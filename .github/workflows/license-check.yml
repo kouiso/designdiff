@@ -1,0 +1,55 @@
+name: License Check
+
+on:
+  pull_request:
+    paths:
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "**/package.json"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  license-check:
+    name: License Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: ".node-version"
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install license-checker
+        run: npm install -g license-checker
+
+      - name: Check licenses
+        run: |
+          DISALLOW="GPL-2.0;GPL-3.0;LGPL-2.0;LGPL-3.0;AGPL-3.0;SSPL-1.0;CDDL-1.0;EPL-1.0"
+          FAIL_ON=$(echo "$DISALLOW" | tr ';' ' ' | xargs -n1 echo "--failOn" | tr '\n' ' ')
+
+          echo "## License Check Results" >> "$GITHUB_STEP_SUMMARY"
+
+          license-checker --production --summary $FAIL_ON | tee license-summary.txt
+
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          cat license-summary.txt >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload license report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: license-report
+          path: license-summary.txt
+          retention-days: 30

@@ -2,17 +2,27 @@ name: CI
 
 on:
   push:
-    branches: [main, develop]
+    branches: [develop]
   pull_request:
-    branches: [main, develop]
+    types: [opened, reopened, synchronize, ready_for_review]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  lint-typecheck-test:
-    name: Lint, TypeCheck & Test (Node)
+  node:
+    name: Node (${{ matrix.check-type }})
     runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+    strategy:
+      fail-fast: false
+      matrix:
+        check-type: [lint, typecheck, test]
     steps:
       - uses: actions/checkout@v4
 
@@ -22,7 +32,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version-file: ".node-version"
           cache: pnpm
 
       - name: Install dependencies
@@ -32,20 +42,29 @@ jobs:
         run: pnpm --filter @figdiff/shared build
 
       - name: Biome check (format + lint)
+        if: matrix.check-type == 'lint'
         run: pnpm check
 
       - name: ESLint
+        if: matrix.check-type == 'lint'
         run: pnpm lint:eslint
 
       - name: TypeScript typecheck
+        if: matrix.check-type == 'typecheck'
         run: pnpm typecheck
 
       - name: Unit tests
+        if: matrix.check-type == 'test'
         run: pnpm test
 
   rust:
-    name: Rust Check & Test
+    name: Rust (${{ matrix.check-type }})
     runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+    strategy:
+      fail-fast: false
+      matrix:
+        check-type: [check, test, clippy]
     steps:
       - uses: actions/checkout@v4
 
@@ -67,13 +86,21 @@ jobs:
             libjavascriptcoregtk-4.1-dev
 
       - name: Cargo check
+        if: matrix.check-type == 'check'
         working-directory: app/desktop/src-tauri
         run: cargo check
 
       - name: Cargo test
+        if: matrix.check-type == 'test'
         working-directory: app/desktop/src-tauri
         run: cargo test
 
       - name: Cargo clippy
+        if: matrix.check-type == 'clippy'
         working-directory: app/desktop/src-tauri
         run: cargo clippy -- -D warnings
+
+      - name: Cargo fmt check
+        if: matrix.check-type == 'clippy'
+        working-directory: app/desktop/src-tauri
+        run: cargo fmt -- --check
