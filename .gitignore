@@ -30,6 +30,9 @@ app/desktop/src-tauri/gen/
 .turbo/
 .figdiff/
 
+# Playwright MCP logs
+.playwright-mcp/
+
 # Debug
 npm-debug.log*
 pnpm-debug.log*
