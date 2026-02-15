@@ -13,6 +13,8 @@
   "home": {
     "pageTitle": "Start Design Comparison",
     "pageDescription": "FigDiff compares Figma designs with implementation screenshots pixel-by-pixel and automatically detects differences.",
+    "inputTitle": "Start by entering a URL or image path",
+    "inputHint": "Paste a Figma URL or enter the path to a local image file.",
     "inputPlaceholder": "Figma URL or local image path...",
     "loading": "Loading...",
     "tokenRequired": "Please set a Figma Token. You can configure it in Settings.",

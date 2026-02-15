@@ -1,6 +1,7 @@
 import { ArrowLeft, ArrowRight, Info } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
+import { Badge } from "@/component/ui/badge";
 import { Button } from "@/component/ui/button";
 import { useCompareStore } from "@/store/compare-store";
 import { useProjectStore } from "@/store/project-store";
@@ -46,6 +47,9 @@ export function ProjectPage({ onNavigate }: ProjectPageProps) {
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div className="flex-1">
+            <Badge variant="secondary" className="mb-1 w-fit">
+              {t("home.stepLabel", { n: 2 })}
+            </Badge>
             <h2 className="font-semibold text-lg">{t("project.pageTitle")}</h2>
             <p className="text-muted-foreground text-sm">{t("project.pageDescription")}</p>
           </div>
