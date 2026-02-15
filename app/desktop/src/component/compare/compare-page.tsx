@@ -1,5 +1,6 @@
 import { Upload } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/component/ui/button";
 import { Card } from "@/component/ui/card";
@@ -14,6 +15,7 @@ import { CompareCanvas } from "./compare-canvas";
 import { ViewModeToggle } from "./view-mode-toggle";
 
 export function ComparePage() {
+  const { t } = useTranslation();
   const [screenshotPath, setScreenshotPath] = useState("");
   const { frameImage, loadDesign } = useProjectStore();
   const {
@@ -50,21 +52,21 @@ export function ComparePage() {
   };
 
   return (
-    <div className="h-screen flex flex-col">
-      {isComparing && <LoadingOverlay message="画像を比較中..." />}
+    <div className="flex h-full flex-col">
+      {isComparing && <LoadingOverlay message={t("compare.comparing")} />}
 
-      <div className="p-4 border-b">
-        <h2 className="text-xl font-semibold mb-4">画像比較</h2>
+      <div className="shrink-0 border-b p-4">
+        <h2 className="mb-4 text-xl font-semibold">{t("compare.title")}</h2>
 
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="screenshot-input">実装スクリーンショット</Label>
+              <Label htmlFor="screenshot-input">{t("compare.screenshotInput")}</Label>
               <div className="flex gap-2">
                 <Input
                   id="screenshot-input"
                   type="text"
-                  placeholder="パスを入力..."
+                  placeholder={t("compare.pathPlaceholder")}
                   value={screenshotPath}
                   onChange={(e) => setScreenshotPath(e.target.value)}
                 />
@@ -76,7 +78,7 @@ export function ComparePage() {
 
             <div className="flex items-end gap-2">
               <Button onClick={handleRunComparison} disabled={isComparing}>
-                {isComparing ? "比較中..." : "比較実行"}
+                {isComparing ? t("compare.running") : t("compare.run")}
               </Button>
             </div>
           </div>
@@ -91,16 +93,18 @@ export function ComparePage() {
             <Card className="p-4">
               <div className="grid grid-cols-3 gap-4 text-sm">
                 <div>
-                  <div className="text-muted-foreground">一致率</div>
+                  <div className="text-muted-foreground">{t("compare.matchRate")}</div>
                   <div className="text-2xl font-bold">{compareResult.matchRate}%</div>
                 </div>
                 <div>
-                  <div className="text-muted-foreground">差分ピクセル</div>
+                  <div className="text-muted-foreground">{t("compare.diffPixels")}</div>
                   <div className="text-2xl font-bold">{compareResult.diffPixelCount}</div>
                 </div>
                 <div>
-                  <div className="text-muted-foreground">差分領域</div>
-                  <div className="text-2xl font-bold">{compareResult.diffRegions.length}箇所</div>
+                  <div className="text-muted-foreground">{t("compare.diffRegions")}</div>
+                  <div className="text-2xl font-bold">
+                    {t("compare.regionsCount", { count: compareResult.diffRegions.length })}
+                  </div>
                 </div>
               </div>
               <Separator className="my-4" />
@@ -110,14 +114,14 @@ export function ComparePage() {
         </div>
       </div>
 
-      <div className="p-4 border-b">
+      <div className="shrink-0 border-b p-4">
         <div className="space-y-4">
           <ViewModeToggle />
 
           {(viewMode === "transparent_overlay" || viewMode === "draggable_overlay") && (
             <div className="flex items-center gap-4">
               <Label htmlFor="opacity-slider" className="whitespace-nowrap">
-                透明度:
+                {t("compare.opacity")}:
               </Label>
               <input
                 id="opacity-slider"
@@ -129,7 +133,7 @@ export function ComparePage() {
                 onChange={(e) => setOverlayOpacity(Number(e.target.value))}
                 className="flex-1"
               />
-              <span className="text-sm text-muted-foreground w-12">
+              <span className="w-12 text-sm text-muted-foreground">
                 {Math.round(overlayOpacity * 100)}%
               </span>
             </div>
@@ -137,7 +141,7 @@ export function ComparePage() {
         </div>
       </div>
 
-      <div className="flex-1 p-4 overflow-auto">
+      <div className="min-h-0 flex-1 p-4">
         <CompareCanvas />
       </div>
     </div>

@@ -46,6 +46,42 @@ export function useCanvasZoomPan({
     lastY: 0,
   });
 
+  // rAFベースのスムーズ更新用
+  const rafRef = useRef<number | null>(null);
+  const pendingTransform = useRef<CanvasTransform | null>(null);
+
+  const flushTransform = useCallback(() => {
+    if (pendingTransform.current) {
+      setTransform(pendingTransform.current);
+      pendingTransform.current = null;
+    }
+    rafRef.current = null;
+  }, []);
+
+  const scheduleTransform = useCallback(
+    (updater: (prev: CanvasTransform) => CanvasTransform) => {
+      setTransform((prev) => {
+        const next = updater(prev);
+        pendingTransform.current = next;
+        return next;
+      });
+      // 連続更新時にrAF内でまとめてレンダリングさせる
+      if (!rafRef.current) {
+        rafRef.current = requestAnimationFrame(flushTransform);
+      }
+    },
+    [flushTransform],
+  );
+
+  // rAFクリーンアップ
+  useEffect(() => {
+    return () => {
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+      }
+    };
+  }, []);
+
   // ホイール＋マウスイベント（ネイティブリスナー）
   useEffect(() => {
     const container = containerRef.current;
@@ -80,7 +116,7 @@ export function useCanvasZoomPan({
         const dx = e.shiftKey ? -e.deltaY : -e.deltaX;
         const dy = e.shiftKey ? 0 : -e.deltaY;
 
-        setTransform((prev) => ({
+        scheduleTransform((prev) => ({
           ...prev,
           x: prev.x + dx,
           y: prev.y + dy,
@@ -137,7 +173,7 @@ export function useCanvasZoomPan({
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("mouseup", onMouseUp);
     };
-  }, [minScale, maxScale]);
+  }, [minScale, maxScale, scheduleTransform]);
 
   // キーボードショートカット
   useEffect(() => {
