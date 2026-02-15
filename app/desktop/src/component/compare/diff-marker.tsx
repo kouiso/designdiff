@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+
 import type { DiffRegion } from "@figdiff/shared";
 
 interface DiffMarkerProps {
@@ -6,11 +8,12 @@ interface DiffMarkerProps {
 }
 
 export function DiffMarker({ region, onClick }: DiffMarkerProps) {
+  const { t } = useTranslation();
   const { bounds, diffPixelCount } = region;
 
   return (
     <div
-      className="absolute border-2 border-red-500 bg-red-500/20 cursor-pointer hover:bg-red-500/30 transition-colors"
+      className="absolute cursor-pointer border-2 border-destructive bg-destructive/20 transition-colors hover:bg-destructive/30"
       style={{
         left: `${bounds.x}px`,
         top: `${bounds.y}px`,
@@ -18,9 +21,17 @@ export function DiffMarker({ region, onClick }: DiffMarkerProps) {
         height: `${bounds.height}px`,
       }}
       onClick={onClick}
-      title={`差分ピクセル: ${diffPixelCount}`}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onClick?.();
+        }
+      }}
+      role="button"
+      tabIndex={0}
+      title={t("compare.diffPixelCount", { count: diffPixelCount })}
     >
-      <span className="absolute -top-6 left-0 bg-red-500 text-white text-xs px-1 rounded">
+      <span className="absolute -top-6 left-0 rounded-md bg-destructive px-1.5 py-0.5 font-medium text-destructive-foreground text-xs">
         {region.id + 1}
       </span>
     </div>

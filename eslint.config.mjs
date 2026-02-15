@@ -19,6 +19,7 @@ export default [
       "**/*.d.ts",
       "app/desktop/src-tauri/",
       "app/desktop/src/__mock__/",
+      "app/desktop/e2e/",
       "**/*.config.ts",
       "**/*.config.mjs",
     ],

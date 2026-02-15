@@ -36,7 +36,15 @@ describe("useProjectStore", () => {
 
   describe("loadProjects", () => {
     it("loads project list via invoke", async () => {
-      const projects = [{ id: "1", name: "Test", figmaFileKey: "ABC", createdAt: "2024-01-01" }];
+      const projects = [
+        {
+          id: "1",
+          name: "Test",
+          figmaUrl: "https://figma.com/file/ABC",
+          createdAt: "2024-01-01",
+          updatedAt: "2024-01-01",
+        },
+      ];
       mockInvoke.mockResolvedValueOnce(projects);
 
       await useProjectStore.getState().loadProjects();

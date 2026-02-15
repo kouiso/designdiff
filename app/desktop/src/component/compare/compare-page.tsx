@@ -1,49 +1,163 @@
-import { ArrowLeft, Check, ImageIcon, Upload } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
+import { Check, ImageIcon, Info, Upload } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
+import { Badge } from "@/component/ui/badge";
 import { Button } from "@/component/ui/button";
 import { Card } from "@/component/ui/card";
 import { Input } from "@/component/ui/input";
 import { Label } from "@/component/ui/label";
 import { Separator } from "@/component/ui/separator";
+import { Slider } from "@/component/ui/slider";
 import { LoadingOverlay, Spinner } from "@/component/ui/spinner";
 import { readLocalImage } from "@/lib/tauri-command";
+import { cn } from "@/lib/util";
 import { useCompareStore } from "@/store/compare-store";
 import { useProjectStore } from "@/store/project-store";
 
-import type { Page } from "../../App";
 import { CompareCanvas } from "./compare-canvas";
 import { ViewModeToggle } from "./view-mode-toggle";
 
-interface ComparePageProps {
-  onNavigate: (page: Page) => void;
+// --- Sub-components ---
+
+function DesignStatus({ hasDesign }: { hasDesign: boolean }) {
+  const { t } = useTranslation();
+  return (
+    <div className="flex items-center gap-2">
+      <div
+        className={cn(
+          "flex h-6 w-6 items-center justify-center rounded-full font-bold text-xs",
+          hasDesign ? "bg-success/20 text-success" : "bg-muted text-muted-foreground",
+        )}
+      >
+        {hasDesign ? <Check className="h-3.5 w-3.5" /> : "1"}
+      </div>
+      <span className="text-sm">{t("compare.designLabel")}</span>
+      {hasDesign && (
+        <Badge variant="secondary" className="text-xs">
+          {t("compare.designLoaded")}
+        </Badge>
+      )}
+    </div>
+  );
 }
 
-export function ComparePage({ onNavigate }: ComparePageProps) {
+function ScreenshotInput({
+  hasScreenshot,
+  screenshotPath,
+  isLoading,
+  onPathChange,
+  onLoad,
+  onClear,
+}: {
+  hasScreenshot: boolean;
+  screenshotPath: string;
+  isLoading: boolean;
+  onPathChange: (path: string) => void;
+  onLoad: () => void;
+  onClear: () => void;
+}) {
+  const { t } = useTranslation();
+  return (
+    <div className="flex flex-1 items-center gap-2">
+      <div
+        className={cn(
+          "flex h-6 w-6 items-center justify-center rounded-full font-bold text-xs",
+          hasScreenshot ? "bg-success/20 text-success" : "bg-primary/20 text-primary",
+        )}
+      >
+        {hasScreenshot ? <Check className="h-3.5 w-3.5" /> : "2"}
+      </div>
+      <span className="text-sm">{t("compare.screenshotLabel")}</span>
+      {hasScreenshot ? (
+        <div className="flex items-center gap-2">
+          <Badge variant="secondary" className="text-xs">
+            {t("compare.screenshotLoaded")}
+          </Badge>
+          <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={onClear}>
+            {t("compare.change")}
+          </Button>
+        </div>
+      ) : (
+        <div className="flex flex-1 items-center gap-1.5">
+          <Input
+            type="text"
+            placeholder={t("compare.screenshotPlaceholder")}
+            value={screenshotPath}
+            onChange={(e) => onPathChange(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") onLoad();
+            }}
+            disabled={isLoading}
+            className="h-8 max-w-md text-sm"
+          />
+          <Button
+            onClick={onLoad}
+            size="icon"
+            disabled={!screenshotPath.trim() || isLoading}
+            className="h-8 w-8"
+            aria-label={t("compare.screenshotLabel")}
+          >
+            {isLoading ? (
+              <Spinner size="sm" label={t("common.loading")} />
+            ) : (
+              <Upload className="h-3.5 w-3.5" />
+            )}
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function GuidanceBar({ hasDesign, hasBothImages }: { hasDesign: boolean; hasBothImages: boolean }) {
+  const { t } = useTranslation();
+  const compareResult = useCompareStore((s) => s.compareResult);
+
+  if (hasBothImages && compareResult) return null;
+
+  const message = hasBothImages
+    ? t("compare.bothLoadedNext")
+    : hasDesign
+      ? t("compare.designLoadedNext")
+      : t("compare.emptyDescription");
+
+  return (
+    <div className="flex shrink-0 items-center gap-2 border-border border-b bg-accent/50 px-4 py-2">
+      <Info className="h-4 w-4 shrink-0 text-primary" />
+      <p className="text-accent-foreground text-sm">{message}</p>
+    </div>
+  );
+}
+
+// --- Main component ---
+
+export function ComparePage() {
   const { t } = useTranslation();
   const [screenshotPath, setScreenshotPath] = useState("");
   const [isLoadingScreenshot, setIsLoadingScreenshot] = useState(false);
-  const { frameImage } = useProjectStore();
-  const {
-    designImage,
-    screenshotImage,
-    compareResult,
-    overlayOpacity,
-    viewMode,
-    isComparing,
-    error,
-    setDesignImage,
-    setScreenshotImage,
-    setViewMode,
-    runComparison,
-    setOverlayOpacity,
-  } = useCompareStore();
+  const frameImage = useProjectStore((s) => s.frameImage);
+  const designImage = useCompareStore((s) => s.designImage);
+  const screenshotImage = useCompareStore((s) => s.screenshotImage);
+  const compareResult = useCompareStore((s) => s.compareResult);
+  const overlayOpacity = useCompareStore((s) => s.overlayOpacity);
+  const viewMode = useCompareStore((s) => s.viewMode);
+  const isComparing = useCompareStore((s) => s.isComparing);
+  const error = useCompareStore((s) => s.error);
+  const setDesignImage = useCompareStore((s) => s.setDesignImage);
+  const setScreenshotImage = useCompareStore((s) => s.setScreenshotImage);
+  const setViewMode = useCompareStore((s) => s.setViewMode);
+  const setError = useCompareStore((s) => s.setError);
+  const runComparison = useCompareStore((s) => s.runComparison);
+  const setOverlayOpacity = useCompareStore((s) => s.setOverlayOpacity);
+  const clearComparison = useCompareStore((s) => s.clearComparison);
 
-  // Figmaデザインがcompare storeにまだセットされていなければセット
-  if (frameImage && !designImage) {
-    setDesignImage(frameImage);
-  }
+  useEffect(() => {
+    if (frameImage && !designImage) {
+      setDesignImage(frameImage);
+    }
+  }, [frameImage, designImage, setDesignImage]);
 
   const handleLoadScreenshot = async () => {
     const trimmed = screenshotPath.trim();
@@ -54,175 +168,96 @@ export function ComparePage({ onNavigate }: ComparePageProps) {
       const base64 = await readLocalImage(trimmed);
       const dataUrl = `data:image/png;base64,${base64}`;
       setScreenshotImage(dataUrl);
-      // 自動で透過オーバーレイに切り替え
       setViewMode("transparent_overlay");
     } catch (e) {
-      useCompareStore.setState({ error: `${t("compare.loadFailed")}: ${String(e)}` });
+      setError(`${t("compare.loadFailed")}: ${String(e)}`);
     } finally {
       setIsLoadingScreenshot(false);
     }
   };
 
-  const handleRunComparison = async () => {
-    await runComparison();
-  };
-
-  const handleBack = () => {
-    onNavigate("project");
+  const handleClearScreenshot = () => {
+    setScreenshotImage(null);
+    clearComparison();
+    setScreenshotPath("");
   };
 
   const hasDesign = !!designImage;
   const hasScreenshot = !!screenshotImage;
-  const canCompare = hasDesign && hasScreenshot && !isComparing;
+  const hasBothImages = hasDesign && hasScreenshot;
+  const canCompare = hasBothImages && !isComparing;
 
   return (
     <div className="flex h-full flex-col">
       {isComparing && <LoadingOverlay message={t("compare.comparing")} />}
 
-      {/* ヘッダー: 戻る + タイトル */}
-      <div className="flex shrink-0 items-center gap-3 border-b p-3">
-        <Button variant="ghost" size="icon" onClick={handleBack}>
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <h2 className="text-lg font-semibold">{t("compare.title")}</h2>
-      </div>
+      {/* Toolbar */}
+      <div className="shrink-0 border-border border-b bg-card/40 px-4 py-3">
+        <div className="flex items-center gap-6">
+          <DesignStatus hasDesign={hasDesign} />
+          <Separator orientation="vertical" className="h-5" />
+          <ScreenshotInput
+            hasScreenshot={hasScreenshot}
+            screenshotPath={screenshotPath}
+            isLoading={isLoadingScreenshot}
+            onPathChange={setScreenshotPath}
+            onLoad={handleLoadScreenshot}
+            onClear={handleClearScreenshot}
+          />
 
-      {/* ステップガイド: デザイン画像 + 実装画像 */}
-      <div className="shrink-0 border-b p-4">
-        <div className="grid grid-cols-2 gap-6">
-          {/* 左: デザイン画像ステータス */}
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <div
-                className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold ${
-                  hasDesign ? "bg-green-500/20 text-green-400" : "bg-muted text-muted-foreground"
-                }`}
-              >
-                {hasDesign ? <Check className="h-3.5 w-3.5" /> : "1"}
-              </div>
-              <Label className="text-base">{t("compare.designLabel")}</Label>
-            </div>
-            {hasDesign ? (
-              <div className="flex items-center gap-2 rounded-md border border-green-500/30 bg-green-500/5 px-3 py-2">
-                <ImageIcon className="h-4 w-4 text-green-400" />
-                <span className="text-sm text-green-400">{t("compare.designLoaded")}</span>
-              </div>
-            ) : (
-              <div className="rounded-md border border-dashed border-border px-3 py-2 text-sm text-muted-foreground">
-                {t("compare.designNotLoaded")}
-              </div>
-            )}
-          </div>
-
-          {/* 右: 実装スクリーンショット入力 */}
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <div
-                className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold ${
-                  hasScreenshot ? "bg-green-500/20 text-green-400" : "bg-primary/20 text-primary"
-                }`}
-              >
-                {hasScreenshot ? <Check className="h-3.5 w-3.5" /> : "2"}
-              </div>
-              <Label className="text-base">{t("compare.screenshotLabel")}</Label>
-            </div>
-            {hasScreenshot ? (
-              <div className="flex items-center gap-2">
-                <div className="flex flex-1 items-center gap-2 rounded-md border border-green-500/30 bg-green-500/5 px-3 py-2">
-                  <ImageIcon className="h-4 w-4 text-green-400" />
-                  <span className="text-sm text-green-400">{t("compare.screenshotLoaded")}</span>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    useCompareStore.setState({ screenshotImage: null, compareResult: null });
-                    setScreenshotPath("");
-                  }}
-                >
-                  {t("compare.change")}
+          {hasBothImages && (
+            <>
+              <Separator orientation="vertical" className="h-5" />
+              <div className="flex items-center gap-3">
+                <Button onClick={runComparison} disabled={!canCompare} className="gap-2">
+                  {isComparing ? t("compare.running") : t("compare.run")}
                 </Button>
+                {compareResult && (
+                  <div className="flex items-center gap-3 text-sm">
+                    <Badge variant={compareResult.matchRate >= 95 ? "default" : "destructive"}>
+                      {compareResult.matchRate}%
+                    </Badge>
+                    <span className="text-muted-foreground">
+                      {t("compare.diffRegions")}: {compareResult.diffRegions.length}
+                    </span>
+                  </div>
+                )}
               </div>
-            ) : (
-              <div className="flex gap-2">
-                <Input
-                  type="text"
-                  placeholder={t("compare.screenshotPlaceholder")}
-                  value={screenshotPath}
-                  onChange={(e) => setScreenshotPath(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") handleLoadScreenshot();
-                  }}
-                  disabled={isLoadingScreenshot}
-                />
-                <Button
-                  onClick={handleLoadScreenshot}
-                  size="icon"
-                  disabled={!screenshotPath.trim() || isLoadingScreenshot}
-                >
-                  {isLoadingScreenshot ? <Spinner size="sm" /> : <Upload className="h-4 w-4" />}
-                </Button>
-              </div>
-            )}
-          </div>
+            </>
+          )}
         </div>
 
-        {/* 比較実行ボタン + エラー */}
-        {hasDesign && hasScreenshot && (
-          <div className="mt-4 flex items-center gap-4">
-            <Button onClick={handleRunComparison} disabled={!canCompare} className="px-8">
-              {isComparing ? t("compare.running") : t("compare.run")}
-            </Button>
-            {compareResult && (
-              <div className="flex gap-6 text-sm">
-                <span>
-                  {t("compare.matchRate")}:{" "}
-                  <strong className="text-lg">{compareResult.matchRate}%</strong>
-                </span>
-                <span>
-                  {t("compare.diffPixels")}:{" "}
-                  <strong>{compareResult.diffPixelCount.toLocaleString()}</strong>
-                </span>
-                <span>
-                  {t("compare.diffRegions")}:{" "}
-                  <strong>
-                    {t("compare.regionsCount", { count: compareResult.diffRegions.length })}
-                  </strong>
-                </span>
-              </div>
-            )}
-          </div>
-        )}
-
         {error && (
-          <div className="mt-3 rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
-            {error}
+          <div className="mt-2 rounded-lg border border-destructive/50 bg-destructive/10 px-3 py-2 text-destructive text-sm">
+            {t(error)}
           </div>
         )}
       </div>
 
-      {/* ビューモード切替 + 透明度 */}
-      {(hasDesign || hasScreenshot) && (
-        <div className="shrink-0 border-b p-3">
+      {/* Guidance bar */}
+      <GuidanceBar hasDesign={hasDesign} hasBothImages={hasBothImages} />
+
+      {/* View mode toggle bar */}
+      {hasBothImages && (
+        <div className="shrink-0 border-border border-b px-4 py-2">
           <div className="flex flex-wrap items-center gap-3">
             <ViewModeToggle />
             {(viewMode === "transparent_overlay" || viewMode === "draggable_overlay") && (
               <>
-                <Separator orientation="vertical" className="h-6" />
+                <Separator orientation="vertical" className="h-5" />
                 <Label htmlFor="opacity-slider" className="whitespace-nowrap text-sm">
                   {t("compare.opacity")}
                 </Label>
-                <input
+                <Slider
                   id="opacity-slider"
-                  type="range"
-                  min="0"
-                  max="1"
-                  step="0.01"
+                  min={0}
+                  max={1}
+                  step={0.01}
                   value={overlayOpacity}
                   onChange={(e) => setOverlayOpacity(Number(e.target.value))}
-                  className="w-32"
+                  className="w-28"
                 />
-                <span className="w-10 text-sm text-muted-foreground">
+                <span className="w-10 text-muted-foreground text-sm">
                   {Math.round(overlayOpacity * 100)}%
                 </span>
               </>
@@ -231,26 +266,30 @@ export function ComparePage({ onNavigate }: ComparePageProps) {
         </div>
       )}
 
-      {/* キャンバス */}
+      {/* Canvas or empty state */}
       <div className="min-h-0 flex-1">
         {hasDesign || hasScreenshot ? (
           <CompareCanvas />
         ) : (
           <div className="flex h-full flex-col items-center justify-center gap-4 text-muted-foreground">
-            <ImageIcon className="h-16 w-16 opacity-30" />
-            <div className="max-w-md space-y-2 text-center">
-              <p className="text-lg font-medium">{t("compare.emptyTitle")}</p>
-              <p className="text-sm">{t("compare.emptyDescription")}</p>
+            <div className="rounded-2xl bg-muted/50 p-6">
+              <ImageIcon className="h-16 w-16 opacity-30" />
+            </div>
+            <div className="max-w-md space-y-1.5 text-center">
+              <p className="font-semibold text-foreground text-lg">{t("compare.emptyTitle")}</p>
+              <p className="text-sm leading-relaxed">{t("compare.emptyDescription")}</p>
             </div>
           </div>
         )}
       </div>
 
-      {/* 比較結果の詳細（サジェスション） */}
+      {/* Suggestion */}
       {compareResult?.suggestion && (
-        <div className="shrink-0 border-t p-3">
-          <Card className="p-3">
-            <p className="text-sm text-muted-foreground">{compareResult.suggestion}</p>
+        <div className="shrink-0 border-border border-t px-4 py-3">
+          <Card className="bg-accent/30 p-4">
+            <p className="text-muted-foreground text-sm">
+              {t(compareResult.suggestion, { count: compareResult.diffRegions.length })}
+            </p>
           </Card>
         </div>
       )}

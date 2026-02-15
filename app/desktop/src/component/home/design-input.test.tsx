@@ -24,13 +24,13 @@ describe("DesignInput", () => {
     render(<DesignInput onSubmit={vi.fn()} />);
     const input = screen.getByPlaceholderText(PLACEHOLDER);
     fireEvent.change(input, { target: { value: "/home/user/image.png" } });
-    expect(screen.getByText("Local")).toBeInTheDocument();
+    expect(screen.getByText("ローカル")).toBeInTheDocument();
   });
 
   it("shows no badge when input is empty", () => {
     render(<DesignInput onSubmit={vi.fn()} />);
     expect(screen.queryByText("Figma")).not.toBeInTheDocument();
-    expect(screen.queryByText("Local")).not.toBeInTheDocument();
+    expect(screen.queryByText("ローカル")).not.toBeInTheDocument();
   });
 
   it("calls onSubmit with trimmed value on Enter", () => {

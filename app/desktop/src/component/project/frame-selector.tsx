@@ -1,7 +1,9 @@
-import type { Frame } from "@figdiff/shared";
+import { Check } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
-import { CardContent, CardTitle } from "@/component/ui/card";
+import type { Frame } from "@figdiff/shared";
+
+import { cn } from "@/lib/util";
 
 interface FrameSelectorProps {
   frames: Frame[];
@@ -15,28 +17,38 @@ export function FrameSelector({ frames, selectedFrame, onSelect }: FrameSelector
   if (frames.length === 0) return null;
 
   return (
-    <div className="space-y-3">
-      <h3 className="text-base font-medium text-muted-foreground">
+    <div className="space-y-2">
+      <h3 className="font-medium text-muted-foreground text-sm">
         {t("project.frames", { count: frames.length })}
       </h3>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-        {frames.map((frame) => (
-          <button
-            key={frame.id}
-            type="button"
-            className={`rounded-xl border border-border bg-card text-left text-card-foreground shadow transition-colors hover:border-primary/50 ${
-              selectedFrame?.id === frame.id ? "border-primary" : ""
-            }`}
-            onClick={() => onSelect(frame)}
-          >
-            <CardContent className="p-4">
-              <CardTitle className="text-base font-semibold">{frame.name}</CardTitle>
-              <p className="mt-1 text-base text-muted-foreground">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+        {frames.map((frame) => {
+          const isSelected = selectedFrame?.id === frame.id;
+          return (
+            <button
+              key={frame.id}
+              type="button"
+              className={cn(
+                "relative rounded-lg border bg-card p-3 text-left transition-all hover:border-primary/50 hover:shadow-sm",
+                isSelected ? "border-primary bg-accent shadow-sm" : "border-border",
+              )}
+              onClick={() => onSelect(frame)}
+              aria-pressed={isSelected}
+            >
+              {isSelected && (
+                <div className="absolute top-2 right-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                  <Check className="h-3 w-3" />
+                </div>
+              )}
+              <p className={cn("font-medium text-sm", isSelected && "text-primary")}>
+                {frame.name}
+              </p>
+              <p className="mt-0.5 text-muted-foreground text-xs">
                 {frame.width} × {frame.height}
               </p>
-            </CardContent>
-          </button>
-        ))}
+            </button>
+          );
+        })}
       </div>
     </div>
   );

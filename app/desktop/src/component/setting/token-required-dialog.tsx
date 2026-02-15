@@ -1,6 +1,10 @@
-import { AlertCircle } from "lucide-react";
 import { useState } from "react";
+
+import { AlertCircle } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { z } from "zod";
+
+import { FigmaTokenSchema } from "@figdiff/shared";
 
 import { Button } from "@/component/ui/button";
 import { Dialog, DialogDescription, DialogHeader, DialogTitle } from "@/component/ui/dialog";
@@ -22,9 +26,13 @@ export function TokenRequiredDialog() {
       return;
     }
 
-    if (!trimmed.startsWith("figd_")) {
-      setError(t("tokenDialog.invalid"));
-      return;
+    try {
+      FigmaTokenSchema.parse(trimmed);
+    } catch (e) {
+      if (e instanceof z.ZodError) {
+        setError(t("tokenDialog.invalid"));
+        return;
+      }
     }
 
     setIsSubmitting(true);
@@ -49,7 +57,7 @@ export function TokenRequiredDialog() {
     <Dialog open={showTokenDialog} onOpenChange={(open) => !open && handleClose()}>
       <DialogHeader>
         <DialogTitle className="flex items-center gap-2">
-          <AlertCircle className="h-5 w-5 text-yellow-500" />
+          <AlertCircle className="h-5 w-5 text-primary" />
           {t("tokenDialog.title")}
         </DialogTitle>
         <DialogDescription>
@@ -83,10 +91,10 @@ export function TokenRequiredDialog() {
             }}
             disabled={isSubmitting}
           />
-          {error && <p className="text-sm text-destructive">{error}</p>}
+          {error && <p className="text-destructive text-sm">{error}</p>}
         </div>
 
-        <div className="flex gap-2 justify-end">
+        <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={handleClose} disabled={isSubmitting}>
             {t("tokenDialog.cancel")}
           </Button>
