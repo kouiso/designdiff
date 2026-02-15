@@ -87,10 +87,10 @@ export function SettingDialog({ open, onOpenChange }: SettingDialogProps) {
             </div>
           )}
           {saveStatus === "saved" && (
-            <p className="text-xs text-green-500">{t("settings.saved")}</p>
+            <p className="text-sm text-green-500">{t("settings.saved")}</p>
           )}
           {saveStatus === "error" && (
-            <p className="text-xs text-destructive">{t("settings.saveFailed")}</p>
+            <p className="text-sm text-destructive">{t("settings.saveFailed")}</p>
           )}
         </div>
 

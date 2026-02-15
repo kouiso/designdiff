@@ -48,7 +48,7 @@ export function ProjectPage({ onNavigate }: ProjectPageProps) {
       </div>
 
       {error && (
-        <div className="shrink-0 rounded-md border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
+        <div className="shrink-0 rounded-md border border-destructive/50 bg-destructive/10 p-4 text-base text-destructive">
           {error}
         </div>
       )}

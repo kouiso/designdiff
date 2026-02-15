@@ -30,8 +30,8 @@ export function FrameSelector({ frames, selectedFrame, onSelect }: FrameSelector
             onClick={() => onSelect(frame)}
           >
             <CardContent className="p-4">
-              <CardTitle className="text-sm">{frame.name}</CardTitle>
-              <p className="mt-1 text-xs text-muted-foreground">
+              <CardTitle className="text-sm font-semibold">{frame.name}</CardTitle>
+              <p className="mt-1 text-sm text-muted-foreground">
                 {frame.width} × {frame.height}
               </p>
             </CardContent>
