@@ -1,0 +1,98 @@
+{
+  "app": {
+    "title": "FigDiff",
+    "description": "FigmaのURLまたはローカル画像パスを入力してください"
+  },
+  "nav": {
+    "home": "ホーム",
+    "settings": "設定"
+  },
+  "home": {
+    "inputPlaceholder": "Figma URL またはローカル画像パス...",
+    "loading": "読み込み中...",
+    "tokenRequired": "Figma Token を設定してください。設定画面から設定できます。"
+  },
+  "project": {
+    "selectFrame": "フレームを選択",
+    "startCompare": "比較を開始",
+    "frames": "フレーム ({{count}})",
+    "loadingImage": "画像を読み込み中..."
+  },
+  "compare": {
+    "title": "画像比較",
+    "screenshotInput": "実装スクリーンショット",
+    "pathPlaceholder": "パスを入力...",
+    "run": "比較実行",
+    "running": "比較中...",
+    "comparing": "画像を比較中...",
+    "matchRate": "一致率",
+    "diffPixels": "差分ピクセル",
+    "diffRegions": "差分領域",
+    "regionsCount": "{{count}}箇所",
+    "opacity": "透明度"
+  },
+  "viewMode": {
+    "design_only": "デザインのみ",
+    "implementation": "実装のみ",
+    "transparent_overlay": "透過オーバーレイ",
+    "split_screen": "分割画面",
+    "blended_diff": "ブレンド差分",
+    "draggable_overlay": "ドラッグオーバーレイ",
+    "pixel_diff": "ピクセル差分",
+    "desc_design_only": "Figmaデザイン画像のみ表示",
+    "desc_implementation": "実装スクリーンショットのみ表示",
+    "desc_transparent_overlay": "デザインと実装を透明度調整で重ねる",
+    "desc_split_screen": "左右分割表示",
+    "desc_blended_diff": "差分をブレンド表示",
+    "desc_draggable_overlay": "デザイン画像をドラッグで移動",
+    "desc_pixel_diff": "機械的差分検出（赤ハイライト）"
+  },
+  "canvas": {
+    "zoomHint": "Ctrl+ホイール: ズーム",
+    "panHint": "ホイール: パン",
+    "dragHint": "Space+ドラッグ: パン",
+    "hint": "Ctrl+ホイール: ズーム | ホイール: パン | Space+ドラッグ: パン",
+    "reset": "リセット"
+  },
+  "settings": {
+    "title": "設定",
+    "description": "FigDiffの設定を管理します",
+    "token": "Figma Personal Access Token",
+    "tokenMasked": "••••••••••••••••",
+    "tokenPlaceholder": "figd_...",
+    "save": "保存",
+    "saving": "保存中...",
+    "saved": "OS Keychainに保存しました",
+    "saveFailed": "保存に失敗しました",
+    "delete": "削除",
+    "theme": "テーマ",
+    "dark": "ダーク",
+    "light": "ライト",
+    "threshold": "デフォルト差分しきい値: {{value}}"
+  },
+  "tokenDialog": {
+    "title": "Figma Tokenが必要です",
+    "description": "Figma APIを使用するには、Personal Access Tokenの設定が必要です。",
+    "howToGet": "Tokenの取得方法はこちら",
+    "inputLabel": "Figma Personal Access Token",
+    "required": "Tokenを入力してください",
+    "invalid": "有効なFigma Personal Access Tokenを入力してください（figd_で始まる）",
+    "failed": "保存に失敗しました: {{error}}",
+    "cancel": "キャンセル",
+    "save": "保存",
+    "saving": "保存中..."
+  },
+  "crop": {
+    "selecting": "選択中...",
+    "selectRegion": "範囲指定",
+    "clear": "クリア"
+  },
+  "common": {
+    "loading": "読み込み中...",
+    "error": "エラー",
+    "cancel": "キャンセル",
+    "save": "保存",
+    "delete": "削除",
+    "reset": "リセット"
+  }
+}

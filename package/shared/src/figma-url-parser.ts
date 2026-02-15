@@ -1,0 +1,48 @@
+import type { ParsedDesignInput } from "./type.js";
+
+/**
+ * Extract file key from a Figma URL.
+ * Supports both /design/ (new) and /file/ (legacy) URL formats.
+ */
+export function extractFileKey(url: string): string {
+  const match = url.match(/\/(design|file)\/([a-zA-Z0-9]+)/);
+  if (!match?.[2]) {
+    throw new Error(`Invalid Figma URL: cannot extract file key from "${url}"`);
+  }
+  return match[2];
+}
+
+/**
+ * Extract node ID from a Figma URL query parameter.
+ * Figma URLs use "1-23" format, but the API expects "1:23".
+ * Returns null if no node-id is present in the URL.
+ */
+export function extractNodeId(url: string): string | null {
+  try {
+    const urlObj = new URL(url);
+    const nodeId = urlObj.searchParams.get("node-id");
+    if (!nodeId) return null;
+    return nodeId.replace(/-/g, ":");
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Determine whether an input string is a Figma URL or a local file path.
+ * Figma URLs contain "figma.com". Everything else is treated as a local path.
+ */
+export function parseDesignInput(input: string): ParsedDesignInput {
+  const trimmed = input.trim();
+  if (!trimmed) {
+    throw new Error("Input cannot be empty");
+  }
+
+  if (trimmed.includes("figma.com")) {
+    const fileKey = extractFileKey(trimmed);
+    const nodeId = extractNodeId(trimmed) ?? undefined;
+    return { type: "figma_url", fileKey, nodeId };
+  }
+
+  return { type: "local_path", filePath: trimmed };
+}

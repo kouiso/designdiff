@@ -1,0 +1,88 @@
+# FigDiff — AI Assistant Reference
+
+## Project Overview
+
+FigDiff is a Diff-driven development tool that compares Figma designs with implementation screenshots using pixelmatch, enabling AI to iteratively detect and fix design discrepancies.
+
+**Stack:**
+- Frontend: React 19 + TypeScript + Vite + Tailwind CSS 4 + shadcn/ui
+- Backend: Rust + Tauri v2
+- State: Zustand 5
+- Shared: `@figdiff/shared` (types + URL parser)
+- MCP Server: `@figdiff/mcp-server` (Phase 4)
+- Linter: Biome (format) + ESLint v9 flat config (lint)
+- Test: Vitest + @testing-library/react + Rust `#[cfg(test)]`
+
+## Monorepo Structure
+
+```
+designdiff/
+├── package/shared/        # @figdiff/shared — types, URL parser
+├── app/desktop/           # @figdiff/desktop — Tauri v2 desktop app
+│   ├── src/               # React frontend
+│   └── src-tauri/         # Rust backend
+├── app/mcp-server/        # @figdiff/mcp-server — MCP tools (Phase 4)
+└── prompt/                # AI prompt system
+    ├── instruction/       # Core rules
+    ├── agent/             # Specialist agents
+    └── skill/             # Domain skills
+```
+
+## Key Commands
+
+```bash
+pnpm build           # Build all packages
+pnpm dev             # Start Tauri dev (desktop + Vite HMR)
+pnpm test            # Run all Vitest tests
+pnpm test:rust       # Run cargo test
+pnpm lint            # Biome lint per-package
+pnpm lint:eslint     # ESLint v9 (root)
+pnpm typecheck       # TypeScript type check
+pnpm check           # Biome check (format + lint)
+pnpm format          # Biome format --write
+```
+
+## Naming Convention
+
+**All folders/files: English lowercase singular kebab-case.**
+
+Exceptions: tool conventions (Cargo.toml, package.json, App.tsx, main.rs, etc.)
+
+```
+✅ src/component/home/home-page.tsx
+✅ src/store/setting-store.ts
+✅ src/type/compare.ts
+❌ src/components/HomePage.tsx
+```
+
+## Architecture Decisions
+
+| Decision | Choice | Reason |
+|----------|--------|--------|
+| Token storage | OS Keychain (`keyring` crate) | Security — not file-based |
+| Image transfer | base64 String | Tauri IPC Vec<u8> → JSON array is inefficient |
+| Figma images | 2-stage fetch (URL → download) | Figma /v1/images returns URL, not image |
+| Image cache | `~/.figdiff/cache/` | Avoid redundant API calls |
+| Formatter | Biome | Fast, all-in-one |
+| Linter | ESLint v9 flat config | Type-aware rules Biome doesn't cover |
+
+## Important Files
+
+| File | Purpose |
+|------|---------|
+| `package/shared/src/type.ts` | All shared TypeScript types |
+| `package/shared/src/figma-url-parser.ts` | Figma URL/path parsing |
+| `app/desktop/src-tauri/src/figma/client.rs` | Rust Figma API client |
+| `app/desktop/src-tauri/src/figma/transform.rs` | Figma → CSS suggestion |
+| `app/desktop/src/lib/tauri-command.ts` | Type-safe Tauri invoke wrapper |
+| `app/desktop/src/store/project-store.ts` | Project/frame state |
+| `app/desktop/src/store/setting-store.ts` | Settings + token |
+| `eslint.config.mjs` | ESLint v9 flat config |
+| `document.md` | Complete design specification |
+
+## AI Principles
+
+1. **Autonomous execution**: No confirmation needed — just do it
+2. **Complete investigation**: Never guess — always read code first
+3. **Full compliance**: Follow all naming, linting, and type rules
+4. **Diff-driven**: FigDiff's core philosophy — compare, detect, fix, repeat

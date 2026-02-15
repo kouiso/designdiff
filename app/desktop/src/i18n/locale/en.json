@@ -1,0 +1,98 @@
+{
+  "app": {
+    "title": "FigDiff",
+    "description": "Paste a Figma URL or enter a local image path to get started."
+  },
+  "nav": {
+    "home": "Home",
+    "settings": "Settings"
+  },
+  "home": {
+    "inputPlaceholder": "Figma URL or local image path...",
+    "loading": "Loading...",
+    "tokenRequired": "Please set a Figma Token. You can configure it in Settings."
+  },
+  "project": {
+    "selectFrame": "Select a Frame",
+    "startCompare": "Start Compare",
+    "frames": "Frames ({{count}})",
+    "loadingImage": "Loading image..."
+  },
+  "compare": {
+    "title": "Image Comparison",
+    "screenshotInput": "Implementation Screenshot",
+    "pathPlaceholder": "Enter path...",
+    "run": "Run Comparison",
+    "running": "Comparing...",
+    "comparing": "Comparing images...",
+    "matchRate": "Match Rate",
+    "diffPixels": "Diff Pixels",
+    "diffRegions": "Diff Regions",
+    "regionsCount": "{{count}} areas",
+    "opacity": "Opacity"
+  },
+  "viewMode": {
+    "design_only": "Design Only",
+    "implementation": "Implementation",
+    "transparent_overlay": "Transparent Overlay",
+    "split_screen": "Split Screen",
+    "blended_diff": "Blended Diff",
+    "draggable_overlay": "Draggable Overlay",
+    "pixel_diff": "Pixel Diff",
+    "desc_design_only": "Show Figma design image only",
+    "desc_implementation": "Show implementation screenshot only",
+    "desc_transparent_overlay": "Overlay design and implementation with adjustable opacity",
+    "desc_split_screen": "Side-by-side split view",
+    "desc_blended_diff": "Show differences with blending",
+    "desc_draggable_overlay": "Drag design image to compare",
+    "desc_pixel_diff": "Mechanical diff detection (red highlights)"
+  },
+  "canvas": {
+    "zoomHint": "Ctrl+Wheel: Zoom",
+    "panHint": "Wheel: Pan",
+    "dragHint": "Space+Drag: Pan",
+    "hint": "Ctrl+Wheel: Zoom | Wheel: Pan | Space+Drag: Pan",
+    "reset": "Reset"
+  },
+  "settings": {
+    "title": "Settings",
+    "description": "Configure FigDiff preferences.",
+    "token": "Figma Personal Access Token",
+    "tokenMasked": "••••••••••••••••",
+    "tokenPlaceholder": "figd_...",
+    "save": "Save",
+    "saving": "Saving...",
+    "saved": "Saved to OS Keychain.",
+    "saveFailed": "Failed to save token.",
+    "delete": "Delete",
+    "theme": "Theme",
+    "dark": "Dark",
+    "light": "Light",
+    "threshold": "Default Diff Threshold: {{value}}"
+  },
+  "tokenDialog": {
+    "title": "Figma Token Required",
+    "description": "A Personal Access Token is required to use the Figma API.",
+    "howToGet": "How to get a token",
+    "inputLabel": "Figma Personal Access Token",
+    "required": "Please enter a token",
+    "invalid": "Please enter a valid Figma Personal Access Token (starts with figd_)",
+    "failed": "Failed to save: {{error}}",
+    "cancel": "Cancel",
+    "save": "Save",
+    "saving": "Saving..."
+  },
+  "crop": {
+    "selecting": "Selecting...",
+    "selectRegion": "Select Region",
+    "clear": "Clear"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "reset": "Reset"
+  }
+}
