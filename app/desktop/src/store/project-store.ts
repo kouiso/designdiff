@@ -71,7 +71,13 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     } catch (e) {
       const errorMsg = String(e);
       set({ error: errorMsg, isLoading: false });
-      if (errorMsg.includes("Token not found") || errorMsg.includes("TokenNotFound")) {
+      if (
+        errorMsg.includes("Token not found") ||
+        errorMsg.includes("TokenNotFound") ||
+        errorMsg.includes("status 403") ||
+        errorMsg.includes("status 401") ||
+        errorMsg.includes("Forbidden")
+      ) {
         useSettingStore.getState().requireToken();
       }
     }
@@ -88,7 +94,13 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     } catch (e) {
       const errorMsg = String(e);
       set({ error: errorMsg, isLoading: false });
-      if (errorMsg.includes("Token not found") || errorMsg.includes("TokenNotFound")) {
+      if (
+        errorMsg.includes("Token not found") ||
+        errorMsg.includes("TokenNotFound") ||
+        errorMsg.includes("status 403") ||
+        errorMsg.includes("status 401") ||
+        errorMsg.includes("Forbidden")
+      ) {
         useSettingStore.getState().requireToken();
       }
     }

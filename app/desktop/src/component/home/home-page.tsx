@@ -33,9 +33,9 @@ export function HomePage({ onNavigate }: HomePageProps) {
 
   return (
     <div className="mx-auto max-w-2xl space-y-8 pt-16">
-      <div className="space-y-2 text-center">
+      <div className="space-y-3 text-center">
         <h1 className="text-4xl font-bold tracking-tight">{t("app.title")}</h1>
-        <p className="text-base text-muted-foreground">{t("app.description")}</p>
+        <p className="text-lg text-muted-foreground">{t("app.description")}</p>
       </div>
 
       <DesignInput onSubmit={handleSubmit} disabled={isLoading} />
@@ -49,7 +49,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
       {isLoading && (
         <div className="flex items-center justify-center gap-2">
           <Spinner size="sm" />
-          <span className="text-sm text-muted-foreground">{t("common.loading")}</span>
+          <span className="text-base text-muted-foreground">{t("common.loading")}</span>
         </div>
       )}
     </div>
