@@ -1,0 +1,66 @@
+# Labels based on changed files
+# See: https://github.com/actions/labeler
+
+frontend:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "app/desktop/src/**"
+          - "app/desktop/index.html"
+          - "app/desktop/vite.config.ts"
+
+rust:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "app/desktop/src-tauri/**"
+
+shared:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "package/shared/**"
+
+mcp-server:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "app/mcp-server/**"
+
+ci:
+  - changed-files:
+      - any-glob-to-any-file:
+          - ".github/**"
+
+config:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "biome.json"
+          - "eslint.config.mjs"
+          - "tsconfig.*.json"
+          - "turbo.json"
+          - "pnpm-workspace.yaml"
+
+dependencies:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "package.json"
+          - "pnpm-lock.yaml"
+          - "**/package.json"
+          - "**/Cargo.toml"
+          - "**/Cargo.lock"
+
+documentation:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "**/*.md"
+          - "doc/**"
+
+prompt:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "prompt/**"
+
+test:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "**/*.test.*"
+          - "**/*.spec.*"
+          - "**/test-fixture/**"
+          - "**/__mock__/**"
