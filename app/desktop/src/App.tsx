@@ -33,7 +33,7 @@ export function App() {
       <main className={`flex-1 overflow-hidden ${page === "home" ? "p-6" : "p-2"}`}>
         {page === "home" && <HomePage onNavigate={handleNavigate} />}
         {page === "project" && <ProjectPage onNavigate={handleNavigate} />}
-        {page === "compare" && <ComparePage />}
+        {page === "compare" && <ComparePage onNavigate={handleNavigate} />}
       </main>
       <SettingDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
       <TokenRequiredDialog />

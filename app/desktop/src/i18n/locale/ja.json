@@ -1,10 +1,12 @@
 {
   "app": {
     "title": "FigDiff",
-    "description": "FigmaのURLまたはローカル画像パスを入力してください"
+    "description": "Figmaデザインと実装を比較して差分を検出します。FigmaのURLを入力して始めましょう。"
   },
   "nav": {
     "home": "ホーム",
+    "project": "フレーム選択",
+    "compare": "比較",
     "settings": "設定"
   },
   "home": {
@@ -19,17 +21,25 @@
     "loadingImage": "画像を読み込み中..."
   },
   "compare": {
-    "title": "画像比較",
-    "screenshotInput": "実装スクリーンショット",
-    "pathPlaceholder": "パスを入力...",
-    "run": "比較実行",
-    "running": "比較中...",
+    "title": "デザイン比較",
+    "designLabel": "デザイン画像（Figma）",
+    "designLoaded": "読み込み済み",
+    "designNotLoaded": "ホームからFigma URLを入力してください",
+    "screenshotLabel": "実装スクリーンショット",
+    "screenshotLoaded": "読み込み済み",
+    "screenshotPlaceholder": "スクリーンショットのファイルパス（例: /tmp/screenshot.png）",
+    "loadFailed": "画像の読み込みに失敗しました",
+    "change": "変更",
+    "run": "差分を検出",
+    "running": "検出中...",
     "comparing": "画像を比較中...",
     "matchRate": "一致率",
     "diffPixels": "差分ピクセル",
     "diffRegions": "差分領域",
     "regionsCount": "{{count}}箇所",
-    "opacity": "透明度"
+    "opacity": "透明度",
+    "emptyTitle": "画像を読み込んでください",
+    "emptyDescription": "ホーム画面からFigma URLを入力してデザイン画像を読み込み、このページで実装スクリーンショットと比較できます。"
   },
   "viewMode": {
     "design_only": "デザインのみ",

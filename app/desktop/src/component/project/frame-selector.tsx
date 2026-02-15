@@ -16,7 +16,7 @@ export function FrameSelector({ frames, selectedFrame, onSelect }: FrameSelector
 
   return (
     <div className="space-y-3">
-      <h3 className="text-sm font-medium text-muted-foreground">
+      <h3 className="text-base font-medium text-muted-foreground">
         {t("project.frames", { count: frames.length })}
       </h3>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
@@ -30,8 +30,8 @@ export function FrameSelector({ frames, selectedFrame, onSelect }: FrameSelector
             onClick={() => onSelect(frame)}
           >
             <CardContent className="p-4">
-              <CardTitle className="text-sm font-semibold">{frame.name}</CardTitle>
-              <p className="mt-1 text-sm text-muted-foreground">
+              <CardTitle className="text-base font-semibold">{frame.name}</CardTitle>
+              <p className="mt-1 text-base text-muted-foreground">
                 {frame.width} × {frame.height}
               </p>
             </CardContent>

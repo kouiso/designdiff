@@ -1,10 +1,12 @@
 {
   "app": {
     "title": "FigDiff",
-    "description": "Paste a Figma URL or enter a local image path to get started."
+    "description": "Compare Figma designs with your implementation to detect differences. Enter a Figma URL to get started."
   },
   "nav": {
     "home": "Home",
+    "project": "Frame Selection",
+    "compare": "Compare",
     "settings": "Settings"
   },
   "home": {
@@ -19,17 +21,25 @@
     "loadingImage": "Loading image..."
   },
   "compare": {
-    "title": "Image Comparison",
-    "screenshotInput": "Implementation Screenshot",
-    "pathPlaceholder": "Enter path...",
-    "run": "Run Comparison",
-    "running": "Comparing...",
+    "title": "Design Comparison",
+    "designLabel": "Design Image (Figma)",
+    "designLoaded": "Loaded",
+    "designNotLoaded": "Enter a Figma URL from Home to load a design",
+    "screenshotLabel": "Implementation Screenshot",
+    "screenshotLoaded": "Loaded",
+    "screenshotPlaceholder": "Screenshot file path (e.g. /tmp/screenshot.png)",
+    "loadFailed": "Failed to load image",
+    "change": "Change",
+    "run": "Detect Differences",
+    "running": "Detecting...",
     "comparing": "Comparing images...",
     "matchRate": "Match Rate",
     "diffPixels": "Diff Pixels",
     "diffRegions": "Diff Regions",
     "regionsCount": "{{count}} areas",
-    "opacity": "Opacity"
+    "opacity": "Opacity",
+    "emptyTitle": "Load images to get started",
+    "emptyDescription": "Enter a Figma URL from the Home screen to load a design image, then compare it with an implementation screenshot here."
   },
   "viewMode": {
     "design_only": "Design Only",

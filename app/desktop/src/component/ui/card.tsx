@@ -23,7 +23,7 @@ export function CardTitle({ className, ...props }: HTMLAttributes<HTMLDivElement
 }
 
 export function CardDescription({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("text-sm text-muted-foreground", className)} {...props} />;
+  return <div className={cn("text-base text-muted-foreground", className)} {...props} />;
 }
 
 export function CardContent({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
