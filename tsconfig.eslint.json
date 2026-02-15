@@ -1,0 +1,19 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "baseUrl": ".",
+    "paths": {
+      "@figdiff/shared": ["./package/shared/src/index.ts"],
+      "@/*": ["./app/desktop/src/*"]
+    }
+  },
+  "include": [
+    "package/shared/src/**/*.ts",
+    "app/desktop/src/**/*.ts",
+    "app/desktop/src/**/*.tsx",
+    "app/mcp-server/src/**/*.ts"
+  ],
+  "exclude": ["**/dist", "**/node_modules", "app/desktop/src/__mock__/**"]
+}

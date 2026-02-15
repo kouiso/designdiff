@@ -1,0 +1,41 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+target/
+*.tsbuildinfo
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Tauri
+app/desktop/src-tauri/target/
+app/desktop/src-tauri/WixTools/
+app/desktop/src-tauri/gen/
+
+# Cache
+.turbo/
+.figdiff/
+
+# Debug
+npm-debug.log*
+pnpm-debug.log*
+yarn-error.log*
+
+# Claude Code local files
+.claude/settings.local.json
+.claude/mcp.json
+.claude/memory/
