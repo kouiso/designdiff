@@ -1,7 +1,7 @@
-import type { Frame, Project } from "@figdiff/shared";
-
-import { parseDesignInput } from "@figdiff/shared";
 import { create } from "zustand";
+
+import type { Frame, Project } from "@figdiff/shared";
+import { parseDesignInput } from "@figdiff/shared";
 
 import {
   getFigmaFrameImage,
@@ -10,6 +10,16 @@ import {
   readLocalImage,
 } from "@/lib/tauri-command";
 import { useSettingStore } from "@/store/setting-store";
+
+function isTokenError(message: string): boolean {
+  return (
+    message.includes("Token not found") ||
+    message.includes("TokenNotFound") ||
+    message.includes("status 403") ||
+    message.includes("status 401") ||
+    message.includes("Forbidden")
+  );
+}
 
 interface ProjectState {
   projects: Project[];
@@ -71,13 +81,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     } catch (e) {
       const errorMsg = String(e);
       set({ error: errorMsg, isLoading: false });
-      if (
-        errorMsg.includes("Token not found") ||
-        errorMsg.includes("TokenNotFound") ||
-        errorMsg.includes("status 403") ||
-        errorMsg.includes("status 401") ||
-        errorMsg.includes("Forbidden")
-      ) {
+      if (isTokenError(errorMsg)) {
         useSettingStore.getState().requireToken();
       }
     }
@@ -94,13 +98,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     } catch (e) {
       const errorMsg = String(e);
       set({ error: errorMsg, isLoading: false });
-      if (
-        errorMsg.includes("Token not found") ||
-        errorMsg.includes("TokenNotFound") ||
-        errorMsg.includes("status 403") ||
-        errorMsg.includes("status 401") ||
-        errorMsg.includes("Forbidden")
-      ) {
+      if (isTokenError(errorMsg)) {
         useSettingStore.getState().requireToken();
       }
     }

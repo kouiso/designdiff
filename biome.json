@@ -1,6 +1,11 @@
 {
   "$schema": "https://biomejs.dev/schemas/2.3.15/schema.json",
-  "assist": { "actions": { "source": { "organizeImports": "on" } } },
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true,
+    "defaultBranch": "develop"
+  },
   "linter": {
     "enabled": true,
     "rules": {
@@ -8,14 +13,29 @@
       "correctness": {
         "noUnusedImports": "warn",
         "noUnusedVariables": "warn",
-        "useHookAtTopLevel": "error"
+        "useHookAtTopLevel": "error",
+        "noUnreachable": "error",
+        "noConstantCondition": "warn"
       },
       "style": {
         "noNonNullAssertion": "off",
-        "useConsistentArrayType": "error"
+        "useConsistentArrayType": "error",
+        "useConst": "error",
+        "useExportType": "off",
+        "useImportType": "off",
+        "useNodejsImportProtocol": "error",
+        "useTemplate": "warn"
       },
       "suspicious": {
-        "noExplicitAny": "warn"
+        "noExplicitAny": "warn",
+        "noDebugger": "error",
+        "noConsole": {
+          "level": "error",
+          "options": {
+            "allow": ["info", "error", "warn"]
+          }
+        },
+        "noDoubleEquals": "error"
       },
       "complexity": {
         "noExcessiveCognitiveComplexity": {
@@ -23,7 +43,9 @@
           "options": {
             "maxAllowedComplexity": 25
           }
-        }
+        },
+        "noForEach": "off",
+        "useLiteralKeys": "warn"
       },
       "a11y": {
         "noLabelWithoutControl": "off",
@@ -32,6 +54,15 @@
         "useKeyWithClickEvents": "off",
         "useSemanticElements": "off",
         "useAriaPropsForRole": "off"
+      },
+      "nursery": {
+        "useSortedClasses": {
+          "level": "warn",
+          "options": {
+            "attributes": ["classList", "className"],
+            "functions": ["clsx", "cva", "tw", "cn"]
+          }
+        }
       }
     }
   },
@@ -45,6 +76,13 @@
     "parser": {
       "cssModules": true,
       "tailwindDirectives": true
+    }
+  },
+  "assist": {
+    "actions": {
+      "source": {
+        "organizeImports": "off"
+      }
     }
   },
   "javascript": {

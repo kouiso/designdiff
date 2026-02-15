@@ -1,3 +1,5 @@
+import { ParsedDesignInputSchema } from "./schema.js";
+
 import type { ParsedDesignInput } from "./type.js";
 
 /**
@@ -38,11 +40,14 @@ export function parseDesignInput(input: string): ParsedDesignInput {
     throw new Error("Input cannot be empty");
   }
 
+  let result: ParsedDesignInput;
   if (trimmed.includes("figma.com")) {
     const fileKey = extractFileKey(trimmed);
     const nodeId = extractNodeId(trimmed) ?? undefined;
-    return { type: "figma_url", fileKey, nodeId };
+    result = { type: "figma_url", fileKey, nodeId };
+  } else {
+    result = { type: "local_path", filePath: trimmed };
   }
 
-  return { type: "local_path", filePath: trimmed };
+  return ParsedDesignInputSchema.parse(result);
 }

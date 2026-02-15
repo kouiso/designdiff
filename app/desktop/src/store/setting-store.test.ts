@@ -28,16 +28,18 @@ describe("useSettingStore", () => {
     it("saves token via invoke and updates state", async () => {
       mockInvoke.mockResolvedValueOnce(undefined);
 
-      await useSettingStore.getState().setFigmaToken("figd_test123");
+      await useSettingStore.getState().setFigmaToken("figd_test1234567890abcdefghij");
 
-      expect(mockInvoke).toHaveBeenCalledWith("save_figma_token", { token: "figd_test123" });
-      expect(useSettingStore.getState().figmaToken).toBe("figd_test123");
+      expect(mockInvoke).toHaveBeenCalledWith("save_figma_token", {
+        token: "figd_test1234567890abcdefghij",
+      });
+      expect(useSettingStore.getState().figmaToken).toBe("figd_test1234567890abcdefghij");
     });
   });
 
   describe("removeFigmaToken", () => {
     it("deletes token via invoke and clears state", async () => {
-      useSettingStore.setState({ figmaToken: "figd_existing" });
+      useSettingStore.setState({ figmaToken: "figd_existing1234567890" });
       mockInvoke.mockResolvedValueOnce(undefined);
 
       await useSettingStore.getState().removeFigmaToken();
@@ -49,12 +51,12 @@ describe("useSettingStore", () => {
 
   describe("loadSettings", () => {
     it("loads token from invoke and updates state", async () => {
-      mockInvoke.mockResolvedValueOnce("figd_loaded");
+      mockInvoke.mockResolvedValueOnce("figd_loaded1234567890abcdef");
 
       await useSettingStore.getState().loadSettings();
 
       expect(mockInvoke).toHaveBeenCalledWith("get_figma_token");
-      expect(useSettingStore.getState().figmaToken).toBe("figd_loaded");
+      expect(useSettingStore.getState().figmaToken).toBe("figd_loaded1234567890abcdef");
       expect(useSettingStore.getState().isLoading).toBe(false);
     });
 

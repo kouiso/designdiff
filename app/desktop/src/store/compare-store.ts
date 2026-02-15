@@ -1,5 +1,6 @@
-import type { CompareDesignResult, CropRegion } from "@figdiff/shared";
 import { create } from "zustand";
+
+import type { CompareDesignResult, CropRegion } from "@figdiff/shared";
 
 import { compareImages } from "@/service/image-compare";
 
@@ -18,17 +19,16 @@ interface CompareState {
   compareResult: (CompareDesignResult & { diffImageBase64?: string }) | null;
   viewMode: ViewMode;
   overlayOpacity: number;
-  showPixelRuler: boolean;
   cropRegion: CropRegion | null;
   isComparing: boolean;
   error: string | null;
 
   setDesignImage: (image: string) => void;
-  setScreenshotImage: (image: string) => void;
+  setScreenshotImage: (image: string | null) => void;
+  setError: (error: string | null) => void;
   runComparison: () => Promise<void>;
   setViewMode: (mode: ViewMode) => void;
   setOverlayOpacity: (opacity: number) => void;
-  togglePixelRuler: () => void;
   setCropRegion: (region: CropRegion | null) => void;
   clearComparison: () => void;
   reset: () => void;
@@ -40,7 +40,6 @@ export const useCompareStore = create<CompareState>((set, get) => ({
   compareResult: null,
   viewMode: "transparent_overlay",
   overlayOpacity: 0.5,
-  showPixelRuler: false,
   cropRegion: null,
   isComparing: false,
   error: null,
@@ -49,10 +48,12 @@ export const useCompareStore = create<CompareState>((set, get) => ({
 
   setScreenshotImage: (image) => set({ screenshotImage: image }),
 
+  setError: (error) => set({ error }),
+
   runComparison: async () => {
     const { designImage, screenshotImage, cropRegion } = get();
     if (!designImage || !screenshotImage) {
-      set({ error: "両方の画像が必要です" });
+      set({ error: "compare.errorBothImagesRequired" });
       return;
     }
 
@@ -74,8 +75,6 @@ export const useCompareStore = create<CompareState>((set, get) => ({
 
   setOverlayOpacity: (opacity) => set({ overlayOpacity: opacity }),
 
-  togglePixelRuler: () => set((state) => ({ showPixelRuler: !state.showPixelRuler })),
-
   setCropRegion: (region) => set({ cropRegion: region }),
 
   clearComparison: () => set({ compareResult: null }),
@@ -87,7 +86,6 @@ export const useCompareStore = create<CompareState>((set, get) => ({
       compareResult: null,
       viewMode: "transparent_overlay",
       overlayOpacity: 0.5,
-      showPixelRuler: false,
       cropRegion: null,
       isComparing: false,
       error: null,

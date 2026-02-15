@@ -1,7 +1,31 @@
 // =============================================================================
 // FigDiff Shared Types
 // All types defined per document.md Section 3.4
+// Types are derived from Zod schemas for runtime validation
 // =============================================================================
+
+import {
+  type BorderRadiusSchema,
+  type ChildNodeSummarySchema,
+  type CompareDesignResultSchema,
+  type CropRegionSchema,
+  type DesignTokenSchema,
+  type DiffRegionSchema,
+  type FigmaTokenSchema,
+  type FrameSchema,
+  type ImageDimensionsSchema,
+  type NodeAppearanceSchema,
+  type NodeEffectSchema,
+  type NodeFillSchema,
+  type NodeInspectionSchema,
+  type NodeLayoutSchema,
+  type NodeStrokeSchema,
+  type NodeTypographySchema,
+  type ParsedDesignInputSchema,
+  type ProjectSchema,
+} from "./schema.js";
+
+import type { z } from "zod";
 
 // --- Design Provider Interface ---
 
@@ -15,148 +39,45 @@ export interface DesignProvider {
 
 // --- Frame ---
 
-export interface Frame {
-  id: string;
-  name: string;
-  width: number;
-  height: number;
-}
+export type Frame = z.infer<typeof FrameSchema>;
 
 // --- Design Token ---
 
-export interface DesignToken {
-  nodeId: string;
-  nodeName: string;
-  nodeType: string;
-  property: string;
-  value: string | number;
-  unit?: string;
-}
+export type DesignToken = z.infer<typeof DesignTokenSchema>;
 
 // --- Node Inspection (Figma Dev Mode-like detail) ---
 
-export interface NodeInspection {
-  nodeId: string;
-  nodeName: string;
-  nodeType: string;
-  layout: NodeLayout;
-  appearance: NodeAppearance;
-  typography?: NodeTypography;
-  cssSuggestion: string;
-  childrenSummary: ChildNodeSummary[];
-}
-
-export interface NodeLayout {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  layoutMode?: "HORIZONTAL" | "VERTICAL" | "NONE";
-  paddingTop?: number;
-  paddingRight?: number;
-  paddingBottom?: number;
-  paddingLeft?: number;
-  itemSpacing?: number;
-  primaryAxisAlign?: string;
-  counterAxisAlign?: string;
-}
-
-export interface NodeAppearance {
-  fills: NodeFill[];
-  strokes: NodeStroke[];
-  borderRadius: BorderRadius;
-  opacity: number;
-  blendMode: string;
-  effects: NodeEffect[];
-}
-
-export interface NodeFill {
-  type: "SOLID" | "GRADIENT_LINEAR" | "IMAGE";
-  color?: string;
-  opacity?: number;
-}
-
-export interface NodeStroke {
-  color: string;
-  weight: number;
-  align: "INSIDE" | "OUTSIDE" | "CENTER";
-}
-
-export interface BorderRadius {
-  topLeft: number;
-  topRight: number;
-  bottomRight: number;
-  bottomLeft: number;
-}
-
-export interface NodeEffect {
-  type: "DROP_SHADOW" | "INNER_SHADOW" | "BLUR";
-  color?: string;
-  offset?: { x: number; y: number };
-  radius: number;
-  spread?: number;
-}
-
-export interface NodeTypography {
-  fontFamily: string;
-  fontWeight: number;
-  fontSize: number;
-  lineHeight: number | "AUTO";
-  letterSpacing: number;
-  textAlign: "LEFT" | "CENTER" | "RIGHT" | "JUSTIFIED";
-  textDecoration: "NONE" | "UNDERLINE" | "STRIKETHROUGH";
-  textContent: string;
-}
-
-export interface ChildNodeSummary {
-  nodeId: string;
-  nodeName: string;
-  nodeType: string;
-  width: number;
-  height: number;
-}
+export type NodeInspection = z.infer<typeof NodeInspectionSchema>;
+export type NodeLayout = z.infer<typeof NodeLayoutSchema>;
+export type NodeAppearance = z.infer<typeof NodeAppearanceSchema>;
+export type NodeFill = z.infer<typeof NodeFillSchema>;
+export type NodeStroke = z.infer<typeof NodeStrokeSchema>;
+export type BorderRadius = z.infer<typeof BorderRadiusSchema>;
+export type NodeEffect = z.infer<typeof NodeEffectSchema>;
+export type NodeTypography = z.infer<typeof NodeTypographySchema>;
+export type ChildNodeSummary = z.infer<typeof ChildNodeSummarySchema>;
 
 // --- Design Input Parsing ---
 
-export type ParsedDesignInput =
-  | { type: "figma_url"; fileKey: string; nodeId?: string }
-  | { type: "local_path"; filePath: string };
+export type ParsedDesignInput = z.infer<typeof ParsedDesignInputSchema>;
 
 // --- Compare Design Result (Phase 2+, type defined ahead) ---
 
-export interface CompareDesignResult {
-  comparisonId: string;
-  matchRate: number;
-  diffPixelCount: number;
-  totalPixelCount: number;
-  diffRegions: DiffRegion[];
-  suggestion: string;
-  diffImageBase64?: string;
-}
-
-export interface DiffRegion {
-  id: number;
-  bounds: { x: number; y: number; width: number; height: number };
-  diffPixelCount: number;
-  nearbyNodeIds: string[];
-  nearbyNodeNames: string[];
-}
+export type CompareDesignResult = z.infer<typeof CompareDesignResultSchema>;
+export type DiffRegion = z.infer<typeof DiffRegionSchema>;
 
 // --- Crop Region (Phase 2+) ---
 
-export interface CropRegion {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
+export type CropRegion = z.infer<typeof CropRegionSchema>;
 
 // --- Project ---
 
-export interface Project {
-  id: string;
-  name: string;
-  figmaUrl?: string;
-  createdAt: string;
-  updatedAt: string;
-}
+export type Project = z.infer<typeof ProjectSchema>;
+
+// --- Figma Token ---
+
+export type FigmaToken = z.infer<typeof FigmaTokenSchema>;
+
+// --- Image Dimensions ---
+
+export type ImageDimensions = z.infer<typeof ImageDimensionsSchema>;

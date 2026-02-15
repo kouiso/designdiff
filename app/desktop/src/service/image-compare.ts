@@ -1,5 +1,14 @@
-import type { CompareDesignResult, CropRegion, DiffRegion } from "@figdiff/shared";
 import pixelmatch from "pixelmatch";
+import { z } from "zod";
+
+import {
+  type CompareDesignResult,
+  CompareDesignResultSchema,
+  type CropRegion,
+  CropRegionSchema,
+  type DiffRegion,
+  DiffRegionSchema,
+} from "@figdiff/shared";
 
 import { cropImage, getImageDimensions, resizeImageToMatch } from "@/lib/tauri-command";
 
@@ -10,8 +19,16 @@ interface CompareImagesOptions {
   cropRegion?: CropRegion;
 }
 
+const CompareImagesOptionsSchema = z.object({
+  designImage: z.string().min(1),
+  screenshotImage: z.string().min(1),
+  threshold: z.number().min(0).max(1).optional(),
+  cropRegion: CropRegionSchema.optional(),
+});
+
 export async function compareImages(options: CompareImagesOptions): Promise<CompareDesignResult> {
-  const { designImage, screenshotImage, threshold = 0.1, cropRegion } = options;
+  const validated = CompareImagesOptionsSchema.parse(options);
+  const { designImage, screenshotImage, threshold = 0.1, cropRegion } = validated;
 
   let designBase64 = designImage.replace(/^data:image\/\w+;base64,/, "");
   let screenshotBase64 = screenshotImage.replace(/^data:image\/\w+;base64,/, "");
@@ -57,14 +74,14 @@ export async function compareImages(options: CompareImagesOptions): Promise<Comp
   const totalPixelCount = width * height;
   const matchRate = ((totalPixelCount - diffPixelCount) / totalPixelCount) * 100;
 
-  const diffImageBase64 = await imageToBas64(diff, width, height);
+  const diffImageBase64 = await imageToBase64(diff, width, height);
 
   const diffRegions = clusterDiffRegions(diff, width, height);
 
   const comparisonId = `cmp-${Date.now()}`;
-  const suggestion = generateSuggestion(matchRate, diffRegions.length);
+  const suggestion = generateSuggestion(matchRate);
 
-  return {
+  const result: CompareDesignResult & { diffImageBase64: string } = {
     comparisonId,
     matchRate: Math.round(matchRate * 100) / 100,
     diffPixelCount,
@@ -72,7 +89,9 @@ export async function compareImages(options: CompareImagesOptions): Promise<Comp
     diffRegions,
     suggestion,
     diffImageBase64,
-  } as CompareDesignResult & { diffImageBase64: string };
+  };
+
+  return CompareDesignResultSchema.extend({ diffImageBase64: z.string() }).parse(result);
 }
 
 function clusterDiffRegions(
@@ -90,13 +109,14 @@ function clusterDiffRegions(
       if (diffData[idx] > 0 && !visited.has(idx)) {
         const region = floodFill(diffData, imageWidth, imageHeight, x, y, visited);
         if (region.pixelCount >= 10) {
-          regions.push({
+          const diffRegion = {
             id: regionId++,
             bounds: region.bounds,
             diffPixelCount: region.pixelCount,
             nearbyNodeIds: [],
             nearbyNodeNames: [],
-          });
+          };
+          regions.push(DiffRegionSchema.parse(diffRegion));
         }
       }
     }
@@ -157,14 +177,14 @@ function floodFill(
   };
 }
 
-function generateSuggestion(matchRate: number, diffRegionCount: number): string {
+function generateSuggestion(matchRate: number): string {
   if (matchRate === 100) {
-    return "一致率100%です。差分はありません。";
+    return "compare.suggestionPerfect";
   }
   if (matchRate >= 95) {
-    return `軽微な差分が${diffRegionCount}箇所あります。inspect_nodeで差分領域のノードを確認してください。`;
+    return "compare.suggestionMinor";
   }
-  return `大きな差分が${diffRegionCount}箇所あります。inspect_nodeで各差分領域を確認し、修正してください。`;
+  return "compare.suggestionMajor";
 }
 
 async function base64ToImageData(base64: string): Promise<ImageData> {
@@ -187,7 +207,7 @@ async function base64ToImageData(base64: string): Promise<ImageData> {
   });
 }
 
-async function imageToBas64(
+async function imageToBase64(
   pixelData: Uint8ClampedArray,
   imageWidth: number,
   imageHeight: number,

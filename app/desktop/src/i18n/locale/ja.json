@@ -7,20 +7,37 @@
     "home": "ホーム",
     "project": "フレーム選択",
     "compare": "比較",
-    "settings": "設定"
+    "settings": "設定",
+    "breadcrumb": "パンくずリスト"
   },
   "home": {
+    "pageTitle": "デザイン比較を始める",
+    "pageDescription": "FigDiffはFigmaデザインと実装スクリーンショットをピクセル単位で比較し、差分を自動検出するツールです。",
     "inputPlaceholder": "Figma URL またはローカル画像パス...",
     "loading": "読み込み中...",
-    "tokenRequired": "Figma Token を設定してください。設定画面から設定できます。"
+    "tokenRequired": "Figma Token を設定してください。設定画面から設定できます。",
+    "howItWorks": "3ステップで差分検出",
+    "step1": "Figma URLを\n入力",
+    "step2": "フレームを\n選択",
+    "step3": "実装と\nピクセル比較",
+    "stepLabel": "ステップ {{n}}",
+    "badgeLocal": "ローカル"
   },
   "project": {
+    "pageTitle": "比較するフレームを選択",
+    "pageDescription": "Figmaファイルから比較したいフレームを選び、デザイン画像を読み込みます。",
     "selectFrame": "フレームを選択",
-    "startCompare": "比較を開始",
+    "startCompare": "比較ページへ進む",
     "frames": "フレーム ({{count}})",
-    "loadingImage": "画像を読み込み中..."
+    "loadingImage": "画像を読み込み中...",
+    "nextStep": "フレームを選択したら「比較ページへ進む」をクリックしてください",
+    "framePreviewAlt": "フレームプレビュー"
   },
   "compare": {
+    "pageTitle": "デザインと実装を比較",
+    "pageDescription": "実装スクリーンショットを追加して、Figmaデザインとの差分を検出します。",
+    "currentStatus": "現在の状態",
+    "nextAction": "次のアクション",
     "title": "デザイン比較",
     "designLabel": "デザイン画像（Figma）",
     "designLoaded": "読み込み済み",
@@ -28,6 +45,7 @@
     "screenshotLabel": "実装スクリーンショット",
     "screenshotLoaded": "読み込み済み",
     "screenshotPlaceholder": "スクリーンショットのファイルパス（例: /tmp/screenshot.png）",
+    "screenshotInstruction": "実装画面のスクリーンショットファイルパスを入力してください",
     "loadFailed": "画像の読み込みに失敗しました",
     "change": "変更",
     "run": "差分を検出",
@@ -37,9 +55,18 @@
     "diffPixels": "差分ピクセル",
     "diffRegions": "差分領域",
     "regionsCount": "{{count}}箇所",
+    "diffPixelCount": "差分ピクセル: {{count}}",
+    "canvasLabel": "デザイン比較キャンバス",
     "opacity": "透明度",
-    "emptyTitle": "画像を読み込んでください",
-    "emptyDescription": "ホーム画面からFigma URLを入力してデザイン画像を読み込み、このページで実装スクリーンショットと比較できます。"
+    "viewModeLabel": "表示モード:",
+    "emptyTitle": "デザイン画像を読み込んでください",
+    "emptyDescription": "ホーム画面に戻ってFigma URLを入力し、フレームを選択してください。",
+    "designLoadedNext": "次に、実装スクリーンショットのファイルパスを入力してください。",
+    "bothLoadedNext": "「差分を検出」ボタンをクリックして比較を実行します。",
+    "errorBothImagesRequired": "デザイン画像と実装スクリーンショットの両方が必要です",
+    "suggestionPerfect": "一致率100%です。差分はありません。",
+    "suggestionMinor": "軽微な差分が{{count}}箇所あります。inspect_nodeで差分領域のノードを確認してください。",
+    "suggestionMajor": "大きな差分が{{count}}箇所あります。inspect_nodeで各差分領域を確認し、修正してください。"
   },
   "viewMode": {
     "design_only": "デザインのみ",
@@ -78,7 +105,9 @@
     "theme": "テーマ",
     "dark": "ダーク",
     "light": "ライト",
-    "threshold": "デフォルト差分しきい値: {{value}}"
+    "threshold": "デフォルト差分しきい値: {{value}}",
+    "language": "言語",
+    "toggleTheme": "テーマ切替"
   },
   "tokenDialog": {
     "title": "Figma Tokenが必要です",
@@ -95,7 +124,8 @@
   "crop": {
     "selecting": "選択中...",
     "selectRegion": "範囲指定",
-    "clear": "クリア"
+    "clear": "クリア",
+    "canvasLabel": "範囲選択キャンバス"
   },
   "common": {
     "loading": "読み込み中...",
@@ -103,6 +133,11 @@
     "cancel": "キャンセル",
     "save": "保存",
     "delete": "削除",
-    "reset": "リセット"
+    "reset": "リセット",
+    "close": "閉じる",
+    "submit": "送信"
+  },
+  "error": {
+    "bothImagesRequired": "両方の画像が必要です"
   }
 }

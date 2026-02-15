@@ -1,5 +1,6 @@
-import { ArrowRight } from "lucide-react";
 import { useState } from "react";
+
+import { ArrowRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { Badge } from "@/component/ui/badge";
@@ -37,25 +38,32 @@ export function DesignInput({ onSubmit, disabled }: DesignInputProps) {
   };
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="relative flex items-center gap-2 rounded-xl border border-border bg-card p-1.5 shadow-sm transition-colors focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/20">
       <div className="relative flex-1">
         <Input
           value={value}
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={t("home.inputPlaceholder")}
+          aria-label={t("home.inputPlaceholder")}
           disabled={disabled}
-          className="pr-20"
+          className="border-0 bg-transparent pr-20 shadow-none focus-visible:ring-0"
         />
         {inputType && (
-          <div className="absolute right-2 top-1/2 -translate-y-1/2">
+          <div className="absolute top-1/2 right-2 -translate-y-1/2">
             <Badge variant={inputType === "figma" ? "default" : "secondary"}>
-              {inputType === "figma" ? "Figma" : "Local"}
+              {inputType === "figma" ? "Figma" : t("home.badgeLocal")}
             </Badge>
           </div>
         )}
       </div>
-      <Button onClick={handleSubmit} disabled={disabled || !value.trim()} size="icon">
+      <Button
+        onClick={handleSubmit}
+        disabled={disabled || !value.trim()}
+        size="icon"
+        className="h-9 w-9 shrink-0 rounded-lg"
+        aria-label={t("common.submit")}
+      >
         <ArrowRight className="h-4 w-4" />
       </Button>
     </div>

@@ -7,20 +7,37 @@
     "home": "Home",
     "project": "Frame Selection",
     "compare": "Compare",
-    "settings": "Settings"
+    "settings": "Settings",
+    "breadcrumb": "Breadcrumb"
   },
   "home": {
+    "pageTitle": "Start Design Comparison",
+    "pageDescription": "FigDiff compares Figma designs with implementation screenshots pixel-by-pixel and automatically detects differences.",
     "inputPlaceholder": "Figma URL or local image path...",
     "loading": "Loading...",
-    "tokenRequired": "Please set a Figma Token. You can configure it in Settings."
+    "tokenRequired": "Please set a Figma Token. You can configure it in Settings.",
+    "howItWorks": "3 Steps to Detect Differences",
+    "step1": "Enter a\nFigma URL",
+    "step2": "Select a\nframe",
+    "step3": "Compare with\nimplementation",
+    "stepLabel": "STEP {{n}}",
+    "badgeLocal": "Local"
   },
   "project": {
+    "pageTitle": "Select a Frame to Compare",
+    "pageDescription": "Choose the frame you want to compare from the Figma file and load the design image.",
     "selectFrame": "Select a Frame",
-    "startCompare": "Start Compare",
+    "startCompare": "Go to Compare Page",
     "frames": "Frames ({{count}})",
-    "loadingImage": "Loading image..."
+    "loadingImage": "Loading image...",
+    "nextStep": "After selecting a frame, click \"Go to Compare Page\"",
+    "framePreviewAlt": "Frame preview"
   },
   "compare": {
+    "pageTitle": "Compare Design and Implementation",
+    "pageDescription": "Add an implementation screenshot and detect differences with the Figma design.",
+    "currentStatus": "Current Status",
+    "nextAction": "Next Action",
     "title": "Design Comparison",
     "designLabel": "Design Image (Figma)",
     "designLoaded": "Loaded",
@@ -28,6 +45,7 @@
     "screenshotLabel": "Implementation Screenshot",
     "screenshotLoaded": "Loaded",
     "screenshotPlaceholder": "Screenshot file path (e.g. /tmp/screenshot.png)",
+    "screenshotInstruction": "Enter the file path of your implementation screenshot",
     "loadFailed": "Failed to load image",
     "change": "Change",
     "run": "Detect Differences",
@@ -37,9 +55,18 @@
     "diffPixels": "Diff Pixels",
     "diffRegions": "Diff Regions",
     "regionsCount": "{{count}} areas",
+    "diffPixelCount": "Diff pixels: {{count}}",
+    "canvasLabel": "Design comparison canvas",
     "opacity": "Opacity",
-    "emptyTitle": "Load images to get started",
-    "emptyDescription": "Enter a Figma URL from the Home screen to load a design image, then compare it with an implementation screenshot here."
+    "viewModeLabel": "View:",
+    "emptyTitle": "Load design image to get started",
+    "emptyDescription": "Return to Home screen, enter a Figma URL, and select a frame.",
+    "designLoadedNext": "Next, enter the file path of your implementation screenshot.",
+    "bothLoadedNext": "Click \"Detect Differences\" to run the comparison.",
+    "errorBothImagesRequired": "Both design image and implementation screenshot are required",
+    "suggestionPerfect": "100% match. No differences found.",
+    "suggestionMinor": "Minor differences found in {{count}} areas. Use inspect_node to check the diff region nodes.",
+    "suggestionMajor": "Significant differences found in {{count}} areas. Use inspect_node to review each diff region and apply fixes."
   },
   "viewMode": {
     "design_only": "Design Only",
@@ -78,7 +105,9 @@
     "theme": "Theme",
     "dark": "Dark",
     "light": "Light",
-    "threshold": "Default Diff Threshold: {{value}}"
+    "threshold": "Default Diff Threshold: {{value}}",
+    "language": "Language",
+    "toggleTheme": "Toggle theme"
   },
   "tokenDialog": {
     "title": "Figma Token Required",
@@ -95,7 +124,8 @@
   "crop": {
     "selecting": "Selecting...",
     "selectRegion": "Select Region",
-    "clear": "Clear"
+    "clear": "Clear",
+    "canvasLabel": "Crop region canvas"
   },
   "common": {
     "loading": "Loading...",
@@ -103,6 +133,11 @@
     "cancel": "Cancel",
     "save": "Save",
     "delete": "Delete",
-    "reset": "Reset"
+    "reset": "Reset",
+    "close": "Close",
+    "submit": "Submit"
+  },
+  "error": {
+    "bothImagesRequired": "Both images are required"
   }
 }

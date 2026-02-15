@@ -4,10 +4,10 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/component/ui/button";
 import { useCompareStore, type ViewMode } from "@/store/compare-store";
 
-const VIEW_MODE_IDS: Array<{
+const VIEW_MODE_IDS: {
   id: ViewMode;
   icon: React.ComponentType<{ className?: string }>;
-}> = [
+}[] = [
   { id: "design_only", icon: ImageIcon },
   { id: "implementation", icon: Code2 },
   { id: "transparent_overlay", icon: Layers },
@@ -22,22 +22,33 @@ export function ViewModeToggle() {
   const { viewMode, setViewMode } = useCompareStore();
 
   return (
-    <div className="flex gap-2">
-      {VIEW_MODE_IDS.map((mode) => {
-        const Icon = mode.icon;
-        return (
-          <Button
-            key={mode.id}
-            variant={viewMode === mode.id ? "default" : "outline"}
-            size="sm"
-            onClick={() => setViewMode(mode.id)}
-            title={t(`viewMode.desc_${mode.id}`)}
-          >
-            <Icon className="h-4 w-4 mr-1" />
-            {t(`viewMode.${mode.id}`)}
-          </Button>
-        );
-      })}
+    <div className="flex items-center gap-1">
+      <span className="mr-1 font-medium text-muted-foreground text-xs">
+        {t("compare.viewModeLabel")}
+      </span>
+      <div className="flex items-center gap-0.5 rounded-lg bg-muted/50 p-0.5">
+        {VIEW_MODE_IDS.map((mode) => {
+          const Icon = mode.icon;
+          const isActive = viewMode === mode.id;
+          return (
+            <Button
+              key={mode.id}
+              variant={isActive ? "default" : "ghost"}
+              size="icon"
+              onClick={() => setViewMode(mode.id)}
+              aria-label={t(`viewMode.${mode.id}`)}
+              title={`${t(`viewMode.${mode.id}`)} — ${t(`viewMode.desc_${mode.id}`)}`}
+              className={
+                isActive
+                  ? "h-8 w-8 rounded-md shadow-sm"
+                  : "h-8 w-8 rounded-md text-muted-foreground hover:text-foreground"
+              }
+            >
+              <Icon className="h-3.5 w-3.5" />
+            </Button>
+          );
+        })}
+      </div>
     </div>
   );
 }

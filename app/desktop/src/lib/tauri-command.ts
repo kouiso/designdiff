@@ -1,5 +1,16 @@
-import type { Frame, NodeInspection, Project } from "@figdiff/shared";
 import { invoke } from "@tauri-apps/api/core";
+import { z } from "zod";
+
+import {
+  FigmaTokenSchema,
+  type Frame,
+  FrameSchema,
+  ImageDimensionsSchema,
+  type NodeInspection,
+  NodeInspectionSchema,
+  type Project,
+  ProjectSchema,
+} from "@figdiff/shared";
 
 export function isTauri(): boolean {
   return "__TAURI_INTERNALS__" in window;
@@ -15,7 +26,8 @@ function ensureTauri(): void {
 
 export async function getFigmaFrames(fileKey: string): Promise<Frame[]> {
   ensureTauri();
-  return invoke<Frame[]>("get_figma_frames", { fileKey });
+  const result = await invoke<unknown>("get_figma_frames", { fileKey });
+  return z.array(FrameSchema).parse(result);
 }
 
 export async function getFigmaFrameImage(
@@ -33,14 +45,16 @@ export async function getFigmaNodeDetail(
   depth = 3,
 ): Promise<NodeInspection> {
   ensureTauri();
-  return invoke<NodeInspection>("get_figma_node_detail", { fileKey, nodeId, depth });
+  const result = await invoke<unknown>("get_figma_node_detail", { fileKey, nodeId, depth });
+  return NodeInspectionSchema.parse(result);
 }
 
 // --- Token management ---
 
 export async function saveFigmaToken(token: string): Promise<void> {
   ensureTauri();
-  return invoke("save_figma_token", { token });
+  const validated = FigmaTokenSchema.parse(token);
+  return invoke("save_figma_token", { token: validated });
 }
 
 export async function getFigmaToken(): Promise<string | null> {
@@ -69,7 +83,8 @@ export async function saveProject(project: Project): Promise<void> {
 
 export async function loadProjectList(): Promise<Project[]> {
   if (!isTauri()) return [];
-  return invoke<Project[]>("load_project_list");
+  const result = await invoke<unknown>("load_project_list");
+  return z.array(ProjectSchema).parse(result);
 }
 
 // --- Image processing ---
@@ -91,10 +106,9 @@ export async function getImageDimensions(
   base64Img: string,
 ): Promise<{ width: number; height: number }> {
   ensureTauri();
-  const [width, height] = await invoke<[number, number]>("get_image_dimensions", {
-    base64Img,
-  });
-  return { width, height };
+  const result = await invoke<unknown>("get_image_dimensions", { base64Img });
+  const parsed = z.tuple([z.number(), z.number()]).parse(result);
+  return ImageDimensionsSchema.parse({ width: parsed[0], height: parsed[1] });
 }
 
 export async function cropImage(

@@ -39,13 +39,21 @@ export const useSettingStore = create<SettingState>((set) => ({
     set({ isLoading: true });
     try {
       const token = await getFigmaToken();
-      set({ figmaToken: token });
+      // Restore persisted theme (default: dark)
+      const saved = localStorage.getItem("figdiff-theme");
+      const theme = saved === "light" ? "light" : "dark";
+      document.documentElement.classList.toggle("dark", theme === "dark");
+      set({ figmaToken: token, theme });
     } finally {
       set({ isLoading: false });
     }
   },
 
-  setTheme: (theme) => set({ theme }),
+  setTheme: (theme) => {
+    document.documentElement.classList.toggle("dark", theme === "dark");
+    localStorage.setItem("figdiff-theme", theme);
+    set({ theme });
+  },
 
   setDefaultThreshold: (threshold) => set({ defaultThreshold: threshold }),
 

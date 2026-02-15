@@ -228,6 +228,5 @@ export function useCanvasZoomPan({
     containerRef,
     transformStyle,
     resetZoom,
-    isPanning: () => panRef.current.isPanning,
   };
 }

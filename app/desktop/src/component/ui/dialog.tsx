@@ -1,7 +1,11 @@
+import { type HTMLAttributes, useCallback, useEffect, useRef } from "react";
+
 import { X } from "lucide-react";
-import { type HTMLAttributes, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 
 import { cn } from "@/lib/util";
+
+import { Button } from "./button";
 
 interface DialogProps {
   open: boolean;
@@ -10,36 +14,81 @@ interface DialogProps {
 }
 
 export function Dialog({ open, onOpenChange, children }: DialogProps) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
+  const { t } = useTranslation();
+
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onOpenChange(false);
+        return;
+      }
+      // Focus trap
+      if (e.key === "Tab" && dialogRef.current) {
+        const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+        );
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    },
+    [onOpenChange],
+  );
+
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onOpenChange(false);
-    };
     if (open) {
+      previousFocusRef.current =
+        document.activeElement instanceof HTMLElement ? document.activeElement : null;
       document.addEventListener("keydown", handleKeyDown);
+      // Focus first focusable element
+      requestAnimationFrame(() => {
+        const first = dialogRef.current?.querySelector<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+        );
+        first?.focus();
+      });
       return () => document.removeEventListener("keydown", handleKeyDown);
     }
-  }, [open, onOpenChange]);
+    // Restore focus on close
+    previousFocusRef.current?.focus();
+  }, [open, handleKeyDown]);
 
   if (!open) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div
-        className="fixed inset-0 bg-black/80"
+        className="fixed inset-0 bg-black/60 backdrop-blur-xs"
         onClick={() => onOpenChange(false)}
-        onKeyDown={() => undefined}
         role="presentation"
       />
-      <div className="relative z-50 w-full max-w-lg rounded-lg border border-border bg-background p-6 shadow-lg">
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="dialog-title"
+        aria-describedby="dialog-description"
+        className="relative z-50 w-full max-w-lg rounded-lg border border-border bg-background p-6 shadow-lg"
+      >
         {children}
-        <button
-          type="button"
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={() => onOpenChange(false)}
-          className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100"
+          className="absolute top-4 right-4 h-8 w-8 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100"
+          aria-label={t("common.close")}
         >
           <X className="h-4 w-4" />
-          <span className="sr-only">Close</span>
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -56,12 +105,22 @@ export function DialogHeader({ className, ...props }: HTMLAttributes<HTMLDivElem
 
 export function DialogTitle({ className, ...props }: HTMLAttributes<HTMLHeadingElement>) {
   return (
-    <h2 className={cn("text-lg font-semibold leading-none tracking-tight", className)} {...props} />
+    <h2
+      id="dialog-title"
+      className={cn("font-semibold text-lg leading-none tracking-tight", className)}
+      {...props}
+    />
   );
 }
 
 export function DialogDescription({ className, ...props }: HTMLAttributes<HTMLParagraphElement>) {
-  return <p className={cn("text-base text-muted-foreground", className)} {...props} />;
+  return (
+    <p
+      id="dialog-description"
+      className={cn("text-muted-foreground text-sm", className)}
+      {...props}
+    />
+  );
 }
 
 export function DialogFooter({ className, ...props }: HTMLAttributes<HTMLDivElement>) {

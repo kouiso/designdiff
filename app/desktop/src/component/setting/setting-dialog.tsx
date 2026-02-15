@@ -1,4 +1,6 @@
 import { useState } from "react";
+
+import { Moon, Sun } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/component/ui/button";
@@ -6,6 +8,7 @@ import { Dialog, DialogDescription, DialogHeader, DialogTitle } from "@/componen
 import { Input } from "@/component/ui/input";
 import { Label } from "@/component/ui/label";
 import { Separator } from "@/component/ui/separator";
+import { Slider } from "@/component/ui/slider";
 import { useSettingStore } from "@/store/setting-store";
 
 interface SettingDialogProps {
@@ -59,17 +62,19 @@ export function SettingDialog({ open, onOpenChange }: SettingDialogProps) {
 
       <div className="mt-6 space-y-6">
         {/* Figma Token */}
-        <div className="space-y-3">
-          <Label htmlFor="figma-token">{t("settings.token")}</Label>
+        <div className="space-y-2">
+          <Label htmlFor="figma-token" className="text-sm">
+            {t("settings.token")}
+          </Label>
           {figmaToken ? (
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <Input value={t("settings.tokenMasked")} disabled className="flex-1" />
               <Button variant="destructive" size="sm" onClick={handleDeleteToken}>
                 {t("settings.delete")}
               </Button>
             </div>
           ) : (
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <Input
                 id="figma-token"
                 type="password"
@@ -86,33 +91,35 @@ export function SettingDialog({ open, onOpenChange }: SettingDialogProps) {
               </Button>
             </div>
           )}
-          {saveStatus === "saved" && (
-            <p className="text-sm text-green-500">{t("settings.saved")}</p>
-          )}
+          {saveStatus === "saved" && <p className="text-sm text-success">{t("settings.saved")}</p>}
           {saveStatus === "error" && (
-            <p className="text-sm text-destructive">{t("settings.saveFailed")}</p>
+            <p className="text-destructive text-sm">{t("settings.saveFailed")}</p>
           )}
         </div>
 
         <Separator />
 
         {/* Theme */}
-        <div className="space-y-3">
-          <Label>{t("settings.theme")}</Label>
+        <div className="space-y-2">
+          <Label className="text-sm">{t("settings.theme")}</Label>
           <div className="flex gap-2">
-            <Button
-              variant={theme === "dark" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setTheme("dark")}
-            >
-              {t("settings.dark")}
-            </Button>
             <Button
               variant={theme === "light" ? "default" : "outline"}
               size="sm"
               onClick={() => setTheme("light")}
+              className="gap-1.5"
             >
+              <Sun className="h-3.5 w-3.5" />
               {t("settings.light")}
+            </Button>
+            <Button
+              variant={theme === "dark" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setTheme("dark")}
+              className="gap-1.5"
+            >
+              <Moon className="h-3.5 w-3.5" />
+              {t("settings.dark")}
             </Button>
           </div>
         </div>
@@ -120,8 +127,8 @@ export function SettingDialog({ open, onOpenChange }: SettingDialogProps) {
         <Separator />
 
         {/* Language */}
-        <div className="space-y-3">
-          <Label>言語 / Language</Label>
+        <div className="space-y-2">
+          <Label className="text-sm">{t("settings.language")}</Label>
           <div className="flex gap-2">
             <Button
               variant={i18n.language === "ja" ? "default" : "outline"}
@@ -143,14 +150,15 @@ export function SettingDialog({ open, onOpenChange }: SettingDialogProps) {
         <Separator />
 
         {/* Threshold */}
-        <div className="space-y-3">
-          <Label htmlFor="threshold">{t("settings.threshold", { value: defaultThreshold })}</Label>
-          <input
+        <div className="space-y-2">
+          <Label htmlFor="threshold" className="text-sm">
+            {t("settings.threshold", { value: defaultThreshold })}
+          </Label>
+          <Slider
             id="threshold"
-            type="range"
-            min="0"
-            max="1"
-            step="0.01"
+            min={0}
+            max={1}
+            step={0.01}
             value={defaultThreshold}
             onChange={(e) => setDefaultThreshold(Number(e.target.value))}
             className="w-full"

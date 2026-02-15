@@ -1,12 +1,14 @@
-import { ArrowLeft, Play } from "lucide-react";
+import { ArrowLeft, ArrowRight, Info } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/component/ui/button";
 import { useCompareStore } from "@/store/compare-store";
 import { useProjectStore } from "@/store/project-store";
-import type { Page } from "../../App";
+
 import { FramePreview } from "./frame-preview";
 import { FrameSelector } from "./frame-selector";
+
+import type { Page } from "../../App";
 
 interface ProjectPageProps {
   onNavigate: (page: Page) => void;
@@ -31,24 +33,39 @@ export function ProjectPage({ onNavigate }: ProjectPageProps) {
   };
 
   return (
-    <div className="flex h-full flex-col gap-4">
-      <div className="flex shrink-0 items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={handleBack}>
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <h2 className="text-xl font-semibold">
-          {selectedFrame ? selectedFrame.name : t("project.selectFrame")}
-        </h2>
-        {frameImage && (
-          <Button onClick={handleStartCompare} className="ml-auto">
-            <Play className="h-4 w-4 mr-2" />
-            {t("project.startCompare")}
+    <div className="flex h-full flex-col gap-3">
+      <div className="flex shrink-0 flex-col gap-3">
+        <div className="flex items-center gap-3">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleBack}
+            className="h-9 w-9"
+            aria-label={t("nav.home")}
+          >
+            <ArrowLeft className="h-4 w-4" />
           </Button>
+          <div className="flex-1">
+            <h2 className="font-semibold text-lg">{t("project.pageTitle")}</h2>
+            <p className="text-muted-foreground text-sm">{t("project.pageDescription")}</p>
+          </div>
+          {frameImage && (
+            <Button onClick={handleStartCompare} className="gap-2">
+              {t("project.startCompare")}
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+        {!frameImage && frames.length > 0 && (
+          <div className="flex items-center gap-2 rounded-lg border border-primary/30 bg-accent px-4 py-2.5">
+            <Info className="h-4 w-4 shrink-0 text-primary" />
+            <p className="text-accent-foreground text-sm">{t("project.nextStep")}</p>
+          </div>
         )}
       </div>
 
       {error && (
-        <div className="shrink-0 rounded-md border border-destructive/50 bg-destructive/10 p-4 text-base text-destructive">
+        <div className="shrink-0 rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-destructive text-sm">
           {error}
         </div>
       )}

@@ -8,10 +8,12 @@ FigDiff is a Diff-driven development tool that compares Figma designs with imple
 - Frontend: React 19 + TypeScript + Vite + Tailwind CSS 4 + shadcn/ui
 - Backend: Rust + Tauri v2
 - State: Zustand 5
-- Shared: `@figdiff/shared` (types + URL parser)
+- Shared: `@figdiff/shared` (types + URL parser + Zod schemas)
 - MCP Server: `@figdiff/mcp-server` (Phase 4)
-- Linter: Biome (format) + ESLint v9 flat config (lint)
+- Linter: Biome (format + basic lint) + ESLint v9 flat config (type-aware + import order)
 - Test: Vitest + @testing-library/react + Rust `#[cfg(test)]`
+- Validation: Zod v4.3.6 (runtime type validation)
+- Node.js: 25.6.1 (managed by mise)
 
 ## Monorepo Structure
 
@@ -31,15 +33,25 @@ designdiff/
 ## Key Commands
 
 ```bash
-pnpm build           # Build all packages
-pnpm dev             # Start Tauri dev (desktop + Vite HMR)
-pnpm test            # Run all Vitest tests
-pnpm test:rust       # Run cargo test
-pnpm lint            # Biome lint per-package
-pnpm lint:eslint     # ESLint v9 (root)
-pnpm typecheck       # TypeScript type check
-pnpm check           # Biome check (format + lint)
-pnpm format          # Biome format --write
+# Setup
+mise install             # Install Node.js 25.6.1 via mise
+mise trust               # Trust .mise.toml (required once)
+
+# Development
+pnpm dev                 # Start Tauri dev (desktop + Vite HMR)
+pnpm build               # Build all packages
+
+# Testing  
+pnpm test                # Run all Vitest tests
+pnpm test:rust           # Run cargo test
+
+# Code Quality
+pnpm typecheck           # TypeScript type check
+pnpm lint                # Biome lint per-package
+pnpm lint:eslint         # ESLint v9 (type-aware, import order)
+pnpm lint:eslint:fix     # ESLint auto-fix
+pnpm check               # Biome check (format + lint)
+pnpm format              # Biome format --write
 ```
 
 ## Naming Convention
@@ -59,12 +71,14 @@ Exceptions: tool conventions (Cargo.toml, package.json, App.tsx, main.rs, etc.)
 
 | Decision | Choice | Reason |
 |----------|--------|--------|
+| Node.js version | 25.6.1 via mise | Latest stable, mise for team consistency |
+| Runtime validation | Zod v4.3.6 | Type-safe runtime validation at boundaries |
 | Token storage | OS Keychain (`keyring` crate) | Security — not file-based |
 | Image transfer | base64 String | Tauri IPC Vec<u8> → JSON array is inefficient |
 | Figma images | 2-stage fetch (URL → download) | Figma /v1/images returns URL, not image |
 | Image cache | `~/.figdiff/cache/` | Avoid redundant API calls |
 | Formatter | Biome | Fast, all-in-one |
-| Linter | ESLint v9 flat config | Type-aware rules Biome doesn't cover |
+| Linter | Biome + ESLint v9 | Biome for speed, ESLint for type-aware rules |
 
 ## Important Files
 
