@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { useCanvasZoomPan } from "@/hook/use-canvas-zoom-pan";
 import { useCompareStore } from "@/store/compare-store";
@@ -9,6 +10,7 @@ export function CompareCanvas() {
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [isDraggingMode, setIsDraggingMode] = useState(false);
 
+  const { t } = useTranslation();
   const { designImage, screenshotImage, compareResult, viewMode, overlayOpacity } =
     useCompareStore();
 
@@ -188,14 +190,14 @@ export function CompareCanvas() {
         {Math.round(scale * 100)}%
       </div>
       <div className="absolute bottom-2 left-2 rounded bg-background/80 px-2 py-1 text-xs text-muted-foreground">
-        Ctrl+ホイール: ズーム | ホイール: パン | Space+ドラッグ: パン
+        {t("canvas.hint")}
       </div>
       <button
         type="button"
         className="absolute top-2 right-2 rounded bg-background/80 px-2 py-1 text-xs text-muted-foreground hover:bg-background"
         onClick={resetZoom}
       >
-        リセット
+        {t("canvas.reset")}
       </button>
     </div>
   );

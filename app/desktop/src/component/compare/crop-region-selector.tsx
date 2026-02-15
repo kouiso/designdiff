@@ -1,5 +1,6 @@
 import type { CropRegion } from "@figdiff/shared";
 import { useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/component/ui/button";
 import { useCompareStore } from "@/store/compare-store";
@@ -10,6 +11,7 @@ export function CropRegionSelector() {
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
   const [currentPos, setCurrentPos] = useState({ x: 0, y: 0 });
 
+  const { t } = useTranslation();
   const { cropRegion, setCropRegion, designImage, screenshotImage } = useCompareStore();
 
   const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -97,7 +99,7 @@ export function CropRegionSelector() {
     <div className="space-y-4">
       <div className="flex gap-2">
         <Button size="sm" variant={isSelecting ? "default" : "outline"}>
-          {isSelecting ? "選択中..." : "範囲指定"}
+          {isSelecting ? t("crop.selecting") : t("crop.selectRegion")}
         </Button>
         {cropRegion && (
           <>
@@ -105,7 +107,7 @@ export function CropRegionSelector() {
               x: {cropRegion.x}, y: {cropRegion.y}, w: {cropRegion.width}, h: {cropRegion.height}
             </span>
             <Button size="sm" variant="ghost" onClick={handleClearRegion}>
-              クリア
+              {t("crop.clear")}
             </Button>
           </>
         )}

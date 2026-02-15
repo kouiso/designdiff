@@ -7,10 +7,23 @@
       "recommended": true,
       "correctness": {
         "noUnusedImports": "warn",
-        "noUnusedVariables": "warn"
+        "noUnusedVariables": "warn",
+        "useHookAtTopLevel": "error"
       },
       "style": {
-        "noNonNullAssertion": "off"
+        "noNonNullAssertion": "off",
+        "useConsistentArrayType": "error"
+      },
+      "suspicious": {
+        "noExplicitAny": "warn"
+      },
+      "complexity": {
+        "noExcessiveCognitiveComplexity": {
+          "level": "warn",
+          "options": {
+            "maxAllowedComplexity": 25
+          }
+        }
       },
       "a11y": {
         "noLabelWithoutControl": "off",

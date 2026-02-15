@@ -30,7 +30,7 @@ export function App() {
   return (
     <div className="flex h-screen flex-col bg-background text-foreground">
       <Header currentPage={page} onNavigate={handleNavigate} />
-      <main className="flex-1 overflow-auto p-6">
+      <main className={`flex-1 overflow-hidden ${page === "home" ? "p-6" : "p-2"}`}>
         {page === "home" && <HomePage onNavigate={handleNavigate} />}
         {page === "project" && <ProjectPage onNavigate={handleNavigate} />}
         {page === "compare" && <ComparePage />}
