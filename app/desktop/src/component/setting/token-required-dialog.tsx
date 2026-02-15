@@ -83,7 +83,7 @@ export function TokenRequiredDialog() {
             }}
             disabled={isSubmitting}
           />
-          {error && <p className="text-xs text-destructive">{error}</p>}
+          {error && <p className="text-sm text-destructive">{error}</p>}
         </div>
 
         <div className="flex gap-2 justify-end">
