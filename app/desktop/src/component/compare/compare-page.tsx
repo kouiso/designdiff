@@ -191,6 +191,14 @@ export function ComparePage() {
     <div className="flex h-full flex-col">
       {isComparing && <LoadingOverlay message={t("compare.comparing")} />}
 
+      <div className="shrink-0 border-border border-b bg-card/40 px-4 py-3">
+        <Badge variant="secondary" className="mb-1 w-fit">
+          {t("home.stepLabel", { n: 3 })}
+        </Badge>
+        <h2 className="font-semibold text-lg">{t("compare.pageTitle")}</h2>
+        <p className="text-muted-foreground text-sm">{t("compare.pageDescription")}</p>
+      </div>
+
       {/* Toolbar */}
       <div className="shrink-0 border-border border-b bg-card/40 px-4 py-3">
         <div className="flex items-center gap-6">

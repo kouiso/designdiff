@@ -1,6 +1,8 @@
 import { GitCompare, ImageIcon, Layers } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
+import { Badge } from "@/component/ui/badge";
+import { Button } from "@/component/ui/button";
 import { Card, CardContent } from "@/component/ui/card";
 import { Spinner } from "@/component/ui/spinner";
 import { cn } from "@/lib/util";
@@ -54,17 +56,37 @@ export function HomePage({ onNavigate }: HomePageProps) {
   ];
 
   return (
-    <div className="mx-auto flex h-full max-w-2xl flex-col justify-center space-y-10">
-      {/* Hero section */}
-      <div className="space-y-3 text-center">
+    <div className="mx-auto flex h-full max-w-3xl flex-col justify-center gap-8">
+      <section className="rounded-2xl border border-border/60 bg-gradient-to-br from-primary/10 via-accent/40 to-background p-6 shadow-sm">
+        <Badge variant="secondary" className="mb-3 w-fit">
+          {t("home.stepLabel", { n: 1 })}
+        </Badge>
         <h1 className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text font-bold text-4xl text-transparent tracking-tight">
           {t("home.pageTitle")}
         </h1>
-        <p className="text-base text-muted-foreground">{t("home.pageDescription")}</p>
-      </div>
+        <p className="mt-2 text-base text-muted-foreground">{t("home.pageDescription")}</p>
+      </section>
 
-      {/* Input */}
-      <DesignInput onSubmit={handleSubmit} disabled={isLoading} />
+      <section className="space-y-3">
+        <div>
+          <h2 className="font-semibold text-lg">{t("home.inputTitle")}</h2>
+          <p className="text-muted-foreground text-sm">{t("home.inputHint")}</p>
+        </div>
+        <DesignInput onSubmit={handleSubmit} disabled={isLoading} />
+        {!figmaToken && (
+          <div className="flex items-center justify-between gap-3 rounded-lg border border-primary/30 bg-accent px-4 py-3">
+            <p className="text-accent-foreground text-sm">{t("home.tokenRequired")}</p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onNavigate("settings")}
+              className="shrink-0"
+            >
+              {t("nav.settings")}
+            </Button>
+          </div>
+        )}
+      </section>
 
       {error && (
         <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-destructive">
@@ -79,12 +101,11 @@ export function HomePage({ onNavigate }: HomePageProps) {
         </div>
       )}
 
-      {/* Workflow cards */}
-      <div className="space-y-3">
+      <section className="space-y-3">
         <h2 className="text-center font-medium text-muted-foreground text-sm uppercase tracking-widest">
           {t("home.howItWorks")}
         </h2>
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid gap-4 md:grid-cols-3">
           {steps.map((step, i) => (
             <Card key={step.key} className="border-border/60 bg-card/80">
               <CardContent className="flex flex-col items-center gap-3 p-5 text-center">
@@ -106,7 +127,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
             </Card>
           ))}
         </div>
-      </div>
+      </section>
     </div>
   );
 }

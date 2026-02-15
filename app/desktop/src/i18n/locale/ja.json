@@ -13,6 +13,8 @@
   "home": {
     "pageTitle": "デザイン比較を始める",
     "pageDescription": "FigDiffはFigmaデザインと実装スクリーンショットをピクセル単位で比較し、差分を自動検出するツールです。",
+    "inputTitle": "まずはURLまたは画像パスを入力",
+    "inputHint": "FigmaのURLを貼り付けるか、ローカル画像のパスを入力してください。",
     "inputPlaceholder": "Figma URL またはローカル画像パス...",
     "loading": "読み込み中...",
     "tokenRequired": "Figma Token を設定してください。設定画面から設定できます。",
