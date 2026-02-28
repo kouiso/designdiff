@@ -1,8 +1,21 @@
-// FigDiff MCP Server — Phase 4 implementation
-// This file is a placeholder. The MCP server will expose:
-// - compare_design: Compare Figma frame vs implementation screenshot
-// - get_design_token: Extract design tokens from a Figma node
-// - inspect_node: Get detailed node information
-// See document.md Section 5 for full specification.
+#!/usr/bin/env node
 
-export const MCP_SERVER_VERSION = "0.1.0";
+/**
+ * FigDiff MCP Server — Entry Point
+ * Starts the MCP server with stdio transport
+ */
+
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+
+import { createMcpServer } from "./server.js";
+
+async function main(): Promise<void> {
+  const server = createMcpServer();
+  const transport = new StdioServerTransport();
+  await server.connect(transport);
+}
+
+main().catch((error) => {
+  console.error("FigDiff MCP Server fatal error:", error);
+  process.exit(1);
+});
