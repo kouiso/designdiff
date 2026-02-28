@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "FigDiff",
+  "description": "Compare Figma designs with implementation screenshots. Pixel-level diff detection for design QA.",
+  "version": "0.1.0",
+  "permissions": ["activeTab", "storage"],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "FigDiff"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "css": ["content.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["overlay.html"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

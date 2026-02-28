@@ -1,0 +1,90 @@
+/**
+ * Crop Region Store
+ * File-based persistence for crop regions at ~/.figdiff/projects/{projectId}/crop-regions.json
+ */
+
+import * as fs from "node:fs/promises";
+import * as path from "node:path";
+
+import type { CropRegion } from "@figdiff/shared";
+
+interface CropRegionEntry {
+  frameName: string;
+  region: CropRegion;
+  note?: string;
+  updatedAt: string;
+}
+
+interface CropRegionFile {
+  regions: CropRegionEntry[];
+}
+
+function getProjectDir(projectId: string): string {
+  if (!/^[a-zA-Z0-9_-]+$/.test(projectId)) {
+    throw new Error("Invalid project ID: must be alphanumeric with hyphens/underscores only");
+  }
+  const homeDir = process.env.HOME || process.env.USERPROFILE || ".";
+  return path.join(homeDir, ".figdiff", "projects", projectId);
+}
+
+function getCropRegionPath(projectId: string): string {
+  return path.join(getProjectDir(projectId), "crop-regions.json");
+}
+
+async function readStore(projectId: string): Promise<CropRegionFile> {
+  try {
+    const data = await fs.readFile(getCropRegionPath(projectId), "utf-8");
+    return JSON.parse(data) as CropRegionFile;
+  } catch {
+    return { regions: [] };
+  }
+}
+
+async function writeStore(projectId: string, store: CropRegionFile): Promise<void> {
+  const filePath = getCropRegionPath(projectId);
+  await fs.mkdir(path.dirname(filePath), { recursive: true });
+  await fs.writeFile(filePath, JSON.stringify(store, null, 2), "utf-8");
+}
+
+/**
+ * Get crop region for a specific frame (or all frames if frameName is omitted)
+ */
+export async function getCropRegion(
+  projectId: string,
+  frameName?: string,
+): Promise<CropRegionEntry[]> {
+  const store = await readStore(projectId);
+  if (!frameName) {
+    return store.regions;
+  }
+  return store.regions.filter((r) => r.frameName === frameName);
+}
+
+/**
+ * Set (upsert) a crop region for a specific frame
+ */
+export async function setCropRegion(
+  projectId: string,
+  frameName: string,
+  region: CropRegion,
+  note?: string,
+): Promise<CropRegionEntry> {
+  const store = await readStore(projectId);
+
+  const entry: CropRegionEntry = {
+    frameName,
+    region,
+    note,
+    updatedAt: new Date().toISOString(),
+  };
+
+  const existingIndex = store.regions.findIndex((r) => r.frameName === frameName);
+  if (existingIndex >= 0) {
+    store.regions[existingIndex] = entry;
+  } else {
+    store.regions.push(entry);
+  }
+
+  await writeStore(projectId, store);
+  return entry;
+}

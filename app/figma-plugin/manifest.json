@@ -1,0 +1,28 @@
+{
+  "name": "FigDiff",
+  "id": "figdiff-design-comparison",
+  "api": "1.0.0",
+  "main": "dist/code.js",
+  "ui": "dist/ui.html",
+  "documentAccess": "dynamic-page",
+  "editorType": ["figma"],
+  "networkAccess": {
+    "allowedDomains": ["none"]
+  },
+  "capabilities": [],
+  "permissions": [],
+  "menu": [
+    {
+      "name": "Compare with Screenshot",
+      "command": "compare"
+    },
+    {
+      "name": "Export Selected Frame",
+      "command": "export-frame"
+    },
+    {
+      "name": "Inspect Selected Node",
+      "command": "inspect"
+    }
+  ]
+}

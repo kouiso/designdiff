@@ -1,0 +1,21 @@
+{
+  "name": "@figdiff/figma-plugin",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "dev": "node build.mjs --watch",
+    "typecheck": "tsc --noEmit -p tsconfig.code.json && tsc --noEmit -p tsconfig.ui.json",
+    "lint": "biome check src/",
+    "lint:fix": "biome check --write src/"
+  },
+  "dependencies": {
+    "@figdiff/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@figma/plugin-typings": "^1.104.0",
+    "esbuild": "^0.24.0",
+    "typescript": "^5.7.0"
+  }
+}
