@@ -100,3 +100,4 @@ Exceptions: tool conventions (Cargo.toml, package.json, App.tsx, main.rs, etc.)
 2. **Complete investigation**: Never guess — always read code first
 3. **Full compliance**: Follow all naming, linting, and type rules
 4. **Diff-driven**: FigDiff's core philosophy — compare, detect, fix, repeat
+5. **Data-driven execution**: Apply data science thinking (pipeline search, hypothesis debugging, self-scoring). See [data-driven-execution.md](prompt/instruction/data-driven-execution.md)
