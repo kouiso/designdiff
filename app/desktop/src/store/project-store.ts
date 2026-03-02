@@ -1,14 +1,9 @@
 import { create } from "zustand";
 
-import type { Frame, Project } from "@figdiff/shared";
+import type { Frame } from "@figdiff/shared";
 import { parseDesignInput } from "@figdiff/shared";
 
-import {
-  getFigmaFrameImage,
-  getFigmaFrames,
-  loadProjectList,
-  readLocalImage,
-} from "@/lib/tauri-command";
+import { getFigmaFrameImage, getFigmaFrames, readLocalImage } from "@/lib/tauri-command";
 import { useSettingStore } from "@/store/setting-store";
 
 function isTokenError(message: string): boolean {
@@ -22,8 +17,6 @@ function isTokenError(message: string): boolean {
 }
 
 interface ProjectState {
-  projects: Project[];
-  currentProject: Project | null;
   frames: Frame[];
   selectedFrame: Frame | null;
   frameImage: string | null;
@@ -31,7 +24,6 @@ interface ProjectState {
   error: string | null;
   currentFileKey: string | null;
 
-  loadProjects: () => Promise<void>;
   loadDesign: (input: string) => Promise<void>;
   selectFrame: (frame: Frame) => Promise<void>;
   clearError: () => void;
@@ -39,23 +31,12 @@ interface ProjectState {
 }
 
 export const useProjectStore = create<ProjectState>((set, get) => ({
-  projects: [],
-  currentProject: null,
   frames: [],
   selectedFrame: null,
   frameImage: null,
   isLoading: false,
   error: null,
   currentFileKey: null,
-
-  loadProjects: async () => {
-    try {
-      const projects = await loadProjectList();
-      set({ projects });
-    } catch (e) {
-      set({ error: String(e) });
-    }
-  },
 
   loadDesign: async (input: string) => {
     set({ isLoading: true, error: null, frames: [], selectedFrame: null, frameImage: null });

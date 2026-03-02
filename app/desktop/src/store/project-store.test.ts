@@ -7,8 +7,6 @@ const mockInvoke = vi.mocked(invoke);
 
 function resetStore() {
   useProjectStore.setState({
-    projects: [],
-    currentProject: null,
     frames: [],
     selectedFrame: null,
     frameImage: null,
@@ -26,40 +24,11 @@ describe("useProjectStore", () => {
 
   it("has correct initial state", () => {
     const state = useProjectStore.getState();
-    expect(state.projects).toEqual([]);
     expect(state.frames).toEqual([]);
     expect(state.selectedFrame).toBeNull();
     expect(state.frameImage).toBeNull();
     expect(state.isLoading).toBe(false);
     expect(state.error).toBeNull();
-  });
-
-  describe("loadProjects", () => {
-    it("loads project list via invoke", async () => {
-      const projects = [
-        {
-          id: "1",
-          name: "Test",
-          figmaUrl: "https://figma.com/file/ABC",
-          createdAt: "2024-01-01",
-          updatedAt: "2024-01-01",
-        },
-      ];
-      mockInvoke.mockResolvedValueOnce(projects);
-
-      await useProjectStore.getState().loadProjects();
-
-      expect(mockInvoke).toHaveBeenCalledWith("load_project_list");
-      expect(useProjectStore.getState().projects).toEqual(projects);
-    });
-
-    it("sets error on failure", async () => {
-      mockInvoke.mockRejectedValueOnce(new Error("load failed"));
-
-      await useProjectStore.getState().loadProjects();
-
-      expect(useProjectStore.getState().error).toBe("Error: load failed");
-    });
   });
 
   describe("loadDesign", () => {
