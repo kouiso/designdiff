@@ -5,11 +5,8 @@ import {
   FigmaTokenSchema,
   type Frame,
   FrameSchema,
-  ImageDimensionsSchema,
   type NodeInspection,
   NodeInspectionSchema,
-  type Project,
-  ProjectSchema,
 } from "@figdiff/shared";
 
 export function isTauri(): boolean {
@@ -72,58 +69,4 @@ export async function deleteFigmaToken(): Promise<void> {
 export async function readLocalImage(path: string): Promise<string> {
   ensureTauri();
   return invoke<string>("read_local_image", { path });
-}
-
-// --- Project storage ---
-
-export async function saveProject(project: Project): Promise<void> {
-  ensureTauri();
-  return invoke("save_project", { project });
-}
-
-export async function loadProjectList(): Promise<Project[]> {
-  if (!isTauri()) return [];
-  const result = await invoke<unknown>("load_project_list");
-  return z.array(ProjectSchema).parse(result);
-}
-
-// --- Image processing ---
-
-export async function resizeImageToMatch(
-  base64Img: string,
-  targetWidth: number,
-  targetHeight: number,
-): Promise<string> {
-  ensureTauri();
-  return invoke<string>("resize_image_to_match", {
-    base64Img,
-    targetWidth,
-    targetHeight,
-  });
-}
-
-export async function getImageDimensions(
-  base64Img: string,
-): Promise<{ width: number; height: number }> {
-  ensureTauri();
-  const result = await invoke<unknown>("get_image_dimensions", { base64Img });
-  const parsed = z.tuple([z.number(), z.number()]).parse(result);
-  return ImageDimensionsSchema.parse({ width: parsed[0], height: parsed[1] });
-}
-
-export async function cropImage(
-  base64Img: string,
-  x: number,
-  y: number,
-  width: number,
-  height: number,
-): Promise<string> {
-  ensureTauri();
-  return invoke<string>("crop_image", {
-    base64Img,
-    x,
-    y,
-    width,
-    height,
-  });
 }
