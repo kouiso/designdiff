@@ -10,7 +10,14 @@ import {
   DiffRegionSchema,
 } from "@figdiff/shared";
 
-import { cropImage, getImageDimensions, resizeImageToMatch } from "@/lib/tauri-command";
+import {
+  cropImageElement,
+  imageDataToBase64,
+  imageDataToCanvas,
+  imageElementToData,
+  loadImageElement,
+  resizeImageData,
+} from "@/util/canvas-image";
 
 interface CompareImagesOptions {
   designImage: string;
@@ -30,51 +37,54 @@ export async function compareImages(options: CompareImagesOptions): Promise<Comp
   const validated = CompareImagesOptionsSchema.parse(options);
   const { designImage, screenshotImage, threshold = 0.1, cropRegion } = validated;
 
-  let designBase64 = designImage.replace(/^data:image\/\w+;base64,/, "");
-  let screenshotBase64 = screenshotImage.replace(/^data:image\/\w+;base64,/, "");
+  const designBase64 = designImage.replace(/^data:image\/\w+;base64,/, "");
+  const screenshotBase64 = screenshotImage.replace(/^data:image\/\w+;base64,/, "");
+
+  const [designImg, screenshotImg] = await Promise.all([
+    loadImageElement(designBase64),
+    loadImageElement(screenshotBase64),
+  ]);
+
+  let designData: ImageData;
+  let screenshotData: ImageData;
 
   if (cropRegion) {
-    designBase64 = await cropImage(
-      designBase64,
+    designData = cropImageElement(
+      designImg,
       cropRegion.x,
       cropRegion.y,
       cropRegion.width,
       cropRegion.height,
     );
-    screenshotBase64 = await cropImage(
-      screenshotBase64,
+    screenshotData = cropImageElement(
+      screenshotImg,
       cropRegion.x,
       cropRegion.y,
       cropRegion.width,
       cropRegion.height,
     );
+  } else {
+    designData = imageElementToData(designImg);
+    screenshotData = imageElementToData(screenshotImg);
   }
 
-  const designDim = await getImageDimensions(designBase64);
-  const screenshotDim = await getImageDimensions(screenshotBase64);
-
-  if (designDim.width !== screenshotDim.width || designDim.height !== screenshotDim.height) {
-    designBase64 = await resizeImageToMatch(
-      designBase64,
-      screenshotDim.width,
-      screenshotDim.height,
-    );
+  if (designData.width !== screenshotData.width || designData.height !== screenshotData.height) {
+    const sourceCanvas = imageDataToCanvas(designData);
+    designData = resizeImageData(sourceCanvas, screenshotData.width, screenshotData.height);
   }
 
-  const design = await base64ToImageData(designBase64);
-  const screenshot = await base64ToImageData(screenshotBase64);
-
-  const { width, height } = design;
+  const { width, height } = screenshotData;
   const diff = new Uint8ClampedArray(width * height * 4);
 
-  const diffPixelCount = pixelmatch(design.data, screenshot.data, diff, width, height, {
+  const diffPixelCount = pixelmatch(designData.data, screenshotData.data, diff, width, height, {
     threshold,
   });
 
   const totalPixelCount = width * height;
   const matchRate = ((totalPixelCount - diffPixelCount) / totalPixelCount) * 100;
 
-  const diffImageBase64 = await imageToBase64(diff, width, height);
+  const diffImageData = new ImageData(diff, width, height);
+  const diffImageBase64 = imageDataToBase64(diffImageData);
 
   const diffRegions = clusterDiffRegions(diff, width, height);
 
@@ -185,47 +195,4 @@ function generateSuggestion(matchRate: number): string {
     return "compare.suggestionMinor";
   }
   return "compare.suggestionMajor";
-}
-
-async function base64ToImageData(base64: string): Promise<ImageData> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => {
-      const canvas = document.createElement("canvas");
-      canvas.width = img.width;
-      canvas.height = img.height;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) {
-        reject(new Error("Failed to get canvas context"));
-        return;
-      }
-      ctx.drawImage(img, 0, 0);
-      resolve(ctx.getImageData(0, 0, img.width, img.height));
-    };
-    img.onerror = reject;
-    img.src = `data:image/png;base64,${base64}`;
-  });
-}
-
-async function imageToBase64(
-  pixelData: Uint8ClampedArray,
-  imageWidth: number,
-  imageHeight: number,
-): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const canvas = document.createElement("canvas");
-    canvas.width = imageWidth;
-    canvas.height = imageHeight;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) {
-      reject(new Error("Failed to get canvas context"));
-      return;
-    }
-    const imageData = ctx.createImageData(imageWidth, imageHeight);
-    for (let i = 0; i < pixelData.length; i++) {
-      imageData.data[i] = pixelData[i];
-    }
-    ctx.putImageData(imageData, 0, 0);
-    resolve(canvas.toDataURL("image/png").split(",")[1]);
-  });
 }
