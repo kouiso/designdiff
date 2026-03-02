@@ -228,42 +228,6 @@ pub fn read_local_image_as_base64(path: &str) -> Result<String, FigDiffError> {
     Ok(base64::engine::general_purpose::STANDARD.encode(&bytes))
 }
 
-// --- Project storage ---
-
-fn get_project_dir() -> PathBuf {
-    get_figdiff_dir().join("project")
-}
-
-pub fn save_project(project: &Project) -> Result<(), FigDiffError> {
-    let dir = get_project_dir();
-    std::fs::create_dir_all(&dir)?;
-    let path = dir.join(format!("{}.json", project.id));
-    let json = serde_json::to_string_pretty(project)?;
-    std::fs::write(path, json)?;
-    Ok(())
-}
-
-pub fn load_project_list() -> Result<Vec<Project>, FigDiffError> {
-    let dir = get_project_dir();
-    if !dir.exists() {
-        return Ok(Vec::new());
-    }
-
-    let mut projects = Vec::new();
-    for entry in std::fs::read_dir(dir)? {
-        let entry = entry?;
-        let path = entry.path();
-        if path.extension().is_some_and(|ext| ext == "json") {
-            let content = std::fs::read_to_string(&path)?;
-            let project: Project = serde_json::from_str(&content)?;
-            projects.push(project);
-        }
-    }
-
-    projects.sort_by(|a, b| b.updated_at.cmp(&a.updated_at));
-    Ok(projects)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
