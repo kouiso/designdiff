@@ -14,12 +14,6 @@ pub enum FigDiffError {
     #[error("IO error: {0}")]
     Io(#[from] std::io::Error),
 
-    #[error("Image processing error: {0}")]
-    Image(#[from] image::ImageError),
-
-    #[error("Image processing error: {0}")]
-    ImageProcessing(String),
-
     #[error("Keyring error: {0}")]
     Keyring(String),
 
