@@ -33,6 +33,35 @@ When the current session is already Sonnet:
 
 ---
 
+## Section 0.5: Comprehension Checkpoint
+
+**Activation**: EVERY task, before any execution. No exceptions.
+
+**Purpose**: Prevent the #1 failure mode — AI executes based on surface-level understanding, misses the real intent.
+
+```
+Before starting ANY task, output:
+
+## 理解証明
+
+**本タスクの本質的目的**: [WHY this task matters, not WHAT to do]
+**成功の定義**: [What the user will see/feel when done correctly]
+**想定される失敗モード**: [Top 3 ways this could go wrong]
+**確認**: この理解は正しいですか？
+
+Rules:
+1. NEVER skip this step. Even for "obvious" tasks.
+2. "本質的目的" must be deeper than the literal request.
+   ❌ "ファイルを修正する"
+   ✅ "AI精度低下の原因であるシンボリックリンク欠損を修復し、全エージェントが統一ルールを読む状態に戻す"
+3. If the user corrects your understanding → record the correction in Failure Pattern Memory (Section 7)
+4. If you cannot articulate the purpose → ASK before proceeding
+```
+
+**Why this works**: Forces the AI to prove comprehension. Misunderstandings caught here cost 0 turns to fix. Misunderstandings caught after implementation cost 10+ turns.
+
+---
+
 ## Section 1: Weighted Triage Protocol
 
 **Activation**: 4+ tasks, files, or issues to address. For 3 or fewer, use intuitive prioritization.
@@ -65,24 +94,67 @@ Stage 1 — Broad Scan
   Goal: Collect ALL potentially relevant candidates
   Report: "Stage 1 complete: N files found. Proceeding to scoring..."
 
-Stage 2 — Relevance Scoring
+Stage 2 — Relevance Scoring & Recall-Miss Prevention
   For each candidate, estimate relevance (0.0-1.0) based on:
     - File name match to task keywords
     - Import/export relationship to known target files
     - Recency of modification
-  Keep: top candidates only
+  
+  ABEJA Recall-Miss Patterns (prevents reading only "top candidates"):
+  
+  1. Over-fetching: While scoring, collect 5× the target count
+     Intent: Prevent accidental exclusion of borderline candidates
+     Example: Need 5 files → collect, score top 25
+  
+  2. Multi-Dimension Scoring: Score on 2+ axes, then combine
+     - Name match percentile (0-100)
+     - Dependency depth percentile (0-100)
+     - Recency percentile (0-100)
+     → Final score = percentile-normalized average
+     Why: Single-axis scoring misses files strong on one dimension but weak on
+          another
+  
+  3. Minimum Threshold Validation: Always include files >= threshold
+     Threshold = (max_score - min_score) × 0.3 + min_score
+     Why: Percentile-only scoring may exclude consistent but lower-scored files
+  
+  4. Cutoff Tie Inclusion: All files tied at decision boundary → include all
+     Example: Rank 10-12 all score 0.65 → include all 3, not just rank 10
+     Why: Prevents arbitrary exclusion at boundary
+  
+  5. Weight Clipping: If scoring is bimodal (some files 0.9+, most < 0.3),
+     Clip weights: min=0.3, max=0.7 before combining axes
+     Why: Prevents one strong signal from drowning out others
+  
+  6. Filter Recovery: If Stage 3 finds 0 relevant content, REVERT to
+     higher threshold from Stage 2 and re-read those files
+     Why: Single-axis failure mode recovery
+  
+  7. Candidate Filling: If < 5 files pass threshold, lower threshold
+     incrementally until at least 5 candidates exist
+     Why: Ensures minimum due-diligence exploratory reading
+  
+  Report: {"stage": 2, "total_scores": N, "threshold": X, "selected": M, "reason": "..."}
 
 Stage 3 — Deep Dive
-  Read only the top 10 files (ranked by dependency reference count)
-  Report: "Stage 3: Reading N files..."
+  Read only the top N files (N = max(5, planned_scope × 2), ranked by final score)
+  But ALSO include all files from recall-miss patterns above
+  Report: "Stage 3: Reading N files (M from recall-miss patterns)..."
 
 Stage 4 — Cross-Reference
   From deep-dive findings, discover NEW related files
   → Feed back to Stage 2 for scoring
-  → Stop when no new high-relevance files are discovered
+  → Stop when no new files pass minimum threshold + at least 1 recall-miss pattern
+
+Stage 5 — Confidence Check (if Stage 1 found 20+ files)
+  Do a random spot-check: Pick 2 files you did NOT read from Stage 1 results
+  Skim their imports/exports. If either is relevant to your task:
+    → LOOP back to Stage 2, lower threshold by 0.1, re-score
+    → Report: "Spot-check found relevant file not in Stage 3. Rescoring..."
+  This detects silent coverage gaps.
 ```
 
-**Prohibitions**: Never read all files in a directory sequentially. Never read a file without scoring its relevance first.
+**Prohibitions**: Never read all files in a directory sequentially. Never read a file without scoring its relevance first. Never apply "top N only" without checking recall-miss patterns first. Never trust a single scoring dimension.
 
 ---
 
@@ -149,11 +221,58 @@ Deviation thresholds:
 
 ---
 
-## Section 6: Multi-Axis Self-Scoring
+## Section 6: Evidence-Based Self-Verification
 
 **Activation**: When finishing a task, before reporting completion.
 
 **Note**: This scores TASK DELIVERABLES (code quality). It is distinct from prompt quality standards (e.g., core.md Section 10 which scores PROMPT writing quality). They do not overlap.
+
+### Phase A — Pre-mortem (task START)
+
+```
+Before writing any code, answer:
+  "This implementation WILL have a defect. Where?"
+  List 3-5 specific failure predictions:
+    - [prediction]: [which file/function] [what could go wrong]
+  These become your verification checklist in Phase C.
+```
+
+### Phase B — Inline Verification (DURING task)
+
+```
+After EACH file change:
+  1. State what you changed and WHY (not just WHAT)
+  2. Check: Does this change contradict any previous change in this task?
+  3. Check: Does this change match your Phase A predictions?
+  If contradiction found → fix NOW, not later
+```
+
+### Phase C — Adversarial Self-Review (task END)
+
+```
+Prohibition: 「問題なし」「OK」「特に指摘なし」is BANNED.
+Every assertion MUST have evidence.
+
+For each review axis, provide SPECIFIC evidence:
+
+| Axis           | Required Evidence (not scores)                    |
+|----------------|---------------------------------------------------|
+| Completeness   | Checklist: [item] → [file:line where implemented] |
+| Type Safety    | [specific type check] → [evidence it's sound]     |
+| Security       | [specific vector] → [specific mitigation + where] |
+| Consistency    | [style rule] → [evidence of compliance]           |
+| Edge Cases     | [specific edge case] → [how it's handled + where] |
+
+❌ "セキュリティ問題なし"
+✅ "SQL injection: parameterized queries確認 (repository/user.ts:45, :78, :112)
+    XSS: sanitize-html適用確認 (controller/post.ts:23)
+    Auth: authGuard全API適用確認 (app.module.ts:15 global guard)"
+
+If you cannot provide specific evidence for an axis → you haven't verified it.
+Go back and verify.
+```
+
+### Phase D — Scoring
 
 ```
 | Axis         | Measurement                                      | Threshold |
@@ -167,7 +286,32 @@ Total = Completeness × 0.35 + Accuracy × 0.35 + Consistency × 0.15 + Efficien
 
 IF Total < 0.85: Self-improve before reporting
 IF any axis < threshold: Focus improvement on that axis
-IF Total >= 0.85 AND all axes pass: Report completion with scores
+IF Total >= 0.85 AND all axes pass: Report completion with evidence
+```
+
+### Phase E — Multi-Agent Auto-Trigger
+
+```
+If the repository has multi-agent-review.md (or equivalent):
+  Auto-trigger conditions (ANY of these):
+    - 3+ files modified
+    - API/interface signature changed
+    - Security-related code changed
+    - Database schema/migration changed
+  
+  When triggered:
+    → Launch adversarial multi-agent review automatically
+    → Do NOT wait for user to request it
+    → Report: "Multi-agent review auto-triggered: [reason]"
+
+If no multi-agent-review.md exists:
+  → Perform self-adversarial review:
+    Adopt 3 distinct perspectives sequentially:
+      1. Security Reviewer: "What can be exploited?"
+      2. Performance Reviewer: "What will be slow at scale?"
+      3. Maintainability Reviewer: "What will confuse the next developer?"
+    Each perspective MUST produce at least 1 specific finding with evidence.
+    Finding = trivial concern is acceptable. Finding = nothing is NOT acceptable.
 ```
 
 ---
@@ -224,12 +368,14 @@ Approach: Start with CLI. Escalate to MCP when complexity requires it.
 
 | Context Detected | Sections Activated |
 |---|---|
+| **ANY task received** | **Section 0.5 (Comprehension Checkpoint) — ALWAYS FIRST** |
 | 4+ tasks/issues received | Section 1 (Weighted Triage) |
 | Codebase investigation needed | Section 2 (Multi-Stage Pipeline) |
 | Error/bug/test failure | Section 3 (Hypothesis-Driven Debugging) |
 | Code review or style decision | Section 4 (Relative Positioning) |
-| Task completion (3+ files or API change) | Section 5 (Deviation Detection) + Section 6 (Self-Scoring) |
-| Task completion (any size) | Section 6 (Self-Scoring) |
+| Task completion (3+ files or API change) | Section 5 (Deviation Detection) + Section 6 (Evidence-Based Verification) |
+| Task completion (any size) | Section 6 Phase C-D (Adversarial Review + Scoring) |
+| Task completion (auto-trigger conditions met) | Section 6 Phase E (Multi-Agent Auto-Trigger) |
 | Any failure or unexpected result | Section 7 (Failure Pattern Memory) |
 | MCP tool needed | Section 8 (Tool Search) |
 | Launching subagents/teams | Section 0 (Model Hierarchy) |
