@@ -22,6 +22,9 @@ pub enum FigDiffError {
 
     #[error("Invalid input: {0}")]
     InvalidInput(String),
+
+    #[error("Screenshot capture failed: {0}")]
+    ScreenshotCapture(String),
 }
 
 impl From<keyring::Error> for FigDiffError {
