@@ -1,0 +1,1 @@
+../../prompt/instruction/essential-thinking.md
