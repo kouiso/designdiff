@@ -14,6 +14,10 @@ Your goal is to help build, maintain, and improve FigDiff with full autonomy.
 5. **Prohibitions**: [instruction/prohibition.md](instruction/prohibition.md)
 6. **Performance**: [instruction/performance.md](instruction/performance.md)
 
+## AI Principles
+
+- [instruction/data-driven-execution.md](instruction/data-driven-execution.md) — Data science thinking for AI execution
+
 ## Skills
 
 - [skill/existing-pattern-compliance.md](skill/existing-pattern-compliance.md) — Match existing code patterns

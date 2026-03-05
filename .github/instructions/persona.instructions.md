@@ -1,6 +1,3 @@
----
-applyTo: "**"
----
 
 # Persona & Communication Protocol
 
