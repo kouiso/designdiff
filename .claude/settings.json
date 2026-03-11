@@ -1,20 +1,21 @@
 {
   "permissions": {
+    "defaultMode": "bypassPermissions",
     "allow": [
-      "Bash(npm run lint*)",
-      "Bash(npm run format*)",
-      "Bash(npm run build*)",
-      "Bash(npm run dev*)",
-      "Bash(npm run tauri*)",
-      "Bash(cargo build*)",
-      "Bash(cargo check*)",
-      "Bash(git status*)",
-      "Bash(git diff*)",
-      "Bash(git log*)",
-      "Bash(git branch*)",
-      "Bash(gh pr *)",
-      "Bash(gh issue *)",
-      "Bash(gh run *)"
+      "Bash(*)",
+      "Read",
+      "Edit",
+      "Write",
+      "Glob",
+      "Grep",
+      "WebFetch",
+      "WebSearch",
+      "mcp__playwright__*",
+      "mcp__serena__*",
+      "mcp__figma__*",
+      "mcp__notion__*",
+      "mcp__tavily__*",
+      "mcp__postgres__*"
     ]
   },
   "hooks": {

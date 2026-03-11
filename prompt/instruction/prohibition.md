@@ -34,3 +34,67 @@
 4. Does this code swallow errors? → **ADD PROPER HANDLING**
 
 **Correct priority:** Type-safe > Architecturally sound > Readable > Working
+
+### Plagiarizing Other Reviewers' Output as Own Review
+
+NEVER report a PR review based solely on other reviewers' findings (Devin, CodeRabbit, human reviewers, etc.) WHEN performing a code review BECAUSE it is intellectual dishonesty — the user requested YOUR analysis, not a summary of someone else's work.
+
+**Required behavior for every PR review:**
+1. Read the actual source code yourself — use local repo, `git show`, or `gh api` for file contents
+2. IF `gh pr diff` fails due to size → use `git diff <base>...<head>` locally or read changed files directly from the filesystem
+3. Other reviewers' comments are supplementary input, not a substitute for your own analysis
+4. Your review MUST contain findings from YOUR code reading, clearly separated from other reviewers' findings
+
+❌ Summarizing Devin/CodeRabbit comments and reporting it as "review result"
+❌ Skipping code reading because diff was unavailable
+✅ Reading changed files directly from local repo and reporting YOUR own findings
+✅ Labeling other reviewers' findings explicitly: "Devin指摘の追認: ..." separated from your own analysis
+
+## Playwright / Browser Verification Prohibitions
+
+### Playwright Refusal Is Prohibited
+
+NEVER claim Playwright is unavailable WHEN `mcp__playwright__*` tools exist in the environment.
+
+Banned excuses:
+```
+❌ "Playwright cannot connect to a Tauri app"
+❌ "I cannot verify browser behavior"
+❌ "Please verify the UI manually"
+❌ "I think this should work, so please confirm"
+```
+
+Tauri v2 desktop apps ARE testable via Playwright on the Vite dev server (`http://localhost:1420`).
+Use `mcp__playwright__browser_navigate` + `take_screenshot` to verify webview behavior.
+
+### False Completion Reporting Is Prohibited
+
+NEVER report task completion WHEN React/Tauri UI code was modified WITHOUT Playwright screenshot verification.
+
+```
+❌ "Implementation is complete." (without running any verification)
+❌ "Please check the UI." (delegating verification to user)
+❌ "I believe this should work." (belief ≠ verification)
+```
+
+Triggers: Any React component, Tauri command, CSS, routing change → MUST run `mcp__playwright__browser_take_screenshot` before reporting complete.
+
+## False Deadend Declaration Is Prohibited
+
+### Rule
+
+NEVER declare a technical obstacle as "impossible" or "cannot be done autonomously"
+WHEN alternatives have not been fully exhausted
+BECAUSE what appears as a wall is almost always a signal that another approach exists.
+
+```
+❌ "This cannot be bypassed autonomously" (before trying all options)
+❌ "Which do you prefer, A or B?" (presenting binary choice when AI can pick autonomously)
+❌ "Manual user action is required" (before trying programmatic alternatives)
+```
+
+```
+✅ Try ALL programmatic alternatives before concluding impossibility
+✅ When multiple paths exist, SELECT the best one and EXECUTE without asking
+✅ Only ask the user when all alternatives are truly exhausted WITH evidence
+```

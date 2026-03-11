@@ -1,5 +1,6 @@
 mod error;
 mod figma;
+mod screenshot;
 
 use error::FigDiffError;
 use figma::client;
@@ -59,6 +60,15 @@ async fn read_local_image(path: String) -> Result<String, FigDiffError> {
     client::read_local_image_as_base64(&path)
 }
 
+#[tauri::command]
+async fn capture_url_screenshot(
+    url: String,
+    width: u32,
+    height: u32,
+) -> Result<String, FigDiffError> {
+    screenshot::capture(&url, width, height).await
+}
+
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_store::Builder::default().build())
@@ -70,6 +80,7 @@ pub fn run() {
             get_figma_token,
             delete_figma_token,
             read_local_image,
+            capture_url_screenshot,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
