@@ -11,15 +11,13 @@ import { Label } from "@/component/ui/label";
 import { Separator } from "@/component/ui/separator";
 import { Slider } from "@/component/ui/slider";
 import { LoadingOverlay, Spinner } from "@/component/ui/spinner";
-import { readLocalImage } from "@/lib/tauri-command";
+import { captureUrlScreenshot, readLocalImage } from "@/lib/tauri-command";
 import { cn } from "@/lib/util";
 import { useCompareStore } from "@/store/compare-store";
 import { useProjectStore } from "@/store/project-store";
 
 import { CompareCanvas } from "./compare-canvas";
 import { ViewModeToggle } from "./view-mode-toggle";
-
-// --- Sub-components ---
 
 function DesignStatus({ hasDesign }: { hasDesign: boolean }) {
   const { t } = useTranslation();
@@ -131,8 +129,6 @@ function GuidanceBar({ hasDesign, hasBothImages }: { hasDesign: boolean; hasBoth
   );
 }
 
-// --- Main component ---
-
 export function ComparePage() {
   const { t } = useTranslation();
   const [screenshotPath, setScreenshotPath] = useState("");
@@ -165,9 +161,19 @@ export function ComparePage() {
 
     setIsLoadingScreenshot(true);
     try {
-      const base64 = await readLocalImage(trimmed);
-      const dataUrl = `data:image/png;base64,${base64}`;
-      setScreenshotImage(dataUrl);
+      const isUrl = /^https?:\/\//i.test(trimmed);
+      let base64: string;
+
+      if (isUrl) {
+        const frame = useProjectStore.getState().selectedFrame;
+        const width = frame ? Math.round(frame.width) : 1440;
+        const height = frame ? Math.round(frame.height) : 900;
+        base64 = await captureUrlScreenshot(trimmed, width, height);
+      } else {
+        base64 = await readLocalImage(trimmed);
+      }
+
+      setScreenshotImage(`data:image/png;base64,${base64}`);
       setViewMode("transparent_overlay");
     } catch (e) {
       setError(`${t("compare.loadFailed")}: ${String(e)}`);
@@ -199,7 +205,6 @@ export function ComparePage() {
         <p className="text-muted-foreground text-sm">{t("compare.pageDescription")}</p>
       </div>
 
-      {/* Toolbar */}
       <div className="shrink-0 border-border border-b bg-card/40 px-4 py-3">
         <div className="flex items-center gap-6">
           <DesignStatus hasDesign={hasDesign} />
@@ -242,10 +247,8 @@ export function ComparePage() {
         )}
       </div>
 
-      {/* Guidance bar */}
       <GuidanceBar hasDesign={hasDesign} hasBothImages={hasBothImages} />
 
-      {/* View mode toggle bar */}
       {hasBothImages && (
         <div className="shrink-0 border-border border-b px-4 py-2">
           <div className="flex flex-wrap items-center gap-3">
@@ -274,7 +277,6 @@ export function ComparePage() {
         </div>
       )}
 
-      {/* Canvas or empty state */}
       <div className="min-h-0 flex-1">
         {hasDesign || hasScreenshot ? (
           <CompareCanvas />
@@ -291,7 +293,6 @@ export function ComparePage() {
         )}
       </div>
 
-      {/* Suggestion */}
       {compareResult?.suggestion && (
         <div className="shrink-0 border-border border-t px-4 py-3">
           <Card className="bg-accent/30 p-4">

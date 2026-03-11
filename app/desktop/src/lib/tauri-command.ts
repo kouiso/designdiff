@@ -19,8 +19,6 @@ function ensureTauri(): void {
   }
 }
 
-// --- Figma API commands ---
-
 export async function getFigmaFrames(fileKey: string): Promise<Frame[]> {
   ensureTauri();
   const result = await invoke<unknown>("get_figma_frames", { fileKey });
@@ -46,8 +44,6 @@ export async function getFigmaNodeDetail(
   return NodeInspectionSchema.parse(result);
 }
 
-// --- Token management ---
-
 export async function saveFigmaToken(token: string): Promise<void> {
   ensureTauri();
   const validated = FigmaTokenSchema.parse(token);
@@ -64,9 +60,20 @@ export async function deleteFigmaToken(): Promise<void> {
   return invoke("delete_figma_token");
 }
 
-// --- Local image ---
-
 export async function readLocalImage(path: string): Promise<string> {
   ensureTauri();
   return invoke<string>("read_local_image", { path });
+}
+
+export async function captureUrlScreenshot(
+  url: string,
+  width: number,
+  height: number,
+): Promise<string> {
+  ensureTauri();
+  return invoke<string>("capture_url_screenshot", {
+    url,
+    width: Math.round(width),
+    height: Math.round(height),
+  });
 }
