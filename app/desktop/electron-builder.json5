@@ -1,0 +1,30 @@
+{
+  "appId": "com.figdiff.app",
+  "productName": "FigDiff",
+  "directories": {
+    "output": "release",
+    "buildResources": "build"
+  },
+  "files": [
+    "dist/**/*",
+    "!**/.DS_Store"
+  ],
+  "asar": true,
+  "mac": {
+    "target": [
+      { "target": "dmg", "arch": ["x64", "arm64"] }
+    ],
+    "category": "public.app-category.developer-tools",
+    "hardenedRuntime": true,
+    "entitlements": "build/entitlements.mac.plist"
+  },
+  "win": {
+    "target": [
+      { "target": "nsis", "arch": ["x64"] }
+    ]
+  },
+  "linux": {
+    "target": ["AppImage"],
+    "category": "Development"
+  }
+}

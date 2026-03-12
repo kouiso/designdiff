@@ -1,0 +1,47 @@
+import { ipcMain } from "electron";
+import { FigmaClient, extractFrames } from "@figdiff/shared";
+import { getToken } from "../util/safe-storage";
+import { NodeFsCacheStrategy } from "../util/cache";
+import { transformNode } from "../util/transform-node";
+
+const requireToken = (): string => {
+  const token = getToken();
+  if (!token) {
+    throw new Error("Token not found");
+  }
+  return token;
+};
+
+let cacheStrategy: NodeFsCacheStrategy | null = null;
+
+const getCache = (): NodeFsCacheStrategy => {
+  if (!cacheStrategy) {
+    cacheStrategy = new NodeFsCacheStrategy();
+  }
+  return cacheStrategy;
+};
+
+export const registerFigmaHandlers = (): void => {
+  ipcMain.handle("figma:get-frames", async (_event, fileKey: string) => {
+    const token = requireToken();
+    const client = new FigmaClient(token, getCache());
+    const file = await client.getFile(fileKey, 3);
+    return extractFrames(file);
+  });
+
+  ipcMain.handle(
+    "figma:get-frame-image",
+    async (_event, fileKey: string, nodeId: string, scale: number = 2) => {
+      const token = requireToken();
+      const client = new FigmaClient(token, getCache());
+      return client.downloadImageAsBase64(fileKey, nodeId, scale);
+    },
+  );
+
+  ipcMain.handle("figma:get-node-detail", async (_event, fileKey: string, nodeId: string) => {
+    const token = requireToken();
+    const client = new FigmaClient(token);
+    const node = await client.getNode(fileKey, nodeId);
+    return transformNode(node);
+  });
+};

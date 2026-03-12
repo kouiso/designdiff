@@ -1,4 +1,4 @@
-import { ChevronRight, Moon, Settings, Sun } from "lucide-react";
+import { ChevronRight, Layers, Moon, Settings, Sun } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/component/ui/button";
@@ -65,9 +65,24 @@ export function Header({ currentPage, onNavigate }: HeaderProps) {
               <span className="font-medium text-foreground">{t("nav.compare")}</span>
             </>
           )}
+          {currentPage === "live_overlay" && (
+            <>
+              <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/50" />
+              <span className="font-medium text-foreground">{t("nav.liveOverlay")}</span>
+            </>
+          )}
         </nav>
       </div>
       <div className="flex items-center gap-1">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => onNavigate("live_overlay")}
+          className={`h-9 gap-1.5 text-sm ${currentPage === "live_overlay" ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:text-foreground"}`}
+        >
+          <Layers className="h-4 w-4" />
+          {t("nav.liveOverlay")}
+        </Button>
         <Button
           variant="ghost"
           size="icon"

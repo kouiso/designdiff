@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-import { deleteFigmaToken, getFigmaToken, saveFigmaToken } from "@/lib/tauri-command";
+import { deleteFigmaToken, getFigmaToken, saveFigmaToken } from "@/lib/electron-command";
 
 interface SettingState {
   figmaToken: string | null;

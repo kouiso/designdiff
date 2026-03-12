@@ -1,9 +1,6 @@
-import { invoke } from "@tauri-apps/api/core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useProjectStore } from "./project-store";
-
-const mockInvoke = vi.mocked(invoke);
 
 function resetStore() {
   useProjectStore.setState({
@@ -34,38 +31,32 @@ describe("useProjectStore", () => {
   describe("loadDesign", () => {
     it("loads frames from Figma URL without node-id", async () => {
       const frames = [{ id: "1:2", name: "Home", width: 1440, height: 900 }];
-      mockInvoke.mockResolvedValueOnce(frames);
+      vi.mocked(window.electronAPI.getFigmaFrames).mockResolvedValueOnce(frames);
 
       await useProjectStore.getState().loadDesign("https://www.figma.com/design/ABC123/Title");
 
-      expect(mockInvoke).toHaveBeenCalledWith("get_figma_frames", { fileKey: "ABC123" });
+      expect(window.electronAPI.getFigmaFrames).toHaveBeenCalledWith("ABC123");
       expect(useProjectStore.getState().frames).toEqual(frames);
       expect(useProjectStore.getState().isLoading).toBe(false);
     });
 
     it("loads image directly from Figma URL with node-id", async () => {
-      mockInvoke.mockResolvedValueOnce("iVBORw0KGgo=");
+      vi.mocked(window.electronAPI.getFigmaFrameImage).mockResolvedValueOnce("iVBORw0KGgo=");
 
       await useProjectStore
         .getState()
         .loadDesign("https://www.figma.com/design/ABC123/Title?node-id=1-23");
 
-      expect(mockInvoke).toHaveBeenCalledWith("get_figma_frame_image", {
-        fileKey: "ABC123",
-        nodeId: "1:23",
-        scale: 2,
-      });
+      expect(window.electronAPI.getFigmaFrameImage).toHaveBeenCalledWith("ABC123", "1:23", 2);
       expect(useProjectStore.getState().frameImage).toBe("data:image/png;base64,iVBORw0KGgo=");
     });
 
     it("loads local image directly", async () => {
-      mockInvoke.mockResolvedValueOnce("localBase64==");
+      vi.mocked(window.electronAPI.readLocalImage).mockResolvedValueOnce("localBase64==");
 
       await useProjectStore.getState().loadDesign("/home/user/screenshot.png");
 
-      expect(mockInvoke).toHaveBeenCalledWith("read_local_image", {
-        path: "/home/user/screenshot.png",
-      });
+      expect(window.electronAPI.readLocalImage).toHaveBeenCalledWith("/home/user/screenshot.png");
       expect(useProjectStore.getState().frameImage).toBe("data:image/png;base64,localBase64==");
     });
 
@@ -76,7 +67,7 @@ describe("useProjectStore", () => {
     });
 
     it("sets error on API failure", async () => {
-      mockInvoke.mockRejectedValueOnce(new Error("API error"));
+      vi.mocked(window.electronAPI.getFigmaFrames).mockRejectedValueOnce(new Error("API error"));
 
       await useProjectStore.getState().loadDesign("https://www.figma.com/design/ABC123/Title");
 
@@ -88,16 +79,12 @@ describe("useProjectStore", () => {
   describe("selectFrame", () => {
     it("loads frame image when frame is selected", async () => {
       useProjectStore.setState({ currentFileKey: "ABC123" });
-      mockInvoke.mockResolvedValueOnce("frameBase64==");
+      vi.mocked(window.electronAPI.getFigmaFrameImage).mockResolvedValueOnce("frameBase64==");
 
       const frame = { id: "1:2", name: "Home", width: 1440, height: 900 };
       await useProjectStore.getState().selectFrame(frame);
 
-      expect(mockInvoke).toHaveBeenCalledWith("get_figma_frame_image", {
-        fileKey: "ABC123",
-        nodeId: "1:2",
-        scale: 2,
-      });
+      expect(window.electronAPI.getFigmaFrameImage).toHaveBeenCalledWith("ABC123", "1:2", 2);
       expect(useProjectStore.getState().selectedFrame).toEqual(frame);
       expect(useProjectStore.getState().frameImage).toBe("data:image/png;base64,frameBase64==");
     });
@@ -106,7 +93,7 @@ describe("useProjectStore", () => {
       const frame = { id: "1:2", name: "Home", width: 1440, height: 900 };
       await useProjectStore.getState().selectFrame(frame);
 
-      expect(mockInvoke).not.toHaveBeenCalled();
+      expect(window.electronAPI.getFigmaFrameImage).not.toHaveBeenCalled();
     });
   });
 

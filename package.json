@@ -10,7 +10,6 @@
     "lint:eslint:fix": "eslint --fix .",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
-    "test:rust": "cd app/desktop/src-tauri && cargo test",
     "format": "biome format --write .",
     "check": "biome check ."
   },
