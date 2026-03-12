@@ -3,7 +3,7 @@ import { create } from "zustand";
 import type { Frame } from "@figdiff/shared";
 import { parseDesignInput } from "@figdiff/shared";
 
-import { getFigmaFrameImage, getFigmaFrames, readLocalImage } from "@/lib/tauri-command";
+import { getFigmaFrameImage, getFigmaFrames, readLocalImage } from "@/lib/electron-command";
 import { useSettingStore } from "@/store/setting-store";
 
 function isTokenError(message: string): boolean {

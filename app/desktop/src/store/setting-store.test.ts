@@ -1,9 +1,6 @@
-import { invoke } from "@tauri-apps/api/core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useSettingStore } from "./setting-store";
-
-const mockInvoke = vi.mocked(invoke);
 
 describe("useSettingStore", () => {
   beforeEach(() => {
@@ -25,43 +22,45 @@ describe("useSettingStore", () => {
   });
 
   describe("setFigmaToken", () => {
-    it("saves token via invoke and updates state", async () => {
-      mockInvoke.mockResolvedValueOnce(undefined);
+    it("saves token via electronAPI and updates state", async () => {
+      vi.mocked(window.electronAPI.saveFigmaToken).mockResolvedValueOnce(undefined);
 
       await useSettingStore.getState().setFigmaToken("figd_test1234567890abcdefghij");
 
-      expect(mockInvoke).toHaveBeenCalledWith("save_figma_token", {
-        token: "figd_test1234567890abcdefghij",
-      });
+      expect(window.electronAPI.saveFigmaToken).toHaveBeenCalledWith(
+        "figd_test1234567890abcdefghij",
+      );
       expect(useSettingStore.getState().figmaToken).toBe("figd_test1234567890abcdefghij");
     });
   });
 
   describe("removeFigmaToken", () => {
-    it("deletes token via invoke and clears state", async () => {
+    it("deletes token via electronAPI and clears state", async () => {
       useSettingStore.setState({ figmaToken: "figd_existing1234567890" });
-      mockInvoke.mockResolvedValueOnce(undefined);
+      vi.mocked(window.electronAPI.deleteFigmaToken).mockResolvedValueOnce(undefined);
 
       await useSettingStore.getState().removeFigmaToken();
 
-      expect(mockInvoke).toHaveBeenCalledWith("delete_figma_token");
+      expect(window.electronAPI.deleteFigmaToken).toHaveBeenCalled();
       expect(useSettingStore.getState().figmaToken).toBeNull();
     });
   });
 
   describe("loadSettings", () => {
-    it("loads token from invoke and updates state", async () => {
-      mockInvoke.mockResolvedValueOnce("figd_loaded1234567890abcdef");
+    it("loads token from electronAPI and updates state", async () => {
+      vi.mocked(window.electronAPI.getFigmaToken).mockResolvedValueOnce(
+        "figd_loaded1234567890abcdef",
+      );
 
       await useSettingStore.getState().loadSettings();
 
-      expect(mockInvoke).toHaveBeenCalledWith("get_figma_token");
+      expect(window.electronAPI.getFigmaToken).toHaveBeenCalled();
       expect(useSettingStore.getState().figmaToken).toBe("figd_loaded1234567890abcdef");
       expect(useSettingStore.getState().isLoading).toBe(false);
     });
 
     it("handles null token gracefully", async () => {
-      mockInvoke.mockResolvedValueOnce(null);
+      vi.mocked(window.electronAPI.getFigmaToken).mockResolvedValueOnce(null);
 
       await useSettingStore.getState().loadSettings();
 

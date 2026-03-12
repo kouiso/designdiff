@@ -8,7 +8,8 @@
     "project": "Frame Selection",
     "compare": "Compare",
     "settings": "Settings",
-    "breadcrumb": "Breadcrumb"
+    "breadcrumb": "Breadcrumb",
+    "liveOverlay": "Live Overlay"
   },
   "home": {
     "pageTitle": "Start Design Comparison",
@@ -138,6 +139,14 @@
     "reset": "Reset",
     "close": "Close",
     "submit": "Submit"
+  },
+  "overlay": {
+    "urlPlaceholder": "Implementation URL (e.g. http://localhost:3000)",
+    "open": "Open",
+    "loadDesign": "Overlay Design",
+    "hide": "Hide overlay",
+    "show": "Show overlay",
+    "capture": "Capture → Compare"
   },
   "error": {
     "bothImagesRequired": "Both images are required"

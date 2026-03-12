@@ -8,7 +8,8 @@
     "project": "フレーム選択",
     "compare": "比較",
     "settings": "設定",
-    "breadcrumb": "パンくずリスト"
+    "breadcrumb": "パンくずリスト",
+    "liveOverlay": "ライブオーバーレイ"
   },
   "home": {
     "pageTitle": "デザイン比較を始める",
@@ -138,6 +139,14 @@
     "reset": "リセット",
     "close": "閉じる",
     "submit": "送信"
+  },
+  "overlay": {
+    "urlPlaceholder": "実装サイトのURL (例: http://localhost:3000)",
+    "open": "表示",
+    "loadDesign": "デザインを重ねる",
+    "hide": "オーバーレイを非表示",
+    "show": "オーバーレイを表示",
+    "capture": "キャプチャ → 比較"
   },
   "error": {
     "bothImagesRequired": "両方の画像が必要です"

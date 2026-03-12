@@ -5,8 +5,6 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": resolve(__dirname, "./src"),
-      "@tauri-apps/api/core": resolve(__dirname, "./src/__mock__/tauri.ts"),
-      "@tauri-apps/plugin-store": resolve(__dirname, "./src/__mock__/tauri-store.ts"),
     },
   },
   test: {

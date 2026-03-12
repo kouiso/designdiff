@@ -11,7 +11,7 @@ import { Label } from "@/component/ui/label";
 import { Separator } from "@/component/ui/separator";
 import { Slider } from "@/component/ui/slider";
 import { LoadingOverlay, Spinner } from "@/component/ui/spinner";
-import { captureUrlScreenshot, readLocalImage } from "@/lib/tauri-command";
+import { captureUrlScreenshot, readLocalImage } from "@/lib/electron-command";
 import { cn } from "@/lib/util";
 import { useCompareStore } from "@/store/compare-store";
 import { useProjectStore } from "@/store/project-store";
