@@ -151,7 +151,9 @@ function floodFill(
   let pixelCount = 0;
 
   while (stack.length > 0) {
-    const [x, y] = stack.pop()!;
+    const item = stack.pop();
+    if (!item) break;
+    const [x, y] = item;
     const idx = (y * imageWidth + x) * 4;
 
     if (

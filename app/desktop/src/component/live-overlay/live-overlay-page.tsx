@@ -17,14 +17,18 @@ export function LiveOverlayPage({ onNavigate }: LiveOverlayPageProps) {
   const isOpen = useOverlayStore((s) => s.isOpen);
 
   useEffect(() => {
+    let cancelled = false;
     let unsubscribe: (() => void) | undefined;
     getOverlay().then((overlay) => {
-      if (!overlay) return;
+      if (cancelled || !overlay) return;
       unsubscribe = overlay.onNavigated((url) => {
         useOverlayStore.getState().handleNavigated(url);
       });
     });
-    return () => unsubscribe?.();
+    return () => {
+      cancelled = true;
+      unsubscribe?.();
+    };
   }, []);
 
   return (

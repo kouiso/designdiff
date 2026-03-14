@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Moon, Sun } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -29,18 +29,33 @@ export function SettingDialog({ open, onOpenChange }: SettingDialogProps) {
   } = useSettingStore();
   const [tokenInput, setTokenInput] = useState("");
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const statusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (statusTimerRef.current) clearTimeout(statusTimerRef.current);
+    };
+  }, []);
+
+  const resetStatusAfter = (ms: number) => {
+    if (statusTimerRef.current) clearTimeout(statusTimerRef.current);
+    statusTimerRef.current = setTimeout(() => setSaveStatus("idle"), ms);
+  };
 
   const handleSaveToken = async () => {
     if (!tokenInput.trim()) return;
     setSaveStatus("saving");
+    setErrorMessage(null);
     try {
       await setFigmaToken(tokenInput.trim());
       setTokenInput("");
       setSaveStatus("saved");
-      setTimeout(() => setSaveStatus("idle"), 2000);
-    } catch {
+      resetStatusAfter(2000);
+    } catch (e) {
       setSaveStatus("error");
-      setTimeout(() => setSaveStatus("idle"), 2000);
+      setErrorMessage(e instanceof Error ? e.message : String(e));
+      resetStatusAfter(5000);
     }
   };
 
@@ -48,8 +63,9 @@ export function SettingDialog({ open, onOpenChange }: SettingDialogProps) {
     try {
       await removeFigmaToken();
       setSaveStatus("idle");
-    } catch {
+    } catch (e) {
       setSaveStatus("error");
+      setErrorMessage(e instanceof Error ? e.message : String(e));
     }
   };
 
@@ -61,7 +77,6 @@ export function SettingDialog({ open, onOpenChange }: SettingDialogProps) {
       </DialogHeader>
 
       <div className="mt-6 space-y-6">
-        {/* Figma Token */}
         <div className="space-y-2">
           <Label htmlFor="figma-token" className="text-sm">
             {t("settings.token")}
@@ -93,13 +108,15 @@ export function SettingDialog({ open, onOpenChange }: SettingDialogProps) {
           )}
           {saveStatus === "saved" && <p className="text-sm text-success">{t("settings.saved")}</p>}
           {saveStatus === "error" && (
-            <p className="text-destructive text-sm">{t("settings.saveFailed")}</p>
+            <p className="text-destructive text-sm">
+              {t("settings.saveFailed")}
+              {errorMessage && ` (${errorMessage})`}
+            </p>
           )}
         </div>
 
         <Separator />
 
-        {/* Theme */}
         <div className="space-y-2">
           <Label className="text-sm">{t("settings.theme")}</Label>
           <div className="flex gap-2">
@@ -126,7 +143,6 @@ export function SettingDialog({ open, onOpenChange }: SettingDialogProps) {
 
         <Separator />
 
-        {/* Language */}
         <div className="space-y-2">
           <Label className="text-sm">{t("settings.language")}</Label>
           <div className="flex gap-2">
@@ -149,7 +165,6 @@ export function SettingDialog({ open, onOpenChange }: SettingDialogProps) {
 
         <Separator />
 
-        {/* Threshold */}
         <div className="space-y-2">
           <Label htmlFor="threshold" className="text-sm">
             {t("settings.threshold", { value: defaultThreshold })}
