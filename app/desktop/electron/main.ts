@@ -32,6 +32,8 @@ const setupCSP = (): void => {
 };
 
 const createWindow = (): void => {
+  const preloadPath = join(__dirname, "../preload/preload.mjs");
+
   const mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
@@ -40,11 +42,14 @@ const createWindow = (): void => {
     center: true,
     title: "FigDiff",
     webPreferences: {
-      preload: join(__dirname, "../preload/preload.mjs"),
+      preload: preloadPath,
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: true,
     },
+  });
+
+  mainWindow.webContents.on("preload-error", (_event, preload, error) => {
+    console.error("[main] preload-error:", preload, error);
   });
 
   mainWindow.webContents.on("will-navigate", (event, url) => {
@@ -68,7 +73,9 @@ const createWindow = (): void => {
 };
 
 app.whenReady().then(() => {
-  setupCSP();
+  if (app.isPackaged) {
+    setupCSP();
+  }
   registerFigmaHandlers();
   registerTokenHandlers();
   registerFileHandlers();
