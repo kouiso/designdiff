@@ -1,5 +1,7 @@
 import { create } from "zustand";
 
+import { getOverlay } from "@/lib/platform";
+
 interface OverlayState {
   url: string;
   isOpen: boolean;
@@ -38,9 +40,15 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
     const trimmed = url.trim();
     if (!trimmed) return;
 
+    const overlay = await getOverlay();
+    if (!overlay) {
+      set({ error: "Overlay is only available in desktop mode" });
+      return;
+    }
+
     set({ isLoading: true, error: null });
     try {
-      await window.electronAPI.overlay.open(trimmed);
+      await overlay.open(trimmed);
       set({ isOpen: true, isLoading: false, currentUrl: trimmed });
     } catch (e) {
       set({ error: String(e), isLoading: false });
@@ -48,8 +56,9 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
   },
 
   closeSite: async () => {
+    const overlay = await getOverlay();
     try {
-      await window.electronAPI.overlay.close();
+      await overlay?.close();
     } finally {
       set({ isOpen: false, currentUrl: null, overlayImageBase64: null, showOverlay: false });
     }
@@ -58,8 +67,10 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
   setOverlayImage: async (base64) => {
     const { opacity } = get();
     set({ overlayImageBase64: base64, showOverlay: true });
+    const overlay = await getOverlay();
+    if (!overlay) return;
     try {
-      await window.electronAPI.overlay.setOverlayImage(base64, opacity);
+      await overlay.setOverlayImage(base64, opacity);
     } catch (e) {
       set({ error: String(e) });
     }
@@ -69,8 +80,10 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
     set({ opacity });
     const { isOpen, showOverlay } = get();
     if (!isOpen || !showOverlay) return;
+    const overlay = await getOverlay();
+    if (!overlay) return;
     try {
-      await window.electronAPI.overlay.updateOpacity(opacity);
+      await overlay.updateOpacity(opacity);
     } catch {
       // オーバーレイが閉じた後のレースコンディション無視
     }
@@ -80,11 +93,13 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
     const { showOverlay, overlayImageBase64, opacity } = get();
     const next = !showOverlay;
     set({ showOverlay: next });
+    const overlay = await getOverlay();
+    if (!overlay) return;
     try {
       if (next && overlayImageBase64) {
-        await window.electronAPI.overlay.setOverlayImage(overlayImageBase64, opacity);
+        await overlay.setOverlayImage(overlayImageBase64, opacity);
       } else {
-        await window.electronAPI.overlay.removeOverlay();
+        await overlay.removeOverlay();
       }
     } catch {
       // オーバーレイが閉じた後のレースコンディション無視
@@ -92,7 +107,9 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
   },
 
   captureForComparison: async () => {
-    return window.electronAPI.overlay.captureScreenshot();
+    const overlay = await getOverlay();
+    if (!overlay) throw new Error("Overlay is only available in desktop mode");
+    return overlay.captureScreenshot();
   },
 
   handleNavigated: (url) => {

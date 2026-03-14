@@ -11,7 +11,7 @@ import { Label } from "@/component/ui/label";
 import { Separator } from "@/component/ui/separator";
 import { Slider } from "@/component/ui/slider";
 import { LoadingOverlay, Spinner } from "@/component/ui/spinner";
-import { captureUrlScreenshot, readLocalImage } from "@/lib/electron-command";
+import { getPlatform } from "@/lib/platform";
 import { cn } from "@/lib/util";
 import { useCompareStore } from "@/store/compare-store";
 import { useProjectStore } from "@/store/project-store";
@@ -161,6 +161,7 @@ export function ComparePage() {
 
     setIsLoadingScreenshot(true);
     try {
+      const platform = await getPlatform();
       const isUrl = /^https?:\/\//i.test(trimmed);
       let base64: string;
 
@@ -168,9 +169,9 @@ export function ComparePage() {
         const frame = useProjectStore.getState().selectedFrame;
         const width = frame ? Math.round(frame.width) : 1440;
         const height = frame ? Math.round(frame.height) : 900;
-        base64 = await captureUrlScreenshot(trimmed, width, height);
+        base64 = await platform.file.captureUrlScreenshot(trimmed, width, height);
       } else {
-        base64 = await readLocalImage(trimmed);
+        base64 = await platform.file.readLocalImage(trimmed);
       }
 
       setScreenshotImage(`data:image/png;base64,${base64}`);

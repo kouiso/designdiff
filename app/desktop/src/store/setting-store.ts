@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-import { deleteFigmaToken, getFigmaToken, saveFigmaToken } from "@/lib/electron-command";
+import { getPlatform } from "@/lib/platform";
 
 interface SettingState {
   figmaToken: string | null;
@@ -26,19 +26,22 @@ export const useSettingStore = create<SettingState>((set) => ({
   showTokenDialog: false,
 
   setFigmaToken: async (token: string) => {
-    await saveFigmaToken(token);
+    const platform = await getPlatform();
+    await platform.token.save(token);
     set({ figmaToken: token, showTokenDialog: false });
   },
 
   removeFigmaToken: async () => {
-    await deleteFigmaToken();
+    const platform = await getPlatform();
+    await platform.token.delete();
     set({ figmaToken: null });
   },
 
   loadSettings: async () => {
     set({ isLoading: true });
     try {
-      const token = await getFigmaToken();
+      const platform = await getPlatform();
+      const token = await platform.token.get();
       // Restore persisted theme (default: dark)
       const saved = localStorage.getItem("figdiff-theme");
       const theme = saved === "light" ? "light" : "dark";
