@@ -3,7 +3,7 @@ import { create } from "zustand";
 import type { Frame } from "@figdiff/shared";
 import { parseDesignInput } from "@figdiff/shared";
 
-import { getFigmaFrameImage, getFigmaFrames, readLocalImage } from "@/lib/electron-command";
+import { getPlatform } from "@/lib/platform";
 import { useSettingStore } from "@/store/setting-store";
 
 function isTokenError(message: string): boolean {
@@ -43,8 +43,10 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     try {
       const parsed = parseDesignInput(input);
 
+      const platform = await getPlatform();
+
       if (parsed.type === "local_path") {
-        const base64 = await readLocalImage(parsed.filePath);
+        const base64 = await platform.file.readLocalImage(parsed.filePath);
         set({ frameImage: `data:image/png;base64,${base64}`, isLoading: false });
         return;
       }
@@ -52,12 +54,12 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       set({ currentFileKey: parsed.fileKey });
 
       if (parsed.nodeId) {
-        const base64 = await getFigmaFrameImage(parsed.fileKey, parsed.nodeId);
+        const base64 = await platform.figma.getFrameImage(parsed.fileKey, parsed.nodeId);
         set({ frameImage: `data:image/png;base64,${base64}`, isLoading: false });
         return;
       }
 
-      const frames = await getFigmaFrames(parsed.fileKey);
+      const frames = await platform.figma.getFrames(parsed.fileKey);
       set({ frames, isLoading: false });
     } catch (e) {
       const errorMsg = String(e);
@@ -74,7 +76,8 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
 
     set({ selectedFrame: frame, isLoading: true, error: null });
     try {
-      const base64 = await getFigmaFrameImage(currentFileKey, frame.id);
+      const platform = await getPlatform();
+      const base64 = await platform.figma.getFrameImage(currentFileKey, frame.id);
       set({ frameImage: `data:image/png;base64,${base64}`, isLoading: false });
     } catch (e) {
       const errorMsg = String(e);

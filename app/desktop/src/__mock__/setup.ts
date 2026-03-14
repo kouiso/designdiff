@@ -1,6 +1,13 @@
+import { beforeEach } from "vitest";
+
 import "@testing-library/jest-dom/vitest";
 import "./i18n";
 import "./electron";
+import { _resetPlatformForTesting } from "@/lib/platform";
+
+beforeEach(() => {
+  _resetPlatformForTesting();
+});
 
 // Mock localStorage for test environment
 const store = new Map<string, string>();

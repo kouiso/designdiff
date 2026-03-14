@@ -2,6 +2,7 @@ import { useEffect } from "react";
 
 import { useTranslation } from "react-i18next";
 
+import { getOverlay } from "@/lib/platform";
 import { useOverlayStore } from "@/store/overlay-store";
 
 import type { Page } from "../../App";
@@ -16,10 +17,14 @@ export function LiveOverlayPage({ onNavigate }: LiveOverlayPageProps) {
   const isOpen = useOverlayStore((s) => s.isOpen);
 
   useEffect(() => {
-    const unsubscribe = window.electronAPI.overlay.onNavigated((url) => {
-      useOverlayStore.getState().handleNavigated(url);
+    let unsubscribe: (() => void) | undefined;
+    getOverlay().then((overlay) => {
+      if (!overlay) return;
+      unsubscribe = overlay.onNavigated((url) => {
+        useOverlayStore.getState().handleNavigated(url);
+      });
     });
-    return unsubscribe;
+    return () => unsubscribe?.();
   }, []);
 
   return (
