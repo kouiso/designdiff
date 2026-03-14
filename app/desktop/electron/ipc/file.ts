@@ -1,9 +1,35 @@
 import { readFile } from "node:fs/promises";
+import { extname, resolve } from "node:path";
+import { homedir } from "node:os";
 import { BrowserWindow, ipcMain } from "electron";
+
+const ALLOWED_IMAGE_EXTENSIONS = new Set([
+  ".png",
+  ".jpg",
+  ".jpeg",
+  ".webp",
+  ".gif",
+  ".bmp",
+  ".svg",
+]);
+
+const validateImagePath = (filePath: string): string => {
+  const resolved = resolve(filePath);
+  const home = homedir();
+  if (!resolved.startsWith(home) && !resolved.startsWith("/tmp")) {
+    throw new Error("ホームディレクトリまたは/tmp配下のファイルのみ読み取り可能です");
+  }
+  const ext = extname(resolved).toLowerCase();
+  if (!ALLOWED_IMAGE_EXTENSIONS.has(ext)) {
+    throw new Error(`許可されていないファイル形式です: ${ext}`);
+  }
+  return resolved;
+};
 
 export const registerFileHandlers = (): void => {
   ipcMain.handle("file:read-local-image", async (_event, path: string) => {
-    const buffer = await readFile(path);
+    const validPath = validateImagePath(path);
+    const buffer = await readFile(validPath);
     return buffer.toString("base64");
   });
 
@@ -28,8 +54,26 @@ export const registerFileHandlers = (): void => {
       try {
         await win.loadURL(url);
 
-        // JS実行完了を待つ (SPA等のレンダリング完了待ち)
-        await new Promise<void>((resolve) => setTimeout(resolve, 2000));
+        await new Promise<void>((resolve, reject) => {
+          const timeout = setTimeout(() => {
+            resolve();
+          }, 10000);
+
+          win.webContents.on("did-finish-load", () => {
+            win.webContents.once("dom-ready", () => {
+              clearTimeout(timeout);
+              // dom-readyだけではSPAの非同期描画が完了していないため、paint完了を待つ
+              win.webContents.once("paint", () => {
+                resolve();
+              });
+            });
+          });
+
+          win.webContents.on("did-fail-load", (_e, code, desc) => {
+            clearTimeout(timeout);
+            reject(new Error(`ページの読み込みに失敗: ${code} ${desc}`));
+          });
+        });
 
         const image = await win.webContents.capturePage();
         return image.toPNG().toString("base64");

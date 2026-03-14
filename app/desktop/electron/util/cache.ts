@@ -16,8 +16,9 @@ export class NodeFsCacheStrategy implements FigmaCacheStrategy {
   }
 
   private getCachePath(fileKey: string, nodeId: string, scale: number): string {
+    const safeFileKey = fileKey.replace(/[^a-zA-Z0-9_-]/g, "_");
     const safeNodeId = nodeId.replace(/:/g, "_");
-    return join(this.cacheDir, `${fileKey}_${safeNodeId}_${scale}x.png`);
+    return join(this.cacheDir, `${safeFileKey}_${safeNodeId}_${scale}x.png`);
   }
 
   async get(fileKey: string, nodeId: string, scale: number): Promise<string | null> {
@@ -27,7 +28,8 @@ export class NodeFsCacheStrategy implements FigmaCacheStrategy {
     try {
       const buffer = readFileSync(path);
       return buffer.toString("base64");
-    } catch {
+    } catch (e) {
+      console.warn("[cache] キャッシュファイルの読み込みに失敗:", e);
       return null;
     }
   }

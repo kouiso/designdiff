@@ -1,16 +1,96 @@
-/**
- * TypeScript Figma API Client
- * Translated from Rust client.rs
- * Works with fetch (browser, Node.js, Figma plugin iframe)
- */
-
+import { z } from "zod";
 import type { Frame } from "./type.js";
 
 const FIGMA_API_BASE = "https://api.figma.com/v1";
 
-/**
- * Figma API response types
- */
+const FigmaNodeSchema: z.ZodType<FigmaNode> = z.lazy(() =>
+  z.object({
+    id: z.string(),
+    name: z.string(),
+    type: z.string(),
+    children: z.array(FigmaNodeSchema).default([]),
+    absoluteBoundingBox: z
+      .object({ x: z.number(), y: z.number(), width: z.number(), height: z.number() })
+      .optional(),
+    absoluteRenderBounds: z
+      .object({ x: z.number(), y: z.number(), width: z.number(), height: z.number() })
+      .optional(),
+    fills: z
+      .array(
+        z.object({
+          type: z.string(),
+          color: z
+            .object({ r: z.number(), g: z.number(), b: z.number(), a: z.number() })
+            .optional(),
+          opacity: z.number().optional(),
+          visible: z.boolean().optional(),
+        }),
+      )
+      .default([]),
+    strokes: z
+      .array(
+        z.object({
+          type: z.string(),
+          color: z
+            .object({ r: z.number(), g: z.number(), b: z.number(), a: z.number() })
+            .optional(),
+          opacity: z.number().optional(),
+          visible: z.boolean().optional(),
+        }),
+      )
+      .default([]),
+    strokeWeight: z.number().optional(),
+    cornerRadius: z.number().optional(),
+    rectangleCornerRadii: z.tuple([z.number(), z.number(), z.number(), z.number()]).optional(),
+    effects: z
+      .array(
+        z.object({
+          type: z.string(),
+          visible: z.boolean().optional(),
+          radius: z.number().optional(),
+          color: z
+            .object({ r: z.number(), g: z.number(), b: z.number(), a: z.number() })
+            .optional(),
+          offset: z.object({ x: z.number(), y: z.number() }).optional(),
+          spread: z.number().optional(),
+        }),
+      )
+      .default([]),
+    opacity: z.number().optional(),
+    layoutMode: z.string().optional(),
+    primaryAxisAlignItems: z.string().optional(),
+    counterAxisAlignItems: z.string().optional(),
+    paddingLeft: z.number().optional(),
+    paddingRight: z.number().optional(),
+    paddingTop: z.number().optional(),
+    paddingBottom: z.number().optional(),
+    itemSpacing: z.number().optional(),
+    style: z
+      .object({
+        fontFamily: z.string().optional(),
+        fontSize: z.number().optional(),
+        fontWeight: z.number().optional(),
+        lineHeightPx: z.number().optional(),
+        letterSpacing: z.number().optional(),
+        textAlignHorizontal: z.string().optional(),
+      })
+      .optional(),
+    characters: z.string().optional(),
+  }),
+);
+
+const FigmaFileResponseSchema = z.object({
+  name: z.string(),
+  document: FigmaNodeSchema,
+});
+
+const FigmaImagesResponseSchema = z.object({
+  images: z.record(z.string(), z.string().nullable()),
+});
+
+const FigmaNodesResponseSchema = z.object({
+  nodes: z.record(z.string(), z.object({ document: FigmaNodeSchema }).nullable()),
+});
 
 export interface FigmaFileResponse {
   name: string;
@@ -90,59 +170,45 @@ export interface FigmaNodesResponse {
   nodes: Record<string, { document: FigmaNode } | null>;
 }
 
-/**
- * Cache strategy interface
- * Apps implement this to customize caching behavior
- */
+/** キャッシュ戦略インターフェース */
 export interface FigmaCacheStrategy {
   get(fileKey: string, nodeId: string, scale: number): Promise<string | null>;
   set(fileKey: string, nodeId: string, scale: number, base64: string): Promise<void>;
 }
 
-/**
- * No-op cache implementation (for cases where caching is disabled)
- */
+/** キャッシュ無効時のno-op実装 */
 export class NoCacheStrategy implements FigmaCacheStrategy {
   async get(): Promise<null> {
     return null;
   }
-  async set(): Promise<void> {
-    // noop
-  }
+  async set(): Promise<void> {}
 }
 
-/**
- * Figma API Client
- * Token must be validated before construction
- */
+const MIN_TOKEN_LENGTH = 20;
+
 export class FigmaClient {
   private token: string;
   private cache: FigmaCacheStrategy;
 
   constructor(token: string, cache?: FigmaCacheStrategy) {
-    // Validate token format (min 20 chars, recommended ~44)
-    if (!token || token.length < 20) {
+    if (!token || token.length < MIN_TOKEN_LENGTH) {
       throw new Error("Invalid Figma token");
     }
     this.token = token;
     this.cache = cache || new NoCacheStrategy();
   }
 
-  /**
-   * Get file structure with configurable depth
-   */
   async getFile(fileKey: string, depth: number = 1): Promise<FigmaFileResponse> {
     const url = `${FIGMA_API_BASE}/files/${fileKey}?depth=${depth}`;
-    return this.fetchApi<FigmaFileResponse>(url);
+    const json = await this.fetchApi(url);
+    return FigmaFileResponseSchema.parse(json);
   }
 
-  /**
-   * Get temporary image URL for a node
-   * Note: URLs expire after ~24 hours
-   */
+  /** 一時画像URLを取得（約24時間で失効） */
   async getImageUrl(fileKey: string, nodeId: string, scale: number = 2): Promise<string> {
     const url = `${FIGMA_API_BASE}/images/${fileKey}?ids=${nodeId}&format=png&scale=${scale}`;
-    const response = await this.fetchApi<FigmaImagesResponse>(url);
+    const json = await this.fetchApi(url);
+    const response = FigmaImagesResponseSchema.parse(json);
 
     const imageUrl = response.images[nodeId];
     if (!imageUrl) {
@@ -152,12 +218,10 @@ export class FigmaClient {
     return imageUrl;
   }
 
-  /**
-   * Get node details with children
-   */
   async getNode(fileKey: string, nodeId: string): Promise<FigmaNode> {
     const url = `${FIGMA_API_BASE}/files/${fileKey}/nodes?ids=${nodeId}`;
-    const response = await this.fetchApi<FigmaNodesResponse>(url);
+    const json = await this.fetchApi(url);
+    const response = FigmaNodesResponseSchema.parse(json);
 
     const wrapper = response.nodes[nodeId];
     if (!wrapper) {
@@ -167,18 +231,12 @@ export class FigmaClient {
     return wrapper.document;
   }
 
-  /**
-   * Download image and return as base64 string
-   * Uses cache strategy if available
-   */
   async downloadImageAsBase64(fileKey: string, nodeId: string, scale: number = 2): Promise<string> {
-    // Check cache first
     const cached = await this.cache.get(fileKey, nodeId, scale);
     if (cached) {
       return cached;
     }
 
-    // Fetch image URL then download
     const imageUrl = await this.getImageUrl(fileKey, nodeId, scale);
     const response = await fetch(imageUrl);
 
@@ -189,16 +247,12 @@ export class FigmaClient {
     const arrayBuffer = await response.arrayBuffer();
     const base64 = this.arrayBufferToBase64(new Uint8Array(arrayBuffer));
 
-    // Save to cache
     await this.cache.set(fileKey, nodeId, scale, base64);
 
     return base64;
   }
 
-  /**
-   * Helper: Figma API call with error handling
-   */
-  private async fetchApi<T>(url: string): Promise<T> {
+  private async fetchApi(url: string): Promise<unknown> {
     const response = await fetch(url, {
       headers: {
         "X-FIGMA-TOKEN": this.token,
@@ -210,12 +264,9 @@ export class FigmaClient {
       throw new Error(`Figma API error ${response.status}: ${body}`);
     }
 
-    return response.json() as Promise<T>;
+    return response.json();
   }
 
-  /**
-   * Helper: Convert Uint8Array to base64 string
-   */
   private arrayBufferToBase64(buffer: Uint8Array): string {
     let binary = "";
     const len = buffer.byteLength;
@@ -226,10 +277,7 @@ export class FigmaClient {
   }
 }
 
-/**
- * Extract FRAME nodes from Figma file response
- * Recursively searches through SECTIONs
- */
+/** FigmaファイルレスポンスからFRAMEノードを再帰的に抽出 */
 export function extractFrames(response: FigmaFileResponse): Frame[] {
   const frames: Frame[] = [];
   for (const page of response.document.children) {

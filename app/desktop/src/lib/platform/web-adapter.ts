@@ -3,7 +3,6 @@ import {
   FigmaClient,
   FigmaTokenSchema,
   FrameSchema,
-  NoCacheStrategy,
   NodeInspectionSchema,
   extractFrames,
 } from "@figdiff/shared";
@@ -41,7 +40,10 @@ const idbGet = async (key: string): Promise<string | null> => {
     const tx = db.transaction("images", "readonly");
     const store = tx.objectStore("images");
     const req = store.get(key);
-    req.onsuccess = () => resolve((req.result ?? null) as string | null);
+    req.onsuccess = () => {
+      const val = req.result;
+      resolve(typeof val === "string" ? val : null);
+    };
     req.onerror = () => reject(req.error);
   });
 };
