@@ -1,0 +1,1 @@
+../../prompt/agent/go-build-resolver.md

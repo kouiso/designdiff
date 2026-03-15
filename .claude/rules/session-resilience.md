@@ -1,1 +1,1 @@
-../../prompt/instructions/session-resilience.md
+../../prompt/instruction/session-resilience.md

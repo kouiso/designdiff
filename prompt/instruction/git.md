@@ -1,3 +1,7 @@
+---
+applyTo: "**"
+---
+
 # Git Guidelines
 
 ## Branches
