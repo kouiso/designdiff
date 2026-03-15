@@ -1,3 +1,7 @@
+---
+applyTo: "**"
+---
+
 # Core Instructions
 
 ## Mission
@@ -19,6 +23,19 @@ Build FigDiff — a desktop application that compares Figma designs with impleme
 - **Uncompromising fixes**: Fix errors at the root. Error suppression is completely forbidden.
 - **Eliminate debug burden**: The AI handles error log analysis, root cause identification, fixing, and verification end-to-end.
 - **Asking the user to verify UI is prohibited**: Use Playwright to verify `http://localhost:1420` yourself.
+
+### UI Operation Prohibition
+
+NEVER ask the user to perform UI operations (click buttons, navigate menus, browser-based login/logout) WHEN a programmatic alternative exists BECAUSE user burden must be zero.
+
+**Detection pattern**: Response contains imperative UI instructions such as "please click", "open the browser", "navigate to", "logout then login".
+
+**Required behavior instead**:
+1. Search for CLI commands, API endpoints, config files, or env vars that achieve the same result.
+2. Use MCP browser tools (playwright, puppeteer, chrome-devtools) to perform UI operations autonomously.
+3. Only if NO programmatic path exists AND human biometric/physical action is literally required: delegate the single unavoidable step only (not a list).
+
+**Exception**: Hardware key press, camera/fingerprint verification, physical device interaction — delegate only the minimum unavoidable step.
 
 ## Workload Principle
 

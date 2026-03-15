@@ -1,0 +1,1 @@
+../../prompt/instruction/ecc-ts-patterns.md

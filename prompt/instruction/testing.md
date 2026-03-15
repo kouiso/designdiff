@@ -1,3 +1,7 @@
+---
+applyTo: "**"
+---
+
 # TDD & Testing Rules
 
 ## Mandatory TDD Workflow

@@ -134,6 +134,8 @@ Detailed instructions are in [prompt/instruction/](prompt/instruction/). All rul
 | [planning-dual-proposal.md](prompt/instruction/planning-dual-proposal.md) | Dual proposal protocol |
 | [data-driven-execution.md](prompt/instruction/data-driven-execution.md) | Data science thinking for AI execution |
 | [verification-mandate.md](prompt/instruction/verification-mandate.md) | Playwright refusal prohibition, false completion reporting prohibition, mandatory Tauri/browser verification |
+| [electron.md](prompt/instruction/electron.md) | Electron/Tauri desktop app development rules and patterns |
+| [github-project.md](prompt/instruction/github-project.md) | GitHub Project field assignment rules, issue/PR metadata management |
 
 ## AI Principles
 

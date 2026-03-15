@@ -1,3 +1,7 @@
+---
+applyTo: "**"
+---
+
 # Performance Guidelines
 
 ## Context Window Optimization

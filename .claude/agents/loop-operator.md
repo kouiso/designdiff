@@ -1,0 +1,1 @@
+../../prompt/agent/loop-operator.md

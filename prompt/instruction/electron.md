@@ -18,13 +18,22 @@ IF the Electron window appears blank or the app behaves unexpectedly THEN use th
 
 **Required behavior**: Use the tool ladder (§2, §3, §4) to confirm actual state. Report only what you CONFIRMED, not what you EXPECT.
 
+**Also prohibited**:
+- ❌ 「Playwrightが既存Chromeセッションとの融合で起動できなかったから、実機確認は磯貝さんにお願いしたい」
+- ❌ Playwright が失敗した時点で諦めてユーザーに委譲する
+- ❌ 1つの手段が失敗したら即座にユーザー確認を求める
+
+**Playwright が失敗したら → 即 screencapture へ。screencapture が失敗したら → osascript へ。全手段失敗後にのみユーザーに報告。**
+
 ---
 
 ## 2. Electron Window Screenshot Tool Ladder
 
+**EXECUTION ORDER IS MANDATORY. Skip Priority 1 only if it throws an error.**
+
 When you need to verify the Electron window appearance (e.g., white screen, wrong layout):
 
-### Priority 1: macOS screencapture (Most Reliable)
+### Priority 1: macOS screencapture (ALWAYS TRY FIRST — before Playwright)
 
 ```bash
 # Capture all screens to a temp file
@@ -36,18 +45,23 @@ WINDOW_ID=$(osascript -e 'tell application "System Events" to tell process "Elec
 [ -n "$WINDOW_ID" ] && screencapture -l "$WINDOW_ID" /tmp/electron_window.png || screencapture -x /tmp/electron_screenshot.png
 ```
 
-### Priority 2: Playwright Electron Integration
+### Priority 2: Playwright via Vite Dev Server (Use ONLY after screencapture)
 
 electron-vite apps expose a Vite dev server (default: http://localhost:5173 or similar).
-Use Playwright to verify the renderer process content:
 
 ```bash
-# The Vite dev server is accessible via browser — verify renderer content
-# mcp__playwright__browser_navigate to http://localhost:5173
-# mcp__playwright__browser_take_screenshot
+# Find Vite dev server port first
+lsof -i :5173 -i :3000 -i :5174 2>/dev/null | grep LISTEN
+# Then: mcp__playwright__browser_navigate → http://localhost:<port>
+# Then: mcp__playwright__browser_take_screenshot
 ```
 
-**Important**: Browser view via Playwright shows the renderer HTML/CSS, but NOT the Electron chrome (titlebar, native window frame). A white screen in Electron may appear as normal content in browser view if it's a preload/IPC issue.
+**If Playwright fails** (e.g., "existing Chrome session conflict", "cannot connect"):
+- DO NOT stop here and ask the user
+- Immediately fall through to Priority 3 (osascript) and Priority 4 (logs)
+- "Playwright failed" is NOT a valid reason to delegate to the user
+
+**Important**: Playwright shows renderer HTML/CSS only. For preload/IPC issues, screencapture (Priority 1) is more reliable.
 
 ### Priority 3: osascript Window State Check
 
