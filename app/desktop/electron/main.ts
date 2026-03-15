@@ -1,5 +1,5 @@
 import { join } from "node:path";
-import { BrowserWindow, app, session } from "electron";
+import { BrowserWindow, app, safeStorage, session } from "electron";
 import { registerFigmaHandlers } from "./ipc/figma";
 import { registerTokenHandlers } from "./ipc/token";
 import { registerFileHandlers } from "./ipc/file";
@@ -32,7 +32,7 @@ const setupCSP = (): void => {
 };
 
 const createWindow = (): void => {
-  const preloadPath = join(__dirname, "../preload/preload.mjs");
+  const preloadPath = join(__dirname, "../preload/preload.cjs");
 
   const mainWindow = new BrowserWindow({
     width: 1200,
@@ -73,7 +73,11 @@ const createWindow = (): void => {
 };
 
 app.whenReady().then(() => {
-  if (app.isPackaged) {
+  if (!app.isPackaged) {
+    // 未署名devビルドではmacOS Keychainが errSecInteractionNotAllowed を返すため、
+    // plaintext暗号化にフォールバック（本番ビルドでは実OS暗号化を使用）
+    safeStorage.setUsePlainTextEncryption(true);
+  } else {
     setupCSP();
   }
   registerFigmaHandlers();

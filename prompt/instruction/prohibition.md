@@ -1,3 +1,7 @@
+---
+applyTo: "**"
+---
+
 # Prohibitions
 
 ## Never Do
@@ -107,6 +111,18 @@ BECAUSE what appears as a wall is almost always a signal that another approach e
 
 ❌ Asking user to check CI/verify/run commands. ✅ Execute, analyze, fix, and report results yourself.
 
+#### 検証委任の完全禁止
+
+NEVER ask the user to verify, test, or confirm implementation results WHEN automated verification tools exist (Playwright, screencapture, osascript, curl, etc.) BECAUSE verification is AI's responsibility — user's time is the most valuable resource.
+
+禁止フレーズ:
+- ❌ 「試してみてくれ」「確認してみて」「動作確認してくれ」
+- ❌ 「確認できたかな？」「どうやった？」（検証結果を聞く）
+- ❌ 「再起動して試してみてや」
+- ❌ 「トークン保存を試してみてくれ」
+
+自動検証が全て失敗した場合のみ、試行した全手段とその失敗理由を提示した上で最小限の確認を依頼してよい。
+
 ### Open-Ended Questions
 
 ❌ "What should we do?" without research. ✅ Research options, present recommendation, then ask for approval.
@@ -199,3 +215,17 @@ NEVER start implementing (editing files, creating new files, running build/deplo
 ```
 
 When in doubt: treat as report-only and end with 「修正も進めますか？」
+
+### Surface Metrics Are Not Quality Verification
+
+NEVER report a task as complete based solely on surface-level metrics (lint pass, build success, test pass) WHEN the deliverable has a content layer (educational materials, documentation, user-facing copy, UI text, prompts) BECAUSE "code runs correctly" ≠ "deliverable meets its purpose."
+
+```
+❌ Verification = lint + test + build pass → report "完了"
+   (actual content of deliverable files never read)
+
+✅ Verification = lint + test + build pass AND actual content of each deliverable file 
+   read and confirmed to meet stated requirements → report "完了"
+```
+
+IF the task involves files that humans will read/use THEN the verification plan MUST include reading those files and confirming content correctness, not just that the code compiles.
