@@ -30,6 +30,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
   const [implUrl, setImplUrl] = useState("");
 
   const handleSubmit = async (input: string) => {
+    if (isLoading) return;
     const isFigmaUrl = (() => {
       try {
         return parseDesignInput(input).type === "figma_url";

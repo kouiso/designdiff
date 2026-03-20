@@ -16,6 +16,8 @@ export const buildInjectScript = (base64Image: string, opacity: number): string 
     document.documentElement.appendChild(host);
   }
   const shadow = host.shadowRoot;
+  var oldImg = shadow.querySelector('img');
+  if (oldImg) oldImg.src = '';
   shadow.innerHTML = '';
   const img = document.createElement('img');
   img.src = 'data:image/png;base64,${base64Image}';
@@ -45,6 +47,10 @@ export const buildRemoveScript = (): string => `
   var tid = host.dataset.toggleInterval;
   if (tid) clearInterval(Number(tid));
   if (host.__figdiff_cleanup__) host.__figdiff_cleanup__();
+  if (host.shadowRoot) {
+    var img = host.shadowRoot.querySelector('img');
+    if (img) img.src = '';
+  }
   host.remove();
 })();
 `;
@@ -84,6 +90,8 @@ export const buildSplitScreenScript = (base64Image: string, splitPosition: numbe
   host.dataset.mode = 'split_screen';
   host.dataset.splitPos = '${pos}';
   const shadow = host.shadowRoot;
+  var oldImg = shadow.querySelector('img');
+  if (oldImg) oldImg.src = '';
   shadow.innerHTML = '';
   const img = document.createElement('img');
   img.src = 'data:image/png;base64,${base64Image}';
@@ -131,6 +139,8 @@ export const buildBlendedDiffScript = (base64Image: string): string => {
   host.style.display = '';
   host.dataset.mode = 'blended_diff';
   const shadow = host.shadowRoot;
+  var oldImg = shadow.querySelector('img');
+  if (oldImg) oldImg.src = '';
   shadow.innerHTML = '';
   const img = document.createElement('img');
   img.src = 'data:image/png;base64,${base64Image}';
@@ -162,6 +172,8 @@ export const buildDraggableScript = (base64Image: string, opacity: number): stri
   host.dataset.dragX = '0';
   host.dataset.dragY = '0';
   const shadow = host.shadowRoot;
+  var oldImg = shadow.querySelector('img');
+  if (oldImg) oldImg.src = '';
   shadow.innerHTML = '';
   const img = document.createElement('img');
   img.src = 'data:image/png;base64,${base64Image}';

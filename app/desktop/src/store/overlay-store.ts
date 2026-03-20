@@ -1,17 +1,11 @@
 import { create } from "zustand";
 
+import type { ViewMode } from "@figdiff/shared";
+
 import { getOverlay } from "@/lib/platform";
 import { compareImages } from "@/service/image-compare";
 
-export type OverlayViewMode =
-  | "design_only"
-  | "implementation"
-  | "transparent_overlay"
-  | "split_screen"
-  | "blended_diff"
-  | "draggable_overlay"
-  | "pixel_diff"
-  | "toggle";
+export type OverlayViewMode = ViewMode;
 
 interface OverlayState {
   url: string;

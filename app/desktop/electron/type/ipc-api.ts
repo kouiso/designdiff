@@ -1,14 +1,6 @@
-import type { Frame, NodeInspection } from "@figdiff/shared";
+import type { Frame, NodeInspection, ViewMode } from "@figdiff/shared";
 
-export type OverlayViewMode =
-  | "design_only"
-  | "implementation"
-  | "transparent_overlay"
-  | "split_screen"
-  | "blended_diff"
-  | "draggable_overlay"
-  | "pixel_diff"
-  | "toggle";
+export type OverlayViewMode = ViewMode;
 
 /**
  * Renderer プロセスから呼び出せる IPC API の型定義
