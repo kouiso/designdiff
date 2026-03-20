@@ -136,6 +136,20 @@ Detailed instructions are in [prompt/instruction/](prompt/instruction/). All rul
 | [verification-mandate.md](prompt/instruction/verification-mandate.md) | Playwright refusal prohibition, false completion reporting prohibition, mandatory Tauri/browser verification |
 | [electron.md](prompt/instruction/electron.md) | Electron/Tauri desktop app development rules and patterns |
 | [github-project.md](prompt/instruction/github-project.md) | GitHub Project field assignment rules, issue/PR metadata management |
+| [ecc-common-agents.md](prompt/instruction/ecc-common-agents.md) | ECC: Agent orchestration patterns |
+| [ecc-common-coding-style.md](prompt/instruction/ecc-common-coding-style.md) | ECC: Common coding style (all languages) |
+| [ecc-common-development-workflow.md](prompt/instruction/ecc-common-development-workflow.md) | ECC: Development workflow standards |
+| [ecc-common-git-workflow.md](prompt/instruction/ecc-common-git-workflow.md) | ECC: Git workflow rules |
+| [ecc-common-hooks.md](prompt/instruction/ecc-common-hooks.md) | ECC: Common hooks patterns |
+| [ecc-common-patterns.md](prompt/instruction/ecc-common-patterns.md) | ECC: Common design patterns |
+| [ecc-common-performance.md](prompt/instruction/ecc-common-performance.md) | ECC: Common performance rules |
+| [ecc-common-security.md](prompt/instruction/ecc-common-security.md) | ECC: Common security rules |
+| [ecc-common-testing.md](prompt/instruction/ecc-common-testing.md) | ECC: Common testing standards |
+| [ecc-ts-coding-style.md](prompt/instruction/ecc-ts-coding-style.md) | ECC: TypeScript/JS coding style |
+| [ecc-ts-hooks.md](prompt/instruction/ecc-ts-hooks.md) | ECC: TypeScript/JS hooks patterns |
+| [ecc-ts-patterns.md](prompt/instruction/ecc-ts-patterns.md) | ECC: TypeScript/JS design patterns |
+| [ecc-ts-security.md](prompt/instruction/ecc-ts-security.md) | ECC: TypeScript/JS security rules |
+| [ecc-ts-testing.md](prompt/instruction/ecc-ts-testing.md) | ECC: TypeScript/JS testing standards |
 
 ## AI Principles
 
