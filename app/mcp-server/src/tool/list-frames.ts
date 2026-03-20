@@ -6,9 +6,10 @@
 import { z } from "zod";
 
 import { extractFileKey } from "@figdiff/shared";
-import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
 import { createFigmaService } from "../service/figma-service.js";
+
+import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
 export function registerListFrames(server: McpServer): void {
   server.registerTool(

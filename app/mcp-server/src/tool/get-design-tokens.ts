@@ -7,10 +7,11 @@
 import { z } from "zod";
 
 import { extractFileKey, extractNodeId } from "@figdiff/shared";
-import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
-import { createFigmaService } from "../service/figma-service.js";
 import { extractDesignTokens } from "../service/figma-node-transformer.js";
+import { createFigmaService } from "../service/figma-service.js";
+
+import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
 const DESCRIPTION = `Figmaフレーム全体のデザイントークン（padding, color, fontSize等の数値データ）を取得します。
 

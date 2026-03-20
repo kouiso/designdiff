@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
+
 import { clusterDiffPixels, generateMatchSuggestion } from "./diff-cluster.js";
 
 const createDiffData = (
   width: number,
   height: number,
-  diffPixels: Array<{ x: number; y: number }>,
+  diffPixels: { x: number; y: number }[],
 ): Uint8ClampedArray => {
   const data = new Uint8ClampedArray(width * height * 4);
   for (const { x, y } of diffPixels) {
@@ -50,7 +51,7 @@ describe("clusterDiffPixels", () => {
   });
 
   it("2D矩形の差分を正しくバウンディングボックスで囲む", () => {
-    const pixels: Array<{ x: number; y: number }> = [];
+    const pixels: { x: number; y: number }[] = [];
     for (let y = 10; y < 15; y++) {
       for (let x = 20; x < 25; x++) {
         pixels.push({ x, y });

@@ -1,5 +1,7 @@
 import { describe, it, expect } from "vitest";
+
 import type { FigmaNode } from "@figdiff/shared";
+
 import { transformNodeToInspection, extractDesignTokens } from "./figma-node-transformer.js";
 
 const makeNode = (overrides: Partial<FigmaNode> = {}): FigmaNode => ({
@@ -193,6 +195,7 @@ describe("transformNodeToInspection", () => {
             fills: [],
             strokes: [],
             effects: [],
+            children: [],
           },
         ],
       });
@@ -300,6 +303,7 @@ describe("extractDesignTokens", () => {
       fills: [],
       strokes: [],
       effects: [],
+      children: [],
     };
     const child: FigmaNode = {
       id: "child",

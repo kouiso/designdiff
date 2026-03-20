@@ -5,9 +5,9 @@
 
 import { z } from "zod";
 
-import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-
 import { setCropRegion } from "../service/crop-region-store.js";
+
+import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
 export function registerSetCropRegion(server: McpServer): void {
   server.registerTool(

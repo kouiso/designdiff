@@ -1,5 +1,7 @@
 import { describe, it, expect } from "vitest";
+
 import type { CompareDesignResult } from "@figdiff/shared";
+
 import { generateMarkdownReport, generateJsonReport } from "./report-generator.js";
 
 const makeResult = (overrides: Partial<CompareDesignResult> = {}): CompareDesignResult => ({
@@ -9,7 +11,7 @@ const makeResult = (overrides: Partial<CompareDesignResult> = {}): CompareDesign
   totalPixelCount: 10000,
   diffRegions: [],
   diffImageBase64: "base64encodeddata",
-  matchSuggestion: "Looks good!",
+  suggestion: "Looks good!",
   ...overrides,
 });
 
@@ -114,7 +116,7 @@ describe("generateJsonReport", () => {
     });
 
     const json = generateJsonReport(result);
-    const parsed = JSON.parse(json) as Record<string, unknown>;
+    const parsed: Record<string, unknown> = JSON.parse(json);
 
     expect(parsed.comparisonId).toBe("json-test-001");
     expect(parsed.matchRate).toBe(88);

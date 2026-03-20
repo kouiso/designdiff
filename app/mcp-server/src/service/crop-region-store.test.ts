@@ -4,6 +4,10 @@ vi.mock("node:fs/promises");
 
 const mockFs = await import("node:fs/promises");
 
+function makeEnoentError(): NodeJS.ErrnoException {
+  return Object.assign(new Error("ENOENT: no such file or directory"), { code: "ENOENT" });
+}
+
 describe("crop-region-store", () => {
   const validProjectId = "test-project-123";
   const frameName = "HomeFrame";
@@ -23,8 +27,8 @@ describe("crop-region-store", () => {
       const writtenData = { regions: [{ frameName, region, updatedAt: new Date().toISOString() }] };
 
       vi.mocked(mockFs.readFile)
-        .mockRejectedValueOnce(new Error("ENOENT"))
-        .mockResolvedValueOnce(JSON.stringify(writtenData) as never);
+        .mockRejectedValueOnce(makeEnoentError())
+        .mockResolvedValueOnce(JSON.stringify(writtenData));
       vi.mocked(mockFs.mkdir).mockResolvedValue(undefined);
       vi.mocked(mockFs.writeFile).mockResolvedValue(undefined);
 
@@ -33,9 +37,7 @@ describe("crop-region-store", () => {
       // Act
       const entry = await setCropRegion(validProjectId, frameName, region);
 
-      vi.mocked(mockFs.readFile).mockResolvedValueOnce(
-        JSON.stringify({ regions: [entry] }) as never,
-      );
+      vi.mocked(mockFs.readFile).mockResolvedValueOnce(JSON.stringify({ regions: [entry] }));
 
       const results = await getCropRegion(validProjectId, frameName);
 
@@ -50,8 +52,8 @@ describe("crop-region-store", () => {
       const writtenEntry = { frameName, region, note, updatedAt: new Date().toISOString() };
 
       vi.mocked(mockFs.readFile)
-        .mockRejectedValueOnce(new Error("ENOENT"))
-        .mockResolvedValueOnce(JSON.stringify({ regions: [writtenEntry] }) as never);
+        .mockRejectedValueOnce(makeEnoentError())
+        .mockResolvedValueOnce(JSON.stringify({ regions: [writtenEntry] }));
       vi.mocked(mockFs.mkdir).mockResolvedValue(undefined);
       vi.mocked(mockFs.writeFile).mockResolvedValue(undefined);
 
@@ -59,9 +61,7 @@ describe("crop-region-store", () => {
 
       await setCropRegion(validProjectId, frameName, region, note);
 
-      vi.mocked(mockFs.readFile).mockResolvedValueOnce(
-        JSON.stringify({ regions: [writtenEntry] }) as never,
-      );
+      vi.mocked(mockFs.readFile).mockResolvedValueOnce(JSON.stringify({ regions: [writtenEntry] }));
 
       const results = await getCropRegion(validProjectId, frameName);
       expect(results[0].note).toBe(note);
@@ -70,7 +70,7 @@ describe("crop-region-store", () => {
 
   describe("getCropRegion with non-existent projectId", () => {
     it("returns empty array when no store file exists", async () => {
-      vi.mocked(mockFs.readFile).mockRejectedValue(new Error("ENOENT"));
+      vi.mocked(mockFs.readFile).mockRejectedValue(makeEnoentError());
 
       const { getCropRegion } = await import("./crop-region-store.js");
 
@@ -82,7 +82,7 @@ describe("crop-region-store", () => {
     });
 
     it("returns empty array when frameName is provided but no match exists", async () => {
-      vi.mocked(mockFs.readFile).mockRejectedValue(new Error("ENOENT"));
+      vi.mocked(mockFs.readFile).mockRejectedValue(makeEnoentError());
 
       const { getCropRegion } = await import("./crop-region-store.js");
 
@@ -102,7 +102,7 @@ describe("crop-region-store", () => {
     });
 
     it("rejects or returns empty array when projectId contains path separators", async () => {
-      vi.mocked(mockFs.readFile).mockRejectedValue(new Error("ENOENT"));
+      vi.mocked(mockFs.readFile).mockRejectedValue(makeEnoentError());
 
       const { getCropRegion } = await import("./crop-region-store.js");
 
@@ -122,7 +122,7 @@ describe("crop-region-store", () => {
     });
 
     it("rejects or returns empty array when projectId contains null bytes", async () => {
-      vi.mocked(mockFs.readFile).mockRejectedValue(new Error("ENOENT"));
+      vi.mocked(mockFs.readFile).mockRejectedValue(makeEnoentError());
 
       const { getCropRegion } = await import("./crop-region-store.js");
 
@@ -152,9 +152,9 @@ describe("crop-region-store", () => {
 
       vi.mocked(mockFs.readFile).mockImplementation((filePath) => {
         const p = String(filePath);
-        if (p.includes(projectA)) return Promise.resolve(JSON.stringify(storeA)) as never;
-        if (p.includes(projectB)) return Promise.resolve(JSON.stringify(storeB)) as never;
-        return Promise.reject(new Error("ENOENT")) as never;
+        if (p.includes(projectA)) return Promise.resolve(JSON.stringify(storeA));
+        if (p.includes(projectB)) return Promise.resolve(JSON.stringify(storeB));
+        return Promise.reject(makeEnoentError());
       });
 
       const { getCropRegion } = await import("./crop-region-store.js");
@@ -180,7 +180,7 @@ describe("crop-region-store", () => {
         ],
       };
 
-      vi.mocked(mockFs.readFile).mockResolvedValue(JSON.stringify(store) as never);
+      vi.mocked(mockFs.readFile).mockResolvedValue(JSON.stringify(store));
 
       const { getCropRegion } = await import("./crop-region-store.js");
 

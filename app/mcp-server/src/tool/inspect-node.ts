@@ -7,10 +7,11 @@
 import { z } from "zod";
 
 import { extractFileKey } from "@figdiff/shared";
-import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
-import { createFigmaService } from "../service/figma-service.js";
 import { transformNodeToInspection } from "../service/figma-node-transformer.js";
+import { createFigmaService } from "../service/figma-service.js";
+
+import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
 const DESCRIPTION = `compare_designで差分が見つかったFigmaノードの詳細情報を取得します。
 Figma Dev Modeで見られるような、CSS的なプロパティ（padding, gap, color, font等）を返します。

@@ -5,12 +5,14 @@
 
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
+
 import { z } from "zod";
 
 import { CompareDesignResultSchema } from "@figdiff/shared";
-import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
 import { generateMarkdownReport, generateJsonReport } from "../service/report-generator.js";
+
+import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
 const DESCRIPTION =
   "compare_designの結果からMarkdownまたはJSONレポートを生成します。結果のJSONを直接渡すか、comparison_idで過去の比較結果を参照します。";

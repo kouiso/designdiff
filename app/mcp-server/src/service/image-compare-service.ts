@@ -46,10 +46,10 @@ export async function compareImages(
   const designMeta = await sharp(designBuffer).metadata();
   const screenshotMeta = await sharp(screenshotBuffer).metadata();
 
-  const designWidth = designMeta.width || 0;
-  const designHeight = designMeta.height || 0;
-  const screenshotWidth = screenshotMeta.width || 0;
-  const screenshotHeight = screenshotMeta.height || 0;
+  const designWidth = designMeta.width ?? 0;
+  const designHeight = designMeta.height ?? 0;
+  const screenshotWidth = screenshotMeta.width ?? 0;
+  const screenshotHeight = screenshotMeta.height ?? 0;
 
   if (designWidth === 0 || designHeight === 0 || screenshotWidth === 0 || screenshotHeight === 0) {
     throw new Error("Invalid image dimensions");
@@ -60,8 +60,8 @@ export async function compareImages(
   if (designWidth !== screenshotWidth || designHeight !== screenshotHeight) {
     finalDesignBuffer = await sharp(designBuffer)
       .resize(screenshotWidth, screenshotHeight, {
-        fit: "cover",
-        position: "center",
+        fit: "contain",
+        background: { r: 255, g: 255, b: 255, alpha: 1 },
       })
       .ensureAlpha()
       .toBuffer();
@@ -71,10 +71,8 @@ export async function compareImages(
   const designRaw = await sharp(finalDesignBuffer).ensureAlpha().raw().toBuffer();
   const screenshotRaw = await sharp(screenshotBuffer).ensureAlpha().raw().toBuffer();
 
-  // Get image info for pixelmatch
-  const designInfo = await sharp(finalDesignBuffer).metadata();
-  const width = designInfo.width || screenshotWidth;
-  const height = designInfo.height || screenshotHeight;
+  const width = screenshotWidth;
+  const height = screenshotHeight;
 
   // Run pixelmatch
   const diffPixelData = new Uint8ClampedArray(width * height * 4);
@@ -143,14 +141,12 @@ async function generateDiffImage(
   const visualBuffer = Buffer.alloc(width * height * 4);
 
   for (let i = 0; i < diffPixelData.length; i += 4) {
-    if (diffPixelData[i + 3] > 0) {
-      // Red highlight for diff pixels
-      visualBuffer[i] = 255; // R
-      visualBuffer[i + 1] = 0; // G
-      visualBuffer[i + 2] = 0; // B
-      visualBuffer[i + 3] = 200; // A (semi-transparent)
+    if (diffPixelData[i] > 128) {
+      visualBuffer[i] = 255;
+      visualBuffer[i + 1] = 0;
+      visualBuffer[i + 2] = 0;
+      visualBuffer[i + 3] = 200;
     } else {
-      // Transparent for non-diff
       visualBuffer[i] = 0;
       visualBuffer[i + 1] = 0;
       visualBuffer[i + 2] = 0;

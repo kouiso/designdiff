@@ -49,12 +49,21 @@ function getCropRegionPath(projectId: string): string {
   return path.join(getProjectDir(projectId), "crop-regions.json");
 }
 
+function isEnoentError(error: unknown): error is Error & { code: string } {
+  if (!(error instanceof Error)) return false;
+  if (!("code" in error)) return false;
+  return error.code === "ENOENT";
+}
+
 async function readStore(projectId: string): Promise<CropRegionFile> {
   try {
     const data = await fs.readFile(getCropRegionPath(projectId), "utf-8");
     return cropRegionFileSchema.parse(JSON.parse(data));
-  } catch {
-    return { regions: [] };
+  } catch (error) {
+    if (isEnoentError(error)) {
+      return { regions: [] };
+    }
+    throw error;
   }
 }
 
@@ -98,9 +107,9 @@ export async function setCropRegion(
 
   const existingIndex = store.regions.findIndex((r) => r.frameName === frameName);
   if (existingIndex >= 0) {
-    store.regions[existingIndex] = entry;
+    store.regions = store.regions.map((r, i) => (i === existingIndex ? entry : r));
   } else {
-    store.regions.push(entry);
+    store.regions = [...store.regions, entry];
   }
 
   await writeStore(projectId, store);
