@@ -1,5 +1,5 @@
 import { cleanup, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useProjectStore } from "@/store/project-store";
 import { useSettingStore } from "@/store/setting-store";
@@ -7,6 +7,11 @@ import { useSettingStore } from "@/store/setting-store";
 import { HomePage } from "./home-page";
 
 afterEach(cleanup);
+
+beforeEach(() => {
+  useSettingStore.setState({ figmaToken: null });
+  useProjectStore.setState({ error: null, isLoading: false });
+});
 
 vi.mock("./design-input", () => ({
   DesignInput: ({ onSubmit, disabled }: { onSubmit: (v: string) => void; disabled: boolean }) => (
@@ -39,7 +44,6 @@ describe("HomePage", () => {
   });
 
   it("figmaToken 未設定時にトークン警告が表示される", () => {
-    useSettingStore.setState({ figmaToken: null });
     render(<HomePage onNavigate={vi.fn()} />);
     expect(screen.getByText(/Figma Token を設定してください/)).toBeInTheDocument();
   });
@@ -48,20 +52,17 @@ describe("HomePage", () => {
     useSettingStore.setState({ figmaToken: "figd_test_token_value_12345" });
     render(<HomePage onNavigate={vi.fn()} />);
     expect(screen.queryByText(/Figma Token を設定してください/)).not.toBeInTheDocument();
-    useSettingStore.setState({ figmaToken: null });
   });
 
   it("error があればエラーメッセージ表示", () => {
     useProjectStore.setState({ error: "テストエラー" });
     render(<HomePage onNavigate={vi.fn()} />);
     expect(screen.getByText("テストエラー")).toBeInTheDocument();
-    useProjectStore.setState({ error: null });
   });
 
   it("isLoading 中はローディング表示", () => {
     useProjectStore.setState({ isLoading: true });
     render(<HomePage onNavigate={vi.fn()} />);
     expect(screen.getByText("読み込み中...")).toBeInTheDocument();
-    useProjectStore.setState({ isLoading: false });
   });
 });

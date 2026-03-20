@@ -157,4 +157,186 @@ describe("useOverlayStore", () => {
       expect(result).toBe("captured==");
     });
   });
+
+  describe("setUrl", () => {
+    it("updates url", () => {
+      useOverlayStore.getState().setUrl("http://localhost:5173");
+      expect(useOverlayStore.getState().url).toBe("http://localhost:5173");
+    });
+  });
+
+  describe("clearError", () => {
+    it("clears error to null", () => {
+      useOverlayStore.setState({ error: "some error" });
+      useOverlayStore.getState().clearError();
+      expect(useOverlayStore.getState().error).toBeNull();
+    });
+  });
+
+  describe("setOverlayImage", () => {
+    it("sets overlayImageBase64 and calls setMode", async () => {
+      vi.mocked(window.electronAPI.overlay.setMode).mockResolvedValueOnce(undefined);
+
+      useOverlayStore.setState({
+        opacity: 0.6,
+        overlayViewMode: "split_screen",
+        splitPosition: 0.3,
+      });
+      await useOverlayStore.getState().setOverlayImage("newBase64");
+
+      expect(useOverlayStore.getState().overlayImageBase64).toBe("newBase64");
+      expect(useOverlayStore.getState().showOverlay).toBe(true);
+      expect(window.electronAPI.overlay.setMode).toHaveBeenCalledWith(
+        "split_screen",
+        "newBase64",
+        0.6,
+        0.3,
+      );
+    });
+
+    it("sets error on setMode failure", async () => {
+      vi.mocked(window.electronAPI.overlay.setMode).mockRejectedValueOnce(
+        new Error("setMode failed"),
+      );
+
+      await useOverlayStore.getState().setOverlayImage("base64");
+      expect(useOverlayStore.getState().error).toContain("setMode failed");
+    });
+  });
+
+  describe("setOverlayViewMode", () => {
+    it("sets mode only in state when not open", async () => {
+      useOverlayStore.setState({ isOpen: false });
+      await useOverlayStore.getState().setOverlayViewMode("pixel_diff");
+
+      expect(useOverlayStore.getState().overlayViewMode).toBe("pixel_diff");
+      expect(window.electronAPI.overlay.setMode).not.toHaveBeenCalled();
+    });
+
+    it("calls setMode on overlay when open with image", async () => {
+      vi.mocked(window.electronAPI.overlay.setMode).mockResolvedValueOnce(undefined);
+
+      useOverlayStore.setState({
+        isOpen: true,
+        overlayImageBase64: "img",
+        opacity: 0.5,
+        splitPosition: 0.5,
+      });
+      await useOverlayStore.getState().setOverlayViewMode("blended_diff");
+
+      expect(window.electronAPI.overlay.setMode).toHaveBeenCalledWith(
+        "blended_diff",
+        "img",
+        0.5,
+        0.5,
+      );
+      expect(useOverlayStore.getState().overlayViewMode).toBe("blended_diff");
+    });
+
+    it("toggle mode starts toggling", async () => {
+      vi.mocked(window.electronAPI.overlay.setMode).mockResolvedValueOnce(undefined);
+      vi.mocked(window.electronAPI.overlay.toggleStart).mockResolvedValueOnce(undefined);
+
+      useOverlayStore.setState({
+        isOpen: true,
+        overlayImageBase64: "img",
+        toggleIntervalMs: 300,
+      });
+      await useOverlayStore.getState().setOverlayViewMode("toggle");
+
+      expect(window.electronAPI.overlay.toggleStart).toHaveBeenCalledWith(300);
+      expect(useOverlayStore.getState().isToggling).toBe(true);
+    });
+
+    it("stops existing toggle before switching mode", async () => {
+      vi.mocked(window.electronAPI.overlay.setMode).mockResolvedValue(undefined);
+      vi.mocked(window.electronAPI.overlay.toggleStop).mockResolvedValueOnce(undefined);
+
+      useOverlayStore.setState({
+        isOpen: true,
+        overlayImageBase64: "img",
+        isToggling: true,
+      });
+      await useOverlayStore.getState().setOverlayViewMode("design_only");
+
+      expect(window.electronAPI.overlay.toggleStop).toHaveBeenCalled();
+      expect(useOverlayStore.getState().isToggling).toBe(false);
+    });
+  });
+
+  describe("setSplitPosition", () => {
+    it("updates splitPosition and calls updateSplitPosition when in split_screen mode", async () => {
+      vi.mocked(window.electronAPI.overlay.updateSplitPosition).mockResolvedValueOnce(undefined);
+
+      useOverlayStore.setState({ isOpen: true, overlayViewMode: "split_screen" });
+      await useOverlayStore.getState().setSplitPosition(0.7);
+
+      expect(useOverlayStore.getState().splitPosition).toBe(0.7);
+      expect(window.electronAPI.overlay.updateSplitPosition).toHaveBeenCalledWith(0.7);
+    });
+
+    it("updates splitPosition without calling overlay when not in split_screen", async () => {
+      useOverlayStore.setState({ isOpen: true, overlayViewMode: "transparent_overlay" });
+      await useOverlayStore.getState().setSplitPosition(0.3);
+
+      expect(useOverlayStore.getState().splitPosition).toBe(0.3);
+      expect(window.electronAPI.overlay.updateSplitPosition).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("setToggleIntervalMs", () => {
+    it("updates toggleIntervalMs", () => {
+      useOverlayStore.getState().setToggleIntervalMs(1000);
+      expect(useOverlayStore.getState().toggleIntervalMs).toBe(1000);
+    });
+  });
+
+  describe("startToggle", () => {
+    it("calls toggleStart and sets isToggling", async () => {
+      vi.mocked(window.electronAPI.overlay.toggleStart).mockResolvedValueOnce(undefined);
+
+      useOverlayStore.setState({ toggleIntervalMs: 250 });
+      await useOverlayStore.getState().startToggle();
+
+      expect(window.electronAPI.overlay.toggleStart).toHaveBeenCalledWith(250);
+      expect(useOverlayStore.getState().isToggling).toBe(true);
+    });
+
+    it("sets error on failure", async () => {
+      vi.mocked(window.electronAPI.overlay.toggleStart).mockRejectedValueOnce(
+        new Error("toggle fail"),
+      );
+
+      await useOverlayStore.getState().startToggle();
+      expect(useOverlayStore.getState().error).toContain("toggle fail");
+    });
+  });
+
+  describe("stopToggle", () => {
+    it("calls toggleStop and resets isToggling", async () => {
+      vi.mocked(window.electronAPI.overlay.toggleStop).mockResolvedValueOnce(undefined);
+
+      useOverlayStore.setState({ isToggling: true });
+      await useOverlayStore.getState().stopToggle();
+
+      expect(window.electronAPI.overlay.toggleStop).toHaveBeenCalled();
+      expect(useOverlayStore.getState().isToggling).toBe(false);
+    });
+
+    it("does nothing when not toggling", async () => {
+      useOverlayStore.setState({ isToggling: false });
+      await useOverlayStore.getState().stopToggle();
+
+      expect(window.electronAPI.overlay.toggleStop).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("runPixelDiff", () => {
+    it("does nothing when overlayImageBase64 is null", async () => {
+      useOverlayStore.setState({ overlayImageBase64: null });
+      await useOverlayStore.getState().runPixelDiff();
+
+      expect(useOverlayStore.getState().isPixelDiffRunning).toBe(false);
+    });
+  });
 });
