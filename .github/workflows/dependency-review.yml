@@ -20,7 +20,7 @@ concurrency:
 jobs:
   dependency-review:
     name: Dependency Review
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.RUNNER_LINUX }}
     steps:
       - uses: actions/checkout@v4
 

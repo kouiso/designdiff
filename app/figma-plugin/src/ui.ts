@@ -221,8 +221,8 @@ function pixelmatchSimple(
 function handleFileInput(file: File): void {
   const reader = new FileReader();
   reader.onload = () => {
-    const dataUrl = reader.result as string;
-    state.screenshotBase64 = dataUrl.replace(/^data:image\/\w+;base64,/, "");
+    if (typeof reader.result !== "string") return;
+    state.screenshotBase64 = reader.result.replace(/^data:image\/\w+;base64,/, "");
     render();
   };
   reader.readAsDataURL(file);
@@ -432,10 +432,10 @@ function el(tag: string, className: string, text?: string): HTMLElement {
   return element;
 }
 
-function tab(id: string, label: string, active: boolean): HTMLElement {
+function tab(id: "compare" | "inspect", label: string, active: boolean): HTMLElement {
   const t = el("div", `tab ${active ? "active" : ""}`, label);
   t.addEventListener("click", () => {
-    state.tab = id as "compare" | "inspect";
+    state.tab = id;
     render();
   });
   return t;

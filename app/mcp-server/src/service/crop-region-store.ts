@@ -4,7 +4,10 @@
  */
 
 import * as fs from "node:fs/promises";
+import { homedir } from "node:os";
 import * as path from "node:path";
+
+import { z } from "zod";
 
 import type { CropRegion } from "@figdiff/shared";
 
@@ -15,16 +18,31 @@ interface CropRegionEntry {
   updatedAt: string;
 }
 
-interface CropRegionFile {
-  regions: CropRegionEntry[];
-}
+const cropRegionSchema = z.object({
+  x: z.number(),
+  y: z.number(),
+  width: z.number(),
+  height: z.number(),
+});
+
+const cropRegionEntrySchema = z.object({
+  frameName: z.string(),
+  region: cropRegionSchema,
+  note: z.string().optional(),
+  updatedAt: z.string(),
+});
+
+const cropRegionFileSchema = z.object({
+  regions: z.array(cropRegionEntrySchema),
+});
+
+type CropRegionFile = z.infer<typeof cropRegionFileSchema>;
 
 function getProjectDir(projectId: string): string {
   if (!/^[a-zA-Z0-9_-]+$/.test(projectId)) {
     throw new Error("Invalid project ID: must be alphanumeric with hyphens/underscores only");
   }
-  const homeDir = process.env.HOME || process.env.USERPROFILE || ".";
-  return path.join(homeDir, ".figdiff", "projects", projectId);
+  return path.join(homedir(), ".figdiff", "projects", projectId);
 }
 
 function getCropRegionPath(projectId: string): string {
@@ -34,7 +52,7 @@ function getCropRegionPath(projectId: string): string {
 async function readStore(projectId: string): Promise<CropRegionFile> {
   try {
     const data = await fs.readFile(getCropRegionPath(projectId), "utf-8");
-    return JSON.parse(data) as CropRegionFile;
+    return cropRegionFileSchema.parse(JSON.parse(data));
   } catch {
     return { regions: [] };
   }

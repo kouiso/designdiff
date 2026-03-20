@@ -25,14 +25,14 @@ NEVER say any of the following WHEN browser/WebView/UI code was modified:
 ❌ "Please check the UI manually"
 ❌ "Please verify the behavior in your browser"
 ❌ "I think this should work, so please confirm"
-❌ "Playwright cannot connect to a Tauri/Electron app"
+❌ "Playwright cannot connect to an Electron app"
 ```
 
 ### 2.2. The Truth
 
 IF the conversation environment has `mcp__playwright__*` tools available, THEN Playwright IS available. No exceptions. No excuses.
 
-IF the app is a Tauri/Electron desktop app, THEN the webview layer IS testable via Playwright. Use `mcp__playwright__browser_navigate` to reach `http://localhost:PORT` opened by `pnpm dev` / `cargo tauri dev`.
+IF the app is an Electron desktop app, THEN the webview layer IS testable via Playwright. Use `mcp__playwright__browser_navigate` to reach `http://localhost:PORT` opened by `pnpm dev`.
 
 ### 2.3. Mandatory Playwright Triggers
 
@@ -43,7 +43,7 @@ WHEN any of the following are modified, MUST run Playwright verification before 
 | Any React/HTML/CSS component | `take_screenshot` + `browser_snapshot` |
 | Any route or navigation | Navigate to route + `take_screenshot` |
 | Any modal, dialog, or form | Trigger the UI + `take_screenshot` |
-| Any Tauri window or webview | `browser_navigate` to dev server + `take_screenshot` |
+| Any Electron window or webview | `browser_navigate` to dev server + `take_screenshot` |
 | Any animation or visual transition | `take_screenshot` before and after |
 | Any button, link, or interactive element | `browser_click` + `take_screenshot` |
 
@@ -81,13 +81,13 @@ IF the verification reveals a bug THEN fix it and re-verify. Do NOT report parti
 
 ---
 
-## 4. Desktop App Verification (Tauri / Electron)
+## 4. Desktop App Verification (Electron)
 
-Desktop apps with webview (Tauri v2, Electron) ARE verifiable via Playwright. The correct procedure is:
+Desktop apps with webview (Electron) ARE verifiable via Playwright. The correct procedure is:
 
 ```
 Step 1: Start dev server
-  → Run `pnpm dev` / `cargo tauri dev` in background (isBackground=true)
+  → Run `pnpm dev` in background (isBackground=true)
 
 Step 2: Wait for server ready
   → Poll port until responding (mcp__playwright__browser_wait_for or curl)
@@ -101,8 +101,6 @@ Step 4: Interact and confirm
   → mcp__playwright__browser_click / browser_type as needed
   → mcp__playwright__browser_take_screenshot after each action
 ```
-
-The claim "Tauri apps cannot be tested with Playwright" is FALSE and is prohibited.
 
 ---
 
@@ -125,6 +123,6 @@ The claim "Tauri apps cannot be tested with Playwright" is FALSE and is prohibit
 | Rule | Confidence |
 |------|-----------|
 | Playwright MCP is always available when tools exist | High |
-| Tauri webview is testable via Playwright on dev server | High |
+| Electron webview is testable via Playwright on dev server | High |
 | False completion without execution is prohibited | High |
 | Desktop apps require `pnpm dev` before Playwright | High |

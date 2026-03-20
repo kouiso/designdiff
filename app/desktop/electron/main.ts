@@ -52,8 +52,10 @@ const createWindow = (): void => {
     mainWindow.moveTop();
     mainWindow.focus();
     // macOS Tahoe (26.1) + Electron 35 でウィンドウが前面に出ない問題の対策
-    mainWindow.setAlwaysOnTop(true);
-    setTimeout(() => mainWindow.setAlwaysOnTop(false), 500);
+    if (process.platform === "darwin") {
+      mainWindow.setAlwaysOnTop(true);
+      setTimeout(() => mainWindow.setAlwaysOnTop(false), 500);
+    }
   });
 
   mainWindow.webContents.on("did-fail-load", (_event, code, desc) => {

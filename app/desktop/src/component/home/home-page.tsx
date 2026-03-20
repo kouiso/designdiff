@@ -118,9 +118,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
           )}
         </div>
 
-        {implUrl.trim() && (
-          <p className="text-muted-foreground text-xs">{t("home.implUrlHint")}</p>
-        )}
+        {implUrl.trim() && <p className="text-muted-foreground text-xs">{t("home.implUrlHint")}</p>}
 
         {!figmaToken && (
           <div className="flex items-center justify-between gap-3 rounded-lg border border-primary/30 bg-accent px-4 py-3">
@@ -178,9 +176,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
         </div>
       </section>
 
-      <p className="text-center text-xs text-muted-foreground/50">
-        v{__APP_VERSION__}
-      </p>
+      <p className="text-center text-muted-foreground/50 text-xs">v{__APP_VERSION__}</p>
     </div>
   );
 }

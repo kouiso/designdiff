@@ -89,7 +89,11 @@ describe("useOverlayStore", () => {
     it("updates opacity and calls electronAPI when overlay is active", async () => {
       vi.mocked(window.electronAPI.overlay.updateOpacity).mockResolvedValueOnce(undefined);
 
-      useOverlayStore.setState({ isOpen: true, showOverlay: true, overlayViewMode: "transparent_overlay" });
+      useOverlayStore.setState({
+        isOpen: true,
+        showOverlay: true,
+        overlayViewMode: "transparent_overlay",
+      });
       await useOverlayStore.getState().setOpacity(0.8);
 
       expect(useOverlayStore.getState().opacity).toBe(0.8);
@@ -129,7 +133,12 @@ describe("useOverlayStore", () => {
       await useOverlayStore.getState().toggleOverlay();
 
       expect(useOverlayStore.getState().showOverlay).toBe(true);
-      expect(window.electronAPI.overlay.setMode).toHaveBeenCalledWith("transparent_overlay", "abc", 0.7, 0.5);
+      expect(window.electronAPI.overlay.setMode).toHaveBeenCalledWith(
+        "transparent_overlay",
+        "abc",
+        0.7,
+        0.5,
+      );
     });
   });
 

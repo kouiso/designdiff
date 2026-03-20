@@ -118,7 +118,8 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
     set({ opacity });
     const { isOpen, showOverlay, overlayViewMode } = get();
     if (!isOpen || !showOverlay) return;
-    if (overlayViewMode !== "transparent_overlay" && overlayViewMode !== "draggable_overlay") return;
+    if (overlayViewMode !== "transparent_overlay" && overlayViewMode !== "draggable_overlay")
+      return;
     const overlay = await getOverlay();
     if (!overlay) return;
     try {

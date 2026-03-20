@@ -20,7 +20,7 @@ applyTo: "**"
 ## PR Workflow
 
 - Create PRs against `develop`
-- CI must pass (lint, typecheck, test, cargo test) before requesting review
+- CI must pass (lint, typecheck, test) before requesting review
 - Squash merge preferred
 - **Share the PR URL immediately upon creation**
 
@@ -38,7 +38,7 @@ applyTo: "**"
 ## Security
 
 - Never commit `.env`, tokens, or secrets
-- Figma token stored in OS Keychain (`keyring` crate), not in files
+- Figma token stored via Electron `safeStorage` + encrypted file, not in source
 - Never hardcode API keys in source code
 
 ## CI Requirements
@@ -48,6 +48,5 @@ All PRs must pass:
 2. `pnpm lint:eslint` (ESLint v9)
 3. `pnpm typecheck` (TypeScript)
 4. `pnpm test --run` (Vitest)
-5. `cargo test` (Rust)
 
 **Do not merge if any check fails. Fix the root cause, never suppress.**

@@ -1,0 +1,55 @@
+name: Build
+
+on:
+  push:
+    branches: [develop]
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Electron Build (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: Linux
+            runs-on: ${{ vars.RUNNER_LINUX }}
+          - os: Windows
+            runs-on: windows-latest
+          - os: macOS
+            runs-on: ${{ vars.RUNNER_MACOS }}
+    runs-on: ${{ matrix.runs-on }}
+    if: github.event.pull_request.draft == false
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: ".node-version"
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build shared package
+        run: pnpm --filter @figdiff/shared build
+
+      - name: Build Electron app
+        run: pnpm --filter @figdiff/desktop build
+
+      - name: Verify build output
+        shell: bash
+        run: |
+          ls app/desktop/dist/main/
+          ls app/desktop/dist/preload/
+          ls app/desktop/dist/renderer/

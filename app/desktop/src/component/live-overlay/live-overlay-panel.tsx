@@ -9,8 +9,9 @@ import { Spinner } from "@/component/ui/spinner";
 import { useOverlayStore } from "@/store/overlay-store";
 import { useProjectStore } from "@/store/project-store";
 
-import type { Page } from "../../App";
 import { OverlayViewModeToggle } from "./overlay-view-mode-toggle";
+
+import type { Page } from "../../App";
 
 interface LiveOverlayPanelProps {
   onNavigate?: (page: Page) => void;
@@ -185,7 +186,7 @@ export function LiveOverlayPanel({ onNavigate }: LiveOverlayPanelProps) {
                   <span className="text-muted-foreground text-xs">{t("overlay.analyzing")}</span>
                 </>
               ) : pixelDiffMatchRate !== null ? (
-                <span className="text-xs font-medium">
+                <span className="font-medium text-xs">
                   {t("compare.matchRate")}: {pixelDiffMatchRate}%
                 </span>
               ) : null}

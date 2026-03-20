@@ -1,4 +1,5 @@
 import { z } from "zod";
+
 import {
   FigmaClient,
   FigmaTokenSchema,
@@ -6,7 +7,9 @@ import {
   NodeInspectionSchema,
   extractFrames,
 } from "@figdiff/shared";
+
 import { transformNode } from "@/lib/transform-node";
+
 import type {
   FileAdapter,
   FigmaAdapter,

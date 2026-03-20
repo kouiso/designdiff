@@ -79,8 +79,6 @@ applyTo: "**"
 - `pnpm lint:eslint`: Run ESLint v9 type-aware checks.
 - `pnpm typecheck`: Run TypeScript type checks.
 - `pnpm test`: Run Vitest tests.
-- `cargo check`: Run Rust type checks.
-- `cargo test`: Run Rust tests.
 
 **The task is incomplete until all checks pass.**
 
@@ -134,6 +132,6 @@ applyTo: "**"
 2. Actual response verification
 3. Log verification
 4. Error handling and edge case verification
-5. Full test execution (`pnpm test` + `cargo test`)
+5. Full test execution (`pnpm test --run`)
 6. Type check passing (`pnpm typecheck`)
 7. Lint passing (`pnpm lint` + `pnpm lint:eslint`)

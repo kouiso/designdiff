@@ -12,8 +12,8 @@ import {
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/component/ui/button";
-import { type OverlayViewMode, useOverlayStore } from "@/store/overlay-store";
 import { useCompareStore } from "@/store/compare-store";
+import { type OverlayViewMode, useOverlayStore } from "@/store/overlay-store";
 
 import type { Page } from "../../App";
 

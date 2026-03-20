@@ -38,8 +38,8 @@ export async function compareImages(
 
   // Apply crop region if provided
   if (cropRegion) {
-    designBuffer = (await cropImageBuffer(designBuffer, cropRegion)) as Buffer;
-    screenshotBuffer = (await cropImageBuffer(screenshotBuffer, cropRegion)) as Buffer;
+    designBuffer = await cropImageBuffer(designBuffer, cropRegion);
+    screenshotBuffer = await cropImageBuffer(screenshotBuffer, cropRegion);
   }
 
   // Get dimensions
@@ -58,17 +58,18 @@ export async function compareImages(
   // Resize design to match screenshot dimensions
   let finalDesignBuffer: Buffer = designBuffer;
   if (designWidth !== screenshotWidth || designHeight !== screenshotHeight) {
-    finalDesignBuffer = (await sharp(designBuffer)
+    finalDesignBuffer = await sharp(designBuffer)
       .resize(screenshotWidth, screenshotHeight, {
         fit: "cover",
         position: "center",
       })
-      .toBuffer()) as Buffer;
+      .ensureAlpha()
+      .toBuffer();
   }
 
   // Extract raw pixel data
-  const designRaw = await sharp(finalDesignBuffer).raw().toBuffer();
-  const screenshotRaw = await sharp(screenshotBuffer).raw().toBuffer();
+  const designRaw = await sharp(finalDesignBuffer).ensureAlpha().raw().toBuffer();
+  const screenshotRaw = await sharp(screenshotBuffer).ensureAlpha().raw().toBuffer();
 
   // Get image info for pixelmatch
   const designInfo = await sharp(finalDesignBuffer).metadata();

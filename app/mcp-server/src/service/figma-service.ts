@@ -4,6 +4,7 @@
  */
 
 import * as fs from "node:fs/promises";
+import { homedir } from "node:os";
 import * as path from "node:path";
 
 import {
@@ -95,8 +96,7 @@ export class FigmaService {
  * Helper: Get MCP cache directory (~/.figdiff/cache/)
  */
 export function getMcpCacheDir(): string {
-  const homeDir = process.env.HOME || process.env.USERPROFILE || ".";
-  return path.join(homeDir, ".figdiff", "cache");
+  return path.join(homedir(), ".figdiff", "cache");
 }
 
 /**

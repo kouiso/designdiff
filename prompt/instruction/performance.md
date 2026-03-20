@@ -37,7 +37,7 @@ applyTo: "**"
 
 - Cache Figma images at `~/.figdiff/cache/` to avoid redundant API calls
 - Use Rust `image` crate for server-side resize (desktop)
-- Transfer images as base64 strings over Tauri IPC
+- Transfer images as base64 strings over Electron IPC
 - Use `scale: 2` for Figma frame images by default
 
 ### Figma API
