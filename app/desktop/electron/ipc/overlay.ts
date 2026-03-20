@@ -28,19 +28,17 @@ const ensureOverlaySession = (): Electron.Session => {
   if (!overlaySession) {
     overlaySession = session.fromPartition(OVERLAY_PARTITION);
     overlaySession.webRequest.onHeadersReceived((details, callback) => {
-      const headers = { ...details.responseHeaders };
-      const keysToRemove = Object.keys(headers).filter((key) => {
-        const lower = key.toLowerCase();
-        return (
-          lower === "x-frame-options" ||
-          lower === "content-security-policy" ||
-          lower === "content-security-policy-report-only"
-        );
-      });
-      for (const key of keysToRemove) {
-        delete headers[key];
-      }
-      callback({ responseHeaders: headers });
+      const filteredHeaders = Object.fromEntries(
+        Object.entries(details.responseHeaders ?? {}).filter(([key]) => {
+          const lower = key.toLowerCase();
+          return (
+            lower !== "x-frame-options" &&
+            lower !== "content-security-policy" &&
+            lower !== "content-security-policy-report-only"
+          );
+        }),
+      );
+      callback({ responseHeaders: filteredHeaders });
     });
   }
   return overlaySession;

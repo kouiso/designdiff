@@ -43,10 +43,14 @@ export function OverlayViewModeToggle({ onNavigate }: OverlayViewModeToggleProps
   const captureForComparison = useOverlayStore((s) => s.captureForComparison);
 
   const handleTwoUp = async () => {
-    const base64 = await captureForComparison();
-    useCompareStore.getState().setScreenshotImage(`data:image/png;base64,${base64}`);
-    if (onNavigate) {
-      onNavigate("compare");
+    try {
+      const base64 = await captureForComparison();
+      useCompareStore.getState().setScreenshotImage(`data:image/png;base64,${base64}`);
+      if (onNavigate) {
+        onNavigate("compare");
+      }
+    } catch (e) {
+      useOverlayStore.setState({ error: String(e) });
     }
   };
 

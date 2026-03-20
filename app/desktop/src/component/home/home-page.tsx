@@ -37,6 +37,9 @@ export function HomePage({ onNavigate }: HomePageProps) {
     clearError();
     await loadDesign(input);
 
+    const { error: loadError } = useProjectStore.getState();
+    if (loadError) return;
+
     const trimmedImplUrl = implUrl.trim();
     if (trimmedImplUrl) {
       const { frames } = useProjectStore.getState();
