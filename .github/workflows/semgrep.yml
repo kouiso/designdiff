@@ -20,7 +20,7 @@ concurrency:
 jobs:
   semgrep:
     name: Code Scan
-    runs-on: ${{ vars.RUNNER_LINUX }}
+    runs-on: ${{ vars.RUNNER_LINUX || 'ubuntu-latest' }}
     container:
       image: semgrep/semgrep
     if: github.actor != 'dependabot[bot]'

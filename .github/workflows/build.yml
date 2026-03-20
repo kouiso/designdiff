@@ -19,11 +19,11 @@ jobs:
       matrix:
         include:
           - os: Linux
-            runs-on: ${{ vars.RUNNER_LINUX }}
+            runs-on: ${{ vars.RUNNER_LINUX || 'ubuntu-latest' }}
           - os: Windows
             runs-on: windows-latest
           - os: macOS
-            runs-on: ${{ vars.RUNNER_MACOS }}
+            runs-on: ${{ vars.RUNNER_MACOS || 'macos-latest' }}
     runs-on: ${{ matrix.runs-on }}
     if: github.event.pull_request.draft == false
     steps:
