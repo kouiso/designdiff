@@ -6,8 +6,6 @@ on:
       - "package.json"
       - "pnpm-lock.yaml"
       - "**/package.json"
-      - "**/Cargo.toml"
-      - "**/Cargo.lock"
 
 permissions:
   contents: read
