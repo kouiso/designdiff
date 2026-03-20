@@ -5,7 +5,7 @@ import { registerTokenHandlers } from "./ipc/token";
 import { registerFileHandlers } from "./ipc/file";
 import { registerOverlayHandlers } from "./ipc/overlay";
 
-const ALLOWED_ORIGINS = ["http://localhost:5173", "file://"];
+const ALLOWED_ORIGINS = ["http://localhost:5173", "http://localhost:5174", "file://"];
 
 const isAllowedOrigin = (url: string): boolean => {
   return ALLOWED_ORIGINS.some((origin) => url.startsWith(origin));
@@ -33,7 +33,6 @@ const setupCSP = (): void => {
 
 const createWindow = (): void => {
   const preloadPath = join(__dirname, "../preload/preload.cjs");
-
   const mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
@@ -46,6 +45,19 @@ const createWindow = (): void => {
       contextIsolation: true,
       nodeIntegration: false,
     },
+  });
+
+  mainWindow.webContents.on("did-finish-load", () => {
+    mainWindow.show();
+    mainWindow.moveTop();
+    mainWindow.focus();
+    // macOS Tahoe (26.1) + Electron 35 でウィンドウが前面に出ない問題の対策
+    mainWindow.setAlwaysOnTop(true);
+    setTimeout(() => mainWindow.setAlwaysOnTop(false), 500);
+  });
+
+  mainWindow.webContents.on("did-fail-load", (_event, code, desc) => {
+    console.error("[main] did-fail-load:", code, desc);
   });
 
   mainWindow.webContents.on("preload-error", (_event, preload, error) => {
@@ -71,6 +83,18 @@ const createWindow = (): void => {
     mainWindow.loadFile(join(__dirname, "../renderer/index.html"));
   }
 };
+
+if (!app.requestSingleInstanceLock()) {
+  app.quit();
+}
+
+app.on("second-instance", () => {
+  const win = BrowserWindow.getAllWindows()[0];
+  if (win) {
+    if (win.isMinimized()) win.restore();
+    win.focus();
+  }
+});
 
 app.whenReady().then(() => {
   if (!app.isPackaged) {

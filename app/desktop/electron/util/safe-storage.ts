@@ -30,7 +30,11 @@ const writeStore = (store: Record<string, string>): void => {
 
 const canEncrypt = (): boolean => {
   try {
-    return safeStorage.isEncryptionAvailable();
+    if (safeStorage.isEncryptionAvailable()) return true;
+    // setUsePlainTextEncryption(true) を呼んでも isEncryptionAvailable() は
+    // OS Keychain の状態を返すため false のまま。
+    // dev環境では plaintext fallback が有効なので暗号化可能とみなす。
+    return !app.isPackaged;
   } catch (e) {
     console.warn("[safe-storage] isEncryptionAvailable failed:", e);
     return false;
@@ -45,9 +49,17 @@ export const saveToken = (token: string): void => {
   }
 
   const store = readStore();
-  const encrypted = safeStorage.encryptString(token);
-  store[CREDENTIAL_KEY] = encrypted.toString("base64");
-  store[`${CREDENTIAL_KEY}-encrypted`] = "true";
+
+  if (safeStorage.isEncryptionAvailable()) {
+    const encrypted = safeStorage.encryptString(token);
+    store[CREDENTIAL_KEY] = encrypted.toString("base64");
+    store[`${CREDENTIAL_KEY}-encrypted`] = "true";
+  } else if (!app.isPackaged) {
+    // macOS dev環境: setUsePlainTextEncryption は no-op のため plaintext fallback
+    store[CREDENTIAL_KEY] = Buffer.from(token).toString("base64");
+    store[`${CREDENTIAL_KEY}-encrypted`] = "dev-plaintext";
+  }
+
   writeStore(store);
 };
 
@@ -56,19 +68,23 @@ export const getToken = (): string | null => {
   const encoded = store[CREDENTIAL_KEY];
   if (!encoded) return null;
 
-  const isEncrypted = store[`${CREDENTIAL_KEY}-encrypted`] === "true";
+  const encryptedFlag = store[`${CREDENTIAL_KEY}-encrypted`];
 
-  if (!isEncrypted) {
-    console.error(
-      "[safe-storage] 非暗号化トークンが検出されました。セキュリティのため読み取りを拒否します。",
-    );
+  if (encryptedFlag === "dev-plaintext") {
+    if (!app.isPackaged) {
+      return Buffer.from(encoded, "base64").toString("utf-8");
+    }
+    console.error("[safe-storage] dev-plaintext トークンは本番環境では読み取れません。再設定してください。");
+    return null;
+  }
+
+  if (encryptedFlag !== "true") {
+    console.error("[safe-storage] 不明な暗号化フラグです。セキュリティのため読み取りを拒否します。");
     return null;
   }
 
   if (!canEncrypt()) {
-    console.error(
-      "[safe-storage] 暗号化されたトークンが保存されていますが、復号化が利用できません。",
-    );
+    console.error("[safe-storage] 暗号化されたトークンが保存されていますが、復号化が利用できません。");
     return null;
   }
 
