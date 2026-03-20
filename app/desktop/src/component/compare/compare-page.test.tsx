@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useCompareStore } from "@/store/compare-store";
@@ -97,5 +97,25 @@ describe("ComparePage", () => {
     useCompareStore.setState({ error: "比較エラー" });
     render(<ComparePage />);
     expect(screen.getByText("比較エラー")).toBeInTheDocument();
+  });
+
+  it("差分を検出ボタンクリック → runComparison 呼ばれる", () => {
+    const mockRunComparison = vi.fn();
+    useCompareStore.setState({
+      designImage: "base64design",
+      screenshotImage: "base64screenshot",
+      runComparison: mockRunComparison,
+    });
+
+    render(<ComparePage />);
+    fireEvent.click(screen.getByText("差分を検出"));
+    expect(mockRunComparison).toHaveBeenCalled();
+  });
+
+  it("frameImage あり → designImage に自動セット", () => {
+    useProjectStore.setState({ frameImage: "data:image/png;base64,frame" });
+    render(<ComparePage />);
+
+    expect(useCompareStore.getState().designImage).toBe("data:image/png;base64,frame");
   });
 });

@@ -1,9 +1,15 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import { useSettingStore } from "@/store/setting-store";
 
 import { Header } from "./header";
 
 afterEach(cleanup);
+
+beforeEach(() => {
+  useSettingStore.setState({ theme: "dark" });
+});
 
 describe("Header", () => {
   it("FigDiff ロゴが表示される", () => {
@@ -49,5 +55,34 @@ describe("Header", () => {
     render(<Header currentPage="home" onNavigate={onNavigate} />);
     fireEvent.click(screen.getByLabelText("設定"));
     expect(onNavigate).toHaveBeenCalledWith("settings");
+  });
+
+  it("テーマ切替ボタンクリック: dark → light", () => {
+    useSettingStore.setState({ theme: "dark" });
+    render(<Header currentPage="home" onNavigate={vi.fn()} />);
+    fireEvent.click(screen.getByLabelText("テーマ切替"));
+    expect(useSettingStore.getState().theme).toBe("light");
+  });
+
+  it("テーマ切替ボタンクリック: light → dark", () => {
+    useSettingStore.setState({ theme: "light" });
+    render(<Header currentPage="home" onNavigate={vi.fn()} />);
+    fireEvent.click(screen.getByLabelText("テーマ切替"));
+    expect(useSettingStore.getState().theme).toBe("dark");
+  });
+
+  it("ライブオーバーレイボタンクリックで onNavigate('live_overlay') 発火", () => {
+    const onNavigate = vi.fn();
+    render(<Header currentPage="home" onNavigate={onNavigate} />);
+    const liveOverlayButtons = screen.getAllByText("ライブオーバーレイ");
+    fireEvent.click(liveOverlayButtons[0]);
+    expect(onNavigate).toHaveBeenCalledWith("live_overlay");
+  });
+
+  it("project パンくずクリックで onNavigate('project') 発火", () => {
+    const onNavigate = vi.fn();
+    render(<Header currentPage="compare" onNavigate={onNavigate} />);
+    fireEvent.click(screen.getByText("フレーム選択"));
+    expect(onNavigate).toHaveBeenCalledWith("project");
   });
 });
