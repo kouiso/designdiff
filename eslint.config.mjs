@@ -17,11 +17,12 @@ export default [
       "**/target/",
       "**/.turbo/",
       "**/*.d.ts",
-      "app/desktop/src-tauri/",
       "app/desktop/src/__mock__/",
       "app/desktop/e2e/",
       "**/*.config.ts",
       "**/*.config.mjs",
+      "app/chrome-extension/build.mjs",
+      "app/figma-plugin/build.mjs",
     ],
   },
 
@@ -69,7 +70,7 @@ export default [
       // TypeScript strict rules (from example-org/sample-project-backend)
       "@typescript-eslint/explicit-function-return-type": "off",
       "@typescript-eslint/explicit-module-boundary-types": "off",
-      "@typescript-eslint/no-explicit-any": "warn",
+      "@typescript-eslint/no-explicit-any": "error",
       "@typescript-eslint/prefer-optional-chain": "warn",
       "@typescript-eslint/no-unsafe-assignment": "warn",
       "@typescript-eslint/no-unsafe-call": "warn",
@@ -179,6 +180,37 @@ export default [
     rules: {
       "react-hooks/rules-of-hooks": "error",
       "react-hooks/exhaustive-deps": "warn",
+    },
+  },
+
+  // Figma Plugin — relaxed rules
+  // figma global (showUI, ui, on, etc.) is declared via @figma/plugin-typings ambient declarations,
+  // which the ESLint TypeScript parser cannot resolve through tsconfig.eslint.json.
+  // Unsafe rules are suppressed here because the warnings are structural artifacts of Figma's
+  // ambient type approach, not actual type-safety issues in our code.
+  {
+    files: ["app/figma-plugin/src/**/*.ts"],
+    rules: {
+      "@typescript-eslint/consistent-type-assertions": "off",
+      "@typescript-eslint/no-unsafe-assignment": "off",
+      "@typescript-eslint/no-unsafe-call": "off",
+      "@typescript-eslint/no-unsafe-member-access": "off",
+      "@typescript-eslint/no-unsafe-return": "off",
+      "no-alert": "off",
+    },
+  },
+
+  // Chrome Extension — relaxed unsafe rules
+  // chrome global (chrome.runtime, chrome.tabs, chrome.storage, etc.) is provided by @types/chrome
+  // as ambient declarations. The ESLint TypeScript parser resolves types through tsconfig.eslint.json
+  // which does not include Chrome extension lib types, causing false-positive unsafe warnings.
+  {
+    files: ["app/chrome-extension/src/**/*.ts"],
+    rules: {
+      "@typescript-eslint/no-unsafe-assignment": "off",
+      "@typescript-eslint/no-unsafe-call": "off",
+      "@typescript-eslint/no-unsafe-member-access": "off",
+      "@typescript-eslint/no-unsafe-return": "off",
     },
   },
 

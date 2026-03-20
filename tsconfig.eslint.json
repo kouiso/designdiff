@@ -13,7 +13,10 @@
     "package/shared/src/**/*.ts",
     "app/desktop/src/**/*.ts",
     "app/desktop/src/**/*.tsx",
-    "app/mcp-server/src/**/*.ts"
+    "app/desktop/electron/**/*.ts",
+    "app/mcp-server/src/**/*.ts",
+    "app/chrome-extension/src/**/*.ts",
+    "app/figma-plugin/src/**/*.ts"
   ],
   "exclude": ["**/dist", "**/node_modules", "app/desktop/src/__mock__/**"]
 }
