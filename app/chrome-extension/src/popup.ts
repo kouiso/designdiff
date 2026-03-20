@@ -5,8 +5,10 @@
 
 import { VIEW_MODES, VIEW_MODE_METADATA, parseDesignInput, extractFileKey } from "@figdiff/shared";
 import type { Frame, ViewMode, DiffRegion } from "@figdiff/shared";
+
 import type {
   ContentMessage,
+  InternalMessage,
   FigmaFetchFramesResponse,
   FigmaFetchImageResponse,
   CompareResponse,
@@ -117,7 +119,8 @@ function renderFigmaTab(): HTMLDivElement {
   urlInput.type = "text";
   urlInput.placeholder = "https://www.figma.com/design/...";
   urlInput.value = state.figmaUrl;
-  urlInput.style.cssText = "width:100%;padding:6px;border:1px solid #DDD;border-radius:4px;font-size:11px;margin-bottom:4px;";
+  urlInput.style.cssText =
+    "width:100%;padding:6px;border:1px solid #DDD;border-radius:4px;font-size:11px;margin-bottom:4px;";
   urlInput.addEventListener("input", () => {
     state.figmaUrl = urlInput.value;
   });
@@ -126,7 +129,7 @@ function renderFigmaTab(): HTMLDivElement {
   const fetchBtn = button("btn btn-primary", state.loading ? "Loading..." : "Fetch Frames");
   fetchBtn.disabled = state.loading;
   fetchBtn.addEventListener("click", () => {
-    void handleFetchFrames();
+    handleFetchFrames().catch(console.error);
   });
   section.appendChild(fetchBtn);
 
@@ -156,7 +159,8 @@ function renderFrameList(): HTMLDivElement {
   wrapper.appendChild(label);
 
   const list = document.createElement("ul");
-  list.style.cssText = "list-style:none;max-height:120px;overflow-y:auto;border:1px solid #EEE;border-radius:4px;";
+  list.style.cssText =
+    "list-style:none;max-height:120px;overflow-y:auto;border:1px solid #EEE;border-radius:4px;";
 
   for (const frame of state.frames) {
     const li = document.createElement("li");
@@ -167,7 +171,7 @@ function renderFrameList(): HTMLDivElement {
       border-bottom:1px solid #F0F0F0;
     `;
     li.addEventListener("click", () => {
-      void handleSelectFrame(frame);
+      handleSelectFrame(frame).catch(console.error);
     });
     list.appendChild(li);
   }
@@ -192,7 +196,7 @@ function renderUploadTab(): HTMLDivElement {
     const clearBtn = button("btn btn-secondary", "Clear");
     clearBtn.addEventListener("click", () => {
       state.designBase64 = null;
-      void hideOverlayOnPage();
+      hideOverlayOnPage().catch(console.error);
       render();
     });
     section.appendChild(clearBtn);
@@ -203,7 +207,8 @@ function renderUploadTab(): HTMLDivElement {
     const fileInput = document.createElement("input");
     fileInput.type = "file";
     fileInput.accept = "image/*";
-    fileInput.style.cssText = "width:100%;padding:6px;border:1px solid #DDD;border-radius:4px;font-size:12px;";
+    fileInput.style.cssText =
+      "width:100%;padding:6px;border:1px solid #DDD;border-radius:4px;font-size:12px;";
     fileInput.addEventListener("change", () => {
       const file = fileInput.files?.[0];
       if (!file) return;
@@ -237,7 +242,8 @@ function renderTokenTab(): HTMLDivElement {
   tokenInput.type = "password";
   tokenInput.placeholder = "figd_...";
   tokenInput.value = state.tokenInput;
-  tokenInput.style.cssText = "width:100%;padding:6px;border:1px solid #DDD;border-radius:4px;font-size:12px;margin-top:6px;";
+  tokenInput.style.cssText =
+    "width:100%;padding:6px;border:1px solid #DDD;border-radius:4px;font-size:12px;margin-top:6px;";
   tokenInput.addEventListener("input", () => {
     state.tokenInput = tokenInput.value;
   });
@@ -246,7 +252,7 @@ function renderTokenTab(): HTMLDivElement {
   const saveBtn = button("btn btn-primary", "Save Token");
   saveBtn.style.marginTop = "6px";
   saveBtn.addEventListener("click", () => {
-    void handleSaveToken();
+    handleSaveToken().catch(console.error);
   });
   section.appendChild(saveBtn);
 
@@ -254,7 +260,7 @@ function renderTokenTab(): HTMLDivElement {
     const clearBtn = button("btn btn-secondary", "Clear Token");
     clearBtn.style.marginTop = "4px";
     clearBtn.addEventListener("click", () => {
-      void handleClearToken();
+      handleClearToken().catch(console.error);
     });
     section.appendChild(clearBtn);
   }
@@ -274,9 +280,9 @@ function renderOverlayControls(): HTMLDivElement {
   );
   toggleBtn.addEventListener("click", () => {
     if (state.overlayActive) {
-      void hideOverlayOnPage();
+      hideOverlayOnPage().catch(console.error);
     } else {
-      void showOverlayOnPage();
+      showOverlayOnPage().catch(console.error);
     }
   });
   section.appendChild(toggleBtn);
@@ -297,7 +303,7 @@ function renderOverlayControls(): HTMLDivElement {
       modeBtn.style.fontSize = "10px";
       modeBtn.addEventListener("click", () => {
         state.mode = mode;
-        void sendModeUpdate(mode);
+        sendModeUpdate(mode).catch(console.error);
         render();
       });
       modeGroup.appendChild(modeBtn);
@@ -319,7 +325,7 @@ function renderOverlayControls(): HTMLDivElement {
       slider.addEventListener("input", () => {
         state.opacity = Number.parseInt(slider.value, 10);
         opacityLabel.textContent = `Opacity: ${state.opacity}%`;
-        void sendOpacityUpdate(state.opacity / 100);
+        sendOpacityUpdate(state.opacity / 100).catch(console.error);
       });
       section.appendChild(slider);
     }
@@ -336,18 +342,31 @@ function renderCompareSection(): HTMLDivElement {
 
   const compareBtn = button("btn btn-primary", "Capture & Compare");
   compareBtn.addEventListener("click", () => {
-    void captureAndCompare();
+    captureAndCompare().catch(console.error);
   });
   section.appendChild(compareBtn);
 
   if (state.matchRate !== null) {
     const rateClass = state.matchRate >= 98 ? "good" : state.matchRate >= 90 ? "warning" : "bad";
     const resultDiv = div("result");
-    resultDiv.innerHTML = `
-      <div class="match-rate ${rateClass}">${state.matchRate}%</div>
-      <div class="stats">${state.diffPixelCount.toLocaleString()} diff px / ${state.totalPixelCount.toLocaleString()} total</div>
-      ${state.regions.length > 0 ? `<div class="stats">${state.regions.length} diff region(s)</div>` : ""}
-    `;
+
+    const rateEl = document.createElement("div");
+    rateEl.className = `match-rate ${rateClass}`;
+    rateEl.textContent = `${state.matchRate}%`;
+    resultDiv.appendChild(rateEl);
+
+    const statsEl = document.createElement("div");
+    statsEl.className = "stats";
+    statsEl.textContent = `${state.diffPixelCount.toLocaleString()} diff px / ${state.totalPixelCount.toLocaleString()} total`;
+    resultDiv.appendChild(statsEl);
+
+    if (state.regions.length > 0) {
+      const regionsEl = document.createElement("div");
+      regionsEl.className = "stats";
+      regionsEl.textContent = `${state.regions.length} diff region(s)`;
+      resultDiv.appendChild(regionsEl);
+    }
+
     section.appendChild(resultDiv);
   }
 
@@ -413,7 +432,7 @@ async function handleSelectFrame(frame: Frame): Promise<void> {
   } else {
     state.designBase64 = response.imageBase64 ?? null;
     if (state.designBase64) {
-      void showOverlayOnPage();
+      await showOverlayOnPage();
     }
   }
   render();
@@ -474,8 +493,9 @@ async function captureAndCompare(): Promise<void> {
   state.screenshotBase64 = captureRes.dataUrl;
 
   const img = new Image();
-  await new Promise<void>((resolve) => {
+  await new Promise<void>((resolve, reject) => {
     img.onload = () => resolve();
+    img.onerror = () => reject(new Error("Failed to load captured screenshot"));
     img.src = captureRes.dataUrl ?? "";
   });
 
@@ -521,9 +541,13 @@ async function handleClearToken(): Promise<void> {
 // Messaging
 // =============================================================================
 
-function sendToBackground<T>(message: Record<string, unknown>): Promise<T> {
-  return new Promise((resolve) => {
+function sendToBackground<T>(message: InternalMessage): Promise<T> {
+  return new Promise((resolve, reject) => {
     chrome.runtime.sendMessage(message, (response: T) => {
+      if (chrome.runtime.lastError) {
+        reject(new Error(chrome.runtime.lastError.message));
+        return;
+      }
       resolve(response);
     });
   });
@@ -571,4 +595,4 @@ async function init(): Promise<void> {
   render();
 }
 
-void init();
+init().catch(console.error);

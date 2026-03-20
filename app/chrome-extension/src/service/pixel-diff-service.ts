@@ -64,7 +64,8 @@ export async function computePixelDiff(
 
   diffCtx.putImageData(diffImageData, 0, 0);
 
-  const matchRate = Math.round(((totalPixelCount - diffPixelCount) / totalPixelCount) * 10000) / 100;
+  const matchRate =
+    Math.round(((totalPixelCount - diffPixelCount) / totalPixelCount) * 10000) / 100;
   const regions = clusterDiffPixels(diffPixels, width, height);
 
   const blob = await diffCanvas.convertToBlob({ type: "image/png" });
@@ -79,7 +80,9 @@ async function decodeImageToImageData(
   targetHeight: number,
 ): Promise<Uint8ClampedArray> {
   const dataUrl = base64.startsWith("data:") ? base64 : `data:image/png;base64,${base64}`;
-  const blob = await fetch(dataUrl).then((r) => r.blob());
+  const response = await fetch(dataUrl);
+  if (!response.ok) throw new Error(`Failed to decode image: ${response.status}`);
+  const blob = await response.blob();
   const bitmap = await createImageBitmap(blob);
 
   const canvas = new OffscreenCanvas(targetWidth, targetHeight);
@@ -88,6 +91,7 @@ async function decodeImageToImageData(
     throw new Error("OffscreenCanvas 2d context unavailable");
   }
   ctx.drawImage(bitmap, 0, 0, targetWidth, targetHeight);
+  bitmap.close();
   return ctx.getImageData(0, 0, targetWidth, targetHeight).data;
 }
 

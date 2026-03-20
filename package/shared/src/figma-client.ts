@@ -1,4 +1,5 @@
 import { z } from "zod";
+
 import type { Frame } from "./type.js";
 
 const FIGMA_API_BASE = "https://api.figma.com/v1";
@@ -181,7 +182,9 @@ export class NoCacheStrategy implements FigmaCacheStrategy {
   async get(): Promise<null> {
     return null;
   }
-  async set(): Promise<void> {}
+  async set(): Promise<void> {
+    return;
+  }
 }
 
 const MIN_TOKEN_LENGTH = 20;
@@ -198,14 +201,14 @@ export class FigmaClient {
     this.cache = cache || new NoCacheStrategy();
   }
 
-  async getFile(fileKey: string, depth: number = 1): Promise<FigmaFileResponse> {
+  async getFile(fileKey: string, depth = 1): Promise<FigmaFileResponse> {
     const url = `${FIGMA_API_BASE}/files/${fileKey}?depth=${depth}`;
     const json = await this.fetchApi(url);
     return FigmaFileResponseSchema.parse(json);
   }
 
   /** 一時画像URLを取得（約24時間で失効） */
-  async getImageUrl(fileKey: string, nodeId: string, scale: number = 2): Promise<string> {
+  async getImageUrl(fileKey: string, nodeId: string, scale = 2): Promise<string> {
     const url = `${FIGMA_API_BASE}/images/${fileKey}?ids=${nodeId}&format=png&scale=${scale}`;
     const json = await this.fetchApi(url);
     const response = FigmaImagesResponseSchema.parse(json);
@@ -231,7 +234,7 @@ export class FigmaClient {
     return wrapper.document;
   }
 
-  async downloadImageAsBase64(fileKey: string, nodeId: string, scale: number = 2): Promise<string> {
+  async downloadImageAsBase64(fileKey: string, nodeId: string, scale = 2): Promise<string> {
     const cached = await this.cache.get(fileKey, nodeId, scale);
     if (cached) {
       return cached;

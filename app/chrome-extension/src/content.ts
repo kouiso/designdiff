@@ -3,16 +3,16 @@
  * 7モードオーバーレイ + DiffHighlight の統合エントリーポイント
  */
 
+import { showDiffHighlights, removeDiffHighlights } from "./content/diff-highlighter";
+import { showFloatingControlBar, removeFloatingControlBar } from "./content/floating-control-bar";
 import {
   showOverlay,
   hideOverlay,
   updateOpacity,
   updateMode,
-  setDiffImageData,
   getState,
 } from "./content/overlay-renderer";
-import { showDiffHighlights, removeDiffHighlights } from "./content/diff-highlighter";
-import { showFloatingControlBar, removeFloatingControlBar } from "./content/floating-control-bar";
+
 import type { ContentMessage } from "./type/message";
 
 chrome.runtime.onMessage.addListener(

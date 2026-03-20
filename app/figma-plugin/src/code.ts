@@ -70,10 +70,14 @@ async function handleGetSelection(): Promise<void> {
 /**
  * Export selected frame as PNG base64
  */
+function isSceneNode(node: BaseNode): node is SceneNode {
+  return node.type !== "DOCUMENT" && node.type !== "PAGE";
+}
+
 function toSceneNode(node: BaseNode | null): SceneNode | null {
   if (node === null) return null;
-  if (node.type === "DOCUMENT" || node.type === "PAGE") return null;
-  return node as SceneNode;
+  if (!isSceneNode(node)) return null;
+  return node;
 }
 
 async function handleExportFrame(nodeId?: string): Promise<void> {
@@ -107,9 +111,10 @@ async function handleExportFrame(nodeId?: string): Promise<void> {
       height: "height" in node ? node.height : 0,
     });
   } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
     figma.ui.postMessage({
       type: "export-result",
-      error: `Export failed: ${error}`,
+      error: `Export failed: ${message}`,
     });
   }
 }
@@ -158,7 +163,7 @@ interface InspectionResult {
   appearance: Record<string, unknown>;
   typography?: Record<string, unknown>;
   cssSuggestion: string;
-  children: Array<{ id: string; name: string; type: string; width: number; height: number }>;
+  children: { id: string; name: string; type: string; width: number; height: number }[];
 }
 
 function extractNodeInspection(node: SceneNode): InspectionResult {
@@ -209,8 +214,8 @@ function extractAppearanceFromNode(node: SceneNode): Record<string, unknown> {
     opacity: "opacity" in node ? node.opacity : 1,
   };
 
-  if ("fills" in node && Array.isArray(node.fills)) {
-    appearance.fills = (node.fills as Paint[])
+  if ("fills" in node && node.fills !== figma.mixed) {
+    appearance.fills = node.fills
       .filter((f) => f.visible !== false)
       .map((f) => {
         if (f.type === "SOLID") {
@@ -224,8 +229,8 @@ function extractAppearanceFromNode(node: SceneNode): Record<string, unknown> {
       });
   }
 
-  if ("strokes" in node && Array.isArray(node.strokes)) {
-    appearance.strokes = (node.strokes as Paint[])
+  if ("strokes" in node) {
+    appearance.strokes = node.strokes
       .filter((s) => s.visible !== false)
       .map((s) => {
         if (s.type === "SOLID") {
@@ -243,8 +248,8 @@ function extractAppearanceFromNode(node: SceneNode): Record<string, unknown> {
     appearance.borderRadius = node.cornerRadius;
   }
 
-  if ("effects" in node && Array.isArray(node.effects)) {
-    appearance.effects = (node.effects as Effect[])
+  if ("effects" in node) {
+    appearance.effects = node.effects
       .filter((e) => e.visible !== false)
       .map((e) => ({
         type: e.type,
@@ -255,7 +260,7 @@ function extractAppearanceFromNode(node: SceneNode): Record<string, unknown> {
   return appearance;
 }
 
-function extractTypographyFromNode(textNode: TextNode | SceneNode): Record<string, unknown> {
+function extractTypographyFromNode(textNode: SceneNode): Record<string, unknown> {
   if (textNode.type !== "TEXT") return {};
   return {
     fontFamily: typeof textNode.fontName !== "symbol" ? textNode.fontName.family : "Mixed",
@@ -313,14 +318,13 @@ function buildCssSuggestion(
 }
 
 function hasChildren(node: SceneNode): node is SceneNode & { children: readonly SceneNode[] } {
-  return "children" in node && Array.isArray((node as unknown as Record<string, unknown>).children);
+  return "children" in node && Array.isArray(node.children);
 }
 
 function extractChildren(
   node: SceneNode,
-): Array<{ id: string; name: string; type: string; width: number; height: number }> {
-  const children: Array<{ id: string; name: string; type: string; width: number; height: number }> =
-    [];
+): { id: string; name: string; type: string; width: number; height: number }[] {
+  const children: { id: string; name: string; type: string; width: number; height: number }[] = [];
   if (hasChildren(node)) {
     for (const child of node.children) {
       children.push({

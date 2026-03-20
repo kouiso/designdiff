@@ -38,6 +38,7 @@ let overlayEl: HTMLDivElement | null = null;
 let splitDividerEl: HTMLDivElement | null = null;
 let diffCanvasEl: HTMLCanvasElement | null = null;
 let diffImageData: string | null = null;
+let activeObjectUrls: string[] = [];
 
 export function showOverlay(
   imageBase64: string,
@@ -60,8 +61,6 @@ export function showOverlay(
 export function hideOverlay(): void {
   overlayState.active = false;
   removeOverlayElements();
-  document.removeEventListener("mousemove", onDragMove);
-  document.removeEventListener("mouseup", onDragEnd);
 }
 
 export function updateOpacity(opacity: number): void {
@@ -96,12 +95,18 @@ export function getState(): Pick<OverlayState, "active" | "mode" | "opacity"> {
 }
 
 function removeOverlayElements(): void {
+  document.removeEventListener("mousemove", onDragMove);
+  document.removeEventListener("mouseup", onDragEnd);
   overlayEl?.remove();
   splitDividerEl?.remove();
   diffCanvasEl?.remove();
   overlayEl = null;
   splitDividerEl = null;
   diffCanvasEl = null;
+  for (const url of activeObjectUrls) {
+    URL.revokeObjectURL(url);
+  }
+  activeObjectUrls = [];
 }
 
 function renderMode(): void {
@@ -110,6 +115,7 @@ function renderMode(): void {
       renderDesignOnly();
       break;
     case "implementation":
+      // オーバーレイを表示しない — 実装画面をそのまま見せるモードのため
       break;
     case "transparent_overlay":
       renderTransparentOverlay();
@@ -137,14 +143,23 @@ function createBaseOverlay(): HTMLDivElement {
 }
 
 function createOverlayImg(base64: string): HTMLImageElement {
+  const dataUrl = base64.startsWith("data:") ? base64 : `data:image/png;base64,${base64}`;
+  const byteString = atob(dataUrl.split(",")[1] ?? dataUrl);
+  const bytes = new Uint8Array(byteString.length);
+  for (let i = 0; i < byteString.length; i++) {
+    bytes[i] = byteString.charCodeAt(i);
+  }
+  const blob = new Blob([bytes], { type: "image/png" });
+  const objectUrl = URL.createObjectURL(blob);
+  activeObjectUrls.push(objectUrl);
   const img = document.createElement("img");
-  img.src = base64.startsWith("data:") ? base64 : `data:image/png;base64,${base64}`;
+  img.src = objectUrl;
   img.draggable = false;
   img.style.cssText = "width:100%;height:100%;object-fit:contain;object-position:top left;";
   return img;
 }
 
-function renderDesignOnly(): void {
+function renderSimpleOverlay(imageBase64: string, opacity: number, blendMode: string): void {
   const el = createBaseOverlay();
   el.style.cssText = `
     position: fixed;
@@ -152,50 +167,27 @@ function renderDesignOnly(): void {
     width: 100vw; height: 100vh;
     z-index: 2147483646;
     pointer-events: none;
-    opacity: 1;
-    mix-blend-mode: normal;
+    opacity: ${opacity};
+    mix-blend-mode: ${blendMode};
   `;
-  if (overlayState.imageBase64) {
-    el.appendChild(createOverlayImg(overlayState.imageBase64));
-  }
+  el.appendChild(createOverlayImg(imageBase64));
   document.body.appendChild(el);
   overlayEl = el;
+}
+
+function renderDesignOnly(): void {
+  if (!overlayState.imageBase64) return;
+  renderSimpleOverlay(overlayState.imageBase64, 1, "normal");
 }
 
 function renderTransparentOverlay(): void {
-  const el = createBaseOverlay();
-  el.style.cssText = `
-    position: fixed;
-    top: 0; left: 0;
-    width: 100vw; height: 100vh;
-    z-index: 2147483646;
-    pointer-events: none;
-    opacity: ${overlayState.opacity};
-    mix-blend-mode: normal;
-  `;
-  if (overlayState.imageBase64) {
-    el.appendChild(createOverlayImg(overlayState.imageBase64));
-  }
-  document.body.appendChild(el);
-  overlayEl = el;
+  if (!overlayState.imageBase64) return;
+  renderSimpleOverlay(overlayState.imageBase64, overlayState.opacity, "normal");
 }
 
 function renderBlendedDiff(): void {
-  const el = createBaseOverlay();
-  el.style.cssText = `
-    position: fixed;
-    top: 0; left: 0;
-    width: 100vw; height: 100vh;
-    z-index: 2147483646;
-    pointer-events: none;
-    opacity: 1;
-    mix-blend-mode: difference;
-  `;
-  if (overlayState.imageBase64) {
-    el.appendChild(createOverlayImg(overlayState.imageBase64));
-  }
-  document.body.appendChild(el);
-  overlayEl = el;
+  if (!overlayState.imageBase64) return;
+  renderSimpleOverlay(overlayState.imageBase64, 1, "difference");
 }
 
 function renderDraggableOverlay(): void {

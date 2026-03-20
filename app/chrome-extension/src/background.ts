@@ -4,18 +4,20 @@
  */
 
 import { fetchFrames, fetchFrameImage } from "./service/figma-service";
-import { getToken, setToken, clearToken } from "./service/token-service";
 import { computePixelDiff } from "./service/pixel-diff-service";
-import type {
-  InternalMessage,
-  PluginSendFrameMessage,
-  ShowOverlayMessage,
-} from "./type/message";
+import { getToken, setToken, clearToken } from "./service/token-service";
+
+import type { InternalMessage, PluginSendFrameMessage, ShowOverlayMessage } from "./type/message";
+
+function isInternalMessage(value: unknown): value is InternalMessage {
+  return typeof value === "object" && value !== null && "type" in value;
+}
 
 // --- Internal message handler (popup → background) ---
 
 chrome.runtime.onMessage.addListener(
-  (message: InternalMessage, _sender, sendResponse: (response: unknown) => void) => {
+  (message: unknown, _sender, sendResponse: (response: unknown) => void) => {
+    if (!isInternalMessage(message)) return;
     switch (message.type) {
       case "capture-screenshot": {
         chrome.tabs.captureVisibleTab({ format: "png" }, (dataUrl) => {

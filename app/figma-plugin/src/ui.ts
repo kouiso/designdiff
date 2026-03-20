@@ -19,7 +19,7 @@ function escapeHtml(text: string): string {
 // --- State ---
 interface AppState {
   tab: "compare" | "inspect";
-  selection: Array<{ id: string; name: string; type: string; width: number; height: number }>;
+  selection: { id: string; name: string; type: string; width: number; height: number }[];
   designBase64: string | null;
   screenshotBase64: string | null;
   comparisonResult: ComparisonResult | null;
@@ -42,7 +42,7 @@ interface InspectionResult {
   appearance: Record<string, unknown>;
   typography?: Record<string, unknown>;
   cssSuggestion: string;
-  children: Array<{ id: string; name: string; type: string; width: number; height: number }>;
+  children: { id: string; name: string; type: string; width: number; height: number }[];
 }
 
 const state: AppState = {
@@ -56,10 +56,47 @@ const state: AppState = {
 };
 
 // --- Message Handling ---
-window.onmessage = (event: MessageEvent) => {
-  const msg = event.data.pluginMessage;
-  if (!msg) return;
 
+interface SelectionMessage {
+  type: "selection";
+  nodes: AppState["selection"];
+}
+interface ExportResultMessage {
+  type: "export-result";
+  base64?: string;
+  error?: string;
+}
+interface InspectResultMessage {
+  type: "inspect-result";
+  inspection?: InspectionResult;
+  error?: string;
+}
+interface RunComparisonMessage {
+  type: "run-comparison";
+  designBase64: string;
+  screenshotBase64: string;
+}
+
+type PluginResponse =
+  | SelectionMessage
+  | ExportResultMessage
+  | InspectResultMessage
+  | RunComparisonMessage;
+
+function isPluginResponse(msg: unknown): msg is PluginResponse {
+  if (typeof msg !== "object" || msg === null || !("type" in msg)) return false;
+  // "type" in msg narrows to { type: unknown }, so property access is safe via index signature
+  const obj: Record<string, unknown> = msg;
+  return typeof obj["type"] === "string";
+}
+
+// Figma Plugin iframe context: event.origin is always "null" (opaque origin), so origin validation is not applicable
+window.onmessage = (event: MessageEvent) => {
+  const raw: unknown = event.data.pluginMessage;
+  if (!raw) return;
+  if (!isPluginResponse(raw)) return;
+
+  const msg = raw;
   switch (msg.type) {
     case "selection":
       state.selection = msg.nodes;
@@ -70,7 +107,7 @@ window.onmessage = (event: MessageEvent) => {
       if (msg.error) {
         alert(msg.error);
         state.loading = false;
-      } else {
+      } else if (msg.base64) {
         state.designBase64 = msg.base64;
         if (state.screenshotBase64) {
           runComparison();
@@ -85,7 +122,7 @@ window.onmessage = (event: MessageEvent) => {
       state.loading = false;
       if (msg.error) {
         alert(msg.error);
-      } else {
+      } else if (msg.inspection) {
         state.inspectionResult = msg.inspection;
       }
       render();
@@ -405,7 +442,7 @@ function renderCssSection(cssSuggestion: string): HTMLElement {
 }
 
 function renderChildrenSection(
-  children: Array<{ id: string; name: string; type: string; width: number; height: number }>,
+  children: { id: string; name: string; type: string; width: number; height: number }[],
 ): HTMLElement {
   const section = el("div", "section");
   section.innerHTML = `<div class="label" style="margin-bottom:4px;">Children (${children.length})</div>`;

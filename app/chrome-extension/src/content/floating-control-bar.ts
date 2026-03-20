@@ -1,5 +1,6 @@
 import { VIEW_MODES, VIEW_MODE_METADATA } from "@figdiff/shared";
 import type { ViewMode } from "@figdiff/shared";
+
 import { overlayState, hideOverlay, updateOpacity, updateMode } from "./overlay-renderer";
 
 // =============================================================================
@@ -8,8 +9,13 @@ import { overlayState, hideOverlay, updateOpacity, updateMode } from "./overlay-
 
 const CONTROLS_ID = "figdiff-controls";
 
+let barAbortController: AbortController | null = null;
+
 export function showFloatingControlBar(): void {
   removeFloatingControlBar();
+
+  barAbortController = new AbortController();
+  const { signal } = barAbortController;
 
   const bar = document.createElement("div");
   bar.id = CONTROLS_ID;
@@ -21,20 +27,22 @@ export function showFloatingControlBar(): void {
   bar.appendChild(label);
 
   if (VIEW_MODE_METADATA[overlayState.mode].requiresOpacitySlider) {
-    bar.appendChild(createOpacitySlider());
+    bar.appendChild(createOpacitySlider(signal));
   }
 
-  bar.appendChild(createModeSelector());
-  bar.appendChild(createCloseButton());
+  bar.appendChild(createModeSelector(signal));
+  bar.appendChild(createCloseButton(signal));
 
   document.body.appendChild(bar);
 }
 
 export function removeFloatingControlBar(): void {
+  barAbortController?.abort();
+  barAbortController = null;
   document.getElementById(CONTROLS_ID)?.remove();
 }
 
-function createOpacitySlider(): HTMLElement {
+function createOpacitySlider(signal: AbortSignal): HTMLElement {
   const wrapper = document.createElement("span");
 
   const slider = document.createElement("input");
@@ -43,11 +51,15 @@ function createOpacitySlider(): HTMLElement {
   slider.max = "100";
   slider.value = String(Math.round(overlayState.opacity * 100));
   slider.title = "Opacity";
-  slider.addEventListener("input", () => {
-    const value = Number.parseInt(slider.value, 10) / 100;
-    updateOpacity(value);
-    opacityLabel.textContent = `${slider.value}%`;
-  });
+  slider.addEventListener(
+    "input",
+    () => {
+      const value = Number.parseInt(slider.value, 10) / 100;
+      updateOpacity(value);
+      opacityLabel.textContent = `${slider.value}%`;
+    },
+    { signal },
+  );
 
   const opacityLabel = document.createElement("span");
   opacityLabel.textContent = `${Math.round(overlayState.opacity * 100)}%`;
@@ -58,7 +70,7 @@ function createOpacitySlider(): HTMLElement {
   return wrapper;
 }
 
-function createModeSelector(): HTMLElement {
+function createModeSelector(signal: AbortSignal): HTMLElement {
   const wrapper = document.createElement("span");
 
   for (const mode of VIEW_MODES) {
@@ -67,10 +79,14 @@ function createModeSelector(): HTMLElement {
     btn.title = meta.label;
     btn.textContent = meta.icon;
     btn.style.opacity = mode === overlayState.mode ? "1" : "0.4";
-    btn.addEventListener("click", () => {
-      updateMode(mode);
-      updateBarAfterModeChange(wrapper, mode);
-    });
+    btn.addEventListener(
+      "click",
+      () => {
+        updateMode(mode);
+        updateBarAfterModeChange(wrapper, mode);
+      },
+      { signal },
+    );
     wrapper.appendChild(btn);
   }
 
@@ -93,19 +109,24 @@ function updateBarAfterModeChange(modeWrapper: HTMLElement, newMode: ViewMode): 
   const needsSlider = VIEW_MODE_METADATA[newMode].requiresOpacitySlider;
 
   if (needsSlider && !existingSlider) {
-    bar.insertBefore(createOpacitySlider(), modeWrapper);
+    if (!barAbortController) return;
+    bar.insertBefore(createOpacitySlider(barAbortController.signal), modeWrapper);
   } else if (!needsSlider && existingSlider) {
     existingSlider.parentElement?.remove();
   }
 }
 
-function createCloseButton(): HTMLButtonElement {
+function createCloseButton(signal: AbortSignal): HTMLButtonElement {
   const btn = document.createElement("button");
   btn.title = "Close";
   btn.textContent = "✕";
-  btn.addEventListener("click", () => {
-    hideOverlay();
-    removeFloatingControlBar();
-  });
+  btn.addEventListener(
+    "click",
+    () => {
+      hideOverlay();
+      removeFloatingControlBar();
+    },
+    { signal },
+  );
   return btn;
 }

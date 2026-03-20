@@ -20,7 +20,11 @@ class ChromeCacheStrategy implements FigmaCacheStrategy {
 
   async set(fileKey: string, nodeId: string, scale: number, base64: string): Promise<void> {
     const key = `${CACHE_PREFIX}${fileKey}_${nodeId}_${scale}`;
-    await chrome.storage.local.set({ [key]: base64 });
+    try {
+      await chrome.storage.local.set({ [key]: base64 });
+    } catch {
+      // chrome.storage.local quota exceeded — skip caching
+    }
   }
 }
 
