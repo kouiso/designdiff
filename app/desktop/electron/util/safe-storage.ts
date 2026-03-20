@@ -1,5 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
+
 import { app, safeStorage } from "electron";
 import { z } from "zod";
 
@@ -74,17 +75,23 @@ export const getToken = (): string | null => {
     if (!app.isPackaged) {
       return Buffer.from(encoded, "base64").toString("utf-8");
     }
-    console.error("[safe-storage] dev-plaintext トークンは本番環境では読み取れません。再設定してください。");
+    console.error(
+      "[safe-storage] dev-plaintext トークンは本番環境では読み取れません。再設定してください。",
+    );
     return null;
   }
 
   if (encryptedFlag !== "true") {
-    console.error("[safe-storage] 不明な暗号化フラグです。セキュリティのため読み取りを拒否します。");
+    console.error(
+      "[safe-storage] 不明な暗号化フラグです。セキュリティのため読み取りを拒否します。",
+    );
     return null;
   }
 
   if (!canEncrypt()) {
-    console.error("[safe-storage] 暗号化されたトークンが保存されていますが、復号化が利用できません。");
+    console.error(
+      "[safe-storage] 暗号化されたトークンが保存されていますが、復号化が利用できません。",
+    );
     return null;
   }
 
@@ -102,12 +109,14 @@ export const deleteToken = (): void => {
   if (!existsSync(path)) return;
 
   const store = readStore();
-  delete store[CREDENTIAL_KEY];
-  delete store[`${CREDENTIAL_KEY}-encrypted`];
+  const keysToRemove = new Set([CREDENTIAL_KEY, `${CREDENTIAL_KEY}-encrypted`]);
+  const cleaned = Object.fromEntries(
+    Object.entries(store).filter(([key]) => !keysToRemove.has(key)),
+  );
 
-  if (Object.keys(store).length === 0) {
+  if (Object.keys(cleaned).length === 0) {
     unlinkSync(path);
   } else {
-    writeStore(store);
+    writeStore(cleaned);
   }
 };

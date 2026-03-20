@@ -1,4 +1,5 @@
 import { contextBridge, ipcRenderer } from "electron";
+
 import type { ElectronAPI } from "./type/ipc-api";
 
 const api: ElectronAPI = {

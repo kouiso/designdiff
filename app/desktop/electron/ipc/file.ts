@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
-import { extname, resolve } from "node:path";
 import { homedir, tmpdir } from "node:os";
+import { extname, resolve } from "node:path";
+
 import { BrowserWindow, ipcMain } from "electron";
 
 const ALLOWED_IMAGE_EXTENSIONS = new Set([
@@ -18,7 +19,9 @@ const validateImagePath = (filePath: string): string => {
   const home = homedir();
   const tmp = tmpdir();
   if (!resolved.startsWith(home) && !resolved.startsWith(tmp)) {
-    throw new Error("ホームディレクトリまたはシステム一時ディレクトリ配下のファイルのみ読み取り可能です");
+    throw new Error(
+      "ホームディレクトリまたはシステム一時ディレクトリ配下のファイルのみ読み取り可能です",
+    );
   }
   const ext = extname(resolved).toLowerCase();
   if (!ALLOWED_IMAGE_EXTENSIONS.has(ext)) {

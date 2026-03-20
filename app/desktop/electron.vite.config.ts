@@ -4,13 +4,9 @@ import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig, externalizeDepsPlugin } from "electron-vite";
 
-const pkg: unknown = JSON.parse(
-  readFileSync(resolve(__dirname, "package.json"), "utf-8"),
-);
+const pkg: unknown = JSON.parse(readFileSync(resolve(__dirname, "package.json"), "utf-8"));
 const appVersion =
-  typeof pkg === "object" && pkg !== null && "version" in pkg
-    ? String(pkg.version)
-    : "0.0.0";
+  typeof pkg === "object" && pkg !== null && "version" in pkg ? String(pkg.version) : "0.0.0";
 
 export default defineConfig({
   main: {

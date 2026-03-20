@@ -1,7 +1,9 @@
 import { ipcMain } from "electron";
+
 import { FigmaClient, extractFrames } from "@figdiff/shared";
-import { getToken } from "../util/safe-storage";
+
 import { NodeFsCacheStrategy } from "../util/cache";
+import { getToken } from "../util/safe-storage";
 import { transformNode } from "../util/transform-node";
 
 const requireToken = (): string => {
@@ -31,7 +33,7 @@ export const registerFigmaHandlers = (): void => {
 
   ipcMain.handle(
     "figma:get-frame-image",
-    async (_event, fileKey: string, nodeId: string, scale: number = 2) => {
+    async (_event, fileKey: string, nodeId: string, scale = 2) => {
       const token = requireToken();
       const client = new FigmaClient(token, getCache());
       return client.downloadImageAsBase64(fileKey, nodeId, scale);

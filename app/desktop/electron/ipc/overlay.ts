@@ -122,13 +122,7 @@ export const registerOverlayHandlers = (): void => {
 
   ipcMain.handle(
     "overlay:set-mode",
-    async (
-      _event,
-      mode: string,
-      base64: string,
-      opacity: number,
-      splitPosition: number,
-    ) => {
+    async (_event, mode: string, base64: string, opacity: number, splitPosition: number) => {
       if (!overlayView) throw new Error("オーバーレイが開かれていません");
 
       await overlayView.webContents.executeJavaScript(buildRemoveScript());
@@ -144,7 +138,9 @@ export const registerOverlayHandlers = (): void => {
           await overlayView.webContents.executeJavaScript(buildInjectScript(base64, opacity));
           break;
         case "split_screen":
-          await overlayView.webContents.executeJavaScript(buildSplitScreenScript(base64, splitPosition));
+          await overlayView.webContents.executeJavaScript(
+            buildSplitScreenScript(base64, splitPosition),
+          );
           break;
         case "blended_diff":
           await overlayView.webContents.executeJavaScript(buildBlendedDiffScript(base64));
