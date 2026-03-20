@@ -32,7 +32,7 @@ NEVER say any of the following WHEN browser/WebView/UI code was modified:
 
 IF the conversation environment has `mcp__playwright__*` tools available, THEN Playwright IS available. No exceptions. No excuses.
 
-IF the app is an Electron desktop app, THEN the webview layer IS testable via Playwright. Use `mcp__playwright__browser_navigate` to reach `http://localhost:PORT` opened by `pnpm dev`.
+IF the app is an Electron desktop app, THEN the webview layer IS testable via Playwright. Use `mcp__playwright__browser_navigate` to reach `http://localhost:5173` opened by `pnpm dev`.
 
 ### 2.3. Mandatory Playwright Triggers
 
@@ -93,7 +93,7 @@ Step 2: Wait for server ready
   → Poll port until responding (mcp__playwright__browser_wait_for or curl)
 
 Step 3: Navigate and verify
-  → mcp__playwright__browser_navigate to http://localhost:[PORT]
+  → mcp__playwright__browser_navigate to http://localhost:5173
   → mcp__playwright__browser_take_screenshot
   → mcp__playwright__browser_snapshot (accessibility tree)
 
