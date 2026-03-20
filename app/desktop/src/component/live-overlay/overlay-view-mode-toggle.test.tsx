@@ -68,9 +68,7 @@ describe("OverlayViewModeToggle", () => {
     await user.click(screen.getByText("2up比較"));
 
     expect(mockCapture).toHaveBeenCalled();
-    expect(useCompareStore.getState().screenshotImage).toBe(
-      "data:image/png;base64,capturedBase64",
-    );
+    expect(useCompareStore.getState().screenshotImage).toBe("data:image/png;base64,capturedBase64");
     expect(onNavigate).toHaveBeenCalledWith("compare");
   });
 

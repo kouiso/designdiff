@@ -44,7 +44,7 @@ const idbGet = async (key: string): Promise<string | null> => {
     const store = tx.objectStore("images");
     const req = store.get(key);
     req.onsuccess = () => {
-      const val = req.result;
+      const val: unknown = req.result;
       resolve(typeof val === "string" ? val : null);
     };
     req.onerror = () => reject(req.error);
