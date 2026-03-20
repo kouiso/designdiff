@@ -6,11 +6,11 @@ applyTo: "**"
 
 ## Never Do
 
-1. **No plain-text token storage** — Use Electron `safeStorage` only
+1. **No plain-text token storage** — Use OS Keychain (`keyring` crate) only
 2. **No `any` type** — Use proper types or generics
 3. **No type assertions** (`as` keyword) — ESLint enforces `assertionStyle: "never"`
-4. **No raw `ipcRenderer.invoke()` calls** — Always use the platform adapter (`src/lib/platform/platform-adapter.ts`)
-5. **No binary buffers over Electron IPC** — Use base64 String for images
+4. **No direct `invoke()` calls** — Always use `src/lib/tauri-command.ts` wrapper
+5. **No `Vec<u8>` over Tauri IPC** — Use base64 String for images
 6. **No plural folder names** — `component/`, not `components/`
 7. **No PascalCase file names** — `home-page.tsx`, not `HomePage.tsx`
 8. **No ESLint disable comments** without justification
@@ -215,6 +215,27 @@ NEVER start implementing (editing files, creating new files, running build/deplo
 ```
 
 When in doubt: treat as report-only and end with 「修正も進めますか？」
+
+### Plan Mode Self-Review Obligation
+
+NEVER call ExitPlanMode or present a plan for user approval WHEN self-review has not scored 100/100 on every check item BECAUSE presenting an incomplete plan shifts quality assurance burden onto the user and wastes their review time on known defects.
+
+```
+❌ Self-review: 85/100 → "このプランで進めてええかな？" (user becomes the quality checker)
+❌ Self-review: 92/100 → ExitPlanMode (known issues shipped to user)
+
+✅ Self-review: 85/100 → fix all issues → re-review → 95/100 → fix remaining → 100/100 → ExitPlanMode
+```
+
+**Self-review checklist** (minimum, before ExitPlanMode):
+1. Re-read the entire plan file
+2. Cross-reference every edit against actual file contents (exact line numbers, exact text)
+3. Check for cascading impacts (e.g., changing a count affects multiple locations)
+4. Verify format consistency with existing file conventions
+5. Grep for stale references that should have been updated
+6. Confirm all new file content is complete (not just section headers)
+
+**Confidence**: High
 
 ### Surface Metrics Are Not Quality Verification
 
