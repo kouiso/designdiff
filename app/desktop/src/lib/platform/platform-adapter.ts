@@ -1,5 +1,7 @@
 import type { Frame, NodeInspection } from "@figdiff/shared";
 
+import type { OverlayViewMode } from "@/store/overlay-store";
+
 /**
  * プラットフォーム非依存のコマンドインターフェース
  * Electron / Web それぞれのアダプターがこれを実装する
@@ -39,7 +41,12 @@ export interface OverlayAdapter {
   removeOverlay(): Promise<void>;
   captureScreenshot(): Promise<string>;
   onNavigated(callback: (url: string) => void): () => void;
-  setMode(mode: string, base64: string, opacity: number, splitPosition: number): Promise<void>;
+  setMode(
+    mode: OverlayViewMode,
+    base64: string,
+    opacity: number,
+    splitPosition: number,
+  ): Promise<void>;
   updateSplitPosition(splitPosition: number): Promise<void>;
   toggleStart(intervalMs: number): Promise<void>;
   toggleStop(): Promise<void>;

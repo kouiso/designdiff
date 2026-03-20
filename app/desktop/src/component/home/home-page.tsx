@@ -3,6 +3,8 @@ import { useState } from "react";
 import { GitCompare, Globe, ImageIcon, Layers, Rocket } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
+import { parseDesignInput } from "@figdiff/shared";
+
 import { Badge } from "@/component/ui/badge";
 import { Button } from "@/component/ui/button";
 import { Card, CardContent } from "@/component/ui/card";
@@ -28,7 +30,14 @@ export function HomePage({ onNavigate }: HomePageProps) {
   const [implUrl, setImplUrl] = useState("");
 
   const handleSubmit = async (input: string) => {
-    if (input.includes("figma.com") && !figmaToken) {
+    const isFigmaUrl = (() => {
+      try {
+        return parseDesignInput(input).type === "figma_url";
+      } catch {
+        return false;
+      }
+    })();
+    if (isFigmaUrl && !figmaToken) {
       useProjectStore.setState({
         error: t("home.tokenRequired"),
       });

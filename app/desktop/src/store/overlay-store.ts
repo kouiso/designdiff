@@ -85,10 +85,10 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
   },
 
   closeSite: async () => {
-    const { stopToggle } = get();
-    await stopToggle();
-    const overlay = await getOverlay();
     try {
+      const { stopToggle } = get();
+      await stopToggle();
+      const overlay = await getOverlay();
       await overlay?.close();
     } finally {
       set({
@@ -98,6 +98,9 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
         showOverlay: false,
         overlayViewMode: "transparent_overlay",
         pixelDiffMatchRate: null,
+        isPixelDiffRunning: false,
+        isToggling: false,
+        error: null,
       });
     }
   },
@@ -233,8 +236,8 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
   },
 
   runPixelDiff: async () => {
-    const { overlayImageBase64, captureForComparison } = get();
-    if (!overlayImageBase64) return;
+    const { overlayImageBase64, captureForComparison, isPixelDiffRunning } = get();
+    if (!overlayImageBase64 || isPixelDiffRunning) return;
 
     set({ isPixelDiffRunning: true, pixelDiffMatchRate: null });
     try {

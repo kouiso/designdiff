@@ -1,6 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import * as imageCompare from "@/service/image-compare";
+
 import { useOverlayStore } from "./overlay-store";
+
+vi.mock("@/service/image-compare", () => ({
+  compareImages: vi.fn(),
+}));
 
 function resetStore() {
   useOverlayStore.setState({
@@ -337,6 +343,115 @@ describe("useOverlayStore", () => {
       await useOverlayStore.getState().runPixelDiff();
 
       expect(useOverlayStore.getState().isPixelDiffRunning).toBe(false);
+    });
+
+    it("does nothing when already running", async () => {
+      useOverlayStore.setState({
+        overlayImageBase64: "img",
+        isPixelDiffRunning: true,
+      });
+      await useOverlayStore.getState().runPixelDiff();
+
+      expect(window.electronAPI.overlay.captureScreenshot).not.toHaveBeenCalled();
+    });
+
+    it("runs pixel diff and sets matchRate on success", async () => {
+      vi.mocked(window.electronAPI.overlay.captureScreenshot).mockResolvedValueOnce("captured==");
+      vi.mocked(imageCompare.compareImages).mockResolvedValueOnce({
+        matchRate: 0.95,
+        mismatchCount: 100,
+        diffImageBase64: "data:image/png;base64,diffData==",
+        diffRegions: [],
+      });
+      vi.mocked(window.electronAPI.overlay.setMode).mockResolvedValueOnce(undefined);
+
+      useOverlayStore.setState({ overlayImageBase64: "designImg", isPixelDiffRunning: false });
+      await useOverlayStore.getState().runPixelDiff();
+
+      const state = useOverlayStore.getState();
+      expect(state.isPixelDiffRunning).toBe(false);
+      expect(state.pixelDiffMatchRate).toBe(0.95);
+      expect(window.electronAPI.overlay.setMode).toHaveBeenCalledWith(
+        "pixel_diff",
+        "diffData==",
+        0.7,
+        0.5,
+      );
+    });
+
+    it("sets error on failure", async () => {
+      vi.mocked(window.electronAPI.overlay.captureScreenshot).mockRejectedValueOnce(
+        new Error("capture failed"),
+      );
+
+      useOverlayStore.setState({ overlayImageBase64: "img", isPixelDiffRunning: false });
+      await useOverlayStore.getState().runPixelDiff();
+
+      const state = useOverlayStore.getState();
+      expect(state.isPixelDiffRunning).toBe(false);
+      expect(state.error).toContain("capture failed");
+    });
+  });
+
+  describe("setOverlayViewMode - pixel_diff path", () => {
+    it("calls runPixelDiff when switching to pixel_diff", async () => {
+      vi.mocked(window.electronAPI.overlay.setMode).mockResolvedValue(undefined);
+      vi.mocked(window.electronAPI.overlay.captureScreenshot).mockResolvedValueOnce("cap==");
+      vi.mocked(imageCompare.compareImages).mockResolvedValueOnce({
+        matchRate: 0.88,
+        mismatchCount: 200,
+        diffImageBase64: "data:image/png;base64,diff==",
+        diffRegions: [],
+      });
+
+      useOverlayStore.setState({
+        isOpen: true,
+        overlayImageBase64: "img",
+        isPixelDiffRunning: false,
+      });
+      await useOverlayStore.getState().setOverlayViewMode("pixel_diff");
+
+      expect(useOverlayStore.getState().overlayViewMode).toBe("pixel_diff");
+      expect(useOverlayStore.getState().pixelDiffMatchRate).toBe(0.88);
+    });
+
+    it("sets error when setMode fails", async () => {
+      vi.mocked(window.electronAPI.overlay.setMode).mockRejectedValueOnce(
+        new Error("setMode exploded"),
+      );
+
+      useOverlayStore.setState({
+        isOpen: true,
+        overlayImageBase64: "img",
+      });
+      await useOverlayStore.getState().setOverlayViewMode("blended_diff");
+
+      expect(useOverlayStore.getState().error).toContain("setMode exploded");
+    });
+  });
+
+  describe("closeSite - full guard", () => {
+    it("resets all state even when stopToggle throws", async () => {
+      vi.mocked(window.electronAPI.overlay.toggleStop).mockRejectedValueOnce(
+        new Error("toggle stop failed"),
+      );
+
+      useOverlayStore.setState({
+        isOpen: true,
+        isToggling: true,
+        currentUrl: "http://example.com",
+        overlayImageBase64: "img",
+        isPixelDiffRunning: true,
+        error: "old error",
+      });
+      await useOverlayStore.getState().closeSite();
+
+      const state = useOverlayStore.getState();
+      expect(state.isOpen).toBe(false);
+      expect(state.isToggling).toBe(false);
+      expect(state.isPixelDiffRunning).toBe(false);
+      expect(state.error).toBeNull();
+      expect(state.currentUrl).toBeNull();
     });
   });
 });

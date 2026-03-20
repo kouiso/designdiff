@@ -1,5 +1,5 @@
 export const buildInjectScript = (base64Image: string, opacity: number): string => {
-  if (!/^[A-Za-z0-9+/]*={0,2}$/.test(base64Image)) {
+  if (!/^[A-Za-z0-9+/]+={0,2}$/.test(base64Image)) {
     throw new Error("不正なbase64文字列です");
   }
   const safeOpacity = Math.min(1, Math.max(0, Number(opacity))).toFixed(2);
@@ -41,7 +41,11 @@ export const buildUpdateOpacityScript = (opacity: number): string => {
 export const buildRemoveScript = (): string => `
 (function() {
   const host = document.getElementById('__figdiff_overlay_host__');
-  if (host) host.remove();
+  if (!host) return;
+  var tid = host.dataset.toggleInterval;
+  if (tid) clearInterval(Number(tid));
+  if (host.__figdiff_cleanup__) host.__figdiff_cleanup__();
+  host.remove();
 })();
 `;
 
@@ -60,7 +64,7 @@ export const buildShowOverlayScript = (): string => `
 `;
 
 export const buildSplitScreenScript = (base64Image: string, splitPosition: number): string => {
-  if (!/^[A-Za-z0-9+/]*={0,2}$/.test(base64Image)) {
+  if (!/^[A-Za-z0-9+/]+={0,2}$/.test(base64Image)) {
     throw new Error("不正なbase64文字列です");
   }
   const pos = Math.min(100, Math.max(0, splitPosition * 100)).toFixed(1);
@@ -109,7 +113,7 @@ export const buildUpdateSplitPositionScript = (splitPosition: number): string =>
 };
 
 export const buildBlendedDiffScript = (base64Image: string): string => {
-  if (!/^[A-Za-z0-9+/]*={0,2}$/.test(base64Image)) {
+  if (!/^[A-Za-z0-9+/]+={0,2}$/.test(base64Image)) {
     throw new Error("不正なbase64文字列です");
   }
 
@@ -137,7 +141,7 @@ export const buildBlendedDiffScript = (base64Image: string): string => {
 };
 
 export const buildDraggableScript = (base64Image: string, opacity: number): string => {
-  if (!/^[A-Za-z0-9+/]*={0,2}$/.test(base64Image)) {
+  if (!/^[A-Za-z0-9+/]+={0,2}$/.test(base64Image)) {
     throw new Error("不正なbase64文字列です");
   }
   const safeOpacity = Math.min(1, Math.max(0, Number(opacity))).toFixed(2);
@@ -163,6 +167,7 @@ export const buildDraggableScript = (base64Image: string, opacity: number): stri
   img.src = 'data:image/png;base64,${base64Image}';
   img.style.cssText = 'width:100%;height:100%;object-fit:contain;opacity:${safeOpacity};cursor:grab;pointer-events:auto;transform:translate(0px,0px);';
   shadow.appendChild(img);
+  if (host.__figdiff_cleanup__) host.__figdiff_cleanup__();
   let dragging = false, startX = 0, startY = 0, offsetX = 0, offsetY = 0;
   img.addEventListener('mousedown', function(e) {
     dragging = true;
@@ -171,19 +176,25 @@ export const buildDraggableScript = (base64Image: string, opacity: number): stri
     img.style.cursor = 'grabbing';
     e.preventDefault();
   });
-  document.addEventListener('mousemove', function(e) {
+  function onMove(e) {
     if (!dragging) return;
     offsetX = e.clientX - startX;
     offsetY = e.clientY - startY;
     img.style.transform = 'translate(' + offsetX + 'px,' + offsetY + 'px)';
     host.dataset.dragX = String(offsetX);
     host.dataset.dragY = String(offsetY);
-  });
-  document.addEventListener('mouseup', function() {
+  }
+  function onUp() {
     if (!dragging) return;
     dragging = false;
     img.style.cursor = 'grab';
-  });
+  }
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('mouseup', onUp);
+  host.__figdiff_cleanup__ = function() {
+    document.removeEventListener('mousemove', onMove);
+    document.removeEventListener('mouseup', onUp);
+  };
 })();
 `;
 };

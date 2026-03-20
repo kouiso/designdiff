@@ -1,5 +1,15 @@
 import type { Frame, NodeInspection } from "@figdiff/shared";
 
+export type OverlayViewMode =
+  | "design_only"
+  | "implementation"
+  | "transparent_overlay"
+  | "split_screen"
+  | "blended_diff"
+  | "draggable_overlay"
+  | "pixel_diff"
+  | "toggle";
+
 /**
  * Renderer プロセスから呼び出せる IPC API の型定義
  * contextBridge 経由で window.electronAPI として公開される
@@ -24,7 +34,12 @@ export interface OverlayAPI {
   removeOverlay(): Promise<void>;
   captureScreenshot(): Promise<string>;
   onNavigated(callback: (url: string) => void): () => void;
-  setMode(mode: string, base64: string, opacity: number, splitPosition: number): Promise<void>;
+  setMode(
+    mode: OverlayViewMode,
+    base64: string,
+    opacity: number,
+    splitPosition: number,
+  ): Promise<void>;
   updateSplitPosition(splitPosition: number): Promise<void>;
   toggleStart(intervalMs: number): Promise<void>;
   toggleStop(): Promise<void>;
