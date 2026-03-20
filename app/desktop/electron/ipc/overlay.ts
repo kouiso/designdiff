@@ -1,9 +1,16 @@
 import { BrowserWindow, WebContentsView, ipcMain, session } from "electron";
 
 import {
+  buildBlendedDiffScript,
+  buildDraggableScript,
+  buildHideOverlayScript,
   buildInjectScript,
   buildRemoveScript,
+  buildSplitScreenScript,
+  buildToggleStartScript,
+  buildToggleStopScript,
   buildUpdateOpacityScript,
+  buildUpdateSplitPositionScript,
 } from "../util/overlay-script";
 
 let overlayView: WebContentsView | null = null;
@@ -113,5 +120,64 @@ export const registerOverlayHandlers = (): void => {
     if (!overlayView) throw new Error("オーバーレイが開かれていません");
     const image = await overlayView.webContents.capturePage();
     return image.toPNG().toString("base64");
+  });
+
+  ipcMain.handle(
+    "overlay:set-mode",
+    async (
+      _event,
+      mode: string,
+      base64: string,
+      opacity: number,
+      splitPosition: number,
+    ) => {
+      if (!overlayView) throw new Error("オーバーレイが開かれていません");
+
+      await overlayView.webContents.executeJavaScript(buildRemoveScript());
+
+      switch (mode) {
+        case "design_only":
+          await overlayView.webContents.executeJavaScript(buildInjectScript(base64, 1));
+          break;
+        case "implementation":
+          await overlayView.webContents.executeJavaScript(buildHideOverlayScript());
+          break;
+        case "transparent_overlay":
+          await overlayView.webContents.executeJavaScript(buildInjectScript(base64, opacity));
+          break;
+        case "split_screen":
+          await overlayView.webContents.executeJavaScript(buildSplitScreenScript(base64, splitPosition));
+          break;
+        case "blended_diff":
+          await overlayView.webContents.executeJavaScript(buildBlendedDiffScript(base64));
+          break;
+        case "draggable_overlay":
+          await overlayView.webContents.executeJavaScript(buildDraggableScript(base64, opacity));
+          break;
+        case "pixel_diff":
+          await overlayView.webContents.executeJavaScript(buildInjectScript(base64, opacity));
+          break;
+        case "toggle":
+          await overlayView.webContents.executeJavaScript(buildInjectScript(base64, 1));
+          break;
+        default:
+          throw new Error(`不明なオーバーレイモード: ${mode}`);
+      }
+    },
+  );
+
+  ipcMain.handle("overlay:update-split-position", async (_event, splitPosition: number) => {
+    if (!overlayView) throw new Error("オーバーレイが開かれていません");
+    await overlayView.webContents.executeJavaScript(buildUpdateSplitPositionScript(splitPosition));
+  });
+
+  ipcMain.handle("overlay:toggle-start", async (_event, intervalMs: number) => {
+    if (!overlayView) throw new Error("オーバーレイが開かれていません");
+    await overlayView.webContents.executeJavaScript(buildToggleStartScript(intervalMs));
+  });
+
+  ipcMain.handle("overlay:toggle-stop", async () => {
+    if (!overlayView) throw new Error("オーバーレイが開かれていません");
+    await overlayView.webContents.executeJavaScript(buildToggleStopScript());
   });
 };

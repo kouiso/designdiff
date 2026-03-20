@@ -1,11 +1,15 @@
-import { GitCompare, ImageIcon, Layers } from "lucide-react";
+import { useState } from "react";
+
+import { GitCompare, Globe, ImageIcon, Layers, Rocket } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { Badge } from "@/component/ui/badge";
 import { Button } from "@/component/ui/button";
 import { Card, CardContent } from "@/component/ui/card";
+import { Input } from "@/component/ui/input";
 import { Spinner } from "@/component/ui/spinner";
 import { cn } from "@/lib/util";
+import { useOverlayStore } from "@/store/overlay-store";
 import { useProjectStore } from "@/store/project-store";
 import { useSettingStore } from "@/store/setting-store";
 
@@ -21,6 +25,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
   const { t } = useTranslation();
   const { loadDesign, isLoading, error, clearError } = useProjectStore();
   const { figmaToken } = useSettingStore();
+  const [implUrl, setImplUrl] = useState("");
 
   const handleSubmit = async (input: string) => {
     if (input.includes("figma.com") && !figmaToken) {
@@ -31,6 +36,21 @@ export function HomePage({ onNavigate }: HomePageProps) {
     }
     clearError();
     await loadDesign(input);
+
+    const trimmedImplUrl = implUrl.trim();
+    if (trimmedImplUrl) {
+      const { frames } = useProjectStore.getState();
+      if (frames.length > 0) {
+        const firstFrame = frames[0];
+        if (firstFrame) {
+          await useProjectStore.getState().selectFrame(firstFrame);
+        }
+      }
+      useOverlayStore.getState().setUrl(trimmedImplUrl);
+      onNavigate("live_overlay");
+      return;
+    }
+
     const { frames, frameImage } = useProjectStore.getState();
     if (frames.length > 0 || frameImage) {
       onNavigate("project");
@@ -73,6 +93,35 @@ export function HomePage({ onNavigate }: HomePageProps) {
           <p className="text-muted-foreground text-sm">{t("home.inputHint")}</p>
         </div>
         <DesignInput onSubmit={handleSubmit} disabled={isLoading} />
+
+        <div className="flex items-center gap-2 rounded-xl border border-border bg-card p-1.5 shadow-sm transition-colors focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/20">
+          <Globe className="ml-2 h-4 w-4 shrink-0 text-muted-foreground" />
+          <Input
+            type="text"
+            value={implUrl}
+            onChange={(e) => setImplUrl(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+              }
+            }}
+            placeholder={t("home.implUrlPlaceholder")}
+            aria-label={t("home.implUrlPlaceholder")}
+            disabled={isLoading}
+            className="border-0 bg-transparent shadow-none focus-visible:ring-0"
+          />
+          {implUrl.trim() && (
+            <Badge variant="outline" className="mr-2 shrink-0">
+              <Rocket className="mr-1 h-3 w-3" />
+              {t("home.badgeLiveOverlay")}
+            </Badge>
+          )}
+        </div>
+
+        {implUrl.trim() && (
+          <p className="text-muted-foreground text-xs">{t("home.implUrlHint")}</p>
+        )}
+
         {!figmaToken && (
           <div className="flex items-center justify-between gap-3 rounded-lg border border-primary/30 bg-accent px-4 py-3">
             <p className="text-accent-foreground text-sm">{t("home.tokenRequired")}</p>
@@ -128,6 +177,10 @@ export function HomePage({ onNavigate }: HomePageProps) {
           ))}
         </div>
       </section>
+
+      <p className="text-center text-xs text-muted-foreground/50">
+        v{__APP_VERSION__}
+      </p>
     </div>
   );
 }

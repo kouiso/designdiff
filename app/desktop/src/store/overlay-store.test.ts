@@ -12,6 +12,12 @@ function resetStore() {
     showOverlay: true,
     currentUrl: null,
     error: null,
+    overlayViewMode: "transparent_overlay",
+    splitPosition: 0.5,
+    toggleIntervalMs: 500,
+    isToggling: false,
+    isPixelDiffRunning: false,
+    pixelDiffMatchRate: null,
   });
 }
 
@@ -83,7 +89,7 @@ describe("useOverlayStore", () => {
     it("updates opacity and calls electronAPI when overlay is active", async () => {
       vi.mocked(window.electronAPI.overlay.updateOpacity).mockResolvedValueOnce(undefined);
 
-      useOverlayStore.setState({ isOpen: true, showOverlay: true });
+      useOverlayStore.setState({ isOpen: true, showOverlay: true, overlayViewMode: "transparent_overlay" });
       await useOverlayStore.getState().setOpacity(0.8);
 
       expect(useOverlayStore.getState().opacity).toBe(0.8);
@@ -111,17 +117,19 @@ describe("useOverlayStore", () => {
     });
 
     it("re-injects overlay when toggling on", async () => {
-      vi.mocked(window.electronAPI.overlay.setOverlayImage).mockResolvedValueOnce(undefined);
+      vi.mocked(window.electronAPI.overlay.setMode).mockResolvedValueOnce(undefined);
 
       useOverlayStore.setState({
         showOverlay: false,
         overlayImageBase64: "abc",
         opacity: 0.7,
+        overlayViewMode: "transparent_overlay",
+        splitPosition: 0.5,
       });
       await useOverlayStore.getState().toggleOverlay();
 
       expect(useOverlayStore.getState().showOverlay).toBe(true);
-      expect(window.electronAPI.overlay.setOverlayImage).toHaveBeenCalledWith("abc", 0.7);
+      expect(window.electronAPI.overlay.setMode).toHaveBeenCalledWith("transparent_overlay", "abc", 0.7, 0.5);
     });
   });
 

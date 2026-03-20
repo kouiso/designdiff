@@ -24,7 +24,10 @@
     "step2": "Select a\nframe",
     "step3": "Compare with\nimplementation",
     "stepLabel": "STEP {{n}}",
-    "badgeLocal": "Local"
+    "badgeLocal": "Local",
+    "implUrlPlaceholder": "Implementation URL (optional, e.g. http://localhost:3000)",
+    "implUrlHint": "Both URLs entered → skip frame selection and launch Live Overlay directly.",
+    "badgeLiveOverlay": "Live Overlay"
   },
   "project": {
     "pageTitle": "Select a Frame to Compare",
@@ -79,13 +82,15 @@
     "blended_diff": "Blended Diff",
     "draggable_overlay": "Draggable Overlay",
     "pixel_diff": "Pixel Diff",
+    "toggle": "Toggle",
     "desc_design_only": "Show Figma design image only",
     "desc_implementation": "Show implementation screenshot only",
     "desc_transparent_overlay": "Overlay design and implementation with adjustable opacity",
     "desc_split_screen": "Side-by-side split view",
     "desc_blended_diff": "Show differences with blending",
     "desc_draggable_overlay": "Drag design image to compare",
-    "desc_pixel_diff": "Mechanical diff detection (red highlights)"
+    "desc_pixel_diff": "Mechanical diff detection (red highlights)",
+    "desc_toggle": "Alternate between design and implementation"
   },
   "canvas": {
     "zoomHint": "Ctrl+Wheel: Zoom",
@@ -146,7 +151,11 @@
     "loadDesign": "Overlay Design",
     "hide": "Hide overlay",
     "show": "Show overlay",
-    "capture": "Capture → Compare"
+    "capture": "Capture → Compare",
+    "twoUp": "2up Compare",
+    "splitPosition": "Split",
+    "toggleSpeed": "Speed",
+    "analyzing": "Analyzing..."
   },
   "error": {
     "bothImagesRequired": "Both images are required"

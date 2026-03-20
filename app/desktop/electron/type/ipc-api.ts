@@ -24,6 +24,10 @@ export interface OverlayAPI {
   removeOverlay(): Promise<void>;
   captureScreenshot(): Promise<string>;
   onNavigated(callback: (url: string) => void): () => void;
+  setMode(mode: string, base64: string, opacity: number, splitPosition: number): Promise<void>;
+  updateSplitPosition(splitPosition: number): Promise<void>;
+  toggleStart(intervalMs: number): Promise<void>;
+  toggleStop(): Promise<void>;
 }
 
 declare global {

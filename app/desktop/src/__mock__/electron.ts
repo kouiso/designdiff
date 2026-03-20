@@ -17,6 +17,10 @@ const electronAPI = {
     removeOverlay: vi.fn(),
     captureScreenshot: vi.fn(),
     onNavigated: vi.fn().mockReturnValue(() => {}),
+    setMode: vi.fn(),
+    updateSplitPosition: vi.fn(),
+    toggleStart: vi.fn(),
+    toggleStop: vi.fn(),
   },
 };
 

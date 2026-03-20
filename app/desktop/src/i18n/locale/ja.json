@@ -24,7 +24,10 @@
     "step2": "フレームを\n選択",
     "step3": "実装と\nピクセル比較",
     "stepLabel": "ステップ {{n}}",
-    "badgeLocal": "ローカル"
+    "badgeLocal": "ローカル",
+    "implUrlPlaceholder": "実装URL（任意、例: http://localhost:3000）",
+    "implUrlHint": "両方入力 → フレーム選択をスキップしてライブオーバーレイを直接起動します。",
+    "badgeLiveOverlay": "ライブオーバーレイ"
   },
   "project": {
     "pageTitle": "比較するフレームを選択",
@@ -79,13 +82,15 @@
     "blended_diff": "ブレンド差分",
     "draggable_overlay": "ドラッグオーバーレイ",
     "pixel_diff": "ピクセル差分",
+    "toggle": "トグル",
     "desc_design_only": "Figmaデザイン画像のみ表示",
     "desc_implementation": "実装スクリーンショットのみ表示",
     "desc_transparent_overlay": "デザインと実装を透明度調整で重ねる",
     "desc_split_screen": "左右分割表示",
     "desc_blended_diff": "差分をブレンド表示",
     "desc_draggable_overlay": "デザイン画像をドラッグで移動",
-    "desc_pixel_diff": "機械的差分検出（赤ハイライト）"
+    "desc_pixel_diff": "機械的差分検出（赤ハイライト）",
+    "desc_toggle": "デザインと実装を交互に表示"
   },
   "canvas": {
     "zoomHint": "Ctrl+ホイール: ズーム",
@@ -146,7 +151,11 @@
     "loadDesign": "デザインを重ねる",
     "hide": "オーバーレイを非表示",
     "show": "オーバーレイを表示",
-    "capture": "キャプチャ → 比較"
+    "capture": "キャプチャ → 比較",
+    "twoUp": "2up比較",
+    "splitPosition": "分割位置",
+    "toggleSpeed": "速度",
+    "analyzing": "解析中..."
   },
   "error": {
     "bothImagesRequired": "両方の画像が必要です"
