@@ -1,1 +1,0 @@
-../../prompt/instruction/ecc-common-testing.md

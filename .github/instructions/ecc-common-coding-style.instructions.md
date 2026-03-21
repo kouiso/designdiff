@@ -1,1 +1,0 @@
-../../prompt/instruction/ecc-common-coding-style.md
