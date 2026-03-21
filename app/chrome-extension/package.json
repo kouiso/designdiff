@@ -8,7 +8,8 @@
     "dev": "node build.mjs --watch",
     "typecheck": "tsc --noEmit -p tsconfig.background.json && tsc --noEmit -p tsconfig.content.json && tsc --noEmit -p tsconfig.popup.json",
     "lint": "biome check src/",
-    "lint:fix": "biome check --write src/"
+    "lint:fix": "biome check --write src/",
+    "test": "vitest run"
   },
   "dependencies": {
     "@figdiff/shared": "workspace:*"
@@ -16,6 +17,7 @@
   "devDependencies": {
     "@types/chrome": "^0.0.287",
     "esbuild": "^0.24.0",
-    "typescript": "^5.7.0"
+    "typescript": "^5.7.0",
+    "vitest": "^3.2.0"
   }
 }

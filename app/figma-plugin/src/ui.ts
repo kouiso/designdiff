@@ -8,7 +8,7 @@
  */
 
 // --- HTML Escaping ---
-function escapeHtml(text: string): string {
+export function escapeHtml(text: string): string {
   return text
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
@@ -83,11 +83,11 @@ type PluginResponse =
   | InspectResultMessage
   | RunComparisonMessage;
 
-function isPluginResponse(msg: unknown): msg is PluginResponse {
+export function isPluginResponse(msg: unknown): msg is PluginResponse {
   if (typeof msg !== "object" || msg === null || !("type" in msg)) return false;
   // "type" in msg narrows to { type: unknown }, so property access is safe via index signature
   const obj: Record<string, unknown> = msg;
-  return typeof obj["type"] === "string";
+  return typeof obj.type === "string";
 }
 
 // Figma Plugin iframe context: event.origin is always "null" (opaque origin), so origin validation is not applicable
@@ -218,7 +218,7 @@ function loadImage(src: string): Promise<HTMLImageElement> {
  * Simple pixelmatch implementation for iframe (no npm dependency)
  * Compares two RGBA pixel arrays and highlights differences in red
  */
-function pixelmatchSimple(
+export function pixelmatchSimple(
   img1: Uint8ClampedArray,
   img2: Uint8ClampedArray,
   output: Uint8ClampedArray,

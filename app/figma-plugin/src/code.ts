@@ -70,11 +70,11 @@ async function handleGetSelection(): Promise<void> {
 /**
  * Export selected frame as PNG base64
  */
-function isSceneNode(node: BaseNode): node is SceneNode {
+export function isSceneNode(node: BaseNode): node is SceneNode {
   return node.type !== "DOCUMENT" && node.type !== "PAGE";
 }
 
-function toSceneNode(node: BaseNode | null): SceneNode | null {
+export function toSceneNode(node: BaseNode | null): SceneNode | null {
   if (node === null) return null;
   if (!isSceneNode(node)) return null;
   return node;
@@ -166,7 +166,7 @@ interface InspectionResult {
   children: { id: string; name: string; type: string; width: number; height: number }[];
 }
 
-function extractNodeInspection(node: SceneNode): InspectionResult {
+export function extractNodeInspection(node: SceneNode): InspectionResult {
   const layout = extractLayoutFromNode(node);
   const appearance = extractAppearanceFromNode(node);
   const typography = node.type === "TEXT" ? extractTypographyFromNode(node) : undefined;
@@ -185,7 +185,7 @@ function extractNodeInspection(node: SceneNode): InspectionResult {
   };
 }
 
-function extractLayoutFromNode(node: SceneNode): Record<string, unknown> {
+export function extractLayoutFromNode(node: SceneNode): Record<string, unknown> {
   const layout: Record<string, unknown> = {
     x: node.x,
     y: node.y,
@@ -209,7 +209,7 @@ function extractLayoutFromNode(node: SceneNode): Record<string, unknown> {
   return layout;
 }
 
-function extractAppearanceFromNode(node: SceneNode): Record<string, unknown> {
+export function extractAppearanceFromNode(node: SceneNode): Record<string, unknown> {
   const appearance: Record<string, unknown> = {
     opacity: "opacity" in node ? node.opacity : 1,
   };
@@ -260,7 +260,7 @@ function extractAppearanceFromNode(node: SceneNode): Record<string, unknown> {
   return appearance;
 }
 
-function extractTypographyFromNode(textNode: SceneNode): Record<string, unknown> {
+export function extractTypographyFromNode(textNode: SceneNode): Record<string, unknown> {
   if (textNode.type !== "TEXT") return {};
   return {
     fontFamily: typeof textNode.fontName !== "symbol" ? textNode.fontName.family : "Mixed",
@@ -276,7 +276,7 @@ function extractTypographyFromNode(textNode: SceneNode): Record<string, unknown>
   };
 }
 
-function buildCssSuggestion(
+export function buildCssSuggestion(
   layout: Record<string, unknown>,
   appearance: Record<string, unknown>,
   typography: Record<string, unknown> | undefined,
@@ -317,11 +317,13 @@ function buildCssSuggestion(
   return cssParts.join(" ");
 }
 
-function hasChildren(node: SceneNode): node is SceneNode & { children: readonly SceneNode[] } {
+export function hasChildren(
+  node: SceneNode,
+): node is SceneNode & { children: readonly SceneNode[] } {
   return "children" in node && Array.isArray(node.children);
 }
 
-function extractChildren(
+export function extractChildren(
   node: SceneNode,
 ): { id: string; name: string; type: string; width: number; height: number }[] {
   const children: { id: string; name: string; type: string; width: number; height: number }[] = [];
@@ -339,7 +341,7 @@ function extractChildren(
   return children;
 }
 
-function rgbToHex(r: number, g: number, b: number): string {
+export function rgbToHex(r: number, g: number, b: number): string {
   const r8 = Math.round(r * 255);
   const g8 = Math.round(g * 255);
   const b8 = Math.round(b * 255);
