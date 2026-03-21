@@ -14,7 +14,8 @@ export type ViewMode =
   | "split_screen"
   | "blended_diff"
   | "draggable_overlay"
-  | "pixel_diff";
+  | "pixel_diff"
+  | "toggle";
 
 export const VIEW_MODES: readonly ViewMode[] = [
   "design_only",
@@ -24,6 +25,7 @@ export const VIEW_MODES: readonly ViewMode[] = [
   "blended_diff",
   "draggable_overlay",
   "pixel_diff",
+  "toggle",
 ];
 
 /**
@@ -94,5 +96,13 @@ export const VIEW_MODE_METADATA: Record<ViewMode, ViewModeMetadata> = {
     pixelayEquivalent: null,
     requiresOpacitySlider: false,
     i18nKey: "viewMode.pixelDiff",
+  },
+  toggle: {
+    id: "toggle",
+    label: "Toggle",
+    icon: "🔄",
+    pixelayEquivalent: null,
+    requiresOpacitySlider: false,
+    i18nKey: "viewMode.toggle",
   },
 };

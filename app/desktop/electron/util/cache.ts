@@ -1,6 +1,8 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+
 import { app } from "electron";
+
 import type { FigmaCacheStrategy } from "@figdiff/shared";
 
 /**

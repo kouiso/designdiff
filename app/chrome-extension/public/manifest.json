@@ -1,12 +1,16 @@
 {
   "manifest_version": 3,
-  "name": "FigDiff",
-  "description": "Compare Figma designs with implementation screenshots. Pixel-level diff detection for design QA.",
+  "name": "PixelRay — FigDiff",
+  "description": "Compare Figma designs with implementation screenshots. 7-mode pixel-level diff detection for design QA.",
   "version": "0.1.0",
-  "permissions": ["activeTab", "storage"],
+  "permissions": ["activeTab", "storage", "tabs"],
+  "host_permissions": ["https://api.figma.com/*", "https://www.figma.com/*"],
+  "externally_connectable": {
+    "matches": ["https://www.figma.com/*", "https://figma.com/*"]
+  },
   "action": {
     "default_popup": "popup.html",
-    "default_title": "FigDiff"
+    "default_title": "PixelRay"
   },
   "content_scripts": [
     {
@@ -22,7 +26,7 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["overlay.html"],
+      "resources": ["*.png", "*.svg"],
       "matches": ["<all_urls>"]
     }
   ]

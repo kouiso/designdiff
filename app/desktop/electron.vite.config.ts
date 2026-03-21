@@ -1,7 +1,12 @@
+import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig, externalizeDepsPlugin } from "electron-vite";
+
+const pkg: unknown = JSON.parse(readFileSync(resolve(__dirname, "package.json"), "utf-8"));
+const appVersion =
+  typeof pkg === "object" && pkg !== null && "version" in pkg ? String(pkg.version) : "0.0.0";
 
 export default defineConfig({
   main: {
@@ -40,6 +45,9 @@ export default defineConfig({
       alias: {
         "@": resolve(__dirname, "./src"),
       },
+    },
+    define: {
+      __APP_VERSION__: JSON.stringify(appVersion),
     },
     build: {
       outDir: "dist/renderer",

@@ -216,6 +216,27 @@ NEVER start implementing (editing files, creating new files, running build/deplo
 
 When in doubt: treat as report-only and end with 「修正も進めますか？」
 
+### Plan Mode Self-Review Obligation
+
+NEVER call ExitPlanMode or present a plan for user approval WHEN self-review has not scored 100/100 on every check item BECAUSE presenting an incomplete plan shifts quality assurance burden onto the user and wastes their review time on known defects.
+
+```
+❌ Self-review: 85/100 → "このプランで進めてええかな？" (user becomes the quality checker)
+❌ Self-review: 92/100 → ExitPlanMode (known issues shipped to user)
+
+✅ Self-review: 85/100 → fix all issues → re-review → 95/100 → fix remaining → 100/100 → ExitPlanMode
+```
+
+**Self-review checklist** (minimum, before ExitPlanMode):
+1. Re-read the entire plan file
+2. Cross-reference every edit against actual file contents (exact line numbers, exact text)
+3. Check for cascading impacts (e.g., changing a count affects multiple locations)
+4. Verify format consistency with existing file conventions
+5. Grep for stale references that should have been updated
+6. Confirm all new file content is complete (not just section headers)
+
+**Confidence**: High
+
 ### Surface Metrics Are Not Quality Verification
 
 NEVER report a task as complete based solely on surface-level metrics (lint pass, build success, test pass) WHEN the deliverable has a content layer (educational materials, documentation, user-facing copy, UI text, prompts) BECAUSE "code runs correctly" ≠ "deliverable meets its purpose."

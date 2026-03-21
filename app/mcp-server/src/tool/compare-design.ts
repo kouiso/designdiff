@@ -6,19 +6,22 @@
 
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
+
 import { z } from "zod";
 
 import { parseDesignInput, type FigmaNode, type CropRegion } from "@figdiff/shared";
-import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
+import { getCropRegion } from "../service/crop-region-store.js";
 import { createFigmaService, type FigmaService } from "../service/figma-service.js";
 import { compareImages } from "../service/image-compare-service.js";
-import { getCropRegion } from "../service/crop-region-store.js";
 
-type McpErrorResult = {
-  content: Array<{ type: "text"; text: string }>;
+import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+
+interface McpErrorResult {
+  [key: string]: unknown;
+  content: { type: "text"; text: string }[];
   isError: true;
-};
+}
 
 function mcpError(text: string): McpErrorResult {
   return { content: [{ type: "text", text }], isError: true };
@@ -164,9 +167,10 @@ export function registerCompareDesign(server: McpServer): void {
           diffImageBase64: undefined, // Exclude from JSON, send as image content
         };
 
-        const content: Array<
-          { type: "text"; text: string } | { type: "image"; data: string; mimeType: string }
-        > = [];
+        const content: (
+          | { type: "text"; text: string }
+          | { type: "image"; data: string; mimeType: string }
+        )[] = [];
 
         // Add diff image if there are differences
         if (result.diffImageBase64 && result.matchRate < 100) {

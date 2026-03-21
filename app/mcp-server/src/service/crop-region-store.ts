@@ -4,7 +4,10 @@
  */
 
 import * as fs from "node:fs/promises";
+import { homedir } from "node:os";
 import * as path from "node:path";
+
+import { z } from "zod";
 
 import type { CropRegion } from "@figdiff/shared";
 
@@ -15,28 +18,52 @@ interface CropRegionEntry {
   updatedAt: string;
 }
 
-interface CropRegionFile {
-  regions: CropRegionEntry[];
-}
+const cropRegionSchema = z.object({
+  x: z.number(),
+  y: z.number(),
+  width: z.number(),
+  height: z.number(),
+});
+
+const cropRegionEntrySchema = z.object({
+  frameName: z.string(),
+  region: cropRegionSchema,
+  note: z.string().optional(),
+  updatedAt: z.string(),
+});
+
+const cropRegionFileSchema = z.object({
+  regions: z.array(cropRegionEntrySchema),
+});
+
+type CropRegionFile = z.infer<typeof cropRegionFileSchema>;
 
 function getProjectDir(projectId: string): string {
   if (!/^[a-zA-Z0-9_-]+$/.test(projectId)) {
     throw new Error("Invalid project ID: must be alphanumeric with hyphens/underscores only");
   }
-  const homeDir = process.env.HOME || process.env.USERPROFILE || ".";
-  return path.join(homeDir, ".figdiff", "projects", projectId);
+  return path.join(homedir(), ".figdiff", "projects", projectId);
 }
 
 function getCropRegionPath(projectId: string): string {
   return path.join(getProjectDir(projectId), "crop-regions.json");
 }
 
+function isEnoentError(error: unknown): error is Error & { code: string } {
+  if (!(error instanceof Error)) return false;
+  if (!("code" in error)) return false;
+  return error.code === "ENOENT";
+}
+
 async function readStore(projectId: string): Promise<CropRegionFile> {
   try {
     const data = await fs.readFile(getCropRegionPath(projectId), "utf-8");
-    return JSON.parse(data) as CropRegionFile;
-  } catch {
-    return { regions: [] };
+    return cropRegionFileSchema.parse(JSON.parse(data));
+  } catch (error) {
+    if (isEnoentError(error)) {
+      return { regions: [] };
+    }
+    throw error;
   }
 }
 
@@ -80,9 +107,9 @@ export async function setCropRegion(
 
   const existingIndex = store.regions.findIndex((r) => r.frameName === frameName);
   if (existingIndex >= 0) {
-    store.regions[existingIndex] = entry;
+    store.regions = store.regions.map((r, i) => (i === existingIndex ? entry : r));
   } else {
-    store.regions.push(entry);
+    store.regions = [...store.regions, entry];
   }
 
   await writeStore(projectId, store);

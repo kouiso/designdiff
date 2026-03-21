@@ -29,6 +29,7 @@ app/desktop/src-tauri/gen/
 # Cache
 .turbo/
 .figdiff/
+node-compile-cache/
 
 # Playwright MCP logs
 .playwright-mcp/

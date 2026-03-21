@@ -19,13 +19,13 @@ concurrency:
 jobs:
   trufflehog:
     name: Secret Scan
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.RUNNER_LINUX || 'ubuntu-latest' }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - uses: trufflesecurity/trufflehog@main
+      - uses: trufflesecurity/trufflehog@v3.93.8
         with:
           base: ${{ github.event.pull_request.base.sha }}
           head: ${{ github.event.pull_request.head.sha }}

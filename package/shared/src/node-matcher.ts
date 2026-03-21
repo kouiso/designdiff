@@ -4,8 +4,8 @@
  * Used to populate nearby_node_ids in CompareDesignResult
  */
 
-import type { DiffRegion } from "./type.js";
 import type { FigmaNode, BoundingBox } from "./figma-client.js";
+import type { DiffRegion } from "./type.js";
 
 /**
  * Match diff regions to Figma nodes

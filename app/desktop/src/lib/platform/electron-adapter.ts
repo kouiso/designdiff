@@ -1,5 +1,7 @@
 import { z } from "zod";
+
 import { FigmaTokenSchema, FrameSchema, NodeInspectionSchema } from "@figdiff/shared";
+
 import type {
   FileAdapter,
   FigmaAdapter,
@@ -53,6 +55,12 @@ export const electronOverlayAdapter: OverlayAdapter = {
   removeOverlay: () => window.electronAPI.overlay.removeOverlay(),
   captureScreenshot: () => window.electronAPI.overlay.captureScreenshot(),
   onNavigated: (callback) => window.electronAPI.overlay.onNavigated(callback),
+  setMode: (mode, base64, opacity, splitPosition) =>
+    window.electronAPI.overlay.setMode(mode, base64, opacity, splitPosition),
+  updateSplitPosition: (splitPosition) =>
+    window.electronAPI.overlay.updateSplitPosition(splitPosition),
+  toggleStart: (intervalMs) => window.electronAPI.overlay.toggleStart(intervalMs),
+  toggleStop: () => window.electronAPI.overlay.toggleStop(),
 };
 
 export const electronAdapter: PlatformAdapter = {

@@ -19,7 +19,7 @@ IF the Electron window appears blank or the app behaves unexpectedly THEN use th
 **Required behavior**: Use the tool ladder (§2, §3, §4) to confirm actual state. Report only what you CONFIRMED, not what you EXPECT.
 
 **Also prohibited**:
-- ❌ 「Playwrightが既存Chromeセッションとの融合で起動できなかったから、実機確認は磯貝さんにお願いしたい」
+- ❌ 「Playwrightが既存Chromeセッションとの融合で起動できなかったから、実機確認はREDACTED_NAMEにお願いしたい」
 - ❌ Playwright が失敗した時点で諦めてユーザーに委譲する
 - ❌ 1つの手段が失敗したら即座にユーザー確認を求める
 

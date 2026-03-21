@@ -1,5 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
+
 import { app, safeStorage } from "electron";
 import { z } from "zod";
 
@@ -30,7 +31,11 @@ const writeStore = (store: Record<string, string>): void => {
 
 const canEncrypt = (): boolean => {
   try {
-    return safeStorage.isEncryptionAvailable();
+    if (safeStorage.isEncryptionAvailable()) return true;
+    // setUsePlainTextEncryption(true) を呼んでも isEncryptionAvailable() は
+    // OS Keychain の状態を返すため false のまま。
+    // dev環境では plaintext fallback が有効なので暗号化可能とみなす。
+    return !app.isPackaged;
   } catch (e) {
     console.warn("[safe-storage] isEncryptionAvailable failed:", e);
     return false;
@@ -45,9 +50,17 @@ export const saveToken = (token: string): void => {
   }
 
   const store = readStore();
-  const encrypted = safeStorage.encryptString(token);
-  store[CREDENTIAL_KEY] = encrypted.toString("base64");
-  store[`${CREDENTIAL_KEY}-encrypted`] = "true";
+
+  if (safeStorage.isEncryptionAvailable()) {
+    const encrypted = safeStorage.encryptString(token);
+    store[CREDENTIAL_KEY] = encrypted.toString("base64");
+    store[`${CREDENTIAL_KEY}-encrypted`] = "true";
+  } else if (!app.isPackaged) {
+    // macOS dev環境: setUsePlainTextEncryption は no-op のため plaintext fallback
+    store[CREDENTIAL_KEY] = Buffer.from(token).toString("base64");
+    store[`${CREDENTIAL_KEY}-encrypted`] = "dev-plaintext";
+  }
+
   writeStore(store);
 };
 
@@ -56,11 +69,21 @@ export const getToken = (): string | null => {
   const encoded = store[CREDENTIAL_KEY];
   if (!encoded) return null;
 
-  const isEncrypted = store[`${CREDENTIAL_KEY}-encrypted`] === "true";
+  const encryptedFlag = store[`${CREDENTIAL_KEY}-encrypted`];
 
-  if (!isEncrypted) {
+  if (encryptedFlag === "dev-plaintext") {
+    if (!app.isPackaged) {
+      return Buffer.from(encoded, "base64").toString("utf-8");
+    }
     console.error(
-      "[safe-storage] 非暗号化トークンが検出されました。セキュリティのため読み取りを拒否します。",
+      "[safe-storage] dev-plaintext トークンは本番環境では読み取れません。再設定してください。",
+    );
+    return null;
+  }
+
+  if (encryptedFlag !== "true") {
+    console.error(
+      "[safe-storage] 不明な暗号化フラグです。セキュリティのため読み取りを拒否します。",
     );
     return null;
   }
@@ -86,12 +109,14 @@ export const deleteToken = (): void => {
   if (!existsSync(path)) return;
 
   const store = readStore();
-  delete store[CREDENTIAL_KEY];
-  delete store[`${CREDENTIAL_KEY}-encrypted`];
+  const keysToRemove = new Set([CREDENTIAL_KEY, `${CREDENTIAL_KEY}-encrypted`]);
+  const cleaned = Object.fromEntries(
+    Object.entries(store).filter(([key]) => !keysToRemove.has(key)),
+  );
 
-  if (Object.keys(store).length === 0) {
+  if (Object.keys(cleaned).length === 0) {
     unlinkSync(path);
   } else {
-    writeStore(store);
+    writeStore(cleaned);
   }
 };

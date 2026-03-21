@@ -5,8 +5,9 @@ import { useTranslation } from "react-i18next";
 import { getOverlay } from "@/lib/platform";
 import { useOverlayStore } from "@/store/overlay-store";
 
-import type { Page } from "../../App";
 import { LiveOverlayPanel } from "./live-overlay-panel";
+
+import type { Page } from "../../App";
 
 interface LiveOverlayPageProps {
   onNavigate: (page: Page) => void;

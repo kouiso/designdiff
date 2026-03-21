@@ -29,7 +29,6 @@ REFACTOR Phase: Improve
 |------|---------|----------|
 | Vitest | TS unit tests | `package/shared/`, `app/desktop/src/` |
 | @testing-library/react | React component tests | `app/desktop/src/` |
-| Rust `#[cfg(test)]` | Rust unit tests | `app/desktop/src-tauri/src/` |
 
 ## File Naming
 
@@ -50,24 +49,22 @@ it("description of expected behavior", () => {
 })
 ```
 
-## Tauri Mock
+## Electron IPC Mock
 
-Tests mock `@tauri-apps/api/core` via `src/__mock__/tauri.ts`.
-Use `vi.mocked(invoke)` to set return values.
+Tests mock the platform adapter via `src/lib/platform/electron-adapter.ts`.
+Use `vi.mock` to stub `window.electronAPI` IPC calls.
 
 ## Test Principles
 
 1. **Test behavior, not implementation**: Test WHAT it does, not HOW it does it
-2. **Mock external boundaries only**: Tauri IPC, Figma API — never mock internal logic
+2. **Mock external boundaries only**: Electron IPC, Figma API — never mock internal logic
 3. **Pure functions need no mocks**: `figma-url-parser.ts` and similar
 4. **React components**: Test user interactions and rendered output, not internal state
-5. **Rust tests**: Use `#[cfg(test)]` modules with `assert_eq!`, `assert!`
 
 ## Running Tests
 
 ```bash
 pnpm test --run    # Vitest single run (for CI)
-cargo test         # Rust unit tests
 ```
 
 **The task is NOT complete until all tests pass.**

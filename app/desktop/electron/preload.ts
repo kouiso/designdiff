@@ -1,4 +1,5 @@
 import { contextBridge, ipcRenderer } from "electron";
+
 import type { ElectronAPI } from "./type/ipc-api";
 
 const api: ElectronAPI = {
@@ -35,6 +36,12 @@ const api: ElectronAPI = {
         ipcRenderer.removeListener("overlay:navigated", handler);
       };
     },
+    setMode: (mode, base64, opacity, splitPosition) =>
+      ipcRenderer.invoke("overlay:set-mode", mode, base64, opacity, splitPosition),
+    updateSplitPosition: (splitPosition) =>
+      ipcRenderer.invoke("overlay:update-split-position", splitPosition),
+    toggleStart: (intervalMs) => ipcRenderer.invoke("overlay:toggle-start", intervalMs),
+    toggleStop: () => ipcRenderer.invoke("overlay:toggle-stop"),
   },
 };
 

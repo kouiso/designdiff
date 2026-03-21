@@ -1,4 +1,6 @@
-import type { Frame, NodeInspection } from "@figdiff/shared";
+import type { Frame, NodeInspection, ViewMode } from "@figdiff/shared";
+
+export type OverlayViewMode = ViewMode;
 
 /**
  * Renderer プロセスから呼び出せる IPC API の型定義
@@ -24,6 +26,15 @@ export interface OverlayAPI {
   removeOverlay(): Promise<void>;
   captureScreenshot(): Promise<string>;
   onNavigated(callback: (url: string) => void): () => void;
+  setMode(
+    mode: OverlayViewMode,
+    base64: string,
+    opacity: number,
+    splitPosition: number,
+  ): Promise<void>;
+  updateSplitPosition(splitPosition: number): Promise<void>;
+  toggleStart(intervalMs: number): Promise<void>;
+  toggleStop(): Promise<void>;
 }
 
 declare global {

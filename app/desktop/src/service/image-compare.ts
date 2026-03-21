@@ -104,7 +104,7 @@ export async function compareImages(options: CompareImagesOptions): Promise<Comp
   return CompareDesignResultSchema.extend({ diffImageBase64: z.string() }).parse(result);
 }
 
-function clusterDiffRegions(
+export function clusterDiffRegions(
   diffData: Uint8ClampedArray,
   imageWidth: number,
   imageHeight: number,
@@ -135,7 +135,7 @@ function clusterDiffRegions(
   return regions;
 }
 
-function floodFill(
+export function floodFill(
   diffData: Uint8ClampedArray,
   imageWidth: number,
   imageHeight: number,
@@ -189,7 +189,7 @@ function floodFill(
   };
 }
 
-function generateSuggestion(matchRate: number): string {
+export function generateSuggestion(matchRate: number): string {
   if (matchRate === 100) {
     return "compare.suggestionPerfect";
   }

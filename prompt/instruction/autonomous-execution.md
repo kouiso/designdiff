@@ -112,7 +112,7 @@ Task(prompt: `
 #### Codebase
 - Source code contents (Read, Grep, Glob)
 - Directory structure (Bash ls, tree, etc.)
-- Config files (package.json, tsconfig.json, Cargo.toml, tauri.conf.json, etc.)
+- Config files (package.json, tsconfig.json, electron.vite.config.ts, electron-builder.json5, etc.)
 - Documentation (README, doc/, document.md, etc.)
 
 #### Git History
@@ -136,9 +136,9 @@ Task(prompt: `
 - Investigate past PRs/commits for the same Issue
 
 #### Runtime Environment
-- Build/run results (`pnpm dev`, `cargo tauri dev`)
-- Test results (`pnpm test`, `cargo test`)
-- Log output (Tauri console, browser devtools console via playwright)
+- Build/run results (`pnpm dev`, `electron-vite dev`)
+- Test results (`pnpm test`)
+- Log output (Electron main process console, renderer devtools via playwright)
 
 #### External Information
 - Official documentation (WebSearch, WebFetch, Tavily)
@@ -190,29 +190,28 @@ Task(prompt: `
 1. **Research**: Gather info via tavily/github MCP before asking the user
 2. **GitHub operations**: Use github MCP or `gh` CLI directly
 3. **Figma design verification**: Use figma MCP to fetch latest design specs — never guess dimensions, colors, or spacing
-4. **UI behavior verification**: Use playwright to navigate `http://localhost:1420` (Vite dev server) and take screenshots
+4. **UI behavior verification**: Use playwright to navigate `http://localhost:5173` (Vite dev server) and take screenshots
 5. **Code debugging**: Use vscode MCP for breakpoints and step execution
 
 ### Autonomous Verification Patterns — Designdiff Specific
 
 - **CI/CD**: `gh run list` → `gh run view` → identify cause → fix → re-run
 - **Frontend tests**: `pnpm test` → analyze failures → fix → re-run
-- **Rust tests**: `cargo test` → analyze failures → fix → re-run
-- **UI behavior** (playwright): Start `pnpm dev` (background) → `browser_navigate http://localhost:1420` → `take_screenshot` → verify
+- **UI behavior** (playwright): Start `pnpm dev` (background) → `browser_navigate http://localhost:5173` → `take_screenshot` → verify
 - **Figma spec**: Use figma MCP → `figma_get_file_nodes` → extract exact measurements → implement → screenshot compare
 - **Type errors**: `pnpm typecheck` → analyze errors → fix → re-run
 - **Lint errors**: `pnpm lint` / `pnpm lint:eslint` → fix all → re-run
 
-### Desktop App Verification (Tauri v2)
+### Desktop App Verification (Electron + electron-vite)
 
-**Tauri webview IS testable via Playwright on the Vite dev server.**
+**Electron renderer IS testable via Playwright on the Vite dev server.**
 
 ```
 Step 1: Start dev server (background)
-  → pnpm dev  (starts Vite on http://localhost:1420 + Tauri window)
+  → pnpm dev  (starts Vite on http://localhost:5173 + Electron window)
 
 Step 2: Navigate and screenshot
-  → mcp__playwright__browser_navigate http://localhost:1420
+  → mcp__playwright__browser_navigate http://localhost:5173
   → mcp__playwright__browser_take_screenshot
 
 Step 3: Interact and verify
@@ -221,7 +220,7 @@ Step 3: Interact and verify
   → mcp__playwright__browser_snapshot for accessibility tree
 ```
 
-❌ "Playwright cannot connect to a Tauri app" is FALSE and prohibited.
+❌ "Playwright cannot connect to an Electron app" is FALSE and prohibited.
 
 ### When the User Says "I'll Do It Myself"
 
@@ -259,11 +258,11 @@ Step 3: Interact and verify
 2. Fully replicate existing code style, design philosophy, and naming conventions
 3. Follow Biome formatting rules (double quotes, semicolons, 2-space indent, 100 line width)
 4. Follow ESLint v9 type-aware rules (no `as`, no `any`)
-5. Follow Rust naming conventions (snake_case files, PascalCase types)
+5. Follow TypeScript naming conventions (kebab-case files, PascalCase types/components)
 
 ### Step 3: Rigorous Quality Assurance
 
-1. **Mandatory CI/test execution**: Run `pnpm lint`, `pnpm typecheck`, `pnpm test`, `cargo test` after work. Continue until all errors are resolved.
+1. **Mandatory CI/test execution**: Run `pnpm lint`, `pnpm typecheck`, `pnpm test` after work. Continue until all errors are resolved.
 2. **Self-correction loop**: Avoid superficial fixes, identify root causes
 3. **Final verification**: Confirm all deliverables fully satisfy requirements — including Playwright screenshot for any UI change
 

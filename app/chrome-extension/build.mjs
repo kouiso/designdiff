@@ -13,7 +13,8 @@ const sharedConfig = {
   bundle: true,
   target: "es2022",
   platform: "browser",
-  sourcemap: false,
+  sourcemap: isWatch,
+  minify: !isWatch,
 };
 
 const entryPoints = [
@@ -59,9 +60,9 @@ async function build() {
   generateContentCss();
 
   if (isWatch) {
-    console.log("Watching for changes...");
+    console.info("Watching for changes...");
   } else {
-    console.log("Build complete.");
+    console.info("Build complete.");
   }
 }
 

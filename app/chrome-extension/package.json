@@ -10,6 +10,9 @@
     "lint": "biome check src/",
     "lint:fix": "biome check --write src/"
   },
+  "dependencies": {
+    "@figdiff/shared": "workspace:*"
+  },
   "devDependencies": {
     "@types/chrome": "^0.0.287",
     "esbuild": "^0.24.0",

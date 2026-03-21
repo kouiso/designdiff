@@ -1,6 +1,11 @@
 import { create } from "zustand";
 
+import type { ViewMode } from "@figdiff/shared";
+
 import { getOverlay } from "@/lib/platform";
+import { compareImages } from "@/service/image-compare";
+
+export type OverlayViewMode = ViewMode;
 
 interface OverlayState {
   url: string;
@@ -11,6 +16,12 @@ interface OverlayState {
   showOverlay: boolean;
   currentUrl: string | null;
   error: string | null;
+  overlayViewMode: OverlayViewMode;
+  splitPosition: number;
+  toggleIntervalMs: number;
+  isToggling: boolean;
+  isPixelDiffRunning: boolean;
+  pixelDiffMatchRate: number | null;
 
   setUrl: (url: string) => void;
   openSite: () => Promise<void>;
@@ -21,6 +32,12 @@ interface OverlayState {
   captureForComparison: () => Promise<string>;
   handleNavigated: (url: string) => void;
   clearError: () => void;
+  setOverlayViewMode: (mode: OverlayViewMode) => Promise<void>;
+  setSplitPosition: (position: number) => Promise<void>;
+  setToggleIntervalMs: (ms: number) => void;
+  startToggle: () => Promise<void>;
+  stopToggle: () => Promise<void>;
+  runPixelDiff: () => Promise<void>;
 }
 
 export const useOverlayStore = create<OverlayState>((set, get) => ({
@@ -32,6 +49,12 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
   showOverlay: true,
   currentUrl: null,
   error: null,
+  overlayViewMode: "transparent_overlay",
+  splitPosition: 0.5,
+  toggleIntervalMs: 500,
+  isToggling: false,
+  isPixelDiffRunning: false,
+  pixelDiffMatchRate: null,
 
   setUrl: (url) => set({ url }),
 
@@ -56,21 +79,33 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
   },
 
   closeSite: async () => {
-    const overlay = await getOverlay();
     try {
+      const { stopToggle } = get();
+      await stopToggle();
+      const overlay = await getOverlay();
       await overlay?.close();
     } finally {
-      set({ isOpen: false, currentUrl: null, overlayImageBase64: null, showOverlay: false });
+      set({
+        isOpen: false,
+        currentUrl: null,
+        overlayImageBase64: null,
+        showOverlay: false,
+        overlayViewMode: "transparent_overlay",
+        pixelDiffMatchRate: null,
+        isPixelDiffRunning: false,
+        isToggling: false,
+        error: null,
+      });
     }
   },
 
   setOverlayImage: async (base64) => {
-    const { opacity } = get();
+    const { opacity, overlayViewMode } = get();
     set({ overlayImageBase64: base64, showOverlay: true });
     const overlay = await getOverlay();
     if (!overlay) return;
     try {
-      await overlay.setOverlayImage(base64, opacity);
+      await overlay.setMode(overlayViewMode, base64, opacity, get().splitPosition);
     } catch (e) {
       set({ error: String(e) });
     }
@@ -78,8 +113,10 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
 
   setOpacity: async (opacity) => {
     set({ opacity });
-    const { isOpen, showOverlay } = get();
+    const { isOpen, showOverlay, overlayViewMode } = get();
     if (!isOpen || !showOverlay) return;
+    if (overlayViewMode !== "transparent_overlay" && overlayViewMode !== "draggable_overlay")
+      return;
     const overlay = await getOverlay();
     if (!overlay) return;
     try {
@@ -90,14 +127,14 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
   },
 
   toggleOverlay: async () => {
-    const { showOverlay, overlayImageBase64, opacity } = get();
+    const { showOverlay, overlayImageBase64, opacity, overlayViewMode, splitPosition } = get();
     const next = !showOverlay;
     set({ showOverlay: next });
     const overlay = await getOverlay();
     if (!overlay) return;
     try {
       if (next && overlayImageBase64) {
-        await overlay.setOverlayImage(overlayImageBase64, opacity);
+        await overlay.setMode(overlayViewMode, overlayImageBase64, opacity, splitPosition);
       } else {
         await overlay.removeOverlay();
       }
@@ -117,4 +154,104 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
   },
 
   clearError: () => set({ error: null }),
+
+  setOverlayViewMode: async (mode) => {
+    const { isToggling, stopToggle, overlayImageBase64, opacity, splitPosition, isOpen } = get();
+    if (!isOpen || !overlayImageBase64) {
+      set({ overlayViewMode: mode });
+      return;
+    }
+
+    if (isToggling) {
+      await stopToggle();
+    }
+
+    const overlay = await getOverlay();
+    if (!overlay) return;
+
+    try {
+      await overlay.setMode(mode, overlayImageBase64, opacity, splitPosition);
+
+      if (mode === "toggle") {
+        await overlay.toggleStart(get().toggleIntervalMs);
+        set({ isToggling: true });
+      }
+
+      if (mode === "pixel_diff") {
+        set({ overlayViewMode: mode });
+        await get().runPixelDiff();
+        return;
+      }
+    } catch (e) {
+      set({ error: String(e) });
+    }
+
+    set({ overlayViewMode: mode, pixelDiffMatchRate: null });
+  },
+
+  setSplitPosition: async (position) => {
+    set({ splitPosition: position });
+    const { isOpen, overlayViewMode } = get();
+    if (!isOpen || overlayViewMode !== "split_screen") return;
+    const overlay = await getOverlay();
+    if (!overlay) return;
+    try {
+      await overlay.updateSplitPosition(position);
+    } catch {
+      // レースコンディション無視
+    }
+  },
+
+  setToggleIntervalMs: (ms) => set({ toggleIntervalMs: ms }),
+
+  startToggle: async () => {
+    const overlay = await getOverlay();
+    if (!overlay) return;
+    try {
+      await overlay.toggleStart(get().toggleIntervalMs);
+      set({ isToggling: true });
+    } catch (e) {
+      set({ error: String(e) });
+    }
+  },
+
+  stopToggle: async () => {
+    const { isToggling } = get();
+    if (!isToggling) return;
+    const overlay = await getOverlay();
+    if (!overlay) return;
+    try {
+      await overlay.toggleStop();
+    } catch {
+      // レースコンディション無視
+    } finally {
+      set({ isToggling: false });
+    }
+  },
+
+  runPixelDiff: async () => {
+    const { overlayImageBase64, captureForComparison, isPixelDiffRunning } = get();
+    if (!overlayImageBase64 || isPixelDiffRunning) return;
+
+    set({ isPixelDiffRunning: true, pixelDiffMatchRate: null });
+    try {
+      const capturedBase64 = await captureForComparison();
+      const result = await compareImages({
+        designImage: `data:image/png;base64,${overlayImageBase64}`,
+        screenshotImage: `data:image/png;base64,${capturedBase64}`,
+      });
+
+      const overlay = await getOverlay();
+      if (!overlay || !result.diffImageBase64) {
+        set({ isPixelDiffRunning: false });
+        return;
+      }
+
+      const diffBase64 = result.diffImageBase64.replace(/^data:image\/png;base64,/, "");
+      await overlay.setMode("pixel_diff", diffBase64, 0.7, 0.5);
+      set({ isPixelDiffRunning: false, pixelDiffMatchRate: result.matchRate });
+    } catch (e) {
+      set({ isPixelDiffRunning: false, error: String(e) });
+    }
+  },
 }));

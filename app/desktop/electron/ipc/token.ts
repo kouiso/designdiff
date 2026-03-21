@@ -1,4 +1,5 @@
 import { ipcMain } from "electron";
+
 import { saveToken, getToken, deleteToken } from "../util/safe-storage";
 
 export const registerTokenHandlers = (): void => {
