@@ -21,11 +21,11 @@ jobs:
     name: Secret Scan
     runs-on: blacksmith-4vcpu-ubuntu-2404
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
-      - uses: trufflesecurity/trufflehog@v3.93.8
+      - uses: trufflesecurity/trufflehog@v3.94.0
         with:
           base: ${{ github.event.pull_request.base.sha }}
           head: ${{ github.event.pull_request.head.sha }}

@@ -17,6 +17,6 @@ jobs:
     name: Label PR
     runs-on: blacksmith-4vcpu-ubuntu-2404
     steps:
-      - uses: actions/labeler@v5
+      - uses: actions/labeler@v6
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
