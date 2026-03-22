@@ -7,6 +7,9 @@ on:
     types: [opened, reopened, synchronize, ready_for_review]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -14,7 +17,7 @@ concurrency:
 jobs:
   node:
     name: Node (${{ matrix.check-type }})
-    runs-on: ${{ vars.RUNNER_LINUX || 'ubuntu-latest' }}
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     if: github.event.pull_request.draft == false
     strategy:
       fail-fast: false

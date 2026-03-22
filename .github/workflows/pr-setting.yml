@@ -15,7 +15,7 @@ concurrency:
 jobs:
   auto-assign:
     name: Auto Assign Author
-    runs-on: ${{ vars.RUNNER_LINUX || 'ubuntu-latest' }}
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     steps:
       - uses: actions/github-script@v7
         with:
