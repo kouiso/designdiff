@@ -1,0 +1,7 @@
+language: ja
+reviews:
+  auto_review:
+    enabled: true
+  path_instructions: []
+chat:
+  auto_reply: true
