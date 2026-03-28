@@ -1,5 +1,5 @@
 ---
-applyTo: "**"
+applyTo: "**/*.ts,**/*.tsx,**/*.js,**/*.jsx,**/*.py,**/*.dart"
 ---
 
 # コードレビュー規約 (Code Review Guidelines)

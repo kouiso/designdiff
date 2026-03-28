@@ -1,5 +1,5 @@
 ---
-applyTo: "**"
+applyTo: "**/*.ts,**/*.tsx,**/*.js,**/*.jsx,**/*.py,**/*.dart"
 ---
 
 # Prohibitions
@@ -53,6 +53,22 @@ NEVER report a PR review based solely on other reviewers' findings (Devin, CodeR
 ❌ Skipping code reading because diff was unavailable
 ✅ Reading changed files directly from local repo and reporting YOUR own findings
 ✅ Labeling other reviewers' findings explicitly: "Devin指摘の追認: ..." separated from your own analysis
+
+## GitHub Operation Prohibitions
+
+### Resolving Review Threads Without Reading
+
+NEVER resolve a review thread without first reading and evaluating the full comment body.
+
+❌ GraphQL resolveReviewThread のIDだけ取得して一括resolve。
+❌ 「Info/Self-reviewだろう」と推測してbodyを読まずにresolve。
+❌ 問題を見つけた後「次はちゃんとやる」と先送り。
+
+✅ 必ずコメント本文を全文取得・読解してから resolve の可否を判断する。
+✅ BUG/Flag/有効な指摘が含まれている場合は、対応完了後にresolveする。
+✅ 問題を発見したら即座に是正行動を取る。「次から」は禁止、「今すぐ」が原則。
+
+---
 
 ## Playwright / Browser Verification Prohibitions
 
