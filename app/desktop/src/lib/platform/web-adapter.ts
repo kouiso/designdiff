@@ -15,6 +15,7 @@ import type {
   FigmaAdapter,
   PlatformAdapter,
   PlatformCapabilities,
+  ProjectAdapter,
   TokenAdapter,
 } from "./platform-adapter";
 
@@ -153,10 +154,26 @@ const webFileAdapter: FileAdapter = {
   },
 };
 
+const webProjectAdapter: ProjectAdapter = {
+  list: async () => {
+    throw new Error("Project persistence is not available in web mode. Use the desktop app.");
+  },
+  load: async () => {
+    throw new Error("Project persistence is not available in web mode. Use the desktop app.");
+  },
+  save: async () => {
+    throw new Error("Project persistence is not available in web mode. Use the desktop app.");
+  },
+  delete: async () => {
+    throw new Error("Project persistence is not available in web mode. Use the desktop app.");
+  },
+};
+
 export const webAdapter: PlatformAdapter = {
   figma: webFigmaAdapter,
   token: webTokenAdapter,
   file: webFileAdapter,
+  project: webProjectAdapter,
 };
 
 export const webCapabilities: PlatformCapabilities = {

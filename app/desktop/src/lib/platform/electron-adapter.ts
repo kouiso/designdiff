@@ -1,6 +1,11 @@
 import { z } from "zod";
 
-import { FigmaTokenSchema, FrameSchema, NodeInspectionSchema } from "@figdiff/shared";
+import {
+  FigmaTokenSchema,
+  FrameSchema,
+  NodeInspectionSchema,
+  ProjectSchema,
+} from "@figdiff/shared";
 
 import type {
   FileAdapter,
@@ -8,6 +13,7 @@ import type {
   OverlayAdapter,
   PlatformAdapter,
   PlatformCapabilities,
+  ProjectAdapter,
   TokenAdapter,
 } from "./platform-adapter";
 
@@ -63,10 +69,27 @@ export const electronOverlayAdapter: OverlayAdapter = {
   toggleStop: () => window.electronAPI.overlay.toggleStop(),
 };
 
+const electronProjectAdapter: ProjectAdapter = {
+  list: async () => {
+    return window.electronAPI.project.list();
+  },
+  load: async (projectId) => {
+    const result = await window.electronAPI.project.load(projectId);
+    return ProjectSchema.parse(result);
+  },
+  save: async (project) => {
+    return window.electronAPI.project.save(project);
+  },
+  delete: async (projectId) => {
+    return window.electronAPI.project.delete(projectId);
+  },
+};
+
 export const electronAdapter: PlatformAdapter = {
   figma: electronFigmaAdapter,
   token: electronTokenAdapter,
   file: electronFileAdapter,
+  project: electronProjectAdapter,
 };
 
 export const electronCapabilities: PlatformCapabilities = {

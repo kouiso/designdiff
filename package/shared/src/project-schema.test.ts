@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
+
 import {
+  CompareDesignResultSchema,
+  CompletionCriteriaSchema,
   DesignSourceSchema,
   ProjectPageSchema,
   ProjectSchema,
-  CompletionCriterionSchema,
-  CompletionCriteriaSchema,
-  CompareDesignResultSchema,
 } from "./schema.js";
 
 describe("DesignSourceSchema", () => {
