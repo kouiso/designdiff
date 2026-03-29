@@ -20,14 +20,21 @@
     "loading": "読み込み中...",
     "tokenRequired": "Figma Token を設定してください。設定画面から設定できます。",
     "howItWorks": "3ステップで差分検出",
-    "step1": "Figma URLを\n入力",
-    "step2": "フレームを\n選択",
-    "step3": "実装と\nピクセル比較",
+    "step1": "実装URLを\n入力",
+    "step2": "デザインを\n追加",
+    "step3": "ピクセル\n比較",
     "stepLabel": "ステップ {{n}}",
     "badgeLocal": "ローカル",
     "implUrlPlaceholder": "実装URL（任意、例: http://localhost:3000）",
     "implUrlHint": "両方入力 → フレーム選択をスキップしてライブオーバーレイを直接起動します。",
-    "badgeLiveOverlay": "ライブオーバーレイ"
+    "badgeLiveOverlay": "ライブオーバーレイ",
+    "newProject": "新規プロジェクト",
+    "createProject": "新規プロジェクト作成",
+    "projectName": "プロジェクト名（例: コーポレートサイト）",
+    "implementationUrl": "実装URL（例: http://localhost:3000）",
+    "noProjects": "プロジェクトがまだありません。作成して始めましょう。",
+    "pageCount": "{{count}}ページ",
+    "quickCompare": "クイック比較（レガシー）"
   },
   "project": {
     "pageTitle": "比較するフレームを選択",
@@ -143,7 +150,9 @@
     "delete": "削除",
     "reset": "リセット",
     "close": "閉じる",
-    "submit": "送信"
+    "submit": "送信",
+    "create": "作成",
+    "add": "追加"
   },
   "overlay": {
     "urlPlaceholder": "実装サイトのURL (例: http://localhost:3000)",

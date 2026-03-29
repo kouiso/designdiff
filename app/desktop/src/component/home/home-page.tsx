@@ -1,6 +1,15 @@
 import { useState } from "react";
 
-import { GitCompare, Globe, ImageIcon, Layers, Rocket } from "lucide-react";
+import {
+  FolderOpen,
+  GitCompare,
+  Globe,
+  ImageIcon,
+  Layers,
+  Plus,
+  Rocket,
+  Trash2,
+} from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { parseDesignInput } from "@figdiff/shared";
@@ -12,8 +21,10 @@ import { Input } from "@/component/ui/input";
 import { Spinner } from "@/component/ui/spinner";
 import { cn } from "@/lib/util";
 import { useOverlayStore } from "@/store/overlay-store";
+import { useProjectListStore } from "@/store/project-list-store";
 import { useProjectStore } from "@/store/project-store";
 import { useSettingStore } from "@/store/setting-store";
+import { useTabStore } from "@/store/tab-store";
 
 import { DesignInput } from "./design-input";
 
@@ -25,12 +36,50 @@ interface HomePageProps {
 
 export function HomePage({ onNavigate }: HomePageProps) {
   const { t } = useTranslation();
-  const { loadDesign, isLoading, error, clearError } = useProjectStore();
+  const { isLoading: projectLoading, error: loadError, clearError } = useProjectStore();
   const { figmaToken } = useSettingStore();
+  const {
+    projects,
+    isLoading: listLoading,
+    createProject,
+    openProject,
+    deleteProject,
+  } = useProjectListStore();
   const [implUrl, setImplUrl] = useState("");
 
-  const handleSubmit = async (input: string) => {
-    if (isLoading) return;
+  // 新規プロジェクト作成
+  const [showCreate, setShowCreate] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newUrl, setNewUrl] = useState("");
+
+  const handleCreateProject = async () => {
+    if (!newName.trim() || !newUrl.trim()) return;
+    try {
+      const project = await createProject(newName.trim(), newUrl.trim());
+      const tabId = useTabStore.getState().openTab(project.id, project.name);
+      await openProject(project.id);
+      if (tabId) {
+        useTabStore.getState().setActiveTab(tabId);
+      }
+      setNewName("");
+      setNewUrl("");
+      setShowCreate(false);
+    } catch {
+      // error は store 経由で表示
+    }
+  };
+
+  const handleOpenProject = async (projectId: string, projectName: string) => {
+    const tabId = useTabStore.getState().openTab(projectId, projectName);
+    await openProject(projectId);
+    if (tabId) {
+      useTabStore.getState().setActiveTab(tabId);
+    }
+  };
+
+  // 既存フロー（Figma URL直接入力）も維持
+  const handleLegacySubmit = async (input: string) => {
+    if (projectLoading) return;
     const isFigmaUrl = (() => {
       try {
         return parseDesignInput(input).type === "figma_url";
@@ -39,25 +88,20 @@ export function HomePage({ onNavigate }: HomePageProps) {
       }
     })();
     if (isFigmaUrl && !figmaToken) {
-      useProjectStore.setState({
-        error: t("home.tokenRequired"),
-      });
+      useProjectStore.setState({ error: t("home.tokenRequired") });
       return;
     }
     clearError();
-    await loadDesign(input);
+    await useProjectStore.getState().loadDesign(input);
 
-    const { error: loadError } = useProjectStore.getState();
-    if (loadError) return;
+    const { error: loadErr } = useProjectStore.getState();
+    if (loadErr) return;
 
     const trimmedImplUrl = implUrl.trim();
     if (trimmedImplUrl) {
       const { frames } = useProjectStore.getState();
-      if (frames.length > 0) {
-        const firstFrame = frames[0];
-        if (firstFrame) {
-          await useProjectStore.getState().selectFrame(firstFrame);
-        }
+      if (frames.length > 0 && frames[0]) {
+        await useProjectStore.getState().selectFrame(frames[0]);
       }
       useOverlayStore.getState().setUrl(trimmedImplUrl);
       onNavigate("live_overlay");
@@ -71,41 +115,130 @@ export function HomePage({ onNavigate }: HomePageProps) {
   };
 
   const steps = [
-    {
-      icon: ImageIcon,
-      key: "step1" as const,
-      color: "bg-primary/15 text-primary",
-    },
-    {
-      icon: Layers,
-      key: "step2" as const,
-      color: "bg-accent text-accent-foreground",
-    },
-    {
-      icon: GitCompare,
-      key: "step3" as const,
-      color: "bg-success/15 text-success",
-    },
+    { icon: Globe, key: "step1" as const, color: "bg-primary/15 text-primary" },
+    { icon: ImageIcon, key: "step2" as const, color: "bg-accent text-accent-foreground" },
+    { icon: GitCompare, key: "step3" as const, color: "bg-success/15 text-success" },
   ];
 
+  const isLoading = projectLoading || listLoading;
+  const error = loadError || useProjectListStore.getState().error;
+
   return (
-    <div className="mx-auto flex h-full max-w-3xl flex-col justify-center gap-8">
-      <section className="rounded-2xl border border-border/60 bg-gradient-to-br from-primary/10 via-accent/40 to-background p-6 shadow-sm">
-        <Badge variant="secondary" className="mb-3 w-fit">
-          {t("home.stepLabel", { n: 1 })}
-        </Badge>
-        <h1 className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text font-bold text-4xl text-transparent tracking-tight">
-          {t("home.pageTitle")}
-        </h1>
-        <p className="mt-2 text-base text-muted-foreground">{t("home.pageDescription")}</p>
+    <div className="mx-auto flex h-full max-w-4xl flex-col gap-6 overflow-y-auto">
+      {/* プロジェクト一覧 */}
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h1 className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text font-bold text-2xl text-transparent tracking-tight">
+            FigDiff
+          </h1>
+          <Button onClick={() => setShowCreate(!showCreate)} size="sm">
+            <Plus className="mr-1 h-4 w-4" />
+            {t("home.newProject", "New Project")}
+          </Button>
+        </div>
+
+        {showCreate && (
+          <Card className="border-primary/30">
+            <CardContent className="space-y-3 p-4">
+              <h3 className="font-semibold text-sm">
+                {t("home.createProject", "Create New Project")}
+              </h3>
+              <Input
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                placeholder={t("home.projectName", "Project name (e.g. Corporate Site)")}
+                className="h-9"
+              />
+              <div className="flex items-center gap-2 rounded-lg border bg-muted/30 p-1.5">
+                <Globe className="ml-1 h-4 w-4 shrink-0 text-muted-foreground" />
+                <Input
+                  value={newUrl}
+                  onChange={(e) => setNewUrl(e.target.value)}
+                  placeholder={t(
+                    "home.implementationUrl",
+                    "Implementation URL (e.g. http://localhost:3000)",
+                  )}
+                  className="border-0 bg-transparent shadow-none focus-visible:ring-0"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleCreateProject();
+                  }}
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button onClick={handleCreateProject} disabled={!newName.trim() || !newUrl.trim()}>
+                  <Rocket className="mr-1 h-4 w-4" />
+                  {t("common.create", "Create")}
+                </Button>
+                <Button variant="ghost" onClick={() => setShowCreate(false)}>
+                  {t("common.cancel", "Cancel")}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {projects.length > 0 ? (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {projects.map((p) => (
+              <Card
+                key={p.id}
+                className="group cursor-pointer transition-colors hover:border-primary/50"
+                onClick={() => handleOpenProject(p.id, p.name)}
+              >
+                <CardContent className="flex items-start justify-between p-4">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <FolderOpen className="h-4 w-4 shrink-0 text-primary" />
+                      <h3 className="truncate font-semibold text-sm">{p.name}</h3>
+                    </div>
+                    <p className="mt-1 truncate text-muted-foreground text-xs">
+                      {p.implementationUrl}
+                    </p>
+                    <div className="mt-2 flex items-center gap-2">
+                      <Badge variant="secondary" className="text-[10px]">
+                        <Layers className="mr-0.5 h-2.5 w-2.5" />
+                        {t("home.pageCount", "{{count}} pages", { count: p.pageCount })}
+                      </Badge>
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deleteProject(p.id);
+                    }}
+                  >
+                    <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          !showCreate && (
+            <Card className="border-dashed">
+              <CardContent className="flex flex-col items-center justify-center gap-2 py-8">
+                <FolderOpen className="h-10 w-10 text-muted-foreground/30" />
+                <p className="text-muted-foreground text-sm">
+                  {t("home.noProjects", "No projects yet. Create one to get started.")}
+                </p>
+              </CardContent>
+            </Card>
+          )
+        )}
       </section>
 
-      <section className="space-y-3">
+      {/* 既存フロー（直接比較）も維持 */}
+      <section className="space-y-3 border-border/40 border-t pt-4">
         <div>
-          <h2 className="font-semibold text-lg">{t("home.inputTitle")}</h2>
-          <p className="text-muted-foreground text-sm">{t("home.inputHint")}</p>
+          <h2 className="font-semibold text-sm text-muted-foreground">
+            {t("home.quickCompare", "Quick Compare (Legacy)")}
+          </h2>
+          <p className="text-muted-foreground text-xs">{t("home.inputHint")}</p>
         </div>
-        <DesignInput onSubmit={handleSubmit} disabled={isLoading} />
+        <DesignInput onSubmit={handleLegacySubmit} disabled={isLoading} />
 
         <div className="flex items-center gap-2 rounded-xl border border-border bg-card p-1.5 shadow-sm transition-colors focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/20">
           <Globe className="ml-2 h-4 w-4 shrink-0 text-muted-foreground" />
@@ -114,9 +247,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
             value={implUrl}
             onChange={(e) => setImplUrl(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-              }
+              if (e.key === "Enter") e.preventDefault();
             }}
             placeholder={t("home.implUrlPlaceholder")}
             aria-label={t("home.implUrlPlaceholder")}
@@ -130,22 +261,6 @@ export function HomePage({ onNavigate }: HomePageProps) {
             </Badge>
           )}
         </div>
-
-        {implUrl.trim() && <p className="text-muted-foreground text-xs">{t("home.implUrlHint")}</p>}
-
-        {!figmaToken && (
-          <div className="flex items-center justify-between gap-3 rounded-lg border border-primary/30 bg-accent px-4 py-3">
-            <p className="text-accent-foreground text-sm">{t("home.tokenRequired")}</p>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onNavigate("settings")}
-              className="shrink-0"
-            >
-              {t("nav.settings")}
-            </Button>
-          </div>
-        )}
       </section>
 
       {error && (
@@ -161,8 +276,9 @@ export function HomePage({ onNavigate }: HomePageProps) {
         </div>
       )}
 
+      {/* ワークフロー説明 */}
       <section className="space-y-3">
-        <h2 className="text-center font-medium text-muted-foreground text-sm uppercase tracking-widest">
+        <h2 className="text-center font-medium text-muted-foreground text-xs uppercase tracking-widest">
           {t("home.howItWorks")}
         </h2>
         <div className="grid gap-4 md:grid-cols-3">

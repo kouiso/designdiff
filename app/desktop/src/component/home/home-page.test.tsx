@@ -2,14 +2,34 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useOverlayStore } from "@/store/overlay-store";
+import { useProjectListStore } from "@/store/project-list-store";
 import { useProjectStore } from "@/store/project-store";
 import { useSettingStore } from "@/store/setting-store";
+import { useTabStore } from "@/store/tab-store";
 
 import { HomePage } from "./home-page";
 
 afterEach(cleanup);
 
 let mockSubmitValue = "test";
+
+vi.mock("@/lib/platform", () => ({
+  getPlatform: vi.fn().mockResolvedValue({
+    project: {
+      list: vi.fn().mockResolvedValue([]),
+      load: vi.fn().mockResolvedValue({
+        id: "test-1",
+        name: "Test",
+        implementationUrl: "http://localhost:3000",
+        pages: [],
+        createdAt: "2026-01-01T00:00:00Z",
+        updatedAt: "2026-01-01T00:00:00Z",
+      }),
+      save: vi.fn(),
+      delete: vi.fn(),
+    },
+  }),
+}));
 
 beforeEach(() => {
   mockSubmitValue = "test";
@@ -22,6 +42,15 @@ beforeEach(() => {
     frameImage: null,
     currentFileKey: null,
   });
+  useProjectListStore.setState({
+    projects: [],
+    isLoading: false,
+    error: null,
+    currentProject: null,
+    selectedPageId: null,
+    selectedSourceId: null,
+  });
+  useTabStore.setState({ tabs: [], activeTabId: null });
   useOverlayStore.setState({ url: "" });
 });
 
@@ -39,9 +68,38 @@ vi.mock("./design-input", () => ({
 }));
 
 describe("HomePage", () => {
-  it("ページタイトルが表示される", () => {
+  it("FigDiffタイトルが表示される", () => {
     render(<HomePage onNavigate={vi.fn()} />);
-    expect(screen.getByText("デザイン比較を始める")).toBeInTheDocument();
+    expect(screen.getByText("FigDiff")).toBeInTheDocument();
+  });
+
+  it("新規プロジェクトボタンが表示される", () => {
+    render(<HomePage onNavigate={vi.fn()} />);
+    expect(screen.getByText("新規プロジェクト")).toBeInTheDocument();
+  });
+
+  it("プロジェクトがない場合に空状態メッセージが表示される", () => {
+    render(<HomePage onNavigate={vi.fn()} />);
+    expect(
+      screen.getByText("プロジェクトがまだありません。作成して始めましょう。"),
+    ).toBeInTheDocument();
+  });
+
+  it("プロジェクト一覧にプロジェクトカードが表示される", () => {
+    useProjectListStore.setState({
+      projects: [
+        {
+          id: "proj-1",
+          name: "テストプロジェクト",
+          implementationUrl: "http://localhost:3000",
+          pageCount: 3,
+          updatedAt: "2026-03-28T12:00:00Z",
+        },
+      ],
+    });
+    render(<HomePage onNavigate={vi.fn()} />);
+    expect(screen.getByText("テストプロジェクト")).toBeInTheDocument();
+    expect(screen.getByText("http://localhost:3000")).toBeInTheDocument();
   });
 
   it("3ステップの説明カードが表示される", () => {
@@ -50,20 +108,16 @@ describe("HomePage", () => {
     expect(screen.getByText("ステップ 3")).toBeInTheDocument();
   });
 
-  it("実装URLの入力フィールドが表示される", () => {
+  it("Quick Compareセクションが表示される", () => {
     render(<HomePage onNavigate={vi.fn()} />);
-    expect(screen.getByLabelText("実装URL（任意、例: http://localhost:3000）")).toBeInTheDocument();
+    expect(screen.getByText("クイック比較（レガシー）")).toBeInTheDocument();
   });
 
-  it("figmaToken 未設定時にトークン警告が表示される", () => {
+  it("新規プロジェクト作成フォームが開閉できる", () => {
     render(<HomePage onNavigate={vi.fn()} />);
-    expect(screen.getByText(/Figma Token を設定してください/)).toBeInTheDocument();
-  });
-
-  it("figmaToken 設定済みならトークン警告が非表示", () => {
-    useSettingStore.setState({ figmaToken: "figd_test_token_value_12345" });
-    render(<HomePage onNavigate={vi.fn()} />);
-    expect(screen.queryByText(/Figma Token を設定してください/)).not.toBeInTheDocument();
+    const btn = screen.getByText("新規プロジェクト");
+    fireEvent.click(btn);
+    expect(screen.getByText("新規プロジェクト作成")).toBeInTheDocument();
   });
 
   it("error があればエラーメッセージ表示", () => {
@@ -78,7 +132,7 @@ describe("HomePage", () => {
     expect(screen.getByText("読み込み中...")).toBeInTheDocument();
   });
 
-  describe("handleSubmit", () => {
+  describe("レガシーフロー handleSubmit", () => {
     it("Figma URLでトークン未設定 → エラー表示", async () => {
       mockSubmitValue = "https://www.figma.com/design/abc123/Test";
       useSettingStore.setState({ figmaToken: null });
@@ -100,27 +154,6 @@ describe("HomePage", () => {
       const mockLoadDesign = vi.fn().mockImplementation(async () => {
         useProjectStore.setState({
           frames: [{ id: "1", name: "Frame", x: 0, y: 0, width: 100, height: 100 }],
-          error: null,
-        });
-      });
-      useProjectStore.setState({ loadDesign: mockLoadDesign });
-
-      const onNavigate = vi.fn();
-      render(<HomePage onNavigate={onNavigate} />);
-      fireEvent.click(screen.getByTestId("design-input"));
-
-      await waitFor(() => {
-        expect(onNavigate).toHaveBeenCalledWith("project");
-      });
-    });
-
-    it("loadDesign 成功 + frameImage あり → project ページへ遷移", async () => {
-      mockSubmitValue = "/path/to/image.png";
-      useSettingStore.setState({ figmaToken: "figd_token" });
-
-      const mockLoadDesign = vi.fn().mockImplementation(async () => {
-        useProjectStore.setState({
-          frameImage: "data:image/png;base64,abc",
           error: null,
         });
       });
