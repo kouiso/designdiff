@@ -2,6 +2,7 @@ import type { Frame, NodeInspection, Project, ViewMode } from "@figdiff/shared";
 
 export type OverlayViewMode = ViewMode;
 
+// platform-adapter.ts の ProjectSummary と同一定義（レイヤー境界のため重複許容）
 export interface ProjectSummary {
   id: string;
   name: string;
