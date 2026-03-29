@@ -8,7 +8,10 @@
  * - inspect: Show Dev Mode-like inspection of selected node
  */
 
-// Plugin command handler
+// Plugin command handler — menu commands route to the appropriate initial tab
+const command = figma.command;
+const initialTab = command === "inspect" ? "inspect" : "compare";
+
 figma.showUI(__html__, { width: 360, height: 480, themeColors: true });
 
 type PluginMessage =
@@ -42,8 +45,14 @@ figma.ui.onmessage = async (msg: PluginMessage) => {
   }
 };
 
-// Send initial selection info when plugin opens
+// Send initial state when plugin opens
 handleGetSelection();
+figma.ui.postMessage({ type: "init", tab: initialTab });
+
+// If launched via "Export Selected Frame" command, auto-export
+if (command === "export-frame") {
+  handleExportFrame();
+}
 
 /**
  * Get current selection info and send to UI
