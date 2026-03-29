@@ -17,7 +17,7 @@ import { useTabStore } from "./store/tab-store";
 
 export type Page = "home" | "project" | "compare" | "live_overlay" | "settings" | "project_view";
 
-export function App() {
+export const App = () => {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const loadSettings = useSettingStore((s) => s.loadSettings);
   const loadProjects = useProjectListStore((s) => s.loadProjects);
@@ -74,4 +74,4 @@ export function App() {
       </div>
     </ErrorBoundary>
   );
-}
+};

@@ -14,7 +14,7 @@ beforeEach(() => {
 describe("TabBar", () => {
   it("タブがない場合は＋ボタンのみ表示される", () => {
     render(<TabBar />);
-    expect(screen.getByLabelText("New tab")).toBeInTheDocument();
+    expect(screen.getByLabelText("新しいタブ")).toBeInTheDocument();
   });
 
   it("タブが表示される", () => {
@@ -49,7 +49,7 @@ describe("TabBar", () => {
       activeTabId: "t1",
     });
     render(<TabBar />);
-    fireEvent.click(screen.getByLabelText("Close Project A"));
+    fireEvent.click(screen.getByLabelText("Project A を閉じる"));
     expect(useTabStore.getState().tabs).toHaveLength(0);
   });
 
@@ -59,7 +59,7 @@ describe("TabBar", () => {
       activeTabId: "t1",
     });
     render(<TabBar />);
-    fireEvent.click(screen.getByLabelText("New tab"));
+    fireEvent.click(screen.getByLabelText("新しいタブ"));
     expect(useTabStore.getState().activeTabId).toBeNull();
   });
 });

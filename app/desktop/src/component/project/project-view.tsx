@@ -50,7 +50,8 @@ export const ProjectView = ({ onNavigate }: ProjectViewProps) => {
 
   const handleAddPage = () => {
     if (!newPageName.trim()) return;
-    const path = newPagePath.trim() || `/${newPageName.trim().toLowerCase().replace(/\s+/g, "-")}`;
+    const rawPath = newPagePath.trim() || newPageName.trim().toLowerCase().replace(/\s+/g, "-");
+    const path = rawPath.startsWith("/") ? rawPath : `/${rawPath}`;
     addPage(newPageName.trim(), path);
     setNewPageName("");
     setNewPagePath("");
@@ -100,22 +101,14 @@ export const ProjectView = ({ onNavigate }: ProjectViewProps) => {
   };
 
   const handleCompare = async (source: DesignSource) => {
-    if (source.type === "figma") {
-      await useProjectStore.getState().loadDesign(source.figmaUrl);
-      const { frameImage } = useProjectStore.getState();
-      if (frameImage) {
-        useCompareStore.getState().setDesignImage(frameImage);
-        onNavigate("compare");
-      } else {
-        onNavigate("project");
-      }
-    } else {
-      await useProjectStore.getState().loadDesign(source.filePath);
-      const { frameImage } = useProjectStore.getState();
-      if (frameImage) {
-        useCompareStore.getState().setDesignImage(frameImage);
-        onNavigate("compare");
-      }
+    const inputUrl = source.type === "figma" ? source.figmaUrl : source.filePath;
+    await useProjectStore.getState().loadDesign(inputUrl);
+    const { frameImage } = useProjectStore.getState();
+    if (frameImage) {
+      useCompareStore.getState().setDesignImage(frameImage);
+      onNavigate("compare");
+    } else if (source.type === "figma") {
+      onNavigate("project");
     }
   };
 

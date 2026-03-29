@@ -34,17 +34,18 @@ interface HomePageProps {
   onNavigate: (page: Page) => void;
 }
 
-export function HomePage({ onNavigate }: HomePageProps) {
+export const HomePage = ({ onNavigate }: HomePageProps) => {
   const { t } = useTranslation();
-  const { isLoading: projectLoading, error: loadError, clearError } = useProjectStore();
-  const { figmaToken } = useSettingStore();
-  const {
-    projects,
-    isLoading: listLoading,
-    createProject,
-    openProject,
-    deleteProject,
-  } = useProjectListStore();
+  const projectLoading = useProjectStore((s) => s.isLoading);
+  const loadError = useProjectStore((s) => s.error);
+  const clearError = useProjectStore((s) => s.clearError);
+  const figmaToken = useSettingStore((s) => s.figmaToken);
+  const projects = useProjectListStore((s) => s.projects);
+  const listLoading = useProjectListStore((s) => s.isLoading);
+  const listError = useProjectListStore((s) => s.error);
+  const createProject = useProjectListStore((s) => s.createProject);
+  const openProject = useProjectListStore((s) => s.openProject);
+  const deleteProject = useProjectListStore((s) => s.deleteProject);
   const [implUrl, setImplUrl] = useState("");
 
   // 新規プロジェクト作成
@@ -121,7 +122,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
   ];
 
   const isLoading = projectLoading || listLoading;
-  const error = loadError || useProjectListStore.getState().error;
+  const error = loadError || listError;
 
   return (
     <div className="mx-auto flex h-full max-w-4xl flex-col gap-6 overflow-y-auto">
@@ -308,4 +309,4 @@ export function HomePage({ onNavigate }: HomePageProps) {
       <p className="text-center text-muted-foreground/50 text-xs">v{__APP_VERSION__}</p>
     </div>
   );
-}
+};

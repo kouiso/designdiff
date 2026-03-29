@@ -1,71 +1,48 @@
 import { describe, expect, it } from "vitest";
 
+import { DIFF_THRESHOLD, calculateMatchRate, isPixelDifferent } from "./pixel-diff-service";
+
 describe("pixel-diff-service", () => {
-  describe("matchRate計算ロジック", () => {
-    it("差分ゼロで100%になる", () => {
-      const totalPixelCount = 10000;
-      const diffPixelCount = 0;
-      const matchRate =
-        Math.round(((totalPixelCount - diffPixelCount) / totalPixelCount) * 10000) / 100;
-      expect(matchRate).toBe(100);
-    });
-
-    it("全ピクセル差分で0%になる", () => {
-      const totalPixelCount = 10000;
-      const diffPixelCount = 10000;
-      const matchRate =
-        Math.round(((totalPixelCount - diffPixelCount) / totalPixelCount) * 10000) / 100;
-      expect(matchRate).toBe(0);
-    });
-
-    it("部分一致で正しい割合を返す", () => {
-      const totalPixelCount = 10000;
-      const diffPixelCount = 580;
-      const matchRate =
-        Math.round(((totalPixelCount - diffPixelCount) / totalPixelCount) * 10000) / 100;
-      expect(matchRate).toBe(94.2);
+  describe("DIFF_THRESHOLD", () => {
+    it("閾値が10である", () => {
+      expect(DIFF_THRESHOLD).toBe(10);
     });
   });
 
-  describe("差分判定ロジック（threshold: maxDiff > 10）", () => {
-    it("RGB差分が10以下なら差分として検出しない", () => {
-      const designR = 100;
-      const screenshotR = 105;
-      const diff = Math.abs(designR - screenshotR);
-      expect(diff > 10).toBe(false);
+  describe("calculateMatchRate", () => {
+    it("差分ゼロで100%を返す", () => {
+      expect(calculateMatchRate(10000, 0)).toBe(100);
     });
 
-    it("RGB差分が11以上なら差分として検出する", () => {
-      const designR = 100;
-      const screenshotR = 115;
-      const diff = Math.abs(designR - screenshotR);
-      expect(diff > 10).toBe(true);
+    it("全ピクセル差分で0%を返す", () => {
+      expect(calculateMatchRate(10000, 10000)).toBe(0);
     });
 
-    it("maxDiffはR,G,Bの最大値で判定する", () => {
-      const rDiff = 5;
-      const gDiff = 3;
-      const bDiff = 12;
-      const maxDiff = Math.max(rDiff, gDiff, bDiff);
-      expect(maxDiff).toBe(12);
-      expect(maxDiff > 10).toBe(true);
+    it("部分一致で正しい割合を返す（94.2%）", () => {
+      expect(calculateMatchRate(10000, 580)).toBe(94.2);
+    });
+
+    it("小数点2桁で丸められる", () => {
+      expect(calculateMatchRate(3, 1)).toBe(66.67);
     });
   });
 
-  describe("DiffResult型の構造", () => {
-    it("必要なフィールドを持つ", () => {
-      const result = {
-        matchRate: 94.2,
-        diffPixelCount: 580,
-        totalPixelCount: 10000,
-        regions: [],
-        diffImageBase64: "base64data",
-      };
-      expect(result).toHaveProperty("matchRate");
-      expect(result).toHaveProperty("diffPixelCount");
-      expect(result).toHaveProperty("totalPixelCount");
-      expect(result).toHaveProperty("regions");
-      expect(result).toHaveProperty("diffImageBase64");
+  describe("isPixelDifferent", () => {
+    it("全チャンネルが閾値以下ならfalseを返す", () => {
+      expect(isPixelDifferent(5, 3, 8)).toBe(false);
+      expect(isPixelDifferent(0, 0, 0)).toBe(false);
+      expect(isPixelDifferent(10, 10, 10)).toBe(false);
+    });
+
+    it("いずれかのチャンネルが閾値超ならtrueを返す", () => {
+      expect(isPixelDifferent(11, 0, 0)).toBe(true);
+      expect(isPixelDifferent(0, 15, 0)).toBe(true);
+      expect(isPixelDifferent(0, 0, 255)).toBe(true);
+    });
+
+    it("R,G,Bの最大値で判定する", () => {
+      expect(isPixelDifferent(5, 3, 12)).toBe(true);
+      expect(isPixelDifferent(5, 3, 9)).toBe(false);
     });
   });
 });

@@ -3,6 +3,10 @@
     "title": "FigDiff",
     "description": "Compare Figma designs with your implementation to detect differences. Enter a Figma URL to get started."
   },
+  "tab": {
+    "close": "Close {{name}}",
+    "new": "New tab"
+  },
   "nav": {
     "home": "Home",
     "project": "Frame Selection",

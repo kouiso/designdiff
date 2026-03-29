@@ -3,6 +3,10 @@
     "title": "FigDiff",
     "description": "Figmaデザインと実装を比較して差分を検出します。FigmaのURLを入力して始めましょう。"
   },
+  "tab": {
+    "close": "{{name}} を閉じる",
+    "new": "新しいタブ"
+  },
   "nav": {
     "home": "ホーム",
     "project": "フレーム選択",
