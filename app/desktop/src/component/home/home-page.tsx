@@ -30,6 +30,12 @@ import { DesignInput } from "./design-input";
 
 import type { Page } from "../../App";
 
+const STEPS = [
+  { icon: Globe, key: "step1" as const, color: "bg-primary/15 text-primary" },
+  { icon: ImageIcon, key: "step2" as const, color: "bg-accent text-accent-foreground" },
+  { icon: GitCompare, key: "step3" as const, color: "bg-success/15 text-success" },
+] as const;
+
 interface HomePageProps {
   onNavigate: (page: Page) => void;
 }
@@ -114,12 +120,6 @@ export const HomePage = ({ onNavigate }: HomePageProps) => {
       onNavigate("project");
     }
   };
-
-  const steps = [
-    { icon: Globe, key: "step1" as const, color: "bg-primary/15 text-primary" },
-    { icon: ImageIcon, key: "step2" as const, color: "bg-accent text-accent-foreground" },
-    { icon: GitCompare, key: "step3" as const, color: "bg-success/15 text-success" },
-  ];
 
   const isLoading = projectLoading || listLoading;
   const error = loadError || listError;
@@ -283,7 +283,7 @@ export const HomePage = ({ onNavigate }: HomePageProps) => {
           {t("home.howItWorks")}
         </h2>
         <div className="grid gap-4 md:grid-cols-3">
-          {steps.map((step, i) => (
+          {STEPS.map((step, i) => (
             <Card key={step.key} className="border-border/60 bg-card/80">
               <CardContent className="flex flex-col items-center gap-3 p-5 text-center">
                 <div
