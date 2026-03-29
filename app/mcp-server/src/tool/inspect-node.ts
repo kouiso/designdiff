@@ -13,13 +13,12 @@ import { createFigmaService } from "../service/figma-service.js";
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
-const DESCRIPTION = `compare_designで差分が見つかったFigmaノードの詳細情報を取得します。
-Figma Dev Modeで見られるような、CSS的なプロパティ（padding, gap, color, font等）を返します。
+const DESCRIPTION = `【使用タイミング】compare_design の status が "FAIL" で diffRegions が返された時
+【入力】compare_design が返した nearbyNodeIds をそのまま渡す
+【出力】各ノードのCSS的プロパティ（padding, gap, color, font等）+ 修正すべき値（cssSuggestion）
+【次のアクション】cssSuggestion に従ってコードを修正 → compare_design で再検証
 
-**このツールはcompare_designの後に、差分がある箇所に対して使ってください。**
-compare_designの返り値に含まれるnearby_node_idsをそのまま渡すと、
-差分に関連するノードの詳細情報を効率よく取得できます。
-
+Figma Dev Modeで見られるような詳細情報を取得します。
 フレーム全体のスペックが必要な場合は get_design_tokens を使ってください。`;
 
 export function registerInspectNode(server: McpServer): void {

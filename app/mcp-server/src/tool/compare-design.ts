@@ -52,6 +52,51 @@ async function resolveNodeId(
   );
 }
 
+interface CompletionCriterion {
+  required: number;
+  current: number;
+  status: "PASS" | "FAIL";
+}
+
+interface CompletionCriteria {
+  matchRate: CompletionCriterion;
+  diffPixelCount: CompletionCriterion;
+  remainingIssues: CompletionCriterion;
+}
+
+function buildCompletionCriteria(
+  matchRate: number,
+  diffPixelCount: number,
+  regionCount: number,
+): CompletionCriteria {
+  return {
+    matchRate: {
+      required: 100,
+      current: matchRate,
+      status: matchRate >= 100 ? "PASS" : "FAIL",
+    },
+    diffPixelCount: {
+      required: 0,
+      current: diffPixelCount,
+      status: diffPixelCount === 0 ? "PASS" : "FAIL",
+    },
+    remainingIssues: {
+      required: 0,
+      current: regionCount,
+      status: regionCount === 0 ? "PASS" : "FAIL",
+    },
+  };
+}
+
+function buildStatus(matchRate: number): "PASS" | "FAIL" {
+  return matchRate >= 100 ? "PASS" : "FAIL";
+}
+
+function buildNextAction(matchRate: number, regionCount: number): string {
+  if (matchRate >= 100) return "一致率100%です。差分はありません。タスク完了です。";
+  return `inspect_node を使って ${regionCount} 箇所の diffRegions の詳細を確認し、CSSを修正してください。修正後は再度 compare_design で検証してください。`;
+}
+
 function buildSuggestion(matchRate: number, regionCount: number): string {
   if (matchRate === 100) return "一致率100%です。差分はありません。";
   if (matchRate >= 95)
@@ -59,22 +104,28 @@ function buildSuggestion(matchRate: number, regionCount: number): string {
   return `大きな差分が${regionCount}箇所あります。inspect_nodeで各差分領域を確認し、修正してください。`;
 }
 
-const DESCRIPTION = `Figmaデザインと実装スクリーンショットのピクセル差分を検出します。
+const DESCRIPTION = `デザインと実装のピクセル差分を検出します。
 
-**実装の修正時は、必ずこのツールから開始してください。**
-このツールが返す差分画像と差分領域を確認し、ズレがある箇所だけを inspect_node で深掘りしてください。
-修正後は再度このツールで比較し、一致率100%を目指してください。
+## 使用条件
+- 実装のCSS/HTML修正時は【必ず】このツールを最初に実行すること
+- status が "FAIL" の場合、inspect_node で詳細を取得し修正すること
+- matchRate が 100 かつ status が "PASS" になるまでループすること
 
-入力:
-- design_source: Figma URL（node-id付きなら自動でそのフレーム） or ローカル画像パス
+## 出力の読み方
+- status: "PASS" = 完了。"FAIL" = 修正が必要
+- completionCriteria: 各項目が "PASS" になるまで作業を続行
+- nextAction: 次に実行すべきアクション（従うこと）
+
+## 入力
+- design_source: Figma URL（node-id付き推奨） or ローカル画像パス
 - screenshot: 実装スクリーンショットのローカルパス
-- threshold: 許容差（デフォルト0.1）
+- threshold: 色差の許容閾値（0-1、デフォルト0.1）
 
-Figma URLの例:
-  "https://www.figma.com/design/ABC123/File?node-id=1-23"  → フレーム指定あり
-  "https://www.figma.com/design/ABC123/File"               → フレーム一覧から選択
+## Figma URLの例
+  "https://www.figma.com/design/ABC123/File?node-id=1-23"
+  "https://www.figma.com/design/ABC123/File"
 
-ローカルパスの例:
+## ローカルパスの例
   "/path/to/design.png"
   "./screenshots/home.png"`;
 
@@ -159,12 +210,24 @@ export function registerCompareDesign(server: McpServer): void {
           figmaRootNode,
         );
 
-        const suggestion = buildSuggestion(result.matchRate, result.diffRegions.length);
+        const regionCount = result.diffRegions.length;
+        const status = buildStatus(result.matchRate);
+        const suggestion = buildSuggestion(result.matchRate, regionCount);
+        const nextAction = buildNextAction(result.matchRate, regionCount);
+        const completionCriteria = buildCompletionCriteria(
+          result.matchRate,
+          result.diffPixelCount,
+          regionCount,
+        );
 
         const resultData = {
+          status,
           ...result,
+          remainingIssues: regionCount,
+          completionCriteria,
+          nextAction,
           suggestion,
-          diffImageBase64: undefined, // Exclude from JSON, send as image content
+          diffImageBase64: undefined,
         };
 
         const content: (
