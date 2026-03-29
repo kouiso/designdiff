@@ -8,7 +8,10 @@ import {
   type BorderRadiusSchema,
   type ChildNodeSummarySchema,
   type CompareDesignResultSchema,
+  type CompletionCriteriaSchema,
+  type CompletionCriterionSchema,
   type CropRegionSchema,
+  type DesignSourceSchema,
   type DesignTokenSchema,
   type DiffRegionSchema,
   type FigmaTokenSchema,
@@ -22,6 +25,7 @@ import {
   type NodeStrokeSchema,
   type NodeTypographySchema,
   type ParsedDesignInputSchema,
+  type ProjectPageSchema,
   type ProjectSchema,
 } from "./schema.js";
 
@@ -70,9 +74,16 @@ export type DiffRegion = z.infer<typeof DiffRegionSchema>;
 
 export type CropRegion = z.infer<typeof CropRegionSchema>;
 
-// --- Project ---
+// --- Project (v4: implementation URL + pages + design sources) ---
 
 export type Project = z.infer<typeof ProjectSchema>;
+export type ProjectPage = z.infer<typeof ProjectPageSchema>;
+export type DesignSource = z.infer<typeof DesignSourceSchema>;
+
+// --- Completion Criteria (v4: AI-driven PASS/FAIL) ---
+
+export type CompletionCriterion = z.infer<typeof CompletionCriterionSchema>;
+export type CompletionCriteria = z.infer<typeof CompletionCriteriaSchema>;
 
 // --- Figma Token ---
 

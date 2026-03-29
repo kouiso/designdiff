@@ -76,12 +76,17 @@ interface RunComparisonMessage {
   designBase64: string;
   screenshotBase64: string;
 }
+interface InitMessage {
+  type: "init";
+  tab: "compare" | "inspect";
+}
 
 type PluginResponse =
   | SelectionMessage
   | ExportResultMessage
   | InspectResultMessage
-  | RunComparisonMessage;
+  | RunComparisonMessage
+  | InitMessage;
 
 export function isPluginResponse(msg: unknown): msg is PluginResponse {
   if (typeof msg !== "object" || msg === null || !("type" in msg)) return false;
@@ -132,6 +137,13 @@ window.onmessage = (event: MessageEvent) => {
       state.designBase64 = msg.designBase64;
       state.screenshotBase64 = msg.screenshotBase64;
       runComparison();
+      break;
+
+    case "init":
+      if (msg.tab === "compare" || msg.tab === "inspect") {
+        state.tab = msg.tab;
+        render();
+      }
       break;
   }
 };

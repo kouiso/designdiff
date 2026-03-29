@@ -3,6 +3,10 @@
     "title": "FigDiff",
     "description": "Compare Figma designs with your implementation to detect differences. Enter a Figma URL to get started."
   },
+  "tab": {
+    "close": "Close {{name}}",
+    "new": "New tab"
+  },
   "nav": {
     "home": "Home",
     "project": "Frame Selection",
@@ -27,7 +31,14 @@
     "badgeLocal": "Local",
     "implUrlPlaceholder": "Implementation URL (optional, e.g. http://localhost:3000)",
     "implUrlHint": "Both URLs entered → skip frame selection and launch Live Overlay directly.",
-    "badgeLiveOverlay": "Live Overlay"
+    "badgeLiveOverlay": "Live Overlay",
+    "newProject": "New Project",
+    "createProject": "Create New Project",
+    "projectName": "Project name (e.g. Corporate Site)",
+    "implementationUrl": "Implementation URL (e.g. http://localhost:3000)",
+    "noProjects": "No projects yet. Create one to get started.",
+    "pageCount": "{{count}} pages",
+    "quickCompare": "Quick Compare (Legacy)"
   },
   "project": {
     "pageTitle": "Select a Frame to Compare",
@@ -143,7 +154,9 @@
     "delete": "Delete",
     "reset": "Reset",
     "close": "Close",
-    "submit": "Submit"
+    "submit": "Submit",
+    "create": "Create",
+    "add": "Add"
   },
   "overlay": {
     "urlPlaceholder": "Implementation URL (e.g. http://localhost:3000)",

@@ -1,4 +1,4 @@
-import type { Frame, NodeInspection } from "@figdiff/shared";
+import type { Frame, NodeInspection, Project } from "@figdiff/shared";
 
 import type { OverlayViewMode } from "@/store/overlay-store";
 
@@ -6,10 +6,26 @@ import type { OverlayViewMode } from "@/store/overlay-store";
  * プラットフォーム非依存のコマンドインターフェース
  * Electron / Web それぞれのアダプターがこれを実装する
  */
+export interface ProjectSummary {
+  id: string;
+  name: string;
+  implementationUrl: string;
+  pageCount: number;
+  updatedAt: string;
+}
+
+export interface ProjectAdapter {
+  list(): Promise<ProjectSummary[]>;
+  load(projectId: string): Promise<Project>;
+  save(project: Project): Promise<void>;
+  delete(projectId: string): Promise<void>;
+}
+
 export interface PlatformAdapter {
   readonly figma: FigmaAdapter;
   readonly token: TokenAdapter;
   readonly file: FileAdapter;
+  readonly project: ProjectAdapter;
 }
 
 export interface FigmaAdapter {

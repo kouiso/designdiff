@@ -43,6 +43,13 @@ const api: ElectronAPI = {
     toggleStart: (intervalMs) => ipcRenderer.invoke("overlay:toggle-start", intervalMs),
     toggleStop: () => ipcRenderer.invoke("overlay:toggle-stop"),
   },
+
+  project: {
+    list: () => ipcRenderer.invoke("project:list"),
+    load: (projectId) => ipcRenderer.invoke("project:load", projectId),
+    save: (project) => ipcRenderer.invoke("project:save", JSON.stringify(project)),
+    delete: (projectId) => ipcRenderer.invoke("project:delete", projectId),
+  },
 };
 
 contextBridge.exposeInMainWorld("electronAPI", api);

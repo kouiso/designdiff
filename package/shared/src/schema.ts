@@ -137,12 +137,30 @@ export const DiffRegionSchema = z.object({
   nearbyNodeNames: z.array(z.string()),
 });
 
+// --- Completion Criteria Schema (v4: AI-driven PASS/FAIL structure) ---
+
+export const CompletionCriterionSchema = z.object({
+  required: z.number(),
+  current: z.number(),
+  status: z.enum(["PASS", "FAIL"]),
+});
+
+export const CompletionCriteriaSchema = z.object({
+  matchRate: CompletionCriterionSchema,
+  diffPixelCount: CompletionCriterionSchema,
+  remainingIssues: CompletionCriterionSchema,
+});
+
 export const CompareDesignResultSchema = z.object({
+  status: z.enum(["PASS", "FAIL"]).optional(),
   comparisonId: z.string(),
   matchRate: z.number().min(0).max(100),
   diffPixelCount: z.number().int().nonnegative(),
   totalPixelCount: z.number().int().positive(),
+  remainingIssues: z.number().int().nonnegative().optional(),
   diffRegions: z.array(DiffRegionSchema),
+  completionCriteria: CompletionCriteriaSchema.optional(),
+  nextAction: z.string().optional(),
   suggestion: z.string(),
   diffImageBase64: z.string().optional(),
 });
@@ -156,14 +174,44 @@ export const CropRegionSchema = z.object({
   height: z.number().positive(),
 });
 
-// --- Project Schema ---
+// --- Design Source Schema (v4: Figma URL or local image per page) ---
+
+export const DesignSourceSchema = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("figma"),
+    id: z.string(),
+    label: z.string(),
+    figmaUrl: z.string(),
+    fileKey: z.string(),
+    nodeId: z.string().optional(),
+    frameName: z.string().optional(),
+  }),
+  z.object({
+    type: z.literal("local_image"),
+    id: z.string(),
+    label: z.string(),
+    filePath: z.string(),
+  }),
+]);
+
+// --- Project Page Schema (v4: one page = one URL path + N design sources) ---
+
+export const ProjectPageSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  path: z.string(),
+  designSources: z.array(DesignSourceSchema),
+});
+
+// --- Project Schema (v4: implementation URL + pages) ---
 
 export const ProjectSchema = z.object({
   id: z.string(),
   name: z.string(),
-  figmaUrl: z.string().optional(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
+  implementationUrl: z.string(),
+  pages: z.array(ProjectPageSchema),
+  createdAt: z.string().datetime({ offset: true }),
+  updatedAt: z.string().datetime({ offset: true }),
 });
 
 // --- Figma Token Schema ---

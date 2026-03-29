@@ -5,6 +5,7 @@ import { BrowserWindow, app, safeStorage, session } from "electron";
 import { registerFigmaHandlers } from "./ipc/figma";
 import { registerFileHandlers } from "./ipc/file";
 import { registerOverlayHandlers } from "./ipc/overlay";
+import { registerProjectHandlers } from "./ipc/project";
 import { registerTokenHandlers } from "./ipc/token";
 
 const ALLOWED_ORIGINS = ["http://localhost:5173", "http://localhost:5174", "file://"];
@@ -112,6 +113,7 @@ app.whenReady().then(() => {
   registerTokenHandlers();
   registerFileHandlers();
   registerOverlayHandlers();
+  registerProjectHandlers();
   createWindow();
 
   app.on("activate", () => {

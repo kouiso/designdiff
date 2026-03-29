@@ -1,6 +1,22 @@
-import type { Frame, NodeInspection, ViewMode } from "@figdiff/shared";
+import type { Frame, NodeInspection, Project, ViewMode } from "@figdiff/shared";
 
 export type OverlayViewMode = ViewMode;
+
+// platform-adapter.ts の ProjectSummary と同一定義（レイヤー境界のため重複許容）
+export interface ProjectSummary {
+  id: string;
+  name: string;
+  implementationUrl: string;
+  pageCount: number;
+  updatedAt: string;
+}
+
+export interface ProjectAPI {
+  list(): Promise<ProjectSummary[]>;
+  load(projectId: string): Promise<Project>;
+  save(project: Project): Promise<void>;
+  delete(projectId: string): Promise<void>;
+}
 
 /**
  * Renderer プロセスから呼び出せる IPC API の型定義
@@ -16,6 +32,7 @@ export interface ElectronAPI {
   readLocalImage(path: string): Promise<string>;
   captureUrlScreenshot(url: string, width: number, height: number): Promise<string>;
   overlay: OverlayAPI;
+  project: ProjectAPI;
 }
 
 export interface OverlayAPI {

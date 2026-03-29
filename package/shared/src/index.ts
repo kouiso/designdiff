@@ -60,7 +60,11 @@ export {
   NodeLayoutSchema,
   NodeStrokeSchema,
   NodeTypographySchema,
+  CompletionCriteriaSchema,
+  CompletionCriterionSchema,
+  DesignSourceSchema,
   ParsedDesignInputSchema,
+  ProjectPageSchema,
   ProjectSchema,
 } from "./schema.js";
 // Types derived from schemas
@@ -82,6 +86,10 @@ export type {
   NodeLayout,
   NodeStroke,
   NodeTypography,
+  CompletionCriteria,
+  CompletionCriterion,
+  DesignSource,
   ParsedDesignInput,
   Project,
+  ProjectPage,
 } from "./type.js";
