@@ -72,16 +72,19 @@ describe("useTabStore", () => {
     });
   });
 
-  describe("getActiveTab", () => {
-    it("アクティブなタブを取得できる", () => {
+  describe("activeTab selector", () => {
+    it("アクティブなタブをselectorで取得できる", () => {
       const id = useTabStore.getState().openTab("proj-1", "Test");
-      const active = useTabStore.getState().getActiveTab();
+      const state = useTabStore.getState();
+      const active = state.tabs.find((t) => t.id === state.activeTabId) ?? null;
       expect(active?.id).toBe(id);
       expect(active?.projectId).toBe("proj-1");
     });
 
     it("タブがない場合はnullを返す", () => {
-      expect(useTabStore.getState().getActiveTab()).toBeNull();
+      const state = useTabStore.getState();
+      const active = state.tabs.find((t) => t.id === state.activeTabId) ?? null;
+      expect(active).toBeNull();
     });
   });
 });

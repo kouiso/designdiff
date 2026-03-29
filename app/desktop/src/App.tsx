@@ -21,7 +21,7 @@ export function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const loadSettings = useSettingStore((s) => s.loadSettings);
   const loadProjects = useProjectListStore((s) => s.loadProjects);
-  const activeTab = useTabStore((s) => s.getActiveTab());
+  const activeTab = useTabStore((s) => s.tabs.find((t) => t.id === s.activeTabId) ?? null);
   const tabs = useTabStore((s) => s.tabs);
 
   const currentPage = activeTab?.page ?? "home";
@@ -37,7 +37,7 @@ export function App() {
       return;
     }
     if (target === "home") {
-      useTabStore.getState().setActiveTab("");
+      useTabStore.getState().setActiveTab(null);
       return;
     }
     if (activeTab) {

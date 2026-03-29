@@ -15,9 +15,8 @@ interface TabState {
 
   openTab: (projectId: string, label: string) => string;
   closeTab: (tabId: string) => void;
-  setActiveTab: (tabId: string) => void;
+  setActiveTab: (tabId: string | null) => void;
   setTabPage: (tabId: string, page: Page) => void;
-  getActiveTab: () => Tab | null;
 }
 
 const generateTabId = (): string => {
@@ -62,10 +61,5 @@ export const useTabStore = create<TabState>((set, get) => ({
     set({
       tabs: get().tabs.map((t) => (t.id === tabId ? { ...t, page } : t)),
     });
-  },
-
-  getActiveTab: () => {
-    const { tabs, activeTabId } = get();
-    return tabs.find((t) => t.id === activeTabId) ?? null;
   },
 }));

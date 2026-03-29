@@ -60,6 +60,6 @@ describe("TabBar", () => {
     });
     render(<TabBar />);
     fireEvent.click(screen.getByLabelText("New tab"));
-    expect(useTabStore.getState().activeTabId).toBe("");
+    expect(useTabStore.getState().activeTabId).toBeNull();
   });
 });

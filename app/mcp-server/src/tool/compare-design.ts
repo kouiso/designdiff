@@ -73,7 +73,7 @@ function buildCompletionCriteria(
     matchRate: {
       required: 100,
       current: matchRate,
-      status: matchRate >= 100 ? "PASS" : "FAIL",
+      status: matchRate === 100 ? "PASS" : "FAIL",
     },
     diffPixelCount: {
       required: 0,
@@ -89,11 +89,11 @@ function buildCompletionCriteria(
 }
 
 function buildStatus(matchRate: number): "PASS" | "FAIL" {
-  return matchRate >= 100 ? "PASS" : "FAIL";
+  return matchRate === 100 ? "PASS" : "FAIL";
 }
 
 function buildNextAction(matchRate: number, regionCount: number): string {
-  if (matchRate >= 100) return "一致率100%です。差分はありません。タスク完了です。";
+  if (matchRate === 100) return "一致率100%です。差分はありません。タスク完了です。";
   return `inspect_node を使って ${regionCount} 箇所の diffRegions の詳細を確認し、CSSを修正してください。修正後は再度 compare_design で検証してください。`;
 }
 

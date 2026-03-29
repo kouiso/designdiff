@@ -13,29 +13,23 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/component/ui/card";
 import { Input } from "@/component/ui/input";
 import { cn } from "@/lib/util";
 import { useCompareStore } from "@/store/compare-store";
-import { useProjectListStore } from "@/store/project-list-store";
+import { generateId, useProjectListStore } from "@/store/project-list-store";
 import { useProjectStore } from "@/store/project-store";
 
 interface ProjectViewProps {
   onNavigate: (page: Page) => void;
 }
 
-const generateId = (): string => {
-  return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-};
-
-export function ProjectView({ onNavigate }: ProjectViewProps) {
+export const ProjectView = ({ onNavigate }: ProjectViewProps) => {
   const { t } = useTranslation();
-  const {
-    currentProject,
-    selectedPageId,
-    selectPage,
-    addPage,
-    removePage,
-    addDesignSource,
-    removeDesignSource,
-    saveCurrentProject,
-  } = useProjectListStore();
+  const currentProject = useProjectListStore((s) => s.currentProject);
+  const selectedPageId = useProjectListStore((s) => s.selectedPageId);
+  const selectPage = useProjectListStore((s) => s.selectPage);
+  const addPage = useProjectListStore((s) => s.addPage);
+  const removePage = useProjectListStore((s) => s.removePage);
+  const addDesignSource = useProjectListStore((s) => s.addDesignSource);
+  const removeDesignSource = useProjectListStore((s) => s.removeDesignSource);
+  const saveCurrentProject = useProjectListStore((s) => s.saveCurrentProject);
 
   const [newPageName, setNewPageName] = useState("");
   const [newPagePath, setNewPagePath] = useState("");
@@ -339,4 +333,4 @@ export function ProjectView({ onNavigate }: ProjectViewProps) {
       </div>
     </div>
   );
-}
+};

@@ -5,6 +5,12 @@ import { app, ipcMain } from "electron";
 
 import { ProjectSchema } from "@figdiff/shared";
 
+const PROJECT_ID_PATTERN = /^[a-zA-Z0-9_-]+$/;
+
+const isValidProjectId = (id: string): boolean => {
+  return PROJECT_ID_PATTERN.test(id) && !id.includes("..");
+};
+
 const getProjectsDir = (): string => {
   const dir = join(app.getPath("home"), ".figdiff", "projects");
   if (!existsSync(dir)) {
@@ -59,6 +65,9 @@ export const registerProjectHandlers = (): void => {
   });
 
   ipcMain.handle("project:load", (_event, projectId: string) => {
+    if (!isValidProjectId(projectId)) {
+      throw new Error(`Invalid project ID: ${projectId}`);
+    }
     const filePath = getProjectFilePath(projectId);
     if (!existsSync(filePath)) {
       throw new Error(`Project not found: ${projectId}`);
@@ -72,11 +81,20 @@ export const registerProjectHandlers = (): void => {
   });
 
   ipcMain.handle("project:save", (_event, projectJson: string) => {
-    const parsed = ProjectSchema.safeParse(JSON.parse(projectJson));
+    let jsonData: unknown;
+    try {
+      jsonData = JSON.parse(projectJson);
+    } catch {
+      throw new Error("Invalid JSON in project data");
+    }
+    const parsed = ProjectSchema.safeParse(jsonData);
     if (!parsed.success) {
       throw new Error(`Invalid project data: ${parsed.error.message}`);
     }
     const project = parsed.data;
+    if (!isValidProjectId(project.id)) {
+      throw new Error(`Invalid project ID: ${project.id}`);
+    }
     const projectDir = getProjectDir(project.id);
     if (!existsSync(projectDir)) {
       mkdirSync(projectDir, { recursive: true });
@@ -85,6 +103,9 @@ export const registerProjectHandlers = (): void => {
   });
 
   ipcMain.handle("project:delete", (_event, projectId: string) => {
+    if (!isValidProjectId(projectId)) {
+      throw new Error(`Invalid project ID: ${projectId}`);
+    }
     const projectDir = getProjectDir(projectId);
     if (existsSync(projectDir)) {
       rmSync(projectDir, { recursive: true, force: true });

@@ -46,7 +46,7 @@ export function TabBar() {
         variant="ghost"
         size="icon"
         className="h-7 w-7 text-muted-foreground hover:text-foreground"
-        onClick={() => setActiveTab("")}
+        onClick={() => setActiveTab(null)}
         aria-label="New tab"
       >
         <Plus className="h-3.5 w-3.5" />
