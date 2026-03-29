@@ -87,7 +87,83 @@ describe("useProjectListStore", () => {
     });
   });
 
+  describe("deleteProject", () => {
+    it("プロジェクトを削除できる", async () => {
+      mockDelete.mockResolvedValueOnce(undefined);
+      mockList.mockResolvedValueOnce([]);
+      useProjectListStore.setState({
+        currentProject: {
+          id: "p1",
+          name: "Test",
+          implementationUrl: "http://localhost:3000",
+          pages: [],
+          createdAt: "2026-01-01T00:00:00Z",
+          updatedAt: "2026-01-01T00:00:00Z",
+        },
+      });
+      await useProjectListStore.getState().deleteProject("p1");
+      expect(useProjectListStore.getState().currentProject).toBeNull();
+    });
+
+    it("別のプロジェクトを削除してもcurrentProjectは残る", async () => {
+      mockDelete.mockResolvedValueOnce(undefined);
+      mockList.mockResolvedValueOnce([]);
+      useProjectListStore.setState({
+        currentProject: {
+          id: "p1",
+          name: "Test",
+          implementationUrl: "http://localhost:3000",
+          pages: [],
+          createdAt: "2026-01-01T00:00:00Z",
+          updatedAt: "2026-01-01T00:00:00Z",
+        },
+      });
+      await useProjectListStore.getState().deleteProject("p2");
+      expect(useProjectListStore.getState().currentProject?.id).toBe("p1");
+    });
+  });
+
+  describe("saveCurrentProject", () => {
+    it("現在のプロジェクトを保存できる", async () => {
+      mockSave.mockResolvedValueOnce(undefined);
+      useProjectListStore.setState({
+        currentProject: {
+          id: "p1",
+          name: "Test",
+          implementationUrl: "http://localhost:3000",
+          pages: [],
+          createdAt: "2026-01-01T00:00:00Z",
+          updatedAt: "2026-01-01T00:00:00Z",
+        },
+      });
+      await useProjectListStore.getState().saveCurrentProject();
+      expect(mockSave).toHaveBeenCalled();
+    });
+
+    it("currentProjectがnullなら何もしない", async () => {
+      await useProjectListStore.getState().saveCurrentProject();
+      expect(mockSave).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("selectPage / selectSource", () => {
+    it("ページを選択できる", () => {
+      useProjectListStore.getState().selectPage("pg-1");
+      expect(useProjectListStore.getState().selectedPageId).toBe("pg-1");
+      expect(useProjectListStore.getState().selectedSourceId).toBeNull();
+    });
+
+    it("ソースを選択できる", () => {
+      useProjectListStore.getState().selectSource("src-1");
+      expect(useProjectListStore.getState().selectedSourceId).toBe("src-1");
+    });
+  });
+
   describe("addPage", () => {
+    it("currentProjectがnullなら何もしない", () => {
+      useProjectListStore.getState().addPage("Home", "/home");
+      expect(useProjectListStore.getState().currentProject).toBeNull();
+    });
     it("ページを追加できる", () => {
       useProjectListStore.setState({
         currentProject: {
