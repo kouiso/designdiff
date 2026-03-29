@@ -61,6 +61,29 @@ describe("DesignSourceSchema", () => {
     expect(result.success).toBe(false);
   });
 
+  it("local_image type で filePath が欠けているとエラー", () => {
+    const input = {
+      type: "local_image",
+      id: "src-x",
+      label: "テスト",
+    };
+    const result = DesignSourceSchema.safeParse(input);
+    expect(result.success).toBe(false);
+  });
+
+  it("figma type で frameName を含むソースをパースできる", () => {
+    const input = {
+      type: "figma",
+      id: "src-f",
+      label: "フレーム指定あり",
+      figmaUrl: "https://figma.com/design/ABC/File",
+      fileKey: "ABC",
+      frameName: "Home",
+    };
+    const result = DesignSourceSchema.safeParse(input);
+    expect(result.success).toBe(true);
+  });
+
   it("figma type で必須フィールドが欠けているとエラー", () => {
     const input = {
       type: "figma",
@@ -191,6 +214,32 @@ describe("ProjectSchema", () => {
     };
     const result = ProjectSchema.safeParse(input);
     expect(result.success).toBe(true);
+  });
+
+  it("ネストされたページデータが不正だとエラー", () => {
+    const input = {
+      id: "proj-bad",
+      name: "不正ネスト",
+      implementationUrl: "http://localhost:3000",
+      pages: [{ id: "pg1", name: "Home" }],
+      createdAt: "2026-03-28T12:00:00Z",
+      updatedAt: "2026-03-28T12:00:00Z",
+    };
+    const result = ProjectSchema.safeParse(input);
+    expect(result.success).toBe(false);
+  });
+
+  it("createdAt が不正な日付文字列だとエラー", () => {
+    const input = {
+      id: "proj-date",
+      name: "日付テスト",
+      implementationUrl: "http://localhost:3000",
+      pages: [],
+      createdAt: "not-a-date",
+      updatedAt: "2026-03-28T12:00:00Z",
+    };
+    const result = ProjectSchema.safeParse(input);
+    expect(result.success).toBe(false);
   });
 
   it("implementationUrl が欠けているとエラー", () => {

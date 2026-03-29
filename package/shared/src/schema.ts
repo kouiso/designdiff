@@ -210,8 +210,8 @@ export const ProjectSchema = z.object({
   name: z.string(),
   implementationUrl: z.string(),
   pages: z.array(ProjectPageSchema),
-  createdAt: z.string(),
-  updatedAt: z.string(),
+  createdAt: z.string().datetime({ offset: true }),
+  updatedAt: z.string().datetime({ offset: true }),
 });
 
 // --- Figma Token Schema ---
