@@ -20,7 +20,7 @@ concurrency:
 jobs:
   semgrep:
     name: Code Scan
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-latest
     container:
       image: semgrep/semgrep
     if: github.actor != 'dependabot[bot]'
