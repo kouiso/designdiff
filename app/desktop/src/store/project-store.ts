@@ -10,6 +10,10 @@ function isTokenError(message: string): boolean {
   return (
     message.includes("Token not found") ||
     message.includes("TokenNotFound") ||
+    message.includes("Invalid token") ||
+    message.includes("Invalid Figma token") ||
+    message.includes("error 403") ||
+    message.includes("error 401") ||
     message.includes("status 403") ||
     message.includes("status 401") ||
     message.includes("Forbidden")

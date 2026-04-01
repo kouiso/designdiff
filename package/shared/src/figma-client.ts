@@ -188,6 +188,8 @@ export class NoCacheStrategy implements FigmaCacheStrategy {
 }
 
 const MIN_TOKEN_LENGTH = 20;
+const API_TIMEOUT_MS = 30_000;
+const IMAGE_DOWNLOAD_TIMEOUT_MS = 60_000;
 
 export class FigmaClient {
   private token: string;
@@ -241,13 +243,28 @@ export class FigmaClient {
     }
 
     const imageUrl = await this.getImageUrl(fileKey, nodeId, scale);
-    const response = await fetch(imageUrl);
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), IMAGE_DOWNLOAD_TIMEOUT_MS);
+
+    let response: Response;
+    try {
+      response = await fetch(imageUrl, { signal: controller.signal });
+    } catch (e) {
+      clearTimeout(timer);
+      if (e instanceof DOMException && e.name === "AbortError") {
+        throw new Error(`Image download timed out after ${IMAGE_DOWNLOAD_TIMEOUT_MS}ms`);
+      }
+      throw e;
+    }
 
     if (!response.ok) {
+      clearTimeout(timer);
       throw new Error(`Failed to download image: ${response.statusText}`);
     }
 
     const arrayBuffer = await response.arrayBuffer();
+    clearTimeout(timer);
     const base64 = this.arrayBufferToBase64(new Uint8Array(arrayBuffer));
 
     await this.cache.set(fileKey, nodeId, scale, base64);
@@ -255,19 +272,32 @@ export class FigmaClient {
     return base64;
   }
 
-  private async fetchApi(url: string): Promise<unknown> {
-    const response = await fetch(url, {
-      headers: {
-        "X-FIGMA-TOKEN": this.token,
-      },
-    });
+  private async fetchApi(url: string, timeoutMs = API_TIMEOUT_MS): Promise<unknown> {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
 
-    if (!response.ok) {
-      const body = await response.text();
-      throw new Error(`Figma API error ${response.status}: ${body}`);
+    try {
+      const response = await fetch(url, {
+        headers: {
+          "X-FIGMA-TOKEN": this.token,
+        },
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        const body = await response.text();
+        throw new Error(`Figma API error ${response.status}: ${body}`);
+      }
+
+      return response.json();
+    } catch (e) {
+      if (e instanceof DOMException && e.name === "AbortError") {
+        throw new Error(`Figma API request timed out after ${timeoutMs}ms`);
+      }
+      throw e;
+    } finally {
+      clearTimeout(timer);
     }
-
-    return response.json();
   }
 
   private arrayBufferToBase64(buffer: Uint8Array): string {
