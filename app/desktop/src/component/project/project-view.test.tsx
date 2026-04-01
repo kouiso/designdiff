@@ -61,7 +61,7 @@ describe("ProjectView", () => {
       },
     });
     render(<ProjectView onNavigate={vi.fn()} />);
-    expect(screen.getByText("No pages yet. Click + to add.")).toBeInTheDocument();
+    expect(screen.getByText("Add a page to start")).toBeInTheDocument();
   });
 
   it("ページ一覧が表示される", () => {
@@ -129,6 +129,6 @@ describe("ProjectView", () => {
       selectedPageId: null,
     });
     render(<ProjectView onNavigate={vi.fn()} />);
-    expect(screen.getByText("Select a page from the sidebar or add a new one")).toBeInTheDocument();
+    expect(screen.getByText("Getting Started")).toBeInTheDocument();
   });
 });

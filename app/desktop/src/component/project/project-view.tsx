@@ -191,9 +191,14 @@ export const ProjectView = ({ onNavigate }: ProjectViewProps) => {
           ))}
 
           {currentProject.pages.length === 0 && !showAddPage && (
-            <p className="py-4 text-center text-muted-foreground text-xs">
-              {t("projectView.noPages", "No pages yet. Click + to add.")}
-            </p>
+            <button
+              type="button"
+              className="w-full rounded-md border border-dashed py-4 text-center text-muted-foreground text-xs transition-colors hover:border-primary/40 hover:text-foreground"
+              onClick={() => setShowAddPage(true)}
+            >
+              <Plus className="mx-auto mb-1 h-4 w-4" />
+              {t("projectView.noPagesAction", "Add a page to start")}
+            </button>
           )}
         </div>
       </aside>
@@ -316,11 +321,77 @@ export const ProjectView = ({ onNavigate }: ProjectViewProps) => {
             </div>
           </div>
         ) : (
-          <div className="flex h-full flex-col items-center justify-center gap-3">
-            <FolderPlus className="h-12 w-12 text-muted-foreground/30" />
-            <p className="text-muted-foreground">
-              {t("projectView.selectPage", "Select a page from the sidebar or add a new one")}
-            </p>
+          <div className="flex h-full flex-col items-center justify-center gap-4">
+            <div className="max-w-md space-y-6 text-center">
+              <div>
+                <FolderPlus className="mx-auto mb-3 h-12 w-12 text-muted-foreground/30" />
+                <h3 className="font-semibold text-lg">
+                  {t("projectView.emptyTitle", "Getting Started")}
+                </h3>
+                <p className="mt-1 text-muted-foreground text-sm">
+                  {t(
+                    "projectView.emptyDescription",
+                    "Compare your Figma designs with the actual implementation in 3 steps",
+                  )}
+                </p>
+              </div>
+
+              <ol className="space-y-3 text-left">
+                <li className="flex items-start gap-3 rounded-lg border bg-primary/5 p-3">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary font-medium text-primary-foreground text-xs">
+                    1
+                  </span>
+                  <div>
+                    <p className="font-medium text-sm">
+                      {t("projectView.step1Title", "Add a page")}
+                    </p>
+                    <p className="text-muted-foreground text-xs">
+                      {t(
+                        "projectView.step1Desc",
+                        'Enter the page path (e.g. "/", "/about") you want to compare',
+                      )}
+                    </p>
+                  </div>
+                </li>
+                <li className="flex items-start gap-3 rounded-lg border p-3">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted font-medium text-muted-foreground text-xs">
+                    2
+                  </span>
+                  <div>
+                    <p className="font-medium text-sm">
+                      {t("projectView.step2Title", "Add a design source")}
+                    </p>
+                    <p className="text-muted-foreground text-xs">
+                      {t(
+                        "projectView.step2Desc",
+                        "Paste a Figma URL or local image path as the design reference",
+                      )}
+                    </p>
+                  </div>
+                </li>
+                <li className="flex items-start gap-3 rounded-lg border p-3">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted font-medium text-muted-foreground text-xs">
+                    3
+                  </span>
+                  <div>
+                    <p className="font-medium text-sm">
+                      {t("projectView.step3Title", "Run comparison")}
+                    </p>
+                    <p className="text-muted-foreground text-xs">
+                      {t(
+                        "projectView.step3Desc",
+                        "FigDiff captures screenshots and highlights pixel-level differences",
+                      )}
+                    </p>
+                  </div>
+                </li>
+              </ol>
+
+              <Button onClick={() => setShowAddPage(true)} className="w-full">
+                <Plus className="mr-2 h-4 w-4" />
+                {t("projectView.addFirstPage", "Add Your First Page")}
+              </Button>
+            </div>
           </div>
         )}
       </div>
