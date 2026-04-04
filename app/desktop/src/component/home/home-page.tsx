@@ -96,6 +96,7 @@ export const HomePage = ({ onNavigate }: HomePageProps) => {
     })();
     if (isFigmaUrl && !figmaToken) {
       useProjectStore.setState({ error: t("home.tokenRequired") });
+      useSettingStore.getState().requireToken();
       return;
     }
     clearError();
@@ -118,7 +119,10 @@ export const HomePage = ({ onNavigate }: HomePageProps) => {
     const { frames, frameImage } = useProjectStore.getState();
     if (frames.length > 0 || frameImage) {
       onNavigate("project");
+      return;
     }
+
+    useProjectStore.setState({ error: t("home.noDesignFound") });
   };
 
   const isLoading = projectLoading || listLoading;

@@ -145,6 +145,8 @@ describe("HomePage", () => {
           "Figma Token を設定してください。設定画面から設定できます。",
         );
       });
+
+      expect(useSettingStore.getState().showTokenDialog).toBe(true);
     });
 
     it("loadDesign 成功 + frames あり → project ページへ遷移", async () => {
@@ -183,6 +185,27 @@ describe("HomePage", () => {
 
       await waitFor(() => {
         expect(useProjectStore.getState().error).toBe("読み込み失敗");
+      });
+      expect(onNavigate).not.toHaveBeenCalled();
+    });
+
+    it("loadDesign 成功でも結果が空 → エラー表示して遷移しない", async () => {
+      mockSubmitValue = "https://www.figma.com/design/abc123/Test";
+      useSettingStore.setState({ figmaToken: "figd_token" });
+
+      const mockLoadDesign = vi.fn().mockImplementation(async () => {
+        useProjectStore.setState({ frames: [], frameImage: null, error: null });
+      });
+      useProjectStore.setState({ loadDesign: mockLoadDesign });
+
+      const onNavigate = vi.fn();
+      render(<HomePage onNavigate={onNavigate} />);
+      fireEvent.click(screen.getByTestId("design-input"));
+
+      await waitFor(() => {
+        expect(useProjectStore.getState().error).toBe(
+          "デザインを取得できませんでした。URLまたはFigma内のフレーム構成を確認してください。",
+        );
       });
       expect(onNavigate).not.toHaveBeenCalled();
     });

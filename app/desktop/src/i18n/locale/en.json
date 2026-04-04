@@ -23,6 +23,7 @@
     "inputPlaceholder": "Figma URL or local image path...",
     "loading": "Loading...",
     "tokenRequired": "Please set a Figma Token. You can configure it in Settings.",
+    "noDesignFound": "No design frames were found. Check the URL or your frame structure in Figma.",
     "howItWorks": "3 Steps to Detect Differences",
     "step1": "Enter a\nFigma URL",
     "step2": "Select a\nframe",

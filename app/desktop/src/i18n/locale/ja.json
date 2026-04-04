@@ -23,6 +23,7 @@
     "inputPlaceholder": "Figma URL またはローカル画像パス...",
     "loading": "読み込み中...",
     "tokenRequired": "Figma Token を設定してください。設定画面から設定できます。",
+    "noDesignFound": "デザインを取得できませんでした。URLまたはFigma内のフレーム構成を確認してください。",
     "howItWorks": "3ステップで差分検出",
     "step1": "実装URLを\n入力",
     "step2": "デザインを\n追加",
