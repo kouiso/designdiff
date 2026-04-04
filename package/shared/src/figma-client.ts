@@ -319,7 +319,7 @@ export function extractFrames(response: FigmaFileResponse): Frame[] {
   return frames;
 }
 
-function collectFrames(nodes: FigmaNode[], frames: Frame[]): void {
+export function collectFrames(nodes: FigmaNode[], frames: Frame[]): void {
   for (const node of nodes) {
     if (node.type === "FRAME") {
       const bbox = node.absoluteBoundingBox;
@@ -335,4 +335,11 @@ function collectFrames(nodes: FigmaNode[], frames: Frame[]): void {
       collectFrames(node.children, frames);
     }
   }
+}
+
+/** CANVASページノードからFRAMEノードを抽出（SECTION内も再帰探索） */
+export function extractPageFrames(pageNode: FigmaNode): Frame[] {
+  const frames: Frame[] = [];
+  collectFrames(pageNode.children, frames);
+  return frames;
 }

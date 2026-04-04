@@ -31,6 +31,16 @@ export function extractNodeId(url: string): string | null {
 }
 
 /**
+ * Build a Figma frame URL by setting/replacing the node-id query parameter.
+ * Converts API colon format (e.g. "1:23") to URL dash format (e.g. "1-23").
+ */
+export function buildFigmaFrameUrl(baseUrl: string, frameNodeId: string): string {
+  const url = new URL(baseUrl);
+  url.searchParams.set("node-id", frameNodeId.replace(/:/g, "-"));
+  return url.toString();
+}
+
+/**
  * Determine whether an input string is a Figma URL or a local file path.
  * Figma URLs contain "figma.com". Everything else is treated as a local path.
  */

@@ -3,6 +3,7 @@ export {
   FigmaClient,
   NoCacheStrategy,
   extractFrames,
+  extractPageFrames,
   type FigmaCacheStrategy,
   type FigmaColor,
   type FigmaEffect,
@@ -42,7 +43,12 @@ export {
 // Zod Schemas
 
 // Figma URL parser
-export { extractFileKey, extractNodeId, parseDesignInput } from "./figma-url-parser.js";
+export {
+  buildFigmaFrameUrl,
+  extractFileKey,
+  extractNodeId,
+  parseDesignInput,
+} from "./figma-url-parser.js";
 export {
   BorderRadiusSchema,
   ChildNodeSummarySchema,
