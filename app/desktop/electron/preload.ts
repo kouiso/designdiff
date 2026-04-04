@@ -5,6 +5,9 @@ import type { ElectronAPI } from "./type/ipc-api";
 const api: ElectronAPI = {
   getFigmaFrames: (fileKey) => ipcRenderer.invoke("figma:get-frames", fileKey),
 
+  getFigmaPageFrames: (fileKey, pageNodeId) =>
+    ipcRenderer.invoke("figma:get-page-frames", fileKey, pageNodeId),
+
   getFigmaFrameImage: (fileKey, nodeId, scale = 2) =>
     ipcRenderer.invoke("figma:get-frame-image", fileKey, nodeId, scale),
 

@@ -24,6 +24,7 @@ export interface ProjectAPI {
  */
 export interface ElectronAPI {
   getFigmaFrames(fileKey: string): Promise<Frame[]>;
+  getFigmaPageFrames(fileKey: string, pageNodeId: string): Promise<Frame[]>;
   getFigmaFrameImage(fileKey: string, nodeId: string, scale?: number): Promise<string>;
   getFigmaNodeDetail(fileKey: string, nodeId: string, depth?: number): Promise<NodeInspection>;
   saveFigmaToken(token: string): Promise<void>;

@@ -1,6 +1,6 @@
 import { ipcMain } from "electron";
 
-import { FigmaClient, extractFrames } from "@figdiff/shared";
+import { FigmaClient, extractFrames, extractPageFrames } from "@figdiff/shared";
 
 import { NodeFsCacheStrategy } from "../util/cache";
 import { getToken } from "../util/safe-storage";
@@ -39,6 +39,13 @@ export const registerFigmaHandlers = (): void => {
       return client.downloadImageAsBase64(fileKey, nodeId, scale);
     },
   );
+
+  ipcMain.handle("figma:get-page-frames", async (_event, fileKey: string, pageNodeId: string) => {
+    const token = requireToken();
+    const client = new FigmaClient(token, getCache());
+    const pageNode = await client.getNode(fileKey, pageNodeId);
+    return extractPageFrames(pageNode);
+  });
 
   ipcMain.handle("figma:get-node-detail", async (_event, fileKey: string, nodeId: string) => {
     const token = requireToken();
