@@ -12,7 +12,8 @@ import {
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
-import { parseDesignInput } from "@figdiff/shared";
+import { buildFigmaFrameUrl, parseDesignInput } from "@figdiff/shared";
+import type { Frame } from "@figdiff/shared";
 
 import { Badge } from "@/component/ui/badge";
 import { Button } from "@/component/ui/button";
@@ -53,6 +54,8 @@ export const HomePage = ({ onNavigate }: HomePageProps) => {
   const openProject = useProjectListStore((s) => s.openProject);
   const deleteProject = useProjectListStore((s) => s.deleteProject);
   const [implUrl, setImplUrl] = useState("");
+  const [pageFrames, setPageFrames] = useState<Frame[]>([]);
+  const [pageBaseUrl, setPageBaseUrl] = useState("");
 
   // 新規プロジェクト作成
   const [showCreate, setShowCreate] = useState(false);
@@ -84,45 +87,107 @@ export const HomePage = ({ onNavigate }: HomePageProps) => {
     }
   };
 
-  // 既存フロー（Figma URL直接入力）も維持
+  const ensureQuickCompareTab = (): void => {
+    const { activeTabId } = useTabStore.getState();
+    if (activeTabId) return;
+    useTabStore.getState().openTab("quick-compare", t("home.quickCompare", "Quick Compare"));
+  };
+
+  const navigateAfterLoad = (): void => {
+    ensureQuickCompareTab();
+    const trimmedImplUrl = implUrl.trim();
+    if (trimmedImplUrl) {
+      const { frames } = useProjectStore.getState();
+      if (frames.length > 0 && frames[0]) {
+        useProjectStore.getState().selectFrame(frames[0]);
+      }
+      useOverlayStore.getState().setUrl(trimmedImplUrl);
+      onNavigate("live_overlay");
+      return;
+    }
+    const { frames, frameImage } = useProjectStore.getState();
+    if (frames.length > 0 || frameImage) {
+      onNavigate("project");
+      return;
+    }
+    useProjectStore.setState({ error: t("home.noDesignFound") });
+  };
+
+  const handleFrameSelect = async (frame: Frame) => {
+    setPageFrames([]);
+    const frameUrl = buildFigmaFrameUrl(pageBaseUrl, frame.id);
+    clearError();
+    await useProjectStore.getState().loadDesign(frameUrl);
+
+    const { error: loadErr } = useProjectStore.getState();
+    if (loadErr) return;
+
+    navigateAfterLoad();
+  };
+
+  const tryPageDetection = async (
+    input: string,
+    fileKey: string,
+    nodeId: string,
+  ): Promise<boolean> => {
+    try {
+      const nodeDetail = await window.electronAPI.getFigmaNodeDetail(fileKey, nodeId, 1);
+      if (nodeDetail.nodeType !== "CANVAS") return false;
+
+      const frames = await window.electronAPI.getFigmaPageFrames(fileKey, nodeId);
+      if (frames.length === 1 && frames[0]) {
+        const frameUrl = buildFigmaFrameUrl(input, frames[0].id);
+        await useProjectStore.getState().loadDesign(frameUrl);
+        const { error: loadErr } = useProjectStore.getState();
+        if (loadErr) return true;
+        ensureQuickCompareTab();
+        onNavigate("project");
+        return true;
+      }
+      if (frames.length > 1) {
+        setPageBaseUrl(input);
+        setPageFrames(frames);
+        return true;
+      }
+      useProjectStore.setState({ error: t("home.noDesignFound") });
+      return true;
+    } catch (e) {
+      console.warn("Page frame detection failed, falling back to single frame flow", e);
+      return false;
+    }
+  };
+
   const handleLegacySubmit = async (input: string) => {
     if (projectLoading) return;
-    const isFigmaUrl = (() => {
+    setPageFrames([]);
+
+    const parsed = (() => {
       try {
-        return parseDesignInput(input).type === "figma_url";
+        return parseDesignInput(input);
       } catch {
-        return false;
+        return null;
       }
     })();
+
+    const isFigmaUrl = parsed?.type === "figma_url";
     if (isFigmaUrl && !figmaToken) {
       useProjectStore.setState({ error: t("home.tokenRequired") });
       useSettingStore.getState().requireToken();
       return;
     }
+
+    if (isFigmaUrl && parsed.type === "figma_url" && parsed.nodeId) {
+      const handled = await tryPageDetection(input, parsed.fileKey, parsed.nodeId);
+      if (handled) return;
+    }
+
     clearError();
     await useProjectStore.getState().loadDesign(input);
 
     const { error: loadErr } = useProjectStore.getState();
     if (loadErr) return;
 
-    const trimmedImplUrl = implUrl.trim();
-    if (trimmedImplUrl) {
-      const { frames } = useProjectStore.getState();
-      if (frames.length > 0 && frames[0]) {
-        await useProjectStore.getState().selectFrame(frames[0]);
-      }
-      useOverlayStore.getState().setUrl(trimmedImplUrl);
-      onNavigate("live_overlay");
-      return;
-    }
-
-    const { frames, frameImage } = useProjectStore.getState();
-    if (frames.length > 0 || frameImage) {
-      onNavigate("project");
-      return;
-    }
-
-    useProjectStore.setState({ error: t("home.noDesignFound") });
+    navigateAfterLoad();
   };
 
   const isLoading = projectLoading || listLoading;
@@ -238,12 +303,41 @@ export const HomePage = ({ onNavigate }: HomePageProps) => {
       {/* 既存フロー（直接比較）も維持 */}
       <section className="space-y-3 border-border/40 border-t pt-4">
         <div>
-          <h2 className="font-semibold text-sm text-muted-foreground">
+          <h2 className="font-semibold text-muted-foreground text-sm">
             {t("home.quickCompare", "Quick Compare (Legacy)")}
           </h2>
           <p className="text-muted-foreground text-xs">{t("home.inputHint")}</p>
         </div>
         <DesignInput onSubmit={handleLegacySubmit} disabled={isLoading} />
+
+        {pageFrames.length > 0 && (
+          <Card className="border-primary/30">
+            <CardContent className="space-y-2 p-4">
+              <div className="flex items-center gap-2">
+                <Layers className="h-4 w-4 text-primary" />
+                <h3 className="font-semibold text-sm">
+                  {t("home.pageFrames", "Frames in this page")} ({pageFrames.length})
+                </h3>
+              </div>
+              <div className="grid gap-1.5">
+                {pageFrames.map((frame) => (
+                  <button
+                    key={frame.id}
+                    type="button"
+                    onClick={() => handleFrameSelect(frame)}
+                    disabled={isLoading}
+                    className="flex items-center justify-between rounded-lg border bg-card px-3 py-2 text-left text-sm transition-colors hover:border-primary/50 hover:bg-accent disabled:opacity-50"
+                  >
+                    <span className="font-medium">{frame.name}</span>
+                    <span className="text-muted-foreground text-xs">
+                      {frame.width}×{frame.height}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <div className="flex items-center gap-2 rounded-xl border border-border bg-card p-1.5 shadow-sm transition-colors focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/20">
           <Globe className="ml-2 h-4 w-4 shrink-0 text-muted-foreground" />
