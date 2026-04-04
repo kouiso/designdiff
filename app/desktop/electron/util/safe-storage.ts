@@ -88,9 +88,9 @@ export const getToken = (): string | null => {
     return null;
   }
 
-  if (!canEncrypt()) {
-    console.error(
-      "[safe-storage] 暗号化されたトークンが保存されていますが、復号化が利用できません。",
+  if (!safeStorage.isEncryptionAvailable()) {
+    console.warn(
+      "[safe-storage] OS Keychainが利用できないため、暗号化済みトークンを復号化できません。トークンを再設定してください。",
     );
     return null;
   }
