@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "unset ELECTRON_RUN_AS_NODE && electron-vite dev",
     "dev:web": "vite --config vite.web.config.ts",
+    "verify:native": "bash ./e2e/verify-native-macos.sh",
     "build": "electron-vite build",
     "build:web": "vite build --config vite.web.config.ts",
     "typecheck": "tsc --noEmit",
