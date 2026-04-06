@@ -1,3 +1,5 @@
+import { useEffect, useRef } from "react";
+
 import { Eye, EyeOff, Globe, Loader2, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -50,6 +52,15 @@ export function LiveOverlayPanel({ onNavigate }: LiveOverlayPanelProps) {
     const base64 = frameImage.replace(/^data:image\/\w+;base64,/, "");
     setOverlayImage(base64);
   };
+
+  const prevFrameImageRef = useRef(frameImage);
+  useEffect(() => {
+    if (isOpen && !overlayImageBase64 && frameImage && prevFrameImageRef.current !== frameImage) {
+      const base64 = frameImage.replace(/^data:image\/\w+;base64,/, "");
+      setOverlayImage(base64);
+    }
+    prevFrameImageRef.current = frameImage;
+  }, [frameImage, isOpen, overlayImageBase64, setOverlayImage]);
 
   const showOpacitySlider =
     overlayViewMode === "transparent_overlay" || overlayViewMode === "draggable_overlay";

@@ -97,12 +97,12 @@ export const HomePage = ({ onNavigate }: HomePageProps) => {
     useTabStore.getState().setTabPage(tabId, page);
   };
 
-  const navigateAfterLoad = (): void => {
+  const navigateAfterLoad = async (): Promise<void> => {
     const trimmedImplUrl = implUrl.trim();
     if (trimmedImplUrl) {
       const { frames } = useProjectStore.getState();
       if (frames.length > 0 && frames[0]) {
-        useProjectStore.getState().selectFrame(frames[0]);
+        await useProjectStore.getState().selectFrame(frames[0]);
       }
       useOverlayStore.getState().setUrl(trimmedImplUrl);
       ensureQuickCompareTab("live_overlay");

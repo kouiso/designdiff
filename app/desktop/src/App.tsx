@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { ComparePage } from "./component/compare/compare-page";
 import { HomePage } from "./component/home/home-page";
@@ -11,6 +11,7 @@ import { SettingDialog } from "./component/setting/setting-dialog";
 import { TokenRequiredDialog } from "./component/setting/token-required-dialog";
 import { ErrorBoundary } from "./component/ui/error-boundary";
 import { cn } from "./lib/util";
+import { useOverlayStore } from "./store/overlay-store";
 import { useProjectListStore } from "./store/project-list-store";
 import { useSettingStore } from "./store/setting-store";
 import { useTabStore } from "./store/tab-store";
@@ -31,19 +32,28 @@ export const App = () => {
     loadProjects();
   }, [loadSettings, loadProjects]);
 
-  const handleNavigate = (target: Page) => {
-    if (target === "settings") {
-      setSettingsOpen(true);
-      return;
-    }
-    if (target === "home") {
-      useTabStore.getState().setActiveTab(null);
-      return;
-    }
-    if (activeTab) {
-      useTabStore.getState().setTabPage(activeTab.id, target);
-    }
-  };
+  const handleNavigate = useCallback(
+    (target: Page) => {
+      if (target === "settings") {
+        setSettingsOpen(true);
+        return;
+      }
+
+      const leavingOverlay = currentPage === "live_overlay" && target !== "live_overlay";
+      if (leavingOverlay) {
+        useOverlayStore.getState().closeSite();
+      }
+
+      if (target === "home") {
+        useTabStore.getState().setActiveTab(null);
+        return;
+      }
+      if (activeTab) {
+        useTabStore.getState().setTabPage(activeTab.id, target);
+      }
+    },
+    [currentPage, activeTab],
+  );
 
   const showTabBar = tabs.length > 0;
   const showHome = !activeTab;
