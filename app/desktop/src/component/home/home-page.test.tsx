@@ -55,7 +55,15 @@ beforeEach(() => {
 });
 
 vi.mock("./design-input", () => ({
-  DesignInput: ({ onSubmit, disabled }: { onSubmit: (v: string) => void; disabled: boolean }) => (
+  DesignInput: ({
+    onSubmit,
+    disabled,
+  }: {
+    value: string;
+    onChange: (v: string) => void;
+    onSubmit: (v: string) => void;
+    disabled: boolean;
+  }) => (
     <button
       type="button"
       onClick={() => onSubmit(mockSubmitValue)}

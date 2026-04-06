@@ -1,5 +1,3 @@
-import { useState } from "react";
-
 import { ArrowRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -8,6 +6,8 @@ import { Button } from "@/component/ui/button";
 import { Input } from "@/component/ui/input";
 
 interface DesignInputProps {
+  value: string;
+  onChange: (value: string) => void;
   onSubmit: (input: string) => void;
   disabled?: boolean;
 }
@@ -19,9 +19,8 @@ function detectInputType(value: string): "figma" | "local" | null {
   return "local";
 }
 
-export function DesignInput({ onSubmit, disabled }: DesignInputProps) {
+export function DesignInput({ value, onChange, onSubmit, disabled }: DesignInputProps) {
   const { t } = useTranslation();
-  const [value, setValue] = useState("");
   const inputType = detectInputType(value);
 
   const handleSubmit = () => {
@@ -42,7 +41,7 @@ export function DesignInput({ onSubmit, disabled }: DesignInputProps) {
       <div className="relative flex-1">
         <Input
           value={value}
-          onChange={(e) => setValue(e.target.value)}
+          onChange={(e) => onChange(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={t("home.inputPlaceholder")}
           aria-label={t("home.inputPlaceholder")}

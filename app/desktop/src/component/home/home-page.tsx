@@ -53,6 +53,7 @@ export const HomePage = ({ onNavigate }: HomePageProps) => {
   const createProject = useProjectListStore((s) => s.createProject);
   const openProject = useProjectListStore((s) => s.openProject);
   const deleteProject = useProjectListStore((s) => s.deleteProject);
+  const [designUrl, setDesignUrl] = useState("");
   const [implUrl, setImplUrl] = useState("");
   const [pageFrames, setPageFrames] = useState<Frame[]>([]);
   const [pageBaseUrl, setPageBaseUrl] = useState("");
@@ -87,14 +88,16 @@ export const HomePage = ({ onNavigate }: HomePageProps) => {
     }
   };
 
-  const ensureQuickCompareTab = (): void => {
+  const ensureQuickCompareTab = (page: Page = "project"): void => {
     const { activeTabId } = useTabStore.getState();
     if (activeTabId) return;
-    useTabStore.getState().openTab("quick-compare", t("home.quickCompare", "Quick Compare"));
+    const tabId = useTabStore
+      .getState()
+      .openTab("quick-compare", t("home.quickCompare", "Quick Compare"));
+    useTabStore.getState().setTabPage(tabId, page);
   };
 
   const navigateAfterLoad = (): void => {
-    ensureQuickCompareTab();
     const trimmedImplUrl = implUrl.trim();
     if (trimmedImplUrl) {
       const { frames } = useProjectStore.getState();
@@ -102,11 +105,13 @@ export const HomePage = ({ onNavigate }: HomePageProps) => {
         useProjectStore.getState().selectFrame(frames[0]);
       }
       useOverlayStore.getState().setUrl(trimmedImplUrl);
+      ensureQuickCompareTab("live_overlay");
       onNavigate("live_overlay");
       return;
     }
     const { frames, frameImage } = useProjectStore.getState();
     if (frames.length > 0 || frameImage) {
+      ensureQuickCompareTab("project");
       onNavigate("project");
       return;
     }
@@ -140,7 +145,7 @@ export const HomePage = ({ onNavigate }: HomePageProps) => {
         await useProjectStore.getState().loadDesign(frameUrl);
         const { error: loadErr } = useProjectStore.getState();
         if (loadErr) return true;
-        ensureQuickCompareTab();
+        ensureQuickCompareTab("project");
         onNavigate("project");
         return true;
       }
@@ -166,34 +171,42 @@ export const HomePage = ({ onNavigate }: HomePageProps) => {
   const handleLegacySubmit = async (input: string) => {
     if (projectLoading) return;
     setPageFrames([]);
+    useProjectStore.setState({ isLoading: true, error: null });
 
-    const parsed = (() => {
-      try {
-        return parseDesignInput(input);
-      } catch {
-        return null;
+    try {
+      const parsed = (() => {
+        try {
+          return parseDesignInput(input);
+        } catch {
+          return null;
+        }
+      })();
+
+      const isFigmaUrl = parsed?.type === "figma_url";
+      if (isFigmaUrl && !figmaToken) {
+        useProjectStore.setState({ error: t("home.tokenRequired"), isLoading: false });
+        useSettingStore.getState().requireToken();
+        return;
       }
-    })();
 
-    const isFigmaUrl = parsed?.type === "figma_url";
-    if (isFigmaUrl && !figmaToken) {
-      useProjectStore.setState({ error: t("home.tokenRequired") });
-      useSettingStore.getState().requireToken();
-      return;
+      if (isFigmaUrl && parsed.type === "figma_url" && parsed.nodeId) {
+        const handled = await tryPageDetection(input, parsed.fileKey, parsed.nodeId);
+        if (handled) {
+          useProjectStore.setState({ isLoading: false });
+          return;
+        }
+      }
+
+      clearError();
+      await useProjectStore.getState().loadDesign(input);
+
+      const { error: loadErr } = useProjectStore.getState();
+      if (loadErr) return;
+
+      navigateAfterLoad();
+    } catch {
+      useProjectStore.setState({ isLoading: false });
     }
-
-    if (isFigmaUrl && parsed.type === "figma_url" && parsed.nodeId) {
-      const handled = await tryPageDetection(input, parsed.fileKey, parsed.nodeId);
-      if (handled) return;
-    }
-
-    clearError();
-    await useProjectStore.getState().loadDesign(input);
-
-    const { error: loadErr } = useProjectStore.getState();
-    if (loadErr) return;
-
-    navigateAfterLoad();
   };
 
   const isLoading = projectLoading || listLoading;
@@ -314,7 +327,12 @@ export const HomePage = ({ onNavigate }: HomePageProps) => {
           </h2>
           <p className="text-muted-foreground text-xs">{t("home.inputHint")}</p>
         </div>
-        <DesignInput onSubmit={handleLegacySubmit} disabled={isLoading} />
+        <DesignInput
+          value={designUrl}
+          onChange={setDesignUrl}
+          onSubmit={handleLegacySubmit}
+          disabled={isLoading}
+        />
 
         {pageFrames.length > 0 && (
           <Card className="border-primary/30">
@@ -352,7 +370,12 @@ export const HomePage = ({ onNavigate }: HomePageProps) => {
             value={implUrl}
             onChange={(e) => setImplUrl(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === "Enter") e.preventDefault();
+              if (e.key === "Enter") {
+                e.preventDefault();
+                if (designUrl.trim()) {
+                  handleLegacySubmit(designUrl.trim());
+                }
+              }
             }}
             placeholder={t("home.implUrlPlaceholder")}
             aria-label={t("home.implUrlPlaceholder")}
