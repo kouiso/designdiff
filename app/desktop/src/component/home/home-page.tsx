@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
-import { buildFigmaFrameUrl, parseDesignInput } from "@figdiff/shared";
+import { buildFigmaFrameUrl, isTokenError, parseDesignInput } from "@figdiff/shared";
 import type { Frame } from "@figdiff/shared";
 
 import { Badge } from "@/component/ui/badge";
@@ -152,6 +152,12 @@ export const HomePage = ({ onNavigate }: HomePageProps) => {
       useProjectStore.setState({ error: t("home.noDesignFound") });
       return true;
     } catch (e) {
+      const errorMsg = String(e);
+      if (isTokenError(errorMsg)) {
+        useProjectStore.setState({ error: t("home.tokenRequired"), isLoading: false });
+        useSettingStore.getState().requireToken();
+        return true;
+      }
       console.warn("Page frame detection failed, falling back to single frame flow", e);
       return false;
     }

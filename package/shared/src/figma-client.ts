@@ -12,9 +12,11 @@ const FigmaNodeSchema: z.ZodType<FigmaNode> = z.lazy(() =>
     children: z.array(FigmaNodeSchema).default([]),
     absoluteBoundingBox: z
       .object({ x: z.number(), y: z.number(), width: z.number(), height: z.number() })
+      .nullable()
       .optional(),
     absoluteRenderBounds: z
       .object({ x: z.number(), y: z.number(), width: z.number(), height: z.number() })
+      .nullable()
       .optional(),
     fills: z
       .array(
@@ -103,8 +105,8 @@ export interface FigmaNode {
   name: string;
   type: string;
   children: FigmaNode[];
-  absoluteBoundingBox?: BoundingBox;
-  absoluteRenderBounds?: BoundingBox;
+  absoluteBoundingBox?: BoundingBox | null;
+  absoluteRenderBounds?: BoundingBox | null;
   fills: FigmaPaint[];
   strokes: FigmaPaint[];
   strokeWeight?: number;
@@ -343,3 +345,18 @@ export function extractPageFrames(pageNode: FigmaNode): Frame[] {
   collectFrames(pageNode.children, frames);
   return frames;
 }
+
+const TOKEN_ERROR_PATTERNS = [
+  "Token not found",
+  "TokenNotFound",
+  "Invalid token",
+  "Invalid Figma token",
+  "error 403",
+  "error 401",
+  "status 403",
+  "status 401",
+  "Forbidden",
+] as const;
+
+export const isTokenError = (message: string): boolean =>
+  TOKEN_ERROR_PATTERNS.some((pattern) => message.includes(pattern));

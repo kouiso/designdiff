@@ -4,6 +4,7 @@ export {
   NoCacheStrategy,
   extractFrames,
   extractPageFrames,
+  isTokenError,
   type FigmaCacheStrategy,
   type FigmaColor,
   type FigmaEffect,

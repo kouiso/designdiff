@@ -1,24 +1,10 @@
 import { create } from "zustand";
 
 import type { Frame } from "@figdiff/shared";
-import { parseDesignInput } from "@figdiff/shared";
+import { isTokenError, parseDesignInput } from "@figdiff/shared";
 
 import { getPlatform } from "@/lib/platform";
 import { useSettingStore } from "@/store/setting-store";
-
-function isTokenError(message: string): boolean {
-  return (
-    message.includes("Token not found") ||
-    message.includes("TokenNotFound") ||
-    message.includes("Invalid token") ||
-    message.includes("Invalid Figma token") ||
-    message.includes("error 403") ||
-    message.includes("error 401") ||
-    message.includes("status 403") ||
-    message.includes("status 401") ||
-    message.includes("Forbidden")
-  );
-}
 
 interface ProjectState {
   frames: Frame[];
@@ -67,9 +53,11 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       set({ frames, isLoading: false });
     } catch (e) {
       const errorMsg = String(e);
-      set({ error: errorMsg, isLoading: false });
       if (isTokenError(errorMsg)) {
+        set({ error: null, isLoading: false });
         useSettingStore.getState().requireToken();
+      } else {
+        set({ error: errorMsg, isLoading: false });
       }
     }
   },
@@ -85,9 +73,11 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       set({ frameImage: `data:image/png;base64,${base64}`, isLoading: false });
     } catch (e) {
       const errorMsg = String(e);
-      set({ error: errorMsg, isLoading: false });
       if (isTokenError(errorMsg)) {
+        set({ error: null, isLoading: false });
         useSettingStore.getState().requireToken();
+      } else {
+        set({ error: errorMsg, isLoading: false });
       }
     }
   },
