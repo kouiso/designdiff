@@ -26,6 +26,11 @@ const getMainWindow = (): BrowserWindow | null => {
   return windows[0] ?? null;
 };
 
+// SECURITY: overlay sessionからCSP/X-Frame-Optionsを除去する
+// 理由: オーバーレイは任意のWebサイトをWebContentsViewに埋め込むため、
+// サイト側のframing制限を解除する必要がある。
+// 緩和策: sandbox: true でrendererプロセスを隔離済み。
+// nodeIntegration: false + contextIsolation: true で特権APIへのアクセスなし。
 const ensureOverlaySession = (): Electron.Session => {
   if (!overlaySession) {
     overlaySession = session.fromPartition(OVERLAY_PARTITION);

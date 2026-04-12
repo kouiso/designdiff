@@ -17,6 +17,7 @@ import { compareImages } from "../service/image-compare-service.js";
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
+// MCP SDKのCallToolResult型がindex signature [key: string]: unknownを要求するため付与
 interface McpErrorResult {
   [key: string]: unknown;
   content: { type: "text"; text: string }[];
@@ -176,8 +177,12 @@ export function registerCompareDesign(server: McpServer): void {
 
           try {
             figmaRootNode = await figmaService.getNodeDetails(parsed.fileKey, resolved);
-          } catch {
-            // Node details optional — proceed without
+          } catch (nodeError) {
+            // Node詳細はオプショナル — 差分比較は続行するがwarningを記録
+            console.error(
+              "[compare_design] node details fetch failed, proceeding without:",
+              nodeError instanceof Error ? nodeError.message : nodeError,
+            );
           }
         } else {
           // Local file path

@@ -31,6 +31,15 @@ export function createMcpServer(): McpServer {
     {
       instructions: `FigDiff — Diff-driven design comparison server.
 
+**Available tools:**
+- compare_design: Pixel-level diff between Figma design and implementation screenshot
+- inspect_node: Dev Mode-like node detail inspection with CSS suggestions
+- get_design_tokens: Extract design tokens (colors, spacing, typography) from Figma frames
+- list_figma_frames: List all frames in a Figma file
+- generate_diff_report: Generate a Markdown diff report from comparison results
+- get_crop_region: Get saved crop region for a project/frame
+- set_crop_region: Save crop region for focused comparison
+
 **Workflow (follow this order):**
 1. compare_design — Always start here. Detects pixel-level differences.
 2. inspect_node — Drill into specific diff regions for CSS-level details.

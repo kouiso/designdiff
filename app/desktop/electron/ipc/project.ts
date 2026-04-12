@@ -80,14 +80,8 @@ export const registerProjectHandlers = (): void => {
     return parsed.data;
   });
 
-  ipcMain.handle("project:save", (_event, projectJson: string) => {
-    let jsonData: unknown;
-    try {
-      jsonData = JSON.parse(projectJson);
-    } catch {
-      throw new Error("Invalid JSON in project data");
-    }
-    const parsed = ProjectSchema.safeParse(jsonData);
+  ipcMain.handle("project:save", (_event, projectData: unknown) => {
+    const parsed = ProjectSchema.safeParse(projectData);
     if (!parsed.success) {
       throw new Error(`Invalid project data: ${parsed.error.message}`);
     }

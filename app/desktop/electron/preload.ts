@@ -51,7 +51,7 @@ const api: ElectronAPI = {
   project: {
     list: () => ipcRenderer.invoke("project:list"),
     load: (projectId) => ipcRenderer.invoke("project:load", projectId),
-    save: (project) => ipcRenderer.invoke("project:save", JSON.stringify(project)),
+    save: (project) => ipcRenderer.invoke("project:save", project),
     delete: (projectId) => ipcRenderer.invoke("project:delete", projectId),
   },
 };

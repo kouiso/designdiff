@@ -11,9 +11,6 @@
     "lint:fix": "biome check --write src/",
     "test": "vitest run"
   },
-  "dependencies": {
-    "@figdiff/shared": "workspace:*"
-  },
   "devDependencies": {
     "@figma/plugin-typings": "^1.104.0",
     "esbuild": "^0.27.4",
