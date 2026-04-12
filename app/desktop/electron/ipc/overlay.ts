@@ -15,6 +15,7 @@ import {
 
 let overlayView: WebContentsView | null = null;
 let overlaySession: Electron.Session | null = null;
+let resizeHandler: (() => void) | null = null;
 
 const OVERLAY_PARTITION = "persist:overlay";
 const FALLBACK_PANEL_OFFSET = 130;
@@ -79,7 +80,11 @@ export const registerOverlayHandlers = (): void => {
     win.contentView.addChildView(overlayView);
     resizeOverlay(win);
 
-    win.on("resize", () => resizeOverlay(win));
+    if (resizeHandler) {
+      win.removeListener("resize", resizeHandler);
+    }
+    resizeHandler = () => resizeOverlay(win);
+    win.on("resize", resizeHandler);
 
     overlayView.webContents.on("did-navigate", (_e, navUrl) => {
       win.webContents.send("overlay:navigated", navUrl);
@@ -101,6 +106,10 @@ export const registerOverlayHandlers = (): void => {
   ipcMain.handle("overlay:close", async () => {
     const win = getMainWindow();
     if (win && overlayView) {
+      if (resizeHandler) {
+        win.removeListener("resize", resizeHandler);
+        resizeHandler = null;
+      }
       win.contentView.removeChildView(overlayView);
       overlayView.webContents.close();
       overlayView = null;

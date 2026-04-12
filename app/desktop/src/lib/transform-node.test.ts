@@ -195,13 +195,22 @@ describe("transformNode", () => {
       expect(result.appearance.effects[0].type).toBe("INNER_SHADOW");
     });
 
-    it("LAYER_BLUR が BLUR に正規化される", () => {
+    it("LAYER_BLUR がそのまま保持される", () => {
       const node = createMinimalNode({
         effects: [{ type: "LAYER_BLUR", radius: 8 }],
       });
       const result = transformNode(node);
-      expect(result.appearance.effects[0].type).toBe("BLUR");
+      expect(result.appearance.effects[0].type).toBe("LAYER_BLUR");
       expect(result.appearance.effects[0].radius).toBe(8);
+    });
+
+    it("BACKGROUND_BLUR がそのまま保持される", () => {
+      const node = createMinimalNode({
+        effects: [{ type: "BACKGROUND_BLUR", radius: 12 }],
+      });
+      const result = transformNode(node);
+      expect(result.appearance.effects[0].type).toBe("BACKGROUND_BLUR");
+      expect(result.appearance.effects[0].radius).toBe(12);
     });
   });
 

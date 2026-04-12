@@ -99,15 +99,21 @@ export function getMcpCacheDir(): string {
   return path.join(homedir(), ".figdiff", "cache");
 }
 
+let figmaServiceInstance: FigmaService | null = null;
+
 /**
- * Helper: Create FigmaService instance from environment
+ * Helper: Get or create FigmaService singleton from environment
+ * Token変更時はプロセス再起動が必要
  */
 export function createFigmaService(): FigmaService {
+  if (figmaServiceInstance) return figmaServiceInstance;
+
   const token = process.env.FIGMA_TOKEN;
   if (!token) {
     throw new Error("FIGMA_TOKEN environment variable is not set");
   }
 
   const cacheDir = getMcpCacheDir();
-  return new FigmaService(token, cacheDir);
+  figmaServiceInstance = new FigmaService(token, cacheDir);
+  return figmaServiceInstance;
 }

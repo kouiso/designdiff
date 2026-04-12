@@ -14,18 +14,26 @@ const isAllowedOrigin = (url: string): boolean => {
   return ALLOWED_ORIGINS.some((origin) => url.startsWith(origin));
 };
 
-const setupCSP = (): void => {
+const setupCSP = (isDev: boolean): void => {
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+    const connectSrc = [
+      "'self'",
+      "https://api.figma.com",
+      "https://figma-alpha-api.s3.us-west-2.amazonaws.com",
+      "https://*.figma.com",
+      ...(isDev ? ["ws://localhost:*"] : []),
+    ].join(" ");
+
     callback({
       responseHeaders: {
         ...details.responseHeaders,
         "Content-Security-Policy": [
           [
             "default-src 'self'",
-            "script-src 'self'",
+            `script-src 'self'${isDev ? " 'unsafe-eval'" : ""}`,
             "style-src 'self' 'unsafe-inline'",
             "img-src 'self' data: https://figma-alpha-api.s3.us-west-2.amazonaws.com https://*.figma.com",
-            "connect-src 'self' https://api.figma.com https://figma-alpha-api.s3.us-west-2.amazonaws.com https://*.figma.com",
+            `connect-src ${connectSrc}`,
             "font-src 'self'",
           ].join("; "),
         ],
@@ -42,6 +50,7 @@ const createWindow = (): void => {
     minWidth: 800,
     minHeight: 600,
     center: true,
+    show: false,
     title: "FigDiff",
     webPreferences: {
       preload: preloadPath,
@@ -50,6 +59,14 @@ const createWindow = (): void => {
     },
   });
 
+  if (!app.isPackaged) {
+    try {
+      mainWindow.webContents.debugger.attach("1.3");
+    } catch (_e) {
+      // debugger already attached
+    }
+  }
+
   mainWindow.webContents.on("did-finish-load", () => {
     mainWindow.show();
     mainWindow.moveTop();
@@ -57,7 +74,7 @@ const createWindow = (): void => {
     // macOS Tahoe (26.1) + Electron 35 でウィンドウが前面に出ない問題の対策
     if (process.platform === "darwin") {
       mainWindow.setAlwaysOnTop(true);
-      setTimeout(() => mainWindow.setAlwaysOnTop(false), 500);
+      mainWindow.once("focus", () => mainWindow.setAlwaysOnTop(false));
     }
   });
 
@@ -106,9 +123,8 @@ app.whenReady().then(() => {
     // 未署名devビルドではmacOS Keychainが errSecInteractionNotAllowed を返すため、
     // plaintext暗号化にフォールバック（本番ビルドでは実OS暗号化を使用）
     safeStorage.setUsePlainTextEncryption(true);
-  } else {
-    setupCSP();
   }
+  setupCSP(!app.isPackaged);
   registerFigmaHandlers();
   registerTokenHandlers();
   registerFileHandlers();

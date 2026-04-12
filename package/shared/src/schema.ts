@@ -43,7 +43,14 @@ export const NodeLayoutSchema = z.object({
 });
 
 export const NodeFillSchema = z.object({
-  type: z.enum(["SOLID", "GRADIENT_LINEAR", "IMAGE"]),
+  type: z.enum([
+    "SOLID",
+    "GRADIENT_LINEAR",
+    "GRADIENT_RADIAL",
+    "GRADIENT_ANGULAR",
+    "GRADIENT_DIAMOND",
+    "IMAGE",
+  ]),
   color: z.string().optional(),
   opacity: z.number().min(0).max(1).optional(),
 });
@@ -62,7 +69,7 @@ export const BorderRadiusSchema = z.object({
 });
 
 export const NodeEffectSchema = z.object({
-  type: z.enum(["DROP_SHADOW", "INNER_SHADOW", "BLUR"]),
+  type: z.enum(["DROP_SHADOW", "INNER_SHADOW", "LAYER_BLUR", "BACKGROUND_BLUR"]),
   color: z.string().optional(),
   offset: z.object({ x: z.number(), y: z.number() }).optional(),
   radius: z.number().nonnegative(),

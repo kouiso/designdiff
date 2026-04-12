@@ -36,12 +36,33 @@ const colorToHex = (color: FigmaColor | undefined): string | undefined => {
   return figmaColorToHex(color.r, color.g, color.b, color.a);
 };
 
+const KNOWN_FILL_TYPES: readonly NodeFill["type"][] = [
+  "SOLID",
+  "GRADIENT_LINEAR",
+  "GRADIENT_RADIAL",
+  "GRADIENT_ANGULAR",
+  "GRADIENT_DIAMOND",
+  "IMAGE",
+];
+
+const isKnownFillType = (type: string): type is NodeFill["type"] =>
+  KNOWN_FILL_TYPES.some((t) => t === type);
+
+const KNOWN_EFFECT_TYPES: readonly NodeEffect["type"][] = [
+  "DROP_SHADOW",
+  "INNER_SHADOW",
+  "LAYER_BLUR",
+  "BACKGROUND_BLUR",
+];
+
+const isKnownEffectType = (type: string): type is NodeEffect["type"] =>
+  KNOWN_EFFECT_TYPES.some((t) => t === type);
+
 const extractFills = (node: FigmaNode): NodeFill[] => {
   return (node.fills ?? [])
     .filter((f) => f.visible !== false)
     .map((f) => {
-      const fillType =
-        f.type === "SOLID" ? "SOLID" : f.type === "GRADIENT_LINEAR" ? "GRADIENT_LINEAR" : "IMAGE";
+      const fillType: NodeFill["type"] = isKnownFillType(f.type) ? f.type : "GRADIENT_LINEAR";
       return {
         type: fillType,
         color: colorToHex(f.color),
@@ -64,12 +85,7 @@ const extractEffects = (node: FigmaNode): NodeEffect[] => {
   return (node.effects ?? [])
     .filter((e) => e.visible !== false)
     .map((e) => {
-      const effectType =
-        e.type === "DROP_SHADOW"
-          ? "DROP_SHADOW"
-          : e.type === "INNER_SHADOW"
-            ? "INNER_SHADOW"
-            : "BLUR";
+      const effectType: NodeEffect["type"] = isKnownEffectType(e.type) ? e.type : "LAYER_BLUR";
       return {
         type: effectType,
         radius: e.radius ?? 0,
