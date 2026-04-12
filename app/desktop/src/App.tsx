@@ -20,12 +20,13 @@ export type Page = "home" | "project" | "compare" | "live_overlay" | "settings" 
 
 export const App = () => {
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [standalonePage, setStandalonePage] = useState<Page | null>(null);
   const loadSettings = useSettingStore((s) => s.loadSettings);
   const loadProjects = useProjectListStore((s) => s.loadProjects);
   const activeTab = useTabStore((s) => s.tabs.find((t) => t.id === s.activeTabId) ?? null);
   const tabs = useTabStore((s) => s.tabs);
 
-  const currentPage = activeTab?.page ?? "home";
+  const currentPage = activeTab?.page ?? standalonePage ?? "home";
 
   useEffect(() => {
     loadSettings();
@@ -44,6 +45,14 @@ export const App = () => {
         useOverlayStore.getState().closeSite();
       }
 
+      if (target === "live_overlay") {
+        setStandalonePage("live_overlay");
+        useTabStore.getState().setActiveTab(null);
+        return;
+      }
+
+      setStandalonePage(null);
+
       if (target === "home") {
         useTabStore.getState().setActiveTab(null);
         return;
@@ -55,8 +64,17 @@ export const App = () => {
     [currentPage, activeTab],
   );
 
+  useEffect(() => {
+    if (activeTab && standalonePage) {
+      if (standalonePage === "live_overlay") {
+        useOverlayStore.getState().closeSite();
+      }
+      setStandalonePage(null);
+    }
+  }, [activeTab, standalonePage]);
+
   const showTabBar = tabs.length > 0;
-  const showHome = !activeTab;
+  const showHome = !activeTab && !standalonePage;
 
   return (
     <ErrorBoundary>

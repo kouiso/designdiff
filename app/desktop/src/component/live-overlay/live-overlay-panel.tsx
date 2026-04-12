@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 
 import { Eye, EyeOff, Globe, Loader2, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -8,6 +8,7 @@ import { Input } from "@/component/ui/input";
 import { Label } from "@/component/ui/label";
 import { Slider } from "@/component/ui/slider";
 import { Spinner } from "@/component/ui/spinner";
+import { getOverlay } from "@/lib/platform";
 import { useOverlayStore } from "@/store/overlay-store";
 import { useProjectStore } from "@/store/project-store";
 
@@ -21,6 +22,7 @@ interface LiveOverlayPanelProps {
 
 export function LiveOverlayPanel({ onNavigate }: LiveOverlayPanelProps) {
   const { t } = useTranslation();
+  const panelRef = useRef<HTMLDivElement>(null);
   const url = useOverlayStore((s) => s.url);
   const isOpen = useOverlayStore((s) => s.isOpen);
   const isLoading = useOverlayStore((s) => s.isLoading);
@@ -53,14 +55,34 @@ export function LiveOverlayPanel({ onNavigate }: LiveOverlayPanelProps) {
     setOverlayImage(base64);
   };
 
-  const prevFrameImageRef = useRef(frameImage);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: mount-only auto-open when URL is pre-set from home page
   useEffect(() => {
-    if (isOpen && !overlayImageBase64 && frameImage && prevFrameImageRef.current !== frameImage) {
+    if (url.trim() && !isOpen && !isLoading) {
+      openSite();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (isOpen && !overlayImageBase64 && frameImage) {
       const base64 = frameImage.replace(/^data:image\/\w+;base64,/, "");
       setOverlayImage(base64);
     }
-    prevFrameImageRef.current = frameImage;
   }, [frameImage, isOpen, overlayImageBase64, setOverlayImage]);
+
+  const sendPanelOffset = useCallback(async () => {
+    if (!panelRef.current) return;
+    const bottom = panelRef.current.getBoundingClientRect().bottom;
+    if (bottom <= 0) return;
+    const overlay = await getOverlay();
+    await overlay?.updateOffset(bottom);
+  }, []);
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: overlayImageBase64 changes panel height (controls row appears/disappears)
+  useEffect(() => {
+    if (!isOpen) return;
+    sendPanelOffset();
+  }, [isOpen, overlayImageBase64, sendPanelOffset]);
 
   const showOpacitySlider =
     overlayViewMode === "transparent_overlay" || overlayViewMode === "draggable_overlay";
@@ -69,7 +91,11 @@ export function LiveOverlayPanel({ onNavigate }: LiveOverlayPanelProps) {
   const showPixelDiffStatus = overlayViewMode === "pixel_diff";
 
   return (
-    <div className="flex shrink-0 flex-col gap-2 border-border border-b bg-card/60 px-3 py-2">
+    <div
+      ref={panelRef}
+      data-overlay-panel
+      className="flex shrink-0 flex-col gap-2 border-border border-b bg-card/60 px-3 py-2"
+    >
       <div className="flex flex-wrap items-center gap-2">
         <div className="flex items-center gap-1.5">
           <Globe className="h-4 w-4 text-muted-foreground" />

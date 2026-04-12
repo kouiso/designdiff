@@ -56,6 +56,7 @@ const electronFileAdapter: FileAdapter = {
 export const electronOverlayAdapter: OverlayAdapter = {
   open: (url) => window.electronAPI.overlay.open(url),
   close: () => window.electronAPI.overlay.close(),
+  updateOffset: (offset) => window.electronAPI.overlay.updateOffset(offset),
   setOverlayImage: (base64, opacity) => window.electronAPI.overlay.setOverlayImage(base64, opacity),
   updateOpacity: (opacity) => window.electronAPI.overlay.updateOpacity(opacity),
   removeOverlay: () => window.electronAPI.overlay.removeOverlay(),

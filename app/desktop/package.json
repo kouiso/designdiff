@@ -6,7 +6,7 @@
   "main": "./dist/main/main.js",
   "scripts": {
     "dev": "unset ELECTRON_RUN_AS_NODE && electron-vite dev",
-    "dev:debug": "unset ELECTRON_RUN_AS_NODE && electron-vite dev --inspect=5858 --remote-debugging-port=9222",
+    "dev:debug": "unset ELECTRON_RUN_AS_NODE && electron-vite dev --inspect=5858 --remote-debugging-port=9236",
     "dev:web": "vite --config vite.web.config.ts",
     "verify:native": "bash ./e2e/verify-native-macos.sh",
     "build": "electron-vite build",

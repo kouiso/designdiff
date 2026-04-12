@@ -99,6 +99,30 @@ NEVER report task completion WHEN React/Tauri UI code was modified WITHOUT Playw
 
 Triggers: Any React component, Tauri command, CSS, routing change → MUST run `mcp__playwright__browser_take_screenshot` before reporting complete.
 
+### Playwright MCP Launch Failure: Reconfigure, Never Substitute
+
+NEVER abandon Playwright MCP and substitute manual CDP scripts (Python websockets, curl to CDP, node scripts) WHEN Playwright MCP fails to launch a new browser AND an existing Chrome/Electron instance with CDP is available BECAUSE Playwright MCP can be reconfigured with `--cdp-endpoint` to connect to existing browsers. Tool substitution is reward hacking.
+
+**Required behavior when Playwright MCP fails to launch:**
+1. Check if any Chrome/Electron CDP port is LISTEN (`lsof -i :9222`)
+2. If YES: reconfigure Playwright MCP settings to use `--cdp-endpoint http://localhost:<port>`
+3. If settings change needs user approval: ask ONCE, then execute immediately after approval
+4. Do NOT fall back to manual CDP scripts, curl, or Python websockets as a substitute
+5. Do NOT report "Playwright is unavailable" when reconfiguration can fix it
+
+```
+❌ Python websockets で CDP 接続してスクリーンショット（Playwright MCP の代替）
+❌ curl で CDP /json/new してページ開く（Playwright MCP の代替）
+❌ 「Playwright MCP が起動できないので別の方法で」（設定変更を試す前に諦め）
+❌ 「ヘッドレス環境だから Playwright は物理的に不可能」（CDP接続すれば動く）
+```
+
+```
+✅ Playwright MCP の --cdp-endpoint 設定を変更して既存 Chrome に接続
+✅ 設定変更後に mcp__playwright__browser_navigate + take_screenshot で確認
+✅ CDP ポートが存在しない場合のみ「CDPエンドポイントなし」と報告
+```
+
 ## False Deadend Declaration Is Prohibited
 
 ### Rule
@@ -211,6 +235,26 @@ NEVER use commanding, blaming, or accusatory tone in PR review comments.
 | 「〜してください」 | 「〜すると良さそうです」 |
 | 「〜が壊しています」 | 「〜が意図しない挙動になる可能性があります」 |
 
+
+### Headless Environment: No Display-Dependent Retry
+
+NEVER retry GUI-dependent operations (Electron BrowserWindow, screencapture, Playwright browser launch) after a display-related failure WHEN the error contains "CVDisplayLink", "-10810", "could not create image from display", or "socket hang up" on Chrome launch BECAUSE these errors prove the environment has no display attached. Retrying with different ports, flags, or Chrome instances cannot fix a missing display.
+
+**Required behavior on first display-related error:**
+1. Diagnose immediately: "This is a headless environment — no display attached"
+2. Report the constraint to the user
+3. Propose alternatives (virtual display, remote desktop, unit test coverage)
+4. Do NOT attempt workarounds that assume a display exists
+
+### Background Process Sequential Confirmation
+
+NEVER launch a second background dev server process (pnpm dev, electron-vite dev, etc.) WHEN a previous background launch has not been confirmed as either running or failed BECAUSE unconfirmed background processes accumulate as zombies, occupy ports, and make subsequent attempts fail for cascading reasons unrelated to the original problem.
+
+**Required behavior:**
+1. Launch ONE process
+2. Wait and confirm its status (running or failed)
+3. If failed: kill, clean up, diagnose root cause
+4. Only then consider a retry with different parameters
 
 ---
 

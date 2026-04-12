@@ -28,6 +28,7 @@ const api: ElectronAPI = {
   overlay: {
     open: (url) => ipcRenderer.invoke("overlay:open", url),
     close: () => ipcRenderer.invoke("overlay:close"),
+    updateOffset: (offset) => ipcRenderer.invoke("overlay:update-offset", offset),
     setOverlayImage: (base64, opacity) => ipcRenderer.invoke("overlay:set-image", base64, opacity),
     updateOpacity: (opacity) => ipcRenderer.invoke("overlay:update-opacity", opacity),
     removeOverlay: () => ipcRenderer.invoke("overlay:remove-image"),

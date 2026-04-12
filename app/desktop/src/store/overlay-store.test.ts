@@ -454,4 +454,46 @@ describe("useOverlayStore", () => {
       expect(state.currentUrl).toBeNull();
     });
   });
+
+  describe("openSite guard conditions", () => {
+    it("does nothing when isLoading is true", async () => {
+      useOverlayStore.setState({ url: "http://localhost:3000", isLoading: true });
+      await useOverlayStore.getState().openSite();
+
+      expect(window.electronAPI.overlay.open).not.toHaveBeenCalled();
+    });
+
+    it("does nothing when isOpen is true", async () => {
+      useOverlayStore.setState({ url: "http://localhost:3000", isOpen: true });
+      await useOverlayStore.getState().openSite();
+
+      expect(window.electronAPI.overlay.open).not.toHaveBeenCalled();
+    });
+
+    it("sets isLoading before calling overlay.open", async () => {
+      let loadingDuringCall = false;
+      vi.mocked(window.electronAPI.overlay.open).mockImplementationOnce(async () => {
+        loadingDuringCall = useOverlayStore.getState().isLoading;
+      });
+
+      useOverlayStore.setState({ url: "http://localhost:3000" });
+      await useOverlayStore.getState().openSite();
+
+      expect(loadingDuringCall).toBe(true);
+    });
+
+    it("resets isLoading on overlay open failure", async () => {
+      vi.mocked(window.electronAPI.overlay.open).mockRejectedValueOnce(
+        new Error("Connection refused"),
+      );
+
+      useOverlayStore.setState({ url: "http://localhost:3000" });
+      await useOverlayStore.getState().openSite();
+
+      const state = useOverlayStore.getState();
+      expect(state.isLoading).toBe(false);
+      expect(state.isOpen).toBe(false);
+      expect(state.error).toContain("Connection refused");
+    });
+  });
 });

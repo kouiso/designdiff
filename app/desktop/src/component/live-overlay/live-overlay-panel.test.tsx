@@ -11,6 +11,18 @@ vi.mock("./overlay-view-mode-toggle", () => ({
   OverlayViewModeToggle: () => <div data-testid="overlay-view-mode-toggle" />,
 }));
 
+const { mockUpdateOffset, mockSetMode } = vi.hoisted(() => ({
+  mockUpdateOffset: vi.fn().mockResolvedValue(undefined),
+  mockSetMode: vi.fn().mockResolvedValue(undefined),
+}));
+
+vi.mock("@/lib/platform", () => ({
+  getOverlay: vi.fn().mockResolvedValue({
+    updateOffset: mockUpdateOffset,
+    setMode: mockSetMode,
+  }),
+}));
+
 afterEach(cleanup);
 
 const resetStores = () => {
@@ -74,11 +86,56 @@ describe("LiveOverlayPanel", () => {
     expect(screen.getByLabelText("オーバーレイを非表示")).toBeInTheDocument();
   });
 
-  it("isOpen=true + frameImage あり + overlay未ロード → デザインを重ねるボタン", () => {
+  it("isOpen=true + frameImage あり + overlay未ロード → 自動適用される", async () => {
     useOverlayStore.setState({ isOpen: true, overlayImageBase64: null });
     useProjectStore.setState({ frameImage: "data:image/png;base64,abc" });
     render(<LiveOverlayPanel />);
-    expect(screen.getByText("デザインを重ねる")).toBeInTheDocument();
+    await vi.waitFor(() => {
+      expect(useOverlayStore.getState().overlayImageBase64).toBe("abc");
+    });
+  });
+
+  it("isOpen時にpanelのoffsetをoverlayに送信する", async () => {
+    mockUpdateOffset.mockClear();
+    useOverlayStore.setState({ isOpen: true, overlayImageBase64: null });
+    const { container } = render(<LiveOverlayPanel />);
+
+    const panel = container.querySelector("[data-overlay-panel]");
+    if (panel) {
+      vi.spyOn(panel, "getBoundingClientRect").mockReturnValue({
+        top: 48,
+        bottom: 140,
+        left: 0,
+        right: 1200,
+        width: 1200,
+        height: 92,
+        x: 0,
+        y: 48,
+        toJSON: () => ({}),
+      });
+    }
+    // Re-trigger the effect by changing overlayImageBase64
+    useOverlayStore.setState({ overlayImageBase64: "trigger" });
+
+    await vi.waitFor(() => {
+      expect(mockUpdateOffset).toHaveBeenCalled();
+    });
+    expect(mockUpdateOffset).toHaveBeenCalledWith(140);
+  });
+
+  it("mount時にURLがpre-setされていたらopenSiteが呼ばれる", async () => {
+    const openSiteSpy = vi.fn();
+    useOverlayStore.setState({
+      url: "http://localhost:4321",
+      isOpen: false,
+      isLoading: false,
+      openSite: openSiteSpy,
+    });
+    render(<LiveOverlayPanel />);
+
+    await vi.waitFor(() => {
+      expect(openSiteSpy).toHaveBeenCalled();
+    });
   });
 
   it("error あり → エラーメッセージ表示", () => {

@@ -17,7 +17,8 @@ let overlayView: WebContentsView | null = null;
 let overlaySession: Electron.Session | null = null;
 
 const OVERLAY_PARTITION = "persist:overlay";
-const PANEL_HEIGHT = 48;
+const FALLBACK_PANEL_OFFSET = 130;
+let panelOffset = FALLBACK_PANEL_OFFSET;
 
 const getMainWindow = (): BrowserWindow | null => {
   const windows = BrowserWindow.getAllWindows();
@@ -47,7 +48,7 @@ const ensureOverlaySession = (): Electron.Session => {
 const resizeOverlay = (win: BrowserWindow): void => {
   if (!overlayView) return;
   const [width, height] = win.getContentSize();
-  overlayView.setBounds({ x: 0, y: PANEL_HEIGHT, width, height: height - PANEL_HEIGHT });
+  overlayView.setBounds({ x: 0, y: panelOffset, width, height: height - panelOffset });
 };
 
 export const registerOverlayHandlers = (): void => {
@@ -88,6 +89,13 @@ export const registerOverlayHandlers = (): void => {
     });
 
     await overlayView.webContents.loadURL(url);
+  });
+
+  ipcMain.handle("overlay:update-offset", async (_event, offset: number) => {
+    if (!overlayView || typeof offset !== "number" || offset <= 0) return;
+    panelOffset = Math.round(offset);
+    const win = getMainWindow();
+    if (win) resizeOverlay(win);
   });
 
   ipcMain.handle("overlay:close", async () => {

@@ -39,6 +39,7 @@ export interface ElectronAPI {
 export interface OverlayAPI {
   open(url: string): Promise<void>;
   close(): Promise<void>;
+  updateOffset(offset: number): Promise<void>;
   setOverlayImage(base64: string, opacity: number): Promise<void>;
   updateOpacity(opacity: number): Promise<void>;
   removeOverlay(): Promise<void>;

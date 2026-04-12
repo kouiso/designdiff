@@ -59,17 +59,19 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
   setUrl: (url) => set({ url }),
 
   openSite: async () => {
-    const { url } = get();
+    const { url, isLoading, isOpen } = get();
+    if (isLoading || isOpen) return;
     const trimmed = url.trim();
     if (!trimmed) return;
 
+    set({ isLoading: true, error: null });
+
     const overlay = await getOverlay();
     if (!overlay) {
-      set({ error: "Overlay is only available in desktop mode" });
+      set({ error: "Overlay is only available in desktop mode", isLoading: false });
       return;
     }
 
-    set({ isLoading: true, error: null });
     try {
       await overlay.open(trimmed);
       set({ isOpen: true, isLoading: false, currentUrl: trimmed });

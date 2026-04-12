@@ -22,6 +22,11 @@ export function LiveOverlayPage({ onNavigate }: LiveOverlayPageProps) {
     let unsubscribe: (() => void) | undefined;
     getOverlay().then((overlay) => {
       if (cancelled || !overlay) return;
+
+      if (!useOverlayStore.getState().isOpen) {
+        overlay.close();
+      }
+
       unsubscribe = overlay.onNavigated((url) => {
         useOverlayStore.getState().handleNavigated(url);
       });
