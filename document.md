@@ -122,7 +122,6 @@ FigDiffのアプローチ:
 │  - get_design_tokens    (フレーム全体の数値データ)       │
 │                                                        │
 │  📋 Utility                                            │
-│  - list_projects        (プロジェクト一覧取得)           │
 │  - list_figma_frames    (フレーム一覧取得)              │
 │  - generate_diff_report (レポート生成)                  │
 │  - get_crop_region      (比較範囲取得)                  │
@@ -526,7 +525,7 @@ compare_design → status: PASS ← ここで初めて完了
 4. **compare_design の返り値で次のアクションを示唆** — `nextAction` フィールドで具体的に誘導
 5. **inspect_node の返り値にCSS提案を含める** — AIがすぐコード修正できるように
 
-### 5.3 Tools定義（8個 — 7個 + list_projects）
+### 5.3 Tools定義（7個）
 
 ```typescript
 // ============================================================
@@ -675,9 +674,9 @@ compare_designの返り値に含まれるnearby_node_idsをそのまま渡すと
   inputSchema: {
     type: "object",
     properties: {
-      comparison_id: {
+      comparison_result: {
         type: "string",
-        description: "compare_designの返り値に含まれるcomparison_id"
+        description: "compare_designの返り値JSON文字列"
       },
       format: {
         type: "string",
@@ -685,7 +684,7 @@ compare_designの返り値に含まれるnearby_node_idsをそのまま渡すと
         default: "markdown"
       }
     },
-    required: ["comparison_id"]
+    required: ["comparison_result"]
   }
 }
 
