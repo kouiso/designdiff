@@ -22,6 +22,7 @@ import {
 import { getCropRegion } from "./crop-region-store.js";
 import { createFigmaService, type FigmaService } from "./figma-service.js";
 import { compareImages } from "./image-compare-service.js";
+import { resolveSafePath } from "../util/path-guard.js";
 
 const FixtureFigmaNodeSchema: z.ZodType<FigmaNode> = z.lazy(() =>
   z.object({
@@ -185,7 +186,8 @@ export async function runCompareDesign(
   args: CompareDesignRunArgs,
 ): Promise<CompareDesignRunOutput> {
   const parsedDesignSource = parseDesignInput(args.design_source);
-  const screenshotBuffer = await fs.readFile(args.screenshot);
+  const screenshotPath = await resolveSafePath(args.screenshot);
+  const screenshotBuffer = await fs.readFile(screenshotPath);
   const screenshotBase64 = screenshotBuffer.toString("base64");
   const screenshotMeta = await sharp(screenshotBuffer).metadata();
   const targetWidth = screenshotMeta.width;
@@ -217,9 +219,11 @@ export async function runCompareDesign(
       );
     }
   } else {
-    const designBuffer = await fs.readFile(parsedDesignSource.filePath);
+    // Local file path — validated to live inside an allowed directory
+    const safePath = await resolveSafePath(parsedDesignSource.filePath);
+    const designBuffer = await fs.readFile(safePath);
     designBase64 = designBuffer.toString("base64");
-    figmaRootNode = await loadLocalFixtureNode(parsedDesignSource.filePath);
+    figmaRootNode = await loadLocalFixtureNode(safePath);
   }
 
   let cropRegion: CropRegion | undefined;
