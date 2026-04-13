@@ -36,6 +36,9 @@ app/desktop/release/
 # Playwright MCP logs
 .playwright-mcp/
 
+# Test results (Playwright, Vitest)
+**/test-results/
+
 # Debug
 npm-debug.log*
 pnpm-debug.log*
