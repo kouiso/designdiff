@@ -1,0 +1,50 @@
+{
+  "test": "MCP compare_design — different images (diff detected)",
+  "timestamp": "2026-04-15T03:24:22.980Z",
+  "input": {
+    "design": "200x200 blue",
+    "screenshot": "200x200 red"
+  },
+  "result": {
+    "status": "FAIL",
+    "comparisonId": "cmp-1776223462979",
+    "matchRate": 0,
+    "diffPixelCount": 40000,
+    "totalPixelCount": 40000,
+    "diffRegions": [
+      {
+        "id": 0,
+        "bounds": {
+          "x": 0,
+          "y": 0,
+          "width": 200,
+          "height": 200
+        },
+        "diffPixelCount": 40000,
+        "nearbyNodeIds": [],
+        "nearbyNodeNames": []
+      }
+    ],
+    "suggestion": "大きな差分が1箇所あります。inspect_nodeで各差分領域を確認し、修正してください。",
+    "remainingIssues": 1,
+    "completionCriteria": {
+      "matchRate": {
+        "required": 100,
+        "current": 0,
+        "status": "FAIL"
+      },
+      "diffPixelCount": {
+        "required": 0,
+        "current": 40000,
+        "status": "FAIL"
+      },
+      "remainingIssues": {
+        "required": 0,
+        "current": 1,
+        "status": "FAIL"
+      }
+    },
+    "nextAction": "inspect_node を使って 1 箇所の diffRegions の詳細を確認し、CSSを修正してください。修正後は再度 compare_design で検証してください。"
+  },
+  "hasDiffImage": true
+}

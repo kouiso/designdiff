@@ -1,0 +1,51 @@
+ WARN  Unsupported engine: wanted: {"node":">=25.6.1"} (current: {"node":"v22.22.2","pnpm":"9.15.9"})
+
+> figdiff@ lint /Users/kouiso/ghq/kouiso/designdiff
+> turbo run lint
+
+• turbo 2.8.20
+
+   • Packages in scope: @figdiff/chrome-extension, @figdiff/desktop, @figdiff/figma-plugin, @figdiff/mcp-server, @figdiff/shared
+   • Running lint in 5 packages
+   • Remote caching disabled
+
+@figdiff/shared:lint: cache hit, replaying logs c288190e1bb42569
+@figdiff/shared:lint: 
+@figdiff/shared:lint: > @figdiff/shared@0.1.0 lint /Users/kouiso/ghq/kouiso/designdiff/package/shared
+@figdiff/shared:lint: > biome check src/
+@figdiff/shared:lint: 
+@figdiff/shared:lint: Checked 13 files in 66ms. No fixes applied.
+@figdiff/shared:build: cache hit, replaying logs 0443176253164228
+@figdiff/shared:build: 
+@figdiff/shared:build: > @figdiff/shared@0.1.0 build /Users/kouiso/ghq/kouiso/designdiff/package/shared
+@figdiff/shared:build: > tsc
+@figdiff/shared:build: 
+@figdiff/figma-plugin:lint: cache hit, replaying logs 1ca185c01d56098b
+@figdiff/figma-plugin:lint: 
+@figdiff/figma-plugin:lint: > @figdiff/figma-plugin@0.1.0 lint /Users/kouiso/ghq/kouiso/designdiff/app/figma-plugin
+@figdiff/figma-plugin:lint: > biome check src/
+@figdiff/figma-plugin:lint: 
+@figdiff/figma-plugin:lint: Checked 5 files in 49ms. No fixes applied.
+@figdiff/desktop:lint: cache hit, replaying logs ec23ad7f781a4cb5
+@figdiff/desktop:lint: 
+@figdiff/desktop:lint: > @figdiff/desktop@0.1.0 lint /Users/kouiso/ghq/kouiso/designdiff/app/desktop
+@figdiff/desktop:lint: > biome check src/
+@figdiff/desktop:lint: 
+@figdiff/desktop:lint: Checked 84 files in 63ms. No fixes applied.
+@figdiff/chrome-extension:lint: cache hit, replaying logs a50e5b0ffce03c95
+@figdiff/chrome-extension:lint: 
+@figdiff/chrome-extension:lint: > @figdiff/chrome-extension@0.1.0 lint /Users/kouiso/ghq/kouiso/designdiff/app/chrome-extension
+@figdiff/chrome-extension:lint: > biome check src/
+@figdiff/chrome-extension:lint: 
+@figdiff/chrome-extension:lint: Checked 17 files in 73ms. No fixes applied.
+@figdiff/mcp-server:lint: cache hit, replaying logs e5325b25655c4f56
+@figdiff/mcp-server:lint: 
+@figdiff/mcp-server:lint: > @figdiff/mcp-server@0.1.0 lint /Users/kouiso/ghq/kouiso/designdiff/app/mcp-server
+@figdiff/mcp-server:lint: > biome check src/
+@figdiff/mcp-server:lint: 
+@figdiff/mcp-server:lint: Checked 18 files in 49ms. No fixes applied.
+
+ Tasks:    6 successful, 6 total
+Cached:    6 cached, 6 total
+  Time:    15ms >>> FULL TURBO
+

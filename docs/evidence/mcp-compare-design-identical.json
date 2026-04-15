@@ -1,0 +1,49 @@
+{
+  "test": "MCP compare_design — identical images",
+  "timestamp": "2026-04-15T03:24:22.967Z",
+  "input": {
+    "design": "200x200 blue",
+    "screenshot": "200x200 blue"
+  },
+  "result": {
+    "status": "PASS",
+    "comparisonId": "cmp-1776223462966",
+    "matchRate": 100,
+    "diffPixelCount": 0,
+    "totalPixelCount": 40000,
+    "diffRegions": [
+      {
+        "id": 0,
+        "bounds": {
+          "x": 0,
+          "y": 0,
+          "width": 200,
+          "height": 200
+        },
+        "diffPixelCount": 40000,
+        "nearbyNodeIds": [],
+        "nearbyNodeNames": []
+      }
+    ],
+    "suggestion": "一致率100%です。差分はありません。",
+    "remainingIssues": 1,
+    "completionCriteria": {
+      "matchRate": {
+        "required": 100,
+        "current": 100,
+        "status": "PASS"
+      },
+      "diffPixelCount": {
+        "required": 0,
+        "current": 0,
+        "status": "PASS"
+      },
+      "remainingIssues": {
+        "required": 0,
+        "current": 1,
+        "status": "FAIL"
+      }
+    },
+    "nextAction": "一致率100%です。差分はありません。タスク完了です。"
+  }
+}
