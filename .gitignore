@@ -39,6 +39,10 @@ app/desktop/release/
 # Test results (Playwright, Vitest)
 **/test-results/
 
+# Temporary files
+**/tmp-*.mjs
+ext-sideload-test.mjs
+
 # Debug
 npm-debug.log*
 pnpm-debug.log*
