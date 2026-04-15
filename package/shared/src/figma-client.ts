@@ -288,7 +288,28 @@ export class FigmaClient {
 
       if (!response.ok) {
         const body = await response.text();
-        throw new Error(`Figma API error ${response.status}: ${body}`);
+        const status = response.status;
+        if (status === 401) {
+          throw new Error(
+            `Figma token is invalid or expired (401). Please update your token in Settings.`,
+          );
+        }
+        if (status === 403) {
+          throw new Error(
+            `Access denied (403). You don't have permission to access this Figma file.`,
+          );
+        }
+        if (status === 429) {
+          const retryAfter = response.headers.get("Retry-After");
+          const wait = retryAfter ? ` Please wait ${retryAfter} seconds.` : " Please wait a moment.";
+          throw new Error(`Figma API rate limit exceeded (429).${wait}`);
+        }
+        if (status >= 500) {
+          throw new Error(
+            `Figma server error (${status}). Please try again later.`,
+          );
+        }
+        throw new Error(`Figma API error ${status}: ${body}`);
       }
 
       return response.json();
@@ -356,6 +377,8 @@ const TOKEN_ERROR_PATTERNS = [
   "status 403",
   "status 401",
   "Forbidden",
+  "invalid or expired (401)",
+  "Access denied (403)",
 ] as const;
 
 export const isTokenError = (message: string): boolean =>
