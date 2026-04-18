@@ -1,4 +1,5 @@
 import {
+  computeHausdorff,
   computeSsim,
   computeSsimForRegion,
   computeVerdict,
@@ -198,7 +199,7 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
         figmaNodeId: section.child.id,
         structure: computeSsimForRegion(designPixels, screenshotPixels, width, height, bbox),
         color: buildApproximateColorDifference(designPixels, screenshotPixels, width, height, bbox),
-        shape: 0,
+        shape: computeHausdorff(designPixels, screenshotPixels, width, height, bbox),
         layout: 0,
       });
     }
@@ -214,8 +215,7 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
       bbox: toWholeFrameRegion(width, height),
       structure: computeSsim(designPixels, screenshotPixels, width, height),
       color: buildApproximateColorDifference(designPixels, screenshotPixels, width, height),
-      // P2 でも ORB・ΔE2000・Hausdorff は導入せず、shape/layout は保留値を維持する。
-      shape: 0,
+      shape: computeHausdorff(designPixels, screenshotPixels, width, height),
       layout: 0,
     },
   ];

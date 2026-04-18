@@ -237,6 +237,14 @@ export const DiffReportSchema = z.object({
   rationale: z.string(),
 });
 
+export const CritiqueConcernSchema = z.enum(["regression", "oscillation", "plateau", "healthy"]);
+
+export const CritiqueNoteSchema = z.object({
+  concern: CritiqueConcernSchema,
+  worstDeltaSection: z.string().optional(),
+  advice: z.string(),
+});
+
 export const CompareDesignResultSchema = z.object({
   status: z.enum(["PASS", "FAIL"]).optional(),
   comparisonId: z.string(),
@@ -249,6 +257,7 @@ export const CompareDesignResultSchema = z.object({
   nextAction: z.string().optional(),
   suggestion: z.string(),
   diffReport: DiffReportSchema.optional(),
+  critique: CritiqueNoteSchema.optional(),
   diffImagePath: z.string().optional(),
   diffImageBase64: z.string().optional(),
 });

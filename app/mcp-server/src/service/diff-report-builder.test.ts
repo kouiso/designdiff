@@ -49,6 +49,7 @@ describe("buildDiffReport", () => {
     expect(result.regionScores[0].regionId).toBe("whole-frame");
     expect(result.regionScores[0].structure).toBe(1);
     expect(result.regionScores[0].color).toBe(0);
+    expect(result.regionScores[0].shape).toBe(0);
     expect(result.weightedAggregate?.weightedStructure).toBe(1);
     expect(result.issues).toEqual([]);
   });
@@ -148,6 +149,7 @@ describe("buildDiffReport", () => {
     expect(
       result.regionScores.find((score) => score.regionId === "footer")?.structure,
     ).toBeLessThan(0.8);
+    expect(result.regionScores.find((score) => score.regionId === "footer")?.shape).toBeDefined();
     expect(result.regionScores.find((score) => score.regionId === "header")?.structure).toBeCloseTo(
       1,
       6,
