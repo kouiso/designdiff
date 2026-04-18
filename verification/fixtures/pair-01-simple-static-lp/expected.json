@@ -12,19 +12,13 @@
       "name": "color-off",
       "image": "impl-color-off.png",
       "expectedVerdict": "fail",
-      "expectedKinds": [
-        "color"
-      ]
+      "expectedKinds": ["color"]
     },
     {
       "name": "layout-off",
       "image": "impl-layout-off.png",
       "expectedVerdict": "fail",
-      "expectedKinds": [
-        "structure",
-        "position",
-        "size"
-      ]
+      "expectedKinds": ["structure", "position", "size"]
     }
   ]
 }
