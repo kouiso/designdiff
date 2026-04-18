@@ -204,6 +204,7 @@ export const RegionScoreSchema = z.object({
   color: z.number().nonnegative(),
   shape: z.number().nonnegative(),
   layout: z.number().nonnegative(),
+  textureScore: z.number().min(0).max(1).optional(),
 });
 
 export const WeightedAggregateSchema = z.object({

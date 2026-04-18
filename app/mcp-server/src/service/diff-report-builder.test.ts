@@ -49,6 +49,7 @@ describe("buildDiffReport", () => {
     expect(result.regionScores[0].regionId).toBe("whole-frame");
     expect(result.regionScores[0].structure).toBe(1);
     expect(result.regionScores[0].color).toBe(0);
+    expect(result.regionScores[0].textureScore).toBeLessThan(0.1);
     expect(result.weightedAggregate?.weightedStructure).toBe(1);
     expect(result.issues).toEqual([]);
   });
@@ -152,5 +153,6 @@ describe("buildDiffReport", () => {
       1,
       6,
     );
+    expect(result.regionScores.every((score) => score.textureScore !== undefined)).toBe(true);
   });
 });

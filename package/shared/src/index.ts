@@ -35,6 +35,7 @@ export {
 
 // Signal
 export { computeSsim, computeSsimForRegion, type SsimRegion } from "./signal/ssim.js";
+export { detectHighTextureRegion } from "./signal/texture.js";
 
 // View Mode Types
 export {

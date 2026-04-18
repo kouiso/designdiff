@@ -133,6 +133,7 @@ export interface RegionScore {
   color: number;
   shape: number;
   layout: number;
+  textureScore?: number;
 }
 
 export interface Alignment {
@@ -160,6 +161,27 @@ export interface WeightedAggregate {
   totalWeight: number;
 }
 
+const TEXTURE_WEIGHT_ALPHA = 0.7;
+const PHOTO_LIKE_TEXTURE_THRESHOLD = 0.6;
+const PHOTO_LIKE_WEIGHT_MULTIPLIER = 0.3;
+
+const getTextureAdjustedWeight = (
+  rawTotalArea: number,
+  regionCount: number,
+  score: RegionScore,
+): number => {
+  const rawArea = score.bbox.w * score.bbox.h;
+  const baseWeight = rawTotalArea > 0 ? rawArea / rawTotalArea : 1 / regionCount;
+  const textureScore = Math.min(1, Math.max(0, score.textureScore ?? 0));
+  const scaledWeight = baseWeight * (1 - TEXTURE_WEIGHT_ALPHA * textureScore);
+
+  if (textureScore > PHOTO_LIKE_TEXTURE_THRESHOLD) {
+    return Math.min(scaledWeight, baseWeight * PHOTO_LIKE_WEIGHT_MULTIPLIER);
+  }
+
+  return scaledWeight;
+};
+
 const normalizeWeightedAggregate = (regionScores: RegionScore[]): WeightedAggregate => {
   if (regionScores.length === 0) {
     return {
@@ -170,16 +192,21 @@ const normalizeWeightedAggregate = (regionScores: RegionScore[]): WeightedAggreg
   }
 
   const rawTotalArea = regionScores.reduce((sum, score) => sum + score.bbox.w * score.bbox.h, 0);
-  const totalArea = rawTotalArea > 0 ? rawTotalArea : regionScores.length;
+  const adjustedWeights = regionScores.map((score) => {
+    return getTextureAdjustedWeight(rawTotalArea, regionScores.length, score);
+  });
+  const adjustedTotalWeight = adjustedWeights.reduce((sum, weight) => sum + weight, 0);
 
   return regionScores.reduce(
-    (aggregate, score) => {
-      const rawArea = score.bbox.w * score.bbox.h;
-      const weight = rawTotalArea > 0 ? rawArea / totalArea : 1 / regionScores.length;
+    (aggregate, score, index) => {
+      const weight =
+        adjustedTotalWeight > 0
+          ? adjustedWeights[index] / adjustedTotalWeight
+          : 1 / regionScores.length;
 
       aggregate.weightedStructure += weight * score.structure;
       aggregate.weightedColor += weight * score.color;
-      aggregate.totalWeight += weight;
+      aggregate.totalWeight = adjustedTotalWeight;
       return aggregate;
     },
     {
@@ -190,17 +217,30 @@ const normalizeWeightedAggregate = (regionScores: RegionScore[]): WeightedAggreg
   );
 };
 
+const usesTextureAdjustedWeights = (regionScores: RegionScore[]): boolean => {
+  return regionScores.some((score) => (score.textureScore ?? 0) > 0);
+};
+
+const buildTextureRationaleSuffix = (regionScores: RegionScore[]): string => {
+  if (!usesTextureAdjustedWeights(regionScores)) {
+    return "";
+  }
+
+  return " with texture-adjusted weights active (alpha 0.700, photo-like cap 0.300)";
+};
+
 export const computeVerdict = (
   report: Omit<DiffReport, "aggregateVerdict" | "rationale">,
 ): { verdict: DiffVerdict; rationale: string; weightedAggregate: WeightedAggregate } => {
   const hasCriticalIssue = report.issues.some((issue) => issue.severity === "critical");
   // P2 では region 面積で重み付けし、単一セクションの暴走で全体 verdict が即死しないようにする。
   const weightedAggregate = normalizeWeightedAggregate(report.regionScores);
+  const textureRationaleSuffix = buildTextureRationaleSuffix(report.regionScores);
 
   if (hasCriticalIssue) {
     return {
       verdict: "fail",
-      rationale: "critical severity issue detected",
+      rationale: `critical severity issue detected${textureRationaleSuffix}`,
       weightedAggregate,
     };
   }
@@ -212,7 +252,7 @@ export const computeVerdict = (
         3,
       )} is below fail threshold 0.800 (weighted color ${weightedAggregate.weightedColor.toFixed(
         3,
-      )}, totalWeight ${weightedAggregate.totalWeight.toFixed(3)})`,
+      )}, totalWeight ${weightedAggregate.totalWeight.toFixed(3)})${textureRationaleSuffix}`,
       weightedAggregate,
     };
   }
@@ -225,7 +265,7 @@ export const computeVerdict = (
         3,
       )} meets pass threshold, and weighted color difference ${weightedAggregate.weightedColor.toFixed(
         3,
-      )} is below 3.000 (totalWeight ${weightedAggregate.totalWeight.toFixed(3)})`,
+      )} is below 3.000 (totalWeight ${weightedAggregate.totalWeight.toFixed(3)})${textureRationaleSuffix}`,
       weightedAggregate,
     };
   }
@@ -236,7 +276,9 @@ export const computeVerdict = (
       3,
     )} and weighted color difference ${weightedAggregate.weightedColor.toFixed(
       3,
-    )} do not satisfy pass thresholds (totalWeight ${weightedAggregate.totalWeight.toFixed(3)})`,
+    )} do not satisfy pass thresholds (totalWeight ${weightedAggregate.totalWeight.toFixed(
+      3,
+    )})${textureRationaleSuffix}`,
     weightedAggregate,
   };
 };
