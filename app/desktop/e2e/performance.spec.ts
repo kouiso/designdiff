@@ -125,7 +125,10 @@ test.describe("Performance measurements", () => {
 
       // Close dialog
       await page.keyboard.press("Escape");
-      await page.locator("[role=dialog]").waitFor({ state: "hidden" }).catch(() => {});
+      await page
+        .locator("[role=dialog]")
+        .waitFor({ state: "hidden" })
+        .catch(() => {});
       await page.waitForTimeout(50);
     }
 
