@@ -70,34 +70,22 @@
       "name": "all-buttons-wrong-color",
       "image": "impl-all-buttons-wrong-color.png",
       "expectedVerdict": "fail",
-      "expectedKinds": [
-        "color"
-      ],
-      "expectedIssueKinds": [
-        "color"
-      ],
+      "expectedKinds": ["color"],
+      "expectedIssueKinds": ["color"],
       "expectedWeightedColorMin": 10,
       "expectedWeightedColorMax": 30,
-      "expectedWorstRegionIds": [
-        "color-button-primary"
-      ],
+      "expectedWorstRegionIds": ["color-button-primary"],
       "notes": "全ボタンが gray-400 になり、トークン解決が完全に失敗する。"
     },
     {
       "name": "single-button-wrong-color",
       "image": "impl-single-button-wrong-color.png",
       "expectedVerdict": "fail",
-      "expectedKinds": [
-        "color"
-      ],
-      "expectedIssueKinds": [
-        "color"
-      ],
+      "expectedKinds": ["color"],
+      "expectedIssueKinds": ["color"],
       "expectedWeightedColorMin": 3,
       "expectedWeightedColorMax": 10,
-      "expectedWorstRegionIds": [
-        "color-button-tertiary"
-      ],
+      "expectedWorstRegionIds": ["color-button-tertiary"],
       "notes": "tertiary のみ rose-300 に変わる borderline case。"
     }
   ]
