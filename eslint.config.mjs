@@ -227,4 +227,23 @@ export default [
       "no-console": "off",
     },
   },
+
+  // Verification scripts — Node.js utility scripts
+  {
+    files: ["verification/scripts/**/*.mjs"],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+      },
+      ecmaVersion: "latest",
+      sourceType: "module",
+    },
+    rules: {
+      "no-console": "off",
+      "no-unused-expressions": "off",
+      "@typescript-eslint/no-unused-expressions": "off",
+      "@typescript-eslint/no-unused-vars": "off",
+      "@typescript-eslint/no-empty-function": "off",
+    },
+  },
 ];

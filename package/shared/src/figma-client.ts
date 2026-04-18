@@ -301,13 +301,13 @@ export class FigmaClient {
         }
         if (status === 429) {
           const retryAfter = response.headers.get("Retry-After");
-          const wait = retryAfter ? ` Please wait ${retryAfter} seconds.` : " Please wait a moment.";
+          const wait = retryAfter
+            ? ` Please wait ${retryAfter} seconds.`
+            : " Please wait a moment.";
           throw new Error(`Figma API rate limit exceeded (429).${wait}`);
         }
         if (status >= 500) {
-          throw new Error(
-            `Figma server error (${status}). Please try again later.`,
-          );
+          throw new Error(`Figma server error (${status}). Please try again later.`);
         }
         throw new Error(`Figma API error ${status}: ${body}`);
       }

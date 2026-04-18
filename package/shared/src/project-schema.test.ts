@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  AlignmentSchema,
   CompareDesignResultSchema,
   CompletionCriteriaSchema,
   DesignSourceSchema,
+  DiffReportSchema,
   ProjectPageSchema,
   ProjectSchema,
 } from "./schema.js";
@@ -288,6 +290,39 @@ describe("CompletionCriteriaSchema", () => {
 });
 
 describe("CompareDesignResultSchema (v4 強化版)", () => {
+  const diffReport = {
+    alignment: {
+      translation: { x: 0, y: 0 },
+      scale: { x: 1, y: 1 },
+      rotation: 0,
+      confidence: 1,
+      residual: 0,
+    },
+    regionScores: [
+      {
+        regionId: "whole-frame",
+        bbox: { x: 0, y: 0, w: 100, h: 100 },
+        structure: 0.99,
+        color: 0.4,
+        shape: 0,
+        layout: 0,
+      },
+    ],
+    issues: [],
+    aggregateVerdict: "pass",
+    rationale: "P1 minimal report",
+  };
+
+  it("DiffReportSchema で v2 レポートをパースできる", () => {
+    const result = DiffReportSchema.safeParse(diffReport);
+    expect(result.success).toBe(true);
+  });
+
+  it("AlignmentSchema で identity alignment をパースできる", () => {
+    const result = AlignmentSchema.safeParse(diffReport.alignment);
+    expect(result.success).toBe(true);
+  });
+
   it("status と completionCriteria を含む結果をパースできる", () => {
     const input = {
       status: "FAIL",
@@ -312,12 +347,16 @@ describe("CompareDesignResultSchema (v4 強化版)", () => {
       },
       nextAction: "inspect_node を使って diffRegions の詳細を確認し、修正してください",
       suggestion: "差分が3箇所あります",
+      diffReport,
+      diffImagePath: "/tmp/figdiff-mcp/cmp-1.png",
     };
     const result = CompareDesignResultSchema.safeParse(input);
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.status).toBe("FAIL");
       expect(result.data.completionCriteria.matchRate.status).toBe("FAIL");
+      expect(result.data.diffReport?.aggregateVerdict).toBe("pass");
+      expect(result.data.diffImagePath).toBe("/tmp/figdiff-mcp/cmp-1.png");
     }
   });
 

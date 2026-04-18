@@ -52,3 +52,6 @@ yarn-error.log*
 .claude/settings.local.json
 .claude/mcp.json
 .claude/memory/
+
+# Verification artifacts (evidence, traces, secrets-masked logs)
+verification/

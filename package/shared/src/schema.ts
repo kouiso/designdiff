@@ -158,6 +158,85 @@ export const CompletionCriteriaSchema = z.object({
   remainingIssues: CompletionCriterionSchema,
 });
 
+// --- FigDiff v2 Diff Report Schema (P1) ---
+
+export const DiffBoundingBoxSchema = z.object({
+  x: z.number(),
+  y: z.number(),
+  w: z.number().nonnegative(),
+  h: z.number().nonnegative(),
+});
+
+export const DiffIssueKindSchema = z.enum([
+  "color",
+  "position",
+  "size",
+  "missing",
+  "extra",
+  "typography",
+]);
+
+export const DiffSeveritySchema = z.enum(["critical", "major", "minor"]);
+
+export const DiffEvidenceSchema = z.object({
+  signal: z.string(),
+  value: z.number(),
+  threshold: z.number(),
+  expected: z.unknown(),
+  actual: z.unknown(),
+});
+
+export const DiffIssueSchema = z.object({
+  regionId: z.string(),
+  bbox: DiffBoundingBoxSchema,
+  kind: DiffIssueKindSchema,
+  severity: DiffSeveritySchema,
+  evidence: DiffEvidenceSchema,
+  figmaNodeId: z.string().optional(),
+  suggestedCssFix: z.string().optional(),
+});
+
+export const RegionScoreSchema = z.object({
+  regionId: z.string(),
+  bbox: DiffBoundingBoxSchema,
+  figmaNodeId: z.string().optional(),
+  structure: z.number().min(0).max(1),
+  color: z.number().nonnegative(),
+  shape: z.number().nonnegative(),
+  layout: z.number().nonnegative(),
+});
+
+export const WeightedAggregateSchema = z.object({
+  weightedStructure: z.number().min(0).max(1),
+  weightedColor: z.number().nonnegative(),
+  totalWeight: z.number().nonnegative(),
+});
+
+export const AlignmentSchema = z.object({
+  translation: z.object({
+    x: z.number(),
+    y: z.number(),
+  }),
+  scale: z.object({
+    x: z.number(),
+    y: z.number(),
+  }),
+  rotation: z.number(),
+  confidence: z.number().min(0).max(1),
+  residual: z.number().nonnegative(),
+});
+
+export const DiffVerdictSchema = z.enum(["pass", "fail", "inconclusive"]);
+
+export const DiffReportSchema = z.object({
+  alignment: AlignmentSchema,
+  regionScores: z.array(RegionScoreSchema),
+  issues: z.array(DiffIssueSchema),
+  weightedAggregate: WeightedAggregateSchema.optional(),
+  aggregateVerdict: DiffVerdictSchema,
+  rationale: z.string(),
+});
+
 export const CompareDesignResultSchema = z.object({
   status: z.enum(["PASS", "FAIL"]).optional(),
   comparisonId: z.string(),
@@ -169,6 +248,8 @@ export const CompareDesignResultSchema = z.object({
   completionCriteria: CompletionCriteriaSchema.optional(),
   nextAction: z.string().optional(),
   suggestion: z.string(),
+  diffReport: DiffReportSchema.optional(),
+  diffImagePath: z.string().optional(),
   diffImageBase64: z.string().optional(),
 });
 

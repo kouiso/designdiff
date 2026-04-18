@@ -92,3 +92,151 @@ export type FigmaToken = z.infer<typeof FigmaTokenSchema>;
 // --- Image Dimensions ---
 
 export type ImageDimensions = z.infer<typeof ImageDimensionsSchema>;
+
+// --- FigDiff v2 Diff Report (P1) ---
+
+export type DiffIssueKind = "color" | "position" | "size" | "missing" | "extra" | "typography";
+
+export type DiffSeverity = "critical" | "major" | "minor";
+
+export interface DiffEvidence {
+  signal: string;
+  value: number;
+  threshold: number;
+  expected: unknown;
+  actual: unknown;
+}
+
+export interface DiffBoundingBox {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+export interface DiffIssue {
+  regionId: string;
+  bbox: DiffBoundingBox;
+  kind: DiffIssueKind;
+  severity: DiffSeverity;
+  evidence: DiffEvidence;
+  figmaNodeId?: string;
+  suggestedCssFix?: string;
+}
+
+export interface RegionScore {
+  regionId: string;
+  bbox: DiffBoundingBox;
+  // P2 では figmaRootNode.children 由来の region に Figma node id を付与する。
+  figmaNodeId?: string;
+  structure: number;
+  color: number;
+  shape: number;
+  layout: number;
+}
+
+export interface Alignment {
+  translation: { x: number; y: number };
+  scale: { x: number; y: number };
+  rotation: number;
+  confidence: number;
+  residual: number;
+}
+
+export type DiffVerdict = "pass" | "fail" | "inconclusive";
+
+export interface DiffReport {
+  alignment: Alignment;
+  regionScores: RegionScore[];
+  issues: DiffIssue[];
+  weightedAggregate?: WeightedAggregate;
+  aggregateVerdict: DiffVerdict;
+  rationale: string;
+}
+
+export interface WeightedAggregate {
+  weightedStructure: number;
+  weightedColor: number;
+  totalWeight: number;
+}
+
+const normalizeWeightedAggregate = (regionScores: RegionScore[]): WeightedAggregate => {
+  if (regionScores.length === 0) {
+    return {
+      weightedStructure: 1,
+      weightedColor: 0,
+      totalWeight: 0,
+    };
+  }
+
+  const rawTotalArea = regionScores.reduce((sum, score) => sum + score.bbox.w * score.bbox.h, 0);
+  const totalArea = rawTotalArea > 0 ? rawTotalArea : regionScores.length;
+
+  return regionScores.reduce(
+    (aggregate, score) => {
+      const rawArea = score.bbox.w * score.bbox.h;
+      const weight = rawTotalArea > 0 ? rawArea / totalArea : 1 / regionScores.length;
+
+      aggregate.weightedStructure += weight * score.structure;
+      aggregate.weightedColor += weight * score.color;
+      aggregate.totalWeight += weight;
+      return aggregate;
+    },
+    {
+      weightedStructure: 0,
+      weightedColor: 0,
+      totalWeight: 0,
+    },
+  );
+};
+
+export const computeVerdict = (
+  report: Omit<DiffReport, "aggregateVerdict" | "rationale">,
+): { verdict: DiffVerdict; rationale: string; weightedAggregate: WeightedAggregate } => {
+  const hasCriticalIssue = report.issues.some((issue) => issue.severity === "critical");
+  // P2 では region 面積で重み付けし、単一セクションの暴走で全体 verdict が即死しないようにする。
+  const weightedAggregate = normalizeWeightedAggregate(report.regionScores);
+
+  if (hasCriticalIssue) {
+    return {
+      verdict: "fail",
+      rationale: "critical severity issue detected",
+      weightedAggregate,
+    };
+  }
+
+  if (weightedAggregate.weightedStructure < 0.8) {
+    return {
+      verdict: "fail",
+      rationale: `weighted structure score ${weightedAggregate.weightedStructure.toFixed(
+        3,
+      )} is below fail threshold 0.800 (weighted color ${weightedAggregate.weightedColor.toFixed(
+        3,
+      )}, totalWeight ${weightedAggregate.totalWeight.toFixed(3)})`,
+      weightedAggregate,
+    };
+  }
+
+  if (weightedAggregate.weightedStructure >= 0.95 && weightedAggregate.weightedColor < 3) {
+    return {
+      verdict: "pass",
+      // color は ΔE 相当の「差分量」を想定し、高いほど色差が大きい単位として扱う。
+      rationale: `no critical issues, weighted structure score ${weightedAggregate.weightedStructure.toFixed(
+        3,
+      )} meets pass threshold, and weighted color difference ${weightedAggregate.weightedColor.toFixed(
+        3,
+      )} is below 3.000 (totalWeight ${weightedAggregate.totalWeight.toFixed(3)})`,
+      weightedAggregate,
+    };
+  }
+
+  return {
+    verdict: "inconclusive",
+    rationale: `no fail condition met, but weighted structure score ${weightedAggregate.weightedStructure.toFixed(
+      3,
+    )} and weighted color difference ${weightedAggregate.weightedColor.toFixed(
+      3,
+    )} do not satisfy pass thresholds (totalWeight ${weightedAggregate.totalWeight.toFixed(3)})`,
+    weightedAggregate,
+  };
+};

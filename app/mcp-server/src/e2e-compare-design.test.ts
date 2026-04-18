@@ -66,14 +66,17 @@ describe("MCP Server E2E: compare_design", () => {
   let designPath: string;
   let screenshotSamePath: string;
   let screenshotDiffPath: string;
+  let originalHome: string | undefined;
 
   beforeAll(async () => {
     await fs.mkdir(FIXTURE_DIR, { recursive: true });
     await fs.mkdir(EVIDENCE_DIR, { recursive: true });
+    originalHome = process.env.HOME;
+    process.env.HOME = path.join(FIXTURE_DIR, "home");
 
     const designImage = await createTestImage(200, 200, { r: 66, g: 133, b: 244 });
     const screenshotSame = await createTestImage(200, 200, { r: 66, g: 133, b: 244 });
-    const screenshotDiff = await createTestImage(200, 200, { r: 244, g: 67, b: 54 });
+    const screenshotDiff = await createTestImage(200, 200, { r: 0, g: 0, b: 0 });
 
     designPath = path.join(FIXTURE_DIR, "design.png");
     screenshotSamePath = path.join(FIXTURE_DIR, "screenshot-same.png");
@@ -94,12 +97,14 @@ describe("MCP Server E2E: compare_design", () => {
 
   afterAll(async () => {
     await client.close();
+    process.env.HOME = originalHome;
     await fs.rm(FIXTURE_DIR, { recursive: true, force: true });
   });
 
   it("ツール一覧に compare_design が含まれること", async () => {
     const result = await client.listTools();
     const toolNames = result.tools.map((t) => t.name);
+    const compareDesignTool = result.tools.find((tool) => tool.name === "compare_design");
     expect(toolNames).toContain("compare_design");
     expect(toolNames).toContain("list_figma_frames");
     expect(toolNames).toContain("inspect_node");
@@ -107,6 +112,8 @@ describe("MCP Server E2E: compare_design", () => {
     expect(toolNames).toContain("get_crop_region");
     expect(toolNames).toContain("set_crop_region");
     expect(toolNames).toContain("get_design_tokens");
+    expect(compareDesignTool?.outputSchema).toBeDefined();
+    expect(JSON.stringify(compareDesignTool?.outputSchema)).toContain("diffReport");
 
     const evidence = {
       test: "MCP tool listing",
@@ -140,6 +147,8 @@ describe("MCP Server E2E: compare_design", () => {
     expect(data.matchRate).toBe(100);
     expect(data.diffPixelCount).toBe(0);
     expect(data.completionCriteria.matchRate.status).toBe("PASS");
+    expect(data.diffReport).toBeDefined();
+    expect(data.diffReport.aggregateVerdict).toBe("pass");
 
     const evidence = {
       test: "MCP compare_design — identical images",
@@ -174,6 +183,9 @@ describe("MCP Server E2E: compare_design", () => {
     expect(data.diffPixelCount).toBeGreaterThan(0);
     expect(data.diffRegions.length).toBeGreaterThan(0);
     expect(data.completionCriteria.matchRate.status).toBe("FAIL");
+    expect(data.diffReport).toBeDefined();
+    expect(data.diffReport.aggregateVerdict).toBe("fail");
+    expect(data.diffImagePath).toBeTruthy();
 
     const imageContent = findImageContent(result);
     expect(imageContent).toBeDefined();
@@ -199,7 +211,7 @@ describe("MCP Server E2E: compare_design", () => {
       .composite([
         {
           input: await sharp({
-            create: { width: 50, height: 50, channels: 3, background: { r: 244, g: 67, b: 54 } },
+            create: { width: 50, height: 50, channels: 3, background: { r: 0, g: 0, b: 0 } },
           })
             .png()
             .toBuffer(),

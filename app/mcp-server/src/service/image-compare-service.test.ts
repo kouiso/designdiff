@@ -3,11 +3,15 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { CompareDesignResult } from "@figdiff/shared";
 
 vi.mock("pixelmatch");
-vi.mock("@figdiff/shared", () => ({
-  clusterDiffPixels: vi.fn(() => []),
-  generateMatchSuggestion: vi.fn(() => "Perfect match!"),
-  matchDiffRegionsToNodes: vi.fn((regions: unknown[]) => regions),
-}));
+vi.mock("@figdiff/shared", async (importOriginal) => {
+  const actual = (await importOriginal()) as Record<string, unknown>;
+  return {
+    ...actual,
+    clusterDiffPixels: vi.fn(() => []),
+    generateMatchSuggestion: vi.fn(() => "Perfect match!"),
+    matchDiffRegionsToNodes: vi.fn((regions: unknown[]) => regions),
+  };
+});
 
 interface MockSharpInstance {
   metadata: ReturnType<typeof vi.fn>;
@@ -71,6 +75,7 @@ describe("compareImages", () => {
 
     expect(result.diffPixelCount).toBe(0);
     expect(result.matchRate).toBe(100);
+    expect(result.diffReport?.aggregateVerdict).toBeDefined();
   });
 
   it("サイズ不一致の場合に resize が呼ばれること", async () => {
@@ -78,12 +83,17 @@ describe("compareImages", () => {
 
     const designInstance = createMockSharpInstance({ width: 100, height: 100 });
     const screenshotInstance = createMockSharpInstance({ width: 200, height: 200 });
+    const resizedDesignInstance = createMockSharpInstance({ width: 200, height: 200 });
+    const diffImageInstance = createMockSharpInstance({ width: 200, height: 200 });
 
-    let callCount = 0;
-    mockSharpFn.mockImplementation(() => {
-      callCount++;
-      return callCount % 2 === 0 ? screenshotInstance : designInstance;
-    });
+    designInstance.resize.mockReturnValue(resizedDesignInstance);
+    mockSharpFn
+      .mockReturnValueOnce(designInstance)
+      .mockReturnValueOnce(screenshotInstance)
+      .mockReturnValueOnce(designInstance)
+      .mockReturnValueOnce(resizedDesignInstance)
+      .mockReturnValueOnce(screenshotInstance)
+      .mockReturnValueOnce(diffImageInstance);
     vi.mocked(pixelmatchMock.default).mockReturnValue(0);
 
     const { compareImages } = await import("./image-compare-service.js");
@@ -96,6 +106,7 @@ describe("compareImages", () => {
 
     expect(designInstance.resize).toHaveBeenCalledWith(200, 200, {
       fit: "contain",
+      position: "top",
       background: { r: 255, g: 255, b: 255, alpha: 1 },
     });
   });

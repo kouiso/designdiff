@@ -5,11 +5,17 @@
  */
 
 import * as fs from "node:fs/promises";
+import * as os from "node:os";
 import * as path from "node:path";
 
 import { z } from "zod";
 
-import { parseDesignInput, type FigmaNode, type CropRegion } from "@figdiff/shared";
+import {
+  CompareDesignResultSchema,
+  parseDesignInput,
+  type CropRegion,
+  type FigmaNode,
+} from "@figdiff/shared";
 
 import { getCropRegion } from "../service/crop-region-store.js";
 import { createFigmaService, type FigmaService } from "../service/figma-service.js";
@@ -130,6 +136,15 @@ const DESCRIPTION = `デザインと実装のピクセル差分を検出しま�
   "/path/to/design.png"
   "./screenshots/home.png"`;
 
+async function persistDiffImage(base64Data: string, comparisonId: string): Promise<string> {
+  const directoryPath = path.join(os.tmpdir(), "figdiff-mcp");
+  await fs.mkdir(directoryPath, { recursive: true });
+
+  const filePath = path.join(directoryPath, `${comparisonId}.png`);
+  await fs.writeFile(filePath, Buffer.from(base64Data, "base64"));
+  return filePath;
+}
+
 export function registerCompareDesign(server: McpServer): void {
   server.registerTool(
     "compare_design",
@@ -155,6 +170,7 @@ export function registerCompareDesign(server: McpServer): void {
           .optional()
           .describe("Crop Region適用のためのプロジェクトID（省略可）"),
       },
+      outputSchema: CompareDesignResultSchema,
     },
     async (args) => {
       try {
@@ -224,16 +240,21 @@ export function registerCompareDesign(server: McpServer): void {
           result.diffPixelCount,
           regionCount,
         );
+        const diffImagePath =
+          result.diffImageBase64 && result.matchRate < 100
+            ? await persistDiffImage(result.diffImageBase64, result.comparisonId)
+            : undefined;
 
-        const resultData = {
+        const resultData = CompareDesignResultSchema.parse({
           status,
           ...result,
           remainingIssues: regionCount,
           completionCriteria,
           nextAction,
           suggestion,
+          diffImagePath,
           diffImageBase64: undefined,
-        };
+        });
 
         const content: (
           | { type: "text"; text: string }
@@ -254,7 +275,7 @@ export function registerCompareDesign(server: McpServer): void {
           text: JSON.stringify(resultData, null, 2),
         });
 
-        return { content };
+        return { content, structuredContent: resultData };
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         return {

@@ -16,6 +16,8 @@ import {
   type FigmaNode,
 } from "@figdiff/shared";
 
+import { buildDiffReport } from "./diff-report-builder.js";
+
 interface CompareImagesOptions {
   designBase64: string;
   screenshotBase64: string;
@@ -61,6 +63,7 @@ export async function compareImages(
     finalDesignBuffer = await sharp(designBuffer)
       .resize(screenshotWidth, screenshotHeight, {
         fit: "contain",
+        position: "top",
         background: { r: 255, g: 255, b: 255, alpha: 1 },
       })
       .ensureAlpha()
@@ -73,17 +76,14 @@ export async function compareImages(
 
   const width = screenshotWidth;
   const height = screenshotHeight;
+  const designPixels = Uint8ClampedArray.from(designRaw);
+  const screenshotPixels = Uint8ClampedArray.from(screenshotRaw);
 
   // Run pixelmatch
   const diffPixelData = new Uint8ClampedArray(width * height * 4);
-  const diffPixelCount = pixelmatch(
-    new Uint8ClampedArray(designRaw),
-    new Uint8ClampedArray(screenshotRaw),
-    diffPixelData,
-    width,
-    height,
-    { threshold },
-  );
+  const diffPixelCount = pixelmatch(designPixels, screenshotPixels, diffPixelData, width, height, {
+    threshold,
+  });
 
   const totalPixelCount = width * height;
   const matchRate =
@@ -99,6 +99,13 @@ export async function compareImages(
 
   // Generate diff image visualization
   const diffImageBase64 = await generateDiffImage(diffPixelData, width, height);
+  const diffReport = buildDiffReport({
+    designPixels,
+    screenshotPixels,
+    width,
+    height,
+    figmaRootNode,
+  });
 
   const comparisonId = `cmp-${Date.now()}`;
   const suggestion = generateMatchSuggestion(matchRate);
@@ -110,6 +117,7 @@ export async function compareImages(
     totalPixelCount,
     diffRegions,
     suggestion,
+    diffReport,
     diffImageBase64,
   };
 }

@@ -1,16 +1,17 @@
 {
   "test": "MCP compare_design — different images (diff detected)",
-  "timestamp": "2026-04-15T03:24:22.980Z",
+  "timestamp": "2026-04-18T11:23:36.845Z",
   "input": {
     "design": "200x200 blue",
     "screenshot": "200x200 red"
   },
   "result": {
     "status": "FAIL",
-    "comparisonId": "cmp-1776223462979",
+    "comparisonId": "cmp-1776511416843",
     "matchRate": 0,
     "diffPixelCount": 40000,
     "totalPixelCount": 40000,
+    "remainingIssues": 1,
     "diffRegions": [
       {
         "id": 0,
@@ -25,8 +26,6 @@
         "nearbyNodeNames": []
       }
     ],
-    "suggestion": "大きな差分が1箇所あります。inspect_nodeで各差分領域を確認し、修正してください。",
-    "remainingIssues": 1,
     "completionCriteria": {
       "matchRate": {
         "required": 100,
@@ -44,7 +43,105 @@
         "status": "FAIL"
       }
     },
-    "nextAction": "inspect_node を使って 1 箇所の diffRegions の詳細を確認し、CSSを修正してください。修正後は再度 compare_design で検証してください。"
+    "nextAction": "inspect_node を使って 1 箇所の diffRegions の詳細を確認し、CSSを修正してください。修正後は再度 compare_design で検証してください。",
+    "suggestion": "大きな差分が1箇所あります。inspect_nodeで各差分領域を確認し、修正してください。",
+    "diffReport": {
+      "alignment": {
+        "translation": {
+          "x": 0,
+          "y": 0
+        },
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "rotation": 0,
+        "confidence": 1,
+        "residual": 0
+      },
+      "regionScores": [
+        {
+          "regionId": "whole-frame",
+          "bbox": {
+            "x": 0,
+            "y": 0,
+            "w": 200,
+            "h": 200
+          },
+          "structure": 0.0004118859252338292,
+          "color": 57.90849673202614,
+          "shape": 0,
+          "layout": 0
+        }
+      ],
+      "issues": [
+        {
+          "regionId": "whole-frame",
+          "bbox": {
+            "x": 0,
+            "y": 0,
+            "w": 200,
+            "h": 200
+          },
+          "kind": "color",
+          "severity": "critical",
+          "evidence": {
+            "signal": "approx_color_difference",
+            "value": 57.90849673202614,
+            "threshold": 3,
+            "expected": "< 3",
+            "actual": 57.90849673202614
+          },
+          "suggestedCssFix": "背景色や塗り色のトークン値をデザイン基準に合わせてください。"
+        },
+        {
+          "regionId": "whole-frame",
+          "bbox": {
+            "x": 0,
+            "y": 0,
+            "w": 200,
+            "h": 200
+          },
+          "kind": "position",
+          "severity": "major",
+          "evidence": {
+            "signal": "ssim",
+            "value": 0.0004118859252338292,
+            "threshold": 0.95,
+            "expected": ">= 0.95",
+            "actual": 0.0004118859252338292
+          },
+          "suggestedCssFix": "位置ずれが大きいため、主要要素の座標と余白を見直してください。"
+        },
+        {
+          "regionId": "whole-frame",
+          "bbox": {
+            "x": 0,
+            "y": 0,
+            "w": 200,
+            "h": 200
+          },
+          "kind": "size",
+          "severity": "major",
+          "evidence": {
+            "signal": "ssim",
+            "value": 0.0004118859252338292,
+            "threshold": 0.9,
+            "expected": ">= 0.9",
+            "actual": 0.0004118859252338292
+          },
+          "suggestedCssFix": "要素サイズやコンテナ幅・高さがデザインと一致しているか確認してください。"
+        }
+      ],
+      "weightedAggregate": {
+        "weightedStructure": 0.0004118859252338292,
+        "weightedColor": 57.90849673202614,
+        "totalWeight": 1
+      },
+      "aggregateVerdict": "fail",
+      "rationale": "critical severity issue detected"
+    },
+    "diffImagePath": "/tmp/figdiff-mcp/cmp-1776511416843.png"
   },
   "hasDiffImage": true
 }
