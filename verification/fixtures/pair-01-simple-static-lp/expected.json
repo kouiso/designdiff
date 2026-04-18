@@ -1,0 +1,30 @@
+{
+  "pairId": "pair-01-simple-static-lp",
+  "figmaFrame": "figma-export.png",
+  "variants": [
+    {
+      "name": "correct",
+      "image": "impl-correct.png",
+      "expectedVerdict": "pass",
+      "expectedKinds": []
+    },
+    {
+      "name": "color-off",
+      "image": "impl-color-off.png",
+      "expectedVerdict": "fail",
+      "expectedKinds": [
+        "color"
+      ]
+    },
+    {
+      "name": "layout-off",
+      "image": "impl-layout-off.png",
+      "expectedVerdict": "fail",
+      "expectedKinds": [
+        "structure",
+        "position",
+        "size"
+      ]
+    }
+  ]
+}
