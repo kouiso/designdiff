@@ -10,6 +10,6 @@
     }
   },
   "include": ["src/**/*.ts"],
-  "exclude": ["dist", "node_modules"],
+  "exclude": ["dist", "node_modules", "**/*.test.ts"],
   "references": [{ "path": "../../package/shared" }]
 }

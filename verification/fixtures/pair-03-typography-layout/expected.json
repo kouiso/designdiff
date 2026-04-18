@@ -105,12 +105,8 @@
       "name": "font-size-off",
       "image": "impl-font-size-off.png",
       "expectedVerdict": "fail",
-      "expectedKinds": [
-        "size"
-      ],
-      "expectedIssueKinds": [
-        "size"
-      ],
+      "expectedKinds": ["size"],
+      "expectedIssueKinds": ["size"],
       "expectedWeightedStructureMax": 0.95,
       "notes": "全 body text block が 85% 高さに縮み、本文スタックが崩れる。"
     },
@@ -118,18 +114,11 @@
       "name": "line-height-off",
       "image": "impl-line-height-off.png",
       "expectedVerdict": "fail",
-      "expectedKinds": [
-        "position"
-      ],
-      "expectedIssueKinds": [
-        "position"
-      ],
+      "expectedKinds": ["position"],
+      "expectedIssueKinds": ["position"],
       "expectedWeightedStructureMin": 0.97,
       "expectedWeightedStructureMax": 0.99,
-      "expectedWorstRegionIds": [
-        "typography-body-block-2",
-        "typography-body-block-4"
-      ],
+      "expectedWorstRegionIds": ["typography-body-block-2", "typography-body-block-4"],
       "notes": "2nd と 4th body block が 8px 下にずれる。"
     }
   ]
