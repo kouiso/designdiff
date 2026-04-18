@@ -309,7 +309,9 @@ async function measureFixture(fixtureDirName) {
   const designBase64 = await loadBase64(path.join(fixtureDir, expectation.figmaFrame));
 
   const rows = [];
-  const variants = [...expectation.variants].sort((left, right) => left.name.localeCompare(right.name));
+  const variants = [...expectation.variants].sort((left, right) =>
+    left.name.localeCompare(right.name),
+  );
 
   for (const variant of variants) {
     const screenshotBase64 = await loadBase64(path.join(fixtureDir, variant.image));
@@ -327,10 +329,18 @@ async function measureFixture(fixtureDirName) {
       ...new Set((result.diffReport?.issues ?? []).map((issue) => issue.kind)),
     ].sort((left, right) => left.localeCompare(right));
     const expectedIssueKinds = getExpectedIssueKinds(variant);
-    const matchedIssueKinds = expectedIssueKinds.filter((kind) => computedIssueKinds.includes(kind));
-    const missedIssueKinds = expectedIssueKinds.filter((kind) => !computedIssueKinds.includes(kind));
-    const unexpectedIssueKinds = computedIssueKinds.filter((kind) => !expectedIssueKinds.includes(kind));
-    const { worstSectionId, worstSectionScore } = getWorstSection(result.diffReport?.regionScores ?? []);
+    const matchedIssueKinds = expectedIssueKinds.filter((kind) =>
+      computedIssueKinds.includes(kind),
+    );
+    const missedIssueKinds = expectedIssueKinds.filter(
+      (kind) => !computedIssueKinds.includes(kind),
+    );
+    const unexpectedIssueKinds = computedIssueKinds.filter(
+      (kind) => !expectedIssueKinds.includes(kind),
+    );
+    const { worstSectionId, worstSectionScore } = getWorstSection(
+      result.diffReport?.regionScores ?? [],
+    );
 
     rows.push({
       fixtureId: expectation.pairId,
@@ -496,20 +506,22 @@ async function main() {
   const result = await measureCorrelation();
   const { metrics } = result;
 
-  console.log(`Verdict accuracy: ${formatPercent(metrics.verdictAccuracy.percentage)}`);
-  console.log(`Structure Pearson: ${formatNumber(metrics.pearson.structure, 6)}`);
-  console.log(`Color Pearson: ${formatNumber(metrics.pearson.color, 6)}`);
+  console.info(`Verdict accuracy: ${formatPercent(metrics.verdictAccuracy.percentage)}`);
+  console.info(`Structure Pearson: ${formatNumber(metrics.pearson.structure, 6)}`);
+  console.info(`Color Pearson: ${formatNumber(metrics.pearson.color, 6)}`);
 
   if (metrics.falseClassifications.length === 0) {
-    console.log("False classifications: none");
+    console.info("False classifications: none");
   } else {
-    console.log("False classifications:");
+    console.info("False classifications:");
     for (const row of metrics.falseClassifications) {
-      console.log(`- ${row.fixtureId}/${row.variantName}: ${row.expectedVerdict} -> ${row.computedVerdict}`);
+      console.info(
+        `- ${row.fixtureId}/${row.variantName}: ${row.expectedVerdict} -> ${row.computedVerdict}`,
+      );
     }
   }
 
-  console.log(
+  console.info(
     `L7 BASELINE: accuracy=${formatPercent(metrics.verdictAccuracy.percentage)}, structure_r=${formatNumber(metrics.pearson.structure, 6)}, color_r=${formatNumber(metrics.pearson.color, 6)}, pending_P3P4`,
   );
 }
