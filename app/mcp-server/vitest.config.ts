@@ -13,11 +13,7 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       include: ["src/**/*.ts"],
-      exclude: [
-        "src/**/*.test.ts",
-        "src/index.ts",
-        "src/pixelmatch.d.ts",
-      ],
+      exclude: ["src/**/*.test.ts", "src/index.ts", "src/pixelmatch.d.ts"],
     },
   },
 });

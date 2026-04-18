@@ -1,13 +1,13 @@
 {
   "test": "MCP compare_design — different images (diff detected)",
-  "timestamp": "2026-04-18T11:23:36.845Z",
+  "timestamp": "2026-04-18T13:16:54.684Z",
   "input": {
     "design": "200x200 blue",
     "screenshot": "200x200 red"
   },
   "result": {
     "status": "FAIL",
-    "comparisonId": "cmp-1776511416843",
+    "comparisonId": "cmp-1776518214682",
     "matchRate": 0,
     "diffPixelCount": 40000,
     "totalPixelCount": 40000,
@@ -141,7 +141,7 @@
       "aggregateVerdict": "fail",
       "rationale": "critical severity issue detected"
     },
-    "diffImagePath": "/tmp/figdiff-mcp/cmp-1776511416843.png"
+    "diffImagePath": "/tmp/figdiff-mcp/cmp-1776518214682.png"
   },
   "hasDiffImage": true
 }
