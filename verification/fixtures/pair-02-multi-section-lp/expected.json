@@ -60,10 +60,7 @@
       "name": "single-section-regression",
       "image": "impl-single-section-regression.png",
       "expectedVerdict": "fail",
-      "expectedKinds": [
-        "position",
-        "size"
-      ],
+      "expectedKinds": ["position", "size"],
       "expectedWeightedStructureMin": 0.9,
       "expectedWeightedStructureMax": 0.93,
       "expectedRegionStructure": {
@@ -82,10 +79,7 @@
       "name": "multi-section-drift",
       "image": "impl-multi-section-drift.png",
       "expectedVerdict": "fail",
-      "expectedKinds": [
-        "position",
-        "size"
-      ],
+      "expectedKinds": ["position", "size"],
       "expectedWeightedStructureMax": 0.85
     }
   ]
