@@ -17,6 +17,7 @@ import { useCompareStore } from "@/store/compare-store";
 import { useProjectStore } from "@/store/project-store";
 
 import { CompareCanvas } from "./compare-canvas";
+import { CompareDiffReport } from "./compare-diff-report";
 import { ViewModeToggle } from "./view-mode-toggle";
 
 function DesignStatus({ hasDesign }: { hasDesign: boolean }) {
@@ -226,16 +227,6 @@ export function ComparePage() {
                 <Button onClick={runComparison} disabled={!canCompare} className="gap-2">
                   {isComparing ? t("compare.running") : t("compare.run")}
                 </Button>
-                {compareResult && (
-                  <div className="flex items-center gap-3 text-sm">
-                    <Badge variant={compareResult.matchRate >= 95 ? "default" : "destructive"}>
-                      {compareResult.matchRate}%
-                    </Badge>
-                    <span className="text-muted-foreground">
-                      {t("compare.diffRegions")}: {compareResult.diffRegions.length}
-                    </span>
-                  </div>
-                )}
               </div>
             </>
           )}
@@ -277,6 +268,8 @@ export function ComparePage() {
           </div>
         </div>
       )}
+
+      {compareResult && <CompareDiffReport compareResult={compareResult} />}
 
       <div className="min-h-0 flex-1">
         {hasDesign || hasScreenshot ? (

@@ -33,6 +33,9 @@ export {
   generateMatchSuggestion,
 } from "./diff-cluster.js";
 
+// Signal
+export { computeSsim, computeSsimForRegion, type SsimRegion } from "./signal/ssim.js";
+
 // View Mode Types
 export {
   VIEW_MODES,
@@ -51,11 +54,19 @@ export {
   parseDesignInput,
 } from "./figma-url-parser.js";
 export {
+  AlignmentSchema,
   BorderRadiusSchema,
   ChildNodeSummarySchema,
   CompareDesignResultSchema,
   CropRegionSchema,
   DesignTokenSchema,
+  DiffBoundingBoxSchema,
+  DiffEvidenceSchema,
+  DiffIssueKindSchema,
+  DiffIssueSchema,
+  DiffReportSchema,
+  DiffSeveritySchema,
+  DiffVerdictSchema,
   DiffRegionSchema,
   FigmaTokenSchema,
   FrameSchema,
@@ -67,6 +78,8 @@ export {
   NodeLayoutSchema,
   NodeStrokeSchema,
   NodeTypographySchema,
+  RegionScoreSchema,
+  WeightedAggregateSchema,
   CompletionCriteriaSchema,
   CompletionCriterionSchema,
   DesignSourceSchema,
@@ -76,9 +89,17 @@ export {
 } from "./schema.js";
 // Types derived from schemas
 export type {
+  Alignment,
   BorderRadius,
   ChildNodeSummary,
   CompareDesignResult,
+  DiffBoundingBox,
+  DiffEvidence,
+  DiffIssue,
+  DiffIssueKind,
+  DiffReport,
+  DiffSeverity,
+  DiffVerdict,
   CropRegion,
   DesignProvider,
   DesignToken,
@@ -93,6 +114,8 @@ export type {
   NodeLayout,
   NodeStroke,
   NodeTypography,
+  RegionScore,
+  WeightedAggregate,
   CompletionCriteria,
   CompletionCriterion,
   DesignSource,
@@ -100,3 +123,4 @@ export type {
   Project,
   ProjectPage,
 } from "./type.js";
+export { computeVerdict } from "./type.js";

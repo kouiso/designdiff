@@ -10,6 +10,7 @@ import {
   DiffRegionSchema,
 } from "@figdiff/shared";
 
+import { buildDiffReport } from "@/service/diff-report";
 import {
   cropImageElement,
   imageDataToBase64,
@@ -90,6 +91,12 @@ export async function compareImages(options: CompareImagesOptions): Promise<Comp
 
   const comparisonId = `cmp-${Date.now()}`;
   const suggestion = generateSuggestion(matchRate);
+  const diffReport = buildDiffReport({
+    designPixels: designData.data,
+    screenshotPixels: screenshotData.data,
+    width,
+    height,
+  });
 
   const result: CompareDesignResult & { diffImageBase64: string } = {
     comparisonId,
@@ -98,6 +105,7 @@ export async function compareImages(options: CompareImagesOptions): Promise<Comp
     totalPixelCount,
     diffRegions,
     suggestion,
+    diffReport,
     diffImageBase64,
   };
 

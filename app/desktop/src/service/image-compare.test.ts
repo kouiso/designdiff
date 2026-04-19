@@ -177,5 +177,7 @@ describe("compareImages", () => {
     const result = await compareImages({ designImage: "abc", screenshotImage: "def" });
     expect(result.matchRate).toBe(100);
     expect(result.suggestion).toBe("compare.suggestionPerfect");
+    expect(result.diffReport?.aggregateVerdict).toBe("pass");
+    expect(result.diffReport?.regionScores).toHaveLength(1);
   });
 });

@@ -1,0 +1,125 @@
+{
+  "pairId": "pair-03-typography-layout",
+  "figmaFrame": "figma-export.png",
+  "figmaRootNode": {
+    "id": "typography-root",
+    "name": "Typography Layout",
+    "type": "FRAME",
+    "absoluteBoundingBox": {
+      "x": 0,
+      "y": 0,
+      "width": 400,
+      "height": 600
+    },
+    "children": [
+      {
+        "id": "typography-header",
+        "name": "Header",
+        "type": "FRAME",
+        "absoluteBoundingBox": {
+          "x": 0,
+          "y": 0,
+          "width": 400,
+          "height": 80
+        }
+      },
+      {
+        "id": "typography-body-block-1",
+        "name": "Body Block 1",
+        "type": "TEXT",
+        "absoluteBoundingBox": {
+          "x": 40,
+          "y": 124,
+          "width": 240,
+          "height": 24
+        }
+      },
+      {
+        "id": "typography-body-block-2",
+        "name": "Body Block 2",
+        "type": "TEXT",
+        "absoluteBoundingBox": {
+          "x": 40,
+          "y": 180,
+          "width": 300,
+          "height": 24
+        }
+      },
+      {
+        "id": "typography-body-block-3",
+        "name": "Body Block 3",
+        "type": "TEXT",
+        "absoluteBoundingBox": {
+          "x": 40,
+          "y": 236,
+          "width": 200,
+          "height": 24
+        }
+      },
+      {
+        "id": "typography-body-block-4",
+        "name": "Body Block 4",
+        "type": "TEXT",
+        "absoluteBoundingBox": {
+          "x": 40,
+          "y": 292,
+          "width": 280,
+          "height": 24
+        }
+      },
+      {
+        "id": "typography-body-block-5",
+        "name": "Body Block 5",
+        "type": "TEXT",
+        "absoluteBoundingBox": {
+          "x": 40,
+          "y": 348,
+          "width": 220,
+          "height": 24
+        }
+      },
+      {
+        "id": "typography-footer",
+        "name": "Footer",
+        "type": "FRAME",
+        "absoluteBoundingBox": {
+          "x": 0,
+          "y": 540,
+          "width": 400,
+          "height": 60
+        }
+      }
+    ]
+  },
+  "variants": [
+    {
+      "name": "correct",
+      "image": "impl-correct.png",
+      "expectedVerdict": "pass",
+      "expectedKinds": [],
+      "expectedWeightedStructureMin": 0.99,
+      "expectedWeightedStructureMax": 1,
+      "notes": "期待どおりの typography-heavy layout。"
+    },
+    {
+      "name": "font-size-off",
+      "image": "impl-font-size-off.png",
+      "expectedVerdict": "fail",
+      "expectedKinds": ["size"],
+      "expectedIssueKinds": ["size"],
+      "expectedWeightedStructureMax": 0.95,
+      "notes": "全 body text block が 85% 高さに縮み、本文スタックが崩れる。"
+    },
+    {
+      "name": "line-height-off",
+      "image": "impl-line-height-off.png",
+      "expectedVerdict": "fail",
+      "expectedKinds": ["position"],
+      "expectedIssueKinds": ["position"],
+      "expectedWeightedStructureMin": 0.97,
+      "expectedWeightedStructureMax": 0.99,
+      "expectedWorstRegionIds": ["typography-body-block-2", "typography-body-block-4"],
+      "notes": "2nd と 4th body block が 8px 下にずれる。"
+    }
+  ]
+}

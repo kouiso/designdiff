@@ -1,16 +1,17 @@
 {
   "test": "MCP compare_design — identical images",
-  "timestamp": "2026-04-15T03:24:22.967Z",
+  "timestamp": "2026-04-18T13:16:54.669Z",
   "input": {
     "design": "200x200 blue",
     "screenshot": "200x200 blue"
   },
   "result": {
     "status": "PASS",
-    "comparisonId": "cmp-1776223462966",
+    "comparisonId": "cmp-1776518214667",
     "matchRate": 100,
     "diffPixelCount": 0,
     "totalPixelCount": 40000,
+    "remainingIssues": 1,
     "diffRegions": [
       {
         "id": 0,
@@ -25,8 +26,6 @@
         "nearbyNodeNames": []
       }
     ],
-    "suggestion": "一致率100%です。差分はありません。",
-    "remainingIssues": 1,
     "completionCriteria": {
       "matchRate": {
         "required": 100,
@@ -44,6 +43,45 @@
         "status": "FAIL"
       }
     },
-    "nextAction": "一致率100%です。差分はありません。タスク完了です。"
+    "nextAction": "一致率100%です。差分はありません。タスク完了です。",
+    "suggestion": "一致率100%です。差分はありません。",
+    "diffReport": {
+      "alignment": {
+        "translation": {
+          "x": 0,
+          "y": 0
+        },
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "rotation": 0,
+        "confidence": 1,
+        "residual": 0
+      },
+      "regionScores": [
+        {
+          "regionId": "whole-frame",
+          "bbox": {
+            "x": 0,
+            "y": 0,
+            "w": 200,
+            "h": 200
+          },
+          "structure": 1,
+          "color": 0,
+          "shape": 0,
+          "layout": 0
+        }
+      ],
+      "issues": [],
+      "weightedAggregate": {
+        "weightedStructure": 1,
+        "weightedColor": 0,
+        "totalWeight": 1
+      },
+      "aggregateVerdict": "pass",
+      "rationale": "no critical issues, weighted structure score 1.000 meets pass threshold, and weighted color difference 0.000 is below 3.000 (totalWeight 1.000)"
+    }
   }
 }

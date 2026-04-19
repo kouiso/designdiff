@@ -92,7 +92,6 @@ async function build() {
 
   if (isWatch) {
     const codeCtx = await esbuild.context(codeConfig);
-    const uiCtx = await esbuild.context(uiConfig);
 
     await codeCtx.watch();
 

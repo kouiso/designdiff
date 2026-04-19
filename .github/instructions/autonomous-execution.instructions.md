@@ -1,1 +1,0 @@
-../../prompt/instruction/autonomous-execution.md
