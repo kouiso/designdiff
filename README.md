@@ -108,6 +108,14 @@ Then the AI agent can use these MCP tools in a loop:
 
 A typical AI loop: `compare-design` (detect diff) → fix code → re-screenshot → `compare-design` (verify improvement) → repeat until match rate >= 99%.
 
+## v2.0 DiffReport Pipeline
+
+- `compare_design` now returns a structured `diffReport` with `aggregateVerdict`, `regionScores`, `issues`, `alignment`, and `weightedAggregate`. The source of truth is `package/shared/src/type.ts` and `package/shared/src/schema.ts`.
+- `matchRate` still exists for backward compatibility, but `diffReport.aggregateVerdict` is now the canonical verdict for AI agents, MCP integrations, and QA tooling.
+- Multi-region scoring can attach `figmaNodeId` to section-level feedback, so agents can target the exact Figma section instead of treating the page as a single scalar score.
+
+See [docs/migration/v1-to-v2.md](docs/migration/v1-to-v2.md) for migration steps and [docs/api/diff-report-schema.md](docs/api/diff-report-schema.md) for the schema reference.
+
 ## Encrypted Files
 
 Some files in this repository are encrypted with [git-crypt](https://github.com/AGWA/git-crypt) (personal/internal configuration). The application works fully without decrypting them.
