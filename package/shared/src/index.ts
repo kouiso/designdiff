@@ -36,6 +36,8 @@ export {
 // Signal
 export { computeSsim, computeSsimForRegion, type SsimRegion } from "./signal/ssim.js";
 export { detectHighTextureRegion } from "./signal/texture.js";
+export { computeHausdorff } from "./signal/hausdorff.js";
+export { selfCritique } from "./self-critique.js";
 
 // View Mode Types
 export {
@@ -58,6 +60,8 @@ export {
   AlignmentSchema,
   BorderRadiusSchema,
   ChildNodeSummarySchema,
+  CritiqueConcernSchema,
+  CritiqueNoteSchema,
   CompareDesignResultSchema,
   CropRegionSchema,
   DesignTokenSchema,
@@ -93,6 +97,7 @@ export type {
   Alignment,
   BorderRadius,
   ChildNodeSummary,
+  CritiqueNote,
   CompareDesignResult,
   DiffBoundingBox,
   DiffEvidence,

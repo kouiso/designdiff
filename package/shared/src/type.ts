@@ -7,6 +7,7 @@
 import {
   type BorderRadiusSchema,
   type ChildNodeSummarySchema,
+  type CritiqueNoteSchema,
   type CompareDesignResultSchema,
   type CompletionCriteriaSchema,
   type CompletionCriterionSchema,
@@ -154,6 +155,8 @@ export interface DiffReport {
   aggregateVerdict: DiffVerdict;
   rationale: string;
 }
+
+export type CritiqueNote = z.infer<typeof CritiqueNoteSchema>;
 
 export interface WeightedAggregate {
   weightedStructure: number;

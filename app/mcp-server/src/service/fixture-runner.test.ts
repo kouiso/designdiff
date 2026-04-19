@@ -64,8 +64,15 @@ const FixtureVariantSchema = z.object({
   image: z.string().min(1),
   expectedVerdict: z.enum(["pass", "fail", "inconclusive"]),
   expectedKinds: z.array(z.string()),
+  expectedIssueKinds: z
+    .array(z.enum(["color", "position", "size", "missing", "extra", "typography"]))
+    .optional(),
+  notes: z.string().optional(),
   expectedWeightedStructureMin: z.number().optional(),
   expectedWeightedStructureMax: z.number().optional(),
+  expectedWeightedColorMin: z.number().optional(),
+  expectedWeightedColorMax: z.number().optional(),
+  expectedWorstRegionIds: z.array(z.string()).optional(),
   expectedRegionStructure: z
     .record(z.string(), z.object({ min: z.number().optional(), max: z.number().optional() }))
     .optional(),
@@ -99,6 +106,23 @@ function assertWeightedStructure(
     expect(result.diffReport?.weightedAggregate?.weightedStructure ?? 2).toBeLessThanOrEqual(
       variant.expectedWeightedStructureMax,
     );
+  }
+}
+
+function assertWeightedColor(
+  result: CompareDesignResult,
+  variant: z.infer<typeof FixtureVariantSchema>,
+): void {
+  if (variant.expectedWeightedColorMin !== undefined) {
+    expect(result.diffReport?.weightedAggregate?.weightedColor ?? -1).toBeGreaterThanOrEqual(
+      variant.expectedWeightedColorMin,
+    );
+  }
+
+  if (variant.expectedWeightedColorMax !== undefined) {
+    expect(
+      result.diffReport?.weightedAggregate?.weightedColor ?? Number.POSITIVE_INFINITY,
+    ).toBeLessThanOrEqual(variant.expectedWeightedColorMax);
   }
 }
 
@@ -138,6 +162,43 @@ function assertIssuePresence(
   expect((result.diffReport?.issues.length ?? 0) > 0).toBe(true);
 }
 
+function assertIssueKinds(
+  result: CompareDesignResult,
+  variant: z.infer<typeof FixtureVariantSchema>,
+): void {
+  if (!variant.expectedIssueKinds || variant.expectedIssueKinds.length === 0) {
+    return;
+  }
+
+  const actualKinds = new Set(result.diffReport?.issues.map((issue) => issue.kind) ?? []);
+
+  for (const expectedKind of variant.expectedIssueKinds) {
+    expect(actualKinds.has(expectedKind)).toBe(true);
+  }
+}
+
+function assertWorstRegions(
+  result: CompareDesignResult,
+  variant: z.infer<typeof FixtureVariantSchema>,
+): void {
+  if (!variant.expectedWorstRegionIds || variant.expectedWorstRegionIds.length === 0) {
+    return;
+  }
+
+  const actualWorstRegionIds = [...(result.diffReport?.regionScores ?? [])]
+    .sort((left, right) => {
+      if (left.structure !== right.structure) {
+        return left.structure - right.structure;
+      }
+
+      return right.color - left.color;
+    })
+    .slice(0, variant.expectedWorstRegionIds.length)
+    .map((score) => score.figmaNodeId ?? score.regionId);
+
+  expect(actualWorstRegionIds).toEqual(variant.expectedWorstRegionIds);
+}
+
 describe("golden fixture runner", () => {
   beforeEach(() => {
     vi.resetModules();
@@ -164,8 +225,11 @@ describe("golden fixture runner", () => {
 
       expect(result.diffReport?.aggregateVerdict).toBe(variant.expectedVerdict);
       assertWeightedStructure(result, variant);
+      assertWeightedColor(result, variant);
       assertRegionStructure(result, variant);
       assertIssuePresence(result, variant);
+      assertIssueKinds(result, variant);
+      assertWorstRegions(result, variant);
     }
   }
 
@@ -175,5 +239,13 @@ describe("golden fixture runner", () => {
 
   it("pair-02-multi-section-lp の期待 verdict と weighted isolation を満たすこと", async () => {
     await runFixture("pair-02-multi-section-lp");
+  });
+
+  it("pair-03-typography-layout の期待 verdict と worst region を満たすこと", async () => {
+    await runFixture("pair-03-typography-layout");
+  });
+
+  it("pair-04-color-system の期待 verdict と weighted color を満たすこと", async () => {
+    await runFixture("pair-04-color-system");
   });
 });
