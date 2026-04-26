@@ -116,6 +116,18 @@ Use the figdiff MCP tool compare_design with:
 - screenshot_path: /absolute/path/to/screenshot.png
 ```
 
+`compare_design` requires `screenshot_path` to be a local screenshot file path. It does not accept a URL directly. Capture the implementation first, then pass the saved file path:
+
+```bash
+npx playwright screenshot http://localhost:5173 /tmp/figdiff-screenshot.png
+```
+
+```text
+Use the figdiff MCP tool compare_design with:
+- figma_url: https://www.figma.com/design/FILE_KEY/Project?node-id=1-2
+- screenshot_path: /tmp/figdiff-screenshot.png
+```
+
 ## Encrypted Files
 
 Some files in this repository are encrypted with [git-crypt](https://github.com/AGWA/git-crypt) (personal/internal configuration). The application works fully without decrypting them.
