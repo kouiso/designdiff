@@ -101,12 +101,20 @@ Configure the MCP server in your AI tool (Claude Code, Cursor, etc.):
 
 Then the AI agent can use these MCP tools in a loop:
 
-1. `list-frames` — Get frame IDs from a Figma file
-2. `compare-design` — Compare a Figma frame with a screenshot, returns match rate + diff image path + diff regions
-3. `inspect-node` — Get CSS properties of a Figma node to guide code fixes
-4. `generate-report` — Generate a diff report after the loop completes
+1. `list_figma_frames` — Get frame IDs from a Figma file
+2. `compare_design` — Compare a Figma frame with a screenshot, returns match rate + diff image path + diff regions
+3. `inspect_node` — Get CSS properties of a Figma node to guide code fixes
+4. `generate_diff_report` — Generate a diff report after the loop completes
 
-A typical AI loop: `compare-design` (detect diff) → fix code → re-screenshot → `compare-design` (verify improvement) → repeat until match rate >= 99%.
+A typical AI loop: `compare_design` (detect diff) → fix code → re-screenshot → `compare_design` (verify improvement) → repeat until match rate >= 99%.
+
+Example Claude Code MCP call:
+
+```text
+Use the figdiff MCP tool compare_design with:
+- figma_url: https://www.figma.com/design/FILE_KEY/Project?node-id=1-2
+- screenshot_path: /absolute/path/to/screenshot.png
+```
 
 ## Encrypted Files
 
