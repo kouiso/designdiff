@@ -81,18 +81,23 @@ describe("compareImages", () => {
   it("サイズ不一致の場合に resize が呼ばれること", async () => {
     const pixelmatchMock = await import("pixelmatch");
 
-    const designInstance = createMockSharpInstance({ width: 100, height: 100 });
-    const screenshotInstance = createMockSharpInstance({ width: 200, height: 200 });
+    const designMetadataInstance = createMockSharpInstance({ width: 100, height: 100 });
+    const screenshotMetadataInstance = createMockSharpInstance({ width: 200, height: 200 });
+    const designResizeInstance = createMockSharpInstance({ width: 100, height: 100 });
     const resizedDesignInstance = createMockSharpInstance({ width: 200, height: 200 });
+    const designRawInstance = createMockSharpInstance({ width: 200, height: 200 });
+    const screenshotRawInstance = createMockSharpInstance({ width: 200, height: 200 });
     const diffImageInstance = createMockSharpInstance({ width: 200, height: 200 });
 
-    designInstance.resize.mockReturnValue(resizedDesignInstance);
+    designResizeInstance.resize.mockReturnValue(resizedDesignInstance);
     mockSharpFn
-      .mockReturnValueOnce(designInstance)
-      .mockReturnValueOnce(screenshotInstance)
-      .mockReturnValueOnce(designInstance)
+      .mockReturnValueOnce(designMetadataInstance)
+      .mockReturnValueOnce(screenshotMetadataInstance)
+      .mockReturnValueOnce(designResizeInstance)
       .mockReturnValueOnce(resizedDesignInstance)
-      .mockReturnValueOnce(screenshotInstance)
+      .mockReturnValueOnce(screenshotMetadataInstance)
+      .mockReturnValueOnce(designRawInstance)
+      .mockReturnValueOnce(screenshotRawInstance)
       .mockReturnValueOnce(diffImageInstance);
     vi.mocked(pixelmatchMock.default).mockReturnValue(0);
 
@@ -104,11 +109,7 @@ describe("compareImages", () => {
       screenshotBase64: dummyBase64,
     });
 
-    expect(designInstance.resize).toHaveBeenCalledWith(200, 200, {
-      fit: "contain",
-      position: "top",
-      background: { r: 255, g: 255, b: 255, alpha: 1 },
-    });
+    expect(designResizeInstance.resize).toHaveBeenCalledWith(200, 200);
   });
 
   it("無効な画像データを渡すとエラーになること", async () => {
