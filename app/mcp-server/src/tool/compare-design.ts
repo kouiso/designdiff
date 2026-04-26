@@ -8,6 +8,7 @@ import * as fs from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
 
+import sharp from "sharp";
 import { z } from "zod";
 
 import {
@@ -175,6 +176,11 @@ export function registerCompareDesign(server: McpServer): void {
     async (args) => {
       try {
         const parsed = parseDesignInput(args.design_source);
+        const screenshotPath = path.resolve(args.screenshot);
+        const screenshotBuffer = await fs.readFile(screenshotPath);
+        const screenshotBase64 = screenshotBuffer.toString("base64");
+        const screenshotMeta = await sharp(screenshotBuffer).metadata();
+        const targetWidth = screenshotMeta.width;
 
         let designBase64: string;
         let figmaRootNode: FigmaNode | undefined;
@@ -189,7 +195,7 @@ export function registerCompareDesign(server: McpServer): void {
           );
           if (typeof resolved !== "string") return resolved;
 
-          designBase64 = await figmaService.getFrameImage(parsed.fileKey, resolved);
+          designBase64 = await figmaService.getFrameImage(parsed.fileKey, resolved, targetWidth);
 
           try {
             figmaRootNode = await figmaService.getNodeDetails(parsed.fileKey, resolved);
@@ -206,11 +212,6 @@ export function registerCompareDesign(server: McpServer): void {
           const buffer = await fs.readFile(filePath);
           designBase64 = buffer.toString("base64");
         }
-
-        // Read screenshot
-        const screenshotPath = path.resolve(args.screenshot);
-        const screenshotBuffer = await fs.readFile(screenshotPath);
-        const screenshotBase64 = screenshotBuffer.toString("base64");
 
         // Check crop region
         let cropRegion: CropRegion | undefined;

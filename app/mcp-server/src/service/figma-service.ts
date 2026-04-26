@@ -7,6 +7,8 @@ import * as fs from "node:fs/promises";
 import { homedir } from "node:os";
 import * as path from "node:path";
 
+import sharp from "sharp";
+
 import {
   FigmaClient,
   type FigmaCacheStrategy,
@@ -73,8 +75,31 @@ export class FigmaService {
   /**
    * Get frame image as base64
    */
-  async getFrameImage(fileKey: string, nodeId: string): Promise<string> {
-    return this.client.downloadImageAsBase64(fileKey, nodeId, 2);
+  async getFrameImage(fileKey: string, nodeId: string, targetWidth?: number): Promise<string> {
+    const initialScale = 2;
+    let base64 = await this.client.downloadImageAsBase64(fileKey, nodeId, initialScale);
+
+    if (!targetWidth) return base64;
+
+    const initialWidth = await getImageWidth(base64);
+    if (initialWidth === 0 || initialWidth >= targetWidth * 0.8) return base64;
+
+    const neededScale = Math.min(4, Math.ceil(targetWidth / (initialWidth / initialScale)));
+    if (neededScale <= initialScale) return base64;
+
+    console.error(
+      `[figma-service] Image too small (${initialWidth}px vs target ${targetWidth}px), retrying with scale=${neededScale}`,
+    );
+
+    base64 = await this.client.downloadImageAsBase64(fileKey, nodeId, neededScale);
+    const retryWidth = await getImageWidth(base64);
+    if (retryWidth > 0 && retryWidth < targetWidth * 0.8) {
+      console.error(
+        `[figma-service] Figma image remains small after retry (${retryWidth}px vs target ${targetWidth}px); proceeding with available image`,
+      );
+    }
+
+    return base64;
   }
 
   /**
@@ -90,6 +115,12 @@ export class FigmaService {
   async getFile(fileKey: string, depth?: number): Promise<FigmaFileResponse> {
     return this.client.getFile(fileKey, depth ?? 2);
   }
+}
+
+async function getImageWidth(base64: string): Promise<number> {
+  const buffer = Buffer.from(base64, "base64");
+  const meta = await sharp(buffer).metadata();
+  return meta.width ?? 0;
 }
 
 /**
