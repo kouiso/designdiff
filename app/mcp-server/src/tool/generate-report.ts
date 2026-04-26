@@ -15,7 +15,7 @@ import { generateMarkdownReport, generateJsonReport } from "../service/report-ge
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
 const DESCRIPTION =
-  "compare_designの結果からMarkdownまたはJSONレポートを生成します。結果のJSONを直接渡すか、comparison_idで過去の比較結果を参照します。";
+  "compare_designの返り値JSON文字列をcomparison_resultに渡して、MarkdownまたはJSONレポートを生成します。";
 
 export function registerGenerateReport(server: McpServer): void {
   server.registerTool(
