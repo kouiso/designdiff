@@ -112,6 +112,64 @@ describe("compareImages", () => {
     expect(designResizeInstance.resize).toHaveBeenCalledWith(200, 200);
   });
 
+  it("cropRegion指定時はデザイン画像をスクリーンショット幅にresizeしてからcropすること", async () => {
+    const pixelmatchMock = await import("pixelmatch");
+
+    const designMetadataInstance = createMockSharpInstance({ width: 100, height: 200 });
+    const screenshotMetadataInstance = createMockSharpInstance({ width: 200, height: 400 });
+    const designResizeInstance = createMockSharpInstance({ width: 100, height: 200 });
+    const resizedDesignInstance = createMockSharpInstance({ width: 200, height: 400 });
+    const designCropInstance = createMockSharpInstance({ width: 200, height: 100 });
+    const screenshotCropInstance = createMockSharpInstance({ width: 200, height: 100 });
+    const croppedDesignMetadataInstance = createMockSharpInstance({ width: 200, height: 100 });
+    const croppedScreenshotMetadataInstance = createMockSharpInstance({ width: 200, height: 100 });
+    const designRawInstance = createMockSharpInstance({ width: 200, height: 100 });
+    const screenshotRawInstance = createMockSharpInstance({ width: 200, height: 100 });
+    const diffImageInstance = createMockSharpInstance({ width: 200, height: 100 });
+
+    designResizeInstance.resize.mockReturnValue(resizedDesignInstance);
+    mockSharpFn
+      .mockReturnValueOnce(designMetadataInstance)
+      .mockReturnValueOnce(screenshotMetadataInstance)
+      .mockReturnValueOnce(designResizeInstance)
+      .mockReturnValueOnce(designCropInstance)
+      .mockReturnValueOnce(screenshotCropInstance)
+      .mockReturnValueOnce(croppedDesignMetadataInstance)
+      .mockReturnValueOnce(croppedScreenshotMetadataInstance)
+      .mockReturnValueOnce(designRawInstance)
+      .mockReturnValueOnce(screenshotRawInstance)
+      .mockReturnValueOnce(diffImageInstance);
+    vi.mocked(pixelmatchMock.default).mockReturnValue(0);
+
+    const { compareImages } = await import("./image-compare-service.js");
+
+    const dummyBase64 = Buffer.alloc(100).toString("base64");
+    await compareImages({
+      designBase64: dummyBase64,
+      screenshotBase64: dummyBase64,
+      cropRegion: { x: 0, y: 10, width: 200, height: 100 },
+    });
+
+    expect(designResizeInstance.resize).toHaveBeenCalledWith(200, 400);
+    expect(designCropInstance.extract).toHaveBeenCalledWith({
+      left: 0,
+      top: 10,
+      width: 200,
+      height: 100,
+    });
+    expect(designResizeInstance.resize.mock.invocationCallOrder[0]).toBeLessThan(
+      designCropInstance.extract.mock.invocationCallOrder[0],
+    );
+    expect(vi.mocked(pixelmatchMock.default)).toHaveBeenCalledWith(
+      expect.any(Uint8ClampedArray),
+      expect.any(Uint8ClampedArray),
+      expect.any(Uint8ClampedArray),
+      200,
+      100,
+      { threshold: 0.1 },
+    );
+  });
+
   it("無効な画像データを渡すとエラーになること", async () => {
     const mockInstance = createMockSharpInstance({ width: 0, height: 0 });
     mockSharpFn.mockReturnValue(mockInstance);

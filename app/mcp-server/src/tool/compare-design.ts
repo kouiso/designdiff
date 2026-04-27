@@ -8,109 +8,13 @@ import * as fs from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
 
-import sharp from "sharp";
 import { z } from "zod";
 
-import {
-  CompareDesignResultSchema,
-  parseDesignInput,
-  type CropRegion,
-  type FigmaNode,
-} from "@figdiff/shared";
+import { CompareDesignResultSchema } from "@figdiff/shared";
 
-import { getCropRegion } from "../service/crop-region-store.js";
-import { createFigmaService, type FigmaService } from "../service/figma-service.js";
-import { compareImages } from "../service/image-compare-service.js";
+import { runCompareDesign } from "../service/compare-design-runner.js";
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-
-// MCP SDKのCallToolResult型がindex signature [key: string]: unknownを要求するため付与
-interface McpErrorResult {
-  [key: string]: unknown;
-  content: { type: "text"; text: string }[];
-  isError: true;
-}
-
-function mcpError(text: string): McpErrorResult {
-  return { content: [{ type: "text", text }], isError: true };
-}
-
-async function resolveNodeId(
-  figmaService: FigmaService,
-  fileKey: string,
-  nodeId: string | undefined,
-  frameName: string | undefined,
-): Promise<string | McpErrorResult> {
-  if (nodeId) return nodeId;
-
-  if (frameName) {
-    const frames = await figmaService.getFrames(fileKey);
-    const frame = frames.find((f) => f.name.toLowerCase() === frameName.toLowerCase());
-    if (!frame) {
-      return mcpError(
-        `Frame "${frameName}" not found. Available frames: ${frames.map((f) => f.name).join(", ")}`,
-      );
-    }
-    return frame.id;
-  }
-
-  const frames = await figmaService.getFrames(fileKey);
-  return mcpError(
-    `No frame specified. Available frames:\n${frames.map((f) => `- ${f.name} (${f.id}, ${f.width}x${f.height})`).join("\n")}\n\nPlease specify frame_name or use a URL with node-id.`,
-  );
-}
-
-interface CompletionCriterion {
-  required: number;
-  current: number;
-  status: "PASS" | "FAIL";
-}
-
-interface CompletionCriteria {
-  matchRate: CompletionCriterion;
-  diffPixelCount: CompletionCriterion;
-  remainingIssues: CompletionCriterion;
-}
-
-function buildCompletionCriteria(
-  matchRate: number,
-  diffPixelCount: number,
-  regionCount: number,
-): CompletionCriteria {
-  return {
-    matchRate: {
-      required: 100,
-      current: matchRate,
-      status: matchRate === 100 ? "PASS" : "FAIL",
-    },
-    diffPixelCount: {
-      required: 0,
-      current: diffPixelCount,
-      status: diffPixelCount === 0 ? "PASS" : "FAIL",
-    },
-    remainingIssues: {
-      required: 0,
-      current: regionCount,
-      status: regionCount === 0 ? "PASS" : "FAIL",
-    },
-  };
-}
-
-function buildStatus(matchRate: number): "PASS" | "FAIL" {
-  return matchRate === 100 ? "PASS" : "FAIL";
-}
-
-function buildNextAction(matchRate: number, regionCount: number): string {
-  if (matchRate === 100) return "一致率100%です。差分はありません。タスク完了です。";
-  return `inspect_node を使って ${regionCount} 箇所の diffRegions の詳細を確認し、CSSを修正してください。修正後は再度 compare_design で検証してください。`;
-}
-
-function buildSuggestion(matchRate: number, regionCount: number): string {
-  if (matchRate === 100) return "一致率100%です。差分はありません。";
-  if (matchRate >= 95)
-    return `軽微な差分が${regionCount}箇所あります。inspect_nodeで差分領域のノードを確認してください。`;
-  return `大きな差分が${regionCount}箇所あります。inspect_nodeで各差分領域を確認し、修正してください。`;
-}
 
 const DESCRIPTION = `デザインと実装のピクセル差分を検出します。
 
@@ -175,84 +79,15 @@ export function registerCompareDesign(server: McpServer): void {
     },
     async (args) => {
       try {
-        const parsed = parseDesignInput(args.design_source);
-        const screenshotPath = path.resolve(args.screenshot);
-        const screenshotBuffer = await fs.readFile(screenshotPath);
-        const screenshotBase64 = screenshotBuffer.toString("base64");
-        const screenshotMeta = await sharp(screenshotBuffer).metadata();
-        const targetWidth = screenshotMeta.width;
-
-        let designBase64: string;
-        let figmaRootNode: FigmaNode | undefined;
-
-        if (parsed.type === "figma_url") {
-          const figmaService = createFigmaService();
-          const resolved = await resolveNodeId(
-            figmaService,
-            parsed.fileKey,
-            parsed.nodeId,
-            args.frame_name,
-          );
-          if (typeof resolved !== "string") return resolved;
-
-          designBase64 = await figmaService.getFrameImage(parsed.fileKey, resolved, targetWidth);
-
-          try {
-            figmaRootNode = await figmaService.getNodeDetails(parsed.fileKey, resolved);
-          } catch (nodeError) {
-            // Node詳細はオプショナル — 差分比較は続行するがwarningを記録
-            console.error(
-              "[compare_design] node details fetch failed, proceeding without:",
-              nodeError instanceof Error ? nodeError.message : nodeError,
-            );
-          }
-        } else {
-          // Local file path
-          const filePath = path.resolve(parsed.filePath);
-          const buffer = await fs.readFile(filePath);
-          designBase64 = buffer.toString("base64");
-        }
-
-        // Check crop region
-        let cropRegion: CropRegion | undefined;
-        if (args.project_id) {
-          const regions = await getCropRegion(args.project_id, args.frame_name);
-          if (regions.length > 0) {
-            cropRegion = regions[0].region;
-          }
-        }
-
-        const result = await compareImages(
-          {
-            designBase64,
-            screenshotBase64,
-            threshold: args.threshold,
-            cropRegion,
-          },
-          figmaRootNode,
-        );
-
-        const regionCount = result.diffRegions.length;
-        const status = buildStatus(result.matchRate);
-        const suggestion = buildSuggestion(result.matchRate, regionCount);
-        const nextAction = buildNextAction(result.matchRate, regionCount);
-        const completionCriteria = buildCompletionCriteria(
-          result.matchRate,
-          result.diffPixelCount,
-          regionCount,
-        );
+        const comparison = await runCompareDesign(args);
+        const result = comparison.result;
         const diffImagePath =
           result.diffImageBase64 && result.matchRate < 100
             ? await persistDiffImage(result.diffImageBase64, result.comparisonId)
             : undefined;
 
         const resultData = CompareDesignResultSchema.parse({
-          status,
           ...result,
-          remainingIssues: regionCount,
-          completionCriteria,
-          nextAction,
-          suggestion,
           diffImagePath,
           diffImageBase64: undefined,
         });
@@ -265,14 +100,14 @@ export function registerCompareDesign(server: McpServer): void {
         // Add diff image if there are differences
         if (result.diffImageBase64 && result.matchRate < 100) {
           content.push({
-            type: "image" as const,
+            type: "image",
             data: result.diffImageBase64,
             mimeType: "image/png",
           });
         }
 
         content.push({
-          type: "text" as const,
+          type: "text",
           text: JSON.stringify(resultData, null, 2),
         });
 
@@ -280,7 +115,7 @@ export function registerCompareDesign(server: McpServer): void {
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         return {
-          content: [{ type: "text" as const, text: `Error: ${message}` }],
+          content: [{ type: "text", text: `Error: ${message}` }],
           isError: true,
         };
       }

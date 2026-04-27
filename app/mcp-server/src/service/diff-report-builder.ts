@@ -1,7 +1,9 @@
 import {
+  computeHausdorff,
   computeSsim,
   computeSsimForRegion,
   computeVerdict,
+  detectHighTextureRegion,
   type DiffBoundingBox,
   type DiffReport,
   type FigmaNode,
@@ -163,6 +165,14 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
   const { designPixels, screenshotPixels, width, height, figmaRootNode } = options;
   const childRegions: RegionScore[] = [];
 
+  const getTextureScore = (bbox: DiffBoundingBox): number => {
+    try {
+      return detectHighTextureRegion(screenshotPixels, width, height, bbox).textureScore;
+    } catch {
+      return 0;
+    }
+  };
+
   if (figmaRootNode) {
     const sectionAnchors = figmaRootNode.children
       .map((child) => {
@@ -198,8 +208,9 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
         figmaNodeId: section.child.id,
         structure: computeSsimForRegion(designPixels, screenshotPixels, width, height, bbox),
         color: buildApproximateColorDifference(designPixels, screenshotPixels, width, height, bbox),
-        shape: 0,
+        shape: computeHausdorff(designPixels, screenshotPixels, width, height, bbox),
         layout: 0,
+        textureScore: getTextureScore(bbox),
       });
     }
   }
@@ -208,15 +219,17 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
     return childRegions;
   }
 
+  const wholeFrameBbox = toWholeFrameRegion(width, height);
+
   return [
     {
       regionId: "whole-frame",
-      bbox: toWholeFrameRegion(width, height),
+      bbox: wholeFrameBbox,
       structure: computeSsim(designPixels, screenshotPixels, width, height),
       color: buildApproximateColorDifference(designPixels, screenshotPixels, width, height),
-      // P2 でも ORB・ΔE2000・Hausdorff は導入せず、shape/layout は保留値を維持する。
-      shape: 0,
+      shape: computeHausdorff(designPixels, screenshotPixels, width, height),
       layout: 0,
+      textureScore: getTextureScore(wholeFrameBbox),
     },
   ];
 }

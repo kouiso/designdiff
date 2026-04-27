@@ -1,0 +1,86 @@
+{
+  "pairId": "pair-02-multi-section-lp",
+  "figmaFrame": "figma-export.png",
+  "figmaRootNode": {
+    "id": "frame-root",
+    "name": "Landing Page",
+    "type": "FRAME",
+    "absoluteBoundingBox": {
+      "x": 0,
+      "y": 0,
+      "width": 360,
+      "height": 600
+    },
+    "children": [
+      {
+        "id": "section-header",
+        "name": "Header",
+        "type": "FRAME",
+        "absoluteBoundingBox": {
+          "x": 0,
+          "y": 0,
+          "width": 360,
+          "height": 96
+        }
+      },
+      {
+        "id": "section-body",
+        "name": "Body",
+        "type": "FRAME",
+        "absoluteBoundingBox": {
+          "x": 0,
+          "y": 96,
+          "width": 360,
+          "height": 336
+        }
+      },
+      {
+        "id": "section-footer",
+        "name": "Footer",
+        "type": "FRAME",
+        "absoluteBoundingBox": {
+          "x": 0,
+          "y": 432,
+          "width": 360,
+          "height": 168
+        }
+      }
+    ]
+  },
+  "variants": [
+    {
+      "name": "correct",
+      "image": "impl-correct.png",
+      "expectedVerdict": "pass",
+      "expectedKinds": [],
+      "expectedWeightedStructureMin": 0.99,
+      "expectedWeightedStructureMax": 1
+    },
+    {
+      "name": "single-section-regression",
+      "image": "impl-single-section-regression.png",
+      "expectedVerdict": "fail",
+      "expectedKinds": ["position", "size"],
+      "expectedWeightedStructureMin": 0.9,
+      "expectedWeightedStructureMax": 0.93,
+      "expectedRegionStructure": {
+        "section-header": {
+          "min": 0.99
+        },
+        "section-body": {
+          "min": 0.99
+        },
+        "section-footer": {
+          "max": 0.91
+        }
+      }
+    },
+    {
+      "name": "multi-section-drift",
+      "image": "impl-multi-section-drift.png",
+      "expectedVerdict": "fail",
+      "expectedKinds": ["position", "size"],
+      "expectedWeightedStructureMax": 0.85
+    }
+  ]
+}

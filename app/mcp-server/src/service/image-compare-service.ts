@@ -31,6 +31,7 @@ interface CompareImagesOptions {
 export async function compareImages(
   options: CompareImagesOptions,
   figmaRootNode?: FigmaNode,
+  comparisonId?: string,
 ): Promise<CompareDesignResult> {
   const { designBase64, screenshotBase64, threshold = 0.1, cropRegion } = options;
 
@@ -92,8 +93,8 @@ export async function compareImages(
   const designRaw = await sharp(finalDesignBuffer).ensureAlpha().raw().toBuffer();
   const screenshotRaw = await sharp(screenshotBuffer).ensureAlpha().raw().toBuffer();
 
-  const width = screenshotWidth;
-  const height = screenshotHeight;
+  const width = finalScreenshotWidth;
+  const height = finalScreenshotHeight;
   const designPixels = Uint8ClampedArray.from(designRaw);
   const screenshotPixels = Uint8ClampedArray.from(screenshotRaw);
 
@@ -125,11 +126,10 @@ export async function compareImages(
     figmaRootNode,
   });
 
-  const comparisonId = `cmp-${Date.now()}`;
   const suggestion = generateMatchSuggestion(matchRate);
 
   return {
-    comparisonId,
+    comparisonId: comparisonId ?? `cmp-${Date.now()}`,
     matchRate,
     diffPixelCount,
     totalPixelCount,

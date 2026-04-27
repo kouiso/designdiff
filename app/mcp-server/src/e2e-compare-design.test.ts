@@ -112,6 +112,7 @@ describe("MCP Server E2E: compare_design", () => {
     expect(toolNames).toContain("get_crop_region");
     expect(toolNames).toContain("set_crop_region");
     expect(toolNames).toContain("get_design_tokens");
+    expect(toolNames).toContain("verify_fix");
     expect(compareDesignTool?.outputSchema).toBeDefined();
     expect(JSON.stringify(compareDesignTool?.outputSchema)).toContain("diffReport");
 
