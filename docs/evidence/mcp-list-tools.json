@@ -1,7 +1,7 @@
 {
   "test": "MCP tool listing",
-  "timestamp": "2026-04-18T13:16:54.645Z",
-  "toolCount": 7,
+  "timestamp": "2026-04-27T04:56:56.722Z",
+  "toolCount": 8,
   "tools": [
     "compare_design",
     "inspect_node",
@@ -9,6 +9,7 @@
     "list_figma_frames",
     "generate_diff_report",
     "get_crop_region",
-    "set_crop_region"
+    "set_crop_region",
+    "verify_fix"
   ]
 }

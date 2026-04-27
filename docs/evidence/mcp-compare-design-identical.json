@@ -1,13 +1,13 @@
 {
   "test": "MCP compare_design — identical images",
-  "timestamp": "2026-04-18T13:16:54.669Z",
+  "timestamp": "2026-04-27T04:56:56.755Z",
   "input": {
     "design": "200x200 blue",
     "screenshot": "200x200 blue"
   },
   "result": {
     "status": "PASS",
-    "comparisonId": "cmp-1776518214667",
+    "comparisonId": "cmp-b868238b-a119-4daf-b789-4f2a82b41925",
     "matchRate": 100,
     "diffPixelCount": 0,
     "totalPixelCount": 40000,
@@ -71,7 +71,8 @@
           "structure": 1,
           "color": 0,
           "shape": 0,
-          "layout": 0
+          "layout": 0,
+          "textureScore": 9.03059714798763e-18
         }
       ],
       "issues": [],
@@ -81,7 +82,7 @@
         "totalWeight": 1
       },
       "aggregateVerdict": "pass",
-      "rationale": "no critical issues, weighted structure score 1.000 meets pass threshold, and weighted color difference 0.000 is below 3.000 (totalWeight 1.000)"
+      "rationale": "no critical issues, weighted structure score 1.000 meets pass threshold, and weighted color difference 0.000 is below 3.000 (totalWeight 1.000) with texture-adjusted weights active (alpha 0.700, photo-like cap 0.300)"
     }
   }
 }

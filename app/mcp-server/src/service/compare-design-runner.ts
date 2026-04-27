@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 
+import sharp from "sharp";
 import { z } from "zod";
 
 import {
@@ -184,6 +185,10 @@ export async function runCompareDesign(
   args: CompareDesignRunArgs,
 ): Promise<CompareDesignRunOutput> {
   const parsedDesignSource = parseDesignInput(args.design_source);
+  const screenshotBuffer = await fs.readFile(args.screenshot);
+  const screenshotBase64 = screenshotBuffer.toString("base64");
+  const screenshotMeta = await sharp(screenshotBuffer).metadata();
+  const targetWidth = screenshotMeta.width;
 
   let designBase64: string;
   let figmaRootNode: FigmaNode | undefined;
@@ -197,7 +202,11 @@ export async function runCompareDesign(
       parsedDesignSource.nodeId,
       args.frame_name,
     );
-    designBase64 = await figmaService.getFrameImage(parsedDesignSource.fileKey, resolvedNodeId);
+    designBase64 = await figmaService.getFrameImage(
+      parsedDesignSource.fileKey,
+      resolvedNodeId,
+      targetWidth,
+    );
 
     try {
       figmaRootNode = await figmaService.getNodeDetails(parsedDesignSource.fileKey, resolvedNodeId);
@@ -212,9 +221,6 @@ export async function runCompareDesign(
     designBase64 = designBuffer.toString("base64");
     figmaRootNode = await loadLocalFixtureNode(parsedDesignSource.filePath);
   }
-
-  const screenshotBuffer = await fs.readFile(args.screenshot);
-  const screenshotBase64 = screenshotBuffer.toString("base64");
 
   let cropRegion: CropRegion | undefined;
   if (args.project_id) {

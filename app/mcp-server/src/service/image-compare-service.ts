@@ -39,13 +39,7 @@ export async function compareImages(
   let designBuffer: Buffer = Buffer.from(designBase64, "base64");
   let screenshotBuffer: Buffer = Buffer.from(screenshotBase64, "base64");
 
-  // Apply crop region if provided
-  if (cropRegion) {
-    designBuffer = await cropImageBuffer(designBuffer, cropRegion);
-    screenshotBuffer = await cropImageBuffer(screenshotBuffer, cropRegion);
-  }
-
-  // Get dimensions
+  // Get original dimensions
   const designMeta = await sharp(designBuffer).metadata();
   const screenshotMeta = await sharp(screenshotBuffer).metadata();
 
@@ -58,11 +52,35 @@ export async function compareImages(
     throw new Error("Invalid image dimensions");
   }
 
-  // Resize design to match screenshot dimensions
+  // Resize design to match screenshot WIDTH first (maintaining aspect ratio)
+  // This normalizes coordinate spaces before crop
+  if (designWidth !== screenshotWidth) {
+    const resizeHeight = Math.round(designHeight * (screenshotWidth / designWidth));
+    designBuffer = await sharp(designBuffer)
+      .resize(screenshotWidth, resizeHeight)
+      .ensureAlpha()
+      .toBuffer();
+  }
+
+  // Apply crop region if provided (now both images are in the same coordinate space)
+  if (cropRegion) {
+    designBuffer = await cropImageBuffer(designBuffer, cropRegion);
+    screenshotBuffer = await cropImageBuffer(screenshotBuffer, cropRegion);
+  }
+
+  // Get final dimensions after crop
+  const finalDesignMeta = await sharp(designBuffer).metadata();
+  const finalScreenshotMeta = await sharp(screenshotBuffer).metadata();
+  const finalDesignWidth = finalDesignMeta.width ?? 0;
+  const finalDesignHeight = finalDesignMeta.height ?? 0;
+  const finalScreenshotWidth = finalScreenshotMeta.width ?? 0;
+  const finalScreenshotHeight = finalScreenshotMeta.height ?? 0;
+
+  // Resize design to match screenshot if still different (e.g., height mismatch after crop)
   let finalDesignBuffer: Buffer = designBuffer;
-  if (designWidth !== screenshotWidth || designHeight !== screenshotHeight) {
+  if (finalDesignWidth !== finalScreenshotWidth || finalDesignHeight !== finalScreenshotHeight) {
     finalDesignBuffer = await sharp(designBuffer)
-      .resize(screenshotWidth, screenshotHeight, {
+      .resize(finalScreenshotWidth, finalScreenshotHeight, {
         fit: "contain",
         position: "top",
         background: { r: 255, g: 255, b: 255, alpha: 1 },
@@ -75,8 +93,8 @@ export async function compareImages(
   const designRaw = await sharp(finalDesignBuffer).ensureAlpha().raw().toBuffer();
   const screenshotRaw = await sharp(screenshotBuffer).ensureAlpha().raw().toBuffer();
 
-  const width = screenshotWidth;
-  const height = screenshotHeight;
+  const width = finalScreenshotWidth;
+  const height = finalScreenshotHeight;
   const designPixels = Uint8ClampedArray.from(designRaw);
   const screenshotPixels = Uint8ClampedArray.from(screenshotRaw);
 

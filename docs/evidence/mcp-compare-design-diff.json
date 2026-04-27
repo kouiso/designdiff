@@ -1,13 +1,13 @@
 {
   "test": "MCP compare_design — different images (diff detected)",
-  "timestamp": "2026-04-18T13:16:54.684Z",
+  "timestamp": "2026-04-27T04:56:56.774Z",
   "input": {
     "design": "200x200 blue",
     "screenshot": "200x200 red"
   },
   "result": {
     "status": "FAIL",
-    "comparisonId": "cmp-1776518214682",
+    "comparisonId": "cmp-5655faa4-c1bf-4ba1-8c60-a646d379966b",
     "matchRate": 0,
     "diffPixelCount": 40000,
     "totalPixelCount": 40000,
@@ -71,7 +71,8 @@
           "structure": 0.0004118859252338292,
           "color": 57.90849673202614,
           "shape": 0,
-          "layout": 0
+          "layout": 0,
+          "textureScore": 0
         }
       ],
       "issues": [
@@ -141,7 +142,12 @@
       "aggregateVerdict": "fail",
       "rationale": "critical severity issue detected"
     },
-    "diffImagePath": "/tmp/figdiff-mcp/cmp-1776518214682.png"
+    "critique": {
+      "concern": "regression",
+      "worstDeltaSection": "whole-frame",
+      "advice": "直前の比較より weightedStructure が 0.05 超悪化しています。対象セクションと直近修正の副作用を先に切り分けてください。"
+    },
+    "diffImagePath": "/var/folders/rf/w0dkblsx33g18_wm31ct_r_r0000gn/T/figdiff-mcp/cmp-5655faa4-c1bf-4ba1-8c60-a646d379966b.png"
   },
   "hasDiffImage": true
 }
