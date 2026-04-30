@@ -11,11 +11,37 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import sharp from "sharp";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { z } from "zod";
 
 import { createMcpServer } from "./server.js";
 
 const FIXTURE_DIR = path.join(import.meta.dirname, "__fixtures__");
 const EVIDENCE_DIR = path.resolve(import.meta.dirname, "../../../docs/evidence");
+const EVIDENCE_TIMESTAMP = "2026-04-30T00:00:00.000Z";
+const EVIDENCE_COMPARISON_ID = "cmp-evidence";
+const EVIDENCE_DIFF_IMAGE_PATH = "/tmp/figdiff-mcp/cmp-evidence.png";
+const evidenceResultSchema = z.record(z.string(), z.unknown());
+
+function formatEvidenceJson(evidence: unknown): string {
+  return `${JSON.stringify(evidence, null, 2)}\n`;
+}
+
+function normalizeResultForEvidence(data: unknown): unknown {
+  const parsed = evidenceResultSchema.safeParse(data);
+  if (!parsed.success) {
+    return data;
+  }
+
+  const result = parsed.data;
+
+  return {
+    ...result,
+    comparisonId:
+      typeof result.comparisonId === "string" ? EVIDENCE_COMPARISON_ID : result.comparisonId,
+    diffImagePath:
+      typeof result.diffImagePath === "string" ? EVIDENCE_DIFF_IMAGE_PATH : result.diffImagePath,
+  };
+}
 
 interface TextContent {
   type: "text";
@@ -118,13 +144,13 @@ describe("MCP Server E2E: compare_design", () => {
 
     const evidence = {
       test: "MCP tool listing",
-      timestamp: new Date().toISOString(),
+      timestamp: EVIDENCE_TIMESTAMP,
       toolCount: result.tools.length,
       tools: toolNames,
     };
     await fs.writeFile(
       path.join(EVIDENCE_DIR, "mcp-list-tools.json"),
-      JSON.stringify(evidence, null, 2),
+      formatEvidenceJson(evidence),
     );
   });
 
@@ -153,13 +179,13 @@ describe("MCP Server E2E: compare_design", () => {
 
     const evidence = {
       test: "MCP compare_design — identical images",
-      timestamp: new Date().toISOString(),
+      timestamp: EVIDENCE_TIMESTAMP,
       input: { design: "200x200 blue", screenshot: "200x200 blue" },
-      result: data,
+      result: normalizeResultForEvidence(data),
     };
     await fs.writeFile(
       path.join(EVIDENCE_DIR, "mcp-compare-design-identical.json"),
-      JSON.stringify(evidence, null, 2),
+      formatEvidenceJson(evidence),
     );
   });
 
@@ -194,14 +220,14 @@ describe("MCP Server E2E: compare_design", () => {
 
     const evidence = {
       test: "MCP compare_design — different images (diff detected)",
-      timestamp: new Date().toISOString(),
+      timestamp: EVIDENCE_TIMESTAMP,
       input: { design: "200x200 blue", screenshot: "200x200 red" },
-      result: data,
+      result: normalizeResultForEvidence(data),
       hasDiffImage: Boolean(imageContent),
     };
     await fs.writeFile(
       path.join(EVIDENCE_DIR, "mcp-compare-design-diff.json"),
-      JSON.stringify(evidence, null, 2),
+      formatEvidenceJson(evidence),
     );
   });
 
@@ -250,7 +276,7 @@ describe("MCP Server E2E: compare_design", () => {
 
     const evidence = {
       test: "MCP compare_design — monotonic matchRate decrease proof",
-      timestamp: new Date().toISOString(),
+      timestamp: EVIDENCE_TIMESTAMP,
       loop: [
         {
           step: 1,
@@ -275,7 +301,7 @@ describe("MCP Server E2E: compare_design", () => {
     };
     await fs.writeFile(
       path.join(EVIDENCE_DIR, "mcp-diff-loop-evidence.json"),
-      JSON.stringify(evidence, null, 2),
+      formatEvidenceJson(evidence),
     );
   });
 

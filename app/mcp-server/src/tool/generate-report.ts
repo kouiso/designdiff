@@ -29,11 +29,12 @@ function normalizeComparisonResultInput(
     return parsed;
   }
 
-  const objectResult = comparisonResultRecordSchema.safeParse(parsed);
-  if (!objectResult.success) {
+  const resultParse = comparisonResultRecordSchema.safeParse(parsed);
+  if (!resultParse.success) {
     return parsed;
   }
-  const result = objectResult.data;
+
+  const result = resultParse.data;
 
   return {
     comparisonId: result.comparisonId ?? `cmp-${Date.now()}`,
@@ -84,7 +85,7 @@ export function registerGenerateReport(server: McpServer): void {
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         return {
-          content: [{ type: "text" as const, text: `Error: ${message}` }],
+          content: [{ type: "text", text: `Error: ${message}` }],
           isError: true,
         };
       }
