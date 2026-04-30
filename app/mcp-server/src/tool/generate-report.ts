@@ -22,13 +22,13 @@ const comparisonResultInputSchema = z.union([z.string(), z.object({}).passthroug
 function normalizeComparisonResultInput(
   input: z.infer<typeof comparisonResultInputSchema>,
 ): unknown {
-  const parsed = typeof input === "string" ? JSON.parse(input) : input;
+  const parsed: unknown = typeof input === "string" ? JSON.parse(input) : input;
 
   if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
     return parsed;
   }
 
-  const result = parsed as Record<string, unknown>;
+  const result = z.record(z.string(), z.unknown()).parse(parsed);
 
   return {
     comparisonId: result.comparisonId ?? `cmp-${Date.now()}`,

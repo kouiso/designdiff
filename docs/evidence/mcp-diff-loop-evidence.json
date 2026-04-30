@@ -1,6 +1,6 @@
 {
   "test": "MCP compare_design — monotonic matchRate decrease proof",
-  "timestamp": "2026-04-30T07:14:57.098Z",
+  "timestamp": "2026-04-30T09:23:20.466Z",
   "loop": [
     {
       "step": 1,
