@@ -59,6 +59,30 @@ describe("electronAdapter", () => {
       expect(window.electronAPI.getFigmaNodeDetail).toHaveBeenCalledWith("ABC", "1:1", 3);
       expect(result.nodeId).toBe("1:1");
     });
+
+    it("getNodeDetail が指定された depth を渡す", async () => {
+      const nodeDetail = {
+        nodeId: "1:1",
+        nodeName: "Frame",
+        nodeType: "FRAME",
+        layout: { x: 0, y: 0, width: 100, height: 100 },
+        appearance: {
+          fills: [],
+          strokes: [],
+          effects: [],
+          borderRadius: { topLeft: 0, topRight: 0, bottomRight: 0, bottomLeft: 0 },
+          opacity: 1,
+          blendMode: "NORMAL",
+        },
+        childrenSummary: [],
+        cssSuggestion: "css",
+      };
+      vi.mocked(window.electronAPI.getFigmaNodeDetail).mockResolvedValueOnce(nodeDetail);
+
+      await electronAdapter.figma.getNodeDetail("ABC", "1:1", 1);
+
+      expect(window.electronAPI.getFigmaNodeDetail).toHaveBeenCalledWith("ABC", "1:1", 1);
+    });
   });
 
   describe("token", () => {

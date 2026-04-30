@@ -215,10 +215,7 @@ const openOverlayUrlWithRetry = async (
     }
   }
 
-  throw buildConnectionError(
-    url,
-    failures.length > 0 ? failures : [formatErrorMessage(lastError)],
-  );
+  throw buildConnectionError(url, failures.length > 0 ? failures : [formatErrorMessage(lastError)]);
 };
 
 export const registerOverlayHandlers = (): void => {
@@ -250,9 +247,7 @@ export const registerOverlayHandlers = (): void => {
         win.removeListener("resize", resizeHandler);
         resizeHandler = null;
       }
-      throw error instanceof Error
-        ? error
-        : buildConnectionError(url, [formatErrorMessage(error)]);
+      throw error instanceof Error ? error : buildConnectionError(url, [formatErrorMessage(error)]);
     }
   });
 
