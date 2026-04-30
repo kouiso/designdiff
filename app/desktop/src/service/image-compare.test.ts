@@ -182,22 +182,24 @@ describe("compareImages", () => {
     expect(resizeImageDataContainTop).toHaveBeenCalledWith(expect.anything(), 10, 30);
   });
 
-  it("cropRegion ありでサイズ不一致の場合、リサイズ後に期待座標でクロップする", async () => {
-    const { cropImageSource, imageElementToData, resizeImageDataContainTop } = await import(
-      "@/util/canvas-image"
-    );
+  it("cropRegion ありでサイズ不一致の場合、スクリーンショット側のクロップ座標をスケールする", async () => {
+    const { cropImageSource, imageElementToData, resizeImageData, resizeImageDataContainTop } =
+      await import("@/util/canvas-image");
     const makeImageData = (width: number, height: number) => ({
       data: new Uint8ClampedArray(width * height * 4),
       width,
       height,
       colorSpace: "srgb" as const,
     });
-    const cropRegion = { x: 3, y: 4, width: 5, height: 6 };
+    const cropRegion = { x: 4, y: 8, width: 6, height: 10 };
 
     vi.mocked(imageElementToData)
       .mockReturnValueOnce(makeImageData(20, 40))
       .mockReturnValueOnce(makeImageData(10, 20));
-    vi.mocked(resizeImageDataContainTop).mockReturnValueOnce(makeImageData(10, 20));
+    vi.mocked(cropImageSource)
+      .mockReturnValueOnce(makeImageData(6, 10))
+      .mockReturnValueOnce(makeImageData(3, 5));
+    vi.mocked(resizeImageDataContainTop).mockReturnValueOnce(makeImageData(3, 5));
 
     await compareImages({
       designImage: "abc",
@@ -205,7 +207,7 @@ describe("compareImages", () => {
       cropRegion,
     });
 
-    expect(resizeImageDataContainTop).toHaveBeenCalledWith(expect.anything(), 10, 20);
+    expect(resizeImageData).not.toHaveBeenCalled();
     expect(cropImageSource).toHaveBeenCalledTimes(2);
     expect(cropImageSource).toHaveBeenNthCalledWith(
       1,
@@ -215,16 +217,10 @@ describe("compareImages", () => {
       cropRegion.width,
       cropRegion.height,
     );
-    expect(cropImageSource).toHaveBeenNthCalledWith(
-      2,
-      expect.anything(),
-      cropRegion.x,
-      cropRegion.y,
-      cropRegion.width,
-      cropRegion.height,
-    );
-    expect(vi.mocked(resizeImageDataContainTop).mock.invocationCallOrder[0]).toBeLessThan(
-      vi.mocked(cropImageSource).mock.invocationCallOrder[0],
+    expect(cropImageSource).toHaveBeenNthCalledWith(2, expect.anything(), 2, 4, 3, 5);
+    expect(resizeImageDataContainTop).toHaveBeenCalledWith(expect.anything(), 3, 5);
+    expect(vi.mocked(cropImageSource).mock.invocationCallOrder[1]).toBeLessThan(
+      vi.mocked(resizeImageDataContainTop).mock.invocationCallOrder[0],
     );
   });
 

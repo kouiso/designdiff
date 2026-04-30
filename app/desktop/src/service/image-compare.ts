@@ -53,23 +53,18 @@ export async function compareImages(options: CompareImagesOptions): Promise<Comp
   designData = imageElementToData(designImg);
   screenshotData = imageElementToData(screenshotImg);
 
-  if (
-    cropRegion &&
-    (designData.width !== screenshotData.width || designData.height !== screenshotData.height)
-  ) {
-    // クロップ座標を両画像で同じ座標系として扱えるよう、クロップ前に幅・高さを揃える。
-    designData = resizeImageDataContainTop(
-      imageDataToCanvas(designData),
-      screenshotData.width,
-      screenshotData.height,
-    );
-  } else if (designData.width !== screenshotData.width) {
+  if (!cropRegion && designData.width !== screenshotData.width) {
     // クロップがない場合は既存方針どおり、スクリーンショット幅に合わせてデザイン画像を同比率でリサイズする。
     const resizeHeight = Math.round(designData.height * (screenshotData.width / designData.width));
     designData = resizeImageData(imageDataToCanvas(designData), screenshotData.width, resizeHeight);
   }
 
   if (cropRegion) {
+    const screenshotCropRegion = scaleCropRegion(
+      cropRegion,
+      screenshotData.width / designData.width,
+      screenshotData.height / designData.height,
+    );
     designData = cropImageSource(
       imageDataToCanvas(designData),
       cropRegion.x,
@@ -79,10 +74,10 @@ export async function compareImages(options: CompareImagesOptions): Promise<Comp
     );
     screenshotData = cropImageSource(
       imageDataToCanvas(screenshotData),
-      cropRegion.x,
-      cropRegion.y,
-      cropRegion.width,
-      cropRegion.height,
+      screenshotCropRegion.x,
+      screenshotCropRegion.y,
+      screenshotCropRegion.width,
+      screenshotCropRegion.height,
     );
   }
 
@@ -130,6 +125,15 @@ export async function compareImages(options: CompareImagesOptions): Promise<Comp
   };
 
   return CompareDesignResultSchema.extend({ diffImageBase64: z.string() }).parse(result);
+}
+
+function scaleCropRegion(region: CropRegion, scaleX: number, scaleY: number): CropRegion {
+  return {
+    x: Math.round(region.x * scaleX),
+    y: Math.round(region.y * scaleY),
+    width: Math.round(region.width * scaleX),
+    height: Math.round(region.height * scaleY),
+  };
 }
 
 export function clusterDiffRegions(
