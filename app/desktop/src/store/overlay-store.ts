@@ -213,6 +213,7 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
       }
     } catch (e) {
       set({ error: String(e) });
+      return;
     }
 
     set({ overlayViewMode: mode, pixelDiffMatchRate: null });

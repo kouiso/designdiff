@@ -417,6 +417,29 @@ describe("useOverlayStore", () => {
       expect(useOverlayStore.getState().pixelDiffMatchRate).toBe(0.88);
     });
 
+    it("preserves matchRate and sets error when runPixelDiff throws", async () => {
+      vi.mocked(window.electronAPI.overlay.setMode).mockResolvedValue(undefined);
+      const runPixelDiff = useOverlayStore.getState().runPixelDiff;
+      useOverlayStore.setState({
+        isOpen: true,
+        overlayImageBase64: "img",
+        pixelDiffMatchRate: 0.88,
+        runPixelDiff: async () => {
+          throw new Error("pixel diff failed");
+        },
+      });
+
+      try {
+        await useOverlayStore.getState().setOverlayViewMode("pixel_diff");
+
+        const state = useOverlayStore.getState();
+        expect(state.pixelDiffMatchRate).toBe(0.88);
+        expect(state.error).toContain("pixel diff failed");
+      } finally {
+        useOverlayStore.setState({ runPixelDiff });
+      }
+    });
+
     it("sets error when setMode fails", async () => {
       vi.mocked(window.electronAPI.overlay.setMode).mockRejectedValueOnce(
         new Error("setMode exploded"),
