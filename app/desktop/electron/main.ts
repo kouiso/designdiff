@@ -1,6 +1,6 @@
 import { join } from "node:path";
 
-import { BrowserWindow, app, safeStorage, session } from "electron";
+import { BrowserWindow, app, dialog, safeStorage, session, shell } from "electron";
 
 import { registerFigmaHandlers } from "./ipc/figma";
 import { registerFileHandlers } from "./ipc/file";
@@ -8,8 +8,23 @@ import { registerOverlayHandlers } from "./ipc/overlay";
 import { registerProjectHandlers } from "./ipc/project";
 import { registerTokenHandlers } from "./ipc/token";
 
+const ALLOWED_EXTERNAL_HOSTS = ["figma.com", "github.com"];
+
+const isAllowedExternalUrl = (url: string): boolean => {
+  try {
+    const parsed = new URL(url);
+    if (!["http:", "https:"].includes(parsed.protocol)) return false;
+    return ALLOWED_EXTERNAL_HOSTS.some(
+      (host) => parsed.hostname === host || parsed.hostname.endsWith(`.${host}`),
+    );
+  } catch {
+    return false;
+  }
+};
+
 const isAllowedOrigin = (url: string, isDev = !app.isPackaged): boolean => {
   if (url.startsWith("file://")) return true;
+  if (isAllowedExternalUrl(url)) return true;
   if (isDev) {
     try {
       const parsed = new URL(url);
@@ -120,12 +135,27 @@ const createWindow = (): void => {
   });
 
   mainWindow.webContents.on("will-navigate", (event, url) => {
+    if (isAllowedExternalUrl(url)) {
+      event.preventDefault();
+      shell.openExternal(url).catch((error: unknown) => {
+        console.error("[main] failed to open external URL:", error);
+      });
+      return;
+    }
+
     if (!isAllowedOrigin(url)) {
       event.preventDefault();
     }
   });
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    if (isAllowedExternalUrl(url)) {
+      shell.openExternal(url).catch((error: unknown) => {
+        console.error("[main] failed to open external URL:", error);
+      });
+      return { action: "deny" };
+    }
+
     if (!isAllowedOrigin(url)) {
       return { action: "deny" };
     }
@@ -170,6 +200,10 @@ app.whenReady().then(() => {
       createWindow();
     }
   });
+}).catch((error: unknown) => {
+  console.error("[main] startup failed:", error);
+  dialog.showErrorBox("FigDiff failed to start", String(error));
+  app.quit();
 });
 
 app.on("window-all-closed", () => {
