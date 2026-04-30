@@ -160,7 +160,7 @@ describe("compareImages", () => {
     expect(resizeImageData).not.toHaveBeenCalled();
   });
 
-  it("幅が同じでも高さが異なる場合、クロップ前に既存方針でリサイズする", async () => {
+  it("幅が同じでも高さが異なる場合、cropRegion なしでは幅基準の事前リサイズをスキップする", async () => {
     const { imageElementToData, resizeImageData, resizeImageDataContainTop } = await import(
       "@/util/canvas-image"
     );
@@ -174,12 +174,58 @@ describe("compareImages", () => {
     vi.mocked(imageElementToData)
       .mockReturnValueOnce(makeImageData(10, 20))
       .mockReturnValueOnce(makeImageData(10, 30));
-    vi.mocked(resizeImageData).mockReturnValueOnce(makeImageData(10, 20));
     vi.mocked(resizeImageDataContainTop).mockReturnValueOnce(makeImageData(10, 30));
 
     await compareImages({ designImage: "abc", screenshotImage: "def" });
 
-    expect(resizeImageData).toHaveBeenCalledWith(expect.anything(), 10, 20);
+    expect(resizeImageData).not.toHaveBeenCalled();
+    expect(resizeImageDataContainTop).toHaveBeenCalledWith(expect.anything(), 10, 30);
+  });
+
+  it("cropRegion ありでサイズ不一致の場合、リサイズ後に期待座標でクロップする", async () => {
+    const { cropImageSource, imageElementToData, resizeImageDataContainTop } = await import(
+      "@/util/canvas-image"
+    );
+    const makeImageData = (width: number, height: number) => ({
+      data: new Uint8ClampedArray(width * height * 4),
+      width,
+      height,
+      colorSpace: "srgb" as const,
+    });
+    const cropRegion = { x: 3, y: 4, width: 5, height: 6 };
+
+    vi.mocked(imageElementToData)
+      .mockReturnValueOnce(makeImageData(20, 40))
+      .mockReturnValueOnce(makeImageData(10, 20));
+    vi.mocked(resizeImageDataContainTop).mockReturnValueOnce(makeImageData(10, 20));
+
+    await compareImages({
+      designImage: "abc",
+      screenshotImage: "def",
+      cropRegion,
+    });
+
+    expect(resizeImageDataContainTop).toHaveBeenCalledWith(expect.anything(), 10, 20);
+    expect(cropImageSource).toHaveBeenCalledTimes(2);
+    expect(cropImageSource).toHaveBeenNthCalledWith(
+      1,
+      expect.anything(),
+      cropRegion.x,
+      cropRegion.y,
+      cropRegion.width,
+      cropRegion.height,
+    );
+    expect(cropImageSource).toHaveBeenNthCalledWith(
+      2,
+      expect.anything(),
+      cropRegion.x,
+      cropRegion.y,
+      cropRegion.width,
+      cropRegion.height,
+    );
+    expect(vi.mocked(resizeImageDataContainTop).mock.invocationCallOrder[0]).toBeLessThan(
+      vi.mocked(cropImageSource).mock.invocationCallOrder[0],
+    );
   });
 
   it("cropRegion ありの場合、cropImageElement が呼ばれる", async () => {

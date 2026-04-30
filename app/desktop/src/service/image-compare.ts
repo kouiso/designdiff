@@ -53,10 +53,18 @@ export async function compareImages(options: CompareImagesOptions): Promise<Comp
   designData = imageElementToData(designImg);
   screenshotData = imageElementToData(screenshotImg);
 
-  const hasSameDimensions =
-    designData.width === screenshotData.width && designData.height === screenshotData.height;
-  if (!hasSameDimensions) {
-    // クロップ前は既存方針どおり、スクリーンショット幅に合わせてデザイン画像を同比率でリサイズする。
+  if (
+    cropRegion &&
+    (designData.width !== screenshotData.width || designData.height !== screenshotData.height)
+  ) {
+    // クロップ座標を両画像で同じ座標系として扱えるよう、クロップ前に幅・高さを揃える。
+    designData = resizeImageDataContainTop(
+      imageDataToCanvas(designData),
+      screenshotData.width,
+      screenshotData.height,
+    );
+  } else if (designData.width !== screenshotData.width) {
+    // クロップがない場合は既存方針どおり、スクリーンショット幅に合わせてデザイン画像を同比率でリサイズする。
     const resizeHeight = Math.round(designData.height * (screenshotData.width / designData.width));
     designData = resizeImageData(imageDataToCanvas(designData), screenshotData.width, resizeHeight);
   }
