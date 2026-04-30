@@ -81,6 +81,48 @@ describe("DesignInput", () => {
     expect(onSubmit).toHaveBeenCalledWith("/mock/design.png");
   });
 
+  it("子要素への移動ではドラッグ中の表示を維持する", () => {
+    const file = new File(["dummy"], "design.png", { type: "image/png" });
+
+    render(<DesignInput value="" onChange={vi.fn()} onSubmit={vi.fn()} />);
+    const input = screen.getByPlaceholderText(PLACEHOLDER);
+    const dropTarget = input.closest("div")?.parentElement;
+
+    expect(dropTarget).not.toBeNull();
+    const dataTransfer = {
+      files: [file],
+      items: [{ kind: "file" }],
+    };
+
+    fireEvent.dragEnter(dropTarget!, { dataTransfer });
+    expect(dropTarget).toHaveClass("border-primary");
+
+    fireEvent.dragEnter(input, { dataTransfer });
+    fireEvent.dragLeave(dropTarget!, { dataTransfer });
+    expect(dropTarget).toHaveClass("border-primary");
+
+    fireEvent.dragLeave(input, { dataTransfer });
+    expect(dropTarget).not.toHaveClass("border-primary");
+  });
+
+  it("画像ファイルのdragoverではdropを許可する", () => {
+    const file = new File(["dummy"], "design.png", { type: "image/png" });
+
+    render(<DesignInput value="" onChange={vi.fn()} onSubmit={vi.fn()} />);
+    const input = screen.getByPlaceholderText(PLACEHOLDER);
+    const dropTarget = input.closest("div")?.parentElement;
+
+    expect(dropTarget).not.toBeNull();
+    const isDefaultAllowed = fireEvent.dragOver(dropTarget!, {
+      dataTransfer: {
+        files: [file],
+        items: [{ kind: "file" }],
+      },
+    });
+
+    expect(isDefaultAllowed).toBe(false);
+  });
+
   it("画像以外のドロップは無視する", () => {
     const onChange = vi.fn();
     const onSubmit = vi.fn();
