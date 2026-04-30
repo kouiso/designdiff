@@ -181,30 +181,33 @@ app.on("second-instance", () => {
   }
 });
 
-app.whenReady().then(() => {
-  if (!app.isPackaged) {
-    // 未署名devビルドではmacOS Keychainが errSecInteractionNotAllowed を返すため、
-    // plaintext暗号化にフォールバック（本番ビルドでは実OS暗号化を使用）
-    safeStorage.setUsePlainTextEncryption(true);
-  }
-  setupCSP(!app.isPackaged);
-  registerFigmaHandlers();
-  registerTokenHandlers();
-  registerFileHandlers();
-  registerOverlayHandlers();
-  registerProjectHandlers();
-  createWindow();
-
-  app.on("activate", () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow();
+app
+  .whenReady()
+  .then(() => {
+    if (!app.isPackaged) {
+      // 未署名devビルドではmacOS Keychainが errSecInteractionNotAllowed を返すため、
+      // plaintext暗号化にフォールバック（本番ビルドでは実OS暗号化を使用）
+      safeStorage.setUsePlainTextEncryption(true);
     }
+    setupCSP(!app.isPackaged);
+    registerFigmaHandlers();
+    registerTokenHandlers();
+    registerFileHandlers();
+    registerOverlayHandlers();
+    registerProjectHandlers();
+    createWindow();
+
+    app.on("activate", () => {
+      if (BrowserWindow.getAllWindows().length === 0) {
+        createWindow();
+      }
+    });
+  })
+  .catch((error: unknown) => {
+    console.error("[main] startup failed:", error);
+    dialog.showErrorBox("FigDiff failed to start", String(error));
+    app.quit();
   });
-}).catch((error: unknown) => {
-  console.error("[main] startup failed:", error);
-  dialog.showErrorBox("FigDiff failed to start", String(error));
-  app.quit();
-});
 
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
