@@ -460,6 +460,32 @@ describe("useOverlayStore", () => {
       expect(useOverlayStore.getState().error).toContain("setMode exploded");
     });
 
+    it("updates store mode when pixel_diff scale update fails after setMode", async () => {
+      vi.mocked(window.electronAPI.overlay.setMode).mockResolvedValue(undefined);
+      vi.mocked(window.electronAPI.overlay.updateScale).mockRejectedValueOnce(
+        new Error("scale exploded"),
+      );
+      vi.mocked(window.electronAPI.overlay.captureScreenshot).mockResolvedValueOnce("cap==");
+      vi.mocked(imageCompare.compareImages).mockResolvedValueOnce({
+        matchRate: 0.91,
+        mismatchCount: 90,
+        diffImageBase64: "data:image/png;base64,diff==",
+        diffRegions: [],
+      });
+
+      useOverlayStore.setState({
+        isOpen: true,
+        overlayImageBase64: "img",
+        overlayViewMode: "transparent_overlay",
+      });
+      await useOverlayStore.getState().setOverlayViewMode("pixel_diff");
+
+      const state = useOverlayStore.getState();
+      expect(state.overlayViewMode).toBe("pixel_diff");
+      expect(state.pixelDiffMatchRate).toBe(0.91);
+      expect(state.error).toContain("scale exploded");
+    });
+
     it("updates store mode when non-pixel scale update fails after setMode", async () => {
       vi.mocked(window.electronAPI.overlay.setMode).mockResolvedValueOnce(undefined);
       vi.mocked(window.electronAPI.overlay.updateScale).mockRejectedValueOnce(

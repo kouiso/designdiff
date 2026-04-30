@@ -200,23 +200,25 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
     const overlay = await getOverlay();
     if (!overlay) return;
 
+    let modeApplied = false;
     try {
       await overlay.setMode(mode, overlayImageBase64, opacity, splitPosition);
+      modeApplied = true;
       await overlay.updateScale(overlayScale, overlayScaleMode);
 
       if (mode === "toggle") {
         await overlay.toggleStart(get().toggleIntervalMs);
         set({ isToggling: true });
       }
-
-      if (mode === "pixel_diff") {
-        set({ overlayViewMode: mode });
-        await get().runPixelDiff();
-        return;
-      }
     } catch (e) {
       set({ error: String(e) });
-      if (mode === "pixel_diff") return;
+      if (mode === "pixel_diff" && !modeApplied) return;
+    }
+
+    if (mode === "pixel_diff") {
+      set({ overlayViewMode: mode });
+      await get().runPixelDiff();
+      return;
     }
 
     set({ overlayViewMode: mode, pixelDiffMatchRate: null, pixelDiffError: null });
