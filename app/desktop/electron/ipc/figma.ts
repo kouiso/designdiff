@@ -47,10 +47,13 @@ export const registerFigmaHandlers = (): void => {
     return extractPageFrames(pageNode);
   });
 
-  ipcMain.handle("figma:get-node-detail", async (_event, fileKey: string, nodeId: string) => {
-    const token = requireToken();
-    const client = new FigmaClient(token, getCache());
-    const node = await client.getNode(fileKey, nodeId);
-    return transformNode(node);
-  });
+  ipcMain.handle(
+    "figma:get-node-detail",
+    async (_event, fileKey: string, nodeId: string, depth = 3) => {
+      const token = requireToken();
+      const client = new FigmaClient(token, getCache());
+      const node = await client.getNode(fileKey, nodeId, depth);
+      return transformNode(node);
+    },
+  );
 };
