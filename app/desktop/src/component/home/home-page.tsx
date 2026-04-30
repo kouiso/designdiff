@@ -103,6 +103,7 @@ export const HomePage = ({ onNavigate }: HomePageProps) => {
       const { frames } = useProjectStore.getState();
       if (frames.length > 0 && frames[0]) {
         await useProjectStore.getState().selectFrame(frames[0]);
+        if (useProjectStore.getState().error) return;
       }
       useOverlayStore.getState().setUrl(trimmedImplUrl);
       ensureQuickCompareTab("live_overlay");
@@ -118,7 +119,7 @@ export const HomePage = ({ onNavigate }: HomePageProps) => {
     useProjectStore.setState({ error: t("home.noDesignFound") });
   };
 
-  const handleNavigateAfterLoadError = (err: unknown): void => {
+  const handleLoadError = (err: unknown): void => {
     console.error(err);
     useProjectStore.setState({ error: String(err), isLoading: false });
   };
@@ -132,7 +133,7 @@ export const HomePage = ({ onNavigate }: HomePageProps) => {
     const { error: loadErr } = useProjectStore.getState();
     if (loadErr) return;
 
-    await navigateAfterLoad().catch(handleNavigateAfterLoadError);
+    await navigateAfterLoad().catch(handleLoadError);
   };
 
   const tryPageDetection = async (
@@ -208,9 +209,9 @@ export const HomePage = ({ onNavigate }: HomePageProps) => {
       const { error: loadErr } = useProjectStore.getState();
       if (loadErr) return;
 
-      await navigateAfterLoad().catch(handleNavigateAfterLoadError);
-    } catch {
-      useProjectStore.setState({ isLoading: false });
+      await navigateAfterLoad();
+    } catch (err) {
+      handleLoadError(err);
     }
   };
 
