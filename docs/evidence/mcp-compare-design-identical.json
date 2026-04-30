@@ -1,13 +1,13 @@
 {
   "test": "MCP compare_design — identical images",
-  "timestamp": "2026-04-30T09:21:20.684Z",
+  "timestamp": "2026-04-30T00:00:00.000Z",
   "input": {
     "design": "200x200 blue",
     "screenshot": "200x200 blue"
   },
   "result": {
     "status": "PASS",
-    "comparisonId": "cmp-59004b4a-fb48-4cf9-8d9f-aeafa6c758d1",
+    "comparisonId": "cmp-evidence",
     "matchRate": 100,
     "diffPixelCount": 0,
     "totalPixelCount": 40000,

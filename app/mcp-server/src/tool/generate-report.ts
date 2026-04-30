@@ -18,26 +18,30 @@ const DESCRIPTION =
   "compare_designの返り値をcomparison_resultにJSON文字列またはオブジェクトで渡して、MarkdownまたはJSONレポートを生成します。";
 
 const comparisonResultInputSchema = z.union([z.string(), z.object({}).passthrough()]);
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
+const comparisonResultRecordSchema = z.record(z.string(), z.unknown());
 
 function normalizeComparisonResultInput(
   input: z.infer<typeof comparisonResultInputSchema>,
 ): unknown {
   const parsed: unknown = typeof input === "string" ? JSON.parse(input) : input;
 
-  if (!isRecord(parsed)) {
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
     return parsed;
   }
 
+  const resultParse = comparisonResultRecordSchema.safeParse(parsed);
+  if (!resultParse.success) {
+    return parsed;
+  }
+
+  const result = resultParse.data;
+
   return {
-    comparisonId: parsed.comparisonId ?? `cmp-${Date.now()}`,
-    ...parsed,
-    totalPixelCount: parsed.totalPixelCount ?? parsed.totalPixels,
-    diffRegions: parsed.diffRegions ?? parsed.regions ?? [],
-    suggestion: parsed.suggestion ?? "",
+    comparisonId: result.comparisonId ?? `cmp-${Date.now()}`,
+    ...result,
+    totalPixelCount: result.totalPixelCount ?? result.totalPixels,
+    diffRegions: result.diffRegions ?? result.regions ?? [],
+    suggestion: result.suggestion ?? "",
   };
 }
 
@@ -81,7 +85,7 @@ export function registerGenerateReport(server: McpServer): void {
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         return {
-          content: [{ type: "text" as const, text: `Error: ${message}` }],
+          content: [{ type: "text", text: `Error: ${message}` }],
           isError: true,
         };
       }
