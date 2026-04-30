@@ -45,8 +45,7 @@ export function DesignInput({ value, onChange, onSubmit, disabled }: DesignInput
     }
   };
 
-  const hasFileItem = (dataTransfer: DataTransfer) =>
-    Array.from(dataTransfer.items).some((item) => item.kind === "file");
+  const hasFileItem = (dataTransfer: DataTransfer) => dataTransfer.types.includes("Files");
 
   const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
     if (disabled) return;
@@ -65,17 +64,16 @@ export function DesignInput({ value, onChange, onSubmit, disabled }: DesignInput
   };
 
   const handleDragLeave = () => {
-    if (disabled) return;
-
     dragCounter.current = Math.max(0, dragCounter.current - 1);
     setIsDraggingImage(dragCounter.current > 0);
   };
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    if (disabled) return;
     e.preventDefault();
     dragCounter.current = 0;
     setIsDraggingImage(false);
+
+    if (disabled) return;
 
     const file = Array.from(e.dataTransfer.files).find(isImageFile);
     if (!file) return;

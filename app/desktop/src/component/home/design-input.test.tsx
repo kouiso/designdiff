@@ -7,6 +7,12 @@ const PLACEHOLDER = "Figma URL またはローカル画像パス...";
 
 afterEach(cleanup);
 
+const createFileDataTransfer = (file: File) => ({
+  files: [file],
+  items: [{ kind: "file" }],
+  types: ["Files"],
+});
+
 describe("DesignInput", () => {
   it("renders input with placeholder", () => {
     render(<DesignInput value="" onChange={vi.fn()} onSubmit={vi.fn()} />);
@@ -70,10 +76,7 @@ describe("DesignInput", () => {
 
     expect(dropTarget).not.toBeNull();
     fireEvent.drop(dropTarget!, {
-      dataTransfer: {
-        files: [file],
-        items: [{ kind: "file" }],
-      },
+      dataTransfer: createFileDataTransfer(file),
     });
 
     expect(window.electronAPI.getPathForFile).toHaveBeenCalledWith(file);
@@ -89,10 +92,7 @@ describe("DesignInput", () => {
     const dropTarget = input.closest("div")?.parentElement;
 
     expect(dropTarget).not.toBeNull();
-    const dataTransfer = {
-      files: [file],
-      items: [{ kind: "file" }],
-    };
+    const dataTransfer = createFileDataTransfer(file);
 
     fireEvent.dragEnter(dropTarget!, { dataTransfer });
     expect(dropTarget).toHaveClass("border-primary");
@@ -114,10 +114,7 @@ describe("DesignInput", () => {
 
     expect(dropTarget).not.toBeNull();
     const isDefaultAllowed = fireEvent.dragOver(dropTarget!, {
-      dataTransfer: {
-        files: [file],
-        items: [{ kind: "file" }],
-      },
+      dataTransfer: createFileDataTransfer(file),
     });
 
     expect(isDefaultAllowed).toBe(false);
@@ -134,10 +131,7 @@ describe("DesignInput", () => {
 
     expect(dropTarget).not.toBeNull();
     fireEvent.drop(dropTarget!, {
-      dataTransfer: {
-        files: [file],
-        items: [{ kind: "file" }],
-      },
+      dataTransfer: createFileDataTransfer(file),
     });
 
     expect(onChange).not.toHaveBeenCalled();
@@ -148,5 +142,43 @@ describe("DesignInput", () => {
     render(<DesignInput value="" onChange={vi.fn()} onSubmit={vi.fn()} disabled />);
     const input = screen.getByPlaceholderText(PLACEHOLDER);
     expect(input).toBeDisabled();
+  });
+
+  it("ドラッグ中にdisabledへ変わってもdragLeaveで表示を解除する", () => {
+    const file = new File(["dummy"], "design.png", { type: "image/png" });
+    const { rerender } = render(<DesignInput value="" onChange={vi.fn()} onSubmit={vi.fn()} />);
+    const input = screen.getByPlaceholderText(PLACEHOLDER);
+    const dropTarget = input.closest("div")?.parentElement;
+
+    expect(dropTarget).not.toBeNull();
+    const dataTransfer = createFileDataTransfer(file);
+    fireEvent.dragEnter(dropTarget!, { dataTransfer });
+    expect(dropTarget).toHaveClass("border-primary");
+
+    rerender(<DesignInput value="" onChange={vi.fn()} onSubmit={vi.fn()} disabled />);
+    fireEvent.dragLeave(dropTarget!, { dataTransfer });
+    expect(dropTarget).not.toHaveClass("border-primary");
+  });
+
+  it("disabled中のドロップでも既定動作を止めてドラッグ表示を解除する", () => {
+    const onChange = vi.fn();
+    const onSubmit = vi.fn();
+    const file = new File(["dummy"], "design.png", { type: "image/png" });
+    const { rerender } = render(<DesignInput value="" onChange={onChange} onSubmit={onSubmit} />);
+    const input = screen.getByPlaceholderText(PLACEHOLDER);
+    const dropTarget = input.closest("div")?.parentElement;
+
+    expect(dropTarget).not.toBeNull();
+    const dataTransfer = createFileDataTransfer(file);
+    fireEvent.dragEnter(dropTarget!, { dataTransfer });
+    expect(dropTarget).toHaveClass("border-primary");
+
+    rerender(<DesignInput value="" onChange={onChange} onSubmit={onSubmit} disabled />);
+    const isDefaultAllowed = fireEvent.drop(dropTarget!, { dataTransfer });
+
+    expect(isDefaultAllowed).toBe(false);
+    expect(dropTarget).not.toHaveClass("border-primary");
+    expect(onChange).not.toHaveBeenCalled();
+    expect(onSubmit).not.toHaveBeenCalled();
   });
 });
