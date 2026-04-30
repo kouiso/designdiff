@@ -25,6 +25,7 @@ interface OverlayState {
   isToggling: boolean;
   isPixelDiffRunning: boolean;
   pixelDiffMatchRate: number | null;
+  pixelDiffError: string | null;
 
   setUrl: (url: string) => void;
   openSite: () => Promise<void>;
@@ -62,6 +63,7 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
   isToggling: false,
   isPixelDiffRunning: false,
   pixelDiffMatchRate: null,
+  pixelDiffError: null,
 
   setUrl: (url) => set({ url }),
 
@@ -101,6 +103,7 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
         showOverlay: false,
         overlayViewMode: "transparent_overlay",
         pixelDiffMatchRate: null,
+        pixelDiffError: null,
         isPixelDiffRunning: false,
         isToggling: false,
         error: null,
@@ -213,10 +216,10 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
       }
     } catch (e) {
       set({ error: String(e) });
-      return;
+      if (mode === "pixel_diff") return;
     }
 
-    set({ overlayViewMode: mode, pixelDiffMatchRate: null });
+    set({ overlayViewMode: mode, pixelDiffMatchRate: null, pixelDiffError: null });
   },
 
   setSplitPosition: async (position) => {
@@ -289,7 +292,7 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
     const { overlayImageBase64, captureForComparison, isPixelDiffRunning } = get();
     if (!overlayImageBase64 || isPixelDiffRunning) return;
 
-    set({ isPixelDiffRunning: true, pixelDiffMatchRate: null });
+    set({ isPixelDiffRunning: true, pixelDiffError: null });
     try {
       const capturedBase64 = await captureForComparison();
       const result = await compareImages({
@@ -306,9 +309,14 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
       const diffBase64 = result.diffImageBase64.replace(/^data:image\/png;base64,/, "");
       await overlay.setMode("pixel_diff", diffBase64, 0.7, 0.5);
       await overlay.updateScale(get().overlayScale, get().overlayScaleMode);
-      set({ isPixelDiffRunning: false, pixelDiffMatchRate: result.matchRate });
+      set({
+        isPixelDiffRunning: false,
+        pixelDiffMatchRate: result.matchRate,
+        pixelDiffError: null,
+      });
     } catch (e) {
-      set({ isPixelDiffRunning: false, error: String(e) });
+      const message = String(e);
+      set({ isPixelDiffRunning: false, error: message, pixelDiffError: message });
     }
   },
 }));
