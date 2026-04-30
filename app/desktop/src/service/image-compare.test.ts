@@ -152,6 +152,36 @@ describe("compareImages", () => {
     expect(imageElementToData).toHaveBeenCalledTimes(2);
   });
 
+  it("デザイン画像とスクリーンショットの幅・高さが同じ場合、事前リサイズをスキップする", async () => {
+    const { resizeImageData } = await import("@/util/canvas-image");
+
+    await compareImages({ designImage: "abc", screenshotImage: "def" });
+
+    expect(resizeImageData).not.toHaveBeenCalled();
+  });
+
+  it("幅が同じでも高さが異なる場合、クロップ前に既存方針でリサイズする", async () => {
+    const { imageElementToData, resizeImageData, resizeImageDataContainTop } = await import(
+      "@/util/canvas-image"
+    );
+    const makeImageData = (width: number, height: number) => ({
+      data: new Uint8ClampedArray(width * height * 4),
+      width,
+      height,
+      colorSpace: "srgb" as const,
+    });
+
+    vi.mocked(imageElementToData)
+      .mockReturnValueOnce(makeImageData(10, 20))
+      .mockReturnValueOnce(makeImageData(10, 30));
+    vi.mocked(resizeImageData).mockReturnValueOnce(makeImageData(10, 20));
+    vi.mocked(resizeImageDataContainTop).mockReturnValueOnce(makeImageData(10, 30));
+
+    await compareImages({ designImage: "abc", screenshotImage: "def" });
+
+    expect(resizeImageData).toHaveBeenCalledWith(expect.anything(), 10, 20);
+  });
+
   it("cropRegion ありの場合、cropImageElement が呼ばれる", async () => {
     const { cropImageSource } = await import("@/util/canvas-image");
     await compareImages({

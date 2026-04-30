@@ -53,7 +53,10 @@ export async function compareImages(options: CompareImagesOptions): Promise<Comp
   designData = imageElementToData(designImg);
   screenshotData = imageElementToData(screenshotImg);
 
-  if (designData.width !== screenshotData.width) {
+  const hasSameDimensions =
+    designData.width === screenshotData.width && designData.height === screenshotData.height;
+  if (!hasSameDimensions) {
+    // クロップ前は既存方針どおり、スクリーンショット幅に合わせてデザイン画像を同比率でリサイズする。
     const resizeHeight = Math.round(designData.height * (screenshotData.width / designData.width));
     designData = resizeImageData(imageDataToCanvas(designData), screenshotData.width, resizeHeight);
   }
