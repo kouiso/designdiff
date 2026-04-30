@@ -22,9 +22,16 @@ const isAllowedExternalUrl = (url: string): boolean => {
   }
 };
 
+const handleExternalUrl = (url: string): boolean => {
+  if (!isAllowedExternalUrl(url)) return false;
+  shell.openExternal(url).catch((error: unknown) => {
+    console.error("[main] failed to open external URL:", url, error);
+  });
+  return true;
+};
+
 const isAllowedOrigin = (url: string, isDev = !app.isPackaged): boolean => {
   if (url.startsWith("file://")) return true;
-  if (isAllowedExternalUrl(url)) return true;
   if (isDev) {
     try {
       const parsed = new URL(url);
@@ -34,6 +41,15 @@ const isAllowedOrigin = (url: string, isDev = !app.isPackaged): boolean => {
     }
   }
   return false;
+};
+
+const formatUnknownError = (error: unknown): string => {
+  if (error instanceof Error) return error.stack ?? error.message;
+  try {
+    return JSON.stringify(error);
+  } catch {
+    return String(error);
+  }
 };
 
 const setupCSP = (isDev: boolean): void => {
@@ -135,11 +151,8 @@ const createWindow = (): void => {
   });
 
   mainWindow.webContents.on("will-navigate", (event, url) => {
-    if (isAllowedExternalUrl(url)) {
+    if (handleExternalUrl(url)) {
       event.preventDefault();
-      shell.openExternal(url).catch((error: unknown) => {
-        console.error("[main] failed to open external URL:", error);
-      });
       return;
     }
 
@@ -149,10 +162,7 @@ const createWindow = (): void => {
   });
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    if (isAllowedExternalUrl(url)) {
-      shell.openExternal(url).catch((error: unknown) => {
-        console.error("[main] failed to open external URL:", error);
-      });
+    if (handleExternalUrl(url)) {
       return { action: "deny" };
     }
 
@@ -205,7 +215,7 @@ app
   })
   .catch((error: unknown) => {
     console.error("[main] startup failed:", error);
-    dialog.showErrorBox("FigDiff failed to start", String(error));
+    dialog.showErrorBox("FigDiff failed to start", formatUnknownError(error));
     app.quit();
   });
 
