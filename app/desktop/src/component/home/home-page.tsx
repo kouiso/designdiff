@@ -118,6 +118,11 @@ export const HomePage = ({ onNavigate }: HomePageProps) => {
     useProjectStore.setState({ error: t("home.noDesignFound") });
   };
 
+  const handleNavigateAfterLoadError = (err: unknown): void => {
+    console.error(err);
+    useProjectStore.setState({ error: String(err), isLoading: false });
+  };
+
   const handleFrameSelect = async (frame: Frame) => {
     setPageFrames([]);
     const frameUrl = buildFigmaFrameUrl(pageBaseUrl, frame.id);
@@ -127,7 +132,7 @@ export const HomePage = ({ onNavigate }: HomePageProps) => {
     const { error: loadErr } = useProjectStore.getState();
     if (loadErr) return;
 
-    navigateAfterLoad();
+    await navigateAfterLoad().catch(handleNavigateAfterLoadError);
   };
 
   const tryPageDetection = async (
@@ -203,7 +208,7 @@ export const HomePage = ({ onNavigate }: HomePageProps) => {
       const { error: loadErr } = useProjectStore.getState();
       if (loadErr) return;
 
-      navigateAfterLoad();
+      await navigateAfterLoad().catch(handleNavigateAfterLoadError);
     } catch {
       useProjectStore.setState({ isLoading: false });
     }
