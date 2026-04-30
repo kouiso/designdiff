@@ -12,12 +12,13 @@ import {
 
 import { buildDiffReport } from "@/service/diff-report";
 import {
-  cropImageElement,
+  cropImageSource,
   imageDataToBase64,
   imageDataToCanvas,
   imageElementToData,
   loadImageElement,
   resizeImageData,
+  resizeImageDataContainTop,
 } from "@/util/canvas-image";
 
 interface CompareImagesOptions {
@@ -49,29 +50,37 @@ export async function compareImages(options: CompareImagesOptions): Promise<Comp
   let designData: ImageData;
   let screenshotData: ImageData;
 
+  designData = imageElementToData(designImg);
+  screenshotData = imageElementToData(screenshotImg);
+
+  if (designData.width !== screenshotData.width) {
+    const resizeHeight = Math.round(designData.height * (screenshotData.width / designData.width));
+    designData = resizeImageData(imageDataToCanvas(designData), screenshotData.width, resizeHeight);
+  }
+
   if (cropRegion) {
-    designData = cropImageElement(
-      designImg,
+    designData = cropImageSource(
+      imageDataToCanvas(designData),
       cropRegion.x,
       cropRegion.y,
       cropRegion.width,
       cropRegion.height,
     );
-    screenshotData = cropImageElement(
-      screenshotImg,
+    screenshotData = cropImageSource(
+      imageDataToCanvas(screenshotData),
       cropRegion.x,
       cropRegion.y,
       cropRegion.width,
       cropRegion.height,
     );
-  } else {
-    designData = imageElementToData(designImg);
-    screenshotData = imageElementToData(screenshotImg);
   }
 
   if (designData.width !== screenshotData.width || designData.height !== screenshotData.height) {
-    const sourceCanvas = imageDataToCanvas(designData);
-    designData = resizeImageData(sourceCanvas, screenshotData.width, screenshotData.height);
+    designData = resizeImageDataContainTop(
+      imageDataToCanvas(designData),
+      screenshotData.width,
+      screenshotData.height,
+    );
   }
 
   const { width, height } = screenshotData;

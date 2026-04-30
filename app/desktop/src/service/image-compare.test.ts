@@ -16,7 +16,9 @@ vi.mock("@/util/canvas-image", () => {
     loadImageElement: vi.fn().mockResolvedValue(mockImg),
     imageElementToData: vi.fn().mockReturnValue(makeImageData(10, 10)),
     cropImageElement: vi.fn().mockReturnValue(makeImageData(10, 10)),
+    cropImageSource: vi.fn().mockReturnValue(makeImageData(10, 10)),
     resizeImageData: vi.fn().mockReturnValue(makeImageData(10, 10)),
+    resizeImageDataContainTop: vi.fn().mockReturnValue(makeImageData(10, 10)),
     imageDataToCanvas: vi
       .fn()
       .mockReturnValue({ toDataURL: () => "data:image/png;base64,mockBase64" }),
@@ -151,13 +153,13 @@ describe("compareImages", () => {
   });
 
   it("cropRegion ありの場合、cropImageElement が呼ばれる", async () => {
-    const { cropImageElement } = await import("@/util/canvas-image");
+    const { cropImageSource } = await import("@/util/canvas-image");
     await compareImages({
       designImage: "abc",
       screenshotImage: "def",
       cropRegion: { x: 0, y: 0, width: 10, height: 10 },
     });
-    expect(cropImageElement).toHaveBeenCalledTimes(2);
+    expect(cropImageSource).toHaveBeenCalledTimes(2);
   });
 
   it("base64 プレフィックス data:image/png;base64, が除去される", async () => {
