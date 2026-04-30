@@ -61,6 +61,10 @@ async function createTestImage(
     .toBuffer();
 }
 
+async function writeEvidenceJson(fileName: string, evidence: unknown): Promise<void> {
+  await fs.writeFile(path.join(EVIDENCE_DIR, fileName), `${JSON.stringify(evidence, null, 2)}\n`);
+}
+
 describe("MCP Server E2E: compare_design", () => {
   let client: Client;
   let designPath: string;
@@ -122,10 +126,7 @@ describe("MCP Server E2E: compare_design", () => {
       toolCount: result.tools.length,
       tools: toolNames,
     };
-    await fs.writeFile(
-      path.join(EVIDENCE_DIR, "mcp-list-tools.json"),
-      JSON.stringify(evidence, null, 2),
-    );
+    await writeEvidenceJson("mcp-list-tools.json", evidence);
   });
 
   it("同一画像比較で matchRate 100% が返ること", async () => {
@@ -157,10 +158,7 @@ describe("MCP Server E2E: compare_design", () => {
       input: { design: "200x200 blue", screenshot: "200x200 blue" },
       result: data,
     };
-    await fs.writeFile(
-      path.join(EVIDENCE_DIR, "mcp-compare-design-identical.json"),
-      JSON.stringify(evidence, null, 2),
-    );
+    await writeEvidenceJson("mcp-compare-design-identical.json", evidence);
   });
 
   it("異なる画像比較で差分が検出されること", async () => {
@@ -199,10 +197,7 @@ describe("MCP Server E2E: compare_design", () => {
       result: data,
       hasDiffImage: Boolean(imageContent),
     };
-    await fs.writeFile(
-      path.join(EVIDENCE_DIR, "mcp-compare-design-diff.json"),
-      JSON.stringify(evidence, null, 2),
-    );
+    await writeEvidenceJson("mcp-compare-design-diff.json", evidence);
   });
 
   it("差分率が単調減少するループを証明できること", async () => {
@@ -273,10 +268,7 @@ describe("MCP Server E2E: compare_design", () => {
       ],
       monotonicallyDecreasing: true,
     };
-    await fs.writeFile(
-      path.join(EVIDENCE_DIR, "mcp-diff-loop-evidence.json"),
-      JSON.stringify(evidence, null, 2),
-    );
+    await writeEvidenceJson("mcp-diff-loop-evidence.json", evidence);
   });
 
   it("crop_region の保存と取得ができること", async () => {
