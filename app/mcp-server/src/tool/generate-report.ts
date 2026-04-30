@@ -18,17 +18,19 @@ const DESCRIPTION =
   "compare_designの返り値をcomparison_resultにJSON文字列またはオブジェクトで渡して、MarkdownまたはJSONレポートを生成します。";
 
 const comparisonResultInputSchema = z.union([z.string(), z.object({}).passthrough()]);
+const comparisonResultObjectSchema = z.record(z.string(), z.unknown());
 
 function normalizeComparisonResultInput(
   input: z.infer<typeof comparisonResultInputSchema>,
 ): unknown {
-  const parsed = typeof input === "string" ? JSON.parse(input) : input;
+  const parsed: unknown = typeof input === "string" ? JSON.parse(input) : input;
 
-  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+  const objectResult = comparisonResultObjectSchema.safeParse(parsed);
+  if (!objectResult.success) {
     return parsed;
   }
 
-  const result = parsed as Record<string, unknown>;
+  const result = objectResult.data;
 
   return {
     comparisonId: result.comparisonId ?? `cmp-${Date.now()}`,

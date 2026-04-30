@@ -5,8 +5,6 @@ import { fileURLToPath } from "node:url";
 
 import { z } from "zod";
 
-import { compareImages } from "../../app/mcp-server/dist/service/image-compare-service.js";
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -15,6 +13,7 @@ const OUTPUT_DIR = path.resolve(__dirname, "../correlation");
 const JSON_OUTPUT_PATH = path.join(OUTPUT_DIR, "baseline-report.json");
 const MARKDOWN_OUTPUT_PATH = path.join(OUTPUT_DIR, "baseline-report.md");
 const THRESHOLD = 0.1;
+let compareImagesPromise = null;
 
 const DiffIssueKindSchema = z.enum(["color", "position", "size", "missing", "extra", "typography"]);
 
@@ -232,6 +231,14 @@ async function loadBase64(filePath) {
   return buffer.toString("base64");
 }
 
+async function loadCompareImages() {
+  if (!compareImagesPromise) {
+    compareImagesPromise = import("../../app/mcp-server/dist/service/image-compare-service.js");
+  }
+  const { compareImages } = await compareImagesPromise;
+  return compareImages;
+}
+
 function formatPercent(value) {
   return value === null ? "n/a" : `${value.toFixed(1)}%`;
 }
@@ -303,6 +310,7 @@ function buildSnapshotTimestamp() {
  * @returns {Promise<CorrelationRow[]>}
  */
 async function measureFixture(fixtureDirName) {
+  const compareImages = await loadCompareImages();
   const fixtureDir = path.join(FIXTURES_ROOT, fixtureDirName);
   const expectedPath = path.join(fixtureDir, "expected.json");
   const expectation = await readJson(expectedPath, FixtureExpectationSchema);
