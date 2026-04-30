@@ -18,21 +18,23 @@ const DESCRIPTION =
   "compare_designの返り値をcomparison_resultにJSON文字列またはオブジェクトで渡して、MarkdownまたはJSONレポートを生成します。";
 
 const comparisonResultInputSchema = z.union([z.string(), z.object({}).passthrough()]);
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return !!value && typeof value === "object" && !Array.isArray(value);
-}
+const comparisonResultRecordSchema = z.record(z.string(), z.unknown());
 
 function normalizeComparisonResultInput(
   input: z.infer<typeof comparisonResultInputSchema>,
 ): unknown {
   const parsed: unknown = typeof input === "string" ? JSON.parse(input) : input;
 
-  if (!isRecord(parsed)) {
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
     return parsed;
   }
 
-  const result = parsed;
+  const resultParse = comparisonResultRecordSchema.safeParse(parsed);
+  if (!resultParse.success) {
+    return parsed;
+  }
+
+  const result = resultParse.data;
 
   return {
     comparisonId: result.comparisonId ?? `cmp-${Date.now()}`,
@@ -83,7 +85,7 @@ export function registerGenerateReport(server: McpServer): void {
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         return {
-          content: [{ type: "text" as const, text: `Error: ${message}` }],
+          content: [{ type: "text", text: `Error: ${message}` }],
           isError: true,
         };
       }
