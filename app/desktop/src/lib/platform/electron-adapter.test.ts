@@ -151,6 +151,11 @@ describe("electronOverlayAdapter", () => {
     expect(window.electronAPI.overlay.updateSplitPosition).toHaveBeenCalledWith(0.3);
   });
 
+  it("updateScale が scale と scaleMode を渡す", async () => {
+    await electronOverlayAdapter.updateScale(0.75, "actual_size");
+    expect(window.electronAPI.overlay.updateScale).toHaveBeenCalledWith(0.75, "actual_size");
+  });
+
   it("toggleStart が intervalMs を渡す", async () => {
     await electronOverlayAdapter.toggleStart(500);
     expect(window.electronAPI.overlay.toggleStart).toHaveBeenCalledWith(500);

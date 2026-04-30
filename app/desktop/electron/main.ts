@@ -8,10 +8,17 @@ import { registerOverlayHandlers } from "./ipc/overlay";
 import { registerProjectHandlers } from "./ipc/project";
 import { registerTokenHandlers } from "./ipc/token";
 
-const ALLOWED_ORIGINS = ["http://localhost:5173", "http://localhost:5174", "file://"];
-
-const isAllowedOrigin = (url: string): boolean => {
-  return ALLOWED_ORIGINS.some((origin) => url.startsWith(origin));
+const isAllowedOrigin = (url: string, isDev = !app.isPackaged): boolean => {
+  if (url.startsWith("file://")) return true;
+  if (isDev) {
+    try {
+      const parsed = new URL(url);
+      return ["localhost", "127.0.0.1", "::1"].includes(parsed.hostname);
+    } catch {
+      return false;
+    }
+  }
+  return false;
 };
 
 const setupCSP = (isDev: boolean): void => {
@@ -30,7 +37,7 @@ const setupCSP = (isDev: boolean): void => {
         "Content-Security-Policy": [
           [
             "default-src 'self'",
-            `script-src 'self'${isDev ? " 'unsafe-eval'" : ""}`,
+            `script-src 'self'${isDev ? " 'unsafe-eval' 'unsafe-inline'" : ""}`,
             "style-src 'self' 'unsafe-inline'",
             "img-src 'self' data: https://figma-alpha-api.s3.us-west-2.amazonaws.com https://*.figma.com",
             `connect-src ${connectSrc}`,
@@ -44,6 +51,7 @@ const setupCSP = (isDev: boolean): void => {
 
 const createWindow = (): void => {
   const preloadPath = join(__dirname, "../preload/preload.cjs");
+  let retriedBlankRenderer = false;
   const mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
@@ -59,14 +67,6 @@ const createWindow = (): void => {
     },
   });
 
-  if (!app.isPackaged) {
-    try {
-      mainWindow.webContents.debugger.attach("1.3");
-    } catch (_e) {
-      // debugger already attached
-    }
-  }
-
   mainWindow.webContents.on("did-finish-load", () => {
     mainWindow.show();
     mainWindow.moveTop();
@@ -78,8 +78,41 @@ const createWindow = (): void => {
     }
   });
 
+  mainWindow.webContents.on("dom-ready", () => {
+    if (app.isPackaged || retriedBlankRenderer) return;
+
+    setTimeout(() => {
+      mainWindow.webContents
+        .executeJavaScript("Boolean(document.querySelector('#root')?.children.length)", true)
+        .then((hasRendered) => {
+          if (hasRendered || retriedBlankRenderer) return;
+          retriedBlankRenderer = true;
+          console.warn("[main] renderer root is blank after load; reloading dev renderer once");
+          mainWindow.reload();
+        })
+        .catch((error: unknown) => {
+          console.error("[main] failed to inspect renderer root:", error);
+        });
+    }, 800);
+  });
+
   mainWindow.webContents.on("did-fail-load", (_event, code, desc) => {
     console.error("[main] did-fail-load:", code, desc);
+  });
+
+  mainWindow.webContents.on("console-message", (details) => {
+    if (app.isPackaged) return;
+    console.warn(
+      `[renderer:${details.level}] ${details.message} (${details.sourceId}:${details.lineNumber})`,
+    );
+  });
+
+  mainWindow.webContents.on("render-process-gone", (_event, details) => {
+    console.error("[main] render-process-gone:", details);
+  });
+
+  mainWindow.webContents.on("unresponsive", () => {
+    console.error("[main] renderer became unresponsive");
   });
 
   mainWindow.webContents.on("preload-error", (_event, preload, error) => {

@@ -32,6 +32,8 @@ export function LiveOverlayPanel({ onNavigate }: LiveOverlayPanelProps) {
   const error = useOverlayStore((s) => s.error);
   const overlayViewMode = useOverlayStore((s) => s.overlayViewMode);
   const splitPosition = useOverlayStore((s) => s.splitPosition);
+  const overlayScale = useOverlayStore((s) => s.overlayScale);
+  const overlayScaleMode = useOverlayStore((s) => s.overlayScaleMode);
   const toggleIntervalMs = useOverlayStore((s) => s.toggleIntervalMs);
   const isPixelDiffRunning = useOverlayStore((s) => s.isPixelDiffRunning);
   const pixelDiffMatchRate = useOverlayStore((s) => s.pixelDiffMatchRate);
@@ -42,6 +44,8 @@ export function LiveOverlayPanel({ onNavigate }: LiveOverlayPanelProps) {
   const toggleOverlay = useOverlayStore((s) => s.toggleOverlay);
   const setOverlayImage = useOverlayStore((s) => s.setOverlayImage);
   const setSplitPosition = useOverlayStore((s) => s.setSplitPosition);
+  const setOverlayScale = useOverlayStore((s) => s.setOverlayScale);
+  const setOverlayScaleMode = useOverlayStore((s) => s.setOverlayScaleMode);
   const setToggleIntervalMs = useOverlayStore((s) => s.setToggleIntervalMs);
   const frameImage = useProjectStore((s) => s.frameImage);
 
@@ -156,6 +160,44 @@ export function LiveOverlayPanel({ onNavigate }: LiveOverlayPanelProps) {
       {isOpen && overlayImageBase64 && (
         <div className="flex flex-wrap items-center gap-2">
           <OverlayViewModeToggle onNavigate={onNavigate} />
+
+          <div className="flex items-center gap-1.5">
+            <Label htmlFor="overlay-scale" className="text-muted-foreground text-xs">
+              {t("overlay.scale")}
+            </Label>
+            <div className="flex items-center gap-0.5 rounded-md bg-muted/50 p-0.5">
+              <Button
+                type="button"
+                variant={overlayScaleMode === "fit_width" ? "default" : "ghost"}
+                size="sm"
+                className="h-6 px-2 text-xs"
+                onClick={() => setOverlayScaleMode("fit_width")}
+              >
+                {t("overlay.scaleModeFitWidth")}
+              </Button>
+              <Button
+                type="button"
+                variant={overlayScaleMode === "actual_size" ? "default" : "ghost"}
+                size="sm"
+                className="h-6 px-2 text-xs"
+                onClick={() => setOverlayScaleMode("actual_size")}
+              >
+                {t("overlay.scaleModeActual")}
+              </Button>
+            </div>
+            <Slider
+              id="overlay-scale"
+              min={0.25}
+              max={2}
+              step={0.01}
+              value={overlayScale}
+              onChange={(e) => setOverlayScale(Number(e.target.value))}
+              className="w-24"
+            />
+            <span className="w-10 text-muted-foreground text-xs">
+              {Math.round(overlayScale * 100)}%
+            </span>
+          </div>
 
           {showOpacitySlider && (
             <div className="flex items-center gap-1.5">

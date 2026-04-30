@@ -10,6 +10,7 @@ import { ProjectView } from "./component/project/project-view";
 import { SettingDialog } from "./component/setting/setting-dialog";
 import { TokenRequiredDialog } from "./component/setting/token-required-dialog";
 import { ErrorBoundary } from "./component/ui/error-boundary";
+import { getOverlay } from "./lib/platform";
 import { cn } from "./lib/util";
 import { useOverlayStore } from "./store/overlay-store";
 import { useProjectListStore } from "./store/project-list-store";
@@ -25,6 +26,7 @@ export const App = () => {
   const loadProjects = useProjectListStore((s) => s.loadProjects);
   const activeTab = useTabStore((s) => s.tabs.find((t) => t.id === s.activeTabId) ?? null);
   const tabs = useTabStore((s) => s.tabs);
+  const isOverlayOpen = useOverlayStore((s) => s.isOpen);
 
   const currentPage = activeTab?.page ?? standalonePage ?? "home";
 
@@ -72,6 +74,20 @@ export const App = () => {
       setStandalonePage(null);
     }
   }, [activeTab, standalonePage]);
+
+  useEffect(() => {
+    if (currentPage === "live_overlay" || !isOverlayOpen) return;
+    useOverlayStore.getState().closeSite();
+  }, [currentPage, isOverlayOpen]);
+
+  useEffect(() => {
+    if (currentPage === "live_overlay") return;
+    getOverlay()
+      .then((overlay) => overlay?.close())
+      .catch(() => {
+        // ページ遷移直後にネイティブビューが既に閉じている場合は無視する
+      });
+  }, [currentPage]);
 
   const showTabBar = tabs.length > 0;
   const showHome = !activeTab && !standalonePage;

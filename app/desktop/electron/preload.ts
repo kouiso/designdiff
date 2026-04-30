@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from "electron";
+import { contextBridge, ipcRenderer, webUtils } from "electron";
 
 import type { ElectronAPI } from "./type/ipc-api";
 
@@ -22,6 +22,8 @@ const api: ElectronAPI = {
 
   readLocalImage: (path) => ipcRenderer.invoke("file:read-local-image", path),
 
+  getPathForFile: (file) => webUtils.getPathForFile(file),
+
   captureUrlScreenshot: (url, width, height) =>
     ipcRenderer.invoke("file:capture-url-screenshot", url, Math.round(width), Math.round(height)),
 
@@ -42,6 +44,7 @@ const api: ElectronAPI = {
     },
     setMode: (mode, base64, opacity, splitPosition) =>
       ipcRenderer.invoke("overlay:set-mode", mode, base64, opacity, splitPosition),
+    updateScale: (scale, scaleMode) => ipcRenderer.invoke("overlay:update-scale", scale, scaleMode),
     updateSplitPosition: (splitPosition) =>
       ipcRenderer.invoke("overlay:update-split-position", splitPosition),
     toggleStart: (intervalMs) => ipcRenderer.invoke("overlay:toggle-start", intervalMs),

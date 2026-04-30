@@ -1,6 +1,6 @@
 import type { Frame, NodeInspection, Project } from "@figdiff/shared";
 
-import type { OverlayViewMode } from "@/store/overlay-store";
+import type { OverlayScaleMode, OverlayViewMode } from "@/store/overlay-store";
 
 /**
  * プラットフォーム非依存のコマンドインターフェース
@@ -64,6 +64,7 @@ export interface OverlayAdapter {
     opacity: number,
     splitPosition: number,
   ): Promise<void>;
+  updateScale(scale: number, scaleMode: OverlayScaleMode): Promise<void>;
   updateSplitPosition(splitPosition: number): Promise<void>;
   toggleStart(intervalMs: number): Promise<void>;
   toggleStop(): Promise<void>;

@@ -20,6 +20,8 @@ function resetStore() {
     error: null,
     overlayViewMode: "transparent_overlay",
     splitPosition: 0.5,
+    overlayScale: 1,
+    overlayScaleMode: "fit_width",
     toggleIntervalMs: 500,
     isToggling: false,
     isPixelDiffRunning: false,

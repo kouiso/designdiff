@@ -64,6 +64,7 @@ export const electronOverlayAdapter: OverlayAdapter = {
   onNavigated: (callback) => window.electronAPI.overlay.onNavigated(callback),
   setMode: (mode, base64, opacity, splitPosition) =>
     window.electronAPI.overlay.setMode(mode, base64, opacity, splitPosition),
+  updateScale: (scale, scaleMode) => window.electronAPI.overlay.updateScale(scale, scaleMode),
   updateSplitPosition: (splitPosition) =>
     window.electronAPI.overlay.updateSplitPosition(splitPosition),
   toggleStart: (intervalMs) => window.electronAPI.overlay.toggleStart(intervalMs),

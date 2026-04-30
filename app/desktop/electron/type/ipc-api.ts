@@ -1,6 +1,7 @@
 import type { Frame, NodeInspection, Project, ViewMode } from "@figdiff/shared";
 
 export type OverlayViewMode = ViewMode;
+export type OverlayScaleMode = "fit_width" | "actual_size";
 
 // platform-adapter.ts の ProjectSummary と同一定義（レイヤー境界のため重複許容）
 export interface ProjectSummary {
@@ -31,6 +32,7 @@ export interface ElectronAPI {
   getFigmaToken(): Promise<string | null>;
   deleteFigmaToken(): Promise<void>;
   readLocalImage(path: string): Promise<string>;
+  getPathForFile(file: File): string;
   captureUrlScreenshot(url: string, width: number, height: number): Promise<string>;
   overlay: OverlayAPI;
   project: ProjectAPI;
@@ -51,6 +53,7 @@ export interface OverlayAPI {
     opacity: number,
     splitPosition: number,
   ): Promise<void>;
+  updateScale(scale: number, scaleMode: OverlayScaleMode): Promise<void>;
   updateSplitPosition(splitPosition: number): Promise<void>;
   toggleStart(intervalMs: number): Promise<void>;
   toggleStop(): Promise<void>;

@@ -174,6 +174,9 @@
     "show": "オーバーレイを表示",
     "capture": "キャプチャ → 比較",
     "twoUp": "2up比較",
+    "scale": "倍率",
+    "scaleModeFitWidth": "幅",
+    "scaleModeActual": "実寸",
     "splitPosition": "分割位置",
     "toggleSpeed": "速度",
     "analyzing": "解析中..."
