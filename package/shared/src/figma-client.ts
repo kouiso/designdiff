@@ -225,8 +225,9 @@ export class FigmaClient {
     return imageUrl;
   }
 
-  async getNode(fileKey: string, nodeId: string, depth = 1): Promise<FigmaNode> {
-    const url = `${FIGMA_API_BASE}/files/${fileKey}/nodes?ids=${nodeId}&depth=${depth}`;
+  async getNode(fileKey: string, nodeId: string, depth?: number): Promise<FigmaNode> {
+    const depthQuery = depth === undefined ? "" : `&depth=${depth}`;
+    const url = `${FIGMA_API_BASE}/files/${fileKey}/nodes?ids=${nodeId}${depthQuery}`;
     const json = await this.fetchApi(url);
     const response = FigmaNodesResponseSchema.parse(json);
 
