@@ -116,14 +116,21 @@ export async function compareImages(
 
   const width = finalScreenshotWidth;
   const height = finalScreenshotHeight;
-  const designPixels = Uint8ClampedArray.from(designRaw);
   const screenshotPixels = Uint8ClampedArray.from(screenshotRaw);
-  const pixelmatchDesignPixels = Uint8ClampedArray.from(designPixels);
-  const reportDesignPixels = Uint8ClampedArray.from(designPixels);
+  const pixelmatchDesignPixels = Uint8ClampedArray.from(designRaw);
+  const reportDesignPixels = paddingMask
+    ? Uint8ClampedArray.from(designRaw)
+    : pixelmatchDesignPixels;
 
   if (paddingMask) {
     // contain の余白は比較対象ではないため、その領域だけをスクリーンショット側に合わせて差分から除外する。
-    maskTransparentPaddingPixels(pixelmatchDesignPixels, screenshotPixels, width, height, paddingMask);
+    maskTransparentPaddingPixels(
+      pixelmatchDesignPixels,
+      screenshotPixels,
+      width,
+      height,
+      paddingMask,
+    );
     preserveLegacyWhitePaddingForReport(reportDesignPixels, width, height, paddingMask);
   }
 
@@ -188,16 +195,35 @@ async function cropImageBuffer(buffer: Buffer, cropRegion: CropRegion): Promise<
     return buffer;
   }
 
-  const left = Math.max(0, Math.floor(cropRegion.x));
-  const top = Math.max(0, Math.floor(cropRegion.y));
+  if (
+    !Number.isFinite(cropRegion.x) ||
+    !Number.isFinite(cropRegion.y) ||
+    !Number.isFinite(cropRegion.width) ||
+    !Number.isFinite(cropRegion.height) ||
+    cropRegion.width <= 0 ||
+    cropRegion.height <= 0
+  ) {
+    console.warn("Crop region is invalid; returning original image buffer.");
+    return buffer;
+  }
 
-  if (left >= imageWidth || top >= imageHeight) {
+  const requestedLeft = Math.floor(cropRegion.x);
+  const requestedTop = Math.floor(cropRegion.y);
+  const requestedRight = Math.floor(cropRegion.x + cropRegion.width);
+  const requestedBottom = Math.floor(cropRegion.y + cropRegion.height);
+
+  const left = Math.max(0, requestedLeft);
+  const top = Math.max(0, requestedTop);
+  const right = Math.min(imageWidth, requestedRight);
+  const bottom = Math.min(imageHeight, requestedBottom);
+
+  if (left >= right || top >= bottom) {
     console.warn("Crop region is outside image bounds; returning original image buffer.");
     return buffer;
   }
 
-  const width = Math.max(1, Math.min(Math.floor(cropRegion.width), imageWidth - left));
-  const height = Math.max(1, Math.min(Math.floor(cropRegion.height), imageHeight - top));
+  const width = right - left;
+  const height = bottom - top;
 
   return sharp(buffer)
     .extract({

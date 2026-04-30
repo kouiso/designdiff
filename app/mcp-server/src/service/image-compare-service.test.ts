@@ -288,6 +288,98 @@ describe("compareImages", () => {
     });
   });
 
+  it("cropRegion が負の座標から始まる場合は画像内の交差範囲だけを抽出すること", async () => {
+    const pixelmatchMock = await import("pixelmatch");
+
+    const designMetadataInstance = createMockSharpInstance({ width: 100, height: 100 });
+    const screenshotMetadataInstance = createMockSharpInstance({ width: 100, height: 100 });
+    const designCropMetadataInstance = createMockSharpInstance({ width: 100, height: 100 });
+    const designCropInstance = createMockSharpInstance({ width: 100, height: 100 });
+    const screenshotCropMetadataInstance = createMockSharpInstance({ width: 100, height: 100 });
+    const screenshotCropInstance = createMockSharpInstance({ width: 100, height: 100 });
+    const croppedDesignMetadataInstance = createMockSharpInstance({ width: 10, height: 15 });
+    const croppedScreenshotMetadataInstance = createMockSharpInstance({ width: 10, height: 15 });
+    const designRawInstance = createMockSharpInstance({ width: 10, height: 15 });
+    const screenshotRawInstance = createMockSharpInstance({ width: 10, height: 15 });
+    const diffImageInstance = createMockSharpInstance({ width: 10, height: 15 });
+
+    mockSharpFn
+      .mockReturnValueOnce(designMetadataInstance)
+      .mockReturnValueOnce(screenshotMetadataInstance)
+      .mockReturnValueOnce(designCropMetadataInstance)
+      .mockReturnValueOnce(designCropInstance)
+      .mockReturnValueOnce(screenshotCropMetadataInstance)
+      .mockReturnValueOnce(screenshotCropInstance)
+      .mockReturnValueOnce(croppedDesignMetadataInstance)
+      .mockReturnValueOnce(croppedScreenshotMetadataInstance)
+      .mockReturnValueOnce(designRawInstance)
+      .mockReturnValueOnce(screenshotRawInstance)
+      .mockReturnValueOnce(diffImageInstance);
+    vi.mocked(pixelmatchMock.default).mockReturnValue(0);
+
+    const { compareImages } = await import("./image-compare-service.js");
+
+    const dummyBase64 = Buffer.alloc(100).toString("base64");
+    await compareImages({
+      designBase64: dummyBase64,
+      screenshotBase64: dummyBase64,
+      cropRegion: { x: -10, y: -5, width: 20, height: 20 },
+    });
+
+    expect(designCropInstance.extract).toHaveBeenCalledWith({
+      left: 0,
+      top: 0,
+      width: 10,
+      height: 15,
+    });
+    expect(screenshotCropInstance.extract).toHaveBeenCalledWith({
+      left: 0,
+      top: 0,
+      width: 10,
+      height: 15,
+    });
+  });
+
+  it("cropRegion に有限でない値がある場合は警告して元のバッファを使うこと", async () => {
+    const pixelmatchMock = await import("pixelmatch");
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+
+    const designMetadataInstance = createMockSharpInstance({ width: 100, height: 100 });
+    const screenshotMetadataInstance = createMockSharpInstance({ width: 100, height: 100 });
+    const designCropMetadataInstance = createMockSharpInstance({ width: 100, height: 100 });
+    const screenshotCropMetadataInstance = createMockSharpInstance({ width: 100, height: 100 });
+    const finalDesignMetadataInstance = createMockSharpInstance({ width: 100, height: 100 });
+    const finalScreenshotMetadataInstance = createMockSharpInstance({ width: 100, height: 100 });
+    const designRawInstance = createMockSharpInstance({ width: 100, height: 100 });
+    const screenshotRawInstance = createMockSharpInstance({ width: 100, height: 100 });
+    const diffImageInstance = createMockSharpInstance({ width: 100, height: 100 });
+
+    mockSharpFn
+      .mockReturnValueOnce(designMetadataInstance)
+      .mockReturnValueOnce(screenshotMetadataInstance)
+      .mockReturnValueOnce(designCropMetadataInstance)
+      .mockReturnValueOnce(screenshotCropMetadataInstance)
+      .mockReturnValueOnce(finalDesignMetadataInstance)
+      .mockReturnValueOnce(finalScreenshotMetadataInstance)
+      .mockReturnValueOnce(designRawInstance)
+      .mockReturnValueOnce(screenshotRawInstance)
+      .mockReturnValueOnce(diffImageInstance);
+    vi.mocked(pixelmatchMock.default).mockReturnValue(0);
+
+    const { compareImages } = await import("./image-compare-service.js");
+
+    const dummyBase64 = Buffer.alloc(100).toString("base64");
+    await compareImages({
+      designBase64: dummyBase64,
+      screenshotBase64: dummyBase64,
+      cropRegion: { x: Number.NaN, y: 0, width: 10, height: 10 },
+    });
+
+    expect(warnSpy).toHaveBeenCalledTimes(2);
+    expect(designCropMetadataInstance.extract).not.toHaveBeenCalled();
+    expect(screenshotCropMetadataInstance.extract).not.toHaveBeenCalled();
+  });
+
   it("cropRegion が画像範囲外の場合は警告して元のバッファを使うこと", async () => {
     const pixelmatchMock = await import("pixelmatch");
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => undefined);

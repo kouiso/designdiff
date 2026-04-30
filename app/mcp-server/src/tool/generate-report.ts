@@ -19,7 +19,9 @@ const DESCRIPTION =
 
 const comparisonResultInputSchema = z.union([z.string(), z.object({}).passthrough()]);
 
-function normalizeComparisonResultInput(input: z.infer<typeof comparisonResultInputSchema>): unknown {
+function normalizeComparisonResultInput(
+  input: z.infer<typeof comparisonResultInputSchema>,
+): unknown {
   const parsed = typeof input === "string" ? JSON.parse(input) : input;
 
   if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
