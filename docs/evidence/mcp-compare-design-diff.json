@@ -1,13 +1,13 @@
 {
   "test": "MCP compare_design — different images (diff detected)",
-  "timestamp": "2026-04-30T09:16:54.302Z",
+  "timestamp": "2026-04-30T09:23:23.361Z",
   "input": {
     "design": "200x200 blue",
     "screenshot": "200x200 red"
   },
   "result": {
     "status": "FAIL",
-    "comparisonId": "cmp-2e53b77b-bb53-4aae-ae3c-494709b85390",
+    "comparisonId": "cmp-1ef02d40-9b8a-4eb3-a10e-0408163e48b7",
     "matchRate": 0,
     "diffPixelCount": 40000,
     "totalPixelCount": 40000,
@@ -147,7 +147,7 @@
       "worstDeltaSection": "whole-frame",
       "advice": "直前の比較より weightedStructure が 0.05 超悪化しています。対象セクションと直近修正の副作用を先に切り分けてください。"
     },
-    "diffImagePath": "/tmp/figdiff-mcp/cmp-2e53b77b-bb53-4aae-ae3c-494709b85390.png"
+    "diffImagePath": "/tmp/figdiff-mcp/cmp-1ef02d40-9b8a-4eb3-a10e-0408163e48b7.png"
   },
   "hasDiffImage": true
 }

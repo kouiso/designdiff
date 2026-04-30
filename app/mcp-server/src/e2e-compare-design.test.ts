@@ -17,6 +17,10 @@ import { createMcpServer } from "./server.js";
 const FIXTURE_DIR = path.join(import.meta.dirname, "__fixtures__");
 const EVIDENCE_DIR = path.resolve(import.meta.dirname, "../../../docs/evidence");
 
+function formatEvidenceJson(evidence: unknown): string {
+  return `${JSON.stringify(evidence, null, 2)}\n`;
+}
+
 interface TextContent {
   type: "text";
   text: string;
@@ -124,7 +128,7 @@ describe("MCP Server E2E: compare_design", () => {
     };
     await fs.writeFile(
       path.join(EVIDENCE_DIR, "mcp-list-tools.json"),
-      JSON.stringify(evidence, null, 2),
+      formatEvidenceJson(evidence),
     );
   });
 
@@ -159,7 +163,7 @@ describe("MCP Server E2E: compare_design", () => {
     };
     await fs.writeFile(
       path.join(EVIDENCE_DIR, "mcp-compare-design-identical.json"),
-      JSON.stringify(evidence, null, 2),
+      formatEvidenceJson(evidence),
     );
   });
 
@@ -201,7 +205,7 @@ describe("MCP Server E2E: compare_design", () => {
     };
     await fs.writeFile(
       path.join(EVIDENCE_DIR, "mcp-compare-design-diff.json"),
-      JSON.stringify(evidence, null, 2),
+      formatEvidenceJson(evidence),
     );
   });
 
@@ -275,7 +279,7 @@ describe("MCP Server E2E: compare_design", () => {
     };
     await fs.writeFile(
       path.join(EVIDENCE_DIR, "mcp-diff-loop-evidence.json"),
-      JSON.stringify(evidence, null, 2),
+      formatEvidenceJson(evidence),
     );
   });
 
