@@ -19,23 +19,25 @@ const DESCRIPTION =
 
 const comparisonResultInputSchema = z.union([z.string(), z.object({}).passthrough()]);
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
 function normalizeComparisonResultInput(
   input: z.infer<typeof comparisonResultInputSchema>,
 ): unknown {
-  const parsed = typeof input === "string" ? JSON.parse(input) : input;
+  const parsed: unknown = typeof input === "string" ? JSON.parse(input) : input;
 
-  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+  if (!isRecord(parsed)) {
     return parsed;
   }
 
-  const result = parsed as Record<string, unknown>;
-
   return {
-    comparisonId: result.comparisonId ?? `cmp-${Date.now()}`,
-    ...result,
-    totalPixelCount: result.totalPixelCount ?? result.totalPixels,
-    diffRegions: result.diffRegions ?? result.regions ?? [],
-    suggestion: result.suggestion ?? "",
+    comparisonId: parsed.comparisonId ?? `cmp-${Date.now()}`,
+    ...parsed,
+    totalPixelCount: parsed.totalPixelCount ?? parsed.totalPixels,
+    diffRegions: parsed.diffRegions ?? parsed.regions ?? [],
+    suggestion: parsed.suggestion ?? "",
   };
 }
 
