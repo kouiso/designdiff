@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 import { ArrowRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -19,8 +21,14 @@ function detectInputType(value: string): "figma" | "local" | null {
   return "local";
 }
 
+const isImageFile = (file: File): boolean => {
+  if (file.type.startsWith("image/")) return true;
+  return /\.(png|jpe?g|webp|gif|bmp|svg)$/i.test(file.name);
+};
+
 export function DesignInput({ value, onChange, onSubmit, disabled }: DesignInputProps) {
   const { t } = useTranslation();
+  const [isDraggingImage, setIsDraggingImage] = useState(false);
   const inputType = detectInputType(value);
 
   const handleSubmit = () => {
@@ -36,8 +44,40 @@ export function DesignInput({ value, onChange, onSubmit, disabled }: DesignInput
     }
   };
 
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    if (disabled) return;
+    const hasFile = Array.from(e.dataTransfer.items).some((item) => item.kind === "file");
+    if (!hasFile) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "copy";
+    setIsDraggingImage(true);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    if (disabled) return;
+    e.preventDefault();
+    setIsDraggingImage(false);
+
+    const file = Array.from(e.dataTransfer.files).find(isImageFile);
+    if (!file) return;
+
+    const path = window.electronAPI?.getPathForFile(file);
+    if (!path) return;
+
+    onChange(path);
+    onSubmit(path);
+  };
+
   return (
-    <div className="relative flex items-center gap-2 rounded-xl border border-border bg-card p-1.5 shadow-sm transition-colors focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/20">
+    <div
+      className={`relative flex items-center gap-2 rounded-xl border bg-card p-1.5 shadow-sm transition-colors focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/20 ${
+        isDraggingImage ? "border-primary ring-2 ring-primary/25" : "border-border"
+      }`}
+      onDragEnter={handleDragOver}
+      onDragOver={handleDragOver}
+      onDragLeave={() => setIsDraggingImage(false)}
+      onDrop={handleDrop}
+    >
       <div className="relative flex-1">
         <Input
           value={value}

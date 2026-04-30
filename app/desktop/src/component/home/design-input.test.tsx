@@ -59,6 +59,49 @@ describe("DesignInput", () => {
     expect(onChange).toHaveBeenCalledWith("test");
   });
 
+  it("画像ファイルのドロップでローカルパスをsubmitする", () => {
+    const onChange = vi.fn();
+    const onSubmit = vi.fn();
+    const file = new File(["dummy"], "design.png", { type: "image/png" });
+
+    render(<DesignInput value="" onChange={onChange} onSubmit={onSubmit} />);
+    const input = screen.getByPlaceholderText(PLACEHOLDER);
+    const dropTarget = input.closest("div")?.parentElement;
+
+    expect(dropTarget).not.toBeNull();
+    fireEvent.drop(dropTarget!, {
+      dataTransfer: {
+        files: [file],
+        items: [{ kind: "file" }],
+      },
+    });
+
+    expect(window.electronAPI.getPathForFile).toHaveBeenCalledWith(file);
+    expect(onChange).toHaveBeenCalledWith("/mock/design.png");
+    expect(onSubmit).toHaveBeenCalledWith("/mock/design.png");
+  });
+
+  it("画像以外のドロップは無視する", () => {
+    const onChange = vi.fn();
+    const onSubmit = vi.fn();
+    const file = new File(["dummy"], "memo.txt", { type: "text/plain" });
+
+    render(<DesignInput value="" onChange={onChange} onSubmit={onSubmit} />);
+    const input = screen.getByPlaceholderText(PLACEHOLDER);
+    const dropTarget = input.closest("div")?.parentElement;
+
+    expect(dropTarget).not.toBeNull();
+    fireEvent.drop(dropTarget!, {
+      dataTransfer: {
+        files: [file],
+        items: [{ kind: "file" }],
+      },
+    });
+
+    expect(onChange).not.toHaveBeenCalled();
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
   it("disables input and button when disabled prop is true", () => {
     render(<DesignInput value="" onChange={vi.fn()} onSubmit={vi.fn()} disabled />);
     const input = screen.getByPlaceholderText(PLACEHOLDER);

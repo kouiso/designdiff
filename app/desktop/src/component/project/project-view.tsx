@@ -37,6 +37,7 @@ export const ProjectView = ({ onNavigate }: ProjectViewProps) => {
   const [newSourceLabel, setNewSourceLabel] = useState("");
   const [newSourceUrl, setNewSourceUrl] = useState("");
   const [showAddSource, setShowAddSource] = useState(false);
+  const [isDraggingSourceImage, setIsDraggingSourceImage] = useState(false);
 
   if (!currentProject) {
     return (
@@ -98,6 +99,33 @@ export const ProjectView = ({ onNavigate }: ProjectViewProps) => {
     setNewSourceUrl("");
     setShowAddSource(false);
     saveCurrentProject();
+  };
+
+  const isImageFile = (file: File): boolean => {
+    if (file.type.startsWith("image/")) return true;
+    return /\.(png|jpe?g|webp|gif|bmp|svg)$/i.test(file.name);
+  };
+
+  const handleSourceDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+    const hasFile = Array.from(event.dataTransfer.items).some((item) => item.kind === "file");
+    if (!hasFile) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "copy";
+    setIsDraggingSourceImage(true);
+  };
+
+  const handleSourceDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    setIsDraggingSourceImage(false);
+
+    const file = Array.from(event.dataTransfer.files).find(isImageFile);
+    if (!file) return;
+
+    const path = window.electronAPI?.getPathForFile(file);
+    if (!path) return;
+
+    setNewSourceUrl(path);
+    setNewSourceLabel((current) => current || file.name.replace(/\.[^.]+$/, ""));
   };
 
   const handleCompare = async (source: DesignSource) => {
@@ -241,7 +269,16 @@ export const ProjectView = ({ onNavigate }: ProjectViewProps) => {
 
             {showAddSource && (
               <Card>
-                <CardContent className="space-y-2 p-4">
+                <CardContent
+                  className={cn(
+                    "space-y-2 rounded-lg p-4 transition-colors",
+                    isDraggingSourceImage && "bg-primary/5 ring-2 ring-primary/25",
+                  )}
+                  onDragEnter={handleSourceDragOver}
+                  onDragOver={handleSourceDragOver}
+                  onDragLeave={() => setIsDraggingSourceImage(false)}
+                  onDrop={handleSourceDrop}
+                >
                   <Input
                     value={newSourceLabel}
                     onChange={(e) => setNewSourceLabel(e.target.value)}
