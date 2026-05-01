@@ -25,6 +25,13 @@ interface CompareImagesOptions {
   cropRegion?: CropRegion;
 }
 
+interface PaddingMask {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+}
+
 /**
  * Compare two images and return diff analysis
  */
@@ -78,12 +85,26 @@ export async function compareImages(
 
   // Resize design to match screenshot if still different (e.g., height mismatch after crop)
   let finalDesignBuffer: Buffer = designBuffer;
+  let paddingMask: PaddingMask | null = null;
   if (finalDesignWidth !== finalScreenshotWidth || finalDesignHeight !== finalScreenshotHeight) {
+    const scale = Math.min(
+      finalScreenshotWidth / finalDesignWidth,
+      finalScreenshotHeight / finalDesignHeight,
+    );
+    const contentWidth = Math.round(finalDesignWidth * scale);
+    const contentHeight = Math.round(finalDesignHeight * scale);
+    paddingMask = {
+      left: Math.floor((finalScreenshotWidth - contentWidth) / 2),
+      top: 0,
+      width: contentWidth,
+      height: contentHeight,
+    };
     finalDesignBuffer = await sharp(designBuffer)
       .resize(finalScreenshotWidth, finalScreenshotHeight, {
         fit: "contain",
         position: "top",
-        background: { r: 255, g: 255, b: 255, alpha: 1 },
+        // contain で作られる余白だけを後段で無視できるよう透明にする。
+        background: { r: 0, g: 0, b: 0, alpha: 0 },
       })
       .ensureAlpha()
       .toBuffer();
@@ -95,14 +116,36 @@ export async function compareImages(
 
   const width = finalScreenshotWidth;
   const height = finalScreenshotHeight;
-  const designPixels = Uint8ClampedArray.from(designRaw);
   const screenshotPixels = Uint8ClampedArray.from(screenshotRaw);
+  const pixelmatchDesignPixels = Uint8ClampedArray.from(designRaw);
+  const reportDesignPixels = paddingMask
+    ? Uint8ClampedArray.from(designRaw)
+    : pixelmatchDesignPixels;
+
+  if (paddingMask) {
+    // contain の余白は比較対象ではないため、その領域だけをスクリーンショット側に合わせて差分から除外する。
+    maskTransparentPaddingPixels(
+      pixelmatchDesignPixels,
+      screenshotPixels,
+      width,
+      height,
+      paddingMask,
+    );
+    preserveLegacyWhitePaddingForReport(reportDesignPixels, width, height, paddingMask);
+  }
 
   // Run pixelmatch
   const diffPixelData = new Uint8ClampedArray(width * height * 4);
-  const diffPixelCount = pixelmatch(designPixels, screenshotPixels, diffPixelData, width, height, {
-    threshold,
-  });
+  const diffPixelCount = pixelmatch(
+    pixelmatchDesignPixels,
+    screenshotPixels,
+    diffPixelData,
+    width,
+    height,
+    {
+      threshold,
+    },
+  );
 
   const totalPixelCount = width * height;
   const matchRate =
@@ -119,7 +162,7 @@ export async function compareImages(
   // Generate diff image visualization
   const diffImageBase64 = await generateDiffImage(diffPixelData, width, height);
   const diffReport = buildDiffReport({
-    designPixels,
+    designPixels: reportDesignPixels,
     screenshotPixels,
     width,
     height,
@@ -144,14 +187,101 @@ export async function compareImages(
  * Crop image buffer using sharp
  */
 async function cropImageBuffer(buffer: Buffer, cropRegion: CropRegion): Promise<Buffer> {
+  const metadata = await sharp(buffer).metadata();
+  const imageWidth = metadata.width ?? 0;
+  const imageHeight = metadata.height ?? 0;
+
+  if (imageWidth <= 0 || imageHeight <= 0) {
+    return buffer;
+  }
+
+  if (
+    !Number.isFinite(cropRegion.x) ||
+    !Number.isFinite(cropRegion.y) ||
+    !Number.isFinite(cropRegion.width) ||
+    !Number.isFinite(cropRegion.height) ||
+    cropRegion.width <= 0 ||
+    cropRegion.height <= 0
+  ) {
+    console.warn("Crop region is invalid; returning original image buffer.");
+    return buffer;
+  }
+
+  const requestedLeft = Math.floor(cropRegion.x);
+  const requestedTop = Math.floor(cropRegion.y);
+  const requestedRight = Math.floor(cropRegion.x + cropRegion.width);
+  const requestedBottom = Math.floor(cropRegion.y + cropRegion.height);
+
+  const left = Math.max(0, requestedLeft);
+  const top = Math.max(0, requestedTop);
+  const right = Math.min(imageWidth, requestedRight);
+  const bottom = Math.min(imageHeight, requestedBottom);
+
+  if (left >= right || top >= bottom) {
+    console.warn("Crop region is outside image bounds; returning original image buffer.");
+    return buffer;
+  }
+
+  const width = right - left;
+  const height = bottom - top;
+
   return sharp(buffer)
     .extract({
-      left: Math.floor(cropRegion.x),
-      top: Math.floor(cropRegion.y),
-      width: Math.floor(cropRegion.width),
-      height: Math.floor(cropRegion.height),
+      left,
+      top,
+      width,
+      height,
     })
     .toBuffer();
+}
+
+function maskTransparentPaddingPixels(
+  designPixels: Uint8ClampedArray,
+  screenshotPixels: Uint8ClampedArray,
+  imageWidth: number,
+  imageHeight: number,
+  content: PaddingMask,
+): void {
+  const contentRight = content.left + content.width;
+  const contentBottom = content.top + content.height;
+
+  for (let y = 0; y < imageHeight; y++) {
+    for (let x = 0; x < imageWidth; x++) {
+      if (x < content.left || x >= contentRight || y < content.top || y >= contentBottom) {
+        const i = (y * imageWidth + x) * 4;
+        if (designPixels[i + 3] === 0) {
+          designPixels[i] = screenshotPixels[i];
+          designPixels[i + 1] = screenshotPixels[i + 1];
+          designPixels[i + 2] = screenshotPixels[i + 2];
+          designPixels[i + 3] = screenshotPixels[i + 3];
+        }
+      }
+    }
+  }
+}
+
+function preserveLegacyWhitePaddingForReport(
+  designPixels: Uint8ClampedArray,
+  imageWidth: number,
+  imageHeight: number,
+  content: PaddingMask,
+): void {
+  const contentRight = content.left + content.width;
+  const contentBottom = content.top + content.height;
+
+  for (let y = 0; y < imageHeight; y++) {
+    for (let x = 0; x < imageWidth; x++) {
+      if (x < content.left || x >= contentRight || y < content.top || y >= contentBottom) {
+        const i = (y * imageWidth + x) * 4;
+        if (designPixels[i + 3] === 0) {
+          designPixels[i] = 255;
+          designPixels[i + 1] = 255;
+          designPixels[i + 2] = 255;
+          designPixels[i + 3] = 255;
+        }
+      }
+    }
+  }
 }
 
 /**
