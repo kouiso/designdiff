@@ -1,12 +1,34 @@
 import { join } from "node:path";
 
-import { BrowserWindow, app, safeStorage, session } from "electron";
+import { BrowserWindow, app, dialog, safeStorage, session, shell } from "electron";
 
 import { registerFigmaHandlers } from "./ipc/figma";
 import { registerFileHandlers } from "./ipc/file";
 import { registerOverlayHandlers } from "./ipc/overlay";
 import { registerProjectHandlers } from "./ipc/project";
 import { registerTokenHandlers } from "./ipc/token";
+
+const ALLOWED_EXTERNAL_HOSTS = ["figma.com", "github.com"];
+
+const isAllowedExternalUrl = (url: string): boolean => {
+  try {
+    const parsed = new URL(url);
+    if (!["http:", "https:"].includes(parsed.protocol)) return false;
+    return ALLOWED_EXTERNAL_HOSTS.some(
+      (host) => parsed.hostname === host || parsed.hostname.endsWith(`.${host}`),
+    );
+  } catch {
+    return false;
+  }
+};
+
+const handleExternalUrl = (url: string): boolean => {
+  if (!isAllowedExternalUrl(url)) return false;
+  shell.openExternal(url).catch((error: unknown) => {
+    console.error("[main] failed to open external URL:", url, error);
+  });
+  return true;
+};
 
 const isAllowedOrigin = (url: string, isDev = !app.isPackaged): boolean => {
   if (url.startsWith("file://")) return true;
@@ -19,6 +41,15 @@ const isAllowedOrigin = (url: string, isDev = !app.isPackaged): boolean => {
     }
   }
   return false;
+};
+
+const formatUnknownError = (error: unknown): string => {
+  if (error instanceof Error) return error.stack ?? error.message;
+  try {
+    return JSON.stringify(error);
+  } catch {
+    return String(error);
+  }
 };
 
 const setupCSP = (isDev: boolean): void => {
@@ -120,12 +151,21 @@ const createWindow = (): void => {
   });
 
   mainWindow.webContents.on("will-navigate", (event, url) => {
+    if (handleExternalUrl(url)) {
+      event.preventDefault();
+      return;
+    }
+
     if (!isAllowedOrigin(url)) {
       event.preventDefault();
     }
   });
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    if (handleExternalUrl(url)) {
+      return { action: "deny" };
+    }
+
     if (!isAllowedOrigin(url)) {
       return { action: "deny" };
     }
@@ -151,26 +191,33 @@ app.on("second-instance", () => {
   }
 });
 
-app.whenReady().then(() => {
-  if (!app.isPackaged) {
-    // 未署名devビルドではmacOS Keychainが errSecInteractionNotAllowed を返すため、
-    // plaintext暗号化にフォールバック（本番ビルドでは実OS暗号化を使用）
-    safeStorage.setUsePlainTextEncryption(true);
-  }
-  setupCSP(!app.isPackaged);
-  registerFigmaHandlers();
-  registerTokenHandlers();
-  registerFileHandlers();
-  registerOverlayHandlers();
-  registerProjectHandlers();
-  createWindow();
-
-  app.on("activate", () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow();
+app
+  .whenReady()
+  .then(() => {
+    if (!app.isPackaged) {
+      // 未署名devビルドではmacOS Keychainが errSecInteractionNotAllowed を返すため、
+      // plaintext暗号化にフォールバック（本番ビルドでは実OS暗号化を使用）
+      safeStorage.setUsePlainTextEncryption(true);
     }
+    setupCSP(!app.isPackaged);
+    registerFigmaHandlers();
+    registerTokenHandlers();
+    registerFileHandlers();
+    registerOverlayHandlers();
+    registerProjectHandlers();
+    createWindow();
+
+    app.on("activate", () => {
+      if (BrowserWindow.getAllWindows().length === 0) {
+        createWindow();
+      }
+    });
+  })
+  .catch((error: unknown) => {
+    console.error("[main] startup failed:", error);
+    dialog.showErrorBox("FigDiff failed to start", formatUnknownError(error));
+    app.quit();
   });
-});
 
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
