@@ -244,5 +244,35 @@ describe("HomePage", () => {
       });
       expect(useOverlayStore.getState().url).toBe("http://localhost:3000");
     });
+
+    it("implUrl あり + frame 選択エラー → live_overlay ページへ遷移しない", async () => {
+      mockSubmitValue = "/path/to/image.png";
+      useSettingStore.setState({ figmaToken: "figd_token" });
+
+      const mockSelectFrame = vi.fn().mockImplementation(async () => {
+        useProjectStore.setState({ error: "フレーム選択失敗", isLoading: false });
+      });
+      const mockLoadDesign = vi.fn().mockImplementation(async () => {
+        useProjectStore.setState({
+          frames: [{ id: "1", name: "Frame", x: 0, y: 0, width: 100, height: 100 }],
+          selectFrame: mockSelectFrame,
+          error: null,
+        });
+      });
+      useProjectStore.setState({ loadDesign: mockLoadDesign });
+
+      const onNavigate = vi.fn();
+      render(<HomePage onNavigate={onNavigate} />);
+
+      const implInput = screen.getByLabelText("実装URL（任意、例: http://localhost:3000）");
+      fireEvent.change(implInput, { target: { value: "http://localhost:3000" } });
+      fireEvent.click(screen.getByTestId("design-input"));
+
+      await waitFor(() => {
+        expect(useProjectStore.getState().error).toBe("フレーム選択失敗");
+      });
+      expect(onNavigate).not.toHaveBeenCalled();
+      expect(useOverlayStore.getState().url).toBe("");
+    });
   });
 });
