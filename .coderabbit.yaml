@@ -1,7 +1,27 @@
-language: ja
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+language: ja-JP
+
 reviews:
+  profile: assertive
+  instructions: |
+    Only cite rules explicitly defined in prompt/instruction/*.md as the basis for findings.
+    Do not flag general best practices or common coding conventions as repository-specific rule violations.
+    When citing a rule, reference the file name (e.g., prohibition.md, code-review.md, essential-thinking.md).
+    For patterns not covered in prompt/instruction/*.md, label them as "suggestion" — never as "violation".
+    Actively look for better implementations and propose concrete alternatives using GitHub Suggested Changes format when applicable.
   auto_review:
-    enabled: true
-  path_instructions: []
+    ignore_usernames: []
+    drafts: false
+  path_filters:
+    - "!.agents/skills/**"
+    - "!.claude/skills/**"
+    - "!pnpm-lock.yaml"
+
 chat:
   auto_reply: true
+
+knowledge_base:
+  code_guidelines:
+    filePatterns:
+      - "prompt/instruction/**/*.md"
+      - "**/REVIEW.md"
