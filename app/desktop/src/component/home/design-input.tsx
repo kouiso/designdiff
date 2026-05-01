@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import { ArrowRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -29,6 +29,7 @@ const isImageFile = (file: File): boolean => {
 export function DesignInput({ value, onChange, onSubmit, disabled }: DesignInputProps) {
   const { t } = useTranslation();
   const [isDraggingImage, setIsDraggingImage] = useState(false);
+  const dragCounter = useRef(0);
   const inputType = detectInputType(value);
 
   const handleSubmit = () => {
@@ -44,19 +45,35 @@ export function DesignInput({ value, onChange, onSubmit, disabled }: DesignInput
     }
   };
 
+  const hasFileItem = (dataTransfer: DataTransfer) => dataTransfer.types.includes("Files");
+
+  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+    if (disabled) return;
+    if (!hasFileItem(e.dataTransfer)) return;
+    e.preventDefault();
+
+    dragCounter.current += 1;
+    setIsDraggingImage(dragCounter.current > 0);
+  };
+
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     if (disabled) return;
-    const hasFile = Array.from(e.dataTransfer.items).some((item) => item.kind === "file");
-    if (!hasFile) return;
+    if (!hasFileItem(e.dataTransfer)) return;
     e.preventDefault();
     e.dataTransfer.dropEffect = "copy";
-    setIsDraggingImage(true);
+  };
+
+  const handleDragLeave = () => {
+    dragCounter.current = Math.max(0, dragCounter.current - 1);
+    setIsDraggingImage(dragCounter.current > 0);
   };
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    if (disabled) return;
     e.preventDefault();
+    dragCounter.current = 0;
     setIsDraggingImage(false);
+
+    if (disabled) return;
 
     const file = Array.from(e.dataTransfer.files).find(isImageFile);
     if (!file) return;
@@ -73,9 +90,9 @@ export function DesignInput({ value, onChange, onSubmit, disabled }: DesignInput
       className={`relative flex items-center gap-2 rounded-xl border bg-card p-1.5 shadow-sm transition-colors focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/20 ${
         isDraggingImage ? "border-primary ring-2 ring-primary/25" : "border-border"
       }`}
-      onDragEnter={handleDragOver}
+      onDragEnter={handleDragEnter}
       onDragOver={handleDragOver}
-      onDragLeave={() => setIsDraggingImage(false)}
+      onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
       <div className="relative flex-1">
