@@ -525,7 +525,7 @@ compare_design → status: PASS ← ここで初めて完了
 4. **compare_design の返り値で次のアクションを示唆** — `nextAction` フィールドで具体的に誘導
 5. **inspect_node の返り値にCSS提案を含める** — AIがすぐコード修正できるように
 
-### 5.3 Tools定義（7個）
+### 5.3 Tools定義（8個）
 
 ```typescript
 // ============================================================
@@ -675,13 +675,18 @@ compare_designの返り値に含まれるnearby_node_idsをそのまま渡すと
     type: "object",
     properties: {
       comparison_result: {
-        type: "string",
-        description: "compare_designの返り値JSON文字列"
+        type: ["string", "object"],
+        description: "compare_designの返り値（JSON文字列またはオブジェクト）"
       },
       format: {
         type: "string",
         enum: ["markdown", "json"],
-        default: "markdown"
+        default: "markdown",
+        description: "出力フォーマット（markdown or json）"
+      },
+      output_path: {
+        type: "string",
+        description: "レポートをファイルに保存する場合のパス（省略可）"
       }
     },
     required: ["comparison_result"]
@@ -739,6 +744,46 @@ compare_designの返り値に含まれるnearby_node_idsをそのまま渡すと
       }
     },
     required: ["project_id", "frame_name", "region"]
+  }
+}
+
+// Tool 8: 修正検証（改善・副作用チェック）
+{
+  name: "verify_fix",
+  description: "compare_design の前回比較と今回比較を突き合わせ、指定ノードが本当に改善したかと他セクションへの副作用を検証します。",
+  inputSchema: {
+    type: "object",
+    properties: {
+      design_source: {
+        type: "string",
+        description: "FigmaのURL（node-id付き推奨）またはデザイン画像のローカルパス"
+      },
+      screenshot: {
+        type: "string",
+        description: "修正後スクリーンショットのローカルパス"
+      },
+      frame_name: {
+        type: "string",
+        description: "Figma URLにnode-idがない場合のフレーム名（省略可）"
+      },
+      threshold: {
+        type: "number",
+        description: "pixelmatch の閾値（デフォルト0.1）"
+      },
+      project_id: {
+        type: "string",
+        description: "Crop Region 適用用のプロジェクトID（省略可）"
+      },
+      prior_comparison_id: {
+        type: "string",
+        description: "比較対象にする過去の compare_design comparisonId"
+      },
+      expected_target_node_id: {
+        type: "string",
+        description: "修正したはずの figmaNodeId"
+      }
+    },
+    required: ["design_source", "screenshot", "prior_comparison_id", "expected_target_node_id"]
   }
 }
 ```
