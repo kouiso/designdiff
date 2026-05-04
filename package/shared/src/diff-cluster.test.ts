@@ -25,6 +25,21 @@ describe("clusterDiffPixels", () => {
     expect(regions).toEqual([]);
   });
 
+  it("pixelmatchの一致ピクセルは差分領域として扱わない", () => {
+    const data = new Uint8ClampedArray(10 * 1 * 4);
+
+    for (let x = 0; x < 10; x++) {
+      const idx = x * 4;
+      data[idx] = x % 2 === 0 ? 255 : 230;
+      data[idx + 1] = data[idx];
+      data[idx + 2] = data[idx];
+      data[idx + 3] = 255;
+    }
+
+    const regions = clusterDiffPixels(data, 10, 1);
+    expect(regions).toEqual([]);
+  });
+
   it("10px未満のクラスタはノイズとしてフィルタされる", () => {
     const pixels = Array.from({ length: 9 }, (_, i) => ({ x: i, y: 0 }));
     const data = createDiffData(100, 100, pixels);

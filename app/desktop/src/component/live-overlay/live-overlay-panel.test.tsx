@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { act, cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -91,7 +91,9 @@ describe("LiveOverlayPanel", () => {
   it("isOpen=true + frameImage あり + overlay未ロード → 自動適用される", async () => {
     useOverlayStore.setState({ isOpen: true, overlayImageBase64: null });
     useProjectStore.setState({ frameImage: "data:image/png;base64,abc" });
-    render(<LiveOverlayPanel />);
+    await act(async () => {
+      render(<LiveOverlayPanel />);
+    });
     await vi.waitFor(() => {
       expect(useOverlayStore.getState().overlayImageBase64).toBe("abc");
     });
@@ -116,8 +118,9 @@ describe("LiveOverlayPanel", () => {
         toJSON: () => ({}),
       });
     }
-    // Re-trigger the effect by changing overlayImageBase64
-    useOverlayStore.setState({ overlayImageBase64: "trigger" });
+    await act(async () => {
+      useOverlayStore.setState({ overlayImageBase64: "trigger" });
+    });
 
     await vi.waitFor(() => {
       expect(mockUpdateOffset).toHaveBeenCalled();

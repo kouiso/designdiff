@@ -1,24 +1,24 @@
 {
   "metric": "page-load",
   "samples": [
-    1059,
-    566,
-    541,
+    555,
     542,
-    543
+    539,
+    541,
+    541
   ],
-  "p95Ms": 1059,
+  "p95Ms": 555,
   "thresholdMs": 1000,
-  "pass": false,
+  "pass": true,
   "interactionMetric": "new-project-button",
   "interactionSamples": [
-    56,
-    34,
+    52,
     44,
-    26,
-    24
+    30,
+    30,
+    26
   ],
-  "interactionP95Ms": 56,
+  "interactionP95Ms": 52,
   "interactionThresholdMs": 200,
   "interactionPass": true,
   "settingsDialogP95Ms": 91,
