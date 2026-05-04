@@ -188,6 +188,8 @@ app.on("second-instance", () => {
   if (win) {
     if (win.isMinimized()) win.restore();
     win.focus();
+  } else if (app.isReady()) {
+    createWindow();
   }
 });
 
