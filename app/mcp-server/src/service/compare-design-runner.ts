@@ -14,6 +14,8 @@ import {
   type FigmaNode,
 } from "@figdiff/shared";
 
+import { resolveSafePath } from "../util/path-guard.js";
+
 import {
   buildComparisonSourceKey,
   getRecentReports,
@@ -22,7 +24,6 @@ import {
 import { getCropRegion } from "./crop-region-store.js";
 import { createFigmaService, type FigmaService } from "./figma-service.js";
 import { compareImages } from "./image-compare-service.js";
-import { resolveSafePath } from "../util/path-guard.js";
 
 const FixtureFigmaNodeSchema: z.ZodType<FigmaNode> = z.lazy(() =>
   z.object({
