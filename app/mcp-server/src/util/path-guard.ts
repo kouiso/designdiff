@@ -32,11 +32,11 @@ function isWithin(child: string, parent: string): boolean {
 }
 
 /**
- * Resolve a user-supplied path and verify it lives inside an allowed directory.
+ * ユーザー指定パスを解決し、許可ディレクトリ内に存在するか検証する。
  *
- * Allowed directories = process.cwd() + entries from FIGDIFF_ALLOWED_DIRS
- * (path-delimiter separated). Symlinks are resolved via fs.realpath so that
- * an allowed-looking path cannot escape via a symlink to /etc/passwd etc.
+ * 許可ディレクトリ = process.cwd() + FIGDIFF_ALLOWED_DIRS の各エントリ
+ * （パス区切り文字で分割）。シンボリックリンクは fs.realpath で解決済みのパスを
+ * 比較するため、/etc/passwd 等へのシンボリックリンク経由の脱出を防止する。
  */
 export async function resolveSafePath(inputPath: string): Promise<string> {
   const allowedDirsRaw = getAllowedDirs();
@@ -56,7 +56,7 @@ export async function resolveSafePath(inputPath: string): Promise<string> {
   const allowed = allowedDirs.some((dir) => isWithin(realPath, dir));
   if (!allowed) {
     throw new Error(
-      `Path not allowed: ${inputPath} resolved to ${realPath}. Allowed directories: ${allowedDirs.join(", ")}. Set FIGDIFF_ALLOWED_DIRS to extend.`,
+      `Path not allowed: "${inputPath}" is outside the permitted directories. Set FIGDIFF_ALLOWED_DIRS to extend.`,
     );
   }
 

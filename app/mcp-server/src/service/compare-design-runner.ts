@@ -83,10 +83,12 @@ const LocalFixtureSchema = z.object({
 });
 
 async function loadLocalFixtureNode(designPath: string): Promise<FigmaNode | undefined> {
+  // expected.json もパスガードで検証してから読み込む
   const fixturePath = path.join(path.dirname(designPath), "expected.json");
 
   try {
-    const raw = await fs.readFile(fixturePath, "utf8");
+    const safeFixturePath = await resolveSafePath(fixturePath);
+    const raw = await fs.readFile(safeFixturePath, "utf8");
     const parsed = LocalFixtureSchema.safeParse(JSON.parse(raw));
     return parsed.success ? parsed.data.figmaRootNode : undefined;
   } catch {
@@ -187,6 +189,7 @@ export async function runCompareDesign(
   args: CompareDesignRunArgs,
 ): Promise<CompareDesignRunOutput> {
   const parsedDesignSource = parseDesignInput(args.design_source);
+  // スクリーンショットの読み込み — 許可されたディレクトリ内にあることを検証する
   const screenshotPath = await resolveSafePath(args.screenshot);
   const screenshotBuffer = await fs.readFile(screenshotPath);
   const screenshotBase64 = screenshotBuffer.toString("base64");
@@ -220,7 +223,7 @@ export async function runCompareDesign(
       );
     }
   } else {
-    // Local file path — validated to live inside an allowed directory
+    // ローカルファイルのパス — 許可ディレクトリ内に存在するか検証する
     const safePath = await resolveSafePath(parsedDesignSource.filePath);
     const designBuffer = await fs.readFile(safePath);
     designBase64 = designBuffer.toString("base64");

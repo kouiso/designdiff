@@ -53,12 +53,16 @@ describe("verify_fix", () => {
   });
 
   afterEach(async () => {
-    await client.close();
-    clearComparisonHistory();
-    if (originalAllowedDirs === undefined) {
-      delete process.env.FIGDIFF_ALLOWED_DIRS;
-    } else {
-      process.env.FIGDIFF_ALLOWED_DIRS = originalAllowedDirs;
+    try {
+      await client.close();
+      clearComparisonHistory();
+    } finally {
+      // client.close() が失敗しても環境変数を必ず元に戻す
+      if (originalAllowedDirs === undefined) {
+        delete process.env.FIGDIFF_ALLOWED_DIRS;
+      } else {
+        process.env.FIGDIFF_ALLOWED_DIRS = originalAllowedDirs;
+      }
     }
   });
 
