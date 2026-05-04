@@ -148,7 +148,7 @@ export function clusterDiffRegions(
   for (let y = 0; y < imageHeight; y++) {
     for (let x = 0; x < imageWidth; x++) {
       const idx = (y * imageWidth + x) * 4;
-      if (diffData[idx] > 0 && !visited.has(idx)) {
+      if (isDiffPixel(diffData, idx) && !visited.has(idx)) {
         const region = floodFill(diffData, imageWidth, imageHeight, x, y, visited);
         if (region.pixelCount >= 10) {
           const diffRegion = {
@@ -194,7 +194,7 @@ export function floodFill(
       y < 0 ||
       y >= imageHeight ||
       visited.has(idx) ||
-      diffData[idx] === 0
+      !isDiffPixel(diffData, idx)
     ) {
       continue;
     }
@@ -219,6 +219,20 @@ export function floodFill(
     },
     pixelCount,
   };
+}
+
+function isDiffPixel(diffData: Uint8ClampedArray, idx: number): boolean {
+  const red = diffData[idx];
+  const green = diffData[idx + 1];
+  const blue = diffData[idx + 2];
+  const alpha = diffData[idx + 3];
+
+  if (alpha === 0 && red === 0 && green === 0 && blue === 0) {
+    return false;
+  }
+
+  // pixelmatch は一致ピクセルを白/グレー、不一致ピクセルを赤/黄で描く。
+  return red !== green || green !== blue;
 }
 
 export function generateSuggestion(matchRate: number): string {

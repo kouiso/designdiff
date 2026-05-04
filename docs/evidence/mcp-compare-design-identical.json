@@ -11,21 +11,8 @@
     "matchRate": 100,
     "diffPixelCount": 0,
     "totalPixelCount": 40000,
-    "remainingIssues": 1,
-    "diffRegions": [
-      {
-        "id": 0,
-        "bounds": {
-          "x": 0,
-          "y": 0,
-          "width": 200,
-          "height": 200
-        },
-        "diffPixelCount": 40000,
-        "nearbyNodeIds": [],
-        "nearbyNodeNames": []
-      }
-    ],
+    "remainingIssues": 0,
+    "diffRegions": [],
     "completionCriteria": {
       "matchRate": {
         "required": 100,
@@ -39,8 +26,8 @@
       },
       "remainingIssues": {
         "required": 0,
-        "current": 1,
-        "status": "FAIL"
+        "current": 0,
+        "status": "PASS"
       }
     },
     "nextAction": "一致率100%です。差分はありません。タスク完了です。",

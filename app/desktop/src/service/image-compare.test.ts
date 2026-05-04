@@ -97,6 +97,23 @@ describe("clusterDiffRegions", () => {
     expect(regions).toHaveLength(0);
   });
 
+  it("pixelmatchの一致ピクセルは領域として扱わない", () => {
+    const width = 10;
+    const height = 1;
+    const data = new Uint8ClampedArray(width * height * 4);
+
+    for (let x = 0; x < width; x++) {
+      const idx = x * 4;
+      data[idx] = x % 2 === 0 ? 255 : 230;
+      data[idx + 1] = data[idx];
+      data[idx + 2] = data[idx];
+      data[idx + 3] = 255;
+    }
+
+    const regions = clusterDiffRegions(data, width, height);
+    expect(regions).toHaveLength(0);
+  });
+
   it("10px 以上の領域は DiffRegion として返される", () => {
     const width = 20;
     const height = 1;

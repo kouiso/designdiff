@@ -37,6 +37,10 @@ test.describe("Performance measurements", () => {
   test("Page load p95 ≤ 1000ms", async ({ page }) => {
     const loadTimes: number[] = [];
 
+    // 初回のVite/ブラウザ側ウォームアップを性能サンプルから除外する。
+    await page.goto("/");
+    await page.waitForLoadState("networkidle");
+
     for (let i = 0; i < SAMPLES; i++) {
       const start = Date.now();
       await page.goto("/");

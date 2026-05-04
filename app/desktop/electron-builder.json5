@@ -26,5 +26,12 @@
   "linux": {
     "target": ["AppImage"],
     "category": "Development"
-  }
+  },
+  "publish": [
+    {
+      "provider": "github",
+      "owner": "kouiso",
+      "repo": "designdiff"
+    }
+  ]
 }
