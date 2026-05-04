@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="240" fill="#8B5CF6"/>
+
+  <!-- Design frame (left) - slightly offset back -->
+  <rect x="100" y="120" width="200" height="260" rx="16" fill="white" opacity="0.9"/>
+  <!-- Design frame inner lines (mockup content) -->
+  <rect x="124" y="152" width="152" height="16" rx="4" fill="#8B5CF6" opacity="0.3"/>
+  <rect x="124" y="180" width="120" height="12" rx="4" fill="#8B5CF6" opacity="0.2"/>
+  <rect x="124" y="204" width="152" height="80" rx="8" fill="#8B5CF6" opacity="0.15"/>
+  <rect x="124" y="300" width="100" height="12" rx="4" fill="#8B5CF6" opacity="0.2"/>
+  <rect x="124" y="324" width="80" height="12" rx="4" fill="#8B5CF6" opacity="0.15"/>
+
+  <!-- Implementation frame (right) - slightly offset forward -->
+  <rect x="212" y="132" width="200" height="260" rx="16" fill="white" opacity="0.95"/>
+  <!-- Implementation frame inner lines -->
+  <rect x="236" y="164" width="152" height="16" rx="4" fill="#8B5CF6" opacity="0.3"/>
+  <rect x="236" y="192" width="120" height="12" rx="4" fill="#8B5CF6" opacity="0.2"/>
+  <rect x="236" y="216" width="152" height="80" rx="8" fill="#8B5CF6" opacity="0.15"/>
+  <rect x="236" y="312" width="100" height="12" rx="4" fill="#8B5CF6" opacity="0.2"/>
+  <rect x="236" y="336" width="80" height="12" rx="4" fill="#8B5CF6" opacity="0.15"/>
+
+  <!-- Diff indicator - delta/change marks -->
+  <!-- Red diff mark (difference detected) -->
+  <circle cx="370" cy="176" r="14" fill="#EF4444"/>
+  <rect x="362" y="173" width="16" height="6" rx="2" fill="white"/>
+
+  <!-- Green diff mark (match) -->
+  <circle cx="370" cy="220" r="14" fill="#22C55E"/>
+  <path d="M362 220 L367 225 L378 214" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+
+  <!-- Vertical divider line in overlap area -->
+  <line x1="256" y1="150" x2="256" y2="374" stroke="#8B5CF6" stroke-width="3" stroke-dasharray="8,6" opacity="0.6"/>
+</svg>
