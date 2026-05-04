@@ -19,14 +19,19 @@ import { useTabStore } from "./store/tab-store";
 
 export type Page = "home" | "project" | "compare" | "live_overlay" | "settings" | "project_view";
 
+const QUICK_COMPARE_PROJECT_ID = "quick-compare";
+
 export const App = () => {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [standalonePage, setStandalonePage] = useState<Page | null>(null);
   const loadSettings = useSettingStore((s) => s.loadSettings);
   const loadProjects = useProjectListStore((s) => s.loadProjects);
+  const openProject = useProjectListStore((s) => s.openProject);
+  const currentProjectId = useProjectListStore((s) => s.currentProject?.id ?? null);
   const activeTab = useTabStore((s) => s.tabs.find((t) => t.id === s.activeTabId) ?? null);
   const tabs = useTabStore((s) => s.tabs);
   const isOverlayOpen = useOverlayStore((s) => s.isOpen);
+  const activeProjectId = activeTab?.projectId ?? null;
 
   const currentPage = activeTab?.page ?? standalonePage ?? "home";
 
@@ -34,6 +39,13 @@ export const App = () => {
     loadSettings();
     loadProjects();
   }, [loadSettings, loadProjects]);
+
+  useEffect(() => {
+    if (!activeProjectId || activeProjectId === QUICK_COMPARE_PROJECT_ID) return;
+    if (currentProjectId === activeProjectId) return;
+
+    openProject(activeProjectId);
+  }, [activeProjectId, currentProjectId, openProject]);
 
   const handleNavigate = useCallback(
     (target: Page) => {

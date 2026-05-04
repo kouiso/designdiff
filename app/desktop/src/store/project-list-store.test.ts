@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import type { Project } from "@figdiff/shared";
+
 const { mockList, mockLoad, mockSave, mockDelete } = vi.hoisted(() => ({
   mockList: vi.fn().mockResolvedValue([]),
   mockLoad: vi.fn(),
@@ -84,6 +86,50 @@ describe("useProjectListStore", () => {
       await useProjectListStore.getState().openProject("p1");
       expect(useProjectListStore.getState().currentProject?.name).toBe("Test");
       expect(useProjectListStore.getState().selectedPageId).toBe("pg1");
+    });
+
+    it("古いopenProjectの完了結果でcurrentProjectを上書きしない", async () => {
+      const projectA: Project = {
+        id: "p1",
+        name: "Project A",
+        implementationUrl: "http://localhost:3000/a",
+        pages: [{ id: "pg-a", name: "A", path: "/a", designSources: [] }],
+        createdAt: "2026-01-01T00:00:00Z",
+        updatedAt: "2026-01-01T00:00:00Z",
+      };
+      const projectB: Project = {
+        id: "p2",
+        name: "Project B",
+        implementationUrl: "http://localhost:3000/b",
+        pages: [{ id: "pg-b", name: "B", path: "/b", designSources: [] }],
+        createdAt: "2026-01-01T00:00:00Z",
+        updatedAt: "2026-01-01T00:00:00Z",
+      };
+      const resolvers = new Map<string, (project: Project) => void>();
+      mockLoad.mockImplementation(
+        (projectId: string) =>
+          new Promise<Project>((resolve) => {
+            resolvers.set(projectId, resolve);
+          }),
+      );
+
+      const firstOpen = useProjectListStore.getState().openProject(projectA.id);
+      const secondOpen = useProjectListStore.getState().openProject(projectB.id);
+      await Promise.resolve();
+      await Promise.resolve();
+
+      expect(resolvers.has(projectA.id)).toBe(true);
+      expect(resolvers.has(projectB.id)).toBe(true);
+
+      resolvers.get(projectB.id)?.(projectB);
+      await secondOpen;
+      expect(useProjectListStore.getState().currentProject?.id).toBe(projectB.id);
+      expect(useProjectListStore.getState().selectedPageId).toBe("pg-b");
+
+      resolvers.get(projectA.id)?.(projectA);
+      await firstOpen;
+      expect(useProjectListStore.getState().currentProject?.id).toBe(projectB.id);
+      expect(useProjectListStore.getState().selectedPageId).toBe("pg-b");
     });
   });
 
