@@ -19,6 +19,8 @@ import { useTabStore } from "./store/tab-store";
 
 export type Page = "home" | "project" | "compare" | "live_overlay" | "settings" | "project_view";
 
+const QUICK_COMPARE_PROJECT_ID = "quick-compare";
+
 export const App = () => {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [standalonePage, setStandalonePage] = useState<Page | null>(null);
@@ -39,7 +41,7 @@ export const App = () => {
   }, [loadSettings, loadProjects]);
 
   useEffect(() => {
-    if (!activeProjectId || activeProjectId === "quick-compare") return;
+    if (!activeProjectId || activeProjectId === QUICK_COMPARE_PROJECT_ID) return;
     if (currentProjectId === activeProjectId) return;
 
     openProject(activeProjectId);

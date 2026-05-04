@@ -43,6 +43,8 @@ export const generateId = (): string => {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 };
 
+let latestOpenProjectRequestId = 0;
+
 export const useProjectListStore = create<ProjectListState>((set, get) => ({
   projects: [],
   isLoading: false,
@@ -85,10 +87,13 @@ export const useProjectListStore = create<ProjectListState>((set, get) => ({
   },
 
   openProject: async (projectId) => {
+    const requestId = ++latestOpenProjectRequestId;
     set({ isLoading: true, error: null });
     try {
       const platform = await getPlatform();
       const project = await platform.project.load(projectId);
+      if (requestId !== latestOpenProjectRequestId) return;
+
       const firstPage = project.pages[0];
       set({
         currentProject: project,
@@ -97,6 +102,7 @@ export const useProjectListStore = create<ProjectListState>((set, get) => ({
         isLoading: false,
       });
     } catch (e) {
+      if (requestId !== latestOpenProjectRequestId) return;
       set({ error: String(e), isLoading: false });
     }
   },
