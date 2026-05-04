@@ -8,10 +8,9 @@ import { z } from "zod";
 import { createMcpServer } from "../server.js";
 import { clearComparisonHistory } from "../service/comparison-history.js";
 
-const PAIR02_DIR = path.resolve(
-  import.meta.dirname,
-  "../../../../verification/fixtures/pair-02-multi-section-lp",
-);
+const FIXTURES_ROOT = path.resolve(import.meta.dirname, "../../../../verification/fixtures");
+
+const PAIR02_DIR = path.join(FIXTURES_ROOT, "pair-02-multi-section-lp");
 
 const TextContentSchema = z.object({
   content: z.array(
@@ -38,8 +37,13 @@ function extractText(result: unknown): string {
 
 describe("verify_fix", () => {
   let client: Client;
+  let originalAllowedDirs: string | undefined;
 
   beforeEach(async () => {
+    // フィクスチャファイルがパストラバーサルガードを通過できるよう許可ディレクトリを設定する
+    originalAllowedDirs = process.env.FIGDIFF_ALLOWED_DIRS;
+    process.env.FIGDIFF_ALLOWED_DIRS = FIXTURES_ROOT;
+
     clearComparisonHistory();
     const server = createMcpServer();
     const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
@@ -49,8 +53,17 @@ describe("verify_fix", () => {
   });
 
   afterEach(async () => {
-    await client.close();
-    clearComparisonHistory();
+    try {
+      await client.close();
+      clearComparisonHistory();
+    } finally {
+      // client.close() が失敗しても環境変数を必ず元に戻す
+      if (originalAllowedDirs === undefined) {
+        delete process.env.FIGDIFF_ALLOWED_DIRS;
+      } else {
+        process.env.FIGDIFF_ALLOWED_DIRS = originalAllowedDirs;
+      }
+    }
   });
 
   it("対象ノードが改善したら improved を返す", async () => {
