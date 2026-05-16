@@ -228,9 +228,9 @@ export default [
     },
   },
 
-  // Verification scripts — Node.js utility scripts
+  // Verification + repo-root Node.js utility scripts
   {
-    files: ["verification/scripts/**/*.mjs"],
+    files: ["verification/scripts/**/*.mjs", "scripts/**/*.mjs"],
     languageOptions: {
       globals: {
         ...globals.node,
