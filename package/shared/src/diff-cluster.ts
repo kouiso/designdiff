@@ -222,8 +222,15 @@ function buildHotMask(args: {
   imageHeight: number;
   cellDensityThreshold: number;
 }): boolean[] {
-  const { cellDiff, gridWidth, gridHeight, cellSize, imageWidth, imageHeight, cellDensityThreshold } =
-    args;
+  const {
+    cellDiff,
+    gridWidth,
+    gridHeight,
+    cellSize,
+    imageWidth,
+    imageHeight,
+    cellDensityThreshold,
+  } = args;
   const hotMask = new Array<boolean>(gridWidth * gridHeight).fill(false);
 
   for (let cy = 0; cy < gridHeight; cy++) {
@@ -256,25 +263,44 @@ function labelConnectedHotCells(
     for (let cx = 0; cx < gridWidth; cx++) {
       const idx = cy * gridWidth + cx;
       if (!hotMask[idx] || visited[idx]) continue;
-      const cells: number[] = [];
-      const stack: number[] = [idx];
-      while (stack.length > 0) {
-        const cellIdx = stack.pop();
-        if (cellIdx === undefined || visited[cellIdx] || !hotMask[cellIdx]) continue;
-        visited[cellIdx] = true;
-        cells.push(cellIdx);
-        const x = cellIdx % gridWidth;
-        const y = Math.floor(cellIdx / gridWidth);
-        if (x + 1 < gridWidth) stack.push(cellIdx + 1);
-        if (x - 1 >= 0) stack.push(cellIdx - 1);
-        if (y + 1 < gridHeight) stack.push(cellIdx + gridWidth);
-        if (y - 1 >= 0) stack.push(cellIdx - gridWidth);
-      }
-      components.push(cells);
+      components.push(floodFillHotComponent(hotMask, visited, gridWidth, gridHeight, idx));
     }
   }
 
   return components;
+}
+
+function floodFillHotComponent(
+  hotMask: boolean[],
+  visited: boolean[],
+  gridWidth: number,
+  gridHeight: number,
+  startIdx: number,
+): number[] {
+  const cells: number[] = [];
+  const stack: number[] = [startIdx];
+  while (stack.length > 0) {
+    const cellIdx = stack.pop();
+    if (cellIdx === undefined || visited[cellIdx] || !hotMask[cellIdx]) continue;
+    visited[cellIdx] = true;
+    cells.push(cellIdx);
+    pushNeighbours(stack, cellIdx, gridWidth, gridHeight);
+  }
+  return cells;
+}
+
+function pushNeighbours(
+  stack: number[],
+  cellIdx: number,
+  gridWidth: number,
+  gridHeight: number,
+): void {
+  const x = cellIdx % gridWidth;
+  const y = Math.floor(cellIdx / gridWidth);
+  if (x + 1 < gridWidth) stack.push(cellIdx + 1);
+  if (x - 1 >= 0) stack.push(cellIdx - 1);
+  if (y + 1 < gridHeight) stack.push(cellIdx + gridWidth);
+  if (y - 1 >= 0) stack.push(cellIdx - gridWidth);
 }
 
 interface ComponentRegion {
