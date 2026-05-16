@@ -30,7 +30,9 @@ export {
 // Diff Clustering (pixelmatch output → regions)
 export {
   clusterDiffPixels,
+  clusterDiffPixelsGrid,
   generateMatchSuggestion,
+  type GridClusterOptions,
 } from "./diff-cluster.js";
 
 // Signal

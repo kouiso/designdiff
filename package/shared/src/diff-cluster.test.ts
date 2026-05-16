@@ -103,3 +103,53 @@ describe("generateMatchSuggestion", () => {
     expect(generateMatchSuggestion(0)).toBe("compare.suggestionMajor");
   });
 });
+
+import { clusterDiffPixelsGrid } from "./diff-cluster.js";
+
+describe("clusterDiffPixelsGrid", () => {
+  it("差分なしの画像は空配列を返す", () => {
+    const data = new Uint8ClampedArray(256 * 256 * 4);
+    const regions = clusterDiffPixelsGrid(data, 256, 256);
+    expect(regions).toEqual([]);
+  });
+
+  it("離れた 2 領域は 2 region に分割される (flood-fill では 1 にならない検証)", () => {
+    const size = 512;
+    const pixels: { x: number; y: number }[] = [];
+    for (let y = 0; y < 64; y++) for (let x = 0; x < 64; x++) pixels.push({ x, y });
+    for (let y = 384; y < 448; y++) for (let x = 384; x < 448; x++) pixels.push({ x, y });
+    const data = createDiffData(size, size, pixels);
+    const regions = clusterDiffPixelsGrid(data, size, size, { cellSize: 64 });
+    expect(regions.length).toBe(2);
+    for (const r of regions) {
+      expect(r.bounds.width).toBeLessThan(size);
+      expect(r.bounds.height).toBeLessThan(size);
+    }
+  });
+
+  it("低密度のスパースな散布は hot cell にならず region 0", () => {
+    const size = 256;
+    const pixels = [
+      { x: 10, y: 10 },
+      { x: 100, y: 100 },
+      { x: 200, y: 200 },
+    ];
+    const data = createDiffData(size, size, pixels);
+    const regions = clusterDiffPixelsGrid(data, size, size);
+    expect(regions.length).toBe(0);
+  });
+
+  it("region bounds は image 境界をはみ出さない", () => {
+    const w = 200;
+    const h = 200;
+    const pixels: { x: number; y: number }[] = [];
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) pixels.push({ x, y });
+    const data = createDiffData(w, h, pixels);
+    const regions = clusterDiffPixelsGrid(data, w, h, { cellSize: 64 });
+    expect(regions.length).toBeGreaterThanOrEqual(1);
+    for (const r of regions) {
+      expect(r.bounds.x + r.bounds.width).toBeLessThanOrEqual(w);
+      expect(r.bounds.y + r.bounds.height).toBeLessThanOrEqual(h);
+    }
+  });
+});
