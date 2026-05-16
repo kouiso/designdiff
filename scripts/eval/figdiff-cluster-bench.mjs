@@ -25,11 +25,8 @@ import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const MCP_BUILD_DIR =
-  process.env.FIGDIFF_MCP_DIST ?? resolve(HERE, "../../app/mcp-server/dist");
-const { compareImages } = await import(
-  `${MCP_BUILD_DIR}/service/image-compare-service.js`
-);
+const MCP_BUILD_DIR = process.env.FIGDIFF_MCP_DIST ?? resolve(HERE, "../../app/mcp-server/dist");
+const { compareImages } = await import(`${MCP_BUILD_DIR}/service/image-compare-service.js`);
 
 const BASE = process.env.FIGDIFF_SCREENSHOTS;
 if (!BASE) {
@@ -43,14 +40,38 @@ const PAGES = [
   { name: "top-sp", figma: `${BASE}/figma/top-sp.png`, impl: `${BASE}/astro/top-sp.png` },
   { name: "about-pc", figma: `${BASE}/figma/about-pc.png`, impl: `${BASE}/astro/about-pc.png` },
   { name: "about-sp", figma: `${BASE}/figma/about-sp.png`, impl: `${BASE}/astro/about-sp.png` },
-  { name: "service-pc", figma: `${BASE}/figma/service-pc.png`, impl: `${BASE}/astro/service-pc.png` },
-  { name: "service-sp", figma: `${BASE}/figma/service-sp.png`, impl: `${BASE}/astro/service-sp.png` },
-  { name: "recruit-pc", figma: `${BASE}/figma/recruit-pc.png`, impl: `${BASE}/astro/recruit-pc.png` },
-  { name: "recruit-sp", figma: `${BASE}/figma/recruit-sp.png`, impl: `${BASE}/astro/recruit-sp.png` },
+  {
+    name: "service-pc",
+    figma: `${BASE}/figma/service-pc.png`,
+    impl: `${BASE}/astro/service-pc.png`,
+  },
+  {
+    name: "service-sp",
+    figma: `${BASE}/figma/service-sp.png`,
+    impl: `${BASE}/astro/service-sp.png`,
+  },
+  {
+    name: "recruit-pc",
+    figma: `${BASE}/figma/recruit-pc.png`,
+    impl: `${BASE}/astro/recruit-pc.png`,
+  },
+  {
+    name: "recruit-sp",
+    figma: `${BASE}/figma/recruit-sp.png`,
+    impl: `${BASE}/astro/recruit-sp.png`,
+  },
   { name: "news-pc", figma: `${BASE}/figma/news-pc.png`, impl: `${BASE}/astro/news-pc.png` },
   { name: "news-sp", figma: `${BASE}/figma/news-sp.png`, impl: `${BASE}/astro/news-sp.png` },
-  { name: "contact-pc", figma: `${BASE}/figma/contact-pc.png`, impl: `${BASE}/astro/contact-pc.png` },
-  { name: "contact-sp", figma: `${BASE}/figma/contact-sp.png`, impl: `${BASE}/astro/contact-sp.png` },
+  {
+    name: "contact-pc",
+    figma: `${BASE}/figma/contact-pc.png`,
+    impl: `${BASE}/astro/contact-pc.png`,
+  },
+  {
+    name: "contact-sp",
+    figma: `${BASE}/figma/contact-sp.png`,
+    impl: `${BASE}/astro/contact-sp.png`,
+  },
 ];
 
 const THRESHOLD = process.env.FIGDIFF_THRESHOLD ? Number(process.env.FIGDIFF_THRESHOLD) : 0.1;
@@ -85,7 +106,9 @@ for (const page of PAGES) {
       diff_image_base64_chars: diffImageSize,
       result: rest,
     });
-    process.stdout.write(`✓ ${page.name}: match_rate=${rest.matchRate}% regions=${rest.diffRegions?.length ?? 0} t=${Math.round(t1 - t0)}ms\n`);
+    process.stdout.write(
+      `✓ ${page.name}: match_rate=${rest.matchRate}% regions=${rest.diffRegions?.length ?? 0} t=${Math.round(t1 - t0)}ms\n`,
+    );
   } catch (e) {
     const t1 = performance.now();
     results.push({
@@ -115,4 +138,6 @@ const summary = {
 const out = process.env.FIGDIFF_OUT ?? "/tmp/figdiff-eval-results.json";
 await writeFile(out, JSON.stringify(summary, null, 2));
 process.stdout.write(`\nResults: ${out}\n`);
-process.stdout.write(`Total: ${summary.total_wall_ms}ms, RSS ${summary.rss_start_mb} → ${summary.rss_end_mb}MB\n`);
+process.stdout.write(
+  `Total: ${summary.total_wall_ms}ms, RSS ${summary.rss_start_mb} → ${summary.rss_end_mb}MB\n`,
+);
