@@ -193,10 +193,12 @@ function buildCellGrid(
   imageWidth: number,
   imageHeight: number,
   cellSize: number,
-): { cellDiff: number[]; gridWidth: number; gridHeight: number } {
+): { cellDiff: Uint32Array; gridWidth: number; gridHeight: number } {
   const gridWidth = Math.ceil(imageWidth / cellSize);
   const gridHeight = Math.ceil(imageHeight / cellSize);
-  const cellDiff = new Array<number>(gridWidth * gridHeight).fill(0);
+  // Uint32Array is ~4× more memory-efficient than Array<number> for large grids
+  // and gives faster scans inside hot loops.
+  const cellDiff = new Uint32Array(gridWidth * gridHeight);
 
   for (let y = 0; y < imageHeight; y++) {
     const cellY = Math.floor(y / cellSize);
@@ -214,7 +216,7 @@ function buildCellGrid(
 }
 
 function buildHotMask(args: {
-  cellDiff: number[];
+  cellDiff: Uint32Array;
   gridWidth: number;
   gridHeight: number;
   cellSize: number;
@@ -277,31 +279,46 @@ function floodFillHotComponent(
   gridHeight: number,
   startIdx: number,
 ): number[] {
+  // Mark-before-push: prevents the same cell from being pushed multiple times
+  // and keeps the stack bounded by the number of cells in the component.
   const cells: number[] = [];
-  const stack: number[] = [startIdx];
+  visited[startIdx] = true;
+  cells.push(startIdx);
+  const stack: number[] = [];
+  pushUnvisitedNeighbours(stack, visited, hotMask, startIdx, gridWidth, gridHeight);
   while (stack.length > 0) {
     const cellIdx = stack.pop();
-    if (cellIdx === undefined || visited[cellIdx] || !hotMask[cellIdx]) continue;
+    if (cellIdx === undefined) continue;
     visited[cellIdx] = true;
     cells.push(cellIdx);
-    pushNeighbours(stack, cellIdx, gridWidth, gridHeight);
+    pushUnvisitedNeighbours(stack, visited, hotMask, cellIdx, gridWidth, gridHeight);
   }
   return cells;
 }
 
-function pushNeighbours(
+function pushUnvisitedNeighbours(
   stack: number[],
+  visited: boolean[],
+  hotMask: boolean[],
   cellIdx: number,
   gridWidth: number,
   gridHeight: number,
 ): void {
   const x = cellIdx % gridWidth;
   const y = Math.floor(cellIdx / gridWidth);
-  if (x + 1 < gridWidth) stack.push(cellIdx + 1);
-  if (x - 1 >= 0) stack.push(cellIdx - 1);
-  if (y + 1 < gridHeight) stack.push(cellIdx + gridWidth);
-  if (y - 1 >= 0) stack.push(cellIdx - gridWidth);
+  const candidates: number[] = [];
+  if (x + 1 < gridWidth) candidates.push(cellIdx + 1);
+  if (x - 1 >= 0) candidates.push(cellIdx - 1);
+  if (y + 1 < gridHeight) candidates.push(cellIdx + gridWidth);
+  if (y - 1 >= 0) candidates.push(cellIdx - gridWidth);
+  for (const n of candidates) {
+    if (hotMask[n] && !visited[n]) {
+      visited[n] = true;
+      stack.push(n);
+    }
+  }
 }
+
 
 interface ComponentRegion {
   bounds: { x: number; y: number; width: number; height: number };
@@ -311,7 +328,7 @@ interface ComponentRegion {
 
 function buildRegionFromComponent(args: {
   component: number[];
-  cellDiff: number[];
+  cellDiff: Uint32Array;
   cellSize: number;
   imageWidth: number;
   imageHeight: number;
