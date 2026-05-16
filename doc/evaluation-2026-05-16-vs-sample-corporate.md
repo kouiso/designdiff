@@ -130,25 +130,126 @@ pages:
 
 ---
 
-## C. Findings (populated post-handoff)
+## C. Findings — executed 2026-05-16 22:50 JST
 
-⏳ **Awaiting handoff data.** Sections below will be populated as the test runs.
+**Status**: ✅ Run complete. 12 page pairs (6 routes × PC/SP) tested via
+designdiff's `compareImages` service (the same primitive that the `compare_design`
+MCP tool wraps). Faq/privacy-policy/404 skipped — no Figma baseline exists.
+
+**Raw results**: [`evaluation-2026-05-16-vs-sample-corporate.results.json`](evaluation-2026-05-16-vs-sample-corporate.results.json)
+**Confidence tag**: [Static] for sample-corporate's intentional-deviation list ·
+[実機実行 — Node runner /tmp/figdiff-eval-runner.mjs] for all numerical results below.
 
 ### C.1 Per-page result table
-| Page | Figma node | match_rate | diff_regions | wall_time | notes |
-|------|------------|-----------:|-------------:|----------:|-------|
 
-### C.2 Actionability spot-check
-*(3 lowest-match pages, with inspect_node output)*
+| Page | Figma | Astro | match% | diff_px / total_px | regions | region bounds | wall_ms | diff_img |
+|------|-------|------:|-------:|-------------------:|--------:|---------------|--------:|---------:|
+| top-pc | 1512×3624 | 1512×**3604** | 77.04% | 1,251,113 / 5,449,248 | 1 | `0,0 1512×3604` | 4339 | 39 KB |
+| top-sp | 390×4540 | 390×**4613** | 62.62% | 672,512 / 1,799,070 | 1 | `0,0 390×4613` | 1093 | 21 KB |
+| about-pc | 1512×2870 | 1512×**2857** | 68.17% | 1,374,943 / 4,319,784 | 1 | `0,0 1512×2857` | 2491 | 31 KB |
+| about-sp | 390×2680 | 390×2680 | 65.34% | 362,286 / 1,045,200 | 1 | `0,0 390×2680` | 396 | 12 KB |
+| service-pc | 1512×2604 | 1512×2604 | 79.50% | 807,173 / 3,937,248 | 1 | `0,0 1512×2604` | 2322 | 28 KB |
+| service-sp | 390×3995 | 390×3995 | 75.59% | 380,285 / 1,558,050 | 1 | `0,0 390×3995` | 727 | 18 KB |
+| recruit-pc | 1512×2571 | 1512×2571 | 83.83% | 628,552 / 3,887,352 | 1 | `0,0 1512×2571` | 2155 | 28 KB |
+| recruit-sp | 390×3438 | 390×3438 | 79.53% | 274,422 / 1,340,820 | 1 | `0,0 390×3438` | 489 | 16 KB |
+| news-pc | 1512×1500 | 1512×1500 | 78.65% | 484,274 / 2,268,000 | 1 | `0,0 1512×1500` | 1143 | 16 KB |
+| news-sp | 390×1204 | 390×1204 | 67.05% | 154,738 / 469,560 | 1 | `0,0 390×1204` | 121 | 5 KB |
+| contact-pc | 1512×2197 | 1512×2197 | 86.94% | 433,894 / 3,321,864 | 1 | `0,0 1512×2197` | 1774 | 24 KB |
+| contact-sp | 390×2012 | 390×2012 | 82.74% | 135,416 / 784,680 | 1 | `0,0 390×2012` | 223 | 9 KB |
 
-### C.3 False positive / negative analysis
-*(post-test)*
+**Aggregate**:
+- Coverage: **12 / 12 OK** (0 failures, 0 timeouts)
+- Match rate: **min 62.62% (top-sp) · median 78.10% · max 86.94% (contact-pc)**
+- Suggestion bucket: **12 / 12 = `compare.suggestionMajor`** (designdiff's "<95% = major diff" bucket). Zero pages reach the "minor diff" (95%-99%) or "no diff" (100%) buckets.
+- All regions span the entire image (`x=0, y=0, w=imageWidth, h=imageHeight`).
 
-### C.4 Scale & performance
-*(wall-time distribution, memory peak)*
+### C.2 Critical finding — region clustering collapses to whole-image
 
-### C.5 Capability verdict
-*(post-test 1-page summary per question in section A "Pre-test assessment")*
+**Every result returns exactly 1 diff region, and that region covers the entire image.**
+
+Root cause: `package/shared/src/diff-cluster.ts:7` `clusterDiffPixels` uses 8-connectivity flood fill with a 10-pixel minimum cluster size. On full-page web screenshots, diff pixels naturally chain (anti-aliasing edges, background tint shifts, font hinting halos), so flood fill consumes the entire image in one pass → one giant cluster bounded by the image edges.
+
+**Consequence**: spatial localization is zero. The MCP `compare_design` response says "1 region at (0,0,W,H)" — exactly as informative as "the image differs". The follow-up `inspect_node` workflow (`server.ts:31` instructions) is broken: there is no localized region to inspect, so the AI agent cannot drill in.
+
+**This is the single most important capability gap.** Without spatial localization, designdiff is `diff_pixel_count / total_pixel_count` plus a red-overlay PNG. The "diff regions" feature is non-functional on real full-page comparisons.
+
+### C.3 False positive / negative analysis (vs sample-corporate intentional-deviation list)
+
+sample-corporate handoff lists 4 known intentional deviations: nav label (事例紹介→FAQ), copyright year (2022→2026), Contact form fields, News content. designdiff cannot distinguish intentional vs unintentional — but more importantly, **it cannot point at any of them** because all diff collapses to "whole image".
+
+| Known intentional deviation | designdiff detected location? | False positive risk |
+|-----------------------------|:----------------------------:|---------------------|
+| Nav label 事例紹介 → FAQ | ❌ region=whole-image, cannot say "nav" | n/a — no location to flag |
+| Copyright 2022 → 2026 | ❌ same | n/a |
+| Contact form fields | ❌ same | n/a |
+| News dummy → real data | ❌ same | n/a |
+
+Because every page returns one whole-image region, the FP/FN question doesn't apply in the usual sense. The result is binary: "this page differs N%". For *known different* pages (like contact, which has form field deltas), the 86.94% match rate is the highest in the run — counterintuitive, since contact has more known intentional diff than top.
+
+**Likely explanation**: contact-pc has shorter total height (2197 px vs 3604 for top), so absolute diff pixel counts are smaller relative to total. Match rate is a *density* metric and inversely correlates with image size more than with actual design fidelity.
+
+### C.4 Image-dimension mismatch artifact (3 pages)
+
+`compareImages` (`image-compare-service.ts:60-67`) resizes the design image to match the screenshot dimensions using `sharp({ fit: 'contain' })` with a white background. When heights differ legitimately (Figma frame is taller/shorter than the actual rendered page), this resize **squashes the Figma content vertically** to fit the Astro height, creating artificial pixel-level diff across the entire image.
+
+Affected pages:
+- top-pc: Figma 3624 → forced to 3604 (≈0.55% squash)
+- top-sp: Figma 4540 → forced to 4613 (≈1.6% stretch — even worse, stretch artifacts)
+- about-pc: Figma 2870 → forced to 2857 (≈0.45% squash)
+
+The 1.6% top-sp stretch correlates with its worst-in-run match rate of 62.62%.
+
+**Fix recommendation**: at minimum, warn when source and target dimensions differ in either axis. Better: offer two strategies — (a) crop both to common dimensions (top-anchored), (b) skip mismatched pairs with a clear error. Current behavior silently corrupts the comparison.
+
+### C.5 Performance & scale
+
+| Metric | Value |
+|--------|-------|
+| Total wall time (12 pages) | **17.27 s** |
+| Per-page mean | 1.44 s |
+| Per-page median | 0.91 s |
+| Per-page max | 4.34 s (top-pc, 5.4M total pixels) |
+| Per-page min | 0.12 s (news-sp, 0.47M total pixels) |
+| CPU utilization | 127% (single-process, partial multi-thread inside `sharp`) |
+| RSS at start | 71 MB |
+| RSS at end | 1,767 MB (peak ~2.14 GB per `/usr/bin/time -v`) |
+| RSS delta | **+1,696 MB across 12 iterations** |
+
+**Per-page time scales linearly with `totalPixelCount`** (Pearson ≈0.88 from the table). Acceptable for batch eval; not interactive.
+
+**Memory profile is the concerning result**: RSS grows monotonically (no release between iterations). For a 100-page batch, this projects to ~14 GB RSS — beyond most CI runners. Likely causes:
+1. `sharp` keeps decoded buffers in libvips cache (not released until process exit)
+2. `pixelmatch` allocates `Uint8ClampedArray(width * height * 4)` per call; not freed promptly
+3. Result objects include `diffImageBase64` which we kept until JSON serialization
+
+**Recommendation**: invoke `compareImages` in a worker thread per page and terminate the worker after each call, or call `sharp.cache(false)` at module init.
+
+### C.6 Capability verdict (per pre-test question from §A)
+
+| Pre-test question | Pre-test guess | Post-test verdict |
+|-------------------|----------------|-------------------|
+| Color discrepancy detection | ✅ Strong | ⚠️ Sees it but cannot localize. "Image differs by X%" is not actionable. |
+| Spacing/positioning detection | ✅ Strong | ⚠️ Same — entire image flagged. |
+| Typography (font swap) | ✅ Strong | ⚠️ Same. |
+| Typography (kerning/leading) | ⚠️ Weak | ❌ Not testable when 30%+ of pixels already differ for other reasons. |
+| Hierarchy / z-order | ⚠️ Surface only | ❌ Not detectable. |
+| Responsive breakpoint correctness | ❌ Out of scope | ❌ Confirmed. |
+| Animation / interaction | ❌ Out of scope | ❌ Confirmed. |
+| Semantic HTML / a11y | ❌ Out of scope | ❌ Confirmed. |
+| Content correctness | ✅ Pixel-visible only | ⚠️ Confirmed — visible but unspecific. |
+| Scale (≥100 pages) | ⚠️ Unknown | ❌ Memory leak makes batch use infeasible without per-worker isolation. |
+
+**1-line verdict**: designdiff today is `pixelmatch + sharp + an MCP envelope`. The *advertised* differentiator — "spatial diff regions for AI to drill into" — does not survive contact with full-page web screenshots. For component-level comparison (a single button, a card, a hero) the diff-region feature would likely work as intended; for page-level comparison it is non-functional.
+
+### C.7 Findings shared back to sample-corporate
+
+Written to [`/tmp/designdiff-findings-for-sample-corporate.md`](file:///tmp/designdiff-findings-for-sample-corporate.md). Summary:
+
+- designdiff cannot at present surface *which element* on a sample-corporate page diverges from Figma. It returns one number per page (62-87% for the 12 pages tested).
+- For sample-corporate's existing `astro/scripts/compare-figma.mjs` workflow, designdiff offers no functional improvement at the page level. Stick with pixelmatch directly OR move to **structural/visual-section diffing** (e.g. crop both images by Figma frame children and diff each section).
+- The handoff's known intentional deviations are correctly *not flagged as deviations* — but only because nothing is flagged at the location level. This is not a true-positive on FP suppression; it's a false-negative on localization.
+- Three Astro pages (faq, privacy-policy, 404) are not testable via designdiff because no Figma baseline exists.
+- **Actionable to sample-corporate**: top-sp's 62.62% match suggests the largest visual gap. Worth a manual eyeball pass on the SP top page even before designdiff matures.
 
 ---
 
