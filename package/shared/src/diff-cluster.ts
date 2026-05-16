@@ -319,7 +319,6 @@ function pushUnvisitedNeighbours(
   }
 }
 
-
 interface ComponentRegion {
   bounds: { x: number; y: number; width: number; height: number };
   diffPixelCount: number;
