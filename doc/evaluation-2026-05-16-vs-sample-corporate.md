@@ -27,8 +27,8 @@ A pixel-diff workflow that compares a **Figma frame image** against an
 
 | Tool | Tier | Input | Output |
 |------|------|-------|--------|
-| **`compare_design`** | Primary | `design_source` (Figma URL with `node-id` OR local image path) + `screenshot` (local path) + `threshold` (default 0.1) + optional `frame_name`, `crop_region` | `match_rate` (%), `diff_regions[]` (bounding boxes), `diff_image_base64` (red-overlay), `suggestion` (i18n key) |
-| `inspect_node` | Secondary | Figma URL/node + region | CSS-level details for diff regions (used after compare) |
+| **`compare_design`** | Primary | `design_source` (Figma URL with `node-id` OR local image path) + `screenshot` (local path) + `threshold` (default 0.1) + optional `frame_name`. Crop region is *not* a direct input — fetched server-side via `comparison_id` referencing previously stored `set_crop_region` state. | `match_rate` (%), `diff_regions[]` (bounding boxes), `diff_image_base64` (red-overlay), `suggestion` (i18n key) |
+| `inspect_node` | Secondary | `node_id` *or* `node_ids[]` (Figma node identifier from `compare_design`'s `diff_regions[].nearbyNodeIds`, plus the Figma URL/file context). Does *not* take a raw `region` rectangle. | CSS-level details for diff regions (used after compare) |
 | `get_design_tokens` | Secondary | Figma URL/frame | color/spacing/typography tokens from Figma |
 | `list_figma_frames` | Utility | Figma URL | frame list + IDs + WxH |
 | `generate_diff_report` | Utility | compare result | Markdown report |
@@ -258,4 +258,4 @@ Written to [`/tmp/designdiff-findings-for-sample-corporate.md`](file:///tmp/desi
 - **Monitor**: `CronCreate` watches `/tmp/sample-corporate-designdiff-handoff.md` every 7 min. When file appears, this session proceeds to phase P1.
 - **Output to sample-corporate**: findings shared via `/tmp/designdiff-findings-for-sample-corporate.md` once C.1-C.4 are populated.
 - **Branch**: `docs/eval-2026-05-16-vs-sample-corporate` (this doc). PR opens once phase P0 done.
-- **Codex Cloud env**: `kouiso/designdiff` env not registered (verified via `codex cloud list`). If long build/screenshot batch needed, user is asked to create env at chatgpt.com/codex; otherwise local execution.
+- **Codex Cloud env**: `kouiso/designdiff` env not registered (verified via `codex cloud list`). If long build/screenshot batch needed, user is asked to create env at the Codex Cloud environment creation UI (path TBC — `chatgpt.com/codex` was incorrect in an earlier draft); otherwise local execution.
