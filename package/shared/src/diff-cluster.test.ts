@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { clusterDiffPixels, generateMatchSuggestion } from "./diff-cluster.js";
+import {
+  clusterDiffPixels,
+  clusterDiffPixelsGrid,
+  generateMatchSuggestion,
+} from "./diff-cluster.js";
 
 const createDiffData = (
   width: number,
@@ -103,8 +107,6 @@ describe("generateMatchSuggestion", () => {
     expect(generateMatchSuggestion(0)).toBe("compare.suggestionMajor");
   });
 });
-
-import { clusterDiffPixelsGrid } from "./diff-cluster.js";
 
 describe("clusterDiffPixelsGrid", () => {
   it("差分なしの画像は空配列を返す", () => {
