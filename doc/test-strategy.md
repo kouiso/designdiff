@@ -21,23 +21,27 @@
 
 ## 2. Per-package inventory
 
-### `@figdiff/shared` — 3 test files
-- `diff-cluster.test.ts` — flood + grid clusterers, suggestion thresholds (14 tests as of PR #51)
-- `figma-url-parser.test.ts` — URL/file-key/node-id parsing (19 tests)
-- Plus signal (`signal/ssim.test.ts`, `signal/hausdorff.test.ts`, `signal/texture.test.ts`), schema (`project-schema.test.ts`), figma-client, self-critique, type, figma-page-frame — total ~93 tests passing on develop.
+### `@figdiff/shared` — 10 test files (~93 tests)
+Verified via `find package/shared/src -name "*.test.ts" | wc -l` at develop tip.
+- Diff clustering: `diff-cluster.test.ts` (flood + grid clusterers, suggestion thresholds — 14 tests as of PR #51)
+- Parsing/schemas: `figma-url-parser.test.ts` (19), `project-schema.test.ts` (23), `figma-page-frame.test.ts` (11), `type.test.ts` (7)
+- Figma: `figma-client.test.ts` (2)
+- Signal layer: `signal/ssim.test.ts` (6), `signal/hausdorff.test.ts` (4), `signal/texture.test.ts` (3)
+- Self-critique: `self-critique.test.ts` (4)
 
 **Coverage target**: ≥ 80 % branch on all pure functions. Currently meeting target on cluster + url-parser; signal coverage TBD via `vitest --coverage`.
 
-### `@figdiff/mcp-server` — 6 test files + 3 smoke variants
-- Tool tests: `compare-design`, `inspect-node`, `list-frames`, `get-design-tokens`, `generate-report`, `crop-region`
-- Smoke: `smoke:runtime` (5 s probe), `smoke:runtime:stable` (30 s), `smoke:runtime:selftest`
-- Service-level (image-compare, figma-service): covered indirectly via tool tests + the new bench script `/tmp/figdiff-eval-runner.mjs` (informal but reproducible)
+### `@figdiff/mcp-server` — 11 test files + 3 smoke variants
+Verified via `find app/mcp-server/src -name "*.test.ts" | wc -l` at develop tip.
+- Tool tests: `compare-design`, `inspect-node`, `list-frames`, `get-design-tokens`, `generate-report`, `crop-region` plus error-shape and runtime tests
+- Smoke (in `package.json` scripts): `smoke:runtime` (5 s probe), `smoke:runtime:stable` (30 s), `smoke:runtime:selftest`
+- Service-level (image-compare, figma-service): covered indirectly via tool tests + the in-repo benchmark script [`scripts/eval/figdiff-cluster-bench.mjs`](../scripts/eval/figdiff-cluster-bench.mjs) (informal but reproducible; used for PR #50/#51 grid-vs-flood comparison)
 
 **Coverage target**: ≥ 80 % branch on service layer; ≥ 60 % on tool wrappers (mostly schema → service plumbing).
 
 **Gap**: no integration test for the `comparisonId`-based crop-region flow end-to-end (set → compare → get).
 
-### `@figdiff/desktop` — 28 test files
+### `@figdiff/desktop` — 32 test files (11 `.test.ts` + 21 `.test.tsx`)
 - Component tests: home, project, compare, live-overlay, setting, layout/header, ui/* primitives (button, input, dialog, slider, spinner, etc.)
 - Hook tests: `use-canvas-zoom-pan`, others
 - Store tests: project, compare, setting, overlay stores (Zustand)
