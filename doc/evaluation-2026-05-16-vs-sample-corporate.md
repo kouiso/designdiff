@@ -11,6 +11,7 @@
 ## A. designdiff capability inventory (1-page)
 
 ### What it is
+
 A pixel-diff workflow that compares a **Figma frame image** against an
 **implementation screenshot** and surfaces the regions that don't match.
 
@@ -28,11 +29,11 @@ A pixel-diff workflow that compares a **Figma frame image** against an
 | Tool | Tier | Input | Output |
 |------|------|-------|--------|
 | **`compare_design`** | Primary | `design_source` (Figma URL with `node-id` OR local image path) + `screenshot` (local path) + `threshold` (default 0.1) + optional `frame_name` + optional `project_id`. Crop region is *not* a direct input — `compare_design` resolves stored crop state server-side via `(project_id, frame_name)` using `getCropRegion()`. | JSON: `matchRate` (%), `diffRegions[]` (bounding boxes), `suggestion` (i18n key) — **camelCase**, not the snake_case earlier drafts used. **Separately**, the diff image is delivered as an MCP `image` content item (PNG, base64) — *not* a JSON `diffImageBase64` field. The tool sets `diffImageBase64: undefined` before serializing the JSON record and attaches the bytes as an MCP image when `matchRate < 100`. **Caveat**: each `diffRegions[].diffPixelCount` is currently the flood-fill cluster's traversed-pixel count, which equals the image's `totalPixelCount` whenever the single-region collapse described in §C.2 occurs. Treat that field as advisory until PR #51's grid clusterer lands. |
-| `inspect_node` | Secondary | `node_id` *or* `node_ids[]` (Figma node identifier from `compare_design`'s `diff_regions[].nearbyNodeIds`, plus the Figma URL/file context). Does *not* take a raw `region` rectangle. | CSS-level details for diff regions (used after compare) |
+| `inspect_node` | Secondary | `node_id` *or* `node_ids[]` (Figma node identifier from `compare_design`'s `diffRegions[].nearbyNodeIds` — camelCase, matching the JSON response), plus the Figma URL/file context. Does *not* take a raw `region` rectangle. | CSS-level details for diff regions (used after compare) |
 | `get_design_tokens` | Secondary | Figma URL/frame | color/spacing/typography tokens from Figma |
 | `list_figma_frames` | Utility | Figma URL | frame list + IDs + WxH |
 | `generate_diff_report` | Utility | compare result | Markdown report |
-| `get_crop_region` / `set_crop_region` | Utility | session-scoped | confine compare to a sub-region |
+| `get_crop_region` / `set_crop_region` | Utility | **file-persisted** at `~/.figdiff/projects/{projectId}/crop-regions.json` (per `app/mcp-server/src/service/crop-region-store.ts:3`) — *not* session-scoped. State survives across runs and `compare_design` reuses it when `project_id` is provided. | confine compare to a sub-region |
 
 ### Granularity
 
@@ -113,7 +114,7 @@ pages:
 | P1 | Build MCP server (`pnpm --filter @figdiff/mcp-server build`) | local (Codex Cloud if heavier task) |
 | P2 | For each page: capture impl screenshot via Playwright at declared viewport | local Playwright MCP |
 | P3 | For each page: invoke `compare_design` with `(figma_url + node_id, screenshot_path)` | MCP client wrapper (Node script) |
-| P4 | Collect `(match_rate, diff_regions, diff_image_base64)` per page | this doc |
+| P4 | Collect `(matchRate, diffRegions, suggestion)` per page from the JSON response; capture the separately-delivered MCP `image` content item (PNG, base64) as the diff visualization | this doc |
 | P5 | Spot-check: for the 3 lowest match-rate pages, run `inspect_node` and assess actionability | manual |
 | P6 | Write findings + share to sample-corporate via `/tmp/designdiff-findings-for-sample-corporate.md` | this doc |
 
@@ -122,8 +123,8 @@ pages:
 | Metric | Target | Notes |
 |--------|--------|-------|
 | Coverage | All handoff pages return a result (no fatal errors) | Failures will be classified: Figma 404, screenshot capture failure, MCP server timeout |
-| False negative | Manual page-by-page review — count pages where eyeball says "wrong" but match_rate ≥99% | Requires holding sample-corporate session's own design-review list as ground truth |
-| False positive | Pages where match_rate <95% but the diff is anti-aliasing, font hinting, or known-different (e.g. dynamic date) | Threshold tuning may resolve |
+| False negative | Manual page-by-page review — count pages where eyeball says "wrong" but `matchRate` ≥99% | Requires holding sample-corporate session's own design-review list as ground truth |
+| False positive | Pages where `matchRate` <95% but the diff is anti-aliasing, font hinting, or known-different (e.g. dynamic date) | Threshold tuning may resolve |
 | Actionability score (1-5) per low-match page | Subjective — "would a developer know what to fix from the report alone?" | 1 = blob of red, no info; 5 = "padding-top off by 8px on .hero-title" |
 | Wall time per page | Median + p95 | Includes Figma fetch + pixelmatch |
 | Memory peak | RSS of MCP server process during batch | sampled via `/usr/bin/time -v` or `ps` snapshot |
@@ -221,7 +222,7 @@ So the actual root cause of the low match rate is not stretch/squash distortion 
 | RSS at end | 1,767 MB (peak ~2.14 GB per `/usr/bin/time -v`) |
 | RSS delta | **+1,696 MB across 12 iterations** |
 
-**Per-page time scales linearly with `totalPixelCount`** (Pearson ≈0.88 from the table). Acceptable for batch eval; not interactive.
+**Per-page time scales tightly with `totalPixelCount`** (Pearson r ≈ 0.9731 from the 12 `wall_ms` × `totalPixelCount` pairs in `results.json` — earlier draft's 0.88 was a rough estimate; the actual coefficient is much stronger). Acceptable for batch eval; not interactive.
 
 **Memory profile**: RSS has spiky growth that is **partially** reclaimed between iterations. Per-page `rss_delta_mb` from `results.json`: `[1440, 457, -6, 90, -246, 169, -192, 131, -286, 29, 41, 69]` — 4 of 12 pages report a *decrease* (GC fired between calls), but the running total still climbs (71 MB → 1,767 MB across 12 pages, peak ~2.14 GB). Earlier draft characterised this as "monotonic" — correction per codex review; the climb is super-linear-but-not-monotonic. Likely causes:
 1. `sharp` keeps decoded buffers in the libvips cache until process exit, so the cache fills even when V8 reclaims the JS-side buffers.
