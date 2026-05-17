@@ -19,14 +19,25 @@
  *   FIGDIFF_OUT          — output JSON path (default /tmp/figdiff-eval-results.json)
  */
 
+import { existsSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
 import { performance } from "node:perf_hooks";
-import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const MCP_BUILD_DIR = process.env.FIGDIFF_MCP_DIST ?? resolve(HERE, "../../app/mcp-server/dist");
-const { compareImages } = await import(`${MCP_BUILD_DIR}/service/image-compare-service.js`);
+const SERVICE_ENTRY = resolve(MCP_BUILD_DIR, "service/image-compare-service.js");
+if (!existsSync(SERVICE_ENTRY)) {
+  console.error(
+    `MCP server build not found at ${SERVICE_ENTRY}.\n` +
+      "Run `pnpm --filter @figdiff/mcp-server build` first, or set FIGDIFF_MCP_DIST to a built dist/ dir.",
+  );
+  process.exit(2);
+}
+// Use a file:// URL so dynamic import works on Windows where raw absolute
+// paths (C:\...) aren't valid ESM specifiers.
+const { compareImages } = await import(pathToFileURL(SERVICE_ENTRY).href);
 
 const BASE = process.env.FIGDIFF_SCREENSHOTS;
 if (!BASE) {
