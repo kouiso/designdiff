@@ -27,7 +27,7 @@ A pixel-diff workflow that compares a **Figma frame image** against an
 
 | Tool | Tier | Input | Output |
 |------|------|-------|--------|
-| **`compare_design`** | Primary | `design_source` (Figma URL with `node-id` OR local image path) + `screenshot` (local path) + `threshold` (default 0.1) + optional `frame_name` + optional `project_id`. Crop region is *not* a direct input — `compare_design` resolves stored crop state server-side via `(project_id, frame_name)` using `getCropRegion()`. | `match_rate` (%), `diff_regions[]` (bounding boxes), `diff_image_base64` (red-overlay), `suggestion` (i18n key). **Caveat**: each `diffRegions[].diffPixelCount` is currently the flood-fill cluster's traversed-pixel count, which equals the image's `totalPixelCount` whenever the single-region collapse described in §C.2 occurs. Treat that field as advisory until PR #51's grid clusterer lands. |
+| **`compare_design`** | Primary | `design_source` (Figma URL with `node-id` OR local image path) + `screenshot` (local path) + `threshold` (default 0.1) + optional `frame_name` + optional `project_id`. Crop region is *not* a direct input — `compare_design` resolves stored crop state server-side via `(project_id, frame_name)` using `getCropRegion()`. | `matchRate` (%), `diffRegions[]` (bounding boxes), `diffImageBase64` (red-overlay), `suggestion` (i18n key) — note the response is **camelCase** (`matchRate` / `diffRegions` / `diffImageBase64`), not the snake_case earlier drafts of this table used. **Caveat**: each `diffRegions[].diffPixelCount` is currently the flood-fill cluster's traversed-pixel count, which equals the image's `totalPixelCount` whenever the single-region collapse described in §C.2 occurs. Treat that field as advisory until PR #51's grid clusterer lands. |
 | `inspect_node` | Secondary | `node_id` *or* `node_ids[]` (Figma node identifier from `compare_design`'s `diff_regions[].nearbyNodeIds`, plus the Figma URL/file context). Does *not* take a raw `region` rectangle. | CSS-level details for diff regions (used after compare) |
 | `get_design_tokens` | Secondary | Figma URL/frame | color/spacing/typography tokens from Figma |
 | `list_figma_frames` | Utility | Figma URL | frame list + IDs + WxH |
@@ -188,18 +188,24 @@ Because every page returns one whole-image region, the FP/FN question doesn't ap
 
 **Likely explanation**: contact-pc has shorter total height (2197 px vs 3604 for top), so absolute diff pixel counts are smaller relative to total. Match rate is a *density* metric and inversely correlates with image size more than with actual design fidelity.
 
-### C.4 Image-dimension mismatch artifact (3 pages)
+### C.4 Image-dimension mismatch — alignment vs distortion (3 pages)
 
-`compareImages` (`image-compare-service.ts:60-67`) resizes the design image to match the screenshot dimensions using `sharp({ fit: 'contain' })` with a white background. When heights differ legitimately (Figma frame is taller/shorter than the actual rendered page), this resize **squashes the Figma content vertically** to fit the Astro height, creating artificial pixel-level diff across the entire image.
+**Correction (per codex review)**: an earlier draft of this section claimed `fit: 'contain'` "vertically squashes/stretches" the Figma image. That is wrong — `contain` preserves the source aspect ratio and *pads* the remaining axis. Develop's `image-compare-service.ts` additionally masks out the transparent padding so it is excluded from the pixelmatch comparison.
 
-Affected pages:
-- top-pc: Figma 3624 → forced to 3604 (≈0.55% squash)
-- top-sp: Figma 4540 → forced to 4613 (≈1.6% stretch — even worse, stretch artifacts)
-- about-pc: Figma 2870 → forced to 2857 (≈0.45% squash)
+What actually happens with mismatched dimensions:
 
-The 1.6% top-sp stretch correlates with its worst-in-run match rate of 62.62%.
+| Page | Figma | Astro | scale = min(Wt/Ws, Ht/Hs) | Content rendered (W × H) | Padding axis |
+|------|-------|------:|--------------------------:|--------------------------|--------------|
+| top-pc | 1512×3624 | 1512×3604 | 0.9945 | ≈ 1504 × 3604 | small left/right pad (8 px total) |
+| top-sp | 390×4540 | 390×4613 | 1.0 | 390 × 4540 | 73 px **bottom** transparent pad (masked) |
+| about-pc | 1512×2870 | 1512×2857 | 0.9955 | ≈ 1505 × 2857 | small left/right pad (7 px) |
 
-**Fix recommendation**: at minimum, warn when source and target dimensions differ in either axis. Better: offer two strategies — (a) crop both to common dimensions (top-anchored), (b) skip mismatched pairs with a clear error. Current behavior silently corrupts the comparison.
+So the actual root cause of the low match rate is not stretch/squash distortion — it is some combination of:
+1. **Vertical alignment shift** when Figma and Astro disagree on page height by N px, every element below the divergence point is rendered at a different y-coordinate, so comparing pixel-by-pixel diff is fundamentally noisy regardless of clustering.
+2. **PC-page width scaling** (top-pc / about-pc): the scale factor 0.9945 / 0.9955 *uniformly* shrinks the Figma image (both axes equally — aspect ratio preserved), but downsampling introduces minor anti-aliasing differences across the entire image.
+3. **Actual design / implementation deltas** unrelated to dimensions.
+
+**Fix recommendation**: when source and target dimensions differ in *either* axis, the diagnostic of choice is the alignment shift, not "distortion". Worth warning the caller (so downstream interpretation can adjust). Stronger guard: refuse comparisons whose aspect ratios diverge by >1% (still useful for catching truly mismatched frame/page pairs).
 
 ### C.5 Performance & scale
 
