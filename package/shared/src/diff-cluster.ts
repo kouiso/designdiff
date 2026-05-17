@@ -151,9 +151,15 @@ export function clusterDiffPixelsGrid(
   // Guard against bad caller input — without this, Math.ceil(W / 0) → Infinity
   // and Array(Infinity) would throw deep inside the hot path with no context.
   if (!Number.isFinite(cellSize) || cellSize <= 0 || !Number.isInteger(cellSize)) {
-    throw new RangeError(`clusterDiffPixelsGrid: cellSize must be a positive integer, got ${cellSize}`);
+    throw new RangeError(
+      `clusterDiffPixelsGrid: cellSize must be a positive integer, got ${cellSize}`,
+    );
   }
-  if (!Number.isFinite(cellDensityThreshold) || cellDensityThreshold < 0 || cellDensityThreshold > 1) {
+  if (
+    !Number.isFinite(cellDensityThreshold) ||
+    cellDensityThreshold < 0 ||
+    cellDensityThreshold > 1
+  ) {
     throw new RangeError(
       `clusterDiffPixelsGrid: cellDensityThreshold must be in [0,1], got ${cellDensityThreshold}`,
     );
@@ -350,10 +356,7 @@ interface ComponentRegion {
   cellCount: number;
 }
 
-function buildRegionFromComponent(args: {
-  component: number[];
-  grid: CellGrid;
-}): ComponentRegion {
+function buildRegionFromComponent(args: { component: number[]; grid: CellGrid }): ComponentRegion {
   const { component, grid } = args;
   // Use per-cell pixel-tight bounds collected in buildCellGrid so node
   // matching uses the actual diff centroid, not the cell-aligned corner.
