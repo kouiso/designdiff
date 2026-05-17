@@ -174,12 +174,19 @@ export async function compareImages(
   // - "flood": legacy 8-connectivity flood fill
   // - "auto" (default): grid for totalPixelCount ≥ AUTO_GRID_PIXEL_THRESHOLD,
   //   flood otherwise (preserves prior behaviour for component-level tests).
+  // Fallback: in "auto" or "grid" mode, when the grid yields 0 regions but
+  //   real diff pixels exist (e.g. thin 1-4px lines/text strokes diluted
+  //   below cellDensityThreshold), fall through to flood-fill so downstream
+  //   region-to-node matching and reporting still has something to attach to.
   const useGrid =
     clusterMode === "grid" ||
     (clusterMode === "auto" && totalPixelCount >= AUTO_GRID_PIXEL_THRESHOLD);
   let diffRegions = useGrid
     ? clusterDiffPixelsGrid(diffPixelData, width, height, gridOptions)
     : clusterDiffPixels(diffPixelData, width, height);
+  if (useGrid && diffRegions.length === 0 && diffPixelCount > 0) {
+    diffRegions = clusterDiffPixels(diffPixelData, width, height);
+  }
 
   // Match diff regions to Figma nodes if available
   if (figmaRootNode) {

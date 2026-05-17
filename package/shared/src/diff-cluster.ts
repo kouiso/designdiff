@@ -148,12 +148,23 @@ export function clusterDiffPixelsGrid(
     ...DEFAULT_GRID_OPTIONS,
     ...options,
   };
-  const { cellDiff, gridWidth, gridHeight } = buildCellGrid(
-    diffPixelData,
-    imageWidth,
-    imageHeight,
-    cellSize,
-  );
+  // Guard against bad caller input — without this, Math.ceil(W / 0) → Infinity
+  // and Array(Infinity) would throw deep inside the hot path with no context.
+  if (!Number.isFinite(cellSize) || cellSize <= 0 || !Number.isInteger(cellSize)) {
+    throw new RangeError(`clusterDiffPixelsGrid: cellSize must be a positive integer, got ${cellSize}`);
+  }
+  if (!Number.isFinite(cellDensityThreshold) || cellDensityThreshold < 0 || cellDensityThreshold > 1) {
+    throw new RangeError(
+      `clusterDiffPixelsGrid: cellDensityThreshold must be in [0,1], got ${cellDensityThreshold}`,
+    );
+  }
+  if (!Number.isFinite(minRegionCells) || minRegionCells < 1 || !Number.isInteger(minRegionCells)) {
+    throw new RangeError(
+      `clusterDiffPixelsGrid: minRegionCells must be an integer ≥ 1, got ${minRegionCells}`,
+    );
+  }
+  const grid = buildCellGrid(diffPixelData, imageWidth, imageHeight, cellSize);
+  const { cellDiff, gridWidth, gridHeight } = grid;
 
   const hotMask = buildHotMask({
     cellDiff,
@@ -168,16 +179,7 @@ export function clusterDiffPixelsGrid(
   const components = labelConnectedHotCells(hotMask, gridWidth, gridHeight);
 
   return components
-    .map((component) =>
-      buildRegionFromComponent({
-        component,
-        cellDiff,
-        cellSize,
-        imageWidth,
-        imageHeight,
-        gridWidth,
-      }),
-    )
+    .map((component) => buildRegionFromComponent({ component, grid }))
     .filter((region) => region.cellCount >= minRegionCells)
     .map((region, index) => ({
       id: index,
@@ -188,17 +190,35 @@ export function clusterDiffPixelsGrid(
     }));
 }
 
+interface CellGrid {
+  cellDiff: Uint32Array;
+  // Per-cell tight bounds (Uint32Array sentinel: minX/minY start at gridDim ≥ any
+  // valid coord, maxX/maxY at 0). Used in buildRegionFromComponent to produce
+  // pixel-tight region bounds instead of cell-aligned ones, so
+  // matchDiffRegionsToNodes resolves nodes by the actual diff center.
+  cellMinX: Uint32Array;
+  cellMinY: Uint32Array;
+  cellMaxX: Uint32Array;
+  cellMaxY: Uint32Array;
+  gridWidth: number;
+  gridHeight: number;
+}
+
 function buildCellGrid(
   diffPixelData: Uint8ClampedArray,
   imageWidth: number,
   imageHeight: number,
   cellSize: number,
-): { cellDiff: Uint32Array; gridWidth: number; gridHeight: number } {
+): CellGrid {
   const gridWidth = Math.ceil(imageWidth / cellSize);
   const gridHeight = Math.ceil(imageHeight / cellSize);
   // Uint32Array is ~4× more memory-efficient than Array<number> for large grids
   // and gives faster scans inside hot loops.
   const cellDiff = new Uint32Array(gridWidth * gridHeight);
+  const cellMinX = new Uint32Array(gridWidth * gridHeight).fill(imageWidth);
+  const cellMinY = new Uint32Array(gridWidth * gridHeight).fill(imageHeight);
+  const cellMaxX = new Uint32Array(gridWidth * gridHeight);
+  const cellMaxY = new Uint32Array(gridWidth * gridHeight);
 
   for (let y = 0; y < imageHeight; y++) {
     const cellY = Math.floor(y / cellSize);
@@ -207,12 +227,17 @@ function buildCellGrid(
       const idx = (rowBase + x) * 4;
       if (isDiffPixel(diffPixelData, idx)) {
         const cellX = Math.floor(x / cellSize);
-        cellDiff[cellY * gridWidth + cellX] += 1;
+        const cellIdx = cellY * gridWidth + cellX;
+        cellDiff[cellIdx] += 1;
+        if (x < cellMinX[cellIdx]) cellMinX[cellIdx] = x;
+        if (y < cellMinY[cellIdx]) cellMinY[cellIdx] = y;
+        if (x > cellMaxX[cellIdx]) cellMaxX[cellIdx] = x;
+        if (y > cellMaxY[cellIdx]) cellMaxY[cellIdx] = y;
       }
     }
   }
 
-  return { cellDiff, gridWidth, gridHeight };
+  return { cellDiff, cellMinX, cellMinY, cellMaxX, cellMaxY, gridWidth, gridHeight };
 }
 
 function buildHotMask(args: {
@@ -327,36 +352,33 @@ interface ComponentRegion {
 
 function buildRegionFromComponent(args: {
   component: number[];
-  cellDiff: Uint32Array;
-  cellSize: number;
-  imageWidth: number;
-  imageHeight: number;
-  gridWidth: number;
+  grid: CellGrid;
 }): ComponentRegion {
-  const { component, cellDiff, cellSize, imageWidth, imageHeight, gridWidth } = args;
-  let minCellX = Number.POSITIVE_INFINITY;
-  let maxCellX = Number.NEGATIVE_INFINITY;
-  let minCellY = Number.POSITIVE_INFINITY;
-  let maxCellY = Number.NEGATIVE_INFINITY;
+  const { component, grid } = args;
+  // Use per-cell pixel-tight bounds collected in buildCellGrid so node
+  // matching uses the actual diff centroid, not the cell-aligned corner.
+  let minX = Number.POSITIVE_INFINITY;
+  let maxX = Number.NEGATIVE_INFINITY;
+  let minY = Number.POSITIVE_INFINITY;
+  let maxY = Number.NEGATIVE_INFINITY;
   let diffPixelCount = 0;
 
   for (const cellIdx of component) {
-    const cx = cellIdx % gridWidth;
-    const cy = Math.floor(cellIdx / gridWidth);
-    if (cx < minCellX) minCellX = cx;
-    if (cx > maxCellX) maxCellX = cx;
-    if (cy < minCellY) minCellY = cy;
-    if (cy > maxCellY) maxCellY = cy;
-    diffPixelCount += cellDiff[cellIdx];
+    if (grid.cellDiff[cellIdx] === 0) continue;
+    diffPixelCount += grid.cellDiff[cellIdx];
+    if (grid.cellMinX[cellIdx] < minX) minX = grid.cellMinX[cellIdx];
+    if (grid.cellMinY[cellIdx] < minY) minY = grid.cellMinY[cellIdx];
+    if (grid.cellMaxX[cellIdx] > maxX) maxX = grid.cellMaxX[cellIdx];
+    if (grid.cellMaxY[cellIdx] > maxY) maxY = grid.cellMaxY[cellIdx];
   }
 
-  const x = minCellX * cellSize;
-  const y = minCellY * cellSize;
-  const width = Math.min((maxCellX - minCellX + 1) * cellSize, imageWidth - x);
-  const height = Math.min((maxCellY - minCellY + 1) * cellSize, imageHeight - y);
-
   return {
-    bounds: { x, y, width, height },
+    bounds: {
+      x: minX,
+      y: minY,
+      width: maxX - minX + 1,
+      height: maxY - minY + 1,
+    },
     diffPixelCount,
     cellCount: component.length,
   };
