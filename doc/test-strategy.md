@@ -13,7 +13,7 @@
 |-------|------|---------------|---------------|
 | **Unit** | Vitest | Per-package via `pnpm --filter <pkg> test`; aggregated `pnpm test` (turbo) | Pure-function correctness, type guards, parsing, schemas, diff algorithms |
 | **Integration** | Vitest + minimal mocks | Per-package (mcp-server, desktop) | MCP tool handlers wired to services, store ↔ component interactions |
-| **Smoke** | Node scripts (`scripts/*.mjs`) | `pnpm --filter @figdiff/mcp-server smoke:runtime{,:stable,:selftest}` · `pnpm --filter @figdiff/desktop smoke:white-theme` | Process boots, stdio transport connects, theme renders without crash |
+| **Smoke** | Node scripts (`scripts/*.mjs`) | *(no `smoke:*` scripts on develop at this revision; the previous `smoke:runtime` / `smoke:white-theme` harnesses have been removed. If smoke harnesses re-land, list them here.)* | Process boots, stdio transport connects, theme renders without crash |
 | **Functional QA** | Manual + Playwright (renderer only) | `pnpm dev` → Vite at `http://localhost:5173` → Playwright MCP | UI flows, dialog focus traps, view-mode toggles |
 | **E2E (Electron)** | Not yet implemented | — | Window boot + IPC + preload bridge (gap, see §6) |
 
@@ -114,7 +114,7 @@ Before reporting "done", verify (mirrors `.github/workflows/ci.yml`):
 - [ ] `pnpm typecheck` (turbo run typecheck)
 - [ ] `pnpm test` (turbo run test)
 - [ ] If renderer change: Playwright snapshot for changed page
-- [ ] If MCP-server change: `pnpm --filter @figdiff/mcp-server smoke:runtime`
+- [ ] If MCP-server change: spin a quick fixture-pair smoke locally (`pnpm --filter @figdiff/mcp-server test` covers tool wrappers; there is no standalone smoke script on develop at present)
 
 ## 5. Coverage measurement
 

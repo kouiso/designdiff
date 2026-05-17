@@ -146,9 +146,16 @@ const summary = {
   results,
 };
 
+const failedCount = summary.pages - summary.ok_count;
 const out = process.env.FIGDIFF_OUT ?? "/tmp/figdiff-eval-results.json";
 await writeFile(out, JSON.stringify(summary, null, 2));
 process.stdout.write(`\nResults: ${out}\n`);
 process.stdout.write(
   `Total: ${summary.total_wall_ms}ms, RSS ${summary.rss_start_mb} → ${summary.rss_end_mb}MB\n`,
 );
+if (failedCount > 0) {
+  // Fail-loud so CI / automation never reports a green run on a partially-broken
+  // benchmark. ok_count is also in the JSON for programmatic callers.
+  process.stderr.write(`${failedCount} of ${summary.pages} pages failed; exiting non-zero.\n`);
+  process.exit(1);
+}
