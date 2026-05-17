@@ -9,21 +9,32 @@ import sharp from "sharp";
 
 import {
   clusterDiffPixels,
+  clusterDiffPixelsGrid,
   generateMatchSuggestion,
   matchDiffRegionsToNodes,
   type CompareDesignResult,
   type CropRegion,
   type FigmaNode,
+  type GridClusterOptions,
 } from "@figdiff/shared";
 
 import { buildDiffReport } from "./diff-report-builder.js";
+
+type ClusterMode = "auto" | "grid" | "flood";
 
 interface CompareImagesOptions {
   designBase64: string;
   screenshotBase64: string;
   threshold?: number;
   cropRegion?: CropRegion;
+  clusterMode?: ClusterMode;
+  gridOptions?: GridClusterOptions;
 }
+
+// Above this total pixel count, "auto" picks grid clustering. Full-page PC
+// screenshots (1512×900+ ≈ 1.36M) clear the bar; SP-only or small component
+// crops stay on flood-fill, where the legacy behaviour works well.
+const AUTO_GRID_PIXEL_THRESHOLD = 1_000_000;
 
 interface PaddingMask {
   left: number;
@@ -40,7 +51,14 @@ export async function compareImages(
   figmaRootNode?: FigmaNode,
   comparisonId?: string,
 ): Promise<CompareDesignResult> {
-  const { designBase64, screenshotBase64, threshold = 0.1, cropRegion } = options;
+  const {
+    designBase64,
+    screenshotBase64,
+    threshold = 0.1,
+    cropRegion,
+    clusterMode = "auto",
+    gridOptions,
+  } = options;
 
   // Decode base64 to buffers
   let designBuffer: Buffer = Buffer.from(designBase64, "base64");
@@ -152,7 +170,23 @@ export async function compareImages(
     Math.round(((totalPixelCount - diffPixelCount) / totalPixelCount) * 100 * 100) / 100;
 
   // Cluster diff regions
-  let diffRegions = clusterDiffPixels(diffPixelData, width, height);
+  // - "grid": grid-based clustering (recommended for full-page screenshots)
+  // - "flood": legacy 8-connectivity flood fill
+  // - "auto" (default): grid for totalPixelCount ≥ AUTO_GRID_PIXEL_THRESHOLD,
+  //   flood otherwise (preserves prior behaviour for component-level tests).
+  // Fallback: in "auto" or "grid" mode, when the grid yields 0 regions but
+  //   real diff pixels exist (e.g. thin 1-4px lines/text strokes diluted
+  //   below cellDensityThreshold), fall through to flood-fill so downstream
+  //   region-to-node matching and reporting still has something to attach to.
+  const useGrid =
+    clusterMode === "grid" ||
+    (clusterMode === "auto" && totalPixelCount >= AUTO_GRID_PIXEL_THRESHOLD);
+  let diffRegions = useGrid
+    ? clusterDiffPixelsGrid(diffPixelData, width, height, gridOptions)
+    : clusterDiffPixels(diffPixelData, width, height);
+  if (useGrid && diffRegions.length === 0 && diffPixelCount > 0) {
+    diffRegions = clusterDiffPixels(diffPixelData, width, height);
+  }
 
   // Match diff regions to Figma nodes if available
   if (figmaRootNode) {

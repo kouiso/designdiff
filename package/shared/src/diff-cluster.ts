@@ -3,6 +3,10 @@ import type { DiffRegion } from "./type.js";
 /**
  * 8-connectivity flood fill で差分ピクセルをクラスタリング
  * 10px未満のクラスタはノイズとしてフィルタ
+ *
+ * NOTE: 全画面 web スクリーンショットでは anti-aliasing chain により
+ * diff pixel が画像全体で 1 cluster に潰れる既知の問題がある。
+ * Full-page 比較には clusterDiffPixelsGrid を推奨。
  */
 export function clusterDiffPixels(
   diffPixelData: Uint8ClampedArray,
@@ -102,6 +106,290 @@ function isDiffPixel(diffData: Uint8ClampedArray, idx: number): boolean {
 
   // pixelmatch は一致ピクセルを白/グレー、不一致ピクセルを赤/黄で描く。
   return red !== green || green !== blue;
+}
+
+export interface GridClusterOptions {
+  cellSize?: number;
+  cellDensityThreshold?: number;
+  minRegionCells?: number;
+}
+
+const DEFAULT_GRID_OPTIONS: Required<GridClusterOptions> = {
+  cellSize: 64,
+  cellDensityThreshold: 0.05,
+  minRegionCells: 1,
+};
+
+/**
+ * Grid-based clustering for full-page web screenshots.
+ *
+ * Why: 8-connectivity flood fill collapses every full-page diff into one
+ * image-spanning cluster because anti-aliasing creates pixel chains across
+ * the whole canvas. This function tiles the image into cells, marks cells
+ * whose diff density exceeds a threshold, and runs 4-connectivity component
+ * labelling on the hot cells. Output: localized regions at section granularity.
+ *
+ * Uses the same isDiffPixel helper as the flood-fill clusterer to stay
+ * consistent with how the rest of the pipeline classifies pixelmatch output.
+ *
+ * - cellSize (default 64 px): grid cell edge length
+ * - cellDensityThreshold (default 0.05): minimum fraction of diff pixels in a
+ *   cell for it to count as "hot"
+ * - minRegionCells (default 1): minimum hot-cell count for a region to be
+ *   reported; raise to suppress small noise
+ */
+export function clusterDiffPixelsGrid(
+  diffPixelData: Uint8ClampedArray,
+  imageWidth: number,
+  imageHeight: number,
+  options: GridClusterOptions = {},
+): DiffRegion[] {
+  const { cellSize, cellDensityThreshold, minRegionCells } = {
+    ...DEFAULT_GRID_OPTIONS,
+    ...options,
+  };
+  // Guard against bad caller input — without this, Math.ceil(W / 0) → Infinity
+  // and Array(Infinity) would throw deep inside the hot path with no context.
+  if (!Number.isFinite(cellSize) || cellSize <= 0 || !Number.isInteger(cellSize)) {
+    throw new RangeError(
+      `clusterDiffPixelsGrid: cellSize must be a positive integer, got ${cellSize}`,
+    );
+  }
+  if (
+    !Number.isFinite(cellDensityThreshold) ||
+    cellDensityThreshold < 0 ||
+    cellDensityThreshold > 1
+  ) {
+    throw new RangeError(
+      `clusterDiffPixelsGrid: cellDensityThreshold must be in [0,1], got ${cellDensityThreshold}`,
+    );
+  }
+  if (!Number.isFinite(minRegionCells) || minRegionCells < 1 || !Number.isInteger(minRegionCells)) {
+    throw new RangeError(
+      `clusterDiffPixelsGrid: minRegionCells must be an integer ≥ 1, got ${minRegionCells}`,
+    );
+  }
+  const grid = buildCellGrid(diffPixelData, imageWidth, imageHeight, cellSize);
+  const { cellDiff, gridWidth, gridHeight } = grid;
+
+  const hotMask = buildHotMask({
+    cellDiff,
+    gridWidth,
+    gridHeight,
+    cellSize,
+    imageWidth,
+    imageHeight,
+    cellDensityThreshold,
+  });
+
+  const components = labelConnectedHotCells(hotMask, gridWidth, gridHeight);
+
+  return components
+    .map((component) => buildRegionFromComponent({ component, grid }))
+    .filter((region) => region.cellCount >= minRegionCells)
+    .map((region, index) => ({
+      id: index,
+      bounds: region.bounds,
+      diffPixelCount: region.diffPixelCount,
+      nearbyNodeIds: [],
+      nearbyNodeNames: [],
+    }));
+}
+
+interface CellGrid {
+  cellDiff: Uint32Array;
+  // Per-cell tight bounds (Uint32Array sentinel: minX/minY start at gridDim ≥ any
+  // valid coord, maxX/maxY at 0). Used in buildRegionFromComponent to produce
+  // pixel-tight region bounds instead of cell-aligned ones, so
+  // matchDiffRegionsToNodes resolves nodes by the actual diff center.
+  cellMinX: Uint32Array;
+  cellMinY: Uint32Array;
+  cellMaxX: Uint32Array;
+  cellMaxY: Uint32Array;
+  gridWidth: number;
+  gridHeight: number;
+}
+
+function buildCellGrid(
+  diffPixelData: Uint8ClampedArray,
+  imageWidth: number,
+  imageHeight: number,
+  cellSize: number,
+): CellGrid {
+  const gridWidth = Math.ceil(imageWidth / cellSize);
+  const gridHeight = Math.ceil(imageHeight / cellSize);
+  // Uint32Array is ~4× more memory-efficient than Array<number> for large grids
+  // and gives faster scans inside hot loops.
+  const cellDiff = new Uint32Array(gridWidth * gridHeight);
+  const cellMinX = new Uint32Array(gridWidth * gridHeight).fill(imageWidth);
+  const cellMinY = new Uint32Array(gridWidth * gridHeight).fill(imageHeight);
+  const cellMaxX = new Uint32Array(gridWidth * gridHeight);
+  const cellMaxY = new Uint32Array(gridWidth * gridHeight);
+
+  for (let y = 0; y < imageHeight; y++) {
+    const cellY = Math.floor(y / cellSize);
+    const rowBase = y * imageWidth;
+    for (let x = 0; x < imageWidth; x++) {
+      const idx = (rowBase + x) * 4;
+      if (isDiffPixel(diffPixelData, idx)) {
+        const cellX = Math.floor(x / cellSize);
+        const cellIdx = cellY * gridWidth + cellX;
+        cellDiff[cellIdx] += 1;
+        if (x < cellMinX[cellIdx]) cellMinX[cellIdx] = x;
+        if (y < cellMinY[cellIdx]) cellMinY[cellIdx] = y;
+        if (x > cellMaxX[cellIdx]) cellMaxX[cellIdx] = x;
+        if (y > cellMaxY[cellIdx]) cellMaxY[cellIdx] = y;
+      }
+    }
+  }
+
+  return { cellDiff, cellMinX, cellMinY, cellMaxX, cellMaxY, gridWidth, gridHeight };
+}
+
+function buildHotMask(args: {
+  cellDiff: Uint32Array;
+  gridWidth: number;
+  gridHeight: number;
+  cellSize: number;
+  imageWidth: number;
+  imageHeight: number;
+  cellDensityThreshold: number;
+}): boolean[] {
+  const {
+    cellDiff,
+    gridWidth,
+    gridHeight,
+    cellSize,
+    imageWidth,
+    imageHeight,
+    cellDensityThreshold,
+  } = args;
+  const hotMask = new Array<boolean>(gridWidth * gridHeight).fill(false);
+
+  for (let cy = 0; cy < gridHeight; cy++) {
+    const cellY0 = cy * cellSize;
+    const cellY1 = Math.min(cellY0 + cellSize, imageHeight);
+    for (let cx = 0; cx < gridWidth; cx++) {
+      const cellX0 = cx * cellSize;
+      const cellX1 = Math.min(cellX0 + cellSize, imageWidth);
+      const cellPixels = (cellX1 - cellX0) * (cellY1 - cellY0);
+      if (cellPixels === 0) continue;
+      // Require at least one diff pixel — otherwise a threshold of 0 would
+      // mark every cell hot (including all-matching ones), producing components
+      // with Infinity bounds from buildRegionFromComponent's sentinel min values.
+      const diffCount = cellDiff[cy * gridWidth + cx];
+      if (diffCount === 0) continue;
+      const density = diffCount / cellPixels;
+      if (density >= cellDensityThreshold) {
+        hotMask[cy * gridWidth + cx] = true;
+      }
+    }
+  }
+
+  return hotMask;
+}
+
+function labelConnectedHotCells(
+  hotMask: boolean[],
+  gridWidth: number,
+  gridHeight: number,
+): number[][] {
+  const visited = new Array<boolean>(gridWidth * gridHeight).fill(false);
+  const components: number[][] = [];
+
+  for (let cy = 0; cy < gridHeight; cy++) {
+    for (let cx = 0; cx < gridWidth; cx++) {
+      const idx = cy * gridWidth + cx;
+      if (!hotMask[idx] || visited[idx]) continue;
+      components.push(floodFillHotComponent(hotMask, visited, gridWidth, gridHeight, idx));
+    }
+  }
+
+  return components;
+}
+
+function floodFillHotComponent(
+  hotMask: boolean[],
+  visited: boolean[],
+  gridWidth: number,
+  gridHeight: number,
+  startIdx: number,
+): number[] {
+  // Mark-before-push: prevents the same cell from being pushed multiple times
+  // and keeps the stack bounded by the number of cells in the component.
+  const cells: number[] = [];
+  visited[startIdx] = true;
+  cells.push(startIdx);
+  const stack: number[] = [];
+  pushUnvisitedNeighbours(stack, visited, hotMask, startIdx, gridWidth, gridHeight);
+  while (stack.length > 0) {
+    const cellIdx = stack.pop();
+    if (cellIdx === undefined) continue;
+    visited[cellIdx] = true;
+    cells.push(cellIdx);
+    pushUnvisitedNeighbours(stack, visited, hotMask, cellIdx, gridWidth, gridHeight);
+  }
+  return cells;
+}
+
+function pushUnvisitedNeighbours(
+  stack: number[],
+  visited: boolean[],
+  hotMask: boolean[],
+  cellIdx: number,
+  gridWidth: number,
+  gridHeight: number,
+): void {
+  const x = cellIdx % gridWidth;
+  const y = Math.floor(cellIdx / gridWidth);
+  const candidates: number[] = [];
+  if (x + 1 < gridWidth) candidates.push(cellIdx + 1);
+  if (x - 1 >= 0) candidates.push(cellIdx - 1);
+  if (y + 1 < gridHeight) candidates.push(cellIdx + gridWidth);
+  if (y - 1 >= 0) candidates.push(cellIdx - gridWidth);
+  for (const n of candidates) {
+    if (hotMask[n] && !visited[n]) {
+      visited[n] = true;
+      stack.push(n);
+    }
+  }
+}
+
+interface ComponentRegion {
+  bounds: { x: number; y: number; width: number; height: number };
+  diffPixelCount: number;
+  cellCount: number;
+}
+
+function buildRegionFromComponent(args: { component: number[]; grid: CellGrid }): ComponentRegion {
+  const { component, grid } = args;
+  // Use per-cell pixel-tight bounds collected in buildCellGrid so node
+  // matching uses the actual diff centroid, not the cell-aligned corner.
+  let minX = Number.POSITIVE_INFINITY;
+  let maxX = Number.NEGATIVE_INFINITY;
+  let minY = Number.POSITIVE_INFINITY;
+  let maxY = Number.NEGATIVE_INFINITY;
+  let diffPixelCount = 0;
+
+  for (const cellIdx of component) {
+    if (grid.cellDiff[cellIdx] === 0) continue;
+    diffPixelCount += grid.cellDiff[cellIdx];
+    if (grid.cellMinX[cellIdx] < minX) minX = grid.cellMinX[cellIdx];
+    if (grid.cellMinY[cellIdx] < minY) minY = grid.cellMinY[cellIdx];
+    if (grid.cellMaxX[cellIdx] > maxX) maxX = grid.cellMaxX[cellIdx];
+    if (grid.cellMaxY[cellIdx] > maxY) maxY = grid.cellMaxY[cellIdx];
+  }
+
+  return {
+    bounds: {
+      x: minX,
+      y: minY,
+      width: maxX - minX + 1,
+      height: maxY - minY + 1,
+    },
+    diffPixelCount,
+    cellCount: component.length,
+  };
 }
 
 export function generateMatchSuggestion(matchRate: number): string {
