@@ -27,7 +27,7 @@ A pixel-diff workflow that compares a **Figma frame image** against an
 
 | Tool | Tier | Input | Output |
 |------|------|-------|--------|
-| **`compare_design`** | Primary | `design_source` (Figma URL with `node-id` OR local image path) + `screenshot` (local path) + `threshold` (default 0.1) + optional `frame_name` + optional `project_id`. Crop region is *not* a direct input — `compare_design` resolves stored crop state server-side via `(project_id, frame_name)` using `getCropRegion()`. | `matchRate` (%), `diffRegions[]` (bounding boxes), `diffImageBase64` (red-overlay), `suggestion` (i18n key) — note the response is **camelCase** (`matchRate` / `diffRegions` / `diffImageBase64`), not the snake_case earlier drafts of this table used. **Caveat**: each `diffRegions[].diffPixelCount` is currently the flood-fill cluster's traversed-pixel count, which equals the image's `totalPixelCount` whenever the single-region collapse described in §C.2 occurs. Treat that field as advisory until PR #51's grid clusterer lands. |
+| **`compare_design`** | Primary | `design_source` (Figma URL with `node-id` OR local image path) + `screenshot` (local path) + `threshold` (default 0.1) + optional `frame_name` + optional `project_id`. Crop region is *not* a direct input — `compare_design` resolves stored crop state server-side via `(project_id, frame_name)` using `getCropRegion()`. | JSON: `matchRate` (%), `diffRegions[]` (bounding boxes), `suggestion` (i18n key) — **camelCase**, not the snake_case earlier drafts used. **Separately**, the diff image is delivered as an MCP `image` content item (PNG, base64) — *not* a JSON `diffImageBase64` field. The tool sets `diffImageBase64: undefined` before serializing the JSON record and attaches the bytes as an MCP image when `matchRate < 100`. **Caveat**: each `diffRegions[].diffPixelCount` is currently the flood-fill cluster's traversed-pixel count, which equals the image's `totalPixelCount` whenever the single-region collapse described in §C.2 occurs. Treat that field as advisory until PR #51's grid clusterer lands. |
 | `inspect_node` | Secondary | `node_id` *or* `node_ids[]` (Figma node identifier from `compare_design`'s `diff_regions[].nearbyNodeIds`, plus the Figma URL/file context). Does *not* take a raw `region` rectangle. | CSS-level details for diff regions (used after compare) |
 | `get_design_tokens` | Secondary | Figma URL/frame | color/spacing/typography tokens from Figma |
 | `list_figma_frames` | Utility | Figma URL | frame list + IDs + WxH |
@@ -60,7 +60,7 @@ A pixel-diff workflow that compares a **Figma frame image** against an
 2. `inspect_node` on each significant diff region
 3. Apply CSS fix
 4. Re-run `compare_design`
-5. Loop until `match_rate === 100`
+5. Loop until `matchRate === 100` (camelCase — the MCP JSON field name)
 
 ### Output examples (from source)
 
