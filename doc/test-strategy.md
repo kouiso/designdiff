@@ -31,39 +31,43 @@ Verified via `find package/shared/src -name "*.test.ts" | wc -l` at develop tip.
 
 **Coverage target**: ≥ 80 % branch on all pure functions. Currently meeting target on cluster + url-parser; signal coverage TBD via `vitest --coverage`.
 
-### `@figdiff/mcp-server` — 11 test files + 3 smoke variants
+### `@figdiff/mcp-server` — 11 test files
 Verified via `find app/mcp-server/src -name "*.test.ts" | wc -l` at develop tip.
 - Tool tests: `compare-design`, `inspect-node`, `list-frames`, `get-design-tokens`, `generate-report`, `crop-region` plus error-shape and runtime tests
-- Smoke (in `package.json` scripts): `smoke:runtime` (5 s probe), `smoke:runtime:stable` (30 s), `smoke:runtime:selftest`
 - Service-level (image-compare, figma-service): covered indirectly via tool tests + the in-repo benchmark script [`scripts/eval/figdiff-cluster-bench.mjs`](../scripts/eval/figdiff-cluster-bench.mjs) (informal but reproducible; used for PR #50/#51 grid-vs-flood comparison)
+- **No `smoke:*` scripts** on develop at this revision (any `smoke:runtime*` references in older drafts are stale; if smoke harnesses re-land they should be re-listed here).
 
 **Coverage target**: ≥ 80 % branch on service layer; ≥ 60 % on tool wrappers (mostly schema → service plumbing).
 
-**Gap**: no integration test for the `comparisonId`-based crop-region flow end-to-end (set → compare → get).
+**Gap**: no integration test for the `project_id` + `frame_name` crop-region lookup flow end-to-end (`set_crop_region` → `compare_design` referencing it → `get_crop_region`).
 
 ### `@figdiff/desktop` — 32 test files (11 `.test.ts` + 21 `.test.tsx`)
 - Component tests: home, project, compare, live-overlay, setting, layout/header, ui/* primitives (button, input, dialog, slider, spinner, etc.)
 - Hook tests: `use-canvas-zoom-pan`, others
 - Store tests: project, compare, setting, overlay stores (Zustand)
 - Lib tests: `tauri-command`, `platform`, `figma-url` helpers
-- Smoke: `smoke:white-theme` (renderer mounts in light theme without console error)
+- **No `smoke:white-theme` script** on develop at this revision (the script does not exist in `app/desktop/package.json` anymore; any reference in older drafts is stale).
 
 **Coverage target**: ≥ 80 % branch on stores + lib; ≥ 60 % on components (interactions, not rendered snapshots).
 
 **Gap**: no Electron main-process tests (preload bridge, IPC handlers — see §6).
 
-### `@figdiff/chrome-extension` — 0 test files
-**Gap (Critical)**: zero tests despite `test` script wired. Manifest, content scripts, capture flow all unverified at the unit level.
+### `@figdiff/chrome-extension` — 6 test files
+Verified at develop tip: `app/chrome-extension/src/background.test.ts`, `service/{token-service,pixel-diff-service,figma-service}.test.ts`, `content/{overlay-renderer,diff-highlighter}.test.ts`.
 
-### `@figdiff/figma-plugin` — 0 test files (no `test` script either)
-**Gap (Critical)**: zero tests, no test script. Plugin entry, message bus, frame extraction logic all manual-only.
+**Coverage gap (not zero, but partial)**: manifest validation and end-to-end capture flow not covered by existing unit tests. Earlier drafts of this doc incorrectly stated "0 tests" — corrected after codex review.
+
+### `@figdiff/figma-plugin` — 2 test files
+Verified at develop tip: `app/figma-plugin/src/code.test.ts`, `app/figma-plugin/src/ui.test.ts`. `package.json` defines `"test": "vitest run"`.
+
+**Coverage gap**: very thin (only entry + UI smoke). Plugin message bus and frame extraction logic largely manual-only. Earlier drafts of this doc incorrectly stated "0 tests + no script" — corrected after codex review.
 
 ## 3. CI workflows (`.github/workflows/`)
 
 | Workflow | What runs | Required to merge? |
 |----------|-----------|--------------------|
-| `ci.yml` | `pnpm lint`, `pnpm typecheck`, `pnpm test` matrix per `check-type` | Yes |
-| `build.yml` | Electron Build per OS (Linux / macOS / Windows) | Yes for code PRs; SKIPPED for docs-only |
+| `ci.yml` | `pnpm check` (Biome format + lint), `pnpm lint:eslint` (ESLint v9 type-aware), `pnpm typecheck`, `pnpm test` matrix per `check-type` | Yes |
+| `build.yml` | Electron Build per OS (Linux / macOS / Windows). Guard: `if: github.event.pull_request.draft == false` only — **no `paths` filter**, so it runs on every non-draft PR including docs-only ones (jobs may still be no-ops if turbo cache hits) | Yes |
 | `dependency-review.yml` | Diff lockfile against vuln DB | Advisory |
 | `labeler.yml` | Auto-label PRs by path | Status only |
 | `license-check.yml` | License compatibility scan | Advisory |
@@ -93,19 +97,19 @@ Bot reviewers wired by repo settings: gemini-code-assist (line-level review on e
 
 | Tool | Required input | Success criterion |
 |------|---------------|-------------------|
-| `compare_design` | `design_source` + `screenshot` paths | Response with `match_rate ∈ [0,100]`, `diff_regions[]`, `diff_image_base64` (non-empty PNG) |
-| `inspect_node` | `node_id` from a prior compare | Returns CSS-equivalent (color hex, font family, dimensions, spacing) |
+| `compare_design` | `design_source` + `screenshot` paths + optional `project_id` (used together with `frame_name` to resolve a stored crop region via `getCropRegion`) | Response with `match_rate ∈ [0,100]`, `diff_regions[]`, `diff_image_base64` (non-empty PNG) |
+| `inspect_node` | Figma URL + `node_id` (or `node_ids[]`) — pulled from `compare_design`'s `diff_regions[].nearbyNodeIds` | Returns CSS-equivalent (color hex, font family, dimensions, spacing) |
 | `get_design_tokens` | Figma URL | Returns color/spacing/typography token list |
 | `list_figma_frames` | Figma URL | Frame list with id, name, width, height |
-| `generate_diff_report` | comparisonId | Markdown report referencing diff_regions |
-| `get_crop_region` / `set_crop_region` | comparisonId + region | Round-trip preserves region |
+| `generate_diff_report` | `project_id` + `frame_name` | Markdown report referencing diff_regions |
+| `get_crop_region` / `set_crop_region` | `project_id` + `frame_name` + region | Round-trip preserves region |
 
-**Verification**: `pnpm --filter @figdiff/mcp-server smoke:runtime:stable` boots server, runs against fixture-pair, asserts no `error` field in any response.
+**Verification**: run the existing tool-level vitest suite (`pnpm --filter @figdiff/mcp-server test`) and exercise each tool end-to-end against a fixture pair. No standalone smoke-harness exists on develop at present (was referenced in earlier drafts but is not in `package.json`).
 
 ### 4.3 Cross-package regression — every PR
 
-Before reporting "done", verify:
-- [ ] `pnpm lint` (Biome)
+Before reporting "done", verify (mirrors `.github/workflows/ci.yml`):
+- [ ] `pnpm check` (Biome format + lint across the repo — this is what CI gates on, NOT `pnpm lint` which only checks `src/` per package)
 - [ ] `pnpm lint:eslint` (type-aware ESLint v9)
 - [ ] `pnpm typecheck` (turbo run typecheck)
 - [ ] `pnpm test` (turbo run test)
@@ -124,12 +128,12 @@ Tracked as follow-up.
 
 | Gap | Severity | Owner | Notes |
 |-----|----------|-------|-------|
-| `@figdiff/chrome-extension` has 0 unit tests | High | Extension maintainer | At minimum: capture-flow unit tests, manifest validation |
-| `@figdiff/figma-plugin` has 0 unit tests + no test script | High | Plugin maintainer | Add vitest config + smoke for frame-extraction logic |
-| No Electron main-process tests | Medium | Desktop maintainer | Add `@electron/spectron` or `playwright-electron` for IPC + preload bridge coverage |
+| `@figdiff/chrome-extension` — thin coverage (6 test files, mostly service-level) | Medium | Extension maintainer | Expand: manifest validation, full capture flow end-to-end, MV3 background lifecycle |
+| `@figdiff/figma-plugin` — thin coverage (2 test files: code, ui) | Medium | Plugin maintainer | Expand: message-bus contract tests, frame-extraction edge cases |
+| No Electron main-process tests | Medium | Desktop maintainer | Add `playwright-electron` for IPC + preload bridge coverage (Spectron is deprecated and not recommended) |
 | No coverage thresholds in CI | Medium | CI maintainer | Add `vitest --coverage` + reporter → fail build below threshold |
 | No persistent Playwright E2E suite for renderer (only ad-hoc) | Medium | Desktop maintainer | Establish `app/desktop/test/playwright/` with happy-path per page |
-| No integration test for MCP `comparisonId` round-trip (set → compare → get) | Low | mcp-server maintainer | Single test file covering `set_crop_region` → `compare_design` referencing it → `get_crop_region` returns same |
+| No integration test for MCP crop-region round-trip (`set_crop_region` → `compare_design` with matching `project_id`/`frame_name` → `get_crop_region`) | Low | mcp-server maintainer | Single test file covering the round-trip |
 | No semantic / structural diff (Figma node-aware) | Strategic | Cross-team | Tracked in PR #50 Section C and the follow-up plan after PR #51 |
 
 ## 7. References
@@ -137,4 +141,3 @@ Tracked as follow-up.
 - `prompt/instruction/testing.md` — TDD methodology (AAA pattern, RED→GREEN→REFACTOR cycle, ≥80 % coverage policy)
 - `prompt/instruction/quality-implementation.md` — Mandatory pre-completion checks
 - `CLAUDE.md` — Project root commands (`pnpm test`, `pnpm test:rust` etc.)
-- `app/mcp-server/scripts/runtime-smoke.mjs` — Smoke harness pattern, reusable across stdio MCP servers
