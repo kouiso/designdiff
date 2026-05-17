@@ -159,7 +159,7 @@ MCP tool wraps). Faq/privacy-policy/404 skipped — no Figma baseline exists.
 
 **Aggregate**:
 - Coverage: **12 / 12 OK** (0 failures, 0 timeouts)
-- Match rate: **min 62.62% (top-sp) · median 78.10% · max 86.94% (contact-pc)**
+- Match rate: **min 62.62% (top-sp) · median 77.845% · max 86.94% (contact-pc)** (computed as the mean of the 6th and 7th sorted values; raw values match `results.json`)
 - Suggestion bucket: **12 / 12 = `compare.suggestionMajor`** (designdiff's "<95% = major diff" bucket). Zero pages reach the "minor diff" (95%-99%) or "no diff" (100%) buckets.
 - All regions span the entire image (`x=0, y=0, w=imageWidth, h=imageHeight`).
 
@@ -207,7 +207,7 @@ The 1.6% top-sp stretch correlates with its worst-in-run match rate of 62.62%.
 |--------|-------|
 | Total wall time (12 pages) | **17.27 s** |
 | Per-page mean | 1.44 s |
-| Per-page median | 0.91 s |
+| Per-page median | 1.118 s (1118 ms; computed from `results.json`, not the earlier rough estimate) |
 | Per-page max | 4.34 s (top-pc, 5.4M total pixels) |
 | Per-page min | 0.12 s (news-sp, 0.47M total pixels) |
 | CPU utilization | 127% (single-process, partial multi-thread inside `sharp`) |
@@ -217,12 +217,12 @@ The 1.6% top-sp stretch correlates with its worst-in-run match rate of 62.62%.
 
 **Per-page time scales linearly with `totalPixelCount`** (Pearson ≈0.88 from the table). Acceptable for batch eval; not interactive.
 
-**Memory profile is the concerning result**: RSS grows monotonically (no release between iterations). For a 100-page batch, this projects to ~14 GB RSS — beyond most CI runners. Likely causes:
-1. `sharp` keeps decoded buffers in libvips cache (not released until process exit)
-2. `pixelmatch` allocates `Uint8ClampedArray(width * height * 4)` per call; not freed promptly
-3. Result objects include `diffImageBase64` which we kept until JSON serialization
+**Memory profile**: RSS has spiky growth that is **partially** reclaimed between iterations. Per-page `rss_delta_mb` from `results.json`: `[1440, 457, -6, 90, -246, 169, -192, 131, -286, 29, 41, 69]` — 4 of 12 pages report a *decrease* (GC fired between calls), but the running total still climbs (71 MB → 1,767 MB across 12 pages, peak ~2.14 GB). Earlier draft characterised this as "monotonic" — correction per codex review; the climb is super-linear-but-not-monotonic. Likely causes:
+1. `sharp` keeps decoded buffers in the libvips cache until process exit, so the cache fills even when V8 reclaims the JS-side buffers.
+2. `pixelmatch` allocates `Uint8ClampedArray(width * height * 4)` per call; GC eventually frees it, but not necessarily before the next call's allocation.
+3. Result objects include `diffImageBase64` which is retained until JSON serialization.
 
-**Recommendation**: invoke `compareImages` in a worker thread per page and terminate the worker after each call, or call `sharp.cache(false)` at module init.
+**Recommendation**: invoke `compareImages` in a worker thread per page and terminate the worker after each call, or call `sharp.cache(false)` at module init. For 100-page batches, the peak (not the average) is what blows out CI runners — the spikes that pushed top-pc to +1440 MB are the binding constraint.
 
 ### C.6 Capability verdict (per pre-test question from §A)
 
