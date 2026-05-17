@@ -27,7 +27,7 @@ A pixel-diff workflow that compares a **Figma frame image** against an
 
 | Tool | Tier | Input | Output |
 |------|------|-------|--------|
-| **`compare_design`** | Primary | `design_source` (Figma URL with `node-id` OR local image path) + `screenshot` (local path) + `threshold` (default 0.1) + optional `frame_name`. Crop region is *not* a direct input — fetched server-side via `comparison_id` referencing previously stored `set_crop_region` state. | `match_rate` (%), `diff_regions[]` (bounding boxes), `diff_image_base64` (red-overlay), `suggestion` (i18n key) |
+| **`compare_design`** | Primary | `design_source` (Figma URL with `node-id` OR local image path) + `screenshot` (local path) + `threshold` (default 0.1) + optional `frame_name` + optional `project_id`. Crop region is *not* a direct input — `compare_design` resolves stored crop state server-side via `(project_id, frame_name)` using `getCropRegion()`. | `match_rate` (%), `diff_regions[]` (bounding boxes), `diff_image_base64` (red-overlay), `suggestion` (i18n key). **Caveat**: each `diffRegions[].diffPixelCount` is currently the flood-fill cluster's traversed-pixel count, which equals the image's `totalPixelCount` whenever the single-region collapse described in §C.2 occurs. Treat that field as advisory until PR #51's grid clusterer lands. |
 | `inspect_node` | Secondary | `node_id` *or* `node_ids[]` (Figma node identifier from `compare_design`'s `diff_regions[].nearbyNodeIds`, plus the Figma URL/file context). Does *not* take a raw `region` rectangle. | CSS-level details for diff regions (used after compare) |
 | `get_design_tokens` | Secondary | Figma URL/frame | color/spacing/typography tokens from Figma |
 | `list_figma_frames` | Utility | Figma URL | frame list + IDs + WxH |
