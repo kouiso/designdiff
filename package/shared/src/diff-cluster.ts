@@ -274,7 +274,12 @@ function buildHotMask(args: {
       const cellX1 = Math.min(cellX0 + cellSize, imageWidth);
       const cellPixels = (cellX1 - cellX0) * (cellY1 - cellY0);
       if (cellPixels === 0) continue;
-      const density = cellDiff[cy * gridWidth + cx] / cellPixels;
+      // Require at least one diff pixel — otherwise a threshold of 0 would
+      // mark every cell hot (including all-matching ones), producing components
+      // with Infinity bounds from buildRegionFromComponent's sentinel min values.
+      const diffCount = cellDiff[cy * gridWidth + cx];
+      if (diffCount === 0) continue;
+      const density = diffCount / cellPixels;
       if (density >= cellDensityThreshold) {
         hotMask[cy * gridWidth + cx] = true;
       }

@@ -211,3 +211,14 @@ describe("clusterDiffPixelsGrid pixel-tight bounds", () => {
     expect(b.height).toBe(16);
   });
 });
+
+describe("clusterDiffPixelsGrid edge — zero-density threshold", () => {
+  it("cellDensityThreshold=0 still excludes all-matching cells (no Infinity bounds)", () => {
+    // All-zero diff data with threshold 0 must produce zero regions
+    // (regression guard: pre-fix this would mark every cell hot and
+    // buildRegionFromComponent would return ±Infinity bounds).
+    const data = new Uint8ClampedArray(128 * 128 * 4);
+    const regions = clusterDiffPixelsGrid(data, 128, 128, { cellDensityThreshold: 0 });
+    expect(regions).toEqual([]);
+  });
+});
