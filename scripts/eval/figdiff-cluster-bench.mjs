@@ -21,8 +21,9 @@
 
 import { existsSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { dirname, join, resolve } from "node:path";
 import { performance } from "node:perf_hooks";
-import { dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -147,7 +148,9 @@ const summary = {
 };
 
 const failedCount = summary.pages - summary.ok_count;
-const out = process.env.FIGDIFF_OUT ?? "/tmp/figdiff-eval-results.json";
+// Use os.tmpdir() so the default output path is portable to Windows (where
+// /tmp does not exist). FIGDIFF_OUT still overrides for explicit placement.
+const out = process.env.FIGDIFF_OUT ?? join(tmpdir(), "figdiff-eval-results.json");
 await writeFile(out, JSON.stringify(summary, null, 2));
 process.stdout.write(`\nResults: ${out}\n`);
 process.stdout.write(

@@ -108,7 +108,8 @@ Bot reviewers wired by repo settings: gemini-code-assist (line-level review on e
 
 ### 4.3 Cross-package regression — every PR
 
-Before reporting "done", verify (mirrors `.github/workflows/ci.yml`):
+Before reporting "done", verify (mirrors `.github/workflows/ci.yml` step-for-step):
+- [ ] `pnpm build` (turbo run build — CI runs this first per matrix job; lint/typecheck/test downstream may pass locally on stale dist while CI fails)
 - [ ] `pnpm check` (Biome format + lint across the repo — this is what CI gates on, NOT `pnpm lint` which only checks `src/` per package)
 - [ ] `pnpm lint:eslint` (type-aware ESLint v9)
 - [ ] `pnpm typecheck` (turbo run typecheck)
