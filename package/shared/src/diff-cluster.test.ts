@@ -155,3 +155,59 @@ describe("clusterDiffPixelsGrid", () => {
     }
   });
 });
+
+describe("clusterDiffPixelsGrid validation guards", () => {
+  const data = new Uint8ClampedArray(64 * 64 * 4);
+
+  it("cellSize <= 0 throws RangeError", () => {
+    expect(() => clusterDiffPixelsGrid(data, 64, 64, { cellSize: 0 })).toThrow(RangeError);
+    expect(() => clusterDiffPixelsGrid(data, 64, 64, { cellSize: -8 })).toThrow(RangeError);
+  });
+
+  it("non-integer cellSize throws", () => {
+    expect(() => clusterDiffPixelsGrid(data, 64, 64, { cellSize: 12.5 })).toThrow(RangeError);
+  });
+
+  it("cellDensityThreshold outside [0,1] throws", () => {
+    expect(() => clusterDiffPixelsGrid(data, 64, 64, { cellDensityThreshold: 1.5 })).toThrow(
+      RangeError,
+    );
+    expect(() => clusterDiffPixelsGrid(data, 64, 64, { cellDensityThreshold: -0.1 })).toThrow(
+      RangeError,
+    );
+  });
+
+  it("minRegionCells < 1 throws", () => {
+    expect(() => clusterDiffPixelsGrid(data, 64, 64, { minRegionCells: 0 })).toThrow(RangeError);
+  });
+});
+
+describe("clusterDiffPixelsGrid pixel-tight bounds", () => {
+  it("region bounds collapse to exact diff pixels, not cell-aligned corners", () => {
+    // A single diff pixel at (200, 300) inside a 512×512 image.
+    // cellSize=64 → cell (3, 4) is hot.
+    // Old behaviour: region bounded at (192, 256, 64, 64) (cell-aligned).
+    // New behaviour: region bounded at (200, 300, 1, 1) (pixel-tight).
+    const size = 512;
+    // With minRegionCells=1 and a single diff pixel, the cell density
+    // (1 / 4096 ≈ 0.0002) is well below default 0.05, so we need a small
+    // dense cluster instead. A 16×16 block at (200, 300) gives density
+    // 256/4096 = 0.0625 > 0.05 → cell becomes hot.
+    const blockData = createDiffData(
+      size,
+      size,
+      Array.from({ length: 16 * 16 }, (_, i) => ({
+        x: 200 + (i % 16),
+        y: 300 + Math.floor(i / 16),
+      })),
+    );
+    const regions = clusterDiffPixelsGrid(blockData, size, size, { cellSize: 64 });
+    expect(regions.length).toBe(1);
+    const b = regions[0].bounds;
+    // Pixel-tight bounds should match the 16×16 block (215, 315 inclusive)
+    expect(b.x).toBe(200);
+    expect(b.y).toBe(300);
+    expect(b.width).toBe(16);
+    expect(b.height).toBe(16);
+  });
+});
