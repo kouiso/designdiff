@@ -22,7 +22,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        check-type: [lint, typecheck, test]
+        check-type: [lint, typecheck, test, coverage]
     steps:
       - uses: actions/checkout@v6
 
@@ -49,3 +49,7 @@ jobs:
       - name: Unit tests
         if: matrix.check-type == 'test'
         run: pnpm test
+
+      - name: Coverage thresholds
+        if: matrix.check-type == 'coverage'
+        run: pnpm -r --filter "@figdiff/shared" --filter "@figdiff/mcp-server" --filter "@figdiff/desktop" run test:coverage

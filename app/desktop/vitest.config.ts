@@ -29,6 +29,12 @@ export default defineConfig({
         "src/lib/platform/web-adapter.ts",
         "src/lib/platform/platform-adapter.ts",
       ],
+      thresholds: {
+        statements: 74,
+        branches: 78,
+        functions: 62,
+        lines: 74,
+      },
     },
   },
 });
