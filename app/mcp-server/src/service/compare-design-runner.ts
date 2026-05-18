@@ -12,6 +12,7 @@ import {
   type CompareDesignResult,
   type CropRegion,
   type FigmaNode,
+  type IgnoreRegion,
 } from "@figdiff/shared";
 
 import { resolveSafePath } from "../util/path-guard.js";
@@ -102,6 +103,9 @@ export interface CompareDesignRunArgs {
   frame_name?: string;
   threshold?: number;
   project_id?: string;
+  // 既知の意図的差分マスク。compare 結果から除外される。
+  // 座標系は cropRegion 適用後 (= screenshot ピクセル座標)。
+  ignore_regions?: IgnoreRegion[];
 }
 
 export interface CompareDesignRunOutput {
@@ -244,6 +248,7 @@ export async function runCompareDesign(
       screenshotBase64,
       threshold: args.threshold ?? 0.1,
       cropRegion,
+      ignoreRegions: args.ignore_regions,
     },
     figmaRootNode,
     `cmp-${randomUUID()}`,

@@ -10,7 +10,7 @@ import * as path from "node:path";
 
 import { z } from "zod";
 
-import { CompareDesignResultSchema } from "@figdiff/shared";
+import { CompareDesignResultSchema, IgnoreRegionSchema } from "@figdiff/shared";
 
 import { runCompareDesign } from "../service/compare-design-runner.js";
 
@@ -32,6 +32,7 @@ const DESCRIPTION = `デザインと実装のピクセル差分を検出しま�
 - design_source: Figma URL（node-id付き推奨） or ローカル画像パス
 - screenshot: 実装スクリーンショットのローカルパス
 - threshold: 色差の許容閾値（0-1、デフォルト0.1）
+- ignore_regions: 既知の意図的差分マスク（省略可）。WP原文 vs Figmaプレースホルダ、Google Map埋め込み等の false-positive 抑制に使用。各矩形 {x,y,width,height,label?} 内のピクセルは差分検出/matchRate 分母から除外される
 
 ## Figma URLの例
   "https://www.figma.com/design/ABC123/File?node-id=1-23"
@@ -74,6 +75,12 @@ export function registerCompareDesign(server: McpServer): void {
           .string()
           .optional()
           .describe("Crop Region適用のためのプロジェクトID（省略可）"),
+        ignore_regions: z
+          .array(IgnoreRegionSchema)
+          .optional()
+          .describe(
+            "意図的差分マスク。各矩形{x,y,width,height,label?}内のピクセルは差分検出/matchRate分母から除外。座標系はcrop適用後のscreenshotピクセル座標。",
+          ),
       },
       outputSchema: CompareDesignResultSchema,
     },

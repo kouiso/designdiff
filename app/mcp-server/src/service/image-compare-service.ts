@@ -16,6 +16,7 @@ import {
   type CropRegion,
   type FigmaNode,
   type GridClusterOptions,
+  type IgnoreRegion,
 } from "@figdiff/shared";
 
 import { buildDiffReport } from "./diff-report-builder.js";
@@ -29,6 +30,9 @@ interface CompareImagesOptions {
   cropRegion?: CropRegion;
   clusterMode?: ClusterMode;
   gridOptions?: GridClusterOptions;
+  // 既知の意図的差分マスク。各矩形内の差分ピクセルは matchRate / clustering から除外。
+  // 矩形は cropRegion 適用後の座標系 (= screenshot ピクセル座標) で指定する。
+  ignoreRegions?: IgnoreRegion[];
 }
 
 // Above this total pixel count, "auto" picks grid clustering. Full-page PC
@@ -58,6 +62,7 @@ export async function compareImages(
     cropRegion,
     clusterMode = "auto",
     gridOptions,
+    ignoreRegions,
   } = options;
 
   // Decode base64 to buffers
@@ -152,6 +157,18 @@ export async function compareImages(
     preserveLegacyWhitePaddingForReport(reportDesignPixels, width, height, paddingMask);
   }
 
+  // ignoreRegions 前処理: matchRate 算出の分母から引く mask ピクセル数を計算し、
+  // 同じ範囲を design / screenshot 両方の入力ピクセルで同一色 (0,0,0,0) に
+  // 揃えておく。こうすると pixelmatch がその範囲を「一致」として扱い、
+  // 戻り値 diffPixelCount にも diff 可視化マークにも mask 範囲が含まれなくなる。
+  const maskedPixelCount = zeroIgnoreRegions(
+    pixelmatchDesignPixels,
+    screenshotPixels,
+    width,
+    height,
+    ignoreRegions,
+  );
+
   // Run pixelmatch
   const diffPixelData = new Uint8ClampedArray(width * height * 4);
   const diffPixelCount = pixelmatch(
@@ -165,9 +182,11 @@ export async function compareImages(
     },
   );
 
-  const totalPixelCount = width * height;
+  const totalPixelCount = width * height - maskedPixelCount;
   const matchRate =
-    Math.round(((totalPixelCount - diffPixelCount) / totalPixelCount) * 100 * 100) / 100;
+    totalPixelCount === 0
+      ? 100
+      : Math.round(((totalPixelCount - diffPixelCount) / totalPixelCount) * 100 * 100) / 100;
 
   // Cluster diff regions
   // - "grid": grid-based clustering (recommended for full-page screenshots)
@@ -267,6 +286,57 @@ async function cropImageBuffer(buffer: Buffer, cropRegion: CropRegion): Promise<
       height,
     })
     .toBuffer();
+}
+
+// ignoreRegions 前処理。各矩形を画像境界にクリップし、矩形内の
+// design / screenshot ピクセルを同一色 (0,0,0,0) で上書きする。
+// これで後段の pixelmatch は mask 範囲を「一致」として扱い、
+// 戻り値の diffPixelCount にも diff 可視化マークにも mask 範囲が
+// 含まれなくなる。OR 結合 (重なるピクセルは 1 度のみカウント)。
+// 戻り値は mask が覆ったユニークピクセル数 — matchRate 分母から引く。
+function zeroIgnoreRegions(
+  designPixels: Uint8ClampedArray,
+  screenshotPixels: Uint8ClampedArray,
+  width: number,
+  height: number,
+  ignoreRegions: readonly IgnoreRegion[] | undefined,
+): number {
+  if (!ignoreRegions || ignoreRegions.length === 0) return 0;
+
+  // 1) マスク bitmap を組み立てる (1 = ignore) — 矩形重複でも一意にカウントする
+  const total = width * height;
+  const mask = new Uint8Array(total);
+  for (const region of ignoreRegions) {
+    const left = Math.max(0, Math.floor(region.x));
+    const top = Math.max(0, Math.floor(region.y));
+    const right = Math.min(width, Math.floor(region.x + region.width));
+    const bottom = Math.min(height, Math.floor(region.y + region.height));
+    if (right <= left || bottom <= top) continue;
+    for (let y = top; y < bottom; y += 1) {
+      const rowBase = y * width;
+      for (let x = left; x < right; x += 1) {
+        mask[rowBase + x] = 1;
+      }
+    }
+  }
+
+  // 2) マスク内ピクセルを design / screenshot の両方で 0 上書き + 数えあげ
+  let maskedCount = 0;
+  for (let i = 0; i < total; i += 1) {
+    if (mask[i] === 1) {
+      maskedCount += 1;
+      const offset = i * 4;
+      designPixels[offset] = 0;
+      designPixels[offset + 1] = 0;
+      designPixels[offset + 2] = 0;
+      designPixels[offset + 3] = 0;
+      screenshotPixels[offset] = 0;
+      screenshotPixels[offset + 1] = 0;
+      screenshotPixels[offset + 2] = 0;
+      screenshotPixels[offset + 3] = 0;
+    }
+  }
+  return maskedCount;
 }
 
 function maskTransparentPaddingPixels(
