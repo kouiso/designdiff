@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import type { RegionScore } from "@figdiff/shared";
+import { IgnoreRegionSchema, type RegionScore } from "@figdiff/shared";
 
 import { runCompareDesign } from "../service/compare-design-runner.js";
 import { getComparisonEntry } from "../service/comparison-history.js";
@@ -55,6 +55,12 @@ export function registerVerifyFix(server: McpServer): void {
           .string()
           .describe("比較対象にする過去の compare_design comparisonId"),
         expected_target_node_id: z.string().describe("修正したはずの figmaNodeId"),
+        ignore_regions: z
+          .array(IgnoreRegionSchema)
+          .optional()
+          .describe(
+            "意図的差分マスク (compare_design と同じ形式)。prior 比較で使った同じマスクを渡さないと、masked baseline と unmasked current の比較になり regression 判定が崩れる",
+          ),
       },
       outputSchema: VerifyFixResultSchema,
     },
@@ -71,6 +77,7 @@ export function registerVerifyFix(server: McpServer): void {
           frame_name: args.frame_name,
           threshold: args.threshold,
           project_id: args.project_id,
+          ignore_regions: args.ignore_regions,
         });
 
         if (!comparison.result.diffReport) {

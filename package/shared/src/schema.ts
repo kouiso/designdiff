@@ -251,7 +251,8 @@ export const CompareDesignResultSchema = z.object({
   comparisonId: z.string(),
   matchRate: z.number().min(0).max(100),
   diffPixelCount: z.number().int().nonnegative(),
-  totalPixelCount: z.number().int().positive(),
+  // ignoreRegions が画像全体を覆うケースでは 0 が正当。
+  totalPixelCount: z.number().int().nonnegative(),
   remainingIssues: z.number().int().nonnegative().optional(),
   diffRegions: z.array(DiffRegionSchema),
   completionCriteria: CompletionCriteriaSchema.optional(),
@@ -270,6 +271,21 @@ export const CropRegionSchema = z.object({
   y: z.number().nonnegative(),
   width: z.number().positive(),
   height: z.number().positive(),
+});
+
+// --- Ignore Region Schema ---
+// マスク用矩形。compare_design 実行時に、この矩形内のピクセルは
+// 差分検出から除外し、分母 (totalPixelCount) からも引いて
+// 「評価対象領域のみ」の matchRate を計算する。
+// 用途: 既知の意図的差分 (WP 原文 vs Figma プレースホルダ、
+// アンチエイリアス / フォントヒンティング差、Google Map 埋め込み等)
+// を false-positive から除外する。
+export const IgnoreRegionSchema = z.object({
+  x: z.number().nonnegative(),
+  y: z.number().nonnegative(),
+  width: z.number().positive(),
+  height: z.number().positive(),
+  label: z.string().optional(),
 });
 
 // --- Design Source Schema (v4: Figma URL or local image per page) ---

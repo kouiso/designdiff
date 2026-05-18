@@ -12,6 +12,7 @@ import {
   type CompletionCriteriaSchema,
   type CompletionCriterionSchema,
   type CropRegionSchema,
+  type IgnoreRegionSchema,
   type DesignSourceSchema,
   type DesignTokenSchema,
   type DiffRegionSchema,
@@ -74,6 +75,10 @@ export type DiffRegion = z.infer<typeof DiffRegionSchema>;
 // --- Crop Region (Phase 2+) ---
 
 export type CropRegion = z.infer<typeof CropRegionSchema>;
+
+// --- Ignore Region (PR #57) ---
+
+export type IgnoreRegion = z.infer<typeof IgnoreRegionSchema>;
 
 // --- Project (v4: implementation URL + pages + design sources) ---
 
