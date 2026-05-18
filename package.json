@@ -15,22 +15,31 @@
     "check": "biome check ."
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.4.14",
+    "@biomejs/biome": "^2.4.15",
     "@eslint/js": "^9.39.4",
-    "@playwright/test": "^1.59.1",
+    "@playwright/test": "^1.60.0",
     "eslint": "^9.39.4",
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "globals": "^15.15.0",
-    "turbo": "^2.9.8",
+    "turbo": "^2.9.14",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.59.1"
+    "typescript-eslint": "^8.59.3"
   },
   "packageManager": "pnpm@9.15.0",
   "engines": {
     "node": ">=25.6.1"
   },
   "dependencies": {
-    "zod": "^4.4.2"
+    "zod": "^4.4.3"
+  },
+  "pnpm": {
+    "overrides": {
+      "fast-uri": ">=3.1.2",
+      "hono": ">=4.12.18",
+      "ip-address": ">=10.1.1",
+      "postcss": ">=8.5.10",
+      "@xmldom/xmldom": ">=0.8.13"
+    }
   }
 }

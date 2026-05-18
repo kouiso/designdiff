@@ -1,4 +1,12 @@
-import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  renameSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { join } from "node:path";
 
 import { app, ipcMain } from "electron";
@@ -25,6 +33,12 @@ const getProjectDir = (projectId: string): string => {
 
 const getProjectFilePath = (projectId: string): string => {
   return join(getProjectDir(projectId), "project.json");
+};
+
+const writeProjectFileAtomic = (filePath: string, contents: string): void => {
+  const tmpPath = `${filePath}.${process.pid}.tmp`;
+  writeFileSync(tmpPath, contents, "utf-8");
+  renameSync(tmpPath, filePath);
 };
 
 export const registerProjectHandlers = (): void => {
@@ -93,7 +107,7 @@ export const registerProjectHandlers = (): void => {
     if (!existsSync(projectDir)) {
       mkdirSync(projectDir, { recursive: true });
     }
-    writeFileSync(getProjectFilePath(project.id), JSON.stringify(project, null, 2), "utf-8");
+    writeProjectFileAtomic(getProjectFilePath(project.id), JSON.stringify(project, null, 2));
   });
 
   ipcMain.handle("project:delete", (_event, projectId: string) => {
