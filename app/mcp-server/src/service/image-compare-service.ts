@@ -168,6 +168,13 @@ export async function compareImages(
     height,
     ignoreRegions,
   );
+  // paddingMask がある (= design / screenshot 寸法不一致で contain resize した) 場合、
+  // reportDesignPixels は pixelmatchDesignPixels と別実体のため、buildDiffReport
+  // で意図的差分が再出現する。同じ mask を当てて足並みを揃える。
+  // 戻り値のカウントはここでは使わない (元 zeroIgnoreRegions で既に集計済)。
+  if (reportDesignPixels !== pixelmatchDesignPixels) {
+    zeroIgnoreRegions(reportDesignPixels, screenshotPixels, width, height, ignoreRegions);
+  }
 
   // Run pixelmatch
   const diffPixelData = new Uint8ClampedArray(width * height * 4);
@@ -303,9 +310,12 @@ function zeroIgnoreRegions(
 ): number {
   if (!ignoreRegions || ignoreRegions.length === 0) return 0;
 
-  // 1) マスク bitmap を組み立てる (1 = ignore) — 矩形重複でも一意にカウントする
+  // 矩形を反復しながら、未処理ピクセル (mask[i]===0) のみ上書き + カウント。
+  // 計算量は O(画像面積) ではなく O(Σ mask 矩形面積) に下がる。
+  // 矩形重複でも mask bitmap で一意化されるので二重カウントしない。
   const total = width * height;
   const mask = new Uint8Array(total);
+  let maskedCount = 0;
   for (const region of ignoreRegions) {
     const left = Math.max(0, Math.floor(region.x));
     const top = Math.max(0, Math.floor(region.y));
@@ -315,25 +325,21 @@ function zeroIgnoreRegions(
     for (let y = top; y < bottom; y += 1) {
       const rowBase = y * width;
       for (let x = left; x < right; x += 1) {
-        mask[rowBase + x] = 1;
+        const i = rowBase + x;
+        if (mask[i] === 0) {
+          mask[i] = 1;
+          maskedCount += 1;
+          const offset = i * 4;
+          designPixels[offset] = 0;
+          designPixels[offset + 1] = 0;
+          designPixels[offset + 2] = 0;
+          designPixels[offset + 3] = 0;
+          screenshotPixels[offset] = 0;
+          screenshotPixels[offset + 1] = 0;
+          screenshotPixels[offset + 2] = 0;
+          screenshotPixels[offset + 3] = 0;
+        }
       }
-    }
-  }
-
-  // 2) マスク内ピクセルを design / screenshot の両方で 0 上書き + 数えあげ
-  let maskedCount = 0;
-  for (let i = 0; i < total; i += 1) {
-    if (mask[i] === 1) {
-      maskedCount += 1;
-      const offset = i * 4;
-      designPixels[offset] = 0;
-      designPixels[offset + 1] = 0;
-      designPixels[offset + 2] = 0;
-      designPixels[offset + 3] = 0;
-      screenshotPixels[offset] = 0;
-      screenshotPixels[offset + 1] = 0;
-      screenshotPixels[offset + 2] = 0;
-      screenshotPixels[offset + 3] = 0;
     }
   }
   return maskedCount;

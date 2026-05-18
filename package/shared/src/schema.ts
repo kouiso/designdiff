@@ -251,7 +251,8 @@ export const CompareDesignResultSchema = z.object({
   comparisonId: z.string(),
   matchRate: z.number().min(0).max(100),
   diffPixelCount: z.number().int().nonnegative(),
-  totalPixelCount: z.number().int().positive(),
+  // ignoreRegions が画像全体を覆うケースでは 0 が正当。
+  totalPixelCount: z.number().int().nonnegative(),
   remainingIssues: z.number().int().nonnegative().optional(),
   diffRegions: z.array(DiffRegionSchema),
   completionCriteria: CompletionCriteriaSchema.optional(),

@@ -3,6 +3,8 @@
 import sharp from "sharp";
 import { describe, expect, it } from "vitest";
 
+import { CompareDesignResultSchema } from "@figdiff/shared";
+
 import { compareImages } from "./image-compare-service.js";
 
 // 単色 PNG を base64 で返す
@@ -35,6 +37,26 @@ describe("compareImages — ignoreRegions マスク", () => {
     expect(result.diffPixelCount).toBe(0);
     expect(result.totalPixelCount).toBe(0);
     expect(result.diffRegions).toEqual([]);
+    // bot review: totalPixelCount=0 が CompareDesignResultSchema 違反で
+    // runtime crash する回帰を防ぐ。schema が nonnegative を許容することを確認。
+    expect(() => CompareDesignResultSchema.parse(result)).not.toThrow();
+  });
+
+  it("design / screenshot の寸法不一致で contain resize が走るケースでも mask が diffReport に効くこと (paddingMask 経路)", async () => {
+    // design 20x10、screenshot 20x20 → contain で paddingMask 発生
+    const design = await solidPng(20, 10, { r: 255, g: 0, b: 0, alpha: 1 });
+    const screenshot = await solidPng(20, 20, { r: 0, g: 0, b: 255, alpha: 1 });
+
+    const result = await compareImages({
+      designBase64: design,
+      screenshotBase64: screenshot,
+      threshold: 0.1,
+      ignoreRegions: [{ x: 0, y: 0, width: 20, height: 20, label: "全体マスク" }],
+    });
+
+    // 全面マスクなので diffReport にも差分は出ないはず
+    expect(result.diffPixelCount).toBe(0);
+    expect(result.matchRate).toBe(100);
   });
 
   it("ignoreRegions 指定なしの場合は通常通り全ピクセル差分が検出されること", async () => {
