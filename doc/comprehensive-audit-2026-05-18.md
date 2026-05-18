@@ -279,6 +279,43 @@ These are recorded as known limitations rather than hidden as if verified.
 
 ---
 
+## §8.5 — designdiff Product Evolution Roadmap (post re-eval 2026-05-18)
+
+A follow-up re-evaluation of designdiff against the new sample-corp Figma file `FIGMAFILEKEYSAMPLECORP1` (see companion doc `doc/evaluation-2026-05-18-vs-sample-corporate-v02.md`) overturned 2 of the 3 v0.1.0 "unfit" findings and discovered 1 new critical issue.
+
+### Re-eval delta vs the 2026-05-16 v0.1.0 baseline
+
+| v0.1.0 finding | v0.2 status (today) | Evidence |
+|---|---|---|
+| Whole-image returned as 1 region | **DISPROVEN** | news-sp now returns 391 spatial regions, contact-sp returns 553. Tight bounding boxes (35×12, 16×20). |
+| Spatial localization impossible | **DISPROVEN** | Regions carry x/y/w/h; pointed at specific UI elements rather than the page as a whole. |
+| Known intentional deviations: 0 detection | **STILL OPEN** | No allowlist / mask parameter in `compareImages()`. |
+| (NEW) Clusterer wall-time scales super-linearly with diff area | **NEW CRITICAL** | 142KB pair = 22.9s. 134KB pair = 52.0s. 467KB pair = >90s timeout. 3MB pair (top-pc) = stalled 17 min and killed. v0.1.0 averaged 1.4s/page. ~16-235× slowdown. |
+
+### Reshaped v0.2 priorities
+
+The "sample-corp unfit" verdict stands but its content has shifted from "semantic / localization weakness" to "performance + missing masks":
+
+- **P0** — Clusterer performance budget + adaptive fallback. Hard wall-clock cap, region count cap (default 100), early-exit when hot-cell ratio >50%, fallback to flood-only at full-image diffs.
+- **P0** — `ignoreRegions` mask support in `compareImages()` (closes v0.1.0 finding #3).
+- **P0** — Per-cell `matchRate` exposed in `gridSummary`.
+- **P1** — Named ignore-region YAML config under `~/.figdiff/projects/<id>/ignore-regions.yaml`.
+- **P1** — Region count cap with hierarchical merging (391-553 raw → ≤50 user-visible groups).
+- **P2** — Per-region threshold override (text vs icons vs photos).
+- **P3** — Semantic Figma node diff. **Downgraded** from §5.g's "high-leverage follow-up" — the spatial-region-based approach now covers the practical workflow once masks + perf land.
+
+### Linkage to §5.g follow-up inventory
+
+Original §5.g item #12 was "Implement semantic Figma node diff (the original eval-vs-sample-corporate finding)." After this re-eval, that single line splits into 3 concrete follow-up issues:
+
+- designdiff issue #2 (P0): clusterer performance budget + adaptive fallback
+- designdiff issue #3 (P0): `ignoreRegions` mask support
+- designdiff issue #4 (P1): per-project ignore-regions YAML
+
+Semantic node diff drops to P3 because pixel-diff + spatial regions + masks + per-cell match% now covers the design-review workflow for the projects we actually use this on.
+
+---
+
 ## §9 — Final composite verdict
 
 **Composite score: 44.5 / 100** (17 axes, post-adversarial revision).
