@@ -15,6 +15,7 @@
     "lint": "biome check src/",
     "lint:fix": "biome check --write src/",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "preview": "electron-vite preview",
     "pack": "electron-builder"
   },

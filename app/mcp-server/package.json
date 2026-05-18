@@ -14,7 +14,8 @@
     "lint": "biome check src/",
     "lint:fix": "biome check --write src/",
     "dev": "tsc --watch",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@figdiff/shared": "workspace:*",

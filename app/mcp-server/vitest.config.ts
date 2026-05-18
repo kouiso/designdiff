@@ -14,6 +14,12 @@ export default defineConfig({
       provider: "v8",
       include: ["src/**/*.ts"],
       exclude: ["src/**/*.test.ts", "src/index.ts", "src/pixelmatch.d.ts"],
+      thresholds: {
+        statements: 77,
+        branches: 77,
+        functions: 75,
+        lines: 77,
+      },
     },
   },
 });
