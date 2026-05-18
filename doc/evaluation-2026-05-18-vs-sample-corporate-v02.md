@@ -131,12 +131,25 @@ export const clusterDiffPixels = (
   diffMask: Uint8Array, width: number, height: number,
   options: ClusterBudget & { strategy?: "auto" | "grid" | "flood" } = {},
 ) => {
-  const start = Date.now();
+  // NOTE: threshold direction is intentionally INVERTED from the current
+  // `image-compare-service.ts:183` implementation. Today grid is used when
+  // `pixels >= AUTO_GRID_PIXEL_THRESHOLD` (large pages). This eval showed
+  // that's exactly when grid stalls. In v0.2, grid is preferred for SMALL
+  // pages where it produces useful spatial localization quickly, and we
+  // fall back to flood for large pages where grid becomes unusable.
   if (options.strategy === "grid" || (options.strategy !== "flood" && width * height < AUTO_GRID_PIXEL_THRESHOLD)) {
-    const out = clusterDiffPixelsGrid(diffMask, width, height, { cellSize: 16, ... });
-    if (Date.now() - start > (options.maxWallMs ?? 5000)) {
-      // mark partial + return a coarser grid
-      return { ...out, partial: true, reason: "wall-budget-exceeded" };
+    // IMPORTANT: clusterDiffPixelsGrid must accept the budget and poll
+    // performance.now() INSIDE its hot loops — the post-hoc check below
+    // cannot preempt synchronous work that has already exceeded the budget
+    // (this is exactly the failure mode we hit while running this eval:
+    // Promise.race could not preempt the sync compute either).
+    const out = clusterDiffPixelsGrid(diffMask, width, height, {
+      cellSize: 16,
+      maxWallMs: options.maxWallMs ?? 5000,
+      maxRegions: options.maxRegions ?? 100,
+    });
+    if (out.partial) {
+      return { ...out, reason: out.reason ?? "wall-budget-exceeded-inside-grid" };
     }
     return out;
   }
@@ -146,7 +159,7 @@ export const clusterDiffPixels = (
 
 Plus:
 - `clusterDiffPixelsGrid` must reject early if `hotCellCount > 0.5 * totalCells` (= entire page is hot, grid clustering provides no value over flood).
-- Per-call hard timeout via `performance.now()` polling every N iterations of the flood-fill inner loop.
+- Per-call hard timeout via `performance.now()` polling **inside** the flood-fill and per-cell loops (post-hoc `Date.now()` at the outer caller cannot preempt sync work — gemini PR #55 review caught this; the budget must be passed INTO the inner function).
 
 ### P0 implementation sketch (mask / ignore-region)
 
