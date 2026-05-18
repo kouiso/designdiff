@@ -22,9 +22,9 @@ jobs:
       matrix:
         include:
           - os: Linux
-            runs-on: ubuntu-latest
+            runs-on: ${{ vars.RUNNER_LINUX }}
           - os: macOS
-            runs-on: macos-latest
+            runs-on: ${{ vars.RUNNER_MACOS }}
           - os: Windows
             runs-on: windows-latest
     runs-on: ${{ matrix.runs-on }}

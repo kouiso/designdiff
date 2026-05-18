@@ -15,7 +15,7 @@ concurrency:
 jobs:
   auto-assign:
     name: Auto Assign Author
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.RUNNER_LINUX }}
     steps:
       - uses: actions/github-script@v9
         with:
