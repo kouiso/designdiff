@@ -21,11 +21,11 @@ jobs:
       matrix:
         include:
           - os: macOS
-            runs-on: macos-latest
+            runs-on: ${{ vars.RUNNER_MACOS }}
           - os: Windows
             runs-on: windows-latest
           - os: Linux
-            runs-on: ubuntu-latest
+            runs-on: ${{ vars.RUNNER_LINUX }}
     runs-on: ${{ matrix.runs-on }}
     steps:
       - uses: actions/checkout@v6
