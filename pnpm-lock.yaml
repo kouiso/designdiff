@@ -176,6 +176,10 @@ importers:
         version: 1.1.4(vitest@3.2.4(@types/debug@4.1.13)(@types/node@25.6.0)(jiti@2.6.1)(jsdom@25.0.1)(lightningcss@1.32.0)(yaml@2.9.0))
 
   app/figma-plugin:
+    dependencies:
+      '@figdiff/shared':
+        specifier: workspace:*
+        version: link:../../package/shared
     devDependencies:
       '@figma/plugin-typings':
         specifier: ^1.125.0

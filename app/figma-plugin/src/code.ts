@@ -8,6 +8,14 @@
  * - inspect: Show Dev Mode-like inspection of selected node
  */
 
+import {
+  figmaColorToHex,
+  generateCssSuggestion,
+  type NodeAppearance,
+  type NodeLayout,
+  type NodeTypography,
+} from "@figdiff/shared";
+
 // Plugin command handler — menu commands route to the appropriate initial tab
 const command = figma.command;
 const initialTab = command === "inspect" ? "inspect" : "compare";
@@ -168,9 +176,9 @@ interface InspectionResult {
   nodeId: string;
   nodeName: string;
   nodeType: string;
-  layout: Record<string, unknown>;
-  appearance: Record<string, unknown>;
-  typography?: Record<string, unknown>;
+  layout: NodeLayout;
+  appearance: NodeAppearance;
+  typography?: NodeTypography;
   cssSuggestion: string;
   children: { id: string; name: string; type: string; width: number; height: number }[];
 }
@@ -194,8 +202,8 @@ export function extractNodeInspection(node: SceneNode): InspectionResult {
   };
 }
 
-export function extractLayoutFromNode(node: SceneNode): Record<string, unknown> {
-  const layout: Record<string, unknown> = {
+export function extractLayoutFromNode(node: SceneNode): NodeLayout {
+  const layout: NodeLayout = {
     x: node.x,
     y: node.y,
     width: "width" in node ? node.width : 0,
@@ -203,24 +211,35 @@ export function extractLayoutFromNode(node: SceneNode): Record<string, unknown> 
   };
 
   if ("layoutMode" in node && node.layoutMode !== "NONE") {
-    layout.layoutMode = node.layoutMode;
+    layout.layoutMode =
+      node.layoutMode === "HORIZONTAL" || node.layoutMode === "VERTICAL" ? node.layoutMode : "NONE";
     layout.paddingTop = "paddingTop" in node ? node.paddingTop : 0;
     layout.paddingRight = "paddingRight" in node ? node.paddingRight : 0;
     layout.paddingBottom = "paddingBottom" in node ? node.paddingBottom : 0;
     layout.paddingLeft = "paddingLeft" in node ? node.paddingLeft : 0;
     layout.itemSpacing = "itemSpacing" in node ? node.itemSpacing : 0;
-    layout.primaryAxisAlignItems =
+    layout.primaryAxisAlign =
       "primaryAxisAlignItems" in node ? node.primaryAxisAlignItems : undefined;
-    layout.counterAxisAlignItems =
+    layout.counterAxisAlign =
       "counterAxisAlignItems" in node ? node.counterAxisAlignItems : undefined;
   }
 
   return layout;
 }
 
-export function extractAppearanceFromNode(node: SceneNode): Record<string, unknown> {
-  const appearance: Record<string, unknown> = {
+export function extractAppearanceFromNode(node: SceneNode): NodeAppearance {
+  const appearance: NodeAppearance = {
+    fills: [],
+    strokes: [],
+    borderRadius: {
+      topLeft: 0,
+      topRight: 0,
+      bottomRight: 0,
+      bottomLeft: 0,
+    },
     opacity: "opacity" in node ? node.opacity : 1,
+    blendMode: "NORMAL",
+    effects: [],
   };
 
   if ("fills" in node && node.fills !== figma.mixed) {
@@ -230,38 +249,48 @@ export function extractAppearanceFromNode(node: SceneNode): Record<string, unkno
         if (f.type === "SOLID") {
           return {
             type: "SOLID",
-            color: rgbToHex(f.color.r, f.color.g, f.color.b),
+            color: figmaColorToHex(f.color.r, f.color.g, f.color.b, f.opacity),
             opacity: f.opacity,
           };
         }
-        return { type: f.type };
+        return { type: normalizeFillType(f.type) };
       });
   }
 
   if ("strokes" in node) {
     appearance.strokes = node.strokes
       .filter((s) => s.visible !== false)
-      .map((s) => {
+      .flatMap((s) => {
         if (s.type === "SOLID") {
-          return {
-            type: "SOLID",
-            color: rgbToHex(s.color.r, s.color.g, s.color.b),
-            weight: "strokeWeight" in node ? node.strokeWeight : 1,
-          };
+          return [
+            {
+              color: figmaColorToHex(s.color.r, s.color.g, s.color.b, s.opacity),
+              weight:
+                "strokeWeight" in node && typeof node.strokeWeight === "number"
+                  ? node.strokeWeight
+                  : 1,
+              align: "CENTER",
+            },
+          ];
         }
-        return { type: s.type };
+        return [];
       });
   }
 
   if ("cornerRadius" in node && typeof node.cornerRadius === "number") {
-    appearance.borderRadius = node.cornerRadius;
+    appearance.borderRadius = {
+      topLeft: node.cornerRadius,
+      topRight: node.cornerRadius,
+      bottomRight: node.cornerRadius,
+      bottomLeft: node.cornerRadius,
+    };
   }
 
   if ("effects" in node) {
     appearance.effects = node.effects
       .filter((e) => e.visible !== false)
       .map((e) => ({
-        type: e.type,
+        type: normalizeEffectType(e.type),
         radius: "radius" in e ? e.radius : 0,
       }));
   }
@@ -269,61 +298,30 @@ export function extractAppearanceFromNode(node: SceneNode): Record<string, unkno
   return appearance;
 }
 
-export function extractTypographyFromNode(textNode: SceneNode): Record<string, unknown> {
-  if (textNode.type !== "TEXT") return {};
+export function extractTypographyFromNode(textNode: SceneNode): NodeTypography | undefined {
+  if (textNode.type !== "TEXT") return undefined;
   return {
     fontFamily: typeof textNode.fontName !== "symbol" ? textNode.fontName.family : "Mixed",
     fontSize: typeof textNode.fontSize !== "symbol" ? textNode.fontSize : 0,
-    fontWeight: typeof textNode.fontName !== "symbol" ? textNode.fontName.style : "Regular",
+    fontWeight:
+      typeof textNode.fontName !== "symbol" ? fontStyleToWeight(textNode.fontName.style) : 400,
     lineHeight:
       typeof textNode.lineHeight !== "symbol" && textNode.lineHeight.unit !== "AUTO"
         ? textNode.lineHeight.value
         : "AUTO",
     letterSpacing: typeof textNode.letterSpacing !== "symbol" ? textNode.letterSpacing.value : 0,
-    textAlignHorizontal: textNode.textAlignHorizontal,
+    textAlign: normalizeTextAlign(textNode.textAlignHorizontal),
+    textDecoration: "NONE",
     textContent: textNode.characters,
   };
 }
 
 export function buildCssSuggestion(
-  layout: Record<string, unknown>,
-  appearance: Record<string, unknown>,
-  typography: Record<string, unknown> | undefined,
+  layout: NodeLayout,
+  appearance: NodeAppearance,
+  typography: NodeTypography | undefined,
 ): string {
-  const cssParts: string[] = [];
-  cssParts.push(`width: ${layout.width}px;`);
-  cssParts.push(`height: ${layout.height}px;`);
-
-  if (layout.layoutMode === "HORIZONTAL") cssParts.push("display: flex; flex-direction: row;");
-  if (layout.layoutMode === "VERTICAL") cssParts.push("display: flex; flex-direction: column;");
-
-  if (layout.paddingTop !== undefined) {
-    cssParts.push(
-      `padding: ${layout.paddingTop}px ${layout.paddingRight}px ${layout.paddingBottom}px ${layout.paddingLeft}px;`,
-    );
-  }
-  if (layout.itemSpacing) cssParts.push(`gap: ${layout.itemSpacing}px;`);
-
-  const fillsValue = appearance.fills;
-  const fills =
-    Array.isArray(fillsValue) &&
-    fillsValue.every(
-      (f): f is { type: string; color?: string } =>
-        typeof f === "object" && f !== null && "type" in f,
-    )
-      ? fillsValue
-      : undefined;
-  if (fills && fills.length > 0 && fills[0].color) {
-    cssParts.push(`background-color: ${fills[0].color};`);
-  }
-  if (appearance.borderRadius) cssParts.push(`border-radius: ${appearance.borderRadius}px;`);
-
-  if (typography) {
-    cssParts.push(`font-family: "${typography.fontFamily}";`);
-    cssParts.push(`font-size: ${typography.fontSize}px;`);
-  }
-
-  return cssParts.join(" ");
+  return generateCssSuggestion(layout, appearance, typography);
 }
 
 export function hasChildren(
@@ -351,10 +349,53 @@ export function extractChildren(
 }
 
 export function rgbToHex(r: number, g: number, b: number): string {
-  const r8 = Math.round(r * 255);
-  const g8 = Math.round(g * 255);
-  const b8 = Math.round(b * 255);
-  return `#${r8.toString(16).padStart(2, "0")}${g8.toString(16).padStart(2, "0")}${b8.toString(16).padStart(2, "0")}`.toUpperCase();
+  return figmaColorToHex(r, g, b);
+}
+
+function normalizeFillType(type: string): NodeAppearance["fills"][number]["type"] {
+  if (
+    type === "SOLID" ||
+    type === "GRADIENT_LINEAR" ||
+    type === "GRADIENT_RADIAL" ||
+    type === "GRADIENT_ANGULAR" ||
+    type === "GRADIENT_DIAMOND" ||
+    type === "IMAGE"
+  ) {
+    return type;
+  }
+  return "GRADIENT_LINEAR";
+}
+
+function normalizeEffectType(type: string): NodeAppearance["effects"][number]["type"] {
+  if (
+    type === "DROP_SHADOW" ||
+    type === "INNER_SHADOW" ||
+    type === "LAYER_BLUR" ||
+    type === "BACKGROUND_BLUR"
+  ) {
+    return type;
+  }
+  return "LAYER_BLUR";
+}
+
+function normalizeTextAlign(align: string): NodeTypography["textAlign"] {
+  if (align === "CENTER" || align === "RIGHT" || align === "JUSTIFIED") {
+    return align;
+  }
+  return "LEFT";
+}
+
+function fontStyleToWeight(style: string): number {
+  const normalized = style.toLowerCase();
+  if (normalized.includes("thin")) return 100;
+  if (normalized.includes("extra light") || normalized.includes("extralight")) return 200;
+  if (normalized.includes("light")) return 300;
+  if (normalized.includes("medium")) return 500;
+  if (normalized.includes("semi bold") || normalized.includes("semibold")) return 600;
+  if (normalized.includes("extra bold") || normalized.includes("extrabold")) return 800;
+  if (normalized.includes("black") || normalized.includes("heavy")) return 900;
+  if (normalized.includes("bold")) return 700;
+  return 400;
 }
 
 // Listen for selection changes
