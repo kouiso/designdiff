@@ -8,6 +8,7 @@ interface Point {
 const SOBEL_GX = [-1, 0, 1, -2, 0, 2, -1, 0, 1];
 const SOBEL_GY = [-1, -2, -1, 0, 0, 0, 1, 2, 1];
 const EDGE_THRESHOLD = 96;
+const MAX_HAUSDORFF_EDGE_POINTS = 1024;
 
 function clampRegion(region: DiffBoundingBox, width: number, height: number): DiffBoundingBox {
   const startX = Math.min(Math.max(0, Math.floor(region.x)), width);
@@ -104,6 +105,20 @@ function directedHausdorff(source: Point[], target: Point[]): number {
   return maxDistance;
 }
 
+function sampleEdgePoints(points: Point[]): Point[] {
+  if (points.length <= MAX_HAUSDORFF_EDGE_POINTS) {
+    return points;
+  }
+
+  const sampled: Point[] = [];
+  const lastIndex = points.length - 1;
+  for (let index = 0; index < MAX_HAUSDORFF_EDGE_POINTS; index += 1) {
+    sampled.push(points[Math.round((index * lastIndex) / (MAX_HAUSDORFF_EDGE_POINTS - 1))]);
+  }
+
+  return sampled;
+}
+
 export const computeHausdorff = (
   imgA: Uint8ClampedArray,
   imgB: Uint8ClampedArray,
@@ -133,7 +148,15 @@ export const computeHausdorff = (
     return 1;
   }
 
-  const distance = Math.max(directedHausdorff(edgesA, edgesB), directedHausdorff(edgesB, edgesA));
+  // LP 全画面では edge 点が数万点になり、厳密 Hausdorff の O(n*m) が
+  // compare 全体を timeout させる。pixelmatch / gridSummary の精密な差分は
+  // 維持し、shape 補助指標だけ決定的サンプリングで上限を持たせる。
+  const sampledEdgesA = sampleEdgePoints(edgesA);
+  const sampledEdgesB = sampleEdgePoints(edgesB);
+  const distance = Math.max(
+    directedHausdorff(sampledEdgesA, sampledEdgesB),
+    directedHausdorff(sampledEdgesB, sampledEdgesA),
+  );
   const diagonal = Math.hypot(region.w, region.h);
 
   if (diagonal === 0) {
