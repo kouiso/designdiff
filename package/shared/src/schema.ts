@@ -306,6 +306,19 @@ export const IgnoreRegionSchema = z.object({
   label: z.string().optional(),
 });
 
+export const IgnoreRegionConfigEntrySchema = IgnoreRegionSchema.extend({
+  id: z.string().regex(/^[a-zA-Z0-9_-]+$/),
+  frame_name: z.string().optional(),
+  note: z.string().optional(),
+}).strict();
+
+export const IgnoreRegionConfigFileSchema = z
+  .object({
+    version: z.literal(1),
+    regions: z.array(IgnoreRegionConfigEntrySchema),
+  })
+  .strict();
+
 // --- Design Source Schema (v4: Figma URL or local image per page) ---
 
 export const DesignSourceSchema = z.discriminatedUnion("type", [

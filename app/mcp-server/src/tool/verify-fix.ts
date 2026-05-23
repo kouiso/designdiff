@@ -22,7 +22,7 @@ const VerifyFixResultSchema = z.object({
 });
 
 const DESCRIPTION =
-  "compare_design の前回比較と今回比較を突き合わせ、指定ノードが本当に改善したかと他セクションへの副作用を検証します。";
+  "compare_design の前回比較と今回比較を突き合わせ、指定ノードが本当に改善したかと他セクションへの副作用を検証します。project_id 指定時は保存済み ignore_regions も適用します。";
 
 function findRegion(regions: RegionScore[], targetNodeId: string): RegionScore | undefined {
   return regions.find((region) => (region.figmaNodeId ?? region.regionId) === targetNodeId);
@@ -50,7 +50,10 @@ export function registerVerifyFix(server: McpServer): void {
         screenshot: z.string().describe("修正後スクリーンショットのローカルパス"),
         frame_name: z.string().optional().describe("Figma URLにnode-idがない場合のフレーム名"),
         threshold: z.number().min(0).max(1).default(0.1).describe("pixelmatch の閾値"),
-        project_id: z.string().optional().describe("Crop Region 適用用のプロジェクトID"),
+        project_id: z
+          .string()
+          .optional()
+          .describe("Crop Region と保存済み ignore_regions 適用用のプロジェクトID"),
         prior_comparison_id: z
           .string()
           .describe("比較対象にする過去の compare_design comparisonId"),
@@ -59,7 +62,7 @@ export function registerVerifyFix(server: McpServer): void {
           .array(IgnoreRegionSchema)
           .optional()
           .describe(
-            "意図的差分マスク (compare_design と同じ形式)。prior 比較で使った同じマスクを渡さないと、masked baseline と unmasked current の比較になり regression 判定が崩れる",
+            "意図的差分マスク (compare_design と同じ形式)。project_id指定時は保存済みマスクと結合される。prior 比較で使った同じマスクを渡さないと、masked baseline と unmasked current の比較になり regression 判定が崩れる",
           ),
       },
       outputSchema: VerifyFixResultSchema,

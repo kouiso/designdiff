@@ -145,6 +145,8 @@ describe("MCP Server E2E: compare_design", () => {
     expect(toolNames).toContain("generate_diff_report");
     expect(toolNames).toContain("get_crop_region");
     expect(toolNames).toContain("set_crop_region");
+    expect(toolNames).toContain("get_ignore_regions");
+    expect(toolNames).toContain("set_ignore_regions");
     expect(toolNames).toContain("get_design_tokens");
     expect(toolNames).toContain("verify_fix");
     expect(compareDesignTool?.outputSchema).toBeDefined();
@@ -335,5 +337,71 @@ describe("MCP Server E2E: compare_design", () => {
     const cropTextContent = findTextContent(getResult);
     const data = JSON.parse(cropTextContent!.text);
     expect(data.regions.length).toBeGreaterThan(0);
+  });
+
+  it("ignore_regions YAML の保存と compare_design 自動適用ができること", async () => {
+    const setResult = await client.callTool({
+      name: "set_ignore_regions",
+      arguments: {
+        project_id: "ignore-project",
+        regions: [
+          {
+            id: "full-frame",
+            frame_name: "test-frame",
+            x: 0,
+            y: 0,
+            width: 200,
+            height: 200,
+            label: "Intentional full-frame diff",
+          },
+        ],
+      },
+    });
+    expect(setResult.isError).toBeFalsy();
+
+    const getResult = await client.callTool({
+      name: "get_ignore_regions",
+      arguments: {
+        project_id: "ignore-project",
+        frame_name: "test-frame",
+      },
+    });
+    expect(getResult.isError).toBeFalsy();
+    const persistedRegions = JSON.parse(findTextContent(getResult)!.text);
+    expect(persistedRegions.regionCount).toBe(1);
+
+    const compareResult = await client.callTool({
+      name: "compare_design",
+      arguments: {
+        design_source: designPath,
+        screenshot: screenshotDiffPath,
+        threshold: 0.1,
+        project_id: "ignore-project",
+        frame_name: "test-frame",
+      },
+    });
+    expect(compareResult.isError).toBeFalsy();
+
+    const data = JSON.parse(findTextContent(compareResult)!.text);
+    expect(data.matchRate).toBe(100);
+    expect(data.diffPixelCount).toBe(0);
+    expect(data.totalPixelCount).toBe(0);
+
+    const evidence = {
+      test: "MCP compare_design — persisted ignore_regions YAML auto-applied",
+      timestamp: EVIDENCE_TIMESTAMP,
+      input: {
+        design: "200x200 blue",
+        screenshot: "200x200 black",
+        projectId: "ignore-project",
+        frameName: "test-frame",
+      },
+      persistedRegions,
+      result: normalizeResultForEvidence(data),
+    };
+    await fs.writeFile(
+      path.join(EVIDENCE_DIR, "mcp-ignore-regions-yaml.json"),
+      formatEvidenceJson(evidence),
+    );
   });
 });
