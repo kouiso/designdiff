@@ -9,10 +9,11 @@ import sharp from "sharp";
 
 import {
   clusterDiffPixels,
-  clusterDiffPixelsGrid,
+  clusterDiffPixelsGridDetailed,
   generateMatchSuggestion,
   matchDiffRegionsToNodes,
   type CompareDesignResult,
+  type ClusterTelemetry,
   type CropRegion,
   type FigmaNode,
   type GridClusterOptions,
@@ -39,12 +40,77 @@ interface CompareImagesOptions {
 // screenshots (1512×900+ ≈ 1.36M) clear the bar; SP-only or small component
 // crops stay on flood-fill, where the legacy behaviour works well.
 const AUTO_GRID_PIXEL_THRESHOLD = 1_000_000;
+const DEFAULT_GRID_BUDGET_OPTIONS = {
+  maxWallMs: 5000,
+  maxRegions: 100,
+  maxHotCellRatio: 0.5,
+  fallbackToFlood: true,
+} satisfies GridClusterOptions;
 
 interface PaddingMask {
   left: number;
   top: number;
   width: number;
   height: number;
+}
+
+interface ClusterDiffResult {
+  diffRegions: CompareDesignResult["diffRegions"];
+  clusterTelemetry: ClusterTelemetry;
+}
+
+function clusterDiffRegions(args: {
+  clusterMode: ClusterMode;
+  totalPixelCount: number;
+  diffPixelCount: number;
+  diffPixelData: Uint8ClampedArray;
+  width: number;
+  height: number;
+  gridOptions?: GridClusterOptions;
+}): ClusterDiffResult {
+  const { clusterMode, totalPixelCount, diffPixelCount, diffPixelData, width, height } = args;
+  const gridOptions = { ...DEFAULT_GRID_BUDGET_OPTIONS, ...args.gridOptions };
+  const useGrid =
+    clusterMode === "grid" ||
+    (clusterMode === "auto" && totalPixelCount >= AUTO_GRID_PIXEL_THRESHOLD);
+  const clusterStartedAt = performance.now();
+  let usedMode: "grid" | "flood" = useGrid ? "grid" : "flood";
+  let fallbackReason: ClusterTelemetry["fallbackReason"];
+  let diffRegions = useGrid ? [] : clusterDiffPixels(diffPixelData, width, height);
+  let gridBudgetMs: number | undefined;
+
+  if (useGrid) {
+    const gridResult = clusterDiffPixelsGridDetailed(diffPixelData, width, height, gridOptions);
+    diffRegions = gridResult.regions;
+    gridBudgetMs = gridResult.budgetMs;
+    if (gridResult.aborted) {
+      fallbackReason = gridResult.abortReason;
+    }
+  }
+
+  if (
+    useGrid &&
+    gridOptions.fallbackToFlood !== false &&
+    diffRegions.length === 0 &&
+    diffPixelCount > 0
+  ) {
+    usedMode = "flood";
+    fallbackReason = fallbackReason ?? "grid-empty-with-diff";
+    diffRegions = clusterDiffPixels(diffPixelData, width, height);
+  }
+
+  return {
+    diffRegions,
+    clusterTelemetry: {
+      requestedMode: clusterMode,
+      usedMode,
+      fallbackUsed: fallbackReason !== undefined,
+      fallbackReason,
+      wallMs: Math.max(0, Math.round((performance.now() - clusterStartedAt) * 100) / 100),
+      budgetMs: gridBudgetMs,
+      regionCount: diffRegions.length,
+    },
+  };
 }
 
 /**
@@ -204,19 +270,22 @@ export async function compareImages(
   //   real diff pixels exist (e.g. thin 1-4px lines/text strokes diluted
   //   below cellDensityThreshold), fall through to flood-fill so downstream
   //   region-to-node matching and reporting still has something to attach to.
-  const useGrid =
-    clusterMode === "grid" ||
-    (clusterMode === "auto" && totalPixelCount >= AUTO_GRID_PIXEL_THRESHOLD);
-  let diffRegions = useGrid
-    ? clusterDiffPixelsGrid(diffPixelData, width, height, gridOptions)
-    : clusterDiffPixels(diffPixelData, width, height);
-  if (useGrid && diffRegions.length === 0 && diffPixelCount > 0) {
-    diffRegions = clusterDiffPixels(diffPixelData, width, height);
-  }
+  const clustered = clusterDiffRegions({
+    clusterMode,
+    totalPixelCount,
+    diffPixelCount,
+    diffPixelData,
+    width,
+    height,
+    gridOptions,
+  });
+  let { diffRegions } = clustered;
+  const { clusterTelemetry } = clustered;
 
   // Match diff regions to Figma nodes if available
   if (figmaRootNode) {
     diffRegions = matchDiffRegionsToNodes(diffRegions, figmaRootNode);
+    clusterTelemetry.regionCount = diffRegions.length;
   }
 
   // Generate diff image visualization
@@ -238,6 +307,7 @@ export async function compareImages(
     totalPixelCount,
     diffRegions,
     suggestion,
+    clusterTelemetry,
     diffReport,
     diffImageBase64,
   };

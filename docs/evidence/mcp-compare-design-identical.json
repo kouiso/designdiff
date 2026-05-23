@@ -32,6 +32,13 @@
     },
     "nextAction": "一致率100%です。差分はありません。タスク完了です。",
     "suggestion": "一致率100%です。差分はありません。",
+    "clusterTelemetry": {
+      "requestedMode": "auto",
+      "usedMode": "flood",
+      "fallbackUsed": false,
+      "wallMs": 0,
+      "regionCount": 0
+    },
     "diffReport": {
       "alignment": {
         "translation": {

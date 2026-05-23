@@ -8,6 +8,7 @@ import {
   type BorderRadiusSchema,
   type ChildNodeSummarySchema,
   type CritiqueNoteSchema,
+  type ClusterTelemetrySchema,
   type CompareDesignResultSchema,
   type CompletionCriteriaSchema,
   type CompletionCriterionSchema,
@@ -71,6 +72,7 @@ export type ParsedDesignInput = z.infer<typeof ParsedDesignInputSchema>;
 
 export type CompareDesignResult = z.infer<typeof CompareDesignResultSchema>;
 export type DiffRegion = z.infer<typeof DiffRegionSchema>;
+export type ClusterTelemetry = z.infer<typeof ClusterTelemetrySchema>;
 
 // --- Crop Region (Phase 2+) ---
 

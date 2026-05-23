@@ -144,6 +144,23 @@ export const DiffRegionSchema = z.object({
   nearbyNodeNames: z.array(z.string()),
 });
 
+export const ClusterTelemetrySchema = z.object({
+  requestedMode: z.enum(["auto", "grid", "flood"]),
+  usedMode: z.enum(["grid", "flood"]),
+  fallbackUsed: z.boolean(),
+  fallbackReason: z
+    .enum([
+      "grid-empty-with-diff",
+      "wall-budget-exceeded",
+      "region-count-exceeded",
+      "hot-cell-ratio-exceeded",
+    ])
+    .optional(),
+  wallMs: z.number().nonnegative(),
+  budgetMs: z.number().nonnegative().optional(),
+  regionCount: z.number().int().nonnegative(),
+});
+
 // --- Completion Criteria Schema (v4: AI-driven PASS/FAIL structure) ---
 
 export const CompletionCriterionSchema = z.object({
@@ -258,6 +275,7 @@ export const CompareDesignResultSchema = z.object({
   completionCriteria: CompletionCriteriaSchema.optional(),
   nextAction: z.string().optional(),
   suggestion: z.string(),
+  clusterTelemetry: ClusterTelemetrySchema.optional(),
   diffReport: DiffReportSchema.optional(),
   critique: CritiqueNoteSchema.optional(),
   diffImagePath: z.string().optional(),

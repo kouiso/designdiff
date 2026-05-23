@@ -112,13 +112,126 @@ export interface GridClusterOptions {
   cellSize?: number;
   cellDensityThreshold?: number;
   minRegionCells?: number;
+  maxWallMs?: number;
+  budgetMs?: number;
+  maxRegions?: number;
+  maxHotCellRatio?: number;
+  fallbackToFlood?: boolean;
 }
 
-const DEFAULT_GRID_OPTIONS: Required<GridClusterOptions> = {
+const DEFAULT_GRID_OPTIONS: Required<
+  Pick<GridClusterOptions, "cellSize" | "cellDensityThreshold" | "minRegionCells">
+> = {
   cellSize: 64,
   cellDensityThreshold: 0.05,
   minRegionCells: 1,
 };
+
+export type GridClusterAbortReason =
+  | "wall-budget-exceeded"
+  | "region-count-exceeded"
+  | "hot-cell-ratio-exceeded";
+
+export interface GridClusterResult {
+  regions: DiffRegion[];
+  aborted: boolean;
+  abortReason?: GridClusterAbortReason;
+  wallMs: number;
+  budgetMs?: number;
+  hotCellRatio: number;
+}
+
+interface BudgetClock {
+  startedAt: number;
+  maxWallMs?: number;
+}
+
+class GridClusterBudgetExceededError extends Error {
+  constructor() {
+    super("grid cluster wall budget exceeded");
+  }
+}
+
+function nowMs(): number {
+  return globalThis.performance?.now() ?? Date.now();
+}
+
+function isBudgetExceeded(clock: BudgetClock): boolean {
+  if (clock.maxWallMs === undefined) {
+    return false;
+  }
+  return nowMs() - clock.startedAt >= clock.maxWallMs;
+}
+
+function assertWithinBudget(clock: BudgetClock): void {
+  if (isBudgetExceeded(clock)) {
+    throw new GridClusterBudgetExceededError();
+  }
+}
+
+function validateGridClusterOptions(args: {
+  cellSize: number;
+  cellDensityThreshold: number;
+  minRegionCells: number;
+  options: GridClusterOptions;
+}): void {
+  const { cellSize, cellDensityThreshold, minRegionCells, options } = args;
+  if (!Number.isFinite(cellSize) || cellSize <= 0 || !Number.isInteger(cellSize)) {
+    throw new RangeError(
+      `clusterDiffPixelsGrid: cellSize must be a positive integer, got ${cellSize}`,
+    );
+  }
+  if (
+    !Number.isFinite(cellDensityThreshold) ||
+    cellDensityThreshold < 0 ||
+    cellDensityThreshold > 1
+  ) {
+    throw new RangeError(
+      `clusterDiffPixelsGrid: cellDensityThreshold must be in [0,1], got ${cellDensityThreshold}`,
+    );
+  }
+  if (!Number.isFinite(minRegionCells) || minRegionCells < 1 || !Number.isInteger(minRegionCells)) {
+    throw new RangeError(
+      `clusterDiffPixelsGrid: minRegionCells must be an integer ≥ 1, got ${minRegionCells}`,
+    );
+  }
+  if (
+    options.budgetMs !== undefined &&
+    (!Number.isFinite(options.budgetMs) || options.budgetMs < 0)
+  ) {
+    throw new RangeError(
+      `clusterDiffPixelsGrid: budgetMs must be nonnegative, got ${options.budgetMs}`,
+    );
+  }
+  if (
+    options.maxWallMs !== undefined &&
+    (!Number.isFinite(options.maxWallMs) || options.maxWallMs < 0)
+  ) {
+    throw new RangeError(
+      `clusterDiffPixelsGrid: maxWallMs must be nonnegative, got ${options.maxWallMs}`,
+    );
+  }
+  if (
+    options.maxRegions !== undefined &&
+    (!Number.isFinite(options.maxRegions) ||
+      options.maxRegions < 1 ||
+      !Number.isInteger(options.maxRegions))
+  ) {
+    throw new RangeError(
+      `clusterDiffPixelsGrid: maxRegions must be an integer ≥ 1, got ${options.maxRegions}`,
+    );
+  }
+  if (
+    options.maxHotCellRatio !== undefined &&
+    (!Number.isFinite(options.maxHotCellRatio) ||
+      options.maxHotCellRatio < 0 ||
+      options.maxHotCellRatio > 1)
+  ) {
+    throw new RangeError(
+      `clusterDiffPixelsGrid: maxHotCellRatio must be in [0,1], got ${options.maxHotCellRatio}`,
+    );
+  }
+}
 
 /**
  * Grid-based clustering for full-page web screenshots.
@@ -144,56 +257,89 @@ export function clusterDiffPixelsGrid(
   imageHeight: number,
   options: GridClusterOptions = {},
 ): DiffRegion[] {
+  return clusterDiffPixelsGridDetailed(diffPixelData, imageWidth, imageHeight, options).regions;
+}
+
+export function clusterDiffPixelsGridDetailed(
+  diffPixelData: Uint8ClampedArray,
+  imageWidth: number,
+  imageHeight: number,
+  options: GridClusterOptions = {},
+): GridClusterResult {
+  const startedAt = nowMs();
   const { cellSize, cellDensityThreshold, minRegionCells } = {
     ...DEFAULT_GRID_OPTIONS,
     ...options,
   };
-  // Guard against bad caller input — without this, Math.ceil(W / 0) → Infinity
-  // and Array(Infinity) would throw deep inside the hot path with no context.
-  if (!Number.isFinite(cellSize) || cellSize <= 0 || !Number.isInteger(cellSize)) {
-    throw new RangeError(
-      `clusterDiffPixelsGrid: cellSize must be a positive integer, got ${cellSize}`,
-    );
-  }
-  if (
-    !Number.isFinite(cellDensityThreshold) ||
-    cellDensityThreshold < 0 ||
-    cellDensityThreshold > 1
-  ) {
-    throw new RangeError(
-      `clusterDiffPixelsGrid: cellDensityThreshold must be in [0,1], got ${cellDensityThreshold}`,
-    );
-  }
-  if (!Number.isFinite(minRegionCells) || minRegionCells < 1 || !Number.isInteger(minRegionCells)) {
-    throw new RangeError(
-      `clusterDiffPixelsGrid: minRegionCells must be an integer ≥ 1, got ${minRegionCells}`,
-    );
-  }
-  const grid = buildCellGrid(diffPixelData, imageWidth, imageHeight, cellSize);
-  const { cellDiff, gridWidth, gridHeight } = grid;
-
-  const hotMask = buildHotMask({
-    cellDiff,
-    gridWidth,
-    gridHeight,
-    cellSize,
-    imageWidth,
-    imageHeight,
-    cellDensityThreshold,
+  const finish = (
+    regions: DiffRegion[],
+    partial: Pick<GridClusterResult, "aborted" | "abortReason" | "hotCellRatio">,
+  ): GridClusterResult => ({
+    regions,
+    ...partial,
+    wallMs: Math.max(0, nowMs() - startedAt),
+    budgetMs: options.maxWallMs ?? options.budgetMs,
   });
 
-  const components = labelConnectedHotCells(hotMask, gridWidth, gridHeight);
+  validateGridClusterOptions({ cellSize, cellDensityThreshold, minRegionCells, options });
 
-  return components
-    .map((component) => buildRegionFromComponent({ component, grid }))
-    .filter((region) => region.cellCount >= minRegionCells)
-    .map((region, index) => ({
-      id: index,
-      bounds: region.bounds,
-      diffPixelCount: region.diffPixelCount,
-      nearbyNodeIds: [],
-      nearbyNodeNames: [],
-    }));
+  const clock: BudgetClock = { startedAt, maxWallMs: options.maxWallMs ?? options.budgetMs };
+  try {
+    const grid = buildCellGrid(diffPixelData, imageWidth, imageHeight, cellSize, clock);
+    const { cellDiff, gridWidth, gridHeight } = grid;
+
+    const hotMask = buildHotMask({
+      cellDiff,
+      gridWidth,
+      gridHeight,
+      cellSize,
+      imageWidth,
+      imageHeight,
+      cellDensityThreshold,
+      clock,
+    });
+    const hotCellCount = hotMask.filter(Boolean).length;
+    const hotCellRatio = hotMask.length === 0 ? 0 : hotCellCount / hotMask.length;
+
+    if (options.maxHotCellRatio !== undefined && hotCellRatio > options.maxHotCellRatio) {
+      return finish([], {
+        aborted: true,
+        abortReason: "hot-cell-ratio-exceeded",
+        hotCellRatio,
+      });
+    }
+
+    const components = labelConnectedHotCells(hotMask, gridWidth, gridHeight, clock);
+    if (options.maxRegions !== undefined && components.length > options.maxRegions) {
+      return finish([], {
+        aborted: true,
+        abortReason: "region-count-exceeded",
+        hotCellRatio,
+      });
+    }
+
+    const regions = components
+      .map((component) => buildRegionFromComponent({ component, grid }))
+      .filter((region) => region.cellCount >= minRegionCells)
+      .map((region, index) => ({
+        id: index,
+        bounds: region.bounds,
+        diffPixelCount: region.diffPixelCount,
+        nearbyNodeIds: [],
+        nearbyNodeNames: [],
+      }));
+
+    return finish(regions, { aborted: false, hotCellRatio });
+  } catch (error) {
+    if (!(error instanceof GridClusterBudgetExceededError)) {
+      throw error;
+    }
+    return finish([], {
+      aborted: true,
+      abortReason: "wall-budget-exceeded",
+      hotCellRatio: 0,
+    });
+  }
 }
 
 interface CellGrid {
@@ -215,6 +361,7 @@ function buildCellGrid(
   imageWidth: number,
   imageHeight: number,
   cellSize: number,
+  clock: BudgetClock,
 ): CellGrid {
   const gridWidth = Math.ceil(imageWidth / cellSize);
   const gridHeight = Math.ceil(imageHeight / cellSize);
@@ -227,6 +374,7 @@ function buildCellGrid(
   const cellMaxY = new Uint32Array(gridWidth * gridHeight);
 
   for (let y = 0; y < imageHeight; y++) {
+    if (y % 16 === 0) assertWithinBudget(clock);
     const cellY = Math.floor(y / cellSize);
     const rowBase = y * imageWidth;
     for (let x = 0; x < imageWidth; x++) {
@@ -254,6 +402,7 @@ function buildHotMask(args: {
   imageWidth: number;
   imageHeight: number;
   cellDensityThreshold: number;
+  clock: BudgetClock;
 }): boolean[] {
   const {
     cellDiff,
@@ -263,10 +412,12 @@ function buildHotMask(args: {
     imageWidth,
     imageHeight,
     cellDensityThreshold,
+    clock,
   } = args;
   const hotMask = new Array<boolean>(gridWidth * gridHeight).fill(false);
 
   for (let cy = 0; cy < gridHeight; cy++) {
+    assertWithinBudget(clock);
     const cellY0 = cy * cellSize;
     const cellY1 = Math.min(cellY0 + cellSize, imageHeight);
     for (let cx = 0; cx < gridWidth; cx++) {
@@ -293,15 +444,17 @@ function labelConnectedHotCells(
   hotMask: boolean[],
   gridWidth: number,
   gridHeight: number,
+  clock: BudgetClock,
 ): number[][] {
   const visited = new Array<boolean>(gridWidth * gridHeight).fill(false);
   const components: number[][] = [];
 
   for (let cy = 0; cy < gridHeight; cy++) {
+    assertWithinBudget(clock);
     for (let cx = 0; cx < gridWidth; cx++) {
       const idx = cy * gridWidth + cx;
       if (!hotMask[idx] || visited[idx]) continue;
-      components.push(floodFillHotComponent(hotMask, visited, gridWidth, gridHeight, idx));
+      components.push(floodFillHotComponent(hotMask, visited, gridWidth, gridHeight, idx, clock));
     }
   }
 
@@ -314,6 +467,7 @@ function floodFillHotComponent(
   gridWidth: number,
   gridHeight: number,
   startIdx: number,
+  clock: BudgetClock,
 ): number[] {
   // Mark-before-push: prevents the same cell from being pushed multiple times
   // and keeps the stack bounded by the number of cells in the component.
@@ -323,6 +477,7 @@ function floodFillHotComponent(
   const stack: number[] = [];
   pushUnvisitedNeighbours(stack, visited, hotMask, startIdx, gridWidth, gridHeight);
   while (stack.length > 0) {
+    if (cells.length % 64 === 0) assertWithinBudget(clock);
     const cellIdx = stack.pop();
     if (cellIdx === undefined) continue;
     visited[cellIdx] = true;

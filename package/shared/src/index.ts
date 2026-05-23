@@ -31,7 +31,9 @@ export {
 export {
   clusterDiffPixels,
   clusterDiffPixelsGrid,
+  clusterDiffPixelsGridDetailed,
   generateMatchSuggestion,
+  type GridClusterResult,
   type GridClusterOptions,
 } from "./diff-cluster.js";
 
@@ -64,6 +66,7 @@ export {
   ChildNodeSummarySchema,
   CritiqueConcernSchema,
   CritiqueNoteSchema,
+  ClusterTelemetrySchema,
   CompareDesignResultSchema,
   CropRegionSchema,
   IgnoreRegionSchema,
@@ -101,6 +104,7 @@ export type {
   BorderRadius,
   ChildNodeSummary,
   CritiqueNote,
+  ClusterTelemetry,
   CompareDesignResult,
   DiffBoundingBox,
   DiffEvidence,

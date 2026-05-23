@@ -433,4 +433,55 @@ describe("compareImages", () => {
       }),
     ).rejects.toThrow("Invalid image dimensions");
   });
+
+  it("grid が差分領域を返せない場合は flood fallback を telemetry に記録すること", async () => {
+    const pixelmatchMock = await import("pixelmatch");
+    const sharedMock = await import("@figdiff/shared");
+
+    const width = 1001;
+    const height = 1000;
+    const designMetadataInstance = createMockSharpInstance({ width, height });
+    const screenshotMetadataInstance = createMockSharpInstance({ width, height });
+    const finalDesignMetadataInstance = createMockSharpInstance({ width, height });
+    const finalScreenshotMetadataInstance = createMockSharpInstance({ width, height });
+    const designRawInstance = createMockSharpInstance({ width, height });
+    const screenshotRawInstance = createMockSharpInstance({ width, height });
+    const diffImageInstance = createMockSharpInstance({ width, height });
+
+    mockSharpFn
+      .mockReturnValueOnce(designMetadataInstance)
+      .mockReturnValueOnce(screenshotMetadataInstance)
+      .mockReturnValueOnce(finalDesignMetadataInstance)
+      .mockReturnValueOnce(finalScreenshotMetadataInstance)
+      .mockReturnValueOnce(designRawInstance)
+      .mockReturnValueOnce(screenshotRawInstance)
+      .mockReturnValueOnce(diffImageInstance);
+    vi.mocked(pixelmatchMock.default).mockReturnValue(1);
+    vi.mocked(sharedMock.clusterDiffPixels).mockReturnValue([
+      {
+        id: 0,
+        bounds: { x: 0, y: 0, width: 10, height: 1 },
+        diffPixelCount: 10,
+        nearbyNodeIds: [],
+        nearbyNodeNames: [],
+      },
+    ]);
+
+    const { compareImages } = await import("./image-compare-service.js");
+    const dummyBase64 = Buffer.alloc(100).toString("base64");
+
+    const result = await compareImages({
+      designBase64: dummyBase64,
+      screenshotBase64: dummyBase64,
+    });
+
+    expect(result.clusterTelemetry).toMatchObject({
+      requestedMode: "auto",
+      usedMode: "flood",
+      fallbackUsed: true,
+      fallbackReason: "grid-empty-with-diff",
+      regionCount: 1,
+    });
+    expect(result.clusterTelemetry?.wallMs).toBeGreaterThanOrEqual(0);
+  });
 });

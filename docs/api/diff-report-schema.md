@@ -91,6 +91,37 @@ export interface WeightedAggregate {
 
 The runtime validator is `DiffReportSchema` in `package/shared/src/schema.ts`.
 
+`compare_design` also returns `clusterTelemetry` on `CompareDesignResult`. This field is outside
+`diffReport` because it describes the clustering process, not a visual issue.
+
+Example:
+
+```json
+{
+  "requestedMode": "auto",
+  "usedMode": "flood",
+  "fallbackUsed": true,
+  "fallbackReason": "grid-empty-with-diff",
+  "wallMs": 5.48,
+  "regionCount": 1
+}
+```
+
+Field meanings:
+
+- `requestedMode`: caller-selected mode, or `"auto"` when default routing was used
+- `usedMode`: final clustering mode after any fallback
+- `fallbackUsed`: `true` when FigDiff could not use the first clustering path as-is
+- `fallbackReason`: one of `"grid-empty-with-diff"`, `"wall-budget-exceeded"`,
+  `"region-count-exceeded"`, or `"hot-cell-ratio-exceeded"`
+- `wallMs`: elapsed clustering time in milliseconds
+- `budgetMs`: optional wall-clock budget supplied to grid clustering. The default grid budget is
+  5000 ms.
+- `regionCount`: final diff region count after fallback and node matching
+
+Default grid safeguards also cap raw connected components at 100 and hot-cell ratio at 0.5 before
+falling back to flood clustering.
+
 ## Field-by-Field Reference
 
 ### `alignment`
