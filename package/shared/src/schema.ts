@@ -161,6 +161,24 @@ export const ClusterTelemetrySchema = z.object({
   regionCount: z.number().int().nonnegative(),
 });
 
+export const GridSummaryCellSchema = z.object({
+  row: z.number().int().nonnegative(),
+  col: z.number().int().nonnegative(),
+  x: z.number().int().nonnegative(),
+  y: z.number().int().nonnegative(),
+  width: z.number().int().positive(),
+  height: z.number().int().positive(),
+  diffPixels: z.number().int().nonnegative(),
+  totalPixels: z.number().int().nonnegative(),
+  matchRate: z.number().min(0).max(100),
+});
+
+export const GridSummarySchema = z.object({
+  rows: z.number().int().positive(),
+  cols: z.number().int().positive(),
+  cells: z.array(GridSummaryCellSchema),
+});
+
 // --- Completion Criteria Schema (v4: AI-driven PASS/FAIL structure) ---
 
 export const CompletionCriterionSchema = z.object({
@@ -276,6 +294,7 @@ export const CompareDesignResultSchema = z.object({
   nextAction: z.string().optional(),
   suggestion: z.string(),
   clusterTelemetry: ClusterTelemetrySchema.optional(),
+  gridSummary: GridSummarySchema.optional(),
   diffReport: DiffReportSchema.optional(),
   critique: CritiqueNoteSchema.optional(),
   diffImagePath: z.string().optional(),

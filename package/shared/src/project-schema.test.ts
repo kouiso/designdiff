@@ -340,6 +340,34 @@ describe("CompareDesignResultSchema (v4 強化版)", () => {
           nearbyNodeNames: ["header"],
         },
       ],
+      gridSummary: {
+        rows: 1,
+        cols: 2,
+        cells: [
+          {
+            row: 0,
+            col: 0,
+            x: 0,
+            y: 0,
+            width: 500,
+            height: 1000,
+            diffPixels: 1847,
+            totalPixels: 500000,
+            matchRate: 99.63,
+          },
+          {
+            row: 0,
+            col: 1,
+            x: 500,
+            y: 0,
+            width: 500,
+            height: 1000,
+            diffPixels: 0,
+            totalPixels: 500000,
+            matchRate: 100,
+          },
+        ],
+      },
       completionCriteria: {
         matchRate: { required: 100, current: 94.2, status: "FAIL" },
         diffPixelCount: { required: 0, current: 1847, status: "FAIL" },
@@ -355,6 +383,7 @@ describe("CompareDesignResultSchema (v4 強化版)", () => {
     if (result.success) {
       expect(result.data.status).toBe("FAIL");
       expect(result.data.completionCriteria.matchRate.status).toBe("FAIL");
+      expect(result.data.gridSummary?.cells[0]?.diffPixels).toBe(1847);
       expect(result.data.diffReport?.aggregateVerdict).toBe("pass");
       expect(result.data.diffImagePath).toBe("/tmp/figdiff-mcp/cmp-1.png");
     }

@@ -52,6 +52,23 @@
       "wallMs": 0,
       "regionCount": 1
     },
+    "gridSummary": {
+      "rows": 1,
+      "cols": 1,
+      "cells": [
+        {
+          "row": 0,
+          "col": 0,
+          "x": 0,
+          "y": 0,
+          "width": 200,
+          "height": 200,
+          "diffPixels": 40000,
+          "totalPixels": 40000,
+          "matchRate": 0
+        }
+      ]
+    },
     "diffReport": {
       "alignment": {
         "translation": {

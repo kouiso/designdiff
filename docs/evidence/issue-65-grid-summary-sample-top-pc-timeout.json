@@ -1,0 +1,20 @@
+{
+  "ran_at": "2026-05-23T07:36:22.565Z",
+  "threshold": 0.1,
+  "page_timeout_ms": 5000,
+  "pages": 1,
+  "ok_count": 0,
+  "total_wall_ms": 5016,
+  "rss_start_mb": 50,
+  "rss_end_mb": 51,
+  "results": [
+    {
+      "page": "top-pc",
+      "ok": false,
+      "wall_ms": 5016,
+      "error": "timeout after 5000ms",
+      "stdout": "",
+      "stderr": ""
+    }
+  ]
+}

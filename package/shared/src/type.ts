@@ -19,6 +19,8 @@ import {
   type DiffRegionSchema,
   type FigmaTokenSchema,
   type FrameSchema,
+  type GridSummaryCellSchema,
+  type GridSummarySchema,
   type ImageDimensionsSchema,
   type IgnoreRegionConfigEntrySchema,
   type IgnoreRegionConfigFileSchema,
@@ -75,6 +77,8 @@ export type ParsedDesignInput = z.infer<typeof ParsedDesignInputSchema>;
 export type CompareDesignResult = z.infer<typeof CompareDesignResultSchema>;
 export type DiffRegion = z.infer<typeof DiffRegionSchema>;
 export type ClusterTelemetry = z.infer<typeof ClusterTelemetrySchema>;
+export type GridSummary = z.infer<typeof GridSummarySchema>;
+export type GridSummaryCell = z.infer<typeof GridSummaryCellSchema>;
 
 // --- Crop Region (Phase 2+) ---
 

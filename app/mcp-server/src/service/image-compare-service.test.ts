@@ -79,7 +79,65 @@ describe("compareImages", () => {
 
     expect(result.diffPixelCount).toBe(0);
     expect(result.matchRate).toBe(100);
+    expect(result.gridSummary?.cells[0]).toMatchObject({
+      diffPixels: 0,
+      totalPixels: 100,
+      matchRate: 100,
+    });
     expect(result.diffReport?.aggregateVerdict).toBeDefined();
+  });
+
+  it("gridSummary でセル別の matchRate と diffPixels を返すこと", async () => {
+    const pixelmatchMock = await import("pixelmatch");
+
+    const width = 640;
+    const height = 320;
+    const mockInstance = createMockSharpInstance({ width, height });
+
+    mockSharpFn.mockReturnValue(mockInstance);
+    vi.mocked(pixelmatchMock.default).mockImplementation((_design, _screenshot, diffPixels) => {
+      for (const pixelIndex of [0, 1, 321]) {
+        const offset = pixelIndex * 4;
+        diffPixels[offset] = 255;
+        diffPixels[offset + 1] = 0;
+        diffPixels[offset + 2] = 0;
+        diffPixels[offset + 3] = 255;
+      }
+      return 3;
+    });
+
+    const { compareImages } = await import("./image-compare-service.js");
+
+    const dummyBase64 = Buffer.alloc(100).toString("base64");
+    const result = await compareImages({
+      designBase64: dummyBase64,
+      screenshotBase64: dummyBase64,
+      ignoreRegions: [{ x: 0, y: 0, width: 1, height: 1 }],
+    });
+
+    expect(result.gridSummary).toMatchObject({ rows: 1, cols: 2 });
+    expect(result.gridSummary?.cells).toHaveLength(2);
+    expect(result.gridSummary?.cells[0]).toMatchObject({
+      row: 0,
+      col: 0,
+      x: 0,
+      y: 0,
+      width: 320,
+      height: 320,
+      diffPixels: 1,
+      totalPixels: 102399,
+    });
+    expect(result.gridSummary?.cells[0]?.matchRate).toBe(100);
+    expect(result.gridSummary?.cells[1]).toMatchObject({
+      row: 0,
+      col: 1,
+      x: 320,
+      y: 0,
+      width: 320,
+      height: 320,
+      diffPixels: 1,
+      totalPixels: 102400,
+    });
   });
 
   it("サイズ不一致の場合に resize が呼ばれること", async () => {
@@ -174,7 +232,7 @@ describe("compareImages", () => {
       expect.any(Uint8ClampedArray),
       200,
       100,
-      { threshold: 0.1 },
+      { threshold: 0.1, diffMask: true },
     );
   });
 
