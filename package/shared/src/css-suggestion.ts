@@ -71,6 +71,9 @@ function appendBorderRadiusCss(parts: string[], appearance: NodeAppearance): voi
   if (!appearance.borderRadius) return;
 
   const br = appearance.borderRadius;
+  if (br.topLeft === 0 && br.topRight === 0 && br.bottomRight === 0 && br.bottomLeft === 0) {
+    return;
+  }
   const allEqual =
     Math.abs(br.topLeft - br.topRight) < 0.01 &&
     Math.abs(br.topRight - br.bottomRight) < 0.01 &&
