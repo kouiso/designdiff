@@ -33,6 +33,13 @@ function normalizeResultForEvidence(data: unknown): unknown {
   }
 
   const result = parsed.data;
+  const clusterTelemetry =
+    typeof result.clusterTelemetry === "object" && result.clusterTelemetry !== null
+      ? {
+          ...result.clusterTelemetry,
+          wallMs: 0,
+        }
+      : result.clusterTelemetry;
 
   return {
     ...result,
@@ -40,6 +47,7 @@ function normalizeResultForEvidence(data: unknown): unknown {
       typeof result.comparisonId === "string" ? EVIDENCE_COMPARISON_ID : result.comparisonId,
     diffImagePath:
       typeof result.diffImagePath === "string" ? EVIDENCE_DIFF_IMAGE_PATH : result.diffImagePath,
+    clusterTelemetry,
   };
 }
 

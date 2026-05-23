@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   clusterDiffPixels,
   clusterDiffPixelsGrid,
+  clusterDiffPixelsGridDetailed,
   generateMatchSuggestion,
 } from "./diff-cluster.js";
 
@@ -180,6 +181,22 @@ describe("clusterDiffPixelsGrid validation guards", () => {
   it("minRegionCells < 1 throws", () => {
     expect(() => clusterDiffPixelsGrid(data, 64, 64, { minRegionCells: 0 })).toThrow(RangeError);
   });
+
+  it("budgetMs < 0 throws", () => {
+    expect(() => clusterDiffPixelsGrid(data, 64, 64, { budgetMs: -1 })).toThrow(RangeError);
+  });
+
+  it("maxWallMs < 0 throws", () => {
+    expect(() => clusterDiffPixelsGrid(data, 64, 64, { maxWallMs: -1 })).toThrow(RangeError);
+  });
+
+  it("maxRegions < 1 throws", () => {
+    expect(() => clusterDiffPixelsGrid(data, 64, 64, { maxRegions: 0 })).toThrow(RangeError);
+  });
+
+  it("maxHotCellRatio outside [0,1] throws", () => {
+    expect(() => clusterDiffPixelsGrid(data, 64, 64, { maxHotCellRatio: 1.5 })).toThrow(RangeError);
+  });
 });
 
 describe("clusterDiffPixelsGrid pixel-tight bounds", () => {
@@ -220,5 +237,46 @@ describe("clusterDiffPixelsGrid edge — zero-density threshold", () => {
     const data = new Uint8ClampedArray(128 * 128 * 4);
     const regions = clusterDiffPixelsGrid(data, 128, 128, { cellDensityThreshold: 0 });
     expect(regions).toEqual([]);
+  });
+});
+
+describe("clusterDiffPixelsGridDetailed telemetry", () => {
+  it("budgetMs=0 で wall-budget-exceeded を返す", () => {
+    const data = createDiffData(
+      128,
+      128,
+      Array.from({ length: 64 * 64 }, (_, i) => ({ x: i % 64, y: Math.floor(i / 64) })),
+    );
+
+    const result = clusterDiffPixelsGridDetailed(data, 128, 128, {
+      cellSize: 64,
+      budgetMs: 0,
+    });
+
+    expect(result.aborted).toBe(true);
+    expect(result.abortReason).toBe("wall-budget-exceeded");
+    expect(result.regions).toEqual([]);
+    expect(result.budgetMs).toBe(0);
+    expect(result.wallMs).toBeGreaterThanOrEqual(0);
+  });
+
+  it("hot cell ratio cap を超えたら hot-cell-ratio-exceeded を返す", () => {
+    const data = createDiffData(
+      128,
+      128,
+      Array.from({ length: 128 * 128 }, (_, i) => ({
+        x: i % 128,
+        y: Math.floor(i / 128),
+      })),
+    );
+
+    const result = clusterDiffPixelsGridDetailed(data, 128, 128, {
+      cellSize: 64,
+      maxHotCellRatio: 0.5,
+    });
+
+    expect(result.aborted).toBe(true);
+    expect(result.abortReason).toBe("hot-cell-ratio-exceeded");
+    expect(result.hotCellRatio).toBe(1);
   });
 });
