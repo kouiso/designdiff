@@ -20,6 +20,8 @@ import {
   type FigmaTokenSchema,
   type FrameSchema,
   type ImageDimensionsSchema,
+  type IgnoreRegionConfigEntrySchema,
+  type IgnoreRegionConfigFileSchema,
   type NodeAppearanceSchema,
   type NodeEffectSchema,
   type NodeFillSchema,
@@ -81,6 +83,8 @@ export type CropRegion = z.infer<typeof CropRegionSchema>;
 // --- Ignore Region (PR #57) ---
 
 export type IgnoreRegion = z.infer<typeof IgnoreRegionSchema>;
+export type IgnoreRegionConfigEntry = z.infer<typeof IgnoreRegionConfigEntrySchema>;
+export type IgnoreRegionConfigFile = z.infer<typeof IgnoreRegionConfigFileSchema>;
 
 // --- Project (v4: implementation URL + pages + design sources) ---
 

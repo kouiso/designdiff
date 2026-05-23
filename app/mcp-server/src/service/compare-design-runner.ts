@@ -24,6 +24,7 @@ import {
 } from "./comparison-history.js";
 import { getCropRegion } from "./crop-region-store.js";
 import { createFigmaService, type FigmaService } from "./figma-service.js";
+import { getIgnoreRegionsForComparison } from "./ignore-region-store.js";
 import { compareImages } from "./image-compare-service.js";
 
 const FixtureFigmaNodeSchema: z.ZodType<FigmaNode> = z.lazy(() =>
@@ -235,12 +236,15 @@ export async function runCompareDesign(
   }
 
   let cropRegion: CropRegion | undefined;
+  let persistedIgnoreRegions: IgnoreRegion[] = [];
   if (args.project_id) {
     const regions = await getCropRegion(args.project_id, args.frame_name);
     if (regions.length > 0) {
       cropRegion = regions[0].region;
     }
+    persistedIgnoreRegions = await getIgnoreRegionsForComparison(args.project_id, args.frame_name);
   }
+  const ignoreRegions = [...persistedIgnoreRegions, ...(args.ignore_regions ?? [])];
 
   const comparison = await compareImages(
     {
@@ -248,7 +252,7 @@ export async function runCompareDesign(
       screenshotBase64,
       threshold: args.threshold ?? 0.1,
       cropRegion,
-      ignoreRegions: args.ignore_regions,
+      ignoreRegions,
     },
     figmaRootNode,
     `cmp-${randomUUID()}`,
