@@ -13,6 +13,7 @@
     "eval:manifest": "node scripts/eval/build-screenshot-manifest.mjs",
     "eval:ingest-figma": "node scripts/eval/ingest-figma-pages.mjs",
     "eval:sample-project-lp-figma": "node scripts/eval/sample-project-lp-figma-smoke.mjs",
+    "eval:sample-project-lp-figma:ready": "node scripts/eval/sample-project-lp-figma-readiness.mjs",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
     "format": "biome format --write .",
