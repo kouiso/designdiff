@@ -8,6 +8,7 @@
 
 import { existsSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
@@ -26,7 +27,9 @@ const figmaManifest = resolve(
   ),
 );
 const tokenEnv = optionalString(options, "token-env", "FIGMA_TOKEN");
-const out = resolve(optionalString(options, "out", "/tmp/sample-project-lp-figma-readiness.md"));
+const out = resolve(
+  optionalString(options, "out", join(tmpdir(), "sample-project-lp-figma-readiness.md")),
+);
 
 const checks = [];
 const lpPackageJson = join(lpRepo, "package.json");
@@ -132,13 +135,15 @@ async function writeReport({ ready, checks, placeholderPages }) {
     "|---|---:|---|",
   ];
   for (const entry of checks) {
-    lines.push(`| ${entry.name} | ${entry.ok ? "yes" : "no"} | ${entry.detail} |`);
+    lines.push(
+      `| ${escapeTable(entry.name)} | ${entry.ok ? "yes" : "no"} | ${escapeTable(entry.detail)} |`,
+    );
   }
   lines.push("", "## Next command", "");
   if (ready) {
     lines.push(
       "```bash",
-      `pnpm eval:sample-project-lp-figma -- --lp-repo ${lpRepo} --figma-manifest ${figmaManifest} --out /tmp/sample-project-lp-figma-smoke --real --skip-install --token-env ${tokenEnv}`,
+      `pnpm eval:sample-project-lp-figma -- --lp-repo ${shellQuote(lpRepo)} --figma-manifest ${shellQuote(figmaManifest)} --out ${shellQuote(join(tmpdir(), "sample-project-lp-figma-smoke"))} --real --skip-install --token-env ${shellQuote(tokenEnv)}`,
       "```",
     );
   } else {
@@ -155,6 +160,14 @@ async function writeReport({ ready, checks, placeholderPages }) {
   lines.push("");
   await mkdir(dirname(out), { recursive: true });
   await writeFile(out, `${lines.join("\n")}\n`);
+}
+
+function escapeTable(value) {
+  return String(value).replaceAll("|", "\\|");
+}
+
+function shellQuote(value) {
+  return `"${String(value).replaceAll("\\", "\\\\").replaceAll('"', '\\"')}"`;
 }
 
 function fail(message) {
