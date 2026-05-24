@@ -53,6 +53,21 @@ FIGMA_TOKEN=<token> pnpm eval:sample-project-lp-figma -- \
 
 `--real` は `FIGMA_TOKEN` が未設定なら fail-loud する。token 変数名を変える場合は `--token-env FIGMA_TOKEN_FOR_LP` を使う。
 
+## mock API smoke
+
+実 Figma token / node mapping がなくても、Figma images API 境界と PNG download、`figdiff-manifest.json` 生成は mock server で検証できる。
+
+```bash
+pnpm eval:ingest-figma:mock -- --out /tmp/sample-lp-figma-mock
+```
+
+期待値:
+
+- mock images API から 2 page 分の download URL が返る。
+- Figma PNG が `/tmp/sample-lp-figma-mock/figma-ingest/figma/` に保存される。
+- `/tmp/sample-lp-figma-mock/figma-ingest/figdiff-manifest.json` に `figma` / `impl` / `meta` の対応が出る。
+- `/tmp/sample-lp-figma-mock/summary.md` に evidence summary が出る。
+
 ## 個別ステップ
 
 1. `verification/fixtures/sample-project-lp-figma-pages.template.json` をコピーし、各 `figma_url` の `REPLACE_*` を実 Figma file key / node-id に置き換える。
