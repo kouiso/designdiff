@@ -22,6 +22,23 @@ pnpm eval:sample-project-lp-figma -- \
 
 実 Figma PNG を取得して eval まで実行する場合は、実 node mapping と token を渡して `--real` を付ける。
 
+Figma API/download 経路だけを token なしで通す場合は `--mock-figma-api` を使う。capture した `impl/` と mock Figma PNG を結合し、`figdiff-manifest.json` 生成まで確認する。
+
+```bash
+pnpm eval:sample-project-lp-figma -- \
+  --lp-repo /path/to/sample-project-lp \
+  --figma-manifest /path/to/sample-project-lp-figma-pages.json \
+  --out /tmp/sample-lp-figma-smoke \
+  --mock-figma-api \
+  --skip-install
+```
+
+期待値:
+
+- `/tmp/sample-lp-figma-smoke/figma/figma/*.png` が mock API 経由で保存される。
+- `/tmp/sample-lp-figma-smoke/figma/figdiff-manifest.json` が生成される。
+- `/tmp/sample-lp-figma-smoke/summary.md` の mode が `mock-figma-api` になる。
+
 先に readiness を確認する。
 
 ```bash
