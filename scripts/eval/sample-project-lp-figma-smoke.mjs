@@ -8,7 +8,7 @@
 
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
@@ -16,6 +16,7 @@ import { fileURLToPath } from "node:url";
 const ARG_PREFIX_LENGTH = 2;
 const ERROR_EXIT_CODE = 2;
 const SUCCESS_EXIT_CODE = 0;
+const PLACEHOLDER_PATTERN = /REPLACE_/u;
 const repoDir = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const options = parseArgs(process.argv.slice(ARG_PREFIX_LENGTH));
 const lpRepo = resolve(requiredOption(options, "lp-repo"));
@@ -39,6 +40,13 @@ const summaryPath = join(outDir, "summary.md");
 
 validateDirectory(lpRepo, "--lp-repo");
 validateFile(figmaManifest, "--figma-manifest");
+const placeholderPages = await findPlaceholderPages(figmaManifest);
+if (realRun && placeholderPages.length > 0) {
+  fail(
+    `Figma manifest contains placeholder values: ${placeholderPages.join(", ")}. ` +
+      "Replace REPLACE_* file keys/node IDs before running real smoke.",
+  );
+}
 if (realRun && !process.env[tokenEnv]) {
   fail(`--real requires ${tokenEnv}. Set ${tokenEnv} or pass --token-env.`);
 }
@@ -139,6 +147,23 @@ function validateFile(path, label) {
   }
 }
 
+async function findPlaceholderPages(manifestPath) {
+  const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
+  if (!Array.isArray(manifest.pages)) {
+    return [];
+  }
+  return manifest.pages
+    .filter((page) => {
+      if (!page || typeof page !== "object") {
+        return false;
+      }
+      return ["figma_url", "file_key", "node_id"].some((key) =>
+        PLACEHOLDER_PATTERN.test(String(page[key] ?? "")),
+      );
+    })
+    .map((page, index) => String(page.name ?? `index-${index}`));
+}
+
 async function run(command, args, options = {}) {
   process.stdout.write(`$ ${[command, ...args].join(" ")}\n`);
   await new Promise((resolvePromise, reject) => {
@@ -165,6 +190,7 @@ async function writeSummary() {
     `- lp repo: ${lpRepo}`,
     `- figma manifest: ${figmaManifest}`,
     `- mode: ${realRun ? "real" : "validate-only"}`,
+    `- placeholder pages: ${placeholderPages.length}`,
     `- capture: ${captureDir}`,
     `- figma output: ${figmaDir}`,
   ];
