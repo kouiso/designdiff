@@ -135,7 +135,7 @@ function hasIngestiblePageShape(page) {
     return false;
   }
   if (page.figma_url) {
-    return true;
+    return isSupportedFigmaUrl(page.figma_url);
   }
   return Boolean(page.file_key && page.node_id);
 }
@@ -145,6 +145,16 @@ function pageName(page, index) {
     return `index-${index}`;
   }
   return String(page.name ?? `index-${index}`);
+}
+
+function isSupportedFigmaUrl(value) {
+  try {
+    const url = new URL(String(value));
+    const [, type, fileKey] = url.pathname.split("/");
+    return ["design", "file"].includes(type) && Boolean(fileKey) && url.searchParams.has("node-id");
+  } catch {
+    return false;
+  }
 }
 
 async function writeReport({ ready, checks, placeholderPages }) {
