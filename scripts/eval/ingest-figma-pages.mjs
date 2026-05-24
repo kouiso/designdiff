@@ -15,6 +15,7 @@ import { dirname, join, resolve } from "node:path";
 import process from "node:process";
 
 const options = parseArgs(process.argv.slice(2));
+const PLACEHOLDER_PATTERN = /REPLACE_/u;
 const figmaManifestPath = resolve(requiredOption(options, "figma-manifest"));
 const outDir = resolve(options.out ? String(options.out) : join(process.cwd(), "figma-ingest"));
 const figmaDir = resolve(outDir, "figma");
@@ -52,6 +53,13 @@ await mkdir(dirname(summaryOut), { recursive: true });
 
 const pages = figmaManifest.pages.map(normalizePage);
 validateImplementationPairs(pages);
+const placeholderPages = pages.filter(hasPlaceholderFigmaTarget);
+if (!validateOnly && placeholderPages.length > 0) {
+  fail(
+    `Figma manifest contains placeholder values: ${placeholderPages.map((page) => page.name).join(", ")}. ` +
+      "Replace REPLACE_* file keys/node IDs before running real ingest.",
+  );
+}
 
 if (validateOnly) {
   await mkdir(dirname(summaryOut), { recursive: true });
@@ -61,6 +69,7 @@ if (validateOnly) {
       figmaManifestPath,
       figmaDir,
       implDir,
+      placeholderPages,
       ingested: pages.map((page) => ({
         name: page.name,
         figma: "(validate-only)",
@@ -76,6 +85,9 @@ if (validateOnly) {
     }),
   );
   process.stdout.write(`Validated pages: ${pages.length}\n`);
+  if (placeholderPages.length > 0) {
+    process.stdout.write(`Placeholder pages: ${placeholderPages.length}\n`);
+  }
   process.stdout.write(`Summary: ${summaryOut}\n`);
   process.exit(0);
 }
@@ -126,7 +138,10 @@ if (implDir) {
   });
 }
 
-await writeFile(summaryOut, renderSummary({ figmaManifestPath, figmaDir, implDir, ingested }));
+await writeFile(
+  summaryOut,
+  renderSummary({ figmaManifestPath, figmaDir, implDir, ingested, placeholderPages }),
+);
 process.stdout.write(`Figma screenshots: ${figmaDir}\n`);
 process.stdout.write(`Pages: ${ingested.length}\n`);
 if (implDir) {
@@ -199,6 +214,14 @@ function normalizeNodeId(value) {
   return String(value).replace("-", ":");
 }
 
+function hasPlaceholderFigmaTarget(page) {
+  return (
+    PLACEHOLDER_PATTERN.test(page.fileKey) ||
+    PLACEHOLDER_PATTERN.test(page.nodeId) ||
+    (page.figmaUrl ? PLACEHOLDER_PATTERN.test(page.figmaUrl) : false)
+  );
+}
+
 function groupByFileKeyAndScale(pages) {
   const groups = new Map();
   for (const page of pages) {
@@ -265,7 +288,7 @@ async function writeJsonAtomic(path, value) {
   await rename(tempFile, path);
 }
 
-function renderSummary({ figmaManifestPath, figmaDir, implDir, ingested }) {
+function renderSummary({ figmaManifestPath, figmaDir, implDir, ingested, placeholderPages = [] }) {
   const lines = [
     "# Figma ingest summary",
     "",
@@ -273,6 +296,7 @@ function renderSummary({ figmaManifestPath, figmaDir, implDir, ingested }) {
     `- Figma screenshots: ${figmaDir}`,
     `- Implementation screenshots: ${implDir ?? "(not paired)"}`,
     `- Pages: ${ingested.length}`,
+    `- Placeholder pages: ${placeholderPages.length}`,
     "",
     "| Page | Figma | Implementation | Node |",
     "|---|---|---|---|",
