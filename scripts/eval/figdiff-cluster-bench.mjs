@@ -23,11 +23,12 @@
  *   FIGDIFF_THRESHOLD    — pixelmatch threshold (default 0.1)
  *   FIGDIFF_OUT          — output JSON path (default /tmp/figdiff-eval-results.json)
  *   FIGDIFF_MD_OUT       — output Markdown summary path
+ *   FIGDIFF_DIFF_DIR     — directory for per-page diff PNG artifacts
  *   FIGDIFF_IMPL_DIR     — implementation screenshot dir under FIGDIFF_SCREENSHOTS (default: astro)
  */
 
 import { existsSync } from "node:fs";
-import { readFile, unlink, writeFile } from "node:fs/promises";
+import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
 import { spawn } from "node:child_process";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
@@ -230,14 +231,14 @@ function renderMarkdown(summary) {
     `- Total wall time: ${summary.total_wall_ms}ms`,
     `- Result: ${failedCount === 0 ? "PASS" : "FAIL"}`,
     "",
-    "| Page | OK | Match | Regions | Diff pixels | Time | Worst cells |",
-    "|---|---:|---:|---:|---:|---:|---|",
+    "| Page | OK | Match | Regions | Diff pixels | Time | Worst cells | Diff artifact |",
+    "|---|---:|---:|---:|---:|---:|---|---|",
   ];
 
   for (const result of summary.results) {
     if (!result.ok) {
       lines.push(
-        `| ${escapeTable(result.page)} | no | - | - | - | ${result.wall_ms}ms | ${escapeTable(result.error ?? "")} |`,
+        `| ${escapeTable(result.page)} | no | - | - | - | ${result.wall_ms}ms | ${escapeTable(result.error ?? "")} | - |`,
       );
       continue;
     }
@@ -246,7 +247,7 @@ function renderMarkdown(summary) {
       .map((cell) => `r${cell.row}c${cell.col}:${cell.matchRate}%`)
       .join(", ");
     lines.push(
-      `| ${escapeTable(result.page)} | yes | ${result.result.matchRate}% | ${result.result.diffRegions?.length ?? 0} | ${result.result.diffPixelCount} | ${result.wall_ms}ms | ${escapeTable(worstCells)} |`,
+      `| ${escapeTable(result.page)} | yes | ${result.result.matchRate}% | ${result.result.diffRegions?.length ?? 0} | ${result.result.diffPixelCount} | ${result.wall_ms}ms | ${escapeTable(worstCells)} | ${escapeTable(result.artifacts?.diff_image ?? "-")} |`,
     );
   }
 
@@ -334,6 +335,7 @@ async function comparePage(page) {
     const t1 = performance.now();
     const peakMemAfter = process.memoryUsage().rss;
 
+    const diffImagePath = await writeDiffArtifact(page.name, result.diffImageBase64);
     const diffImageSize = result.diffImageBase64?.length ?? 0;
     const { diffImageBase64, ...rest } = result;
     const worstGridCells = (rest.gridSummary?.cells ?? [])
@@ -353,10 +355,12 @@ async function comparePage(page) {
 
     return {
       page: page.name,
+      meta: page.meta,
       ok: true,
       wall_ms: Math.round(t1 - t0),
       rss_delta_mb: Math.round((peakMemAfter - peakMemBefore) / 1024 / 1024),
       diff_image_base64_chars: diffImageSize,
+      artifacts: diffImagePath ? { diff_image: diffImagePath } : undefined,
       worst_grid_cells: worstGridCells,
       result: rest,
     };
@@ -369,4 +373,20 @@ async function comparePage(page) {
       error: String(e),
     };
   }
+}
+
+async function writeDiffArtifact(pageName, diffImageBase64) {
+  if (!process.env.FIGDIFF_DIFF_DIR || !diffImageBase64) {
+    return undefined;
+  }
+
+  const outputDirectory = resolve(process.env.FIGDIFF_DIFF_DIR);
+  await mkdir(outputDirectory, { recursive: true });
+  const outputPath = join(outputDirectory, `${safeFilePart(pageName)}-diff.png`);
+  await writeFile(outputPath, Buffer.from(diffImageBase64, "base64"));
+  return outputPath;
+}
+
+function safeFilePart(value) {
+  return String(value).replaceAll(/[^a-zA-Z0-9._-]/g, "_");
 }
