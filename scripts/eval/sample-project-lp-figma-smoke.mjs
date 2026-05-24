@@ -99,6 +99,7 @@ try {
 
   if (realRun) {
     if (!skipBuild) {
+      await run("pnpm", ["--filter", "@figdiff/shared", "build"]);
       await run("pnpm", ["--filter", "@figdiff/mcp-server", "build"]);
     }
     await run("node", [join(repoDir, "scripts/eval/figdiff-cluster-bench.mjs")], {
