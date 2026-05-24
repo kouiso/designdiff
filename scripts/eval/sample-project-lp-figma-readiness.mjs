@@ -51,6 +51,14 @@ if (existsSync(figmaManifest)) {
 }
 
 const placeholderPages = pages.filter(hasPlaceholderFigmaTarget);
+const invalidPages = pages.filter((page) => !hasIngestiblePageShape(page));
+checks.push(
+  check(
+    "Ingestible page schema",
+    invalidPages.length === 0,
+    invalidPages.length === 0 ? "ok" : invalidPages.map(pageName).join(", "),
+  ),
+);
 checks.push(
   check(
     "No REPLACE_* placeholders",
@@ -120,6 +128,23 @@ function hasPlaceholderFigmaTarget(page) {
   return ["figma_url", "file_key", "node_id", "figmaUrl", "fileKey", "nodeId"].some((key) =>
     PLACEHOLDER_PATTERN.test(String(page[key] ?? "")),
   );
+}
+
+function hasIngestiblePageShape(page) {
+  if (!page || typeof page !== "object" || !page.name) {
+    return false;
+  }
+  if (page.figma_url) {
+    return true;
+  }
+  return Boolean(page.file_key && page.node_id);
+}
+
+function pageName(page, index) {
+  if (!page || typeof page !== "object") {
+    return `index-${index}`;
+  }
+  return String(page.name ?? `index-${index}`);
 }
 
 async function writeReport({ ready, checks, placeholderPages }) {
