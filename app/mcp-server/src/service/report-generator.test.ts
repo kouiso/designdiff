@@ -88,6 +88,65 @@ describe("generateMarkdownReport", () => {
 
     expect(typeof markdown).toBe("string");
   });
+
+  it("includes compliance benchmark table and next action", () => {
+    const result = makeResult({
+      completionCriteria: {
+        matchRate: { required: 100, current: 98.5, status: "FAIL" },
+        diffPixelCount: { required: 0, current: 150, status: "FAIL" },
+        remainingIssues: { required: 0, current: 2, status: "FAIL" },
+      },
+      remainingIssues: 2,
+      nextAction: "Fix hero heading spacing and color token mismatch.",
+    });
+
+    const markdown = generateMarkdownReport(result);
+
+    expect(markdown).toContain("Compliance Benchmark Snapshot");
+    expect(markdown).toContain("Suggested Next Action");
+    expect(markdown).toContain("Fix hero heading spacing and color token mismatch.");
+    expect(markdown).toContain("| Match Rate | 100 | 98.5 | FAIL |");
+  });
+
+  it("includes typed diff evidence summary when diffReport exists", () => {
+    const result = makeResult({
+      diffReport: {
+        alignment: {
+          translation: { x: 0, y: 0 },
+          scale: { x: 1, y: 1 },
+          rotation: 0,
+          confidence: 1,
+          residual: 0,
+        },
+        regionScores: [],
+        issues: [
+          {
+            regionId: "r-1",
+            bbox: { x: 0, y: 0, w: 100, h: 50 },
+            kind: "color",
+            severity: "critical",
+            evidence: {
+              signal: "deltaE",
+              value: 8.1,
+              threshold: 3,
+              expected: "#ffffff",
+              actual: "#f8f8f8",
+            },
+          },
+        ],
+        aggregateVerdict: "fail",
+        rationale: "Critical color mismatch remains.",
+      },
+      diffImagePath: "/tmp/figdiff/cmp-001.png",
+    });
+
+    const markdown = generateMarkdownReport(result);
+
+    expect(markdown).toContain("Evidence for Figma Compliance");
+    expect(markdown).toContain("Aggregate Verdict: **fail**");
+    expect(markdown).toContain("Critical Issues: **1**");
+    expect(markdown).toContain("Evidence image: /tmp/figdiff/cmp-001.png");
+  });
 });
 
 describe("generateJsonReport", () => {
