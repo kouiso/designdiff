@@ -7,16 +7,23 @@
  *
  * Usage:
  *   # Run from anywhere; resolves the in-repo MCP server build relative to this script.
- *   FIGDIFF_SCREENSHOTS=/path/to/sample-corporate/astro/test/screenshots \
+ *   FIGDIFF_SCREENSHOTS=/path/to/sample-corporate/test/screenshots \
+ *     node scripts/eval/figdiff-cluster-bench.mjs
+ *   FIGDIFF_MANIFEST=/path/to/figdiff-manifest.json \
+ *     FIGDIFF_MD_OUT=/tmp/figdiff-eval.md \
  *     node scripts/eval/figdiff-cluster-bench.mjs
  *
  * Required env:
- *   FIGDIFF_SCREENSHOTS  — directory containing `figma/<page>.png` + `astro/<page>.png` pairs
+ *   FIGDIFF_SCREENSHOTS  — directory containing `figma/<page>.png` + `<implDir>/<page>.png` pairs
+ *   or
+ *   FIGDIFF_MANIFEST     — JSON file with `{ "pages": [{ "name", "figma", "impl" }] }`
  *
  * Optional env:
  *   FIGDIFF_MCP_DIST     — override path to @figdiff/mcp-server dist (default: ../../app/mcp-server/dist)
  *   FIGDIFF_THRESHOLD    — pixelmatch threshold (default 0.1)
  *   FIGDIFF_OUT          — output JSON path (default /tmp/figdiff-eval-results.json)
+ *   FIGDIFF_MD_OUT       — output Markdown summary path
+ *   FIGDIFF_IMPL_DIR     — implementation screenshot dir under FIGDIFF_SCREENSHOTS (default: astro)
  */
 
 import { existsSync } from "node:fs";
@@ -53,51 +60,7 @@ if (process.env.FIGDIFF_EVAL_WORKER === "1") {
   process.exit(result.ok ? 0 : 1);
 }
 
-const BASE = process.env.FIGDIFF_SCREENSHOTS;
-if (!BASE) {
-  console.error(
-    "FIGDIFF_SCREENSHOTS env var is required (path to a directory containing figma/ and astro/ subdirs).",
-  );
-  process.exit(2);
-}
-const PAGES = [
-  { name: "top-pc", figma: `${BASE}/figma/top-pc.png`, impl: `${BASE}/astro/top-pc.png` },
-  { name: "top-sp", figma: `${BASE}/figma/top-sp.png`, impl: `${BASE}/astro/top-sp.png` },
-  { name: "about-pc", figma: `${BASE}/figma/about-pc.png`, impl: `${BASE}/astro/about-pc.png` },
-  { name: "about-sp", figma: `${BASE}/figma/about-sp.png`, impl: `${BASE}/astro/about-sp.png` },
-  {
-    name: "service-pc",
-    figma: `${BASE}/figma/service-pc.png`,
-    impl: `${BASE}/astro/service-pc.png`,
-  },
-  {
-    name: "service-sp",
-    figma: `${BASE}/figma/service-sp.png`,
-    impl: `${BASE}/astro/service-sp.png`,
-  },
-  {
-    name: "recruit-pc",
-    figma: `${BASE}/figma/recruit-pc.png`,
-    impl: `${BASE}/astro/recruit-pc.png`,
-  },
-  {
-    name: "recruit-sp",
-    figma: `${BASE}/figma/recruit-sp.png`,
-    impl: `${BASE}/astro/recruit-sp.png`,
-  },
-  { name: "news-pc", figma: `${BASE}/figma/news-pc.png`, impl: `${BASE}/astro/news-pc.png` },
-  { name: "news-sp", figma: `${BASE}/figma/news-sp.png`, impl: `${BASE}/astro/news-sp.png` },
-  {
-    name: "contact-pc",
-    figma: `${BASE}/figma/contact-pc.png`,
-    impl: `${BASE}/astro/contact-pc.png`,
-  },
-  {
-    name: "contact-sp",
-    figma: `${BASE}/figma/contact-sp.png`,
-    impl: `${BASE}/astro/contact-sp.png`,
-  },
-];
+const PAGES = await buildPages();
 
 const selectedPages = new Set(
   (process.env.FIGDIFF_PAGES ?? "")
@@ -135,6 +98,13 @@ const summary = {
   ran_at: new Date().toISOString(),
   threshold: THRESHOLD,
   page_timeout_ms: PAGE_TIMEOUT_MS,
+  source: process.env.FIGDIFF_MANIFEST
+    ? { type: "manifest", path: resolve(process.env.FIGDIFF_MANIFEST) }
+    : {
+        type: "screenshots",
+        path: process.env.FIGDIFF_SCREENSHOTS ? resolve(process.env.FIGDIFF_SCREENSHOTS) : null,
+        impl_dir: process.env.FIGDIFF_IMPL_DIR ?? "astro",
+      },
   pages: results.length,
   ok_count: results.filter((r) => r.ok).length,
   total_wall_ms: Math.round(endAll - startAll),
@@ -145,7 +115,13 @@ const summary = {
 
 const failedCount = summary.pages - summary.ok_count;
 await writeFile(OUT, JSON.stringify(summary, null, 2));
+if (process.env.FIGDIFF_MD_OUT) {
+  await writeFile(process.env.FIGDIFF_MD_OUT, renderMarkdown(summary));
+}
 process.stdout.write(`\nResults: ${OUT}\n`);
+if (process.env.FIGDIFF_MD_OUT) {
+  process.stdout.write(`Markdown: ${process.env.FIGDIFF_MD_OUT}\n`);
+}
 process.stdout.write(
   `Total: ${summary.total_wall_ms}ms, RSS ${summary.rss_start_mb} → ${summary.rss_end_mb}MB\n`,
 );
@@ -156,8 +132,135 @@ if (failedCount > 0) {
   process.exit(1);
 }
 
+async function buildPages() {
+  if (process.env.FIGDIFF_MANIFEST) {
+    return loadManifestPages(process.env.FIGDIFF_MANIFEST);
+  }
+
+  const base = process.env.FIGDIFF_SCREENSHOTS;
+  if (!base) {
+    console.error(
+      "FIGDIFF_SCREENSHOTS or FIGDIFF_MANIFEST is required. " +
+        "FIGDIFF_SCREENSHOTS should contain figma/ and an implementation screenshot dir.",
+    );
+    process.exit(2);
+  }
+  const implDir = process.env.FIGDIFF_IMPL_DIR ?? "astro";
+  return [
+    { name: "top-pc", figma: `${base}/figma/top-pc.png`, impl: `${base}/${implDir}/top-pc.png` },
+    { name: "top-sp", figma: `${base}/figma/top-sp.png`, impl: `${base}/${implDir}/top-sp.png` },
+    {
+      name: "about-pc",
+      figma: `${base}/figma/about-pc.png`,
+      impl: `${base}/${implDir}/about-pc.png`,
+    },
+    {
+      name: "about-sp",
+      figma: `${base}/figma/about-sp.png`,
+      impl: `${base}/${implDir}/about-sp.png`,
+    },
+    {
+      name: "service-pc",
+      figma: `${base}/figma/service-pc.png`,
+      impl: `${base}/${implDir}/service-pc.png`,
+    },
+    {
+      name: "service-sp",
+      figma: `${base}/figma/service-sp.png`,
+      impl: `${base}/${implDir}/service-sp.png`,
+    },
+    {
+      name: "recruit-pc",
+      figma: `${base}/figma/recruit-pc.png`,
+      impl: `${base}/${implDir}/recruit-pc.png`,
+    },
+    {
+      name: "recruit-sp",
+      figma: `${base}/figma/recruit-sp.png`,
+      impl: `${base}/${implDir}/recruit-sp.png`,
+    },
+    { name: "news-pc", figma: `${base}/figma/news-pc.png`, impl: `${base}/${implDir}/news-pc.png` },
+    { name: "news-sp", figma: `${base}/figma/news-sp.png`, impl: `${base}/${implDir}/news-sp.png` },
+    {
+      name: "contact-pc",
+      figma: `${base}/figma/contact-pc.png`,
+      impl: `${base}/${implDir}/contact-pc.png`,
+    },
+    {
+      name: "contact-sp",
+      figma: `${base}/figma/contact-sp.png`,
+      impl: `${base}/${implDir}/contact-sp.png`,
+    },
+  ];
+}
+
+async function loadManifestPages(manifestPath) {
+  const manifestFile = resolve(manifestPath);
+  const manifestDir = dirname(manifestFile);
+  const manifest = JSON.parse(await readFile(manifestFile, "utf8"));
+  if (!Array.isArray(manifest.pages) || manifest.pages.length === 0) {
+    console.error("FIGDIFF_MANIFEST must contain a non-empty pages array.");
+    process.exit(2);
+  }
+  return manifest.pages.map((page, index) => {
+    if (!page.name || !page.figma || !page.impl) {
+      console.error(
+        `Invalid FIGDIFF_MANIFEST page at index ${index}: name, figma, and impl are required.`,
+      );
+      process.exit(2);
+    }
+    return {
+      name: String(page.name),
+      figma: resolve(manifestDir, page.figma),
+      impl: resolve(manifestDir, page.impl),
+      meta: page.meta ?? undefined,
+    };
+  });
+}
+
+function renderMarkdown(summary) {
+  const failedCount = summary.pages - summary.ok_count;
+  const lines = [
+    "# designdiff eval summary",
+    "",
+    `- Ran at: ${summary.ran_at}`,
+    `- Source: ${summary.source.type}${summary.source.path ? ` (${summary.source.path})` : ""}`,
+    `- Threshold: ${summary.threshold}`,
+    `- Pages: ${summary.ok_count}/${summary.pages} ok`,
+    `- Total wall time: ${summary.total_wall_ms}ms`,
+    `- Result: ${failedCount === 0 ? "PASS" : "FAIL"}`,
+    "",
+    "| Page | OK | Match | Regions | Diff pixels | Time | Worst cells |",
+    "|---|---:|---:|---:|---:|---:|---|",
+  ];
+
+  for (const result of summary.results) {
+    if (!result.ok) {
+      lines.push(
+        `| ${escapeTable(result.page)} | no | - | - | - | ${result.wall_ms}ms | ${escapeTable(result.error ?? "")} |`,
+      );
+      continue;
+    }
+    const worstCells = (result.worst_grid_cells ?? [])
+      .slice(0, 3)
+      .map((cell) => `r${cell.row}c${cell.col}:${cell.matchRate}%`)
+      .join(", ");
+    lines.push(
+      `| ${escapeTable(result.page)} | yes | ${result.result.matchRate}% | ${result.result.diffRegions?.length ?? 0} | ${result.result.diffPixelCount} | ${result.wall_ms}ms | ${escapeTable(worstCells)} |`,
+    );
+  }
+
+  lines.push("");
+  return `${lines.join("\n")}\n`;
+}
+
+function escapeTable(value) {
+  return String(value).replaceAll("|", "\\|").replaceAll("\n", " ");
+}
+
 async function runPageWorker(page) {
-  const pageOut = join(tmpdir(), `figdiff-eval-${process.pid}-${page.name}.json`);
+  const safePageName = page.name.replaceAll(/[^a-zA-Z0-9._-]/g, "_");
+  const pageOut = join(tmpdir(), `figdiff-eval-${process.pid}-${safePageName}.json`);
   const startedAt = performance.now();
   const child = spawn(process.execPath, [SELF], {
     env: {
