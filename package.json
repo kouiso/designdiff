@@ -12,6 +12,7 @@
     "eval:capture-lp": "node scripts/eval/capture-lp-screenshots.mjs",
     "eval:manifest": "node scripts/eval/build-screenshot-manifest.mjs",
     "eval:ingest-figma": "node scripts/eval/ingest-figma-pages.mjs",
+    "eval:sample-project-lp-figma": "node scripts/eval/sample-project-lp-figma-smoke.mjs",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
     "format": "biome format --write .",
