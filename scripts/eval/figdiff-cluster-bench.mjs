@@ -231,14 +231,14 @@ function renderMarkdown(summary) {
     `- Total wall time: ${summary.total_wall_ms}ms`,
     `- Result: ${failedCount === 0 ? "PASS" : "FAIL"}`,
     "",
-    "| Page | OK | Match | Regions | Diff pixels | Time | Worst cells | Diff artifact |",
-    "|---|---:|---:|---:|---:|---:|---|---|",
+    "| Page | OK | Match | Regions | Diff pixels | Viewport Δ | Time | Worst cells | Diff artifact |",
+    "|---|---:|---:|---:|---:|---|---:|---|---|",
   ];
 
   for (const result of summary.results) {
     if (!result.ok) {
       lines.push(
-        `| ${escapeTable(result.page)} | no | - | - | - | ${result.wall_ms}ms | ${escapeTable(result.error ?? "")} | - |`,
+        `| ${escapeTable(result.page)} | no | - | - | - | - | ${result.wall_ms}ms | ${escapeTable(result.error ?? "")} | - |`,
       );
       continue;
     }
@@ -246,17 +246,70 @@ function renderMarkdown(summary) {
       .slice(0, 3)
       .map((cell) => `r${cell.row}c${cell.col}:${cell.matchRate}%`)
       .join(", ");
+    const viewportMismatch = result.viewport_mismatch;
+    const viewportCell = viewportMismatch
+      ? `${viewportMismatch.design.width}x${viewportMismatch.design.height}→${viewportMismatch.screenshot.width}x${viewportMismatch.screenshot.height} (Δw:${viewportMismatch.widthDelta}, Δh:${viewportMismatch.heightDelta})`
+      : "-";
     lines.push(
-      `| ${escapeTable(result.page)} | yes | ${result.result.matchRate}% | ${result.result.diffRegions?.length ?? 0} | ${result.result.diffPixelCount} | ${result.wall_ms}ms | ${escapeTable(worstCells)} | ${escapeTable(result.artifacts?.diff_image ?? "-")} |`,
+      `| ${escapeTable(result.page)} | yes | ${result.result.matchRate}% | ${result.result.diffRegions?.length ?? 0} | ${result.result.diffPixelCount} | ${escapeTable(viewportCell)} | ${result.wall_ms}ms | ${escapeTable(worstCells)} | ${escapeTable(result.artifacts?.diff_image ?? "-")} |`,
     );
   }
 
   lines.push("");
+
+  const viewportMismatchRows = summary.results.filter(
+    (result) => result.ok && result.viewport_mismatch?.hasMismatch,
+  );
+  if (viewportMismatchRows.length > 0) {
+    lines.push("## Viewport mismatch (compact CI)");
+    lines.push("");
+    lines.push("| Page | Design viewport | Screenshot viewport | Δw | Δh | Δarea | Δarea% |");
+    lines.push("|---|---:|---:|---:|---:|---:|---:|");
+    for (const result of viewportMismatchRows) {
+      const mismatch = result.viewport_mismatch;
+      lines.push(
+        `| ${escapeTable(result.page)} | ${mismatch.design.width}x${mismatch.design.height} | ${mismatch.screenshot.width}x${mismatch.screenshot.height} | ${mismatch.widthDelta} | ${mismatch.heightDelta} | ${mismatch.areaDelta} | ${mismatch.areaDeltaRate}% |`,
+      );
+    }
+    lines.push("");
+  }
+
   return `${lines.join("\n")}\n`;
 }
 
 function escapeTable(value) {
   return String(value).replaceAll("|", "\\|").replaceAll("\n", " ");
+}
+
+function readPngDimensions(buffer) {
+  const pngSignature = "89504e470d0a1a0a";
+  if (buffer.length < 24 || buffer.subarray(0, 8).toString("hex") !== pngSignature) {
+    throw new Error("unsupported image format (expected PNG)");
+  }
+
+  // PNG の IHDR 先頭に幅/高さ(4byte big-endian)が入る。
+  return {
+    width: buffer.readUInt32BE(16),
+    height: buffer.readUInt32BE(20),
+  };
+}
+
+function buildViewportMismatch(designDimensions, screenshotDimensions) {
+  const widthDelta = screenshotDimensions.width - designDimensions.width;
+  const heightDelta = screenshotDimensions.height - designDimensions.height;
+  const designArea = designDimensions.width * designDimensions.height;
+  const screenshotArea = screenshotDimensions.width * screenshotDimensions.height;
+
+  return {
+    design: designDimensions,
+    screenshot: screenshotDimensions,
+    widthDelta,
+    heightDelta,
+    areaDelta: screenshotArea - designArea,
+    areaDeltaRate:
+      designArea > 0 ? Number((((screenshotArea - designArea) / designArea) * 100).toFixed(2)) : 0,
+    hasMismatch: widthDelta !== 0 || heightDelta !== 0,
+  };
 }
 
 async function runPageWorker(page) {
@@ -325,8 +378,13 @@ async function comparePage(page) {
   const peakMemBefore = process.memoryUsage().rss;
   try {
     const { compareImages } = await import(pathToFileURL(SERVICE_ENTRY).href);
-    const designBase64 = (await readFile(page.figma)).toString("base64");
-    const screenshotBase64 = (await readFile(page.impl)).toString("base64");
+    const designBuffer = await readFile(page.figma);
+    const screenshotBuffer = await readFile(page.impl);
+    const designDimensions = readPngDimensions(designBuffer);
+    const screenshotDimensions = readPngDimensions(screenshotBuffer);
+    const viewportMismatch = buildViewportMismatch(designDimensions, screenshotDimensions);
+    const designBase64 = designBuffer.toString("base64");
+    const screenshotBase64 = screenshotBuffer.toString("base64");
     const result = await compareImages({
       designBase64,
       screenshotBase64,
@@ -361,6 +419,7 @@ async function comparePage(page) {
       rss_delta_mb: Math.round((peakMemAfter - peakMemBefore) / 1024 / 1024),
       diff_image_base64_chars: diffImageSize,
       artifacts: diffImagePath ? { diff_image: diffImagePath } : undefined,
+      viewport_mismatch: viewportMismatch,
       worst_grid_cells: worstGridCells,
       result: rest,
     };
