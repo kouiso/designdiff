@@ -21,6 +21,7 @@ const figmaDir = resolve(outDir, "figma");
 const implDir = options["impl-dir"] ? resolve(String(options["impl-dir"])) : null;
 const tokenEnv = options["token-env"] ? String(options["token-env"]) : "FIGMA_TOKEN";
 const token = options.token ? String(options.token) : process.env[tokenEnv];
+const validateOnly = Boolean(options["validate-only"]);
 const apiBase = stripTrailingSlash(
   options["api-base"] ? String(options["api-base"]) : "https://api.figma.com/v1",
 );
@@ -33,7 +34,7 @@ const summaryOut = resolve(
   options.summary ? String(options.summary) : join(outDir, "figma-ingest-summary.md"),
 );
 
-if (!token) {
+if (!validateOnly && !token) {
   fail(`Figma token is required. Set ${tokenEnv} or pass --token.`);
 }
 if (!Number.isFinite(scale) || scale <= 0) {
@@ -50,6 +51,35 @@ await mkdir(dirname(manifestOut), { recursive: true });
 await mkdir(dirname(summaryOut), { recursive: true });
 
 const pages = figmaManifest.pages.map(normalizePage);
+validateImplementationPairs(pages);
+
+if (validateOnly) {
+  await mkdir(dirname(summaryOut), { recursive: true });
+  await writeFile(
+    summaryOut,
+    renderSummary({
+      figmaManifestPath,
+      figmaDir,
+      implDir,
+      ingested: pages.map((page) => ({
+        name: page.name,
+        figma: "(validate-only)",
+        impl: implDir ? join(implDir, `${page.name}.png`) : null,
+        meta: {
+          file_key: page.fileKey,
+          node_id: page.nodeId,
+          figma_url: page.figmaUrl,
+          scale: page.scale,
+          format,
+        },
+      })),
+    }),
+  );
+  process.stdout.write(`Validated pages: ${pages.length}\n`);
+  process.stdout.write(`Summary: ${summaryOut}\n`);
+  process.exit(0);
+}
+
 const groupedPages = groupByFileKeyAndScale(pages);
 const ingested = [];
 
@@ -75,9 +105,6 @@ for (const filePages of groupedPages.values()) {
         format,
       },
     };
-    if (entry.impl && !existsSync(entry.impl)) {
-      fail(`Implementation screenshot missing for ${page.name}: ${entry.impl}`);
-    }
     ingested.push(entry);
   }
 }
@@ -181,6 +208,18 @@ function groupByFileKeyAndScale(pages) {
     groups.set(key, group);
   }
   return groups;
+}
+
+function validateImplementationPairs(pages) {
+  if (!implDir) {
+    return;
+  }
+  for (const page of pages) {
+    const implPath = join(implDir, `${page.name}.png`);
+    if (!existsSync(implPath)) {
+      fail(`Implementation screenshot missing for ${page.name}: ${implPath}`);
+    }
+  }
 }
 
 async function fetchFigmaImageUrls({ fileKey, pages }) {
