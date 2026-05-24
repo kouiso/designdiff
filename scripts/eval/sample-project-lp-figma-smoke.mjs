@@ -34,6 +34,7 @@ const mockFigmaApi = Boolean(options["mock-figma-api"]);
 const skipInstall = Boolean(options["skip-install"]);
 const skipBuild = Boolean(options["skip-build"]);
 const tokenEnv = optionalString(options, "token-env", "FIGMA_TOKEN");
+const capturePages = optionalString(options, "pages", null);
 const captureDir = join(outDir, "capture");
 const figmaDir = join(outDir, "figma");
 const evalJson = join(outDir, "eval.json");
@@ -69,6 +70,9 @@ const captureArgs = [
 ];
 if (skipInstall) {
   captureArgs.push("--skip-install");
+}
+if (capturePages) {
+  captureArgs.push("--pages", capturePages);
 }
 try {
   await run("node", captureArgs);
@@ -278,6 +282,7 @@ async function writeSummary() {
     `- lp repo: ${lpRepo}`,
     `- figma manifest: ${figmaManifest}`,
     `- mode: ${modeName()}`,
+    `- pages: ${capturePages ?? "(default)"}`,
     `- placeholder pages: ${placeholderPages.length}`,
     `- capture: ${captureDir}`,
     `- figma output: ${figmaDir}`,
