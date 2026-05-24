@@ -8,6 +8,7 @@
 
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
+import { createServer } from "node:http";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import process from "node:process";
@@ -29,6 +30,7 @@ const figmaManifest = resolve(
 );
 const outDir = resolve(optionalString(options, "out", "/tmp/sample-project-lp-figma-smoke"));
 const realRun = Boolean(options.real);
+const mockFigmaApi = Boolean(options["mock-figma-api"]);
 const skipInstall = Boolean(options["skip-install"]);
 const skipBuild = Boolean(options["skip-build"]);
 const tokenEnv = optionalString(options, "token-env", "FIGMA_TOKEN");
@@ -41,17 +43,22 @@ const summaryPath = join(outDir, "summary.md");
 validateDirectory(lpRepo, "--lp-repo");
 validateFile(figmaManifest, "--figma-manifest");
 const placeholderPages = await findPlaceholderPages(figmaManifest);
-if (realRun && placeholderPages.length > 0) {
+if ((realRun || mockFigmaApi) && placeholderPages.length > 0) {
   fail(
     `Figma manifest contains placeholder values: ${placeholderPages.join(", ")}. ` +
-      "Replace REPLACE_* file keys/node IDs before running real smoke.",
+      "Replace REPLACE_* file keys/node IDs before running real or mock API smoke.",
   );
+}
+if (realRun && mockFigmaApi) {
+  fail("--real and --mock-figma-api are mutually exclusive.");
 }
 if (realRun && !process.env[tokenEnv]) {
   fail(`--real requires ${tokenEnv}. Set ${tokenEnv} or pass --token-env.`);
 }
 
 await mkdir(outDir, { recursive: true });
+let mockServer = null;
+let mockApiBase = null;
 
 const captureArgs = [
   join(repoDir, "scripts/eval/capture-lp-screenshots.mjs"),
@@ -63,36 +70,50 @@ const captureArgs = [
 if (skipInstall) {
   captureArgs.push("--skip-install");
 }
-await run("node", captureArgs);
+try {
+  await run("node", captureArgs);
 
-const ingestArgs = [
-  join(repoDir, "scripts/eval/ingest-figma-pages.mjs"),
-  "--figma-manifest",
-  figmaManifest,
-  "--out",
-  figmaDir,
-  "--impl-dir",
-  join(captureDir, "impl"),
-  "--token-env",
-  tokenEnv,
-];
-if (!realRun) {
-  ingestArgs.push("--validate-only");
-}
-await run("node", ingestArgs);
-
-if (realRun) {
-  if (!skipBuild) {
-    await run("pnpm", ["--filter", "@figdiff/mcp-server", "build"]);
+  if (mockFigmaApi) {
+    mockServer = createMockFigmaServer();
+    const { port } = await listen(mockServer);
+    mockApiBase = `http://127.0.0.1:${port}/v1`;
   }
-  await run("node", [join(repoDir, "scripts/eval/figdiff-cluster-bench.mjs")], {
-    env: {
-      ...process.env,
-      FIGDIFF_MANIFEST: join(figmaDir, "figdiff-manifest.json"),
-      FIGDIFF_OUT: evalJson,
-      FIGDIFF_MD_OUT: evalMd,
-    },
-  });
+
+  const ingestArgs = [
+    join(repoDir, "scripts/eval/ingest-figma-pages.mjs"),
+    "--figma-manifest",
+    figmaManifest,
+    "--out",
+    figmaDir,
+    "--impl-dir",
+    join(captureDir, "impl"),
+    "--token-env",
+    tokenEnv,
+  ];
+  if (mockFigmaApi) {
+    ingestArgs.push("--token", "mock-token", "--api-base", mockApiBase);
+  } else if (!realRun) {
+    ingestArgs.push("--validate-only");
+  }
+  await run("node", ingestArgs);
+
+  if (realRun) {
+    if (!skipBuild) {
+      await run("pnpm", ["--filter", "@figdiff/mcp-server", "build"]);
+    }
+    await run("node", [join(repoDir, "scripts/eval/figdiff-cluster-bench.mjs")], {
+      env: {
+        ...process.env,
+        FIGDIFF_MANIFEST: join(figmaDir, "figdiff-manifest.json"),
+        FIGDIFF_OUT: evalJson,
+        FIGDIFF_MD_OUT: evalMd,
+      },
+    });
+  }
+} finally {
+  if (mockServer) {
+    await close(mockServer);
+  }
 }
 
 await writeSummary();
@@ -183,23 +204,99 @@ async function run(command, args, options = {}) {
   });
 }
 
+function createMockFigmaServer() {
+  return createServer((request, response) => {
+    const url = new URL(request.url ?? "/", "http://127.0.0.1");
+    if (url.pathname.startsWith("/v1/images/")) {
+      const ids = String(url.searchParams.get("ids") ?? "")
+        .split(",")
+        .filter(Boolean);
+      const port = serverAddressPort(response);
+      const images = Object.fromEntries(
+        ids.map((id) => [id, `http://127.0.0.1:${port}/download/${encodeURIComponent(id)}.png`]),
+      );
+      response.writeHead(200, { "content-type": "application/json" });
+      response.end(JSON.stringify({ images }));
+      return;
+    }
+    if (url.pathname.startsWith("/download/")) {
+      response.writeHead(200, { "content-type": "image/png" });
+      response.end(mockPngBytes());
+      return;
+    }
+    response.writeHead(404, { "content-type": "application/json" });
+    response.end(JSON.stringify({ err: `not found: ${url.pathname}` }));
+  });
+}
+
+function serverAddressPort(response) {
+  const port = response.socket?.localPort;
+  if (!port) {
+    fail("Mock Figma API port is unavailable.");
+  }
+  return port;
+}
+
+function mockPngBytes() {
+  return Buffer.from(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=",
+    "base64",
+  );
+}
+
+async function listen(server) {
+  return await new Promise((resolvePromise, reject) => {
+    server.once("error", reject);
+    server.listen(0, "127.0.0.1", () => {
+      const address = server.address();
+      if (!address || typeof address === "string") {
+        reject(new Error("Mock Figma API address is unavailable."));
+        return;
+      }
+      resolvePromise(address);
+    });
+  });
+}
+
+async function close(server) {
+  await new Promise((resolvePromise, reject) => {
+    server.close((error) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+      resolvePromise();
+    });
+  });
+}
+
 async function writeSummary() {
   const lines = [
     "# sample-project-lp Figma smoke",
     "",
     `- lp repo: ${lpRepo}`,
     `- figma manifest: ${figmaManifest}`,
-    `- mode: ${realRun ? "real" : "validate-only"}`,
+    `- mode: ${modeName()}`,
     `- placeholder pages: ${placeholderPages.length}`,
     `- capture: ${captureDir}`,
     `- figma output: ${figmaDir}`,
   ];
+  if (mockApiBase) {
+    lines.push(`- mock API base: ${mockApiBase}`);
+  }
   if (realRun) {
     lines.push(`- eval markdown: ${evalMd}`, `- eval json: ${evalJson}`);
   }
   lines.push("");
   await mkdir(dirname(summaryPath), { recursive: true });
   await writeFile(summaryPath, `${lines.join("\n")}\n`);
+}
+
+function modeName() {
+  if (mockFigmaApi) {
+    return "mock-figma-api";
+  }
+  return realRun ? "real" : "validate-only";
 }
 
 function fail(message) {
