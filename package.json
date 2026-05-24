@@ -9,6 +9,7 @@
     "lint:fix": "turbo run lint:fix",
     "lint:eslint": "eslint .",
     "lint:eslint:fix": "eslint --fix .",
+    "eval:capture-lp": "node scripts/eval/capture-lp-screenshots.mjs",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
     "format": "biome format --write .",
