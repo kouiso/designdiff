@@ -168,7 +168,7 @@ async function writeReport({ ready, checks, placeholderPages }) {
   if (ready) {
     lines.push(
       "```bash",
-      `pnpm eval:sample-project-lp-figma -- --lp-repo ${shellQuote(lpRepo)} --figma-manifest ${shellQuote(figmaManifest)} --out ${shellQuote(join(tmpdir(), "sample-project-lp-figma-smoke"))} --real --skip-install --token-env ${shellQuote(tokenEnv)}`,
+      `pnpm eval:sample-project-lp-figma -- --lp-repo ${shellQuote(lpRepo)} --figma-manifest ${shellQuote(figmaManifest)} --out ${shellQuote(join(tmpdir(), "sample-project-lp-figma-smoke"))} --real --token-env ${shellQuote(tokenEnv)}`,
       "```",
     );
   } else {
