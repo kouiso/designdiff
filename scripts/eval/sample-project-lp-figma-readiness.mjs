@@ -114,7 +114,7 @@ function hasPlaceholderFigmaTarget(page) {
   if (!page || typeof page !== "object") {
     return false;
   }
-  return ["figma_url", "file_key", "node_id"].some((key) =>
+  return ["figma_url", "file_key", "node_id", "figmaUrl", "fileKey", "nodeId"].some((key) =>
     PLACEHOLDER_PATTERN.test(String(page[key] ?? "")),
   );
 }
@@ -138,7 +138,7 @@ async function writeReport({ ready, checks, placeholderPages }) {
   if (ready) {
     lines.push(
       "```bash",
-      `pnpm eval:sample-project-lp-figma -- --lp-repo ${lpRepo} --figma-manifest ${figmaManifest} --out /tmp/sample-project-lp-figma-smoke --real --skip-install`,
+      `pnpm eval:sample-project-lp-figma -- --lp-repo ${lpRepo} --figma-manifest ${figmaManifest} --out /tmp/sample-project-lp-figma-smoke --real --skip-install --token-env ${tokenEnv}`,
       "```",
     );
   } else {
