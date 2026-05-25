@@ -41,11 +41,14 @@ const figmaDir = join(outDir, "figma");
 const evalJson = join(outDir, "eval.json");
 const evalMd = join(outDir, "eval.md");
 const summaryPath = join(outDir, "summary.md");
+const readinessMd = join(outDir, "readiness.md");
+const readinessJson = join(outDir, "readiness.json");
+let readinessBlocked = false;
 
 validateDirectory(lpRepo, "--lp-repo");
 validateFile(figmaManifest, "--figma-manifest");
 const placeholderPages = await findPlaceholderPages(figmaManifest);
-if ((realRun || mockFigmaApi) && placeholderPages.length > 0) {
+if ((mockFigmaApi || explicitValidateOnly) && placeholderPages.length > 0) {
   fail(
     `Figma manifest contains placeholder values: ${placeholderPages.join(", ")}. ` +
       "Replace REPLACE_* file keys/node IDs before running real or mock API smoke.",
@@ -58,13 +61,36 @@ const modeFlags = [realRun, mockFigmaApi, explicitValidateOnly].filter(Boolean).
 if (modeFlags !== 1) {
   fail("You must specify exactly one mode: --real, --mock-figma-api, or --validate-only.");
 }
-if (realRun && !process.env[tokenEnv]) {
-  fail(`--real requires ${tokenEnv}. Set ${tokenEnv} or pass --token-env.`);
-}
-
 await mkdir(outDir, { recursive: true });
 let mockServer = null;
 let mockApiBase = null;
+
+if (realRun) {
+  const readinessArgs = [
+    join(repoDir, "scripts/eval/sample-project-lp-figma-readiness.mjs"),
+    "--lp-repo",
+    lpRepo,
+    "--figma-manifest",
+    figmaManifest,
+    "--token-env",
+    tokenEnv,
+    "--out",
+    readinessMd,
+    "--json-out",
+    readinessJson,
+  ];
+  try {
+    await run("node", readinessArgs);
+  } catch {
+    readinessBlocked = true;
+    await writeSummary();
+    process.stdout.write(`Summary: ${summaryPath}\n`);
+    process.stderr.write(
+      `Readiness blocked real mode. Evidence: ${readinessMd} / ${readinessJson}\n`,
+    );
+    process.exit(ERROR_EXIT_CODE);
+  }
+}
 
 const captureArgs = [
   join(repoDir, "scripts/eval/capture-lp-screenshots.mjs"),
@@ -297,6 +323,9 @@ async function writeSummary() {
   }
   if (realRun) {
     lines.push(`- eval markdown: ${evalMd}`, `- eval json: ${evalJson}`);
+    lines.push(`- readiness markdown: ${readinessMd}`);
+    lines.push(`- readiness json: ${readinessJson}`);
+    lines.push(`- readiness status: ${readinessBlocked ? "blocked" : "passed"}`);
   }
   lines.push("");
   await mkdir(dirname(summaryPath), { recursive: true });
