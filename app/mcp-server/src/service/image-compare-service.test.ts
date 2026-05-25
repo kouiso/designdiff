@@ -547,7 +547,7 @@ describe("compareImages", () => {
     const pixelmatchMock = await import("pixelmatch");
     const sharedMock = await import("@figdiff/shared");
 
-    const width = 1900;
+    const width = 1501;
     const height = 1200;
     const designMetadataInstance = createMockSharpInstance({ width, height });
     const screenshotMetadataInstance = createMockSharpInstance({ width, height });
@@ -619,5 +619,58 @@ describe("compareImages", () => {
         }),
       ]),
     );
+  });
+
+  it("quick tile fallback はリージョン数を上限で打ち切り、決定的な順序で返すこと", async () => {
+    const pixelmatchMock = await import("pixelmatch");
+    const sharedMock = await import("@figdiff/shared");
+
+    const width = 1600;
+    const height = 1200;
+    const designMetadataInstance = createMockSharpInstance({ width, height });
+    const screenshotMetadataInstance = createMockSharpInstance({ width, height });
+    const finalDesignMetadataInstance = createMockSharpInstance({ width, height });
+    const finalScreenshotMetadataInstance = createMockSharpInstance({ width, height });
+    const designRawInstance = createMockSharpInstance({ width, height });
+    const screenshotRawInstance = createMockSharpInstance({ width, height });
+    const diffImageInstance = createMockSharpInstance({ width, height });
+
+    mockSharpFn
+      .mockReturnValueOnce(designMetadataInstance)
+      .mockReturnValueOnce(screenshotMetadataInstance)
+      .mockReturnValueOnce(finalDesignMetadataInstance)
+      .mockReturnValueOnce(finalScreenshotMetadataInstance)
+      .mockReturnValueOnce(designRawInstance)
+      .mockReturnValueOnce(screenshotRawInstance)
+      .mockReturnValueOnce(diffImageInstance);
+
+    vi.mocked(pixelmatchMock.default).mockImplementation((_a, _b, diffPixels) => {
+      for (let i = 0; i < diffPixels.length; i += 4) {
+        diffPixels[i] = 255;
+        diffPixels[i + 3] = 255;
+      }
+      return width * height;
+    });
+
+    vi.spyOn(sharedMock, "clusterDiffPixelsGridDetailed").mockReturnValue({
+      regions: [],
+      aborted: true,
+      abortReason: "wall-budget-exceeded",
+      wallMs: 5100,
+      budgetMs: 5000,
+      hotCellRatio: 1,
+    });
+
+    const { compareImages } = await import("./image-compare-service.js");
+    const dummyBase64 = Buffer.alloc(100).toString("base64");
+    const result = await compareImages({
+      designBase64: dummyBase64,
+      screenshotBase64: dummyBase64,
+    });
+
+    expect(result.diffRegions.length).toBeLessThanOrEqual(60);
+    expect(result.diffRegions[0]?.id).toBe(0);
+    expect(result.diffRegions[0]?.bounds).toEqual({ x: 0, y: 0, width: 192, height: 192 });
+    expect(result.diffRegions.at(-1)?.id).toBe(result.diffRegions.length - 1);
   });
 });
