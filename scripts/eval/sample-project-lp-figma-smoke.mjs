@@ -81,7 +81,10 @@ if (realRun) {
   ];
   try {
     await run("node", readinessArgs);
-  } catch {
+  } catch (error) {
+    if (error?.code !== ERROR_EXIT_CODE && error?.exitCode !== ERROR_EXIT_CODE) {
+      throw error;
+    }
     readinessBlocked = true;
     await writeSummary();
     process.stdout.write(`Summary: ${summaryPath}\n`);
@@ -235,7 +238,10 @@ async function run(command, args, options = {}) {
         resolvePromise();
         return;
       }
-      reject(new Error(`${command} ${args.join(" ")} failed with exit code ${code}`));
+      const error = new Error(`${command} ${args.join(" ")} failed with exit code ${code}`);
+      error.code = code;
+      error.exitCode = code;
+      reject(error);
     });
   });
 }

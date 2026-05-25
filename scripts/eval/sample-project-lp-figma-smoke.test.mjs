@@ -91,8 +91,9 @@ test("--real で readiness が block したとき summary に markdown/json の�
     assert.equal(existsSync(readinessJsonPath), true);
     const readiness = JSON.parse(readFileSync(readinessJsonPath, "utf8"));
     assert.equal(readiness.ready, false);
-    assert.equal(Array.isArray(readiness.missingRequirements), true);
     assert.equal(readiness.actualPaths.jsonEvidence, readinessJsonPath);
+    assert.equal(Array.isArray(readiness.missingRequirements), true);
+    assert.ok(readiness.missingRequirements.includes("No REPLACE_* placeholders"));
   } finally {
     rmSync(root, { force: true, recursive: true });
   }
