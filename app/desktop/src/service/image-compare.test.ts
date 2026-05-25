@@ -269,6 +269,6 @@ describe("compareImages", () => {
     expect(result.matchRate).toBe(100);
     expect(result.suggestion).toBe("compare.suggestionPerfect");
     expect(result.diffReport?.aggregateVerdict).toBe("pass");
-    expect(result.diffReport?.regionScores).toHaveLength(1);
+    expect(result.diffReport?.regionScores).toHaveLength(9);
   });
 });
