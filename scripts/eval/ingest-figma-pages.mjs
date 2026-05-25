@@ -310,7 +310,11 @@ async function writeJsonAtomic(path, value) {
 }
 
 function renderSummary({ figmaManifestPath, figmaDir, implDir, ingested, placeholderPages = [] }) {
-  const ingestMode = validateOnly ? "validate-only" : useRealFigmaApi ? "real-figma-api" : "custom-api-base";
+  const ingestMode = validateOnly
+    ? "validate-only"
+    : useRealFigmaApi
+      ? "real-figma-api"
+      : "custom-api-base";
   const lines = [
     "# Figma ingest summary",
     "",
