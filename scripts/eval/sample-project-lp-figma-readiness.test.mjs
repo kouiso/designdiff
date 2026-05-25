@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -8,6 +9,10 @@ import { fileURLToPath } from "node:url";
 
 const repoDir = resolve(fileURLToPath(new URL("../..", import.meta.url)));
 const script = join(repoDir, "scripts/eval/sample-project-lp-figma-readiness.mjs");
+
+function manifestChecksum(path) {
+  return createHash("sha256").update(readFileSync(path, "utf8")).digest("hex");
+}
 
 function setupFixture({ placeholder = false } = {}) {
   const root = mkdtempSync(join(tmpdir(), "sample-project-ready-test-"));
@@ -47,6 +52,10 @@ test("blocked 時に JSON 証跡へ blocker と expected/actual path を出力�
     assert.equal(evidence.actualPaths.markdownReport, out);
     assert.equal(evidence.actualPaths.jsonEvidence, jsonOut);
     assert.equal(evidence.realSmokeCommand, null);
+    assert.equal(evidence.expectedManifestMetadata.manifestPageCount, true);
+    assert.equal(evidence.expectedManifestMetadata.manifestSha256, true);
+    assert.equal(evidence.actualManifestMetadata.manifestPageCount, 1);
+    assert.equal(evidence.actualManifestMetadata.manifestSha256, manifestChecksum(manifestPath));
   } finally {
     rmSync(root, { force: true, recursive: true });
     rmSync(out, { force: true });
@@ -90,6 +99,10 @@ test("ready 時に JSON 証跡へ real smoke command と missingRequirements 空
     assert.match(evidence.realSmokeCommand, /--real/u);
     assert.equal(evidence.expectedPaths.lpRepoPackageJson, join(lpRepo, "package.json"));
     assert.equal(evidence.actualPaths.lpRepoPackageJsonExists, true);
+    assert.equal(evidence.expectedManifestMetadata.manifestPageCount, true);
+    assert.equal(evidence.expectedManifestMetadata.manifestSha256, true);
+    assert.equal(evidence.actualManifestMetadata.manifestPageCount, 1);
+    assert.equal(evidence.actualManifestMetadata.manifestSha256, manifestChecksum(manifestPath));
   } finally {
     rmSync(root, { force: true, recursive: true });
     rmSync(out, { force: true });
