@@ -30,6 +30,7 @@ const tokenEnv = optionalString(options, "token-env", "FIGMA_TOKEN");
 const out = resolve(
   optionalString(options, "out", join(tmpdir(), "sample-project-lp-figma-readiness.md")),
 );
+const jsonOut = resolve(optionalString(options, "json-out", deriveJsonOutPath(out)));
 
 const checks = [];
 const lpPackageJson = join(lpRepo, "package.json");
@@ -70,14 +71,16 @@ checks.push(
 );
 
 const ready = checks.every((entry) => entry.ok) && !manifestError;
-await writeReport({ ready, checks, placeholderPages });
+const smokeCommand = buildSmokeCommand();
+await writeReport({ ready, checks, placeholderPages, smokeCommand });
+await writeJsonEvidence({ ready, checks, placeholderPages, smokeCommand });
 
 if (ready) {
-  process.stdout.write(`Ready: ${out}\n`);
+  process.stdout.write(`Ready: ${out}\nEvidence JSON: ${jsonOut}\n`);
   process.exit(0);
 }
 
-process.stderr.write(`Not ready: ${out}\n`);
+process.stderr.write(`Not ready: ${out}\nEvidence JSON: ${jsonOut}\n`);
 process.exit(ERROR_EXIT_CODE);
 
 function parseArgs(args) {
@@ -99,14 +102,12 @@ function parseArgs(args) {
   }
   return parsed;
 }
-
 function requiredOption(options, key) {
   if (!options[key] || options[key] === true) {
     fail(`--${key} is required`);
   }
   return String(options[key]);
 }
-
 function optionalString(options, key, fallback) {
   if (!options[key]) {
     return fallback;
@@ -116,11 +117,9 @@ function optionalString(options, key, fallback) {
   }
   return String(options[key]);
 }
-
 function check(name, ok, detail) {
   return { name, ok, detail };
 }
-
 function hasPlaceholderFigmaTarget(page) {
   if (!page || typeof page !== "object") {
     return false;
@@ -129,7 +128,6 @@ function hasPlaceholderFigmaTarget(page) {
     PLACEHOLDER_PATTERN.test(String(page[key] ?? "")),
   );
 }
-
 function hasIngestiblePageShape(page) {
   if (!page || typeof page !== "object" || !page.name) {
     return false;
@@ -139,14 +137,12 @@ function hasIngestiblePageShape(page) {
   }
   return Boolean(page.file_key && page.node_id);
 }
-
 function pageName(page, index) {
   if (!page || typeof page !== "object") {
     return `index-${index}`;
   }
   return String(page.name ?? `index-${index}`);
 }
-
 function isSupportedFigmaUrl(value) {
   try {
     const url = new URL(String(value));
@@ -156,8 +152,7 @@ function isSupportedFigmaUrl(value) {
     return false;
   }
 }
-
-async function writeReport({ ready, checks, placeholderPages }) {
+async function writeReport({ ready, checks, placeholderPages, smokeCommand }) {
   const lines = [
     "# sample-project-lp Figma readiness",
     "",
@@ -165,6 +160,7 @@ async function writeReport({ ready, checks, placeholderPages }) {
     `- LP repo: ${lpRepo}`,
     `- Figma manifest: ${figmaManifest}`,
     `- Token env: ${tokenEnv}`,
+    `- Evidence JSON: ${jsonOut}`,
     "",
     "| Check | OK | Detail |",
     "|---|---:|---|",
@@ -176,11 +172,7 @@ async function writeReport({ ready, checks, placeholderPages }) {
   }
   lines.push("", "## Next command", "");
   if (ready) {
-    lines.push(
-      "```bash",
-      `pnpm eval:sample-project-lp-figma -- --lp-repo ${shellQuote(lpRepo)} --figma-manifest ${shellQuote(figmaManifest)} --out ${shellQuote(join(tmpdir(), "sample-project-lp-figma-smoke"))} --real --token-env ${shellQuote(tokenEnv)}`,
-      "```",
-    );
+    lines.push("```bash", smokeCommand, "```");
   } else {
     lines.push("- Replace all `REPLACE_*` values in the Figma manifest.");
     lines.push(`- Export ${tokenEnv} without storing it in the repo.`);
@@ -196,15 +188,41 @@ async function writeReport({ ready, checks, placeholderPages }) {
   await mkdir(dirname(out), { recursive: true });
   await writeFile(out, `${lines.join("\n")}\n`);
 }
-
+async function writeJsonEvidence({ ready, checks, placeholderPages, smokeCommand }) {
+  const missingRequirements = checks.filter((entry) => !entry.ok).map((entry) => entry.name);
+  const evidence = {
+    ready,
+    missingRequirements,
+    placeholderPageNames: placeholderPages.map((page) => page.name ?? "(unnamed)"),
+    manifestPath: figmaManifest,
+    lpRepoPath: lpRepo,
+    realSmokeCommand: ready ? smokeCommand : null,
+    expectedPaths: { lpRepoPackageJson: join(lpRepo, "package.json"), figmaManifest },
+    actualPaths: {
+      lpRepoPackageJsonExists: existsSync(join(lpRepo, "package.json")),
+      figmaManifestExists: existsSync(figmaManifest),
+      markdownReport: out,
+      jsonEvidence: jsonOut,
+    },
+    checks,
+  };
+  await mkdir(dirname(jsonOut), { recursive: true });
+  await writeFile(jsonOut, `${JSON.stringify(evidence, null, 2)}\n`);
+}
+function buildSmokeCommand() {
+  return `pnpm eval:sample-project-lp-figma -- --lp-repo ${shellQuote(lpRepo)} --figma-manifest ${shellQuote(figmaManifest)} --out ${shellQuote(join(tmpdir(), "sample-project-lp-figma-smoke"))} --real --token-env ${shellQuote(tokenEnv)}`;
+}
+function deriveJsonOutPath(markdownOutPath) {
+  return markdownOutPath.endsWith(".md")
+    ? `${markdownOutPath.slice(0, -3)}.json`
+    : `${markdownOutPath}.json`;
+}
 function escapeTable(value) {
   return String(value).replaceAll("|", "\\|");
 }
-
 function shellQuote(value) {
   return `"${String(value).replaceAll("\\", "\\\\").replaceAll('"', '\\"')}"`;
 }
-
 function fail(message) {
   process.stderr.write(`${message}\n`);
   process.exit(ERROR_EXIT_CODE);
