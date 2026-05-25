@@ -547,7 +547,7 @@ describe("compareImages", () => {
     const pixelmatchMock = await import("pixelmatch");
     const sharedMock = await import("@figdiff/shared");
 
-    const width = 1900;
+    const width = 1501;
     const height = 1200;
     const designMetadataInstance = createMockSharpInstance({ width, height });
     const screenshotMetadataInstance = createMockSharpInstance({ width, height });
@@ -625,8 +625,8 @@ describe("compareImages", () => {
     const pixelmatchMock = await import("pixelmatch");
     const sharedMock = await import("@figdiff/shared");
 
-    const width = 2112;
-    const height = 1344;
+    const width = 1600;
+    const height = 1200;
     const designMetadataInstance = createMockSharpInstance({ width, height });
     const screenshotMetadataInstance = createMockSharpInstance({ width, height });
     const finalDesignMetadataInstance = createMockSharpInstance({ width, height });
