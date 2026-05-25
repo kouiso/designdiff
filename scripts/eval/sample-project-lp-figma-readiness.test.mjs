@@ -10,6 +10,55 @@ import { fileURLToPath } from "node:url";
 const repoDir = resolve(fileURLToPath(new URL("../..", import.meta.url)));
 const script = join(repoDir, "scripts/eval/sample-project-lp-figma-readiness.mjs");
 
+function assertReadinessEvidenceContract(evidence) {
+  const requiredTopLevelKeys = [
+    "ready",
+    "missingRequirements",
+    "placeholderPageNames",
+    "manifestPath",
+    "lpRepoPath",
+    "expectedPaths",
+    "actualPaths",
+    "expectedManifestMetadata",
+    "actualManifestMetadata",
+    "checks",
+  ];
+
+  for (const key of requiredTopLevelKeys) {
+    assert.ok(key in evidence, `missing readiness contract key: ${key}`);
+  }
+
+  assert.equal(typeof evidence.ready, "boolean");
+  assert.equal(Array.isArray(evidence.missingRequirements), true);
+  assert.equal(Array.isArray(evidence.placeholderPageNames), true);
+  assert.equal(typeof evidence.manifestPath, "string");
+  assert.equal(typeof evidence.lpRepoPath, "string");
+  assert.equal(Array.isArray(evidence.checks), true);
+  assert.ok(evidence.checks.length > 0);
+  for (const check of evidence.checks) {
+    assert.equal(typeof check.name, "string");
+    assert.equal(typeof check.ok, "boolean");
+    assert.equal(typeof check.detail, "string");
+  }
+
+  // expected vs actual の証跡を automation が読めることを保証する。
+  assert.equal(typeof evidence.expectedPaths, "object");
+  assert.equal(typeof evidence.actualPaths, "object");
+  assert.ok("lpRepoPackageJson" in evidence.expectedPaths);
+  assert.ok("figmaManifest" in evidence.expectedPaths);
+  assert.ok("lpRepoPackageJsonExists" in evidence.actualPaths);
+  assert.ok("figmaManifestExists" in evidence.actualPaths);
+  assert.ok("markdownReport" in evidence.actualPaths);
+  assert.ok("jsonEvidence" in evidence.actualPaths);
+
+  assert.equal(typeof evidence.expectedManifestMetadata, "object");
+  assert.equal(typeof evidence.actualManifestMetadata, "object");
+  assert.ok("manifestPageCount" in evidence.expectedManifestMetadata);
+  assert.ok("manifestSha256" in evidence.expectedManifestMetadata);
+  assert.ok("manifestPageCount" in evidence.actualManifestMetadata);
+  assert.ok("manifestSha256" in evidence.actualManifestMetadata);
+}
+
 function manifestChecksum(path) {
   return createHash("sha256").update(readFileSync(path, "utf8")).digest("hex");
 }
@@ -44,6 +93,7 @@ test("blocked 時に JSON 証跡へ blocker と expected/actual path を出力�
     assert.equal(result.status, 2);
     const jsonOut = out.replace(/\.md$/u, ".json");
     const evidence = JSON.parse(readFileSync(jsonOut, "utf8"));
+    assertReadinessEvidenceContract(evidence);
     assert.equal(evidence.ready, false);
     assert.match(evidence.missingRequirements.join("\n"), /No REPLACE_\* placeholders/u);
     assert.deepEqual(evidence.placeholderPageNames, ["top"]);
@@ -91,6 +141,7 @@ test("ready 時に JSON 証跡へ real smoke command と missingRequirements 空
 
     assert.equal(result.status, 0);
     const evidence = JSON.parse(readFileSync(jsonOut, "utf8"));
+    assertReadinessEvidenceContract(evidence);
     assert.equal(evidence.ready, true);
     assert.deepEqual(evidence.missingRequirements, []);
     assert.deepEqual(evidence.placeholderPageNames, []);
