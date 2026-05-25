@@ -1,22 +1,23 @@
 #!/usr/bin/env node
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { parseArgs } from "node:util";
 
-function parseArgs(argv) {
-  const args = { text: undefined, file: undefined };
-  for (let i = 0; i < argv.length; i += 1) {
-    const token = argv[i];
-    if (token === "--text") {
-      args.text = argv[i + 1];
-      i += 1;
-      continue;
-    }
-    if (token === "--file") {
-      args.file = argv[i + 1];
-      i += 1;
-    }
+function parseCliArgs(argv) {
+  try {
+    const { values } = parseArgs({
+      args: argv,
+      options: {
+        file: { type: "string" },
+        text: { type: "string" },
+      },
+      strict: true,
+    });
+    return { file: values.file, text: values.text };
+  } catch (error) {
+    process.stderr.write(`${error.message}\n`);
+    process.exit(2);
   }
-  return args;
 }
 
 function collectEvidence(input) {
@@ -91,7 +92,7 @@ function toGuidance(sourceLabel, checks, matched) {
 }
 
 function main() {
-  const args = parseArgs(process.argv.slice(2));
+  const args = parseCliArgs(process.argv.slice(2));
   if (!args.text && !args.file) {
     process.stderr.write(
       "usage: node scripts/eval/pr-visual-evidence-readiness.mjs --text <markdown> | --file <path>\n",
@@ -104,7 +105,12 @@ function main() {
   if (args.file) {
     const fullPath = resolve(process.cwd(), args.file);
     sourceLabel = fullPath;
-    input = readFileSync(fullPath, "utf8");
+    try {
+      input = readFileSync(fullPath, "utf8");
+    } catch (error) {
+      process.stderr.write(`failed to read evidence file: ${error.message}\n`);
+      process.exit(2);
+    }
   }
 
   const { checks, matched } = collectEvidence(input ?? "");

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, writeFileSync } from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import test from "node:test";
@@ -32,13 +32,17 @@ test("Figma URL があれば readiness pass", () => {
 
 test("evidence ファイル入力を読み取り、画像 URL を検出する", () => {
   const tmp = mkdtempSync(join(tmpdir(), "pr-evidence-"));
-  const filePath = join(tmp, "evidence.md");
-  writeFileSync(filePath, "![before](https://example.com/before.png)\n");
-  const result = spawnSync("node", [script, "--file", filePath], {
-    cwd: repoDir,
-    encoding: "utf8",
-  });
-  assert.equal(result.status, 0);
-  assert.match(result.stdout, /markdown_image/u);
-  assert.match(result.stdout, /source:/u);
+  try {
+    const filePath = join(tmp, "evidence.md");
+    writeFileSync(filePath, "![before](https://example.com/before.png)\n");
+    const result = spawnSync("node", [script, "--file", filePath], {
+      cwd: repoDir,
+      encoding: "utf8",
+    });
+    assert.equal(result.status, 0);
+    assert.match(result.stdout, /markdown_image/u);
+    assert.match(result.stdout, /source:/u);
+  } finally {
+    rmSync(tmp, { force: true, recursive: true });
+  }
 });
