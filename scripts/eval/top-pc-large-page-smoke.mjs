@@ -23,7 +23,6 @@ const skipCapture = Boolean(options["skip-capture"]);
 const skipInstall = Boolean(options["skip-install"]);
 
 const captureDir = join(outDir, "capture");
-const implPath = resolveTopPcImplPath(captureDir);
 const evalDir = join(outDir, "eval");
 const diffDir = join(outDir, "diff");
 const baselineJson = join(evalDir, "baseline.json");
@@ -54,6 +53,7 @@ if (!skipCapture) {
   await run("node", captureArgs);
 }
 
+const implPath = resolveTopPcImplPath(captureDir);
 if (!existsSync(implPath)) {
   fail(`top-pc screenshot not found: ${implPath}`);
 }
