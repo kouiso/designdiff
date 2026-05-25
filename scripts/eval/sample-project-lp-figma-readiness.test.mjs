@@ -62,10 +62,14 @@ function assertReadinessEvidenceContract(evidence) {
 function assertReadinessDemoCommand(markdown, { lpRepo, manifestPath, outPath, jsonOutPath }) {
   assert.match(markdown, /## 1-minute demo \(readiness re-run\)/u);
   assert.match(markdown, /```bash[\s\S]*scripts\/eval\/sample-project-lp-figma-readiness\.mjs/u);
-  assert.ok(markdown.includes(`--lp-repo "${lpRepo}"`));
-  assert.ok(markdown.includes(`--figma-manifest "${manifestPath}"`));
-  assert.ok(markdown.includes(`--out "${outPath}"`));
-  assert.ok(markdown.includes(`--json-out "${jsonOutPath}"`));
+  assert.ok(markdown.includes(`--lp-repo ${shellQuote(lpRepo)}`));
+  assert.ok(markdown.includes(`--figma-manifest ${shellQuote(manifestPath)}`));
+  assert.ok(markdown.includes(`--out ${shellQuote(outPath)}`));
+  assert.ok(markdown.includes(`--json-out ${shellQuote(jsonOutPath)}`));
+}
+
+function shellQuote(value) {
+  return `"${String(value).replaceAll("\\", "\\\\").replaceAll('"', '\\"')}"`;
 }
 
 function manifestChecksum(path) {
