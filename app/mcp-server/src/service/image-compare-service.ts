@@ -90,13 +90,7 @@ interface QuickTileCandidate {
   diffPixelCount: number;
 }
 
-const isVisibleDiffPixel = (
-  diffPixelData: Uint8ClampedArray,
-  width: number,
-  x: number,
-  y: number,
-): boolean => {
-  const idx = (y * width + x) * 4;
+const isVisibleDiffPixelAtIndex = (diffPixelData: Uint8ClampedArray, idx: number): boolean => {
   const red = diffPixelData[idx];
   const green = diffPixelData[idx + 1];
   const blue = diffPixelData[idx + 2];
@@ -190,8 +184,10 @@ function clusterDiffPixelsQuickTiles(
       const right = Math.min(width, left + QUICK_TILE_SIZE);
       let count = 0;
       for (let y = top; y < bottom; y++) {
-        for (let x = left; x < right; x++) {
-          if (isVisibleDiffPixel(diffPixelData, width, x, y)) {
+        const rowStartIndex = (y * width + left) * 4;
+        const rowEndIndex = (y * width + right) * 4;
+        for (let idx = rowStartIndex; idx < rowEndIndex; idx += 4) {
+          if (isVisibleDiffPixelAtIndex(diffPixelData, idx)) {
             count++;
           }
         }
