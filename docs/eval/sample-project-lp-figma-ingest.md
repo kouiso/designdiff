@@ -138,3 +138,4 @@ pnpm smoke:top-pc-large-page -- --lp-repo /path/to/sample-corporate --out /tmp/f
 - `eval/baseline.json`（60s timeout）と `eval/actual.json`（既定 5s timeout）で compare_design 相当の結果を取得する。
 - `top-pc-large-page-smoke-report.md` に expected vs actual の timing / diff signal を出力する。
 - compare_design 直接実行が困難な環境では、同一コアロジックを使う `figdiff-cluster-bench.mjs` を benchmark fallback として利用する。
+- PR 用の実行証跡テンプレートと blocker 記録は `docs/evidence/s2-top-pc-large-page-smoke.md` を参照。
