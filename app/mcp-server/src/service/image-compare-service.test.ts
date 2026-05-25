@@ -579,35 +579,45 @@ describe("compareImages", () => {
       return count;
     });
 
-    vi.spyOn(sharedMock, "clusterDiffPixelsGridDetailed").mockReturnValue({
-      regions: [],
-      aborted: true,
-      abortReason: "wall-budget-exceeded",
-      wallMs: 5010,
-      budgetMs: 5000,
-      hotCellRatio: 0.9,
-    });
-    vi.spyOn(sharedMock, "clusterDiffPixels").mockImplementation(() => {
-      throw new Error("flood fallback should be skipped");
-    });
+    const clusterDiffPixelsGridDetailedSpy = vi
+      .spyOn(sharedMock, "clusterDiffPixelsGridDetailed")
+      .mockReturnValue({
+        regions: [],
+        aborted: true,
+        abortReason: "wall-budget-exceeded",
+        wallMs: 5010,
+        budgetMs: 5000,
+        hotCellRatio: 0.9,
+      });
+    const clusterDiffPixelsSpy = vi
+      .spyOn(sharedMock, "clusterDiffPixels")
+      .mockImplementation(() => {
+        throw new Error("flood fallback should be skipped");
+      });
 
     const { compareImages } = await import("./image-compare-service.js");
     const dummyBase64 = Buffer.alloc(100).toString("base64");
-    const startedAt = performance.now();
     const result = await compareImages({
       designBase64: dummyBase64,
       screenshotBase64: dummyBase64,
     });
-    const elapsedMs = performance.now() - startedAt;
 
+    expect(clusterDiffPixelsGridDetailedSpy).toHaveBeenCalledOnce();
+    expect(clusterDiffPixelsSpy).not.toHaveBeenCalled();
     expect(result.clusterTelemetry).toMatchObject({
       requestedMode: "auto",
       usedMode: "grid",
       fallbackUsed: true,
       fallbackReason: "wall-budget-exceeded",
+      budgetMs: 5000,
     });
-    expect(result.diffRegions.length).toBeGreaterThan(0);
-    expect(result.diffRegions[0]?.bounds).toEqual({ x: 0, y: 0, width: 192, height: 192 });
-    expect(elapsedMs).toBeLessThan(5000);
+    expect(result.diffRegions).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          bounds: { x: 0, y: 0, width: 192, height: 192 },
+          diffPixelCount: 64,
+        }),
+      ]),
+    );
   });
 });
