@@ -23,13 +23,13 @@ The token needs permission to deploy the configured Cloudflare Pages project.
 
 ## Workflow behavior
 
-`.github/workflows/deploy-web.yml` runs for same-repository pull requests, pushes to `develop`, and manual dispatch. Fork pull requests are skipped because Cloudflare deploy secrets are not available to them. The workflow:
+`.github/workflows/deploy-web.yml` runs for same-repository pull requests, pushes to `develop`, and manual dispatch. Fork pull requests are skipped. When Cloudflare secrets/variables are not configured, the workflow still runs dependency install + web build checks and explicitly skips the deploy step. The workflow:
 
 1. Installs dependencies with `pnpm install --frozen-lockfile`.
 2. Builds `@figdiff/shared`, which is required before the Vite app can resolve `@figdiff/shared`.
 3. Builds the static web app with `pnpm --filter @figdiff/desktop build:web`.
-4. Deploys `app/desktop/dist/web` using `cloudflare/wrangler-action@v3`.
-5. Verifies the returned deployment URL responds with HTTP 200.
+4. Deploys `app/desktop/dist/web` using `cloudflare/wrangler-action@v3` only when `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN`, and `CLOUDFLARE_PAGES_PROJECT_NAME` are configured.
+5. Verifies the returned deployment URL responds with HTTP 200 when deploy runs.
 
 ## Evidence plan
 
