@@ -109,6 +109,27 @@ function appendTypedDiffEvidence(
   lines.push(`- Total Typed Issues: **${diffReport.issues.length}**`);
   lines.push(`- Rationale: ${diffReport.rationale}`);
   lines.push("");
+  if (diffReport.issues.length > 0) {
+    lines.push("### Typed Issues (Expected vs Actual)");
+    lines.push("");
+    for (const [index, issue] of diffReport.issues.entries()) {
+      lines.push(
+        `${index + 1}. \`${issue.kind}\` (${issue.severity}) signal=\`${issue.evidence.signal}\``,
+      );
+      lines.push(`   - Expected: \`${String(issue.evidence.expected)}\``);
+      lines.push(`   - Actual: \`${String(issue.evidence.actual)}\``);
+      if (
+        issue.evidence.figmaFileKey ||
+        issue.evidence.figmaNodeId ||
+        issue.evidence.figmaPageName
+      ) {
+        lines.push(
+          `   - Provenance: fileKey=\`${issue.evidence.figmaFileKey ?? "n/a"}\`, nodeId=\`${issue.evidence.figmaNodeId ?? "n/a"}\`, page=\`${issue.evidence.figmaPageName ?? "n/a"}\``,
+        );
+      }
+    }
+    lines.push("");
+  }
 }
 
 /**
