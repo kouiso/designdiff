@@ -131,6 +131,9 @@ describe("generateMarkdownReport", () => {
               threshold: 3,
               expected: "#ffffff",
               actual: "#f8f8f8",
+              figmaFileKey: "FILE_ABC",
+              figmaNodeId: "1:2",
+              figmaPageName: "Top",
             },
           },
         ],
@@ -145,6 +148,10 @@ describe("generateMarkdownReport", () => {
     expect(markdown).toContain("Evidence for Figma Compliance");
     expect(markdown).toContain("Aggregate Verdict: **fail**");
     expect(markdown).toContain("Critical Issues: **1**");
+    expect(markdown).toContain("Typed Issues (Expected vs Actual)");
+    expect(markdown).toContain("Expected: `#ffffff`");
+    expect(markdown).toContain("Actual: `#f8f8f8`");
+    expect(markdown).toContain("fileKey=`FILE_ABC`, nodeId=`1:2`, page=`Top`");
     expect(markdown).toContain("Evidence image: /tmp/figdiff/cmp-001.png");
   });
 });

@@ -121,6 +121,9 @@ export interface DiffEvidence {
   threshold: number;
   expected: unknown;
   actual: unknown;
+  figmaFileKey?: string;
+  figmaNodeId?: string;
+  figmaPageName?: string;
 }
 
 export interface DiffBoundingBox {

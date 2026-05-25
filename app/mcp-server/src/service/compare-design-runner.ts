@@ -292,6 +292,25 @@ export async function runCompareDesign(
     figmaRootNode,
     `cmp-${randomUUID()}`,
   );
+  const figmaProvenance =
+    parsedDesignSource.type === "figma_url"
+      ? {
+          figmaFileKey: parsedDesignSource.fileKey,
+          figmaNodeId: resolvedNodeId,
+          figmaPageName: figmaRootNode?.name,
+        }
+      : undefined;
+  if (comparison.diffReport && figmaProvenance) {
+    comparison.diffReport.issues = comparison.diffReport.issues.map((issue) => ({
+      ...issue,
+      evidence: {
+        ...issue.evidence,
+        figmaFileKey: issue.evidence.figmaFileKey ?? figmaProvenance.figmaFileKey,
+        figmaNodeId: issue.evidence.figmaNodeId ?? figmaProvenance.figmaNodeId,
+        figmaPageName: issue.evidence.figmaPageName ?? figmaProvenance.figmaPageName,
+      },
+    }));
+  }
 
   const regionCount = comparison.diffRegions.length;
   const targetNodeIds = buildTargetNodeIds(comparison.diffReport, comparison.diffRegions);

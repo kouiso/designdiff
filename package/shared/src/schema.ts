@@ -219,6 +219,9 @@ export const DiffEvidenceSchema = z.object({
   threshold: z.number(),
   expected: z.unknown(),
   actual: z.unknown(),
+  figmaFileKey: z.string().optional(),
+  figmaNodeId: z.string().optional(),
+  figmaPageName: z.string().optional(),
 });
 
 export const DiffIssueSchema = z.object({

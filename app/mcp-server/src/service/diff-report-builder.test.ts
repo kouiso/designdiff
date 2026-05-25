@@ -65,6 +65,9 @@ describe("buildDiffReport", () => {
       screenshotPixels,
       width: 16,
       height: 16,
+      figmaFileKey: "FILE_KEY_123",
+      figmaNodeId: "12:34",
+      figmaPageName: "Landing Page",
     });
 
     expect(result.aggregateVerdict).toBe("fail");
@@ -74,6 +77,11 @@ describe("buildDiffReport", () => {
     expect(result.issues.map((issue) => issue.kind)).toContain("position");
     expect(result.issues.map((issue) => issue.kind)).toContain("size");
     expect(result.issues.map((issue) => issue.severity)).toContain("critical");
+    for (const issue of result.issues) {
+      expect(issue.evidence.figmaFileKey).toBe("FILE_KEY_123");
+      expect(issue.evidence.figmaNodeId).toBe("12:34");
+      expect(issue.evidence.figmaPageName).toBe("Landing Page");
+    }
   });
 
   it("figmaRootNode.children があれば section ごとの regionScore を返す", async () => {
