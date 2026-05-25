@@ -46,3 +46,28 @@ test("evidence ファイル入力を読み取り、画像 URL を検出する", 
     rmSync(tmp, { force: true, recursive: true });
   }
 });
+
+test("expected/actual/result が揃った visual diff report は readiness pass", () => {
+  const body = [
+    "## Visual diff report",
+    "expected: docs/evidence/before.png",
+    "actual: docs/evidence/after.png",
+    "result: 差分率 0.8% で許容範囲内",
+  ].join("\n");
+  const result = spawnSync("node", [script, "--text", body], {
+    cwd: repoDir,
+    encoding: "utf8",
+  });
+  assert.equal(result.status, 0);
+  assert.match(result.stdout, /diff_fields/u);
+});
+
+test("expected/actual のみで result 欠落は fail-loud", () => {
+  const body = ["expected: before", "actual: after"].join("\n");
+  const result = spawnSync("node", [script, "--text", body], {
+    cwd: repoDir,
+    encoding: "utf8",
+  });
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /\[FAIL\]/u);
+});

@@ -23,6 +23,22 @@ function parseCliArgs(argv) {
 function collectEvidence(input) {
   const checks = [
     {
+      key: "diff_fields",
+      expected: "Visual Diff の expected/actual/result フィールド",
+      collect: (text) => {
+        const normalized = text.toLowerCase();
+        const labels = ["expected", "actual", "result"];
+        const found = labels.filter((label) => {
+          const pattern = new RegExp(
+            `(?:^|\\n)\\s*(?:[-*]\\s*)?(?:\\*\\*)?${label}(?:\\*\\*)?\\s*[:：]`,
+            "m",
+          );
+          return pattern.test(normalized);
+        });
+        return found.length === labels.length ? labels : [];
+      },
+    },
+    {
       key: "markdown_image",
       expected: "Markdown 画像 (例: ![alt](https://.../before.png))",
       regex: /!\[[^\]]*\]\((https?:\/\/[^)]+)\)/giu,
@@ -46,7 +62,9 @@ function collectEvidence(input) {
 
   const matched = [];
   for (const check of checks) {
-    const values = [...input.matchAll(check.regex)].map((m) => m[0]);
+    const values = check.collect
+      ? check.collect(input)
+      : [...input.matchAll(check.regex)].map((m) => m[0]);
     if (values.length > 0) {
       matched.push({ ...check, values: [...new Set(values)] });
     }
