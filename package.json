@@ -18,7 +18,8 @@
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
     "format": "biome format --write .",
-    "check": "biome check ."
+    "check": "biome check .",
+    "smoke:top-pc-large-page": "node scripts/eval/top-pc-large-page-smoke.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.15",

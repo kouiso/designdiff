@@ -50,6 +50,9 @@ const DEFAULT_GRID_BUDGET_OPTIONS = {
   maxHotCellRatio: 0.5,
   fallbackToFlood: true,
 } satisfies GridClusterOptions;
+const FLOOD_FALLBACK_MAX_PIXELS = 1_800_000;
+const QUICK_TILE_SIZE = 192;
+const QUICK_TILE_DIFF_THRESHOLD = 16;
 
 interface PaddingMask {
   left: number;
@@ -106,15 +109,27 @@ function clusterDiffRegions(args: {
     }
   }
 
+  const shouldSkipFloodFallback =
+    useGrid &&
+    totalPixelCount > FLOOD_FALLBACK_MAX_PIXELS &&
+    (fallbackReason === "wall-budget-exceeded" ||
+      fallbackReason === "hot-cell-ratio-exceeded" ||
+      fallbackReason === "region-count-exceeded");
+
   if (
     useGrid &&
     gridOptions.fallbackToFlood !== false &&
     diffRegions.length === 0 &&
-    diffPixelCount > 0
+    diffPixelCount > 0 &&
+    !shouldSkipFloodFallback
   ) {
     usedMode = "flood";
     fallbackReason = fallbackReason ?? "grid-empty-with-diff";
     diffRegions = clusterDiffPixels(diffPixelData, width, height);
+  }
+  if (useGrid && diffRegions.length === 0 && diffPixelCount > 0 && shouldSkipFloodFallback) {
+    diffRegions = clusterDiffPixelsQuickTiles(diffPixelData, width, height);
+    fallbackReason = fallbackReason ?? "grid-empty-with-diff";
   }
 
   return {
@@ -129,6 +144,51 @@ function clusterDiffRegions(args: {
       regionCount: diffRegions.length,
     },
   };
+}
+
+function clusterDiffPixelsQuickTiles(
+  diffPixelData: Uint8ClampedArray,
+  width: number,
+  height: number,
+): CompareDesignResult["diffRegions"] {
+  const cols = Math.ceil(width / QUICK_TILE_SIZE);
+  const rows = Math.ceil(height / QUICK_TILE_SIZE);
+  const cells: CompareDesignResult["diffRegions"] = [];
+  let id = 0;
+  for (let row = 0; row < rows; row++) {
+    const top = row * QUICK_TILE_SIZE;
+    const bottom = Math.min(height, top + QUICK_TILE_SIZE);
+    for (let col = 0; col < cols; col++) {
+      const left = col * QUICK_TILE_SIZE;
+      const right = Math.min(width, left + QUICK_TILE_SIZE);
+      let count = 0;
+      for (let y = top; y < bottom; y++) {
+        for (let x = left; x < right; x++) {
+          const idx = (y * width + x) * 4;
+          const red = diffPixelData[idx];
+          const green = diffPixelData[idx + 1];
+          const blue = diffPixelData[idx + 2];
+          const alpha = diffPixelData[idx + 3];
+          if (
+            !(alpha === 0 && red === 0 && green === 0 && blue === 0) &&
+            (red !== green || green !== blue)
+          ) {
+            count++;
+          }
+        }
+      }
+      if (count >= QUICK_TILE_DIFF_THRESHOLD) {
+        cells.push({
+          id: id++,
+          bounds: { x: left, y: top, width: right - left, height: bottom - top },
+          diffPixelCount: count,
+          nearbyNodeIds: [],
+          nearbyNodeNames: [],
+        });
+      }
+    }
+  }
+  return cells;
 }
 
 /**
