@@ -65,6 +65,28 @@ test("watchdog は lp-repo 未指定時 SAMPLE_PROJECT_LP_REPO を既定値と�
   }
 });
 
+test("watchdog は HOME なしでも既定 fallback path でクラッシュしない", () => {
+  const outDir = mkdtempSync(join(tmpdir(), "sample-project-watchdog-no-home-test-"));
+  try {
+    const { HOME: _home, SAMPLE_PROJECT_LP_REPO: _lpRepo, ...env } = process.env;
+    const result = spawnSync(
+      "node",
+      [script, "--out-dir", outDir, "--figma-manifest", manifestPath],
+      {
+        cwd: repoDir,
+        encoding: "utf8",
+        env,
+      },
+    );
+
+    assert.equal(result.status, 2);
+    assert.doesNotMatch(result.stderr, /path.*must be of type string/u);
+    assert.match(result.stderr, /Readiness status: blocked/u);
+  } finally {
+    rmSync(outDir, { force: true, recursive: true });
+  }
+});
+
 function escapeRegExp(value) {
   return value.replaceAll(/[.*+?^${}()|[\]\\]/gu, "\\$&");
 }

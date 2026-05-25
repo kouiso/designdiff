@@ -100,14 +100,15 @@ function optionalString(parsed, key, fallback) {
 }
 
 function resolveDefaultLpRepo() {
+  const defaultFallback = join(repoDir, "../sample-project-lp");
   const candidates = [
     process.env.SAMPLE_PROJECT_LP_REPO,
-    join(repoDir, "../sample-project-lp"),
+    defaultFallback,
     process.env.HOME ? join(process.env.HOME, "worktrees/sample-project-lp-audit") : null,
     process.env.HOME ? join(process.env.HOME, "ghq/github.com/example-org/sample-project-lp") : null,
   ].filter(Boolean);
   return (
-    candidates.find((candidate) => existsSync(join(candidate, "package.json"))) ?? candidates[1]
+    candidates.find((candidate) => existsSync(join(candidate, "package.json"))) ?? defaultFallback
   );
 }
 
