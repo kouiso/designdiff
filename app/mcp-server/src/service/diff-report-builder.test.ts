@@ -69,8 +69,11 @@ describe("buildDiffReport", () => {
 
     expect(result.aggregateVerdict).toBe("fail");
     expect(result.regionScores[0].structure).toBeLessThan(0.8);
+    expect(result.weightedAggregate?.weightedStructure).toBeLessThan(0.8);
     expect(result.rationale).toContain("critical severity issue");
     expect(result.issues.map((issue) => issue.kind)).toContain("position");
+    expect(result.issues.map((issue) => issue.kind)).toContain("size");
+    expect(result.issues.map((issue) => issue.severity)).toContain("critical");
   });
 
   it("figmaRootNode.children があれば section ごとの regionScore を返す", async () => {
@@ -156,5 +159,32 @@ describe("buildDiffReport", () => {
       6,
     );
     expect(result.regionScores.every((score) => score.textureScore !== undefined)).toBe(true);
+  });
+
+  it("pass 閾値未達の中間差分は pass にならないこと", async () => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    const designPixels = await createSolidRgba(16, 16, { r: 255, g: 255, b: 255 });
+    const screenshotPixels = Uint8ClampedArray.from(designPixels);
+
+    for (let y = 0; y < 14; y++) {
+      for (let x = 0; x < 14; x++) {
+        const index = (y * 16 + x) * 4;
+        screenshotPixels[index] = 180;
+        screenshotPixels[index + 1] = 180;
+        screenshotPixels[index + 2] = 180;
+      }
+    }
+
+    const result = buildDiffReport({
+      designPixels,
+      screenshotPixels,
+      width: 16,
+      height: 16,
+    });
+
+    expect(result.regionScores).toHaveLength(1);
+    expect(result.regionScores[0].color).toBeGreaterThan(0);
+    expect(result.regionScores[0].structure).toBeLessThan(0.95);
+    expect(result.aggregateVerdict).not.toBe("pass");
   });
 });

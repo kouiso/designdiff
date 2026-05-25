@@ -31,6 +31,7 @@ const figmaManifest = resolve(
 const outDir = resolve(optionalString(options, "out", "/tmp/sample-project-lp-figma-smoke"));
 const realRun = Boolean(options.real);
 const mockFigmaApi = Boolean(options["mock-figma-api"]);
+const explicitValidateOnly = Boolean(options["validate-only"]);
 const skipInstall = Boolean(options["skip-install"]);
 const skipBuild = Boolean(options["skip-build"]);
 const tokenEnv = optionalString(options, "token-env", "FIGMA_TOKEN");
@@ -52,6 +53,10 @@ if ((realRun || mockFigmaApi) && placeholderPages.length > 0) {
 }
 if (realRun && mockFigmaApi) {
   fail("--real and --mock-figma-api are mutually exclusive.");
+}
+const modeFlags = [realRun, mockFigmaApi, explicitValidateOnly].filter(Boolean).length;
+if (modeFlags !== 1) {
+  fail("You must specify exactly one mode: --real, --mock-figma-api, or --validate-only.");
 }
 if (realRun && !process.env[tokenEnv]) {
   fail(`--real requires ${tokenEnv}. Set ${tokenEnv} or pass --token-env.`);
@@ -96,7 +101,7 @@ try {
   ];
   if (mockFigmaApi) {
     ingestArgs.push("--token", "mock-token", "--api-base", mockApiBase);
-  } else if (!realRun) {
+  } else if (explicitValidateOnly) {
     ingestArgs.push("--validate-only");
   }
   await run("node", ingestArgs);

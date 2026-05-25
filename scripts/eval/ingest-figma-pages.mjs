@@ -26,6 +26,7 @@ const validateOnly = Boolean(options["validate-only"]);
 const apiBase = stripTrailingSlash(
   options["api-base"] ? String(options["api-base"]) : "https://api.figma.com/v1",
 );
+const useRealFigmaApi = !validateOnly && apiBase === "https://api.figma.com/v1";
 const scale = options.scale ? Number(options.scale) : 2;
 const format = options.format ? String(options.format) : "png";
 const manifestOut = resolve(
@@ -53,6 +54,9 @@ await mkdir(dirname(summaryOut), { recursive: true });
 
 const pages = figmaManifest.pages.map(normalizePage);
 validateImplementationPairs(pages);
+if (useRealFigmaApi) {
+  validateRealFigmaPages(pages);
+}
 const placeholderPages = pages.filter(hasPlaceholderFigmaTarget);
 if (!validateOnly && placeholderPages.length > 0) {
   fail(
@@ -245,6 +249,15 @@ function validateImplementationPairs(pages) {
   }
 }
 
+function validateRealFigmaPages(pages) {
+  const missingUrlPages = pages.filter((page) => !page.figmaUrl).map((page) => page.name);
+  if (missingUrlPages.length > 0) {
+    fail(
+      `Real Figma ingest requires figma_url for every page. Missing figma_url: ${missingUrlPages.join(", ")}`,
+    );
+  }
+}
+
 async function fetchFigmaImageUrls({ fileKey, pages }) {
   const ids = pages.map((page) => page.nodeId).join(",");
   const pageScale = pages[0]?.scale ?? scale;
@@ -269,6 +282,14 @@ async function fetchFigmaImageUrls({ fileKey, pages }) {
 }
 
 async function downloadFile(url, outFile) {
+  if (useRealFigmaApi) {
+    const host = new URL(url).host;
+    if (host !== "figma-alpha-api.s3.us-west-2.amazonaws.com") {
+      fail(
+        `Real Figma ingest expected Figma CDN URL, but received ${host}. This usually means mock/placeholder data was used.`,
+      );
+    }
+  }
   const response = await fetch(url, {
     headers: url.startsWith(apiBase) ? { "X-Figma-Token": token } : {},
   });
@@ -289,10 +310,17 @@ async function writeJsonAtomic(path, value) {
 }
 
 function renderSummary({ figmaManifestPath, figmaDir, implDir, ingested, placeholderPages = [] }) {
+  const ingestMode = validateOnly
+    ? "validate-only"
+    : useRealFigmaApi
+      ? "real-figma-api"
+      : "custom-api-base";
   const lines = [
     "# Figma ingest summary",
     "",
     `- Source manifest: ${figmaManifestPath}`,
+    `- Ingest mode: ${ingestMode}`,
+    `- API base: ${apiBase}`,
     `- Figma screenshots: ${figmaDir}`,
     `- Implementation screenshots: ${implDir ?? "(not paired)"}`,
     `- Pages: ${ingested.length}`,
