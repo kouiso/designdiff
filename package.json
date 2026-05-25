@@ -19,7 +19,8 @@
     "test": "turbo run test",
     "format": "biome format --write .",
     "check": "biome check .",
-    "smoke:top-pc-large-page": "node scripts/eval/top-pc-large-page-smoke.mjs"
+    "smoke:top-pc-large-page": "node scripts/eval/top-pc-large-page-smoke.mjs",
+    "eval:pr-visual-evidence": "node scripts/eval/pr-visual-evidence-readiness.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.15",
