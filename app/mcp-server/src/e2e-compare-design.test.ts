@@ -186,6 +186,10 @@ describe("MCP Server E2E: compare_design", () => {
     expect(data.completionCriteria.matchRate.status).toBe("PASS");
     expect(data.diffReport).toBeDefined();
     expect(data.diffReport.aggregateVerdict).toBe("pass");
+    expect(data.diffReport.regionScores).toHaveLength(1);
+    expect(data.diffReport.regionScores[0].regionId).toBe("whole-frame");
+    expect(data.diffReport.regionScores[0].structure).toBe(1);
+    expect(data.diffReport.issues).toEqual([]);
 
     const evidence = {
       test: "MCP compare_design — identical images",
@@ -222,6 +226,11 @@ describe("MCP Server E2E: compare_design", () => {
     expect(data.completionCriteria.matchRate.status).toBe("FAIL");
     expect(data.diffReport).toBeDefined();
     expect(data.diffReport.aggregateVerdict).toBe("fail");
+    expect(data.diffReport.regionScores.length).toBeGreaterThan(0);
+    expect(data.diffReport.issues.length).toBeGreaterThan(0);
+    expect(data.diffReport.issues.map((issue: { severity: string }) => issue.severity)).toContain(
+      "critical",
+    );
     expect(data.diffImagePath).toBeTruthy();
 
     const imageContent = findImageContent(result);
