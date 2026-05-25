@@ -19,7 +19,7 @@ sample-corporate 向けに、`compare_design` まで最短で到達する再現�
   - `~/ghq/example-org/sample-corporate/test/screenshots/astro/<page>.png`
   - `~/ghq/example-org/sample-corporate/test/screenshots/figma/<page>.png`
 
-> 重要: 上記パスは本リポジトリ管理外（別リポジトリ/別作業環境）であり、今回の環境 `/workspace/designdiff` には存在しない。
+> 重要: 上記パスは本リポジトリ管理外（別リポジトリ/別作業環境）であり、designdiff 単独 checkout には存在しない。
 
 ---
 
@@ -29,7 +29,7 @@ sample-corporate 向けに、`compare_design` まで最短で到達する再現�
 
 ```bash
 # 0) 準備
-cd /workspace/designdiff
+cd <designdiff repo root>
 
 # 1) 再現用フォルダ作成
 mkdir -p /tmp/designdiff-step2-smoke
@@ -51,10 +51,8 @@ pnpm --filter @figdiff/mcp-server exec vitest run src/e2e-compare-design.test.ts
 
 #### Command 3: `pnpm --filter @figdiff/mcp-server exec vitest run src/e2e-compare-design.test.ts`
 - 期待値: compare path（image load -> diff -> result shape）が通る。
-- 実測: 6 tests passed。
-- 出力:
-  - テスト標準出力（コンソール）
-  - 生成物は fixture 駆動のため固定（本手順では追加ファイル出力なし）
+- 実測: cloud worker では 6 tests passed。ローカル確認環境では disk 95% のため `node_modules` install を避けており、同コマンドは `vitest: command not found` で未実行。
+- 出力: テスト標準出力（コンソール）。生成物は fixture 駆動のため固定（本手順では追加ファイル出力なし）。
 
 ---
 
