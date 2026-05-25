@@ -20,7 +20,8 @@
     "format": "biome format --write .",
     "check": "biome check .",
     "smoke:top-pc-large-page": "node scripts/eval/top-pc-large-page-smoke.mjs",
-    "eval:pr-visual-evidence": "node scripts/eval/pr-visual-evidence-readiness.mjs"
+    "eval:pr-visual-evidence": "node scripts/eval/pr-visual-evidence-readiness.mjs",
+    "eval:sample-project-lp-figma:watchdog": "node scripts/eval/sample-project-lp-figma-readiness-watchdog.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.15",
