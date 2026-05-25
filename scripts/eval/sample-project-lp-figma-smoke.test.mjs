@@ -47,10 +47,8 @@ test("モード未指定は fail-loud で終了し、暗黙 validate-only fallba
 
 test("--real で readiness が block したとき summary に markdown/json の証跡 path と status を出す", () => {
   const { root, lpRepo } = prepareFixture();
-  const manifestRoot = mkdtempSync(join(tmpdir(), "sample-project-smoke-manifest-"));
-  const outRoot = mkdtempSync(join(tmpdir(), "sample-project-smoke-out-"));
-  const manifest = join(manifestRoot, "manifest.json");
-  const outDir = join(outRoot, "out");
+  const manifest = join(root, "blocked-manifest.json");
+  const outDir = join(root, "out");
   try {
     writeFileSync(
       manifest,
@@ -97,7 +95,5 @@ test("--real で readiness が block したとき summary に markdown/json の�
     assert.equal(readiness.actualPaths.jsonEvidence, readinessJsonPath);
   } finally {
     rmSync(root, { force: true, recursive: true });
-    rmSync(manifestRoot, { force: true, recursive: true });
-    rmSync(outRoot, { force: true, recursive: true });
   }
 });
