@@ -11,6 +11,7 @@ import {
   selfCritique,
   type CompareDesignResult,
   type CropRegion,
+  type DiffReport,
   type FigmaNode,
   type IgnoreRegion,
 } from "@figdiff/shared";
@@ -172,12 +173,40 @@ function buildStatus(matchRate: number): "PASS" | "FAIL" {
   return matchRate === 100 ? "PASS" : "FAIL";
 }
 
-function buildNextAction(matchRate: number, regionCount: number): string {
+export function buildTargetNodeIds(
+  diffReport: DiffReport | undefined,
+  diffRegions: CompareDesignResult["diffRegions"],
+  limit = 5,
+): string[] {
+  const candidates: string[] = [];
+
+  const rankedRegionScores = [...(diffReport?.regionScores ?? [])]
+    .filter((score) => typeof score.figmaNodeId === "string" && score.figmaNodeId.length > 0)
+    .sort((a, b) => a.structure - b.structure);
+
+  for (const score of rankedRegionScores) {
+    if (score.figmaNodeId) candidates.push(score.figmaNodeId);
+  }
+
+  for (const region of diffRegions) {
+    for (const nodeId of region.nearbyNodeIds) {
+      candidates.push(nodeId);
+    }
+  }
+
+  return [...new Set(candidates)].slice(0, Math.max(1, limit));
+}
+
+function buildNextAction(matchRate: number, regionCount: number, targetNodeIds: string[]): string {
   if (matchRate === 100) {
     return "一致率100%です。差分はありません。タスク完了です。";
   }
 
-  return `inspect_node を使って ${regionCount} 箇所の diffRegions の詳細を確認し、CSSを修正してください。修正後は再度 compare_design で検証してください。`;
+  if (targetNodeIds.length === 0) {
+    return `inspect_node を使って ${regionCount} 箇所の diffRegions の詳細を確認し、CSSを修正してください。修正後は再度 compare_design で検証してください。`;
+  }
+
+  return `inspect_node を使って ${regionCount} 箇所の diffRegions の詳細を確認してください。まず ${targetNodeIds.join(" -> ")} の順で確認し、CSSを修正したら再度 compare_design で検証してください。`;
 }
 
 function buildSuggestion(matchRate: number, regionCount: number): string {
@@ -259,6 +288,7 @@ export async function runCompareDesign(
   );
 
   const regionCount = comparison.diffRegions.length;
+  const targetNodeIds = buildTargetNodeIds(comparison.diffReport, comparison.diffRegions);
   const sourceKey = buildComparisonSourceKey(parsedDesignSource, resolvedNodeId);
   const priorReports = getRecentReports(sourceKey);
   const critique =
@@ -275,7 +305,7 @@ export async function runCompareDesign(
       comparison.diffPixelCount,
       regionCount,
     ),
-    nextAction: buildNextAction(comparison.matchRate, regionCount),
+    nextAction: buildNextAction(comparison.matchRate, regionCount, targetNodeIds),
     suggestion: buildSuggestion(comparison.matchRate, regionCount),
     critique,
   });
