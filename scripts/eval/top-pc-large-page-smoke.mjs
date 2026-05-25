@@ -9,6 +9,7 @@ import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
+import { resolveTopPcImplPath } from "./top-pc-smoke-paths.mjs";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
 
@@ -22,13 +23,14 @@ const skipCapture = Boolean(options["skip-capture"]);
 const skipInstall = Boolean(options["skip-install"]);
 
 const captureDir = join(outDir, "capture");
-const implPath = join(captureDir, "impl", "top-pc.png");
+const implPath = resolveTopPcImplPath(captureDir);
 const evalDir = join(outDir, "eval");
 const diffDir = join(outDir, "diff");
 const baselineJson = join(evalDir, "baseline.json");
 const baselineMd = join(evalDir, "baseline.md");
 const actualJson = join(evalDir, "actual.json");
 const actualMd = join(evalDir, "actual.md");
+const benchManifest = join(evalDir, "manifest.json");
 const reportPath = join(outDir, "top-pc-large-page-smoke-report.md");
 
 if (!existsSync(lpRepo)) {
@@ -56,11 +58,27 @@ if (!existsSync(implPath)) {
   fail(`top-pc screenshot not found: ${implPath}`);
 }
 
+await writeFile(
+  benchManifest,
+  JSON.stringify(
+    {
+      pages: [
+        {
+          name: "top-pc",
+          figma: join(captureDir, "figma", "top-pc.png"),
+          impl: implPath,
+        },
+      ],
+    },
+    null,
+    2,
+  ),
+);
+
 await run("node", [join(repoDir, "scripts/eval/figdiff-cluster-bench.mjs")], {
   env: {
     ...process.env,
-    FIGDIFF_SCREENSHOTS: captureDir,
-    FIGDIFF_PAGES: "top-pc",
+    FIGDIFF_MANIFEST: benchManifest,
     FIGDIFF_OUT: baselineJson,
     FIGDIFF_MD_OUT: baselineMd,
     FIGDIFF_PAGE_TIMEOUT_MS: String(baselineTimeoutMs),
@@ -71,8 +89,7 @@ await run("node", [join(repoDir, "scripts/eval/figdiff-cluster-bench.mjs")], {
 await run("node", [join(repoDir, "scripts/eval/figdiff-cluster-bench.mjs")], {
   env: {
     ...process.env,
-    FIGDIFF_SCREENSHOTS: captureDir,
-    FIGDIFF_PAGES: "top-pc",
+    FIGDIFF_MANIFEST: benchManifest,
     FIGDIFF_OUT: actualJson,
     FIGDIFF_MD_OUT: actualMd,
     FIGDIFF_PAGE_TIMEOUT_MS: String(timeoutMs),
@@ -90,6 +107,7 @@ const report = [
   "",
   `- 実行日時: ${new Date().toISOString()}`,
   `- 実装スクリーンショット: \`${implPath}\``,
+  `- bench manifest: \`${benchManifest}\``,
   `- compare_design相当コマンド: \`node scripts/eval/figdiff-cluster-bench.mjs\``,
   `- baseline timeout: ${baselineTimeoutMs}ms`,
   `- target timeout: ${timeoutMs}ms`,
