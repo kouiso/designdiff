@@ -4,8 +4,9 @@ import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 
-const repoDir = resolve(new URL("../..", import.meta.url).pathname);
+const repoDir = resolve(fileURLToPath(new URL("../..", import.meta.url)));
 const script = join(repoDir, "scripts/eval/sample-project-lp-figma-smoke.mjs");
 
 function prepareFixture() {

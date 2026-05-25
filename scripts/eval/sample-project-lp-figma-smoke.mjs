@@ -58,9 +58,6 @@ const modeFlags = [realRun, mockFigmaApi, explicitValidateOnly].filter(Boolean).
 if (modeFlags !== 1) {
   fail("You must specify exactly one mode: --real, --mock-figma-api, or --validate-only.");
 }
-if (explicitValidateOnly && (realRun || mockFigmaApi)) {
-  fail("--validate-only is mutually exclusive with --real / --mock-figma-api.");
-}
 if (realRun && !process.env[tokenEnv]) {
   fail(`--real requires ${tokenEnv}. Set ${tokenEnv} or pass --token-env.`);
 }
