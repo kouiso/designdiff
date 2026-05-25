@@ -6,6 +6,7 @@
  * fail-loud に確認する。
  */
 
+import { createHash } from "node:crypto";
 import { existsSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -40,9 +41,11 @@ checks.push(check(`${tokenEnv} environment variable`, Boolean(process.env[tokenE
 
 let pages = [];
 let manifestError = null;
+let manifestRaw = null;
 if (existsSync(figmaManifest)) {
   try {
-    const manifest = JSON.parse(await readFile(figmaManifest, "utf8"));
+    manifestRaw = await readFile(figmaManifest, "utf8");
+    const manifest = JSON.parse(manifestRaw);
     pages = Array.isArray(manifest.pages) ? manifest.pages : [];
     checks.push(check("Manifest pages", pages.length > 0, `${pages.length} page(s)`));
   } catch (error) {
@@ -73,7 +76,14 @@ checks.push(
 const ready = checks.every((entry) => entry.ok) && !manifestError;
 const smokeCommand = buildSmokeCommand();
 await writeReport({ ready, checks, placeholderPages, smokeCommand });
-await writeJsonEvidence({ ready, checks, placeholderPages, smokeCommand });
+await writeJsonEvidence({
+  ready,
+  checks,
+  placeholderPages,
+  smokeCommand,
+  manifestRaw,
+  manifestPageCount: pages.length,
+});
 
 if (ready) {
   process.stdout.write(`Ready: ${out}\nEvidence JSON: ${jsonOut}\n`);
@@ -188,8 +198,26 @@ async function writeReport({ ready, checks, placeholderPages, smokeCommand }) {
   await mkdir(dirname(out), { recursive: true });
   await writeFile(out, `${lines.join("\n")}\n`);
 }
-async function writeJsonEvidence({ ready, checks, placeholderPages, smokeCommand }) {
+async function writeJsonEvidence({
+  ready,
+  checks,
+  placeholderPages,
+  smokeCommand,
+  manifestRaw,
+  manifestPageCount,
+}) {
   const missingRequirements = checks.filter((entry) => !entry.ok).map((entry) => entry.name);
+  const manifestSha256 = manifestRaw
+    ? createHash("sha256").update(manifestRaw).digest("hex")
+    : null;
+  const expectedManifestMetadata = {
+    manifestPageCount: manifestPageCount > 0,
+    manifestSha256: true,
+  };
+  const actualManifestMetadata = {
+    manifestPageCount,
+    manifestSha256,
+  };
   const evidence = {
     ready,
     missingRequirements,
@@ -198,6 +226,8 @@ async function writeJsonEvidence({ ready, checks, placeholderPages, smokeCommand
     lpRepoPath: lpRepo,
     realSmokeCommand: ready ? smokeCommand : null,
     expectedPaths: { lpRepoPackageJson: join(lpRepo, "package.json"), figmaManifest },
+    expectedManifestMetadata,
+    actualManifestMetadata,
     actualPaths: {
       lpRepoPackageJsonExists: existsSync(join(lpRepo, "package.json")),
       figmaManifestExists: existsSync(figmaManifest),
