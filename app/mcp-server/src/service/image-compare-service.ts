@@ -53,6 +53,8 @@ const DEFAULT_GRID_BUDGET_OPTIONS = {
 const FLOOD_FALLBACK_MAX_PIXELS = 1_800_000;
 const QUICK_TILE_SIZE = 192;
 const QUICK_TILE_DIFF_THRESHOLD = 16;
+const QUICK_TILE_MAX_REGIONS = 60;
+const QUICK_TILE_BUDGET_MS = 1500;
 
 interface PaddingMask {
   left: number;
@@ -79,6 +81,31 @@ interface ClusterDiffResult {
   diffRegions: CompareDesignResult["diffRegions"];
   clusterTelemetry: ClusterTelemetry;
 }
+
+interface QuickTileCandidate {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+  diffPixelCount: number;
+}
+
+const isVisibleDiffPixel = (
+  diffPixelData: Uint8ClampedArray,
+  width: number,
+  x: number,
+  y: number,
+): boolean => {
+  const idx = (y * width + x) * 4;
+  const red = diffPixelData[idx];
+  const green = diffPixelData[idx + 1];
+  const blue = diffPixelData[idx + 2];
+  const alpha = diffPixelData[idx + 3];
+
+  return (
+    !(alpha === 0 && red === 0 && green === 0 && blue === 0) && (red !== green || green !== blue)
+  );
+};
 
 function clusterDiffRegions(args: {
   clusterMode: ClusterMode;
@@ -153,8 +180,8 @@ function clusterDiffPixelsQuickTiles(
 ): CompareDesignResult["diffRegions"] {
   const cols = Math.ceil(width / QUICK_TILE_SIZE);
   const rows = Math.ceil(height / QUICK_TILE_SIZE);
-  const cells: CompareDesignResult["diffRegions"] = [];
-  let id = 0;
+  const startedAt = performance.now();
+  const tiles: QuickTileCandidate[] = [];
   for (let row = 0; row < rows; row++) {
     const top = row * QUICK_TILE_SIZE;
     const bottom = Math.min(height, top + QUICK_TILE_SIZE);
@@ -164,31 +191,41 @@ function clusterDiffPixelsQuickTiles(
       let count = 0;
       for (let y = top; y < bottom; y++) {
         for (let x = left; x < right; x++) {
-          const idx = (y * width + x) * 4;
-          const red = diffPixelData[idx];
-          const green = diffPixelData[idx + 1];
-          const blue = diffPixelData[idx + 2];
-          const alpha = diffPixelData[idx + 3];
-          if (
-            !(alpha === 0 && red === 0 && green === 0 && blue === 0) &&
-            (red !== green || green !== blue)
-          ) {
+          if (isVisibleDiffPixel(diffPixelData, width, x, y)) {
             count++;
           }
         }
       }
       if (count >= QUICK_TILE_DIFF_THRESHOLD) {
-        cells.push({
-          id: id++,
-          bounds: { x: left, y: top, width: right - left, height: bottom - top },
+        tiles.push({
+          left,
+          top,
+          width: right - left,
+          height: bottom - top,
           diffPixelCount: count,
-          nearbyNodeIds: [],
-          nearbyNodeNames: [],
         });
       }
+      if (performance.now() - startedAt >= QUICK_TILE_BUDGET_MS) {
+        break;
+      }
+    }
+    if (performance.now() - startedAt >= QUICK_TILE_BUDGET_MS) {
+      break;
     }
   }
-  return cells;
+
+  const topTiles = tiles
+    .sort((a, b) => b.diffPixelCount - a.diffPixelCount || a.top - b.top || a.left - b.left)
+    .slice(0, QUICK_TILE_MAX_REGIONS)
+    .sort((a, b) => a.top - b.top || a.left - b.left);
+
+  return topTiles.map((tile, index) => ({
+    id: index,
+    bounds: { x: tile.left, y: tile.top, width: tile.width, height: tile.height },
+    diffPixelCount: tile.diffPixelCount,
+    nearbyNodeIds: [],
+    nearbyNodeNames: [],
+  }));
 }
 
 /**
