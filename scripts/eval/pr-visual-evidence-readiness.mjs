@@ -14,7 +14,6 @@ function parseArgs(argv) {
     if (token === "--file") {
       args.file = argv[i + 1];
       i += 1;
-      continue;
     }
   }
   return args;
@@ -94,7 +93,9 @@ function toGuidance(sourceLabel, checks, matched) {
 function main() {
   const args = parseArgs(process.argv.slice(2));
   if (!args.text && !args.file) {
-    console.error("usage: node scripts/eval/pr-visual-evidence-readiness.mjs --text <markdown> | --file <path>");
+    process.stderr.write(
+      "usage: node scripts/eval/pr-visual-evidence-readiness.mjs --text <markdown> | --file <path>\n",
+    );
     process.exit(2);
   }
 
@@ -110,11 +111,11 @@ function main() {
   const result = toGuidance(sourceLabel, checks, matched);
 
   if (!result.hasAnyEvidence) {
-    console.error(result.text);
+    process.stderr.write(`${result.text}\n`);
     process.exit(1);
   }
 
-  console.log(result.text);
+  process.stdout.write(`${result.text}\n`);
 }
 
 main();
