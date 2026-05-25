@@ -250,6 +250,24 @@ const buildTextureRationaleSuffix = (regionScores: RegionScore[]): string => {
   return " with texture-adjusted weights active (alpha 0.700, photo-like cap 0.300)";
 };
 
+const buildWorstRegionEvidenceSuffix = (regionScores: RegionScore[]): string => {
+  if (regionScores.length === 0) {
+    return "";
+  }
+
+  const worstRegion = regionScores.reduce((worst, current) => {
+    if (current.structure !== worst.structure) {
+      return current.structure < worst.structure ? current : worst;
+    }
+
+    return current.color > worst.color ? current : worst;
+  }, regionScores[0]);
+
+  return `; weakest region ${worstRegion.regionId} (structure ${worstRegion.structure.toFixed(
+    3,
+  )}, color ${worstRegion.color.toFixed(3)})`;
+};
+
 export const computeVerdict = (
   report: Omit<DiffReport, "aggregateVerdict" | "rationale">,
 ): { verdict: DiffVerdict; rationale: string; weightedAggregate: WeightedAggregate } => {
@@ -257,11 +275,12 @@ export const computeVerdict = (
   // P2 では region 面積で重み付けし、単一セクションの暴走で全体 verdict が即死しないようにする。
   const weightedAggregate = normalizeWeightedAggregate(report.regionScores);
   const textureRationaleSuffix = buildTextureRationaleSuffix(report.regionScores);
+  const worstRegionEvidenceSuffix = buildWorstRegionEvidenceSuffix(report.regionScores);
 
   if (hasCriticalIssue) {
     return {
       verdict: "fail",
-      rationale: `critical severity issue detected${textureRationaleSuffix}`,
+      rationale: `critical severity issue detected${worstRegionEvidenceSuffix}${textureRationaleSuffix}`,
       weightedAggregate,
     };
   }
@@ -273,7 +292,7 @@ export const computeVerdict = (
         3,
       )} is below fail threshold 0.800 (weighted color ${weightedAggregate.weightedColor.toFixed(
         3,
-      )}, totalWeight ${weightedAggregate.totalWeight.toFixed(3)})${textureRationaleSuffix}`,
+      )}, totalWeight ${weightedAggregate.totalWeight.toFixed(3)})${worstRegionEvidenceSuffix}${textureRationaleSuffix}`,
       weightedAggregate,
     };
   }
@@ -286,7 +305,7 @@ export const computeVerdict = (
         3,
       )} meets pass threshold, and weighted color difference ${weightedAggregate.weightedColor.toFixed(
         3,
-      )} is below 3.000 (totalWeight ${weightedAggregate.totalWeight.toFixed(3)})${textureRationaleSuffix}`,
+      )} is below 3.000 (totalWeight ${weightedAggregate.totalWeight.toFixed(3)})${worstRegionEvidenceSuffix}${textureRationaleSuffix}`,
       weightedAggregate,
     };
   }
@@ -299,7 +318,7 @@ export const computeVerdict = (
       3,
     )} do not satisfy pass thresholds (totalWeight ${weightedAggregate.totalWeight.toFixed(
       3,
-    )})${textureRationaleSuffix}`,
+    )})${worstRegionEvidenceSuffix}${textureRationaleSuffix}`,
     weightedAggregate,
   };
 };

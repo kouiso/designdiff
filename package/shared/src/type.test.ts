@@ -60,6 +60,7 @@ describe("computeVerdict", () => {
 
     expect(result.verdict).toBe("fail");
     expect(result.rationale).toContain("critical severity issue");
+    expect(result.rationale).toContain("weakest region region-1");
   });
 
   it("5 region の weighted structure が fail 閾値を下回る場合は fail を返す", () => {
@@ -133,6 +134,23 @@ describe("computeVerdict", () => {
 
     expect(result.verdict).toBe("inconclusive");
     expect(result.rationale).toContain("do not satisfy pass thresholds");
+    expect(result.rationale).toContain("weakest region region-1");
+  });
+
+  it("pass 判定でも weakest region の証跡を rationale に含める", () => {
+    const result = computeVerdict({
+      alignment,
+      regionScores: [
+        createRegionScore({ regionId: "hero", structure: 0.96, color: 2.8 }),
+        createRegionScore({ regionId: "headline", structure: 0.99, color: 1.3 }),
+      ],
+      issues: [],
+    });
+
+    expect(result.verdict).toBe("pass");
+    expect(result.rationale).toContain("weakest region hero");
+    expect(result.rationale).toContain("structure 0.960");
+    expect(result.rationale).toContain("color 2.800");
   });
 
   it("photo-heavy region は texture-adjusted weight で寄与が約 21% まで落ちる", () => {
