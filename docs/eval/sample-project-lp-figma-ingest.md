@@ -125,3 +125,16 @@ node scripts/eval/figdiff-cluster-bench.mjs
 ```
 
 `FIGMA_TOKEN` は repo に保存しない。`--validate-only` は token/API なしで manifest 構造と `impl/<name>.png` の存在だけを検証する。
+
+## top-pc large-page smoke（Step 2）
+
+top-pc の performance blocker 再現と改善確認を、実装 screenshot 取得込みで 1 コマンド化する。
+
+```bash
+pnpm smoke:top-pc-large-page -- --lp-repo /path/to/sample-corporate --out /tmp/figdiff-top-pc-smoke
+```
+
+- `capture/impl/top-pc.png`（実装スクショ）が生成される。
+- `eval/baseline.json`（60s timeout）と `eval/actual.json`（既定 5s timeout）で compare_design 相当の結果を取得する。
+- `top-pc-large-page-smoke-report.md` に expected vs actual の timing / diff signal を出力する。
+- compare_design 直接実行が困難な環境では、同一コアロジックを使う `figdiff-cluster-bench.mjs` を benchmark fallback として利用する。
