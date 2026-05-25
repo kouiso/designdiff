@@ -59,6 +59,19 @@ function assertReadinessEvidenceContract(evidence) {
   assert.ok("manifestSha256" in evidence.actualManifestMetadata);
 }
 
+function assertReadinessDemoCommand(markdown, { lpRepo, manifestPath, outPath, jsonOutPath }) {
+  assert.match(markdown, /## 1-minute demo \(readiness re-run\)/u);
+  assert.match(markdown, /```bash[\s\S]*scripts\/eval\/sample-project-lp-figma-readiness\.mjs/u);
+  assert.ok(markdown.includes(`--lp-repo ${shellQuote(lpRepo)}`));
+  assert.ok(markdown.includes(`--figma-manifest ${shellQuote(manifestPath)}`));
+  assert.ok(markdown.includes(`--out ${shellQuote(outPath)}`));
+  assert.ok(markdown.includes(`--json-out ${shellQuote(jsonOutPath)}`));
+}
+
+function shellQuote(value) {
+  return `"${String(value).replaceAll("\\", "\\\\").replaceAll('"', '\\"')}"`;
+}
+
 function manifestChecksum(path) {
   return createHash("sha256").update(readFileSync(path, "utf8")).digest("hex");
 }
@@ -93,6 +106,13 @@ test("blocked 時に JSON 証跡へ blocker と expected/actual path を出力�
     assert.equal(result.status, 2);
     const jsonOut = out.replace(/\.md$/u, ".json");
     const evidence = JSON.parse(readFileSync(jsonOut, "utf8"));
+    const markdown = readFileSync(out, "utf8");
+    assertReadinessDemoCommand(markdown, {
+      lpRepo,
+      manifestPath,
+      outPath: out,
+      jsonOutPath: jsonOut,
+    });
     assertReadinessEvidenceContract(evidence);
     assert.equal(evidence.ready, false);
     assert.match(evidence.missingRequirements.join("\n"), /No REPLACE_\* placeholders/u);
@@ -141,6 +161,13 @@ test("ready 時に JSON 証跡へ real smoke command と missingRequirements 空
 
     assert.equal(result.status, 0);
     const evidence = JSON.parse(readFileSync(jsonOut, "utf8"));
+    const markdown = readFileSync(out, "utf8");
+    assertReadinessDemoCommand(markdown, {
+      lpRepo,
+      manifestPath,
+      outPath: out,
+      jsonOutPath: jsonOut,
+    });
     assertReadinessEvidenceContract(evidence);
     assert.equal(evidence.ready, true);
     assert.deepEqual(evidence.missingRequirements, []);

@@ -75,7 +75,8 @@ checks.push(
 
 const ready = checks.every((entry) => entry.ok) && !manifestError;
 const smokeCommand = buildSmokeCommand();
-await writeReport({ ready, checks, placeholderPages, smokeCommand });
+const readinessCommand = buildReadinessCommand();
+await writeReport({ ready, checks, placeholderPages, smokeCommand, readinessCommand });
 await writeJsonEvidence({
   ready,
   checks,
@@ -162,7 +163,7 @@ function isSupportedFigmaUrl(value) {
     return false;
   }
 }
-async function writeReport({ ready, checks, placeholderPages, smokeCommand }) {
+async function writeReport({ ready, checks, placeholderPages, smokeCommand, readinessCommand }) {
   const lines = [
     "# sample-project-lp Figma readiness",
     "",
@@ -180,13 +181,14 @@ async function writeReport({ ready, checks, placeholderPages, smokeCommand }) {
       `| ${escapeTable(entry.name)} | ${entry.ok ? "yes" : "no"} | ${escapeTable(entry.detail)} |`,
     );
   }
+  lines.push("", "## 1-minute demo (readiness re-run)", "", "```bash", readinessCommand, "```");
   lines.push("", "## Next command", "");
   if (ready) {
     lines.push("```bash", smokeCommand, "```");
   } else {
     lines.push("- Replace all `REPLACE_*` values in the Figma manifest.");
     lines.push(`- Export ${tokenEnv} without storing it in the repo.`);
-    lines.push("- Re-run this readiness command before `--real` smoke.");
+    lines.push("- Re-run the 1-minute readiness command, then run `--real` smoke.");
   }
   if (placeholderPages.length > 0) {
     lines.push("", "## Placeholder pages", "");
@@ -239,6 +241,24 @@ async function writeJsonEvidence({
   await mkdir(dirname(jsonOut), { recursive: true });
   await writeFile(jsonOut, `${JSON.stringify(evidence, null, 2)}\n`);
 }
+function buildReadinessCommand() {
+  const args = [
+    "node",
+    "scripts/eval/sample-project-lp-figma-readiness.mjs",
+    "--lp-repo",
+    shellQuote(lpRepo),
+    "--figma-manifest",
+    shellQuote(figmaManifest),
+    "--token-env",
+    shellQuote(tokenEnv),
+    "--out",
+    shellQuote(out),
+    "--json-out",
+    shellQuote(jsonOut),
+  ];
+  return args.join(" ");
+}
+
 function buildSmokeCommand() {
   return `pnpm eval:sample-project-lp-figma -- --lp-repo ${shellQuote(lpRepo)} --figma-manifest ${shellQuote(figmaManifest)} --out ${shellQuote(join(tmpdir(), "sample-project-lp-figma-smoke"))} --real --token-env ${shellQuote(tokenEnv)}`;
 }
