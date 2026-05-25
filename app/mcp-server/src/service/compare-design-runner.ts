@@ -178,6 +178,10 @@ export function buildTargetNodeIds(
   diffRegions: CompareDesignResult["diffRegions"],
   limit = 5,
 ): string[] {
+  if (limit <= 0) {
+    return [];
+  }
+
   const candidates: string[] = [];
 
   const rankedRegionScores = [...(diffReport?.regionScores ?? [])]
@@ -190,11 +194,13 @@ export function buildTargetNodeIds(
 
   for (const region of diffRegions) {
     for (const nodeId of region.nearbyNodeIds) {
-      candidates.push(nodeId);
+      if (nodeId.length > 0) {
+        candidates.push(nodeId);
+      }
     }
   }
 
-  return [...new Set(candidates)].slice(0, Math.max(1, limit));
+  return [...new Set(candidates)].slice(0, limit);
 }
 
 function buildNextAction(matchRate: number, regionCount: number, targetNodeIds: string[]): string {

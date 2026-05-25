@@ -57,11 +57,29 @@ describe("buildTargetNodeIds", () => {
         id: 1,
         bounds: { x: 10, y: 20, width: 40, height: 50 },
         diffPixelCount: 100,
-        nearbyNodeIds: ["node-a", "node-b", "node-a"],
+        nearbyNodeIds: ["node-a", "", "node-b", "node-a"],
         nearbyNodeNames: ["A", "B", "A"],
       },
     ]);
 
     expect(targetNodeIds).toEqual(["node-a", "node-b"]);
+  });
+
+  it("limit が 0 以下なら対象ノードを返さない", () => {
+    const targetNodeIds = buildTargetNodeIds(
+      undefined,
+      [
+        {
+          id: 1,
+          bounds: { x: 10, y: 20, width: 40, height: 50 },
+          diffPixelCount: 100,
+          nearbyNodeIds: ["node-a"],
+          nearbyNodeNames: ["A"],
+        },
+      ],
+      0,
+    );
+
+    expect(targetNodeIds).toEqual([]);
   });
 });
