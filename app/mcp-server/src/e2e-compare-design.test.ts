@@ -413,4 +413,51 @@ describe("MCP Server E2E: compare_design", () => {
       formatEvidenceJson(evidence),
     );
   });
+
+  it("ignore_regions の persisted + inline が結合されること", async () => {
+    const setResult = await client.callTool({
+      name: "set_ignore_regions",
+      arguments: {
+        project_id: "ignore-project-merge",
+        regions: [
+          {
+            id: "left-half",
+            frame_name: "test-frame",
+            x: 0,
+            y: 0,
+            width: 100,
+            height: 200,
+            label: "persisted-left-half",
+          },
+        ],
+      },
+    });
+    expect(setResult.isError).toBeFalsy();
+
+    const compareResult = await client.callTool({
+      name: "compare_design",
+      arguments: {
+        design_source: designPath,
+        screenshot: screenshotDiffPath,
+        threshold: 0.1,
+        project_id: "ignore-project-merge",
+        frame_name: "test-frame",
+        ignore_regions: [
+          {
+            x: 100,
+            y: 0,
+            width: 100,
+            height: 200,
+            label: "inline-right-half",
+          },
+        ],
+      },
+    });
+    expect(compareResult.isError).toBeFalsy();
+
+    const data = JSON.parse(findTextContent(compareResult)!.text);
+    expect(data.matchRate).toBe(100);
+    expect(data.diffPixelCount).toBe(0);
+    expect(data.totalPixelCount).toBe(0);
+  });
 });
