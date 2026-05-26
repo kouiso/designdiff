@@ -6,6 +6,7 @@
 
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
+import { readFile } from "node:fs/promises";
 import { mkdir } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import process from "node:process";
@@ -56,10 +57,31 @@ try {
   if (error?.code !== ERROR_EXIT_CODE && error?.exitCode !== ERROR_EXIT_CODE) {
     throw error;
   }
+  const blockerSummary = await buildBlockerSummary(jsonOut);
   process.stderr.write(
-    `Readiness status: blocked\nEvidence markdown: ${markdownOut}\nEvidence json: ${jsonOut}\n`,
+    `Readiness status: blocked\n${blockerSummary}Evidence markdown: ${redactPath(markdownOut)}\nEvidence json: ${redactPath(jsonOut)}\n`,
   );
   process.exit(ERROR_EXIT_CODE);
+}
+
+async function buildBlockerSummary(evidencePath) {
+  try {
+    const raw = await readFile(evidencePath, "utf8");
+    const evidence = JSON.parse(raw);
+    const blockers = Array.isArray(evidence.missingRequirements) ? evidence.missingRequirements : [];
+    const placeholderPages = Array.isArray(evidence.placeholderPageNames)
+      ? evidence.placeholderPageNames
+      : [];
+    const lines = [
+      `Blockers (${blockers.length}): ${blockers.length > 0 ? blockers.join("; ") : "(none)"}`,
+    ];
+    if (placeholderPages.length > 0) {
+      lines.push(`Placeholder pages (${placeholderPages.length}): ${placeholderPages.join(", ")}`);
+    }
+    return `${lines.join("\n")}\n`;
+  } catch {
+    return "Blockers: unavailable (failed to parse readiness evidence)\n";
+  }
 }
 
 function parseArgs(args) {
@@ -110,6 +132,15 @@ function resolveDefaultLpRepo() {
   return (
     candidates.find((candidate) => existsSync(join(candidate, "package.json"))) ?? defaultFallback
   );
+}
+
+function redactPath(value) {
+  const raw = String(value);
+  const home = process.env.HOME;
+  if (home && raw.startsWith(`${home}/`)) {
+    return raw.replace(home, "~");
+  }
+  return raw;
 }
 
 function fail(message) {
