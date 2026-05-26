@@ -248,6 +248,7 @@ export async function runCompareDesign(
       screenshotBase64,
       threshold: args.threshold ?? 0.1,
       cropRegion,
+      figmaNodeId: resolvedNodeId,
       ignoreRegions: args.ignore_regions,
     },
     figmaRootNode,

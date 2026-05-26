@@ -157,4 +157,100 @@ describe("buildDiffReport", () => {
     );
     expect(result.regionScores.every((score) => score.textureScore !== undefined)).toBe(true);
   });
+  it("whole-frame fallback でも figmaNodeId を保持すること", async () => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    const pixels = await createSolidRgba(16, 16, { r: 66, g: 133, b: 244 });
+
+    const result = buildDiffReport({
+      designPixels: pixels,
+      screenshotPixels: pixels,
+      width: 16,
+      height: 16,
+      figmaNodeId: "1:100",
+    });
+
+    expect(result.regionScores).toHaveLength(1);
+    expect(result.regionScores[0].figmaNodeId).toBe("1:100");
+  });
+
+  it("極小領域を除外しつつ heavy page の上下セクションを保持すること", async () => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    const designPixels = await createSolidRgba(200, 200, { r: 255, g: 255, b: 255 });
+    const screenshotPixels = Uint8ClampedArray.from(designPixels);
+
+    const figmaRootNode: FigmaNode = {
+      id: "root",
+      name: "Frame",
+      type: "FRAME",
+      absoluteBoundingBox: { x: 0, y: 0, width: 200, height: 200 },
+      absoluteRenderBounds: null,
+      fills: [],
+      strokes: [],
+      effects: [],
+      children: [
+        ...Array.from({ length: 30 }, (_, index) => ({
+          id: `tiny-${index}`,
+          name: `Tiny ${index}`,
+          type: "FRAME" as const,
+          absoluteBoundingBox: { x: 0, y: index * 2, width: 4, height: 4 },
+          absoluteRenderBounds: null,
+          fills: [],
+          strokes: [],
+          effects: [],
+          children: [],
+        })),
+        ...Array.from({ length: 28 }, (_, index) => ({
+          id: `section-${index}`,
+          name: `Section ${index}`,
+          type: "FRAME" as const,
+          absoluteBoundingBox: { x: 0, y: index * 7, width: 180, height: 8 },
+          absoluteRenderBounds: null,
+          fills: [],
+          strokes: [],
+          effects: [],
+          children: [],
+        })),
+      ],
+    };
+
+    const result = buildDiffReport({
+      designPixels,
+      screenshotPixels,
+      width: 200,
+      height: 200,
+      figmaRootNode,
+    });
+
+    expect(result.regionScores).toHaveLength(24);
+    expect(result.regionScores.every((score) => score.regionId.startsWith("section-"))).toBe(true);
+    expect(result.regionScores[0].regionId).toBe("section-0");
+    expect(result.regionScores.at(-1)?.regionId).toBe("section-27");
+  });
+
+  it("pass 閾値未達の中間差分は pass にならないこと", async () => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    const designPixels = await createSolidRgba(16, 16, { r: 255, g: 255, b: 255 });
+    const screenshotPixels = Uint8ClampedArray.from(designPixels);
+
+    for (let y = 0; y < 14; y++) {
+      for (let x = 0; x < 14; x++) {
+        const index = (y * 16 + x) * 4;
+        screenshotPixels[index] = 180;
+        screenshotPixels[index + 1] = 180;
+        screenshotPixels[index + 2] = 180;
+      }
+    }
+
+    const result = buildDiffReport({
+      designPixels,
+      screenshotPixels,
+      width: 16,
+      height: 16,
+    });
+
+    expect(result.regionScores).toHaveLength(1);
+    expect(result.regionScores[0].color).toBeGreaterThan(0);
+    expect(result.regionScores[0].structure).toBeLessThan(0.95);
+    expect(result.aggregateVerdict).not.toBe("pass");
+  });
 });

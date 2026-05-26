@@ -30,6 +30,7 @@ interface CompareImagesOptions {
   cropRegion?: CropRegion;
   clusterMode?: ClusterMode;
   gridOptions?: GridClusterOptions;
+  figmaNodeId?: string;
   // 既知の意図的差分マスク。各矩形内の差分ピクセルは matchRate / clustering から除外。
   // 矩形は cropRegion 適用後の座標系 (= screenshot ピクセル座標) で指定する。
   ignoreRegions?: IgnoreRegion[];
@@ -62,6 +63,7 @@ export async function compareImages(
     cropRegion,
     clusterMode = "auto",
     gridOptions,
+    figmaNodeId,
     ignoreRegions,
   } = options;
 
@@ -227,6 +229,7 @@ export async function compareImages(
     width,
     height,
     figmaRootNode,
+    figmaNodeId,
   });
 
   const suggestion = generateMatchSuggestion(matchRate);
