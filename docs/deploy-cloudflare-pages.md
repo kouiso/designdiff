@@ -5,7 +5,7 @@ FigDiff has three application surfaces: Electron desktop, Chrome extension, and 
 ## Platform decision
 
 - **Cloudflare Pages** is the selected web deploy target. The app emits static Vite assets and does not need a Next.js runtime, server functions, or a Vercel-specific project file.
-- **Vercel** is not selected for this rollout because there is no `vercel.json`, Next.js app, or reference workflow precedent in `sample-org/sample-mobile`.
+- **Vercel** is not selected for this rollout because there is no `vercel.json`, Next.js app, or matching reference workflow in this organization.
 - **fastlane** is not applicable because this repository has no `ios/`, `android/`, React Native, Flutter, or native mobile release target.
 
 ## Required GitHub configuration
