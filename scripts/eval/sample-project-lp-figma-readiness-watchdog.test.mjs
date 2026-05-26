@@ -29,6 +29,8 @@ test("watchdog は readiness 証跡を out-dir 配下へ markdown/json で出力
     const markdown = readFileSync(mdPath, "utf8");
 
     assert.match(result.stderr, /Readiness status: blocked/u);
+    assert.match(result.stderr, /Blockers \([1-9][0-9]*\):/u);
+    assert.match(result.stderr, /No REPLACE_\* placeholders/u);
     assert.match(result.stderr, new RegExp(`Evidence markdown: ${escapeRegExp(mdPath)}`, "u"));
     assert.match(result.stderr, new RegExp(`Evidence json: ${escapeRegExp(jsonPath)}`, "u"));
 
@@ -82,6 +84,7 @@ test("watchdog は HOME なしでも既定 fallback path でクラッシュし�
     assert.equal(result.status, 2);
     assert.doesNotMatch(result.stderr, /path.*must be of type string/u);
     assert.match(result.stderr, /Readiness status: blocked/u);
+    assert.match(result.stderr, /Blockers \([1-9][0-9]*\):/u);
   } finally {
     rmSync(outDir, { force: true, recursive: true });
   }
@@ -90,3 +93,23 @@ test("watchdog は HOME なしでも既定 fallback path でクラッシュし�
 function escapeRegExp(value) {
   return value.replaceAll(/[.*+?^${}()|[\]\\]/gu, "\\$&");
 }
+
+test("watchdog は blocker 出力で token 値を露出しない", () => {
+  const outDir = mkdtempSync(join(tmpdir(), "sample-project-watchdog-redact-test-"));
+  try {
+    const result = spawnSync(
+      "node",
+      [script, "--out-dir", outDir, "--lp-repo", repoDir, "--figma-manifest", manifestPath],
+      {
+        cwd: repoDir,
+        encoding: "utf8",
+        env: { ...process.env, FIGMA_TOKEN: "figd_super_secret_token_value" },
+      },
+    );
+
+    assert.equal(result.status, 2);
+    assert.doesNotMatch(result.stderr, /figd_super_secret_token_value/u);
+  } finally {
+    rmSync(outDir, { force: true, recursive: true });
+  }
+});
