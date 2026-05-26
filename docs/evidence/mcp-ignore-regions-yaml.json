@@ -109,7 +109,7 @@
         "totalWeight": 1
       },
       "aggregateVerdict": "pass",
-      "rationale": "no critical issues, weighted structure score 1.000 meets pass threshold, and weighted color difference 0.000 is below 3.000 (totalWeight 1.000)"
+      "rationale": "no critical issues, weighted structure score 1.000 meets pass threshold, and weighted color difference 0.000 is below 3.000 (totalWeight 1.000); weakest region whole-frame (structure 1.000, color 0.000)"
     },
     "critique": {
       "concern": "healthy",

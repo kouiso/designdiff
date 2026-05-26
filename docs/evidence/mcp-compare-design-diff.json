@@ -164,7 +164,7 @@
         "totalWeight": 1
       },
       "aggregateVerdict": "fail",
-      "rationale": "critical severity issue detected"
+      "rationale": "critical severity issue detected; weakest region whole-frame (structure 0.000, color 57.908)"
     },
     "critique": {
       "concern": "regression",

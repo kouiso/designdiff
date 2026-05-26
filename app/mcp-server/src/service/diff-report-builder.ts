@@ -21,6 +21,9 @@ interface BuildDiffReportOptions {
   figmaPageName?: string;
 }
 
+const MAX_REGION_SCORE_COUNT = 24;
+const MIN_REGION_PIXEL_AREA = 64;
+
 const buildApproximateColorDifference = (
   designPixels: Uint8ClampedArray,
   screenshotPixels: Uint8ClampedArray,
@@ -188,8 +191,8 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
   };
 
   if (figmaRootNode) {
-    const sectionAnchors = figmaRootNode.children
-      .map((child) => {
+    const allSectionAnchors = figmaRootNode.children
+      .map((child: FigmaNode) => {
         const bbox = toScreenshotBbox(child, figmaRootNode, width, height);
         if (!bbox || bbox.w === 0 || bbox.h === 0) {
           return null;
@@ -198,7 +201,16 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
         return { child, bbox };
       })
       .filter((section): section is { child: FigmaNode; bbox: DiffBoundingBox } => section !== null)
-      .sort((a, b) => a.bbox.y - b.bbox.y);
+      .filter((section) => section.bbox.w * section.bbox.h >= MIN_REGION_PIXEL_AREA)
+      .sort((a, b) => {
+        if (a.bbox.y !== b.bbox.y) {
+          return a.bbox.y - b.bbox.y;
+        }
+
+        return b.bbox.w * b.bbox.h - a.bbox.w * a.bbox.h;
+      });
+
+    const sectionAnchors = selectAnchorsForScoring(allSectionAnchors);
 
     for (const [index, section] of sectionAnchors.entries()) {
       const nextSection = sectionAnchors[index + 1];
@@ -244,8 +256,24 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
       shape: computeHausdorff(designPixels, screenshotPixels, width, height),
       layout: 0,
       textureScore: getTextureScore(wholeFrameBbox),
+      figmaNodeId: options.figmaNodeId,
     },
   ];
+}
+
+function selectAnchorsForScoring<T>(anchors: readonly T[]): T[] {
+  if (anchors.length <= MAX_REGION_SCORE_COUNT) {
+    return [...anchors];
+  }
+
+  console.info(
+    `[diff-report] regionScores capped from ${anchors.length} to ${MAX_REGION_SCORE_COUNT}`,
+  );
+
+  return Array.from({ length: MAX_REGION_SCORE_COUNT }, (_, index) => {
+    const sourceIndex = Math.round((index * (anchors.length - 1)) / (MAX_REGION_SCORE_COUNT - 1));
+    return anchors[sourceIndex];
+  });
 }
 
 export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
