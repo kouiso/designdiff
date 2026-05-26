@@ -68,7 +68,9 @@ async function buildBlockerSummary(evidencePath) {
   try {
     const raw = await readFile(evidencePath, "utf8");
     const evidence = JSON.parse(raw);
-    const blockers = Array.isArray(evidence.missingRequirements) ? evidence.missingRequirements : [];
+    const blockers = Array.isArray(evidence.missingRequirements)
+      ? evidence.missingRequirements
+      : [];
     const placeholderPages = Array.isArray(evidence.placeholderPageNames)
       ? evidence.placeholderPageNames
       : [];
