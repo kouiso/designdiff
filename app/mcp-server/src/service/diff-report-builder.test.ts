@@ -3,6 +3,25 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { FigmaNode } from "@figdiff/shared";
 
+const FALLBACK_FRAME_WIDTH = 16;
+const FALLBACK_FRAME_HEIGHT = 16;
+const FALLBACK_NODE_ID = "1:100";
+const BLUE_RGB = { r: 66, g: 133, b: 244 };
+const WHITE_RGB = { r: 255, g: 255, b: 255 };
+const HEAVY_FRAME_SIZE = 200;
+const TINY_REGION_COUNT = 30;
+const TINY_REGION_SIZE = 4;
+const TINY_REGION_Y_STEP = 2;
+const SECTION_REGION_COUNT = 28;
+const SECTION_REGION_WIDTH = 180;
+const SECTION_REGION_HEIGHT = 8;
+const SECTION_REGION_Y_STEP = 7;
+const EXPECTED_CAPPED_REGION_COUNT = 24;
+const INTERMEDIATE_DIFF_SIZE = 16;
+const INTERMEDIATE_DIFF_LIMIT = 14;
+const INTERMEDIATE_DIFF_RGB = 180;
+const PASS_STRUCTURE_THRESHOLD = 0.95;
+
 async function createSolidRgba(
   width: number,
   height: number,
@@ -159,51 +178,61 @@ describe("buildDiffReport", () => {
   });
   it("whole-frame fallback でも figmaNodeId を保持すること", async () => {
     const { buildDiffReport } = await import("./diff-report-builder.js");
-    const pixels = await createSolidRgba(16, 16, { r: 66, g: 133, b: 244 });
+    const pixels = await createSolidRgba(FALLBACK_FRAME_WIDTH, FALLBACK_FRAME_HEIGHT, BLUE_RGB);
 
     const result = buildDiffReport({
       designPixels: pixels,
       screenshotPixels: pixels,
-      width: 16,
-      height: 16,
-      figmaNodeId: "1:100",
+      width: FALLBACK_FRAME_WIDTH,
+      height: FALLBACK_FRAME_HEIGHT,
+      figmaNodeId: FALLBACK_NODE_ID,
     });
 
     expect(result.regionScores).toHaveLength(1);
-    expect(result.regionScores[0].figmaNodeId).toBe("1:100");
+    expect(result.regionScores[0].figmaNodeId).toBe(FALLBACK_NODE_ID);
   });
 
   it("極小領域を除外しつつ heavy page の上下セクションを保持すること", async () => {
     const { buildDiffReport } = await import("./diff-report-builder.js");
-    const designPixels = await createSolidRgba(200, 200, { r: 255, g: 255, b: 255 });
+    const designPixels = await createSolidRgba(HEAVY_FRAME_SIZE, HEAVY_FRAME_SIZE, WHITE_RGB);
     const screenshotPixels = Uint8ClampedArray.from(designPixels);
 
     const figmaRootNode: FigmaNode = {
       id: "root",
       name: "Frame",
       type: "FRAME",
-      absoluteBoundingBox: { x: 0, y: 0, width: 200, height: 200 },
+      absoluteBoundingBox: { x: 0, y: 0, width: HEAVY_FRAME_SIZE, height: HEAVY_FRAME_SIZE },
       absoluteRenderBounds: null,
       fills: [],
       strokes: [],
       effects: [],
       children: [
-        ...Array.from({ length: 30 }, (_, index) => ({
+        ...Array.from({ length: TINY_REGION_COUNT }, (_, index) => ({
           id: `tiny-${index}`,
           name: `Tiny ${index}`,
           type: "FRAME" as const,
-          absoluteBoundingBox: { x: 0, y: index * 2, width: 4, height: 4 },
+          absoluteBoundingBox: {
+            x: 0,
+            y: index * TINY_REGION_Y_STEP,
+            width: TINY_REGION_SIZE,
+            height: TINY_REGION_SIZE,
+          },
           absoluteRenderBounds: null,
           fills: [],
           strokes: [],
           effects: [],
           children: [],
         })),
-        ...Array.from({ length: 28 }, (_, index) => ({
+        ...Array.from({ length: SECTION_REGION_COUNT }, (_, index) => ({
           id: `section-${index}`,
           name: `Section ${index}`,
           type: "FRAME" as const,
-          absoluteBoundingBox: { x: 0, y: index * 7, width: 180, height: 8 },
+          absoluteBoundingBox: {
+            x: 0,
+            y: index * SECTION_REGION_Y_STEP,
+            width: SECTION_REGION_WIDTH,
+            height: SECTION_REGION_HEIGHT,
+          },
           absoluteRenderBounds: null,
           fills: [],
           strokes: [],
@@ -216,41 +245,45 @@ describe("buildDiffReport", () => {
     const result = buildDiffReport({
       designPixels,
       screenshotPixels,
-      width: 200,
-      height: 200,
+      width: HEAVY_FRAME_SIZE,
+      height: HEAVY_FRAME_SIZE,
       figmaRootNode,
     });
 
-    expect(result.regionScores).toHaveLength(24);
+    expect(result.regionScores).toHaveLength(EXPECTED_CAPPED_REGION_COUNT);
     expect(result.regionScores.every((score) => score.regionId.startsWith("section-"))).toBe(true);
     expect(result.regionScores[0].regionId).toBe("section-0");
-    expect(result.regionScores.at(-1)?.regionId).toBe("section-27");
+    expect(result.regionScores.at(-1)?.regionId).toBe(`section-${SECTION_REGION_COUNT - 1}`);
   });
 
   it("pass 閾値未達の中間差分は pass にならないこと", async () => {
     const { buildDiffReport } = await import("./diff-report-builder.js");
-    const designPixels = await createSolidRgba(16, 16, { r: 255, g: 255, b: 255 });
+    const designPixels = await createSolidRgba(
+      INTERMEDIATE_DIFF_SIZE,
+      INTERMEDIATE_DIFF_SIZE,
+      WHITE_RGB,
+    );
     const screenshotPixels = Uint8ClampedArray.from(designPixels);
 
-    for (let y = 0; y < 14; y++) {
-      for (let x = 0; x < 14; x++) {
-        const index = (y * 16 + x) * 4;
-        screenshotPixels[index] = 180;
-        screenshotPixels[index + 1] = 180;
-        screenshotPixels[index + 2] = 180;
+    for (let y = 0; y < INTERMEDIATE_DIFF_LIMIT; y++) {
+      for (let x = 0; x < INTERMEDIATE_DIFF_LIMIT; x++) {
+        const index = (y * INTERMEDIATE_DIFF_SIZE + x) * 4;
+        screenshotPixels[index] = INTERMEDIATE_DIFF_RGB;
+        screenshotPixels[index + 1] = INTERMEDIATE_DIFF_RGB;
+        screenshotPixels[index + 2] = INTERMEDIATE_DIFF_RGB;
       }
     }
 
     const result = buildDiffReport({
       designPixels,
       screenshotPixels,
-      width: 16,
-      height: 16,
+      width: INTERMEDIATE_DIFF_SIZE,
+      height: INTERMEDIATE_DIFF_SIZE,
     });
 
     expect(result.regionScores).toHaveLength(1);
     expect(result.regionScores[0].color).toBeGreaterThan(0);
-    expect(result.regionScores[0].structure).toBeLessThan(0.95);
+    expect(result.regionScores[0].structure).toBeLessThan(PASS_STRUCTURE_THRESHOLD);
     expect(result.aggregateVerdict).not.toBe("pass");
   });
 });

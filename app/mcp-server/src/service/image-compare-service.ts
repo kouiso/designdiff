@@ -30,6 +30,7 @@ interface CompareImagesOptions {
   cropRegion?: CropRegion;
   clusterMode?: ClusterMode;
   gridOptions?: GridClusterOptions;
+  // whole-frame fallback の regionScore を元の Figma node に紐付けるための node id。
   figmaNodeId?: string;
   // 既知の意図的差分マスク。各矩形内の差分ピクセルは matchRate / clustering から除外。
   // 矩形は cropRegion 適用後の座標系 (= screenshot ピクセル座標) で指定する。

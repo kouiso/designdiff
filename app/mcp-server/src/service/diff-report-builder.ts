@@ -253,6 +253,10 @@ function selectAnchorsForScoring<T>(anchors: readonly T[]): T[] {
     return [...anchors];
   }
 
+  console.info(
+    `[diff-report] regionScores capped from ${anchors.length} to ${MAX_REGION_SCORE_COUNT}`,
+  );
+
   return Array.from({ length: MAX_REGION_SCORE_COUNT }, (_, index) => {
     const sourceIndex = Math.round((index * (anchors.length - 1)) / (MAX_REGION_SCORE_COUNT - 1));
     return anchors[sourceIndex];
