@@ -1,0 +1,64 @@
+{
+  "issue": 65,
+  "truePurpose": "デザイン差分を高 precision で自動検出し、review コストを下げる",
+  "contributionPercent": 80,
+  "expected": {
+    "gridSummary": "compareImages returns per-cell rows/cols/cells with matchRate and diffPixels",
+    "runner": "LP corpus runner writes an evidence file even when a page times out"
+  },
+  "actual": {
+    "newsSp": {
+      "ok": true,
+      "matchRate": 80.1,
+      "regions": 396,
+      "grid": {
+        "rows": 4,
+        "cols": 2,
+        "cells": 8
+      },
+      "worstGridCells": [
+        {
+          "row": 0,
+          "col": 1,
+          "x": 214,
+          "y": 0,
+          "width": 215,
+          "height": 301,
+          "matchRate": 67.48,
+          "diffPixels": 21045
+        },
+        {
+          "row": 3,
+          "col": 1,
+          "x": 214,
+          "y": 903,
+          "width": 215,
+          "height": 301,
+          "matchRate": 69.82,
+          "diffPixels": 19529
+        },
+        {
+          "row": 3,
+          "col": 0,
+          "x": 0,
+          "y": 903,
+          "width": 214,
+          "height": 301,
+          "matchRate": 71.23,
+          "diffPixels": 18534
+        }
+      ],
+      "wallMs": 24896
+    },
+    "topPc": {
+      "ok": false,
+      "error": "timeout after 5000ms",
+      "wallMs": 5016
+    }
+  },
+  "sourceEvidence": [
+    "docs/evidence/issue-65-grid-summary-sample-news-sp.json",
+    "docs/evidence/issue-65-grid-summary-sample-top-pc-timeout.json"
+  ],
+  "generatedAt": "2026-05-23T07:36:54.032Z"
+}

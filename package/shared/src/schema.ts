@@ -144,6 +144,41 @@ export const DiffRegionSchema = z.object({
   nearbyNodeNames: z.array(z.string()),
 });
 
+export const ClusterTelemetrySchema = z.object({
+  requestedMode: z.enum(["auto", "grid", "flood"]),
+  usedMode: z.enum(["grid", "flood"]),
+  fallbackUsed: z.boolean(),
+  fallbackReason: z
+    .enum([
+      "grid-empty-with-diff",
+      "wall-budget-exceeded",
+      "region-count-exceeded",
+      "hot-cell-ratio-exceeded",
+    ])
+    .optional(),
+  wallMs: z.number().nonnegative(),
+  budgetMs: z.number().nonnegative().optional(),
+  regionCount: z.number().int().nonnegative(),
+});
+
+export const GridSummaryCellSchema = z.object({
+  row: z.number().int().nonnegative(),
+  col: z.number().int().nonnegative(),
+  x: z.number().int().nonnegative(),
+  y: z.number().int().nonnegative(),
+  width: z.number().int().positive(),
+  height: z.number().int().positive(),
+  diffPixels: z.number().int().nonnegative(),
+  totalPixels: z.number().int().nonnegative(),
+  matchRate: z.number().min(0).max(100),
+});
+
+export const GridSummarySchema = z.object({
+  rows: z.number().int().positive(),
+  cols: z.number().int().positive(),
+  cells: z.array(GridSummaryCellSchema),
+});
+
 // --- Completion Criteria Schema (v4: AI-driven PASS/FAIL structure) ---
 
 export const CompletionCriterionSchema = z.object({
@@ -184,6 +219,9 @@ export const DiffEvidenceSchema = z.object({
   threshold: z.number(),
   expected: z.unknown(),
   actual: z.unknown(),
+  figmaFileKey: z.string().optional(),
+  figmaNodeId: z.string().optional(),
+  figmaPageName: z.string().optional(),
 });
 
 export const DiffIssueSchema = z.object({
@@ -258,6 +296,8 @@ export const CompareDesignResultSchema = z.object({
   completionCriteria: CompletionCriteriaSchema.optional(),
   nextAction: z.string().optional(),
   suggestion: z.string(),
+  clusterTelemetry: ClusterTelemetrySchema.optional(),
+  gridSummary: GridSummarySchema.optional(),
   diffReport: DiffReportSchema.optional(),
   critique: CritiqueNoteSchema.optional(),
   diffImagePath: z.string().optional(),
@@ -287,6 +327,19 @@ export const IgnoreRegionSchema = z.object({
   height: z.number().positive(),
   label: z.string().optional(),
 });
+
+export const IgnoreRegionConfigEntrySchema = IgnoreRegionSchema.extend({
+  id: z.string().regex(/^[a-zA-Z0-9_-]+$/),
+  frame_name: z.string().optional(),
+  note: z.string().optional(),
+}).strict();
+
+export const IgnoreRegionConfigFileSchema = z
+  .object({
+    version: z.literal(1),
+    regions: z.array(IgnoreRegionConfigEntrySchema),
+  })
+  .strict();
 
 // --- Design Source Schema (v4: Figma URL or local image per page) ---
 

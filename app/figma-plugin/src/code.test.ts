@@ -1,5 +1,7 @@
 import { describe, it, expect } from "vitest";
 
+import type { NodeAppearance, NodeLayout, NodeTypography } from "@figdiff/shared";
+
 import {
   rgbToHex,
   buildCssSuggestion,
@@ -12,6 +14,47 @@ import {
   extractTypographyFromNode,
   extractNodeInspection,
 } from "./code";
+
+function makeLayout(overrides: Partial<NodeLayout> = {}): NodeLayout {
+  return {
+    x: 0,
+    y: 0,
+    width: 100,
+    height: 50,
+    ...overrides,
+  };
+}
+
+function makeAppearance(overrides: Partial<NodeAppearance> = {}): NodeAppearance {
+  return {
+    fills: [],
+    strokes: [],
+    borderRadius: {
+      topLeft: 0,
+      topRight: 0,
+      bottomRight: 0,
+      bottomLeft: 0,
+    },
+    opacity: 1,
+    blendMode: "NORMAL",
+    effects: [],
+    ...overrides,
+  };
+}
+
+function makeTypography(overrides: Partial<NodeTypography> = {}): NodeTypography {
+  return {
+    fontFamily: "Inter",
+    fontWeight: 400,
+    fontSize: 16,
+    lineHeight: "AUTO",
+    letterSpacing: 0,
+    textAlign: "LEFT",
+    textDecoration: "NONE",
+    textContent: "",
+    ...overrides,
+  };
+}
 
 describe("rgbToHex", () => {
   it("(0,0,0) → #000000", () => {
@@ -38,60 +81,77 @@ describe("rgbToHex", () => {
 
 describe("buildCssSuggestion", () => {
   it("layout only → width/height を含む", () => {
-    const layout = { width: 200, height: 100 };
-    const result = buildCssSuggestion(layout, {}, undefined);
-    expect(result).toContain("width: 200px;");
-    expect(result).toContain("height: 100px;");
+    const result = buildCssSuggestion(
+      makeLayout({ width: 200, height: 100 }),
+      makeAppearance(),
+      undefined,
+    );
+    expect(result).toContain("width: 200.0px;");
+    expect(result).toContain("height: 100.0px;");
   });
 
   it("HORIZONTAL layout → flex-direction: row を含む", () => {
-    const layout = { width: 200, height: 100, layoutMode: "HORIZONTAL" };
-    const result = buildCssSuggestion(layout, {}, undefined);
+    const result = buildCssSuggestion(
+      makeLayout({ width: 200, height: 100, layoutMode: "HORIZONTAL" }),
+      makeAppearance(),
+      undefined,
+    );
     expect(result).toContain("flex-direction: row");
   });
 
   it("VERTICAL layout → flex-direction: column を含む", () => {
-    const layout = { width: 200, height: 100, layoutMode: "VERTICAL" };
-    const result = buildCssSuggestion(layout, {}, undefined);
+    const result = buildCssSuggestion(
+      makeLayout({ width: 200, height: 100, layoutMode: "VERTICAL" }),
+      makeAppearance(),
+      undefined,
+    );
     expect(result).toContain("flex-direction: column");
   });
 
   it("padding あり → padding CSS を含む", () => {
-    const layout = {
-      width: 200,
-      height: 100,
-      paddingTop: 10,
-      paddingRight: 20,
-      paddingBottom: 10,
-      paddingLeft: 20,
-    };
-    const result = buildCssSuggestion(layout, {}, undefined);
-    expect(result).toContain("padding: 10px 20px 10px 20px;");
+    const result = buildCssSuggestion(
+      makeLayout({
+        width: 200,
+        height: 100,
+        paddingTop: 10,
+        paddingRight: 20,
+        paddingBottom: 10,
+        paddingLeft: 20,
+      }),
+      makeAppearance(),
+      undefined,
+    );
+    expect(result).toContain("padding: 10.0px 20.0px 10.0px 20.0px;");
   });
 
   it("itemSpacing あり → gap CSS を含む", () => {
-    const layout = { width: 200, height: 100, itemSpacing: 8 };
-    const result = buildCssSuggestion(layout, {}, undefined);
-    expect(result).toContain("gap: 8px;");
+    const result = buildCssSuggestion(
+      makeLayout({ width: 200, height: 100, itemSpacing: 8 }),
+      makeAppearance(),
+      undefined,
+    );
+    expect(result).toContain("gap: 8.0px;");
   });
 
   it("fills あり → background-color を含む", () => {
-    const appearance = { fills: [{ type: "SOLID", color: "#FF0000" }] };
-    const result = buildCssSuggestion({ width: 100, height: 50 }, appearance, undefined);
+    const appearance = makeAppearance({ fills: [{ type: "SOLID", color: "#FF0000" }] });
+    const result = buildCssSuggestion(makeLayout(), appearance, undefined);
     expect(result).toContain("background-color: #FF0000;");
   });
 
   it("borderRadius あり → border-radius を含む", () => {
-    const appearance = { borderRadius: 8 };
-    const result = buildCssSuggestion({ width: 100, height: 50 }, appearance, undefined);
-    expect(result).toContain("border-radius: 8px;");
+    const appearance = makeAppearance({
+      borderRadius: { topLeft: 8, topRight: 8, bottomRight: 8, bottomLeft: 8 },
+    });
+    const result = buildCssSuggestion(makeLayout(), appearance, undefined);
+    expect(result).toContain("border-radius: 8.0px;");
   });
 
   it("typography あり → font-family を含む", () => {
-    const typography = { fontFamily: "Inter", fontSize: 16 };
-    const result = buildCssSuggestion({ width: 100, height: 50 }, {}, typography);
+    const typography = makeTypography({ fontFamily: "Inter", fontSize: 16 });
+    const result = buildCssSuggestion(makeLayout(), makeAppearance(), typography);
     expect(result).toContain('font-family: "Inter";');
-    expect(result).toContain("font-size: 16px;");
+    expect(result).toContain("font-size: 16.0px;");
   });
 });
 
@@ -229,7 +289,12 @@ describe("extractAppearanceFromNode", () => {
   it("cornerRadius → borderRadius を含む", () => {
     const node = { type: "RECTANGLE", opacity: 1, cornerRadius: 12 };
     const result = extractAppearanceFromNode(node as unknown as SceneNode);
-    expect(result.borderRadius).toBe(12);
+    expect(result.borderRadius).toEqual({
+      topLeft: 12,
+      topRight: 12,
+      bottomRight: 12,
+      bottomLeft: 12,
+    });
   });
 
   it("strokes → stroke 情報を含む", () => {
@@ -271,7 +336,7 @@ describe("extractTypographyFromNode", () => {
     const result = extractTypographyFromNode(node as unknown as SceneNode);
     expect(result.fontFamily).toBe("Inter");
     expect(result.fontSize).toBe(24);
-    expect(result.fontWeight).toBe("Bold");
+    expect(result.fontWeight).toBe(700);
     expect(result.lineHeight).toBe(32);
     expect(result.letterSpacing).toBe(0.5);
     expect(result.textContent).toBe("Hello");
@@ -280,7 +345,7 @@ describe("extractTypographyFromNode", () => {
   it("非TEXT ノード → 空オブジェクト", () => {
     const node = { type: "RECTANGLE" };
     const result = extractTypographyFromNode(node as unknown as SceneNode);
-    expect(result).toEqual({});
+    expect(result).toBeUndefined();
   });
 
   it("AUTO lineHeight → 'AUTO' を返す", () => {
@@ -317,6 +382,6 @@ describe("extractNodeInspection", () => {
     expect(result.nodeType).toBe("FRAME");
     expect(result.layout.width).toBe(400);
     expect(result.children).toHaveLength(1);
-    expect(result.cssSuggestion).toContain("width: 400px;");
+    expect(result.cssSuggestion).toContain("width: 400.0px;");
   });
 });

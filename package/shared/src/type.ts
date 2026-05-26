@@ -8,6 +8,7 @@ import {
   type BorderRadiusSchema,
   type ChildNodeSummarySchema,
   type CritiqueNoteSchema,
+  type ClusterTelemetrySchema,
   type CompareDesignResultSchema,
   type CompletionCriteriaSchema,
   type CompletionCriterionSchema,
@@ -18,7 +19,11 @@ import {
   type DiffRegionSchema,
   type FigmaTokenSchema,
   type FrameSchema,
+  type GridSummaryCellSchema,
+  type GridSummarySchema,
   type ImageDimensionsSchema,
+  type IgnoreRegionConfigEntrySchema,
+  type IgnoreRegionConfigFileSchema,
   type NodeAppearanceSchema,
   type NodeEffectSchema,
   type NodeFillSchema,
@@ -71,6 +76,9 @@ export type ParsedDesignInput = z.infer<typeof ParsedDesignInputSchema>;
 
 export type CompareDesignResult = z.infer<typeof CompareDesignResultSchema>;
 export type DiffRegion = z.infer<typeof DiffRegionSchema>;
+export type ClusterTelemetry = z.infer<typeof ClusterTelemetrySchema>;
+export type GridSummary = z.infer<typeof GridSummarySchema>;
+export type GridSummaryCell = z.infer<typeof GridSummaryCellSchema>;
 
 // --- Crop Region (Phase 2+) ---
 
@@ -79,6 +87,8 @@ export type CropRegion = z.infer<typeof CropRegionSchema>;
 // --- Ignore Region (PR #57) ---
 
 export type IgnoreRegion = z.infer<typeof IgnoreRegionSchema>;
+export type IgnoreRegionConfigEntry = z.infer<typeof IgnoreRegionConfigEntrySchema>;
+export type IgnoreRegionConfigFile = z.infer<typeof IgnoreRegionConfigFileSchema>;
 
 // --- Project (v4: implementation URL + pages + design sources) ---
 
@@ -111,6 +121,9 @@ export interface DiffEvidence {
   threshold: number;
   expected: unknown;
   actual: unknown;
+  figmaFileKey?: string;
+  figmaNodeId?: string;
+  figmaPageName?: string;
 }
 
 export interface DiffBoundingBox {
@@ -237,6 +250,24 @@ const buildTextureRationaleSuffix = (regionScores: RegionScore[]): string => {
   return " with texture-adjusted weights active (alpha 0.700, photo-like cap 0.300)";
 };
 
+const buildWorstRegionEvidenceSuffix = (regionScores: RegionScore[]): string => {
+  if (regionScores.length === 0) {
+    return "";
+  }
+
+  const worstRegion = regionScores.reduce((worst, current) => {
+    if (current.structure !== worst.structure) {
+      return current.structure < worst.structure ? current : worst;
+    }
+
+    return current.color > worst.color ? current : worst;
+  }, regionScores[0]);
+
+  return `; weakest region ${worstRegion.regionId} (structure ${worstRegion.structure.toFixed(
+    3,
+  )}, color ${worstRegion.color.toFixed(3)})`;
+};
+
 export const computeVerdict = (
   report: Omit<DiffReport, "aggregateVerdict" | "rationale">,
 ): { verdict: DiffVerdict; rationale: string; weightedAggregate: WeightedAggregate } => {
@@ -244,11 +275,12 @@ export const computeVerdict = (
   // P2 では region 面積で重み付けし、単一セクションの暴走で全体 verdict が即死しないようにする。
   const weightedAggregate = normalizeWeightedAggregate(report.regionScores);
   const textureRationaleSuffix = buildTextureRationaleSuffix(report.regionScores);
+  const worstRegionEvidenceSuffix = buildWorstRegionEvidenceSuffix(report.regionScores);
 
   if (hasCriticalIssue) {
     return {
       verdict: "fail",
-      rationale: `critical severity issue detected${textureRationaleSuffix}`,
+      rationale: `critical severity issue detected${worstRegionEvidenceSuffix}${textureRationaleSuffix}`,
       weightedAggregate,
     };
   }
@@ -260,7 +292,7 @@ export const computeVerdict = (
         3,
       )} is below fail threshold 0.800 (weighted color ${weightedAggregate.weightedColor.toFixed(
         3,
-      )}, totalWeight ${weightedAggregate.totalWeight.toFixed(3)})${textureRationaleSuffix}`,
+      )}, totalWeight ${weightedAggregate.totalWeight.toFixed(3)})${worstRegionEvidenceSuffix}${textureRationaleSuffix}`,
       weightedAggregate,
     };
   }
@@ -273,7 +305,7 @@ export const computeVerdict = (
         3,
       )} meets pass threshold, and weighted color difference ${weightedAggregate.weightedColor.toFixed(
         3,
-      )} is below 3.000 (totalWeight ${weightedAggregate.totalWeight.toFixed(3)})${textureRationaleSuffix}`,
+      )} is below 3.000 (totalWeight ${weightedAggregate.totalWeight.toFixed(3)})${worstRegionEvidenceSuffix}${textureRationaleSuffix}`,
       weightedAggregate,
     };
   }
@@ -286,7 +318,7 @@ export const computeVerdict = (
       3,
     )} do not satisfy pass thresholds (totalWeight ${weightedAggregate.totalWeight.toFixed(
       3,
-    )})${textureRationaleSuffix}`,
+    )})${worstRegionEvidenceSuffix}${textureRationaleSuffix}`,
     weightedAggregate,
   };
 };

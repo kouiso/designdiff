@@ -45,6 +45,30 @@
     },
     "nextAction": "inspect_node を使って 1 箇所の diffRegions の詳細を確認し、CSSを修正してください。修正後は再度 compare_design で検証してください。",
     "suggestion": "大きな差分が1箇所あります。inspect_nodeで各差分領域を確認し、修正してください。",
+    "clusterTelemetry": {
+      "requestedMode": "auto",
+      "usedMode": "flood",
+      "fallbackUsed": false,
+      "wallMs": 0,
+      "regionCount": 1
+    },
+    "gridSummary": {
+      "rows": 1,
+      "cols": 1,
+      "cells": [
+        {
+          "row": 0,
+          "col": 0,
+          "x": 0,
+          "y": 0,
+          "width": 200,
+          "height": 200,
+          "diffPixels": 40000,
+          "totalPixels": 40000,
+          "matchRate": 0
+        }
+      ]
+    },
     "diffReport": {
       "alignment": {
         "translation": {
@@ -140,7 +164,7 @@
         "totalWeight": 1
       },
       "aggregateVerdict": "fail",
-      "rationale": "critical severity issue detected"
+      "rationale": "critical severity issue detected; weakest region whole-frame (structure 0.000, color 57.908)"
     },
     "critique": {
       "concern": "regression",

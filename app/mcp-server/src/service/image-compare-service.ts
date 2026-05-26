@@ -9,13 +9,15 @@ import sharp from "sharp";
 
 import {
   clusterDiffPixels,
-  clusterDiffPixelsGrid,
+  clusterDiffPixelsGridDetailed,
   generateMatchSuggestion,
   matchDiffRegionsToNodes,
   type CompareDesignResult,
+  type ClusterTelemetry,
   type CropRegion,
   type FigmaNode,
   type GridClusterOptions,
+  type GridSummary,
   type IgnoreRegion,
 } from "@figdiff/shared";
 
@@ -41,12 +43,187 @@ interface CompareImagesOptions {
 // screenshots (1512×900+ ≈ 1.36M) clear the bar; SP-only or small component
 // crops stay on flood-fill, where the legacy behaviour works well.
 const AUTO_GRID_PIXEL_THRESHOLD = 1_000_000;
+const GRID_SUMMARY_TARGET_CELL_SIZE = 320;
+const GRID_SUMMARY_MAX_ROWS = 24;
+const GRID_SUMMARY_MAX_COLS = 12;
+const DEFAULT_GRID_BUDGET_OPTIONS = {
+  maxWallMs: 5000,
+  maxRegions: 100,
+  maxHotCellRatio: 0.5,
+  fallbackToFlood: true,
+} satisfies GridClusterOptions;
+const FLOOD_FALLBACK_MAX_PIXELS = 1_800_000;
+const QUICK_TILE_SIZE = 192;
+const QUICK_TILE_DIFF_THRESHOLD = 16;
+const QUICK_TILE_MAX_REGIONS = 60;
+const QUICK_TILE_BUDGET_MS = 1500;
 
 interface PaddingMask {
   left: number;
   top: number;
   width: number;
   height: number;
+}
+
+interface IgnoreMaskResult {
+  maskedPixelCount: number;
+  mask?: Uint8Array;
+}
+
+interface GridCellGeometry {
+  row: number;
+  col: number;
+  left: number;
+  top: number;
+  right: number;
+  bottom: number;
+}
+
+interface ClusterDiffResult {
+  diffRegions: CompareDesignResult["diffRegions"];
+  clusterTelemetry: ClusterTelemetry;
+}
+
+interface QuickTileCandidate {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+  diffPixelCount: number;
+}
+
+const isVisibleDiffPixelAtIndex = (diffPixelData: Uint8ClampedArray, idx: number): boolean => {
+  const red = diffPixelData[idx];
+  const green = diffPixelData[idx + 1];
+  const blue = diffPixelData[idx + 2];
+  const alpha = diffPixelData[idx + 3];
+
+  return (
+    !(alpha === 0 && red === 0 && green === 0 && blue === 0) && (red !== green || green !== blue)
+  );
+};
+
+function clusterDiffRegions(args: {
+  clusterMode: ClusterMode;
+  totalPixelCount: number;
+  diffPixelCount: number;
+  diffPixelData: Uint8ClampedArray;
+  width: number;
+  height: number;
+  gridOptions?: GridClusterOptions;
+}): ClusterDiffResult {
+  const { clusterMode, totalPixelCount, diffPixelCount, diffPixelData, width, height } = args;
+  const gridOptions = { ...DEFAULT_GRID_BUDGET_OPTIONS, ...args.gridOptions };
+  const useGrid =
+    clusterMode === "grid" ||
+    (clusterMode === "auto" && totalPixelCount >= AUTO_GRID_PIXEL_THRESHOLD);
+  const clusterStartedAt = performance.now();
+  let usedMode: "grid" | "flood" = useGrid ? "grid" : "flood";
+  let fallbackReason: ClusterTelemetry["fallbackReason"];
+  let diffRegions = useGrid ? [] : clusterDiffPixels(diffPixelData, width, height);
+  let gridBudgetMs: number | undefined;
+
+  if (useGrid) {
+    const gridResult = clusterDiffPixelsGridDetailed(diffPixelData, width, height, gridOptions);
+    diffRegions = gridResult.regions;
+    gridBudgetMs = gridResult.budgetMs;
+    if (gridResult.aborted) {
+      fallbackReason = gridResult.abortReason;
+    }
+  }
+
+  const shouldSkipFloodFallback =
+    useGrid &&
+    totalPixelCount > FLOOD_FALLBACK_MAX_PIXELS &&
+    (fallbackReason === "wall-budget-exceeded" ||
+      fallbackReason === "hot-cell-ratio-exceeded" ||
+      fallbackReason === "region-count-exceeded");
+
+  if (
+    useGrid &&
+    gridOptions.fallbackToFlood !== false &&
+    diffRegions.length === 0 &&
+    diffPixelCount > 0 &&
+    !shouldSkipFloodFallback
+  ) {
+    usedMode = "flood";
+    fallbackReason = fallbackReason ?? "grid-empty-with-diff";
+    diffRegions = clusterDiffPixels(diffPixelData, width, height);
+  }
+  if (useGrid && diffRegions.length === 0 && diffPixelCount > 0 && shouldSkipFloodFallback) {
+    diffRegions = clusterDiffPixelsQuickTiles(diffPixelData, width, height);
+    fallbackReason = fallbackReason ?? "grid-empty-with-diff";
+  }
+
+  return {
+    diffRegions,
+    clusterTelemetry: {
+      requestedMode: clusterMode,
+      usedMode,
+      fallbackUsed: fallbackReason !== undefined,
+      fallbackReason,
+      wallMs: Math.max(0, Math.round((performance.now() - clusterStartedAt) * 100) / 100),
+      budgetMs: gridBudgetMs,
+      regionCount: diffRegions.length,
+    },
+  };
+}
+
+function clusterDiffPixelsQuickTiles(
+  diffPixelData: Uint8ClampedArray,
+  width: number,
+  height: number,
+): CompareDesignResult["diffRegions"] {
+  const cols = Math.ceil(width / QUICK_TILE_SIZE);
+  const rows = Math.ceil(height / QUICK_TILE_SIZE);
+  const startedAt = performance.now();
+  const tiles: QuickTileCandidate[] = [];
+  for (let row = 0; row < rows; row++) {
+    const top = row * QUICK_TILE_SIZE;
+    const bottom = Math.min(height, top + QUICK_TILE_SIZE);
+    for (let col = 0; col < cols; col++) {
+      const left = col * QUICK_TILE_SIZE;
+      const right = Math.min(width, left + QUICK_TILE_SIZE);
+      let count = 0;
+      for (let y = top; y < bottom; y++) {
+        const rowStartIndex = (y * width + left) * 4;
+        const rowEndIndex = (y * width + right) * 4;
+        for (let idx = rowStartIndex; idx < rowEndIndex; idx += 4) {
+          if (isVisibleDiffPixelAtIndex(diffPixelData, idx)) {
+            count++;
+          }
+        }
+      }
+      if (count >= QUICK_TILE_DIFF_THRESHOLD) {
+        tiles.push({
+          left,
+          top,
+          width: right - left,
+          height: bottom - top,
+          diffPixelCount: count,
+        });
+      }
+      if (performance.now() - startedAt >= QUICK_TILE_BUDGET_MS) {
+        break;
+      }
+    }
+    if (performance.now() - startedAt >= QUICK_TILE_BUDGET_MS) {
+      break;
+    }
+  }
+
+  const topTiles = tiles
+    .sort((a, b) => b.diffPixelCount - a.diffPixelCount || a.top - b.top || a.left - b.left)
+    .slice(0, QUICK_TILE_MAX_REGIONS)
+    .sort((a, b) => a.top - b.top || a.left - b.left);
+
+  return topTiles.map((tile, index) => ({
+    id: index,
+    bounds: { x: tile.left, y: tile.top, width: tile.width, height: tile.height },
+    diffPixelCount: tile.diffPixelCount,
+    nearbyNodeIds: [],
+    nearbyNodeNames: [],
+  }));
 }
 
 /**
@@ -164,13 +341,14 @@ export async function compareImages(
   // 同じ範囲を design / screenshot 両方の入力ピクセルで同一色 (0,0,0,0) に
   // 揃えておく。こうすると pixelmatch がその範囲を「一致」として扱い、
   // 戻り値 diffPixelCount にも diff 可視化マークにも mask 範囲が含まれなくなる。
-  const maskedPixelCount = zeroIgnoreRegions(
+  const ignoreMaskResult = zeroIgnoreRegions(
     pixelmatchDesignPixels,
     screenshotPixels,
     width,
     height,
     ignoreRegions,
   );
+  const { maskedPixelCount } = ignoreMaskResult;
   // paddingMask がある (= design / screenshot 寸法不一致で contain resize した) 場合、
   // reportDesignPixels は pixelmatchDesignPixels と別実体のため、buildDiffReport
   // で意図的差分が再出現する。同じ mask を当てて足並みを揃える。
@@ -189,6 +367,7 @@ export async function compareImages(
     height,
     {
       threshold,
+      diffMask: true,
     },
   );
 
@@ -197,6 +376,13 @@ export async function compareImages(
     totalPixelCount === 0
       ? 100
       : Math.round(((totalPixelCount - diffPixelCount) / totalPixelCount) * 100 * 100) / 100;
+  const gridSummary = buildGridSummary(
+    diffPixelData,
+    width,
+    height,
+    diffPixelCount,
+    ignoreMaskResult.mask,
+  );
 
   // Cluster diff regions
   // - "grid": grid-based clustering (recommended for full-page screenshots)
@@ -207,19 +393,22 @@ export async function compareImages(
   //   real diff pixels exist (e.g. thin 1-4px lines/text strokes diluted
   //   below cellDensityThreshold), fall through to flood-fill so downstream
   //   region-to-node matching and reporting still has something to attach to.
-  const useGrid =
-    clusterMode === "grid" ||
-    (clusterMode === "auto" && totalPixelCount >= AUTO_GRID_PIXEL_THRESHOLD);
-  let diffRegions = useGrid
-    ? clusterDiffPixelsGrid(diffPixelData, width, height, gridOptions)
-    : clusterDiffPixels(diffPixelData, width, height);
-  if (useGrid && diffRegions.length === 0 && diffPixelCount > 0) {
-    diffRegions = clusterDiffPixels(diffPixelData, width, height);
-  }
+  const clustered = clusterDiffRegions({
+    clusterMode,
+    totalPixelCount,
+    diffPixelCount,
+    diffPixelData,
+    width,
+    height,
+    gridOptions,
+  });
+  let { diffRegions } = clustered;
+  const { clusterTelemetry } = clustered;
 
   // Match diff regions to Figma nodes if available
   if (figmaRootNode) {
     diffRegions = matchDiffRegionsToNodes(diffRegions, figmaRootNode);
+    clusterTelemetry.regionCount = diffRegions.length;
   }
 
   // Generate diff image visualization
@@ -242,6 +431,8 @@ export async function compareImages(
     totalPixelCount,
     diffRegions,
     suggestion,
+    clusterTelemetry,
+    gridSummary,
     diffReport,
     diffImageBase64,
   };
@@ -311,8 +502,8 @@ function zeroIgnoreRegions(
   width: number,
   height: number,
   ignoreRegions: readonly IgnoreRegion[] | undefined,
-): number {
-  if (!ignoreRegions || ignoreRegions.length === 0) return 0;
+): IgnoreMaskResult {
+  if (!ignoreRegions || ignoreRegions.length === 0) return { maskedPixelCount: 0 };
 
   // 矩形を反復しながら、未処理ピクセル (mask[i]===0) のみ上書き + カウント。
   // 計算量は O(画像面積) ではなく O(Σ mask 矩形面積) に下がる。
@@ -346,7 +537,114 @@ function zeroIgnoreRegions(
       }
     }
   }
-  return maskedCount;
+  return { maskedPixelCount: maskedCount, mask };
+}
+
+function buildGridSummary(
+  diffPixelData: Uint8ClampedArray,
+  width: number,
+  height: number,
+  diffPixelCount: number,
+  ignoreMask?: Uint8Array,
+): GridSummary {
+  const { rows, cols } = getGridDimensions(width, height);
+  const geometries = buildGridCellGeometries(width, height, rows, cols);
+
+  if (diffPixelCount === 0 && !ignoreMask) {
+    return {
+      rows,
+      cols,
+      cells: geometries.map(buildPerfectGridSummaryCell),
+    };
+  }
+
+  const cells = geometries.map((geometry) =>
+    summarizeGridCell(geometry, diffPixelData, width, ignoreMask),
+  );
+  return { rows, cols, cells };
+}
+
+function getGridDimensions(width: number, height: number): { rows: number; cols: number } {
+  return {
+    rows: Math.min(
+      GRID_SUMMARY_MAX_ROWS,
+      Math.max(1, Math.ceil(height / GRID_SUMMARY_TARGET_CELL_SIZE)),
+    ),
+    cols: Math.min(
+      GRID_SUMMARY_MAX_COLS,
+      Math.max(1, Math.ceil(width / GRID_SUMMARY_TARGET_CELL_SIZE)),
+    ),
+  };
+}
+
+function buildGridCellGeometries(
+  width: number,
+  height: number,
+  rows: number,
+  cols: number,
+): GridCellGeometry[] {
+  const geometries: GridCellGeometry[] = [];
+  for (let row = 0; row < rows; row += 1) {
+    const top = Math.floor((height * row) / rows);
+    const bottom = Math.floor((height * (row + 1)) / rows);
+    for (let col = 0; col < cols; col += 1) {
+      const left = Math.floor((width * col) / cols);
+      const right = Math.floor((width * (col + 1)) / cols);
+      geometries.push({ row, col, left, top, right, bottom });
+    }
+  }
+  return geometries;
+}
+
+function buildPerfectGridSummaryCell(geometry: GridCellGeometry): GridSummary["cells"][number] {
+  return {
+    row: geometry.row,
+    col: geometry.col,
+    x: geometry.left,
+    y: geometry.top,
+    width: geometry.right - geometry.left,
+    height: geometry.bottom - geometry.top,
+    diffPixels: 0,
+    totalPixels: (geometry.right - geometry.left) * (geometry.bottom - geometry.top),
+    matchRate: 100,
+  };
+}
+
+function summarizeGridCell(
+  geometry: GridCellGeometry,
+  diffPixelData: Uint8ClampedArray,
+  imageWidth: number,
+  ignoreMask?: Uint8Array,
+): GridSummary["cells"][number] {
+  let diffPixels = 0;
+  let totalPixels = 0;
+
+  for (let y = geometry.top; y < geometry.bottom; y += 1) {
+    const rowBase = y * imageWidth;
+    for (let x = geometry.left; x < geometry.right; x += 1) {
+      const pixelIndex = rowBase + x;
+      if (ignoreMask?.[pixelIndex]) continue;
+      totalPixels += 1;
+      if (diffPixelData[pixelIndex * 4] > 128) {
+        diffPixels += 1;
+      }
+    }
+  }
+
+  return {
+    row: geometry.row,
+    col: geometry.col,
+    x: geometry.left,
+    y: geometry.top,
+    width: geometry.right - geometry.left,
+    height: geometry.bottom - geometry.top,
+    diffPixels,
+    totalPixels,
+    matchRate:
+      totalPixels === 0
+        ? 100
+        : Math.round(((totalPixels - diffPixels) / totalPixels) * 100 * 100) / 100,
+  };
 }
 
 function maskTransparentPaddingPixels(

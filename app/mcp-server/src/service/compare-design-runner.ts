@@ -11,6 +11,7 @@ import {
   selfCritique,
   type CompareDesignResult,
   type CropRegion,
+  type DiffReport,
   type FigmaNode,
   type IgnoreRegion,
 } from "@figdiff/shared";
@@ -24,6 +25,7 @@ import {
 } from "./comparison-history.js";
 import { getCropRegion } from "./crop-region-store.js";
 import { createFigmaService, type FigmaService } from "./figma-service.js";
+import { getIgnoreRegionsForComparison } from "./ignore-region-store.js";
 import { compareImages } from "./image-compare-service.js";
 
 const FixtureFigmaNodeSchema: z.ZodType<FigmaNode> = z.lazy(() =>
@@ -171,12 +173,46 @@ function buildStatus(matchRate: number): "PASS" | "FAIL" {
   return matchRate === 100 ? "PASS" : "FAIL";
 }
 
-function buildNextAction(matchRate: number, regionCount: number): string {
+export function buildTargetNodeIds(
+  diffReport: DiffReport | undefined,
+  diffRegions: CompareDesignResult["diffRegions"],
+  limit = 5,
+): string[] {
+  if (limit <= 0) {
+    return [];
+  }
+
+  const candidates: string[] = [];
+
+  const rankedRegionScores = [...(diffReport?.regionScores ?? [])]
+    .filter((score) => typeof score.figmaNodeId === "string" && score.figmaNodeId.length > 0)
+    .sort((a, b) => a.structure - b.structure);
+
+  for (const score of rankedRegionScores) {
+    if (score.figmaNodeId) candidates.push(score.figmaNodeId);
+  }
+
+  for (const region of diffRegions) {
+    for (const nodeId of region.nearbyNodeIds) {
+      if (nodeId.length > 0) {
+        candidates.push(nodeId);
+      }
+    }
+  }
+
+  return [...new Set(candidates)].slice(0, limit);
+}
+
+function buildNextAction(matchRate: number, regionCount: number, targetNodeIds: string[]): string {
   if (matchRate === 100) {
     return "一致率100%です。差分はありません。タスク完了です。";
   }
 
-  return `inspect_node を使って ${regionCount} 箇所の diffRegions の詳細を確認し、CSSを修正してください。修正後は再度 compare_design で検証してください。`;
+  if (targetNodeIds.length === 0) {
+    return `inspect_node を使って ${regionCount} 箇所の diffRegions の詳細を確認し、CSSを修正してください。修正後は再度 compare_design で検証してください。`;
+  }
+
+  return `inspect_node を使って ${regionCount} 箇所の diffRegions の詳細を確認してください。まず ${targetNodeIds.join(" -> ")} の順で確認し、CSSを修正したら再度 compare_design で検証してください。`;
 }
 
 function buildSuggestion(matchRate: number, regionCount: number): string {
@@ -235,12 +271,15 @@ export async function runCompareDesign(
   }
 
   let cropRegion: CropRegion | undefined;
+  let persistedIgnoreRegions: IgnoreRegion[] = [];
   if (args.project_id) {
     const regions = await getCropRegion(args.project_id, args.frame_name);
     if (regions.length > 0) {
       cropRegion = regions[0].region;
     }
+    persistedIgnoreRegions = await getIgnoreRegionsForComparison(args.project_id, args.frame_name);
   }
+  const ignoreRegions = [...persistedIgnoreRegions, ...(args.ignore_regions ?? [])];
 
   const comparison = await compareImages(
     {
@@ -249,13 +288,33 @@ export async function runCompareDesign(
       threshold: args.threshold ?? 0.1,
       cropRegion,
       figmaNodeId: resolvedNodeId,
-      ignoreRegions: args.ignore_regions,
+      ignoreRegions,
     },
     figmaRootNode,
     `cmp-${randomUUID()}`,
   );
+  const figmaProvenance =
+    parsedDesignSource.type === "figma_url"
+      ? {
+          figmaFileKey: parsedDesignSource.fileKey,
+          figmaNodeId: resolvedNodeId,
+          figmaPageName: figmaRootNode?.name,
+        }
+      : undefined;
+  if (comparison.diffReport && figmaProvenance) {
+    comparison.diffReport.issues = comparison.diffReport.issues.map((issue) => ({
+      ...issue,
+      evidence: {
+        ...issue.evidence,
+        figmaFileKey: issue.evidence.figmaFileKey ?? figmaProvenance.figmaFileKey,
+        figmaNodeId: issue.evidence.figmaNodeId ?? figmaProvenance.figmaNodeId,
+        figmaPageName: issue.evidence.figmaPageName ?? figmaProvenance.figmaPageName,
+      },
+    }));
+  }
 
   const regionCount = comparison.diffRegions.length;
+  const targetNodeIds = buildTargetNodeIds(comparison.diffReport, comparison.diffRegions);
   const sourceKey = buildComparisonSourceKey(parsedDesignSource, resolvedNodeId);
   const priorReports = getRecentReports(sourceKey);
   const critique =
@@ -272,7 +331,7 @@ export async function runCompareDesign(
       comparison.diffPixelCount,
       regionCount,
     ),
-    nextAction: buildNextAction(comparison.matchRate, regionCount),
+    nextAction: buildNextAction(comparison.matchRate, regionCount, targetNodeIds),
     suggestion: buildSuggestion(comparison.matchRate, regionCount),
     critique,
   });

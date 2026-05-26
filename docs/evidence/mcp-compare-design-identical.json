@@ -32,6 +32,30 @@
     },
     "nextAction": "一致率100%です。差分はありません。タスク完了です。",
     "suggestion": "一致率100%です。差分はありません。",
+    "clusterTelemetry": {
+      "requestedMode": "auto",
+      "usedMode": "flood",
+      "fallbackUsed": false,
+      "wallMs": 0,
+      "regionCount": 0
+    },
+    "gridSummary": {
+      "rows": 1,
+      "cols": 1,
+      "cells": [
+        {
+          "row": 0,
+          "col": 0,
+          "x": 0,
+          "y": 0,
+          "width": 200,
+          "height": 200,
+          "diffPixels": 0,
+          "totalPixels": 40000,
+          "matchRate": 100
+        }
+      ]
+    },
     "diffReport": {
       "alignment": {
         "translation": {
@@ -69,7 +93,7 @@
         "totalWeight": 1
       },
       "aggregateVerdict": "pass",
-      "rationale": "no critical issues, weighted structure score 1.000 meets pass threshold, and weighted color difference 0.000 is below 3.000 (totalWeight 1.000) with texture-adjusted weights active (alpha 0.700, photo-like cap 0.300)"
+      "rationale": "no critical issues, weighted structure score 1.000 meets pass threshold, and weighted color difference 0.000 is below 3.000 (totalWeight 1.000); weakest region whole-frame (structure 1.000, color 0.000) with texture-adjusted weights active (alpha 0.700, photo-like cap 0.300)"
     }
   }
 }

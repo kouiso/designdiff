@@ -79,7 +79,65 @@ describe("compareImages", () => {
 
     expect(result.diffPixelCount).toBe(0);
     expect(result.matchRate).toBe(100);
+    expect(result.gridSummary?.cells[0]).toMatchObject({
+      diffPixels: 0,
+      totalPixels: 100,
+      matchRate: 100,
+    });
     expect(result.diffReport?.aggregateVerdict).toBeDefined();
+  });
+
+  it("gridSummary でセル別の matchRate と diffPixels を返すこと", async () => {
+    const pixelmatchMock = await import("pixelmatch");
+
+    const width = 640;
+    const height = 320;
+    const mockInstance = createMockSharpInstance({ width, height });
+
+    mockSharpFn.mockReturnValue(mockInstance);
+    vi.mocked(pixelmatchMock.default).mockImplementation((_design, _screenshot, diffPixels) => {
+      for (const pixelIndex of [0, 1, 321]) {
+        const offset = pixelIndex * 4;
+        diffPixels[offset] = 255;
+        diffPixels[offset + 1] = 0;
+        diffPixels[offset + 2] = 0;
+        diffPixels[offset + 3] = 255;
+      }
+      return 3;
+    });
+
+    const { compareImages } = await import("./image-compare-service.js");
+
+    const dummyBase64 = Buffer.alloc(100).toString("base64");
+    const result = await compareImages({
+      designBase64: dummyBase64,
+      screenshotBase64: dummyBase64,
+      ignoreRegions: [{ x: 0, y: 0, width: 1, height: 1 }],
+    });
+
+    expect(result.gridSummary).toMatchObject({ rows: 1, cols: 2 });
+    expect(result.gridSummary?.cells).toHaveLength(2);
+    expect(result.gridSummary?.cells[0]).toMatchObject({
+      row: 0,
+      col: 0,
+      x: 0,
+      y: 0,
+      width: 320,
+      height: 320,
+      diffPixels: 1,
+      totalPixels: 102399,
+    });
+    expect(result.gridSummary?.cells[0]?.matchRate).toBe(100);
+    expect(result.gridSummary?.cells[1]).toMatchObject({
+      row: 0,
+      col: 1,
+      x: 320,
+      y: 0,
+      width: 320,
+      height: 320,
+      diffPixels: 1,
+      totalPixels: 102400,
+    });
   });
 
   it("サイズ不一致の場合に resize が呼ばれること", async () => {
@@ -174,7 +232,7 @@ describe("compareImages", () => {
       expect.any(Uint8ClampedArray),
       200,
       100,
-      { threshold: 0.1 },
+      { threshold: 0.1, diffMask: true },
     );
   });
 
@@ -432,5 +490,187 @@ describe("compareImages", () => {
         screenshotBase64: "invalid",
       }),
     ).rejects.toThrow("Invalid image dimensions");
+  });
+
+  it("grid が差分領域を返せない場合は flood fallback を telemetry に記録すること", async () => {
+    const pixelmatchMock = await import("pixelmatch");
+    const sharedMock = await import("@figdiff/shared");
+
+    const width = 1001;
+    const height = 1000;
+    const designMetadataInstance = createMockSharpInstance({ width, height });
+    const screenshotMetadataInstance = createMockSharpInstance({ width, height });
+    const finalDesignMetadataInstance = createMockSharpInstance({ width, height });
+    const finalScreenshotMetadataInstance = createMockSharpInstance({ width, height });
+    const designRawInstance = createMockSharpInstance({ width, height });
+    const screenshotRawInstance = createMockSharpInstance({ width, height });
+    const diffImageInstance = createMockSharpInstance({ width, height });
+
+    mockSharpFn
+      .mockReturnValueOnce(designMetadataInstance)
+      .mockReturnValueOnce(screenshotMetadataInstance)
+      .mockReturnValueOnce(finalDesignMetadataInstance)
+      .mockReturnValueOnce(finalScreenshotMetadataInstance)
+      .mockReturnValueOnce(designRawInstance)
+      .mockReturnValueOnce(screenshotRawInstance)
+      .mockReturnValueOnce(diffImageInstance);
+    vi.mocked(pixelmatchMock.default).mockReturnValue(1);
+    vi.mocked(sharedMock.clusterDiffPixels).mockReturnValue([
+      {
+        id: 0,
+        bounds: { x: 0, y: 0, width: 10, height: 1 },
+        diffPixelCount: 10,
+        nearbyNodeIds: [],
+        nearbyNodeNames: [],
+      },
+    ]);
+
+    const { compareImages } = await import("./image-compare-service.js");
+    const dummyBase64 = Buffer.alloc(100).toString("base64");
+
+    const result = await compareImages({
+      designBase64: dummyBase64,
+      screenshotBase64: dummyBase64,
+    });
+
+    expect(result.clusterTelemetry).toMatchObject({
+      requestedMode: "auto",
+      usedMode: "flood",
+      fallbackUsed: true,
+      fallbackReason: "grid-empty-with-diff",
+      regionCount: 1,
+    });
+    expect(result.clusterTelemetry?.wallMs).toBeGreaterThanOrEqual(0);
+  });
+
+  it("大きな画像で grid が予算超過した場合は flood をスキップしてタイル領域を返すこと", async () => {
+    const pixelmatchMock = await import("pixelmatch");
+    const sharedMock = await import("@figdiff/shared");
+
+    const width = 1501;
+    const height = 1200;
+    const designMetadataInstance = createMockSharpInstance({ width, height });
+    const screenshotMetadataInstance = createMockSharpInstance({ width, height });
+    const finalDesignMetadataInstance = createMockSharpInstance({ width, height });
+    const finalScreenshotMetadataInstance = createMockSharpInstance({ width, height });
+    const designRawInstance = createMockSharpInstance({ width, height });
+    const screenshotRawInstance = createMockSharpInstance({ width, height });
+    const diffImageInstance = createMockSharpInstance({ width, height });
+
+    mockSharpFn
+      .mockReturnValueOnce(designMetadataInstance)
+      .mockReturnValueOnce(screenshotMetadataInstance)
+      .mockReturnValueOnce(finalDesignMetadataInstance)
+      .mockReturnValueOnce(finalScreenshotMetadataInstance)
+      .mockReturnValueOnce(designRawInstance)
+      .mockReturnValueOnce(screenshotRawInstance)
+      .mockReturnValueOnce(diffImageInstance);
+
+    vi.mocked(pixelmatchMock.default).mockImplementation((_a, _b, diffPixels) => {
+      let count = 0;
+      for (let y = 0; y < 8; y++) {
+        for (let x = 0; x < 8; x++) {
+          const index = ((24 + y) * width + (24 + x)) * 4;
+          diffPixels[index] = 255;
+          diffPixels[index + 3] = 255;
+          count++;
+        }
+      }
+      return count;
+    });
+
+    const clusterDiffPixelsGridDetailedSpy = vi
+      .spyOn(sharedMock, "clusterDiffPixelsGridDetailed")
+      .mockReturnValue({
+        regions: [],
+        aborted: true,
+        abortReason: "wall-budget-exceeded",
+        wallMs: 5010,
+        budgetMs: 5000,
+        hotCellRatio: 0.9,
+      });
+    const clusterDiffPixelsSpy = vi
+      .spyOn(sharedMock, "clusterDiffPixels")
+      .mockImplementation(() => {
+        throw new Error("flood fallback should be skipped");
+      });
+
+    const { compareImages } = await import("./image-compare-service.js");
+    const dummyBase64 = Buffer.alloc(100).toString("base64");
+    const result = await compareImages({
+      designBase64: dummyBase64,
+      screenshotBase64: dummyBase64,
+    });
+
+    expect(clusterDiffPixelsGridDetailedSpy).toHaveBeenCalledOnce();
+    expect(clusterDiffPixelsSpy).not.toHaveBeenCalled();
+    expect(result.clusterTelemetry).toMatchObject({
+      requestedMode: "auto",
+      usedMode: "grid",
+      fallbackUsed: true,
+      fallbackReason: "wall-budget-exceeded",
+      budgetMs: 5000,
+    });
+    expect(result.diffRegions).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          bounds: { x: 0, y: 0, width: 192, height: 192 },
+          diffPixelCount: 64,
+        }),
+      ]),
+    );
+  });
+
+  it("quick tile fallback はリージョン数を上限で打ち切り、決定的な順序で返すこと", async () => {
+    const pixelmatchMock = await import("pixelmatch");
+    const sharedMock = await import("@figdiff/shared");
+
+    const width = 1600;
+    const height = 1200;
+    const designMetadataInstance = createMockSharpInstance({ width, height });
+    const screenshotMetadataInstance = createMockSharpInstance({ width, height });
+    const finalDesignMetadataInstance = createMockSharpInstance({ width, height });
+    const finalScreenshotMetadataInstance = createMockSharpInstance({ width, height });
+    const designRawInstance = createMockSharpInstance({ width, height });
+    const screenshotRawInstance = createMockSharpInstance({ width, height });
+    const diffImageInstance = createMockSharpInstance({ width, height });
+
+    mockSharpFn
+      .mockReturnValueOnce(designMetadataInstance)
+      .mockReturnValueOnce(screenshotMetadataInstance)
+      .mockReturnValueOnce(finalDesignMetadataInstance)
+      .mockReturnValueOnce(finalScreenshotMetadataInstance)
+      .mockReturnValueOnce(designRawInstance)
+      .mockReturnValueOnce(screenshotRawInstance)
+      .mockReturnValueOnce(diffImageInstance);
+
+    vi.mocked(pixelmatchMock.default).mockImplementation((_a, _b, diffPixels) => {
+      for (let i = 0; i < diffPixels.length; i += 4) {
+        diffPixels[i] = 255;
+        diffPixels[i + 3] = 255;
+      }
+      return width * height;
+    });
+
+    vi.spyOn(sharedMock, "clusterDiffPixelsGridDetailed").mockReturnValue({
+      regions: [],
+      aborted: true,
+      abortReason: "wall-budget-exceeded",
+      wallMs: 5100,
+      budgetMs: 5000,
+      hotCellRatio: 1,
+    });
+
+    const { compareImages } = await import("./image-compare-service.js");
+    const dummyBase64 = Buffer.alloc(100).toString("base64");
+    const result = await compareImages({
+      designBase64: dummyBase64,
+      screenshotBase64: dummyBase64,
+    });
+
+    expect(result.diffRegions.length).toBeLessThanOrEqual(60);
+    expect(result.diffRegions[0]?.id).toBe(0);
+    expect(result.diffRegions[0]?.bounds).toEqual({ x: 0, y: 0, width: 192, height: 192 });
+    expect(result.diffRegions.at(-1)?.id).toBe(result.diffRegions.length - 1);
   });
 });

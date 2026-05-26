@@ -9,10 +9,19 @@
     "lint:fix": "turbo run lint:fix",
     "lint:eslint": "eslint .",
     "lint:eslint:fix": "eslint --fix .",
+    "eval:capture-lp": "node scripts/eval/capture-lp-screenshots.mjs",
+    "eval:manifest": "node scripts/eval/build-screenshot-manifest.mjs",
+    "eval:ingest-figma": "node scripts/eval/ingest-figma-pages.mjs",
+    "eval:ingest-figma:mock": "node scripts/eval/verify-figma-ingest-mock.mjs",
+    "eval:sample-project-lp-figma": "node scripts/eval/sample-project-lp-figma-smoke.mjs",
+    "eval:sample-project-lp-figma:ready": "node scripts/eval/sample-project-lp-figma-readiness.mjs",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
     "format": "biome format --write .",
-    "check": "biome check ."
+    "check": "biome check .",
+    "smoke:top-pc-large-page": "node scripts/eval/top-pc-large-page-smoke.mjs",
+    "eval:pr-visual-evidence": "node scripts/eval/pr-visual-evidence-readiness.mjs",
+    "eval:sample-project-lp-figma:watchdog": "node scripts/eval/sample-project-lp-figma-readiness-watchdog.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.15",

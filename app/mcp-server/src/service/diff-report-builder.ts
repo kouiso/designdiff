@@ -16,7 +16,9 @@ interface BuildDiffReportOptions {
   width: number;
   height: number;
   figmaRootNode?: FigmaNode;
+  figmaFileKey?: string;
   figmaNodeId?: string;
+  figmaPageName?: string;
 }
 
 const MAX_REGION_SCORE_COUNT = 24;
@@ -64,8 +66,16 @@ const buildApproximateColorDifference = (
   return (meanAbsoluteRgbDifference / 255) * 100;
 };
 
-function buildIssues(regionScores: RegionScore[]): DiffReport["issues"] {
+function buildIssues(
+  regionScores: RegionScore[],
+  options: BuildDiffReportOptions,
+): DiffReport["issues"] {
   const issues: DiffReport["issues"] = [];
+  const evidenceProvenance = {
+    figmaFileKey: options.figmaFileKey,
+    figmaNodeId: options.figmaNodeId,
+    figmaPageName: options.figmaPageName,
+  };
 
   for (const regionScore of regionScores) {
     if (regionScore.color >= 3) {
@@ -81,6 +91,7 @@ function buildIssues(regionScores: RegionScore[]): DiffReport["issues"] {
           threshold: 3,
           expected: "< 3",
           actual: regionScore.color,
+          ...evidenceProvenance,
         },
         suggestedCssFix: "背景色や塗り色のトークン値をデザイン基準に合わせてください。",
       });
@@ -99,6 +110,7 @@ function buildIssues(regionScores: RegionScore[]): DiffReport["issues"] {
           threshold: 0.95,
           expected: ">= 0.95",
           actual: regionScore.structure,
+          ...evidenceProvenance,
         },
         suggestedCssFix: "位置ずれが大きいため、主要要素の座標と余白を見直してください。",
       });
@@ -117,6 +129,7 @@ function buildIssues(regionScores: RegionScore[]): DiffReport["issues"] {
           threshold: 0.9,
           expected: ">= 0.9",
           actual: regionScore.structure,
+          ...evidenceProvenance,
         },
         suggestedCssFix: "要素サイズやコンテナ幅・高さがデザインと一致しているか確認してください。",
       });
@@ -275,7 +288,7 @@ export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
     residual: 0,
   };
 
-  const issues = buildIssues(regionScores);
+  const issues = buildIssues(regionScores, options);
   const verdict = computeVerdict({ alignment, regionScores, issues });
 
   return {

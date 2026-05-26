@@ -11,6 +11,8 @@ Source of truth:
 - `app/mcp-server/src/tool/generate-report.ts`
 - `app/mcp-server/src/tool/get-crop-region.ts`
 - `app/mcp-server/src/tool/set-crop-region.ts`
+- `app/mcp-server/src/tool/get-ignore-regions.ts`
+- `app/mcp-server/src/tool/set-ignore-regions.ts`
 - Shared schemas in `package/shared/src/schema.ts`
 
 ## `compare_design`
@@ -27,7 +29,16 @@ Defined in `app/mcp-server/src/tool/compare-design.ts`.
   "screenshot": "string",
   "frame_name": "string?",
   "threshold": "number (0..1, default 0.1)",
-  "project_id": "string?"
+  "project_id": "string?",
+  "ignore_regions": [
+    {
+      "x": "number >= 0",
+      "y": "number >= 0",
+      "width": "number > 0",
+      "height": "number > 0",
+      "label": "string?"
+    }
+  ]
 }
 ```
 
@@ -35,7 +46,8 @@ Notes:
 
 - `design_source` accepts a Figma URL or a local image path.
 - `frame_name` is used when a Figma URL does not include `node-id`.
-- `project_id` enables crop-region lookup through `getCropRegion`.
+- `project_id` enables crop-region lookup through `getCropRegion` and persisted ignore-region lookup through `~/.figdiff/projects/{project_id}/ignore-regions.yaml`.
+- Persisted ignore regions are applied before the ad hoc `ignore_regions` input. Both use screenshot pixel coordinates after crop-region application.
 
 ### Output shape
 
@@ -82,6 +94,7 @@ Tool transport details:
 - invalid Figma URL parsing
 - frame not found when `frame_name` is provided
 - missing frame selection when the URL has no `node-id` and no `frame_name`
+- invalid persisted ignore-region YAML
 - output parse failure against `CompareDesignResultSchema`
 
 ## `inspect_node`
@@ -373,6 +386,129 @@ The nested `entry.region` value uses the `CropRegion` shape.
 
 - crop-region store write failure
 - invalid region values such as negative coordinates or non-positive dimensions
+
+## `get_ignore_regions`
+
+Utility tool that reads persisted ignore regions for a project.
+
+Defined in `app/mcp-server/src/tool/get-ignore-regions.ts`.
+
+### Input schema
+
+```json
+{
+  "project_id": "string",
+  "frame_name": "string?"
+}
+```
+
+Notes:
+
+- Config is read from `~/.figdiff/projects/{project_id}/ignore-regions.yaml`.
+- When `frame_name` is provided, global entries plus matching frame entries are returned.
+- When `frame_name` is omitted, all entries are returned.
+
+### Output shape
+
+The tool returns text content with this JSON object:
+
+```json
+{
+  "regionCount": "number",
+  "regions": []
+}
+```
+
+Each entry follows `IgnoreRegionConfigEntrySchema` from `package/shared/src/schema.ts`.
+
+### Usage example
+
+```json
+{
+  "name": "get_ignore_regions",
+  "arguments": {
+    "project_id": "project-123",
+    "frame_name": "Home"
+  }
+}
+```
+
+### Error modes
+
+- invalid project ID
+- invalid YAML or schema validation failure
+- filesystem read failure
+
+## `set_ignore_regions`
+
+Utility tool that atomically replaces persisted ignore regions for a project.
+
+Defined in `app/mcp-server/src/tool/set-ignore-regions.ts`.
+
+### Input schema
+
+```json
+{
+  "project_id": "string",
+  "regions": [
+    {
+      "id": "string",
+      "frame_name": "string?",
+      "x": "number >= 0",
+      "y": "number >= 0",
+      "width": "number > 0",
+      "height": "number > 0",
+      "label": "string?",
+      "note": "string?"
+    }
+  ]
+}
+```
+
+Notes:
+
+- Writes `version: 1` YAML to `~/.figdiff/projects/{project_id}/ignore-regions.yaml`.
+- Writes use a temporary file followed by rename, so readers do not observe partial YAML.
+- `id` is limited to alphanumeric, hyphen, and underscore characters.
+
+### Output shape
+
+The tool returns text content with this JSON object:
+
+```json
+{
+  "success": true,
+  "regionCount": "number"
+}
+```
+
+### Usage example
+
+```json
+{
+  "name": "set_ignore_regions",
+  "arguments": {
+    "project_id": "project-123",
+    "regions": [
+      {
+        "id": "hero-map",
+        "frame_name": "Home",
+        "x": 0,
+        "y": 360,
+        "width": 390,
+        "height": 180,
+        "label": "external map"
+      }
+    ]
+  }
+}
+```
+
+### Error modes
+
+- invalid project ID
+- invalid region values or extra YAML fields
+- filesystem write failure
 
 ## Consumer Notes
 

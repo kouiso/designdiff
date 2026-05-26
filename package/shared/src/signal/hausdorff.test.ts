@@ -80,4 +80,21 @@ describe("computeHausdorff", () => {
 
     expect(result).toBeCloseTo(0, 6);
   });
+
+  it("高密度な輪郭でも有界サンプリングで有限値を返す", () => {
+    const width = 256;
+    const height = 256;
+    const imageA = createBlankImage(width, height);
+    const imageB = createBlankImage(width, height);
+
+    for (let x = 4; x < width - 4; x += 4) {
+      drawRect(imageA, width, x, 8, 1, height - 16);
+      drawRect(imageB, width, x + 1, 8, 1, height - 16);
+    }
+
+    const result = computeHausdorff(imageA, imageB, width, height);
+
+    expect(result).toBeGreaterThanOrEqual(0);
+    expect(result).toBeLessThanOrEqual(1);
+  });
 });
