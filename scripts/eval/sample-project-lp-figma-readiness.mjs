@@ -393,7 +393,10 @@ function normalizeExpectedTexts(page) {
   if (!Array.isArray(value)) {
     return [];
   }
-  return value.map((entry) => String(entry)).filter(Boolean);
+  return value
+    .filter((entry) => entry !== null && entry !== undefined)
+    .map((entry) => String(entry))
+    .filter(Boolean);
 }
 
 function buildReadinessCommand() {
