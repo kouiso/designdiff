@@ -1,0 +1,39 @@
+{
+  "pages": [
+    {
+      "name": "sbi-search-empty-pc",
+      "figma_url": "https://www.figma.com/design/FIGMAFILEKEYSAMPLELP01/Sample-Project?node-id=9233:9725",
+      "expected_texts": [
+        "該当する項目が見つかりません",
+        "名前の一部でも検索できます",
+        "新しい項目を登録する →"
+      ]
+    },
+    {
+      "name": "sbi-free-limit-pc",
+      "figma_url": "https://www.figma.com/design/FIGMAFILEKEYSAMPLELP01/Sample-Project?node-id=9233:9736",
+      "expected_texts": [
+        "登録上限に達しました",
+        "無料プランでは項目を5件まで 登録できます。プレミアムプランで 無制限に登録できます。",
+        "プレミアムプランを見る →",
+        "あとで"
+      ]
+    },
+    {
+      "name": "sbi-consent-pc",
+      "figma_url": "https://www.figma.com/design/FIGMAFILEKEYSAMPLELP01/Sample-Project?node-id=9436:3040",
+      "expected_texts": [
+        "利用規約とプライバシーポリシーに同意する",
+        "同意する場合はチェックボックスを押してください"
+      ]
+    },
+    {
+      "name": "sbi-consent-sp",
+      "figma_url": "https://www.figma.com/design/FIGMAFILEKEYSAMPLELP01/Sample-Project?node-id=9475:3081",
+      "expected_texts": [
+        "利用規約とプライバシーポリシーに同意する",
+        "同意する場合はチェックボックスを押してください"
+      ]
+    }
+  ]
+}

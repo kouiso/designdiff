@@ -73,6 +73,40 @@ FIGMA_TOKEN=<token> pnpm eval:sample-project-lp-figma -- \
 
 `--real` は `FIGMA_TOKEN` が未設定なら fail-loud する。token 変数名を変える場合は `--token-env FIGMA_TOKEN_FOR_LP` を使う。
 
+## SBI regression readiness
+
+`verification/fixtures/sample-project-lp-figma-pages.sbi-regression.json` は、SBI 追加検証用の 4 frame を固定する manifest。`REPLACE_*` placeholder は含めず、readiness では token だけが残 blocker になる状態を確認する。
+
+```bash
+pnpm eval:sample-project-lp-figma:sbi-regression:watchdog
+```
+
+semantic anchor 件数だけを token なしで再確認する場合は validate-only ingest を使う。
+
+```bash
+pnpm eval:sample-project-lp-figma:sbi-regression:validate
+```
+
+期待値:
+
+- `FIGMA_TOKEN` が未設定の場合は exit 2 で `Readiness status: blocked`。
+- JSON evidence の `missingRequirements` は `["FIGMA_TOKEN environment variable"]`。
+- JSON evidence の `placeholderPageNames` は `[]`。
+- validate-only の `figma-ingest-summary.md` は `expected_texts` の件数を出し、SBI frame の semantic anchor を確認できる。
+- validate-only の `figma-ingest-summary.json` は `expected_text_count` と `expected_texts` を page ごとに出す。
+- Markdown の `Next command` は `FIGMA_TOKEN` export と再実行だけを案内し、`REPLACE_*` 置換を案内しない。
+
+`--lp-repo` を明示したい場合は、既存の generic watchdog に同じ manifest を渡す。
+
+```bash
+pnpm eval:sample-project-lp-figma:watchdog -- \
+  --out-dir /tmp/designdiff-sbi-regression-watchdog \
+  --lp-repo /path/to/sample-project-lp \
+  --figma-manifest verification/fixtures/sample-project-lp-figma-pages.sbi-regression.json
+```
+
+`FIGMA_TOKEN` が利用できる環境では、readiness が出力する `realSmokeCommand` を使って real Figma PNG download と eval へ進む。token は repo に保存しない。
+
 ## mock API smoke
 
 実 Figma token / node mapping がなくても、Figma images API 境界と PNG download、`figdiff-manifest.json` 生成は mock server で検証できる。

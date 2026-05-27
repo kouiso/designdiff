@@ -21,7 +21,9 @@
     "check": "biome check .",
     "smoke:top-pc-large-page": "node scripts/eval/top-pc-large-page-smoke.mjs",
     "eval:pr-visual-evidence": "node scripts/eval/pr-visual-evidence-readiness.mjs",
-    "eval:sample-project-lp-figma:watchdog": "node scripts/eval/sample-project-lp-figma-readiness-watchdog.mjs"
+    "eval:sample-project-lp-figma:watchdog": "node scripts/eval/sample-project-lp-figma-readiness-watchdog.mjs",
+    "eval:sample-project-lp-figma:sbi-regression:watchdog": "node scripts/eval/sample-project-lp-figma-readiness-watchdog.mjs --out-dir /tmp/designdiff-sbi-regression-watchdog --figma-manifest verification/fixtures/sample-project-lp-figma-pages.sbi-regression.json",
+    "eval:sample-project-lp-figma:sbi-regression:validate": "node scripts/eval/ingest-figma-pages.mjs --figma-manifest verification/fixtures/sample-project-lp-figma-pages.sbi-regression.json --out /tmp/designdiff-sbi-regression-validate-only --summary-json /tmp/designdiff-sbi-regression-validate-only/figma-ingest-summary.json --validate-only"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.15",
