@@ -32,9 +32,7 @@ const out = resolve(
   optionalString(options, "out", join(tmpdir(), "sample-project-lp-figma-readiness.md")),
 );
 const jsonOut = resolve(optionalString(options, "json-out", deriveJsonOutPath(out)));
-const htmlOut = options["html-out"]
-  ? resolve(optionalString(options, "html-out", ""))
-  : null;
+const htmlOut = options["html-out"] ? resolve(optionalString(options, "html-out", "")) : null;
 
 const checks = [];
 const lpPackageJson = join(lpRepo, "package.json");
@@ -90,7 +88,14 @@ await writeJsonEvidence({
   manifestPageCount: pages.length,
 });
 if (htmlOut) {
-  await writeHtmlReport({ ready, checks, placeholderPages, smokeCommand, readinessCommand, nextActions });
+  await writeHtmlReport({
+    ready,
+    checks,
+    placeholderPages,
+    smokeCommand,
+    readinessCommand,
+    nextActions,
+  });
 }
 
 if (ready) {
@@ -224,9 +229,10 @@ async function writeHtmlReport({
 }) {
   const rows = checks
     .map(
-      (entry) => `<tr class="${entry.ok ? "ok" : "ng"}"><td>${escapeHtml(entry.name)}</td><td>${
-        entry.ok ? "できています" : "未完了"
-      }</td><td>${escapeHtml(entry.detail)}</td></tr>`,
+      (entry) =>
+        `<tr class="${entry.ok ? "ok" : "ng"}"><td>${escapeHtml(entry.name)}</td><td>${
+          entry.ok ? "できています" : "未完了"
+        }</td><td>${escapeHtml(entry.detail)}</td></tr>`,
     )
     .join("\n");
   const nextActionItems = nextActions.map((action) => `<li>${escapeHtml(action)}</li>`).join("\n");
