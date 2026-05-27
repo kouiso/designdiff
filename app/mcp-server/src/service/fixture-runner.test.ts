@@ -86,6 +86,8 @@ const FixtureExpectationSchema = z.object({
 });
 
 const FIXTURES_ROOT = path.resolve(import.meta.dirname, "../../../../verification/fixtures");
+// coverage 実行では画像比較が 5 秒を超えることがあるため、fixture だけ余裕を持たせる。
+const FIXTURE_TEST_TIMEOUT_MS = 15_000;
 
 async function loadBase64(filePath: string): Promise<string> {
   const buffer = await fs.readFile(filePath);
@@ -233,19 +235,35 @@ describe("golden fixture runner", () => {
     }
   }
 
-  it("pair-01-simple-static-lp の期待 verdict を満たすこと", async () => {
-    await runFixture("pair-01-simple-static-lp");
-  });
+  it(
+    "pair-01-simple-static-lp の期待 verdict を満たすこと",
+    async () => {
+      await runFixture("pair-01-simple-static-lp");
+    },
+    FIXTURE_TEST_TIMEOUT_MS,
+  );
 
-  it("pair-02-multi-section-lp の期待 verdict と weighted isolation を満たすこと", async () => {
-    await runFixture("pair-02-multi-section-lp");
-  });
+  it(
+    "pair-02-multi-section-lp の期待 verdict と weighted isolation を満たすこと",
+    async () => {
+      await runFixture("pair-02-multi-section-lp");
+    },
+    FIXTURE_TEST_TIMEOUT_MS,
+  );
 
-  it("pair-03-typography-layout の期待 verdict と worst region を満たすこと", async () => {
-    await runFixture("pair-03-typography-layout");
-  });
+  it(
+    "pair-03-typography-layout の期待 verdict と worst region を満たすこと",
+    async () => {
+      await runFixture("pair-03-typography-layout");
+    },
+    FIXTURE_TEST_TIMEOUT_MS,
+  );
 
-  it("pair-04-color-system の期待 verdict と weighted color を満たすこと", async () => {
-    await runFixture("pair-04-color-system");
-  });
+  it(
+    "pair-04-color-system の期待 verdict と weighted color を満たすこと",
+    async () => {
+      await runFixture("pair-04-color-system");
+    },
+    FIXTURE_TEST_TIMEOUT_MS,
+  );
 });
