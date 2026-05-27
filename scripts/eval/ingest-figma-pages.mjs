@@ -35,6 +35,9 @@ const manifestOut = resolve(
 const summaryOut = resolve(
   options.summary ? String(options.summary) : join(outDir, "figma-ingest-summary.md"),
 );
+const summaryJsonOut = resolve(
+  options["summary-json"] ? String(options["summary-json"]) : deriveSummaryJsonOutPath(summaryOut),
+);
 
 if (!validateOnly && !token) {
   fail(`Figma token is required. Set ${tokenEnv} or pass --token.`);
@@ -51,6 +54,7 @@ if (!Array.isArray(figmaManifest.pages) || figmaManifest.pages.length === 0) {
 await mkdir(figmaDir, { recursive: true });
 await mkdir(dirname(manifestOut), { recursive: true });
 await mkdir(dirname(summaryOut), { recursive: true });
+await mkdir(dirname(summaryJsonOut), { recursive: true });
 
 const pages = figmaManifest.pages.map(normalizePage);
 validateImplementationPairs(pages);
@@ -66,6 +70,19 @@ if (!validateOnly && placeholderPages.length > 0) {
 }
 
 if (validateOnly) {
+  const ingested = pages.map((page) => ({
+    name: page.name,
+    figma: "(validate-only)",
+    impl: implDir ? join(implDir, `${page.name}.png`) : null,
+    meta: {
+      file_key: page.fileKey,
+      node_id: page.nodeId,
+      figma_url: page.figmaUrl,
+      scale: page.scale,
+      format,
+      ...buildExpectedTextsMeta(page),
+    },
+  }));
   await mkdir(dirname(summaryOut), { recursive: true });
   await writeFile(
     summaryOut,
@@ -74,25 +91,19 @@ if (validateOnly) {
       figmaDir,
       implDir,
       placeholderPages,
-      ingested: pages.map((page) => ({
-        name: page.name,
-        figma: "(validate-only)",
-        impl: implDir ? join(implDir, `${page.name}.png`) : null,
-        meta: {
-          file_key: page.fileKey,
-          node_id: page.nodeId,
-          figma_url: page.figmaUrl,
-          scale: page.scale,
-          format,
-        },
-      })),
+      ingested,
     }),
+  );
+  await writeJsonAtomic(
+    summaryJsonOut,
+    buildSummaryEvidence({ figmaManifestPath, figmaDir, implDir, ingested, placeholderPages }),
   );
   process.stdout.write(`Validated pages: ${pages.length}\n`);
   if (placeholderPages.length > 0) {
     process.stdout.write(`Placeholder pages: ${placeholderPages.length}\n`);
   }
   process.stdout.write(`Summary: ${summaryOut}\n`);
+  process.stdout.write(`Summary JSON: ${summaryJsonOut}\n`);
   process.exit(0);
 }
 
@@ -119,6 +130,7 @@ for (const filePages of groupedPages.values()) {
         figma_url: page.figmaUrl,
         scale: page.scale,
         format,
+        ...buildExpectedTextsMeta(page),
       },
     };
     ingested.push(entry);
@@ -146,12 +158,17 @@ await writeFile(
   summaryOut,
   renderSummary({ figmaManifestPath, figmaDir, implDir, ingested, placeholderPages }),
 );
+await writeJsonAtomic(
+  summaryJsonOut,
+  buildSummaryEvidence({ figmaManifestPath, figmaDir, implDir, ingested, placeholderPages }),
+);
 process.stdout.write(`Figma screenshots: ${figmaDir}\n`);
 process.stdout.write(`Pages: ${ingested.length}\n`);
 if (implDir) {
   process.stdout.write(`Manifest: ${manifestOut}\n`);
 }
 process.stdout.write(`Summary: ${summaryOut}\n`);
+process.stdout.write(`Summary JSON: ${summaryJsonOut}\n`);
 
 function parseArgs(args) {
   const parsed = {};
@@ -198,7 +215,23 @@ function normalizePage(page, index) {
     nodeId: normalizeNodeId(nodeId),
     figmaUrl,
     scale: page.scale ? Number(page.scale) : scale,
+    expectedTexts: normalizeExpectedTexts(page),
   };
+}
+
+function normalizeExpectedTexts(page) {
+  const value = page.expected_texts ?? page.expectedTexts;
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value
+    .filter((entry) => entry !== null && entry !== undefined)
+    .map((entry) => String(entry))
+    .filter(Boolean);
+}
+
+function buildExpectedTextsMeta(page) {
+  return page.expectedTexts.length > 0 ? { expected_texts: page.expectedTexts } : {};
 }
 
 function parseFigmaUrl(value) {
@@ -310,6 +343,14 @@ async function writeJsonAtomic(path, value) {
 }
 
 function renderSummary({ figmaManifestPath, figmaDir, implDir, ingested, placeholderPages = [] }) {
+  const evidence = buildSummaryEvidence({
+    figmaManifestPath,
+    figmaDir,
+    implDir,
+    ingested,
+    placeholderPages,
+  });
+  const expectedTextCounts = evidence.pages.map((page) => page.expected_text_count);
   const ingestMode = validateOnly
     ? "validate-only"
     : useRealFigmaApi
@@ -325,17 +366,56 @@ function renderSummary({ figmaManifestPath, figmaDir, implDir, ingested, placeho
     `- Implementation screenshots: ${implDir ?? "(not paired)"}`,
     `- Pages: ${ingested.length}`,
     `- Placeholder pages: ${placeholderPages.length}`,
+    `- Expected text counts: ${expectedTextCounts.join(", ")}`,
     "",
-    "| Page | Figma | Implementation | Node |",
-    "|---|---|---|---|",
+    "| Page | Figma | Implementation | Node | Expected texts |",
+    "|---|---|---|---|---:|",
   ];
   for (const page of ingested) {
+    const expectedTextCount = page.meta.expected_texts?.length ?? 0;
     lines.push(
-      `| ${page.name} | ${page.figma} | ${page.impl ?? ""} | ${page.meta.file_key}/${page.meta.node_id} |`,
+      `| ${page.name} | ${page.figma} | ${page.impl ?? ""} | ${page.meta.file_key}/${page.meta.node_id} | ${expectedTextCount} |`,
     );
   }
   lines.push("");
   return `${lines.join("\n")}`;
+}
+
+function buildSummaryEvidence({
+  figmaManifestPath,
+  figmaDir,
+  implDir,
+  ingested,
+  placeholderPages = [],
+}) {
+  return {
+    source_manifest: figmaManifestPath,
+    ingest_mode: validateOnly
+      ? "validate-only"
+      : useRealFigmaApi
+        ? "real-figma-api"
+        : "custom-api-base",
+    api_base: apiBase,
+    figma_dir: figmaDir,
+    impl_dir: implDir,
+    page_count: ingested.length,
+    placeholder_pages: placeholderPages.map((page) => page.name),
+    pages: ingested.map((page) => ({
+      name: page.name,
+      figma: page.figma,
+      impl: page.impl,
+      file_key: page.meta.file_key,
+      node_id: page.meta.node_id,
+      expected_text_count: page.meta.expected_texts?.length ?? 0,
+      expected_texts: page.meta.expected_texts ?? [],
+    })),
+  };
+}
+
+function deriveSummaryJsonOutPath(markdownOutPath) {
+  return markdownOutPath.endsWith(".md")
+    ? `${markdownOutPath.slice(0, -3)}.json`
+    : `${markdownOutPath}.json`;
 }
 
 function stripTrailingSlash(value) {
