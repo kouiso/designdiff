@@ -86,6 +86,7 @@ await writeJsonEvidence({
   smokeCommand,
   manifestRaw,
   manifestPageCount: pages.length,
+  pages,
 });
 if (htmlOut) {
   await writeHtmlReport({
@@ -325,6 +326,7 @@ async function writeJsonEvidence({
   smokeCommand,
   manifestRaw,
   manifestPageCount,
+  pages,
 }) {
   const missingRequirements = checks.filter((entry) => !entry.ok).map((entry) => entry.name);
   const manifestSha256 = manifestRaw
@@ -338,6 +340,7 @@ async function writeJsonEvidence({
     manifestPageCount,
     manifestSha256,
   };
+  const semanticAnchors = buildSemanticAnchors(pages);
   const evidence = {
     ready,
     missingRequirements,
@@ -348,6 +351,7 @@ async function writeJsonEvidence({
     expectedPaths: { lpRepoPackageJson: join(lpRepo, "package.json"), figmaManifest },
     expectedManifestMetadata,
     actualManifestMetadata,
+    semanticAnchors,
     actualPaths: {
       lpRepoPackageJsonExists: existsSync(join(lpRepo, "package.json")),
       figmaManifestExists: existsSync(figmaManifest),
@@ -359,6 +363,39 @@ async function writeJsonEvidence({
   await mkdir(dirname(jsonOut), { recursive: true });
   await writeFile(jsonOut, `${JSON.stringify(evidence, null, 2)}\n`);
 }
+
+function buildSemanticAnchors(pages) {
+  const pageAnchors = pages.map((page, index) => {
+    const expectedTexts = normalizeExpectedTexts(page);
+    return {
+      name: pageName(page, index),
+      expectedTextCount: expectedTexts.length,
+      expectedTexts,
+    };
+  });
+
+  return {
+    pageCount: pageAnchors.length,
+    pagesWithExpectedTexts: pageAnchors.filter((page) => page.expectedTextCount > 0).length,
+    totalExpectedTextCount: pageAnchors.reduce((total, page) => total + page.expectedTextCount, 0),
+    missingExpectedTextPageNames: pageAnchors
+      .filter((page) => page.expectedTextCount === 0)
+      .map((page) => page.name),
+    pages: pageAnchors,
+  };
+}
+
+function normalizeExpectedTexts(page) {
+  if (!page || typeof page !== "object") {
+    return [];
+  }
+  const value = page.expected_texts ?? page.expectedTexts;
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value.map((entry) => String(entry)).filter(Boolean);
+}
+
 function buildReadinessCommand() {
   const args = [
     "node",

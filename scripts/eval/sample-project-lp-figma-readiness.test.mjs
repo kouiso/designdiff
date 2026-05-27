@@ -21,6 +21,7 @@ function assertReadinessEvidenceContract(evidence) {
     "actualPaths",
     "expectedManifestMetadata",
     "actualManifestMetadata",
+    "semanticAnchors",
     "checks",
   ];
 
@@ -57,6 +58,15 @@ function assertReadinessEvidenceContract(evidence) {
   assert.ok("manifestSha256" in evidence.expectedManifestMetadata);
   assert.ok("manifestPageCount" in evidence.actualManifestMetadata);
   assert.ok("manifestSha256" in evidence.actualManifestMetadata);
+
+  assert.equal(typeof evidence.semanticAnchors, "object");
+  assert.ok("pageCount" in evidence.semanticAnchors);
+  assert.ok("pagesWithExpectedTexts" in evidence.semanticAnchors);
+  assert.ok("totalExpectedTextCount" in evidence.semanticAnchors);
+  assert.ok("missingExpectedTextPageNames" in evidence.semanticAnchors);
+  assert.ok("pages" in evidence.semanticAnchors);
+  assert.equal(Array.isArray(evidence.semanticAnchors.missingExpectedTextPageNames), true);
+  assert.equal(Array.isArray(evidence.semanticAnchors.pages), true);
 }
 
 function assertReadinessDemoCommand(markdown, { lpRepo, manifestPath, outPath, jsonOutPath }) {
@@ -87,7 +97,18 @@ function setupFixture({ placeholder = false } = {}) {
     ? "https://www.figma.com/design/REPLACE_FILE_KEY/LP?node-id=REPLACE_NODE_ID"
     : "https://www.figma.com/design/abc123/LP?node-id=1-2";
 
-  writeFileSync(manifestPath, JSON.stringify({ pages: [{ name: "top", figma_url: figmaUrl }] }));
+  writeFileSync(
+    manifestPath,
+    JSON.stringify({
+      pages: [
+        {
+          name: "top",
+          figma_url: figmaUrl,
+          expected_texts: ["トップ", "無料ではじめる"],
+        },
+      ],
+    }),
+  );
 
   return { root, lpRepo, manifestPath };
 }
@@ -143,6 +164,15 @@ test("blocked 時に JSON 証跡へ blocker と expected/actual path を出力�
     assert.equal(evidence.expectedManifestMetadata.manifestSha256, true);
     assert.equal(evidence.actualManifestMetadata.manifestPageCount, 1);
     assert.equal(evidence.actualManifestMetadata.manifestSha256, manifestChecksum(manifestPath));
+    assert.equal(evidence.semanticAnchors.pageCount, 1);
+    assert.equal(evidence.semanticAnchors.pagesWithExpectedTexts, 1);
+    assert.equal(evidence.semanticAnchors.totalExpectedTextCount, 2);
+    assert.deepEqual(evidence.semanticAnchors.missingExpectedTextPageNames, []);
+    assert.deepEqual(evidence.semanticAnchors.pages[0], {
+      name: "top",
+      expectedTextCount: 2,
+      expectedTexts: ["トップ", "無料ではじめる"],
+    });
   } finally {
     rmSync(root, { force: true, recursive: true });
     rmSync(out, { force: true });
@@ -206,6 +236,10 @@ test("ready 時に JSON 証跡へ real smoke command と missingRequirements 空
     assert.equal(evidence.expectedManifestMetadata.manifestSha256, true);
     assert.equal(evidence.actualManifestMetadata.manifestPageCount, 1);
     assert.equal(evidence.actualManifestMetadata.manifestSha256, manifestChecksum(manifestPath));
+    assert.equal(evidence.semanticAnchors.pageCount, 1);
+    assert.equal(evidence.semanticAnchors.pagesWithExpectedTexts, 1);
+    assert.equal(evidence.semanticAnchors.totalExpectedTextCount, 2);
+    assert.deepEqual(evidence.semanticAnchors.missingExpectedTextPageNames, []);
   } finally {
     rmSync(root, { force: true, recursive: true });
     rmSync(out, { force: true });
