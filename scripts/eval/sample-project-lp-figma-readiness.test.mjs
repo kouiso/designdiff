@@ -104,7 +104,7 @@ function setupFixture({ placeholder = false } = {}) {
         {
           name: "top",
           figma_url: figmaUrl,
-          expected_texts: ["トップ", "無料ではじめる"],
+          expected_texts: ["トップ", null, "", "無料ではじめる"],
         },
       ],
     }),
