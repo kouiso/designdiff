@@ -95,11 +95,22 @@ function setupFixture({ placeholder = false } = {}) {
 test("blocked 時に JSON 証跡へ blocker と expected/actual path を出力する", () => {
   const { root, lpRepo, manifestPath } = setupFixture({ placeholder: true });
   const out = join(tmpdir(), `sample-project-ready-${Date.now()}.md`);
+  const htmlOut = out.replace(/\.md$/u, ".html");
 
   try {
     const result = spawnSync(
-      "node",
-      [script, "--lp-repo", lpRepo, "--figma-manifest", manifestPath, "--out", out],
+      process.execPath,
+      [
+        script,
+        "--lp-repo",
+        lpRepo,
+        "--figma-manifest",
+        manifestPath,
+        "--out",
+        out,
+        "--html-out",
+        htmlOut,
+      ],
       { cwd: repoDir, encoding: "utf8" },
     );
 
@@ -113,6 +124,12 @@ test("blocked 時に JSON 証跡へ blocker と expected/actual path を出力�
       outPath: out,
       jsonOutPath: jsonOut,
     });
+    const html = readFileSync(htmlOut, "utf8");
+    assert.match(html, /まだ比較を始められません/u);
+    assert.match(html, /ユーザーが今できるようになったこと/u);
+    assert.match(html, /仮の Figma 値を、実際の Figma ファイルと画面 ID に置き換えてください。/u);
+    assert.match(html, /top/u);
+    assert.match(markdown, new RegExp(`--html-out ${escapeRegExp(shellQuote(htmlOut))}`, "u"));
     assertReadinessEvidenceContract(evidence);
     assert.equal(evidence.ready, false);
     assert.match(evidence.missingRequirements.join("\n"), /No REPLACE_\* placeholders/u);
@@ -130,6 +147,7 @@ test("blocked 時に JSON 証跡へ blocker と expected/actual path を出力�
     rmSync(root, { force: true, recursive: true });
     rmSync(out, { force: true });
     rmSync(out.replace(/\.md$/u, ".json"), { force: true });
+    rmSync(htmlOut, { force: true });
   }
 });
 
@@ -137,10 +155,11 @@ test("ready 時に JSON 証跡へ real smoke command と missingRequirements 空
   const { root, lpRepo, manifestPath } = setupFixture();
   const out = join(tmpdir(), `sample-project-ready-${Date.now()}-ready.md`);
   const jsonOut = join(tmpdir(), `sample-project-ready-${Date.now()}-ready-evidence.json`);
+  const htmlOut = join(tmpdir(), `sample-project-ready-${Date.now()}-ready.html`);
 
   try {
     const result = spawnSync(
-      "node",
+      process.execPath,
       [
         script,
         "--lp-repo",
@@ -151,6 +170,8 @@ test("ready 時に JSON 証跡へ real smoke command と missingRequirements 空
         out,
         "--json-out",
         jsonOut,
+        "--html-out",
+        htmlOut,
       ],
       {
         cwd: repoDir,
@@ -168,6 +189,10 @@ test("ready 時に JSON 証跡へ real smoke command と missingRequirements 空
       outPath: out,
       jsonOutPath: jsonOut,
     });
+    const html = readFileSync(htmlOut, "utf8");
+    assert.match(html, /比較を始められます/u);
+    assert.match(html, /このまま実デザイン画像の取得と画面比較に進めます。/u);
+    assert.match(html, /pnpm eval:sample-project-lp-figma/u);
     assertReadinessEvidenceContract(evidence);
     assert.equal(evidence.ready, true);
     assert.deepEqual(evidence.missingRequirements, []);
@@ -185,5 +210,10 @@ test("ready 時に JSON 証跡へ real smoke command と missingRequirements 空
     rmSync(root, { force: true, recursive: true });
     rmSync(out, { force: true });
     rmSync(jsonOut, { force: true });
+    rmSync(htmlOut, { force: true });
   }
 });
+
+function escapeRegExp(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
+}

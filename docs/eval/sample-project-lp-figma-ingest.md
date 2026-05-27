@@ -45,13 +45,15 @@ pnpm eval:sample-project-lp-figma -- \
 pnpm eval:sample-project-lp-figma:ready -- \
   --lp-repo /path/to/sample-project-lp \
   --figma-manifest /path/to/sample-project-lp-figma-pages.json \
-  --out /tmp/sample-lp-figma-readiness.md
+  --out /tmp/sample-lp-figma-readiness.md \
+  --html-out /tmp/sample-lp-figma-readiness.html
 ```
 
 期待値:
 
 - 実 Figma manifest と token が揃っていれば `Ready: yes`。
 - template の `REPLACE_*` が残っている場合は exit 2 で、未置換 page が report に出る。
+- `/tmp/sample-lp-figma-readiness.html` で、比較を始める前に足りないものを日本語の画面として確認できる。
 
 ```bash
 FIGMA_TOKEN=<token> pnpm eval:sample-project-lp-figma -- \

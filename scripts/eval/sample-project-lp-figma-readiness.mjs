@@ -32,6 +32,7 @@ const out = resolve(
   optionalString(options, "out", join(tmpdir(), "sample-project-lp-figma-readiness.md")),
 );
 const jsonOut = resolve(optionalString(options, "json-out", deriveJsonOutPath(out)));
+const htmlOut = options["html-out"] ? resolve(optionalString(options, "html-out", "")) : null;
 
 const checks = [];
 const lpPackageJson = join(lpRepo, "package.json");
@@ -76,7 +77,8 @@ checks.push(
 const ready = checks.every((entry) => entry.ok) && !manifestError;
 const smokeCommand = buildSmokeCommand();
 const readinessCommand = buildReadinessCommand();
-await writeReport({ ready, checks, placeholderPages, smokeCommand, readinessCommand });
+const nextActions = buildNextActions({ ready, checks, placeholderPages });
+await writeReport({ ready, checks, placeholderPages, smokeCommand, readinessCommand, nextActions });
 await writeJsonEvidence({
   ready,
   checks,
@@ -85,6 +87,16 @@ await writeJsonEvidence({
   manifestRaw,
   manifestPageCount: pages.length,
 });
+if (htmlOut) {
+  await writeHtmlReport({
+    ready,
+    checks,
+    placeholderPages,
+    smokeCommand,
+    readinessCommand,
+    nextActions,
+  });
+}
 
 if (ready) {
   process.stdout.write(`Ready: ${out}\nEvidence JSON: ${jsonOut}\n`);
@@ -163,7 +175,14 @@ function isSupportedFigmaUrl(value) {
     return false;
   }
 }
-async function writeReport({ ready, checks, placeholderPages, smokeCommand, readinessCommand }) {
+async function writeReport({
+  ready,
+  checks,
+  placeholderPages,
+  smokeCommand,
+  readinessCommand,
+  nextActions,
+}) {
   const lines = [
     "# sample-project-lp Figma readiness",
     "",
@@ -186,9 +205,9 @@ async function writeReport({ ready, checks, placeholderPages, smokeCommand, read
   if (ready) {
     lines.push("```bash", smokeCommand, "```");
   } else {
-    lines.push("- Replace all `REPLACE_*` values in the Figma manifest.");
-    lines.push(`- Export ${tokenEnv} without storing it in the repo.`);
-    lines.push("- Re-run the 1-minute readiness command, then run `--real` smoke.");
+    for (const action of nextActions) {
+      lines.push(`- ${action}`);
+    }
   }
   if (placeholderPages.length > 0) {
     lines.push("", "## Placeholder pages", "");
@@ -199,6 +218,105 @@ async function writeReport({ ready, checks, placeholderPages, smokeCommand, read
   lines.push("");
   await mkdir(dirname(out), { recursive: true });
   await writeFile(out, `${lines.join("\n")}\n`);
+}
+async function writeHtmlReport({
+  ready,
+  checks,
+  placeholderPages,
+  smokeCommand,
+  readinessCommand,
+  nextActions,
+}) {
+  const rows = checks
+    .map(
+      (entry) =>
+        `<tr class="${entry.ok ? "ok" : "ng"}"><td>${escapeHtml(entry.name)}</td><td>${
+          entry.ok ? "できています" : "未完了"
+        }</td><td>${escapeHtml(entry.detail)}</td></tr>`,
+    )
+    .join("\n");
+  const nextActionItems = nextActions.map((action) => `<li>${escapeHtml(action)}</li>`).join("\n");
+  const placeholderItems = placeholderPages
+    .map((page) => `<li>${escapeHtml(page.name ?? "(unnamed)")}</li>`)
+    .join("\n");
+  const html = `<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>sample-project-lp Figma 比較準備</title>
+  <style>
+    :root { color-scheme: light; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    body { margin: 0; background: #f7f7f5; color: #1f2933; }
+    main { max-width: 980px; margin: 0 auto; padding: 32px 24px 48px; }
+    h1 { margin: 0 0 12px; font-size: 30px; letter-spacing: 0; }
+    h2 { margin-top: 28px; font-size: 20px; letter-spacing: 0; }
+    .status { display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 6px; font-weight: 700; }
+    .status.ready { background: #dff7ea; color: #166534; }
+    .status.blocked { background: #fff1d6; color: #8a4b00; }
+    .panel { background: #ffffff; border: 1px solid #d7d7d2; border-radius: 8px; padding: 20px; margin-top: 16px; }
+    table { width: 100%; border-collapse: collapse; background: #ffffff; }
+    th, td { border-bottom: 1px solid #e5e5df; padding: 10px 12px; text-align: left; vertical-align: top; }
+    th { background: #efefea; font-size: 13px; }
+    tr.ok td:nth-child(2) { color: #166534; font-weight: 700; }
+    tr.ng td:nth-child(2) { color: #b45309; font-weight: 700; }
+    code, pre { font-family: "SFMono-Regular", Consolas, monospace; }
+    pre { overflow-x: auto; background: #1f2933; color: #f8fafc; padding: 14px; border-radius: 6px; }
+    .path { overflow-wrap: anywhere; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>sample-project-lp Figma 比較準備</h1>
+    <div class="status ${ready ? "ready" : "blocked"}">${
+      ready ? "比較を始められます" : "まだ比較を始められません"
+    }</div>
+
+    <section class="panel">
+      <h2>ユーザーが今できるようになったこと</h2>
+      <p>${
+        ready
+          ? "実デザイン画像とサイト画面の比較を始めるための準備がそろっているか、一目で確認できます。"
+          : "実デザイン画像とサイト画面の比較を始める前に、何が足りないかを日本語の画面で確認できます。"
+      }</p>
+    </section>
+
+    <section class="panel">
+      <h2>今足りないもの</h2>
+      ${nextActionItems ? `<ul>${nextActionItems}</ul>` : "<p>追加で直すものはありません。</p>"}
+    </section>
+
+    <section class="panel">
+      <h2>動作確認</h2>
+      <table>
+        <thead><tr><th>確認項目</th><th>状態</th><th>内容</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </section>
+
+    ${
+      placeholderItems
+        ? `<section class="panel"><h2>仮のまま残っている画面</h2><ul>${placeholderItems}</ul></section>`
+        : ""
+    }
+
+    <section class="panel">
+      <h2>次に実行するコマンド</h2>
+      <pre>${escapeHtml(ready ? smokeCommand : readinessCommand)}</pre>
+    </section>
+
+    <section class="panel">
+      <h2>保存先</h2>
+      <p class="path">Markdown: ${escapeHtml(out)}</p>
+      <p class="path">JSON: ${escapeHtml(jsonOut)}</p>
+      <p class="path">HTML: ${escapeHtml(htmlOut)}</p>
+    </section>
+  </main>
+</body>
+</html>
+`;
+  await mkdir(dirname(htmlOut), { recursive: true });
+  await writeFile(htmlOut, html);
 }
 async function writeJsonEvidence({
   ready,
@@ -256,7 +374,37 @@ function buildReadinessCommand() {
     "--json-out",
     shellQuote(jsonOut),
   ];
+  if (htmlOut) {
+    args.push("--html-out", shellQuote(htmlOut));
+  }
   return args.join(" ");
+}
+
+function buildNextActions({ ready, checks, placeholderPages }) {
+  if (ready) {
+    return ["このまま実デザイン画像の取得と画面比較に進めます。"];
+  }
+  const missingNames = new Set(checks.filter((entry) => !entry.ok).map((entry) => entry.name));
+  const actions = [];
+  if (missingNames.has("LP repo package.json")) {
+    actions.push("sample-project-lp のフォルダを正しく指定してください。");
+  }
+  if (missingNames.has("Figma manifest file")) {
+    actions.push("Figma の画面一覧ファイルを用意してください。");
+  }
+  if (missingNames.has("Manifest pages") || missingNames.has("Ingestible page schema")) {
+    actions.push("画面一覧ファイルに、画面名と Figma のリンクを入れてください。");
+  }
+  if (placeholderPages.length > 0 || missingNames.has("No REPLACE_* placeholders")) {
+    actions.push("仮の Figma 値を、実際の Figma ファイルと画面 ID に置き換えてください。");
+  }
+  if (missingNames.has(`${tokenEnv} environment variable`)) {
+    actions.push(`${tokenEnv} を環境変数に入れてください。値はリポジトリに保存しないでください。`);
+  }
+  if (actions.length === 0) {
+    actions.push("未完了の確認項目を直して、もう一度 readiness を実行してください。");
+  }
+  return actions;
 }
 
 function buildSmokeCommand() {
@@ -269,6 +417,14 @@ function deriveJsonOutPath(markdownOutPath) {
 }
 function escapeTable(value) {
   return String(value).replaceAll("|", "\\|");
+}
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
 }
 function shellQuote(value) {
   return `"${String(value).replaceAll("\\", "\\\\").replaceAll('"', '\\"')}"`;
