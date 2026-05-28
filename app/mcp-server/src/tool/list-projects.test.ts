@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from "vite
 import { listProjects } from "./list-projects.js";
 
 vi.mock("node:os", async () => {
-  const actual = await vi.importActual("node:os") as { homedir: () => string };
+  const actual = (await vi.importActual("node:os")) as { homedir: () => string };
   return {
     ...actual,
     homedir: vi.fn(() => actual.homedir()),
