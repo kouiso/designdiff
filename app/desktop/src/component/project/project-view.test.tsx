@@ -269,9 +269,7 @@ describe("ProjectView", () => {
       render(<ProjectView onNavigate={vi.fn()} />);
 
       fireEvent.click(screen.getAllByText("Add Design Source")[0]);
-      expect(
-        screen.getByPlaceholderText("Figma URL or local image path"),
-      ).toBeInTheDocument();
+      expect(screen.getByPlaceholderText("Figma URL or local image path")).toBeInTheDocument();
     });
 
     it("ローカル画像パスを入力して Add すると addDesignSource が呼ばれる", () => {
@@ -351,10 +349,9 @@ describe("ProjectView", () => {
       render(<ProjectView onNavigate={vi.fn()} />);
 
       fireEvent.click(screen.getAllByText("Add Design Source")[0]);
-      fireEvent.change(
-        screen.getByPlaceholderText("Label (e.g. PC Design, SP Design)"),
-        { target: { value: "SP Design" } },
-      );
+      fireEvent.change(screen.getByPlaceholderText("Label (e.g. PC Design, SP Design)"), {
+        target: { value: "SP Design" },
+      });
       fireEvent.change(screen.getByPlaceholderText("Figma URL or local image path"), {
         target: { value: "/path/sp.png" },
       });
@@ -408,9 +405,7 @@ describe("ProjectView", () => {
       fireEvent.click(screen.getByText("Compare"));
 
       await waitFor(() => {
-        expect(mockLoadDesign).toHaveBeenCalledWith(
-          "https://www.figma.com/design/ABC/File",
-        );
+        expect(mockLoadDesign).toHaveBeenCalledWith("https://www.figma.com/design/ABC/File");
         expect(onNavigate).toHaveBeenCalledWith("compare");
       });
     });

@@ -88,14 +88,10 @@ describe("useCanvasZoomPan", () => {
       renderHook(() => useCanvasZoomPan());
 
       act(() => {
-        window.dispatchEvent(
-          new KeyboardEvent("keydown", { code: "Space", bubbles: true }),
-        );
+        window.dispatchEvent(new KeyboardEvent("keydown", { code: "Space", bubbles: true }));
       });
       act(() => {
-        window.dispatchEvent(
-          new KeyboardEvent("keyup", { code: "Space", bubbles: true }),
-        );
+        window.dispatchEvent(new KeyboardEvent("keyup", { code: "Space", bubbles: true }));
       });
     });
 

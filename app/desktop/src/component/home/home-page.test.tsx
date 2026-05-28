@@ -165,10 +165,9 @@ describe("HomePage", () => {
       fireEvent.change(screen.getByPlaceholderText("プロジェクト名（例: コーポレートサイト）"), {
         target: { value: "新プロジェクト" },
       });
-      fireEvent.change(
-        screen.getByPlaceholderText("実装URL（例: http://localhost:3000）"),
-        { target: { value: "http://localhost:4000" } },
-      );
+      fireEvent.change(screen.getByPlaceholderText("実装URL（例: http://localhost:3000）"), {
+        target: { value: "http://localhost:4000" },
+      });
 
       fireEvent.click(screen.getByText("作成"));
 
@@ -185,10 +184,9 @@ describe("HomePage", () => {
       render(<HomePage onNavigate={vi.fn()} />);
       fireEvent.click(screen.getByText("新規プロジェクト"));
 
-      fireEvent.change(
-        screen.getByPlaceholderText("実装URL（例: http://localhost:3000）"),
-        { target: { value: "http://localhost:4000" } },
-      );
+      fireEvent.change(screen.getByPlaceholderText("実装URL（例: http://localhost:3000）"), {
+        target: { value: "http://localhost:4000" },
+      });
       fireEvent.click(screen.getByText("作成"));
 
       expect(mockCreateProject).not.toHaveBeenCalled();
@@ -201,10 +199,9 @@ describe("HomePage", () => {
       render(<HomePage onNavigate={vi.fn()} />);
       fireEvent.click(screen.getByText("新規プロジェクト"));
 
-      fireEvent.change(
-        screen.getByPlaceholderText("プロジェクト名（例: コーポレートサイト）"),
-        { target: { value: "Test" } },
-      );
+      fireEvent.change(screen.getByPlaceholderText("プロジェクト名（例: コーポレートサイト）"), {
+        target: { value: "Test" },
+      });
       fireEvent.click(screen.getByText("作成"));
 
       expect(mockCreateProject).not.toHaveBeenCalled();
@@ -228,10 +225,9 @@ describe("HomePage", () => {
       render(<HomePage onNavigate={vi.fn()} />);
       fireEvent.click(screen.getByText("新規プロジェクト"));
 
-      fireEvent.change(
-        screen.getByPlaceholderText("プロジェクト名（例: コーポレートサイト）"),
-        { target: { value: "Test" } },
-      );
+      fireEvent.change(screen.getByPlaceholderText("プロジェクト名（例: コーポレートサイト）"), {
+        target: { value: "Test" },
+      });
       const urlInput = screen.getByPlaceholderText("実装URL（例: http://localhost:3000）");
       fireEvent.change(urlInput, { target: { value: "http://localhost:3000" } });
       fireEvent.keyDown(urlInput, { key: "Enter" });
@@ -294,7 +290,9 @@ describe("HomePage", () => {
 
       render(<HomePage onNavigate={vi.fn()} />);
       // Delete button is in the card; trigger with click (stopPropagation prevents openProject)
-      const deleteBtn = document.querySelector("button svg[class*='text-destructive']")?.closest("button");
+      const deleteBtn = document
+        .querySelector("button svg[class*='text-destructive']")
+        ?.closest("button");
       if (deleteBtn) {
         fireEvent.click(deleteBtn);
         expect(mockDeleteProject).toHaveBeenCalledWith("proj-1");

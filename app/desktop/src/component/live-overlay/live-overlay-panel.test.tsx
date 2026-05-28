@@ -159,7 +159,11 @@ describe("LiveOverlayPanel", () => {
 
   it("isOpen=true + frameImage あり + overlayImageBase64 なし → デザインを重ねるボタンが表示される", () => {
     const mockSetOverlayImage = vi.fn(); // Prevent auto-apply effect from hiding the button
-    useOverlayStore.setState({ isOpen: true, overlayImageBase64: null, setOverlayImage: mockSetOverlayImage });
+    useOverlayStore.setState({
+      isOpen: true,
+      overlayImageBase64: null,
+      setOverlayImage: mockSetOverlayImage,
+    });
     useProjectStore.setState({ frameImage: "data:image/png;base64,abc" });
     render(<LiveOverlayPanel />);
     expect(screen.getByText("デザインを重ねる")).toBeInTheDocument();
@@ -207,7 +211,10 @@ describe("LiveOverlayPanel overlay controls", () => {
 
   it("幅ボタンクリックで setOverlayScaleMode('fit_width') が呼ばれる", async () => {
     const mockSetScaleMode = vi.fn().mockResolvedValue(undefined);
-    useOverlayStore.setState({ overlayScaleMode: "actual_size", setOverlayScaleMode: mockSetScaleMode });
+    useOverlayStore.setState({
+      overlayScaleMode: "actual_size",
+      setOverlayScaleMode: mockSetScaleMode,
+    });
     render(<LiveOverlayPanel />);
     fireEvent.click(screen.getByText("幅"));
     expect(mockSetScaleMode).toHaveBeenCalledWith("fit_width");
@@ -215,7 +222,10 @@ describe("LiveOverlayPanel overlay controls", () => {
 
   it("実寸ボタンクリックで setOverlayScaleMode('actual_size') が呼ばれる", async () => {
     const mockSetScaleMode = vi.fn().mockResolvedValue(undefined);
-    useOverlayStore.setState({ overlayScaleMode: "fit_width", setOverlayScaleMode: mockSetScaleMode });
+    useOverlayStore.setState({
+      overlayScaleMode: "fit_width",
+      setOverlayScaleMode: mockSetScaleMode,
+    });
     render(<LiveOverlayPanel />);
     fireEvent.click(screen.getByText("実寸"));
     expect(mockSetScaleMode).toHaveBeenCalledWith("actual_size");
@@ -238,7 +248,10 @@ describe("LiveOverlayPanel overlay controls", () => {
 
   it("透明度スライダー変更で setOpacity が呼ばれる", async () => {
     const mockSetOpacity = vi.fn().mockResolvedValue(undefined);
-    useOverlayStore.setState({ overlayViewMode: "transparent_overlay", setOpacity: mockSetOpacity });
+    useOverlayStore.setState({
+      overlayViewMode: "transparent_overlay",
+      setOpacity: mockSetOpacity,
+    });
     render(<LiveOverlayPanel />);
     const slider = screen.getByLabelText("透明度");
     fireEvent.change(slider, { target: { value: "0.8" } });
@@ -259,7 +272,10 @@ describe("LiveOverlayPanel overlay controls", () => {
 
   it("分割位置スライダー変更で setSplitPosition が呼ばれる", async () => {
     const mockSetSplitPosition = vi.fn().mockResolvedValue(undefined);
-    useOverlayStore.setState({ overlayViewMode: "split_screen", setSplitPosition: mockSetSplitPosition });
+    useOverlayStore.setState({
+      overlayViewMode: "split_screen",
+      setSplitPosition: mockSetSplitPosition,
+    });
     render(<LiveOverlayPanel />);
     const slider = screen.getByLabelText("分割位置");
     fireEvent.change(slider, { target: { value: "0.3" } });
@@ -274,7 +290,10 @@ describe("LiveOverlayPanel overlay controls", () => {
 
   it("速度スライダー変更で setToggleIntervalMs が呼ばれる", () => {
     const mockSetToggleIntervalMs = vi.fn();
-    useOverlayStore.setState({ overlayViewMode: "toggle", setToggleIntervalMs: mockSetToggleIntervalMs });
+    useOverlayStore.setState({
+      overlayViewMode: "toggle",
+      setToggleIntervalMs: mockSetToggleIntervalMs,
+    });
     render(<LiveOverlayPanel />);
     const slider = screen.getByLabelText("速度");
     fireEvent.change(slider, { target: { value: "1000" } });
