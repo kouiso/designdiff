@@ -1,5 +1,0 @@
- WARN  Unsupported engine: wanted: {"node":">=25.6.1"} (current: {"node":"v22.22.2","pnpm":"9.15.9"})
-
-> figdiff@ lint:eslint /Users/kouiso/ghq/kouiso/designdiff
-> eslint .
-

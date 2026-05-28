@@ -54,9 +54,12 @@ yarn-error.log*
 .claude/memory/
 
 # Verification artifacts (evidence, traces, secrets-masked logs)
-# Keep committed: fixtures, scripts, correlation reports
+# Keep committed: fixtures, scripts, correlation reports (.png, .md, .json)
 # Ignore: per-attempt runs and ad-hoc evidence drops
 verification/attempts/
 verification/evidence/
 verification/traces/
 verification/logs/
+
+# Evidence build/lint/test logs (not source-of-truth, regeneratable)
+docs/evidence/*.log
