@@ -1,12 +1,13 @@
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
 import { tmpdir } from "node:os";
+import { join } from "node:path";
+
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from "vitest";
 
 import { listProjects } from "./list-projects.js";
 
 vi.mock("node:os", async () => {
-  const actual = await vi.importActual<typeof import("node:os")>("node:os");
+  const actual = await vi.importActual("node:os") as { homedir: () => string };
   return {
     ...actual,
     homedir: vi.fn(() => actual.homedir()),
