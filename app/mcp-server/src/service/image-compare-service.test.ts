@@ -619,7 +619,8 @@ describe("compareImages", () => {
         }),
       ]),
     );
-  });
+  // 1501×1200×4 ≈ 7.2 MB buffer + pixel loop is slow on CI runners; 15 s avoids flaky timeout.
+  }, 15000);
 
   it("quick tile fallback はリージョン数を上限で打ち切り、決定的な順序で返すこと", async () => {
     const pixelmatchMock = await import("pixelmatch");
@@ -672,5 +673,6 @@ describe("compareImages", () => {
     expect(result.diffRegions[0]?.id).toBe(0);
     expect(result.diffRegions[0]?.bounds).toEqual({ x: 0, y: 0, width: 192, height: 192 });
     expect(result.diffRegions.at(-1)?.id).toBe(result.diffRegions.length - 1);
-  });
+  // 1600×1200×4 ≈ 7.7 MB buffer + pixel loop is slow on CI runners; 15 s avoids flaky timeout.
+  }, 15000);
 });
