@@ -1,0 +1,19 @@
+{
+  "pages": [
+    {
+      "name": "top-pc",
+      "figma_url": "https://www.figma.com/design/FIGMAFILEKEYSAMPLELP01/Sample-Project-LP?node-id=9221-12662",
+      "expected_texts": [
+        "サンプルの見出しを もっとスマートに",
+        "Sample Project"
+      ]
+    },
+    {
+      "name": "contact-pc",
+      "figma_url": "https://www.figma.com/design/FIGMAFILEKEYSAMPLELP01/Sample-Project-LP?node-id=9221-12624",
+      "expected_texts": [
+        "お問い合わせ"
+      ]
+    }
+  ]
+}
