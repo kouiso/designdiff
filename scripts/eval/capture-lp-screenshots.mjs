@@ -207,7 +207,7 @@ async function capturePages({ baseUrl, implDir, pages }) {
       const page = await context.newPage();
       for (const target of pages) {
         const url = new URL(target.path, baseUrl).toString();
-        await page.goto(url, { waitUntil: "networkidle" });
+        await page.goto(url, { waitUntil: "load", timeout: 60000 });
         const fileName = `${target.name}-${viewport.suffix}.png`;
         const screenshotPath = join(implDir, fileName);
         await page.screenshot({ path: screenshotPath, fullPage: true });
