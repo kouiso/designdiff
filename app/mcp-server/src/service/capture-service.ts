@@ -28,15 +28,16 @@ export function getCaptureDir(): string {
  * Requires `@playwright/test` installed and `playwright install chromium` run once.
  */
 export async function captureUrl(url: string, options: CaptureOptions): Promise<CaptureResult> {
-  let chromium: typeof import("@playwright/test")["chromium"];
-  try {
-    const pw = await import("@playwright/test");
-    chromium = pw.chromium;
-  } catch {
-    throw new Error(
-      "Playwright is not installed. Run: pnpm add -D @playwright/test && npx playwright install chromium",
-    );
-  }
+  const loadPw = async () => {
+    try {
+      return await import("@playwright/test");
+    } catch {
+      throw new Error(
+        "Playwright is not installed. Run: pnpm add -D @playwright/test && npx playwright install chromium",
+      );
+    }
+  };
+  const pw = await loadPw();
 
   const captureDir = getCaptureDir();
   await fs.mkdir(captureDir, { recursive: true });
@@ -44,7 +45,7 @@ export async function captureUrl(url: string, options: CaptureOptions): Promise<
   const id = crypto.randomUUID();
   const screenshotPath = path.join(captureDir, `capture-${id}.png`);
 
-  const browser = await chromium.launch();
+  const browser = await pw.chromium.launch();
   try {
     const context = await browser.newContext({
       viewport: { width: options.width, height: options.height ?? 1200 },
