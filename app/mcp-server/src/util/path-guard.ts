@@ -1,8 +1,9 @@
 import * as fs from "node:fs/promises";
+import { homedir } from "node:os";
 import * as path from "node:path";
 
 function getAllowedDirs(): string[] {
-  const dirs = [path.resolve(process.cwd())];
+  const dirs = [path.resolve(process.cwd()), path.join(homedir(), ".figdiff", "cache")];
   const extra = process.env.FIGDIFF_ALLOWED_DIRS;
   if (extra) {
     for (const segment of extra.split(path.delimiter)) {

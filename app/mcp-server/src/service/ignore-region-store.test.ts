@@ -104,6 +104,7 @@ regions:
   });
 
   it("setIgnoreRegionConfig writes temp file then atomically renames", async () => {
+    vi.mocked(mockFs.readFile).mockRejectedValue(makeEnoentError());
     vi.mocked(mockFs.mkdir).mockResolvedValue(undefined);
     vi.mocked(mockFs.writeFile).mockResolvedValue(undefined);
     vi.mocked(mockFs.rename).mockResolvedValue(undefined);
@@ -126,6 +127,7 @@ regions:
 
   it("write failure removes temp file", async () => {
     const error = new Error("disk full");
+    vi.mocked(mockFs.readFile).mockRejectedValue(makeEnoentError());
     vi.mocked(mockFs.mkdir).mockResolvedValue(undefined);
     vi.mocked(mockFs.writeFile).mockRejectedValue(error);
     vi.mocked(mockFs.rm).mockResolvedValue(undefined);

@@ -30,7 +30,9 @@ const DESCRIPTION = `デザインと実装のピクセル差分を検出しま�
 
 ## 入力
 - design_source: Figma URL（node-id付き推奨） or ローカル画像パス
-- screenshot: 実装スクリーンショットのローカルパス
+- screenshot: 実装スクリーンショットのローカルパス（screenshot_url 使用時はプレースホルダ文字列で可）
+- screenshot_url: 撮影対象URL。指定時はPlaywrightで内部撮影しscreenshotの代わりに使用
+- capture_width: 撮影幅(px)。省略時はFigmaフレームの実幅を自動取得（screenshot_url指定時のみ有効）
 - threshold: 色差の許容閾値（0-1、デフォルト0.1）
 - project_id: Crop Region と保存済み ignore_regions の適用に使うプロジェクトID（省略可）
 - ignore_regions: 既知の意図的差分マスク（省略可）。project_id の保存済みマスクと結合される。WP原文 vs Figmaプレースホルダ、Google Map埋め込み等の false-positive 抑制に使用。各矩形 {x,y,width,height,label?} 内のピクセルは差分検出/matchRate 分母から除外される
@@ -61,7 +63,26 @@ export function registerCompareDesign(server: McpServer): void {
         design_source: z
           .string()
           .describe("FigmaのURL（node-id付き推奨）またはデザイン画像のローカルパス"),
-        screenshot: z.string().describe("実装スクリーンショットのローカルパス"),
+        screenshot: z
+          .string()
+          .describe(
+            "実装スクリーンショットのローカルパス（screenshot_url使用時はプレースホルダ文字列で可）",
+          ),
+        screenshot_url: z
+          .string()
+          .url()
+          .optional()
+          .describe(
+            "撮影対象のURL。指定時はPlaywrightで内部撮影し、screenshotの代わりに使用する。screenshotとどちらか一方を指定。",
+          ),
+        capture_width: z
+          .number()
+          .int()
+          .positive()
+          .optional()
+          .describe(
+            "撮影幅(px)。省略時はFigmaフレームの実幅を自動取得。screenshot_url指定時のみ有効。",
+          ),
         frame_name: z
           .string()
           .optional()

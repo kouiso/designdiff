@@ -153,7 +153,37 @@ export async function setIgnoreRegionConfig(
   projectId: string,
   regions: IgnoreRegionConfigEntry[],
 ): Promise<IgnoreRegionConfigFile> {
-  const config = IgnoreRegionConfigFileSchema.parse({ version: 1, regions });
+  const existing = await readConfig(projectId);
+
+  // Merge by id: new regions overwrite existing ones with same id
+  const existingMap = new Map(existing.regions.map((r) => [r.id, r]));
+  for (const region of regions) {
+    existingMap.set(region.id, region);
+  }
+  const merged = [...existingMap.values()];
+
+  // Coverage check: warn if masked area exceeds 40% of a 1440x1024 reference frame
+  const referencePx = 1440 * 1024;
+  const maskedPx = merged.reduce((sum, r) => sum + r.width * r.height, 0);
+  const coveragePct = (maskedPx / referencePx) * 100;
+  if (coveragePct > 40) {
+    console.error(
+      `[ignore-region-store] Warning: total masked area is ${coveragePct.toFixed(1)}% of reference frame. Review masks for coverage creep.`,
+    );
+  }
+
+  const config = IgnoreRegionConfigFileSchema.parse({ version: 1, regions: merged });
+  await writeConfig(projectId, config);
+  return config;
+}
+
+export async function deleteIgnoreRegion(
+  projectId: string,
+  regionId: string,
+): Promise<IgnoreRegionConfigFile> {
+  const existing = await readConfig(projectId);
+  const filtered = existing.regions.filter((r) => r.id !== regionId);
+  const config = IgnoreRegionConfigFileSchema.parse({ version: 1, regions: filtered });
   await writeConfig(projectId, config);
   return config;
 }

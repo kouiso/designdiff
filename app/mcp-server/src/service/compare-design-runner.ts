@@ -102,6 +102,8 @@ async function loadLocalFixtureNode(designPath: string): Promise<FigmaNode | und
 export interface CompareDesignRunArgs {
   design_source: string;
   screenshot: string;
+  screenshot_url?: string;
+  capture_width?: number;
   frame_name?: string;
   threshold?: number;
   project_id?: string;
@@ -127,13 +129,18 @@ async function resolveNodeId(
 
   const frames = await figmaService.getFrames(fileKey);
   if (frameName) {
-    const frame = frames.find((entry) => entry.name.toLowerCase() === frameName.toLowerCase());
-    if (!frame) {
+    const matches = frames.filter((entry) => entry.name.toLowerCase() === frameName.toLowerCase());
+    if (matches.length === 0) {
       throw new Error(
         `Frame "${frameName}" not found. Available frames: ${frames.map((entry) => entry.name).join(", ")}`,
       );
     }
-    return frame.id;
+    if (matches.length > 1) {
+      throw new Error(
+        `Ambiguous frame name "${frameName}": ${matches.length} frames match. Use node-id in the URL to disambiguate. Matches: ${matches.map((f) => `${f.id} (${f.width}x${f.height})`).join(", ")}`,
+      );
+    }
+    return matches[0].id;
   }
 
   throw new Error(
@@ -225,35 +232,57 @@ function buildSuggestion(matchRate: number, regionCount: number): string {
   return `大きな差分が${regionCount}箇所あります。inspect_nodeで各差分領域を確認し、修正してください。`;
 }
 
-export async function runCompareDesign(
-  args: CompareDesignRunArgs,
-): Promise<CompareDesignRunOutput> {
+async function resolveScreenshotPath(args: CompareDesignRunArgs): Promise<string> {
+  if (!args.screenshot_url) {
+    return resolveSafePath(args.screenshot);
+  }
+
+  const { captureUrl } = await import("./capture-service.js");
   const parsedDesignSource = parseDesignInput(args.design_source);
-  // スクリーンショットの読み込み — 許可されたディレクトリ内にあることを検証する
-  const screenshotPath = await resolveSafePath(args.screenshot);
-  const screenshotBuffer = await fs.readFile(screenshotPath);
-  const screenshotBase64 = screenshotBuffer.toString("base64");
-  const screenshotMeta = await sharp(screenshotBuffer).metadata();
-  const targetWidth = screenshotMeta.width;
+  let captureWidth = args.capture_width;
+  if (!captureWidth && parsedDesignSource.type === "figma_url") {
+    try {
+      const figmaService = createFigmaService();
+      const frames = await figmaService.getFrames(parsedDesignSource.fileKey);
+      const nodeId = parsedDesignSource.nodeId?.replace(/-/g, ":");
+      const matched =
+        (nodeId ? frames.find((f) => f.id === nodeId) : undefined) ??
+        (args.frame_name
+          ? frames.find((f) => f.name.toLowerCase() === args.frame_name!.toLowerCase())
+          : undefined);
+      captureWidth = matched?.width;
+    } catch {
+      // proceed with default width
+    }
+  }
+  const captured = await captureUrl(args.screenshot_url, { width: captureWidth ?? 1440 });
+  return captured.screenshotPath;
+}
 
-  let designBase64: string;
-  let figmaRootNode: FigmaNode | undefined;
-  let resolvedNodeId: string | undefined;
-
+async function resolveDesignAssets(
+  parsedDesignSource: ReturnType<typeof parseDesignInput>,
+  frameName: string | undefined,
+  targetWidth: number | undefined,
+): Promise<{
+  designBase64: string;
+  figmaRootNode: FigmaNode | undefined;
+  resolvedNodeId: string | undefined;
+}> {
   if (parsedDesignSource.type === "figma_url") {
     const figmaService = createFigmaService();
-    resolvedNodeId = await resolveNodeId(
+    const resolvedNodeId = await resolveNodeId(
       figmaService,
       parsedDesignSource.fileKey,
       parsedDesignSource.nodeId,
-      args.frame_name,
+      frameName,
     );
-    designBase64 = await figmaService.getFrameImage(
+    const designBase64 = await figmaService.getFrameImage(
       parsedDesignSource.fileKey,
       resolvedNodeId,
       targetWidth,
     );
 
+    let figmaRootNode: FigmaNode | undefined;
     try {
       figmaRootNode = await figmaService.getNodeDetails(parsedDesignSource.fileKey, resolvedNodeId);
     } catch (nodeError) {
@@ -262,13 +291,34 @@ export async function runCompareDesign(
         nodeError instanceof Error ? nodeError.message : nodeError,
       );
     }
-  } else {
-    // ローカルファイルのパス — 許可ディレクトリ内に存在するか検証する
-    const safePath = await resolveSafePath(parsedDesignSource.filePath);
-    const designBuffer = await fs.readFile(safePath);
-    designBase64 = designBuffer.toString("base64");
-    figmaRootNode = await loadLocalFixtureNode(safePath);
+
+    return { designBase64, figmaRootNode, resolvedNodeId };
   }
+
+  // ローカルファイルのパス — 許可ディレクトリ内に存在するか検証する
+  const safePath = await resolveSafePath(parsedDesignSource.filePath);
+  const designBuffer = await fs.readFile(safePath);
+  const designBase64 = designBuffer.toString("base64");
+  const figmaRootNode = await loadLocalFixtureNode(safePath);
+  return { designBase64, figmaRootNode, resolvedNodeId: undefined };
+}
+
+export async function runCompareDesign(
+  args: CompareDesignRunArgs,
+): Promise<CompareDesignRunOutput> {
+  const parsedDesignSource = parseDesignInput(args.design_source);
+  // スクリーンショットの読み込み — 許可されたディレクトリ内にあることを検証する
+  const screenshotPath = await resolveScreenshotPath(args);
+  const screenshotBuffer = await fs.readFile(screenshotPath);
+  const screenshotBase64 = screenshotBuffer.toString("base64");
+  const screenshotMeta = await sharp(screenshotBuffer).metadata();
+  const targetWidth = screenshotMeta.width;
+
+  const { designBase64, figmaRootNode, resolvedNodeId } = await resolveDesignAssets(
+    parsedDesignSource,
+    args.frame_name,
+    targetWidth,
+  );
 
   let cropRegion: CropRegion | undefined;
   let persistedIgnoreRegions: IgnoreRegion[] = [];

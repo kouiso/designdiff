@@ -214,6 +214,10 @@ importers:
       zod:
         specifier: ^4.4.3
         version: 4.4.3
+    optionalDependencies:
+      '@playwright/test':
+        specifier: ^1.60.0
+        version: 1.60.0
     devDependencies:
       '@vitest/coverage-v8':
         specifier: ^3.2.4
