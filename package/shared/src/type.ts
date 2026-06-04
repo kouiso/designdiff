@@ -17,6 +17,8 @@ import {
   type DesignSourceSchema,
   type DesignTokenSchema,
   type DiffRegionSchema,
+  type FigmaAuthStateSchema,
+  type FigmaOAuthTokenResponseSchema,
   type FigmaTokenSchema,
   type FrameSchema,
   type GridSummaryCellSchema,
@@ -104,6 +106,11 @@ export type CompletionCriteria = z.infer<typeof CompletionCriteriaSchema>;
 // --- Figma Token ---
 
 export type FigmaToken = z.infer<typeof FigmaTokenSchema>;
+
+// --- Figma OAuth ---
+
+export type FigmaOAuthTokenResponse = z.infer<typeof FigmaOAuthTokenResponseSchema>;
+export type FigmaAuthState = z.infer<typeof FigmaAuthStateSchema>;
 
 // --- Image Dimensions ---
 

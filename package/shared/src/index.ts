@@ -1,5 +1,6 @@
 // Figma Client
 export {
+  FigmaApiError,
   FigmaClient,
   NoCacheStrategy,
   extractFrames,
@@ -81,6 +82,8 @@ export {
   DiffSeveritySchema,
   DiffVerdictSchema,
   DiffRegionSchema,
+  FigmaAuthStateSchema,
+  FigmaOAuthTokenResponseSchema,
   FigmaTokenSchema,
   FrameSchema,
   GridSummaryCellSchema,
@@ -124,6 +127,8 @@ export type {
   DesignProvider,
   DesignToken,
   DiffRegion,
+  FigmaAuthState,
+  FigmaOAuthTokenResponse,
   FigmaToken,
   Frame,
   GridSummary,

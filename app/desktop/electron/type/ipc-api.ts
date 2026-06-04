@@ -1,4 +1,4 @@
-import type { Frame, NodeInspection, Project, ViewMode } from "@figdiff/shared";
+import type { FigmaAuthState, Frame, NodeInspection, Project, ViewMode } from "@figdiff/shared";
 
 export type OverlayViewMode = ViewMode;
 export type OverlayScaleMode = "fit_width" | "actual_size";
@@ -36,6 +36,15 @@ export interface ElectronAPI {
   captureUrlScreenshot(url: string, width: number, height: number): Promise<string>;
   overlay: OverlayAPI;
   project: ProjectAPI;
+  oauth: OAuthAPI;
+}
+
+export interface OAuthAPI {
+  start(): Promise<void>;
+  logout(): Promise<void>;
+  status(): Promise<FigmaAuthState>;
+  saveClient(clientId: string, clientSecret: string): Promise<void>;
+  getClientId(): Promise<string | null>;
 }
 
 export interface OverlayAPI {

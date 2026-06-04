@@ -14,7 +14,8 @@
     "typecheck": "tsc --noEmit",
     "lint": "biome check src/",
     "lint:fix": "biome check --write src/",
-    "test": "vitest run",
+    "test": "vitest run && vitest run --config vitest.electron.config.ts",
+    "test:electron": "vitest run --config vitest.electron.config.ts",
     "test:coverage": "vitest run --coverage",
     "preview": "electron-vite preview",
     "pack": "electron-builder"

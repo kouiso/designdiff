@@ -57,6 +57,15 @@ const api: ElectronAPI = {
     save: (project) => ipcRenderer.invoke("project:save", project),
     delete: (projectId) => ipcRenderer.invoke("project:delete", projectId),
   },
+
+  oauth: {
+    start: () => ipcRenderer.invoke("oauth:start"),
+    logout: () => ipcRenderer.invoke("oauth:logout"),
+    status: () => ipcRenderer.invoke("oauth:status"),
+    saveClient: (clientId, clientSecret) =>
+      ipcRenderer.invoke("oauth:save-client", clientId, clientSecret),
+    getClientId: () => ipcRenderer.invoke("oauth:get-client-id"),
+  },
 };
 
 contextBridge.exposeInMainWorld("electronAPI", api);

@@ -394,3 +394,20 @@ export const ImageDimensionsSchema = z.object({
   width: z.number().int().positive(),
   height: z.number().int().positive(),
 });
+
+// --- Figma OAuth Token Response Schema ---
+
+export const FigmaOAuthTokenResponseSchema = z.object({
+  access_token: z.string().min(1),
+  refresh_token: z.string().min(1),
+  expires_in: z.number().int().positive(),
+  token_type: z.string().optional(),
+  scope: z.string().optional(),
+});
+
+// --- Figma Auth State Schema (sent to renderer — no secrets) ---
+
+export const FigmaAuthStateSchema = z.object({
+  mode: z.enum(["oauth", "pat", "none"]),
+  expiresAt: z.number().optional(),
+});

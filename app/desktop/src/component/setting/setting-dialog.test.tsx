@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -13,8 +13,10 @@ describe("SettingDialog", () => {
     vi.clearAllMocks();
     useSettingStore.setState({
       figmaToken: null,
+      oauthState: { mode: "none" },
       theme: "dark",
       defaultThreshold: 0.1,
+      loadOAuthStatus: vi.fn().mockResolvedValue(undefined),
     });
   });
 
@@ -31,8 +33,11 @@ describe("SettingDialog", () => {
 
   it("figmaToken なしの場合パスワード入力フィールド + 保存ボタン表示", () => {
     render(<SettingDialog open={true} onOpenChange={vi.fn()} />);
-    expect(screen.getByPlaceholderText("figd_...")).toBeInTheDocument();
-    expect(screen.getByText("保存")).toBeInTheDocument();
+    const input = screen.getByPlaceholderText("figd_...");
+    expect(input).toBeInTheDocument();
+    // PAT section save button — scoped to the container holding the PAT input
+    const patSection = input.closest(".flex.items-center.gap-2")!;
+    expect(within(patSection).getByText("保存")).toBeInTheDocument();
   });
 
   it("figmaToken ありの場合マスク表示 + 削除ボタン表示", () => {
@@ -43,7 +48,9 @@ describe("SettingDialog", () => {
 
   it("空トークンで保存ボタン disabled", () => {
     render(<SettingDialog open={true} onOpenChange={vi.fn()} />);
-    const saveButton = screen.getByText("保存");
+    const input = screen.getByPlaceholderText("figd_...");
+    const patSection = input.closest(".flex.items-center.gap-2")!;
+    const saveButton = within(patSection).getByText("保存");
     expect(saveButton).toBeDisabled();
   });
 
@@ -70,7 +77,8 @@ describe("SettingDialog", () => {
       const input = screen.getByPlaceholderText("figd_...");
       await userEvent.type(input, "figd_test_token_123");
 
-      const saveButton = screen.getByText("保存");
+      const patSection = input.closest(".flex.items-center.gap-2")!;
+      const saveButton = within(patSection).getByText("保存");
       expect(saveButton).toBeEnabled();
       fireEvent.click(saveButton);
 
@@ -85,8 +93,10 @@ describe("SettingDialog", () => {
 
       render(<SettingDialog open={true} onOpenChange={vi.fn()} />);
 
-      await userEvent.type(screen.getByPlaceholderText("figd_..."), "figd_abc");
-      fireEvent.click(screen.getByText("保存"));
+      const input = screen.getByPlaceholderText("figd_...");
+      await userEvent.type(input, "figd_abc");
+      const patSection = input.closest(".flex.items-center.gap-2")!;
+      fireEvent.click(within(patSection).getByText("保存"));
 
       await waitFor(() => {
         expect(screen.getByText("OS Keychainに保存しました")).toBeInTheDocument();
@@ -99,8 +109,10 @@ describe("SettingDialog", () => {
 
       render(<SettingDialog open={true} onOpenChange={vi.fn()} />);
 
-      await userEvent.type(screen.getByPlaceholderText("figd_..."), "figd_abc");
-      fireEvent.click(screen.getByText("保存"));
+      const input = screen.getByPlaceholderText("figd_...");
+      await userEvent.type(input, "figd_abc");
+      const patSection = input.closest(".flex.items-center.gap-2")!;
+      fireEvent.click(within(patSection).getByText("保存"));
 
       await waitFor(() => {
         expect(screen.getByText(/保存に失敗しました/)).toBeInTheDocument();
@@ -115,11 +127,11 @@ describe("SettingDialog", () => {
       render(<SettingDialog open={true} onOpenChange={vi.fn()} />);
 
       const input = screen.getByPlaceholderText("figd_...");
-      await userEvent.type(input, "figd_enter_test");
+      fireEvent.change(input, { target: { value: "figdabctest123" } });
       fireEvent.keyDown(input, { key: "Enter" });
 
       await waitFor(() => {
-        expect(mockSetFigmaToken).toHaveBeenCalledWith("figd_enter_test");
+        expect(mockSetFigmaToken).toHaveBeenCalledWith("figdabctest123");
       });
     });
   });

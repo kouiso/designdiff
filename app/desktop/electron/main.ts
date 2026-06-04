@@ -4,6 +4,7 @@ import { BrowserWindow, app, dialog, safeStorage, session, shell } from "electro
 
 import { registerFigmaHandlers } from "./ipc/figma";
 import { registerFileHandlers } from "./ipc/file";
+import { registerOAuthHandlers } from "./ipc/oauth";
 import { registerOverlayHandlers } from "./ipc/overlay";
 import { registerProjectHandlers } from "./ipc/project";
 import { registerTokenHandlers } from "./ipc/token";
@@ -207,6 +208,7 @@ app
     registerFileHandlers();
     registerOverlayHandlers();
     registerProjectHandlers();
+    registerOAuthHandlers();
     createWindow();
 
     app.on("activate", () => {

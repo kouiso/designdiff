@@ -10,6 +10,7 @@ import {
 import type {
   FileAdapter,
   FigmaAdapter,
+  OAuthAdapter,
   OverlayAdapter,
   PlatformAdapter,
   PlatformCapabilities,
@@ -87,11 +88,21 @@ const electronProjectAdapter: ProjectAdapter = {
   },
 };
 
+const electronOAuthAdapter: OAuthAdapter = {
+  start: () => window.electronAPI.oauth.start(),
+  logout: () => window.electronAPI.oauth.logout(),
+  status: () => window.electronAPI.oauth.status(),
+  saveClient: (clientId, clientSecret) =>
+    window.electronAPI.oauth.saveClient(clientId, clientSecret),
+  getClientId: () => window.electronAPI.oauth.getClientId(),
+};
+
 export const electronAdapter: PlatformAdapter = {
   figma: electronFigmaAdapter,
   token: electronTokenAdapter,
   file: electronFileAdapter,
   project: electronProjectAdapter,
+  oauth: electronOAuthAdapter,
 };
 
 export const electronCapabilities: PlatformCapabilities = {
