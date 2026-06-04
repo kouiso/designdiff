@@ -1,9 +1,10 @@
 import { create } from "zustand";
 
-import type { ViewMode } from "@figdiff/shared";
+import type { CompareDesignResult, ViewMode } from "@figdiff/shared";
 
 import { getOverlay } from "@/lib/platform";
 import { compareImages } from "@/service/image-compare";
+import { computeLiveDiff } from "@/service/live-diff";
 
 export type OverlayViewMode = ViewMode;
 export type OverlayScaleMode = "fit_width" | "actual_size";
@@ -26,6 +27,10 @@ interface OverlayState {
   isPixelDiffRunning: boolean;
   pixelDiffMatchRate: number | null;
   pixelDiffError: string | null;
+  isLiveDiffEnabled: boolean;
+  isLiveDiffRunning: boolean;
+  liveDiffResult: (CompareDesignResult & { diffImageBase64?: string }) | null;
+  liveDiffError: string | null;
 
   setUrl: (url: string) => void;
   openSite: () => Promise<void>;
@@ -44,6 +49,8 @@ interface OverlayState {
   startToggle: () => Promise<void>;
   stopToggle: () => Promise<void>;
   runPixelDiff: () => Promise<void>;
+  setLiveDiffEnabled: (enabled: boolean) => void;
+  runLiveDiff: () => Promise<void>;
 }
 
 export const useOverlayStore = create<OverlayState>((set, get) => ({
@@ -64,6 +71,10 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
   isPixelDiffRunning: false,
   pixelDiffMatchRate: null,
   pixelDiffError: null,
+  isLiveDiffEnabled: false,
+  isLiveDiffRunning: false,
+  liveDiffResult: null,
+  liveDiffError: null,
 
   setUrl: (url) => set({ url }),
 
@@ -77,7 +88,10 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
 
     const overlay = await getOverlay();
     if (!overlay) {
-      set({ error: "Overlay is only available in desktop mode", isLoading: false });
+      set({
+        error: "Overlay is only available in desktop mode",
+        isLoading: false,
+      });
       return;
     }
 
@@ -105,6 +119,10 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
         pixelDiffMatchRate: null,
         pixelDiffError: null,
         isPixelDiffRunning: false,
+        isLiveDiffEnabled: false,
+        isLiveDiffRunning: false,
+        liveDiffResult: null,
+        liveDiffError: null,
         isToggling: false,
         error: null,
       });
@@ -173,6 +191,11 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
 
   handleNavigated: (url) => {
     set({ currentUrl: url });
+    if (get().isLiveDiffEnabled) {
+      get()
+        .runLiveDiff()
+        .catch(() => undefined);
+    }
   },
 
   clearError: () => set({ error: null }),
@@ -221,7 +244,11 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
       return;
     }
 
-    set({ overlayViewMode: mode, pixelDiffMatchRate: null, pixelDiffError: null });
+    set({
+      overlayViewMode: mode,
+      pixelDiffMatchRate: null,
+      pixelDiffError: null,
+    });
   },
 
   setSplitPosition: async (position) => {
@@ -318,7 +345,49 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
       });
     } catch (e) {
       const message = String(e);
-      set({ isPixelDiffRunning: false, error: message, pixelDiffError: message });
+      set({
+        isPixelDiffRunning: false,
+        error: message,
+        pixelDiffError: message,
+      });
+    }
+  },
+
+  setLiveDiffEnabled: (enabled) => {
+    if (!enabled) {
+      set({
+        isLiveDiffEnabled: false,
+        isLiveDiffRunning: false,
+        liveDiffError: null,
+      });
+      return;
+    }
+    set({ isLiveDiffEnabled: true, liveDiffError: null });
+    get()
+      .runLiveDiff()
+      .catch(() => undefined);
+  },
+
+  runLiveDiff: async () => {
+    const { overlayImageBase64, captureForComparison, isLiveDiffRunning, isOpen } = get();
+    if (!isOpen || !overlayImageBase64 || isLiveDiffRunning) return;
+
+    set({ isLiveDiffRunning: true, liveDiffError: null });
+    try {
+      const capturedBase64 = await captureForComparison();
+      const result = await computeLiveDiff({
+        designImageBase64: overlayImageBase64,
+        screenshotBase64: capturedBase64,
+      });
+
+      set({
+        isLiveDiffRunning: false,
+        liveDiffResult: result,
+        liveDiffError: null,
+      });
+    } catch (e) {
+      const message = String(e);
+      set({ isLiveDiffRunning: false, liveDiffError: message });
     }
   },
 }));

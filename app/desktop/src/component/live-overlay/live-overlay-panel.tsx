@@ -20,6 +20,41 @@ interface LiveOverlayPanelProps {
   onNavigate?: (page: Page) => void;
 }
 
+interface LiveDiffStatusProps {
+  isEnabled: boolean;
+  isRunning: boolean;
+  matchRate: number | null;
+  error: string | null;
+  onToggle: () => void;
+}
+
+function LiveDiffStatus({ isEnabled, isRunning, matchRate, error, onToggle }: LiveDiffStatusProps) {
+  const { t } = useTranslation();
+
+  return (
+    <div className="flex items-center gap-1.5 rounded-md border border-border/70 bg-background/60 px-2 py-1">
+      <Button
+        type="button"
+        variant={isEnabled ? "default" : "outline"}
+        size="sm"
+        className="h-6 px-2 text-xs"
+        onClick={onToggle}
+      >
+        {t("overlay.liveDiff")}
+      </Button>
+      {isRunning ? <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" /> : null}
+      {matchRate !== null ? (
+        <span className="font-medium text-xs">
+          {t("compare.matchRate")}: {matchRate}%
+        </span>
+      ) : (
+        <span className="text-muted-foreground text-xs">{t("overlay.liveDiffIdle")}</span>
+      )}
+      {error ? <span className="text-destructive text-xs">{error}</span> : null}
+    </div>
+  );
+}
+
 export function LiveOverlayPanel({ onNavigate }: LiveOverlayPanelProps) {
   const { t } = useTranslation();
   const panelRef = useRef<HTMLDivElement>(null);
@@ -37,6 +72,10 @@ export function LiveOverlayPanel({ onNavigate }: LiveOverlayPanelProps) {
   const toggleIntervalMs = useOverlayStore((s) => s.toggleIntervalMs);
   const isPixelDiffRunning = useOverlayStore((s) => s.isPixelDiffRunning);
   const pixelDiffMatchRate = useOverlayStore((s) => s.pixelDiffMatchRate);
+  const isLiveDiffEnabled = useOverlayStore((s) => s.isLiveDiffEnabled);
+  const isLiveDiffRunning = useOverlayStore((s) => s.isLiveDiffRunning);
+  const liveDiffResult = useOverlayStore((s) => s.liveDiffResult);
+  const liveDiffError = useOverlayStore((s) => s.liveDiffError);
   const setUrl = useOverlayStore((s) => s.setUrl);
   const openSite = useOverlayStore((s) => s.openSite);
   const closeSite = useOverlayStore((s) => s.closeSite);
@@ -47,6 +86,7 @@ export function LiveOverlayPanel({ onNavigate }: LiveOverlayPanelProps) {
   const setOverlayScale = useOverlayStore((s) => s.setOverlayScale);
   const setOverlayScaleMode = useOverlayStore((s) => s.setOverlayScaleMode);
   const setToggleIntervalMs = useOverlayStore((s) => s.setToggleIntervalMs);
+  const setLiveDiffEnabled = useOverlayStore((s) => s.setLiveDiffEnabled);
   const frameImage = useProjectStore((s) => s.frameImage);
 
   const handleOpen = () => {
@@ -160,6 +200,14 @@ export function LiveOverlayPanel({ onNavigate }: LiveOverlayPanelProps) {
       {isOpen && overlayImageBase64 && (
         <div className="flex flex-wrap items-center gap-2">
           <OverlayViewModeToggle onNavigate={onNavigate} />
+
+          <LiveDiffStatus
+            isEnabled={isLiveDiffEnabled}
+            isRunning={isLiveDiffRunning}
+            matchRate={liveDiffResult?.matchRate ?? null}
+            error={liveDiffError}
+            onToggle={() => setLiveDiffEnabled(!isLiveDiffEnabled)}
+          />
 
           <div className="flex items-center gap-1.5">
             <Label htmlFor="overlay-scale" className="text-muted-foreground text-xs">
