@@ -154,6 +154,14 @@ export const resolveAccessToken = async (): Promise<string> => {
   return pat;
 };
 
+// ポートが直前フローの非同期 server.close() でまだ解放されていない場合に備えた
+// listen リトライ設定（高速な再ログインやテスト連続実行での EADDRINUSE を吸収する）。
+const LISTEN_MAX_RETRIES = 10;
+const LISTEN_RETRY_DELAY_MS = 50;
+// dual-stack (::) を優先しつつ、IPv6 非対応環境 (一部のCIランナー等) では IPv4 に
+// フォールバックする。localhost は 127.0.0.1 / ::1 のどちらにも解決され得るため。
+const LISTEN_HOSTS = ["::", "127.0.0.1"] as const;
+
 export const startFigmaOAuth = (): Promise<void> => {
   if (activeFlow) {
     activeFlow.cancel();
@@ -246,30 +254,55 @@ export const startFigmaOAuth = (): Promise<void> => {
       });
     });
 
-    server.on("error", (e) => {
+    const onPostListenError = (e: Error): void => {
       settle(() => reject(new Error(`OAuth callback server error: ${e.message}`)));
-    });
+    };
 
-    server.listen({ port: FIXED_PORT, host: "::", ipv6Only: false }, () => {
-      timeoutId = setTimeout(() => {
-        settle(() => reject(new Error("OAuth login timed out after 120 seconds")));
-      }, OAUTH_TIMEOUT_MS);
+    const attemptListen = (hostIndex: number, attempt: number): void => {
+      if (settled) return;
+      const host = LISTEN_HOSTS[hostIndex];
+      const onListenError = (e: NodeJS.ErrnoException): void => {
+        if (settled) return;
+        // IPv6 非対応環境では :: が EAFNOSUPPORT / EADDRNOTAVAIL になるため IPv4 へ切替。
+        if (
+          (e.code === "EAFNOSUPPORT" || e.code === "EADDRNOTAVAIL") &&
+          hostIndex + 1 < LISTEN_HOSTS.length
+        ) {
+          attemptListen(hostIndex + 1, 0);
+          return;
+        }
+        if (e.code === "EADDRINUSE" && attempt < LISTEN_MAX_RETRIES) {
+          setTimeout(() => attemptListen(hostIndex, attempt + 1), LISTEN_RETRY_DELAY_MS);
+          return;
+        }
+        settle(() => reject(new Error(`OAuth callback server error: ${e.message}`)));
+      };
+      server.once("error", onListenError);
+      server.listen({ port: FIXED_PORT, host, ipv6Only: false }, () => {
+        server.removeListener("error", onListenError);
+        server.on("error", onPostListenError);
 
-      const params = new URLSearchParams({
-        client_id: creds.clientId,
-        redirect_uri: REDIRECT_URI,
-        scope: SCOPES,
-        state,
-        response_type: "code",
-        code_challenge: challenge,
-        code_challenge_method: "S256",
+        timeoutId = setTimeout(() => {
+          settle(() => reject(new Error("OAuth login timed out after 120 seconds")));
+        }, OAUTH_TIMEOUT_MS);
+
+        const params = new URLSearchParams({
+          client_id: creds.clientId,
+          redirect_uri: REDIRECT_URI,
+          scope: SCOPES,
+          state,
+          response_type: "code",
+          code_challenge: challenge,
+          code_challenge_method: "S256",
+        });
+        const authUrl = `${FIGMA_OAUTH_BASE}?${params.toString()}`;
+        console.info("[figma-oauth] opening authorization URL");
+        shell.openExternal(authUrl).catch((e: unknown) => {
+          settle(() => reject(new Error(`Failed to open browser: ${String(e)}`)));
+        });
       });
-      const authUrl = `${FIGMA_OAUTH_BASE}?${params.toString()}`;
-      console.info("[figma-oauth] opening authorization URL");
-      shell.openExternal(authUrl).catch((e: unknown) => {
-        settle(() => reject(new Error(`Failed to open browser: ${String(e)}`)));
-      });
-    });
+    };
+    attemptListen(0, 0);
   });
 };
 
