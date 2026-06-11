@@ -261,24 +261,12 @@ export const startFigmaOAuth = (): Promise<void> => {
     const attemptListen = (hostIndex: number, attempt: number): void => {
       if (settled) return;
       const host = LISTEN_HOSTS[hostIndex];
-      const onListenError = (e: NodeJS.ErrnoException): void => {
-        if (settled) return;
-        // IPv6 非対応環境では :: が EAFNOSUPPORT / EADDRNOTAVAIL になるため IPv4 へ切替。
-        if (
-          (e.code === "EAFNOSUPPORT" || e.code === "EADDRNOTAVAIL") &&
-          hostIndex + 1 < LISTEN_HOSTS.length
-        ) {
-          attemptListen(hostIndex + 1, 0);
-          return;
-        }
-        if (e.code === "EADDRINUSE" && attempt < LISTEN_MAX_RETRIES) {
-          setTimeout(() => attemptListen(hostIndex, attempt + 1), LISTEN_RETRY_DELAY_MS);
-          return;
-        }
-        settle(() => reject(new Error(`OAuth callback server error: ${e.message}`)));
-      };
-      server.once("error", onListenError);
-      server.listen({ port: FIXED_PORT, host, ipv6Only: false }, () => {
+
+      // listen 成功コールバックを毎回 server.listen(..., cb) で渡すと、bind 失敗時にも
+      // 'listening' once リスナーが残り続け、後続のリトライが成功した瞬間に過去の試行分が
+      // 全て発火してブラウザを多重に開いてしまう。明示的な once リスナーにして、エラー時は
+      // 必ず除去してから次の試行へ進める。
+      const onListening = (): void => {
         server.removeListener("error", onListenError);
         server.on("error", onPostListenError);
 
@@ -300,7 +288,30 @@ export const startFigmaOAuth = (): Promise<void> => {
         shell.openExternal(authUrl).catch((e: unknown) => {
           settle(() => reject(new Error(`Failed to open browser: ${String(e)}`)));
         });
-      });
+      };
+
+      const onListenError = (e: NodeJS.ErrnoException): void => {
+        // この試行で登録した listen 成功リスナーを除去し、後続成功時の多重発火を防ぐ。
+        server.removeListener("listening", onListening);
+        if (settled) return;
+        // IPv6 非対応環境では :: が EAFNOSUPPORT / EADDRNOTAVAIL になるため IPv4 へ切替。
+        if (
+          (e.code === "EAFNOSUPPORT" || e.code === "EADDRNOTAVAIL") &&
+          hostIndex + 1 < LISTEN_HOSTS.length
+        ) {
+          attemptListen(hostIndex + 1, 0);
+          return;
+        }
+        if (e.code === "EADDRINUSE" && attempt < LISTEN_MAX_RETRIES) {
+          setTimeout(() => attemptListen(hostIndex, attempt + 1), LISTEN_RETRY_DELAY_MS);
+          return;
+        }
+        settle(() => reject(new Error(`OAuth callback server error: ${e.message}`)));
+      };
+
+      server.once("listening", onListening);
+      server.once("error", onListenError);
+      server.listen({ port: FIXED_PORT, host, ipv6Only: false });
     };
     attemptListen(0, 0);
   });
