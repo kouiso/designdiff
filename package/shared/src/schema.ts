@@ -388,9 +388,20 @@ export const FigmaTokenSchema = z
   .min(20)
   .regex(/^figd_/, "Figma token must start with 'figd_'");
 
-// --- Image Dimensions Schema ---
-
 export const ImageDimensionsSchema = z.object({
   width: z.number().int().positive(),
   height: z.number().int().positive(),
+});
+
+export const FigmaOAuthTokenResponseSchema = z.object({
+  access_token: z.string().min(1),
+  refresh_token: z.string().min(1),
+  expires_in: z.number().int().positive(),
+  token_type: z.string().optional(),
+  scope: z.string().optional(),
+});
+
+export const FigmaAuthStateSchema = z.object({
+  mode: z.enum(["oauth", "pat", "none"]),
+  expiresAt: z.number().optional(),
 });

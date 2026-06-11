@@ -53,7 +53,7 @@ describe("Header", () => {
   it("設定ボタンクリックで onNavigate('settings') 発火", () => {
     const onNavigate = vi.fn();
     render(<Header currentPage="home" onNavigate={onNavigate} />);
-    fireEvent.click(screen.getByLabelText("設定"));
+    fireEvent.click(screen.getByRole("button", { name: "設定" }));
     expect(onNavigate).toHaveBeenCalledWith("settings");
   });
 

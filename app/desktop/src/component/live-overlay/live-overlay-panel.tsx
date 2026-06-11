@@ -1,23 +1,64 @@
 import { useCallback, useEffect, useRef } from "react";
 
-import { Eye, EyeOff, Globe, Loader2, X } from "lucide-react";
+import {
+  Eye,
+  EyeOff,
+  Focus,
+  Globe,
+  Layers,
+  Loader2,
+  Monitor,
+  Move,
+  RefreshCw,
+  ScanSearch,
+  Split,
+  X,
+  Zap,
+} from "lucide-react";
 import { useTranslation } from "react-i18next";
 
-import { Button } from "@/component/ui/button";
-import { Input } from "@/component/ui/input";
-import { Label } from "@/component/ui/label";
-import { Slider } from "@/component/ui/slider";
+import { SliderRow } from "@/component/ui/slider-row";
 import { Spinner } from "@/component/ui/spinner";
 import { getOverlay } from "@/lib/platform";
-import { useOverlayStore } from "@/store/overlay-store";
+import { useCompareStore } from "@/store/compare-store";
+import { type OverlayViewMode, useOverlayStore } from "@/store/overlay-store";
 import { useProjectStore } from "@/store/project-store";
 
-import { OverlayViewModeToggle } from "./overlay-view-mode-toggle";
-
 import type { Page } from "../../App";
+import type { LucideIcon } from "lucide-react";
 
 interface LiveOverlayPanelProps {
   onNavigate?: (page: Page) => void;
+}
+
+interface ToolbarMode {
+  id: OverlayViewMode;
+  label: string;
+  icon: LucideIcon;
+}
+
+const FLOW_OVERLAY_MODES: ToolbarMode[] = [
+  { id: "pixel_diff", label: "DIFF", icon: Zap },
+  { id: "transparent_overlay", label: "デザインを重ねる", icon: Layers },
+  { id: "split_screen", label: "SIDE_BY_SIDE", icon: Monitor },
+  { id: "draggable_overlay", label: "SPLIT", icon: Split },
+  { id: "toggle", label: "TOGGLE", icon: RefreshCw },
+  { id: "blended_diff", label: "FLICKER", icon: Focus },
+  { id: "design_only", label: "MAGNIFY", icon: Move },
+  { id: "implementation", label: "INSPECT", icon: ScanSearch },
+];
+
+function getModeTone(mode: OverlayViewMode): string {
+  if (mode === "pixel_diff") return "var(--diff)";
+  if (mode === "toggle" || mode === "blended_diff") return "var(--warn)";
+  return "var(--cobalt)";
+}
+
+function getMatchColor(matchRate: number | null): string {
+  if (matchRate === null) return "var(--muted-fg)";
+  if (matchRate >= 90) return "var(--match)";
+  if (matchRate >= 70) return "var(--warn)";
+  return "var(--diff)";
 }
 
 interface LiveDiffStatusProps {
@@ -32,25 +73,26 @@ function LiveDiffStatus({ isEnabled, isRunning, matchRate, error, onToggle }: Li
   const { t } = useTranslation();
 
   return (
-    <div className="flex items-center gap-1.5 rounded-md border border-border/70 bg-background/60 px-2 py-1">
-      <Button
+    <div className="flex items-center gap-1.5">
+      <button
         type="button"
-        variant={isEnabled ? "default" : "outline"}
-        size="sm"
-        className="h-6 px-2 text-xs"
+        className="fd-btn"
         onClick={onToggle}
+        style={{
+          background: isEnabled ? "var(--cobalt)" : "var(--surface)",
+          color: isEnabled ? "var(--cobalt-fg)" : "var(--fg-2)",
+          borderColor: isEnabled ? "transparent" : "var(--border-strong)",
+        }}
       >
         {t("overlay.liveDiff")}
-      </Button>
-      {isRunning ? <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" /> : null}
+      </button>
+      {isRunning ? <Loader2 className="h-3.5 w-3.5 animate-spin" style={{ color: "var(--muted-fg)" }} /> : null}
       {matchRate !== null ? (
-        <span className="font-medium text-xs">
-          {t("compare.matchRate")}: {matchRate}%
-        </span>
+        <span className="mono text-xs font-bold" style={{ color: getMatchColor(matchRate) }}>{matchRate}%</span>
       ) : (
-        <span className="text-muted-foreground text-xs">{t("overlay.liveDiffIdle")}</span>
+        <span className="text-xs" style={{ color: "var(--muted-fg)" }}>{t("overlay.liveDiffIdle")}</span>
       )}
-      {error ? <span className="text-destructive text-xs">{error}</span> : null}
+      {error ? <span className="text-xs" style={{ color: "var(--diff)" }}>{error}</span> : null}
     </div>
   );
 }
@@ -58,6 +100,7 @@ function LiveDiffStatus({ isEnabled, isRunning, matchRate, error, onToggle }: Li
 export function LiveOverlayPanel({ onNavigate }: LiveOverlayPanelProps) {
   const { t } = useTranslation();
   const panelRef = useRef<HTMLDivElement>(null);
+  const didAutoOpenRef = useRef(false);
   const url = useOverlayStore((s) => s.url);
   const isOpen = useOverlayStore((s) => s.isOpen);
   const isLoading = useOverlayStore((s) => s.isLoading);
@@ -72,6 +115,7 @@ export function LiveOverlayPanel({ onNavigate }: LiveOverlayPanelProps) {
   const toggleIntervalMs = useOverlayStore((s) => s.toggleIntervalMs);
   const isPixelDiffRunning = useOverlayStore((s) => s.isPixelDiffRunning);
   const pixelDiffMatchRate = useOverlayStore((s) => s.pixelDiffMatchRate);
+  const currentUrl = useOverlayStore((s) => s.currentUrl);
   const isLiveDiffEnabled = useOverlayStore((s) => s.isLiveDiffEnabled);
   const isLiveDiffRunning = useOverlayStore((s) => s.isLiveDiffRunning);
   const liveDiffResult = useOverlayStore((s) => s.liveDiffResult);
@@ -82,10 +126,12 @@ export function LiveOverlayPanel({ onNavigate }: LiveOverlayPanelProps) {
   const setOpacity = useOverlayStore((s) => s.setOpacity);
   const toggleOverlay = useOverlayStore((s) => s.toggleOverlay);
   const setOverlayImage = useOverlayStore((s) => s.setOverlayImage);
+  const setOverlayViewMode = useOverlayStore((s) => s.setOverlayViewMode);
   const setSplitPosition = useOverlayStore((s) => s.setSplitPosition);
   const setOverlayScale = useOverlayStore((s) => s.setOverlayScale);
   const setOverlayScaleMode = useOverlayStore((s) => s.setOverlayScaleMode);
   const setToggleIntervalMs = useOverlayStore((s) => s.setToggleIntervalMs);
+  const captureForComparison = useOverlayStore((s) => s.captureForComparison);
   const setLiveDiffEnabled = useOverlayStore((s) => s.setLiveDiffEnabled);
   const frameImage = useProjectStore((s) => s.frameImage);
 
@@ -99,13 +145,31 @@ export function LiveOverlayPanel({ onNavigate }: LiveOverlayPanelProps) {
     setOverlayImage(base64);
   };
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: mount-only auto-open when URL is pre-set from home page
+  const handleInspect = async () => {
+    try {
+      const base64 = await captureForComparison();
+      useCompareStore.getState().setScreenshotImage(`data:image/png;base64,${base64}`);
+      onNavigate?.("compare");
+    } catch (e) {
+      useOverlayStore.setState({ error: String(e) });
+    }
+  };
+
+  const handleModeClick = (mode: OverlayViewMode) => {
+    if (mode === "implementation" && onNavigate) {
+      handleInspect();
+      return;
+    }
+    setOverlayViewMode(mode);
+  };
+
   useEffect(() => {
+    if (didAutoOpenRef.current) return;
+    didAutoOpenRef.current = true;
     if (url.trim() && !isOpen && !isLoading) {
       openSite();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [isLoading, isOpen, openSite, url]);
 
   useEffect(() => {
     if (isOpen && !overlayImageBase64 && frameImage) {
@@ -122,28 +186,30 @@ export function LiveOverlayPanel({ onNavigate }: LiveOverlayPanelProps) {
     await overlay?.updateOffset(bottom);
   }, []);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: overlayImageBase64 changes panel height (controls row appears/disappears)
   useEffect(() => {
+    const shouldMeasurePanel = Boolean(overlayImageBase64) || Boolean(overlayViewMode);
     if (!isOpen) return;
+    if (!shouldMeasurePanel) return;
     sendPanelOffset();
-  }, [isOpen, overlayImageBase64, sendPanelOffset]);
+  }, [isOpen, overlayImageBase64, overlayViewMode, sendPanelOffset]);
 
-  const showOpacitySlider =
-    overlayViewMode === "transparent_overlay" || overlayViewMode === "draggable_overlay";
-  const showSplitSlider = overlayViewMode === "split_screen";
-  const showToggleSlider = overlayViewMode === "toggle";
-  const showPixelDiffStatus = overlayViewMode === "pixel_diff";
+  const activeTone = getModeTone(overlayViewMode);
+  const visibleUrl = currentUrl ?? url;
 
   return (
     <div
       ref={panelRef}
       data-overlay-panel
-      className="flex shrink-0 flex-col gap-2 border-border border-b bg-card/60 px-3 py-2"
+      className="flex shrink-0 flex-col gap-3 px-4 py-3"
+      style={{ background: "var(--surface)", borderBottom: "1px solid var(--border)", color: "var(--fg)" }}
     >
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="flex items-center gap-1.5">
-          <Globe className="h-4 w-4 text-muted-foreground" />
-          <Input
+      <div className="flex flex-wrap items-center gap-3">
+        <div
+          className="flex min-w-[320px] flex-1 items-center gap-2 rounded-[var(--radius-token)] px-3 py-2"
+          style={{ background: "var(--bg-2)", border: "1px solid var(--border)" }}
+        >
+          <Globe className="h-4 w-4 shrink-0" style={{ color: "var(--muted-fg)" }} />
+          <input
             type="text"
             placeholder={t("overlay.urlPlaceholder")}
             value={url}
@@ -152,173 +218,221 @@ export function LiveOverlayPanel({ onNavigate }: LiveOverlayPanelProps) {
               if (e.key === "Enter") handleOpen();
             }}
             disabled={isLoading || isOpen}
-            className="h-8 w-72 text-sm"
+            className="min-w-0 flex-1 bg-transparent text-sm outline-none"
+            style={{ color: "var(--fg)" }}
           />
           {isOpen ? (
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={closeSite}>
+            <button type="button" className="fd-icon-btn" onClick={closeSite} aria-label="close">
               <X className="h-4 w-4" />
-            </Button>
+            </button>
           ) : (
-            <Button
-              size="sm"
-              className="h-8"
+            <button
+              type="button"
+              className="fd-btn primary"
               onClick={handleOpen}
               disabled={isLoading || !url.trim()}
+              style={{ opacity: isLoading || !url.trim() ? 0.55 : 1 }}
             >
               {isLoading ? <Spinner size="sm" label={t("common.loading")} /> : t("overlay.open")}
-            </Button>
+            </button>
           )}
         </div>
 
-        {isOpen && (
-          <>
-            <div className="mx-1 h-5 w-px bg-border" />
-
-            {!overlayImageBase64 && frameImage && (
-              <Button variant="outline" size="sm" className="h-8" onClick={handleLoadDesign}>
-                {t("overlay.loadDesign")}
-              </Button>
-            )}
-
-            {overlayImageBase64 && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                onClick={toggleOverlay}
-                aria-label={showOverlay ? t("overlay.hide") : t("overlay.show")}
-              >
-                {showOverlay ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-              </Button>
-            )}
-          </>
+        {isOpen && !overlayImageBase64 && frameImage && (
+          <button type="button" className="fd-btn" onClick={handleLoadDesign}>
+            <Layers className="h-4 w-4" />
+            {t("overlay.loadDesign")}
+          </button>
         )}
 
-        {error && <p className="text-destructive text-xs">{error}</p>}
+        {isOpen && overlayImageBase64 && (
+          <button
+            type="button"
+            className="fd-icon-btn"
+            onClick={toggleOverlay}
+            aria-label={showOverlay ? t("overlay.hide") : t("overlay.show")}
+            style={{ background: showOverlay ? "var(--cobalt-soft)" : "transparent", color: showOverlay ? "var(--cobalt)" : "var(--muted-fg)" }}
+          >
+            {showOverlay ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+          </button>
+        )}
       </div>
 
+      {error && (
+        <div className="rounded-[var(--radius-sm-token)] px-3 py-2 text-xs" style={{ background: "var(--diff-soft)", color: "var(--diff)" }}>
+          {error}
+        </div>
+      )}
+
       {isOpen && overlayImageBase64 && (
-        <div className="flex flex-wrap items-center gap-2">
-          <OverlayViewModeToggle onNavigate={onNavigate} />
-
-          <LiveDiffStatus
-            isEnabled={isLiveDiffEnabled}
-            isRunning={isLiveDiffRunning}
-            matchRate={liveDiffResult?.matchRate ?? null}
-            error={liveDiffError}
-            onToggle={() => setLiveDiffEnabled(!isLiveDiffEnabled)}
-          />
-
-          <div className="flex items-center gap-1.5">
-            <Label htmlFor="overlay-scale" className="text-muted-foreground text-xs">
-              {t("overlay.scale")}
-            </Label>
-            <div className="flex items-center gap-0.5 rounded-md bg-muted/50 p-0.5">
-              <Button
-                type="button"
-                variant={overlayScaleMode === "fit_width" ? "default" : "ghost"}
-                size="sm"
-                className="h-6 px-2 text-xs"
-                onClick={() => setOverlayScaleMode("fit_width")}
-              >
-                {t("overlay.scaleModeFitWidth")}
-              </Button>
-              <Button
-                type="button"
-                variant={overlayScaleMode === "actual_size" ? "default" : "ghost"}
-                size="sm"
-                className="h-6 px-2 text-xs"
-                onClick={() => setOverlayScaleMode("actual_size")}
-              >
-                {t("overlay.scaleModeActual")}
-              </Button>
+        <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_360px]">
+          <div className="space-y-3">
+            <div className="flex flex-wrap gap-2">
+              {FLOW_OVERLAY_MODES.map((mode) => {
+                const Icon = mode.icon;
+                const isActive = overlayViewMode === mode.id;
+                return (
+                  <button
+                    key={`${mode.label}-${mode.id}`}
+                    type="button"
+                    className="fd-btn"
+                    onClick={() => handleModeClick(mode.id)}
+                    title={`${t(`viewMode.${mode.id}`)} - ${t(`viewMode.desc_${mode.id}`)}`}
+                    aria-label={t(`viewMode.${mode.id}`)}
+                    style={{
+                      background: isActive ? "var(--cobalt)" : "var(--surface)",
+                      color: isActive ? "var(--cobalt-fg)" : "var(--fg-2)",
+                      borderColor: isActive ? "transparent" : "var(--border-strong)",
+                    }}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {mode.label}
+                  </button>
+                );
+              })}
             </div>
-            <Slider
-              id="overlay-scale"
-              min={0.25}
-              max={2}
-              step={0.01}
-              value={overlayScale}
-              onChange={(e) => setOverlayScale(Number(e.target.value))}
-              className="w-24"
+            <LiveDiffStatus
+              isEnabled={isLiveDiffEnabled}
+              isRunning={isLiveDiffRunning}
+              matchRate={liveDiffResult?.matchRate ?? null}
+              error={liveDiffError}
+              onToggle={() => setLiveDiffEnabled(!isLiveDiffEnabled)}
             />
-            <span className="w-10 text-muted-foreground text-xs">
-              {Math.round(overlayScale * 100)}%
-            </span>
-          </div>
 
-          {showOpacitySlider && (
-            <div className="flex items-center gap-1.5">
-              <Label htmlFor="overlay-opacity" className="text-muted-foreground text-xs">
-                {t("compare.opacity")}
-              </Label>
-              <Slider
-                id="overlay-opacity"
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
+              <div className="flex items-center gap-1 rounded-[var(--radius-sm-token)] p-1" style={{ background: "var(--surface-2)" }}>
+                <button
+                  type="button"
+                  className="rounded-[10px] px-3 py-1.5 text-xs font-semibold"
+                  onClick={() => setOverlayScaleMode("fit_width")}
+                  style={{
+                    background: overlayScaleMode === "fit_width" ? "var(--surface)" : "transparent",
+                    color: overlayScaleMode === "fit_width" ? "var(--fg)" : "var(--muted-fg)",
+                  }}
+                >
+                  {t("overlay.scaleModeFitWidth")}
+                </button>
+                <button
+                  type="button"
+                  className="rounded-[10px] px-3 py-1.5 text-xs font-semibold"
+                  onClick={() => setOverlayScaleMode("actual_size")}
+                  style={{
+                    background: overlayScaleMode === "actual_size" ? "var(--surface)" : "transparent",
+                    color: overlayScaleMode === "actual_size" ? "var(--fg)" : "var(--muted-fg)",
+                  }}
+                >
+                  {t("overlay.scaleModeActual")}
+                </button>
+              </div>
+
+              <SliderRow
+                label={t("overlay.scale")}
+                min={0.25}
+                max={2}
+                step={0.01}
+                value={overlayScale}
+                displayValue={`${Math.round(overlayScale * 100)}%`}
+                onChange={setOverlayScale}
+              />
+              <SliderRow
+                label={t("compare.opacity")}
                 min={0}
                 max={1}
                 step={0.01}
                 value={opacity}
-                onChange={(e) => setOpacity(Number(e.target.value))}
-                className="w-24"
+                displayValue={`${Math.round(opacity * 100)}%`}
+                onChange={setOpacity}
               />
-              <span className="w-8 text-muted-foreground text-xs">
-                {Math.round(opacity * 100)}%
-              </span>
-            </div>
-          )}
-
-          {showSplitSlider && (
-            <div className="flex items-center gap-1.5">
-              <Label htmlFor="overlay-split" className="text-muted-foreground text-xs">
-                {t("overlay.splitPosition")}
-              </Label>
-              <Slider
-                id="overlay-split"
+              <SliderRow
+                label={t("overlay.splitPosition")}
                 min={0}
                 max={1}
                 step={0.01}
                 value={splitPosition}
-                onChange={(e) => setSplitPosition(Number(e.target.value))}
-                className="w-24"
+                displayValue={`${Math.round(splitPosition * 100)}%`}
+                onChange={setSplitPosition}
               />
-              <span className="w-8 text-muted-foreground text-xs">
-                {Math.round(splitPosition * 100)}%
-              </span>
-            </div>
-          )}
-
-          {showToggleSlider && (
-            <div className="flex items-center gap-1.5">
-              <Label htmlFor="overlay-toggle-speed" className="text-muted-foreground text-xs">
-                {t("overlay.toggleSpeed")}
-              </Label>
-              <Slider
-                id="overlay-toggle-speed"
+              <SliderRow
+                label={t("overlay.toggleSpeed")}
                 min={100}
                 max={2000}
                 step={50}
                 value={toggleIntervalMs}
-                onChange={(e) => setToggleIntervalMs(Number(e.target.value))}
-                className="w-24"
+                displayValue={`${toggleIntervalMs}ms`}
+                onChange={setToggleIntervalMs}
               />
-              <span className="w-10 text-muted-foreground text-xs">{toggleIntervalMs}ms</span>
             </div>
-          )}
 
-          {showPixelDiffStatus && (
-            <div className="flex items-center gap-1.5">
-              {isPixelDiffRunning ? (
-                <>
-                  <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
-                  <span className="text-muted-foreground text-xs">{t("overlay.analyzing")}</span>
-                </>
-              ) : pixelDiffMatchRate !== null ? (
-                <span className="font-medium text-xs">
-                  {t("compare.matchRate")}: {pixelDiffMatchRate}%
-                </span>
-              ) : null}
+            <div className="flex flex-wrap items-center gap-3">
+              <span
+                className="fd-pill"
+                style={{
+                  background: overlayViewMode === "pixel_diff" ? "var(--diff-soft)" : "var(--cobalt-soft)",
+                  color: overlayViewMode === "pixel_diff" ? "var(--diff)" : "var(--cobalt)",
+                }}
+              >
+                {isPixelDiffRunning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Zap className="h-3.5 w-3.5" />}
+                Live diff
+              </span>
+              <span className="text-xs" style={{ color: "var(--muted-fg)" }}>
+                {isPixelDiffRunning
+                  ? t("overlay.analyzing")
+                  : pixelDiffMatchRate !== null
+                    ? `${t("compare.matchRate")}: ${pixelDiffMatchRate}%`
+                    : t(`viewMode.${overlayViewMode}`)}
+              </span>
+              <span className="mono text-xs font-bold" style={{ color: getMatchColor(pixelDiffMatchRate) }}>
+                {pixelDiffMatchRate !== null ? `${pixelDiffMatchRate}%` : "--"}
+              </span>
             </div>
-          )}
+          </div>
+
+          <div
+            className="overflow-hidden rounded-[var(--radius-token)]"
+            style={{ background: "var(--bg-2)", border: "1px solid var(--border)" }}
+          >
+            <div className="flex items-center gap-2 px-3 py-2" style={{ borderBottom: "1px solid var(--border)", background: "var(--surface-2)" }}>
+              <span className="h-2.5 w-2.5 rounded-full" style={{ background: "var(--diff)" }} />
+              <span className="h-2.5 w-2.5 rounded-full" style={{ background: "var(--warn)" }} />
+              <span className="h-2.5 w-2.5 rounded-full" style={{ background: "var(--match)" }} />
+              <span className="mono ml-2 min-w-0 truncate text-xs" style={{ color: "var(--muted-fg)" }}>
+                {visibleUrl}
+              </span>
+            </div>
+            <div className="relative h-32 overflow-hidden" style={{ background: "var(--surface)" }}>
+              <div
+                className="absolute inset-x-8 top-6 h-16 rounded-[var(--radius-sm-token)]"
+                style={{
+                  background: "linear-gradient(135deg, var(--surface-2), var(--bg-2))",
+                  border: "1px solid var(--border)",
+                }}
+              />
+              <div
+                className="absolute top-6 bottom-6"
+                style={{
+                  left: `${Math.round(splitPosition * 100)}%`,
+                  width: 2,
+                  background: activeTone,
+                  boxShadow: `0 0 0 999px color-mix(in oklch, ${activeTone} 8%, transparent)`,
+                }}
+              />
+              <div
+                className="absolute right-4 bottom-4 left-4 h-2 rounded-full"
+                style={{ background: "var(--border)" }}
+              >
+                <div
+                  className="h-full rounded-full"
+                  style={{ width: `${Math.round(opacity * 100)}%`, background: activeTone }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {!isOpen && (
+        <div className="rounded-[var(--radius-token)] p-4 text-sm" style={{ background: "var(--bg-2)", color: "var(--muted-fg)", border: "1px solid var(--border)" }}>
+          {t("overlay.urlPlaceholder")}
         </div>
       )}
     </div>

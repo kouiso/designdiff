@@ -1,4 +1,4 @@
-import type { Frame, NodeInspection, Project } from "@figdiff/shared";
+import type { FigmaAuthState, Frame, NodeInspection, Project } from "@figdiff/shared";
 
 import type { OverlayScaleMode, OverlayViewMode } from "@/store/overlay-store";
 
@@ -21,11 +21,20 @@ export interface ProjectAdapter {
   delete(projectId: string): Promise<void>;
 }
 
+export interface OAuthAdapter {
+  start(): Promise<void>;
+  logout(): Promise<void>;
+  status(): Promise<FigmaAuthState>;
+  saveClient(clientId: string, clientSecret: string): Promise<void>;
+  getClientId(): Promise<string | null>;
+}
+
 export interface PlatformAdapter {
   readonly figma: FigmaAdapter;
   readonly token: TokenAdapter;
   readonly file: FileAdapter;
   readonly project: ProjectAdapter;
+  readonly oauth: OAuthAdapter;
 }
 
 export interface FigmaAdapter {

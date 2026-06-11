@@ -1,7 +1,6 @@
 import { Plus, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
-import { Button } from "@/component/ui/button";
 import { cn } from "@/lib/util";
 import { useTabStore } from "@/store/tab-store";
 
@@ -13,49 +12,120 @@ export const TabBar = () => {
   const closeTab = useTabStore((s) => s.closeTab);
 
   return (
-    <div className="flex h-9 shrink-0 items-center gap-0 border-border/60 border-b bg-muted/30 px-1">
-      {tabs.map((tab) => (
-        <button
-          key={tab.id}
-          type="button"
-          onClick={() => setActiveTab(tab.id)}
-          className={cn(
-            "group flex h-7 max-w-48 items-center gap-1 rounded-md px-2 text-xs transition-colors",
-            tab.id === activeTabId
-              ? "bg-background text-foreground shadow-sm"
-              : "text-muted-foreground hover:bg-background/50 hover:text-foreground",
-          )}
-        >
-          <span className="min-w-0 flex-1 truncate text-left">{tab.label}</span>
-          <span
-            role="button"
-            tabIndex={0}
-            className="ml-1 rounded p-0.5 opacity-0 transition-opacity hover:bg-muted group-hover:opacity-100"
-            onClick={(e) => {
-              e.stopPropagation();
-              closeTab(tab.id);
+    <div
+      style={{
+        height: 40,
+        flexShrink: 0,
+        display: "flex",
+        alignItems: "center",
+        gap: 4,
+        padding: "0 8px",
+        borderBottom: "1px solid var(--border)",
+        background: "var(--bg)",
+        overflowX: "auto",
+      }}
+      className="scroll"
+    >
+      {tabs.map((tab) => {
+        const active = tab.id === activeTabId;
+        return (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => setActiveTab(tab.id)}
+            className={cn("group")}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              minWidth: 0,
+              maxWidth: 220,
+              padding: "0 8px 0 11px",
+              height: 30,
+              borderRadius: 9,
+              border: active ? "1px solid var(--border)" : "1px solid transparent",
+              color: active ? "var(--fg)" : "var(--muted-fg)",
+              background: active ? "var(--bg-2)" : "transparent",
+              fontSize: 12.5,
+              fontWeight: 600,
+              cursor: "pointer",
+              transition: "background 0.14s, color 0.14s, border-color 0.14s",
+              flexShrink: 0,
+              fontFamily: "inherit",
             }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
+          >
+            {/* ステータスドット */}
+            <span
+              style={{
+                width: 7,
+                height: 7,
+                borderRadius: 99,
+                background: "var(--cobalt)",
+                flexShrink: 0,
+              }}
+            />
+            <span
+              style={{
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+                flex: 1,
+                textAlign: "left",
+              }}
+            >
+              {tab.label}
+            </span>
+            <span
+              role="button"
+              tabIndex={0}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: 18,
+                height: 18,
+                borderRadius: 6,
+                color: "var(--faint-fg)",
+                flexShrink: 0,
+              }}
+              onClick={(e) => {
                 e.stopPropagation();
                 closeTab(tab.id);
-              }
-            }}
-            aria-label={t("tab.close", { name: tab.label })}
-          >
-            <X className="h-3 w-3" />
-          </span>
-        </button>
-      ))}
-      <Button
-        variant="ghost"
-        size="icon"
-        className="h-7 w-7 text-muted-foreground hover:text-foreground"
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.stopPropagation();
+                  closeTab(tab.id);
+                }
+              }}
+              aria-label={t("tab.close", { name: tab.label })}
+            >
+              <X size={12} />
+            </span>
+          </button>
+        );
+      })}
+      <button
+        type="button"
         onClick={() => setActiveTab(null)}
         aria-label={t("tab.new")}
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          width: 28,
+          height: 28,
+          borderRadius: 8,
+          color: "var(--muted-fg)",
+          background: "none",
+          border: "none",
+          cursor: "pointer",
+          flexShrink: 0,
+          transition: "all 0.14s",
+        }}
       >
-        <Plus className="h-3.5 w-3.5" />
-      </Button>
+        <Plus size={14} />
+      </button>
     </div>
   );
 };

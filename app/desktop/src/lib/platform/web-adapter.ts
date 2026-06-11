@@ -13,6 +13,7 @@ import { transformNode } from "@/lib/transform-node";
 import type {
   FileAdapter,
   FigmaAdapter,
+  OAuthAdapter,
   PlatformAdapter,
   PlatformCapabilities,
   ProjectAdapter,
@@ -169,11 +170,28 @@ const webProjectAdapter: ProjectAdapter = {
   },
 };
 
+const webOAuthAdapter: OAuthAdapter = {
+  start: async () => {
+    throw new Error("OAuth login is not available in web mode. Use the desktop app.");
+  },
+  logout: async () => {
+    throw new Error("OAuth logout is not available in web mode. Use the desktop app.");
+  },
+  status: async () => ({ mode: "none" as const }),
+  saveClient: async () => {
+    throw new Error(
+      "Saving OAuth client credentials in web mode is not supported (plain localStorage + XSS risk).",
+    );
+  },
+  getClientId: async () => null,
+};
+
 export const webAdapter: PlatformAdapter = {
   figma: webFigmaAdapter,
   token: webTokenAdapter,
   file: webFileAdapter,
   project: webProjectAdapter,
+  oauth: webOAuthAdapter,
 };
 
 export const webCapabilities: PlatformCapabilities = {

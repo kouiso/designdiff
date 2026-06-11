@@ -310,3 +310,26 @@ NEVER report a task as complete based solely on surface-level metrics (lint pass
 ```
 
 IF the task involves files that humans will read/use THEN the verification plan MUST include reading those files and confirming content correctness, not just that the code compiles.
+
+### Feature Completion Without Essential Behavior Verification Is Prohibited
+
+NEVER declare a feature "done" / "完了" / "OK" / "大丈夫" or any equivalent
+WHEN the feature exists to perform a multi-step behavioral flow
+  (authentication, data fetch, API call sequence, form submission, IPC round-trip, etc.)
+AND the verification evidence consists solely of:
+  (a) static checks (typecheck / lint / test pass counts), or
+  (b) UI rendering confirmation (component visible in screenshot)
+WITHOUT any log or observed output proving the flow's core behavior was executed.
+
+BECAUSE "button is visible" ≠ "button's action succeeds".
+  A rendered UI element and a working feature are different things.
+  The feature's essential behavior = the user-visible action it was built to perform.
+
+REQUIRED before claiming done for a behavioral feature:
+  1. Execute the feature's primary user action end-to-end.
+  2. Observe the intended output (token stored, success state, API returns expected data, etc.).
+  3. If one step requires human input (OAuth consent, physical tap, biometric),
+     make that ONE step explicit and plan for it — do NOT skip it and declare done.
+
+EXCEPTION: Pure display-only changes (icon swap, color tweak, static layout)
+  where rendering IS the feature — screenshot verification is sufficient.

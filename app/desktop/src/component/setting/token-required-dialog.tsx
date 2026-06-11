@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, LogIn } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { z } from "zod";
 
@@ -10,14 +10,17 @@ import { Button } from "@/component/ui/button";
 import { Dialog, DialogDescription, DialogHeader, DialogTitle } from "@/component/ui/dialog";
 import { Input } from "@/component/ui/input";
 import { Label } from "@/component/ui/label";
+import { Separator } from "@/component/ui/separator";
 import { useSettingStore } from "@/store/setting-store";
 
 export function TokenRequiredDialog() {
   const { t } = useTranslation();
-  const { showTokenDialog, setFigmaToken, closeTokenDialog } = useSettingStore();
+  const { showTokenDialog, setFigmaToken, closeTokenDialog, startFigmaLogin } = useSettingStore();
   const [tokenInput, setTokenInput] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loginStatus, setLoginStatus] = useState<"idle" | "pending" | "error">("idle");
+  const [loginError, setLoginError] = useState<string | null>(null);
 
   const handleSubmit = async () => {
     const trimmed = tokenInput.trim();
@@ -44,6 +47,19 @@ export function TokenRequiredDialog() {
     } catch (e) {
       setError(t("tokenDialog.failed", { error: String(e) }));
       setIsSubmitting(false);
+    }
+  };
+
+  const handleLogin = async () => {
+    setLoginStatus("pending");
+    setLoginError(null);
+    try {
+      await startFigmaLogin();
+      setLoginStatus("idle");
+      closeTokenDialog();
+    } catch (e) {
+      setLoginStatus("error");
+      setLoginError(e instanceof Error ? e.message : String(e));
     }
   };
 
@@ -75,6 +91,27 @@ export function TokenRequiredDialog() {
       </DialogHeader>
 
       <div className="space-y-4 py-4">
+        {/* OAuth login */}
+        <div className="space-y-2">
+          <Button
+            className="w-full gap-1.5"
+            onClick={handleLogin}
+            disabled={loginStatus === "pending"}
+          >
+            <LogIn className="h-4 w-4" />
+            {loginStatus === "pending" ? "ブラウザで認証中..." : "Figma でログイン (OAuth)"}
+          </Button>
+          {loginStatus === "error" && loginError && (
+            <p className="text-destructive text-sm">{loginError}</p>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Separator className="flex-1" />
+          <span className="text-muted-foreground text-xs">または PAT で認証</span>
+          <Separator className="flex-1" />
+        </div>
+
         <div className="space-y-2">
           <Label htmlFor="token-input">{t("tokenDialog.inputLabel")}</Label>
           <Input

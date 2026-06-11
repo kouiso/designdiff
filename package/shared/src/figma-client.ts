@@ -189,20 +189,33 @@ export class NoCacheStrategy implements FigmaCacheStrategy {
   }
 }
 
+export class FigmaApiError extends Error {
+  readonly status: number;
+  constructor(status: number, message: string) {
+    super(message);
+    this.name = "FigmaApiError";
+    this.status = status;
+  }
+}
+
 const MIN_TOKEN_LENGTH = 20;
 const API_TIMEOUT_MS = 30_000;
 const IMAGE_DOWNLOAD_TIMEOUT_MS = 60_000;
 
+export type FigmaAuthMode = "pat" | "oauth";
+
 export class FigmaClient {
   private token: string;
   private cache: FigmaCacheStrategy;
+  private authMode: FigmaAuthMode;
 
-  constructor(token: string, cache?: FigmaCacheStrategy) {
+  constructor(token: string, cache?: FigmaCacheStrategy, authMode: FigmaAuthMode = "pat") {
     if (!token || token.length < MIN_TOKEN_LENGTH) {
       throw new Error("Invalid Figma token");
     }
     this.token = token;
     this.cache = cache || new NoCacheStrategy();
+    this.authMode = authMode;
   }
 
   async getFile(fileKey: string, depth = 1): Promise<FigmaFileResponse> {
@@ -281,9 +294,7 @@ export class FigmaClient {
 
     try {
       const response = await fetch(url, {
-        headers: {
-          "X-FIGMA-TOKEN": this.token,
-        },
+        headers: this.createAuthHeaders(),
         signal: controller.signal,
       });
 
@@ -291,12 +302,14 @@ export class FigmaClient {
         const body = await response.text();
         const status = response.status;
         if (status === 401) {
-          throw new Error(
+          throw new FigmaApiError(
+            401,
             `Figma token is invalid or expired (401). Please update your token in Settings.`,
           );
         }
         if (status === 403) {
-          throw new Error(
+          throw new FigmaApiError(
+            403,
             `Access denied (403). You don't have permission to access this Figma file.`,
           );
         }
@@ -305,12 +318,15 @@ export class FigmaClient {
           const wait = retryAfter
             ? ` Please wait ${retryAfter} seconds.`
             : " Please wait a moment.";
-          throw new Error(`Figma API rate limit exceeded (429).${wait}`);
+          throw new FigmaApiError(429, `Figma API rate limit exceeded (429).${wait}`);
         }
         if (status >= 500) {
-          throw new Error(`Figma server error (${status}). Please try again later.`);
+          throw new FigmaApiError(
+            status,
+            `Figma server error (${status}). Please try again later.`,
+          );
         }
-        throw new Error(`Figma API error ${status}: ${body}`);
+        throw new FigmaApiError(status, `Figma API error ${status}: ${body}`);
       }
 
       return response.json();
@@ -322,6 +338,13 @@ export class FigmaClient {
     } finally {
       clearTimeout(timer);
     }
+  }
+
+  private createAuthHeaders(): HeadersInit {
+    if (this.authMode === "oauth") {
+      return { Authorization: `Bearer ${this.token}` };
+    }
+    return { "X-Figma-Token": this.token };
   }
 
   private arrayBufferToBase64(buffer: Uint8Array): string {
