@@ -9,7 +9,7 @@ interface LogoProps {
 export function Logo({ size = 28, variant = "full", className }: LogoProps) {
   const s = size;
   return (
-    <span className={cn("inline-flex items-center gap-2 select-none", className)}>
+    <span className={cn("inline-flex select-none items-center gap-2", className)}>
       <svg width={s} height={s} viewBox="0 0 28 28" fill="none" aria-hidden="true">
         <rect
           x="2"

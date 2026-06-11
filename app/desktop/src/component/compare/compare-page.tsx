@@ -92,7 +92,7 @@ function buildScoreBreakdown(compareResult: ResultWithDiffImage | null) {
 function StepDot({ done, fallback }: { done: boolean; fallback: string }) {
   return (
     <span
-      className="inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold"
+      className="inline-flex h-6 w-6 items-center justify-center rounded-full font-bold text-xs"
       style={{
         background: done ? "var(--match-soft)" : "var(--surface-2)",
         color: done ? "var(--match)" : "var(--muted-fg)",
@@ -124,10 +124,13 @@ function ScreenshotLoader({
   return (
     <div className="flex min-w-[260px] flex-1 items-center gap-2">
       <StepDot done={hasScreenshot} fallback="2" />
-      <span className="text-sm font-medium">{t("compare.screenshotLabel")}</span>
+      <span className="font-medium text-sm">{t("compare.screenshotLabel")}</span>
       {hasScreenshot ? (
         <>
-          <span className="fd-pill" style={{ background: "var(--match-soft)", color: "var(--match)" }}>
+          <span
+            className="fd-pill"
+            style={{ background: "var(--match-soft)", color: "var(--match)" }}
+          >
             {t("compare.screenshotLoaded")}
           </span>
           <button type="button" className="fd-btn ghost" onClick={onClear}>
@@ -164,7 +167,11 @@ function ScreenshotLoader({
               opacity: !screenshotPath.trim() || isLoading ? 0.55 : 1,
             }}
           >
-            {isLoading ? <Spinner size="sm" label={t("common.loading")} /> : <Upload className="h-4 w-4" />}
+            {isLoading ? (
+              <Spinner size="sm" label={t("common.loading")} />
+            ) : (
+              <Upload className="h-4 w-4" />
+            )}
           </button>
         </>
       )}
@@ -195,12 +202,21 @@ function EmptyCanvasState() {
   );
 }
 
-function IssueList({ issues, compareResult }: { issues: DiffIssue[]; compareResult: ResultWithDiffImage | null }) {
+function IssueList({
+  issues,
+  compareResult,
+}: {
+  issues: DiffIssue[];
+  compareResult: ResultWithDiffImage | null;
+}) {
   const { t } = useTranslation();
 
   if (!compareResult) {
     return (
-      <div className="rounded-[var(--radius-token)] p-4 text-sm" style={{ background: "var(--surface-2)", color: "var(--muted-fg)" }}>
+      <div
+        className="rounded-[var(--radius-token)] p-4 text-sm"
+        style={{ background: "var(--surface-2)", color: "var(--muted-fg)" }}
+      >
         {t("compare.bothLoadedNext")}
       </div>
     );
@@ -208,7 +224,10 @@ function IssueList({ issues, compareResult }: { issues: DiffIssue[]; compareResu
 
   if (issues.length === 0) {
     return (
-      <div className="rounded-[var(--radius-token)] p-4 text-sm" style={{ background: "var(--match-soft)", color: "var(--match)" }}>
+      <div
+        className="rounded-[var(--radius-token)] p-4 text-sm"
+        style={{ background: "var(--match-soft)", color: "var(--match)" }}
+      >
         {t("compare.issuesEmpty")}
       </div>
     );
@@ -223,7 +242,7 @@ function IssueList({ issues, compareResult }: { issues: DiffIssue[]; compareResu
           style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}
         >
           <div className="flex items-center justify-between gap-2">
-            <span className="text-sm font-semibold" style={{ color: "var(--fg)" }}>
+            <span className="font-semibold text-sm" style={{ color: "var(--fg)" }}>
               {issue.kind}
             </span>
             <span
@@ -240,7 +259,8 @@ function IssueList({ issues, compareResult }: { issues: DiffIssue[]; compareResu
             x:{issue.bbox.x} y:{issue.bbox.y} w:{issue.bbox.w} h:{issue.bbox.h}
           </p>
           <p className="mt-1 text-xs" style={{ color: "var(--muted-fg)" }}>
-            {issue.evidence.signal}: {issue.evidence.value.toFixed(3)} / {issue.evidence.threshold.toFixed(3)}
+            {issue.evidence.signal}: {issue.evidence.value.toFixed(3)} /{" "}
+            {issue.evidence.threshold.toFixed(3)}
           </p>
         </div>
       ))}
@@ -340,9 +360,12 @@ export function ComparePage() {
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2">
             <StepDot done={hasDesign} fallback="1" />
-            <span className="text-sm font-medium">{t("compare.designLabel")}</span>
+            <span className="font-medium text-sm">{t("compare.designLabel")}</span>
             {hasDesign && (
-              <span className="fd-pill" style={{ background: "var(--match-soft)", color: "var(--match)" }}>
+              <span
+                className="fd-pill"
+                style={{ background: "var(--match-soft)", color: "var(--match)" }}
+              >
                 {t("compare.designLoaded")}
               </span>
             )}
@@ -355,14 +378,22 @@ export function ComparePage() {
             onLoad={handleLoadScreenshot}
             onClear={handleClearScreenshot}
           />
-          <button type="button" className="fd-btn primary" onClick={runComparison} disabled={!canCompare}>
+          <button
+            type="button"
+            className="fd-btn primary"
+            onClick={runComparison}
+            disabled={!canCompare}
+          >
             {isComparing ? t("compare.running") : t("compare.run")}
           </button>
         </div>
       </div>
 
       {error && (
-        <div className="mx-5 mt-3 rounded-[var(--radius-sm-token)] px-3 py-2 text-sm" style={{ background: "var(--diff-soft)", color: "var(--diff)" }}>
+        <div
+          className="mx-5 mt-3 rounded-[var(--radius-sm-token)] px-3 py-2 text-sm"
+          style={{ background: "var(--diff-soft)", color: "var(--diff)" }}
+        >
           {t(error)}
         </div>
       )}
@@ -398,7 +429,10 @@ export function ComparePage() {
 
             <div className="flex items-center gap-3">
               {(viewMode === "transparent_overlay" || viewMode === "draggable_overlay") && (
-                <label className="flex items-center gap-2 text-xs" style={{ color: "var(--muted-fg)" }}>
+                <label
+                  className="flex items-center gap-2 text-xs"
+                  style={{ color: "var(--muted-fg)" }}
+                >
                   {t("compare.opacity")}
                   <input
                     type="range"
@@ -441,10 +475,10 @@ export function ComparePage() {
           <div className="flex items-center gap-4">
             <ScoreRing score={score} size={128} stroke={9} />
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold" style={{ color: "var(--muted-fg)" }}>
+              <p className="font-semibold text-sm" style={{ color: "var(--muted-fg)" }}>
                 {t("compare.matchRate")}
               </p>
-              <p className="mono text-3xl font-bold" style={{ color: scoreColor(score) }}>
+              <p className="mono font-bold text-3xl" style={{ color: scoreColor(score) }}>
                 {formatScore(score)}
               </p>
               <div className="mt-2">
@@ -454,28 +488,37 @@ export function ComparePage() {
           </div>
 
           <div className="grid grid-cols-3 gap-2">
-            <div className="rounded-[var(--radius-sm-token)] p-3" style={{ background: "var(--surface-2)" }}>
+            <div
+              className="rounded-[var(--radius-sm-token)] p-3"
+              style={{ background: "var(--surface-2)" }}
+            >
               <p className="text-xs" style={{ color: "var(--muted-fg)" }}>
                 {t("compare.diffRegions")}
               </p>
-              <p className="mono text-lg font-bold">{compareResult?.diffRegions.length ?? 0}</p>
+              <p className="mono font-bold text-lg">{compareResult?.diffRegions.length ?? 0}</p>
             </div>
-            <div className="rounded-[var(--radius-sm-token)] p-3" style={{ background: "var(--surface-2)" }}>
+            <div
+              className="rounded-[var(--radius-sm-token)] p-3"
+              style={{ background: "var(--surface-2)" }}
+            >
               <p className="text-xs" style={{ color: "var(--muted-fg)" }}>
                 {t("compare.diffPixels")}
               </p>
-              <p className="mono text-lg font-bold">{compareResult?.diffPixelCount ?? 0}</p>
+              <p className="mono font-bold text-lg">{compareResult?.diffPixelCount ?? 0}</p>
             </div>
-            <div className="rounded-[var(--radius-sm-token)] p-3" style={{ background: "var(--surface-2)" }}>
+            <div
+              className="rounded-[var(--radius-sm-token)] p-3"
+              style={{ background: "var(--surface-2)" }}
+            >
               <p className="text-xs" style={{ color: "var(--muted-fg)" }}>
                 {t("compare.issuesTitle")}
               </p>
-              <p className="mono text-lg font-bold">{issues.length}</p>
+              <p className="mono font-bold text-lg">{issues.length}</p>
             </div>
           </div>
 
           <div className="space-y-2">
-            <p className="text-sm font-semibold">{t("compare.supplementaryInfo")}</p>
+            <p className="font-semibold text-sm">{t("compare.supplementaryInfo")}</p>
             <div className="space-y-2">
               {scoreBreakdown.map((item) => (
                 <ScoreBar key={item.label} label={item.label} score={clampScore(item.score)} />
@@ -484,10 +527,13 @@ export function ComparePage() {
           </div>
 
           <div className="space-y-3">
-            <div className="flex rounded-[var(--radius-sm-token)] p-1" style={{ background: "var(--surface-2)" }}>
+            <div
+              className="flex rounded-[var(--radius-sm-token)] p-1"
+              style={{ background: "var(--surface-2)" }}
+            >
               <button
                 type="button"
-                className="flex-1 rounded-[10px] px-3 py-2 text-sm font-semibold"
+                className="flex-1 rounded-[10px] px-3 py-2 font-semibold text-sm"
                 onClick={() => setActiveTab("issues")}
                 style={{
                   background: activeTab === "issues" ? "var(--surface)" : "transparent",
@@ -498,7 +544,7 @@ export function ComparePage() {
               </button>
               <button
                 type="button"
-                className="flex-1 rounded-[10px] px-3 py-2 text-sm font-semibold"
+                className="flex-1 rounded-[10px] px-3 py-2 font-semibold text-sm"
                 onClick={() => setActiveTab("report")}
                 style={{
                   background: activeTab === "report" ? "var(--surface)" : "transparent",
@@ -517,14 +563,20 @@ export function ComparePage() {
             ) : compareResult?.diffReport ? (
               <CompareDiffReport compareResult={compareResult} />
             ) : (
-              <div className="rounded-[var(--radius-token)] p-4 text-sm" style={{ background: "var(--surface-2)", color: "var(--muted-fg)" }}>
+              <div
+                className="rounded-[var(--radius-token)] p-4 text-sm"
+                style={{ background: "var(--surface-2)", color: "var(--muted-fg)" }}
+              >
                 {t("compare.diffReportTitle")}
               </div>
             )}
           </div>
 
           {compareResult?.suggestion && (
-            <div className="rounded-[var(--radius-token)] p-4 text-sm" style={{ background: "var(--cobalt-soft)", color: "var(--fg)" }}>
+            <div
+              className="rounded-[var(--radius-token)] p-4 text-sm"
+              style={{ background: "var(--cobalt-soft)", color: "var(--fg)" }}
+            >
               {t(compareResult.suggestion, { count: compareResult.diffRegions.length })}
             </div>
           )}

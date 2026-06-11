@@ -284,6 +284,73 @@ export const CritiqueNoteSchema = z.object({
   advice: z.string(),
 });
 
+// --- Comparison Confidence Layer (Pre-flight / Normalization / Diagnosis / Headline) ---
+// 「near-100% のミスマッチはほぼ常に実装差分ではなく設定ミス」という観察に基づき、
+// ツール自身が誤設定を検知・説明するためのメタ情報。計測ロジックには手を入れず、
+// 既存シグナル (regionScores / 正規化結果) を集約して提示する。
+
+export const PreflightWarningCodeSchema = z.enum([
+  "width_mismatch",
+  "crop_out_of_bounds",
+  "crop_stale",
+  "blank_frame",
+]);
+
+export const PreflightSeveritySchema = z.enum(["info", "warning", "critical"]);
+
+export const PreflightWarningSchema = z.object({
+  code: PreflightWarningCodeSchema,
+  severity: PreflightSeveritySchema,
+  message: z.string(),
+  suggestedFix: z.string().optional(),
+});
+
+export const PreflightReportSchema = z.object({
+  warnings: z.array(PreflightWarningSchema),
+});
+
+export const NormalizationReportSchema = z.object({
+  designNativeWidth: z.number().int().nonnegative(),
+  designNativeHeight: z.number().int().nonnegative(),
+  screenshotWidth: z.number().int().nonnegative(),
+  screenshotHeight: z.number().int().nonnegative(),
+  cropApplied: z.boolean(),
+  containResized: z.boolean(),
+  // contain 正規化で適用された最終スケール。1 から大きく外れると寸法ミスマッチのサイン。
+  appliedScale: z.number().nonnegative(),
+});
+
+export const ComparisonHeadlineSchema = z.object({
+  structureMatch: z.number().min(0).max(100),
+  colorOnlyRegions: z.number().int().nonnegative(),
+  structuralRegions: z.number().int().nonnegative(),
+  headline: z.string(),
+});
+
+export const DiagnosisVerdictSchema = z.enum(["clean", "real_diff", "likely_misconfig"]);
+
+export const DiagnosisCauseCodeSchema = z.enum([
+  "width_mismatch",
+  "crop_compression",
+  "aspect_mismatch",
+  "global_color_shift",
+  "blank_or_wrong_node",
+]);
+
+export const DiagnosisCauseSchema = z.object({
+  code: DiagnosisCauseCodeSchema,
+  confidence: z.number().min(0).max(1),
+  message: z.string(),
+  suggestedFix: z.string(),
+});
+
+export const ComparisonDiagnosisSchema = z.object({
+  verdict: DiagnosisVerdictSchema,
+  likelyMisconfig: z.boolean(),
+  rankedCauses: z.array(DiagnosisCauseSchema),
+  headline: z.string(),
+});
+
 export const CompareDesignResultSchema = z.object({
   status: z.enum(["PASS", "FAIL"]).optional(),
   comparisonId: z.string(),
@@ -300,6 +367,10 @@ export const CompareDesignResultSchema = z.object({
   gridSummary: GridSummarySchema.optional(),
   diffReport: DiffReportSchema.optional(),
   critique: CritiqueNoteSchema.optional(),
+  preflight: PreflightReportSchema.optional(),
+  normalization: NormalizationReportSchema.optional(),
+  diagnosis: ComparisonDiagnosisSchema.optional(),
+  comparisonHeadline: ComparisonHeadlineSchema.optional(),
   diffImagePath: z.string().optional(),
   diffImageBase64: z.string().optional(),
 });

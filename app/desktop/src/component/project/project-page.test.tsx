@@ -38,15 +38,15 @@ describe("ProjectPage", () => {
     expect(onNavigate).toHaveBeenCalledWith("home");
   });
 
-  it("frameImage あり → 比較ページへ進むボタン表示", () => {
+  it("frameImage あり → 比較を開始ボタン表示", () => {
     useProjectStore.setState({ frameImage: "data:image/png;base64,abc" });
     render(<ProjectPage onNavigate={vi.fn()} />);
-    expect(screen.getByText("比較ページへ進む")).toBeInTheDocument();
+    expect(screen.getByText("比較を開始")).toBeInTheDocument();
   });
 
-  it("frameImage なし → 比較ページへ進むボタン非表示", () => {
+  it("frameImage なし → 比較を開始ボタン非表示", () => {
     render(<ProjectPage onNavigate={vi.fn()} />);
-    expect(screen.queryByText("比較ページへ進む")).not.toBeInTheDocument();
+    expect(screen.queryByText("比較を開始")).not.toBeInTheDocument();
   });
 
   it("frames あり + frameImage なし → FrameSelector 表示", () => {

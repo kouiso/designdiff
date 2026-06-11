@@ -17,7 +17,9 @@ export function ScoreBar({ label, score, className }: ScoreBarProps) {
   const color = barColor(clampedScore);
   return (
     <div className={cn("flex items-center gap-3", className)}>
-      <span style={{ fontSize: 12, color: "var(--muted-fg)", width: 56, flexShrink: 0 }}>{label}</span>
+      <span style={{ fontSize: 12, color: "var(--muted-fg)", width: 56, flexShrink: 0 }}>
+        {label}
+      </span>
       <span
         style={{
           flex: 1,
@@ -41,7 +43,10 @@ export function ScoreBar({ label, score, className }: ScoreBarProps) {
           }}
         />
       </span>
-      <span className="mono" style={{ fontSize: 12, fontWeight: 700, color, width: 32, textAlign: "right" }}>
+      <span
+        className="mono"
+        style={{ fontSize: 12, fontWeight: 700, color, width: 32, textAlign: "right" }}
+      >
         {score}
       </span>
     </div>

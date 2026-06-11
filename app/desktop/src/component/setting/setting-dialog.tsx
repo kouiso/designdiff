@@ -134,13 +134,13 @@ export function SettingDialog({ open, onOpenChange }: SettingDialogProps) {
       <div className="mt-6 space-y-6">
         {/* ── OAuth ログイン ── */}
         <div className="space-y-3">
-          <Label className="text-sm font-medium">Figma ログイン (OAuth)</Label>
+          <Label className="font-medium text-sm">Figma ログイン (OAuth)</Label>
           {oauthState.mode === "oauth" ? (
             <div className="flex items-center justify-between rounded-md border px-3 py-2">
               <div className="text-sm">
-                <span className="text-success font-medium">ログイン済み</span>
+                <span className="font-medium text-success">ログイン済み</span>
                 {expiresAtLabel && (
-                  <span className="text-muted-foreground ml-2">有効期限: {expiresAtLabel}</span>
+                  <span className="ml-2 text-muted-foreground">有効期限: {expiresAtLabel}</span>
                 )}
               </div>
               <Button variant="outline" size="sm" onClick={handleLogout} className="gap-1.5">
@@ -164,7 +164,7 @@ export function SettingDialog({ open, onOpenChange }: SettingDialogProps) {
               )}
               {/* production: client_id/secret 入力欄 */}
               <details className="mt-2">
-                <summary className="text-muted-foreground cursor-pointer text-xs">
+                <summary className="cursor-pointer text-muted-foreground text-xs">
                   OAuth アプリ設定 (client_id / client_secret)
                 </summary>
                 <div className="mt-2 space-y-2">
@@ -212,7 +212,7 @@ export function SettingDialog({ open, onOpenChange }: SettingDialogProps) {
         <div className="space-y-2">
           <Label htmlFor="figma-token" className="text-sm">
             {t("settings.token")}
-            <span className="text-muted-foreground ml-1 text-xs">(PAT フォールバック)</span>
+            <span className="ml-1 text-muted-foreground text-xs">(PAT フォールバック)</span>
           </Label>
           {figmaToken ? (
             <div className="flex items-center gap-2">

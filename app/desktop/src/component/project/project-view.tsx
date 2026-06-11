@@ -209,7 +209,10 @@ export const ProjectView = ({ onNavigate }: ProjectViewProps) => {
         }}
       >
         <div style={{ borderBottom: "1px solid var(--border)", padding: 18 }}>
-          <div className="fd-chip mb-3" style={{ background: "var(--cobalt-soft)", color: "var(--cobalt)" }}>
+          <div
+            className="fd-chip mb-3"
+            style={{ background: "var(--cobalt-soft)", color: "var(--cobalt)" }}
+          >
             {isFigmaConnected ? "Figma" : t("home.tokenRequired")}
           </div>
           <h2 className="truncate" style={{ fontSize: 17, fontWeight: 760 }}>
@@ -375,7 +378,9 @@ export const ProjectView = ({ onNavigate }: ProjectViewProps) => {
                     {t("projectView.sources", "Design Sources")}
                   </h2>
                   <p style={{ color: "var(--muted-fg)", fontSize: 13 }}>
-                    {primarySource ? sourceLabel(primarySource) : t("projectView.noSources", "No design sources yet")}
+                    {primarySource
+                      ? sourceLabel(primarySource)
+                      : t("projectView.noSources", "No design sources yet")}
                   </p>
                 </div>
                 <div className="flex gap-2">
@@ -468,7 +473,10 @@ export const ProjectView = ({ onNavigate }: ProjectViewProps) => {
                             {source.label}
                           </h3>
                         </div>
-                        <p className="mt-2 truncate" style={{ color: "var(--muted-fg)", fontSize: 12 }}>
+                        <p
+                          className="mt-2 truncate"
+                          style={{ color: "var(--muted-fg)", fontSize: 12 }}
+                        >
                           {sourceLabel(source)}
                         </p>
                       </div>
@@ -542,7 +550,9 @@ export const ProjectView = ({ onNavigate }: ProjectViewProps) => {
                   <ImagePlus size={30} style={{ color: "var(--cobalt)" }} />
                   <h2 style={{ fontSize: 16, fontWeight: 760 }}>{t("compare.screenshotLabel")}</h2>
                   <p style={{ color: "var(--muted-fg)", fontSize: 13 }}>
-                    {screenshotImage ? t("compare.screenshotLoaded") : t("compare.screenshotInstruction")}
+                    {screenshotImage
+                      ? t("compare.screenshotLoaded")
+                      : t("compare.screenshotInstruction")}
                   </p>
                 </div>
               </div>

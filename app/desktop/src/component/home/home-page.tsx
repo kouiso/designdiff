@@ -305,7 +305,10 @@ export const HomePage = ({ onNavigate }: HomePageProps) => {
             </h2>
             <p style={{ color: "var(--muted-fg)", fontSize: 13 }}>{t("home.inputHint")}</p>
           </div>
-          <span className="fd-pill" style={{ background: "var(--cobalt-soft)", color: "var(--cobalt)" }}>
+          <span
+            className="fd-pill"
+            style={{ background: "var(--cobalt-soft)", color: "var(--cobalt)" }}
+          >
             {t("home.stepLabel", { n: 1 })}
           </span>
         </div>
@@ -482,7 +485,10 @@ export const HomePage = ({ onNavigate }: HomePageProps) => {
       )}
 
       {isLoading && (
-        <div className="flex items-center justify-center gap-2" style={{ color: "var(--muted-fg)" }}>
+        <div
+          className="flex items-center justify-center gap-2"
+          style={{ color: "var(--muted-fg)" }}
+        >
           <Spinner size="sm" label={t("common.loading")} />
           <span>{t("common.loading")}</span>
         </div>
@@ -499,7 +505,10 @@ export const HomePage = ({ onNavigate }: HomePageProps) => {
               padding: 16,
             }}
           >
-            <span className="fd-pill" style={{ background: "var(--cobalt-soft)", color: "var(--cobalt)" }}>
+            <span
+              className="fd-pill"
+              style={{ background: "var(--cobalt-soft)", color: "var(--cobalt)" }}
+            >
               {t("home.stepLabel", { n })}
             </span>
             <p className="mt-3 whitespace-pre-line" style={{ color: "var(--fg)", fontWeight: 720 }}>

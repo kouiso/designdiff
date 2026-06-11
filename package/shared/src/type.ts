@@ -12,6 +12,16 @@ import {
   type CompareDesignResultSchema,
   type CompletionCriteriaSchema,
   type CompletionCriterionSchema,
+  type ComparisonDiagnosisSchema,
+  type ComparisonHeadlineSchema,
+  type DiagnosisCauseSchema,
+  type DiagnosisCauseCodeSchema,
+  type DiagnosisVerdictSchema,
+  type NormalizationReportSchema,
+  type PreflightReportSchema,
+  type PreflightSeveritySchema,
+  type PreflightWarningSchema,
+  type PreflightWarningCodeSchema,
   type CropRegionSchema,
   type IgnoreRegionSchema,
   type DesignSourceSchema,
@@ -81,6 +91,19 @@ export type DiffRegion = z.infer<typeof DiffRegionSchema>;
 export type ClusterTelemetry = z.infer<typeof ClusterTelemetrySchema>;
 export type GridSummary = z.infer<typeof GridSummarySchema>;
 export type GridSummaryCell = z.infer<typeof GridSummaryCellSchema>;
+
+// --- Comparison Confidence Layer ---
+
+export type PreflightWarningCode = z.infer<typeof PreflightWarningCodeSchema>;
+export type PreflightSeverity = z.infer<typeof PreflightSeveritySchema>;
+export type PreflightWarning = z.infer<typeof PreflightWarningSchema>;
+export type PreflightReport = z.infer<typeof PreflightReportSchema>;
+export type NormalizationReport = z.infer<typeof NormalizationReportSchema>;
+export type ComparisonHeadline = z.infer<typeof ComparisonHeadlineSchema>;
+export type DiagnosisVerdict = z.infer<typeof DiagnosisVerdictSchema>;
+export type DiagnosisCauseCode = z.infer<typeof DiagnosisCauseCodeSchema>;
+export type DiagnosisCause = z.infer<typeof DiagnosisCauseSchema>;
+export type ComparisonDiagnosis = z.infer<typeof ComparisonDiagnosisSchema>;
 
 // --- Crop Region (Phase 2+) ---
 

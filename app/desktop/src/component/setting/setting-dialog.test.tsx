@@ -94,13 +94,14 @@ describe("SettingDialog", () => {
       render(<SettingDialog open={true} onOpenChange={vi.fn()} />);
 
       const input = screen.getByPlaceholderText("figd_...");
-      await userEvent.type(input, "figd_abc");
+      // userEvent.type はキーストロークごとに timer/microtask を挟むため、他テストが
+      // 残した window リスナー等で event loop が混むと race で flake する。値は
+      // fireEvent.change で同期的に設定し、メッセージ表示のみ findByText で待つ。
+      fireEvent.change(input, { target: { value: "figd_abc" } });
       const patSection = input.closest(".flex.items-center.gap-2")!;
       fireEvent.click(within(patSection).getByText("保存"));
 
-      await waitFor(() => {
-        expect(screen.getByText("OS Keychainに保存しました")).toBeInTheDocument();
-      });
+      expect(await screen.findByText("OS Keychainに保存しました")).toBeInTheDocument();
     });
 
     it("保存失敗 → エラーメッセージ表示", async () => {
@@ -110,14 +111,13 @@ describe("SettingDialog", () => {
       render(<SettingDialog open={true} onOpenChange={vi.fn()} />);
 
       const input = screen.getByPlaceholderText("figd_...");
-      await userEvent.type(input, "figd_abc");
+      // 同上: 入力は同期的に行い、非同期はエラーメッセージの出現だけを findByText で待つ。
+      fireEvent.change(input, { target: { value: "figd_abc" } });
       const patSection = input.closest(".flex.items-center.gap-2")!;
       fireEvent.click(within(patSection).getByText("保存"));
 
-      await waitFor(() => {
-        expect(screen.getByText(/保存に失敗しました/)).toBeInTheDocument();
-        expect(screen.getByText(/保存エラー/)).toBeInTheDocument();
-      });
+      expect(await screen.findByText(/保存に失敗しました/)).toBeInTheDocument();
+      expect(screen.getByText(/保存エラー/)).toBeInTheDocument();
     });
 
     it("Enter キーで保存", async () => {

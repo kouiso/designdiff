@@ -1,8 +1,9 @@
 {
   "test": "MCP tool listing",
   "timestamp": "2026-04-30T00:00:00.000Z",
-  "toolCount": 10,
+  "toolCount": 11,
   "tools": [
+    "list_projects",
     "compare_design",
     "inspect_node",
     "get_design_tokens",

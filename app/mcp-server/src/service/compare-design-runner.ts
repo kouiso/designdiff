@@ -6,10 +6,16 @@ import sharp from "sharp";
 import { z } from "zod";
 
 import {
+  buildComparisonHeadline,
   CompareDesignResultSchema,
+  diagnoseComparison,
+  formatFrameCandidates,
   parseDesignInput,
+  rankFrameCandidates,
+  runPreflight,
   selfCritique,
   type CompareDesignResult,
+  type ComparisonDiagnosis,
   type CropRegion,
   type DiffReport,
   type FigmaNode,
@@ -122,18 +128,22 @@ async function resolveNodeId(
   fileKey: string,
   nodeId: string | undefined,
   frameName: string | undefined,
+  targetWidth: number | undefined,
 ): Promise<string> {
   if (nodeId) {
     return nodeId;
   }
 
   const frames = await figmaService.getFrames(fileKey);
+  // 実コンテンツらしいフレーム (撮影幅一致・ページらしい形) を上位に並べた候補一覧。
+  // 正常解決時には不要なので、エラー時にのみ生成する。
+  const buildGuidance = (): string =>
+    formatFrameCandidates(rankFrameCandidates(frames, targetWidth), targetWidth);
+
   if (frameName) {
     const matches = frames.filter((entry) => entry.name.toLowerCase() === frameName.toLowerCase());
     if (matches.length === 0) {
-      throw new Error(
-        `Frame "${frameName}" not found. Available frames: ${frames.map((entry) => entry.name).join(", ")}`,
-      );
+      throw new Error(`Frame "${frameName}" not found.\n\n${buildGuidance()}`);
     }
     if (matches.length > 1) {
       throw new Error(
@@ -144,7 +154,7 @@ async function resolveNodeId(
   }
 
   throw new Error(
-    `No frame specified. Available frames:\n${frames.map((entry) => `- ${entry.name} (${entry.id}, ${entry.width}x${entry.height})`).join("\n")}\n\nPlease specify frame_name or use a URL with node-id.`,
+    `No frame specified.\n\n${buildGuidance()}\n\nURL に node-id を付けるか frame_name を指定してください。`,
   );
 }
 
@@ -232,6 +242,17 @@ function buildSuggestion(matchRate: number, regionCount: number): string {
   return `大きな差分が${regionCount}箇所あります。inspect_nodeで各差分領域を確認し、修正してください。`;
 }
 
+// 設定ミスの可能性が高い場合、CSS修正ではなくセットアップ修正へ誘導する。
+// tool description が nextAction に従うよう指示しているため、誤った CSS 修正に
+// 進ませないよう診断結果で nextAction を上書きする。
+function buildMisconfigNextAction(diagnosis: ComparisonDiagnosis): string {
+  const top = diagnosis.rankedCauses[0];
+  const fix = top
+    ? top.suggestedFix
+    : "設定（capture_width / crop region / node-id）を見直してください。";
+  return `⚠️ セットアップ問題の可能性が高いです。CSS修正の前に、まず設定を見直してください: ${fix} 解消後に再度 compare_design で検証してください。`;
+}
+
 async function resolveScreenshotPath(args: CompareDesignRunArgs): Promise<string> {
   if (!args.screenshot_url) {
     return resolveSafePath(args.screenshot);
@@ -275,6 +296,7 @@ async function resolveDesignAssets(
       parsedDesignSource.fileKey,
       parsedDesignSource.nodeId,
       frameName,
+      targetWidth,
     );
     const designBase64 = await figmaService.getFrameImage(
       parsedDesignSource.fileKey,
@@ -321,11 +343,13 @@ export async function runCompareDesign(
   );
 
   let cropRegion: CropRegion | undefined;
+  let cropUpdatedAt: string | undefined;
   let persistedIgnoreRegions: IgnoreRegion[] = [];
   if (args.project_id) {
     const regions = await getCropRegion(args.project_id, args.frame_name);
     if (regions.length > 0) {
       cropRegion = regions[0].region;
+      cropUpdatedAt = regions[0].updatedAt;
     }
     persistedIgnoreRegions = await getIgnoreRegionsForComparison(args.project_id, args.frame_name);
   }
@@ -363,6 +387,27 @@ export async function runCompareDesign(
     }));
   }
 
+  // 確信度レイヤー: 設定ミスを検知・説明し、結果ヘッドラインを構造/色に分離する。
+  const figmaFrameBox = figmaRootNode?.absoluteBoundingBox ?? undefined;
+  const regionScores = comparison.diffReport?.regionScores ?? [];
+  const preflight = runPreflight({
+    screenshotWidth: comparison.normalization?.screenshotWidth ?? screenshotMeta.width ?? 0,
+    screenshotHeight: comparison.normalization?.screenshotHeight ?? screenshotMeta.height ?? 0,
+    figmaFrameWidth: figmaFrameBox?.width,
+    figmaFrameHeight: figmaFrameBox?.height,
+    cropRegion,
+    cropUpdatedAt,
+    figmaChildCount: figmaRootNode?.children?.length,
+    figmaNodeType: figmaRootNode?.type,
+  });
+  const comparisonHeadline = buildComparisonHeadline(regionScores, comparison.matchRate);
+  const diagnosis = diagnoseComparison({
+    matchRate: comparison.matchRate,
+    regionScores,
+    preflightWarnings: preflight.warnings,
+    normalization: comparison.normalization,
+  });
+
   const regionCount = comparison.diffRegions.length;
   const targetNodeIds = buildTargetNodeIds(comparison.diffReport, comparison.diffRegions);
   const sourceKey = buildComparisonSourceKey(parsedDesignSource, resolvedNodeId);
@@ -381,9 +426,16 @@ export async function runCompareDesign(
       comparison.diffPixelCount,
       regionCount,
     ),
-    nextAction: buildNextAction(comparison.matchRate, regionCount, targetNodeIds),
-    suggestion: buildSuggestion(comparison.matchRate, regionCount),
+    nextAction: diagnosis.likelyMisconfig
+      ? buildMisconfigNextAction(diagnosis)
+      : buildNextAction(comparison.matchRate, regionCount, targetNodeIds),
+    suggestion: diagnosis.likelyMisconfig
+      ? diagnosis.headline
+      : buildSuggestion(comparison.matchRate, regionCount),
     critique,
+    preflight,
+    comparisonHeadline,
+    diagnosis,
   });
 
   recordComparison({

@@ -114,6 +114,30 @@
     "critique": {
       "concern": "healthy",
       "advice": "比較結果は大きく悪化していません。worstDeltaSection を優先しつつ、同じ評価条件で修正を継続してください。"
+    },
+    "preflight": {
+      "warnings": []
+    },
+    "normalization": {
+      "designNativeWidth": 200,
+      "designNativeHeight": 200,
+      "screenshotWidth": 200,
+      "screenshotHeight": 200,
+      "cropApplied": false,
+      "containResized": false,
+      "appliedScale": 1
+    },
+    "diagnosis": {
+      "verdict": "clean",
+      "likelyMisconfig": false,
+      "rankedCauses": [],
+      "headline": "差分はほぼありません。"
+    },
+    "comparisonHeadline": {
+      "structureMatch": 100,
+      "colorOnlyRegions": 0,
+      "structuralRegions": 0,
+      "headline": "構造一致 100% / 色のみ差分 0領域 / 構造差分 0領域"
     }
   }
 }
