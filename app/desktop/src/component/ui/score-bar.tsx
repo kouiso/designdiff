@@ -13,7 +13,8 @@ function barColor(score: number): string {
 }
 
 export function ScoreBar({ label, score, className }: ScoreBarProps) {
-  const color = barColor(score);
+  const clampedScore = Math.min(100, Math.max(0, score));
+  const color = barColor(clampedScore);
   return (
     <div className={cn("flex items-center gap-3", className)}>
       <span style={{ fontSize: 12, color: "var(--muted-fg)", width: 56, flexShrink: 0 }}>{label}</span>
@@ -33,7 +34,7 @@ export function ScoreBar({ label, score, className }: ScoreBarProps) {
             left: 0,
             top: 0,
             height: "100%",
-            width: `${score}%`,
+            width: `${clampedScore}%`,
             borderRadius: 99,
             background: color,
             transition: "width 0.4s ease",

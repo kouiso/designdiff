@@ -21,7 +21,8 @@ export function SliderRow({
   onChange,
   className,
 }: SliderRowProps) {
-  const pct = ((value - min) / (max - min)) * 100;
+  const range = max - min;
+  const pct = range === 0 ? 0 : Math.min(100, Math.max(0, ((value - min) / range) * 100));
   return (
     <label className={cn("flex items-center gap-3", className)} style={{ color: "var(--muted-fg)", fontSize: 12.5 }}>
       <span style={{ whiteSpace: "nowrap" }}>{label}</span>

@@ -36,11 +36,15 @@ export function SettingsScreen() {
   const statusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    loadOAuthStatus();
+    loadOAuthStatus().catch((err: unknown) => {
+      console.error("OAuth status load failed:", err);
+      setLoginStatus("error");
+      setLoginError(t("settings.oauthStatusLoadFailed"));
+    });
     return () => {
       if (statusTimerRef.current) clearTimeout(statusTimerRef.current);
     };
-  }, [loadOAuthStatus]);
+  }, [loadOAuthStatus, t]);
 
   const resetStatusAfter = (ms: number) => {
     if (statusTimerRef.current) clearTimeout(statusTimerRef.current);
@@ -102,7 +106,6 @@ export function SettingsScreen() {
         background: "var(--bg)",
       }}
     >
-      {/* Page header */}
       <div
         style={{
           padding: "32px 40px 24px",
@@ -119,14 +122,13 @@ export function SettingsScreen() {
             margin: 0,
           }}
         >
-          {t("nav.settings", "設定")}
+          {t("settings.title")}
         </h2>
         <p style={{ fontSize: 13, color: "var(--muted-fg)", marginTop: 4 }}>
-          FigDiff の接続設定と動作オプション
+          {t("settings.pageDescription")}
         </p>
       </div>
 
-      {/* Content */}
       <div
         style={{
           maxWidth: 640,
@@ -137,8 +139,7 @@ export function SettingsScreen() {
           gap: 32,
         }}
       >
-        {/* Figma接続 */}
-        <SetSection title={t("settings.figmaConnection", "Figma接続")}>
+        <SetSection title={t("settings.figmaConnection")}>
           {isConnected ? (
             <div
               style={{
@@ -162,7 +163,7 @@ export function SettingsScreen() {
                   }}
                 />
                 <span style={{ fontSize: 13.5, fontWeight: 600, color: "var(--fg)" }}>
-                  {"Figma 接続済み"}
+                  {t("settings.figmaConnected")}
                 </span>
               </div>
               <button
@@ -172,7 +173,7 @@ export function SettingsScreen() {
                 style={{ padding: "5px 10px", fontSize: 12.5 }}
               >
                 <LogOut size={13} />
-                ログアウト
+                {t("settings.logout")}
               </button>
             </div>
           ) : (
@@ -185,7 +186,7 @@ export function SettingsScreen() {
                 style={{ alignSelf: "flex-start" }}
               >
                 <LogIn size={15} />
-                {loginStatus === "pending" ? "ログイン中..." : "Figma でログイン"}
+                {loginStatus === "pending" ? t("settings.loggingIn") : t("settings.loginWithFigma")}
               </button>
               {loginError && (
                 <span style={{ fontSize: 12, color: "var(--diff)" }}>{loginError}</span>
@@ -204,7 +205,7 @@ export function SettingsScreen() {
                   textDecoration: "underline",
                 }}
               >
-                {showPatInput ? "PATを非表示" : "代わりに Personal Access Token を使用"}
+                {showPatInput ? t("settings.hidePat") : t("settings.usePat")}
               </button>
               {showPatInput && (
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -223,11 +224,15 @@ export function SettingsScreen() {
                       onClick={handleSaveToken}
                       disabled={!tokenInput.trim() || saveStatus === "saving"}
                     >
-                      {saveStatus === "saving" ? "保存中..." : saveStatus === "saved" ? "保存済み ✓" : "保存"}
+                      {saveStatus === "saving"
+                        ? t("settings.saving")
+                        : saveStatus === "saved"
+                          ? t("settings.savedInline")
+                          : t("settings.save")}
                     </Button>
                     {figmaToken && (
                       <Button size="sm" variant="ghost" onClick={handleDeleteToken}>
-                        削除
+                        {t("settings.delete")}
                       </Button>
                     )}
                     {saveStatus === "error" && errorMessage && (
@@ -240,11 +245,10 @@ export function SettingsScreen() {
           )}
         </SetSection>
 
-        {/* 外観 */}
-        <SetSection title={t("settings.appearance", "外観")}>
+        <SetSection title={t("settings.appearance")}>
           <SetToggle
-            label={t("settings.darkMode", "ダークモード")}
-            description={t("settings.darkModeDesc", "画面の配色を暗くする")}
+            label={t("settings.darkMode")}
+            description={t("settings.darkModeDesc")}
             checked={theme === "dark"}
             onChange={(v) => setTheme(v ? "dark" : "light")}
           />
@@ -261,15 +265,19 @@ export function SettingsScreen() {
           >
             <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
               <span style={{ fontSize: 13.5, fontWeight: 600, color: "var(--fg)" }}>
-                {t("settings.language", "言語")}
+                {t("settings.language")}
               </span>
               <span style={{ fontSize: 12, color: "var(--muted-fg)" }}>
-                {t("settings.languageDesc", "表示言語を選択")}
+                {t("settings.languageDesc")}
               </span>
             </div>
             <select
               value={i18n.language}
-              onChange={(e) => i18n.changeLanguage(e.target.value)}
+              onChange={(e) => {
+                i18n.changeLanguage(e.target.value).catch((err: unknown) => {
+                  console.error("Language change failed:", err);
+                });
+              }}
               style={{
                 padding: "6px 10px",
                 borderRadius: "var(--radius-sm-token)",
@@ -281,14 +289,13 @@ export function SettingsScreen() {
                 fontFamily: "inherit",
               }}
             >
-              <option value="ja">日本語</option>
-              <option value="en">English</option>
+              <option value="ja">{t("settings.languageJapanese")}</option>
+              <option value="en">{t("settings.languageEnglish")}</option>
             </select>
           </div>
         </SetSection>
 
-        {/* 比較設定 */}
-        <SetSection title={t("settings.compareSettings", "比較設定")}>
+        <SetSection title={t("settings.compareSettings")}>
           <div
             style={{
               padding: "14px 16px",
@@ -301,7 +308,7 @@ export function SettingsScreen() {
             }}
           >
             <span style={{ fontSize: 13.5, fontWeight: 600, color: "var(--fg)" }}>
-              {t("settings.threshold", "差分しきい値")}
+              {t("settings.threshold")}
             </span>
             <SliderRow
               label=""
@@ -313,15 +320,12 @@ export function SettingsScreen() {
               onChange={setDefaultThreshold}
             />
             <span style={{ fontSize: 12, color: "var(--muted-fg)" }}>
-              この値を超えると差分ありと判定します
+              {t("settings.thresholdDesc")}
             </span>
           </div>
           <SetToggle
-            label={t("settings.autoCompare", "自動再比較")}
-            description={t(
-              "settings.autoCompareDesc",
-              "スクリーンショット取得後に自動で比較を実行する",
-            )}
+            label={t("settings.autoCompare")}
+            description={t("settings.autoCompareDesc")}
             checked={autoCompare}
             onChange={setAutoCompare}
           />

@@ -14,10 +14,11 @@ function ringColor(score: number): string {
 }
 
 export function ScoreRing({ score, size = 64, stroke = 5, className }: ScoreRingProps) {
+  const clampedScore = Math.min(100, Math.max(0, score));
   const r = (size - stroke) / 2;
   const circ = 2 * Math.PI * r;
-  const offset = circ - (score / 100) * circ;
-  const color = ringColor(score);
+  const offset = circ - (clampedScore / 100) * circ;
+  const color = ringColor(clampedScore);
 
   return (
     <span
