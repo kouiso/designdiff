@@ -7,7 +7,7 @@ import { TabBar } from "./component/layout/tab-bar";
 import { LiveOverlayPage } from "./component/live-overlay/live-overlay-page";
 import { ProjectPage } from "./component/project/project-page";
 import { ProjectView } from "./component/project/project-view";
-import { SettingDialog } from "./component/setting/setting-dialog";
+import { SettingsScreen } from "./component/setting/settings-screen";
 import { TokenRequiredDialog } from "./component/setting/token-required-dialog";
 import { ErrorBoundary } from "./component/ui/error-boundary";
 import { getOverlay } from "./lib/platform";
@@ -22,7 +22,6 @@ export type Page = "home" | "project" | "compare" | "live_overlay" | "settings" 
 const QUICK_COMPARE_PROJECT_ID = "quick-compare";
 
 export const App = () => {
-  const [settingsOpen, setSettingsOpen] = useState(false);
   const [standalonePage, setStandalonePage] = useState<Page | null>(null);
   const loadSettings = useSettingStore((s) => s.loadSettings);
   const loadProjects = useProjectListStore((s) => s.loadProjects);
@@ -49,14 +48,15 @@ export const App = () => {
 
   const handleNavigate = useCallback(
     (target: Page) => {
-      if (target === "settings") {
-        setSettingsOpen(true);
-        return;
-      }
-
       const leavingOverlay = currentPage === "live_overlay" && target !== "live_overlay";
       if (leavingOverlay) {
         useOverlayStore.getState().closeSite();
+      }
+
+      if (target === "settings") {
+        setStandalonePage("settings");
+        useTabStore.getState().setActiveTab(null);
+        return;
       }
 
       if (target === "live_overlay") {
@@ -112,7 +112,11 @@ export const App = () => {
         <main
           className={cn(
             "flex-1 overflow-hidden",
-            showHome ? "p-6" : currentPage === "live_overlay" ? "p-0" : "p-2",
+            showHome
+              ? "p-6"
+              : currentPage === "live_overlay" || currentPage === "settings"
+                ? "p-0"
+                : "p-2",
           )}
         >
           {showHome && <HomePage onNavigate={handleNavigate} />}
@@ -124,8 +128,8 @@ export const App = () => {
           {!showHome && currentPage === "live_overlay" && (
             <LiveOverlayPage onNavigate={handleNavigate} />
           )}
+          {!showHome && currentPage === "settings" && <SettingsScreen />}
         </main>
-        <SettingDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
         <TokenRequiredDialog />
       </div>
     </ErrorBoundary>

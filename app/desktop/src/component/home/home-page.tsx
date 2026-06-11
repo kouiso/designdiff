@@ -1,45 +1,34 @@
 import { useState } from "react";
 
-import {
-  FolderOpen,
-  GitCompare,
-  Globe,
-  ImageIcon,
-  Layers,
-  Plus,
-  Rocket,
-  Trash2,
-} from "lucide-react";
+import { ArrowRight, FolderOpen, Globe, Layers, Link2, Plus, Rocket, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { buildFigmaFrameUrl, isTokenError, parseDesignInput } from "@figdiff/shared";
 import type { Frame } from "@figdiff/shared";
 
-import { Badge } from "@/component/ui/badge";
-import { Button } from "@/component/ui/button";
-import { Card, CardContent } from "@/component/ui/card";
 import { Input } from "@/component/ui/input";
+import { ScoreRing } from "@/component/ui/score-ring";
 import { Spinner } from "@/component/ui/spinner";
-import { cn } from "@/lib/util";
+import { StatusPill } from "@/component/ui/status-pill";
+import type { StatusType } from "@/component/ui/status-pill";
 import { useOverlayStore } from "@/store/overlay-store";
 import { useProjectListStore } from "@/store/project-list-store";
 import { useProjectStore } from "@/store/project-store";
 import { useSettingStore } from "@/store/setting-store";
 import { useTabStore } from "@/store/tab-store";
 
-import { DesignInput } from "./design-input";
-
 import type { Page } from "../../App";
-
-const STEPS = [
-  { icon: Globe, key: "step1" as const, color: "bg-primary/15 text-primary" },
-  { icon: ImageIcon, key: "step2" as const, color: "bg-accent text-accent-foreground" },
-  { icon: GitCompare, key: "step3" as const, color: "bg-success/15 text-success" },
-] as const;
+import { DesignInput } from "./design-input";
 
 interface HomePageProps {
   onNavigate: (page: Page) => void;
 }
+
+const projectScore = (): number => 0;
+
+const projectStatus = (pageCount: number): StatusType => {
+  return pageCount > 0 ? "checking" : "idle";
+};
 
 export const HomePage = ({ onNavigate }: HomePageProps) => {
   const { t } = useTranslation();
@@ -47,6 +36,8 @@ export const HomePage = ({ onNavigate }: HomePageProps) => {
   const loadError = useProjectStore((s) => s.error);
   const clearError = useProjectStore((s) => s.clearError);
   const figmaToken = useSettingStore((s) => s.figmaToken);
+  const oauthState = useSettingStore((s) => s.oauthState);
+  const startFigmaLogin = useSettingStore((s) => s.startFigmaLogin);
   const projects = useProjectListStore((s) => s.projects);
   const listLoading = useProjectListStore((s) => s.isLoading);
   const listError = useProjectListStore((s) => s.error);
@@ -57,24 +48,41 @@ export const HomePage = ({ onNavigate }: HomePageProps) => {
   const [implUrl, setImplUrl] = useState("");
   const [pageFrames, setPageFrames] = useState<Frame[]>([]);
   const [pageBaseUrl, setPageBaseUrl] = useState("");
+  const [createName, setCreateName] = useState("");
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [loginStatus, setLoginStatus] = useState<"idle" | "pending" | "error">("idle");
 
-  // 新規プロジェクト作成
-  const [showCreate, setShowCreate] = useState(false);
-  const [newName, setNewName] = useState("");
-  const [newUrl, setNewUrl] = useState("");
+  const isConnected = oauthState.mode === "oauth" || oauthState.mode === "pat" || !!figmaToken;
 
   const handleCreateProject = async () => {
-    if (!newName.trim() || !newUrl.trim()) return;
+    const trimmedName = createName.trim();
+    const trimmedImplUrl = implUrl.trim();
+    if (!trimmedName || !trimmedImplUrl) return;
+
+    const trimmedDesignUrl = designUrl.trim();
+    if (trimmedDesignUrl) {
+      try {
+        const parsed = parseDesignInput(trimmedDesignUrl);
+        if (parsed.type === "figma_url" && !figmaToken && oauthState.mode !== "oauth") {
+          useProjectStore.setState({ error: t("home.tokenRequired"), isLoading: false });
+          useSettingStore.getState().requireToken();
+          return;
+        }
+      } catch {
+        // Figma URL 以外の入力は従来どおり後続の読み込み処理に委ねる
+      }
+    }
+
     try {
-      const project = await createProject(newName.trim(), newUrl.trim());
+      const project = await createProject(trimmedName, trimmedImplUrl);
       const tabId = useTabStore.getState().openTab(project.id, project.name);
       await openProject(project.id);
       if (tabId) {
         useTabStore.getState().setActiveTab(tabId);
       }
-      setNewName("");
-      setNewUrl("");
-      setShowCreate(false);
+      onNavigate("project");
+      setCreateName("");
+      setShowCreateForm(false);
     } catch {
       // error は store 経由で表示
     }
@@ -86,6 +94,7 @@ export const HomePage = ({ onNavigate }: HomePageProps) => {
     if (tabId) {
       useTabStore.getState().setActiveTab(tabId);
     }
+    onNavigate("project");
   };
 
   const ensureQuickCompareTab = (page: Page = "project"): void => {
@@ -189,7 +198,7 @@ export const HomePage = ({ onNavigate }: HomePageProps) => {
       })();
 
       const isFigmaUrl = parsed?.type === "figma_url";
-      if (isFigmaUrl && !figmaToken) {
+      if (isFigmaUrl && !figmaToken && oauthState.mode !== "oauth") {
         useProjectStore.setState({ error: t("home.tokenRequired"), isLoading: false });
         useSettingStore.getState().requireToken();
         return;
@@ -215,231 +224,401 @@ export const HomePage = ({ onNavigate }: HomePageProps) => {
     }
   };
 
+  const handleLauncherSubmit = async () => {
+    if (implUrl.trim()) {
+      await handleCreateProject();
+      return;
+    }
+    if (designUrl.trim()) {
+      await handleLegacySubmit(designUrl.trim());
+      return;
+    }
+  };
+
+  const handleHeroAction = async () => {
+    if (!isConnected) {
+      setLoginStatus("pending");
+      try {
+        await startFigmaLogin();
+        setLoginStatus("idle");
+      } catch (e) {
+        console.error(e);
+        setLoginStatus("error");
+      }
+      return;
+    }
+    await handleCreateProject();
+  };
+
   const isLoading = projectLoading || listLoading;
   const error = loadError || listError;
 
   return (
-    <div className="mx-auto flex h-full max-w-4xl flex-col gap-6 overflow-y-auto">
-      {/* プロジェクト一覧 */}
-      <section className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h1 className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text font-bold text-2xl text-transparent tracking-tight">
-            FigDiff
-          </h1>
-          <Button onClick={() => setShowCreate(!showCreate)} size="sm">
-            <Plus className="mr-1 h-4 w-4" />
-            {t("home.newProject", "New Project")}
-          </Button>
+    <div className="scroll mx-auto flex h-full max-w-6xl flex-col gap-5 overflow-y-auto">
+      <section
+        style={{
+          border: "1px solid var(--cobalt-line)",
+          borderRadius: "var(--radius-lg-token)",
+          background:
+            "linear-gradient(135deg, var(--surface) 0%, var(--cobalt-soft) 54%, var(--surface-2) 100%)",
+          boxShadow: "0 22px 70px hsl(var(--shadow-color) / 0.12)",
+          padding: 28,
+        }}
+      >
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+          <div className="max-w-2xl">
+            <div className="fd-chip mb-4" style={{ background: "var(--surface)" }}>
+              <Rocket size={14} />
+              {t("home.pageTitle")}
+            </div>
+            <h1 style={{ color: "var(--fg)", fontSize: 44, fontWeight: 800, lineHeight: 1.05 }}>
+              FigDiff
+            </h1>
+            <p className="mt-3 max-w-xl" style={{ color: "var(--fg-2)", fontSize: 16 }}>
+              {t("home.pageDescription")}
+            </p>
+          </div>
+          <button
+            type="button"
+            className="fd-btn primary"
+            onClick={isConnected ? () => setShowCreateForm(true) : handleHeroAction}
+          >
+            {isConnected ? t("home.newProject") : t("home.startFigmaLogin", "Login with Figma")}
+            <ArrowRight size={16} />
+          </button>
+        </div>
+      </section>
+
+      <section
+        style={{
+          border: "1px solid var(--border)",
+          borderRadius: "var(--radius-token)",
+          background: "var(--surface)",
+          padding: 18,
+        }}
+      >
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <div>
+            <h2 style={{ color: "var(--fg)", fontSize: 16, fontWeight: 700 }}>
+              {t("home.inputTitle")}
+            </h2>
+            <p style={{ color: "var(--muted-fg)", fontSize: 13 }}>{t("home.inputHint")}</p>
+          </div>
+          <span className="fd-pill" style={{ background: "var(--cobalt-soft)", color: "var(--cobalt)" }}>
+            {t("home.stepLabel", { n: 1 })}
+          </span>
         </div>
 
-        {showCreate && (
-          <Card className="border-primary/30">
-            <CardContent className="space-y-3 p-4">
-              <h3 className="font-semibold text-sm">
-                {t("home.createProject", "Create New Project")}
-              </h3>
-              <Input
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                placeholder={t("home.projectName", "Project name (e.g. Corporate Site)")}
-                className="h-9"
-              />
-              <div className="flex items-center gap-2 rounded-lg border bg-muted/30 p-1.5">
-                <Globe className="ml-1 h-4 w-4 shrink-0 text-muted-foreground" />
-                <Input
-                  value={newUrl}
-                  onChange={(e) => setNewUrl(e.target.value)}
-                  placeholder={t(
-                    "home.implementationUrl",
-                    "Implementation URL (e.g. http://localhost:3000)",
-                  )}
-                  className="border-0 bg-transparent shadow-none focus-visible:ring-0"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") handleCreateProject();
-                  }}
-                />
-              </div>
-              <div className="flex gap-2">
-                <Button onClick={handleCreateProject} disabled={!newName.trim() || !newUrl.trim()}>
-                  <Rocket className="mr-1 h-4 w-4" />
-                  {t("common.create", "Create")}
-                </Button>
-                <Button variant="ghost" onClick={() => setShowCreate(false)}>
-                  {t("common.cancel", "Cancel")}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+        <div className="grid gap-3 lg:grid-cols-[1.2fr_1fr_auto]">
+          <label
+            className="flex items-center gap-2"
+            style={{
+              border: "1px solid var(--border)",
+              borderRadius: "var(--radius-sm-token)",
+              background: "var(--bg)",
+              padding: "0 12px",
+            }}
+          >
+            <Link2 size={16} style={{ color: "var(--muted-fg)" }} />
+            <Input
+              value={designUrl}
+              onChange={(e) => setDesignUrl(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && designUrl.trim()) {
+                  handleLauncherSubmit();
+                }
+              }}
+              placeholder={t("home.inputPlaceholder")}
+              disabled={isLoading}
+              className="border-0 bg-transparent shadow-none focus-visible:ring-0"
+            />
+          </label>
+          <label
+            className="flex items-center gap-2"
+            style={{
+              border: "1px solid var(--border)",
+              borderRadius: "var(--radius-sm-token)",
+              background: "var(--bg)",
+              padding: "0 12px",
+            }}
+          >
+            <Globe size={16} style={{ color: "var(--muted-fg)" }} />
+            <Input
+              value={implUrl}
+              onChange={(e) => setImplUrl(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  handleLauncherSubmit();
+                }
+              }}
+              placeholder={t("home.implUrlPlaceholder")}
+              aria-label={t("home.implUrlPlaceholder")}
+              disabled={isLoading}
+              className="border-0 bg-transparent shadow-none focus-visible:ring-0"
+            />
+          </label>
+          <button
+            type="button"
+            className="fd-btn primary justify-center"
+            onClick={handleLauncherSubmit}
+            disabled={isLoading || (!designUrl.trim() && !implUrl.trim())}
+          >
+            <Plus size={16} />
+            {t("common.submit")}
+          </button>
+        </div>
+
+        <div className="mt-4 flex justify-end">
+          <button
+            type="button"
+            className="fd-btn"
+            onClick={() => setShowCreateForm((current) => !current)}
+          >
+            <Plus size={15} />
+            {t("home.newProject")}
+          </button>
+        </div>
+
+        {showCreateForm && (
+          <div
+            className="mt-4 space-y-3"
+            style={{
+              border: "1px solid var(--border)",
+              borderRadius: "var(--radius-sm-token)",
+              background: "var(--bg)",
+              padding: 14,
+            }}
+          >
+            <h3 style={{ color: "var(--fg)", fontSize: 15, fontWeight: 740 }}>
+              {t("home.createProject")}
+            </h3>
+            <Input
+              value={createName}
+              onChange={(e) => setCreateName(e.target.value)}
+              placeholder={t("home.projectName")}
+              disabled={isLoading}
+              style={{ background: "var(--surface)", borderColor: "var(--border)" }}
+            />
+            <Input
+              value={implUrl}
+              onChange={(e) => setImplUrl(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  handleCreateProject();
+                }
+              }}
+              placeholder={t("home.implementationUrl")}
+              disabled={isLoading}
+              style={{ background: "var(--surface)", borderColor: "var(--border)" }}
+            />
+            <div className="flex gap-2">
+              <button
+                type="button"
+                className="fd-btn primary"
+                onClick={handleCreateProject}
+                disabled={isLoading}
+              >
+                {t("common.create")}
+              </button>
+              <button
+                type="button"
+                className="fd-btn ghost"
+                onClick={() => setShowCreateForm(false)}
+              >
+                {t("common.cancel")}
+              </button>
+            </div>
+          </div>
         )}
 
-        {projects.length > 0 ? (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {projects.map((p) => (
-              <Card
-                key={p.id}
-                className="group cursor-pointer transition-colors hover:border-primary/50"
-                onClick={() => handleOpenProject(p.id, p.name)}
+        {pageFrames.length > 0 && (
+          <div className="mt-4 grid gap-2">
+            <div className="flex items-center gap-2" style={{ color: "var(--fg-2)", fontSize: 13 }}>
+              <Layers size={15} />
+              {t("home.pageFrames", "Frames in this page")} ({pageFrames.length})
+            </div>
+            {pageFrames.map((frame) => (
+              <button
+                key={frame.id}
+                type="button"
+                onClick={() => handleFrameSelect(frame)}
+                disabled={isLoading}
+                className="flex items-center justify-between text-left"
+                style={{
+                  border: "1px solid var(--border)",
+                  borderRadius: "var(--radius-sm-token)",
+                  background: "var(--bg)",
+                  color: "var(--fg)",
+                  padding: "10px 12px",
+                }}
               >
-                <CardContent className="flex items-start justify-between p-4">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <FolderOpen className="h-4 w-4 shrink-0 text-primary" />
-                      <h3 className="truncate font-semibold text-sm">{p.name}</h3>
-                    </div>
-                    <p className="mt-1 truncate text-muted-foreground text-xs">
-                      {p.implementationUrl}
-                    </p>
-                    <div className="mt-2 flex items-center gap-2">
-                      <Badge variant="secondary" className="text-[10px]">
-                        <Layers className="mr-0.5 h-2.5 w-2.5" />
-                        {t("home.pageCount", "{{count}} pages", { count: p.pageCount })}
-                      </Badge>
-                    </div>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      deleteProject(p.id);
-                    }}
-                  >
-                    <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                  </Button>
-                </CardContent>
-              </Card>
+                <span style={{ fontWeight: 650 }}>{frame.name}</span>
+                <span className="mono" style={{ color: "var(--muted-fg)", fontSize: 12 }}>
+                  {frame.width}x{frame.height}
+                </span>
+              </button>
             ))}
           </div>
-        ) : (
-          !showCreate && (
-            <Card className="border-dashed">
-              <CardContent className="flex flex-col items-center justify-center gap-2 py-8">
-                <FolderOpen className="h-10 w-10 text-muted-foreground/30" />
-                <p className="text-muted-foreground text-sm">
-                  {t("home.noProjects", "No projects yet. Create one to get started.")}
-                </p>
-              </CardContent>
-            </Card>
-          )
         )}
       </section>
 
-      {/* 既存フロー（直接比較）も維持 */}
-      <section className="space-y-3 border-border/40 border-t pt-4">
-        <div>
-          <h2 className="font-semibold text-muted-foreground text-sm">
-            {t("home.quickCompare", "Quick Compare (Legacy)")}
-          </h2>
-          <p className="text-muted-foreground text-xs">{t("home.inputHint")}</p>
+      {error && (
+        <div
+          style={{
+            border: "1px solid var(--diff)",
+            borderRadius: "var(--radius-sm-token)",
+            background: "var(--diff-soft)",
+            color: "var(--diff)",
+            padding: 12,
+          }}
+        >
+          {error}
         </div>
+      )}
+
+      {loginStatus === "error" && (
+        <div style={{ color: "var(--diff)", fontSize: 13 }}>Figma ログインに失敗しました</div>
+      )}
+
+      {isLoading && (
+        <div className="flex items-center justify-center gap-2" style={{ color: "var(--muted-fg)" }}>
+          <Spinner size="sm" label={t("common.loading")} />
+          <span>{t("common.loading")}</span>
+        </div>
+      )}
+
+      <section className="grid gap-3 md:grid-cols-3">
+        {[1, 2, 3].map((n) => (
+          <div
+            key={n}
+            style={{
+              border: "1px solid var(--border)",
+              borderRadius: "var(--radius-token)",
+              background: "var(--surface)",
+              padding: 16,
+            }}
+          >
+            <span className="fd-pill" style={{ background: "var(--cobalt-soft)", color: "var(--cobalt)" }}>
+              {t("home.stepLabel", { n })}
+            </span>
+            <p className="mt-3 whitespace-pre-line" style={{ color: "var(--fg)", fontWeight: 720 }}>
+              {t(`home.step${n}`)}
+            </p>
+          </div>
+        ))}
+      </section>
+
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 style={{ color: "var(--fg)", fontSize: 18, fontWeight: 750 }}>続きから</h2>
+            <p style={{ color: "var(--muted-fg)", fontSize: 13 }}>{t("home.howItWorks")}</p>
+          </div>
+          <span className="mono" style={{ color: "var(--faint-fg)", fontSize: 12 }}>
+            v{__APP_VERSION__}
+          </span>
+        </div>
+
+        {projects.length > 0 ? (
+          <div className="grid gap-3">
+            {projects.map((project) => {
+              const score = projectScore();
+              const status = projectStatus(project.pageCount);
+              return (
+                <article
+                  key={project.id}
+                  className="grid items-center gap-4 lg:grid-cols-[1fr_auto_auto_auto]"
+                  onClick={() => handleOpenProject(project.id, project.name)}
+                  style={{
+                    border: "1px solid var(--border)",
+                    borderRadius: "var(--radius-token)",
+                    background: "var(--surface)",
+                    cursor: "pointer",
+                    padding: 14,
+                  }}
+                >
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <FolderOpen size={17} style={{ color: "var(--cobalt)" }} />
+                      <h3 className="truncate" style={{ color: "var(--fg)", fontWeight: 700 }}>
+                        {project.name}
+                      </h3>
+                    </div>
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <span className="fd-chip">
+                        <Layers size={13} />
+                        {t("home.pageCount", "{{count}} pages", { count: project.pageCount })}
+                      </span>
+                      <span className="truncate" style={{ color: "var(--muted-fg)", fontSize: 12 }}>
+                        {project.implementationUrl}
+                      </span>
+                    </div>
+                  </div>
+                  <ScoreRing score={score} size={52} stroke={5} />
+                  <StatusPill status={status} />
+                  <div className="flex items-center justify-end gap-2">
+                    <button
+                      type="button"
+                      className="fd-btn ghost"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteProject(project.id);
+                      }}
+                      aria-label={t("common.delete")}
+                    >
+                      <Trash2 className="text-destructive" size={15} />
+                    </button>
+                    <button
+                      type="button"
+                      className="fd-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleOpenProject(project.id, project.name);
+                      }}
+                    >
+                      開く
+                      <ArrowRight size={15} />
+                    </button>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        ) : (
+          <div
+            className="flex flex-col items-center justify-center gap-2"
+            style={{
+              border: "1px dashed var(--border-strong)",
+              borderRadius: "var(--radius-token)",
+              color: "var(--muted-fg)",
+              padding: 32,
+            }}
+          >
+            <FolderOpen size={34} style={{ color: "var(--faint-fg)" }} />
+            <p>{t("home.noProjects", "No projects yet. Create one to get started.")}</p>
+          </div>
+        )}
+      </section>
+
+      <section
+        className="space-y-3"
+        style={{
+          border: "1px solid var(--border)",
+          borderRadius: "var(--radius-token)",
+          background: "var(--surface)",
+          padding: 18,
+        }}
+      >
+        <h2 style={{ color: "var(--fg)", fontSize: 16, fontWeight: 740 }}>
+          {t("home.quickCompare")}
+        </h2>
         <DesignInput
           value={designUrl}
           onChange={setDesignUrl}
           onSubmit={handleLegacySubmit}
           disabled={isLoading}
         />
-
-        {pageFrames.length > 0 && (
-          <Card className="border-primary/30">
-            <CardContent className="space-y-2 p-4">
-              <div className="flex items-center gap-2">
-                <Layers className="h-4 w-4 text-primary" />
-                <h3 className="font-semibold text-sm">
-                  {t("home.pageFrames", "Frames in this page")} ({pageFrames.length})
-                </h3>
-              </div>
-              <div className="grid gap-1.5">
-                {pageFrames.map((frame) => (
-                  <button
-                    key={frame.id}
-                    type="button"
-                    onClick={() => handleFrameSelect(frame)}
-                    disabled={isLoading}
-                    className="flex items-center justify-between rounded-lg border bg-card px-3 py-2 text-left text-sm transition-colors hover:border-primary/50 hover:bg-accent disabled:opacity-50"
-                  >
-                    <span className="font-medium">{frame.name}</span>
-                    <span className="text-muted-foreground text-xs">
-                      {frame.width}×{frame.height}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        <div className="flex items-center gap-2 rounded-xl border border-border bg-card p-1.5 shadow-sm transition-colors focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/20">
-          <Globe className="ml-2 h-4 w-4 shrink-0 text-muted-foreground" />
-          <Input
-            type="text"
-            value={implUrl}
-            onChange={(e) => setImplUrl(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                if (designUrl.trim()) {
-                  handleLegacySubmit(designUrl.trim());
-                }
-              }
-            }}
-            placeholder={t("home.implUrlPlaceholder")}
-            aria-label={t("home.implUrlPlaceholder")}
-            disabled={isLoading}
-            className="border-0 bg-transparent shadow-none focus-visible:ring-0"
-          />
-          {implUrl.trim() && (
-            <Badge variant="outline" className="mr-2 shrink-0">
-              <Rocket className="mr-1 h-3 w-3" />
-              {t("home.badgeLiveOverlay")}
-            </Badge>
-          )}
-        </div>
       </section>
-
-      {error && (
-        <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-destructive">
-          {error}
-        </div>
-      )}
-
-      {isLoading && (
-        <div className="flex items-center justify-center gap-2">
-          <Spinner size="sm" label={t("common.loading")} />
-          <span className="text-muted-foreground">{t("common.loading")}</span>
-        </div>
-      )}
-
-      {/* ワークフロー説明 */}
-      <section className="space-y-3">
-        <h2 className="text-center font-medium text-muted-foreground text-xs uppercase tracking-widest">
-          {t("home.howItWorks")}
-        </h2>
-        <div className="grid gap-4 md:grid-cols-3">
-          {STEPS.map((step, i) => (
-            <Card key={step.key} className="border-border/60 bg-card/80">
-              <CardContent className="flex flex-col items-center gap-3 p-5 text-center">
-                <div
-                  className={cn(
-                    "flex h-10 w-10 items-center justify-center rounded-xl",
-                    step.color,
-                  )}
-                >
-                  <step.icon className="h-5 w-5" />
-                </div>
-                <span className="font-bold text-muted-foreground text-xs">
-                  {t("home.stepLabel", { n: i + 1 })}
-                </span>
-                <p className="whitespace-pre-line font-medium text-sm leading-relaxed">
-                  {t(`home.${step.key}`)}
-                </p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </section>
-
-      <p className="text-center text-muted-foreground/50 text-xs">v{__APP_VERSION__}</p>
     </div>
   );
 };

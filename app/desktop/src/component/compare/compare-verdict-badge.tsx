@@ -15,11 +15,17 @@ const verdictLabel: Record<DiffVerdict, string> = {
   inconclusive: "INCONCLUSIVE",
 };
 
-export function CompareVerdictBadge({ verdict }: { verdict: DiffVerdict }) {
+export function CompareVerdictBadge({
+  verdict,
+  testId = "compare-verdict-badge",
+}: {
+  verdict: DiffVerdict;
+  testId?: string;
+}) {
   return (
     <Badge
       className={cn("w-fit px-3 py-1 font-bold tracking-wide", verdictClassName[verdict])}
-      data-testid="compare-verdict-badge"
+      data-testid={testId}
     >
       {verdictLabel[verdict]}
     </Badge>

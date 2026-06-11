@@ -15,7 +15,16 @@
     "breadcrumb": "Breadcrumb",
     "liveOverlay": "Live Overlay"
   },
+  "header": {
+    "newCompare": "New Comparison",
+    "cmdK": "Command"
+  },
   "home": {
+    "hero": "Visualize design vs implementation diffs",
+    "heroSub": "Compare Figma frames and implementation screenshots pixel by pixel",
+    "recentProjects": "Recent Projects",
+    "openProject": "Open",
+    "startFigmaLogin": "Login with Figma",
     "pageTitle": "Start Design Comparison",
     "pageDescription": "FigDiff compares Figma designs with implementation screenshots pixel-by-pixel and automatically detects differences.",
     "inputTitle": "Start by entering a URL or image path",
@@ -121,6 +130,9 @@
   "settings": {
     "title": "Settings",
     "description": "Configure FigDiff preferences.",
+    "figmaConnection": "Figma Connection",
+    "appearance": "Appearance",
+    "compareSettings": "Compare Settings",
     "token": "Figma Personal Access Token",
     "tokenMasked": "••••••••••••••••",
     "tokenPlaceholder": "figd_...",
@@ -132,8 +144,13 @@
     "theme": "Theme",
     "dark": "Dark",
     "light": "Light",
+    "darkMode": "Dark Mode",
+    "darkModeDesc": "Use dark color scheme",
     "threshold": "Default Diff Threshold: {{value}}",
     "language": "Language",
+    "languageDesc": "Select display language",
+    "autoCompare": "Auto Re-Compare",
+    "autoCompareDesc": "Automatically run comparison after screenshot capture",
     "toggleTheme": "Toggle theme"
   },
   "tokenDialog": {

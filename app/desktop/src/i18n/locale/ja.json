@@ -15,7 +15,16 @@
     "breadcrumb": "パンくずリスト",
     "liveOverlay": "ライブオーバーレイ"
   },
+  "header": {
+    "newCompare": "新規比較",
+    "cmdK": "コマンド"
+  },
   "home": {
+    "hero": "デザインと実装の差分を可視化",
+    "heroSub": "Figmaフレームと実装スクリーンショットをピクセル単位で比較",
+    "recentProjects": "続きから",
+    "openProject": "開く",
+    "startFigmaLogin": "Figma でログイン",
     "pageTitle": "デザイン比較を始める",
     "pageDescription": "FigDiffはFigmaデザインと実装スクリーンショットをピクセル単位で比較し、差分を自動検出するツールです。",
     "inputTitle": "まずはURLまたは画像パスを入力",
@@ -121,6 +130,9 @@
   "settings": {
     "title": "設定",
     "description": "FigDiffの設定を管理します",
+    "figmaConnection": "Figma接続",
+    "appearance": "外観",
+    "compareSettings": "比較設定",
     "token": "Figma Personal Access Token",
     "tokenMasked": "••••••••••••••••",
     "tokenPlaceholder": "figd_...",
@@ -132,8 +144,13 @@
     "theme": "テーマ",
     "dark": "ダーク",
     "light": "ライト",
+    "darkMode": "ダークモード",
+    "darkModeDesc": "画面の配色を暗くする",
     "threshold": "デフォルト差分しきい値: {{value}}",
     "language": "言語",
+    "languageDesc": "表示言語を選択",
+    "autoCompare": "自動再比較",
+    "autoCompareDesc": "スクリーンショット取得後に自動で比較を実行する",
     "toggleTheme": "テーマ切替"
   },
   "tokenDialog": {
