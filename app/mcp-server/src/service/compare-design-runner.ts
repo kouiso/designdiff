@@ -15,6 +15,7 @@ import {
   runPreflight,
   selfCritique,
   type CompareDesignResult,
+  type ComparisonDiagnosis,
   type CropRegion,
   type DiffReport,
   type FigmaNode,
@@ -241,6 +242,17 @@ function buildSuggestion(matchRate: number, regionCount: number): string {
   return `大きな差分が${regionCount}箇所あります。inspect_nodeで各差分領域を確認し、修正してください。`;
 }
 
+// 設定ミスの可能性が高い場合、CSS修正ではなくセットアップ修正へ誘導する。
+// tool description が nextAction に従うよう指示しているため、誤った CSS 修正に
+// 進ませないよう診断結果で nextAction を上書きする。
+function buildMisconfigNextAction(diagnosis: ComparisonDiagnosis): string {
+  const top = diagnosis.rankedCauses[0];
+  const fix = top
+    ? top.suggestedFix
+    : "設定（capture_width / crop region / node-id）を見直してください。";
+  return `⚠️ セットアップ問題の可能性が高いです。CSS修正の前に、まず設定を見直してください: ${fix} 解消後に再度 compare_design で検証してください。`;
+}
+
 async function resolveScreenshotPath(args: CompareDesignRunArgs): Promise<string> {
   if (!args.screenshot_url) {
     return resolveSafePath(args.screenshot);
@@ -413,8 +425,12 @@ export async function runCompareDesign(
       comparison.diffPixelCount,
       regionCount,
     ),
-    nextAction: buildNextAction(comparison.matchRate, regionCount, targetNodeIds),
-    suggestion: buildSuggestion(comparison.matchRate, regionCount),
+    nextAction: diagnosis.likelyMisconfig
+      ? buildMisconfigNextAction(diagnosis)
+      : buildNextAction(comparison.matchRate, regionCount, targetNodeIds),
+    suggestion: diagnosis.likelyMisconfig
+      ? diagnosis.headline
+      : buildSuggestion(comparison.matchRate, regionCount),
     critique,
     preflight,
     comparisonHeadline,
