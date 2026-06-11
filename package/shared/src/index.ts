@@ -49,6 +49,11 @@ export { selfCritique } from "./self-critique.js";
 export { runPreflight, type PreflightInput } from "./confidence/preflight.js";
 export { diagnoseComparison, type DiagnosisInput } from "./confidence/diagnosis.js";
 export { buildComparisonHeadline } from "./confidence/headline.js";
+export {
+  rankFrameCandidates,
+  formatFrameCandidates,
+  type RankedFrame,
+} from "./confidence/frame-guidance.js";
 
 // View Mode Types
 export {

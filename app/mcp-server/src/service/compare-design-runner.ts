@@ -9,7 +9,9 @@ import {
   buildComparisonHeadline,
   CompareDesignResultSchema,
   diagnoseComparison,
+  formatFrameCandidates,
   parseDesignInput,
+  rankFrameCandidates,
   runPreflight,
   selfCritique,
   type CompareDesignResult,
@@ -125,18 +127,22 @@ async function resolveNodeId(
   fileKey: string,
   nodeId: string | undefined,
   frameName: string | undefined,
+  targetWidth: number | undefined,
 ): Promise<string> {
   if (nodeId) {
     return nodeId;
   }
 
   const frames = await figmaService.getFrames(fileKey);
+  // 実コンテンツらしいフレーム (撮影幅一致・ページらしい形) を上位に並べた候補一覧。
+  // 正常解決時には不要なので、エラー時にのみ生成する。
+  const buildGuidance = (): string =>
+    formatFrameCandidates(rankFrameCandidates(frames, targetWidth), targetWidth);
+
   if (frameName) {
     const matches = frames.filter((entry) => entry.name.toLowerCase() === frameName.toLowerCase());
     if (matches.length === 0) {
-      throw new Error(
-        `Frame "${frameName}" not found. Available frames: ${frames.map((entry) => entry.name).join(", ")}`,
-      );
+      throw new Error(`Frame "${frameName}" not found.\n\n${buildGuidance()}`);
     }
     if (matches.length > 1) {
       throw new Error(
@@ -147,7 +153,7 @@ async function resolveNodeId(
   }
 
   throw new Error(
-    `No frame specified. Available frames:\n${frames.map((entry) => `- ${entry.name} (${entry.id}, ${entry.width}x${entry.height})`).join("\n")}\n\nPlease specify frame_name or use a URL with node-id.`,
+    `No frame specified.\n\n${buildGuidance()}\n\nURL に node-id を付けるか frame_name を指定してください。`,
   );
 }
 
@@ -278,6 +284,7 @@ async function resolveDesignAssets(
       parsedDesignSource.fileKey,
       parsedDesignSource.nodeId,
       frameName,
+      targetWidth,
     );
     const designBase64 = await figmaService.getFrameImage(
       parsedDesignSource.fileKey,
