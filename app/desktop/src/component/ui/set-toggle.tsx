@@ -1,5 +1,6 @@
-import { cn } from "@/lib/util";
 import type { ReactNode } from "react";
+
+import { cn } from "@/lib/util";
 
 interface SetToggleProps {
   label: string;

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef } from "react";
 
 import {
-  Code2,
+
   Eye,
   EyeOff,
   Focus,
@@ -21,8 +21,8 @@ import { useTranslation } from "react-i18next";
 import { SliderRow } from "@/component/ui/slider-row";
 import { Spinner } from "@/component/ui/spinner";
 import { getOverlay } from "@/lib/platform";
-import { type OverlayViewMode, useOverlayStore } from "@/store/overlay-store";
 import { useCompareStore } from "@/store/compare-store";
+import { type OverlayViewMode, useOverlayStore } from "@/store/overlay-store";
 import { useProjectStore } from "@/store/project-store";
 
 import type { Page } from "../../App";

@@ -17,8 +17,9 @@ import { useProjectStore } from "@/store/project-store";
 import { useSettingStore } from "@/store/setting-store";
 import { useTabStore } from "@/store/tab-store";
 
-import type { Page } from "../../App";
 import { DesignInput } from "./design-input";
+
+import type { Page } from "../../App";
 
 interface HomePageProps {
   onNavigate: (page: Page) => void;

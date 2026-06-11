@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+
 import { BarChart2, Home, Layers, Settings, SlidersHorizontal } from "lucide-react";
 import { useTranslation } from "react-i18next";
 

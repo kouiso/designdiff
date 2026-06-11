@@ -3,6 +3,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Check, FileText, ImageIcon, Layers, ScanSearch, Split, Upload, Zap } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
+import type { CompareDesignResult, DiffIssue, DiffVerdict } from "@figdiff/shared";
+
 import { ScoreBar } from "@/component/ui/score-bar";
 import { ScoreRing } from "@/component/ui/score-ring";
 import { LoadingOverlay, Spinner } from "@/component/ui/spinner";
@@ -16,7 +18,6 @@ import { CompareDiffReport } from "./compare-diff-report";
 import { CompareVerdictBadge } from "./compare-verdict-badge";
 import { CropRegionSelector } from "./crop-region-selector";
 
-import type { CompareDesignResult, DiffIssue, DiffVerdict } from "@figdiff/shared";
 import type { LucideIcon } from "lucide-react";
 
 type ResultWithDiffImage = CompareDesignResult & { diffImageBase64?: string };
