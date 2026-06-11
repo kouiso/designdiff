@@ -45,6 +45,11 @@ export { detectHighTextureRegion } from "./signal/texture.js";
 export { computeHausdorff } from "./signal/hausdorff.js";
 export { selfCritique } from "./self-critique.js";
 
+// Comparison Confidence Layer (pre-flight / diagnosis / headline)
+export { runPreflight, type PreflightInput } from "./confidence/preflight.js";
+export { diagnoseComparison, type DiagnosisInput } from "./confidence/diagnosis.js";
+export { buildComparisonHeadline } from "./confidence/headline.js";
+
 // View Mode Types
 export {
   VIEW_MODES,
@@ -70,6 +75,16 @@ export {
   CritiqueNoteSchema,
   ClusterTelemetrySchema,
   CompareDesignResultSchema,
+  ComparisonDiagnosisSchema,
+  ComparisonHeadlineSchema,
+  DiagnosisCauseSchema,
+  DiagnosisCauseCodeSchema,
+  DiagnosisVerdictSchema,
+  NormalizationReportSchema,
+  PreflightReportSchema,
+  PreflightSeveritySchema,
+  PreflightWarningSchema,
+  PreflightWarningCodeSchema,
   CropRegionSchema,
   IgnoreRegionSchema,
   IgnoreRegionConfigEntrySchema,
@@ -114,6 +129,16 @@ export type {
   CritiqueNote,
   ClusterTelemetry,
   CompareDesignResult,
+  ComparisonDiagnosis,
+  ComparisonHeadline,
+  DiagnosisCause,
+  DiagnosisCauseCode,
+  DiagnosisVerdict,
+  NormalizationReport,
+  PreflightReport,
+  PreflightSeverity,
+  PreflightWarning,
+  PreflightWarningCode,
   DiffBoundingBox,
   DiffEvidence,
   DiffIssue,

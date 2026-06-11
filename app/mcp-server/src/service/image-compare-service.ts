@@ -289,11 +289,13 @@ export async function compareImages(
   // Resize design to match screenshot if still different (e.g., height mismatch after crop)
   let finalDesignBuffer: Buffer = designBuffer;
   let paddingMask: PaddingMask | null = null;
+  let appliedScale = 1;
   if (finalDesignWidth !== finalScreenshotWidth || finalDesignHeight !== finalScreenshotHeight) {
     const scale = Math.min(
       finalScreenshotWidth / finalDesignWidth,
       finalScreenshotHeight / finalDesignHeight,
     );
+    appliedScale = scale;
     const contentWidth = Math.round(finalDesignWidth * scale);
     const contentHeight = Math.round(finalDesignHeight * scale);
     paddingMask = {
@@ -435,6 +437,15 @@ export async function compareImages(
     gridSummary,
     diffReport,
     diffImageBase64,
+    normalization: {
+      designNativeWidth: designWidth,
+      designNativeHeight: designHeight,
+      screenshotWidth,
+      screenshotHeight,
+      cropApplied: Boolean(cropRegion),
+      containResized: paddingMask !== null,
+      appliedScale,
+    },
   };
 }
 

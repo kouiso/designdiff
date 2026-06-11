@@ -6,8 +6,11 @@ import sharp from "sharp";
 import { z } from "zod";
 
 import {
+  buildComparisonHeadline,
   CompareDesignResultSchema,
+  diagnoseComparison,
   parseDesignInput,
+  runPreflight,
   selfCritique,
   type CompareDesignResult,
   type CropRegion,
@@ -321,11 +324,13 @@ export async function runCompareDesign(
   );
 
   let cropRegion: CropRegion | undefined;
+  let cropUpdatedAt: string | undefined;
   let persistedIgnoreRegions: IgnoreRegion[] = [];
   if (args.project_id) {
     const regions = await getCropRegion(args.project_id, args.frame_name);
     if (regions.length > 0) {
       cropRegion = regions[0].region;
+      cropUpdatedAt = regions[0].updatedAt;
     }
     persistedIgnoreRegions = await getIgnoreRegionsForComparison(args.project_id, args.frame_name);
   }
@@ -363,6 +368,26 @@ export async function runCompareDesign(
     }));
   }
 
+  // 確信度レイヤー: 設定ミスを検知・説明し、結果ヘッドラインを構造/色に分離する。
+  const figmaFrameBox = figmaRootNode?.absoluteBoundingBox ?? undefined;
+  const regionScores = comparison.diffReport?.regionScores ?? [];
+  const preflight = runPreflight({
+    screenshotWidth: comparison.normalization?.screenshotWidth ?? screenshotMeta.width ?? 0,
+    screenshotHeight: comparison.normalization?.screenshotHeight ?? screenshotMeta.height ?? 0,
+    figmaFrameWidth: figmaFrameBox?.width,
+    figmaFrameHeight: figmaFrameBox?.height,
+    cropRegion,
+    cropUpdatedAt,
+    figmaChildCount: figmaRootNode?.children.length,
+  });
+  const comparisonHeadline = buildComparisonHeadline(regionScores, comparison.matchRate);
+  const diagnosis = diagnoseComparison({
+    matchRate: comparison.matchRate,
+    regionScores,
+    preflightWarnings: preflight.warnings,
+    normalization: comparison.normalization,
+  });
+
   const regionCount = comparison.diffRegions.length;
   const targetNodeIds = buildTargetNodeIds(comparison.diffReport, comparison.diffRegions);
   const sourceKey = buildComparisonSourceKey(parsedDesignSource, resolvedNodeId);
@@ -384,6 +409,9 @@ export async function runCompareDesign(
     nextAction: buildNextAction(comparison.matchRate, regionCount, targetNodeIds),
     suggestion: buildSuggestion(comparison.matchRate, regionCount),
     critique,
+    preflight,
+    comparisonHeadline,
+    diagnosis,
   });
 
   recordComparison({

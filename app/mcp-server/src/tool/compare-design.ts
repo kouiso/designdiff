@@ -10,7 +10,11 @@ import * as path from "node:path";
 
 import { z } from "zod";
 
-import { CompareDesignResultSchema, IgnoreRegionSchema } from "@figdiff/shared";
+import {
+  CompareDesignResultSchema,
+  IgnoreRegionSchema,
+  type CompareDesignResult,
+} from "@figdiff/shared";
 
 import { runCompareDesign } from "../service/compare-design-runner.js";
 
@@ -44,6 +48,40 @@ const DESCRIPTION = `デザインと実装のピクセル差分を検出しま�
 ## ローカルパスの例
   "/path/to/design.png"
   "./screenshots/home.png"`;
+
+function buildSummaryText(result: CompareDesignResult): string {
+  const lines: string[] = [];
+
+  if (result.diagnosis) {
+    lines.push(result.diagnosis.headline);
+    if (result.diagnosis.likelyMisconfig && result.diagnosis.rankedCauses.length > 0) {
+      lines.push("");
+      lines.push("推定原因（確度順）:");
+      for (const cause of result.diagnosis.rankedCauses) {
+        lines.push(
+          `- [${Math.round(cause.confidence * 100)}%] ${cause.message} → ${cause.suggestedFix}`,
+        );
+      }
+    }
+  }
+
+  if (result.comparisonHeadline) {
+    lines.push("");
+    lines.push(result.comparisonHeadline.headline);
+  }
+
+  const warnings = result.preflight?.warnings ?? [];
+  if (warnings.length > 0) {
+    lines.push("");
+    lines.push("Pre-flight 警告:");
+    for (const warning of warnings) {
+      const fix = warning.suggestedFix ? ` → ${warning.suggestedFix}` : "";
+      lines.push(`- [${warning.severity}] ${warning.message}${fix}`);
+    }
+  }
+
+  return lines.join("\n");
+}
 
 async function persistDiffImage(base64Data: string, comparisonId: string): Promise<string> {
   const directoryPath = path.join(os.tmpdir(), "figdiff-mcp");
@@ -135,10 +173,17 @@ export function registerCompareDesign(server: McpServer): void {
           });
         }
 
+        // 互換性のため最初の text ブロックは JSON のまま維持し、
+        // 確信度レイヤーの人間可読サマリ（設定ミス診断・構造/色分離・警告）は末尾に置く。
         content.push({
           type: "text",
           text: JSON.stringify(resultData, null, 2),
         });
+
+        const summaryText = buildSummaryText(result);
+        if (summaryText.length > 0) {
+          content.push({ type: "text", text: summaryText });
+        }
 
         return { content, structuredContent: resultData };
       } catch (error) {
