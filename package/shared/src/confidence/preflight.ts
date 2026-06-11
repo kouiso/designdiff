@@ -70,7 +70,10 @@ export function runPreflight(input: PreflightInput): PreflightReport {
     }
   }
 
-  if (typeof input.figmaChildCount === "number" && input.figmaChildCount < MIN_CONTENT_CHILD_COUNT) {
+  if (
+    typeof input.figmaChildCount === "number" &&
+    input.figmaChildCount < MIN_CONTENT_CHILD_COUNT
+  ) {
     warnings.push({
       code: "blank_frame",
       severity: "warning",
