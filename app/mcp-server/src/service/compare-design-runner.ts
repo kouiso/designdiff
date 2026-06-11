@@ -398,6 +398,7 @@ export async function runCompareDesign(
     cropRegion,
     cropUpdatedAt,
     figmaChildCount: figmaRootNode?.children?.length,
+    figmaNodeType: figmaRootNode?.type,
   });
   const comparisonHeadline = buildComparisonHeadline(regionScores, comparison.matchRate);
   const diagnosis = diagnoseComparison({

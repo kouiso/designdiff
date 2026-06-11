@@ -11,6 +11,7 @@ export interface PreflightInput {
   cropRegion?: { x: number; y: number; width: number; height: number };
   cropUpdatedAt?: string;
   figmaChildCount?: number;
+  figmaNodeType?: string;
   widthTolerancePx?: number;
 }
 
@@ -22,6 +23,16 @@ const CROP_BOUNDS_TOLERANCE_PX = 1;
 // 子要素がこの数未満（=0個）なら空白フレームを疑う。子1個は単一要素の正当なフレーム
 // （実差分を誤って misconfig 扱いしないため）対象外にする。
 const MIN_CONTENT_CHILD_COUNT = 1;
+// blank_frame は「子を持つはずのコンテナ」が空のときだけ疑う。TEXT/RECTANGLE/icon 等の
+// 描画可能なリーフノードは子が 0 個でも正当な比較対象なので、誤って misconfig 扱いしない。
+const FRAME_LIKE_NODE_TYPES = new Set([
+  "FRAME",
+  "SECTION",
+  "GROUP",
+  "COMPONENT",
+  "COMPONENT_SET",
+  "INSTANCE",
+]);
 const PERCENT = 100;
 
 export function runPreflight(input: PreflightInput): PreflightReport {
@@ -72,7 +83,10 @@ export function runPreflight(input: PreflightInput): PreflightReport {
 
   if (
     typeof input.figmaChildCount === "number" &&
-    input.figmaChildCount < MIN_CONTENT_CHILD_COUNT
+    input.figmaChildCount < MIN_CONTENT_CHILD_COUNT &&
+    // ノード種別が不明な場合は従来通り警告する（種別未指定の呼び出し元との後方互換）。
+    // 種別が判明していてリーフノードなら、子 0 個は正当なので警告しない。
+    (input.figmaNodeType === undefined || FRAME_LIKE_NODE_TYPES.has(input.figmaNodeType))
   ) {
     warnings.push({
       code: "blank_frame",

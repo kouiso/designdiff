@@ -65,9 +65,24 @@ describe("runPreflight", () => {
     expect(warning?.message).toContain("2026-01-01");
   });
 
-  it("子要素が0個なら blank_frame を出す", () => {
+  it("子要素が0個なら blank_frame を出す（種別未指定の後方互換）", () => {
     const report = runPreflight({ ...base, figmaChildCount: 0 });
     expect(report.warnings.find((w) => w.code === "blank_frame")).toBeDefined();
+  });
+
+  it("コンテナ種別（FRAME）で子0個なら blank_frame を出す", () => {
+    const report = runPreflight({ ...base, figmaChildCount: 0, figmaNodeType: "FRAME" });
+    expect(report.warnings.find((w) => w.code === "blank_frame")).toBeDefined();
+  });
+
+  it("描画可能なリーフノード（TEXT）は子0個でも blank_frame を出さない", () => {
+    const report = runPreflight({ ...base, figmaChildCount: 0, figmaNodeType: "TEXT" });
+    expect(report.warnings.find((w) => w.code === "blank_frame")).toBeUndefined();
+  });
+
+  it("リーフノード（RECTANGLE）は子0個でも blank_frame を出さない", () => {
+    const report = runPreflight({ ...base, figmaChildCount: 0, figmaNodeType: "RECTANGLE" });
+    expect(report.warnings.find((w) => w.code === "blank_frame")).toBeUndefined();
   });
 
   it("子要素が1個の正当なフレームは blank_frame を出さない", () => {
