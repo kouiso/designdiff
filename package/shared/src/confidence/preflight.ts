@@ -19,7 +19,8 @@ const CRITICAL_WIDTH_RATIO = 0.2;
 const STALE_CROP_HEIGHT_RATIO = 0.6;
 // crop 範囲判定で許容する 1px のゆとり。リサイズ時の浮動小数点丸め誤差を吸収する。
 const CROP_BOUNDS_TOLERANCE_PX = 1;
-// 子要素がこれ以下なら、空白フレームや概観ボードを誤選択している可能性を疑う。
+// 子要素がこの数未満（=0個）なら空白フレームを疑う。子1個は単一要素の正当なフレーム
+// （実差分を誤って misconfig 扱いしないため）対象外にする。
 const MIN_CONTENT_CHILD_COUNT = 1;
 const PERCENT = 100;
 
@@ -69,14 +70,11 @@ export function runPreflight(input: PreflightInput): PreflightReport {
     }
   }
 
-  if (
-    typeof input.figmaChildCount === "number" &&
-    input.figmaChildCount <= MIN_CONTENT_CHILD_COUNT
-  ) {
+  if (typeof input.figmaChildCount === "number" && input.figmaChildCount < MIN_CONTENT_CHILD_COUNT) {
     warnings.push({
       code: "blank_frame",
       severity: "warning",
-      message: `選択ノードの子要素が ${input.figmaChildCount} 個しかありません。空白フレームや概観ボードを誤って選んでいる可能性があります。`,
+      message: `選択ノードに子要素がありません。空白フレームや概観ボードを誤って選んでいる可能性があります。`,
       suggestedFix:
         "list_figma_frames で実コンテンツのフレームを確認し、正しい node-id を指定してください。",
     });

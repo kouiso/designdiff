@@ -65,9 +65,14 @@ describe("runPreflight", () => {
     expect(warning?.message).toContain("2026-01-01");
   });
 
-  it("子要素が1個以下なら blank_frame を出す", () => {
+  it("子要素が0個なら blank_frame を出す", () => {
     const report = runPreflight({ ...base, figmaChildCount: 0 });
     expect(report.warnings.find((w) => w.code === "blank_frame")).toBeDefined();
+  });
+
+  it("子要素が1個の正当なフレームは blank_frame を出さない", () => {
+    const report = runPreflight({ ...base, figmaChildCount: 1 });
+    expect(report.warnings.find((w) => w.code === "blank_frame")).toBeUndefined();
   });
 
   it("通常の十分な子要素では blank_frame を出さない", () => {
