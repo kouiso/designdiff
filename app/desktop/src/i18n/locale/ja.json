@@ -146,7 +146,7 @@
     "light": "ライト",
     "darkMode": "ダークモード",
     "darkModeDesc": "画面の配色を暗くする",
-    "threshold": "デフォルト差分しきい値: {{value}}",
+    "threshold": "デフォルト差分しきい値",
     "language": "言語",
     "languageDesc": "表示言語を選択",
     "autoCompare": "自動再比較",

@@ -146,7 +146,7 @@
     "light": "Light",
     "darkMode": "Dark Mode",
     "darkModeDesc": "Use dark color scheme",
-    "threshold": "Default Diff Threshold: {{value}}",
+    "threshold": "Default Diff Threshold",
     "language": "Language",
     "languageDesc": "Select display language",
     "autoCompare": "Auto Re-Compare",
