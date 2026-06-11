@@ -1,5 +1,8 @@
 import { request as httpRequest } from "node:http";
+
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import type { MockInstance } from "vitest";
 
 vi.mock("electron", () => ({
   app: { isPackaged: false },
@@ -16,7 +19,6 @@ vi.mock("../util/safe-storage", () => ({
   deleteOAuthClientCredentials: vi.fn(),
 }));
 
-// Import after vi.mock declarations
 const { shell } = await import("electron");
 const safeStorage = await import("../util/safe-storage");
 const { startFigmaOAuth, logoutFigmaOAuth, refreshFigmaToken, resolveAccessToken } = await import(
@@ -33,13 +35,18 @@ const mockTokenResponse = {
   expires_in: 7776000,
 };
 
-// Mock only Figma API calls (not the loopback server).
-const makeFetchOk = () =>
-  vi.spyOn(global, "fetch").mockResolvedValue({
-    ok: true,
-    json: async () => mockTokenResponse,
-    text: async () => "",
-  } as Response);
+type FetchSpy = MockInstance<typeof globalThis.fetch>;
+
+const createTokenResponse = (): Response => {
+  return new Response(JSON.stringify(mockTokenResponse), {
+    status: 200,
+    headers: { "Content-Type": "application/json" },
+  });
+};
+
+const makeFetchOk = (): FetchSpy => {
+  return vi.spyOn(globalThis, "fetch").mockResolvedValue(createTokenResponse());
+};
 
 // Use node:http directly (agent: false = no keep-alive) so the loopback
 // connection is not pooled by undici and closes immediately after the
@@ -100,8 +107,10 @@ describe("startFigmaOAuth — happy path", () => {
 
     await startFigmaOAuth();
 
-    const [[authUrl]] = vi.mocked(shell.openExternal).mock.calls;
-    const parsed = new URL(authUrl as string);
+    const authCall = vi.mocked(shell.openExternal).mock.calls[0];
+    if (!authCall) throw new Error("openExternal が呼び出されていません。");
+    const [authUrl] = authCall;
+    const parsed = new URL(authUrl);
 
     expect(parsed.hostname).toBe("www.figma.com");
     expect(parsed.pathname).toBe("/oauth");
@@ -128,15 +137,19 @@ describe("startFigmaOAuth — happy path", () => {
     const tokenCall = fetchSpy.mock.calls.find(
       ([url]) => typeof url === "string" && url.includes("oauth/token"),
     );
-    expect(tokenCall).toBeTruthy();
-    const [, init] = tokenCall as [string, RequestInit];
-    const headers = init.headers as Record<string, string>;
-    expect(headers["Authorization"]).toMatch(/^Basic /);
-    const decoded = Buffer.from(headers["Authorization"].replace("Basic ", ""), "base64").toString();
+    if (!tokenCall) throw new Error("token endpoint が呼び出されていません。");
+    const [, init] = tokenCall;
+    if (!init) throw new Error("token endpoint の RequestInit がありません。");
+    const headers = new Headers(init.headers);
+    const authorization = headers.get("Authorization");
+    if (!authorization) throw new Error("Authorization ヘッダーがありません。");
+    expect(authorization).toMatch(/^Basic /);
+    const decoded = Buffer.from(authorization.replace("Basic ", ""), "base64").toString();
     expect(decoded).toBe(`${FAKE_CLIENT_ID}:${FAKE_CLIENT_SECRET}`);
-    expect(headers["Content-Type"]).toBe("application/x-www-form-urlencoded");
+    expect(headers.get("Content-Type")).toBe("application/x-www-form-urlencoded");
 
-    const body = new URLSearchParams(init.body as string);
+    if (typeof init.body !== "string") throw new Error("token endpoint の body が文字列ではありません。");
+    const body = new URLSearchParams(init.body);
     expect(body.get("grant_type")).toBe("authorization_code");
     expect(body.get("code")).toBe("real-code");
     expect(body.get("redirect_uri")).toBe("http://localhost:51073/callback");
@@ -265,9 +278,7 @@ describe("startFigmaOAuth — error cases", () => {
       // first call: do nothing (simulate waiting for user consent)
     });
     const first = startFigmaOAuth();
-    first.catch((e) => {
-      expect((e as Error).message).toMatch(/cancelled/);
-    });
+    const firstRejection = expect(first).rejects.toThrow(/cancelled/);
 
     // Yield so server1's listen callback fires and mock1 is consumed before
     // the second startFigmaOAuth() creates its server and claims mock2.
@@ -283,6 +294,7 @@ describe("startFigmaOAuth — error cases", () => {
 
     // second call cancels the first and completes successfully
     await startFigmaOAuth();
+    await firstRejection;
   });
 });
 
@@ -316,11 +328,7 @@ describe("refreshFigmaToken", () => {
       refreshToken: "old-refresh",
       expiresAt: Date.now() + 1000,
     });
-    vi.spyOn(global, "fetch").mockResolvedValue({
-      ok: false,
-      status: 401,
-      text: async () => "Unauthorized",
-    } as Response);
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("Unauthorized", { status: 401 }));
 
     await expect(refreshFigmaToken()).rejects.toThrow();
     expect(safeStorage.deleteOAuthTokens).toHaveBeenCalled();

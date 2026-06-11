@@ -494,7 +494,7 @@ export function ComparePage() {
                   color: activeTab === "issues" ? "var(--fg)" : "var(--muted-fg)",
                 }}
               >
-                課題
+                {t("compare.tabIssues")}
               </button>
               <button
                 type="button"
@@ -507,7 +507,7 @@ export function ComparePage() {
               >
                 <span className="inline-flex items-center justify-center gap-1.5">
                   <FileText className="h-4 w-4" />
-                  レポートv2
+                  {t("compare.tabReport")}
                 </span>
               </button>
             </div>

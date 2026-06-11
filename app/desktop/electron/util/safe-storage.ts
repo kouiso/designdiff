@@ -226,6 +226,9 @@ export const getOAuthTokens = (): OAuthTokens | null => {
 };
 
 export const deleteOAuthTokens = (): void => {
+  const credPath = getCredentialPath();
+  if (!existsSync(credPath)) return;
+
   const store = readStore();
   const cleaned = removeKeys(store, [
     OAUTH_ACCESS_TOKEN_KEY,
@@ -233,7 +236,6 @@ export const deleteOAuthTokens = (): void => {
     OAUTH_EXPIRY_KEY,
   ]);
 
-  const credPath = getCredentialPath();
   if (Object.keys(cleaned).length === 0 && existsSync(credPath)) {
     unlinkSync(credPath);
   } else {
@@ -275,10 +277,12 @@ export const getOAuthClientCredentials = (): OAuthClientCredentials | null => {
 };
 
 export const deleteOAuthClientCredentials = (): void => {
+  const credPath = getCredentialPath();
+  if (!existsSync(credPath)) return;
+
   const store = readStore();
   const cleaned = removeKeys(store, [OAUTH_CLIENT_ID_KEY, OAUTH_CLIENT_SECRET_KEY]);
 
-  const credPath = getCredentialPath();
   if (Object.keys(cleaned).length === 0 && existsSync(credPath)) {
     unlinkSync(credPath);
   } else {

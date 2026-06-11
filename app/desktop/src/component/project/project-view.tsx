@@ -571,7 +571,7 @@ export const ProjectView = ({ onNavigate }: ProjectViewProps) => {
                     }
                   }}
                 >
-                  比較を開始
+                  {t("project.startCompare")}
                   <ArrowRight size={16} />
                 </button>
               </div>

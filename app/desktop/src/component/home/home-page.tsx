@@ -478,7 +478,7 @@ export const HomePage = ({ onNavigate }: HomePageProps) => {
       )}
 
       {loginStatus === "error" && (
-        <div style={{ color: "var(--diff)", fontSize: 13 }}>Figma ログインに失敗しました</div>
+        <div style={{ color: "var(--diff)", fontSize: 13 }}>{t("home.figmaLoginFailed")}</div>
       )}
 
       {isLoading && (
@@ -512,7 +512,9 @@ export const HomePage = ({ onNavigate }: HomePageProps) => {
       <section className="space-y-3">
         <div className="flex items-center justify-between">
           <div>
-            <h2 style={{ color: "var(--fg)", fontSize: 18, fontWeight: 750 }}>続きから</h2>
+            <h2 style={{ color: "var(--fg)", fontSize: 18, fontWeight: 750 }}>
+              {t("home.recentProjects")}
+            </h2>
             <p style={{ color: "var(--muted-fg)", fontSize: 13 }}>{t("home.howItWorks")}</p>
           </div>
           <span className="mono" style={{ color: "var(--faint-fg)", fontSize: 12 }}>
@@ -577,7 +579,7 @@ export const HomePage = ({ onNavigate }: HomePageProps) => {
                         handleOpenProject(project.id, project.name);
                       }}
                     >
-                      開く
+                      {t("home.openProject")}
                       <ArrowRight size={15} />
                     </button>
                   </div>

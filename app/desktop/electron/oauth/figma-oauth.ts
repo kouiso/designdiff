@@ -183,7 +183,7 @@ export const startFigmaOAuth = (): Promise<void> => {
     };
 
     server.on("request", (req, res) => {
-      // Handle PNA preflight: Chrome requires Access-Control-Allow-Private-Network for public→localhost redirects
+      // Chrome の PNA 制約により Figma から localhost へのリダイレクトで許可ヘッダーが必要
       if (req.method === "OPTIONS") {
         res.writeHead(204, {
           "Access-Control-Allow-Origin": "https://www.figma.com",

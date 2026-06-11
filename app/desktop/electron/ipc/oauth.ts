@@ -30,7 +30,7 @@ export const registerOAuthHandlers = (): void => {
   });
 
   ipcMain.handle("oauth:save-client", (_event, clientId: string, clientSecret: string) => {
-    if (!clientId || !clientSecret) {
+    if (!clientId || !clientSecret || clientId.trim() === "" || clientSecret.trim() === "") {
       throw new Error("client_id と client_secret の両方が必要です。");
     }
     saveOAuthClientCredentials({ clientId, clientSecret });

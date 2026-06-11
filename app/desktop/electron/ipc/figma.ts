@@ -4,7 +4,7 @@ import { FigmaApiError, FigmaClient, extractFrames, extractPageFrames } from "@f
 
 import { refreshFigmaToken, resolveAccessToken } from "../oauth/figma-oauth";
 import { NodeFsCacheStrategy } from "../util/cache";
-import { getOAuthTokens, deleteOAuthTokens } from "../util/safe-storage";
+import { deleteOAuthTokens, getOAuthTokens } from "../util/safe-storage";
 import { transformNode } from "../util/transform-node";
 
 let cacheStrategy: NodeFsCacheStrategy | null = null;
@@ -18,6 +18,15 @@ const getCache = (): NodeFsCacheStrategy => {
 
 const isOAuthMode = (): boolean => getOAuthTokens() !== null;
 
+const getErrorMessage = (error: unknown): string => {
+  return error instanceof Error ? error.message : String(error);
+};
+
+const isInvalidOAuthTokenError = (error: unknown): boolean => {
+  const message = getErrorMessage(error);
+  return message.includes("invalid_grant") || message.includes("invalid_token");
+};
+
 const withOAuthRetry = async <T>(fn: (token: string) => Promise<T>): Promise<T> => {
   const token = await resolveAccessToken();
   try {
@@ -27,9 +36,12 @@ const withOAuthRetry = async <T>(fn: (token: string) => Promise<T>): Promise<T> 
       let refreshedToken: string;
       try {
         refreshedToken = await refreshFigmaToken();
-      } catch {
-        deleteOAuthTokens();
-        throw new Error("Figmaのセッションが切れました。設定画面から再ログインしてください。");
+      } catch (refreshError) {
+        if (isInvalidOAuthTokenError(refreshError)) {
+          deleteOAuthTokens();
+          throw new Error("Figmaのセッションが切れました。設定画面から再ログインしてください。");
+        }
+        throw new Error("Figmaのトークン更新に失敗しました。通信状態を確認して再試行してください。");
       }
       try {
         return await fn(refreshedToken);
