@@ -202,16 +202,20 @@ const MIN_TOKEN_LENGTH = 20;
 const API_TIMEOUT_MS = 30_000;
 const IMAGE_DOWNLOAD_TIMEOUT_MS = 60_000;
 
+export type FigmaAuthMode = "pat" | "oauth";
+
 export class FigmaClient {
   private token: string;
   private cache: FigmaCacheStrategy;
+  private authMode: FigmaAuthMode;
 
-  constructor(token: string, cache?: FigmaCacheStrategy) {
+  constructor(token: string, cache?: FigmaCacheStrategy, authMode: FigmaAuthMode = "pat") {
     if (!token || token.length < MIN_TOKEN_LENGTH) {
       throw new Error("Invalid Figma token");
     }
     this.token = token;
     this.cache = cache || new NoCacheStrategy();
+    this.authMode = authMode;
   }
 
   async getFile(fileKey: string, depth = 1): Promise<FigmaFileResponse> {
@@ -290,9 +294,7 @@ export class FigmaClient {
 
     try {
       const response = await fetch(url, {
-        headers: {
-          "X-FIGMA-TOKEN": this.token,
-        },
+        headers: this.createAuthHeaders(),
         signal: controller.signal,
       });
 
@@ -336,6 +338,13 @@ export class FigmaClient {
     } finally {
       clearTimeout(timer);
     }
+  }
+
+  private createAuthHeaders(): HeadersInit {
+    if (this.authMode === "oauth") {
+      return { Authorization: `Bearer ${this.token}` };
+    }
+    return { "X-Figma-Token": this.token };
   }
 
   private arrayBufferToBase64(buffer: Uint8Array): string {

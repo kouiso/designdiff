@@ -90,6 +90,7 @@ export function SettingsScreen() {
   const handleLogout = async () => {
     try {
       await logoutFigma();
+      await removeFigmaToken();
     } catch (e) {
       console.error("Failed to logout:", e);
     }
@@ -312,12 +313,12 @@ export function SettingsScreen() {
             </span>
             <SliderRow
               label=""
-              value={defaultThreshold}
+              value={Math.round(defaultThreshold * 100)}
               min={0}
               max={100}
               step={1}
-              displayValue={`${defaultThreshold}%`}
-              onChange={setDefaultThreshold}
+              displayValue={`${Math.round(defaultThreshold * 100)}%`}
+              onChange={(v) => setDefaultThreshold(v / 100)}
             />
             <span style={{ fontSize: 12, color: "var(--muted-fg)" }}>
               {t("settings.thresholdDesc")}

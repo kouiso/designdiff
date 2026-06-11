@@ -18,6 +18,10 @@ const getCache = (): NodeFsCacheStrategy => {
 
 const isOAuthMode = (): boolean => getOAuthTokens() !== null;
 
+const createFigmaClient = (token: string): FigmaClient => {
+  return new FigmaClient(token, getCache(), isOAuthMode() ? "oauth" : "pat");
+};
+
 const getErrorMessage = (error: unknown): string => {
   return error instanceof Error ? error.message : String(error);
 };
@@ -60,7 +64,7 @@ const withOAuthRetry = async <T>(fn: (token: string) => Promise<T>): Promise<T> 
 export const registerFigmaHandlers = (): void => {
   ipcMain.handle("figma:get-frames", async (_event, fileKey: string) => {
     return withOAuthRetry(async (token) => {
-      const client = new FigmaClient(token, getCache());
+      const client = createFigmaClient(token);
       const file = await client.getFile(fileKey, 3);
       return extractFrames(file);
     });
@@ -70,7 +74,7 @@ export const registerFigmaHandlers = (): void => {
     "figma:get-frame-image",
     async (_event, fileKey: string, nodeId: string, scale = 2) => {
       return withOAuthRetry((token) => {
-        const client = new FigmaClient(token, getCache());
+        const client = createFigmaClient(token);
         return client.downloadImageAsBase64(fileKey, nodeId, scale);
       });
     },
@@ -78,7 +82,7 @@ export const registerFigmaHandlers = (): void => {
 
   ipcMain.handle("figma:get-page-frames", async (_event, fileKey: string, pageNodeId: string) => {
     return withOAuthRetry(async (token) => {
-      const client = new FigmaClient(token, getCache());
+      const client = createFigmaClient(token);
       const pageNode = await client.getNode(fileKey, pageNodeId);
       return extractPageFrames(pageNode);
     });
@@ -88,7 +92,7 @@ export const registerFigmaHandlers = (): void => {
     "figma:get-node-detail",
     async (_event, fileKey: string, nodeId: string, depth = 3) => {
       return withOAuthRetry(async (token) => {
-        const client = new FigmaClient(token, getCache());
+        const client = createFigmaClient(token);
         const node = await client.getNode(fileKey, nodeId, depth);
         return transformNode(node);
       });

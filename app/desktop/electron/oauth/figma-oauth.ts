@@ -1,6 +1,7 @@
 import { createServer } from "node:http";
 
 import { app, shell } from "electron";
+import { z } from "zod";
 
 import { FigmaOAuthTokenResponseSchema } from "@figdiff/shared";
 
@@ -35,6 +36,13 @@ const ERROR_HTML =
   '<!DOCTYPE html><html><head><meta charset="utf-8"><title>FigDiff</title></head>' +
   '<body style="font-family:sans-serif;padding:2rem"><h2>ログイン失敗</h2>' +
   "<p>このタブを閉じて再試行してください。</p></body></html>";
+
+const FigmaOAuthRefreshResponseSchema = z.object({
+  access_token: z.string().min(1),
+  expires_in: z.number().int().positive(),
+  token_type: z.string().optional(),
+  scope: z.string().optional(),
+});
 
 interface ActiveFlow {
   cancel(): void;
@@ -123,11 +131,11 @@ export const refreshFigmaToken = async (): Promise<string> => {
   }
 
   const json: unknown = await response.json();
-  const tokens = FigmaOAuthTokenResponseSchema.parse(json);
+  const tokens = FigmaOAuthRefreshResponseSchema.parse(json);
   const expiresAt = Date.now() + tokens.expires_in * 1000;
   saveOAuthTokens({
     accessToken: tokens.access_token,
-    refreshToken: tokens.refresh_token,
+    refreshToken: stored.refreshToken,
     expiresAt,
   });
   return tokens.access_token;
@@ -173,6 +181,7 @@ export const startFigmaOAuth = (): Promise<void> => {
       if (settled) return;
       settled = true;
       if (timeoutId) clearTimeout(timeoutId);
+      server.closeAllConnections();
       server.close();
       activeFlow = null;
       fn();

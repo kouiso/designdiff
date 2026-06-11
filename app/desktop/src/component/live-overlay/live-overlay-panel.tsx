@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef } from "react";
 
 import {
-
   Eye,
   EyeOff,
   Focus,
@@ -65,6 +64,7 @@ function getMatchColor(matchRate: number | null): string {
 export function LiveOverlayPanel({ onNavigate }: LiveOverlayPanelProps) {
   const { t } = useTranslation();
   const panelRef = useRef<HTMLDivElement>(null);
+  const didAutoOpenRef = useRef(false);
   const url = useOverlayStore((s) => s.url);
   const isOpen = useOverlayStore((s) => s.isOpen);
   const isLoading = useOverlayStore((s) => s.isLoading);
@@ -122,13 +122,13 @@ export function LiveOverlayPanel({ onNavigate }: LiveOverlayPanelProps) {
     setOverlayViewMode(mode);
   };
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: mount-only auto-open when URL is pre-set from home page
   useEffect(() => {
+    if (didAutoOpenRef.current) return;
+    didAutoOpenRef.current = true;
     if (url.trim() && !isOpen && !isLoading) {
       openSite();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [isLoading, isOpen, openSite, url]);
 
   useEffect(() => {
     if (isOpen && !overlayImageBase64 && frameImage) {
@@ -145,9 +145,10 @@ export function LiveOverlayPanel({ onNavigate }: LiveOverlayPanelProps) {
     await overlay?.updateOffset(bottom);
   }, []);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: Flow controls can change panel height
   useEffect(() => {
+    const shouldMeasurePanel = Boolean(overlayImageBase64) || Boolean(overlayViewMode);
     if (!isOpen) return;
+    if (!shouldMeasurePanel) return;
     sendPanelOffset();
   }, [isOpen, overlayImageBase64, overlayViewMode, sendPanelOffset]);
 

@@ -7,6 +7,7 @@ export {
   extractPageFrames,
   isTokenError,
   type FigmaCacheStrategy,
+  type FigmaAuthMode,
   type FigmaColor,
   type FigmaEffect,
   type FigmaFileResponse,
