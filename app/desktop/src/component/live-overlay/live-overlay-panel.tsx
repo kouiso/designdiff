@@ -61,6 +61,42 @@ function getMatchColor(matchRate: number | null): string {
   return "var(--diff)";
 }
 
+interface LiveDiffStatusProps {
+  isEnabled: boolean;
+  isRunning: boolean;
+  matchRate: number | null;
+  error: string | null;
+  onToggle: () => void;
+}
+
+function LiveDiffStatus({ isEnabled, isRunning, matchRate, error, onToggle }: LiveDiffStatusProps) {
+  const { t } = useTranslation();
+
+  return (
+    <div className="flex items-center gap-1.5">
+      <button
+        type="button"
+        className="fd-btn"
+        onClick={onToggle}
+        style={{
+          background: isEnabled ? "var(--cobalt)" : "var(--surface)",
+          color: isEnabled ? "var(--cobalt-fg)" : "var(--fg-2)",
+          borderColor: isEnabled ? "transparent" : "var(--border-strong)",
+        }}
+      >
+        {t("overlay.liveDiff")}
+      </button>
+      {isRunning ? <Loader2 className="h-3.5 w-3.5 animate-spin" style={{ color: "var(--muted-fg)" }} /> : null}
+      {matchRate !== null ? (
+        <span className="mono text-xs font-bold" style={{ color: getMatchColor(matchRate) }}>{matchRate}%</span>
+      ) : (
+        <span className="text-xs" style={{ color: "var(--muted-fg)" }}>{t("overlay.liveDiffIdle")}</span>
+      )}
+      {error ? <span className="text-xs" style={{ color: "var(--diff)" }}>{error}</span> : null}
+    </div>
+  );
+}
+
 export function LiveOverlayPanel({ onNavigate }: LiveOverlayPanelProps) {
   const { t } = useTranslation();
   const panelRef = useRef<HTMLDivElement>(null);
@@ -80,6 +116,10 @@ export function LiveOverlayPanel({ onNavigate }: LiveOverlayPanelProps) {
   const isPixelDiffRunning = useOverlayStore((s) => s.isPixelDiffRunning);
   const pixelDiffMatchRate = useOverlayStore((s) => s.pixelDiffMatchRate);
   const currentUrl = useOverlayStore((s) => s.currentUrl);
+  const isLiveDiffEnabled = useOverlayStore((s) => s.isLiveDiffEnabled);
+  const isLiveDiffRunning = useOverlayStore((s) => s.isLiveDiffRunning);
+  const liveDiffResult = useOverlayStore((s) => s.liveDiffResult);
+  const liveDiffError = useOverlayStore((s) => s.liveDiffError);
   const setUrl = useOverlayStore((s) => s.setUrl);
   const openSite = useOverlayStore((s) => s.openSite);
   const closeSite = useOverlayStore((s) => s.closeSite);
@@ -92,6 +132,7 @@ export function LiveOverlayPanel({ onNavigate }: LiveOverlayPanelProps) {
   const setOverlayScaleMode = useOverlayStore((s) => s.setOverlayScaleMode);
   const setToggleIntervalMs = useOverlayStore((s) => s.setToggleIntervalMs);
   const captureForComparison = useOverlayStore((s) => s.captureForComparison);
+  const setLiveDiffEnabled = useOverlayStore((s) => s.setLiveDiffEnabled);
   const frameImage = useProjectStore((s) => s.frameImage);
 
   const handleOpen = () => {
@@ -250,6 +291,13 @@ export function LiveOverlayPanel({ onNavigate }: LiveOverlayPanelProps) {
                 );
               })}
             </div>
+            <LiveDiffStatus
+              isEnabled={isLiveDiffEnabled}
+              isRunning={isLiveDiffRunning}
+              matchRate={liveDiffResult?.matchRate ?? null}
+              error={liveDiffError}
+              onToggle={() => setLiveDiffEnabled(!isLiveDiffEnabled)}
+            />
 
             <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
               <div className="flex items-center gap-1 rounded-[var(--radius-sm-token)] p-1" style={{ background: "var(--surface-2)" }}>

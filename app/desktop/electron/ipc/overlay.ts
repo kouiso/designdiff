@@ -5,6 +5,7 @@ import {
   buildDraggableScript,
   buildHideOverlayScript,
   buildInjectScript,
+  buildShowOverlayScript,
   buildRemoveScript,
   buildSplitScreenScript,
   buildToggleStartScript,
@@ -154,7 +155,12 @@ const ensureOverlaySession = (): Electron.Session => {
 const resizeOverlay = (win: BrowserWindow): void => {
   if (!overlayView) return;
   const [width, height] = win.getContentSize();
-  overlayView.setBounds({ x: 0, y: panelOffset, width, height: height - panelOffset });
+  overlayView.setBounds({
+    x: 0,
+    y: panelOffset,
+    width,
+    height: height - panelOffset,
+  });
 };
 
 const createOverlayView = (win: BrowserWindow, ses: Electron.Session): WebContentsView => {
@@ -176,6 +182,12 @@ const createOverlayView = (win: BrowserWindow, ses: Electron.Session): WebConten
   });
   view.webContents.on("did-navigate-in-page", (_e, navUrl) => {
     win.webContents.send("overlay:navigated", navUrl);
+  });
+  view.webContents.on("dom-ready", () => {
+    win.webContents.send("overlay:navigated", view.webContents.getURL());
+  });
+  view.webContents.on("did-frame-finish-load", () => {
+    win.webContents.send("overlay:navigated", view.webContents.getURL());
   });
   view.webContents.on("did-fail-load", (_event, code, desc, failedUrl) => {
     console.error("[overlay] did-fail-load:", code, desc, failedUrl);
@@ -296,8 +308,15 @@ export const registerOverlayHandlers = (): void => {
 
   ipcMain.handle("overlay:capture-screenshot", async () => {
     if (!overlayView) throw new Error("オーバーレイが開かれていません");
-    const image = await overlayView.webContents.capturePage();
-    return image.toPNG().toString("base64");
+    await overlayView.webContents.executeJavaScript(buildHideOverlayScript());
+    try {
+      const image = await overlayView.webContents.capturePage();
+      return image.toPNG().toString("base64");
+    } finally {
+      if (!overlayView?.webContents.isDestroyed()) {
+        await overlayView.webContents.executeJavaScript(buildShowOverlayScript());
+      }
+    }
   });
 
   ipcMain.handle(

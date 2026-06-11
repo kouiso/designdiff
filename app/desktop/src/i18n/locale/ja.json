@@ -211,7 +211,9 @@
     "scaleModeActual": "実寸",
     "splitPosition": "分割位置",
     "toggleSpeed": "速度",
-    "analyzing": "解析中..."
+    "analyzing": "解析中...",
+    "liveDiff": "ライブ差分",
+    "liveDiffIdle": "待機中"
   },
   "error": {
     "bothImagesRequired": "両方の画像が必要です"

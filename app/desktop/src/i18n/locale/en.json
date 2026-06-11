@@ -211,7 +211,9 @@
     "scaleModeActual": "Actual",
     "splitPosition": "Split",
     "toggleSpeed": "Speed",
-    "analyzing": "Analyzing..."
+    "analyzing": "Analyzing...",
+    "liveDiff": "Live diff",
+    "liveDiffIdle": "Waiting"
   },
   "error": {
     "bothImagesRequired": "Both images are required"
