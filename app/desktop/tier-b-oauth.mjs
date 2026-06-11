@@ -25,7 +25,7 @@ if (!CLIENT_ID || !CLIENT_SECRET) {
   console.error("FIGMA_OAUTH_CLIENT_ID / FIGMA_OAUTH_CLIENT_SECRET not set in .env.local");
   process.exit(1);
 }
-console.log(`[tier-b] client_id length=${CLIENT_ID.length} prefix=${CLIENT_ID.slice(0, 4)}…`);
+console.info(`[tier-b] client_id length=${CLIENT_ID.length} prefix=${CLIENT_ID.slice(0, 4)}…`);
 
 // ── PKCE ─────────────────────────────────────────────────────────────────────
 const verifier = randomBytes(32).toString("base64url");
@@ -59,7 +59,7 @@ const code = await new Promise((resolve, reject) => {
   }, 600_000);
 
   const server = createServer((req, res) => {
-    console.log(`[tier-b] incoming: ${req.method} ${req.url} from ${req.socket.remoteAddress}`);
+    console.info(`[tier-b] incoming: ${req.method} ${req.url} from ${req.socket.remoteAddress}`);
 
     // Handle PNA preflight (Chrome requires Access-Control-Allow-Private-Network for public→localhost redirects)
     if (req.method === "OPTIONS") {
@@ -75,17 +75,25 @@ const code = await new Promise((resolve, reject) => {
     }
 
     let url;
-    try { url = new URL(req.url ?? "/", `http://localhost:${FIXED_PORT}`); }
-    catch { res.writeHead(400).end(); return; }
+    try {
+      url = new URL(req.url ?? "/", `http://localhost:${FIXED_PORT}`);
+    } catch {
+      res.writeHead(400).end();
+      return;
+    }
 
-    if (url.pathname !== "/callback") { res.writeHead(404).end(); return; }
+    if (url.pathname !== "/callback") {
+      res.writeHead(404).end();
+      return;
+    }
 
     const receivedState = url.searchParams.get("state");
     const code = url.searchParams.get("code");
     const error = url.searchParams.get("error");
 
     if (error) {
-      res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" })
+      res
+        .writeHead(200, { "Content-Type": "text/html; charset=utf-8" })
         .end(`<html><body><h2>エラー: ${error}</h2></body></html>`);
       clearTimeout(timeout);
       server.close();
@@ -122,16 +130,16 @@ const code = await new Promise((resolve, reject) => {
   // Dual-stack: accept both IPv4 (127.0.0.1) and IPv6 (::1) so Chrome's
   // redirect to http://localhost works regardless of which address it resolves first.
   server.listen({ port: FIXED_PORT, host: "::", ipv6Only: false }, () => {
-    console.log(`[tier-b] loopback server listening on port ${FIXED_PORT}`);
+    console.info(`[tier-b] loopback server listening on port ${FIXED_PORT}`);
     execSync(`open -a Safari '${authUrl}'`);
-    console.log(`[tier-b] Safari opened.`);
-    console.log(`[tier-b] Auth URL (open manually if needed): ${authUrl}`);
-    console.log(`[tier-b] → If not logged into Figma in Safari, log in first, then Allow`);
-    console.log(`[tier-b] Waiting for callback... (600s timeout)`);
+    console.info(`[tier-b] Safari opened.`);
+    console.info(`[tier-b] Auth URL (open manually if needed): ${authUrl}`);
+    console.info(`[tier-b] → If not logged into Figma in Safari, log in first, then Allow`);
+    console.info(`[tier-b] Waiting for callback... (600s timeout)`);
   });
 });
 
-console.log(`[tier-b] ✓ callback received. code length=${code.length}`);
+console.info(`[tier-b] ✓ callback received. code length=${code.length}`);
 
 // ── Token exchange ────────────────────────────────────────────────────────────
 const basicAuth = Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString("base64");
@@ -142,7 +150,7 @@ const tokenBody = new URLSearchParams({
   code_verifier: verifier,
 });
 
-console.log("[tier-b] exchanging code for token...");
+console.info("[tier-b] exchanging code for token...");
 const tokenResp = await fetch("https://api.figma.com/v1/oauth/token", {
   method: "POST",
   headers: {
@@ -160,13 +168,13 @@ if (!tokenResp.ok) {
 
 const tokenJson = await tokenResp.json();
 const accessToken = tokenJson.access_token;
-console.log(
+console.info(
   `[tier-b] token exchange SUCCESS. access_token: len=${accessToken?.length} prefix=${accessToken?.slice(0, 2)}…`,
 );
-console.log(`[tier-b] expires_in=${tokenJson.expires_in}s`);
+console.info(`[tier-b] expires_in=${tokenJson.expires_in}s`);
 
 // ── Verify token with /v1/me ──────────────────────────────────────────────────
-console.log("[tier-b] calling GET /v1/me to verify token...");
+console.info("[tier-b] calling GET /v1/me to verify token...");
 const meResp = await fetch("https://api.figma.com/v1/me", {
   headers: { Authorization: `Bearer ${accessToken}` },
 });
@@ -177,6 +185,6 @@ if (!meResp.ok) {
 }
 
 const me = await meResp.json();
-console.log(`\n[tier-b] ✓ REAL ROUND-TRIP SUCCESS`);
-console.log(`[tier-b] user.handle = ${me.handle}`);
-console.log(`[tier-b] user.email  = ${me.email}`);
+console.info(`\n[tier-b] ✓ REAL ROUND-TRIP SUCCESS`);
+console.info(`[tier-b] user.handle = ${me.handle}`);
+console.info(`[tier-b] user.email  = ${me.email}`);

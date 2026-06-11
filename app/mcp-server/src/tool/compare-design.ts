@@ -49,6 +49,11 @@ const DESCRIPTION = `デザインと実装のピクセル差分を検出しま�
   "/path/to/design.png"
   "./screenshots/home.png"`;
 
+const CONFIDENCE_TO_PERCENTAGE = 100;
+
+// 並び順は「結論 → 原因 → 内訳 → 警告」。AI/ユーザーが最初の数行で
+// 「実差分か設定ミスか」を即断でき、likely_misconfig の時だけ確度順に原因を
+// 列挙して最優先の対処に誘導するため、この順序と簡潔な箇条書き形式にしている。
 function buildSummaryText(result: CompareDesignResult): string {
   const lines: string[] = [];
 
@@ -59,7 +64,7 @@ function buildSummaryText(result: CompareDesignResult): string {
       lines.push("推定原因（確度順）:");
       for (const cause of result.diagnosis.rankedCauses) {
         lines.push(
-          `- [${Math.round(cause.confidence * 100)}%] ${cause.message} → ${cause.suggestedFix}`,
+          `- [${Math.round(cause.confidence * CONFIDENCE_TO_PERCENTAGE)}%] ${cause.message} → ${cause.suggestedFix}`,
         );
       }
     }

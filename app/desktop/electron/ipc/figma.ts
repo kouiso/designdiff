@@ -45,7 +45,9 @@ const withOAuthRetry = async <T>(fn: (token: string) => Promise<T>): Promise<T> 
           deleteOAuthTokens();
           throw new Error("Figmaのセッションが切れました。設定画面から再ログインしてください。");
         }
-        throw new Error("Figmaのトークン更新に失敗しました。通信状態を確認して再試行してください。");
+        throw new Error(
+          "Figmaのトークン更新に失敗しました。通信状態を確認して再試行してください。",
+        );
       }
       try {
         return await fn(refreshedToken);

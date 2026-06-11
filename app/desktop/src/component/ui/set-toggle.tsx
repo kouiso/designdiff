@@ -11,7 +11,14 @@ interface SetToggleProps {
   className?: string;
 }
 
-export function SetToggle({ label, description, checked, onChange, children, className }: SetToggleProps) {
+export function SetToggle({
+  label,
+  description,
+  checked,
+  onChange,
+  children,
+  className,
+}: SetToggleProps) {
   return (
     <div
       className={cn("flex items-start justify-between gap-4", className)}
@@ -22,9 +29,11 @@ export function SetToggle({ label, description, checked, onChange, children, cla
         border: "1px solid var(--border)",
       }}
     >
-      <div className="flex flex-col gap-1 min-w-0">
+      <div className="flex min-w-0 flex-col gap-1">
         <span style={{ fontSize: 13.5, fontWeight: 600, color: "var(--fg)" }}>{label}</span>
-        {description && <span style={{ fontSize: 12, color: "var(--muted-fg)" }}>{description}</span>}
+        {description && (
+          <span style={{ fontSize: 12, color: "var(--muted-fg)" }}>{description}</span>
+        )}
         {children}
       </div>
       <button

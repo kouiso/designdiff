@@ -148,7 +148,8 @@ describe("startFigmaOAuth — happy path", () => {
     expect(decoded).toBe(`${FAKE_CLIENT_ID}:${FAKE_CLIENT_SECRET}`);
     expect(headers.get("Content-Type")).toBe("application/x-www-form-urlencoded");
 
-    if (typeof init.body !== "string") throw new Error("token endpoint の body が文字列ではありません。");
+    if (typeof init.body !== "string")
+      throw new Error("token endpoint の body が文字列ではありません。");
     const body = new URLSearchParams(init.body);
     expect(body.get("grant_type")).toBe("authorization_code");
     expect(body.get("code")).toBe("real-code");
@@ -231,10 +232,7 @@ describe("startFigmaOAuth — error cases", () => {
       });
     });
 
-    await Promise.all([
-      expect(startFigmaOAuth()).rejects.toThrow(/access_denied/),
-      fetchDone,
-    ]);
+    await Promise.all([expect(startFigmaOAuth()).rejects.toThrow(/access_denied/), fetchDone]);
     expect(callbackResult?.body).toContain("ログイン失敗");
   });
 

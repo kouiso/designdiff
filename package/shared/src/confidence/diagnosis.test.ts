@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import type { NormalizationReport, PreflightWarning, RegionScore } from "../type.js";
-
 import { diagnoseComparison } from "./diagnosis.js";
+
+import type { NormalizationReport, PreflightWarning, RegionScore } from "../type.js";
 
 const region = (overrides: Partial<RegionScore>): RegionScore => ({
   regionId: "r",
@@ -20,6 +20,20 @@ const widthWarning: PreflightWarning = {
   message: "幅が違います",
   suggestedFix: "capture_width を合わせてください",
 };
+
+const normalizationReport = (overrides?: Partial<NormalizationReport>): NormalizationReport => ({
+  designNativeWidth: 1082,
+  designNativeHeight: 3931,
+  screenshotWidth: 1082,
+  screenshotHeight: 1021,
+  cropApplied: true,
+  containResized: true,
+  appliedScale: 0.26,
+  ...overrides,
+});
+
+// normalizationCause の確度（diagnosis.ts の CONFIDENCE_NORMALIZATION と一致）。
+const CONFIDENCE_NORMALIZATION_FOR_TEST = 0.8;
 
 describe("diagnoseComparison", () => {
   it("一致率が高ければ clean", () => {
@@ -55,34 +69,17 @@ describe("diagnoseComparison", () => {
   });
 
   it("contain で大きく圧縮された場合 crop_compression を検出する", () => {
-    const normalization: NormalizationReport = {
-      designNativeWidth: 1082,
-      designNativeHeight: 3931,
-      screenshotWidth: 1082,
-      screenshotHeight: 1021,
-      cropApplied: true,
-      containResized: true,
-      appliedScale: 0.26,
-    };
     const result = diagnoseComparison({
       matchRate: 5,
       regionScores: [region({ structure: 0.4 })],
       preflightWarnings: [],
-      normalization,
+      normalization: normalizationReport(),
     });
     expect(result.rankedCauses.some((c) => c.code === "crop_compression")).toBe(true);
   });
 
   it("極端な圧縮(appliedScale<0.5)は matchRate が高くても likely_misconfig", () => {
-    const normalization: NormalizationReport = {
-      designNativeWidth: 1082,
-      designNativeHeight: 3931,
-      screenshotWidth: 1082,
-      screenshotHeight: 1021,
-      cropApplied: false,
-      containResized: true,
-      appliedScale: 0.26,
-    };
+    const normalization = normalizationReport({ cropApplied: false });
     const result = diagnoseComparison({
       matchRate: 79,
       regionScores: [region({ structure: 0.55 })],
@@ -101,6 +98,35 @@ describe("diagnoseComparison", () => {
     });
     expect(result.verdict).toBe("clean");
     expect(result.rankedCauses).toEqual([]);
+  });
+
+  it("crop_out_of_bounds 警告があれば containResized=false でも likely_misconfig", () => {
+    const result = diagnoseComparison({
+      matchRate: 9,
+      regionScores: [region({ structure: 0.5 })],
+      preflightWarnings: [
+        {
+          code: "crop_out_of_bounds",
+          severity: "critical",
+          message: "crop が範囲外",
+          suggestedFix: "crop を更新してください",
+        },
+      ],
+    });
+    expect(result.verdict).toBe("likely_misconfig");
+    expect(result.rankedCauses.some((c) => c.code === "crop_compression")).toBe(true);
+  });
+
+  it("crop_compression の重複は確度の高い方だけ残す", () => {
+    const result = diagnoseComparison({
+      matchRate: 5,
+      regionScores: [region({ structure: 0.4 })],
+      preflightWarnings: [{ code: "crop_stale", severity: "warning", message: "古い crop" }],
+      normalization: normalizationReport(),
+    });
+    const cropCauses = result.rankedCauses.filter((c) => c.code === "crop_compression");
+    expect(cropCauses).toHaveLength(1);
+    expect(cropCauses[0].confidence).toBe(CONFIDENCE_NORMALIZATION_FOR_TEST);
   });
 
   it("低一致率でも設定ミスの署名が無ければ real_diff", () => {

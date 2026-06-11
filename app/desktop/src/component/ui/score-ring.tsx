@@ -22,10 +22,11 @@ export function ScoreRing({ score, size = 64, stroke = 5, className }: ScoreRing
 
   return (
     <span
-      className={cn("inline-flex flex-col items-center justify-center relative", className)}
+      className={cn("relative inline-flex flex-col items-center justify-center", className)}
       style={{ width: size, height: size }}
     >
       <svg
+        aria-hidden="true"
         width={size}
         height={size}
         style={{ position: "absolute", top: 0, left: 0, transform: "rotate(-90deg)" }}

@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import type { RegionScore } from "../type.js";
-
 import { buildComparisonHeadline } from "./headline.js";
+
+import type { RegionScore } from "../type.js";
 
 const region = (overrides: Partial<RegionScore>): RegionScore => ({
   regionId: "r",

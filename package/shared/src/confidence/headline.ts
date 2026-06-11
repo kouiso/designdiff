@@ -6,6 +6,9 @@ import type { ComparisonHeadline, RegionScore } from "../type.js";
 
 const COLOR_DELTA_THRESHOLD = 3;
 const STRUCTURE_OK_THRESHOLD = 0.95;
+const PERCENT = 100;
+// 構造一致率は見やすさのため小数第2位まで丸める。
+const STRUCTURE_MATCH_DECIMAL_PLACES = 2;
 
 export function buildComparisonHeadline(
   regionScores: RegionScore[],
@@ -22,7 +25,8 @@ export function buildComparisonHeadline(
 
   const avgStructure =
     regionScores.reduce((sum, score) => sum + score.structure, 0) / regionScores.length;
-  const structureMatch = Math.round(avgStructure * 100 * 100) / 100;
+  const roundingFactor = 10 ** STRUCTURE_MATCH_DECIMAL_PLACES;
+  const structureMatch = Math.round(avgStructure * PERCENT * roundingFactor) / roundingFactor;
   const colorOnlyRegions = regionScores.filter(
     (score) => score.color >= COLOR_DELTA_THRESHOLD && score.structure >= STRUCTURE_OK_THRESHOLD,
   ).length;

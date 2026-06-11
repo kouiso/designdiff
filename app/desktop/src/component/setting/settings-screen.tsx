@@ -96,7 +96,7 @@ export function SettingsScreen() {
     }
   };
 
-  const isConnected = (oauthState?.mode === "oauth" || oauthState?.mode === "pat") || !!figmaToken;
+  const isConnected = oauthState?.mode === "oauth" || oauthState?.mode === "pat" || !!figmaToken;
 
   return (
     <div

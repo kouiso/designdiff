@@ -230,7 +230,7 @@ export default [
 
   // Verification + repo-root Node.js utility scripts
   {
-    files: ["verification/scripts/**/*.mjs", "scripts/**/*.mjs"],
+    files: ["verification/scripts/**/*.mjs", "scripts/**/*.mjs", "app/desktop/*.mjs"],
     languageOptions: {
       globals: {
         ...globals.node,

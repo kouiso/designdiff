@@ -17,6 +17,11 @@ export interface PreflightInput {
 const DEFAULT_WIDTH_TOLERANCE_PX = 2;
 const CRITICAL_WIDTH_RATIO = 0.2;
 const STALE_CROP_HEIGHT_RATIO = 0.6;
+// crop 範囲判定で許容する 1px のゆとり。リサイズ時の浮動小数点丸め誤差を吸収する。
+const CROP_BOUNDS_TOLERANCE_PX = 1;
+// 子要素がこれ以下なら、空白フレームや概観ボードを誤選択している可能性を疑う。
+const MIN_CONTENT_CHILD_COUNT = 1;
+const PERCENT = 100;
 
 export function runPreflight(input: PreflightInput): PreflightReport {
   const warnings: PreflightWarning[] = [];
@@ -38,7 +43,10 @@ export function runPreflight(input: PreflightInput): PreflightReport {
 
   if (input.cropRegion) {
     const { x, y, width, height } = input.cropRegion;
-    if (x + width > input.screenshotWidth + 1 || y + height > input.screenshotHeight + 1) {
+    if (
+      x + width > input.screenshotWidth + CROP_BOUNDS_TOLERANCE_PX ||
+      y + height > input.screenshotHeight + CROP_BOUNDS_TOLERANCE_PX
+    ) {
       warnings.push({
         code: "crop_out_of_bounds",
         severity: "critical",
@@ -51,16 +59,20 @@ export function runPreflight(input: PreflightInput): PreflightReport {
       height < input.screenshotHeight * STALE_CROP_HEIGHT_RATIO
     ) {
       const setOn = input.cropUpdatedAt ? `（設定日時: ${input.cropUpdatedAt}）` : "";
+      const stalePercent = Math.round(STALE_CROP_HEIGHT_RATIO * PERCENT);
       warnings.push({
         code: "crop_stale",
         severity: "warning",
-        message: `保存済み crop の高さ ${height}px は、現在のスクリーンショット高さ ${input.screenshotHeight}px の 60% 未満です${setOn}。短いページ用の古い crop が残っていると、比較範囲が大きく削られたり圧縮されたりします。`,
+        message: `保存済み crop の高さ ${height}px は、現在のスクリーンショット高さ ${input.screenshotHeight}px の ${stalePercent}% 未満です${setOn}。短いページ用の古い crop が残っていると、比較範囲が大きく削られたり圧縮されたりします。`,
         suggestedFix: "意図した crop か確認し、不要なら set_crop_region で更新してください。",
       });
     }
   }
 
-  if (typeof input.figmaChildCount === "number" && input.figmaChildCount <= 1) {
+  if (
+    typeof input.figmaChildCount === "number" &&
+    input.figmaChildCount <= MIN_CONTENT_CHILD_COUNT
+  ) {
     warnings.push({
       code: "blank_frame",
       severity: "warning",

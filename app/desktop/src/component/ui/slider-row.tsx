@@ -24,7 +24,10 @@ export function SliderRow({
   const range = max - min;
   const pct = range === 0 ? 0 : Math.min(100, Math.max(0, ((value - min) / range) * 100));
   return (
-    <label className={cn("flex items-center gap-3", className)} style={{ color: "var(--muted-fg)", fontSize: 12.5 }}>
+    <label
+      className={cn("flex items-center gap-3", className)}
+      style={{ color: "var(--muted-fg)", fontSize: 12.5 }}
+    >
       <span style={{ whiteSpace: "nowrap" }}>{label}</span>
       <span
         style={{
@@ -37,7 +40,14 @@ export function SliderRow({
         }}
       >
         <span
-          style={{ position: "absolute", left: 0, right: 0, height: 4, borderRadius: 99, background: "var(--border)" }}
+          style={{
+            position: "absolute",
+            left: 0,
+            right: 0,
+            height: 4,
+            borderRadius: 99,
+            background: "var(--border)",
+          }}
         />
         <span
           style={{
@@ -80,7 +90,10 @@ export function SliderRow({
           }}
         />
       </span>
-      <span className="mono" style={{ fontWeight: 700, color: "var(--fg)", width: 44, textAlign: "right" }}>
+      <span
+        className="mono"
+        style={{ fontWeight: 700, color: "var(--fg)", width: 44, textAlign: "right" }}
+      >
         {displayValue}
       </span>
     </label>

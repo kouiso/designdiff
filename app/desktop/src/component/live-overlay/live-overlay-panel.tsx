@@ -86,13 +86,23 @@ function LiveDiffStatus({ isEnabled, isRunning, matchRate, error, onToggle }: Li
       >
         {t("overlay.liveDiff")}
       </button>
-      {isRunning ? <Loader2 className="h-3.5 w-3.5 animate-spin" style={{ color: "var(--muted-fg)" }} /> : null}
+      {isRunning ? (
+        <Loader2 className="h-3.5 w-3.5 animate-spin" style={{ color: "var(--muted-fg)" }} />
+      ) : null}
       {matchRate !== null ? (
-        <span className="mono text-xs font-bold" style={{ color: getMatchColor(matchRate) }}>{matchRate}%</span>
+        <span className="mono font-bold text-xs" style={{ color: getMatchColor(matchRate) }}>
+          {matchRate}%
+        </span>
       ) : (
-        <span className="text-xs" style={{ color: "var(--muted-fg)" }}>{t("overlay.liveDiffIdle")}</span>
+        <span className="text-xs" style={{ color: "var(--muted-fg)" }}>
+          {t("overlay.liveDiffIdle")}
+        </span>
       )}
-      {error ? <span className="text-xs" style={{ color: "var(--diff)" }}>{error}</span> : null}
+      {error ? (
+        <span className="text-xs" style={{ color: "var(--diff)" }}>
+          {error}
+        </span>
+      ) : null}
     </div>
   );
 }
@@ -201,7 +211,11 @@ export function LiveOverlayPanel({ onNavigate }: LiveOverlayPanelProps) {
       ref={panelRef}
       data-overlay-panel
       className="flex shrink-0 flex-col gap-3 px-4 py-3"
-      style={{ background: "var(--surface)", borderBottom: "1px solid var(--border)", color: "var(--fg)" }}
+      style={{
+        background: "var(--surface)",
+        borderBottom: "1px solid var(--border)",
+        color: "var(--fg)",
+      }}
     >
       <div className="flex flex-wrap items-center gap-3">
         <div
@@ -251,7 +265,10 @@ export function LiveOverlayPanel({ onNavigate }: LiveOverlayPanelProps) {
             className="fd-icon-btn"
             onClick={toggleOverlay}
             aria-label={showOverlay ? t("overlay.hide") : t("overlay.show")}
-            style={{ background: showOverlay ? "var(--cobalt-soft)" : "transparent", color: showOverlay ? "var(--cobalt)" : "var(--muted-fg)" }}
+            style={{
+              background: showOverlay ? "var(--cobalt-soft)" : "transparent",
+              color: showOverlay ? "var(--cobalt)" : "var(--muted-fg)",
+            }}
           >
             {showOverlay ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
           </button>
@@ -259,7 +276,10 @@ export function LiveOverlayPanel({ onNavigate }: LiveOverlayPanelProps) {
       </div>
 
       {error && (
-        <div className="rounded-[var(--radius-sm-token)] px-3 py-2 text-xs" style={{ background: "var(--diff-soft)", color: "var(--diff)" }}>
+        <div
+          className="rounded-[var(--radius-sm-token)] px-3 py-2 text-xs"
+          style={{ background: "var(--diff-soft)", color: "var(--diff)" }}
+        >
           {error}
         </div>
       )}
@@ -300,10 +320,13 @@ export function LiveOverlayPanel({ onNavigate }: LiveOverlayPanelProps) {
             />
 
             <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
-              <div className="flex items-center gap-1 rounded-[var(--radius-sm-token)] p-1" style={{ background: "var(--surface-2)" }}>
+              <div
+                className="flex items-center gap-1 rounded-[var(--radius-sm-token)] p-1"
+                style={{ background: "var(--surface-2)" }}
+              >
                 <button
                   type="button"
-                  className="rounded-[10px] px-3 py-1.5 text-xs font-semibold"
+                  className="rounded-[10px] px-3 py-1.5 font-semibold text-xs"
                   onClick={() => setOverlayScaleMode("fit_width")}
                   style={{
                     background: overlayScaleMode === "fit_width" ? "var(--surface)" : "transparent",
@@ -314,10 +337,11 @@ export function LiveOverlayPanel({ onNavigate }: LiveOverlayPanelProps) {
                 </button>
                 <button
                   type="button"
-                  className="rounded-[10px] px-3 py-1.5 text-xs font-semibold"
+                  className="rounded-[10px] px-3 py-1.5 font-semibold text-xs"
                   onClick={() => setOverlayScaleMode("actual_size")}
                   style={{
-                    background: overlayScaleMode === "actual_size" ? "var(--surface)" : "transparent",
+                    background:
+                      overlayScaleMode === "actual_size" ? "var(--surface)" : "transparent",
                     color: overlayScaleMode === "actual_size" ? "var(--fg)" : "var(--muted-fg)",
                   }}
                 >
@@ -367,11 +391,16 @@ export function LiveOverlayPanel({ onNavigate }: LiveOverlayPanelProps) {
               <span
                 className="fd-pill"
                 style={{
-                  background: overlayViewMode === "pixel_diff" ? "var(--diff-soft)" : "var(--cobalt-soft)",
+                  background:
+                    overlayViewMode === "pixel_diff" ? "var(--diff-soft)" : "var(--cobalt-soft)",
                   color: overlayViewMode === "pixel_diff" ? "var(--diff)" : "var(--cobalt)",
                 }}
               >
-                {isPixelDiffRunning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Zap className="h-3.5 w-3.5" />}
+                {isPixelDiffRunning ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Zap className="h-3.5 w-3.5" />
+                )}
                 Live diff
               </span>
               <span className="text-xs" style={{ color: "var(--muted-fg)" }}>
@@ -381,7 +410,10 @@ export function LiveOverlayPanel({ onNavigate }: LiveOverlayPanelProps) {
                     ? `${t("compare.matchRate")}: ${pixelDiffMatchRate}%`
                     : t(`viewMode.${overlayViewMode}`)}
               </span>
-              <span className="mono text-xs font-bold" style={{ color: getMatchColor(pixelDiffMatchRate) }}>
+              <span
+                className="mono font-bold text-xs"
+                style={{ color: getMatchColor(pixelDiffMatchRate) }}
+              >
                 {pixelDiffMatchRate !== null ? `${pixelDiffMatchRate}%` : "--"}
               </span>
             </div>
@@ -391,11 +423,17 @@ export function LiveOverlayPanel({ onNavigate }: LiveOverlayPanelProps) {
             className="overflow-hidden rounded-[var(--radius-token)]"
             style={{ background: "var(--bg-2)", border: "1px solid var(--border)" }}
           >
-            <div className="flex items-center gap-2 px-3 py-2" style={{ borderBottom: "1px solid var(--border)", background: "var(--surface-2)" }}>
+            <div
+              className="flex items-center gap-2 px-3 py-2"
+              style={{ borderBottom: "1px solid var(--border)", background: "var(--surface-2)" }}
+            >
               <span className="h-2.5 w-2.5 rounded-full" style={{ background: "var(--diff)" }} />
               <span className="h-2.5 w-2.5 rounded-full" style={{ background: "var(--warn)" }} />
               <span className="h-2.5 w-2.5 rounded-full" style={{ background: "var(--match)" }} />
-              <span className="mono ml-2 min-w-0 truncate text-xs" style={{ color: "var(--muted-fg)" }}>
+              <span
+                className="mono ml-2 min-w-0 truncate text-xs"
+                style={{ color: "var(--muted-fg)" }}
+              >
                 {visibleUrl}
               </span>
             </div>
@@ -431,7 +469,14 @@ export function LiveOverlayPanel({ onNavigate }: LiveOverlayPanelProps) {
       )}
 
       {!isOpen && (
-        <div className="rounded-[var(--radius-token)] p-4 text-sm" style={{ background: "var(--bg-2)", color: "var(--muted-fg)", border: "1px solid var(--border)" }}>
+        <div
+          className="rounded-[var(--radius-token)] p-4 text-sm"
+          style={{
+            background: "var(--bg-2)",
+            color: "var(--muted-fg)",
+            border: "1px solid var(--border)",
+          }}
+        >
           {t("overlay.urlPlaceholder")}
         </div>
       )}

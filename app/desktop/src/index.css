@@ -35,24 +35,24 @@
   --cobalt-strong: oklch(0.47 0.165 256);
   --cobalt-fg: #ffffff;
   --cobalt-soft: oklch(0.54 0.165 256 / 0.12);
-  --cobalt-line: oklch(0.54 0.165 256 / 0.30);
+  --cobalt-line: oklch(0.54 0.165 256 / 0.3);
 
   --match: oklch(0.58 0.13 158);
   --match-soft: oklch(0.58 0.13 158 / 0.13);
-  --diff: oklch(0.585 0.20 24);
-  --diff-soft: oklch(0.585 0.20 24 / 0.13);
-  --warn: oklch(0.70 0.14 72);
-  --warn-soft: oklch(0.70 0.14 72 / 0.16);
+  --diff: oklch(0.585 0.2 24);
+  --diff-soft: oklch(0.585 0.2 24 / 0.13);
+  --warn: oklch(0.7 0.14 72);
+  --warn-soft: oklch(0.7 0.14 72 / 0.16);
 
   --bg: oklch(0.985 0.003 255);
   --bg-2: oklch(0.965 0.004 255);
   --surface: oklch(1 0 0);
   --surface-2: oklch(0.975 0.004 255);
   --fg: oklch(0.21 0.02 268);
-  --fg-2: oklch(0.40 0.02 268);
+  --fg-2: oklch(0.4 0.02 268);
   --muted-fg: oklch(0.55 0.018 268);
   --faint-fg: oklch(0.68 0.015 268);
-  --border: oklch(0.90 0.006 268);
+  --border: oklch(0.9 0.006 268);
   --border-strong: oklch(0.83 0.008 268);
   --shadow-color: 240 30% 30%;
   --radius-token: 14px;
@@ -83,18 +83,18 @@
 
 /* ─── Dark theme ─── */
 .dark {
-  --cobalt: oklch(0.70 0.145 256);
+  --cobalt: oklch(0.7 0.145 256);
   --cobalt-strong: oklch(0.63 0.145 256);
   --cobalt-fg: oklch(0.16 0.02 268);
-  --cobalt-soft: oklch(0.70 0.145 256 / 0.16);
-  --cobalt-line: oklch(0.70 0.145 256 / 0.34);
+  --cobalt-soft: oklch(0.7 0.145 256 / 0.16);
+  --cobalt-line: oklch(0.7 0.145 256 / 0.34);
 
   --match: oklch(0.74 0.15 158);
   --match-soft: oklch(0.74 0.15 158 / 0.16);
-  --diff: oklch(0.70 0.19 24);
-  --diff-soft: oklch(0.70 0.19 24 / 0.18);
-  --warn: oklch(0.80 0.13 78);
-  --warn-soft: oklch(0.80 0.13 78 / 0.18);
+  --diff: oklch(0.7 0.19 24);
+  --diff-soft: oklch(0.7 0.19 24 / 0.18);
+  --warn: oklch(0.8 0.13 78);
+  --warn-soft: oklch(0.8 0.13 78 / 0.18);
 
   --bg: oklch(0.165 0.012 268);
   --bg-2: oklch(0.135 0.012 268);
@@ -104,8 +104,8 @@
   --fg-2: oklch(0.82 0.008 268);
   --muted-fg: oklch(0.66 0.012 268);
   --faint-fg: oklch(0.52 0.012 268);
-  --border: oklch(0.30 0.013 268);
-  --border-strong: oklch(0.40 0.015 268);
+  --border: oklch(0.3 0.013 268);
+  --border-strong: oklch(0.4 0.015 268);
   --shadow-color: 240 60% 3%;
 }
 
@@ -116,8 +116,7 @@ html {
 }
 
 body {
-  font-family:
-    "Hanken Grotesk", "Noto Sans JP", system-ui, sans-serif;
+  font-family: "Hanken Grotesk", "Noto Sans JP", system-ui, sans-serif;
   margin: 0;
   font-weight: 400;
   line-height: 1.6;
@@ -134,7 +133,10 @@ body {
 }
 
 /* Custom scrollbar */
-.scroll::-webkit-scrollbar { width: 10px; height: 10px; }
+.scroll::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
 .scroll::-webkit-scrollbar-thumb {
   background: var(--border-strong);
   border-radius: 99px;
@@ -145,7 +147,9 @@ body {
   background: var(--faint-fg);
   background-clip: content-box;
 }
-.scroll::-webkit-scrollbar-track { background: transparent; }
+.scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
 
 /* Generic button */
 .fd-btn {
@@ -164,11 +168,25 @@ body {
   cursor: pointer;
   font-family: inherit;
 }
-.fd-btn:hover { border-color: var(--faint-fg); color: var(--fg); }
-.fd-btn.primary { background: var(--cobalt); color: var(--cobalt-fg); border-color: transparent; }
-.fd-btn.primary:hover { background: var(--cobalt-strong); }
-.fd-btn.ghost { background: transparent; border-color: transparent; }
-.fd-btn.ghost:hover { background: var(--surface-2); }
+.fd-btn:hover {
+  border-color: var(--faint-fg);
+  color: var(--fg);
+}
+.fd-btn.primary {
+  background: var(--cobalt);
+  color: var(--cobalt-fg);
+  border-color: transparent;
+}
+.fd-btn.primary:hover {
+  background: var(--cobalt-strong);
+}
+.fd-btn.ghost {
+  background: transparent;
+  border-color: transparent;
+}
+.fd-btn.ghost:hover {
+  background: var(--surface-2);
+}
 
 /* Pill & chip */
 .fd-pill {
@@ -209,13 +227,26 @@ body {
   border: none;
   font-family: inherit;
 }
-.fd-icon-btn:hover { background: var(--surface-2); color: var(--fg); }
+.fd-icon-btn:hover {
+  background: var(--surface-2);
+  color: var(--fg);
+}
 
 @keyframes fd-pop {
-  from { opacity: 0; transform: scale(0.97); }
-  to { opacity: 1; transform: none; }
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 @keyframes fd-fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }

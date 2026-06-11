@@ -22,6 +22,11 @@ const WIDTH_MATCH_TOLERANCE_PX = 2;
 const WIDE_BOARD_RATIO = 3;
 // これより小さい面積は実ページとしては小さすぎる。
 const TINY_AREA = 200 * 200;
+// スコアリングの重み。撮影幅一致を支配的にし、形状ヒントで微調整する意図でこの大小関係にしている。
+const WIDTH_MATCH_SCORE_BONUS = 1000;
+const WIDE_BOARD_PENALTY = 100;
+const TALL_PAGE_BONUS = 50;
+const TINY_AREA_PENALTY = 50;
 
 interface ScoredFrame {
   frame: Frame;
@@ -39,21 +44,21 @@ function scoreFrame(frame: Frame, targetWidth?: number): ScoredFrame {
     targetWidth > 0 &&
     Math.abs(frame.width - targetWidth) <= WIDTH_MATCH_TOLERANCE_PX;
   if (matchesWidth) {
-    score += 1000;
+    score += WIDTH_MATCH_SCORE_BONUS;
     reasons.push(`幅${targetWidth}px一致`);
   }
 
   const ratio = frame.height > 0 ? frame.width / frame.height : Number.POSITIVE_INFINITY;
   if (ratio > WIDE_BOARD_RATIO) {
-    score -= 100;
+    score -= WIDE_BOARD_PENALTY;
     reasons.push("横長: 概観ボードの可能性");
   } else if (frame.height >= frame.width) {
-    score += 50;
+    score += TALL_PAGE_BONUS;
     reasons.push("縦長ページ");
   }
 
   if (frame.width * frame.height < TINY_AREA) {
-    score -= 50;
+    score -= TINY_AREA_PENALTY;
     reasons.push("小サイズ");
   }
 

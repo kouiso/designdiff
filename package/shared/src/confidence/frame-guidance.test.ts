@@ -1,8 +1,12 @@
 import { describe, expect, it } from "vitest";
 
+import { formatFrameCandidates, rankFrameCandidates } from "./frame-guidance.js";
+
 import type { Frame } from "../type.js";
 
-import { formatFrameCandidates, rankFrameCandidates } from "./frame-guidance.js";
+// 実装の撮影幅。これに一致するフレームが正解候補という前提を表す。
+const TARGET_WIDTH = 1082;
+const TALL_PAGE_HEIGHT = 3931;
 
 const frame = (overrides: Partial<Frame> & Pick<Frame, "id" | "name">): Frame => ({
   width: 1080,
@@ -15,14 +19,14 @@ describe("rankFrameCandidates", () => {
     const ranked = rankFrameCandidates(
       [
         frame({ id: "1:1", name: "Wide Board", width: 5000, height: 1200 }),
-        frame({ id: "1:2", name: "Home", width: 1082, height: 3931 }),
+        frame({ id: "1:2", name: "Home", width: TARGET_WIDTH, height: TALL_PAGE_HEIGHT }),
         frame({ id: "1:3", name: "Misc", width: 1440, height: 2000 }),
       ],
-      1082,
+      TARGET_WIDTH,
     );
     expect(ranked[0].id).toBe("1:2");
     expect(ranked[0].matchesWidth).toBe(true);
-    expect(ranked[0].reason).toContain("幅1082px一致");
+    expect(ranked[0].reason).toContain(`幅${TARGET_WIDTH}px一致`);
   });
 
   it("横長フレームは概観ボードとして降格させる", () => {
@@ -55,11 +59,14 @@ describe("rankFrameCandidates", () => {
 describe("formatFrameCandidates", () => {
   it("先頭候補に ★ を付けて撮影幅をヘッダに含める", () => {
     const text = formatFrameCandidates(
-      rankFrameCandidates([frame({ id: "1:2", name: "Home", width: 1082, height: 3931 })], 1082),
-      1082,
+      rankFrameCandidates(
+        [frame({ id: "1:2", name: "Home", width: TARGET_WIDTH, height: TALL_PAGE_HEIGHT })],
+        TARGET_WIDTH,
+      ),
+      TARGET_WIDTH,
     );
-    expect(text).toContain("撮影幅 1082px");
-    expect(text).toContain("★ Home (1:2, 1082x3931)");
+    expect(text).toContain(`撮影幅 ${TARGET_WIDTH}px`);
+    expect(text).toContain(`★ Home (1:2, ${TARGET_WIDTH}x${TALL_PAGE_HEIGHT})`);
   });
 
   it("フレームが無いときは明示メッセージを返す", () => {

@@ -131,6 +131,7 @@ export function Header({ currentPage, onNavigate }: HeaderProps) {
         >
           {theme === "dark" ? (
             <svg
+              aria-hidden="true"
               width="16"
               height="16"
               viewBox="0 0 24 24"
@@ -145,6 +146,7 @@ export function Header({ currentPage, onNavigate }: HeaderProps) {
             </svg>
           ) : (
             <svg
+              aria-hidden="true"
               width="16"
               height="16"
               viewBox="0 0 24 24"
@@ -165,6 +167,7 @@ export function Header({ currentPage, onNavigate }: HeaderProps) {
           style={{ padding: "7px 14px", fontSize: 13 }}
         >
           <svg
+            aria-hidden="true"
             width="14"
             height="14"
             viewBox="0 0 24 24"
