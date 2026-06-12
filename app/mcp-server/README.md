@@ -55,16 +55,16 @@ FIGMA_TOKEN = "figd_your_token_here"
 | Tool | Description |
 |---|---|
 | **`compare_design`** | Primary tool. Pixel diff between Figma design and implementation screenshot. Always start here. |
-| `inspect_node` | Get CSS/layout details for a specific Figma node |
+| `inspect_node` | Get CSS/layout details for a Figma node (`figma_url` + optional `node_id`/`node_ids`) |
 | `verify_fix` | Re-run comparison after a CSS fix to confirm improvement |
 | `list_figma_frames` | List frames in a Figma file with dimensions |
-| `get_figma_node` | Fetch raw Figma node data |
+| `list_projects` | List saved projects |
+| `get_design_tokens` | Extract design tokens (colors, typography) from a Figma file |
+| `generate_diff_report` | Generate a structured diff report from a comparison result |
 | `set_crop_region` | Save a crop region to focus comparison on a sub-area |
 | `get_crop_region` | Retrieve saved crop region |
-| `delete_crop_region` | Remove a saved crop region |
 | `set_ignore_regions` | Save regions to exclude from diff (e.g. maps, ads) |
 | `get_ignore_regions` | Retrieve saved ignore regions |
-| `delete_ignore_regions` | Remove saved ignore regions |
 
 ## Minimal workflow
 
@@ -72,7 +72,7 @@ FIGMA_TOKEN = "figd_your_token_here"
 1. compare_design(design_source="https://figma.com/design/FILE?node-id=1-23", screenshot="/path/to/impl.png")
    → status: "PASS" (done) or "FAIL" (continue)
 
-2. inspect_node(file_key="FILE", node_id="1:23")
+2. inspect_node(figma_url="https://figma.com/design/FILE?node-id=1-23", node_id="1:23")
    → CSS suggestions for diff regions
 
 3. Fix the CSS in your implementation
