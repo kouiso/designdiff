@@ -31,6 +31,9 @@ vi.mock("../util/cache", () => ({
 
 vi.mock("../util/safe-storage", () => ({
   getToken: mocks.getToken,
+  getOAuthTokens: vi.fn().mockReturnValue(null),
+  getOAuthClientCredentials: vi.fn().mockReturnValue(null),
+  deleteOAuthTokens: vi.fn(),
 }));
 
 vi.mock("../util/transform-node", () => ({

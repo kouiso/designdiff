@@ -130,21 +130,61 @@ export function getMcpCacheDir(): string {
   return path.join(homedir(), ".figdiff", "cache");
 }
 
+const PAT_PREFIX = "figd_";
+const PRINTABLE_ASCII_RE = /^[\x21-\x7E]+$/;
+
+type FigmaCredentialStatus =
+  | { envName: "FIGMA_TOKEN"; configured: false; valid: false; authMode: "pat"; issue: "missing" }
+  | { envName: "FIGMA_TOKEN"; configured: true; valid: true; authMode: "pat"; issue: null }
+  | {
+      envName: "FIGMA_TOKEN";
+      configured: true;
+      valid: false;
+      authMode: "pat";
+      issue: "invalid";
+      reason: "no-pat-prefix" | "invalid-chars";
+    };
+
+export function getFigmaCredentialStatus(
+  env: Record<string, string | undefined> = process.env,
+): FigmaCredentialStatus {
+  const token = env["FIGMA_TOKEN"];
+  if (!token) {
+    return { envName: "FIGMA_TOKEN", configured: false, valid: false, authMode: "pat", issue: "missing" };
+  }
+  if (!token.startsWith(PAT_PREFIX)) {
+    return { envName: "FIGMA_TOKEN", configured: true, valid: false, authMode: "pat", issue: "invalid", reason: "no-pat-prefix" };
+  }
+  if (!PRINTABLE_ASCII_RE.test(token)) {
+    return { envName: "FIGMA_TOKEN", configured: true, valid: false, authMode: "pat", issue: "invalid", reason: "invalid-chars" };
+  }
+  return { envName: "FIGMA_TOKEN", configured: true, valid: true, authMode: "pat", issue: null };
+}
+
+export function formatFigmaCredentialError(status: FigmaCredentialStatus): string {
+  if (status.issue === "missing") {
+    return "FIGMA_TOKEN is not set. Configure FIGMA_TOKEN with a Figma Personal Access Token.";
+  }
+  if (status.issue === "invalid") {
+    if (status.reason === "no-pat-prefix") {
+      return "FIGMA_TOKEN is invalid. Personal Access Tokens only — value must start with figd_.";
+    }
+    return "FIGMA_TOKEN is invalid. Personal Access Token must contain only printable ASCII characters.";
+  }
+  return "";
+}
+
 let figmaServiceInstance: FigmaService | null = null;
 
-/**
- * Helper: Get or create FigmaService singleton from environment
- * Token変更時はプロセス再起動が必要
- */
 export function createFigmaService(): FigmaService {
   if (figmaServiceInstance) return figmaServiceInstance;
 
-  const token = process.env.FIGMA_TOKEN;
-  if (!token) {
-    throw new Error("FIGMA_TOKEN environment variable is not set");
+  const status = getFigmaCredentialStatus();
+  if (!status.valid) {
+    throw new Error(formatFigmaCredentialError(status));
   }
 
   const cacheDir = getMcpCacheDir();
-  figmaServiceInstance = new FigmaService(token, cacheDir);
+  figmaServiceInstance = new FigmaService(process.env.FIGMA_TOKEN ?? "", cacheDir);
   return figmaServiceInstance;
 }

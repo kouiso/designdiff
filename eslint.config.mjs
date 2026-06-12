@@ -246,4 +246,28 @@ export default [
       "@typescript-eslint/no-empty-function": "off",
     },
   },
+
+  // App-level smoke/contract scripts (Node.js + browser globals for page.evaluate contexts)
+  {
+    files: [
+      "app/chrome-extension/scripts/**/*.mjs",
+      "app/desktop/scripts/**/*.mjs",
+      "app/mcp-server/scripts/**/*.mjs",
+    ],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+        ...globals.browser,
+      },
+      ecmaVersion: "latest",
+      sourceType: "module",
+    },
+    rules: {
+      "no-console": "off",
+      "no-unused-expressions": "off",
+      "@typescript-eslint/no-unused-expressions": "off",
+      "@typescript-eslint/no-unused-vars": "off",
+      "@typescript-eslint/no-empty-function": "off",
+    },
+  },
 ];
