@@ -113,7 +113,7 @@ Task(prompt: `
 - Source code contents (Read, Grep, Glob)
 - Directory structure (Bash ls, tree, etc.)
 - Config files (package.json, tsconfig.json, electron.vite.config.ts, electron-builder.json5, etc.)
-- Documentation (README, doc/, document.md, etc.)
+- Documentation (README, docs/, document.md, etc.)
 
 #### Git History
 - Commit history (`git log`, `git show`)
@@ -313,7 +313,7 @@ Copy the report summary to MEMORY.md. MEMORY.md auto-loads at session start, so 
 ### Plan File Persistence
 
 - Record plan file path and purpose in MEMORY.md immediately after creation
-- Archive completed plans to `doc/plans/`
+- Archive completed plans to `docs/plans/`
 
 ### Session Resilience Principles
 
