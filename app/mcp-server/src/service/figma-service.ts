@@ -52,6 +52,22 @@ class FileSystemCacheStrategy implements FigmaCacheStrategy {
   }
 }
 
+const MIN_SCALE = 0.5;
+const MAX_SCALE = 4;
+
+/**
+ * Compute the optimal Figma image scale to match a target pixel width without
+ * downsampling. Clamped to [MIN_SCALE, MAX_SCALE].
+ */
+export function computeOptimalScale(
+  targetWidth: number,
+  logicalWidth: number,
+  minScale = MIN_SCALE,
+  maxScale = MAX_SCALE,
+): number {
+  return Math.min(maxScale, Math.max(minScale, targetWidth / logicalWidth));
+}
+
 /**
  * Figma service for MCP server
  */
@@ -73,9 +89,37 @@ export class FigmaService {
   }
 
   /**
-   * Get frame image as base64
+   * Get frame image as base64.
+   * When logicalWidth is provided, computes the optimal Figma scale to match
+   * targetWidth exactly, avoiding a downsample step that would introduce blur.
    */
-  async getFrameImage(fileKey: string, nodeId: string, targetWidth?: number): Promise<string> {
+  async getFrameImage(
+    fileKey: string,
+    nodeId: string,
+    targetWidth?: number,
+    logicalWidth?: number,
+  ): Promise<string> {
+    // Optimal-scale path: fetch at the exact resolution needed, no downsample blur.
+    if (targetWidth && logicalWidth && logicalWidth > 0) {
+      const optimalScale = computeOptimalScale(targetWidth, logicalWidth);
+      let base64 = await this.client.downloadImageAsBase64(fileKey, nodeId, optimalScale);
+      const actualWidth = await getImageWidth(base64);
+      if (actualWidth > 0 && actualWidth < targetWidth * 0.8) {
+        const fallbackScale = Math.min(
+          MAX_SCALE,
+          Math.ceil(targetWidth / (actualWidth / optimalScale)),
+        );
+        if (fallbackScale > optimalScale) {
+          console.error(
+            `[figma-service] Image smaller than expected (${actualWidth}px vs target ${targetWidth}px), retrying with scale=${fallbackScale}`,
+          );
+          base64 = await this.client.downloadImageAsBase64(fileKey, nodeId, fallbackScale);
+        }
+      }
+      return base64;
+    }
+
+    // Legacy path: logicalWidth unknown → scale=2 baseline, escalate if too small.
     const initialScale = 2;
     let base64 = await this.client.downloadImageAsBase64(fileKey, nodeId, initialScale);
 

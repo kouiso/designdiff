@@ -298,12 +298,6 @@ async function resolveDesignAssets(
       frameName,
       targetWidth,
     );
-    const designBase64 = await figmaService.getFrameImage(
-      parsedDesignSource.fileKey,
-      resolvedNodeId,
-      targetWidth,
-    );
-
     let figmaRootNode: FigmaNode | undefined;
     try {
       figmaRootNode = await figmaService.getNodeDetails(parsedDesignSource.fileKey, resolvedNodeId);
@@ -313,6 +307,16 @@ async function resolveDesignAssets(
         nodeError instanceof Error ? nodeError.message : nodeError,
       );
     }
+
+    // Use the node's logical width to compute the optimal Figma image scale,
+    // preventing a downsample step that would blur the design image.
+    const logicalWidth = figmaRootNode?.absoluteBoundingBox?.width;
+    const designBase64 = await figmaService.getFrameImage(
+      parsedDesignSource.fileKey,
+      resolvedNodeId,
+      targetWidth,
+      logicalWidth,
+    );
 
     return { designBase64, figmaRootNode, resolvedNodeId };
   }

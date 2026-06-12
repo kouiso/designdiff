@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 
 import {
+  computeOptimalScale,
   createFigmaService,
   formatFigmaCredentialError,
   getFigmaCredentialStatus,
@@ -90,5 +91,32 @@ describe("Figma credential preflight", () => {
 
     expect(message).toContain("FIGMA_TOKEN is invalid");
     expect(message).not.toContain(secretValue);
+  });
+});
+
+describe("computeOptimalScale", () => {
+  it("returns 1 when targetWidth equals logicalWidth (no downsample needed)", () => {
+    expect(computeOptimalScale(343, 343)).toBe(1);
+  });
+
+  it("returns 2 for 2x retina screenshot vs logical size", () => {
+    expect(computeOptimalScale(686, 343)).toBe(2);
+  });
+
+  it("clamps to MIN_SCALE when ratio falls below minimum", () => {
+    expect(computeOptimalScale(50, 1000)).toBe(0.5);
+  });
+
+  it("clamps to MAX_SCALE when ratio exceeds maximum", () => {
+    expect(computeOptimalScale(5000, 100)).toBe(4);
+  });
+
+  it("handles non-integer ratio", () => {
+    expect(computeOptimalScale(500, 400)).toBeCloseTo(1.25, 5);
+  });
+
+  it("respects custom min/max bounds", () => {
+    expect(computeOptimalScale(100, 1000, 0.2, 3)).toBe(0.2);
+    expect(computeOptimalScale(9000, 100, 0.5, 3)).toBe(3);
   });
 });
