@@ -1,0 +1,94 @@
+import { afterEach, describe, expect, it } from "vitest";
+
+import {
+  createFigmaService,
+  formatFigmaCredentialError,
+  getFigmaCredentialStatus,
+} from "./figma-service.js";
+
+const originalFigmaToken = process.env.FIGMA_TOKEN;
+
+afterEach(() => {
+  if (originalFigmaToken === undefined) {
+    delete process.env.FIGMA_TOKEN;
+  } else {
+    process.env.FIGMA_TOKEN = originalFigmaToken;
+  }
+});
+
+describe("Figma credential preflight", () => {
+  it("reports missing FIGMA_TOKEN without exposing a token value", () => {
+    const status = getFigmaCredentialStatus({});
+    const message = formatFigmaCredentialError(status);
+
+    expect(status).toEqual({
+      envName: "FIGMA_TOKEN",
+      configured: false,
+      valid: false,
+      authMode: "pat",
+      issue: "missing",
+    });
+    expect(message).toContain("FIGMA_TOKEN is not set");
+    expect(message).not.toContain("undefined");
+  });
+
+  it("rejects non-PAT credential shapes without echoing the configured value", () => {
+    const secretValue = "oauth_access_token_value_that_must_not_be_logged";
+    const status = getFigmaCredentialStatus({ FIGMA_TOKEN: secretValue });
+    const message = formatFigmaCredentialError(status);
+
+    expect(status).toMatchObject({
+      envName: "FIGMA_TOKEN",
+      configured: true,
+      valid: false,
+      authMode: "pat",
+      issue: "invalid",
+    });
+    expect(message).toContain("Personal Access Tokens only");
+    expect(message).not.toContain(secretValue);
+  });
+
+  it("rejects PAT-shaped values with embedded whitespace without echoing them", () => {
+    const secretValue = "figd_validprefix\nheader_injection_12345";
+    const status = getFigmaCredentialStatus({ FIGMA_TOKEN: secretValue });
+    const message = formatFigmaCredentialError(status);
+
+    expect(status).toMatchObject({
+      envName: "FIGMA_TOKEN",
+      configured: true,
+      valid: false,
+      authMode: "pat",
+      issue: "invalid",
+    });
+    expect(message).toContain("FIGMA_TOKEN is invalid");
+    expect(message).not.toContain(secretValue);
+    expect(message).not.toContain("header_injection_12345");
+  });
+
+  it("accepts a syntactically valid Figma PAT shape", () => {
+    const status = getFigmaCredentialStatus({ FIGMA_TOKEN: "figd_1234567890abcdef" });
+
+    expect(status).toEqual({
+      envName: "FIGMA_TOKEN",
+      configured: true,
+      valid: true,
+      authMode: "pat",
+      issue: null,
+    });
+  });
+
+  it("fails createFigmaService preflight before network work and without leaking secrets", () => {
+    const secretValue = "bad_secret_value_that_must_not_be_logged";
+    process.env.FIGMA_TOKEN = secretValue;
+
+    let message = "";
+    try {
+      createFigmaService();
+    } catch (error) {
+      message = error instanceof Error ? error.message : String(error);
+    }
+
+    expect(message).toContain("FIGMA_TOKEN is invalid");
+    expect(message).not.toContain(secretValue);
+  });
+});

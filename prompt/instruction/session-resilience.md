@@ -147,7 +147,7 @@ planファイルをプロジェクトルートに作成した後、セッショ�
 
 - planファイルを作成したら、**MEMORY.mdにファイルパスと目的を即座に記録**
 - planファイル名に日付を含める（例: `plan-2026-02-14-feature-xxx.md`）
-- 完了したplanは `doc/plans/` に移動（アーカイブ）
+- 完了したplanは `docs/plans/` に移動（アーカイブ）
 
 ```markdown
 # MEMORY.mdに書く内容

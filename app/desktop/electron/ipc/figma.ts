@@ -7,6 +7,14 @@ import { NodeFsCacheStrategy } from "../util/cache";
 import { deleteOAuthTokens, getOAuthTokens } from "../util/safe-storage";
 import { transformNode } from "../util/transform-node";
 
+const FIGMA_IPC_FALLBACK = "Failed to complete Figma request.";
+const PAT_LEAK_PATTERN = /figd_/;
+
+export const formatFigmaIpcError = (error: unknown): string => {
+  const message = error instanceof Error ? error.message : String(error);
+  return PAT_LEAK_PATTERN.test(message) ? FIGMA_IPC_FALLBACK : message;
+};
+
 let cacheStrategy: NodeFsCacheStrategy | null = null;
 
 const getCache = (): NodeFsCacheStrategy => {
@@ -65,39 +73,59 @@ const withOAuthRetry = async <T>(fn: (token: string) => Promise<T>): Promise<T> 
 
 export const registerFigmaHandlers = (): void => {
   ipcMain.handle("figma:get-frames", async (_event, fileKey: string) => {
-    return withOAuthRetry(async (token) => {
-      const client = createFigmaClient(token);
-      const file = await client.getFile(fileKey, 3);
-      return extractFrames(file);
-    });
+    try {
+      return await withOAuthRetry(async (token) => {
+        const client = createFigmaClient(token);
+        const file = await client.getFile(fileKey, 3);
+        return extractFrames(file);
+      });
+    } catch (e) {
+      console.error("[figma:get-frames] failed.");
+      throw new Error(formatFigmaIpcError(e));
+    }
   });
 
   ipcMain.handle(
     "figma:get-frame-image",
     async (_event, fileKey: string, nodeId: string, scale = 2) => {
-      return withOAuthRetry((token) => {
-        const client = createFigmaClient(token);
-        return client.downloadImageAsBase64(fileKey, nodeId, scale);
-      });
+      try {
+        return await withOAuthRetry((token) => {
+          const client = createFigmaClient(token);
+          return client.downloadImageAsBase64(fileKey, nodeId, scale);
+        });
+      } catch (e) {
+        console.error("[figma:get-frame-image] failed.");
+        throw new Error(formatFigmaIpcError(e));
+      }
     },
   );
 
   ipcMain.handle("figma:get-page-frames", async (_event, fileKey: string, pageNodeId: string) => {
-    return withOAuthRetry(async (token) => {
-      const client = createFigmaClient(token);
-      const pageNode = await client.getNode(fileKey, pageNodeId);
-      return extractPageFrames(pageNode);
-    });
+    try {
+      return await withOAuthRetry(async (token) => {
+        const client = createFigmaClient(token);
+        const pageNode = await client.getNode(fileKey, pageNodeId);
+        return extractPageFrames(pageNode);
+      });
+    } catch (e) {
+      console.error("[figma:get-page-frames] failed.");
+      throw new Error(formatFigmaIpcError(e));
+    }
   });
 
   ipcMain.handle(
     "figma:get-node-detail",
     async (_event, fileKey: string, nodeId: string, depth = 3) => {
-      return withOAuthRetry(async (token) => {
-        const client = createFigmaClient(token);
-        const node = await client.getNode(fileKey, nodeId, depth);
-        return transformNode(node);
-      });
+      try {
+        return await withOAuthRetry(async (token) => {
+          const client = createFigmaClient(token);
+          const node = await client.getNode(fileKey, nodeId, depth);
+          return transformNode(node);
+        });
+      } catch (e) {
+        console.error("[figma:get-node-detail] failed.");
+        throw new Error(formatFigmaIpcError(e));
+      }
     },
   );
 };

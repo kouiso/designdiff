@@ -64,3 +64,8 @@ verification/logs/
 
 # Evidence build/lint/test logs (not source-of-truth, regeneratable)
 docs/evidence/*.log
+
+# Local runtime noise
+error.log
+.codex
+.claude/scheduled_tasks.lock

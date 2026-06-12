@@ -46,6 +46,7 @@ export interface FigmaAdapter {
 export interface TokenAdapter {
   save(token: string): Promise<void>;
   get(): Promise<string | null>;
+  has(): Promise<boolean>;
   delete(): Promise<void>;
 }
 
