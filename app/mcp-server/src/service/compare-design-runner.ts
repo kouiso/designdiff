@@ -308,8 +308,7 @@ async function resolveDesignAssets(
       );
     }
 
-    // Use the node's logical width to compute the optimal Figma image scale,
-    // preventing a downsample step that would blur the design image.
+    // ダウンサンプリングによる補間ボケとそれによる差分誤検知を防ぐため。
     const logicalWidth = figmaRootNode?.absoluteBoundingBox?.width;
     const designBase64 = await figmaService.getFrameImage(
       parsedDesignSource.fileKey,

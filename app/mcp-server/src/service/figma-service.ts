@@ -56,8 +56,7 @@ const MIN_SCALE = 0.5;
 const MAX_SCALE = 4;
 
 /**
- * Compute the optimal Figma image scale to match a target pixel width without
- * downsampling. Clamped to [MIN_SCALE, MAX_SCALE].
+ * ダウンサンプリングを回避し補間ボケを防ぐため、スクリーンショット幅に合致する最適スケールを計算します。
  */
 export function computeOptimalScale(
   targetWidth: number,
@@ -89,9 +88,8 @@ export class FigmaService {
   }
 
   /**
-   * Get frame image as base64.
-   * When logicalWidth is provided, computes the optimal Figma scale to match
-   * targetWidth exactly, avoiding a downsample step that would introduce blur.
+   * フレーム画像をBase64として取得します。
+   * ダウンサンプリングによる補間ボケを防ぐため、logicalWidthが指定された場合は最適なスケールを計算して取得します。
    */
   async getFrameImage(
     fileKey: string,
@@ -99,7 +97,7 @@ export class FigmaService {
     targetWidth?: number,
     logicalWidth?: number,
   ): Promise<string> {
-    // Optimal-scale path: fetch at the exact resolution needed, no downsample blur.
+    // ダウンサンプリングによる補間ボケを防ぎ、要求された解像度で直接取得するため。
     if (targetWidth && logicalWidth && logicalWidth > 0) {
       const optimalScale = computeOptimalScale(targetWidth, logicalWidth);
       let base64 = await this.client.downloadImageAsBase64(fileKey, nodeId, optimalScale);
@@ -119,7 +117,7 @@ export class FigmaService {
       return base64;
     }
 
-    // Legacy path: logicalWidth unknown → scale=2 baseline, escalate if too small.
+    // 論理幅が不明な場合に、デフォルトのスケールで取得した後に必要に応じてリトライするため。
     const initialScale = 2;
     let base64 = await this.client.downloadImageAsBase64(fileKey, nodeId, initialScale);
 
