@@ -102,11 +102,17 @@ const webFigmaAdapter: FigmaAdapter = {
   },
 };
 
+const PRINTABLE_ASCII_RE = /^[\x21-\x7E]+$/;
+
+const isValidStoredToken = (value: string): boolean =>
+  FigmaTokenSchema.safeParse(value).success && PRINTABLE_ASCII_RE.test(value);
+
 const webTokenAdapter: TokenAdapter = {
   save: async (token) => {
     const trimmed = token.trim();
     try {
       const validated = FigmaTokenSchema.parse(trimmed);
+      if (!PRINTABLE_ASCII_RE.test(validated)) throw new Error("non-printable");
       localStorage.setItem(TOKEN_STORAGE_KEY, validated);
     } catch {
       throw new Error(
@@ -116,6 +122,15 @@ const webTokenAdapter: TokenAdapter = {
   },
   get: async () => {
     return getTokenFromStorage();
+  },
+  has: async () => {
+    const stored = getTokenFromStorage();
+    if (!stored) return false;
+    if (!isValidStoredToken(stored)) {
+      localStorage.removeItem(TOKEN_STORAGE_KEY);
+      return false;
+    }
+    return true;
   },
   delete: async () => {
     localStorage.removeItem(TOKEN_STORAGE_KEY);

@@ -40,6 +40,10 @@ const electronTokenAdapter: TokenAdapter = {
   get: async () => {
     return window.electronAPI.getFigmaToken();
   },
+  has: async () => {
+    const token = await window.electronAPI.getFigmaToken();
+    return token !== null;
+  },
   delete: async () => {
     return window.electronAPI.deleteFigmaToken();
   },
