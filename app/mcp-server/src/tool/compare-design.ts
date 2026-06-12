@@ -86,17 +86,20 @@ export function buildSummaryText(result: CompareDesignResult): string {
   }
 
   if (result.normalization) {
-    const { designNativeWidth, designNativeHeight, screenshotWidth, screenshotHeight, appliedScale } =
-      result.normalization;
+    const {
+      designNativeWidth,
+      designNativeHeight,
+      screenshotWidth,
+      screenshotHeight,
+      appliedScale,
+    } = result.normalization;
     lines.push("");
     lines.push(
       `画像サイズ: design ${designNativeWidth}×${designNativeHeight} / screenshot ${screenshotWidth}×${screenshotHeight} / scale ${appliedScale.toFixed(2)}`,
     );
     const ratio = screenshotWidth > 0 ? designNativeWidth / screenshotWidth : 1;
     if (ratio < 0.9 || ratio > 1.1) {
-      lines.push(
-        `  解像度差 約${ratio.toFixed(2)}x を正規化（軽微なボケが diff に乗る可能性）`,
-      );
+      lines.push(`  解像度差 約${ratio.toFixed(2)}x を正規化（軽微なボケが diff に乗る可能性）`);
     }
   }
 
