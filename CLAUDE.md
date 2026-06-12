@@ -19,13 +19,13 @@ FigDiff is a Diff-driven development tool that compares Figma designs with imple
 
 **Stack:**
 - Frontend: React 19 + TypeScript + Vite + Tailwind CSS 4 + shadcn/ui
-- Backend: Rust + Tauri v2
+- Desktop: Electron 35 + electron-vite 3
 - State: Zustand 5
 - Shared: `@figdiff/shared` (types + URL parser + Zod schemas)
 - MCP Server: `@figdiff/mcp-server` (Phase 4)
 - Linter: Biome (format + basic lint) + ESLint v9 flat config (type-aware + import order)
-- Test: Vitest + @testing-library/react + Rust `#[cfg(test)]`
-- Validation: Zod v4.3.6 (runtime type validation)
+- Test: Vitest + @testing-library/react
+- Validation: Zod v4.4.3 (runtime type validation)
 - Node.js: 25.6.1 (managed by mise)
 
 ## Monorepo Structure
@@ -33,9 +33,11 @@ FigDiff is a Diff-driven development tool that compares Figma designs with imple
 ```
 designdiff/
 ├── package/shared/        # @figdiff/shared — types, URL parser
-├── app/desktop/           # @figdiff/desktop — Tauri v2 desktop app
-│   ├── src/               # React frontend
-│   └── src-tauri/         # Rust backend
+├── app/desktop/           # @figdiff/desktop — Electron desktop app
+│   ├── src/               # React renderer
+│   └── electron/          # Electron main + IPC
+├── app/chrome-extension/  # @figdiff/chrome-extension
+├── app/figma-plugin/       # @figdiff/figma-plugin
 ├── app/mcp-server/        # @figdiff/mcp-server — MCP tools (Phase 4)
 └── prompt/                # AI prompt system
     ├── instruction/       # Core rules
@@ -51,12 +53,11 @@ mise install             # Install Node.js 25.6.1 via mise
 mise trust               # Trust .mise.toml (required once)
 
 # Development
-pnpm dev                 # Start Tauri dev (desktop + Vite HMR)
+pnpm dev                 # Start Electron + Vite HMR dev server
 pnpm build               # Build all packages
 
 # Testing  
 pnpm test                # Run all Vitest tests
-pnpm test:rust           # Run cargo test
 
 # Code Quality
 pnpm typecheck           # TypeScript type check
@@ -71,7 +72,7 @@ pnpm format              # Biome format --write
 
 **All folders/files: English lowercase singular kebab-case.**
 
-Exceptions: tool conventions (Cargo.toml, package.json, App.tsx, main.rs, etc.)
+Exceptions: tool conventions (package.json, App.tsx, main.ts, etc.)
 
 ```
 ✅ src/component/home/home-page.tsx
@@ -85,9 +86,9 @@ Exceptions: tool conventions (Cargo.toml, package.json, App.tsx, main.rs, etc.)
 | Decision | Choice | Reason |
 |----------|--------|--------|
 | Node.js version | 25.6.1 via mise | Latest stable, mise for team consistency |
-| Runtime validation | Zod v4.3.6 | Type-safe runtime validation at boundaries |
-| Token storage | OS Keychain (`keyring` crate) | Security — not file-based |
-| Image transfer | base64 String | Tauri IPC Vec<u8> → JSON array is inefficient |
+| Runtime validation | Zod v4.4.3 | Type-safe runtime validation at boundaries |
+| Token storage | OS Keychain (Electron safeStorage) | Security — not file-based |
+| Image transfer | base64 String | Electron IPC — efficient binary transfer |
 | Figma images | 2-stage fetch (URL → download) | Figma /v1/images returns URL, not image |
 | Image cache | `~/.figdiff/cache/` | Avoid redundant API calls |
 | Formatter | Biome | Fast, all-in-one |
@@ -99,9 +100,9 @@ Exceptions: tool conventions (Cargo.toml, package.json, App.tsx, main.rs, etc.)
 |------|---------|
 | `package/shared/src/type.ts` | All shared TypeScript types |
 | `package/shared/src/figma-url-parser.ts` | Figma URL/path parsing |
-| `app/desktop/src-tauri/src/figma/client.rs` | Rust Figma API client |
-| `app/desktop/src-tauri/src/figma/transform.rs` | Figma → CSS suggestion |
-| `app/desktop/src/lib/tauri-command.ts` | Type-safe Tauri invoke wrapper |
+| `package/shared/src/figma-client.ts` | Figma API client |
+| `app/desktop/src/lib/transform-node.ts` | Figma node → CSS suggestion |
+| `app/desktop/src/lib/platform/` | Platform/IPC adapter (electron/web) |
 | `app/desktop/src/store/project-store.ts` | Project/frame state |
 | `app/desktop/src/store/setting-store.ts` | Settings + token |
 | `eslint.config.mjs` | ESLint v9 flat config |

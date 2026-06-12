@@ -47,6 +47,7 @@ ext-sideload-test.mjs
 npm-debug.log*
 pnpm-debug.log*
 yarn-error.log*
+error.log
 
 # Claude Code local files
 .claude/settings.local.json

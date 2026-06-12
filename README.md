@@ -106,7 +106,7 @@ Then the AI agent can use these MCP tools in a loop:
 3. `inspect_node` — Get CSS properties of a Figma node to guide code fixes
 4. `generate_diff_report` — Generate a diff report after the loop completes
 
-A typical AI loop: `compare_design` (detect diff) → fix code → re-screenshot → `compare_design` (verify improvement) → repeat until match rate >= 99%.
+A typical AI loop: `compare_design` (detect diff) → fix code → re-screenshot → `compare_design` (verify improvement) → repeat until match rate reaches 100%.
 
 Example Claude Code MCP call:
 

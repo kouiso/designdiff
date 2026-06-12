@@ -57,7 +57,7 @@ FigDiffのアプローチ:
 | デザインツール連携 | Figma REST API v1（将来: Penpot等も対応） |
 | AI分析 | MCPサーバー経由（Cursor / Claude Code / Copilot等） |
 | MCPサーバー | TypeScript + @modelcontextprotocol/sdk | 最新 |
-| MCPサーバーランタイム | Node.js (stdio transport) | 22.x LTS |
+| MCPサーバーランタイム | Node.js (stdio transport) | 25.6.1 |
 | 秘密情報管理 | Electron safeStorage（OS標準のCredential Manager） |
 | ビルド | Vite (electron-vite) | 6.x |
 | パッケージマネージャー | pnpm | 9.x |
@@ -525,7 +525,7 @@ compare_design → status: PASS ← ここで初めて完了
 4. **compare_design の返り値で次のアクションを示唆** — `nextAction` フィールドで具体的に誘導
 5. **inspect_node の返り値にCSS提案を含める** — AIがすぐコード修正できるように
 
-### 5.3 Tools定義（8個）
+### 5.3 Tools定義（11個）
 
 ```typescript
 // ============================================================
@@ -786,6 +786,71 @@ compare_designの返り値に含まれるnearby_node_idsをそのまま渡すと
     required: ["design_source", "screenshot", "prior_comparison_id", "expected_target_node_id"]
   }
 }
+
+// Tool 9: プロジェクト一覧取得
+{
+  name: "list_projects",
+  description: "~/.figdiff/projects/ に保存された全FigDiffプロジェクトを一覧表示します。プロジェクトIDを確認するために使用してください。",
+  inputSchema: {
+    type: "object",
+    properties: {}
+  }
+}
+
+// Tool 10: ignore_regions 取得
+{
+  name: "get_ignore_regions",
+  description: "プロジェクトに保存された意図的差分マスク（ignore_regions）を取得します。アニメーション領域やダイナミックコンテンツ等、常に無視すべき領域を確認するために使用します。",
+  inputSchema: {
+    type: "object",
+    properties: {
+      project_id: {
+        type: "string",
+        description: "プロジェクトID"
+      },
+      frame_name: {
+        type: "string",
+        description: "フレーム名（省略時は全フレームのマスクを返す）"
+      }
+    },
+    required: ["project_id"]
+  }
+}
+
+// Tool 11: ignore_regions 設定
+{
+  name: "set_ignore_regions",
+  description: "意図的差分マスク（ignore_regions）を保存します。アニメーション領域やダイナミックコンテンツ等、常に無視すべき領域を登録します。compare_design や verify_fix 実行時に自動適用されます。",
+  inputSchema: {
+    type: "object",
+    properties: {
+      project_id: {
+        type: "string",
+        description: "プロジェクトID"
+      },
+      frame_name: {
+        type: "string",
+        description: "フレーム名"
+      },
+      regions: {
+        type: "array",
+        description: "無視する矩形領域の配列",
+        items: {
+          type: "object",
+          properties: {
+            x: { type: "number" },
+            y: { type: "number" },
+            width: { type: "number" },
+            height: { type: "number" },
+            label: { type: "string", description: "メモ（例: アニメーション領域）" }
+          },
+          required: ["x", "y", "width", "height"]
+        }
+      }
+    },
+    required: ["project_id", "frame_name", "regions"]
+  }
+}
 ```
 
 ### 5.4 compare_design の返り値設計（AIを仕組みで動かす）
@@ -989,14 +1054,18 @@ app/mcp-server/
 ├── src/
 │   ├── index.ts
 │   ├── server.ts
-│   ├── tools/
+│   ├── tool/
 │   │   ├── compare-design.ts       # 🎯 Primary
 │   │   ├── inspect-node.ts         # 🔍 Secondary
 │   │   ├── get-design-tokens.ts    # 🔍 Secondary
 │   │   ├── list-frames.ts          # 📋 Utility
+│   │   ├── list-projects.ts        # 📋 Utility
 │   │   ├── generate-report.ts      # 📋 Utility
 │   │   ├── get-crop-region.ts      # 📋 Utility
-│   │   └── set-crop-region.ts      # 📋 Utility
+│   │   ├── set-crop-region.ts      # 📋 Utility
+│   │   ├── get-ignore-regions.ts   # 📋 Utility
+│   │   ├── set-ignore-regions.ts   # 📋 Utility
+│   │   └── verify-fix.ts           # ✅ Verification
 │   ├── services/
 │   │   ├── design-input-parser.ts  # URL/パス自動判定
 │   │   ├── node-matcher.ts         # 差分領域→Figmaノード マッチング
