@@ -104,8 +104,15 @@ const webFigmaAdapter: FigmaAdapter = {
 
 const webTokenAdapter: TokenAdapter = {
   save: async (token) => {
-    const validated = FigmaTokenSchema.parse(token);
-    localStorage.setItem(TOKEN_STORAGE_KEY, validated);
+    const trimmed = token.trim();
+    try {
+      const validated = FigmaTokenSchema.parse(trimmed);
+      localStorage.setItem(TOKEN_STORAGE_KEY, validated);
+    } catch {
+      throw new Error(
+        "Invalid Figma token. Expected a printable Personal Access Token starting with figd_.",
+      );
+    }
   },
   get: async () => {
     return getTokenFromStorage();
