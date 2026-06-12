@@ -17,12 +17,20 @@ vi.mock("electron", () => ({
 }));
 
 vi.mock("@figdiff/shared", () => ({
+  FigmaApiError: class FigmaApiError extends Error {
+    status: number;
+    constructor(message: string, status: number) {
+      super(message);
+      this.status = status;
+    }
+  },
   FigmaClient: vi.fn(() => ({
     downloadImageAsBase64: mocks.downloadImageAsBase64,
     getFile: mocks.getFile,
     getNode: mocks.getNode,
   })),
   extractFrames: mocks.extractFrames,
+  extractPageFrames: vi.fn(),
 }));
 
 vi.mock("../util/cache", () => ({
