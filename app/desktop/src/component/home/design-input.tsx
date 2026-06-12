@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import { ArrowRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -8,6 +8,8 @@ import { Button } from "@/component/ui/button";
 import { Input } from "@/component/ui/input";
 
 interface DesignInputProps {
+  value: string;
+  onChange: (value: string) => void;
   onSubmit: (input: string) => void;
   disabled?: boolean;
 }
@@ -19,9 +21,15 @@ function detectInputType(value: string): "figma" | "local" | null {
   return "local";
 }
 
-export function DesignInput({ onSubmit, disabled }: DesignInputProps) {
+const isImageFile = (file: File): boolean => {
+  if (file.type.startsWith("image/")) return true;
+  return /\.(png|jpe?g|webp|gif|bmp|svg)$/i.test(file.name);
+};
+
+export function DesignInput({ value, onChange, onSubmit, disabled }: DesignInputProps) {
   const { t } = useTranslation();
-  const [value, setValue] = useState("");
+  const [isDraggingImage, setIsDraggingImage] = useState(false);
+  const dragCounter = useRef(0);
   const inputType = detectInputType(value);
 
   const handleSubmit = () => {
@@ -37,12 +45,60 @@ export function DesignInput({ onSubmit, disabled }: DesignInputProps) {
     }
   };
 
+  const hasFileItem = (dataTransfer: DataTransfer) => dataTransfer.types.includes("Files");
+
+  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+    if (disabled) return;
+    if (!hasFileItem(e.dataTransfer)) return;
+    e.preventDefault();
+
+    dragCounter.current += 1;
+    setIsDraggingImage(dragCounter.current > 0);
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    if (disabled) return;
+    if (!hasFileItem(e.dataTransfer)) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "copy";
+  };
+
+  const handleDragLeave = () => {
+    dragCounter.current = Math.max(0, dragCounter.current - 1);
+    setIsDraggingImage(dragCounter.current > 0);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    dragCounter.current = 0;
+    setIsDraggingImage(false);
+
+    if (disabled) return;
+
+    const file = Array.from(e.dataTransfer.files).find(isImageFile);
+    if (!file) return;
+
+    const path = window.electronAPI?.getPathForFile(file);
+    if (!path) return;
+
+    onChange(path);
+    onSubmit(path);
+  };
+
   return (
-    <div className="relative flex items-center gap-2 rounded-xl border border-border bg-card p-1.5 shadow-sm transition-colors focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/20">
+    <div
+      className={`relative flex items-center gap-2 rounded-xl border bg-card p-1.5 shadow-sm transition-colors focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/20 ${
+        isDraggingImage ? "border-primary ring-2 ring-primary/25" : "border-border"
+      }`}
+      onDragEnter={handleDragEnter}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
       <div className="relative flex-1">
         <Input
           value={value}
-          onChange={(e) => setValue(e.target.value)}
+          onChange={(e) => onChange(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={t("home.inputPlaceholder")}
           aria-label={t("home.inputPlaceholder")}

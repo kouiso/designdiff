@@ -1,0 +1,347 @@
+{
+  "ran_at": "2026-05-16T14:07:00.350Z",
+  "threshold": 0.1,
+  "pages": 12,
+  "ok_count": 12,
+  "total_wall_ms": 17275,
+  "rss_start_mb": 71,
+  "rss_end_mb": 1767,
+  "results": [
+    {
+      "page": "top-pc",
+      "ok": true,
+      "wall_ms": 4339,
+      "rss_delta_mb": 1440,
+      "diff_image_base64_chars": 40832,
+      "result": {
+        "comparisonId": "cmp-1778940407414",
+        "matchRate": 77.04,
+        "diffPixelCount": 1251113,
+        "totalPixelCount": 5449248,
+        "diffRegions": [
+          {
+            "id": 0,
+            "bounds": {
+              "x": 0,
+              "y": 0,
+              "width": 1512,
+              "height": 3604
+            },
+            "diffPixelCount": 5449248,
+            "nearbyNodeIds": [],
+            "nearbyNodeNames": []
+          }
+        ],
+        "suggestion": "compare.suggestionMajor"
+      }
+    },
+    {
+      "page": "top-sp",
+      "ok": true,
+      "wall_ms": 1093,
+      "rss_delta_mb": 457,
+      "diff_image_base64_chars": 22100,
+      "result": {
+        "comparisonId": "cmp-1778940408507",
+        "matchRate": 62.62,
+        "diffPixelCount": 672512,
+        "totalPixelCount": 1799070,
+        "diffRegions": [
+          {
+            "id": 0,
+            "bounds": {
+              "x": 0,
+              "y": 0,
+              "width": 390,
+              "height": 4613
+            },
+            "diffPixelCount": 1799070,
+            "nearbyNodeIds": [],
+            "nearbyNodeNames": []
+          }
+        ],
+        "suggestion": "compare.suggestionMajor"
+      }
+    },
+    {
+      "page": "about-pc",
+      "ok": true,
+      "wall_ms": 2491,
+      "rss_delta_mb": -6,
+      "diff_image_base64_chars": 32396,
+      "result": {
+        "comparisonId": "cmp-1778940410999",
+        "matchRate": 68.17,
+        "diffPixelCount": 1374943,
+        "totalPixelCount": 4319784,
+        "diffRegions": [
+          {
+            "id": 0,
+            "bounds": {
+              "x": 0,
+              "y": 0,
+              "width": 1512,
+              "height": 2857
+            },
+            "diffPixelCount": 4319784,
+            "nearbyNodeIds": [],
+            "nearbyNodeNames": []
+          }
+        ],
+        "suggestion": "compare.suggestionMajor"
+      }
+    },
+    {
+      "page": "about-sp",
+      "ok": true,
+      "wall_ms": 396,
+      "rss_delta_mb": 90,
+      "diff_image_base64_chars": 13036,
+      "result": {
+        "comparisonId": "cmp-1778940411395",
+        "matchRate": 65.34,
+        "diffPixelCount": 362286,
+        "totalPixelCount": 1045200,
+        "diffRegions": [
+          {
+            "id": 0,
+            "bounds": {
+              "x": 0,
+              "y": 0,
+              "width": 390,
+              "height": 2680
+            },
+            "diffPixelCount": 1045200,
+            "nearbyNodeIds": [],
+            "nearbyNodeNames": []
+          }
+        ],
+        "suggestion": "compare.suggestionMajor"
+      }
+    },
+    {
+      "page": "service-pc",
+      "ok": true,
+      "wall_ms": 2322,
+      "rss_delta_mb": -246,
+      "diff_image_base64_chars": 29548,
+      "result": {
+        "comparisonId": "cmp-1778940413717",
+        "matchRate": 79.5,
+        "diffPixelCount": 807173,
+        "totalPixelCount": 3937248,
+        "diffRegions": [
+          {
+            "id": 0,
+            "bounds": {
+              "x": 0,
+              "y": 0,
+              "width": 1512,
+              "height": 2604
+            },
+            "diffPixelCount": 3937248,
+            "nearbyNodeIds": [],
+            "nearbyNodeNames": []
+          }
+        ],
+        "suggestion": "compare.suggestionMajor"
+      }
+    },
+    {
+      "page": "service-sp",
+      "ok": true,
+      "wall_ms": 727,
+      "rss_delta_mb": 169,
+      "diff_image_base64_chars": 19172,
+      "result": {
+        "comparisonId": "cmp-1778940414444",
+        "matchRate": 75.59,
+        "diffPixelCount": 380285,
+        "totalPixelCount": 1558050,
+        "diffRegions": [
+          {
+            "id": 0,
+            "bounds": {
+              "x": 0,
+              "y": 0,
+              "width": 390,
+              "height": 3995
+            },
+            "diffPixelCount": 1558050,
+            "nearbyNodeIds": [],
+            "nearbyNodeNames": []
+          }
+        ],
+        "suggestion": "compare.suggestionMajor"
+      }
+    },
+    {
+      "page": "recruit-pc",
+      "ok": true,
+      "wall_ms": 2155,
+      "rss_delta_mb": -192,
+      "diff_image_base64_chars": 29180,
+      "result": {
+        "comparisonId": "cmp-1778940416599",
+        "matchRate": 83.83,
+        "diffPixelCount": 628552,
+        "totalPixelCount": 3887352,
+        "diffRegions": [
+          {
+            "id": 0,
+            "bounds": {
+              "x": 0,
+              "y": 0,
+              "width": 1512,
+              "height": 2571
+            },
+            "diffPixelCount": 3887352,
+            "nearbyNodeIds": [],
+            "nearbyNodeNames": []
+          }
+        ],
+        "suggestion": "compare.suggestionMajor"
+      }
+    },
+    {
+      "page": "recruit-sp",
+      "ok": true,
+      "wall_ms": 489,
+      "rss_delta_mb": 131,
+      "diff_image_base64_chars": 16572,
+      "result": {
+        "comparisonId": "cmp-1778940417089",
+        "matchRate": 79.53,
+        "diffPixelCount": 274422,
+        "totalPixelCount": 1340820,
+        "diffRegions": [
+          {
+            "id": 0,
+            "bounds": {
+              "x": 0,
+              "y": 0,
+              "width": 390,
+              "height": 3438
+            },
+            "diffPixelCount": 1340820,
+            "nearbyNodeIds": [],
+            "nearbyNodeNames": []
+          }
+        ],
+        "suggestion": "compare.suggestionMajor"
+      }
+    },
+    {
+      "page": "news-pc",
+      "ok": true,
+      "wall_ms": 1143,
+      "rss_delta_mb": -286,
+      "diff_image_base64_chars": 17068,
+      "result": {
+        "comparisonId": "cmp-1778940418231",
+        "matchRate": 78.65,
+        "diffPixelCount": 484274,
+        "totalPixelCount": 2268000,
+        "diffRegions": [
+          {
+            "id": 0,
+            "bounds": {
+              "x": 0,
+              "y": 0,
+              "width": 1512,
+              "height": 1500
+            },
+            "diffPixelCount": 2268000,
+            "nearbyNodeIds": [],
+            "nearbyNodeNames": []
+          }
+        ],
+        "suggestion": "compare.suggestionMajor"
+      }
+    },
+    {
+      "page": "news-sp",
+      "ok": true,
+      "wall_ms": 121,
+      "rss_delta_mb": 29,
+      "diff_image_base64_chars": 5972,
+      "result": {
+        "comparisonId": "cmp-1778940418353",
+        "matchRate": 67.05,
+        "diffPixelCount": 154738,
+        "totalPixelCount": 469560,
+        "diffRegions": [
+          {
+            "id": 0,
+            "bounds": {
+              "x": 0,
+              "y": 0,
+              "width": 390,
+              "height": 1204
+            },
+            "diffPixelCount": 469560,
+            "nearbyNodeIds": [],
+            "nearbyNodeNames": []
+          }
+        ],
+        "suggestion": "compare.suggestionMajor"
+      }
+    },
+    {
+      "page": "contact-pc",
+      "ok": true,
+      "wall_ms": 1774,
+      "rss_delta_mb": 41,
+      "diff_image_base64_chars": 25004,
+      "result": {
+        "comparisonId": "cmp-1778940420127",
+        "matchRate": 86.94,
+        "diffPixelCount": 433894,
+        "totalPixelCount": 3321864,
+        "diffRegions": [
+          {
+            "id": 0,
+            "bounds": {
+              "x": 0,
+              "y": 0,
+              "width": 1512,
+              "height": 2197
+            },
+            "diffPixelCount": 3321864,
+            "nearbyNodeIds": [],
+            "nearbyNodeNames": []
+          }
+        ],
+        "suggestion": "compare.suggestionMajor"
+      }
+    },
+    {
+      "page": "contact-sp",
+      "ok": true,
+      "wall_ms": 223,
+      "rss_delta_mb": 69,
+      "diff_image_base64_chars": 9876,
+      "result": {
+        "comparisonId": "cmp-1778940420349",
+        "matchRate": 82.74,
+        "diffPixelCount": 135416,
+        "totalPixelCount": 784680,
+        "diffRegions": [
+          {
+            "id": 0,
+            "bounds": {
+              "x": 0,
+              "y": 0,
+              "width": 390,
+              "height": 2012
+            },
+            "diffPixelCount": 784680,
+            "nearbyNodeIds": [],
+            "nearbyNodeNames": []
+          }
+        ],
+        "suggestion": "compare.suggestionMajor"
+      }
+    }
+  ]
+}

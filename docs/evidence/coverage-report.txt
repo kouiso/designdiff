@@ -1,0 +1,20 @@
+=== FigDiff Coverage Report ===
+Date: 2026-04-14T07:24:28Z
+
+=== @figdiff/shared ===
+ Test Files  4 passed (4)
+      Tests  60 passed (60)
+   Duration  780ms (transform 514ms, setup 0ms, collect 1.57s, tests 19ms, environment 2ms, prepare 264ms)
+All files          |   45.04 |    95.83 |   72.22 |   45.04 |                   
+
+=== @figdiff/mcp-server ===
+ Test Files  4 passed (4)
+      Tests  42 passed (42)
+   Duration  792ms (transform 138ms, setup 0ms, collect 265ms, tests 87ms, environment 1ms, prepare 227ms)
+All files          |   39.04 |    82.96 |   91.89 |   39.04 |                   
+
+=== @figdiff/desktop ===
+ Test Files  30 passed (30)
+      Tests  303 passed (303)
+   Duration  6.28s (transform 1.31s, setup 7.29s, collect 9.84s, tests 5.46s, environment 27.34s, prepare 3.04s)
+All files          |   80.66 |    84.63 |   68.82 |   80.66 |                   

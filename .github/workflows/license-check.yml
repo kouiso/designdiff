@@ -7,6 +7,9 @@ on:
       - "pnpm-lock.yaml"
       - "**/package.json"
 
+permissions:
+  contents: read
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -14,11 +17,11 @@ concurrency:
 jobs:
   license-check:
     name: License Check
-    runs-on: ${{ vars.RUNNER_LINUX || 'ubuntu-latest' }}
+    runs-on: ${{ vars.RUNNER_LINUX }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: jdx/mise-action@v2
+      - uses: jdx/mise-action@v4
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -41,7 +44,7 @@ jobs:
 
       - name: Upload license report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: license-report
           path: license-summary.txt

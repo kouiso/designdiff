@@ -4,8 +4,8 @@
  */
 
 import * as esbuild from "esbuild";
-import * as fs from "fs";
-import * as path from "path";
+import * as fs from "node:fs";
+import * as path from "node:path";
 
 const isWatch = process.argv.includes("--watch");
 
@@ -92,7 +92,6 @@ async function build() {
 
   if (isWatch) {
     const codeCtx = await esbuild.context(codeConfig);
-    const uiCtx = await esbuild.context(uiConfig);
 
     await codeCtx.watch();
 
@@ -106,12 +105,12 @@ async function build() {
     const uiWatchCtx = await esbuild.context({ ...uiConfig, plugins: [uiPlugin] });
     await uiWatchCtx.watch();
 
-    console.log("Watching for changes...");
+    console.info("Watching for changes...");
   } else {
     await esbuild.build(codeConfig);
     await esbuild.build(uiConfig);
     generateUiHtml();
-    console.log("Build complete.");
+    console.info("Build complete.");
   }
 }
 

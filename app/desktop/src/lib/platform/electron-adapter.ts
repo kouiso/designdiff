@@ -1,13 +1,20 @@
 import { z } from "zod";
 
-import { FigmaTokenSchema, FrameSchema, NodeInspectionSchema } from "@figdiff/shared";
+import {
+  FigmaTokenSchema,
+  FrameSchema,
+  NodeInspectionSchema,
+  ProjectSchema,
+} from "@figdiff/shared";
 
 import type {
   FileAdapter,
   FigmaAdapter,
+  OAuthAdapter,
   OverlayAdapter,
   PlatformAdapter,
   PlatformCapabilities,
+  ProjectAdapter,
   TokenAdapter,
 } from "./platform-adapter";
 
@@ -33,6 +40,10 @@ const electronTokenAdapter: TokenAdapter = {
   get: async () => {
     return window.electronAPI.getFigmaToken();
   },
+  has: async () => {
+    const token = await window.electronAPI.getFigmaToken();
+    return token !== null;
+  },
   delete: async () => {
     return window.electronAPI.deleteFigmaToken();
   },
@@ -50,6 +61,7 @@ const electronFileAdapter: FileAdapter = {
 export const electronOverlayAdapter: OverlayAdapter = {
   open: (url) => window.electronAPI.overlay.open(url),
   close: () => window.electronAPI.overlay.close(),
+  updateOffset: (offset) => window.electronAPI.overlay.updateOffset(offset),
   setOverlayImage: (base64, opacity) => window.electronAPI.overlay.setOverlayImage(base64, opacity),
   updateOpacity: (opacity) => window.electronAPI.overlay.updateOpacity(opacity),
   removeOverlay: () => window.electronAPI.overlay.removeOverlay(),
@@ -57,16 +69,44 @@ export const electronOverlayAdapter: OverlayAdapter = {
   onNavigated: (callback) => window.electronAPI.overlay.onNavigated(callback),
   setMode: (mode, base64, opacity, splitPosition) =>
     window.electronAPI.overlay.setMode(mode, base64, opacity, splitPosition),
+  updateScale: (scale, scaleMode) => window.electronAPI.overlay.updateScale(scale, scaleMode),
   updateSplitPosition: (splitPosition) =>
     window.electronAPI.overlay.updateSplitPosition(splitPosition),
   toggleStart: (intervalMs) => window.electronAPI.overlay.toggleStart(intervalMs),
   toggleStop: () => window.electronAPI.overlay.toggleStop(),
 };
 
+const electronProjectAdapter: ProjectAdapter = {
+  list: async () => {
+    return window.electronAPI.project.list();
+  },
+  load: async (projectId) => {
+    const result = await window.electronAPI.project.load(projectId);
+    return ProjectSchema.parse(result);
+  },
+  save: async (project) => {
+    return window.electronAPI.project.save(project);
+  },
+  delete: async (projectId) => {
+    return window.electronAPI.project.delete(projectId);
+  },
+};
+
+const electronOAuthAdapter: OAuthAdapter = {
+  start: () => window.electronAPI.oauth.start(),
+  logout: () => window.electronAPI.oauth.logout(),
+  status: () => window.electronAPI.oauth.status(),
+  saveClient: (clientId, clientSecret) =>
+    window.electronAPI.oauth.saveClient(clientId, clientSecret),
+  getClientId: () => window.electronAPI.oauth.getClientId(),
+};
+
 export const electronAdapter: PlatformAdapter = {
   figma: electronFigmaAdapter,
   token: electronTokenAdapter,
   file: electronFileAdapter,
+  project: electronProjectAdapter,
+  oauth: electronOAuthAdapter,
 };
 
 export const electronCapabilities: PlatformCapabilities = {

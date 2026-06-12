@@ -1,15 +1,40 @@
-import type { Frame, NodeInspection } from "@figdiff/shared";
+import type { FigmaAuthState, Frame, NodeInspection, Project } from "@figdiff/shared";
 
-import type { OverlayViewMode } from "@/store/overlay-store";
+import type { OverlayScaleMode, OverlayViewMode } from "@/store/overlay-store";
 
 /**
  * プラットフォーム非依存のコマンドインターフェース
  * Electron / Web それぞれのアダプターがこれを実装する
  */
+export interface ProjectSummary {
+  id: string;
+  name: string;
+  implementationUrl: string;
+  pageCount: number;
+  updatedAt: string;
+}
+
+export interface ProjectAdapter {
+  list(): Promise<ProjectSummary[]>;
+  load(projectId: string): Promise<Project>;
+  save(project: Project): Promise<void>;
+  delete(projectId: string): Promise<void>;
+}
+
+export interface OAuthAdapter {
+  start(): Promise<void>;
+  logout(): Promise<void>;
+  status(): Promise<FigmaAuthState>;
+  saveClient(clientId: string, clientSecret: string): Promise<void>;
+  getClientId(): Promise<string | null>;
+}
+
 export interface PlatformAdapter {
   readonly figma: FigmaAdapter;
   readonly token: TokenAdapter;
   readonly file: FileAdapter;
+  readonly project: ProjectAdapter;
+  readonly oauth: OAuthAdapter;
 }
 
 export interface FigmaAdapter {
@@ -21,6 +46,7 @@ export interface FigmaAdapter {
 export interface TokenAdapter {
   save(token: string): Promise<void>;
   get(): Promise<string | null>;
+  has(): Promise<boolean>;
   delete(): Promise<void>;
 }
 
@@ -36,6 +62,7 @@ export interface FileAdapter {
 export interface OverlayAdapter {
   open(url: string): Promise<void>;
   close(): Promise<void>;
+  updateOffset(offset: number): Promise<void>;
   setOverlayImage(base64: string, opacity: number): Promise<void>;
   updateOpacity(opacity: number): Promise<void>;
   removeOverlay(): Promise<void>;
@@ -47,6 +74,7 @@ export interface OverlayAdapter {
     opacity: number,
     splitPosition: number,
   ): Promise<void>;
+  updateScale(scale: number, scaleMode: OverlayScaleMode): Promise<void>;
   updateSplitPosition(splitPosition: number): Promise<void>;
   toggleStart(intervalMs: number): Promise<void>;
   toggleStop(): Promise<void>;

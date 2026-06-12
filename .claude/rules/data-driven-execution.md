@@ -1,1 +1,0 @@
-../../prompt/instruction/data-driven-execution.md

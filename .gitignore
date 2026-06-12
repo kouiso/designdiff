@@ -5,6 +5,7 @@ node_modules/
 dist/
 target/
 *.tsbuildinfo
+coverage/
 
 # Environment
 .env
@@ -30,16 +31,41 @@ app/desktop/src-tauri/gen/
 .turbo/
 .figdiff/
 node-compile-cache/
+app/desktop/release/
 
 # Playwright MCP logs
 .playwright-mcp/
+
+# Test results (Playwright, Vitest)
+**/test-results/
+
+# Temporary files
+**/tmp-*.mjs
+ext-sideload-test.mjs
 
 # Debug
 npm-debug.log*
 pnpm-debug.log*
 yarn-error.log*
+error.log
 
 # Claude Code local files
 .claude/settings.local.json
 .claude/mcp.json
 .claude/memory/
+
+# Verification artifacts (evidence, traces, secrets-masked logs)
+# Keep committed: fixtures, scripts, correlation reports (.png, .md, .json)
+# Ignore: per-attempt runs and ad-hoc evidence drops
+verification/attempts/
+verification/evidence/
+verification/traces/
+verification/logs/
+
+# Evidence build/lint/test logs (not source-of-truth, regeneratable)
+docs/evidence/*.log
+
+# Local runtime noise
+error.log
+.codex
+.claude/scheduled_tasks.lock

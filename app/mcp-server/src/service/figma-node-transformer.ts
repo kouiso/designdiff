@@ -113,16 +113,38 @@ function extractAppearance(node: FigmaNode): NodeAppearance {
   };
 }
 
-function normalizeFillType(type: string): "SOLID" | "GRADIENT_LINEAR" | "IMAGE" {
-  if (type === "SOLID") return "SOLID";
-  if (type === "IMAGE") return "IMAGE";
-  return "GRADIENT_LINEAR";
+const KNOWN_FILL_TYPES: readonly NodeFill["type"][] = [
+  "SOLID",
+  "GRADIENT_LINEAR",
+  "GRADIENT_RADIAL",
+  "GRADIENT_ANGULAR",
+  "GRADIENT_DIAMOND",
+  "IMAGE",
+];
+
+function isKnownFillType(type: string): type is NodeFill["type"] {
+  return KNOWN_FILL_TYPES.some((t) => t === type);
 }
 
-function normalizeEffectType(type: string): "DROP_SHADOW" | "INNER_SHADOW" | "BLUR" {
-  if (type === "DROP_SHADOW") return "DROP_SHADOW";
-  if (type === "INNER_SHADOW") return "INNER_SHADOW";
-  return "BLUR";
+function normalizeFillType(type: string): NodeFill["type"] {
+  // Figma API未知のグラデーション型はGRADIENT_LINEARにフォールバック
+  return isKnownFillType(type) ? type : "GRADIENT_LINEAR";
+}
+
+const KNOWN_EFFECT_TYPES: readonly NodeEffect["type"][] = [
+  "DROP_SHADOW",
+  "INNER_SHADOW",
+  "LAYER_BLUR",
+  "BACKGROUND_BLUR",
+];
+
+function isKnownEffectType(type: string): type is NodeEffect["type"] {
+  return KNOWN_EFFECT_TYPES.some((t) => t === type);
+}
+
+function normalizeEffectType(type: string): NodeEffect["type"] {
+  // Figma API未知のエフェクト型はLAYER_BLURにフォールバック
+  return isKnownEffectType(type) ? type : "LAYER_BLUR";
 }
 
 function extractTypography(node: FigmaNode): NodeTypography | undefined {

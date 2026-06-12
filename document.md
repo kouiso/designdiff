@@ -1,6 +1,6 @@
 # FigDiff - Figma Design Comparison Tool
 
-## 設計書 & 開発計画 v3
+## 設計書 & 開発計画 v4
 
 ---
 
@@ -30,8 +30,8 @@ FigDiffのアプローチ:
 
 | 既存ツール | 限界 | FigDiffの優位性 |
 |-----------|------|----------------|
-| PerfectPixel | Chrome拡張のみ、Web専用、手動位置合わせ、比較モード少ない | デスクトップアプリ、モバイル対応、自動整列、7比較モード |
-| Pixelay | Figma Edit権限必須、月額$20、無料版はデスクトップ比較不可、7比較モードだが機械的diff検出なし | APIベース、Viewer権限でOK、無料、7比較モード+機械的Pixel Diff |
+| PerfectPixel | Chrome拡張のみ、Web専用、手動位置合わせ、比較モード少ない | デスクトップアプリ、モバイル対応、自動整列、8比較モード |
+| Pixelay | Figma Edit権限必須、月額$20、無料版はデスクトップ比較不可、7比較モードだが機械的diff検出なし | APIベース、Viewer権限でOK、無料、8比較モード（7+Pixel Diff+Toggle） |
 | Figma MCP (既存) | テキストデータのみ、AIが全情報から独自解釈 | 画像diff起点、AIが見て直すサイクル |
 | 目視確認 | REDACTEDだと余白・微妙な色味を見落とす | 機械がピクセル単位で検出、見落としゼロ |
 
@@ -47,26 +47,29 @@ FigDiffのアプローチ:
 
 | レイヤー | 技術 | バージョン目安 |
 |---------|------|--------------|
-| デスクトップフレームワーク | Tauri v2 | 2.x |
+| デスクトップフレームワーク | Electron + electron-vite | Electron 35.x |
 | フロントエンド | React + TypeScript | React 19, TS 5.x |
 | 状態管理 | Zustand | 5.x |
 | スタイリング | Tailwind CSS | 4.x |
+| UIコンポーネント | shadcn/ui | 最新 |
 | 画像比較エンジン | pixelmatch (npm) | 6.x |
 | 画像リサイズ | sharp (npm) | 0.33.x |
 | デザインツール連携 | Figma REST API v1（将来: Penpot等も対応） |
 | AI分析 | MCPサーバー経由（Cursor / Claude Code / Copilot等） |
 | MCPサーバー | TypeScript + @modelcontextprotocol/sdk | 最新 |
-| MCPサーバーランタイム | Node.js (stdio transport) | 22.x LTS |
-| 秘密情報管理 | Tauri plugin-keychain（OS標準のCredential Manager） |
-| ビルド | Vite | 6.x |
+| MCPサーバーランタイム | Node.js (stdio transport) | 25.6.1 |
+| 秘密情報管理 | Electron safeStorage（OS標準のCredential Manager） |
+| ビルド | Vite (electron-vite) | 6.x |
 | パッケージマネージャー | pnpm | 9.x |
+| バリデーション | Zod | 最新 |
+| リンター | Biome + ESLint v9 (type-aware) | 最新 |
 
-### なぜTauri？
-- Electronより圧倒的に軽量（バンドルサイズ 10MB以下 vs 150MB+）
-- Rust製バックエンドで画像処理も高速
-- ファイルシステムアクセスが容易（スクショの読み込み等）
-- React + TypeScriptがそのまま使える
-- OS標準のKeychainに秘密情報を安全に保存できる
+### なぜElectron？
+- Node.js API（sharp等）をメインプロセスで直接利用可能
+- WebContentsView でライブオーバーレイ（実装サイトの埋め込み表示）が容易
+- エコシステムの安定性と豊富なドキュメント
+- electron-vite によるHMR + 高速ビルド
+- OS標準のsafeStorageで秘密情報を安全に保存
 
 ### なぜAPIキー不要の設計？
 - ユーザーは既にCursor / Claude Code / GitHub Copilotなどを契約している
@@ -82,22 +85,25 @@ FigDiffのアプローチ:
 
 ```
 ┌───────────────────────────────────────────────────────┐
-│                   Tauri Desktop App                    │
+│              Electron Desktop App (electron-vite)       │
 │                                                        │
 │  ┌─────────────────────┐  ┌─────────────────────────┐ │
-│  │   React Frontend    │  │   Tauri Backend (Rust)   │ │
+│  │   React Frontend    │  │   Electron Main Process  │ │
+│  │   (Renderer)        │  │   (Node.js)              │ │
 │  │                     │  │                          │ │
 │  │  ┌───────────────┐  │  │  - ファイル読み書き       │ │
-│  │  │ CompareView   │  │  │  - スクショ取込          │ │
-│  │  │ (Canvas描画)  │←─┼──│  - 画像リサイズ (sharp)  │ │
-│  │  │ + CropRegion  │  │  │  - Keychain連携         │ │
+│  │  │ TabBar        │  │  │  - 画像リサイズ (sharp)  │ │
+│  │  │ + PageSidebar │  │  │  - safeStorage連携      │ │
 │  │  ├───────────────┤  │  │  - 画像キャッシュ        │ │
-│  │  │ DiffReport    │  │  │                          │ │
-│  │  │ (差分リスト)   │  │  └─────────────────────────┘ │
-│  │  └───────────────┘  │                               │
-│  │                     │  ┌─────────────────────────┐ │
-│  └─────────────────────┘  │  Services (TS)          │ │
-│                           │                          │ │
+│  │  │ CompareView   │←─┼──│  - プロジェクト永続化    │ │
+│  │  │ (Canvas描画)  │  │  │  - WebContentsView      │ │
+│  │  │ + CropRegion  │  │  │    (Live Overlay)       │ │
+│  │  ├───────────────┤  │  │                          │ │
+│  │  │ DiffReport    │  │  └─────────────────────────┘ │
+│  │  │ (差分リスト)   │  │                               │
+│  │  └───────────────┘  │  ┌─────────────────────────┐ │
+│  │                     │  │  Services (TS)          │ │
+│  └─────────────────────┘  │                          │ │
 │                           │  - Design Provider       │ │
 │                           │    (Figma / 画像直接)    │ │
 │                           │  - pixelmatch 比較       │ │
@@ -302,43 +308,109 @@ interface NodeInspection {
 
 ## 4. 画面設計
 
-### 4.1 ホーム画面（プロジェクト一覧）
+### 4.0 UXフロー概要（実装URL起点）
 
 ```
-┌──────────────────────────────────────────┐
-│  FigDiff                          [設定] │
-├──────────────────────────────────────────┤
-│                                          │
-│  📁 最近のプロジェクト                     │
-│                                          │
-│  ┌──────────┐ ┌──────────┐ ┌──────────┐ │
-│  │ ProjectA │ │ ProjectB │ │    ＋    │ │
-│  │ 差分: 3  │ │ 差分: 0  │ │  新規作成 │ │
-│  │ 更新: 今日│ │ 更新:昨日│ │          │ │
-│  └──────────┘ └──────────┘ └──────────┘ │
-│                                          │
-│  ──────────── または ────────────         │
-│                                          │
-│  🔗 URLまたはパスで直接比較:              │
-│  ┌────────────────────────────────────┐  │
-│  │ FigmaURL / ローカルパスを入力...   │  │
-│  └────────────────────────────────────┘  │
-│  ↑ Figma URLでもローカル画像パスでもOK   │
-│                                          │
-└──────────────────────────────────────────┘
+1. ホーム画面
+   ├── 保存済みプロジェクト一覧（カード形式、永続化）
+   └── [+ 新規プロジェクト] ボタン
+
+2. 新規プロジェクト作成ダイアログ
+   ├── プロジェクト名を入力（例: "コーポレートサイト"）
+   └── 実装URL（例: http://localhost:3000）を入力 → 作成
+
+3. プロジェクトが開く（タブとして）
+   ├── 左: ページ一覧サイドバー + [+ ページ追加]
+   │   └── ページ名とパスを入力（例: "ホーム", "/home"）
+   └── 右: 選択中ページのデザインソース管理
+       ├── [+ Figma URLを追加] [+ ローカル画像を追加]
+       ├── デザインソース一覧（PC版、SP版、等）
+       └── 各ソースで [比較実行] → Compare画面へ
+
+4. Compare画面
+   └── 既存の8モード比較ビュー（後述）
+```
+
+**フロー逆転の理由:**
+- 開発者の実際のワークフローは「実装が先にあり、デザインと照合する」
+- 1ページに対してPC/SP等の複数デザインソースが存在する
+- プロジェクト単位で管理することで、次回以降はURLの再入力が不要
+
+### 4.1 ホーム画面（プロジェクト一覧 + タブバー）
+
+```
+┌────────────────────────────────────────────────────┐
+│ [コーポレートサイト ×] [ECサイト ×] [+]     [設定] │ ← タブバー
+├────────────────────────────────────────────────────┤
+│                                                    │
+│  FigDiff                                           │
+│                                                    │
+│  📁 プロジェクト一覧                                │
+│                                                    │
+│  ┌──────────────┐ ┌──────────────┐ ┌──────────┐   │
+│  │ コーポレート   │ │ ECサイト     │ │    ＋    │   │
+│  │ localhost:3000│ │ localhost:8080│ │  新規作成 │   │
+│  │ ページ: 5     │ │ ページ: 3    │ │          │   │
+│  │ 更新: 今日    │ │ 更新: 昨日   │ │          │   │
+│  └──────────────┘ └──────────────┘ └──────────┘   │
+│                                                    │
+└────────────────────────────────────────────────────┘
 ```
 
 **機能:**
-- Figma File URLを入力して新規プロジェクト作成
-- 画像ファイルパスを直接入力して比較開始
-- Figma URLにnode-idが含まれていれば、そのフレームを直接開く
-- プロジェクトごとに比較履歴を保持
+- 保存済みプロジェクトをカード形式で一覧表示（~/.figdiff/に永続化）
+- カードクリック → 新しいタブでプロジェクトが開く
+- [+新規作成] → プロジェクト作成ダイアログ
+- プロジェクトカードにはURL、ページ数、最終更新日を表示
+
+### 4.1.1 タブバー
+
+```
+┌──────────────────────────────────────────────────────┐
+│ [コーポレートサイト ×] [ECサイト ×] [+]       [設定] │
+└──────────────────────────────────────────────────────┘
+```
+
+- ブラウザ風タブ（React内レンダリング、単一Electronウィンドウ）
+- 各タブ = 1プロジェクト。タブ切替でプロジェクト間を移動
+- [×] でタブを閉じる（プロジェクト自体は削除されない）
+- [+] で新規プロジェクト作成 or ホーム画面に戻る
+- 将来: タブのドラッグ&ドロップで並び替え、別ウィンドウへの分離
+
+### 4.1.2 プロジェクトビュー（タブ内レイアウト）
+
+```
+┌────────────────────────────────────────────────────┐
+│ [コーポレートサイト ×] [ECサイト ×] [+]     [設定] │
+├────────────────────────────────────────────────────┤
+│ FigDiff > コーポレートサイト > /home > PC版デザイン │
+├──────────┬─────────────────────────────────────────┤
+│ ページ一覧│  デザインソース & 比較ビュー             │
+│          │                                         │
+│ ▸ /home  │  🔗 PC版デザイン (Figma)    [比較]      │
+│   /about │  🔗 SP版デザイン (Figma)    [比較]      │
+│   /price │  📁 修正前スクショ          [比較]      │
+│          │                                         │
+│ [+ 追加] │  [+ デザインソースを追加]                │
+└──────────┴─────────────────────────────────────────┘
+```
+
+**左サイドバー: ページ一覧**
+- プロジェクト内のページ（/home, /about, /price 等）をリスト表示
+- [+ 追加] でページ名 + パスを入力して新規ページ追加
+- ページの実装URLは `{project.implementationUrl}{page.path}` で自動結合
+
+**右メインエリア: デザインソース管理**
+- 選択中ページに紐づくデザインソースを一覧表示
+- 各ソースにラベル（PC版、SP版等）と種別（Figma / ローカル画像）を表示
+- [比較] ボタンでCompare画面に遷移
+- [+ デザインソースを追加] でFigma URLまたはローカル画像パスを追加
 
 ### 4.2 メイン比較画面（コア機能）
 
 ```
 ┌──────────────────────────────────────────────────────────┐
-│  ProjectA > Home                    [← →] [比較実行]      │
+│  ProjectA > /home > PC版デザイン     [← →] [比較実行]     │
 ├────────────────────────────────┬─────────────────────────┤
 │                                │                         │
 │     比較ビューエリア            │   差分分析パネル         │
@@ -357,10 +429,9 @@ interface NodeInspection {
 │  │  └ ─ ─ ─ ─ ─ ─ ─ ┘     │  │  [inspect →]            │
 │  └──────────────────────────┘  │                         │
 │                                │  ✅ その他の領域: 一致   │
-│  [🎨] [</>] [🔲] [◧] [◐] [✥] [🔴] │  [レポート出力]          │
+│  [🎨] [</>] [🔲] [◧] [◐] [✥] [🔴] [⟳] │  [レポート出力]   │
 │                                │  [MCPコマンドをコピー]    │
 │  透明度: ────●──── 50%        │                         │
-│  📏 Pixel Ruler [ON/OFF]      │                         │
 │  範囲: [全体] [範囲指定]       │                         │
 │                                │                         │
 ├────────────────────────────────┤                         │
@@ -374,7 +445,7 @@ interface NodeInspection {
 └────────────────────────────────┴─────────────────────────┘
 ```
 
-**表示モード（7モード — Pixelay同等 + FigDiff独自）:**
+**表示モード（8モード — Pixelay同等 + FigDiff独自）:**
 
 | # | モード名 | アイコン | 説明 | Pixelay対応 |
 |---|---------|---------|------|------------|
@@ -385,10 +456,10 @@ interface NodeInspection {
 | 5 | Blended Diff | ◐ | 差分をブレンド表示（ズレが色で浮き出る） | Blended Diff |
 | 6 | Draggable Overlay | ✥ | デザイン画像をドラッグで移動しながら比較 | Draggable Overlay |
 | 7 | **Pixel Diff** ★ | 🔴 | **FigDiff独自** — pixelmatchによる機械的差分検出。赤ハイライトで差分箇所表示、クリックでinspect_node詳細へ。nearby_node_ids連携 | （Pixelayにはない） |
+| 8 | Toggle | ⟳ | デザインと実装を一定間隔で切替表示 | Toggle Overlay |
 
 **共通UI:**
 - Overlay Opacityスライダー（モード3, 6で使用、0-100%）
-- Pixel Ruler（全モード共通で使えるピクセル定規ツール、トグルで表示/非表示）
 - モード切替はツールバーのアイコンクリック（Pixelayと同じUX）
 
 **Pixelayとの差別化ポイント:**
@@ -424,17 +495,37 @@ interface NodeInspection {
 Cursor / Claude Code / Claude Desktop / GitHub Copilot 等から呼び出せるMCPサーバー。
 **Diff駆動ワークフローの中核。**
 
-### 5.2 ツール設計思想: AIが「diff → inspect → fix → diff」を自然にやりたくなる
+### 5.2 ツール設計思想: AIを「仕組み」で動かす（プロンプトではなく出力構造で強制）
 
-ツールのdescriptionがAIの行動を決定する。以下の原則で設計:
+**核心**: AIはプロンプトの指示を無視することがあるが、**ツールの出力データは無視できない**（次の行動の判断材料だから）。
+テストが赤い時にAIが直したくなるのと同じ心理を、MCP出力で再現する。
 
+#### 原則1: 数値で強制する（PASS/FAIL構造）
+- compare_designの返り値に `status: "PASS" | "FAIL"` を含める
+- `completionCriteria` で各指標の目標値と現在値を構造化
+- AIは「3つのFAILが残っている」→「修正しないといけない」と自然に判断する
+
+#### 原則2: ツール説明文を「AIの行動仕様書」にする
+- 「何ができるか」ではなく「いつ使うか」「完了条件は何か」で書く
+- AIが読んだ瞬間に「ループしないといけない」と理解する構造
+
+#### 原則3: ツール間の依存関係を出力で強制
+```
+compare_design → status: FAIL
+  ↓ nextAction に "inspect_node を実行" と書いてある
+inspect_node → cssSuggestion に具体的な修正値
+  ↓ "この値をCSSに適用してから再度 compare_design を実行"
+compare_design → status: PASS ← ここで初めて完了
+```
+
+#### 原則4: 従来の設計も維持
 1. **compare_design を「入口」にする** — descriptionに「まずこのツールで差分を確認してください」と書く
 2. **inspect_node を「差分の深掘り」に位置づける** — descriptionに「compare_designで見つかった差分箇所の詳細を取得するツール」と書く
 3. **get_design_tokens は「フレーム全体のスペック」** — descriptionに「初回設計時のみ。修正時はcompare_design + inspect_nodeを使ってください」と書く
-4. **compare_design の返り値で次のアクションを示唆** — `suggestion` フィールドに「差分があります。inspect_nodeで詳細を確認してください」と入れる
+4. **compare_design の返り値で次のアクションを示唆** — `nextAction` フィールドで具体的に誘導
 5. **inspect_node の返り値にCSS提案を含める** — AIがすぐコード修正できるように
 
-### 5.3 Tools定義（7個）
+### 5.3 Tools定義（11個）
 
 ```typescript
 // ============================================================
@@ -583,17 +674,22 @@ compare_designの返り値に含まれるnearby_node_idsをそのまま渡すと
   inputSchema: {
     type: "object",
     properties: {
-      comparison_id: {
-        type: "string",
-        description: "compare_designの返り値に含まれるcomparison_id"
+      comparison_result: {
+        type: ["string", "object"],
+        description: "compare_designの返り値（JSON文字列またはオブジェクト）"
       },
       format: {
         type: "string",
         enum: ["markdown", "json"],
-        default: "markdown"
+        default: "markdown",
+        description: "出力フォーマット（markdown or json）"
+      },
+      output_path: {
+        type: "string",
+        description: "レポートをファイルに保存する場合のパス（省略可）"
       }
     },
-    required: ["comparison_id"]
+    required: ["comparison_result"]
   }
 }
 
@@ -650,18 +746,127 @@ compare_designの返り値に含まれるnearby_node_idsをそのまま渡すと
     required: ["project_id", "frame_name", "region"]
   }
 }
+
+// Tool 8: 修正検証（改善・副作用チェック）
+{
+  name: "verify_fix",
+  description: "compare_design の前回比較と今回比較を突き合わせ、指定ノードが本当に改善したかと他セクションへの副作用を検証します。",
+  inputSchema: {
+    type: "object",
+    properties: {
+      design_source: {
+        type: "string",
+        description: "FigmaのURL（node-id付き推奨）またはデザイン画像のローカルパス"
+      },
+      screenshot: {
+        type: "string",
+        description: "修正後スクリーンショットのローカルパス"
+      },
+      frame_name: {
+        type: "string",
+        description: "Figma URLにnode-idがない場合のフレーム名（省略可）"
+      },
+      threshold: {
+        type: "number",
+        description: "pixelmatch の閾値（デフォルト0.1）"
+      },
+      project_id: {
+        type: "string",
+        description: "Crop Region 適用用のプロジェクトID（省略可）"
+      },
+      prior_comparison_id: {
+        type: "string",
+        description: "比較対象にする過去の compare_design comparisonId"
+      },
+      expected_target_node_id: {
+        type: "string",
+        description: "修正したはずの figmaNodeId"
+      }
+    },
+    required: ["design_source", "screenshot", "prior_comparison_id", "expected_target_node_id"]
+  }
+}
+
+// Tool 9: プロジェクト一覧取得
+{
+  name: "list_projects",
+  description: "~/.figdiff/projects/ に保存された全FigDiffプロジェクトを一覧表示します。プロジェクトIDを確認するために使用してください。",
+  inputSchema: {
+    type: "object",
+    properties: {}
+  }
+}
+
+// Tool 10: ignore_regions 取得
+{
+  name: "get_ignore_regions",
+  description: "プロジェクトに保存された意図的差分マスク（ignore_regions）を取得します。アニメーション領域やダイナミックコンテンツ等、常に無視すべき領域を確認するために使用します。",
+  inputSchema: {
+    type: "object",
+    properties: {
+      project_id: {
+        type: "string",
+        description: "プロジェクトID"
+      },
+      frame_name: {
+        type: "string",
+        description: "フレーム名（省略時は全フレームのマスクを返す）"
+      }
+    },
+    required: ["project_id"]
+  }
+}
+
+// Tool 11: ignore_regions 設定
+{
+  name: "set_ignore_regions",
+  description: "意図的差分マスク（ignore_regions）を保存します。アニメーション領域やダイナミックコンテンツ等、常に無視すべき領域を登録します。compare_design や verify_fix 実行時に自動適用されます。",
+  inputSchema: {
+    type: "object",
+    properties: {
+      project_id: {
+        type: "string",
+        description: "プロジェクトID"
+      },
+      frame_name: {
+        type: "string",
+        description: "フレーム名"
+      },
+      regions: {
+        type: "array",
+        description: "無視する矩形領域の配列",
+        items: {
+          type: "object",
+          properties: {
+            x: { type: "number" },
+            y: { type: "number" },
+            width: { type: "number" },
+            height: { type: "number" },
+            label: { type: "string", description: "メモ（例: アニメーション領域）" }
+          },
+          required: ["x", "y", "width", "height"]
+        }
+      }
+    },
+    required: ["project_id", "frame_name", "regions"]
+  }
+}
 ```
 
-### 5.4 compare_design の返り値設計（AIの次のアクションを誘導）
+### 5.4 compare_design の返り値設計（AIを仕組みで動かす）
 
 ```typescript
-// compare_design が返すデータ
+// compare_design が返すデータ — テスト結果のようにPASS/FAILで強制
 interface CompareDesignResult {
+  // ★ PASS/FAIL — AIはFAILを放置できない
+  status: "PASS" | "FAIL";
+
   comparison_id: string;
   match_rate: number;             // 94.2（%）
   diff_pixel_count: number;       // 5800
   total_pixel_count: number;      // 100000
-  
+  remaining_issues: number;       // 差分領域の数（0でないとタスク完了できない）
+
   // ★ 差分がある領域のリスト（AIがinspect_nodeに渡せる）
   diff_regions: Array<{
     id: number;
@@ -671,13 +876,22 @@ interface CompareDesignResult {
     nearby_node_ids: string[];
     nearby_node_names: string[];
   }>;
-  
-  // ★ AIへの次のアクション提案
-  suggestion: string;
+
+  // ★ 完了条件を構造化データとして返す（AIが機械的に判断できる）
+  completion_criteria: {
+    match_rate: { required: 100; current: number; status: "PASS" | "FAIL" };
+    diff_pixel_count: { required: 0; current: number; status: "PASS" | "FAIL" };
+    remaining_issues: { required: 0; current: number; status: "PASS" | "FAIL" };
+  };
+
+  // ★ AIへの次のアクション（具体的な行動指示）
+  next_action: string;
   // 例:
-  // match_rate === 100 → "一致率100%です。差分はありません。"
-  // match_rate >= 95   → "軽微な差分が{n}箇所あります。inspect_nodeで差分領域のノードを確認してください。"
-  // match_rate < 95    → "大きな差分が{n}箇所あります。inspect_nodeで各差分領域を確認し、修正してください。"
+  // status === "PASS" → "一致率100%です。差分はありません。タスク完了です。"
+  // status === "FAIL" → "inspect_node を使って diffRegions の詳細を確認し、修正してください。"
+
+  // ★ 後方互換: 従来のsuggestionも維持
+  suggestion: string;
 }
 
 // MCP content として返す形式
@@ -768,40 +982,90 @@ AI: [compare_design(...)]
     → Crop Region適用済みで比較
 ```
 
-### 5.6 Crop Region データ共有
+### 5.6 プロジェクトデータモデル（v4 新設計）
+
+```typescript
+// DesignSource — 各ページに紐づくデザインソース（Figma URL or ローカル画像）
+const DesignSourceSchema = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("figma"),
+    id: z.string(),
+    label: z.string(),                     // "PC版デザイン", "SP版デザイン"
+    figmaUrl: z.string(),
+    fileKey: z.string(),
+    nodeId: z.string().optional(),
+    frameName: z.string().optional(),
+  }),
+  z.object({
+    type: z.literal("local_image"),
+    id: z.string(),
+    label: z.string(),                     // "修正前スクショ"
+    filePath: z.string(),
+  }),
+]);
+
+// ProjectPage — 実装の1ページ（/home, /about 等）
+const ProjectPageSchema = z.object({
+  id: z.string(),
+  name: z.string(),                        // "ホーム"
+  path: z.string(),                        // "/home"
+  designSources: z.array(DesignSourceSchema),
+});
+
+// Project — 1つの実装サーバーURL + N個のページ
+const ProjectSchema = z.object({
+  id: z.string(),
+  name: z.string(),                        // "コーポレートサイト"
+  implementationUrl: z.string(),           // "http://localhost:3000"
+  pages: z.array(ProjectPageSchema),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+```
+
+**構造のポイント:**
+- Project = 1つの実装サーバーURL（起点）
+- Page = 実装URLの1ページ（`implementationUrl + page.path` でフルURL）
+- DesignSource = 各ページに紐づくデザインソース（複数可。PC版Figma、SP版Figma、ローカル画像等）
+
+### 5.7 Crop Region データ共有 & プロジェクト永続化
 
 ```
 共有データディレクトリ: ~/.figdiff/
 
 ~/.figdiff/
-├── config.json
+├── settings.json              # グローバル設定
 ├── projects/
-│   ├── project-a/
-│   │   ├── meta.json
+│   ├── {project-id}/
+│   │   ├── project.json       # ProjectSchema 全体（ページ・デザインソース含む）
 │   │   ├── crop-regions.json
-│   │   ├── cache/           # Figma画像キャッシュ
-│   │   └── comparisons/     # 比較結果履歴
-│   └── project-b/
+│   │   ├── cache/             # Figma画像キャッシュ
+│   │   └── comparisons/       # 比較結果履歴
+│   └── ...
 └── ...
 ```
 
-### 5.7 MCPサーバーのディレクトリ構造
+### 5.8 MCPサーバーのディレクトリ構造
 
 ```
-apps/mcp-server/
+app/mcp-server/
 ├── package.json
 ├── tsconfig.json
 ├── src/
 │   ├── index.ts
 │   ├── server.ts
-│   ├── tools/
+│   ├── tool/
 │   │   ├── compare-design.ts       # 🎯 Primary
 │   │   ├── inspect-node.ts         # 🔍 Secondary
 │   │   ├── get-design-tokens.ts    # 🔍 Secondary
 │   │   ├── list-frames.ts          # 📋 Utility
+│   │   ├── list-projects.ts        # 📋 Utility
 │   │   ├── generate-report.ts      # 📋 Utility
 │   │   ├── get-crop-region.ts      # 📋 Utility
-│   │   └── set-crop-region.ts      # 📋 Utility
+│   │   ├── set-crop-region.ts      # 📋 Utility
+│   │   ├── get-ignore-regions.ts   # 📋 Utility
+│   │   ├── set-ignore-regions.ts   # 📋 Utility
+│   │   └── verify-fix.ts           # ✅ Verification
 │   ├── services/
 │   │   ├── design-input-parser.ts  # URL/パス自動判定
 │   │   ├── node-matcher.ts         # 差分領域→Figmaノード マッチング
@@ -930,14 +1194,17 @@ compare_designの返り値にnearby_node_idsを含めるため、差分画像の
 ## 8. ディレクトリ構造
 
 ```
-figdiff/
-├── apps/
-│   ├── desktop/                    # Tauri デスクトップアプリ
-│   │   ├── src-tauri/
-│   │   │   ├── Cargo.toml
-│   │   │   ├── tauri.conf.json
-│   │   │   └── src/
-│   │   │       └── main.rs
+designdiff/
+├── app/
+│   ├── desktop/                    # Electron デスクトップアプリ
+│   │   ├── electron/
+│   │   │   ├── main.ts
+│   │   │   ├── preload.ts
+│   │   │   └── ipc/
+│   │   │       ├── figma.ts
+│   │   │       ├── file.ts
+│   │   │       ├── token.ts
+│   │   │       └── overlay.ts
 │   │   ├── src/
 │   │   │   ├── App.tsx
 │   │   │   ├── main.tsx
@@ -1018,7 +1285,7 @@ figdiff/
 │       │       └── index.ts
 │       └── README.md
 │
-├── packages/
+├── package/
 │   └── shared/
 │       ├── package.json
 │       ├── src/
@@ -1049,11 +1316,11 @@ figdiff/
 
 **やること:**
 - pnpmワークスペース + Turborepo セットアップ
-- Tauri v2 + React + TypeScript + Vite 初期化
+- Electron + electron-vite + React + TypeScript 初期化
 - Tailwind CSS + Biome 設定
 - GitHub リポジトリ作成
 
-**完了条件:** `pnpm tauri dev` でTauriの空ウィンドウが起動する
+**完了条件:** `pnpm dev` でElectronの空ウィンドウが起動する
 
 ---
 
@@ -1085,7 +1352,7 @@ figdiff/
 - スクショのドラッグ&ドロップ + パス直接入力
 - 画像リサイズ整合（sharp）
 - Crop Region（矩形ドラッグ指定、JSON自動保存）
-- Canvas 2画像描画 + 7表示モード（Pixelay同等 + Pixel Diff）
+- Canvas 2画像描画 + 8表示モード（Pixelay同等 + Pixel Diff + Toggle）
 - Overlay Opacityスライダー + Pixel Ruler
 - pixelmatch 差分画像生成 + 一致率表示
 - 差分領域クラスタリング（赤ピクセル結合 → バウンディングボックス）
@@ -1118,7 +1385,7 @@ figdiff/
 
 **やること:**
 - @modelcontextprotocol/sdk でサーバー構築
-- 7つのToolを実装（description含む）
+- 7つのToolを実装 + list_projectsを追加（計8ツール、description含む）
   - compare_design（★Primary、suggestion付き返り値）
   - inspect_node（Dev Mode詳細 + css_suggestion）
   - get_design_tokens（description で「修正時は使わない」と明記）
@@ -1139,52 +1406,143 @@ figdiff/
 
 ---
 
-### Phase 5: 仕上げ（3-4日）
+### Phase 5: 仕上げ（3-4日）✅ 完了
 
-**やること:**
-- 比較履歴保存、前回との差分
+**やったこと:**
 - ダークテーマ
 - エラーハンドリング、ローディングUI
 - オフライン対応（キャッシュ済み画像ならpixelmatch可能）
 - Figma APIレート制限対策
+- i18n（日本語/英語）
 - README / ポートフォリオ用ドキュメント
-- npm publish / GitHub Releases
-
-**完了条件:** プロダクトとして人に見せられるレベルの完成度
 
 ---
 
-### Phase 6: 追加機能（将来）
+### Phase A: データモデル + 永続化レイヤー（v4 新設計）
 
-- **Figmaプラグイン版**（Community公開 — Edit権限のある自分のファイル向け）
-  - 開発モードで自分だけ使う → Community公開で誰でも利用可
-  - Pixelayの代替としてFigma内から直接比較可能
-  - MCPサーバー版との二刀流配布
+**やること:**
+- ProjectSchema, ProjectPageSchema, DesignSourceSchema のZod定義（§5.6参照）
+- Electron IPC経由の永続化レイヤー（~/.figdiff/projects/）
+- project:list / project:load / project:save / project:delete ハンドラー
+- PlatformAdapter への ProjectAdapter インターフェース追加
+- 新Zodスキーマのテスト（TDD: テストファースト）
+
+**完了条件:**
+- プロジェクトの作成・読込・保存・削除がElectron IPC経由で動作する
+- テストカバレッジ ≥ 80%
+
+---
+
+### Phase B: フロー逆転（実装URL起点 → デザインソース追加）
+
+**やること:**
+- ホーム画面をプロジェクト一覧に変更（§4.1参照）
+- 新規プロジェクト作成ダイアログ（名前 + 実装URL入力）
+- プロジェクトビュー（§4.1.2参照）: ページ一覧サイドバー + デザインソース管理
+- ページ追加/編集UI（名前 + パス入力）
+- デザインソース追加UI（Figma URL or ローカル画像パス + ラベル入力）
+- 既存の Compare/LiveOverlay 画面への遷移を新フローに接続
+- コンポーネントテスト
+
+**完了条件:**
+- 実装URLを先に入力 → ページ追加 → デザインソース追加 → 比較 のフローが動作
+- プロジェクトが~/.figdiff/に永続化される
+
+---
+
+### Phase C: タブUI（React内タブバー + Store スコープ化）
+
+**やること:**
+- useTabStore の実装（タブの開閉・切替・順序管理）
+- App.tsx にタブバーコンポーネント追加
+- 既存Zustand storeのスコープ化（projectIdでインスタンス分離）
+  - useProjectStore → useDesignSourceStore(projectId)
+  - useCompareStore → useCompareStore(projectId, sourceId)
+  - useOverlayStore → useOverlayStore(projectId)
+- タブごとにページ状態を独立管理
+- タブバーのテスト
+
+**完了条件:**
+- 複数プロジェクトを同時にタブで開き、切替できる
+- 各タブの状態が独立している
+
+---
+
+### Phase D: MCP出力構造の強化
+
+**やること:**
+- CompareDesignResult に status, completion_criteria, next_action フィールド追加（§5.4参照）
+- 各ツールのdescriptionを「いつ使うか」「完了条件は何か」形式に書き換え
+- 新ツール list_projects の追加
+- compare_design に project_id + page_path パラメータ追加（後方互換維持）
+- MCPツールのテスト更新
+
+**完了条件:**
+- compare_design が status: "FAIL" / "PASS" を返す
+- AIが出力を見て自律的にループを回す構造になっている
+- 既存のパラメータなしでの利用も動作する（後方互換）
+
+---
+
+### Phase E: テストカバレッジ網羅
+
+**やること:**
+- 全パッケージのテストカバレッジを ≥ 80% に引き上げ
+- 新機能（Phase A-D）のテストはTDDで各フェーズに含める
+- 既存の不足分を補完
+- E2Eテスト（主要フロー: プロジェクト作成 → ページ追加 → 比較 → 結果確認）
+
+**完了条件:**
+- `pnpm test --coverage` で全パッケージ ≥ 80%
+- CI（lint + typecheck + test）が全てパス
+
+---
+
+### Phase F: Chrome拡張 + Figmaプラグイン仕上げ
+
+**やること:**
+- Chrome拡張: 統合テスト、UI仕上げ、manifest v3対応確認
+- Figmaプラグイン: UI完成、フレームエクスポート、比較機能接続
+- 両方のテストカバレッジ確保
+
+**完了条件:**
+- Chrome拡張が正常に動作する
+- FigmaプラグインがFigma内から比較を実行できる
+
+---
+
+### 将来の追加機能
+
 - Slack/Discord通知
 - GitHub PR コメント自動投稿
 - Figma Webhook で自動比較
 - チーム共有機能
 - Figma Variables 連携
 - PenpotProvider 追加
-- Web版（Tauri不要のブラウザ版）
+- Web版（Electron不要のブラウザ版）
+- タブのドラッグ&ドロップで別ウィンドウに分離
 
 ---
 
 ## 10. 開発期間サマリー
 
-| Phase | 内容 | 期間 | 累計 |
+| Phase | 内容 | 期間 | 状態 |
 |-------|------|------|------|
-| 0 | 環境構築 | 1日 | 1日 |
-| 1 | Figma API + Provider + URLパース | 3-4日 | 5日 |
-| 2 | 画像比較コア + Crop Region + ノードマッチ | 6-7日 | 12日 |
-| 3 | inspect_node + 数値差分 + レポート | 4-5日 | 17日 |
-| 4 | MCPサーバー（7 tools + Diff駆動設計） | 5-6日 | 23日 |
-| 5 | 仕上げ | 3-4日 | 27日 |
+| 0 | 環境構築 | 1日 | ✅ 完了 |
+| 1 | Figma API + Provider + URLパース | 3-4日 | ✅ 完了 |
+| 2 | 画像比較コア + Crop Region + ノードマッチ | 6-7日 | ✅ 完了 |
+| 3 | inspect_node + 数値差分 + レポート | 4-5日 | ✅ 完了 |
+| 4 | MCPサーバー（8 tools + Diff駆動設計） | 5-6日 | ✅ 完了 |
+| 5 | 仕上げ | 3-4日 | ✅ 完了 |
+| **A** | **データモデル + 永続化レイヤー** | 2-3日 | 🔧 次 |
+| **B** | **フロー逆転（実装URL起点）** | 3-4日 | 📋 計画中 |
+| **C** | **タブUI + Store スコープ化** | 3-4日 | 📋 計画中 |
+| **D** | **MCP出力構造の強化** | 2-3日 | 📋 計画中 |
+| **E** | **テストカバレッジ ≥ 80%** | 2-3日 | 📋 計画中 |
+| **F** | **Chrome拡張 + Figmaプラグイン仕上げ** | 3-4日 | 📋 計画中 |
 
-**MVP（Phase 0-2）: 約12日でpixelmatch比較が動く**
-**フル機能（Phase 0-5）: 約27日（約1ヶ月）**
-
-業務委託の合間に週2-3日 → 2-2.5ヶ月で完成。
+**Phase 0-5（コア機能）: ✅ 完了**
+**Phase A-F（UX進化 + 品質強化）: 約16-21日**
 
 ---
 
@@ -1199,8 +1557,10 @@ figdiff/
 | ノードマッチングの精度 | nearby_node_ids が不正確 | 候補を複数返す、AIが判断 |
 | AIがdiffループを止めない | 無限ループ | suggestion に「5回以上比較してもズレが残る場合は人間に確認を」と含める |
 | AIがget_design_tokensから始める | Diff駆動にならない | description で強く誘導 + compare_designの返り値で次のアクションを提示 |
-| Tauri v2 互換性 | プラグイン未対応 | コア機能はWeb技術で完結 |
+| Electron バンドルサイズ | 150MB+ | electron-builder でプラットフォーム別最適化 |
 | Figma API仕様変更 | エンドポイント廃止 | DesignProviderに隔離 |
+| プロジェクトデータ破損 | 永続化ファイル破損 | JSONバリデーション（Zod）、バックアップ |
+| タブ間の状態リーク | Store分離不備 | projectIdスコープの厳密テスト |
 | Crop Region JSON競合 | 同時書き込み | updated_atで最新判定 |
 | Figma Token漏洩 | 不正アクセス | OS Keychain保存、平文禁止 |
 
@@ -1213,14 +1573,14 @@ figdiff/
 **競合価格対比:**
 - Pixelay Pro: $20/月（年払い$16/月）— 7比較モード、デスクトップ比較はPro限定
 - Applitools: エンタープライズ向け高額
-- FigDiff MCP: **無料**（7比較モード + Pixel Diff + AI自動修正ループ）
+- FigDiff MCP: **無料**（8比較モード + AI自動修正ループ）
 - FigDiff デスクトップ: **買い切り $29**（Pixelay 2ヶ月分以下）
 
 ```
 ┌─────────────────────────────────────┐
 │          無料（OSS / npm公開）         │
 │                                      │
-│  MCPサーバー（7 tools）               │
+│  MCPサーバー（8 tools）               │
 │  - Cursor / Claude Code / Copilot    │
 │  - Diff駆動ワークフロー              │
 │  - compare → inspect → fix サイクル  │
@@ -1279,7 +1639,7 @@ figdiff/
 ### アピールポイント
 - 自分の課題を技術で解決した実例
 - **Diff駆動のAI行動設計** — ツールのdescriptionでAIの行動を制御する設計思想
-- Tauri + React + TypeScript のモダンスタック
+- Electron + React + TypeScript のモダンスタック
 - Figma API / MCP / Design Provider パターン
 - APIキー不要の設計（既存AIツールとの連携）
 - REDACTEDフレンドリーなUX設計

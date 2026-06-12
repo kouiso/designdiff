@@ -56,20 +56,17 @@ export const registerFileHandlers = (): void => {
       });
 
       try {
-        await win.loadURL(url);
-
-        await new Promise<void>((resolve, reject) => {
+        // loadURL前にリスナー登録（race condition防止）
+        const pageReady = new Promise<void>((resolve, reject) => {
           const timeout = setTimeout(() => {
             resolve();
           }, 10000);
 
           win.webContents.on("did-finish-load", () => {
-            win.webContents.once("dom-ready", () => {
+            // dom-readyだけではSPAの非同期描画が完了していないため、paint完了を待つ
+            win.webContents.once("paint", () => {
               clearTimeout(timeout);
-              // dom-readyだけではSPAの非同期描画が完了していないため、paint完了を待つ
-              win.webContents.once("paint", () => {
-                resolve();
-              });
+              resolve();
             });
           });
 
@@ -78,6 +75,9 @@ export const registerFileHandlers = (): void => {
             reject(new Error(`ページの読み込みに失敗: ${code} ${desc}`));
           });
         });
+
+        await win.loadURL(url);
+        await pageReady;
 
         const image = await win.webContents.capturePage();
         return image.toPNG().toString("base64");

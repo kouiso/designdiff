@@ -8,7 +8,15 @@ const electronAPI = {
   getFigmaToken: vi.fn(),
   deleteFigmaToken: vi.fn(),
   readLocalImage: vi.fn(),
+  getPathForFile: vi.fn((file: File) => `/mock/${file.name}`),
   captureUrlScreenshot: vi.fn(),
+  oauth: {
+    start: vi.fn().mockResolvedValue(undefined),
+    logout: vi.fn().mockResolvedValue(undefined),
+    status: vi.fn().mockResolvedValue({ mode: "none" }),
+    saveClient: vi.fn().mockResolvedValue(undefined),
+    getClientId: vi.fn().mockResolvedValue(null),
+  },
   overlay: {
     open: vi.fn(),
     close: vi.fn(),
@@ -18,6 +26,7 @@ const electronAPI = {
     captureScreenshot: vi.fn(),
     onNavigated: vi.fn().mockReturnValue(() => {}),
     setMode: vi.fn(),
+    updateScale: vi.fn(),
     updateSplitPosition: vi.fn(),
     toggleStart: vi.fn(),
     toggleStop: vi.fn(),

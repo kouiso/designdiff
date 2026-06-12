@@ -1,11 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import * as imageCompare from "@/service/image-compare";
+import * as liveDiff from "@/service/live-diff";
 
 import { useOverlayStore } from "./overlay-store";
 
 vi.mock("@/service/image-compare", () => ({
   compareImages: vi.fn(),
+}));
+
+vi.mock("@/service/live-diff", () => ({
+  computeLiveDiff: vi.fn(),
 }));
 
 function resetStore() {
@@ -20,10 +25,17 @@ function resetStore() {
     error: null,
     overlayViewMode: "transparent_overlay",
     splitPosition: 0.5,
+    overlayScale: 1,
+    overlayScaleMode: "fit_width",
     toggleIntervalMs: 500,
     isToggling: false,
     isPixelDiffRunning: false,
     pixelDiffMatchRate: null,
+    pixelDiffError: null,
+    isLiveDiffEnabled: false,
+    isLiveDiffRunning: false,
+    liveDiffResult: null,
+    liveDiffError: null,
   });
 }
 
@@ -119,7 +131,10 @@ describe("useOverlayStore", () => {
     it("removes overlay when toggling off", async () => {
       vi.mocked(window.electronAPI.overlay.removeOverlay).mockResolvedValueOnce(undefined);
 
-      useOverlayStore.setState({ showOverlay: true, overlayImageBase64: "abc" });
+      useOverlayStore.setState({
+        showOverlay: true,
+        overlayImageBase64: "abc",
+      });
       await useOverlayStore.getState().toggleOverlay();
 
       expect(useOverlayStore.getState().showOverlay).toBe(false);
@@ -274,7 +289,10 @@ describe("useOverlayStore", () => {
     it("updates splitPosition and calls updateSplitPosition when in split_screen mode", async () => {
       vi.mocked(window.electronAPI.overlay.updateSplitPosition).mockResolvedValueOnce(undefined);
 
-      useOverlayStore.setState({ isOpen: true, overlayViewMode: "split_screen" });
+      useOverlayStore.setState({
+        isOpen: true,
+        overlayViewMode: "split_screen",
+      });
       await useOverlayStore.getState().setSplitPosition(0.7);
 
       expect(useOverlayStore.getState().splitPosition).toBe(0.7);
@@ -282,7 +300,10 @@ describe("useOverlayStore", () => {
     });
 
     it("updates splitPosition without calling overlay when not in split_screen", async () => {
-      useOverlayStore.setState({ isOpen: true, overlayViewMode: "transparent_overlay" });
+      useOverlayStore.setState({
+        isOpen: true,
+        overlayViewMode: "transparent_overlay",
+      });
       await useOverlayStore.getState().setSplitPosition(0.3);
 
       expect(useOverlayStore.getState().splitPosition).toBe(0.3);
@@ -365,7 +386,10 @@ describe("useOverlayStore", () => {
       });
       vi.mocked(window.electronAPI.overlay.setMode).mockResolvedValueOnce(undefined);
 
-      useOverlayStore.setState({ overlayImageBase64: "designImg", isPixelDiffRunning: false });
+      useOverlayStore.setState({
+        overlayImageBase64: "designImg",
+        isPixelDiffRunning: false,
+      });
       await useOverlayStore.getState().runPixelDiff();
 
       const state = useOverlayStore.getState();
@@ -379,16 +403,22 @@ describe("useOverlayStore", () => {
       );
     });
 
-    it("sets error on failure", async () => {
+    it("preserves matchRate and sets pixelDiffError on failure", async () => {
       vi.mocked(window.electronAPI.overlay.captureScreenshot).mockRejectedValueOnce(
         new Error("capture failed"),
       );
 
-      useOverlayStore.setState({ overlayImageBase64: "img", isPixelDiffRunning: false });
+      useOverlayStore.setState({
+        overlayImageBase64: "img",
+        isPixelDiffRunning: false,
+        pixelDiffMatchRate: 0.95,
+      });
       await useOverlayStore.getState().runPixelDiff();
 
       const state = useOverlayStore.getState();
       expect(state.isPixelDiffRunning).toBe(false);
+      expect(state.pixelDiffMatchRate).toBe(0.95);
+      expect(state.pixelDiffError).toContain("capture failed");
       expect(state.error).toContain("capture failed");
     });
   });
@@ -415,7 +445,27 @@ describe("useOverlayStore", () => {
       expect(useOverlayStore.getState().pixelDiffMatchRate).toBe(0.88);
     });
 
-    it("sets error when setMode fails", async () => {
+    it("preserves matchRate and sets error when runPixelDiff fails", async () => {
+      vi.mocked(window.electronAPI.overlay.setMode).mockResolvedValue(undefined);
+      vi.mocked(window.electronAPI.overlay.captureScreenshot).mockRejectedValueOnce(
+        new Error("pixel diff failed"),
+      );
+      useOverlayStore.setState({
+        isOpen: true,
+        overlayImageBase64: "img",
+        pixelDiffMatchRate: 0.88,
+      });
+
+      await useOverlayStore.getState().setOverlayViewMode("pixel_diff");
+
+      const state = useOverlayStore.getState();
+      expect(state.overlayViewMode).toBe("pixel_diff");
+      expect(state.pixelDiffMatchRate).toBe(0.88);
+      expect(state.pixelDiffError).toContain("pixel diff failed");
+      expect(state.error).toContain("pixel diff failed");
+    });
+
+    it("keeps previous mode when pixel_diff setMode fails", async () => {
       vi.mocked(window.electronAPI.overlay.setMode).mockRejectedValueOnce(
         new Error("setMode exploded"),
       );
@@ -423,10 +473,148 @@ describe("useOverlayStore", () => {
       useOverlayStore.setState({
         isOpen: true,
         overlayImageBase64: "img",
+        overlayViewMode: "transparent_overlay",
+      });
+      await useOverlayStore.getState().setOverlayViewMode("pixel_diff");
+
+      expect(useOverlayStore.getState().overlayViewMode).toBe("transparent_overlay");
+      expect(useOverlayStore.getState().error).toContain("setMode exploded");
+    });
+
+    it("updates store mode when pixel_diff scale update fails after setMode", async () => {
+      vi.mocked(window.electronAPI.overlay.setMode).mockResolvedValue(undefined);
+      vi.mocked(window.electronAPI.overlay.updateScale).mockRejectedValueOnce(
+        new Error("scale exploded"),
+      );
+      vi.mocked(window.electronAPI.overlay.captureScreenshot).mockResolvedValueOnce("cap==");
+      vi.mocked(imageCompare.compareImages).mockResolvedValueOnce({
+        matchRate: 0.91,
+        mismatchCount: 90,
+        diffImageBase64: "data:image/png;base64,diff==",
+        diffRegions: [],
+      });
+
+      useOverlayStore.setState({
+        isOpen: true,
+        overlayImageBase64: "img",
+        overlayViewMode: "transparent_overlay",
+      });
+      await useOverlayStore.getState().setOverlayViewMode("pixel_diff");
+
+      const state = useOverlayStore.getState();
+      expect(state.overlayViewMode).toBe("pixel_diff");
+      expect(state.pixelDiffMatchRate).toBe(0.91);
+      expect(state.error).toContain("scale exploded");
+    });
+
+    it("updates store mode when non-pixel scale update fails after setMode", async () => {
+      vi.mocked(window.electronAPI.overlay.setMode).mockResolvedValueOnce(undefined);
+      vi.mocked(window.electronAPI.overlay.updateScale).mockRejectedValueOnce(
+        new Error("scale exploded"),
+      );
+
+      useOverlayStore.setState({
+        isOpen: true,
+        overlayImageBase64: "img",
+        overlayViewMode: "transparent_overlay",
+        pixelDiffMatchRate: 0.88,
       });
       await useOverlayStore.getState().setOverlayViewMode("blended_diff");
 
-      expect(useOverlayStore.getState().error).toContain("setMode exploded");
+      const state = useOverlayStore.getState();
+      expect(state.overlayViewMode).toBe("blended_diff");
+      expect(state.pixelDiffMatchRate).toBeNull();
+      expect(state.error).toContain("scale exploded");
+    });
+  });
+
+  describe("live diff", () => {
+    it("enables live diff and starts a recompute", async () => {
+      vi.mocked(window.electronAPI.overlay.captureScreenshot).mockResolvedValueOnce("captured==");
+      vi.mocked(liveDiff.computeLiveDiff).mockResolvedValueOnce({
+        comparisonId: "cmp-live",
+        matchRate: 99.1,
+        diffPixelCount: 1,
+        totalPixelCount: 100,
+        diffRegions: [],
+        suggestion: "compare.suggestionMinor",
+      });
+
+      useOverlayStore.setState({
+        isOpen: true,
+        overlayImageBase64: "design==",
+      });
+      useOverlayStore.getState().setLiveDiffEnabled(true);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      const state = useOverlayStore.getState();
+      expect(state.isLiveDiffEnabled).toBe(true);
+      expect(state.isLiveDiffRunning).toBe(false);
+      expect(state.liveDiffResult?.matchRate).toBe(99.1);
+      expect(liveDiff.computeLiveDiff).toHaveBeenCalledWith({
+        designImageBase64: "design==",
+        screenshotBase64: "captured==",
+      });
+    });
+
+    it("skips overlapping live diff runs", async () => {
+      useOverlayStore.setState({
+        isOpen: true,
+        overlayImageBase64: "design==",
+        isLiveDiffRunning: true,
+      });
+
+      await useOverlayStore.getState().runLiveDiff();
+
+      expect(window.electronAPI.overlay.captureScreenshot).not.toHaveBeenCalled();
+      expect(liveDiff.computeLiveDiff).not.toHaveBeenCalled();
+    });
+
+    it("updates live diff when navigation event arrives while enabled", async () => {
+      vi.mocked(window.electronAPI.overlay.captureScreenshot).mockResolvedValueOnce("captured==");
+      vi.mocked(liveDiff.computeLiveDiff).mockResolvedValueOnce({
+        comparisonId: "cmp-live",
+        matchRate: 88,
+        diffPixelCount: 12,
+        totalPixelCount: 100,
+        diffRegions: [],
+        suggestion: "compare.suggestionMajor",
+      });
+      useOverlayStore.setState({
+        isOpen: true,
+        overlayImageBase64: "design==",
+        isLiveDiffEnabled: true,
+      });
+
+      useOverlayStore.getState().handleNavigated("http://localhost:3000/next");
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      expect(useOverlayStore.getState().currentUrl).toBe("http://localhost:3000/next");
+      expect(useOverlayStore.getState().liveDiffResult?.matchRate).toBe(88);
+    });
+
+    it("disables live diff without clearing the latest report", () => {
+      useOverlayStore.setState({
+        isLiveDiffEnabled: true,
+        isLiveDiffRunning: true,
+        liveDiffResult: {
+          comparisonId: "cmp-live",
+          matchRate: 92,
+          diffPixelCount: 8,
+          totalPixelCount: 100,
+          diffRegions: [],
+          suggestion: "compare.suggestionMinor",
+        },
+        liveDiffError: "old",
+      });
+
+      useOverlayStore.getState().setLiveDiffEnabled(false);
+
+      const state = useOverlayStore.getState();
+      expect(state.isLiveDiffEnabled).toBe(false);
+      expect(state.isLiveDiffRunning).toBe(false);
+      expect(state.liveDiffResult?.matchRate).toBe(92);
+      expect(state.liveDiffError).toBeNull();
     });
   });
 
@@ -452,6 +640,51 @@ describe("useOverlayStore", () => {
       expect(state.isPixelDiffRunning).toBe(false);
       expect(state.error).toBeNull();
       expect(state.currentUrl).toBeNull();
+    });
+  });
+
+  describe("openSite guard conditions", () => {
+    it("does nothing when isLoading is true", async () => {
+      useOverlayStore.setState({
+        url: "http://localhost:3000",
+        isLoading: true,
+      });
+      await useOverlayStore.getState().openSite();
+
+      expect(window.electronAPI.overlay.open).not.toHaveBeenCalled();
+    });
+
+    it("does nothing when isOpen is true", async () => {
+      useOverlayStore.setState({ url: "http://localhost:3000", isOpen: true });
+      await useOverlayStore.getState().openSite();
+
+      expect(window.electronAPI.overlay.open).not.toHaveBeenCalled();
+    });
+
+    it("sets isLoading before calling overlay.open", async () => {
+      let loadingDuringCall = false;
+      vi.mocked(window.electronAPI.overlay.open).mockImplementationOnce(async () => {
+        loadingDuringCall = useOverlayStore.getState().isLoading;
+      });
+
+      useOverlayStore.setState({ url: "http://localhost:3000" });
+      await useOverlayStore.getState().openSite();
+
+      expect(loadingDuringCall).toBe(true);
+    });
+
+    it("resets isLoading on overlay open failure", async () => {
+      vi.mocked(window.electronAPI.overlay.open).mockRejectedValueOnce(
+        new Error("Connection refused"),
+      );
+
+      useOverlayStore.setState({ url: "http://localhost:3000" });
+      await useOverlayStore.getState().openSite();
+
+      const state = useOverlayStore.getState();
+      expect(state.isLoading).toBe(false);
+      expect(state.isOpen).toBe(false);
+      expect(state.error).toContain("Connection refused");
     });
   });
 });

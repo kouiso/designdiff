@@ -1,0 +1,92 @@
+{
+  "pairId": "pair-04-color-system",
+  "figmaFrame": "figma-export.png",
+  "figmaRootNode": {
+    "id": "color-root",
+    "name": "Color System",
+    "type": "FRAME",
+    "absoluteBoundingBox": {
+      "x": 0,
+      "y": 0,
+      "width": 400,
+      "height": 500
+    },
+    "children": [
+      {
+        "id": "color-button-primary",
+        "name": "Button 1",
+        "type": "FRAME",
+        "absoluteBoundingBox": {
+          "x": 80,
+          "y": 252,
+          "width": 80,
+          "height": 40
+        }
+      },
+      {
+        "id": "color-button-secondary",
+        "name": "Button 2",
+        "type": "FRAME",
+        "absoluteBoundingBox": {
+          "x": 80,
+          "y": 306,
+          "width": 80,
+          "height": 40
+        }
+      },
+      {
+        "id": "color-button-tertiary",
+        "name": "Button 3",
+        "type": "FRAME",
+        "absoluteBoundingBox": {
+          "x": 40,
+          "y": 360,
+          "width": 320,
+          "height": 40
+        }
+      },
+      {
+        "id": "color-button-end",
+        "name": "Button End",
+        "type": "FRAME",
+        "absoluteBoundingBox": {
+          "x": 0,
+          "y": 442,
+          "width": 1,
+          "height": 1
+        }
+      }
+    ]
+  },
+  "variants": [
+    {
+      "name": "correct",
+      "image": "impl-correct.png",
+      "expectedVerdict": "pass",
+      "expectedKinds": [],
+      "notes": "期待どおりの color system。"
+    },
+    {
+      "name": "all-buttons-wrong-color",
+      "image": "impl-all-buttons-wrong-color.png",
+      "expectedVerdict": "fail",
+      "expectedKinds": ["color"],
+      "expectedIssueKinds": ["color"],
+      "expectedWeightedColorMin": 10,
+      "expectedWeightedColorMax": 30,
+      "expectedWorstRegionIds": ["color-button-primary"],
+      "notes": "全ボタンが gray-400 になり、トークン解決が完全に失敗する。"
+    },
+    {
+      "name": "single-button-wrong-color",
+      "image": "impl-single-button-wrong-color.png",
+      "expectedVerdict": "fail",
+      "expectedKinds": ["color"],
+      "expectedIssueKinds": ["color"],
+      "expectedWeightedColorMin": 3,
+      "expectedWeightedColorMax": 10,
+      "expectedWorstRegionIds": ["color-button-tertiary"],
+      "notes": "tertiary のみ rose-300 に変わる borderline case。"
+    }
+  ]
+}

@@ -13,8 +13,10 @@ import { transformNode } from "@/lib/transform-node";
 import type {
   FileAdapter,
   FigmaAdapter,
+  OAuthAdapter,
   PlatformAdapter,
   PlatformCapabilities,
+  ProjectAdapter,
   TokenAdapter,
 } from "./platform-adapter";
 
@@ -100,13 +102,35 @@ const webFigmaAdapter: FigmaAdapter = {
   },
 };
 
+const PRINTABLE_ASCII_RE = /^[\x21-\x7E]+$/;
+
+const isValidStoredToken = (value: string): boolean =>
+  FigmaTokenSchema.safeParse(value).success && PRINTABLE_ASCII_RE.test(value);
+
 const webTokenAdapter: TokenAdapter = {
   save: async (token) => {
-    const validated = FigmaTokenSchema.parse(token);
-    localStorage.setItem(TOKEN_STORAGE_KEY, validated);
+    const trimmed = token.trim();
+    try {
+      const validated = FigmaTokenSchema.parse(trimmed);
+      if (!PRINTABLE_ASCII_RE.test(validated)) throw new Error("non-printable");
+      localStorage.setItem(TOKEN_STORAGE_KEY, validated);
+    } catch {
+      throw new Error(
+        "Invalid Figma token. Expected a printable Personal Access Token starting with figd_.",
+      );
+    }
   },
   get: async () => {
     return getTokenFromStorage();
+  },
+  has: async () => {
+    const stored = getTokenFromStorage();
+    if (!stored) return false;
+    if (!isValidStoredToken(stored)) {
+      localStorage.removeItem(TOKEN_STORAGE_KEY);
+      return false;
+    }
+    return true;
   },
   delete: async () => {
     localStorage.removeItem(TOKEN_STORAGE_KEY);
@@ -153,10 +177,43 @@ const webFileAdapter: FileAdapter = {
   },
 };
 
+const webProjectAdapter: ProjectAdapter = {
+  list: async () => {
+    throw new Error("Project persistence is not available in web mode. Use the desktop app.");
+  },
+  load: async () => {
+    throw new Error("Project persistence is not available in web mode. Use the desktop app.");
+  },
+  save: async () => {
+    throw new Error("Project persistence is not available in web mode. Use the desktop app.");
+  },
+  delete: async () => {
+    throw new Error("Project persistence is not available in web mode. Use the desktop app.");
+  },
+};
+
+const webOAuthAdapter: OAuthAdapter = {
+  start: async () => {
+    throw new Error("OAuth login is not available in web mode. Use the desktop app.");
+  },
+  logout: async () => {
+    throw new Error("OAuth logout is not available in web mode. Use the desktop app.");
+  },
+  status: async () => ({ mode: "none" as const }),
+  saveClient: async () => {
+    throw new Error(
+      "Saving OAuth client credentials in web mode is not supported (plain localStorage + XSS risk).",
+    );
+  },
+  getClientId: async () => null,
+};
+
 export const webAdapter: PlatformAdapter = {
   figma: webFigmaAdapter,
   token: webTokenAdapter,
   file: webFileAdapter,
+  project: webProjectAdapter,
+  oauth: webOAuthAdapter,
 };
 
 export const webCapabilities: PlatformCapabilities = {

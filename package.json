@@ -4,31 +4,55 @@
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
+    "verify:native": "pnpm --filter @figdiff/desktop verify:native",
     "lint": "turbo run lint",
     "lint:fix": "turbo run lint:fix",
     "lint:eslint": "eslint .",
     "lint:eslint:fix": "eslint --fix .",
+    "eval:capture-lp": "node scripts/eval/capture-lp-screenshots.mjs",
+    "eval:manifest": "node scripts/eval/build-screenshot-manifest.mjs",
+    "eval:ingest-figma": "node scripts/eval/ingest-figma-pages.mjs",
+    "eval:ingest-figma:mock": "node scripts/eval/verify-figma-ingest-mock.mjs",
+    "eval:sample-project-lp-figma": "node scripts/eval/sample-project-lp-figma-smoke.mjs",
+    "eval:sample-project-lp-figma:ready": "node scripts/eval/sample-project-lp-figma-readiness.mjs",
+    "eval:sample-corporate-figma:ready": "node scripts/eval/sample-corporate-figma-readiness.mjs",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
     "format": "biome format --write .",
-    "check": "biome check ."
+    "check": "biome check .",
+    "smoke:top-pc-large-page": "node scripts/eval/top-pc-large-page-smoke.mjs",
+    "eval:pr-visual-evidence": "node scripts/eval/pr-visual-evidence-readiness.mjs",
+    "eval:sample-project-lp-figma:watchdog": "node scripts/eval/sample-project-lp-figma-readiness-watchdog.mjs",
+    "eval:sample-project-lp-figma:sbi-regression:watchdog": "node scripts/eval/sample-project-lp-figma-readiness-watchdog.mjs --out-dir /tmp/designdiff-sbi-regression-watchdog --figma-manifest verification/fixtures/sample-project-lp-figma-pages.sbi-regression.json",
+    "eval:sample-project-lp-figma:sbi-regression:validate": "node scripts/eval/ingest-figma-pages.mjs --figma-manifest verification/fixtures/sample-project-lp-figma-pages.sbi-regression.json --out /tmp/designdiff-sbi-regression-validate-only --summary-json /tmp/designdiff-sbi-regression-validate-only/figma-ingest-summary.json --validate-only",
+    "guard:figma-credentials": "node scripts/figma-credential-guard.mjs"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.3.15",
-    "@eslint/js": "^9.28.0",
-    "eslint": "^9.28.0",
-    "eslint-plugin-import": "^2.29.1",
+    "@biomejs/biome": "^2.4.15",
+    "@eslint/js": "^9.39.4",
+    "@playwright/test": "^1.60.0",
+    "eslint": "^9.39.4",
+    "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "globals": "^15.15.0",
-    "turbo": "^2.3.0",
-    "typescript": "^5.7.0",
-    "typescript-eslint": "^8.33.0"
+    "turbo": "^2.9.14",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.59.3"
   },
   "packageManager": "pnpm@9.15.0",
   "engines": {
     "node": ">=25.6.1"
   },
   "dependencies": {
-    "zod": "^4.3.6"
+    "zod": "^4.4.3"
+  },
+  "pnpm": {
+    "overrides": {
+      "fast-uri": "^3.1.2",
+      "hono": "^4.12.18",
+      "ip-address": "^10.1.1",
+      "postcss": "^8.5.10",
+      "@xmldom/xmldom": "^0.8.13"
+    }
   }
 }

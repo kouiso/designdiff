@@ -10,13 +10,15 @@ import {
   DiffRegionSchema,
 } from "@figdiff/shared";
 
+import { buildDiffReport } from "@/service/diff-report";
 import {
-  cropImageElement,
+  cropImageSource,
   imageDataToBase64,
   imageDataToCanvas,
   imageElementToData,
   loadImageElement,
   resizeImageData,
+  resizeImageDataContainTop,
 } from "@/util/canvas-image";
 
 interface CompareImagesOptions {
@@ -48,29 +50,43 @@ export async function compareImages(options: CompareImagesOptions): Promise<Comp
   let designData: ImageData;
   let screenshotData: ImageData;
 
+  designData = imageElementToData(designImg);
+  screenshotData = imageElementToData(screenshotImg);
+
+  if (!cropRegion && designData.width !== screenshotData.width) {
+    // クロップがない場合は既存方針どおり、スクリーンショット幅に合わせてデザイン画像を同比率でリサイズする。
+    const resizeHeight = Math.round(designData.height * (screenshotData.width / designData.width));
+    designData = resizeImageData(imageDataToCanvas(designData), screenshotData.width, resizeHeight);
+  }
+
   if (cropRegion) {
-    designData = cropImageElement(
-      designImg,
+    const screenshotCropRegion = scaleCropRegion(
+      cropRegion,
+      screenshotData.width / designData.width,
+      screenshotData.height / designData.height,
+    );
+    designData = cropImageSource(
+      imageDataToCanvas(designData),
       cropRegion.x,
       cropRegion.y,
       cropRegion.width,
       cropRegion.height,
     );
-    screenshotData = cropImageElement(
-      screenshotImg,
-      cropRegion.x,
-      cropRegion.y,
-      cropRegion.width,
-      cropRegion.height,
+    screenshotData = cropImageSource(
+      imageDataToCanvas(screenshotData),
+      screenshotCropRegion.x,
+      screenshotCropRegion.y,
+      screenshotCropRegion.width,
+      screenshotCropRegion.height,
     );
-  } else {
-    designData = imageElementToData(designImg);
-    screenshotData = imageElementToData(screenshotImg);
   }
 
   if (designData.width !== screenshotData.width || designData.height !== screenshotData.height) {
-    const sourceCanvas = imageDataToCanvas(designData);
-    designData = resizeImageData(sourceCanvas, screenshotData.width, screenshotData.height);
+    designData = resizeImageDataContainTop(
+      imageDataToCanvas(designData),
+      screenshotData.width,
+      screenshotData.height,
+    );
   }
 
   const { width, height } = screenshotData;
@@ -90,6 +106,12 @@ export async function compareImages(options: CompareImagesOptions): Promise<Comp
 
   const comparisonId = `cmp-${Date.now()}`;
   const suggestion = generateSuggestion(matchRate);
+  const diffReport = buildDiffReport({
+    designPixels: designData.data,
+    screenshotPixels: screenshotData.data,
+    width,
+    height,
+  });
 
   const result: CompareDesignResult & { diffImageBase64: string } = {
     comparisonId,
@@ -98,10 +120,20 @@ export async function compareImages(options: CompareImagesOptions): Promise<Comp
     totalPixelCount,
     diffRegions,
     suggestion,
+    diffReport,
     diffImageBase64,
   };
 
   return CompareDesignResultSchema.extend({ diffImageBase64: z.string() }).parse(result);
+}
+
+function scaleCropRegion(region: CropRegion, scaleX: number, scaleY: number): CropRegion {
+  return {
+    x: Math.round(region.x * scaleX),
+    y: Math.round(region.y * scaleY),
+    width: Math.round(region.width * scaleX),
+    height: Math.round(region.height * scaleY),
+  };
 }
 
 export function clusterDiffRegions(
@@ -116,7 +148,7 @@ export function clusterDiffRegions(
   for (let y = 0; y < imageHeight; y++) {
     for (let x = 0; x < imageWidth; x++) {
       const idx = (y * imageWidth + x) * 4;
-      if (diffData[idx] > 0 && !visited.has(idx)) {
+      if (isDiffPixel(diffData, idx) && !visited.has(idx)) {
         const region = floodFill(diffData, imageWidth, imageHeight, x, y, visited);
         if (region.pixelCount >= 10) {
           const diffRegion = {
@@ -162,7 +194,7 @@ export function floodFill(
       y < 0 ||
       y >= imageHeight ||
       visited.has(idx) ||
-      diffData[idx] === 0
+      !isDiffPixel(diffData, idx)
     ) {
       continue;
     }
@@ -187,6 +219,20 @@ export function floodFill(
     },
     pixelCount,
   };
+}
+
+function isDiffPixel(diffData: Uint8ClampedArray, idx: number): boolean {
+  const red = diffData[idx];
+  const green = diffData[idx + 1];
+  const blue = diffData[idx + 2];
+  const alpha = diffData[idx + 3];
+
+  if (alpha === 0 && red === 0 && green === 0 && blue === 0) {
+    return false;
+  }
+
+  // pixelmatch は一致ピクセルを白/グレー、不一致ピクセルを赤/黄で描く。
+  return red !== green || green !== blue;
 }
 
 export function generateSuggestion(matchRate: number): string {

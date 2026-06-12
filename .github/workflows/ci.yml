@@ -1,11 +1,12 @@
 name: CI
 
 on:
-  push:
-    branches: [develop]
   pull_request:
     types: [opened, reopened, synchronize, ready_for_review]
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -14,22 +15,22 @@ concurrency:
 jobs:
   node:
     name: Node (${{ matrix.check-type }})
-    runs-on: ${{ vars.RUNNER_LINUX || 'ubuntu-latest' }}
+    runs-on: ${{ vars.RUNNER_LINUX }}
     if: github.event.pull_request.draft == false
     strategy:
       fail-fast: false
       matrix:
-        check-type: [lint, typecheck, test]
+        check-type: [lint, typecheck, test, coverage]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: jdx/mise-action@v2
+      - uses: jdx/mise-action@v4
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build shared package
-        run: pnpm --filter @figdiff/shared build
+      - name: Build all packages
+        run: pnpm build
 
       - name: Biome check (format + lint)
         if: matrix.check-type == 'lint'
@@ -46,3 +47,7 @@ jobs:
       - name: Unit tests
         if: matrix.check-type == 'test'
         run: pnpm test
+
+      - name: Coverage thresholds
+        if: matrix.check-type == 'coverage'
+        run: pnpm -r --filter "@figdiff/shared" --filter "@figdiff/mcp-server" --filter "@figdiff/desktop" run test:coverage

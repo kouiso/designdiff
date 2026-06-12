@@ -1,0 +1,18 @@
+{
+  "test": "MCP tool listing",
+  "timestamp": "2026-04-30T00:00:00.000Z",
+  "toolCount": 11,
+  "tools": [
+    "list_projects",
+    "compare_design",
+    "inspect_node",
+    "get_design_tokens",
+    "list_figma_frames",
+    "generate_diff_report",
+    "get_crop_region",
+    "set_crop_region",
+    "get_ignore_regions",
+    "set_ignore_regions",
+    "verify_fix"
+  ]
+}

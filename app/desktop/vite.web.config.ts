@@ -10,6 +10,9 @@ export default defineConfig({
       "@": resolve(__dirname, "./src"),
     },
   },
+  define: {
+    __APP_VERSION__: JSON.stringify("0.0.0-dev"),
+  },
   build: {
     outDir: "dist/web",
   },

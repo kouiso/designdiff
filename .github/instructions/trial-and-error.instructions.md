@@ -1,1 +1,0 @@
-../../prompt/instruction/trial-and-error.md

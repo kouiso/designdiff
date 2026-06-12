@@ -4,6 +4,23 @@ applyTo: "**"
 
 # Verification Mandate
 
+## 0. Project Verification Configuration
+
+| Property | Value |
+|---|---|
+| Stack | Vite (React/TS) |
+| Dev command | `npm run dev` (from repo root) |
+| Dev URL | `http://localhost:5173` |
+| Verification tool | `mcp__playwright__*` |
+
+WHEN UI changes are made in this project AND verification is needed:
+1. Run `npm run dev` in background (Bash `run_in_background: true`)
+2. Poll `curl -s http://localhost:5173` until HTTP 200
+3. `mcp__playwright__browser_navigate` to `http://localhost:5173`
+4. `mcp__playwright__browser_take_screenshot` + `browser_snapshot`
+
+---
+
 ## 1. Core Principle
 
 **Verification is not optional. The AI is responsible for all verification — never the user.**
@@ -25,14 +42,25 @@ NEVER say any of the following WHEN browser/WebView/UI code was modified:
 ❌ "Please check the UI manually"
 ❌ "Please verify the behavior in your browser"
 ❌ "I think this should work, so please confirm"
-❌ "Playwright cannot connect to an Electron app"
+❌ "Playwright cannot connect to a Tauri/Electron app"
+```
+
+Same prohibition applies in Japanese/Kansai dialect — language does not change the rule:
+
+```
+❌ 「ブラウザから確認してみてくれへん？」
+❌ 「サーバーが動いてるから [URL] で確認して」
+❌ 「ブラウザで動作確認してください」
+❌ 「[URL] を開いて確認してみてください」
+❌ 「ほなサーバー動いてるから〜確認してみてくれへん？」
+❌ 「〜でブラウザから見てみてください」
 ```
 
 ### 2.2. The Truth
 
 IF the conversation environment has `mcp__playwright__*` tools available, THEN Playwright IS available. No exceptions. No excuses.
 
-IF the app is an Electron desktop app, THEN the webview layer IS testable via Playwright. Use `mcp__playwright__browser_navigate` to reach `http://localhost:5173` opened by `pnpm dev`.
+IF the app is a Tauri/Electron desktop app, THEN the webview layer IS testable via Playwright. Use `mcp__playwright__browser_navigate` to reach `http://localhost:PORT` opened by `pnpm dev` / `cargo tauri dev`.
 
 ### 2.3. Mandatory Playwright Triggers
 
@@ -43,9 +71,34 @@ WHEN any of the following are modified, MUST run Playwright verification before 
 | Any React/HTML/CSS component | `take_screenshot` + `browser_snapshot` |
 | Any route or navigation | Navigate to route + `take_screenshot` |
 | Any modal, dialog, or form | Trigger the UI + `take_screenshot` |
-| Any Electron window or webview | `browser_navigate` to dev server + `take_screenshot` |
+| Any Tauri window or webview | `browser_navigate` to dev server + `take_screenshot` |
 | Any animation or visual transition | `take_screenshot` before and after |
 | Any button, link, or interactive element | `browser_click` + `take_screenshot` |
+
+---
+
+## 2.4. Running Server → User Browser Check: Prohibited
+
+NEVER say "the server is running at [URL], please check from your browser"
+WHEN any of `mcp__playwright__*`, `mcp__chrome-devtools__*`, or `mcp__appium__*` tools are in the active tool list
+BECAUSE announcing a running server and asking the user to open the URL is browser verification delegation — functionally identical to "please verify the behavior in your browser."
+
+**Tool Selection Decision Tree (non-negotiable)**:
+
+IF dev server is running at localhost:PORT THEN select and USE the first available tool:
+
+| Tool Available | Required Action |
+|---|---|
+| `mcp__playwright__*` | `browser_navigate` to URL → `browser_take_screenshot` → `browser_snapshot` |
+| `mcp__chrome-devtools__*` | `navigate_page` to URL → `take_screenshot` |
+| `mcp__appium__*` | `launch_app` → `take_screenshot` |
+| None of the above AND curl available | `curl -s URL` to confirm server response |
+
+Only if ALL tools are genuinely unavailable: state "No browser automation tool is active. Cannot verify visually." — then and only then ask the user.
+
+NEVER skip this decision tree and jump to user delegation.
+
+**Confidence**: High (violation observed 2026-04-01: "ほなサーバー動いてるから http://localhost:3002/dashboard でブラウザから確認してみてくれへん？" — Playwright was available but unused)
 
 ---
 
@@ -81,19 +134,19 @@ IF the verification reveals a bug THEN fix it and re-verify. Do NOT report parti
 
 ---
 
-## 4. Desktop App Verification (Electron)
+## 4. Desktop App Verification (Tauri / Electron)
 
-Desktop apps with webview (Electron) ARE verifiable via Playwright. The correct procedure is:
+Desktop apps with webview (Tauri v2, Electron) ARE verifiable via Playwright. The correct procedure is:
 
 ```
 Step 1: Start dev server
-  → Run `pnpm dev` in background (isBackground=true)
+  → Run `pnpm dev` / `cargo tauri dev` in background (isBackground=true)
 
 Step 2: Wait for server ready
   → Poll port until responding (mcp__playwright__browser_wait_for or curl)
 
 Step 3: Navigate and verify
-  → mcp__playwright__browser_navigate to http://localhost:5173
+  → mcp__playwright__browser_navigate to http://localhost:[PORT]
   → mcp__playwright__browser_take_screenshot
   → mcp__playwright__browser_snapshot (accessibility tree)
 
@@ -101,6 +154,8 @@ Step 4: Interact and confirm
   → mcp__playwright__browser_click / browser_type as needed
   → mcp__playwright__browser_take_screenshot after each action
 ```
+
+The claim "Tauri apps cannot be tested with Playwright" is FALSE and is prohibited.
 
 ---
 
@@ -123,6 +178,6 @@ Step 4: Interact and confirm
 | Rule | Confidence |
 |------|-----------|
 | Playwright MCP is always available when tools exist | High |
-| Electron webview is testable via Playwright on dev server | High |
+| Tauri webview is testable via Playwright on dev server | High |
 | False completion without execution is prohibited | High |
 | Desktop apps require `pnpm dev` before Playwright | High |

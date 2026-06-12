@@ -1,0 +1,47 @@
+{
+  "task": "top-pc performance blocker",
+  "truePurpose": "デザイン差分を高 precision で自動検出し、review コストを下げる",
+  "contributionPercent": 80,
+  "verification": {
+    "what": "sample-corporate top-pc full-page design/implementation screenshot comparison",
+    "method": "scripts/eval/figdiff-cluster-bench.mjs with FIGDIFF_PAGES=top-pc; baseline timeout=60000ms, acceptance timeout=5000ms",
+    "expected": "top-pc returns a diff result within 5000ms while preserving matchRate, diffPixels, diffRegions, gridSummary, and diffReport",
+    "actual": {
+      "before": {
+        "ok": false,
+        "error": "timeout after 60000ms",
+        "wallMs": 60014
+      },
+      "after60sHarness": {
+        "ok": true,
+        "wallMs": 1278
+      },
+      "after5sHarness": {
+        "ok": true,
+        "wallMs": 1297,
+        "matchRate": 71.8,
+        "diffPixelCount": 1536943,
+        "regionCount": 1786,
+        "grid": {
+          "rows": 12,
+          "cols": 5,
+          "cells": 60
+        },
+        "clusterTelemetry": {
+          "requestedMode": "auto",
+          "usedMode": "flood",
+          "fallbackUsed": true,
+          "fallbackReason": "hot-cell-ratio-exceeded",
+          "wallMs": 374.81,
+          "budgetMs": 5000,
+          "regionCount": 1786
+        },
+        "diffReportVerdict": "fail"
+      }
+    },
+    "match": true
+  },
+  "sourceEvidence": ["docs/evidence/top-pc-performance-evidence.json"],
+  "generatedAt": "2026-05-23T10:07:25.657Z",
+  "rawEvidenceNote": "Raw runner outputs were summarized into this aggregate evidence file to keep PR review focused."
+}

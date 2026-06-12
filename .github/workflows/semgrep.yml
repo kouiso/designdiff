@@ -20,11 +20,11 @@ concurrency:
 jobs:
   semgrep:
     name: Code Scan
-    runs-on: ${{ vars.RUNNER_LINUX || 'ubuntu-latest' }}
+    runs-on: ${{ vars.RUNNER_LINUX }}
     container:
       image: semgrep/semgrep
     if: github.actor != 'dependabot[bot]'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - run: semgrep scan --config auto

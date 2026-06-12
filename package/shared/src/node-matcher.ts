@@ -80,7 +80,7 @@ interface FlattenedNode {
   id: string;
   name: string;
   depth: number;
-  absoluteBoundingBox?: BoundingBox;
+  absoluteBoundingBox?: BoundingBox | null;
 }
 
 function flattenNodeTree(node: FigmaNode, depth: number): FlattenedNode[] {

@@ -1,0 +1,25 @@
+{
+  "test": "MCP compare_design — monotonic matchRate decrease proof",
+  "timestamp": "2026-04-30T00:00:00.000Z",
+  "loop": [
+    {
+      "step": 1,
+      "description": "Full diff (red vs blue)",
+      "matchRate": 0,
+      "diffPixelCount": 40000
+    },
+    {
+      "step": 2,
+      "description": "Partial fix (small red corner)",
+      "matchRate": 93.75,
+      "diffPixelCount": 2500
+    },
+    {
+      "step": 3,
+      "description": "Perfect match",
+      "matchRate": 100,
+      "diffPixelCount": 0
+    }
+  ],
+  "monotonicallyDecreasing": true
+}

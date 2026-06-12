@@ -11,18 +11,39 @@ export const buildInjectScript = (base64Image: string, opacity: number): string 
   if (!host) {
     host = document.createElement('div');
     host.id = OVERLAY_ID;
-    host.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:2147483647;';
     host.attachShadow({ mode: 'open' });
     document.documentElement.appendChild(host);
   }
+  host.style.cssText = 'position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:2147483647;';
+  host.style.display = '';
+  host.dataset.overlayScale = host.dataset.overlayScale || '1';
+  host.dataset.scaleMode = host.dataset.scaleMode || 'fit_width';
+  if (host.__figdiff_cleanup__) host.__figdiff_cleanup__();
   const shadow = host.shadowRoot;
   var oldImg = shadow.querySelector('img');
   if (oldImg) oldImg.src = '';
   shadow.innerHTML = '';
+  const stage = document.createElement('div');
+  stage.className = '__figdiff_overlay_stage__';
+  stage.style.cssText = 'position:absolute;top:0;left:0;width:100%;pointer-events:none;transform-origin:top left;';
   const img = document.createElement('img');
+  img.className = '__figdiff_overlay_image__';
   img.src = 'data:image/png;base64,${base64Image}';
-  img.style.cssText = 'width:100%;height:100%;object-fit:contain;opacity:${safeOpacity};pointer-events:none;';
-  shadow.appendChild(img);
+  img.style.cssText = 'display:block;width:100%;height:auto;max-width:none;opacity:${safeOpacity};pointer-events:none;';
+  stage.appendChild(img);
+  shadow.appendChild(stage);
+  function syncLayout() {
+    const scale = Number(host.dataset.overlayScale || '1') || 1;
+    const scaleMode = host.dataset.scaleMode || 'fit_width';
+    img.style.width = scaleMode === 'actual_size' ? 'auto' : '100%';
+    stage.style.transform = 'translateY(' + (-window.scrollY) + 'px) scale(' + scale + ')';
+  }
+  syncLayout();
+  host.__figdiff_sync_layout__ = syncLayout;
+  window.addEventListener('scroll', syncLayout, { passive: true });
+  host.__figdiff_cleanup__ = function() {
+    window.removeEventListener('scroll', syncLayout);
+  };
 })();
 `;
 };
@@ -36,6 +57,32 @@ export const buildUpdateOpacityScript = (opacity: number): string => {
     const img = host.shadowRoot.querySelector('img');
     if (img) img.style.opacity = '${safeOpacity}';
   }
+})();
+`;
+};
+
+export const buildUpdateScaleScript = (
+  scale: number,
+  scaleMode: "fit_width" | "actual_size",
+): string => {
+  const safeScale = Math.min(2, Math.max(0.25, Number(scale))).toFixed(2);
+  const safeScaleMode = scaleMode === "actual_size" ? "actual_size" : "fit_width";
+  return `
+(function() {
+  const host = document.getElementById('__figdiff_overlay_host__');
+  if (!host || !host.shadowRoot) return;
+  host.dataset.overlayScale = '${safeScale}';
+  host.dataset.scaleMode = '${safeScaleMode}';
+  if (host.__figdiff_sync_layout__) {
+    host.__figdiff_sync_layout__();
+    return;
+  }
+  const stage = host.shadowRoot.querySelector('.__figdiff_overlay_stage__');
+  const img = host.shadowRoot.querySelector('.__figdiff_overlay_image__');
+  if (!stage || !img) return;
+  stage.style.transformOrigin = 'top left';
+  img.style.width = '${safeScaleMode}' === 'actual_size' ? 'auto' : '100%';
+  stage.style.transform = 'translateY(' + (-window.scrollY) + 'px) scale(${safeScale})';
 })();
 `;
 };
@@ -82,25 +129,45 @@ export const buildSplitScreenScript = (base64Image: string, splitPosition: numbe
   if (!host) {
     host = document.createElement('div');
     host.id = OVERLAY_ID;
-    host.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:2147483647;';
     host.attachShadow({ mode: 'open' });
     document.documentElement.appendChild(host);
   }
+  host.style.cssText = 'position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:2147483647;';
   host.style.display = '';
   host.dataset.mode = 'split_screen';
   host.dataset.splitPos = '${pos}';
+  host.dataset.overlayScale = host.dataset.overlayScale || '1';
+  host.dataset.scaleMode = host.dataset.scaleMode || 'fit_width';
+  if (host.__figdiff_cleanup__) host.__figdiff_cleanup__();
   const shadow = host.shadowRoot;
   var oldImg = shadow.querySelector('img');
   if (oldImg) oldImg.src = '';
   shadow.innerHTML = '';
+  const stage = document.createElement('div');
+  stage.className = '__figdiff_overlay_stage__';
+  stage.style.cssText = 'position:absolute;top:0;left:0;width:100%;pointer-events:none;transform-origin:top left;';
   const img = document.createElement('img');
+  img.className = '__figdiff_overlay_image__';
   img.src = 'data:image/png;base64,${base64Image}';
-  img.style.cssText = 'width:100%;height:100%;object-fit:contain;opacity:1;pointer-events:none;clip-path:polygon(0 0,${pos}% 0,${pos}% 100%,0 100%);';
-  shadow.appendChild(img);
+  img.style.cssText = 'display:block;width:100%;height:auto;max-width:none;opacity:1;pointer-events:none;clip-path:polygon(0 0,${pos}% 0,${pos}% 100%,0 100%);';
+  stage.appendChild(img);
+  shadow.appendChild(stage);
   const divider = document.createElement('div');
   divider.className = '__figdiff_divider__';
   divider.style.cssText = 'position:absolute;top:0;left:${pos}%;width:2px;height:100%;background:rgba(255,255,255,0.8);pointer-events:none;box-shadow:0 0 4px rgba(0,0,0,0.5);';
   shadow.appendChild(divider);
+  function syncLayout() {
+    const scale = Number(host.dataset.overlayScale || '1') || 1;
+    const scaleMode = host.dataset.scaleMode || 'fit_width';
+    img.style.width = scaleMode === 'actual_size' ? 'auto' : '100%';
+    stage.style.transform = 'translateY(' + (-window.scrollY) + 'px) scale(' + scale + ')';
+  }
+  syncLayout();
+  host.__figdiff_sync_layout__ = syncLayout;
+  window.addEventListener('scroll', syncLayout, { passive: true });
+  host.__figdiff_cleanup__ = function() {
+    window.removeEventListener('scroll', syncLayout);
+  };
 })();
 `;
 };
@@ -132,20 +199,40 @@ export const buildBlendedDiffScript = (base64Image: string): string => {
   if (!host) {
     host = document.createElement('div');
     host.id = OVERLAY_ID;
-    host.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:2147483647;';
     host.attachShadow({ mode: 'open' });
     document.documentElement.appendChild(host);
   }
+  host.style.cssText = 'position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:2147483647;';
   host.style.display = '';
   host.dataset.mode = 'blended_diff';
+  host.dataset.overlayScale = host.dataset.overlayScale || '1';
+  host.dataset.scaleMode = host.dataset.scaleMode || 'fit_width';
+  if (host.__figdiff_cleanup__) host.__figdiff_cleanup__();
   const shadow = host.shadowRoot;
   var oldImg = shadow.querySelector('img');
   if (oldImg) oldImg.src = '';
   shadow.innerHTML = '';
+  const stage = document.createElement('div');
+  stage.className = '__figdiff_overlay_stage__';
+  stage.style.cssText = 'position:absolute;top:0;left:0;width:100%;pointer-events:none;transform-origin:top left;';
   const img = document.createElement('img');
+  img.className = '__figdiff_overlay_image__';
   img.src = 'data:image/png;base64,${base64Image}';
-  img.style.cssText = 'width:100%;height:100%;object-fit:contain;opacity:1;mix-blend-mode:difference;pointer-events:none;';
-  shadow.appendChild(img);
+  img.style.cssText = 'display:block;width:100%;height:auto;max-width:none;opacity:1;mix-blend-mode:difference;pointer-events:none;';
+  stage.appendChild(img);
+  shadow.appendChild(stage);
+  function syncLayout() {
+    const scale = Number(host.dataset.overlayScale || '1') || 1;
+    const scaleMode = host.dataset.scaleMode || 'fit_width';
+    img.style.width = scaleMode === 'actual_size' ? 'auto' : '100%';
+    stage.style.transform = 'translateY(' + (-window.scrollY) + 'px) scale(' + scale + ')';
+  }
+  syncLayout();
+  host.__figdiff_sync_layout__ = syncLayout;
+  window.addEventListener('scroll', syncLayout, { passive: true });
+  host.__figdiff_cleanup__ = function() {
+    window.removeEventListener('scroll', syncLayout);
+  };
 })();
 `;
 };
@@ -163,24 +250,39 @@ export const buildDraggableScript = (base64Image: string, opacity: number): stri
   if (!host) {
     host = document.createElement('div');
     host.id = OVERLAY_ID;
-    host.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:2147483647;';
     host.attachShadow({ mode: 'open' });
     document.documentElement.appendChild(host);
   }
+  host.style.cssText = 'position:fixed;inset:0;overflow:hidden;pointer-events:auto;z-index:2147483647;';
   host.style.display = '';
   host.dataset.mode = 'draggable';
   host.dataset.dragX = '0';
   host.dataset.dragY = '0';
+  host.dataset.overlayScale = host.dataset.overlayScale || '1';
+  host.dataset.scaleMode = host.dataset.scaleMode || 'fit_width';
+  if (host.__figdiff_cleanup__) host.__figdiff_cleanup__();
   const shadow = host.shadowRoot;
   var oldImg = shadow.querySelector('img');
   if (oldImg) oldImg.src = '';
   shadow.innerHTML = '';
+  const stage = document.createElement('div');
+  stage.className = '__figdiff_overlay_stage__';
+  stage.style.cssText = 'position:absolute;top:0;left:0;width:100%;pointer-events:none;transform-origin:top left;';
   const img = document.createElement('img');
+  img.className = '__figdiff_overlay_image__';
   img.src = 'data:image/png;base64,${base64Image}';
-  img.style.cssText = 'width:100%;height:100%;object-fit:contain;opacity:${safeOpacity};cursor:grab;pointer-events:auto;transform:translate(0px,0px);';
-  shadow.appendChild(img);
-  if (host.__figdiff_cleanup__) host.__figdiff_cleanup__();
+  img.style.cssText = 'display:block;width:100%;height:auto;max-width:none;opacity:${safeOpacity};cursor:grab;pointer-events:auto;transform:translate(0px,0px);';
+  stage.appendChild(img);
+  shadow.appendChild(stage);
   let dragging = false, startX = 0, startY = 0, offsetX = 0, offsetY = 0;
+  function syncLayout() {
+    const scale = Number(host.dataset.overlayScale || '1') || 1;
+    const scaleMode = host.dataset.scaleMode || 'fit_width';
+    img.style.width = scaleMode === 'actual_size' ? 'auto' : '100%';
+    stage.style.transform = 'translateY(' + (-window.scrollY) + 'px) scale(' + scale + ')';
+  }
+  syncLayout();
+  host.__figdiff_sync_layout__ = syncLayout;
   img.addEventListener('mousedown', function(e) {
     dragging = true;
     startX = e.clientX - offsetX;
@@ -203,9 +305,11 @@ export const buildDraggableScript = (base64Image: string, opacity: number): stri
   }
   document.addEventListener('mousemove', onMove);
   document.addEventListener('mouseup', onUp);
+  window.addEventListener('scroll', syncLayout, { passive: true });
   host.__figdiff_cleanup__ = function() {
     document.removeEventListener('mousemove', onMove);
     document.removeEventListener('mouseup', onUp);
+    window.removeEventListener('scroll', syncLayout);
   };
 })();
 `;

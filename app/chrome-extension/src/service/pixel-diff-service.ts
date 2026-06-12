@@ -6,6 +6,16 @@ import type { DiffRegion } from "@figdiff/shared";
 // Service worker (background.ts) から呼び出す
 // =============================================================================
 
+export const DIFF_THRESHOLD = 10;
+
+export const calculateMatchRate = (totalPixelCount: number, diffPixelCount: number): number => {
+  return Math.round(((totalPixelCount - diffPixelCount) / totalPixelCount) * 10000) / 100;
+};
+
+export const isPixelDifferent = (rDiff: number, gDiff: number, bDiff: number): boolean => {
+  return Math.max(rDiff, gDiff, bDiff) > DIFF_THRESHOLD;
+};
+
 export interface DiffResult {
   matchRate: number;
   diffPixelCount: number;
@@ -46,9 +56,8 @@ export async function computePixelDiff(
     const rDiff = Math.abs(designData[offset] - screenshotData[offset]);
     const gDiff = Math.abs(designData[offset + 1] - screenshotData[offset + 1]);
     const bDiff = Math.abs(designData[offset + 2] - screenshotData[offset + 2]);
-    const maxDiff = Math.max(rDiff, gDiff, bDiff);
 
-    if (maxDiff > 10) {
+    if (isPixelDifferent(rDiff, gDiff, bDiff)) {
       diffPixels[offset] = 255;
       diffPixels[offset + 1] = 0;
       diffPixels[offset + 2] = 0;
@@ -64,8 +73,7 @@ export async function computePixelDiff(
 
   diffCtx.putImageData(diffImageData, 0, 0);
 
-  const matchRate =
-    Math.round(((totalPixelCount - diffPixelCount) / totalPixelCount) * 10000) / 100;
+  const matchRate = calculateMatchRate(totalPixelCount, diffPixelCount);
   const regions = clusterDiffPixels(diffPixels, width, height);
 
   const blob = await diffCanvas.convertToBlob({ type: "image/png" });

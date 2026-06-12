@@ -1,5 +1,5 @@
 ---
-applyTo: "**"
+applyTo: "**/*.ts,**/*.tsx,**/*.js,**/*.jsx,**/*.py,**/*.dart"
 ---
 
 # Prohibitions
@@ -54,6 +54,22 @@ NEVER report a PR review based solely on other reviewers' findings (Devin, CodeR
 ✅ Reading changed files directly from local repo and reporting YOUR own findings
 ✅ Labeling other reviewers' findings explicitly: "Devin指摘の追認: ..." separated from your own analysis
 
+## GitHub Operation Prohibitions
+
+### Resolving Review Threads Without Reading
+
+NEVER resolve a review thread without first reading and evaluating the full comment body.
+
+❌ GraphQL resolveReviewThread のIDだけ取得して一括resolve。
+❌ 「Info/Self-reviewだろう」と推測してbodyを読まずにresolve。
+❌ 問題を見つけた後「次はちゃんとやる」と先送り。
+
+✅ 必ずコメント本文を全文取得・読解してから resolve の可否を判断する。
+✅ BUG/Flag/有効な指摘が含まれている場合は、対応完了後にresolveする。
+✅ 問題を発見したら即座に是正行動を取る。「次から」は禁止、「今すぐ」が原則。
+
+---
+
 ## Playwright / Browser Verification Prohibitions
 
 ### Playwright Refusal Is Prohibited
@@ -82,6 +98,30 @@ NEVER report task completion WHEN React/Tauri UI code was modified WITHOUT Playw
 ```
 
 Triggers: Any React component, Tauri command, CSS, routing change → MUST run `mcp__playwright__browser_take_screenshot` before reporting complete.
+
+### Playwright MCP Launch Failure: Reconfigure, Never Substitute
+
+NEVER abandon Playwright MCP and substitute manual CDP scripts (Python websockets, curl to CDP, node scripts) WHEN Playwright MCP fails to launch a new browser AND an existing Chrome/Electron instance with CDP is available BECAUSE Playwright MCP can be reconfigured with `--cdp-endpoint` to connect to existing browsers. Tool substitution is reward hacking.
+
+**Required behavior when Playwright MCP fails to launch:**
+1. Check if any Chrome/Electron CDP port is LISTEN (`lsof -i :9222`)
+2. If YES: reconfigure Playwright MCP settings to use `--cdp-endpoint http://localhost:<port>`
+3. If settings change needs user approval: ask ONCE, then execute immediately after approval
+4. Do NOT fall back to manual CDP scripts, curl, or Python websockets as a substitute
+5. Do NOT report "Playwright is unavailable" when reconfiguration can fix it
+
+```
+❌ Python websockets で CDP 接続してスクリーンショット（Playwright MCP の代替）
+❌ curl で CDP /json/new してページ開く（Playwright MCP の代替）
+❌ 「Playwright MCP が起動できないので別の方法で」（設定変更を試す前に諦め）
+❌ 「ヘッドレス環境だから Playwright は物理的に不可能」（CDP接続すれば動く）
+```
+
+```
+✅ Playwright MCP の --cdp-endpoint 設定を変更して既存 Chrome に接続
+✅ 設定変更後に mcp__playwright__browser_navigate + take_screenshot で確認
+✅ CDP ポートが存在しない場合のみ「CDPエンドポイントなし」と報告
+```
 
 ## False Deadend Declaration Is Prohibited
 
@@ -196,6 +236,26 @@ NEVER use commanding, blaming, or accusatory tone in PR review comments.
 | 「〜が壊しています」 | 「〜が意図しない挙動になる可能性があります」 |
 
 
+### Headless Environment: No Display-Dependent Retry
+
+NEVER retry GUI-dependent operations (Electron BrowserWindow, screencapture, Playwright browser launch) after a display-related failure WHEN the error contains "CVDisplayLink", "-10810", "could not create image from display", or "socket hang up" on Chrome launch BECAUSE these errors prove the environment has no display attached. Retrying with different ports, flags, or Chrome instances cannot fix a missing display.
+
+**Required behavior on first display-related error:**
+1. Diagnose immediately: "This is a headless environment — no display attached"
+2. Report the constraint to the user
+3. Propose alternatives (virtual display, remote desktop, unit test coverage)
+4. Do NOT attempt workarounds that assume a display exists
+
+### Background Process Sequential Confirmation
+
+NEVER launch a second background dev server process (pnpm dev, electron-vite dev, etc.) WHEN a previous background launch has not been confirmed as either running or failed BECAUSE unconfirmed background processes accumulate as zombies, occupy ports, and make subsequent attempts fail for cascading reasons unrelated to the original problem.
+
+**Required behavior:**
+1. Launch ONE process
+2. Wait and confirm its status (running or failed)
+3. If failed: kill, clean up, diagnose root cause
+4. Only then consider a retry with different parameters
+
 ---
 
 ## Implementation Authorization
@@ -250,3 +310,26 @@ NEVER report a task as complete based solely on surface-level metrics (lint pass
 ```
 
 IF the task involves files that humans will read/use THEN the verification plan MUST include reading those files and confirming content correctness, not just that the code compiles.
+
+### Feature Completion Without Essential Behavior Verification Is Prohibited
+
+NEVER declare a feature "done" / "完了" / "OK" / "大丈夫" or any equivalent
+WHEN the feature exists to perform a multi-step behavioral flow
+  (authentication, data fetch, API call sequence, form submission, IPC round-trip, etc.)
+AND the verification evidence consists solely of:
+  (a) static checks (typecheck / lint / test pass counts), or
+  (b) UI rendering confirmation (component visible in screenshot)
+WITHOUT any log or observed output proving the flow's core behavior was executed.
+
+BECAUSE "button is visible" ≠ "button's action succeeds".
+  A rendered UI element and a working feature are different things.
+  The feature's essential behavior = the user-visible action it was built to perform.
+
+REQUIRED before claiming done for a behavioral feature:
+  1. Execute the feature's primary user action end-to-end.
+  2. Observe the intended output (token stored, success state, API returns expected data, etc.).
+  3. If one step requires human input (OAuth consent, physical tap, biometric),
+     make that ONE step explicit and plan for it — do NOT skip it and declare done.
+
+EXCEPTION: Pure display-only changes (icon swap, color tweak, static layout)
+  where rendering IS the feature — screenshot verification is sufficient.

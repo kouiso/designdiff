@@ -5,78 +5,97 @@
  */
 
 import * as fs from "node:fs/promises";
+import * as os from "node:os";
 import * as path from "node:path";
 
 import { z } from "zod";
 
-import { parseDesignInput, type FigmaNode, type CropRegion } from "@figdiff/shared";
+import {
+  CompareDesignResultSchema,
+  IgnoreRegionSchema,
+  type CompareDesignResult,
+} from "@figdiff/shared";
 
-import { getCropRegion } from "../service/crop-region-store.js";
-import { createFigmaService, type FigmaService } from "../service/figma-service.js";
-import { compareImages } from "../service/image-compare-service.js";
+import { runCompareDesign } from "../service/compare-design-runner.js";
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
-interface McpErrorResult {
-  [key: string]: unknown;
-  content: { type: "text"; text: string }[];
-  isError: true;
-}
+const DESCRIPTION = `デザインと実装のピクセル差分を検出します。
 
-function mcpError(text: string): McpErrorResult {
-  return { content: [{ type: "text", text }], isError: true };
-}
+## 使用条件
+- 実装のCSS/HTML修正時は【必ず】このツールを最初に実行すること
+- status が "FAIL" の場合、inspect_node で詳細を取得し修正すること
+- matchRate が 100 かつ status が "PASS" になるまでループすること
 
-async function resolveNodeId(
-  figmaService: FigmaService,
-  fileKey: string,
-  nodeId: string | undefined,
-  frameName: string | undefined,
-): Promise<string | McpErrorResult> {
-  if (nodeId) return nodeId;
+## 出力の読み方
+- status: "PASS" = 完了。"FAIL" = 修正が必要
+- completionCriteria: 各項目が "PASS" になるまで作業を続行
+- nextAction: 次に実行すべきアクション（従うこと）
 
-  if (frameName) {
-    const frames = await figmaService.getFrames(fileKey);
-    const frame = frames.find((f) => f.name.toLowerCase() === frameName.toLowerCase());
-    if (!frame) {
-      return mcpError(
-        `Frame "${frameName}" not found. Available frames: ${frames.map((f) => f.name).join(", ")}`,
-      );
-    }
-    return frame.id;
-  }
+## 入力
+- design_source: Figma URL（node-id付き推奨） or ローカル画像パス
+- screenshot: 実装スクリーンショットのローカルパス（screenshot_url 使用時はプレースホルダ文字列で可）
+- screenshot_url: 撮影対象URL。指定時はPlaywrightで内部撮影しscreenshotの代わりに使用
+- capture_width: 撮影幅(px)。省略時はFigmaフレームの実幅を自動取得（screenshot_url指定時のみ有効）
+- threshold: 色差の許容閾値（0-1、デフォルト0.1）
+- project_id: Crop Region と保存済み ignore_regions の適用に使うプロジェクトID（省略可）
+- ignore_regions: 既知の意図的差分マスク（省略可）。project_id の保存済みマスクと結合される。WP原文 vs Figmaプレースホルダ、Google Map埋め込み等の false-positive 抑制に使用。各矩形 {x,y,width,height,label?} 内のピクセルは差分検出/matchRate 分母から除外される
 
-  const frames = await figmaService.getFrames(fileKey);
-  return mcpError(
-    `No frame specified. Available frames:\n${frames.map((f) => `- ${f.name} (${f.id}, ${f.width}x${f.height})`).join("\n")}\n\nPlease specify frame_name or use a URL with node-id.`,
-  );
-}
+## Figma URLの例
+  "https://www.figma.com/design/ABC123/File?node-id=1-23"
+  "https://www.figma.com/design/ABC123/File"
 
-function buildSuggestion(matchRate: number, regionCount: number): string {
-  if (matchRate === 100) return "一致率100%です。差分はありません。";
-  if (matchRate >= 95)
-    return `軽微な差分が${regionCount}箇所あります。inspect_nodeで差分領域のノードを確認してください。`;
-  return `大きな差分が${regionCount}箇所あります。inspect_nodeで各差分領域を確認し、修正してください。`;
-}
-
-const DESCRIPTION = `Figmaデザインと実装スクリーンショットのピクセル差分を検出します。
-
-**実装の修正時は、必ずこのツールから開始してください。**
-このツールが返す差分画像と差分領域を確認し、ズレがある箇所だけを inspect_node で深掘りしてください。
-修正後は再度このツールで比較し、一致率100%を目指してください。
-
-入力:
-- design_source: Figma URL（node-id付きなら自動でそのフレーム） or ローカル画像パス
-- screenshot: 実装スクリーンショットのローカルパス
-- threshold: 許容差（デフォルト0.1）
-
-Figma URLの例:
-  "https://www.figma.com/design/ABC123/File?node-id=1-23"  → フレーム指定あり
-  "https://www.figma.com/design/ABC123/File"               → フレーム一覧から選択
-
-ローカルパスの例:
+## ローカルパスの例
   "/path/to/design.png"
   "./screenshots/home.png"`;
+
+const CONFIDENCE_TO_PERCENTAGE = 100;
+
+// 並び順は「結論 → 原因 → 内訳 → 警告」。AI/ユーザーが最初の数行で
+// 「実差分か設定ミスか」を即断でき、likely_misconfig の時だけ確度順に原因を
+// 列挙して最優先の対処に誘導するため、この順序と簡潔な箇条書き形式にしている。
+function buildSummaryText(result: CompareDesignResult): string {
+  const lines: string[] = [];
+
+  if (result.diagnosis) {
+    lines.push(result.diagnosis.headline);
+    if (result.diagnosis.likelyMisconfig && result.diagnosis.rankedCauses.length > 0) {
+      lines.push("");
+      lines.push("推定原因（確度順）:");
+      for (const cause of result.diagnosis.rankedCauses) {
+        lines.push(
+          `- [${Math.round(cause.confidence * CONFIDENCE_TO_PERCENTAGE)}%] ${cause.message} → ${cause.suggestedFix}`,
+        );
+      }
+    }
+  }
+
+  if (result.comparisonHeadline) {
+    lines.push("");
+    lines.push(result.comparisonHeadline.headline);
+  }
+
+  const warnings = result.preflight?.warnings ?? [];
+  if (warnings.length > 0) {
+    lines.push("");
+    lines.push("Pre-flight 警告:");
+    for (const warning of warnings) {
+      const fix = warning.suggestedFix ? ` → ${warning.suggestedFix}` : "";
+      lines.push(`- [${warning.severity}] ${warning.message}${fix}`);
+    }
+  }
+
+  return lines.join("\n");
+}
+
+async function persistDiffImage(base64Data: string, comparisonId: string): Promise<string> {
+  const directoryPath = path.join(os.tmpdir(), "figdiff-mcp");
+  await fs.mkdir(directoryPath, { recursive: true });
+
+  const filePath = path.join(directoryPath, `${comparisonId}.png`);
+  await fs.writeFile(filePath, Buffer.from(base64Data, "base64"));
+  return filePath;
+}
 
 export function registerCompareDesign(server: McpServer): void {
   server.registerTool(
@@ -87,7 +106,26 @@ export function registerCompareDesign(server: McpServer): void {
         design_source: z
           .string()
           .describe("FigmaのURL（node-id付き推奨）またはデザイン画像のローカルパス"),
-        screenshot: z.string().describe("実装スクリーンショットのローカルパス"),
+        screenshot: z
+          .string()
+          .describe(
+            "実装スクリーンショットのローカルパス（screenshot_url使用時はプレースホルダ文字列で可）",
+          ),
+        screenshot_url: z
+          .string()
+          .url()
+          .optional()
+          .describe(
+            "撮影対象のURL。指定時はPlaywrightで内部撮影し、screenshotの代わりに使用する。screenshotとどちらか一方を指定。",
+          ),
+        capture_width: z
+          .number()
+          .int()
+          .positive()
+          .optional()
+          .describe(
+            "撮影幅(px)。省略時はFigmaフレームの実幅を自動取得。screenshot_url指定時のみ有効。",
+          ),
         frame_name: z
           .string()
           .optional()
@@ -101,71 +139,30 @@ export function registerCompareDesign(server: McpServer): void {
         project_id: z
           .string()
           .optional()
-          .describe("Crop Region適用のためのプロジェクトID（省略可）"),
+          .describe("Crop Region と保存済み ignore_regions 適用のためのプロジェクトID（省略可）"),
+        ignore_regions: z
+          .array(IgnoreRegionSchema)
+          .optional()
+          .describe(
+            "意図的差分マスク。project_id指定時は保存済みマスクと結合される。各矩形{x,y,width,height,label?}内のピクセルは差分検出/matchRate分母から除外。座標系はcrop適用後のscreenshotピクセル座標。",
+          ),
       },
+      outputSchema: CompareDesignResultSchema,
     },
     async (args) => {
       try {
-        const parsed = parseDesignInput(args.design_source);
+        const comparison = await runCompareDesign(args);
+        const result = comparison.result;
+        const diffImagePath =
+          result.diffImageBase64 && result.matchRate < 100
+            ? await persistDiffImage(result.diffImageBase64, result.comparisonId)
+            : undefined;
 
-        let designBase64: string;
-        let figmaRootNode: FigmaNode | undefined;
-
-        if (parsed.type === "figma_url") {
-          const figmaService = createFigmaService();
-          const resolved = await resolveNodeId(
-            figmaService,
-            parsed.fileKey,
-            parsed.nodeId,
-            args.frame_name,
-          );
-          if (typeof resolved !== "string") return resolved;
-
-          designBase64 = await figmaService.getFrameImage(parsed.fileKey, resolved);
-
-          try {
-            figmaRootNode = await figmaService.getNodeDetails(parsed.fileKey, resolved);
-          } catch {
-            // Node details optional — proceed without
-          }
-        } else {
-          // Local file path
-          const filePath = path.resolve(parsed.filePath);
-          const buffer = await fs.readFile(filePath);
-          designBase64 = buffer.toString("base64");
-        }
-
-        // Read screenshot
-        const screenshotPath = path.resolve(args.screenshot);
-        const screenshotBuffer = await fs.readFile(screenshotPath);
-        const screenshotBase64 = screenshotBuffer.toString("base64");
-
-        // Check crop region
-        let cropRegion: CropRegion | undefined;
-        if (args.project_id) {
-          const regions = await getCropRegion(args.project_id, args.frame_name);
-          if (regions.length > 0) {
-            cropRegion = regions[0].region;
-          }
-        }
-
-        const result = await compareImages(
-          {
-            designBase64,
-            screenshotBase64,
-            threshold: args.threshold,
-            cropRegion,
-          },
-          figmaRootNode,
-        );
-
-        const suggestion = buildSuggestion(result.matchRate, result.diffRegions.length);
-
-        const resultData = {
+        const resultData = CompareDesignResultSchema.parse({
           ...result,
-          suggestion,
-          diffImageBase64: undefined, // Exclude from JSON, send as image content
-        };
+          diffImagePath,
+          diffImageBase64: undefined,
+        });
 
         const content: (
           | { type: "text"; text: string }
@@ -175,22 +172,29 @@ export function registerCompareDesign(server: McpServer): void {
         // Add diff image if there are differences
         if (result.diffImageBase64 && result.matchRate < 100) {
           content.push({
-            type: "image" as const,
+            type: "image",
             data: result.diffImageBase64,
             mimeType: "image/png",
           });
         }
 
+        // 互換性のため最初の text ブロックは JSON のまま維持し、
+        // 確信度レイヤーの人間可読サマリ（設定ミス診断・構造/色分離・警告）は末尾に置く。
         content.push({
-          type: "text" as const,
+          type: "text",
           text: JSON.stringify(resultData, null, 2),
         });
 
-        return { content };
+        const summaryText = buildSummaryText(result);
+        if (summaryText.length > 0) {
+          content.push({ type: "text", text: summaryText });
+        }
+
+        return { content, structuredContent: resultData };
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         return {
-          content: [{ type: "text" as const, text: `Error: ${message}` }],
+          content: [{ type: "text", text: `Error: ${message}` }],
           isError: true,
         };
       }

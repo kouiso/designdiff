@@ -1,0 +1,143 @@
+{
+  "test": "MCP compare_design — persisted ignore_regions YAML auto-applied",
+  "timestamp": "2026-04-30T00:00:00.000Z",
+  "input": {
+    "design": "200x200 blue",
+    "screenshot": "200x200 black",
+    "projectId": "ignore-project",
+    "frameName": "test-frame"
+  },
+  "persistedRegions": {
+    "regionCount": 1,
+    "regions": [
+      {
+        "x": 0,
+        "y": 0,
+        "width": 200,
+        "height": 200,
+        "label": "Intentional full-frame diff",
+        "id": "full-frame",
+        "frame_name": "test-frame"
+      }
+    ]
+  },
+  "result": {
+    "status": "PASS",
+    "comparisonId": "cmp-evidence",
+    "matchRate": 100,
+    "diffPixelCount": 0,
+    "totalPixelCount": 0,
+    "remainingIssues": 0,
+    "diffRegions": [],
+    "completionCriteria": {
+      "matchRate": {
+        "required": 100,
+        "current": 100,
+        "status": "PASS"
+      },
+      "diffPixelCount": {
+        "required": 0,
+        "current": 0,
+        "status": "PASS"
+      },
+      "remainingIssues": {
+        "required": 0,
+        "current": 0,
+        "status": "PASS"
+      }
+    },
+    "nextAction": "一致率100%です。差分はありません。タスク完了です。",
+    "suggestion": "一致率100%です。差分はありません。",
+    "clusterTelemetry": {
+      "requestedMode": "auto",
+      "usedMode": "flood",
+      "fallbackUsed": false,
+      "wallMs": 0,
+      "regionCount": 0
+    },
+    "gridSummary": {
+      "rows": 1,
+      "cols": 1,
+      "cells": [
+        {
+          "row": 0,
+          "col": 0,
+          "x": 0,
+          "y": 0,
+          "width": 200,
+          "height": 200,
+          "diffPixels": 0,
+          "totalPixels": 0,
+          "matchRate": 100
+        }
+      ]
+    },
+    "diffReport": {
+      "alignment": {
+        "translation": {
+          "x": 0,
+          "y": 0
+        },
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "rotation": 0,
+        "confidence": 1,
+        "residual": 0
+      },
+      "regionScores": [
+        {
+          "regionId": "whole-frame",
+          "bbox": {
+            "x": 0,
+            "y": 0,
+            "w": 200,
+            "h": 200
+          },
+          "structure": 1,
+          "color": 0,
+          "shape": 0,
+          "layout": 0,
+          "textureScore": 0
+        }
+      ],
+      "issues": [],
+      "weightedAggregate": {
+        "weightedStructure": 1,
+        "weightedColor": 0,
+        "totalWeight": 1
+      },
+      "aggregateVerdict": "pass",
+      "rationale": "no critical issues, weighted structure score 1.000 meets pass threshold, and weighted color difference 0.000 is below 3.000 (totalWeight 1.000); weakest region whole-frame (structure 1.000, color 0.000)"
+    },
+    "critique": {
+      "concern": "healthy",
+      "advice": "比較結果は大きく悪化していません。worstDeltaSection を優先しつつ、同じ評価条件で修正を継続してください。"
+    },
+    "preflight": {
+      "warnings": []
+    },
+    "normalization": {
+      "designNativeWidth": 200,
+      "designNativeHeight": 200,
+      "screenshotWidth": 200,
+      "screenshotHeight": 200,
+      "cropApplied": false,
+      "containResized": false,
+      "appliedScale": 1
+    },
+    "diagnosis": {
+      "verdict": "clean",
+      "likelyMisconfig": false,
+      "rankedCauses": [],
+      "headline": "差分はほぼありません。"
+    },
+    "comparisonHeadline": {
+      "structureMatch": 100,
+      "colorOnlyRegions": 0,
+      "structuralRegions": 0,
+      "headline": "構造一致 100% / 色のみ差分 0領域 / 構造差分 0領域"
+    }
+  }
+}

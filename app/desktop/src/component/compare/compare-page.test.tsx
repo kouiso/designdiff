@@ -82,15 +82,42 @@ describe("ComparePage", () => {
       designImage: "d",
       screenshotImage: "s",
       compareResult: {
+        comparisonId: "cmp-1",
         matchRate: 95.5,
         diffPixelCount: 100,
+        totalPixelCount: 1000,
         suggestion: "compare.suggestionMinor",
         diffImageBase64: "diffbase64",
         diffRegions: [],
+        diffReport: {
+          alignment: {
+            translation: { x: 0, y: 0 },
+            scale: { x: 1, y: 1 },
+            rotation: 0,
+            confidence: 1,
+            residual: 0,
+          },
+          regionScores: [
+            {
+              regionId: "whole-frame",
+              bbox: { x: 0, y: 0, w: 1440, h: 900 },
+              structure: 0.96,
+              color: 2.4,
+              shape: 0,
+              layout: 0,
+            },
+          ],
+          issues: [],
+          aggregateVerdict: "pass",
+          rationale: "no critical issues",
+        },
       },
     });
     render(<ComparePage />);
-    expect(screen.getByText("95.5%")).toBeInTheDocument();
+    expect(screen.getByTestId("compare-verdict-badge")).toHaveTextContent("PASS");
+    expect(screen.getByText("RegionScore Summary")).toBeInTheDocument();
+    expect(screen.getByText("No typed issues (P1 scope)")).toBeInTheDocument();
+    expect(screen.getByText("matchRate: 95.5%")).toBeInTheDocument();
   });
 
   it("error あり → エラーメッセージ表示", () => {

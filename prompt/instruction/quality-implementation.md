@@ -1,5 +1,5 @@
 ---
-applyTo: "**"
+applyTo: "**/*.ts,**/*.tsx,**/*.js,**/*.jsx,**/*.py,**/*.dart"
 ---
 
 # Quality & Implementation Rules
@@ -121,7 +121,7 @@ applyTo: "**"
 ### Required Pre-Work Investigation
 
 1. **Full Repository Comprehension**: Read all directory structures, source code, and documents thoroughly.
-2. **Documentation-First Principle**: Fully understand README, CLAUDE.md, document.md, and all files under doc/. Ignoring documented requirements is dereliction of duty.
+2. **Documentation-First Principle**: Fully understand README, CLAUDE.md, document.md, and all files under docs/. Ignoring documented requirements is dereliction of duty.
 3. **Full Understanding of Existing Patterns**: Review implementation methods and test code for similar features.
 
 ### Definition of Full Verification

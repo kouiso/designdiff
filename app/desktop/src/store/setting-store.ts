@@ -1,9 +1,12 @@
 import { create } from "zustand";
 
+import type { FigmaAuthState } from "@figdiff/shared";
+
 import { getPlatform } from "@/lib/platform";
 
 interface SettingState {
   figmaToken: string | null;
+  oauthState: FigmaAuthState;
   theme: "light" | "dark";
   defaultThreshold: number;
   isLoading: boolean;
@@ -16,10 +19,16 @@ interface SettingState {
   setDefaultThreshold: (threshold: number) => void;
   requireToken: () => void;
   closeTokenDialog: () => void;
+
+  startFigmaLogin: () => Promise<void>;
+  logoutFigma: () => Promise<void>;
+  saveOAuthClient: (clientId: string, clientSecret: string) => Promise<void>;
+  loadOAuthStatus: () => Promise<void>;
 }
 
 export const useSettingStore = create<SettingState>((set) => ({
   figmaToken: null,
+  oauthState: { mode: "none" },
   theme: "dark",
   defaultThreshold: 0.1,
   isLoading: false,
@@ -41,12 +50,14 @@ export const useSettingStore = create<SettingState>((set) => ({
     set({ isLoading: true });
     try {
       const platform = await getPlatform();
-      const token = await platform.token.get();
-      // Restore persisted theme (default: dark)
+      const [token, oauthState] = await Promise.all([
+        platform.token.get(),
+        platform.oauth.status(),
+      ]);
       const saved = localStorage.getItem("figdiff-theme");
       const theme = saved === "light" ? "light" : "dark";
       document.documentElement.classList.toggle("dark", theme === "dark");
-      set({ figmaToken: token, theme });
+      set({ figmaToken: token, oauthState, theme });
     } finally {
       set({ isLoading: false });
     }
@@ -63,4 +74,28 @@ export const useSettingStore = create<SettingState>((set) => ({
   requireToken: () => set({ showTokenDialog: true }),
 
   closeTokenDialog: () => set({ showTokenDialog: false }),
+
+  startFigmaLogin: async () => {
+    const platform = await getPlatform();
+    await platform.oauth.start();
+    const oauthState = await platform.oauth.status();
+    set({ oauthState, showTokenDialog: false });
+  },
+
+  logoutFigma: async () => {
+    const platform = await getPlatform();
+    await platform.oauth.logout();
+    set({ oauthState: { mode: "none" } });
+  },
+
+  saveOAuthClient: async (clientId: string, clientSecret: string) => {
+    const platform = await getPlatform();
+    await platform.oauth.saveClient(clientId, clientSecret);
+  },
+
+  loadOAuthStatus: async () => {
+    const platform = await getPlatform();
+    const oauthState = await platform.oauth.status();
+    set({ oauthState });
+  },
 }));

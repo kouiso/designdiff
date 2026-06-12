@@ -15,7 +15,35 @@ import { generateMarkdownReport, generateJsonReport } from "../service/report-ge
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
 const DESCRIPTION =
-  "compare_designの結果からMarkdownまたはJSONレポートを生成します。結果のJSONを直接渡すか、comparison_idで過去の比較結果を参照します。";
+  "compare_designの返り値をcomparison_resultにJSON文字列またはオブジェクトで渡して、MarkdownまたはJSONレポートを生成します。";
+
+const comparisonResultInputSchema = z.union([z.string(), z.object({}).passthrough()]);
+const comparisonResultRecordSchema = z.record(z.string(), z.unknown());
+
+function normalizeComparisonResultInput(
+  input: z.infer<typeof comparisonResultInputSchema>,
+): unknown {
+  const parsed: unknown = typeof input === "string" ? JSON.parse(input) : input;
+
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    return parsed;
+  }
+
+  const resultParse = comparisonResultRecordSchema.safeParse(parsed);
+  if (!resultParse.success) {
+    return parsed;
+  }
+
+  const result = resultParse.data;
+
+  return {
+    comparisonId: result.comparisonId ?? `cmp-${Date.now()}`,
+    ...result,
+    totalPixelCount: result.totalPixelCount ?? result.totalPixels,
+    diffRegions: result.diffRegions ?? result.regions ?? [],
+    suggestion: result.suggestion ?? "",
+  };
+}
 
 export function registerGenerateReport(server: McpServer): void {
   server.registerTool(
@@ -23,7 +51,9 @@ export function registerGenerateReport(server: McpServer): void {
     {
       description: DESCRIPTION,
       inputSchema: {
-        comparison_result: z.string().describe("compare_designの返り値JSON文字列"),
+        comparison_result: comparisonResultInputSchema.describe(
+          "compare_designの返り値（JSON文字列またはオブジェクト）",
+        ),
         format: z
           .enum(["markdown", "json"])
           .default("markdown")
@@ -36,7 +66,9 @@ export function registerGenerateReport(server: McpServer): void {
     },
     async (args) => {
       try {
-        const result = CompareDesignResultSchema.parse(JSON.parse(args.comparison_result));
+        const result = CompareDesignResultSchema.parse(
+          normalizeComparisonResultInput(args.comparison_result),
+        );
 
         const report =
           args.format === "json" ? generateJsonReport(result) : generateMarkdownReport(result);
@@ -53,7 +85,7 @@ export function registerGenerateReport(server: McpServer): void {
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         return {
-          content: [{ type: "text" as const, text: `Error: ${message}` }],
+          content: [{ type: "text", text: `Error: ${message}` }],
           isError: true,
         };
       }

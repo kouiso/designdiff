@@ -15,8 +15,8 @@ concurrency:
 jobs:
   labeler:
     name: Label PR
-    runs-on: ${{ vars.RUNNER_LINUX || 'ubuntu-latest' }}
+    runs-on: ${{ vars.RUNNER_LINUX }}
     steps:
-      - uses: actions/labeler@v5
+      - uses: actions/labeler@v6
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}

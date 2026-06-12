@@ -1,0 +1,13 @@
+version: '3'
+
+tasks:
+  ci:fast:
+    cmds:
+      - pnpm install --frozen-lockfile
+      - pnpm lint
+      - pnpm build
+      - pnpm test
+
+  ci:
+    cmds:
+      - task: ci:fast

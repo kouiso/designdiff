@@ -38,6 +38,7 @@ export const getCapabilities = async (): Promise<PlatformCapabilities> => {
 
 export const getOverlay = async (): Promise<OverlayAdapter | null> => {
   if (!isElectronEnv()) return null;
+  if (!window.electronAPI?.overlay) return null;
   const { electronOverlayAdapter } = await import("./electron-adapter");
   return electronOverlayAdapter;
 };

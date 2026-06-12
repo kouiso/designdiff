@@ -8,12 +8,13 @@
  */
 
 // --- HTML Escaping ---
-function escapeHtml(text: string): string {
+export function escapeHtml(text: string): string {
   return text
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 // --- State ---
@@ -76,18 +77,30 @@ interface RunComparisonMessage {
   designBase64: string;
   screenshotBase64: string;
 }
+interface InitMessage {
+  type: "init";
+  tab: "compare" | "inspect";
+}
 
 type PluginResponse =
   | SelectionMessage
   | ExportResultMessage
   | InspectResultMessage
-  | RunComparisonMessage;
+  | RunComparisonMessage
+  | InitMessage;
 
-function isPluginResponse(msg: unknown): msg is PluginResponse {
+const PLUGIN_RESPONSE_TYPES = new Set([
+  "selection",
+  "export-result",
+  "inspect-result",
+  "run-comparison",
+  "init",
+]);
+
+export function isPluginResponse(msg: unknown): msg is PluginResponse {
   if (typeof msg !== "object" || msg === null || !("type" in msg)) return false;
-  // "type" in msg narrows to { type: unknown }, so property access is safe via index signature
-  const obj: Record<string, unknown> = msg;
-  return typeof obj["type"] === "string";
+  const obj = msg as Record<string, unknown>;
+  return typeof obj.type === "string" && PLUGIN_RESPONSE_TYPES.has(obj.type);
 }
 
 // Figma Plugin iframe context: event.origin is always "null" (opaque origin), so origin validation is not applicable
@@ -133,6 +146,13 @@ window.onmessage = (event: MessageEvent) => {
       state.screenshotBase64 = msg.screenshotBase64;
       runComparison();
       break;
+
+    case "init":
+      if (msg.tab === "compare" || msg.tab === "inspect") {
+        state.tab = msg.tab;
+        render();
+      }
+      break;
   }
 };
 
@@ -156,7 +176,8 @@ async function runComparison(): Promise<void> {
     const designCanvas = document.createElement("canvas");
     designCanvas.width = width;
     designCanvas.height = height;
-    const designCtx = designCanvas.getContext("2d")!;
+    const designCtx = designCanvas.getContext("2d");
+    if (!designCtx) throw new Error("Failed to create canvas 2d context for design image");
     designCtx.drawImage(designImg, 0, 0, width, height);
     const designData = designCtx.getImageData(0, 0, width, height);
 
@@ -164,7 +185,8 @@ async function runComparison(): Promise<void> {
     const ssCanvas = document.createElement("canvas");
     ssCanvas.width = width;
     ssCanvas.height = height;
-    const ssCtx = ssCanvas.getContext("2d")!;
+    const ssCtx = ssCanvas.getContext("2d");
+    if (!ssCtx) throw new Error("Failed to create canvas 2d context for screenshot");
     ssCtx.drawImage(screenshotImg, 0, 0, width, height);
     const ssData = ssCtx.getImageData(0, 0, width, height);
 
@@ -187,7 +209,8 @@ async function runComparison(): Promise<void> {
     const diffCanvas = document.createElement("canvas");
     diffCanvas.width = width;
     diffCanvas.height = height;
-    const diffCtx = diffCanvas.getContext("2d")!;
+    const diffCtx = diffCanvas.getContext("2d");
+    if (!diffCtx) throw new Error("Failed to create canvas 2d context for diff output");
     diffCtx.putImageData(diffData, 0, 0);
     const diffImageBase64 = diffCanvas.toDataURL("image/png").replace("data:image/png;base64,", "");
 
@@ -218,7 +241,7 @@ function loadImage(src: string): Promise<HTMLImageElement> {
  * Simple pixelmatch implementation for iframe (no npm dependency)
  * Compares two RGBA pixel arrays and highlights differences in red
  */
-function pixelmatchSimple(
+export function pixelmatchSimple(
   img1: Uint8ClampedArray,
   img2: Uint8ClampedArray,
   output: Uint8ClampedArray,
@@ -268,7 +291,8 @@ function handleFileInput(file: File): void {
 // --- Rendering ---
 
 function render(): void {
-  const app = document.getElementById("app")!;
+  const app = document.getElementById("app");
+  if (!app) return;
   app.innerHTML = "";
 
   // Tabs

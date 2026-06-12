@@ -3,8 +3,13 @@
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "./src",
-    "composite": true
+    "composite": true,
+    "baseUrl": ".",
+    "paths": {
+      "@figdiff/shared": ["../../package/shared/src/index.ts"]
+    }
   },
   "include": ["src/**/*.ts"],
-  "exclude": ["dist", "node_modules"]
+  "exclude": ["dist", "node_modules", "**/*.test.ts"],
+  "references": [{ "path": "../../package/shared" }]
 }

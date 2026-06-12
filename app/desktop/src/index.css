@@ -5,82 +5,108 @@
 @theme {
   --color-background: var(--bg);
   --color-foreground: var(--fg);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-fg);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-fg);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-fg);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-fg);
-  --color-muted: var(--muted);
+  --color-card: var(--surface);
+  --color-card-foreground: var(--fg);
+  --color-popover: var(--surface);
+  --color-popover-foreground: var(--fg);
+  --color-primary: var(--cobalt);
+  --color-primary-foreground: var(--cobalt-fg);
+  --color-secondary: var(--surface-2);
+  --color-secondary-foreground: var(--fg-2);
+  --color-muted: var(--bg-2);
   --color-muted-foreground: var(--muted-fg);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-fg);
-  --color-destructive: var(--destructive);
-  --color-destructive-foreground: var(--destructive-fg);
-  --color-success: var(--success);
-  --color-success-foreground: var(--success-fg);
+  --color-accent: var(--cobalt-soft);
+  --color-accent-foreground: var(--cobalt);
+  --color-destructive: var(--diff);
+  --color-destructive-foreground: #ffffff;
+  --color-success: var(--match);
+  --color-success-foreground: #ffffff;
   --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
-  --color-sidebar: var(--sidebar);
-  --color-sidebar-foreground: var(--sidebar-fg);
-  --radius: 0.625rem;
+  --color-input: var(--border);
+  --color-ring: var(--cobalt);
+  --color-sidebar: var(--surface);
+  --color-sidebar-foreground: var(--fg);
+  --radius: 0.875rem;
 }
 
 /* ─── Light theme ─── */
 :root {
-  --bg: #ffffff;
-  --fg: #09090b;
-  --card: #ffffff;
-  --card-fg: #09090b;
-  --popover: #ffffff;
-  --popover-fg: #09090b;
-  --primary: #6d28d9;
-  --primary-fg: #ffffff;
-  --secondary: #f4f4f5;
-  --secondary-fg: #18181b;
-  --muted: #f4f4f5;
-  --muted-fg: #71717a;
-  --accent: #f0e7ff;
-  --accent-fg: #6d28d9;
-  --destructive: #dc2626;
+  --cobalt: oklch(0.54 0.165 256);
+  --cobalt-strong: oklch(0.47 0.165 256);
+  --cobalt-fg: #ffffff;
+  --cobalt-soft: oklch(0.54 0.165 256 / 0.12);
+  --cobalt-line: oklch(0.54 0.165 256 / 0.3);
+
+  --match: oklch(0.58 0.13 158);
+  --match-soft: oklch(0.58 0.13 158 / 0.13);
+  --diff: oklch(0.585 0.2 24);
+  --diff-soft: oklch(0.585 0.2 24 / 0.13);
+  --warn: oklch(0.7 0.14 72);
+  --warn-soft: oklch(0.7 0.14 72 / 0.16);
+
+  --bg: oklch(0.985 0.003 255);
+  --bg-2: oklch(0.965 0.004 255);
+  --surface: oklch(1 0 0);
+  --surface-2: oklch(0.975 0.004 255);
+  --fg: oklch(0.21 0.02 268);
+  --fg-2: oklch(0.4 0.02 268);
+  --muted-fg: oklch(0.55 0.018 268);
+  --faint-fg: oklch(0.68 0.015 268);
+  --border: oklch(0.9 0.006 268);
+  --border-strong: oklch(0.83 0.008 268);
+  --shadow-color: 240 30% 30%;
+  --radius-token: 14px;
+  --radius-sm-token: 10px;
+  --radius-lg-token: 22px;
+
+  /* shadcn compat aliases */
+  --primary: var(--cobalt);
+  --primary-fg: var(--cobalt-fg);
+  --accent: var(--cobalt-soft);
+  --accent-fg: var(--cobalt);
+  --card: var(--surface);
+  --card-fg: var(--fg);
+  --popover: var(--surface);
+  --popover-fg: var(--fg);
+  --secondary: var(--surface-2);
+  --secondary-fg: var(--fg-2);
+  --muted: var(--bg-2);
+  --destructive: var(--diff);
   --destructive-fg: #ffffff;
-  --success: #16a34a;
+  --success: var(--match);
   --success-fg: #ffffff;
-  --border: #e4e4e7;
-  --input: #e4e4e7;
-  --ring: #6d28d9;
-  --sidebar: #fafafa;
-  --sidebar-fg: #09090b;
+  --input: var(--border);
+  --ring: var(--cobalt);
+  --sidebar: var(--surface);
+  --sidebar-fg: var(--fg);
 }
 
 /* ─── Dark theme ─── */
 .dark {
-  --bg: #09090b;
-  --fg: #fafafa;
-  --card: #111113;
-  --card-fg: #fafafa;
-  --popover: #111113;
-  --popover-fg: #fafafa;
-  --primary: #a78bfa;
-  --primary-fg: #09090b;
-  --secondary: #1e1e22;
-  --secondary-fg: #fafafa;
-  --muted: #1e1e22;
-  --muted-fg: #a1a1aa;
-  --accent: #2d1b69;
-  --accent-fg: #c4b5fd;
-  --destructive: #ef4444;
-  --destructive-fg: #fafafa;
-  --success: #22c55e;
-  --success-fg: #09090b;
-  --border: #27272a;
-  --input: #27272a;
-  --ring: #a78bfa;
-  --sidebar: #111113;
-  --sidebar-fg: #fafafa;
+  --cobalt: oklch(0.7 0.145 256);
+  --cobalt-strong: oklch(0.63 0.145 256);
+  --cobalt-fg: oklch(0.16 0.02 268);
+  --cobalt-soft: oklch(0.7 0.145 256 / 0.16);
+  --cobalt-line: oklch(0.7 0.145 256 / 0.34);
+
+  --match: oklch(0.74 0.15 158);
+  --match-soft: oklch(0.74 0.15 158 / 0.16);
+  --diff: oklch(0.7 0.19 24);
+  --diff-soft: oklch(0.7 0.19 24 / 0.18);
+  --warn: oklch(0.8 0.13 78);
+  --warn-soft: oklch(0.8 0.13 78 / 0.18);
+
+  --bg: oklch(0.165 0.012 268);
+  --bg-2: oklch(0.135 0.012 268);
+  --surface: oklch(0.205 0.013 268);
+  --surface-2: oklch(0.235 0.014 268);
+  --fg: oklch(0.96 0.004 268);
+  --fg-2: oklch(0.82 0.008 268);
+  --muted-fg: oklch(0.66 0.012 268);
+  --faint-fg: oklch(0.52 0.012 268);
+  --border: oklch(0.3 0.013 268);
+  --border-strong: oklch(0.4 0.015 268);
+  --shadow-color: 240 60% 3%;
 }
 
 html {
@@ -90,27 +116,137 @@ html {
 }
 
 body {
-  font-family:
-    "Hiragino Sans", "Hiragino Kaku Gothic ProN",
-    "Noto Sans JP", "Noto Sans CJK JP",
-    "Yu Gothic UI", "Meiryo",
-    -apple-system, BlinkMacSystemFont,
-    "Segoe UI", Roboto, Ubuntu, Cantarell,
-    sans-serif;
+  font-family: "Hanken Grotesk", "Noto Sans JP", system-ui, sans-serif;
   margin: 0;
   font-weight: 400;
-  line-height: 1.7;
-  letter-spacing: 0.03em;
-  text-rendering: optimizeLegibility;
+  line-height: 1.6;
+  letter-spacing: -0.01em;
+  text-rendering: optimizelegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  font-feature-settings: "palt";
 }
 
-/* 高DPIディスプレイでのフォントウェイト補正 */
-@media (min-resolution: 2dppx) {
-  body {
-    -webkit-font-smoothing: subpixel-antialiased;
-    font-weight: 420;
+.mono {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-feature-settings: "tnum";
+  letter-spacing: -0.01em;
+}
+
+/* Custom scrollbar */
+.scroll::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.scroll::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 99px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+.scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--faint-fg);
+  background-clip: content-box;
+}
+.scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Generic button */
+.fd-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 15px;
+  border-radius: var(--radius-sm-token);
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--fg-2);
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  transition: all 0.14s ease;
+  white-space: nowrap;
+  cursor: pointer;
+  font-family: inherit;
+}
+.fd-btn:hover {
+  border-color: var(--faint-fg);
+  color: var(--fg);
+}
+.fd-btn.primary {
+  background: var(--cobalt);
+  color: var(--cobalt-fg);
+  border-color: transparent;
+}
+.fd-btn.primary:hover {
+  background: var(--cobalt-strong);
+}
+.fd-btn.ghost {
+  background: transparent;
+  border-color: transparent;
+}
+.fd-btn.ghost:hover {
+  background: var(--surface-2);
+}
+
+/* Pill & chip */
+.fd-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 99px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.fd-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted-fg);
+  padding: 4px 9px;
+  border-radius: var(--radius-sm-token);
+  border: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+/* Icon button */
+.fd-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-sm-token);
+  color: var(--muted-fg);
+  transition: all 0.14s;
+  cursor: pointer;
+  background: none;
+  border: none;
+  font-family: inherit;
+}
+.fd-icon-btn:hover {
+  background: var(--surface-2);
+  color: var(--fg);
+}
+
+@keyframes fd-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes fd-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }

@@ -43,7 +43,14 @@ export const NodeLayoutSchema = z.object({
 });
 
 export const NodeFillSchema = z.object({
-  type: z.enum(["SOLID", "GRADIENT_LINEAR", "IMAGE"]),
+  type: z.enum([
+    "SOLID",
+    "GRADIENT_LINEAR",
+    "GRADIENT_RADIAL",
+    "GRADIENT_ANGULAR",
+    "GRADIENT_DIAMOND",
+    "IMAGE",
+  ]),
   color: z.string().optional(),
   opacity: z.number().min(0).max(1).optional(),
 });
@@ -62,7 +69,7 @@ export const BorderRadiusSchema = z.object({
 });
 
 export const NodeEffectSchema = z.object({
-  type: z.enum(["DROP_SHADOW", "INNER_SHADOW", "BLUR"]),
+  type: z.enum(["DROP_SHADOW", "INNER_SHADOW", "LAYER_BLUR", "BACKGROUND_BLUR"]),
   color: z.string().optional(),
   offset: z.object({ x: z.number(), y: z.number() }).optional(),
   radius: z.number().nonnegative(),
@@ -137,13 +144,234 @@ export const DiffRegionSchema = z.object({
   nearbyNodeNames: z.array(z.string()),
 });
 
+export const ClusterTelemetrySchema = z.object({
+  requestedMode: z.enum(["auto", "grid", "flood"]),
+  usedMode: z.enum(["grid", "flood"]),
+  fallbackUsed: z.boolean(),
+  fallbackReason: z
+    .enum([
+      "grid-empty-with-diff",
+      "wall-budget-exceeded",
+      "region-count-exceeded",
+      "hot-cell-ratio-exceeded",
+    ])
+    .optional(),
+  wallMs: z.number().nonnegative(),
+  budgetMs: z.number().nonnegative().optional(),
+  regionCount: z.number().int().nonnegative(),
+});
+
+export const GridSummaryCellSchema = z.object({
+  row: z.number().int().nonnegative(),
+  col: z.number().int().nonnegative(),
+  x: z.number().int().nonnegative(),
+  y: z.number().int().nonnegative(),
+  width: z.number().int().positive(),
+  height: z.number().int().positive(),
+  diffPixels: z.number().int().nonnegative(),
+  totalPixels: z.number().int().nonnegative(),
+  matchRate: z.number().min(0).max(100),
+});
+
+export const GridSummarySchema = z.object({
+  rows: z.number().int().positive(),
+  cols: z.number().int().positive(),
+  cells: z.array(GridSummaryCellSchema),
+});
+
+// --- Completion Criteria Schema (v4: AI-driven PASS/FAIL structure) ---
+
+export const CompletionCriterionSchema = z.object({
+  required: z.number(),
+  current: z.number(),
+  status: z.enum(["PASS", "FAIL"]),
+});
+
+export const CompletionCriteriaSchema = z.object({
+  matchRate: CompletionCriterionSchema,
+  diffPixelCount: CompletionCriterionSchema,
+  remainingIssues: CompletionCriterionSchema,
+});
+
+// --- FigDiff v2 Diff Report Schema (P1) ---
+
+export const DiffBoundingBoxSchema = z.object({
+  x: z.number(),
+  y: z.number(),
+  w: z.number().nonnegative(),
+  h: z.number().nonnegative(),
+});
+
+export const DiffIssueKindSchema = z.enum([
+  "color",
+  "position",
+  "size",
+  "missing",
+  "extra",
+  "typography",
+]);
+
+export const DiffSeveritySchema = z.enum(["critical", "major", "minor"]);
+
+export const DiffEvidenceSchema = z.object({
+  signal: z.string(),
+  value: z.number(),
+  threshold: z.number(),
+  expected: z.unknown(),
+  actual: z.unknown(),
+  figmaFileKey: z.string().optional(),
+  figmaNodeId: z.string().optional(),
+  figmaPageName: z.string().optional(),
+});
+
+export const DiffIssueSchema = z.object({
+  regionId: z.string(),
+  bbox: DiffBoundingBoxSchema,
+  kind: DiffIssueKindSchema,
+  severity: DiffSeveritySchema,
+  evidence: DiffEvidenceSchema,
+  figmaNodeId: z.string().optional(),
+  suggestedCssFix: z.string().optional(),
+});
+
+export const RegionScoreSchema = z.object({
+  regionId: z.string(),
+  bbox: DiffBoundingBoxSchema,
+  figmaNodeId: z.string().optional(),
+  structure: z.number().min(0).max(1),
+  color: z.number().nonnegative(),
+  shape: z.number().nonnegative(),
+  layout: z.number().nonnegative(),
+  textureScore: z.number().min(0).max(1).optional(),
+});
+
+export const WeightedAggregateSchema = z.object({
+  weightedStructure: z.number().min(0).max(1),
+  weightedColor: z.number().nonnegative(),
+  totalWeight: z.number().nonnegative(),
+});
+
+export const AlignmentSchema = z.object({
+  translation: z.object({
+    x: z.number(),
+    y: z.number(),
+  }),
+  scale: z.object({
+    x: z.number(),
+    y: z.number(),
+  }),
+  rotation: z.number(),
+  confidence: z.number().min(0).max(1),
+  residual: z.number().nonnegative(),
+});
+
+export const DiffVerdictSchema = z.enum(["pass", "fail", "inconclusive"]);
+
+export const DiffReportSchema = z.object({
+  alignment: AlignmentSchema,
+  regionScores: z.array(RegionScoreSchema),
+  issues: z.array(DiffIssueSchema),
+  weightedAggregate: WeightedAggregateSchema.optional(),
+  aggregateVerdict: DiffVerdictSchema,
+  rationale: z.string(),
+});
+
+export const CritiqueConcernSchema = z.enum(["regression", "oscillation", "plateau", "healthy"]);
+
+export const CritiqueNoteSchema = z.object({
+  concern: CritiqueConcernSchema,
+  worstDeltaSection: z.string().optional(),
+  advice: z.string(),
+});
+
+// --- Comparison Confidence Layer (Pre-flight / Normalization / Diagnosis / Headline) ---
+// 「near-100% のミスマッチはほぼ常に実装差分ではなく設定ミス」という観察に基づき、
+// ツール自身が誤設定を検知・説明するためのメタ情報。計測ロジックには手を入れず、
+// 既存シグナル (regionScores / 正規化結果) を集約して提示する。
+
+export const PreflightWarningCodeSchema = z.enum([
+  "width_mismatch",
+  "crop_out_of_bounds",
+  "crop_stale",
+  "blank_frame",
+]);
+
+export const PreflightSeveritySchema = z.enum(["info", "warning", "critical"]);
+
+export const PreflightWarningSchema = z.object({
+  code: PreflightWarningCodeSchema,
+  severity: PreflightSeveritySchema,
+  message: z.string(),
+  suggestedFix: z.string().optional(),
+});
+
+export const PreflightReportSchema = z.object({
+  warnings: z.array(PreflightWarningSchema),
+});
+
+export const NormalizationReportSchema = z.object({
+  designNativeWidth: z.number().int().nonnegative(),
+  designNativeHeight: z.number().int().nonnegative(),
+  screenshotWidth: z.number().int().nonnegative(),
+  screenshotHeight: z.number().int().nonnegative(),
+  cropApplied: z.boolean(),
+  containResized: z.boolean(),
+  // contain 正規化で適用された最終スケール。1 から大きく外れると寸法ミスマッチのサイン。
+  appliedScale: z.number().nonnegative(),
+});
+
+export const ComparisonHeadlineSchema = z.object({
+  structureMatch: z.number().min(0).max(100),
+  colorOnlyRegions: z.number().int().nonnegative(),
+  structuralRegions: z.number().int().nonnegative(),
+  headline: z.string(),
+});
+
+export const DiagnosisVerdictSchema = z.enum(["clean", "real_diff", "likely_misconfig"]);
+
+export const DiagnosisCauseCodeSchema = z.enum([
+  "width_mismatch",
+  "crop_compression",
+  "aspect_mismatch",
+  "global_color_shift",
+  "blank_or_wrong_node",
+]);
+
+export const DiagnosisCauseSchema = z.object({
+  code: DiagnosisCauseCodeSchema,
+  confidence: z.number().min(0).max(1),
+  message: z.string(),
+  suggestedFix: z.string(),
+});
+
+export const ComparisonDiagnosisSchema = z.object({
+  verdict: DiagnosisVerdictSchema,
+  likelyMisconfig: z.boolean(),
+  rankedCauses: z.array(DiagnosisCauseSchema),
+  headline: z.string(),
+});
+
 export const CompareDesignResultSchema = z.object({
+  status: z.enum(["PASS", "FAIL"]).optional(),
   comparisonId: z.string(),
   matchRate: z.number().min(0).max(100),
   diffPixelCount: z.number().int().nonnegative(),
-  totalPixelCount: z.number().int().positive(),
+  // ignoreRegions が画像全体を覆うケースでは 0 が正当。
+  totalPixelCount: z.number().int().nonnegative(),
+  remainingIssues: z.number().int().nonnegative().optional(),
   diffRegions: z.array(DiffRegionSchema),
+  completionCriteria: CompletionCriteriaSchema.optional(),
+  nextAction: z.string().optional(),
   suggestion: z.string(),
+  clusterTelemetry: ClusterTelemetrySchema.optional(),
+  gridSummary: GridSummarySchema.optional(),
+  diffReport: DiffReportSchema.optional(),
+  critique: CritiqueNoteSchema.optional(),
+  preflight: PreflightReportSchema.optional(),
+  normalization: NormalizationReportSchema.optional(),
+  diagnosis: ComparisonDiagnosisSchema.optional(),
+  comparisonHeadline: ComparisonHeadlineSchema.optional(),
+  diffImagePath: z.string().optional(),
   diffImageBase64: z.string().optional(),
 });
 
@@ -156,14 +384,72 @@ export const CropRegionSchema = z.object({
   height: z.number().positive(),
 });
 
-// --- Project Schema ---
+// --- Ignore Region Schema ---
+// マスク用矩形。compare_design 実行時に、この矩形内のピクセルは
+// 差分検出から除外し、分母 (totalPixelCount) からも引いて
+// 「評価対象領域のみ」の matchRate を計算する。
+// 用途: 既知の意図的差分 (WP 原文 vs Figma プレースホルダ、
+// アンチエイリアス / フォントヒンティング差、Google Map 埋め込み等)
+// を false-positive から除外する。
+export const IgnoreRegionSchema = z.object({
+  x: z.number().nonnegative(),
+  y: z.number().nonnegative(),
+  width: z.number().positive(),
+  height: z.number().positive(),
+  label: z.string().optional(),
+});
+
+export const IgnoreRegionConfigEntrySchema = IgnoreRegionSchema.extend({
+  id: z.string().regex(/^[a-zA-Z0-9_-]+$/),
+  frame_name: z.string().optional(),
+  note: z.string().optional(),
+}).strict();
+
+export const IgnoreRegionConfigFileSchema = z
+  .object({
+    version: z.literal(1),
+    regions: z.array(IgnoreRegionConfigEntrySchema),
+  })
+  .strict();
+
+// --- Design Source Schema (v4: Figma URL or local image per page) ---
+
+export const DesignSourceSchema = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("figma"),
+    id: z.string(),
+    label: z.string(),
+    figmaUrl: z.string(),
+    fileKey: z.string(),
+    nodeId: z.string().optional(),
+    frameName: z.string().optional(),
+  }),
+  z.object({
+    type: z.literal("local_image"),
+    id: z.string(),
+    label: z.string(),
+    filePath: z.string(),
+  }),
+]);
+
+// --- Project Page Schema (v4: one page = one URL path + N design sources) ---
+
+export const ProjectPageSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  path: z.string(),
+  designSources: z.array(DesignSourceSchema),
+});
+
+// --- Project Schema (v4: implementation URL + pages) ---
 
 export const ProjectSchema = z.object({
   id: z.string(),
   name: z.string(),
-  figmaUrl: z.string().optional(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
+  implementationUrl: z.string(),
+  pages: z.array(ProjectPageSchema),
+  createdAt: z.string().datetime({ offset: true }),
+  updatedAt: z.string().datetime({ offset: true }),
 });
 
 // --- Figma Token Schema ---
@@ -173,9 +459,20 @@ export const FigmaTokenSchema = z
   .min(20)
   .regex(/^figd_/, "Figma token must start with 'figd_'");
 
-// --- Image Dimensions Schema ---
-
 export const ImageDimensionsSchema = z.object({
   width: z.number().int().positive(),
   height: z.number().int().positive(),
+});
+
+export const FigmaOAuthTokenResponseSchema = z.object({
+  access_token: z.string().min(1),
+  refresh_token: z.string().min(1),
+  expires_in: z.number().int().positive(),
+  token_type: z.string().optional(),
+  scope: z.string().optional(),
+});
+
+export const FigmaAuthStateSchema = z.object({
+  mode: z.enum(["oauth", "pat", "none"]),
+  expiresAt: z.number().optional(),
 });

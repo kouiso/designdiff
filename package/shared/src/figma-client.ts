@@ -12,9 +12,11 @@ const FigmaNodeSchema: z.ZodType<FigmaNode> = z.lazy(() =>
     children: z.array(FigmaNodeSchema).default([]),
     absoluteBoundingBox: z
       .object({ x: z.number(), y: z.number(), width: z.number(), height: z.number() })
+      .nullable()
       .optional(),
     absoluteRenderBounds: z
       .object({ x: z.number(), y: z.number(), width: z.number(), height: z.number() })
+      .nullable()
       .optional(),
     fills: z
       .array(
@@ -103,8 +105,8 @@ export interface FigmaNode {
   name: string;
   type: string;
   children: FigmaNode[];
-  absoluteBoundingBox?: BoundingBox;
-  absoluteRenderBounds?: BoundingBox;
+  absoluteBoundingBox?: BoundingBox | null;
+  absoluteRenderBounds?: BoundingBox | null;
   fills: FigmaPaint[];
   strokes: FigmaPaint[];
   strokeWeight?: number;
@@ -187,18 +189,33 @@ export class NoCacheStrategy implements FigmaCacheStrategy {
   }
 }
 
+export class FigmaApiError extends Error {
+  readonly status: number;
+  constructor(status: number, message: string) {
+    super(message);
+    this.name = "FigmaApiError";
+    this.status = status;
+  }
+}
+
 const MIN_TOKEN_LENGTH = 20;
+const API_TIMEOUT_MS = 30_000;
+const IMAGE_DOWNLOAD_TIMEOUT_MS = 60_000;
+
+export type FigmaAuthMode = "pat" | "oauth";
 
 export class FigmaClient {
   private token: string;
   private cache: FigmaCacheStrategy;
+  private authMode: FigmaAuthMode;
 
-  constructor(token: string, cache?: FigmaCacheStrategy) {
+  constructor(token: string, cache?: FigmaCacheStrategy, authMode: FigmaAuthMode = "pat") {
     if (!token || token.length < MIN_TOKEN_LENGTH) {
       throw new Error("Invalid Figma token");
     }
     this.token = token;
     this.cache = cache || new NoCacheStrategy();
+    this.authMode = authMode;
   }
 
   async getFile(fileKey: string, depth = 1): Promise<FigmaFileResponse> {
@@ -221,8 +238,9 @@ export class FigmaClient {
     return imageUrl;
   }
 
-  async getNode(fileKey: string, nodeId: string): Promise<FigmaNode> {
-    const url = `${FIGMA_API_BASE}/files/${fileKey}/nodes?ids=${nodeId}`;
+  async getNode(fileKey: string, nodeId: string, depth?: number): Promise<FigmaNode> {
+    const depthQuery = depth === undefined ? "" : `&depth=${depth}`;
+    const url = `${FIGMA_API_BASE}/files/${fileKey}/nodes?ids=${nodeId}${depthQuery}`;
     const json = await this.fetchApi(url);
     const response = FigmaNodesResponseSchema.parse(json);
 
@@ -241,13 +259,28 @@ export class FigmaClient {
     }
 
     const imageUrl = await this.getImageUrl(fileKey, nodeId, scale);
-    const response = await fetch(imageUrl);
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), IMAGE_DOWNLOAD_TIMEOUT_MS);
+
+    let response: Response;
+    try {
+      response = await fetch(imageUrl, { signal: controller.signal });
+    } catch (e) {
+      clearTimeout(timer);
+      if (e instanceof DOMException && e.name === "AbortError") {
+        throw new Error(`Image download timed out after ${IMAGE_DOWNLOAD_TIMEOUT_MS}ms`);
+      }
+      throw e;
+    }
 
     if (!response.ok) {
+      clearTimeout(timer);
       throw new Error(`Failed to download image: ${response.statusText}`);
     }
 
     const arrayBuffer = await response.arrayBuffer();
+    clearTimeout(timer);
     const base64 = this.arrayBufferToBase64(new Uint8Array(arrayBuffer));
 
     await this.cache.set(fileKey, nodeId, scale, base64);
@@ -255,19 +288,63 @@ export class FigmaClient {
     return base64;
   }
 
-  private async fetchApi(url: string): Promise<unknown> {
-    const response = await fetch(url, {
-      headers: {
-        "X-FIGMA-TOKEN": this.token,
-      },
-    });
+  private async fetchApi(url: string, timeoutMs = API_TIMEOUT_MS): Promise<unknown> {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
 
-    if (!response.ok) {
-      const body = await response.text();
-      throw new Error(`Figma API error ${response.status}: ${body}`);
+    try {
+      const response = await fetch(url, {
+        headers: this.createAuthHeaders(),
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        const body = await response.text();
+        const status = response.status;
+        if (status === 401) {
+          throw new FigmaApiError(
+            401,
+            `Figma token is invalid or expired (401). Please update your token in Settings.`,
+          );
+        }
+        if (status === 403) {
+          throw new FigmaApiError(
+            403,
+            `Access denied (403). You don't have permission to access this Figma file.`,
+          );
+        }
+        if (status === 429) {
+          const retryAfter = response.headers.get("Retry-After");
+          const wait = retryAfter
+            ? ` Please wait ${retryAfter} seconds.`
+            : " Please wait a moment.";
+          throw new FigmaApiError(429, `Figma API rate limit exceeded (429).${wait}`);
+        }
+        if (status >= 500) {
+          throw new FigmaApiError(
+            status,
+            `Figma server error (${status}). Please try again later.`,
+          );
+        }
+        throw new FigmaApiError(status, `Figma API error ${status}: ${body}`);
+      }
+
+      return response.json();
+    } catch (e) {
+      if (e instanceof DOMException && e.name === "AbortError") {
+        throw new Error(`Figma API request timed out after ${timeoutMs}ms`);
+      }
+      throw e;
+    } finally {
+      clearTimeout(timer);
     }
+  }
 
-    return response.json();
+  private createAuthHeaders(): HeadersInit {
+    if (this.authMode === "oauth") {
+      return { Authorization: `Bearer ${this.token}` };
+    }
+    return { "X-Figma-Token": this.token };
   }
 
   private arrayBufferToBase64(buffer: Uint8Array): string {
@@ -289,7 +366,7 @@ export function extractFrames(response: FigmaFileResponse): Frame[] {
   return frames;
 }
 
-function collectFrames(nodes: FigmaNode[], frames: Frame[]): void {
+export function collectFrames(nodes: FigmaNode[], frames: Frame[]): void {
   for (const node of nodes) {
     if (node.type === "FRAME") {
       const bbox = node.absoluteBoundingBox;
@@ -306,3 +383,27 @@ function collectFrames(nodes: FigmaNode[], frames: Frame[]): void {
     }
   }
 }
+
+/** CANVASページノードからFRAMEノードを抽出（SECTION内も再帰探索） */
+export function extractPageFrames(pageNode: FigmaNode): Frame[] {
+  const frames: Frame[] = [];
+  collectFrames(pageNode.children, frames);
+  return frames;
+}
+
+const TOKEN_ERROR_PATTERNS = [
+  "Token not found",
+  "TokenNotFound",
+  "Invalid token",
+  "Invalid Figma token",
+  "error 403",
+  "error 401",
+  "status 403",
+  "status 401",
+  "Forbidden",
+  "invalid or expired (401)",
+  "Access denied (403)",
+] as const;
+
+export const isTokenError = (message: string): boolean =>
+  TOKEN_ERROR_PATTERNS.some((pattern) => message.includes(pattern));

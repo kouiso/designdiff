@@ -3,6 +3,10 @@
     "title": "FigDiff",
     "description": "Compare Figma designs with your implementation to detect differences. Enter a Figma URL to get started."
   },
+  "tab": {
+    "close": "Close {{name}}",
+    "new": "New tab"
+  },
   "nav": {
     "home": "Home",
     "project": "Frame Selection",
@@ -11,7 +15,17 @@
     "breadcrumb": "Breadcrumb",
     "liveOverlay": "Live Overlay"
   },
+  "header": {
+    "newCompare": "New Comparison",
+    "cmdK": "Command"
+  },
   "home": {
+    "hero": "Visualize design vs implementation diffs",
+    "heroSub": "Compare Figma frames and implementation screenshots pixel by pixel",
+    "recentProjects": "Recent Projects",
+    "openProject": "Open",
+    "figmaLoginFailed": "Figma login failed",
+    "startFigmaLogin": "Login with Figma",
     "pageTitle": "Start Design Comparison",
     "pageDescription": "FigDiff compares Figma designs with implementation screenshots pixel-by-pixel and automatically detects differences.",
     "inputTitle": "Start by entering a URL or image path",
@@ -19,6 +33,7 @@
     "inputPlaceholder": "Figma URL or local image path...",
     "loading": "Loading...",
     "tokenRequired": "Please set a Figma Token. You can configure it in Settings.",
+    "noDesignFound": "No design frames were found. Check the URL or your frame structure in Figma.",
     "howItWorks": "3 Steps to Detect Differences",
     "step1": "Enter a\nFigma URL",
     "step2": "Select a\nframe",
@@ -27,13 +42,20 @@
     "badgeLocal": "Local",
     "implUrlPlaceholder": "Implementation URL (optional, e.g. http://localhost:3000)",
     "implUrlHint": "Both URLs entered → skip frame selection and launch Live Overlay directly.",
-    "badgeLiveOverlay": "Live Overlay"
+    "badgeLiveOverlay": "Live Overlay",
+    "newProject": "New Project",
+    "createProject": "Create New Project",
+    "projectName": "Project name (e.g. Corporate Site)",
+    "implementationUrl": "Implementation URL (e.g. http://localhost:3000)",
+    "noProjects": "No projects yet. Create one to get started.",
+    "pageCount": "{{count}} pages",
+    "quickCompare": "Quick Compare (Legacy)"
   },
   "project": {
     "pageTitle": "Select a Frame to Compare",
     "pageDescription": "Choose the frame you want to compare from the Figma file and load the design image.",
     "selectFrame": "Select a Frame",
-    "startCompare": "Go to Compare Page",
+    "startCompare": "Start Compare",
     "frames": "Frames ({{count}})",
     "loadingImage": "Loading image...",
     "nextStep": "After selecting a frame, click \"Go to Compare Page\"",
@@ -58,6 +80,15 @@
     "running": "Detecting...",
     "comparing": "Comparing images...",
     "matchRate": "Match Rate",
+    "diffReportTitle": "Typed Diff Report",
+    "tabIssues": "Issues",
+    "tabReport": "Report v2",
+    "diffReportRationale": "Rationale",
+    "regionScoreSummary": "RegionScore Summary",
+    "issuesTitle": "Issues",
+    "issuesEmpty": "No typed issues (P1 scope)",
+    "supplementaryInfo": "Supplementary Info",
+    "diffPreviewAlt": "Diff preview",
     "diffPixels": "Diff Pixels",
     "diffRegions": "Diff Regions",
     "regionsCount": "{{count}} areas",
@@ -102,19 +133,39 @@
   "settings": {
     "title": "Settings",
     "description": "Configure FigDiff preferences.",
+    "pageDescription": "Connection settings and behavior options for FigDiff",
+    "figmaConnection": "Figma Connection",
+    "figmaConnected": "Figma connected",
+    "logout": "Logout",
+    "loginWithFigma": "Login with Figma",
+    "loggingIn": "Logging in...",
+    "usePat": "Use a Personal Access Token instead",
+    "hidePat": "Hide PAT",
+    "oauthStatusLoadFailed": "Failed to load Figma connection status.",
+    "appearance": "Appearance",
+    "compareSettings": "Compare Settings",
     "token": "Figma Personal Access Token",
     "tokenMasked": "••••••••••••••••",
     "tokenPlaceholder": "figd_...",
     "save": "Save",
     "saving": "Saving...",
     "saved": "Saved to OS Keychain.",
+    "savedInline": "Saved",
     "saveFailed": "Failed to save token.",
     "delete": "Delete",
     "theme": "Theme",
     "dark": "Dark",
     "light": "Light",
-    "threshold": "Default Diff Threshold: {{value}}",
+    "darkMode": "Dark Mode",
+    "darkModeDesc": "Use dark color scheme",
+    "threshold": "Default Diff Threshold",
+    "thresholdDesc": "Values above this threshold are treated as differences.",
     "language": "Language",
+    "languageDesc": "Select display language",
+    "languageJapanese": "Japanese",
+    "languageEnglish": "English",
+    "autoCompare": "Auto Re-Compare",
+    "autoCompareDesc": "Automatically run comparison after screenshot capture",
     "toggleTheme": "Toggle theme"
   },
   "tokenDialog": {
@@ -143,7 +194,9 @@
     "delete": "Delete",
     "reset": "Reset",
     "close": "Close",
-    "submit": "Submit"
+    "submit": "Submit",
+    "create": "Create",
+    "add": "Add"
   },
   "overlay": {
     "urlPlaceholder": "Implementation URL (e.g. http://localhost:3000)",
@@ -153,9 +206,14 @@
     "show": "Show overlay",
     "capture": "Capture → Compare",
     "twoUp": "2up Compare",
+    "scale": "Scale",
+    "scaleModeFitWidth": "Width",
+    "scaleModeActual": "Actual",
     "splitPosition": "Split",
     "toggleSpeed": "Speed",
-    "analyzing": "Analyzing..."
+    "analyzing": "Analyzing...",
+    "liveDiff": "Live diff",
+    "liveDiffIdle": "Waiting"
   },
   "error": {
     "bothImagesRequired": "Both images are required"
