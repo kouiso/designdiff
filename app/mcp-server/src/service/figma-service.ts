@@ -148,15 +148,35 @@ type FigmaCredentialStatus =
 export function getFigmaCredentialStatus(
   env: Record<string, string | undefined> = process.env,
 ): FigmaCredentialStatus {
-  const token = env["FIGMA_TOKEN"];
+  const token = env.FIGMA_TOKEN;
   if (!token) {
-    return { envName: "FIGMA_TOKEN", configured: false, valid: false, authMode: "pat", issue: "missing" };
+    return {
+      envName: "FIGMA_TOKEN",
+      configured: false,
+      valid: false,
+      authMode: "pat",
+      issue: "missing",
+    };
   }
   if (!token.startsWith(PAT_PREFIX)) {
-    return { envName: "FIGMA_TOKEN", configured: true, valid: false, authMode: "pat", issue: "invalid", reason: "no-pat-prefix" };
+    return {
+      envName: "FIGMA_TOKEN",
+      configured: true,
+      valid: false,
+      authMode: "pat",
+      issue: "invalid",
+      reason: "no-pat-prefix",
+    };
   }
   if (!PRINTABLE_ASCII_RE.test(token)) {
-    return { envName: "FIGMA_TOKEN", configured: true, valid: false, authMode: "pat", issue: "invalid", reason: "invalid-chars" };
+    return {
+      envName: "FIGMA_TOKEN",
+      configured: true,
+      valid: false,
+      authMode: "pat",
+      issue: "invalid",
+      reason: "invalid-chars",
+    };
   }
   return { envName: "FIGMA_TOKEN", configured: true, valid: true, authMode: "pat", issue: null };
 }
