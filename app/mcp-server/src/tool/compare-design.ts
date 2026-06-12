@@ -54,7 +54,7 @@ const CONFIDENCE_TO_PERCENTAGE = 100;
 // 並び順は「結論 → 原因 → 内訳 → 警告」。AI/ユーザーが最初の数行で
 // 「実差分か設定ミスか」を即断でき、likely_misconfig の時だけ確度順に原因を
 // 列挙して最優先の対処に誘導するため、この順序と簡潔な箇条書き形式にしている。
-function buildSummaryText(result: CompareDesignResult): string {
+export function buildSummaryText(result: CompareDesignResult): string {
   const lines: string[] = [];
 
   if (result.diagnosis) {
@@ -82,6 +82,24 @@ function buildSummaryText(result: CompareDesignResult): string {
     for (const warning of warnings) {
       const fix = warning.suggestedFix ? ` → ${warning.suggestedFix}` : "";
       lines.push(`- [${warning.severity}] ${warning.message}${fix}`);
+    }
+  }
+
+  if (result.normalization) {
+    const {
+      designNativeWidth,
+      designNativeHeight,
+      screenshotWidth,
+      screenshotHeight,
+      appliedScale,
+    } = result.normalization;
+    lines.push("");
+    lines.push(
+      `画像サイズ: design ${designNativeWidth}×${designNativeHeight} / screenshot ${screenshotWidth}×${screenshotHeight} / scale ${appliedScale.toFixed(2)}`,
+    );
+    const ratio = screenshotWidth > 0 ? designNativeWidth / screenshotWidth : 1;
+    if (ratio < 0.9 || ratio > 1.1) {
+      lines.push(`  解像度差 約${ratio.toFixed(2)}x を正規化（軽微なボケが diff に乗る可能性）`);
     }
   }
 

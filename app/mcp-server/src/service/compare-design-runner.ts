@@ -298,12 +298,6 @@ async function resolveDesignAssets(
       frameName,
       targetWidth,
     );
-    const designBase64 = await figmaService.getFrameImage(
-      parsedDesignSource.fileKey,
-      resolvedNodeId,
-      targetWidth,
-    );
-
     let figmaRootNode: FigmaNode | undefined;
     try {
       figmaRootNode = await figmaService.getNodeDetails(parsedDesignSource.fileKey, resolvedNodeId);
@@ -313,6 +307,15 @@ async function resolveDesignAssets(
         nodeError instanceof Error ? nodeError.message : nodeError,
       );
     }
+
+    // ダウンサンプリングによる補間ボケとそれによる差分誤検知を防ぐため。
+    const logicalWidth = figmaRootNode?.absoluteBoundingBox?.width;
+    const designBase64 = await figmaService.getFrameImage(
+      parsedDesignSource.fileKey,
+      resolvedNodeId,
+      targetWidth,
+      logicalWidth,
+    );
 
     return { designBase64, figmaRootNode, resolvedNodeId };
   }
