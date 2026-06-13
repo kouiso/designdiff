@@ -562,17 +562,19 @@ export async function runCompareDesign(
 
   // 成功後に使用ノードを記憶し、次回の自動補完に活かす。
   if (args.project_id && parsedDesignSource.type === "figma_url" && resolvedNodeId) {
-    setLastUsedNode(
-      args.project_id,
-      parsedDesignSource.fileKey,
-      resolvedNodeId,
-      figmaRootNode?.name,
-    ).catch((e: unknown) => {
+    try {
+      await setLastUsedNode(
+        args.project_id,
+        parsedDesignSource.fileKey,
+        resolvedNodeId,
+        figmaRootNode?.name,
+      );
+    } catch (e: unknown) {
       console.warn(
         "[compare_design] last-used node save failed:",
         e instanceof Error ? e.message : e,
       );
-    });
+    }
   }
 
   return {
