@@ -37,8 +37,9 @@ const DESCRIPTION = `デザインと実装のピクセル差分を検出しま�
 - screenshot: 実装スクリーンショットのローカルパス（screenshot_url 使用時はプレースホルダ文字列で可）
 - screenshot_url: 撮影対象URL。指定時はPlaywrightで内部撮影しscreenshotの代わりに使用
 - capture_width: 撮影幅(px)。省略時はFigmaフレームの実幅を自動取得（screenshot_url指定時のみ有効）
-- threshold: 色差の許容閾値（0-1、デフォルト0.1）
-- project_id: Crop Region と保存済み ignore_regions の適用に使うプロジェクトID（省略可）
+- threshold: 色差の許容閾値（0-1）。profile を指定した場合はそちらが既定値になる
+- profile: 比較プロファイル（strict/balanced/layout）。threshold 直接指定で上書き可
+- project_id: Crop Region・ignore_regions・前回使用ノード自動補完に使うプロジェクトID（省略可）
 - ignore_regions: 既知の意図的差分マスク（省略可）。project_id の保存済みマスクと結合される。WP原文 vs Figmaプレースホルダ、Google Map埋め込み等の false-positive 抑制に使用。各矩形 {x,y,width,height,label?} 内のピクセルは差分検出/matchRate 分母から除外される
 
 ## Figma URLの例
@@ -152,12 +153,26 @@ export function registerCompareDesign(server: McpServer): void {
           .number()
           .min(0)
           .max(1)
-          .default(0.1)
-          .describe("色差の許容閾値（0-1）。デフォルト0.1"),
+          .optional()
+          .describe(
+            "色差の許容閾値（0-1）。直接指定時は profile より優先される。省略時は profile の値か 0.1。",
+          ),
+        profile: z
+          .enum(["strict", "balanced", "layout"])
+          .optional()
+          .describe(
+            "比較プロファイル。strict=完全一致(threshold 0)、balanced=通常(threshold 0.1、省略時のデフォルト)、layout=構造のみ(threshold 0.4)。threshold を直接指定した場合はそちらが優先される。",
+          ),
         project_id: z
           .string()
+          .regex(
+            /^[a-zA-Z0-9_-]+$/,
+            "Project ID must be alphanumeric with hyphens/underscores only",
+          )
           .optional()
-          .describe("Crop Region と保存済み ignore_regions 適用のためのプロジェクトID（省略可）"),
+          .describe(
+            "Crop Region・保存済み ignore_regions・前回使用ノードの自動補完に使うプロジェクトID（省略可）",
+          ),
         ignore_regions: z
           .array(IgnoreRegionSchema)
           .optional()

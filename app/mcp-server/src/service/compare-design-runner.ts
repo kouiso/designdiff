@@ -20,6 +20,7 @@ import {
   type DiffReport,
   type FigmaNode,
   type IgnoreRegion,
+  type PreflightWarning,
 } from "@figdiff/shared";
 
 import { resolveSafePath } from "../util/path-guard.js";
@@ -33,6 +34,7 @@ import { getCropRegion } from "./crop-region-store.js";
 import { createFigmaService, type FigmaService } from "./figma-service.js";
 import { getIgnoreRegionsForComparison } from "./ignore-region-store.js";
 import { compareImages } from "./image-compare-service.js";
+import { getLastUsedNode, setLastUsedNode } from "./last-used-node-store.js";
 
 const FixtureFigmaNodeSchema: z.ZodType<FigmaNode> = z.lazy(() =>
   z.object({
@@ -105,6 +107,25 @@ async function loadLocalFixtureNode(designPath: string): Promise<FigmaNode | und
   }
 }
 
+// threshold の既定値を決める比較プロファイル。
+// threshold を直接指定した場合はそちらが優先される。
+type ComparisonProfile = "strict" | "balanced" | "layout";
+
+const PROFILE_THRESHOLDS: Record<ComparisonProfile, number> = {
+  strict: 0.0,
+  balanced: 0.1,
+  layout: 0.4,
+};
+
+function resolveThreshold(
+  threshold: number | undefined,
+  profile: ComparisonProfile | undefined,
+): number {
+  if (threshold !== undefined) return threshold;
+  if (profile !== undefined) return PROFILE_THRESHOLDS[profile];
+  return 0.1;
+}
+
 export interface CompareDesignRunArgs {
   design_source: string;
   screenshot: string;
@@ -112,6 +133,7 @@ export interface CompareDesignRunArgs {
   capture_width?: number;
   frame_name?: string;
   threshold?: number;
+  profile?: ComparisonProfile;
   project_id?: string;
   // 既知の意図的差分マスク。compare 結果から除外される。
   // 座標系は cropRegion 適用後 (= screenshot ピクセル座標)。
@@ -242,6 +264,60 @@ function buildSuggestion(matchRate: number, regionCount: number): string {
   return `大きな差分が${regionCount}箇所あります。inspect_nodeで各差分領域を確認し、修正してください。`;
 }
 
+// nodeId も frame_name も未指定のとき、前回使用ノードをフォールバックとして返す。
+async function resolveLastUsedFallback(
+  args: CompareDesignRunArgs,
+  fileKey: string,
+): Promise<{ fallbackNodeId: string | undefined; lastUsedNodeNote: string | undefined }> {
+  if (!args.project_id || args.frame_name) {
+    return { fallbackNodeId: undefined, lastUsedNodeNote: undefined };
+  }
+  let lastUsed: Awaited<ReturnType<typeof getLastUsedNode>>;
+  try {
+    lastUsed = await getLastUsedNode(args.project_id, fileKey);
+  } catch (error) {
+    console.warn(
+      "[compare_design] last-used node fetch failed, skipping fallback:",
+      error instanceof Error ? error.message : error,
+    );
+    return { fallbackNodeId: undefined, lastUsedNodeNote: undefined };
+  }
+  if (!lastUsed) {
+    return { fallbackNodeId: undefined, lastUsedNodeNote: undefined };
+  }
+  const note = lastUsed.nodeName
+    ? `前回使用したノード "${lastUsed.nodeName}" (${lastUsed.nodeId}) を自動使用しました。`
+    : `前回使用したノード ${lastUsed.nodeId} を自動使用しました。`;
+  return { fallbackNodeId: lastUsed.nodeId, lastUsedNodeNote: note };
+}
+
+// blank_frame 警告が出たとき、フレーム候補一覧を suggestedFix に付与する。
+async function enhanceBlankFrameWarning(
+  warnings: PreflightWarning[],
+  fileKey: string,
+  screenWidth: number | undefined,
+): Promise<PreflightWarning[]> {
+  if (!warnings.some((w) => w.code === "blank_frame")) {
+    return warnings;
+  }
+  try {
+    const figmaService = createFigmaService();
+    const frames = await figmaService.getFrames(fileKey);
+    const candidateText = formatFrameCandidates(
+      rankFrameCandidates(frames, screenWidth),
+      screenWidth,
+    );
+    return warnings.map((w) =>
+      w.code === "blank_frame"
+        ? { ...w, suggestedFix: `コンテンツを持つフレームを選択してください:\n${candidateText}` }
+        : w,
+    );
+  } catch {
+    // フレーム一覧の取得失敗は非致命的。基本の警告メッセージのみで続行する。
+    return warnings;
+  }
+}
+
 // 設定ミスの可能性が高い場合、CSS修正ではなくセットアップ修正へ誘導する。
 // tool description が nextAction に従うよう指示しているため、誤った CSS 修正に
 // 進ませないよう診断結果で nextAction を上書きする。
@@ -253,7 +329,12 @@ function buildMisconfigNextAction(diagnosis: ComparisonDiagnosis): string {
   return `⚠️ セットアップ問題の可能性が高いです。CSS修正の前に、まず設定を見直してください: ${fix} 解消後に再度 compare_design で検証してください。`;
 }
 
-async function resolveScreenshotPath(args: CompareDesignRunArgs): Promise<string> {
+// fallbackNodeId は last-used node フォールバックから来る可能性がある。
+// screenshot_url 撮影前に解決しておくことで、フレームの実幅を capture_width に使える。
+async function resolveScreenshotPath(
+  args: CompareDesignRunArgs,
+  fallbackNodeId?: string,
+): Promise<string> {
   if (!args.screenshot_url) {
     return resolveSafePath(args.screenshot);
   }
@@ -265,9 +346,9 @@ async function resolveScreenshotPath(args: CompareDesignRunArgs): Promise<string
     try {
       const figmaService = createFigmaService();
       const frames = await figmaService.getFrames(parsedDesignSource.fileKey);
-      const nodeId = parsedDesignSource.nodeId?.replace(/-/g, ":");
+      const effectiveNodeId = (parsedDesignSource.nodeId ?? fallbackNodeId)?.replace(/-/g, ":");
       const matched =
-        (nodeId ? frames.find((f) => f.id === nodeId) : undefined) ??
+        (effectiveNodeId ? frames.find((f) => f.id === effectiveNodeId) : undefined) ??
         (args.frame_name
           ? frames.find((f) => f.name.toLowerCase() === args.frame_name!.toLowerCase())
           : undefined);
@@ -284,6 +365,7 @@ async function resolveDesignAssets(
   parsedDesignSource: ReturnType<typeof parseDesignInput>,
   frameName: string | undefined,
   targetWidth: number | undefined,
+  fallbackNodeId?: string,
 ): Promise<{
   designBase64: string;
   figmaRootNode: FigmaNode | undefined;
@@ -291,10 +373,12 @@ async function resolveDesignAssets(
 }> {
   if (parsedDesignSource.type === "figma_url") {
     const figmaService = createFigmaService();
+    // nodeId が未指定のとき、前回使用ノードのフォールバックを試みる。
+    const effectiveNodeId = parsedDesignSource.nodeId ?? fallbackNodeId;
     const resolvedNodeId = await resolveNodeId(
       figmaService,
       parsedDesignSource.fileKey,
-      parsedDesignSource.nodeId,
+      effectiveNodeId,
       frameName,
       targetWidth,
     );
@@ -332,8 +416,16 @@ export async function runCompareDesign(
   args: CompareDesignRunArgs,
 ): Promise<CompareDesignRunOutput> {
   const parsedDesignSource = parseDesignInput(args.design_source);
+  const effectiveThreshold = resolveThreshold(args.threshold, args.profile);
+
+  // screenshot_url 撮影前に last-used ノードを解決し、フレームの実幅を capture_width に使えるようにする。
+  const { fallbackNodeId, lastUsedNodeNote } =
+    parsedDesignSource.type === "figma_url" && !parsedDesignSource.nodeId
+      ? await resolveLastUsedFallback(args, parsedDesignSource.fileKey)
+      : { fallbackNodeId: undefined, lastUsedNodeNote: undefined };
+
   // スクリーンショットの読み込み — 許可されたディレクトリ内にあることを検証する
-  const screenshotPath = await resolveScreenshotPath(args);
+  const screenshotPath = await resolveScreenshotPath(args, fallbackNodeId);
   const screenshotBuffer = await fs.readFile(screenshotPath);
   const screenshotBase64 = screenshotBuffer.toString("base64");
   const screenshotMeta = await sharp(screenshotBuffer).metadata();
@@ -343,6 +435,7 @@ export async function runCompareDesign(
     parsedDesignSource,
     args.frame_name,
     targetWidth,
+    fallbackNodeId,
   );
 
   let cropRegion: CropRegion | undefined;
@@ -362,7 +455,7 @@ export async function runCompareDesign(
     {
       designBase64,
       screenshotBase64,
-      threshold: args.threshold ?? 0.1,
+      threshold: effectiveThreshold,
       cropRegion,
       figmaNodeId: resolvedNodeId,
       ignoreRegions,
@@ -403,6 +496,8 @@ export async function runCompareDesign(
     figmaChildCount: figmaRootNode?.children?.length,
     figmaNodeType: figmaRootNode?.type,
   });
+
+  // 診断は元の preflight 警告で行い、その後に表示用の拡張を加える。
   const comparisonHeadline = buildComparisonHeadline(regionScores, comparison.matchRate);
   const diagnosis = diagnoseComparison({
     matchRate: comparison.matchRate,
@@ -410,6 +505,24 @@ export async function runCompareDesign(
     preflightWarnings: preflight.warnings,
     normalization: comparison.normalization,
   });
+
+  // blank_frame 警告をフレーム候補付きに強化し、前回使用ノード info を先頭に追加する。
+  const screenWidth = comparison.normalization?.screenshotWidth ?? screenshotMeta.width;
+  let finalPreflightWarnings =
+    parsedDesignSource.type === "figma_url"
+      ? await enhanceBlankFrameWarning(preflight.warnings, parsedDesignSource.fileKey, screenWidth)
+      : preflight.warnings;
+
+  if (lastUsedNodeNote) {
+    const infoWarning: PreflightWarning = {
+      code: "last_used_node",
+      severity: "info",
+      message: lastUsedNodeNote,
+    };
+    finalPreflightWarnings = [infoWarning, ...finalPreflightWarnings];
+  }
+
+  const finalPreflight = { warnings: finalPreflightWarnings };
 
   const regionCount = comparison.diffRegions.length;
   const targetNodeIds = buildTargetNodeIds(comparison.diffReport, comparison.diffRegions);
@@ -436,7 +549,7 @@ export async function runCompareDesign(
       ? diagnosis.headline
       : buildSuggestion(comparison.matchRate, regionCount),
     critique,
-    preflight,
+    preflight: finalPreflight,
     comparisonHeadline,
     diagnosis,
   });
@@ -446,6 +559,23 @@ export async function runCompareDesign(
     sourceKey,
     result,
   });
+
+  // 成功後に使用ノードを記憶し、次回の自動補完に活かす。
+  if (args.project_id && parsedDesignSource.type === "figma_url" && resolvedNodeId) {
+    try {
+      await setLastUsedNode(
+        args.project_id,
+        parsedDesignSource.fileKey,
+        resolvedNodeId,
+        figmaRootNode?.name,
+      );
+    } catch (e: unknown) {
+      console.warn(
+        "[compare_design] last-used node save failed:",
+        e instanceof Error ? e.message : e,
+      );
+    }
+  }
 
   return {
     parsedDesignSource,
