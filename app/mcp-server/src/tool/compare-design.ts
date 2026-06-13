@@ -165,6 +165,10 @@ export function registerCompareDesign(server: McpServer): void {
           ),
         project_id: z
           .string()
+          .regex(
+            /^[a-zA-Z0-9_-]+$/,
+            "Project ID must be alphanumeric with hyphens/underscores only",
+          )
           .optional()
           .describe(
             "Crop Region・保存済み ignore_regions・前回使用ノードの自動補完に使うプロジェクトID（省略可）",

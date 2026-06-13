@@ -32,9 +32,9 @@ import {
 } from "./comparison-history.js";
 import { getCropRegion } from "./crop-region-store.js";
 import { createFigmaService, type FigmaService } from "./figma-service.js";
-import { getLastUsedNode, setLastUsedNode } from "./last-used-node-store.js";
 import { getIgnoreRegionsForComparison } from "./ignore-region-store.js";
 import { compareImages } from "./image-compare-service.js";
+import { getLastUsedNode, setLastUsedNode } from "./last-used-node-store.js";
 
 const FixtureFigmaNodeSchema: z.ZodType<FigmaNode> = z.lazy(() =>
   z.object({
@@ -272,7 +272,16 @@ async function resolveLastUsedFallback(
   if (!args.project_id || args.frame_name) {
     return { fallbackNodeId: undefined, lastUsedNodeNote: undefined };
   }
-  const lastUsed = await getLastUsedNode(args.project_id, fileKey);
+  let lastUsed: Awaited<ReturnType<typeof getLastUsedNode>>;
+  try {
+    lastUsed = await getLastUsedNode(args.project_id, fileKey);
+  } catch (error) {
+    console.warn(
+      "[compare_design] last-used node fetch failed, skipping fallback:",
+      error instanceof Error ? error.message : error,
+    );
+    return { fallbackNodeId: undefined, lastUsedNodeNote: undefined };
+  }
   if (!lastUsed) {
     return { fallbackNodeId: undefined, lastUsedNodeNote: undefined };
   }
@@ -320,7 +329,12 @@ function buildMisconfigNextAction(diagnosis: ComparisonDiagnosis): string {
   return `⚠️ セットアップ問題の可能性が高いです。CSS修正の前に、まず設定を見直してください: ${fix} 解消後に再度 compare_design で検証してください。`;
 }
 
-async function resolveScreenshotPath(args: CompareDesignRunArgs): Promise<string> {
+// fallbackNodeId は last-used node フォールバックから来る可能性がある。
+// screenshot_url 撮影前に解決しておくことで、フレームの実幅を capture_width に使える。
+async function resolveScreenshotPath(
+  args: CompareDesignRunArgs,
+  fallbackNodeId?: string,
+): Promise<string> {
   if (!args.screenshot_url) {
     return resolveSafePath(args.screenshot);
   }
@@ -332,9 +346,9 @@ async function resolveScreenshotPath(args: CompareDesignRunArgs): Promise<string
     try {
       const figmaService = createFigmaService();
       const frames = await figmaService.getFrames(parsedDesignSource.fileKey);
-      const nodeId = parsedDesignSource.nodeId?.replace(/-/g, ":");
+      const effectiveNodeId = (parsedDesignSource.nodeId ?? fallbackNodeId)?.replace(/-/g, ":");
       const matched =
-        (nodeId ? frames.find((f) => f.id === nodeId) : undefined) ??
+        (effectiveNodeId ? frames.find((f) => f.id === effectiveNodeId) : undefined) ??
         (args.frame_name
           ? frames.find((f) => f.name.toLowerCase() === args.frame_name!.toLowerCase())
           : undefined);
@@ -404,18 +418,18 @@ export async function runCompareDesign(
   const parsedDesignSource = parseDesignInput(args.design_source);
   const effectiveThreshold = resolveThreshold(args.threshold, args.profile);
 
-  // スクリーンショットの読み込み — 許可されたディレクトリ内にあることを検証する
-  const screenshotPath = await resolveScreenshotPath(args);
-  const screenshotBuffer = await fs.readFile(screenshotPath);
-  const screenshotBase64 = screenshotBuffer.toString("base64");
-  const screenshotMeta = await sharp(screenshotBuffer).metadata();
-  const targetWidth = screenshotMeta.width;
-
-  // nodeId 未指定のとき、前回使用ノードをフォールバックとして補完する。
+  // screenshot_url 撮影前に last-used ノードを解決し、フレームの実幅を capture_width に使えるようにする。
   const { fallbackNodeId, lastUsedNodeNote } =
     parsedDesignSource.type === "figma_url" && !parsedDesignSource.nodeId
       ? await resolveLastUsedFallback(args, parsedDesignSource.fileKey)
       : { fallbackNodeId: undefined, lastUsedNodeNote: undefined };
+
+  // スクリーンショットの読み込み — 許可されたディレクトリ内にあることを検証する
+  const screenshotPath = await resolveScreenshotPath(args, fallbackNodeId);
+  const screenshotBuffer = await fs.readFile(screenshotPath);
+  const screenshotBase64 = screenshotBuffer.toString("base64");
+  const screenshotMeta = await sharp(screenshotBuffer).metadata();
+  const targetWidth = screenshotMeta.width;
 
   const { designBase64, figmaRootNode, resolvedNodeId } = await resolveDesignAssets(
     parsedDesignSource,

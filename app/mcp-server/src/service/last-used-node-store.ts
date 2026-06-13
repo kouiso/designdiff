@@ -49,7 +49,12 @@ async function readStore(projectId: string): Promise<LastUsedNodeFile> {
     if (isEnoentError(error)) {
       return { entries: [] };
     }
-    throw error;
+    // 破損したキャッシュファイルは自己修復できるよう空ストアを返す。
+    console.warn(
+      `[last-used-node-store] store read/parse failed for project "${projectId}", resetting:`,
+      error instanceof Error ? error.message : error,
+    );
+    return { entries: [] };
   }
 }
 
