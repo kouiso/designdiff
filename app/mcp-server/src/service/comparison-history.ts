@@ -20,6 +20,10 @@ export interface ComparisonHistoryEntry {
 const historyBySourceKey = new Map<string, ComparisonHistoryEntry[]>();
 const historyByComparisonId = new Map<string, ComparisonHistoryEntry>();
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
 function hasDiffReport(entry: ComparisonHistoryEntry): entry is ComparisonHistoryEntry & {
   result: CompareDesignResult & { diffReport: DiffReport };
 } {
@@ -89,12 +93,10 @@ export async function getComparisonEntry(
     if (!filePath.startsWith(dir + path.sep) && filePath !== dir) return undefined;
     const raw = await fs.readFile(filePath, "utf-8");
     const parsed: unknown = JSON.parse(raw);
-    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return undefined;
-    const {
-      comparisonId: storedId,
-      sourceKey,
-      result: rawResult,
-    } = parsed as Record<string, unknown>;
+    if (!isRecord(parsed)) return undefined;
+    const storedId = parsed["comparisonId"];
+    const sourceKey = parsed["sourceKey"];
+    const rawResult = parsed["result"];
     const result = CompareDesignResultSchema.parse(rawResult);
     return {
       comparisonId: typeof storedId === "string" ? storedId : comparisonId,
