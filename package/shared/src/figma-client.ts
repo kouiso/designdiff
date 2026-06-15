@@ -382,7 +382,7 @@ export function collectFrames(nodes: FigmaNode[], frames: Frame[]): void {
         });
       }
     }
-    if (CONTAINER_TYPES.has(node.type) && node.children) {
+    if (CONTAINER_TYPES.has(node.type) && node?.children) {
       collectFrames(node.children, frames);
     }
   }

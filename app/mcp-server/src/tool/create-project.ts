@@ -5,14 +5,15 @@
  */
 
 import { randomBytes } from "node:crypto";
-import { existsSync, mkdirSync } from "node:fs";
-import { writeFile } from "node:fs/promises";
+import { existsSync } from "node:fs";
+import { mkdir, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { join } from "node:path";
 
 import { z } from "zod";
 
 import { ProjectSchema } from "@figdiff/shared";
+
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
 const DESCRIPTION = `【使用タイミング】compare_design / set_ignore_regions を使う前にプロジェクトを登録するとき
@@ -28,11 +29,11 @@ FigDiff プロジェクトを新規作成し ~/.figdiff/projects/{id}/project.js
 
 【完了条件】project_id が返ったら完了。list_projects で確認可能。`;
 
-const getProjectsDir = (): string => {
+const PROJECT_ID_PATTERN = /^[\w-]+$/;
+
+const getProjectsDir = async (): Promise<string> => {
   const dir = join(homedir(), ".figdiff", "projects");
-  if (!existsSync(dir)) {
-    mkdirSync(dir, { recursive: true });
-  }
+  await mkdir(dir, { recursive: true });
   return dir;
 };
 
@@ -52,7 +53,19 @@ export function registerCreateProject(server: McpServer): void {
     },
     async (args) => {
       try {
-        const projectsDir = getProjectsDir();
+        if (args.id !== undefined && !PROJECT_ID_PATTERN.test(args.id)) {
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: `Error: Invalid project id "${args.id}". Use only letters, digits, hyphens, and underscores.`,
+              },
+            ],
+            isError: true,
+          };
+        }
+
+        const projectsDir = await getProjectsDir();
         const projectId = args.id ?? `${Date.now()}-${randomBytes(4).toString("hex")}`;
         const projectDir = join(projectsDir, projectId);
 
@@ -68,7 +81,7 @@ export function registerCreateProject(server: McpServer): void {
           };
         }
 
-        mkdirSync(projectDir, { recursive: true });
+        await mkdir(projectDir, { recursive: true });
 
         const now = new Date().toISOString();
         const project = ProjectSchema.parse({
