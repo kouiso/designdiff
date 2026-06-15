@@ -83,7 +83,7 @@ export class FigmaService {
    * Get file structure and extract frames
    */
   async getFrames(fileKey: string): Promise<Frame[]> {
-    const file = await this.client.getFile(fileKey, 1);
+    const file = await this.client.getFile(fileKey, 2);
     return extractFrames(file);
   }
 

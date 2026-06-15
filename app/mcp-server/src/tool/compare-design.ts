@@ -14,11 +14,14 @@ import {
   CompareDesignResultSchema,
   IgnoreRegionSchema,
   type CompareDesignResult,
+  type DiffRegion,
 } from "@figdiff/shared";
 
 import { runCompareDesign } from "../service/compare-design-runner.js";
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+
+const MAX_INLINE_DIFF_REGIONS = 20;
 
 const DESCRIPTION = `デザインと実装のピクセル差分を検出します。
 
@@ -32,6 +35,7 @@ const DESCRIPTION = `デザインと実装のピクセル差分を検出しま�
 - completionCriteria: 各項目が "PASS" になるまで作業を続行
 - nextAction: 次に実行すべきアクション（従うこと）
 - diffImagePath: 差分画像のローカルパス。Read ツールで開いて視覚確認できる（~/.figdiff/results/ に保存）
+- diffRegions: 差分領域。レスポンス肥大化を防ぐため上位20件のみ。全件は regionsDetailPath のJSONファイルを参照
 
 ## 入力
 - design_source: Figma URL（node-id付き推奨） or ローカル画像パス
@@ -116,6 +120,14 @@ async function persistDiffImage(base64Data: string, comparisonId: string): Promi
   return filePath;
 }
 
+async function persistDiffRegions(regions: DiffRegion[], comparisonId: string): Promise<string> {
+  const directoryPath = path.join(homedir(), ".figdiff", "results");
+  await fs.mkdir(directoryPath, { recursive: true });
+  const filePath = path.join(directoryPath, `${comparisonId}.regions.json`);
+  await fs.writeFile(filePath, JSON.stringify(regions, null, 2));
+  return filePath;
+}
+
 export function registerCompareDesign(server: McpServer): void {
   server.registerTool(
     "compare_design",
@@ -191,10 +203,27 @@ export function registerCompareDesign(server: McpServer): void {
             ? await persistDiffImage(result.diffImageBase64, result.comparisonId)
             : undefined;
 
+        const allRegions = result.diffRegions ?? [];
+        const sortedRegions = [...allRegions].sort(
+          (a, b) => (b.diffPixelCount ?? 0) - (a.diffPixelCount ?? 0),
+        );
+        const truncated = sortedRegions.length > MAX_INLINE_DIFF_REGIONS;
+        const inlineRegions = truncated
+          ? sortedRegions.slice(0, MAX_INLINE_DIFF_REGIONS)
+          : sortedRegions;
+        const regionsDetailPath = truncated
+          ? await persistDiffRegions(sortedRegions, result.comparisonId)
+          : undefined;
+
         const resultData = CompareDesignResultSchema.parse({
           ...result,
           diffImagePath,
           diffImageBase64: undefined,
+          diffRegions: inlineRegions,
+          totalRegionCount: allRegions.length,
+          returnedRegionCount: inlineRegions.length,
+          regionsTruncated: truncated,
+          regionsDetailPath,
         });
 
         const content: { type: "text"; text: string }[] = [];
