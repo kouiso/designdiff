@@ -1,8 +1,15 @@
+import * as fs from "node:fs/promises";
+import { homedir } from "node:os";
 import * as path from "node:path";
 
+import { CompareDesignResultSchema } from "@figdiff/shared";
 import type { CompareDesignResult, DiffReport, ParsedDesignInput } from "@figdiff/shared";
 
 const MAX_REPORTS_PER_KEY = 5;
+
+function resultsDir(): string {
+  return path.join(homedir(), ".figdiff", "results");
+}
 
 export interface ComparisonHistoryEntry {
   comparisonId: string;
@@ -30,7 +37,7 @@ export function buildComparisonSourceKey(
   return `local:${path.resolve(parsedDesign.filePath)}`;
 }
 
-export function recordComparison(entry: ComparisonHistoryEntry): void {
+export async function recordComparison(entry: ComparisonHistoryEntry): Promise<void> {
   const existingEntries = historyBySourceKey.get(entry.sourceKey) ?? [];
   const nextEntries = [...existingEntries, entry];
 
@@ -38,15 +45,54 @@ export function recordComparison(entry: ComparisonHistoryEntry): void {
     const removed = nextEntries.shift();
     if (removed) {
       historyByComparisonId.delete(removed.comparisonId);
+      try {
+        await fs.rm(path.join(resultsDir(), `${removed.comparisonId}.json`), { force: true });
+      } catch {
+        // 古い履歴の削除失敗は現在の比較結果の保存を妨げないため無視する。
+      }
     }
   }
 
   historyBySourceKey.set(entry.sourceKey, nextEntries);
   historyByComparisonId.set(entry.comparisonId, entry);
+
+  try {
+    const dir = resultsDir();
+    await fs.mkdir(dir, { recursive: true });
+    const diskEntry = {
+      comparisonId: entry.comparisonId,
+      sourceKey: entry.sourceKey,
+      result: { ...entry.result, diffImageBase64: undefined },
+    };
+    await fs.writeFile(
+      path.join(dir, `${entry.comparisonId}.json`),
+      JSON.stringify(diskEntry, null, 2),
+      "utf-8",
+    );
+  } catch {
+    // ディスク保存に失敗しても同一プロセス内の履歴参照は継続できるため無視する。
+  }
 }
 
-export function getComparisonEntry(comparisonId: string): ComparisonHistoryEntry | undefined {
-  return historyByComparisonId.get(comparisonId);
+export async function getComparisonEntry(
+  comparisonId: string,
+): Promise<ComparisonHistoryEntry | undefined> {
+  const inMemory = historyByComparisonId.get(comparisonId);
+  if (inMemory) return inMemory;
+
+  try {
+    const filePath = path.join(resultsDir(), `${comparisonId}.json`);
+    const raw = await fs.readFile(filePath, "utf-8");
+    const parsed = JSON.parse(raw) as { comparisonId: string; sourceKey: string; result: unknown };
+    const result = CompareDesignResultSchema.parse(parsed.result);
+    return {
+      comparisonId: parsed.comparisonId,
+      sourceKey: parsed.sourceKey ?? "unknown",
+      result,
+    };
+  } catch {
+    return undefined;
+  }
 }
 
 export function getRecentReports(sourceKey: string): DiffReport[] {

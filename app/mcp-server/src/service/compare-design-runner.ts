@@ -554,7 +554,7 @@ export async function runCompareDesign(
     diagnosis,
   });
 
-  recordComparison({
+  await recordComparison({
     comparisonId: result.comparisonId,
     sourceKey,
     result,

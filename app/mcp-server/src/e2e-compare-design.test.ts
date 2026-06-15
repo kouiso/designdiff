@@ -56,13 +56,7 @@ interface TextContent {
   text: string;
 }
 
-interface ImageContent {
-  type: "image";
-  data: string;
-  mimeType: string;
-}
-
-type ContentItem = TextContent | ImageContent | { type: string; [key: string]: unknown };
+type ContentItem = TextContent | { type: string; [key: string]: unknown };
 
 function getContentItems(result: Record<string, unknown>): ContentItem[] {
   const content = result.content;
@@ -72,10 +66,6 @@ function getContentItems(result: Record<string, unknown>): ContentItem[] {
 
 function findTextContent(result: Record<string, unknown>): TextContent | undefined {
   return getContentItems(result).find((c): c is TextContent => c.type === "text");
-}
-
-function findImageContent(result: Record<string, unknown>): ImageContent | undefined {
-  return getContentItems(result).find((c): c is ImageContent => c.type === "image");
 }
 
 async function createTestImage(
@@ -232,17 +222,16 @@ describe("MCP Server E2E: compare_design", () => {
       "critical",
     );
     expect(data.diffImagePath).toBeTruthy();
-
-    const imageContent = findImageContent(result);
-    expect(imageContent).toBeDefined();
-    expect(imageContent!.mimeType).toBe("image/png");
+    const diffImageStat = await fs.stat(data.diffImagePath);
+    expect(diffImageStat.isFile()).toBe(true);
+    expect(getContentItems(result).some((content) => content.type === "image")).toBe(false);
 
     const evidence = {
       test: "MCP compare_design — different images (diff detected)",
       timestamp: EVIDENCE_TIMESTAMP,
       input: { design: "200x200 blue", screenshot: "200x200 red" },
       result: normalizeResultForEvidence(data),
-      hasDiffImage: Boolean(imageContent),
+      hasDiffImage: Boolean(data.diffImagePath),
     };
     await fs.writeFile(
       path.join(EVIDENCE_DIR, "mcp-compare-design-diff.json"),
