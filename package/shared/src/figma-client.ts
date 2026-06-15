@@ -366,9 +366,12 @@ export function extractFrames(response: FigmaFileResponse): Frame[] {
   return frames;
 }
 
+const FRAME_LIKE_TYPES = new Set(["FRAME", "COMPONENT", "COMPONENT_SET", "INSTANCE"]);
+const CONTAINER_TYPES = new Set(["SECTION", "GROUP"]);
+
 export function collectFrames(nodes: FigmaNode[], frames: Frame[]): void {
   for (const node of nodes) {
-    if (node.type === "FRAME") {
+    if (FRAME_LIKE_TYPES.has(node.type)) {
       const bbox = node.absoluteBoundingBox;
       if (bbox) {
         frames.push({
@@ -378,7 +381,8 @@ export function collectFrames(nodes: FigmaNode[], frames: Frame[]): void {
           height: bbox.height,
         });
       }
-    } else if (node.type === "SECTION") {
+    }
+    if (CONTAINER_TYPES.has(node.type) && node?.children) {
       collectFrames(node.children, frames);
     }
   }

@@ -2,8 +2,9 @@
  * FigDiff MCP Server
  * Diff-driven design comparison tools for AI assistants
  *
- * Exposes 11 tools via MCP protocol:
+ * Exposes 12 tools via MCP protocol:
  * - list_projects (Utility): List all FigDiff projects stored in ~/.figdiff/projects/
+ * - create_project (Utility): Create a new FigDiff project
  * - compare_design (Primary): Pixel diff between Figma design and implementation
  * - inspect_node (Secondary): Dev Mode-like node detail inspection
  * - get_design_tokens (Secondary): Extract design tokens from a Figma frame
@@ -19,6 +20,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
 import { registerCompareDesign } from "./tool/compare-design.js";
+import { registerCreateProject } from "./tool/create-project.js";
 import { registerGenerateReport } from "./tool/generate-report.js";
 import { registerGetCropRegion } from "./tool/get-crop-region.js";
 import { registerGetDesignTokens } from "./tool/get-design-tokens.js";
@@ -41,6 +43,7 @@ export function createMcpServer(): McpServer {
 
 **Available tools:**
 - list_projects: List all FigDiff projects stored in ~/.figdiff/projects/
+- create_project: Create a new FigDiff project
 - compare_design: Pixel-level diff between Figma design and implementation screenshot
 - inspect_node: Dev Mode-like node detail inspection with CSS suggestions
 - get_design_tokens: Extract design tokens (colors, spacing, typography) from Figma frames
@@ -68,6 +71,7 @@ export function createMcpServer(): McpServer {
 
   // Register all tools
   registerListProjects(server);
+  registerCreateProject(server);
   registerCompareDesign(server);
   registerInspectNode(server);
   registerGetDesignTokens(server);
