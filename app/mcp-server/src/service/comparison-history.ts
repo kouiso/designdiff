@@ -46,7 +46,9 @@ export async function recordComparison(entry: ComparisonHistoryEntry): Promise<v
     if (removed) {
       historyByComparisonId.delete(removed.comparisonId);
       try {
-        await fs.rm(path.join(resultsDir(), `${removed.comparisonId}.json`), { force: true });
+        const dir = resultsDir();
+        await fs.rm(path.join(dir, `${removed.comparisonId}.json`), { force: true });
+        await fs.rm(path.join(dir, `${removed.comparisonId}.png`), { force: true });
       } catch {
         // 古い履歴の削除失敗は現在の比較結果の保存を妨げないため無視する。
       }
@@ -81,13 +83,22 @@ export async function getComparisonEntry(
   if (inMemory) return inMemory;
 
   try {
-    const filePath = path.join(resultsDir(), `${comparisonId}.json`);
+    const dir = resultsDir();
+    const filePath = path.join(dir, `${comparisonId}.json`);
+    // Path traversal guard: resolved path must stay within resultsDir
+    if (!filePath.startsWith(dir + path.sep) && filePath !== dir) return undefined;
     const raw = await fs.readFile(filePath, "utf-8");
-    const parsed = JSON.parse(raw) as { comparisonId: string; sourceKey: string; result: unknown };
-    const result = CompareDesignResultSchema.parse(parsed.result);
+    const parsed: unknown = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return undefined;
+    const {
+      comparisonId: storedId,
+      sourceKey,
+      result: rawResult,
+    } = parsed as Record<string, unknown>;
+    const result = CompareDesignResultSchema.parse(rawResult);
     return {
-      comparisonId: parsed.comparisonId,
-      sourceKey: parsed.sourceKey ?? "unknown",
+      comparisonId: typeof storedId === "string" ? storedId : comparisonId,
+      sourceKey: typeof sourceKey === "string" ? sourceKey : "unknown",
       result,
     };
   } catch {

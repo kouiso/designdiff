@@ -4,6 +4,7 @@
  */
 
 import * as fs from "node:fs/promises";
+import { homedir } from "node:os";
 import * as path from "node:path";
 
 import { z } from "zod";
@@ -90,7 +91,16 @@ export function registerGenerateReport(server: McpServer): void {
               isError: true,
             };
           }
-          rawResult = entry.result;
+          // diffImagePath は recordComparison 時点では未確定なのでIDから導出する
+          const pngPath = path.join(homedir(), ".figdiff", "results", `${args.comparison_id}.png`);
+          let diffImagePath: string | undefined;
+          try {
+            await fs.access(pngPath);
+            diffImagePath = pngPath;
+          } catch {
+            // PNG が存在しない場合は undefined のまま（差分なし or tmpdir保存）
+          }
+          rawResult = diffImagePath ? { ...entry.result, diffImagePath } : entry.result;
         } else if (args.comparison_result !== undefined) {
           rawResult = normalizeComparisonResultInput(args.comparison_result);
         } else {
