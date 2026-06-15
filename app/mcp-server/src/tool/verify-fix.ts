@@ -69,7 +69,7 @@ export function registerVerifyFix(server: McpServer): void {
     },
     async (args) => {
       try {
-        const priorEntry = getComparisonEntry(args.prior_comparison_id);
+        const priorEntry = await getComparisonEntry(args.prior_comparison_id);
         if (!priorEntry?.result.diffReport) {
           throw new Error(`prior comparison not found: ${args.prior_comparison_id}`);
         }

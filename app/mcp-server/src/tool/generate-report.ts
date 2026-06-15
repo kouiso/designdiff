@@ -4,18 +4,20 @@
  */
 
 import * as fs from "node:fs/promises";
+import { homedir } from "node:os";
 import * as path from "node:path";
 
 import { z } from "zod";
 
 import { CompareDesignResultSchema } from "@figdiff/shared";
 
+import { getComparisonEntry } from "../service/comparison-history.js";
 import { generateMarkdownReport, generateJsonReport } from "../service/report-generator.js";
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
 const DESCRIPTION =
-  "compare_designの返り値をcomparison_resultにJSON文字列またはオブジェクトで渡して、MarkdownまたはJSONレポートを生成します。";
+  "comparison_id（推奨・軽量）または comparison_result を渡して Markdown または JSON レポートを生成します。comparison_id は compare_design の返り値から取得してください。";
 
 const comparisonResultInputSchema = z.union([z.string(), z.object({}).passthrough()]);
 const comparisonResultRecordSchema = z.record(z.string(), z.unknown());
@@ -51,9 +53,17 @@ export function registerGenerateReport(server: McpServer): void {
     {
       description: DESCRIPTION,
       inputSchema: {
-        comparison_result: comparisonResultInputSchema.describe(
-          "compare_designの返り値（JSON文字列またはオブジェクト）",
-        ),
+        comparison_id: z
+          .string()
+          .optional()
+          .describe(
+            "compare_design が返した comparisonId。comparison_result の代わりに指定可（推奨・軽量）",
+          ),
+        comparison_result: comparisonResultInputSchema
+          .optional()
+          .describe(
+            "compare_designの返り値（JSON文字列またはオブジェクト）。comparison_id と二者択一",
+          ),
         format: z
           .enum(["markdown", "json"])
           .default("markdown")
@@ -66,14 +76,50 @@ export function registerGenerateReport(server: McpServer): void {
     },
     async (args) => {
       try {
-        const result = CompareDesignResultSchema.parse(
-          normalizeComparisonResultInput(args.comparison_result),
-        );
+        let rawResult: unknown;
+
+        if (args.comparison_id) {
+          const entry = await getComparisonEntry(args.comparison_id);
+          if (!entry) {
+            return {
+              content: [
+                {
+                  type: "text",
+                  text: "Error: comparison_id が見つかりません。compare_design を再実行するか comparison_result を直接渡してください。",
+                },
+              ],
+              isError: true,
+            };
+          }
+          // diffImagePath は recordComparison 時点では未確定なのでIDから導出する
+          const pngPath = path.join(homedir(), ".figdiff", "results", `${args.comparison_id}.png`);
+          let diffImagePath: string | undefined;
+          try {
+            await fs.access(pngPath);
+            diffImagePath = pngPath;
+          } catch {
+            // PNG が存在しない場合は undefined のまま（差分なし or tmpdir保存）
+          }
+          rawResult = diffImagePath ? { ...entry.result, diffImagePath } : entry.result;
+        } else if (args.comparison_result !== undefined) {
+          rawResult = normalizeComparisonResultInput(args.comparison_result);
+        } else {
+          return {
+            content: [
+              {
+                type: "text",
+                text: "Error: comparison_id または comparison_result のどちらかを指定してください。",
+              },
+            ],
+            isError: true,
+          };
+        }
+
+        const result = CompareDesignResultSchema.parse(rawResult);
 
         const report =
           args.format === "json" ? generateJsonReport(result) : generateMarkdownReport(result);
 
-        // Save to file if output_path is provided
         if (args.output_path) {
           const outputPath = path.resolve(args.output_path);
           await fs.writeFile(outputPath, report, "utf-8");

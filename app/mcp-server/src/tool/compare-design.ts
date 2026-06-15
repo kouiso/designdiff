@@ -5,7 +5,7 @@
  */
 
 import * as fs from "node:fs/promises";
-import * as os from "node:os";
+import { homedir } from "node:os";
 import * as path from "node:path";
 
 import { z } from "zod";
@@ -31,6 +31,7 @@ const DESCRIPTION = `デザインと実装のピクセル差分を検出しま�
 - status: "PASS" = 完了。"FAIL" = 修正が必要
 - completionCriteria: 各項目が "PASS" になるまで作業を続行
 - nextAction: 次に実行すべきアクション（従うこと）
+- diffImagePath: 差分画像のローカルパス。Read ツールで開いて視覚確認できる（~/.figdiff/results/ に保存）
 
 ## 入力
 - design_source: Figma URL（node-id付き推奨） or ローカル画像パス
@@ -108,9 +109,8 @@ export function buildSummaryText(result: CompareDesignResult): string {
 }
 
 async function persistDiffImage(base64Data: string, comparisonId: string): Promise<string> {
-  const directoryPath = path.join(os.tmpdir(), "figdiff-mcp");
+  const directoryPath = path.join(homedir(), ".figdiff", "results");
   await fs.mkdir(directoryPath, { recursive: true });
-
   const filePath = path.join(directoryPath, `${comparisonId}.png`);
   await fs.writeFile(filePath, Buffer.from(base64Data, "base64"));
   return filePath;
@@ -197,19 +197,7 @@ export function registerCompareDesign(server: McpServer): void {
           diffImageBase64: undefined,
         });
 
-        const content: (
-          | { type: "text"; text: string }
-          | { type: "image"; data: string; mimeType: string }
-        )[] = [];
-
-        // Add diff image if there are differences
-        if (result.diffImageBase64 && result.matchRate < 100) {
-          content.push({
-            type: "image",
-            data: result.diffImageBase64,
-            mimeType: "image/png",
-          });
-        }
+        const content: { type: "text"; text: string }[] = [];
 
         // 互換性のため最初の text ブロックは JSON のまま維持し、
         // 確信度レイヤーの人間可読サマリ（設定ミス診断・構造/色分離・警告）は末尾に置く。

@@ -60,12 +60,12 @@ describe("comparison-history", () => {
     expect(buildComparisonSourceKey(parsed)).toBe("figma:abc123:1:2");
   });
 
-  it("履歴は 1 キーあたり 5 件まで保持する", () => {
+  it("履歴は 1 キーあたり 5 件まで保持する", async () => {
     clearComparisonHistory();
     const sourceKey = "figma:file:node";
 
     for (let index = 0; index < 6; index++) {
-      recordComparison({
+      await recordComparison({
         comparisonId: `cmp-${index}`,
         sourceKey,
         result: createResult(`cmp-${index}`, createReport(0.8 + index * 0.01)),
@@ -73,7 +73,30 @@ describe("comparison-history", () => {
     }
 
     expect(getRecentReports(sourceKey)).toHaveLength(5);
-    expect(getComparisonEntry("cmp-0")).toBeUndefined();
-    expect(getComparisonEntry("cmp-5")?.comparisonId).toBe("cmp-5");
+    expect(await getComparisonEntry("cmp-0")).toBeUndefined();
+    expect((await getComparisonEntry("cmp-5"))?.comparisonId).toBe("cmp-5");
+  });
+
+  it("メモリ履歴がない場合はディスクから比較結果を復元する", async () => {
+    clearComparisonHistory();
+    const comparisonId = `cmp-disk-${Date.now()}`;
+    const sourceKey = "figma:file:disk";
+
+    await recordComparison({
+      comparisonId,
+      sourceKey,
+      result: {
+        ...createResult(comparisonId, createReport(0.9)),
+        diffImageBase64: "base64-data",
+      },
+    });
+
+    clearComparisonHistory();
+
+    const restored = await getComparisonEntry(comparisonId);
+
+    expect(restored?.comparisonId).toBe(comparisonId);
+    expect(restored?.sourceKey).toBe(sourceKey);
+    expect(restored?.result.diffImageBase64).toBeUndefined();
   });
 });
