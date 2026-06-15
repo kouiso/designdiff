@@ -10,9 +10,10 @@ import { writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { join } from "node:path";
 
+import { z } from "zod";
+
 import { ProjectSchema } from "@figdiff/shared";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { z } from "zod";
 
 const DESCRIPTION = `【使用タイミング】compare_design / set_ignore_regions を使う前にプロジェクトを登録するとき
 
