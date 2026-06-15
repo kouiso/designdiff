@@ -19,6 +19,24 @@ export interface ProjectAPI {
   delete(projectId: string): Promise<void>;
 }
 
+export interface ActiveSessionPayload {
+  comparisonId: string;
+  sourceKey: string;
+  projectId?: string;
+  implementationUrl?: string;
+  designSource: string;
+  designImagePath?: string;
+  matchRate: number;
+  status: "PASS" | "FAIL" | "ERROR";
+  updatedAt: number;
+}
+
+export interface ActiveSessionAPI {
+  read(): Promise<ActiveSessionPayload | null>;
+  readImage(imagePath: string): Promise<string | null>;
+  onUpdated(callback: (session: ActiveSessionPayload) => void): () => void;
+}
+
 /**
  * Renderer プロセスから呼び出せる IPC API の型定義
  * contextBridge 経由で window.electronAPI として公開される
@@ -37,6 +55,7 @@ export interface ElectronAPI {
   overlay: OverlayAPI;
   project: ProjectAPI;
   oauth: OAuthAPI;
+  activeSession: ActiveSessionAPI;
 }
 
 export interface OAuthAPI {

@@ -4,6 +4,7 @@ import { IgnoreRegionSchema, type RegionScore } from "@figdiff/shared";
 
 import { runCompareDesign } from "../service/compare-design-runner.js";
 import { getComparisonEntry } from "../service/comparison-history.js";
+import { writeActiveSession } from "../service/active-session.js";
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
@@ -136,6 +137,20 @@ export function registerVerifyFix(server: McpServer): void {
           verdict: buildVerdict(structureDelta),
           sideEffects,
         });
+
+        try {
+          await writeActiveSession({
+            comparisonId: args.prior_comparison_id,
+            sourceKey: args.prior_comparison_id,
+            implementationUrl: undefined,
+            designSource: args.design_source,
+            matchRate: 0,
+            status: structuredContent.verdict === "improved" ? "PASS" : "FAIL",
+            updatedAt: Date.now(),
+          });
+        } catch {
+          // non-critical
+        }
 
         return {
           content: [{ type: "text", text: JSON.stringify(structuredContent, null, 2) }],

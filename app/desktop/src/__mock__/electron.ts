@@ -2,6 +2,7 @@ import { vi } from "vitest";
 
 const electronAPI = {
   getFigmaFrames: vi.fn(),
+  getFigmaPageFrames: vi.fn(),
   getFigmaFrameImage: vi.fn(),
   getFigmaNodeDetail: vi.fn(),
   saveFigmaToken: vi.fn(),
@@ -17,9 +18,15 @@ const electronAPI = {
     saveClient: vi.fn().mockResolvedValue(undefined),
     getClientId: vi.fn().mockResolvedValue(null),
   },
+  activeSession: {
+    read: vi.fn().mockResolvedValue(null),
+    readImage: vi.fn().mockResolvedValue(null),
+    onUpdated: vi.fn().mockReturnValue(() => {}),
+  },
   overlay: {
     open: vi.fn(),
     close: vi.fn(),
+    updateOffset: vi.fn(),
     setOverlayImage: vi.fn(),
     updateOpacity: vi.fn(),
     removeOverlay: vi.fn(),

@@ -51,6 +51,10 @@ interface OverlayState {
   runPixelDiff: () => Promise<void>;
   setLiveDiffEnabled: (enabled: boolean) => void;
   runLiveDiff: () => Promise<void>;
+  startFromActiveSession: (session: {
+    implementationUrl?: string;
+    designImagePath?: string;
+  }) => Promise<void>;
 }
 
 export const useOverlayStore = create<OverlayState>((set, get) => ({
@@ -389,5 +393,23 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
       const message = String(e);
       set({ isLiveDiffRunning: false, liveDiffError: message });
     }
+  },
+
+  startFromActiveSession: async (session) => {
+    const { implementationUrl, designImagePath } = session;
+    if (!implementationUrl) return;
+    get().setUrl(implementationUrl);
+    await get().openSite();
+    if (designImagePath && window.electronAPI?.activeSession) {
+      try {
+        const base64 = await window.electronAPI.activeSession.readImage(designImagePath);
+        if (base64) {
+          await get().setOverlayImage(base64);
+        }
+      } catch {
+        // 画像読み込みはライブオーバーレイ起動後に再試行できるため
+      }
+    }
+    get().setLiveDiffEnabled(true);
   },
 }));

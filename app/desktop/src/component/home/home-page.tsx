@@ -11,12 +11,14 @@ import { ScoreRing } from "@/component/ui/score-ring";
 import { Spinner } from "@/component/ui/spinner";
 import { StatusPill } from "@/component/ui/status-pill";
 import type { StatusType } from "@/component/ui/status-pill";
+import { useActiveSessionStore, useActiveSessionSync } from "@/store/active-session-store";
 import { useOverlayStore } from "@/store/overlay-store";
 import { useProjectListStore } from "@/store/project-list-store";
 import { useProjectStore } from "@/store/project-store";
 import { useSettingStore } from "@/store/setting-store";
 import { useTabStore } from "@/store/tab-store";
 
+import { ActiveSessionCard } from "./active-session-card";
 import { DesignInput } from "./design-input";
 
 import type { Page } from "../../App";
@@ -52,6 +54,9 @@ export const HomePage = ({ onNavigate }: HomePageProps) => {
   const [createName, setCreateName] = useState("");
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [loginStatus, setLoginStatus] = useState<"idle" | "pending" | "error">("idle");
+  useActiveSessionSync();
+  const activeSession = useActiveSessionStore((s) => s.activeSession);
+  const isActiveSession = useActiveSessionStore((s) => s.isActive);
 
   const isConnected = oauthState.mode === "oauth" || oauthState.mode === "pat" || !!figmaToken;
 
@@ -256,6 +261,16 @@ export const HomePage = ({ onNavigate }: HomePageProps) => {
 
   return (
     <div className="scroll mx-auto flex h-full max-w-6xl flex-col gap-5 overflow-y-auto">
+      {isActiveSession && activeSession && (
+        <ActiveSessionCard
+          session={activeSession}
+          onOpen={() => {
+            ensureQuickCompareTab("live_overlay");
+            useOverlayStore.getState().startFromActiveSession(activeSession);
+            onNavigate("live_overlay");
+          }}
+        />
+      )}
       <section
         style={{
           border: "1px solid var(--cobalt-line)",

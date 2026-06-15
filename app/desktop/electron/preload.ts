@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer, webUtils } from "electron";
 
+import type { ActiveSessionPayload } from "./ipc/active-session";
 import type { ElectronAPI } from "./type/ipc-api";
 
 const api: ElectronAPI = {
@@ -65,6 +66,19 @@ const api: ElectronAPI = {
     saveClient: (clientId, clientSecret) =>
       ipcRenderer.invoke("oauth:save-client", clientId, clientSecret),
     getClientId: () => ipcRenderer.invoke("oauth:get-client-id"),
+  },
+
+  activeSession: {
+    read: () => ipcRenderer.invoke("active-session:read"),
+    readImage: (imagePath: string) => ipcRenderer.invoke("active-session:read-image", imagePath),
+    onUpdated: (callback: (session: ActiveSessionPayload) => void) => {
+      const handler = (_event: Electron.IpcRendererEvent, session: ActiveSessionPayload) =>
+        callback(session);
+      ipcRenderer.on("active-session:updated", handler);
+      return () => {
+        ipcRenderer.removeListener("active-session:updated", handler);
+      };
+    },
   },
 };
 
