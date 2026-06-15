@@ -412,6 +412,57 @@ async function resolveDesignAssets(
   return { designBase64, figmaRootNode, resolvedNodeId: undefined };
 }
 
+interface ProjectRegions {
+  cropRegion: CropRegion | undefined;
+  cropUpdatedAt: string | undefined;
+  ignoreRegions: IgnoreRegion[];
+}
+
+async function resolveProjectRegions(
+  projectId: string | undefined,
+  frameName: string | undefined,
+  extraIgnoreRegions: IgnoreRegion[] | undefined,
+): Promise<ProjectRegions> {
+  let cropRegion: CropRegion | undefined;
+  let cropUpdatedAt: string | undefined;
+  let persistedIgnoreRegions: IgnoreRegion[] = [];
+  if (projectId) {
+    const regions = await getCropRegion(projectId, frameName);
+    if (regions.length > 0) {
+      cropRegion = regions[0].region;
+      cropUpdatedAt = regions[0].updatedAt;
+    }
+    persistedIgnoreRegions = await getIgnoreRegionsForComparison(projectId, frameName);
+  }
+  return {
+    cropRegion,
+    cropUpdatedAt,
+    ignoreRegions: [...persistedIgnoreRegions, ...(extraIgnoreRegions ?? [])],
+  };
+}
+
+interface FigmaProvenance {
+  figmaFileKey: string;
+  figmaNodeId: string | undefined;
+  figmaPageName: string | undefined;
+}
+
+function applyFigmaProvenance(
+  comparison: Awaited<ReturnType<typeof compareImages>>,
+  provenance: FigmaProvenance | undefined,
+): void {
+  if (!comparison.diffReport || !provenance) return;
+  comparison.diffReport.issues = comparison.diffReport.issues.map((issue) => ({
+    ...issue,
+    evidence: {
+      ...issue.evidence,
+      figmaFileKey: issue.evidence.figmaFileKey ?? provenance.figmaFileKey,
+      figmaNodeId: issue.evidence.figmaNodeId ?? provenance.figmaNodeId,
+      figmaPageName: issue.evidence.figmaPageName ?? provenance.figmaPageName,
+    },
+  }));
+}
+
 export async function runCompareDesign(
   args: CompareDesignRunArgs,
 ): Promise<CompareDesignRunOutput> {
@@ -438,18 +489,11 @@ export async function runCompareDesign(
     fallbackNodeId,
   );
 
-  let cropRegion: CropRegion | undefined;
-  let cropUpdatedAt: string | undefined;
-  let persistedIgnoreRegions: IgnoreRegion[] = [];
-  if (args.project_id) {
-    const regions = await getCropRegion(args.project_id, args.frame_name);
-    if (regions.length > 0) {
-      cropRegion = regions[0].region;
-      cropUpdatedAt = regions[0].updatedAt;
-    }
-    persistedIgnoreRegions = await getIgnoreRegionsForComparison(args.project_id, args.frame_name);
-  }
-  const ignoreRegions = [...persistedIgnoreRegions, ...(args.ignore_regions ?? [])];
+  const { cropRegion, cropUpdatedAt, ignoreRegions } = await resolveProjectRegions(
+    args.project_id,
+    args.frame_name,
+    args.ignore_regions,
+  );
 
   const comparison = await compareImages(
     {
@@ -471,17 +515,7 @@ export async function runCompareDesign(
           figmaPageName: figmaRootNode?.name,
         }
       : undefined;
-  if (comparison.diffReport && figmaProvenance) {
-    comparison.diffReport.issues = comparison.diffReport.issues.map((issue) => ({
-      ...issue,
-      evidence: {
-        ...issue.evidence,
-        figmaFileKey: issue.evidence.figmaFileKey ?? figmaProvenance.figmaFileKey,
-        figmaNodeId: issue.evidence.figmaNodeId ?? figmaProvenance.figmaNodeId,
-        figmaPageName: issue.evidence.figmaPageName ?? figmaProvenance.figmaPageName,
-      },
-    }));
-  }
+  applyFigmaProvenance(comparison, figmaProvenance);
 
   // 確信度レイヤー: 設定ミスを検知・説明し、結果ヘッドラインを構造/色に分離する。
   const figmaFrameBox = figmaRootNode?.absoluteBoundingBox ?? undefined;
