@@ -177,9 +177,7 @@ async function resolveNodeId(
 
   const ranked = rankFrameCandidates(frames, targetWidth);
   if (ranked.length === 0) {
-    throw new Error(
-      `No frame specified and no frames found in the file.\n\n${buildGuidance()}`,
-    );
+    throw new Error(`No frame specified and no frames found in the file.\n\n${buildGuidance()}`);
   }
   const autoSelected = ranked[0];
   const widthDiff = targetWidth !== undefined ? Math.abs(autoSelected.width - targetWidth) : undefined;

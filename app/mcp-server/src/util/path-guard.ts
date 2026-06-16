@@ -78,9 +78,7 @@ export async function resolveScreenshotInputPath(inputPath: string): Promise<str
 
   const valid = await isImageFile(realPath);
   if (!valid) {
-    throw new Error(
-      `Screenshot must be a PNG, JPEG, or WebP image file: ${inputPath}`,
-    );
+    throw new Error(`Screenshot must be a PNG, JPEG, or WebP image file: ${inputPath}`);
   }
 
   return realPath;

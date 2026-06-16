@@ -1,8 +1,119 @@
-import { request as httpRequest } from "node:http";
-
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { MockInstance } from "vitest";
+
+const httpMock = vi.hoisted(() => {
+  type Handler = (...args: unknown[]) => void;
+
+  class MockServer {
+    private listeners = new Map<string, Handler[]>();
+
+    on(event: string, handler: Handler): this {
+      this.listeners.set(event, [...(this.listeners.get(event) ?? []), handler]);
+      return this;
+    }
+
+    once(event: string, handler: Handler): this {
+      const onceHandler: Handler = (...args) => {
+        this.removeListener(event, onceHandler);
+        handler(...args);
+      };
+      return this.on(event, onceHandler);
+    }
+
+    removeListener(event: string, handler: Handler): this {
+      this.listeners.set(
+        event,
+        (this.listeners.get(event) ?? []).filter((listener) => listener !== handler),
+      );
+      return this;
+    }
+
+    emit(event: string, ...args: unknown[]): void {
+      for (const listener of this.listeners.get(event) ?? []) {
+        listener(...args);
+      }
+    }
+
+    listen(): this {
+      activeServer = this;
+      setImmediate(() => this.emit("listening"));
+      return this;
+    }
+
+    close(): this {
+      if (activeServer === this) activeServer = null;
+      return this;
+    }
+
+    closeAllConnections(): void {}
+  }
+
+  class MockResponse {
+    statusCode = 200;
+    private body = "";
+    private listeners = new Map<string, Handler[]>();
+
+    writeHead(statusCode: number): this {
+      this.statusCode = statusCode;
+      return this;
+    }
+
+    end(body = ""): this {
+      this.body = String(body);
+      setImmediate(() => {
+        if (this.body.length > 0) this.emit("data", Buffer.from(this.body));
+        this.emit("end");
+      });
+      return this;
+    }
+
+    on(event: string, handler: Handler): this {
+      this.listeners.set(event, [...(this.listeners.get(event) ?? []), handler]);
+      return this;
+    }
+
+    private emit(event: string, ...args: unknown[]): void {
+      for (const listener of this.listeners.get(event) ?? []) {
+        listener(...args);
+      }
+    }
+  }
+
+  let activeServer: MockServer | null = null;
+
+  const createServer = vi.fn(() => new MockServer());
+  const request = vi.fn((options: { path?: string }, callback?: (res: MockResponse) => void) => {
+    const errorHandlers: Handler[] = [];
+
+    return {
+      on(event: string, handler: Handler) {
+        if (event === "error") errorHandlers.push(handler);
+        return this;
+      },
+      end() {
+        if (!activeServer) {
+          for (const handler of errorHandlers) handler(new Error("No active mock server"));
+          return;
+        }
+
+        const response = new MockResponse();
+        if (callback) callback(response);
+        activeServer.emit(
+          "request",
+          { method: "GET", url: options.path ?? "/" },
+          response,
+        );
+      },
+    };
+  });
+
+  return { createServer, request };
+});
+
+vi.mock("node:http", () => httpMock);
+
+const { request: httpRequest } = await import("node:http");
 
 vi.mock("electron", () => ({
   app: { isPackaged: false },

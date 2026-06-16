@@ -1,7 +1,7 @@
 {
   "test": "MCP tool listing",
   "timestamp": "2026-04-30T00:00:00.000Z",
-  "toolCount": 13,
+  "toolCount": 14,
   "tools": [
     "list_projects",
     "create_project",
@@ -15,6 +15,7 @@
     "get_ignore_regions",
     "set_ignore_regions",
     "verify_fix",
-    "set_figma_token"
+    "set_figma_token",
+    "report_issue"
   ]
 }

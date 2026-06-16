@@ -68,6 +68,21 @@ function findTextContent(result: Record<string, unknown>): TextContent | undefin
   return getContentItems(result).find((c): c is TextContent => c.type === "text");
 }
 
+async function fetchDiffReportJson(client: Client, comparisonId: string): Promise<Record<string, unknown>> {
+  const result = await client.callTool({
+    name: "generate_diff_report",
+    arguments: {
+      comparison_id: comparisonId,
+      format: "json",
+    },
+  });
+
+  expect(result.isError).toBeFalsy();
+  const textContent = findTextContent(result);
+  expect(textContent).toBeDefined();
+  return JSON.parse(textContent!.text) as Record<string, unknown>;
+}
+
 async function createTestImage(
   width: number,
   height: number,
@@ -174,12 +189,22 @@ describe("MCP Server E2E: compare_design", () => {
     expect(data.matchRate).toBe(100);
     expect(data.diffPixelCount).toBe(0);
     expect(data.completionCriteria.matchRate.status).toBe("PASS");
-    expect(data.diffReport).toBeDefined();
-    expect(data.diffReport.aggregateVerdict).toBe("pass");
-    expect(data.diffReport.regionScores).toHaveLength(1);
-    expect(data.diffReport.regionScores[0].regionId).toBe("whole-frame");
-    expect(data.diffReport.regionScores[0].structure).toBe(1);
-    expect(data.diffReport.issues).toEqual([]);
+    expect(data.diffReport).toBeUndefined();
+    expect(data.gridSummary).toBeUndefined();
+    expect(getContentItems(result)[1]?.type).toBe("text");
+    expect((getContentItems(result)[1] as TextContent).text).toContain("generate_diff_report");
+
+    const report = await fetchDiffReportJson(client, data.comparisonId);
+    const diffReport = report.diffReport as {
+      aggregateVerdict: string;
+      regionScores: { regionId: string; structure: number }[];
+      issues: unknown[];
+    };
+    expect(diffReport.aggregateVerdict).toBe("pass");
+    expect(diffReport.regionScores).toHaveLength(1);
+    expect(diffReport.regionScores[0].regionId).toBe("whole-frame");
+    expect(diffReport.regionScores[0].structure).toBe(1);
+    expect(diffReport.issues).toEqual([]);
 
     const evidence = {
       test: "MCP compare_design — identical images",
@@ -214,13 +239,19 @@ describe("MCP Server E2E: compare_design", () => {
     expect(data.diffPixelCount).toBeGreaterThan(0);
     expect(data.diffRegions.length).toBeGreaterThan(0);
     expect(data.completionCriteria.matchRate.status).toBe("FAIL");
-    expect(data.diffReport).toBeDefined();
-    expect(data.diffReport.aggregateVerdict).toBe("fail");
-    expect(data.diffReport.regionScores.length).toBeGreaterThan(0);
-    expect(data.diffReport.issues.length).toBeGreaterThan(0);
-    expect(data.diffReport.issues.map((issue: { severity: string }) => issue.severity)).toContain(
-      "critical",
-    );
+    expect(data.diffReport).toBeUndefined();
+    expect(data.gridSummary).toBeUndefined();
+
+    const report = await fetchDiffReportJson(client, data.comparisonId);
+    const diffReport = report.diffReport as {
+      aggregateVerdict: string;
+      regionScores: unknown[];
+      issues: { severity: string }[];
+    };
+    expect(diffReport.aggregateVerdict).toBe("fail");
+    expect(diffReport.regionScores.length).toBeGreaterThan(0);
+    expect(diffReport.issues.length).toBeGreaterThan(0);
+    expect(diffReport.issues.map((issue) => issue.severity)).toContain("critical");
     expect(data.diffImagePath).toBeTruthy();
     const diffImageStat = await fs.stat(data.diffImagePath);
     expect(diffImageStat.isFile()).toBe(true);
