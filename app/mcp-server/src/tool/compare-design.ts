@@ -228,11 +228,16 @@ export function registerCompareDesign(server: McpServer): void {
         });
 
         try {
+          const designImagePath =
+            comparison.parsedDesignSource.type === "local_path"
+              ? comparison.parsedDesignSource.filePath
+              : undefined;
           await writeActiveSession({
             comparisonId: resultData.comparisonId,
             sourceKey: resultData.comparisonId,
             implementationUrl: args.screenshot_url ?? undefined,
             designSource: args.design_source,
+            designImagePath,
             matchRate: resultData.matchRate,
             status: resultData.status === "PASS" ? "PASS" : "FAIL",
             updatedAt: Date.now(),
