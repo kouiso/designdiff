@@ -121,7 +121,6 @@ async function persistDiffImage(base64Data: string, comparisonId: string): Promi
   return filePath;
 }
 
-
 export function registerCompareDesign(server: McpServer): void {
   server.registerTool(
     "compare_design",
