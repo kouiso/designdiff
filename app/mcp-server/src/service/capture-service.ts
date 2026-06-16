@@ -113,6 +113,6 @@ export async function captureUrl(url: string, options: CaptureOptions): Promise<
     await context.close();
     throw error;
   } finally {
-    await browser.disconnect();
+    await browser.close();
   }
 }
