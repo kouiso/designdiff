@@ -38,7 +38,6 @@ vi.mock("../service/figma-service.js", async () => {
     formatFigmaCredentialError: () => "",
     getMcpCacheDir: () => path.join(os.tmpdir(), "figdiff-mock-cache"),
     computeOptimalScale: () => 2,
-    FigmaService: class {},
     _MOCK_TOKEN: MOCK_TOKEN,
   };
 });
