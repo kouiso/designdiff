@@ -2,7 +2,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useActiveSessionStore } from "./active-session-store";
 
-const makeSession = (overrides: Partial<Parameters<typeof useActiveSessionStore.getState>["0"]> = {}) => ({
+const makeSession = (
+  overrides: Partial<Parameters<typeof useActiveSessionStore.getState>["0"]> = {},
+) => ({
   comparisonId: "cmp-001",
   sourceKey: "cmp-001",
   designSource: "https://www.figma.com/design/ABC/File",
