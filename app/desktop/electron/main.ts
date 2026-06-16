@@ -9,6 +9,7 @@ import { registerOAuthHandlers } from "./ipc/oauth";
 import { registerOverlayHandlers } from "./ipc/overlay";
 import { registerProjectHandlers } from "./ipc/project";
 import { registerTokenHandlers } from "./ipc/token";
+import { migrateCredentials } from "./util/migrate-credentials";
 
 const ALLOWED_EXTERNAL_HOSTS = ["figma.com", "github.com"];
 
@@ -203,6 +204,7 @@ app
       // plaintext暗号化にフォールバック（本番ビルドでは実OS暗号化を使用）
       safeStorage.setUsePlainTextEncryption(true);
     }
+    migrateCredentials();
     setupCSP(!app.isPackaged);
     registerFigmaHandlers();
     registerTokenHandlers();

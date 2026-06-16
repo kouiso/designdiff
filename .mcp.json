@@ -3,9 +3,7 @@
     "figdiff": {
       "command": "node",
       "args": ["app/mcp-server/dist/index.js"],
-      "env": {
-        "FIGMA_TOKEN": "${FIGMA_TOKEN}"
-      }
+      "env": {}
     }
   }
 }

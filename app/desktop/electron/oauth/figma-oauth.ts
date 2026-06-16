@@ -1,29 +1,27 @@
 import { createServer } from "node:http";
 
 import { app, shell } from "electron";
-import { z } from "zod";
 
-import { FigmaOAuthTokenResponseSchema } from "@figdiff/shared";
-
-import { generateCodeChallenge, generateCodeVerifier, generateState } from "../util/pkce";
 import {
-  type OAuthClientCredentials,
-  type OAuthTokens,
-  deleteOAuthClientCredentials,
+  FigmaRefreshError,
   deleteOAuthTokens,
   getOAuthClientCredentials,
   getOAuthTokens,
-  getToken,
+  refreshFigmaOAuthToken,
+  resolveFigmaAccessToken,
   saveOAuthTokens,
-} from "../util/safe-storage";
+  type OAuthClientCredentials,
+  type OAuthTokens,
+} from "@figdiff/credential-store";
+import { FigmaOAuthTokenResponseSchema } from "@figdiff/shared";
+
+import { generateCodeChallenge, generateCodeVerifier, generateState } from "../util/pkce";
 
 const FIXED_PORT = 51073;
 const OAUTH_TIMEOUT_MS = 120_000;
-const FIVE_MINUTES_MS = 5 * 60 * 1000;
 
 const FIGMA_OAUTH_BASE = "https://www.figma.com/oauth";
 const FIGMA_TOKEN_URL = "https://api.figma.com/v1/oauth/token";
-const FIGMA_REFRESH_URL = "https://api.figma.com/v1/oauth/refresh";
 const REDIRECT_URI = `http://localhost:${FIXED_PORT}/callback`;
 const SCOPES = "file_content:read current_user:read";
 
@@ -36,13 +34,6 @@ const ERROR_HTML =
   '<!DOCTYPE html><html><head><meta charset="utf-8"><title>FigDiff</title></head>' +
   '<body style="font-family:sans-serif;padding:2rem"><h2>ログイン失敗</h2>' +
   "<p>このタブを閉じて再試行してください。</p></body></html>";
-
-const FigmaOAuthRefreshResponseSchema = z.object({
-  access_token: z.string().min(1),
-  expires_in: z.number().int().positive(),
-  token_type: z.string().optional(),
-  scope: z.string().optional(),
-});
 
 interface ActiveFlow {
   cancel(): void;
@@ -108,59 +99,30 @@ const exchangeCodeForToken = async (
   });
 };
 
+const LISTEN_MAX_RETRIES = 10;
+const LISTEN_RETRY_DELAY_MS = 50;
+const LISTEN_HOSTS = ["::", "127.0.0.1"] as const;
+
 export const refreshFigmaToken = async (): Promise<string> => {
-  const creds = resolveClientCredentials();
   const stored = getOAuthTokens();
   if (!stored) throw new Error("OAuth セッションがありません。再ログインしてください。");
 
-  const basicAuth = Buffer.from(`${creds.clientId}:${creds.clientSecret}`).toString("base64");
-  const body = new URLSearchParams({ refresh_token: stored.refreshToken });
-
-  const response = await fetch(FIGMA_REFRESH_URL, {
-    method: "POST",
-    headers: {
-      Authorization: `Basic ${basicAuth}`,
-      "Content-Type": "application/x-www-form-urlencoded",
-    },
-    body: body.toString(),
-  });
-
-  if (!response.ok) {
-    deleteOAuthTokens();
-    throw new Error(`Token refresh failed (${response.status}). 再ログインしてください。`);
+  try {
+    const tokens = await refreshFigmaOAuthToken(stored.refreshToken);
+    return tokens.accessToken;
+  } catch (e) {
+    if (e instanceof FigmaRefreshError && (e.status === 400 || e.status === 401)) {
+      deleteOAuthTokens();
+    }
+    throw e;
   }
-
-  const json: unknown = await response.json();
-  const tokens = FigmaOAuthRefreshResponseSchema.parse(json);
-  const expiresAt = Date.now() + tokens.expires_in * 1000;
-  saveOAuthTokens({
-    accessToken: tokens.access_token,
-    refreshToken: stored.refreshToken,
-    expiresAt,
-  });
-  return tokens.access_token;
 };
 
 export const resolveAccessToken = async (): Promise<string> => {
-  const stored = getOAuthTokens();
-  if (stored) {
-    if (stored.expiresAt - Date.now() < FIVE_MINUTES_MS) {
-      return refreshFigmaToken();
-    }
-    return stored.accessToken;
-  }
-  const pat = getToken();
-  if (!pat) throw new Error("Token not found");
-  return pat;
+  const resolved = await resolveFigmaAccessToken();
+  if (!resolved) throw new Error("Token not found");
+  return resolved.token;
 };
-
-// ポートが直前フローの非同期 server.close() でまだ解放されていない場合に備えた
-// listen リトライ設定（高速な再ログインやテスト連続実行での EADDRINUSE を吸収する）。
-const LISTEN_MAX_RETRIES = 10;
-const LISTEN_RETRY_DELAY_MS = 50;
-// dual-stack (::) を優先しつつ、IPv6 非対応環境 (一部のCIランナー等) では IPv4 に
-// フォールバックする。localhost は 127.0.0.1 / ::1 のどちらにも解決され得るため。
-const LISTEN_HOSTS = ["::", "127.0.0.1"] as const;
 
 export const startFigmaOAuth = (): Promise<void> => {
   if (activeFlow) {
@@ -200,7 +162,6 @@ export const startFigmaOAuth = (): Promise<void> => {
     };
 
     server.on("request", (req, res) => {
-      // Chrome の PNA 制約により Figma から localhost へのリダイレクトで許可ヘッダーが必要
       if (req.method === "OPTIONS") {
         res.writeHead(204, {
           "Access-Control-Allow-Origin": "https://www.figma.com",
@@ -262,10 +223,6 @@ export const startFigmaOAuth = (): Promise<void> => {
       if (settled) return;
       const host = LISTEN_HOSTS[hostIndex];
 
-      // listen 成功コールバックを毎回 server.listen(..., cb) で渡すと、bind 失敗時にも
-      // 'listening' once リスナーが残り続け、後続のリトライが成功した瞬間に過去の試行分が
-      // 全て発火してブラウザを多重に開いてしまう。明示的な once リスナーにして、エラー時は
-      // 必ず除去してから次の試行へ進める。
       const onListening = (): void => {
         server.removeListener("error", onListenError);
         server.on("error", onPostListenError);
@@ -291,10 +248,8 @@ export const startFigmaOAuth = (): Promise<void> => {
       };
 
       const onListenError = (e: NodeJS.ErrnoException): void => {
-        // この試行で登録した listen 成功リスナーを除去し、後続成功時の多重発火を防ぐ。
         server.removeListener("listening", onListening);
         if (settled) return;
-        // IPv6 非対応環境では :: が EAFNOSUPPORT / EADDRNOTAVAIL になるため IPv4 へ切替。
         if (
           (e.code === "EAFNOSUPPORT" || e.code === "EADDRNOTAVAIL") &&
           hostIndex + 1 < LISTEN_HOSTS.length
@@ -331,5 +286,5 @@ export const getOAuthStatus = (): { mode: "oauth" | "none"; expiresAt?: number }
   return { mode: "oauth", expiresAt: stored.expiresAt };
 };
 
-export { deleteOAuthClientCredentials };
+export { deleteOAuthClientCredentials } from "@figdiff/credential-store";
 export type { OAuthTokens };

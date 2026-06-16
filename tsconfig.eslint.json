@@ -5,11 +5,13 @@
     "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {
+      "@figdiff/credential-store": ["./package/credential-store/src/index.ts"],
       "@figdiff/shared": ["./package/shared/src/index.ts"],
       "@/*": ["./app/desktop/src/*"]
     }
   },
   "include": [
+    "package/credential-store/src/**/*.ts",
     "package/shared/src/**/*.ts",
     "app/desktop/src/**/*.ts",
     "app/desktop/src/**/*.tsx",

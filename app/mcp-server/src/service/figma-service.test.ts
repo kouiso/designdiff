@@ -78,13 +78,13 @@ describe("Figma credential preflight", () => {
     });
   });
 
-  it("fails createFigmaService preflight before network work and without leaking secrets", () => {
+  it("fails createFigmaService preflight before network work and without leaking secrets", async () => {
     const secretValue = "bad_secret_value_that_must_not_be_logged";
     process.env.FIGMA_TOKEN = secretValue;
 
     let message = "";
     try {
-      createFigmaService();
+      await createFigmaService();
     } catch (error) {
       message = error instanceof Error ? error.message : String(error);
     }
