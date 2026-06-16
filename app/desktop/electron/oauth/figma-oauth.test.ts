@@ -47,7 +47,9 @@ const httpMock = vi.hoisted(() => {
       return this;
     }
 
-    closeAllConnections(): void { /* required by net.Server interface */ }
+    closeAllConnections(): void {
+      /* required by net.Server interface */
+    }
   }
 
   class MockResponse {
