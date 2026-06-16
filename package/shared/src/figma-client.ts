@@ -395,6 +395,33 @@ export function extractPageFrames(pageNode: FigmaNode): Frame[] {
   return frames;
 }
 
+export function collectNestedFrames(nodes: FigmaNode[], frames: Frame[]): void {
+  for (const node of nodes) {
+    if (FRAME_LIKE_TYPES.has(node.type)) {
+      const bbox = node.absoluteBoundingBox;
+      if (bbox) {
+        frames.push({
+          id: node.id,
+          name: node.name,
+          width: bbox.width,
+          height: bbox.height,
+        });
+      }
+    }
+    if (node.children && node.children.length > 0) {
+      collectNestedFrames(node.children, frames);
+    }
+  }
+}
+
+export function extractNestedFrames(response: FigmaFileResponse): Frame[] {
+  const frames: Frame[] = [];
+  for (const page of response.document.children) {
+    collectNestedFrames(page.children, frames);
+  }
+  return frames;
+}
+
 const TOKEN_ERROR_PATTERNS = [
   "Token not found",
   "TokenNotFound",

@@ -23,7 +23,7 @@ import {
   type PreflightWarning,
 } from "@figdiff/shared";
 
-import { resolveSafePath } from "../util/path-guard.js";
+import { resolveSafePath, resolveScreenshotInputPath } from "../util/path-guard.js";
 
 import {
   buildComparisonSourceKey,
@@ -175,9 +175,22 @@ async function resolveNodeId(
     return matches[0].id;
   }
 
-  throw new Error(
-    `No frame specified.\n\n${buildGuidance()}\n\nURL に node-id を付けるか frame_name を指定してください。`,
+  const ranked = rankFrameCandidates(frames, targetWidth);
+  if (ranked.length === 0) {
+    throw new Error(
+      `No frame specified and no frames found in the file.\n\n${buildGuidance()}`,
+    );
+  }
+  const autoSelected = ranked[0];
+  const widthDiff = targetWidth !== undefined ? Math.abs(autoSelected.width - targetWidth) : undefined;
+  const deviationNote =
+    widthDiff !== undefined && widthDiff > 10
+      ? ` (幅差 ${widthDiff}px)`
+      : "";
+  console.error(
+    `[compare_design] node-id未指定のため幅${targetWidth ?? "不明"}pxに最も近い "${autoSelected.name}" (${autoSelected.id}) を自動選択${deviationNote}`,
   );
+  return autoSelected.id;
 }
 
 function buildCompletionCriteria(
@@ -336,7 +349,7 @@ async function resolveScreenshotPath(
   fallbackNodeId?: string,
 ): Promise<string> {
   if (!args.screenshot_url) {
-    return resolveSafePath(args.screenshot);
+    return resolveScreenshotInputPath(args.screenshot);
   }
 
   const { captureUrl } = await import("./capture-service.js");

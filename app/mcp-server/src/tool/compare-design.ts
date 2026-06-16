@@ -242,17 +242,23 @@ export function registerCompareDesign(server: McpServer): void {
 
         // 互換性のため最初の text ブロックは JSON のまま維持し、
         // 確信度レイヤーの人間可読サマリ（設定ミス診断・構造/色分離・警告）は末尾に置く。
+        const slimResultData = {
+          ...resultData,
+          gridSummary: undefined,
+          diffReport: undefined,
+        };
+
         content.push({
           type: "text",
-          text: JSON.stringify(resultData, null, 2),
+          text: JSON.stringify(slimResultData, null, 2),
         });
 
         const summaryText = buildSummaryText(result);
-        if (summaryText.length > 0) {
-          content.push({ type: "text", text: summaryText });
-        }
+        const hintLine = `全差分レポート（gridSummary/diffReport含む）は generate_diff_report(comparison_id="${result.comparisonId}") で取得可能。`;
+        const fullSummary = summaryText.length > 0 ? `${summaryText}\n\n${hintLine}` : hintLine;
+        content.push({ type: "text", text: fullSummary });
 
-        return { content, structuredContent: resultData };
+        return { content, structuredContent: slimResultData };
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         return {
