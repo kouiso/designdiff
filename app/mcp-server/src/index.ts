@@ -8,8 +8,6 @@
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { selectFileCredentialBackend } from "@figdiff/credential-store";
 
-import { selectFileCredentialBackend } from "@figdiff/credential-store";
-
 import { createMcpServer } from "./server.js";
 
 async function main(): Promise<void> {
