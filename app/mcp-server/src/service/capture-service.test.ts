@@ -134,11 +134,10 @@ describe("captureUrl — CDP path (FIGDIFF_CDP_ENDPOINT is set)", () => {
     expect(mockLaunch).not.toHaveBeenCalled();
   });
 
-  it("calls browser.disconnect() and not browser.close()", async () => {
+  it("calls browser.close() to disconnect from CDP (does not kill remote Chrome)", async () => {
     await captureUrl("http://localhost:3001", { width: 1440 });
 
-    expect(mockBrowserDisconnect).toHaveBeenCalledOnce();
-    expect(mockBrowserClose).not.toHaveBeenCalled();
+    expect(mockBrowserClose).toHaveBeenCalledOnce();
   });
 
   it("closes the context after screenshot", async () => {
