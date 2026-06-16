@@ -56,7 +56,9 @@ export function createFileBackend(): FileBackend {
     delete(account: string): void {
       const store = readStore();
       if (!(account in store)) return;
-      const nextStore = Object.fromEntries(Object.entries(store).filter(([key]) => key !== account));
+      const nextStore = Object.fromEntries(
+        Object.entries(store).filter(([key]) => key !== account),
+      );
       if (Object.keys(nextStore).length === 0) {
         try {
           unlinkSync(CREDENTIAL_PATH);
