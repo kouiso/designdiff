@@ -408,7 +408,7 @@ export function collectNestedFrames(nodes: FigmaNode[], frames: Frame[]): void {
         });
       }
     }
-    if (node.children && node.children.length > 0) {
+    if (node?.children?.length) {
       collectNestedFrames(node.children, frames);
     }
   }
@@ -416,8 +416,8 @@ export function collectNestedFrames(nodes: FigmaNode[], frames: Frame[]): void {
 
 export function extractNestedFrames(response: FigmaFileResponse): Frame[] {
   const frames: Frame[] = [];
-  for (const page of response.document.children) {
-    collectNestedFrames(page.children, frames);
+  for (const page of response?.document?.children ?? []) {
+    collectNestedFrames(page?.children ?? [], frames);
   }
   return frames;
 }

@@ -40,17 +40,19 @@ const WEBP_MAGIC = Buffer.from([0x52, 0x49, 0x46, 0x46]);
 async function isImageFile(filePath: string): Promise<boolean> {
   const ext = path.extname(filePath).toLowerCase();
   if (!IMAGE_EXTENSIONS.has(ext)) return false;
+  let handle: fs.FileHandle | undefined;
   try {
-    const handle = await fs.open(filePath, "r");
+    handle = await fs.open(filePath, "r");
     const buf = Buffer.alloc(8);
     await handle.read(buf, 0, 8, 0);
-    await handle.close();
     if (buf.subarray(0, 4).equals(PNG_MAGIC)) return true;
     if (buf.subarray(0, 3).equals(JPEG_MAGIC)) return true;
     if (buf.subarray(0, 4).equals(WEBP_MAGIC)) return true;
     return false;
   } catch {
     return false;
+  } finally {
+    await handle?.close().catch(() => {});
   }
 }
 
