@@ -153,7 +153,7 @@ export class GithubService {
       method: "POST",
       headers: this.headers(),
       body: JSON.stringify({ name, color: "ededed" }),
-    }).catch(() => {}); // ignore creation errors (race or no permission)
+    }).catch(() => undefined); // ignore creation errors (race or no permission)
   }
 
   async findOpenIssueByTitle(

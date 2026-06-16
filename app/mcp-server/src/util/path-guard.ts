@@ -52,7 +52,7 @@ async function isImageFile(filePath: string): Promise<boolean> {
   } catch {
     return false;
   } finally {
-    await handle?.close().catch(() => {});
+    await handle?.close().catch(() => undefined);
   }
 }
 

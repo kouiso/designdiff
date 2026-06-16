@@ -4,8 +4,6 @@ import * as path from "node:path";
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
-type ComparisonHistoryModule = typeof import("./comparison-history.js");
-
 const mocks = vi.hoisted(() => ({
   compareImages: vi.fn(),
   createFigmaService: vi.fn(),
@@ -36,6 +34,7 @@ vi.mock("./comparison-history.js", async (importOriginal) => {
 });
 
 import { buildTargetNodeIds, runCompareDesign } from "./compare-design-runner.js";
+import type * as ComparisonHistoryModule from "./comparison-history.js";
 
 let tmpRoot: string | undefined;
 
