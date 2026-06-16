@@ -15,14 +15,19 @@ let _available: boolean | undefined;
 
 export function probeKeychainAvailability(): boolean {
   if (_available !== undefined) return _available;
+  const entry = new Entry(SERVICE, PROBE_ACCOUNT);
   try {
-    const entry = new Entry(SERVICE, PROBE_ACCOUNT);
     entry.setPassword(PROBE_VALUE);
     const val = entry.getPassword();
-    entry.deletePassword();
     _available = val === PROBE_VALUE;
   } catch {
     _available = false;
+  } finally {
+    try {
+      entry.deletePassword();
+    } catch {
+      // ignore cleanup errors
+    }
   }
   return _available;
 }

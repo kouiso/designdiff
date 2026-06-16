@@ -2,9 +2,8 @@ import { createServer } from "node:http";
 
 import { app, shell } from "electron";
 
-import { FigmaOAuthTokenResponseSchema } from "@figdiff/shared";
-
 import {
+  FigmaRefreshError,
   deleteOAuthTokens,
   getOAuthClientCredentials,
   getOAuthTokens,
@@ -14,6 +13,7 @@ import {
   type OAuthClientCredentials,
   type OAuthTokens,
 } from "@figdiff/credential-store";
+import { FigmaOAuthTokenResponseSchema } from "@figdiff/shared";
 
 import { generateCodeChallenge, generateCodeVerifier, generateState } from "../util/pkce";
 
@@ -111,7 +111,9 @@ export const refreshFigmaToken = async (): Promise<string> => {
     const tokens = await refreshFigmaOAuthToken(stored.refreshToken);
     return tokens.accessToken;
   } catch (e) {
-    deleteOAuthTokens();
+    if (e instanceof FigmaRefreshError && (e.status === 400 || e.status === 401)) {
+      deleteOAuthTokens();
+    }
     throw e;
   }
 };

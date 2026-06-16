@@ -45,19 +45,31 @@ vi.mock("../util/safe-storage", () => ({
   deleteOAuthTokens: vi.fn(),
 }));
 
-vi.mock("@figdiff/credential-store", () => ({
-  resolveFigmaAccessToken: mocks.resolveFigmaAccessToken,
-  getOAuthTokens: vi.fn().mockReturnValue(null),
-  deleteOAuthTokens: vi.fn(),
-  getOAuthClientCredentials: vi.fn().mockReturnValue(null),
-  saveOAuthTokens: vi.fn(),
-  refreshFigmaOAuthToken: vi.fn(),
-  getPat: vi.fn().mockReturnValue(null),
-  savePat: vi.fn(),
-  deletePat: vi.fn(),
-  saveOAuthClientCredentials: vi.fn(),
-  deleteOAuthClientCredentials: vi.fn(),
-}));
+vi.mock("@figdiff/credential-store", () => {
+  class FigmaRefreshError extends Error {
+    constructor(
+      message: string,
+      public readonly status: number,
+    ) {
+      super(message);
+      this.name = "FigmaRefreshError";
+    }
+  }
+  return {
+    FigmaRefreshError,
+    resolveFigmaAccessToken: mocks.resolveFigmaAccessToken,
+    getOAuthTokens: vi.fn().mockReturnValue(null),
+    deleteOAuthTokens: vi.fn(),
+    getOAuthClientCredentials: vi.fn().mockReturnValue(null),
+    saveOAuthTokens: vi.fn(),
+    refreshFigmaOAuthToken: vi.fn(),
+    getPat: vi.fn().mockReturnValue(null),
+    savePat: vi.fn(),
+    deletePat: vi.fn(),
+    saveOAuthClientCredentials: vi.fn(),
+    deleteOAuthClientCredentials: vi.fn(),
+  };
+});
 
 vi.mock("../util/transform-node", () => ({
   transformNode: mocks.transformNode,

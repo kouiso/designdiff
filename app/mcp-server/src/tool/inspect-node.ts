@@ -44,7 +44,7 @@ export function registerInspectNode(server: McpServer): void {
     async (args) => {
       try {
         const fileKey = extractFileKey(args.figma_url);
-        const figmaService = createFigmaService();
+        const figmaService = await createFigmaService();
 
         // Collect node IDs to inspect
         const ids: string[] = [];

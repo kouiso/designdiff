@@ -9,19 +9,31 @@ vi.mock("electron", () => ({
   shell: { openExternal: vi.fn() },
 }));
 
-vi.mock("@figdiff/credential-store", () => ({
-  saveOAuthTokens: vi.fn(),
-  getOAuthTokens: vi.fn().mockReturnValue(null),
-  deleteOAuthTokens: vi.fn(),
-  getPat: vi.fn().mockReturnValue(null),
-  savePat: vi.fn(),
-  deletePat: vi.fn(),
-  getOAuthClientCredentials: vi.fn().mockReturnValue(null),
-  saveOAuthClientCredentials: vi.fn(),
-  deleteOAuthClientCredentials: vi.fn(),
-  refreshFigmaOAuthToken: vi.fn(),
-  resolveFigmaAccessToken: vi.fn().mockResolvedValue(null),
-}));
+vi.mock("@figdiff/credential-store", () => {
+  class FigmaRefreshError extends Error {
+    constructor(
+      message: string,
+      public readonly status: number,
+    ) {
+      super(message);
+      this.name = "FigmaRefreshError";
+    }
+  }
+  return {
+    FigmaRefreshError,
+    saveOAuthTokens: vi.fn(),
+    getOAuthTokens: vi.fn().mockReturnValue(null),
+    deleteOAuthTokens: vi.fn(),
+    getPat: vi.fn().mockReturnValue(null),
+    savePat: vi.fn(),
+    deletePat: vi.fn(),
+    getOAuthClientCredentials: vi.fn().mockReturnValue(null),
+    saveOAuthClientCredentials: vi.fn(),
+    deleteOAuthClientCredentials: vi.fn(),
+    refreshFigmaOAuthToken: vi.fn(),
+    resolveFigmaAccessToken: vi.fn().mockResolvedValue(null),
+  };
+});
 
 const { shell } = await import("electron");
 const credentialStore = await import("@figdiff/credential-store");
@@ -311,7 +323,7 @@ describe("refreshFigmaToken", () => {
       expiresAt: Date.now() + 1000,
     });
     vi.mocked(credentialStore.refreshFigmaOAuthToken).mockRejectedValue(
-      new Error("Unauthorized"),
+      new credentialStore.FigmaRefreshError("Unauthorized", 401),
     );
 
     await expect(refreshFigmaToken()).rejects.toBeTruthy();

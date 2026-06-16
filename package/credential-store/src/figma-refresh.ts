@@ -8,6 +8,16 @@ import {
 
 const FIGMA_REFRESH_URL = "https://api.figma.com/v1/oauth/refresh";
 
+export class FigmaRefreshError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number,
+  ) {
+    super(message);
+    this.name = "FigmaRefreshError";
+  }
+}
+
 const FigmaRefreshResponseSchema = z.object({
   access_token: z.string().min(1),
   expires_in: z.number().int().positive(),
@@ -35,7 +45,10 @@ export async function refreshFigmaOAuthToken(refreshToken: string): Promise<OAut
 
   if (!response.ok) {
     const text = await response.text();
-    throw new Error(`Figma token refresh failed (${response.status}): ${text}`);
+    throw new FigmaRefreshError(
+      `Figma token refresh failed (${response.status}): ${text}`,
+      response.status,
+    );
   }
 
   const json: unknown = await response.json();

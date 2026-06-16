@@ -1,5 +1,5 @@
 import { deleteOAuthTokens, getOAuthTokens, getPat } from "./figma-credentials.js";
-import { refreshFigmaOAuthToken } from "./figma-refresh.js";
+import { FigmaRefreshError, refreshFigmaOAuthToken } from "./figma-refresh.js";
 
 const FIVE_MINUTES_MS = 5 * 60 * 1000;
 
@@ -18,8 +18,10 @@ export async function resolveFigmaAccessToken(): Promise<ResolvedFigmaToken | nu
         const refreshed = await refreshFigmaOAuthToken(oauthTokens.refreshToken);
         return { authMode: "oauth", token: refreshed.accessToken };
       } catch (e) {
-        console.warn("[credential-store] OAuth refresh failed, clearing tokens:", e);
-        deleteOAuthTokens();
+        console.warn("[credential-store] OAuth refresh failed:", e);
+        if (e instanceof FigmaRefreshError && (e.status === 400 || e.status === 401)) {
+          deleteOAuthTokens();
+        }
       }
     } else {
       return { authMode: "oauth", token: oauthTokens.accessToken };

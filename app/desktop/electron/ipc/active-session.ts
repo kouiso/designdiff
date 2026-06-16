@@ -6,6 +6,12 @@ import * as path from "node:path";
 import { BrowserWindow, ipcMain } from "electron";
 import { z } from "zod";
 
+declare module "node:fs" {
+  interface FSWatcher {
+    on(event: "error", listener: (error: Error) => void): this;
+  }
+}
+
 export const ActiveSessionPayloadSchema = z.object({
   comparisonId: z.string(),
   sourceKey: z.string(),
@@ -30,10 +36,6 @@ const getMainWindow = (): BrowserWindow | null => {
 
 let watcher: fs.FSWatcher | null = null;
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
-
-type ErrorWatchable = {
-  on(event: "error", listener: (error: Error) => void): void;
-};
 
 const readActiveSession = async (): Promise<ActiveSessionPayload | null> => {
   try {
@@ -63,8 +65,7 @@ const startWatcher = (): void => {
         broadcastActiveSession().catch(() => undefined);
       }, 200);
     });
-    const errorWatchable = watcher as unknown as ErrorWatchable;
-    errorWatchable.on("error", () => {
+    watcher?.on("error", () => {
       watcher?.close();
       watcher = null;
     });
