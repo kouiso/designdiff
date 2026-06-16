@@ -144,7 +144,7 @@ export function registerVerifyFix(server: McpServer): void {
             sourceKey: args.prior_comparison_id,
             implementationUrl: undefined,
             designSource: args.design_source,
-            matchRate: 0,
+            matchRate: comparison.result.matchRate,
             status: structuredContent.verdict === "improved" ? "PASS" : "FAIL",
             updatedAt: Date.now(),
           });
