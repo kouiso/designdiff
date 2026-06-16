@@ -25,6 +25,7 @@ vi.mock("./image-compare-service.js", () => ({
 }));
 
 vi.mock("./comparison-history.js", async (importOriginal) => {
+  // eslint-disable-next-line @typescript-eslint/consistent-type-imports -- vi.mock importOriginal requires inline import() type
   const actual = await importOriginal<typeof import("./comparison-history.js")>();
   return {
     ...actual,

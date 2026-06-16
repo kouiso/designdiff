@@ -36,6 +36,7 @@ const httpMock = vi.hoisted(() => {
     }
 
     listen(): this {
+      // eslint-disable-next-line @typescript-eslint/no-this-alias -- test mock stores server ref for teardown
       activeServer = this;
       setImmediate(() => this.emit("listening"));
       return this;
@@ -46,7 +47,7 @@ const httpMock = vi.hoisted(() => {
       return this;
     }
 
-    closeAllConnections(): void {}
+    closeAllConnections(): void { /* required by net.Server interface */ }
   }
 
   class MockResponse {
