@@ -687,4 +687,60 @@ describe("useOverlayStore", () => {
       expect(state.error).toContain("Connection refused");
     });
   });
+
+  describe("startFromActiveSession", () => {
+    it("opens overlay via openSite when isOpen is false", async () => {
+      vi.mocked(window.electronAPI.overlay.open).mockResolvedValueOnce(undefined);
+      useOverlayStore.setState({ isOpen: false, url: "" });
+
+      await useOverlayStore.getState().startFromActiveSession({
+        implementationUrl: "http://localhost:3000",
+      });
+
+      const state = useOverlayStore.getState();
+      expect(window.electronAPI.overlay.open).toHaveBeenCalledWith("http://localhost:3000");
+      expect(state.isOpen).toBe(true);
+      expect(state.currentUrl).toBe("http://localhost:3000");
+    });
+
+    it("navigates existing overlay to new URL when isOpen is true", async () => {
+      vi.mocked(window.electronAPI.overlay.open).mockResolvedValueOnce(undefined);
+      useOverlayStore.setState({
+        isOpen: true,
+        currentUrl: "http://localhost:3000",
+        url: "http://localhost:3000",
+      });
+
+      await useOverlayStore.getState().startFromActiveSession({
+        implementationUrl: "http://localhost:4000",
+      });
+
+      expect(window.electronAPI.overlay.open).toHaveBeenCalledWith("http://localhost:4000");
+      const state = useOverlayStore.getState();
+      expect(state.currentUrl).toBe("http://localhost:4000");
+    });
+
+    it("does nothing when implementationUrl is absent", async () => {
+      await useOverlayStore.getState().startFromActiveSession({});
+      expect(window.electronAPI.overlay.open).not.toHaveBeenCalled();
+    });
+
+    it("loads design image overlay when designImagePath is provided", async () => {
+      vi.mocked(window.electronAPI.overlay.open).mockResolvedValueOnce(undefined);
+      vi.mocked(window.electronAPI.activeSession.readImage).mockResolvedValueOnce("base64img");
+      vi.mocked(window.electronAPI.overlay.setMode).mockResolvedValueOnce(undefined);
+      vi.mocked(window.electronAPI.overlay.updateScale).mockResolvedValueOnce(undefined);
+      useOverlayStore.setState({ isOpen: false });
+
+      await useOverlayStore.getState().startFromActiveSession({
+        implementationUrl: "http://localhost:3000",
+        designImagePath: "/home/user/.figdiff/cache/design.png",
+      });
+
+      expect(window.electronAPI.activeSession.readImage).toHaveBeenCalledWith(
+        "/home/user/.figdiff/cache/design.png",
+      );
+      expect(useOverlayStore.getState().overlayImageBase64).toBe("base64img");
+    });
+  });
 });
