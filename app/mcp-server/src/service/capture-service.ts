@@ -26,6 +26,10 @@ export function getCaptureDir(): string {
  * - fullPage: true
  *
  * Requires `@playwright/test` installed and `playwright install chromium` run once.
+ *
+ * When env FIGDIFF_CDP_ENDPOINT is set, connects to an existing Chrome via CDP
+ * instead of launching a new browser. Useful in WSL/sandbox where localhost
+ * on the MCP server side cannot reach the host dev server.
  */
 export async function captureUrl(url: string, options: CaptureOptions): Promise<CaptureResult> {
   const loadPw = async () => {
@@ -37,6 +41,9 @@ export async function captureUrl(url: string, options: CaptureOptions): Promise<
       );
     }
   };
+
+  const cdpEndpoint = process.env.FIGDIFF_CDP_ENDPOINT?.trim();
+
   const pw = await loadPw();
 
   const captureDir = getCaptureDir();
@@ -45,14 +52,9 @@ export async function captureUrl(url: string, options: CaptureOptions): Promise<
   const id = crypto.randomUUID();
   const screenshotPath = path.join(captureDir, `capture-${id}.png`);
 
-  const browser = await pw.chromium.launch();
-  try {
-    const context = await browser.newContext({
-      viewport: { width: options.width, height: options.height ?? 1200 },
-      deviceScaleFactor: 1,
-    });
-    const page = await context.newPage();
+  type PwPage = Awaited<ReturnType<Awaited<ReturnType<typeof pw.chromium.launch>>["newPage"]>>;
 
+  const takeScreenshot = async (page: PwPage): Promise<CaptureResult> => {
     await page.goto(url, { waitUntil: "networkidle", timeout: 60_000 });
     await page.evaluate(() => document.fonts.ready);
 
@@ -69,9 +71,48 @@ export async function captureUrl(url: string, options: CaptureOptions): Promise<
       height: document.documentElement.scrollHeight,
     }));
 
-    await context.close();
     return { screenshotPath, width: dims.width, height: dims.height };
+  };
+
+  if (cdpEndpoint === undefined) {
+    const browser = await pw.chromium.launch();
+    try {
+      const context = await browser.newContext({
+        viewport: { width: options.width, height: options.height ?? 1200 },
+        deviceScaleFactor: 1,
+      });
+      const page = await context.newPage();
+      const result = await takeScreenshot(page);
+      await context.close();
+      return result;
+    } finally {
+      await browser.close();
+    }
+  }
+
+  let browser: Awaited<ReturnType<typeof pw.chromium.connectOverCDP>>;
+  try {
+    browser = await pw.chromium.connectOverCDP(cdpEndpoint);
+  } catch (cause) {
+    throw new Error(
+      `FIGDIFF_CDP_ENDPOINT(=${cdpEndpoint})のChromeに接続できません。ホストで\`chrome --remote-debugging-port=9222\`を起動し、サンドボックスから到達可能なアドレスをFIGDIFF_CDP_ENDPOINTに指定してください。到達できない場合は事前に撮影したPNGを\`screenshot\`引数で渡してください。`,
+      { cause },
+    );
+  }
+
+  const context = await browser.newContext({
+    viewport: { width: options.width, height: options.height ?? 1200 },
+    deviceScaleFactor: 1,
+  });
+  try {
+    const page = await context.newPage();
+    const result = await takeScreenshot(page);
+    await context.close();
+    return result;
+  } catch (error) {
+    await context.close();
+    throw error;
   } finally {
-    await browser.close();
+    await browser.disconnect();
   }
 }
