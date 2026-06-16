@@ -21,8 +21,11 @@ vi.mock("../service/figma-service.js", async () => {
   const MOCK_TOKEN = "figd_mock";
   return {
     createFigmaService: () => ({
-      getNodeDetails: async (_fileKey: string, _nodeId: string, _depth?: number): Promise<FigmaNode> =>
-        makeLargeNode(),
+      getNodeDetails: async (
+        _fileKey: string,
+        _nodeId: string,
+        _depth?: number,
+      ): Promise<FigmaNode> => makeLargeNode(),
       getFrames: async (_fileKey: string): Promise<Frame[]> => makeManyFrames(150),
     }),
     getFigmaCredentialStatus: () => ({
@@ -35,9 +38,7 @@ vi.mock("../service/figma-service.js", async () => {
     formatFigmaCredentialError: () => "",
     getMcpCacheDir: () => path.join(os.tmpdir(), "figdiff-mock-cache"),
     computeOptimalScale: () => 2,
-    FigmaService: class {
-      constructor(_token: string, _cacheDir: string) {}
-    },
+FigmaService: class {},
     _MOCK_TOKEN: MOCK_TOKEN,
   };
 });
