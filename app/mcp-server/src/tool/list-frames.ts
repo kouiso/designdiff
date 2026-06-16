@@ -33,7 +33,7 @@ export function registerListFrames(server: McpServer): void {
     async (args) => {
       try {
         const fileKey = extractFileKey(args.figma_url);
-        const figmaService = createFigmaService();
+        const figmaService = await createFigmaService();
         const frames = await figmaService.getFrames(fileKey, {
           includeNested: args.include_nested,
         });
