@@ -13,6 +13,9 @@
     "totalPixelCount": 40000,
     "remainingIssues": 0,
     "diffRegions": [],
+    "totalRegionCount": 0,
+    "returnedRegionCount": 0,
+    "regionsTruncated": false,
     "completionCriteria": {
       "matchRate": {
         "required": 100,

@@ -26,6 +26,9 @@
         "nearbyNodeNames": []
       }
     ],
+    "totalRegionCount": 1,
+    "returnedRegionCount": 1,
+    "regionsTruncated": false,
     "completionCriteria": {
       "matchRate": {
         "required": 100,

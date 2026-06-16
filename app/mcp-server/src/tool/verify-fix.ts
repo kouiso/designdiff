@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { IgnoreRegionSchema, type RegionScore } from "@figdiff/shared";
 
+import { writeActiveSession } from "../service/active-session.js";
 import { runCompareDesign } from "../service/compare-design-runner.js";
 import { getComparisonEntry } from "../service/comparison-history.js";
 
@@ -136,6 +137,20 @@ export function registerVerifyFix(server: McpServer): void {
           verdict: buildVerdict(structureDelta),
           sideEffects,
         });
+
+        try {
+          await writeActiveSession({
+            comparisonId: args.prior_comparison_id,
+            sourceKey: args.prior_comparison_id,
+            implementationUrl: undefined,
+            designSource: args.design_source,
+            matchRate: comparison.result.matchRate,
+            status: structuredContent.verdict === "improved" ? "PASS" : "FAIL",
+            updatedAt: Date.now(),
+          });
+        } catch {
+          // non-critical
+        }
 
         return {
           content: [{ type: "text", text: JSON.stringify(structuredContent, null, 2) }],

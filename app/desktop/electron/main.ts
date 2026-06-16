@@ -2,6 +2,7 @@ import { join } from "node:path";
 
 import { BrowserWindow, app, dialog, safeStorage, session, shell } from "electron";
 
+import { registerActiveSessionHandlers } from "./ipc/active-session";
 import { registerFigmaHandlers } from "./ipc/figma";
 import { registerFileHandlers } from "./ipc/file";
 import { registerOAuthHandlers } from "./ipc/oauth";
@@ -209,6 +210,7 @@ app
     registerOverlayHandlers();
     registerProjectHandlers();
     registerOAuthHandlers();
+    registerActiveSessionHandlers();
     createWindow();
 
     app.on("activate", () => {

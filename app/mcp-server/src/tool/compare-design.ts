@@ -17,6 +17,7 @@ import {
   type DiffRegion,
 } from "@figdiff/shared";
 
+import { writeActiveSession } from "../service/active-session.js";
 import { runCompareDesign } from "../service/compare-design-runner.js";
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
@@ -225,6 +226,25 @@ export function registerCompareDesign(server: McpServer): void {
           regionsTruncated: truncated,
           regionsDetailPath,
         });
+
+        try {
+          const designImagePath =
+            comparison.parsedDesignSource.type === "local_path"
+              ? comparison.parsedDesignSource.filePath
+              : undefined;
+          await writeActiveSession({
+            comparisonId: resultData.comparisonId,
+            sourceKey: resultData.comparisonId,
+            implementationUrl: args.screenshot_url ?? undefined,
+            designSource: args.design_source,
+            designImagePath,
+            matchRate: resultData.matchRate,
+            status: resultData.status === "PASS" ? "PASS" : "FAIL",
+            updatedAt: Date.now(),
+          });
+        } catch {
+          // non-critical
+        }
 
         const content: { type: "text"; text: string }[] = [];
 

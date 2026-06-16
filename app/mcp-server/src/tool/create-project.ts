@@ -47,6 +47,10 @@ export function registerCreateProject(server: McpServer): void {
         implementation_url: z.string().url().describe("実装URL (例: https://example.com)"),
         id: z
           .string()
+          .regex(
+            /^[a-zA-Z0-9_-]+$/,
+            "Project ID must contain only alphanumeric characters, hyphens, and underscores",
+          )
           .optional()
           .describe("プロジェクトID。省略時は自動生成。既存IDと重複する場合はエラー。"),
       },
