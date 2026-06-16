@@ -2,9 +2,9 @@ import { z } from "zod";
 
 import { IgnoreRegionSchema, type RegionScore } from "@figdiff/shared";
 
+import { writeActiveSession } from "../service/active-session.js";
 import { runCompareDesign } from "../service/compare-design-runner.js";
 import { getComparisonEntry } from "../service/comparison-history.js";
-import { writeActiveSession } from "../service/active-session.js";
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 

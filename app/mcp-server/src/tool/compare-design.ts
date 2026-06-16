@@ -17,8 +17,8 @@ import {
   type DiffRegion,
 } from "@figdiff/shared";
 
-import { runCompareDesign } from "../service/compare-design-runner.js";
 import { writeActiveSession } from "../service/active-session.js";
+import { runCompareDesign } from "../service/compare-design-runner.js";
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
