@@ -49,7 +49,7 @@ export function registerInspectNode(server: McpServer): void {
     async (args) => {
       try {
         const fileKey = extractFileKey(args.figma_url);
-        const figmaService = createFigmaService();
+        const figmaService = await createFigmaService();
 
         // Collect node IDs to inspect
         const ids: string[] = [];
@@ -78,11 +78,13 @@ export function registerInspectNode(server: McpServer): void {
           const inspection = inspections[0];
           const children = inspection.childrenSummary;
           if (children && children.length > MAX_CHILDREN_INLINE) {
+            const detailPath = await persistDetailJson(children, `children-${crypto.randomUUID()}`);
             const capped = {
               ...inspection,
               childrenSummary: children.slice(0, MAX_CHILDREN_INLINE),
               childrenTruncated: true,
               childrenCount: children.length,
+              childrenDetailPath: detailPath,
             };
             return {
               content: [{ type: "text", text: JSON.stringify(capped) }],
@@ -109,10 +111,7 @@ export function registerInspectNode(server: McpServer): void {
 
         const serialized = JSON.stringify(capped);
         if (serialized.length > INLINE_RESPONSE_BUDGET) {
-          const detailPath = await persistDetailJson(
-            inspections,
-            `inspect-${Date.now()}`,
-          );
+          const detailPath = await persistDetailJson(inspections, `inspect-${crypto.randomUUID()}`);
           const summaries = inspections.map((inspection) => ({
             nodeId: inspection.nodeId,
             nodeName: inspection.nodeName,

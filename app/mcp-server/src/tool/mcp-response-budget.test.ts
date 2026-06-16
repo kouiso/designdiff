@@ -38,7 +38,7 @@ vi.mock("../service/figma-service.js", async () => {
     formatFigmaCredentialError: () => "",
     getMcpCacheDir: () => path.join(os.tmpdir(), "figdiff-mock-cache"),
     computeOptimalScale: () => 2,
-FigmaService: class {},
+    FigmaService: class {},
     _MOCK_TOKEN: MOCK_TOKEN,
   };
 });
@@ -145,6 +145,9 @@ describe("MCP response budget — responses never exceed archive threshold", () 
       const data = JSON.parse(extractText(result));
       expect(data.childrenTruncated).toBe(true);
       expect(data.childrenCount).toBe(100);
+      createdFiles.push(data.childrenDetailPath);
+      expect(typeof data.childrenDetailPath).toBe("string");
+      expect(data.childrenDetailPath).toMatch(/\.json$/);
       expect(data.childrenSummary).toHaveLength(25);
     });
 

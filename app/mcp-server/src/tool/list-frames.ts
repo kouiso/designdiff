@@ -27,14 +27,14 @@ export function registerListFrames(server: McpServer): void {
     async (args) => {
       try {
         const fileKey = extractFileKey(args.figma_url);
-        const figmaService = createFigmaService();
+        const figmaService = await createFigmaService();
         const frames = await figmaService.getFrames(fileKey);
 
         const result = { frameCount: frames.length, frames };
         const serialized = JSON.stringify(result);
 
         if (serialized.length > INLINE_RESPONSE_BUDGET) {
-          const framesDetailPath = await persistDetailJson(frames, `frames-${Date.now()}`);
+          const framesDetailPath = await persistDetailJson(frames, `frames-${crypto.randomUUID()}`);
           // Fit as many frames inline as possible within budget
           const skeleton = JSON.stringify({
             frameCount: frames.length,

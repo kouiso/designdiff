@@ -43,7 +43,7 @@ export function registerGetDesignTokens(server: McpServer): void {
     async (args) => {
       try {
         const fileKey = extractFileKey(args.figma_url);
-        const figmaService = createFigmaService();
+        const figmaService = await createFigmaService();
 
         let nodeId = extractNodeId(args.figma_url) ?? undefined;
 
@@ -85,7 +85,7 @@ export function registerGetDesignTokens(server: McpServer): void {
         const serialized = JSON.stringify(result);
 
         if (serialized.length > INLINE_RESPONSE_BUDGET) {
-          const tokensDetailPath = await persistDetailJson(tokens, `tokens-${Date.now()}`);
+          const tokensDetailPath = await persistDetailJson(tokens, `tokens-${crypto.randomUUID()}`);
           // Fit as many tokens inline as possible within budget
           const skeleton = JSON.stringify({
             nodeId,
