@@ -34,7 +34,8 @@ let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 const readActiveSession = async (): Promise<ActiveSessionPayload | null> => {
   try {
     const raw = await fsPromises.readFile(ACTIVE_SESSION_PATH, "utf-8");
-    return ActiveSessionPayloadSchema.parse(JSON.parse(raw));
+    const parsed: unknown = JSON.parse(raw);
+    return ActiveSessionPayloadSchema.parse(parsed);
   } catch {
     return null;
   }
@@ -52,13 +53,14 @@ const startWatcher = (): void => {
   if (watcher) return;
   try {
     watcher = fs.watch(FIGDIFF_DIR, { persistent: false }, (_event, filename) => {
-      if (filename !== "active-session.json") return;
+      if (!filename || filename !== "active-session.json") return;
       if (debounceTimer) clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => {
         broadcastActiveSession().catch(() => undefined);
       }, 200);
     });
     watcher.on("error", () => {
+      watcher?.close();
       watcher = null;
     });
   } catch {
@@ -78,7 +80,9 @@ export const registerActiveSessionHandlers = (): void => {
 
   ipcMain.handle("active-session:read-image", async (_event, imagePath: string) => {
     try {
-      const buf = await fsPromises.readFile(imagePath);
+      const resolved = path.resolve(imagePath);
+      if (!resolved.startsWith(FIGDIFF_DIR + path.sep)) return null;
+      const buf = await fsPromises.readFile(resolved);
       return buf.toString("base64");
     } catch {
       return null;

@@ -399,7 +399,20 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
     const { implementationUrl, designImagePath } = session;
     if (!implementationUrl) return;
     get().setUrl(implementationUrl);
-    await get().openSite();
+    if (get().isOpen) {
+      const overlay = await getOverlay();
+      if (overlay) {
+        try {
+          await overlay.open(implementationUrl);
+          set({ currentUrl: implementationUrl });
+        } catch (e) {
+          set({ error: String(e) });
+          return;
+        }
+      }
+    } else {
+      await get().openSite();
+    }
     if (designImagePath && window.electronAPI?.activeSession) {
       try {
         const base64 = await window.electronAPI.activeSession.readImage(designImagePath);

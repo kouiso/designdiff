@@ -46,10 +46,10 @@ export function useActiveSessionSync(): void {
     });
 
     const interval = setInterval(() => {
-      const { activeSession } = useActiveSessionStore.getState();
+      const { activeSession, isActive: prevIsActive } = useActiveSessionStore.getState();
       if (!activeSession) return;
       const isActive = Date.now() - activeSession.updatedAt < ACTIVE_THRESHOLD_MS;
-      useActiveSessionStore.setState({ isActive });
+      if (isActive !== prevIsActive) useActiveSessionStore.setState({ isActive });
     }, 5000);
 
     return () => {

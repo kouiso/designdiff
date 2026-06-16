@@ -31,7 +31,8 @@ export async function writeActiveSession(payload: ActiveSessionPayload): Promise
 export async function readActiveSession(): Promise<ActiveSessionPayload | null> {
   try {
     const raw = await fs.readFile(ACTIVE_SESSION_PATH, "utf-8");
-    return ActiveSessionPayloadSchema.parse(JSON.parse(raw));
+    const parsed: unknown = JSON.parse(raw);
+    return ActiveSessionPayloadSchema.parse(parsed);
   } catch {
     return null;
   }

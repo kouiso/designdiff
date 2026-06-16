@@ -1,5 +1,5 @@
 ## Codex Cloud
-**ENV_ID**: `69f33919a318819180da9a63`  — use `codex cloud exec --env 69f33919a318819180da9a63 "<task>"` (zero local PC load)
+**ENV_ID**: `69f33919a318819180da9a63e715d321`  — use `codex cloud exec --env 69f33919a318819180da9a63e715d321 "<task>"` (zero local PC load)
 
 # FigDiff — AI Assistant Reference
 
