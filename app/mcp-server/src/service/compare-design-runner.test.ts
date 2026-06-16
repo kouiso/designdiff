@@ -34,6 +34,7 @@ vi.mock("./comparison-history.js", async (importOriginal) => {
 });
 
 import { buildTargetNodeIds, runCompareDesign } from "./compare-design-runner.js";
+
 import type * as ComparisonHistoryModule from "./comparison-history.js";
 
 let tmpRoot: string | undefined;
