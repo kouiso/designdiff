@@ -31,6 +31,10 @@ const getMainWindow = (): BrowserWindow | null => {
 let watcher: fs.FSWatcher | null = null;
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
+type ErrorWatchable = {
+  on(event: "error", listener: (error: Error) => void): void;
+};
+
 const readActiveSession = async (): Promise<ActiveSessionPayload | null> => {
   try {
     const raw = await fsPromises.readFile(ACTIVE_SESSION_PATH, "utf-8");
@@ -59,7 +63,8 @@ const startWatcher = (): void => {
         broadcastActiveSession().catch(() => undefined);
       }, 200);
     });
-    watcher.on("error", () => {
+    const errorWatchable = watcher as unknown as ErrorWatchable;
+    errorWatchable.on("error", () => {
       watcher?.close();
       watcher = null;
     });

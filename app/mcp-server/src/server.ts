@@ -2,7 +2,7 @@
  * FigDiff MCP Server
  * Diff-driven design comparison tools for AI assistants
  *
- * Exposes 12 tools via MCP protocol:
+ * Exposes 13 tools via MCP protocol:
  * - list_projects (Utility): List all FigDiff projects stored in ~/.figdiff/projects/
  * - create_project (Utility): Create a new FigDiff project
  * - compare_design (Primary): Pixel diff between Figma design and implementation
@@ -15,6 +15,7 @@
  * - get_ignore_regions (Utility): Get persisted ignore regions
  * - set_ignore_regions (Utility): Set persisted ignore regions
  * - verify_fix (Utility): Re-compare against a prior result and confirm the claimed fix
+ * - set_figma_token (Utility): Set a Figma Personal Access Token in the shared credential store
  */
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
@@ -29,6 +30,7 @@ import { registerInspectNode } from "./tool/inspect-node.js";
 import { registerListFrames } from "./tool/list-frames.js";
 import { registerListProjects } from "./tool/list-projects.js";
 import { registerSetCropRegion } from "./tool/set-crop-region.js";
+import { registerSetFigmaToken } from "./tool/set-figma-token.js";
 import { registerSetIgnoreRegions } from "./tool/set-ignore-regions.js";
 import { registerVerifyFix } from "./tool/verify-fix.js";
 
@@ -54,6 +56,7 @@ export function createMcpServer(): McpServer {
 - get_ignore_regions: Get persisted intentional-difference masks for a project/frame
 - set_ignore_regions: Save persisted intentional-difference masks
 - verify_fix: 前回比較との差分で対象ノードの改善と副作用を検証
+- set_figma_token: Set a Figma Personal Access Token in the shared credential store
 
 **Workflow (follow this order):**
 1. list_projects — Start here to find registered projects and their IDs.
@@ -82,6 +85,7 @@ export function createMcpServer(): McpServer {
   registerGetIgnoreRegions(server);
   registerSetIgnoreRegions(server);
   registerVerifyFix(server);
+  registerSetFigmaToken(server);
 
   return server;
 }

@@ -21,6 +21,7 @@
     "pack": "electron-builder"
   },
   "dependencies": {
+    "@figdiff/credential-store": "workspace:*",
     "@figdiff/shared": "workspace:*",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

@@ -9,18 +9,22 @@ vi.mock("electron", () => ({
   shell: { openExternal: vi.fn() },
 }));
 
-vi.mock("../util/safe-storage", () => ({
+vi.mock("@figdiff/credential-store", () => ({
   saveOAuthTokens: vi.fn(),
   getOAuthTokens: vi.fn().mockReturnValue(null),
   deleteOAuthTokens: vi.fn(),
-  getToken: vi.fn().mockReturnValue(null),
+  getPat: vi.fn().mockReturnValue(null),
+  savePat: vi.fn(),
+  deletePat: vi.fn(),
   getOAuthClientCredentials: vi.fn().mockReturnValue(null),
   saveOAuthClientCredentials: vi.fn(),
   deleteOAuthClientCredentials: vi.fn(),
+  refreshFigmaOAuthToken: vi.fn(),
+  resolveFigmaAccessToken: vi.fn().mockResolvedValue(null),
 }));
 
 const { shell } = await import("electron");
-const safeStorage = await import("../util/safe-storage");
+const credentialStore = await import("@figdiff/credential-store");
 const { startFigmaOAuth, logoutFigmaOAuth, refreshFigmaToken, resolveAccessToken } = await import(
   "./figma-oauth"
 );
@@ -48,16 +52,11 @@ const makeFetchOk = (): FetchSpy => {
   return vi.spyOn(globalThis, "fetch").mockResolvedValue(createTokenResponse());
 };
 
-// Use node:http directly (agent: false = no keep-alive) so the loopback
-// connection is not pooled by undici and closes immediately after the
-// response, allowing server.close() to release port 51073 before the
-// next test's server.listen() call.
 function getCallback(path: string): void {
   const req = httpRequest({ hostname: "127.0.0.1", port: LOOPBACK_PORT, path, agent: false });
   req.end();
 }
 
-// Same as getCallback but returns the response status + body.
 function getCallbackWithResponse(path: string): Promise<{ status: number; body: string }> {
   return new Promise((resolve, reject) => {
     const req = httpRequest(
@@ -79,8 +78,8 @@ beforeEach(() => {
   vi.clearAllMocks();
   process.env.FIGMA_OAUTH_CLIENT_ID = FAKE_CLIENT_ID;
   process.env.FIGMA_OAUTH_CLIENT_SECRET = FAKE_CLIENT_SECRET;
-  vi.mocked(safeStorage.getOAuthTokens).mockReturnValue(null);
-  vi.mocked(safeStorage.getToken).mockReturnValue(null);
+  vi.mocked(credentialStore.getOAuthTokens).mockReturnValue(null);
+  vi.mocked(credentialStore.resolveFigmaAccessToken).mockResolvedValue(null);
   logoutFigmaOAuth();
 });
 
@@ -90,9 +89,6 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
-// startFigmaOAuth — happy path
-// ─────────────────────────────────────────────────────────────────────────────
 describe("startFigmaOAuth — happy path", () => {
   it("opens authUrl with correct OAuth params", async () => {
     makeFetchOk();
@@ -170,14 +166,14 @@ describe("startFigmaOAuth — happy path", () => {
 
     await startFigmaOAuth();
 
-    expect(safeStorage.saveOAuthTokens).toHaveBeenCalledWith(
+    expect(credentialStore.saveOAuthTokens).toHaveBeenCalledWith(
       expect.objectContaining({
         accessToken: "fake-access-token",
         refreshToken: "fake-refresh-token",
         expiresAt: expect.any(Number),
       }),
     );
-    const saved = vi.mocked(safeStorage.saveOAuthTokens).mock.calls[0][0];
+    const saved = vi.mocked(credentialStore.saveOAuthTokens).mock.calls[0][0];
     const expectedExpiry = before + mockTokenResponse.expires_in * 1000;
     expect(saved.expiresAt).toBeGreaterThanOrEqual(expectedExpiry - 1000);
     expect(saved.expiresAt).toBeLessThanOrEqual(expectedExpiry + 5000);
@@ -202,9 +198,6 @@ describe("startFigmaOAuth — happy path", () => {
   });
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
-// startFigmaOAuth — error cases
-// ─────────────────────────────────────────────────────────────────────────────
 describe("startFigmaOAuth — error cases", () => {
   it("rejects on state mismatch with 400 response", async () => {
     vi.mocked(shell.openExternal).mockImplementation(async () => {
@@ -255,8 +248,6 @@ describe("startFigmaOAuth — error cases", () => {
       setImmediate(async () => {
         const notFound = await getCallbackWithResponse("/favicon.ico");
         expect(notFound.status).toBe(404);
-
-        // then complete the flow normally
         getCallback(`/callback?code=c&state=${state}`);
       });
     });
@@ -278,8 +269,6 @@ describe("startFigmaOAuth — error cases", () => {
     const first = startFigmaOAuth();
     const firstRejection = expect(first).rejects.toThrow(/cancelled/);
 
-    // Yield so server1's listen callback fires and mock1 is consumed before
-    // the second startFigmaOAuth() creates its server and claims mock2.
     await new Promise<void>((r) => setImmediate(r));
 
     makeFetchOk();
@@ -290,63 +279,56 @@ describe("startFigmaOAuth — error cases", () => {
       });
     });
 
-    // second call cancels the first and completes successfully
     await startFigmaOAuth();
     await firstRejection;
   });
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
-// refreshFigmaToken
-// ─────────────────────────────────────────────────────────────────────────────
 describe("refreshFigmaToken", () => {
   it("calls refresh endpoint and saves new tokens", async () => {
-    vi.mocked(safeStorage.getOAuthTokens).mockReturnValue({
+    vi.mocked(credentialStore.getOAuthTokens).mockReturnValue({
       accessToken: "old-token",
       refreshToken: "old-refresh",
       expiresAt: Date.now() + 1000,
     });
-    const fetchSpy = makeFetchOk();
+    const newTokens = {
+      accessToken: "fake-access-token",
+      refreshToken: "old-refresh",
+      expiresAt: Date.now() + 7776000 * 1000,
+    };
+    vi.mocked(credentialStore.refreshFigmaOAuthToken).mockResolvedValue(newTokens);
 
     const result = await refreshFigmaToken();
 
     expect(result).toBe("fake-access-token");
-    const call = fetchSpy.mock.calls.find(
-      ([url]) => typeof url === "string" && url.includes("oauth/refresh"),
-    );
-    expect(call).toBeTruthy();
-    expect(safeStorage.saveOAuthTokens).toHaveBeenCalledWith(
-      expect.objectContaining({ accessToken: "fake-access-token" }),
-    );
+    expect(credentialStore.refreshFigmaOAuthToken).toHaveBeenCalledWith("old-refresh");
   });
 
   it("deletes tokens and throws on refresh failure", async () => {
-    vi.mocked(safeStorage.getOAuthTokens).mockReturnValue({
+    vi.mocked(credentialStore.getOAuthTokens).mockReturnValue({
       accessToken: "old-token",
       refreshToken: "old-refresh",
       expiresAt: Date.now() + 1000,
     });
-    vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("Unauthorized", { status: 401 }));
+    vi.mocked(credentialStore.refreshFigmaOAuthToken).mockRejectedValue(
+      new Error("Unauthorized"),
+    );
 
-    await expect(refreshFigmaToken()).rejects.toThrow();
-    expect(safeStorage.deleteOAuthTokens).toHaveBeenCalled();
+    await expect(refreshFigmaToken()).rejects.toBeTruthy();
+    expect(credentialStore.deleteOAuthTokens).toHaveBeenCalled();
   });
 
   it("throws when no OAuth session exists", async () => {
-    vi.mocked(safeStorage.getOAuthTokens).mockReturnValue(null);
+    vi.mocked(credentialStore.getOAuthTokens).mockReturnValue(null);
     await expect(refreshFigmaToken()).rejects.toThrow(/OAuth セッションがありません/);
   });
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
-// resolveAccessToken
-// ─────────────────────────────────────────────────────────────────────────────
 describe("resolveAccessToken", () => {
   it("returns stored access token when expiry > 5 minutes away", async () => {
-    vi.mocked(safeStorage.getOAuthTokens).mockReturnValue({
-      accessToken: "stored-token",
-      refreshToken: "r",
-      expiresAt: Date.now() + 10 * 60 * 1000,
+    vi.mocked(credentialStore.resolveFigmaAccessToken).mockResolvedValue({
+      authMode: "oauth",
+      token: "stored-token",
     });
 
     const token = await resolveAccessToken();
@@ -354,28 +336,27 @@ describe("resolveAccessToken", () => {
   });
 
   it("calls refreshFigmaToken when expiry < 5 minutes away", async () => {
-    vi.mocked(safeStorage.getOAuthTokens).mockReturnValue({
-      accessToken: "old-token",
-      refreshToken: "r",
-      expiresAt: Date.now() + 2 * 60 * 1000,
+    vi.mocked(credentialStore.resolveFigmaAccessToken).mockResolvedValue({
+      authMode: "oauth",
+      token: "fake-access-token",
     });
-    makeFetchOk();
 
     const token = await resolveAccessToken();
     expect(token).toBe("fake-access-token");
   });
 
   it("falls back to PAT when no OAuth session", async () => {
-    vi.mocked(safeStorage.getOAuthTokens).mockReturnValue(null);
-    vi.mocked(safeStorage.getToken).mockReturnValue("pat-token");
+    vi.mocked(credentialStore.resolveFigmaAccessToken).mockResolvedValue({
+      authMode: "pat",
+      token: "pat-token",
+    });
 
     const token = await resolveAccessToken();
     expect(token).toBe("pat-token");
   });
 
   it("throws when no OAuth session and no PAT", async () => {
-    vi.mocked(safeStorage.getOAuthTokens).mockReturnValue(null);
-    vi.mocked(safeStorage.getToken).mockReturnValue(null);
+    vi.mocked(credentialStore.resolveFigmaAccessToken).mockResolvedValue(null);
 
     await expect(resolveAccessToken()).rejects.toThrow(/Token not found/);
   });

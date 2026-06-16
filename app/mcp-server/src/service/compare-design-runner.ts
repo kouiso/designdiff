@@ -301,7 +301,7 @@ async function enhanceBlankFrameWarning(
     return warnings;
   }
   try {
-    const figmaService = createFigmaService();
+    const figmaService = await createFigmaService();
     const frames = await figmaService.getFrames(fileKey);
     const candidateText = formatFrameCandidates(
       rankFrameCandidates(frames, screenWidth),
@@ -344,7 +344,7 @@ async function resolveScreenshotPath(
   let captureWidth = args.capture_width;
   if (!captureWidth && parsedDesignSource.type === "figma_url") {
     try {
-      const figmaService = createFigmaService();
+      const figmaService = await createFigmaService();
       const frames = await figmaService.getFrames(parsedDesignSource.fileKey);
       const effectiveNodeId = (parsedDesignSource.nodeId ?? fallbackNodeId)?.replace(/-/g, ":");
       const matched =
@@ -372,7 +372,7 @@ async function resolveDesignAssets(
   resolvedNodeId: string | undefined;
 }> {
   if (parsedDesignSource.type === "figma_url") {
-    const figmaService = createFigmaService();
+    const figmaService = await createFigmaService();
     // nodeId が未指定のとき、前回使用ノードのフォールバックを試みる。
     const effectiveNodeId = parsedDesignSource.nodeId ?? fallbackNodeId;
     const resolvedNodeId = await resolveNodeId(
