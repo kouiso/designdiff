@@ -140,7 +140,7 @@ export function registerCompareDesign(server: McpServer): void {
           .url()
           .optional()
           .describe(
-            "撮影対象のURL。指定時はPlaywrightで内部撮影し、screenshotの代わりに使用する。screenshotとどちらか一方を指定。",
+            "撮影対象のURL。指定時はPlaywrightで内部撮影し、screenshotの代わりに使用する。screenshotとどちらか一方を指定。別ネットワーク環境（WSL/サンドボックス）でlocalhost到達が失敗する場合は環境変数FIGDIFF_CDP_ENDPOINTにホストChromeのCDPアドレスを設定してください。",
           ),
         capture_width: z
           .number()
