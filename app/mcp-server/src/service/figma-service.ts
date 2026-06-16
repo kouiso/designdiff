@@ -126,6 +126,9 @@ export class FigmaService {
     return base64;
   }
 
+  /**
+   * Get node details (Dev Mode-like information)
+   */
   async getNodeDetails(fileKey: string, nodeId: string, depth?: number): Promise<FigmaNode> {
     return this.client.getNode(fileKey, nodeId, depth);
   }
