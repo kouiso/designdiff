@@ -36,14 +36,13 @@ const httpMock = vi.hoisted(() => {
     }
 
     listen(): this {
-      // eslint-disable-next-line @typescript-eslint/no-this-alias -- test mock stores server ref for teardown
-      activeServer = this;
+      setActiveServer(this);
       setImmediate(() => this.emit("listening"));
       return this;
     }
 
     close(): this {
-      if (activeServer === this) activeServer = null;
+      if (activeServer === this) setActiveServer(null);
       return this;
     }
 
@@ -84,6 +83,10 @@ const httpMock = vi.hoisted(() => {
   }
 
   let activeServer: MockServer | null = null;
+
+  function setActiveServer(server: MockServer | null): void {
+    activeServer = server;
+  }
 
   const createServer = vi.fn(() => new MockServer());
   const request = vi.fn((options: { path?: string }, callback?: (res: MockResponse) => void) => {

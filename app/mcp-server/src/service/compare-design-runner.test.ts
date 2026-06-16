@@ -4,6 +4,8 @@ import * as path from "node:path";
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
+type ComparisonHistoryModule = typeof import("./comparison-history.js");
+
 const mocks = vi.hoisted(() => ({
   compareImages: vi.fn(),
   createFigmaService: vi.fn(),
@@ -25,8 +27,7 @@ vi.mock("./image-compare-service.js", () => ({
 }));
 
 vi.mock("./comparison-history.js", async (importOriginal) => {
-  // eslint-disable-next-line @typescript-eslint/consistent-type-imports -- vi.mock importOriginal requires inline import() type
-  const actual = await importOriginal<typeof import("./comparison-history.js")>();
+  const actual = await importOriginal<ComparisonHistoryModule>();
   return {
     ...actual,
     getRecentReports: mocks.getRecentReports,
