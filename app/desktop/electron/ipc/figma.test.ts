@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   getToken: vi.fn(),
   ipcMainHandle: vi.fn(),
   transformNode: vi.fn(),
+  resolveFigmaAccessToken: vi.fn(),
 }));
 
 vi.mock("electron", () => ({
@@ -44,6 +45,32 @@ vi.mock("../util/safe-storage", () => ({
   deleteOAuthTokens: vi.fn(),
 }));
 
+vi.mock("@figdiff/credential-store", () => {
+  class FigmaRefreshError extends Error {
+    constructor(
+      message: string,
+      public readonly status: number,
+    ) {
+      super(message);
+      this.name = "FigmaRefreshError";
+    }
+  }
+  return {
+    FigmaRefreshError,
+    resolveFigmaAccessToken: mocks.resolveFigmaAccessToken,
+    getOAuthTokens: vi.fn().mockReturnValue(null),
+    deleteOAuthTokens: vi.fn(),
+    getOAuthClientCredentials: vi.fn().mockReturnValue(null),
+    saveOAuthTokens: vi.fn(),
+    refreshFigmaOAuthToken: vi.fn(),
+    getPat: vi.fn().mockReturnValue(null),
+    savePat: vi.fn(),
+    deletePat: vi.fn(),
+    saveOAuthClientCredentials: vi.fn(),
+    deleteOAuthClientCredentials: vi.fn(),
+  };
+});
+
 vi.mock("../util/transform-node", () => ({
   transformNode: mocks.transformNode,
 }));
@@ -77,7 +104,7 @@ describe("Figma IPC secret-safe error contract", () => {
   it("registers Figma handlers that return fixed text for unknown Figma request failures", async () => {
     const { registerFigmaHandlers } = await import("./figma");
     const secretValue = "figd_secret_token_value_12345";
-    mocks.getToken.mockReturnValue("figd_valid_token_12345");
+    mocks.resolveFigmaAccessToken.mockResolvedValue({ authMode: "pat", token: "figd_valid_token_12345" });
     mocks.getFile.mockRejectedValueOnce(new Error(`network failed ${secretValue}`));
 
     registerFigmaHandlers();

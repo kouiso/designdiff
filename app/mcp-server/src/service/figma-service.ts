@@ -9,6 +9,7 @@ import * as path from "node:path";
 
 import sharp from "sharp";
 
+import { resolveFigmaAccessToken } from "@figdiff/credential-store";
 import {
   FigmaClient,
   type FigmaCacheStrategy,
@@ -18,10 +19,6 @@ import {
 } from "@figdiff/shared";
 import type { Frame } from "@figdiff/shared";
 
-/**
- * File-based cache implementation for Node.js
- * Stores cached images in ~/.figdiff/cache/
- */
 class FileSystemCacheStrategy implements FigmaCacheStrategy {
   private cacheDir: string;
 
@@ -55,9 +52,6 @@ class FileSystemCacheStrategy implements FigmaCacheStrategy {
 const MIN_SCALE = 0.5;
 const MAX_SCALE = 4;
 
-/**
- * ダウンサンプリングを回避し補間ボケを防ぐため、スクリーンショット幅に合致する最適スケールを計算します。
- */
 export function computeOptimalScale(
   targetWidth: number,
   logicalWidth: number,
@@ -67,37 +61,26 @@ export function computeOptimalScale(
   return Math.min(maxScale, Math.max(minScale, targetWidth / logicalWidth));
 }
 
-/**
- * Figma service for MCP server
- */
 export class FigmaService {
   private client: FigmaClient;
   private cache: FileSystemCacheStrategy;
 
-  constructor(token: string, cacheDir: string) {
+  constructor(token: string, cacheDir: string, authMode: "pat" | "oauth" = "pat") {
     this.cache = new FileSystemCacheStrategy(cacheDir);
-    this.client = new FigmaClient(token, this.cache);
+    this.client = new FigmaClient(token, this.cache, authMode);
   }
 
-  /**
-   * Get file structure and extract frames
-   */
   async getFrames(fileKey: string): Promise<Frame[]> {
     const file = await this.client.getFile(fileKey, 2);
     return extractFrames(file);
   }
 
-  /**
-   * フレーム画像をBase64として取得します。
-   * ダウンサンプリングによる補間ボケを防ぐため、logicalWidthが指定された場合は最適なスケールを計算して取得します。
-   */
   async getFrameImage(
     fileKey: string,
     nodeId: string,
     targetWidth?: number,
     logicalWidth?: number,
   ): Promise<string> {
-    // ダウンサンプリングによる補間ボケを防ぎ、要求された解像度で直接取得するため。
     if (targetWidth && logicalWidth && logicalWidth > 0) {
       const optimalScale = computeOptimalScale(targetWidth, logicalWidth);
       let base64 = await this.client.downloadImageAsBase64(fileKey, nodeId, optimalScale);
@@ -117,7 +100,6 @@ export class FigmaService {
       return base64;
     }
 
-    // 論理幅が不明な場合に、デフォルトのスケールで取得した後に必要に応じてリトライするため。
     const initialScale = 2;
     let base64 = await this.client.downloadImageAsBase64(fileKey, nodeId, initialScale);
 
@@ -151,9 +133,6 @@ export class FigmaService {
     return this.client.getNode(fileKey, nodeId, depth);
   }
 
-  /**
-   * Get entire file structure for token extraction
-   */
   async getFile(fileKey: string, depth?: number): Promise<FigmaFileResponse> {
     return this.client.getFile(fileKey, depth ?? 2);
   }
@@ -165,9 +144,6 @@ async function getImageWidth(base64: string): Promise<number> {
   return meta.width ?? 0;
 }
 
-/**
- * Helper: Get MCP cache directory (~/.figdiff/cache/)
- */
 export function getMcpCacheDir(): string {
   return path.join(homedir(), ".figdiff", "cache");
 }
@@ -220,7 +196,13 @@ export function getFigmaCredentialStatus(
       reason: "invalid-chars",
     };
   }
-  return { envName: "FIGMA_TOKEN", configured: true, valid: true, authMode: "pat", issue: null };
+  return {
+    envName: "FIGMA_TOKEN",
+    configured: true,
+    valid: true,
+    authMode: "pat",
+    issue: null,
+  };
 }
 
 export function formatFigmaCredentialError(status: FigmaCredentialStatus): string {
@@ -238,15 +220,32 @@ export function formatFigmaCredentialError(status: FigmaCredentialStatus): strin
 
 let figmaServiceInstance: FigmaService | null = null;
 
-export function createFigmaService(): FigmaService {
+export function invalidateFigmaService(): void {
+  figmaServiceInstance = null;
+}
+
+export async function createFigmaService(): Promise<FigmaService> {
   if (figmaServiceInstance) return figmaServiceInstance;
 
-  const status = getFigmaCredentialStatus();
-  if (!status.valid) {
-    throw new Error(formatFigmaCredentialError(status));
+  const resolved = await resolveFigmaAccessToken();
+  if (resolved) {
+    const cacheDir = getMcpCacheDir();
+    figmaServiceInstance = new FigmaService(resolved.token, cacheDir, resolved.authMode);
+    return figmaServiceInstance;
   }
 
-  const cacheDir = getMcpCacheDir();
-  figmaServiceInstance = new FigmaService(process.env.FIGMA_TOKEN ?? "", cacheDir);
-  return figmaServiceInstance;
+  const envToken = process.env.FIGMA_TOKEN;
+  if (envToken) {
+    const status = getFigmaCredentialStatus();
+    if (!status.valid) {
+      throw new Error(formatFigmaCredentialError(status));
+    }
+    const cacheDir = getMcpCacheDir();
+    figmaServiceInstance = new FigmaService(envToken, cacheDir, "pat");
+    return figmaServiceInstance;
+  }
+
+  throw new Error(
+    "Figma token not configured. Use the set_figma_token tool to set a Personal Access Token, or log in via the FigDiff desktop app.",
+  );
 }

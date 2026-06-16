@@ -17,6 +17,7 @@ export default defineConfig({
         input: {
           main: resolve(__dirname, "electron/main.ts"),
         },
+        external: ["@napi-rs/keyring"],
       },
     },
   },
