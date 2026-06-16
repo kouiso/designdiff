@@ -360,8 +360,8 @@ export class FigmaClient {
 /** FigmaファイルレスポンスからFRAMEノードを再帰的に抽出 */
 export function extractFrames(response: FigmaFileResponse): Frame[] {
   const frames: Frame[] = [];
-  for (const page of response.document.children) {
-    collectFrames(page.children, frames);
+  for (const page of response?.document?.children ?? []) {
+    collectFrames(page?.children ?? [], frames);
   }
   return frames;
 }
@@ -382,7 +382,7 @@ export function collectFrames(nodes: FigmaNode[], frames: Frame[]): void {
         });
       }
     }
-    if (CONTAINER_TYPES.has(node.type) && node?.children) {
+    if (CONTAINER_TYPES.has(node.type) && node?.children?.length) {
       collectFrames(node.children, frames);
     }
   }
