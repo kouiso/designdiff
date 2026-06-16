@@ -1,3 +1,7 @@
+import * as fs from "node:fs/promises";
+import { tmpdir } from "node:os";
+import * as path from "node:path";
+
 import { describe, expect, it } from "vitest";
 
 import type { CompareDesignResult, DiffReport, ParsedDesignInput } from "@figdiff/shared";
@@ -79,24 +83,34 @@ describe("comparison-history", () => {
 
   it("メモリ履歴がない場合はディスクから比較結果を復元する", async () => {
     clearComparisonHistory();
-    const comparisonId = `cmp-disk-${Date.now()}`;
-    const sourceKey = "figma:file:disk";
+    const originalHome = process.env.HOME;
+    const testHome = await fs.mkdtemp(path.join(tmpdir(), "figdiff-history-"));
 
-    await recordComparison({
-      comparisonId,
-      sourceKey,
-      result: {
-        ...createResult(comparisonId, createReport(0.9)),
-        diffImageBase64: "base64-data",
-      },
-    });
+    try {
+      process.env.HOME = testHome;
+      const comparisonId = `cmp-disk-${Date.now()}`;
+      const sourceKey = "figma:file:disk";
 
-    clearComparisonHistory();
+      await recordComparison({
+        comparisonId,
+        sourceKey,
+        result: {
+          ...createResult(comparisonId, createReport(0.9)),
+          diffImageBase64: "base64-data",
+        },
+      });
 
-    const restored = await getComparisonEntry(comparisonId);
+      clearComparisonHistory();
 
-    expect(restored?.comparisonId).toBe(comparisonId);
-    expect(restored?.sourceKey).toBe(sourceKey);
-    expect(restored?.result.diffImageBase64).toBeUndefined();
+      const restored = await getComparisonEntry(comparisonId);
+
+      expect(restored?.comparisonId).toBe(comparisonId);
+      expect(restored?.sourceKey).toBe(sourceKey);
+      expect(restored?.result.diffImageBase64).toBeUndefined();
+    } finally {
+      if (originalHome === undefined) delete process.env.HOME;
+      else process.env.HOME = originalHome;
+      await fs.rm(testHome, { recursive: true, force: true });
+    }
   });
 });

@@ -360,8 +360,8 @@ export class FigmaClient {
 /** FigmaファイルレスポンスからFRAMEノードを再帰的に抽出 */
 export function extractFrames(response: FigmaFileResponse): Frame[] {
   const frames: Frame[] = [];
-  for (const page of response.document.children) {
-    collectFrames(page.children, frames);
+  for (const page of response?.document?.children ?? []) {
+    collectFrames(page?.children ?? [], frames);
   }
   return frames;
 }
@@ -382,7 +382,7 @@ export function collectFrames(nodes: FigmaNode[], frames: Frame[]): void {
         });
       }
     }
-    if (CONTAINER_TYPES.has(node.type) && node?.children) {
+    if (CONTAINER_TYPES.has(node.type) && node?.children?.length) {
       collectFrames(node.children, frames);
     }
   }
@@ -392,6 +392,33 @@ export function collectFrames(nodes: FigmaNode[], frames: Frame[]): void {
 export function extractPageFrames(pageNode: FigmaNode): Frame[] {
   const frames: Frame[] = [];
   collectFrames(pageNode.children, frames);
+  return frames;
+}
+
+export function collectNestedFrames(nodes: FigmaNode[], frames: Frame[]): void {
+  for (const node of nodes) {
+    if (FRAME_LIKE_TYPES.has(node.type)) {
+      const bbox = node.absoluteBoundingBox;
+      if (bbox) {
+        frames.push({
+          id: node.id,
+          name: node.name,
+          width: bbox.width,
+          height: bbox.height,
+        });
+      }
+    }
+    if (node?.children?.length) {
+      collectNestedFrames(node.children, frames);
+    }
+  }
+}
+
+export function extractNestedFrames(response: FigmaFileResponse): Frame[] {
+  const frames: Frame[] = [];
+  for (const page of response?.document?.children ?? []) {
+    collectNestedFrames(page?.children ?? [], frames);
+  }
   return frames;
 }
 

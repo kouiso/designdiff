@@ -2,9 +2,9 @@ import * as fs from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
 
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
-import { resolveSafePath } from "./path-guard.js";
+import { resolveSafePath, resolveScreenshotInputPath } from "./path-guard.js";
 
 describe("resolveSafePath", () => {
   let tmpRoot: string;
@@ -20,6 +20,7 @@ describe("resolveSafePath", () => {
   });
 
   afterEach(async () => {
+    vi.restoreAllMocks();
     process.chdir(originalCwd);
     if (originalEnv === undefined) delete process.env.FIGDIFF_ALLOWED_DIRS;
     else process.env.FIGDIFF_ALLOWED_DIRS = originalEnv;
@@ -112,5 +113,69 @@ describe("resolveSafePath", () => {
     await fs.symlink(targetFile, linkPath);
 
     await expect(resolveSafePath(linkPath)).rejects.toThrow(/not allowed/i);
+  });
+});
+
+describe("resolveScreenshotInputPath", () => {
+  let tmpRoot: string;
+
+  beforeEach(async () => {
+    tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), "figdiff-screenshot-input-"));
+  });
+
+  afterEach(async () => {
+    vi.restoreAllMocks();
+    await fs.rm(tmpRoot, { recursive: true, force: true });
+  });
+
+  it("returns the real path for a valid PNG file", async () => {
+    const filePath = path.join(tmpRoot, "design.png");
+    await fs.writeFile(filePath, Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
+
+    const resolved = await resolveScreenshotInputPath(filePath);
+
+    expect(resolved).toBe(await fs.realpath(filePath));
+  });
+
+  it("returns the real path for a valid JPEG file", async () => {
+    const filePath = path.join(tmpRoot, "design.jpeg");
+    await fs.writeFile(filePath, Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10]));
+
+    const resolved = await resolveScreenshotInputPath(filePath);
+
+    expect(resolved).toBe(await fs.realpath(filePath));
+  });
+
+  it("throws a clear error when screenshot file does not exist", async () => {
+    const missingPath = path.join(tmpRoot, "missing.png");
+
+    await expect(resolveScreenshotInputPath(missingPath)).rejects.toThrow(
+      /Screenshot file not found/i,
+    );
+  });
+
+  it("throws a clear error for a directory path", async () => {
+    const dirPath = path.join(tmpRoot, "screenshots");
+    await fs.mkdir(dirPath);
+
+    await expect(resolveScreenshotInputPath(dirPath)).rejects.toThrow(/not a file/i);
+  });
+
+  it("throws a clear error for a text file", async () => {
+    const filePath = path.join(tmpRoot, "notes.txt");
+    await fs.writeFile(filePath, "not an image");
+
+    await expect(resolveScreenshotInputPath(filePath)).rejects.toThrow(
+      /must be a PNG, JPEG, or WebP/i,
+    );
+  });
+
+  it("throws a clear error for a .png file with wrong magic bytes", async () => {
+    const filePath = path.join(tmpRoot, "fake.png");
+    await fs.writeFile(filePath, "not a png");
+
+    await expect(resolveScreenshotInputPath(filePath)).rejects.toThrow(
+      /must be a PNG, JPEG, or WebP/i,
+    );
   });
 });

@@ -58,62 +58,6 @@
       "wallMs": 0,
       "regionCount": 0
     },
-    "gridSummary": {
-      "rows": 1,
-      "cols": 1,
-      "cells": [
-        {
-          "row": 0,
-          "col": 0,
-          "x": 0,
-          "y": 0,
-          "width": 200,
-          "height": 200,
-          "diffPixels": 0,
-          "totalPixels": 0,
-          "matchRate": 100
-        }
-      ]
-    },
-    "diffReport": {
-      "alignment": {
-        "translation": {
-          "x": 0,
-          "y": 0
-        },
-        "scale": {
-          "x": 1,
-          "y": 1
-        },
-        "rotation": 0,
-        "confidence": 1,
-        "residual": 0
-      },
-      "regionScores": [
-        {
-          "regionId": "whole-frame",
-          "bbox": {
-            "x": 0,
-            "y": 0,
-            "w": 200,
-            "h": 200
-          },
-          "structure": 1,
-          "color": 0,
-          "shape": 0,
-          "layout": 0,
-          "textureScore": 0
-        }
-      ],
-      "issues": [],
-      "weightedAggregate": {
-        "weightedStructure": 1,
-        "weightedColor": 0,
-        "totalWeight": 1
-      },
-      "aggregateVerdict": "pass",
-      "rationale": "no critical issues, weighted structure score 1.000 meets pass threshold, and weighted color difference 0.000 is below 3.000 (totalWeight 1.000); weakest region whole-frame (structure 1.000, color 0.000)"
-    },
     "critique": {
       "concern": "healthy",
       "advice": "比較結果は大きく悪化していません。worstDeltaSection を優先しつつ、同じ評価条件で修正を継続してください。"

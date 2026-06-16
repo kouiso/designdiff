@@ -16,6 +16,7 @@
  * - set_ignore_regions (Utility): Set persisted ignore regions
  * - verify_fix (Utility): Re-compare against a prior result and confirm the claimed fix
  * - set_figma_token (Utility): Set a Figma Personal Access Token in the shared credential store
+ * - report_issue (Utility): Create a GitHub issue for usability feedback, bugs, or requests
  */
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
@@ -29,6 +30,7 @@ import { registerGetIgnoreRegions } from "./tool/get-ignore-regions.js";
 import { registerInspectNode } from "./tool/inspect-node.js";
 import { registerListFrames } from "./tool/list-frames.js";
 import { registerListProjects } from "./tool/list-projects.js";
+import { registerReportIssue } from "./tool/report-issue.js";
 import { registerSetCropRegion } from "./tool/set-crop-region.js";
 import { registerSetFigmaToken } from "./tool/set-figma-token.js";
 import { registerSetIgnoreRegions } from "./tool/set-ignore-regions.js";
@@ -57,6 +59,7 @@ export function createMcpServer(): McpServer {
 - set_ignore_regions: Save persisted intentional-difference masks
 - verify_fix: 前回比較との差分で対象ノードの改善と副作用を検証
 - set_figma_token: Set a Figma Personal Access Token in the shared credential store
+- report_issue: 使いにくい点・バグ・改善要望に気づいたら即座に GitHub issue として起票できます
 
 **Workflow (follow this order):**
 1. list_projects — Start here to find registered projects and their IDs.
@@ -65,7 +68,8 @@ export function createMcpServer(): McpServer {
 4. Fix code based on css_suggestion values.
 5. Re-run compare_design to verify fixes.
 6. verify_fix で claimed fix の改善有無と副作用を確認する。
-7. Repeat until match_rate reaches 100%.`,
+7. Repeat until match_rate reaches 100%.
+8. 使いにくさ・バグを発見したら report_issue で即起票してください。`,
       capabilities: {
         tools: {},
       },
@@ -86,6 +90,7 @@ export function createMcpServer(): McpServer {
   registerSetIgnoreRegions(server);
   registerVerifyFix(server);
   registerSetFigmaToken(server);
+  registerReportIssue(server);
 
   return server;
 }

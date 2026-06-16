@@ -107,6 +107,250 @@ function LiveDiffStatus({ isEnabled, isRunning, matchRate, error, onToggle }: Li
   );
 }
 
+interface ModeToolbarProps {
+  activeMode: OverlayViewMode;
+  onModeClick: (mode: OverlayViewMode) => void;
+}
+
+function ModeToolbar({ activeMode, onModeClick }: ModeToolbarProps) {
+  const { t } = useTranslation();
+
+  return (
+    <div className="flex flex-wrap gap-2">
+      {FLOW_OVERLAY_MODES.map((mode) => {
+        const Icon = mode.icon;
+        const isActive = activeMode === mode.id;
+        return (
+          <button
+            key={`${mode.label}-${mode.id}`}
+            type="button"
+            className="fd-btn"
+            onClick={() => onModeClick(mode.id)}
+            title={`${t(`viewMode.${mode.id}`)} - ${t(`viewMode.desc_${mode.id}`)}`}
+            aria-label={t(`viewMode.${mode.id}`)}
+            style={{
+              background: isActive ? "var(--cobalt)" : "var(--surface)",
+              color: isActive ? "var(--cobalt-fg)" : "var(--fg-2)",
+              borderColor: isActive ? "transparent" : "var(--border-strong)",
+            }}
+          >
+            <Icon className="h-4 w-4" />
+            {mode.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+interface ScaleModeControlProps {
+  scaleMode: string;
+  onChange: (scaleMode: "fit_width" | "actual_size") => void;
+}
+
+function ScaleModeControl({ scaleMode, onChange }: ScaleModeControlProps) {
+  const { t } = useTranslation();
+
+  return (
+    <div
+      className="flex items-center gap-1 rounded-[var(--radius-sm-token)] p-1"
+      style={{ background: "var(--surface-2)" }}
+    >
+      <button
+        type="button"
+        className="rounded-[10px] px-3 py-1.5 font-semibold text-xs"
+        onClick={() => onChange("fit_width")}
+        style={{
+          background: scaleMode === "fit_width" ? "var(--surface)" : "transparent",
+          color: scaleMode === "fit_width" ? "var(--fg)" : "var(--muted-fg)",
+        }}
+      >
+        {t("overlay.scaleModeFitWidth")}
+      </button>
+      <button
+        type="button"
+        className="rounded-[10px] px-3 py-1.5 font-semibold text-xs"
+        onClick={() => onChange("actual_size")}
+        style={{
+          background: scaleMode === "actual_size" ? "var(--surface)" : "transparent",
+          color: scaleMode === "actual_size" ? "var(--fg)" : "var(--muted-fg)",
+        }}
+      >
+        {t("overlay.scaleModeActual")}
+      </button>
+    </div>
+  );
+}
+
+interface OverlayControlsProps {
+  overlayScaleMode: string;
+  overlayScale: number;
+  opacity: number;
+  splitPosition: number;
+  toggleIntervalMs: number;
+  setOverlayScaleMode: (scaleMode: "fit_width" | "actual_size") => void;
+  setOverlayScale: (scale: number) => void;
+  setOpacity: (opacity: number) => void;
+  setSplitPosition: (position: number) => void;
+  setToggleIntervalMs: (intervalMs: number) => void;
+}
+
+function OverlayControls({
+  overlayScaleMode,
+  overlayScale,
+  opacity,
+  splitPosition,
+  toggleIntervalMs,
+  setOverlayScaleMode,
+  setOverlayScale,
+  setOpacity,
+  setSplitPosition,
+  setToggleIntervalMs,
+}: OverlayControlsProps) {
+  const { t } = useTranslation();
+
+  return (
+    <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
+      <ScaleModeControl scaleMode={overlayScaleMode} onChange={setOverlayScaleMode} />
+      <SliderRow
+        label={t("overlay.scale")}
+        min={0.25}
+        max={2}
+        step={0.01}
+        value={overlayScale}
+        displayValue={`${Math.round(overlayScale * 100)}%`}
+        onChange={setOverlayScale}
+      />
+      <SliderRow
+        label={t("compare.opacity")}
+        min={0}
+        max={1}
+        step={0.01}
+        value={opacity}
+        displayValue={`${Math.round(opacity * 100)}%`}
+        onChange={setOpacity}
+      />
+      <SliderRow
+        label={t("overlay.splitPosition")}
+        min={0}
+        max={1}
+        step={0.01}
+        value={splitPosition}
+        displayValue={`${Math.round(splitPosition * 100)}%`}
+        onChange={setSplitPosition}
+      />
+      <SliderRow
+        label={t("overlay.toggleSpeed")}
+        min={100}
+        max={2000}
+        step={50}
+        value={toggleIntervalMs}
+        displayValue={`${toggleIntervalMs}ms`}
+        onChange={setToggleIntervalMs}
+      />
+    </div>
+  );
+}
+
+interface PixelDiffSummaryProps {
+  overlayViewMode: OverlayViewMode;
+  isPixelDiffRunning: boolean;
+  pixelDiffMatchRate: number | null;
+}
+
+function PixelDiffSummary({
+  overlayViewMode,
+  isPixelDiffRunning,
+  pixelDiffMatchRate,
+}: PixelDiffSummaryProps) {
+  const { t } = useTranslation();
+  const statusText = isPixelDiffRunning
+    ? t("overlay.analyzing")
+    : pixelDiffMatchRate !== null
+      ? `${t("compare.matchRate")}: ${pixelDiffMatchRate}%`
+      : t(`viewMode.${overlayViewMode}`);
+
+  return (
+    <div className="flex flex-wrap items-center gap-3">
+      <span
+        className="fd-pill"
+        style={{
+          background: overlayViewMode === "pixel_diff" ? "var(--diff-soft)" : "var(--cobalt-soft)",
+          color: overlayViewMode === "pixel_diff" ? "var(--diff)" : "var(--cobalt)",
+        }}
+      >
+        {isPixelDiffRunning ? (
+          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+        ) : (
+          <Zap className="h-3.5 w-3.5" />
+        )}
+        Live diff
+      </span>
+      <span className="text-xs" style={{ color: "var(--muted-fg)" }}>
+        {statusText}
+      </span>
+      <span className="mono font-bold text-xs" style={{ color: getMatchColor(pixelDiffMatchRate) }}>
+        {pixelDiffMatchRate !== null ? `${pixelDiffMatchRate}%` : "--"}
+      </span>
+    </div>
+  );
+}
+
+interface OverlayPreviewProps {
+  visibleUrl: string;
+  splitPosition: number;
+  opacity: number;
+  activeTone: string;
+}
+
+function OverlayPreview({ visibleUrl, splitPosition, opacity, activeTone }: OverlayPreviewProps) {
+  return (
+    <div
+      className="overflow-hidden rounded-[var(--radius-token)]"
+      style={{ background: "var(--bg-2)", border: "1px solid var(--border)" }}
+    >
+      <div
+        className="flex items-center gap-2 px-3 py-2"
+        style={{ borderBottom: "1px solid var(--border)", background: "var(--surface-2)" }}
+      >
+        <span className="h-2.5 w-2.5 rounded-full" style={{ background: "var(--diff)" }} />
+        <span className="h-2.5 w-2.5 rounded-full" style={{ background: "var(--warn)" }} />
+        <span className="h-2.5 w-2.5 rounded-full" style={{ background: "var(--match)" }} />
+        <span className="mono ml-2 min-w-0 truncate text-xs" style={{ color: "var(--muted-fg)" }}>
+          {visibleUrl}
+        </span>
+      </div>
+      <div className="relative h-32 overflow-hidden" style={{ background: "var(--surface)" }}>
+        <div
+          className="absolute inset-x-8 top-6 h-16 rounded-[var(--radius-sm-token)]"
+          style={{
+            background: "linear-gradient(135deg, var(--surface-2), var(--bg-2))",
+            border: "1px solid var(--border)",
+          }}
+        />
+        <div
+          className="absolute top-6 bottom-6"
+          style={{
+            left: `${Math.round(splitPosition * 100)}%`,
+            width: 2,
+            background: activeTone,
+            boxShadow: `0 0 0 999px color-mix(in oklch, ${activeTone} 8%, transparent)`,
+          }}
+        />
+        <div
+          className="absolute right-4 bottom-4 left-4 h-2 rounded-full"
+          style={{ background: "var(--border)" }}
+        >
+          <div
+            className="h-full rounded-full"
+            style={{ width: `${Math.round(opacity * 100)}%`, background: activeTone }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function LiveOverlayPanel({ onNavigate }: LiveOverlayPanelProps) {
   const { t } = useTranslation();
   const panelRef = useRef<HTMLDivElement>(null);
@@ -287,30 +531,7 @@ export function LiveOverlayPanel({ onNavigate }: LiveOverlayPanelProps) {
       {isOpen && overlayImageBase64 && (
         <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_360px]">
           <div className="space-y-3">
-            <div className="flex flex-wrap gap-2">
-              {FLOW_OVERLAY_MODES.map((mode) => {
-                const Icon = mode.icon;
-                const isActive = overlayViewMode === mode.id;
-                return (
-                  <button
-                    key={`${mode.label}-${mode.id}`}
-                    type="button"
-                    className="fd-btn"
-                    onClick={() => handleModeClick(mode.id)}
-                    title={`${t(`viewMode.${mode.id}`)} - ${t(`viewMode.desc_${mode.id}`)}`}
-                    aria-label={t(`viewMode.${mode.id}`)}
-                    style={{
-                      background: isActive ? "var(--cobalt)" : "var(--surface)",
-                      color: isActive ? "var(--cobalt-fg)" : "var(--fg-2)",
-                      borderColor: isActive ? "transparent" : "var(--border-strong)",
-                    }}
-                  >
-                    <Icon className="h-4 w-4" />
-                    {mode.label}
-                  </button>
-                );
-              })}
-            </div>
+            <ModeToolbar activeMode={overlayViewMode} onModeClick={handleModeClick} />
             <LiveDiffStatus
               isEnabled={isLiveDiffEnabled}
               isRunning={isLiveDiffRunning}
@@ -319,152 +540,32 @@ export function LiveOverlayPanel({ onNavigate }: LiveOverlayPanelProps) {
               onToggle={() => setLiveDiffEnabled(!isLiveDiffEnabled)}
             />
 
-            <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
-              <div
-                className="flex items-center gap-1 rounded-[var(--radius-sm-token)] p-1"
-                style={{ background: "var(--surface-2)" }}
-              >
-                <button
-                  type="button"
-                  className="rounded-[10px] px-3 py-1.5 font-semibold text-xs"
-                  onClick={() => setOverlayScaleMode("fit_width")}
-                  style={{
-                    background: overlayScaleMode === "fit_width" ? "var(--surface)" : "transparent",
-                    color: overlayScaleMode === "fit_width" ? "var(--fg)" : "var(--muted-fg)",
-                  }}
-                >
-                  {t("overlay.scaleModeFitWidth")}
-                </button>
-                <button
-                  type="button"
-                  className="rounded-[10px] px-3 py-1.5 font-semibold text-xs"
-                  onClick={() => setOverlayScaleMode("actual_size")}
-                  style={{
-                    background:
-                      overlayScaleMode === "actual_size" ? "var(--surface)" : "transparent",
-                    color: overlayScaleMode === "actual_size" ? "var(--fg)" : "var(--muted-fg)",
-                  }}
-                >
-                  {t("overlay.scaleModeActual")}
-                </button>
-              </div>
+            <OverlayControls
+              overlayScaleMode={overlayScaleMode}
+              overlayScale={overlayScale}
+              opacity={opacity}
+              splitPosition={splitPosition}
+              toggleIntervalMs={toggleIntervalMs}
+              setOverlayScaleMode={setOverlayScaleMode}
+              setOverlayScale={setOverlayScale}
+              setOpacity={setOpacity}
+              setSplitPosition={setSplitPosition}
+              setToggleIntervalMs={setToggleIntervalMs}
+            />
 
-              <SliderRow
-                label={t("overlay.scale")}
-                min={0.25}
-                max={2}
-                step={0.01}
-                value={overlayScale}
-                displayValue={`${Math.round(overlayScale * 100)}%`}
-                onChange={setOverlayScale}
-              />
-              <SliderRow
-                label={t("compare.opacity")}
-                min={0}
-                max={1}
-                step={0.01}
-                value={opacity}
-                displayValue={`${Math.round(opacity * 100)}%`}
-                onChange={setOpacity}
-              />
-              <SliderRow
-                label={t("overlay.splitPosition")}
-                min={0}
-                max={1}
-                step={0.01}
-                value={splitPosition}
-                displayValue={`${Math.round(splitPosition * 100)}%`}
-                onChange={setSplitPosition}
-              />
-              <SliderRow
-                label={t("overlay.toggleSpeed")}
-                min={100}
-                max={2000}
-                step={50}
-                value={toggleIntervalMs}
-                displayValue={`${toggleIntervalMs}ms`}
-                onChange={setToggleIntervalMs}
-              />
-            </div>
-
-            <div className="flex flex-wrap items-center gap-3">
-              <span
-                className="fd-pill"
-                style={{
-                  background:
-                    overlayViewMode === "pixel_diff" ? "var(--diff-soft)" : "var(--cobalt-soft)",
-                  color: overlayViewMode === "pixel_diff" ? "var(--diff)" : "var(--cobalt)",
-                }}
-              >
-                {isPixelDiffRunning ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <Zap className="h-3.5 w-3.5" />
-                )}
-                Live diff
-              </span>
-              <span className="text-xs" style={{ color: "var(--muted-fg)" }}>
-                {isPixelDiffRunning
-                  ? t("overlay.analyzing")
-                  : pixelDiffMatchRate !== null
-                    ? `${t("compare.matchRate")}: ${pixelDiffMatchRate}%`
-                    : t(`viewMode.${overlayViewMode}`)}
-              </span>
-              <span
-                className="mono font-bold text-xs"
-                style={{ color: getMatchColor(pixelDiffMatchRate) }}
-              >
-                {pixelDiffMatchRate !== null ? `${pixelDiffMatchRate}%` : "--"}
-              </span>
-            </div>
+            <PixelDiffSummary
+              overlayViewMode={overlayViewMode}
+              isPixelDiffRunning={isPixelDiffRunning}
+              pixelDiffMatchRate={pixelDiffMatchRate}
+            />
           </div>
 
-          <div
-            className="overflow-hidden rounded-[var(--radius-token)]"
-            style={{ background: "var(--bg-2)", border: "1px solid var(--border)" }}
-          >
-            <div
-              className="flex items-center gap-2 px-3 py-2"
-              style={{ borderBottom: "1px solid var(--border)", background: "var(--surface-2)" }}
-            >
-              <span className="h-2.5 w-2.5 rounded-full" style={{ background: "var(--diff)" }} />
-              <span className="h-2.5 w-2.5 rounded-full" style={{ background: "var(--warn)" }} />
-              <span className="h-2.5 w-2.5 rounded-full" style={{ background: "var(--match)" }} />
-              <span
-                className="mono ml-2 min-w-0 truncate text-xs"
-                style={{ color: "var(--muted-fg)" }}
-              >
-                {visibleUrl}
-              </span>
-            </div>
-            <div className="relative h-32 overflow-hidden" style={{ background: "var(--surface)" }}>
-              <div
-                className="absolute inset-x-8 top-6 h-16 rounded-[var(--radius-sm-token)]"
-                style={{
-                  background: "linear-gradient(135deg, var(--surface-2), var(--bg-2))",
-                  border: "1px solid var(--border)",
-                }}
-              />
-              <div
-                className="absolute top-6 bottom-6"
-                style={{
-                  left: `${Math.round(splitPosition * 100)}%`,
-                  width: 2,
-                  background: activeTone,
-                  boxShadow: `0 0 0 999px color-mix(in oklch, ${activeTone} 8%, transparent)`,
-                }}
-              />
-              <div
-                className="absolute right-4 bottom-4 left-4 h-2 rounded-full"
-                style={{ background: "var(--border)" }}
-              >
-                <div
-                  className="h-full rounded-full"
-                  style={{ width: `${Math.round(opacity * 100)}%`, background: activeTone }}
-                />
-              </div>
-            </div>
-          </div>
+          <OverlayPreview
+            visibleUrl={visibleUrl}
+            splitPosition={splitPosition}
+            opacity={opacity}
+            activeTone={activeTone}
+          />
         </div>
       )}
 

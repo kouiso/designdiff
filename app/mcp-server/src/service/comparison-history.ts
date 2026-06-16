@@ -94,9 +94,9 @@ export async function getComparisonEntry(
     const raw = await fs.readFile(filePath, "utf-8");
     const parsed: unknown = JSON.parse(raw);
     if (!isRecord(parsed)) return undefined;
-    const storedId = parsed["comparisonId"];
-    const sourceKey = parsed["sourceKey"];
-    const rawResult = parsed["result"];
+    const storedId = parsed.comparisonId;
+    const sourceKey = parsed.sourceKey;
+    const rawResult = parsed.result;
     const result = CompareDesignResultSchema.parse(rawResult);
     return {
       comparisonId: typeof storedId === "string" ? storedId : comparisonId,

@@ -14,6 +14,7 @@ import {
   FigmaClient,
   type FigmaCacheStrategy,
   extractFrames,
+  extractNestedFrames,
   type FigmaFileResponse,
   type FigmaNode,
 } from "@figdiff/shared";
@@ -70,9 +71,10 @@ export class FigmaService {
     this.client = new FigmaClient(token, this.cache, authMode);
   }
 
-  async getFrames(fileKey: string): Promise<Frame[]> {
-    const file = await this.client.getFile(fileKey, 2);
-    return extractFrames(file);
+  async getFrames(fileKey: string, options?: { includeNested?: boolean }): Promise<Frame[]> {
+    const fetchDepth = options?.includeNested ? 6 : 2;
+    const file = await this.client.getFile(fileKey, fetchDepth);
+    return options?.includeNested ? extractNestedFrames(file) : extractFrames(file);
   }
 
   async getFrameImage(

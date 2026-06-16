@@ -22,15 +22,27 @@ export function registerListFrames(server: McpServer): void {
         "Figmaファイル内のフレーム一覧を取得します。各フレームのID, 名前, サイズを返します。レスポンスが大きい場合は切り詰め、全件は framesDetailPath の JSON を Read で参照。",
       inputSchema: {
         figma_url: z.string().describe("FigmaファイルのURL"),
+        include_nested: z
+          .boolean()
+          .optional()
+          .describe(
+            "モーダル・オーバーレイ等、FRAMEノード内にネストされたフレームも含めて取得（default: false）",
+          ),
       },
     },
     async (args) => {
       try {
         const fileKey = extractFileKey(args.figma_url);
         const figmaService = await createFigmaService();
-        const frames = await figmaService.getFrames(fileKey);
+        const frames = await figmaService.getFrames(fileKey, {
+          includeNested: args.include_nested,
+        });
 
-        const result = { frameCount: frames.length, frames };
+        const result = {
+          frameCount: frames.length,
+          includeNested: args.include_nested ?? false,
+          frames,
+        };
         const serialized = JSON.stringify(result);
 
         if (serialized.length > INLINE_RESPONSE_BUDGET) {
@@ -38,6 +50,7 @@ export function registerListFrames(server: McpServer): void {
           // Fit as many frames inline as possible within budget
           const skeleton = JSON.stringify({
             frameCount: frames.length,
+            includeNested: args.include_nested ?? false,
             frames: [],
             framesTruncated: true,
             framesDetailPath,
@@ -56,6 +69,7 @@ export function registerListFrames(server: McpServer): void {
                 type: "text",
                 text: JSON.stringify({
                   frameCount: frames.length,
+                  includeNested: args.include_nested ?? false,
                   frames: frames.slice(0, inlineCount),
                   framesTruncated: true,
                   framesDetailPath,

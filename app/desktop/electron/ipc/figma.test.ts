@@ -104,7 +104,10 @@ describe("Figma IPC secret-safe error contract", () => {
   it("registers Figma handlers that return fixed text for unknown Figma request failures", async () => {
     const { registerFigmaHandlers } = await import("./figma");
     const secretValue = "figd_secret_token_value_12345";
-    mocks.resolveFigmaAccessToken.mockResolvedValue({ authMode: "pat", token: "figd_valid_token_12345" });
+    mocks.resolveFigmaAccessToken.mockResolvedValue({
+      authMode: "pat",
+      token: "figd_valid_token_12345",
+    });
     mocks.getFile.mockRejectedValueOnce(new Error(`network failed ${secretValue}`));
 
     registerFigmaHandlers();
