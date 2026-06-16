@@ -32,7 +32,7 @@ const HOME_PATH_RE = /\/home\/[^/]+\//g;
 const USERS_PATH_RE = /\/Users\/[^/]+\//g;
 const WINDOWS_PATH_RE = /\b[A-Za-z]:[/\\]Users[/\\][^/\\]+[/\\]/g;
 const TOKEN_RE =
-  /\b(ghp_[A-Za-z0-9]+|gho_[A-Za-z0-9]+|ghs_[A-Za-z0-9]+|ghu_[A-Za-z0-9]+|ghr_[A-Za-z0-9]+|figd_[A-Za-z0-9]+|github_pat_[A-Za-z0-9_]+)\b/g;
+  /\b(ghp_[A-Za-z0-9]+|gho_[A-Za-z0-9]+|ghs_[A-Za-z0-9]+|ghu_[A-Za-z0-9]+|ghr_[A-Za-z0-9]+|figd_[A-Za-z0-9_]+|github_pat_[A-Za-z0-9_]+)\b/g;
 const FIGMA_KEY_RE = /figma\.com\/(design|file|proto)\/([A-Za-z0-9]{8,})/g;
 
 interface SanitizeResult {
@@ -147,13 +147,13 @@ export class GithubService {
       return;
     }
     if (checkRes.status !== 404) {
-      return; // 403 or other — no write permission, skip silently
+      return; // 403 等は書き込み権限なし — 無視
     }
     await fetch(`https://api.github.com/repos/${owner}/${repo}/labels`, {
       method: "POST",
       headers: this.headers(),
       body: JSON.stringify({ name, color: "ededed" }),
-    }).catch(() => undefined); // ignore creation errors (race or no permission)
+    }).catch(() => undefined); // 作成エラーは無視（競合または権限なし）
   }
 
   async findOpenIssueByTitle(
