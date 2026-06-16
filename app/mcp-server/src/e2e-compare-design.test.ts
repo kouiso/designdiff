@@ -68,7 +68,10 @@ function findTextContent(result: Record<string, unknown>): TextContent | undefin
   return getContentItems(result).find((c): c is TextContent => c.type === "text");
 }
 
-async function fetchDiffReportJson(client: Client, comparisonId: string): Promise<Record<string, unknown>> {
+async function fetchDiffReportJson(
+  client: Client,
+  comparisonId: string,
+): Promise<Record<string, unknown>> {
   const result = await client.callTool({
     name: "generate_diff_report",
     arguments: {

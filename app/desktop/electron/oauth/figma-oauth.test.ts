@@ -99,11 +99,7 @@ const httpMock = vi.hoisted(() => {
 
         const response = new MockResponse();
         if (callback) callback(response);
-        activeServer.emit(
-          "request",
-          { method: "GET", url: options.path ?? "/" },
-          response,
-        );
+        activeServer.emit("request", { method: "GET", url: options.path ?? "/" }, response);
       },
     };
   });

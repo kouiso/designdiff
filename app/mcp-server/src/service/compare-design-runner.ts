@@ -180,11 +180,9 @@ async function resolveNodeId(
     throw new Error(`No frame specified and no frames found in the file.\n\n${buildGuidance()}`);
   }
   const autoSelected = ranked[0];
-  const widthDiff = targetWidth !== undefined ? Math.abs(autoSelected.width - targetWidth) : undefined;
-  const deviationNote =
-    widthDiff !== undefined && widthDiff > 10
-      ? ` (幅差 ${widthDiff}px)`
-      : "";
+  const widthDiff =
+    targetWidth !== undefined ? Math.abs(autoSelected.width - targetWidth) : undefined;
+  const deviationNote = widthDiff !== undefined && widthDiff > 10 ? ` (幅差 ${widthDiff}px)` : "";
   console.error(
     `[compare_design] node-id未指定のため幅${targetWidth ?? "不明"}pxに最も近い "${autoSelected.name}" (${autoSelected.id}) を自動選択${deviationNote}`,
   );

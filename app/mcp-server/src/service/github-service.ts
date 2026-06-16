@@ -111,9 +111,7 @@ function getGithubIssueSearchItems(value: unknown): GithubIssueSearchItem[] {
 }
 
 function isGithubIssueSummary(value: unknown): value is GithubIssueSummary {
-  return (
-    isRecord(value) && typeof value.number === "number" && typeof value.html_url === "string"
-  );
+  return isRecord(value) && typeof value.number === "number" && typeof value.html_url === "string";
 }
 
 export class GithubService {
