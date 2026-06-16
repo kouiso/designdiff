@@ -13,6 +13,10 @@ export interface CredentialStoreInfo {
 
 let _backend: Backend | undefined;
 
+export function selectFileCredentialBackend(): void {
+  _backend = createFileBackend();
+}
+
 export function getBackend(): Backend {
   if (_backend) return _backend;
   if (probeKeychainAvailability()) {

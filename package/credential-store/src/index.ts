@@ -3,6 +3,7 @@ export {
   deleteCredential,
   getCredential,
   setCredential,
+  selectFileCredentialBackend,
 } from "./credential-store.js";
 export type { CredentialStoreInfo } from "./credential-store.js";
 export {
