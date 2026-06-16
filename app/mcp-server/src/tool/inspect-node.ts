@@ -10,6 +10,7 @@ import { extractFileKey } from "@figdiff/shared";
 
 import { transformNodeToInspection } from "../service/figma-node-transformer.js";
 import { createFigmaService } from "../service/figma-service.js";
+import { persistDetailJson } from "../service/persist-detail.js";
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
@@ -19,7 +20,11 @@ const DESCRIPTION = `【使用タイミング】compare_design の status が "F
 【次のアクション】cssSuggestion に従ってコードを修正 → compare_design で再検証
 
 Figma Dev Modeで見られるような詳細情報を取得します。
-フレーム全体のスペックが必要な場合は get_design_tokens を使ってください。`;
+フレーム全体のスペックが必要な場合は get_design_tokens を使ってください。
+レスポンスは肥大化防止のため切り詰める場合がある。全件は *DetailPath の JSON を Read で参照。`;
+
+const INLINE_RESPONSE_BUDGET = 3500;
+const MAX_CHILDREN_INLINE = 25;
 
 export function registerInspectNode(server: McpServer): void {
   server.registerTool(
@@ -63,22 +68,65 @@ export function registerInspectNode(server: McpServer): void {
 
         const inspections = await Promise.all(
           uniqueIds.map(async (nodeId) => {
-            const node = await figmaService.getNodeDetails(fileKey, nodeId);
+            const node = await figmaService.getNodeDetails(fileKey, nodeId, 1);
             return transformNodeToInspection(node);
           }),
         );
 
+        if (inspections.length === 1) {
+          // Single node: only cap children inline
+          const inspection = inspections[0];
+          const children = inspection.childrenSummary;
+          if (children && children.length > MAX_CHILDREN_INLINE) {
+            const capped = {
+              ...inspection,
+              childrenSummary: children.slice(0, MAX_CHILDREN_INLINE),
+              childrenTruncated: true,
+              childrenCount: children.length,
+            };
+            return {
+              content: [{ type: "text", text: JSON.stringify(capped) }],
+            };
+          }
+          return {
+            content: [{ type: "text", text: JSON.stringify(inspection) }],
+          };
+        }
+
+        // Multi-node: cap children per inspection, then check total budget
+        const capped = inspections.map((inspection) => {
+          const children = inspection.childrenSummary;
+          if (children && children.length > MAX_CHILDREN_INLINE) {
+            return {
+              ...inspection,
+              childrenSummary: children.slice(0, MAX_CHILDREN_INLINE),
+              childrenTruncated: true,
+              childrenCount: children.length,
+            };
+          }
+          return inspection;
+        });
+
+        const serialized = JSON.stringify(capped);
+        if (serialized.length > INLINE_RESPONSE_BUDGET) {
+          const detailPath = await persistDetailJson(
+            inspections,
+            `inspect-${Date.now()}`,
+          );
+          const summaries = inspections.map((inspection) => ({
+            nodeId: inspection.nodeId,
+            nodeName: inspection.nodeName,
+            nodeType: inspection.nodeType,
+            cssSuggestion: inspection.cssSuggestion,
+            detailPath,
+          }));
+          return {
+            content: [{ type: "text", text: JSON.stringify(summaries) }],
+          };
+        }
+
         return {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify(
-                inspections.length === 1 ? inspections[0] : inspections,
-                null,
-                2,
-              ),
-            },
-          ],
+          content: [{ type: "text", text: serialized }],
         };
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);

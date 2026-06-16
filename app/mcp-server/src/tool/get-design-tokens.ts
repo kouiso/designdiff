@@ -10,6 +10,7 @@ import { extractFileKey, extractNodeId } from "@figdiff/shared";
 
 import { extractDesignTokens } from "../service/figma-node-transformer.js";
 import { createFigmaService } from "../service/figma-service.js";
+import { persistDetailJson } from "../service/persist-detail.js";
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
@@ -17,7 +18,10 @@ const DESCRIPTION = `Figmaフレーム全体のデザイントークン（paddin
 
 **注意: 実装の修正時はこのツールではなく、compare_design → inspect_node のフローを推奨します。**
 このツールは、新規ページの初回実装時や、フレーム全体の概要を把握したい場合に使用してください。
-修正作業では、差分がある箇所だけを inspect_node で取得するほうが効率的です。`;
+修正作業では、差分がある箇所だけを inspect_node で取得するほうが効率的です。
+レスポンスは肥大化防止のため切り詰める場合がある。全件は tokensDetailPath の JSON を Read で参照。`;
+
+const INLINE_RESPONSE_BUDGET = 3500;
 
 export function registerGetDesignTokens(server: McpServer): void {
   server.registerTool(
@@ -74,14 +78,51 @@ export function registerGetDesignTokens(server: McpServer): void {
           };
         }
 
-        const node = await figmaService.getNodeDetails(fileKey, nodeId);
+        const node = await figmaService.getNodeDetails(fileKey, nodeId, args.depth);
         const tokens = extractDesignTokens(node, args.depth);
+
+        const result = { nodeId, tokenCount: tokens.length, tokens };
+        const serialized = JSON.stringify(result);
+
+        if (serialized.length > INLINE_RESPONSE_BUDGET) {
+          const tokensDetailPath = await persistDetailJson(tokens, `tokens-${Date.now()}`);
+          // Fit as many tokens inline as possible within budget
+          const skeleton = JSON.stringify({
+            nodeId,
+            tokenCount: tokens.length,
+            tokens: [],
+            tokensTruncated: true,
+            tokensDetailPath,
+          });
+          let inlineCount = 0;
+          let accumulated = skeleton.length;
+          for (const token of tokens) {
+            const tokenLen = JSON.stringify(token).length + 1; // +1 for comma separator
+            if (accumulated + tokenLen > INLINE_RESPONSE_BUDGET) break;
+            accumulated += tokenLen;
+            inlineCount++;
+          }
+          return {
+            content: [
+              {
+                type: "text",
+                text: JSON.stringify({
+                  nodeId,
+                  tokenCount: tokens.length,
+                  tokens: tokens.slice(0, inlineCount),
+                  tokensTruncated: true,
+                  tokensDetailPath,
+                }),
+              },
+            ],
+          };
+        }
 
         return {
           content: [
             {
               type: "text",
-              text: JSON.stringify({ nodeId, tokenCount: tokens.length, tokens }, null, 2),
+              text: serialized,
             },
           ],
         };

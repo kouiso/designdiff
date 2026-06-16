@@ -14,11 +14,11 @@ import {
   CompareDesignResultSchema,
   IgnoreRegionSchema,
   type CompareDesignResult,
-  type DiffRegion,
 } from "@figdiff/shared";
 
 import { writeActiveSession } from "../service/active-session.js";
 import { runCompareDesign } from "../service/compare-design-runner.js";
+import { persistDetailJson } from "../service/persist-detail.js";
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
@@ -121,13 +121,6 @@ async function persistDiffImage(base64Data: string, comparisonId: string): Promi
   return filePath;
 }
 
-async function persistDiffRegions(regions: DiffRegion[], comparisonId: string): Promise<string> {
-  const directoryPath = path.join(homedir(), ".figdiff", "results");
-  await fs.mkdir(directoryPath, { recursive: true });
-  const filePath = path.join(directoryPath, `${comparisonId}.regions.json`);
-  await fs.writeFile(filePath, JSON.stringify(regions, null, 2));
-  return filePath;
-}
 
 export function registerCompareDesign(server: McpServer): void {
   server.registerTool(
@@ -213,7 +206,7 @@ export function registerCompareDesign(server: McpServer): void {
           ? sortedRegions.slice(0, MAX_INLINE_DIFF_REGIONS)
           : sortedRegions;
         const regionsDetailPath = truncated
-          ? await persistDiffRegions(sortedRegions, result.comparisonId)
+          ? await persistDetailJson(sortedRegions, `${result.comparisonId}.regions`)
           : undefined;
 
         const resultData = CompareDesignResultSchema.parse({
