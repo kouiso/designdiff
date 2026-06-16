@@ -116,7 +116,9 @@ Use the figdiff MCP tool compare_design with:
 - screenshot_path: /absolute/path/to/screenshot.png
 ```
 
-`compare_design` requires `screenshot_path` to be a local screenshot file path. It does not accept a URL directly. Capture the implementation first, then pass the saved file path:
+`compare_design` supports two capture modes:
+
+**Option A — Pre-captured screenshot (always works):**
 
 ```bash
 npx playwright screenshot http://localhost:5173 /tmp/figdiff-screenshot.png
@@ -127,6 +129,33 @@ Use the figdiff MCP tool compare_design with:
 - figma_url: https://www.figma.com/design/FILE_KEY/Project?node-id=1-2
 - screenshot_path: /tmp/figdiff-screenshot.png
 ```
+
+**Option B — `screenshot_url` with internal Playwright capture:**
+
+Pass `screenshot_url` instead of `screenshot_path` and figdiff captures the page internally.
+
+```text
+Use the figdiff MCP tool compare_design with:
+- figma_url: https://www.figma.com/design/FILE_KEY/Project?node-id=1-2
+- screenshot_url: http://localhost:5173
+```
+
+> **WSL / sandbox network isolation**: If the MCP server runs in WSL or a sandboxed environment, `localhost` inside figdiff may not reach the host's dev server. Fix by setting `FIGDIFF_CDP_ENDPOINT` in `.mcp.json` to a Chrome instance running on the host:
+>
+> ```json
+> {
+>   "mcpServers": {
+>     "figdiff": {
+>       "env": {
+>         "FIGDIFF_CDP_ENDPOINT": "http://localhost:9222"
+>       }
+>     }
+>   }
+> }
+> ```
+>
+> Then start Chrome on the host with `--remote-debugging-port=9222`. figdiff will capture via that Chrome (which can reach host `localhost`) instead of launching its own Chromium.
+> If `FIGDIFF_CDP_ENDPOINT` is not set, figdiff launches its own Chromium (default behaviour, no config needed in single-network environments).
 
 ## v2.0 DiffReport Pipeline
 
