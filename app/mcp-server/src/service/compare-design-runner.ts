@@ -356,10 +356,11 @@ async function resolveLastUsedFallback(
   if (!lastUsed) {
     return { fallbackNodeId: undefined, lastUsedNodeNote: undefined };
   }
+  const normalizedNodeId = normalizeNodeId(lastUsed.nodeId);
   const note = lastUsed.nodeName
-    ? `前回使用したノード "${lastUsed.nodeName}" (${lastUsed.nodeId}) を自動使用しました。`
-    : `前回使用したノード ${lastUsed.nodeId} を自動使用しました。`;
-  return { fallbackNodeId: lastUsed.nodeId, lastUsedNodeNote: note };
+    ? `前回使用したノード "${lastUsed.nodeName}" (${normalizedNodeId}) を自動使用しました。`
+    : `前回使用したノード ${normalizedNodeId} を自動使用しました。`;
+  return { fallbackNodeId: normalizedNodeId, lastUsedNodeNote: note };
 }
 
 // blank_frame 警告が出たとき、フレーム候補一覧を suggestedFix に付与する。
@@ -406,6 +407,19 @@ async function resolveScreenshotPath(
   args: CompareDesignRunArgs,
   fallbackNodeId?: string,
 ): Promise<string> {
+  const screenshotSources = [
+    args.screenshot && args.screenshot.trim() !== "" ? "screenshot" : undefined,
+    args.screenshot_url ? "screenshot_url" : undefined,
+    args.capture_device ? "capture_device" : undefined,
+  ].filter((source): source is string => Boolean(source));
+  if (screenshotSources.length > 1) {
+    throw new Error(
+      `Specify exactly one of screenshot, screenshot_url, or capture_device (received: ${screenshotSources.join(
+        ", ",
+      )}).`,
+    );
+  }
+
   if (args.capture_device) {
     return captureDeviceScreenshot({ device: args.capture_device });
   }
@@ -453,7 +467,8 @@ async function resolveDesignAssets(
   if (parsedDesignSource.type === "figma_url") {
     const figmaService = await createFigmaService();
     // nodeId が未指定のとき、前回使用ノードのフォールバックを試みる。
-    const effectiveNodeId = parsedDesignSource.nodeId ?? fallbackNodeId;
+    const effectiveNodeId =
+      parsedDesignSource.nodeId ?? (fallbackNodeId ? normalizeNodeId(fallbackNodeId) : undefined);
     const resolvedNodeId = await resolveNodeId(
       figmaService,
       parsedDesignSource.fileKey,
