@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "@figdiff/credential-store": "workspace:*",
+    "@figdiff/mobile-capture": "workspace:*",
     "@figdiff/shared": "workspace:*",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "pixelmatch": "^5.3.0",

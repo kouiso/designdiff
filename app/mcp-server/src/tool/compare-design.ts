@@ -42,6 +42,7 @@ const DESCRIPTION = `デザインと実装のピクセル差分を検出しま�
 - design_source: Figma URL（node-id付き推奨） or ローカル画像パス
 - screenshot: 実装スクリーンショットのローカルパス（screenshot_url 使用時はプレースホルダ文字列で可）
 - screenshot_url: 撮影対象URL。指定時はPlaywrightで内部撮影しscreenshotの代わりに使用
+- capture_device: 接続済みモバイル端末/SimulatorからPNGを撮影しscreenshotの代わりに使用（android/ios-sim/ios-device）
 - capture_width: 撮影幅(px)。省略時はFigmaフレームの実幅を自動取得（screenshot_url指定時のみ有効）
 - threshold: 色差の許容閾値（0-1）。profile を指定した場合はそちらが既定値になる
 - profile: 比較プロファイル（strict/balanced/layout）。threshold 直接指定で上書き可
@@ -149,6 +150,12 @@ export function registerCompareDesign(server: McpServer): void {
           .optional()
           .describe(
             "撮影対象のURL。指定時はPlaywrightで内部撮影し、screenshotの代わりに使用する。screenshotとどちらか一方を指定。別ネットワーク環境（WSL/サンドボックス）でlocalhost到達が失敗する場合は環境変数FIGDIFF_CDP_ENDPOINTにホストChromeのCDPアドレスを設定してください。",
+          ),
+        capture_device: z
+          .enum(["android", "ios-sim", "ios-device"])
+          .optional()
+          .describe(
+            "接続済みモバイル端末/SimulatorからPNGを撮影し、screenshotの代わりに使用する。android=adb、ios-sim=xcrun simctl、ios-device=pymobiledevice3。",
           ),
         capture_width: z
           .number()
