@@ -36,16 +36,6 @@ function figmaCounterAxisToAlign(value: string | undefined): string | undefined 
   }
 }
 
-function applyOpacityToHex(color: string, opacity: number | undefined): string {
-  if (opacity === undefined || opacity >= 1 || !color.startsWith("#")) return color;
-
-  const alphaHex = color.length === 9 ? color.slice(7, 9) : "FF";
-  const alpha = Number.parseInt(alphaHex, 16) / 255;
-  return `${color.slice(0, 7)}${Math.round(alpha * opacity * 255)
-    .toString(16)
-    .padStart(2, "0")}`.toUpperCase();
-}
-
 function gradientFunction(type: string): string {
   return type === "GRADIENT_RADIAL" ? "radial-gradient" : "linear-gradient";
 }
@@ -118,9 +108,7 @@ function appendAppearanceCss(
     if (gradient) {
       parts.push(`background-image: ${gradient};`);
     } else if (fill.color) {
-      parts.push(
-        `${isTextNode ? "color" : "background-color"}: ${applyOpacityToHex(fill.color, fill.opacity)};`,
-      );
+      parts.push(`${isTextNode ? "color" : "background-color"}: ${fill.color};`);
     }
   }
 

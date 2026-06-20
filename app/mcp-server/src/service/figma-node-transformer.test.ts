@@ -565,6 +565,24 @@ describe("extractDesignTokens", () => {
     expect(tokens.some((token) => token.property.includes("BoxShadow"))).toBe(false);
   });
 
+  it("css suggestion uses the transformer-folded fill opacity exactly once", () => {
+    const node = makeNode({
+      fills: [
+        {
+          type: "SOLID",
+          visible: true,
+          color: { r: 0, g: 1, b: 0, a: 1 },
+          opacity: 0.5,
+        },
+      ],
+    });
+
+    const inspection = transformNodeToInspection(node);
+
+    expect(inspection.cssSuggestion).toContain("background-color: #00FF0080;");
+    expect(inspection.cssSuggestion).not.toContain("#00FF0040");
+  });
+
   it("inspect node carries gradient stops and paint opacity consistently", () => {
     const node = makeNode({
       fills: [

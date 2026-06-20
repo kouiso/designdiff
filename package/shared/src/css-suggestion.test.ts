@@ -176,11 +176,11 @@ describe("generateCssSuggestion", () => {
     expect(css).toContain("background-image: linear-gradient(#FF0000 0.0%, #0000FF80 50.0%);");
   });
 
-  it("paint-level fill opacity は color に畳み込む", () => {
+  it("pre-folded fill opacity color をそのまま生成する", () => {
     const css = generateCssSuggestion(
       layout,
       {
-        fills: [{ type: "SOLID", color: "#FF0000", opacity: 0.5 }],
+        fills: [{ type: "SOLID", color: "#FF000080", opacity: 0.5 }],
         strokes: [],
         borderRadius: undefined,
         opacity: 1,

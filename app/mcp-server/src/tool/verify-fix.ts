@@ -30,7 +30,7 @@ function findRegion(regions: RegionScore[], targetNodeId: string): RegionScore |
 }
 
 const STRUCTURE_DELTA_THRESHOLD = 0.01;
-const COLOR_DELTA_THRESHOLD = 0.01;
+const COLOR_DELTA_THRESHOLD = 3;
 const SHAPE_DELTA_THRESHOLD = 0.01;
 const SIDE_EFFECT_STRUCTURE_THRESHOLD = 0.05;
 

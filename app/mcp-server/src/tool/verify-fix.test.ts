@@ -40,15 +40,19 @@ function extractText(result: unknown): string {
 
 describe("buildVerdict", () => {
   it("色または形状の悪化を regression として扱う", () => {
-    expect(buildVerdict(0, 0.02, 0)).toBe("regressed");
-    expect(buildVerdict(0.02, 0.02, 0)).toBe("regressed");
+    expect(buildVerdict(0, 3.1, 0)).toBe("regressed");
+    expect(buildVerdict(0.02, 3.1, 0)).toBe("regressed");
     expect(buildVerdict(0, 0, 0.02)).toBe("regressed");
   });
 
   it("構造・色・形状の改善を improved として扱う", () => {
     expect(buildVerdict(0.02, 0, 0)).toBe("improved");
-    expect(buildVerdict(0, -0.02, 0)).toBe("improved");
+    expect(buildVerdict(0, -3.1, 0)).toBe("improved");
     expect(buildVerdict(0, 0, -0.02)).toBe("improved");
+  });
+
+  it("small color movement on 0..100 scale does not override large structural improvement", () => {
+    expect(buildVerdict(0.5, 0.05, 0)).toBe("improved");
   });
 });
 
