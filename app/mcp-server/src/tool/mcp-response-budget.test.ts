@@ -31,7 +31,8 @@ vi.mock("../service/figma-service.js", async () => {
             `Requested Figma node not found: Node "${_nodeId}" not found in file ${_fileKey}. The id may not exist, or the format may be wrong (expected "1:23" with a colon; dash-format ids from Figma URLs are auto-converted). Run list_figma_frames to see valid node ids.`,
           );
         }
-        return makeLargeNode(100, _nodeId);
+        if (_nodeId === "tiny") return makeLargeNode(0, _nodeId);
+        return makeLargeNode(_nodeId.startsWith("compact") ? 26 : 100, _nodeId);
       },
       getFrames: async (_fileKey: string): Promise<Frame[]> => makeManyFrames(150),
     }),
@@ -51,10 +52,10 @@ vi.mock("../service/figma-service.js", async () => {
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-function makeChild(index: number): FigmaNode {
+function makeChild(index: number, namePrefix = "Child Node"): FigmaNode {
   return {
     id: `child-${index}`,
-    name: `Child Node ${index}`,
+    name: `${namePrefix} ${index}`,
     type: "FRAME",
     absoluteBoundingBox: { x: index * 10, y: 0, width: 100, height: 50 },
     fills: [{ type: "SOLID", color: { r: 1, g: 0.5, b: 0.2, a: 1 }, visible: true }],
@@ -65,6 +66,25 @@ function makeChild(index: number): FigmaNode {
 }
 
 function makeLargeNode(childCount = 100, id = "frame-root"): FigmaNode {
+  if (id.startsWith("compact") || id === "tiny") {
+    return {
+      id,
+      name: id,
+      type: "FRAME",
+      absoluteBoundingBox: { x: 0, y: 0, width: 1, height: 1 },
+      fills: [],
+      strokes: [],
+      effects: [],
+      children: Array.from({ length: childCount }, (_, i) => makeChild(i, "C")),
+    };
+  }
+
+  const childNamePrefix =
+    id === "long:names"
+      ? "Realistic Figma Layer Name With Variant State And Slot And Responsive Breakpoint Nested Component"
+      : id.startsWith("compact")
+        ? "C"
+        : "Child Node";
   return {
     id,
     name: "Large Frame",
@@ -79,7 +99,7 @@ function makeLargeNode(childCount = 100, id = "frame-root"): FigmaNode {
     paddingBottom: 24,
     paddingLeft: 24,
     itemSpacing: 16,
-    children: Array.from({ length: childCount }, (_, i) => makeChild(i)),
+    children: Array.from({ length: childCount }, (_, i) => makeChild(i, childNamePrefix)),
   };
 }
 
@@ -169,6 +189,26 @@ describe("MCP response budget — responses never exceed archive threshold", () 
       expect(data.layout.width).toBe(1440);
     });
 
+    it("single node with long child names: falls back to lightweight summary with detailPath", async () => {
+      const result = await client.callTool({
+        name: "inspect_node",
+        arguments: { figma_url: FIGMA_URL, node_id: "long-names" },
+      });
+
+      expect(result.isError).toBeFalsy();
+      const text = extractText(result);
+      expect(text.length).toBeLessThan(ARCHIVE_THRESHOLD);
+      const data = JSON.parse(text);
+      expect(data.nodeId).toBe("long:names");
+      expect(data.cssSuggestion).toBeDefined();
+      expect(data.layout).toBeUndefined();
+      expect(typeof data.detailPath).toBe("string");
+      createdFiles.push(data.detailPath);
+
+      const archived = JSON.parse(await fs.readFile(data.detailPath, "utf-8"));
+      expect(archived.childrenSummary).toHaveLength(100);
+    });
+
     it("dash format node_id を colon format に正規化する", async () => {
       const result = await client.callTool({
         name: "inspect_node",
@@ -235,6 +275,27 @@ describe("MCP response budget — responses never exceed archive threshold", () 
       const archived = JSON.parse(await fs.readFile(first.detailPath, "utf-8"));
       expect(archived).toHaveLength(10);
       expect(archived[0].layout).toBeDefined();
+    });
+
+    it("multi-node under budget with truncated children: includes childrenDetailPath per node", async () => {
+      const result = await client.callTool({
+        name: "inspect_node",
+        arguments: { figma_url: FIGMA_URL, node_ids: ["compact-a", "tiny"] },
+      });
+
+      expect(result.isError).toBeFalsy();
+      const text = extractText(result);
+      expect(text.length).toBeLessThan(ARCHIVE_THRESHOLD);
+      const data = JSON.parse(text);
+      expect(data).toHaveLength(2);
+      expect(data[0].childrenTruncated).toBe(true);
+      expect(data[0].childrenCount).toBe(26);
+      expect(typeof data[0].childrenDetailPath).toBe("string");
+      createdFiles.push(data[0].childrenDetailPath, data[1].childrenDetailPath);
+
+      const archived = JSON.parse(await fs.readFile(data[0].childrenDetailPath, "utf-8"));
+      expect(archived).toHaveLength(26);
+      expect(archived[25].nodeId).toBe("child-25");
     });
 
     it("small node with few children: response passes through unchanged (no truncation)", async () => {
