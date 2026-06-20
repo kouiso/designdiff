@@ -6,7 +6,7 @@
 
 import type { NodeAppearance, NodeLayout, NodeTypography } from "./type.js";
 
-function figmaAlignToCss(value: string | undefined): string | undefined {
+function figmaPrimaryAxisToJustify(value: string | undefined): string | undefined {
   switch (value) {
     case "MIN":
       return "flex-start";
@@ -16,11 +16,47 @@ function figmaAlignToCss(value: string | undefined): string | undefined {
       return "center";
     case "SPACE_BETWEEN":
       return "space-between";
+    default:
+      return undefined;
+  }
+}
+
+function figmaCounterAxisToAlign(value: string | undefined): string | undefined {
+  switch (value) {
+    case "MIN":
+      return "flex-start";
+    case "MAX":
+      return "flex-end";
+    case "CENTER":
+      return "center";
     case "BASELINE":
       return "baseline";
     default:
       return undefined;
   }
+}
+
+function applyOpacityToHex(color: string, opacity: number | undefined): string {
+  if (opacity === undefined || opacity >= 1 || !color.startsWith("#")) return color;
+
+  const alphaHex = color.length === 9 ? color.slice(7, 9) : "FF";
+  const alpha = Number.parseInt(alphaHex, 16) / 255;
+  return `${color.slice(0, 7)}${Math.round(alpha * opacity * 255)
+    .toString(16)
+    .padStart(2, "0")}`.toUpperCase();
+}
+
+function gradientFunction(type: string): string {
+  return type === "GRADIENT_RADIAL" ? "radial-gradient" : "linear-gradient";
+}
+
+function formatGradient(fill: NonNullable<NodeAppearance["fills"]>[number]): string | undefined {
+  if (!fill.type.startsWith("GRADIENT_") || !fill.gradientStops?.length) return undefined;
+
+  const stops = fill.gradientStops.map(
+    (stop) => `${stop.color} ${(stop.position * 100).toFixed(1)}%`,
+  );
+  return `${gradientFunction(fill.type)}(${stops.join(", ")})`;
 }
 
 function appendLayoutCss(parts: string[], layout: NodeLayout): void {
@@ -38,12 +74,12 @@ function appendLayoutCss(parts: string[], layout: NodeLayout): void {
     }
 
     if (layout.layoutMode === "HORIZONTAL" || layout.layoutMode === "VERTICAL") {
-      const justifyContent = figmaAlignToCss(layout.primaryAxisAlign);
-      const alignItems = figmaAlignToCss(layout.counterAxisAlign);
+      const justifyContent = figmaPrimaryAxisToJustify(layout.primaryAxisAlign);
+      const alignItems = figmaCounterAxisToAlign(layout.counterAxisAlign);
       if (justifyContent && layout.primaryAxisAlign !== "MIN") {
         parts.push(`justify-content: ${justifyContent};`);
       }
-      if (alignItems && layout.counterAxisAlign !== "MIN") {
+      if (alignItems) {
         parts.push(`align-items: ${alignItems};`);
       }
     }
@@ -78,8 +114,13 @@ function appendAppearanceCss(
 ): void {
   if (appearance.fills && appearance.fills.length > 0) {
     const fill = appearance.fills[0];
-    if (fill.color) {
-      parts.push(`${isTextNode ? "color" : "background-color"}: ${fill.color};`);
+    const gradient = formatGradient(fill);
+    if (gradient) {
+      parts.push(`background-image: ${gradient};`);
+    } else if (fill.color) {
+      parts.push(
+        `${isTextNode ? "color" : "background-color"}: ${applyOpacityToHex(fill.color, fill.opacity)};`,
+      );
     }
   }
 

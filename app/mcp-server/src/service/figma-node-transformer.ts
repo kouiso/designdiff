@@ -84,14 +84,18 @@ function extractAppearance(node: FigmaNode): NodeAppearance {
     .filter((f) => f.visible !== false)
     .map((f) => ({
       type: normalizeFillType(f.type),
-      color: f.color ? figmaColorToHex(f.color.r, f.color.g, f.color.b, f.color.a) : undefined,
+      color: f.color ? colorWithPaintOpacity(f.color, f.opacity) : undefined,
       opacity: f.opacity,
+      gradientStops: f.gradientStops?.map((stop) => ({
+        position: stop.position,
+        color: figmaColorToHex(stop.color.r, stop.color.g, stop.color.b, stop.color.a),
+      })),
     }));
 
   const strokes: NodeStroke[] = (node.strokes || [])
-    .filter((s) => s.visible !== false)
+    .filter((s) => s.visible !== false && s.color)
     .map((s) => ({
-      color: s.color ? figmaColorToHex(s.color.r, s.color.g, s.color.b, s.color.a) : "#000000",
+      color: s.color ? colorWithPaintOpacity(s.color, s.opacity) : "#000000",
       weight: node.strokeWeight ?? 1,
       align: "CENTER" as const,
     }));
@@ -253,56 +257,123 @@ function colorWithPaintOpacity(
   return figmaColorToHex(color.r, color.g, color.b, color.a * (opacity ?? 1));
 }
 
-function collectFillTokens(node: FigmaNode, tokens: DesignToken[]): void {
-  for (const fill of node.fills || []) {
-    if (fill.visible === false) continue;
-
-    if (fill.type === "SOLID" && fill.color) {
-      const fillProperty = node.type === "TEXT" ? "color" : "backgroundColor";
-      pushToken(tokens, node, fillProperty, colorWithPaintOpacity(fill.color, fill.opacity));
-      continue;
-    }
-
-    if (fill.type.startsWith("GRADIENT_")) {
-      pushToken(tokens, node, "backgroundImage", fill.type);
-      for (const [index, stop] of (fill.gradientStops || []).entries()) {
-        pushToken(
-          tokens,
-          node,
-          `gradientStop${index}Color`,
-          figmaColorToHex(stop.color.r, stop.color.g, stop.color.b, stop.color.a),
-        );
-        pushToken(tokens, node, `gradientStop${index}Position`, stop.position);
-      }
-    }
+function collectGradientStopTokens(
+  node: FigmaNode,
+  tokens: DesignToken[],
+  fill: NonNullable<FigmaNode["fills"]>[number],
+  stopPrefix: (index: number) => string,
+): void {
+  for (const [stopIndex, stop] of (fill.gradientStops || []).entries()) {
+    const prefix = stopPrefix(stopIndex);
+    pushToken(
+      tokens,
+      node,
+      `${prefix}Color`,
+      figmaColorToHex(stop.color.r, stop.color.g, stop.color.b, stop.color.a),
+    );
+    pushToken(tokens, node, `${prefix}Position`, stop.position * 100, "%");
   }
 }
 
+function collectFillTokens(node: FigmaNode, tokens: DesignToken[]): void {
+  const visibleFills = (node.fills || []).filter((fill) => fill.visible !== false);
+  const hasMultipleFills = visibleFills.length > 1;
+
+  for (const [fillIndex, fill] of visibleFills.entries()) {
+    const fillPrefix = hasMultipleFills ? `fill${fillIndex}` : "";
+
+    if (fill.type === "SOLID" && fill.color) {
+      const fillProperty = node.type === "TEXT" ? "color" : "backgroundColor";
+      pushToken(
+        tokens,
+        node,
+        hasMultipleFills ? `${fillPrefix}Color` : fillProperty,
+        colorWithPaintOpacity(fill.color, fill.opacity),
+      );
+      continue;
+    }
+
+    if (!fill.type.startsWith("GRADIENT_")) continue;
+
+    pushToken(
+      tokens,
+      node,
+      hasMultipleFills ? `${fillPrefix}BackgroundImage` : "backgroundImage",
+      fill.type,
+    );
+    collectGradientStopTokens(node, tokens, fill, (stopIndex) =>
+      hasMultipleFills ? `${fillPrefix}GradientStop${stopIndex}` : `gradientStop${stopIndex}`,
+    );
+  }
+}
 function collectStrokeTokens(node: FigmaNode, tokens: DesignToken[]): void {
-  for (const stroke of node.strokes || []) {
-    if (stroke.visible === false || !stroke.color) continue;
-    pushToken(tokens, node, "borderColor", colorWithPaintOpacity(stroke.color, stroke.opacity));
+  const visibleStrokes = (node.strokes || []).filter(
+    (stroke) => stroke.visible !== false && stroke.color,
+  );
+  const hasMultipleStrokes = visibleStrokes.length > 1;
+
+  for (const [index, stroke] of visibleStrokes.entries()) {
+    if (!stroke.color) continue;
+    pushToken(
+      tokens,
+      node,
+      hasMultipleStrokes ? `stroke${index}Color` : "borderColor",
+      colorWithPaintOpacity(stroke.color, stroke.opacity),
+    );
+  }
+
+  if (visibleStrokes.length > 0) {
     pushToken(tokens, node, "borderWidth", node.strokeWeight ?? 1, "px");
   }
 }
 
 function collectEffectTokens(node: FigmaNode, tokens: DesignToken[]): void {
-  for (const effect of node.effects || []) {
-    if (effect.visible === false) continue;
-    pushToken(tokens, node, "boxShadowType", effect.type);
+  const visibleEffects = (node.effects || []).filter((effect) => effect.visible !== false);
+  const hasMultipleEffects = visibleEffects.length > 1;
+
+  for (const [index, effect] of visibleEffects.entries()) {
+    const effectPrefix = hasMultipleEffects ? `effect${index}` : "";
+
+    if (effect.type === "LAYER_BLUR") {
+      pushTokenIfDefined(
+        tokens,
+        node,
+        hasMultipleEffects ? `${effectPrefix}BlurRadius` : "blurRadius",
+        effect.radius,
+        "px",
+      );
+      continue;
+    }
+
+    if (effect.type === "BACKGROUND_BLUR") {
+      pushTokenIfDefined(
+        tokens,
+        node,
+        hasMultipleEffects ? `${effectPrefix}BackdropBlurRadius` : "backdropBlurRadius",
+        effect.radius,
+        "px",
+      );
+      continue;
+    }
+
+    if (effect.type !== "DROP_SHADOW" && effect.type !== "INNER_SHADOW") continue;
+
+    const shadowPrefix = hasMultipleEffects ? `${effectPrefix}BoxShadow` : "boxShadow";
+    pushToken(tokens, node, `${shadowPrefix}Type`, effect.type);
+    if (effect.type === "INNER_SHADOW") pushToken(tokens, node, `${shadowPrefix}Inset`, "inset");
     if (effect.color)
       pushToken(
         tokens,
         node,
-        "boxShadowColor",
+        `${shadowPrefix}Color`,
         figmaColorToHex(effect.color.r, effect.color.g, effect.color.b, effect.color.a),
       );
     if (effect.offset) {
-      pushToken(tokens, node, "boxShadowOffsetX", effect.offset.x, "px");
-      pushToken(tokens, node, "boxShadowOffsetY", effect.offset.y, "px");
+      pushToken(tokens, node, `${shadowPrefix}OffsetX`, effect.offset.x, "px");
+      pushToken(tokens, node, `${shadowPrefix}OffsetY`, effect.offset.y, "px");
     }
-    pushTokenIfDefined(tokens, node, "boxShadowRadius", effect.radius, "px");
-    pushTokenIfDefined(tokens, node, "boxShadowSpread", effect.spread, "px");
+    pushTokenIfDefined(tokens, node, `${shadowPrefix}Radius`, effect.radius, "px");
+    pushTokenIfDefined(tokens, node, `${shadowPrefix}Spread`, effect.spread, "px");
   }
 }
 

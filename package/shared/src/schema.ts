@@ -53,6 +53,14 @@ export const NodeFillSchema = z.object({
   ]),
   color: z.string().optional(),
   opacity: z.number().min(0).max(1).optional(),
+  gradientStops: z
+    .array(
+      z.object({
+        position: z.number(),
+        color: z.string(),
+      }),
+    )
+    .optional(),
 });
 
 export const NodeStrokeSchema = z.object({
