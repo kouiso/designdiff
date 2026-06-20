@@ -316,11 +316,19 @@ describe("extractDesignTokens", () => {
     const frameTokens = extractDesignTokens(frameNode, 1);
 
     expect(textTokens).toContainEqual(
-      expect.objectContaining({ nodeId: "text", property: "color", value: "#0033FF" }),
+      expect.objectContaining({
+        nodeId: "text",
+        property: "color",
+        value: "#0033FF",
+      }),
     );
     expect(textTokens.some((t) => t.property === "backgroundColor")).toBe(false);
     expect(frameTokens).toContainEqual(
-      expect.objectContaining({ nodeId: "frame", property: "backgroundColor", value: "#FFFFFF" }),
+      expect.objectContaining({
+        nodeId: "frame",
+        property: "backgroundColor",
+        value: "#FFFFFF",
+      }),
     );
   });
 
@@ -377,13 +385,23 @@ describe("extractDesignTokens", () => {
       expect.objectContaining({ property: "borderColor", value: "#0000FF80" }),
     );
     expect(tokens).toContainEqual(
-      expect.objectContaining({ property: "borderWidth", value: 2, unit: "px" }),
+      expect.objectContaining({
+        property: "borderWidth",
+        value: 2,
+        unit: "px",
+      }),
     );
     expect(tokens).toContainEqual(
-      expect.objectContaining({ property: "boxShadowType", value: "DROP_SHADOW" }),
+      expect.objectContaining({
+        property: "boxShadowType",
+        value: "DROP_SHADOW",
+      }),
     );
     expect(tokens).toContainEqual(
-      expect.objectContaining({ property: "boxShadowColor", value: "#00000040" }),
+      expect.objectContaining({
+        property: "boxShadowColor",
+        value: "#00000040",
+      }),
     );
     expect(tokens).toContainEqual(
       expect.objectContaining({ property: "boxShadowOffsetX", value: 1.23 }),
@@ -402,7 +420,10 @@ describe("extractDesignTokens", () => {
       expect.objectContaining({ property: "borderTopLeftRadius", value: 4 }),
     );
     expect(tokens).toContainEqual(
-      expect.objectContaining({ property: "borderBottomLeftRadius", value: 16 }),
+      expect.objectContaining({
+        property: "borderBottomLeftRadius",
+        value: 16,
+      }),
     );
   });
 
@@ -420,24 +441,166 @@ describe("extractDesignTokens", () => {
       ],
     });
     const solidNode = makeNode({
-      fills: [{ type: "SOLID", visible: true, color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 0.5 }],
+      fills: [
+        {
+          type: "SOLID",
+          visible: true,
+          color: { r: 1, g: 0, b: 0, a: 1 },
+          opacity: 0.5,
+        },
+      ],
     });
 
     const gradientTokens = extractDesignTokens(gradientNode, 1);
     const solidTokens = extractDesignTokens(solidNode, 1);
 
     expect(gradientTokens).toContainEqual(
-      expect.objectContaining({ property: "backgroundImage", value: "GRADIENT_LINEAR" }),
+      expect.objectContaining({
+        property: "backgroundImage",
+        value: "GRADIENT_LINEAR",
+      }),
     );
     expect(gradientTokens).toContainEqual(
-      expect.objectContaining({ property: "gradientStop1Color", value: "#0000FF80" }),
+      expect.objectContaining({
+        property: "gradientStop1Color",
+        value: "#0000FF80",
+      }),
     );
     expect(gradientTokens).toContainEqual(
-      expect.objectContaining({ property: "gradientStop1Position", value: 0.56 }),
+      expect.objectContaining({
+        property: "gradientStop1Position",
+        value: 55.56,
+        unit: "%",
+      }),
     );
     expect(solidTokens).toContainEqual(
-      expect.objectContaining({ property: "backgroundColor", value: "#FF000080" }),
+      expect.objectContaining({
+        property: "backgroundColor",
+        value: "#FF000080",
+      }),
     );
+  });
+
+  it("indexes multi-instance paints and emits border width once", () => {
+    const node = makeNode({
+      strokes: [
+        { type: "SOLID", visible: true, color: { r: 1, g: 0, b: 0, a: 1 } },
+        { type: "SOLID", visible: true, color: { r: 0, g: 0, b: 1, a: 1 } },
+      ],
+      strokeWeight: 2,
+      fills: [
+        {
+          type: "GRADIENT_LINEAR",
+          visible: true,
+          gradientStops: [{ position: 0.25, color: { r: 1, g: 0, b: 0, a: 1 } }],
+        },
+        {
+          type: "GRADIENT_RADIAL",
+          visible: true,
+          gradientStops: [{ position: 0.75, color: { r: 0, g: 0, b: 1, a: 1 } }],
+        },
+      ],
+      effects: [
+        { type: "DROP_SHADOW", visible: true, radius: 1 },
+        { type: "INNER_SHADOW", visible: true, radius: 2 },
+      ],
+    });
+
+    const tokens = extractDesignTokens(node, 1);
+
+    expect(tokens).toContainEqual(
+      expect.objectContaining({ property: "stroke0Color", value: "#FF0000" }),
+    );
+    expect(tokens).toContainEqual(
+      expect.objectContaining({ property: "stroke1Color", value: "#0000FF" }),
+    );
+    expect(tokens.filter((token) => token.property === "borderWidth")).toHaveLength(1);
+    expect(tokens).toContainEqual(
+      expect.objectContaining({
+        property: "fill0GradientStop0Position",
+        value: 25,
+        unit: "%",
+      }),
+    );
+    expect(tokens).toContainEqual(
+      expect.objectContaining({
+        property: "fill1GradientStop0Position",
+        value: 75,
+        unit: "%",
+      }),
+    );
+    expect(tokens).toContainEqual(
+      expect.objectContaining({
+        property: "effect0BoxShadowType",
+        value: "DROP_SHADOW",
+      }),
+    );
+    expect(tokens).toContainEqual(
+      expect.objectContaining({
+        property: "effect1BoxShadowInset",
+        value: "inset",
+      }),
+    );
+  });
+
+  it("emits blur-specific tokens instead of box-shadow tokens for blur effects", () => {
+    const node = makeNode({
+      effects: [
+        { type: "LAYER_BLUR", visible: true, radius: 4 },
+        { type: "BACKGROUND_BLUR", visible: true, radius: 8 },
+      ],
+    });
+
+    const tokens = extractDesignTokens(node, 1);
+
+    expect(tokens).toContainEqual(
+      expect.objectContaining({ property: "effect0BlurRadius", value: 4 }),
+    );
+    expect(tokens).toContainEqual(
+      expect.objectContaining({
+        property: "effect1BackdropBlurRadius",
+        value: 8,
+      }),
+    );
+    expect(tokens.some((token) => token.property.includes("BoxShadow"))).toBe(false);
+  });
+
+  it("inspect node carries gradient stops and paint opacity consistently", () => {
+    const node = makeNode({
+      fills: [
+        {
+          type: "GRADIENT_LINEAR",
+          visible: true,
+          gradientStops: [{ position: 0.5, color: { r: 1, g: 0, b: 0, a: 0.5 } }],
+        },
+        {
+          type: "SOLID",
+          visible: true,
+          color: { r: 0, g: 1, b: 0, a: 1 },
+          opacity: 0.5,
+        },
+      ],
+      strokes: [
+        { type: "SOLID", visible: true },
+        {
+          type: "SOLID",
+          visible: true,
+          color: { r: 0, g: 0, b: 1, a: 1 },
+          opacity: 0.5,
+        },
+      ],
+      strokeWeight: 3,
+    });
+
+    const inspection = transformNodeToInspection(node);
+
+    expect(inspection.appearance.fills[0]?.gradientStops).toEqual([
+      { position: 0.5, color: "#FF000080" },
+    ]);
+    expect(inspection.appearance.fills[1]?.color).toBe("#00FF0080");
+    expect(inspection.appearance.strokes).toEqual([
+      { color: "#0000FF80", weight: 3, align: "CENTER" },
+    ]);
   });
 
   it("skips bare bounding-box tokens for decorative vector and line nodes", () => {
@@ -446,12 +609,22 @@ describe("extractDesignTokens", () => {
         makeNode({
           id: "vector",
           type: "VECTOR",
-          absoluteBoundingBox: { x: 0, y: 0, width: 1707.981348362011, height: 931 },
+          absoluteBoundingBox: {
+            x: 0,
+            y: 0,
+            width: 1707.981348362011,
+            height: 931,
+          },
         }),
         makeNode({
           id: "line",
           type: "LINE",
-          absoluteBoundingBox: { x: 0, y: 0, width: 54.543209075927734, height: 0 },
+          absoluteBoundingBox: {
+            x: 0,
+            y: 0,
+            width: 54.543209075927734,
+            height: 0,
+          },
         }),
       ],
     });
@@ -464,7 +637,12 @@ describe("extractDesignTokens", () => {
 
   it("rounds fractional numeric token values to two decimals", () => {
     const node = makeNode({
-      absoluteBoundingBox: { x: 0, y: 0, width: 54.543209075927734, height: 57.480003356933594 },
+      absoluteBoundingBox: {
+        x: 0,
+        y: 0,
+        width: 54.543209075927734,
+        height: 57.480003356933594,
+      },
       type: "TEXT",
       style: { lineHeightPx: 57.480003356933594 },
     });

@@ -121,7 +121,7 @@ describe("generateCssSuggestion", () => {
     expect(css).toContain("align-items: center;");
   });
 
-  it("default auto-layout alignment は CSS に出力しない", () => {
+  it("primary-axis MIN は省略し counter-axis MIN は flex-start を出力する", () => {
     const css = generateCssSuggestion(
       {
         ...layout,
@@ -134,7 +134,63 @@ describe("generateCssSuggestion", () => {
     );
 
     expect(css).not.toContain("justify-content");
-    expect(css).not.toContain("align-items");
+    expect(css).toContain("align-items: flex-start;");
+  });
+
+  it("counter-axis SPACE_BETWEEN は invalid な align-items を出力しない", () => {
+    const css = generateCssSuggestion(
+      {
+        ...layout,
+        layoutMode: "HORIZONTAL",
+        counterAxisAlign: "SPACE_BETWEEN",
+      },
+      makeAppearance(undefined),
+      undefined,
+    );
+
+    expect(css).not.toContain("align-items: space-between;");
+  });
+
+  it("gradient fill は background-image として生成する", () => {
+    const css = generateCssSuggestion(
+      layout,
+      {
+        fills: [
+          {
+            type: "GRADIENT_LINEAR",
+            gradientStops: [
+              { color: "#FF0000", position: 0 },
+              { color: "#0000FF80", position: 0.5 },
+            ],
+          },
+        ],
+        strokes: [],
+        borderRadius: undefined,
+        opacity: 1,
+        blendMode: "NORMAL",
+        effects: [],
+      },
+      undefined,
+    );
+
+    expect(css).toContain("background-image: linear-gradient(#FF0000 0.0%, #0000FF80 50.0%);");
+  });
+
+  it("paint-level fill opacity は color に畳み込む", () => {
+    const css = generateCssSuggestion(
+      layout,
+      {
+        fills: [{ type: "SOLID", color: "#FF0000", opacity: 0.5 }],
+        strokes: [],
+        borderRadius: undefined,
+        opacity: 1,
+        blendMode: "NORMAL",
+        effects: [],
+      },
+      undefined,
+    );
+
+    expect(css).toContain("background-color: #FF000080;");
   });
 
   it("typography がある fill は color として生成する", () => {
