@@ -29,13 +29,32 @@ function findRegion(regions: RegionScore[], targetNodeId: string): RegionScore |
   return regions.find((region) => (region.figmaNodeId ?? region.regionId) === targetNodeId);
 }
 
-function buildVerdict(structureDelta: number): "improved" | "unchanged" | "regressed" {
-  if (structureDelta > 0.01) {
-    return "improved";
-  }
-  if (structureDelta < -0.01) {
+const STRUCTURE_DELTA_THRESHOLD = 0.01;
+const COLOR_DELTA_THRESHOLD = 0.01;
+const SHAPE_DELTA_THRESHOLD = 0.01;
+const SIDE_EFFECT_STRUCTURE_THRESHOLD = 0.05;
+
+export function buildVerdict(
+  structureDelta: number,
+  colorDelta: number,
+  shapeDelta: number,
+): "improved" | "unchanged" | "regressed" {
+  if (
+    structureDelta < -STRUCTURE_DELTA_THRESHOLD ||
+    colorDelta > COLOR_DELTA_THRESHOLD ||
+    shapeDelta > SHAPE_DELTA_THRESHOLD
+  ) {
     return "regressed";
   }
+
+  if (
+    structureDelta > STRUCTURE_DELTA_THRESHOLD ||
+    colorDelta < -COLOR_DELTA_THRESHOLD ||
+    shapeDelta < -SHAPE_DELTA_THRESHOLD
+  ) {
+    return "improved";
+  }
+
   return "unchanged";
 }
 
@@ -122,7 +141,7 @@ export function registerVerifyFix(server: McpServer): void {
             }
 
             const delta = region.structure - previous.structure;
-            if (Math.abs(delta) <= 0.05) {
+            if (delta >= -SIDE_EFFECT_STRUCTURE_THRESHOLD) {
               return [];
             }
 
@@ -134,14 +153,14 @@ export function registerVerifyFix(server: McpServer): void {
           structureDelta,
           colorDelta,
           shapeDelta,
-          verdict: buildVerdict(structureDelta),
+          verdict: buildVerdict(structureDelta, colorDelta, shapeDelta),
           sideEffects,
         });
 
         try {
           await writeActiveSession({
-            comparisonId: args.prior_comparison_id,
-            sourceKey: args.prior_comparison_id,
+            comparisonId: comparison.result.comparisonId,
+            sourceKey: comparison.result.comparisonId,
             implementationUrl: undefined,
             designSource: args.design_source,
             matchRate: comparison.result.matchRate,

@@ -6,7 +6,10 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { z } from "zod";
 
 import { createMcpServer } from "../server.js";
+import { readActiveSession } from "../service/active-session.js";
 import { clearComparisonHistory } from "../service/comparison-history.js";
+
+import { buildVerdict } from "./verify-fix.js";
 
 const FIXTURES_ROOT = path.resolve(import.meta.dirname, "../../../../verification/fixtures");
 
@@ -34,6 +37,20 @@ function extractText(result: unknown): string {
 
   return textItem.text;
 }
+
+describe("buildVerdict", () => {
+  it("色または形状の悪化を regression として扱う", () => {
+    expect(buildVerdict(0, 0.02, 0)).toBe("regressed");
+    expect(buildVerdict(0.02, 0.02, 0)).toBe("regressed");
+    expect(buildVerdict(0, 0, 0.02)).toBe("regressed");
+  });
+
+  it("構造・色・形状の改善を improved として扱う", () => {
+    expect(buildVerdict(0.02, 0, 0)).toBe("improved");
+    expect(buildVerdict(0, -0.02, 0)).toBe("improved");
+    expect(buildVerdict(0, 0, -0.02)).toBe("improved");
+  });
+});
 
 describe("verify_fix", () => {
   let client: Client;
@@ -99,6 +116,11 @@ describe("verify_fix", () => {
     expect(data.verdict).toBe("improved");
     expect(data.structureDelta).toBeGreaterThan(0.05);
     expect(data.sideEffects).toEqual([]);
+
+    const activeSession = await readActiveSession();
+    expect(activeSession?.comparisonId).not.toBe(priorData.comparisonId);
+    expect(activeSession?.sourceKey).toBe(activeSession?.comparisonId);
+    expect(activeSession?.matchRate).toBe(100);
   });
 
   it("対象ノードがさらに悪化したら regressed を返す", async () => {
