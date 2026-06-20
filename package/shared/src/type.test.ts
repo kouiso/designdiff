@@ -51,6 +51,21 @@ describe("computeVerdict", () => {
     expect(result.rationale).toContain("weighted structure score");
   });
 
+  it("clamps weighted structure to one when perfect regions accumulate rounding noise", () => {
+    const result = computeVerdict({
+      alignment,
+      regionScores: [
+        createRegionScore({ regionId: "r1", bbox: { x: 0, y: 0, w: 10, h: 10 }, structure: 1 }),
+        createRegionScore({ regionId: "r2", bbox: { x: 10, y: 0, w: 20, h: 10 }, structure: 1 }),
+        createRegionScore({ regionId: "r3", bbox: { x: 30, y: 0, w: 30, h: 10 }, structure: 1 }),
+      ],
+      issues: [],
+    });
+
+    expect(result.weightedAggregate.weightedStructure).toBeLessThanOrEqual(1);
+    expect(result.weightedAggregate.weightedStructure).toBe(1);
+  });
+
   it("critical issue がある場合は fail を返す", () => {
     const result = computeVerdict({
       alignment,

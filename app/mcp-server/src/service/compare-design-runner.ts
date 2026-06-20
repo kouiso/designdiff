@@ -25,7 +25,11 @@ import {
   type PreflightWarning,
 } from "@figdiff/shared";
 
-import { resolveSafePath, resolveScreenshotInputPath } from "../util/path-guard.js";
+import {
+  EMPTY_SCREENSHOT_INPUT_MESSAGE,
+  resolveSafePath,
+  resolveScreenshotInputPath,
+} from "../util/path-guard.js";
 
 import {
   buildComparisonSourceKey,
@@ -130,7 +134,7 @@ function resolveThreshold(
 
 export interface CompareDesignRunArgs {
   design_source: string;
-  screenshot: string;
+  screenshot?: string;
   screenshot_url?: string;
   capture_device?: CaptureDevice;
   capture_width?: number;
@@ -406,6 +410,9 @@ async function resolveScreenshotPath(
   }
 
   if (!args.screenshot_url) {
+    if (!args.screenshot || args.screenshot.trim() === "") {
+      throw new Error(EMPTY_SCREENSHOT_INPUT_MESSAGE);
+    }
     return resolveScreenshotInputPath(args.screenshot);
   }
 
@@ -477,6 +484,13 @@ async function resolveDesignAssets(
   // ローカルファイルのパス — 許可ディレクトリ内に存在するか検証する
   const safePath = await resolveSafePath(parsedDesignSource.filePath);
   const designBuffer = await fs.readFile(safePath);
+  try {
+    await sharp(designBuffer).metadata();
+  } catch {
+    throw new Error(
+      `Failed to decode design image (file may be corrupt or truncated): ${safePath}`,
+    );
+  }
   const designBase64 = designBuffer.toString("base64");
   const figmaRootNode = await loadLocalFixtureNode(safePath);
   return { designBase64, figmaRootNode, resolvedNodeId: undefined };
@@ -498,9 +512,9 @@ async function resolveProjectRegions(
   let persistedIgnoreRegions: IgnoreRegion[] = [];
   if (projectId) {
     const regions = await getCropRegion(projectId, frameName);
-    if (regions.length > 0) {
-      cropRegion = regions[0].region;
-      cropUpdatedAt = regions[0].updatedAt;
+    if (regions.length === 1 || frameName) {
+      cropRegion = regions[0]?.region;
+      cropUpdatedAt = regions[0]?.updatedAt;
     }
     persistedIgnoreRegions = await getIgnoreRegionsForComparison(projectId, frameName);
   }
@@ -549,7 +563,14 @@ export async function runCompareDesign(
   const screenshotPath = await resolveScreenshotPath(args, fallbackNodeId);
   const screenshotBuffer = await fs.readFile(screenshotPath);
   const screenshotBase64 = screenshotBuffer.toString("base64");
-  const screenshotMeta = await sharp(screenshotBuffer).metadata();
+  let screenshotMeta: sharp.Metadata;
+  try {
+    screenshotMeta = await sharp(screenshotBuffer).metadata();
+  } catch {
+    throw new Error(
+      `Failed to decode screenshot image (file may be corrupt or truncated): ${screenshotPath}`,
+    );
+  }
   const targetWidth = screenshotMeta.width;
 
   const { designBase64, figmaRootNode, resolvedNodeId } = await resolveDesignAssets(
@@ -561,7 +582,7 @@ export async function runCompareDesign(
 
   const { cropRegion, cropUpdatedAt, ignoreRegions } = await resolveProjectRegions(
     args.project_id,
-    args.frame_name,
+    args.frame_name ?? figmaRootNode?.name,
     args.ignore_regions,
   );
 

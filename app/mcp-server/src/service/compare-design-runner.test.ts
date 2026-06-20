@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   getRecentReports: vi.fn(() => []),
   recordComparison: vi.fn(async () => undefined),
   sharp: vi.fn(),
+  captureUrl: vi.fn(),
 }));
 
 vi.mock("sharp", () => ({
@@ -21,6 +22,10 @@ vi.mock("./figma-service.js", () => ({
 
 vi.mock("./image-compare-service.js", () => ({
   compareImages: mocks.compareImages,
+}));
+
+vi.mock("./capture-service.js", () => ({
+  captureUrl: mocks.captureUrl,
 }));
 
 vi.mock("./comparison-history.js", async (importOriginal) => {
@@ -199,6 +204,53 @@ describe("runCompareDesign", () => {
       screenshot: screenshotPath,
     });
   }
+
+  it("throws a named-options error when no screenshot source is provided", async () => {
+    await expect(
+      runCompareDesign({
+        design_source: "./design.png",
+      }),
+    ).rejects.toThrow(/screenshot must not be empty/);
+  });
+
+  it("allows screenshot_url without a placeholder screenshot", async () => {
+    tmpRoot = await fs.mkdtemp(path.join(process.cwd(), "tmp-figdiff-runner-"));
+    const designPath = path.join(tmpRoot, "design.png");
+    const screenshotPath = path.join(tmpRoot, "captured.png");
+    await fs.writeFile(designPath, Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+    await fs.writeFile(screenshotPath, Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+
+    mocks.captureUrl.mockResolvedValue({ screenshotPath });
+    mocks.sharp.mockReturnValue({
+      metadata: vi.fn(async () => ({ width: 390, height: 844 })),
+    });
+    mocks.compareImages.mockResolvedValue({
+      comparisonId: "cmp-captured",
+      matchRate: 100,
+      diffPixelCount: 0,
+      totalPixelCount: 390 * 844,
+      diffRegions: [],
+      suggestion: "一致率100%です。差分はありません。",
+      normalization: {
+        designNativeWidth: 390,
+        designNativeHeight: 844,
+        screenshotWidth: 390,
+        screenshotHeight: 844,
+        cropApplied: false,
+        containResized: false,
+        appliedScale: 1,
+      },
+    });
+
+    const output = await runCompareDesign({
+      design_source: designPath,
+      screenshot_url: "https://example.test",
+    });
+
+    expect(mocks.captureUrl).toHaveBeenCalledWith("https://example.test", { width: 1440 });
+    expect(output.result.status).toBe("PASS");
+    expect(output.result.matchRate).toBe(100);
+  });
 
   it("auto-selects the best matching frame when nodeId and frameName are omitted", async () => {
     tmpRoot = await fs.mkdtemp(path.join(process.cwd(), "tmp-figdiff-runner-"));

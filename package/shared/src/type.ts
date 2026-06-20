@@ -233,6 +233,8 @@ const getTextureAdjustedWeight = (
   return scaledWeight;
 };
 
+const clamp01 = (value: number): number => Math.min(1, Math.max(0, value));
+
 const normalizeWeightedAggregate = (regionScores: RegionScore[]): WeightedAggregate => {
   if (regionScores.length === 0) {
     return {
@@ -248,7 +250,7 @@ const normalizeWeightedAggregate = (regionScores: RegionScore[]): WeightedAggreg
   });
   const adjustedTotalWeight = adjustedWeights.reduce((sum, weight) => sum + weight, 0);
 
-  return regionScores.reduce(
+  const aggregate = regionScores.reduce(
     (aggregate, score, index) => {
       const weight =
         adjustedTotalWeight > 0
@@ -266,6 +268,11 @@ const normalizeWeightedAggregate = (regionScores: RegionScore[]): WeightedAggreg
       totalWeight: 0,
     },
   );
+
+  return {
+    ...aggregate,
+    weightedStructure: clamp01(aggregate.weightedStructure),
+  };
 };
 
 const usesTextureAdjustedWeights = (regionScores: RegionScore[]): boolean => {

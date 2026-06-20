@@ -26,7 +26,9 @@ Defined in `app/mcp-server/src/tool/compare-design.ts`.
 ```json
 {
   "design_source": "string",
-  "screenshot": "string",
+  "screenshot": "string?",
+  "screenshot_url": "string?",
+  "capture_device": "android | ios-sim | ios-device?",
   "frame_name": "string?",
   "threshold": "number (0..1, default 0.1)",
   "project_id": "string?",
@@ -44,8 +46,9 @@ Defined in `app/mcp-server/src/tool/compare-design.ts`.
 
 Notes:
 
-- `design_source` accepts a Figma URL or a local image path.
-- `frame_name` is used when a Figma URL does not include `node-id`.
+- `design_source` accepts a Figma URL or a local image path. Local image paths must be under the current working directory, `~/.figdiff/cache`, or a directory added with `FIGDIFF_ALLOWED_DIRS`.
+- Provide one screenshot source: `screenshot` (local PNG/JPEG/WebP path), `screenshot_url` (Playwright capture; use `FIGDIFF_CDP_ENDPOINT` for cross-network host Chrome), or `capture_device` (`android`, `ios-sim`, `ios-device`). Local `screenshot` paths are not restricted by the `design_source` allowlist.
+- `frame_name` is used when a Figma URL does not include `node-id`; when node details are available, `compare_design` also uses the resolved frame name to apply frame-scoped persisted ignore regions/crops in node-id flows.
 - `project_id` enables crop-region lookup through `getCropRegion` and persisted ignore-region lookup through `~/.figdiff/projects/{project_id}/ignore-regions.yaml`.
 - Persisted ignore regions are applied before the ad hoc `ignore_regions` input. Both use screenshot pixel coordinates after crop-region application.
 
