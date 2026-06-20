@@ -55,6 +55,7 @@ function drawSplitScreen(
     ctx.drawImage(screenshot, 0, 0);
     ctx.restore();
   }
+  // 分割線は重なった画像上で常に判別できるコントラストを優先するため。
   ctx.strokeStyle = "#fff";
   ctx.lineWidth = 2;
   ctx.beginPath();

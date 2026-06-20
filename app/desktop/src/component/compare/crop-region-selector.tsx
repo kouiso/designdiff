@@ -6,6 +6,7 @@ import type { CropRegion } from "@figdiff/shared";
 
 import { Button } from "@/component/ui/button";
 import { useCompareStore } from "@/store/compare-store";
+import { readCssToken } from "@/util/css-token";
 
 export function CropRegionSelector() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -96,12 +97,12 @@ export function CropRegionSelector() {
     const width = Math.abs(currentPos.x - startPos.x);
     const height = Math.abs(currentPos.y - startPos.y);
 
-    ctx.strokeStyle = "#3b82f6";
+    ctx.strokeStyle = readCssToken("--cobalt", "#3b82f6");
     ctx.lineWidth = 2;
     ctx.setLineDash([5, 5]);
     ctx.strokeRect(x, y, width, height);
 
-    ctx.fillStyle = "rgba(59, 130, 246, 0.1)";
+    ctx.fillStyle = readCssToken("--cobalt-soft", "rgba(59,130,246,0.1)");
     ctx.fillRect(x, y, width, height);
   }, [isSelecting, startPos, currentPos]);
 
