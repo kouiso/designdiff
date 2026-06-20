@@ -190,7 +190,7 @@ export const CompletionCriterionSchema = z.object({
 });
 
 export const CompletionCriteriaSchema = z.object({
-  visualReview: CompletionCriterionSchema,
+  structuralReview: CompletionCriterionSchema,
   matchRate: CompletionCriterionSchema,
   diffPixelCount: CompletionCriterionSchema,
   remainingIssues: CompletionCriterionSchema,

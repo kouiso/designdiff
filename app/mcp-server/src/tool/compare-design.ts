@@ -32,7 +32,7 @@ const DESCRIPTION = `デザインと実装のピクセル差分を検出しま�
 - status が "PASS" になるまでループすること。matchRate% は参考値であり、完成ゲートではない
 
 ## 出力の読み方
-- status: "PASS" = ビジュアル判定上の完了。"FAIL" = 修正またはレビューが必要
+- status: "PASS" = 構造SSIM判定上の完了。"FAIL" = 修正またはレビューが必要
 - completionCriteria: blocking=true の項目が "PASS" になるまで作業を続行。matchRate は参考値
 - nextAction: 次に実行すべきアクション（従うこと）
 - diffImagePath: 差分画像のローカルパス。Read ツールで開いて視覚確認できる（~/.figdiff/results/ に保存）
@@ -65,7 +65,7 @@ export function buildSummaryText(result: CompareDesignResult): string {
   const lines: string[] = [];
 
   if (result.diffReport) {
-    lines.push(`ビジュアル判定: ${result.diffReport.aggregateVerdict.toUpperCase()}`);
+    lines.push(`構造SSIM判定: ${result.diffReport.aggregateVerdict.toUpperCase()}`);
     lines.push(result.diffReport.rationale);
   }
 

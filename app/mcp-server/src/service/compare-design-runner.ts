@@ -194,29 +194,30 @@ function buildCompletionCriteria(
   matchRate: number,
   diffPixelCount: number,
   regionCount: number,
-  semanticVerdict: DiffVerdict,
-  semanticRationale: string | undefined,
-): {
-  [key in "visualReview" | "matchRate" | "diffPixelCount" | "remainingIssues"]: {
+  structuralVerdict: DiffVerdict,
+  structuralRationale: string | undefined,
+): Record<
+  "structuralReview" | "matchRate" | "diffPixelCount" | "remainingIssues",
+  {
     required: number;
     current: number;
     status: "PASS" | "FAIL";
     blocking: boolean;
     note: string;
-  };
-} {
-  const semanticStatus = semanticVerdict === "pass" ? "PASS" : "FAIL";
+  }
+> {
+  const structuralStatus = structuralVerdict === "pass" ? "PASS" : "FAIL";
 
   return {
-    visualReview: {
+    structuralReview: {
       required: 1,
-      current: semanticVerdict === "pass" ? 1 : 0,
-      status: semanticStatus,
+      current: structuralVerdict === "pass" ? 1 : 0,
+      status: structuralStatus,
       blocking: true,
       note:
-        semanticVerdict === "inconclusive"
-          ? "Semantic verdict is inconclusive; treat this as not complete and ask for review."
-          : (semanticRationale ?? "Semantic verdict from diffReport.aggregateVerdict."),
+        structuralVerdict === "inconclusive"
+          ? "Structural SSIM verdict is inconclusive; treat this as not complete and ask for review."
+          : (structuralRationale ?? "Structural SSIM verdict from diffReport.aggregateVerdict."),
     },
     matchRate: {
       required: 100,
@@ -228,21 +229,21 @@ function buildCompletionCriteria(
     diffPixelCount: {
       required: 0,
       current: diffPixelCount,
-      status: semanticStatus === "PASS" || diffPixelCount === 0 ? "PASS" : "FAIL",
+      status: structuralStatus === "PASS" || diffPixelCount === 0 ? "PASS" : "FAIL",
       blocking: false,
-      note: "Reference metric. Visual/semantic review is the blocking gate.",
+      note: "Reference metric. Structural SSIM review is the blocking gate.",
     },
     remainingIssues: {
       required: 0,
       current: regionCount,
-      status: semanticStatus === "PASS" || regionCount === 0 ? "PASS" : "FAIL",
-      blocking: semanticStatus !== "PASS",
-      note: "Blocking only while semantic visual review has not passed.",
+      status: structuralStatus === "PASS" || regionCount === 0 ? "PASS" : "FAIL",
+      blocking: structuralStatus !== "PASS",
+      note: "Blocking only while structural SSIM review has not passed.",
     },
   };
 }
 
-function resolveSemanticVerdict(
+function resolveStructuralVerdict(
   diffReport: DiffReport | undefined,
   diffPixelCount: number,
 ): { verdict: DiffVerdict; rationale: string | undefined } {
@@ -256,8 +257,8 @@ function resolveSemanticVerdict(
   };
 }
 
-function buildStatus(semanticVerdict: DiffVerdict): "PASS" | "FAIL" {
-  return semanticVerdict === "pass" ? "PASS" : "FAIL";
+function buildStatus(structuralVerdict: DiffVerdict): "PASS" | "FAIL" {
+  return structuralVerdict === "pass" ? "PASS" : "FAIL";
 }
 
 export function buildTargetNodeIds(
@@ -291,16 +292,16 @@ export function buildTargetNodeIds(
 }
 
 function buildNextAction(
-  semanticVerdict: DiffVerdict,
+  structuralVerdict: DiffVerdict,
   regionCount: number,
   targetNodeIds: string[],
 ): string {
-  if (semanticVerdict === "pass") {
-    return "ビジュアル判定はPASSです。matchRate%は参考値として扱い、差分画像に重大な崩れがないことを確認して完了してください。";
+  if (structuralVerdict === "pass") {
+    return "構造SSIM判定はPASSです。matchRate%は参考値として扱い、差分画像に重大な崩れがないことを確認して完了してください。";
   }
 
-  if (semanticVerdict === "inconclusive") {
-    return "ビジュアル判定はinconclusiveです。完成扱いにせず、diff画像をレイアウト・色・文字・余白の観点で人手確認してください。";
+  if (structuralVerdict === "inconclusive") {
+    return "構造SSIM判定はinconclusiveです。完成扱いにせず、diff画像をレイアウト・色・文字・余白の観点で人手確認してください。";
   }
 
   if (targetNodeIds.length === 0) {
@@ -311,18 +312,18 @@ function buildNextAction(
 }
 
 function buildSuggestion(
-  semanticVerdict: DiffVerdict,
+  structuralVerdict: DiffVerdict,
   matchRate: number,
   regionCount: number,
 ): string {
-  if (semanticVerdict === "pass") {
-    return `ビジュアル判定はPASSです。matchRate ${matchRate.toFixed(2)}% は参考値で、完成ゲートではありません。`;
+  if (structuralVerdict === "pass") {
+    return `構造SSIM判定はPASSです。matchRate ${matchRate.toFixed(2)}% は参考値で、完成ゲートではありません。`;
   }
-  if (semanticVerdict === "inconclusive") {
-    return `matchRate ${matchRate.toFixed(2)}% だけでは判断できません。diff画像を意味レベルでレビューしてください。`;
+  if (structuralVerdict === "inconclusive") {
+    return `matchRate ${matchRate.toFixed(2)}% だけでは判断できません。diff画像を構造レベルでレビューしてください。`;
   }
   if (matchRate >= 95) {
-    return `matchRateは高いですが、ビジュアル判定はFAILです。局所的な粗を${regionCount}箇所確認してください。`;
+    return `matchRateは高いですが、構造SSIM判定はFAILです。局所的な粗を${regionCount}箇所確認してください。`;
   }
   return `大きな差分が${regionCount}箇所あります。inspect_nodeで各差分領域を確認し、修正してください。`;
 }
@@ -623,7 +624,10 @@ export async function runCompareDesign(
 
   const regionCount = comparison.diffRegions.length;
   const targetNodeIds = buildTargetNodeIds(comparison.diffReport, comparison.diffRegions);
-  const semanticReview = resolveSemanticVerdict(comparison.diffReport, comparison.diffPixelCount);
+  const structuralReviewResult = resolveStructuralVerdict(
+    comparison.diffReport,
+    comparison.diffPixelCount,
+  );
   const sourceKey = buildComparisonSourceKey(parsedDesignSource, resolvedNodeId);
   const priorReports = getRecentReports(sourceKey);
   const critique =
@@ -632,22 +636,22 @@ export async function runCompareDesign(
       : undefined;
 
   const result = CompareDesignResultSchema.parse({
-    status: buildStatus(semanticReview.verdict),
+    status: buildStatus(structuralReviewResult.verdict),
     ...comparison,
     remainingIssues: regionCount,
     completionCriteria: buildCompletionCriteria(
       comparison.matchRate,
       comparison.diffPixelCount,
       regionCount,
-      semanticReview.verdict,
-      semanticReview.rationale,
+      structuralReviewResult.verdict,
+      structuralReviewResult.rationale,
     ),
     nextAction: diagnosis.likelyMisconfig
       ? buildMisconfigNextAction(diagnosis)
-      : buildNextAction(semanticReview.verdict, regionCount, targetNodeIds),
+      : buildNextAction(structuralReviewResult.verdict, regionCount, targetNodeIds),
     suggestion: diagnosis.likelyMisconfig
       ? diagnosis.headline
-      : buildSuggestion(semanticReview.verdict, comparison.matchRate, regionCount),
+      : buildSuggestion(structuralReviewResult.verdict, comparison.matchRate, regionCount),
     critique,
     preflight: finalPreflight,
     comparisonHeadline,

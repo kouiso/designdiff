@@ -241,7 +241,7 @@ describe("MCP Server E2E: compare_design", () => {
     expect(data.matchRate).toBeLessThan(100);
     expect(data.diffPixelCount).toBeGreaterThan(0);
     expect(data.diffRegions.length).toBeGreaterThan(0);
-    expect(data.completionCriteria.visualReview.status).toBe("FAIL");
+    expect(data.completionCriteria.structuralReview.status).toBe("FAIL");
     expect(data.completionCriteria.matchRate.status).toBe("PASS");
     expect(data.completionCriteria.matchRate.blocking).toBe(false);
     expect(data.diffReport).toBeUndefined();

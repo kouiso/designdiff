@@ -13,7 +13,7 @@ function makeResult(overrides: Partial<CompareDesignResult> = {}): CompareDesign
     diffRegions: [],
     remainingIssues: 0,
     completionCriteria: {
-      visualReview: { required: 1, current: 1, status: "PASS", blocking: true },
+      structuralReview: { required: 1, current: 1, status: "PASS", blocking: true },
       matchRate: { required: 100, current: 100, status: "PASS" },
       diffPixelCount: { required: 0, current: 0, status: "PASS" },
       remainingIssues: { required: 0, current: 0, status: "PASS" },

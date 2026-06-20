@@ -133,6 +133,73 @@ describe("buildTargetNodeIds", () => {
 });
 
 describe("runCompareDesign", () => {
+  async function runLocalStructuralComparison(
+    aggregateVerdict: "pass" | "fail" | "inconclusive",
+    diffPixelCount: number,
+    matchRate: number,
+  ) {
+    tmpRoot = await fs.mkdtemp(path.join(process.cwd(), "tmp-figdiff-runner-"));
+    const designPath = path.join(tmpRoot, "design.png");
+    const screenshotPath = path.join(tmpRoot, "screenshot.png");
+    await fs.writeFile(designPath, Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+    await fs.writeFile(screenshotPath, Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+
+    mocks.sharp.mockReturnValue({
+      metadata: vi.fn(async () => ({ width: 390, height: 844 })),
+    });
+    mocks.compareImages.mockResolvedValue({
+      comparisonId: `cmp-${aggregateVerdict}`,
+      matchRate,
+      diffPixelCount,
+      totalPixelCount: 390 * 844,
+      diffRegions:
+        diffPixelCount > 0
+          ? [
+              {
+                id: 1,
+                bounds: { x: 120, y: 680, width: 80, height: 24 },
+                diffPixelCount,
+                nearbyNodeIds: [],
+                nearbyNodeNames: [],
+              },
+            ]
+          : [],
+      suggestion: "structural test fixture",
+      diffReport: {
+        alignment: {
+          translation: { x: 0, y: 0 },
+          scale: { x: 1, y: 1 },
+          rotation: 0,
+          confidence: 1,
+          residual: 0,
+        },
+        regionScores: [],
+        issues: [],
+        weightedAggregate: {
+          weightedStructure: aggregateVerdict === "pass" ? 1 : 0.72,
+          weightedColor: 1,
+          totalWeight: 1,
+        },
+        aggregateVerdict,
+        rationale: `structural ${aggregateVerdict}`,
+      },
+      normalization: {
+        designNativeWidth: 390,
+        designNativeHeight: 844,
+        screenshotWidth: 390,
+        screenshotHeight: 844,
+        cropApplied: false,
+        containResized: false,
+        appliedScale: 1,
+      },
+    });
+
+    return runCompareDesign({
+      design_source: designPath,
+      screenshot: screenshotPath,
+    });
+  }
+
   it("auto-selects the best matching frame when nodeId and frameName are omitted", async () => {
     tmpRoot = await fs.mkdtemp(path.join(process.cwd(), "tmp-figdiff-runner-"));
     const screenshotPath = path.join(tmpRoot, "screenshot.png");
@@ -196,7 +263,7 @@ describe("runCompareDesign", () => {
     expect(consoleError).toHaveBeenCalledWith(expect.stringContaining('"Home" (2:2)'));
   });
 
-  it("keeps status FAIL when semantic verdict fails despite a high matchRate", async () => {
+  it("keeps status FAIL when structural verdict fails despite a high matchRate", async () => {
     tmpRoot = await fs.mkdtemp(path.join(process.cwd(), "tmp-figdiff-runner-"));
     const designPath = path.join(tmpRoot, "design.png");
     const screenshotPath = path.join(tmpRoot, "screenshot.png");
@@ -279,8 +346,30 @@ describe("runCompareDesign", () => {
     });
 
     expect(result.status).toBe("FAIL");
-    expect(result.completionCriteria?.visualReview.status).toBe("FAIL");
+    expect(result.completionCriteria?.structuralReview.status).toBe("FAIL");
     expect(result.completionCriteria?.matchRate.blocking).toBe(false);
     expect(result.suggestion).toContain("matchRateは高いですが");
+  });
+
+  it("keeps status FAIL when structural verdict is inconclusive", async () => {
+    const { result } = await runLocalStructuralComparison("inconclusive", 12, 99.99);
+
+    expect(result.status).toBe("FAIL");
+    expect(result.completionCriteria?.structuralReview.status).toBe("FAIL");
+    expect(result.completionCriteria?.structuralReview.current).toBe(0);
+  });
+
+  it("always marks structuralReview as blocking", async () => {
+    const { result } = await runLocalStructuralComparison("pass", 0, 100);
+
+    expect(result.completionCriteria?.structuralReview.blocking).toBe(true);
+  });
+
+  it("keeps status PASS when structural verdict passes despite diff pixels", async () => {
+    const { result } = await runLocalStructuralComparison("pass", 42, 99.98);
+
+    expect(result.status).toBe("PASS");
+    expect(result.completionCriteria?.structuralReview.status).toBe("PASS");
+    expect(result.completionCriteria?.diffPixelCount.status).toBe("PASS");
   });
 });

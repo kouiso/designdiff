@@ -260,6 +260,7 @@ describe("ProjectSchema", () => {
 describe("CompletionCriteriaSchema", () => {
   it("全 PASS の完了条件をパースできる", () => {
     const input = {
+      structuralReview: { required: 1, current: 1, status: "PASS", blocking: true },
       matchRate: { required: 100, current: 100, status: "PASS" },
       diffPixelCount: { required: 0, current: 0, status: "PASS" },
       remainingIssues: { required: 0, current: 0, status: "PASS" },
@@ -270,6 +271,7 @@ describe("CompletionCriteriaSchema", () => {
 
   it("FAIL を含む完了条件をパースできる", () => {
     const input = {
+      structuralReview: { required: 1, current: 0, status: "FAIL", blocking: true },
       matchRate: { required: 100, current: 94.2, status: "FAIL" },
       diffPixelCount: { required: 0, current: 1847, status: "FAIL" },
       remainingIssues: { required: 0, current: 3, status: "FAIL" },
@@ -280,7 +282,8 @@ describe("CompletionCriteriaSchema", () => {
 
   it("不正な status でエラー", () => {
     const input = {
-      matchRate: { required: 100, current: 94.2, status: "UNKNOWN" },
+      structuralReview: { required: 1, current: 0, status: "UNKNOWN", blocking: true },
+      matchRate: { required: 100, current: 94.2, status: "PASS" },
       diffPixelCount: { required: 0, current: 0, status: "PASS" },
       remainingIssues: { required: 0, current: 0, status: "PASS" },
     };
@@ -369,6 +372,7 @@ describe("CompareDesignResultSchema (v4 強化版)", () => {
         ],
       },
       completionCriteria: {
+        structuralReview: { required: 1, current: 0, status: "FAIL", blocking: true },
         matchRate: { required: 100, current: 94.2, status: "FAIL" },
         diffPixelCount: { required: 0, current: 1847, status: "FAIL" },
         remainingIssues: { required: 0, current: 3, status: "FAIL" },
@@ -399,6 +403,7 @@ describe("CompareDesignResultSchema (v4 強化版)", () => {
       remainingIssues: 0,
       diffRegions: [],
       completionCriteria: {
+        structuralReview: { required: 1, current: 1, status: "PASS", blocking: true },
         matchRate: { required: 100, current: 100, status: "PASS" },
         diffPixelCount: { required: 0, current: 0, status: "PASS" },
         remainingIssues: { required: 0, current: 0, status: "PASS" },
