@@ -70,7 +70,7 @@ describe("generateCssSuggestion", () => {
     expect(css).toContain("display: flex; flex-direction: row;");
     expect(css).toContain("padding: 8.0px 12.0px 8.0px 12.0px;");
     expect(css).toContain("gap: 16.0px;");
-    expect(css).toContain("background-color: #112233;");
+    expect(css).toContain("color: #112233;");
     expect(css).toContain("border: 2.0px solid #445566;");
     expect(css).toContain("border-radius: 4.0px;");
     expect(css).toContain("box-shadow: 1.0px 2.0px 3.0px 4.0px rgba(0,0,0,0.25);");
@@ -103,6 +103,38 @@ describe("generateCssSuggestion", () => {
     expect(css).toContain("display: flex; flex-direction: column;");
     expect(css).toContain("padding: 8.0px;");
     expect(css).toContain("border-radius: 2.0px 4.0px 6.0px 8.0px;");
+  });
+
+  it("typography がある fill は color として生成する", () => {
+    const css = generateCssSuggestion(
+      layout,
+      {
+        fills: [{ type: "SOLID", color: "#112233" }],
+        strokes: [],
+        borderRadius: {
+          topLeft: 0,
+          topRight: 0,
+          bottomRight: 0,
+          bottomLeft: 0,
+        },
+        opacity: 1,
+        blendMode: "NORMAL",
+        effects: [],
+      },
+      {
+        fontFamily: "Inter",
+        fontWeight: 400,
+        fontSize: 16,
+        lineHeight: "AUTO",
+        letterSpacing: 0,
+        textAlign: "LEFT",
+        textDecoration: "NONE",
+        textContent: "Hello",
+      },
+    );
+
+    expect(css).toContain("color: #112233;");
+    expect(css).not.toContain("background-color: #112233;");
   });
 
   it("ゼロの border-radius は CSS に出力しない", () => {

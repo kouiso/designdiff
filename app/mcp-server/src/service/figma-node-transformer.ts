@@ -254,7 +254,8 @@ function collectTokens(
   for (const fill of node.fills || []) {
     if (fill.visible === false || !fill.color) continue;
     const hex = figmaColorToHex(fill.color.r, fill.color.g, fill.color.b, fill.color.a);
-    pushToken(tokens, node, "backgroundColor", hex);
+    const fillProperty = node.type === "TEXT" ? "color" : "backgroundColor";
+    pushToken(tokens, node, fillProperty, hex);
   }
 
   collectTypographyTokens(node, tokens);

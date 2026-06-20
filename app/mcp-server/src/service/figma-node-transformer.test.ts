@@ -294,6 +294,32 @@ describe("extractDesignTokens", () => {
     expect(tokens.find((t) => t.property === "lineHeight")?.value).toBe(28);
   });
 
+  it("maps solid fill tokens to color for TEXT and backgroundColor for non-TEXT nodes", () => {
+    const textNode = makeNode({
+      id: "text",
+      name: "Label",
+      type: "TEXT",
+      fills: [{ type: "SOLID", visible: true, color: { r: 0, g: 0.2, b: 1, a: 1 } }],
+    });
+    const frameNode = makeNode({
+      id: "frame",
+      name: "Panel",
+      type: "FRAME",
+      fills: [{ type: "SOLID", visible: true, color: { r: 1, g: 1, b: 1, a: 1 } }],
+    });
+
+    const textTokens = extractDesignTokens(textNode, 1);
+    const frameTokens = extractDesignTokens(frameNode, 1);
+
+    expect(textTokens).toContainEqual(
+      expect.objectContaining({ nodeId: "text", property: "color", value: "#0033FF" }),
+    );
+    expect(textTokens.some((t) => t.property === "backgroundColor")).toBe(false);
+    expect(frameTokens).toContainEqual(
+      expect.objectContaining({ nodeId: "frame", property: "backgroundColor", value: "#FFFFFF" }),
+    );
+  });
+
   it("does not extract tokens beyond specified depth", () => {
     const deepChild: FigmaNode = {
       id: "deep",

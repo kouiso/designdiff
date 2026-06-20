@@ -43,11 +43,15 @@ function appendLayoutCss(parts: string[], layout: NodeLayout): void {
   }
 }
 
-function appendAppearanceCss(parts: string[], appearance: NodeAppearance): void {
+function appendAppearanceCss(
+  parts: string[],
+  appearance: NodeAppearance,
+  isTextNode: boolean,
+): void {
   if (appearance.fills && appearance.fills.length > 0) {
     const fill = appearance.fills[0];
     if (fill.color) {
-      parts.push(`background-color: ${fill.color};`);
+      parts.push(`${isTextNode ? "color" : "background-color"}: ${fill.color};`);
     }
   }
 
@@ -131,7 +135,7 @@ export function generateCssSuggestion(
   const parts: string[] = [];
 
   appendLayoutCss(parts, layout);
-  appendAppearanceCss(parts, appearance);
+  appendAppearanceCss(parts, appearance, typography !== undefined);
   if (typography) {
     appendTypographyCss(parts, typography);
   }
