@@ -10,10 +10,17 @@ const mocks = vi.hoisted(() => ({
   recordComparison: vi.fn(async () => undefined),
   sharp: vi.fn(),
   captureUrl: vi.fn(),
+  captureDeviceScreenshot: vi.fn(),
+  getLastUsedNode: vi.fn(),
+  setLastUsedNode: vi.fn(async () => undefined),
 }));
 
 vi.mock("sharp", () => ({
   default: mocks.sharp,
+}));
+
+vi.mock("@figdiff/mobile-capture", () => ({
+  captureDeviceScreenshot: mocks.captureDeviceScreenshot,
 }));
 
 vi.mock("./figma-service.js", () => ({
@@ -26,6 +33,11 @@ vi.mock("./image-compare-service.js", () => ({
 
 vi.mock("./capture-service.js", () => ({
   captureUrl: mocks.captureUrl,
+}));
+
+vi.mock("./last-used-node-store.js", () => ({
+  getLastUsedNode: mocks.getLastUsedNode,
+  setLastUsedNode: mocks.setLastUsedNode,
 }));
 
 vi.mock("./comparison-history.js", async (importOriginal) => {
@@ -213,6 +225,23 @@ describe("runCompareDesign", () => {
     ).rejects.toThrow(/screenshot must not be empty/);
   });
 
+  it("rejects multiple screenshot sources instead of silently preferring one", async () => {
+    tmpRoot = await fs.mkdtemp(path.join(process.cwd(), "tmp-figdiff-runner-"));
+    const designPath = path.join(tmpRoot, "design.png");
+    const screenshotPath = path.join(tmpRoot, "screenshot.png");
+    await fs.writeFile(designPath, Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+    await fs.writeFile(screenshotPath, Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+
+    await expect(
+      runCompareDesign({
+        design_source: designPath,
+        screenshot: screenshotPath,
+        screenshot_url: "https://example.test",
+      }),
+    ).rejects.toThrow(/Specify exactly one of screenshot, screenshot_url, or capture_device/);
+    expect(mocks.captureUrl).not.toHaveBeenCalled();
+  });
+
   it("allows screenshot_url without a placeholder screenshot", async () => {
     tmpRoot = await fs.mkdtemp(path.join(process.cwd(), "tmp-figdiff-runner-"));
     const designPath = path.join(tmpRoot, "design.png");
@@ -313,6 +342,72 @@ describe("runCompareDesign", () => {
       expect.stringMatching(/^cmp-/),
     );
     expect(consoleError).toHaveBeenCalledWith(expect.stringContaining('"Home" (2:2)'));
+  });
+
+  it("normalizes last-used fallback node ids for screenshot capture width and Figma assets", async () => {
+    tmpRoot = await fs.mkdtemp(path.join(process.cwd(), "tmp-figdiff-runner-"));
+    const screenshotPath = path.join(tmpRoot, "captured.png");
+    await fs.writeFile(screenshotPath, Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+
+    mocks.getLastUsedNode.mockResolvedValue({
+      figmaFileKey: "FILEKEY123",
+      nodeId: "12-34",
+      nodeName: "Stored Frame",
+      updatedAt: "2026-06-20T00:00:00.000Z",
+    });
+    mocks.captureUrl.mockResolvedValue({ screenshotPath });
+    const getFrames = vi.fn(async () => [
+      { id: "12:34", name: "Stored Frame", width: 375, height: 812 },
+      { id: "56:78", name: "Other", width: 1440, height: 900 },
+    ]);
+    const getNodeDetails = vi.fn(async () => ({
+      id: "12:34",
+      name: "Stored Frame",
+      type: "FRAME",
+      children: [],
+      absoluteBoundingBox: { x: 0, y: 0, width: 375, height: 812 },
+      fills: [],
+      strokes: [],
+      effects: [],
+    }));
+    const getFrameImage = vi.fn(async () => Buffer.from("design").toString("base64"));
+    mocks.createFigmaService.mockReturnValue({ getFrames, getNodeDetails, getFrameImage });
+    mocks.sharp.mockReturnValue({
+      metadata: vi.fn(async () => ({ width: 375, height: 812 })),
+    });
+    mocks.compareImages.mockResolvedValue({
+      comparisonId: "cmp-last-used",
+      matchRate: 100,
+      diffPixelCount: 0,
+      totalPixelCount: 375 * 812,
+      diffRegions: [],
+      suggestion: "一致率100%です。差分はありません。",
+      normalization: {
+        designNativeWidth: 375,
+        designNativeHeight: 812,
+        screenshotWidth: 375,
+        screenshotHeight: 812,
+        cropApplied: false,
+        containResized: false,
+        appliedScale: 1,
+      },
+    });
+
+    const output = await runCompareDesign({
+      design_source: "https://www.figma.com/design/FILEKEY123/Test",
+      screenshot_url: "https://example.test",
+      project_id: "project-last-used",
+    });
+
+    expect(mocks.captureUrl).toHaveBeenCalledWith("https://example.test", { width: 375 });
+    expect(getNodeDetails).toHaveBeenCalledWith("FILEKEY123", "12:34");
+    expect(getFrameImage).toHaveBeenCalledWith("FILEKEY123", "12:34", 375, 375);
+    expect(output.result.preflight?.warnings[0]).toEqual(
+      expect.objectContaining({
+        code: "last_used_node",
+        message: expect.stringContaining("(12:34)"),
+      }),
+    );
   });
 
   it("keeps status FAIL when structural verdict fails despite a high matchRate", async () => {
