@@ -89,6 +89,33 @@ describe("FigmaClient", () => {
         "https://api.figma.com/v1/files/FILE/nodes?ids=1:1&depth=3",
       );
     });
+
+    it("dash format node id を colon format に正規化して取得する", async () => {
+      const fetchMock = stubFigmaFetch();
+      const client = new FigmaClient(token);
+
+      const result = await client.getNode("FILE", "1-1");
+
+      expect(fetchMock.mock.calls[0]?.[0]).toBe(
+        "https://api.figma.com/v1/files/FILE/nodes?ids=1:1",
+      );
+      expect(result).toEqual(node);
+    });
+
+    it("missing node error は file key と修正ヒントを含める", async () => {
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(async () => new Response(JSON.stringify({ nodes: { "99999:88888": null } }))),
+      );
+      const client = new FigmaClient(token);
+
+      await expect(client.getNode("FILE", "99999:88888")).rejects.toThrow(
+        'Requested Figma node not found: Node "99999:88888" not found in file FILE.',
+      );
+      await expect(client.getNode("FILE", "99999:88888")).rejects.toThrow(
+        "Run list_figma_frames to see valid node ids.",
+      );
+    });
   });
 });
 

@@ -105,6 +105,38 @@ describe("generateCssSuggestion", () => {
     expect(css).toContain("border-radius: 2.0px 4.0px 6.0px 8.0px;");
   });
 
+  it("auto-layout alignment を flex alignment CSS に変換する", () => {
+    const css = generateCssSuggestion(
+      {
+        ...layout,
+        layoutMode: "HORIZONTAL",
+        primaryAxisAlign: "SPACE_BETWEEN",
+        counterAxisAlign: "CENTER",
+      },
+      makeAppearance(undefined),
+      undefined,
+    );
+
+    expect(css).toContain("justify-content: space-between;");
+    expect(css).toContain("align-items: center;");
+  });
+
+  it("default auto-layout alignment は CSS に出力しない", () => {
+    const css = generateCssSuggestion(
+      {
+        ...layout,
+        layoutMode: "VERTICAL",
+        primaryAxisAlign: "MIN",
+        counterAxisAlign: "MIN",
+      },
+      makeAppearance(undefined),
+      undefined,
+    );
+
+    expect(css).not.toContain("justify-content");
+    expect(css).not.toContain("align-items");
+  });
+
   it("typography がある fill は color として生成する", () => {
     const css = generateCssSuggestion(
       layout,

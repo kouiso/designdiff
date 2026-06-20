@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { extractFileKey, extractNodeId, parseDesignInput } from "./figma-url-parser.js";
+import {
+  extractFileKey,
+  extractNodeId,
+  normalizeNodeId,
+  parseDesignInput,
+} from "./figma-url-parser.js";
 
 describe("extractFileKey", () => {
   it("extracts file key from /design/ URL", () => {
@@ -116,5 +121,15 @@ describe("parseDesignInput", () => {
 
   it("throws on whitespace-only input", () => {
     expect(() => parseDesignInput("   ")).toThrow("Input cannot be empty");
+  });
+});
+
+describe("normalizeNodeId", () => {
+  it("dash format を colon format に変換する", () => {
+    expect(normalizeNodeId("72-2552")).toBe("72:2552");
+  });
+
+  it("colon format はそのまま返す", () => {
+    expect(normalizeNodeId("72:2552")).toBe("72:2552");
   });
 });

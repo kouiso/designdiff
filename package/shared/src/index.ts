@@ -72,6 +72,7 @@ export {
   buildFigmaFrameUrl,
   extractFileKey,
   extractNodeId,
+  normalizeNodeId,
   parseDesignInput,
 } from "./figma-url-parser.js";
 export {

@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { normalizeNodeId } from "./figma-url-parser.js";
+
 import type { Frame } from "./type.js";
 
 const FIGMA_API_BASE = "https://api.figma.com/v1";
@@ -239,14 +241,17 @@ export class FigmaClient {
   }
 
   async getNode(fileKey: string, nodeId: string, depth?: number): Promise<FigmaNode> {
+    const normalizedNodeId = normalizeNodeId(nodeId);
     const depthQuery = depth === undefined ? "" : `&depth=${depth}`;
-    const url = `${FIGMA_API_BASE}/files/${fileKey}/nodes?ids=${nodeId}${depthQuery}`;
+    const url = `${FIGMA_API_BASE}/files/${fileKey}/nodes?ids=${normalizedNodeId}${depthQuery}`;
     const json = await this.fetchApi(url);
     const response = FigmaNodesResponseSchema.parse(json);
 
-    const wrapper = response.nodes[nodeId];
+    const wrapper = response.nodes[normalizedNodeId];
     if (!wrapper) {
-      throw new Error(`Node ${nodeId} not found`);
+      throw new Error(
+        `Requested Figma node not found: Node "${nodeId}" not found in file ${fileKey}. The id may not exist, or the format may be wrong (expected "1:23" with a colon; dash-format ids from Figma URLs are auto-converted). Run list_figma_frames to see valid node ids.`,
+      );
     }
 
     return wrapper.document;

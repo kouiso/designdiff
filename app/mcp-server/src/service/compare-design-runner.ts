@@ -11,6 +11,7 @@ import {
   CompareDesignResultSchema,
   diagnoseComparison,
   formatFrameCandidates,
+  normalizeNodeId,
   parseDesignInput,
   rankFrameCandidates,
   runPreflight,
@@ -416,7 +417,8 @@ async function resolveScreenshotPath(
     try {
       const figmaService = await createFigmaService();
       const frames = await figmaService.getFrames(parsedDesignSource.fileKey);
-      const effectiveNodeId = (parsedDesignSource.nodeId ?? fallbackNodeId)?.replace(/-/g, ":");
+      const effectiveNodeId =
+        parsedDesignSource.nodeId ?? (fallbackNodeId ? normalizeNodeId(fallbackNodeId) : undefined);
       const matched =
         (effectiveNodeId ? frames.find((f) => f.id === effectiveNodeId) : undefined) ??
         (args.frame_name
