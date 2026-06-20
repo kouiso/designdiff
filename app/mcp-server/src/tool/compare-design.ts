@@ -39,8 +39,8 @@ const DESCRIPTION = `デザインと実装のピクセル差分を検出しま�
 - diffRegions: 差分領域。レスポンス肥大化を防ぐため上位20件のみ。全件は regionsDetailPath のJSONファイルを参照
 
 ## 入力
-- design_source: Figma URL（node-id付き推奨） or ローカル画像パス
-- screenshot: 実装スクリーンショットのローカルパス（screenshot_url 使用時はプレースホルダ文字列で可）
+- design_source: Figma URL（node-id付き推奨） or ローカル画像パス（ローカル画像はカレントディレクトリまたは ~/.figdiff/cache 配下。追加は FIGDIFF_ALLOWED_DIRS）
+- screenshot: 実装スクリーンショットのローカルパス（screenshot_url / capture_device 使用時は省略可）
 - screenshot_url: 撮影対象URL。指定時はPlaywrightで内部撮影しscreenshotの代わりに使用
 - capture_device: 接続済みモバイル端末/SimulatorからPNGを撮影しscreenshotの代わりに使用（android/ios-sim/ios-device）
 - capture_width: 撮影幅(px)。省略時はFigmaフレームの実幅を自動取得（screenshot_url指定時のみ有効）
@@ -54,8 +54,10 @@ const DESCRIPTION = `デザインと実装のピクセル差分を検出しま�
   "https://www.figma.com/design/ABC123/File"
 
 ## ローカルパスの例
-  "/path/to/design.png"
-  "./screenshots/home.png"`;
+  "./design/home.png"
+  "./screenshots/home.png"
+
+ローカルの design_source はカレントディレクトリまたは ~/.figdiff/cache 配下に置くか、FIGDIFF_ALLOWED_DIRS で許可ディレクトリを追加してください。screenshot のローカルパスはこの allowlist の対象外です。`;
 
 const CONFIDENCE_TO_PERCENTAGE = 100;
 
@@ -138,18 +140,21 @@ export function registerCompareDesign(server: McpServer): void {
       inputSchema: {
         design_source: z
           .string()
-          .describe("FigmaのURL（node-id付き推奨）またはデザイン画像のローカルパス"),
+          .describe(
+            "FigmaのURL（node-id付き推奨）またはデザイン画像のローカルパス。ローカル画像はカレントディレクトリまたは ~/.figdiff/cache 配下、または FIGDIFF_ALLOWED_DIRS で追加した許可ディレクトリ配下に置く。",
+          ),
         screenshot: z
           .string()
+          .optional()
           .describe(
-            "実装スクリーンショットのローカルパス（screenshot_url使用時はプレースホルダ文字列で可）",
+            "実装スクリーンショットのローカルパス（screenshot_url / capture_device 使用時は省略可）",
           ),
         screenshot_url: z
           .string()
           .url()
           .optional()
           .describe(
-            "撮影対象のURL。指定時はPlaywrightで内部撮影し、screenshotの代わりに使用する。screenshotとどちらか一方を指定。別ネットワーク環境（WSL/サンドボックス）でlocalhost到達が失敗する場合は環境変数FIGDIFF_CDP_ENDPOINTにホストChromeのCDPアドレスを設定してください。",
+            "撮影対象のURL。指定時はPlaywrightで内部撮影し、screenshotの代わりに使用する。screenshot / screenshot_url / capture_device のいずれか一つを指定。別ネットワーク環境（WSL/サンドボックス）でlocalhost到達が失敗する場合は環境変数FIGDIFF_CDP_ENDPOINTにホストChromeのCDPアドレスを設定してください。",
           ),
         capture_device: z
           .enum(["android", "ios-sim", "ios-device"])

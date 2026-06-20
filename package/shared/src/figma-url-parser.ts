@@ -44,9 +44,29 @@ export function buildFigmaFrameUrl(baseUrl: string, frameNodeId: string): string
   return url.toString();
 }
 
+function isRecognizedFigmaUrl(input: string): boolean {
+  try {
+    const url = new URL(input);
+    return /(^|\.)figma\.com$/i.test(url.hostname) && /^\/(design|file)\//.test(url.pathname);
+  } catch {
+    return false;
+  }
+}
+
+function looksLikeUrl(input: string): boolean {
+  return (
+    /^https?:\/\//i.test(input) ||
+    input.includes("://") ||
+    (/figma/i.test(input) && !isPathLike(input))
+  );
+}
+
+function isPathLike(input: string): boolean {
+  return /^(\/|\.\/?|~\/|[a-zA-Z]:[\\/])/.test(input) || /\.(png|jpe?g|webp)$/i.test(input);
+}
+
 /**
- * Determine whether an input string is a Figma URL or a local file path.
- * Figma URLs contain "figma.com". Everything else is treated as a local path.
+ * Determine whether an input string is a Figma URL or a local image file path.
  */
 export function parseDesignInput(input: string): ParsedDesignInput {
   const trimmed = input.trim();
@@ -55,12 +75,20 @@ export function parseDesignInput(input: string): ParsedDesignInput {
   }
 
   let result: ParsedDesignInput;
-  if (trimmed.includes("figma.com")) {
+  if (isRecognizedFigmaUrl(trimmed)) {
     const fileKey = extractFileKey(trimmed);
     const nodeId = extractNodeId(trimmed) ?? undefined;
     result = { type: "figma_url", fileKey, nodeId };
-  } else {
+  } else if (looksLikeUrl(trimmed) || /^\/(design|file)\//.test(trimmed)) {
+    throw new Error(
+      "design_source looks like a URL but is not a recognized Figma link; expected a https://www.figma.com/design/... or /file/... URL",
+    );
+  } else if (isPathLike(trimmed)) {
     result = { type: "local_path", filePath: trimmed };
+  } else {
+    throw new Error(
+      "design_source is neither an existing image file nor a recognized Figma URL; expected a figma.com /design or /file link, or a local PNG/JPEG/WebP path",
+    );
   }
 
   return ParsedDesignInputSchema.parse(result);

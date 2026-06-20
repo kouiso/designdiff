@@ -115,6 +115,26 @@ describe("parseDesignInput", () => {
     });
   });
 
+  it("throws for a garbage string", () => {
+    expect(() => parseDesignInput("not-a-url-and-not-a-path")).toThrow(
+      /neither an existing image file nor a recognized Figma URL/,
+    );
+  });
+
+  it("throws for a typo'd Figma host", () => {
+    expect(() => parseDesignInput("https://www.figma.co/design/ABC123/Title")).toThrow(
+      /looks like a URL/,
+    );
+  });
+
+  it("throws for a dropped-domain share path", () => {
+    expect(() => parseDesignInput("/design/ABC123/Title?node-id=1-23")).toThrow(/looks like a URL/);
+  });
+
+  it("throws for a bare word with no image extension", () => {
+    expect(() => parseDesignInput("mockup")).toThrow(/local PNG\/JPEG\/WebP path/);
+  });
+
   it("throws on empty input", () => {
     expect(() => parseDesignInput("")).toThrow("Input cannot be empty");
   });

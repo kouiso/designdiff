@@ -2,6 +2,7 @@ import * as fs from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
 
+import sharp from "sharp";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 import { resolveSafePath, resolveScreenshotInputPath } from "./path-guard.js";
@@ -114,6 +115,15 @@ describe("resolveSafePath", () => {
 
     await expect(resolveSafePath(linkPath)).rejects.toThrow(/not allowed/i);
   });
+
+  it("throws a clear error for a corrupt .png file with valid magic bytes", async () => {
+    const filePath = path.join(tmpRoot, "corrupt.png");
+    await fs.writeFile(filePath, Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x00, 0x00, 0x00, 0x00]));
+
+    await expect(resolveScreenshotInputPath(filePath)).rejects.toThrow(
+      /valid\/decodable image file/,
+    );
+  });
 });
 
 describe("resolveScreenshotInputPath", () => {
@@ -130,7 +140,9 @@ describe("resolveScreenshotInputPath", () => {
 
   it("returns the real path for a valid PNG file", async () => {
     const filePath = path.join(tmpRoot, "design.png");
-    await fs.writeFile(filePath, Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
+    await sharp({ create: { width: 1, height: 1, channels: 4, background: "red" } })
+      .png()
+      .toFile(filePath);
 
     const resolved = await resolveScreenshotInputPath(filePath);
 
@@ -139,7 +151,9 @@ describe("resolveScreenshotInputPath", () => {
 
   it("returns the real path for a valid JPEG file", async () => {
     const filePath = path.join(tmpRoot, "design.jpeg");
-    await fs.writeFile(filePath, Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10]));
+    await sharp({ create: { width: 1, height: 1, channels: 3, background: "red" } })
+      .jpeg()
+      .toFile(filePath);
 
     const resolved = await resolveScreenshotInputPath(filePath);
 
@@ -152,6 +166,8 @@ describe("resolveScreenshotInputPath", () => {
     await expect(resolveScreenshotInputPath(missingPath)).rejects.toThrow(
       /Screenshot file not found/i,
     );
+    await expect(resolveScreenshotInputPath(missingPath)).rejects.toThrow(/screenshot_url/);
+    await expect(resolveScreenshotInputPath(missingPath)).rejects.toThrow(/capture_device/);
   });
 
   it("throws a clear error for a directory path", async () => {
@@ -159,6 +175,7 @@ describe("resolveScreenshotInputPath", () => {
     await fs.mkdir(dirPath);
 
     await expect(resolveScreenshotInputPath(dirPath)).rejects.toThrow(/not a file/i);
+    await expect(resolveScreenshotInputPath(dirPath)).rejects.toThrow(/screenshot_url/);
   });
 
   it("throws a clear error for a text file", async () => {
@@ -168,6 +185,14 @@ describe("resolveScreenshotInputPath", () => {
     await expect(resolveScreenshotInputPath(filePath)).rejects.toThrow(
       /must be a PNG, JPEG, or WebP/i,
     );
+    await expect(resolveScreenshotInputPath(filePath)).rejects.toThrow(/capture_device/);
+  });
+
+  it("throws a clear error when screenshot input is empty", async () => {
+    await expect(resolveScreenshotInputPath("")).rejects.toThrow(/screenshot must not be empty/i);
+    await expect(resolveScreenshotInputPath("   ")).rejects.toThrow(
+      /screenshot_url \/ capture_device/,
+    );
   });
 
   it("throws a clear error for a .png file with wrong magic bytes", async () => {
@@ -176,6 +201,15 @@ describe("resolveScreenshotInputPath", () => {
 
     await expect(resolveScreenshotInputPath(filePath)).rejects.toThrow(
       /must be a PNG, JPEG, or WebP/i,
+    );
+  });
+
+  it("throws a clear error for a corrupt .png file with valid magic bytes", async () => {
+    const filePath = path.join(tmpRoot, "corrupt.png");
+    await fs.writeFile(filePath, Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x00, 0x00, 0x00, 0x00]));
+
+    await expect(resolveScreenshotInputPath(filePath)).rejects.toThrow(
+      /valid\/decodable image file/,
     );
   });
 });
