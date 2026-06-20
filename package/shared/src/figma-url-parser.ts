@@ -25,7 +25,7 @@ export function normalizeNodeId(nodeId: string): string {
 
 export function extractNodeId(url: string): string | null {
   try {
-    const urlObj = new URL(url);
+    const urlObj = new URL(normalizeFigmaUrlInput(url));
     const nodeId = urlObj.searchParams.get("node-id");
     if (!nodeId) return null;
     return normalizeNodeId(nodeId);
@@ -44,9 +44,16 @@ export function buildFigmaFrameUrl(baseUrl: string, frameNodeId: string): string
   return url.toString();
 }
 
+function normalizeFigmaUrlInput(input: string): string {
+  if (/^(?:www\.)?figma\.com\//i.test(input)) {
+    return `https://${input}`;
+  }
+  return input;
+}
+
 function isRecognizedFigmaUrl(input: string): boolean {
   try {
-    const url = new URL(input);
+    const url = new URL(normalizeFigmaUrlInput(input));
     return /(^|\.)figma\.com$/i.test(url.hostname) && /^\/(design|file)\//.test(url.pathname);
   } catch {
     return false;
@@ -61,8 +68,12 @@ function looksLikeUrl(input: string): boolean {
   );
 }
 
+function hasImageExtension(input: string): boolean {
+  return /\.(png|jpe?g|webp)$/i.test(input);
+}
+
 function isPathLike(input: string): boolean {
-  return /^(\/|\.\/?|~\/|[a-zA-Z]:[\\/])/.test(input) || /\.(png|jpe?g|webp)$/i.test(input);
+  return /^(\/|\.\/?|~\/|[a-zA-Z]:[\\/])/.test(input) || hasImageExtension(input);
 }
 
 /**
@@ -79,12 +90,16 @@ export function parseDesignInput(input: string): ParsedDesignInput {
     const fileKey = extractFileKey(trimmed);
     const nodeId = extractNodeId(trimmed) ?? undefined;
     result = { type: "figma_url", fileKey, nodeId };
-  } else if (looksLikeUrl(trimmed) || /^\/(design|file)\//.test(trimmed)) {
+  } else if (/^\/(design|file)\//.test(trimmed) && !hasImageExtension(trimmed)) {
     throw new Error(
       "design_source looks like a URL but is not a recognized Figma link; expected a https://www.figma.com/design/... or /file/... URL",
     );
   } else if (isPathLike(trimmed)) {
     result = { type: "local_path", filePath: trimmed };
+  } else if (looksLikeUrl(trimmed)) {
+    throw new Error(
+      "design_source looks like a URL but is not a recognized Figma link; expected a https://www.figma.com/design/... or /file/... URL",
+    );
   } else {
     throw new Error(
       "design_source is neither an existing image file nor a recognized Figma URL; expected a figma.com /design or /file link, or a local PNG/JPEG/WebP path",
