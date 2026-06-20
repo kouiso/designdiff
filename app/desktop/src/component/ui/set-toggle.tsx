@@ -61,6 +61,7 @@ export function SetToggle({
             width: 16,
             height: 16,
             borderRadius: 99,
+            // ノブの白と影の alpha は面上で浮いて見えることを優先するため。
             background: "#fff",
             transition: "left 0.15s",
             boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
