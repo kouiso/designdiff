@@ -27,6 +27,14 @@ const FigmaNodeSchema: z.ZodType<FigmaNode> = z.lazy(() =>
             .optional(),
           opacity: z.number().optional(),
           visible: z.boolean().optional(),
+          gradientStops: z
+            .array(
+              z.object({
+                position: z.number(),
+                color: z.object({ r: z.number(), g: z.number(), b: z.number(), a: z.number() }),
+              }),
+            )
+            .optional(),
         }),
       )
       .default([]),
@@ -138,6 +146,7 @@ export interface FigmaPaint {
   color?: FigmaColor;
   opacity?: number;
   visible?: boolean;
+  gradientStops?: FigmaColorStop[];
 }
 
 export interface FigmaColor {
@@ -145,6 +154,11 @@ export interface FigmaColor {
   g: number;
   b: number;
   a: number;
+}
+
+export interface FigmaColorStop {
+  position: number;
+  color: FigmaColor;
 }
 
 export interface FigmaEffect {

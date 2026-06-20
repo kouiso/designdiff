@@ -19,6 +19,17 @@ import {
   type DesignToken,
 } from "@figdiff/shared";
 
+const roundPx = (n: number): number => Math.round(n * 100) / 100;
+
+const BBOX_TOKEN_NODE_TYPES = new Set([
+  "FRAME",
+  "GROUP",
+  "INSTANCE",
+  "COMPONENT",
+  "RECTANGLE",
+  "TEXT",
+]);
+
 /**
  * Transform a FigmaNode into NodeInspection with CSS suggestions
  */
@@ -204,7 +215,7 @@ function pushToken(
     nodeName: node.name,
     nodeType: node.type,
     property,
-    value,
+    value: typeof value === "number" ? roundPx(value) : value,
     unit,
   });
 }
@@ -229,6 +240,83 @@ function collectTypographyTokens(node: FigmaNode, tokens: DesignToken[]): void {
   if (s.fontFamily) pushToken(tokens, node, "fontFamily", s.fontFamily);
   if (s.fontWeight) pushToken(tokens, node, "fontWeight", s.fontWeight);
   if (s.lineHeightPx) pushToken(tokens, node, "lineHeight", s.lineHeightPx, "px");
+  if (s.letterSpacing !== undefined)
+    pushToken(tokens, node, "letterSpacing", s.letterSpacing, "px");
+  if (s.textAlignHorizontal)
+    pushToken(tokens, node, "textAlign", normalizeTextAlign(s.textAlignHorizontal));
+}
+
+function colorWithPaintOpacity(
+  color: { r: number; g: number; b: number; a: number },
+  opacity?: number,
+): string {
+  return figmaColorToHex(color.r, color.g, color.b, color.a * (opacity ?? 1));
+}
+
+function collectFillTokens(node: FigmaNode, tokens: DesignToken[]): void {
+  for (const fill of node.fills || []) {
+    if (fill.visible === false) continue;
+
+    if (fill.type === "SOLID" && fill.color) {
+      const fillProperty = node.type === "TEXT" ? "color" : "backgroundColor";
+      pushToken(tokens, node, fillProperty, colorWithPaintOpacity(fill.color, fill.opacity));
+      continue;
+    }
+
+    if (fill.type.startsWith("GRADIENT_")) {
+      pushToken(tokens, node, "backgroundImage", fill.type);
+      for (const [index, stop] of (fill.gradientStops || []).entries()) {
+        pushToken(
+          tokens,
+          node,
+          `gradientStop${index}Color`,
+          figmaColorToHex(stop.color.r, stop.color.g, stop.color.b, stop.color.a),
+        );
+        pushToken(tokens, node, `gradientStop${index}Position`, stop.position);
+      }
+    }
+  }
+}
+
+function collectStrokeTokens(node: FigmaNode, tokens: DesignToken[]): void {
+  for (const stroke of node.strokes || []) {
+    if (stroke.visible === false || !stroke.color) continue;
+    pushToken(tokens, node, "borderColor", colorWithPaintOpacity(stroke.color, stroke.opacity));
+    pushToken(tokens, node, "borderWidth", node.strokeWeight ?? 1, "px");
+  }
+}
+
+function collectEffectTokens(node: FigmaNode, tokens: DesignToken[]): void {
+  for (const effect of node.effects || []) {
+    if (effect.visible === false) continue;
+    pushToken(tokens, node, "boxShadowType", effect.type);
+    if (effect.color)
+      pushToken(
+        tokens,
+        node,
+        "boxShadowColor",
+        figmaColorToHex(effect.color.r, effect.color.g, effect.color.b, effect.color.a),
+      );
+    if (effect.offset) {
+      pushToken(tokens, node, "boxShadowOffsetX", effect.offset.x, "px");
+      pushToken(tokens, node, "boxShadowOffsetY", effect.offset.y, "px");
+    }
+    pushTokenIfDefined(tokens, node, "boxShadowRadius", effect.radius, "px");
+    pushTokenIfDefined(tokens, node, "boxShadowSpread", effect.spread, "px");
+  }
+}
+
+function collectBorderRadiusTokens(node: FigmaNode, tokens: DesignToken[]): void {
+  if (node.rectangleCornerRadii) {
+    const [topLeft, topRight, bottomRight, bottomLeft] = node.rectangleCornerRadii;
+    pushToken(tokens, node, "borderTopLeftRadius", topLeft, "px");
+    pushToken(tokens, node, "borderTopRightRadius", topRight, "px");
+    pushToken(tokens, node, "borderBottomRightRadius", bottomRight, "px");
+    pushToken(tokens, node, "borderBottomLeftRadius", bottomLeft, "px");
+    return;
+  }
+
+  pushTokenIfDefined(tokens, node, "borderRadius", node.cornerRadius, "px");
 }
 
 function collectTokens(
@@ -239,7 +327,7 @@ function collectTokens(
 ): void {
   const bbox = node.absoluteBoundingBox;
 
-  if (bbox) {
+  if (bbox && BBOX_TOKEN_NODE_TYPES.has(node.type) && bbox.width > 0 && bbox.height > 0) {
     pushToken(tokens, node, "width", bbox.width, "px");
     pushToken(tokens, node, "height", bbox.height, "px");
   }
@@ -249,14 +337,13 @@ function collectTokens(
   pushTokenIfDefined(tokens, node, "paddingBottom", node.paddingBottom, "px");
   pushTokenIfDefined(tokens, node, "paddingLeft", node.paddingLeft, "px");
   pushTokenIfDefined(tokens, node, "gap", node.itemSpacing, "px");
-  pushTokenIfDefined(tokens, node, "borderRadius", node.cornerRadius, "px");
+  collectBorderRadiusTokens(node, tokens);
+  collectFillTokens(node, tokens);
+  collectStrokeTokens(node, tokens);
+  collectEffectTokens(node, tokens);
 
-  for (const fill of node.fills || []) {
-    if (fill.visible === false || !fill.color) continue;
-    const hex = figmaColorToHex(fill.color.r, fill.color.g, fill.color.b, fill.color.a);
-    const fillProperty = node.type === "TEXT" ? "color" : "backgroundColor";
-    pushToken(tokens, node, fillProperty, hex);
-  }
+  if (node.opacity !== undefined && node.opacity < 1)
+    pushToken(tokens, node, "opacity", node.opacity);
 
   collectTypographyTokens(node, tokens);
 
