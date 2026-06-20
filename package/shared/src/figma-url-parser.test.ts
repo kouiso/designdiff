@@ -53,6 +53,10 @@ describe("extractNodeId", () => {
   it("returns null for invalid URL", () => {
     expect(extractNodeId("not-a-url")).toBeNull();
   });
+
+  it("extracts node-id from scheme-less Figma URL", () => {
+    expect(extractNodeId("figma.com/design/ABC/Title?node-id=1-23")).toBe("1:23");
+  });
 });
 
 describe("parseDesignInput", () => {
@@ -83,11 +87,40 @@ describe("parseDesignInput", () => {
     });
   });
 
+  it("parses scheme-less Figma design URL", () => {
+    const result = parseDesignInput("figma.com/design/ABC123/Title?node-id=1-23");
+    expect(result).toEqual({
+      type: "figma_url",
+      fileKey: "ABC123",
+      nodeId: "1:23",
+    });
+  });
+
+  it("parses scheme-less www Figma design URL", () => {
+    const result = parseDesignInput("www.figma.com/design/ABC123/Title");
+    expect(result).toEqual({
+      type: "figma_url",
+      fileKey: "ABC123",
+      nodeId: undefined,
+    });
+  });
+
   it("parses absolute file path", () => {
     const result = parseDesignInput("/home/user/screenshot.png");
     expect(result).toEqual({
       type: "local_path",
       filePath: "/home/user/screenshot.png",
+    });
+  });
+
+  it("parses absolute image paths under /design and /file", () => {
+    expect(parseDesignInput("/design/home.png")).toEqual({
+      type: "local_path",
+      filePath: "/design/home.png",
+    });
+    expect(parseDesignInput("/file/snapshot.jpg")).toEqual({
+      type: "local_path",
+      filePath: "/file/snapshot.jpg",
     });
   });
 
