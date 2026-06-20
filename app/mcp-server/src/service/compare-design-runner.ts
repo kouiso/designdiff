@@ -5,6 +5,7 @@ import * as path from "node:path";
 import sharp from "sharp";
 import { z } from "zod";
 
+import { captureDeviceScreenshot, type CaptureDevice } from "@figdiff/mobile-capture";
 import {
   buildComparisonHeadline,
   CompareDesignResultSchema,
@@ -130,6 +131,7 @@ export interface CompareDesignRunArgs {
   design_source: string;
   screenshot: string;
   screenshot_url?: string;
+  capture_device?: CaptureDevice;
   capture_width?: number;
   frame_name?: string;
   threshold?: number;
@@ -344,6 +346,10 @@ async function resolveScreenshotPath(
   args: CompareDesignRunArgs,
   fallbackNodeId?: string,
 ): Promise<string> {
+  if (args.capture_device) {
+    return captureDeviceScreenshot({ device: args.capture_device });
+  }
+
   if (!args.screenshot_url) {
     return resolveScreenshotInputPath(args.screenshot);
   }

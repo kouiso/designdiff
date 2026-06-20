@@ -7,12 +7,14 @@
     "paths": {
       "@figdiff/credential-store": ["./package/credential-store/src/index.ts"],
       "@figdiff/shared": ["./package/shared/src/index.ts"],
-      "@/*": ["./app/desktop/src/*"]
+      "@/*": ["./app/desktop/src/*"],
+      "@figdiff/mobile-capture": ["./package/mobile-capture/src/index.ts"]
     }
   },
   "include": [
     "package/credential-store/src/**/*.ts",
     "package/shared/src/**/*.ts",
+    "package/mobile-capture/src/**/*.ts",
     "app/desktop/src/**/*.ts",
     "app/desktop/src/**/*.tsx",
     "app/desktop/electron/**/*.ts",

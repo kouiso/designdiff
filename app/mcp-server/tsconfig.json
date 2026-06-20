@@ -6,10 +6,18 @@
     "composite": true,
     "baseUrl": ".",
     "paths": {
-      "@figdiff/shared": ["../../package/shared/src/index.ts"]
+      "@figdiff/shared": ["../../package/shared/src/index.ts"],
+      "@figdiff/mobile-capture": ["../../package/mobile-capture/src/index.ts"]
     }
   },
   "include": ["src/**/*.ts"],
   "exclude": ["dist", "node_modules", "**/*.test.ts"],
-  "references": [{ "path": "../../package/shared" }]
+  "references": [
+    {
+      "path": "../../package/shared"
+    },
+    {
+      "path": "../../package/mobile-capture"
+    }
+  ]
 }
