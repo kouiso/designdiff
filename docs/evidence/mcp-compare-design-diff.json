@@ -30,20 +30,33 @@
     "returnedRegionCount": 1,
     "regionsTruncated": false,
     "completionCriteria": {
+      "visualReview": {
+        "required": 1,
+        "current": 0,
+        "status": "FAIL",
+        "blocking": true,
+        "note": "critical severity issue detected; weakest region whole-frame (structure 0.000, color 57.908)"
+      },
       "matchRate": {
         "required": 100,
         "current": 0,
-        "status": "FAIL"
+        "status": "PASS",
+        "blocking": false,
+        "note": "Reference metric only. Do not use matchRate% as the completion gate."
       },
       "diffPixelCount": {
         "required": 0,
         "current": 40000,
-        "status": "FAIL"
+        "status": "FAIL",
+        "blocking": false,
+        "note": "Reference metric. Visual/semantic review is the blocking gate."
       },
       "remainingIssues": {
         "required": 0,
         "current": 1,
-        "status": "FAIL"
+        "status": "FAIL",
+        "blocking": true,
+        "note": "Blocking only while semantic visual review has not passed."
       }
     },
     "nextAction": "inspect_node を使って 1 箇所の diffRegions の詳細を確認し、CSSを修正してください。修正後は再度 compare_design で検証してください。",

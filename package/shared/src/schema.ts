@@ -185,9 +185,12 @@ export const CompletionCriterionSchema = z.object({
   required: z.number(),
   current: z.number(),
   status: z.enum(["PASS", "FAIL"]),
+  blocking: z.boolean().optional(),
+  note: z.string().optional(),
 });
 
 export const CompletionCriteriaSchema = z.object({
+  visualReview: CompletionCriterionSchema,
   matchRate: CompletionCriterionSchema,
   diffPixelCount: CompletionCriterionSchema,
   remainingIssues: CompletionCriterionSchema,

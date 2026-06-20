@@ -1,5 +1,4 @@
 import * as fs from "node:fs/promises";
-import * as os from "node:os";
 import * as path from "node:path";
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
@@ -135,7 +134,7 @@ describe("buildTargetNodeIds", () => {
 
 describe("runCompareDesign", () => {
   it("auto-selects the best matching frame when nodeId and frameName are omitted", async () => {
-    tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), "figdiff-runner-"));
+    tmpRoot = await fs.mkdtemp(path.join(process.cwd(), "tmp-figdiff-runner-"));
     const screenshotPath = path.join(tmpRoot, "screenshot.png");
     await fs.writeFile(
       screenshotPath,
@@ -195,5 +194,93 @@ describe("runCompareDesign", () => {
       expect.stringMatching(/^cmp-/),
     );
     expect(consoleError).toHaveBeenCalledWith(expect.stringContaining('"Home" (2:2)'));
+  });
+
+  it("keeps status FAIL when semantic verdict fails despite a high matchRate", async () => {
+    tmpRoot = await fs.mkdtemp(path.join(process.cwd(), "tmp-figdiff-runner-"));
+    const designPath = path.join(tmpRoot, "design.png");
+    const screenshotPath = path.join(tmpRoot, "screenshot.png");
+    await fs.writeFile(designPath, Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+    await fs.writeFile(screenshotPath, Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+
+    mocks.sharp.mockReturnValue({
+      metadata: vi.fn(async () => ({ width: 390, height: 844 })),
+    });
+    mocks.compareImages.mockResolvedValue({
+      comparisonId: "cmp-localized-flaw",
+      matchRate: 99.98,
+      diffPixelCount: 66,
+      totalPixelCount: 390 * 844,
+      diffRegions: [
+        {
+          id: 1,
+          bounds: { x: 120, y: 680, width: 80, height: 24 },
+          diffPixelCount: 66,
+          nearbyNodeIds: [],
+          nearbyNodeNames: [],
+        },
+      ],
+      suggestion: "旧matchRateでは軽微に見える差分",
+      diffReport: {
+        alignment: {
+          translation: { x: 0, y: 0 },
+          scale: { x: 1, y: 1 },
+          rotation: 0,
+          confidence: 1,
+          residual: 0,
+        },
+        regionScores: [
+          {
+            regionId: "cta",
+            bbox: { x: 120, y: 680, w: 80, h: 24 },
+            structure: 0.72,
+            color: 1,
+            shape: 0,
+            layout: 0,
+          },
+        ],
+        issues: [
+          {
+            regionId: "cta",
+            bbox: { x: 120, y: 680, w: 80, h: 24 },
+            kind: "position",
+            severity: "major",
+            evidence: {
+              signal: "ssim",
+              value: 0.72,
+              threshold: 0.95,
+              expected: ">= 0.95",
+              actual: 0.72,
+            },
+          },
+        ],
+        weightedAggregate: {
+          weightedStructure: 0.72,
+          weightedColor: 1,
+          totalWeight: 1,
+        },
+        aggregateVerdict: "fail",
+        rationale: "localized CTA flaw detected",
+      },
+      normalization: {
+        designNativeWidth: 390,
+        designNativeHeight: 844,
+        screenshotWidth: 390,
+        screenshotHeight: 844,
+        cropApplied: false,
+        containResized: false,
+        appliedScale: 1,
+      },
+    });
+
+    const { result } = await runCompareDesign({
+      design_source: designPath,
+      screenshot: screenshotPath,
+    });
+
+    expect(result.status).toBe("FAIL");
+    expect(result.completionCriteria?.visualReview.status).toBe("FAIL");
+    expect(result.completionCriteria?.matchRate.blocking).toBe(false);
+    expect(result.suggestion).toContain("matchRateは高いですが");
   });
 });

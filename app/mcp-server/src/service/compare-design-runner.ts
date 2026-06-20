@@ -18,6 +18,7 @@ import {
   type ComparisonDiagnosis,
   type CropRegion,
   type DiffReport,
+  type DiffVerdict,
   type FigmaNode,
   type IgnoreRegion,
   type PreflightWarning,
@@ -193,32 +194,70 @@ function buildCompletionCriteria(
   matchRate: number,
   diffPixelCount: number,
   regionCount: number,
+  semanticVerdict: DiffVerdict,
+  semanticRationale: string | undefined,
 ): {
-  matchRate: { required: number; current: number; status: "PASS" | "FAIL" };
-  diffPixelCount: { required: number; current: number; status: "PASS" | "FAIL" };
-  remainingIssues: { required: number; current: number; status: "PASS" | "FAIL" };
+  [key in "visualReview" | "matchRate" | "diffPixelCount" | "remainingIssues"]: {
+    required: number;
+    current: number;
+    status: "PASS" | "FAIL";
+    blocking: boolean;
+    note: string;
+  };
 } {
+  const semanticStatus = semanticVerdict === "pass" ? "PASS" : "FAIL";
+
   return {
+    visualReview: {
+      required: 1,
+      current: semanticVerdict === "pass" ? 1 : 0,
+      status: semanticStatus,
+      blocking: true,
+      note:
+        semanticVerdict === "inconclusive"
+          ? "Semantic verdict is inconclusive; treat this as not complete and ask for review."
+          : (semanticRationale ?? "Semantic verdict from diffReport.aggregateVerdict."),
+    },
     matchRate: {
       required: 100,
       current: matchRate,
-      status: matchRate === 100 ? "PASS" : "FAIL",
+      status: "PASS",
+      blocking: false,
+      note: "Reference metric only. Do not use matchRate% as the completion gate.",
     },
     diffPixelCount: {
       required: 0,
       current: diffPixelCount,
-      status: diffPixelCount === 0 ? "PASS" : "FAIL",
+      status: semanticStatus === "PASS" || diffPixelCount === 0 ? "PASS" : "FAIL",
+      blocking: false,
+      note: "Reference metric. Visual/semantic review is the blocking gate.",
     },
     remainingIssues: {
       required: 0,
       current: regionCount,
-      status: regionCount === 0 ? "PASS" : "FAIL",
+      status: semanticStatus === "PASS" || regionCount === 0 ? "PASS" : "FAIL",
+      blocking: semanticStatus !== "PASS",
+      note: "Blocking only while semantic visual review has not passed.",
     },
   };
 }
 
-function buildStatus(matchRate: number): "PASS" | "FAIL" {
-  return matchRate === 100 ? "PASS" : "FAIL";
+function resolveSemanticVerdict(
+  diffReport: DiffReport | undefined,
+  diffPixelCount: number,
+): { verdict: DiffVerdict; rationale: string | undefined } {
+  if (diffReport) {
+    return { verdict: diffReport.aggregateVerdict, rationale: diffReport.rationale };
+  }
+
+  return {
+    verdict: diffPixelCount === 0 ? "pass" : "fail",
+    rationale: "diffReport unavailable; fell back to exact pixel diff.",
+  };
+}
+
+function buildStatus(semanticVerdict: DiffVerdict): "PASS" | "FAIL" {
+  return semanticVerdict === "pass" ? "PASS" : "FAIL";
 }
 
 export function buildTargetNodeIds(
@@ -251,9 +290,17 @@ export function buildTargetNodeIds(
   return [...new Set(candidates)].slice(0, limit);
 }
 
-function buildNextAction(matchRate: number, regionCount: number, targetNodeIds: string[]): string {
-  if (matchRate === 100) {
-    return "一致率100%です。差分はありません。タスク完了です。";
+function buildNextAction(
+  semanticVerdict: DiffVerdict,
+  regionCount: number,
+  targetNodeIds: string[],
+): string {
+  if (semanticVerdict === "pass") {
+    return "ビジュアル判定はPASSです。matchRate%は参考値として扱い、差分画像に重大な崩れがないことを確認して完了してください。";
+  }
+
+  if (semanticVerdict === "inconclusive") {
+    return "ビジュアル判定はinconclusiveです。完成扱いにせず、diff画像をレイアウト・色・文字・余白の観点で人手確認してください。";
   }
 
   if (targetNodeIds.length === 0) {
@@ -263,12 +310,19 @@ function buildNextAction(matchRate: number, regionCount: number, targetNodeIds: 
   return `inspect_node を使って ${regionCount} 箇所の diffRegions の詳細を確認してください。まず ${targetNodeIds.join(" -> ")} の順で確認し、CSSを修正したら再度 compare_design で検証してください。`;
 }
 
-function buildSuggestion(matchRate: number, regionCount: number): string {
-  if (matchRate === 100) {
-    return "一致率100%です。差分はありません。";
+function buildSuggestion(
+  semanticVerdict: DiffVerdict,
+  matchRate: number,
+  regionCount: number,
+): string {
+  if (semanticVerdict === "pass") {
+    return `ビジュアル判定はPASSです。matchRate ${matchRate.toFixed(2)}% は参考値で、完成ゲートではありません。`;
+  }
+  if (semanticVerdict === "inconclusive") {
+    return `matchRate ${matchRate.toFixed(2)}% だけでは判断できません。diff画像を意味レベルでレビューしてください。`;
   }
   if (matchRate >= 95) {
-    return `軽微な差分が${regionCount}箇所あります。inspect_nodeで差分領域のノードを確認してください。`;
+    return `matchRateは高いですが、ビジュアル判定はFAILです。局所的な粗を${regionCount}箇所確認してください。`;
   }
   return `大きな差分が${regionCount}箇所あります。inspect_nodeで各差分領域を確認し、修正してください。`;
 }
@@ -569,6 +623,7 @@ export async function runCompareDesign(
 
   const regionCount = comparison.diffRegions.length;
   const targetNodeIds = buildTargetNodeIds(comparison.diffReport, comparison.diffRegions);
+  const semanticReview = resolveSemanticVerdict(comparison.diffReport, comparison.diffPixelCount);
   const sourceKey = buildComparisonSourceKey(parsedDesignSource, resolvedNodeId);
   const priorReports = getRecentReports(sourceKey);
   const critique =
@@ -577,20 +632,22 @@ export async function runCompareDesign(
       : undefined;
 
   const result = CompareDesignResultSchema.parse({
-    status: buildStatus(comparison.matchRate),
+    status: buildStatus(semanticReview.verdict),
     ...comparison,
     remainingIssues: regionCount,
     completionCriteria: buildCompletionCriteria(
       comparison.matchRate,
       comparison.diffPixelCount,
       regionCount,
+      semanticReview.verdict,
+      semanticReview.rationale,
     ),
     nextAction: diagnosis.likelyMisconfig
       ? buildMisconfigNextAction(diagnosis)
-      : buildNextAction(comparison.matchRate, regionCount, targetNodeIds),
+      : buildNextAction(semanticReview.verdict, regionCount, targetNodeIds),
     suggestion: diagnosis.likelyMisconfig
       ? diagnosis.headline
-      : buildSuggestion(comparison.matchRate, regionCount),
+      : buildSuggestion(semanticReview.verdict, comparison.matchRate, regionCount),
     critique,
     preflight: finalPreflight,
     comparisonHeadline,
