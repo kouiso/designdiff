@@ -19,12 +19,16 @@ export function extractFileKey(url: string): string {
  * Figma URLs use "1-23" format, but the API expects "1:23".
  * Returns null if no node-id is present in the URL.
  */
+export function normalizeNodeId(nodeId: string): string {
+  return nodeId.replace(/-/g, ":");
+}
+
 export function extractNodeId(url: string): string | null {
   try {
     const urlObj = new URL(url);
     const nodeId = urlObj.searchParams.get("node-id");
     if (!nodeId) return null;
-    return nodeId.replace(/-/g, ":");
+    return normalizeNodeId(nodeId);
   } catch {
     return null;
   }

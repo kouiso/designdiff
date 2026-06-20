@@ -6,11 +6,13 @@
 
 import { z } from "zod";
 
-import { extractFileKey } from "@figdiff/shared";
+import { extractFileKey, extractNodeId, normalizeNodeId } from "@figdiff/shared";
 
 import { transformNodeToInspection } from "../service/figma-node-transformer.js";
 import { createFigmaService } from "../service/figma-service.js";
 import { persistDetailJson } from "../service/persist-detail.js";
+
+import { mcpToolError } from "./error.js";
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
@@ -53,8 +55,12 @@ export function registerInspectNode(server: McpServer): void {
 
         // Collect node IDs to inspect
         const ids: string[] = [];
-        if (args.node_id) ids.push(args.node_id);
-        if (args.node_ids) ids.push(...args.node_ids);
+        if (args.node_id) ids.push(normalizeNodeId(args.node_id));
+        if (args.node_ids) ids.push(...args.node_ids.map(normalizeNodeId));
+        if (ids.length === 0) {
+          const urlNodeId = extractNodeId(args.figma_url);
+          if (urlNodeId) ids.push(urlNodeId);
+        }
 
         if (ids.length === 0) {
           return {
@@ -128,11 +134,7 @@ export function registerInspectNode(server: McpServer): void {
           content: [{ type: "text", text: serialized }],
         };
       } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        return {
-          content: [{ type: "text" as const, text: `Error: ${message}` }],
-          isError: true,
-        };
+        return mcpToolError(error);
       }
     },
   );

@@ -25,7 +25,14 @@ vi.mock("../service/figma-service.js", async () => {
         _fileKey: string,
         _nodeId: string,
         _depth?: number,
-      ): Promise<FigmaNode> => makeLargeNode(),
+      ): Promise<FigmaNode> => {
+        if (_nodeId === "missing:node") {
+          throw new Error(
+            `Requested Figma node not found: Node "${_nodeId}" not found in file ${_fileKey}. The id may not exist, or the format may be wrong (expected "1:23" with a colon; dash-format ids from Figma URLs are auto-converted). Run list_figma_frames to see valid node ids.`,
+          );
+        }
+        return makeLargeNode(100, _nodeId);
+      },
       getFrames: async (_fileKey: string): Promise<Frame[]> => makeManyFrames(150),
     }),
     getFigmaCredentialStatus: () => ({
@@ -57,9 +64,9 @@ function makeChild(index: number): FigmaNode {
   };
 }
 
-function makeLargeNode(childCount = 100): FigmaNode {
+function makeLargeNode(childCount = 100, id = "frame-root"): FigmaNode {
   return {
-    id: "frame-root",
+    id,
     name: "Large Frame",
     type: "FRAME",
     absoluteBoundingBox: { x: 0, y: 0, width: 1440, height: 900 },
@@ -160,6 +167,43 @@ describe("MCP response budget — responses never exceed archive threshold", () 
       expect(data.cssSuggestion.length).toBeGreaterThan(0);
       expect(data.layout).toBeDefined();
       expect(data.layout.width).toBe(1440);
+    });
+
+    it("dash format node_id を colon format に正規化する", async () => {
+      const result = await client.callTool({
+        name: "inspect_node",
+        arguments: { figma_url: FIGMA_URL, node_id: "72-2552" },
+      });
+
+      expect(result.isError).toBeFalsy();
+      const data = JSON.parse(extractText(result));
+      expect(data.nodeId).toBe("72:2552");
+    });
+
+    it("figma_url に埋め込まれた node-id を node_id 省略時に使う", async () => {
+      const result = await client.callTool({
+        name: "inspect_node",
+        arguments: { figma_url: "https://www.figma.com/design/MOCKFILEKEY/Mock?node-id=72-2552" },
+      });
+
+      expect(result.isError).toBeFalsy();
+      const data = JSON.parse(extractText(result));
+      expect(data.nodeId).toBe("72:2552");
+    });
+
+    it("missing node error は安全な自己解決ヒントを返す", async () => {
+      const result = await client.callTool({
+        name: "inspect_node",
+        arguments: { figma_url: FIGMA_URL, node_id: "missing:node" },
+      });
+
+      expect(result.isError).toBe(true);
+      const text = extractText(result);
+      expect(text).toContain(
+        'Error: Requested Figma node not found: Node "missing:node" not found in file MOCKFILEKEY.',
+      );
+      expect(text).toContain('expected "1:23" with a colon');
+      expect(text).toContain("Run list_figma_frames to see valid node ids.");
     });
 
     it("multi-node (10 nodes) with 100 children each: response text < 4096 chars", async () => {

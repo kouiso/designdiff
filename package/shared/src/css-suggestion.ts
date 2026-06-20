@@ -6,6 +6,23 @@
 
 import type { NodeAppearance, NodeLayout, NodeTypography } from "./type.js";
 
+function figmaAlignToCss(value: string | undefined): string | undefined {
+  switch (value) {
+    case "MIN":
+      return "flex-start";
+    case "MAX":
+      return "flex-end";
+    case "CENTER":
+      return "center";
+    case "SPACE_BETWEEN":
+      return "space-between";
+    case "BASELINE":
+      return "baseline";
+    default:
+      return undefined;
+  }
+}
+
 function appendLayoutCss(parts: string[], layout: NodeLayout): void {
   parts.push(`width: ${layout.width.toFixed(1)}px;`);
   parts.push(`height: ${layout.height.toFixed(1)}px;`);
@@ -18,6 +35,17 @@ function appendLayoutCss(parts: string[], layout: NodeLayout): void {
       case "VERTICAL":
         parts.push("display: flex; flex-direction: column;");
         break;
+    }
+
+    if (layout.layoutMode === "HORIZONTAL" || layout.layoutMode === "VERTICAL") {
+      const justifyContent = figmaAlignToCss(layout.primaryAxisAlign);
+      const alignItems = figmaAlignToCss(layout.counterAxisAlign);
+      if (justifyContent && layout.primaryAxisAlign !== "MIN") {
+        parts.push(`justify-content: ${justifyContent};`);
+      }
+      if (alignItems && layout.counterAxisAlign !== "MIN") {
+        parts.push(`align-items: ${alignItems};`);
+      }
     }
   }
 
