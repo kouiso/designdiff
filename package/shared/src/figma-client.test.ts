@@ -1,6 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { collectNestedFrames, extractNestedFrames, FigmaClient } from "./figma-client.js";
+import {
+  collectNestedFrames,
+  extractFrames,
+  extractNestedFrames,
+  FigmaClient,
+} from "./figma-client.js";
 
 import type { FigmaFileResponse, FigmaNode } from "./figma-client.js";
 
@@ -84,6 +89,44 @@ describe("FigmaClient", () => {
         "https://api.figma.com/v1/files/FILE/nodes?ids=1:1&depth=3",
       );
     });
+  });
+});
+
+describe("extractFrames", () => {
+  it("returns page-level artboards through SECTION/GROUP nesting without inner frames", () => {
+    const response: FigmaFileResponse = {
+      name: "Marketing File",
+      document: makeNode("0:0", "Document", "DOCUMENT", [
+        makeNode("0:1", "Page 1", "CANVAS", [
+          makeNode("1:0", "Marketing Section", "SECTION", [
+            makeNode("1:1", "Desktop Group", "GROUP", [
+              makeFrameNode("2:1", "TOP", 1512, 9820, [makeFrameNode("2:2", "Button", 240, 48)]),
+            ]),
+          ]),
+        ]),
+      ]),
+    };
+
+    const frames = extractFrames(response);
+
+    expect(frames).toEqual([{ id: "2:1", name: "TOP", width: 1512, height: 9820 }]);
+  });
+
+  it("does not miss artboards nested below the old depth-2 boundary", () => {
+    const response: FigmaFileResponse = {
+      name: "Marketing File",
+      document: makeNode("0:0", "Document", "DOCUMENT", [
+        makeNode("0:1", "Page 1", "CANVAS", [
+          makeNode("1:0", "Section", "SECTION", [
+            makeNode("1:1", "Group", "GROUP", [makeFrameNode("2:1", "ABOUT", 1512, 6400)]),
+          ]),
+        ]),
+      ]),
+    };
+
+    const frames = extractFrames(response);
+
+    expect(frames).toContainEqual({ id: "2:1", name: "ABOUT", width: 1512, height: 6400 });
   });
 });
 

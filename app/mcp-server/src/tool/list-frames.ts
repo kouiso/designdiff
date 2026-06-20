@@ -28,19 +28,28 @@ export function registerListFrames(server: McpServer): void {
           .describe(
             "モーダル・オーバーレイ等、FRAMEノード内にネストされたフレームも含めて取得（default: false）",
           ),
+        level: z
+          .enum(["page", "all"])
+          .optional()
+          .describe(
+            "page: PAGE/SECTION/GROUP配下のアートボードのみ取得。all: ネストされた全フレームも取得（default: page）",
+          ),
       },
     },
     async (args) => {
       try {
         const fileKey = extractFileKey(args.figma_url);
         const figmaService = await createFigmaService();
+        const level = args.level ?? (args.include_nested ? "all" : "page");
         const frames = await figmaService.getFrames(fileKey, {
           includeNested: args.include_nested,
+          level,
         });
 
         const result = {
           frameCount: frames.length,
           includeNested: args.include_nested ?? false,
+          level,
           frames,
         };
         const serialized = JSON.stringify(result);
@@ -51,6 +60,7 @@ export function registerListFrames(server: McpServer): void {
           const skeleton = JSON.stringify({
             frameCount: frames.length,
             includeNested: args.include_nested ?? false,
+            level,
             frames: [],
             framesTruncated: true,
             framesDetailPath,
@@ -70,6 +80,7 @@ export function registerListFrames(server: McpServer): void {
                 text: JSON.stringify({
                   frameCount: frames.length,
                   includeNested: args.include_nested ?? false,
+                  level,
                   frames: frames.slice(0, inlineCount),
                   framesTruncated: true,
                   framesDetailPath,
