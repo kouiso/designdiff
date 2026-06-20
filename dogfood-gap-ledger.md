@@ -36,8 +36,30 @@ designdiff を実弾で使い倒して踏んだ不満・バグ・改善要望を
 ### 既知の制約（正直記録）
 - 本セッションの figdiff MCP サーバーは起動時の旧コードを保持。今回の本体fixは **live 再呼び出しには未反映**（サーバー再起動が必要）。検証は各PRの CI unit テストが正。
 
-## Mobile（Flutter/RN）
-- 委譲経路（bg-MCP）が本セッション未接続、Cloud は実機に届かず。**未着手・境界として保留**。bg-MCP接続 or macmini対話セッション待ち。
+## Round 2（自己コードの敵対回帰レビュー）
+merge済み9 PRのコードを読み、回帰/潜在バグを並列adversarialレビュー → **18候補→17確定**（med8/low9）。
+- 全17件を5バッチで fix・merge：figma-url-parser回帰(#178) / token・css調和(#179) / inspect-node budget(#180) / verify-fix信号(#181) / screenshot優先順位(#182)
+- 自己検出した #175 のローカルパス誤拒否regressionもここで修正
+
+## Round 3 収束レビュー → Round 4
+Round3の17 fixに新regressionが無いか strict 敵対レビュー → **3候補→2確定**：
+- [high] verify_fix の colorDelta 閾値 0.01 が 0..100 ΔE スケールに対し小さすぎ（改善を regressed 誤判定）→ 3 に是正
+- [med] inspect_node css-suggestion の paint opacity 二重適用 → 一回に
+- 2件を Round4 で fix・merge（#183）
+
+## 収束（loop-until-dry）
+Round4の2 fixを最終敵対レビュー → **CONVERGED：新規 high/med regression ゼロ**（確信度93% コード解析）。
+gap収束推移：27 → 17 → 2 → 0。停止条件到達（gap dry ＋ in-flight PR 全merge ＋ mobile境界記録）。
+
+### このセッションのdesigndiff品質向上サマリ
+- マージ 16 PR（回収 B/E/D ＋ 台帳 ＋ dogfood本体fix 多数）
+- dogfoodで designdiff の MCP ツール（list_figma_frames / get_design_tokens / inspect_node / compare_design / verify_fix）を実弾で叩いて、欠落・誤ラベル・誤判定・回帰を多数 fix
+- 残 med/low 6件は #173 に記録（後追い）
+
+## Mobile（Flutter/RN）— 唯一の未完了境界
+- 委譲経路（bg-MCP）が本セッション未接続、Cloud は実機に届かず。**未着手・境界として保留**。
+- 必要なもの：bg-MCP 接続 or macmini 対話セッション（Pixel実機/iOS sim）。
+- Task D の mobile-capture パッケージは merge 済み（#166）なので、配線は完了。実機 round-trip だけが残る。
 
 ## Flutter (sample-project / macmini)
 
