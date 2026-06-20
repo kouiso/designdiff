@@ -28,6 +28,38 @@ Figma Dev Modeで見られるような詳細情報を取得します。
 const INLINE_RESPONSE_BUDGET = 3500;
 const MAX_CHILDREN_INLINE = 25;
 
+type Inspection = ReturnType<typeof transformNodeToInspection>;
+type CappedInspection = Inspection & {
+  childrenTruncated?: true;
+  childrenCount?: number;
+  childrenDetailPath?: string;
+};
+
+function toInspectionSummary(inspection: Inspection, detailPath: string) {
+  return {
+    nodeId: inspection.nodeId,
+    nodeName: inspection.nodeName,
+    nodeType: inspection.nodeType,
+    cssSuggestion: inspection.cssSuggestion,
+    detailPath,
+  };
+}
+
+async function capInspectionChildren(inspection: Inspection): Promise<CappedInspection> {
+  const children = inspection.childrenSummary;
+  if (children && children.length > MAX_CHILDREN_INLINE) {
+    const detailPath = await persistDetailJson(children, `children-${crypto.randomUUID()}`);
+    return {
+      ...inspection,
+      childrenSummary: children.slice(0, MAX_CHILDREN_INLINE),
+      childrenTruncated: true,
+      childrenCount: children.length,
+      childrenDetailPath: detailPath,
+    };
+  }
+  return inspection;
+}
+
 export function registerInspectNode(server: McpServer): void {
   server.registerTool(
     "inspect_node",
@@ -80,51 +112,39 @@ export function registerInspectNode(server: McpServer): void {
         );
 
         if (inspections.length === 1) {
-          // Single node: only cap children inline
           const inspection = inspections[0];
-          const children = inspection.childrenSummary;
-          if (children && children.length > MAX_CHILDREN_INLINE) {
-            const detailPath = await persistDetailJson(children, `children-${crypto.randomUUID()}`);
-            const capped = {
-              ...inspection,
-              childrenSummary: children.slice(0, MAX_CHILDREN_INLINE),
-              childrenTruncated: true,
-              childrenCount: children.length,
-              childrenDetailPath: detailPath,
-            };
+          const capped = await capInspectionChildren(inspection);
+          const serialized = JSON.stringify(capped);
+          if (serialized.length > INLINE_RESPONSE_BUDGET) {
+            const detailPath = await persistDetailJson(
+              inspection,
+              `inspect-${crypto.randomUUID()}`,
+            );
             return {
-              content: [{ type: "text", text: JSON.stringify(capped) }],
+              content: [
+                {
+                  type: "text",
+                  text: JSON.stringify(toInspectionSummary(inspection, detailPath)),
+                },
+              ],
             };
           }
           return {
-            content: [{ type: "text", text: JSON.stringify(inspection) }],
+            content: [{ type: "text", text: serialized }],
           };
         }
 
         // Multi-node: cap children per inspection, then check total budget
-        const capped = inspections.map((inspection) => {
-          const children = inspection.childrenSummary;
-          if (children && children.length > MAX_CHILDREN_INLINE) {
-            return {
-              ...inspection,
-              childrenSummary: children.slice(0, MAX_CHILDREN_INLINE),
-              childrenTruncated: true,
-              childrenCount: children.length,
-            };
-          }
-          return inspection;
-        });
+        const capped = await Promise.all(
+          inspections.map((inspection) => capInspectionChildren(inspection)),
+        );
 
         const serialized = JSON.stringify(capped);
         if (serialized.length > INLINE_RESPONSE_BUDGET) {
           const detailPath = await persistDetailJson(inspections, `inspect-${crypto.randomUUID()}`);
-          const summaries = inspections.map((inspection) => ({
-            nodeId: inspection.nodeId,
-            nodeName: inspection.nodeName,
-            nodeType: inspection.nodeType,
-            cssSuggestion: inspection.cssSuggestion,
-            detailPath,
-          }));
+          const summaries = inspections.map((inspection) =>
+            toInspectionSummary(inspection, detailPath),
+          );
           return {
             content: [{ type: "text", text: JSON.stringify(summaries) }],
           };
