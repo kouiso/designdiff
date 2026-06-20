@@ -1,8 +1,9 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   computeOptimalScale,
   createFigmaService,
+  FigmaService,
   formatFigmaCredentialError,
   getFigmaCredentialStatus,
 } from "./figma-service.js";
@@ -118,5 +119,87 @@ describe("computeOptimalScale", () => {
   it("respects custom min/max bounds", () => {
     expect(computeOptimalScale(100, 1000, 0.2, 3)).toBe(0.2);
     expect(computeOptimalScale(9000, 100, 0.5, 3)).toBe(3);
+  });
+});
+
+describe("FigmaService.getFrames", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("fetches enough depth for page-level artboards through SECTION/GROUP nesting", async () => {
+    const fetchMock = vi.fn(async () =>
+      Response.json({
+        name: "Marketing File",
+        document: {
+          id: "0:0",
+          name: "Document",
+          type: "DOCUMENT",
+          children: [
+            {
+              id: "0:1",
+              name: "Page",
+              type: "CANVAS",
+              children: [
+                {
+                  id: "1:0",
+                  name: "Section",
+                  type: "SECTION",
+                  children: [
+                    {
+                      id: "1:1",
+                      name: "Group",
+                      type: "GROUP",
+                      children: [
+                        {
+                          id: "2:1",
+                          name: "TOP",
+                          type: "FRAME",
+                          children: [
+                            {
+                              id: "2:2",
+                              name: "Button",
+                              type: "FRAME",
+                              children: [],
+                              absoluteBoundingBox: { x: 0, y: 0, width: 240, height: 48 },
+                              fills: [],
+                              strokes: [],
+                              effects: [],
+                            },
+                          ],
+                          absoluteBoundingBox: { x: 0, y: 0, width: 1512, height: 9820 },
+                          fills: [],
+                          strokes: [],
+                          effects: [],
+                        },
+                      ],
+                      fills: [],
+                      strokes: [],
+                      effects: [],
+                    },
+                  ],
+                  fills: [],
+                  strokes: [],
+                  effects: [],
+                },
+              ],
+              fills: [],
+              strokes: [],
+              effects: [],
+            },
+          ],
+          fills: [],
+          strokes: [],
+          effects: [],
+        },
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const service = new FigmaService("figd_valid_token_12345", "/tmp/figdiff-test-cache");
+
+    const frames = await service.getFrames("FILE", { level: "page" });
+
+    expect(fetchMock.mock.calls[0]?.[0]).toBe("https://api.figma.com/v1/files/FILE?depth=6");
+    expect(frames).toEqual([{ id: "2:1", name: "TOP", width: 1512, height: 9820 }]);
   });
 });

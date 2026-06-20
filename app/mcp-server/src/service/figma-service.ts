@@ -71,10 +71,13 @@ export class FigmaService {
     this.client = new FigmaClient(token, this.cache, authMode);
   }
 
-  async getFrames(fileKey: string, options?: { includeNested?: boolean }): Promise<Frame[]> {
-    const fetchDepth = options?.includeNested ? 6 : 2;
-    const file = await this.client.getFile(fileKey, fetchDepth);
-    return options?.includeNested ? extractNestedFrames(file) : extractFrames(file);
+  async getFrames(
+    fileKey: string,
+    options?: { includeNested?: boolean; level?: "page" | "all" },
+  ): Promise<Frame[]> {
+    const includeAllNestedFrames = options?.includeNested === true || options?.level === "all";
+    const file = await this.client.getFile(fileKey, 6);
+    return includeAllNestedFrames ? extractNestedFrames(file) : extractFrames(file);
   }
 
   async getFrameImage(
