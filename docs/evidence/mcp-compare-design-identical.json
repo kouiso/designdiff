@@ -17,24 +17,37 @@
     "returnedRegionCount": 0,
     "regionsTruncated": false,
     "completionCriteria": {
+      "structuralReview": {
+        "required": 1,
+        "current": 1,
+        "status": "PASS",
+        "blocking": true,
+        "note": "no critical issues, weighted structure score 1.000 meets pass threshold, and weighted color difference 0.000 is below 3.000 (totalWeight 1.000); weakest region whole-frame (structure 1.000, color 0.000) with texture-adjusted weights active (alpha 0.700, photo-like cap 0.300)"
+      },
       "matchRate": {
         "required": 100,
         "current": 100,
-        "status": "PASS"
+        "status": "PASS",
+        "blocking": false,
+        "note": "Reference metric only. Do not use matchRate% as the completion gate."
       },
       "diffPixelCount": {
         "required": 0,
         "current": 0,
-        "status": "PASS"
+        "status": "PASS",
+        "blocking": false,
+        "note": "Reference metric. Structural SSIM review is the blocking gate."
       },
       "remainingIssues": {
         "required": 0,
         "current": 0,
-        "status": "PASS"
+        "status": "PASS",
+        "blocking": false,
+        "note": "Blocking only while structural SSIM review has not passed."
       }
     },
-    "nextAction": "一致率100%です。差分はありません。タスク完了です。",
-    "suggestion": "一致率100%です。差分はありません。",
+    "nextAction": "構造SSIM判定はPASSです。matchRate%は参考値として扱い、差分画像に重大な崩れがないことを確認して完了してください。",
+    "suggestion": "構造SSIM判定はPASSです。matchRate 100.00% は参考値で、完成ゲートではありません。",
     "clusterTelemetry": {
       "requestedMode": "auto",
       "usedMode": "flood",

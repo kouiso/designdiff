@@ -29,11 +29,11 @@ const DESCRIPTION = `デザインと実装のピクセル差分を検出しま�
 ## 使用条件
 - 実装のCSS/HTML修正時は【必ず】このツールを最初に実行すること
 - status が "FAIL" の場合、inspect_node で詳細を取得し修正すること
-- matchRate が 100 かつ status が "PASS" になるまでループすること
+- status が "PASS" になるまでループすること。matchRate% は参考値であり、完成ゲートではない
 
 ## 出力の読み方
-- status: "PASS" = 完了。"FAIL" = 修正が必要
-- completionCriteria: 各項目が "PASS" になるまで作業を続行
+- status: "PASS" = 構造SSIM判定上の完了。"FAIL" = 修正またはレビューが必要
+- completionCriteria: blocking=true の項目が "PASS" になるまで作業を続行。matchRate は参考値
 - nextAction: 次に実行すべきアクション（従うこと）
 - diffImagePath: 差分画像のローカルパス。Read ツールで開いて視覚確認できる（~/.figdiff/results/ に保存）
 - diffRegions: 差分領域。レスポンス肥大化を防ぐため上位20件のみ。全件は regionsDetailPath のJSONファイルを参照
@@ -64,7 +64,15 @@ const CONFIDENCE_TO_PERCENTAGE = 100;
 export function buildSummaryText(result: CompareDesignResult): string {
   const lines: string[] = [];
 
+  if (result.diffReport) {
+    lines.push(`構造SSIM判定: ${result.diffReport.aggregateVerdict.toUpperCase()}`);
+    lines.push(result.diffReport.rationale);
+  }
+
   if (result.diagnosis) {
+    if (lines.length > 0) {
+      lines.push("");
+    }
     lines.push(result.diagnosis.headline);
     if (result.diagnosis.likelyMisconfig && result.diagnosis.rankedCauses.length > 0) {
       lines.push("");
