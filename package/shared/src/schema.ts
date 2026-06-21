@@ -87,7 +87,7 @@ export const NodeEffectSchema = z.object({
 export const NodeAppearanceSchema = z.object({
   fills: z.array(NodeFillSchema),
   strokes: z.array(NodeStrokeSchema),
-  borderRadius: BorderRadiusSchema,
+  borderRadius: BorderRadiusSchema.optional(),
   opacity: z.number().min(0).max(1),
   blendMode: z.string(),
   effects: z.array(NodeEffectSchema),

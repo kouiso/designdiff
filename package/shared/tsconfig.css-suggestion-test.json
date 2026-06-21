@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "rootDir": "./src"
+  },
+  "include": [
+    "src/css-suggestion.ts",
+    "src/css-suggestion.test.ts",
+    "src/schema.ts",
+    "src/type.ts"
+  ],
+  "exclude": ["dist", "node_modules"]
+}

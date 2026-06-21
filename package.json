@@ -16,7 +16,7 @@
     "eval:sample-project-lp-figma": "node scripts/eval/sample-project-lp-figma-smoke.mjs",
     "eval:sample-project-lp-figma:ready": "node scripts/eval/sample-project-lp-figma-readiness.mjs",
     "eval:sample-corporate-figma:ready": "node scripts/eval/sample-corporate-figma-readiness.mjs",
-    "typecheck": "turbo run typecheck",
+    "typecheck": "turbo run typecheck && pnpm --filter @figdiff/shared typecheck:test",
     "test": "turbo run test",
     "format": "biome format --write .",
     "check": "biome check .",

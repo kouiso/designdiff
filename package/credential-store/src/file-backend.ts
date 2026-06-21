@@ -34,7 +34,7 @@ function readStore(): Record<string, string> {
 
 function writeStore(store: Record<string, string>): void {
   const dir = path.dirname(CREDENTIAL_PATH);
-  mkdirSync(dir, { recursive: true });
+  mkdirSync(dir, { recursive: true, mode: 0o700 });
   const tmp = `${CREDENTIAL_PATH}.tmp`;
   writeFileSync(tmp, JSON.stringify(store), { encoding: "utf-8", mode: 0o600 });
   renameSync(tmp, CREDENTIAL_PATH);
