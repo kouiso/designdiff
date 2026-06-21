@@ -52,6 +52,10 @@ export { runPreflight, type PreflightInput } from "./confidence/preflight.js";
 export { diagnoseComparison, type DiagnosisInput } from "./confidence/diagnosis.js";
 export { buildComparisonHeadline } from "./confidence/headline.js";
 export {
+  buildSystemBarIgnoreRegions,
+  type MobileSystemBarPlatform,
+} from "./confidence/system-bar-ignore-regions.js";
+export {
   rankFrameCandidates,
   formatFrameCandidates,
   type RankedFrame,
