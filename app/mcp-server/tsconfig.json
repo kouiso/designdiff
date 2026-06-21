@@ -17,6 +17,9 @@
       "path": "../../package/shared"
     },
     {
+      "path": "../../package/credential-store"
+    },
+    {
       "path": "../../package/mobile-capture"
     }
   ]
