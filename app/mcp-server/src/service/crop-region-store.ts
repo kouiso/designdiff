@@ -81,6 +81,17 @@ export async function getCropRegion(
   return store.regions.filter((r) => r.frameName === frameName);
 }
 
+export async function getCropRegionForComparison(
+  projectId: string,
+  frameName?: string,
+): Promise<CropRegionEntry | undefined> {
+  const regions = await getCropRegion(projectId, frameName);
+  if (regions.length === 1 || frameName) {
+    return regions[0];
+  }
+  return undefined;
+}
+
 /**
  * Set (upsert) a crop region for a specific frame
  */

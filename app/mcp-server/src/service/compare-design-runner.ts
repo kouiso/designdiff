@@ -38,7 +38,7 @@ import {
   getRecentReports,
   recordComparison,
 } from "./comparison-history.js";
-import { getCropRegion } from "./crop-region-store.js";
+import { getCropRegionForComparison } from "./crop-region-store.js";
 import { createFigmaService, type FigmaService } from "./figma-service.js";
 import { getIgnoreRegionsForComparison } from "./ignore-region-store.js";
 import { compareImages } from "./image-compare-service.js";
@@ -543,11 +543,9 @@ async function resolveProjectRegions(
   let cropUpdatedAt: string | undefined;
   let persistedIgnoreRegions: IgnoreRegion[] = [];
   if (projectId) {
-    const regions = await getCropRegion(projectId, frameName);
-    if (regions.length === 1 || frameName) {
-      cropRegion = regions[0]?.region;
-      cropUpdatedAt = regions[0]?.updatedAt;
-    }
+    const region = await getCropRegionForComparison(projectId, frameName);
+    cropRegion = region?.region;
+    cropUpdatedAt = region?.updatedAt;
     persistedIgnoreRegions = await getIgnoreRegionsForComparison(projectId, frameName);
   }
   return {
