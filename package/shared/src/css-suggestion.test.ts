@@ -176,6 +176,58 @@ describe("generateCssSuggestion", () => {
     expect(css).toContain("background-image: linear-gradient(#FF0000 0.0%, #0000FF80 50.0%);");
   });
 
+  it("gradient fill の paint opacity を stop color に反映する", () => {
+    const css = generateCssSuggestion(
+      layout,
+      {
+        fills: [
+          {
+            type: "GRADIENT_LINEAR",
+            opacity: 0.5,
+            gradientStops: [
+              { color: "#FF0000", position: 0 },
+              { color: "#0000FF80", position: 0.5 },
+            ],
+          },
+        ],
+        strokes: [],
+        borderRadius: undefined,
+        opacity: 1,
+        blendMode: "NORMAL",
+        effects: [],
+      },
+      undefined,
+    );
+
+    expect(css).toContain("background-image: linear-gradient(#FF000080 0.0%, #0000FF40 50.0%);");
+    expect(css).not.toContain("#FF0000 0.0%");
+  });
+
+  it("inner shadow は inset box-shadow として生成する", () => {
+    const css = generateCssSuggestion(
+      layout,
+      {
+        fills: [],
+        strokes: [],
+        borderRadius: undefined,
+        opacity: 1,
+        blendMode: "NORMAL",
+        effects: [
+          {
+            type: "INNER_SHADOW",
+            color: "#00000040",
+            offset: { x: 1, y: 2 },
+            radius: 3,
+            spread: 4,
+          },
+        ],
+      },
+      undefined,
+    );
+
+    expect(css).toContain("box-shadow: inset 1.0px 2.0px 3.0px 4.0px #00000040;");
+  });
+
   it("pre-folded fill opacity color をそのまま生成する", () => {
     const css = generateCssSuggestion(
       layout,

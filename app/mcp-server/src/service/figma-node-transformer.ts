@@ -85,10 +85,15 @@ function extractAppearance(node: FigmaNode): NodeAppearance {
     .map((f) => ({
       type: normalizeFillType(f.type),
       color: f.color ? colorWithPaintOpacity(f.color, f.opacity) : undefined,
-      opacity: f.opacity,
+      opacity: f.type.startsWith("GRADIENT_") ? undefined : f.opacity,
       gradientStops: f.gradientStops?.map((stop) => ({
         position: stop.position,
-        color: figmaColorToHex(stop.color.r, stop.color.g, stop.color.b, stop.color.a),
+        color: figmaColorToHex(
+          stop.color.r,
+          stop.color.g,
+          stop.color.b,
+          stop.color.a * (f.opacity ?? 1),
+        ),
       })),
     }));
 
@@ -269,7 +274,7 @@ function collectGradientStopTokens(
       tokens,
       node,
       `${prefix}Color`,
-      figmaColorToHex(stop.color.r, stop.color.g, stop.color.b, stop.color.a),
+      figmaColorToHex(stop.color.r, stop.color.g, stop.color.b, stop.color.a * (fill.opacity ?? 1)),
     );
     pushToken(tokens, node, `${prefix}Position`, stop.position * 100, "%");
   }
