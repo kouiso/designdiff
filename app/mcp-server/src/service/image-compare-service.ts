@@ -92,6 +92,10 @@ interface QuickTileCandidate {
   diffPixelCount: number;
 }
 
+function isScreenshotOnlyIgnoreRegion(region: IgnoreRegion): boolean {
+  return region.label?.startsWith("system:") ?? false;
+}
+
 const isVisibleDiffPixelAtIndex = (diffPixelData: Uint8ClampedArray, idx: number): boolean => {
   const red = diffPixelData[idx];
   const green = diffPixelData[idx + 1];
@@ -501,9 +505,11 @@ async function cropImageBuffer(buffer: Buffer, cropRegion: CropRegion): Promise<
     .toBuffer();
 }
 
-// ignoreRegions 前処理。各矩形を画像境界にクリップし、矩形内の
+// ignoreRegions 前処理。各矩形を画像境界にクリップし、通常の user mask は
 // design / screenshot ピクセルを同一色 (0,0,0,0) で上書きする。
-// これで後段の pixelmatch は mask 範囲を「一致」として扱い、
+// system:* mask は screenshot 側だけを design と同じピクセルへ揃える。
+// これで後段の pixelmatch は mask 範囲を「一致」として扱いながら、
+// device chrome preset で Figma 側の上端/下端を黒塗りしない。
 // 戻り値の diffPixelCount にも diff 可視化マークにも mask 範囲が
 // 含まれなくなる。OR 結合 (重なるピクセルは 1 度のみカウント)。
 // 戻り値は mask が覆ったユニークピクセル数 — matchRate 分母から引く。
@@ -523,6 +529,7 @@ function zeroIgnoreRegions(
   const mask = new Uint8Array(total);
   let maskedCount = 0;
   for (const region of ignoreRegions) {
+    const screenshotOnly = isScreenshotOnlyIgnoreRegion(region);
     const left = Math.max(0, Math.floor(region.x));
     const top = Math.max(0, Math.floor(region.y));
     const right = Math.min(width, Math.floor(region.x + region.width));
@@ -535,7 +542,14 @@ function zeroIgnoreRegions(
         if (mask[i] === 0) {
           mask[i] = 1;
           maskedCount += 1;
-          const offset = i * 4;
+        }
+        const offset = i * 4;
+        if (screenshotOnly) {
+          screenshotPixels[offset] = designPixels[offset];
+          screenshotPixels[offset + 1] = designPixels[offset + 1];
+          screenshotPixels[offset + 2] = designPixels[offset + 2];
+          screenshotPixels[offset + 3] = designPixels[offset + 3];
+        } else {
           designPixels[offset] = 0;
           designPixels[offset + 1] = 0;
           designPixels[offset + 2] = 0;

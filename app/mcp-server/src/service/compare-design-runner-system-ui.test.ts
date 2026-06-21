@@ -9,9 +9,22 @@ const CAPTURED_SCREENSHOT_PATH = path.join(
   "tmp-system-ui-mask-test",
   "captured.png",
 );
+const URL_SCREENSHOT_PATH = path.join(process.cwd(), "tmp-system-ui-mask-test", "url.png");
+const WIDTH = 1080;
+const HEIGHT = 2400;
+const STATUS_BAR_HEIGHT = 72;
+const NAV_BAR_HEIGHT = 72;
 
 vi.mock("@figdiff/mobile-capture", () => ({
   captureDeviceScreenshot: vi.fn(async () => CAPTURED_SCREENSHOT_PATH),
+}));
+
+vi.mock("./capture-service.js", () => ({
+  captureUrl: vi.fn(async () => ({
+    screenshotPath: URL_SCREENSHOT_PATH,
+    width: WIDTH,
+    height: HEIGHT,
+  })),
 }));
 
 async function createImageWithMaskedNoise(
@@ -20,8 +33,8 @@ async function createImageWithMaskedNoise(
 ): Promise<void> {
   const image = sharp({
     create: {
-      width: 100,
-      height: 100,
+      width: WIDTH,
+      height: HEIGHT,
       channels: 3,
       background: { r: 255, g: 255, b: 255 },
     },
@@ -40,7 +53,12 @@ async function createImageWithMaskedNoise(
   const systemBars: sharp.OverlayOptions[] = [
     {
       input: await sharp({
-        create: { width: 100, height: 4, channels: 3, background: { r: 0, g: 0, b: 0 } },
+        create: {
+          width: WIDTH,
+          height: STATUS_BAR_HEIGHT,
+          channels: 3,
+          background: { r: 0, g: 0, b: 0 },
+        },
       })
         .png()
         .toBuffer(),
@@ -49,12 +67,17 @@ async function createImageWithMaskedNoise(
     },
     {
       input: await sharp({
-        create: { width: 100, height: 3, channels: 3, background: { r: 0, g: 0, b: 0 } },
+        create: {
+          width: WIDTH,
+          height: NAV_BAR_HEIGHT,
+          channels: 3,
+          background: { r: 0, g: 0, b: 0 },
+        },
       })
         .png()
         .toBuffer(),
       left: 0,
-      top: 97,
+      top: HEIGHT - NAV_BAR_HEIGHT,
     },
   ];
 
@@ -62,12 +85,12 @@ async function createImageWithMaskedNoise(
     ? [
         {
           input: await sharp({
-            create: { width: 20, height: 10, channels: 3, background: { r: 0, g: 0, b: 0 } },
+            create: { width: 200, height: 100, channels: 3, background: { r: 0, g: 0, b: 0 } },
           })
             .png()
             .toBuffer(),
-          left: 10,
-          top: 50,
+          left: 100,
+          top: 1200,
         },
       ]
     : [];
@@ -81,8 +104,8 @@ async function createImageWithMaskedNoise(
 async function createImageWithPostCropTopNoise(filePath: string): Promise<void> {
   await sharp({
     create: {
-      width: 100,
-      height: 100,
+      width: WIDTH,
+      height: HEIGHT,
       channels: 3,
       background: { r: 255, g: 255, b: 255 },
     },
@@ -90,12 +113,17 @@ async function createImageWithPostCropTopNoise(filePath: string): Promise<void> 
     .composite([
       {
         input: await sharp({
-          create: { width: 100, height: 4, channels: 3, background: { r: 0, g: 0, b: 0 } },
+          create: {
+            width: WIDTH,
+            height: STATUS_BAR_HEIGHT,
+            channels: 3,
+            background: { r: 0, g: 0, b: 0 },
+          },
         })
           .png()
           .toBuffer(),
         left: 0,
-        top: 10,
+        top: 120,
       },
     ])
     .png()
@@ -105,8 +133,8 @@ async function createImageWithPostCropTopNoise(filePath: string): Promise<void> 
 async function createWhiteImage(filePath: string): Promise<void> {
   await sharp({
     create: {
-      width: 100,
-      height: 100,
+      width: WIDTH,
+      height: HEIGHT,
       channels: 3,
       background: { r: 255, g: 255, b: 255 },
     },
@@ -125,6 +153,7 @@ describe("runCompareDesign system UI masks", () => {
     await createWhiteImage(designPath);
     await createImageWithMaskedNoise(CAPTURED_SCREENSHOT_PATH, true);
     await createImageWithMaskedNoise(plainScreenshotPath, false);
+    await createImageWithMaskedNoise(URL_SCREENSHOT_PATH, false);
   });
 
   afterAll(async () => {
@@ -138,12 +167,12 @@ describe("runCompareDesign system UI masks", () => {
       design_source: designPath,
       capture_device: "android",
       threshold: 0,
-      ignore_regions: [{ x: 10, y: 50, width: 20, height: 10, label: "user:dynamic" }],
+      ignore_regions: [{ x: 100, y: 1200, width: 200, height: 100, label: "user:dynamic" }],
     });
 
     expect(comparison.result.matchRate).toBe(100);
     expect(comparison.result.diffPixelCount).toBe(0);
-    expect(comparison.result.totalPixelCount).toBe(9100);
+    expect(comparison.result.totalPixelCount).toBe(2416480);
   });
 
   it("mask_system_ui:false では capture_device でも system bar マスクを追加しないこと", async () => {
@@ -154,11 +183,11 @@ describe("runCompareDesign system UI masks", () => {
       capture_device: "android",
       threshold: 0,
       mask_system_ui: false,
-      ignore_regions: [{ x: 10, y: 50, width: 20, height: 10, label: "user:dynamic" }],
+      ignore_regions: [{ x: 100, y: 1200, width: 200, height: 100, label: "user:dynamic" }],
     });
 
-    expect(comparison.result.diffPixelCount).toBe(700);
-    expect(comparison.result.totalPixelCount).toBe(9800);
+    expect(comparison.result.diffPixelCount).toBe(155520);
+    expect(comparison.result.totalPixelCount).toBe(2572000);
   });
 
   it("通常 screenshot では既定で system bar マスクを追加しないこと", async () => {
@@ -170,8 +199,21 @@ describe("runCompareDesign system UI masks", () => {
       threshold: 0,
     });
 
-    expect(comparison.result.diffPixelCount).toBe(700);
-    expect(comparison.result.totalPixelCount).toBe(10000);
+    expect(comparison.result.diffPixelCount).toBe(155520);
+    expect(comparison.result.totalPixelCount).toBe(2592000);
+  });
+
+  it("screenshot_url では既定で system bar マスクを追加しないこと", async () => {
+    const { runCompareDesign } = await import("./compare-design-runner.js");
+
+    const comparison = await runCompareDesign({
+      design_source: designPath,
+      screenshot_url: "https://example.test",
+      threshold: 0,
+    });
+
+    expect(comparison.result.diffPixelCount).toBe(155520);
+    expect(comparison.result.totalPixelCount).toBe(2592000);
   });
 
   it("capture_device と cropRegion.y>0 の併用では post-crop 上端の実コンテンツを mask しないこと", async () => {
@@ -187,7 +229,7 @@ describe("runCompareDesign system UI masks", () => {
           regions: [
             {
               frameName: "Captured",
-              region: { x: 0, y: 10, width: 100, height: 80 },
+              region: { x: 0, y: 120, width: WIDTH, height: 2160 },
               updatedAt: "2026-06-21T00:00:00.000Z",
             },
           ],
@@ -203,8 +245,8 @@ describe("runCompareDesign system UI masks", () => {
         threshold: 0,
       });
 
-      expect(comparison.result.diffPixelCount).toBe(400);
-      expect(comparison.result.totalPixelCount).toBe(8000);
+      expect(comparison.result.diffPixelCount).toBe(77760);
+      expect(comparison.result.totalPixelCount).toBe(2332800);
     } finally {
       await fs.rm(projectDir, { recursive: true, force: true });
     }

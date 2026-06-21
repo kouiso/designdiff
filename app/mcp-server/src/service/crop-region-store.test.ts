@@ -189,5 +189,20 @@ describe("crop-region-store", () => {
       expect(results).toHaveLength(2);
       expect(results.map((r) => r.frameName)).toEqual(["Frame1", "Frame2"]);
     });
+
+    it("getCropRegionForComparison returns undefined when project has multiple regions and no frameName", async () => {
+      const store = {
+        regions: [
+          { frameName: "Frame1", region, updatedAt: "" },
+          { frameName: "Frame2", region, updatedAt: "" },
+        ],
+      };
+
+      vi.mocked(mockFs.readFile).mockResolvedValue(JSON.stringify(store));
+
+      const { getCropRegionForComparison } = await import("./crop-region-store.js");
+
+      await expect(getCropRegionForComparison("project-multi")).resolves.toBeUndefined();
+    });
   });
 });
