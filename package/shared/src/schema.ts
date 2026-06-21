@@ -302,6 +302,7 @@ export const CritiqueNoteSchema = z.object({
 
 export const PreflightWarningCodeSchema = z.enum([
   "width_mismatch",
+  "aspect_ratio_mismatch",
   "crop_out_of_bounds",
   "crop_stale",
   "blank_frame",

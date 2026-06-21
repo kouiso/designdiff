@@ -19,6 +19,8 @@ export interface PreflightInput {
 
 const DEFAULT_WIDTH_TOLERANCE_PX = 2;
 const CRITICAL_WIDTH_RATIO = 0.2;
+const ASPECT_RATIO_TOLERANCE = 0.01;
+const SCALE_RATIO_TOLERANCE = 0.01;
 const STALE_CROP_HEIGHT_RATIO = 0.6;
 // crop 範囲判定で許容する 1px のゆとり。リサイズ時の浮動小数点丸め誤差を吸収する。
 const CROP_BOUNDS_TOLERANCE_PX = 1;
@@ -36,41 +38,159 @@ const FRAME_LIKE_NODE_TYPES = new Set([
   "INSTANCE",
 ]);
 const PERCENT = 100;
+const DPR_SCALES = [1, 2, 3, 4];
 
-export function runPreflight(input: PreflightInput): PreflightReport {
-  const warnings: PreflightWarning[] = [];
-  const tolerance = input.widthTolerancePx ?? DEFAULT_WIDTH_TOLERANCE_PX;
+function aspectRatio(width: number, height: number): number | undefined {
+  if (width <= 0 || height <= 0) {
+    return undefined;
+  }
+  return width / height;
+}
 
+function relativeDelta(a: number, b: number): number {
+  const baseline = Math.max(Math.abs(a), Math.abs(b), Number.EPSILON);
+  return Math.abs(a - b) / baseline;
+}
+
+function aspectMatches(
+  figmaWidth: number,
+  figmaHeight: number | undefined,
+  screenshotWidth: number,
+  screenshotHeight: number,
+): boolean | undefined {
+  if (typeof figmaHeight !== "number") {
+    return undefined;
+  }
+  const figmaAspect = aspectRatio(figmaWidth, figmaHeight);
+  const screenshotAspect = aspectRatio(screenshotWidth, screenshotHeight);
+  if (figmaAspect === undefined || screenshotAspect === undefined) {
+    return undefined;
+  }
+  return relativeDelta(figmaAspect, screenshotAspect) <= ASPECT_RATIO_TOLERANCE;
+}
+
+function isStandardDprScale(a: number, b: number): boolean {
+  if (a <= 0 || b <= 0) {
+    return false;
+  }
+  const ratio = Math.max(a, b) / Math.min(a, b);
+  return DPR_SCALES.some((scale) => Math.abs(ratio - scale) <= SCALE_RATIO_TOLERANCE);
+}
+
+function isPureScaleVariant(input: PreflightInput, tolerance: number): boolean {
+  if (
+    typeof input.figmaFrameWidth !== "number" ||
+    typeof input.figmaFrameHeight !== "number" ||
+    aspectMatches(
+      input.figmaFrameWidth,
+      input.figmaFrameHeight,
+      input.screenshotWidth,
+      input.screenshotHeight,
+    ) !== true
+  ) {
+    return false;
+  }
+  if (Math.abs(input.figmaFrameWidth - input.screenshotWidth) <= tolerance) {
+    return true;
+  }
+  if (input.screenshotSource !== "capture_device") {
+    return false;
+  }
+  return (
+    isStandardDprScale(input.figmaFrameWidth, input.screenshotWidth) ||
+    (typeof input.figmaLogicalFrameWidth === "number" &&
+      isStandardDprScale(input.figmaLogicalFrameWidth, input.screenshotWidth))
+  );
+}
+
+function dimensionSuggestedFix(input: PreflightInput): string {
+  if (input.screenshotSource === "capture_device") {
+    return `端末キャプチャは物理ピクセルで返るため、Figma フレームを同じスケール（例: DPR込みの ${input.screenshotWidth}px 幅）でレンダリングして比較してください。`;
+  }
+  return `capture_width=${input.figmaFrameWidth} を指定して撮影し直してください。`;
+}
+
+function pushLogicalPhysicalWidthInfo(warnings: PreflightWarning[], input: PreflightInput): void {
+  warnings.push({
+    code: "logical_physical_width",
+    severity: "info",
+    message: `Figma の論理フレーム幅は ${input.figmaLogicalFrameWidth ?? input.figmaFrameWidth}px ですが、比較画像は DPR 込みの物理ピクセル相当です。縦横比と標準 DPR スケールが揃っているため、この差は設定ミスではない可能性があります。`,
+  });
+}
+
+function pushDimensionWarnings(
+  warnings: PreflightWarning[],
+  input: PreflightInput,
+  tolerance: number,
+): void {
   if (
     typeof input.figmaFrameWidth === "number" &&
     input.figmaFrameWidth > 0 &&
     Math.abs(input.figmaFrameWidth - input.screenshotWidth) > tolerance
   ) {
     const ratio = Math.abs(input.figmaFrameWidth - input.screenshotWidth) / input.figmaFrameWidth;
+    const sameAspect = aspectMatches(
+      input.figmaFrameWidth,
+      input.figmaFrameHeight,
+      input.screenshotWidth,
+      input.screenshotHeight,
+    );
+    if (isPureScaleVariant(input, tolerance)) {
+      pushLogicalPhysicalWidthInfo(warnings, input);
+    } else if (sameAspect) {
+      warnings.push({
+        code: "aspect_ratio_mismatch",
+        severity: "warning",
+        message: `Figma レンダリング画像は ${input.figmaFrameWidth}x${input.figmaFrameHeight}px、スクリーンショットは ${input.screenshotWidth}x${input.screenshotHeight}px です。縦横比は近いものの解像度が違うため、DPR だけではない撮影条件差の可能性があります。`,
+        suggestedFix: dimensionSuggestedFix(input),
+      });
+    } else {
+      warnings.push({
+        code: "width_mismatch",
+        severity: ratio >= CRITICAL_WIDTH_RATIO || sameAspect === false ? "critical" : "warning",
+        message: `Figma レンダリング画像幅 ${input.figmaFrameWidth}px に対し、スクリーンショット幅は ${input.screenshotWidth}px です。幅が違うと要素が横方向にズレ、全面が差分として検出されます。`,
+        suggestedFix: dimensionSuggestedFix(input),
+      });
+    }
+  } else if (
+    typeof input.figmaFrameWidth === "number" &&
+    typeof input.figmaFrameHeight === "number" &&
+    input.figmaFrameWidth > 0 &&
+    input.figmaFrameHeight > 0 &&
+    aspectMatches(
+      input.figmaFrameWidth,
+      input.figmaFrameHeight,
+      input.screenshotWidth,
+      input.screenshotHeight,
+    ) === false
+  ) {
     warnings.push({
-      code: "width_mismatch",
-      severity: ratio >= CRITICAL_WIDTH_RATIO ? "critical" : "warning",
-      message: `Figma レンダリング画像幅 ${input.figmaFrameWidth}px に対し、スクリーンショット幅は ${input.screenshotWidth}px です。幅が違うと要素が横方向にズレ、全面が差分として検出されます。`,
-      suggestedFix:
-        input.screenshotSource === "capture_device" || input.screenshotSource === "screenshot"
-          ? `端末キャプチャは物理ピクセルで返るため、Figma フレームを同じスケール（例: DPR込みの ${input.screenshotWidth}px 幅）でレンダリングして比較してください。`
-          : `capture_width=${input.figmaFrameWidth} を指定して撮影し直してください。`,
+      code: "aspect_ratio_mismatch",
+      severity: "critical",
+      message: `Figma レンダリング画像は ${input.figmaFrameWidth}x${input.figmaFrameHeight}px、スクリーンショットは ${input.screenshotWidth}x${input.screenshotHeight}px です。幅が近くても縦横比が違うため、比較前提が崩れています。`,
+      suggestedFix: dimensionSuggestedFix(input),
     });
   }
+}
+
+export function runPreflight(input: PreflightInput): PreflightReport {
+  const warnings: PreflightWarning[] = [];
+  const tolerance = input.widthTolerancePx ?? DEFAULT_WIDTH_TOLERANCE_PX;
+
+  pushDimensionWarnings(warnings, input, tolerance);
 
   if (
     typeof input.figmaLogicalFrameWidth === "number" &&
     typeof input.figmaFrameWidth === "number" &&
+    typeof input.figmaFrameHeight === "number" &&
     input.figmaLogicalFrameWidth > 0 &&
     input.figmaFrameWidth > 0 &&
     Math.abs(input.figmaLogicalFrameWidth - input.figmaFrameWidth) > tolerance &&
-    Math.abs(input.figmaFrameWidth - input.screenshotWidth) <= tolerance
+    Math.abs(input.figmaFrameWidth - input.screenshotWidth) <= tolerance &&
+    isPureScaleVariant(input, tolerance) &&
+    !warnings.some((warning) => warning.code === "logical_physical_width")
   ) {
-    warnings.push({
-      code: "logical_physical_width",
-      severity: "info",
-      message: `Figma の論理フレーム幅は ${input.figmaLogicalFrameWidth}px ですが、比較にはレンダリング画像幅 ${input.figmaFrameWidth}px を使用しています。端末キャプチャは DPR 込みの物理ピクセルになるため、この差は設定ミスではない可能性があります。`,
-    });
+    pushLogicalPhysicalWidthInfo(warnings, input);
   }
 
   if (input.cropRegion) {

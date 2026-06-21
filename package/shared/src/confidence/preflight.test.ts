@@ -6,7 +6,7 @@ import { runPreflight } from "./preflight.js";
 const STANDARD_WIDTH = 1082;
 const STANDARD_HEIGHT = 3000;
 const WIDE_SCREEN_WIDTH = 1440; // 撮影幅がフレームより明確に広い（>20%）ケース。
-const SLIGHTLY_WIDE_WIDTH = 1100; // 許容を超えるが20%未満のケース。
+const SLIGHTLY_WIDE_WIDTH = 1100; // 許容を超えるが20%未満の同一縦横比ケース。
 const TALL_SCREEN_HEIGHT = 3931;
 const SHORT_CROP_HEIGHT = 1021; // TALL_SCREEN_HEIGHT の60%未満。
 const OUT_OF_BOUNDS_CROP_HEIGHT = 5000;
@@ -24,11 +24,12 @@ describe("runPreflight", () => {
     expect(report.warnings.find((w) => w.code === "width_mismatch")).toBeUndefined();
   });
 
-  it("幅が許容を超えてズレると width_mismatch を出す", () => {
+  it("幅と縦横比が許容を超えてズレると width_mismatch を出す", () => {
     const report = runPreflight({
       screenshotWidth: WIDE_SCREEN_WIDTH,
       screenshotHeight: STANDARD_HEIGHT,
       figmaFrameWidth: STANDARD_WIDTH,
+      figmaFrameHeight: STANDARD_HEIGHT,
     });
     const warning = report.warnings.find((w) => w.code === "width_mismatch");
     expect(warning).toBeDefined();
@@ -41,6 +42,7 @@ describe("runPreflight", () => {
       screenshotWidth: WIDE_SCREEN_WIDTH,
       screenshotHeight: STANDARD_HEIGHT,
       figmaFrameWidth: STANDARD_WIDTH,
+      figmaFrameHeight: STANDARD_HEIGHT,
       screenshotSource: "capture_device",
     });
     const warning = report.warnings.find((w) => w.code === "width_mismatch");
@@ -53,6 +55,7 @@ describe("runPreflight", () => {
       screenshotWidth: 1080,
       screenshotHeight: 2340,
       figmaFrameWidth: 1080,
+      figmaFrameHeight: 2340,
       figmaLogicalFrameWidth: 390,
       screenshotSource: "capture_device",
     });
@@ -61,13 +64,84 @@ describe("runPreflight", () => {
     expect(report.warnings.find((w) => w.code === "logical_physical_width")?.severity).toBe("info");
   });
 
-  it("わずかな幅差(<20%)は warning 止まり", () => {
+  it("わずかな幅差(<20%)でも同一縦横比の解像度差は warning として残す", () => {
     const report = runPreflight({
       screenshotWidth: SLIGHTLY_WIDE_WIDTH,
+      screenshotHeight: (STANDARD_HEIGHT * SLIGHTLY_WIDE_WIDTH) / STANDARD_WIDTH,
+      figmaFrameWidth: STANDARD_WIDTH,
+      figmaFrameHeight: STANDARD_HEIGHT,
+    });
+    const warning = report.warnings.find((w) => w.code === "aspect_ratio_mismatch");
+    expect(warning?.severity).toBe("warning");
+    expect(report.warnings.find((w) => w.code === "logical_physical_width")).toBeUndefined();
+  });
+
+  it("同一縦横比でも標準DPRではない別解像度は aspect_ratio_mismatch を出す", () => {
+    const report = runPreflight({
+      screenshotWidth: 1170,
+      screenshotHeight: 2532,
+      figmaFrameWidth: 1080,
+      figmaFrameHeight: 2340,
+      screenshotSource: "capture_device",
+    });
+
+    const warning = report.warnings.find((w) => w.code === "aspect_ratio_mismatch");
+    expect(warning?.severity).toBe("warning");
+    expect(report.warnings.find((w) => w.code === "logical_physical_width")).toBeUndefined();
+  });
+
+  it("幅が一致していても縦横比が大きく違えば critical", () => {
+    const report = runPreflight({
+      screenshotWidth: 1080,
+      screenshotHeight: 1920,
+      figmaFrameWidth: 1080,
+      figmaFrameHeight: 2340,
+    });
+
+    const warning = report.warnings.find((w) => w.code === "aspect_ratio_mismatch");
+    expect(warning?.severity).toBe("critical");
+  });
+
+  it("レンダリング画像幅とスクショ幅が一致するDPR差は info", () => {
+    const report = runPreflight({
+      screenshotWidth: 1080,
+      screenshotHeight: 2340,
+      figmaFrameWidth: 1080,
+      figmaFrameHeight: 2340,
+      figmaLogicalFrameWidth: 390,
+      screenshotSource: "capture_device",
+    });
+
+    expect(report.warnings.find((w) => w.code === "aspect_ratio_mismatch")).toBeUndefined();
+    expect(report.warnings.find((w) => w.code === "logical_physical_width")?.severity).toBe("info");
+  });
+
+  it("screenshot_url の幅ズレでは capture_width を提案する", () => {
+    const report = runPreflight({
+      screenshotWidth: WIDE_SCREEN_WIDTH,
       screenshotHeight: STANDARD_HEIGHT,
       figmaFrameWidth: STANDARD_WIDTH,
+      figmaFrameHeight: STANDARD_HEIGHT,
+      screenshotSource: "screenshot_url",
     });
-    expect(report.warnings.find((w) => w.code === "width_mismatch")?.severity).toBe("warning");
+
+    const warning = report.warnings.find(
+      (w) => w.code === "width_mismatch" || w.code === "aspect_ratio_mismatch",
+    );
+    expect(warning?.suggestedFix).toContain("capture_width");
+  });
+
+  it("1080.4px の丸め差は幅警告にしない", () => {
+    const report = runPreflight({
+      screenshotWidth: 1080.4,
+      screenshotHeight: 2340,
+      figmaFrameWidth: 1080,
+      figmaFrameHeight: 2340,
+      widthTolerancePx: 1,
+    });
+
+    expect(report.warnings.find((w) => w.code === "width_mismatch")).toBeUndefined();
+    expect(report.warnings.find((w) => w.code === "aspect_ratio_mismatch")).toBeUndefined();
   });
 
   it("crop が画像範囲を超えると crop_out_of_bounds を出す", () => {

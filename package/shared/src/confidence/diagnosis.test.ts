@@ -58,6 +58,25 @@ describe("diagnoseComparison", () => {
     expect(result.headline).toContain("セットアップ問題");
   });
 
+  it("低一致率 + aspect_ratio_mismatch 警告で likely_misconfig になり原因に aspect_mismatch が入る", () => {
+    const result = diagnoseComparison({
+      matchRate: 8,
+      regionScores: [region({ structure: 0.99 })],
+      preflightWarnings: [
+        {
+          code: "aspect_ratio_mismatch",
+          severity: "warning",
+          message: "同一縦横比の別解像度",
+          suggestedFix: "capture_width を合わせてください",
+        },
+      ],
+    });
+    expect(result.verdict).toBe("likely_misconfig");
+    expect(result.likelyMisconfig).toBe(true);
+    expect(result.rankedCauses[0].code).toBe("aspect_mismatch");
+    expect(result.rankedCauses[0].suggestedFix).toContain("capture_width");
+  });
+
   it("構造は高いが色差が大きいと global_color_shift を検出する", () => {
     const result = diagnoseComparison({
       matchRate: 12,

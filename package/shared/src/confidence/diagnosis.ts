@@ -33,6 +33,8 @@ const FULL_PAGE_VIEWPORT_HEIGHT_RATIO = 1.4;
 // 各診断原因の確度 (0-1)。原因をランク付けする際の重みなので、上部の閾値定数と同様に集約する。
 const CONFIDENCE_WIDTH_MISMATCH_CRITICAL = 0.9;
 const CONFIDENCE_WIDTH_MISMATCH_WARNING = 0.7;
+const CONFIDENCE_ASPECT_PREFLIGHT_CRITICAL = 0.9;
+const CONFIDENCE_ASPECT_PREFLIGHT_WARNING = 0.7;
 const CONFIDENCE_NORMALIZATION = 0.8;
 const CONFIDENCE_MILD_ASPECT_MISMATCH = 0.45;
 const CONFIDENCE_CROP_PREFLIGHT_CRITICAL = 0.85;
@@ -61,6 +63,25 @@ function widthMismatchCause(warnings: PreflightWarning[]): DiagnosisCause | unde
     message:
       "撮影幅と Figma フレーム幅が一致していません。レイアウト自体は合っていても全面が差分になります。",
     suggestedFix: warning.suggestedFix ?? "capture_width を Figma フレーム幅に合わせてください。",
+  };
+}
+
+function aspectRatioPreflightCause(warnings: PreflightWarning[]): DiagnosisCause | undefined {
+  const warning = warnings.find((entry) => entry.code === "aspect_ratio_mismatch");
+  if (!warning) {
+    return undefined;
+  }
+  return {
+    code: "aspect_mismatch",
+    confidence:
+      warning.severity === "critical"
+        ? CONFIDENCE_ASPECT_PREFLIGHT_CRITICAL
+        : CONFIDENCE_ASPECT_PREFLIGHT_WARNING,
+    message:
+      "Figma レンダリング画像とスクリーンショットの縦横比または解像度が一致していません。DPR だけではない撮影条件差の可能性があります。",
+    suggestedFix:
+      warning.suggestedFix ??
+      "Figma フレーム、capture_width、撮影端末の解像度設定を揃えてください。",
   };
 }
 
@@ -222,6 +243,7 @@ export function diagnoseComparison(input: DiagnosisInput): ComparisonDiagnosis {
 
   const causes = [
     widthMismatchCause(input.preflightWarnings),
+    aspectRatioPreflightCause(input.preflightWarnings),
     normalizationCause(input.normalization),
     cropPreflightCause(input.preflightWarnings),
     globalColorShiftCause(input.matchRate, avgStructure, avgColor, lowMatchThreshold),
