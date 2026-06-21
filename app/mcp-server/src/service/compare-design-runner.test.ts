@@ -349,6 +349,67 @@ describe("runCompareDesign", () => {
     }
   });
 
+  it("does not persist a transparent diff PNG for a perfect match", async () => {
+    const originalHome = process.env.HOME;
+    tmpRoot = await fs.mkdtemp(path.join(process.cwd(), "tmp-figdiff-runner-"));
+    const testHome = path.join(tmpRoot, "home");
+    process.env.HOME = testHome;
+    const designPath = path.join(tmpRoot, "design.png");
+    const screenshotPath = path.join(tmpRoot, "screenshot.png");
+    await fs.writeFile(designPath, Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+    await fs.writeFile(screenshotPath, Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+
+    try {
+      mocks.sharp.mockReturnValue({
+        metadata: vi.fn(async () => ({ width: 390, height: 844 })),
+      });
+      mocks.compareImages.mockResolvedValue({
+        comparisonId: "cmp-runner-perfect-match",
+        matchRate: 100,
+        diffPixelCount: 0,
+        totalPixelCount: 390 * 844,
+        diffRegions: [],
+        suggestion: "一致率100%です。差分はありません。",
+        diffImageBase64: Buffer.from("transparent diff png").toString("base64"),
+        normalization: {
+          designNativeWidth: 390,
+          designNativeHeight: 844,
+          screenshotWidth: 390,
+          screenshotHeight: 844,
+          cropApplied: false,
+          containResized: false,
+          appliedScale: 1,
+        },
+      });
+
+      const { result } = await runCompareDesign({
+        design_source: designPath,
+        screenshot: screenshotPath,
+      });
+
+      const unexpectedPath = path.join(
+        testHome,
+        ".figdiff",
+        "results",
+        "diff-cmp-runner-perfect-match.png",
+      );
+      expect(result.diffImagePath).toBeUndefined();
+      await expect(fs.stat(unexpectedPath)).rejects.toThrow();
+      expect(mocks.recordComparison).toHaveBeenCalledWith(
+        expect.objectContaining({
+          comparisonId: "cmp-runner-perfect-match",
+          result: expect.objectContaining({
+            diffImagePath: undefined,
+            diffImageBase64: Buffer.from("transparent diff png").toString("base64"),
+          }),
+        }),
+      );
+    } finally {
+      if (originalHome === undefined) delete process.env.HOME;
+      else process.env.HOME = originalHome;
+    }
+  });
+
   it("auto-selects the best matching frame when nodeId and frameName are omitted", async () => {
     tmpRoot = await fs.mkdtemp(path.join(process.cwd(), "tmp-figdiff-runner-"));
     const screenshotPath = path.join(tmpRoot, "screenshot.png");

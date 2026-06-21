@@ -739,9 +739,10 @@ export async function runCompareDesign(
   const result = CompareDesignResultSchema.parse({
     status: buildStatus(structuralReviewResult.verdict),
     ...comparison,
-    diffImagePath: comparison.diffImageBase64
-      ? await persistDiffImage(comparison.diffImageBase64, comparison.comparisonId)
-      : undefined,
+    diffImagePath:
+      comparison.diffImageBase64 && comparison.matchRate < 100
+        ? await persistDiffImage(comparison.diffImageBase64, comparison.comparisonId)
+        : undefined,
     remainingIssues: regionCount,
     completionCriteria: buildCompletionCriteria(
       comparison.matchRate,

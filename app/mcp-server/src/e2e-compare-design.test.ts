@@ -203,6 +203,7 @@ describe("MCP Server E2E: compare_design", () => {
     expect(data.status).toBe("PASS");
     expect(data.matchRate).toBe(100);
     expect(data.diffPixelCount).toBe(0);
+    expect(data.diffImagePath).toBeUndefined();
     expect(data.completionCriteria.matchRate.status).toBe("PASS");
     expect(data.diffReport).toBeUndefined();
     expect(data.gridSummary).toBeUndefined();

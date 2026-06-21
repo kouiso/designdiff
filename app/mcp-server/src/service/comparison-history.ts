@@ -5,6 +5,8 @@ import * as path from "node:path";
 import { CompareDesignResultSchema } from "@figdiff/shared";
 import type { CompareDesignResult, DiffReport, ParsedDesignInput } from "@figdiff/shared";
 
+import { diffImageFileName } from "./persist-detail.js";
+
 const MAX_REPORTS_PER_KEY = 5;
 
 function resultsDir(): string {
@@ -52,7 +54,9 @@ export async function recordComparison(entry: ComparisonHistoryEntry): Promise<v
       try {
         const dir = resultsDir();
         await fs.rm(path.join(dir, `${removed.comparisonId}.json`), { force: true });
+        await fs.rm(path.join(dir, diffImageFileName(removed.comparisonId)), { force: true });
         await fs.rm(path.join(dir, `${removed.comparisonId}.png`), { force: true });
+        await fs.rm(path.join(dir, `${removed.comparisonId}.regions.json`), { force: true });
       } catch {
         // 古い履歴の削除失敗は現在の比較結果の保存を妨げないため無視する。
       }

@@ -81,6 +81,42 @@ describe("comparison-history", () => {
     expect((await getComparisonEntry("cmp-5"))?.comparisonId).toBe("cmp-5");
   });
 
+  it("履歴上限から外れた比較の永続化ファイルを削除する", async () => {
+    clearComparisonHistory();
+    const originalHome = process.env.HOME;
+    const testHome = await fs.mkdtemp(path.join(tmpdir(), "figdiff-history-evict-"));
+    const sourceKey = "figma:file:evict";
+
+    try {
+      process.env.HOME = testHome;
+      const resultsDir = path.join(testHome, ".figdiff", "results");
+      await fs.mkdir(resultsDir, { recursive: true });
+
+      for (let index = 0; index < 6; index++) {
+        const comparisonId = `cmp-evict-${index}`;
+        await fs.writeFile(path.join(resultsDir, `diff-${comparisonId}.png`), "diff");
+        await fs.writeFile(path.join(resultsDir, `${comparisonId}.png`), "legacy");
+        await fs.writeFile(path.join(resultsDir, `${comparisonId}.regions.json`), "[]");
+        await recordComparison({
+          comparisonId,
+          sourceKey,
+          result: createResult(comparisonId, createReport(0.8 + index * 0.01)),
+        });
+      }
+
+      await expect(fs.stat(path.join(resultsDir, "diff-cmp-evict-0.png"))).rejects.toThrow();
+      await expect(fs.stat(path.join(resultsDir, "cmp-evict-0.png"))).rejects.toThrow();
+      await expect(fs.stat(path.join(resultsDir, "cmp-evict-0.regions.json"))).rejects.toThrow();
+      await expect(fs.stat(path.join(resultsDir, "diff-cmp-evict-5.png"))).resolves.toBeDefined();
+      expect(getRecentReports(sourceKey)).toHaveLength(5);
+    } finally {
+      if (originalHome === undefined) delete process.env.HOME;
+      else process.env.HOME = originalHome;
+      clearComparisonHistory();
+      await fs.rm(testHome, { recursive: true, force: true });
+    }
+  });
+
   it("メモリ履歴がない場合はディスクから比較結果を復元する", async () => {
     clearComparisonHistory();
     const originalHome = process.env.HOME;
