@@ -8,6 +8,8 @@ export interface PreflightInput {
   screenshotHeight: number;
   figmaFrameWidth?: number;
   figmaFrameHeight?: number;
+  figmaLogicalFrameWidth?: number;
+  screenshotSource?: "screenshot" | "screenshot_url" | "capture_device";
   cropRegion?: { x: number; y: number; width: number; height: number };
   cropUpdatedAt?: string;
   figmaChildCount?: number;
@@ -48,8 +50,26 @@ export function runPreflight(input: PreflightInput): PreflightReport {
     warnings.push({
       code: "width_mismatch",
       severity: ratio >= CRITICAL_WIDTH_RATIO ? "critical" : "warning",
-      message: `Figma フレーム幅 ${input.figmaFrameWidth}px に対し、スクリーンショット幅は ${input.screenshotWidth}px です。幅が違うと要素が横方向にズレ、全面が差分として検出されます。`,
-      suggestedFix: `capture_width=${input.figmaFrameWidth} を指定して撮影し直してください。`,
+      message: `Figma レンダリング画像幅 ${input.figmaFrameWidth}px に対し、スクリーンショット幅は ${input.screenshotWidth}px です。幅が違うと要素が横方向にズレ、全面が差分として検出されます。`,
+      suggestedFix:
+        input.screenshotSource === "capture_device" || input.screenshotSource === "screenshot"
+          ? `端末キャプチャは物理ピクセルで返るため、Figma フレームを同じスケール（例: DPR込みの ${input.screenshotWidth}px 幅）でレンダリングして比較してください。`
+          : `capture_width=${input.figmaFrameWidth} を指定して撮影し直してください。`,
+    });
+  }
+
+  if (
+    typeof input.figmaLogicalFrameWidth === "number" &&
+    typeof input.figmaFrameWidth === "number" &&
+    input.figmaLogicalFrameWidth > 0 &&
+    input.figmaFrameWidth > 0 &&
+    Math.abs(input.figmaLogicalFrameWidth - input.figmaFrameWidth) > tolerance &&
+    Math.abs(input.figmaFrameWidth - input.screenshotWidth) <= tolerance
+  ) {
+    warnings.push({
+      code: "logical_physical_width",
+      severity: "info",
+      message: `Figma の論理フレーム幅は ${input.figmaLogicalFrameWidth}px ですが、比較にはレンダリング画像幅 ${input.figmaFrameWidth}px を使用しています。端末キャプチャは DPR 込みの物理ピクセルになるため、この差は設定ミスではない可能性があります。`,
     });
   }
 

@@ -9,14 +9,15 @@
     "figdiff-mcp": "./dist/index.js"
   },
   "scripts": {
-    "build": "tsc && node -e \"require('node:fs').chmodSync('dist/index.js', 0o755)\"",
-    "pretypecheck": "pnpm --filter @figdiff/shared build",
+    "build": "tsc -b --force && node -e \"require('node:fs').chmodSync('dist/index.js', 0o755)\"",
+    "pretypecheck": "pnpm --filter @figdiff/credential-store build && pnpm --filter @figdiff/shared build && pnpm --filter @figdiff/mobile-capture build",
     "typecheck": "tsc --noEmit",
     "lint": "biome check src/",
     "lint:fix": "biome check --write src/",
     "dev": "tsc --watch",
     "test": "vitest run",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "prebuild": "pnpm --filter @figdiff/credential-store build"
   },
   "dependencies": {
     "@figdiff/credential-store": "workspace:*",

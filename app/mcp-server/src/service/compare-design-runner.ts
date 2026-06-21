@@ -159,6 +159,7 @@ async function resolveNodeId(
   nodeId: string | undefined,
   frameName: string | undefined,
   targetWidth: number | undefined,
+  targetHeight: number | undefined,
 ): Promise<string> {
   if (nodeId) {
     return nodeId;
@@ -168,7 +169,7 @@ async function resolveNodeId(
   // 実コンテンツらしいフレーム (撮影幅一致・ページらしい形) を上位に並べた候補一覧。
   // 正常解決時には不要なので、エラー時にのみ生成する。
   const buildGuidance = (): string =>
-    formatFrameCandidates(rankFrameCandidates(frames, targetWidth), targetWidth);
+    formatFrameCandidates(rankFrameCandidates(frames, targetWidth, targetHeight), targetWidth);
 
   if (frameName) {
     const matches = frames.filter((entry) => entry.name.toLowerCase() === frameName.toLowerCase());
@@ -183,7 +184,7 @@ async function resolveNodeId(
     return matches[0].id;
   }
 
-  const ranked = rankFrameCandidates(frames, targetWidth);
+  const ranked = rankFrameCandidates(frames, targetWidth, targetHeight);
   if (ranked.length === 0) {
     throw new Error(`No frame specified and no frames found in the file.\n\n${buildGuidance()}`);
   }
@@ -368,6 +369,7 @@ async function enhanceBlankFrameWarning(
   warnings: PreflightWarning[],
   fileKey: string,
   screenWidth: number | undefined,
+  screenHeight: number | undefined,
 ): Promise<PreflightWarning[]> {
   if (!warnings.some((w) => w.code === "blank_frame")) {
     return warnings;
@@ -376,7 +378,7 @@ async function enhanceBlankFrameWarning(
     const figmaService = await createFigmaService();
     const frames = await figmaService.getFrames(fileKey);
     const candidateText = formatFrameCandidates(
-      rankFrameCandidates(frames, screenWidth),
+      rankFrameCandidates(frames, screenWidth, screenHeight),
       screenWidth,
     );
     return warnings.map((w) =>
@@ -458,6 +460,7 @@ async function resolveDesignAssets(
   parsedDesignSource: ReturnType<typeof parseDesignInput>,
   frameName: string | undefined,
   targetWidth: number | undefined,
+  targetHeight: number | undefined,
   fallbackNodeId?: string,
 ): Promise<{
   designBase64: string;
@@ -475,6 +478,7 @@ async function resolveDesignAssets(
       effectiveNodeId,
       frameName,
       targetWidth,
+      targetHeight,
     );
     let figmaRootNode: FigmaNode | undefined;
     try {
@@ -594,6 +598,7 @@ export async function runCompareDesign(
     parsedDesignSource,
     args.frame_name,
     targetWidth,
+    screenshotMeta.height,
     fallbackNodeId,
   );
 
@@ -631,8 +636,14 @@ export async function runCompareDesign(
   const preflight = runPreflight({
     screenshotWidth: comparison.normalization?.screenshotWidth ?? screenshotMeta.width ?? 0,
     screenshotHeight: comparison.normalization?.screenshotHeight ?? screenshotMeta.height ?? 0,
-    figmaFrameWidth: figmaFrameBox?.width,
-    figmaFrameHeight: figmaFrameBox?.height,
+    figmaFrameWidth: comparison.normalization?.designNativeWidth ?? figmaFrameBox?.width,
+    figmaFrameHeight: comparison.normalization?.designNativeHeight ?? figmaFrameBox?.height,
+    figmaLogicalFrameWidth: figmaFrameBox?.width,
+    screenshotSource: args.capture_device
+      ? "capture_device"
+      : args.screenshot_url
+        ? "screenshot_url"
+        : "screenshot",
     cropRegion,
     cropUpdatedAt,
     figmaChildCount: figmaRootNode?.children?.length,
@@ -650,9 +661,15 @@ export async function runCompareDesign(
 
   // blank_frame 警告をフレーム候補付きに強化し、前回使用ノード info を先頭に追加する。
   const screenWidth = comparison.normalization?.screenshotWidth ?? screenshotMeta.width;
+  const screenHeight = comparison.normalization?.screenshotHeight ?? screenshotMeta.height;
   let finalPreflightWarnings =
     parsedDesignSource.type === "figma_url"
-      ? await enhanceBlankFrameWarning(preflight.warnings, parsedDesignSource.fileKey, screenWidth)
+      ? await enhanceBlankFrameWarning(
+          preflight.warnings,
+          parsedDesignSource.fileKey,
+          screenWidth,
+          screenHeight,
+        )
       : preflight.warnings;
 
   if (lastUsedNodeNote) {

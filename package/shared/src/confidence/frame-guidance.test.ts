@@ -29,6 +29,20 @@ describe("rankFrameCandidates", () => {
     expect(ranked[0].reason).toContain(`幅${TARGET_WIDTH}px一致`);
   });
 
+  it("モバイル実機スクショでは幅だけでなく縦横比が近いアプリ画面を優先する", () => {
+    const ranked = rankFrameCandidates(
+      [
+        frame({ id: "1:lp", name: "LP", width: 1082, height: 3931 }),
+        frame({ id: "1:app", name: "app-form", width: 390, height: 844 }),
+      ],
+      1080,
+      2340,
+    );
+
+    expect(ranked[0].id).toBe("1:app");
+    expect(ranked[0].reason).toContain("縦横比が近い");
+  });
+
   it("横長フレームは概観ボードとして降格させる", () => {
     const ranked = rankFrameCandidates([
       frame({ id: "1:1", name: "Overview", width: 6000, height: 1500 }),
