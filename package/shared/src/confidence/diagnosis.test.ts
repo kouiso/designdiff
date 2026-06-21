@@ -79,7 +79,14 @@ describe("diagnoseComparison", () => {
   });
 
   it("極端な圧縮(appliedScale<0.5)は matchRate が高くても likely_misconfig", () => {
-    const normalization = normalizationReport({ cropApplied: false });
+    const normalization = normalizationReport({
+      designNativeWidth: 1080,
+      designNativeHeight: 1080,
+      screenshotWidth: 1080,
+      screenshotHeight: 2340,
+      cropApplied: false,
+      appliedScale: 0.46,
+    });
     const result = diagnoseComparison({
       matchRate: 79,
       regionScores: [region({ structure: 0.55 })],
@@ -87,7 +94,52 @@ describe("diagnoseComparison", () => {
       normalization,
     });
     expect(result.verdict).toBe("likely_misconfig");
-    expect(result.rankedCauses.some((c) => c.code === "aspect_mismatch")).toBe(true);
+    const cause = result.rankedCauses.find((c) => c.code === "aspect_mismatch");
+    expect(cause?.classification).toBe("wrong_frame_or_misconfig");
+    expect(cause?.suggestedFix).toContain("list_figma_frames");
+  });
+
+  it("縦長 Figma フレームは full-page vs single viewport として crop/scroll guidance を返す", () => {
+    const result = diagnoseComparison({
+      matchRate: 79,
+      regionScores: [region({ structure: 0.55 })],
+      preflightWarnings: [],
+      normalization: normalizationReport({
+        designNativeWidth: 1080,
+        designNativeHeight: 6000,
+        screenshotWidth: 1080,
+        screenshotHeight: 2340,
+        cropApplied: false,
+        appliedScale: 0.39,
+      }),
+    });
+    const cause = result.rankedCauses.find((c) => c.code === "aspect_mismatch");
+    expect(result.verdict).not.toBe("likely_misconfig");
+    expect(cause?.classification).toBe("full_page_vs_viewport");
+    expect(cause?.message).toContain("フルページ");
+    expect(cause?.suggestedFix).toContain("set_crop_region");
+    expect(cause?.suggestedFix).toContain("スクロール/フルページ撮影");
+  });
+
+  it("軽い縦横比差は letterbox 除外済みとして実差分確認に誘導する", () => {
+    const result = diagnoseComparison({
+      matchRate: 60,
+      regionScores: [region({ structure: 0.6, color: 1 })],
+      preflightWarnings: [],
+      normalization: normalizationReport({
+        designNativeWidth: 1080,
+        designNativeHeight: 2300,
+        screenshotWidth: 1080,
+        screenshotHeight: 2340,
+        cropApplied: false,
+        appliedScale: 1,
+      }),
+    });
+    const cause = result.rankedCauses.find((c) => c.code === "aspect_mismatch");
+    expect(result.verdict).toBe("real_diff");
+    expect(cause?.classification).toBe("mild_aspect_mismatch");
+    expect(cause?.message).toContain("レターボックス余白は差分から除外済み");
+    expect(result.headline).toContain("レターボックス余白");
   });
 
   it("clean のときは rankedCauses を空にする", () => {

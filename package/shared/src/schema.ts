@@ -356,6 +356,9 @@ export const DiagnosisCauseSchema = z.object({
   confidence: z.number().min(0).max(1),
   message: z.string(),
   suggestedFix: z.string(),
+  classification: z
+    .enum(["full_page_vs_viewport", "wrong_frame_or_misconfig", "mild_aspect_mismatch"])
+    .optional(),
 });
 
 export const ComparisonDiagnosisSchema = z.object({
