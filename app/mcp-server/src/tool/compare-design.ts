@@ -42,12 +42,13 @@ const DESCRIPTION = `デザインと実装のピクセル差分を検出しま�
 - design_source: Figma URL（node-id付き推奨） or ローカル画像パス（ローカル画像はカレントディレクトリまたは ~/.figdiff/cache 配下。追加は FIGDIFF_ALLOWED_DIRS）
 - screenshot: 実装スクリーンショットのローカルパス（screenshot_url / capture_device 使用時は省略可）
 - screenshot_url: 撮影対象URL。指定時はPlaywrightで内部撮影しscreenshotの代わりに使用
-- capture_device: 接続済みモバイル端末/SimulatorからPNGを撮影しscreenshotの代わりに使用（android/ios-sim/ios-device）
+- capture_device: 接続済みモバイル端末/SimulatorからPNGを撮影しscreenshotの代わりに使用（android/ios-sim/ios-device）。既定でOSステータスバー/ナビゲーションバーを ignore_regions として自動マスク
 - capture_width: 撮影幅(px)。省略時はFigmaフレームの実幅を自動取得（screenshot_url指定時のみ有効）
 - threshold: 色差の許容閾値（0-1）。profile を指定した場合はそちらが既定値になる
 - profile: 比較プロファイル（strict/balanced/layout）。threshold 直接指定で上書き可
 - project_id: Crop Region・ignore_regions・前回使用ノード自動補完に使うプロジェクトID（省略可）
-- ignore_regions: 既知の意図的差分マスク（省略可）。project_id の保存済みマスクと結合される。WP原文 vs Figmaプレースホルダ、Google Map埋め込み等の false-positive 抑制に使用。各矩形 {x,y,width,height,label?} 内のピクセルは差分検出/matchRate 分母から除外される
+- ignore_regions: 既知の意図的差分マスク（省略可）。project_id の保存済みマスク、自動 system UI マスクと結合される。WP原文 vs Figmaプレースホルダ、Google Map埋め込み等の false-positive 抑制に使用。各矩形 {x,y,width,height,label?} 内のピクセルは差分検出/matchRate 分母から除外される
+- mask_system_ui: モバイル実機/Simulator撮影のOSステータスバー/ナビゲーションバーを自動マスクするか。capture_device指定時は既定true、それ以外は既定false。set_ignore_regionsで追加の微調整が可能
 
 ## Figma URLの例
   "https://www.figma.com/design/ABC123/File?node-id=1-23"
@@ -169,6 +170,12 @@ export function registerCompareDesign(server: McpServer): void {
           .optional()
           .describe(
             "撮影幅(px)。省略時はFigmaフレームの実幅を自動取得。screenshot_url指定時のみ有効。",
+          ),
+        mask_system_ui: z
+          .boolean()
+          .optional()
+          .describe(
+            "モバイル実機/Simulator撮影のOSステータスバー/ナビゲーションバーを自動ignore_regions化する。capture_device指定時は既定true、それ以外は既定false。",
           ),
         frame_name: z
           .string()

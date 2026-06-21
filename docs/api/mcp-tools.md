@@ -29,6 +29,7 @@ Defined in `app/mcp-server/src/tool/compare-design.ts`.
   "screenshot": "string?",
   "screenshot_url": "string?",
   "capture_device": "android | ios-sim | ios-device?",
+  "mask_system_ui": "boolean?",
   "frame_name": "string?",
   "threshold": "number (0..1, default 0.1)",
   "project_id": "string?",
@@ -51,6 +52,7 @@ Notes:
 - `frame_name` is used when a Figma URL does not include `node-id`; when node details are available, `compare_design` also uses the resolved frame name to apply frame-scoped persisted ignore regions/crops in node-id flows.
 - `project_id` enables crop-region lookup through `getCropRegion` and persisted ignore-region lookup through `~/.figdiff/projects/{project_id}/ignore-regions.yaml`.
 - Persisted ignore regions are applied before the ad hoc `ignore_regions` input. Both use screenshot pixel coordinates after crop-region application.
+- Mobile `capture_device` comparisons default `mask_system_ui` to `true`, adding top `system:status-bar` and bottom `system:navigation-bar` ignore regions in screenshot pixel coordinates. Set `mask_system_ui: false` to disable this preset; use `set_ignore_regions` or inline `ignore_regions` for device-specific fine-tuning.
 
 ### Output shape
 

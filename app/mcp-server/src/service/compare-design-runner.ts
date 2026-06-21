@@ -8,6 +8,7 @@ import { z } from "zod";
 import { captureDeviceScreenshot, type CaptureDevice } from "@figdiff/mobile-capture";
 import {
   buildComparisonHeadline,
+  buildSystemBarIgnoreRegions,
   CompareDesignResultSchema,
   diagnoseComparison,
   formatFrameCandidates,
@@ -143,6 +144,7 @@ export interface CompareDesignRunArgs {
   threshold?: number;
   profile?: ComparisonProfile;
   project_id?: string;
+  mask_system_ui?: boolean;
   // 既知の意図的差分マスク。compare 結果から除外される。
   // 座標系は cropRegion 適用後 (= screenshot ピクセル座標)。
   ignore_regions?: IgnoreRegion[];
@@ -546,6 +548,23 @@ async function resolveProjectRegions(
   };
 }
 
+function buildSystemIgnoreRegionsForComparison(
+  args: CompareDesignRunArgs,
+  screenshotMeta: sharp.Metadata,
+  cropRegion: CropRegion | undefined,
+): IgnoreRegion[] {
+  const maskSystemUi = args.mask_system_ui ?? args.capture_device !== undefined;
+  if (!maskSystemUi) {
+    return [];
+  }
+
+  return buildSystemBarIgnoreRegions(
+    cropRegion?.width ?? screenshotMeta.width ?? 0,
+    cropRegion?.height ?? screenshotMeta.height ?? 0,
+    args.capture_device ?? "android",
+  );
+}
+
 interface FigmaProvenance {
   figmaFileKey: string;
   figmaNodeId: string | undefined;
@@ -602,11 +621,19 @@ export async function runCompareDesign(
     fallbackNodeId,
   );
 
-  const { cropRegion, cropUpdatedAt, ignoreRegions } = await resolveProjectRegions(
+  const {
+    cropRegion,
+    cropUpdatedAt,
+    ignoreRegions: projectIgnoreRegions,
+  } = await resolveProjectRegions(
     args.project_id,
     args.frame_name ?? figmaRootNode?.name,
     args.ignore_regions,
   );
+  const ignoreRegions = [
+    ...projectIgnoreRegions,
+    ...buildSystemIgnoreRegionsForComparison(args, screenshotMeta, cropRegion),
+  ];
 
   const comparison = await compareImages(
     {
