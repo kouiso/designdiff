@@ -741,7 +741,7 @@ export async function runCompareDesign(
     status: buildStatus(structuralReviewResult.verdict),
     ...comparison,
     diffImagePath:
-      comparison.diffImageBase64 && comparison.matchRate < 100
+      comparison.diffImageBase64 && (comparison.matchRate < 100 || comparison.diffPixelCount > 0)
         ? await persistDiffImage(comparison.diffImageBase64, comparison.comparisonId)
         : undefined,
     remainingIssues: regionCount,

@@ -167,6 +167,7 @@ describe("MCP Server E2E: compare_design", () => {
     expect(toolNames).toContain("set_crop_region");
     expect(toolNames).toContain("get_ignore_regions");
     expect(toolNames).toContain("set_ignore_regions");
+    expect(toolNames).toContain("delete_ignore_region");
     expect(toolNames).toContain("get_design_tokens");
     expect(toolNames).toContain("verify_fix");
     expect(compareDesignTool?.outputSchema).toBeDefined();
@@ -468,6 +469,52 @@ describe("MCP Server E2E: compare_design", () => {
     expect(getResult.isError).toBeFalsy();
     const persistedRegions = JSON.parse(findTextContent(getResult)!.text);
     expect(persistedRegions.regionCount).toBe(1);
+
+    const deleteResult = await client.callTool({
+      name: "delete_ignore_region",
+      arguments: {
+        project_id: "ignore-project",
+        frame_name: "test-frame",
+        region_id: "full-frame",
+      },
+    });
+    expect(deleteResult.isError).toBeFalsy();
+    const deletePayload = JSON.parse(findTextContent(deleteResult)!.text);
+    expect(deletePayload).toMatchObject({
+      success: true,
+      deletedRegionId: "full-frame",
+      frameName: "test-frame",
+      regionCount: 0,
+    });
+
+    const getAfterDeleteResult = await client.callTool({
+      name: "get_ignore_regions",
+      arguments: {
+        project_id: "ignore-project",
+        frame_name: "test-frame",
+      },
+    });
+    expect(getAfterDeleteResult.isError).toBeFalsy();
+    const afterDeleteRegions = JSON.parse(findTextContent(getAfterDeleteResult)!.text);
+    expect(afterDeleteRegions.regionCount).toBe(0);
+
+    await client.callTool({
+      name: "set_ignore_regions",
+      arguments: {
+        project_id: "ignore-project",
+        regions: [
+          {
+            id: "full-frame",
+            frame_name: "test-frame",
+            x: 0,
+            y: 0,
+            width: 200,
+            height: 200,
+            label: "Intentional full-frame diff",
+          },
+        ],
+      },
+    });
 
     const compareResult = await client.callTool({
       name: "compare_design",

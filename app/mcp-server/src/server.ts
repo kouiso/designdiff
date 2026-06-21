@@ -15,6 +15,7 @@
  * - set_crop_region (Utility): Set comparison crop region
  * - get_ignore_regions (Utility): Get persisted ignore regions
  * - set_ignore_regions (Utility): Set persisted ignore regions
+ * - delete_ignore_region (Utility): Delete a persisted ignore region
  * - verify_fix (Utility): Re-compare against a prior result and confirm the claimed fix
  * - set_figma_token (Utility): Set a Figma Personal Access Token in the shared credential store
  * - report_issue (Utility): Create a GitHub issue for usability feedback, bugs, or requests
@@ -24,6 +25,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
 import { registerCompareDesign } from "./tool/compare-design.js";
 import { registerCreateProject } from "./tool/create-project.js";
+import { registerDeleteIgnoreRegion } from "./tool/delete-ignore-region.js";
 import { registerDeleteProject } from "./tool/delete-project.js";
 import { registerGenerateReport } from "./tool/generate-report.js";
 import { registerGetCropRegion } from "./tool/get-crop-region.js";
@@ -60,6 +62,7 @@ export function createMcpServer(): McpServer {
 - set_crop_region: Save crop region for focused comparison
 - get_ignore_regions: Get persisted intentional-difference masks for a project/frame
 - set_ignore_regions: Save persisted intentional-difference masks
+- delete_ignore_region: Delete a persisted intentional-difference mask by id
 - verify_fix: 前回比較との差分で対象ノードの改善と副作用を検証
 - set_figma_token: Set a Figma Personal Access Token in the shared credential store
 - report_issue: 使いにくい点・バグ・改善要望に気づいたら即座に GitHub issue として起票できます
@@ -92,6 +95,7 @@ export function createMcpServer(): McpServer {
   registerSetCropRegion(server);
   registerGetIgnoreRegions(server);
   registerSetIgnoreRegions(server);
+  registerDeleteIgnoreRegion(server);
   registerVerifyFix(server);
   registerSetFigmaToken(server);
   registerReportIssue(server);
