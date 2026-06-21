@@ -125,6 +125,39 @@ regions:
     expect(renameFrom.split("/").slice(0, -1)).toEqual(renameTo.split("/").slice(0, -1));
   });
 
+  it("setIgnoreRegionConfig upsert-merges regions by id", async () => {
+    vi.mocked(mockFs.readFile).mockResolvedValue(`version: 1
+regions:
+  - id: existing
+    label: Old label
+    x: 1
+    y: 2
+    width: 3
+    height: 4
+  - id: keep
+    x: 5
+    y: 6
+    width: 7
+    height: 8
+`);
+    vi.mocked(mockFs.mkdir).mockResolvedValue(undefined);
+    vi.mocked(mockFs.writeFile).mockResolvedValue(undefined);
+    vi.mocked(mockFs.rename).mockResolvedValue(undefined);
+
+    const { setIgnoreRegionConfig } = await import("./ignore-region-store.js");
+
+    const config = await setIgnoreRegionConfig("project-1", [
+      { id: "existing", label: "New label", x: 10, y: 20, width: 30, height: 40 },
+      { id: "new", x: 50, y: 60, width: 70, height: 80 },
+    ]);
+
+    expect(config.regions).toEqual([
+      { id: "existing", label: "New label", x: 10, y: 20, width: 30, height: 40 },
+      { id: "keep", x: 5, y: 6, width: 7, height: 8 },
+      { id: "new", x: 50, y: 60, width: 70, height: 80 },
+    ]);
+  });
+
   it("write failure removes temp file", async () => {
     const error = new Error("disk full");
     vi.mocked(mockFs.readFile).mockRejectedValue(makeEnoentError());

@@ -1,5 +1,5 @@
-import { existsSync, mkdirSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { existsSync, mkdirSync, rmSync, statSync } from "node:fs";
+import { platform, tmpdir } from "node:os";
 import * as path from "node:path";
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -40,6 +40,21 @@ describe("FileBackend", () => {
     backend.set("figma-pat", "figd_test_token_123");
     expect(backend.get("figma-pat")).toBe("figd_test_token_123");
   });
+
+  it.skipIf(platform() === "win32")("writes credentials.json with owner-only permissions", () => {
+    const backend = createFileBackend();
+    backend.set("figma-pat", "figd_test_token_123");
+    expect(statSync(TMP_CRED_PATH).mode & 0o777).toBe(0o600);
+  });
+
+  it.skipIf(platform() === "win32")(
+    "creates credential directory with owner-only permissions",
+    () => {
+      const backend = createFileBackend();
+      backend.set("figma-pat", "figd_test_token_123");
+      expect(statSync(path.dirname(TMP_CRED_PATH)).mode & 0o777).toBe(0o700);
+    },
+  );
 
   it("deletes a value", () => {
     const backend = createFileBackend();

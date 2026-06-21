@@ -1,6 +1,6 @@
 /**
  * set_ignore_regions — Utility MCP Tool
- * Replace persisted ignore regions for a project.
+ * Upsert persisted ignore regions for a project by id.
  */
 
 import { z } from "zod";
@@ -17,13 +17,13 @@ export function registerSetIgnoreRegions(server: McpServer): void {
     "set_ignore_regions",
     {
       description:
-        "プロジェクトの意図的差分マスクをignore-regions.yamlへ保存します。既存マスクは置き換えます。座標系はcrop適用後のscreenshotピクセル座標です（designはscreenshot幅にリサイズ後にcropされます。Figmaフレームピクセルではありません）。",
+        "プロジェクトの意図的差分マスクをignore-regions.yamlへ保存します。既存マスクはidごとに更新または追加され、削除はdelete_ignore_regionを使います。座標系はcrop適用後のscreenshotピクセル座標です（designはscreenshot幅にリサイズ後にcropされます。Figmaフレームピクセルではありません）。",
       inputSchema: {
         project_id: z.string().regex(PROJECT_ID_PATTERN).describe("プロジェクトID"),
         regions: z
           .array(IgnoreRegionConfigEntrySchema)
           .describe(
-            "保存する意図的差分マスク一覧。座標系はcrop適用後のscreenshotピクセル座標です（designはscreenshot幅にリサイズ後にcropされます。Figmaフレームピクセルではありません）。",
+            "保存する意図的差分マスク一覧。既存マスクは同じidなら更新され、異なるidなら保持されます。削除はdelete_ignore_regionを使います。座標系はcrop適用後のscreenshotピクセル座標です（designはscreenshot幅にリサイズ後にcropされます。Figmaフレームピクセルではありません）。",
           ),
       },
     },
