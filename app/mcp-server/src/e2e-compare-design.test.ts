@@ -116,9 +116,21 @@ describe("MCP Server E2E: compare_design", () => {
     originalHome = process.env.HOME;
     process.env.HOME = path.join(FIXTURE_DIR, "home");
 
-    const designImage = await createTestImage(200, 200, { r: 66, g: 133, b: 244 });
-    const screenshotSame = await createTestImage(200, 200, { r: 66, g: 133, b: 244 });
-    const screenshotDiff = await createTestImage(200, 200, { r: 0, g: 0, b: 0 });
+    const designImage = await createTestImage(200, 200, {
+      r: 66,
+      g: 133,
+      b: 244,
+    });
+    const screenshotSame = await createTestImage(200, 200, {
+      r: 66,
+      g: 133,
+      b: 244,
+    });
+    const screenshotDiff = await createTestImage(200, 200, {
+      r: 0,
+      g: 0,
+      b: 0,
+    });
 
     designPath = path.join(FIXTURE_DIR, "design.png");
     screenshotSamePath = path.join(FIXTURE_DIR, "screenshot-same.png");
@@ -277,12 +289,22 @@ describe("MCP Server E2E: compare_design", () => {
 
   it("差分率が単調減少するループを証明できること", async () => {
     const partialDiffImage = await sharp({
-      create: { width: 200, height: 200, channels: 3, background: { r: 66, g: 133, b: 244 } },
+      create: {
+        width: 200,
+        height: 200,
+        channels: 3,
+        background: { r: 66, g: 133, b: 244 },
+      },
     })
       .composite([
         {
           input: await sharp({
-            create: { width: 50, height: 50, channels: 3, background: { r: 0, g: 0, b: 0 } },
+            create: {
+              width: 50,
+              height: 50,
+              channels: 3,
+              background: { r: 0, g: 0, b: 0 },
+            },
           })
             .png()
             .toBuffer(),
@@ -298,19 +320,31 @@ describe("MCP Server E2E: compare_design", () => {
 
     const resultFull = await client.callTool({
       name: "compare_design",
-      arguments: { design_source: designPath, screenshot: screenshotDiffPath, threshold: 0.1 },
+      arguments: {
+        design_source: designPath,
+        screenshot: screenshotDiffPath,
+        threshold: 0.1,
+      },
     });
     const dataFull = JSON.parse(findTextContent(resultFull)!.text);
 
     const resultPartial = await client.callTool({
       name: "compare_design",
-      arguments: { design_source: designPath, screenshot: partialDiffPath, threshold: 0.1 },
+      arguments: {
+        design_source: designPath,
+        screenshot: partialDiffPath,
+        threshold: 0.1,
+      },
     });
     const dataPartial = JSON.parse(findTextContent(resultPartial)!.text);
 
     const resultPerfect = await client.callTool({
       name: "compare_design",
-      arguments: { design_source: designPath, screenshot: screenshotSamePath, threshold: 0.1 },
+      arguments: {
+        design_source: designPath,
+        screenshot: screenshotSamePath,
+        threshold: 0.1,
+      },
     });
     const dataPerfect = JSON.parse(findTextContent(resultPerfect)!.text);
 
@@ -350,6 +384,21 @@ describe("MCP Server E2E: compare_design", () => {
   });
 
   it("crop_region の保存と取得ができること", async () => {
+    await client.callTool({
+      name: "delete_project",
+      arguments: { project_id: "test-project" },
+    });
+
+    const createResult = await client.callTool({
+      name: "create_project",
+      arguments: {
+        id: "test-project",
+        name: "test-project",
+        implementation_url: "https://example.com",
+      },
+    });
+    expect(createResult.isError).toBeFalsy();
+
     const setResult = await client.callTool({
       name: "set_crop_region",
       arguments: {
@@ -374,6 +423,21 @@ describe("MCP Server E2E: compare_design", () => {
   });
 
   it("ignore_regions YAML の保存と compare_design 自動適用ができること", async () => {
+    await client.callTool({
+      name: "delete_project",
+      arguments: { project_id: "ignore-project" },
+    });
+
+    const createResult = await client.callTool({
+      name: "create_project",
+      arguments: {
+        id: "ignore-project",
+        name: "ignore-project",
+        implementation_url: "https://example.com",
+      },
+    });
+    expect(createResult.isError).toBeFalsy();
+
     const setResult = await client.callTool({
       name: "set_ignore_regions",
       arguments: {
@@ -440,6 +504,21 @@ describe("MCP Server E2E: compare_design", () => {
   });
 
   it("ignore_regions の persisted + inline が結合されること", async () => {
+    await client.callTool({
+      name: "delete_project",
+      arguments: { project_id: "ignore-project-merge" },
+    });
+
+    const createResult = await client.callTool({
+      name: "create_project",
+      arguments: {
+        id: "ignore-project-merge",
+        name: "ignore-project-merge",
+        implementation_url: "https://example.com",
+      },
+    });
+    expect(createResult.isError).toBeFalsy();
+
     const setResult = await client.callTool({
       name: "set_ignore_regions",
       arguments: {

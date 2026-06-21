@@ -1,21 +1,49 @@
+import { execFileSync } from "node:child_process";
+
 const PRINTABLE_ASCII_RE = /^[\x21-\x7E]+$/;
 
 type GithubCredentialStatus =
   | { configured: false; valid: false; issue: "missing" }
-  | { configured: true; valid: true; issue: null }
+  | {
+      configured: true;
+      valid: true;
+      issue: null;
+      token: string;
+      source: "env" | "gh";
+    }
   | { configured: true; valid: false; issue: "invalid-chars" };
+
+function readGhCliToken(): string | null {
+  try {
+    const token = execFileSync("gh", ["auth", "token"], {
+      encoding: "utf-8",
+      stdio: ["ignore", "pipe", "ignore"],
+    }).trim();
+    return token.length > 0 ? token : null;
+  } catch {
+    return null;
+  }
+}
 
 export function getGithubCredentialStatus(
   env: Record<string, string | undefined> = process.env,
+  ghTokenResolver: () => string | null = readGhCliToken,
 ): GithubCredentialStatus {
-  const token = env.GITHUB_TOKEN;
+  const envToken = env.GITHUB_TOKEN ?? env.GH_TOKEN;
+  const token = envToken ?? ghTokenResolver();
   if (!token) {
     return { configured: false, valid: false, issue: "missing" };
   }
   if (!PRINTABLE_ASCII_RE.test(token)) {
     return { configured: true, valid: false, issue: "invalid-chars" };
   }
-  return { configured: true, valid: true, issue: null };
+  return {
+    configured: true,
+    valid: true,
+    issue: null,
+    token,
+    source: envToken === token ? "env" : "gh",
+  };
 }
 
 export function formatGithubCredentialError(status: GithubCredentialStatus): string {
@@ -183,7 +211,11 @@ export class GithubService {
 
     const existing = await this.findOpenIssueByTitle(owner, repo, title);
     if (existing) {
-      return { number: existing.number, html_url: existing.html_url, deduped: true };
+      return {
+        number: existing.number,
+        html_url: existing.html_url,
+        deduped: true,
+      };
     }
 
     const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/issues`, {
@@ -201,7 +233,11 @@ export class GithubService {
     if (!isGithubIssueSummary(created)) {
       throw new Error("GitHub API response is missing issue number or URL");
     }
-    return { number: created.number, html_url: created.html_url, deduped: false };
+    return {
+      number: created.number,
+      html_url: created.html_url,
+      deduped: false,
+    };
   }
 }
 
@@ -215,7 +251,7 @@ export function createGithubService(): GithubService {
   if (!status.valid) {
     throw new Error(formatGithubCredentialError(status));
   }
-  githubServiceInstance = new GithubService(process.env.GITHUB_TOKEN ?? "");
+  githubServiceInstance = new GithubService(status.token);
   return githubServiceInstance;
 }
 

@@ -8,18 +8,37 @@ import { z } from "zod";
 import { extractFileKey } from "@figdiff/shared";
 
 import { createFigmaService } from "../service/figma-service.js";
-import { persistDetailJson } from "../service/persist-detail.js";
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
-const INLINE_RESPONSE_BUDGET = 3500;
+const DEFAULT_LIMIT = 15;
+const MAX_LIMIT = 500;
+
+interface FrameSummary {
+  id: string;
+  name: string;
+}
+
+function isFrameLike(frame: unknown): frame is { id?: unknown; name?: unknown } {
+  return frame !== null && typeof frame === "object";
+}
+
+function toIdNameFrame(frame: unknown): FrameSummary {
+  if (!isFrameLike(frame)) {
+    return { id: "", name: "" };
+  }
+  return {
+    id: typeof frame.id === "string" ? frame.id : "",
+    name: typeof frame.name === "string" ? frame.name : "",
+  };
+}
 
 export function registerListFrames(server: McpServer): void {
   server.registerTool(
     "list_figma_frames",
     {
       description:
-        "Figmaファイル内のフレーム一覧を取得します。各フレームのID, 名前, サイズを返します。レスポンスが大きい場合は切り詰め、全件は framesDetailPath の JSON を Read で参照。",
+        "Figmaファイル内のフレーム一覧を取得します。offset/limit でページングでき、fields='id_name' で軽量なID・名前のみを返します。",
       inputSchema: {
         figma_url: z.string().describe("FigmaファイルのURL"),
         include_nested: z
@@ -34,6 +53,20 @@ export function registerListFrames(server: McpServer): void {
           .describe(
             "page: PAGE/SECTION/GROUP配下のアートボードのみ取得。all: ネストされた全フレームも取得（default: page）",
           ),
+        offset: z.number().int().nonnegative().optional().describe("返却開始位置（default: 0）"),
+        limit: z
+          .number()
+          .int()
+          .positive()
+          .max(MAX_LIMIT)
+          .optional()
+          .describe(`1ページあたりの最大件数（default: ${DEFAULT_LIMIT}, max: ${MAX_LIMIT}）`),
+        fields: z
+          .enum(["full", "id_name"])
+          .optional()
+          .describe(
+            "full: ID/名前/サイズ等を返す。id_name: IDと名前のみの軽量一覧を返す（default: full）",
+          ),
       },
     },
     async (args) => {
@@ -46,55 +79,30 @@ export function registerListFrames(server: McpServer): void {
           level,
         });
 
-        const result = {
-          frameCount: frames.length,
-          includeNested: args.include_nested ?? false,
-          level,
-          frames,
-        };
-        const serialized = JSON.stringify(result);
-
-        if (serialized.length > INLINE_RESPONSE_BUDGET) {
-          const framesDetailPath = await persistDetailJson(frames, `frames-${crypto.randomUUID()}`);
-          // Fit as many frames inline as possible within budget
-          const skeleton = JSON.stringify({
-            frameCount: frames.length,
-            includeNested: args.include_nested ?? false,
-            level,
-            frames: [],
-            framesTruncated: true,
-            framesDetailPath,
-          });
-          let inlineCount = 0;
-          let accumulated = skeleton.length;
-          for (const frame of frames) {
-            const frameLen = JSON.stringify(frame).length + 1;
-            if (accumulated + frameLen > INLINE_RESPONSE_BUDGET) break;
-            accumulated += frameLen;
-            inlineCount++;
-          }
-          return {
-            content: [
-              {
-                type: "text",
-                text: JSON.stringify({
-                  frameCount: frames.length,
-                  includeNested: args.include_nested ?? false,
-                  level,
-                  frames: frames.slice(0, inlineCount),
-                  framesTruncated: true,
-                  framesDetailPath,
-                }),
-              },
-            ],
-          };
-        }
+        const offset = args.offset ?? 0;
+        const limit = args.limit ?? DEFAULT_LIMIT;
+        const fields = args.fields ?? "full";
+        const pageFrames = frames.slice(offset, offset + limit);
+        const projectedFrames = fields === "id_name" ? pageFrames.map(toIdNameFrame) : pageFrames;
+        const nextOffset = offset + projectedFrames.length;
+        const hasMore = nextOffset < frames.length;
 
         return {
           content: [
             {
               type: "text",
-              text: serialized,
+              text: JSON.stringify({
+                frameCount: frames.length,
+                pageCount: projectedFrames.length,
+                offset,
+                limit,
+                nextOffset: hasMore ? nextOffset : null,
+                hasMore,
+                includeNested: args.include_nested ?? false,
+                level,
+                fields,
+                frames: projectedFrames,
+              }),
             },
           ],
         };
