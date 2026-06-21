@@ -91,8 +91,13 @@ export function registerGenerateReport(server: McpServer): void {
               isError: true,
             };
           }
-          // diffImagePath は recordComparison 時点では未確定なのでIDから導出する
-          const pngPath = path.join(homedir(), ".figdiff", "results", `${args.comparison_id}.png`);
+          // 古い履歴では diffImagePath がないため、現行の安定パスをIDから補完する。
+          const pngPath = path.join(
+            homedir(),
+            ".figdiff",
+            "results",
+            `diff-${args.comparison_id}.png`,
+          );
           let diffImagePath: string | undefined;
           try {
             await fs.access(pngPath);

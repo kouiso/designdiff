@@ -4,10 +4,6 @@
  * AI should ALWAYS start with this tool.
  */
 
-import * as fs from "node:fs/promises";
-import { homedir } from "node:os";
-import * as path from "node:path";
-
 import { z } from "zod";
 
 import {
@@ -125,14 +121,6 @@ export function buildSummaryText(result: CompareDesignResult): string {
   return lines.join("\n");
 }
 
-async function persistDiffImage(base64Data: string, comparisonId: string): Promise<string> {
-  const directoryPath = path.join(homedir(), ".figdiff", "results");
-  await fs.mkdir(directoryPath, { recursive: true });
-  const filePath = path.join(directoryPath, `${comparisonId}.png`);
-  await fs.writeFile(filePath, Buffer.from(base64Data, "base64"));
-  return filePath;
-}
-
 export function registerCompareDesign(server: McpServer): void {
   server.registerTool(
     "compare_design",
@@ -218,10 +206,6 @@ export function registerCompareDesign(server: McpServer): void {
       try {
         const comparison = await runCompareDesign(args);
         const result = comparison.result;
-        const diffImagePath =
-          result.diffImageBase64 && result.matchRate < 100
-            ? await persistDiffImage(result.diffImageBase64, result.comparisonId)
-            : undefined;
 
         const allRegions = result.diffRegions ?? [];
         const sortedRegions = [...allRegions].sort(
@@ -237,7 +221,7 @@ export function registerCompareDesign(server: McpServer): void {
 
         const resultData = CompareDesignResultSchema.parse({
           ...result,
-          diffImagePath,
+          diffImagePath: result.diffImagePath,
           diffImageBase64: undefined,
           diffRegions: inlineRegions,
           totalRegionCount: allRegions.length,

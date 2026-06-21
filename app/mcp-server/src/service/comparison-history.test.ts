@@ -96,6 +96,7 @@ describe("comparison-history", () => {
         sourceKey,
         result: {
           ...createResult(comparisonId, createReport(0.9)),
+          diffImagePath: path.join(testHome, ".figdiff", "results", `diff-${comparisonId}.png`),
           diffImageBase64: "base64-data",
         },
       });
@@ -106,6 +107,9 @@ describe("comparison-history", () => {
 
       expect(restored?.comparisonId).toBe(comparisonId);
       expect(restored?.sourceKey).toBe(sourceKey);
+      expect(restored?.result.diffImagePath).toBe(
+        path.join(testHome, ".figdiff", "results", `diff-${comparisonId}.png`),
+      );
       expect(restored?.result.diffImageBase64).toBeUndefined();
     } finally {
       if (originalHome === undefined) delete process.env.HOME;
