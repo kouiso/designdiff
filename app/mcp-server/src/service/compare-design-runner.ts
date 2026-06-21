@@ -43,6 +43,7 @@ import { createFigmaService, type FigmaService } from "./figma-service.js";
 import { getIgnoreRegionsForComparison } from "./ignore-region-store.js";
 import { compareImages } from "./image-compare-service.js";
 import { getLastUsedNode, setLastUsedNode } from "./last-used-node-store.js";
+import { persistDiffImage } from "./persist-detail.js";
 
 const FixtureFigmaNodeSchema: z.ZodType<FigmaNode> = z.lazy(() =>
   z.object({
@@ -738,6 +739,9 @@ export async function runCompareDesign(
   const result = CompareDesignResultSchema.parse({
     status: buildStatus(structuralReviewResult.verdict),
     ...comparison,
+    diffImagePath: comparison.diffImageBase64
+      ? await persistDiffImage(comparison.diffImageBase64, comparison.comparisonId)
+      : undefined,
     remainingIssues: regionCount,
     completionCriteria: buildCompletionCriteria(
       comparison.matchRate,

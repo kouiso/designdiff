@@ -281,6 +281,74 @@ describe("runCompareDesign", () => {
     expect(output.result.matchRate).toBe(100);
   });
 
+  it("persists a runner diff PNG path when compareImages returns diffImageBase64", async () => {
+    const originalHome = process.env.HOME;
+    tmpRoot = await fs.mkdtemp(path.join(process.cwd(), "tmp-figdiff-runner-"));
+    const testHome = path.join(tmpRoot, "home");
+    process.env.HOME = testHome;
+    const designPath = path.join(tmpRoot, "design.png");
+    const screenshotPath = path.join(tmpRoot, "screenshot.png");
+    await fs.writeFile(designPath, Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+    await fs.writeFile(screenshotPath, Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+
+    try {
+      mocks.sharp.mockReturnValue({
+        metadata: vi.fn(async () => ({ width: 390, height: 844 })),
+      });
+      mocks.compareImages.mockResolvedValue({
+        comparisonId: "cmp-runner-diff-artifact",
+        matchRate: 98.5,
+        diffPixelCount: 42,
+        totalPixelCount: 390 * 844,
+        diffRegions: [
+          {
+            id: 1,
+            bounds: { x: 10, y: 20, width: 30, height: 40 },
+            diffPixelCount: 42,
+            nearbyNodeIds: [],
+            nearbyNodeNames: [],
+          },
+        ],
+        suggestion: "差分があります。",
+        diffImageBase64: Buffer.from("runner diff png").toString("base64"),
+        normalization: {
+          designNativeWidth: 390,
+          designNativeHeight: 844,
+          screenshotWidth: 390,
+          screenshotHeight: 844,
+          cropApplied: false,
+          containResized: false,
+          appliedScale: 1,
+        },
+      });
+
+      const { result } = await runCompareDesign({
+        design_source: designPath,
+        screenshot: screenshotPath,
+      });
+
+      expect(result.diffImageBase64).toBe(Buffer.from("runner diff png").toString("base64"));
+      expect(result.diffImagePath).toBe(
+        path.join(testHome, ".figdiff", "results", "diff-cmp-runner-diff-artifact.png"),
+      );
+      const diffStat = await fs.stat(result.diffImagePath ?? "");
+      expect(diffStat.isFile()).toBe(true);
+      expect(diffStat.size).toBe(Buffer.byteLength("runner diff png"));
+      expect(mocks.recordComparison).toHaveBeenCalledWith(
+        expect.objectContaining({
+          comparisonId: "cmp-runner-diff-artifact",
+          result: expect.objectContaining({
+            diffImagePath: result.diffImagePath,
+            diffImageBase64: Buffer.from("runner diff png").toString("base64"),
+          }),
+        }),
+      );
+    } finally {
+      if (originalHome === undefined) delete process.env.HOME;
+      else process.env.HOME = originalHome;
+    }
+  });
+
   it("auto-selects the best matching frame when nodeId and frameName are omitted", async () => {
     tmpRoot = await fs.mkdtemp(path.join(process.cwd(), "tmp-figdiff-runner-"));
     const screenshotPath = path.join(tmpRoot, "screenshot.png");
