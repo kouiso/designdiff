@@ -433,6 +433,7 @@ describe("extractDesignTokens", () => {
         {
           type: "GRADIENT_LINEAR",
           visible: true,
+          opacity: 0.5,
           gradientStops: [
             { position: 0, color: { r: 1, g: 0, b: 0, a: 1 } },
             { position: 0.55555, color: { r: 0, g: 0, b: 1, a: 0.5 } },
@@ -463,7 +464,7 @@ describe("extractDesignTokens", () => {
     expect(gradientTokens).toContainEqual(
       expect.objectContaining({
         property: "gradientStop1Color",
-        value: "#0000FF80",
+        value: "#0000FF40",
       }),
     );
     expect(gradientTokens).toContainEqual(
@@ -565,6 +566,48 @@ describe("extractDesignTokens", () => {
     expect(tokens.some((token) => token.property.includes("BoxShadow"))).toBe(false);
   });
 
+  it("css suggestion includes transformer-folded gradient fill opacity exactly once", () => {
+    const node = makeNode({
+      fills: [
+        {
+          type: "GRADIENT_LINEAR",
+          visible: true,
+          opacity: 0.5,
+          gradientStops: [{ position: 0, color: { r: 1, g: 0, b: 0, a: 1 } }],
+        },
+      ],
+    });
+
+    const inspection = transformNodeToInspection(node);
+
+    expect(inspection.appearance.fills[0]?.gradientStops?.[0]?.color).toBe("#FF000080");
+    expect(inspection.cssSuggestion).toContain(
+      "background-image: linear-gradient(#FF000080 0.0%);",
+    );
+    expect(inspection.cssSuggestion).not.toContain("#FF000040");
+  });
+
+  it("css suggestion includes inner shadow as inset box-shadow", () => {
+    const node = makeNode({
+      effects: [
+        {
+          type: "INNER_SHADOW",
+          visible: true,
+          color: { r: 0, g: 0, b: 0, a: 0.25 },
+          offset: { x: 1, y: 2 },
+          radius: 3,
+          spread: 4,
+        },
+      ],
+    });
+
+    const inspection = transformNodeToInspection(node);
+
+    expect(inspection.cssSuggestion).toContain(
+      "box-shadow: inset 1.0px 2.0px 3.0px 4.0px #00000040;",
+    );
+  });
+
   it("css suggestion uses the transformer-folded fill opacity exactly once", () => {
     const node = makeNode({
       fills: [
@@ -589,6 +632,7 @@ describe("extractDesignTokens", () => {
         {
           type: "GRADIENT_LINEAR",
           visible: true,
+          opacity: 0.5,
           gradientStops: [{ position: 0.5, color: { r: 1, g: 0, b: 0, a: 0.5 } }],
         },
         {
@@ -613,7 +657,7 @@ describe("extractDesignTokens", () => {
     const inspection = transformNodeToInspection(node);
 
     expect(inspection.appearance.fills[0]?.gradientStops).toEqual([
-      { position: 0.5, color: "#FF000080" },
+      { position: 0.5, color: "#FF000040" },
     ]);
     expect(inspection.appearance.fills[1]?.color).toBe("#00FF0080");
     expect(inspection.appearance.strokes).toEqual([

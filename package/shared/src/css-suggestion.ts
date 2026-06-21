@@ -40,12 +40,32 @@ function gradientFunction(type: string): string {
   return type === "GRADIENT_RADIAL" ? "radial-gradient" : "linear-gradient";
 }
 
+function multiplyHexColorOpacity(color: string, opacity: number): string {
+  const match = /^#([0-9a-f]{6})([0-9a-f]{2})?$/i.exec(color);
+  if (!match) return color;
+
+  const alpha = match[2] ? Number.parseInt(match[2], 16) / 255 : 1;
+  const multipliedAlpha = alpha * opacity;
+  const alphaHex = Math.round(multipliedAlpha * 255)
+    .toString(16)
+    .padStart(2, "0")
+    .toUpperCase();
+
+  if (Math.abs(multipliedAlpha - 1) < 0.001) {
+    return `#${match[1]}`.toUpperCase();
+  }
+
+  return `#${match[1]}${alphaHex}`.toUpperCase();
+}
+
 function formatGradient(fill: NonNullable<NodeAppearance["fills"]>[number]): string | undefined {
   if (!fill.type.startsWith("GRADIENT_") || !fill.gradientStops?.length) return undefined;
 
-  const stops = fill.gradientStops.map(
-    (stop) => `${stop.color} ${(stop.position * 100).toFixed(1)}%`,
-  );
+  const stops = fill.gradientStops.map((stop) => {
+    const color =
+      fill.opacity === undefined ? stop.color : multiplyHexColorOpacity(stop.color, fill.opacity);
+    return `${color} ${(stop.position * 100).toFixed(1)}%`;
+  });
   return `${gradientFunction(fill.type)}(${stops.join(", ")})`;
 }
 
@@ -153,14 +173,15 @@ function appendEffectsCss(parts: string[], appearance: NodeAppearance): void {
   if (!appearance.effects) return;
 
   for (const effect of appearance.effects) {
-    if (effect.type === "DROP_SHADOW") {
+    if (effect.type === "DROP_SHADOW" || effect.type === "INNER_SHADOW") {
       const offsetX = effect.offset?.x ?? 0;
       const offsetY = effect.offset?.y ?? 0;
       const radius = effect.radius || 0;
       const spread = effect.spread || 0;
       const color = effect.color || "rgba(0,0,0,0.25)";
+      const inset = effect.type === "INNER_SHADOW" ? "inset " : "";
       parts.push(
-        `box-shadow: ${offsetX.toFixed(1)}px ${offsetY.toFixed(1)}px ${radius.toFixed(1)}px ${spread.toFixed(1)}px ${color};`,
+        `box-shadow: ${inset}${offsetX.toFixed(1)}px ${offsetY.toFixed(1)}px ${radius.toFixed(1)}px ${spread.toFixed(1)}px ${color};`,
       );
     }
   }
