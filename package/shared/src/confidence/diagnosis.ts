@@ -29,10 +29,12 @@ const SCALE_HIGH = 1.4;
 // これを超える圧縮/引き伸ばしは、matchRate に関わらず比較自体が無効なほどの設定ミス。
 const SEVERE_SCALE_LOW = 0.5;
 const SEVERE_SCALE_HIGH = 2;
+const FULL_PAGE_VIEWPORT_HEIGHT_RATIO = 1.4;
 // 各診断原因の確度 (0-1)。原因をランク付けする際の重みなので、上部の閾値定数と同様に集約する。
 const CONFIDENCE_WIDTH_MISMATCH_CRITICAL = 0.9;
 const CONFIDENCE_WIDTH_MISMATCH_WARNING = 0.7;
 const CONFIDENCE_NORMALIZATION = 0.8;
+const CONFIDENCE_MILD_ASPECT_MISMATCH = 0.45;
 const CONFIDENCE_CROP_PREFLIGHT_CRITICAL = 0.85;
 const CONFIDENCE_CROP_PREFLIGHT_WARNING = 0.6;
 const CONFIDENCE_GLOBAL_COLOR_SHIFT = 0.6;
@@ -67,7 +69,43 @@ function normalizationCause(normalization?: NormalizationReport): DiagnosisCause
     return undefined;
   }
   const scale = normalization.appliedScale;
-  if (scale <= 0 || (scale >= SCALE_LOW && scale <= SCALE_HIGH)) {
+  if (scale <= 0) {
+    return undefined;
+  }
+  const classification = classifyAspectMismatch(normalization);
+  if (!normalization.cropApplied && classification === "full_page_vs_viewport") {
+    const ratio = heightRatioAfterWidthNormalization(normalization);
+    return {
+      code: "aspect_mismatch",
+      classification,
+      confidence: CONFIDENCE_NORMALIZATION,
+      message: `Figma フレームはスクリーンショットより縦に長いフルページ相当です（幅正規化後の高さ比 約 ${ratio.toFixed(2)}x）。単一ビューポート撮影との差分が混ざっている可能性が高く、これは通常の実装差分とは限りません。`,
+      suggestedFix:
+        "単一ビューポート同士を比較するなら set_crop_region で Figma 側を viewport 高に切り出してください。フルページ比較をしたい場合は、スクロール/フルページ撮影した screenshot を使ってください。",
+    };
+  }
+  if (!normalization.cropApplied && classification === "wrong_frame_or_misconfig") {
+    return {
+      code: "aspect_mismatch",
+      classification,
+      confidence: CONFIDENCE_NORMALIZATION,
+      message: `比較前の正規化で約 ${scale.toFixed(2)}x の強い引き伸ばし/圧縮が発生しています。Figma フレーム選択や撮影設定が誤っている可能性が高いです。`,
+      suggestedFix:
+        "CSS修正の前に list_figma_frames で画面に対応する正しいフレームを選び直し、capture_width / screenshot の端末設定も確認してください。",
+    };
+  }
+  if (!normalization.cropApplied && classification === "mild_aspect_mismatch") {
+    return {
+      code: "aspect_mismatch",
+      classification,
+      confidence: CONFIDENCE_MILD_ASPECT_MISMATCH,
+      message:
+        "Figma フレームとスクリーンショットに軽い縦横比差があります。contain 正規化のレターボックス余白は差分から除外済みです。",
+      suggestedFix:
+        "余白部分ではなく、残っている diffRegions を実際の視覚差分として確認してください。必要なら viewport に合わせた crop を設定してください。",
+    };
+  }
+  if (scale >= SCALE_LOW && scale <= SCALE_HIGH) {
     return undefined;
   }
   return {
@@ -78,6 +116,34 @@ function normalizationCause(normalization?: NormalizationReport): DiagnosisCause
       ? "古い crop region を確認・更新してください（get_crop_region / set_crop_region）。"
       : "Figma フレームと実装の縦横比を揃えてください。",
   };
+}
+
+function heightRatioAfterWidthNormalization(normalization: NormalizationReport): number {
+  if (
+    normalization.designNativeWidth <= 0 ||
+    normalization.designNativeHeight <= 0 ||
+    normalization.screenshotWidth <= 0 ||
+    normalization.screenshotHeight <= 0
+  ) {
+    return 0;
+  }
+  const normalizedDesignHeight =
+    normalization.designNativeHeight *
+    (normalization.screenshotWidth / normalization.designNativeWidth);
+  return normalizedDesignHeight / normalization.screenshotHeight;
+}
+
+function classifyAspectMismatch(
+  normalization: NormalizationReport,
+): NonNullable<DiagnosisCause["classification"]> {
+  const heightRatio = heightRatioAfterWidthNormalization(normalization);
+  if (heightRatio > FULL_PAGE_VIEWPORT_HEIGHT_RATIO) {
+    return "full_page_vs_viewport";
+  }
+  if (isSevereSquish(normalization)) {
+    return "wrong_frame_or_misconfig";
+  }
+  return "mild_aspect_mismatch";
 }
 
 function globalColorShiftCause(
@@ -168,12 +234,18 @@ export function diagnoseComparison(input: DiagnosisInput): ComparisonDiagnosis {
     .filter((cause, index, all) => all.findIndex((entry) => entry.code === cause.code) === index);
 
   // 極端な正規化スケールは、matchRate がたまたま高くても比較そのものが無効。
-  const severeSquish = isSevereSquish(input.normalization);
+  const severeSquish =
+    input.normalization && classifyAspectMismatch(input.normalization) !== "full_page_vs_viewport"
+      ? isSevereSquish(input.normalization)
+      : false;
+  const hasBlockingSetupCause = causes.some(
+    (cause) => cause.code !== "aspect_mismatch" || cause.classification !== "mild_aspect_mismatch",
+  );
 
   let verdict: ComparisonDiagnosis["verdict"];
   if (input.matchRate >= CLEAN_MATCH_THRESHOLD && !severeSquish) {
     verdict = "clean";
-  } else if (severeSquish || (input.matchRate < lowMatchThreshold && causes.length > 0)) {
+  } else if (severeSquish || (input.matchRate < lowMatchThreshold && hasBlockingSetupCause)) {
     verdict = "likely_misconfig";
   } else {
     verdict = "real_diff";
@@ -198,6 +270,10 @@ function buildHeadline(
   if (verdict === "likely_misconfig") {
     const lead = rankedCauses.length > 0 ? `最有力原因: ${rankedCauses[0].message}` : "";
     return `⚠️ これは実装差分ではなくセットアップ問題の可能性が高いです（一致率 ${matchRate}%）。${lead}`;
+  }
+  const aspectCause = rankedCauses.find((cause) => cause.code === "aspect_mismatch");
+  if (aspectCause?.classification === "mild_aspect_mismatch") {
+    return `実装差分を検出しました（一致率 ${matchRate}%）。${aspectCause.message}`;
   }
   return `実装差分を検出しました（一致率 ${matchRate}%）。`;
 }

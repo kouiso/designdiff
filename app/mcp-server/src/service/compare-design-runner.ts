@@ -403,6 +403,14 @@ function buildMisconfigNextAction(diagnosis: ComparisonDiagnosis): string {
   return `⚠️ セットアップ問題の可能性が高いです。CSS修正の前に、まず設定を見直してください: ${fix} 解消後に再度 compare_design で検証してください。`;
 }
 
+function buildDiagnosisNextAction(diagnosis: ComparisonDiagnosis): string | undefined {
+  const aspectCause = diagnosis.rankedCauses.find((cause) => cause.code === "aspect_mismatch");
+  if (!aspectCause) {
+    return undefined;
+  }
+  return `${aspectCause.suggestedFix} ${diagnosis.headline}`;
+}
+
 // fallbackNodeId は last-used node フォールバックから来る可能性がある。
 // screenshot_url 撮影前に解決しておくことで、フレームの実幅を capture_width に使える。
 async function resolveScreenshotPath(
@@ -695,6 +703,10 @@ export async function runCompareDesign(
     comparison.diffReport && priorReports.length > 0
       ? selfCritique(comparison.diffReport, priorReports)
       : undefined;
+  const diagnosisNextAction = diagnosis.likelyMisconfig
+    ? buildMisconfigNextAction(diagnosis)
+    : (buildDiagnosisNextAction(diagnosis) ??
+      buildNextAction(structuralReviewResult.verdict, regionCount, targetNodeIds));
 
   const result = CompareDesignResultSchema.parse({
     status: buildStatus(structuralReviewResult.verdict),
@@ -707,9 +719,7 @@ export async function runCompareDesign(
       structuralReviewResult.verdict,
       structuralReviewResult.rationale,
     ),
-    nextAction: diagnosis.likelyMisconfig
-      ? buildMisconfigNextAction(diagnosis)
-      : buildNextAction(structuralReviewResult.verdict, regionCount, targetNodeIds),
+    nextAction: diagnosisNextAction,
     suggestion: diagnosis.likelyMisconfig
       ? diagnosis.headline
       : buildSuggestion(structuralReviewResult.verdict, comparison.matchRate, regionCount),
