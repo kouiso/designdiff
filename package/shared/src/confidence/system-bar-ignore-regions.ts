@@ -7,12 +7,12 @@ interface SystemChromeInsets {
   bottom: number;
 }
 
-const DEVICE_INSET_PRESETS: Array<{
+const DEVICE_INSET_PRESETS: {
   platform: "android" | "ios";
   portraitWidth: number;
   portraitHeight: number;
   insets: SystemChromeInsets;
-}> = [
+}[] = [
   { platform: "ios", portraitWidth: 1179, portraitHeight: 2556, insets: { top: 162, bottom: 102 } },
   { platform: "ios", portraitWidth: 750, portraitHeight: 1334, insets: { top: 40, bottom: 0 } },
   {
