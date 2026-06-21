@@ -16,4 +16,16 @@ describe("buildSystemBarIgnoreRegions", () => {
       { x: 0, y: 980, width: 200, height: 20, label: "system:navigation-bar" },
     ]);
   });
+
+  it("cropRegion が system bar を切り落とす場合は post-crop 座標に誤配置しないこと", () => {
+    expect(
+      buildSystemBarIgnoreRegions(100, 100, "android", { x: 0, y: 10, width: 100, height: 80 }),
+    ).toEqual([]);
+  });
+
+  it("cropRegion と重なる system bar だけを post-crop 座標へ変換すること", () => {
+    expect(
+      buildSystemBarIgnoreRegions(100, 100, "android", { x: 10, y: 95, width: 50, height: 5 }),
+    ).toEqual([{ x: 0, y: 2, width: 50, height: 3, label: "system:navigation-bar" }]);
+  });
 });
