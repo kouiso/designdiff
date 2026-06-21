@@ -568,9 +568,10 @@ function buildSystemIgnoreRegionsForComparison(
   }
 
   return buildSystemBarIgnoreRegions(
-    cropRegion?.width ?? screenshotMeta.width ?? 0,
-    cropRegion?.height ?? screenshotMeta.height ?? 0,
+    screenshotMeta.width ?? 0,
+    screenshotMeta.height ?? 0,
     args.capture_device ?? "android",
+    cropRegion,
   );
 }
 

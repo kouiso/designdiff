@@ -78,6 +78,30 @@ async function createImageWithMaskedNoise(
     .toFile(filePath);
 }
 
+async function createImageWithPostCropTopNoise(filePath: string): Promise<void> {
+  await sharp({
+    create: {
+      width: 100,
+      height: 100,
+      channels: 3,
+      background: { r: 255, g: 255, b: 255 },
+    },
+  })
+    .composite([
+      {
+        input: await sharp({
+          create: { width: 100, height: 4, channels: 3, background: { r: 0, g: 0, b: 0 } },
+        })
+          .png()
+          .toBuffer(),
+        left: 0,
+        top: 10,
+      },
+    ])
+    .png()
+    .toFile(filePath);
+}
+
 async function createWhiteImage(filePath: string): Promise<void> {
   await sharp({
     create: {
@@ -148,5 +172,41 @@ describe("runCompareDesign system UI masks", () => {
 
     expect(comparison.result.diffPixelCount).toBe(700);
     expect(comparison.result.totalPixelCount).toBe(10000);
+  });
+
+  it("capture_device と cropRegion.y>0 の併用では post-crop 上端の実コンテンツを mask しないこと", async () => {
+    const { getProjectDir } = await import("./project-store.js");
+    const { runCompareDesign } = await import("./compare-design-runner.js");
+    const projectId = "system-ui-crop-test";
+    const projectDir = getProjectDir(projectId);
+    try {
+      await fs.mkdir(projectDir, { recursive: true });
+      await fs.writeFile(
+        path.join(projectDir, "crop-regions.json"),
+        JSON.stringify({
+          regions: [
+            {
+              frameName: "Captured",
+              region: { x: 0, y: 10, width: 100, height: 80 },
+              updatedAt: "2026-06-21T00:00:00.000Z",
+            },
+          ],
+        }),
+        "utf-8",
+      );
+      await createImageWithPostCropTopNoise(CAPTURED_SCREENSHOT_PATH);
+
+      const comparison = await runCompareDesign({
+        design_source: designPath,
+        capture_device: "android",
+        project_id: projectId,
+        threshold: 0,
+      });
+
+      expect(comparison.result.diffPixelCount).toBe(400);
+      expect(comparison.result.totalPixelCount).toBe(8000);
+    } finally {
+      await fs.rm(projectDir, { recursive: true, force: true });
+    }
   });
 });

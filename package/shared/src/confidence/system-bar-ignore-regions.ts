@@ -1,4 +1,4 @@
-import type { IgnoreRegion } from "../type.js";
+import type { CropRegion, IgnoreRegion } from "../type.js";
 
 export type MobileSystemBarPlatform = "android" | "ios-sim" | "ios-device";
 
@@ -28,10 +28,38 @@ function getSystemBarRatios(platform: MobileSystemBarPlatform): {
   };
 }
 
+function intersectSystemRegionWithCrop(
+  region: IgnoreRegion,
+  cropRegion: CropRegion,
+): IgnoreRegion | undefined {
+  const cropRight = cropRegion.x + cropRegion.width;
+  const cropBottom = cropRegion.y + cropRegion.height;
+  const regionRight = region.x + region.width;
+  const regionBottom = region.y + region.height;
+
+  const left = Math.max(region.x, cropRegion.x);
+  const top = Math.max(region.y, cropRegion.y);
+  const right = Math.min(regionRight, cropRight);
+  const bottom = Math.min(regionBottom, cropBottom);
+
+  if (right <= left || bottom <= top) {
+    return undefined;
+  }
+
+  return {
+    x: left - cropRegion.x,
+    y: top - cropRegion.y,
+    width: right - left,
+    height: bottom - top,
+    label: region.label,
+  };
+}
+
 export function buildSystemBarIgnoreRegions(
   screenshotWidth: number,
   screenshotHeight: number,
   platform: MobileSystemBarPlatform,
+  cropRegion?: CropRegion,
 ): IgnoreRegion[] {
   if (screenshotWidth <= 0 || screenshotHeight <= 0) {
     return [];
@@ -41,7 +69,7 @@ export function buildSystemBarIgnoreRegions(
   const statusBarHeight = Math.max(1, Math.round(screenshotHeight * statusBarRatio));
   const navBarHeight = Math.max(1, Math.round(screenshotHeight * navBarRatio));
 
-  return [
+  const fullScreenshotRegions: IgnoreRegion[] = [
     {
       x: 0,
       y: 0,
@@ -57,4 +85,13 @@ export function buildSystemBarIgnoreRegions(
       label: "system:navigation-bar",
     },
   ];
+
+  if (!cropRegion) {
+    return fullScreenshotRegions;
+  }
+
+  return fullScreenshotRegions.flatMap((region) => {
+    const croppedRegion = intersectSystemRegionWithCrop(region, cropRegion);
+    return croppedRegion ? [croppedRegion] : [];
+  });
 }
