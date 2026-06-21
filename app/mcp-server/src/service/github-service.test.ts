@@ -17,22 +17,63 @@ describe("getGithubCredentialStatus", () => {
   });
 
   it("returns missing when GITHUB_TOKEN is undefined", () => {
-    expect(getGithubCredentialStatus({ GITHUB_TOKEN: undefined })).toMatchObject({
+    expect(
+      getGithubCredentialStatus({ GITHUB_TOKEN: undefined, GH_TOKEN: undefined }, () => null),
+    ).toMatchObject({
       valid: false,
       issue: "missing",
     });
   });
 
   it("returns valid for a printable ASCII token", () => {
-    expect(getGithubCredentialStatus({ GITHUB_TOKEN: "ghp_printable_TOKEN_123" })).toMatchObject({
+    expect(
+      getGithubCredentialStatus({ GITHUB_TOKEN: "ghp_printable_TOKEN_123" }, () => null),
+    ).toMatchObject({
       valid: true,
     });
   });
 
   it("returns invalid-chars for a token with non-printable chars", () => {
-    expect(getGithubCredentialStatus({ GITHUB_TOKEN: "ghp_token\nbad" })).toMatchObject({
+    expect(getGithubCredentialStatus({ GITHUB_TOKEN: "ghp_token\nbad" }, () => null)).toMatchObject(
+      {
+        valid: false,
+        issue: "invalid-chars",
+      },
+    );
+  });
+
+  it("returns valid for GH_TOKEN when GITHUB_TOKEN is unset", () => {
+    expect(
+      getGithubCredentialStatus(
+        { GITHUB_TOKEN: undefined, GH_TOKEN: "ghp_from_GH_TOKEN" },
+        () => null,
+      ),
+    ).toMatchObject({
+      valid: true,
+      source: "env",
+      token: "ghp_from_GH_TOKEN",
+    });
+  });
+
+  it("falls back to gh CLI token when env tokens are unset", () => {
+    expect(
+      getGithubCredentialStatus(
+        { GITHUB_TOKEN: undefined, GH_TOKEN: undefined },
+        () => "ghp_from_cli",
+      ),
+    ).toMatchObject({
+      valid: true,
+      source: "gh",
+      token: "ghp_from_cli",
+    });
+  });
+
+  it("returns missing when neither env tokens nor gh CLI token exist", () => {
+    expect(
+      getGithubCredentialStatus({ GITHUB_TOKEN: undefined, GH_TOKEN: undefined }, () => null),
+    ).toMatchObject({
       valid: false,
-      issue: "invalid-chars",
+      issue: "missing",
     });
   });
 });
@@ -119,7 +160,11 @@ describe("GithubService", () => {
       return new Response(
         JSON.stringify({
           items: [
-            { number: 123, html_url: "https://github.com/kouiso/designdiff/issues/123", title },
+            {
+              number: 123,
+              html_url: "https://github.com/kouiso/designdiff/issues/123",
+              title,
+            },
           ],
         }),
       );

@@ -223,7 +223,9 @@ describe("MCP response budget — responses never exceed archive threshold", () 
     it("figma_url に埋め込まれた node-id を node_id 省略時に使う", async () => {
       const result = await client.callTool({
         name: "inspect_node",
-        arguments: { figma_url: "https://www.figma.com/design/MOCKFILEKEY/Mock?node-id=72-2552" },
+        arguments: {
+          figma_url: "https://www.figma.com/design/MOCKFILEKEY/Mock?node-id=72-2552",
+        },
       });
 
       expect(result.isError).toBeFalsy();
@@ -363,22 +365,33 @@ describe("MCP response budget — responses never exceed archive threshold", () 
       expect(text.length).toBeLessThan(ARCHIVE_THRESHOLD);
     });
 
-    it("150 frames: framesTruncated=true and framesDetailPath file contains all frames", async () => {
+    it("150 frames: supports offset/limit pagination without host filesystem paths", async () => {
       const result = await client.callTool({
         name: "list_figma_frames",
-        arguments: { figma_url: FIGMA_URL },
+        arguments: { figma_url: FIGMA_URL, offset: 50, limit: 25 },
       });
       const data = JSON.parse(extractText(result));
       expect(data.frameCount).toBe(150);
+      expect(data.pageCount).toBe(25);
+      expect(data.offset).toBe(50);
+      expect(data.nextOffset).toBe(75);
+      expect(data.hasMore).toBe(true);
+      expect(data.frames[0].id).toBe("frame-50");
+      expect(data.frames[24].id).toBe("frame-74");
+      expect(data.framesDetailPath).toBeUndefined();
+    });
 
-      if (data.framesTruncated) {
-        expect(typeof data.framesDetailPath).toBe("string");
-        createdFiles.push(data.framesDetailPath);
-        const archived = JSON.parse(await fs.readFile(data.framesDetailPath, "utf-8"));
-        expect(archived).toHaveLength(150);
-        expect(archived[0].id).toBe("frame-0");
-        expect(archived[149].id).toBe("frame-149");
-      }
+    it("150 frames: supports id/name lightweight projection", async () => {
+      const result = await client.callTool({
+        name: "list_figma_frames",
+        arguments: { figma_url: FIGMA_URL, limit: 150, fields: "id_name" },
+      });
+      const data = JSON.parse(extractText(result));
+      expect(data.frameCount).toBe(150);
+      expect(data.pageCount).toBe(150);
+      expect(data.hasMore).toBe(false);
+      expect(data.nextOffset).toBeNull();
+      expect(data.frames[0]).toEqual({ id: "frame-0", name: "Page Frame 0" });
     });
 
     it("frameCount is always accurate regardless of truncation", async () => {

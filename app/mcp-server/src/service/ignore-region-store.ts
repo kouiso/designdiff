@@ -4,7 +4,6 @@
  */
 
 import * as fs from "node:fs/promises";
-import { homedir } from "node:os";
 import * as path from "node:path";
 
 import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
@@ -16,16 +15,11 @@ import {
   type IgnoreRegionConfigFile,
 } from "@figdiff/shared";
 
+import { assertProjectExists, getProjectDir } from "./project-store.js";
+
 import type { z } from "zod";
 
 const EMPTY_CONFIG: IgnoreRegionConfigFile = { version: 1, regions: [] };
-
-function getProjectDir(projectId: string): string {
-  if (!/^[a-zA-Z0-9_-]+$/.test(projectId)) {
-    throw new Error("Invalid project ID: must be alphanumeric with hyphens/underscores only");
-  }
-  return path.join(homedir(), ".figdiff", "projects", projectId);
-}
 
 export function getIgnoreRegionPath(projectId: string): string {
   return path.join(getProjectDir(projectId), "ignore-regions.yaml");
@@ -153,6 +147,8 @@ export async function setIgnoreRegionConfig(
   projectId: string,
   regions: IgnoreRegionConfigEntry[],
 ): Promise<IgnoreRegionConfigFile> {
+  await assertProjectExists(projectId);
+  await assertProjectExists(projectId);
   const existing = await readConfig(projectId);
 
   // Merge by id: new regions overwrite existing ones with same id

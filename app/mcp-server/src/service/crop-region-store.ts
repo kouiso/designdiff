@@ -4,12 +4,13 @@
  */
 
 import * as fs from "node:fs/promises";
-import { homedir } from "node:os";
 import * as path from "node:path";
 
 import { z } from "zod";
 
 import type { CropRegion } from "@figdiff/shared";
+
+import { assertProjectExists, getProjectDir } from "./project-store.js";
 
 interface CropRegionEntry {
   frameName: string;
@@ -37,13 +38,6 @@ const cropRegionFileSchema = z.object({
 });
 
 type CropRegionFile = z.infer<typeof cropRegionFileSchema>;
-
-function getProjectDir(projectId: string): string {
-  if (!/^[a-zA-Z0-9_-]+$/.test(projectId)) {
-    throw new Error("Invalid project ID: must be alphanumeric with hyphens/underscores only");
-  }
-  return path.join(homedir(), ".figdiff", "projects", projectId);
-}
 
 function getCropRegionPath(projectId: string): string {
   return path.join(getProjectDir(projectId), "crop-regions.json");
@@ -96,6 +90,7 @@ export async function setCropRegion(
   region: CropRegion,
   note?: string,
 ): Promise<CropRegionEntry> {
+  await assertProjectExists(projectId);
   const store = await readStore(projectId);
 
   const entry: CropRegionEntry = {

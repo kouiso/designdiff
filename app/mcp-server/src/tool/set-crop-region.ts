@@ -6,6 +6,7 @@
 import { z } from "zod";
 
 import { setCropRegion } from "../service/crop-region-store.js";
+import { PROJECT_ID_PATTERN } from "../service/project-store.js";
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
@@ -13,9 +14,10 @@ export function registerSetCropRegion(server: McpServer): void {
   server.registerTool(
     "set_crop_region",
     {
-      description: "比較範囲を設定します。モバイルスクショのステータスバー除外等に使用。",
+      description:
+        "比較範囲を設定します。モバイルスクショのステータスバー除外等に使用。座標系はcrop適用後のscreenshotピクセル座標です（designはscreenshot幅にリサイズ後にcropされます。Figmaフレームピクセルではありません）。",
       inputSchema: {
-        project_id: z.string().describe("プロジェクトID"),
+        project_id: z.string().regex(PROJECT_ID_PATTERN).describe("プロジェクトID"),
         frame_name: z.string().describe("フレーム名"),
         region: z
           .object({
@@ -24,7 +26,9 @@ export function registerSetCropRegion(server: McpServer): void {
             width: z.number().positive().describe("幅"),
             height: z.number().positive().describe("高さ"),
           })
-          .describe("クロップ領域"),
+          .describe(
+            "クロップ領域。座標系はcrop適用後のscreenshotピクセル座標です（designはscreenshot幅にリサイズ後にcropされます。Figmaフレームピクセルではありません）。",
+          ),
         note: z.string().optional().describe("メモ（例: iOSステータスバー除外）"),
       },
     },
