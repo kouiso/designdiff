@@ -8,6 +8,8 @@
     "frameName": "test-frame"
   },
   "persistedRegions": {
+    "projectExists": true,
+    "coordinateBasis": "post-crop screenshot pixels",
     "regionCount": 1,
     "regions": [
       {

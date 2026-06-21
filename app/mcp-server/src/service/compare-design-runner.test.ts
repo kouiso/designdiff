@@ -281,7 +281,7 @@ describe("runCompareDesign", () => {
     expect(output.result.matchRate).toBe(100);
   });
 
-  it("persists a runner diff PNG path when compareImages returns diffImageBase64", async () => {
+  it("persists a runner diff PNG path when rounded matchRate is 100 but diff pixels exist", async () => {
     const originalHome = process.env.HOME;
     tmpRoot = await fs.mkdtemp(path.join(process.cwd(), "tmp-figdiff-runner-"));
     const testHome = path.join(tmpRoot, "home");
@@ -297,7 +297,7 @@ describe("runCompareDesign", () => {
       });
       mocks.compareImages.mockResolvedValue({
         comparisonId: "cmp-runner-diff-artifact",
-        matchRate: 98.5,
+        matchRate: 100,
         diffPixelCount: 42,
         totalPixelCount: 390 * 844,
         diffRegions: [
