@@ -307,6 +307,7 @@ export const PreflightWarningCodeSchema = z.enum([
   "blank_frame",
   // ノードが未指定のとき前回使用したノードを自動補完したことを通知する。
   "last_used_node",
+  "logical_physical_width",
 ]);
 
 export const PreflightSeveritySchema = z.enum(["info", "warning", "critical"]);

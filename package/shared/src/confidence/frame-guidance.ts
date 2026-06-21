@@ -14,6 +14,7 @@ export interface RankedFrame {
   width: number;
   height: number;
   matchesWidth: boolean;
+  aspectRatioDistance?: number;
   reason: string;
 }
 
@@ -27,15 +28,19 @@ const WIDTH_MATCH_SCORE_BONUS = 1000;
 const WIDE_BOARD_PENALTY = 100;
 const TALL_PAGE_BONUS = 50;
 const TINY_AREA_PENALTY = 50;
+const ASPECT_RATIO_SCORE_WEIGHT = 220;
+const WILD_ASPECT_RATIO_DISTANCE = 0.35;
+const WILD_ASPECT_RATIO_PENALTY = 950;
 
 interface ScoredFrame {
   frame: Frame;
   score: number;
   matchesWidth: boolean;
+  aspectRatioDistance?: number;
   reason: string;
 }
 
-function scoreFrame(frame: Frame, targetWidth?: number): ScoredFrame {
+function scoreFrame(frame: Frame, targetWidth?: number, targetHeight?: number): ScoredFrame {
   const reasons: string[] = [];
   let score = 0;
 
@@ -57,6 +62,27 @@ function scoreFrame(frame: Frame, targetWidth?: number): ScoredFrame {
     reasons.push("縦長ページ");
   }
 
+  let aspectRatioDistance: number | undefined;
+  if (
+    typeof targetWidth === "number" &&
+    targetWidth > 0 &&
+    typeof targetHeight === "number" &&
+    targetHeight > 0 &&
+    frame.width > 0 &&
+    frame.height > 0
+  ) {
+    const targetRatio = targetWidth / targetHeight;
+    const frameRatio = frame.width / frame.height;
+    aspectRatioDistance = Math.abs(Math.log(frameRatio / targetRatio));
+    score -= aspectRatioDistance * ASPECT_RATIO_SCORE_WEIGHT;
+    if (aspectRatioDistance >= WILD_ASPECT_RATIO_DISTANCE) {
+      score -= WILD_ASPECT_RATIO_PENALTY;
+      reasons.push("縦横比が撮影画像と大きく不一致");
+    } else {
+      reasons.push("縦横比が近い");
+    }
+  }
+
   if (frame.width * frame.height < TINY_AREA) {
     score -= TINY_AREA_PENALTY;
     reasons.push("小サイズ");
@@ -66,13 +92,18 @@ function scoreFrame(frame: Frame, targetWidth?: number): ScoredFrame {
     frame,
     score,
     matchesWidth,
+    aspectRatioDistance,
     reason: reasons.length > 0 ? reasons.join("・") : "通常フレーム",
   };
 }
 
-export function rankFrameCandidates(frames: Frame[], targetWidth?: number): RankedFrame[] {
+export function rankFrameCandidates(
+  frames: Frame[],
+  targetWidth?: number,
+  targetHeight?: number,
+): RankedFrame[] {
   return frames
-    .map((frame, index) => ({ scored: scoreFrame(frame, targetWidth), index }))
+    .map((frame, index) => ({ scored: scoreFrame(frame, targetWidth, targetHeight), index }))
     .sort((a, b) => {
       if (b.scored.score !== a.scored.score) {
         return b.scored.score - a.scored.score;
@@ -86,6 +117,7 @@ export function rankFrameCandidates(frames: Frame[], targetWidth?: number): Rank
       width: scored.frame.width,
       height: scored.frame.height,
       matchesWidth: scored.matchesWidth,
+      aspectRatioDistance: scored.aspectRatioDistance,
       reason: scored.reason,
     }));
 }

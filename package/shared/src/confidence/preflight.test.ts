@@ -36,6 +36,31 @@ describe("runPreflight", () => {
     expect(warning?.suggestedFix).toContain(String(STANDARD_WIDTH));
   });
 
+  it("capture_device 由来の幅ズレでは capture_width を提案しない", () => {
+    const report = runPreflight({
+      screenshotWidth: WIDE_SCREEN_WIDTH,
+      screenshotHeight: STANDARD_HEIGHT,
+      figmaFrameWidth: STANDARD_WIDTH,
+      screenshotSource: "capture_device",
+    });
+    const warning = report.warnings.find((w) => w.code === "width_mismatch");
+    expect(warning?.suggestedFix).not.toContain("capture_width");
+    expect(warning?.suggestedFix).toContain("物理ピクセル");
+  });
+
+  it("レンダリング画像幅が一致するDPR差は info に留める", () => {
+    const report = runPreflight({
+      screenshotWidth: 1080,
+      screenshotHeight: 2340,
+      figmaFrameWidth: 1080,
+      figmaLogicalFrameWidth: 390,
+      screenshotSource: "capture_device",
+    });
+
+    expect(report.warnings.find((w) => w.code === "width_mismatch")).toBeUndefined();
+    expect(report.warnings.find((w) => w.code === "logical_physical_width")?.severity).toBe("info");
+  });
+
   it("わずかな幅差(<20%)は warning 止まり", () => {
     const report = runPreflight({
       screenshotWidth: SLIGHTLY_WIDE_WIDTH,
