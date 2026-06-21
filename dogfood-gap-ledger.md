@@ -56,10 +56,27 @@ gap収束推移：27 → 17 → 2 → 0。停止条件到達（gap dry ＋ in-fl
 - dogfoodで designdiff の MCP ツール（list_figma_frames / get_design_tokens / inspect_node / compare_design / verify_fix）を実弾で叩いて、欠落・誤ラベル・誤判定・回帰を多数 fix
 - 残 med/low 6件は #173 に記録（後追い）
 
-## Mobile（Flutter/RN）— 唯一の未完了境界
-- 委譲経路（bg-MCP）が本セッション未接続、Cloud は実機に届かず。**未着手・境界として保留**。
-- 必要なもの：bg-MCP 接続 or macmini 対話セッション（Pixel実機/iOS sim）。
-- Task D の mobile-capture パッケージは merge 済み（#166）なので、配線は完了。実機 round-trip だけが残る。
+## Mobile（Flutter/RN）— 実機round-trip 完了 ✅
+macmini 経由（ssh）で実機 dogfood を完遂。bg-MCP 不要で macmini ローカルの codex に委譲。
+
+### Task D 実機E2E（[deferred:macmini] → 解消）
+- **Android**：Pixel(2A091FDH300C0J)で sample-project staging 実画面を `adb exec-out screencap -p` で取得（1080×2340）→ `captureDeviceScreenshot({device:"android"})` が ~/.figdiff/cache/capture/ に保存 → `compare_design` を capture_device:"android" で実行成立（FAIL/match 86.53%/8 region）。
+- **iOS**：iPhone 17 Pro sim を `xcrun simctl io booted screenshot` で取得（1206×2622）→ ios-sim provider 検証。sample-mobile dev もsimに導入済み。
+- → mobile-capture(#166) の android/ios 両 provider が実機/シムで end-to-end 成立。
+
+### 検出モバイルgap 7件 → issue #185
+| # | 重 | gap |
+|---|----|-----|
+|1|high|DPR/物理px不一致（実機物理px vs Figma論理px、preflightが誤critical）|
+|2|high|自動frame選択がモバイルで誤る（幅のみrankでLP誤選択、aspect比要）|
+|3|med|capture_device向けremediationが的外れ（capture_width=390はscreenshot_url専用）|
+|4|med|システムバー/ナビバーのノイズ差分（crop/ignoreプリセット無し）|
+|5|med|height/aspect不一致をcontain resizeで吸収し区別不能|
+|6|low|runner経路のdiff成果物パスが弱い|
+|7|low|build順依存（mcp-server build が credential-store 先要求）|
+
+tractable な #2/#3/#7＋#1のpreflight明確化は本体fix（PR別）。#4/#5 は issue #185 に保持（大きめ機能）。
+RN(sample-mobile)は sample-org 他org＝NO-PUSH。比較ステップのみ実施しpushはしない。
 
 ## Flutter (sample-project / macmini)
 
