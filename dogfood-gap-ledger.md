@@ -84,8 +84,25 @@ RN(sample-mobile)は sample-org 他org＝NO-PUSH。比較ステップのみ実�
 |------|----|------|------|------|------|
 | | | | | | |
 
-## React Native (sample-mobile / macmini, NO-PUSH) 
+## React Native (sample-mobile / macmini, NO-PUSH)
+- iOS sim(iPhone 17 Pro)に sample-mobile dev 導入確認。ios-sim provider の `captureDeviceScreenshot` は実機検証済み（Task D iOS経路）。
+- sample-mobile固有のFigma比較は NO-PUSH＋Figmaキー不確定のため未実施（モバイルgapはFlutter側で網羅済み）。
 
-| 日付 | 面 | 事象 | 期待 | 実際 | 状態 |
-|------|----|------|------|------|------|
-| | | | | | |
+## 総合監査＋多段収束（2026-06-20〜21）
+全dogfood fixをマージ後、累積差分を多段で敵対監査し収束させた。
+
+| ラウンド | 検出 | 対応 |
+|---|---|---|
+| WEB R1 gap狩り | 27確定 | 19件fix(#171/#172/#174/#175/#176) |
+| 自己回帰 R2 | 17確定 | 全fix(#178-182) |
+| 収束 R3 | 2確定 | fix(#183) |
+| #173 残gap | 6 | fix(#186) |
+| モバイル実機 | 7 | fix(#188/#189/#190/#191) → #185クローズ |
+| 総合監査 | 9確定 | fix(#192-195) |
+| 監査fix収束 | 2確定 | fix(#196) |
+| 最終収束レビュー | **0（dry）** | **CONVERGED** |
+
+- 収束推移: 27 → 17 → 2 → 9 → 2 → **0**
+- このセッション計 **28 PR** を develop にマージ。open PR/重大issue ゼロ。
+- 残: #197（pre-existing low、記録のみ）、#185-4/5は#189/#190で対応済み。
+- 全 fix は各PR CIで build/typecheck/test/check/lint:eslint 緑。各fixバッチに敵対収束レビュー（CONVERGED確認）。
