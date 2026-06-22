@@ -1,14 +1,24 @@
 import {
   computeHausdorff,
-  computeSsim,
   computeSsimForRegion,
   computeVerdict,
   detectHighTextureRegion,
+  type CropRegion,
   type DiffBoundingBox,
   type DiffReport,
   type FigmaNode,
   type RegionScore,
 } from "@figdiff/shared";
+
+// contain-resize で生じた余白を表す矩形 (= 実コンテンツの占有範囲)。
+// image-compare-service の PaddingMask と同じ意味。SSIM / 色差から
+// 余白 (上下の透明帯) を除外するために content rect として受け取る。
+interface PaddingMaskRect {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+}
 
 interface BuildDiffReportOptions {
   designPixels: Uint8ClampedArray;
@@ -19,6 +29,17 @@ interface BuildDiffReportOptions {
   figmaFileKey?: string;
   figmaNodeId?: string;
   figmaPageName?: string;
+  // set_crop_region 適用時の crop 矩形 (フル幅 resize 後のスクリーンショット座標)。
+  // 与えられると node→region 写像で crop 原点を減算し、スケールをフルフレーム
+  // 基準で算出する。未指定なら crop 無し扱い (従来挙動)。
+  cropRegion?: CropRegion;
+  // crop 適用前のフルフレームのスクリーンショット寸法。crop 時のスケール算出基準。
+  // cropRegion はあるが fullFrame が無い場合は、crop 後の width/height + crop 原点で
+  // フルフレーム寸法を再構成する。
+  fullFrame?: { width: number; height: number };
+  // contain-resize の余白矩形 (content rect)。与えられると whole-frame の
+  // SSIM / 色差を余白 (透明帯) を除いた content rect 内だけで計算する。
+  paddingMask?: PaddingMaskRect;
 }
 
 const MAX_REGION_SCORE_COUNT = 24;
@@ -143,11 +164,60 @@ function toWholeFrameRegion(width: number, height: number): DiffBoundingBox {
   return { x: 0, y: 0, w: width, h: height };
 }
 
+/**
+ * whole-frame の SSIM / 色差を計算する対象矩形を返す。
+ * contain-resize の余白 (上下の透明帯) は比較対象でないため、paddingMask が
+ * あればその content rect を、無ければフレーム全体を返す。これにより letterbox
+ * 余白や padding 由来の偽の構造差で whole-frame SSIM が不当に下がるのを防ぐ。
+ */
+function toContentRegion(
+  width: number,
+  height: number,
+  paddingMask?: PaddingMaskRect,
+): DiffBoundingBox {
+  if (!paddingMask) {
+    return toWholeFrameRegion(width, height);
+  }
+  return {
+    x: Math.max(0, paddingMask.left),
+    y: Math.max(0, paddingMask.top),
+    w: Math.max(0, Math.min(width - paddingMask.left, paddingMask.width)),
+    h: Math.max(0, Math.min(height - paddingMask.top, paddingMask.height)),
+  };
+}
+
+/**
+ * crop 適用前のフルフレーム寸法を解決する。
+ * fullFrame があればそれを使い、無ければ crop 後寸法 + crop 原点から再構成する。
+ */
+function resolveFullFrame(
+  width: number,
+  height: number,
+  cropRegion: CropRegion | undefined,
+  fullFrame: { width: number; height: number } | undefined,
+): { width: number; height: number } {
+  if (fullFrame) {
+    return fullFrame;
+  }
+  if (cropRegion) {
+    // crop 後の width/height は crop 矩形の幅/高さに一致する想定。crop 原点を
+    // 足し戻すことでフルフレームの「最低限」の寸法を推定する (右/下の余りは
+    // 不明なため crop 矩形の右/下端までを採用する)。
+    return {
+      width: Math.max(width, cropRegion.x + cropRegion.width),
+      height: Math.max(height, cropRegion.y + cropRegion.height),
+    };
+  }
+  return { width, height };
+}
+
 function toScreenshotBbox(
   child: FigmaNode,
   root: FigmaNode,
   width: number,
   height: number,
+  fullFrame: { width: number; height: number },
+  cropRegion?: CropRegion,
 ): DiffBoundingBox | null {
   const childBox = child.absoluteBoundingBox;
   const rootBox = root.absoluteBoundingBox;
@@ -155,12 +225,17 @@ function toScreenshotBbox(
     return null;
   }
 
-  const scale = Math.min(width / rootBox.width, height / rootBox.height);
+  // crop 適用前のフルフレーム寸法でスケールを決める。crop 後の width/height を
+  // 使うとスケールが変わって node 写像が縮尺ずれするため、フル寸法を基準にする。
+  const scale = Math.min(fullFrame.width / rootBox.width, fullFrame.height / rootBox.height);
   const renderedWidth = rootBox.width * scale;
-  const offsetX = (width - renderedWidth) / 2;
+  const offsetX = (fullFrame.width - renderedWidth) / 2;
   const offsetY = 0;
-  const x = offsetX + (childBox.x - rootBox.x) * scale;
-  const y = offsetY + (childBox.y - rootBox.y) * scale;
+  // crop 原点を減算して crop 後スクリーンショット座標に揃える。
+  const cropX = cropRegion?.x ?? 0;
+  const cropY = cropRegion?.y ?? 0;
+  const x = offsetX + (childBox.x - rootBox.x) * scale - cropX;
+  const y = offsetY + (childBox.y - rootBox.y) * scale - cropY;
   const w = childBox.width * scale;
   const h = childBox.height * scale;
 
@@ -179,8 +254,10 @@ function toScreenshotBbox(
 }
 
 function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
-  const { designPixels, screenshotPixels, width, height, figmaRootNode } = options;
+  const { designPixels, screenshotPixels, width, height, figmaRootNode, cropRegion, paddingMask } =
+    options;
   const childRegions: RegionScore[] = [];
+  const fullFrame = resolveFullFrame(width, height, cropRegion, options.fullFrame);
 
   const getTextureScore = (bbox: DiffBoundingBox): number => {
     try {
@@ -193,7 +270,7 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
   if (figmaRootNode) {
     const allSectionAnchors = figmaRootNode.children
       .map((child: FigmaNode) => {
-        const bbox = toScreenshotBbox(child, figmaRootNode, width, height);
+        const bbox = toScreenshotBbox(child, figmaRootNode, width, height, fullFrame, cropRegion);
         if (!bbox || bbox.w === 0 || bbox.h === 0) {
           return null;
         }
@@ -246,14 +323,22 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
   }
 
   const wholeFrameBbox = toWholeFrameRegion(width, height);
+  // letterbox 余白を含めると SSIM / 色差が不当に悪化するため、content rect 内で評価する。
+  const contentBbox = toContentRegion(width, height, paddingMask);
 
   return [
     {
       regionId: "whole-frame",
       bbox: wholeFrameBbox,
-      structure: computeSsim(designPixels, screenshotPixels, width, height),
-      color: buildApproximateColorDifference(designPixels, screenshotPixels, width, height),
-      shape: computeHausdorff(designPixels, screenshotPixels, width, height),
+      structure: computeSsimForRegion(designPixels, screenshotPixels, width, height, contentBbox),
+      color: buildApproximateColorDifference(
+        designPixels,
+        screenshotPixels,
+        width,
+        height,
+        paddingMask ? contentBbox : undefined,
+      ),
+      shape: computeHausdorff(designPixels, screenshotPixels, width, height, contentBbox),
       layout: 0,
       textureScore: getTextureScore(wholeFrameBbox),
       figmaNodeId: options.figmaNodeId,

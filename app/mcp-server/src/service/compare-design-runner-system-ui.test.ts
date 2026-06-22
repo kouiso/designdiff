@@ -242,6 +242,8 @@ describe("runCompareDesign system UI masks", () => {
         design_source: designPath,
         capture_device: "android",
         project_id: projectId,
+        // crop は frame 一致時のみ適用されるため、保存した "Captured" フレームを明示する。
+        frame_name: "Captured",
         threshold: 0,
       });
 
