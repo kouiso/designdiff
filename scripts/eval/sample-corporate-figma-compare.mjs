@@ -246,7 +246,7 @@ async function loadComparablePixels(browser, figmaPath, implPath) {
     return await page.evaluate(
       async ({ figmaUrl, implUrl }) => {
         async function loadImage(src) {
-          const image = new Image();
+          const image = new globalThis.Image();
           image.decoding = "async";
           const loaded = new Promise((resolve, reject) => {
             image.onload = () => resolve();
@@ -257,7 +257,7 @@ async function loadComparablePixels(browser, figmaPath, implPath) {
           return image;
         }
         function pixelsFor(image, width, height) {
-          const canvas = new OffscreenCanvas(width, height);
+          const canvas = new globalThis.OffscreenCanvas(width, height);
           const context = canvas.getContext("2d");
           context.drawImage(image, 0, 0, width, height);
           return Array.from(context.getImageData(0, 0, width, height).data);

@@ -51,15 +51,7 @@ if (!skipInstall && !existsSync(join(repoDir, "node_modules"))) {
 await runCommand(packageManagerCommand(repoDir, "run", "build"), { cwd: repoDir });
 
 const port = await getFreePort();
-const preview = spawnPackageCommand(repoDir, [
-  "run",
-  "preview",
-  "--",
-  "--host",
-  "127.0.0.1",
-  "--port",
-  String(port),
-]);
+const preview = spawnAstroPreview(repoDir, port);
 const baseUrl = `http://127.0.0.1:${port}`;
 
 try {
@@ -139,12 +131,22 @@ function packageManagerInstallCommand(repoDir) {
   return ["npm", "install"];
 }
 
-function spawnPackageCommand(repoDir, args) {
-  const command = packageManagerCommand(repoDir, ...args);
-  const child = spawn(command[0], command.slice(1), {
-    cwd: repoDir,
-    stdio: ["ignore", "pipe", "pipe"],
-  });
+function spawnAstroPreview(repoDir, port) {
+  const child = spawn(
+    process.execPath,
+    [
+      join(repoDir, "node_modules/astro/astro.js"),
+      "preview",
+      "--host",
+      "127.0.0.1",
+      "--port",
+      String(port),
+    ],
+    {
+      cwd: repoDir,
+      stdio: ["ignore", "pipe", "pipe"],
+    },
+  );
   child.stdout.on("data", (chunk) => process.stdout.write(chunk));
   child.stderr.on("data", (chunk) => process.stderr.write(chunk));
   return child;
