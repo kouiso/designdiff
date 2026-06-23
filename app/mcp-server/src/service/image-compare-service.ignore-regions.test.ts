@@ -140,3 +140,30 @@ describe("compareImages — ignoreRegions マスク", () => {
     expect(result.diffPixelCount).toBeGreaterThan(0);
   });
 });
+
+describe("redactImageBase64ForPublicExport", () => {
+  it("public export 用画像の ignoreRegions 内ピクセルを不透明な黒に置き換えること", async () => {
+    const { redactImageBase64ForPublicExport } = await import("./image-compare-service.js");
+    const source = await solidPng(6, 6, { r: 255, g: 0, b: 0, alpha: 1 });
+
+    const redacted = await redactImageBase64ForPublicExport(source, [
+      { x: 2, y: 2, width: 2, height: 2, label: "customer-logo" },
+    ]);
+
+    const before = await sharp(Buffer.from(source, "base64")).ensureAlpha().raw().toBuffer();
+    const after = await sharp(Buffer.from(redacted, "base64")).ensureAlpha().raw().toBuffer();
+    const insideOffset = (2 * 6 + 2) * 4;
+    const outsideOffset = (0 * 6 + 0) * 4;
+
+    expect([...before.slice(insideOffset, insideOffset + 4)]).toEqual([255, 0, 0, 255]);
+    expect([...after.slice(insideOffset, insideOffset + 4)]).toEqual([0, 0, 0, 255]);
+    expect([...after.slice(outsideOffset, outsideOffset + 4)]).toEqual([255, 0, 0, 255]);
+  });
+
+  it("ignoreRegions 未設定では public export 用画像を変更しないこと", async () => {
+    const { redactImageBase64ForPublicExport } = await import("./image-compare-service.js");
+    const source = await solidPng(3, 3, { r: 10, g: 20, b: 30, alpha: 1 });
+
+    await expect(redactImageBase64ForPublicExport(source, undefined)).resolves.toBe(source);
+  });
+});

@@ -5,6 +5,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   compareImages: vi.fn(),
+  redactImageBase64ForPublicExport: vi.fn(async (imageBase64: string) => imageBase64),
   createFigmaService: vi.fn(),
   getRecentReports: vi.fn(() => []),
   recordComparison: vi.fn(async () => undefined),
@@ -29,6 +30,7 @@ vi.mock("./figma-service.js", () => ({
 
 vi.mock("./image-compare-service.js", () => ({
   compareImages: mocks.compareImages,
+  redactImageBase64ForPublicExport: mocks.redactImageBase64ForPublicExport,
 }));
 
 vi.mock("./capture-service.js", () => ({
