@@ -1,0 +1,137 @@
+# sample-corporate Figma readiness
+
+- Ready: no
+- Site repo: /workspace/designdiff
+- Figma manifest: /workspace/designdiff/verification/fixtures/sample-corporate-figma-pages.template.json
+- Token env: FIGMA_TOKEN
+- Evidence JSON: /workspace/designdiff/verification/receipts/readiness-gate-validity-2026-06-23.json
+
+| Check | OK | Detail |
+|---|---:|---|
+| Site repo package.json | yes | /workspace/designdiff/package.json |
+| Figma manifest file | yes | /workspace/designdiff/verification/fixtures/sample-corporate-figma-pages.template.json |
+| FIGMA_TOKEN environment variable | yes | FIGMA_TOKEN |
+| Figma token validity | no | figma token invalid or expired (GET /v1/me validation request failed: fetch failed) |
+| Manifest pages | yes | 12 page(s) |
+| Ingestible page schema | yes | ok |
+| No REPLACE_* placeholders | no | top-pc, about-pc, service-pc, recruit-pc, news-pc, contact-pc, top-sp, about-sp, service-sp, recruit-sp, news-sp, contact-sp |
+
+## 1-minute demo (readiness re-run)
+
+```bash
+node scripts/eval/sample-corporate-figma-readiness.mjs --site-repo "/workspace/designdiff" --figma-manifest "/workspace/designdiff/verification/fixtures/sample-corporate-figma-pages.template.json" --token-env "FIGMA_TOKEN" --out "/workspace/designdiff/verification/receipts/readiness-gate-validity-2026-06-23.txt" --json-out "/workspace/designdiff/verification/receipts/readiness-gate-validity-2026-06-23.json"
+```
+
+## Next command
+
+- Refresh FIGMA_TOKEN; the current token is invalid or expired.
+- Replace all `REPLACE_*` values in the Figma manifest.
+- Re-run the 1-minute readiness command, then run `--real` smoke.
+
+## Placeholder pages
+
+- top-pc
+- about-pc
+- service-pc
+- recruit-pc
+- news-pc
+- contact-pc
+- top-sp
+- about-sp
+- service-sp
+- recruit-sp
+- news-sp
+- contact-sp
+
+
+## Command output
+
+```text
+Not ready: /workspace/designdiff/verification/receipts/readiness-gate-validity-2026-06-23.txt
+Evidence JSON: /workspace/designdiff/verification/receipts/readiness-gate-validity-2026-06-23.json
+Exit code: 2
+```
+
+## JSON evidence
+
+```json
+{
+  "ready": false,
+  "missingRequirements": [
+    "Figma token validity",
+    "No REPLACE_* placeholders"
+  ],
+  "placeholderPageNames": [
+    "top-pc",
+    "about-pc",
+    "service-pc",
+    "recruit-pc",
+    "news-pc",
+    "contact-pc",
+    "top-sp",
+    "about-sp",
+    "service-sp",
+    "recruit-sp",
+    "news-sp",
+    "contact-sp"
+  ],
+  "manifestPath": "/workspace/designdiff/verification/fixtures/sample-corporate-figma-pages.template.json",
+  "siteRepoPath": "/workspace/designdiff",
+  "realSmokeCommand": null,
+  "expectedPaths": {
+    "siteRepoPackageJson": "/workspace/designdiff/package.json",
+    "figmaManifest": "/workspace/designdiff/verification/fixtures/sample-corporate-figma-pages.template.json"
+  },
+  "expectedManifestMetadata": {
+    "manifestPageCount": true,
+    "manifestSha256": true
+  },
+  "actualManifestMetadata": {
+    "manifestPageCount": 12,
+    "manifestSha256": "9f1b7b3905fa5c1546b607d40457d3dd63755cae6e4a4e75d4a48aa41e31e99f"
+  },
+  "actualPaths": {
+    "siteRepoPackageJsonExists": true,
+    "figmaManifestExists": true,
+    "markdownReport": "/workspace/designdiff/verification/receipts/readiness-gate-validity-2026-06-23.txt",
+    "jsonEvidence": "/workspace/designdiff/verification/receipts/readiness-gate-validity-2026-06-23.json"
+  },
+  "checks": [
+    {
+      "name": "Site repo package.json",
+      "ok": true,
+      "detail": "/workspace/designdiff/package.json"
+    },
+    {
+      "name": "Figma manifest file",
+      "ok": true,
+      "detail": "/workspace/designdiff/verification/fixtures/sample-corporate-figma-pages.template.json"
+    },
+    {
+      "name": "FIGMA_TOKEN environment variable",
+      "ok": true,
+      "detail": "FIGMA_TOKEN"
+    },
+    {
+      "name": "Figma token validity",
+      "ok": false,
+      "detail": "figma token invalid or expired (GET /v1/me validation request failed: fetch failed)"
+    },
+    {
+      "name": "Manifest pages",
+      "ok": true,
+      "detail": "12 page(s)"
+    },
+    {
+      "name": "Ingestible page schema",
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "name": "No REPLACE_* placeholders",
+      "ok": false,
+      "detail": "top-pc, about-pc, service-pc, recruit-pc, news-pc, contact-pc, top-sp, about-sp, service-sp, recruit-sp, news-sp, contact-sp"
+    }
+  ]
+}
+```
