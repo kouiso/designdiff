@@ -85,6 +85,7 @@ export function SliderRow({
             borderRadius: 99,
             background: "var(--cobalt)",
             border: "2.5px solid var(--surface)",
+            // 影の alpha はテーマ非依存の固定値。つまみが面上に浮いて見えるコントラストを優先するため。
             boxShadow: "0 1px 4px rgba(0,0,0,.25)",
             pointerEvents: "none",
           }}
