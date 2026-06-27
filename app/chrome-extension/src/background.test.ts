@@ -8,6 +8,7 @@ import type { DiffResult } from "./service/pixel-diff-service";
 // biome-ignore lint/suspicious/noExplicitAny: テスト用に chrome モックを補完するため
 const chromeGlobal = globalThis.chrome as any;
 if (chromeGlobal?.runtime && !chromeGlobal.runtime.onMessageExternal) {
+  // eslint-disable-next-line @typescript-eslint/no-empty-function -- chrome mock stub for test setup
   chromeGlobal.runtime.onMessageExternal = { addListener: () => {} };
 }
 
