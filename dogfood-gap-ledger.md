@@ -106,3 +106,24 @@ RN(sample-mobile)は sample-org 他org＝NO-PUSH。比較ステップのみ実�
 - このセッション計 **28 PR** を develop にマージ。open PR/重大issue ゼロ。
 - 残: #197（pre-existing low、記録のみ）、#185-4/5は#189/#190で対応済み。
 - 全 fix は各PR CIで build/typecheck/test/check/lint:eslint 緑。各fixバッチに敵対収束レビュー（CONVERGED確認）。
+
+## WS3 収束（2026-06-25）— capture-lp-screenshots runner 本番投入
+
+PR #207（`feat(WS3): sample-corporate Figma 対実装 構造SSIM ランナー`）を develop にマージ。Closes #205。
+
+- 変更: `scripts/eval/capture-lp-screenshots.mjs` に Astro CLI 動的解決（`spawnAstroPreview`）を追加。
+  Astro v4/5/6 系を問わず `astro preview` が正常起動する。
+- live E2E 証跡: sample-corporate に対し `--self-manifest` モードで実行 → 12枚スクリーンショット + manifest 生成 [CLI確認] ✅
+
+### runner 動作時の摩擦（dogfood gap）
+
+| 日付 | 面 | 事象 | 期待 | 状態 |
+|------|----|------|------|------|
+| 2026-06-25 | WEB runner | Node 22.11.0 で Astro v6 ビルドが即死（>=22.12.0 が必要） | エラーに upgrade 案内 or README に記載 | todo |
+| 2026-06-25 | WEB runner | Corepack pnpm 署名検証エラー（`COREPACK_ENABLE_STRICT=0` で回避） | README に workaround 記載 | todo |
+
+### 最終状態（2026-06-25）
+
+- `gh pr list -R kouiso/designdiff --state open` → **0件**
+- `git worktree list` → メイン1本のみ（prunable 5本 + pr207-runner 削除済み）
+- dogfood loop 正式クローズ。

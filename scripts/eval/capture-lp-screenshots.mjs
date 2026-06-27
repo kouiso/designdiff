@@ -138,8 +138,7 @@ function resolveAstroCli(repoDir) {
   const requireFromRepo = createRequire(join(repoDir, "package.json"));
   const astroPkgPath = requireFromRepo.resolve("astro/package.json");
   const astroPkg = requireFromRepo("astro/package.json");
-  const binEntry =
-    typeof astroPkg.bin === "string" ? astroPkg.bin : astroPkg.bin?.astro;
+  const binEntry = typeof astroPkg.bin === "string" ? astroPkg.bin : astroPkg.bin?.astro;
   if (binEntry) {
     return join(dirname(astroPkgPath), binEntry);
   }
@@ -149,14 +148,7 @@ function resolveAstroCli(repoDir) {
 function spawnAstroPreview(repoDir, port) {
   const child = spawn(
     process.execPath,
-    [
-      resolveAstroCli(repoDir),
-      "preview",
-      "--host",
-      "127.0.0.1",
-      "--port",
-      String(port),
-    ],
+    [resolveAstroCli(repoDir), "preview", "--host", "127.0.0.1", "--port", String(port)],
     {
       cwd: repoDir,
       stdio: ["ignore", "pipe", "pipe"],
