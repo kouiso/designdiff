@@ -23,6 +23,26 @@ import {
 
 import { buildDiffReport } from "./diff-report-builder.js";
 
+// sharp の入力ピクセル上限。縦長の Figma エクスポートや巨大スクショが
+// 無制限の raw バッファをデコードしてプロセスを OOM させないための天井。
+// この値を超える入力は runCompareDesign 側で早期に弾く想定だが、
+// デコード自体のガードとしても全 sharp() に効かせる。
+const MAX_INPUT_PIXELS = 40_000_000;
+
+// 比較パイプラインが扱う作業解像度の上限。これを超える入力は
+// アスペクト比を保ったまま縮小し、design / screenshot 双方を
+// 同じ比率で揃えてから pixelmatch にかける。
+const MAX_COMPARE_PIXELS = 24_000_000;
+
+type SharpInput = Parameters<typeof sharp>[0];
+type SharpOptions = Parameters<typeof sharp>[1];
+
+// 全 sharp() 呼び出しに limitInputPixels を強制する薄いラッパ。
+// 個別呼び出しで指定し忘れても OOM ガードが必ず効くようにする。
+function createSharp(input?: SharpInput, options?: SharpOptions): sharp.Sharp {
+  return sharp(input, { limitInputPixels: MAX_INPUT_PIXELS, ...options });
+}
+
 type ClusterMode = "auto" | "grid" | "flood";
 
 interface CompareImagesOptions {
@@ -316,23 +336,45 @@ export async function compareImages(
   let screenshotBuffer: Buffer = Buffer.from(screenshotBase64, "base64");
 
   // Get original dimensions
-  const designMeta = await sharp(designBuffer).metadata();
-  const screenshotMeta = await sharp(screenshotBuffer).metadata();
+  const designMeta = await createSharp(designBuffer).metadata();
+  const screenshotMeta = await createSharp(screenshotBuffer).metadata();
 
   const designWidth = designMeta.width ?? 0;
   const designHeight = designMeta.height ?? 0;
-  const screenshotWidth = screenshotMeta.width ?? 0;
-  const screenshotHeight = screenshotMeta.height ?? 0;
+  let screenshotWidth = screenshotMeta.width ?? 0;
+  let screenshotHeight = screenshotMeta.height ?? 0;
 
   if (designWidth === 0 || designHeight === 0 || screenshotWidth === 0 || screenshotHeight === 0) {
     throw new Error("Invalid image dimensions");
+  }
+
+  // normalization レポートとアスペクト比診断は撮影時の実寸を使う。
+  // 作業解像度ガードで縮小しても、報告値は native のまま維持する。
+  const nativeScreenshotWidth = screenshotWidth;
+  const nativeScreenshotHeight = screenshotHeight;
+
+  // 作業ピクセル上限ガード: 大きい側 (スクショは縦長になりやすい) が
+  // MAX_COMPARE_PIXELS を超えるとき、両画像を同じ比率で縮小して
+  // 比較解像度を有界にする。同率で縮めることで座標系のズレを避ける。
+  // design 側は後段で screenshot 幅に再正規化されるため、ここでは
+  // 基準となる screenshot だけを物理的に縮小し、寸法を更新する。
+  const screenshotPixelCount = screenshotWidth * screenshotHeight;
+  if (screenshotPixelCount > MAX_COMPARE_PIXELS) {
+    const capScale = Math.sqrt(MAX_COMPARE_PIXELS / screenshotPixelCount);
+    const cappedWidth = Math.max(1, Math.round(screenshotWidth * capScale));
+    const cappedHeight = Math.max(1, Math.round(screenshotHeight * capScale));
+    screenshotBuffer = await createSharp(screenshotBuffer)
+      .resize(cappedWidth, cappedHeight)
+      .toBuffer();
+    screenshotWidth = cappedWidth;
+    screenshotHeight = cappedHeight;
   }
 
   // Resize design to match screenshot WIDTH first (maintaining aspect ratio)
   // This normalizes coordinate spaces before crop
   if (designWidth !== screenshotWidth) {
     const resizeHeight = Math.round(designHeight * (screenshotWidth / designWidth));
-    designBuffer = await sharp(designBuffer)
+    designBuffer = await createSharp(designBuffer)
       .resize(screenshotWidth, resizeHeight)
       .ensureAlpha()
       .toBuffer();
@@ -345,8 +387,8 @@ export async function compareImages(
   }
 
   // Get final dimensions after crop
-  const finalDesignMeta = await sharp(designBuffer).metadata();
-  const finalScreenshotMeta = await sharp(screenshotBuffer).metadata();
+  const finalDesignMeta = await createSharp(designBuffer).metadata();
+  const finalScreenshotMeta = await createSharp(screenshotBuffer).metadata();
   const finalDesignWidth = finalDesignMeta.width ?? 0;
   const finalDesignHeight = finalDesignMeta.height ?? 0;
   const finalScreenshotWidth = finalScreenshotMeta.width ?? 0;
@@ -370,7 +412,7 @@ export async function compareImages(
       width: contentWidth,
       height: contentHeight,
     };
-    finalDesignBuffer = await sharp(designBuffer)
+    finalDesignBuffer = await createSharp(designBuffer)
       .resize(finalScreenshotWidth, finalScreenshotHeight, {
         fit: "contain",
         position: "top",
@@ -382,8 +424,8 @@ export async function compareImages(
   }
 
   // Extract raw pixel data
-  const designRaw = await sharp(finalDesignBuffer).ensureAlpha().raw().toBuffer();
-  const screenshotRaw = await sharp(screenshotBuffer).ensureAlpha().raw().toBuffer();
+  const designRaw = await createSharp(finalDesignBuffer).ensureAlpha().raw().toBuffer();
+  const screenshotRaw = await createSharp(screenshotBuffer).ensureAlpha().raw().toBuffer();
 
   const width = finalScreenshotWidth;
   const height = finalScreenshotHeight;
@@ -506,8 +548,8 @@ export async function compareImages(
     normalization: {
       designNativeWidth: designWidth,
       designNativeHeight: designHeight,
-      screenshotWidth,
-      screenshotHeight,
+      screenshotWidth: nativeScreenshotWidth,
+      screenshotHeight: nativeScreenshotHeight,
       cropApplied: Boolean(cropRegion),
       containResized: paddingMask !== null,
       appliedScale,
@@ -519,7 +561,7 @@ export async function compareImages(
  * Crop image buffer using sharp
  */
 async function cropImageBuffer(buffer: Buffer, cropRegion: CropRegion): Promise<Buffer> {
-  const metadata = await sharp(buffer).metadata();
+  const metadata = await createSharp(buffer).metadata();
   const imageWidth = metadata.width ?? 0;
   const imageHeight = metadata.height ?? 0;
 
@@ -557,7 +599,7 @@ async function cropImageBuffer(buffer: Buffer, cropRegion: CropRegion): Promise<
   const width = right - left;
   const height = bottom - top;
 
-  return sharp(buffer)
+  return createSharp(buffer)
     .extract({
       left,
       top,
@@ -809,7 +851,7 @@ async function generateDiffImage(
     }
   }
 
-  const pngBuffer = await sharp(visualBuffer, {
+  const pngBuffer = await createSharp(visualBuffer, {
     raw: {
       width,
       height,

@@ -87,6 +87,48 @@ describe("compareImages", () => {
     expect(result.diffReport?.aggregateVerdict).toBeDefined();
   });
 
+  it("入力が作業ピクセル上限を超えるときスクリーンショットを上限内に縮小すること", async () => {
+    const pixelmatchMock = await import("pixelmatch");
+
+    // 6000x4200 = 25.2M px は MAX_COMPARE_PIXELS (24M) を超える。
+    // 最初の 2 回の metadata (design / screenshot) は超過寸法を返し、
+    // cap resize 後の再 metadata は縮小済みの小寸法を返してテストを軽量に保つ。
+    const oversized = { width: 6000, height: 4200, channels: 4 };
+    const capped = { width: 100, height: 100, channels: 4 };
+    const instance = createMockSharpInstance({ width: 100, height: 100 });
+    instance.metadata
+      .mockResolvedValueOnce(oversized)
+      .mockResolvedValueOnce(oversized)
+      .mockResolvedValue(capped);
+
+    mockSharpFn.mockReturnValue(instance);
+    vi.mocked(pixelmatchMock.default).mockReturnValue(0);
+
+    const { compareImages } = await import("./image-compare-service.js");
+
+    const dummyBase64 = Buffer.alloc(100).toString("base64");
+    const result = await compareImages({
+      designBase64: dummyBase64,
+      screenshotBase64: dummyBase64,
+    });
+
+    // cap resize が呼ばれ、その出力ピクセル数は上限以内であること。
+    const capResizeCall = instance.resize.mock.calls.find(
+      (call): call is [number, number] =>
+        typeof call[0] === "number" &&
+        typeof call[1] === "number" &&
+        call[0] < 6000 &&
+        call[1] < 4200,
+    );
+    expect(capResizeCall).toBeDefined();
+    expect(
+      (capResizeCall as [number, number])[0] * (capResizeCall as [number, number])[1],
+    ).toBeLessThanOrEqual(24_000_000);
+    // normalization は撮影時の native 寸法 (縮小前) を報告し続けること。
+    expect(result.normalization?.screenshotWidth).toBe(6000);
+    expect(result.normalization?.screenshotHeight).toBe(4200);
+  });
+
   it("gridSummary でセル別の matchRate と diffPixels を返すこと", async () => {
     const pixelmatchMock = await import("pixelmatch");
 

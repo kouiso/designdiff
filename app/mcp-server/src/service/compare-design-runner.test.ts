@@ -650,4 +650,316 @@ describe("runCompareDesign", () => {
     expect(result.completionCriteria?.structuralReview.status).toBe("PASS");
     expect(result.completionCriteria?.diffPixelCount.status).toBe("PASS");
   });
+
+  // compareImages の戻り値を直接差し込めるローカル比較ヘルパ。
+  // normalization / diffReport / matchRate を細かく制御して診断分岐を再現する。
+  async function runLocalComparisonWithOverrides(
+    overrides: Partial<Awaited<ReturnType<typeof _compareImagesShape>>>,
+  ) {
+    tmpRoot = await fs.mkdtemp(path.join(process.cwd(), "tmp-figdiff-runner-"));
+    const designPath = path.join(tmpRoot, "design.png");
+    const screenshotPath = path.join(tmpRoot, "screenshot.png");
+    await fs.writeFile(designPath, Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+    await fs.writeFile(screenshotPath, Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+
+    mocks.sharp.mockReturnValue({
+      metadata: vi.fn(async () => ({ width: 390, height: 844 })),
+    });
+    mocks.compareImages.mockResolvedValue({
+      comparisonId: "cmp-override",
+      matchRate: 100,
+      diffPixelCount: 0,
+      totalPixelCount: 390 * 844,
+      diffRegions: [],
+      suggestion: "fixture",
+      normalization: {
+        designNativeWidth: 390,
+        designNativeHeight: 844,
+        screenshotWidth: 390,
+        screenshotHeight: 844,
+        cropApplied: false,
+        containResized: false,
+        appliedScale: 1,
+      },
+      ...overrides,
+    });
+
+    return runCompareDesign({
+      design_source: designPath,
+      screenshot: screenshotPath,
+    });
+  }
+
+  // 型を借りるためのダミー: compareImages のモック戻り値の形を推論させる。
+  function _compareImagesShape() {
+    return {} as Parameters<typeof mocks.compareImages.mockResolvedValue>[0];
+  }
+
+  it("forces status FAIL when diagnosis flags likelyMisconfig even with a passing structural verdict", async () => {
+    // 約 0.3x の強い圧縮 (severeSquish) で likelyMisconfig=true を誘発。
+    // 構造判定は pass だが、無効な比較なので PASS にしてはいけない。
+    const { result } = await runLocalComparisonWithOverrides({
+      comparisonId: "cmp-misconfig",
+      matchRate: 99.99,
+      diffPixelCount: 0,
+      diffReport: {
+        alignment: {
+          translation: { x: 0, y: 0 },
+          scale: { x: 1, y: 1 },
+          rotation: 0,
+          confidence: 1,
+          residual: 0,
+        },
+        regionScores: [],
+        issues: [],
+        weightedAggregate: { weightedStructure: 1, weightedColor: 1, totalWeight: 1 },
+        aggregateVerdict: "pass",
+        rationale: "structural pass",
+      },
+      normalization: {
+        designNativeWidth: 390,
+        designNativeHeight: 600,
+        screenshotWidth: 390,
+        screenshotHeight: 2000,
+        cropApplied: false,
+        containResized: true,
+        appliedScale: 0.3,
+      },
+    });
+
+    expect(result.diagnosis?.likelyMisconfig).toBe(true);
+    // フィックス前は structural pass で PASS になり、このアサートが落ちる。
+    expect(result.status).toBe("FAIL");
+    expect(result.nextAction).toContain("セットアップ問題");
+  });
+
+  it("emits the aspect_mismatch nextAction override without flagging misconfig", async () => {
+    // mild_aspect_mismatch (軽い縦横比差) は likelyMisconfig=false のまま
+    // buildDiagnosisNextAction で nextAction を上書きする経路。
+    const { result } = await runLocalComparisonWithOverrides({
+      comparisonId: "cmp-mild-aspect",
+      // 99 以上だと diagnosis が clean に倒れて rankedCauses が空になるため、
+      // real_diff に留まる 96% を使う。
+      matchRate: 96,
+      diffPixelCount: 10,
+      diffRegions: [
+        {
+          id: 1,
+          bounds: { x: 0, y: 0, width: 10, height: 10 },
+          diffPixelCount: 10,
+          nearbyNodeIds: [],
+          nearbyNodeNames: [],
+        },
+      ],
+      diffReport: {
+        alignment: {
+          translation: { x: 0, y: 0 },
+          scale: { x: 1, y: 1 },
+          rotation: 0,
+          confidence: 1,
+          residual: 0,
+        },
+        regionScores: [],
+        issues: [],
+        weightedAggregate: { weightedStructure: 0.8, weightedColor: 1, totalWeight: 1 },
+        aggregateVerdict: "fail",
+        rationale: "mild aspect",
+      },
+      // native 寸法は揃え (preflight の aspect_ratio_mismatch を出さない) つつ、
+      // contain 正規化だけ軽く効かせて mild_aspect_mismatch を首位に立てる。
+      normalization: {
+        designNativeWidth: 390,
+        designNativeHeight: 800,
+        screenshotWidth: 390,
+        screenshotHeight: 800,
+        cropApplied: false,
+        containResized: true,
+        appliedScale: 0.95,
+      },
+    });
+
+    expect(result.diagnosis?.likelyMisconfig).toBe(false);
+    expect(result.diagnosis?.rankedCauses[0]?.classification).toBe("mild_aspect_mismatch");
+    // buildDiagnosisNextAction が aspect cause の suggestedFix を nextAction に混ぜる。
+    expect(result.nextAction).toContain("crop");
+  });
+
+  it("surfaces inconclusive nextAction, suggestion, and structuralReview note", async () => {
+    const { result } = await runLocalStructuralComparison("inconclusive", 12, 99.99);
+
+    expect(result.nextAction).toContain("人手確認");
+    expect(result.nextAction).toContain("inconclusive");
+    expect(result.suggestion).toContain("だけでは判断できません");
+    expect(result.completionCriteria?.structuralReview.note).toBe(
+      "Structural SSIM verdict is inconclusive; treat this as not complete and ask for review.",
+    );
+  });
+
+  it("falls back to exact pixel diff when diffReport is omitted", async () => {
+    // diffReport 不在 + diffPixelCount > 0 → resolveStructuralVerdict が fail を返す。
+    const { result } = await runLocalComparisonWithOverrides({
+      comparisonId: "cmp-no-report",
+      matchRate: 98,
+      diffPixelCount: 123,
+      diffRegions: [
+        {
+          id: 1,
+          bounds: { x: 0, y: 0, width: 10, height: 10 },
+          diffPixelCount: 123,
+          nearbyNodeIds: [],
+          nearbyNodeNames: [],
+        },
+      ],
+    });
+
+    expect(result.status).toBe("FAIL");
+    expect(result.completionCriteria?.structuralReview.status).toBe("FAIL");
+    expect(result.completionCriteria?.structuralReview.note).toContain(
+      "fell back to exact pixel diff",
+    );
+  });
+
+  it("does not let remainingIssues report PASS while it is still blocking", async () => {
+    // 構造 fail だが regionCount===0 のケース。フィックス前は status PASS + blocking true で矛盾。
+    const { result } = await runLocalComparisonWithOverrides({
+      comparisonId: "cmp-blocking-consistency",
+      matchRate: 99.9,
+      diffPixelCount: 30,
+      diffRegions: [],
+      diffReport: {
+        alignment: {
+          translation: { x: 0, y: 0 },
+          scale: { x: 1, y: 1 },
+          rotation: 0,
+          confidence: 1,
+          residual: 0,
+        },
+        regionScores: [],
+        issues: [],
+        weightedAggregate: { weightedStructure: 0.5, weightedColor: 1, totalWeight: 1 },
+        aggregateVerdict: "fail",
+        rationale: "structural fail without regions",
+      },
+    });
+
+    const remaining = result.completionCriteria?.remainingIssues;
+    expect(remaining?.blocking).toBe(true);
+    // フィックス前は regionCount===0 ショートカットで PASS になり、blocking と矛盾していた。
+    expect(remaining?.status).toBe("FAIL");
+  });
+
+  it("persists a diff image on a structural FAIL even when matchRate rounds to 100 and diffPixelCount is 0", async () => {
+    const originalHome = process.env.HOME;
+    tmpRoot = await fs.mkdtemp(path.join(process.cwd(), "tmp-figdiff-runner-"));
+    const testHome = path.join(tmpRoot, "home");
+    process.env.HOME = testHome;
+    const designPath = path.join(tmpRoot, "design.png");
+    const screenshotPath = path.join(tmpRoot, "screenshot.png");
+    await fs.writeFile(designPath, Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+    await fs.writeFile(screenshotPath, Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+
+    try {
+      mocks.sharp.mockReturnValue({
+        metadata: vi.fn(async () => ({ width: 390, height: 844 })),
+      });
+      mocks.compareImages.mockResolvedValue({
+        comparisonId: "cmp-fail-no-pixels",
+        matchRate: 100,
+        diffPixelCount: 0,
+        totalPixelCount: 390 * 844,
+        diffRegions: [],
+        suggestion: "structural fail",
+        diffImageBase64: Buffer.from("fail diff png").toString("base64"),
+        diffReport: {
+          alignment: {
+            translation: { x: 0, y: 0 },
+            scale: { x: 1, y: 1 },
+            rotation: 0,
+            confidence: 1,
+            residual: 0,
+          },
+          regionScores: [],
+          issues: [],
+          weightedAggregate: { weightedStructure: 0.4, weightedColor: 1, totalWeight: 1 },
+          aggregateVerdict: "fail",
+          rationale: "structural fail despite 100% pixel match",
+        },
+        normalization: {
+          designNativeWidth: 390,
+          designNativeHeight: 844,
+          screenshotWidth: 390,
+          screenshotHeight: 844,
+          cropApplied: false,
+          containResized: false,
+          appliedScale: 1,
+        },
+      });
+
+      const { result } = await runCompareDesign({
+        design_source: designPath,
+        screenshot: screenshotPath,
+      });
+
+      expect(result.status).toBe("FAIL");
+      // フィックス前は matchRate===100 && diffPixelCount===0 で diffImagePath が undefined になり、
+      // FAIL なのに証拠画像が欠落していた。
+      expect(result.diffImagePath).toBe(
+        path.join(testHome, ".figdiff", "results", "diff-cmp-fail-no-pixels.png"),
+      );
+      const diffStat = await fs.stat(result.diffImagePath ?? "");
+      expect(diffStat.isFile()).toBe(true);
+    } finally {
+      if (originalHome === undefined) delete process.env.HOME;
+      else process.env.HOME = originalHome;
+    }
+  });
+
+  it("rejects an oversized screenshot before comparing", async () => {
+    tmpRoot = await fs.mkdtemp(path.join(process.cwd(), "tmp-figdiff-runner-"));
+    const designPath = path.join(tmpRoot, "design.png");
+    const screenshotPath = path.join(tmpRoot, "screenshot.png");
+    await fs.writeFile(designPath, Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+    await fs.writeFile(screenshotPath, Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+
+    // 40M px 超の入力 (例: 5000 x 9000 = 45M) は比較前に弾く。
+    mocks.sharp.mockReturnValue({
+      metadata: vi.fn(async () => ({ width: 5000, height: 9000 })),
+    });
+
+    await expect(
+      runCompareDesign({
+        design_source: designPath,
+        screenshot: screenshotPath,
+      }),
+    ).rejects.toThrow(/too large to compare safely/);
+    expect(mocks.compareImages).not.toHaveBeenCalled();
+  });
+
+  it("throws a decode error when screenshot metadata fails", async () => {
+    tmpRoot = await fs.mkdtemp(path.join(process.cwd(), "tmp-figdiff-runner-"));
+    const designPath = path.join(tmpRoot, "design.png");
+    const screenshotPath = path.join(tmpRoot, "screenshot.png");
+    // path-guard のマジックバイト検証 (PNG) を通すため、先頭は有効な PNG 署名にする。
+    await fs.writeFile(designPath, Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+    await fs.writeFile(screenshotPath, Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+
+    // path-guard は sharp(path文字列) で検証し、runner は sharp(Buffer) でデコードする。
+    // 同一モックを引数の型で振り分け、runner 側のデコードだけ失敗させて
+    // "Failed to decode screenshot image" 経路を踏ませる。
+    mocks.sharp.mockImplementation((input: unknown) => ({
+      metadata: vi.fn(() =>
+        Buffer.isBuffer(input)
+          ? Promise.reject(new Error("bad png"))
+          : Promise.resolve({ width: 390, height: 844 }),
+      ),
+    }));
+
+    await expect(
+      runCompareDesign({
+        design_source: designPath,
+        screenshot: screenshotPath,
+      }),
+    ).rejects.toThrow(/Failed to decode screenshot image/);
+    expect(mocks.compareImages).not.toHaveBeenCalled();
+  });
 });

@@ -116,6 +116,10 @@ async function loadLocalFixtureNode(designPath: string): Promise<FigmaNode | und
   }
 }
 
+// スクショのデコード/比較を許容する入力ピクセル上限。これを超える入力は
+// raw バッファでプロセスを OOM させうるため、比較前に明確なエラーで弾く。
+const MAX_DECODE_PIXELS = 40_000_000;
+
 // threshold の既定値を決める比較プロファイル。
 // threshold を直接指定した場合はそちらが優先される。
 type ComparisonProfile = "strict" | "balanced" | "layout";
@@ -247,7 +251,10 @@ function buildCompletionCriteria(
     remainingIssues: {
       required: 0,
       current: regionCount,
-      status: structuralStatus === "PASS" || regionCount === 0 ? "PASS" : "FAIL",
+      // blocking が true のとき行が PASS を報告すると status と矛盾する。
+      // status は blocking ゲート (構造判定) に合わせ、regionCount===0 の
+      // ショートカットは構造が PASS のときだけ効かせる。
+      status: structuralStatus === "PASS" ? "PASS" : "FAIL",
       blocking: structuralStatus !== "PASS",
       note: "Blocking only while structural SSIM review has not passed.",
     },
@@ -268,8 +275,26 @@ function resolveStructuralVerdict(
   };
 }
 
-function buildStatus(structuralVerdict: DiffVerdict): "PASS" | "FAIL" {
+// 設定ミス (空フレーム / 激しいアスペクト潰れ / 誤フレーム) が疑われる比較は、
+// 構造判定が pass でも信用できない。likelyMisconfig のときは status を FAIL に
+// 倒し、無効な比較が PASS と誤報されるのを防ぐ。
+function buildStatus(structuralVerdict: DiffVerdict, likelyMisconfig: boolean): "PASS" | "FAIL" {
+  if (likelyMisconfig) {
+    return "FAIL";
+  }
   return structuralVerdict === "pass" ? "PASS" : "FAIL";
+}
+
+// diff 画像を永続化すべきかを status 起点で判定する。FAIL のときは matchRate が
+// 100 に丸まり diffPixelCount が 0 でも証拠画像を残す。pixel メトリクスだけで
+// ゲートすると、構造判定や misconfig 由来の FAIL で diff 画像が欠落する。
+function shouldPersistDiffImage(
+  status: "PASS" | "FAIL",
+  structuralVerdict: DiffVerdict,
+  matchRate: number,
+  diffPixelCount: number,
+): boolean {
+  return status === "FAIL" || structuralVerdict !== "pass" || matchRate < 100 || diffPixelCount > 0;
 }
 
 export function buildTargetNodeIds(
@@ -613,10 +638,22 @@ export async function runCompareDesign(
   const screenshotBase64 = screenshotBuffer.toString("base64");
   let screenshotMeta: sharp.Metadata;
   try {
-    screenshotMeta = await sharp(screenshotBuffer).metadata();
+    screenshotMeta = await sharp(screenshotBuffer, {
+      limitInputPixels: MAX_DECODE_PIXELS,
+    }).metadata();
   } catch {
     throw new Error(
       `Failed to decode screenshot image (file may be corrupt or truncated): ${screenshotPath}`,
+    );
+  }
+  // 巨大な縦長スクショは raw デコードでプロセスを OOM させる。
+  // 比較前に天井を超える入力を明確なエラーで弾く。
+  const screenshotPixelCount = (screenshotMeta.width ?? 0) * (screenshotMeta.height ?? 0);
+  if (screenshotPixelCount > MAX_DECODE_PIXELS) {
+    throw new Error(
+      `Screenshot too large to compare safely: ${screenshotMeta.width}x${screenshotMeta.height} ` +
+        `(${screenshotPixelCount} px exceeds the ${MAX_DECODE_PIXELS} px ceiling). ` +
+        `Crop or downscale the screenshot before comparing.`,
     );
   }
   const targetWidth = screenshotMeta.width;
@@ -735,11 +772,18 @@ export async function runCompareDesign(
     : (buildDiagnosisNextAction(diagnosis) ??
       buildNextAction(structuralReviewResult.verdict, regionCount, targetNodeIds));
 
+  const status = buildStatus(structuralReviewResult.verdict, diagnosis.likelyMisconfig);
+  const persistDiffImageNeeded = shouldPersistDiffImage(
+    status,
+    structuralReviewResult.verdict,
+    comparison.matchRate,
+    comparison.diffPixelCount,
+  );
   const result = CompareDesignResultSchema.parse({
-    status: buildStatus(structuralReviewResult.verdict),
+    status,
     ...comparison,
     diffImagePath:
-      comparison.diffImageBase64 && (comparison.matchRate < 100 || comparison.diffPixelCount > 0)
+      comparison.diffImageBase64 && persistDiffImageNeeded
         ? await persistDiffImage(
             await redactImageBase64ForPublicExport(comparison.diffImageBase64, ignoreRegions),
             comparison.comparisonId,
