@@ -205,4 +205,73 @@ describe("crop-region-store", () => {
       await expect(getCropRegionForComparison("project-multi")).resolves.toBeUndefined();
     });
   });
+
+  describe("getCropRegionForComparison frame-identity safety (finding 4 & 5)", () => {
+    it("frameName 不一致なら無関係なフレームの crop を黙って返さないこと (finding 4)", async () => {
+      // 単一 crop だが frameName が違う。旧実装は regions.length === 1 で
+      // 無条件 regions[0] を返してしまっていた。identity 不一致では undefined。
+      const store = {
+        regions: [{ frameName: "OtherFrame", region, updatedAt: "" }],
+      };
+      vi.mocked(mockFs.readFile).mockResolvedValue(JSON.stringify(store));
+
+      const { getCropRegionForComparison } = await import("./crop-region-store.js");
+
+      await expect(getCropRegionForComparison("p", "HomeFrame")).resolves.toBeUndefined();
+    });
+
+    it("frameName 未指定で単一の frame 固有 crop があっても黙って適用しないこと (finding 4)", async () => {
+      // 旧実装は regions.length === 1 のショートカットでこれを適用していた。
+      const store = {
+        regions: [{ frameName: "OtherFrame", region, updatedAt: "" }],
+      };
+      vi.mocked(mockFs.readFile).mockResolvedValue(JSON.stringify(store));
+
+      const { getCropRegionForComparison } = await import("./crop-region-store.js");
+
+      await expect(getCropRegionForComparison("p")).resolves.toBeUndefined();
+    });
+
+    it("frameName 一致時はその frame の crop を返すこと", async () => {
+      const store = {
+        regions: [
+          { frameName: "OtherFrame", region: { x: 1, y: 1, width: 1, height: 1 }, updatedAt: "" },
+          { frameName: "HomeFrame", region, updatedAt: "" },
+        ],
+      };
+      vi.mocked(mockFs.readFile).mockResolvedValue(JSON.stringify(store));
+
+      const { getCropRegionForComparison } = await import("./crop-region-store.js");
+
+      const result = await getCropRegionForComparison("p", "HomeFrame");
+      expect(result?.frameName).toBe("HomeFrame");
+      expect(result?.region).toEqual(region);
+    });
+
+    it('グローバル crop (frameName === "") は frameName 未指定でも適用すること (finding 5)', async () => {
+      const globalRegion = { x: 5, y: 5, width: 50, height: 50 };
+      const store = {
+        regions: [{ frameName: "", region: globalRegion, updatedAt: "" }],
+      };
+      vi.mocked(mockFs.readFile).mockResolvedValue(JSON.stringify(store));
+
+      const { getCropRegionForComparison } = await import("./crop-region-store.js");
+
+      const result = await getCropRegionForComparison("p");
+      expect(result?.region).toEqual(globalRegion);
+    });
+
+    it("frame 固有 crop が無く グローバル crop がある場合は frameName 指定でもグローバルへフォールバックすること", async () => {
+      const globalRegion = { x: 5, y: 5, width: 50, height: 50 };
+      const store = {
+        regions: [{ frameName: "", region: globalRegion, updatedAt: "" }],
+      };
+      vi.mocked(mockFs.readFile).mockResolvedValue(JSON.stringify(store));
+
+      const { getCropRegionForComparison } = await import("./crop-region-store.js");
+
+      const result = await getCropRegionForComparison("p", "AnyFrame");
+      expect(result?.region).toEqual(globalRegion);
+    });
+  });
 });

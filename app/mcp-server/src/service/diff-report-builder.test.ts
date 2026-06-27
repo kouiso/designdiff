@@ -298,3 +298,150 @@ describe("buildDiffReport", () => {
     expect(result.aggregateVerdict).not.toBe("pass");
   });
 });
+
+describe("buildDiffReport coordinate-space fixes", () => {
+  beforeEach(() => {
+    vi.resetModules();
+    vi.doUnmock("@figdiff/shared");
+  });
+
+  it("paddingMask を渡すと letterbox 余白を whole-frame SSIM から除外すること (finding 3)", async () => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    const width = 32;
+    const height = 32;
+    // content rect = 上 24 行。下 8 行は contain-resize の余白で比較対象外。
+    const contentHeight = 24;
+
+    const designPixels = await createSolidRgba(width, height, WHITE_RGB);
+    const screenshotPixels = Uint8ClampedArray.from(designPixels);
+    // 余白帯 (24..31 行) を design 側だけ黒にする = 余白の偽差分。
+    for (let y = contentHeight; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const index = (y * width + x) * 4;
+        designPixels[index] = 0;
+        designPixels[index + 1] = 0;
+        designPixels[index + 2] = 0;
+      }
+    }
+
+    const withMask = buildDiffReport({
+      designPixels,
+      screenshotPixels,
+      width,
+      height,
+      paddingMask: { left: 0, top: 0, width, height: contentHeight },
+    });
+
+    const withoutMask = buildDiffReport({
+      designPixels,
+      screenshotPixels,
+      width,
+      height,
+    });
+
+    // 余白を除外すれば content は一致 → SSIM ≈ 1。除外しないと余白の差分で下がる。
+    expect(withMask.regionScores[0].regionId).toBe("whole-frame");
+    expect(withMask.regionScores[0].structure).toBeGreaterThan(
+      withoutMask.regionScores[0].structure,
+    );
+    expect(withMask.regionScores[0].structure).toBeCloseTo(1, 6);
+    expect(withMask.regionScores[0].color).toBe(0);
+    expect(withoutMask.regionScores[0].color).toBeGreaterThan(0);
+  });
+
+  it("cropRegion を渡すと section 写像が crop 原点ぶんシフトすること (finding 2)", async () => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    const width = 64;
+    const height = 64;
+    const designPixels = await createSolidRgba(width, height, WHITE_RGB);
+    const screenshotPixels = Uint8ClampedArray.from(designPixels);
+
+    // Figma フレーム: 64x128。フル幅 64 / フル高さ 128 → scale 1。
+    // crop で上 64px を削った (crop 後 height = 64)。
+    const figmaRootNode: FigmaNode = {
+      id: "root",
+      name: "Frame",
+      type: "FRAME",
+      absoluteBoundingBox: { x: 0, y: 0, width: 64, height: 128 },
+      absoluteRenderBounds: null,
+      fills: [],
+      strokes: [],
+      effects: [],
+      children: [
+        {
+          id: "lower",
+          name: "Lower",
+          type: "FRAME",
+          // Figma canvas y=64..128。crop 原点 y=64 を引くと screenshot y=0..64。
+          absoluteBoundingBox: { x: 0, y: 64, width: 64, height: 64 },
+          absoluteRenderBounds: null,
+          fills: [],
+          strokes: [],
+          effects: [],
+          children: [],
+        },
+      ],
+    };
+
+    const result = buildDiffReport({
+      designPixels,
+      screenshotPixels,
+      width,
+      height,
+      figmaRootNode,
+      cropRegion: { x: 0, y: 64, width: 64, height: 64 },
+      fullFrame: { width: 64, height: 128 },
+    });
+
+    const lower = result.regionScores.find((score) => score.regionId === "lower");
+    expect(lower).toBeDefined();
+    // crop 原点を引いた後、lower section は screenshot 上端 (y≈0) に来る。
+    expect(lower?.bbox.y).toBe(0);
+    expect(lower?.bbox.h).toBeGreaterThan(0);
+  });
+
+  it("cropRegion 無しでは crop シフトが起きず従来の写像になること", async () => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    const width = 64;
+    const height = 128;
+    const designPixels = await createSolidRgba(width, height, WHITE_RGB);
+    const screenshotPixels = Uint8ClampedArray.from(designPixels);
+
+    const figmaRootNode: FigmaNode = {
+      id: "root",
+      name: "Frame",
+      type: "FRAME",
+      absoluteBoundingBox: { x: 0, y: 0, width: 64, height: 128 },
+      absoluteRenderBounds: null,
+      fills: [],
+      strokes: [],
+      effects: [],
+      children: [
+        {
+          id: "lower",
+          name: "Lower",
+          type: "FRAME",
+          absoluteBoundingBox: { x: 0, y: 64, width: 64, height: 64 },
+          absoluteRenderBounds: null,
+          fills: [],
+          strokes: [],
+          effects: [],
+          children: [],
+        },
+      ],
+    };
+
+    const result = buildDiffReport({
+      designPixels,
+      screenshotPixels,
+      width,
+      height,
+      figmaRootNode,
+    });
+
+    const lower = result.regionScores.find((score) => score.regionId === "lower");
+    expect(lower).toBeDefined();
+    // crop 無し: lower section は screenshot y=64 に来る (シフトなし)。
+    expect(lower?.bbox.y).toBe(64);
+  });
+});
