@@ -654,7 +654,7 @@ describe("runCompareDesign", () => {
   // compareImages の戻り値を直接差し込めるローカル比較ヘルパ。
   // normalization / diffReport / matchRate を細かく制御して診断分岐を再現する。
   async function runLocalComparisonWithOverrides(
-    overrides: Partial<Awaited<ReturnType<typeof compareImagesShape>>>,
+    overrides: Partial<Awaited<ReturnType<typeof _compareImagesShape>>>,
   ) {
     tmpRoot = await fs.mkdtemp(path.join(process.cwd(), "tmp-figdiff-runner-"));
     const designPath = path.join(tmpRoot, "design.png");
@@ -691,7 +691,7 @@ describe("runCompareDesign", () => {
   }
 
   // 型を借りるためのダミー: compareImages のモック戻り値の形を推論させる。
-  function compareImagesShape() {
+  function _compareImagesShape() {
     return {} as Parameters<typeof mocks.compareImages.mockResolvedValue>[0];
   }
 
