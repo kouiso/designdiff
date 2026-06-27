@@ -3,6 +3,7 @@
  * File-based persistence for ignore regions at ~/.figdiff/projects/{projectId}/ignore-regions.yaml
  */
 
+import { existsSync } from "node:fs";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 
@@ -177,6 +178,10 @@ export async function deleteIgnoreRegion(
   projectId: string,
   regionId: string,
 ): Promise<IgnoreRegionConfigFile> {
+  if (!existsSync(getIgnoreRegionPath(projectId))) {
+    return EMPTY_CONFIG;
+  }
+
   const existing = await readConfig(projectId);
   const filtered = existing.regions.filter((r) => r.id !== regionId);
   const config = IgnoreRegionConfigFileSchema.parse({ version: 1, regions: filtered });
