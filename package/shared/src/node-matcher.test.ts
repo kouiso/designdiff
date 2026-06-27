@@ -1,13 +1,14 @@
 import { describe, expect, it } from "vitest";
 
-import type { FigmaNode } from "./figma-client.js";
-import type { DiffRegion } from "./type.js";
 import {
   boundingBoxArea,
   figmaToScreenshotBbox,
   matchDiffRegionsToNodes,
   pointInBoundingBox,
 } from "./node-matcher.js";
+
+import type { FigmaNode } from "./figma-client.js";
+import type { DiffRegion } from "./type.js";
 
 function makeRegion(x: number, y: number, width: number, height: number): DiffRegion {
   return {
