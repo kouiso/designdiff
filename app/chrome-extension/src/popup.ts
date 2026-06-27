@@ -440,7 +440,6 @@ async function handleSelectFrame(frame: Frame): Promise<void> {
 
 async function showOverlayOnPage(): Promise<void> {
   if (!state.designBase64) return;
-  state.overlayActive = true;
 
   const message: ContentMessage = {
     type: "show-overlay",
@@ -451,13 +450,23 @@ async function showOverlayOnPage(): Promise<void> {
     frameHeight: state.selectedFrame?.height ?? 800,
   };
 
-  await sendToActiveTab(message);
+  // content script が居ないページ(chrome:// や注入対象外)では sendMessage が
+  // lastError になる。overlayActive はメッセージ送達に成功してから立てる。
+  const result = await sendToActiveTab(message);
+  if (result.error) {
+    state.overlayActive = false;
+    state.error = "Overlay not supported on this page";
+  } else {
+    state.overlayActive = true;
+    state.error = null;
+  }
   render();
 }
 
 async function hideOverlayOnPage(): Promise<void> {
   state.overlayActive = false;
   const message: ContentMessage = { type: "hide-overlay" };
+  // hide は失敗しても致命的ではないため、エラーは握りつぶさず state は更新済み。
   await sendToActiveTab(message);
   render();
 }
@@ -553,16 +562,28 @@ function sendToBackground<T>(message: InternalMessage): Promise<T> {
   });
 }
 
-function sendToActiveTab(message: ContentMessage): Promise<unknown> {
+// content script への送達結果。content script が居ないページでは error が入る。
+interface SendToActiveTabResult {
+  response?: unknown;
+  error?: string;
+}
+
+function sendToActiveTab(message: ContentMessage): Promise<SendToActiveTabResult> {
   return new Promise((resolve) => {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       const tabId = tabs[0]?.id;
       if (tabId === undefined) {
-        resolve(null);
+        resolve({ error: "No active tab" });
         return;
       }
       chrome.tabs.sendMessage(tabId, message, (response) => {
-        resolve(response);
+        // content script 不在(注入対象外ページ)だと lastError になる。
+        // 黙って握りつぶさず error を返し、呼び出し側が UI に出せるようにする。
+        if (chrome.runtime.lastError) {
+          resolve({ error: chrome.runtime.lastError.message });
+          return;
+        }
+        resolve({ response });
       });
     });
   });

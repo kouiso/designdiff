@@ -13,6 +13,35 @@ function isInternalMessage(value: unknown): value is InternalMessage {
   return typeof value === "object" && value !== null && "type" in value;
 }
 
+// onMessageExternal を受け付ける正規の送信元 origin。
+// manifest の externally_connectable は figma.com 配下を広く許可してしまうため、
+// ここで送信元 origin を厳密一致でゲートし、任意の figma.com ページからの
+// overlay 注入(なりすまし)を弾く。Figma プラグイン UI は www.figma.com 上で動く。
+const ALLOWED_EXTERNAL_ORIGINS: ReadonlySet<string> = new Set([
+  "https://www.figma.com",
+  "https://figma.com",
+]);
+
+/**
+ * onMessageExternal の送信元が許可 origin か検証する。
+ * sender.origin を優先し、無ければ sender.url から origin を導出する。
+ */
+export function isAllowedExternalSender(
+  sender: Pick<chrome.runtime.MessageSender, "origin" | "url"> | undefined,
+): boolean {
+  if (!sender) return false;
+  let origin = sender.origin;
+  if (!origin && sender.url) {
+    try {
+      origin = new URL(sender.url).origin;
+    } catch {
+      return false;
+    }
+  }
+  if (!origin) return false;
+  return ALLOWED_EXTERNAL_ORIGINS.has(origin);
+}
+
 // --- Internal message handler (popup → background) ---
 
 chrome.runtime.onMessage.addListener(
@@ -54,17 +83,30 @@ chrome.runtime.onMessage.addListener(
       }
 
       case "token:get": {
-        getToken().then((token) => sendResponse({ token }));
+        // chrome.storage が reject すると popup の message port がハングするため必ず catch する。
+        getToken()
+          .then((token) => sendResponse({ token }))
+          .catch((err) =>
+            sendResponse({ error: err instanceof Error ? err.message : String(err) }),
+          );
         return true;
       }
 
       case "token:set": {
-        setToken(message.token).then(() => sendResponse({ success: true }));
+        setToken(message.token)
+          .then(() => sendResponse({ success: true }))
+          .catch((err) =>
+            sendResponse({ error: err instanceof Error ? err.message : String(err) }),
+          );
         return true;
       }
 
       case "token:clear": {
-        clearToken().then(() => sendResponse({ success: true }));
+        clearToken()
+          .then(() => sendResponse({ success: true }))
+          .catch((err) =>
+            sendResponse({ error: err instanceof Error ? err.message : String(err) }),
+          );
         return true;
       }
 
@@ -86,6 +128,12 @@ chrome.runtime.onMessage.addListener(
 
 chrome.runtime.onMessageExternal.addListener(
   (message: PluginSendFrameMessage, _sender, sendResponse: (response: unknown) => void) => {
+    // 送信元 origin を厳密一致で検証し、許可外なら何もせず弾く。
+    if (!isAllowedExternalSender(_sender)) {
+      sendResponse({ error: "Sender origin not allowed" });
+      return;
+    }
+
     if (message.type !== "plugin:send-frame") {
       sendResponse({ error: "Unknown external message type" });
       return;
