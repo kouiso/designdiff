@@ -10,7 +10,7 @@
  */
 
 import { existsSync } from "node:fs";
-import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
+import { mkdir, readFile, readdir, rename, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import process from "node:process";
 
@@ -104,6 +104,19 @@ if (validateOnly) {
   }
   process.stdout.write(`Summary: ${summaryOut}\n`);
   process.stdout.write(`Summary JSON: ${summaryJsonOut}\n`);
+  if (implDir) {
+    const implFiles = await readdir(implDir).catch(() => []);
+    const ingestedNames = new Set(ingested.map((p) => p.name));
+    const unmatched = implFiles
+      .filter((f) => f.endsWith(".png"))
+      .map((f) => f.replace(/\.png$/u, ""))
+      .filter((name) => !ingestedNames.has(name));
+    if (unmatched.length > 0) {
+      process.stderr.write(
+        `[ingest-figma-pages] WARN: impl screenshots with no manifest entry (skipped): ${unmatched.join(", ")}\n`,
+      );
+    }
+  }
   process.exit(0);
 }
 
@@ -134,6 +147,20 @@ for (const filePages of groupedPages.values()) {
       },
     };
     ingested.push(entry);
+  }
+}
+
+if (implDir) {
+  const implFiles = await readdir(implDir).catch(() => []);
+  const ingestedNames = new Set(ingested.map((p) => p.name));
+  const unmatched = implFiles
+    .filter((f) => f.endsWith(".png"))
+    .map((f) => f.replace(/\.png$/u, ""))
+    .filter((name) => !ingestedNames.has(name));
+  if (unmatched.length > 0) {
+    process.stderr.write(
+      `[ingest-figma-pages] WARN: impl screenshots with no manifest entry (skipped): ${unmatched.join(", ")}\n`,
+    );
   }
 }
 

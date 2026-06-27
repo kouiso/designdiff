@@ -67,3 +67,49 @@ test("validate-only summary preserves expected_texts as review traceability", ()
     rmSync(root, { force: true, recursive: true });
   }
 });
+
+test("validate-only warns when impl dir has screenshots not in manifest", () => {
+  const root = mkdtempSync(join(tmpdir(), "figma-ingest-unmatched-warn-"));
+  const implDir = join(root, "impl");
+  const outDir = join(root, "out");
+  const manifestPath = join(root, "figma-pages.json");
+  mkdirSync(implDir, { recursive: true });
+  writeFileSync(join(implDir, "top-pc.png"), "impl");
+  writeFileSync(join(implDir, "privacy-policy-pc.png"), "impl");
+  writeFileSync(
+    manifestPath,
+    JSON.stringify({
+      pages: [
+        {
+          name: "top-pc",
+          figma_url: "https://www.figma.com/design/file123/Sample-Project-LP?node-id=1:2",
+        },
+      ],
+    }),
+  );
+
+  try {
+    const result = spawnSync(
+      "node",
+      [
+        script,
+        "--figma-manifest",
+        manifestPath,
+        "--out",
+        outDir,
+        "--impl-dir",
+        implDir,
+        "--validate-only",
+      ],
+      { cwd: repoDir, encoding: "utf8" },
+    );
+
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(
+      result.stderr,
+      /WARN: impl screenshots with no manifest entry.*privacy-policy-pc/u,
+    );
+  } finally {
+    rmSync(root, { force: true, recursive: true });
+  }
+});
