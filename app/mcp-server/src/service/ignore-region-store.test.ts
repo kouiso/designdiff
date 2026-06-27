@@ -1,7 +1,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
+vi.mock("node:fs", () => ({
+  constants: { F_OK: 0 },
+  existsSync: vi.fn(),
+}));
 vi.mock("node:fs/promises");
 
+const mockNodeFs = await import("node:fs");
 const mockFs = await import("node:fs/promises");
 
 function makeEnoentError(): NodeJS.ErrnoException {
@@ -156,6 +161,70 @@ regions:
       { id: "keep", x: 5, y: 6, width: 7, height: 8 },
       { id: "new", x: 50, y: 60, width: 70, height: 80 },
     ]);
+  });
+
+  it("deleteIgnoreRegion returns empty config without writing when project config is absent", async () => {
+    vi.mocked(mockNodeFs.existsSync).mockReturnValue(false);
+
+    const { deleteIgnoreRegion } = await import("./ignore-region-store.js");
+
+    await expect(deleteIgnoreRegion("ghost", "r1")).resolves.toEqual({ version: 1, regions: [] });
+    expect(vi.mocked(mockFs.readFile)).not.toHaveBeenCalled();
+    expect(vi.mocked(mockFs.mkdir)).not.toHaveBeenCalled();
+    expect(vi.mocked(mockFs.writeFile)).not.toHaveBeenCalled();
+    expect(vi.mocked(mockFs.rename)).not.toHaveBeenCalled();
+  });
+
+  it("deleteIgnoreRegion removes the matching region and writes the remaining regions", async () => {
+    vi.mocked(mockNodeFs.existsSync).mockReturnValue(true);
+    vi.mocked(mockFs.readFile).mockResolvedValue(`version: 1
+regions:
+  - id: r1
+    x: 1
+    y: 2
+    width: 3
+    height: 4
+  - id: r2
+    x: 5
+    y: 6
+    width: 7
+    height: 8
+`);
+    vi.mocked(mockFs.mkdir).mockResolvedValue(undefined);
+    vi.mocked(mockFs.writeFile).mockResolvedValue(undefined);
+    vi.mocked(mockFs.rename).mockResolvedValue(undefined);
+
+    const { deleteIgnoreRegion } = await import("./ignore-region-store.js");
+
+    const config = await deleteIgnoreRegion("project-1", "r1");
+
+    expect(config.regions.map((region) => region.id)).toEqual(["r2"]);
+    expect(vi.mocked(mockFs.writeFile)).toHaveBeenCalledOnce();
+    expect(String(vi.mocked(mockFs.writeFile).mock.calls[0][1])).toContain("id: r2");
+    expect(String(vi.mocked(mockFs.writeFile).mock.calls[0][1])).not.toContain("id: r1");
+  });
+
+  it("deleteIgnoreRegion keeps existing regions when the id is unknown", async () => {
+    vi.mocked(mockNodeFs.existsSync).mockReturnValue(true);
+    vi.mocked(mockFs.readFile).mockResolvedValue(`version: 1
+regions:
+  - id: r1
+    x: 1
+    y: 2
+    width: 3
+    height: 4
+`);
+    vi.mocked(mockFs.mkdir).mockResolvedValue(undefined);
+    vi.mocked(mockFs.writeFile).mockResolvedValue(undefined);
+    vi.mocked(mockFs.rename).mockResolvedValue(undefined);
+
+    const { deleteIgnoreRegion } = await import("./ignore-region-store.js");
+
+    const config = await deleteIgnoreRegion("project-1", "unknown");
+
+    expect(config.regions.map((region) => region.id)).toEqual(["r1"]);
+    expect(vi.mocked(mockFs.writeFile)).toHaveBeenCalledOnce();
+    expect(String(vi.mocked(mockFs.writeFile).mock.calls[0][1])).toContain("id: r1");
   });
 
   it("write failure removes temp file", async () => {

@@ -16,8 +16,9 @@ import { chromium } from "@playwright/test";
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { createRequire } from "node:module";
 import net from "node:net";
-import { basename, join, resolve } from "node:path";
+import { basename, dirname, join, resolve } from "node:path";
 import process from "node:process";
 
 const DEFAULT_PAGES = [
@@ -51,15 +52,7 @@ if (!skipInstall && !existsSync(join(repoDir, "node_modules"))) {
 await runCommand(packageManagerCommand(repoDir, "run", "build"), { cwd: repoDir });
 
 const port = await getFreePort();
-const preview = spawnPackageCommand(repoDir, [
-  "run",
-  "preview",
-  "--",
-  "--host",
-  "127.0.0.1",
-  "--port",
-  String(port),
-]);
+const preview = spawnAstroPreview(repoDir, port);
 const baseUrl = `http://127.0.0.1:${port}`;
 
 try {
@@ -139,12 +132,28 @@ function packageManagerInstallCommand(repoDir) {
   return ["npm", "install"];
 }
 
-function spawnPackageCommand(repoDir, args) {
-  const command = packageManagerCommand(repoDir, ...args);
-  const child = spawn(command[0], command.slice(1), {
-    cwd: repoDir,
-    stdio: ["ignore", "pipe", "pipe"],
-  });
+// astro の CLI 入口は version でファイル名が変わる (4/5 系は astro.js、6 系は bin/astro.mjs)。
+// 固定パスだと preview サーバーが起動せず capture が timeout するので、package.json の bin から解決する。
+function resolveAstroCli(repoDir) {
+  const requireFromRepo = createRequire(join(repoDir, "package.json"));
+  const astroPkgPath = requireFromRepo.resolve("astro/package.json");
+  const astroPkg = requireFromRepo("astro/package.json");
+  const binEntry = typeof astroPkg.bin === "string" ? astroPkg.bin : astroPkg.bin?.astro;
+  if (binEntry) {
+    return join(dirname(astroPkgPath), binEntry);
+  }
+  return join(repoDir, "node_modules/astro/astro.js");
+}
+
+function spawnAstroPreview(repoDir, port) {
+  const child = spawn(
+    process.execPath,
+    [resolveAstroCli(repoDir), "preview", "--host", "127.0.0.1", "--port", String(port)],
+    {
+      cwd: repoDir,
+      stdio: ["ignore", "pipe", "pipe"],
+    },
+  );
   child.stdout.on("data", (chunk) => process.stdout.write(chunk));
   child.stderr.on("data", (chunk) => process.stderr.write(chunk));
   return child;

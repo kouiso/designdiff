@@ -58,6 +58,68 @@ const QUICK_TILE_DIFF_THRESHOLD = 16;
 const QUICK_TILE_MAX_REGIONS = 60;
 const QUICK_TILE_BUDGET_MS = 1500;
 
+const PUBLIC_EXPORT_REDACTION_COLOR = { r: 0, g: 0, b: 0, alpha: 1 };
+
+export async function redactImageBase64ForPublicExport(
+  imageBase64: string,
+  ignoreRegions: readonly IgnoreRegion[] | undefined,
+): Promise<string> {
+  if (!ignoreRegions || ignoreRegions.length === 0) {
+    return imageBase64;
+  }
+
+  const imageBuffer = Buffer.from(imageBase64, "base64");
+  const metadata = await sharp(imageBuffer).metadata();
+  const width = metadata.width ?? 0;
+  const height = metadata.height ?? 0;
+  if (width === 0 || height === 0) {
+    throw new Error("Invalid image dimensions");
+  }
+
+  const overlays = ignoreRegions
+    .map((region) => clipIgnoreRegion(region, width, height))
+    .filter((region): region is NonNullable<typeof region> => region !== null)
+    .map((region) => ({
+      input: {
+        create: {
+          width: region.width,
+          height: region.height,
+          channels: 4 as const,
+          background: PUBLIC_EXPORT_REDACTION_COLOR,
+        },
+      },
+      left: region.left,
+      top: region.top,
+    }));
+
+  if (overlays.length === 0) {
+    return imageBase64;
+  }
+
+  // public export では顧客デザイン断片を残さないため、不透明な単色で上書きする。
+  const redactedBuffer = await sharp(imageBuffer)
+    .ensureAlpha()
+    .composite(overlays)
+    .png()
+    .toBuffer();
+  return redactedBuffer.toString("base64");
+}
+
+function clipIgnoreRegion(
+  region: IgnoreRegion,
+  imageWidth: number,
+  imageHeight: number,
+): { left: number; top: number; width: number; height: number } | null {
+  const left = Math.max(0, Math.floor(region.x));
+  const top = Math.max(0, Math.floor(region.y));
+  const right = Math.min(imageWidth, Math.floor(region.x + region.width));
+  const bottom = Math.min(imageHeight, Math.floor(region.y + region.height));
+  if (right <= left || bottom <= top) {
+    return null;
+  }
+  return { left, top, width: right - left, height: bottom - top };
+}
+
 interface PaddingMask {
   left: number;
   top: number;

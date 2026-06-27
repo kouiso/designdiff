@@ -41,7 +41,7 @@ import {
 import { getCropRegionForComparison } from "./crop-region-store.js";
 import { createFigmaService, type FigmaService } from "./figma-service.js";
 import { getIgnoreRegionsForComparison } from "./ignore-region-store.js";
-import { compareImages } from "./image-compare-service.js";
+import { compareImages, redactImageBase64ForPublicExport } from "./image-compare-service.js";
 import { getLastUsedNode, setLastUsedNode } from "./last-used-node-store.js";
 import { persistDiffImage } from "./persist-detail.js";
 
@@ -740,7 +740,10 @@ export async function runCompareDesign(
     ...comparison,
     diffImagePath:
       comparison.diffImageBase64 && (comparison.matchRate < 100 || comparison.diffPixelCount > 0)
-        ? await persistDiffImage(comparison.diffImageBase64, comparison.comparisonId)
+        ? await persistDiffImage(
+            await redactImageBase64ForPublicExport(comparison.diffImageBase64, ignoreRegions),
+            comparison.comparisonId,
+          )
         : undefined,
     remainingIssues: regionCount,
     completionCriteria: buildCompletionCriteria(

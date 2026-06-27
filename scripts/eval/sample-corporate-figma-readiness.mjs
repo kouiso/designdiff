@@ -17,6 +17,7 @@ import { fileURLToPath } from "node:url";
 const ARG_PREFIX_LENGTH = 2;
 const ERROR_EXIT_CODE = 2;
 const PLACEHOLDER_PATTERN = /REPLACE_/u;
+const FIGMA_ME_ENDPOINT = "https://api.figma.com/v1/me";
 const repoDir = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const options = parseArgs(process.argv.slice(ARG_PREFIX_LENGTH));
 const siteRepo = resolve(requiredOption(options, "site-repo"));
@@ -37,7 +38,12 @@ const checks = [];
 const sitePackageJson = join(siteRepo, "package.json");
 checks.push(check("Site repo package.json", existsSync(sitePackageJson), sitePackageJson));
 checks.push(check("Figma manifest file", existsSync(figmaManifest), figmaManifest));
-checks.push(check(`${tokenEnv} environment variable`, Boolean(process.env[tokenEnv]), tokenEnv));
+const figmaToken = process.env[tokenEnv];
+const hasFigmaToken = Boolean(figmaToken);
+checks.push(check(`${tokenEnv} environment variable`, hasFigmaToken, tokenEnv));
+if (hasFigmaToken) {
+  checks.push(await validateFigmaToken(figmaToken));
+}
 
 let pages = [];
 let manifestError = null;
@@ -131,6 +137,35 @@ function optionalString(options, key, fallback) {
 function check(name, ok, detail) {
   return { name, ok, detail };
 }
+async function validateFigmaToken(token) {
+  try {
+    const response = await fetch(FIGMA_ME_ENDPOINT, {
+      headers: { "X-Figma-Token": token },
+    });
+    if (response.ok) {
+      return check("Figma token validity", true, "ok");
+    }
+    const responseBody = await response.text();
+    return check(
+      "Figma token validity",
+      false,
+      `figma token invalid or expired (GET /v1/me returned ${response.status} ${response.statusText}${formatFigmaError(responseBody)})`,
+    );
+  } catch (error) {
+    return check(
+      "Figma token validity",
+      false,
+      `figma token invalid or expired (GET /v1/me validation request failed: ${error.message})`,
+    );
+  }
+}
+function formatFigmaError(responseBody) {
+  const trimmed = responseBody.trim();
+  if (!trimmed) {
+    return "";
+  }
+  return `: ${trimmed}`;
+}
 function hasPlaceholderFigmaTarget(page) {
   if (!page || typeof page !== "object") {
     return false;
@@ -214,6 +249,9 @@ function buildBlockedNextActions({ missingChecks, placeholderPages }) {
   }
   if (missingCheckNames.has(`${tokenEnv} environment variable`)) {
     actions.push(`Export ${tokenEnv} without storing it in the repo.`);
+  }
+  if (missingCheckNames.has("Figma token validity")) {
+    actions.push(`Refresh ${tokenEnv}; the current token is invalid or expired.`);
   }
   if (missingCheckNames.has("Manifest pages")) {
     actions.push("Add at least one page to the Figma manifest.");
