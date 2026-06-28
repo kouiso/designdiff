@@ -6,7 +6,6 @@
  * dogfood 用 runner。
  */
 
-import { chromium } from "@playwright/test";
 import { spawn } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { mkdir, readFile } from "node:fs/promises";
@@ -14,6 +13,7 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import process from "node:process";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import sharp from "sharp";
 
 const ARG_PREFIX_LENGTH = 2;
 const WARN_THRESHOLD = 0.95;
@@ -114,27 +114,22 @@ if (!Array.isArray(manifest.pages) || manifest.pages.length === 0) {
 }
 
 const rows = [];
-const browser = await chromium.launch();
-try {
-  for (const page of manifest.pages) {
-    if (!page.figma || !page.impl) {
-      fail(`Compare manifest page is missing figma/impl path: ${page.name ?? "(unnamed)"}`);
-    }
-    const pair = await loadComparablePixels(browser, page.figma, page.impl);
-    const score = computeSsim(pair.figmaPixels, pair.implPixels, pair.width, pair.height);
-    rows.push({
-      name: page.name,
-      nodeId: page.meta?.node_id ?? "-",
-      score,
-      verdict: score < BLOCK_THRESHOLD ? "BLOCK" : score < WARN_THRESHOLD ? "WARN" : "PASS",
-      width: pair.width,
-      height: pair.height,
-      figma: page.figma,
-      impl: page.impl,
-    });
+for (const page of manifest.pages) {
+  if (!page.figma || !page.impl) {
+    fail(`Compare manifest page is missing figma/impl path: ${page.name ?? "(unnamed)"}`);
   }
-} finally {
-  await browser.close();
+  const pair = await loadComparablePixels(page.figma, page.impl);
+  const score = computeSsim(pair.figmaPixels, pair.implPixels, pair.width, pair.height);
+  rows.push({
+    name: page.name,
+    nodeId: page.meta?.node_id ?? "-",
+    score,
+    verdict: score < BLOCK_THRESHOLD ? "BLOCK" : score < WARN_THRESHOLD ? "WARN" : "PASS",
+    width: pair.width,
+    height: pair.height,
+    figma: page.figma,
+    impl: page.impl,
+  });
 }
 
 printReport(rows);
@@ -240,44 +235,22 @@ async function runCommand(command, args, options) {
   });
 }
 
-async function loadComparablePixels(browser, figmaPath, implPath) {
-  const page = await browser.newPage();
-  try {
-    return await page.evaluate(
-      async ({ figmaUrl, implUrl }) => {
-        async function loadImage(src) {
-          const image = new globalThis.Image();
-          image.decoding = "async";
-          const loaded = new Promise((resolve, reject) => {
-            image.onload = () => resolve();
-            image.onerror = () => reject(new Error(`Failed to decode image: ${src}`));
-          });
-          image.src = src;
-          await loaded;
-          return image;
-        }
-        function pixelsFor(image, width, height) {
-          const canvas = new globalThis.OffscreenCanvas(width, height);
-          const context = canvas.getContext("2d");
-          context.drawImage(image, 0, 0, width, height);
-          return Array.from(context.getImageData(0, 0, width, height).data);
-        }
-        const figma = await loadImage(figmaUrl);
-        const impl = await loadImage(implUrl);
-        const width = figma.naturalWidth;
-        const height = figma.naturalHeight;
-        return {
-          width,
-          height,
-          figmaPixels: pixelsFor(figma, width, height),
-          implPixels: pixelsFor(impl, width, height),
-        };
-      },
-      { figmaUrl: pathToFileURL(figmaPath).href, implUrl: pathToFileURL(implPath).href },
-    );
-  } finally {
-    await page.close();
-  }
+async function loadComparablePixels(figmaPath, implPath) {
+  const figmaMeta = await sharp(figmaPath).metadata();
+  const { width } = figmaMeta;
+  const height = figmaMeta.height;
+  const figmaRaw = await sharp(figmaPath).ensureAlpha().raw().toBuffer();
+  const implResized = await sharp(implPath)
+    .resize(width, height, { fit: "fill" })
+    .ensureAlpha()
+    .raw()
+    .toBuffer();
+  return {
+    width,
+    height,
+    figmaPixels: Array.from(figmaRaw),
+    implPixels: Array.from(implResized),
+  };
 }
 
 function printReport(rows) {
