@@ -2,51 +2,51 @@
   "pages": [
     {
       "name": "top-pc",
-      "figma_url": "https://www.figma.com/design/FIGMAFILEKEYSAMPLECORP1/sample-corporate?node-id=72:4571"
+      "figma_url": "https://www.figma.com/design/FIGMAFILEKEYSAMPLECORP1/sample-corporate?node-id=2:4"
     },
     {
       "name": "about-pc",
-      "figma_url": "https://www.figma.com/design/FIGMAFILEKEYSAMPLECORP1/sample-corporate?node-id=72:4620"
+      "figma_url": "https://www.figma.com/design/FIGMAFILEKEYSAMPLECORP1/sample-corporate?node-id=48:151"
     },
     {
       "name": "service-pc",
-      "figma_url": "https://www.figma.com/design/FIGMAFILEKEYSAMPLECORP1/sample-corporate?node-id=72:4672"
+      "figma_url": "https://www.figma.com/design/FIGMAFILEKEYSAMPLECORP1/sample-corporate?node-id=60:320"
     },
     {
       "name": "recruit-pc",
-      "figma_url": "https://www.figma.com/design/FIGMAFILEKEYSAMPLECORP1/sample-corporate?node-id=72:5132"
+      "figma_url": "https://www.figma.com/design/FIGMAFILEKEYSAMPLECORP1/sample-corporate?node-id=62:736"
     },
     {
       "name": "news-pc",
-      "figma_url": "https://www.figma.com/design/FIGMAFILEKEYSAMPLECORP1/sample-corporate?node-id=72:5250"
+      "figma_url": "https://www.figma.com/design/FIGMAFILEKEYSAMPLECORP1/sample-corporate?node-id=63:971"
     },
     {
       "name": "contact-pc",
-      "figma_url": "https://www.figma.com/design/FIGMAFILEKEYSAMPLECORP1/sample-corporate?node-id=72:5323"
+      "figma_url": "https://www.figma.com/design/FIGMAFILEKEYSAMPLECORP1/sample-corporate?node-id=63:1320"
     },
     {
       "name": "top-sp",
-      "figma_url": "https://www.figma.com/design/FIGMAFILEKEYSAMPLECORP1/sample-corporate?node-id=72:6318"
+      "figma_url": "https://www.figma.com/design/FIGMAFILEKEYSAMPLECORP1/sample-corporate?node-id=93:572"
     },
     {
       "name": "about-sp",
-      "figma_url": "https://www.figma.com/design/FIGMAFILEKEYSAMPLECORP1/sample-corporate?node-id=72:6415"
+      "figma_url": "https://www.figma.com/design/FIGMAFILEKEYSAMPLECORP1/sample-corporate?node-id=108:527"
     },
     {
       "name": "service-sp",
-      "figma_url": "https://www.figma.com/design/FIGMAFILEKEYSAMPLECORP1/sample-corporate?node-id=72:6456"
+      "figma_url": "https://www.figma.com/design/FIGMAFILEKEYSAMPLECORP1/sample-corporate?node-id=115:609"
     },
     {
       "name": "recruit-sp",
-      "figma_url": "https://www.figma.com/design/FIGMAFILEKEYSAMPLECORP1/sample-corporate?node-id=72:6940"
+      "figma_url": "https://www.figma.com/design/FIGMAFILEKEYSAMPLECORP1/sample-corporate?node-id=121:897"
     },
     {
       "name": "news-sp",
-      "figma_url": "https://www.figma.com/design/FIGMAFILEKEYSAMPLECORP1/sample-corporate?node-id=72:7064"
+      "figma_url": "https://www.figma.com/design/FIGMAFILEKEYSAMPLECORP1/sample-corporate?node-id=122:1027"
     },
     {
       "name": "contact-sp",
-      "figma_url": "https://www.figma.com/design/FIGMAFILEKEYSAMPLECORP1/sample-corporate?node-id=72:7141"
+      "figma_url": "https://www.figma.com/design/FIGMAFILEKEYSAMPLECORP1/sample-corporate?node-id=123:770"
     }
   ]
 }

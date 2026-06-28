@@ -45,6 +45,7 @@
     "node": ">=25.6.1"
   },
   "dependencies": {
+    "sharp": "^0.34.5",
     "zod": "^4.4.3"
   },
   "pnpm": {
