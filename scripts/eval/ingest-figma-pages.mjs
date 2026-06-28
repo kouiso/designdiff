@@ -112,9 +112,9 @@ if (validateOnly) {
       .map((f) => f.replace(/\.png$/u, ""))
       .filter((name) => !ingestedNames.has(name));
     if (unmatched.length > 0) {
-      process.stderr.write(
-        `[ingest-figma-pages] WARN: impl screenshots with no manifest entry (skipped): ${unmatched.join(", ")}\n`,
-      );
+      const warnMsg = `[ingest-figma-pages] WARN: impl screenshots with no manifest entry (skipped, not compared): ${unmatched.join(", ")}\n`;
+      process.stderr.write(warnMsg);
+      process.stdout.write(warnMsg);
     }
   }
   process.exit(0);
@@ -150,17 +150,18 @@ for (const filePages of groupedPages.values()) {
   }
 }
 
+let unmatchedImpl = [];
 if (implDir) {
   const implFiles = await readdir(implDir).catch(() => []);
   const ingestedNames = new Set(ingested.map((p) => p.name));
-  const unmatched = implFiles
+  unmatchedImpl = implFiles
     .filter((f) => f.endsWith(".png"))
     .map((f) => f.replace(/\.png$/u, ""))
     .filter((name) => !ingestedNames.has(name));
-  if (unmatched.length > 0) {
-    process.stderr.write(
-      `[ingest-figma-pages] WARN: impl screenshots with no manifest entry (skipped): ${unmatched.join(", ")}\n`,
-    );
+  if (unmatchedImpl.length > 0) {
+    const warnMsg = `[ingest-figma-pages] WARN: impl screenshots with no manifest entry (skipped, not compared): ${unmatchedImpl.join(", ")}\n`;
+    process.stderr.write(warnMsg);
+    process.stdout.write(warnMsg);
   }
 }
 
@@ -193,6 +194,11 @@ process.stdout.write(`Figma screenshots: ${figmaDir}\n`);
 process.stdout.write(`Pages: ${ingested.length}\n`);
 if (implDir) {
   process.stdout.write(`Manifest: ${manifestOut}\n`);
+  if (unmatchedImpl.length > 0) {
+    process.stdout.write(
+      `Skipped (no manifest entry): ${unmatchedImpl.length} — ${unmatchedImpl.join(", ")}\n`,
+    );
+  }
 }
 process.stdout.write(`Summary: ${summaryOut}\n`);
 process.stdout.write(`Summary JSON: ${summaryJsonOut}\n`);
