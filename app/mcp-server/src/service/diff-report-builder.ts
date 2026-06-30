@@ -1,5 +1,6 @@
 import {
   computeHausdorff,
+  computeMeanDeltaE2000,
   computeSsimForRegion,
   computeVerdict,
   detectHighTextureRegion,
@@ -45,7 +46,7 @@ interface BuildDiffReportOptions {
 const MAX_REGION_SCORE_COUNT = 24;
 const MIN_REGION_PIXEL_AREA = 64;
 
-const buildApproximateColorDifference = (
+const buildColorDifference = (
   designPixels: Uint8ClampedArray,
   screenshotPixels: Uint8ClampedArray,
   width: number,
@@ -56,35 +57,7 @@ const buildApproximateColorDifference = (
   const startY = bbox ? Math.max(0, Math.floor(bbox.y)) : 0;
   const endX = bbox ? Math.min(Math.ceil(bbox.x + bbox.w), width) : width;
   const endY = bbox ? Math.min(Math.ceil(bbox.y + bbox.h), height) : height;
-  let totalRgbDifference = 0;
-  let pixelCount = 0;
-
-  if (!bbox) {
-    for (let index = 0; index < designPixels.length; index += 4) {
-      totalRgbDifference += Math.abs(designPixels[index] - screenshotPixels[index]);
-      totalRgbDifference += Math.abs(designPixels[index + 1] - screenshotPixels[index + 1]);
-      totalRgbDifference += Math.abs(designPixels[index + 2] - screenshotPixels[index + 2]);
-    }
-    pixelCount = designPixels.length / 4;
-  } else {
-    for (let y = startY; y < endY; y++) {
-      for (let x = startX; x < endX; x++) {
-        const index = (y * width + x) * 4;
-        totalRgbDifference += Math.abs(designPixels[index] - screenshotPixels[index]);
-        totalRgbDifference += Math.abs(designPixels[index + 1] - screenshotPixels[index + 1]);
-        totalRgbDifference += Math.abs(designPixels[index + 2] - screenshotPixels[index + 2]);
-        pixelCount += 1;
-      }
-    }
-  }
-
-  if (pixelCount === 0) {
-    return 0;
-  }
-
-  const meanAbsoluteRgbDifference = totalRgbDifference / (pixelCount * 3);
-  // P1 はまだ ΔE2000 を導入しないため、平均 RGB 絶対差を 0-100 の ΔE 相当レンジへ正規化した近似値を返す。
-  return (meanAbsoluteRgbDifference / 255) * 100;
+  return computeMeanDeltaE2000(designPixels, screenshotPixels, startX, startY, endX, endY, width);
 };
 
 function buildIssues(
@@ -99,7 +72,7 @@ function buildIssues(
   };
 
   for (const regionScore of regionScores) {
-    if (regionScore.color >= 3) {
+    if (regionScore.color >= 2) {
       issues.push({
         regionId: regionScore.regionId,
         bbox: regionScore.bbox,
@@ -107,10 +80,10 @@ function buildIssues(
         severity: "critical",
         figmaNodeId: regionScore.figmaNodeId,
         evidence: {
-          signal: "approx_color_difference",
+          signal: "delta_e_2000",
           value: regionScore.color,
-          threshold: 3,
-          expected: "< 3",
+          threshold: 2,
+          expected: "< 2",
           actual: regionScore.color,
           ...evidenceProvenance,
         },
@@ -310,7 +283,7 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
         bbox,
         figmaNodeId: section.child.id,
         structure: computeSsimForRegion(designPixels, screenshotPixels, width, height, bbox),
-        color: buildApproximateColorDifference(designPixels, screenshotPixels, width, height, bbox),
+        color: buildColorDifference(designPixels, screenshotPixels, width, height, bbox),
         shape: computeHausdorff(designPixels, screenshotPixels, width, height, bbox),
         layout: 0,
         textureScore: getTextureScore(bbox),
@@ -331,7 +304,7 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
       regionId: "whole-frame",
       bbox: wholeFrameBbox,
       structure: computeSsimForRegion(designPixels, screenshotPixels, width, height, contentBbox),
-      color: buildApproximateColorDifference(
+      color: buildColorDifference(
         designPixels,
         screenshotPixels,
         width,
