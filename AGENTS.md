@@ -34,3 +34,21 @@ pnpm test                # Run tests
 - No `any` types / No `@ts-ignore` / No `eslint-disable` (fix root cause)
 - `git reset --hard/--soft/--mixed` forbidden
 - `--no-verify` forbidden / `--force` forbidden (use `--force-with-lease` only)
+
+## Review Focus — Recurring AI Mistakes (MUST violations)
+
+The following patterns are **recurring AI implementation errors** in this repo.
+Review bots MUST flag each as a **violation (MUST fix)** when detected in a diff or PR body.
+Cite the relevant file from `prompt/instruction/` as the rule basis.
+
+| # | Category | Detection Signal in Diff / PR | Severity |
+|---|---|---|---|
+| 1 | **false-done** | Behavioral change PR with no Playwright/screenshot/execution evidence in PR body | 違反 (MUST) |
+| 2 | **guard-missing** | Division, image processing, file I/O, or coordinate transform with no boundary/guard check | 違反 (MUST) |
+| 3 | **type/lint/naming** | `as SomeType` (not `as const`), `any`, `console.log`, PascalCase file name, plural folder name | 違反 (MUST) |
+| 4 | **stale-id / silent-swallow** | Hardcoded Figma/node ID literal; empty `catch {}` block; silent empty `return` on error path | 違反 (MUST) |
+| 5 | **PR-bypass / unauthorized-git** | CI/workflow file added directly to main without a PR; evidence of `--force` or `--no-verify` | 違反 (MUST) |
+| 6 | **self-certification** | Code/test uses `compare_design`, `match%`, or FigDiff's own status as a correctness oracle | 違反 (MUST) |
+| 7 | **review-plagiarism** | Review comment is a restatement of another bot's finding without independent code reading | 注意 (NOTE) |
+
+> Rule basis: `prompt/instruction/verification-mandate.md`, `prohibition.md`, `code-review.md`, `essential-thinking.md`
