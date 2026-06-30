@@ -35,7 +35,7 @@
         "current": 0,
         "status": "FAIL",
         "blocking": true,
-        "note": "critical severity issue detected; weakest region whole-frame (structure 0.000, color 57.908)"
+        "note": "critical severity issue detected; weakest region whole-frame (structure 0.000, color 50.251)"
       },
       "matchRate": {
         "required": 100,

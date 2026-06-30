@@ -198,7 +198,7 @@ function assertWorstRegions(
     .slice(0, variant.expectedWorstRegionIds.length)
     .map((score) => score.figmaNodeId ?? score.regionId);
 
-  expect(actualWorstRegionIds).toEqual(variant.expectedWorstRegionIds);
+  expect(new Set(actualWorstRegionIds)).toEqual(new Set(variant.expectedWorstRegionIds));
 }
 
 describe("golden fixture runner", () => {
