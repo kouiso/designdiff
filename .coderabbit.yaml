@@ -4,11 +4,28 @@ language: ja-JP
 reviews:
   profile: assertive
   instructions: |
-    Only cite rules explicitly defined in prompt/instruction/*.md as the basis for findings.
+    Only cite rules explicitly defined in prompt/instruction/*.md or AGENTS.md as the basis for findings.
     Do not flag general best practices or common coding conventions as repository-specific rule violations.
-    When citing a rule, reference the file name (e.g., prohibition.md, code-review.md, essential-thinking.md).
-    For patterns not covered in prompt/instruction/*.md, label them as "suggestion" — never as "violation".
+    When citing a rule, reference the file name (e.g., prohibition.md, code-review.md, essential-thinking.md, AGENTS.md).
+    For patterns not covered in prompt/instruction/*.md or AGENTS.md, label them as "suggestion" — never as "violation".
     Actively look for better implementations and propose concrete alternatives using GitHub Suggested Changes format when applicable.
+
+    ## Recurring AI Mistakes — Flag as MUST violations
+    The "Review Focus" table in AGENTS.md lists 7 recurring AI implementation errors for this repo.
+    When any of the following signals appear in a diff or PR body, flag them as violations (MUST fix),
+    citing the relevant prompt/instruction/*.md file as the rule basis:
+    1. Behavioral change PR with no Playwright/screenshot/execution evidence in the PR body -> verification-mandate.md
+    2. Division, image processing, file I/O, or coordinate transform with no boundary/guard check -> prohibition.md
+    3. `as SomeType` (not `as const`), `any`, `console.log`, PascalCase file name, plural folder name -> prohibition.md
+    4. Hardcoded Figma/node ID literal; empty `catch {}` block; silent empty `return` on error path -> prohibition.md, essential-thinking.md
+    5. CI/workflow file added directly to main without a PR; `--force` or `--no-verify` usage -> prohibition.md
+    6. Code/test uses `compare_design`, `match%`, or FigDiff own output as a correctness oracle -> verification-mandate.md
+    7. Review comment that merely restates another bot finding without independent code reading -> code-review.md (NOTE level only)
+
+    ## Process-level violations (also flag as MUST)
+    - PR body for a behavioral change contains no live execution evidence (Playwright, curl, or screenshot)
+    - A CI/workflow YAML file appears to have been pushed directly to the default branch (no PR trail)
+    - Review findings are copy-pasted from Devin, CodeRabbit, or Gemini without the reviewer reading the source file
   auto_review:
     ignore_usernames: []
     drafts: false
@@ -24,4 +41,5 @@ knowledge_base:
   code_guidelines:
     filePatterns:
       - "prompt/instruction/**/*.md"
+      - "AGENTS.md"
       - "**/REVIEW.md"
