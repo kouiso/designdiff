@@ -46,6 +46,139 @@ interface BuildDiffReportOptions {
 const MAX_REGION_SCORE_COUNT = 24;
 const MIN_REGION_PIXEL_AREA = 64;
 
+// ─── Translation detection ────────────────────────────────────────────────────
+
+const COARSE_RANGE = 50;
+const COARSE_STEP = 5;
+const FINE_RANGE = 5;
+const COARSE_SAMPLE_STEP = 4;
+const DIFF_THRESHOLD_SQ = 625; // per-channel RGB distance threshold (25^2)
+
+/**
+ * Count differing pixels between design (offset by dx,dy) and screenshot,
+ * sampling every sampleStep pixels. No array allocation — direct index math.
+ *
+ * alwaysPenalizeOob: when true, every OOB pixel counts as a diff (used in the
+ * improvement-check gate to prevent transparent-vs-black false matches).
+ * When false (default for detection), OOB only penalizes visible screen content.
+ */
+const countSsdOffset = (
+  design: Uint8ClampedArray,
+  screenshot: Uint8ClampedArray,
+  width: number,
+  height: number,
+  dx: number,
+  dy: number,
+  sampleStep: number,
+  alwaysPenalizeOob = false,
+): number => {
+  let diff = 0;
+  for (let y = 0; y < height; y += sampleStep) {
+    for (let x = 0; x < width; x += sampleStep) {
+      const bIdx = (y * width + x) * 4;
+      const srcX = x - dx;
+      const srcY = y - dy;
+      if (srcX < 0 || srcX >= width || srcY < 0 || srcY >= height) {
+        if (alwaysPenalizeOob) {
+          diff++;
+        } else {
+          // Out-of-bounds design pixels are effectively transparent (0,0,0,0).
+          // Count as diff when the screenshot has visible content.
+          const r = screenshot[bIdx];
+          const g = screenshot[bIdx + 1];
+          const b = screenshot[bIdx + 2];
+          if (r * r + g * g + b * b > DIFF_THRESHOLD_SQ) diff++;
+        }
+        continue;
+      }
+      const aIdx = (srcY * width + srcX) * 4;
+      const dr = design[aIdx] - screenshot[bIdx];
+      const dg = design[aIdx + 1] - screenshot[bIdx + 1];
+      const db = design[aIdx + 2] - screenshot[bIdx + 2];
+      if (dr * dr + dg * dg + db * db > DIFF_THRESHOLD_SQ) diff++;
+    }
+  }
+  return diff;
+};
+
+/**
+ * Detect translation offset between design and screenshot pixels.
+ * Coarse search (±50px, step 5px, sampled) then fine (±5px, full resolution).
+ * Returns { dx, dy } such that shifting design by (dx,dy) minimises pixel diff.
+ */
+const detectTranslation = (
+  design: Uint8ClampedArray,
+  screenshot: Uint8ClampedArray,
+  width: number,
+  height: number,
+): { dx: number; dy: number; confidence: number; residual: number } => {
+  if (width * height < 64) {
+    return { dx: 0, dy: 0, confidence: 1, residual: 0 };
+  }
+
+  let bestDx = 0;
+  let bestDy = 0;
+  let bestDiff = Infinity;
+
+  for (let dy = -COARSE_RANGE; dy <= COARSE_RANGE; dy += COARSE_STEP) {
+    for (let dx = -COARSE_RANGE; dx <= COARSE_RANGE; dx += COARSE_STEP) {
+      const d = countSsdOffset(design, screenshot, width, height, dx, dy, COARSE_SAMPLE_STEP);
+      if (d < bestDiff) {
+        bestDiff = d;
+        bestDx = dx;
+        bestDy = dy;
+      }
+    }
+  }
+
+  const coarseDx = bestDx;
+  const coarseDy = bestDy;
+  for (let dy = coarseDy - FINE_RANGE; dy <= coarseDy + FINE_RANGE; dy++) {
+    for (let dx = coarseDx - FINE_RANGE; dx <= coarseDx + FINE_RANGE; dx++) {
+      const d = countSsdOffset(design, screenshot, width, height, dx, dy, 1);
+      if (d < bestDiff) {
+        bestDiff = d;
+        bestDx = dx;
+        bestDy = dy;
+      }
+    }
+  }
+
+  const residual = bestDiff / (width * height);
+  const offsetMagnitude = Math.sqrt(bestDx * bestDx + bestDy * bestDy);
+  const confidence = Math.max(0, 1 - offsetMagnitude / (COARSE_RANGE * Math.SQRT2));
+
+  return { dx: bestDx, dy: bestDy, confidence, residual };
+};
+
+/**
+ * Shift design pixels by (dx, dy) to apply alignment correction.
+ * Pixels shifted outside bounds become transparent.
+ */
+const shiftPixels = (
+  src: Uint8ClampedArray,
+  width: number,
+  height: number,
+  dx: number,
+  dy: number,
+): Uint8ClampedArray => {
+  const dst = new Uint8ClampedArray(width * height * 4);
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const srcX = x - dx;
+      const srcY = y - dy;
+      if (srcX < 0 || srcX >= width || srcY < 0 || srcY >= height) continue;
+      const srcIdx = (srcY * width + srcX) * 4;
+      const dstIdx = (y * width + x) * 4;
+      dst[dstIdx] = src[srcIdx];
+      dst[dstIdx + 1] = src[srcIdx + 1];
+      dst[dstIdx + 2] = src[srcIdx + 2];
+      dst[dstIdx + 3] = src[srcIdx + 3];
+    }
+  }
+  return dst;
+};
+
 const buildColorDifference = (
   designPixels: Uint8ClampedArray,
   screenshotPixels: Uint8ClampedArray,
@@ -334,16 +467,41 @@ function selectAnchorsForScoring<T>(anchors: readonly T[]): T[] {
   });
 }
 
+const ALIGNMENT_IMPROVEMENT_THRESHOLD = 0.85;
+
 export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
-  const regionScores = buildRegionScores(options);
+  const { designPixels, screenshotPixels, width, height } = options;
+
+  const { dx, dy, confidence, residual } = detectTranslation(
+    designPixels,
+    screenshotPixels,
+    width,
+    height,
+  );
+
+  // Only apply alignment correction when it meaningfully reduces pixel diff (>15% improvement).
+  // This guards against false minima in content-different images (e.g. uniform color images
+  // where any offset appears equally good without OOB penalization).
+  let alignedDesignPixels = designPixels;
+  if (dx !== 0 || dy !== 0) {
+    // Use alwaysPenalizeOob=true so that transparent OOB design pixels never
+    // falsely "match" a black screenshot region (both would appear as (0,0,0)).
+    const baselineDiff = countSsdOffset(designPixels, screenshotPixels, width, height, 0, 0, COARSE_SAMPLE_STEP, true);
+    const correctedDiff = countSsdOffset(designPixels, screenshotPixels, width, height, dx, dy, COARSE_SAMPLE_STEP, true);
+    if (baselineDiff > 0 && correctedDiff < baselineDiff * ALIGNMENT_IMPROVEMENT_THRESHOLD) {
+      alignedDesignPixels = shiftPixels(designPixels, width, height, dx, dy);
+    }
+  }
+
+  const alignedOptions = { ...options, designPixels: alignedDesignPixels };
+  const regionScores = buildRegionScores(alignedOptions);
 
   const alignment = {
-    // P1 は位置合わせをまだ行わないため、identity transform をそのまま返す。
-    translation: { x: 0, y: 0 },
+    translation: { x: dx, y: dy },
     scale: { x: 1, y: 1 },
     rotation: 0,
-    confidence: 1,
-    residual: 0,
+    confidence,
+    residual,
   };
 
   const issues = buildIssues(regionScores, options);
