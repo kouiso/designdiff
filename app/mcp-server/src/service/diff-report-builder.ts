@@ -136,11 +136,22 @@ const detectTranslation = (
     }
   }
 
+  // bestDiff from the coarse pass is a sampled count (every COARSE_SAMPLE_STEP
+  // pixels), not comparable to the fine pass's full-resolution count — reset
+  // before the fine pass so it doesn't spuriously "win" against every full-res
+  // candidate purely because it summed far fewer samples.
   const coarseDx = bestDx;
   const coarseDy = bestDy;
+  bestDiff = Infinity;
+  // The fine pass runs FINE_RANGE*2+1 squared candidates; a step of 1 on a
+  // large screenshot (e.g. a 1080x2340 real-device capture) means over 100
+  // full-resolution scans. Sample on a stride for large images — the fine
+  // pass only needs to discriminate between candidates 10px apart, so a
+  // coarser sample than 1px is still discriminating at that scale.
+  const fineSampleStep = width * height > 1_000_000 ? 2 : 1;
   for (let dy = coarseDy - FINE_RANGE; dy <= coarseDy + FINE_RANGE; dy++) {
     for (let dx = coarseDx - FINE_RANGE; dx <= coarseDx + FINE_RANGE; dx++) {
-      const d = countSsdOffset(design, screenshot, width, height, dx, dy, 1);
+      const d = countSsdOffset(design, screenshot, width, height, dx, dy, fineSampleStep);
       if (d < bestDiff) {
         bestDiff = d;
         bestDx = dx;
@@ -492,6 +503,13 @@ const ALIGNMENT_IMPROVEMENT_THRESHOLD = 0.85;
 
 export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
   const { designPixels, screenshotPixels, width, height } = options;
+
+  const expectedLength = width * height * 4;
+  if (designPixels.length < expectedLength || screenshotPixels.length < expectedLength) {
+    throw new Error(
+      `Pixel buffer too small for ${width}x${height}: design=${designPixels.length}, screenshot=${screenshotPixels.length}, expected>=${expectedLength}`,
+    );
+  }
 
   const { dx, dy, confidence, residual } = detectTranslation(
     designPixels,

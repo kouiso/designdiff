@@ -96,7 +96,7 @@ function detectTranslationCoarse(designPixels, screenshotPixels, width, height) 
     dx: bestDx,
     dy: bestDy,
     diffAtBest: bestDiff,
-    residualRate: bestDiff / totalPixels,
+    residualRate: totalPixels === 0 ? 0 : bestDiff / totalPixels,
   };
 }
 
@@ -267,6 +267,9 @@ async function compareFiles(designPath, screenshotPath, outDiffPath) {
   const screenshot = await loadImage(screenshotPath, canvasWidth, canvasHeight);
 
   const { width, height } = design;
+  if (width === 0 || height === 0) {
+    throw new Error(`Zero-dimension image: width=${width}, height=${height}`);
+  }
 
   // Baseline diff (no alignment)
   const baselineDiffPng = new Uint8ClampedArray(width * height * 4);

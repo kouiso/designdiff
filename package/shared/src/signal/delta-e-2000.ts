@@ -97,6 +97,14 @@ export function deltaE2000(lab1: [number, number, number], lab2: [number, number
   );
 }
 
+// deltaE2000 involves several trig calls per pixel pair; on whole-frame regions
+// without a figmaRootNode (up to MAX_COMPARE_PIXELS = 24,000,000 px in
+// image-compare-service.ts) a dense per-pixel scan is measurably slow. Above
+// this many candidate pixels, sample on a stride instead — the mean color
+// difference is stable under sampling, and clusterDiffPixels/pixelmatch
+// already carry the pixel-exact diff signal.
+const MAX_DENSE_SAMPLE_PIXELS = 1_000_000;
+
 /**
  * Compute mean CIEDE2000 color difference over a rectangular region of two RGBA pixel arrays.
  * Transparent pixels (alpha = 0 in both) are skipped.
@@ -110,11 +118,25 @@ export function computeMeanDeltaE2000(
   endY: number,
   width: number,
 ): number {
+  const height = Math.min(pixels1.length / 4 / width || 0, pixels2.length / 4 / width || 0);
+  const clampedStartX = Math.max(0, Math.min(width, Math.floor(startX)));
+  const clampedStartY = Math.max(0, Math.min(height, Math.floor(startY)));
+  const clampedEndX = Math.max(clampedStartX, Math.min(width, Math.ceil(endX)));
+  const clampedEndY = Math.max(clampedStartY, Math.min(height, Math.ceil(endY)));
+
+  const regionWidth = clampedEndX - clampedStartX;
+  const regionHeight = clampedEndY - clampedStartY;
+  const regionArea = regionWidth * regionHeight;
+  const stride =
+    regionArea > MAX_DENSE_SAMPLE_PIXELS
+      ? Math.ceil(Math.sqrt(regionArea / MAX_DENSE_SAMPLE_PIXELS))
+      : 1;
+
   let total = 0;
   let count = 0;
 
-  for (let y = startY; y < endY; y++) {
-    for (let x = startX; x < endX; x++) {
+  for (let y = clampedStartY; y < clampedEndY; y += stride) {
+    for (let x = clampedStartX; x < clampedEndX; x += stride) {
       const i = (y * width + x) * 4;
       if (pixels1[i + 3] === 0 && pixels2[i + 3] === 0) continue;
       total += deltaE2000(
