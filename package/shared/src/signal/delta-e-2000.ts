@@ -132,15 +132,33 @@ export function computeMeanDeltaE2000(
   let total = 0;
   let count = 0;
 
-  // A fixed rectangular lattice (same x-phase on every sampled row) can miss
-  // a periodic narrow feature entirely — e.g. a 1px vertical rule that falls
-  // exactly between sampled columns is invisible on every row. Stagger the
-  // x-phase by row index (a diagonal lattice) so consecutive sampled rows
-  // land on different columns, at the same total sample count/cost.
-  let rowIndex = 0;
-  for (let y = clampedStartY; y < clampedEndY; y += stride, rowIndex++) {
-    const xPhase = clampedStartX + (rowIndex % stride);
-    for (let x = xPhase; x < clampedEndX; x += stride) {
+  // A fixed rectangular lattice (same x-phase on every sampled row, same
+  // y-phase on every sampled column) can miss a periodic narrow feature
+  // entirely — a 1px rule that falls exactly between sampled positions is
+  // invisible everywhere it's checked. Staggering only the x-phase by row
+  // still samples the SAME set of rows on every pass, so a purely
+  // horizontal 1px feature at an unvisited row is still always missed.
+  //
+  // Tile the region into stride x stride blocks and, within each block,
+  // offset BOTH x and y by an amount that varies with the block's column
+  // index — this sweeps the sampled y-position across the block's height as
+  // blockX changes, not just the x-position across the block's width. Same
+  // one-sample-per-block cost as a plain lattice, but no fixed row or
+  // column is ever skipped across the whole scan.
+  let blockY = 0;
+  for (
+    let blockStartY = clampedStartY;
+    blockStartY < clampedEndY;
+    blockStartY += stride, blockY++
+  ) {
+    let blockX = 0;
+    for (
+      let blockStartX = clampedStartX;
+      blockStartX < clampedEndX;
+      blockStartX += stride, blockX++
+    ) {
+      const x = Math.min(clampedEndX - 1, blockStartX + (blockY % stride));
+      const y = Math.min(clampedEndY - 1, blockStartY + (blockX % stride));
       const i = (y * width + x) * 4;
       if (pixels1[i + 3] === 0 && pixels2[i + 3] === 0) continue;
       total += deltaE2000(
