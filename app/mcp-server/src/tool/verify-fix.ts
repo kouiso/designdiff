@@ -30,7 +30,11 @@ function findRegion(regions: RegionScore[], targetNodeId: string): RegionScore |
 }
 
 const STRUCTURE_DELTA_THRESHOLD = 0.01;
-const COLOR_DELTA_THRESHOLD = 3;
+// buildIssues() (diff-report-builder.ts) emits a critical "color" issue at
+// color >= 2 — keep this gate on the same threshold so a change that pushes
+// a region into compare_design's failing range is never simultaneously
+// reported here as "unchanged".
+const COLOR_DELTA_THRESHOLD = 2;
 const SHAPE_DELTA_THRESHOLD = 0.01;
 const SIDE_EFFECT_STRUCTURE_THRESHOLD = 0.05;
 
