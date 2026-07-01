@@ -451,3 +451,98 @@ describe("buildDiffReport coordinate-space fixes", () => {
     expect(lower?.bbox.y).toBe(64);
   });
 });
+
+describe("buildDiffReport global alignment shift severity", () => {
+  beforeEach(() => {
+    vi.resetModules();
+    vi.doUnmock("@figdiff/shared");
+  });
+
+  // 縦に画面全体を貫く色付きバー (識別可能な特徴が無いと detectTranslation が
+  // オフセットを検出できない — 単色画像はどこにシフトしても同じに見えるため)。
+  // 背景は黒 (0,0,0): countSsdOffset の OOB 判定は「screenshot 側が可視 (RGB二乗和
+  // が閾値超)」で diff を数える。背景を白にすると OOB 帯 (シフト分の左右端) が
+  // 常に可視とみなされ大きなペナルティになり、改善ゲート (alwaysPenalizeOob=true)
+  // で補正が採用されなくなる。バーを画面全体の高さにすることで、baseline の
+  // ミスマッチ量が OOB ペナルティを安定して上回り、補正が正しく採用される。
+  async function createShiftedPattern(
+    width: number,
+    height: number,
+    dx: number,
+  ): Promise<{ design: Uint8ClampedArray; screenshot: Uint8ClampedArray }> {
+    const barLeft = Math.floor(width / 4);
+    const barWidth = Math.floor(width / 4);
+
+    const build = (offsetX: number): Uint8ClampedArray => {
+      const pixels = new Uint8ClampedArray(width * height * 4);
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          const idx = (y * width + x) * 4;
+          const inBar = x >= barLeft + offsetX && x < barLeft + offsetX + barWidth;
+          if (inBar) {
+            pixels[idx] = 66;
+            pixels[idx + 1] = 133;
+            pixels[idx + 2] = 244;
+          } else {
+            pixels[idx] = 0;
+            pixels[idx + 1] = 0;
+            pixels[idx + 2] = 0;
+          }
+          pixels[idx + 3] = 255;
+        }
+      }
+      return pixels;
+    };
+
+    return { design: build(0), screenshot: build(dx) };
+  }
+
+  it("小さい許容範囲内のシフト(1px)はグローバルシフトのcritical化を発火させないこと", async () => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    const width = 100;
+    const height = 100;
+    const { design, screenshot } = await createShiftedPattern(width, height, 1);
+
+    const result = buildDiffReport({
+      designPixels: design,
+      screenshotPixels: screenshot,
+      width,
+      height,
+    });
+
+    // 1px の補正境界には shape/structure ベースの既存ロジックが軽微な
+    // position issue (major) を出しうる — それ自体は正しい既存挙動。
+    // ここで確認したいのは「新設のグローバルシフトcritical化 (evidence.signal
+    // === "translation_offset") が、閾値未満のシフトで誤発火しないこと」のみ。
+    const globalShiftIssue = result.issues.find(
+      (issue) => issue.evidence.signal === "translation_offset",
+    );
+    expect(globalShiftIssue).toBeUndefined();
+  });
+
+  it("採用された大きな(>=10px)グローバルシフトは position issue が critical になり aggregateVerdict が fail すること", async () => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    const width = 100;
+    const height = 100;
+    const { design, screenshot } = await createShiftedPattern(width, height, 15);
+
+    const result = buildDiffReport({
+      designPixels: design,
+      screenshotPixels: screenshot,
+      width,
+      height,
+    });
+
+    // 補正が採用されている (アライメント検知が機能している証拠)。
+    expect(Math.abs(result.alignment.translation.x)).toBeGreaterThanOrEqual(10);
+
+    const positionIssue = result.issues.find((issue) => issue.kind === "position");
+    expect(positionIssue).toBeDefined();
+    expect(positionIssue?.severity).toBe("critical");
+
+    // これが今回の修正の核心: 補正後の region score は綺麗に見えても、
+    // critical position issue が computeVerdict の hasCriticalIssue を
+    // 通じて verdict を fail にする（グローバルシフトが黙って消えない）。
+    expect(result.aggregateVerdict).toBe("fail");
+  });
+});

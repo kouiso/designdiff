@@ -1,7 +1,7 @@
 // sRGB 8-bit (0-255) -> linear light (0-1)
 function srgbToLinear(c: number): number {
   const n = c / 255;
-  return n <= 0.04045 ? n / 12.92 : Math.pow((n + 0.055) / 1.055, 2.4);
+  return n <= 0.04045 ? n / 12.92 : ((n + 0.055) / 1.055) ** 2.4;
 }
 
 // Linear sRGB -> CIE XYZ (D65 illuminant, sRGB primaries)
@@ -42,7 +42,7 @@ export function deltaE2000(lab1: [number, number, number], lab2: [number, number
   const C1 = Math.sqrt(a1 * a1 + b1 * b1);
   const C2 = Math.sqrt(a2 * a2 + b2 * b2);
   const Cbar = (C1 + C2) / 2;
-  const Cbar7 = Math.pow(Cbar, 7);
+  const Cbar7 = Cbar ** 7;
   const G = 0.5 * (1 - Math.sqrt(Cbar7 / (Cbar7 + 6103515625))); // 25^7 = 6103515625
 
   const a1p = a1 * (1 + G);
@@ -80,20 +80,17 @@ export function deltaE2000(lab1: [number, number, number], lab2: [number, number
     0.32 * Math.cos((3 * Hbarp + 6) * DEG) -
     0.2 * Math.cos((4 * Hbarp - 63) * DEG);
 
-  const SL = 1 + (0.015 * Math.pow(Lbarp - 50, 2)) / Math.sqrt(20 + Math.pow(Lbarp - 50, 2));
+  const SL = 1 + (0.015 * (Lbarp - 50) ** 2) / Math.sqrt(20 + (Lbarp - 50) ** 2);
   const SC = 1 + 0.045 * Cbarp;
   const SH = 1 + 0.015 * Cbarp * T;
 
-  const Cbarp7 = Math.pow(Cbarp, 7);
+  const Cbarp7 = Cbarp ** 7;
   const RC = 2 * Math.sqrt(Cbarp7 / (Cbarp7 + 6103515625));
-  const dTheta = 30 * Math.exp(-Math.pow((Hbarp - 275) / 25, 2));
+  const dTheta = 30 * Math.exp(-(((Hbarp - 275) / 25) ** 2));
   const RT = -Math.sin(2 * dTheta * DEG) * RC;
 
   return Math.sqrt(
-    Math.pow(dLp / SL, 2) +
-      Math.pow(dCp / SC, 2) +
-      Math.pow(dHp / SH, 2) +
-      RT * (dCp / SC) * (dHp / SH),
+    (dLp / SL) ** 2 + (dCp / SC) ** 2 + (dHp / SH) ** 2 + RT * (dCp / SC) * (dHp / SH),
   );
 }
 
@@ -135,8 +132,15 @@ export function computeMeanDeltaE2000(
   let total = 0;
   let count = 0;
 
-  for (let y = clampedStartY; y < clampedEndY; y += stride) {
-    for (let x = clampedStartX; x < clampedEndX; x += stride) {
+  // A fixed rectangular lattice (same x-phase on every sampled row) can miss
+  // a periodic narrow feature entirely — e.g. a 1px vertical rule that falls
+  // exactly between sampled columns is invisible on every row. Stagger the
+  // x-phase by row index (a diagonal lattice) so consecutive sampled rows
+  // land on different columns, at the same total sample count/cost.
+  let rowIndex = 0;
+  for (let y = clampedStartY; y < clampedEndY; y += stride, rowIndex++) {
+    const xPhase = clampedStartX + (rowIndex % stride);
+    for (let x = xPhase; x < clampedEndX; x += stride) {
       const i = (y * width + x) * 4;
       if (pixels1[i + 3] === 0 && pixels2[i + 3] === 0) continue;
       total += deltaE2000(

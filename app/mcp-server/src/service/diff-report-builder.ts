@@ -508,6 +508,17 @@ function selectAnchorsForScoring<T>(anchors: readonly T[]): T[] {
 const ALIGNMENT_IMPROVEMENT_THRESHOLD = 0.85;
 // Sub-pixel/anti-aliasing tolerance for the global-shift visibility issue below.
 const GLOBAL_SHIFT_ISSUE_THRESHOLD_PX = 2;
+// A shift at or above this magnitude is implausible as mere rendering/DPR
+// noise between a Figma export and a real screenshot (that noise lives in
+// the 0-2px range this alignment correction exists to absorb — see the
+// ae45d66 commit this feature originated from). Codex correctly flagged
+// that a "major" issue alone never blocks PASS (computeVerdict only checks
+// severity==="critical"); below this size we keep the shift as a visible,
+// non-blocking note (preserves the original false-"全面ズレ" fix for
+// capture-scale noise). At or above it, treat as a real position defect —
+// escalate to "critical" so it fails through the same path "color" already
+// uses, without touching computeVerdict itself.
+const GLOBAL_SHIFT_CRITICAL_THRESHOLD_PX = 10;
 
 export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
   const { designPixels, screenshotPixels, width, height } = options;
@@ -574,28 +585,28 @@ export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
   const issues = buildIssues(regionScores, options);
 
   // An accepted global alignment correction can hide a real regression: e.g.
-  // a page that scrolled/shifted 5-10px is itself often the bug under test,
-  // not a capture artifact to silently correct away. Surface any non-trivial
-  // accepted shift as an explicit (non-critical) position issue so it stays
-  // visible in the report, without changing computeVerdict's pass/fail
-  // thresholds — a large-enough shift still degrades weightedStructure and
-  // fails through the existing path; a small one is now a visible note
-  // instead of being fully invisible.
-  if (
-    alignmentApplied &&
-    (Math.abs(dx) >= GLOBAL_SHIFT_ISSUE_THRESHOLD_PX ||
-      Math.abs(dy) >= GLOBAL_SHIFT_ISSUE_THRESHOLD_PX)
-  ) {
+  // a page that scrolled/shifted is itself often the bug under test, not a
+  // capture artifact to silently correct away. A shift >= the critical
+  // threshold is escalated to severity="critical" so it fails through the
+  // same hasCriticalIssue path "color" already uses (computeVerdict itself
+  // is untouched); a smaller accepted shift stays a visible, non-blocking
+  // note — preserving the original false-"全面ズレ" fix this alignment
+  // correction exists for.
+  const shiftMagnitude = Math.sqrt(dx * dx + dy * dy);
+  if (alignmentApplied && shiftMagnitude >= GLOBAL_SHIFT_ISSUE_THRESHOLD_PX) {
+    const isCriticalShift = shiftMagnitude >= GLOBAL_SHIFT_CRITICAL_THRESHOLD_PX;
     issues.push({
       regionId: "whole-frame",
       bbox: { x: 0, y: 0, w: width, h: height },
       kind: "position",
-      severity: "major",
+      severity: isCriticalShift ? "critical" : "major",
       figmaNodeId: options.figmaNodeId,
       evidence: {
         signal: "translation_offset",
-        value: Math.sqrt(dx * dx + dy * dy),
-        threshold: GLOBAL_SHIFT_ISSUE_THRESHOLD_PX,
+        value: shiftMagnitude,
+        threshold: isCriticalShift
+          ? GLOBAL_SHIFT_CRITICAL_THRESHOLD_PX
+          : GLOBAL_SHIFT_ISSUE_THRESHOLD_PX,
         expected: `< ${GLOBAL_SHIFT_ISSUE_THRESHOLD_PX}px`,
         actual: `dx=${dx}, dy=${dy}`,
         figmaFileKey: options.figmaFileKey,
