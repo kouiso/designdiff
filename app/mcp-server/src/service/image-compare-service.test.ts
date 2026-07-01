@@ -583,7 +583,7 @@ describe("compareImages", () => {
       regionCount: 1,
     });
     expect(result.clusterTelemetry?.wallMs).toBeGreaterThanOrEqual(0);
-  }, 15000);
+  });
 
   it("大きな画像で grid が予算超過した場合は flood をスキップしてタイル領域を返すこと", async () => {
     const pixelmatchMock = await import("pixelmatch");

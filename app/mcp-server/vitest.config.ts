@@ -10,6 +10,12 @@ export default defineConfig({
   },
   test: {
     globals: true,
+    // v8 coverage instrumentation adds meaningful overhead to the
+    // sharp/pixelmatch-heavy tests in this package; the default 5000ms
+    // vitest timeout is regularly exceeded under `test:coverage` on CI
+    // runners (11 tests across 4 files timed out in the same run) even
+    // though every test passes comfortably under `test` (no coverage).
+    testTimeout: 30000,
     coverage: {
       provider: "v8",
       include: ["src/**/*.ts"],
