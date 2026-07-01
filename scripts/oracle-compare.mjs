@@ -5,10 +5,10 @@
  * Self-certify ban: this script is the ground-truth, not FigDiff's own output.
  */
 
-import { createRequire } from "module";
-import { promises as fs } from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
+import { createRequire } from "node:module";
+import { promises as fs } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const require = createRequire(import.meta.url);
@@ -80,16 +80,8 @@ function detectTranslationCoarse(designPixels, screenshotPixels, width, height) 
   // Fine pass around best coarse candidate
   const coarseBestDx = bestDx;
   const coarseBestDy = bestDy;
-  for (
-    let dy = coarseBestDy - FINE_RANGE;
-    dy <= coarseBestDy + FINE_RANGE;
-    dy++
-  ) {
-    for (
-      let dx = coarseBestDx - FINE_RANGE;
-      dx <= coarseBestDx + FINE_RANGE;
-      dx++
-    ) {
+  for (let dy = coarseBestDy - FINE_RANGE; dy <= coarseBestDy + FINE_RANGE; dy++) {
+    for (let dx = coarseBestDx - FINE_RANGE; dx <= coarseBestDx + FINE_RANGE; dx++) {
       const shifted = shiftPixels(designPixels, width, height, dx, dy);
       const diff = countDiff(shifted, screenshotPixels, width, height);
       if (diff < bestDiff) {
@@ -174,8 +166,7 @@ function buildTestPattern(width, height) {
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       const idx = (y * width + x) * 4;
-      const inRect =
-        x >= 80 && x < 160 && y >= 60 && y < 140;
+      const inRect = x >= 80 && x < 160 && y >= 60 && y < 140;
       if (inRect) {
         pixels[idx] = 255;
         pixels[idx + 1] = 255;
@@ -267,9 +258,7 @@ async function compareFiles(designPath, screenshotPath, outDiffPath) {
   ]);
   const sizeMismatch =
     designMeta.width !== screenshotMeta.width || designMeta.height !== screenshotMeta.height;
-  const canvasWidth = sizeMismatch
-    ? Math.max(designMeta.width, screenshotMeta.width)
-    : undefined;
+  const canvasWidth = sizeMismatch ? Math.max(designMeta.width, screenshotMeta.width) : undefined;
   const canvasHeight = sizeMismatch
     ? Math.max(designMeta.height, screenshotMeta.height)
     : undefined;
@@ -287,16 +276,11 @@ async function compareFiles(designPath, screenshotPath, outDiffPath) {
     baselineDiffPng,
     width,
     height,
-    { threshold: 0.1 }
+    { threshold: 0.1 },
   );
 
   // Detect translation
-  const detection = detectTranslationCoarse(
-    design.pixels,
-    screenshot.pixels,
-    width,
-    height
-  );
+  const detection = detectTranslationCoarse(design.pixels, screenshot.pixels, width, height);
 
   // Apply correction
   const correctedDesign = shiftPixels(design.pixels, width, height, detection.dx, detection.dy);
@@ -307,7 +291,7 @@ async function compareFiles(designPath, screenshotPath, outDiffPath) {
     correctedDiffPng,
     width,
     height,
-    { threshold: 0.1 }
+    { threshold: 0.1 },
   );
 
   if (outDiffPath) {
@@ -338,7 +322,7 @@ const [, , mode, ...args] = process.argv;
 if (mode === "self-test" || !mode) {
   selfTest()
     .then((results) => {
-      console.log(JSON.stringify(results, null, 2));
+      console.info(JSON.stringify(results, null, 2));
       process.exit(results.overall === "PASS" ? 0 : 1);
     })
     .catch((err) => {
@@ -353,7 +337,7 @@ if (mode === "self-test" || !mode) {
   }
   compareFiles(designPath, screenshotPath, outDiffPath)
     .then((results) => {
-      console.log(JSON.stringify(results, null, 2));
+      console.info(JSON.stringify(results, null, 2));
     })
     .catch((err) => {
       console.error("COMPARE ERROR:", err.message);

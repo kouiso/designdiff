@@ -1,4 +1,9 @@
-import { computeMeanDeltaE2000, computeSsim, computeVerdict, type DiffReport } from "@figdiff/shared";
+import {
+  computeMeanDeltaE2000,
+  computeSsim,
+  computeVerdict,
+  type DiffReport,
+} from "@figdiff/shared";
 
 interface BuildDiffReportOptions {
   designPixels: Uint8ClampedArray;
@@ -16,8 +21,6 @@ interface RegionWindow {
 }
 
 const GRID_SIZE = 3;
-
-
 
 const buildRegionWindows = (width: number, height: number): RegionWindow[] => {
   const horizontalNames = ["left", "center", "right"];

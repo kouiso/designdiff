@@ -507,8 +507,26 @@ export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
   if (dx !== 0 || dy !== 0) {
     // Use alwaysPenalizeOob=true so that transparent OOB design pixels never
     // falsely "match" a black screenshot region (both would appear as (0,0,0)).
-    const baselineDiff = countSsdOffset(designPixels, screenshotPixels, width, height, 0, 0, COARSE_SAMPLE_STEP, true);
-    const correctedDiff = countSsdOffset(designPixels, screenshotPixels, width, height, dx, dy, COARSE_SAMPLE_STEP, true);
+    const baselineDiff = countSsdOffset(
+      designPixels,
+      screenshotPixels,
+      width,
+      height,
+      0,
+      0,
+      COARSE_SAMPLE_STEP,
+      true,
+    );
+    const correctedDiff = countSsdOffset(
+      designPixels,
+      screenshotPixels,
+      width,
+      height,
+      dx,
+      dy,
+      COARSE_SAMPLE_STEP,
+      true,
+    );
     if (baselineDiff > 0 && correctedDiff < baselineDiff * ALIGNMENT_IMPROVEMENT_THRESHOLD) {
       alignedDesignPixels = shiftPixels(designPixels, width, height, dx, dy);
     }
