@@ -500,6 +500,8 @@ function selectAnchorsForScoring<T>(anchors: readonly T[]): T[] {
 }
 
 const ALIGNMENT_IMPROVEMENT_THRESHOLD = 0.85;
+// Sub-pixel/anti-aliasing tolerance for the global-shift visibility issue below.
+const GLOBAL_SHIFT_ISSUE_THRESHOLD_PX = 2;
 
 export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
   const { designPixels, screenshotPixels, width, height } = options;
@@ -522,6 +524,7 @@ export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
   // This guards against false minima in content-different images (e.g. uniform color images
   // where any offset appears equally good without OOB penalization).
   let alignedDesignPixels = designPixels;
+  let alignmentApplied = false;
   if (dx !== 0 || dy !== 0) {
     // Use alwaysPenalizeOob=true so that transparent OOB design pixels never
     // falsely "match" a black screenshot region (both would appear as (0,0,0)).
@@ -547,6 +550,7 @@ export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
     );
     if (baselineDiff > 0 && correctedDiff < baselineDiff * ALIGNMENT_IMPROVEMENT_THRESHOLD) {
       alignedDesignPixels = shiftPixels(designPixels, width, height, dx, dy);
+      alignmentApplied = true;
     }
   }
 
@@ -562,6 +566,41 @@ export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
   };
 
   const issues = buildIssues(regionScores, options);
+
+  // An accepted global alignment correction can hide a real regression: e.g.
+  // a page that scrolled/shifted 5-10px is itself often the bug under test,
+  // not a capture artifact to silently correct away. Surface any non-trivial
+  // accepted shift as an explicit (non-critical) position issue so it stays
+  // visible in the report, without changing computeVerdict's pass/fail
+  // thresholds — a large-enough shift still degrades weightedStructure and
+  // fails through the existing path; a small one is now a visible note
+  // instead of being fully invisible.
+  if (
+    alignmentApplied &&
+    (Math.abs(dx) >= GLOBAL_SHIFT_ISSUE_THRESHOLD_PX ||
+      Math.abs(dy) >= GLOBAL_SHIFT_ISSUE_THRESHOLD_PX)
+  ) {
+    issues.push({
+      regionId: "whole-frame",
+      bbox: { x: 0, y: 0, w: width, h: height },
+      kind: "position",
+      severity: "major",
+      figmaNodeId: options.figmaNodeId,
+      evidence: {
+        signal: "translation_offset",
+        value: Math.sqrt(dx * dx + dy * dy),
+        threshold: GLOBAL_SHIFT_ISSUE_THRESHOLD_PX,
+        expected: `< ${GLOBAL_SHIFT_ISSUE_THRESHOLD_PX}px`,
+        actual: `dx=${dx}, dy=${dy}`,
+        figmaFileKey: options.figmaFileKey,
+        figmaNodeId: options.figmaNodeId,
+        figmaPageName: options.figmaPageName,
+      },
+      suggestedCssFix:
+        "画面全体が平行移動しています。意図したスクロール/マージン変更か、レイアウト回帰かを確認してください。",
+    });
+  }
+
   const verdict = computeVerdict({ alignment, regionScores, issues });
 
   return {
