@@ -160,7 +160,13 @@ const detectTranslation = (
     }
   }
 
-  const residual = bestDiff / (width * height);
+  // bestDiff is a count over the fineSampleStep grid, not every pixel — normalize
+  // by the actual number of sampled positions (matches countSsdOffset's
+  // `for (i = 0; i < n; i += step)` iteration count), not the raw pixel count,
+  // or a strided scan underreports residual by roughly step^2.
+  const sampledPositionCount =
+    Math.ceil(width / fineSampleStep) * Math.ceil(height / fineSampleStep);
+  const residual = sampledPositionCount === 0 ? 0 : bestDiff / sampledPositionCount;
   const offsetMagnitude = Math.sqrt(bestDx * bestDx + bestDy * bestDy);
   const confidence = Math.max(0, 1 - offsetMagnitude / (COARSE_RANGE * Math.SQRT2));
 

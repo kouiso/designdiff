@@ -4,7 +4,11 @@
 
 import type { ComparisonHeadline, RegionScore } from "../type.js";
 
-const COLOR_DELTA_THRESHOLD = 3;
+// buildIssues() (diff-report-builder.ts) emits a critical "color" issue at
+// color >= 2 — keep this headline's colorOnlyRegions count on the same
+// threshold so a region that fails on color is never simultaneously reported
+// as "0 color-only regions" in the headline text.
+const COLOR_DELTA_THRESHOLD = 2;
 const STRUCTURE_OK_THRESHOLD = 0.95;
 const PERCENT = 100;
 // 構造一致率は見やすさのため小数第2位まで丸める。
