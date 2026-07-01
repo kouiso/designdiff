@@ -15,7 +15,7 @@ export default defineConfig({
     // vitest timeout is regularly exceeded under `test:coverage` on CI
     // runners (11 tests across 4 files timed out in the same run) even
     // though every test passes comfortably under `test` (no coverage).
-    testTimeout: 30000,
+    testTimeout: 60000,
     coverage: {
       provider: "v8",
       include: ["src/**/*.ts"],
