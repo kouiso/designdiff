@@ -14,17 +14,23 @@
     },
     "issueKindPrecision": {
       "matched": 11,
-      "emitted": 20,
-      "percentage": 55
+      "emitted": 18,
+      "percentage": 61.1
     },
     "pearson": {
-      "structure": 0.682228,
-      "color": -0.503544
+      "structure": 0.655076,
+      "color": -0.474715
     },
-    "snapshotTimestamp": "2026-04-18T06:17:08-07:00",
+    "snapshotTimestamp": "2026-06-28T10:50:38+09:00",
     "baselineSignalsInEffect": {
-      "active": ["P1 issue typing and verdict logic", "P2 multi-region SSIM weighting"],
-      "inactive": ["P3 Hausdorff", "P4 texture"]
+      "active": [
+        "P1 issue typing and verdict logic",
+        "P2 multi-region SSIM weighting"
+      ],
+      "inactive": [
+        "P3 Hausdorff",
+        "P4 texture"
+      ]
     },
     "nextMeasurementTrigger": "Re-run after P3 and P4 merge to develop"
   },
@@ -34,15 +40,21 @@
       "variantName": "color-off",
       "expectedVerdict": "fail",
       "computedVerdict": "fail",
-      "expectedIssueKinds": ["color"],
-      "computedIssueKinds": ["color"],
+      "expectedIssueKinds": [
+        "color"
+      ],
+      "computedIssueKinds": [
+        "color"
+      ],
       "weightedStructure": 0.985561,
-      "weightedColor": 3.333333,
+      "weightedColor": 3.057725,
       "humanSeverity": 0,
       "matchesVerdict": true,
       "issueKindRecall": 1,
       "issueKindPrecision": 1,
-      "matchedIssueKinds": ["color"],
+      "matchedIssueKinds": [
+        "color"
+      ],
       "missedIssueKinds": [],
       "unexpectedIssueKinds": [],
       "worstSectionId": "whole-frame",
@@ -72,17 +84,32 @@
       "variantName": "layout-off",
       "expectedVerdict": "fail",
       "computedVerdict": "fail",
-      "expectedIssueKinds": ["position", "size", "structure"],
-      "computedIssueKinds": ["color", "position", "size"],
+      "expectedIssueKinds": [
+        "position",
+        "size",
+        "structure"
+      ],
+      "computedIssueKinds": [
+        "color",
+        "position",
+        "size"
+      ],
       "weightedStructure": 0.885683,
-      "weightedColor": 10.222222,
+      "weightedColor": 9.324988,
       "humanSeverity": 0,
       "matchesVerdict": true,
       "issueKindRecall": 0.666667,
       "issueKindPrecision": 0.666667,
-      "matchedIssueKinds": ["position", "size"],
-      "missedIssueKinds": ["structure"],
-      "unexpectedIssueKinds": ["color"],
+      "matchedIssueKinds": [
+        "position",
+        "size"
+      ],
+      "missedIssueKinds": [
+        "structure"
+      ],
+      "unexpectedIssueKinds": [
+        "color"
+      ],
       "worstSectionId": "whole-frame",
       "worstSectionScore": 0.885683
     },
@@ -110,17 +137,29 @@
       "variantName": "multi-section-drift",
       "expectedVerdict": "fail",
       "computedVerdict": "fail",
-      "expectedIssueKinds": ["position", "size"],
-      "computedIssueKinds": ["color", "position", "size"],
-      "weightedStructure": 0.837915,
-      "weightedColor": 14.789925,
+      "expectedIssueKinds": [
+        "position",
+        "size"
+      ],
+      "computedIssueKinds": [
+        "color",
+        "position",
+        "size"
+      ],
+      "weightedStructure": 0.839675,
+      "weightedColor": 13.080491,
       "humanSeverity": 0,
       "matchesVerdict": true,
       "issueKindRecall": 1,
       "issueKindPrecision": 0.666667,
-      "matchedIssueKinds": ["position", "size"],
+      "matchedIssueKinds": [
+        "position",
+        "size"
+      ],
       "missedIssueKinds": [],
-      "unexpectedIssueKinds": ["color"],
+      "unexpectedIssueKinds": [
+        "color"
+      ],
       "worstSectionId": "section-header",
       "worstSectionScore": 0.635797
     },
@@ -129,17 +168,29 @@
       "variantName": "single-section-regression",
       "expectedVerdict": "fail",
       "computedVerdict": "fail",
-      "expectedIssueKinds": ["position", "size"],
-      "computedIssueKinds": ["color", "position", "size"],
-      "weightedStructure": 0.920946,
-      "weightedColor": 24.576177,
+      "expectedIssueKinds": [
+        "position",
+        "size"
+      ],
+      "computedIssueKinds": [
+        "color",
+        "position",
+        "size"
+      ],
+      "weightedStructure": 0.920419,
+      "weightedColor": 22.299401,
       "humanSeverity": 0.5,
       "matchesVerdict": true,
       "issueKindRecall": 1,
       "issueKindPrecision": 0.666667,
-      "matchedIssueKinds": ["position", "size"],
+      "matchedIssueKinds": [
+        "position",
+        "size"
+      ],
       "missedIssueKinds": [],
-      "unexpectedIssueKinds": ["color"],
+      "unexpectedIssueKinds": [
+        "color"
+      ],
       "worstSectionId": "section-footer",
       "worstSectionScore": 0.890345
     },
@@ -167,17 +218,28 @@
       "variantName": "font-size-off",
       "expectedVerdict": "fail",
       "computedVerdict": "fail",
-      "expectedIssueKinds": ["size"],
-      "computedIssueKinds": ["color", "position", "size"],
-      "weightedStructure": 0.942945,
-      "weightedColor": 2.009033,
+      "expectedIssueKinds": [
+        "size"
+      ],
+      "computedIssueKinds": [
+        "color",
+        "position",
+        "size"
+      ],
+      "weightedStructure": 0.941684,
+      "weightedColor": 1.681212,
       "humanSeverity": 0,
       "matchesVerdict": true,
       "issueKindRecall": 1,
       "issueKindPrecision": 0.333333,
-      "matchedIssueKinds": ["size"],
+      "matchedIssueKinds": [
+        "size"
+      ],
       "missedIssueKinds": [],
-      "unexpectedIssueKinds": ["color", "position"],
+      "unexpectedIssueKinds": [
+        "color",
+        "position"
+      ],
       "worstSectionId": "typography-body-block-3",
       "worstSectionScore": 0.857761
     },
@@ -186,18 +248,29 @@
       "variantName": "line-height-off",
       "expectedVerdict": "fail",
       "computedVerdict": "fail",
-      "expectedIssueKinds": ["position"],
-      "computedIssueKinds": ["color", "position", "size"],
-      "weightedStructure": 0.977959,
-      "weightedColor": 3.534853,
+      "expectedIssueKinds": [
+        "position"
+      ],
+      "computedIssueKinds": [
+        "color",
+        "position",
+        "size"
+      ],
+      "weightedStructure": 0.977827,
+      "weightedColor": 2.809494,
       "humanSeverity": 0.5,
       "matchesVerdict": true,
       "issueKindRecall": 1,
       "issueKindPrecision": 0.333333,
-      "matchedIssueKinds": ["position"],
+      "matchedIssueKinds": [
+        "position"
+      ],
       "missedIssueKinds": [],
-      "unexpectedIssueKinds": ["color", "size"],
-      "worstSectionId": "typography-body-block-2",
+      "unexpectedIssueKinds": [
+        "color",
+        "size"
+      ],
+      "worstSectionId": "typography-body-block-4",
       "worstSectionScore": 0.882627
     },
     {
@@ -205,17 +278,23 @@
       "variantName": "all-buttons-wrong-color",
       "expectedVerdict": "fail",
       "computedVerdict": "fail",
-      "expectedIssueKinds": ["color"],
-      "computedIssueKinds": ["color", "position", "size"],
-      "weightedStructure": 0.953947,
-      "weightedColor": 18.018847,
+      "expectedIssueKinds": [
+        "color"
+      ],
+      "computedIssueKinds": [
+        "color"
+      ],
+      "weightedStructure": 0.968913,
+      "weightedColor": 11.467875,
       "humanSeverity": 0,
       "matchesVerdict": true,
       "issueKindRecall": 1,
-      "issueKindPrecision": 0.333333,
-      "matchedIssueKinds": ["color"],
+      "issueKindPrecision": 1,
+      "matchedIssueKinds": [
+        "color"
+      ],
       "missedIssueKinds": [],
-      "unexpectedIssueKinds": ["position", "size"],
+      "unexpectedIssueKinds": [],
       "worstSectionId": "color-button-primary",
       "worstSectionScore": 0.786944
     },
@@ -235,7 +314,7 @@
       "matchedIssueKinds": [],
       "missedIssueKinds": [],
       "unexpectedIssueKinds": [],
-      "worstSectionId": "color-button-end",
+      "worstSectionId": "color-button-primary",
       "worstSectionScore": 1
     },
     {
@@ -243,19 +322,25 @@
       "variantName": "single-button-wrong-color",
       "expectedVerdict": "fail",
       "computedVerdict": "fail",
-      "expectedIssueKinds": ["color"],
-      "computedIssueKinds": ["color"],
-      "weightedStructure": 0.966303,
-      "weightedColor": 9.147109,
+      "expectedIssueKinds": [
+        "color"
+      ],
+      "computedIssueKinds": [
+        "color"
+      ],
+      "weightedStructure": 0.977135,
+      "weightedColor": 4.866668,
       "humanSeverity": 0.5,
       "matchesVerdict": true,
       "issueKindRecall": 1,
       "issueKindPrecision": 1,
-      "matchedIssueKinds": ["color"],
+      "matchedIssueKinds": [
+        "color"
+      ],
       "missedIssueKinds": [],
       "unexpectedIssueKinds": [],
       "worstSectionId": "color-button-tertiary",
-      "worstSectionScore": 0.955133
+      "worstSectionScore": 0.972581
     }
   ],
   "falseClassifications": []

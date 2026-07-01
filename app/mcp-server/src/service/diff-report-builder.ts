@@ -45,6 +45,11 @@ interface BuildDiffReportOptions {
 
 const MAX_REGION_SCORE_COUNT = 24;
 const MIN_REGION_PIXEL_AREA = 64;
+// shape (Hausdorff, 0-1 正規化済み) が実測でこの値を明確に上回る場合のみ
+// エッジの空間ズレを「実在する」と判定する。純色/輝度シフトのみの領域は
+// 実測で shape=0.0000 exact、実際の平行移動/リサイズは最小でも 0.013 台
+// だったため、0.005 は両者の間の安全マージン。
+const GEOMETRIC_SHAPE_EPSILON = 0.005;
 
 // ─── Translation detection ────────────────────────────────────────────────────
 
@@ -205,6 +210,10 @@ function buildIssues(
   };
 
   for (const regionScore of regionScores) {
+    // color は唯一の severity="critical" kind で computeVerdict の
+    // hasCriticalIssue 判定に直結するため、常に emit する（verdict の
+    // 正しさが kind ラベルの精度より優先 — 条件付き抑制で verdict accuracy が
+    // 100%→66.7%に崩れることを実測済み）。
     if (regionScore.color >= 2) {
       issues.push({
         regionId: regionScore.regionId,
@@ -224,7 +233,19 @@ function buildIssues(
       });
     }
 
-    if (regionScore.structure < 0.95) {
+    // position/size は structure (SSIM) が閾値を割った領域のうち、shape
+    // (Sobel エッジの Hausdorff 距離、色に依存しない) が実際にエッジ位置の
+    // ズレを示している場合のみ発火させる。SSIM の luminance 項は純色/輝度
+    // シフトだけでも押し下げられるため、SSIM 単独では「色だけ変わった」領域を
+    // 誤って position/size と分類してしまう（issue-kind precision 55%の
+    // 根本原因）。shape はエッジ（局所的な輝度勾配が閾値を超える箇所）の
+    // 空間位置を色に関わらず比較するため、エッジが動いていなければ 0 になる
+    // ——純色シフトの実測: 0.0000。実際の平行移動/リサイズでは shape > 0
+    // （実測: line-height-off 8pxシフト=0.052〜0.056、layout-off=0.141、
+    // single-section-regression=0.087、font-size-off=0.013〜0.019）。
+    const hasEdgeDisplacement = regionScore.shape > GEOMETRIC_SHAPE_EPSILON;
+
+    if (regionScore.structure < 0.95 && hasEdgeDisplacement) {
       issues.push({
         regionId: regionScore.regionId,
         bbox: regionScore.bbox,
@@ -232,7 +253,7 @@ function buildIssues(
         severity: "major",
         figmaNodeId: regionScore.figmaNodeId,
         evidence: {
-          signal: "ssim",
+          signal: "ssim+hausdorff",
           value: regionScore.structure,
           threshold: 0.95,
           expected: ">= 0.95",
@@ -243,7 +264,7 @@ function buildIssues(
       });
     }
 
-    if (regionScore.structure < 0.9) {
+    if (regionScore.structure < 0.9 && hasEdgeDisplacement) {
       issues.push({
         regionId: regionScore.regionId,
         bbox: regionScore.bbox,
@@ -251,7 +272,7 @@ function buildIssues(
         severity: "major",
         figmaNodeId: regionScore.figmaNodeId,
         evidence: {
-          signal: "ssim",
+          signal: "ssim+hausdorff",
           value: regionScore.structure,
           threshold: 0.9,
           expected: ">= 0.9",

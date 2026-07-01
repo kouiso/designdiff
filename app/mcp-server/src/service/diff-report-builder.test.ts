@@ -93,8 +93,14 @@ describe("buildDiffReport", () => {
     expect(result.regionScores[0].structure).toBeLessThan(0.8);
     expect(result.weightedAggregate?.weightedStructure).toBeLessThan(0.8);
     expect(result.rationale).toContain("critical severity issue");
-    expect(result.issues.map((issue) => issue.kind)).toContain("position");
-    expect(result.issues.map((issue) => issue.kind)).toContain("size");
+    // 両方とも内部が完全に一様な単色ブロック（黒 vs 白）— エッジ（局所的な
+    // 輝度勾配）が一切無いため shape (Hausdorff) は 0。幾何学的な歪みは無く
+    // 純粋な色差のみなので "position"/"size" は発火しない（発火したら
+    // issue-kind precision のバグ = 色変化だけで geometric kind が誤発火）。
+    expect(result.regionScores[0].shape).toBe(0);
+    expect(result.issues.map((issue) => issue.kind)).toContain("color");
+    expect(result.issues.map((issue) => issue.kind)).not.toContain("position");
+    expect(result.issues.map((issue) => issue.kind)).not.toContain("size");
     expect(result.issues.map((issue) => issue.severity)).toContain("critical");
     for (const issue of result.issues) {
       expect(issue.evidence.figmaFileKey).toBe("FILE_KEY_123");

@@ -110,12 +110,49 @@ function detectTranslationCoarse(designPixels, screenshotPixels, width, height) 
 
 /**
  * Load image file → Uint8ClampedArray (RGBA) + dimensions via Sharp.
+ * When canvasWidth/canvasHeight are given and differ from the source image's
+ * own dimensions, the image is padded (NOT scaled) into the top-left corner
+ * of a canvasWidth x canvasHeight transparent canvas. This preserves absolute
+ * pixel positions/scale — required because oracle-compare measures pixel-level
+ * translation offsets, and resizing would distort that measurement.
  */
-async function loadImage(filePath) {
+async function loadImage(filePath, canvasWidth, canvasHeight) {
   const img = sharp(filePath).ensureAlpha();
   const { width, height } = await img.metadata();
+
+  if (
+    canvasWidth != null &&
+    canvasHeight != null &&
+    (width !== canvasWidth || height !== canvasHeight)
+  ) {
+    const padded = await sharp(filePath)
+      .ensureAlpha()
+      .extend({
+        top: 0,
+        left: 0,
+        right: Math.max(0, canvasWidth - width),
+        bottom: Math.max(0, canvasHeight - height),
+        background: { r: 0, g: 0, b: 0, alpha: 0 },
+      })
+      .raw()
+      .toBuffer();
+    return {
+      pixels: new Uint8ClampedArray(padded.buffer, padded.byteOffset, padded.byteLength),
+      width: canvasWidth,
+      height: canvasHeight,
+      originalWidth: width,
+      originalHeight: height,
+    };
+  }
+
   const rawBuf = await img.raw().toBuffer();
-  return { pixels: new Uint8ClampedArray(rawBuf.buffer), width, height };
+  return {
+    pixels: new Uint8ClampedArray(rawBuf.buffer, rawBuf.byteOffset, rawBuf.byteLength),
+    width,
+    height,
+    originalWidth: width,
+    originalHeight: height,
+  };
 }
 
 /**
@@ -223,14 +260,22 @@ async function selfTest() {
  * Returns summary including detected translation and residual rate.
  */
 async function compareFiles(designPath, screenshotPath, outDiffPath) {
-  const design = await loadImage(designPath);
-  const screenshot = await loadImage(screenshotPath);
+  // Probe dimensions first so we know whether padding-normalization is needed.
+  const [designMeta, screenshotMeta] = await Promise.all([
+    sharp(designPath).metadata(),
+    sharp(screenshotPath).metadata(),
+  ]);
+  const sizeMismatch =
+    designMeta.width !== screenshotMeta.width || designMeta.height !== screenshotMeta.height;
+  const canvasWidth = sizeMismatch
+    ? Math.max(designMeta.width, screenshotMeta.width)
+    : undefined;
+  const canvasHeight = sizeMismatch
+    ? Math.max(designMeta.height, screenshotMeta.height)
+    : undefined;
 
-  if (design.width !== screenshot.width || design.height !== screenshot.height) {
-    throw new Error(
-      `Size mismatch: design=${design.width}x${design.height} vs screenshot=${screenshot.width}x${screenshot.height}`
-    );
-  }
+  const design = await loadImage(designPath, canvasWidth, canvasHeight);
+  const screenshot = await loadImage(screenshotPath, canvasWidth, canvasHeight);
 
   const { width, height } = design;
 
@@ -273,6 +318,9 @@ async function compareFiles(designPath, screenshotPath, outDiffPath) {
   return {
     width,
     height,
+    sizeMismatch,
+    designOriginalSize: { width: design.originalWidth, height: design.originalHeight },
+    screenshotOriginalSize: { width: screenshot.originalWidth, height: screenshot.originalHeight },
     totalPixels: width * height,
     baselineDiffPixels: baselineDiffCount,
     baselineResidualRate: baselineDiffCount / (width * height),
