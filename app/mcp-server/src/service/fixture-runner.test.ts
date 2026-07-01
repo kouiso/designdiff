@@ -87,7 +87,7 @@ const FixtureExpectationSchema = z.object({
 
 const FIXTURES_ROOT = path.resolve(import.meta.dirname, "../../../../verification/fixtures");
 // coverage 実行では画像比較が 5 秒を超えることがあるため、fixture だけ余裕を持たせる。
-const FIXTURE_TEST_TIMEOUT_MS = 15_000;
+const FIXTURE_TEST_TIMEOUT_MS = 30_000;
 
 async function loadBase64(filePath: string): Promise<string> {
   const buffer = await fs.readFile(filePath);
