@@ -8,8 +8,8 @@ function srgbToLinear(c: number): number {
 function linearRgbToXyz(r: number, g: number, b: number): [number, number, number] {
   return [
     r * 0.4124564 + g * 0.3575761 + b * 0.1804375,
-    r * 0.2126729 + g * 0.7151522 + b * 0.0721750,
-    r * 0.0193339 + g * 0.1191920 + b * 0.9503041,
+    r * 0.2126729 + g * 0.7151522 + b * 0.072175,
+    r * 0.0193339 + g * 0.119192 + b * 0.9503041,
   ];
 }
 
@@ -21,18 +21,9 @@ const LAB_EPSILON = 0.008856;
 const LAB_KAPPA = 903.3;
 
 function xyzToLab(x: number, y: number, z: number): [number, number, number] {
-  const fx =
-    x / D65_X > LAB_EPSILON
-      ? Math.cbrt(x / D65_X)
-      : (LAB_KAPPA * (x / D65_X) + 16) / 116;
-  const fy =
-    y / D65_Y > LAB_EPSILON
-      ? Math.cbrt(y / D65_Y)
-      : (LAB_KAPPA * (y / D65_Y) + 16) / 116;
-  const fz =
-    z / D65_Z > LAB_EPSILON
-      ? Math.cbrt(z / D65_Z)
-      : (LAB_KAPPA * (z / D65_Z) + 16) / 116;
+  const fx = x / D65_X > LAB_EPSILON ? Math.cbrt(x / D65_X) : (LAB_KAPPA * (x / D65_X) + 16) / 116;
+  const fy = y / D65_Y > LAB_EPSILON ? Math.cbrt(y / D65_Y) : (LAB_KAPPA * (y / D65_Y) + 16) / 116;
+  const fz = z / D65_Z > LAB_EPSILON ? Math.cbrt(z / D65_Z) : (LAB_KAPPA * (z / D65_Z) + 16) / 116;
 
   return [116 * fy - 16, 500 * (fx - fy), 200 * (fy - fz)];
 }
@@ -44,10 +35,7 @@ export function srgbToLab(r: number, g: number, b: number): [number, number, num
 
 const DEG = Math.PI / 180;
 
-export function deltaE2000(
-  lab1: [number, number, number],
-  lab2: [number, number, number],
-): number {
+export function deltaE2000(lab1: [number, number, number], lab2: [number, number, number]): number {
   const [L1, a1, b1] = lab1;
   const [L2, a2, b2] = lab2;
 
