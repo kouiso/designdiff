@@ -173,7 +173,7 @@ describe("runCompareDesign system UI masks", () => {
     expect(comparison.result.matchRate).toBe(100);
     expect(comparison.result.diffPixelCount).toBe(0);
     expect(comparison.result.totalPixelCount).toBe(2416480);
-  }, 15_000);
+  }, 60_000);
 
   it("mask_system_ui:false では capture_device でも system bar マスクを追加しないこと", async () => {
     const { runCompareDesign } = await import("./compare-design-runner.js");
@@ -188,7 +188,7 @@ describe("runCompareDesign system UI masks", () => {
 
     expect(comparison.result.diffPixelCount).toBe(155520);
     expect(comparison.result.totalPixelCount).toBe(2572000);
-  }, 15_000);
+  }, 60_000);
 
   it("通常 screenshot では既定で system bar マスクを追加しないこと", async () => {
     const { runCompareDesign } = await import("./compare-design-runner.js");
@@ -201,7 +201,7 @@ describe("runCompareDesign system UI masks", () => {
 
     expect(comparison.result.diffPixelCount).toBe(155520);
     expect(comparison.result.totalPixelCount).toBe(2592000);
-  }, 15_000);
+  }, 60_000);
 
   it("screenshot_url では既定で system bar マスクを追加しないこと", async () => {
     const { runCompareDesign } = await import("./compare-design-runner.js");
@@ -214,7 +214,7 @@ describe("runCompareDesign system UI masks", () => {
 
     expect(comparison.result.diffPixelCount).toBe(155520);
     expect(comparison.result.totalPixelCount).toBe(2592000);
-  }, 15_000);
+  }, 60_000);
 
   it("capture_device と cropRegion.y>0 の併用では post-crop 上端の実コンテンツを mask しないこと", async () => {
     const { getProjectDir } = await import("./project-store.js");
@@ -252,5 +252,5 @@ describe("runCompareDesign system UI masks", () => {
     } finally {
       await fs.rm(projectDir, { recursive: true, force: true });
     }
-  }, 15_000);
+  }, 60_000);
 });

@@ -40,19 +40,29 @@ function extractText(result: unknown): string {
 
 describe("buildVerdict", () => {
   it("色または形状の悪化を regression として扱う", () => {
-    expect(buildVerdict(0, 3.1, 0)).toBe("regressed");
-    expect(buildVerdict(0.02, 3.1, 0)).toBe("regressed");
-    expect(buildVerdict(0, 0, 0.02)).toBe("regressed");
+    expect(buildVerdict(0, 3.1, 0, 0, 3.1)).toBe("regressed");
+    expect(buildVerdict(0.02, 3.1, 0, 0, 3.1)).toBe("regressed");
+    expect(buildVerdict(0, 0, 0.02, 1, 1)).toBe("regressed");
   });
 
   it("構造・色・形状の改善を improved として扱う", () => {
-    expect(buildVerdict(0.02, 0, 0)).toBe("improved");
-    expect(buildVerdict(0, -3.1, 0)).toBe("improved");
-    expect(buildVerdict(0, 0, -0.02)).toBe("improved");
+    expect(buildVerdict(0.02, 0, 0, 1, 1)).toBe("improved");
+    expect(buildVerdict(0, -3.1, 0, 3.1, 0)).toBe("improved");
+    expect(buildVerdict(0, 0, -0.02, 1, 1)).toBe("improved");
   });
 
   it("small color movement on 0..100 scale does not override large structural improvement", () => {
-    expect(buildVerdict(0.5, 0.05, 0)).toBe("improved");
+    expect(buildVerdict(0.5, 0.05, 0, 1, 1.05)).toBe("improved");
+  });
+
+  it("小さいcolorDeltaでも buildIssues の fail 閾値(2)を跨いだら regressed とする", () => {
+    // colorDelta = 0.6 (< COLOR_DELTA_THRESHOLD=2) だが、絶対値が
+    // 1.5(pass) -> 2.1(fail) に悪化しているため regressed 扱いにする。
+    expect(buildVerdict(0, 0.6, 0, 1.5, 2.1)).toBe("regressed");
+  });
+
+  it("閾値を跨がない小さい colorDelta は unchanged のままにする", () => {
+    expect(buildVerdict(0, 0.6, 0, 0.5, 1.1)).toBe("unchanged");
   });
 });
 

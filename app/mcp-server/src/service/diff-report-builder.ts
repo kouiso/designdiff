@@ -1,5 +1,6 @@
 import {
   computeHausdorff,
+  computeMeanDeltaE2000,
   computeSsimForRegion,
   computeVerdict,
   detectHighTextureRegion,
@@ -44,8 +45,163 @@ interface BuildDiffReportOptions {
 
 const MAX_REGION_SCORE_COUNT = 24;
 const MIN_REGION_PIXEL_AREA = 64;
+// shape (Hausdorff, 0-1 正規化済み) が実測でこの値を明確に上回る場合のみ
+// エッジの空間ズレを「実在する」と判定する。純色/輝度シフトのみの領域は
+// 実測で shape=0.0000 exact、実際の平行移動/リサイズは最小でも 0.013 台
+// だったため、0.005 は両者の間の安全マージン。
+const GEOMETRIC_SHAPE_EPSILON = 0.005;
 
-const buildApproximateColorDifference = (
+// ─── Translation detection ────────────────────────────────────────────────────
+
+const COARSE_RANGE = 50;
+const COARSE_STEP = 5;
+const FINE_RANGE = 5;
+const COARSE_SAMPLE_STEP = 4;
+const DIFF_THRESHOLD_SQ = 625; // per-channel RGB distance threshold (25^2)
+
+/**
+ * Count differing pixels between design (offset by dx,dy) and screenshot,
+ * sampling every sampleStep pixels. No array allocation — direct index math.
+ *
+ * alwaysPenalizeOob: when true, every OOB pixel counts as a diff (used in the
+ * improvement-check gate to prevent transparent-vs-black false matches).
+ * When false (default for detection), OOB only penalizes visible screen content.
+ */
+const countSsdOffset = (
+  design: Uint8ClampedArray,
+  screenshot: Uint8ClampedArray,
+  width: number,
+  height: number,
+  dx: number,
+  dy: number,
+  sampleStep: number,
+  alwaysPenalizeOob = false,
+): number => {
+  let diff = 0;
+  for (let y = 0; y < height; y += sampleStep) {
+    for (let x = 0; x < width; x += sampleStep) {
+      const bIdx = (y * width + x) * 4;
+      const srcX = x - dx;
+      const srcY = y - dy;
+      if (srcX < 0 || srcX >= width || srcY < 0 || srcY >= height) {
+        if (alwaysPenalizeOob) {
+          diff++;
+        } else {
+          // Out-of-bounds design pixels are effectively transparent (0,0,0,0).
+          // Count as diff when the screenshot has visible content.
+          const r = screenshot[bIdx];
+          const g = screenshot[bIdx + 1];
+          const b = screenshot[bIdx + 2];
+          if (r * r + g * g + b * b > DIFF_THRESHOLD_SQ) diff++;
+        }
+        continue;
+      }
+      const aIdx = (srcY * width + srcX) * 4;
+      const dr = design[aIdx] - screenshot[bIdx];
+      const dg = design[aIdx + 1] - screenshot[bIdx + 1];
+      const db = design[aIdx + 2] - screenshot[bIdx + 2];
+      if (dr * dr + dg * dg + db * db > DIFF_THRESHOLD_SQ) diff++;
+    }
+  }
+  return diff;
+};
+
+/**
+ * Detect translation offset between design and screenshot pixels.
+ * Coarse search (±50px, step 5px, sampled) then fine (±5px, full resolution).
+ * Returns { dx, dy } such that shifting design by (dx,dy) minimises pixel diff.
+ */
+const detectTranslation = (
+  design: Uint8ClampedArray,
+  screenshot: Uint8ClampedArray,
+  width: number,
+  height: number,
+): { dx: number; dy: number; confidence: number; residual: number } => {
+  if (width * height < 64) {
+    return { dx: 0, dy: 0, confidence: 1, residual: 0 };
+  }
+
+  let bestDx = 0;
+  let bestDy = 0;
+  let bestDiff = Infinity;
+
+  for (let dy = -COARSE_RANGE; dy <= COARSE_RANGE; dy += COARSE_STEP) {
+    for (let dx = -COARSE_RANGE; dx <= COARSE_RANGE; dx += COARSE_STEP) {
+      const d = countSsdOffset(design, screenshot, width, height, dx, dy, COARSE_SAMPLE_STEP);
+      if (d < bestDiff) {
+        bestDiff = d;
+        bestDx = dx;
+        bestDy = dy;
+      }
+    }
+  }
+
+  // bestDiff from the coarse pass is a sampled count (every COARSE_SAMPLE_STEP
+  // pixels), not comparable to the fine pass's full-resolution count — reset
+  // before the fine pass so it doesn't spuriously "win" against every full-res
+  // candidate purely because it summed far fewer samples.
+  const coarseDx = bestDx;
+  const coarseDy = bestDy;
+  bestDiff = Infinity;
+  // The fine pass runs FINE_RANGE*2+1 squared candidates; a step of 1 on a
+  // large screenshot (e.g. a 1080x2340 real-device capture) means over 100
+  // full-resolution scans. Sample on a stride for large images — the fine
+  // pass only needs to discriminate between candidates 10px apart, so a
+  // coarser sample than 1px is still discriminating at that scale.
+  const fineSampleStep = width * height > 1_000_000 ? 2 : 1;
+  for (let dy = coarseDy - FINE_RANGE; dy <= coarseDy + FINE_RANGE; dy++) {
+    for (let dx = coarseDx - FINE_RANGE; dx <= coarseDx + FINE_RANGE; dx++) {
+      const d = countSsdOffset(design, screenshot, width, height, dx, dy, fineSampleStep);
+      if (d < bestDiff) {
+        bestDiff = d;
+        bestDx = dx;
+        bestDy = dy;
+      }
+    }
+  }
+
+  // bestDiff is a count over the fineSampleStep grid, not every pixel — normalize
+  // by the actual number of sampled positions (matches countSsdOffset's
+  // `for (i = 0; i < n; i += step)` iteration count), not the raw pixel count,
+  // or a strided scan underreports residual by roughly step^2.
+  const sampledPositionCount =
+    Math.ceil(width / fineSampleStep) * Math.ceil(height / fineSampleStep);
+  const residual = sampledPositionCount === 0 ? 0 : bestDiff / sampledPositionCount;
+  const offsetMagnitude = Math.sqrt(bestDx * bestDx + bestDy * bestDy);
+  const confidence = Math.max(0, 1 - offsetMagnitude / (COARSE_RANGE * Math.SQRT2));
+
+  return { dx: bestDx, dy: bestDy, confidence, residual };
+};
+
+/**
+ * Shift design pixels by (dx, dy) to apply alignment correction.
+ * Pixels shifted outside bounds become transparent.
+ */
+const shiftPixels = (
+  src: Uint8ClampedArray,
+  width: number,
+  height: number,
+  dx: number,
+  dy: number,
+): Uint8ClampedArray => {
+  const dst = new Uint8ClampedArray(width * height * 4);
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const srcX = x - dx;
+      const srcY = y - dy;
+      if (srcX < 0 || srcX >= width || srcY < 0 || srcY >= height) continue;
+      const srcIdx = (srcY * width + srcX) * 4;
+      const dstIdx = (y * width + x) * 4;
+      dst[dstIdx] = src[srcIdx];
+      dst[dstIdx + 1] = src[srcIdx + 1];
+      dst[dstIdx + 2] = src[srcIdx + 2];
+      dst[dstIdx + 3] = src[srcIdx + 3];
+    }
+  }
+  return dst;
+};
+
+const buildColorDifference = (
   designPixels: Uint8ClampedArray,
   screenshotPixels: Uint8ClampedArray,
   width: number,
@@ -56,35 +212,7 @@ const buildApproximateColorDifference = (
   const startY = bbox ? Math.max(0, Math.floor(bbox.y)) : 0;
   const endX = bbox ? Math.min(Math.ceil(bbox.x + bbox.w), width) : width;
   const endY = bbox ? Math.min(Math.ceil(bbox.y + bbox.h), height) : height;
-  let totalRgbDifference = 0;
-  let pixelCount = 0;
-
-  if (!bbox) {
-    for (let index = 0; index < designPixels.length; index += 4) {
-      totalRgbDifference += Math.abs(designPixels[index] - screenshotPixels[index]);
-      totalRgbDifference += Math.abs(designPixels[index + 1] - screenshotPixels[index + 1]);
-      totalRgbDifference += Math.abs(designPixels[index + 2] - screenshotPixels[index + 2]);
-    }
-    pixelCount = designPixels.length / 4;
-  } else {
-    for (let y = startY; y < endY; y++) {
-      for (let x = startX; x < endX; x++) {
-        const index = (y * width + x) * 4;
-        totalRgbDifference += Math.abs(designPixels[index] - screenshotPixels[index]);
-        totalRgbDifference += Math.abs(designPixels[index + 1] - screenshotPixels[index + 1]);
-        totalRgbDifference += Math.abs(designPixels[index + 2] - screenshotPixels[index + 2]);
-        pixelCount += 1;
-      }
-    }
-  }
-
-  if (pixelCount === 0) {
-    return 0;
-  }
-
-  const meanAbsoluteRgbDifference = totalRgbDifference / (pixelCount * 3);
-  // P1 はまだ ΔE2000 を導入しないため、平均 RGB 絶対差を 0-100 の ΔE 相当レンジへ正規化した近似値を返す。
-  return (meanAbsoluteRgbDifference / 255) * 100;
+  return computeMeanDeltaE2000(designPixels, screenshotPixels, startX, startY, endX, endY, width);
 };
 
 function buildIssues(
@@ -99,7 +227,11 @@ function buildIssues(
   };
 
   for (const regionScore of regionScores) {
-    if (regionScore.color >= 3) {
+    // color は唯一の severity="critical" kind で computeVerdict の
+    // hasCriticalIssue 判定に直結するため、常に emit する（verdict の
+    // 正しさが kind ラベルの精度より優先 — 条件付き抑制で verdict accuracy が
+    // 100%→66.7%に崩れることを実測済み）。
+    if (regionScore.color >= 2) {
       issues.push({
         regionId: regionScore.regionId,
         bbox: regionScore.bbox,
@@ -107,10 +239,10 @@ function buildIssues(
         severity: "critical",
         figmaNodeId: regionScore.figmaNodeId,
         evidence: {
-          signal: "approx_color_difference",
+          signal: "delta_e_2000",
           value: regionScore.color,
-          threshold: 3,
-          expected: "< 3",
+          threshold: 2,
+          expected: "< 2",
           actual: regionScore.color,
           ...evidenceProvenance,
         },
@@ -118,7 +250,19 @@ function buildIssues(
       });
     }
 
-    if (regionScore.structure < 0.95) {
+    // position/size は structure (SSIM) が閾値を割った領域のうち、shape
+    // (Sobel エッジの Hausdorff 距離、色に依存しない) が実際にエッジ位置の
+    // ズレを示している場合のみ発火させる。SSIM の luminance 項は純色/輝度
+    // シフトだけでも押し下げられるため、SSIM 単独では「色だけ変わった」領域を
+    // 誤って position/size と分類してしまう（issue-kind precision 55%の
+    // 根本原因）。shape はエッジ（局所的な輝度勾配が閾値を超える箇所）の
+    // 空間位置を色に関わらず比較するため、エッジが動いていなければ 0 になる
+    // ——純色シフトの実測: 0.0000。実際の平行移動/リサイズでは shape > 0
+    // （実測: line-height-off 8pxシフト=0.052〜0.056、layout-off=0.141、
+    // single-section-regression=0.087、font-size-off=0.013〜0.019）。
+    const hasEdgeDisplacement = regionScore.shape > GEOMETRIC_SHAPE_EPSILON;
+
+    if (regionScore.structure < 0.95 && hasEdgeDisplacement) {
       issues.push({
         regionId: regionScore.regionId,
         bbox: regionScore.bbox,
@@ -126,7 +270,7 @@ function buildIssues(
         severity: "major",
         figmaNodeId: regionScore.figmaNodeId,
         evidence: {
-          signal: "ssim",
+          signal: "ssim+hausdorff",
           value: regionScore.structure,
           threshold: 0.95,
           expected: ">= 0.95",
@@ -137,7 +281,7 @@ function buildIssues(
       });
     }
 
-    if (regionScore.structure < 0.9) {
+    if (regionScore.structure < 0.9 && hasEdgeDisplacement) {
       issues.push({
         regionId: regionScore.regionId,
         bbox: regionScore.bbox,
@@ -145,7 +289,7 @@ function buildIssues(
         severity: "major",
         figmaNodeId: regionScore.figmaNodeId,
         evidence: {
-          signal: "ssim",
+          signal: "ssim+hausdorff",
           value: regionScore.structure,
           threshold: 0.9,
           expected: ">= 0.9",
@@ -310,7 +454,7 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
         bbox,
         figmaNodeId: section.child.id,
         structure: computeSsimForRegion(designPixels, screenshotPixels, width, height, bbox),
-        color: buildApproximateColorDifference(designPixels, screenshotPixels, width, height, bbox),
+        color: buildColorDifference(designPixels, screenshotPixels, width, height, bbox),
         shape: computeHausdorff(designPixels, screenshotPixels, width, height, bbox),
         layout: 0,
         textureScore: getTextureScore(bbox),
@@ -331,7 +475,7 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
       regionId: "whole-frame",
       bbox: wholeFrameBbox,
       structure: computeSsimForRegion(designPixels, screenshotPixels, width, height, contentBbox),
-      color: buildApproximateColorDifference(
+      color: buildColorDifference(
         designPixels,
         screenshotPixels,
         width,
@@ -361,19 +505,119 @@ function selectAnchorsForScoring<T>(anchors: readonly T[]): T[] {
   });
 }
 
+const ALIGNMENT_IMPROVEMENT_THRESHOLD = 0.85;
+// Sub-pixel/anti-aliasing tolerance for the global-shift visibility issue below.
+const GLOBAL_SHIFT_ISSUE_THRESHOLD_PX = 2;
+// A shift at or above this magnitude is implausible as mere rendering/DPR
+// noise between a Figma export and a real screenshot (that noise lives in
+// the 0-2px range this alignment correction exists to absorb — see the
+// ae45d66 commit this feature originated from). Codex correctly flagged
+// that a "major" issue alone never blocks PASS (computeVerdict only checks
+// severity==="critical"); below this size we keep the shift as a visible,
+// non-blocking note (preserves the original false-"全面ズレ" fix for
+// capture-scale noise). At or above it, treat as a real position defect —
+// escalate to "critical" so it fails through the same path "color" already
+// uses, without touching computeVerdict itself.
+const GLOBAL_SHIFT_CRITICAL_THRESHOLD_PX = 10;
+
 export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
-  const regionScores = buildRegionScores(options);
+  const { designPixels, screenshotPixels, width, height } = options;
+
+  const expectedLength = width * height * 4;
+  if (designPixels.length < expectedLength || screenshotPixels.length < expectedLength) {
+    throw new Error(
+      `Pixel buffer too small for ${width}x${height}: design=${designPixels.length}, screenshot=${screenshotPixels.length}, expected>=${expectedLength}`,
+    );
+  }
+
+  const { dx, dy, confidence, residual } = detectTranslation(
+    designPixels,
+    screenshotPixels,
+    width,
+    height,
+  );
+
+  // Only apply alignment correction when it meaningfully reduces pixel diff (>15% improvement).
+  // This guards against false minima in content-different images (e.g. uniform color images
+  // where any offset appears equally good without OOB penalization).
+  let alignedDesignPixels = designPixels;
+  let alignmentApplied = false;
+  if (dx !== 0 || dy !== 0) {
+    // Use alwaysPenalizeOob=true so that transparent OOB design pixels never
+    // falsely "match" a black screenshot region (both would appear as (0,0,0)).
+    const baselineDiff = countSsdOffset(
+      designPixels,
+      screenshotPixels,
+      width,
+      height,
+      0,
+      0,
+      COARSE_SAMPLE_STEP,
+      true,
+    );
+    const correctedDiff = countSsdOffset(
+      designPixels,
+      screenshotPixels,
+      width,
+      height,
+      dx,
+      dy,
+      COARSE_SAMPLE_STEP,
+      true,
+    );
+    if (baselineDiff > 0 && correctedDiff < baselineDiff * ALIGNMENT_IMPROVEMENT_THRESHOLD) {
+      alignedDesignPixels = shiftPixels(designPixels, width, height, dx, dy);
+      alignmentApplied = true;
+    }
+  }
+
+  const alignedOptions = { ...options, designPixels: alignedDesignPixels };
+  const regionScores = buildRegionScores(alignedOptions);
 
   const alignment = {
-    // P1 は位置合わせをまだ行わないため、identity transform をそのまま返す。
-    translation: { x: 0, y: 0 },
+    translation: { x: dx, y: dy },
     scale: { x: 1, y: 1 },
     rotation: 0,
-    confidence: 1,
-    residual: 0,
+    confidence,
+    residual,
   };
 
   const issues = buildIssues(regionScores, options);
+
+  // An accepted global alignment correction can hide a real regression: e.g.
+  // a page that scrolled/shifted is itself often the bug under test, not a
+  // capture artifact to silently correct away. A shift >= the critical
+  // threshold is escalated to severity="critical" so it fails through the
+  // same hasCriticalIssue path "color" already uses (computeVerdict itself
+  // is untouched); a smaller accepted shift stays a visible, non-blocking
+  // note — preserving the original false-"全面ズレ" fix this alignment
+  // correction exists for.
+  const shiftMagnitude = Math.sqrt(dx * dx + dy * dy);
+  if (alignmentApplied && shiftMagnitude >= GLOBAL_SHIFT_ISSUE_THRESHOLD_PX) {
+    const isCriticalShift = shiftMagnitude >= GLOBAL_SHIFT_CRITICAL_THRESHOLD_PX;
+    issues.push({
+      regionId: "whole-frame",
+      bbox: { x: 0, y: 0, w: width, h: height },
+      kind: "position",
+      severity: isCriticalShift ? "critical" : "major",
+      figmaNodeId: options.figmaNodeId,
+      evidence: {
+        signal: "translation_offset",
+        value: shiftMagnitude,
+        threshold: isCriticalShift
+          ? GLOBAL_SHIFT_CRITICAL_THRESHOLD_PX
+          : GLOBAL_SHIFT_ISSUE_THRESHOLD_PX,
+        expected: `< ${GLOBAL_SHIFT_ISSUE_THRESHOLD_PX}px`,
+        actual: `dx=${dx}, dy=${dy}`,
+        figmaFileKey: options.figmaFileKey,
+        figmaNodeId: options.figmaNodeId,
+        figmaPageName: options.figmaPageName,
+      },
+      suggestedCssFix:
+        "画面全体が平行移動しています。意図したスクロール/マージン変更か、レイアウト回帰かを確認してください。",
+    });
+  }
+
   const verdict = computeVerdict({ alignment, regionScores, issues });
 
   return {

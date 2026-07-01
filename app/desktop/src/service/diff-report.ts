@@ -1,4 +1,9 @@
-import { computeSsim, computeVerdict, type DiffReport } from "@figdiff/shared";
+import {
+  computeMeanDeltaE2000,
+  computeSsim,
+  computeVerdict,
+  type DiffReport,
+} from "@figdiff/shared";
 
 interface BuildDiffReportOptions {
   designPixels: Uint8ClampedArray;
@@ -16,28 +21,6 @@ interface RegionWindow {
 }
 
 const GRID_SIZE = 3;
-
-const buildApproximateColorDifference = (
-  designPixels: Uint8ClampedArray,
-  screenshotPixels: Uint8ClampedArray,
-): number => {
-  let totalRgbDifference = 0;
-  const pixelCount = designPixels.length / 4;
-
-  for (let index = 0; index < designPixels.length; index += 4) {
-    totalRgbDifference += Math.abs(designPixels[index] - screenshotPixels[index]);
-    totalRgbDifference += Math.abs(designPixels[index + 1] - screenshotPixels[index + 1]);
-    totalRgbDifference += Math.abs(designPixels[index + 2] - screenshotPixels[index + 2]);
-  }
-
-  if (pixelCount === 0) {
-    return 0;
-  }
-
-  const meanAbsoluteRgbDifference = totalRgbDifference / (pixelCount * 3);
-  // P1 では ΔE2000 未導入のため、平均 RGB 絶対差を 0-100 の近似スコアへ正規化する。
-  return (meanAbsoluteRgbDifference / 255) * 100;
-};
 
 const buildRegionWindows = (width: number, height: number): RegionWindow[] => {
   const horizontalNames = ["left", "center", "right"];
@@ -91,17 +74,17 @@ function buildIssues(regionScores: DiffReport["regionScores"]): DiffReport["issu
   const issues: DiffReport["issues"] = [];
 
   for (const regionScore of regionScores) {
-    if (regionScore.color >= 3 && regionScore.structure >= 0.95) {
+    if (regionScore.color >= 2 && regionScore.structure >= 0.95) {
       issues.push({
         regionId: regionScore.regionId,
         bbox: regionScore.bbox,
         kind: "color",
         severity: "critical",
         evidence: {
-          signal: "approx_color_difference",
+          signal: "delta_e_2000",
           value: regionScore.color,
-          threshold: 3,
-          expected: "< 3",
+          threshold: 2,
+          expected: "< 2",
           actual: regionScore.color,
         },
         suggestedCssFix:
@@ -157,7 +140,15 @@ export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
     const designRegionPixels = sampleRegionPixels(designPixels, width, window);
     const screenshotRegionPixels = sampleRegionPixels(screenshotPixels, width, window);
     const structure = computeSsim(designRegionPixels, screenshotRegionPixels, window.w, window.h);
-    const color = buildApproximateColorDifference(designRegionPixels, screenshotRegionPixels);
+    const color = computeMeanDeltaE2000(
+      designRegionPixels,
+      screenshotRegionPixels,
+      0,
+      0,
+      window.w,
+      window.h,
+      window.w,
+    );
 
     return {
       regionId: window.regionId,

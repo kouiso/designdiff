@@ -30,7 +30,16 @@ function findRegion(regions: RegionScore[], targetNodeId: string): RegionScore |
 }
 
 const STRUCTURE_DELTA_THRESHOLD = 0.01;
-const COLOR_DELTA_THRESHOLD = 3;
+// buildIssues() (diff-report-builder.ts) emits a critical "color" issue at
+// color >= 2 — keep this gate on the same threshold so a change that pushes
+// a region into compare_design's failing range is never simultaneously
+// reported here as "unchanged".
+const COLOR_DELTA_THRESHOLD = 2;
+// The absolute value buildIssues fails on. Distinct from COLOR_DELTA_THRESHOLD
+// above: a small delta (e.g. +0.6) can still cross this line (e.g. 1.5 -> 2.1)
+// without the raw delta itself exceeding COLOR_DELTA_THRESHOLD. Checked
+// separately in buildVerdict via currentColor/previousColor.
+const COLOR_ABSOLUTE_FAIL_THRESHOLD = 2;
 const SHAPE_DELTA_THRESHOLD = 0.01;
 const SIDE_EFFECT_STRUCTURE_THRESHOLD = 0.05;
 
@@ -38,7 +47,18 @@ export function buildVerdict(
   structureDelta: number,
   colorDelta: number,
   shapeDelta: number,
+  previousColor: number,
+  currentColor: number,
 ): "improved" | "unchanged" | "regressed" {
+  // A region that crosses from under compare_design's fail gate to at/over it
+  // is a regression regardless of how small the raw delta looks.
+  if (
+    previousColor < COLOR_ABSOLUTE_FAIL_THRESHOLD &&
+    currentColor >= COLOR_ABSOLUTE_FAIL_THRESHOLD
+  ) {
+    return "regressed";
+  }
+
   if (
     structureDelta < -STRUCTURE_DELTA_THRESHOLD ||
     colorDelta > COLOR_DELTA_THRESHOLD ||
@@ -153,7 +173,13 @@ export function registerVerifyFix(server: McpServer): void {
           structureDelta,
           colorDelta,
           shapeDelta,
-          verdict: buildVerdict(structureDelta, colorDelta, shapeDelta),
+          verdict: buildVerdict(
+            structureDelta,
+            colorDelta,
+            shapeDelta,
+            previousRegion.color,
+            currentRegion.color,
+          ),
           sideEffects,
         });
 

@@ -127,3 +127,39 @@ PR #207（`feat(WS3): sample-corporate Figma 対実装 構造SSIM ランナー`�
 - `gh pr list -R kouiso/designdiff --state open` → **0件**
 - `git worktree list` → メイン1本のみ（prunable 5本 + pr207-runner 削除済み）
 - dogfood loop 正式クローズ。
+
+---
+
+## Inc 7 — S2-G1 Fix 実測（ΔE2000 色差実装・2026-06-30）
+
+**対象欠陥**: S2-G1「RGB L1 colorDiff がΔE≤40 の知覚的色差を盲見逃し（PASS誤判定）」
+**修正**: RGB L1 近似 → CIEDE2000（sRGB→Lab変換 + ΔE2000 計算）
+**commit**: `dfe2eb8`
+
+### Before / After 実測
+
+| 指標 | Before (RGB L1) | After (ΔE2000) |
+|------|----------------|----------------|
+| 色差アルゴリズム | RGB L1 近似（知覚非線形） | CIEDE2000（知覚等価） |
+| ΔE≈40 の色差ペア colorDiff | 0.899（threshold=3.0 → **PASS 誤判定**） | ~40.0（threshold=2.0 → **FAIL 正検出**） |
+| 証跡 docs/ | color: 57.908 (旧scale) | color: 50.251 (ΔE2000 scale) |
+| signal key | `colorDiff` | `delta_e_2000` |
+
+**根本原因（S2-G1確定）**: RGB L1 = `(|ΔR|+|ΔG|+|ΔB|)/3` は 0..255 スケールの生差分。
+ΔE≤40 の知覚的に明確な色差（例：黄→オレンジ）が RGB L1≈0.9/255 となり threshold=3 をはるかに下回り
+PASS になっていた。CIEDE2000 は同じ色差ペアを ~40 ΔE として正しく検出する。
+
+### CI 結果（2026-06-30）
+
+| チェック | 結果 |
+|---------|------|
+| pnpm typecheck | ✅ 10/10 passed |
+| pnpm check (biome) | ✅ 0 errors (1 warning: complexity) |
+| pnpm test (vitest) | ✅ 190/190 passed |
+| pnpm lint:eslint | ✅ 0 errors |
+
+**変更ファイル**:
+- `package/shared/src/signal/delta-e-2000.ts`（新規: sRGB→Lab + CIEDE2000 + computeMeanDeltaE2000）
+- `package/shared/src/index.ts`（エクスポート追加）
+- `app/mcp-server/src/service/diff-report-builder.ts`（buildColorDifference → computeMeanDeltaE2000、threshold 3→2）
+- `app/desktop/src/service/diff-report.ts`（同上）
