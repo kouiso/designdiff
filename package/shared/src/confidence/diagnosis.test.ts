@@ -188,6 +188,40 @@ describe("diagnoseComparison", () => {
     expect(result.rankedCauses.some((c) => c.code === "crop_compression")).toBe(true);
   });
 
+  it("critical の crop_out_of_bounds は matchRate が 100 でも likely_misconfig", () => {
+    const result = diagnoseComparison({
+      matchRate: 100,
+      regionScores: [region({ structure: 1, color: 0 })],
+      preflightWarnings: [
+        {
+          code: "crop_out_of_bounds",
+          severity: "critical",
+          message: "crop が範囲外",
+          suggestedFix: "crop を更新してください",
+        },
+      ],
+    });
+    expect(result.verdict).toBe("likely_misconfig");
+    expect(result.likelyMisconfig).toBe(true);
+  });
+
+  it("warning の crop_out_of_bounds は matchRate が 99.9 なら clean", () => {
+    const result = diagnoseComparison({
+      matchRate: 99.9,
+      regionScores: [region({ structure: 1, color: 0 })],
+      preflightWarnings: [
+        {
+          code: "crop_out_of_bounds",
+          severity: "warning",
+          message: "crop が範囲外",
+          suggestedFix: "crop を更新してください",
+        },
+      ],
+    });
+    expect(result.verdict).toBe("clean");
+    expect(result.likelyMisconfig).toBe(false);
+  });
+
   it("crop_compression の重複は確度の高い方だけ残す", () => {
     const result = diagnoseComparison({
       matchRate: 5,

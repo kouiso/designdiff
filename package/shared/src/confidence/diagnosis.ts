@@ -263,11 +263,16 @@ export function diagnoseComparison(input: DiagnosisInput): ComparisonDiagnosis {
   const hasBlockingSetupCause = causes.some(
     (cause) => cause.code !== "aspect_mismatch" || cause.classification !== "mild_aspect_mismatch",
   );
+  const hasCriticalPreflightWarning = input.preflightWarnings.some(
+    (warning) => warning.severity === "critical",
+  );
 
   let verdict: ComparisonDiagnosis["verdict"];
-  if (input.matchRate >= CLEAN_MATCH_THRESHOLD && !severeSquish) {
+  if (severeSquish || hasCriticalPreflightWarning) {
+    verdict = "likely_misconfig";
+  } else if (input.matchRate >= CLEAN_MATCH_THRESHOLD) {
     verdict = "clean";
-  } else if (severeSquish || (input.matchRate < lowMatchThreshold && hasBlockingSetupCause)) {
+  } else if (input.matchRate < lowMatchThreshold && hasBlockingSetupCause) {
     verdict = "likely_misconfig";
   } else {
     verdict = "real_diff";
