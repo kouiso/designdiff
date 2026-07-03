@@ -266,7 +266,8 @@ export function diagnoseComparison(input: DiagnosisInput): ComparisonDiagnosis {
   // full_page_vs_viewport は aspect_ratio_mismatch が critical でも意図的な撮影条件差であり、
   // severeSquish と同様にここでも misconfig 扱いから除外する。
   const isFullPageVsViewport =
-    input.normalization !== undefined && classifyAspectMismatch(input.normalization) === "full_page_vs_viewport";
+    input.normalization !== undefined &&
+    classifyAspectMismatch(input.normalization) === "full_page_vs_viewport";
   const hasCriticalPreflightWarning = input.preflightWarnings.some((warning) => {
     if (warning.severity !== "critical") return false;
     if (warning.code === "aspect_ratio_mismatch" && isFullPageVsViewport) return false;
