@@ -263,11 +263,23 @@ export function diagnoseComparison(input: DiagnosisInput): ComparisonDiagnosis {
   const hasBlockingSetupCause = causes.some(
     (cause) => cause.code !== "aspect_mismatch" || cause.classification !== "mild_aspect_mismatch",
   );
+  // full_page_vs_viewport は aspect_ratio_mismatch が critical でも意図的な撮影条件差であり、
+  // severeSquish と同様にここでも misconfig 扱いから除外する。
+  const isFullPageVsViewport =
+    input.normalization !== undefined &&
+    classifyAspectMismatch(input.normalization) === "full_page_vs_viewport";
+  const hasCriticalPreflightWarning = input.preflightWarnings.some((warning) => {
+    if (warning.severity !== "critical") return false;
+    if (warning.code === "aspect_ratio_mismatch" && isFullPageVsViewport) return false;
+    return true;
+  });
 
   let verdict: ComparisonDiagnosis["verdict"];
-  if (input.matchRate >= CLEAN_MATCH_THRESHOLD && !severeSquish) {
+  if (severeSquish || hasCriticalPreflightWarning) {
+    verdict = "likely_misconfig";
+  } else if (input.matchRate >= CLEAN_MATCH_THRESHOLD) {
     verdict = "clean";
-  } else if (severeSquish || (input.matchRate < lowMatchThreshold && hasBlockingSetupCause)) {
+  } else if (input.matchRate < lowMatchThreshold && hasBlockingSetupCause) {
     verdict = "likely_misconfig";
   } else {
     verdict = "real_diff";
