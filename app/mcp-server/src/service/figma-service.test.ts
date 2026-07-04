@@ -1,6 +1,6 @@
 import * as fs from "node:fs/promises";
-import * as path from "node:path";
 import { tmpdir } from "node:os";
+import * as path from "node:path";
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 
