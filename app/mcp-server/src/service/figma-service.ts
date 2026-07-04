@@ -20,7 +20,7 @@ import {
 } from "@figdiff/shared";
 import type { Frame } from "@figdiff/shared";
 
-class FileSystemCacheStrategy implements FigmaCacheStrategy {
+export class FileSystemCacheStrategy implements FigmaCacheStrategy {
   private cacheDir: string;
 
   constructor(cacheDir: string) {
@@ -30,10 +30,12 @@ class FileSystemCacheStrategy implements FigmaCacheStrategy {
   async get(fileKey: string, nodeId: string, scale: number): Promise<string | null> {
     try {
       const cacheFile = this.getCachePath(fileKey, nodeId, scale);
-      const data = await fs.readFile(cacheFile, "utf-8");
-      return data;
-    } catch {
-      return null;
+      const data = await fs.readFile(cacheFile);
+      if (isPngBuffer(data)) return data.toString("base64");
+      return stripDataImagePrefix(data.toString("utf-8"));
+    } catch (error) {
+      if (isFileNotFoundError(error)) return null;
+      throw error;
     }
   }
 
@@ -41,13 +43,37 @@ class FileSystemCacheStrategy implements FigmaCacheStrategy {
     const cacheFile = this.getCachePath(fileKey, nodeId, scale);
     const dir = path.dirname(cacheFile);
     await fs.mkdir(dir, { recursive: true });
-    await fs.writeFile(cacheFile, base64, "utf-8");
+    const pngData = decodeBase64Image(base64);
+    await fs.writeFile(cacheFile, pngData);
   }
 
   private getCachePath(fileKey: string, nodeId: string, scale: number): string {
     const safeNodeId = nodeId.replace(/:/g, "_");
     return path.join(this.cacheDir, `${fileKey}_${safeNodeId}_${scale}x.png`);
   }
+}
+
+function decodeBase64Image(base64: string): Buffer {
+  return Buffer.from(stripDataImagePrefix(base64), "base64");
+}
+
+function stripDataImagePrefix(base64: string): string {
+  // data URL 経由の入力でもキャッシュは実 PNG として再利用できるようにするため。
+  return base64.trim().replace(/^data:image\/[^;]+;base64,/, "");
+}
+
+function isPngBuffer(buffer: Buffer): boolean {
+  return (
+    buffer.length >= 4 &&
+    buffer[0] === 0x89 &&
+    buffer[1] === 0x50 &&
+    buffer[2] === 0x4e &&
+    buffer[3] === 0x47
+  );
+}
+
+function isFileNotFoundError(error: unknown): boolean {
+  return error instanceof Error && "code" in error && error.code === "ENOENT";
 }
 
 const MIN_SCALE = 0.5;
