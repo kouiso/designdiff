@@ -26,7 +26,10 @@ jobs:
           - os: Windows
             runs-on: windows-latest
     runs-on: ${{ matrix.runs-on }}
-    if: github.event.pull_request.draft == false && (matrix.os == 'Linux' || github.event_name != 'pull_request')
+    if: >
+      (github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch') &&
+      github.event.pull_request.draft == false &&
+      (matrix.os == 'Linux' || github.event_name != 'pull_request')
     steps:
       - uses: actions/checkout@v6
 
