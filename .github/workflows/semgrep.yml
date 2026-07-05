@@ -21,6 +21,7 @@ jobs:
   semgrep:
     name: Code Scan
     runs-on: ${{ vars.RUNNER_LINUX }}
+    timeout-minutes: 15
     container:
       image: semgrep/semgrep
     if: github.actor != 'dependabot[bot]'

@@ -16,6 +16,7 @@ concurrency:
 jobs:
   release:
     name: Build & Release (${{ matrix.os }})
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:

@@ -19,6 +19,7 @@ jobs:
   cloudflare-pages:
     name: Cloudflare Pages
     runs-on: ${{ vars.RUNNER_LINUX }}
+    timeout-minutes: 30
     if: github.event_name != 'pull_request' || (github.event.pull_request.draft == false && github.event.pull_request.head.repo.full_name == github.repository)
     env:
       HAS_CLOUDFLARE_SECRETS: ${{ secrets.CLOUDFLARE_ACCOUNT_ID != '' && secrets.CLOUDFLARE_API_TOKEN != '' && vars.CLOUDFLARE_PAGES_PROJECT_NAME != '' }}
@@ -53,7 +54,7 @@ jobs:
       - name: Deploy to Cloudflare Pages
         if: env.HAS_CLOUDFLARE_SECRETS == 'true'
         id: deploy
-        uses: cloudflare/wrangler-action@v3
+        uses: cloudflare/wrangler-action@9acf94ace14e7dc412b076f2c5c20b8ce93c79cd # v3.15.0
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

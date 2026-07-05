@@ -16,6 +16,7 @@ jobs:
   node:
     name: Node (${{ matrix.check-type }})
     runs-on: ${{ vars.RUNNER_LINUX }}
+    timeout-minutes: 15
     if: github.event.pull_request.draft == false
     strategy:
       fail-fast: false
