@@ -8,10 +8,18 @@ on:
       - '.github/copilot-instructions.md'
       - 'scripts/sync-ai-rules.sh'
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   drift-check:
     name: Bridge files in sync with AGENTS.md
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
         with:

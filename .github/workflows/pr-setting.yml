@@ -16,6 +16,7 @@ jobs:
   auto-assign:
     name: Auto Assign Author
     runs-on: ${{ vars.RUNNER_LINUX }}
+    timeout-minutes: 5
     steps:
       - uses: actions/github-script@v9
         with:

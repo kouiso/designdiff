@@ -20,6 +20,7 @@ jobs:
   trufflehog:
     name: Secret Scan
     runs-on: ${{ vars.RUNNER_LINUX }}
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v6
         with:

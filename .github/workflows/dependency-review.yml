@@ -19,6 +19,7 @@ jobs:
   dependency-review:
     name: Dependency Review
     runs-on: ${{ vars.RUNNER_LINUX }}
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v6
 

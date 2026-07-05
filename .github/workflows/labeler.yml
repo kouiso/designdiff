@@ -16,6 +16,7 @@ jobs:
   labeler:
     name: Label PR
     runs-on: ${{ vars.RUNNER_LINUX }}
+    timeout-minutes: 5
     steps:
       - uses: actions/labeler@v6
         with:
