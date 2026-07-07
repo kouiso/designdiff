@@ -73,13 +73,22 @@ export async function captureUrl(url: string, options: CaptureOptions): Promise<
     const client = await page.context().newCDPSession(page);
     let contentHeight: number;
     try {
-      const { contentSize } = await client.send("Page.getLayoutMetrics");
-      contentHeight = Math.ceil(contentSize.height);
+      const metrics = await client.send("Page.getLayoutMetrics");
+      const rawHeight = metrics?.contentSize?.height;
+      if (typeof rawHeight !== "number" || !Number.isFinite(rawHeight) || rawHeight <= 0) {
+        throw new Error(
+          `CDP Page.getLayoutMetrics returned invalid contentSize height: ${String(rawHeight)}`,
+        );
+      }
+      contentHeight = Math.ceil(rawHeight);
       const shot = await client.send("Page.captureScreenshot", {
         format: "png",
         clip: { x: 0, y: 0, width: options.width, height: contentHeight, scale: 1 },
         captureBeyondViewport: true,
       });
+      if (!shot?.data) {
+        throw new Error("CDP Page.captureScreenshot did not return image data");
+      }
       await fs.writeFile(screenshotPath, Buffer.from(shot.data, "base64"));
     } finally {
       await client.detach();

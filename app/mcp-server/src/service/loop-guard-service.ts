@@ -49,12 +49,29 @@ function stateFilePath(sourceKey: string, stateDir: string): string {
   return path.join(stateDir, `${hash}.json`);
 }
 
+// Node のエラーは e.code を持つ。ENOENT (初回でファイル無し) は正常系。
+function errorCode(e: unknown): string | undefined {
+  if (typeof e === "object" && e !== null && "code" in e && typeof e.code === "string") {
+    return e.code;
+  }
+  return undefined;
+}
+
 async function loadEntries(filePath: string): Promise<LoopStateEntry[]> {
   try {
     const raw = await fs.readFile(filePath, "utf8");
     const parsed = z.array(LoopStateEntrySchema).safeParse(JSON.parse(raw));
-    return parsed.success ? parsed.data : [];
-  } catch {
+    if (!parsed.success) {
+      console.warn(`[loop-guard] loop-state schema mismatch (resetting): ${parsed.error.message}`);
+      return [];
+    }
+    return parsed.data;
+  } catch (e: unknown) {
+    if (errorCode(e) !== "ENOENT") {
+      console.warn(
+        `[loop-guard] failed to read loop-state file: ${e instanceof Error ? e.message : String(e)}`,
+      );
+    }
     return [];
   }
 }
@@ -147,7 +164,12 @@ export async function resetLoopState(
   const stateDir = options.stateDir ?? getLoopStateDir();
   try {
     await fs.rm(stateFilePath(sourceKey, stateDir));
-  } catch {
-    // 存在しない場合は何もしない
+  } catch (e: unknown) {
+    // 存在しない (ENOENT) のは正常系。それ以外は観測できるよう警告を残す。
+    if (errorCode(e) !== "ENOENT") {
+      console.warn(
+        `[loop-guard] failed to reset loop-state: ${e instanceof Error ? e.message : String(e)}`,
+      );
+    }
   }
 }
