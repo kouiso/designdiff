@@ -43,6 +43,16 @@ const COLOR_ABSOLUTE_FAIL_THRESHOLD = 2;
 const SHAPE_DELTA_THRESHOLD = 0.01;
 const SIDE_EFFECT_STRUCTURE_THRESHOLD = 0.05;
 
+// 各軸の delta をその軸の閾値で正規化した寄与に変換する。
+// 閾値未満の変動はノイズとして 0 に落とす。符号は「改善が正」。
+function axisContribution(delta: number, threshold: number, higherIsBetter: boolean): number {
+  if (Math.abs(delta) <= threshold) {
+    return 0;
+  }
+  const normalized = delta / threshold;
+  return higherIsBetter ? normalized : -normalized;
+}
+
 export function buildVerdict(
   structureDelta: number,
   colorDelta: number,
@@ -59,22 +69,21 @@ export function buildVerdict(
     return "regressed";
   }
 
-  if (
-    structureDelta < -STRUCTURE_DELTA_THRESHOLD ||
-    colorDelta > COLOR_DELTA_THRESHOLD ||
-    shapeDelta > SHAPE_DELTA_THRESHOLD
-  ) {
+  // 単一軸の悪化で regressed に短絡しない (issue #238)。グローバルなリフロー
+  // 修正では shape が揺れやすく、structure/color の大きな改善が小さな shape
+  // 悪化に打ち消される誤判定が実測で起きた。閾値正規化した寄与の合計で、
+  // 軸間の改善と悪化を相殺してから判定する。
+  const score =
+    axisContribution(structureDelta, STRUCTURE_DELTA_THRESHOLD, true) +
+    axisContribution(colorDelta, COLOR_DELTA_THRESHOLD, false) +
+    axisContribution(shapeDelta, SHAPE_DELTA_THRESHOLD, false);
+
+  if (score < 0) {
     return "regressed";
   }
-
-  if (
-    structureDelta > STRUCTURE_DELTA_THRESHOLD ||
-    colorDelta < -COLOR_DELTA_THRESHOLD ||
-    shapeDelta < -SHAPE_DELTA_THRESHOLD
-  ) {
+  if (score > 0) {
     return "improved";
   }
-
   return "unchanged";
 }
 
