@@ -4,6 +4,10 @@ import * as path from "node:path";
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("@figdiff/credential-store", () => ({
+  resolveFigmaAccessToken: vi.fn(async () => null),
+}));
+
 import {
   computeOptimalScale,
   createFigmaService,
@@ -11,6 +15,7 @@ import {
   FigmaService,
   formatFigmaCredentialError,
   getFigmaCredentialStatus,
+  invalidateFigmaService,
 } from "./figma-service.js";
 
 const originalFigmaToken = process.env.FIGMA_TOKEN;
@@ -21,6 +26,7 @@ afterEach(() => {
   } else {
     process.env.FIGMA_TOKEN = originalFigmaToken;
   }
+  invalidateFigmaService();
 });
 
 describe("Figma credential preflight", () => {
