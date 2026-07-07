@@ -115,6 +115,12 @@ describe("MCP Server E2E: compare_design", () => {
     await fs.mkdir(EVIDENCE_DIR, { recursive: true });
     originalHome = process.env.HOME;
     process.env.HOME = path.join(FIXTURE_DIR, "home");
+    // loop-guard の履歴が前回実行から残ると evidence の loopGuard.iteration が
+    // 実行ごとにずれる。毎回クリーンな状態から始めて fixture を決定的にする。
+    await fs.rm(path.join(FIXTURE_DIR, "home", ".figdiff", "loop-state"), {
+      recursive: true,
+      force: true,
+    });
 
     const designImage = await createTestImage(200, 200, {
       r: 66,

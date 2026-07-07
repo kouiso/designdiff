@@ -78,6 +78,11 @@
       "colorOnlyRegions": 0,
       "structuralRegions": 0,
       "headline": "構造一致 100% / 色のみ差分 0領域 / 構造差分 0領域"
+    },
+    "loopGuard": {
+      "iteration": 1,
+      "decision": "stop",
+      "reason": "PASS に到達しました (反復 1 回)。ループを終了してください。"
     }
   }
 }

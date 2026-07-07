@@ -369,8 +369,18 @@ export const ComparisonDiagnosisSchema = z.object({
   headline: z.string(),
 });
 
+// 自走ループの停止判定。compare_design が呼び出し履歴から反復回数と
+// 収束状況を評価して続行/停止を返す。
+export const LoopGuardReportSchema = z.object({
+  iteration: z.number().int().positive(),
+  decision: z.enum(["continue", "stop"]),
+  reason: z.string(),
+});
+
 export const CompareDesignResultSchema = z.object({
-  status: z.enum(["PASS", "FAIL"]).optional(),
+  // UNCERTAIN: 判定の確からしさを損なう条件 (設定ミス疑い / 構造判定 inconclusive)
+  // が検出された状態。PASS でも FAIL でもなく「人間のレビューが必要」を意味する。
+  status: z.enum(["PASS", "FAIL", "UNCERTAIN"]).optional(),
   comparisonId: z.string(),
   matchRate: z.number().min(0).max(100),
   diffPixelCount: z.number().int().nonnegative(),
@@ -393,6 +403,7 @@ export const CompareDesignResultSchema = z.object({
   normalization: NormalizationReportSchema.optional(),
   diagnosis: ComparisonDiagnosisSchema.optional(),
   comparisonHeadline: ComparisonHeadlineSchema.optional(),
+  loopGuard: LoopGuardReportSchema.optional(),
   diffImagePath: z.string().optional(),
   diffImageBase64: z.string().optional(),
 });

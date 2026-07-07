@@ -51,6 +51,16 @@ vi.mock("./comparison-history.js", async (importOriginal) => {
   };
 });
 
+// 実 ~/.figdiff/loop-state を汚さないよう固定レポートを返す。
+// loop-guard 自体の判定ロジックは loop-guard-service.test.ts で検証する。
+vi.mock("./loop-guard-service.js", () => ({
+  recordIterationAndEvaluate: vi.fn(async () => ({
+    iteration: 1,
+    decision: "continue" as const,
+    reason: "test",
+  })),
+}));
+
 import { buildTargetNodeIds, runCompareDesign } from "./compare-design-runner.js";
 
 import type * as ComparisonHistoryModule from "./comparison-history.js";
@@ -629,10 +639,12 @@ describe("runCompareDesign", () => {
     expect(result.suggestion).toContain("matchRateは高いですが");
   });
 
-  it("keeps status FAIL when structural verdict is inconclusive", async () => {
+  it("reports status UNCERTAIN when structural verdict is inconclusive", async () => {
     const { result } = await runLocalStructuralComparison("inconclusive", 12, 99.99);
 
-    expect(result.status).toBe("FAIL");
+    // 構造判定が inconclusive = 判定の確からしさ自体が欠けた状態。
+    // FAIL (直せ) でも PASS (合格) でもなく UNCERTAIN (人間レビュー) を返す。
+    expect(result.status).toBe("UNCERTAIN");
     expect(result.completionCriteria?.structuralReview.status).toBe("FAIL");
     expect(result.completionCriteria?.structuralReview.current).toBe(0);
   });
@@ -728,8 +740,9 @@ describe("runCompareDesign", () => {
     });
 
     expect(result.diagnosis?.likelyMisconfig).toBe(true);
-    // フィックス前は structural pass で PASS になり、このアサートが落ちる。
-    expect(result.status).toBe("FAIL");
+    // 設定ミス疑いの比較は構造判定が pass でも信用できない。
+    // 嘘の PASS を出さず UNCERTAIN で人間レビューに回す (誤PASS防止ガード)。
+    expect(result.status).toBe("UNCERTAIN");
     expect(result.nextAction).toContain("セットアップ問題");
   });
 

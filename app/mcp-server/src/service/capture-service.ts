@@ -64,14 +64,28 @@ export async function captureUrl(url: string, options: CaptureOptions): Promise<
         "*,*::before,*::after{animation-duration:0s!important;animation-delay:0s!important;transition-duration:0s!important;transition-delay:0s!important;}",
     });
 
-    await page.screenshot({ path: screenshotPath, fullPage: true });
+    // fullPage:true ignores the requested capture width, and DOM scrollHeight can
+    // under-report the laid-out area (observed stuck at the viewport height).
+    // CDP Page.getLayoutMetrics().contentSize is the browser's actual laid-out
+    // pixel area (what fullPage uses internally), and Page.captureScreenshot with
+    // captureBeyondViewport captures past the viewport — Playwright's clip alone
+    // clamps to the viewport, so both the measurement and the capture go via CDP.
+    const client = await page.context().newCDPSession(page);
+    let contentHeight: number;
+    try {
+      const { contentSize } = await client.send("Page.getLayoutMetrics");
+      contentHeight = Math.ceil(contentSize.height);
+      const shot = await client.send("Page.captureScreenshot", {
+        format: "png",
+        clip: { x: 0, y: 0, width: options.width, height: contentHeight, scale: 1 },
+        captureBeyondViewport: true,
+      });
+      await fs.writeFile(screenshotPath, Buffer.from(shot.data, "base64"));
+    } finally {
+      await client.detach();
+    }
 
-    const dims = await page.evaluate(() => ({
-      width: document.documentElement.scrollWidth,
-      height: document.documentElement.scrollHeight,
-    }));
-
-    return { screenshotPath, width: dims.width, height: dims.height };
+    return { screenshotPath, width: options.width, height: contentHeight };
   };
 
   if (cdpEndpoint === undefined) {

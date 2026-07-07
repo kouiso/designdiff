@@ -242,7 +242,7 @@ export function registerCompareDesign(server: McpServer): void {
             designSource: args.design_source,
             designImagePath,
             matchRate: resultData.matchRate,
-            status: resultData.status === "PASS" ? "PASS" : "FAIL",
+            status: resultData.status ?? "FAIL",
             updatedAt: Date.now(),
           });
         } catch {

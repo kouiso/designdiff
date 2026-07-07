@@ -24,6 +24,7 @@ import {
   type DiffVerdict,
   type FigmaNode,
   type IgnoreRegion,
+  type LoopGuardReport,
   type PreflightWarning,
 } from "@figdiff/shared";
 
@@ -43,6 +44,7 @@ import { createFigmaService, type FigmaService } from "./figma-service.js";
 import { getIgnoreRegionsForComparison } from "./ignore-region-store.js";
 import { compareImages, redactImageBase64ForPublicExport } from "./image-compare-service.js";
 import { getLastUsedNode, setLastUsedNode } from "./last-used-node-store.js";
+import { recordIterationAndEvaluate } from "./loop-guard-service.js";
 import { persistDiffImage } from "./persist-detail.js";
 
 const FixtureFigmaNodeSchema: z.ZodType<FigmaNode> = z.lazy(() =>
@@ -276,11 +278,18 @@ function resolveStructuralVerdict(
 }
 
 // 設定ミス (空フレーム / 激しいアスペクト潰れ / 誤フレーム) が疑われる比較は、
-// 構造判定が pass でも信用できない。likelyMisconfig のときは status を FAIL に
-// 倒し、無効な比較が PASS と誤報されるのを防ぐ。
-function buildStatus(structuralVerdict: DiffVerdict, likelyMisconfig: boolean): "PASS" | "FAIL" {
+// 構造判定が pass でも fail でも信用できない。信用できる計器の条件は
+// 「自信が無いとき嘘の PASS/FAIL を出さず UNCERTAIN と正直に申告する」こと。
+// likelyMisconfig と構造判定 inconclusive は判定の確からしさ自体が欠けた状態
+// なので、PASS/FAIL ではなく UNCERTAIN に倒して人間レビューへ回す。
+type CompareStatus = "PASS" | "FAIL" | "UNCERTAIN";
+
+function buildStatus(structuralVerdict: DiffVerdict, likelyMisconfig: boolean): CompareStatus {
   if (likelyMisconfig) {
-    return "FAIL";
+    return "UNCERTAIN";
+  }
+  if (structuralVerdict === "inconclusive") {
+    return "UNCERTAIN";
   }
   return structuralVerdict === "pass" ? "PASS" : "FAIL";
 }
@@ -289,12 +298,12 @@ function buildStatus(structuralVerdict: DiffVerdict, likelyMisconfig: boolean): 
 // 100 に丸まり diffPixelCount が 0 でも証拠画像を残す。pixel メトリクスだけで
 // ゲートすると、構造判定や misconfig 由来の FAIL で diff 画像が欠落する。
 function shouldPersistDiffImage(
-  status: "PASS" | "FAIL",
+  status: CompareStatus,
   structuralVerdict: DiffVerdict,
   matchRate: number,
   diffPixelCount: number,
 ): boolean {
-  return status === "FAIL" || structuralVerdict !== "pass" || matchRate < 100 || diffPixelCount > 0;
+  return status !== "PASS" || structuralVerdict !== "pass" || matchRate < 100 || diffPixelCount > 0;
 }
 
 export function buildTargetNodeIds(
@@ -620,6 +629,18 @@ function applyFigmaProvenance(
   }));
 }
 
+// 自走ループの停止判定。履歴記録に失敗しても比較結果自体は返す。
+async function evaluateLoopGuardSafely(
+  input: Parameters<typeof recordIterationAndEvaluate>[0],
+): Promise<LoopGuardReport | undefined> {
+  try {
+    return await recordIterationAndEvaluate(input);
+  } catch (e: unknown) {
+    console.warn("[compare_design] loop-guard failed:", e instanceof Error ? e.message : e);
+    return undefined;
+  }
+}
+
 export async function runCompareDesign(
   args: CompareDesignRunArgs,
 ): Promise<CompareDesignRunOutput> {
@@ -773,6 +794,13 @@ export async function runCompareDesign(
       buildNextAction(structuralReviewResult.verdict, regionCount, targetNodeIds));
 
   const status = buildStatus(structuralReviewResult.verdict, diagnosis.likelyMisconfig);
+  const loopGuard = await evaluateLoopGuardSafely({
+    sourceKey,
+    comparisonId: comparison.comparisonId,
+    matchRate: comparison.matchRate,
+    structuralVerdict: structuralReviewResult.verdict,
+    status,
+  });
   const persistDiffImageNeeded = shouldPersistDiffImage(
     status,
     structuralReviewResult.verdict,
@@ -805,6 +833,7 @@ export async function runCompareDesign(
     preflight: finalPreflight,
     comparisonHeadline,
     diagnosis,
+    loopGuard,
   });
 
   await recordComparison({
