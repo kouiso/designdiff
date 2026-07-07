@@ -69,3 +69,6 @@ docs/evidence/*.log
 error.log
 .codex
 .claude/scheduled_tasks.lock
+
+# Serena tool auto-generated config (differs per machine/session)
+.serena/project.yml
