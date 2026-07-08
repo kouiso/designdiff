@@ -64,14 +64,37 @@ export async function captureUrl(url: string, options: CaptureOptions): Promise<
         "*,*::before,*::after{animation-duration:0s!important;animation-delay:0s!important;transition-duration:0s!important;transition-delay:0s!important;}",
     });
 
-    await page.screenshot({ path: screenshotPath, fullPage: true });
+    // fullPage:true は要求された幅を無視し、DOMのscrollHeightはレイアウト領域を
+    // 過小報告する（ビューポート高で止まる）ことがあるため、測定とキャプチャの
+    // 両方をCDP経由で行う。captureBeyondViewportによりビューポート外も取得できる。
+    const client = await page.context().newCDPSession(page);
+    let contentHeight: number;
+    try {
+      if (!(options.width > 0)) {
+        throw new Error(`キャプチャ幅が不正です (width=${options.width})。`);
+      }
+      const metrics = await client.send("Page.getLayoutMetrics");
+      const rawHeight = metrics?.contentSize?.height;
+      if (typeof rawHeight !== "number" || !Number.isFinite(rawHeight) || rawHeight <= 0) {
+        throw new Error(
+          `CDP Page.getLayoutMetrics returned invalid contentSize height: ${String(rawHeight)}`,
+        );
+      }
+      contentHeight = Math.ceil(rawHeight);
+      const shot = await client.send("Page.captureScreenshot", {
+        format: "png",
+        clip: { x: 0, y: 0, width: options.width, height: contentHeight, scale: 1 },
+        captureBeyondViewport: true,
+      });
+      if (!shot?.data) {
+        throw new Error("CDP Page.captureScreenshot did not return image data");
+      }
+      await fs.writeFile(screenshotPath, Buffer.from(shot.data, "base64"));
+    } finally {
+      await client.detach();
+    }
 
-    const dims = await page.evaluate(() => ({
-      width: document.documentElement.scrollWidth,
-      height: document.documentElement.scrollHeight,
-    }));
-
-    return { screenshotPath, width: dims.width, height: dims.height };
+    return { screenshotPath, width: options.width, height: contentHeight };
   };
 
   if (cdpEndpoint === undefined) {

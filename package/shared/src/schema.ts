@@ -333,6 +333,10 @@ export const NormalizationReportSchema = z.object({
   containResized: z.boolean(),
   // contain 正規化で適用された最終スケール。1 から大きく外れると寸法ミスマッチのサイン。
   appliedScale: z.number().nonnegative(),
+  // project の cropRegion 設定なしに、スクショがdesignフレーム高を超えた分を
+  // ツールが自動でフレーム範囲へcropしたか。人間がcropRegionを手設定する
+  // 手間を無くすための自動化 (#237系: 真の完成に向けた手動介入の自動化)。
+  autoCropped: z.boolean().optional(),
 });
 
 export const ComparisonHeadlineSchema = z.object({
@@ -369,8 +373,18 @@ export const ComparisonDiagnosisSchema = z.object({
   headline: z.string(),
 });
 
+// 自走ループの停止判定。compare_design が呼び出し履歴から反復回数と
+// 収束状況を評価して続行/停止を返す。
+export const LoopGuardReportSchema = z.object({
+  iteration: z.number().int().positive(),
+  decision: z.enum(["continue", "stop"]),
+  reason: z.string(),
+});
+
 export const CompareDesignResultSchema = z.object({
-  status: z.enum(["PASS", "FAIL"]).optional(),
+  // UNCERTAIN: 判定の確からしさを損なう条件 (設定ミス疑い / 構造判定 inconclusive)
+  // が検出された状態。PASS でも FAIL でもなく「人間のレビューが必要」を意味する。
+  status: z.enum(["PASS", "FAIL", "UNCERTAIN"]).optional(),
   comparisonId: z.string(),
   matchRate: z.number().min(0).max(100),
   diffPixelCount: z.number().int().nonnegative(),
@@ -393,6 +407,7 @@ export const CompareDesignResultSchema = z.object({
   normalization: NormalizationReportSchema.optional(),
   diagnosis: ComparisonDiagnosisSchema.optional(),
   comparisonHeadline: ComparisonHeadlineSchema.optional(),
+  loopGuard: LoopGuardReportSchema.optional(),
   diffImagePath: z.string().optional(),
   diffImageBase64: z.string().optional(),
 });

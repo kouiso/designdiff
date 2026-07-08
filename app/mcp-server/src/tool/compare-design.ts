@@ -58,6 +58,58 @@ const DESCRIPTION = `デザインと実装のピクセル差分を検出しま�
 
 const CONFIDENCE_TO_PERCENTAGE = 100;
 
+function buildDiagnosisLines(result: CompareDesignResult, hasPriorLines: boolean): string[] {
+  if (!result.diagnosis) {
+    return [];
+  }
+  const lines: string[] = hasPriorLines ? [""] : [];
+  lines.push(result.diagnosis.headline);
+  if (result.diagnosis.likelyMisconfig && result.diagnosis.rankedCauses.length > 0) {
+    lines.push("", "推定原因（確度順）:");
+    for (const cause of result.diagnosis.rankedCauses) {
+      lines.push(
+        `- [${Math.round(cause.confidence * CONFIDENCE_TO_PERCENTAGE)}%] ${cause.message} → ${cause.suggestedFix}`,
+      );
+    }
+  }
+  return lines;
+}
+
+function buildPreflightWarningLines(result: CompareDesignResult): string[] {
+  const warnings = result.preflight?.warnings ?? [];
+  if (warnings.length === 0) {
+    return [];
+  }
+  const lines: string[] = ["", "Pre-flight 警告:"];
+  for (const warning of warnings) {
+    const fix = warning.suggestedFix ? ` → ${warning.suggestedFix}` : "";
+    lines.push(`- [${warning.severity}] ${warning.message}${fix}`);
+  }
+  return lines;
+}
+
+function buildNormalizationLines(result: CompareDesignResult): string[] {
+  if (!result.normalization) {
+    return [];
+  }
+  const { designNativeWidth, designNativeHeight, screenshotWidth, screenshotHeight, appliedScale } =
+    result.normalization;
+  const lines: string[] = [
+    "",
+    `画像サイズ: design ${designNativeWidth}×${designNativeHeight} / screenshot ${screenshotWidth}×${screenshotHeight} / scale ${appliedScale.toFixed(2)}`,
+  ];
+  const ratio = screenshotWidth > 0 ? designNativeWidth / screenshotWidth : 1;
+  if (ratio < 0.9 || ratio > 1.1) {
+    lines.push(`  解像度差 約${ratio.toFixed(2)}x を正規化（軽微なボケが diff に乗る可能性）`);
+  }
+  if (result.normalization.autoCropped) {
+    lines.push(
+      `  スクリーンショットがdesignフレーム高を超えていたため、自動でフレーム範囲 (${designNativeWidth}×${designNativeHeight}) にcropして比較しました`,
+    );
+  }
+  return lines;
+}
+
 // 並び順は「結論 → 原因 → 内訳 → 警告」。AI/ユーザーが最初の数行で
 // 「実差分か設定ミスか」を即断でき、likely_misconfig の時だけ確度順に原因を
 // 列挙して最優先の対処に誘導するため、この順序と簡潔な箇条書き形式にしている。
@@ -69,54 +121,14 @@ export function buildSummaryText(result: CompareDesignResult): string {
     lines.push(result.diffReport.rationale);
   }
 
-  if (result.diagnosis) {
-    if (lines.length > 0) {
-      lines.push("");
-    }
-    lines.push(result.diagnosis.headline);
-    if (result.diagnosis.likelyMisconfig && result.diagnosis.rankedCauses.length > 0) {
-      lines.push("");
-      lines.push("推定原因（確度順）:");
-      for (const cause of result.diagnosis.rankedCauses) {
-        lines.push(
-          `- [${Math.round(cause.confidence * CONFIDENCE_TO_PERCENTAGE)}%] ${cause.message} → ${cause.suggestedFix}`,
-        );
-      }
-    }
-  }
+  lines.push(...buildDiagnosisLines(result, lines.length > 0));
 
   if (result.comparisonHeadline) {
-    lines.push("");
-    lines.push(result.comparisonHeadline.headline);
+    lines.push("", result.comparisonHeadline.headline);
   }
 
-  const warnings = result.preflight?.warnings ?? [];
-  if (warnings.length > 0) {
-    lines.push("");
-    lines.push("Pre-flight 警告:");
-    for (const warning of warnings) {
-      const fix = warning.suggestedFix ? ` → ${warning.suggestedFix}` : "";
-      lines.push(`- [${warning.severity}] ${warning.message}${fix}`);
-    }
-  }
-
-  if (result.normalization) {
-    const {
-      designNativeWidth,
-      designNativeHeight,
-      screenshotWidth,
-      screenshotHeight,
-      appliedScale,
-    } = result.normalization;
-    lines.push("");
-    lines.push(
-      `画像サイズ: design ${designNativeWidth}×${designNativeHeight} / screenshot ${screenshotWidth}×${screenshotHeight} / scale ${appliedScale.toFixed(2)}`,
-    );
-    const ratio = screenshotWidth > 0 ? designNativeWidth / screenshotWidth : 1;
-    if (ratio < 0.9 || ratio > 1.1) {
-      lines.push(`  解像度差 約${ratio.toFixed(2)}x を正規化（軽微なボケが diff に乗る可能性）`);
-    }
-  }
+  lines.push(...buildPreflightWarningLines(result));
+  lines.push(...buildNormalizationLines(result));
 
   return lines.join("\n");
 }
@@ -242,7 +254,7 @@ export function registerCompareDesign(server: McpServer): void {
             designSource: args.design_source,
             designImagePath,
             matchRate: resultData.matchRate,
-            status: resultData.status === "PASS" ? "PASS" : "FAIL",
+            status: resultData.status ?? "FAIL",
             updatedAt: Date.now(),
           });
         } catch {

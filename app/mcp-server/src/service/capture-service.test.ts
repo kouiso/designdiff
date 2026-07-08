@@ -6,26 +6,41 @@ import { captureUrl } from "./capture-service.js";
 // Playwright mock
 // ---------------------------------------------------------------------------
 
-const mockScreenshot = vi.fn().mockResolvedValue(undefined);
 const mockGoto = vi.fn().mockResolvedValue(null);
-const mockEvaluate = vi
-  .fn()
-  .mockResolvedValueOnce(undefined) // document.fonts.ready
-  .mockResolvedValue({ width: 1440, height: 900 }); // scrollWidth/Height
+const mockEvaluate = vi.fn().mockResolvedValue(undefined); // document.fonts.ready
 const mockAddStyleTag = vi.fn().mockResolvedValue(undefined);
+
+// CDP セッション: getLayoutMetrics が実レイアウト寸法、captureScreenshot が画像を返す。
+const mockCdpSend = vi.fn(async (method: string) => {
+  if (method === "Page.getLayoutMetrics") {
+    return { contentSize: { x: 0, y: 0, width: 1440, height: 900 } };
+  }
+  if (method === "Page.captureScreenshot") {
+    return { data: Buffer.from("fake-png").toString("base64") };
+  }
+  return {};
+});
+const mockCdpDetach = vi.fn().mockResolvedValue(undefined);
+const mockNewCDPSession = vi.fn().mockResolvedValue({ send: mockCdpSend, detach: mockCdpDetach });
+
+const mockContextClose = vi.fn().mockResolvedValue(undefined);
+const mockContext: {
+  newPage: ReturnType<typeof vi.fn>;
+  close: ReturnType<typeof vi.fn>;
+  newCDPSession: ReturnType<typeof vi.fn>;
+} = {
+  newPage: vi.fn(),
+  close: mockContextClose,
+  newCDPSession: mockNewCDPSession,
+};
 
 const mockPage = {
   goto: mockGoto,
   evaluate: mockEvaluate,
   addStyleTag: mockAddStyleTag,
-  screenshot: mockScreenshot,
+  context: () => mockContext,
 };
-
-const mockContextClose = vi.fn().mockResolvedValue(undefined);
-const mockContext = {
-  newPage: vi.fn().mockResolvedValue(mockPage),
-  close: mockContextClose,
-};
+mockContext.newPage.mockResolvedValue(mockPage);
 
 const mockBrowserClose = vi.fn().mockResolvedValue(undefined);
 const mockBrowserDisconnect = vi.fn().mockResolvedValue(undefined);
@@ -52,7 +67,6 @@ vi.mock("@playwright/test", () => ({
 // ---------------------------------------------------------------------------
 
 function resetPageMocks() {
-  mockScreenshot.mockClear();
   mockGoto.mockClear();
   mockAddStyleTag.mockClear();
   mockContextClose.mockClear();
@@ -62,10 +76,10 @@ function resetPageMocks() {
   mockContext.newPage.mockClear();
   mockLaunch.mockClear();
   mockConnectOverCDP.mockClear();
-
-  // Re-set evaluate to return correct values in sequence per test
-  mockEvaluate.mockReset();
-  mockEvaluate.mockResolvedValueOnce(undefined).mockResolvedValue({ width: 1440, height: 900 });
+  mockEvaluate.mockClear();
+  mockCdpSend.mockClear();
+  mockCdpDetach.mockClear();
+  mockNewCDPSession.mockClear();
 }
 
 // ---------------------------------------------------------------------------
@@ -108,6 +122,20 @@ describe("captureUrl — launch path (no FIGDIFF_CDP_ENDPOINT)", () => {
     expect(result.screenshotPath).toMatch(/capture-.*\.png$/);
     expect(result.width).toBe(1440);
     expect(result.height).toBe(900);
+  });
+
+  it("captures via CDP captureScreenshot with captureBeyondViewport and the requested width", async () => {
+    await captureUrl("http://localhost:3001", { width: 1440 });
+
+    expect(mockCdpSend).toHaveBeenCalledWith("Page.getLayoutMetrics");
+    expect(mockCdpSend).toHaveBeenCalledWith(
+      "Page.captureScreenshot",
+      expect.objectContaining({
+        captureBeyondViewport: true,
+        clip: expect.objectContaining({ width: 1440, height: 900 }),
+      }),
+    );
+    expect(mockCdpDetach).toHaveBeenCalledOnce();
   });
 });
 

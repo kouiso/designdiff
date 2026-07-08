@@ -10,6 +10,7 @@ import {
   type CritiqueNoteSchema,
   type ClusterTelemetrySchema,
   type CompareDesignResultSchema,
+  type LoopGuardReportSchema,
   type CompletionCriteriaSchema,
   type CompletionCriterionSchema,
   type ComparisonDiagnosisSchema,
@@ -87,6 +88,7 @@ export type ParsedDesignInput = z.infer<typeof ParsedDesignInputSchema>;
 // --- Compare Design Result (Phase 2+, type defined ahead) ---
 
 export type CompareDesignResult = z.infer<typeof CompareDesignResultSchema>;
+export type LoopGuardReport = z.infer<typeof LoopGuardReportSchema>;
 export type DiffRegion = z.infer<typeof DiffRegionSchema>;
 export type ClusterTelemetry = z.infer<typeof ClusterTelemetrySchema>;
 export type GridSummary = z.infer<typeof GridSummarySchema>;

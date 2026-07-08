@@ -10,7 +10,7 @@ export interface ActiveSessionPayload {
   designSource: string;
   designImagePath?: string;
   matchRate: number;
-  status: "PASS" | "FAIL" | "ERROR";
+  status: "PASS" | "FAIL" | "UNCERTAIN" | "ERROR";
   updatedAt: number;
 }
 

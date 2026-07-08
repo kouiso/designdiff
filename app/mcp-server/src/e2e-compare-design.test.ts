@@ -155,6 +155,17 @@ describe("MCP Server E2E: compare_design", () => {
     await fs.rm(FIXTURE_DIR, { recursive: true, force: true });
   });
 
+  beforeEach(async () => {
+    // このファイルの複数ケースは同じ designPath (= 同じ loop-guard sourceKey)
+    // を共有するため、ケースをまたいで loop-state が積み上がると
+    // loopGuard.iteration が実行順でぶれる。ケースごとにクリーンな状態から
+    // 始めて evidence を決定的にする。
+    await fs.rm(path.join(FIXTURE_DIR, "home", ".figdiff", "loop-state"), {
+      recursive: true,
+      force: true,
+    });
+  });
+
   it("ツール一覧に compare_design が含まれること", async () => {
     const result = await client.listTools();
     const toolNames = result.tools.map((t) => t.name);

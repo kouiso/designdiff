@@ -12,7 +12,7 @@ export const ActiveSessionPayloadSchema = z.object({
   designSource: z.string(),
   designImagePath: z.string().optional(),
   matchRate: z.number(),
-  status: z.enum(["PASS", "FAIL", "ERROR"]),
+  status: z.enum(["PASS", "FAIL", "UNCERTAIN", "ERROR"]),
   updatedAt: z.number(),
 });
 
