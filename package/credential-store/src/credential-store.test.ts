@@ -93,4 +93,30 @@ describe("getCredential — keychain-unavailable-data fallback", () => {
     const { getCredential } = await import("./credential-store.js");
     expect(getCredential("figma-pat")).toBe("figd_from_keychain");
   });
+
+  it("deleteCredentialはkeychain選択時にfile backendからも削除する (削除後にフォールバックで復活しない)", async () => {
+    vi.doMock("./keychain-backend.js", () => ({
+      probeKeychainAvailability: () => true,
+      createKeychainBackend: () => ({
+        type: "keychain" as const,
+        get: () => null,
+        set: () => {
+          throw new Error("not expected to be called in this test");
+        },
+        delete: () => {
+          // keychain側の削除自体は成功しているものとして扱う
+        },
+      }),
+    }));
+
+    const { createFileBackend } = await import("./file-backend.js");
+    createFileBackend().set("figma-pat", "figd_from_file_backend");
+
+    const { getCredential, deleteCredential } = await import("./credential-store.js");
+    expect(getCredential("figma-pat")).toBe("figd_from_file_backend");
+
+    deleteCredential("figma-pat");
+
+    expect(getCredential("figma-pat")).toBeNull();
+  });
 });
