@@ -117,6 +117,69 @@ describe("FigmaClient", () => {
       );
     });
   });
+  describe("getImageUrl", () => {
+    it("omits version query when version is undefined", async () => {
+      const fetchMock = vi.fn(async () => {
+        return new Response(
+          JSON.stringify({ images: { "1:1": "https://image.example/base.png" } }),
+        );
+      });
+      vi.stubGlobal("fetch", fetchMock);
+      const client = new FigmaClient(token);
+
+      await expect(client.getImageUrl("FILE", "1:1", 2)).resolves.toBe(
+        "https://image.example/base.png",
+      );
+
+      expect(fetchMock.mock.calls[0]?.[0]).toBe(
+        "https://api.figma.com/v1/images/FILE?ids=1:1&format=png&scale=2",
+      );
+    });
+
+    it("includes encoded version query when version is provided", async () => {
+      const fetchMock = vi.fn(async () => {
+        return new Response(
+          JSON.stringify({ images: { "1:1": "https://image.example/version.png" } }),
+        );
+      });
+      vi.stubGlobal("fetch", fetchMock);
+      const client = new FigmaClient(token);
+
+      await expect(client.getImageUrl("FILE", "1:1", 2, "123/456")).resolves.toBe(
+        "https://image.example/version.png",
+      );
+
+      expect(fetchMock.mock.calls[0]?.[0]).toBe(
+        "https://api.figma.com/v1/images/FILE?ids=1:1&format=png&scale=2&version=123%2F456",
+      );
+    });
+  });
+
+  describe("downloadImageAsBase64", () => {
+    it("threads version through image lookup and cache access", async () => {
+      const cache = {
+        get: vi.fn(async () => null),
+        set: vi.fn(async () => undefined),
+      };
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValueOnce(
+          new Response(JSON.stringify({ images: { "1:1": "https://image.example/version.png" } })),
+        )
+        .mockResolvedValueOnce(new Response(new Uint8Array([1, 2, 3])));
+      vi.stubGlobal("fetch", fetchMock);
+      const client = new FigmaClient(token, cache);
+
+      const base64 = await client.downloadImageAsBase64("FILE", "1:1", 3, "1234567890");
+
+      expect(base64).toBe(Buffer.from([1, 2, 3]).toString("base64"));
+      expect(fetchMock.mock.calls[0]?.[0]).toBe(
+        "https://api.figma.com/v1/images/FILE?ids=1:1&format=png&scale=3&version=1234567890",
+      );
+      expect(cache.get).toHaveBeenCalledWith("FILE", "1:1", 3, "1234567890");
+      expect(cache.set).toHaveBeenCalledWith("FILE", "1:1", 3, "1234567890", base64);
+    });
+  });
 });
 
 describe("extractFrames", () => {

@@ -1,3 +1,4 @@
+import { runFlutterGolden } from "./flutter-golden.js";
 import { resolveCaptureOutputPath } from "./path.js";
 import { AndroidCaptureProvider } from "./provider/android.js";
 import { IosDeviceCaptureProvider } from "./provider/ios-device.js";
@@ -5,6 +6,8 @@ import { IosSimCaptureProvider } from "./provider/ios-sim.js";
 
 import type { CaptureDevice, DeviceCaptureProvider } from "./types.js";
 
+export { runFlutterGolden };
+export type { RunFlutterGoldenOptions } from "./flutter-golden.js";
 export type { CaptureDevice } from "./types.js";
 
 export interface CaptureDeviceScreenshotOptions {

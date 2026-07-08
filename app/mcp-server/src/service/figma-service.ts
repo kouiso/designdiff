@@ -27,9 +27,14 @@ export class FileSystemCacheStrategy implements FigmaCacheStrategy {
     this.cacheDir = cacheDir;
   }
 
-  async get(fileKey: string, nodeId: string, scale: number): Promise<string | null> {
+  async get(
+    fileKey: string,
+    nodeId: string,
+    scale: number,
+    version?: string,
+  ): Promise<string | null> {
     try {
-      const cacheFile = this.getCachePath(fileKey, nodeId, scale);
+      const cacheFile = this.getCachePath(fileKey, nodeId, scale, version);
       const data = await fs.readFile(cacheFile);
       if (isPngBuffer(data)) return data.toString("base64");
       return stripDataImagePrefix(data.toString("utf-8"));
@@ -39,17 +44,25 @@ export class FileSystemCacheStrategy implements FigmaCacheStrategy {
     }
   }
 
-  async set(fileKey: string, nodeId: string, scale: number, base64: string): Promise<void> {
-    const cacheFile = this.getCachePath(fileKey, nodeId, scale);
+  async set(
+    fileKey: string,
+    nodeId: string,
+    scale: number,
+    version: string | undefined,
+    base64: string,
+  ): Promise<void> {
+    const cacheFile = this.getCachePath(fileKey, nodeId, scale, version);
     const dir = path.dirname(cacheFile);
     await fs.mkdir(dir, { recursive: true });
     const pngData = decodeBase64Image(base64);
     await fs.writeFile(cacheFile, pngData);
   }
 
-  private getCachePath(fileKey: string, nodeId: string, scale: number): string {
+  private getCachePath(fileKey: string, nodeId: string, scale: number, version?: string): string {
     const safeNodeId = nodeId.replace(/:/g, "_");
-    return path.join(this.cacheDir, `${fileKey}_${safeNodeId}_${scale}x.png`);
+    const safeVersion = version?.replace(/[^a-zA-Z0-9_-]/g, "_");
+    const versionSuffix = safeVersion === undefined ? "" : `-v${safeVersion}`;
+    return path.join(this.cacheDir, `${fileKey}_${safeNodeId}_${scale}x${versionSuffix}.png`);
   }
 }
 
@@ -111,10 +124,11 @@ export class FigmaService {
     nodeId: string,
     targetWidth?: number,
     logicalWidth?: number,
+    version?: string,
   ): Promise<string> {
     if (targetWidth && logicalWidth && logicalWidth > 0) {
       const optimalScale = computeOptimalScale(targetWidth, logicalWidth);
-      let base64 = await this.client.downloadImageAsBase64(fileKey, nodeId, optimalScale);
+      let base64 = await this.client.downloadImageAsBase64(fileKey, nodeId, optimalScale, version);
       const actualWidth = await getImageWidth(base64);
       if (actualWidth > 0 && actualWidth < targetWidth * 0.8) {
         const fallbackScale = Math.min(
@@ -125,14 +139,14 @@ export class FigmaService {
           console.error(
             `[figma-service] Image smaller than expected (${actualWidth}px vs target ${targetWidth}px), retrying with scale=${fallbackScale}`,
           );
-          base64 = await this.client.downloadImageAsBase64(fileKey, nodeId, fallbackScale);
+          base64 = await this.client.downloadImageAsBase64(fileKey, nodeId, fallbackScale, version);
         }
       }
       return base64;
     }
 
     const initialScale = 2;
-    let base64 = await this.client.downloadImageAsBase64(fileKey, nodeId, initialScale);
+    let base64 = await this.client.downloadImageAsBase64(fileKey, nodeId, initialScale, version);
 
     if (!targetWidth) return base64;
 
@@ -146,7 +160,7 @@ export class FigmaService {
       `[figma-service] Image too small (${initialWidth}px vs target ${targetWidth}px), retrying with scale=${neededScale}`,
     );
 
-    base64 = await this.client.downloadImageAsBase64(fileKey, nodeId, neededScale);
+    base64 = await this.client.downloadImageAsBase64(fileKey, nodeId, neededScale, version);
     const retryWidth = await getImageWidth(base64);
     if (retryWidth > 0 && retryWidth < targetWidth * 0.8) {
       console.error(

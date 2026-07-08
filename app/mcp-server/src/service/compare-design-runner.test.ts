@@ -578,13 +578,61 @@ describe("runCompareDesign", () => {
 
     expect(getFrames).toHaveBeenCalledWith("FILEKEY123");
     expect(getNodeDetails).toHaveBeenCalledWith("FILEKEY123", "2:2");
-    expect(getFrameImage).toHaveBeenCalledWith("FILEKEY123", "2:2", 1440, 1440);
+    expect(getFrameImage).toHaveBeenCalledWith("FILEKEY123", "2:2", 1440, 1440, undefined);
     expect(mocks.compareImages).toHaveBeenCalledWith(
       expect.objectContaining({ figmaNodeId: "2:2" }),
       expect.objectContaining({ id: "2:2" }),
       expect.stringMatching(/^cmp-/),
     );
     expect(consoleError).toHaveBeenCalledWith(expect.stringContaining('"Home" (2:2)'));
+  });
+
+  it("passes Figma URL version-id to reference image fetching", async () => {
+    tmpRoot = await fs.mkdtemp(path.join(process.cwd(), "tmp-figdiff-runner-"));
+    const screenshotPath = path.join(tmpRoot, "captured.png");
+    await fs.writeFile(screenshotPath, Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+
+    const getFrames = vi.fn(async () => [{ id: "2:2", name: "Home", width: 1440, height: 1800 }]);
+    const getNodeDetails = vi.fn(async () => ({
+      id: "2:2",
+      name: "Home",
+      type: "FRAME",
+      children: [],
+      absoluteBoundingBox: { x: 0, y: 0, width: 1440, height: 1800 },
+      fills: [],
+      strokes: [],
+      effects: [],
+    }));
+    const getFrameImage = vi.fn(async () => Buffer.from("design").toString("base64"));
+    mocks.createFigmaService.mockReturnValue({ getFrames, getNodeDetails, getFrameImage });
+    mocks.sharp.mockReturnValue({
+      metadata: vi.fn(async () => ({ width: 1440, height: 1800 })),
+    });
+    mocks.compareImages.mockResolvedValue({
+      comparisonId: "cmp-version",
+      matchRate: 100,
+      diffPixelCount: 0,
+      totalPixelCount: 1440 * 1800,
+      diffRegions: [],
+      suggestion: "一致率100%です。差分はありません。",
+      normalization: {
+        designNativeWidth: 1440,
+        designNativeHeight: 1800,
+        screenshotWidth: 1440,
+        screenshotHeight: 1800,
+        cropApplied: false,
+        containResized: false,
+        appliedScale: 1,
+      },
+    });
+
+    await runCompareDesign({
+      design_source:
+        "https://www.figma.com/design/FILEKEY123/Test?node-id=2-2&version-id=987654321",
+      screenshot: screenshotPath,
+    });
+
+    expect(getFrameImage).toHaveBeenCalledWith("FILEKEY123", "2:2", 1440, 1440, "987654321");
   });
 
   it("normalizes last-used fallback node ids for screenshot capture width and Figma assets", async () => {
@@ -644,7 +692,7 @@ describe("runCompareDesign", () => {
 
     expect(mocks.captureUrl).toHaveBeenCalledWith("https://example.test", { width: 375 });
     expect(getNodeDetails).toHaveBeenCalledWith("FILEKEY123", "12:34");
-    expect(getFrameImage).toHaveBeenCalledWith("FILEKEY123", "12:34", 375, 375);
+    expect(getFrameImage).toHaveBeenCalledWith("FILEKEY123", "12:34", 375, 375, undefined);
     expect(output.result.preflight?.warnings[0]).toEqual(
       expect.objectContaining({
         code: "last_used_node",

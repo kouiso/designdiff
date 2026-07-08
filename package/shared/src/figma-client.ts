@@ -191,8 +191,14 @@ export interface FigmaNodesResponse {
 
 /** キャッシュ戦略インターフェース */
 export interface FigmaCacheStrategy {
-  get(fileKey: string, nodeId: string, scale: number): Promise<string | null>;
-  set(fileKey: string, nodeId: string, scale: number, base64: string): Promise<void>;
+  get(fileKey: string, nodeId: string, scale: number, version?: string): Promise<string | null>;
+  set(
+    fileKey: string,
+    nodeId: string,
+    scale: number,
+    version: string | undefined,
+    base64: string,
+  ): Promise<void>;
 }
 
 /** キャッシュ無効時のno-op実装 */
@@ -241,8 +247,9 @@ export class FigmaClient {
   }
 
   /** 一時画像URLを取得（約24時間で失効） */
-  async getImageUrl(fileKey: string, nodeId: string, scale = 2): Promise<string> {
-    const url = `${FIGMA_API_BASE}/images/${fileKey}?ids=${nodeId}&format=png&scale=${scale}`;
+  async getImageUrl(fileKey: string, nodeId: string, scale = 2, version?: string): Promise<string> {
+    const versionQuery = version === undefined ? "" : `&version=${encodeURIComponent(version)}`;
+    const url = `${FIGMA_API_BASE}/images/${fileKey}?ids=${nodeId}&format=png&scale=${scale}${versionQuery}`;
     const json = await this.fetchApi(url);
     const response = FigmaImagesResponseSchema.parse(json);
 
@@ -271,13 +278,18 @@ export class FigmaClient {
     return wrapper.document;
   }
 
-  async downloadImageAsBase64(fileKey: string, nodeId: string, scale = 2): Promise<string> {
-    const cached = await this.cache.get(fileKey, nodeId, scale);
+  async downloadImageAsBase64(
+    fileKey: string,
+    nodeId: string,
+    scale = 2,
+    version?: string,
+  ): Promise<string> {
+    const cached = await this.cache.get(fileKey, nodeId, scale, version);
     if (cached) {
       return cached;
     }
 
-    const imageUrl = await this.getImageUrl(fileKey, nodeId, scale);
+    const imageUrl = await this.getImageUrl(fileKey, nodeId, scale, version);
 
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), IMAGE_DOWNLOAD_TIMEOUT_MS);
@@ -302,7 +314,7 @@ export class FigmaClient {
     clearTimeout(timer);
     const base64 = this.arrayBufferToBase64(new Uint8Array(arrayBuffer));
 
-    await this.cache.set(fileKey, nodeId, scale, base64);
+    await this.cache.set(fileKey, nodeId, scale, version, base64);
 
     return base64;
   }
