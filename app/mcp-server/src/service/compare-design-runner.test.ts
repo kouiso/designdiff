@@ -765,6 +765,20 @@ describe("runCompareDesign", () => {
     expect(result.completionCriteria?.diffPixelCount.status).toBe("PASS");
   });
 
+  it("marks non-100 matchRate as non-blocking FAIL in completion criteria", async () => {
+    const { result } = await runLocalStructuralComparison("pass", 42, 58.79);
+
+    expect(result.completionCriteria?.matchRate.status).toBe("FAIL");
+    expect(result.completionCriteria?.matchRate.blocking).toBe(false);
+  });
+
+  it("marks 100 matchRate as PASS in completion criteria", async () => {
+    const { result } = await runLocalStructuralComparison("pass", 0, 100);
+
+    expect(result.completionCriteria?.matchRate.status).toBe("PASS");
+    expect(result.completionCriteria?.matchRate.blocking).toBe(false);
+  });
+
   it("wires loopGuard from recordIterationAndEvaluate through to the result", async () => {
     const { result } = await runLocalStructuralComparison("pass", 0, 100);
 

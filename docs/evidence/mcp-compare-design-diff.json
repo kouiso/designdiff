@@ -40,7 +40,7 @@
       "matchRate": {
         "required": 100,
         "current": 0,
-        "status": "PASS",
+        "status": "FAIL",
         "blocking": false,
         "note": "Reference metric only. Do not use matchRate% as the completion gate."
       },
