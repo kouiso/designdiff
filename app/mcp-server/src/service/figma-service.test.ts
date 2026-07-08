@@ -11,7 +11,12 @@ import {
   FigmaService,
   formatFigmaCredentialError,
   getFigmaCredentialStatus,
+  invalidateFigmaService,
 } from "./figma-service.js";
+
+vi.mock("@figdiff/credential-store", () => ({
+  resolveFigmaAccessToken: vi.fn(async () => null),
+}));
 
 const originalFigmaToken = process.env.FIGMA_TOKEN;
 
@@ -21,6 +26,7 @@ afterEach(() => {
   } else {
     process.env.FIGMA_TOKEN = originalFigmaToken;
   }
+  invalidateFigmaService();
 });
 
 describe("Figma credential preflight", () => {
