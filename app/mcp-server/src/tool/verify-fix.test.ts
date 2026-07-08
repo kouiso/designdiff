@@ -9,7 +9,7 @@ import { createMcpServer } from "../server.js";
 import { readActiveSession } from "../service/active-session.js";
 import { clearComparisonHistory } from "../service/comparison-history.js";
 
-import { buildVerdict } from "./verify-fix.js";
+import { axisContribution, buildVerdict } from "./verify-fix.js";
 
 const FIXTURES_ROOT = path.resolve(import.meta.dirname, "../../../../verification/fixtures");
 
@@ -63,6 +63,40 @@ describe("buildVerdict", () => {
 
   it("閾値を跨がない小さい colorDelta は unchanged のままにする", () => {
     expect(buildVerdict(0, 0.6, 0, 0.5, 1.1)).toBe("unchanged");
+  });
+
+  it("structure/color の大幅改善は小さな shape 悪化に打ち消されず improved になる (issue #238 実測ケース)", () => {
+    // sample-corporate TOP の hero 修正 (100vh→768px) 実測値。
+    // structure 0.398→0.496, color 30.5→19.9, shape 0.146→0.211。
+    // 独立オラクル (Playwright実測・目視) では明確な改善やが、
+    // 旧ロジックは shapeDelta>0.01 だけで regressed に短絡していた。
+    expect(buildVerdict(0.098, -10.6, 0.065, 30.5, 19.9)).toBe("improved");
+  });
+
+  it("悪化が優勢なら軸合成でも regressed になる", () => {
+    // 上の実測ケースの符号反転: structure/color が悪化し shape だけ改善。
+    expect(buildVerdict(-0.098, 10.6, -0.065, 19.9, 30.5)).toBe("regressed");
+  });
+
+  it("color のゲート跨ぎは他軸が大幅改善でも regressed を維持する", () => {
+    // structure が大きく改善していても、color が pass 域 (<2) から
+    // fail 域 (>=2) へ跨いだら compare_design と矛盾しないよう regressed。
+    expect(buildVerdict(0.5, 0.6, 0, 1.5, 2.1)).toBe("regressed");
+  });
+});
+
+describe("axisContribution", () => {
+  it("threshold<=0 はゼロ除算を避けて寄与0を返す", () => {
+    expect(axisContribution(1, 0, true)).toBe(0);
+    expect(axisContribution(1, -1, true)).toBe(0);
+  });
+
+  it("閾値超えの delta を正規化した寄与に変換する (higherIsBetter=true)", () => {
+    expect(axisContribution(0.02, 0.01, true)).toBe(2);
+  });
+
+  it("higherIsBetter=false のときは符号を反転する", () => {
+    expect(axisContribution(4, 2, false)).toBe(-2);
   });
 });
 
