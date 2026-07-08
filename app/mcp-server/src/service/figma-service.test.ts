@@ -4,10 +4,6 @@ import * as path from "node:path";
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@figdiff/credential-store", () => ({
-  resolveFigmaAccessToken: vi.fn(async () => null),
-}));
-
 import {
   computeOptimalScale,
   createFigmaService,
@@ -17,6 +13,10 @@ import {
   getFigmaCredentialStatus,
   invalidateFigmaService,
 } from "./figma-service.js";
+
+vi.mock("@figdiff/credential-store", () => ({
+  resolveFigmaAccessToken: vi.fn(async () => null),
+}));
 
 const originalFigmaToken = process.env.FIGMA_TOKEN;
 
