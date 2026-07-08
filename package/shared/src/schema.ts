@@ -333,6 +333,10 @@ export const NormalizationReportSchema = z.object({
   containResized: z.boolean(),
   // contain 正規化で適用された最終スケール。1 から大きく外れると寸法ミスマッチのサイン。
   appliedScale: z.number().nonnegative(),
+  // project の cropRegion 設定なしに、スクショがdesignフレーム高を超えた分を
+  // ツールが自動でフレーム範囲へcropしたか。人間がcropRegionを手設定する
+  // 手間を無くすための自動化 (#237系: 真の完成に向けた手動介入の自動化)。
+  autoCropped: z.boolean().optional(),
 });
 
 export const ComparisonHeadlineSchema = z.object({

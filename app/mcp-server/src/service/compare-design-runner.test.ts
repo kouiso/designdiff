@@ -61,9 +61,10 @@ vi.mock("./loop-guard-service.js", () => ({
   })),
 }));
 
-import { buildTargetNodeIds, runCompareDesign } from "./compare-design-runner.js";
+import { buildTargetNodeIds, resolveAutoCrop, runCompareDesign } from "./compare-design-runner.js";
 
 import type * as ComparisonHistoryModule from "./comparison-history.js";
+import type SharpModule from "sharp";
 
 let tmpRoot: string | undefined;
 
@@ -77,6 +78,107 @@ afterEach(async () => {
   if (tmpRoot) {
     await fs.rm(tmpRoot, { recursive: true, force: true });
   }
+});
+
+describe("resolveAutoCrop", () => {
+  // このテストだけ mock 済み ("./compare-design-runner.ts" 内部の sharp モック
+  // とは別に) 実 sharp を使い、超過領域の空白判定を実データで検証する。
+  let realSharp: typeof SharpModule;
+
+  beforeEach(async () => {
+    const actual = await vi.importActual<{ default: typeof SharpModule }>("sharp");
+    realSharp = actual.default;
+    // このファイル冒頭の vi.mock("sharp") により compare-design-runner.ts 内部が
+    // 呼ぶ sharp() もモック化されている。resolveAutoCrop の空白判定
+    // (sharp().extract().stats()) を実際に検証するため、このブロックだけ
+    // 実装を実 sharp にフォールバックする。
+    mocks.sharp.mockImplementation(realSharp);
+  });
+
+  // top..excessTop は白背景固定、excessTop..height (超過領域) だけ
+  // "blank" (白と同色) か "noise" (ランダムノイズ) で塗り分ける。
+  async function makeScreenshot(
+    width: number,
+    height: number,
+    excess: "blank" | "noise",
+    excessTop: number,
+  ): Promise<Buffer> {
+    const pixels = Buffer.alloc(width * height * 3, 255);
+    if (excess === "noise") {
+      for (let y = excessTop; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          const base = (y * width + x) * 3;
+          pixels[base] = (base * 37) % 256;
+          pixels[base + 1] = (base * 53) % 256;
+          pixels[base + 2] = (base * 71) % 256;
+        }
+      }
+    }
+    return realSharp(pixels, { raw: { width, height, channels: 3 } })
+      .png()
+      .toBuffer();
+  }
+
+  it("超過領域が単色(空白)なら design範囲へ自動cropする", async () => {
+    const screenshot = await makeScreenshot(100, 150, "blank", 100);
+    const result = await resolveAutoCrop(
+      undefined,
+      { width: 100, height: 100 },
+      100,
+      150,
+      screenshot,
+    );
+    expect(result).toEqual({ x: 0, y: 0, width: 100, height: 100 });
+  });
+
+  it("超過領域にノイズ(=実コンテンツ)があるなら自動cropしない (意図しない追加セクションを握り潰さない)", async () => {
+    const screenshot = await makeScreenshot(100, 150, "noise", 100);
+    const result = await resolveAutoCrop(
+      undefined,
+      { width: 100, height: 100 },
+      100,
+      150,
+      screenshot,
+    );
+    expect(result).toBeUndefined();
+  });
+
+  it("手動cropRegionが既にある場合は自動cropしない", async () => {
+    const manual = { x: 10, y: 20, width: 100, height: 200 };
+    const screenshot = await makeScreenshot(100, 150, "blank", 100);
+    const result = await resolveAutoCrop(manual, { width: 100, height: 100 }, 100, 150, screenshot);
+    expect(result).toBeUndefined();
+  });
+
+  it("幅が一致しない場合は自動cropしない (撮影条件そのものが疑わしいため)", async () => {
+    const screenshot = await makeScreenshot(100, 150, "blank", 100);
+    const result = await resolveAutoCrop(
+      undefined,
+      { width: 90, height: 100 },
+      100,
+      150,
+      screenshot,
+    );
+    expect(result).toBeUndefined();
+  });
+
+  it("スクショ高がdesignフレーム高以下なら自動cropしない (超過が無い)", async () => {
+    const screenshot = await makeScreenshot(100, 100, "blank", 100);
+    const result = await resolveAutoCrop(
+      undefined,
+      { width: 100, height: 100 },
+      100,
+      100,
+      screenshot,
+    );
+    expect(result).toBeUndefined();
+  });
+
+  it("figmaフレーム情報が無い場合は自動cropしない (ローカル画像design_source等)", async () => {
+    const screenshot = await makeScreenshot(100, 150, "blank", 100);
+    const result = await resolveAutoCrop(undefined, undefined, 100, 150, screenshot);
+    expect(result).toBeUndefined();
+  });
 });
 
 describe("buildTargetNodeIds", () => {

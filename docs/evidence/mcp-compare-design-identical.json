@@ -65,7 +65,8 @@
       "screenshotHeight": 200,
       "cropApplied": false,
       "containResized": false,
-      "appliedScale": 1
+      "appliedScale": 1,
+      "autoCropped": false
     },
     "diagnosis": {
       "verdict": "clean",

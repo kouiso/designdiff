@@ -589,6 +589,102 @@ async function resolveProjectRegions(
   };
 }
 
+// スクショの高さが design フレーム高を超えた分を自動で crop する。
+// 「AIにフル任せ」の定義上、人間が project の cropRegion を手設定する
+// 工程を無くすための自動化 (真の完成プランP1)。幅が一致しない場合は
+// 撮影条件そのものが疑わしいため自動crop対象外とし、既存の preflight
+// (width_mismatch等) に判断を委ねる。
+const AUTO_CROP_WIDTH_TOLERANCE_PX = 2;
+// 超過領域が「空白/背景色」とみなせる標準偏差の上限 (0-255 スケール)。
+// これを超えるコンテンツ (文字・写真・追加セクション等) がある超過領域は
+// 実装差分の可能性が高いため crop せず、通常どおり比較対象に含める。
+const AUTO_CROP_UNIFORM_STDDEV_THRESHOLD = 8;
+
+// 超過領域が実質空白かどうかを判定する。意図しない追加セクション
+// (=本物の差分。回帰テストで実証済み: 360x600 design に対し 360x1548 の
+// 実装スクショを auto-crop すると余分なセクションごと差分が消える) を
+// 「単なる余白」と誤認して握り潰さないための安全ガード。
+async function isExcessRegionBlank(
+  screenshotBuffer: Buffer,
+  region: { left: number; top: number; width: number; height: number },
+): Promise<boolean> {
+  if (region.width <= 0 || region.height <= 0) {
+    return true;
+  }
+  try {
+    const stats = await sharp(screenshotBuffer).extract(region).stats();
+    return stats.channels.every((channel) => channel.stdev <= AUTO_CROP_UNIFORM_STDDEV_THRESHOLD);
+  } catch {
+    // 抽出に失敗した場合は安全側 (crop しない) に倒す。
+    return false;
+  }
+}
+
+export async function resolveAutoCrop(
+  existingCropRegion: CropRegion | undefined,
+  figmaFrameBox: { width: number; height: number } | undefined,
+  screenshotWidth: number | undefined,
+  screenshotHeight: number | undefined,
+  screenshotBuffer: Buffer,
+): Promise<CropRegion | undefined> {
+  if (existingCropRegion || !figmaFrameBox || !screenshotWidth || !screenshotHeight) {
+    return undefined;
+  }
+  const widthDiff = Math.abs(screenshotWidth - figmaFrameBox.width);
+  if (widthDiff > AUTO_CROP_WIDTH_TOLERANCE_PX) {
+    return undefined;
+  }
+  if (screenshotHeight <= figmaFrameBox.height) {
+    return undefined;
+  }
+  const excessRegion = {
+    left: 0,
+    top: Math.floor(figmaFrameBox.height),
+    width: Math.floor(screenshotWidth),
+    height: Math.floor(screenshotHeight - figmaFrameBox.height),
+  };
+  const isBlank = await isExcessRegionBlank(screenshotBuffer, excessRegion);
+  if (!isBlank) {
+    return undefined;
+  }
+  return { x: 0, y: 0, width: figmaFrameBox.width, height: figmaFrameBox.height };
+}
+
+// comparison.normalization の screenshotWidth/Height は常に crop 適用前の
+// native 実測値を報告する (cropApplied=true でも native のまま)。
+// preflight の aspect_ratio_mismatch 判定に生の値を渡すと、design/screenshot
+// 両方に同じ cropRegion を適用した後は必ず一致するはずの寸法が
+// 「crop前 vs design」で比較されて誤検知する。cropRegion 適用時は
+// 比較後の実サイズ (= cropRegion の寸法) を preflight に渡す。
+function resolvePreflightDimensions(
+  cropRegion: CropRegion | undefined,
+  normalization:
+    | {
+        screenshotWidth?: number;
+        screenshotHeight?: number;
+        designNativeWidth?: number;
+        designNativeHeight?: number;
+      }
+    | undefined,
+  screenshotMeta: { width?: number; height?: number },
+  figmaFrameBox: { width: number; height: number } | undefined,
+): {
+  screenshotWidth: number;
+  screenshotHeight: number;
+  figmaFrameWidth: number | undefined;
+  figmaFrameHeight: number | undefined;
+} {
+  return {
+    screenshotWidth:
+      cropRegion?.width ?? normalization?.screenshotWidth ?? screenshotMeta.width ?? 0,
+    screenshotHeight:
+      cropRegion?.height ?? normalization?.screenshotHeight ?? screenshotMeta.height ?? 0,
+    figmaFrameWidth: cropRegion?.width ?? normalization?.designNativeWidth ?? figmaFrameBox?.width,
+    figmaFrameHeight:
+      cropRegion?.height ?? normalization?.designNativeHeight ?? figmaFrameBox?.height,
+  };
+}
+
 function buildSystemIgnoreRegionsForComparison(
   args: CompareDesignRunArgs,
   screenshotMeta: sharp.Metadata,
@@ -688,7 +784,7 @@ export async function runCompareDesign(
   );
 
   const {
-    cropRegion,
+    cropRegion: manualCropRegion,
     cropUpdatedAt,
     ignoreRegions: projectIgnoreRegions,
   } = await resolveProjectRegions(
@@ -696,6 +792,14 @@ export async function runCompareDesign(
     args.frame_name ?? figmaRootNode?.name,
     args.ignore_regions,
   );
+  const autoCropRegion = await resolveAutoCrop(
+    manualCropRegion,
+    figmaRootNode?.absoluteBoundingBox ?? undefined,
+    screenshotMeta.width,
+    screenshotMeta.height,
+    screenshotBuffer,
+  );
+  const cropRegion = manualCropRegion ?? autoCropRegion;
   const ignoreRegions = [
     ...projectIgnoreRegions,
     ...buildSystemIgnoreRegionsForComparison(args, screenshotMeta, cropRegion),
@@ -726,11 +830,17 @@ export async function runCompareDesign(
   // 確信度レイヤー: 設定ミスを検知・説明し、結果ヘッドラインを構造/色に分離する。
   const figmaFrameBox = figmaRootNode?.absoluteBoundingBox ?? undefined;
   const regionScores = comparison.diffReport?.regionScores ?? [];
+  const preflightDimensions = resolvePreflightDimensions(
+    cropRegion,
+    comparison.normalization,
+    screenshotMeta,
+    figmaFrameBox,
+  );
   const preflight = runPreflight({
-    screenshotWidth: comparison.normalization?.screenshotWidth ?? screenshotMeta.width ?? 0,
-    screenshotHeight: comparison.normalization?.screenshotHeight ?? screenshotMeta.height ?? 0,
-    figmaFrameWidth: comparison.normalization?.designNativeWidth ?? figmaFrameBox?.width,
-    figmaFrameHeight: comparison.normalization?.designNativeHeight ?? figmaFrameBox?.height,
+    screenshotWidth: preflightDimensions.screenshotWidth,
+    screenshotHeight: preflightDimensions.screenshotHeight,
+    figmaFrameWidth: preflightDimensions.figmaFrameWidth,
+    figmaFrameHeight: preflightDimensions.figmaFrameHeight,
     figmaLogicalFrameWidth: figmaFrameBox?.width,
     screenshotSource: args.capture_device
       ? "capture_device"
@@ -810,6 +920,9 @@ export async function runCompareDesign(
   const result = CompareDesignResultSchema.parse({
     status,
     ...comparison,
+    normalization: comparison.normalization
+      ? { ...comparison.normalization, autoCropped: autoCropRegion !== undefined }
+      : comparison.normalization,
     diffImagePath:
       comparison.diffImageBase64 && persistDiffImageNeeded
         ? await persistDiffImage(
