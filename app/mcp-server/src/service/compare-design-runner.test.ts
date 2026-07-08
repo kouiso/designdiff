@@ -765,6 +765,12 @@ describe("runCompareDesign", () => {
     expect(result.completionCriteria?.diffPixelCount.status).toBe("PASS");
   });
 
+  it("wires loopGuard from recordIterationAndEvaluate through to the result", async () => {
+    const { result } = await runLocalStructuralComparison("pass", 0, 100);
+
+    expect(result.loopGuard).toEqual({ iteration: 1, decision: "continue", reason: "test" });
+  });
+
   // compareImages の戻り値を直接差し込めるローカル比較ヘルパ。
   // normalization / diffReport / matchRate を細かく制御して診断分岐を再現する。
   async function runLocalComparisonWithOverrides(

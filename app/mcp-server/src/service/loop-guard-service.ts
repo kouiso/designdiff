@@ -34,7 +34,7 @@ const LoopStateEntrySchema = z.object({
   comparisonId: z.string(),
   matchRate: z.number(),
   structuralVerdict: z.enum(["pass", "fail", "inconclusive"]),
-  status: z.string(),
+  status: z.enum(["PASS", "FAIL", "UNCERTAIN"]),
   timestamp: z.number(),
 });
 
@@ -58,14 +58,9 @@ function errorCode(e: unknown): string | undefined {
 }
 
 async function loadEntries(filePath: string): Promise<LoopStateEntry[]> {
+  let raw: string;
   try {
-    const raw = await fs.readFile(filePath, "utf8");
-    const parsed = z.array(LoopStateEntrySchema).safeParse(JSON.parse(raw));
-    if (!parsed.success) {
-      console.warn(`[loop-guard] loop-state schema mismatch (resetting): ${parsed.error.message}`);
-      return [];
-    }
-    return parsed.data;
+    raw = await fs.readFile(filePath, "utf8");
   } catch (e: unknown) {
     if (errorCode(e) !== "ENOENT") {
       console.warn(
@@ -74,6 +69,30 @@ async function loadEntries(filePath: string): Promise<LoopStateEntry[]> {
     }
     return [];
   }
+
+  let json: unknown;
+  try {
+    json = JSON.parse(raw);
+  } catch {
+    console.warn("[loop-guard] loop-state file is not valid JSON (resetting)");
+    return [];
+  }
+  if (!Array.isArray(json)) {
+    console.warn("[loop-guard] loop-state file is not an array (resetting)");
+    return [];
+  }
+
+  // 1件の破損エントリで履歴全体を捨てず、壊れたエントリだけ除外する。
+  const entries: LoopStateEntry[] = [];
+  for (const item of json) {
+    const parsed = LoopStateEntrySchema.safeParse(item);
+    if (parsed.success) {
+      entries.push(parsed.data);
+    } else {
+      console.warn(`[loop-guard] dropping malformed loop-state entry: ${parsed.error.message}`);
+    }
+  }
+  return entries;
 }
 
 export interface LoopGuardOptions {
@@ -112,6 +131,9 @@ export async function recordIterationAndEvaluate(
   const iteration = entries.length;
 
   if (input.status === "PASS") {
+    // 完了したキャンペーンの履歴を持ち越さない。残すと次の修正キャンペーンが
+    // 初回から反復済み扱いになり、上限/停滞判定が早発する。
+    await resetLoopState(input.sourceKey, { stateDir });
     return {
       iteration,
       decision: "stop",
@@ -120,6 +142,7 @@ export async function recordIterationAndEvaluate(
   }
 
   if (input.status === "UNCERTAIN") {
+    await resetLoopState(input.sourceKey, { stateDir });
     return {
       iteration,
       decision: "stop",

@@ -64,15 +64,15 @@ export async function captureUrl(url: string, options: CaptureOptions): Promise<
         "*,*::before,*::after{animation-duration:0s!important;animation-delay:0s!important;transition-duration:0s!important;transition-delay:0s!important;}",
     });
 
-    // fullPage:true ignores the requested capture width, and DOM scrollHeight can
-    // under-report the laid-out area (observed stuck at the viewport height).
-    // CDP Page.getLayoutMetrics().contentSize is the browser's actual laid-out
-    // pixel area (what fullPage uses internally), and Page.captureScreenshot with
-    // captureBeyondViewport captures past the viewport — Playwright's clip alone
-    // clamps to the viewport, so both the measurement and the capture go via CDP.
+    // fullPage:true は要求された幅を無視し、DOMのscrollHeightはレイアウト領域を
+    // 過小報告する（ビューポート高で止まる）ことがあるため、測定とキャプチャの
+    // 両方をCDP経由で行う。captureBeyondViewportによりビューポート外も取得できる。
     const client = await page.context().newCDPSession(page);
     let contentHeight: number;
     try {
+      if (!(options.width > 0)) {
+        throw new Error(`キャプチャ幅が不正です (width=${options.width})。`);
+      }
       const metrics = await client.send("Page.getLayoutMetrics");
       const rawHeight = metrics?.contentSize?.height;
       if (typeof rawHeight !== "number" || !Number.isFinite(rawHeight) || rawHeight <= 0) {
