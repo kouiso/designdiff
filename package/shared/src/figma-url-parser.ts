@@ -34,6 +34,15 @@ export function extractNodeId(url: string): string | null {
   }
 }
 
+export function extractVersionId(url: string): string | null {
+  try {
+    const urlObj = new URL(normalizeFigmaUrlInput(url));
+    return urlObj.searchParams.get("version-id");
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Build a Figma frame URL by setting/replacing the node-id query parameter.
  * Converts API colon format (e.g. "1:23") to URL dash format (e.g. "1-23").
@@ -89,7 +98,8 @@ export function parseDesignInput(input: string): ParsedDesignInput {
   if (isRecognizedFigmaUrl(trimmed)) {
     const fileKey = extractFileKey(trimmed);
     const nodeId = extractNodeId(trimmed) ?? undefined;
-    result = { type: "figma_url", fileKey, nodeId };
+    const version = extractVersionId(trimmed) ?? undefined;
+    result = { type: "figma_url", fileKey, nodeId, version };
   } else if (/^\/(design|file)\//.test(trimmed) && !hasImageExtension(trimmed)) {
     throw new Error(
       "design_source looks like a URL but is not a recognized Figma link; expected a https://www.figma.com/design/... or /file/... URL",

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   extractFileKey,
   extractNodeId,
+  extractVersionId,
   normalizeNodeId,
   parseDesignInput,
 } from "./figma-url-parser.js";
@@ -59,6 +60,18 @@ describe("extractNodeId", () => {
   });
 });
 
+describe("extractVersionId", () => {
+  it("returns version-id when present", () => {
+    expect(
+      extractVersionId("https://www.figma.com/design/ABC/Title?node-id=1-23&version-id=1234567890"),
+    ).toBe("1234567890");
+  });
+
+  it("returns null when version-id is absent", () => {
+    expect(extractVersionId("https://www.figma.com/design/ABC/Title?node-id=1-23")).toBeNull();
+  });
+});
+
 describe("parseDesignInput", () => {
   it("parses Figma URL with node-id", () => {
     const result = parseDesignInput("https://www.figma.com/design/ABC123/Title?node-id=1-23");
@@ -66,6 +79,19 @@ describe("parseDesignInput", () => {
       type: "figma_url",
       fileKey: "ABC123",
       nodeId: "1:23",
+      version: undefined,
+    });
+  });
+
+  it("parses Figma URL with version-id", () => {
+    const result = parseDesignInput(
+      "https://www.figma.com/design/ABC123/Title?node-id=1-23&version-id=987654321",
+    );
+    expect(result).toEqual({
+      type: "figma_url",
+      fileKey: "ABC123",
+      nodeId: "1:23",
+      version: "987654321",
     });
   });
 
@@ -75,6 +101,7 @@ describe("parseDesignInput", () => {
       type: "figma_url",
       fileKey: "ABC123",
       nodeId: undefined,
+      version: undefined,
     });
   });
 
@@ -84,6 +111,7 @@ describe("parseDesignInput", () => {
       type: "figma_url",
       fileKey: "XYZ789",
       nodeId: "5:10",
+      version: undefined,
     });
   });
 
@@ -93,6 +121,7 @@ describe("parseDesignInput", () => {
       type: "figma_url",
       fileKey: "ABC123",
       nodeId: "1:23",
+      version: undefined,
     });
   });
 
@@ -102,6 +131,7 @@ describe("parseDesignInput", () => {
       type: "figma_url",
       fileKey: "ABC123",
       nodeId: undefined,
+      version: undefined,
     });
   });
 

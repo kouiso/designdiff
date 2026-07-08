@@ -113,12 +113,31 @@ describe("FileSystemCacheStrategy", () => {
     const pngBytes = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
     const base64 = pngBytes.toString("base64");
 
-    await cache.set("FILE", "1:2", 2, `data:image/png;base64,${base64}`);
+    await cache.set("FILE", "1:2", 2, undefined, `data:image/png;base64,${base64}`);
 
     const cacheFile = path.join(cacheDir, "FILE_1_2_2x.png");
     const cachedBytes = await fs.readFile(cacheFile);
     expect([...cachedBytes.subarray(0, 4)]).toEqual([0x89, 0x50, 0x4e, 0x47]);
     await expect(cache.get("FILE", "1:2", 2)).resolves.toBe(base64);
+  });
+
+  it("keeps unversioned filenames backward compatible and separates versioned files", async () => {
+    const cacheDir = await fs.mkdtemp(path.join(tmpdir(), "figdiff-cache-"));
+    const cache = new FileSystemCacheStrategy(cacheDir);
+    const base64A = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x01]).toString("base64");
+    const base64B = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x02]).toString("base64");
+
+    await cache.set("FILE", "1:2", 2, undefined, base64A);
+    await cache.set("FILE", "1:2", 2, "version/one", base64B);
+
+    await expect(fs.readFile(path.join(cacheDir, "FILE_1_2_2x.png"))).resolves.toBeInstanceOf(
+      Buffer,
+    );
+    await expect(
+      fs.readFile(path.join(cacheDir, "FILE_1_2_2x-vversion_one.png")),
+    ).resolves.toBeInstanceOf(Buffer);
+    await expect(cache.get("FILE", "1:2", 2)).resolves.toBe(base64A);
+    await expect(cache.get("FILE", "1:2", 2, "version/one")).resolves.toBe(base64B);
   });
 
   it("reads legacy text cache files as base64 during migration", async () => {

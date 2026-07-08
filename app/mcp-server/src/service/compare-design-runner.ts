@@ -542,6 +542,7 @@ async function resolveDesignAssets(
       resolvedNodeId,
       targetWidth,
       logicalWidth,
+      parsedDesignSource.version,
     );
 
     return { designBase64, figmaRootNode, resolvedNodeId };

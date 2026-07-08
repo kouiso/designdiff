@@ -130,6 +130,7 @@ export const ParsedDesignInputSchema = z.discriminatedUnion("type", [
     type: z.literal("figma_url"),
     fileKey: z.string().min(1),
     nodeId: z.string().optional(),
+    version: z.string().optional(),
   }),
   z.object({
     type: z.literal("local_path"),

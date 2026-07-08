@@ -129,15 +129,18 @@ Use the same Figma design URL form accepted by the existing parser:
 https://www.figma.com/design/<FILE_KEY>/<TITLE>?node-id=<NODE_ID>&version-id=<VERSION_ID>
 ```
 
-What the current code confirms:
+How version pinning works:
 
 - `/design/<FILE_KEY>/...` and legacy `/file/<FILE_KEY>/...` links are recognized.
 - `node-id=1-23` is normalized to API form `1:23`.
-- Additional query parameters such as `version-id=...` can remain on the URL, so
-  keep the frozen-version parameter in the `design_source` you pass around.
-- The shared parser extracts `fileKey` and `nodeId`; it does not invent a
-  separate shorthand for version pinning. Therefore, use Figma's real
-  `version-id` query parameter on the URL rather than a custom syntax.
+- `version-id=<VERSION_ID>` is extracted from the Figma URL and threaded to the
+  Figma Images API as its `version=<VERSION_ID>` query parameter. This renders
+  the reference image from that frozen historical Figma file version.
+- Cached reference images are separated by version, so a URL pinned to an old
+  Figma version cannot be served a newer unpinned or differently pinned cached
+  image.
+- Use Figma's real `version-id` query parameter on the URL rather than a custom
+  syntax; keep it in every `design_source` you pass through the workflow.
 
 ### Generate a Flutter golden PNG
 
