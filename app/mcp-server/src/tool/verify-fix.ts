@@ -45,8 +45,12 @@ const SIDE_EFFECT_STRUCTURE_THRESHOLD = 0.05;
 
 // 各軸の delta をその軸の閾値で正規化した寄与に変換する。
 // 閾値未満の変動はノイズとして 0 に落とす。符号は「改善が正」。
-function axisContribution(delta: number, threshold: number, higherIsBetter: boolean): number {
-  if (Math.abs(delta) <= threshold) {
+export function axisContribution(
+  delta: number,
+  threshold: number,
+  higherIsBetter: boolean,
+): number {
+  if (threshold <= 0 || Math.abs(delta) <= threshold) {
     return 0;
   }
   const normalized = delta / threshold;

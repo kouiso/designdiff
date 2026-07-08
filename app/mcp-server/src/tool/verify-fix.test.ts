@@ -9,7 +9,7 @@ import { createMcpServer } from "../server.js";
 import { readActiveSession } from "../service/active-session.js";
 import { clearComparisonHistory } from "../service/comparison-history.js";
 
-import { buildVerdict } from "./verify-fix.js";
+import { axisContribution, buildVerdict } from "./verify-fix.js";
 
 const FIXTURES_ROOT = path.resolve(import.meta.dirname, "../../../../verification/fixtures");
 
@@ -82,6 +82,21 @@ describe("buildVerdict", () => {
     // structure が大きく改善していても、color が pass 域 (<2) から
     // fail 域 (>=2) へ跨いだら compare_design と矛盾しないよう regressed。
     expect(buildVerdict(0.5, 0.6, 0, 1.5, 2.1)).toBe("regressed");
+  });
+});
+
+describe("axisContribution", () => {
+  it("threshold<=0 はゼロ除算を避けて寄与0を返す", () => {
+    expect(axisContribution(1, 0, true)).toBe(0);
+    expect(axisContribution(1, -1, true)).toBe(0);
+  });
+
+  it("閾値超えの delta を正規化した寄与に変換する (higherIsBetter=true)", () => {
+    expect(axisContribution(0.02, 0.01, true)).toBe(2);
+  });
+
+  it("higherIsBetter=false のときは符号を反転する", () => {
+    expect(axisContribution(4, 2, false)).toBe(-2);
   });
 });
 
