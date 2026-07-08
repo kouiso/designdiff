@@ -110,6 +110,18 @@ function dimensionSuggestedFix(input: PreflightInput): string {
   return `capture_width=${input.figmaFrameWidth} を指定して撮影し直してください。`;
 }
 
+function viewportWidthSuggestedFix(): string {
+  return "サイト実装が vw ベースのレスポンシブ幅を使っている場合は、ブラウザの viewport 幅やスクロールバー有無で固定pxの Figma フレームと描画幅がずれることがあるため、意図した viewport / scrollbar 条件も確認してください。";
+}
+
+function widthMismatchSuggestedFix(input: PreflightInput): string {
+  return `${dimensionSuggestedFix(input)} ${viewportWidthSuggestedFix()}`;
+}
+
+function heightMismatchSuggestedFix(input: PreflightInput): string {
+  return `スクリーンショット幅 ${input.screenshotWidth}px は Figma フレーム幅 ${input.figmaFrameWidth}px とすでに一致しているため、差分の主因は content height / 縦方向の比較範囲です。Figma フレームが固定高さアートボードかスクロール可能な full-page デザインか、crop_region が意図した高さか、正しい breakpoint / frame variant を選んでいるかを確認してください。`;
+}
+
 function pushLogicalPhysicalWidthInfo(warnings: PreflightWarning[], input: PreflightInput): void {
   warnings.push({
     code: "logical_physical_width",
@@ -142,14 +154,14 @@ function pushDimensionWarnings(
         code: "aspect_ratio_mismatch",
         severity: "warning",
         message: `Figma レンダリング画像は ${input.figmaFrameWidth}x${input.figmaFrameHeight}px、スクリーンショットは ${input.screenshotWidth}x${input.screenshotHeight}px です。縦横比は近いものの解像度が違うため、DPR だけではない撮影条件差の可能性があります。`,
-        suggestedFix: dimensionSuggestedFix(input),
+        suggestedFix: widthMismatchSuggestedFix(input),
       });
     } else {
       warnings.push({
         code: "width_mismatch",
         severity: ratio >= CRITICAL_WIDTH_RATIO || sameAspect === false ? "critical" : "warning",
         message: `Figma レンダリング画像幅 ${input.figmaFrameWidth}px に対し、スクリーンショット幅は ${input.screenshotWidth}px です。幅が違うと要素が横方向にズレ、全面が差分として検出されます。`,
-        suggestedFix: dimensionSuggestedFix(input),
+        suggestedFix: widthMismatchSuggestedFix(input),
       });
     }
   } else if (
@@ -168,7 +180,7 @@ function pushDimensionWarnings(
       code: "aspect_ratio_mismatch",
       severity: "critical",
       message: `Figma レンダリング画像は ${input.figmaFrameWidth}x${input.figmaFrameHeight}px、スクリーンショットは ${input.screenshotWidth}x${input.screenshotHeight}px です。幅が近くても縦横比が違うため、比較前提が崩れています。`,
-      suggestedFix: dimensionSuggestedFix(input),
+      suggestedFix: heightMismatchSuggestedFix(input),
     });
   }
 }

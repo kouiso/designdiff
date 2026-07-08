@@ -26,6 +26,8 @@ export interface LoopIterationInput {
   sourceKey: string;
   comparisonId: string;
   matchRate: number;
+  diffPixelCount?: number;
+  regionCount?: number;
   structuralVerdict: DiffVerdict;
   status: "PASS" | "FAIL" | "UNCERTAIN";
 }
@@ -33,6 +35,8 @@ export interface LoopIterationInput {
 const LoopStateEntrySchema = z.object({
   comparisonId: z.string(),
   matchRate: z.number(),
+  diffPixelCount: z.number().optional(),
+  regionCount: z.number().optional(),
   structuralVerdict: z.enum(["pass", "fail", "inconclusive"]),
   status: z.enum(["PASS", "FAIL", "UNCERTAIN"]),
   timestamp: z.number(),
@@ -121,6 +125,8 @@ export async function recordIterationAndEvaluate(
     {
       comparisonId: input.comparisonId,
       matchRate: input.matchRate,
+      diffPixelCount: input.diffPixelCount,
+      regionCount: input.regionCount,
       structuralVerdict: input.structuralVerdict,
       status: input.status,
       timestamp: now,
@@ -161,6 +167,26 @@ export async function recordIterationAndEvaluate(
 
   if (iteration >= 3) {
     const [prev2, prev1, latest] = entries.slice(-3);
+    const hasComparableDiffMetrics = [prev2, prev1, latest].every(
+      (entry) => typeof entry.diffPixelCount === "number" && typeof entry.regionCount === "number",
+    );
+    if (
+      hasComparableDiffMetrics &&
+      latest.matchRate === prev1.matchRate &&
+      prev1.matchRate === prev2.matchRate &&
+      latest.diffPixelCount === prev1.diffPixelCount &&
+      prev1.diffPixelCount === prev2.diffPixelCount &&
+      latest.regionCount === prev1.regionCount &&
+      prev1.regionCount === prev2.regionCount
+    ) {
+      return {
+        iteration,
+        decision: "stop",
+        reason:
+          "直近3回の比較結果（matchRate・diffPixelCount・差分領域数）が完全に同一です。提案された修正が実際には適用/反映されていない可能性が高いため、自動修正を止めて設定（capture_width / crop / node選択）を人間が確認してください。",
+      };
+    }
+
     const delta1 = Math.abs(latest.matchRate - prev1.matchRate);
     const delta2 = Math.abs(prev1.matchRate - prev2.matchRate);
     if (delta1 < STAGNATION_DELTA && delta2 < STAGNATION_DELTA) {

@@ -908,6 +908,8 @@ export async function runCompareDesign(
     sourceKey,
     comparisonId: comparison.comparisonId,
     matchRate: comparison.matchRate,
+    diffPixelCount: comparison.diffPixelCount,
+    regionCount,
     structuralVerdict: structuralReviewResult.verdict,
     status,
   });
