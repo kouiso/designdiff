@@ -27,7 +27,7 @@ const HIGH_STRUCTURE = 0.9;
 const SCALE_LOW = 0.7;
 const SCALE_HIGH = 1.4;
 // これを超える圧縮/引き伸ばしは、matchRate に関わらず比較自体が無効なほどの設定ミス。
-const SEVERE_SCALE_LOW = 0.5;
+const SEVERE_SCALE_LOW = 0.6;
 const SEVERE_SCALE_HIGH = 2;
 const FULL_PAGE_VIEWPORT_HEIGHT_RATIO = 1.4;
 // 各診断原因の確度 (0-1)。原因をランク付けする際の重みなので、上部の閾値定数と同様に集約する。
@@ -158,11 +158,11 @@ function classifyAspectMismatch(
   normalization: NormalizationReport,
 ): NonNullable<DiagnosisCause["classification"]> {
   const heightRatio = heightRatioAfterWidthNormalization(normalization);
-  if (heightRatio > FULL_PAGE_VIEWPORT_HEIGHT_RATIO) {
-    return "full_page_vs_viewport";
-  }
   if (isSevereSquish(normalization)) {
     return "wrong_frame_or_misconfig";
+  }
+  if (heightRatio > FULL_PAGE_VIEWPORT_HEIGHT_RATIO) {
+    return "full_page_vs_viewport";
   }
   return "mild_aspect_mismatch";
 }
@@ -256,15 +256,12 @@ export function diagnoseComparison(input: DiagnosisInput): ComparisonDiagnosis {
     .filter((cause, index, all) => all.findIndex((entry) => entry.code === cause.code) === index);
 
   // 極端な正規化スケールは、matchRate がたまたま高くても比較そのものが無効。
-  const severeSquish =
-    input.normalization && classifyAspectMismatch(input.normalization) !== "full_page_vs_viewport"
-      ? isSevereSquish(input.normalization)
-      : false;
+  const severeSquish = input.normalization ? isSevereSquish(input.normalization) : false;
   const hasBlockingSetupCause = causes.some(
     (cause) => cause.code !== "aspect_mismatch" || cause.classification !== "mild_aspect_mismatch",
   );
-  // full_page_vs_viewport は aspect_ratio_mismatch が critical でも意図的な撮影条件差であり、
-  // severeSquish と同様にここでも misconfig 扱いから除外する。
+  // full_page_vs_viewport は aspect_ratio_mismatch が critical でも意図的な撮影条件差の可能性があるため、
+  // 極端な contain 圧縮ではない場合だけ misconfig 扱いから除外する。
   const isFullPageVsViewport =
     input.normalization !== undefined &&
     classifyAspectMismatch(input.normalization) === "full_page_vs_viewport";

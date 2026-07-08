@@ -97,7 +97,7 @@ describe("diagnoseComparison", () => {
     expect(result.rankedCauses.some((c) => c.code === "crop_compression")).toBe(true);
   });
 
-  it("極端な圧縮(appliedScale<0.5)は matchRate が高くても likely_misconfig", () => {
+  it("極端な圧縮(appliedScale<0.6)は matchRate が高くても likely_misconfig", () => {
     const normalization = normalizationReport({
       designNativeWidth: 1080,
       designNativeHeight: 1080,
@@ -118,7 +118,29 @@ describe("diagnoseComparison", () => {
     expect(cause?.suggestedFix).toContain("list_figma_frames");
   });
 
-  it("縦長 Figma フレームは full-page vs single viewport として crop/scroll guidance を返す", () => {
+  it("Issue #237 の詳細テンプレート対短い記事ページは likely_misconfig", () => {
+    const result = diagnoseComparison({
+      matchRate: 79,
+      regionScores: [region({ structure: 0.55 })],
+      preflightWarnings: [],
+      normalization: normalizationReport({
+        designNativeWidth: 1512,
+        designNativeHeight: 3346,
+        screenshotWidth: 1512,
+        screenshotHeight: 1798,
+        cropApplied: false,
+        containResized: true,
+        appliedScale: 0.5373580394500896,
+      }),
+    });
+
+    expect(result.verdict).toBe("likely_misconfig");
+    expect(result.likelyMisconfig).toBe(true);
+    const cause = result.rankedCauses.find((c) => c.code === "aspect_mismatch");
+    expect(cause?.classification).toBe("wrong_frame_or_misconfig");
+  });
+
+  it("極端に縦長な Figma フレームは wrong-frame 候補として list_figma_frames guidance を返す", () => {
     const result = diagnoseComparison({
       matchRate: 79,
       regionScores: [region({ structure: 0.55 })],
@@ -133,11 +155,10 @@ describe("diagnoseComparison", () => {
       }),
     });
     const cause = result.rankedCauses.find((c) => c.code === "aspect_mismatch");
-    expect(result.verdict).not.toBe("likely_misconfig");
-    expect(cause?.classification).toBe("full_page_vs_viewport");
-    expect(cause?.message).toContain("フルページ");
-    expect(cause?.suggestedFix).toContain("set_crop_region");
-    expect(cause?.suggestedFix).toContain("スクロール/フルページ撮影");
+    // Issue #237 の実例と同じく、極端な contain 圧縮はフルページ撮影差より誤フレームを優先する。
+    expect(result.verdict).toBe("likely_misconfig");
+    expect(cause?.classification).toBe("wrong_frame_or_misconfig");
+    expect(cause?.suggestedFix).toContain("list_figma_frames");
   });
 
   it("軽い縦横比差は letterbox 除外済みとして実差分確認に誘導する", () => {
