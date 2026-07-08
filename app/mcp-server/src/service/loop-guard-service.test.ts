@@ -94,6 +94,37 @@ describe("loop-guard-service", () => {
     expect(report?.reason).toContain("停滞");
   });
 
+  it("stops with identical-result reason for three identical comparison outputs", async () => {
+    let report: Awaited<ReturnType<typeof recordIterationAndEvaluate>> | undefined;
+    for (let i = 0; i < 3; i++) {
+      report = await recordIterationAndEvaluate(
+        input({ matchRate: 80, diffPixelCount: 1200, regionCount: 4 }),
+        { stateDir, now: baseNow + i * 1000 },
+      );
+    }
+
+    expect(report?.iteration).toBe(3);
+    expect(report?.decision).toBe("stop");
+    expect(report?.reason).toContain("完全に同一");
+    expect(report?.reason).toContain("diffPixelCount");
+  });
+
+  it("does not use identical-result stop when diffPixelCount differs", async () => {
+    const diffPixelCounts = [1200, 1190, 1180];
+    let report: Awaited<ReturnType<typeof recordIterationAndEvaluate>> | undefined;
+    for (let i = 0; i < diffPixelCounts.length; i++) {
+      report = await recordIterationAndEvaluate(
+        input({ matchRate: 80, diffPixelCount: diffPixelCounts[i], regionCount: 4 }),
+        { stateDir, now: baseNow + i * 1000 },
+      );
+    }
+
+    expect(report?.iteration).toBe(3);
+    expect(report?.decision).toBe("stop");
+    expect(report?.reason).toContain("停滞");
+    expect(report?.reason).not.toContain("完全に同一");
+  });
+
   it("keeps continuing while matchRate is still improving", async () => {
     const rates = [60, 70, 80, 90];
     let report: Awaited<ReturnType<typeof recordIterationAndEvaluate>> | undefined;

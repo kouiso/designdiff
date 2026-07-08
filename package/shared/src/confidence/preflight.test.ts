@@ -73,6 +73,9 @@ describe("runPreflight", () => {
     });
     const warning = report.warnings.find((w) => w.code === "aspect_ratio_mismatch");
     expect(warning?.severity).toBe("warning");
+    expect(warning?.suggestedFix).toContain(`capture_width=${STANDARD_WIDTH}`);
+    expect(warning?.suggestedFix).toContain("vw");
+    expect(warning?.suggestedFix).toContain("viewport");
     expect(report.warnings.find((w) => w.code === "logical_physical_width")).toBeUndefined();
   });
 
@@ -90,7 +93,7 @@ describe("runPreflight", () => {
     expect(report.warnings.find((w) => w.code === "logical_physical_width")).toBeUndefined();
   });
 
-  it("幅が一致していても縦横比が大きく違えば critical", () => {
+  it("幅が一致していても縦横比が大きく違えば高さ向けの修正を提案する", () => {
     const report = runPreflight({
       screenshotWidth: 1080,
       screenshotHeight: 1920,
@@ -100,6 +103,9 @@ describe("runPreflight", () => {
 
     const warning = report.warnings.find((w) => w.code === "aspect_ratio_mismatch");
     expect(warning?.severity).toBe("critical");
+    expect(warning?.suggestedFix).not.toContain("capture_width=");
+    expect(warning?.suggestedFix).toContain("content height");
+    expect(warning?.suggestedFix).toContain("縦方向");
   });
 
   it("レンダリング画像幅とスクショ幅が一致するDPR差は info", () => {
@@ -116,7 +122,7 @@ describe("runPreflight", () => {
     expect(report.warnings.find((w) => w.code === "logical_physical_width")?.severity).toBe("info");
   });
 
-  it("screenshot_url の幅ズレでは capture_width を提案する", () => {
+  it("screenshot_url の幅ズレでは capture_width と vw/viewport 確認を提案する", () => {
     const report = runPreflight({
       screenshotWidth: WIDE_SCREEN_WIDTH,
       screenshotHeight: STANDARD_HEIGHT,
@@ -129,6 +135,8 @@ describe("runPreflight", () => {
       (w) => w.code === "width_mismatch" || w.code === "aspect_ratio_mismatch",
     );
     expect(warning?.suggestedFix).toContain("capture_width");
+    expect(warning?.suggestedFix).toContain("vw");
+    expect(warning?.suggestedFix).toContain("viewport");
   });
 
   it("1080.4px の丸め差は幅警告にしない", () => {
