@@ -239,7 +239,7 @@ function buildCompletionCriteria(
     matchRate: {
       required: 100,
       current: matchRate,
-      status: "PASS",
+      status: matchRate >= 100 ? "PASS" : "FAIL",
       blocking: false,
       note: "Reference metric only. Do not use matchRate% as the completion gate.",
     },
