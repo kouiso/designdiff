@@ -29,7 +29,19 @@ export function getBackend(): Backend {
 }
 
 export function getCredential(account: string): string | null {
-  return getBackend().get(account);
+  const backend = getBackend();
+  const value = backend.get(account);
+  if (value !== null) return value;
+  // keychain backend が「利用可能」と判定されても、そのkeychainには
+  // 該当エントリが無く、file backend (~/.figdiff/credentials.json) の方に
+  // 既存のクレデンシャルが保存されているケースがある (probeKeychainAvailability
+  // は「keychain機構が動くか」だけを見て「該当データがそこにあるか」は
+  // 見ていないため)。read-only フォールバックとしてfile backendも確認する。
+  // set/delete の意味論は変えない (常に選択済みbackendへ書く)。
+  if (backend.type === "keychain") {
+    return createFileBackend().get(account);
+  }
+  return null;
 }
 
 export function setCredential(account: string, value: string): void {
