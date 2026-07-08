@@ -112,6 +112,80 @@ A genuine fix reduces the diff image file size and increases matchRate.
 
 ---
 
+## Native (Flutter) App Workflow
+
+Use this path when the implementation is a native Flutter app and the available
+runnable artifact is a Flutter golden/widget-test PNG, not a browser URL. This is
+a standalone CLI handoff: generate the PNG first, then pass that local file path
+to `compare_design` through its existing `screenshot` file-path argument. Do not
+add a `capture_device` value and do not ask an MCP tool to run arbitrary shell
+commands.
+
+### Pin the Figma design to a frozen version
+
+Use the same Figma design URL form accepted by the existing parser:
+
+```
+https://www.figma.com/design/<FILE_KEY>/<TITLE>?node-id=<NODE_ID>&version-id=<VERSION_ID>
+```
+
+What the current code confirms:
+
+- `/design/<FILE_KEY>/...` and legacy `/file/<FILE_KEY>/...` links are recognized.
+- `node-id=1-23` is normalized to API form `1:23`.
+- Additional query parameters such as `version-id=...` can remain on the URL, so
+  keep the frozen-version parameter in the `design_source` you pass around.
+- The shared parser extracts `fileKey` and `nodeId`; it does not invent a
+  separate shorthand for version pinning. Therefore, use Figma's real
+  `version-id` query parameter on the URL rather than a custom syntax.
+
+### Generate a Flutter golden PNG
+
+From the Flutter project, identify both:
+
+1. the test target to run, for example `test/widget_test.dart`; and
+2. the golden PNG path used by `matchesGoldenFile()`, relative to the Flutter
+   project directory, for example `test/widget/goldens/welcome_screen.png`.
+
+Then run the dedicated CLI:
+
+```bash
+figdiff-flutter-golden \
+  --test test/widget_test.dart \
+  --project-dir /path/to/flutter-app \
+  --golden test/widget/goldens/welcome_screen.png
+```
+
+The CLI runs `flutter test --update-goldens <target>` inside `--project-dir`,
+verifies that the requested golden PNG exists, and prints only the absolute PNG
+path. It does not auto-discover goldens because the test's
+`matchesGoldenFile()` path is the source of truth.
+
+### Compare the generated PNG with Figma
+
+Compose the CLI with `compare_design` by command substitution:
+
+```
+compare_design(
+  design_source: "https://www.figma.com/design/<FILE_KEY>/<TITLE>?node-id=<NODE_ID>&version-id=<VERSION_ID>",
+  screenshot: "$(figdiff-flutter-golden --test test/widget_test.dart --project-dir /path/to/flutter-app --golden test/widget/goldens/welcome_screen.png)",
+  project_id: "<PROJECT_ID>"
+)
+```
+
+Autonomous campaign loop for Flutter:
+
+1. Keep the Figma URL frozen with `version-id` so the target cannot drift mid-run.
+2. Edit the Flutter widget/theme/layout code.
+3. Re-run `figdiff-flutter-golden` for the known test target and golden path.
+4. Feed the printed PNG path into `compare_design` as `screenshot`.
+5. Read `loopGuard`, `status`, `matchRate`, and `diffRegions` exactly like the
+   web workflow above; stop when `loopGuard.decision` is `stop`.
+
+Live real-device capture remains the separate `capture_device` workflow. Use this
+Flutter golden workflow only when the desired input is deterministic golden-test
+PNG output.
+
 ## Gotchas
 
 ### Node ID format
