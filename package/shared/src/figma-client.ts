@@ -11,6 +11,7 @@ const FigmaNodeSchema: z.ZodType<FigmaNode> = z.lazy(() =>
     id: z.string(),
     name: z.string(),
     type: z.string(),
+    visible: z.boolean().optional(),
     children: z.array(FigmaNodeSchema).default([]),
     absoluteBoundingBox: z
       .object({ x: z.number(), y: z.number(), width: z.number(), height: z.number() })
@@ -114,6 +115,7 @@ export interface FigmaNode {
   id: string;
   name: string;
   type: string;
+  visible?: boolean;
   children: FigmaNode[];
   absoluteBoundingBox?: BoundingBox | null;
   absoluteRenderBounds?: BoundingBox | null;

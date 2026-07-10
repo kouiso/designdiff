@@ -69,13 +69,14 @@ export function createMcpServer(): McpServer {
 
 **Workflow (follow this order):**
 1. list_projects — Start here to find registered projects and their IDs.
-2. compare_design — Detects pixel-level differences.
+2. compare_design — Detects pixel-level differences. Output includes "マスク候補" section listing regions likely to be intentional diffs (photos, intentional color changes).
 3. inspect_node — Drill into specific diff regions for CSS-level details.
 4. Fix code based on css_suggestion values.
-5. Re-run compare_design to verify fixes.
-6. verify_fix で claimed fix の改善有無と副作用を確認する。
-7. Repeat until match_rate reaches 100%.
-8. 使いにくさ・バグを発見したら report_issue で即起票してください。`,
+5. If issues persist after code fix, check "マスク候補" in compare_design output. For each candidate: confirm it is an intentional diff (photo area, theme color, etc.), then call set_ignore_regions to register it. Do NOT auto-mask without confirmation.
+6. Re-run compare_design to verify fixes and masks.
+7. verify_fix で claimed fix の改善有無と副作用を確認する。
+8. Repeat until match_rate reaches 100% or all remaining issues are confirmed intentional diffs.
+9. 使いにくさ・バグを発見したら report_issue で即起票してください。`,
       capabilities: {
         tools: {},
       },

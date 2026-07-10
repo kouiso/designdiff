@@ -108,6 +108,7 @@ export const ChildNodeSummarySchema = z.object({
   nodeId: z.string(),
   nodeName: z.string(),
   nodeType: z.string(),
+  visible: z.boolean().optional(),
   width: z.number().nonnegative(),
   height: z.number().nonnegative(),
 });
@@ -116,6 +117,7 @@ export const NodeInspectionSchema = z.object({
   nodeId: z.string(),
   nodeName: z.string(),
   nodeType: z.string(),
+  visible: z.boolean().optional(),
   layout: NodeLayoutSchema,
   appearance: NodeAppearanceSchema,
   typography: NodeTypographySchema.optional(),

@@ -129,8 +129,35 @@ export function buildSummaryText(result: CompareDesignResult): string {
 
   lines.push(...buildPreflightWarningLines(result));
   lines.push(...buildNormalizationLines(result));
+  lines.push(...buildMaskCandidateLines(result));
 
   return lines.join("\n");
+}
+
+function buildMaskCandidateLines(result: CompareDesignResult): string[] {
+  const report = result.diffReport;
+  if (!report || report.aggregateVerdict === "pass") return [];
+
+  const candidates = report.regionScores.filter(
+    (r) => (r.textureScore ?? 0) > 0.5 || (r.structure >= 0.9 && r.color < 0.7),
+  );
+
+  if (candidates.length === 0) return [];
+
+  const lines = ["", "マスク候補（意図的差分の可能性・採否はAIループが判断）:"];
+  for (const c of candidates) {
+    const reason =
+      (c.textureScore ?? 0) > 0.5
+        ? `texture=${(c.textureScore ?? 0).toFixed(2)} (写真/画像領域)`
+        : `structure=${c.structure.toFixed(2)} / color=${c.color.toFixed(2)} (意図的な色差)`;
+    lines.push(
+      `  - ${c.regionId}: {x:${c.bbox.x},y:${c.bbox.y},w:${c.bbox.w},h:${c.bbox.h}} (${reason})`,
+    );
+    lines.push(
+      `    → set_ignore_regions(label:"${c.regionId}-intentional", x:${c.bbox.x}, y:${c.bbox.y}, width:${c.bbox.w}, height:${c.bbox.h})`,
+    );
+  }
+  return lines;
 }
 
 export function registerCompareDesign(server: McpServer): void {
