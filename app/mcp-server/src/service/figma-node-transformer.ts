@@ -45,6 +45,7 @@ export function transformNodeToInspection(node: FigmaNode): NodeInspection {
     nodeId: node.id,
     nodeName: node.name,
     nodeType: node.type,
+    visible: node.visible !== false,
     layout,
     appearance,
     typography,
@@ -197,6 +198,7 @@ function extractChildrenSummary(node: FigmaNode): ChildNodeSummary[] {
     nodeId: child.id,
     nodeName: child.name,
     nodeType: child.type,
+    visible: child.visible !== false,
     width: child.absoluteBoundingBox?.width ?? 0,
     height: child.absoluteBoundingBox?.height ?? 0,
   }));
@@ -401,6 +403,8 @@ function collectTokens(
   maxDepth: number,
   currentDepth: number,
 ): void {
+  if (node.visible === false) return;
+
   const bbox = node.absoluteBoundingBox;
 
   if (bbox && BBOX_TOKEN_NODE_TYPES.has(node.type) && bbox.width > 0 && bbox.height > 0) {

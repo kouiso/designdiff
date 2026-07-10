@@ -191,6 +191,7 @@ describe("transformNodeToInspection", () => {
             id: "child-1",
             name: "ChildFrame",
             type: "FRAME",
+            visible: false,
             absoluteBoundingBox: { x: 0, y: 0, width: 50, height: 50 },
             fills: [],
             strokes: [],
@@ -205,8 +206,44 @@ describe("transformNodeToInspection", () => {
       expect(result.childrenSummary).toHaveLength(1);
       expect(result.childrenSummary[0].nodeId).toBe("child-1");
       expect(result.childrenSummary[0].nodeName).toBe("ChildFrame");
+      expect(result.childrenSummary[0].visible).toBe(false);
       expect(result.childrenSummary[0].width).toBe(50);
       expect(result.childrenSummary[0].height).toBe(50);
+    });
+
+    it("preserves omitted and false node visibility in inspection output", () => {
+      const hiddenChild: FigmaNode = {
+        id: "hidden-child",
+        name: "HiddenChild",
+        type: "RECTANGLE",
+        visible: false,
+        absoluteBoundingBox: { x: 0, y: 0, width: 40, height: 20 },
+        fills: [],
+        strokes: [],
+        effects: [],
+        children: [],
+      };
+      const visibleChild: FigmaNode = {
+        id: "visible-child",
+        name: "VisibleChild",
+        type: "RECTANGLE",
+        absoluteBoundingBox: { x: 0, y: 0, width: 30, height: 10 },
+        fills: [],
+        strokes: [],
+        effects: [],
+        children: [],
+      };
+      const node = makeNode({ visible: false, children: [hiddenChild, visibleChild] });
+
+      const result = transformNodeToInspection(node);
+
+      expect(result.visible).toBe(false);
+      expect(result.childrenSummary).toContainEqual(
+        expect.objectContaining({ nodeId: "hidden-child", visible: false }),
+      );
+      expect(result.childrenSummary).toContainEqual(
+        expect.objectContaining({ nodeId: "visible-child", visible: true }),
+      );
     });
 
     it("returns empty childrenSummary when children is absent", () => {
@@ -257,6 +294,51 @@ describe("extractDesignTokens", () => {
     expect(widthToken?.value).toBe(320);
     expect(widthToken?.unit).toBe("px");
     expect(heightToken?.value).toBe(480);
+  });
+
+  it("skips hidden nodes and descendants while treating omitted visible as rendered", () => {
+    const hiddenChild: FigmaNode = {
+      id: "hidden-child",
+      name: "HiddenChild",
+      type: "RECTANGLE",
+      visible: false,
+      absoluteBoundingBox: { x: 0, y: 0, width: 80, height: 40 },
+      fills: [{ type: "SOLID", color: { r: 1, g: 0, b: 0, a: 1 } }],
+      strokes: [],
+      effects: [],
+      children: [
+        {
+          id: "hidden-grandchild",
+          name: "HiddenGrandchild",
+          type: "TEXT",
+          absoluteBoundingBox: { x: 0, y: 0, width: 20, height: 10 },
+          fills: [{ type: "SOLID", color: { r: 0, g: 1, b: 0, a: 1 } }],
+          strokes: [],
+          effects: [],
+          children: [],
+          style: { fontSize: 12 },
+        },
+      ],
+    };
+    const visibleChild: FigmaNode = {
+      id: "visible-child",
+      name: "VisibleChild",
+      type: "RECTANGLE",
+      absoluteBoundingBox: { x: 0, y: 0, width: 60, height: 30 },
+      fills: [{ type: "SOLID", color: { r: 0, g: 0, b: 1, a: 1 } }],
+      strokes: [],
+      effects: [],
+      children: [],
+    };
+    const root = makeNode({ children: [hiddenChild, visibleChild] });
+
+    const tokens = extractDesignTokens(root, 2);
+    const nodeIds = tokens.map((token) => token.nodeId);
+
+    expect(nodeIds).toContain("node-1");
+    expect(nodeIds).toContain("visible-child");
+    expect(nodeIds).not.toContain("hidden-child");
+    expect(nodeIds).not.toContain("hidden-grandchild");
   });
 
   it("extracts padding tokens when defined", () => {
