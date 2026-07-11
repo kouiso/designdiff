@@ -23,10 +23,7 @@ import {
 
 import { buildDiffReport } from "./diff-report-builder.js";
 
-// sharp の入力ピクセル上限。縦長の Figma エクスポートや巨大スクショが
-// 無制限の raw バッファをデコードしてプロセスを OOM させないための天井。
-// この値を超える入力は runCompareDesign 側で早期に弾く想定だが、
-// デコード自体のガードとしても全 sharp() に効かせる。
+// 巨大画像のデコードでプロセスを OOM させないための上限。
 const MAX_INPUT_PIXELS = 40_000_000;
 
 // 比較パイプラインが扱う作業解像度の上限。これを超える入力は
@@ -34,13 +31,23 @@ const MAX_INPUT_PIXELS = 40_000_000;
 // 同じ比率で揃えてから pixelmatch にかける。
 const MAX_COMPARE_PIXELS = 24_000_000;
 
-type SharpInput = Parameters<typeof sharp>[0];
-type SharpOptions = Parameters<typeof sharp>[1];
+type SharpBufferInput = Parameters<typeof sharp>[0];
+type SharpOptions = NonNullable<Parameters<typeof sharp>[1]>;
+interface SharpCreateOptions extends SharpOptions {
+  create: NonNullable<SharpOptions["create"]>;
+}
+type SharpInput = SharpBufferInput | SharpCreateOptions;
 
-// 全 sharp() 呼び出しに limitInputPixels を強制する薄いラッパ。
-// 個別呼び出しで指定し忘れても OOM ガードが必ず効くようにする。
+// 全 sharp() 呼び出しで OOM ガードを必ず有効にする。
 function createSharp(input?: SharpInput, options?: SharpOptions): sharp.Sharp {
-  return sharp(input, { limitInputPixels: MAX_INPUT_PIXELS, ...options });
+  const guardedOptions = { ...options, limitInputPixels: MAX_INPUT_PIXELS };
+  if (input === undefined) {
+    return sharp(guardedOptions);
+  }
+  if (typeof input === "object" && "create" in input) {
+    return sharp({ ...input, limitInputPixels: MAX_INPUT_PIXELS });
+  }
+  return sharp(input, guardedOptions);
 }
 
 type ClusterMode = "auto" | "grid" | "flood";
@@ -89,7 +96,7 @@ export async function redactImageBase64ForPublicExport(
   }
 
   const imageBuffer = Buffer.from(imageBase64, "base64");
-  const metadata = await sharp(imageBuffer).metadata();
+  const metadata = await createSharp(imageBuffer).metadata();
   const width = metadata.width ?? 0;
   const height = metadata.height ?? 0;
   if (width === 0 || height === 0) {
@@ -117,7 +124,7 @@ export async function redactImageBase64ForPublicExport(
   }
 
   // public export では顧客デザイン断片を残さないため、不透明な単色で上書きする。
-  const redactedBuffer = await sharp(imageBuffer)
+  const redactedBuffer = await createSharp(imageBuffer)
     .ensureAlpha()
     .composite(overlays)
     .png()
@@ -312,6 +319,112 @@ function clusterDiffPixelsQuickTiles(
   }));
 }
 
+// #252: 実装差によるページ全体のズレで、本来一致する箇所が
+// 差分化されるのを避けるためアンカーを合わせる。
+function rowLuminanceProfile(
+  pixels: Uint8Array | Buffer,
+  width: number,
+  height: number,
+): Float64Array {
+  const profile = new Float64Array(height);
+  if (pixels.length < width * height * 4) {
+    return profile;
+  }
+  for (let y = 0; y < height; y++) {
+    let sum = 0;
+    let opaqueCount = 0;
+    const rowStart = y * width * 4;
+    for (let x = 0; x < width; x++) {
+      const i = rowStart + x * 4;
+      if (pixels[i + 3] === 0) continue;
+      sum += 0.299 * pixels[i] + 0.587 * pixels[i + 1] + 0.114 * pixels[i + 2];
+      opaqueCount++;
+    }
+    profile[y] = opaqueCount > 0 ? sum / opaqueCount : 0;
+  }
+  return profile;
+}
+
+function columnLuminanceProfile(
+  pixels: Uint8Array | Buffer,
+  width: number,
+  height: number,
+): Float64Array {
+  const profile = new Float64Array(width);
+  if (pixels.length < width * height * 4) {
+    return profile;
+  }
+  for (let x = 0; x < width; x++) {
+    let sum = 0;
+    let opaqueCount = 0;
+    for (let y = 0; y < height; y++) {
+      const i = (y * width + x) * 4;
+      if (pixels[i + 3] === 0) continue;
+      sum += 0.299 * pixels[i] + 0.587 * pixels[i + 1] + 0.114 * pixels[i + 2];
+      opaqueCount++;
+    }
+    profile[x] = opaqueCount > 0 ? sum / opaqueCount : 0;
+  }
+  return profile;
+}
+
+function windowedPearsonCorrelation(
+  design: Float64Array,
+  reference: Float64Array,
+  offset: number,
+): number {
+  const len = design.length;
+  let sumA = 0;
+  let sumB = 0;
+  let sumAB = 0;
+  let sumA2 = 0;
+  let sumB2 = 0;
+  for (let i = 0; i < len; i++) {
+    const a = design[i];
+    const b = reference[offset + i];
+    sumA += a;
+    sumB += b;
+    sumAB += a * b;
+    sumA2 += a * a;
+    sumB2 += b * b;
+  }
+  const n = len;
+  const numerator = n * sumAB - sumA * sumB;
+  const denomA = n * sumA2 - sumA * sumA;
+  const denomB = n * sumB2 - sumB * sumB;
+  const denominator = Math.sqrt(Math.max(denomA, 0) * Math.max(denomB, 0));
+  return denominator === 0 ? 0 : numerator / denominator;
+}
+
+// 相関が弱すぎる場合は誤検出を避けるため従来位置へフォールバックする。
+const MIN_CONFIDENT_ANCHOR_CORRELATION = 0.3;
+function detectBestAnchorOffset(
+  designProfile: Float64Array,
+  referenceProfile: Float64Array,
+  maxOffset: number,
+  fallbackOffset = 0,
+): number {
+  const safeMaxOffset = Math.min(maxOffset, referenceProfile.length - designProfile.length);
+  const clampedFallback = Math.max(0, Math.min(fallbackOffset, Math.max(safeMaxOffset, 0)));
+  if (
+    safeMaxOffset <= 0 ||
+    designProfile.length === 0 ||
+    referenceProfile.length < designProfile.length
+  ) {
+    return clampedFallback;
+  }
+  let bestOffset = clampedFallback;
+  let bestScore = -Infinity;
+  for (let offset = 0; offset <= safeMaxOffset; offset++) {
+    const score = windowedPearsonCorrelation(designProfile, referenceProfile, offset);
+    if (score > bestScore) {
+      bestScore = score;
+      bestOffset = offset;
+    }
+  }
+  return bestScore >= MIN_CONFIDENT_ANCHOR_CORRELATION ? bestOffset : clampedFallback;
+}
+
 /**
  * Compare two images and return diff analysis
  */
@@ -404,27 +517,69 @@ export async function compareImages(
       finalScreenshotHeight / finalDesignHeight,
     );
     appliedScale = scale;
-    const contentWidth = Math.round(finalDesignWidth * scale);
-    const contentHeight = Math.round(finalDesignHeight * scale);
+    const contentWidth = Math.max(1, Math.round(finalDesignWidth * scale));
+    const contentHeight = Math.max(1, Math.round(finalDesignHeight * scale));
+
+    const { data: contentRaw } = await createSharp(designBuffer)
+      .resize(contentWidth, contentHeight, { fit: "fill" })
+      .ensureAlpha()
+      .raw()
+      .toBuffer({ resolveWithObject: true });
+    const { data: screenshotRawForAnchor } = await createSharp(screenshotBuffer)
+      .ensureAlpha()
+      .raw()
+      .toBuffer({ resolveWithObject: true });
+
+    const maxTop = finalScreenshotHeight - contentHeight;
+    const maxLeft = finalScreenshotWidth - contentWidth;
+    const top = detectBestAnchorOffset(
+      rowLuminanceProfile(contentRaw, contentWidth, contentHeight),
+      rowLuminanceProfile(screenshotRawForAnchor, finalScreenshotWidth, finalScreenshotHeight),
+      maxTop,
+    );
+    const left = detectBestAnchorOffset(
+      columnLuminanceProfile(contentRaw, contentWidth, contentHeight),
+      columnLuminanceProfile(screenshotRawForAnchor, finalScreenshotWidth, finalScreenshotHeight),
+      maxLeft,
+      Math.floor(maxLeft / 2),
+    );
+
     paddingMask = {
-      left: Math.floor((finalScreenshotWidth - contentWidth) / 2),
-      top: 0,
+      left,
+      top,
       width: contentWidth,
       height: contentHeight,
     };
-    finalDesignBuffer = await createSharp(designBuffer)
-      .resize(finalScreenshotWidth, finalScreenshotHeight, {
-        fit: "contain",
-        position: "top",
-        // contain で作られる余白だけを後段で無視できるよう透明にする。
+    finalDesignBuffer = await createSharp({
+      create: {
+        width: finalScreenshotWidth,
+        height: finalScreenshotHeight,
+        channels: 4,
         background: { r: 0, g: 0, b: 0, alpha: 0 },
-      })
+      },
+    })
+      .composite([
+        {
+          input: contentRaw,
+          raw: { width: contentWidth, height: contentHeight, channels: 4 },
+          left,
+          top,
+        },
+      ])
       .ensureAlpha()
       .toBuffer();
   }
 
   // Extract raw pixel data
-  const designRaw = await createSharp(finalDesignBuffer).ensureAlpha().raw().toBuffer();
+  const designRaw = await (paddingMask
+    ? createSharp(finalDesignBuffer, {
+        raw: { width: finalScreenshotWidth, height: finalScreenshotHeight, channels: 4 },
+      })
+    : createSharp(finalDesignBuffer)
+  )
+    .ensureAlpha()
+    .raw()
+    .toBuffer();
   const screenshotRaw = await createSharp(screenshotBuffer).ensureAlpha().raw().toBuffer();
 
   const width = finalScreenshotWidth;
