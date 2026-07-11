@@ -23,10 +23,7 @@ import {
 
 import { buildDiffReport } from "./diff-report-builder.js";
 
-// sharp の入力ピクセル上限。縦長の Figma エクスポートや巨大スクショが
-// 無制限の raw バッファをデコードしてプロセスを OOM させないための天井。
-// この値を超える入力は runCompareDesign 側で早期に弾く想定だが、
-// デコード自体のガードとしても全 sharp() に効かせる。
+// 巨大画像のデコードでプロセスを OOM させないための上限。
 const MAX_INPUT_PIXELS = 40_000_000;
 
 // 比較パイプラインが扱う作業解像度の上限。これを超える入力は
@@ -41,15 +38,14 @@ interface SharpCreateOptions extends SharpOptions {
 }
 type SharpInput = SharpBufferInput | SharpCreateOptions;
 
-// 全 sharp() 呼び出しに limitInputPixels を強制する薄いラッパ。
-// 個別呼び出しで指定し忘れても OOM ガードが必ず効くようにする。
+// 全 sharp() 呼び出しで OOM ガードを必ず有効にする。
 function createSharp(input?: SharpInput, options?: SharpOptions): sharp.Sharp {
-  const guardedOptions = { limitInputPixels: MAX_INPUT_PIXELS, ...options };
+  const guardedOptions = { ...options, limitInputPixels: MAX_INPUT_PIXELS };
   if (input === undefined) {
     return sharp(guardedOptions);
   }
   if (typeof input === "object" && "create" in input) {
-    return sharp({ limitInputPixels: MAX_INPUT_PIXELS, ...input });
+    return sharp({ ...input, limitInputPixels: MAX_INPUT_PIXELS });
   }
   return sharp(input, guardedOptions);
 }
@@ -100,7 +96,7 @@ export async function redactImageBase64ForPublicExport(
   }
 
   const imageBuffer = Buffer.from(imageBase64, "base64");
-  const metadata = await sharp(imageBuffer).metadata();
+  const metadata = await createSharp(imageBuffer).metadata();
   const width = metadata.width ?? 0;
   const height = metadata.height ?? 0;
   if (width === 0 || height === 0) {
@@ -128,7 +124,7 @@ export async function redactImageBase64ForPublicExport(
   }
 
   // public export では顧客デザイン断片を残さないため、不透明な単色で上書きする。
-  const redactedBuffer = await sharp(imageBuffer)
+  const redactedBuffer = await createSharp(imageBuffer)
     .ensureAlpha()
     .composite(overlays)
     .png()
@@ -323,10 +319,8 @@ function clusterDiffPixelsQuickTiles(
   }));
 }
 
-// #252: 単純な top=0 / center 固定だと、header/footer高さの実装差程度の
-// 微差でもページ全体がズレたまま比較され、実際は一致している箇所まで
-// 差分として検出されてしまう。行/列の輝度プロファイルの相関が最大に
-// なるオフセットを探索してから重ねることで、本質的にアンカーを合わせる。
+// #252: 実装差によるページ全体のズレで、本来一致する箇所が
+// 差分化されるのを避けるためアンカーを合わせる。
 function rowLuminanceProfile(
   pixels: Uint8Array | Buffer,
   width: number,
@@ -402,9 +396,7 @@ function windowedPearsonCorrelation(
   return denominator === 0 ? 0 : numerator / denominator;
 }
 
-// design の輝度プロファイルを reference の中でスライドさせ、相関が最大に
-// なるオフセットを返す。相関が弱すぎる場合(≈無相関)は誤検出を避けて
-// 呼び出し元の軸に応じた従来位置へフォールバックする。
+// 相関が弱すぎる場合は誤検出を避けるため従来位置へフォールバックする。
 const MIN_CONFIDENT_ANCHOR_CORRELATION = 0.3;
 function detectBestAnchorOffset(
   designProfile: Float64Array,
@@ -525,11 +517,11 @@ export async function compareImages(
       finalScreenshotHeight / finalDesignHeight,
     );
     appliedScale = scale;
-    const contentWidth = Math.round(finalDesignWidth * scale);
-    const contentHeight = Math.round(finalDesignHeight * scale);
+    const contentWidth = Math.max(1, Math.round(finalDesignWidth * scale));
+    const contentHeight = Math.max(1, Math.round(finalDesignHeight * scale));
 
     const { data: contentRaw } = await createSharp(designBuffer)
-      .resize(contentWidth, contentHeight)
+      .resize(contentWidth, contentHeight, { fit: "fill" })
       .ensureAlpha()
       .raw()
       .toBuffer({ resolveWithObject: true });

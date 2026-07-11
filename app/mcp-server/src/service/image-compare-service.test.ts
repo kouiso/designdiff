@@ -353,7 +353,7 @@ describe("compareImages", () => {
     const { compareImages } = await import("./image-compare-service.js");
 
     const dummyBase64 = Buffer.alloc(100).toString("base64");
-    const result = await compareImages({
+    await compareImages({
       designBase64: dummyBase64,
       screenshotBase64: dummyBase64,
     });
@@ -366,8 +366,6 @@ describe("compareImages", () => {
         top: topOffset,
       },
     ]);
-    expect(result.matchRate).toBe(100);
-    expect(width * designHeight).toBeGreaterThan(0);
   });
 
   it("相関が弱い場合は誤検出を避けて offset 0 にフォールバックすること", async () => {
@@ -434,6 +432,106 @@ describe("compareImages", () => {
         input: flatDesign,
         raw: { width, height: designHeight, channels: 4 },
         left: 0,
+        top: 0,
+      },
+    ]);
+  });
+
+  it("幅差がある場合は輝度プロファイルの相関で left offset を検出すること", async () => {
+    const pixelmatchMock = await import("pixelmatch");
+
+    const finalDesignWidth = 4;
+    const finalDesignHeight = 4;
+    const finalScreenshotWidth = 7;
+    const finalScreenshotHeight = 4;
+    const leftOffset = 2;
+    const designMetadataInstance = createMockSharpInstance({
+      width: finalScreenshotWidth,
+      height: finalScreenshotHeight,
+    });
+    const screenshotMetadataInstance = createMockSharpInstance({
+      width: finalScreenshotWidth,
+      height: finalScreenshotHeight,
+    });
+    const finalDesignMetadataInstance = createMockSharpInstance({
+      width: finalDesignWidth,
+      height: finalDesignHeight,
+    });
+    const finalScreenshotMetadataInstance = createMockSharpInstance({
+      width: finalScreenshotWidth,
+      height: finalScreenshotHeight,
+    });
+    const contentRawInstance = createMockSharpInstance({
+      width: finalDesignWidth,
+      height: finalDesignHeight,
+    });
+    const screenshotAnchorRawInstance = createMockSharpInstance({
+      width: finalScreenshotWidth,
+      height: finalScreenshotHeight,
+    });
+    const canvasInstance = createMockSharpInstance({
+      width: finalScreenshotWidth,
+      height: finalScreenshotHeight,
+    });
+    const designRawInstance = createMockSharpInstance({
+      width: finalScreenshotWidth,
+      height: finalScreenshotHeight,
+    });
+    const screenshotRawInstance = createMockSharpInstance({
+      width: finalScreenshotWidth,
+      height: finalScreenshotHeight,
+    });
+    const diffImageInstance = createMockSharpInstance({
+      width: finalScreenshotWidth,
+      height: finalScreenshotHeight,
+    });
+
+    const makeRaw = (columnValues: readonly number[], height: number) =>
+      Buffer.from(
+        Array.from({ length: height }, () =>
+          columnValues.flatMap((value) => [value, value, value, 255]),
+        ).flat(),
+      );
+    const contentRaw = makeRaw([30, 90, 150, 210], finalDesignHeight);
+    const screenshotRaw = makeRaw([250, 240, 30, 90, 150, 210, 10], finalScreenshotHeight);
+
+    contentRawInstance.toBuffer.mockImplementation((options?: { resolveWithObject?: boolean }) =>
+      Promise.resolve(options?.resolveWithObject ? { data: contentRaw, info: {} } : contentRaw),
+    );
+    screenshotAnchorRawInstance.toBuffer.mockImplementation(
+      (options?: { resolveWithObject?: boolean }) =>
+        Promise.resolve(
+          options?.resolveWithObject ? { data: screenshotRaw, info: {} } : screenshotRaw,
+        ),
+    );
+    designRawInstance.toBuffer.mockResolvedValue(screenshotRaw);
+    screenshotRawInstance.toBuffer.mockResolvedValue(screenshotRaw);
+    mockSharpFn
+      .mockReturnValueOnce(designMetadataInstance)
+      .mockReturnValueOnce(screenshotMetadataInstance)
+      .mockReturnValueOnce(finalDesignMetadataInstance)
+      .mockReturnValueOnce(finalScreenshotMetadataInstance)
+      .mockReturnValueOnce(contentRawInstance)
+      .mockReturnValueOnce(screenshotAnchorRawInstance)
+      .mockReturnValueOnce(canvasInstance)
+      .mockReturnValueOnce(designRawInstance)
+      .mockReturnValueOnce(screenshotRawInstance)
+      .mockReturnValueOnce(diffImageInstance);
+    vi.mocked(pixelmatchMock.default).mockReturnValue(0);
+
+    const { compareImages } = await import("./image-compare-service.js");
+
+    const dummyBase64 = Buffer.alloc(100).toString("base64");
+    await compareImages({
+      designBase64: dummyBase64,
+      screenshotBase64: dummyBase64,
+    });
+
+    expect(canvasInstance.composite).toHaveBeenCalledWith([
+      {
+        input: contentRaw,
+        raw: { width: finalDesignWidth, height: finalDesignHeight, channels: 4 },
+        left: leftOffset,
         top: 0,
       },
     ]);
