@@ -312,7 +312,12 @@ function clusterDiffPixelsQuickTiles(
 
   return topTiles.map((tile, index) => ({
     id: index,
-    bounds: { x: tile.left, y: tile.top, width: tile.width, height: tile.height },
+    bounds: {
+      x: tile.left,
+      y: tile.top,
+      width: tile.width,
+      height: tile.height,
+    },
     diffPixelCount: tile.diffPixelCount,
     nearbyNodeIds: [],
     nearbyNodeNames: [],
@@ -345,19 +350,23 @@ function rowLuminanceProfile(
   return profile;
 }
 
-function columnLuminanceProfile(
+export function columnLuminanceProfile(
   pixels: Uint8Array | Buffer,
   width: number,
   height: number,
+  rowStart = 0,
+  rowEnd = height,
 ): Float64Array {
   const profile = new Float64Array(width);
   if (pixels.length < width * height * 4) {
     return profile;
   }
+  const clippedRowStart = Math.max(0, Math.min(height, Math.floor(rowStart)));
+  const clippedRowEnd = Math.max(clippedRowStart, Math.min(height, Math.floor(rowEnd)));
   for (let x = 0; x < width; x++) {
     let sum = 0;
     let opaqueCount = 0;
-    for (let y = 0; y < height; y++) {
+    for (let y = clippedRowStart; y < clippedRowEnd; y++) {
       const i = (y * width + x) * 4;
       if (pixels[i + 3] === 0) continue;
       sum += 0.299 * pixels[i] + 0.587 * pixels[i + 1] + 0.114 * pixels[i + 2];
@@ -398,7 +407,12 @@ function windowedPearsonCorrelation(
 
 // 相関が弱すぎる場合は誤検出を避けるため従来位置へフォールバックする。
 const MIN_CONFIDENT_ANCHOR_CORRELATION = 0.3;
-function detectBestAnchorOffset(
+const ANCHOR_OFFSET_SEARCH_BUDGET = 2000;
+const PADDING_LUMINANCE_STDDEV_THRESHOLD = 8;
+const PADDING_EDGE_RGB_DISTANCE_THRESHOLD = 15;
+const PADDING_EDGE_SAMPLE_THICKNESS = 3;
+const TOP_REFINED_ANCHOR_CANDIDATE_COUNT = 3;
+export function detectBestAnchorOffset(
   designProfile: Float64Array,
   referenceProfile: Float64Array,
   maxOffset: number,
@@ -413,16 +427,252 @@ function detectBestAnchorOffset(
   ) {
     return clampedFallback;
   }
-  let bestOffset = clampedFallback;
-  let bestScore = -Infinity;
-  for (let offset = 0; offset <= safeMaxOffset; offset++) {
-    const score = windowedPearsonCorrelation(designProfile, referenceProfile, offset);
-    if (score > bestScore) {
-      bestScore = score;
-      bestOffset = offset;
+  const findBestOffsetInRange = (start: number, end: number, step: number) => {
+    let bestOffset = clampedFallback;
+    let bestScore = -Infinity;
+    for (let offset = start; offset <= end; offset += step) {
+      const score = windowedPearsonCorrelation(designProfile, referenceProfile, offset);
+      if (score > bestScore) {
+        bestScore = score;
+        bestOffset = offset;
+      }
+    }
+    return { bestOffset, bestScore };
+  };
+  const findTopOffsetsInRange = (start: number, end: number, step: number, count: number) => {
+    const candidates: { bestOffset: number; bestScore: number }[] = [];
+    for (let offset = start; offset <= end; offset += step) {
+      const score = windowedPearsonCorrelation(designProfile, referenceProfile, offset);
+      candidates.push({ bestOffset: offset, bestScore: score });
+      candidates.sort((a, b) => b.bestScore - a.bestScore);
+      if (candidates.length > count) candidates.pop();
+    }
+    return candidates;
+  };
+
+  const stride =
+    safeMaxOffset > ANCHOR_OFFSET_SEARCH_BUDGET
+      ? Math.ceil(safeMaxOffset / ANCHOR_OFFSET_SEARCH_BUDGET)
+      : 1;
+  if (stride === 1) {
+    const { bestOffset, bestScore } = findBestOffsetInRange(0, safeMaxOffset, 1);
+    return bestScore >= MIN_CONFIDENT_ANCHOR_CORRELATION ? bestOffset : clampedFallback;
+  }
+
+  const stridedCandidates = findTopOffsetsInRange(
+    0,
+    safeMaxOffset,
+    stride,
+    TOP_REFINED_ANCHOR_CANDIDATE_COUNT,
+  );
+  const refinementRadius = stride;
+  let refinedBest = { bestOffset: clampedFallback, bestScore: -Infinity };
+  for (const candidate of stridedCandidates) {
+    // 病的な反復パターンでは完全ではないが、単一候補だけの精密化より真のピークを落としにくくするため。
+    const refinementStart = Math.max(0, candidate.bestOffset - refinementRadius);
+    const refinementEnd = Math.min(safeMaxOffset, candidate.bestOffset + refinementRadius);
+    const refinedCandidate = findBestOffsetInRange(refinementStart, refinementEnd, 1);
+    if (refinedCandidate.bestScore > refinedBest.bestScore) {
+      refinedBest = refinedCandidate;
     }
   }
-  return bestScore >= MIN_CONFIDENT_ANCHOR_CORRELATION ? bestOffset : clampedFallback;
+  return refinedBest.bestScore >= MIN_CONFIDENT_ANCHOR_CORRELATION
+    ? refinedBest.bestOffset
+    : clampedFallback;
+}
+
+export function zeroIgnoredPixelsForAnchor(
+  rawPixels: Uint8Array | Buffer,
+  width: number,
+  height: number,
+  ignoreRegions: readonly IgnoreRegion[] | undefined,
+): Uint8Array | Buffer {
+  if (!ignoreRegions || ignoreRegions.length === 0) {
+    return rawPixels;
+  }
+  if (rawPixels.length < width * height * 4) {
+    return rawPixels;
+  }
+  const anchorPixels = Buffer.from(rawPixels);
+  for (const region of ignoreRegions) {
+    const clipped = clipIgnoreRegion(region, width, height);
+    if (clipped === null) continue;
+    for (let y = clipped.top; y < clipped.top + clipped.height; y += 1) {
+      const rowStart = y * width * 4;
+      for (let x = clipped.left; x < clipped.left + clipped.width; x += 1) {
+        anchorPixels[rowStart + x * 4 + 3] = 0;
+      }
+    }
+  }
+  return anchorPixels;
+}
+
+interface RgbMean {
+  r: number;
+  g: number;
+  b: number;
+}
+
+function meanRgbForRegion(
+  pixels: Uint8Array | Buffer,
+  width: number,
+  height: number,
+  region: { left: number; top: number; width: number; height: number },
+): { mean: RgbMean | null; luminanceStddev: number } {
+  const left = Math.max(0, region.left);
+  const top = Math.max(0, region.top);
+  const right = Math.min(width, region.left + region.width);
+  const bottom = Math.min(height, region.top + region.height);
+  if (pixels.length < width * height * 4 || right <= left || bottom <= top) {
+    return { mean: null, luminanceStddev: 0 };
+  }
+
+  let luminanceSum = 0;
+  let luminanceSumSq = 0;
+  let r = 0;
+  let g = 0;
+  let b = 0;
+  let count = 0;
+  for (let y = top; y < bottom; y += 1) {
+    const rowStart = y * width * 4;
+    for (let x = left; x < right; x += 1) {
+      const i = rowStart + x * 4;
+      if (pixels[i + 3] === 0) continue;
+      const luminance = 0.299 * pixels[i] + 0.587 * pixels[i + 1] + 0.114 * pixels[i + 2];
+      luminanceSum += luminance;
+      luminanceSumSq += luminance * luminance;
+      r += pixels[i];
+      g += pixels[i + 1];
+      b += pixels[i + 2];
+      count += 1;
+    }
+  }
+  if (count === 0) return { mean: null, luminanceStddev: 0 };
+  const luminanceMean = luminanceSum / count;
+  const variance = Math.max(0, luminanceSumSq / count - luminanceMean * luminanceMean);
+  return {
+    mean: { r: r / count, g: g / count, b: b / count },
+    luminanceStddev: Math.sqrt(variance),
+  };
+}
+
+function rgbDistance(a: RgbMean, b: RgbMean): number {
+  return Math.sqrt((a.r - b.r) ** 2 + (a.g - b.g) ** 2 + (a.b - b.b) ** 2);
+}
+
+type PaddingGapEdge = "top" | "left" | "right" | "bottom";
+
+function contentEdgeRegion(edge: PaddingGapEdge, width: number, height: number) {
+  const thickness = Math.max(1, Math.min(PADDING_EDGE_SAMPLE_THICKNESS, width, height));
+  switch (edge) {
+    case "top":
+      return { left: 0, top: 0, width, height: Math.min(thickness, height) };
+    case "left":
+      return { left: 0, top: 0, width: Math.min(thickness, width), height };
+    case "right":
+      return {
+        left: Math.max(0, width - thickness),
+        top: 0,
+        width: Math.min(thickness, width),
+        height,
+      };
+    case "bottom":
+      return {
+        left: 0,
+        top: Math.max(0, height - thickness),
+        width,
+        height: Math.min(thickness, height),
+      };
+  }
+}
+
+export function isLikelyLetterboxPadding(
+  pixels: Uint8Array | Buffer,
+  width: number,
+  height: number,
+  region: { left: number; top: number; width: number; height: number },
+  contentPixels: Uint8Array | Buffer,
+  contentWidth: number,
+  contentHeight: number,
+  contentEdge: PaddingGapEdge,
+): boolean {
+  if (pixels.length < width * height * 4) {
+    return true;
+  }
+  const gapStats = meanRgbForRegion(pixels, width, height, region);
+  if (gapStats.mean === null) return true;
+  if (gapStats.luminanceStddev > PADDING_LUMINANCE_STDDEV_THRESHOLD) return false;
+
+  const edgeStats = meanRgbForRegion(
+    contentPixels,
+    contentWidth,
+    contentHeight,
+    contentEdgeRegion(contentEdge, contentWidth, contentHeight),
+  );
+  if (edgeStats.mean === null) return true;
+  return rgbDistance(gapStats.mean, edgeStats.mean) <= PADDING_EDGE_RGB_DISTANCE_THRESHOLD;
+}
+
+function shouldUsePaddingMask(
+  pixels: Uint8Array | Buffer,
+  width: number,
+  height: number,
+  left: number,
+  top: number,
+  contentPixels: Uint8Array | Buffer,
+  contentWidth: number,
+  contentHeight: number,
+): boolean {
+  const rightGapWidth = width - (left + contentWidth);
+  const bottomGapHeight = height - (top + contentHeight);
+  const gapChecks: {
+    edge: PaddingGapEdge;
+    region: { left: number; top: number; width: number; height: number };
+  }[] = [];
+  if (top > 0)
+    gapChecks.push({
+      edge: "top",
+      region: { left: 0, top: 0, width, height: top },
+    });
+  if (left > 0)
+    gapChecks.push({
+      edge: "left",
+      region: { left: 0, top: 0, width: left, height },
+    });
+  if (rightGapWidth > 0) {
+    gapChecks.push({
+      edge: "right",
+      region: {
+        left: left + contentWidth,
+        top: 0,
+        width: rightGapWidth,
+        height,
+      },
+    });
+  }
+  if (bottomGapHeight > 0) {
+    gapChecks.push({
+      edge: "bottom",
+      region: {
+        left: 0,
+        top: top + contentHeight,
+        width,
+        height: bottomGapHeight,
+      },
+    });
+  }
+  return gapChecks.every(({ edge, region }) =>
+    isLikelyLetterboxPadding(
+      pixels,
+      width,
+      height,
+      region,
+      contentPixels,
+      contentWidth,
+      contentHeight,
+      edge,
+    ),
+  );
 }
 
 /**
@@ -510,6 +760,7 @@ export async function compareImages(
   // Resize design to match screenshot if still different (e.g., height mismatch after crop)
   let finalDesignBuffer: Buffer = designBuffer;
   let paddingMask: PaddingMask | null = null;
+  let wasComposited = false;
   let appliedScale = 1;
   if (finalDesignWidth !== finalScreenshotWidth || finalDesignHeight !== finalScreenshotHeight) {
     const scale = Math.min(
@@ -530,26 +781,51 @@ export async function compareImages(
       .raw()
       .toBuffer({ resolveWithObject: true });
 
+    const screenshotAnchorPixels = zeroIgnoredPixelsForAnchor(
+      screenshotRawForAnchor,
+      finalScreenshotWidth,
+      finalScreenshotHeight,
+      ignoreRegions,
+    );
     const maxTop = finalScreenshotHeight - contentHeight;
     const maxLeft = finalScreenshotWidth - contentWidth;
     const top = detectBestAnchorOffset(
       rowLuminanceProfile(contentRaw, contentWidth, contentHeight),
-      rowLuminanceProfile(screenshotRawForAnchor, finalScreenshotWidth, finalScreenshotHeight),
+      rowLuminanceProfile(screenshotAnchorPixels, finalScreenshotWidth, finalScreenshotHeight),
       maxTop,
     );
     const left = detectBestAnchorOffset(
       columnLuminanceProfile(contentRaw, contentWidth, contentHeight),
-      columnLuminanceProfile(screenshotRawForAnchor, finalScreenshotWidth, finalScreenshotHeight),
+      columnLuminanceProfile(
+        screenshotAnchorPixels,
+        finalScreenshotWidth,
+        finalScreenshotHeight,
+        top,
+        top + contentHeight,
+      ),
       maxLeft,
       Math.floor(maxLeft / 2),
     );
 
-    paddingMask = {
+    // 実 UI の新規帯を contain 余白として隠すと、検出すべき差分が消えてしまうため。
+    paddingMask = shouldUsePaddingMask(
+      screenshotRawForAnchor,
+      finalScreenshotWidth,
+      finalScreenshotHeight,
       left,
       top,
-      width: contentWidth,
-      height: contentHeight,
-    };
+      contentRaw,
+      contentWidth,
+      contentHeight,
+    )
+      ? {
+          left,
+          top,
+          width: contentWidth,
+          height: contentHeight,
+        }
+      : null;
+    wasComposited = true;
     finalDesignBuffer = await createSharp({
       create: {
         width: finalScreenshotWidth,
@@ -571,9 +847,13 @@ export async function compareImages(
   }
 
   // Extract raw pixel data
-  const designRaw = await (paddingMask
+  const designRaw = await (wasComposited
     ? createSharp(finalDesignBuffer, {
-        raw: { width: finalScreenshotWidth, height: finalScreenshotHeight, channels: 4 },
+        raw: {
+          width: finalScreenshotWidth,
+          height: finalScreenshotHeight,
+          channels: 4,
+        },
       })
     : createSharp(finalDesignBuffer)
   )
@@ -706,7 +986,7 @@ export async function compareImages(
       screenshotWidth: nativeScreenshotWidth,
       screenshotHeight: nativeScreenshotHeight,
       cropApplied: Boolean(cropRegion),
-      containResized: paddingMask !== null,
+      containResized: wasComposited,
       appliedScale,
     },
   };
