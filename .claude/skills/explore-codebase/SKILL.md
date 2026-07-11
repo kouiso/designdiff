@@ -24,5 +24,7 @@ Use the code-review-graph MCP tools to explore and understand the codebase.
 
 ## Token Efficiency Rules
 - ALWAYS start with `get_minimal_context(task="<your task>")` before any other graph tool.
-- Use `detail_level="minimal"` on all calls. Only escalate to "standard" when minimal is insufficient.
+- Use `detail_level="minimal"` on graph tool calls that support it (query/analysis/review/community/flow tools).
+  `get_minimal_context` has no `detail_level` parameter — it always returns a compact summary.
+  Only escalate other tools to `"standard"` when minimal is insufficient.
 - Target: complete any review/debug/refactor task in ≤5 tool calls and ≤800 total output tokens.
