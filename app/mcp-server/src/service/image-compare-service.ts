@@ -333,6 +333,9 @@ function rowLuminanceProfile(
   height: number,
 ): Float64Array {
   const profile = new Float64Array(height);
+  if (pixels.length < width * height * 4) {
+    return profile;
+  }
   for (let y = 0; y < height; y++) {
     let sum = 0;
     let opaqueCount = 0;
@@ -354,6 +357,9 @@ function columnLuminanceProfile(
   height: number,
 ): Float64Array {
   const profile = new Float64Array(width);
+  if (pixels.length < width * height * 4) {
+    return profile;
+  }
   for (let x = 0; x < width; x++) {
     let sum = 0;
     let opaqueCount = 0;
@@ -405,12 +411,13 @@ function detectBestAnchorOffset(
   referenceProfile: Float64Array,
   maxOffset: number,
 ): number {
-  if (maxOffset <= 0 || designProfile.length === 0 || referenceProfile.length < designProfile.length) {
+  const safeMaxOffset = Math.min(maxOffset, referenceProfile.length - designProfile.length);
+  if (safeMaxOffset <= 0 || designProfile.length === 0 || referenceProfile.length < designProfile.length) {
     return 0;
   }
   let bestOffset = 0;
   let bestScore = -Infinity;
-  for (let offset = 0; offset <= maxOffset; offset++) {
+  for (let offset = 0; offset <= safeMaxOffset; offset++) {
     const score = windowedPearsonCorrelation(designProfile, referenceProfile, offset);
     if (score > bestScore) {
       bestScore = score;
