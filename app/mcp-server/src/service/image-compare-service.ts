@@ -619,6 +619,7 @@ export async function compareImages(
   // Resize design to match screenshot if still different (e.g., height mismatch after crop)
   let finalDesignBuffer: Buffer = designBuffer;
   let paddingMask: PaddingMask | null = null;
+  let wasComposited = false;
   let appliedScale = 1;
   if (finalDesignWidth !== finalScreenshotWidth || finalDesignHeight !== finalScreenshotHeight) {
     const scale = Math.min(
@@ -680,6 +681,7 @@ export async function compareImages(
           height: contentHeight,
         }
       : null;
+    wasComposited = true;
     finalDesignBuffer = await createSharp({
       create: {
         width: finalScreenshotWidth,
@@ -701,7 +703,7 @@ export async function compareImages(
   }
 
   // Extract raw pixel data
-  const designRaw = await (paddingMask
+  const designRaw = await (wasComposited
     ? createSharp(finalDesignBuffer, {
         raw: { width: finalScreenshotWidth, height: finalScreenshotHeight, channels: 4 },
       })
