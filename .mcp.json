@@ -13,7 +13,6 @@
         "code-review-graph",
         "serve"
       ],
-      "cwd": "/Users/kouiso/ghq/kouiso/designdiff",
       "type": "stdio"
     }
   }
