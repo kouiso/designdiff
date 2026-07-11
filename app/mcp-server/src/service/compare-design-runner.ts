@@ -738,6 +738,7 @@ async function evaluateLoopGuardSafely(
   }
 }
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: pre-existing orchestration pipeline (image decode -> resolve -> compare -> report); out of scope for this PR, tracked separately for refactor.
 export async function runCompareDesign(
   args: CompareDesignRunArgs,
 ): Promise<CompareDesignRunOutput> {
