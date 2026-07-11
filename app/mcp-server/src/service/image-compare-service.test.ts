@@ -188,13 +188,34 @@ describe("compareImages", () => {
   it("サイズ不一致の場合に resize が呼ばれること", async () => {
     const pixelmatchMock = await import("pixelmatch");
 
-    const designMetadataInstance = createMockSharpInstance({ width: 100, height: 100 });
-    const screenshotMetadataInstance = createMockSharpInstance({ width: 200, height: 200 });
-    const designResizeInstance = createMockSharpInstance({ width: 100, height: 100 });
-    const resizedDesignInstance = createMockSharpInstance({ width: 200, height: 200 });
-    const designRawInstance = createMockSharpInstance({ width: 200, height: 200 });
-    const screenshotRawInstance = createMockSharpInstance({ width: 200, height: 200 });
-    const diffImageInstance = createMockSharpInstance({ width: 200, height: 200 });
+    const designMetadataInstance = createMockSharpInstance({
+      width: 100,
+      height: 100,
+    });
+    const screenshotMetadataInstance = createMockSharpInstance({
+      width: 200,
+      height: 200,
+    });
+    const designResizeInstance = createMockSharpInstance({
+      width: 100,
+      height: 100,
+    });
+    const resizedDesignInstance = createMockSharpInstance({
+      width: 200,
+      height: 200,
+    });
+    const designRawInstance = createMockSharpInstance({
+      width: 200,
+      height: 200,
+    });
+    const screenshotRawInstance = createMockSharpInstance({
+      width: 200,
+      height: 200,
+    });
+    const diffImageInstance = createMockSharpInstance({
+      width: 200,
+      height: 200,
+    });
 
     designResizeInstance.resize.mockReturnValue(resizedDesignInstance);
     mockSharpFn
@@ -222,19 +243,58 @@ describe("compareImages", () => {
   it("cropRegion指定時はデザイン画像をスクリーンショット幅にresizeしてからcropすること", async () => {
     const pixelmatchMock = await import("pixelmatch");
 
-    const designMetadataInstance = createMockSharpInstance({ width: 100, height: 200 });
-    const screenshotMetadataInstance = createMockSharpInstance({ width: 200, height: 400 });
-    const designResizeInstance = createMockSharpInstance({ width: 100, height: 200 });
-    const resizedDesignInstance = createMockSharpInstance({ width: 200, height: 400 });
-    const designCropMetadataInstance = createMockSharpInstance({ width: 200, height: 400 });
-    const designCropInstance = createMockSharpInstance({ width: 200, height: 100 });
-    const screenshotCropMetadataInstance = createMockSharpInstance({ width: 200, height: 400 });
-    const screenshotCropInstance = createMockSharpInstance({ width: 200, height: 100 });
-    const croppedDesignMetadataInstance = createMockSharpInstance({ width: 200, height: 100 });
-    const croppedScreenshotMetadataInstance = createMockSharpInstance({ width: 200, height: 100 });
-    const designRawInstance = createMockSharpInstance({ width: 200, height: 100 });
-    const screenshotRawInstance = createMockSharpInstance({ width: 200, height: 100 });
-    const diffImageInstance = createMockSharpInstance({ width: 200, height: 100 });
+    const designMetadataInstance = createMockSharpInstance({
+      width: 100,
+      height: 200,
+    });
+    const screenshotMetadataInstance = createMockSharpInstance({
+      width: 200,
+      height: 400,
+    });
+    const designResizeInstance = createMockSharpInstance({
+      width: 100,
+      height: 200,
+    });
+    const resizedDesignInstance = createMockSharpInstance({
+      width: 200,
+      height: 400,
+    });
+    const designCropMetadataInstance = createMockSharpInstance({
+      width: 200,
+      height: 400,
+    });
+    const designCropInstance = createMockSharpInstance({
+      width: 200,
+      height: 100,
+    });
+    const screenshotCropMetadataInstance = createMockSharpInstance({
+      width: 200,
+      height: 400,
+    });
+    const screenshotCropInstance = createMockSharpInstance({
+      width: 200,
+      height: 100,
+    });
+    const croppedDesignMetadataInstance = createMockSharpInstance({
+      width: 200,
+      height: 100,
+    });
+    const croppedScreenshotMetadataInstance = createMockSharpInstance({
+      width: 200,
+      height: 100,
+    });
+    const designRawInstance = createMockSharpInstance({
+      width: 200,
+      height: 100,
+    });
+    const screenshotRawInstance = createMockSharpInstance({
+      width: 200,
+      height: 100,
+    });
+    const diffImageInstance = createMockSharpInstance({
+      width: 200,
+      height: 100,
+    });
 
     designResizeInstance.resize.mockReturnValue(resizedDesignInstance);
     mockSharpFn
@@ -288,22 +348,46 @@ describe("compareImages", () => {
     const designHeight = 4;
     const screenshotHeight = 6;
     const topOffset = 2;
-    const designMetadataInstance = createMockSharpInstance({ width, height: designHeight });
-    const screenshotMetadataInstance = createMockSharpInstance({ width, height: screenshotHeight });
-    const finalDesignMetadataInstance = createMockSharpInstance({ width, height: designHeight });
+    const designMetadataInstance = createMockSharpInstance({
+      width,
+      height: designHeight,
+    });
+    const screenshotMetadataInstance = createMockSharpInstance({
+      width,
+      height: screenshotHeight,
+    });
+    const finalDesignMetadataInstance = createMockSharpInstance({
+      width,
+      height: designHeight,
+    });
     const finalScreenshotMetadataInstance = createMockSharpInstance({
       width,
       height: screenshotHeight,
     });
-    const contentRawInstance = createMockSharpInstance({ width, height: designHeight });
+    const contentRawInstance = createMockSharpInstance({
+      width,
+      height: designHeight,
+    });
     const screenshotAnchorRawInstance = createMockSharpInstance({
       width,
       height: screenshotHeight,
     });
-    const canvasInstance = createMockSharpInstance({ width, height: screenshotHeight });
-    const designRawInstance = createMockSharpInstance({ width, height: screenshotHeight });
-    const screenshotRawInstance = createMockSharpInstance({ width, height: screenshotHeight });
-    const diffImageInstance = createMockSharpInstance({ width, height: screenshotHeight });
+    const canvasInstance = createMockSharpInstance({
+      width,
+      height: screenshotHeight,
+    });
+    const designRawInstance = createMockSharpInstance({
+      width,
+      height: screenshotHeight,
+    });
+    const screenshotRawInstance = createMockSharpInstance({
+      width,
+      height: screenshotHeight,
+    });
+    const diffImageInstance = createMockSharpInstance({
+      width,
+      height: screenshotHeight,
+    });
 
     const makeRaw = (rowValues: readonly number[]) =>
       Buffer.from(
@@ -374,22 +458,46 @@ describe("compareImages", () => {
     const width = 3;
     const designHeight = 2;
     const screenshotHeight = 4;
-    const designMetadataInstance = createMockSharpInstance({ width, height: designHeight });
-    const screenshotMetadataInstance = createMockSharpInstance({ width, height: screenshotHeight });
-    const finalDesignMetadataInstance = createMockSharpInstance({ width, height: designHeight });
+    const designMetadataInstance = createMockSharpInstance({
+      width,
+      height: designHeight,
+    });
+    const screenshotMetadataInstance = createMockSharpInstance({
+      width,
+      height: screenshotHeight,
+    });
+    const finalDesignMetadataInstance = createMockSharpInstance({
+      width,
+      height: designHeight,
+    });
     const finalScreenshotMetadataInstance = createMockSharpInstance({
       width,
       height: screenshotHeight,
     });
-    const contentRawInstance = createMockSharpInstance({ width, height: designHeight });
+    const contentRawInstance = createMockSharpInstance({
+      width,
+      height: designHeight,
+    });
     const screenshotAnchorRawInstance = createMockSharpInstance({
       width,
       height: screenshotHeight,
     });
-    const canvasInstance = createMockSharpInstance({ width, height: screenshotHeight });
-    const designRawInstance = createMockSharpInstance({ width, height: screenshotHeight });
-    const screenshotRawInstance = createMockSharpInstance({ width, height: screenshotHeight });
-    const diffImageInstance = createMockSharpInstance({ width, height: screenshotHeight });
+    const canvasInstance = createMockSharpInstance({
+      width,
+      height: screenshotHeight,
+    });
+    const designRawInstance = createMockSharpInstance({
+      width,
+      height: screenshotHeight,
+    });
+    const screenshotRawInstance = createMockSharpInstance({
+      width,
+      height: screenshotHeight,
+    });
+    const diffImageInstance = createMockSharpInstance({
+      width,
+      height: screenshotHeight,
+    });
     const flatDesign = Buffer.alloc(width * designHeight * 4, 128);
     const flatScreenshot = Buffer.alloc(width * screenshotHeight * 4, 128);
     for (let i = 3; i < flatDesign.length; i += 4) flatDesign[i] = 255;
@@ -530,7 +638,11 @@ describe("compareImages", () => {
     expect(canvasInstance.composite).toHaveBeenCalledWith([
       {
         input: contentRaw,
-        raw: { width: finalDesignWidth, height: finalDesignHeight, channels: 4 },
+        raw: {
+          width: finalDesignWidth,
+          height: finalDesignHeight,
+          channels: 4,
+        },
         left: leftOffset,
         top: 0,
       },
@@ -638,16 +750,43 @@ describe("compareImages", () => {
   it("cropRegion が画像範囲を超える場合は抽出範囲をクランプすること", async () => {
     const pixelmatchMock = await import("pixelmatch");
 
-    const designMetadataInstance = createMockSharpInstance({ width: 100, height: 100 });
-    const screenshotMetadataInstance = createMockSharpInstance({ width: 100, height: 100 });
-    const designCropMetadataInstance = createMockSharpInstance({ width: 100, height: 100 });
-    const designCropInstance = createMockSharpInstance({ width: 100, height: 100 });
-    const screenshotCropMetadataInstance = createMockSharpInstance({ width: 100, height: 100 });
-    const screenshotCropInstance = createMockSharpInstance({ width: 100, height: 100 });
-    const croppedDesignMetadataInstance = createMockSharpInstance({ width: 10, height: 5 });
-    const croppedScreenshotMetadataInstance = createMockSharpInstance({ width: 10, height: 5 });
+    const designMetadataInstance = createMockSharpInstance({
+      width: 100,
+      height: 100,
+    });
+    const screenshotMetadataInstance = createMockSharpInstance({
+      width: 100,
+      height: 100,
+    });
+    const designCropMetadataInstance = createMockSharpInstance({
+      width: 100,
+      height: 100,
+    });
+    const designCropInstance = createMockSharpInstance({
+      width: 100,
+      height: 100,
+    });
+    const screenshotCropMetadataInstance = createMockSharpInstance({
+      width: 100,
+      height: 100,
+    });
+    const screenshotCropInstance = createMockSharpInstance({
+      width: 100,
+      height: 100,
+    });
+    const croppedDesignMetadataInstance = createMockSharpInstance({
+      width: 10,
+      height: 5,
+    });
+    const croppedScreenshotMetadataInstance = createMockSharpInstance({
+      width: 10,
+      height: 5,
+    });
     const designRawInstance = createMockSharpInstance({ width: 10, height: 5 });
-    const screenshotRawInstance = createMockSharpInstance({ width: 10, height: 5 });
+    const screenshotRawInstance = createMockSharpInstance({
+      width: 10,
+      height: 5,
+    });
     const diffImageInstance = createMockSharpInstance({ width: 10, height: 5 });
 
     mockSharpFn
@@ -690,17 +829,50 @@ describe("compareImages", () => {
   it("cropRegion が負の座標から始まる場合は画像内の交差範囲だけを抽出すること", async () => {
     const pixelmatchMock = await import("pixelmatch");
 
-    const designMetadataInstance = createMockSharpInstance({ width: 100, height: 100 });
-    const screenshotMetadataInstance = createMockSharpInstance({ width: 100, height: 100 });
-    const designCropMetadataInstance = createMockSharpInstance({ width: 100, height: 100 });
-    const designCropInstance = createMockSharpInstance({ width: 100, height: 100 });
-    const screenshotCropMetadataInstance = createMockSharpInstance({ width: 100, height: 100 });
-    const screenshotCropInstance = createMockSharpInstance({ width: 100, height: 100 });
-    const croppedDesignMetadataInstance = createMockSharpInstance({ width: 10, height: 15 });
-    const croppedScreenshotMetadataInstance = createMockSharpInstance({ width: 10, height: 15 });
-    const designRawInstance = createMockSharpInstance({ width: 10, height: 15 });
-    const screenshotRawInstance = createMockSharpInstance({ width: 10, height: 15 });
-    const diffImageInstance = createMockSharpInstance({ width: 10, height: 15 });
+    const designMetadataInstance = createMockSharpInstance({
+      width: 100,
+      height: 100,
+    });
+    const screenshotMetadataInstance = createMockSharpInstance({
+      width: 100,
+      height: 100,
+    });
+    const designCropMetadataInstance = createMockSharpInstance({
+      width: 100,
+      height: 100,
+    });
+    const designCropInstance = createMockSharpInstance({
+      width: 100,
+      height: 100,
+    });
+    const screenshotCropMetadataInstance = createMockSharpInstance({
+      width: 100,
+      height: 100,
+    });
+    const screenshotCropInstance = createMockSharpInstance({
+      width: 100,
+      height: 100,
+    });
+    const croppedDesignMetadataInstance = createMockSharpInstance({
+      width: 10,
+      height: 15,
+    });
+    const croppedScreenshotMetadataInstance = createMockSharpInstance({
+      width: 10,
+      height: 15,
+    });
+    const designRawInstance = createMockSharpInstance({
+      width: 10,
+      height: 15,
+    });
+    const screenshotRawInstance = createMockSharpInstance({
+      width: 10,
+      height: 15,
+    });
+    const diffImageInstance = createMockSharpInstance({
+      width: 10,
+      height: 15,
+    });
 
     mockSharpFn
       .mockReturnValueOnce(designMetadataInstance)
@@ -743,15 +915,42 @@ describe("compareImages", () => {
     const pixelmatchMock = await import("pixelmatch");
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => undefined);
 
-    const designMetadataInstance = createMockSharpInstance({ width: 100, height: 100 });
-    const screenshotMetadataInstance = createMockSharpInstance({ width: 100, height: 100 });
-    const designCropMetadataInstance = createMockSharpInstance({ width: 100, height: 100 });
-    const screenshotCropMetadataInstance = createMockSharpInstance({ width: 100, height: 100 });
-    const finalDesignMetadataInstance = createMockSharpInstance({ width: 100, height: 100 });
-    const finalScreenshotMetadataInstance = createMockSharpInstance({ width: 100, height: 100 });
-    const designRawInstance = createMockSharpInstance({ width: 100, height: 100 });
-    const screenshotRawInstance = createMockSharpInstance({ width: 100, height: 100 });
-    const diffImageInstance = createMockSharpInstance({ width: 100, height: 100 });
+    const designMetadataInstance = createMockSharpInstance({
+      width: 100,
+      height: 100,
+    });
+    const screenshotMetadataInstance = createMockSharpInstance({
+      width: 100,
+      height: 100,
+    });
+    const designCropMetadataInstance = createMockSharpInstance({
+      width: 100,
+      height: 100,
+    });
+    const screenshotCropMetadataInstance = createMockSharpInstance({
+      width: 100,
+      height: 100,
+    });
+    const finalDesignMetadataInstance = createMockSharpInstance({
+      width: 100,
+      height: 100,
+    });
+    const finalScreenshotMetadataInstance = createMockSharpInstance({
+      width: 100,
+      height: 100,
+    });
+    const designRawInstance = createMockSharpInstance({
+      width: 100,
+      height: 100,
+    });
+    const screenshotRawInstance = createMockSharpInstance({
+      width: 100,
+      height: 100,
+    });
+    const diffImageInstance = createMockSharpInstance({
+      width: 100,
+      height: 100,
+    });
 
     mockSharpFn
       .mockReturnValueOnce(designMetadataInstance)
@@ -783,15 +982,42 @@ describe("compareImages", () => {
     const pixelmatchMock = await import("pixelmatch");
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => undefined);
 
-    const designMetadataInstance = createMockSharpInstance({ width: 100, height: 100 });
-    const screenshotMetadataInstance = createMockSharpInstance({ width: 100, height: 100 });
-    const designCropMetadataInstance = createMockSharpInstance({ width: 100, height: 100 });
-    const screenshotCropMetadataInstance = createMockSharpInstance({ width: 100, height: 100 });
-    const finalDesignMetadataInstance = createMockSharpInstance({ width: 100, height: 100 });
-    const finalScreenshotMetadataInstance = createMockSharpInstance({ width: 100, height: 100 });
-    const designRawInstance = createMockSharpInstance({ width: 100, height: 100 });
-    const screenshotRawInstance = createMockSharpInstance({ width: 100, height: 100 });
-    const diffImageInstance = createMockSharpInstance({ width: 100, height: 100 });
+    const designMetadataInstance = createMockSharpInstance({
+      width: 100,
+      height: 100,
+    });
+    const screenshotMetadataInstance = createMockSharpInstance({
+      width: 100,
+      height: 100,
+    });
+    const designCropMetadataInstance = createMockSharpInstance({
+      width: 100,
+      height: 100,
+    });
+    const screenshotCropMetadataInstance = createMockSharpInstance({
+      width: 100,
+      height: 100,
+    });
+    const finalDesignMetadataInstance = createMockSharpInstance({
+      width: 100,
+      height: 100,
+    });
+    const finalScreenshotMetadataInstance = createMockSharpInstance({
+      width: 100,
+      height: 100,
+    });
+    const designRawInstance = createMockSharpInstance({
+      width: 100,
+      height: 100,
+    });
+    const screenshotRawInstance = createMockSharpInstance({
+      width: 100,
+      height: 100,
+    });
+    const diffImageInstance = createMockSharpInstance({
+      width: 100,
+      height: 100,
+    });
 
     mockSharpFn
       .mockReturnValueOnce(designMetadataInstance)
@@ -840,9 +1066,18 @@ describe("compareImages", () => {
     const width = 1001;
     const height = 1000;
     const designMetadataInstance = createMockSharpInstance({ width, height });
-    const screenshotMetadataInstance = createMockSharpInstance({ width, height });
-    const finalDesignMetadataInstance = createMockSharpInstance({ width, height });
-    const finalScreenshotMetadataInstance = createMockSharpInstance({ width, height });
+    const screenshotMetadataInstance = createMockSharpInstance({
+      width,
+      height,
+    });
+    const finalDesignMetadataInstance = createMockSharpInstance({
+      width,
+      height,
+    });
+    const finalScreenshotMetadataInstance = createMockSharpInstance({
+      width,
+      height,
+    });
     const designRawInstance = createMockSharpInstance({ width, height });
     const screenshotRawInstance = createMockSharpInstance({ width, height });
     const diffImageInstance = createMockSharpInstance({ width, height });
@@ -891,9 +1126,18 @@ describe("compareImages", () => {
     const width = 1501;
     const height = 1200;
     const designMetadataInstance = createMockSharpInstance({ width, height });
-    const screenshotMetadataInstance = createMockSharpInstance({ width, height });
-    const finalDesignMetadataInstance = createMockSharpInstance({ width, height });
-    const finalScreenshotMetadataInstance = createMockSharpInstance({ width, height });
+    const screenshotMetadataInstance = createMockSharpInstance({
+      width,
+      height,
+    });
+    const finalDesignMetadataInstance = createMockSharpInstance({
+      width,
+      height,
+    });
+    const finalScreenshotMetadataInstance = createMockSharpInstance({
+      width,
+      height,
+    });
     const designRawInstance = createMockSharpInstance({ width, height });
     const screenshotRawInstance = createMockSharpInstance({ width, height });
     const diffImageInstance = createMockSharpInstance({ width, height });
@@ -970,9 +1214,18 @@ describe("compareImages", () => {
     const width = 1600;
     const height = 1200;
     const designMetadataInstance = createMockSharpInstance({ width, height });
-    const screenshotMetadataInstance = createMockSharpInstance({ width, height });
-    const finalDesignMetadataInstance = createMockSharpInstance({ width, height });
-    const finalScreenshotMetadataInstance = createMockSharpInstance({ width, height });
+    const screenshotMetadataInstance = createMockSharpInstance({
+      width,
+      height,
+    });
+    const finalDesignMetadataInstance = createMockSharpInstance({
+      width,
+      height,
+    });
+    const finalScreenshotMetadataInstance = createMockSharpInstance({
+      width,
+      height,
+    });
     const designRawInstance = createMockSharpInstance({ width, height });
     const screenshotRawInstance = createMockSharpInstance({ width, height });
     const diffImageInstance = createMockSharpInstance({ width, height });
@@ -1012,7 +1265,12 @@ describe("compareImages", () => {
 
     expect(result.diffRegions.length).toBeLessThanOrEqual(60);
     expect(result.diffRegions[0]?.id).toBe(0);
-    expect(result.diffRegions[0]?.bounds).toEqual({ x: 0, y: 0, width: 192, height: 192 });
+    expect(result.diffRegions[0]?.bounds).toEqual({
+      x: 0,
+      y: 0,
+      width: 192,
+      height: 192,
+    });
     expect(result.diffRegions.at(-1)?.id).toBe(result.diffRegions.length - 1);
     // 1600×1200×4 ≈ 7.7 MB buffer + pixel loop is slow on CI runners; 15 s avoids flaky timeout.
   }, 60000);
@@ -1033,7 +1291,7 @@ describe("compareImages", () => {
     const width = 3;
     const height = 2;
     const raw = Buffer.from([
-      10, 10, 10, 255, 20, 20, 20, 255, 30, 30, 30, 255, 40, 40, 40, 255, 50, 50, 50, 255, 60, 60,
+      10, 10, 10, 255, 20, 20, 20, 255, 10, 10, 10, 255, 20, 20, 20, 255, 50, 50, 50, 255, 60, 60,
       60, 255,
     ]);
 
@@ -1165,11 +1423,11 @@ describe("compareImages", () => {
     instances[2] = createMockSharpInstance({ width, height: designHeight });
     instances[4] = createMockSharpInstance({ width, height: designHeight });
     const contentRaw = Buffer.from([
-      10, 10, 10, 255, 20, 20, 20, 255, 30, 30, 30, 255, 40, 40, 40, 255,
+      10, 10, 10, 255, 20, 20, 20, 255, 10, 10, 10, 255, 20, 20, 20, 255,
     ]);
     const screenshotRaw = Buffer.from([
-      128, 128, 128, 255, 128, 128, 128, 255, 10, 10, 10, 255, 20, 20, 20, 255, 30, 30, 30, 255, 40,
-      40, 40, 255,
+      10, 10, 10, 255, 20, 20, 20, 255, 10, 10, 10, 255, 20, 20, 20, 255, 30, 30, 30, 255, 40, 40,
+      40, 255,
     ]);
     const designRaw = Buffer.from(screenshotRaw);
     designRaw[3] = 0;
@@ -1188,11 +1446,7 @@ describe("compareImages", () => {
     instances.forEach((instance) => {
       mockSharpFn.mockReturnValueOnce(instance);
     });
-    vi.mocked(pixelmatchMock.default).mockImplementation((designInput) => {
-      expect(designInput[3]).toBe(255);
-      expect(designInput[7]).toBe(255);
-      return 0;
-    });
+    vi.mocked(pixelmatchMock.default).mockReturnValue(0);
 
     const { compareImages } = await import("./image-compare-service.js");
     const dummyBase64 = Buffer.alloc(100).toString("base64");
@@ -1201,6 +1455,106 @@ describe("compareImages", () => {
       screenshotBase64: dummyBase64,
     });
 
-    expect(result.normalization?.containResized).toBe(true);
+    expect(result.normalization?.containResized).toBe(false);
+  });
+  it("短い anchor buffer は mask せずそのまま返すこと", async () => {
+    const { zeroIgnoredPixelsForAnchor } = await import("./image-compare-service.js");
+    const raw = Buffer.from([255, 255, 255, 255]);
+
+    expect(() =>
+      zeroIgnoredPixelsForAnchor(raw, 2, 2, [{ x: 0, y: 0, width: 2, height: 2 }]),
+    ).not.toThrow();
+    expect(zeroIgnoredPixelsForAnchor(raw, 2, 2, [{ x: 0, y: 0, width: 2, height: 2 }])).toBe(raw);
+  });
+
+  it("短い padding 判定 buffer は安全な余白として扱うこと", async () => {
+    const { isLikelyLetterboxPadding } = await import("./image-compare-service.js");
+    const pixels = Buffer.from([255, 255, 255, 255]);
+    const content = Buffer.alloc(2 * 2 * 4, 255);
+
+    expect(() =>
+      isLikelyLetterboxPadding(
+        pixels,
+        2,
+        2,
+        { left: 0, top: 0, width: 2, height: 2 },
+        content,
+        2,
+        2,
+        "top",
+      ),
+    ).not.toThrow();
+    expect(
+      isLikelyLetterboxPadding(
+        pixels,
+        2,
+        2,
+        { left: 0, top: 0, width: 2, height: 2 },
+        content,
+        2,
+        2,
+        "top",
+      ),
+    ).toBe(true);
+  });
+
+  it("一様でも content 境界色と違う gap は padding とみなさないこと", async () => {
+    const { isLikelyLetterboxPadding } = await import("./image-compare-service.js");
+    const pixels = Buffer.alloc(2 * 1 * 4);
+    const content = Buffer.alloc(2 * 2 * 4);
+    for (let i = 0; i < pixels.length; i += 4) {
+      pixels[i] = 255;
+      pixels[i + 3] = 255;
+    }
+    for (let i = 0; i < content.length; i += 4) {
+      content[i] = 255;
+      content[i + 1] = 255;
+      content[i + 2] = 255;
+      content[i + 3] = 255;
+    }
+
+    expect(
+      isLikelyLetterboxPadding(
+        pixels,
+        2,
+        1,
+        { left: 0, top: 0, width: 2, height: 1 },
+        content,
+        2,
+        2,
+        "top",
+      ),
+    ).toBe(false);
+  });
+
+  it("一様で content 境界色と同じ gap は padding とみなすこと", async () => {
+    const { isLikelyLetterboxPadding } = await import("./image-compare-service.js");
+    const pixels = Buffer.alloc(2 * 1 * 4, 255);
+    const content = Buffer.alloc(2 * 2 * 4, 255);
+
+    expect(
+      isLikelyLetterboxPadding(
+        pixels,
+        2,
+        1,
+        { left: 0, top: 0, width: 2, height: 1 },
+        content,
+        2,
+        2,
+        "top",
+      ),
+    ).toBe(true);
+  });
+
+  it("stride 探索は未サンプルの真の peak を精密化で見つけること", async () => {
+    const { detectBestAnchorOffset } = await import("./image-compare-service.js");
+    const designProfile = Float64Array.from(
+      Array.from({ length: 120 }, (_, index) => 80 + Math.sin(index / 8) * 40 + index / 20),
+    );
+    const referenceProfile = new Float64Array(10_120);
+    const trueOffset = 3457;
+    referenceProfile.set(designProfile, trueOffset);
+
+    expect(detectBestAnchorOffset(designProfile, referenceProfile, 10_000)).toBe(trueOffset);
   });
 });

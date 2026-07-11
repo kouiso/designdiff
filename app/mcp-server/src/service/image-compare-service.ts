@@ -312,7 +312,12 @@ function clusterDiffPixelsQuickTiles(
 
   return topTiles.map((tile, index) => ({
     id: index,
-    bounds: { x: tile.left, y: tile.top, width: tile.width, height: tile.height },
+    bounds: {
+      x: tile.left,
+      y: tile.top,
+      width: tile.width,
+      height: tile.height,
+    },
     diffPixelCount: tile.diffPixelCount,
     nearbyNodeIds: [],
     nearbyNodeNames: [],
@@ -404,6 +409,9 @@ function windowedPearsonCorrelation(
 const MIN_CONFIDENT_ANCHOR_CORRELATION = 0.3;
 const ANCHOR_OFFSET_SEARCH_BUDGET = 2000;
 const PADDING_LUMINANCE_STDDEV_THRESHOLD = 8;
+const PADDING_EDGE_RGB_DISTANCE_THRESHOLD = 15;
+const PADDING_EDGE_SAMPLE_THICKNESS = 3;
+const TOP_REFINED_ANCHOR_CANDIDATE_COUNT = 3;
 export function detectBestAnchorOffset(
   designProfile: Float64Array,
   referenceProfile: Float64Array,
@@ -431,6 +439,16 @@ export function detectBestAnchorOffset(
     }
     return { bestOffset, bestScore };
   };
+  const findTopOffsetsInRange = (start: number, end: number, step: number, count: number) => {
+    const candidates: { bestOffset: number; bestScore: number }[] = [];
+    for (let offset = start; offset <= end; offset += step) {
+      const score = windowedPearsonCorrelation(designProfile, referenceProfile, offset);
+      candidates.push({ bestOffset: offset, bestScore: score });
+      candidates.sort((a, b) => b.bestScore - a.bestScore);
+      if (candidates.length > count) candidates.pop();
+    }
+    return candidates;
+  };
 
   const stride =
     safeMaxOffset > ANCHOR_OFFSET_SEARCH_BUDGET
@@ -441,11 +459,23 @@ export function detectBestAnchorOffset(
     return bestScore >= MIN_CONFIDENT_ANCHOR_CORRELATION ? bestOffset : clampedFallback;
   }
 
-  const stridedBest = findBestOffsetInRange(0, safeMaxOffset, stride);
-  const refinementRadius = Math.ceil(stride / 2);
-  const refinementStart = Math.max(0, stridedBest.bestOffset - refinementRadius);
-  const refinementEnd = Math.min(safeMaxOffset, stridedBest.bestOffset + refinementRadius);
-  const refinedBest = findBestOffsetInRange(refinementStart, refinementEnd, 1);
+  const stridedCandidates = findTopOffsetsInRange(
+    0,
+    safeMaxOffset,
+    stride,
+    TOP_REFINED_ANCHOR_CANDIDATE_COUNT,
+  );
+  const refinementRadius = stride;
+  let refinedBest = { bestOffset: clampedFallback, bestScore: -Infinity };
+  for (const candidate of stridedCandidates) {
+    // 病的な反復パターンでは完全ではないが、単一候補だけの精密化より真のピークを落としにくくするため。
+    const refinementStart = Math.max(0, candidate.bestOffset - refinementRadius);
+    const refinementEnd = Math.min(safeMaxOffset, candidate.bestOffset + refinementRadius);
+    const refinedCandidate = findBestOffsetInRange(refinementStart, refinementEnd, 1);
+    if (refinedCandidate.bestScore > refinedBest.bestScore) {
+      refinedBest = refinedCandidate;
+    }
+  }
   return refinedBest.bestScore >= MIN_CONFIDENT_ANCHOR_CORRELATION
     ? refinedBest.bestOffset
     : clampedFallback;
@@ -458,6 +488,9 @@ export function zeroIgnoredPixelsForAnchor(
   ignoreRegions: readonly IgnoreRegion[] | undefined,
 ): Uint8Array | Buffer {
   if (!ignoreRegions || ignoreRegions.length === 0) {
+    return rawPixels;
+  }
+  if (rawPixels.length < width * height * 4) {
     return rawPixels;
   }
   const anchorPixels = Buffer.from(rawPixels);
@@ -474,22 +507,31 @@ export function zeroIgnoredPixelsForAnchor(
   return anchorPixels;
 }
 
-function isLikelyLetterboxPadding(
+interface RgbMean {
+  r: number;
+  g: number;
+  b: number;
+}
+
+function meanRgbForRegion(
   pixels: Uint8Array | Buffer,
   width: number,
   height: number,
   region: { left: number; top: number; width: number; height: number },
-): boolean {
+): { mean: RgbMean | null; luminanceStddev: number } {
   const left = Math.max(0, region.left);
   const top = Math.max(0, region.top);
   const right = Math.min(width, region.left + region.width);
   const bottom = Math.min(height, region.top + region.height);
-  if (right <= left || bottom <= top) {
-    return true;
+  if (pixels.length < width * height * 4 || right <= left || bottom <= top) {
+    return { mean: null, luminanceStddev: 0 };
   }
 
-  let sum = 0;
-  let sumSq = 0;
+  let luminanceSum = 0;
+  let luminanceSumSq = 0;
+  let r = 0;
+  let g = 0;
+  let b = 0;
   let count = 0;
   for (let y = top; y < bottom; y += 1) {
     const rowStart = y * width * 4;
@@ -497,15 +539,78 @@ function isLikelyLetterboxPadding(
       const i = rowStart + x * 4;
       if (pixels[i + 3] === 0) continue;
       const luminance = 0.299 * pixels[i] + 0.587 * pixels[i + 1] + 0.114 * pixels[i + 2];
-      sum += luminance;
-      sumSq += luminance * luminance;
+      luminanceSum += luminance;
+      luminanceSumSq += luminance * luminance;
+      r += pixels[i];
+      g += pixels[i + 1];
+      b += pixels[i + 2];
       count += 1;
     }
   }
-  if (count === 0) return true;
-  const mean = sum / count;
-  const variance = Math.max(0, sumSq / count - mean * mean);
-  return Math.sqrt(variance) <= PADDING_LUMINANCE_STDDEV_THRESHOLD;
+  if (count === 0) return { mean: null, luminanceStddev: 0 };
+  const luminanceMean = luminanceSum / count;
+  const variance = Math.max(0, luminanceSumSq / count - luminanceMean * luminanceMean);
+  return {
+    mean: { r: r / count, g: g / count, b: b / count },
+    luminanceStddev: Math.sqrt(variance),
+  };
+}
+
+function rgbDistance(a: RgbMean, b: RgbMean): number {
+  return Math.sqrt((a.r - b.r) ** 2 + (a.g - b.g) ** 2 + (a.b - b.b) ** 2);
+}
+
+type PaddingGapEdge = "top" | "left" | "right" | "bottom";
+
+function contentEdgeRegion(edge: PaddingGapEdge, width: number, height: number) {
+  const thickness = Math.max(1, Math.min(PADDING_EDGE_SAMPLE_THICKNESS, width, height));
+  switch (edge) {
+    case "top":
+      return { left: 0, top: 0, width, height: Math.min(thickness, height) };
+    case "left":
+      return { left: 0, top: 0, width: Math.min(thickness, width), height };
+    case "right":
+      return {
+        left: Math.max(0, width - thickness),
+        top: 0,
+        width: Math.min(thickness, width),
+        height,
+      };
+    case "bottom":
+      return {
+        left: 0,
+        top: Math.max(0, height - thickness),
+        width,
+        height: Math.min(thickness, height),
+      };
+  }
+}
+
+export function isLikelyLetterboxPadding(
+  pixels: Uint8Array | Buffer,
+  width: number,
+  height: number,
+  region: { left: number; top: number; width: number; height: number },
+  contentPixels: Uint8Array | Buffer,
+  contentWidth: number,
+  contentHeight: number,
+  contentEdge: PaddingGapEdge,
+): boolean {
+  if (pixels.length < width * height * 4) {
+    return true;
+  }
+  const gapStats = meanRgbForRegion(pixels, width, height, region);
+  if (gapStats.mean === null) return true;
+  if (gapStats.luminanceStddev > PADDING_LUMINANCE_STDDEV_THRESHOLD) return false;
+
+  const edgeStats = meanRgbForRegion(
+    contentPixels,
+    contentWidth,
+    contentHeight,
+    contentEdgeRegion(contentEdge, contentWidth, contentHeight),
+  );
+  if (edgeStats.mean === null) return true;
+  return rgbDistance(gapStats.mean, edgeStats.mean) <= PADDING_EDGE_RGB_DISTANCE_THRESHOLD;
 }
 
 function shouldUsePaddingMask(
@@ -514,24 +619,60 @@ function shouldUsePaddingMask(
   height: number,
   left: number,
   top: number,
+  contentPixels: Uint8Array | Buffer,
+  contentWidth: number,
+  contentHeight: number,
 ): boolean {
-  const topLooksLikePadding =
-    top === 0 ||
-    isLikelyLetterboxPadding(pixels, width, height, {
-      left: 0,
-      top: 0,
+  const rightGapWidth = width - (left + contentWidth);
+  const bottomGapHeight = height - (top + contentHeight);
+  const gapChecks: {
+    edge: PaddingGapEdge;
+    region: { left: number; top: number; width: number; height: number };
+  }[] = [];
+  if (top > 0)
+    gapChecks.push({
+      edge: "top",
+      region: { left: 0, top: 0, width, height: top },
+    });
+  if (left > 0)
+    gapChecks.push({
+      edge: "left",
+      region: { left: 0, top: 0, width: left, height },
+    });
+  if (rightGapWidth > 0) {
+    gapChecks.push({
+      edge: "right",
+      region: {
+        left: left + contentWidth,
+        top: 0,
+        width: rightGapWidth,
+        height,
+      },
+    });
+  }
+  if (bottomGapHeight > 0) {
+    gapChecks.push({
+      edge: "bottom",
+      region: {
+        left: 0,
+        top: top + contentHeight,
+        width,
+        height: bottomGapHeight,
+      },
+    });
+  }
+  return gapChecks.every(({ edge, region }) =>
+    isLikelyLetterboxPadding(
+      pixels,
       width,
-      height: top,
-    });
-  const leftLooksLikePadding =
-    left === 0 ||
-    isLikelyLetterboxPadding(pixels, width, height, {
-      left: 0,
-      top: 0,
-      width: left,
       height,
-    });
-  return topLooksLikePadding && leftLooksLikePadding;
+      region,
+      contentPixels,
+      contentWidth,
+      contentHeight,
+      edge,
+    ),
+  );
 }
 
 /**
@@ -673,6 +814,9 @@ export async function compareImages(
       finalScreenshotHeight,
       left,
       top,
+      contentRaw,
+      contentWidth,
+      contentHeight,
     )
       ? {
           left,
@@ -705,7 +849,11 @@ export async function compareImages(
   // Extract raw pixel data
   const designRaw = await (wasComposited
     ? createSharp(finalDesignBuffer, {
-        raw: { width: finalScreenshotWidth, height: finalScreenshotHeight, channels: 4 },
+        raw: {
+          width: finalScreenshotWidth,
+          height: finalScreenshotHeight,
+          channels: 4,
+        },
       })
     : createSharp(finalDesignBuffer)
   )
