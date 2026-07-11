@@ -410,7 +410,7 @@ function detectBestAnchorOffset(
   designProfile: Float64Array,
   referenceProfile: Float64Array,
   maxOffset: number,
-  fallbackOffset: number = 0,
+  fallbackOffset = 0,
 ): number {
   const safeMaxOffset = Math.min(maxOffset, referenceProfile.length - designProfile.length);
   const clampedFallback = Math.max(0, Math.min(fallbackOffset, Math.max(safeMaxOffset, 0)));
