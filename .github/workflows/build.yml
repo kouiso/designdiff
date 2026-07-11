@@ -13,24 +13,50 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
+  build-linux:
+    name: Electron Build (Linux)
+    timeout-minutes: 45
+    runs-on: ${{ vars.RUNNER_LINUX }}
+    if: >
+      (github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch') &&
+      github.event.pull_request.draft == false
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: jdx/mise-action@v4
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build shared package
+        run: pnpm --filter @figdiff/shared build
+
+      - name: Build Electron app
+        run: pnpm --filter @figdiff/desktop build
+
+      - name: Verify build output
+        shell: bash
+        run: |
+          ls app/desktop/dist/main/
+          ls app/desktop/dist/preload/
+          ls app/desktop/dist/renderer/
+
+  build-other-platforms:
     name: Electron Build (${{ matrix.os }})
     timeout-minutes: 45
+    # Only dispatch-triggered runs build macOS/Windows — this keeps the job-level
+    # if: free of the matrix context (not available there) and, unlike a
+    # per-step if:, never allocates a macOS/Windows runner on pull_request events.
+    if: github.event_name == 'workflow_dispatch'
     strategy:
       fail-fast: false
       matrix:
         include:
-          - os: Linux
-            runs-on: ${{ vars.RUNNER_LINUX }}
           - os: macOS
             runs-on: ${{ vars.RUNNER_MACOS }}
           - os: Windows
             runs-on: windows-latest
     runs-on: ${{ matrix.runs-on }}
-    if: >
-      (github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch') &&
-      github.event.pull_request.draft == false &&
-      (matrix.os == 'Linux' || github.event_name != 'pull_request')
     steps:
       - uses: actions/checkout@v6
 
