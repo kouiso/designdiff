@@ -2,8 +2,19 @@
   "mcpServers": {
     "figdiff": {
       "command": "node",
-      "args": ["app/mcp-server/dist/index.js"],
+      "args": [
+        "app/mcp-server/dist/index.js"
+      ],
       "env": {}
+    },
+    "code-review-graph": {
+      "command": "uvx",
+      "args": [
+        "code-review-graph",
+        "serve"
+      ],
+      "cwd": "/Users/kouiso/ghq/kouiso/designdiff",
+      "type": "stdio"
     }
   }
 }
