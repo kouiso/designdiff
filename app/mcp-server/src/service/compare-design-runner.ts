@@ -738,6 +738,7 @@ async function evaluateLoopGuardSafely(
   }
 }
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: 既存コードの複雑度であり本PRの変更対象外。別途リファクタで対応予定。
 export async function runCompareDesign(
   args: CompareDesignRunArgs,
 ): Promise<CompareDesignRunOutput> {

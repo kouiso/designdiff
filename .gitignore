@@ -72,3 +72,5 @@ error.log
 
 # Serena tool auto-generated config (differs per machine/session)
 .serena/project.yml
+# Added by code-review-graph
+.code-review-graph/
