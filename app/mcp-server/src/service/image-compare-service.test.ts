@@ -1016,4 +1016,191 @@ describe("compareImages", () => {
     expect(result.diffRegions.at(-1)?.id).toBe(result.diffRegions.length - 1);
     // 1600×1200×4 ≈ 7.7 MB buffer + pixel loop is slow on CI runners; 15 s avoids flaky timeout.
   }, 60000);
+  it("大きな anchor 探索でも stride 後の精密化で正しい offset を返すこと", async () => {
+    const { detectBestAnchorOffset } = await import("./image-compare-service.js");
+    const designProfile = Float64Array.from(
+      Array.from({ length: 100 }, (_, index) => 80 + Math.sin(index / 3) * 40 + index / 5),
+    );
+    const referenceProfile = new Float64Array(5100);
+    const offset = 3457;
+    referenceProfile.set(designProfile, offset);
+
+    expect(detectBestAnchorOffset(designProfile, referenceProfile, 5000)).toBe(offset);
+  });
+
+  it("anchor 探索用の輝度プロファイルから ignoreRegions の画素を除外すること", async () => {
+    const { zeroIgnoredPixelsForAnchor } = await import("./image-compare-service.js");
+    const width = 3;
+    const height = 2;
+    const raw = Buffer.from([
+      10, 10, 10, 255, 20, 20, 20, 255, 30, 30, 30, 255, 40, 40, 40, 255, 50, 50, 50, 255, 60, 60,
+      60, 255,
+    ]);
+
+    const masked = zeroIgnoredPixelsForAnchor(raw, width, height, [
+      { x: 1, y: 0, width: 2, height: 1 },
+    ]);
+
+    expect(masked).not.toBe(raw);
+    expect(masked[7]).toBe(0);
+    expect(masked[11]).toBe(0);
+    expect(masked[3]).toBe(255);
+    expect(raw[7]).toBe(255);
+  });
+
+  it("横方向 anchor は検出済み縦 window の列輝度だけで left offset を検出すること", async () => {
+    const { columnLuminanceProfile, detectBestAnchorOffset } = await import(
+      "./image-compare-service.js"
+    );
+    const screenshotWidth = 4;
+    const screenshotHeight = 4;
+    const designRaw = Buffer.from([
+      10, 10, 10, 255, 200, 200, 200, 255, 50, 50, 50, 255, 240, 240, 240, 255,
+    ]);
+    const screenshotRaw = Buffer.alloc(screenshotWidth * screenshotHeight * 4);
+    const setPixel = (x: number, y: number, value: number, alpha = 255) => {
+      const index = (y * screenshotWidth + x) * 4;
+      screenshotRaw[index] = value;
+      screenshotRaw[index + 1] = value;
+      screenshotRaw[index + 2] = value;
+      screenshotRaw[index + 3] = alpha;
+    };
+    [
+      [0, 0, 0],
+      [1, 0, 50],
+      [2, 0, 200],
+      [3, 0, 150],
+      [0, 1, 0],
+      [1, 1, 100],
+      [2, 1, 200],
+      [3, 1, 100],
+    ].forEach(([x, y, value]) => {
+      setPixel(x, y, value);
+    });
+    setPixel(1, 2, 10);
+    setPixel(2, 2, 200);
+    setPixel(0, 2, 100);
+    setPixel(3, 2, 100);
+    setPixel(1, 3, 50);
+    setPixel(2, 3, 240);
+    setPixel(0, 3, 100);
+    setPixel(3, 3, 100);
+
+    const designProfile = columnLuminanceProfile(designRaw, 2, 2);
+    const fullHeightOffset = detectBestAnchorOffset(
+      designProfile,
+      columnLuminanceProfile(screenshotRaw, screenshotWidth, screenshotHeight),
+      2,
+      1,
+    );
+    const windowedOffset = detectBestAnchorOffset(
+      designProfile,
+      columnLuminanceProfile(screenshotRaw, screenshotWidth, screenshotHeight, 2, 4),
+      2,
+      1,
+    );
+
+    expect(fullHeightOffset).not.toBe(1);
+    expect(windowedOffset).toBe(1);
+  });
+
+  it("非一様な上端 gap は paddingMask で差分から除外しないこと", async () => {
+    const pixelmatchMock = await import("pixelmatch");
+    const width = 2;
+    const designHeight = 2;
+    const screenshotHeight = 3;
+    const instances = Array.from({ length: 10 }, () =>
+      createMockSharpInstance({ width, height: screenshotHeight }),
+    );
+    instances[2] = createMockSharpInstance({ width, height: designHeight });
+    instances[4] = createMockSharpInstance({ width, height: designHeight });
+    const contentRaw = Buffer.from([
+      10, 10, 10, 255, 20, 20, 20, 255, 30, 30, 30, 255, 40, 40, 40, 255,
+    ]);
+    const screenshotRaw = Buffer.from([
+      0, 0, 0, 255, 255, 255, 255, 255, 10, 10, 10, 255, 20, 20, 20, 255, 30, 30, 30, 255, 40, 40,
+      40, 255,
+    ]);
+    const designRaw = Buffer.from(screenshotRaw);
+    designRaw[3] = 0;
+    designRaw[7] = 0;
+    instances[4].toBuffer.mockImplementation((options?: { resolveWithObject?: boolean }) =>
+      Promise.resolve(options?.resolveWithObject ? { data: contentRaw, info: {} } : contentRaw),
+    );
+    instances[5].toBuffer.mockImplementation((options?: { resolveWithObject?: boolean }) =>
+      Promise.resolve(
+        options?.resolveWithObject ? { data: screenshotRaw, info: {} } : screenshotRaw,
+      ),
+    );
+    instances[7].toBuffer.mockResolvedValue(designRaw);
+    instances[8].toBuffer.mockResolvedValue(screenshotRaw);
+    mockSharpFn.mockReset();
+    instances.forEach((instance) => {
+      mockSharpFn.mockReturnValueOnce(instance);
+    });
+    vi.mocked(pixelmatchMock.default).mockImplementation((designInput) => {
+      expect(designInput[3]).toBe(0);
+      expect(designInput[7]).toBe(0);
+      return 2;
+    });
+
+    const { compareImages } = await import("./image-compare-service.js");
+    const dummyBase64 = Buffer.alloc(100).toString("base64");
+    const result = await compareImages({
+      designBase64: dummyBase64,
+      screenshotBase64: dummyBase64,
+    });
+
+    expect(result.normalization?.containResized).toBe(false);
+  });
+
+  it("一様な上端 gap は従来どおり paddingMask で差分から除外すること", async () => {
+    const pixelmatchMock = await import("pixelmatch");
+    const width = 2;
+    const designHeight = 2;
+    const screenshotHeight = 3;
+    const instances = Array.from({ length: 10 }, () =>
+      createMockSharpInstance({ width, height: screenshotHeight }),
+    );
+    instances[2] = createMockSharpInstance({ width, height: designHeight });
+    instances[4] = createMockSharpInstance({ width, height: designHeight });
+    const contentRaw = Buffer.from([
+      10, 10, 10, 255, 20, 20, 20, 255, 30, 30, 30, 255, 40, 40, 40, 255,
+    ]);
+    const screenshotRaw = Buffer.from([
+      128, 128, 128, 255, 128, 128, 128, 255, 10, 10, 10, 255, 20, 20, 20, 255, 30, 30, 30, 255, 40,
+      40, 40, 255,
+    ]);
+    const designRaw = Buffer.from(screenshotRaw);
+    designRaw[3] = 0;
+    designRaw[7] = 0;
+    instances[4].toBuffer.mockImplementation((options?: { resolveWithObject?: boolean }) =>
+      Promise.resolve(options?.resolveWithObject ? { data: contentRaw, info: {} } : contentRaw),
+    );
+    instances[5].toBuffer.mockImplementation((options?: { resolveWithObject?: boolean }) =>
+      Promise.resolve(
+        options?.resolveWithObject ? { data: screenshotRaw, info: {} } : screenshotRaw,
+      ),
+    );
+    instances[7].toBuffer.mockResolvedValue(designRaw);
+    instances[8].toBuffer.mockResolvedValue(screenshotRaw);
+    mockSharpFn.mockReset();
+    instances.forEach((instance) => {
+      mockSharpFn.mockReturnValueOnce(instance);
+    });
+    vi.mocked(pixelmatchMock.default).mockImplementation((designInput) => {
+      expect(designInput[3]).toBe(255);
+      expect(designInput[7]).toBe(255);
+      return 0;
+    });
+
+    const { compareImages } = await import("./image-compare-service.js");
+    const dummyBase64 = Buffer.alloc(100).toString("base64");
+    const result = await compareImages({
+      designBase64: dummyBase64,
+      screenshotBase64: dummyBase64,
+    });
+
+    expect(result.normalization?.containResized).toBe(true);
+  });
 });
