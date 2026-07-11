@@ -404,18 +404,24 @@ function windowedPearsonCorrelation(
 
 // design の輝度プロファイルを reference の中でスライドさせ、相関が最大に
 // なるオフセットを返す。相関が弱すぎる場合(≈無相関)は誤検出を避けて
-// 0 (従来通りの位置) にフォールバックする。
+// 呼び出し元の軸に応じた従来位置へフォールバックする。
 const MIN_CONFIDENT_ANCHOR_CORRELATION = 0.3;
 function detectBestAnchorOffset(
   designProfile: Float64Array,
   referenceProfile: Float64Array,
   maxOffset: number,
+  fallbackOffset: number = 0,
 ): number {
   const safeMaxOffset = Math.min(maxOffset, referenceProfile.length - designProfile.length);
-  if (safeMaxOffset <= 0 || designProfile.length === 0 || referenceProfile.length < designProfile.length) {
-    return 0;
+  const clampedFallback = Math.max(0, Math.min(fallbackOffset, Math.max(safeMaxOffset, 0)));
+  if (
+    safeMaxOffset <= 0 ||
+    designProfile.length === 0 ||
+    referenceProfile.length < designProfile.length
+  ) {
+    return clampedFallback;
   }
-  let bestOffset = 0;
+  let bestOffset = clampedFallback;
   let bestScore = -Infinity;
   for (let offset = 0; offset <= safeMaxOffset; offset++) {
     const score = windowedPearsonCorrelation(designProfile, referenceProfile, offset);
@@ -424,7 +430,7 @@ function detectBestAnchorOffset(
       bestOffset = offset;
     }
   }
-  return bestScore >= MIN_CONFIDENT_ANCHOR_CORRELATION ? bestOffset : 0;
+  return bestScore >= MIN_CONFIDENT_ANCHOR_CORRELATION ? bestOffset : clampedFallback;
 }
 
 /**
@@ -543,6 +549,7 @@ export async function compareImages(
       columnLuminanceProfile(contentRaw, contentWidth, contentHeight),
       columnLuminanceProfile(screenshotRawForAnchor, finalScreenshotWidth, finalScreenshotHeight),
       maxLeft,
+      Math.floor(maxLeft / 2),
     );
 
     paddingMask = {
