@@ -1409,7 +1409,7 @@ describe("compareImages", () => {
       screenshotBase64: dummyBase64,
     });
 
-    expect(result.normalization?.containResized).toBe(false);
+    expect(result.normalization?.containResized).toBe(true);
   });
 
   it("一様な上端 gap は従来どおり paddingMask で差分から除外すること", async () => {
@@ -1455,7 +1455,7 @@ describe("compareImages", () => {
       screenshotBase64: dummyBase64,
     });
 
-    expect(result.normalization?.containResized).toBe(false);
+    expect(result.normalization?.containResized).toBe(true);
   });
   it("短い anchor buffer は mask せずそのまま返すこと", async () => {
     const { zeroIgnoredPixelsForAnchor } = await import("./image-compare-service.js");

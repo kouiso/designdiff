@@ -986,7 +986,7 @@ export async function compareImages(
       screenshotWidth: nativeScreenshotWidth,
       screenshotHeight: nativeScreenshotHeight,
       cropApplied: Boolean(cropRegion),
-      containResized: paddingMask !== null,
+      containResized: wasComposited,
       appliedScale,
     },
   };
