@@ -29,23 +29,28 @@ jobs:
     runs-on: ${{ matrix.runs-on }}
     if: >
       (github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch') &&
-      github.event.pull_request.draft == false &&
-      (matrix.os == 'Linux' || github.event_name != 'pull_request')
+      github.event.pull_request.draft == false
     steps:
       - uses: actions/checkout@v6
+        if: matrix.os == 'Linux' || github.event_name != 'pull_request'
 
       - uses: jdx/mise-action@v4
+        if: matrix.os == 'Linux' || github.event_name != 'pull_request'
 
       - name: Install dependencies
+        if: matrix.os == 'Linux' || github.event_name != 'pull_request'
         run: pnpm install --frozen-lockfile
 
       - name: Build shared package
+        if: matrix.os == 'Linux' || github.event_name != 'pull_request'
         run: pnpm --filter @figdiff/shared build
 
       - name: Build Electron app
+        if: matrix.os == 'Linux' || github.event_name != 'pull_request'
         run: pnpm --filter @figdiff/desktop build
 
       - name: Verify build output
+        if: matrix.os == 'Linux' || github.event_name != 'pull_request'
         shell: bash
         run: |
           ls app/desktop/dist/main/
