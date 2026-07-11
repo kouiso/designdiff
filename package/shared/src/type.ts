@@ -304,7 +304,7 @@ const buildWorstRegionEvidenceSuffix = (regionScores: RegionScore[]): string => 
 
   return `; weakest region ${worstRegion.regionId} (structure ${worstRegion.structure.toFixed(
     3,
-  )}, color ${worstRegion.color.toFixed(3)})`;
+  )}, color ΔE ${worstRegion.color.toFixed(3)}; lower=better, critical threshold 2)`;
 };
 
 export const computeVerdict = (

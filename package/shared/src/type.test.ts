@@ -165,7 +165,7 @@ describe("computeVerdict", () => {
     expect(result.verdict).toBe("pass");
     expect(result.rationale).toContain("weakest region hero");
     expect(result.rationale).toContain("structure 0.960");
-    expect(result.rationale).toContain("color 2.800");
+    expect(result.rationale).toContain("color ΔE 2.800");
   });
 
   it("photo-heavy region は texture-adjusted weight で寄与が約 21% まで落ちる", () => {
