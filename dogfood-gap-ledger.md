@@ -111,7 +111,7 @@ RN(sample-mobile)は sample-org 他org＝NO-PUSH。比較ステップのみ実�
 
 PR #207（`feat(WS3): sample-corporate Figma 対実装 構造SSIM ランナー`）を develop にマージ。Closes #205。
 
-- 変更: `scripts/eval/capture-lp-screenshots.mjs` に Astro CLI 動的解決（`spawnAstroPreview`）を追加。
+- 変更: `script/eval/capture-lp-screenshots.mjs` に Astro CLI 動的解決（`spawnAstroPreview`）を追加。
   Astro v4/5/6 系を問わず `astro preview` が正常起動する。
 - live E2E 証跡: sample-corporate に対し `--self-manifest` モードで実行 → 12枚スクリーンショット + manifest 生成 [CLI確認] ✅
 

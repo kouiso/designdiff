@@ -16,7 +16,7 @@ import { useTranslation } from "react-i18next";
 import { parseDesignInput } from "@figdiff/shared";
 import type { DesignSource, ProjectPage } from "@figdiff/shared";
 
-import type { Page } from "@/App";
+import type { Page } from "@/app";
 import { Input } from "@/component/ui/input";
 import { ScoreRing } from "@/component/ui/score-ring";
 import { StatusPill } from "@/component/ui/status-pill";

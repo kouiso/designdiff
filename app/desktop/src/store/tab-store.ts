@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-import type { Page } from "@/App";
+import type { Page } from "@/app";
 
 export interface Tab {
   id: string;

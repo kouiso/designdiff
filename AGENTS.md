@@ -4,7 +4,7 @@ Design diff tool for Figma — compares design screenshots and surfaces visual r
 TypeScript/Node.js monorepo using Turborepo.
 
 > ⚠️ `.gemini/styleguide.md` and `.github/copilot-instructions.md` are auto-generated from this file
-> by `scripts/sync-ai-rules.sh`. Do NOT edit them directly.
+> by `script/sync-ai-rules.sh`. Do NOT edit them directly.
 
 ## Tech Stack
 

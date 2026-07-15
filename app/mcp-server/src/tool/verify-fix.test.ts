@@ -11,7 +11,7 @@ import { clearComparisonHistory } from "../service/comparison-history.js";
 
 import { axisContribution, buildVerdict } from "./verify-fix.js";
 
-const FIXTURES_ROOT = path.resolve(import.meta.dirname, "../../../../verification/fixtures");
+const FIXTURES_ROOT = path.resolve(import.meta.dirname, "../../../../verification/fixture");
 
 const PAIR02_DIR = path.join(FIXTURES_ROOT, "pair-02-multi-section-lp");
 

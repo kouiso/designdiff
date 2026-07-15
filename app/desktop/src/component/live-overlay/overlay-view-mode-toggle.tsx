@@ -15,7 +15,7 @@ import { Button } from "@/component/ui/button";
 import { useCompareStore } from "@/store/compare-store";
 import { type OverlayViewMode, useOverlayStore } from "@/store/overlay-store";
 
-import type { Page } from "../../App";
+import type { Page } from "../../app";
 
 const OVERLAY_MODE_IDS: {
   id: OverlayViewMode;

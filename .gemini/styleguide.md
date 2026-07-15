@@ -1,6 +1,6 @@
-<!-- AUTO-GENERATED from AGENTS.md by scripts/sync-ai-rules.sh -->
+<!-- AUTO-GENERATED from AGENTS.md by script/sync-ai-rules.sh -->
 <!-- DO NOT HAND-EDIT — changes will be overwritten on next sync -->
-<!-- To update: edit AGENTS.md, then run: bash scripts/sync-ai-rules.sh -->
+<!-- To update: edit AGENTS.md, then run: bash script/sync-ai-rules.sh -->
 
 # designdiff — Gemini Code Assist Style Guide
 
@@ -23,7 +23,7 @@ Design diff tool for Figma — compares design screenshots and surfaces visual r
 TypeScript/Node.js monorepo using Turborepo.
 
 > ⚠️ `.gemini/styleguide.md` and `.github/copilot-instructions.md` are auto-generated from this file
-> by `scripts/sync-ai-rules.sh`. Do NOT edit them directly.
+> by `script/sync-ai-rules.sh`. Do NOT edit them directly.
 
 ## Tech Stack
 

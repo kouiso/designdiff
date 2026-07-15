@@ -9,7 +9,7 @@ import { useProjectStore } from "@/store/project-store";
 import { FramePreview } from "./frame-preview";
 import { FrameSelector } from "./frame-selector";
 
-import type { Page } from "../../App";
+import type { Page } from "../../app";
 
 interface ProjectPageProps {
   onNavigate: (page: Page) => void;

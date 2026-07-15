@@ -4,6 +4,7 @@ tasks:
   ci:fast:
     cmds:
       - pnpm install --frozen-lockfile
+      - pnpm check:naming
       - pnpm lint
       - pnpm build
       - pnpm test

@@ -21,7 +21,7 @@ import { useTabStore } from "@/store/tab-store";
 import { ActiveSessionCard } from "./active-session-card";
 import { DesignInput } from "./design-input";
 
-import type { Page } from "../../App";
+import type { Page } from "../../app";
 
 interface HomePageProps {
   onNavigate: (page: Page) => void;

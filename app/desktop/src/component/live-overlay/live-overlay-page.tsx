@@ -8,7 +8,7 @@ import { useOverlayStore } from "@/store/overlay-store";
 
 import { LiveOverlayPanel } from "./live-overlay-panel";
 
-import type { Page } from "../../App";
+import type { Page } from "../../app";
 
 interface LiveOverlayPageProps {
   onNavigate: (page: Page) => void;
