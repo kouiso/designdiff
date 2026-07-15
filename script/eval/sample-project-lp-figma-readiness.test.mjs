@@ -71,7 +71,7 @@ function assertReadinessEvidenceContract(evidence) {
 
 function assertReadinessDemoCommand(markdown, { lpRepo, manifestPath, outPath, jsonOutPath }) {
   assert.match(markdown, /## 1-minute demo \(readiness re-run\)/u);
-  assert.match(markdown, /```bash[\s\S]*scripts\/eval\/sample-project-lp-figma-readiness\.mjs/u);
+  assert.match(markdown, /```bash[\s\S]*script\/eval\/sample-project-lp-figma-readiness\.mjs/u);
   assert.ok(markdown.includes(`--lp-repo ${shellQuote(lpRepo)}`));
   assert.ok(markdown.includes(`--figma-manifest ${shellQuote(manifestPath)}`));
   assert.ok(markdown.includes(`--out ${shellQuote(outPath)}`));

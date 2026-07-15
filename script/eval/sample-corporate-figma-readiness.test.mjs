@@ -60,7 +60,7 @@ function assertReadinessEvidenceContract(evidence) {
 
 function assertReadinessDemoCommand(markdown, { siteRepo, manifestPath, outPath, jsonOutPath }) {
   assert.match(markdown, /## 1-minute demo \(readiness re-run\)/u);
-  assert.match(markdown, /```bash[\s\S]*scripts\/eval\/sample-corporate-figma-readiness\.mjs/u);
+  assert.match(markdown, /```bash[\s\S]*script\/eval\/sample-corporate-figma-readiness\.mjs/u);
   assert.ok(markdown.includes(`--site-repo ${shellQuote(siteRepo)}`));
   assert.ok(markdown.includes(`--figma-manifest ${shellQuote(manifestPath)}`));
   assert.ok(markdown.includes(`--out ${shellQuote(outPath)}`));

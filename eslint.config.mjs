@@ -40,7 +40,6 @@ export default [
     plugins: {
       "@typescript-eslint": typescriptEslint.plugin,
       import: importPlugin,
-      "@eslint-community/eslint-comments": eslintComments,
     },
 
     languageOptions: {
@@ -170,8 +169,18 @@ export default [
       eqeqeq: "error",
       "no-debugger": "error",
       "no-alert": "error",
+    },
+  },
 
-      // eslint-disable comments must carry a justification (prohibition #8)
+  // Every eslint-disable / eslint-enable directive must carry a justification
+  // (prohibition #8). Applies to TS, TSX, and plain JS/MJS scripts alike so the
+  // repo scripts under script/** and verification/script/** are also covered.
+  {
+    files: ["**/*.ts", "**/*.tsx", "**/*.mjs", "**/*.cjs", "**/*.js"],
+    plugins: {
+      "@eslint-community/eslint-comments": eslintComments,
+    },
+    rules: {
       "@eslint-community/eslint-comments/require-description": ["error", { ignore: [] }],
       "@eslint-community/eslint-comments/no-unused-disable": "error",
     },
