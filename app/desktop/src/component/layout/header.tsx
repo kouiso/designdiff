@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import { Logo } from "@/component/layout/logo";
 import { useSettingStore } from "@/store/setting-store";
 
-import type { Page } from "../../App";
+import type { Page } from "../../app";
 
 interface HeaderProps {
   currentPage: Page;

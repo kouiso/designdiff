@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   calculatePearsonCorrelation,
   computeCorrelationMetrics,
-} from "../../../../verification/scripts/measure-correlation.mjs";
+} from "../../../../verification/script/measure-correlation.mjs";
 
 describe("measure correlation metrics", () => {
   it("3 variants がすべて正解なら accuracy が 100% になること", () => {

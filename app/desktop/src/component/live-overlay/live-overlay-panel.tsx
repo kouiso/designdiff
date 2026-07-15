@@ -24,7 +24,7 @@ import { useCompareStore } from "@/store/compare-store";
 import { type OverlayViewMode, useOverlayStore } from "@/store/overlay-store";
 import { useProjectStore } from "@/store/project-store";
 
-import type { Page } from "../../App";
+import type { Page } from "../../app";
 import type { LucideIcon } from "lucide-react";
 
 interface LiveOverlayPanelProps {

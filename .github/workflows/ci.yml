@@ -52,3 +52,16 @@ jobs:
       - name: Coverage thresholds
         if: matrix.check-type == 'coverage'
         run: pnpm -r --filter "@figdiff/shared" --filter "@figdiff/mcp-server" --filter "@figdiff/desktop" run test:coverage
+
+  naming:
+    name: Naming (kebab-case files, singular folders)
+    runs-on: ${{ vars.RUNNER_LINUX }}
+    timeout-minutes: 5
+    if: github.event.pull_request.draft == false
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: jdx/mise-action@v4
+
+      - name: Check naming conventions
+        run: node script/check-naming.mjs

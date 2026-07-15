@@ -193,8 +193,8 @@ Stop advancing phases the moment the plateau breaks. Over-engineering prevention
 | Architecture decisions | Claude | This doc, schema design, verdict rubric |
 | Signal impl (SSIM, ΔE2000, ORB, Canny) | Codex | Pure TS in `@figdiff/shared`, unit tested |
 | MCP tool changes | Codex | `compare_design` return shape, new tools |
-| Fixture generation | Codex | Golden set under `verification/fixtures/` |
-| P5 harness retro | Codex | Update `verification/scripts/verify-p5-harness.mjs` to consume `DiffReport` |
+| Fixture generation | Codex | Golden set under `verification/fixture/` |
+| P5 harness retro | Codex | Update `verification/script/verify-p5-harness.mjs` to consume `DiffReport` |
 | AI prompt engineering | Claude | How to feed DiffReport to AI, how to read `verify_fix` |
 | Review of each phase | Claude | Verdict correlation with human judgment; typed issues quality |
 

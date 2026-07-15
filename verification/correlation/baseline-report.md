@@ -37,4 +37,4 @@
 - Not active yet: P3 Hausdorff, P4 texture
 
 ## Next Measurement Trigger
-- Re-run `pnpm node verification/scripts/measure-correlation.mjs` after P3 and P4 merge to `develop`.
+- Re-run `pnpm node verification/script/measure-correlation.mjs` after P3 and P4 merge to `develop`.

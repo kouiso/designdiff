@@ -1,5 +1,6 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import eslintComments from "@eslint-community/eslint-plugin-eslint-comments";
 import js from "@eslint/js";
 import importPlugin from "eslint-plugin-import";
 import reactHooksPlugin from "eslint-plugin-react-hooks";
@@ -39,6 +40,7 @@ export default [
     plugins: {
       "@typescript-eslint": typescriptEslint.plugin,
       import: importPlugin,
+      "@eslint-community/eslint-comments": eslintComments,
     },
 
     languageOptions: {
@@ -168,10 +170,14 @@ export default [
       eqeqeq: "error",
       "no-debugger": "error",
       "no-alert": "error",
+
+      // eslint-disable comments must carry a justification (prohibition #8)
+      "@eslint-community/eslint-comments/require-description": ["error", { ignore: [] }],
+      "@eslint-community/eslint-comments/no-unused-disable": "error",
     },
   },
 
-  // React hooks rules
+  // React hooks rules + props type naming
   {
     files: ["app/desktop/src/**/*.tsx", "app/desktop/src/**/*.ts"],
     plugins: {
@@ -180,6 +186,19 @@ export default [
     rules: {
       "react-hooks/rules-of-hooks": "error",
       "react-hooks/exhaustive-deps": "warn",
+
+      // Props types are named after the component (`XxxProps`), never bare `Props`.
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: "TSTypeAliasDeclaration[id.name='Props']",
+          message: "Name props type after the component: use `XxxProps`, not bare `Props`.",
+        },
+        {
+          selector: "TSInterfaceDeclaration[id.name='Props']",
+          message: "Name props interface after the component: use `XxxProps`, not bare `Props`.",
+        },
+      ],
     },
   },
 
@@ -230,7 +249,7 @@ export default [
 
   // Verification + repo-root Node.js utility scripts
   {
-    files: ["verification/scripts/**/*.mjs", "scripts/**/*.mjs", "app/desktop/*.mjs"],
+    files: ["verification/script/**/*.mjs", "script/**/*.mjs", "app/desktop/*.mjs"],
     languageOptions: {
       globals: {
         ...globals.node,
@@ -250,9 +269,9 @@ export default [
   // App-level smoke/contract scripts (Node.js + browser globals for page.evaluate contexts)
   {
     files: [
-      "app/chrome-extension/scripts/**/*.mjs",
-      "app/desktop/scripts/**/*.mjs",
-      "app/mcp-server/scripts/**/*.mjs",
+      "app/chrome-extension/script/**/*.mjs",
+      "app/desktop/script/**/*.mjs",
+      "app/mcp-server/script/**/*.mjs",
     ],
     languageOptions: {
       globals: {

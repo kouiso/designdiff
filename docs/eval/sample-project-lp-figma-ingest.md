@@ -75,7 +75,7 @@ FIGMA_TOKEN=<token> pnpm eval:sample-project-lp-figma -- \
 
 ## SBI regression readiness
 
-`verification/fixtures/sample-project-lp-figma-pages.sbi-regression.json` は、SBI 追加検証用の 4 frame を固定する manifest。`REPLACE_*` placeholder は含めず、readiness では token だけが残 blocker になる状態を確認する。
+`verification/fixture/sample-project-lp-figma-pages.sbi-regression.json` は、SBI 追加検証用の 4 frame を固定する manifest。`REPLACE_*` placeholder は含めず、readiness では token だけが残 blocker になる状態を確認する。
 
 ```bash
 pnpm eval:sample-project-lp-figma:sbi-regression:watchdog
@@ -102,7 +102,7 @@ pnpm eval:sample-project-lp-figma:sbi-regression:validate
 pnpm eval:sample-project-lp-figma:watchdog -- \
   --out-dir /tmp/designdiff-sbi-regression-watchdog \
   --lp-repo /path/to/sample-project-lp \
-  --figma-manifest verification/fixtures/sample-project-lp-figma-pages.sbi-regression.json
+  --figma-manifest verification/fixture/sample-project-lp-figma-pages.sbi-regression.json
 ```
 
 `FIGMA_TOKEN` が利用できる環境では、readiness が出力する `realSmokeCommand` を使って real Figma PNG download と eval へ進む。token は repo に保存しない。
@@ -124,7 +124,7 @@ pnpm eval:ingest-figma:mock -- --out /tmp/sample-lp-figma-mock
 
 ## 個別ステップ
 
-1. `verification/fixtures/sample-project-lp-figma-pages.template.json` をコピーし、各 `figma_url` の `REPLACE_*` を実 Figma file key / node-id に置き換える。
+1. `verification/fixture/sample-project-lp-figma-pages.template.json` をコピーし、各 `figma_url` の `REPLACE_*` を実 Figma file key / node-id に置き換える。
 2. 実装 screenshot を取得する。
 
 ```bash
@@ -158,7 +158,7 @@ FIGMA_TOKEN=<token> pnpm eval:ingest-figma -- \
 ```bash
 FIGDIFF_MANIFEST=/tmp/sample-lp-figma/figdiff-manifest.json \
 FIGDIFF_MD_OUT=/tmp/sample-lp-figma/eval.md \
-node scripts/eval/figdiff-cluster-bench.mjs
+node script/eval/figdiff-cluster-bench.mjs
 ```
 
 `FIGMA_TOKEN` は repo に保存しない。`--validate-only` は token/API なしで manifest 構造と `impl/<name>.png` の存在だけを検証する。
