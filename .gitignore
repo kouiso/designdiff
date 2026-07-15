@@ -55,7 +55,7 @@ error.log
 .claude/memory/
 
 # Verification artifacts (evidence, traces, secrets-masked logs)
-# Keep committed: fixtures, scripts, correlation reports (.png, .md, .json)
+# Keep committed: fixture/, script/, correlation/ reports (.png, .md, .json)
 # Ignore: per-attempt runs and ad-hoc evidence drops
 verification/attempts/
 verification/evidence/

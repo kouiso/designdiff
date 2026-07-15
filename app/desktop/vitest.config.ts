@@ -25,7 +25,7 @@ export default defineConfig({
         "src/i18n/**",
         "src/env.d.ts",
         "src/main.tsx",
-        "src/App.tsx",
+        "src/app.tsx",
         "src/lib/platform/web-adapter.ts",
         "src/lib/platform/platform-adapter.ts",
       ],
