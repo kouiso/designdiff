@@ -80,7 +80,7 @@ const KEBAB_FILE = /^[a-z0-9]+(-[a-z0-9]+)*(\.[a-z0-9]+(-[a-z0-9]+)*)*$/;
 // kebab-case dir, or the __x__ testing convention (e.g. __mock__).
 const KEBAB_DIR = /^([a-z0-9]+(-[a-z0-9]+)*|__[a-z0-9]+__)$/;
 
-const files = execSync("git ls-files", { encoding: "utf8" }).split("\n").filter(Boolean);
+const files = execSync("git ls-files", { encoding: "utf8" }).split(/\r?\n/).filter(Boolean);
 
 const violations = [];
 for (const file of files) {
