@@ -25,8 +25,12 @@ jobs:
       HAS_CLOUDFLARE_SECRETS: ${{ secrets.CLOUDFLARE_ACCOUNT_ID != '' && secrets.CLOUDFLARE_API_TOKEN != '' && vars.CLOUDFLARE_PAGES_PROJECT_NAME != '' }}
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
 
       - uses: jdx/mise-action@dad1bfd3df957f44999b559dd69dc1671cb4e9ea # v4.2.1
+        with:
+          cache: false
 
       - name: Validate Cloudflare configuration
         if: env.HAS_CLOUDFLARE_SECRETS == 'true'
