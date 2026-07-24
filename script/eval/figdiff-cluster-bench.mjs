@@ -25,6 +25,7 @@
  *   FIGDIFF_MD_OUT       — output Markdown summary path
  *   FIGDIFF_DIFF_DIR     — directory for per-page diff PNG artifacts
  *   FIGDIFF_IMPL_DIR     — implementation screenshot dir under FIGDIFF_SCREENSHOTS (default: astro)
+ *   FIGDIFF_ANTIALIAS_BLUR_SIGMA — symmetric cross-renderer antialias normalization (0..4.5)
  */
 
 import { existsSync } from "node:fs";
@@ -34,6 +35,13 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { performance } from "node:perf_hooks";
 import { fileURLToPath, pathToFileURL } from "node:url";
+
+import {
+  findCriticalRawDiffRegions,
+  normalizeAntialiasPair,
+  parseAntialiasBlurSigma,
+  resolveCrossRendererVerdict,
+} from "./visual-normalization.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const MCP_BUILD_DIR = process.env.FIGDIFF_MCP_DIST ?? resolve(HERE, "../../app/mcp-server/dist");
@@ -49,6 +57,7 @@ if (!existsSync(SERVICE_ENTRY)) {
 // paths (C:\...) aren't valid ESM specifiers.
 const SELF = fileURLToPath(import.meta.url);
 const THRESHOLD = process.env.FIGDIFF_THRESHOLD ? Number(process.env.FIGDIFF_THRESHOLD) : 0.1;
+const ANTIALIAS_BLUR_SIGMA = parseAntialiasBlurSigma(process.env.FIGDIFF_ANTIALIAS_BLUR_SIGMA);
 const PAGE_TIMEOUT_MS = process.env.FIGDIFF_PAGE_TIMEOUT_MS
   ? Number(process.env.FIGDIFF_PAGE_TIMEOUT_MS)
   : 90_000;
@@ -98,6 +107,7 @@ const memEnd = process.memoryUsage();
 const summary = {
   ran_at: new Date().toISOString(),
   threshold: THRESHOLD,
+  antialias_blur_sigma: ANTIALIAS_BLUR_SIGMA,
   page_timeout_ms: PAGE_TIMEOUT_MS,
   source: process.env.FIGDIFF_MANIFEST
     ? { type: "manifest", path: resolve(process.env.FIGDIFF_MANIFEST) }
@@ -115,6 +125,10 @@ const summary = {
 };
 
 const failedCount = summary.pages - summary.ok_count;
+summary.visual_verdict_counts = countVisualVerdicts(results);
+summary.visual_pass_count = summary.visual_verdict_counts.pass ?? 0;
+summary.visual_result =
+  summary.visual_pass_count === summary.pages && failedCount === 0 ? "PASS" : "FAIL";
 await writeFile(OUT, JSON.stringify(summary, null, 2));
 if (process.env.FIGDIFF_MD_OUT) {
   await writeFile(process.env.FIGDIFF_MD_OUT, renderMarkdown(summary));
@@ -126,10 +140,12 @@ if (process.env.FIGDIFF_MD_OUT) {
 process.stdout.write(
   `Total: ${summary.total_wall_ms}ms, RSS ${summary.rss_start_mb} → ${summary.rss_end_mb}MB\n`,
 );
-if (failedCount > 0) {
+if (failedCount > 0 || summary.visual_result !== "PASS") {
   // Fail-loud so CI / automation never reports a green run on a partially-broken
   // benchmark. ok_count is also in the JSON for programmatic callers.
-  process.stderr.write(`${failedCount} of ${summary.pages} pages failed; exiting non-zero.\n`);
+  process.stderr.write(
+    `${failedCount} execution errors; ${summary.visual_pass_count}/${summary.pages} visual passes; exiting non-zero.\n`,
+  );
   process.exit(1);
 }
 
@@ -229,7 +245,8 @@ function renderMarkdown(summary) {
     `- Threshold: ${summary.threshold}`,
     `- Pages: ${summary.ok_count}/${summary.pages} ok`,
     `- Total wall time: ${summary.total_wall_ms}ms`,
-    `- Result: ${failedCount === 0 ? "PASS" : "FAIL"}`,
+    `- Execution result: ${failedCount === 0 ? "PASS" : "FAIL"}`,
+    `- Visual result: ${summary.visual_result} (${summary.visual_pass_count}/${summary.pages} pass)`,
     "",
     "| Page | OK | Match | Regions | Diff pixels | Viewport Δ | Time | Worst cells | Diff artifact |",
     "|---|---:|---:|---:|---:|---|---:|---|---|",
@@ -275,6 +292,15 @@ function renderMarkdown(summary) {
   }
 
   return `${lines.join("\n")}\n`;
+}
+
+function countVisualVerdicts(results) {
+  const counts = {};
+  for (const result of results) {
+    const verdict = result.ok ? (result.visual_verdict ?? "inconclusive") : "error";
+    counts[verdict] = (counts[verdict] ?? 0) + 1;
+  }
+  return counts;
 }
 
 function escapeTable(value) {
@@ -383,8 +409,21 @@ async function comparePage(page) {
     const designDimensions = readPngDimensions(designBuffer);
     const screenshotDimensions = readPngDimensions(screenshotBuffer);
     const viewportMismatch = buildViewportMismatch(designDimensions, screenshotDimensions);
-    const designBase64 = designBuffer.toString("base64");
-    const screenshotBase64 = screenshotBuffer.toString("base64");
+    const rawResult =
+      ANTIALIAS_BLUR_SIGMA > 0
+        ? await compareImages({
+            designBase64: designBuffer.toString("base64"),
+            screenshotBase64: screenshotBuffer.toString("base64"),
+            threshold: THRESHOLD,
+          })
+        : undefined;
+    const normalized = await normalizeAntialiasPair(
+      designBuffer,
+      screenshotBuffer,
+      ANTIALIAS_BLUR_SIGMA,
+    );
+    const designBase64 = normalized.designBuffer.toString("base64");
+    const screenshotBase64 = normalized.screenshotBuffer.toString("base64");
     const result = await compareImages({
       designBase64,
       screenshotBase64,
@@ -396,6 +435,19 @@ async function comparePage(page) {
     const diffImagePath = await writeDiffArtifact(page.name, result.diffImageBase64);
     const diffImageSize = result.diffImageBase64?.length ?? 0;
     const { diffImageBase64, ...rest } = result;
+    const rawGuardResult = rawResult ?? result;
+    const criticalRawDiffRegions = findCriticalRawDiffRegions(rawGuardResult);
+    const rawGuard = {
+      match_rate: rawGuardResult.matchRate,
+      critical_regions: criticalRawDiffRegions,
+      passed: criticalRawDiffRegions.length === 0,
+    };
+    const normalizedVerdict = rest.diffReport?.aggregateVerdict ?? "inconclusive";
+    const visualVerdict = resolveCrossRendererVerdict({
+      aggregateVerdict: normalizedVerdict,
+      hasViewportMismatch: viewportMismatch.hasMismatch,
+      rawGuardPassed: rawGuard.passed,
+    });
     const worstGridCells = (rest.gridSummary?.cells ?? [])
       .filter((cell) => cell.diffPixels > 0)
       .sort((a, b) => b.diffPixels - a.diffPixels)
@@ -420,6 +472,11 @@ async function comparePage(page) {
       diff_image_base64_chars: diffImageSize,
       artifacts: diffImagePath ? { diff_image: diffImagePath } : undefined,
       viewport_mismatch: viewportMismatch,
+      normalization: {
+        antialias_blur_sigma: ANTIALIAS_BLUR_SIGMA,
+      },
+      raw_guard: rawGuard,
+      visual_verdict: visualVerdict,
       worst_grid_cells: worstGridCells,
       result: rest,
     };
