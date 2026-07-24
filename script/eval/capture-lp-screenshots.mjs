@@ -29,12 +29,11 @@ const DEFAULT_PAGES = [
   { name: "tokushoho", path: "/tokushoho" },
   { name: "account-deletion", path: "/account-deletion" },
 ];
-const VIEWPORTS = [
-  { suffix: "pc", width: 1440, height: 1200 },
-  { suffix: "sp", width: 390, height: 844 },
-];
-
 const options = parseArgs(process.argv.slice(2));
+const VIEWPORTS = [
+  { suffix: "pc", width: positiveIntegerOption(options, "pc-width", 1440), height: 1200 },
+  { suffix: "sp", width: positiveIntegerOption(options, "sp-width", 390), height: 844 },
+];
 const repoDir = resolve(requiredOption(options, "repo"));
 const outDir = resolve(options.out ?? join(process.cwd(), "lp-screenshots"));
 const implDir = resolve(outDir, "impl");
@@ -92,6 +91,17 @@ function requiredOption(options, key) {
     throw new Error(`--${key} is required`);
   }
   return String(options[key]);
+}
+
+function positiveIntegerOption(options, key, fallback) {
+  if (options[key] === undefined) {
+    return fallback;
+  }
+  const value = Number(options[key]);
+  if (!Number.isSafeInteger(value) || value <= 0) {
+    throw new Error(`--${key} must be a positive integer`);
+  }
+  return value;
 }
 
 function validateRepo(repoDir) {
@@ -217,6 +227,7 @@ async function capturePages({ baseUrl, implDir, pages }) {
       for (const target of pages) {
         const url = new URL(target.path, baseUrl).toString();
         await page.goto(url, { waitUntil: "load", timeout: 60000 });
+        await loadAllImages(page);
         const fileName = `${target.name}-${viewport.suffix}.png`;
         const screenshotPath = join(implDir, fileName);
         await page.screenshot({ path: screenshotPath, fullPage: true });
@@ -233,6 +244,44 @@ async function capturePages({ baseUrl, implDir, pages }) {
     await browser.close();
   }
   return captured;
+}
+
+async function loadAllImages(page) {
+  await page.evaluate(async () => {
+    for (const image of globalThis.document.images) {
+      image.loading = "eager";
+    }
+    const viewportHeight = globalThis.window.innerHeight;
+    for (
+      let offset = 0;
+      offset < globalThis.document.documentElement.scrollHeight;
+      offset += viewportHeight
+    ) {
+      globalThis.window.scrollTo(0, offset);
+      await new Promise((resolvePromise) => setTimeout(resolvePromise, 50));
+    }
+    globalThis.window.scrollTo(0, 0);
+  });
+  try {
+    await page.waitForFunction(
+      () =>
+        Array.from(globalThis.document.images).every(
+          (image) => image.complete && image.naturalWidth > 0 && image.naturalHeight > 0,
+        ),
+      undefined,
+      { timeout: 60_000 },
+    );
+  } catch (error) {
+    const failedImages = await page.evaluate(() =>
+      Array.from(globalThis.document.images)
+        .filter((image) => !image.complete || image.naturalWidth === 0 || image.naturalHeight === 0)
+        .map((image) => image.currentSrc || image.src || "(empty src)"),
+    );
+    throw new Error(`Images did not load: ${failedImages.join(", ")}`, { cause: error });
+  }
+  await page.evaluate(async () => {
+    await Promise.all(Array.from(globalThis.document.images, (image) => image.decode()));
+  });
 }
 
 async function writeManifests({ captured, figmaDir, outDir, selfManifest }) {

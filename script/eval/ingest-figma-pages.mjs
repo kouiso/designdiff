@@ -331,6 +331,8 @@ async function fetchFigmaImageUrls({ fileKey, pages }) {
   url.searchParams.set("ids", ids);
   url.searchParams.set("format", format);
   url.searchParams.set("scale", String(pageScale));
+  url.searchParams.set("contents_only", "true");
+  url.searchParams.set("use_absolute_bounds", "true");
   const response = await fetch(url, {
     headers: { "X-Figma-Token": token },
   });

@@ -102,6 +102,14 @@ function createMockFigmaServer() {
   return createServer((request, response) => {
     const url = new URL(request.url ?? "/", "http://127.0.0.1");
     if (url.pathname === "/v1/images/mockFile") {
+      if (
+        url.searchParams.get("contents_only") !== "true" ||
+        url.searchParams.get("use_absolute_bounds") !== "true"
+      ) {
+        response.writeHead(400, { "content-type": "application/json" });
+        response.end(JSON.stringify({ err: "frame-bound render parameters are required" }));
+        return;
+      }
       const ids = String(url.searchParams.get("ids") ?? "")
         .split(",")
         .filter(Boolean);
