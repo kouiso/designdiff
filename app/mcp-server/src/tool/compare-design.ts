@@ -138,9 +138,8 @@ export function buildSummaryText(result: CompareDesignResult): string {
   return lines.join("\n");
 }
 
-// loopGuard は structuredContent にしか載っておらず、テキスト出力を読む AI からは
-// 見えていなかった。停止判定が実装済みなのに使われない直接原因だったため、最初の1行に
-// 出す。末尾に置くと長い出力で読み飛ばされ、同じ状態に戻る。
+// 停止判定を見落とすと、止まるべきループが不要な反復を続ける。サマリーの最初の1行に置く。
+// 末尾では長い出力に埋もれて同じ状態に戻る。
 function buildLoopGuardLines(result: CompareDesignResult): string[] {
   const guard = result.loopGuard;
   // compare_design は必ず停止判定を評価するので、undefined は「評価に失敗した」を意味する

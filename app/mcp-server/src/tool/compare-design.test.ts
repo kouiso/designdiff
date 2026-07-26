@@ -82,9 +82,6 @@ describe("buildSummaryText — image size display", () => {
   });
 });
 
-// loopGuard は structuredContent にしか載っておらず、テキスト出力を読む AI からは
-// 存在自体が見えていなかった。停止判定が実装済みなのに使われない直接原因だったため、
-// 先頭に出して読み飛ばせないようにする。
 describe("buildSummaryText — loop guard", () => {
   it("puts the stop decision on the first line", () => {
     const result = makeResult({
@@ -114,6 +111,23 @@ describe("buildSummaryText — loop guard", () => {
     const text = buildSummaryText(result);
     expect(text).toContain("反復回数が上限 (5 回) に達しました。");
     expect(text).toContain("5");
+  });
+
+  // 上限を超えると iteration が MAX を上回るため "6/5 回" のような分数になり得る。
+  it("does not print a limit fraction once the cap is exceeded", () => {
+    const result = makeResult({
+      status: "FAIL",
+      loopGuard: {
+        iteration: 6,
+        decision: "stop",
+        reason: "反復回数が上限 (5 回) に達しました。",
+      },
+    });
+
+    const firstLine = buildSummaryText(result).split("\n")[0];
+    expect(firstLine).toContain("反復 6 回目");
+    expect(firstLine).not.toContain("上限");
+    expect(firstLine).not.toContain("/");
   });
 
   it("shows continue when the loop may proceed", () => {
