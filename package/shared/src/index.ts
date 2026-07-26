@@ -56,6 +56,7 @@ export {
   computePerceptibleDiffRatio,
   deltaE2000,
   PERCEPTIBLE_DELTA_E,
+  PERCEPTIBLE_DIFF_CONTRADICTION_RATIO,
   srgbToLab,
 } from "./signal/delta-e-2000.js";
 export { selfCritique } from "./self-critique.js";

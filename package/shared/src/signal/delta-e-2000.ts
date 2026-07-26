@@ -128,6 +128,10 @@ export function computeMeanDeltaE2000(
 // 同じ値を境目に使う。
 export const PERCEPTIBLE_DELTA_E = 2;
 
+// 見える差を持つ画素がこの割合を超えたら、判定と画素の証拠が食い違っているとみなす。
+// 広い無変化領域があると平均 ΔE は閾値を下回るが、それでも画面の過半が違いうる。
+export const PERCEPTIBLE_DIFF_CONTRADICTION_RATIO = 0.5;
+
 // 判定を止めるゲートが使う値なので、まず全画素を見る。格子状に間引くと、
 // 周期的な模様が全サンプルの隙間に入り込み、実際の差を少なく見積もる。
 // 同一画素は色差計算に入らないので、通常の比較ではこの走査はほぼ無償で終わる。
@@ -147,6 +151,24 @@ function scramble(value: number): number {
 
 // 透明度の違いは、格納された RGB が同じでも見た目には出る。共通の背景へ
 // 合成してから比べる。白なのは、比較対象が白地のページ上で見られるため。
+function clampRegion(
+  startX: number,
+  startY: number,
+  endX: number,
+  endY: number,
+  width: number,
+  height: number,
+): { clampedStartX: number; clampedStartY: number; clampedEndX: number; clampedEndY: number } {
+  const clampedStartX = Math.max(0, Math.min(width, Math.floor(startX)));
+  const clampedStartY = Math.max(0, Math.min(height, Math.floor(startY)));
+  return {
+    clampedStartX,
+    clampedStartY,
+    clampedEndX: Math.max(clampedStartX, Math.min(width, Math.ceil(endX))),
+    clampedEndY: Math.max(clampedStartY, Math.min(height, Math.ceil(endY))),
+  };
+}
+
 function compositeOverWhite(pixels: Uint8ClampedArray, offset: number): [number, number, number] {
   const alpha = pixels[offset + 3] / 255;
   if (alpha === 1) return [pixels[offset], pixels[offset + 1], pixels[offset + 2]];
@@ -155,6 +177,9 @@ function compositeOverWhite(pixels: Uint8ClampedArray, offset: number): [number,
 }
 
 export interface PerceptibleDiffOptions {
+  // 見える差のあった画素を 1 で書き込む。人間レビューへ回すときの証拠に使う。
+  // 呼び出し側が画素数ぶん確保して渡す。
+  outMask?: Uint8Array;
   // 比較の対象外に置いた画素。分母から外す。
   // system:* マスクは screenshot 側を design と同じ値へ揃えるため、
   // 数えると「一致した画素」として比率を薄めてしまう。
@@ -197,6 +222,9 @@ export function computePerceptibleDiffRatio(
       `computePerceptibleDiffRatio: pixel buffers differ in length (${pixels1.length} vs ${pixels2.length})`,
     );
   }
+  if (pixels1.length === 0) {
+    throw new Error("computePerceptibleDiffRatio: pixel buffers are empty");
+  }
   if (pixels1.length % (width * 4) !== 0) {
     throw new Error(
       `computePerceptibleDiffRatio: buffer length ${pixels1.length} is not a whole number of ${width}px RGBA rows`,
@@ -208,16 +236,35 @@ export function computePerceptibleDiffRatio(
     );
   }
   const ignoreMask = options.ignoreMask;
-  const height = Math.min(pixels1.length / 4 / width || 0, pixels2.length / 4 / width || 0);
-  const clampedStartX = Math.max(0, Math.min(width, Math.floor(startX)));
-  const clampedStartY = Math.max(0, Math.min(height, Math.floor(startY)));
-  const clampedEndX = Math.max(clampedStartX, Math.min(width, Math.ceil(endX)));
-  const clampedEndY = Math.max(clampedStartY, Math.min(height, Math.ceil(endY)));
+  const outMask = options.outMask;
+  const pixelCount = pixels1.length / 4;
+  // 短いマスクは欠けた位置が undefined になり、黙って「対象内」として数えられる。
+  // 除外したはずの差が比率を押し上げ、正常な比較を人間レビューへ送ってしまう。
+  if (ignoreMask !== undefined && ignoreMask.length !== pixelCount) {
+    throw new Error(
+      `computePerceptibleDiffRatio: ignoreMask must cover every pixel (got ${ignoreMask.length}, expected ${pixelCount})`,
+    );
+  }
+  const height = pixelCount / width;
+  const { clampedStartX, clampedStartY, clampedEndX, clampedEndY } = clampRegion(
+    startX,
+    startY,
+    endX,
+    endY,
+    width,
+    height,
+  );
+  // 面積が 0 になる指定 (順序が逆、画像の外) をそのまま通すと 0 が返る。
+  // 0 は「見える差が無い」と読まれるので、無効な比較を合格させてしまう。
+  if (clampedEndX <= clampedStartX || clampedEndY <= clampedStartY) {
+    throw new Error(
+      `computePerceptibleDiffRatio: region (${startX},${startY})-(${endX},${endY}) does not intersect the ${width}x${height} image`,
+    );
+  }
 
   const regionWidth = clampedEndX - clampedStartX;
   const regionHeight = clampedEndY - clampedStartY;
   const regionArea = regionWidth * regionHeight;
-  if (regionArea <= 0) return 0;
 
   let perceptible = 0;
   let count = 0;
@@ -241,6 +288,7 @@ export function computePerceptibleDiffRatio(
     const [r2, g2, b2] = compositeOverWhite(pixels2, offset);
     if (deltaE2000(srgbToLab(r1, g1, b1), srgbToLab(r2, g2, b2)) > threshold) {
       perceptible++;
+      if (outMask !== undefined) outMask[index] = 1;
     }
   };
 
@@ -272,10 +320,14 @@ function forEachSampledPixel(
   visit: (deltaE: number) => void,
 ): void {
   const height = Math.min(pixels1.length / 4 / width || 0, pixels2.length / 4 / width || 0);
-  const clampedStartX = Math.max(0, Math.min(width, Math.floor(startX)));
-  const clampedStartY = Math.max(0, Math.min(height, Math.floor(startY)));
-  const clampedEndX = Math.max(clampedStartX, Math.min(width, Math.ceil(endX)));
-  const clampedEndY = Math.max(clampedStartY, Math.min(height, Math.ceil(endY)));
+  const { clampedStartX, clampedStartY, clampedEndX, clampedEndY } = clampRegion(
+    startX,
+    startY,
+    endX,
+    endY,
+    width,
+    height,
+  );
 
   const regionWidth = clampedEndX - clampedStartX;
   const regionHeight = clampedEndY - clampedStartY;

@@ -130,6 +130,44 @@ describe("computePerceptibleDiffRatio", () => {
     expect(ratio).toBeCloseTo(15 / 16, 2);
   });
 
+  // 0 は「見える差が無い」と読まれる。壊れた入力で 0 を返すと無効な比較を合格させる。
+  it("rejects inputs that would collapse to nothing instead of returning 0", () => {
+    const a = canvas(W, H, () => [120, 130, 140]);
+    const empty = new Uint8ClampedArray(0);
+
+    expect(() => computePerceptibleDiffRatio(empty, empty, 0, 0, 10, 10, 10)).toThrow(/empty/);
+    // 順序が逆の範囲
+    expect(() => computePerceptibleDiffRatio(a, a, 50, 50, 10, 10, W)).toThrow(
+      /does not intersect/,
+    );
+    // 画像の外
+    expect(() => computePerceptibleDiffRatio(a, a, 500, 500, 600, 600, W)).toThrow(
+      /does not intersect/,
+    );
+  });
+
+  // 短いマスクは欠けた位置が undefined になり、黙って対象内として数えられる。
+  it("rejects an ignore mask that does not cover every pixel", () => {
+    const a = canvas(W, H, () => [120, 130, 140]);
+
+    expect(() =>
+      computePerceptibleDiffRatio(a, a, 0, 0, W, H, W, { ignoreMask: new Uint8Array(10) }),
+    ).toThrow(/must cover every pixel/);
+  });
+
+  // 人間レビューへ回すときの証拠になるので、どこが違ったかを書き出せること。
+  it("writes the differing pixels into the output mask", () => {
+    const a = canvas(W, H, () => [120, 130, 140]);
+    const b = canvas(W, H, (_x, y) => (y < 40 ? [190, 90, 90] : [120, 130, 140]));
+    const outMask = new Uint8Array(W * H);
+
+    computePerceptibleDiffRatio(a, b, 0, 0, W, H, W, { outMask });
+
+    expect(outMask[0]).toBe(1);
+    expect(outMask[(H - 1) * W]).toBe(0);
+    expect(outMask.reduce((sum, v) => sum + v, 0)).toBe(40 * W);
+  });
+
   it("honours the region bounds", () => {
     const a = canvas(W, H, () => [120, 130, 140]);
     const b = canvas(W, H, (_x, y) => (y < 50 ? [190, 90, 90] : [120, 130, 140]));

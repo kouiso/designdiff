@@ -8,6 +8,7 @@ import pixelmatch from "pixelmatch";
 import sharp from "sharp";
 
 import {
+  PERCEPTIBLE_DIFF_CONTRADICTION_RATIO,
   clusterDiffPixels,
   clusterDiffPixelsGridDetailed,
   generateMatchSuggestion,
@@ -922,6 +923,31 @@ export async function compareImages(
     totalPixelCount === 0
       ? 100
       : Math.round(((totalPixelCount - diffPixelCount) / totalPixelCount) * 100 * 100) / 100;
+  // 判定と証拠を先に作る。矛盾で人間レビューへ回すとき、pixelmatch の閾値では
+  // 1画素も差分にならないことがある。そのままだと差分画像が真っ黒、領域0件で
+  // 「見てくれ」と渡すことになるので、見える差のあった画素を証拠として使う。
+  const perceptibleMask = new Uint8Array(width * height);
+  const diffReport = buildDiffReport({
+    designPixels: reportDesignPixels,
+    screenshotPixels,
+    width,
+    height,
+    figmaRootNode,
+    figmaNodeId,
+    // letterbox の余白と、比較の対象外に置いた画素を評価から外す。
+    // 渡さないと余白だけで矛盾判定の比率が跳ね上がる。
+    paddingMask: paddingMask ?? undefined,
+    ignoreMask: ignoreMaskResult.mask,
+    perceptibleMask,
+  });
+
+  if (
+    diffPixelCount === 0 &&
+    (diffReport.perceptibleDiffRatio ?? 0) > PERCEPTIBLE_DIFF_CONTRADICTION_RATIO
+  ) {
+    paintPerceptibleMask(diffPixelData, perceptibleMask);
+  }
+
   const gridSummary = buildGridSummary(
     diffPixelData,
     width,
@@ -959,18 +985,6 @@ export async function compareImages(
 
   // Generate diff image visualization
   const diffImageBase64 = await generateDiffImage(diffPixelData, width, height);
-  const diffReport = buildDiffReport({
-    designPixels: reportDesignPixels,
-    screenshotPixels,
-    width,
-    height,
-    figmaRootNode,
-    figmaNodeId,
-    // letterbox の余白と、比較の対象外に置いた画素を評価から外す。
-    // 渡さないと余白だけで矛盾判定の比率が跳ね上がる。
-    paddingMask: paddingMask ?? undefined,
-    ignoreMask: ignoreMaskResult.mask,
-  });
 
   const suggestion = generateMatchSuggestion(matchRate);
 
@@ -1269,6 +1283,19 @@ function preserveLegacyWhitePaddingForReport(
  * Generate diff visualization image as base64 PNG
  * Highlights diff regions in red
  */
+// pixelmatch の差分可視化と同じ赤で塗る。証拠の出どころが違っても、
+// 人が見る色は揃えておく。
+function paintPerceptibleMask(diffPixelData: Uint8ClampedArray, mask: Uint8Array): void {
+  for (let i = 0; i < mask.length; i += 1) {
+    if (mask[i] !== 1) continue;
+    const offset = i * 4;
+    diffPixelData[offset] = 255;
+    diffPixelData[offset + 1] = 0;
+    diffPixelData[offset + 2] = 0;
+    diffPixelData[offset + 3] = 255;
+  }
+}
+
 async function generateDiffImage(
   diffPixelData: Uint8ClampedArray,
   width: number,

@@ -16,6 +16,7 @@ import {
   parseDesignInput,
   rankFrameCandidates,
   PERCEPTIBLE_DELTA_E,
+  PERCEPTIBLE_DIFF_CONTRADICTION_RATIO,
   runPreflight,
   selfCritique,
   type CompareDesignResult,
@@ -255,7 +256,7 @@ function buildCompletionCriteria(
         ? perceptibleDiffRatio === undefined
           ? "Not evaluated: the contradiction check only applies to a passing structural review."
           : "Structural review and the perceptible-difference evidence agree."
-        : `Structural review says pass, yet ${Math.round((perceptibleDiffRatio ?? 0) * 100)}% of pixels differ visibly (CIEDE2000 above ${PERCEPTIBLE_DELTA_E}); the limit is ${Math.round(PERCEPTIBLE_DIFF_CONTRADICTION_RATIO * 100)}%. One of the two is wrong, so this comparison is routed to human review instead of reporting PASS.`,
+        : `Structural review says pass, yet ${formatPerceptibleDiffPercent(perceptibleDiffRatio)} of pixels differ visibly (CIEDE2000 above ${PERCEPTIBLE_DELTA_E}); the limit is ${Math.round(PERCEPTIBLE_DIFF_CONTRADICTION_RATIO * 100)}%. One of the two is wrong, so this comparison is routed to human review instead of reporting PASS.`,
     },
     matchRate: {
       required: 100,
@@ -319,7 +320,6 @@ type CompareStatus = "PASS" | "FAIL" | "UNCERTAIN";
 //
 // 半分を境にするのは、平均 ΔE では拾えない形を拾うため。広い無変化領域が平均を
 // 押し下げると、画面の過半が目に見えて違っていても mean は閾値 2 を下回る。
-export const PERCEPTIBLE_DIFF_CONTRADICTION_RATIO = 0.5;
 
 function isPassContradictedByPixels(
   structuralVerdict: DiffVerdict,

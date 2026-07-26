@@ -194,6 +194,10 @@ describe("generateMarkdownReport — 整合ゲートの表示", () => {
     const markdown = generateMarkdownReport(uncertainResult());
 
     expect(markdown).toContain("| Final Status | PASS | UNCERTAIN | UNCERTAIN |");
+    // 本 PR の中心シナリオ。構造レビュー自体は PASS のまま、整合行だけが
+    // UNCERTAIN になる。Diff Verdict 行が PASS を出しても、最終 status と
+    // 整合行が別に UNCERTAIN を示すので表として矛盾しない。この形を固定する。
+    expect(markdown).toContain("| Diff Verdict | pass | pass | PASS |");
   });
 
   it("status を持たない古い履歴では構造レビュー結果へ落とす", () => {
