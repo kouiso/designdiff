@@ -217,4 +217,109 @@ describe("loop-guard-service", () => {
     });
     expect(report.iteration).toBe(1);
   });
+
+  describe("停滞判定に見える差の割合を合成する", () => {
+    async function runSeries(
+      series: readonly { matchRate: number; perceptibleDiffRatio?: number }[],
+    ) {
+      let report: Awaited<ReturnType<typeof recordIterationAndEvaluate>> | undefined;
+      for (const [i, step] of series.entries()) {
+        report = await recordIterationAndEvaluate(input(step), {
+          stateDir,
+          now: baseNow + i * 1000,
+        });
+      }
+      if (report === undefined) throw new Error("series must not be empty");
+      return report;
+    }
+
+    it("matchRate が止まっていても見える差が減っていれば続行する", async () => {
+      const report = await runSeries([
+        { matchRate: 80.0, perceptibleDiffRatio: 0.4 },
+        { matchRate: 80.1, perceptibleDiffRatio: 0.25 },
+        { matchRate: 80.2, perceptibleDiffRatio: 0.1 },
+      ]);
+
+      expect(report.decision).toBe("continue");
+      expect(report.reason).toContain("人が見て分かる差");
+    });
+
+    it("matchRate も見える差も止まっていれば停止する", async () => {
+      const report = await runSeries([
+        { matchRate: 80.0, perceptibleDiffRatio: 0.4 },
+        { matchRate: 80.1, perceptibleDiffRatio: 0.401 },
+        { matchRate: 80.2, perceptibleDiffRatio: 0.402 },
+      ]);
+
+      expect(report.decision).toBe("stop");
+      expect(report.reason).toContain("停滞");
+      expect(report.reason).toContain("どちらも動いていません");
+    });
+
+    it("見える差の記録が無ければ従来どおり matchRate だけで停滞と判定する", async () => {
+      const report = await runSeries([
+        { matchRate: 80.0 },
+        { matchRate: 80.1 },
+        { matchRate: 80.2 },
+      ]);
+
+      expect(report.decision).toBe("stop");
+      expect(report.reason).toContain("停滞");
+    });
+
+    it("3件のうち1件でも見える差が欠けていれば matchRate だけで判定する", async () => {
+      const report = await runSeries([
+        { matchRate: 80.0, perceptibleDiffRatio: 0.4 },
+        { matchRate: 80.1 },
+        { matchRate: 80.2, perceptibleDiffRatio: 0.1 },
+      ]);
+
+      expect(report.decision).toBe("stop");
+      expect(report.reason).toContain("停滞");
+    });
+
+    it("見える差が2回続けて増えたら matchRate が改善していても停止する", async () => {
+      const report = await runSeries([
+        { matchRate: 60, perceptibleDiffRatio: 0.1 },
+        { matchRate: 70, perceptibleDiffRatio: 0.3 },
+        { matchRate: 80, perceptibleDiffRatio: 0.5 },
+      ]);
+
+      expect(report.decision).toBe("stop");
+      expect(report.reason).toContain("人が見て分かる差が2回続けて増えています");
+    });
+
+    it("見える差が増えても1回だけなら停止しない", async () => {
+      const report = await runSeries([
+        { matchRate: 60, perceptibleDiffRatio: 0.4 },
+        { matchRate: 70, perceptibleDiffRatio: 0.1 },
+        { matchRate: 80, perceptibleDiffRatio: 0.2 },
+      ]);
+
+      expect(report.decision).toBe("continue");
+    });
+
+    it("閾値未満の下降は悪化として扱わない", async () => {
+      const report = await runSeries([
+        { matchRate: 80.2, perceptibleDiffRatio: 0.4 },
+        { matchRate: 80.1, perceptibleDiffRatio: 0.401 },
+        { matchRate: 80.0, perceptibleDiffRatio: 0.402 },
+      ]);
+
+      expect(report.decision).toBe("stop");
+      expect(report.reason).toContain("停滞");
+      expect(report.reason).not.toContain("悪化");
+    });
+
+    it("matchRate の悪化判定は見える差より先に効く", async () => {
+      const report = await runSeries([
+        { matchRate: 90, perceptibleDiffRatio: 0.1 },
+        { matchRate: 80, perceptibleDiffRatio: 0.1 },
+        { matchRate: 70, perceptibleDiffRatio: 0.1 },
+      ]);
+
+      expect(report.decision).toBe("stop");
+      expect(report.reason).toContain("matchRate が2回続けて悪化");
+    });
+  });
 });

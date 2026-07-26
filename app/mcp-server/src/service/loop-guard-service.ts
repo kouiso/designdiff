@@ -20,6 +20,9 @@ import { getFigdiffLoopStateDir } from "../util/figdiff-paths.js";
 export const MAX_LOOP_ITERATIONS = 5;
 // matchRate の変化 (パーセントポイント) がこの値未満なら「進捗なし」とみなす。
 export const STAGNATION_DELTA = 0.5;
+// 見える差の割合 (0..1) の変化がこの値未満なら「進捗なし」とみなす。
+// 0.005 = 全画素の 0.5% ぶん。matchRate の 0.5pt と同じ粒度に合わせている。
+export const PERCEPTIBLE_STAGNATION_DELTA = 0.005;
 // これより古い記録は別ループとみなして捨てる。
 export const LOOP_STATE_TTL_MS = 2 * 60 * 60 * 1000;
 
@@ -29,6 +32,13 @@ export interface LoopIterationInput {
   matchRate: number;
   diffPixelCount?: number;
   regionCount?: number;
+  /**
+   * ΔE2000 で「人が見て違うと分かる」画素の割合 (0..1)。
+   * matchRate は pixelmatch の閾値に引きずられ、文字の縁のぼかしだけで動く。
+   * 停滞・悪化の判定を matchRate 単独に任せると、実際には何も直っていない編集を
+   * 「進捗あり」と誤読して回り続ける。独立した知覚側の軸として併用する。
+   */
+  perceptibleDiffRatio?: number;
   structuralVerdict: DiffVerdict;
   status: "PASS" | "FAIL" | "UNCERTAIN";
 }
@@ -38,6 +48,7 @@ const LoopStateEntrySchema = z.object({
   matchRate: z.number(),
   diffPixelCount: z.number().optional(),
   regionCount: z.number().optional(),
+  perceptibleDiffRatio: z.number().optional(),
   structuralVerdict: z.enum(["pass", "fail", "inconclusive"]),
   status: z.enum(["PASS", "FAIL", "UNCERTAIN"]),
   timestamp: z.number(),
@@ -105,6 +116,32 @@ export interface LoopGuardOptions {
   now?: number;
 }
 
+interface PerceptibleSeries {
+  /** [2回前, 1回前, 今回] の見える差の割合 */
+  values: [number, number, number];
+  /** 今回 - 1回前。正なら悪化 */
+  signed1: number;
+  /** 1回前 - 2回前。正なら悪化 */
+  signed2: number;
+}
+
+/** 3件すべてに見える差の記録があるときだけ、知覚側の系列として使う。 */
+function readPerceptibleSeries(
+  prev2: LoopStateEntry,
+  prev1: LoopStateEntry,
+  latest: LoopStateEntry,
+): PerceptibleSeries | undefined {
+  const a = prev2.perceptibleDiffRatio;
+  const b = prev1.perceptibleDiffRatio;
+  const c = latest.perceptibleDiffRatio;
+  if (typeof a !== "number" || typeof b !== "number" || typeof c !== "number") return undefined;
+  return { values: [a, b, c], signed1: c - b, signed2: b - a };
+}
+
+function formatRatio(ratio: number): string {
+  return `${(ratio * 100).toFixed(2)}%`;
+}
+
 /**
  * 今回の比較結果をループ履歴に記録し、続行/停止の判定を返す。
  * 判定優先順: PASS到達 > UNCERTAIN > 反復上限 > 収束停滞 > 続行。
@@ -128,6 +165,7 @@ export async function recordIterationAndEvaluate(
       matchRate: input.matchRate,
       diffPixelCount: input.diffPixelCount,
       regionCount: input.regionCount,
+      perceptibleDiffRatio: input.perceptibleDiffRatio,
       structuralVerdict: input.structuralVerdict,
       status: input.status,
       timestamp: now,
@@ -195,20 +233,56 @@ export async function recordIterationAndEvaluate(
     // 悪化の検出を停滞より先に見る。停滞判定は絶対値なので、下がり続けていても
     // 変化量が閾値を超えていれば continue に落ちてしまい、悪化する編集を続けろと
     // 指示することになる。
+    // 悪化と呼ぶには、停滞と見なす幅を超えて下がっている必要がある。閾値未満の
+    // 下降は測定の揺れであり、これを悪化として止めると直せる修正まで捨てる。
     const signed1 = latest.matchRate - prev1.matchRate;
     const signed2 = prev1.matchRate - prev2.matchRate;
-    if (signed1 < 0 && signed2 < 0) {
+    if (signed1 <= -STAGNATION_DELTA && signed2 <= -STAGNATION_DELTA) {
       return await stopAndReset(
         `matchRate が2回続けて悪化しています (${prev2.matchRate.toFixed(2)} → ${prev1.matchRate.toFixed(2)} → ${latest.matchRate.toFixed(2)})。修正が逆効果になっているため、自動修正を止めて直前の変更を戻すか人間に報告してください。`,
       );
     }
 
+    const perceptible = readPerceptibleSeries(prev2, prev1, latest);
+
+    // 見える差が2回続けて増えている = 人の目で分かる劣化。matchRate が
+    // 文字の縁のぼかしで揺れて悪化判定を逃れる場合でも、こちらで捕まえる。
+    if (
+      perceptible &&
+      perceptible.signed1 >= PERCEPTIBLE_STAGNATION_DELTA &&
+      perceptible.signed2 >= PERCEPTIBLE_STAGNATION_DELTA
+    ) {
+      return await stopAndReset(
+        `人が見て分かる差が2回続けて増えています (${formatRatio(perceptible.values[0])} → ${formatRatio(perceptible.values[1])} → ${formatRatio(perceptible.values[2])})。修正が逆効果になっているため、自動修正を止めて直前の変更を戻すか人間に報告してください。`,
+      );
+    }
+
     const delta1 = Math.abs(signed1);
     const delta2 = Math.abs(signed2);
-    if (delta1 < STAGNATION_DELTA && delta2 < STAGNATION_DELTA) {
-      return await stopAndReset(
-        `収束が停滞しています (直近2回の matchRate 変化 ${delta2.toFixed(2)}pt → ${delta1.toFixed(2)}pt、いずれも ${STAGNATION_DELTA}pt 未満)。修正が効いていないため、自動修正を止めて人間に報告してください。`,
-      );
+    const matchRateStagnant = delta1 < STAGNATION_DELTA && delta2 < STAGNATION_DELTA;
+
+    // 停滞は matchRate 単独では決めない。matchRate はアンチエイリアスの揺れで
+    // 動かないことがあり、その裏で見える差が確実に減っている場合がある。
+    // そこで止めると、効いている修正を途中で捨てることになる。
+    // 知覚側の軸が取れているときは、両方が動いていないことを停止の条件にする。
+    if (matchRateStagnant) {
+      if (perceptible === undefined) {
+        return await stopAndReset(
+          `収束が停滞しています (直近2回の matchRate 変化 ${delta2.toFixed(2)}pt → ${delta1.toFixed(2)}pt、いずれも ${STAGNATION_DELTA}pt 未満)。修正が効いていないため、自動修正を止めて人間に報告してください。`,
+        );
+      }
+      const pDelta1 = Math.abs(perceptible.signed1);
+      const pDelta2 = Math.abs(perceptible.signed2);
+      if (pDelta1 < PERCEPTIBLE_STAGNATION_DELTA && pDelta2 < PERCEPTIBLE_STAGNATION_DELTA) {
+        return await stopAndReset(
+          `収束が停滞しています (matchRate の変化 ${delta2.toFixed(2)}pt → ${delta1.toFixed(2)}pt、人が見て分かる差の変化 ${formatRatio(pDelta2)} → ${formatRatio(pDelta1)}。どちらも動いていません)。修正が効いていないため、自動修正を止めて人間に報告してください。`,
+        );
+      }
+      return {
+        iteration,
+        decision: "continue",
+        reason: `反復 ${iteration}/${MAX_LOOP_ITERATIONS} 回。matchRate は止まっていますが、人が見て分かる差は ${formatRatio(perceptible.values[0])} → ${formatRatio(perceptible.values[2])} と動いています。修正は効いているので続行できます。`,
+      };
     }
   }
 

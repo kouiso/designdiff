@@ -7,13 +7,46 @@ import { getCaptureCacheDir } from "../util/figdiff-paths.js";
 export interface CaptureOptions {
   width: number;
   height?: number;
+  /**
+   * 動的コンテンツ検出のために2回撮る。時計・カウンタ・カルーセルのような
+   * 撮るたびに変わる要素を、実装の誤りと切り分けるため。
+   */
+  detectDynamic?: boolean;
+  /** 追加サンプル1枚ごとの待ち (ms)。既定 DEFAULT_DYNAMIC_SAMPLE_DELAY_MS。 */
+  dynamicSampleDelayMs?: number;
+  /** 追加で撮る枚数。既定 DEFAULT_DYNAMIC_SAMPLE_COUNT。 */
+  dynamicSampleCount?: number;
 }
 
 export interface CaptureResult {
   screenshotPath: string;
   width: number;
   height: number;
+  /**
+   * detectDynamic 指定時のみ。追加サンプルのパス一覧。
+   * 突き合わせは呼び出し側 (画像を読む責務を持つ層) が行う。
+   */
+  dynamicSamplePaths?: string[];
 }
+
+/**
+ * 既定の2回目撮影までの待ち時間 (ms)。
+ *
+ * 1秒境界を必ず跨ぐ長さにしている。1秒未満だと秒単位で更新される時計の
+ * 「秒の桁」が2枚とも同じ値になり、ミリ秒の桁しかマスクされない。
+ * 実測 (800px 幅の時計ページ): 700ms は覆う面積 3,072px、1,200ms は 6,912px。
+ * 取りこぼした桁は毎回差分に出続けるので、自走ループが収束しなくなる。
+ */
+export const DEFAULT_DYNAMIC_SAMPLE_DELAY_MS = 1_200;
+
+/**
+ * 既定の追加サンプル枚数。
+ *
+ * 1枚だけだと「その間隔で動いた部分」しか取れない。更新周期の違う要素
+ * (秒表示とミリ秒表示、数秒ごとに切り替わるカルーセル) を取りこぼす。
+ * 2枚に増やして和を取ると、間隔の異なる2つの窓を見ることになる。
+ */
+export const DEFAULT_DYNAMIC_SAMPLE_COUNT = 2;
 
 export function getCaptureDir(): string {
   return getCaptureCacheDir();
@@ -70,6 +103,7 @@ export async function captureUrl(url: string, options: CaptureOptions): Promise<
     // 両方をCDP経由で行う。captureBeyondViewportによりビューポート外も取得できる。
     const client = await page.context().newCDPSession(page);
     let contentHeight: number;
+    let dynamicSamplePaths: string[] | undefined;
     try {
       if (!(options.width > 0)) {
         throw new Error(`キャプチャ幅が不正です (width=${options.width})。`);
@@ -82,20 +116,40 @@ export async function captureUrl(url: string, options: CaptureOptions): Promise<
         );
       }
       contentHeight = Math.ceil(rawHeight);
-      const shot = await client.send("Page.captureScreenshot", {
-        format: "png",
-        clip: { x: 0, y: 0, width: options.width, height: contentHeight, scale: 1 },
-        captureBeyondViewport: true,
-      });
-      if (!shot?.data) {
-        throw new Error("CDP Page.captureScreenshot did not return image data");
+
+      const shootTo = async (outPath: string): Promise<void> => {
+        const shot = await client.send("Page.captureScreenshot", {
+          format: "png",
+          clip: { x: 0, y: 0, width: options.width, height: contentHeight, scale: 1 },
+          captureBeyondViewport: true,
+        });
+        if (!shot?.data) {
+          throw new Error("CDP Page.captureScreenshot did not return image data");
+        }
+        await fs.writeFile(outPath, Buffer.from(shot.data, "base64"));
+      };
+
+      await shootTo(screenshotPath);
+
+      if (options.detectDynamic === true) {
+        // 同じページ・同じレイアウトのまま少し待ってもう一度撮る。
+        // 遷移し直すと広告やレイアウトごと変わり、動的要素の切り分けにならない。
+        const delay = options.dynamicSampleDelayMs ?? DEFAULT_DYNAMIC_SAMPLE_DELAY_MS;
+        const sampleCount = options.dynamicSampleCount ?? DEFAULT_DYNAMIC_SAMPLE_COUNT;
+        const paths: string[] = [];
+        for (let i = 0; i < sampleCount; i++) {
+          await page.waitForTimeout(delay);
+          const samplePath = path.join(captureDir, `capture-${id}-sample-${i}.png`);
+          await shootTo(samplePath);
+          paths.push(samplePath);
+        }
+        dynamicSamplePaths = paths.length > 0 ? paths : undefined;
       }
-      await fs.writeFile(screenshotPath, Buffer.from(shot.data, "base64"));
     } finally {
       await client.detach();
     }
 
-    return { screenshotPath, width: options.width, height: contentHeight };
+    return { screenshotPath, width: options.width, height: contentHeight, dynamicSamplePaths };
   };
 
   if (cdpEndpoint === undefined) {
