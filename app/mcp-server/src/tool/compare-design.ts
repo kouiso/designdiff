@@ -49,6 +49,9 @@ const DESCRIPTION = `デザインと実装のピクセル差分を検出しま�
 - mask_system_ui: モバイル実機/Simulator撮影のOSステータスバー/ナビゲーションバーを自動マスクするか。capture_device指定時は既定true、それ以外は既定false。set_ignore_regionsで追加の微調整が可能
 - auto_mask_dynamic: screenshot_url経路で同じページを2回撮り、変わった領域を自動マスクする（既定true）。時計/カウンタ/カルーセル等が毎回差分に出て収束しなくなるのを防ぐ
 
+## 実機スクショの帯
+capture_device 指定時は、画面上下のべた塗り帯（開発時のトースト/スナックバーの可能性）を検出し、set_ignore_regions のコマンド付きで候補として出します。自動では除外しません。デザイン側にも同じ帯がある場合は意図した要素なので、マスクしないでください。
+
 ## Figma URLの例
   "https://www.figma.com/design/ABC123/File?node-id=1-23"
   "https://www.figma.com/design/ABC123/File"
@@ -135,6 +138,7 @@ export function buildSummaryText(result: CompareDesignResult): string {
 
   lines.push(...buildPreflightWarningLines(result));
   lines.push(...buildNormalizationLines(result));
+  lines.push(...buildToastBandLines(result));
   lines.push(...buildMaskCandidateLines(result));
 
   return lines.join("\n");
@@ -163,6 +167,29 @@ function buildLoopGuardLines(result: CompareDesignResult): string[] {
       : `反復 ${guard.iteration} 回目 / 上限 ${MAX_LOOP_ITERATIONS}`;
   // 区切りの空行は後続セクションが自分の前に足す規約なので、ここでは足さない。
   return [`ループ判定: ${verdict} (${progress})`, guard.reason];
+}
+
+// 実機スクショの帯 (開発時のトースト等) は、比較対象の画面と無関係やのに
+// 毎回差分に乗る。自動では消さず、そのまま貼れるコマンドとして提案する。
+function buildToastBandLines(result: CompareDesignResult): string[] {
+  const candidates = result.toastBandCandidates ?? [];
+  if (candidates.length === 0) return [];
+
+  const lines = [
+    "",
+    "帯のマスク候補（実機のトースト/スナックバーの可能性・自動では除外していません）:",
+  ];
+  for (const [index, candidate] of candidates.entries()) {
+    const where = candidate.position === "top" ? "画面上部" : "画面下部";
+    lines.push(
+      `  - ${where} {x:${candidate.x},y:${candidate.y},w:${candidate.width},h:${candidate.height}} (周囲との明るさの差 ${candidate.contrast})`,
+    );
+    lines.push(
+      `    → set_ignore_regions(label:"device-band-${index + 1}", x:${candidate.x}, y:${candidate.y}, width:${candidate.width}, height:${candidate.height})`,
+    );
+  }
+  lines.push("  デザイン側にも同じ帯がある場合は、意図した要素なのでマスクしないでください。");
+  return lines;
 }
 
 function buildMaskCandidateLines(result: CompareDesignResult): string[] {

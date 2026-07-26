@@ -399,6 +399,15 @@ export const LoopGuardReportSchema = z.object({
   reason: z.string(),
 });
 
+export const ToastBandCandidateSchema = z.object({
+  x: z.number().nonnegative(),
+  y: z.number().nonnegative(),
+  width: z.number().positive(),
+  height: z.number().positive(),
+  contrast: z.number().nonnegative(),
+  position: z.enum(["top", "bottom"]),
+});
+
 export const CompareDesignResultSchema = z.object({
   // UNCERTAIN: 判定の確からしさを損なう条件 (設定ミス疑い / 構造判定 inconclusive)
   // が検出された状態。PASS でも FAIL でもなく「人間のレビューが必要」を意味する。
@@ -426,6 +435,9 @@ export const CompareDesignResultSchema = z.object({
   diagnosis: ComparisonDiagnosisSchema.optional(),
   comparisonHeadline: ComparisonHeadlineSchema.optional(),
   loopGuard: LoopGuardReportSchema.optional(),
+  // 実機スクショに写り込む帯 (開発時のトースト等) のマスク候補。
+  // 自動では適用しない。画素だけではトーストと正しい暗色帯を区別できないため。
+  toastBandCandidates: z.array(ToastBandCandidateSchema).optional(),
   diffImagePath: z.string().optional(),
   diffImageBase64: z.string().optional(),
 });

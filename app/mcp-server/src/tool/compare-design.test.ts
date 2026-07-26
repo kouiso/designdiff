@@ -148,3 +148,38 @@ describe("buildSummaryText — loop guard", () => {
     expect(firstLine).toContain("取得できません");
   });
 });
+
+describe("帯のマスク候補の出力", () => {
+  it("候補が無ければ何も出さない", () => {
+    expect(buildSummaryText(makeResult())).not.toContain("帯のマスク候補");
+  });
+
+  it("候補があれば、そのまま貼れるコマンド付きで出す", () => {
+    const text = buildSummaryText(
+      makeResult({
+        toastBandCandidates: [
+          { x: 0, y: 2200, width: 1080, height: 120, contrast: 180, position: "bottom" },
+        ],
+      }),
+    );
+
+    expect(text).toContain("帯のマスク候補");
+    expect(text).toContain("画面下部");
+    expect(text).toContain("set_ignore_regions");
+    expect(text).toContain("x:0");
+    expect(text).toContain("h:120");
+  });
+
+  it("自動では除外していないことを明示する", () => {
+    const text = buildSummaryText(
+      makeResult({
+        toastBandCandidates: [
+          { x: 0, y: 0, width: 1080, height: 90, contrast: 200, position: "top" },
+        ],
+      }),
+    );
+
+    expect(text).toContain("自動では除外していません");
+    expect(text).toContain("画面上部");
+  });
+});

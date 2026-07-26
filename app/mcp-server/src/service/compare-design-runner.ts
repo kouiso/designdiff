@@ -11,6 +11,7 @@ import {
   buildSystemBarIgnoreRegions,
   CompareDesignResultSchema,
   detectDynamicRegionsAcrossSamples,
+  detectToastBands,
   diagnoseComparison,
   formatFrameCandidates,
   normalizeNodeId,
@@ -29,6 +30,7 @@ import {
   type IgnoreRegion,
   type LoopGuardReport,
   type PreflightWarning,
+  type ToastBandCandidate,
 } from "@figdiff/shared";
 
 import {
@@ -587,6 +589,49 @@ async function resolveScreenshotPath(
   };
 }
 
+/** 候補がいずれかのマスクへ完全に収まっているか。 */
+function isCoveredBy(
+  candidate: { x: number; y: number; width: number; height: number },
+  regions: readonly IgnoreRegion[],
+): boolean {
+  return regions.some(
+    (region) =>
+      candidate.x >= region.x &&
+      candidate.y >= region.y &&
+      candidate.x + candidate.width <= region.x + region.width &&
+      candidate.y + candidate.height <= region.y + region.height,
+  );
+}
+
+/**
+ * 実機スクショに写り込む帯 (開発時のトースト等) をマスク候補として拾う。
+ * 自動では適用しない。画素だけではトーストと正しい暗色帯を区別できないため、
+ * 提案に留めて採否は人とループの判断に委ねる。
+ */
+async function detectToastBandCandidates(
+  screenshotPath: string,
+  enabled: boolean,
+  alreadyMasked: readonly IgnoreRegion[],
+): Promise<ToastBandCandidate[]> {
+  if (!enabled) return [];
+  try {
+    const { data, info } = await sharp(screenshotPath)
+      .ensureAlpha()
+      .raw()
+      .toBuffer({ resolveWithObject: true });
+    // 既にマスク済みの帯 (OSのステータスバー等) を候補に出すと、
+    // 同じ場所を二重に提案することになって読み手が混乱する。
+    return detectToastBands(data, info.width, info.height).filter(
+      (candidate) => !isCoveredBy(candidate, alreadyMasked),
+    );
+  } catch (error) {
+    console.warn(
+      `[compare-design] トースト帯の検出に失敗しました: ${error instanceof Error ? error.message : String(error)}`,
+    );
+    return [];
+  }
+}
+
 /**
  * 動的領域は crop 前の生スクショ座標で出る。ignore_regions の座標系は crop 適用後
  * なので、crop の原点ぶん平行移動して crop 矩形でクリップする。はみ出したものは捨てる。
@@ -989,6 +1034,13 @@ export async function runCompareDesign(
     ...shiftRegionsIntoCropSpace(dynamicIgnoreRegions, cropRegion),
   ];
 
+  // 既に適用したマスクが分かってから候補を出す。二重の提案を避けるため。
+  const toastBandCandidates = await detectToastBandCandidates(
+    screenshotPath,
+    args.capture_device !== undefined,
+    ignoreRegions,
+  );
+
   const comparison = await compareImages(
     {
       designBase64,
@@ -1153,6 +1205,7 @@ export async function runCompareDesign(
     comparisonHeadline,
     diagnosis,
     loopGuard,
+    toastBandCandidates: toastBandCandidates.length > 0 ? toastBandCandidates : undefined,
   });
 
   await recordComparison({

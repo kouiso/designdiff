@@ -67,6 +67,11 @@ export {
   type DetectDynamicRegionsOptions,
   type DynamicRegion,
 } from "./signal/dynamic-region.js";
+export {
+  detectToastBands,
+  type DetectToastBandsOptions,
+  type ToastBandCandidate,
+} from "./signal/toast-band.js";
 export { selfCritique } from "./self-critique.js";
 
 // Comparison Confidence Layer (pre-flight / diagnosis / headline)
