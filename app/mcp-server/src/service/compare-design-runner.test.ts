@@ -163,6 +163,20 @@ describe("resolveAutoCrop", () => {
     expect(result).toBeUndefined();
   });
 
+  // 撮影幅の許容は 2px、crop 範囲判定の許容は 1px。フレーム幅をそのまま crop に
+  // すると、2px 狭いスクショで生成した crop が範囲外と判定される。
+  it("スクショがフレームより狭い場合は実寸法に収める", async () => {
+    const screenshot = await makeScreenshot(98, 150, "blank", 100);
+    const result = await resolveAutoCrop(
+      undefined,
+      { width: 100, height: 100 },
+      98,
+      150,
+      screenshot,
+    );
+    expect(result).toEqual({ x: 0, y: 0, width: 98, height: 100 });
+  });
+
   it("手動cropRegionが既にある場合は自動cropしない", async () => {
     const manual = { x: 10, y: 20, width: 100, height: 200 };
     const screenshot = await makeScreenshot(100, 150, "blank", 100);

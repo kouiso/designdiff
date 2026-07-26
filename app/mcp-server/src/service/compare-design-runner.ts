@@ -657,7 +657,15 @@ export async function resolveAutoCrop(
   if (!isBlank) {
     return undefined;
   }
-  return { x: 0, y: 0, width: figmaFrameBox.width, height: figmaFrameBox.height };
+  // 撮影幅は Figma フレーム幅と最大 2px までズレても受け入れる。フレーム幅を
+  // そのまま crop にすると、その分だけ画像をはみ出して範囲外と判定される。
+  // 生成側で実寸法に収める。
+  return {
+    x: 0,
+    y: 0,
+    width: Math.min(figmaFrameBox.width, screenshotWidth),
+    height: Math.min(figmaFrameBox.height, screenshotHeight),
+  };
 }
 
 // comparison.normalization の screenshotWidth/Height は常に crop 適用前の
