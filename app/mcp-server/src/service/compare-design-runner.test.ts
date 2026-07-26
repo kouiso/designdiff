@@ -302,6 +302,7 @@ describe("runCompareDesign", () => {
     aggregateVerdict: "pass" | "fail" | "inconclusive",
     diffPixelCount: number,
     matchRate: number,
+    perceptibleDiffRatio = 0,
     extraArgs: Partial<CompareDesignRunArgs> = {},
   ) {
     tmpRoot = await fs.mkdtemp(path.join(process.cwd(), "tmp-figdiff-runner-"));
@@ -348,6 +349,7 @@ describe("runCompareDesign", () => {
         },
         aggregateVerdict,
         rationale: `structural ${aggregateVerdict}`,
+        perceptibleDiffRatio,
       },
       normalization: {
         designNativeWidth: 390,
@@ -839,8 +841,10 @@ describe("runCompareDesign", () => {
 
     // 構造判定が inconclusive = 判定の確からしさ自体が欠けた状態。
     // FAIL (直せ) でも PASS (合格) でもなく UNCERTAIN (人間レビュー) を返す。
+    // 行の status も UNCERTAIN で揃える。FAIL と書くと「直せば PASS になる」と
+    // 読まれ、直しようのないものを直し続ける指示になる。
     expect(result.status).toBe("UNCERTAIN");
-    expect(result.completionCriteria?.structuralReview.status).toBe("FAIL");
+    expect(result.completionCriteria?.structuralReview.status).toBe("UNCERTAIN");
     expect(result.completionCriteria?.structuralReview.current).toBe(0);
   });
 
@@ -853,7 +857,9 @@ describe("runCompareDesign", () => {
       updatedAt: "2026-01-01T00:00:00.000Z",
     });
 
-    const { result } = await runLocalStructuralComparison("pass", 0, 100, { project_id: "proj-1" });
+    const { result } = await runLocalStructuralComparison("pass", 0, 100, 0, {
+      project_id: "proj-1",
+    });
 
     // compareImages はモックなので status を根拠にしない。ここで確かめるのは
     // 「crop 前の実寸法が preflight まで届いているか」という配線だけ。
@@ -861,6 +867,60 @@ describe("runCompareDesign", () => {
     const warning = result.preflight?.warnings.find((w) => w.code === "crop_out_of_bounds");
     expect(warning?.severity).toBe("critical");
     expect(warning?.message).toContain("390x844");
+  });
+
+  // #269 の安全網。判定器が pass と言っているのに画面の大半が目に見えて違うなら、
+  // どちらかが嘘なので PASS を出さず人間レビューへ回す。
+  // 証拠は matchRate ではなく perceptibleDiffRatio。前者は pixelmatch の threshold と
+  // profile で動くため、判定側の都合で審判が変わってしまう。
+  it("routes a pass verdict to human review when most pixels differ visibly", async () => {
+    const { result } = await runLocalStructuralComparison("pass", 324000, 0, 0.96);
+
+    expect(result.status).toBe("UNCERTAIN");
+    expect(result.completionCriteria?.consistencyReview.status).toBe("UNCERTAIN");
+    expect(result.completionCriteria?.consistencyReview.blocking).toBe(true);
+    expect(result.completionCriteria?.consistencyReview.note).toContain("human review");
+  });
+
+  // 呼び出し側は nextAction に従うよう案内されている。status が人間レビューを
+  // 指しているのに nextAction が「完了を確認せよ」と言う状態を作らない。
+  it("points nextAction and suggestion at human review on the same contradiction", async () => {
+    const { result } = await runLocalStructuralComparison("pass", 324000, 0, 0.96);
+
+    expect(result.nextAction).toContain("人間に報告");
+    expect(result.suggestion).toContain("矛盾");
+  });
+
+  it("keeps a pass verdict when the visible evidence backs it up", async () => {
+    const { result } = await runLocalStructuralComparison("pass", 0, 100, 0);
+
+    expect(result.status).toBe("PASS");
+    expect(result.completionCriteria?.consistencyReview.status).toBe("PASS");
+    expect(result.completionCriteria?.consistencyReview.blocking).toBe(false);
+  });
+
+  // 描画エンジン差で全画素が 1 段ずれても ΔE は知覚の境目 (2) を超えない。
+  // matchRate を審判にしていた頃は strict profile でここが 0% に落ちて誤発火した。
+  it("does not fire when every pixel differs but none of it is visible", async () => {
+    const { result } = await runLocalStructuralComparison("pass", 324000, 0, 0);
+
+    expect(result.status).toBe("PASS");
+    expect(result.completionCriteria?.consistencyReview.status).toBe("PASS");
+  });
+
+  // 過半に届かない見える差は、既存の色/構造の判定が扱う領分。
+  it("does not fire below the contradiction ratio", async () => {
+    const { result } = await runLocalStructuralComparison("pass", 10000, 80, 0.4);
+
+    expect(result.status).toBe("PASS");
+  });
+
+  // fail 側は元から人間へ回す必要がない。整合ゲートは pass のときだけ働く。
+  it("leaves a fail verdict alone", async () => {
+    const { result } = await runLocalStructuralComparison("fail", 324000, 0, 0.96);
+
+    expect(result.status).toBe("FAIL");
+    expect(result.completionCriteria?.consistencyReview.status).toBe("PASS");
   });
 
   it("always marks structuralReview as blocking", async () => {

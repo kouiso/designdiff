@@ -30,8 +30,8 @@ const DESCRIPTION = `デザインと実装のピクセル差分を検出しま�
 
 ## 出力の読み方
 - ループ判定: 2つ目のテキストブロック先頭。停止 / 続行 / 取得できません。status より優先する。取得できません は停止として扱う
-- status: "PASS" = 構造SSIM判定上の完了。"FAIL" = 修正またはレビューが必要
-- completionCriteria: blocking=true の項目が "PASS" になるまで作業を続行。matchRate は参考値
+- status: "PASS" = 構造SSIM判定上の完了。"FAIL" = 修正が必要。"UNCERTAIN" = 判定の確からしさが足りず人間レビューへ回った状態。失敗ではないので直そうとせず報告すること
+- completionCriteria: blocking=true の項目が "PASS" になるまで作業を続行。ただし status が "UNCERTAIN" の項目は直しても "PASS" にならないので、そこで止めて人間に報告する。matchRate は参考値
 - nextAction: 次に実行すべきアクション（従うこと）
 - diffImagePath: 差分画像のローカルパス。Read ツールで開いて視覚確認できる（~/.figdiff/results/ に保存）
 - diffRegions: 差分領域。レスポンス肥大化を防ぐため上位20件のみ。全件は regionsDetailPath のJSONファイルを参照

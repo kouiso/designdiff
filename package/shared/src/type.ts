@@ -210,6 +210,9 @@ export interface DiffReport {
   weightedAggregate?: WeightedAggregate;
   aggregateVerdict: DiffVerdict;
   rationale: string;
+  // 知覚できる差 (ΔE2000 > 2) を持つ画素の割合 (0..1)。
+  // pixelmatch の threshold にも profile にも依存しない独立した証拠。
+  perceptibleDiffRatio?: number;
 }
 
 export type CritiqueNote = z.infer<typeof CritiqueNoteSchema>;

@@ -156,6 +156,110 @@ describe("generateMarkdownReport", () => {
   });
 });
 
+// Markdown だけを見た読み手が、人間レビューへ回った比較を PASS と読んでしまわないこと。
+describe("generateMarkdownReport — 整合ゲートの表示", () => {
+  const uncertainResult = (): CompareDesignResult =>
+    makeResult({
+      status: "UNCERTAIN",
+      completionCriteria: {
+        structuralReview: { required: 1, current: 1, status: "PASS", blocking: true },
+        consistencyReview: {
+          required: 0.5,
+          current: 0.96,
+          status: "UNCERTAIN",
+          blocking: true,
+          note: "routed to human review",
+        },
+        matchRate: { required: 100, current: 98.5, status: "FAIL", blocking: false },
+        diffPixelCount: { required: 0, current: 150, status: "PASS", blocking: false },
+        remainingIssues: { required: 0, current: 0, status: "PASS", blocking: false },
+      },
+      diffReport: {
+        alignment: {
+          translation: { x: 0, y: 0 },
+          scale: { x: 1, y: 1 },
+          rotation: 0,
+          confidence: 1,
+          residual: 0,
+        },
+        regionScores: [],
+        issues: [],
+        aggregateVerdict: "pass",
+        rationale: "structural pass",
+        perceptibleDiffRatio: 0.96,
+      },
+    });
+
+  it("shows the final status so the table cannot read as PASS", () => {
+    const markdown = generateMarkdownReport(uncertainResult());
+
+    expect(markdown).toContain("| Final Status | PASS | UNCERTAIN | UNCERTAIN |");
+    // 本 PR の中心シナリオ。構造レビュー自体は PASS のまま、整合行だけが
+    // UNCERTAIN になる。Diff Verdict 行が PASS を出しても、最終 status と
+    // 整合行が別に UNCERTAIN を示すので表として矛盾しない。この形を固定する。
+    expect(markdown).toContain("| Diff Verdict | pass | pass | PASS |");
+  });
+
+  it("status を持たない古い履歴では構造レビュー結果へ落とす", () => {
+    const markdown = generateMarkdownReport(
+      makeResult({
+        completionCriteria: {
+          structuralReview: { required: 1, current: 0, status: "FAIL", blocking: true },
+          matchRate: { required: 100, current: 98.5, status: "FAIL", blocking: false },
+          diffPixelCount: { required: 0, current: 150, status: "PASS", blocking: false },
+          remainingIssues: { required: 0, current: 0, status: "PASS", blocking: false },
+        },
+      }),
+    );
+
+    expect(markdown).toContain("| Final Status | PASS | FAIL | FAIL |");
+    expect(markdown).not.toContain("undefined");
+  });
+
+  it("status も completionCriteria も無ければ行ごと出さない", () => {
+    const markdown = generateMarkdownReport(makeResult());
+
+    expect(markdown).not.toContain("Final Status");
+    expect(markdown).not.toContain("undefined");
+  });
+
+  it("shows the consistency review row", () => {
+    const markdown = generateMarkdownReport(uncertainResult());
+
+    expect(markdown).toContain("| Consistency Review |");
+    expect(markdown).toContain("0.96");
+  });
+
+  it("does not let the structural row claim PASS on its own", () => {
+    const markdown = generateMarkdownReport(
+      makeResult({
+        status: "UNCERTAIN",
+        completionCriteria: {
+          structuralReview: { required: 1, current: 0, status: "UNCERTAIN", blocking: true },
+          matchRate: { required: 100, current: 98.5, status: "FAIL", blocking: false },
+          diffPixelCount: { required: 0, current: 150, status: "PASS", blocking: false },
+          remainingIssues: { required: 0, current: 0, status: "PASS", blocking: false },
+        },
+        diffReport: {
+          alignment: {
+            translation: { x: 0, y: 0 },
+            scale: { x: 1, y: 1 },
+            rotation: 0,
+            confidence: 1,
+            residual: 0,
+          },
+          regionScores: [],
+          issues: [],
+          aggregateVerdict: "inconclusive",
+          rationale: "structural inconclusive",
+        },
+      }),
+    );
+
+    expect(markdown).toContain("| Diff Verdict | pass | inconclusive | UNCERTAIN |");
+  });
+});
+
 describe("generateJsonReport", () => {
   it("returns valid JSON", () => {
     const result = makeResult();

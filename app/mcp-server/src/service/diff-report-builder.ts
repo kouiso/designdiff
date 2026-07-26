@@ -2,6 +2,7 @@ import {
   compareFlatRegionColor,
   computeHausdorff,
   computeMeanDeltaE2000,
+  computePerceptibleDiffRatio,
   computeSsimForRegion,
   computeVerdict,
   detectHighTextureRegion,
@@ -27,6 +28,10 @@ interface BuildDiffReportOptions {
   screenshotPixels: Uint8ClampedArray;
   width: number;
   height: number;
+  // 比較の対象外に置いた画素 (1 = 対象外)。矛盾判定の分母から外す。
+  ignoreMask?: Uint8Array;
+  // 見える差のあった画素を 1 で書き込む先。人間レビューへ回すときの証拠に使う。
+  perceptibleMask?: Uint8Array;
   figmaRootNode?: FigmaNode;
   figmaFileKey?: string;
   figmaNodeId?: string;
@@ -578,7 +583,7 @@ const GLOBAL_SHIFT_ISSUE_THRESHOLD_PX = 2;
 const GLOBAL_SHIFT_CRITICAL_THRESHOLD_PX = 10;
 
 export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
-  const { designPixels, screenshotPixels, width, height } = options;
+  const { designPixels, screenshotPixels, width, height, paddingMask } = options;
 
   const expectedLength = width * height * 4;
   if (designPixels.length < expectedLength || screenshotPixels.length < expectedLength) {
@@ -677,6 +682,25 @@ export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
 
   const verdict = computeVerdict({ alignment, regionScores, issues });
 
+  // 判定と独立した証拠。ただし矛盾を疑うのは「判定が pass」のときだけなので、
+  // それ以外では走査そのものを行わない。全画素が違う比較 (= fail になる比較) で
+  // 最も高くつく計算を、使わないまま回さないため。
+  let perceptibleDiffRatio: number | undefined;
+  if (verdict.verdict === "pass") {
+    // letterbox の余白は評価から外す。
+    const evaluated = toContentRegion(width, height, paddingMask);
+    perceptibleDiffRatio = computePerceptibleDiffRatio(
+      alignedDesignPixels,
+      screenshotPixels,
+      evaluated.x,
+      evaluated.y,
+      evaluated.x + evaluated.w,
+      evaluated.y + evaluated.h,
+      width,
+      { ignoreMask: options.ignoreMask, outMask: options.perceptibleMask },
+    );
+  }
+
   return {
     alignment,
     regionScores,
@@ -684,5 +708,6 @@ export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
     weightedAggregate: verdict.weightedAggregate,
     aggregateVerdict: verdict.verdict,
     rationale: verdict.rationale,
+    perceptibleDiffRatio,
   };
 }

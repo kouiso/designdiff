@@ -14,6 +14,10 @@ const VerifyFixResultSchema = z.object({
   colorDelta: z.number(),
   shapeDelta: z.number(),
   verdict: z.enum(["improved", "unchanged", "regressed"]),
+  // verdict は対象ノードが良くなったかだけを答える。比較そのものが信用できるかは
+  // 別の問いなので、runner の status をそのまま持ち上げる。局所的な改善で
+  // 人間レビュー行きの比較を握り潰さないため。
+  comparisonStatus: z.enum(["PASS", "FAIL", "UNCERTAIN"]),
   sideEffects: z.array(
     z.object({
       nodeId: z.string(),
@@ -24,6 +28,16 @@ const VerifyFixResultSchema = z.object({
 
 const DESCRIPTION =
   "compare_design の前回比較と今回比較を突き合わせ、指定ノードが本当に改善したかと他セクションへの副作用を検証します。project_id 指定時は保存済み ignore_regions も適用します。";
+
+// 比較全体が人間レビューへ回っているなら、対象ノードが良くなっていても PASS と
+// 書かない。書くとセッションカードだけが合格を主張する。
+export function resolveSessionStatus(
+  comparisonStatus: "PASS" | "FAIL" | "UNCERTAIN",
+  verdict: "improved" | "unchanged" | "regressed",
+): "PASS" | "FAIL" | "UNCERTAIN" {
+  if (comparisonStatus === "UNCERTAIN") return "UNCERTAIN";
+  return verdict === "improved" ? "PASS" : "FAIL";
+}
 
 function findRegion(regions: RegionScore[], targetNodeId: string): RegionScore | undefined {
   return regions.find((region) => (region.figmaNodeId ?? region.regionId) === targetNodeId);
@@ -193,6 +207,7 @@ export function registerVerifyFix(server: McpServer): void {
             previousRegion.color,
             currentRegion.color,
           ),
+          comparisonStatus: comparison.result.status,
           sideEffects,
         });
 
@@ -203,7 +218,10 @@ export function registerVerifyFix(server: McpServer): void {
             implementationUrl: undefined,
             designSource: args.design_source,
             matchRate: comparison.result.matchRate,
-            status: structuredContent.verdict === "improved" ? "PASS" : "FAIL",
+            status: resolveSessionStatus(
+              structuredContent.comparisonStatus,
+              structuredContent.verdict,
+            ),
             updatedAt: Date.now(),
           });
         } catch {
