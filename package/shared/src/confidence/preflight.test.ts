@@ -200,6 +200,66 @@ describe("runPreflight", () => {
     expect(report.warnings.find((w) => w.code === "crop_stale")).toBeDefined();
   });
 
+  // 自動 crop は今回の比較のために計算したもの。design フレームより背の高い
+  // スクショから切り出す形は正常で、ここで警告すると設定ミス扱いされてしまう。
+  it("自動 crop には古さ判定を当てない", () => {
+    const report = runPreflight({
+      screenshotWidth: 1512,
+      screenshotHeight: 100,
+      rawScreenshotWidth: 1512,
+      rawScreenshotHeight: 200,
+      cropRegion: { x: 0, y: 0, width: 1512, height: 100 },
+      cropOrigin: "auto",
+    });
+
+    expect(report.warnings.find((w) => w.code === "crop_stale")).toBeUndefined();
+  });
+
+  it("保存済み crop なら同じ形で古さ判定が出る", () => {
+    const report = runPreflight({
+      screenshotWidth: 1512,
+      screenshotHeight: 100,
+      rawScreenshotWidth: 1512,
+      rawScreenshotHeight: 200,
+      cropRegion: { x: 0, y: 0, width: 1512, height: 100 },
+      cropOrigin: "persisted",
+    });
+
+    expect(report.warnings.find((w) => w.code === "crop_stale")).toBeDefined();
+  });
+
+  // CropRegionSchema は非負・正の寸法を保証するが、runPreflight は共有パッケージの
+  // 公開関数で、この入力型はその制約を持たない。
+  it("左端・上端の範囲外も範囲外として扱う", () => {
+    const report = runPreflight({
+      screenshotWidth: 1512,
+      screenshotHeight: 900,
+      rawScreenshotWidth: 1512,
+      rawScreenshotHeight: 900,
+      cropRegion: { x: -10, y: -10, width: 100, height: 100 },
+    });
+
+    expect(report.warnings.find((w) => w.code === "crop_out_of_bounds")?.severity).toBe("critical");
+  });
+
+  it("矩形として成立しない寸法も範囲外として扱う", () => {
+    for (const cropRegion of [
+      { x: 0, y: 0, width: 0, height: 100 },
+      { x: 0, y: 0, width: 100, height: -5 },
+      { x: Number.NaN, y: 0, width: 100, height: 100 },
+    ]) {
+      const report = runPreflight({
+        screenshotWidth: 1512,
+        screenshotHeight: 900,
+        rawScreenshotWidth: 1512,
+        rawScreenshotHeight: 900,
+        cropRegion,
+      });
+
+      expect(report.warnings.find((w) => w.code === "crop_out_of_bounds")).toBeDefined();
+    }
+  });
+
   it("実寸法に収まる crop では何も出さない", () => {
     const report = runPreflight({
       screenshotWidth: 1512,

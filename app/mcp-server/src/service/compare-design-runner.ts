@@ -866,6 +866,9 @@ export async function runCompareDesign(
         ? "screenshot_url"
         : "screenshot",
     cropRegion,
+    // 自動 crop は今回の比較のために計算したもの。保存済み crop 向けの
+    // 「古い設定が残っている」警告を当てない。
+    cropOrigin: manualCropRegion ? "persisted" : "auto",
     cropUpdatedAt,
     figmaChildCount: figmaRootNode?.children?.length,
     figmaNodeType: figmaRootNode?.type,

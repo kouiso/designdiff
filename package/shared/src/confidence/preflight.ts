@@ -17,6 +17,9 @@ export interface PreflightInput {
   figmaLogicalFrameWidth?: number;
   screenshotSource?: "screenshot" | "screenshot_url" | "capture_device";
   cropRegion?: { x: number; y: number; width: number; height: number };
+  // 保存済み crop か、FigDiff がその場で計算した自動 crop か。
+  // 「古い設定が残っている」という警告は保存済みにしか意味がない。
+  cropOrigin?: "persisted" | "auto";
   cropUpdatedAt?: string;
   figmaChildCount?: number;
   figmaNodeType?: string;
@@ -217,7 +220,20 @@ export function runPreflight(input: PreflightInput): PreflightReport {
     // 退化する。保存 crop は x=0 で作られるため永久に発火しなくなる。
     const rawWidth = input.rawScreenshotWidth ?? input.screenshotWidth;
     const rawHeight = input.rawScreenshotHeight ?? input.screenshotHeight;
+    // CropRegionSchema は非負・正の寸法を保証するが、runPreflight は共有パッケージの
+    // 公開関数で、この入力型はその制約を持たない。矩形として成立しない値も
+    // 「範囲外」として扱う。
+    const isMalformed =
+      !Number.isFinite(x) ||
+      !Number.isFinite(y) ||
+      !Number.isFinite(width) ||
+      !Number.isFinite(height) ||
+      x < -CROP_BOUNDS_TOLERANCE_PX ||
+      y < -CROP_BOUNDS_TOLERANCE_PX ||
+      width <= 0 ||
+      height <= 0;
     if (
+      isMalformed ||
       x + width > rawWidth + CROP_BOUNDS_TOLERANCE_PX ||
       y + height > rawHeight + CROP_BOUNDS_TOLERANCE_PX
     ) {
@@ -228,7 +244,14 @@ export function runPreflight(input: PreflightInput): PreflightReport {
         suggestedFix:
           "set_crop_region で更新するか、project_id を外して crop なしで比較してください。",
       });
-    } else if (rawHeight > 0 && height < rawHeight * STALE_CROP_HEIGHT_RATIO) {
+    } else if (
+      // 自動 crop は今回の比較のために計算したものなので「古い設定が残っている」に
+      // あたらない。design フレームより背の高いスクショから切り出す形は正常で、
+      // ここで警告すると設定ミス扱いされて UNCERTAIN へ倒れる。
+      input.cropOrigin !== "auto" &&
+      rawHeight > 0 &&
+      height < rawHeight * STALE_CROP_HEIGHT_RATIO
+    ) {
       const setOn = input.cropUpdatedAt ? `（設定日時: ${input.cropUpdatedAt}）` : "";
       const stalePercent = Math.round(STALE_CROP_HEIGHT_RATIO * PERCENT);
       warnings.push({

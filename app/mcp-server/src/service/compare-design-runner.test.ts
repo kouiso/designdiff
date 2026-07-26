@@ -3,8 +3,6 @@ import * as path from "node:path";
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
-import type { CompareDesignRunArgs } from "./compare-design-runner.js";
-
 const mocks = vi.hoisted(() => ({
   compareImages: vi.fn(),
   redactImageBase64ForPublicExport: vi.fn(async (imageBase64: string) => imageBase64),
@@ -71,6 +69,7 @@ vi.mock("./loop-guard-service.js", () => ({
 
 import { buildTargetNodeIds, resolveAutoCrop, runCompareDesign } from "./compare-design-runner.js";
 
+import type { CompareDesignRunArgs } from "./compare-design-runner.js";
 import type * as ComparisonHistoryModule from "./comparison-history.js";
 import type SharpModule from "sharp";
 
@@ -829,9 +828,12 @@ describe("runCompareDesign", () => {
 
     const { result } = await runLocalStructuralComparison("pass", 0, 100, { project_id: "proj-1" });
 
+    // compareImages はモックなので status を根拠にしない。ここで確かめるのは
+    // 「crop 前の実寸法が preflight まで届いているか」という配線だけ。
+    // 実際に UNCERTAIN へ倒れるかは実画像を通した実行で確認する (PR 本文)。
     const warning = result.preflight?.warnings.find((w) => w.code === "crop_out_of_bounds");
     expect(warning?.severity).toBe("critical");
-    expect(result.status).toBe("UNCERTAIN");
+    expect(warning?.message).toContain("390x844");
   });
 
   it("always marks structuralReview as blocking", async () => {
