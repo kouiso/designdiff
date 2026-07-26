@@ -143,7 +143,15 @@ export function buildSummaryText(result: CompareDesignResult): string {
 // 出す。末尾に置くと長い出力で読み飛ばされ、同じ状態に戻る。
 function buildLoopGuardLines(result: CompareDesignResult): string[] {
   const guard = result.loopGuard;
-  if (!guard) return [];
+  // compare_design は必ず停止判定を評価するので、undefined は「評価に失敗した」を意味する
+  // (状態ファイルが書けない等)。黙って行を落とすと停止判定が見えない元の状態に戻るため、
+  // 失敗した事実を出して人間の判断へ回す。
+  if (!guard) {
+    return [
+      "ループ判定: 取得できません (停止判定の評価に失敗しました)",
+      "自動修正を続けず、現状を人間に報告してください。~/.figdiff/loop-state/ に書き込めない可能性があります。",
+    ];
+  }
 
   const verdict = guard.decision === "stop" ? "停止" : "続行";
   // iteration は上限を超えて増え続けるため "6/5 回" のような読み手を混乱させる分数を

@@ -126,8 +126,11 @@ describe("buildSummaryText — loop guard", () => {
     expect(firstLine).toContain("続行");
   });
 
-  it("emits nothing when loopGuard is absent", () => {
-    const text = buildSummaryText(makeResult());
-    expect(text).not.toContain("ループ判定");
+  // evaluateLoopGuardSafely は状態ファイルの書き込み失敗を握り潰して undefined を返す。
+  // 黙って行が消えると、停止判定が見えない元の壊れた状態にそのまま戻る。
+  it("warns instead of going silent when loopGuard is unavailable", () => {
+    const firstLine = buildSummaryText(makeResult()).split("\n")[0];
+    expect(firstLine).toContain("ループ判定");
+    expect(firstLine).toContain("取得できません");
   });
 });
