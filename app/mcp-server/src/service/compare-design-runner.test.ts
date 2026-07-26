@@ -547,7 +547,7 @@ describe("runCompareDesign", () => {
       strokes: [],
       effects: [],
     }));
-    const getFrameImage = vi.fn(async () => Buffer.from("design").toString("base64"));
+    const getFrameImage = vi.fn(async () => ({ base64: Buffer.from("design").toString("base64") }));
     mocks.createFigmaService.mockReturnValue({ getFrames, getNodeDetails, getFrameImage });
     mocks.sharp.mockReturnValue({
       metadata: vi.fn(async () => ({ width: 1440, height: 1800 })),
@@ -578,7 +578,10 @@ describe("runCompareDesign", () => {
 
     expect(getFrames).toHaveBeenCalledWith("FILEKEY123");
     expect(getNodeDetails).toHaveBeenCalledWith("FILEKEY123", "2:2");
-    expect(getFrameImage).toHaveBeenCalledWith("FILEKEY123", "2:2", 1440, 1440, undefined);
+    expect(getFrameImage).toHaveBeenCalledWith("FILEKEY123", "2:2", 1440, 1440, undefined, {
+      logicalBox: { x: 0, y: 0, width: 1440, height: 1800 },
+      renderBox: undefined,
+    });
     expect(mocks.compareImages).toHaveBeenCalledWith(
       expect.objectContaining({ figmaNodeId: "2:2" }),
       expect.objectContaining({ id: "2:2" }),
@@ -603,7 +606,7 @@ describe("runCompareDesign", () => {
       strokes: [],
       effects: [],
     }));
-    const getFrameImage = vi.fn(async () => Buffer.from("design").toString("base64"));
+    const getFrameImage = vi.fn(async () => ({ base64: Buffer.from("design").toString("base64") }));
     mocks.createFigmaService.mockReturnValue({ getFrames, getNodeDetails, getFrameImage });
     mocks.sharp.mockReturnValue({
       metadata: vi.fn(async () => ({ width: 1440, height: 1800 })),
@@ -632,7 +635,10 @@ describe("runCompareDesign", () => {
       screenshot: screenshotPath,
     });
 
-    expect(getFrameImage).toHaveBeenCalledWith("FILEKEY123", "2:2", 1440, 1440, "987654321");
+    expect(getFrameImage).toHaveBeenCalledWith("FILEKEY123", "2:2", 1440, 1440, "987654321", {
+      logicalBox: { x: 0, y: 0, width: 1440, height: 1800 },
+      renderBox: undefined,
+    });
   });
 
   it("normalizes last-used fallback node ids for screenshot capture width and Figma assets", async () => {
@@ -661,7 +667,7 @@ describe("runCompareDesign", () => {
       strokes: [],
       effects: [],
     }));
-    const getFrameImage = vi.fn(async () => Buffer.from("design").toString("base64"));
+    const getFrameImage = vi.fn(async () => ({ base64: Buffer.from("design").toString("base64") }));
     mocks.createFigmaService.mockReturnValue({ getFrames, getNodeDetails, getFrameImage });
     mocks.sharp.mockReturnValue({
       metadata: vi.fn(async () => ({ width: 375, height: 812 })),
@@ -692,7 +698,10 @@ describe("runCompareDesign", () => {
 
     expect(mocks.captureUrl).toHaveBeenCalledWith("https://example.test", { width: 375 });
     expect(getNodeDetails).toHaveBeenCalledWith("FILEKEY123", "12:34");
-    expect(getFrameImage).toHaveBeenCalledWith("FILEKEY123", "12:34", 375, 375, undefined);
+    expect(getFrameImage).toHaveBeenCalledWith("FILEKEY123", "12:34", 375, 375, undefined, {
+      logicalBox: { x: 0, y: 0, width: 375, height: 812 },
+      renderBox: undefined,
+    });
     expect(output.result.preflight?.warnings[0]).toEqual(
       expect.objectContaining({
         code: "last_used_node",
