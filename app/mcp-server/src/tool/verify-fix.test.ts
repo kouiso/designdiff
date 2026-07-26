@@ -9,7 +9,7 @@ import { createMcpServer } from "../server.js";
 import { readActiveSession } from "../service/active-session.js";
 import { clearComparisonHistory } from "../service/comparison-history.js";
 
-import { axisContribution, buildVerdict } from "./verify-fix.js";
+import { axisContribution, buildVerdict, resolveSessionStatus } from "./verify-fix.js";
 
 const FIXTURES_ROOT = path.resolve(import.meta.dirname, "../../../../verification/fixture");
 
@@ -82,6 +82,22 @@ describe("buildVerdict", () => {
     // structure が大きく改善していても、color が pass 域 (<2) から
     // fail 域 (>=2) へ跨いだら compare_design と矛盾しないよう regressed。
     expect(buildVerdict(0.5, 0.6, 0, 1.5, 2.1)).toBe("regressed");
+  });
+});
+
+describe("resolveSessionStatus", () => {
+  // 比較全体が人間レビュー行きなら、対象ノードの改善で上書きしない。
+  it("keeps UNCERTAIN whatever the local verdict says", () => {
+    expect(resolveSessionStatus("UNCERTAIN", "improved")).toBe("UNCERTAIN");
+    expect(resolveSessionStatus("UNCERTAIN", "unchanged")).toBe("UNCERTAIN");
+    expect(resolveSessionStatus("UNCERTAIN", "regressed")).toBe("UNCERTAIN");
+  });
+
+  it("falls back to the local verdict otherwise", () => {
+    expect(resolveSessionStatus("PASS", "improved")).toBe("PASS");
+    expect(resolveSessionStatus("PASS", "unchanged")).toBe("FAIL");
+    expect(resolveSessionStatus("FAIL", "improved")).toBe("PASS");
+    expect(resolveSessionStatus("FAIL", "regressed")).toBe("FAIL");
   });
 });
 
@@ -169,6 +185,79 @@ describe("verify_fix", () => {
     expect(activeSession?.comparisonId).not.toBe(priorData.comparisonId);
     expect(activeSession?.sourceKey).toBe(activeSession?.comparisonId);
     expect(activeSession?.matchRate).toBe(100);
+  });
+
+  // verdict は対象ノードが良くなったかだけを答える。比較そのものが人間レビューへ
+  // 回っているなら、局所的な改善でそれを握り潰さない。
+  it("比較全体の status を verdict と別に持ち上げる", async () => {
+    const designPath = path.join(PAIR02_DIR, "figma-export.png");
+    const priorScreenshot = path.join(PAIR02_DIR, "impl-single-section-regression.png");
+    const currentScreenshot = path.join(PAIR02_DIR, "impl-correct.png");
+
+    const prior = await client.callTool({
+      name: "compare_design",
+      arguments: {
+        design_source: designPath,
+        screenshot: priorScreenshot,
+        threshold: 0.1,
+      },
+    });
+    const priorData = JSON.parse(extractText(prior));
+
+    const result = await client.callTool({
+      name: "verify_fix",
+      arguments: {
+        design_source: designPath,
+        screenshot: currentScreenshot,
+        prior_comparison_id: priorData.comparisonId,
+        expected_target_node_id: "section-footer",
+        threshold: 0.1,
+      },
+    });
+
+    const data = JSON.parse(extractText(result));
+    expect(data.verdict).toBe("improved");
+
+    const activeSession = await readActiveSession();
+    expect(activeSession?.status).toBe(resolveSessionStatus(data.comparisonStatus, data.verdict));
+  });
+
+  // FigDiff 自身の判定を「正解」として使うと、検証したい分類器そのものに依存する。
+  // ここで見るのは伝播だけ。runner が返した status がそのまま出てくるか、
+  // セッションにも同じ判断が反映されるかを、値の中身を決めつけずに確かめる。
+  it("runner の status をそのまま持ち上げ、セッションにも反映する", async () => {
+    const designPath = path.join(PAIR02_DIR, "figma-export.png");
+    const priorScreenshot = path.join(PAIR02_DIR, "impl-multi-section-drift.png");
+    const currentScreenshot = path.join(PAIR02_DIR, "impl-single-section-regression.png");
+
+    const prior = await client.callTool({
+      name: "compare_design",
+      arguments: { design_source: designPath, screenshot: priorScreenshot, threshold: 0.1 },
+    });
+    const priorData = JSON.parse(extractText(prior));
+
+    const current = await client.callTool({
+      name: "compare_design",
+      arguments: { design_source: designPath, screenshot: currentScreenshot, threshold: 0.1 },
+    });
+    const runnerStatus = JSON.parse(extractText(current)).status;
+
+    const result = await client.callTool({
+      name: "verify_fix",
+      arguments: {
+        design_source: designPath,
+        screenshot: currentScreenshot,
+        prior_comparison_id: priorData.comparisonId,
+        expected_target_node_id: "section-footer",
+        threshold: 0.1,
+      },
+    });
+
+    const data = JSON.parse(extractText(result));
+    expect(data.comparisonStatus).toBe(runnerStatus);
+
+    const activeSession = await readActiveSession();
+    expect(activeSession?.status).toBe(resolveSessionStatus(runnerStatus, data.verdict));
   });
 
   it("対象ノードがさらに悪化したら regressed を返す", async () => {

@@ -51,7 +51,14 @@ export {
   type FlatRegionColor,
   type FlatRegionColorComparison,
 } from "./signal/flat-region-color.js";
-export { computeMeanDeltaE2000, deltaE2000, srgbToLab } from "./signal/delta-e-2000.js";
+export {
+  computeMeanDeltaE2000,
+  computePerceptibleDiffRatio,
+  deltaE2000,
+  PERCEPTIBLE_DELTA_E,
+  PERCEPTIBLE_DIFF_CONTRADICTION_RATIO,
+  srgbToLab,
+} from "./signal/delta-e-2000.js";
 export { selfCritique } from "./self-critique.js";
 
 // Comparison Confidence Layer (pre-flight / diagnosis / headline)

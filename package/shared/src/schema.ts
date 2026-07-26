@@ -195,13 +195,17 @@ export const GridSummarySchema = z.object({
 export const CompletionCriterionSchema = z.object({
   required: z.number(),
   current: z.number(),
-  status: z.enum(["PASS", "FAIL"]),
+  // UNCERTAIN は「判定の確からしさが足りず人間レビューへ回した」状態。
+  // FAIL と同じにすると、直しようのないものを直し続けろという指示になる。
+  status: z.enum(["PASS", "FAIL", "UNCERTAIN"]),
   blocking: z.boolean().optional(),
   note: z.string().optional(),
 });
 
 export const CompletionCriteriaSchema = z.object({
   structuralReview: CompletionCriterionSchema,
+  // 判定器が pass と言っているのに画素の大半が違う状態を検出する行。
+  consistencyReview: CompletionCriterionSchema.optional(),
   matchRate: CompletionCriterionSchema,
   diffPixelCount: CompletionCriterionSchema,
   remainingIssues: CompletionCriterionSchema,
@@ -296,6 +300,9 @@ export const DiffReportSchema = z.object({
   weightedAggregate: WeightedAggregateSchema.optional(),
   aggregateVerdict: DiffVerdictSchema,
   rationale: z.string(),
+  // 知覚できる差 (ΔE2000 > 2) を持つ画素の割合。pixelmatch の threshold にも
+  // profile にも依存しない、判定と独立した証拠として持つ。
+  perceptibleDiffRatio: z.number().min(0).max(1).optional(),
 });
 
 export const CritiqueConcernSchema = z.enum(["regression", "oscillation", "plateau", "healthy"]);

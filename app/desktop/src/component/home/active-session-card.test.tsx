@@ -40,6 +40,22 @@ describe("ActiveSessionCard", () => {
     expect(onOpen).toHaveBeenCalledOnce();
   });
 
+  // UNCERTAIN は自走ループが止まって人の判断を待っている状態。
+  it("人の確認待ちであることを出す (UNCERTAIN)", () => {
+    render(
+      <ActiveSessionCard session={{ ...baseSession, status: "UNCERTAIN" }} onOpen={vi.fn()} />,
+    );
+
+    expect(screen.getByText(/人の確認待ち/)).toBeInTheDocument();
+    expect(screen.queryByText(/AI が実装中/)).not.toBeInTheDocument();
+  });
+
+  it("進行中は従来どおり実装中と出す", () => {
+    render(<ActiveSessionCard session={{ ...baseSession, status: "FAIL" }} onOpen={vi.fn()} />);
+
+    expect(screen.getByText(/AI が実装中/)).toBeInTheDocument();
+  });
+
   it("displays designSource", () => {
     render(<ActiveSessionCard session={baseSession} onOpen={vi.fn()} />);
     expect(screen.getByText(/figma\.com/)).toBeInTheDocument();
