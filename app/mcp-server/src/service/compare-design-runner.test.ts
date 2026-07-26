@@ -3,6 +3,8 @@ import * as path from "node:path";
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
+import type { CompareDesignRunArgs } from "./compare-design-runner.js";
+
 const mocks = vi.hoisted(() => ({
   compareImages: vi.fn(),
   redactImageBase64ForPublicExport: vi.fn(async (imageBase64: string) => imageBase64),
@@ -14,6 +16,7 @@ const mocks = vi.hoisted(() => ({
   captureDeviceScreenshot: vi.fn(),
   getLastUsedNode: vi.fn(),
   setLastUsedNode: vi.fn(async () => undefined),
+  getCropRegionForComparison: vi.fn(async () => undefined),
 }));
 
 vi.mock("sharp", () => ({
@@ -35,6 +38,11 @@ vi.mock("./image-compare-service.js", () => ({
 
 vi.mock("./capture-service.js", () => ({
   captureUrl: mocks.captureUrl,
+}));
+
+// 実 ~/.figdiff/projects を読まずに保存 crop を差し込む。
+vi.mock("./crop-region-store.js", () => ({
+  getCropRegionForComparison: mocks.getCropRegionForComparison,
 }));
 
 vi.mock("./last-used-node-store.js", () => ({
@@ -268,6 +276,7 @@ describe("runCompareDesign", () => {
     aggregateVerdict: "pass" | "fail" | "inconclusive",
     diffPixelCount: number,
     matchRate: number,
+    extraArgs: Partial<CompareDesignRunArgs> = {},
   ) {
     tmpRoot = await fs.mkdtemp(path.join(process.cwd(), "tmp-figdiff-runner-"));
     const designPath = path.join(tmpRoot, "design.png");
@@ -328,6 +337,7 @@ describe("runCompareDesign", () => {
     return runCompareDesign({
       design_source: designPath,
       screenshot: screenshotPath,
+      ...extraArgs,
     });
   }
 
@@ -806,6 +816,22 @@ describe("runCompareDesign", () => {
     expect(result.status).toBe("UNCERTAIN");
     expect(result.completionCriteria?.structuralReview.status).toBe("FAIL");
     expect(result.completionCriteria?.structuralReview.current).toBe(0);
+  });
+
+  // 保存 crop は x=0 で作られる。crop 後の寸法だけを preflight に渡していたため
+  // 判定が x > 許容値 に退化し、範囲外の crop を永久に見逃していた。
+  it("flags a saved crop that no longer fits the screenshot", async () => {
+    mocks.getCropRegionForComparison.mockResolvedValueOnce({
+      frameName: "",
+      region: { x: 0, y: 0, width: 460, height: 844 },
+      updatedAt: "2026-01-01T00:00:00.000Z",
+    });
+
+    const { result } = await runLocalStructuralComparison("pass", 0, 100, { project_id: "proj-1" });
+
+    const warning = result.preflight?.warnings.find((w) => w.code === "crop_out_of_bounds");
+    expect(warning?.severity).toBe("critical");
+    expect(result.status).toBe("UNCERTAIN");
   });
 
   it("always marks structuralReview as blocking", async () => {

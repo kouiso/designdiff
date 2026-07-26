@@ -172,6 +172,47 @@ describe("runPreflight", () => {
     expect(warning?.message).toContain("2026-01-01");
   });
 
+  // crop 後の寸法と比べると x + width > width となり、判定が x > 許容値 に退化する。
+  // 保存 crop は x=0 で作られるため、この形では永久に発火しなくなっていた。
+  it("crop 前の実寸法を渡せば、x=0 の保存 crop でも範囲外を検出する", () => {
+    const report = runPreflight({
+      screenshotWidth: 1550,
+      screenshotHeight: 900,
+      rawScreenshotWidth: 1512,
+      rawScreenshotHeight: 900,
+      cropRegion: { x: 0, y: 0, width: 1550, height: 900 },
+    });
+
+    const warning = report.warnings.find((w) => w.code === "crop_out_of_bounds");
+    expect(warning?.severity).toBe("critical");
+    expect(warning?.message).toContain("1512x900");
+  });
+
+  it("crop 高さの古さ判定も crop 前の実寸法で行う", () => {
+    const report = runPreflight({
+      screenshotWidth: 1512,
+      screenshotHeight: 300,
+      rawScreenshotWidth: 1512,
+      rawScreenshotHeight: 900,
+      cropRegion: { x: 0, y: 0, width: 1512, height: 300 },
+    });
+
+    expect(report.warnings.find((w) => w.code === "crop_stale")).toBeDefined();
+  });
+
+  it("実寸法に収まる crop では何も出さない", () => {
+    const report = runPreflight({
+      screenshotWidth: 1512,
+      screenshotHeight: 900,
+      rawScreenshotWidth: 1512,
+      rawScreenshotHeight: 900,
+      cropRegion: { x: 0, y: 0, width: 1512, height: 900 },
+    });
+
+    expect(report.warnings.find((w) => w.code === "crop_out_of_bounds")).toBeUndefined();
+    expect(report.warnings.find((w) => w.code === "crop_stale")).toBeUndefined();
+  });
+
   it("子要素が0個なら blank_frame を出す（種別未指定の後方互換）", () => {
     const report = runPreflight({ ...base, figmaChildCount: 0 });
     expect(report.warnings.find((w) => w.code === "blank_frame")).toBeDefined();

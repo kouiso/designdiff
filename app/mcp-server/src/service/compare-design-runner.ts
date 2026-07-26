@@ -681,6 +681,8 @@ function resolvePreflightDimensions(
 ): {
   screenshotWidth: number;
   screenshotHeight: number;
+  rawScreenshotWidth: number;
+  rawScreenshotHeight: number;
   figmaFrameWidth: number | undefined;
   figmaFrameHeight: number | undefined;
 } {
@@ -689,6 +691,9 @@ function resolvePreflightDimensions(
       cropRegion?.width ?? normalization?.screenshotWidth ?? screenshotMeta.width ?? 0,
     screenshotHeight:
       cropRegion?.height ?? normalization?.screenshotHeight ?? screenshotMeta.height ?? 0,
+    // crop 前の実寸法。crop が画像に収まっているかは crop 後の寸法とは比べられない。
+    rawScreenshotWidth: normalization?.screenshotWidth ?? screenshotMeta.width ?? 0,
+    rawScreenshotHeight: normalization?.screenshotHeight ?? screenshotMeta.height ?? 0,
     figmaFrameWidth: cropRegion?.width ?? normalization?.designNativeWidth ?? figmaFrameBox?.width,
     figmaFrameHeight:
       cropRegion?.height ?? normalization?.designNativeHeight ?? figmaFrameBox?.height,
@@ -850,6 +855,8 @@ export async function runCompareDesign(
   const preflight = runPreflight({
     screenshotWidth: preflightDimensions.screenshotWidth,
     screenshotHeight: preflightDimensions.screenshotHeight,
+    rawScreenshotWidth: preflightDimensions.rawScreenshotWidth,
+    rawScreenshotHeight: preflightDimensions.rawScreenshotHeight,
     figmaFrameWidth: preflightDimensions.figmaFrameWidth,
     figmaFrameHeight: preflightDimensions.figmaFrameHeight,
     figmaLogicalFrameWidth: figmaFrameBox?.width,

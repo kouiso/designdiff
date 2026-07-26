@@ -4,8 +4,14 @@
 import type { PreflightReport, PreflightWarning } from "../type.js";
 
 export interface PreflightInput {
+  // cropRegion 適用後の寸法。design と揃えて比べる縦横比・幅の判定に使う。
   screenshotWidth: number;
   screenshotHeight: number;
+  // crop を当てる前の実スクリーンショット寸法。crop が画像に収まっているかは
+  // これと比べないと判定できない。省略時は crop 判定を screenshotWidth/Height に
+  // 落とすが、cropRegion があるときは呼び出し側が必ず渡すこと。
+  rawScreenshotWidth?: number;
+  rawScreenshotHeight?: number;
   figmaFrameWidth?: number;
   figmaFrameHeight?: number;
   figmaLogicalFrameWidth?: number;
@@ -207,27 +213,28 @@ export function runPreflight(input: PreflightInput): PreflightReport {
 
   if (input.cropRegion) {
     const { x, y, width, height } = input.cropRegion;
+    // crop 後の寸法と比べると x + width > width となり、判定が x > 許容値 に
+    // 退化する。保存 crop は x=0 で作られるため永久に発火しなくなる。
+    const rawWidth = input.rawScreenshotWidth ?? input.screenshotWidth;
+    const rawHeight = input.rawScreenshotHeight ?? input.screenshotHeight;
     if (
-      x + width > input.screenshotWidth + CROP_BOUNDS_TOLERANCE_PX ||
-      y + height > input.screenshotHeight + CROP_BOUNDS_TOLERANCE_PX
+      x + width > rawWidth + CROP_BOUNDS_TOLERANCE_PX ||
+      y + height > rawHeight + CROP_BOUNDS_TOLERANCE_PX
     ) {
       warnings.push({
         code: "crop_out_of_bounds",
         severity: "critical",
-        message: `Crop region (${x},${y} ${width}x${height}) が現在の画像サイズ (${input.screenshotWidth}x${input.screenshotHeight}) を超えています。古い設定が残っている可能性があります。`,
+        message: `Crop region (${x},${y} ${width}x${height}) が現在の画像サイズ (${rawWidth}x${rawHeight}) を超えています。古い設定が残っている可能性があります。`,
         suggestedFix:
           "set_crop_region で更新するか、project_id を外して crop なしで比較してください。",
       });
-    } else if (
-      input.screenshotHeight > 0 &&
-      height < input.screenshotHeight * STALE_CROP_HEIGHT_RATIO
-    ) {
+    } else if (rawHeight > 0 && height < rawHeight * STALE_CROP_HEIGHT_RATIO) {
       const setOn = input.cropUpdatedAt ? `（設定日時: ${input.cropUpdatedAt}）` : "";
       const stalePercent = Math.round(STALE_CROP_HEIGHT_RATIO * PERCENT);
       warnings.push({
         code: "crop_stale",
         severity: "warning",
-        message: `保存済み crop の高さ ${height}px は、現在のスクリーンショット高さ ${input.screenshotHeight}px の ${stalePercent}% 未満です${setOn}。短いページ用の古い crop が残っていると、比較範囲が大きく削られたり圧縮されたりします。`,
+        message: `保存済み crop の高さ ${height}px は、現在のスクリーンショット高さ ${rawHeight}px の ${stalePercent}% 未満です${setOn}。短いページ用の古い crop が残っていると、比較範囲が大きく削られたり圧縮されたりします。`,
         suggestedFix: "意図した crop か確認し、不要なら set_crop_region で更新してください。",
       });
     }
