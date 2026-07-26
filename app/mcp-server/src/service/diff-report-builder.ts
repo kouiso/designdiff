@@ -28,6 +28,8 @@ interface BuildDiffReportOptions {
   screenshotPixels: Uint8ClampedArray;
   width: number;
   height: number;
+  // 比較の対象外に置いた画素 (1 = 対象外)。矛盾判定の分母から外す。
+  ignoreMask?: Uint8Array;
   figmaRootNode?: FigmaNode;
   figmaFileKey?: string;
   figmaNodeId?: string;
@@ -688,6 +690,7 @@ export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
     evaluated.x + evaluated.w,
     evaluated.y + evaluated.h,
     width,
+    { ignoreMask: options.ignoreMask },
   );
 
   return {

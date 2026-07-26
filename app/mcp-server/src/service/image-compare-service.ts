@@ -156,6 +156,7 @@ interface PaddingMask {
 
 interface IgnoreMaskResult {
   maskedPixelCount: number;
+  // 比較の対象外に置いた画素。1 = 対象外。
   mask?: Uint8Array;
 }
 
@@ -965,6 +966,10 @@ export async function compareImages(
     height,
     figmaRootNode,
     figmaNodeId,
+    // letterbox の余白と、比較の対象外に置いた画素を評価から外す。
+    // 渡さないと余白だけで矛盾判定の比率が跳ね上がる。
+    paddingMask: paddingMask ?? undefined,
+    ignoreMask: ignoreMaskResult.mask,
   });
 
   const suggestion = generateMatchSuggestion(matchRate);

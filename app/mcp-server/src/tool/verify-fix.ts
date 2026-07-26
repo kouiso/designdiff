@@ -29,6 +29,16 @@ const VerifyFixResultSchema = z.object({
 const DESCRIPTION =
   "compare_design の前回比較と今回比較を突き合わせ、指定ノードが本当に改善したかと他セクションへの副作用を検証します。project_id 指定時は保存済み ignore_regions も適用します。";
 
+// 比較全体が人間レビューへ回っているなら、対象ノードが良くなっていても PASS と
+// 書かない。書くとセッションカードだけが合格を主張する。
+export function resolveSessionStatus(
+  comparisonStatus: "PASS" | "FAIL" | "UNCERTAIN",
+  verdict: "improved" | "unchanged" | "regressed",
+): "PASS" | "FAIL" | "UNCERTAIN" {
+  if (comparisonStatus === "UNCERTAIN") return "UNCERTAIN";
+  return verdict === "improved" ? "PASS" : "FAIL";
+}
+
 function findRegion(regions: RegionScore[], targetNodeId: string): RegionScore | undefined {
   return regions.find((region) => (region.figmaNodeId ?? region.regionId) === targetNodeId);
 }
@@ -208,14 +218,10 @@ export function registerVerifyFix(server: McpServer): void {
             implementationUrl: undefined,
             designSource: args.design_source,
             matchRate: comparison.result.matchRate,
-            // 比較全体が人間レビューへ回っているなら、対象ノードが良くなっていても
-            // PASS と書かない。書くとカードだけが合格を主張する。
-            status:
-              structuredContent.comparisonStatus === "UNCERTAIN"
-                ? "UNCERTAIN"
-                : structuredContent.verdict === "improved"
-                  ? "PASS"
-                  : "FAIL",
+            status: resolveSessionStatus(
+              structuredContent.comparisonStatus,
+              structuredContent.verdict,
+            ),
             updatedAt: Date.now(),
           });
         } catch {

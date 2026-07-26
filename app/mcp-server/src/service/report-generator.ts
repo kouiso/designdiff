@@ -74,7 +74,11 @@ function appendComplianceBenchmark(
   lines.push("| --- | --- | --- | --- |");
   // 最終 status を出さないと、整合ゲートで人間レビューへ回った比較でも
   // この表だけを見た読み手には PASS に見えてしまう。
-  lines.push(`| Final Status | PASS | ${result.status} | ${result.status} |`);
+  // status を持たない古い履歴では、判定済みの構造レビュー結果へ落とす。
+  const finalStatus = result.status ?? completionCriteria?.structuralReview?.status;
+  if (finalStatus) {
+    lines.push(`| Final Status | PASS | ${finalStatus} | ${finalStatus} |`);
+  }
   if (completionCriteria?.consistencyReview) {
     const consistency = completionCriteria.consistencyReview;
     lines.push(

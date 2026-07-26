@@ -196,6 +196,29 @@ describe("generateMarkdownReport — 整合ゲートの表示", () => {
     expect(markdown).toContain("| Final Status | PASS | UNCERTAIN | UNCERTAIN |");
   });
 
+  it("status を持たない古い履歴では構造レビュー結果へ落とす", () => {
+    const markdown = generateMarkdownReport(
+      makeResult({
+        completionCriteria: {
+          structuralReview: { required: 1, current: 0, status: "FAIL", blocking: true },
+          matchRate: { required: 100, current: 98.5, status: "FAIL", blocking: false },
+          diffPixelCount: { required: 0, current: 150, status: "PASS", blocking: false },
+          remainingIssues: { required: 0, current: 0, status: "PASS", blocking: false },
+        },
+      }),
+    );
+
+    expect(markdown).toContain("| Final Status | PASS | FAIL | FAIL |");
+    expect(markdown).not.toContain("undefined");
+  });
+
+  it("status も completionCriteria も無ければ行ごと出さない", () => {
+    const markdown = generateMarkdownReport(makeResult());
+
+    expect(markdown).not.toContain("Final Status");
+    expect(markdown).not.toContain("undefined");
+  });
+
   it("shows the consistency review row", () => {
     const markdown = generateMarkdownReport(uncertainResult());
 

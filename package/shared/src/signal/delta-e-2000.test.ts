@@ -83,6 +83,53 @@ describe("computePerceptibleDiffRatio", () => {
     expect(ratio).toBeLessThan(0.65);
   });
 
+  // 格納された RGB が同じでも、透明度が違えば見た目には出る。pixelmatch は
+  // アルファを合成して差として数えるので、こちらが 0 を返すと矛盾を見逃す。
+  it("counts an opacity difference that RGB alone cannot see", () => {
+    const opaqueBlack = new Uint8ClampedArray(W * H * 4);
+    const transparentBlack = new Uint8ClampedArray(W * H * 4);
+    for (let i = 0; i < W * H; i += 1) {
+      opaqueBlack[i * 4 + 3] = 255;
+      transparentBlack[i * 4 + 3] = 0;
+    }
+    // 片側だけ完全透明だと「存在しない画素」ではなく「白に見える画素」になる。
+    expect(computePerceptibleDiffRatio(opaqueBlack, transparentBlack, 0, 0, W, H, W)).toBe(1);
+  });
+
+  it("skips pixels that are transparent on both sides", () => {
+    const a = new Uint8ClampedArray(W * H * 4);
+    const b = new Uint8ClampedArray(W * H * 4);
+    expect(computePerceptibleDiffRatio(a, b, 0, 0, W, H, W)).toBe(0);
+  });
+
+  // 比較の対象外に置いた画素を数えると、比率が薄まって矛盾を見逃す。
+  it("keeps masked pixels out of the denominator", () => {
+    const a = canvas(W, H, () => [120, 130, 140]);
+    const b = canvas(W, H, (_x, y) => (y < 40 ? [190, 90, 90] : [120, 130, 140]));
+
+    // 下60行をマスクすると、残り40行はすべて見える差になる。
+    const ignoreMask = new Uint8Array(W * H);
+    for (let y = 40; y < H; y += 1) {
+      for (let x = 0; x < W; x += 1) ignoreMask[y * W + x] = 1;
+    }
+
+    expect(computePerceptibleDiffRatio(a, b, 0, 0, W, H, W)).toBeCloseTo(0.4, 2);
+    expect(computePerceptibleDiffRatio(a, b, 0, 0, W, H, W, { ignoreMask })).toBe(1);
+  });
+
+  // 間引くと周期的な模様がサンプルの隙間に入り込み、画面の大半が違っても 0 になりうる。
+  it("sees a periodic pattern that a fixed lattice would step over", () => {
+    const size = 400;
+    const a = canvas(size, size, () => [120, 130, 140]);
+    const b = canvas(size, size, (x, y) =>
+      x % 4 === 0 && y % 4 === 0 ? [120, 130, 140] : [190, 90, 90],
+    );
+
+    // 4x4 のうち 1 点だけが一致。残り 15/16 は見える差。
+    const ratio = computePerceptibleDiffRatio(a, b, 0, 0, size, size, size);
+    expect(ratio).toBeCloseTo(15 / 16, 2);
+  });
+
   it("honours the region bounds", () => {
     const a = canvas(W, H, () => [120, 130, 140]);
     const b = canvas(W, H, (_x, y) => (y < 50 ? [190, 90, 90] : [120, 130, 140]));
