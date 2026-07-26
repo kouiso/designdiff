@@ -314,6 +314,33 @@ describe("FigmaService.getFrameImage — effect margin removal on a real PNG", (
     expect(result.effectMarginCrop).toBeUndefined();
     expect(result.base64).toBe(exported);
   });
+
+  // 収まるかの判定は丸める前の小数で行うので、境界ぎりぎりの寸法は丸めると
+  // 1px はみ出しうる。sharp.extract は範囲外で例外を投げて compare_design ごと
+  // 落とすため、切らずに元の書き出しを返すのが正しい。
+  it("keeps the uncropped export when rounding would push the crop past the edge", async () => {
+    const exported = (
+      await sharp({
+        create: { width: 100, height: 100, channels: 3, background: { r: 10, g: 20, b: 30 } },
+      })
+        .png()
+        .toBuffer()
+    ).toString("base64");
+    vi.spyOn(FigmaClient.prototype, "downloadImageAsBase64").mockResolvedValue(exported);
+
+    const service = new FigmaService(
+      "figd_1234567890abcdef",
+      path.join(tmpdir(), "figdiff-test-cache"),
+    );
+    // left 0.6 + width 99.8 = 100.4 は許容内だが、丸めると 1 + 100 = 101 になる。
+    const result = await service.getFrameImage("FILEKEY", "1:1", 100, 99.8, undefined, {
+      logicalBox: { x: 0.6, y: 0.6, width: 99.8, height: 99.8 },
+      renderBox: { x: 0, y: 0, width: 100, height: 100 },
+    });
+
+    expect(result.effectMarginCrop).toBeUndefined();
+    expect(result.base64).toBe(exported);
+  });
 });
 
 // #275 の本体: 推奨 capture_width が毎回 renderBounds/boundingBox 倍に膨らむ発散。

@@ -186,10 +186,15 @@ async function cropEffectMargin(
 
   const buffer = Buffer.from(base64, "base64");
   const meta = await sharp(buffer).metadata();
+  const imageWidth = meta.width ?? 0;
   const imageHeight = meta.height ?? 0;
-  if (crop.top + crop.height > imageHeight) {
+  // 収まるかの判定は四捨五入の前に小数で行っているため、境界ぎりぎりの寸法
+  // (例 幅100 に left=0.6 / width=99.8) は丸めると 1px はみ出しうる。
+  // sharp.extract は範囲外で例外を投げて compare_design ごと落とすので、
+  // 丸めた後の矩形を実測寸法に対して測り直す。
+  if (crop.left + crop.width > imageWidth || crop.top + crop.height > imageHeight) {
     console.error(
-      `[figma-service] effect-margin crop exceeds exported height (${crop.top + crop.height}px vs ${imageHeight}px); keeping the uncropped export`,
+      `[figma-service] effect-margin crop exceeds the exported image (${crop.left + crop.width}x${crop.top + crop.height}px vs ${imageWidth}x${imageHeight}px); keeping the uncropped export`,
     );
     return { base64 };
   }
