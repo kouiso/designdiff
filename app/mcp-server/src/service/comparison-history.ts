@@ -1,16 +1,17 @@
 import * as fs from "node:fs/promises";
-import { homedir } from "node:os";
 import * as path from "node:path";
 
 import { CompareDesignResultSchema } from "@figdiff/shared";
 import type { CompareDesignResult, DiffReport, ParsedDesignInput } from "@figdiff/shared";
+
+import { getFigdiffResultsDir } from "../util/figdiff-paths.js";
 
 import { diffImageFileName } from "./persist-detail.js";
 
 const MAX_REPORTS_PER_KEY = 5;
 
 function resultsDir(): string {
-  return path.join(homedir(), ".figdiff", "results");
+  return getFigdiffResultsDir();
 }
 
 export interface ComparisonHistoryEntry {

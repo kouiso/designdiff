@@ -4,7 +4,6 @@
  */
 
 import * as fs from "node:fs/promises";
-import { homedir } from "node:os";
 import * as path from "node:path";
 
 import sharp from "sharp";
@@ -20,6 +19,8 @@ import {
   type FigmaNode,
 } from "@figdiff/shared";
 import type { Frame } from "@figdiff/shared";
+
+import { getFigdiffCacheDir } from "../util/figdiff-paths.js";
 
 export class FileSystemCacheStrategy implements FigmaCacheStrategy {
   private cacheDir: string;
@@ -302,7 +303,7 @@ async function getImageWidth(base64: string): Promise<number> {
 }
 
 export function getMcpCacheDir(): string {
-  return path.join(homedir(), ".figdiff", "cache");
+  return getFigdiffCacheDir();
 }
 
 const PAT_PREFIX = "figd_";
