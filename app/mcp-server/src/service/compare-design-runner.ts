@@ -252,7 +252,9 @@ function buildCompletionCriteria(
       status: pixelsAgreeWithPass ? "PASS" : "UNCERTAIN",
       blocking: !pixelsAgreeWithPass,
       note: pixelsAgreeWithPass
-        ? "Structural review and the perceptible-difference evidence agree."
+        ? perceptibleDiffRatio === undefined
+          ? "Not evaluated: the contradiction check only applies to a passing structural review."
+          : "Structural review and the perceptible-difference evidence agree."
         : `Structural review says pass, yet ${Math.round((perceptibleDiffRatio ?? 0) * 100)}% of pixels differ visibly (CIEDE2000 above ${PERCEPTIBLE_DELTA_E}); the limit is ${Math.round(PERCEPTIBLE_DIFF_CONTRADICTION_RATIO * 100)}%. One of the two is wrong, so this comparison is routed to human review instead of reporting PASS.`,
     },
     matchRate: {

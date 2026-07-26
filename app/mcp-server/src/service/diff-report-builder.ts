@@ -680,18 +680,24 @@ export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
 
   const verdict = computeVerdict({ alignment, regionScores, issues });
 
-  // 判定と独立した証拠。letterbox の余白は評価から外す。
-  const evaluated = toContentRegion(width, height, paddingMask);
-  const perceptibleDiffRatio = computePerceptibleDiffRatio(
-    alignedDesignPixels,
-    screenshotPixels,
-    evaluated.x,
-    evaluated.y,
-    evaluated.x + evaluated.w,
-    evaluated.y + evaluated.h,
-    width,
-    { ignoreMask: options.ignoreMask },
-  );
+  // 判定と独立した証拠。ただし矛盾を疑うのは「判定が pass」のときだけなので、
+  // それ以外では走査そのものを行わない。全画素が違う比較 (= fail になる比較) で
+  // 最も高くつく計算を、使わないまま回さないため。
+  let perceptibleDiffRatio: number | undefined;
+  if (verdict.verdict === "pass") {
+    // letterbox の余白は評価から外す。
+    const evaluated = toContentRegion(width, height, paddingMask);
+    perceptibleDiffRatio = computePerceptibleDiffRatio(
+      alignedDesignPixels,
+      screenshotPixels,
+      evaluated.x,
+      evaluated.y,
+      evaluated.x + evaluated.w,
+      evaluated.y + evaluated.h,
+      width,
+      { ignoreMask: options.ignoreMask },
+    );
+  }
 
   return {
     alignment,

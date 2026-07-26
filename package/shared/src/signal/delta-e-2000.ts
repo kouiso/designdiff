@@ -181,6 +181,32 @@ export function computePerceptibleDiffRatio(
   options: PerceptibleDiffOptions = {},
 ): number {
   const threshold = options.threshold ?? PERCEPTIBLE_DELTA_E;
+  // 共有パッケージの公開関数なので、呼び出し側の検証を当てにしない。
+  // 壊れた入力で 0 を返すと「差が無い」と読まれ、無効な比較を合格させてしまう。
+  // 黙って縮退させず、呼び出し側の誤りとして弾く。
+  if (!Number.isInteger(width) || width <= 0) {
+    throw new Error(`computePerceptibleDiffRatio: width must be a positive integer (got ${width})`);
+  }
+  if (!Number.isFinite(threshold) || threshold < 0) {
+    throw new Error(
+      `computePerceptibleDiffRatio: threshold must be a non-negative finite number (got ${threshold})`,
+    );
+  }
+  if (pixels1.length !== pixels2.length) {
+    throw new Error(
+      `computePerceptibleDiffRatio: pixel buffers differ in length (${pixels1.length} vs ${pixels2.length})`,
+    );
+  }
+  if (pixels1.length % (width * 4) !== 0) {
+    throw new Error(
+      `computePerceptibleDiffRatio: buffer length ${pixels1.length} is not a whole number of ${width}px RGBA rows`,
+    );
+  }
+  if (![startX, startY, endX, endY].every((value) => Number.isFinite(value))) {
+    throw new Error(
+      `computePerceptibleDiffRatio: bounds must be finite (got ${startX},${startY},${endX},${endY})`,
+    );
+  }
   const ignoreMask = options.ignoreMask;
   const height = Math.min(pixels1.length / 4 / width || 0, pixels2.length / 4 / width || 0);
   const clampedStartX = Math.max(0, Math.min(width, Math.floor(startX)));
