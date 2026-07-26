@@ -72,6 +72,15 @@ function appendComplianceBenchmark(
   lines.push("");
   lines.push("| Check | Target | Current | Status |");
   lines.push("| --- | --- | --- | --- |");
+  // 最終 status を出さないと、整合ゲートで人間レビューへ回った比較でも
+  // この表だけを見た読み手には PASS に見えてしまう。
+  lines.push(`| Final Status | PASS | ${result.status} | ${result.status} |`);
+  if (completionCriteria?.consistencyReview) {
+    const consistency = completionCriteria.consistencyReview;
+    lines.push(
+      `| Consistency Review | <= ${consistency.required} | ${consistency.current} | ${consistency.status} |`,
+    );
+  }
   lines.push(
     `| Match Rate | ${completionCriteria?.matchRate.required ?? "n/a"} | ${completionCriteria?.matchRate.current ?? result.matchRate} | ${completionCriteria?.matchRate.status ?? "n/a"} |`,
   );
@@ -83,9 +92,12 @@ function appendComplianceBenchmark(
   );
 
   if (diffReport) {
-    lines.push(
-      `| Diff Verdict | pass | ${diffReport.aggregateVerdict} | ${diffReport.aggregateVerdict === "pass" ? "PASS" : "FAIL"} |`,
-    );
+    // 構造判定の行に自前の PASS/FAIL を書くと、最終 status が UNCERTAIN でも
+    // この行だけ PASS と主張してしまう。判定済みの status をそのまま使う。
+    const structuralStatus =
+      completionCriteria?.structuralReview.status ??
+      (diffReport.aggregateVerdict === "pass" ? "PASS" : "FAIL");
+    lines.push(`| Diff Verdict | pass | ${diffReport.aggregateVerdict} | ${structuralStatus} |`);
   }
 
   lines.push("");

@@ -300,6 +300,9 @@ export const DiffReportSchema = z.object({
   weightedAggregate: WeightedAggregateSchema.optional(),
   aggregateVerdict: DiffVerdictSchema,
   rationale: z.string(),
+  // 知覚できる差 (ΔE2000 > 2) を持つ画素の割合。pixelmatch の threshold にも
+  // profile にも依存しない、判定と独立した証拠として持つ。
+  perceptibleDiffRatio: z.number().min(0).max(1).optional(),
 });
 
 export const CritiqueConcernSchema = z.enum(["regression", "oscillation", "plateau", "healthy"]);

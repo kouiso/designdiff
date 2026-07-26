@@ -2,6 +2,7 @@ import {
   compareFlatRegionColor,
   computeHausdorff,
   computeMeanDeltaE2000,
+  computePerceptibleDiffRatio,
   computeSsimForRegion,
   computeVerdict,
   detectHighTextureRegion,
@@ -578,7 +579,7 @@ const GLOBAL_SHIFT_ISSUE_THRESHOLD_PX = 2;
 const GLOBAL_SHIFT_CRITICAL_THRESHOLD_PX = 10;
 
 export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
-  const { designPixels, screenshotPixels, width, height } = options;
+  const { designPixels, screenshotPixels, width, height, paddingMask } = options;
 
   const expectedLength = width * height * 4;
   if (designPixels.length < expectedLength || screenshotPixels.length < expectedLength) {
@@ -677,6 +678,18 @@ export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
 
   const verdict = computeVerdict({ alignment, regionScores, issues });
 
+  // 判定と独立した証拠。letterbox の余白は評価から外す。
+  const evaluated = toContentRegion(width, height, paddingMask);
+  const perceptibleDiffRatio = computePerceptibleDiffRatio(
+    alignedDesignPixels,
+    screenshotPixels,
+    evaluated.x,
+    evaluated.y,
+    evaluated.x + evaluated.w,
+    evaluated.y + evaluated.h,
+    width,
+  );
+
   return {
     alignment,
     regionScores,
@@ -684,5 +697,6 @@ export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
     weightedAggregate: verdict.weightedAggregate,
     aggregateVerdict: verdict.verdict,
     rationale: verdict.rationale,
+    perceptibleDiffRatio,
   };
 }

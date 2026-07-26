@@ -115,6 +115,62 @@ export function computeMeanDeltaE2000(
   endY: number,
   width: number,
 ): number {
+  let total = 0;
+  let count = 0;
+  forEachSampledPixel(pixels1, pixels2, startX, startY, endX, endY, width, (deltaE) => {
+    total += deltaE;
+    count++;
+  });
+
+  return count === 0 ? 0 : total / count;
+}
+
+/**
+ * A colour difference at or below this is at the edge of human perception.
+ * The rest of the pipeline already treats a mean CIEDE2000 of 2 as critical,
+ * so the same number marks the boundary here.
+ */
+export const PERCEPTIBLE_DELTA_E = 2;
+
+/**
+ * Fraction (0..1) of compared pixels whose colour difference is perceptible.
+ *
+ * This exists to answer a different question from the mean: a mean can be
+ * dragged below its threshold by a large untouched area while more than half
+ * the frame has visibly shifted. It is also independent of the pixelmatch
+ * threshold and of the comparison profile, so a renderer that differs by a
+ * single quantisation step everywhere does not register at all.
+ */
+export function computePerceptibleDiffRatio(
+  pixels1: Uint8ClampedArray,
+  pixels2: Uint8ClampedArray,
+  startX: number,
+  startY: number,
+  endX: number,
+  endY: number,
+  width: number,
+  threshold: number = PERCEPTIBLE_DELTA_E,
+): number {
+  let perceptible = 0;
+  let count = 0;
+  forEachSampledPixel(pixels1, pixels2, startX, startY, endX, endY, width, (deltaE) => {
+    if (deltaE > threshold) perceptible++;
+    count++;
+  });
+
+  return count === 0 ? 0 : perceptible / count;
+}
+
+function forEachSampledPixel(
+  pixels1: Uint8ClampedArray,
+  pixels2: Uint8ClampedArray,
+  startX: number,
+  startY: number,
+  endX: number,
+  endY: number,
+  width: number,
+  visit: (deltaE: number) => void,
+): void {
   const height = Math.min(pixels1.length / 4 / width || 0, pixels2.length / 4 / width || 0);
   const clampedStartX = Math.max(0, Math.min(width, Math.floor(startX)));
   const clampedStartY = Math.max(0, Math.min(height, Math.floor(startY)));
@@ -128,9 +184,6 @@ export function computeMeanDeltaE2000(
     regionArea > MAX_DENSE_SAMPLE_PIXELS
       ? Math.ceil(Math.sqrt(regionArea / MAX_DENSE_SAMPLE_PIXELS))
       : 1;
-
-  let total = 0;
-  let count = 0;
 
   // A fixed rectangular lattice (same x-phase on every sampled row, same
   // y-phase on every sampled column) can miss a periodic narrow feature
@@ -161,13 +214,12 @@ export function computeMeanDeltaE2000(
       const y = Math.min(clampedEndY - 1, blockStartY + (blockX % stride));
       const i = (y * width + x) * 4;
       if (pixels1[i + 3] === 0 && pixels2[i + 3] === 0) continue;
-      total += deltaE2000(
-        srgbToLab(pixels1[i], pixels1[i + 1], pixels1[i + 2]),
-        srgbToLab(pixels2[i], pixels2[i + 1], pixels2[i + 2]),
+      visit(
+        deltaE2000(
+          srgbToLab(pixels1[i], pixels1[i + 1], pixels1[i + 2]),
+          srgbToLab(pixels2[i], pixels2[i + 1], pixels2[i + 2]),
+        ),
       );
-      count++;
     }
   }
-
-  return count === 0 ? 0 : total / count;
 }

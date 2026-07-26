@@ -15,6 +15,7 @@ import {
   normalizeNodeId,
   parseDesignInput,
   rankFrameCandidates,
+  PERCEPTIBLE_DELTA_E,
   runPreflight,
   selfCritique,
   type CompareDesignResult,
@@ -213,6 +214,7 @@ function buildCompletionCriteria(
   regionCount: number,
   structuralVerdict: DiffVerdict,
   structuralRationale: string | undefined,
+  perceptibleDiffRatio: number | undefined,
 ): Record<
   "structuralReview" | "consistencyReview" | "matchRate" | "diffPixelCount" | "remainingIssues",
   {
@@ -231,7 +233,7 @@ function buildCompletionCriteria(
       : structuralVerdict === "inconclusive"
         ? "UNCERTAIN"
         : "FAIL";
-  const pixelsAgreeWithPass = !isPassContradictedByPixels(structuralVerdict, matchRate);
+  const pixelsAgreeWithPass = !isPassContradictedByPixels(structuralVerdict, perceptibleDiffRatio);
 
   return {
     structuralReview: {
@@ -245,13 +247,13 @@ function buildCompletionCriteria(
           : (structuralRationale ?? "Structural SSIM verdict from diffReport.aggregateVerdict."),
     },
     consistencyReview: {
-      required: CONSISTENCY_MATCH_RATE_FLOOR,
-      current: matchRate,
+      required: PERCEPTIBLE_DIFF_CONTRADICTION_RATIO,
+      current: perceptibleDiffRatio ?? 0,
       status: pixelsAgreeWithPass ? "PASS" : "UNCERTAIN",
       blocking: !pixelsAgreeWithPass,
       note: pixelsAgreeWithPass
-        ? "Structural verdict and pixel evidence agree."
-        : `Structural review says pass, yet only ${matchRate}% of pixels match (floor ${CONSISTENCY_MATCH_RATE_FLOOR}%). One of the two is wrong, so this comparison is routed to human review instead of reporting PASS.`,
+        ? "Structural review and the perceptible-difference evidence agree."
+        : `Structural review says pass, yet ${Math.round((perceptibleDiffRatio ?? 0) * 100)}% of pixels differ visibly (CIEDE2000 above ${PERCEPTIBLE_DELTA_E}); the limit is ${Math.round(PERCEPTIBLE_DIFF_CONTRADICTION_RATIO * 100)}%. One of the two is wrong, so this comparison is routed to human review instead of reporting PASS.`,
     },
     matchRate: {
       required: 100,
@@ -301,22 +303,47 @@ function resolveStructuralVerdict(
 // なので、PASS/FAIL ではなく UNCERTAIN に倒して人間レビューへ回す。
 type CompareStatus = "PASS" | "FAIL" | "UNCERTAIN";
 
-// 判定器が pass と言っているのに画素の大半が違うなら、どちらかが嘘をついている。
-// #269 の 1080x300 単色フレームがこの形で、matchRate 0% のまま PASS が出ていた。
-// 床値は「正しい実装でもフォントの縁のぼかしでどこまで落ちるか」から決める。
-// 実測フィクスチャ12件では正しい実装が 100%、欠陥ありでも最低 73.16% だったので、
-// 50% は正常な比較には決して触れない。半分以上の画素が違う時点で、
-// どんな実装差でも説明がつかない。
-export const CONSISTENCY_MATCH_RATE_FLOOR = 50;
+// 判定器が pass と言っているのに、画面の大半が目に見えて違う。どちらかが嘘なので
+// PASS を出さず人間レビューへ回す。
+//
+// 証拠に matchRate は使わない。matchRate は pixelmatch の threshold と profile に
+// 依存するため、strict profile では描画エンジン差の 1/255 のブレでも「違う画素」に
+// 数えられ、正しい実装まで人間レビューへ送ってしまう。判定側の都合で動く数字を
+// 判定の審判に据えると、結局は自己認証になる (Codex 指摘)。
+//
+// 代わりに perceptibleDiffRatio を使う。ΔE2000 が知覚の境目 (2) を超えた画素の
+// 割合で、threshold にも profile にも依存しない。1段の量子化ノイズ (ΔE≈0.3) は
+// はじめから数に入らない。
+//
+// 半分を境にするのは、平均 ΔE では拾えない形を拾うため。広い無変化領域が平均を
+// 押し下げると、画面の過半が目に見えて違っていても mean は閾値 2 を下回る。
+export const PERCEPTIBLE_DIFF_CONTRADICTION_RATIO = 0.5;
 
-function isPassContradictedByPixels(structuralVerdict: DiffVerdict, matchRate: number): boolean {
-  return structuralVerdict === "pass" && matchRate < CONSISTENCY_MATCH_RATE_FLOOR;
+function isPassContradictedByPixels(
+  structuralVerdict: DiffVerdict,
+  perceptibleDiffRatio: number | undefined,
+): boolean {
+  if (structuralVerdict !== "pass") return false;
+  if (typeof perceptibleDiffRatio !== "number") return false;
+  return perceptibleDiffRatio > PERCEPTIBLE_DIFF_CONTRADICTION_RATIO;
+}
+
+function formatPerceptibleDiffPercent(perceptibleDiffRatio: number | undefined): string {
+  return `${Math.round((perceptibleDiffRatio ?? 0) * 100)}%`;
+}
+
+function buildPixelContradictionNextAction(perceptibleDiffRatio: number | undefined): string {
+  return `構造判定は pass ですが、画面の ${formatPerceptibleDiffPercent(perceptibleDiffRatio)} が目に見えて違います。判定と証拠が食い違っているため、自動修正を続けず現状を人間に報告してください。`;
+}
+
+function buildPixelContradictionSuggestion(perceptibleDiffRatio: number | undefined): string {
+  return `構造判定と画素の証拠が矛盾しています (目に見える差 ${formatPerceptibleDiffPercent(perceptibleDiffRatio)})。比較対象のフレーム / crop / 撮影条件が正しいかを人間が確認してください。`;
 }
 
 function buildStatus(
   structuralVerdict: DiffVerdict,
   likelyMisconfig: boolean,
-  matchRate: number,
+  perceptibleDiffRatio: number | undefined,
 ): CompareStatus {
   if (likelyMisconfig) {
     return "UNCERTAIN";
@@ -324,7 +351,7 @@ function buildStatus(
   if (structuralVerdict === "inconclusive") {
     return "UNCERTAIN";
   }
-  if (isPassContradictedByPixels(structuralVerdict, matchRate)) {
+  if (isPassContradictedByPixels(structuralVerdict, perceptibleDiffRatio)) {
     return "UNCERTAIN";
   }
   return structuralVerdict === "pass" ? "PASS" : "FAIL";
@@ -945,16 +972,26 @@ export async function runCompareDesign(
     comparison.diffReport && priorReports.length > 0
       ? selfCritique(comparison.diffReport, priorReports)
       : undefined;
-  const diagnosisNextAction = diagnosis.likelyMisconfig
-    ? buildMisconfigNextAction(diagnosis)
-    : (buildDiagnosisNextAction(diagnosis) ??
-      buildNextAction(structuralReviewResult.verdict, regionCount, targetNodeIds));
+  const perceptibleDiffRatio = comparison.diffReport?.perceptibleDiffRatio;
+  const pixelsContradictPass = isPassContradictedByPixels(
+    structuralReviewResult.verdict,
+    perceptibleDiffRatio,
+  );
 
   const status = buildStatus(
     structuralReviewResult.verdict,
     diagnosis.likelyMisconfig,
-    comparison.matchRate,
+    perceptibleDiffRatio,
   );
+
+  // 呼び出し側は nextAction に従うよう案内しているので、status が人間レビューを
+  // 指しているのに nextAction が「完了を確認せよ」と言う状態を作らない。
+  const diagnosisNextAction = diagnosis.likelyMisconfig
+    ? buildMisconfigNextAction(diagnosis)
+    : pixelsContradictPass
+      ? buildPixelContradictionNextAction(perceptibleDiffRatio)
+      : (buildDiagnosisNextAction(diagnosis) ??
+        buildNextAction(structuralReviewResult.verdict, regionCount, targetNodeIds));
   const loopGuard = await evaluateLoopGuardSafely({
     sourceKey,
     comparisonId: comparison.comparisonId,
@@ -990,11 +1027,14 @@ export async function runCompareDesign(
       regionCount,
       structuralReviewResult.verdict,
       structuralReviewResult.rationale,
+      perceptibleDiffRatio,
     ),
     nextAction: diagnosisNextAction,
     suggestion: diagnosis.likelyMisconfig
       ? diagnosis.headline
-      : buildSuggestion(structuralReviewResult.verdict, comparison.matchRate, regionCount),
+      : pixelsContradictPass
+        ? buildPixelContradictionSuggestion(perceptibleDiffRatio)
+        : buildSuggestion(structuralReviewResult.verdict, comparison.matchRate, regionCount),
     critique,
     preflight: finalPreflight,
     comparisonHeadline,

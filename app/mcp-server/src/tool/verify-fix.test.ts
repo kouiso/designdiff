@@ -171,6 +171,87 @@ describe("verify_fix", () => {
     expect(activeSession?.matchRate).toBe(100);
   });
 
+  // verdict は対象ノードが良くなったかだけを答える。比較そのものが人間レビューへ
+  // 回っているなら、局所的な改善でそれを握り潰さない。
+  it("比較全体の status を verdict と別に持ち上げる", async () => {
+    const designPath = path.join(PAIR02_DIR, "figma-export.png");
+    const priorScreenshot = path.join(PAIR02_DIR, "impl-single-section-regression.png");
+    const currentScreenshot = path.join(PAIR02_DIR, "impl-correct.png");
+
+    const prior = await client.callTool({
+      name: "compare_design",
+      arguments: {
+        design_source: designPath,
+        screenshot: priorScreenshot,
+        threshold: 0.1,
+      },
+    });
+    const priorData = JSON.parse(extractText(prior));
+
+    const result = await client.callTool({
+      name: "verify_fix",
+      arguments: {
+        design_source: designPath,
+        screenshot: currentScreenshot,
+        prior_comparison_id: priorData.comparisonId,
+        expected_target_node_id: "section-footer",
+        threshold: 0.1,
+      },
+    });
+
+    const data = JSON.parse(extractText(result));
+    expect(data.verdict).toBe("improved");
+    expect(data.comparisonStatus).toBe("PASS");
+
+    const activeSession = await readActiveSession();
+    expect(activeSession?.status).toBe("PASS");
+  });
+
+  it("比較が人間レビュー行きなら、対象ノードが良くなっても PASS と書かない", async () => {
+    const designPath = path.join(PAIR02_DIR, "figma-export.png");
+    const priorScreenshot = path.join(PAIR02_DIR, "impl-multi-section-drift.png");
+    const currentScreenshot = path.join(PAIR02_DIR, "impl-single-section-regression.png");
+
+    const prior = await client.callTool({
+      name: "compare_design",
+      arguments: {
+        design_source: designPath,
+        screenshot: priorScreenshot,
+        threshold: 0.1,
+      },
+    });
+    const priorData = JSON.parse(extractText(prior));
+
+    const current = await client.callTool({
+      name: "compare_design",
+      arguments: {
+        design_source: designPath,
+        screenshot: currentScreenshot,
+        threshold: 0.1,
+      },
+    });
+    const currentStatus = JSON.parse(extractText(current)).status;
+    // このフィクスチャは単体で UNCERTAIN になる。前提が崩れたら気付けるようにする。
+    expect(currentStatus).toBe("UNCERTAIN");
+
+    const result = await client.callTool({
+      name: "verify_fix",
+      arguments: {
+        design_source: designPath,
+        screenshot: currentScreenshot,
+        prior_comparison_id: priorData.comparisonId,
+        expected_target_node_id: "section-footer",
+        threshold: 0.1,
+      },
+    });
+
+    const data = JSON.parse(extractText(result));
+    expect(data.comparisonStatus).toBe("UNCERTAIN");
+
+    const activeSession = await readActiveSession();
+    expect(activeSession?.status).toBe("UNCERTAIN");
+  });
+
   it("対象ノードがさらに悪化したら regressed を返す", async () => {
     const designPath = path.join(PAIR02_DIR, "figma-export.png");
     const priorScreenshot = path.join(PAIR02_DIR, "impl-correct.png");

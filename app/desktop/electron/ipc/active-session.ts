@@ -20,7 +20,9 @@ export const ActiveSessionPayloadSchema = z.object({
   designSource: z.string(),
   designImagePath: z.string().optional(),
   matchRate: z.number(),
-  status: z.enum(["PASS", "FAIL", "ERROR"]),
+  // UNCERTAIN は compare_design が人間レビューへ回した状態。受け付けないと
+  // parse が落ちてカードが更新されず、いちばん人が見るべき比較だけ画面から消える。
+  status: z.enum(["PASS", "FAIL", "UNCERTAIN", "ERROR"]),
   updatedAt: z.number(),
 });
 

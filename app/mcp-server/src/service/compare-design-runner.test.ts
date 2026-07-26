@@ -268,6 +268,7 @@ describe("runCompareDesign", () => {
     aggregateVerdict: "pass" | "fail" | "inconclusive",
     diffPixelCount: number,
     matchRate: number,
+    perceptibleDiffRatio = 0,
   ) {
     tmpRoot = await fs.mkdtemp(path.join(process.cwd(), "tmp-figdiff-runner-"));
     const designPath = path.join(tmpRoot, "design.png");
@@ -313,6 +314,7 @@ describe("runCompareDesign", () => {
         },
         aggregateVerdict,
         rationale: `structural ${aggregateVerdict}`,
+        perceptibleDiffRatio,
       },
       normalization: {
         designNativeWidth: 390,
@@ -810,11 +812,12 @@ describe("runCompareDesign", () => {
     expect(result.completionCriteria?.structuralReview.current).toBe(0);
   });
 
-  // #269: 1080x300 の単色フレームで matchRate 0% のまま PASS が返っていた。
-  // 判定器が pass と言い、画素が全部違うと言う状態は、どちらかが嘘なので
-  // PASS を出さず人間レビューへ回す。
-  it("routes a pass verdict to human review when the pixels contradict it", async () => {
-    const { result } = await runLocalStructuralComparison("pass", 324000, 0);
+  // #269 の安全網。判定器が pass と言っているのに画面の大半が目に見えて違うなら、
+  // どちらかが嘘なので PASS を出さず人間レビューへ回す。
+  // 証拠は matchRate ではなく perceptibleDiffRatio。前者は pixelmatch の threshold と
+  // profile で動くため、判定側の都合で審判が変わってしまう。
+  it("routes a pass verdict to human review when most pixels differ visibly", async () => {
+    const { result } = await runLocalStructuralComparison("pass", 324000, 0, 0.96);
 
     expect(result.status).toBe("UNCERTAIN");
     expect(result.completionCriteria?.consistencyReview.status).toBe("UNCERTAIN");
@@ -822,26 +825,42 @@ describe("runCompareDesign", () => {
     expect(result.completionCriteria?.consistencyReview.note).toContain("human review");
   });
 
-  it("keeps a pass verdict when the pixels back it up", async () => {
-    const { result } = await runLocalStructuralComparison("pass", 0, 100);
+  // 呼び出し側は nextAction に従うよう案内されている。status が人間レビューを
+  // 指しているのに nextAction が「完了を確認せよ」と言う状態を作らない。
+  it("points nextAction and suggestion at human review on the same contradiction", async () => {
+    const { result } = await runLocalStructuralComparison("pass", 324000, 0, 0.96);
+
+    expect(result.nextAction).toContain("人間に報告");
+    expect(result.suggestion).toContain("矛盾");
+  });
+
+  it("keeps a pass verdict when the visible evidence backs it up", async () => {
+    const { result } = await runLocalStructuralComparison("pass", 0, 100, 0);
 
     expect(result.status).toBe("PASS");
     expect(result.completionCriteria?.consistencyReview.status).toBe("PASS");
     expect(result.completionCriteria?.consistencyReview.blocking).toBe(false);
   });
 
-  // フォントの縁のぼかしで落ちる程度では発火させない。実測フィクスチャ12件では
-  // 正しい実装が 100%、欠陥ありでも最低 73.16% だった。
-  it("does not fire on the match-rate range a real comparison lives in", async () => {
-    const { result } = await runLocalStructuralComparison("pass", 5000, 73.16);
+  // 描画エンジン差で全画素が 1 段ずれても ΔE は知覚の境目 (2) を超えない。
+  // matchRate を審判にしていた頃は strict profile でここが 0% に落ちて誤発火した。
+  it("does not fire when every pixel differs but none of it is visible", async () => {
+    const { result } = await runLocalStructuralComparison("pass", 324000, 0, 0);
 
     expect(result.status).toBe("PASS");
     expect(result.completionCriteria?.consistencyReview.status).toBe("PASS");
   });
 
+  // 過半に届かない見える差は、既存の色/構造の判定が扱う領分。
+  it("does not fire below the contradiction ratio", async () => {
+    const { result } = await runLocalStructuralComparison("pass", 10000, 80, 0.4);
+
+    expect(result.status).toBe("PASS");
+  });
+
   // fail 側は元から人間へ回す必要がない。整合ゲートは pass のときだけ働く。
   it("leaves a fail verdict alone", async () => {
-    const { result } = await runLocalStructuralComparison("fail", 324000, 0);
+    const { result } = await runLocalStructuralComparison("fail", 324000, 0, 0.96);
 
     expect(result.status).toBe("FAIL");
     expect(result.completionCriteria?.consistencyReview.status).toBe("PASS");
