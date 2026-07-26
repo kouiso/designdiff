@@ -185,6 +185,12 @@ export interface RegionScore {
   shape: number;
   layout: number;
   textureScore?: number;
+  // 両側がベタ面のときだけ入る。ΔE2000 が閾値を下回るトークン1段のズレを捕まえる。
+  flatColorMismatch?: {
+    designHex: string;
+    screenshotHex: string;
+    maxChannelDelta: number;
+  };
 }
 
 export interface Alignment {

@@ -45,6 +45,12 @@ export {
 export { computeSsim, computeSsimForRegion, type SsimRegion } from "./signal/ssim.js";
 export { detectHighTextureRegion } from "./signal/texture.js";
 export { computeHausdorff } from "./signal/hausdorff.js";
+export {
+  compareFlatRegionColor,
+  detectFlatRegionColor,
+  type FlatRegionColor,
+  type FlatRegionColorComparison,
+} from "./signal/flat-region-color.js";
 export { computeMeanDeltaE2000, deltaE2000, srgbToLab } from "./signal/delta-e-2000.js";
 export { selfCritique } from "./self-critique.js";
 

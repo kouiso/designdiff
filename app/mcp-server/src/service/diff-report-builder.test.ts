@@ -305,6 +305,58 @@ describe("buildDiffReport", () => {
   });
 });
 
+// #269: ΔE2000 は知覚距離なので、単色トークンが1段ズレただけでは閾値 2 に届かず
+// critical に上がらない。pixelmatch は全画素を差分と数えるので、判定器が「一致」、
+// 画素が「全部違う」と言う状態が生まれ、matchRate 0% の PASS になっていた。
+describe("buildDiffReport — flat fill colour (#269)", () => {
+  beforeEach(() => {
+    vi.resetModules();
+    vi.doUnmock("@figdiff/shared");
+  });
+
+  it("fails a one-token fill drift that delta-E leaves far below its threshold", async () => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    const designPixels = await createSolidRgba(64, 64, { r: 0x22, g: 0xaa, b: 0x88 });
+    const screenshotPixels = await createSolidRgba(64, 64, { r: 0x28, g: 0xaa, b: 0x88 });
+
+    const result = buildDiffReport({
+      designPixels,
+      screenshotPixels,
+      width: 64,
+      height: 64,
+    });
+
+    // ΔE 単独では pass 側に落ちる値であることを同時に示す。
+    expect(result.regionScores[0].color).toBeLessThan(2);
+    expect(result.regionScores[0].flatColorMismatch).toEqual({
+      designHex: "#22AA88",
+      screenshotHex: "#28AA88",
+      maxChannelDelta: 6,
+    });
+    expect(result.aggregateVerdict).toBe("fail");
+    expect(result.issues[0]).toMatchObject({
+      kind: "color",
+      severity: "critical",
+      evidence: { signal: "flat_region_color" },
+    });
+  });
+
+  it("keeps an identical flat fill passing", async () => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    const pixels = await createSolidRgba(64, 64, { r: 0x22, g: 0xaa, b: 0x88 });
+
+    const result = buildDiffReport({
+      designPixels: pixels,
+      screenshotPixels: pixels,
+      width: 64,
+      height: 64,
+    });
+
+    expect(result.regionScores[0].flatColorMismatch).toBeUndefined();
+    expect(result.aggregateVerdict).toBe("pass");
+  });
+});
+
 describe("buildDiffReport coordinate-space fixes", () => {
   beforeEach(() => {
     vi.resetModules();
