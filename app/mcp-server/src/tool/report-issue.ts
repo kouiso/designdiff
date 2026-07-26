@@ -4,6 +4,10 @@ import { z } from "zod";
 
 import { readActiveSession } from "../service/active-session.js";
 import {
+  detectForeignProjectNames,
+  formatForeignProjectError,
+} from "../service/cross-project-guard.js";
+import {
   createGithubService,
   formatGithubCredentialError,
   getGithubCredentialStatus,
@@ -165,6 +169,18 @@ export function registerReportIssue(server: McpServer): void {
         const titleSanitized = sanitizeForPublicIssue(rawTitle, includeDesignSource);
         const bodySanitized = sanitizeForPublicIssue(rawBody, includeDesignSource);
         const totalMasked = titleSanitized.maskedCount + bodySanitized.maskedCount;
+
+        // 他プロジェクトの識別子はマスクせず起票そのものを止める。名前だけ伏せても
+        // 前後の文で特定できるため、書き手に一般化させるのが正しい。
+        const foreignNames = await detectForeignProjectNames(
+          `${titleSanitized.text}\n${bodySanitized.text}`,
+        );
+        if (foreignNames.length > 0) {
+          return {
+            content: [{ type: "text", text: `Error: ${formatForeignProjectError(foreignNames)}` }],
+            isError: true,
+          };
+        }
 
         const issueResult = await githubService.createIssue({
           owner,
