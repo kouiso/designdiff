@@ -123,7 +123,10 @@ export const computeSsimForRegion = (
   let ssimSum = 0;
   let windowCount = 0;
 
-  // P2 でも 8x8 ボックス窓を維持し、ORB・ΔE2000・Hausdorff は意図的に導入しない。
+  // 窓は 8x8 のボックスで固定する。ガウス窓へ変えると、判定の基準が
+  // これまでの記録と繋がらなくなる。
+  // ΔE2000 と Hausdorff は別の信号として signal/ 配下に実装済みで、
+  // diff-report-builder が SSIM と併用する。ここで扱わないだけ。
   for (let startY = region.y; startY < region.y + region.h; startY += WINDOW_SIZE) {
     const windowHeight = Math.min(WINDOW_SIZE, region.y + region.h - startY);
 

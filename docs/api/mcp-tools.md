@@ -209,9 +209,25 @@ Defined in `app/mcp-server/src/tool/list-frames.ts`.
 
 ```json
 {
-  "figma_url": "string"
+  "figma_url": "string",
+  "include_nested": "boolean (optional, default: false)",
+  "level": "\"page\" | \"all\" (optional, default: \"page\")",
+  "offset": "number (optional, default: 0)",
+  "limit": "number (optional, default: 15, max: 500)",
+  "fields": "\"full\" | \"id_name\" (optional, default: \"full\")"
 }
 ```
+
+| Field | Meaning |
+| --- | --- |
+| `include_nested` | Also return frames nested inside FRAME nodes (modals, overlays). |
+| `level` | `page` returns artboards under PAGE/SECTION/GROUP only. `all` returns every nested frame. |
+| `offset` | Index of the first frame to return. |
+| `limit` | Page size. **Defaults to 15, not "all frames".** Maximum is 500. |
+| `fields` | `full` returns id, name and size. `id_name` returns a light list of id and name only. |
+
+**`limit` defaults to 15.** A file with 260 frames returns 15 of them unless you page
+through the rest. Read `hasMore` before assuming you have the whole list.
 
 ### Output shape
 
@@ -220,13 +236,31 @@ The tool returns text content with this JSON object:
 ```json
 {
   "frameCount": "number",
+  "pageCount": "number",
+  "offset": "number",
+  "limit": "number",
+  "nextOffset": "number | null",
+  "hasMore": "boolean",
+  "includeNested": "boolean",
+  "level": "string",
+  "fields": "string",
   "frames": []
 }
 ```
 
+| Field | Meaning |
+| --- | --- |
+| `frameCount` | Total number of frames in the file, ignoring paging. |
+| `pageCount` | Number of frames in this response. |
+| `nextOffset` | Value to pass as `offset` for the next page. `null` when there is no next page. |
+| `hasMore` | `true` while frames remain. |
+
 `frames` is an array of `Frame`, defined by `FrameSchema` in `package/shared/src/schema.ts`.
+When `fields` is `id_name`, each entry has only `id` and `name`.
 
 ### Usage example
+
+First page with default paging:
 
 ```json
 {
@@ -236,6 +270,26 @@ The tool returns text content with this JSON object:
   }
 }
 ```
+
+Fetching every frame from a large file. Start at offset 0, then repeat with the returned
+`nextOffset` while `hasMore` is `true`:
+
+```json
+{
+  "name": "list_figma_frames",
+  "arguments": {
+    "figma_url": "https://www.figma.com/design/ABC123/File",
+    "level": "all",
+    "fields": "id_name",
+    "offset": 0,
+    "limit": 500
+  }
+}
+```
+
+A 260-frame file answers this in a single page (`pageCount: 260`, `hasMore: false`).
+With the default `limit` the same call returns `pageCount: 15` and `hasMore: true`.
+Use `fields: "id_name"` when you only need to pick a target frame, so the response stays small.
 
 ### Error modes
 
