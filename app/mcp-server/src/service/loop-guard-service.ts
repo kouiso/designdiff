@@ -157,12 +157,19 @@ export async function recordIterationAndEvaluate(
     };
   }
 
+  // 上限・停滞・悪化で止めたあとも履歴を残すと、人間が原因を直して再実行しても
+  // TTL (2時間) のあいだ stop を返し続ける。sourceKey は Figma ファイル/ノードしか
+  // 含まず実装側やキャンペーンを区別できないため、同じノードの独立した比較まで
+  // 巻き添えになる。停止を一度返した時点でこのキャンペーンの役目は終わりなので破棄する。
+  const stopAndReset = async (reason: string): Promise<LoopGuardReport> => {
+    await resetLoopState(input.sourceKey, { stateDir });
+    return { iteration, decision: "stop", reason };
+  };
+
   if (iteration >= MAX_LOOP_ITERATIONS) {
-    return {
-      iteration,
-      decision: "stop",
-      reason: `反復回数が上限 (${MAX_LOOP_ITERATIONS} 回) に達しました。これ以上の自動修正は止めて、現状と残差分を人間に報告してください。`,
-    };
+    return await stopAndReset(
+      `反復回数が上限 (${MAX_LOOP_ITERATIONS} 回) に達しました。これ以上の自動修正は止めて、現状と残差分を人間に報告してください。`,
+    );
   }
 
   if (iteration >= 3) {
@@ -179,22 +186,28 @@ export async function recordIterationAndEvaluate(
       latest.regionCount === prev1.regionCount &&
       prev1.regionCount === prev2.regionCount
     ) {
-      return {
-        iteration,
-        decision: "stop",
-        reason:
-          "直近3回の比較結果（matchRate・diffPixelCount・差分領域数）が完全に同一です。提案された修正が実際には適用/反映されていない可能性が高いため、自動修正を止めて設定（capture_width / crop / node選択）を人間が確認してください。",
-      };
+      return await stopAndReset(
+        "直近3回の比較結果（matchRate・diffPixelCount・差分領域数）が完全に同一です。提案された修正が実際には適用/反映されていない可能性が高いため、自動修正を止めて設定（capture_width / crop / node選択）を人間が確認してください。",
+      );
     }
 
-    const delta1 = Math.abs(latest.matchRate - prev1.matchRate);
-    const delta2 = Math.abs(prev1.matchRate - prev2.matchRate);
+    // 悪化の検出を停滞より先に見る。停滞判定は絶対値なので、下がり続けていても
+    // 変化量が閾値を超えていれば continue に落ちてしまい、悪化する編集を続けろと
+    // 指示することになる。
+    const signed1 = latest.matchRate - prev1.matchRate;
+    const signed2 = prev1.matchRate - prev2.matchRate;
+    if (signed1 < 0 && signed2 < 0) {
+      return await stopAndReset(
+        `matchRate が2回続けて悪化しています (${prev2.matchRate.toFixed(2)} → ${prev1.matchRate.toFixed(2)} → ${latest.matchRate.toFixed(2)})。修正が逆効果になっているため、自動修正を止めて直前の変更を戻すか人間に報告してください。`,
+      );
+    }
+
+    const delta1 = Math.abs(signed1);
+    const delta2 = Math.abs(signed2);
     if (delta1 < STAGNATION_DELTA && delta2 < STAGNATION_DELTA) {
-      return {
-        iteration,
-        decision: "stop",
-        reason: `収束が停滞しています (直近2回の matchRate 変化 ${delta2.toFixed(2)}pt → ${delta1.toFixed(2)}pt、いずれも ${STAGNATION_DELTA}pt 未満)。修正が効いていないため、自動修正を止めて人間に報告してください。`,
-      };
+      return await stopAndReset(
+        `収束が停滞しています (直近2回の matchRate 変化 ${delta2.toFixed(2)}pt → ${delta1.toFixed(2)}pt、いずれも ${STAGNATION_DELTA}pt 未満)。修正が効いていないため、自動修正を止めて人間に報告してください。`,
+      );
     }
   }
 

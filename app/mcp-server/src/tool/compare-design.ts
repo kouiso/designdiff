@@ -26,9 +26,10 @@ const DESCRIPTION = `デザインと実装のピクセル差分を検出しま�
 ## 使用条件
 - 実装のCSS/HTML修正時は【必ず】このツールを最初に実行すること
 - status が "FAIL" の場合、inspect_node で詳細を取得し修正すること
-- status が "PASS" になるまでループすること。matchRate% は参考値であり、完成ゲートではない
+- ループの継続可否は「ループ判定」行が最終決定。status が "FAIL" でも 停止 と出たら即座に止めて人間に報告すること。matchRate% は参考値であり、完成ゲートではない
 
 ## 出力の読み方
+- ループ判定: 2つ目のテキストブロック先頭。停止 / 続行 / 取得できません。status より優先する。取得できません は停止として扱う
 - status: "PASS" = 構造SSIM判定上の完了。"FAIL" = 修正またはレビューが必要
 - completionCriteria: blocking=true の項目が "PASS" になるまで作業を続行。matchRate は参考値
 - nextAction: 次に実行すべきアクション（従うこと）
