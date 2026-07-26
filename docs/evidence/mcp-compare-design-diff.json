@@ -35,7 +35,14 @@
         "current": 0,
         "status": "FAIL",
         "blocking": true,
-        "note": "critical severity issue detected; weakest region whole-frame (structure 0.000, color 50.251)"
+        "note": "critical severity issue detected; weakest region whole-frame (structure 0.000, color ΔE 50.251; lower=better, critical threshold 2)"
+      },
+      "consistencyReview": {
+        "required": 0.5,
+        "current": 0,
+        "status": "PASS",
+        "blocking": false,
+        "note": "Not evaluated: the contradiction check only applies to a passing structural review."
       },
       "matchRate": {
         "required": 100,
