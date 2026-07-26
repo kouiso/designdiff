@@ -81,3 +81,70 @@ describe("buildSummaryText — image size display", () => {
     expect(text).not.toContain("画像サイズ");
   });
 });
+
+describe("buildSummaryText — loop guard", () => {
+  it("puts the stop decision on the first line", () => {
+    const result = makeResult({
+      status: "FAIL",
+      loopGuard: {
+        iteration: 5,
+        decision: "stop",
+        reason: "反復回数が上限 (5 回) に達しました。",
+      },
+    });
+
+    const firstLine = buildSummaryText(result).split("\n")[0];
+    expect(firstLine).toContain("ループ判定");
+    expect(firstLine).toContain("停止");
+  });
+
+  it("includes the reason and iteration count", () => {
+    const result = makeResult({
+      status: "FAIL",
+      loopGuard: {
+        iteration: 5,
+        decision: "stop",
+        reason: "反復回数が上限 (5 回) に達しました。",
+      },
+    });
+
+    const text = buildSummaryText(result);
+    expect(text).toContain("反復回数が上限 (5 回) に達しました。");
+    expect(text).toContain("5");
+  });
+
+  // 上限を超えると iteration が MAX を上回るため "6/5 回" のような分数になり得る。
+  it("does not print a limit fraction once the cap is exceeded", () => {
+    const result = makeResult({
+      status: "FAIL",
+      loopGuard: {
+        iteration: 6,
+        decision: "stop",
+        reason: "反復回数が上限 (5 回) に達しました。",
+      },
+    });
+
+    const firstLine = buildSummaryText(result).split("\n")[0];
+    expect(firstLine).toContain("反復 6 回目");
+    expect(firstLine).not.toContain("上限");
+    expect(firstLine).not.toContain("/");
+  });
+
+  it("shows continue when the loop may proceed", () => {
+    const result = makeResult({
+      status: "FAIL",
+      loopGuard: { iteration: 2, decision: "continue", reason: "改善の余地があります。" },
+    });
+
+    const firstLine = buildSummaryText(result).split("\n")[0];
+    expect(firstLine).toContain("続行");
+  });
+
+  // evaluateLoopGuardSafely は状態ファイルの書き込み失敗を握り潰して undefined を返す。
+  // 黙って行が消えると、停止判定が見えない元の壊れた状態にそのまま戻る。
+  it("warns instead of going silent when loopGuard is unavailable", () => {
+    const firstLine = buildSummaryText(makeResult()).split("\n")[0];
+    expect(firstLine).toContain("ループ判定");
+    expect(firstLine).toContain("取得できません");
+  });
+});

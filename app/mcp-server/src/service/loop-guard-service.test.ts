@@ -164,6 +164,44 @@ describe("loop-guard-service", () => {
     expect(report.iteration).toBe(1);
   });
 
+  // 上限/停滞で止めた履歴が残り続けると、人間が直したあとの再実行まで
+  // TTL(2時間)のあいだ stop を返し続ける。停止を返した時点で役目は終わっている。
+  it("clears history after a cap stop so the next campaign starts fresh", async () => {
+    for (let i = 0; i < MAX_LOOP_ITERATIONS; i++) {
+      await recordIterationAndEvaluate(input({ matchRate: 50 + i * 5 }), {
+        stateDir,
+        now: baseNow + i,
+      });
+    }
+
+    const next = await recordIterationAndEvaluate(input({ matchRate: 60 }), {
+      stateDir,
+      now: baseNow + 100,
+    });
+
+    expect(next.iteration).toBe(1);
+    expect(next.decision).toBe("continue");
+  });
+
+  // 停滞判定は Math.abs を使うため、悪化し続ける実行が閾値を超えて "continue" になる。
+  // 悪化しているのに編集を続けろと指示するのは、停止判定として誤り。
+  it("stops when the match rate keeps getting worse", async () => {
+    const rates = [90, 85, 80];
+    let report = await recordIterationAndEvaluate(input({ matchRate: rates[0] }), {
+      stateDir,
+      now: baseNow,
+    });
+    for (let i = 1; i < rates.length; i++) {
+      report = await recordIterationAndEvaluate(input({ matchRate: rates[i] }), {
+        stateDir,
+        now: baseNow + i,
+      });
+    }
+
+    expect(report.decision).toBe("stop");
+    expect(report.reason).toContain("悪化");
+  });
+
   it("resetLoopState clears the history for the key", async () => {
     await recordIterationAndEvaluate(input({ matchRate: 50 }), { stateDir, now: baseNow });
     await recordIterationAndEvaluate(input({ matchRate: 60 }), {

@@ -14,6 +14,7 @@ import {
 
 import { writeActiveSession } from "../service/active-session.js";
 import { runCompareDesign } from "../service/compare-design-runner.js";
+import { MAX_LOOP_ITERATIONS } from "../service/loop-guard-service.js";
 import { persistDetailJson } from "../service/persist-detail.js";
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
@@ -25,9 +26,10 @@ const DESCRIPTION = `デザインと実装のピクセル差分を検出しま�
 ## 使用条件
 - 実装のCSS/HTML修正時は【必ず】このツールを最初に実行すること
 - status が "FAIL" の場合、inspect_node で詳細を取得し修正すること
-- status が "PASS" になるまでループすること。matchRate% は参考値であり、完成ゲートではない
+- ループの継続可否は「ループ判定」行が最終決定。status が "FAIL" でも 停止 と出たら即座に止めて人間に報告すること。matchRate% は参考値であり、完成ゲートではない
 
 ## 出力の読み方
+- ループ判定: 2つ目のテキストブロック先頭。停止 / 続行 / 取得できません。status より優先する。取得できません は停止として扱う
 - status: "PASS" = 構造SSIM判定上の完了。"FAIL" = 修正またはレビューが必要
 - completionCriteria: blocking=true の項目が "PASS" になるまで作業を続行。matchRate は参考値
 - nextAction: 次に実行すべきアクション（従うこと）
@@ -116,7 +118,10 @@ function buildNormalizationLines(result: CompareDesignResult): string[] {
 export function buildSummaryText(result: CompareDesignResult): string {
   const lines: string[] = [];
 
+  lines.push(...buildLoopGuardLines(result));
+
   if (result.diffReport) {
+    if (lines.length > 0) lines.push("");
     lines.push(`構造SSIM判定: ${result.diffReport.aggregateVerdict.toUpperCase()}`);
     lines.push(result.diffReport.rationale);
   }
@@ -132,6 +137,31 @@ export function buildSummaryText(result: CompareDesignResult): string {
   lines.push(...buildMaskCandidateLines(result));
 
   return lines.join("\n");
+}
+
+// 停止判定を見落とすと、止まるべきループが不要な反復を続ける。サマリーの最初の1行に置く。
+// 末尾では長い出力に埋もれて同じ状態に戻る。
+function buildLoopGuardLines(result: CompareDesignResult): string[] {
+  const guard = result.loopGuard;
+  // compare_design は必ず停止判定を評価するので、undefined は「評価に失敗した」を意味する
+  // (状態ファイルが書けない等)。黙って行を落とすと停止判定が見えない元の状態に戻るため、
+  // 失敗した事実を出して人間の判断へ回す。
+  if (!guard) {
+    return [
+      "ループ判定: 取得できません (停止判定の評価に失敗しました)",
+      "自動修正を続けず、現状を人間に報告してください。~/.figdiff/loop-state/ に書き込めない可能性があります。",
+    ];
+  }
+
+  const verdict = guard.decision === "stop" ? "停止" : "続行";
+  // iteration は上限を超えて増え続けるため "6/5 回" のような読み手を混乱させる分数を
+  // 出さない。上限は続行中だけ残量の目安として意味を持つ。
+  const progress =
+    guard.decision === "stop"
+      ? `反復 ${guard.iteration} 回目`
+      : `反復 ${guard.iteration} 回目 / 上限 ${MAX_LOOP_ITERATIONS}`;
+  // 区切りの空行は後続セクションが自分の前に足す規約なので、ここでは足さない。
+  return [`ループ判定: ${verdict} (${progress})`, guard.reason];
 }
 
 function buildMaskCandidateLines(result: CompareDesignResult): string[] {
