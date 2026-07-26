@@ -6,6 +6,7 @@ import { readActiveSession } from "../service/active-session.js";
 import {
   detectForeignProjectNames,
   formatForeignProjectError,
+  PRODUCT_SELF_NAMES,
 } from "../service/cross-project-guard.js";
 import {
   createGithubService,
@@ -172,8 +173,11 @@ export function registerReportIssue(server: McpServer): void {
 
         // 他プロジェクトの識別子はマスクせず起票そのものを止める。名前だけ伏せても
         // 前後の文で特定できるため、書き手に一般化させるのが正しい。
+        // 「自分」は投稿先そのもの。FIGDIFF_ISSUE_REPO で投稿先を変えたときに、
+        // 固定名のままだと投稿先の名前を他プロジェクト扱いして弾いてしまう。
         const foreignNames = await detectForeignProjectNames(
           `${titleSanitized.text}\n${bodySanitized.text}`,
+          { selfNames: [owner, repo, ...PRODUCT_SELF_NAMES] },
         );
         if (foreignNames.length > 0) {
           return {

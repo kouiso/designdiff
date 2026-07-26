@@ -51,8 +51,12 @@ const GENERIC_NAMES: ReadonlySet<string> = new Set([
   "worktrees",
 ]);
 
-/** このリポジトリ自身を指す語。検出対象から外す。 */
-const SELF_NAMES: readonly string[] = ["designdiff", "figdiff", "kouiso"];
+/**
+ * この製品自身を指す語。検出対象から外す。
+ * 投稿先を FIGDIFF_ISSUE_REPO で変えても、本文が designdiff の話である事実は
+ * 変わらないので、投稿先の owner/repo と合わせて使う。
+ */
+export const PRODUCT_SELF_NAMES: readonly string[] = ["designdiff", "figdiff"];
 
 /** これより短い語は誤検知が多いので識別子として扱わない。 */
 const MIN_NAME_LENGTH = 5;
@@ -60,7 +64,7 @@ const MIN_NAME_LENGTH = 5;
 export interface ForeignProjectGuardOptions {
   /** チェックアウト置き場。既定は FIGDIFF_PROJECT_ROOT または ~/ghq */
   projectRoot?: string;
-  /** 検出対象から外す語。既定は SELF_NAMES */
+  /** 検出対象から外す語。既定は PRODUCT_SELF_NAMES */
   selfNames?: readonly string[];
   /** 走査せずに判定語を直接渡す (テスト用) */
   knownNames?: readonly string[];
@@ -73,13 +77,31 @@ function resolveProjectRoot(options: ForeignProjectGuardOptions): string {
   return path.join(homedir(), "ghq");
 }
 
+function errorCode(error: unknown): string | undefined {
+  if (typeof error === "object" && error !== null && "code" in error) {
+    const { code } = error;
+    if (typeof code === "string") return code;
+  }
+  return undefined;
+}
+
+/** 「置き場が存在しない」だけを正常系として扱うコード。 */
+const MISSING_DIRECTORY_CODES: ReadonlySet<string> = new Set(["ENOENT", "ENOTDIR"]);
+
 async function listDirectories(dir: string): Promise<string[]> {
   try {
     const entries = await fs.readdir(dir, { withFileTypes: true });
     return entries.filter((entry) => entry.isDirectory()).map((entry) => entry.name);
-  } catch {
-    // 置き場が無いマシンでは判定語ゼロ = 素通し。ここで落とすとissue起票自体が死ぬ。
-    return [];
+  } catch (error: unknown) {
+    // 置き場が無いマシンでは判定語ゼロ = 素通し。ここで落とすと issue 起票自体が死ぬ。
+    if (MISSING_DIRECTORY_CODES.has(errorCode(error) ?? "")) return [];
+    // それ以外 (EACCES, EMFILE, I/O障害) は「調べられなかった」であって
+    // 「他プロジェクトが無い」ではない。素通しさせると、判定語ゼロのまま
+    // 公開まで進む。安全装置なので、分からないときは止める側に倒す。
+    throw new Error(
+      `他プロジェクトの識別子を調べられませんでした (${dir}: ${error instanceof Error ? error.message : String(error)})。安全のため起票を中止します。`,
+      { cause: error },
+    );
   }
 }
 
@@ -131,7 +153,7 @@ export async function detectForeignProjectNames(
   text: string,
   options: ForeignProjectGuardOptions = {},
 ): Promise<string[]> {
-  const selfNames = new Set((options.selfNames ?? SELF_NAMES).map((n) => n.toLowerCase()));
+  const selfNames = new Set((options.selfNames ?? PRODUCT_SELF_NAMES).map((n) => n.toLowerCase()));
   const candidates = new Set(
     (await collectProjectNames(options))
       .map((n) => n.toLowerCase())

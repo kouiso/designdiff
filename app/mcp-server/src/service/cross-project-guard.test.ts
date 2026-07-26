@@ -37,9 +37,7 @@ describe("detectForeignProjectNames", () => {
   it("自リポジトリ名は検出しない", async () => {
     const hits = await detectForeignProjectNames(
       "designdiff の crop がずれる (kouiso/designdiff)",
-      {
-        knownNames: KNOWN,
-      },
+      { knownNames: KNOWN, selfNames: ["kouiso", "designdiff", "figdiff"] },
     );
     expect(hits).toEqual([]);
   });
@@ -120,6 +118,27 @@ describe("collectProjectNames", () => {
 
   it("実置き場を走査しても designdiff 自身は候補から外れる", async () => {
     const hits = await detectForeignProjectNames("designdiff の話だけ", { projectRoot: root });
+    expect(hits).toEqual([]);
+  });
+
+  it("読めない置き場は素通しせず例外にする", async () => {
+    const locked = path.join(root, "locked");
+    await fs.mkdir(locked, { recursive: true });
+    await fs.chmod(locked, 0o000);
+    try {
+      await expect(
+        detectForeignProjectNames("なんでもいい", { projectRoot: locked }),
+      ).rejects.toThrow(/調べられませんでした/);
+    } finally {
+      await fs.chmod(locked, 0o755);
+    }
+  });
+
+  it("selfNames を渡すと投稿先の名前は検出対象から外れる", async () => {
+    const hits = await detectForeignProjectNames("acme-inc の話", {
+      knownNames: KNOWN,
+      selfNames: ["acme-inc"],
+    });
     expect(hits).toEqual([]);
   });
 });
