@@ -120,6 +120,7 @@ export function buildSummaryText(result: CompareDesignResult): string {
   lines.push(...buildLoopGuardLines(result));
 
   if (result.diffReport) {
+    if (lines.length > 0) lines.push("");
     lines.push(`構造SSIM判定: ${result.diffReport.aggregateVerdict.toUpperCase()}`);
     lines.push(result.diffReport.rationale);
   }
@@ -151,7 +152,8 @@ function buildLoopGuardLines(result: CompareDesignResult): string[] {
     guard.decision === "stop"
       ? `反復 ${guard.iteration} 回目`
       : `反復 ${guard.iteration} 回目 / 上限 ${MAX_LOOP_ITERATIONS}`;
-  return [`ループ判定: ${verdict} (${progress})`, guard.reason, ""];
+  // 区切りの空行は後続セクションが自分の前に足す規約なので、ここでは足さない。
+  return [`ループ判定: ${verdict} (${progress})`, guard.reason];
 }
 
 function buildMaskCandidateLines(result: CompareDesignResult): string[] {
