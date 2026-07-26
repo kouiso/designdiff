@@ -17,9 +17,6 @@ export interface PreflightInput {
   figmaLogicalFrameWidth?: number;
   screenshotSource?: "screenshot" | "screenshot_url" | "capture_device";
   cropRegion?: { x: number; y: number; width: number; height: number };
-  // 保存済み crop か、FigDiff がその場で計算した自動 crop か。
-  // 「古い設定が残っている」という警告は保存済みにしか意味がない。
-  cropOrigin?: "persisted" | "auto";
   cropUpdatedAt?: string;
   figmaChildCount?: number;
   figmaNodeType?: string;
@@ -30,7 +27,6 @@ const DEFAULT_WIDTH_TOLERANCE_PX = 2;
 const CRITICAL_WIDTH_RATIO = 0.2;
 const ASPECT_RATIO_TOLERANCE = 0.01;
 const SCALE_RATIO_TOLERANCE = 0.01;
-const STALE_CROP_HEIGHT_RATIO = 0.6;
 // crop 範囲判定で許容する 1px のゆとり。リサイズ時の浮動小数点丸め誤差を吸収する。
 const CROP_BOUNDS_TOLERANCE_PX = 1;
 // 子要素がこの数未満（=0個）なら空白フレームを疑う。子1個は単一要素の正当なフレーム
@@ -46,7 +42,6 @@ const FRAME_LIKE_NODE_TYPES = new Set([
   "COMPONENT_SET",
   "INSTANCE",
 ]);
-const PERCENT = 100;
 const DPR_SCALES = [1, 2, 3, 4];
 
 function aspectRatio(width: number, height: number): number | undefined {
@@ -218,8 +213,16 @@ export function runPreflight(input: PreflightInput): PreflightReport {
     const { x, y, width, height } = input.cropRegion;
     // crop 後の寸法と比べると x + width > width となり、判定が x > 許容値 に
     // 退化する。保存 crop は x=0 で作られるため永久に発火しなくなる。
-    const rawWidth = input.rawScreenshotWidth ?? input.screenshotWidth;
-    const rawHeight = input.rawScreenshotHeight ?? input.screenshotHeight;
+    // 生の寸法も検証してから境界として使う。NaN や Infinity をそのまま比較に
+    // 使うと、範囲外の crop でも判定が偽になって警告が出ない。
+    const isUsableBound = (value: number | undefined): value is number =>
+      typeof value === "number" && Number.isFinite(value) && value > 0;
+    const rawWidth = isUsableBound(input.rawScreenshotWidth)
+      ? input.rawScreenshotWidth
+      : input.screenshotWidth;
+    const rawHeight = isUsableBound(input.rawScreenshotHeight)
+      ? input.rawScreenshotHeight
+      : input.screenshotHeight;
     // CropRegionSchema は非負・正の寸法を保証するが、runPreflight は共有パッケージの
     // 公開関数で、この入力型はその制約を持たない。矩形として成立しない値も
     // 「範囲外」として扱う。
@@ -244,23 +247,12 @@ export function runPreflight(input: PreflightInput): PreflightReport {
         suggestedFix:
           "set_crop_region で更新するか、project_id を外して crop なしで比較してください。",
       });
-    } else if (
-      // 自動 crop は今回の比較のために計算したものなので「古い設定が残っている」に
-      // あたらない。design フレームより背の高いスクショから切り出す形は正常で、
-      // ここで警告すると設定ミス扱いされて UNCERTAIN へ倒れる。
-      input.cropOrigin !== "auto" &&
-      rawHeight > 0 &&
-      height < rawHeight * STALE_CROP_HEIGHT_RATIO
-    ) {
-      const setOn = input.cropUpdatedAt ? `（設定日時: ${input.cropUpdatedAt}）` : "";
-      const stalePercent = Math.round(STALE_CROP_HEIGHT_RATIO * PERCENT);
-      warnings.push({
-        code: "crop_stale",
-        severity: "warning",
-        message: `保存済み crop の高さ ${height}px は、現在のスクリーンショット高さ ${rawHeight}px の ${stalePercent}% 未満です${setOn}。短いページ用の古い crop が残っていると、比較範囲が大きく削られたり圧縮されたりします。`,
-        suggestedFix: "意図した crop か確認し、不要なら set_crop_region で更新してください。",
-      });
     }
+    // crop_stale はここでは出さない。「crop が実画像の高さの 60% 未満」は
+    // 古い設定と、set_crop_region で意図的に絞った範囲を区別できない。
+    // この警告は設定ミスの根拠として扱われ、一致率が低いときに実際の不具合を
+    // FAIL ではなく UNCERTAIN へ倒す。意図した部分 crop で誤診する害のほうが
+    // 大きい。古さの判定には crop 保存時の画面寸法が要る (#288)。
   }
 
   if (

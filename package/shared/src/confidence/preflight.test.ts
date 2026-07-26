@@ -160,16 +160,16 @@ describe("runPreflight", () => {
     expect(report.warnings.find((w) => w.code === "crop_out_of_bounds")?.severity).toBe("critical");
   });
 
-  it("crop 高さがスクショ高さの60%未満なら crop_stale を出す", () => {
+  // 「crop が実画像の 60% 未満」は、古い設定と意図的に絞った範囲を区別できない。
+  // 設定ミスの根拠として扱われ、実際の不具合を UNCERTAIN へ倒すため出さない (#288)。
+  it("crop が小さいだけでは crop_stale を出さない", () => {
     const report = runPreflight({
       screenshotWidth: STANDARD_WIDTH,
       screenshotHeight: TALL_SCREEN_HEIGHT,
       cropRegion: { x: 0, y: 0, width: STANDARD_WIDTH, height: SHORT_CROP_HEIGHT },
       cropUpdatedAt: "2026-01-01T00:00:00.000Z",
     });
-    const warning = report.warnings.find((w) => w.code === "crop_stale");
-    expect(warning).toBeDefined();
-    expect(warning?.message).toContain("2026-01-01");
+    expect(report.warnings.find((w) => w.code === "crop_stale")).toBeUndefined();
   });
 
   // crop 後の寸法と比べると x + width > width となり、判定が x > 許容値 に退化する。
@@ -188,44 +188,37 @@ describe("runPreflight", () => {
     expect(warning?.message).toContain("1512x900");
   });
 
-  it("crop 高さの古さ判定も crop 前の実寸法で行う", () => {
+  // set_crop_region は比較範囲を意図的に絞るための機能。絞った crop を
+  // 「古い設定」と報告すると、実際の不具合が設定ミスとして UNCERTAIN へ倒れる。
+  it("意図的に絞った保存 crop を古い設定として報告しない", () => {
     const report = runPreflight({
-      screenshotWidth: 1512,
+      screenshotWidth: 1000,
       screenshotHeight: 300,
-      rawScreenshotWidth: 1512,
-      rawScreenshotHeight: 900,
-      cropRegion: { x: 0, y: 0, width: 1512, height: 300 },
-    });
-
-    expect(report.warnings.find((w) => w.code === "crop_stale")).toBeDefined();
-  });
-
-  // 自動 crop は今回の比較のために計算したもの。design フレームより背の高い
-  // スクショから切り出す形は正常で、ここで警告すると設定ミス扱いされてしまう。
-  it("自動 crop には古さ判定を当てない", () => {
-    const report = runPreflight({
-      screenshotWidth: 1512,
-      screenshotHeight: 100,
-      rawScreenshotWidth: 1512,
-      rawScreenshotHeight: 200,
-      cropRegion: { x: 0, y: 0, width: 1512, height: 100 },
-      cropOrigin: "auto",
+      rawScreenshotWidth: 1000,
+      rawScreenshotHeight: 1000,
+      cropRegion: { x: 0, y: 0, width: 1000, height: 300 },
+      cropUpdatedAt: "2026-01-01T00:00:00.000Z",
     });
 
     expect(report.warnings.find((w) => w.code === "crop_stale")).toBeUndefined();
+    expect(report.warnings.find((w) => w.code === "crop_out_of_bounds")).toBeUndefined();
   });
 
-  it("保存済み crop なら同じ形で古さ判定が出る", () => {
-    const report = runPreflight({
-      screenshotWidth: 1512,
-      screenshotHeight: 100,
-      rawScreenshotWidth: 1512,
-      rawScreenshotHeight: 200,
-      cropRegion: { x: 0, y: 0, width: 1512, height: 100 },
-      cropOrigin: "persisted",
-    });
+  // 壊れた寸法をそのまま境界に使うと、範囲外の crop でも判定が偽になって黙る。
+  it("生の寸法が壊れていても範囲外を見逃さない", () => {
+    for (const rawScreenshotWidth of [Number.NaN, Number.POSITIVE_INFINITY, 0, -10]) {
+      const report = runPreflight({
+        screenshotWidth: 1512,
+        screenshotHeight: 900,
+        rawScreenshotWidth,
+        rawScreenshotHeight: 900,
+        cropRegion: { x: 0, y: 0, width: 5000, height: 900 },
+      });
 
-    expect(report.warnings.find((w) => w.code === "crop_stale")).toBeDefined();
+      expect(report.warnings.find((w) => w.code === "crop_out_of_bounds")?.severity).toBe(
+        "critical",
+      );
+    }
   });
 
   // CropRegionSchema は非負・正の寸法を保証するが、runPreflight は共有パッケージの
