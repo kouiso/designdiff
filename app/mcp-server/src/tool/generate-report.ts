@@ -4,7 +4,6 @@
  */
 
 import * as fs from "node:fs/promises";
-import { homedir } from "node:os";
 import * as path from "node:path";
 
 import { z } from "zod";
@@ -13,6 +12,7 @@ import { CompareDesignResultSchema } from "@figdiff/shared";
 
 import { getComparisonEntry } from "../service/comparison-history.js";
 import { generateMarkdownReport, generateJsonReport } from "../service/report-generator.js";
+import { getFigdiffResultsDir } from "../util/figdiff-paths.js";
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
@@ -92,12 +92,7 @@ export function registerGenerateReport(server: McpServer): void {
             };
           }
           // 古い履歴では diffImagePath がないため、現行の安定パスをIDから補完する。
-          const pngPath = path.join(
-            homedir(),
-            ".figdiff",
-            "results",
-            `diff-${args.comparison_id}.png`,
-          );
+          const pngPath = path.join(getFigdiffResultsDir(), `diff-${args.comparison_id}.png`);
           let diffImagePath: string | undefined;
           try {
             await fs.access(pngPath);

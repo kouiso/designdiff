@@ -94,11 +94,28 @@ async function writeConfig(projectId: string, config: IgnoreRegionConfigFile): P
   }
 }
 
+/**
+ * フレーム名の突き合わせ用に正規化する。
+ *
+ * 保存時は人が set_ignore_regions へ打ち込んだ文字列、参照時は Figma から来た
+ * ノード名や args.frame_name が入る。全角空白・前後の空白・大文字小文字が
+ * 揃わないだけで、保存したマスクが一生ヒットしない。表示用の原文は
+ * entry.frame_name にそのまま残し、突き合わせだけ正規化する。
+ */
+export function normalizeFrameName(frameName: string): string {
+  return frameName.normalize("NFKC").replace(/\s+/g, " ").trim().toLowerCase();
+}
+
+function frameNameEquals(a: string | undefined, b: string | undefined): boolean {
+  if (a === undefined || b === undefined) return false;
+  return normalizeFrameName(a) === normalizeFrameName(b);
+}
+
 function matchesFrame(entry: IgnoreRegionConfigEntry, frameName?: string): boolean {
   if (!frameName) {
     return true;
   }
-  return entry.frame_name === undefined || entry.frame_name === frameName;
+  return entry.frame_name === undefined || frameNameEquals(entry.frame_name, frameName);
 }
 
 function matchesComparisonFrame(entry: IgnoreRegionConfigEntry, frameName?: string): boolean {
@@ -148,7 +165,6 @@ export async function setIgnoreRegionConfig(
   projectId: string,
   regions: IgnoreRegionConfigEntry[],
 ): Promise<IgnoreRegionConfigFile> {
-  await assertProjectExists(projectId);
   await assertProjectExists(projectId);
   const existing = await readConfig(projectId);
 

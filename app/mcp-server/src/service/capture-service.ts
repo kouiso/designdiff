@@ -1,7 +1,8 @@
 import * as crypto from "node:crypto";
 import * as fs from "node:fs/promises";
-import { homedir } from "node:os";
 import * as path from "node:path";
+
+import { getCaptureCacheDir } from "../util/figdiff-paths.js";
 
 export interface CaptureOptions {
   width: number;
@@ -15,7 +16,7 @@ export interface CaptureResult {
 }
 
 export function getCaptureDir(): string {
-  return path.join(homedir(), ".figdiff", "cache", "capture");
+  return getCaptureCacheDir();
 }
 
 /**

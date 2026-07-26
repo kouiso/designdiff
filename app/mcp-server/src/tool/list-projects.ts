@@ -4,10 +4,11 @@
  */
 
 import { existsSync, mkdirSync, readdirSync, readFileSync } from "node:fs";
-import { homedir } from "node:os";
 import { join } from "node:path";
 
 import { ProjectSchema } from "@figdiff/shared";
+
+import { getFigdiffProjectsDir } from "../util/figdiff-paths.js";
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
@@ -20,7 +21,7 @@ compare_design の project_id パラメータに使用するIDを確認できま
 【完了条件】このツール単体で完結。戻り値の projects 配列を参照して次のツールに進む。`;
 
 const getProjectsDir = (): string => {
-  const dir = join(homedir(), ".figdiff", "projects");
+  const dir = getFigdiffProjectsDir();
   if (!existsSync(dir)) {
     mkdirSync(dir, { recursive: true });
   }

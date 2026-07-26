@@ -4,10 +4,11 @@
 
 import { constants } from "node:fs";
 import { access, mkdir, readFile, rm } from "node:fs/promises";
-import { homedir } from "node:os";
 import { join } from "node:path";
 
 import { ProjectSchema } from "@figdiff/shared";
+
+import { getFigdiffProjectsDir } from "../util/figdiff-paths.js";
 
 export const PROJECT_ID_PATTERN = /^[a-zA-Z0-9_-]+$/;
 
@@ -18,7 +19,7 @@ export function validateProjectId(projectId: string): void {
 }
 
 export function getProjectsDirPath(): string {
-  return join(homedir(), ".figdiff", "projects");
+  return getFigdiffProjectsDir();
 }
 
 export async function ensureProjectsDir(): Promise<string> {

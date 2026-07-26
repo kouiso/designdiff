@@ -1,8 +1,8 @@
 import * as fs from "node:fs/promises";
-import { homedir } from "node:os";
-import * as path from "node:path";
 
 import { z } from "zod";
+
+import { getActiveSessionPath, getFigdiffHome } from "../util/figdiff-paths.js";
 
 export const ActiveSessionPayloadSchema = z.object({
   comparisonId: z.string(),
@@ -18,19 +18,17 @@ export const ActiveSessionPayloadSchema = z.object({
 
 export type ActiveSessionPayload = z.infer<typeof ActiveSessionPayloadSchema>;
 
-const ACTIVE_SESSION_PATH = path.join(homedir(), ".figdiff", "active-session.json");
-
 export async function writeActiveSession(payload: ActiveSessionPayload): Promise<void> {
-  const dir = path.join(homedir(), ".figdiff");
-  await fs.mkdir(dir, { recursive: true });
-  const tmp = `${ACTIVE_SESSION_PATH}.tmp`;
+  await fs.mkdir(getFigdiffHome(), { recursive: true });
+  const activeSessionPath = getActiveSessionPath();
+  const tmp = `${activeSessionPath}.tmp`;
   await fs.writeFile(tmp, JSON.stringify(payload), "utf-8");
-  await fs.rename(tmp, ACTIVE_SESSION_PATH);
+  await fs.rename(tmp, activeSessionPath);
 }
 
 export async function readActiveSession(): Promise<ActiveSessionPayload | null> {
   try {
-    const raw = await fs.readFile(ACTIVE_SESSION_PATH, "utf-8");
+    const raw = await fs.readFile(getActiveSessionPath(), "utf-8");
     const parsed: unknown = JSON.parse(raw);
     return ActiveSessionPayloadSchema.parse(parsed);
   } catch {

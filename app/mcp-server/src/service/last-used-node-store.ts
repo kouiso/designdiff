@@ -1,8 +1,9 @@
 import * as fs from "node:fs/promises";
-import { homedir } from "node:os";
 import * as path from "node:path";
 
 import { z } from "zod";
+
+import { getFigdiffProjectsDir } from "../util/figdiff-paths.js";
 
 interface LastUsedNodeEntry {
   nodeId: string;
@@ -28,7 +29,7 @@ function getProjectDir(projectId: string): string {
   if (!/^[a-zA-Z0-9_-]+$/.test(projectId)) {
     throw new Error("Invalid project ID: must be alphanumeric with hyphens/underscores only");
   }
-  return path.join(homedir(), ".figdiff", "projects", projectId);
+  return path.join(getFigdiffProjectsDir(), projectId);
 }
 
 function getLastUsedNodePath(projectId: string): string {

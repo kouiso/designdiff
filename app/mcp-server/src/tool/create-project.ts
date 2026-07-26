@@ -7,12 +7,13 @@
 import { randomBytes } from "node:crypto";
 import { existsSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
-import { homedir } from "node:os";
 import { join } from "node:path";
 
 import { z } from "zod";
 
 import { ProjectSchema } from "@figdiff/shared";
+
+import { getFigdiffProjectsDir } from "../util/figdiff-paths.js";
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
@@ -32,7 +33,7 @@ FigDiff プロジェクトを新規作成し ~/.figdiff/projects/{id}/project.js
 const PROJECT_ID_PATTERN = /^[\w-]+$/;
 
 const getProjectsDir = async (): Promise<string> => {
-  const dir = join(homedir(), ".figdiff", "projects");
+  const dir = getFigdiffProjectsDir();
   await mkdir(dir, { recursive: true });
   return dir;
 };

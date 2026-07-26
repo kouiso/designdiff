@@ -246,3 +246,35 @@ regions:
     expect(vi.mocked(mockFs.rm)).toHaveBeenCalledWith(writePath, { force: true });
   });
 });
+
+describe("フレーム名の正規化", () => {
+  let normalizeFrameName: (name: string) => string;
+
+  beforeEach(async () => {
+    ({ normalizeFrameName } = await import("./ignore-region-store.js"));
+  });
+
+  it("大文字小文字が違ってもヒットする", () => {
+    expect(normalizeFrameName("Home Page")).toBe(normalizeFrameName("home page"));
+  });
+
+  it("前後の空白は無視する", () => {
+    expect(normalizeFrameName("  Home  ")).toBe(normalizeFrameName("Home"));
+  });
+
+  it("全角空白と半角空白を同じ扱いにする", () => {
+    expect(normalizeFrameName("Home　Page")).toBe(normalizeFrameName("Home Page"));
+  });
+
+  it("連続した空白を1つにまとめる", () => {
+    expect(normalizeFrameName("Home   Page")).toBe(normalizeFrameName("Home Page"));
+  });
+
+  it("全角英数を半角に揃える", () => {
+    expect(normalizeFrameName("ＨＯＭＥ")).toBe(normalizeFrameName("home"));
+  });
+
+  it("別のフレーム名は別のままにする", () => {
+    expect(normalizeFrameName("Home")).not.toBe(normalizeFrameName("About"));
+  });
+});

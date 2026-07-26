@@ -1,11 +1,12 @@
 import * as fs from "node:fs/promises";
-import { homedir } from "node:os";
 import * as path from "node:path";
 
 import sharp from "sharp";
 
+import { getFigdiffCacheDir } from "./figdiff-paths.js";
+
 function getAllowedDirs(): string[] {
-  const dirs = [path.resolve(process.cwd()), path.join(homedir(), ".figdiff", "cache")];
+  const dirs = [path.resolve(process.cwd()), getFigdiffCacheDir()];
   const extra = process.env.FIGDIFF_ALLOWED_DIRS;
   if (extra) {
     for (const segment of extra.split(path.delimiter)) {
