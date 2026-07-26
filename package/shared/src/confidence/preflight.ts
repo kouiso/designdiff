@@ -4,8 +4,14 @@
 import type { PreflightReport, PreflightWarning } from "../type.js";
 
 export interface PreflightInput {
+  // cropRegion 適用後の寸法。design と揃えて比べる縦横比・幅の判定に使う。
   screenshotWidth: number;
   screenshotHeight: number;
+  // crop を当てる前の実スクリーンショット寸法。crop が画像に収まっているかは
+  // これと比べないと判定できない。省略時は crop 判定を screenshotWidth/Height に
+  // 落とすが、cropRegion があるときは呼び出し側が必ず渡すこと。
+  rawScreenshotWidth?: number;
+  rawScreenshotHeight?: number;
   figmaFrameWidth?: number;
   figmaFrameHeight?: number;
   figmaLogicalFrameWidth?: number;
@@ -21,7 +27,6 @@ const DEFAULT_WIDTH_TOLERANCE_PX = 2;
 const CRITICAL_WIDTH_RATIO = 0.2;
 const ASPECT_RATIO_TOLERANCE = 0.01;
 const SCALE_RATIO_TOLERANCE = 0.01;
-const STALE_CROP_HEIGHT_RATIO = 0.6;
 // crop 範囲判定で許容する 1px のゆとり。リサイズ時の浮動小数点丸め誤差を吸収する。
 const CROP_BOUNDS_TOLERANCE_PX = 1;
 // 子要素がこの数未満（=0個）なら空白フレームを疑う。子1個は単一要素の正当なフレーム
@@ -37,7 +42,6 @@ const FRAME_LIKE_NODE_TYPES = new Set([
   "COMPONENT_SET",
   "INSTANCE",
 ]);
-const PERCENT = 100;
 const DPR_SCALES = [1, 2, 3, 4];
 
 function aspectRatio(width: number, height: number): number | undefined {
@@ -207,30 +211,48 @@ export function runPreflight(input: PreflightInput): PreflightReport {
 
   if (input.cropRegion) {
     const { x, y, width, height } = input.cropRegion;
+    // crop 後の寸法と比べると x + width > width となり、判定が x > 許容値 に
+    // 退化する。保存 crop は x=0 で作られるため永久に発火しなくなる。
+    // 生の寸法も検証してから境界として使う。NaN や Infinity をそのまま比較に
+    // 使うと、範囲外の crop でも判定が偽になって警告が出ない。
+    const isUsableBound = (value: number | undefined): value is number =>
+      typeof value === "number" && Number.isFinite(value) && value > 0;
+    const rawWidth = isUsableBound(input.rawScreenshotWidth)
+      ? input.rawScreenshotWidth
+      : input.screenshotWidth;
+    const rawHeight = isUsableBound(input.rawScreenshotHeight)
+      ? input.rawScreenshotHeight
+      : input.screenshotHeight;
+    // CropRegionSchema は非負・正の寸法を保証するが、runPreflight は共有パッケージの
+    // 公開関数で、この入力型はその制約を持たない。矩形として成立しない値も
+    // 「範囲外」として扱う。
+    const isMalformed =
+      !Number.isFinite(x) ||
+      !Number.isFinite(y) ||
+      !Number.isFinite(width) ||
+      !Number.isFinite(height) ||
+      x < -CROP_BOUNDS_TOLERANCE_PX ||
+      y < -CROP_BOUNDS_TOLERANCE_PX ||
+      width <= 0 ||
+      height <= 0;
     if (
-      x + width > input.screenshotWidth + CROP_BOUNDS_TOLERANCE_PX ||
-      y + height > input.screenshotHeight + CROP_BOUNDS_TOLERANCE_PX
+      isMalformed ||
+      x + width > rawWidth + CROP_BOUNDS_TOLERANCE_PX ||
+      y + height > rawHeight + CROP_BOUNDS_TOLERANCE_PX
     ) {
       warnings.push({
         code: "crop_out_of_bounds",
         severity: "critical",
-        message: `Crop region (${x},${y} ${width}x${height}) が現在の画像サイズ (${input.screenshotWidth}x${input.screenshotHeight}) を超えています。古い設定が残っている可能性があります。`,
+        message: `Crop region (${x},${y} ${width}x${height}) が現在の画像サイズ (${rawWidth}x${rawHeight}) を超えています。古い設定が残っている可能性があります。`,
         suggestedFix:
           "set_crop_region で更新するか、project_id を外して crop なしで比較してください。",
       });
-    } else if (
-      input.screenshotHeight > 0 &&
-      height < input.screenshotHeight * STALE_CROP_HEIGHT_RATIO
-    ) {
-      const setOn = input.cropUpdatedAt ? `（設定日時: ${input.cropUpdatedAt}）` : "";
-      const stalePercent = Math.round(STALE_CROP_HEIGHT_RATIO * PERCENT);
-      warnings.push({
-        code: "crop_stale",
-        severity: "warning",
-        message: `保存済み crop の高さ ${height}px は、現在のスクリーンショット高さ ${input.screenshotHeight}px の ${stalePercent}% 未満です${setOn}。短いページ用の古い crop が残っていると、比較範囲が大きく削られたり圧縮されたりします。`,
-        suggestedFix: "意図した crop か確認し、不要なら set_crop_region で更新してください。",
-      });
     }
+    // crop_stale はここでは出さない。「crop が実画像の高さの 60% 未満」は
+    // 古い設定と、set_crop_region で意図的に絞った範囲を区別できない。
+    // この警告は設定ミスの根拠として扱われ、一致率が低いときに実際の不具合を
+    // FAIL ではなく UNCERTAIN へ倒す。意図した部分 crop で誤診する害のほうが
+    // 大きい。古さの判定には crop 保存時の画面寸法が要る (#288)。
   }
 
   if (

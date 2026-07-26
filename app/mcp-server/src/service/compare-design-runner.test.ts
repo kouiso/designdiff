@@ -14,6 +14,7 @@ const mocks = vi.hoisted(() => ({
   captureDeviceScreenshot: vi.fn(),
   getLastUsedNode: vi.fn(),
   setLastUsedNode: vi.fn(async () => undefined),
+  getCropRegionForComparison: vi.fn(async () => undefined),
 }));
 
 vi.mock("sharp", () => ({
@@ -35,6 +36,11 @@ vi.mock("./image-compare-service.js", () => ({
 
 vi.mock("./capture-service.js", () => ({
   captureUrl: mocks.captureUrl,
+}));
+
+// 実 ~/.figdiff/projects を読まずに保存 crop を差し込む。
+vi.mock("./crop-region-store.js", () => ({
+  getCropRegionForComparison: mocks.getCropRegionForComparison,
 }));
 
 vi.mock("./last-used-node-store.js", () => ({
@@ -63,6 +69,7 @@ vi.mock("./loop-guard-service.js", () => ({
 
 import { buildTargetNodeIds, resolveAutoCrop, runCompareDesign } from "./compare-design-runner.js";
 
+import type { CompareDesignRunArgs } from "./compare-design-runner.js";
 import type * as ComparisonHistoryModule from "./comparison-history.js";
 import type SharpModule from "sharp";
 
@@ -102,8 +109,21 @@ describe("resolveAutoCrop", () => {
     height: number,
     excess: "blank" | "noise",
     excessTop: number,
+    designArea: "blank" | "content" = "blank",
   ): Promise<Buffer> {
     const pixels = Buffer.alloc(width * height * 3, 255);
+    if (designArea === "content") {
+      // design 側にだけ模様を置く。実ページはここが真っ白にならない。
+      for (let y = 0; y < excessTop; y++) {
+        for (let x = 0; x < width; x++) {
+          const base = (y * width + x) * 3;
+          const on = (x + y) % 7 === 0;
+          pixels[base] = on ? 17 : 255;
+          pixels[base + 1] = on ? 17 : 255;
+          pixels[base + 2] = on ? 17 : 255;
+        }
+      }
+    }
     if (excess === "noise") {
       for (let y = excessTop; y < height; y++) {
         for (let x = 0; x < width; x++) {
@@ -141,6 +161,20 @@ describe("resolveAutoCrop", () => {
       screenshot,
     );
     expect(result).toBeUndefined();
+  });
+
+  // 撮影幅の許容は 2px、crop 範囲判定の許容は 1px。フレーム幅をそのまま crop に
+  // すると、2px 狭いスクショで生成した crop が範囲外と判定される。
+  it("スクショがフレームより狭い場合は実寸法に収める", async () => {
+    const screenshot = await makeScreenshot(98, 150, "blank", 100);
+    const result = await resolveAutoCrop(
+      undefined,
+      { width: 100, height: 100 },
+      98,
+      150,
+      screenshot,
+    );
+    expect(result).toEqual({ x: 0, y: 0, width: 98, height: 100 });
   });
 
   it("手動cropRegionが既にある場合は自動cropしない", async () => {
@@ -269,6 +303,7 @@ describe("runCompareDesign", () => {
     diffPixelCount: number,
     matchRate: number,
     perceptibleDiffRatio = 0,
+    extraArgs: Partial<CompareDesignRunArgs> = {},
   ) {
     tmpRoot = await fs.mkdtemp(path.join(process.cwd(), "tmp-figdiff-runner-"));
     const designPath = path.join(tmpRoot, "design.png");
@@ -330,6 +365,7 @@ describe("runCompareDesign", () => {
     return runCompareDesign({
       design_source: designPath,
       screenshot: screenshotPath,
+      ...extraArgs,
     });
   }
 
@@ -810,6 +846,27 @@ describe("runCompareDesign", () => {
     expect(result.status).toBe("UNCERTAIN");
     expect(result.completionCriteria?.structuralReview.status).toBe("UNCERTAIN");
     expect(result.completionCriteria?.structuralReview.current).toBe(0);
+  });
+
+  // 保存 crop は x=0 で作られる。crop 後の寸法だけを preflight に渡していたため
+  // 判定が x > 許容値 に退化し、範囲外の crop を永久に見逃していた。
+  it("flags a saved crop that no longer fits the screenshot", async () => {
+    mocks.getCropRegionForComparison.mockResolvedValueOnce({
+      frameName: "",
+      region: { x: 0, y: 0, width: 460, height: 844 },
+      updatedAt: "2026-01-01T00:00:00.000Z",
+    });
+
+    const { result } = await runLocalStructuralComparison("pass", 0, 100, 0, {
+      project_id: "proj-1",
+    });
+
+    // compareImages はモックなので status を根拠にしない。ここで確かめるのは
+    // 「crop 前の実寸法が preflight まで届いているか」という配線だけ。
+    // 実際に UNCERTAIN へ倒れるかは実画像を通した実行で確認する (PR 本文)。
+    const warning = result.preflight?.warnings.find((w) => w.code === "crop_out_of_bounds");
+    expect(warning?.severity).toBe("critical");
+    expect(warning?.message).toContain("390x844");
   });
 
   // #269 の安全網。判定器が pass と言っているのに画面の大半が目に見えて違うなら、

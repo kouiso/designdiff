@@ -722,7 +722,15 @@ export async function resolveAutoCrop(
   if (!isBlank) {
     return undefined;
   }
-  return { x: 0, y: 0, width: figmaFrameBox.width, height: figmaFrameBox.height };
+  // 撮影幅は Figma フレーム幅と最大 2px までズレても受け入れる。フレーム幅を
+  // そのまま crop にすると、その分だけ画像をはみ出して範囲外と判定される。
+  // 生成側で実寸法に収める。
+  return {
+    x: 0,
+    y: 0,
+    width: Math.min(figmaFrameBox.width, screenshotWidth),
+    height: Math.min(figmaFrameBox.height, screenshotHeight),
+  };
 }
 
 // comparison.normalization の screenshotWidth/Height は常に crop 適用前の
@@ -746,6 +754,8 @@ function resolvePreflightDimensions(
 ): {
   screenshotWidth: number;
   screenshotHeight: number;
+  rawScreenshotWidth: number;
+  rawScreenshotHeight: number;
   figmaFrameWidth: number | undefined;
   figmaFrameHeight: number | undefined;
 } {
@@ -754,6 +764,9 @@ function resolvePreflightDimensions(
       cropRegion?.width ?? normalization?.screenshotWidth ?? screenshotMeta.width ?? 0,
     screenshotHeight:
       cropRegion?.height ?? normalization?.screenshotHeight ?? screenshotMeta.height ?? 0,
+    // crop 前の実寸法。crop が画像に収まっているかは crop 後の寸法とは比べられない。
+    rawScreenshotWidth: normalization?.screenshotWidth ?? screenshotMeta.width ?? 0,
+    rawScreenshotHeight: normalization?.screenshotHeight ?? screenshotMeta.height ?? 0,
     figmaFrameWidth: cropRegion?.width ?? normalization?.designNativeWidth ?? figmaFrameBox?.width,
     figmaFrameHeight:
       cropRegion?.height ?? normalization?.designNativeHeight ?? figmaFrameBox?.height,
@@ -915,6 +928,8 @@ export async function runCompareDesign(
   const preflight = runPreflight({
     screenshotWidth: preflightDimensions.screenshotWidth,
     screenshotHeight: preflightDimensions.screenshotHeight,
+    rawScreenshotWidth: preflightDimensions.rawScreenshotWidth,
+    rawScreenshotHeight: preflightDimensions.rawScreenshotHeight,
     figmaFrameWidth: preflightDimensions.figmaFrameWidth,
     figmaFrameHeight: preflightDimensions.figmaFrameHeight,
     figmaLogicalFrameWidth: figmaFrameBox?.width,
