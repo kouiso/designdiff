@@ -22,7 +22,14 @@
         "current": 1,
         "status": "PASS",
         "blocking": true,
-        "note": "no critical issues, weighted structure score 1.000 meets pass threshold, and weighted color difference 0.000 is below 3.000 (totalWeight 1.000); weakest region whole-frame (structure 1.000, color 0.000) with texture-adjusted weights active (alpha 0.700, photo-like cap 0.300)"
+        "note": "no critical issues, weighted structure score 1.000 meets pass threshold, and weighted color difference 0.000 is below 3.000 (totalWeight 1.000); weakest region whole-frame (structure 1.000, color ΔE 0.000; lower=better, critical threshold 2) with texture-adjusted weights active (alpha 0.700, photo-like cap 0.300)"
+      },
+      "consistencyReview": {
+        "required": 0.5,
+        "current": 0,
+        "status": "PASS",
+        "blocking": false,
+        "note": "Structural review and the perceptible-difference evidence agree."
       },
       "matchRate": {
         "required": 100,
