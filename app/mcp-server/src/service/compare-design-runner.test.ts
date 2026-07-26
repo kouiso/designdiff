@@ -109,8 +109,21 @@ describe("resolveAutoCrop", () => {
     height: number,
     excess: "blank" | "noise",
     excessTop: number,
+    designArea: "blank" | "content" = "blank",
   ): Promise<Buffer> {
     const pixels = Buffer.alloc(width * height * 3, 255);
+    if (designArea === "content") {
+      // design 側にだけ模様を置く。実ページはここが真っ白にならない。
+      for (let y = 0; y < excessTop; y++) {
+        for (let x = 0; x < width; x++) {
+          const base = (y * width + x) * 3;
+          const on = (x + y) % 7 === 0;
+          pixels[base] = on ? 17 : 255;
+          pixels[base + 1] = on ? 17 : 255;
+          pixels[base + 2] = on ? 17 : 255;
+        }
+      }
+    }
     if (excess === "noise") {
       for (let y = excessTop; y < height; y++) {
         for (let x = 0; x < width; x++) {
