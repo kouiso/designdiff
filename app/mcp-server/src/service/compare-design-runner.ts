@@ -537,15 +537,24 @@ async function resolveDesignAssets(
 
     // ダウンサンプリングによる補間ボケとそれによる差分誤検知を防ぐため。
     const logicalWidth = figmaRootNode?.absoluteBoundingBox?.width;
-    const designBase64 = await figmaService.getFrameImage(
+    const frameImage = await figmaService.getFrameImage(
       parsedDesignSource.fileKey,
       resolvedNodeId,
       targetWidth,
       logicalWidth,
       parsedDesignSource.version,
+      {
+        logicalBox: figmaRootNode?.absoluteBoundingBox,
+        renderBox: figmaRootNode?.absoluteRenderBounds,
+      },
     );
+    if (frameImage.effectMarginCrop) {
+      console.error(
+        `[compare_design] trimmed Figma effect margin to the logical bounding box (${frameImage.effectMarginCrop.width}x${frameImage.effectMarginCrop.height}px)`,
+      );
+    }
 
-    return { designBase64, figmaRootNode, resolvedNodeId };
+    return { designBase64: frameImage.base64, figmaRootNode, resolvedNodeId };
   }
 
   // ローカルファイルのパス — 許可ディレクトリ内に存在するか検証する

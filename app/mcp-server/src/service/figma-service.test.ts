@@ -2,9 +2,13 @@ import * as fs from "node:fs/promises";
 import { tmpdir } from "node:os";
 import * as path from "node:path";
 
+import sharp from "sharp";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { FigmaClient } from "@figdiff/shared";
+
 import {
+  computeEffectMarginCrop,
   computeOptimalScale,
   createFigmaService,
   FileSystemCacheStrategy,
@@ -175,6 +179,183 @@ describe("computeOptimalScale", () => {
   it("respects custom min/max bounds", () => {
     expect(computeOptimalScale(100, 1000, 0.2, 3)).toBe(0.2);
     expect(computeOptimalScale(9000, 100, 0.5, 3)).toBe(3);
+  });
+});
+
+// issue #275 の実測: 論理 390x80 のノードに 20px の影が四方へ出ており、
+// Figma の書き出しは 430x120 になる。
+const ISSUE_275_LOGICAL = { x: 20, y: 20, width: 390, height: 80 };
+const ISSUE_275_RENDER = { x: 0, y: 0, width: 430, height: 120 };
+
+describe("computeEffectMarginCrop", () => {
+  it("trims the shadow margin back to the logical bounding box at scale 1", () => {
+    const crop = computeEffectMarginCrop(
+      { logicalBox: ISSUE_275_LOGICAL, renderBox: ISSUE_275_RENDER },
+      430,
+    );
+
+    expect(crop).toEqual({ left: 20, top: 20, width: 390, height: 80, effectiveScale: 1 });
+  });
+
+  it("derives the scale from the exported width instead of trusting the requested scale", () => {
+    const crop = computeEffectMarginCrop(
+      { logicalBox: ISSUE_275_LOGICAL, renderBox: ISSUE_275_RENDER },
+      860,
+    );
+
+    expect(crop).toEqual({ left: 40, top: 40, width: 780, height: 160, effectiveScale: 2 });
+  });
+
+  it("returns null when the node has no effects (export already equals the logical box)", () => {
+    const box = { x: 0, y: 0, width: 390, height: 80 };
+    expect(computeEffectMarginCrop({ logicalBox: box, renderBox: box }, 390)).toBeNull();
+  });
+
+  it("returns null when render bounds are missing", () => {
+    expect(computeEffectMarginCrop({ logicalBox: ISSUE_275_LOGICAL }, 430)).toBeNull();
+  });
+
+  // clipsContent などで renderBounds が boundingBox より小さいとき、切ると内容を失う。
+  it("returns null when the logical box does not fit inside the exported canvas", () => {
+    const crop = computeEffectMarginCrop(
+      {
+        logicalBox: { x: 0, y: 0, width: 390, height: 80 },
+        renderBox: { x: 10, y: 10, width: 200, height: 40 },
+      },
+      200,
+    );
+
+    expect(crop).toBeNull();
+  });
+});
+
+// 純粋関数が正しい矩形を返しても、実際に切れていなければ発散は止まらない。
+// 本物の PNG を本物の sharp で切って、出力の寸法と画素で確かめる。
+describe("FigmaService.getFrameImage — effect margin removal on a real PNG", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  async function makeShadowedExport(): Promise<string> {
+    const shadow = await sharp({
+      create: {
+        width: ISSUE_275_RENDER.width,
+        height: ISSUE_275_RENDER.height,
+        channels: 3,
+        background: { r: 200, g: 0, b: 0 },
+      },
+    })
+      .png()
+      .toBuffer();
+    const content = await sharp({
+      create: {
+        width: ISSUE_275_LOGICAL.width,
+        height: ISSUE_275_LOGICAL.height,
+        channels: 3,
+        background: { r: 0, g: 160, b: 0 },
+      },
+    })
+      .png()
+      .toBuffer();
+    const composed = await sharp(shadow)
+      .composite([{ input: content, left: ISSUE_275_LOGICAL.x, top: ISSUE_275_LOGICAL.y }])
+      .png()
+      .toBuffer();
+    return composed.toString("base64");
+  }
+
+  it("returns the logical box only, with the shadow band removed", async () => {
+    const exported = await makeShadowedExport();
+    vi.spyOn(FigmaClient.prototype, "downloadImageAsBase64").mockResolvedValue(exported);
+
+    const service = new FigmaService(
+      "figd_1234567890abcdef",
+      path.join(tmpdir(), "figdiff-test-cache"),
+    );
+    const result = await service.getFrameImage(
+      "FILEKEY",
+      "1:1",
+      ISSUE_275_LOGICAL.width,
+      ISSUE_275_LOGICAL.width,
+      undefined,
+      { logicalBox: ISSUE_275_LOGICAL, renderBox: ISSUE_275_RENDER },
+    );
+
+    expect(result.effectMarginCrop).toEqual({
+      left: 20,
+      top: 20,
+      width: 390,
+      height: 80,
+      effectiveScale: 1,
+    });
+
+    const output = sharp(Buffer.from(result.base64, "base64"));
+    const meta = await output.metadata();
+    expect(meta.width).toBe(ISSUE_275_LOGICAL.width);
+    expect(meta.height).toBe(ISSUE_275_LOGICAL.height);
+
+    // 影は赤、内容は緑。切れていれば端の画素も緑になる。
+    const { data } = await output.raw().toBuffer({ resolveWithObject: true });
+    expect([data[0], data[1], data[2]]).toEqual([0, 160, 0]);
+  });
+
+  it("leaves the export untouched when the node has no render bounds", async () => {
+    const exported = await makeShadowedExport();
+    vi.spyOn(FigmaClient.prototype, "downloadImageAsBase64").mockResolvedValue(exported);
+
+    const service = new FigmaService(
+      "figd_1234567890abcdef",
+      path.join(tmpdir(), "figdiff-test-cache"),
+    );
+    const result = await service.getFrameImage("FILEKEY", "1:1", 390, 390, undefined, {
+      logicalBox: ISSUE_275_LOGICAL,
+    });
+
+    expect(result.effectMarginCrop).toBeUndefined();
+    expect(result.base64).toBe(exported);
+  });
+});
+
+// #275 の本体: 推奨 capture_width が毎回 renderBounds/boundingBox 倍に膨らむ発散。
+describe("recommended capture width convergence (#275)", () => {
+  // Figma の書き出しを再現する。キャンバスは renderBounds、倍率は要求どおり。
+  function exportWidth(requestedScale: number): number {
+    return ISSUE_275_RENDER.width * requestedScale;
+  }
+
+  it("keeps the design width equal to the screenshot width across repeated runs", () => {
+    const logicalWidth = ISSUE_275_LOGICAL.width;
+    let captureWidth = logicalWidth;
+    const observed: number[] = [];
+
+    for (let run = 0; run < 3; run += 1) {
+      const scale = computeOptimalScale(captureWidth, logicalWidth);
+      const exported = exportWidth(scale);
+      const crop = computeEffectMarginCrop(
+        { logicalBox: ISSUE_275_LOGICAL, renderBox: ISSUE_275_RENDER },
+        exported,
+      );
+      const designWidth = crop ? crop.width : exported;
+      observed.push(designWidth);
+      // 診断は design 画像の幅を capture_width として提案する。
+      captureWidth = designWidth;
+    }
+
+    expect(observed).toEqual([390, 390, 390]);
+  });
+
+  it("diverges without the crop, reproducing the reported 430 to 475 growth", () => {
+    const logicalWidth = ISSUE_275_LOGICAL.width;
+    let captureWidth = logicalWidth;
+    const observed: number[] = [];
+
+    for (let run = 0; run < 2; run += 1) {
+      const exported = exportWidth(computeOptimalScale(captureWidth, logicalWidth));
+      observed.push(Math.round(exported));
+      captureWidth = exported;
+    }
+
+    expect(observed).toEqual([430, 474]);
   });
 });
 
