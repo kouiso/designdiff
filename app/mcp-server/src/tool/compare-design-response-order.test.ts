@@ -20,10 +20,10 @@ vi.mock("../service/persist-detail.js", () => ({
   persistDetailJson: mocks.persistDetailJson,
 }));
 
-type ToolResponse = {
+interface ToolResponse {
   content: { type: "text"; text: string }[];
   structuredContent?: Record<string, unknown>;
-};
+}
 type ToolHandler = (args: Record<string, unknown>) => Promise<ToolResponse>;
 
 function makeResult() {
