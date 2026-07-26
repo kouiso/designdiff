@@ -1,4 +1,5 @@
 import {
+  compareFlatRegionColor,
   computeHausdorff,
   computeMeanDeltaE2000,
   computeSsimForRegion,
@@ -215,6 +216,25 @@ const buildColorDifference = (
   return computeMeanDeltaE2000(designPixels, screenshotPixels, startX, startY, endX, endY, width);
 };
 
+// ΔE2000 は知覚距離なのでトークン1段のズレ (例 #22AA88 vs #28AA88) が閾値 2 を
+// 下回り critical に上がらない。ベタ面には縁のぼかしが無いので、両側がベタ面の
+// ときだけ hex を完全一致で比べれば、文字や写真を巻き込まずに拾える (#269)。
+const buildFlatColorMismatch = (
+  designPixels: Uint8ClampedArray,
+  screenshotPixels: Uint8ClampedArray,
+  width: number,
+  height: number,
+  bbox?: DiffBoundingBox,
+): RegionScore["flatColorMismatch"] => {
+  const comparison = compareFlatRegionColor(designPixels, screenshotPixels, width, height, bbox);
+  if (!comparison.mismatch || !comparison.design || !comparison.screenshot) return undefined;
+  return {
+    designHex: comparison.design.hex,
+    screenshotHex: comparison.screenshot.hex,
+    maxChannelDelta: comparison.maxChannelDelta ?? 0,
+  };
+};
+
 function buildIssues(
   regionScores: RegionScore[],
   options: BuildDiffReportOptions,
@@ -227,6 +247,29 @@ function buildIssues(
   };
 
   for (const regionScore of regionScores) {
+    // ベタ面どうしの hex 不一致は「塗りのトークンが違う」という離散的な事実で、
+    // ΔE の連続量では表現できない。critical に上げて computeVerdict の
+    // hasCriticalIssue 経路へ乗せる。
+    const flat = regionScore.flatColorMismatch;
+    if (flat) {
+      issues.push({
+        regionId: regionScore.regionId,
+        bbox: regionScore.bbox,
+        kind: "color",
+        severity: "critical",
+        figmaNodeId: regionScore.figmaNodeId,
+        evidence: {
+          signal: "flat_region_color",
+          value: flat.maxChannelDelta,
+          threshold: 1,
+          expected: flat.designHex,
+          actual: flat.screenshotHex,
+          ...evidenceProvenance,
+        },
+        suggestedCssFix: `ベタ面の塗りが ${flat.designHex} ではなく ${flat.screenshotHex} になっています。色トークンをデザイン基準に合わせてください。`,
+      });
+    }
+
     // color は唯一の severity="critical" kind で computeVerdict の
     // hasCriticalIssue 判定に直結するため、常に emit する（verdict の
     // 正しさが kind ラベルの精度より優先 — 条件付き抑制で verdict accuracy が
@@ -455,6 +498,13 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
         figmaNodeId: section.child.id,
         structure: computeSsimForRegion(designPixels, screenshotPixels, width, height, bbox),
         color: buildColorDifference(designPixels, screenshotPixels, width, height, bbox),
+        flatColorMismatch: buildFlatColorMismatch(
+          designPixels,
+          screenshotPixels,
+          width,
+          height,
+          bbox,
+        ),
         shape: computeHausdorff(designPixels, screenshotPixels, width, height, bbox),
         layout: 0,
         textureScore: getTextureScore(bbox),
@@ -481,6 +531,13 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
         width,
         height,
         paddingMask ? contentBbox : undefined,
+      ),
+      flatColorMismatch: buildFlatColorMismatch(
+        designPixels,
+        screenshotPixels,
+        width,
+        height,
+        contentBbox,
       ),
       shape: computeHausdorff(designPixels, screenshotPixels, width, height, contentBbox),
       layout: 0,

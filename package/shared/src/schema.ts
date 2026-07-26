@@ -257,6 +257,14 @@ export const RegionScoreSchema = z.object({
   shape: z.number().nonnegative(),
   layout: z.number().nonnegative(),
   textureScore: z.number().min(0).max(1).optional(),
+  // 落とすと「なぜ critical になったか」が結果から辿れなくなる。
+  flatColorMismatch: z
+    .object({
+      designHex: z.string(),
+      screenshotHex: z.string(),
+      maxChannelDelta: z.number().nonnegative(),
+    })
+    .optional(),
 });
 
 export const WeightedAggregateSchema = z.object({
