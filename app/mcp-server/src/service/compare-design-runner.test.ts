@@ -428,9 +428,53 @@ describe("runCompareDesign", () => {
       screenshot_url: "https://example.test",
     });
 
-    expect(mocks.captureUrl).toHaveBeenCalledWith("https://example.test", { width: 1440 });
+    expect(mocks.captureUrl).toHaveBeenCalledWith("https://example.test", {
+      width: 1440,
+      detectDynamic: true,
+    });
     expect(output.result.status).toBe("PASS");
     expect(output.result.matchRate).toBe(100);
+  });
+
+  it("auto_mask_dynamic:false では2回目の撮影を要求しない", async () => {
+    tmpRoot = await fs.mkdtemp(path.join(process.cwd(), "tmp-figdiff-runner-"));
+    const designPath = path.join(tmpRoot, "design.png");
+    const screenshotPath = path.join(tmpRoot, "captured.png");
+    await fs.writeFile(designPath, Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+    await fs.writeFile(screenshotPath, Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+
+    mocks.captureUrl.mockResolvedValue({ screenshotPath });
+    mocks.sharp.mockReturnValue({
+      metadata: vi.fn(async () => ({ width: 390, height: 844 })),
+    });
+    mocks.compareImages.mockResolvedValue({
+      comparisonId: "cmp-captured",
+      matchRate: 100,
+      diffPixelCount: 0,
+      totalPixelCount: 390 * 844,
+      diffRegions: [],
+      suggestion: "一致率100%です。差分はありません。",
+      normalization: {
+        designNativeWidth: 390,
+        designNativeHeight: 844,
+        screenshotWidth: 390,
+        screenshotHeight: 844,
+        cropApplied: false,
+        containResized: false,
+        appliedScale: 1,
+      },
+    });
+
+    await runCompareDesign({
+      design_source: designPath,
+      screenshot_url: "https://example.test",
+      auto_mask_dynamic: false,
+    });
+
+    expect(mocks.captureUrl).toHaveBeenCalledWith("https://example.test", {
+      width: 1440,
+      detectDynamic: false,
+    });
   });
 
   it("persists a runner diff PNG path when rounded matchRate is 100 but diff pixels exist", async () => {
@@ -734,7 +778,10 @@ describe("runCompareDesign", () => {
       project_id: "project-last-used",
     });
 
-    expect(mocks.captureUrl).toHaveBeenCalledWith("https://example.test", { width: 375 });
+    expect(mocks.captureUrl).toHaveBeenCalledWith("https://example.test", {
+      width: 375,
+      detectDynamic: true,
+    });
     expect(getNodeDetails).toHaveBeenCalledWith("FILEKEY123", "12:34");
     expect(getFrameImage).toHaveBeenCalledWith("FILEKEY123", "12:34", 375, 375, undefined, {
       logicalBox: { x: 0, y: 0, width: 375, height: 812 },

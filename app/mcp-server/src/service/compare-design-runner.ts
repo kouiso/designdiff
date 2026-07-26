@@ -10,6 +10,7 @@ import {
   buildComparisonHeadline,
   buildSystemBarIgnoreRegions,
   CompareDesignResultSchema,
+  detectDynamicRegionsAcrossSamples,
   diagnoseComparison,
   formatFrameCandidates,
   normalizeNodeId,
@@ -154,6 +155,11 @@ export interface CompareDesignRunArgs {
   profile?: ComparisonProfile;
   project_id?: string;
   mask_system_ui?: boolean;
+  /**
+   * screenshot_url 経路で、撮るたびに変わる領域を自動でマスクする (既定 true)。
+   * 時計・カウンタ・カルーセルが毎回差分に計上されると、自走ループが収束しない。
+   */
+  auto_mask_dynamic?: boolean;
   // 既知の意図的差分マスク。compare 結果から除外される。
   // 座標系は cropRegion 適用後 (= screenshot ピクセル座標)。
   ignore_regions?: IgnoreRegion[];
@@ -515,10 +521,16 @@ function buildDiagnosisNextAction(diagnosis: ComparisonDiagnosis): string | unde
 
 // fallbackNodeId は last-used node フォールバックから来る可能性がある。
 // screenshot_url 撮影前に解決しておくことで、フレームの実幅を capture_width に使える。
+interface ResolvedScreenshot {
+  screenshotPath: string;
+  /** 動的コンテンツ検出用の追加サンプル。FigDiff 自身が URL を撮ったときだけ得られる。 */
+  dynamicSamplePaths?: string[];
+}
+
 async function resolveScreenshotPath(
   args: CompareDesignRunArgs,
   fallbackNodeId?: string,
-): Promise<string> {
+): Promise<ResolvedScreenshot> {
   const screenshotSources = [
     args.screenshot && args.screenshot.trim() !== "" ? "screenshot" : undefined,
     args.screenshot_url ? "screenshot_url" : undefined,
@@ -533,14 +545,14 @@ async function resolveScreenshotPath(
   }
 
   if (args.capture_device) {
-    return captureDeviceScreenshot({ device: args.capture_device });
+    return { screenshotPath: await captureDeviceScreenshot({ device: args.capture_device }) };
   }
 
   if (!args.screenshot_url) {
     if (!args.screenshot || args.screenshot.trim() === "") {
       throw new Error(EMPTY_SCREENSHOT_INPUT_MESSAGE);
     }
-    return resolveScreenshotInputPath(args.screenshot);
+    return { screenshotPath: await resolveScreenshotInputPath(args.screenshot) };
   }
 
   const { captureUrl } = await import("./capture-service.js");
@@ -562,8 +574,85 @@ async function resolveScreenshotPath(
       // proceed with default width
     }
   }
-  const captured = await captureUrl(args.screenshot_url, { width: captureWidth ?? 1440 });
-  return captured.screenshotPath;
+  // 動的コンテンツの自動検出は FigDiff 自身が撮ったときだけ可能。手渡しの PNG では
+  // 「同じページの2連写」を作れないため、この経路に限る。
+  const detectDynamic = args.auto_mask_dynamic !== false;
+  const captured = await captureUrl(args.screenshot_url, {
+    width: captureWidth ?? 1440,
+    detectDynamic,
+  });
+  return {
+    screenshotPath: captured.screenshotPath,
+    dynamicSamplePaths: captured.dynamicSamplePaths,
+  };
+}
+
+/**
+ * 動的領域は crop 前の生スクショ座標で出る。ignore_regions の座標系は crop 適用後
+ * なので、crop の原点ぶん平行移動して crop 矩形でクリップする。はみ出したものは捨てる。
+ */
+export function shiftRegionsIntoCropSpace(
+  regions: readonly IgnoreRegion[],
+  cropRegion: CropRegion | undefined,
+): IgnoreRegion[] {
+  if (cropRegion === undefined) return [...regions];
+  const shifted: IgnoreRegion[] = [];
+  for (const region of regions) {
+    const left = Math.max(region.x, cropRegion.x);
+    const top = Math.max(region.y, cropRegion.y);
+    const right = Math.min(region.x + region.width, cropRegion.x + cropRegion.width);
+    const bottom = Math.min(region.y + region.height, cropRegion.y + cropRegion.height);
+    if (right <= left || bottom <= top) continue;
+    shifted.push({
+      x: left - cropRegion.x,
+      y: top - cropRegion.y,
+      width: right - left,
+      height: bottom - top,
+      label: region.label,
+    });
+  }
+  return shifted;
+}
+
+/**
+ * 2連写を突き合わせて、撮るたびに変わる領域をマスク候補として返す。
+ * 検出に失敗しても比較そのものは続ける。ここで落とすと、動的要素のある
+ * ページの比較が丸ごとできなくなり、元の問題より悪くなる。
+ */
+async function detectDynamicIgnoreRegions(
+  screenshotPath: string,
+  samplePaths: string[] | undefined,
+): Promise<IgnoreRegion[]> {
+  if (samplePaths === undefined || samplePaths.length === 0) return [];
+  try {
+    const base = await sharp(screenshotPath)
+      .ensureAlpha()
+      .raw()
+      .toBuffer({ resolveWithObject: true });
+    const samples = await Promise.all(
+      samplePaths.map((p) => sharp(p).ensureAlpha().raw().toBuffer({ resolveWithObject: true })),
+    );
+    // 寸法が揃わないものは同一ページの連写ではない。混ぜると誤検出になるので落とす。
+    const usable = samples
+      .filter(
+        (sample) =>
+          sample.info.width === base.info.width && sample.info.height === base.info.height,
+      )
+      .map((sample) => sample.data);
+    if (usable.length === 0) return [];
+    const regions = detectDynamicRegionsAcrossSamples(
+      base.data,
+      usable,
+      base.info.width,
+      base.info.height,
+    );
+    return regions.map((region) => ({ ...region, label: "auto:dynamic" }));
+  } catch (error) {
+    console.warn(
+      `[compare-design] 動的コンテンツの検出に失敗しました: ${error instanceof Error ? error.message : String(error)}`,
+    );
+    return [];
+  }
 }
 
 async function resolveDesignAssets(
@@ -839,7 +928,12 @@ export async function runCompareDesign(
       : { fallbackNodeId: undefined, lastUsedNodeNote: undefined };
 
   // スクリーンショットの読み込み — 許可されたディレクトリ内にあることを検証する
-  const screenshotPath = await resolveScreenshotPath(args, fallbackNodeId);
+  const resolvedScreenshot = await resolveScreenshotPath(args, fallbackNodeId);
+  const screenshotPath = resolvedScreenshot.screenshotPath;
+  const dynamicIgnoreRegions = await detectDynamicIgnoreRegions(
+    screenshotPath,
+    resolvedScreenshot.dynamicSamplePaths,
+  );
   const screenshotBuffer = await fs.readFile(screenshotPath);
   const screenshotBase64 = screenshotBuffer.toString("base64");
   let screenshotMeta: sharp.Metadata;
@@ -892,6 +986,7 @@ export async function runCompareDesign(
   const ignoreRegions = [
     ...projectIgnoreRegions,
     ...buildSystemIgnoreRegionsForComparison(args, screenshotMeta, cropRegion),
+    ...shiftRegionsIntoCropSpace(dynamicIgnoreRegions, cropRegion),
   ];
 
   const comparison = await compareImages(
@@ -1015,6 +1110,7 @@ export async function runCompareDesign(
     matchRate: comparison.matchRate,
     diffPixelCount: comparison.diffPixelCount,
     regionCount,
+    perceptibleDiffRatio,
     structuralVerdict: structuralReviewResult.verdict,
     status,
   });

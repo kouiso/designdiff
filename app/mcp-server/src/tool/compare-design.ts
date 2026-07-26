@@ -47,6 +47,7 @@ const DESCRIPTION = `デザインと実装のピクセル差分を検出しま�
 - project_id: Crop Region・ignore_regions・前回使用ノード自動補完に使うプロジェクトID（省略可）
 - ignore_regions: 既知の意図的差分マスク（省略可）。project_id の保存済みマスク、自動 system UI マスクと結合される。WP原文 vs Figmaプレースホルダ、Google Map埋め込み等の false-positive 抑制に使用。各矩形 {x,y,width,height,label?} 内のピクセルは差分検出/matchRate 分母から除外される
 - mask_system_ui: モバイル実機/Simulator撮影のOSステータスバー/ナビゲーションバーを自動マスクするか。capture_device指定時は既定true、それ以外は既定false。set_ignore_regionsで追加の微調整が可能
+- auto_mask_dynamic: screenshot_url経路で同じページを2回撮り、変わった領域を自動マスクする（既定true）。時計/カウンタ/カルーセル等が毎回差分に出て収束しなくなるのを防ぐ
 
 ## Figma URLの例
   "https://www.figma.com/design/ABC123/File?node-id=1-23"
@@ -233,6 +234,12 @@ export function registerCompareDesign(server: McpServer): void {
           .optional()
           .describe(
             "モバイル実機/Simulator撮影のOSステータスバー/ナビゲーションバーを自動ignore_regions化する。capture_device指定時は既定true、それ以外は既定false。",
+          ),
+        auto_mask_dynamic: z
+          .boolean()
+          .optional()
+          .describe(
+            "screenshot_url経路で同じページを2回撮り、撮るたびに変わる領域(時計/カウンタ/カルーセル/ランダム広告)を自動でignore_regions化する。既定true。falseにすると2回目の撮影を行わない。",
           ),
         frame_name: z
           .string()

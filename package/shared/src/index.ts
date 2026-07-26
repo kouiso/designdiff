@@ -59,6 +59,14 @@ export {
   PERCEPTIBLE_DIFF_CONTRADICTION_RATIO,
   srgbToLab,
 } from "./signal/delta-e-2000.js";
+export {
+  detectDynamicRegions,
+  detectDynamicRegionsAcrossSamples,
+  DYNAMIC_CELL_SIZE,
+  DYNAMIC_CHANNEL_TOLERANCE,
+  type DetectDynamicRegionsOptions,
+  type DynamicRegion,
+} from "./signal/dynamic-region.js";
 export { selfCritique } from "./self-critique.js";
 
 // Comparison Confidence Layer (pre-flight / diagnosis / headline)
