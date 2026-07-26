@@ -61,6 +61,24 @@ export const PRODUCT_SELF_NAMES: readonly string[] = ["designdiff", "figdiff"];
 /** これより短い語は誤検知が多いので識別子として扱わない。 */
 const MIN_NAME_LENGTH = 5;
 
+/**
+ * 検出対象から外す語を利用者が足せるようにする環境変数 (カンマ区切り)。
+ *
+ * 置き場には自分のプロジェクトだけでなく、参照用に clone した外部OSSも並ぶ。
+ * それらの名前 (例: よく話題に出るフレームワーク名) が本文に出るのは漏洩ではないが、
+ * ディレクトリ名としては区別が付かない。既定を緩めず、逃げ道だけ用意する。
+ */
+const ALLOWED_NAMES_ENV = "FIGDIFF_ALLOWED_PROJECT_NAMES";
+
+function readAllowedNamesFromEnv(): string[] {
+  const raw = process.env[ALLOWED_NAMES_ENV];
+  if (raw === undefined) return [];
+  return raw
+    .split(",")
+    .map((name) => name.trim().toLowerCase())
+    .filter((name) => name.length > 0);
+}
+
 export interface ForeignProjectGuardOptions {
   /** チェックアウト置き場。既定は FIGDIFF_PROJECT_ROOT または ~/ghq */
   projectRoot?: string;
@@ -99,7 +117,11 @@ async function listDirectories(dir: string): Promise<string[]> {
     // 「他プロジェクトが無い」ではない。素通しさせると、判定語ゼロのまま
     // 公開まで進む。安全装置なので、分からないときは止める側に倒す。
     throw new Error(
-      `他プロジェクトの識別子を調べられませんでした (${dir}: ${error instanceof Error ? error.message : String(error)})。安全のため起票を中止します。`,
+      [
+        `他プロジェクトの識別子を調べられませんでした (${dir}: ${error instanceof Error ? error.message : String(error)})。`,
+        "安全のため起票を中止します。",
+        "読めないディレクトリが原因なら FIGDIFF_PROJECT_ROOT で走査先を変更できます。",
+      ].join(""),
       { cause: error },
     );
   }
@@ -153,7 +175,10 @@ export async function detectForeignProjectNames(
   text: string,
   options: ForeignProjectGuardOptions = {},
 ): Promise<string[]> {
-  const selfNames = new Set((options.selfNames ?? PRODUCT_SELF_NAMES).map((n) => n.toLowerCase()));
+  const selfNames = new Set([
+    ...(options.selfNames ?? PRODUCT_SELF_NAMES).map((n) => n.toLowerCase()),
+    ...readAllowedNamesFromEnv(),
+  ]);
   const candidates = new Set(
     (await collectProjectNames(options))
       .map((n) => n.toLowerCase())
@@ -181,5 +206,8 @@ export function formatForeignProjectError(hits: readonly string[]): string {
     "",
     "出所を落として、このリポジトリ単体で成立する記述へ書き換えてから再実行してください。",
     "再現手順が出所抜きで書けない場合は、事象と期待値だけを書いてください。",
+    "",
+    "参照用に clone した外部OSSの名前など、そもそも漏洩に当たらない語が引っかかった場合は",
+    "FIGDIFF_ALLOWED_PROJECT_NAMES にカンマ区切りで並べると検出対象から外れます。",
   ].join("\n");
 }

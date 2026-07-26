@@ -143,6 +143,37 @@ describe("collectProjectNames", () => {
   });
 });
 
+describe("FIGDIFF_ALLOWED_PROJECT_NAMES", () => {
+  const original = process.env.FIGDIFF_ALLOWED_PROJECT_NAMES;
+
+  afterAll(() => {
+    if (original === undefined) delete process.env.FIGDIFF_ALLOWED_PROJECT_NAMES;
+    else process.env.FIGDIFF_ALLOWED_PROJECT_NAMES = original;
+  });
+
+  it("並べた語は検出対象から外れる", async () => {
+    process.env.FIGDIFF_ALLOWED_PROJECT_NAMES = "widget-native, acme-inc";
+    const hits = await detectForeignProjectNames("widget-native と acme-inc の話", {
+      knownNames: KNOWN,
+    });
+    expect(hits).toEqual([]);
+  });
+
+  it("並べていない語は従来どおり検出する", async () => {
+    process.env.FIGDIFF_ALLOWED_PROJECT_NAMES = "widget-native";
+    const hits = await detectForeignProjectNames("widget-native と acme-inc の話", {
+      knownNames: KNOWN,
+    });
+    expect(hits).toEqual(["acme-inc"]);
+  });
+
+  it("空文字は無視する", async () => {
+    process.env.FIGDIFF_ALLOWED_PROJECT_NAMES = " , ,";
+    const hits = await detectForeignProjectNames("acme-inc の話", { knownNames: KNOWN });
+    expect(hits).toEqual(["acme-inc"]);
+  });
+});
+
 describe("formatForeignProjectError", () => {
   it("検出語と直し方を含む", () => {
     const message = formatForeignProjectError(["acme-inc"]);
