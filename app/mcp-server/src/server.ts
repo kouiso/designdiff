@@ -2,7 +2,7 @@
  * FigDiff MCP Server
  * Diff-driven design comparison tools for AI assistants
  *
- * Exposes 15 tools via MCP protocol:
+ * Exposes 16 tools via MCP protocol:
  * - list_projects (Utility): List all FigDiff projects stored in ~/.figdiff/projects/
  * - create_project (Utility): Create a new FigDiff project
  * - delete_project (Utility): Delete a FigDiff project
@@ -75,7 +75,14 @@ export function createMcpServer(): McpServer {
 5. If issues persist after code fix, check "マスク候補" in compare_design output. For each candidate: confirm it is an intentional diff (photo area, theme color, etc.), then call set_ignore_regions to register it. Do NOT auto-mask without confirmation.
 6. Re-run compare_design to verify fixes and masks.
 7. verify_fix で claimed fix の改善有無と副作用を確認する。
-8. Repeat until match_rate reaches 100% or all remaining issues are confirmed intentional diffs.
+8. STOP CONDITION — obey the "ループ判定" line at the top of every compare_design output.
+   It says 停止 (stop) or 続行 (continue) plus the reason. When it says 停止, stop editing
+   immediately and report the current state to the human. Do NOT keep iterating past it.
+   NEVER use match_rate as the stop condition. It is a reference metric only: font
+   antialiasing means an identical page still never reaches 100%, so "loop until 100%"
+   never terminates. The blocking gate is the structural review in completion_criteria.
+   UNCERTAIN is not a failure — it means the comparison was routed to human review by
+   design because its confidence was not trustworthy. Report it, do not retry blindly.
 9. 使いにくさ・バグを発見したら report_issue で即起票してください。`,
       capabilities: {
         tools: {},

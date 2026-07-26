@@ -14,6 +14,7 @@ import {
 
 import { writeActiveSession } from "../service/active-session.js";
 import { runCompareDesign } from "../service/compare-design-runner.js";
+import { MAX_LOOP_ITERATIONS } from "../service/loop-guard-service.js";
 import { persistDetailJson } from "../service/persist-detail.js";
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
@@ -116,6 +117,8 @@ function buildNormalizationLines(result: CompareDesignResult): string[] {
 export function buildSummaryText(result: CompareDesignResult): string {
   const lines: string[] = [];
 
+  lines.push(...buildLoopGuardLines(result));
+
   if (result.diffReport) {
     lines.push(`構造SSIM判定: ${result.diffReport.aggregateVerdict.toUpperCase()}`);
     lines.push(result.diffReport.rationale);
@@ -132,6 +135,23 @@ export function buildSummaryText(result: CompareDesignResult): string {
   lines.push(...buildMaskCandidateLines(result));
 
   return lines.join("\n");
+}
+
+// loopGuard は structuredContent にしか載っておらず、テキスト出力を読む AI からは
+// 見えていなかった。停止判定が実装済みなのに使われない直接原因だったため、最初の1行に
+// 出す。末尾に置くと長い出力で読み飛ばされ、同じ状態に戻る。
+function buildLoopGuardLines(result: CompareDesignResult): string[] {
+  const guard = result.loopGuard;
+  if (!guard) return [];
+
+  const verdict = guard.decision === "stop" ? "停止" : "続行";
+  // iteration は上限を超えて増え続けるため "6/5 回" のような読み手を混乱させる分数を
+  // 出さない。上限は続行中だけ残量の目安として意味を持つ。
+  const progress =
+    guard.decision === "stop"
+      ? `反復 ${guard.iteration} 回目`
+      : `反復 ${guard.iteration} 回目 / 上限 ${MAX_LOOP_ITERATIONS}`;
+  return [`ループ判定: ${verdict} (${progress})`, guard.reason, ""];
 }
 
 function buildMaskCandidateLines(result: CompareDesignResult): string[] {

@@ -81,3 +81,53 @@ describe("buildSummaryText — image size display", () => {
     expect(text).not.toContain("画像サイズ");
   });
 });
+
+// loopGuard は structuredContent にしか載っておらず、テキスト出力を読む AI からは
+// 存在自体が見えていなかった。停止判定が実装済みなのに使われない直接原因だったため、
+// 先頭に出して読み飛ばせないようにする。
+describe("buildSummaryText — loop guard", () => {
+  it("puts the stop decision on the first line", () => {
+    const result = makeResult({
+      status: "FAIL",
+      loopGuard: {
+        iteration: 5,
+        decision: "stop",
+        reason: "反復回数が上限 (5 回) に達しました。",
+      },
+    });
+
+    const firstLine = buildSummaryText(result).split("\n")[0];
+    expect(firstLine).toContain("ループ判定");
+    expect(firstLine).toContain("停止");
+  });
+
+  it("includes the reason and iteration count", () => {
+    const result = makeResult({
+      status: "FAIL",
+      loopGuard: {
+        iteration: 5,
+        decision: "stop",
+        reason: "反復回数が上限 (5 回) に達しました。",
+      },
+    });
+
+    const text = buildSummaryText(result);
+    expect(text).toContain("反復回数が上限 (5 回) に達しました。");
+    expect(text).toContain("5");
+  });
+
+  it("shows continue when the loop may proceed", () => {
+    const result = makeResult({
+      status: "FAIL",
+      loopGuard: { iteration: 2, decision: "continue", reason: "改善の余地があります。" },
+    });
+
+    const firstLine = buildSummaryText(result).split("\n")[0];
+    expect(firstLine).toContain("続行");
+  });
+
+  it("emits nothing when loopGuard is absent", () => {
+    const text = buildSummaryText(makeResult());
+    expect(text).not.toContain("ループ判定");
+  });
+});
