@@ -803,9 +803,48 @@ describe("runCompareDesign", () => {
 
     // 構造判定が inconclusive = 判定の確からしさ自体が欠けた状態。
     // FAIL (直せ) でも PASS (合格) でもなく UNCERTAIN (人間レビュー) を返す。
+    // 行の status も UNCERTAIN で揃える。FAIL と書くと「直せば PASS になる」と
+    // 読まれ、直しようのないものを直し続ける指示になる。
     expect(result.status).toBe("UNCERTAIN");
-    expect(result.completionCriteria?.structuralReview.status).toBe("FAIL");
+    expect(result.completionCriteria?.structuralReview.status).toBe("UNCERTAIN");
     expect(result.completionCriteria?.structuralReview.current).toBe(0);
+  });
+
+  // #269: 1080x300 の単色フレームで matchRate 0% のまま PASS が返っていた。
+  // 判定器が pass と言い、画素が全部違うと言う状態は、どちらかが嘘なので
+  // PASS を出さず人間レビューへ回す。
+  it("routes a pass verdict to human review when the pixels contradict it", async () => {
+    const { result } = await runLocalStructuralComparison("pass", 324000, 0);
+
+    expect(result.status).toBe("UNCERTAIN");
+    expect(result.completionCriteria?.consistencyReview.status).toBe("UNCERTAIN");
+    expect(result.completionCriteria?.consistencyReview.blocking).toBe(true);
+    expect(result.completionCriteria?.consistencyReview.note).toContain("human review");
+  });
+
+  it("keeps a pass verdict when the pixels back it up", async () => {
+    const { result } = await runLocalStructuralComparison("pass", 0, 100);
+
+    expect(result.status).toBe("PASS");
+    expect(result.completionCriteria?.consistencyReview.status).toBe("PASS");
+    expect(result.completionCriteria?.consistencyReview.blocking).toBe(false);
+  });
+
+  // フォントの縁のぼかしで落ちる程度では発火させない。実測フィクスチャ12件では
+  // 正しい実装が 100%、欠陥ありでも最低 73.16% だった。
+  it("does not fire on the match-rate range a real comparison lives in", async () => {
+    const { result } = await runLocalStructuralComparison("pass", 5000, 73.16);
+
+    expect(result.status).toBe("PASS");
+    expect(result.completionCriteria?.consistencyReview.status).toBe("PASS");
+  });
+
+  // fail 側は元から人間へ回す必要がない。整合ゲートは pass のときだけ働く。
+  it("leaves a fail verdict alone", async () => {
+    const { result } = await runLocalStructuralComparison("fail", 324000, 0);
+
+    expect(result.status).toBe("FAIL");
+    expect(result.completionCriteria?.consistencyReview.status).toBe("PASS");
   });
 
   it("always marks structuralReview as blocking", async () => {

@@ -214,16 +214,24 @@ function buildCompletionCriteria(
   structuralVerdict: DiffVerdict,
   structuralRationale: string | undefined,
 ): Record<
-  "structuralReview" | "matchRate" | "diffPixelCount" | "remainingIssues",
+  "structuralReview" | "consistencyReview" | "matchRate" | "diffPixelCount" | "remainingIssues",
   {
     required: number;
     current: number;
-    status: "PASS" | "FAIL";
+    status: "PASS" | "FAIL" | "UNCERTAIN";
     blocking: boolean;
     note: string;
   }
 > {
-  const structuralStatus = structuralVerdict === "pass" ? "PASS" : "FAIL";
+  // inconclusive を FAIL と書くと「直せば PASS になる」と読まれる。実際は
+  // 判定の確からしさが足りていない状態なので、status も UNCERTAIN で揃える。
+  const structuralStatus =
+    structuralVerdict === "pass"
+      ? "PASS"
+      : structuralVerdict === "inconclusive"
+        ? "UNCERTAIN"
+        : "FAIL";
+  const pixelsAgreeWithPass = !isPassContradictedByPixels(structuralVerdict, matchRate);
 
   return {
     structuralReview: {
@@ -235,6 +243,15 @@ function buildCompletionCriteria(
         structuralVerdict === "inconclusive"
           ? "Structural SSIM verdict is inconclusive; treat this as not complete and ask for review."
           : (structuralRationale ?? "Structural SSIM verdict from diffReport.aggregateVerdict."),
+    },
+    consistencyReview: {
+      required: CONSISTENCY_MATCH_RATE_FLOOR,
+      current: matchRate,
+      status: pixelsAgreeWithPass ? "PASS" : "UNCERTAIN",
+      blocking: !pixelsAgreeWithPass,
+      note: pixelsAgreeWithPass
+        ? "Structural verdict and pixel evidence agree."
+        : `Structural review says pass, yet only ${matchRate}% of pixels match (floor ${CONSISTENCY_MATCH_RATE_FLOOR}%). One of the two is wrong, so this comparison is routed to human review instead of reporting PASS.`,
     },
     matchRate: {
       required: 100,
@@ -284,11 +301,30 @@ function resolveStructuralVerdict(
 // なので、PASS/FAIL ではなく UNCERTAIN に倒して人間レビューへ回す。
 type CompareStatus = "PASS" | "FAIL" | "UNCERTAIN";
 
-function buildStatus(structuralVerdict: DiffVerdict, likelyMisconfig: boolean): CompareStatus {
+// 判定器が pass と言っているのに画素の大半が違うなら、どちらかが嘘をついている。
+// #269 の 1080x300 単色フレームがこの形で、matchRate 0% のまま PASS が出ていた。
+// 床値は「正しい実装でもフォントの縁のぼかしでどこまで落ちるか」から決める。
+// 実測フィクスチャ12件では正しい実装が 100%、欠陥ありでも最低 73.16% だったので、
+// 50% は正常な比較には決して触れない。半分以上の画素が違う時点で、
+// どんな実装差でも説明がつかない。
+export const CONSISTENCY_MATCH_RATE_FLOOR = 50;
+
+function isPassContradictedByPixels(structuralVerdict: DiffVerdict, matchRate: number): boolean {
+  return structuralVerdict === "pass" && matchRate < CONSISTENCY_MATCH_RATE_FLOOR;
+}
+
+function buildStatus(
+  structuralVerdict: DiffVerdict,
+  likelyMisconfig: boolean,
+  matchRate: number,
+): CompareStatus {
   if (likelyMisconfig) {
     return "UNCERTAIN";
   }
   if (structuralVerdict === "inconclusive") {
+    return "UNCERTAIN";
+  }
+  if (isPassContradictedByPixels(structuralVerdict, matchRate)) {
     return "UNCERTAIN";
   }
   return structuralVerdict === "pass" ? "PASS" : "FAIL";
@@ -914,7 +950,11 @@ export async function runCompareDesign(
     : (buildDiagnosisNextAction(diagnosis) ??
       buildNextAction(structuralReviewResult.verdict, regionCount, targetNodeIds));
 
-  const status = buildStatus(structuralReviewResult.verdict, diagnosis.likelyMisconfig);
+  const status = buildStatus(
+    structuralReviewResult.verdict,
+    diagnosis.likelyMisconfig,
+    comparison.matchRate,
+  );
   const loopGuard = await evaluateLoopGuardSafely({
     sourceKey,
     comparisonId: comparison.comparisonId,
