@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Project } from "@figdiff/shared";
 
 import { App } from "./app";
+import { useOverlayStore } from "./store/overlay-store";
 import { useProjectListStore } from "./store/project-list-store";
 import { useTabStore } from "./store/tab-store";
 
@@ -94,5 +95,83 @@ describe("App", () => {
     });
     expect(screen.getAllByText("Project B").length).toBeGreaterThan(0);
     expect(window.electronAPI.project.load).toHaveBeenCalledWith(projectB.id);
+  });
+
+  it("設定へ遷移するとタブ選択が外れて設定画面だけが残る", async () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole("button", { name: "設定" }));
+
+    await waitFor(() => {
+      expect(useTabStore.getState().activeTabId).toBeNull();
+    });
+    expect(screen.queryByTestId("project-view")).not.toBeInTheDocument();
+  });
+
+  it("ライブオーバーレイへ遷移した後ホームへ戻ると開いていたサイトを閉じる", async () => {
+    const closeSite = vi.fn();
+    useOverlayStore.setState({ closeSite });
+
+    render(<App />);
+
+    fireEvent.click(screen.getByRole("button", { name: "ライブオーバーレイ" }));
+    await waitFor(() => {
+      expect(useTabStore.getState().activeTabId).toBeNull();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "ホーム" }));
+
+    await waitFor(() => {
+      expect(closeSite).toHaveBeenCalled();
+    });
+  });
+
+  it("タブがある状態で比較へ遷移すると、そのタブのページが切り替わる", async () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole("button", { name: "比較" }));
+
+    await waitFor(() => {
+      const tab = useTabStore.getState().tabs.find((t) => t.id === "tab-a");
+      expect(tab?.page).toBe("compare");
+    });
+  });
+
+  it("フレーム選択へ遷移すると、そのタブのページが project になる", async () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole("button", { name: "フレーム選択" }));
+
+    await waitFor(() => {
+      const tab = useTabStore.getState().tabs.find((t) => t.id === "tab-a");
+      expect(tab?.page).toBe("project");
+    });
+  });
+
+  it("タブが無ければホームを選択状態にする", async () => {
+    useTabStore.setState({ tabs: [], activeTabId: null });
+
+    render(<App />);
+
+    await waitFor(() => {
+      expect(window.electronAPI.project.list).toHaveBeenCalled();
+    });
+    expect(screen.getByRole("button", { name: "ホーム" })).toHaveAttribute("aria-current", "page");
+  });
+
+  it("設定表示中にタブが選択されたら設定を閉じてタブ内容へ戻る", async () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole("button", { name: "設定" }));
+    await waitFor(() => {
+      expect(useTabStore.getState().activeTabId).toBeNull();
+    });
+
+    fireEvent.click(screen.getByText("Project B"));
+
+    await waitFor(() => {
+      expect(useTabStore.getState().activeTabId).toBe("tab-b");
+    });
+    expect(screen.getAllByText("Project B").length).toBeGreaterThan(0);
   });
 });

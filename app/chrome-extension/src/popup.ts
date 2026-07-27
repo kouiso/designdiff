@@ -19,7 +19,7 @@ import type {
 // State
 // =============================================================================
 
-interface PopupState {
+export interface PopupState {
   tab: "figma" | "upload" | "token";
   figmaUrl: string;
   frames: Frame[];
@@ -39,7 +39,7 @@ interface PopupState {
   hasToken: boolean;
 }
 
-const state: PopupState = {
+export const state: PopupState = {
   tab: "figma",
   figmaUrl: "",
   frames: [],
@@ -63,7 +63,7 @@ const state: PopupState = {
 // Render
 // =============================================================================
 
-function render(): void {
+export function render(): void {
   const app = document.getElementById("app");
   if (!app) return;
   app.innerHTML = "";
@@ -83,7 +83,7 @@ function render(): void {
   }
 }
 
-function renderTabs(): HTMLDivElement {
+export function renderTabs(): HTMLDivElement {
   const wrapper = div("tabs");
   wrapper.style.cssText = "display:flex;gap:0;border-bottom:1px solid #EEE;margin-bottom:8px;";
 
@@ -108,7 +108,7 @@ function renderTabs(): HTMLDivElement {
 
 // --- Figma Tab ---
 
-function renderFigmaTab(): HTMLDivElement {
+export function renderFigmaTab(): HTMLDivElement {
   const section = div("section");
 
   const urlLabel = div("label");
@@ -152,7 +152,7 @@ function renderFigmaTab(): HTMLDivElement {
   return section;
 }
 
-function renderFrameList(): HTMLDivElement {
+export function renderFrameList(): HTMLDivElement {
   const wrapper = div("section");
   const label = div("label");
   label.textContent = `Frames (${state.frames.length})`;
@@ -181,7 +181,7 @@ function renderFrameList(): HTMLDivElement {
 
 // --- Upload Tab ---
 
-function renderUploadTab(): HTMLDivElement {
+export function renderUploadTab(): HTMLDivElement {
   const section = div("section");
   const label = div("label");
   label.textContent = "Upload Design Image";
@@ -230,7 +230,7 @@ function renderUploadTab(): HTMLDivElement {
 
 // --- Token Tab ---
 
-function renderTokenTab(): HTMLDivElement {
+export function renderTokenTab(): HTMLDivElement {
   const section = div("section");
 
   const statusLabel = div("label");
@@ -270,7 +270,7 @@ function renderTokenTab(): HTMLDivElement {
 
 // --- Shared UI: Overlay Controls ---
 
-function renderOverlayControls(): HTMLDivElement {
+export function renderOverlayControls(): HTMLDivElement {
   const section = div("section");
   section.style.marginTop = "8px";
 
@@ -336,7 +336,7 @@ function renderOverlayControls(): HTMLDivElement {
 
 // --- Shared UI: Compare Section ---
 
-function renderCompareSection(): HTMLDivElement {
+export function renderCompareSection(): HTMLDivElement {
   const section = div("section");
   section.style.marginTop = "8px";
 
@@ -377,7 +377,7 @@ function renderCompareSection(): HTMLDivElement {
 // Actions
 // =============================================================================
 
-async function handleFetchFrames(): Promise<void> {
+export async function handleFetchFrames(): Promise<void> {
   if (!state.figmaUrl) {
     state.error = "Please enter a Figma URL";
     render();
@@ -413,7 +413,7 @@ async function handleFetchFrames(): Promise<void> {
   render();
 }
 
-async function handleSelectFrame(frame: Frame): Promise<void> {
+export async function handleSelectFrame(frame: Frame): Promise<void> {
   state.selectedFrame = frame;
   state.loading = true;
   state.designBase64 = null;
@@ -438,7 +438,7 @@ async function handleSelectFrame(frame: Frame): Promise<void> {
   render();
 }
 
-async function showOverlayOnPage(): Promise<void> {
+export async function showOverlayOnPage(): Promise<void> {
   if (!state.designBase64) return;
 
   const message: ContentMessage = {
@@ -463,7 +463,7 @@ async function showOverlayOnPage(): Promise<void> {
   render();
 }
 
-async function hideOverlayOnPage(): Promise<void> {
+export async function hideOverlayOnPage(): Promise<void> {
   state.overlayActive = false;
   const message: ContentMessage = { type: "hide-overlay" };
   // hide は失敗しても致命的ではないため、エラーは握りつぶさず state は更新済み。
@@ -471,17 +471,17 @@ async function hideOverlayOnPage(): Promise<void> {
   render();
 }
 
-async function sendModeUpdate(mode: ViewMode): Promise<void> {
+export async function sendModeUpdate(mode: ViewMode): Promise<void> {
   const message: ContentMessage = { type: "update-mode", mode };
   await sendToActiveTab(message);
 }
 
-async function sendOpacityUpdate(opacity: number): Promise<void> {
+export async function sendOpacityUpdate(opacity: number): Promise<void> {
   const message: ContentMessage = { type: "update-opacity", opacity };
   await sendToActiveTab(message);
 }
 
-async function captureAndCompare(): Promise<void> {
+export async function captureAndCompare(): Promise<void> {
   if (!state.designBase64) return;
 
   if (state.overlayActive) {
@@ -532,7 +532,7 @@ async function captureAndCompare(): Promise<void> {
   render();
 }
 
-async function handleSaveToken(): Promise<void> {
+export async function handleSaveToken(): Promise<void> {
   if (!state.tokenInput) return;
   await sendToBackground({ type: "token:set", token: state.tokenInput });
   state.hasToken = true;
@@ -540,7 +540,7 @@ async function handleSaveToken(): Promise<void> {
   render();
 }
 
-async function handleClearToken(): Promise<void> {
+export async function handleClearToken(): Promise<void> {
   await sendToBackground({ type: "token:clear" });
   state.hasToken = false;
   render();
@@ -550,7 +550,7 @@ async function handleClearToken(): Promise<void> {
 // Messaging
 // =============================================================================
 
-function sendToBackground<T>(message: InternalMessage): Promise<T> {
+export function sendToBackground<T>(message: InternalMessage): Promise<T> {
   return new Promise((resolve, reject) => {
     chrome.runtime.sendMessage(message, (response: T) => {
       if (chrome.runtime.lastError) {
@@ -568,7 +568,7 @@ interface SendToActiveTabResult {
   error?: string;
 }
 
-function sendToActiveTab(message: ContentMessage): Promise<SendToActiveTabResult> {
+export function sendToActiveTab(message: ContentMessage): Promise<SendToActiveTabResult> {
   return new Promise((resolve) => {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       const tabId = tabs[0]?.id;
@@ -610,10 +610,12 @@ function button(className: string, text: string): HTMLButtonElement {
 // Init
 // =============================================================================
 
-async function init(): Promise<void> {
+export async function init(): Promise<void> {
   const tokenRes = await sendToBackground<TokenGetResponse>({ type: "token:get" });
   state.hasToken = !!tokenRes.token;
   render();
 }
 
+// popup.html から読み込まれた時点の起動処理。
+// 個々のハンドラは上で export してあり、ここは配線だけを担う。
 init().catch(console.error);

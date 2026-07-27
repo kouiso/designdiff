@@ -1,3 +1,5 @@
+// jsdom は canvas を実装していないため、getContext("2d") 一式をモックで埋める
+import "vitest-canvas-mock";
 import { vi } from "vitest";
 
 const figmaMock = {

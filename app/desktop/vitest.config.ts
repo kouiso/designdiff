@@ -18,6 +18,12 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       include: ["src/**/*.{ts,tsx}"],
+      // 除外してよいのは「実行される製品ロジックを持たないファイル」だけ。
+      // 出荷コードを分母から外して数字を作るのは禁止。
+      // - src/i18n/**: i18next の初期化19行と翻訳辞書(JSON)のみで分岐なし
+      // - src/env.d.ts: ambient 宣言のみでランタイム出力なし
+      // - src/main.tsx: createRoot して App を描くだけの13行の起動処理
+      // - src/lib/platform/platform-adapter.ts: interface と型宣言のみ、関数本体ゼロ
       exclude: [
         "src/**/*.test.{ts,tsx}",
         "src/__mock__/**",
@@ -25,8 +31,6 @@ export default defineConfig({
         "src/i18n/**",
         "src/env.d.ts",
         "src/main.tsx",
-        "src/app.tsx",
-        "src/lib/platform/web-adapter.ts",
         "src/lib/platform/platform-adapter.ts",
       ],
       thresholds: {

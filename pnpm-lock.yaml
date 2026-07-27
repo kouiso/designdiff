@@ -208,6 +208,9 @@ importers:
       vitest:
         specifier: ^3.2.4
         version: 3.2.4(@types/debug@4.1.13)(@types/node@25.6.0)(jiti@2.6.1)(jsdom@25.0.1)(lightningcss@1.32.0)(yaml@2.9.0)
+      vitest-canvas-mock:
+        specifier: 1.1.4
+        version: 1.1.4(vitest@3.2.4(@types/debug@4.1.13)(@types/node@25.6.0)(jiti@2.6.1)(jsdom@25.0.1)(lightningcss@1.32.0)(yaml@2.9.0))
 
   app/mcp-server:
     dependencies:

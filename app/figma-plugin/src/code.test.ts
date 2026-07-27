@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 
 import type { NodeAppearance, NodeLayout, NodeTypography } from "@figdiff/shared";
 
@@ -383,5 +383,376 @@ describe("extractNodeInspection", () => {
     expect(result.layout.width).toBe(400);
     expect(result.children).toHaveLength(1);
     expect(result.cssSuggestion).toContain("width: 400.0px;");
+  });
+});
+
+// --- figma API を経由する経路 ---
+
+// Figma のノード型は巨大なので、テストでは必要なプロパティだけを持つ偽物を渡す。
+// 型アサーション禁止のため、型述語で目的の型とみなす。
+function isShapeOf<T>(_value: unknown): _value is T {
+  return true;
+}
+
+function fake<T>(source: object): T {
+  if (!isShapeOf<T>(source)) throw new Error("unreachable");
+  return source;
+}
+
+function postedMessages(): { type: string; [key: string]: unknown }[] {
+  return vi.mocked(figma.ui.postMessage).mock.calls.map((call) => fake(call[0]));
+}
+
+function lastMessageOfType(type: string): Record<string, unknown> | undefined {
+  return postedMessages()
+    .filter((msg) => msg.type === type)
+    .at(-1);
+}
+
+function sendToPlugin(msg: object): void {
+  const handler = figma.ui.onmessage;
+  if (!handler) throw new Error("code.ts が figma.ui.onmessage を設定していない");
+  handler(msg, { origin: "*" });
+}
+
+function makeExportableNode(overrides: object = {}): SceneNode {
+  return fake({
+    id: "1:1",
+    name: "Frame 1",
+    type: "FRAME",
+    x: 0,
+    y: 0,
+    width: 200,
+    height: 100,
+    opacity: 1,
+    exportAsync: () => Promise.resolve(new Uint8Array([1, 2, 3])),
+    ...overrides,
+  });
+}
+
+beforeEach(() => {
+  vi.mocked(figma.ui.postMessage).mockClear();
+  vi.mocked(figma.getNodeById).mockReset();
+  figma.currentPage.selection = [];
+});
+
+describe("figma.ui.onmessage: get-selection", () => {
+  it("選択なし → 空配列を返す", async () => {
+    sendToPlugin({ type: "get-selection" });
+    await vi.waitFor(() => {
+      expect(lastMessageOfType("selection")).toEqual({ type: "selection", nodes: [] });
+    });
+  });
+
+  it("選択あり → id/name/type/幅高さを返す", async () => {
+    figma.currentPage.selection = [makeExportableNode({ id: "2:2", name: "Card" })];
+    sendToPlugin({ type: "get-selection" });
+    await vi.waitFor(() => {
+      expect(lastMessageOfType("selection")).toEqual({
+        type: "selection",
+        nodes: [{ id: "2:2", name: "Card", type: "FRAME", width: 200, height: 100 }],
+      });
+    });
+  });
+
+  it("幅高さを持たないノード → 0 で埋める", async () => {
+    figma.currentPage.selection = [fake({ id: "3:3", name: "Slice", type: "SLICE" })];
+    sendToPlugin({ type: "get-selection" });
+    await vi.waitFor(() => {
+      expect(lastMessageOfType("selection")?.nodes).toEqual([
+        { id: "3:3", name: "Slice", type: "SLICE", width: 0, height: 0 },
+      ]);
+    });
+  });
+});
+
+describe("figma.ui.onmessage: export-frame", () => {
+  it("nodeId 指定 → base64 を返す", async () => {
+    vi.mocked(figma.getNodeById).mockReturnValue(makeExportableNode({ id: "4:4", name: "Hero" }));
+    sendToPlugin({ type: "export-frame", nodeId: "4:4" });
+    await vi.waitFor(() => {
+      expect(lastMessageOfType("export-result")).toEqual({
+        type: "export-result",
+        base64: figma.base64Encode(new Uint8Array([1, 2, 3])),
+        nodeId: "4:4",
+        nodeName: "Hero",
+        width: 200,
+        height: 100,
+      });
+    });
+  });
+
+  it("nodeId なし → 選択中のノードを書き出す", async () => {
+    figma.currentPage.selection = [makeExportableNode()];
+    sendToPlugin({ type: "export-frame" });
+    await vi.waitFor(() => {
+      expect(lastMessageOfType("export-result")?.nodeId).toBe("1:1");
+    });
+  });
+
+  it("対象ノードなし → エラーを返す", async () => {
+    vi.mocked(figma.getNodeById).mockReturnValue(null);
+    sendToPlugin({ type: "export-frame", nodeId: "missing" });
+    await vi.waitFor(() => {
+      expect(lastMessageOfType("export-result")).toEqual({
+        type: "export-result",
+        error: "No node selected",
+      });
+    });
+  });
+
+  it("PAGE ノード → SceneNode でないのでエラーを返す", async () => {
+    vi.mocked(figma.getNodeById).mockReturnValue(fake({ id: "0:1", type: "PAGE" }));
+    sendToPlugin({ type: "export-frame", nodeId: "0:1" });
+    await vi.waitFor(() => {
+      expect(lastMessageOfType("export-result")?.error).toBe("No node selected");
+    });
+  });
+
+  it("exportAsync が失敗 → エラー文言を返す", async () => {
+    figma.currentPage.selection = [
+      makeExportableNode({ exportAsync: () => Promise.reject(new Error("too large")) }),
+    ];
+    sendToPlugin({ type: "export-frame" });
+    await vi.waitFor(() => {
+      expect(lastMessageOfType("export-result")?.error).toBe("Export failed: too large");
+    });
+  });
+
+  it("Error 以外の失敗 → 文字列化して返す", async () => {
+    // Figma API は Error 以外も投げうる。String() 側の分岐を通すための偽物。
+    const nonError: Error = fake({ toString: () => "boom" });
+    figma.currentPage.selection = [
+      makeExportableNode({ exportAsync: () => Promise.reject(nonError) }),
+    ];
+    sendToPlugin({ type: "export-frame" });
+    await vi.waitFor(() => {
+      expect(lastMessageOfType("export-result")?.error).toBe("Export failed: boom");
+    });
+  });
+
+  it("幅高さを持たないノード → 0 で埋める", async () => {
+    figma.currentPage.selection = [
+      fake({
+        id: "5:5",
+        name: "Slice",
+        type: "SLICE",
+        exportAsync: () => Promise.resolve(new Uint8Array([1])),
+      }),
+    ];
+    sendToPlugin({ type: "export-frame" });
+    await vi.waitFor(() => {
+      const result = lastMessageOfType("export-result");
+      expect(result?.width).toBe(0);
+      expect(result?.height).toBe(0);
+    });
+  });
+});
+
+describe("figma.ui.onmessage: inspect-node", () => {
+  it("nodeId 指定 → 検査結果を返す", async () => {
+    vi.mocked(figma.getNodeById).mockReturnValue(makeExportableNode({ id: "6:6", name: "Panel" }));
+    sendToPlugin({ type: "inspect-node", nodeId: "6:6" });
+    await vi.waitFor(() => {
+      expect(lastMessageOfType("inspect-result")?.inspection).toMatchObject({
+        nodeId: "6:6",
+        nodeName: "Panel",
+      });
+    });
+  });
+
+  it("nodeId なし → 選択中のノードを検査する", async () => {
+    figma.currentPage.selection = [makeExportableNode()];
+    sendToPlugin({ type: "inspect-node" });
+    await vi.waitFor(() => {
+      expect(lastMessageOfType("inspect-result")?.inspection).toMatchObject({ nodeId: "1:1" });
+    });
+  });
+
+  it("対象ノードなし → エラーを返す", async () => {
+    vi.mocked(figma.getNodeById).mockReturnValue(null);
+    sendToPlugin({ type: "inspect-node", nodeId: "missing" });
+    await vi.waitFor(() => {
+      expect(lastMessageOfType("inspect-result")).toEqual({
+        type: "inspect-result",
+        error: "No node selected",
+      });
+    });
+  });
+});
+
+describe("figma.ui.onmessage: その他のコマンド", () => {
+  it("compare-images → UI へ比較依頼を差し戻す", async () => {
+    sendToPlugin({ type: "compare-images", designBase64: "d", screenshotBase64: "s" });
+    await vi.waitFor(() => {
+      expect(lastMessageOfType("run-comparison")).toEqual({
+        type: "run-comparison",
+        designBase64: "d",
+        screenshotBase64: "s",
+      });
+    });
+  });
+
+  it("resize → figma.ui.resize を呼ぶ", () => {
+    sendToPlugin({ type: "resize", width: 500, height: 600 });
+    expect(figma.ui.resize).toHaveBeenCalledWith(500, 600);
+  });
+
+  it("close → プラグインを閉じる", () => {
+    sendToPlugin({ type: "close" });
+    expect(figma.closePlugin).toHaveBeenCalled();
+  });
+});
+
+describe("selectionchange ハンドラ", () => {
+  it("選択変更 → 現在の選択を UI へ送る", async () => {
+    const registered = vi.mocked(figma.on).mock.calls.find((call) => call[0] === "selectionchange");
+    if (!registered) throw new Error("selectionchange が登録されていない");
+    const handler: () => void = fake(registered[1]);
+
+    figma.currentPage.selection = [makeExportableNode({ id: "7:7", name: "Changed" })];
+    handler();
+
+    await vi.waitFor(() => {
+      expect(lastMessageOfType("selection")?.nodes).toEqual([
+        { id: "7:7", name: "Changed", type: "FRAME", width: 200, height: 100 },
+      ]);
+    });
+  });
+});
+
+describe("正規化ヘルパー (公開 API 経由)", () => {
+  it("グラデーション fill → 型をそのまま保つ", () => {
+    const node = fake<SceneNode>({
+      type: "RECTANGLE",
+      opacity: 1,
+      fills: [
+        { type: "GRADIENT_RADIAL", visible: true },
+        { type: "IMAGE", visible: true },
+      ],
+    });
+    expect(extractAppearanceFromNode(node).fills).toEqual([
+      { type: "GRADIENT_RADIAL" },
+      { type: "IMAGE" },
+    ]);
+  });
+
+  it("未知の fill 型 → GRADIENT_LINEAR に寄せる", () => {
+    const node = fake<SceneNode>({
+      type: "RECTANGLE",
+      opacity: 1,
+      fills: [{ type: "VIDEO", visible: true }],
+    });
+    expect(extractAppearanceFromNode(node).fills).toEqual([{ type: "GRADIENT_LINEAR" }]);
+  });
+
+  it("非表示の fill / stroke → 除外する", () => {
+    const node = fake<SceneNode>({
+      type: "RECTANGLE",
+      opacity: 1,
+      fills: [{ type: "SOLID", visible: false, color: { r: 0, g: 0, b: 0 } }],
+      strokes: [
+        { type: "SOLID", visible: false, color: { r: 0, g: 0, b: 0 } },
+        { type: "GRADIENT_LINEAR", visible: true },
+      ],
+    });
+    const appearance = extractAppearanceFromNode(node);
+    expect(appearance.fills).toEqual([]);
+    expect(appearance.strokes).toEqual([]);
+  });
+
+  it("strokeWeight が数値でない → 1 を使う", () => {
+    const node = fake<SceneNode>({
+      type: "RECTANGLE",
+      opacity: 1,
+      strokes: [{ type: "SOLID", visible: true, color: { r: 0, g: 0, b: 0 } }],
+      strokeWeight: figma.mixed,
+    });
+    expect(extractAppearanceFromNode(node).strokes[0].weight).toBe(1);
+  });
+
+  it("各 effect 型 → そのまま保ち、未知の型は LAYER_BLUR に寄せる", () => {
+    const node = fake<SceneNode>({
+      type: "RECTANGLE",
+      opacity: 1,
+      effects: [
+        { type: "INNER_SHADOW", visible: true, radius: 2 },
+        { type: "BACKGROUND_BLUR", visible: true, radius: 3 },
+        { type: "NOISE", visible: true },
+      ],
+    });
+    expect(extractAppearanceFromNode(node).effects).toEqual([
+      { type: "INNER_SHADOW", radius: 2 },
+      { type: "BACKGROUND_BLUR", radius: 3 },
+      { type: "LAYER_BLUR", radius: 0 },
+    ]);
+  });
+
+  it("mixed な fills → 何も取り出さない", () => {
+    const node = fake<SceneNode>({ type: "RECTANGLE", opacity: 1, fills: figma.mixed });
+    expect(extractAppearanceFromNode(node).fills).toEqual([]);
+  });
+
+  function makeTextNode(overrides: object): SceneNode {
+    return fake({
+      type: "TEXT",
+      fontName: { family: "Inter", style: "Regular" },
+      fontSize: 16,
+      lineHeight: { unit: "AUTO" },
+      letterSpacing: { value: 0 },
+      textAlignHorizontal: "LEFT",
+      characters: "Test",
+      ...overrides,
+    });
+  }
+
+  it.each([
+    ["Thin", 100],
+    ["Extra Light", 200],
+    ["ExtraLight", 200],
+    ["Light", 300],
+    ["Regular", 400],
+    ["Medium", 500],
+    ["Semi Bold", 600],
+    ["SemiBold", 600],
+    ["Extra Bold", 800],
+    ["ExtraBold", 800],
+    ["Black", 900],
+    ["Heavy", 900],
+    ["Bold", 700],
+  ])("fontStyle %s → fontWeight %i", (style, weight) => {
+    const node = makeTextNode({ fontName: { family: "Inter", style } });
+    expect(extractTypographyFromNode(node)?.fontWeight).toBe(weight);
+  });
+
+  it.each([
+    ["CENTER", "CENTER"],
+    ["RIGHT", "RIGHT"],
+    ["JUSTIFIED", "JUSTIFIED"],
+    ["LEFT", "LEFT"],
+    ["UNKNOWN", "LEFT"],
+  ])("textAlignHorizontal %s → textAlign %s", (input, expected) => {
+    const node = makeTextNode({ textAlignHorizontal: input });
+    expect(extractTypographyFromNode(node)?.textAlign).toBe(expected);
+  });
+
+  it("mixed な fontName / fontSize / letterSpacing → 既定値に落とす", () => {
+    const node = makeTextNode({
+      fontName: figma.mixed,
+      fontSize: figma.mixed,
+      lineHeight: figma.mixed,
+      letterSpacing: figma.mixed,
+    });
+    const typography = extractTypographyFromNode(node);
+    expect(typography?.fontFamily).toBe("Mixed");
+    expect(typography?.fontSize).toBe(0);
+    expect(typography?.fontWeight).toBe(400);
+    expect(typography?.lineHeight).toBe("AUTO");
+    expect(typography?.letterSpacing).toBe(0);
+  });
+
+  it("TEXT ノードの検査 → typography を含む", () => {
+    const result = extractNodeInspection(makeTextNode({ id: "8:8", name: "Label", x: 0, y: 0 }));
+    expect(result.typography?.fontFamily).toBe("Inter");
   });
 });
