@@ -160,14 +160,45 @@ describe("runPreflight", () => {
     expect(report.warnings.find((w) => w.code === "crop_out_of_bounds")?.severity).toBe("critical");
   });
 
-  // 「crop が実画像の 60% 未満」は、古い設定と意図的に絞った範囲を区別できない。
-  // 設定ミスの根拠として扱われ、実際の不具合を UNCERTAIN へ倒すため出さない (#288)。
+  // crop の大きさは古さの根拠にならない。小さい crop は、古い設定とも
+  // 意図して絞った範囲とも読める。保存時の撮影寸法が無い crop では判定しない。
   it("crop が小さいだけでは crop_stale を出さない", () => {
     const report = runPreflight({
       screenshotWidth: STANDARD_WIDTH,
       screenshotHeight: TALL_SCREEN_HEIGHT,
       cropRegion: { x: 0, y: 0, width: STANDARD_WIDTH, height: SHORT_CROP_HEIGHT },
       cropUpdatedAt: "2026-01-01T00:00:00.000Z",
+    });
+    expect(report.warnings.find((w) => w.code === "crop_stale")).toBeUndefined();
+  });
+
+  // 古さの根拠は「保存したときの撮影寸法と、今回の撮影寸法が違うこと」。
+  it("保存時の撮影寸法が今回と違えば crop_stale を出す", () => {
+    const report = runPreflight({
+      screenshotWidth: 390,
+      screenshotHeight: 700,
+      rawScreenshotWidth: 390,
+      rawScreenshotHeight: 800,
+      cropRegion: { x: 0, y: 0, width: 390, height: 700 },
+      cropCapturedWidth: 1440,
+      cropCapturedHeight: 3000,
+    });
+    const stale = report.warnings.find((w) => w.code === "crop_stale");
+    expect(stale?.severity).toBe("critical");
+    expect(stale?.message).toContain("1440x3000");
+    expect(stale?.message).toContain("390x800");
+  });
+
+  // 意図して狭くした crop は、撮影寸法が保存時と同じなら古くない。
+  it("撮影寸法が保存時と同じなら、狭い crop でも crop_stale を出さない", () => {
+    const report = runPreflight({
+      screenshotWidth: STANDARD_WIDTH,
+      screenshotHeight: SHORT_CROP_HEIGHT,
+      rawScreenshotWidth: STANDARD_WIDTH,
+      rawScreenshotHeight: TALL_SCREEN_HEIGHT,
+      cropRegion: { x: 0, y: 0, width: STANDARD_WIDTH, height: SHORT_CROP_HEIGHT },
+      cropCapturedWidth: STANDARD_WIDTH,
+      cropCapturedHeight: TALL_SCREEN_HEIGHT,
     });
     expect(report.warnings.find((w) => w.code === "crop_stale")).toBeUndefined();
   });

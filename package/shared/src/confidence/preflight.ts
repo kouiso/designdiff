@@ -18,6 +18,11 @@ export interface PreflightInput {
   screenshotSource?: "screenshot" | "screenshot_url" | "capture_device";
   cropRegion?: { x: number; y: number; width: number; height: number };
   cropUpdatedAt?: string;
+  // crop を保存したときのスクリーンショット寸法。今回の撮影寸法と比べることで
+  // 「古い crop」と「意図的に絞った crop」を区別する。crop の大きさだけでは
+  // どちらか判別できない。保存時に記録が無い crop では undefined になる。
+  cropCapturedWidth?: number;
+  cropCapturedHeight?: number;
   figmaChildCount?: number;
   figmaNodeType?: string;
   widthTolerancePx?: number;
@@ -248,11 +253,26 @@ export function runPreflight(input: PreflightInput): PreflightReport {
           "set_crop_region で更新するか、project_id を外して crop なしで比較してください。",
       });
     }
-    // crop_stale はここでは出さない。「crop が実画像の高さの 60% 未満」は
-    // 古い設定と、set_crop_region で意図的に絞った範囲を区別できない。
-    // この警告は設定ミスの根拠として扱われ、一致率が低いときに実際の不具合を
-    // FAIL ではなく UNCERTAIN へ倒す。意図した部分 crop で誤診する害のほうが
-    // 大きい。古さの判定には crop 保存時の画面寸法が要る (#288)。
+    // 古さは crop の大きさでは判定できない。「小さい crop」は古い設定とも
+    // 意図的に絞った範囲とも読めるため。判断の根拠は、crop を保存したときの
+    // 撮影寸法が今回の撮影寸法と食い違っているかどうかに置く。食い違えば
+    // その crop は別の撮影条件で作られたもので、今の画像には当てはまらない。
+    // 保存時の記録が無い crop では判定しない (推測で警告を出さない)。
+    const savedWidth = input.cropCapturedWidth;
+    const savedHeight = input.cropCapturedHeight;
+    if (isUsableBound(savedWidth) && isUsableBound(savedHeight)) {
+      const widthDrift = Math.abs(savedWidth - rawWidth);
+      const heightDrift = Math.abs(savedHeight - rawHeight);
+      if (widthDrift > CROP_BOUNDS_TOLERANCE_PX || heightDrift > CROP_BOUNDS_TOLERANCE_PX) {
+        warnings.push({
+          code: "crop_stale",
+          severity: "critical",
+          message: `Crop region は ${savedWidth}x${savedHeight} の画像に対して保存されましたが、今回の画像は ${rawWidth}x${rawHeight} です。撮影条件が変わっており、この crop は現在の画像に合っていません。`,
+          suggestedFix:
+            "set_crop_region で現在の画像に合わせて保存し直すか、project_id を外して crop なしで比較してください。",
+        });
+      }
+    }
   }
 
   if (

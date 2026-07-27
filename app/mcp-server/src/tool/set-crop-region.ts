@@ -30,11 +30,33 @@ export function registerSetCropRegion(server: McpServer): void {
             "クロップ領域。座標系はcrop適用後のscreenshotピクセル座標です（designはscreenshot幅にリサイズ後にcropされます。Figmaフレームピクセルではありません）。",
           ),
         note: z.string().optional().describe("メモ（例: iOSステータスバー除外）"),
+        screenshot_width: z
+          .number()
+          .positive()
+          .optional()
+          .describe(
+            "この crop を決めたときのスクリーンショット全体の幅。撮影条件が変わったことを検出するために使う。compare_design が報告した値をそのまま渡す。",
+          ),
+        screenshot_height: z
+          .number()
+          .positive()
+          .optional()
+          .describe("この crop を決めたときのスクリーンショット全体の高さ。"),
       },
     },
     async (args) => {
       try {
-        const entry = await setCropRegion(args.project_id, args.frame_name, args.region, args.note);
+        const capturedSize =
+          args.screenshot_width !== undefined && args.screenshot_height !== undefined
+            ? { width: args.screenshot_width, height: args.screenshot_height }
+            : undefined;
+        const entry = await setCropRegion(
+          args.project_id,
+          args.frame_name,
+          args.region,
+          args.note,
+          capturedSize,
+        );
 
         return {
           content: [
