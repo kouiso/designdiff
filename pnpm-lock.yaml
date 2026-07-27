@@ -65,6 +65,9 @@ importers:
       '@types/chrome':
         specifier: ^0.1.40
         version: 0.1.40
+      '@vitest/coverage-v8':
+        specifier: ^3.2.4
+        version: 3.2.4(vitest@3.2.4(@types/debug@4.1.13)(@types/node@25.6.0)(jiti@2.6.1)(jsdom@25.0.1)(lightningcss@1.32.0)(yaml@2.9.0))
       esbuild:
         specifier: ^0.28.0
         version: 0.28.0
@@ -193,6 +196,9 @@ importers:
       '@figma/plugin-typings':
         specifier: ^1.125.0
         version: 1.125.0
+      '@vitest/coverage-v8':
+        specifier: ^3.2.4
+        version: 3.2.4(vitest@3.2.4(@types/debug@4.1.13)(@types/node@25.6.0)(jiti@2.6.1)(jsdom@25.0.1)(lightningcss@1.32.0)(yaml@2.9.0))
       esbuild:
         specifier: ^0.28.0
         version: 0.28.0
@@ -256,6 +262,9 @@ importers:
       '@types/node':
         specifier: ^24.10.3
         version: 24.13.2
+      '@vitest/coverage-v8':
+        specifier: ^3.2.4
+        version: 3.2.4(vitest@3.2.4(@types/debug@4.1.13)(@types/node@24.13.2)(jiti@2.6.1)(jsdom@25.0.1)(lightningcss@1.32.0)(yaml@2.9.0))
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
@@ -5740,6 +5749,25 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+  '@vitest/coverage-v8@3.2.4(vitest@3.2.4(@types/debug@4.1.13)(@types/node@24.13.2)(jiti@2.6.1)(jsdom@25.0.1)(lightningcss@1.32.0)(yaml@2.9.0))':
+    dependencies:
+      '@ampproject/remapping': 2.3.0
+      '@bcoe/v8-coverage': 1.0.2
+      ast-v8-to-istanbul: 0.3.12
+      debug: 4.4.3
+      istanbul-lib-coverage: 3.2.2
+      istanbul-lib-report: 3.0.1
+      istanbul-lib-source-maps: 5.0.6
+      istanbul-reports: 3.2.0
+      magic-string: 0.30.21
+      magicast: 0.3.5
+      std-env: 3.10.0
+      test-exclude: 7.0.2
+      tinyrainbow: 2.0.0
+      vitest: 3.2.4(@types/debug@4.1.13)(@types/node@24.13.2)(jiti@2.6.1)(jsdom@25.0.1)(lightningcss@1.32.0)(yaml@2.9.0)
+    transitivePeerDependencies:
+      - supports-color
+
   '@vitest/coverage-v8@3.2.4(vitest@3.2.4(@types/debug@4.1.13)(@types/node@25.6.0)(jiti@2.6.1)(jsdom@25.0.1)(lightningcss@1.32.0)(yaml@2.9.0))':
     dependencies:
       '@ampproject/remapping': 2.3.0
@@ -7528,7 +7556,7 @@ snapshots:
 
   make-dir@4.0.0:
     dependencies:
-      semver: 7.7.4
+      semver: 7.8.0
 
   make-fetch-happen@14.0.3:
     dependencies:

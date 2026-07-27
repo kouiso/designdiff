@@ -83,3 +83,43 @@ describe("useSettingStore", () => {
     });
   });
 });
+
+describe("Figma のログイン状態", () => {
+  beforeEach(() => {
+    useSettingStore.setState({ oauthState: { mode: "none" }, showTokenDialog: true });
+  });
+
+  it("ログインすると状態を取り直し、トークン要求の案内を閉じる", async () => {
+    vi.mocked(window.electronAPI.oauth.status).mockResolvedValueOnce({ mode: "oauth" });
+
+    await useSettingStore.getState().startFigmaLogin();
+
+    expect(window.electronAPI.oauth.start).toHaveBeenCalledTimes(1);
+    expect(useSettingStore.getState().oauthState).toEqual({ mode: "oauth" });
+    expect(useSettingStore.getState().showTokenDialog).toBe(false);
+  });
+
+  // 状態を戻さんとログアウトしたのに接続済みの表示が残る。
+  it("ログアウトすると未接続へ戻す", async () => {
+    useSettingStore.setState({ oauthState: { mode: "oauth" } });
+
+    await useSettingStore.getState().logoutFigma();
+
+    expect(window.electronAPI.oauth.logout).toHaveBeenCalledTimes(1);
+    expect(useSettingStore.getState().oauthState).toEqual({ mode: "none" });
+  });
+
+  it("OAuth クライアントの保存はそのまま渡す", async () => {
+    await useSettingStore.getState().saveOAuthClient("client-id", "client-secret");
+
+    expect(window.electronAPI.oauth.saveClient).toHaveBeenCalledWith("client-id", "client-secret");
+  });
+
+  it("起動時の読み込みで現在の接続状態を取り込む", async () => {
+    vi.mocked(window.electronAPI.oauth.status).mockResolvedValueOnce({ mode: "pat" });
+
+    await useSettingStore.getState().loadOAuthStatus();
+
+    expect(useSettingStore.getState().oauthState).toEqual({ mode: "pat" });
+  });
+});

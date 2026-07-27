@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { useCompareStore } from "@/store/compare-store";
 import { useProjectStore } from "@/store/project-store";
 
 import { ProjectPage } from "./project-page";
@@ -55,6 +56,18 @@ describe("ProjectPage", () => {
     });
     render(<ProjectPage onNavigate={vi.fn()} />);
     expect(screen.getByTestId("frame-selector")).toBeInTheDocument();
+  });
+
+  // 押しても何も起きんと、選んだのに進めん行き止まりになる。
+  it("比較を開始で design 画像を引き渡して比較画面へ移る", () => {
+    const onNavigate = vi.fn();
+    useProjectStore.setState({ frameImage: "data:image/png;base64,abc" });
+    render(<ProjectPage onNavigate={onNavigate} />);
+
+    fireEvent.click(screen.getByText("比較を開始"));
+
+    expect(useCompareStore.getState().designImage).toBe("data:image/png;base64,abc");
+    expect(onNavigate).toHaveBeenCalledWith("compare");
   });
 
   it("error あり → エラーメッセージ表示", () => {
