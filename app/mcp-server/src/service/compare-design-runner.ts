@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 
-import sharp from "sharp";
+import sharp, { type Metadata } from "sharp";
 import { z } from "zod";
 
 import { captureDeviceScreenshot, type CaptureDevice } from "@figdiff/mobile-capture";
@@ -1119,7 +1119,7 @@ function resolvePreflightDimensions(
 
 function buildSystemIgnoreRegionsForComparison(
   args: CompareDesignRunArgs,
-  screenshotMeta: sharp.Metadata,
+  screenshotMeta: Metadata,
   cropRegion: CropRegion | undefined,
 ): IgnoreRegion[] {
   const maskSystemUi = args.mask_system_ui ?? args.capture_device !== undefined;
@@ -1191,7 +1191,7 @@ export async function runCompareDesign(
   );
   const screenshotBuffer = await fs.readFile(screenshotPath);
   const screenshotBase64 = screenshotBuffer.toString("base64");
-  let screenshotMeta: sharp.Metadata;
+  let screenshotMeta: Metadata;
   try {
     screenshotMeta = await sharp(screenshotBuffer, {
       limitInputPixels: MAX_DECODE_PIXELS,
