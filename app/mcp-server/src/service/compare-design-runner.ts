@@ -879,6 +879,9 @@ async function resolveDesignAssets(
 interface ProjectRegions {
   cropRegion: CropRegion | undefined;
   cropUpdatedAt: string | undefined;
+  // crop を保存したときのスクショ寸法。今回の撮影と食い違えば古い crop と判る。
+  cropCapturedWidth: number | undefined;
+  cropCapturedHeight: number | undefined;
   ignoreRegions: IgnoreRegion[];
 }
 
@@ -889,16 +892,22 @@ async function resolveProjectRegions(
 ): Promise<ProjectRegions> {
   let cropRegion: CropRegion | undefined;
   let cropUpdatedAt: string | undefined;
+  let cropCapturedWidth: number | undefined;
+  let cropCapturedHeight: number | undefined;
   let persistedIgnoreRegions: IgnoreRegion[] = [];
   if (projectId) {
     const region = await getCropRegionForComparison(projectId, frameName);
     cropRegion = region?.region;
     cropUpdatedAt = region?.updatedAt;
+    cropCapturedWidth = region?.capturedWidth;
+    cropCapturedHeight = region?.capturedHeight;
     persistedIgnoreRegions = await getIgnoreRegionsForComparison(projectId, frameName);
   }
   return {
     cropRegion,
     cropUpdatedAt,
+    cropCapturedWidth,
+    cropCapturedHeight,
     ignoreRegions: [...persistedIgnoreRegions, ...(extraIgnoreRegions ?? [])],
   };
 }
@@ -1215,6 +1224,8 @@ export async function runCompareDesign(
   const {
     cropRegion: manualCropRegion,
     cropUpdatedAt,
+    cropCapturedWidth,
+    cropCapturedHeight,
     ignoreRegions: projectIgnoreRegions,
   } = await resolveProjectRegions(
     args.project_id,
@@ -1288,6 +1299,10 @@ export async function runCompareDesign(
         : "screenshot",
     cropRegion,
     cropUpdatedAt,
+    // 自動 crop は今回の画像から求めた矩形なので、古さの判定対象にせん。
+    // 保存済みの手動 crop のときだけ、保存時の撮影寸法を渡す。
+    cropCapturedWidth: manualCropRegion ? cropCapturedWidth : undefined,
+    cropCapturedHeight: manualCropRegion ? cropCapturedHeight : undefined,
     figmaChildCount: figmaRootNode?.children?.length,
     figmaNodeType: figmaRootNode?.type,
   });
