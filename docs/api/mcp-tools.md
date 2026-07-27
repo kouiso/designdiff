@@ -29,9 +29,13 @@ Defined in `app/mcp-server/src/tool/compare-design.ts`.
   "screenshot": "string?",
   "screenshot_url": "string?",
   "capture_device": "android | ios-sim | ios-device?",
+  "capture_width": "number?",
   "mask_system_ui": "boolean?",
+  "auto_mask_dynamic": "boolean? (default true)",
+  "token_diff": "boolean? (default true)",
   "frame_name": "string?",
   "threshold": "number (0..1, default 0.1)",
+  "profile": "strict | balanced | layout?",
   "project_id": "string?",
   "ignore_regions": [
     {
@@ -52,6 +56,10 @@ Notes:
 - `frame_name` is used when a Figma URL does not include `node-id`; when node details are available, `compare_design` also uses the resolved frame name to apply frame-scoped persisted ignore regions/crops in node-id flows.
 - `project_id` enables crop-region lookup through `getCropRegion` and persisted ignore-region lookup through `~/.figdiff/projects/{project_id}/ignore-regions.yaml`.
 - Persisted ignore regions are applied before the ad hoc `ignore_regions` input. Both use screenshot pixel coordinates after crop-region application.
+- `capture_width` sets the capture width in px for `screenshot_url`; when omitted the Figma frame's own width is used.
+- `auto_mask_dynamic` (default `true`, `screenshot_url` only) captures the same page three times and masks whatever changed between shots. Clocks, counters, carousels and rotating ads otherwise appear as a difference on every run, and the loop never converges.
+- `token_diff` (default `true`) compares colour and typography as values instead of pixels. It needs both a Figma node tree and a FigDiff-captured URL; a handed-over PNG or a device screenshot cannot provide the DOM values. When too few nodes can be matched to DOM elements the result is not used, `verdictRoute` stays `pixel`, and `tokenDiff.demotionReason` says why.
+- A colour or font-size/weight value that differs from the design sets `status` to `FAIL` even when the pixel comparison passes, because those are exact values rather than perceptual judgements. The reverse does not apply: matching values never turn a pixel `FAIL` into `PASS`, since layout can still be wrong.
 - Mobile `capture_device` comparisons default `mask_system_ui` to `true`, adding top `system:status-bar` and bottom `system:navigation-bar` ignore regions in screenshot pixel coordinates. Set `mask_system_ui: false` to disable this preset; use `set_ignore_regions` or inline `ignore_regions` for device-specific fine-tuning.
 
 ### Output shape
@@ -60,7 +68,7 @@ The output schema is `CompareDesignResultSchema` from `package/shared/src/schema
 
 Important fields:
 
-- `status?: "PASS" | "FAIL"`
+- `status?: "PASS" | "FAIL" | "UNCERTAIN"` — `UNCERTAIN` means the comparison was routed to human review because its confidence was not trustworthy. It is not a failure to retry.
 - `comparisonId: string`
 - `matchRate: number`
 - `diffPixelCount: number`
@@ -71,6 +79,10 @@ Important fields:
 - `nextAction?: string`
 - `suggestion: string`
 - `diffReport?: DiffReport`
+- `tokenDiff?: TokenDiffReport` — node/property counts, the unmatched ratio, every mismatch with the design and implementation values, and `reliable` plus `demotionReason`
+- `verdictRoute?: "token-diff" | "pixel"` — which comparison decided the verdict. Always present so a silent fallback to the pixel path is visible.
+- `loopGuard?: LoopGuardReport`
+- `toastBandCandidates?: ToastBandCandidate[]`
 - `diffImagePath?: string`
 - `diffImageBase64?: string`
 

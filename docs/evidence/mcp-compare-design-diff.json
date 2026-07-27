@@ -44,6 +44,13 @@
         "blocking": false,
         "note": "Not evaluated: the contradiction check only applies to a passing structural review."
       },
+      "tokenReview": {
+        "required": 0,
+        "current": 0,
+        "status": "UNCERTAIN",
+        "blocking": false,
+        "note": "Not evaluated: token comparison needs both a Figma node tree and a FigDiff-captured URL."
+      },
       "matchRate": {
         "required": 100,
         "current": 0,
@@ -110,6 +117,7 @@
       "decision": "continue",
       "reason": "反復 1/5 回。改善の余地があるため修正を続行できます。"
     },
+    "verdictRoute": "pixel",
     "diffImagePath": "/tmp/figdiff-mcp/cmp-evidence.png"
   },
   "hasDiffImage": true

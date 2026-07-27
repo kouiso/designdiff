@@ -70,12 +70,17 @@ export function createMcpServer(): McpServer {
 **Workflow (follow this order):**
 1. list_projects — Start here to find registered projects and their IDs.
 2. compare_design — Detects pixel-level differences. Output includes "マスク候補" section listing regions likely to be intentional diffs (photos, intentional color changes).
-3. inspect_node — Drill into specific diff regions for CSS-level details.
-4. Fix code based on css_suggestion values.
-5. If issues persist after code fix, check "マスク候補" in compare_design output. For each candidate: confirm it is an intentional diff (photo area, theme color, etc.), then call set_ignore_regions to register it. Do NOT auto-mask without confirmation.
-6. Re-run compare_design to verify fixes and masks.
-7. verify_fix で claimed fix の改善有無と副作用を確認する。
-8. STOP CONDITION — compare_design returns two text blocks: the first is JSON, the
+3. Check "判定経路" in the summary. When it reads token-diff, colour and typography were
+   compared as values rather than pixels, and the listed 要修正 items carry the exact value
+   the design specifies — apply those directly instead of guessing from the diff image.
+   When it reads pixel, the summary says why the value comparison was not usable; colour is
+   then only judged by pixels, which cannot see differences that hide in font antialiasing.
+4. inspect_node — Drill into specific diff regions for CSS-level details.
+5. Fix code based on css_suggestion values and the 要修正 token values.
+6. If issues persist after code fix, check "マスク候補" in compare_design output. For each candidate: confirm it is an intentional diff (photo area, theme color, etc.), then call set_ignore_regions to register it. Do NOT auto-mask without confirmation.
+7. Re-run compare_design to verify fixes and masks.
+8. verify_fix で claimed fix の改善有無と副作用を確認する。
+9. STOP CONDITION — compare_design returns two text blocks: the first is JSON, the
    second is a human-readable summary. The summary block STARTS with a "ループ判定" line
    saying 停止 (stop) or 続行 (continue) plus the reason; the same data is in the JSON
    block's "loopGuard" field. When it says 停止, stop editing immediately and report the
@@ -87,7 +92,7 @@ export function createMcpServer(): McpServer {
    never terminates. The blocking gate is completionCriteria.structuralReview in the JSON.
    UNCERTAIN is not a failure — it means the comparison was routed to human review by
    design because its confidence was not trustworthy. Report it, do not retry blindly.
-9. 使いにくさ・バグを発見したら report_issue で即起票してください。`,
+10. 使いにくさ・バグを発見したら report_issue で即起票してください。`,
       capabilities: {
         tools: {},
       },

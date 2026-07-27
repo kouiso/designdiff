@@ -2,11 +2,18 @@ import * as crypto from "node:crypto";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 
+import type { DomElementStyle } from "@figdiff/shared";
+
 import { getCaptureCacheDir } from "../util/figdiff-paths.js";
 
 export interface CaptureOptions {
   width: number;
   height?: number;
+  /**
+   * 撮影直前に、実装が実際に使っている色・文字の値を DOM から採取する。
+   * 画素を数える経路と違い、アンチエイリアスの影響を受けずに比べられる。
+   */
+  collectDomStyles?: boolean;
   /**
    * 動的コンテンツ検出のために2回撮る。時計・カウンタ・カルーセルのような
    * 撮るたびに変わる要素を、実装の誤りと切り分けるため。
@@ -27,7 +34,17 @@ export interface CaptureResult {
    * 突き合わせは呼び出し側 (画像を読む責務を持つ層) が行う。
    */
   dynamicSamplePaths?: string[];
+  /** collectDomStyles 指定時のみ。採取に失敗した場合は undefined のまま。 */
+  domStyles?: DomElementStyle[];
 }
+
+/**
+ * 採取する DOM 要素の上限。
+ *
+ * 上限が無いと巨大なページで数万件が返り、突合が現実的な時間で終わらない。
+ * 打ち切った場合は未照合として正直に数えられるので、黙って劣化することはない。
+ */
+export const MAX_DOM_STYLE_ELEMENTS = 3_000;
 
 /**
  * 既定の2回目撮影までの待ち時間 (ms)。
@@ -50,6 +67,63 @@ export const DEFAULT_DYNAMIC_SAMPLE_COUNT = 2;
 
 export function getCaptureDir(): string {
   return getCaptureCacheDir();
+}
+
+/**
+ * ブラウザ側で実行され、見た目に関わる要素だけを拾って返す。
+ *
+ * この関数の中身は文字列化されてブラウザへ送られるため、外側の変数を掴めない。
+ * 上限は引数で渡す。文字も背景色も持たない要素は、比べる値が無いので落とす。
+ */
+function harvestDomStyles(maxElements: number): DomElementStyle[] {
+  const collected: DomElementStyle[] = [];
+  for (const element of document.querySelectorAll("*")) {
+    if (collected.length >= maxElements) break;
+    const rect = element.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) continue;
+    const style = window.getComputedStyle(element);
+    if (style.visibility === "hidden" || style.display === "none") continue;
+    if (Number(style.opacity) === 0) continue;
+
+    // 直接の子テキストだけを見る。子孫のテキストまで数えると、同じ文字列が
+    // 祖先の要素にも計上され、1つの文字に対して何重にも突合が走る。
+    let ownText = "";
+    for (const child of element.childNodes) {
+      if (child.nodeType === Node.TEXT_NODE) ownText += child.nodeValue ?? "";
+    }
+    ownText = ownText.replace(/\s+/g, " ").trim();
+
+    const background = style.backgroundColor;
+    const hasBackground =
+      background !== "" &&
+      background !== "transparent" &&
+      !background.startsWith("rgba(0, 0, 0, 0");
+    if (ownText === "" && !hasBackground) continue;
+
+    const entry: DomElementStyle = {
+      tag: element.tagName.toLowerCase(),
+      x: Math.round(rect.left + window.scrollX),
+      y: Math.round(rect.top + window.scrollY),
+      width: Math.round(rect.width),
+      height: Math.round(rect.height),
+    };
+    if (ownText !== "") {
+      entry.text = ownText.slice(0, 60);
+      entry.color = style.color;
+      const fontSize = Number.parseFloat(style.fontSize);
+      if (Number.isFinite(fontSize)) entry.fontSize = fontSize;
+      const fontWeight = Number.parseFloat(style.fontWeight);
+      if (Number.isFinite(fontWeight)) entry.fontWeight = fontWeight;
+      entry.fontFamily = style.fontFamily;
+      const lineHeight = Number.parseFloat(style.lineHeight);
+      if (Number.isFinite(lineHeight)) entry.lineHeight = lineHeight;
+      const letterSpacing = Number.parseFloat(style.letterSpacing);
+      if (Number.isFinite(letterSpacing)) entry.letterSpacing = letterSpacing;
+    }
+    if (hasBackground) entry.backgroundColor = background;
+    collected.push(entry);
+  }
+  return collected;
 }
 
 /**
@@ -101,6 +175,22 @@ export async function captureUrl(url: string, options: CaptureOptions): Promise<
     // fullPage:true は要求された幅を無視し、DOMのscrollHeightはレイアウト領域を
     // 過小報告する（ビューポート高で止まる）ことがあるため、測定とキャプチャの
     // 両方をCDP経由で行う。captureBeyondViewportによりビューポート外も取得できる。
+    // 採取は撮影前に行う。撮影後だと遅延読み込みや再レイアウトで、
+    // 画像に写っている値と採取した値がずれる可能性がある。
+    let domStyles: DomElementStyle[] | undefined;
+    if (options.collectDomStyles === true) {
+      try {
+        domStyles = await page.evaluate(harvestDomStyles, MAX_DOM_STYLE_ELEMENTS);
+      } catch (error) {
+        // 採取に失敗しても撮影自体は続ける。画素経路だけで判定できる。
+        console.warn(
+          `[capture] DOM スタイルの採取に失敗しました: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+        );
+      }
+    }
+
     const client = await page.context().newCDPSession(page);
     let contentHeight: number;
     let dynamicSamplePaths: string[] | undefined;
@@ -149,7 +239,13 @@ export async function captureUrl(url: string, options: CaptureOptions): Promise<
       await client.detach();
     }
 
-    return { screenshotPath, width: options.width, height: contentHeight, dynamicSamplePaths };
+    return {
+      screenshotPath,
+      width: options.width,
+      height: contentHeight,
+      dynamicSamplePaths,
+      domStyles,
+    };
   };
 
   if (cdpEndpoint === undefined) {

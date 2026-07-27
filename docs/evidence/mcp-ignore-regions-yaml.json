@@ -49,6 +49,13 @@
         "blocking": false,
         "note": "Structural review and the perceptible-difference evidence agree."
       },
+      "tokenReview": {
+        "required": 0,
+        "current": 0,
+        "status": "UNCERTAIN",
+        "blocking": false,
+        "note": "Not evaluated: token comparison needs both a Figma node tree and a FigDiff-captured URL."
+      },
       "matchRate": {
         "required": 100,
         "current": 100,
@@ -113,6 +120,7 @@
       "iteration": 1,
       "decision": "stop",
       "reason": "PASS に到達しました (反復 1 回)。ループを終了してください。"
-    }
+    },
+    "verdictRoute": "pixel"
   }
 }

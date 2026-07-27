@@ -206,6 +206,9 @@ export const CompletionCriteriaSchema = z.object({
   structuralReview: CompletionCriterionSchema,
   // 判定器が pass と言っているのに画素の大半が違う状態を検出する行。
   consistencyReview: CompletionCriterionSchema.optional(),
+  // 色と文字を値そのもので突き合わせた行。使えなかったときは UNCERTAIN で残し、
+  // 「見ていない」ことが読み手に伝わるようにする。
+  tokenReview: CompletionCriterionSchema.optional(),
   matchRate: CompletionCriterionSchema,
   diffPixelCount: CompletionCriterionSchema,
   remainingIssues: CompletionCriterionSchema,
@@ -408,6 +411,57 @@ export const ToastBandCandidateSchema = z.object({
   position: z.enum(["top", "bottom"]),
 });
 
+// --- Token Diff Schemas ---
+// 色・文字は画素を数えるより、実装が実際に使っている値そのものを比べるほうが正確。
+// 画素経路はアンチエイリアス (文字の縁のぼかし) の影響を必ず受けるので、
+// 「#FCFCFC と #FFFFFF のどちらが正しいか」のような差を安定して言い当てられない。
+
+/** 実装側 DOM の1要素から採取した見た目の値。座標はページ左上を原点とする。 */
+export const DomElementStyleSchema = z.object({
+  tag: z.string(),
+  text: z.string().optional(),
+  x: z.number(),
+  y: z.number(),
+  width: z.number().nonnegative(),
+  height: z.number().nonnegative(),
+  color: z.string().optional(),
+  backgroundColor: z.string().optional(),
+  fontSize: z.number().optional(),
+  fontWeight: z.number().optional(),
+  fontFamily: z.string().optional(),
+  lineHeight: z.number().optional(),
+  letterSpacing: z.number().optional(),
+});
+
+export const TokenMismatchSchema = z.object({
+  property: z.string(),
+  nodeId: z.string(),
+  nodeName: z.string(),
+  designValue: z.string(),
+  implValue: z.string(),
+  severity: DiffSeveritySchema,
+  /** 実装側の該当矩形 (スクリーンショット座標)。人が場所を特定するために出す。 */
+  region: DiffBoundingBoxSchema.optional(),
+});
+
+export const TokenDiffReportSchema = z.object({
+  /** 突合を試みた Figma ノード数。 */
+  comparedNodeCount: z.number().int().nonnegative(),
+  matchedNodeCount: z.number().int().nonnegative(),
+  unmatchedNodeCount: z.number().int().nonnegative(),
+  /** 対応付けできなかった割合。高いほどこの経路の判定は当てにならない。 */
+  unmatchedRatio: z.number().min(0).max(1),
+  checkedPropertyCount: z.number().int().nonnegative(),
+  mismatches: z.array(TokenMismatchSchema),
+  /** unmatchedRatio が閾値以下で、合否の根拠として使える状態か。 */
+  reliable: z.boolean(),
+  /** 使えない場合に、なぜ画素経路へ落としたかを人の言葉で残す。 */
+  demotionReason: z.string().optional(),
+});
+
+/** どの経路が最終的な合否を決めたか。無言で劣化させないために必ず載せる。 */
+export const VerdictRouteSchema = z.enum(["token-diff", "pixel"]);
+
 export const CompareDesignResultSchema = z.object({
   // UNCERTAIN: 判定の確からしさを損なう条件 (設定ミス疑い / 構造判定 inconclusive)
   // が検出された状態。PASS でも FAIL でもなく「人間のレビューが必要」を意味する。
@@ -438,6 +492,9 @@ export const CompareDesignResultSchema = z.object({
   // 実機スクショに写り込む帯 (開発時のトースト等) のマスク候補。
   // 自動では適用しない。画素だけではトーストと正しい暗色帯を区別できないため。
   toastBandCandidates: z.array(ToastBandCandidateSchema).optional(),
+  tokenDiff: TokenDiffReportSchema.optional(),
+  /** 合否を決めた経路。token-diff が働いたときだけ "token-diff"。 */
+  verdictRoute: VerdictRouteSchema.optional(),
   diffImagePath: z.string().optional(),
   diffImageBase64: z.string().optional(),
 });
