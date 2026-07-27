@@ -1,1 +1,1 @@
-../../prompt/contexts/review.md
+../../prompt/context/review.md

@@ -1584,7 +1584,7 @@ designdiff/
 ┌─────────────────────────────────────┐
 │          無料（OSS / npm公開）         │
 │                                      │
-│  MCPサーバー（8 tools）               │
+│  MCPサーバー（16 tools）              │
 │  - Cursor / Claude Code / Copilot    │
 │  - Diff駆動ワークフロー              │
 │  - compare → inspect → fix サイクル  │

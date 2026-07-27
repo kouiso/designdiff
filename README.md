@@ -51,6 +51,16 @@ mise trust          # Trust .mise.toml (required once)
 pnpm install        # Install dependencies
 ```
 
+If `pnpm install` fails with a Corepack signature error, Corepack is trying to verify a
+package manager release against a key it does not have. Install pnpm directly instead of
+going through Corepack:
+
+```bash
+corepack disable
+npm install -g pnpm
+pnpm install
+```
+
 ### Development
 
 ```bash
