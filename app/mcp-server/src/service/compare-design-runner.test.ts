@@ -431,6 +431,7 @@ describe("runCompareDesign", () => {
     expect(mocks.captureUrl).toHaveBeenCalledWith("https://example.test", {
       width: 1440,
       detectDynamic: true,
+      collectDomStyles: true,
     });
     expect(output.result.status).toBe("PASS");
     expect(output.result.matchRate).toBe(100);
@@ -474,6 +475,145 @@ describe("runCompareDesign", () => {
     expect(mocks.captureUrl).toHaveBeenCalledWith("https://example.test", {
       width: 1440,
       detectDynamic: false,
+      collectDomStyles: true,
+    });
+  });
+
+  // 色は画素でなく値そのもので比べる経路。アンチエイリアスに埋もれる差を捕まえる。
+  describe("色・文字の値による判定 (token-diff)", () => {
+    const FRAME_BOX = { x: 0, y: 0, width: 400, height: 300 };
+
+    function textFixtureNode(index: number, color: { r: number; g: number; b: number }) {
+      return {
+        id: `1:${index}`,
+        name: `label-${index}`,
+        type: "TEXT",
+        children: [],
+        absoluteBoundingBox: { x: 0, y: index * 40, width: 200, height: 24 },
+        fills: [{ type: "SOLID", color: { ...color, a: 1 } }],
+        strokes: [],
+        effects: [],
+        style: { fontFamily: "Inter", fontSize: 16, fontWeight: 400 },
+      };
+    }
+
+    function domTextStyle(index: number, color: string) {
+      return {
+        tag: "p",
+        text: `label-${index}`,
+        x: 0,
+        y: index * 40,
+        width: 200,
+        height: 24,
+        color,
+        fontSize: 16,
+        fontWeight: 400,
+        fontFamily: "Inter, sans-serif",
+      };
+    }
+
+    async function runWithDomStyles(domStyles: unknown[]) {
+      tmpRoot = await fs.mkdtemp(path.join(process.cwd(), "tmp-figdiff-runner-"));
+      const designPath = path.join(tmpRoot, "design.png");
+      const screenshotPath = path.join(tmpRoot, "captured.png");
+      await fs.writeFile(designPath, Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+      await fs.writeFile(screenshotPath, Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+      await fs.writeFile(
+        path.join(tmpRoot, "expected.json"),
+        JSON.stringify({
+          figmaRootNode: {
+            id: "0:1",
+            name: "Frame",
+            type: "FRAME",
+            absoluteBoundingBox: FRAME_BOX,
+            fills: [],
+            strokes: [],
+            effects: [],
+            children: [0, 1, 2].map((index) => textFixtureNode(index, { r: 0, g: 0, b: 0 })),
+          },
+        }),
+      );
+
+      mocks.captureUrl.mockResolvedValue({ screenshotPath, domStyles });
+      mocks.sharp.mockReturnValue({
+        metadata: vi.fn(async () => ({ width: 400, height: 300 })),
+      });
+      mocks.compareImages.mockResolvedValue({
+        comparisonId: "cmp-token",
+        matchRate: 100,
+        diffPixelCount: 0,
+        totalPixelCount: 400 * 300,
+        diffRegions: [],
+        suggestion: "一致率100%です。差分はありません。",
+        normalization: {
+          designNativeWidth: 400,
+          designNativeHeight: 300,
+          screenshotWidth: 400,
+          screenshotHeight: 300,
+          cropApplied: false,
+          containResized: false,
+          appliedScale: 1,
+        },
+      });
+
+      return runCompareDesign({
+        design_source: designPath,
+        screenshot_url: "https://example.test",
+      });
+    }
+
+    it("画素が完全一致でも、色の値が違えば FAIL にして経路を token-diff と申告する", async () => {
+      const output = await runWithDomStyles([
+        domTextStyle(0, "rgb(252, 252, 252)"),
+        domTextStyle(1, "rgb(0, 0, 0)"),
+        domTextStyle(2, "rgb(0, 0, 0)"),
+      ]);
+
+      expect(output.result.status).toBe("FAIL");
+      expect(output.result.verdictRoute).toBe("token-diff");
+      expect(output.result.tokenDiff?.reliable).toBe(true);
+      expect(output.result.tokenDiff?.mismatches[0]).toMatchObject({
+        property: "color",
+        designValue: "#000000",
+        implValue: "#FCFCFC",
+      });
+      expect(output.result.completionCriteria?.tokenReview.status).toBe("FAIL");
+      expect(output.result.suggestion).toContain("色・文字の値");
+    });
+
+    it("値が一致していれば PASS のまま、経路は pixel と申告する", async () => {
+      const output = await runWithDomStyles([
+        domTextStyle(0, "rgb(0, 0, 0)"),
+        domTextStyle(1, "rgb(0, 0, 0)"),
+        domTextStyle(2, "rgb(0, 0, 0)"),
+      ]);
+
+      expect(output.result.status).toBe("PASS");
+      expect(output.result.verdictRoute).toBe("pixel");
+      expect(output.result.tokenDiff?.mismatches).toHaveLength(0);
+      expect(output.result.completionCriteria?.tokenReview.status).toBe("PASS");
+    });
+
+    // 座標が合わへんときに残り物だけで判定すると、見えてる範囲だけで結論を出すことになる。
+    it("対応付けできなければ判定に使わず、理由を残して画素経路のままにする", async () => {
+      const output = await runWithDomStyles([
+        { ...domTextStyle(0, "rgb(252, 252, 252)"), y: 5_000 },
+      ]);
+
+      expect(output.result.status).toBe("PASS");
+      expect(output.result.verdictRoute).toBe("pixel");
+      expect(output.result.tokenDiff?.reliable).toBe(false);
+      expect(output.result.tokenDiff?.demotionReason).toBeTruthy();
+      expect(output.result.completionCriteria?.tokenReview.status).toBe("UNCERTAIN");
+      expect(output.result.completionCriteria?.tokenReview.blocking).toBe(false);
+    });
+
+    it("DOM の値が採取できなければ token-diff の欄自体を出さない", async () => {
+      const output = await runWithDomStyles([]);
+
+      expect(output.result.tokenDiff).toBeUndefined();
+      expect(output.result.verdictRoute).toBe("pixel");
+      expect(output.result.completionCriteria?.tokenReview.status).toBe("UNCERTAIN");
     });
   });
 
@@ -781,6 +921,7 @@ describe("runCompareDesign", () => {
     expect(mocks.captureUrl).toHaveBeenCalledWith("https://example.test", {
       width: 375,
       detectDynamic: true,
+      collectDomStyles: true,
     });
     expect(getNodeDetails).toHaveBeenCalledWith("FILEKEY123", "12:34");
     expect(getFrameImage).toHaveBeenCalledWith("FILEKEY123", "12:34", 375, 375, undefined, {

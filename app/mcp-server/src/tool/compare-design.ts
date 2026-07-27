@@ -30,6 +30,7 @@ const DESCRIPTION = `デザインと実装のピクセル差分を検出しま�
 
 ## 出力の読み方
 - ループ判定: 2つ目のテキストブロック先頭。停止 / 続行 / 取得できません。status より優先する。取得できません は停止として扱う
+- 判定経路: token-diff = 色とフォントを値そのもので突き合わせた。要修正の項目は設計側の値が確定しているので、そのまま直すこと。pixel = 値の突合が使えず画素だけで見た（理由が同じ欄に出る）。この場合フォントの縁のぼかしに埋もれる色差は検出できない
 - status: "PASS" = 構造SSIM判定上の完了。"FAIL" = 修正が必要。"UNCERTAIN" = 判定の確からしさが足りず人間レビューへ回った状態。失敗ではないので直そうとせず報告すること
 - completionCriteria: blocking=true の項目が "PASS" になるまで作業を続行。ただし status が "UNCERTAIN" の項目は直しても "PASS" にならないので、そこで止めて人間に報告する。matchRate は参考値
 - nextAction: 次に実行すべきアクション（従うこと）
@@ -123,6 +124,7 @@ export function buildSummaryText(result: CompareDesignResult): string {
   const lines: string[] = [];
 
   lines.push(...buildLoopGuardLines(result));
+  lines.push(...buildTokenDiffLines(result));
 
   if (result.diffReport) {
     if (lines.length > 0) lines.push("");
@@ -167,6 +169,48 @@ function buildLoopGuardLines(result: CompareDesignResult): string[] {
       : `反復 ${guard.iteration} 回目 / 上限 ${MAX_LOOP_ITERATIONS}`;
   // 区切りの空行は後続セクションが自分の前に足す規約なので、ここでは足さない。
   return [`ループ判定: ${verdict} (${progress})`, guard.reason];
+}
+
+// 色と文字は画素やなく値そのもので比べられる。どちらの経路で判定したかを必ず出す。
+// 出さんと、画素経路へ静かに落ちとることに読み手が気づけへん。
+function buildTokenDiffLines(result: CompareDesignResult): string[] {
+  const report = result.tokenDiff;
+  if (!report) return [];
+
+  const lines: string[] = ["", `判定経路: ${result.verdictRoute ?? "pixel"}`];
+  if (!report.reliable) {
+    lines.push(
+      `色・文字の値による判定は使いませんでした。${report.demotionReason ?? ""}`.trim(),
+      "この比較では色も画素経路で見ています。文字の縁のぼかしに埋もれる程度の色差は捕まえられません。",
+    );
+    return lines;
+  }
+
+  const blocking = report.mismatches.filter((mismatch) => mismatch.severity === "critical");
+  lines.push(
+    `色・文字の値: ${report.matchedNodeCount} ノード / ${report.checkedPropertyCount} 項目を突き合わせ (未照合 ${report.unmatchedNodeCount} ノード)`,
+  );
+  if (report.mismatches.length === 0) {
+    lines.push("食い違いはありません。");
+    return lines;
+  }
+
+  for (const mismatch of report.mismatches.slice(0, 10)) {
+    const mark = mismatch.severity === "critical" ? "要修正" : "参考";
+    const where = mismatch.region ? ` @ (${mismatch.region.x}, ${mismatch.region.y})` : "";
+    lines.push(
+      `- [${mark}] ${mismatch.nodeName} の ${mismatch.property}: 設計 ${mismatch.designValue} / 実装 ${mismatch.implValue}${where}`,
+    );
+  }
+  if (report.mismatches.length > 10) {
+    lines.push(`- ほか ${report.mismatches.length - 10} 件`);
+  }
+  if (blocking.length > 0) {
+    lines.push(
+      "要修正の項目は値が確定しているので、推測せずこの値へ直してください。参考の項目は合否を落としません。",
+    );
+  }
+  return lines;
 }
 
 // 実機スクショの帯 (開発時のトースト等) は、比較対象の画面と無関係やのに
@@ -267,6 +311,12 @@ export function registerCompareDesign(server: McpServer): void {
           .optional()
           .describe(
             "screenshot_url経路で同じページを2回撮り、撮るたびに変わる領域(時計/カウンタ/カルーセル/ランダム広告)を自動でignore_regions化する。既定true。falseにすると2回目の撮影を行わない。",
+          ),
+        token_diff: z
+          .boolean()
+          .optional()
+          .describe(
+            "screenshot_url + Figma URL の組み合わせで、色・フォントを画素ではなく値そのもので突き合わせる。既定true。対応付けできない割合が高い場合は自動で画素経路へ戻る。判定に使った経路は verdictRoute に出る。",
           ),
         frame_name: z
           .string()

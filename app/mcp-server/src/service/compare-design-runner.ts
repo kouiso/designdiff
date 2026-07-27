@@ -26,11 +26,15 @@ import {
   type CropRegion,
   type DiffReport,
   type DiffVerdict,
+  type DomElementStyle,
   type FigmaNode,
   type IgnoreRegion,
   type LoopGuardReport,
   type PreflightWarning,
   type ToastBandCandidate,
+  type TokenDiffReport,
+  type TokenMismatch,
+  type VerdictRoute,
 } from "@figdiff/shared";
 
 import {
@@ -51,6 +55,14 @@ import { compareImages, redactImageBase64ForPublicExport } from "./image-compare
 import { getLastUsedNode, setLastUsedNode } from "./last-used-node-store.js";
 import { recordIterationAndEvaluate } from "./loop-guard-service.js";
 import { persistDiffImage } from "./persist-detail.js";
+import { blockingMismatches, runTokenDiff } from "./token-diff-service.js";
+
+const FixturePaintSchema = z.object({
+  type: z.string(),
+  color: z.object({ r: z.number(), g: z.number(), b: z.number(), a: z.number() }).optional(),
+  opacity: z.number().optional(),
+  visible: z.boolean().optional(),
+});
 
 const FixtureFigmaNodeSchema: z.ZodType<FigmaNode> = z.lazy(() =>
   z.object({
@@ -76,8 +88,10 @@ const FixtureFigmaNodeSchema: z.ZodType<FigmaNode> = z.lazy(() =>
       })
       .nullable()
       .optional(),
-    fills: z.array(z.object({ type: z.string() })).default([]),
-    strokes: z.array(z.object({ type: z.string() })).default([]),
+    // 色まで持てるようにしてある。落とすと fixture 経由の比較が色を見られず、
+    // 「色は照合済み」と読める結果を色を見ないまま返すことになる。
+    fills: z.array(FixturePaintSchema).default([]),
+    strokes: z.array(FixturePaintSchema).default([]),
     strokeWeight: z.number().optional(),
     cornerRadius: z.number().optional(),
     rectangleCornerRadii: z.tuple([z.number(), z.number(), z.number(), z.number()]).optional(),
@@ -162,6 +176,12 @@ export interface CompareDesignRunArgs {
    * 時計・カウンタ・カルーセルが毎回差分に計上されると、自走ループが収束しない。
    */
   auto_mask_dynamic?: boolean;
+  /**
+   * screenshot_url + Figma URL の組み合わせで、色と文字を値のまま突き合わせる (既定 true)。
+   * 画素経路と違いアンチエイリアスの影響を受けないので、色と文字はこちらを合否の根拠にする。
+   * 対応付けできない割合が高いときは自動で画素経路へ戻す。
+   */
+  token_diff?: boolean;
   // 既知の意図的差分マスク。compare 結果から除外される。
   // 座標系は cropRegion 適用後 (= screenshot ピクセル座標)。
   ignore_regions?: IgnoreRegion[];
@@ -224,8 +244,14 @@ function buildCompletionCriteria(
   structuralVerdict: DiffVerdict,
   structuralRationale: string | undefined,
   perceptibleDiffRatio: number | undefined,
+  tokenDiff: TokenDiffReport | undefined,
 ): Record<
-  "structuralReview" | "consistencyReview" | "matchRate" | "diffPixelCount" | "remainingIssues",
+  | "structuralReview"
+  | "consistencyReview"
+  | "tokenReview"
+  | "matchRate"
+  | "diffPixelCount"
+  | "remainingIssues",
   {
     required: number;
     current: number;
@@ -243,6 +269,7 @@ function buildCompletionCriteria(
         ? "UNCERTAIN"
         : "FAIL";
   const pixelsAgreeWithPass = !isPassContradictedByPixels(structuralVerdict, perceptibleDiffRatio);
+  const tokenBlocking = tokenDiff ? blockingMismatches(tokenDiff) : [];
 
   return {
     structuralReview: {
@@ -265,6 +292,22 @@ function buildCompletionCriteria(
           ? "Not evaluated: the contradiction check only applies to a passing structural review."
           : "Structural review and the perceptible-difference evidence agree."
         : `Structural review says pass, yet ${formatPerceptibleDiffPercent(perceptibleDiffRatio)} of pixels differ visibly (CIEDE2000 above ${PERCEPTIBLE_DELTA_E}); the limit is ${Math.round(PERCEPTIBLE_DIFF_CONTRADICTION_RATIO * 100)}%. One of the two is wrong, so this comparison is routed to human review instead of reporting PASS.`,
+    },
+    // 色と文字は値そのもので比べられる。使えたときはこれが色の正本になり、
+    // 使えなかったときは「見ていない」と分かるように理由を残す。
+    tokenReview: {
+      required: 0,
+      current: tokenBlocking.length,
+      status: !tokenDiff?.reliable ? "UNCERTAIN" : tokenBlocking.length === 0 ? "PASS" : "FAIL",
+      blocking: tokenBlocking.length > 0,
+      note:
+        tokenDiff === undefined
+          ? "Not evaluated: token comparison needs both a Figma node tree and a FigDiff-captured URL."
+          : !tokenDiff.reliable
+            ? `Not used as evidence. ${tokenDiff.demotionReason ?? ""}`.trim()
+            : tokenBlocking.length === 0
+              ? `Colour and typography values match across ${tokenDiff.matchedNodeCount} nodes (${tokenDiff.checkedPropertyCount} properties).`
+              : `${tokenBlocking.length} colour/typography values differ from the design. These are exact values, not perceptual guesses.`,
     },
     matchRate: {
       required: 100,
@@ -354,6 +397,7 @@ function buildStatus(
   structuralVerdict: DiffVerdict,
   likelyMisconfig: boolean,
   perceptibleDiffRatio: number | undefined,
+  tokenDiffBlockingCount: number,
 ): CompareStatus {
   if (likelyMisconfig) {
     return "UNCERTAIN";
@@ -364,7 +408,60 @@ function buildStatus(
   if (isPassContradictedByPixels(structuralVerdict, perceptibleDiffRatio)) {
     return "UNCERTAIN";
   }
+  // 色や文字の大きさは値の事実であって、見た目の近さの問題ではない。
+  // 画素が近いと言っても、使っている値が違うなら実装は仕様どおりではない。
+  // 逆向き (token-diff が一致 → PASS) には効かせない。値が合っていても
+  // 配置が崩れていることはあり、そちらは画素経路の担当。
+  if (tokenDiffBlockingCount > 0) {
+    return "FAIL";
+  }
   return structuralVerdict === "pass" ? "PASS" : "FAIL";
+}
+
+/**
+ * 色・文字の値による突合を、失敗しても比較全体を巻き込まない形で回す。
+ * 材料が揃わないとき (手渡し PNG / Figma ノードが無い) は undefined を返し、
+ * 呼び出し側はそのまま画素経路だけで判定する。
+ */
+function runTokenDiffSafely(
+  figmaRootNode: FigmaNode | undefined,
+  domStyles: readonly DomElementStyle[] | undefined,
+  screenshotWidth: number | undefined,
+): TokenDiffReport | undefined {
+  if (!figmaRootNode || !domStyles || domStyles.length === 0) return undefined;
+  if (typeof screenshotWidth !== "number" || screenshotWidth <= 0) return undefined;
+  try {
+    return runTokenDiff({ figmaRootNode, domStyles, screenshotWidth });
+  } catch (error) {
+    console.warn(
+      `[compare-design] 色・文字の値による突合に失敗しました: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    );
+    return undefined;
+  }
+}
+
+/** token-diff の結果を人が読む1行にする。 */
+function buildTokenDiffSummary(
+  report: TokenDiffReport,
+  blocking: readonly TokenMismatch[],
+): string {
+  if (!report.reliable) {
+    return `色・文字の値による判定は使いませんでした。${report.demotionReason ?? ""}`.trim();
+  }
+  if (blocking.length === 0) {
+    return `色・文字の値は ${report.matchedNodeCount} ノード / ${report.checkedPropertyCount} 項目を突き合わせ、食い違いはありませんでした。`;
+  }
+  const head = blocking
+    .slice(0, 3)
+    .map(
+      (mismatch) =>
+        `${mismatch.nodeName} の ${mismatch.property} が ${mismatch.designValue} ではなく ${mismatch.implValue}`,
+    )
+    .join(" / ");
+  const rest = blocking.length > 3 ? ` ほか ${blocking.length - 3} 件` : "";
+  return `色・文字の値が ${blocking.length} 件食い違っています: ${head}${rest}。`;
 }
 
 // diff 画像を永続化すべきかを status 起点で判定する。FAIL のときは matchRate が
@@ -527,6 +624,11 @@ interface ResolvedScreenshot {
   screenshotPath: string;
   /** 動的コンテンツ検出用の追加サンプル。FigDiff 自身が URL を撮ったときだけ得られる。 */
   dynamicSamplePaths?: string[];
+  /**
+   * 実装が実際に使っている色・文字の値。FigDiff 自身が URL を撮ったときだけ得られる。
+   * 手渡しの PNG や実機スクショからは取れないので、その場合は画素経路だけで判定する。
+   */
+  domStyles?: DomElementStyle[];
 }
 
 async function resolveScreenshotPath(
@@ -582,10 +684,13 @@ async function resolveScreenshotPath(
   const captured = await captureUrl(args.screenshot_url, {
     width: captureWidth ?? 1440,
     detectDynamic,
+    // 色と文字は画素より値で比べたほうが正確。撮れるときは必ず採取しておく。
+    collectDomStyles: args.token_diff !== false,
   });
   return {
     screenshotPath: captured.screenshotPath,
     dynamicSamplePaths: captured.dynamicSamplePaths,
+    domStyles: captured.domStyles,
   };
 }
 
@@ -1142,11 +1247,28 @@ export async function runCompareDesign(
     perceptibleDiffRatio,
   );
 
+  // 色と文字は値そのもので比べる。撮影と Figma ノードの両方が揃ったときだけ動く。
+  const tokenDiff = runTokenDiffSafely(
+    figmaRootNode,
+    resolvedScreenshot.domStyles,
+    screenshotMeta.width,
+  );
+  const tokenDiffBlocking = tokenDiff ? blockingMismatches(tokenDiff) : [];
+  // 合否を落とす食い違いがあるときだけ、その説明を前面に出す。
+  const tokenDiffSummary =
+    tokenDiff && tokenDiffBlocking.length > 0
+      ? buildTokenDiffSummary(tokenDiff, tokenDiffBlocking)
+      : undefined;
+
   const status = buildStatus(
     structuralReviewResult.verdict,
     diagnosis.likelyMisconfig,
     perceptibleDiffRatio,
+    tokenDiffBlocking.length,
   );
+  // 経路を必ず出す。無言で画素経路へ落ちていることに呼び出し側が気づけないと、
+  // 「色は見てもらえている」と誤解したまま作業が進む。
+  const verdictRoute: VerdictRoute = tokenDiffBlocking.length > 0 ? "token-diff" : "pixel";
 
   // 呼び出し側は nextAction に従うよう案内しているので、status が人間レビューを
   // 指しているのに nextAction が「完了を確認せよ」と言う状態を作らない。
@@ -1154,8 +1276,10 @@ export async function runCompareDesign(
     ? buildMisconfigNextAction(diagnosis)
     : pixelsContradictPass
       ? buildPixelContradictionNextAction(perceptibleDiffRatio)
-      : (buildDiagnosisNextAction(diagnosis) ??
-        buildNextAction(structuralReviewResult.verdict, regionCount, targetNodeIds));
+      : tokenDiffSummary !== undefined
+        ? `${tokenDiffSummary} 値が分かっているので、該当箇所の指定を設計側の値へ直してください。`
+        : (buildDiagnosisNextAction(diagnosis) ??
+          buildNextAction(structuralReviewResult.verdict, regionCount, targetNodeIds));
   const loopGuard = await evaluateLoopGuardSafely({
     sourceKey,
     comparisonId: comparison.comparisonId,
@@ -1193,13 +1317,17 @@ export async function runCompareDesign(
       structuralReviewResult.verdict,
       structuralReviewResult.rationale,
       perceptibleDiffRatio,
+      tokenDiff,
     ),
+    tokenDiff,
+    verdictRoute,
     nextAction: diagnosisNextAction,
     suggestion: diagnosis.likelyMisconfig
       ? diagnosis.headline
       : pixelsContradictPass
         ? buildPixelContradictionSuggestion(perceptibleDiffRatio)
-        : buildSuggestion(structuralReviewResult.verdict, comparison.matchRate, regionCount),
+        : (tokenDiffSummary ??
+          buildSuggestion(structuralReviewResult.verdict, comparison.matchRate, regionCount)),
     critique,
     preflight: finalPreflight,
     comparisonHeadline,

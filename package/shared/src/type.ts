@@ -28,6 +28,10 @@ import {
   type DesignSourceSchema,
   type DesignTokenSchema,
   type DiffRegionSchema,
+  type DomElementStyleSchema,
+  type TokenDiffReportSchema,
+  type TokenMismatchSchema,
+  type VerdictRouteSchema,
   type FigmaAuthStateSchema,
   type FigmaOAuthTokenResponseSchema,
   type FigmaTokenSchema,
@@ -90,6 +94,14 @@ export type ParsedDesignInput = z.infer<typeof ParsedDesignInputSchema>;
 export type CompareDesignResult = z.infer<typeof CompareDesignResultSchema>;
 export type LoopGuardReport = z.infer<typeof LoopGuardReportSchema>;
 export type DiffRegion = z.infer<typeof DiffRegionSchema>;
+
+// --- Token Diff (色・文字を数値で突き合わせる経路) ---
+
+export type DomElementStyle = z.infer<typeof DomElementStyleSchema>;
+export type TokenMismatch = z.infer<typeof TokenMismatchSchema>;
+export type TokenDiffReport = z.infer<typeof TokenDiffReportSchema>;
+export type VerdictRoute = z.infer<typeof VerdictRouteSchema>;
+
 export type ClusterTelemetry = z.infer<typeof ClusterTelemetrySchema>;
 export type GridSummary = z.infer<typeof GridSummarySchema>;
 export type GridSummaryCell = z.infer<typeof GridSummaryCellSchema>;
