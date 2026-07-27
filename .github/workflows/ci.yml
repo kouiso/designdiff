@@ -133,3 +133,10 @@ jobs:
 
       - name: Run independent oracle self-test
         run: node script/oracle-compare.mjs self-test
+
+      # 物差しが正しいだけでは足りん。FigDiff の合否がその物差しと一致するかを見る。
+      # ゴールデン検体の期待合否は FigDiff 側のテストが検証しており、ここで
+      # 独立オラクルも同じ期待合否に一致することを示す。両者が同じ正解へ
+      # 独立にたどり着いているかの確認になる。
+      - name: Check FigDiff verdicts agree with the independent oracle
+        run: node script/oracle-verdict-agreement.mjs
