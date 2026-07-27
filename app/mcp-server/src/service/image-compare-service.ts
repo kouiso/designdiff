@@ -5,7 +5,7 @@
  */
 
 import pixelmatch from "pixelmatch";
-import sharp from "sharp";
+import sharp, { type Sharp } from "sharp";
 
 import {
   PERCEPTIBLE_DIFF_CONTRADICTION_RATIO,
@@ -40,7 +40,7 @@ interface SharpCreateOptions extends SharpOptions {
 type SharpInput = SharpBufferInput | SharpCreateOptions;
 
 // 全 sharp() 呼び出しで OOM ガードを必ず有効にする。
-function createSharp(input?: SharpInput, options?: SharpOptions): sharp.Sharp {
+function createSharp(input?: SharpInput, options?: SharpOptions): Sharp {
   const guardedOptions = { ...options, limitInputPixels: MAX_INPUT_PIXELS };
   if (input === undefined) {
     return sharp(guardedOptions);
