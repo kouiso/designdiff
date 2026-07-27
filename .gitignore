@@ -64,6 +64,10 @@ verification/evidence/
 verification/traces/
 verification/logs/
 
+# Manifests filled with a real Figma file key. The tracked manifests under
+# verification/fixture/ carry placeholder keys only; copy one here and fill it in.
+verification/fixture/local/
+
 # Evidence build/lint/test logs (not source-of-truth, regeneratable)
 docs/evidence/*.log
 
