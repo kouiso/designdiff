@@ -8,14 +8,12 @@ export default defineConfig({
       // 分母に入れると「未テストの製品コード」の量が読めなくなる。
       include: ["src/**/*.ts"],
       exclude: ["src/**/*.test.ts", "src/__mock__/**"],
-      // 目標は4軸すべて80% (document.md Phase E)。まだ届いていないので、
-      // 現状の実測値を下限に置いて「下がったら止める」状態にしてある。
-      // 80%まで引き上げる作業は #307 で追う。
+      // 目標は4軸すべて80% (document.md Phase E)。
       thresholds: {
-        statements: 30,
-        branches: 85,
-        functions: 61,
-        lines: 30,
+        statements: 80,
+        branches: 80,
+        functions: 80,
+        lines: 80,
       },
     },
     environment: "jsdom",
