@@ -194,11 +194,16 @@ describe("Figma タブ", () => {
     );
   });
 
-  it("Figma として解釈できない URL は parseDesignInput が throw する", async () => {
+  // 例外がそのまま外へ出る形だと、呼び出し元が握り潰して画面には何も出ん。
+  // 利用者から見て「理由が表示される」ことを条件にする。
+  it("Figma として解釈できない URL は、理由を画面のエラーへ載せる", async () => {
     const popup = await loadPopup();
     popup.state.figmaUrl = "just-some-text";
 
-    await expect(popup.handleFetchFrames()).rejects.toThrow();
+    await expect(popup.handleFetchFrames()).resolves.toBeUndefined();
+
+    expect(popup.state.error).toBeTruthy();
+    expect(popup.state.loading).toBe(false);
   });
 
   it("background がエラーを返す → error に載せ loading を戻す", async () => {
