@@ -38,6 +38,8 @@ app/desktop/release/
 
 # Test results (Playwright, Vitest)
 **/test-results/
+**/playwright-report/
+**/.playwright/
 
 # Temporary files
 **/tmp-*.mjs

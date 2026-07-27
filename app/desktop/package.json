@@ -17,6 +17,7 @@
     "test": "vitest run && vitest run --config vitest.electron.config.ts",
     "test:electron": "vitest run --config vitest.electron.config.ts",
     "test:coverage": "vitest run --coverage",
+    "e2e": "playwright test",
     "preview": "electron-vite preview",
     "pack": "electron-builder"
   },

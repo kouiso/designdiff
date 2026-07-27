@@ -1,27 +1,27 @@
 {
   "metric": "page-load",
   "samples": [
-    555,
-    542,
-    539,
-    541,
-    541
+    583,
+    578,
+    570,
+    580,
+    563
   ],
-  "p95Ms": 555,
+  "p95Ms": 583,
   "thresholdMs": 1000,
   "pass": true,
   "interactionMetric": "new-project-button",
   "interactionSamples": [
-    52,
-    44,
-    30,
-    30,
-    26
+    66,
+    31,
+    26,
+    25,
+    20
   ],
-  "interactionP95Ms": 52,
+  "interactionP95Ms": 66,
   "interactionThresholdMs": 200,
   "interactionPass": true,
-  "settingsDialogP95Ms": 91,
-  "settingsDialogThresholdMs": 200,
-  "settingsDialogPass": true
+  "settingsScreenP95Ms": 99,
+  "settingsScreenThresholdMs": 200,
+  "settingsScreenPass": true
 }
