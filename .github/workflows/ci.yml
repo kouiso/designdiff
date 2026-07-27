@@ -93,7 +93,7 @@ jobs:
           retention-days: 7
 
   naming:
-    name: Naming (kebab-case files, singular folders)
+    name: Naming and action pins
     runs-on: ${{ vars.RUNNER_LINUX }}
     timeout-minutes: 5
     if: github.event.pull_request.draft == false
@@ -106,3 +106,8 @@ jobs:
 
       - name: Check naming conventions
         run: node script/check-naming.mjs
+
+      # 同じ Action の版が混ざると、更新のたびに片方が取り残される。
+      # 動いてしまうので気づけない。混ざった時点で止める。
+      - name: Check action pins
+        run: node script/check-action-pins.mjs
