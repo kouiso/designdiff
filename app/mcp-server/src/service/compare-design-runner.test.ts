@@ -151,6 +151,86 @@ describe("resolveAutoCrop", () => {
     expect(result).toEqual({ x: 0, y: 0, width: 100, height: 100 });
   });
 
+  // 実ページは design 領域に文字や画像が必ずある。design 領域を真っ白にした
+  // 検体だけで検証していると、超過領域の切り出しが効いていなくても
+  // 「画像全体の標準偏差 ≒ 超過領域の標準偏差」になって合否が一致してしまう。
+  it("design領域に模様があっても、超過領域が空白なら自動cropする", async () => {
+    const screenshot = await makeScreenshot(100, 150, "blank", 100, "content");
+    const result = await resolveAutoCrop(
+      undefined,
+      { width: 100, height: 100 },
+      100,
+      150,
+      screenshot,
+    );
+    expect(result).toEqual({ x: 0, y: 0, width: 100, height: 100 });
+  });
+
+  it("design領域に模様があり、超過領域にもコンテンツがあるなら自動cropしない", async () => {
+    const screenshot = await makeScreenshot(100, 150, "noise", 100, "content");
+    const result = await resolveAutoCrop(
+      undefined,
+      { width: 100, height: 100 },
+      100,
+      150,
+      screenshot,
+    );
+    expect(result).toBeUndefined();
+  });
+
+  // 単色で塗られた巨大なブロックは余白ではなく実装の不具合。一様かどうかだけで
+  // 判定すると、これを余白とみなして差分ごと消してしまう。
+  it("超過領域が単色でも、ページ背景と違う色なら自動cropしない", async () => {
+    const width = 100;
+    const height = 150;
+    const pixels = Buffer.alloc(width * height * 3, 255);
+    for (let y = 100; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const base = (y * width + x) * 3;
+        pixels[base] = 239;
+        pixels[base + 1] = 111;
+        pixels[base + 2] = 108;
+      }
+    }
+    const screenshot = await realSharp(pixels, { raw: { width, height, channels: 3 } })
+      .png()
+      .toBuffer();
+    const result = await resolveAutoCrop(
+      undefined,
+      { width: 100, height: 100 },
+      100,
+      150,
+      screenshot,
+    );
+    expect(result).toBeUndefined();
+  });
+
+  // Figma のフレーム寸法は論理pt、実機スクショは 2x/3x の実ピクセル。素で
+  // 比べると高解像度の撮影が丸ごと対象外になる。
+  it("実機2x撮影でも、撮影倍率を割り出して自動cropする", async () => {
+    const screenshot = await makeScreenshot(750, 1400, "blank", 1200, "content");
+    const result = await resolveAutoCrop(
+      undefined,
+      { width: 375, height: 600 },
+      750,
+      1400,
+      screenshot,
+    );
+    expect(result).toEqual({ x: 0, y: 0, width: 750, height: 1200 });
+  });
+
+  it("撮影倍率が 1x/2x/3x のどれにも乗らない幅なら自動cropしない", async () => {
+    const screenshot = await makeScreenshot(500, 1000, "blank", 800, "content");
+    const result = await resolveAutoCrop(
+      undefined,
+      { width: 375, height: 600 },
+      500,
+      1000,
+      screenshot,
+    );
+    expect(result).toBeUndefined();
+  });
+
   it("超過領域にノイズ(=実コンテンツ)があるなら自動cropしない (意図しない追加セクションを握り潰さない)", async () => {
     const screenshot = await makeScreenshot(100, 150, "noise", 100);
     const result = await resolveAutoCrop(

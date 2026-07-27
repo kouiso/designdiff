@@ -909,25 +909,107 @@ async function resolveProjectRegions(
 // 撮影条件そのものが疑わしいため自動crop対象外とし、既存の preflight
 // (width_mismatch等) に判断を委ねる。
 const AUTO_CROP_WIDTH_TOLERANCE_PX = 2;
+// Figma のフレーム寸法は論理pt、スクショは撮影機の実ピクセル。実機やRetinaは
+// 2x/3x で撮れるので、幅を素のまま比べると論理pt と実px を突き合わせてしまい、
+// 高解像度の撮影が丸ごと自動crop の対象外になる。撮影倍率を先に割り出して
+// 同じ空間へ揃える。倍率が下の候補に乗らん場合だけ「撮影条件が疑わしい」とみなす。
+const AUTO_CROP_SUPPORTED_CAPTURE_SCALES = [1, 2, 3];
+
+// 撮影幅がフレーム幅の何倍かを返す。候補のどれにも合わなければ undefined。
+function resolveCaptureScale(screenshotWidth: number, frameWidth: number): number | undefined {
+  if (frameWidth <= 0) {
+    return undefined;
+  }
+  return AUTO_CROP_SUPPORTED_CAPTURE_SCALES.find(
+    (scale) =>
+      Math.abs(screenshotWidth - frameWidth * scale) <= AUTO_CROP_WIDTH_TOLERANCE_PX * scale,
+  );
+}
 // 超過領域が「空白/背景色」とみなせる標準偏差の上限 (0-255 スケール)。
 // これを超えるコンテンツ (文字・写真・追加セクション等) がある超過領域は
 // 実装差分の可能性が高いため crop せず、通常どおり比較対象に含める。
 const AUTO_CROP_UNIFORM_STDDEV_THRESHOLD = 8;
 
-// 超過領域が実質空白かどうかを判定する。意図しない追加セクション
-// (=本物の差分。回帰テストで実証済み: 360x600 design に対し 360x1548 の
-// 実装スクショを auto-crop すると余分なセクションごと差分が消える) を
-// 「単なる余白」と誤認して握り潰さないための安全ガード。
-async function isExcessRegionBlank(
+// 背景色を拾うときの縮小サイズ。最頻色を数えるだけなので原寸は要らん。
+// 補間で元に無い色が生まれると最頻色がズレるため nearest で縮める。
+const AUTO_CROP_BACKGROUND_SAMPLE_PX = 64;
+// 背景色とみなす色差 (チャンネルごとの絶対差の上限)。
+const AUTO_CROP_BACKGROUND_CHANNEL_TOLERANCE = 12;
+
+type Rgb = readonly [number, number, number];
+
+// 指定領域の最頻色を返す。ページ背景の代表値として使う。
+async function resolveDominantColor(
   screenshotBuffer: Buffer,
   region: { left: number; top: number; width: number; height: number },
+): Promise<Rgb | undefined> {
+  const { data, info } = await sharp(screenshotBuffer)
+    .extract(region)
+    .resize(AUTO_CROP_BACKGROUND_SAMPLE_PX, AUTO_CROP_BACKGROUND_SAMPLE_PX, {
+      fit: "fill",
+      kernel: "nearest",
+    })
+    .removeAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+  const counts = new Map<string, number>();
+  for (let offset = 0; offset < data.length; offset += info.channels) {
+    const key = `${data[offset]},${data[offset + 1]},${data[offset + 2]}`;
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  let best: string | undefined;
+  let bestCount = 0;
+  for (const [key, count] of counts) {
+    if (count > bestCount) {
+      best = key;
+      bestCount = count;
+    }
+  }
+  if (!best) {
+    return undefined;
+  }
+  const [r, g, b] = best.split(",").map(Number);
+  return [r, g, b];
+}
+
+// 超過領域が「ページ背景がそのまま伸びとるだけ」かを判定する。
+//
+// 一様であることだけを条件にすると、単色で塗られた巨大なブロックまで余白と
+// みなしてしまう。実際、360x600 の design に対し 360x1548 の実装という回帰の
+// 検体では、超過948pxが単色 (ページ背景とは別の色) で埋まっており、
+// 一様判定だけでは本物の差分ごと crop で消えてしまう。
+// そこで「一様」に加えて「design 領域の背景色と同じ色」であることを要求する。
+async function isExcessRegionBackgroundOnly(
+  screenshotBuffer: Buffer,
+  designRegion: { left: number; top: number; width: number; height: number },
+  excessRegion: { left: number; top: number; width: number; height: number },
 ): Promise<boolean> {
-  if (region.width <= 0 || region.height <= 0) {
+  if (excessRegion.width <= 0 || excessRegion.height <= 0) {
     return true;
   }
   try {
-    const stats = await sharp(screenshotBuffer).extract(region).stats();
-    return stats.channels.every((channel) => channel.stdev <= AUTO_CROP_UNIFORM_STDDEV_THRESHOLD);
+    // stats() は入力画像そのものから算出され、積んだ extract は反映されん。
+    // 一度バッファへ書き出してから測らんと、超過領域やのうて画像全体の
+    // 標準偏差を見てしまう (実ページは design 側に必ず文字や画像があるので
+    // 常に閾値超え = 自動crop が一度も発火せん)。
+    const excess = await sharp(screenshotBuffer).extract(excessRegion).toBuffer();
+    const stats = await sharp(excess).stats();
+    const uniform = stats.channels.every(
+      (channel) => channel.stdev <= AUTO_CROP_UNIFORM_STDDEV_THRESHOLD,
+    );
+    if (!uniform) {
+      return false;
+    }
+    const background = await resolveDominantColor(screenshotBuffer, designRegion);
+    if (!background) {
+      return false;
+    }
+    const [er, eg, eb] = stats.channels.map((channel) => channel.mean);
+    return (
+      Math.abs(er - background[0]) <= AUTO_CROP_BACKGROUND_CHANNEL_TOLERANCE &&
+      Math.abs(eg - background[1]) <= AUTO_CROP_BACKGROUND_CHANNEL_TOLERANCE &&
+      Math.abs(eb - background[2]) <= AUTO_CROP_BACKGROUND_CHANNEL_TOLERANCE
+    );
   } catch {
     // 抽出に失敗した場合は安全側 (crop しない) に倒す。
     return false;
@@ -944,21 +1026,35 @@ export async function resolveAutoCrop(
   if (existingCropRegion || !figmaFrameBox || !screenshotWidth || !screenshotHeight) {
     return undefined;
   }
-  const widthDiff = Math.abs(screenshotWidth - figmaFrameBox.width);
-  if (widthDiff > AUTO_CROP_WIDTH_TOLERANCE_PX) {
+  const captureScale = resolveCaptureScale(screenshotWidth, figmaFrameBox.width);
+  if (captureScale === undefined) {
     return undefined;
   }
-  if (screenshotHeight <= figmaFrameBox.height) {
+  // 以降はすべてスクショの実ピクセル空間で扱う。crop は design 画像にも同じ
+  // 矩形で当たるが、design 側は撮影幅に合わせて書き出されるので空間は揃う。
+  const frameWidthPx = figmaFrameBox.width * captureScale;
+  const frameHeightPx = figmaFrameBox.height * captureScale;
+  if (screenshotHeight <= frameHeightPx) {
     return undefined;
   }
   const excessRegion = {
     left: 0,
-    top: Math.floor(figmaFrameBox.height),
+    top: Math.floor(frameHeightPx),
     width: Math.floor(screenshotWidth),
-    height: Math.floor(screenshotHeight - figmaFrameBox.height),
+    height: Math.floor(screenshotHeight - frameHeightPx),
   };
-  const isBlank = await isExcessRegionBlank(screenshotBuffer, excessRegion);
-  if (!isBlank) {
+  const designRegion = {
+    left: 0,
+    top: 0,
+    width: Math.floor(Math.min(frameWidthPx, screenshotWidth)),
+    height: Math.floor(frameHeightPx),
+  };
+  const backgroundOnly = await isExcessRegionBackgroundOnly(
+    screenshotBuffer,
+    designRegion,
+    excessRegion,
+  );
+  if (!backgroundOnly) {
     return undefined;
   }
   // 撮影幅は Figma フレーム幅と最大 2px までズレても受け入れる。フレーム幅を
@@ -967,8 +1063,8 @@ export async function resolveAutoCrop(
   return {
     x: 0,
     y: 0,
-    width: Math.min(figmaFrameBox.width, screenshotWidth),
-    height: Math.min(figmaFrameBox.height, screenshotHeight),
+    width: Math.min(frameWidthPx, screenshotWidth),
+    height: Math.min(frameHeightPx, screenshotHeight),
   };
 }
 
