@@ -68,6 +68,7 @@ vi.mock("./loop-guard-service.js", () => ({
 }));
 
 import { buildTargetNodeIds, resolveAutoCrop, runCompareDesign } from "./compare-design-runner.js";
+import { recordIterationAndEvaluate } from "./loop-guard-service.js";
 
 import type { CompareDesignRunArgs } from "./compare-design-runner.js";
 import type * as ComparisonHistoryModule from "./comparison-history.js";
@@ -1114,6 +1115,82 @@ describe("runCompareDesign", () => {
     expect(result.status).toBe("UNCERTAIN");
     expect(result.completionCriteria?.structuralReview.status).toBe("UNCERTAIN");
     expect(result.completionCriteria?.structuralReview.current).toBe(0);
+  });
+
+  // #24。設計がフルページ、撮影が単一ビューポート相当のとき、比較前に設計を
+  // 縮めて重ねとる。縮めた後の画素差では「実装が違う」と「撮影範囲が足りん」を
+  // 区別できん。FAIL を返すと自走ループが直しに行くので、UNCERTAIN で止める。
+  async function runFullPageVsViewport(cropApplied: boolean) {
+    tmpRoot = await fs.mkdtemp(path.join(process.cwd(), "tmp-figdiff-runner-"));
+    const designPath = path.join(tmpRoot, "design.png");
+    const screenshotPath = path.join(tmpRoot, "screenshot.png");
+    await fs.writeFile(designPath, Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+    await fs.writeFile(screenshotPath, Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+
+    mocks.sharp.mockReturnValue({
+      metadata: vi.fn(async () => ({ width: 2166, height: 5231 })),
+    });
+    mocks.compareImages.mockResolvedValue({
+      comparisonId: "cmp-fullpage",
+      matchRate: 56.19,
+      diffPixelCount: 4_963_849,
+      totalPixelCount: 11_330_346,
+      diffRegions: [
+        {
+          id: 1,
+          bounds: { x: 0, y: 0, width: 192, height: 192 },
+          diffPixelCount: 36_864,
+          nearbyNodeIds: [],
+          nearbyNodeNames: [],
+        },
+      ],
+      suggestion: "full page fixture",
+      diffReport: {
+        alignment: {
+          translation: { x: 0, y: 0 },
+          scale: { x: 1, y: 1 },
+          rotation: 0,
+          confidence: 1,
+          residual: 0,
+        },
+        regionScores: [],
+        issues: [],
+        weightedAggregate: { weightedStructure: 0.39, weightedColor: 0.5, totalWeight: 1 },
+        aggregateVerdict: "fail",
+        rationale: "full page fixture",
+        perceptibleDiffRatio: 0.44,
+      },
+      normalization: {
+        designNativeWidth: 2166,
+        designNativeHeight: 8190,
+        screenshotWidth: 2166,
+        screenshotHeight: 5231,
+        cropApplied,
+        containResized: true,
+        appliedScale: 0.6387,
+      },
+    });
+
+    return runCompareDesign({ design_source: designPath, screenshot: screenshotPath });
+  }
+
+  it("routes a full-page design against a shorter capture to human review", async () => {
+    const { result } = await runFullPageVsViewport(false);
+
+    expect(result.status).toBe("UNCERTAIN");
+    // 自走ループは UNCERTAIN で止まる作り (loop-guard-service.test.ts で検証済み)。
+    // ここでは UNCERTAIN がループ判定まで届いていることだけを見る。届かんと
+    // 成立していない比較のまま修正を続けることになる。
+    expect(vi.mocked(recordIterationAndEvaluate)).toHaveBeenCalledWith(
+      expect.objectContaining({ status: "UNCERTAIN" }),
+    );
+  });
+
+  it("keeps a normal verdict once the comparison range was cropped to match", async () => {
+    const { result } = await runFullPageVsViewport(true);
+
+    // crop 済みなら比較範囲は揃っとるので、この安全網は効かせん。
+    expect(result.status).toBe("FAIL");
   });
 
   // 保存 crop は x=0 で作られる。crop 後の寸法だけを preflight に渡していたため
