@@ -47,4 +47,4 @@ if (conflicts.length > 0) {
 }
 
 const total = [...pins.values()].reduce((sum, refs) => sum + refs.size, 0);
-console.log(`Action pin check passed: ${pins.size} actions, ${total} pins, no version conflicts.`);
+console.info(`Action pin check passed: ${pins.size} actions, ${total} pins, no version conflicts.`);
