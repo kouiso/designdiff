@@ -384,9 +384,14 @@ export async function handleFetchFrames(): Promise<void> {
     return;
   }
 
-  const parsed = parseDesignInput(state.figmaUrl);
-  if (!parsed) {
-    state.error = "Invalid Figma URL";
+  // ここは入力が Figma の URL として解釈できるかを確かめるだけで、結果は使わん。
+  // parseDesignInput は解釈できん入力を throw で返し、null は返さない。
+  // 「戻り値が偽なら」という受け方では一度も拾えず、例外がそのまま外へ出て
+  // 画面には何も出ないまま握り潰されていた。投げられた理由をそのまま見せる。
+  try {
+    parseDesignInput(state.figmaUrl);
+  } catch (error) {
+    state.error = error instanceof Error ? error.message : "Invalid Figma URL";
     render();
     return;
   }

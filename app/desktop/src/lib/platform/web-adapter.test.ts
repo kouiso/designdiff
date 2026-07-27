@@ -7,13 +7,19 @@ const TOKEN_STORAGE_KEY = "figdiff:figma-token";
 const VALID_TOKEN = "figd_web_token_1234567890";
 
 /**
- * web-adapter が FigmaClient へ渡すキャッシュ戦略の実引数の形。
- * shared 側の FigmaCacheStrategy とは引数の数が違うので、
- * 実際に渡っている形をそのまま書いて捕捉する。
+ * web-adapter が FigmaClient へ渡すキャッシュ戦略の形。shared 側の
+ * FigmaCacheStrategy と同じ並びにしておく。ここを実装に合わせて崩すと、
+ * 引数がずれたまま「そういう仕様」として固定してしまう。
  */
 interface CapturedCache {
-  get(fileKey: string, nodeId: string, scale: number): Promise<string | null>;
-  set(fileKey: string, nodeId: string, scale: number, base64: string): Promise<void>;
+  get(fileKey: string, nodeId: string, scale: number, version?: string): Promise<string | null>;
+  set(
+    fileKey: string,
+    nodeId: string,
+    scale: number,
+    version: string | undefined,
+    base64: string,
+  ): Promise<void>;
 }
 
 const getFile = vi.fn<(fileKey: string, depth?: number) => Promise<FigmaFileResponse>>();
@@ -300,9 +306,28 @@ describe("webAdapter", () => {
     it("set した画像を同じキーで get できる", async () => {
       const cache = await primeCache();
 
-      await cache.set("file-key", "1:2", 2, "CACHED");
+      await cache.set("file-key", "1:2", 2, undefined, "CACHED");
 
       await expect(cache.get("file-key", "1:2", 2)).resolves.toBe("CACHED");
+    });
+
+    // 引数が1つ足りん実装やと base64 の位置に version が入り、画像やのうて
+    // 版の文字列を保存してしまう。TypeScript は引数の少ない実装を通すので、
+    // 保存した中身そのものを見て捕まえる。
+    it("version を伴う保存でも、版やのうて画像そのものを保存する", async () => {
+      const cache = await primeCache();
+
+      await cache.set("file-key", "1:2", 2, "v9", "REAL_IMAGE");
+
+      await expect(cache.get("file-key", "1:2", 2, "v9")).resolves.toBe("REAL_IMAGE");
+    });
+
+    it("版が変われば別のキーとして扱い、古い画像を返さない", async () => {
+      const cache = await primeCache();
+
+      await cache.set("file-key", "1:2", 2, "v1", "OLD");
+
+      await expect(cache.get("file-key", "1:2", 2, "v2")).resolves.toBeNull();
     });
 
     it("未保存のキーは null を返す", async () => {
@@ -314,7 +339,7 @@ describe("webAdapter", () => {
     it("スケールが違えば別のキーとして扱う", async () => {
       const cache = await primeCache();
 
-      await cache.set("file-key", "1:2", 2, "AT2X");
+      await cache.set("file-key", "1:2", 2, undefined, "AT2X");
 
       await expect(cache.get("file-key", "1:2", 4)).resolves.toBeNull();
     });
@@ -330,7 +355,9 @@ describe("webAdapter", () => {
       const cache = await primeCache();
       idbFailure = "put";
 
-      await expect(cache.set("file-key", "1:2", 2, "CACHED")).rejects.toThrow("idb failed");
+      await expect(cache.set("file-key", "1:2", 2, undefined, "CACHED")).rejects.toThrow(
+        "idb failed",
+      );
     });
   });
 
