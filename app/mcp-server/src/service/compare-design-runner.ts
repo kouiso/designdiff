@@ -14,6 +14,7 @@ import {
   detectToastBands,
   diagnoseComparison,
   formatFrameCandidates,
+  isFullPageAgainstShorterCapture,
   normalizeNodeId,
   parseDesignInput,
   rankFrameCandidates,
@@ -398,8 +399,15 @@ function buildStatus(
   likelyMisconfig: boolean,
   perceptibleDiffRatio: number | undefined,
   tokenDiffBlockingCount: number,
+  aspectMismatchInconclusive: boolean,
 ): CompareStatus {
   if (likelyMisconfig) {
+    return "UNCERTAIN";
+  }
+  // 設計の方が縦に長い時、比較前に設計を縮めて重ねとる。縮めた後の画素差は
+  // 「実装が違う」と「撮影範囲が足りん」を区別できん。診断側も
+  // 「通常の実装差分とは限りません」と言うとるので、FAIL と言い切らん。
+  if (aspectMismatchInconclusive) {
     return "UNCERTAIN";
   }
   if (structuralVerdict === "inconclusive") {
@@ -1371,11 +1379,16 @@ export async function runCompareDesign(
       ? buildTokenDiffSummary(tokenDiff, tokenDiffBlocking)
       : undefined;
 
+  // 設計がフルページ、撮影がそれより短い時は、画素差から実装の良し悪しを
+  // 決められん。crop 済みなら比較範囲は揃っとるので対象外。
+  const aspectMismatchInconclusive = isFullPageAgainstShorterCapture(comparison.normalization);
+
   const status = buildStatus(
     structuralReviewResult.verdict,
     diagnosis.likelyMisconfig,
     perceptibleDiffRatio,
     tokenDiffBlocking.length,
+    aspectMismatchInconclusive,
   );
   // 経路を必ず出す。無言で画素経路へ落ちていることに呼び出し側が気づけないと、
   // 「色は見てもらえている」と誤解したまま作業が進む。

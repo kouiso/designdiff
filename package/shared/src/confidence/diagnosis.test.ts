@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { diagnoseComparison } from "./diagnosis.js";
+import { diagnoseComparison, isFullPageAgainstShorterCapture } from "./diagnosis.js";
 
 import type { NormalizationReport, PreflightWarning, RegionScore } from "../type.js";
 
@@ -263,5 +263,51 @@ describe("diagnoseComparison", () => {
     });
     expect(result.verdict).toBe("real_diff");
     expect(result.likelyMisconfig).toBe(false);
+  });
+});
+
+describe("isFullPageAgainstShorterCapture", () => {
+  const norm = (
+    designHeight: number,
+    screenshotHeight: number,
+    overrides: Partial<NormalizationReport> = {},
+  ): NormalizationReport => ({
+    designNativeWidth: 2166,
+    designNativeHeight: designHeight,
+    screenshotWidth: 2166,
+    screenshotHeight: screenshotHeight,
+    cropApplied: false,
+    containResized: true,
+    appliedScale: screenshotHeight / designHeight,
+    ...overrides,
+  });
+
+  it("設計がフルページで撮影が短いときに true", () => {
+    // 8190 / 5231 = 約1.57倍。設計を縮めて重ねとるので画素差では判定できん。
+    expect(isFullPageAgainstShorterCapture(norm(8190, 5231))).toBe(true);
+  });
+
+  it("撮影の方が縦に長いときは false", () => {
+    // 実装がフルページ、設計が1画面分。縮めとるのは設計やない。
+    expect(isFullPageAgainstShorterCapture(norm(1080, 5231))).toBe(false);
+  });
+
+  it("縦の差が小さいときは false", () => {
+    expect(isFullPageAgainstShorterCapture(norm(5400, 5231))).toBe(false);
+  });
+
+  it("crop 済みなら false", () => {
+    // 比較範囲を揃えた後なので、この安全網は要らん。
+    expect(isFullPageAgainstShorterCapture(norm(8190, 5231, { cropApplied: true }))).toBe(false);
+  });
+
+  it("正規化しとらんなら false", () => {
+    expect(isFullPageAgainstShorterCapture(norm(8190, 5231, { containResized: false }))).toBe(
+      false,
+    );
+  });
+
+  it("normalization が無いときは false", () => {
+    expect(isFullPageAgainstShorterCapture(undefined)).toBe(false);
   });
 });

@@ -76,7 +76,11 @@ export { selfCritique } from "./self-critique.js";
 
 // Comparison Confidence Layer (pre-flight / diagnosis / headline)
 export { runPreflight, type PreflightInput } from "./confidence/preflight.js";
-export { diagnoseComparison, type DiagnosisInput } from "./confidence/diagnosis.js";
+export {
+  diagnoseComparison,
+  isFullPageAgainstShorterCapture,
+  type DiagnosisInput,
+} from "./confidence/diagnosis.js";
 export { buildComparisonHeadline } from "./confidence/headline.js";
 export {
   buildSystemBarIgnoreRegions,
