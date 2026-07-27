@@ -1,1 +1,1 @@
-../../prompt/contexts/research.md
+../../prompt/context/research.md

@@ -1,1 +1,1 @@
-../../prompt/contexts/dev.md
+../../prompt/context/dev.md
