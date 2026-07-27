@@ -53,7 +53,9 @@ jobs:
 
       - name: Coverage thresholds
         if: matrix.check-type == 'coverage'
-        run: pnpm -r --filter "@figdiff/shared" --filter "@figdiff/mcp-server" --filter "@figdiff/desktop" run test:coverage
+        # 7パッケージ全部を対象にする。門の外に置いたパッケージは、
+        # 下がっても誰も気づかんまま放置される。
+        run: pnpm -r run test:coverage
 
   e2e:
     name: E2E (Playwright)
