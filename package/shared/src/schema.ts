@@ -330,6 +330,8 @@ export const PreflightWarningCodeSchema = z.enum([
   // ノードが未指定のとき前回使用したノードを自動補完したことを通知する。
   "last_used_node",
   "logical_physical_width",
+  // 指定ノードが今の Figma に無く、キャッシュ画像で比較していることを通知する。
+  "design_node_missing",
 ]);
 
 export const PreflightSeveritySchema = z.enum(["info", "warning", "critical"]);

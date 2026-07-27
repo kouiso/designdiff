@@ -9,6 +9,7 @@ export {
   extractPageFrames,
   isTokenError,
   type FigmaCacheStrategy,
+  FIGMA_NODE_NOT_FOUND_MARKER,
   type FigmaAuthMode,
   type FigmaColor,
   type FigmaEffect,

@@ -12,6 +12,7 @@ import {
   CompareDesignResultSchema,
   detectDynamicRegionsAcrossSamples,
   detectToastBands,
+  FIGMA_NODE_NOT_FOUND_MARKER,
   diagnoseComparison,
   formatFrameCandidates,
   isFullPageAgainstShorterCapture,
@@ -823,6 +824,9 @@ async function resolveDesignAssets(
   designBase64: string;
   figmaRootNode: FigmaNode | undefined;
   resolvedNodeId: string | undefined;
+  // ノードが今の Figma に無かった時だけ入る。画像はキャッシュから出るので、
+  // ここを落とすと「消えた設計と比べた」ことが結果から分からんくなる。
+  missingNodeId: string | undefined;
 }> {
   if (parsedDesignSource.type === "figma_url") {
     const figmaService = await createFigmaService();
@@ -838,13 +842,17 @@ async function resolveDesignAssets(
       targetHeight,
     );
     let figmaRootNode: FigmaNode | undefined;
+    let missingNodeId: string | undefined;
     try {
       figmaRootNode = await figmaService.getNodeDetails(parsedDesignSource.fileKey, resolvedNodeId);
     } catch (nodeError) {
-      console.error(
-        "[compare_design] node details fetch failed, proceeding without:",
-        nodeError instanceof Error ? nodeError.message : nodeError,
-      );
+      const message = nodeError instanceof Error ? nodeError.message : String(nodeError);
+      console.error("[compare_design] node details fetch failed, proceeding without:", message);
+      // 「今の Figma に無い」と「一時的に取れんかった」を分ける。前者は
+      // キャッシュ画像で比較が成立してしまうので、結果へ出さんとあかん。
+      if (message.includes(FIGMA_NODE_NOT_FOUND_MARKER)) {
+        missingNodeId = resolvedNodeId;
+      }
     }
 
     // ダウンサンプリングによる補間ボケとそれによる差分誤検知を防ぐため。
@@ -866,7 +874,7 @@ async function resolveDesignAssets(
       );
     }
 
-    return { designBase64: frameImage.base64, figmaRootNode, resolvedNodeId };
+    return { designBase64: frameImage.base64, figmaRootNode, resolvedNodeId, missingNodeId };
   }
 
   // ローカルファイルのパス — 許可ディレクトリ内に存在するか検証する
@@ -881,7 +889,7 @@ async function resolveDesignAssets(
   }
   const designBase64 = designBuffer.toString("base64");
   const figmaRootNode = await loadLocalFixtureNode(safePath);
-  return { designBase64, figmaRootNode, resolvedNodeId: undefined };
+  return { designBase64, figmaRootNode, resolvedNodeId: undefined, missingNodeId: undefined };
 }
 
 interface ProjectRegions {
@@ -1221,7 +1229,7 @@ export async function runCompareDesign(
   }
   const targetWidth = screenshotMeta.width;
 
-  const { designBase64, figmaRootNode, resolvedNodeId } = await resolveDesignAssets(
+  const { designBase64, figmaRootNode, resolvedNodeId, missingNodeId } = await resolveDesignAssets(
     parsedDesignSource,
     args.frame_name,
     targetWidth,
@@ -1346,6 +1354,20 @@ export async function runCompareDesign(
     finalPreflightWarnings = [infoWarning, ...finalPreflightWarnings];
   }
 
+  // ノードが今の Figma に無いのに比較が通るのは、過去に取った画像が
+  // キャッシュに残っとるため。黙って通すと、消えた設計へ向かって
+  // 実装を直し続けることになる。先頭に出して合否も止める。
+  if (missingNodeId) {
+    const missingWarning: PreflightWarning = {
+      code: "design_node_missing",
+      severity: "critical",
+      message: `指定したノード ${missingNodeId} は現在の Figma に見つかりません。過去に取得した画像と比較しています。`,
+      suggestedFix:
+        "list_figma_frames で現在のノードを確認し、作り直されたフレームの id へ差し替えてください。",
+    };
+    finalPreflightWarnings = [missingWarning, ...finalPreflightWarnings];
+  }
+
   const finalPreflight = { warnings: finalPreflightWarnings };
 
   const regionCount = comparison.diffRegions.length;
@@ -1388,7 +1410,7 @@ export async function runCompareDesign(
     diagnosis.likelyMisconfig,
     perceptibleDiffRatio,
     tokenDiffBlocking.length,
-    aspectMismatchInconclusive,
+    aspectMismatchInconclusive || missingNodeId !== undefined,
   );
   // 経路を必ず出す。無言で画素経路へ落ちていることに呼び出し側が気づけないと、
   // 「色は見てもらえている」と誤解したまま作業が進む。
