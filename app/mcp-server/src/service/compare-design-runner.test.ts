@@ -893,6 +893,106 @@ describe("runCompareDesign", () => {
     expect(consoleError).toHaveBeenCalledWith(expect.stringContaining('"Home" (2:2)'));
   });
 
+  // #29。ノードが今の Figma に無くても、画像はキャッシュから出るので比較が
+  // 最後まで通ってしまう。黙って通すと、消えた設計へ向かって実装を直し続ける。
+  it("routes a comparison to human review when the design node no longer exists", async () => {
+    tmpRoot = await fs.mkdtemp(path.join(process.cwd(), "tmp-figdiff-runner-"));
+    const screenshotPath = path.join(tmpRoot, "screenshot.png");
+    await fs.writeFile(screenshotPath, Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+
+    const getNodeDetails = vi.fn(async () => {
+      throw new Error('Requested Figma node not found: Node "9:9" not found in file FILEKEY123.');
+    });
+    const getFrameImage = vi.fn(async () => ({
+      base64: Buffer.from("cached design").toString("base64"),
+    }));
+    mocks.createFigmaService.mockReturnValue({
+      getFrames: vi.fn(async () => []),
+      getNodeDetails,
+      getFrameImage,
+    });
+    mocks.sharp.mockReturnValue({ metadata: vi.fn(async () => ({ width: 1440, height: 1800 })) });
+    mocks.compareImages.mockResolvedValue({
+      comparisonId: "cmp-missing-node",
+      matchRate: 100,
+      diffPixelCount: 0,
+      totalPixelCount: 1440 * 1800,
+      diffRegions: [],
+      suggestion: "一致率100%です。差分はありません。",
+      normalization: {
+        designNativeWidth: 1440,
+        designNativeHeight: 1800,
+        screenshotWidth: 1440,
+        screenshotHeight: 1800,
+        cropApplied: false,
+        containResized: false,
+        appliedScale: 1,
+      },
+    });
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    const { result } = await runCompareDesign({
+      design_source: "https://www.figma.com/design/FILEKEY123/Test?node-id=9-9",
+      screenshot: screenshotPath,
+    });
+
+    // 画像はキャッシュから出るので比較自体は通る。ここで一致率100%なのは
+    // 「消えた設計と、たまたま合う画像を比べた」だけで、合格の根拠にならん。
+    expect(getFrameImage).toHaveBeenCalled();
+    const warning = result.preflight?.warnings.find((w) => w.code === "design_node_missing");
+    expect(warning?.severity).toBe("critical");
+    expect(warning?.message).toContain("9:9");
+    expect(result.status).toBe("UNCERTAIN");
+    expect(vi.mocked(recordIterationAndEvaluate)).toHaveBeenCalledWith(
+      expect.objectContaining({ status: "UNCERTAIN" }),
+    );
+  });
+
+  // 取得が一時的に失敗しただけなら止めん。止めると通信のゆらぎで
+  // 毎回人間レビューへ回ることになる。
+  it("keeps a normal verdict when the node fetch fails for another reason", async () => {
+    tmpRoot = await fs.mkdtemp(path.join(process.cwd(), "tmp-figdiff-runner-"));
+    const screenshotPath = path.join(tmpRoot, "screenshot.png");
+    await fs.writeFile(screenshotPath, Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+
+    mocks.createFigmaService.mockReturnValue({
+      getFrames: vi.fn(async () => []),
+      getNodeDetails: vi.fn(async () => {
+        throw new Error("Figma API error 503: upstream unavailable");
+      }),
+      getFrameImage: vi.fn(async () => ({
+        base64: Buffer.from("cached design").toString("base64"),
+      })),
+    });
+    mocks.sharp.mockReturnValue({ metadata: vi.fn(async () => ({ width: 1440, height: 1800 })) });
+    mocks.compareImages.mockResolvedValue({
+      comparisonId: "cmp-transient",
+      matchRate: 100,
+      diffPixelCount: 0,
+      totalPixelCount: 1440 * 1800,
+      diffRegions: [],
+      suggestion: "一致率100%です。差分はありません。",
+      normalization: {
+        designNativeWidth: 1440,
+        designNativeHeight: 1800,
+        screenshotWidth: 1440,
+        screenshotHeight: 1800,
+        cropApplied: false,
+        containResized: false,
+        appliedScale: 1,
+      },
+    });
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    const { result } = await runCompareDesign({
+      design_source: "https://www.figma.com/design/FILEKEY123/Test?node-id=9-9",
+      screenshot: screenshotPath,
+    });
+
+    expect(result.preflight?.warnings.some((w) => w.code === "design_node_missing")).toBe(false);
+    expect(result.status).not.toBe("UNCERTAIN");
+  });
+
   it("passes Figma URL version-id to reference image fetching", async () => {
     tmpRoot = await fs.mkdtemp(path.join(process.cwd(), "tmp-figdiff-runner-"));
     const screenshotPath = path.join(tmpRoot, "captured.png");
