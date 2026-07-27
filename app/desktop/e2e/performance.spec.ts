@@ -16,6 +16,8 @@ import { fileURLToPath } from "node:url";
 
 import { expect, test } from "@playwright/test";
 
+import { openSettings } from "./helper.js";
+
 const currentDir = path.dirname(fileURLToPath(import.meta.url));
 const EVIDENCE_DIR = path.resolve(currentDir, "../../../docs/evidence");
 
@@ -114,7 +116,8 @@ test.describe("Performance measurements", () => {
     expect(p95ms).toBeLessThanOrEqual(INTERACTION_P95_THRESHOLD_MS);
   });
 
-  test("Settings dialog open p95 ≤ 200ms", async ({ page }) => {
+  // 設定はダイアログではなくページになった。開くまでの体感を測る目的は同じ。
+  test("Settings screen open p95 ≤ 200ms", async ({ page }) => {
     await page.goto("/");
     await page.waitForLoadState("networkidle");
 
@@ -122,17 +125,10 @@ test.describe("Performance measurements", () => {
 
     for (let i = 0; i < SAMPLES; i++) {
       const start = Date.now();
-      const settingsBtn = page.locator("header").getByRole("button").last();
-      await settingsBtn.click();
-      await page.locator("[role=dialog]").waitFor({ state: "visible" });
+      await openSettings(page);
       openTimes.push(Date.now() - start);
 
-      // Close dialog
-      await page.keyboard.press("Escape");
-      await page
-        .locator("[role=dialog]")
-        .waitFor({ state: "hidden" })
-        .catch(() => {});
+      await page.getByRole("navigation", { name: "Main navigation" }).getByText("ホーム").click();
       await page.waitForTimeout(50);
     }
 
@@ -144,9 +140,9 @@ test.describe("Performance measurements", () => {
 
     const updated = {
       ...existing,
-      settingsDialogP95Ms: p95ms,
-      settingsDialogThresholdMs: INTERACTION_P95_THRESHOLD_MS,
-      settingsDialogPass: p95ms <= INTERACTION_P95_THRESHOLD_MS,
+      settingsScreenP95Ms: p95ms,
+      settingsScreenThresholdMs: INTERACTION_P95_THRESHOLD_MS,
+      settingsScreenPass: p95ms <= INTERACTION_P95_THRESHOLD_MS,
     };
 
     fs.writeFileSync(

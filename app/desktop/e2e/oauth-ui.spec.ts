@@ -4,6 +4,8 @@ import { fileURLToPath } from "node:url";
 
 import { expect, test } from "@playwright/test";
 
+import { openSettings, revealPatInput } from "./helper.js";
+
 const currentDir = path.dirname(fileURLToPath(import.meta.url));
 const EVIDENCE_DIR = path.resolve(currentDir, "../../../docs/evidence");
 
@@ -12,54 +14,43 @@ test.beforeAll(() => {
 });
 
 test.describe("OAuth UI 描画検証", () => {
-  test("設定ダイアログに OAuth ログインセクションが表示されること", async ({ page }) => {
+  test("設定画面に Figma ログインが表示されること", async ({ page }) => {
     await page.goto("/");
     await page.waitForLoadState("networkidle");
+    await openSettings(page);
 
-    const settingsBtn = page.locator("header").getByRole("button").last();
-    await settingsBtn.click();
-    await page.waitForTimeout(500);
+    await expect(page.getByText("Figma接続")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Figma でログイン" })).toBeVisible();
 
-    const dialog = page.locator("[role=dialog]");
-    await expect(dialog).toBeVisible();
-
-    // OAuth セクションラベル
-    await expect(page.getByText("Figma ログイン (OAuth)")).toBeVisible();
-
-    // OAuth ログインボタン
-    await expect(page.getByText("Figma でログイン")).toBeVisible();
-
-    // PAT フォールバック節
-    await expect(page.getByText("PAT フォールバック")).toBeVisible();
-
-    // PAT 入力プレースホルダ
-    await expect(page.getByPlaceholder("figd_...")).toBeVisible();
+    // PAT は畳まれた状態が既定。OAuth を先に見せる作りになっている。
+    await expect(page.getByPlaceholder("figd_...")).toBeHidden();
+    await expect(
+      page.getByRole("button", { name: "代わりに Personal Access Token を使用" }),
+    ).toBeVisible();
 
     await page.screenshot({
-      path: path.join(EVIDENCE_DIR, "oauth-ui-setting-dialog.png"),
+      path: path.join(EVIDENCE_DIR, "oauth-ui-setting-screen.png"),
       fullPage: true,
     });
   });
 
-  test("設定ダイアログで OAuth ボタンのみが有効で PAT 保存ボタンは初期 disabled であること", async ({
-    page,
-  }) => {
+  test("PAT が空のあいだは保存ボタンが押せないこと", async ({ page }) => {
     await page.goto("/");
     await page.waitForLoadState("networkidle");
+    await openSettings(page);
 
-    const settingsBtn = page.locator("header").getByRole("button").last();
-    await settingsBtn.click();
-    await page.waitForTimeout(500);
+    await expect(page.getByRole("button", { name: "Figma でログイン" })).toBeEnabled();
 
-    const dialog = page.locator("[role=dialog]");
-    await expect(dialog).toBeVisible();
-
-    // PAT 入力が空の場合は保存ボタンが disabled
+    await revealPatInput(page);
     const patInput = page.getByPlaceholder("figd_...");
     await expect(patInput).toHaveValue("");
+    await expect(page.getByRole("button", { name: "保存" })).toBeDisabled();
 
-    // OAuth ボタンは enabled
-    const oauthBtn = page.getByRole("button", { name: "Figma でログイン" });
-    await expect(oauthBtn).toBeEnabled();
+    // 空白だけでは押せない。trim してから判定しているため。
+    await patInput.fill("   ");
+    await expect(page.getByRole("button", { name: "保存" })).toBeDisabled();
+
+    await patInput.fill("figd_dummy_value_for_ui_check");
+    await expect(page.getByRole("button", { name: "保存" })).toBeEnabled();
   });
 });

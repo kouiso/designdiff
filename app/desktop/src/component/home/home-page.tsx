@@ -431,11 +431,13 @@ export const HomePage = ({ onNavigate }: HomePageProps) => {
               style={{ background: "var(--surface)", borderColor: "var(--border)" }}
             />
             <div className="flex gap-2">
+              {/* handleCreateProject は名前か実装URLが空なら黙って何もしない。
+                  押せる見た目のまま無反応やと、押した人には壊れとるようにしか見えん。 */}
               <button
                 type="button"
                 className="fd-btn primary"
                 onClick={handleCreateProject}
-                disabled={isLoading}
+                disabled={isLoading || !createName.trim() || !implUrl.trim()}
               >
                 {t("common.create")}
               </button>

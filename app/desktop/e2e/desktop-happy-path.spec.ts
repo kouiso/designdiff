@@ -4,6 +4,8 @@ import { fileURLToPath } from "node:url";
 
 import { expect, test } from "@playwright/test";
 
+import { openSettings } from "./helper.js";
+
 const currentDir = path.dirname(fileURLToPath(import.meta.url));
 const EVIDENCE_DIR = path.resolve(currentDir, "../../../docs/evidence");
 
@@ -54,8 +56,11 @@ test.describe("Desktop Happy Path E2E", () => {
       await page.goto("/");
       await page.waitForLoadState("networkidle");
 
-      const step1 = page.locator("text=ステップ 1");
-      await expect(step1).toBeVisible();
+      // 「ステップ 1」は入力欄の見出しと3ステップ説明の両方に出る。
+      // どちらか1つを指さないと strict mode に引っかかる。
+      const step1 = page.locator("span.fd-pill", { hasText: "ステップ 1" });
+      await expect(step1.first()).toBeVisible();
+      await expect(page.locator("span.fd-pill", { hasText: "ステップ 3" }).first()).toBeVisible();
     });
   });
 
@@ -93,22 +98,32 @@ test.describe("Desktop Happy Path E2E", () => {
 
       await page.locator("button:has-text('新規プロジェクト')").click();
 
-      const createBtn = page.locator("button:has-text('作成')");
+      const createBtn = page.getByRole("button", { name: "作成", exact: true });
       await expect(createBtn).toBeDisabled();
+
+      // 片方だけ埋めても押せない。handleCreateProject が両方を要求するため。
+      await page.locator("input[placeholder*='プロジェクト名']").fill("サンプル");
+      await expect(createBtn).toBeDisabled();
+
+      // トップの入力欄にも「実装URL」を含む placeholder があるので、作成フォーム側を名指しする。
+      await page
+        .getByPlaceholder("実装URL（例: http://localhost:3000）")
+        .fill("http://localhost:3000");
+      await expect(createBtn).toBeEnabled();
     });
   });
 
-  test.describe("設定ダイアログ", () => {
-    test("設定アイコンからダイアログが開くこと", async ({ page }) => {
+  // 設定はダイアログではなくヘッダーのナビゲーションから開くページになっている。
+  test.describe("設定画面", () => {
+    test("ヘッダーの設定から設定画面へ遷移できること", async ({ page }) => {
       await page.goto("/");
       await page.waitForLoadState("networkidle");
 
-      const settingsBtn = page.locator("header").getByRole("button").last();
-      await settingsBtn.click();
-      await page.waitForTimeout(500);
+      await openSettings(page);
 
-      const dialog = page.locator("[role=dialog]");
-      await expect(dialog).toBeVisible();
+      await expect(page.getByRole("heading", { name: "設定", exact: true })).toBeVisible();
+      await expect(page.getByText("Figma接続")).toBeVisible();
+      await expect(page.getByText("外観")).toBeVisible();
 
       await page.screenshot({
         path: path.join(EVIDENCE_DIR, "e2e-desktop-settings.png"),
