@@ -277,6 +277,10 @@ export const RegionScoreSchema = z.object({
   regionId: z.string(),
   bbox: DiffBoundingBoxSchema,
   figmaNodeId: z.string().optional(),
+  // "root" は比較対象そのものを指す行。子の行と一緒に集計すると同じ画素を
+  // 二重に数えるため、重み付けと見出しの集計からは外す。局所比較で
+  // 「対象ノードが見つからない」を出さないために、行としては必ず持たせる。
+  scope: z.enum(["section", "root"]).optional(),
   structure: z.number().min(0).max(1),
   color: z.number().nonnegative(),
   shape: z.number().nonnegative(),

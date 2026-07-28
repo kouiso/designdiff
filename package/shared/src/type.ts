@@ -194,6 +194,9 @@ export interface RegionScore {
   bbox: DiffBoundingBox;
   // P2 では figmaRootNode.children 由来の region に Figma node id を付与する。
   figmaNodeId?: string;
+  // "root" は比較対象そのものを指す行。子の行と範囲が重なるので集計からは外す。
+  // 局所比較で「対象ノードが見つからない」を出さないために、行としては必ず持たせる。
+  scope?: "section" | "root";
   structure: number;
   color: number;
   shape: number;
@@ -260,7 +263,20 @@ const getTextureAdjustedWeight = (
 
 const clamp01 = (value: number): number => Math.min(1, Math.max(0, value));
 
-const normalizeWeightedAggregate = (regionScores: RegionScore[]): WeightedAggregate => {
+/**
+ * 集計に使う行だけを選ぶ。
+ *
+ * 比較対象そのものを指す行 (scope: "root") は、子の行と範囲が重なる。
+ * 一緒に集計すると同じ画素を二重に数えるので、子の行が1つでもあれば外す。
+ * 子が無いときは root しか手掛かりが無いので、そのまま使う。
+ */
+export const selectScoringRegions = (regionScores: RegionScore[]): RegionScore[] => {
+  const sections = regionScores.filter((score) => score.scope !== "root");
+  return sections.length > 0 ? sections : regionScores;
+};
+
+const normalizeWeightedAggregate = (allRegionScores: RegionScore[]): WeightedAggregate => {
+  const regionScores = selectScoringRegions(allRegionScores);
   if (regionScores.length === 0) {
     return {
       weightedStructure: 1,

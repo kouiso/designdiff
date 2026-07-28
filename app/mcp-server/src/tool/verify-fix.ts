@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { IgnoreRegionSchema, type RegionScore } from "@figdiff/shared";
+import { IgnoreRegionSchema, normalizeNodeId, type RegionScore } from "@figdiff/shared";
 
 import { writeActiveSession } from "../service/active-session.js";
 import { runCompareDesign } from "../service/compare-design-runner.js";
@@ -39,8 +39,23 @@ export function resolveSessionStatus(
   return verdict === "improved" ? "PASS" : "FAIL";
 }
 
+/**
+ * 対象ノードの行を引く。
+ *
+ * Figma の URL から写した ID は 49792-73431 のようにハイフン区切りで、
+ * 保存側は 49792:73431 のコロン区切り。素の文字列比較だと一生一致しない。
+ */
 function findRegion(regions: RegionScore[], targetNodeId: string): RegionScore | undefined {
-  return regions.find((region) => (region.figmaNodeId ?? region.regionId) === targetNodeId);
+  const target = normalizeNodeId(targetNodeId);
+  return regions.find(
+    (region) => normalizeNodeId(region.figmaNodeId ?? region.regionId) === target,
+  );
+}
+
+/** 引けなかったときに、何なら引けるのかを示す。 */
+function describeAvailableRegionIds(regions: RegionScore[]): string {
+  const ids = regions.map((region) => region.figmaNodeId ?? region.regionId);
+  return ids.length > 0 ? ids.join(", ") : "(なし)";
 }
 
 const STRUCTURE_DELTA_THRESHOLD = 0.01;
@@ -164,7 +179,11 @@ export function registerVerifyFix(server: McpServer): void {
         );
 
         if (!previousRegion || !currentRegion) {
-          throw new Error(`target node not found in diff report: ${args.expected_target_node_id}`);
+          const available = describeAvailableRegionIds(comparison.result.diffReport.regionScores);
+          throw new Error(
+            `target node not found in diff report: ${args.expected_target_node_id}. ` +
+              `available: ${available}`,
+          );
         }
 
         const structureDelta = currentRegion.structure - previousRegion.structure;

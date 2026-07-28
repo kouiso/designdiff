@@ -177,12 +177,11 @@ describe("buildDiffReport", () => {
       figmaRootNode,
     });
 
-    expect(result.regionScores).toHaveLength(3);
-    expect(result.regionScores.map((score) => score.figmaNodeId)).toEqual([
-      "header",
-      "body",
-      "footer",
-    ]);
+    // 子の行3件に加えて、比較対象そのものを指す行が1件付く。
+    const sectionScores = result.regionScores.filter((score) => score.scope !== "root");
+    expect(sectionScores).toHaveLength(3);
+    expect(result.regionScores.filter((score) => score.scope === "root")).toHaveLength(1);
+    expect(sectionScores.map((score) => score.figmaNodeId)).toEqual(["header", "body", "footer"]);
     expect(
       result.regionScores.find((score) => score.regionId === "footer")?.structure,
     ).toBeLessThan(0.8);
@@ -267,10 +266,14 @@ describe("buildDiffReport", () => {
       figmaRootNode,
     });
 
-    expect(result.regionScores).toHaveLength(EXPECTED_CAPPED_REGION_COUNT);
-    expect(result.regionScores.every((score) => score.regionId.startsWith("section-"))).toBe(true);
-    expect(result.regionScores[0].regionId).toBe("section-0");
-    expect(result.regionScores.at(-1)?.regionId).toBe(`section-${SECTION_REGION_COUNT - 1}`);
+    // 最後の1件は比較対象そのものを指す行。上限は section の行に対して効く。
+    const sectionScores = result.regionScores.filter((score) => score.scope !== "root");
+    const rootScores = result.regionScores.filter((score) => score.scope === "root");
+    expect(sectionScores).toHaveLength(EXPECTED_CAPPED_REGION_COUNT);
+    expect(rootScores).toHaveLength(1);
+    expect(sectionScores.every((score) => score.regionId.startsWith("section-"))).toBe(true);
+    expect(sectionScores[0].regionId).toBe("section-0");
+    expect(sectionScores.at(-1)?.regionId).toBe(`section-${SECTION_REGION_COUNT - 1}`);
   });
 
   it("pass 閾値未達の中間差分は pass にならないこと", async () => {

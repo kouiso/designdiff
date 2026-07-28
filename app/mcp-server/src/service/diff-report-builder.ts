@@ -517,13 +517,42 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
     }
   }
 
-  if (childRegions.length > 0) {
-    return childRegions;
-  }
-
   const wholeFrameBbox = toWholeFrameRegion(width, height);
   // letterbox 余白を含めると SSIM / 色差が不当に悪化するため、content rect 内で評価する。
   const contentBbox = toContentRegion(width, height, paddingMask);
+
+  // 比較対象そのものの行。子の行があっても必ず1件持たせる。
+  // 単一ノードを比べたとき、子の行しか無いと「対象ノードが見つからない」で
+  // verify_fix が落ち、局所的な修正を自分で確かめられなくなる。
+  // 集計では scope: "root" を外すので、重み付けと見出しの値は変わらない。
+  const rootRegion: RegionScore = {
+    regionId: "whole-frame",
+    scope: "root",
+    bbox: wholeFrameBbox,
+    structure: computeSsimForRegion(designPixels, screenshotPixels, width, height, contentBbox),
+    color: buildColorDifference(
+      designPixels,
+      screenshotPixels,
+      width,
+      height,
+      paddingMask ? contentBbox : undefined,
+    ),
+    flatColorMismatch: buildFlatColorMismatch(
+      designPixels,
+      screenshotPixels,
+      width,
+      height,
+      contentBbox,
+    ),
+    shape: computeHausdorff(designPixels, screenshotPixels, width, height, contentBbox),
+    layout: 0,
+    textureScore: getTextureScore(wholeFrameBbox),
+    figmaNodeId: options.figmaNodeId,
+  };
+
+  if (childRegions.length > 0) {
+    return [...childRegions, rootRegion];
+  }
 
   return [
     {

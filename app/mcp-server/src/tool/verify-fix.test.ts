@@ -187,6 +187,69 @@ describe("verify_fix", () => {
     expect(activeSession?.matchRate).toBe(100);
   });
 
+  // 局所比較では子の行しか無く、対象ノード自身の行が無いと引き当てに失敗していた。
+  // 自分の修正を自分で確かめられないと、任せっきりの前提が崩れる。
+  it("比較対象そのもののノードIDでも引き当てられること", async () => {
+    const designPath = path.join(PAIR02_DIR, "figma-export.png");
+    const priorScreenshot = path.join(PAIR02_DIR, "impl-single-section-regression.png");
+    const currentScreenshot = path.join(PAIR02_DIR, "impl-correct.png");
+
+    const prior = await client.callTool({
+      name: "compare_design",
+      arguments: {
+        design_source: designPath,
+        screenshot: priorScreenshot,
+        threshold: 0.1,
+      },
+    });
+
+    const priorData = JSON.parse(extractText(prior));
+    const result = await client.callTool({
+      name: "verify_fix",
+      arguments: {
+        design_source: designPath,
+        screenshot: currentScreenshot,
+        prior_comparison_id: priorData.comparisonId,
+        expected_target_node_id: "whole-frame",
+        threshold: 0.1,
+      },
+    });
+
+    expect(result.isError).toBeFalsy();
+    const data = JSON.parse(extractText(result));
+    expect(data.fixedNode).toBe("whole-frame");
+  });
+
+  it("引き当てに失敗したときは、引ける名前を添えて返すこと", async () => {
+    const designPath = path.join(PAIR02_DIR, "figma-export.png");
+    const priorScreenshot = path.join(PAIR02_DIR, "impl-single-section-regression.png");
+    const currentScreenshot = path.join(PAIR02_DIR, "impl-correct.png");
+
+    const prior = await client.callTool({
+      name: "compare_design",
+      arguments: {
+        design_source: designPath,
+        screenshot: priorScreenshot,
+        threshold: 0.1,
+      },
+    });
+
+    const priorData = JSON.parse(extractText(prior));
+    const result = await client.callTool({
+      name: "verify_fix",
+      arguments: {
+        design_source: designPath,
+        screenshot: currentScreenshot,
+        prior_comparison_id: priorData.comparisonId,
+        expected_target_node_id: "no-such-node",
+        threshold: 0.1,
+      },
+    });
+
+    expect(result.isError).toBeTruthy();
+    expect(extractText(result)).toContain("available:");
+  });
+
   // verdict は対象ノードが良くなったかだけを答える。比較そのものが人間レビューへ
   // 回っているなら、局所的な改善でそれを握り潰さない。
   it("比較全体の status を verdict と別に持ち上げる", async () => {
