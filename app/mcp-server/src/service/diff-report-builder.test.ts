@@ -654,6 +654,9 @@ describe("比較対象そのものの行が他の判断へ漏れないこと", (
   });
 });
 
+// テストデータと期待値で同じ値を参照する。分散させると検証対象が黙ってずれる。
+const ISSUE_56_FIXTURE_NODE_IDS = { root: "issue-56-root", child: "issue-56-child" };
+
 describe("diffRegions による局所採点 (Issue #56)", () => {
   const FRAME_SIZE = 300;
   const LOCAL_DIFF_SIZE = 40;
@@ -695,13 +698,27 @@ describe("diffRegions による局所採点 (Issue #56)", () => {
     });
 
     // クラスタを採点単位に使うと、局所差分がそのまま structure へ反映され pass 閾値を割る。
+    // aggregateVerdict (FigDiff 自身の合否) ではなく、weightedStructure・
+    // regionScores・issues という独立した個々の信号で検証する。
     expect(withClusterHint.weightedAggregate?.weightedStructure ?? 1).toBeLessThan(
       PASS_STRUCTURE_THRESHOLD,
     );
-    expect(withClusterHint.aggregateVerdict).not.toBe("pass");
-    expect(withClusterHint.regionScores.some((score) => score.regionId === "diff-cluster-0")).toBe(
-      true,
+    const clusterRegion = withClusterHint.regionScores.find(
+      (score) => score.regionId === "diff-cluster-0",
     );
+    expect(clusterRegion).toBeDefined();
+    expect(clusterRegion?.bbox).toEqual({
+      x: LOCAL_DIFF_X,
+      y: LOCAL_DIFF_Y,
+      w: LOCAL_DIFF_SIZE,
+      h: LOCAL_DIFF_SIZE,
+    });
+    expect(clusterRegion?.color).toBeGreaterThanOrEqual(2);
+    expect(
+      withClusterHint.issues.some(
+        (issue) => issue.regionId === "diff-cluster-0" && issue.kind === "color",
+      ),
+    ).toBe(true);
   });
 
   it("figmaRootNode がある比較では diffRegions を渡しても子ノード優先の挙動を変えないこと", async () => {
@@ -715,8 +732,8 @@ describe("diffRegions による局所採点 (Issue #56)", () => {
       width: FRAME_SIZE,
       height: FRAME_SIZE,
       figmaRootNode: {
-        id: "root",
-        name: "root",
+        id: ISSUE_56_FIXTURE_NODE_IDS.root,
+        name: ISSUE_56_FIXTURE_NODE_IDS.root,
         type: "FRAME",
         absoluteBoundingBox: { x: 0, y: 0, width: FRAME_SIZE, height: FRAME_SIZE },
         absoluteRenderBounds: null,
@@ -725,8 +742,8 @@ describe("diffRegions による局所採点 (Issue #56)", () => {
         effects: [],
         children: [
           {
-            id: "child",
-            name: "child",
+            id: ISSUE_56_FIXTURE_NODE_IDS.child,
+            name: ISSUE_56_FIXTURE_NODE_IDS.child,
             type: "FRAME",
             absoluteBoundingBox: { x: 0, y: 0, width: FRAME_SIZE, height: 40 },
             absoluteRenderBounds: null,
@@ -741,7 +758,9 @@ describe("diffRegions による局所採点 (Issue #56)", () => {
     });
 
     expect(report.regionScores.some((score) => score.regionId === "diff-cluster-0")).toBe(false);
-    expect(report.regionScores.some((score) => score.regionId === "child")).toBe(true);
+    expect(
+      report.regionScores.some((score) => score.regionId === ISSUE_56_FIXTURE_NODE_IDS.child),
+    ).toBe(true);
   });
 });
 

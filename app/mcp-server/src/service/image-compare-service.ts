@@ -1079,19 +1079,11 @@ export async function compareImages(
   }
   const reportScreenshotPixels = screenshotPixels;
 
-  // Cluster diff regions
-  // - "grid": grid-based clustering (recommended for full-page screenshots)
-  // - "flood": legacy 8-connectivity flood fill
-  // - "auto" (default): grid for totalPixelCount ≥ AUTO_GRID_PIXEL_THRESHOLD,
-  //   flood otherwise (preserves prior behaviour for component-level tests).
-  // Fallback: in "auto" or "grid" mode, when the grid yields 0 regions but
-  //   real diff pixels exist (e.g. thin 1-4px lines/text strokes diluted
-  //   below cellDensityThreshold), fall through to flood-fill so downstream
-  //   region-to-node matching and reporting still has something to attach to.
-  //
-  // buildDiffReport より前に呼ぶ。Figma ノード木が無い比較では、この生の
-  // bbox が局所化の唯一の手がかりになり、採点単位として渡す (Issue #56)。
-  const clustered = clusterDiffRegions({
+  // buildDiffReport の採点だけに使う先読みクラスタリング。矛盾マスクの塗り足し
+  // (下の paintPerceptibleMask) より前の diffPixelData で計算するため、最終的に
+  // 返す diffRegions とは別に持つ。使い回すと矛盾ケースで人間レビューに渡す
+  // diffRegions が空になる (塗り足された画素をクラスタが一度も見ない)。
+  const earlyClusterForScoring = clusterDiffRegions({
     clusterMode,
     totalPixelCount,
     diffPixelCount,
@@ -1100,8 +1092,6 @@ export async function compareImages(
     height,
     gridOptions,
   });
-  let { diffRegions } = clustered;
-  const { clusterTelemetry, clusterCollapse } = clustered;
 
   const perceptibleMask = new Uint8Array(width * height);
   const diffReport = buildDiffReport({
@@ -1118,7 +1108,7 @@ export async function compareImages(
     perceptibleMask,
     // Figma ノード写像 (matchDiffRegionsToNodes) より前の素の bbox でよい。
     // 採点は座標だけを使い、ノード名は使わない。
-    diffRegions: clustered.diffRegions.map((region) => ({
+    diffRegions: earlyClusterForScoring.diffRegions.map((region) => ({
       x: region.bounds.x,
       y: region.bounds.y,
       w: region.bounds.width,
@@ -1126,11 +1116,13 @@ export async function compareImages(
     })),
   });
 
+  let maskPainted = false;
   if (
     diffPixelCount === 0 &&
     (diffReport.perceptibleDiffRatio ?? 0) > PERCEPTIBLE_DIFF_CONTRADICTION_RATIO
   ) {
     paintPerceptibleMask(diffPixelData, perceptibleMask);
+    maskPainted = true;
   }
 
   const gridSummary = buildGridSummary(
@@ -1140,6 +1132,32 @@ export async function compareImages(
     diffPixelCount,
     ignoreMaskResult.mask,
   );
+
+  // Cluster diff regions
+  // - "grid": grid-based clustering (recommended for full-page screenshots)
+  // - "flood": legacy 8-connectivity flood fill
+  // - "auto" (default): grid for totalPixelCount ≥ AUTO_GRID_PIXEL_THRESHOLD,
+  //   flood otherwise (preserves prior behaviour for component-level tests).
+  // Fallback: in "auto" or "grid" mode, when the grid yields 0 regions but
+  //   real diff pixels exist (e.g. thin 1-4px lines/text strokes diluted
+  //   below cellDensityThreshold), fall through to flood-fill so downstream
+  //   region-to-node matching and reporting still has something to attach to.
+  //
+  // 塗り足しが起きた回だけ計算し直す。先読みクラスタリングは重い (壁時計予算つき)
+  // ため、大半を占める塗り足し無しの回まで毎回2回走らせるとその分だけ遅くなる。
+  const clustered = maskPainted
+    ? clusterDiffRegions({
+        clusterMode,
+        totalPixelCount,
+        diffPixelCount,
+        diffPixelData,
+        width,
+        height,
+        gridOptions,
+      })
+    : earlyClusterForScoring;
+  let { diffRegions } = clustered;
+  const { clusterTelemetry, clusterCollapse } = clustered;
 
   // Match diff regions to Figma nodes if available
   if (figmaRootNode) {
