@@ -140,3 +140,8 @@ jobs:
       # 独立にたどり着いているかの確認になる。
       - name: Check FigDiff verdicts agree with the independent oracle
         run: node script/oracle-verdict-agreement.mjs
+
+      # 収束したかどうかを決める側のロジックも、変更のたびに検査する。
+      # ここが緩むと、外側で測る形にした意味が無くなる。
+      - name: Check the convergence gate logic
+        run: pnpm --filter "@figdiff/mcp-server" exec vitest run src/service/p5-oracle-gate.test.ts

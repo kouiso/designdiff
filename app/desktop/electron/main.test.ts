@@ -228,9 +228,12 @@ describe("起動処理", () => {
     }
 
     let devHeaders: Record<string, string[]> = {};
-    devCallback({ responseHeaders: {} }, (result: { responseHeaders: Record<string, string[]> }) => {
-      devHeaders = result.responseHeaders;
-    });
+    devCallback(
+      { responseHeaders: {} },
+      (result: { responseHeaders: Record<string, string[]> }) => {
+        devHeaders = result.responseHeaders;
+      },
+    );
     const devPolicy = Object.entries(devHeaders)
       .map(([, value]) => value.join(" "))
       .join(" ");
