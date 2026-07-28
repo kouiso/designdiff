@@ -22,9 +22,10 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURE_ROOT = path.join(__dirname, "../verification/fixture");
 const ORACLE = path.join(__dirname, "oracle-compare.mjs");
 
-// 一致した検体の残差はいずれも 0、不一致の検体は最小でも 2.0%。
-// その間に閾値を置く。境界付近の検体は無いので、0.5% で明確に分かれる。
-const RESIDUAL_FAIL_THRESHOLD = 0.005;
+import { RESIDUAL_FAIL_THRESHOLD } from "./oracle-threshold.mjs";
+
+// しきい値は1箇所に置く。ここと収束の判定で別々に持つと、黙って
+// 別々の「正解」を持つことになる。
 
 function oracleVerdict(designPath, screenshotPath) {
   const run = spawnSync(process.execPath, [ORACLE, "compare", designPath, screenshotPath], {
