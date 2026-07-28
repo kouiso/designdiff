@@ -35,7 +35,7 @@
         "current": 0,
         "status": "FAIL",
         "blocking": true,
-        "note": "critical severity issue detected; weakest region whole-frame (structure 0.000, color ΔE 50.251; lower=better, critical threshold 2)"
+        "note": "critical severity issue detected; weakest region diff-cluster-0 (structure 0.000, color ΔE 50.251; lower=better, critical threshold 2)"
       },
       "consistencyReview": {
         "required": 0.5,

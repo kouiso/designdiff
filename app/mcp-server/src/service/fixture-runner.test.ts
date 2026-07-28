@@ -266,4 +266,12 @@ describe("golden fixture runner", () => {
     },
     FIXTURE_TEST_TIMEOUT_MS,
   );
+
+  it(
+    "pair-05-localized-diff の期待 verdict を満たすこと (Issue #56 回帰防止)",
+    async () => {
+      await runFixture("pair-05-localized-diff");
+    },
+    FIXTURE_TEST_TIMEOUT_MS,
+  );
 });

@@ -1079,6 +1079,30 @@ export async function compareImages(
   }
   const reportScreenshotPixels = screenshotPixels;
 
+  // Cluster diff regions
+  // - "grid": grid-based clustering (recommended for full-page screenshots)
+  // - "flood": legacy 8-connectivity flood fill
+  // - "auto" (default): grid for totalPixelCount ≥ AUTO_GRID_PIXEL_THRESHOLD,
+  //   flood otherwise (preserves prior behaviour for component-level tests).
+  // Fallback: in "auto" or "grid" mode, when the grid yields 0 regions but
+  //   real diff pixels exist (e.g. thin 1-4px lines/text strokes diluted
+  //   below cellDensityThreshold), fall through to flood-fill so downstream
+  //   region-to-node matching and reporting still has something to attach to.
+  //
+  // buildDiffReport より前に呼ぶ。Figma ノード木が無い比較では、この生の
+  // bbox が局所化の唯一の手がかりになり、採点単位として渡す (Issue #56)。
+  const clustered = clusterDiffRegions({
+    clusterMode,
+    totalPixelCount,
+    diffPixelCount,
+    diffPixelData,
+    width,
+    height,
+    gridOptions,
+  });
+  let { diffRegions } = clustered;
+  const { clusterTelemetry, clusterCollapse } = clustered;
+
   const perceptibleMask = new Uint8Array(width * height);
   const diffReport = buildDiffReport({
     designPixels: reportDesignPixels,
@@ -1092,6 +1116,14 @@ export async function compareImages(
     paddingMask: paddingMask ?? undefined,
     ignoreMask: ignoreMaskResult.mask,
     perceptibleMask,
+    // Figma ノード写像 (matchDiffRegionsToNodes) より前の素の bbox でよい。
+    // 採点は座標だけを使い、ノード名は使わない。
+    diffRegions: clustered.diffRegions.map((region) => ({
+      x: region.bounds.x,
+      y: region.bounds.y,
+      w: region.bounds.width,
+      h: region.bounds.height,
+    })),
   });
 
   if (
@@ -1108,27 +1140,6 @@ export async function compareImages(
     diffPixelCount,
     ignoreMaskResult.mask,
   );
-
-  // Cluster diff regions
-  // - "grid": grid-based clustering (recommended for full-page screenshots)
-  // - "flood": legacy 8-connectivity flood fill
-  // - "auto" (default): grid for totalPixelCount ≥ AUTO_GRID_PIXEL_THRESHOLD,
-  //   flood otherwise (preserves prior behaviour for component-level tests).
-  // Fallback: in "auto" or "grid" mode, when the grid yields 0 regions but
-  //   real diff pixels exist (e.g. thin 1-4px lines/text strokes diluted
-  //   below cellDensityThreshold), fall through to flood-fill so downstream
-  //   region-to-node matching and reporting still has something to attach to.
-  const clustered = clusterDiffRegions({
-    clusterMode,
-    totalPixelCount,
-    diffPixelCount,
-    diffPixelData,
-    width,
-    height,
-    gridOptions,
-  });
-  let { diffRegions } = clustered;
-  const { clusterTelemetry, clusterCollapse } = clustered;
 
   // Match diff regions to Figma nodes if available
   if (figmaRootNode) {

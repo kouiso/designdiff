@@ -1,0 +1,21 @@
+{
+  "pairId": "pair-05-localized-diff",
+  "figmaFrame": "figma-export.png",
+  "variants": [
+    {
+      "name": "correct",
+      "image": "impl-correct.png",
+      "expectedVerdict": "pass",
+      "expectedKinds": []
+    },
+    {
+      "name": "localized-diff",
+      "image": "impl-localized-diff.png",
+      "expectedVerdict": "fail",
+      "expectedKinds": ["color"],
+      "expectedIssueKinds": ["color"],
+      "notes": "Issue #56: 400x300 の 1.33% (40x40) だけの局所差分。figmaRootNode が無い比較で、面積重み平均に薄まって PASS を通り抜ける regime を固定する検体。",
+      "expectedWeightedStructureMax": 0.5
+    }
+  ]
+}

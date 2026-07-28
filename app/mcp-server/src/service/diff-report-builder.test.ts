@@ -654,6 +654,97 @@ describe("比較対象そのものの行が他の判断へ漏れないこと", (
   });
 });
 
+describe("diffRegions による局所採点 (Issue #56)", () => {
+  const FRAME_SIZE = 300;
+  const LOCAL_DIFF_SIZE = 40;
+  const LOCAL_DIFF_X = 130;
+  const LOCAL_DIFF_Y = 130;
+
+  it("figmaRootNode が無い比較で、小面積の局所差分が whole-frame 平均に薄まらないこと", async () => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    const designPixels = await createSolidRgba(FRAME_SIZE, FRAME_SIZE, WHITE_RGB);
+    const screenshotPixels = Uint8ClampedArray.from(designPixels);
+    for (let y = LOCAL_DIFF_Y; y < LOCAL_DIFF_Y + LOCAL_DIFF_SIZE; y++) {
+      for (let x = LOCAL_DIFF_X; x < LOCAL_DIFF_X + LOCAL_DIFF_SIZE; x++) {
+        const index = (y * FRAME_SIZE + x) * 4;
+        screenshotPixels[index] = 20;
+        screenshotPixels[index + 1] = 20;
+        screenshotPixels[index + 2] = 20;
+      }
+    }
+
+    const withoutClusterHint = buildDiffReport({
+      designPixels,
+      screenshotPixels,
+      width: FRAME_SIZE,
+      height: FRAME_SIZE,
+    });
+
+    // クラスタ情報を渡さない従来経路: whole-frame 1行の面積重み平均に薄まり、
+    // 40x40 (面積比 1.78%) は 0.95 の pass 閾値を超えてしまう。これが #56 の症状。
+    expect(withoutClusterHint.weightedAggregate?.weightedStructure ?? 0).toBeGreaterThanOrEqual(
+      PASS_STRUCTURE_THRESHOLD,
+    );
+
+    const withClusterHint = buildDiffReport({
+      designPixels,
+      screenshotPixels,
+      width: FRAME_SIZE,
+      height: FRAME_SIZE,
+      diffRegions: [{ x: LOCAL_DIFF_X, y: LOCAL_DIFF_Y, w: LOCAL_DIFF_SIZE, h: LOCAL_DIFF_SIZE }],
+    });
+
+    // クラスタを採点単位に使うと、局所差分がそのまま structure へ反映され pass 閾値を割る。
+    expect(withClusterHint.weightedAggregate?.weightedStructure ?? 1).toBeLessThan(
+      PASS_STRUCTURE_THRESHOLD,
+    );
+    expect(withClusterHint.aggregateVerdict).not.toBe("pass");
+    expect(withClusterHint.regionScores.some((score) => score.regionId === "diff-cluster-0")).toBe(
+      true,
+    );
+  });
+
+  it("figmaRootNode がある比較では diffRegions を渡しても子ノード優先の挙動を変えないこと", async () => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    const designPixels = await createSolidRgba(FRAME_SIZE, FRAME_SIZE, WHITE_RGB);
+    const screenshotPixels = Uint8ClampedArray.from(designPixels);
+
+    const report = buildDiffReport({
+      designPixels,
+      screenshotPixels,
+      width: FRAME_SIZE,
+      height: FRAME_SIZE,
+      figmaRootNode: {
+        id: "root",
+        name: "root",
+        type: "FRAME",
+        absoluteBoundingBox: { x: 0, y: 0, width: FRAME_SIZE, height: FRAME_SIZE },
+        absoluteRenderBounds: null,
+        fills: [],
+        strokes: [],
+        effects: [],
+        children: [
+          {
+            id: "child",
+            name: "child",
+            type: "FRAME",
+            absoluteBoundingBox: { x: 0, y: 0, width: FRAME_SIZE, height: 40 },
+            absoluteRenderBounds: null,
+            fills: [],
+            strokes: [],
+            effects: [],
+            children: [],
+          },
+        ],
+      },
+      diffRegions: [{ x: LOCAL_DIFF_X, y: LOCAL_DIFF_Y, w: LOCAL_DIFF_SIZE, h: LOCAL_DIFF_SIZE }],
+    });
+
+    expect(report.regionScores.some((score) => score.regionId === "diff-cluster-0")).toBe(false);
+    expect(report.regionScores.some((score) => score.regionId === "child")).toBe(true);
+  });
+});
+
 // テストデータと期待値で同じ値を参照する。分散させると検証対象が黙ってずれる。
 const VISIBILITY_FIXTURE_NODE_IDS = { visible: "layer-visible", hidden: "layer-hidden" };
 const VARIANT_FIXTURE_NODE_IDS = { a: "variant-a", b: "variant-b", c: "variant-c" };

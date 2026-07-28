@@ -50,6 +50,10 @@ interface BuildDiffReportOptions {
   // contain-resize の余白矩形 (content rect)。与えられると whole-frame の
   // SSIM / 色差を余白 (透明帯) を除いた content rect 内だけで計算する。
   paddingMask?: PaddingMaskRect;
+  // pixelmatch の差分クラスタ (bbox のみ)。Figma ノード木が無い比較 (PNG手渡し)
+  // では局所化の唯一の手がかりがこれになる。figmaRootNode 由来の子行が無い
+  // ときだけ採点単位として使う (Issue #56)。
+  diffRegions?: DiffBoundingBox[];
 }
 
 const MAX_REGION_SCORE_COUNT = 24;
@@ -379,6 +383,38 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
     }
   }
 
+  // Figma ノード木が無い比較では childRegions が作れず、面積重み付き平均が
+  // whole-frame 1行だけになる。局所差分が面積比で薄まって合否を通り抜ける
+  // (Issue #56)。pixelmatch の差分クラスタは局所化を既に正しく行えているため、
+  // これを採点単位に転用する。figmaRootNode 側の挙動 (childRegions がある場合)
+  // は変えない。
+  const diffClusterRegions: RegionScore[] = [];
+  if (childRegions.length === 0 && options.diffRegions && options.diffRegions.length > 0) {
+    const scoreableClusters = options.diffRegions.filter(
+      (bbox) => bbox.w > 0 && bbox.h > 0 && bbox.w * bbox.h >= MIN_REGION_PIXEL_AREA,
+    );
+    const selectedClusters = selectAnchorsForScoring(scoreableClusters);
+
+    for (const [index, bbox] of selectedClusters.entries()) {
+      diffClusterRegions.push({
+        regionId: `diff-cluster-${index}`,
+        bbox,
+        structure: computeSsimForRegion(designPixels, screenshotPixels, width, height, bbox),
+        color: buildColorDifference(designPixels, screenshotPixels, width, height, bbox),
+        flatColorMismatch: buildFlatColorMismatch(
+          designPixels,
+          screenshotPixels,
+          width,
+          height,
+          bbox,
+        ),
+        shape: computeHausdorff(designPixels, screenshotPixels, width, height, bbox),
+        layout: UNIMPLEMENTED_LAYOUT_SCORE,
+        textureScore: getTextureScore(bbox),
+      });
+    }
+  }
+
   const wholeFrameBbox = toWholeFrameRegion(width, height);
   // letterbox 余白を含めると SSIM / 色差が不当に悪化するため、content rect 内で評価する。
   const contentBbox = toContentRegion(width, height, paddingMask);
@@ -419,6 +455,10 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
 
   if (childRegions.length > 0) {
     return [...childRegions, buildRootRegion()];
+  }
+
+  if (diffClusterRegions.length > 0) {
+    return [...diffClusterRegions, buildRootRegion()];
   }
 
   return [buildRootRegion()];
