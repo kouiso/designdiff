@@ -124,7 +124,9 @@ export async function compareImages(options: CompareImagesOptions): Promise<Comp
     diffImageBase64,
   };
 
-  return CompareDesignResultSchema.extend({ diffImageBase64: z.string() }).parse(result);
+  // 元のスキーマは「分割できなかったなら領域は空」という決まりを持つ。
+  // extend では決まりごと落ちるので、それを保ったまま項目を足す方を使う。
+  return CompareDesignResultSchema.safeExtend({ diffImageBase64: z.string() }).parse(result);
 }
 
 function scaleCropRegion(region: CropRegion, scaleX: number, scaleY: number): CropRegion {

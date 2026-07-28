@@ -793,6 +793,8 @@ export async function compareImages(
   let paddingMask: PaddingMask | null = null;
   let wasComposited = false;
   let appliedScale = 1;
+  // 合成した場合の貼り付け位置。ノード bbox を同じ空間へ写すときに要る。
+  let compositeOffset = { x: 0, y: 0 };
   if (finalDesignWidth !== finalScreenshotWidth || finalDesignHeight !== finalScreenshotHeight) {
     const scale = Math.min(
       finalScreenshotWidth / finalDesignWidth,
@@ -857,6 +859,7 @@ export async function compareImages(
         }
       : null;
     wasComposited = true;
+    compositeOffset = { x: left, y: top };
     finalDesignBuffer = await createSharp({
       create: {
         width: finalScreenshotWidth,
@@ -1020,6 +1023,10 @@ export async function compareImages(
       fullScreenshotWidth: screenshotWidth,
       fullScreenshotHeight: normalizedDesignHeight,
       cropOrigin: appliedCropOrigin ?? undefined,
+      // 切り出しの後にさらに縮めて貼り付けた場合は、その倍率と位置も反映する。
+      // 反映しないと、その経路だけ座標がずれて違うノード名が付く。
+      contentScale: wasComposited ? appliedScale : undefined,
+      contentOffset: wasComposited ? compositeOffset : undefined,
     });
     clusterTelemetry.regionCount = diffRegions.length;
   }
