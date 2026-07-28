@@ -7,8 +7,7 @@ import {
   NodeInspectionSchema,
   extractFrames,
 } from "@figdiff/shared";
-
-import { transformNode } from "@/lib/transform-node";
+import { transformNode } from "@figdiff/shared";
 
 import type {
   FileAdapter,

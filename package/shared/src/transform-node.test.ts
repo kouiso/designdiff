@@ -1,13 +1,15 @@
 import { describe, expect, it, vi } from "vitest";
 
-import type { FigmaNode } from "@figdiff/shared";
+import { transformNode } from "./transform-node.js";
 
-import { transformNode } from "./transform-node";
+import type { FigmaNode } from "./figma-client.js";
 
-vi.mock("@figdiff/shared", async (importOriginal) => {
+// パッケージ名ではなく実体のモジュールを差し替える。共有側から自分自身を
+// パッケージ名で読むと、差し替えの対象と実際に読まれる実体がずれる。
+vi.mock("./css-suggestion.js", async (importOriginal) => {
   const actual = await importOriginal();
   return {
-    ...actual,
+    ...(actual as Record<string, unknown>),
     generateCssSuggestion: vi.fn().mockReturnValue("mocked-css"),
   };
 });
