@@ -2,6 +2,23 @@
 
 `eval:ingest-figma` は sample-project-lp の実装 screenshot と Figma frame PNG を対応づける。
 
+## 実の Figma file key の渡し方
+
+`verification/fixture/` に置いてある manifest の `figma_url` は、file key の部分が
+`FIGMAFILEKEY...` というプレースホルダになっている。実在の設計ファイルを指す key は
+リポジトリに置かない。
+
+自分の Figma ファイルで動かすときは、manifest を `verification/fixture/local/` へ複製して
+key と `node-id` を埋め、`--figma-manifest` でそのパスを渡す。`local/` は git 管理外。
+
+```bash
+mkdir -p verification/fixture/local
+cp verification/fixture/sample-project-lp-figma-pages.template.json \
+   verification/fixture/local/my-pages.json
+# my-pages.json の FIGMAFILEKEY... と REPLACE_* を自分の値へ置き換える
+pnpm eval:ingest-figma -- --figma-manifest verification/fixture/local/my-pages.json
+```
+
 ## 1 コマンド smoke
 
 実 Figma URL / token がない段階では、capture と manifest の名前対応を validate-only で確認する。

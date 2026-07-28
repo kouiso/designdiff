@@ -11,6 +11,9 @@ coverage/
 .env
 .env.local
 .env.*.local
+# 手で取った .env のバックアップ。中身は本物の秘密情報なので、日付や連番が
+# ついた派生ファイルもまとめて追跡対象から外す。
+.env*.bak*
 
 # OS
 .DS_Store
@@ -44,6 +47,10 @@ app/desktop/release/
 # Temporary files
 **/tmp-*.mjs
 ext-sideload-test.mjs
+# script/oracle-compare.mjs が self-test の入出力 PNG を書き出す先
+.tmp-oracle/
+# compare-design-runner-system-ui.test.ts が cwd に作るフィクスチャ置き場
+**/tmp-system-ui-mask-test/
 
 # Debug
 npm-debug.log*
@@ -64,6 +71,10 @@ verification/evidence/
 verification/traces/
 verification/logs/
 
+# Manifests filled with a real Figma file key. The tracked manifests under
+# verification/fixture/ carry placeholder keys only; copy one here and fill it in.
+verification/fixture/local/
+
 # Evidence build/lint/test logs (not source-of-truth, regeneratable)
 docs/evidence/*.log
 
@@ -74,5 +85,6 @@ error.log
 
 # Serena tool auto-generated config (differs per machine/session)
 .serena/project.yml
+.serena/memories/
 # Added by code-review-graph
 .code-review-graph/

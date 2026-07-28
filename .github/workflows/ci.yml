@@ -23,7 +23,7 @@ jobs:
       matrix:
         check-type: [lint, typecheck, test, coverage]
     steps:
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
@@ -53,7 +53,9 @@ jobs:
 
       - name: Coverage thresholds
         if: matrix.check-type == 'coverage'
-        run: pnpm -r --filter "@figdiff/shared" --filter "@figdiff/mcp-server" --filter "@figdiff/desktop" run test:coverage
+        # 7パッケージ全部を対象にする。門の外に置いたパッケージは、
+        # 下がっても誰も気づかんまま放置される。
+        run: pnpm -r run test:coverage
 
   e2e:
     name: E2E (Playwright)
@@ -61,7 +63,7 @@ jobs:
     timeout-minutes: 20
     if: github.event.pull_request.draft == false
     steps:
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
@@ -91,12 +93,12 @@ jobs:
           retention-days: 7
 
   naming:
-    name: Naming (kebab-case files, singular folders)
+    name: Naming and action pins
     runs-on: ${{ vars.RUNNER_LINUX }}
     timeout-minutes: 5
     if: github.event.pull_request.draft == false
     steps:
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
@@ -104,3 +106,42 @@ jobs:
 
       - name: Check naming conventions
         run: node script/check-naming.mjs
+
+      # 同じ Action の版が混ざると、更新のたびに片方が取り残される。
+      # 動いてしまうので気づけない。混ざった時点で止める。
+      - name: Check action pins
+        run: node script/check-action-pins.mjs
+
+  # FigDiff の合否を FigDiff 自身のテストで裏付けると、ズレたときに一緒にズレる。
+  # このジョブは FigDiff のコードを一切読み込まず、画像処理ライブラリだけで
+  # 「ずらした画像はずれて見えるか」「ずれを戻したら一致するか」を測る。
+  # 独立した物差しが壊れていないことを、比較機能の変更ごとに確かめる。
+  oracle:
+    name: Independent oracle self-test
+    runs-on: ${{ vars.RUNNER_LINUX }}
+    timeout-minutes: 10
+    if: github.event.pull_request.draft == false
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: jdx/mise-action@dad1bfd3df957f44999b559dd69dc1671cb4e9ea # v4.2.1
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run independent oracle self-test
+        run: node script/oracle-compare.mjs self-test
+
+      # 物差しが正しいだけでは足りん。FigDiff の合否がその物差しと一致するかを見る。
+      # ゴールデン検体の期待合否は FigDiff 側のテストが検証しており、ここで
+      # 独立オラクルも同じ期待合否に一致することを示す。両者が同じ正解へ
+      # 独立にたどり着いているかの確認になる。
+      - name: Check FigDiff verdicts agree with the independent oracle
+        run: node script/oracle-verdict-agreement.mjs
+
+      # 収束したかどうかを決める側のロジックも、変更のたびに検査する。
+      # ここが緩むと、外側で測る形にした意味が無くなる。
+      - name: Check the convergence gate logic
+        run: pnpm --filter "@figdiff/mcp-server" exec vitest run src/service/p5-oracle-gate.test.ts

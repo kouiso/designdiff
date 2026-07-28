@@ -7,8 +7,7 @@ import {
   NodeInspectionSchema,
   extractFrames,
 } from "@figdiff/shared";
-
-import { transformNode } from "@/lib/transform-node";
+import { transformNode } from "@figdiff/shared";
 
 import type {
   FileAdapter,
@@ -64,11 +63,26 @@ const idbSet = async (key: string, value: string): Promise<void> => {
   });
 };
 
+// version まで鍵に含める。Figma 側でフレームを直しても版が変われば別の鍵になり、
+// 古い画像を返さずに取り直せる。版が分からんときは版なしの鍵へ落とす。
+const cacheKey = (fileKey: string, nodeId: string, scale: number, version: string | undefined) =>
+  version === undefined
+    ? `${fileKey}_${nodeId}_${scale}x`
+    : `${fileKey}_${nodeId}_${scale}x_${version}`;
+
+// 引数はインターフェース (FigmaCacheStrategy) と同じ並びにする。version を
+// 受け取らんと base64 の位置がひとつ手前へずれ、画像の代わりに版の文字列を
+// 保存してしまう。TypeScript は引数の少ない実装を許すので型検査では出ん。
 const webCacheStrategy = {
-  get: async (fileKey: string, nodeId: string, scale: number) =>
-    idbGet(`${fileKey}_${nodeId}_${scale}x`),
-  set: async (fileKey: string, nodeId: string, scale: number, base64: string) =>
-    idbSet(`${fileKey}_${nodeId}_${scale}x`, base64),
+  get: async (fileKey: string, nodeId: string, scale: number, version?: string) =>
+    idbGet(cacheKey(fileKey, nodeId, scale, version)),
+  set: async (
+    fileKey: string,
+    nodeId: string,
+    scale: number,
+    version: string | undefined,
+    base64: string,
+  ) => idbSet(cacheKey(fileKey, nodeId, scale, version), base64),
 };
 
 const getTokenFromStorage = (): string | null => {

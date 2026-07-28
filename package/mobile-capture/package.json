@@ -24,7 +24,7 @@
     "@types/node": "^25.6.0",
     "@vitest/coverage-v8": "^3.2.4",
     "typescript": "^5.9.3",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.6"
   },
   "bin": {
     "figdiff-flutter-golden": "./dist/bin/figdiff-flutter-golden.js"

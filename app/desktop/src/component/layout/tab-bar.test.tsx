@@ -53,6 +53,31 @@ describe("TabBar", () => {
     expect(useTabStore.getState().tabs).toHaveLength(0);
   });
 
+  // ×は span なので、キーボードだけで操作する人には Enter/Space が唯一の手段になる。
+  it("×はキーボードでも閉じられる", () => {
+    useTabStore.setState({
+      tabs: [{ id: "t1", projectId: "p1", label: "Project A", page: "project_view" }],
+      activeTabId: "t1",
+    });
+    render(<TabBar />);
+
+    fireEvent.keyDown(screen.getByLabelText("Project A を閉じる"), { key: "Enter" });
+
+    expect(useTabStore.getState().tabs).toHaveLength(0);
+  });
+
+  it("×は関係ないキーでは閉じない", () => {
+    useTabStore.setState({
+      tabs: [{ id: "t1", projectId: "p1", label: "Project A", page: "project_view" }],
+      activeTabId: "t1",
+    });
+    render(<TabBar />);
+
+    fireEvent.keyDown(screen.getByLabelText("Project A を閉じる"), { key: "a" });
+
+    expect(useTabStore.getState().tabs).toHaveLength(1);
+  });
+
   it("＋ボタンでactiveTabIdが空文字列に設定される（ホーム表示）", () => {
     useTabStore.setState({
       tabs: [{ id: "t1", projectId: "p1", label: "Test", page: "project_view" }],

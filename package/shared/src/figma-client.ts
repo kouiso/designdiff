@@ -4,6 +4,12 @@ import { normalizeNodeId } from "./figma-url-parser.js";
 
 import type { Frame } from "./type.js";
 
+/**
+ * ノードが今の Figma に無い時のエラー文の頭。
+ * 呼び出し側が「一時的に取れんかった」と区別するために文字列で照合する。
+ */
+export const FIGMA_NODE_NOT_FOUND_MARKER = "Requested Figma node not found";
+
 const FIGMA_API_BASE = "https://api.figma.com/v1";
 
 const FigmaNodeSchema: z.ZodType<FigmaNode> = z.lazy(() =>
@@ -273,7 +279,7 @@ export class FigmaClient {
     const wrapper = response.nodes[normalizedNodeId];
     if (!wrapper) {
       throw new Error(
-        `Requested Figma node not found: Node "${nodeId}" not found in file ${fileKey}. The id may not exist, or the format may be wrong (expected "1:23" with a colon; dash-format ids from Figma URLs are auto-converted). Run list_figma_frames to see valid node ids.`,
+        `${FIGMA_NODE_NOT_FOUND_MARKER}: Node "${nodeId}" not found in file ${fileKey}. The id may not exist, or the format may be wrong (expected "1:23" with a colon; dash-format ids from Figma URLs are auto-converted). Run list_figma_frames to see valid node ids.`,
       );
     }
 

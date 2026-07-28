@@ -46,7 +46,7 @@ interface InspectionResult {
   children: { id: string; name: string; type: string; width: number; height: number }[];
 }
 
-const state: AppState = {
+export const state: AppState = {
   tab: "compare",
   selection: [],
   designBase64: null,
@@ -103,9 +103,7 @@ export function isPluginResponse(msg: unknown): msg is PluginResponse {
   return typeof obj.type === "string" && PLUGIN_RESPONSE_TYPES.has(obj.type);
 }
 
-// Figma Plugin iframe context: event.origin is always "null" (opaque origin), so origin validation is not applicable
-window.onmessage = (event: MessageEvent) => {
-  const raw: unknown = event.data.pluginMessage;
+export function handlePluginMessage(raw: unknown): void {
   if (!raw) return;
   if (!isPluginResponse(raw)) return;
 
@@ -154,19 +152,24 @@ window.onmessage = (event: MessageEvent) => {
       }
       break;
   }
+}
+
+// Figma Plugin iframe context: event.origin is always "null" (opaque origin), so origin validation is not applicable
+window.onmessage = (event: MessageEvent) => {
+  handlePluginMessage(event.data.pluginMessage);
 };
 
 // --- Comparison Logic (uses Canvas API in iframe) ---
 
-async function runComparison(): Promise<void> {
+export async function runComparison(): Promise<void> {
   if (!state.designBase64 || !state.screenshotBase64) return;
 
   state.loading = true;
   render();
 
   try {
-    const designImg = await loadImage(`data:image/png;base64,${state.designBase64}`);
-    const screenshotImg = await loadImage(`data:image/png;base64,${state.screenshotBase64}`);
+    const designImg = await imageLoader.load(`data:image/png;base64,${state.designBase64}`);
+    const screenshotImg = await imageLoader.load(`data:image/png;base64,${state.screenshotBase64}`);
 
     // Use screenshot dimensions as target
     const width = screenshotImg.width;
@@ -237,6 +240,10 @@ function loadImage(src: string): Promise<HTMLImageElement> {
   });
 }
 
+// 画像デコードの差し替え口。jsdom は <img> のデコードを実装しておらず onload が発火しないため、
+// テストからだけ load を差し替える。実行時は既定の loadImage がそのまま使われる。
+export const imageLoader = { load: loadImage };
+
 /**
  * Simple pixelmatch implementation for iframe (no npm dependency)
  * Compares two RGBA pixel arrays and highlights differences in red
@@ -278,7 +285,7 @@ export function pixelmatchSimple(
 
 // --- File Input Handler ---
 
-function handleFileInput(file: File): void {
+export function handleFileInput(file: File): void {
   const reader = new FileReader();
   reader.onload = () => {
     if (typeof reader.result !== "string") return;
@@ -290,7 +297,7 @@ function handleFileInput(file: File): void {
 
 // --- Rendering ---
 
-function render(): void {
+export function render(): void {
   const app = document.getElementById("app");
   if (!app) return;
   app.innerHTML = "";
@@ -308,7 +315,7 @@ function render(): void {
   }
 }
 
-function renderCompareTab(app: HTMLElement): void {
+export function renderCompareTab(app: HTMLElement): void {
   // Selection info
   if (state.selection.length === 0) {
     app.appendChild(el("div", "section", "Select a frame in Figma to begin comparison."));
@@ -396,7 +403,7 @@ function renderCompareTab(app: HTMLElement): void {
   }
 }
 
-function renderInspectTab(app: HTMLElement): void {
+export function renderInspectTab(app: HTMLElement): void {
   if (state.selection.length === 0) {
     app.appendChild(el("div", "section", "Select a node in Figma to inspect."));
     return;
@@ -436,7 +443,7 @@ function renderInspectTab(app: HTMLElement): void {
   }
 }
 
-function renderPropertySection(title: string, data: Record<string, unknown>): HTMLElement {
+export function renderPropertySection(title: string, data: Record<string, unknown>): HTMLElement {
   const section = el("div", "node-info");
   section.innerHTML = `<div class="label" style="margin-bottom:4px;font-weight:600;">${title}</div>`;
   for (const [key, val] of Object.entries(data)) {
@@ -447,7 +454,7 @@ function renderPropertySection(title: string, data: Record<string, unknown>): HT
   return section;
 }
 
-function renderCssSection(cssSuggestion: string): HTMLElement {
+export function renderCssSection(cssSuggestion: string): HTMLElement {
   const section = el("div", "section");
   section.innerHTML = `<div class="label" style="margin-bottom:4px;">CSS Suggestion</div>`;
   const cssBlock = el("div", "css-block", cssSuggestion);
@@ -465,7 +472,7 @@ function renderCssSection(cssSuggestion: string): HTMLElement {
   return section;
 }
 
-function renderChildrenSection(
+export function renderChildrenSection(
   children: { id: string; name: string; type: string; width: number; height: number }[],
 ): HTMLElement {
   const section = el("div", "section");
@@ -486,14 +493,14 @@ function renderChildrenSection(
 
 // --- DOM Helpers ---
 
-function el(tag: string, className: string, text?: string): HTMLElement {
+export function el(tag: string, className: string, text?: string): HTMLElement {
   const element = document.createElement(tag);
   element.className = className;
   if (text) element.textContent = text;
   return element;
 }
 
-function tab(id: "compare" | "inspect", label: string, active: boolean): HTMLElement {
+export function tab(id: "compare" | "inspect", label: string, active: boolean): HTMLElement {
   const t = el("div", `tab ${active ? "active" : ""}`, label);
   t.addEventListener("click", () => {
     state.tab = id;

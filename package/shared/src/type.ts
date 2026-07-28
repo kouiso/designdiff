@@ -8,6 +8,7 @@ import {
   type BorderRadiusSchema,
   type ChildNodeSummarySchema,
   type CritiqueNoteSchema,
+  type ClusterCollapseSchema,
   type ClusterTelemetrySchema,
   type CompareDesignResultSchema,
   type LoopGuardReportSchema,
@@ -103,6 +104,7 @@ export type TokenDiffReport = z.infer<typeof TokenDiffReportSchema>;
 export type VerdictRoute = z.infer<typeof VerdictRouteSchema>;
 
 export type ClusterTelemetry = z.infer<typeof ClusterTelemetrySchema>;
+export type ClusterCollapse = z.infer<typeof ClusterCollapseSchema>;
 export type GridSummary = z.infer<typeof GridSummarySchema>;
 export type GridSummaryCell = z.infer<typeof GridSummaryCellSchema>;
 
@@ -192,6 +194,12 @@ export interface RegionScore {
   bbox: DiffBoundingBox;
   // P2 では figmaRootNode.children 由来の region に Figma node id を付与する。
   figmaNodeId?: string;
+  // "root" は比較対象そのものを指す行。子の行と範囲が重なるので集計からは外す。
+  // 局所比較で「対象ノードが見つからない」を出さないために、行としては必ず持たせる。
+  scope?: "section" | "root";
+  // 同じ位置・同じ大きさの兄弟をまとめたとき、下に隠れた層のID。
+  // 落とすと、重なりの下側で起きた崩れの直し先へ辿れなくなる。
+  overlappingNodeIds?: string[];
   structure: number;
   color: number;
   shape: number;
@@ -204,6 +212,14 @@ export interface RegionScore {
     maxChannelDelta: number;
   };
 }
+
+/**
+ * layout スコアは未実装。定義が決まっていないので 0 のままにする。
+ *
+ * 合否の判定はこの値を読んでいない。決めていない数字を入れると、読む側は
+ * 測った結果だと受け取る。名前を付けて「意図した 0」だと分かる形にする。
+ */
+export const UNIMPLEMENTED_LAYOUT_SCORE = 0;
 
 export interface Alignment {
   translation: { x: number; y: number };
@@ -258,7 +274,20 @@ const getTextureAdjustedWeight = (
 
 const clamp01 = (value: number): number => Math.min(1, Math.max(0, value));
 
-const normalizeWeightedAggregate = (regionScores: RegionScore[]): WeightedAggregate => {
+/**
+ * 集計に使う行だけを選ぶ。
+ *
+ * 比較対象そのものを指す行 (scope: "root") は、子の行と範囲が重なる。
+ * 一緒に集計すると同じ画素を二重に数えるので、子の行が1つでもあれば外す。
+ * 子が無いときは root しか手掛かりが無いので、そのまま使う。
+ */
+export const selectScoringRegions = (regionScores: RegionScore[]): RegionScore[] => {
+  const sections = regionScores.filter((score) => score.scope !== "root");
+  return sections.length > 0 ? sections : regionScores;
+};
+
+const normalizeWeightedAggregate = (allRegionScores: RegionScore[]): WeightedAggregate => {
+  const regionScores = selectScoringRegions(allRegionScores);
   if (regionScores.length === 0) {
     return {
       weightedStructure: 1,
@@ -334,8 +363,11 @@ export const computeVerdict = (
   const hasCriticalIssue = report.issues.some((issue) => issue.severity === "critical");
   // P2 では region 面積で重み付けし、単一セクションの暴走で全体 verdict が即死しないようにする。
   const weightedAggregate = normalizeWeightedAggregate(report.regionScores);
-  const textureRationaleSuffix = buildTextureRationaleSuffix(report.regionScores);
-  const worstRegionEvidenceSuffix = buildWorstRegionEvidenceSuffix(report.regionScores);
+  // 理由の文面も集計と同じ行から作る。片方だけ全部の行を見ると、判定は子から
+  // 出しているのに「いちばん悪いのは画面全体」と書く食い違いが起きる。
+  const scoringRegions = selectScoringRegions(report.regionScores);
+  const textureRationaleSuffix = buildTextureRationaleSuffix(scoringRegions);
+  const worstRegionEvidenceSuffix = buildWorstRegionEvidenceSuffix(scoringRegions);
 
   if (hasCriticalIssue) {
     return {

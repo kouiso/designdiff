@@ -86,3 +86,40 @@ describe("Header", () => {
     expect(onNavigate).toHaveBeenCalledWith("project");
   });
 });
+
+describe("Header の残りの操作", () => {
+  it("ロゴを押すとホームへ戻る", () => {
+    const onNavigate = vi.fn();
+    render(<Header currentPage="compare" onNavigate={onNavigate} />);
+
+    fireEvent.click(screen.getByText("FigDiff"));
+
+    expect(onNavigate).toHaveBeenCalledWith("home");
+  });
+
+  it("新規比較を押すと比較画面へ移る", () => {
+    const onNavigate = vi.fn();
+    render(<Header currentPage="home" onNavigate={onNavigate} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "新規比較" }));
+
+    expect(onNavigate).toHaveBeenCalledWith("compare");
+  });
+
+  // 選択中の項目までホバーで色が変わると、どこにおるか分からんようになる。
+  it("選択中でない項目だけホバーで見た目が変わる", () => {
+    render(<Header currentPage="home" onNavigate={vi.fn()} />);
+
+    const inactive = screen.getByRole("button", { name: "比較" });
+    const before = inactive.style.background;
+    fireEvent.mouseEnter(inactive);
+    expect(inactive.style.background).not.toBe(before);
+    fireEvent.mouseLeave(inactive);
+    expect(inactive.style.background).toBe("transparent");
+
+    const active = screen.getByRole("button", { name: "ホーム" });
+    const activeBackground = active.style.background;
+    fireEvent.mouseEnter(active);
+    expect(active.style.background).toBe(activeBackground);
+  });
+});

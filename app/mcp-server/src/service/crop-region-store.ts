@@ -17,6 +17,11 @@ interface CropRegionEntry {
   region: CropRegion;
   note?: string;
   updatedAt: string;
+  // crop を決めたときのスクリーンショット寸法。あとから「この crop は古いのか、
+  // それとも意図して狭くしたのか」を区別する唯一の根拠になる。省略可能なのは、
+  // この記録を持たない既存の保存ファイルを読み続けるため。
+  capturedWidth?: number;
+  capturedHeight?: number;
 }
 
 // frameName === "" は「どのフレームにも適用するグローバル crop」を表す。
@@ -40,6 +45,8 @@ const cropRegionEntrySchema = z.object({
   region: cropRegionSchema,
   note: z.string().optional(),
   updatedAt: z.string(),
+  capturedWidth: z.number().positive().optional(),
+  capturedHeight: z.number().positive().optional(),
 });
 
 const cropRegionFileSchema = z.object({
@@ -131,6 +138,7 @@ export async function setCropRegion(
   frameName: string,
   region: CropRegion,
   note?: string,
+  capturedSize?: { width: number; height: number },
 ): Promise<CropRegionEntry> {
   await assertProjectExists(projectId);
   const store = await readStore(projectId);
@@ -140,6 +148,8 @@ export async function setCropRegion(
     region,
     note,
     updatedAt: new Date().toISOString(),
+    capturedWidth: capturedSize?.width,
+    capturedHeight: capturedSize?.height,
   };
 
   const existingIndex = store.regions.findIndex((r) => r.frameName === frameName);

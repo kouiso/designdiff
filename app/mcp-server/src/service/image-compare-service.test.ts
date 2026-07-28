@@ -1196,6 +1196,9 @@ describe("compareImages", () => {
       fallbackReason: "wall-budget-exceeded",
       budgetMs: 5000,
     });
+    // 時間切れは「差分が全面に広がっている」証拠にならないので、
+    // 見つけた大まかな位置はそのまま返す。
+    expect(result.clusterCollapse).toBeUndefined();
     expect(result.diffRegions).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -1263,6 +1266,7 @@ describe("compareImages", () => {
       screenshotBase64: dummyBase64,
     });
 
+    expect(result.clusterCollapse).toBeUndefined();
     expect(result.diffRegions.length).toBeLessThanOrEqual(60);
     expect(result.diffRegions[0]?.id).toBe(0);
     expect(result.diffRegions[0]?.bounds).toEqual({

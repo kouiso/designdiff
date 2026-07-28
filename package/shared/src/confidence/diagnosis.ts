@@ -167,6 +167,23 @@ function classifyAspectMismatch(
   return "mild_aspect_mismatch";
 }
 
+/**
+ * 設計がフルページ相当で、撮影がそれより縦に短い状態か。
+ *
+ * この時は比較前に設計を縮めて重ねとるので、残った画素差からは
+ * 「実装が違う」と「撮影範囲が足りん」を区別できん。合否を出す側が
+ * FAIL と言い切らんための判定に使う。
+ *
+ * rankedCauses から読み取らんのは、同じ code の原因が複数出た時に
+ * 分類を持たん方が残ることがあるため。判定は元の寸法から直に求める。
+ */
+export function isFullPageAgainstShorterCapture(normalization?: NormalizationReport): boolean {
+  if (!normalization?.containResized || normalization.cropApplied) {
+    return false;
+  }
+  return classifyAspectMismatch(normalization) === "full_page_vs_viewport";
+}
+
 function globalColorShiftCause(
   matchRate: number,
   avgStructure: number,

@@ -177,12 +177,11 @@ describe("buildDiffReport", () => {
       figmaRootNode,
     });
 
-    expect(result.regionScores).toHaveLength(3);
-    expect(result.regionScores.map((score) => score.figmaNodeId)).toEqual([
-      "header",
-      "body",
-      "footer",
-    ]);
+    // 子の行3件に加えて、比較対象そのものを指す行が1件付く。
+    const sectionScores = result.regionScores.filter((score) => score.scope !== "root");
+    expect(sectionScores).toHaveLength(3);
+    expect(result.regionScores.filter((score) => score.scope === "root")).toHaveLength(1);
+    expect(sectionScores.map((score) => score.figmaNodeId)).toEqual(["header", "body", "footer"]);
     expect(
       result.regionScores.find((score) => score.regionId === "footer")?.structure,
     ).toBeLessThan(0.8);
@@ -267,10 +266,14 @@ describe("buildDiffReport", () => {
       figmaRootNode,
     });
 
-    expect(result.regionScores).toHaveLength(EXPECTED_CAPPED_REGION_COUNT);
-    expect(result.regionScores.every((score) => score.regionId.startsWith("section-"))).toBe(true);
-    expect(result.regionScores[0].regionId).toBe("section-0");
-    expect(result.regionScores.at(-1)?.regionId).toBe(`section-${SECTION_REGION_COUNT - 1}`);
+    // 最後の1件は比較対象そのものを指す行。上限は section の行に対して効く。
+    const sectionScores = result.regionScores.filter((score) => score.scope !== "root");
+    const rootScores = result.regionScores.filter((score) => score.scope === "root");
+    expect(sectionScores).toHaveLength(EXPECTED_CAPPED_REGION_COUNT);
+    expect(rootScores).toHaveLength(1);
+    expect(sectionScores.every((score) => score.regionId.startsWith("section-"))).toBe(true);
+    expect(sectionScores[0].regionId).toBe("section-0");
+    expect(sectionScores.at(-1)?.regionId).toBe(`section-${SECTION_REGION_COUNT - 1}`);
   });
 
   it("pass 閾値未達の中間差分は pass にならないこと", async () => {
@@ -596,5 +599,202 @@ describe("buildDiffReport global alignment shift severity", () => {
     // critical position issue が computeVerdict の hasCriticalIssue を
     // 通じて verdict を fail にする（グローバルシフトが黙って消えない）。
     expect(result.aggregateVerdict).toBe("fail");
+  });
+});
+
+// テストデータと期待値で同じ値を参照する。分散させると検証対象が黙ってずれる。
+const SCOPE_FIXTURE_NODE_IDS = { root: "scope-root", banner: "scope-banner" };
+
+describe("比較対象そのものの行が他の判断へ漏れないこと", () => {
+  const makeNode = (
+    id: string,
+    box: { x: number; y: number; width: number; height: number },
+  ): FigmaNode => ({
+    id,
+    name: id,
+    type: "FRAME",
+    absoluteBoundingBox: box,
+    absoluteRenderBounds: null,
+    fills: [],
+    strokes: [],
+    effects: [],
+    children: [],
+  });
+
+  it("子が全部合格なら、背景だけの色差で不合格にしないこと", async () => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    const size = 200;
+    // 子は上端の帯だけ。そこは一致させ、残りの背景だけ大きく色を変える。
+    const designPixels = await createSolidRgba(size, size, WHITE_RGB);
+    const screenshotPixels = Uint8ClampedArray.from(designPixels);
+    for (let y = 60; y < size; y++) {
+      for (let x = 0; x < size; x++) {
+        const index = (y * size + x) * 4;
+        screenshotPixels[index] = BLUE_RGB.r;
+        screenshotPixels[index + 1] = BLUE_RGB.g;
+        screenshotPixels[index + 2] = BLUE_RGB.b;
+      }
+    }
+
+    const report = buildDiffReport({
+      designPixels,
+      screenshotPixels,
+      width: size,
+      height: size,
+      figmaRootNode: {
+        ...makeNode(SCOPE_FIXTURE_NODE_IDS.root, { x: 0, y: 0, width: size, height: size }),
+        children: [
+          makeNode(SCOPE_FIXTURE_NODE_IDS.banner, { x: 0, y: 0, width: size, height: 40 }),
+        ],
+      },
+    });
+
+    // 合否を決める不具合が、比較対象そのものの行から作られていないこと。
+    expect(report.issues.every((issue) => issue.regionId !== "whole-frame")).toBe(true);
+  });
+});
+
+// テストデータと期待値で同じ値を参照する。分散させると検証対象が黙ってずれる。
+const VISIBILITY_FIXTURE_NODE_IDS = { visible: "layer-visible", hidden: "layer-hidden" };
+const VARIANT_FIXTURE_NODE_IDS = { a: "variant-a", b: "variant-b", c: "variant-c" };
+
+describe("buildRegionScores の対象選び", () => {
+  const makeChild = (
+    id: string,
+    box: { x: number; y: number; width: number; height: number },
+    visible?: boolean,
+  ): FigmaNode => ({
+    id,
+    name: id,
+    type: "FRAME",
+    visible,
+    absoluteBoundingBox: box,
+    absoluteRenderBounds: null,
+    fills: [],
+    strokes: [],
+    effects: [],
+    children: [],
+  });
+
+  const makeRoot = (children: FigmaNode[]): FigmaNode => ({
+    id: "root",
+    name: "Frame",
+    type: "FRAME",
+    absoluteBoundingBox: { x: 0, y: 0, width: 200, height: 200 },
+    absoluteRenderBounds: null,
+    fills: [],
+    strokes: [],
+    effects: [],
+    children,
+  });
+
+  async function scoreIdsFor(children: FigmaNode[]): Promise<string[]> {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    const designPixels = await createSolidRgba(200, 200, WHITE_RGB);
+    const screenshotPixels = await createSolidRgba(200, 200, BLUE_RGB);
+    const report = buildDiffReport({
+      designPixels,
+      screenshotPixels,
+      width: 200,
+      height: 200,
+      figmaRootNode: makeRoot(children),
+    });
+    return report.regionScores.map((score) => score.figmaNodeId ?? score.regionId);
+  }
+
+  it("非表示の子は評価対象に入れないこと", async () => {
+    const ids = await scoreIdsFor([
+      makeChild(VISIBILITY_FIXTURE_NODE_IDS.visible, { x: 0, y: 0, width: 200, height: 100 }),
+      makeChild(
+        VISIBILITY_FIXTURE_NODE_IDS.hidden,
+        { x: 0, y: 100, width: 200, height: 100 },
+        false,
+      ),
+    ]);
+
+    expect(ids).toContain(VISIBILITY_FIXTURE_NODE_IDS.visible);
+    expect(ids).not.toContain(VISIBILITY_FIXTURE_NODE_IDS.hidden);
+  });
+
+  it("同じ位置・同じ大きさの子は1件だけ残すこと", async () => {
+    const ids = await scoreIdsFor([
+      makeChild(VARIANT_FIXTURE_NODE_IDS.a, { x: 0, y: 0, width: 200, height: 100 }),
+      makeChild(VARIANT_FIXTURE_NODE_IDS.b, { x: 0, y: 0, width: 200, height: 100 }),
+      makeChild(VARIANT_FIXTURE_NODE_IDS.c, { x: 0, y: 0, width: 200, height: 100 }),
+    ]);
+
+    const variants = ids.filter((id) => id.startsWith("variant-"));
+    expect(variants).toHaveLength(1);
+  });
+});
+
+describe("同じ矩形の子が複数あるときの扱い", () => {
+  const makeChild = (id: string): FigmaNode => ({
+    id,
+    name: id,
+    type: "FRAME",
+    absoluteBoundingBox: { x: 0, y: 0, width: 200, height: 100 },
+    absoluteRenderBounds: null,
+    fills: [],
+    strokes: [],
+    effects: [],
+    children: [],
+  });
+
+  it("手前に描かれる最後の子の名前を残すこと", async () => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    const designPixels = await createSolidRgba(200, 200, WHITE_RGB);
+    const screenshotPixels = await createSolidRgba(200, 200, BLUE_RGB);
+
+    const report = buildDiffReport({
+      designPixels,
+      screenshotPixels,
+      width: 200,
+      height: 200,
+      figmaRootNode: {
+        id: "root",
+        name: "Frame",
+        type: "FRAME",
+        absoluteBoundingBox: { x: 0, y: 0, width: 200, height: 200 },
+        absoluteRenderBounds: null,
+        fills: [],
+        strokes: [],
+        effects: [],
+        children: [makeChild("under"), makeChild("middle"), makeChild("on-top")],
+      },
+    });
+
+    const ids = report.regionScores.map((score) => score.figmaNodeId);
+    expect(ids).toContain("on-top");
+    expect(ids).not.toContain("under");
+    expect(ids).not.toContain("middle");
+  });
+
+  it("下に隠れた層のIDも残すこと", async () => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    const designPixels = await createSolidRgba(200, 200, WHITE_RGB);
+    const screenshotPixels = await createSolidRgba(200, 200, BLUE_RGB);
+
+    const report = buildDiffReport({
+      designPixels,
+      screenshotPixels,
+      width: 200,
+      height: 200,
+      figmaRootNode: {
+        id: "root",
+        name: "Frame",
+        type: "FRAME",
+        absoluteBoundingBox: { x: 0, y: 0, width: 200, height: 200 },
+        absoluteRenderBounds: null,
+        fills: [],
+        strokes: [],
+        effects: [],
+        children: [makeChild("under"), makeChild("middle"), makeChild("on-top")],
+      },
+    });
+
+    // 半透明や部分的な塗りだと下の層も見えている。直し先を辿れる状態を保つ。
+    const merged = report.regionScores.find((score) => score.figmaNodeId === "on-top");
+    expect(merged?.overlappingNodeIds).toEqual(["under", "middle"]);
   });
 });

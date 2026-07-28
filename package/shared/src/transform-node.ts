@@ -1,7 +1,8 @@
 /**
  * FigmaNode → NodeInspection 変換
- * electron/util/transform-node.ts と同一ロジック
- * Web Adapter から利用するために src/lib に配置
+ *
+ * 画面側と土台側の両方が要る。以前は同じ中身を2ファイルに置いており、
+ * 片方だけ直すと表示と内部で違う結果になる状態だった。共有側へ寄せる。
  */
 import {
   type FigmaNode,
@@ -17,7 +18,7 @@ import {
   type NodeStroke,
   type NodeEffect,
   type BorderRadius,
-} from "@figdiff/shared";
+} from "./index.js";
 
 const extractBorderRadius = (node: FigmaNode): BorderRadius => {
   if (node.rectangleCornerRadii) {

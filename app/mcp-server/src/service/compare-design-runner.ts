@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 
-import sharp from "sharp";
+import sharp, { type Metadata } from "sharp";
 import { z } from "zod";
 
 import { captureDeviceScreenshot, type CaptureDevice } from "@figdiff/mobile-capture";
@@ -12,17 +12,22 @@ import {
   CompareDesignResultSchema,
   detectDynamicRegionsAcrossSamples,
   detectToastBands,
+  FIGMA_NODE_NOT_FOUND_MARKER,
   diagnoseComparison,
   formatFrameCandidates,
+  isFullPageAgainstShorterCapture,
   normalizeNodeId,
   parseDesignInput,
   rankFrameCandidates,
   PERCEPTIBLE_DELTA_E,
   PERCEPTIBLE_DIFF_CONTRADICTION_RATIO,
   runPreflight,
+  selectScoringRegions,
   selfCritique,
+  type ClusterCollapse,
   type CompareDesignResult,
   type ComparisonDiagnosis,
+  type CritiqueNote,
   type CropRegion,
   type DiffReport,
   type DiffVerdict,
@@ -45,7 +50,8 @@ import {
 
 import {
   buildComparisonSourceKey,
-  getRecentReports,
+  getRecentComparisons,
+  type RecentComparison,
   recordComparison,
 } from "./comparison-history.js";
 import { getCropRegionForComparison } from "./crop-region-store.js";
@@ -69,6 +75,8 @@ const FixtureFigmaNodeSchema: z.ZodType<FigmaNode> = z.lazy(() =>
     id: z.string(),
     name: z.string(),
     type: z.string(),
+    // 落とすと、非表示の子を除く処理がローカル検体の経路だけ効かなくなる。
+    visible: z.boolean().optional(),
     children: z.array(FixtureFigmaNodeSchema).default([]),
     absoluteBoundingBox: z
       .object({
@@ -169,6 +177,11 @@ export interface CompareDesignRunArgs {
   frame_name?: string;
   threshold?: number;
   profile?: ComparisonProfile;
+  /**
+   * 画素の比較と、構造・色の評価を同じ下地の上で行うために要る。
+   * 片方だけ白のままだと、一致率と構造判定が別の絵を見て食い違う。
+   */
+  design_background?: string;
   project_id?: string;
   mask_system_ui?: boolean;
   /**
@@ -398,8 +411,15 @@ function buildStatus(
   likelyMisconfig: boolean,
   perceptibleDiffRatio: number | undefined,
   tokenDiffBlockingCount: number,
+  aspectMismatchInconclusive: boolean,
 ): CompareStatus {
   if (likelyMisconfig) {
+    return "UNCERTAIN";
+  }
+  // 設計の方が縦に長い時、比較前に設計を縮めて重ねとる。縮めた後の画素差は
+  // 「実装が違う」と「撮影範囲が足りん」を区別できん。診断側も
+  // 「通常の実装差分とは限りません」と言うとるので、FAIL と言い切らん。
+  if (aspectMismatchInconclusive) {
     return "UNCERTAIN";
   }
   if (structuralVerdict === "inconclusive") {
@@ -488,11 +508,19 @@ export function buildTargetNodeIds(
   const candidates: string[] = [];
 
   const rankedRegionScores = [...(diffReport?.regionScores ?? [])]
+    // 比較対象そのものの行は全部の子を覆う。並べると、上限5件の枠を奪って
+    // 本当に崩れている子が案内から落ちる。
+    .filter((score) => score.scope !== "root")
     .filter((score) => typeof score.figmaNodeId === "string" && score.figmaNodeId.length > 0)
     .sort((a, b) => a.structure - b.structure);
 
   for (const score of rankedRegionScores) {
     if (score.figmaNodeId) candidates.push(score.figmaNodeId);
+    // 重なりでまとめた下側の層も直し先の候補に入れる。半透明や部分的な塗りだと
+    // 手前の層だけを直しても画面が変わらないことがある。
+    for (const overlappingNodeId of score.overlappingNodeIds ?? []) {
+      candidates.push(overlappingNodeId);
+    }
   }
 
   for (const region of diffRegions) {
@@ -510,7 +538,15 @@ function buildNextAction(
   structuralVerdict: DiffVerdict,
   regionCount: number,
   targetNodeIds: string[],
+  clusterCollapse?: ClusterCollapse,
 ): string {
+  // 分割できなかった回に「N箇所を確認せよ」と言うと、位置の手がかりを持たない
+  // タイルの数だけ修正箇所があるように読める。先に前提の確認へ回す。
+  if (clusterCollapse) {
+    const checks = clusterCollapse.checks.map((check, index) => `${index + 1}. ${check}`).join(" ");
+    return `${clusterCollapse.message} ${checks}`;
+  }
+
   if (structuralVerdict === "pass") {
     return "構造SSIM判定はPASSです。matchRate%は参考値として扱い、差分画像に重大な崩れがないことを確認して完了してください。";
   }
@@ -653,7 +689,13 @@ async function resolveScreenshotPath(
   }
 
   if (!args.screenshot_url) {
-    if (!args.screenshot || args.screenshot.trim() === "") {
+    if (args.screenshot === undefined) {
+      const receivedArguments = Object.keys(args).join(", ");
+      throw new Error(
+        `screenshot が指定されていません。受け取った引数: ${receivedArguments || "なし"}。画像のパスは screenshot に渡してください（screenshot_url / capture_device も可）。`,
+      );
+    }
+    if (args.screenshot.trim() === "") {
       throw new Error(EMPTY_SCREENSHOT_INPUT_MESSAGE);
     }
     return { screenshotPath: await resolveScreenshotInputPath(args.screenshot) };
@@ -815,6 +857,9 @@ async function resolveDesignAssets(
   designBase64: string;
   figmaRootNode: FigmaNode | undefined;
   resolvedNodeId: string | undefined;
+  // ノードが今の Figma に無かった時だけ入る。画像はキャッシュから出るので、
+  // ここを落とすと「消えた設計と比べた」ことが結果から分からんくなる。
+  missingNodeId: string | undefined;
 }> {
   if (parsedDesignSource.type === "figma_url") {
     const figmaService = await createFigmaService();
@@ -830,13 +875,17 @@ async function resolveDesignAssets(
       targetHeight,
     );
     let figmaRootNode: FigmaNode | undefined;
+    let missingNodeId: string | undefined;
     try {
       figmaRootNode = await figmaService.getNodeDetails(parsedDesignSource.fileKey, resolvedNodeId);
     } catch (nodeError) {
-      console.error(
-        "[compare_design] node details fetch failed, proceeding without:",
-        nodeError instanceof Error ? nodeError.message : nodeError,
-      );
+      const message = nodeError instanceof Error ? nodeError.message : String(nodeError);
+      console.error("[compare_design] node details fetch failed, proceeding without:", message);
+      // 「今の Figma に無い」と「一時的に取れんかった」を分ける。前者は
+      // キャッシュ画像で比較が成立してしまうので、結果へ出さんとあかん。
+      if (message.includes(FIGMA_NODE_NOT_FOUND_MARKER)) {
+        missingNodeId = resolvedNodeId;
+      }
     }
 
     // ダウンサンプリングによる補間ボケとそれによる差分誤検知を防ぐため。
@@ -858,7 +907,7 @@ async function resolveDesignAssets(
       );
     }
 
-    return { designBase64: frameImage.base64, figmaRootNode, resolvedNodeId };
+    return { designBase64: frameImage.base64, figmaRootNode, resolvedNodeId, missingNodeId };
   }
 
   // ローカルファイルのパス — 許可ディレクトリ内に存在するか検証する
@@ -873,12 +922,15 @@ async function resolveDesignAssets(
   }
   const designBase64 = designBuffer.toString("base64");
   const figmaRootNode = await loadLocalFixtureNode(safePath);
-  return { designBase64, figmaRootNode, resolvedNodeId: undefined };
+  return { designBase64, figmaRootNode, resolvedNodeId: undefined, missingNodeId: undefined };
 }
 
 interface ProjectRegions {
   cropRegion: CropRegion | undefined;
   cropUpdatedAt: string | undefined;
+  // crop を保存したときのスクショ寸法。今回の撮影と食い違えば古い crop と判る。
+  cropCapturedWidth: number | undefined;
+  cropCapturedHeight: number | undefined;
   ignoreRegions: IgnoreRegion[];
 }
 
@@ -889,16 +941,22 @@ async function resolveProjectRegions(
 ): Promise<ProjectRegions> {
   let cropRegion: CropRegion | undefined;
   let cropUpdatedAt: string | undefined;
+  let cropCapturedWidth: number | undefined;
+  let cropCapturedHeight: number | undefined;
   let persistedIgnoreRegions: IgnoreRegion[] = [];
   if (projectId) {
     const region = await getCropRegionForComparison(projectId, frameName);
     cropRegion = region?.region;
     cropUpdatedAt = region?.updatedAt;
+    cropCapturedWidth = region?.capturedWidth;
+    cropCapturedHeight = region?.capturedHeight;
     persistedIgnoreRegions = await getIgnoreRegionsForComparison(projectId, frameName);
   }
   return {
     cropRegion,
     cropUpdatedAt,
+    cropCapturedWidth,
+    cropCapturedHeight,
     ignoreRegions: [...persistedIgnoreRegions, ...(extraIgnoreRegions ?? [])],
   };
 }
@@ -909,25 +967,107 @@ async function resolveProjectRegions(
 // 撮影条件そのものが疑わしいため自動crop対象外とし、既存の preflight
 // (width_mismatch等) に判断を委ねる。
 const AUTO_CROP_WIDTH_TOLERANCE_PX = 2;
+// Figma のフレーム寸法は論理pt、スクショは撮影機の実ピクセル。実機やRetinaは
+// 2x/3x で撮れるので、幅を素のまま比べると論理pt と実px を突き合わせてしまい、
+// 高解像度の撮影が丸ごと自動crop の対象外になる。撮影倍率を先に割り出して
+// 同じ空間へ揃える。倍率が下の候補に乗らん場合だけ「撮影条件が疑わしい」とみなす。
+const AUTO_CROP_SUPPORTED_CAPTURE_SCALES = [1, 2, 3];
+
+// 撮影幅がフレーム幅の何倍かを返す。候補のどれにも合わなければ undefined。
+function resolveCaptureScale(screenshotWidth: number, frameWidth: number): number | undefined {
+  if (frameWidth <= 0) {
+    return undefined;
+  }
+  return AUTO_CROP_SUPPORTED_CAPTURE_SCALES.find(
+    (scale) =>
+      Math.abs(screenshotWidth - frameWidth * scale) <= AUTO_CROP_WIDTH_TOLERANCE_PX * scale,
+  );
+}
 // 超過領域が「空白/背景色」とみなせる標準偏差の上限 (0-255 スケール)。
 // これを超えるコンテンツ (文字・写真・追加セクション等) がある超過領域は
 // 実装差分の可能性が高いため crop せず、通常どおり比較対象に含める。
 const AUTO_CROP_UNIFORM_STDDEV_THRESHOLD = 8;
 
-// 超過領域が実質空白かどうかを判定する。意図しない追加セクション
-// (=本物の差分。回帰テストで実証済み: 360x600 design に対し 360x1548 の
-// 実装スクショを auto-crop すると余分なセクションごと差分が消える) を
-// 「単なる余白」と誤認して握り潰さないための安全ガード。
-async function isExcessRegionBlank(
+// 背景色を拾うときの縮小サイズ。最頻色を数えるだけなので原寸は要らん。
+// 補間で元に無い色が生まれると最頻色がズレるため nearest で縮める。
+const AUTO_CROP_BACKGROUND_SAMPLE_PX = 64;
+// 背景色とみなす色差 (チャンネルごとの絶対差の上限)。
+const AUTO_CROP_BACKGROUND_CHANNEL_TOLERANCE = 12;
+
+type Rgb = readonly [number, number, number];
+
+// 指定領域の最頻色を返す。ページ背景の代表値として使う。
+async function resolveDominantColor(
   screenshotBuffer: Buffer,
   region: { left: number; top: number; width: number; height: number },
+): Promise<Rgb | undefined> {
+  const { data, info } = await sharp(screenshotBuffer)
+    .extract(region)
+    .resize(AUTO_CROP_BACKGROUND_SAMPLE_PX, AUTO_CROP_BACKGROUND_SAMPLE_PX, {
+      fit: "fill",
+      kernel: "nearest",
+    })
+    .removeAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+  const counts = new Map<string, number>();
+  for (let offset = 0; offset < data.length; offset += info.channels) {
+    const key = `${data[offset]},${data[offset + 1]},${data[offset + 2]}`;
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  let best: string | undefined;
+  let bestCount = 0;
+  for (const [key, count] of counts) {
+    if (count > bestCount) {
+      best = key;
+      bestCount = count;
+    }
+  }
+  if (!best) {
+    return undefined;
+  }
+  const [r, g, b] = best.split(",").map(Number);
+  return [r, g, b];
+}
+
+// 超過領域が「ページ背景がそのまま伸びとるだけ」かを判定する。
+//
+// 一様であることだけを条件にすると、単色で塗られた巨大なブロックまで余白と
+// みなしてしまう。実際、360x600 の design に対し 360x1548 の実装という回帰の
+// 検体では、超過948pxが単色 (ページ背景とは別の色) で埋まっており、
+// 一様判定だけでは本物の差分ごと crop で消えてしまう。
+// そこで「一様」に加えて「design 領域の背景色と同じ色」であることを要求する。
+async function isExcessRegionBackgroundOnly(
+  screenshotBuffer: Buffer,
+  designRegion: { left: number; top: number; width: number; height: number },
+  excessRegion: { left: number; top: number; width: number; height: number },
 ): Promise<boolean> {
-  if (region.width <= 0 || region.height <= 0) {
+  if (excessRegion.width <= 0 || excessRegion.height <= 0) {
     return true;
   }
   try {
-    const stats = await sharp(screenshotBuffer).extract(region).stats();
-    return stats.channels.every((channel) => channel.stdev <= AUTO_CROP_UNIFORM_STDDEV_THRESHOLD);
+    // stats() は入力画像そのものから算出され、積んだ extract は反映されん。
+    // 一度バッファへ書き出してから測らんと、超過領域やのうて画像全体の
+    // 標準偏差を見てしまう (実ページは design 側に必ず文字や画像があるので
+    // 常に閾値超え = 自動crop が一度も発火せん)。
+    const excess = await sharp(screenshotBuffer).extract(excessRegion).toBuffer();
+    const stats = await sharp(excess).stats();
+    const uniform = stats.channels.every(
+      (channel) => channel.stdev <= AUTO_CROP_UNIFORM_STDDEV_THRESHOLD,
+    );
+    if (!uniform) {
+      return false;
+    }
+    const background = await resolveDominantColor(screenshotBuffer, designRegion);
+    if (!background) {
+      return false;
+    }
+    const [er, eg, eb] = stats.channels.map((channel) => channel.mean);
+    return (
+      Math.abs(er - background[0]) <= AUTO_CROP_BACKGROUND_CHANNEL_TOLERANCE &&
+      Math.abs(eg - background[1]) <= AUTO_CROP_BACKGROUND_CHANNEL_TOLERANCE &&
+      Math.abs(eb - background[2]) <= AUTO_CROP_BACKGROUND_CHANNEL_TOLERANCE
+    );
   } catch {
     // 抽出に失敗した場合は安全側 (crop しない) に倒す。
     return false;
@@ -944,21 +1084,35 @@ export async function resolveAutoCrop(
   if (existingCropRegion || !figmaFrameBox || !screenshotWidth || !screenshotHeight) {
     return undefined;
   }
-  const widthDiff = Math.abs(screenshotWidth - figmaFrameBox.width);
-  if (widthDiff > AUTO_CROP_WIDTH_TOLERANCE_PX) {
+  const captureScale = resolveCaptureScale(screenshotWidth, figmaFrameBox.width);
+  if (captureScale === undefined) {
     return undefined;
   }
-  if (screenshotHeight <= figmaFrameBox.height) {
+  // 以降はすべてスクショの実ピクセル空間で扱う。crop は design 画像にも同じ
+  // 矩形で当たるが、design 側は撮影幅に合わせて書き出されるので空間は揃う。
+  const frameWidthPx = figmaFrameBox.width * captureScale;
+  const frameHeightPx = figmaFrameBox.height * captureScale;
+  if (screenshotHeight <= frameHeightPx) {
     return undefined;
   }
   const excessRegion = {
     left: 0,
-    top: Math.floor(figmaFrameBox.height),
+    top: Math.floor(frameHeightPx),
     width: Math.floor(screenshotWidth),
-    height: Math.floor(screenshotHeight - figmaFrameBox.height),
+    height: Math.floor(screenshotHeight - frameHeightPx),
   };
-  const isBlank = await isExcessRegionBlank(screenshotBuffer, excessRegion);
-  if (!isBlank) {
+  const designRegion = {
+    left: 0,
+    top: 0,
+    width: Math.floor(Math.min(frameWidthPx, screenshotWidth)),
+    height: Math.floor(frameHeightPx),
+  };
+  const backgroundOnly = await isExcessRegionBackgroundOnly(
+    screenshotBuffer,
+    designRegion,
+    excessRegion,
+  );
+  if (!backgroundOnly) {
     return undefined;
   }
   // 撮影幅は Figma フレーム幅と最大 2px までズレても受け入れる。フレーム幅を
@@ -967,8 +1121,8 @@ export async function resolveAutoCrop(
   return {
     x: 0,
     y: 0,
-    width: Math.min(figmaFrameBox.width, screenshotWidth),
-    height: Math.min(figmaFrameBox.height, screenshotHeight),
+    width: Math.min(frameWidthPx, screenshotWidth),
+    height: Math.min(frameHeightPx, screenshotHeight),
   };
 }
 
@@ -1014,7 +1168,7 @@ function resolvePreflightDimensions(
 
 function buildSystemIgnoreRegionsForComparison(
   args: CompareDesignRunArgs,
-  screenshotMeta: sharp.Metadata,
+  screenshotMeta: Metadata,
   cropRegion: CropRegion | undefined,
 ): IgnoreRegion[] {
   const maskSystemUi = args.mask_system_ui ?? args.capture_device !== undefined;
@@ -1064,6 +1218,64 @@ async function evaluateLoopGuardSafely(
   }
 }
 
+/**
+ * 撮影条件が同じかどうかの見方は、撮り方で変わる。
+ *
+ * URLを開いてページ全体を撮る場合、高さは中身の量で決まる。実装で1行足しただけ
+ * でも変わるので、高さを条件に入れると「実装を直したから比べられない」という
+ * 逆立ちが起きる。この場合は幅だけで見る。
+ *
+ * 画像を渡す場合や端末から撮る場合は、高さも撮る側が決めた値。違う高さを同じ
+ * 条件として扱うと、別の大きさの絵で出した数値を並べて比べることになる。
+ */
+function isSameCaptureCondition(
+  entry: RecentComparison,
+  captureWidth: number,
+  captureHeight: number | undefined,
+  heightIsContentDriven: boolean,
+): boolean {
+  if (entry.captureWidth !== captureWidth) {
+    return false;
+  }
+  if (heightIsContentDriven) {
+    return true;
+  }
+  return entry.captureHeight === captureHeight;
+}
+
+function buildCaptureAwareCritique(
+  report: DiffReport | undefined,
+  priorComparisons: RecentComparison[],
+  captureWidth: number | undefined,
+  captureHeight: number | undefined,
+  heightIsContentDriven: boolean,
+): CritiqueNote | undefined {
+  if (!report || priorComparisons.length === 0 || typeof captureWidth !== "number") {
+    return undefined;
+  }
+
+  const comparableReports = priorComparisons
+    .filter((entry) =>
+      isSameCaptureCondition(entry, captureWidth, captureHeight, heightIsContentDriven),
+    )
+    .map((entry) => entry.report);
+  if (comparableReports.length > 0) {
+    return selfCritique(report, comparableReports);
+  }
+
+  for (let index = priorComparisons.length - 1; index >= 0; index--) {
+    const prior = priorComparisons[index];
+    if (typeof prior.captureWidth === "number") {
+      return {
+        concern: "capture-changed",
+        advice: `撮影条件（撮影幅 ${prior.captureWidth}px → ${captureWidth}px）が変わったため、前回との悪化判定は行っていません。`,
+      };
+    }
+  }
+
+  return undefined;
+}
+
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: 既存コードの複雑度であり本PRの変更対象外。別途リファクタで対応予定。
 export async function runCompareDesign(
   args: CompareDesignRunArgs,
@@ -1086,7 +1298,7 @@ export async function runCompareDesign(
   );
   const screenshotBuffer = await fs.readFile(screenshotPath);
   const screenshotBase64 = screenshotBuffer.toString("base64");
-  let screenshotMeta: sharp.Metadata;
+  let screenshotMeta: Metadata;
   try {
     screenshotMeta = await sharp(screenshotBuffer, {
       limitInputPixels: MAX_DECODE_PIXELS,
@@ -1108,7 +1320,7 @@ export async function runCompareDesign(
   }
   const targetWidth = screenshotMeta.width;
 
-  const { designBase64, figmaRootNode, resolvedNodeId } = await resolveDesignAssets(
+  const { designBase64, figmaRootNode, resolvedNodeId, missingNodeId } = await resolveDesignAssets(
     parsedDesignSource,
     args.frame_name,
     targetWidth,
@@ -1119,6 +1331,8 @@ export async function runCompareDesign(
   const {
     cropRegion: manualCropRegion,
     cropUpdatedAt,
+    cropCapturedWidth,
+    cropCapturedHeight,
     ignoreRegions: projectIgnoreRegions,
   } = await resolveProjectRegions(
     args.project_id,
@@ -1154,6 +1368,7 @@ export async function runCompareDesign(
       cropRegion,
       figmaNodeId: resolvedNodeId,
       ignoreRegions,
+      designBackground: args.design_background,
     },
     figmaRootNode,
     `cmp-${randomUUID()}`,
@@ -1192,6 +1407,10 @@ export async function runCompareDesign(
         : "screenshot",
     cropRegion,
     cropUpdatedAt,
+    // 自動 crop は今回の画像から求めた矩形なので、古さの判定対象にせん。
+    // 保存済みの手動 crop のときだけ、保存時の撮影寸法を渡す。
+    cropCapturedWidth: manualCropRegion ? cropCapturedWidth : undefined,
+    cropCapturedHeight: manualCropRegion ? cropCapturedHeight : undefined,
     figmaChildCount: figmaRootNode?.children?.length,
     figmaNodeType: figmaRootNode?.type,
   });
@@ -1200,7 +1419,9 @@ export async function runCompareDesign(
   const comparisonHeadline = buildComparisonHeadline(regionScores, comparison.matchRate);
   const diagnosis = diagnoseComparison({
     matchRate: comparison.matchRate,
-    regionScores,
+    // 比較対象そのものの行は子と範囲が重なる。平均に入れると同じ画素を二重に
+    // 数えて、しきい値をまたぐかどうかが変わる。
+    regionScores: selectScoringRegions(regionScores),
     preflightWarnings: preflight.warnings,
     normalization: comparison.normalization,
   });
@@ -1227,20 +1448,47 @@ export async function runCompareDesign(
     finalPreflightWarnings = [infoWarning, ...finalPreflightWarnings];
   }
 
+  // ノードが今の Figma に無いのに比較が通るのは、過去に取った画像が
+  // キャッシュに残っとるため。黙って通すと、消えた設計へ向かって
+  // 実装を直し続けることになる。先頭に出して合否も止める。
+  if (missingNodeId) {
+    const missingWarning: PreflightWarning = {
+      code: "design_node_missing",
+      severity: "critical",
+      message: `指定したノード ${missingNodeId} は現在の Figma に見つかりません。過去に取得した画像と比較しています。`,
+      suggestedFix:
+        "list_figma_frames で現在のノードを確認し、作り直されたフレームの id へ差し替えてください。",
+    };
+    finalPreflightWarnings = [missingWarning, ...finalPreflightWarnings];
+  }
+
   const finalPreflight = { warnings: finalPreflightWarnings };
 
-  const regionCount = comparison.diffRegions.length;
+  // 分割できなかった回は領域が空になるが、差分が無いわけではない。
+  // 0 のまま流すと「残課題ゼロ」と読める行が出るので、1件として数える。
+  const regionCount = comparison.clusterCollapse ? 1 : comparison.diffRegions.length;
   const targetNodeIds = buildTargetNodeIds(comparison.diffReport, comparison.diffRegions);
   const structuralReviewResult = resolveStructuralVerdict(
     comparison.diffReport,
     comparison.diffPixelCount,
   );
-  const sourceKey = buildComparisonSourceKey(parsedDesignSource, resolvedNodeId);
-  const priorReports = getRecentReports(sourceKey);
-  const critique =
-    comparison.diffReport && priorReports.length > 0
-      ? selfCritique(comparison.diffReport, priorReports)
-      : undefined;
+  const sourceKey = buildComparisonSourceKey(
+    parsedDesignSource,
+    resolvedNodeId,
+    args.design_background,
+  );
+  const priorComparisons = getRecentComparisons(sourceKey);
+  const captureWidth = comparison.normalization?.screenshotWidth;
+  const captureHeight = comparison.normalization?.screenshotHeight;
+  // URLを開いて撮る場合だけ、高さは中身の量で決まる。
+  const heightIsContentDriven = typeof args.screenshot_url === "string";
+  const critique = buildCaptureAwareCritique(
+    comparison.diffReport,
+    priorComparisons,
+    captureWidth,
+    captureHeight,
+    heightIsContentDriven,
+  );
   const perceptibleDiffRatio = comparison.diffReport?.perceptibleDiffRatio;
   const pixelsContradictPass = isPassContradictedByPixels(
     structuralReviewResult.verdict,
@@ -1260,11 +1508,16 @@ export async function runCompareDesign(
       ? buildTokenDiffSummary(tokenDiff, tokenDiffBlocking)
       : undefined;
 
+  // 設計がフルページ、撮影がそれより短い時は、画素差から実装の良し悪しを
+  // 決められん。crop 済みなら比較範囲は揃っとるので対象外。
+  const aspectMismatchInconclusive = isFullPageAgainstShorterCapture(comparison.normalization);
+
   const status = buildStatus(
     structuralReviewResult.verdict,
     diagnosis.likelyMisconfig,
     perceptibleDiffRatio,
     tokenDiffBlocking.length,
+    aspectMismatchInconclusive || missingNodeId !== undefined,
   );
   // 経路を必ず出す。無言で画素経路へ落ちていることに呼び出し側が気づけないと、
   // 「色は見てもらえている」と誤解したまま作業が進む。
@@ -1279,11 +1532,19 @@ export async function runCompareDesign(
       : tokenDiffSummary !== undefined
         ? `${tokenDiffSummary} 値が分かっているので、該当箇所の指定を設計側の値へ直してください。`
         : (buildDiagnosisNextAction(diagnosis) ??
-          buildNextAction(structuralReviewResult.verdict, regionCount, targetNodeIds));
+          buildNextAction(
+            structuralReviewResult.verdict,
+            regionCount,
+            targetNodeIds,
+            comparison.clusterCollapse,
+          ));
   const loopGuard = await evaluateLoopGuardSafely({
     sourceKey,
     comparisonId: comparison.comparisonId,
     matchRate: comparison.matchRate,
+    captureWidth,
+    captureHeight,
+    heightIsContentDriven,
     diffPixelCount: comparison.diffPixelCount,
     regionCount,
     perceptibleDiffRatio,
@@ -1340,6 +1601,8 @@ export async function runCompareDesign(
     comparisonId: result.comparisonId,
     sourceKey,
     result,
+    captureWidth: result.normalization?.screenshotWidth,
+    captureHeight: result.normalization?.screenshotHeight,
   });
 
   // 成功後に使用ノードを記憶し、次回の自動補完に活かす。

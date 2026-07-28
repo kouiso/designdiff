@@ -28,7 +28,17 @@ export function generateMarkdownReport(result: CompareDesignResult): string {
   appendComplianceBenchmark(lines, result, remainingIssues);
   appendTypedDiffEvidence(lines, result.diffReport);
 
-  if (result.diffRegions.length === 0) {
+  if (result.clusterCollapse) {
+    // 領域が空でも「差分なし」ではない。分割できなかっただけで差分は残っている。
+    // ここで一致と書くと、受け取る側は完成扱いにしてしまう。
+    lines.push("## Diff Regions (could not be localized)");
+    lines.push("");
+    lines.push(result.clusterCollapse.message);
+    lines.push("");
+    for (const check of result.clusterCollapse.checks) {
+      lines.push(`- ${check}`);
+    }
+  } else if (result.diffRegions.length === 0) {
     lines.push("No differences found. Design and implementation match perfectly.");
   } else {
     lines.push(`## Diff Regions (${result.diffRegions.length})`);

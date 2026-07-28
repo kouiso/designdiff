@@ -15,6 +15,10 @@ concurrency:
 jobs:
   auto-assign:
     name: Auto Assign Author
+    # 担当者に設定できるのは人間のアカウントだけで、bot を渡すと GitHub が 403 を返す。
+    # dependabot の依存更新PRが毎回この1件だけ赤くなり、他が全部緑でも
+    # 「CIが落ちているPR」に見えてしまうため、bot が作ったPRでは走らせない。
+    if: github.event.pull_request.user.type != 'Bot'
     runs-on: ${{ vars.RUNNER_LINUX }}
     timeout-minutes: 5
     steps:

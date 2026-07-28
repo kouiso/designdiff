@@ -24,6 +24,11 @@ export interface FigmaToScreenshotTransform {
   fullScreenshotHeight: number;
   // crop 原点 (フル幅基準のスクリーンショット座標)。crop 適用時に減算する。
   cropOrigin?: { x: number; y: number };
+  // crop 後にさらに contain 合成した場合の倍率と貼り付け位置。
+  // design と screenshot の寸法が crop 後も揃わないとき、design を縮めて
+  // 最終画像の中へ置く。この段を反映しないと、その経路だけ座標がずれる。
+  contentScale?: number;
+  contentOffset?: { x: number; y: number };
 }
 
 interface FigmaToScreenshotBboxOptions {
@@ -32,6 +37,9 @@ interface FigmaToScreenshotBboxOptions {
   fullHeight: number;
   // crop 原点 (フル幅基準のスクリーンショット座標)。crop 適用時に減算する。
   cropOrigin?: { x: number; y: number };
+  // contain 合成の倍率と貼り付け位置。crop の減算より後に適用する。
+  contentScale?: number;
+  contentOffset?: { x: number; y: number };
 }
 
 /**
@@ -59,12 +67,20 @@ export function figmaToScreenshotBbox(
   const cropX = options.cropOrigin?.x ?? 0;
   const cropY = options.cropOrigin?.y ?? 0;
 
-  const x = offsetX + (childBox.x - rootBox.x) * scale - cropX;
-  const y = offsetY + (childBox.y - rootBox.y) * scale - cropY;
-  const w = childBox.width * scale;
-  const h = childBox.height * scale;
+  const croppedX = offsetX + (childBox.x - rootBox.x) * scale - cropX;
+  const croppedY = offsetY + (childBox.y - rootBox.y) * scale - cropY;
 
-  return { x, y, w, h };
+  // contain 合成は crop の後に走るので、減算より後に掛ける。
+  const contentScale = options.contentScale ?? 1;
+  const contentOffsetX = options.contentOffset?.x ?? 0;
+  const contentOffsetY = options.contentOffset?.y ?? 0;
+
+  return {
+    x: croppedX * contentScale + contentOffsetX,
+    y: croppedY * contentScale + contentOffsetY,
+    w: childBox.width * scale * contentScale,
+    h: childBox.height * scale * contentScale,
+  };
 }
 
 /**
@@ -101,6 +117,8 @@ export function matchDiffRegionsToNodes(
                 fullWidth: transform.fullScreenshotWidth,
                 fullHeight: transform.fullScreenshotHeight,
                 cropOrigin: transform.cropOrigin,
+                contentScale: transform.contentScale,
+                contentOffset: transform.contentOffset,
               })
             : null,
         }))
@@ -170,7 +188,15 @@ interface FlattenedNode {
   absoluteBoundingBox?: BoundingBox | null;
 }
 
+/**
+ * 非表示のノードは画面に出ない。名前を返すと、直しても画面が変わらない層を
+ * 直せという案内になる。枝ごと落とすのは、非表示の親の下は全部出ないため。
+ */
 function flattenNodeTree(node: FigmaNode, depth: number): FlattenedNode[] {
+  if (node.visible === false) {
+    return [];
+  }
+
   const result: FlattenedNode[] = [
     {
       id: node.id,

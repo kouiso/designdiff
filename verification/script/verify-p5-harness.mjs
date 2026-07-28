@@ -394,7 +394,9 @@ async function readTurnMetrics(evidenceDir) {
       turn: parseTurnNumber(fileName),
       matchRate: typeof parsed?.matchRate === "number" ? parsed.matchRate : null,
       status: parsed?.status ?? null,
-      verdict: parsed?.diffReport?.aggregateVerdict ?? null,
+      // FigDiff 自身の申告。記録には残すが、合否には使わない。
+      // 使うと、作った本人が採点する形に戻る。
+      figdiffVerdictObserved: parsed?.diffReport?.aggregateVerdict ?? null,
       issueCount: Array.isArray(parsed?.diffReport?.issues)
         ? parsed.diffReport.issues.length
         : null,
@@ -488,7 +490,7 @@ function buildClaudePrompt({ env, evidenceDir, maxTurns, port, worktreePath }) {
     `MANDATORY: Between compare_design call N and compare_design call N+1, you MUST use the Edit or Write tool on at least one .astro, .css, .tsx, or .ts file. If you skip the edit, the verification fails.`,
     `Do not stop after analysis. After the first compare_design, you must either edit one of the likely implementation files or write a trace file that explains the exact blocker.`,
     `If turn N matchRate is lower than turn N-1, revert the edit that caused the regression before you continue.`,
-    'Convergence target for this verification is verdict-driven: stop successfully once diffReport.aggregateVerdict === "pass". Keep matchRate only as a secondary reference metric.',
+    "FigDiff's own aggregateVerdict is a hint, not the finish line. Convergence is judged after the run by an independent pixel oracle you cannot influence. Keep iterating while each turn visibly reduces the difference; stop when two consecutive turns produce no improvement, or at the turn cap.",
     `Use the figdiff MCP compare_design tool at least 4 times unless you hit the convergence target earlier. Hard cap: ${maxTurns} compare_design turns.`,
     `After each compare_design call, immediately write the raw JSON response to these exact files in order: ${Array.from({ length: maxTurns }, (_, index) => path.join(evidenceDir, turnFileName(index + 1))).join(", ")}. Never skip a turn number and never delay this write until the end.`,
     `For each turn, capture a fresh screenshot of http://127.0.0.1:${port}/ to these exact files in order: ${Array.from({ length: maxTurns }, (_, index) => path.join(evidenceDir, "screenshots", `turn-${String(index + 1).padStart(2, "0")}.png`)).join(", ")}.`,
@@ -616,7 +618,7 @@ async function runClaudeVerification({
 
   const turns = await readTurnMetrics(evidenceDir);
   const finalMatchRate = turns.at(-1)?.matchRate ?? null;
-  const finalVerdict = turns.at(-1)?.verdict ?? null;
+  const finalFigdiffVerdict = turns.at(-1)?.figdiffVerdictObserved ?? null;
   const highestTurn = turns.at(-1)?.turn ?? 0;
   const observedCompareTurns =
     summary.steps.find((step) => step.step === "claude-run")?.observedCompareTurns ?? 0;
@@ -627,7 +629,7 @@ async function runClaudeVerification({
   ).filter((fileName) => !existingTurnFiles.has(fileName));
   const turnLog = turns.map((turn) => ({
     turn: turn.turn,
-    verdict: turn.verdict,
+    figdiffVerdictObserved: turn.figdiffVerdictObserved,
     matchRate: turn.matchRate,
     issueCount: turn.issueCount,
     weightedStructure: turn.weightedStructure,
@@ -640,18 +642,63 @@ async function runClaudeVerification({
     `${JSON.stringify(turnLog, null, 2)}\n`,
     "utf8",
   );
+  // 合否は独立した物差しで出す。ここで FigDiff の申告を使うと、
+  // 作った本人が採点する形に戻る。
+  const oracle = await evaluateWithIndependentOracle(evidenceDir);
+
   summary.steps.push({
     step: "evaluate-convergence",
-    targetVerdict: "pass",
+    judge: "independent-oracle",
     maxCompareTurns: maxTurns,
-    finalVerdict,
+    // 観測した事実として残すだけ。合否の材料にはしない。
+    finalFigdiffVerdictObserved: finalFigdiffVerdict,
     finalMatchRate,
     turnCount: turns.length,
     observedCompareTurns,
     missingTurnFiles,
     turns: turnLog,
-    pass: finalVerdict === "pass",
+    oracle,
+    pass: oracle.pass,
   });
+}
+
+/**
+ * 収束したかどうかを、FigDiff の外側の物差しで測る。
+ *
+ * 設計画像は環境変数 FIGDIFF_P5_DESIGN_IMAGE で渡す。渡されていなければ
+ * 測れないので、合格を出さずに理由を返す。黙って合格にすると、
+ * 測っていない回が「収束した」として記録に残る。
+ */
+async function evaluateWithIndependentOracle(evidenceDir) {
+  const designPath = process.env.FIGDIFF_P5_DESIGN_IMAGE;
+  if (!designPath) {
+    return {
+      pass: false,
+      reason:
+        "設計画像が渡されていない。FIGDIFF_P5_DESIGN_IMAGE に Figma から書き出した画像のパスを指定する。",
+      turns: [],
+    };
+  }
+
+  try {
+    const { evaluateOracleRun, runOracleForTurn } = await import("./p5-oracle-gate.mjs");
+    const screenshotsDir = path.join(evidenceDir, "screenshots");
+    const names = (await fs.readdir(screenshotsDir))
+      .filter((name) => /^turn-\d+\.png$/.test(name))
+      .sort();
+    const oracleTurns = names.map((name) =>
+      runOracleForTurn({ designPath, screenshotPath: path.join(screenshotsDir, name) }),
+    );
+    const verdict = evaluateOracleRun({ turns: oracleTurns });
+    await fs.writeFile(
+      path.join(evidenceDir, "oracle-metrics.json"),
+      `${JSON.stringify({ designPath, turns: oracleTurns, ...verdict }, null, 2)}\n`,
+      "utf8",
+    );
+    return { ...verdict, turns: oracleTurns };
+  } catch (error) {
+    return { pass: false, reason: `独立した物差しの実行に失敗: ${String(error)}`, turns: [] };
+  }
 }
 
 async function main() {

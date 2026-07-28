@@ -16,6 +16,7 @@ import { writeActiveSession } from "../service/active-session.js";
 import { runCompareDesign } from "../service/compare-design-runner.js";
 import { MAX_LOOP_ITERATIONS } from "../service/loop-guard-service.js";
 import { persistDetailJson } from "../service/persist-detail.js";
+import { assertNoUnknownToolArguments } from "../util/raw-tool-arguments.js";
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
@@ -240,9 +241,11 @@ function buildMaskCandidateLines(result: CompareDesignResult): string[] {
   const report = result.diffReport;
   if (!report || report.aggregateVerdict === "pass") return [];
 
-  const candidates = report.regionScores.filter(
-    (r) => (r.textureScore ?? 0) > 0.5 || (r.structure >= 0.9 && r.color < 0.7),
-  );
+  const candidates = report.regionScores
+    // 比較対象そのものの行は画面全体を覆う。写真の多い画面で候補に入ると、
+    // 「画面全部を無視しろ」という案内になり、あらゆる崩れが隠れる。
+    .filter((r) => r.scope !== "root")
+    .filter((r) => (r.textureScore ?? 0) > 0.5 || (r.structure >= 0.9 && r.color < 0.7));
 
   if (candidates.length === 0) return [];
 
@@ -263,100 +266,109 @@ function buildMaskCandidateLines(result: CompareDesignResult): string[] {
 }
 
 export function registerCompareDesign(server: McpServer): void {
+  const inputSchema = {
+    design_source: z
+      .string()
+      .describe(
+        "FigmaのURL（node-id付き推奨）またはデザイン画像のローカルパス。ローカル画像はカレントディレクトリまたは ~/.figdiff/cache 配下、または FIGDIFF_ALLOWED_DIRS で追加した許可ディレクトリ配下に置く。",
+      ),
+    screenshot: z
+      .string()
+      .optional()
+      .describe(
+        "実装スクリーンショットのローカルパス（screenshot_url / capture_device 使用時は省略可）",
+      ),
+    screenshot_url: z
+      .string()
+      .url()
+      .optional()
+      .describe(
+        "撮影対象のURL。指定時はPlaywrightで内部撮影し、screenshotの代わりに使用する。screenshot / screenshot_url / capture_device のいずれか一つを指定。別ネットワーク環境（WSL/サンドボックス）でlocalhost到達が失敗する場合は環境変数FIGDIFF_CDP_ENDPOINTにホストChromeのCDPアドレスを設定してください。",
+      ),
+    capture_device: z
+      .enum(["android", "ios-sim", "ios-device"])
+      .optional()
+      .describe(
+        "接続済みモバイル端末/SimulatorからPNGを撮影し、screenshotの代わりに使用する。android=adb、ios-sim=xcrun simctl、ios-device=pymobiledevice3。",
+      ),
+    capture_width: z
+      .number()
+      .int()
+      .positive()
+      .optional()
+      .describe(
+        "撮影幅(px)。省略時はFigmaフレームの実幅を自動取得。screenshot_url指定時のみ有効。",
+      ),
+    mask_system_ui: z
+      .boolean()
+      .optional()
+      .describe(
+        "モバイル実機/Simulator撮影のOSステータスバー/ナビゲーションバーを自動ignore_regions化する。capture_device指定時は既定true、それ以外は既定false。",
+      ),
+    auto_mask_dynamic: z
+      .boolean()
+      .optional()
+      .describe(
+        "screenshot_url経路で同じページを2回撮り、撮るたびに変わる領域(時計/カウンタ/カルーセル/ランダム広告)を自動でignore_regions化する。既定true。falseにすると2回目の撮影を行わない。",
+      ),
+    token_diff: z
+      .boolean()
+      .optional()
+      .describe(
+        "screenshot_url + Figma URL の組み合わせで、色・フォントを画素ではなく値そのもので突き合わせる。既定true。対応付けできない割合が高い場合は自動で画素経路へ戻る。判定に使った経路は verdictRoute に出る。",
+      ),
+    frame_name: z
+      .string()
+      .optional()
+      .describe("Figma URLにnode-idが含まれない場合のフレーム名（省略可）"),
+    threshold: z
+      .number()
+      .min(0)
+      .max(1)
+      .optional()
+      .describe(
+        "色差の許容閾値（0-1）。直接指定時は profile より優先される。省略時は profile の値か 0.1。",
+      ),
+    design_background: z
+      .string()
+      .regex(/^#?([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/, "design_background must be a hex color")
+      .optional()
+      .describe(
+        "背景の塗りが無いFigmaノードを、どの色の上に置いて評価するか（#RRGGBB、既定は白）。実装側の画面が白地でない場合に指定する。",
+      ),
+    profile: z
+      .enum(["strict", "balanced", "layout"])
+      .optional()
+      .describe(
+        "比較プロファイル。strict=完全一致(threshold 0)、balanced=通常(threshold 0.1、省略時のデフォルト)、layout=構造のみ(threshold 0.4)。threshold を直接指定した場合はそちらが優先される。",
+      ),
+    project_id: z
+      .string()
+      .regex(/^[a-zA-Z0-9_-]+$/, "Project ID must be alphanumeric with hyphens/underscores only")
+      .optional()
+      .describe(
+        "Crop Region・保存済み ignore_regions・前回使用ノードの自動補完に使うプロジェクトID（省略可）",
+      ),
+    ignore_regions: z
+      .array(IgnoreRegionSchema)
+      .optional()
+      .describe(
+        "意図的差分マスク。project_id指定時は保存済みマスクと結合される。各矩形{x,y,width,height,label?}内のピクセルは差分検出/matchRate分母から除外。座標系はcrop適用後のscreenshotピクセル座標。",
+      ),
+  };
+
   server.registerTool(
     "compare_design",
     {
       description: DESCRIPTION,
-      inputSchema: {
-        design_source: z
-          .string()
-          .describe(
-            "FigmaのURL（node-id付き推奨）またはデザイン画像のローカルパス。ローカル画像はカレントディレクトリまたは ~/.figdiff/cache 配下、または FIGDIFF_ALLOWED_DIRS で追加した許可ディレクトリ配下に置く。",
-          ),
-        screenshot: z
-          .string()
-          .optional()
-          .describe(
-            "実装スクリーンショットのローカルパス（screenshot_url / capture_device 使用時は省略可）",
-          ),
-        screenshot_url: z
-          .string()
-          .url()
-          .optional()
-          .describe(
-            "撮影対象のURL。指定時はPlaywrightで内部撮影し、screenshotの代わりに使用する。screenshot / screenshot_url / capture_device のいずれか一つを指定。別ネットワーク環境（WSL/サンドボックス）でlocalhost到達が失敗する場合は環境変数FIGDIFF_CDP_ENDPOINTにホストChromeのCDPアドレスを設定してください。",
-          ),
-        capture_device: z
-          .enum(["android", "ios-sim", "ios-device"])
-          .optional()
-          .describe(
-            "接続済みモバイル端末/SimulatorからPNGを撮影し、screenshotの代わりに使用する。android=adb、ios-sim=xcrun simctl、ios-device=pymobiledevice3。",
-          ),
-        capture_width: z
-          .number()
-          .int()
-          .positive()
-          .optional()
-          .describe(
-            "撮影幅(px)。省略時はFigmaフレームの実幅を自動取得。screenshot_url指定時のみ有効。",
-          ),
-        mask_system_ui: z
-          .boolean()
-          .optional()
-          .describe(
-            "モバイル実機/Simulator撮影のOSステータスバー/ナビゲーションバーを自動ignore_regions化する。capture_device指定時は既定true、それ以外は既定false。",
-          ),
-        auto_mask_dynamic: z
-          .boolean()
-          .optional()
-          .describe(
-            "screenshot_url経路で同じページを2回撮り、撮るたびに変わる領域(時計/カウンタ/カルーセル/ランダム広告)を自動でignore_regions化する。既定true。falseにすると2回目の撮影を行わない。",
-          ),
-        token_diff: z
-          .boolean()
-          .optional()
-          .describe(
-            "screenshot_url + Figma URL の組み合わせで、色・フォントを画素ではなく値そのもので突き合わせる。既定true。対応付けできない割合が高い場合は自動で画素経路へ戻る。判定に使った経路は verdictRoute に出る。",
-          ),
-        frame_name: z
-          .string()
-          .optional()
-          .describe("Figma URLにnode-idが含まれない場合のフレーム名（省略可）"),
-        threshold: z
-          .number()
-          .min(0)
-          .max(1)
-          .optional()
-          .describe(
-            "色差の許容閾値（0-1）。直接指定時は profile より優先される。省略時は profile の値か 0.1。",
-          ),
-        profile: z
-          .enum(["strict", "balanced", "layout"])
-          .optional()
-          .describe(
-            "比較プロファイル。strict=完全一致(threshold 0)、balanced=通常(threshold 0.1、省略時のデフォルト)、layout=構造のみ(threshold 0.4)。threshold を直接指定した場合はそちらが優先される。",
-          ),
-        project_id: z
-          .string()
-          .regex(
-            /^[a-zA-Z0-9_-]+$/,
-            "Project ID must be alphanumeric with hyphens/underscores only",
-          )
-          .optional()
-          .describe(
-            "Crop Region・保存済み ignore_regions・前回使用ノードの自動補完に使うプロジェクトID（省略可）",
-          ),
-        ignore_regions: z
-          .array(IgnoreRegionSchema)
-          .optional()
-          .describe(
-            "意図的差分マスク。project_id指定時は保存済みマスクと結合される。各矩形{x,y,width,height,label?}内のピクセルは差分検出/matchRate分母から除外。座標系はcrop適用後のscreenshotピクセル座標。",
-          ),
-      },
+      inputSchema,
       outputSchema: CompareDesignResultSchema,
     },
-    async (args) => {
+    async (args, extra) => {
       try {
+        // strict schema では SDK の汎用エラーに変わるだけで誤記を案内できないため、
+        // parse 前に transport が保存した引数名を shape と照合する。
+        assertNoUnknownToolArguments("compare_design", Object.keys(inputSchema), extra);
         const comparison = await runCompareDesign(args);
         const result = comparison.result;
 

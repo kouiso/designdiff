@@ -18,6 +18,14 @@ export interface ComparisonHistoryEntry {
   comparisonId: string;
   sourceKey: string;
   result: CompareDesignResult;
+  captureWidth?: number;
+  captureHeight?: number;
+}
+
+export interface RecentComparison {
+  report: DiffReport;
+  captureWidth?: number;
+  captureHeight?: number;
 }
 
 const historyBySourceKey = new Map<string, ComparisonHistoryEntry[]>();
@@ -36,12 +44,16 @@ function hasDiffReport(entry: ComparisonHistoryEntry): entry is ComparisonHistor
 export function buildComparisonSourceKey(
   parsedDesign: ParsedDesignInput,
   resolvedNodeId?: string,
+  // 下地の色を変えると、同じ画面でも構造と色の数値が別物になる。
+  // 履歴を分けないと、下地を変えただけの回が「実装が悪化した」として並ぶ。
+  designBackground?: string,
 ): string {
+  const backgroundSuffix = designBackground ? `@${designBackground.toLowerCase()}` : "";
   if (parsedDesign.type === "figma_url") {
-    return `figma:${parsedDesign.fileKey}:${resolvedNodeId ?? parsedDesign.nodeId ?? "root"}`;
+    return `figma:${parsedDesign.fileKey}:${resolvedNodeId ?? parsedDesign.nodeId ?? "root"}${backgroundSuffix}`;
   }
 
-  return `local:${path.resolve(parsedDesign.filePath)}`;
+  return `local:${path.resolve(parsedDesign.filePath)}${backgroundSuffix}`;
 }
 
 export async function recordComparison(entry: ComparisonHistoryEntry): Promise<void> {
@@ -73,6 +85,8 @@ export async function recordComparison(entry: ComparisonHistoryEntry): Promise<v
     const diskEntry = {
       comparisonId: entry.comparisonId,
       sourceKey: entry.sourceKey,
+      captureWidth: entry.captureWidth,
+      captureHeight: entry.captureHeight,
       result: { ...entry.result, diffImageBase64: undefined },
     };
     await fs.writeFile(
@@ -101,11 +115,15 @@ export async function getComparisonEntry(
     if (!isRecord(parsed)) return undefined;
     const storedId = parsed.comparisonId;
     const sourceKey = parsed.sourceKey;
+    const captureWidth = parsed.captureWidth;
+    const captureHeight = parsed.captureHeight;
     const rawResult = parsed.result;
     const result = CompareDesignResultSchema.parse(rawResult);
     return {
       comparisonId: typeof storedId === "string" ? storedId : comparisonId,
       sourceKey: typeof sourceKey === "string" ? sourceKey : "unknown",
+      captureWidth: typeof captureWidth === "number" ? captureWidth : undefined,
+      captureHeight: typeof captureHeight === "number" ? captureHeight : undefined,
       result,
     };
   } catch {
@@ -113,9 +131,17 @@ export async function getComparisonEntry(
   }
 }
 
-export function getRecentReports(sourceKey: string): DiffReport[] {
+export function getRecentComparisons(sourceKey: string): RecentComparison[] {
   const entries = historyBySourceKey.get(sourceKey) ?? [];
-  return entries.filter(hasDiffReport).map((entry) => entry.result.diffReport);
+  return entries.filter(hasDiffReport).map((entry) => ({
+    report: entry.result.diffReport,
+    captureWidth: entry.captureWidth,
+    captureHeight: entry.captureHeight,
+  }));
+}
+
+export function getRecentReports(sourceKey: string): DiffReport[] {
+  return getRecentComparisons(sourceKey).map((entry) => entry.report);
 }
 
 export function clearComparisonHistory(): void {

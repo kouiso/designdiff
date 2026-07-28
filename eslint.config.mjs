@@ -15,6 +15,9 @@ export default [
     ignores: [
       "**/node_modules/",
       "**/dist/",
+      // カバレッジのHTMLレポートに含まれる生成JS。gitignore済みだが、
+      // 同じ作業ツリーで coverage を回すと lint が拾って落ちる。
+      "**/coverage/",
       "**/target/",
       "**/.turbo/",
       "**/*.d.ts",

@@ -1,11 +1,11 @@
 import { ipcMain } from "electron";
 
 import { FigmaApiError, FigmaClient, extractFrames, extractPageFrames } from "@figdiff/shared";
+import { transformNode } from "@figdiff/shared";
 
 import { refreshFigmaToken, resolveAccessToken } from "../oauth/figma-oauth";
 import { NodeFsCacheStrategy } from "../util/cache";
 import { deleteOAuthTokens, getOAuthTokens } from "../util/safe-storage";
-import { transformNode } from "../util/transform-node";
 
 const FIGMA_IPC_FALLBACK = "Failed to complete Figma request.";
 const PAT_LEAK_PATTERN = /figd_/;

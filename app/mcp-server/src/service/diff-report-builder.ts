@@ -4,6 +4,9 @@ import {
   computeMeanDeltaE2000,
   computePerceptibleDiffRatio,
   computeSsimForRegion,
+  resolveAlignment,
+  UNIMPLEMENTED_LAYOUT_SCORE,
+  selectScoringRegions,
   computeVerdict,
   detectHighTextureRegion,
   type CropRegion,
@@ -58,154 +61,6 @@ const MIN_REGION_PIXEL_AREA = 64;
 const GEOMETRIC_SHAPE_EPSILON = 0.005;
 
 // ─── Translation detection ────────────────────────────────────────────────────
-
-const COARSE_RANGE = 50;
-const COARSE_STEP = 5;
-const FINE_RANGE = 5;
-const COARSE_SAMPLE_STEP = 4;
-const DIFF_THRESHOLD_SQ = 625; // per-channel RGB distance threshold (25^2)
-
-/**
- * Count differing pixels between design (offset by dx,dy) and screenshot,
- * sampling every sampleStep pixels. No array allocation — direct index math.
- *
- * alwaysPenalizeOob: when true, every OOB pixel counts as a diff (used in the
- * improvement-check gate to prevent transparent-vs-black false matches).
- * When false (default for detection), OOB only penalizes visible screen content.
- */
-const countSsdOffset = (
-  design: Uint8ClampedArray,
-  screenshot: Uint8ClampedArray,
-  width: number,
-  height: number,
-  dx: number,
-  dy: number,
-  sampleStep: number,
-  alwaysPenalizeOob = false,
-): number => {
-  let diff = 0;
-  for (let y = 0; y < height; y += sampleStep) {
-    for (let x = 0; x < width; x += sampleStep) {
-      const bIdx = (y * width + x) * 4;
-      const srcX = x - dx;
-      const srcY = y - dy;
-      if (srcX < 0 || srcX >= width || srcY < 0 || srcY >= height) {
-        if (alwaysPenalizeOob) {
-          diff++;
-        } else {
-          // Out-of-bounds design pixels are effectively transparent (0,0,0,0).
-          // Count as diff when the screenshot has visible content.
-          const r = screenshot[bIdx];
-          const g = screenshot[bIdx + 1];
-          const b = screenshot[bIdx + 2];
-          if (r * r + g * g + b * b > DIFF_THRESHOLD_SQ) diff++;
-        }
-        continue;
-      }
-      const aIdx = (srcY * width + srcX) * 4;
-      const dr = design[aIdx] - screenshot[bIdx];
-      const dg = design[aIdx + 1] - screenshot[bIdx + 1];
-      const db = design[aIdx + 2] - screenshot[bIdx + 2];
-      if (dr * dr + dg * dg + db * db > DIFF_THRESHOLD_SQ) diff++;
-    }
-  }
-  return diff;
-};
-
-/**
- * Detect translation offset between design and screenshot pixels.
- * Coarse search (±50px, step 5px, sampled) then fine (±5px, full resolution).
- * Returns { dx, dy } such that shifting design by (dx,dy) minimises pixel diff.
- */
-const detectTranslation = (
-  design: Uint8ClampedArray,
-  screenshot: Uint8ClampedArray,
-  width: number,
-  height: number,
-): { dx: number; dy: number; confidence: number; residual: number } => {
-  if (width * height < 64) {
-    return { dx: 0, dy: 0, confidence: 1, residual: 0 };
-  }
-
-  let bestDx = 0;
-  let bestDy = 0;
-  let bestDiff = Infinity;
-
-  for (let dy = -COARSE_RANGE; dy <= COARSE_RANGE; dy += COARSE_STEP) {
-    for (let dx = -COARSE_RANGE; dx <= COARSE_RANGE; dx += COARSE_STEP) {
-      const d = countSsdOffset(design, screenshot, width, height, dx, dy, COARSE_SAMPLE_STEP);
-      if (d < bestDiff) {
-        bestDiff = d;
-        bestDx = dx;
-        bestDy = dy;
-      }
-    }
-  }
-
-  // bestDiff from the coarse pass is a sampled count (every COARSE_SAMPLE_STEP
-  // pixels), not comparable to the fine pass's full-resolution count — reset
-  // before the fine pass so it doesn't spuriously "win" against every full-res
-  // candidate purely because it summed far fewer samples.
-  const coarseDx = bestDx;
-  const coarseDy = bestDy;
-  bestDiff = Infinity;
-  // The fine pass runs FINE_RANGE*2+1 squared candidates; a step of 1 on a
-  // large screenshot (e.g. a 1080x2340 real-device capture) means over 100
-  // full-resolution scans. Sample on a stride for large images — the fine
-  // pass only needs to discriminate between candidates 10px apart, so a
-  // coarser sample than 1px is still discriminating at that scale.
-  const fineSampleStep = width * height > 1_000_000 ? 2 : 1;
-  for (let dy = coarseDy - FINE_RANGE; dy <= coarseDy + FINE_RANGE; dy++) {
-    for (let dx = coarseDx - FINE_RANGE; dx <= coarseDx + FINE_RANGE; dx++) {
-      const d = countSsdOffset(design, screenshot, width, height, dx, dy, fineSampleStep);
-      if (d < bestDiff) {
-        bestDiff = d;
-        bestDx = dx;
-        bestDy = dy;
-      }
-    }
-  }
-
-  // bestDiff is a count over the fineSampleStep grid, not every pixel — normalize
-  // by the actual number of sampled positions (matches countSsdOffset's
-  // `for (i = 0; i < n; i += step)` iteration count), not the raw pixel count,
-  // or a strided scan underreports residual by roughly step^2.
-  const sampledPositionCount =
-    Math.ceil(width / fineSampleStep) * Math.ceil(height / fineSampleStep);
-  const residual = sampledPositionCount === 0 ? 0 : bestDiff / sampledPositionCount;
-  const offsetMagnitude = Math.sqrt(bestDx * bestDx + bestDy * bestDy);
-  const confidence = Math.max(0, 1 - offsetMagnitude / (COARSE_RANGE * Math.SQRT2));
-
-  return { dx: bestDx, dy: bestDy, confidence, residual };
-};
-
-/**
- * Shift design pixels by (dx, dy) to apply alignment correction.
- * Pixels shifted outside bounds become transparent.
- */
-const shiftPixels = (
-  src: Uint8ClampedArray,
-  width: number,
-  height: number,
-  dx: number,
-  dy: number,
-): Uint8ClampedArray => {
-  const dst = new Uint8ClampedArray(width * height * 4);
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      const srcX = x - dx;
-      const srcY = y - dy;
-      if (srcX < 0 || srcX >= width || srcY < 0 || srcY >= height) continue;
-      const srcIdx = (srcY * width + srcX) * 4;
-      const dstIdx = (y * width + x) * 4;
-      dst[dstIdx] = src[srcIdx];
-      dst[dstIdx + 1] = src[srcIdx + 1];
-      dst[dstIdx + 2] = src[srcIdx + 2];
-      dst[dstIdx + 3] = src[srcIdx + 3];
-    }
-  }
-  return dst;
-};
 
 const buildColorDifference = (
   designPixels: Uint8ClampedArray,
@@ -460,7 +315,10 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
   };
 
   if (figmaRootNode) {
-    const allSectionAnchors = figmaRootNode.children
+    const scoreableChildren = figmaRootNode.children
+      // 非表示のバリアントは画面に出ないので、評価対象にすると
+      // 実装が正しくても差分として残り続ける。
+      .filter((child: FigmaNode) => child.visible !== false)
       .map((child: FigmaNode) => {
         const bbox = toScreenshotBbox(child, figmaRootNode, width, height, fullFrame, cropRegion);
         if (!bbox || bbox.w === 0 || bbox.h === 0) {
@@ -470,14 +328,17 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
         return { child, bbox };
       })
       .filter((section): section is { child: FigmaNode; bbox: DiffBoundingBox } => section !== null)
-      .filter((section) => section.bbox.w * section.bbox.h >= MIN_REGION_PIXEL_AREA)
-      .sort((a, b) => {
-        if (a.bbox.y !== b.bbox.y) {
-          return a.bbox.y - b.bbox.y;
-        }
+      .filter((section) => section.bbox.w * section.bbox.h >= MIN_REGION_PIXEL_AREA);
 
-        return b.bbox.w * b.bbox.h - a.bbox.w * a.bbox.h;
-      });
+    // 同じ位置・同じ大きさの子が複数あると、同じ範囲の領域が重複して並ぶ。
+    // 受け取る側には、直す場所がその数だけあるように見える。1件へまとめる。
+    const allSectionAnchors = mergeEqualBoxSiblings(scoreableChildren).sort((a, b) => {
+      if (a.bbox.y !== b.bbox.y) {
+        return a.bbox.y - b.bbox.y;
+      }
+
+      return b.bbox.w * b.bbox.h - a.bbox.w * a.bbox.h;
+    });
 
     const sectionAnchors = selectAnchorsForScoring(allSectionAnchors);
 
@@ -501,6 +362,7 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
         regionId: section.child.id,
         bbox,
         figmaNodeId: section.child.id,
+        overlappingNodeIds: section.overlappingNodeIds,
         structure: computeSsimForRegion(designPixels, screenshotPixels, width, height, bbox),
         color: buildColorDifference(designPixels, screenshotPixels, width, height, bbox),
         flatColorMismatch: buildFlatColorMismatch(
@@ -511,45 +373,101 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
           bbox,
         ),
         shape: computeHausdorff(designPixels, screenshotPixels, width, height, bbox),
-        layout: 0,
+        layout: UNIMPLEMENTED_LAYOUT_SCORE,
         textureScore: getTextureScore(bbox),
       });
     }
-  }
-
-  if (childRegions.length > 0) {
-    return childRegions;
   }
 
   const wholeFrameBbox = toWholeFrameRegion(width, height);
   // letterbox 余白を含めると SSIM / 色差が不当に悪化するため、content rect 内で評価する。
   const contentBbox = toContentRegion(width, height, paddingMask);
 
-  return [
-    {
-      regionId: "whole-frame",
-      bbox: wholeFrameBbox,
-      structure: computeSsimForRegion(designPixels, screenshotPixels, width, height, contentBbox),
-      color: buildColorDifference(
-        designPixels,
-        screenshotPixels,
-        width,
-        height,
-        paddingMask ? contentBbox : undefined,
-      ),
-      flatColorMismatch: buildFlatColorMismatch(
-        designPixels,
-        screenshotPixels,
-        width,
-        height,
-        contentBbox,
-      ),
-      shape: computeHausdorff(designPixels, screenshotPixels, width, height, contentBbox),
-      layout: 0,
-      textureScore: getTextureScore(wholeFrameBbox),
-      figmaNodeId: options.figmaNodeId,
-    },
-  ];
+  // 比較対象そのものの行。子の行があっても必ず1件持たせる。
+  // 単一ノードを比べたとき、子の行しか無いと「対象ノードが見つからない」で
+  // verify_fix が落ち、局所的な修正を自分で確かめられなくなる。
+  // 集計では scope: "root" を外すので、重み付けと見出しの値は変わらない。
+  //
+  // 遅延で作る。子が無い経路では下の fallback が同じ計算をやり直すため、
+  // 先に作ると画素を舐める処理が丸ごと二重になる。
+  const buildRootRegion = (): RegionScore => ({
+    regionId: "whole-frame",
+    scope: "root",
+    bbox: wholeFrameBbox,
+    structure: computeSsimForRegion(designPixels, screenshotPixels, width, height, contentBbox),
+    color: buildColorDifference(
+      designPixels,
+      screenshotPixels,
+      width,
+      height,
+      paddingMask ? contentBbox : undefined,
+    ),
+    flatColorMismatch: buildFlatColorMismatch(
+      designPixels,
+      screenshotPixels,
+      width,
+      height,
+      contentBbox,
+    ),
+    shape: computeHausdorff(designPixels, screenshotPixels, width, height, contentBbox),
+    layout: UNIMPLEMENTED_LAYOUT_SCORE,
+    textureScore: getTextureScore(wholeFrameBbox),
+    // 比較元のノードIDが解決できない検体でも、この行を名前で引けるようにする。
+    // 引けないと、対象そのものを指定した検証がその経路だけ通らない。
+    figmaNodeId: options.figmaNodeId ?? figmaRootNode?.id,
+  });
+
+  if (childRegions.length > 0) {
+    return [...childRegions, buildRootRegion()];
+  }
+
+  return [buildRootRegion()];
+}
+
+interface SectionAnchor {
+  child: FigmaNode;
+  bbox: DiffBoundingBox;
+  overlappingNodeIds?: string[];
+}
+
+const boxKey = (bbox: DiffBoundingBox): string => `${bbox.x},${bbox.y},${bbox.w},${bbox.h}`;
+
+/**
+ * 同じ矩形の兄弟を1件へまとめ、隠れた側のIDを手前の1件へ集める。
+ *
+ * 一度だけ全体を走って矩形ごとの並びを作り、そこから引き当てる。走査のたびに
+ * 配列を頭から探すと子の数の2乗に比例し、層が数千ある画面で比較が目に見えて遅くなる。
+ */
+function mergeEqualBoxSiblings(
+  sections: readonly { child: FigmaNode; bbox: DiffBoundingBox }[],
+): SectionAnchor[] {
+  const membersByBox = new Map<string, { child: FigmaNode; bbox: DiffBoundingBox }[]>();
+  for (const section of sections) {
+    const key = boxKey(section.bbox);
+    const members = membersByBox.get(key);
+    if (members) {
+      members.push(section);
+    } else {
+      membersByBox.set(key, [section]);
+    }
+  }
+
+  const merged: SectionAnchor[] = [];
+  for (const members of membersByBox.values()) {
+    // Figma は後に並ぶ子ほど手前に描くので、いちばん手前は最後の1枚。
+    // ただし半透明や部分的な塗りだと下の層も見えているので、IDは残す。
+    const front = members[members.length - 1];
+    merged.push(
+      members.length === 1
+        ? front
+        : {
+            ...front,
+            overlappingNodeIds: members.slice(0, -1).map((member) => member.child.id),
+          },
+    );
+  }
+
+  return merged;
 }
 
 function selectAnchorsForScoring<T>(anchors: readonly T[]): T[] {
@@ -567,7 +485,6 @@ function selectAnchorsForScoring<T>(anchors: readonly T[]): T[] {
   });
 }
 
-const ALIGNMENT_IMPROVEMENT_THRESHOLD = 0.85;
 // Sub-pixel/anti-aliasing tolerance for the global-shift visibility issue below.
 const GLOBAL_SHIFT_ISSUE_THRESHOLD_PX = 2;
 // A shift at or above this magnitude is implausible as mere rendering/DPR
@@ -592,59 +509,19 @@ export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
     );
   }
 
-  const { dx, dy, confidence, residual } = detectTranslation(
-    designPixels,
-    screenshotPixels,
-    width,
-    height,
-  );
-
-  // Only apply alignment correction when it meaningfully reduces pixel diff (>15% improvement).
-  // This guards against false minima in content-different images (e.g. uniform color images
-  // where any offset appears equally good without OOB penalization).
-  let alignedDesignPixels = designPixels;
-  let alignmentApplied = false;
-  if (dx !== 0 || dy !== 0) {
-    // Use alwaysPenalizeOob=true so that transparent OOB design pixels never
-    // falsely "match" a black screenshot region (both would appear as (0,0,0)).
-    const baselineDiff = countSsdOffset(
-      designPixels,
-      screenshotPixels,
-      width,
-      height,
-      0,
-      0,
-      COARSE_SAMPLE_STEP,
-      true,
-    );
-    const correctedDiff = countSsdOffset(
-      designPixels,
-      screenshotPixels,
-      width,
-      height,
-      dx,
-      dy,
-      COARSE_SAMPLE_STEP,
-      true,
-    );
-    if (baselineDiff > 0 && correctedDiff < baselineDiff * ALIGNMENT_IMPROVEMENT_THRESHOLD) {
-      alignedDesignPixels = shiftPixels(designPixels, width, height, dx, dy);
-      alignmentApplied = true;
-    }
-  }
+  const {
+    alignment,
+    alignedDesignPixels,
+    applied: alignmentApplied,
+  } = resolveAlignment(designPixels, screenshotPixels, width, height);
+  const { x: dx, y: dy } = alignment.translation;
 
   const alignedOptions = { ...options, designPixels: alignedDesignPixels };
   const regionScores = buildRegionScores(alignedOptions);
 
-  const alignment = {
-    translation: { x: dx, y: dy },
-    scale: { x: 1, y: 1 },
-    rotation: 0,
-    confidence,
-    residual,
-  };
-
-  const issues = buildIssues(regionScores, options);
+  // 比較対象そのものの行は子と範囲が重なる。合否を決める不具合をここから作ると、
+  // 子が全部合格でも背景の色差だけで不合格へ倒れる。集計と同じ行だけを使う。
+  const issues = buildIssues(selectScoringRegions(regionScores), options);
 
   // An accepted global alignment correction can hide a real regression: e.g.
   // a page that scrolled/shifted is itself often the bug under test, not a

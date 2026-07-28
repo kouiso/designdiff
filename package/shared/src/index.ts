@@ -9,6 +9,7 @@ export {
   extractPageFrames,
   isTokenError,
   type FigmaCacheStrategy,
+  FIGMA_NODE_NOT_FOUND_MARKER,
   type FigmaAuthMode,
   type FigmaColor,
   type FigmaEffect,
@@ -23,6 +24,9 @@ export {
 
 // CSS Suggestion Generator
 export { generateCssSuggestion, figmaColorToHex } from "./css-suggestion.js";
+
+// Figma Node → 検査結果への変換
+export { transformNode } from "./transform-node.js";
 
 // Node Matcher (diff region → Figma node)
 export {
@@ -45,6 +49,19 @@ export {
 export { computeSsim, computeSsimForRegion, type SsimRegion } from "./signal/ssim.js";
 export { detectHighTextureRegion } from "./signal/texture.js";
 export { computeHausdorff } from "./signal/hausdorff.js";
+export {
+  ALIGNMENT_IMPROVEMENT_THRESHOLD,
+  COARSE_RANGE,
+  COARSE_SAMPLE_STEP,
+  COARSE_STEP,
+  DIFF_THRESHOLD_SQ,
+  FINE_RANGE,
+  countSsdOffset,
+  detectTranslation,
+  resolveAlignment,
+  shiftPixels,
+  type ResolvedAlignment,
+} from "./signal/translation.js";
 export {
   compareFlatRegionColor,
   detectFlatRegionColor,
@@ -76,7 +93,11 @@ export { selfCritique } from "./self-critique.js";
 
 // Comparison Confidence Layer (pre-flight / diagnosis / headline)
 export { runPreflight, type PreflightInput } from "./confidence/preflight.js";
-export { diagnoseComparison, type DiagnosisInput } from "./confidence/diagnosis.js";
+export {
+  diagnoseComparison,
+  isFullPageAgainstShorterCapture,
+  type DiagnosisInput,
+} from "./confidence/diagnosis.js";
 export { buildComparisonHeadline } from "./confidence/headline.js";
 export {
   buildSystemBarIgnoreRegions,
@@ -112,6 +133,7 @@ export {
   ChildNodeSummarySchema,
   CritiqueConcernSchema,
   CritiqueNoteSchema,
+  ClusterCollapseSchema,
   ClusterTelemetrySchema,
   CompareDesignResultSchema,
   LoopGuardReportSchema,
@@ -171,6 +193,7 @@ export type {
   BorderRadius,
   ChildNodeSummary,
   CritiqueNote,
+  ClusterCollapse,
   ClusterTelemetry,
   CompareDesignResult,
   LoopGuardReport,
@@ -225,4 +248,4 @@ export type {
   Project,
   ProjectPage,
 } from "./type.js";
-export { computeVerdict } from "./type.js";
+export { computeVerdict, selectScoringRegions, UNIMPLEMENTED_LAYOUT_SCORE } from "./type.js";

@@ -1,7 +1,7 @@
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 
-import sharp from "sharp";
+import sharp, { type OverlayOptions } from "sharp";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 const CAPTURED_SCREENSHOT_PATH = path.join(
@@ -40,7 +40,7 @@ async function createImageWithMaskedNoise(
     },
   });
 
-  const overlays: sharp.OverlayOptions[] = [
+  const overlays: OverlayOptions[] = [
     {
       input: Buffer.from([0, 0, 0]),
       raw: { width: 1, height: 1, channels: 3 },
@@ -50,7 +50,7 @@ async function createImageWithMaskedNoise(
     },
   ];
 
-  const systemBars: sharp.OverlayOptions[] = [
+  const systemBars: OverlayOptions[] = [
     {
       input: await sharp({
         create: {
@@ -81,7 +81,7 @@ async function createImageWithMaskedNoise(
     },
   ];
 
-  const userNoise: sharp.OverlayOptions[] = includeUserNoise
+  const userNoise: OverlayOptions[] = includeUserNoise
     ? [
         {
           input: await sharp({

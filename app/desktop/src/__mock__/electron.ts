@@ -11,6 +11,14 @@ const electronAPI = {
   readLocalImage: vi.fn(),
   getPathForFile: vi.fn((file: File) => `/mock/${file.name}`),
   captureUrlScreenshot: vi.fn(),
+  // 本物の preload には project がある。ここに無いと、
+  // プロジェクトの読み書きを通るコードがテストから触れない。
+  project: {
+    list: vi.fn().mockResolvedValue([]),
+    load: vi.fn().mockResolvedValue(null),
+    save: vi.fn().mockResolvedValue(undefined),
+    delete: vi.fn().mockResolvedValue(undefined),
+  },
   oauth: {
     start: vi.fn().mockResolvedValue(undefined),
     logout: vi.fn().mockResolvedValue(undefined),

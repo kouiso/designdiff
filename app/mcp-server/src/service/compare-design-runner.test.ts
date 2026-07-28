@@ -7,7 +7,7 @@ const mocks = vi.hoisted(() => ({
   compareImages: vi.fn(),
   redactImageBase64ForPublicExport: vi.fn(async (imageBase64: string) => imageBase64),
   createFigmaService: vi.fn(),
-  getRecentReports: vi.fn(() => []),
+  getRecentComparisons: vi.fn<() => ComparisonHistoryModule.RecentComparison[]>(() => []),
   recordComparison: vi.fn(async () => undefined),
   sharp: vi.fn(),
   captureUrl: vi.fn(),
@@ -52,7 +52,7 @@ vi.mock("./comparison-history.js", async (importOriginal) => {
   const actual = await importOriginal<ComparisonHistoryModule>();
   return {
     ...actual,
-    getRecentReports: mocks.getRecentReports,
+    getRecentComparisons: mocks.getRecentComparisons,
     recordComparison: mocks.recordComparison,
   };
 });
@@ -68,6 +68,7 @@ vi.mock("./loop-guard-service.js", () => ({
 }));
 
 import { buildTargetNodeIds, resolveAutoCrop, runCompareDesign } from "./compare-design-runner.js";
+import { recordIterationAndEvaluate } from "./loop-guard-service.js";
 
 import type { CompareDesignRunArgs } from "./compare-design-runner.js";
 import type * as ComparisonHistoryModule from "./comparison-history.js";
@@ -149,6 +150,86 @@ describe("resolveAutoCrop", () => {
       screenshot,
     );
     expect(result).toEqual({ x: 0, y: 0, width: 100, height: 100 });
+  });
+
+  // 実ページは design 領域に文字や画像が必ずある。design 領域を真っ白にした
+  // 検体だけで検証していると、超過領域の切り出しが効いていなくても
+  // 「画像全体の標準偏差 ≒ 超過領域の標準偏差」になって合否が一致してしまう。
+  it("design領域に模様があっても、超過領域が空白なら自動cropする", async () => {
+    const screenshot = await makeScreenshot(100, 150, "blank", 100, "content");
+    const result = await resolveAutoCrop(
+      undefined,
+      { width: 100, height: 100 },
+      100,
+      150,
+      screenshot,
+    );
+    expect(result).toEqual({ x: 0, y: 0, width: 100, height: 100 });
+  });
+
+  it("design領域に模様があり、超過領域にもコンテンツがあるなら自動cropしない", async () => {
+    const screenshot = await makeScreenshot(100, 150, "noise", 100, "content");
+    const result = await resolveAutoCrop(
+      undefined,
+      { width: 100, height: 100 },
+      100,
+      150,
+      screenshot,
+    );
+    expect(result).toBeUndefined();
+  });
+
+  // 単色で塗られた巨大なブロックは余白ではなく実装の不具合。一様かどうかだけで
+  // 判定すると、これを余白とみなして差分ごと消してしまう。
+  it("超過領域が単色でも、ページ背景と違う色なら自動cropしない", async () => {
+    const width = 100;
+    const height = 150;
+    const pixels = Buffer.alloc(width * height * 3, 255);
+    for (let y = 100; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const base = (y * width + x) * 3;
+        pixels[base] = 239;
+        pixels[base + 1] = 111;
+        pixels[base + 2] = 108;
+      }
+    }
+    const screenshot = await realSharp(pixels, { raw: { width, height, channels: 3 } })
+      .png()
+      .toBuffer();
+    const result = await resolveAutoCrop(
+      undefined,
+      { width: 100, height: 100 },
+      100,
+      150,
+      screenshot,
+    );
+    expect(result).toBeUndefined();
+  });
+
+  // Figma のフレーム寸法は論理pt、実機スクショは 2x/3x の実ピクセル。素で
+  // 比べると高解像度の撮影が丸ごと対象外になる。
+  it("実機2x撮影でも、撮影倍率を割り出して自動cropする", async () => {
+    const screenshot = await makeScreenshot(750, 1400, "blank", 1200, "content");
+    const result = await resolveAutoCrop(
+      undefined,
+      { width: 375, height: 600 },
+      750,
+      1400,
+      screenshot,
+    );
+    expect(result).toEqual({ x: 0, y: 0, width: 750, height: 1200 });
+  });
+
+  it("撮影倍率が 1x/2x/3x のどれにも乗らない幅なら自動cropしない", async () => {
+    const screenshot = await makeScreenshot(500, 1000, "blank", 800, "content");
+    const result = await resolveAutoCrop(
+      undefined,
+      { width: 375, height: 600 },
+      500,
+      1000,
+      screenshot,
+    );
+    expect(result).toBeUndefined();
   });
 
   it("超過領域にノイズ(=実コンテンツ)があるなら自動cropしない (意図しない追加セクションを握り潰さない)", async () => {
@@ -374,6 +455,17 @@ describe("runCompareDesign", () => {
       runCompareDesign({
         design_source: "./design.png",
       }),
+    ).rejects.toThrow(
+      /screenshot が指定されていません。受け取った引数: design_source。画像のパスは screenshot に渡してください/,
+    );
+  });
+
+  it("keeps the existing error when screenshot is truly empty", async () => {
+    await expect(
+      runCompareDesign({
+        design_source: "./design.png",
+        screenshot: "   ",
+      }),
     ).rejects.toThrow(/screenshot must not be empty/);
   });
 
@@ -435,6 +527,105 @@ describe("runCompareDesign", () => {
     });
     expect(output.result.status).toBe("PASS");
     expect(output.result.matchRate).toBe(100);
+  });
+
+  it("撮影幅を変えた比較は regression ではなく capture-changed を返す", async () => {
+    tmpRoot = await fs.mkdtemp(path.join(process.cwd(), "tmp-figdiff-runner-"));
+    const designPath = path.join(tmpRoot, "design.png");
+    const screenshotPath = path.join(tmpRoot, "captured.png");
+    await fs.writeFile(designPath, Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+    await fs.writeFile(screenshotPath, Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+
+    let captureWidth = 1440;
+    let captureHeight = 900;
+    let weightedStructure = 0.8;
+    let comparisonId = "cmp-1440";
+    mocks.captureUrl.mockResolvedValue({ screenshotPath });
+    mocks.sharp.mockReturnValue({
+      metadata: vi.fn(async () => ({ width: captureWidth, height: captureHeight })),
+    });
+    mocks.compareImages.mockImplementation(async () => ({
+      comparisonId,
+      matchRate: 90,
+      diffPixelCount: 10,
+      totalPixelCount: captureWidth * captureHeight,
+      diffRegions: [],
+      suggestion: "structural test fixture",
+      diffReport: {
+        alignment: {
+          translation: { x: 0, y: 0 },
+          scale: { x: 1, y: 1 },
+          rotation: 0,
+          confidence: 1,
+          residual: 0,
+        },
+        regionScores: [],
+        issues: [],
+        weightedAggregate: {
+          weightedStructure,
+          weightedColor: 1,
+          totalWeight: 1,
+        },
+        aggregateVerdict: "fail" as const,
+        rationale: "capture dimension test",
+      },
+      normalization: {
+        designNativeWidth: 1440,
+        designNativeHeight: 900,
+        screenshotWidth: captureWidth,
+        screenshotHeight: captureHeight,
+        cropApplied: false,
+        containResized: false,
+        appliedScale: 1,
+      },
+    }));
+
+    const first = await runCompareDesign({
+      design_source: designPath,
+      screenshot_url: "https://example.test",
+      capture_width: 1440,
+    });
+    if (!first.result.diffReport) {
+      throw new Error("first comparison must include a diff report");
+    }
+    mocks.getRecentComparisons.mockReturnValue([
+      {
+        report: first.result.diffReport,
+        captureWidth: 1440,
+        captureHeight: 900,
+      },
+    ]);
+
+    captureWidth = 2166;
+    captureHeight = 1354;
+    weightedStructure = 0.7;
+    comparisonId = "cmp-2166";
+    const second = await runCompareDesign({
+      design_source: designPath,
+      screenshot_url: "https://example.test",
+      capture_width: 2166,
+    });
+
+    expect(second.result.critique).toEqual({
+      concern: "capture-changed",
+      advice:
+        "撮影条件（撮影幅 1440px → 2166px）が変わったため、前回との悪化判定は行っていません。",
+    });
+    expect(second.result.critique?.concern).not.toBe("regression");
+    expect(mocks.recordComparison).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        captureWidth: 1440,
+        captureHeight: 900,
+      }),
+    );
+    expect(mocks.recordComparison).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        captureWidth: 2166,
+        captureHeight: 1354,
+      }),
+    );
   });
 
   it("auto_mask_dynamic:false では2回目の撮影を要求しない", async () => {
@@ -812,6 +1003,106 @@ describe("runCompareDesign", () => {
     expect(consoleError).toHaveBeenCalledWith(expect.stringContaining('"Home" (2:2)'));
   });
 
+  // #29。ノードが今の Figma に無くても、画像はキャッシュから出るので比較が
+  // 最後まで通ってしまう。黙って通すと、消えた設計へ向かって実装を直し続ける。
+  it("routes a comparison to human review when the design node no longer exists", async () => {
+    tmpRoot = await fs.mkdtemp(path.join(process.cwd(), "tmp-figdiff-runner-"));
+    const screenshotPath = path.join(tmpRoot, "screenshot.png");
+    await fs.writeFile(screenshotPath, Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+
+    const getNodeDetails = vi.fn(async () => {
+      throw new Error('Requested Figma node not found: Node "9:9" not found in file FILEKEY123.');
+    });
+    const getFrameImage = vi.fn(async () => ({
+      base64: Buffer.from("cached design").toString("base64"),
+    }));
+    mocks.createFigmaService.mockReturnValue({
+      getFrames: vi.fn(async () => []),
+      getNodeDetails,
+      getFrameImage,
+    });
+    mocks.sharp.mockReturnValue({ metadata: vi.fn(async () => ({ width: 1440, height: 1800 })) });
+    mocks.compareImages.mockResolvedValue({
+      comparisonId: "cmp-missing-node",
+      matchRate: 100,
+      diffPixelCount: 0,
+      totalPixelCount: 1440 * 1800,
+      diffRegions: [],
+      suggestion: "一致率100%です。差分はありません。",
+      normalization: {
+        designNativeWidth: 1440,
+        designNativeHeight: 1800,
+        screenshotWidth: 1440,
+        screenshotHeight: 1800,
+        cropApplied: false,
+        containResized: false,
+        appliedScale: 1,
+      },
+    });
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    const { result } = await runCompareDesign({
+      design_source: "https://www.figma.com/design/FILEKEY123/Test?node-id=9-9",
+      screenshot: screenshotPath,
+    });
+
+    // 画像はキャッシュから出るので比較自体は通る。ここで一致率100%なのは
+    // 「消えた設計と、たまたま合う画像を比べた」だけで、合格の根拠にならん。
+    expect(getFrameImage).toHaveBeenCalled();
+    const warning = result.preflight?.warnings.find((w) => w.code === "design_node_missing");
+    expect(warning?.severity).toBe("critical");
+    expect(warning?.message).toContain("9:9");
+    expect(result.status).toBe("UNCERTAIN");
+    expect(vi.mocked(recordIterationAndEvaluate)).toHaveBeenCalledWith(
+      expect.objectContaining({ status: "UNCERTAIN" }),
+    );
+  });
+
+  // 取得が一時的に失敗しただけなら止めん。止めると通信のゆらぎで
+  // 毎回人間レビューへ回ることになる。
+  it("keeps a normal verdict when the node fetch fails for another reason", async () => {
+    tmpRoot = await fs.mkdtemp(path.join(process.cwd(), "tmp-figdiff-runner-"));
+    const screenshotPath = path.join(tmpRoot, "screenshot.png");
+    await fs.writeFile(screenshotPath, Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+
+    mocks.createFigmaService.mockReturnValue({
+      getFrames: vi.fn(async () => []),
+      getNodeDetails: vi.fn(async () => {
+        throw new Error("Figma API error 503: upstream unavailable");
+      }),
+      getFrameImage: vi.fn(async () => ({
+        base64: Buffer.from("cached design").toString("base64"),
+      })),
+    });
+    mocks.sharp.mockReturnValue({ metadata: vi.fn(async () => ({ width: 1440, height: 1800 })) });
+    mocks.compareImages.mockResolvedValue({
+      comparisonId: "cmp-transient",
+      matchRate: 100,
+      diffPixelCount: 0,
+      totalPixelCount: 1440 * 1800,
+      diffRegions: [],
+      suggestion: "一致率100%です。差分はありません。",
+      normalization: {
+        designNativeWidth: 1440,
+        designNativeHeight: 1800,
+        screenshotWidth: 1440,
+        screenshotHeight: 1800,
+        cropApplied: false,
+        containResized: false,
+        appliedScale: 1,
+      },
+    });
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    const { result } = await runCompareDesign({
+      design_source: "https://www.figma.com/design/FILEKEY123/Test?node-id=9-9",
+      screenshot: screenshotPath,
+    });
+
+    expect(result.preflight?.warnings.some((w) => w.code === "design_node_missing")).toBe(false);
+    expect(result.status).not.toBe("UNCERTAIN");
+  });
+
   it("passes Figma URL version-id to reference image fetching", async () => {
     tmpRoot = await fs.mkdtemp(path.join(process.cwd(), "tmp-figdiff-runner-"));
     const screenshotPath = path.join(tmpRoot, "captured.png");
@@ -1034,6 +1325,82 @@ describe("runCompareDesign", () => {
     expect(result.status).toBe("UNCERTAIN");
     expect(result.completionCriteria?.structuralReview.status).toBe("UNCERTAIN");
     expect(result.completionCriteria?.structuralReview.current).toBe(0);
+  });
+
+  // #24。設計がフルページ、撮影が単一ビューポート相当のとき、比較前に設計を
+  // 縮めて重ねとる。縮めた後の画素差では「実装が違う」と「撮影範囲が足りん」を
+  // 区別できん。FAIL を返すと自走ループが直しに行くので、UNCERTAIN で止める。
+  async function runFullPageVsViewport(cropApplied: boolean) {
+    tmpRoot = await fs.mkdtemp(path.join(process.cwd(), "tmp-figdiff-runner-"));
+    const designPath = path.join(tmpRoot, "design.png");
+    const screenshotPath = path.join(tmpRoot, "screenshot.png");
+    await fs.writeFile(designPath, Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+    await fs.writeFile(screenshotPath, Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+
+    mocks.sharp.mockReturnValue({
+      metadata: vi.fn(async () => ({ width: 2166, height: 5231 })),
+    });
+    mocks.compareImages.mockResolvedValue({
+      comparisonId: "cmp-fullpage",
+      matchRate: 56.19,
+      diffPixelCount: 4_963_849,
+      totalPixelCount: 11_330_346,
+      diffRegions: [
+        {
+          id: 1,
+          bounds: { x: 0, y: 0, width: 192, height: 192 },
+          diffPixelCount: 36_864,
+          nearbyNodeIds: [],
+          nearbyNodeNames: [],
+        },
+      ],
+      suggestion: "full page fixture",
+      diffReport: {
+        alignment: {
+          translation: { x: 0, y: 0 },
+          scale: { x: 1, y: 1 },
+          rotation: 0,
+          confidence: 1,
+          residual: 0,
+        },
+        regionScores: [],
+        issues: [],
+        weightedAggregate: { weightedStructure: 0.39, weightedColor: 0.5, totalWeight: 1 },
+        aggregateVerdict: "fail",
+        rationale: "full page fixture",
+        perceptibleDiffRatio: 0.44,
+      },
+      normalization: {
+        designNativeWidth: 2166,
+        designNativeHeight: 8190,
+        screenshotWidth: 2166,
+        screenshotHeight: 5231,
+        cropApplied,
+        containResized: true,
+        appliedScale: 0.6387,
+      },
+    });
+
+    return runCompareDesign({ design_source: designPath, screenshot: screenshotPath });
+  }
+
+  it("routes a full-page design against a shorter capture to human review", async () => {
+    const { result } = await runFullPageVsViewport(false);
+
+    expect(result.status).toBe("UNCERTAIN");
+    // 自走ループは UNCERTAIN で止まる作り (loop-guard-service.test.ts で検証済み)。
+    // ここでは UNCERTAIN がループ判定まで届いていることだけを見る。届かんと
+    // 成立していない比較のまま修正を続けることになる。
+    expect(vi.mocked(recordIterationAndEvaluate)).toHaveBeenCalledWith(
+      expect.objectContaining({ status: "UNCERTAIN" }),
+    );
+  });
+
+  it("keeps a normal verdict once the comparison range was cropped to match", async () => {
+    const { result } = await runFullPageVsViewport(true);
+
+    // crop 済みなら比較範囲は揃っとるので、この安全網は効かせん。
+    expect(result.status).toBe("FAIL");
   });
 
   // 保存 crop は x=0 で作られる。crop 後の寸法だけを preflight に渡していたため

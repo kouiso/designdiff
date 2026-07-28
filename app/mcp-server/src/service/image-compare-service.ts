@@ -5,7 +5,7 @@
  */
 
 import pixelmatch from "pixelmatch";
-import sharp from "sharp";
+import sharp, { type Sharp } from "sharp";
 
 import {
   PERCEPTIBLE_DIFF_CONTRADICTION_RATIO,
@@ -14,6 +14,7 @@ import {
   generateMatchSuggestion,
   matchDiffRegionsToNodes,
   type CompareDesignResult,
+  type ClusterCollapse,
   type ClusterTelemetry,
   type CropRegion,
   type FigmaNode,
@@ -40,7 +41,7 @@ interface SharpCreateOptions extends SharpOptions {
 type SharpInput = SharpBufferInput | SharpCreateOptions;
 
 // 全 sharp() 呼び出しで OOM ガードを必ず有効にする。
-function createSharp(input?: SharpInput, options?: SharpOptions): sharp.Sharp {
+function createSharp(input?: SharpInput, options?: SharpOptions): Sharp {
   const guardedOptions = { ...options, limitInputPixels: MAX_INPUT_PIXELS };
   if (input === undefined) {
     return sharp(guardedOptions);
@@ -65,6 +66,8 @@ interface CompareImagesOptions {
   // 既知の意図的差分マスク。各矩形内の差分ピクセルは matchRate / clustering から除外。
   // 矩形は cropRegion 適用後の座標系 (= screenshot ピクセル座標) で指定する。
   ignoreRegions?: IgnoreRegion[];
+  // 背景の塗りが無いノードを、どの色の上に置いて評価するか (#RRGGBB)。既定は白。
+  designBackground?: string;
 }
 
 // Above this total pixel count, "auto" picks grid clustering. Full-page PC
@@ -87,6 +90,77 @@ const QUICK_TILE_MAX_REGIONS = 60;
 const QUICK_TILE_BUDGET_MS = 1500;
 
 const PUBLIC_EXPORT_REDACTION_COLOR = { r: 0, g: 0, b: 0, alpha: 1 };
+
+// 背景の塗りが無いノードを置く既定の下地。実装側の画面が白地で描かれることが多い。
+const DEFAULT_DESIGN_BACKGROUND = "#FFFFFF";
+
+/**
+ * 解釈できない指定を投げずに白へ倒す。ここで例外を投げると、色の書き方を
+ * 1文字間違えただけで比較そのものが実行できなくなる。既定と同じ白へ落ちれば、
+ * 少なくとも従来どおりの結果は得られる。
+ */
+export function parseBackgroundColor(value: string): { r: number; g: number; b: number } {
+  const hex = value.trim().replace(/^#/, "");
+  const expanded =
+    hex.length === 3
+      ? hex
+          .split("")
+          .map((char) => char + char)
+          .join("")
+      : hex;
+  if (!/^[0-9a-fA-F]{6}$/.test(expanded)) {
+    return { r: 255, g: 255, b: 255 };
+  }
+  return {
+    r: Number.parseInt(expanded.slice(0, 2), 16),
+    g: Number.parseInt(expanded.slice(2, 4), 16),
+    b: Number.parseInt(expanded.slice(4, 6), 16),
+  };
+}
+
+function isWhite(color: { r: number; g: number; b: number }): boolean {
+  return color.r === 255 && color.g === 255 && color.b === 255;
+}
+
+export function hasTransparentPixel(pixels: Uint8ClampedArray): boolean {
+  for (let index = 3; index < pixels.length; index += 4) {
+    if (pixels[index] !== 255) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * 透明・半透明の画素を background の上に置いて不透明にする。
+ *
+ * pixelmatch は半透明を白へ混ぜて評価するので一致率は妥当に出るが、
+ * 構造・色・輪郭を測る側は生の RGB を読むため、透明が黒として入る。
+ * 背景の塗りが無い Figma ノードを白地の実装と比べると、そこだけで
+ * 「一致率は高いのに構造一致は0%」という食い違いが起きる。
+ */
+export function flattenTransparentPixels(
+  pixels: Uint8ClampedArray,
+  background: { r: number; g: number; b: number },
+): void {
+  // 4で割り切れない長さは RGBA として壊れている。最後の1画素の透明度が
+  // 読めず NaN を書き込んで黙って絵を壊すより、その場で止める。
+  if (pixels.length % 4 !== 0) {
+    throw new Error(`RGBA buffer length must be a multiple of 4: got ${pixels.length}`);
+  }
+
+  for (let index = 0; index < pixels.length; index += 4) {
+    const alpha = pixels[index + 3];
+    if (alpha === 255) {
+      continue;
+    }
+    const ratio = alpha / 255;
+    pixels[index] = Math.round(pixels[index] * ratio + background.r * (1 - ratio));
+    pixels[index + 1] = Math.round(pixels[index + 1] * ratio + background.g * (1 - ratio));
+    pixels[index + 2] = Math.round(pixels[index + 2] * ratio + background.b * (1 - ratio));
+    pixels[index + 3] = 255;
+  }
+}
 
 export async function redactImageBase64ForPublicExport(
   imageBase64: string,
@@ -173,7 +247,24 @@ interface GridCellGeometry {
 interface ClusterDiffResult {
   diffRegions: CompareDesignResult["diffRegions"];
   clusterTelemetry: ClusterTelemetry;
+  clusterCollapse?: ClusterCollapse;
 }
+
+// 分割を諦めたときに、次に何を疑えばよいかを毎回同じ順で示す。
+// ここが空だと「60箇所直せ」という読み方に戻ってしまう。
+// 分割を諦めた理由のうち、「差分が全面に広がっている」と言い切れるもの。
+// 時間切れ (wall-budget-exceeded) は処理が重かっただけで、広がりの証拠にならない。
+function isWidespreadDiffReason(
+  reason: NonNullable<ClusterTelemetry["fallbackReason"]>,
+): reason is "hot-cell-ratio-exceeded" | "region-count-exceeded" {
+  return reason === "hot-cell-ratio-exceeded" || reason === "region-count-exceeded";
+}
+
+const CLUSTER_COLLAPSE_CHECKS = [
+  "撮影条件が設計と揃っているか（撮影幅・倍率・スクロール位置）",
+  "比較元のFigmaフレームが、撮影した画面と同じものか",
+  "実装がまだ着手前の状態になっていないか",
+];
 
 interface QuickTileCandidate {
   left: number;
@@ -245,13 +336,33 @@ function clusterDiffRegions(args: {
     fallbackReason = fallbackReason ?? "grid-empty-with-diff";
     diffRegions = clusterDiffPixels(diffPixelData, width, height);
   }
+  // 差分が広すぎて分割できなかった場合。以前はここで作った等間隔タイルを
+  // そのまま差分領域として返していたが、タイルは位置の手がかりを持たない。
+  // 「直す場所がタイルの数だけある」と読めてしまうので、領域としては返さず、
+  // 分割できなかったという事実として返す。
+  let clusterCollapse: ClusterCollapse | undefined;
   if (useGrid && diffRegions.length === 0 && diffPixelCount > 0 && shouldSkipFloodFallback) {
-    diffRegions = clusterDiffPixelsQuickTiles(diffPixelData, width, height);
+    const coarseTiles = clusterDiffPixelsQuickTiles(diffPixelData, width, height);
     fallbackReason = fallbackReason ?? "grid-empty-with-diff";
+    if (isWidespreadDiffReason(fallbackReason)) {
+      clusterCollapse = {
+        collapsed: true,
+        reason: fallbackReason,
+        coarseTileCount: coarseTiles.length,
+        message:
+          "差分が画面全体に広がっているため、直す場所を領域に分けられませんでした。個別のCSS修正へ進む前に、比較の前提を先に確認してください。",
+        checks: CLUSTER_COLLAPSE_CHECKS,
+      };
+    } else {
+      // 時間切れは「差分が全面に広がっている」証拠にならない。局所的な差分でも
+      // 大きい画像なら起きる。せっかく見つけた大まかな位置を捨てずに返す。
+      diffRegions = coarseTiles;
+    }
   }
 
   return {
     diffRegions,
+    clusterCollapse,
     clusterTelemetry: {
       requestedMode: clusterMode,
       usedMode,
@@ -737,8 +848,13 @@ export async function compareImages(
 
   // Resize design to match screenshot WIDTH first (maintaining aspect ratio)
   // This normalizes coordinate spaces before crop
+  //
+  // crop 前のこの寸法が、後段でノード bbox をスクリーンショット空間へ写すときの
+  // 基準になる。crop 後の寸法を使うと、切り落とした分だけ倍率がずれる。
+  let normalizedDesignHeight = designHeight;
   if (designWidth !== screenshotWidth) {
     const resizeHeight = Math.round(designHeight * (screenshotWidth / designWidth));
+    normalizedDesignHeight = resizeHeight;
     designBuffer = await createSharp(designBuffer)
       .resize(screenshotWidth, resizeHeight)
       .ensureAlpha()
@@ -764,6 +880,8 @@ export async function compareImages(
   let paddingMask: PaddingMask | null = null;
   let wasComposited = false;
   let appliedScale = 1;
+  // 合成した場合の貼り付け位置。ノード bbox を同じ空間へ写すときに要る。
+  let compositeOffset = { x: 0, y: 0 };
   if (finalDesignWidth !== finalScreenshotWidth || finalDesignHeight !== finalScreenshotHeight) {
     const scale = Math.min(
       finalScreenshotWidth / finalDesignWidth,
@@ -828,6 +946,7 @@ export async function compareImages(
         }
       : null;
     wasComposited = true;
+    compositeOffset = { x: left, y: top };
     finalDesignBuffer = await createSharp({
       create: {
         width: finalScreenshotWidth,
@@ -881,7 +1000,13 @@ export async function compareImages(
       height,
       paddingMask,
     );
-    preserveLegacyWhitePaddingForReport(reportDesignPixels, width, height, paddingMask);
+    preserveLegacyWhitePaddingForReport(
+      reportDesignPixels,
+      width,
+      height,
+      paddingMask,
+      parseBackgroundColor(options.designBackground ?? DEFAULT_DESIGN_BACKGROUND),
+    );
   }
 
   // ignoreRegions 前処理: matchRate 算出の分母から引く mask ピクセル数を計算し、
@@ -906,6 +1031,19 @@ export async function compareImages(
 
   // Run pixelmatch
   const diffPixelData = new Uint8ClampedArray(width * height * 4);
+  const backgroundColor = parseBackgroundColor(
+    options.designBackground ?? DEFAULT_DESIGN_BACKGROUND,
+  );
+
+  // 白以外を指定された場合は、画素どうしの比較にも同じ下地を敷いてから数える。
+  // pixelmatch は半透明を白へ混ぜて見るので、敷かないと一致率と差分画像だけが
+  // 白基準のまま残り、「構造は合格なのに画面が真っ赤」という食い違いになる。
+  // 白のときは pixelmatch の内部処理と同じ結果になるので、触らずに残す。
+  if (options.designBackground !== undefined && !isWhite(backgroundColor)) {
+    flattenTransparentPixels(pixelmatchDesignPixels, backgroundColor);
+    flattenTransparentPixels(screenshotPixels, backgroundColor);
+  }
+
   const diffPixelCount = pixelmatch(
     pixelmatchDesignPixels,
     screenshotPixels,
@@ -926,10 +1064,25 @@ export async function compareImages(
   // 判定と証拠を先に作る。矛盾で人間レビューへ回すとき、pixelmatch の閾値では
   // 1画素も差分にならないことがある。そのままだと差分画像が真っ黒、領域0件で
   // 「見てくれ」と渡すことになるので、見える差のあった画素を証拠として使う。
+  // 判定へ渡す側を不透明化する。既定の白では pixelmatch の入力を触らないので
+  // 一致率は変わらない。構造・色・輪郭を測る側は生の RGB を読むため、下地を
+  // 敷かないと透明が黒として評価に入る。
+
+  // ここに来る時点で pixelmatch は終わっており、元の透明度を読む処理はもう無い。
+  // 複製すると、上限いっぱいの画像で 96MB の確保が増えて OOM の上限が形骸化する。
+  // 同じ配列をそのまま塗り替える。
+  if (hasTransparentPixel(reportDesignPixels)) {
+    flattenTransparentPixels(reportDesignPixels, backgroundColor);
+  }
+  if (hasTransparentPixel(screenshotPixels)) {
+    flattenTransparentPixels(screenshotPixels, backgroundColor);
+  }
+  const reportScreenshotPixels = screenshotPixels;
+
   const perceptibleMask = new Uint8Array(width * height);
   const diffReport = buildDiffReport({
     designPixels: reportDesignPixels,
-    screenshotPixels,
+    screenshotPixels: reportScreenshotPixels,
     width,
     height,
     figmaRootNode,
@@ -975,11 +1128,29 @@ export async function compareImages(
     gridOptions,
   });
   let { diffRegions } = clustered;
-  const { clusterTelemetry } = clustered;
+  const { clusterTelemetry, clusterCollapse } = clustered;
 
   // Match diff regions to Figma nodes if available
   if (figmaRootNode) {
-    diffRegions = matchDiffRegionsToNodes(diffRegions, figmaRootNode);
+    // 変換を渡さないと、ノード側は Figma canvas 座標 (x が数万になることもある)、
+    // 差分領域は crop 後のスクリーンショット座標のままで突き合わせることになり、
+    // 包含判定が一度も成立せずノード名が全件空で返る。
+    // 倍率の基準は crop 前の正規化済み design 寸法。実パイプラインが
+    // 「幅合わせ → crop」の順で処理するため、高さも幅合わせ後の値を渡す。
+    // 差分領域は撮影側の座標で出るので、切り出し原点も撮影側の寸法で決める。
+    // 設計側の寸法で決めると、片方だけ切り出しが成立した回に原点がずれる。
+    const appliedCropOrigin = cropRegion
+      ? resolveAppliedCropOrigin(cropRegion, screenshotWidth, screenshotHeight)
+      : null;
+    diffRegions = matchDiffRegionsToNodes(diffRegions, figmaRootNode, {
+      fullScreenshotWidth: screenshotWidth,
+      fullScreenshotHeight: normalizedDesignHeight,
+      cropOrigin: appliedCropOrigin ?? undefined,
+      // 切り出しの後にさらに縮めて貼り付けた場合は、その倍率と位置も反映する。
+      // 反映しないと、その経路だけ座標がずれて違うノード名が付く。
+      contentScale: wasComposited ? appliedScale : undefined,
+      contentOffset: wasComposited ? compositeOffset : undefined,
+    });
     clusterTelemetry.regionCount = diffRegions.length;
   }
 
@@ -996,6 +1167,7 @@ export async function compareImages(
     diffRegions,
     suggestion,
     clusterTelemetry,
+    clusterCollapse,
     gridSummary,
     diffReport,
     diffImageBase64,
@@ -1009,6 +1181,45 @@ export async function compareImages(
       appliedScale,
     },
   };
+}
+
+/**
+ * cropImageBuffer が実際に切り出す原点を、同じ丸めとクリップで先に求める。
+ * 切り出しが成立しない場合は null を返す (画像がそのまま通るため原点は 0)。
+ *
+ * ノード bbox をスクリーンショット空間へ写すとき、要求値ではなく実際に
+ * 適用された原点を引かないと、切り出しが無効だった回だけ座標が丸ごとずれる。
+ */
+export function resolveAppliedCropOrigin(
+  cropRegion: CropRegion,
+  imageWidth: number,
+  imageHeight: number,
+): { x: number; y: number } | null {
+  if (imageWidth <= 0 || imageHeight <= 0) {
+    return null;
+  }
+
+  if (
+    !Number.isFinite(cropRegion.x) ||
+    !Number.isFinite(cropRegion.y) ||
+    !Number.isFinite(cropRegion.width) ||
+    !Number.isFinite(cropRegion.height) ||
+    cropRegion.width <= 0 ||
+    cropRegion.height <= 0
+  ) {
+    return null;
+  }
+
+  const left = Math.max(0, Math.floor(cropRegion.x));
+  const top = Math.max(0, Math.floor(cropRegion.y));
+  const right = Math.min(imageWidth, Math.floor(cropRegion.x + cropRegion.width));
+  const bottom = Math.min(imageHeight, Math.floor(cropRegion.y + cropRegion.height));
+
+  if (left >= right || top >= bottom) {
+    return null;
+  }
+
+  return { x: left, y: top };
 }
 
 /**
@@ -1260,6 +1471,9 @@ function preserveLegacyWhitePaddingForReport(
   imageWidth: number,
   imageHeight: number,
   content: PaddingMask,
+  // 余白を何色で埋めるか。白で固定すると、黒地の画面を比べるときに
+  // 余白だけが白のまま残り、一致しているのに崩れとして数えられる。
+  background: { r: number; g: number; b: number },
 ): void {
   const contentRight = content.left + content.width;
   const contentBottom = content.top + content.height;
@@ -1269,9 +1483,9 @@ function preserveLegacyWhitePaddingForReport(
       if (x < content.left || x >= contentRight || y < content.top || y >= contentBottom) {
         const i = (y * imageWidth + x) * 4;
         if (designPixels[i + 3] === 0) {
-          designPixels[i] = 255;
-          designPixels[i + 1] = 255;
-          designPixels[i + 2] = 255;
+          designPixels[i] = background.r;
+          designPixels[i + 1] = background.g;
+          designPixels[i + 2] = background.b;
           designPixels[i + 3] = 255;
         }
       }

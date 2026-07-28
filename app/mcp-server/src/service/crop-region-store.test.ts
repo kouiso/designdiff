@@ -66,6 +66,37 @@ describe("crop-region-store", () => {
       const results = await getCropRegion(validProjectId, frameName);
       expect(results[0].note).toBe(note);
     });
+
+    // crop を決めたときの撮影寸法。あとから「古い crop なのか、意図して狭く
+    // したのか」を区別する唯一の根拠になるので、保存されないと判定できない。
+    it("stores the screenshot size the crop was measured against", async () => {
+      vi.mocked(mockFs.readFile).mockRejectedValueOnce(makeEnoentError());
+      vi.mocked(mockFs.mkdir).mockResolvedValue(undefined);
+      vi.mocked(mockFs.writeFile).mockResolvedValue(undefined);
+
+      const { setCropRegion } = await import("./crop-region-store.js");
+
+      const entry = await setCropRegion(validProjectId, frameName, region, undefined, {
+        width: 1440,
+        height: 3000,
+      });
+
+      expect(entry.capturedWidth).toBe(1440);
+      expect(entry.capturedHeight).toBe(3000);
+    });
+
+    it("leaves the captured size unset when the caller does not supply it", async () => {
+      vi.mocked(mockFs.readFile).mockRejectedValueOnce(makeEnoentError());
+      vi.mocked(mockFs.mkdir).mockResolvedValue(undefined);
+      vi.mocked(mockFs.writeFile).mockResolvedValue(undefined);
+
+      const { setCropRegion } = await import("./crop-region-store.js");
+
+      const entry = await setCropRegion(validProjectId, frameName, region);
+
+      expect(entry.capturedWidth).toBeUndefined();
+      expect(entry.capturedHeight).toBeUndefined();
+    });
   });
 
   describe("getCropRegion with non-existent projectId", () => {

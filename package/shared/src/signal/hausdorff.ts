@@ -24,7 +24,17 @@ function clampRegion(region: DiffBoundingBox, width: number, height: number): Di
   };
 }
 
+// 同じ画像を領域ごとに何度も渡される。9分割なら同じ変換を9回やることになり、
+// 実寸の画面では数千万画素の変換が丸ごと繰り返される。中身が変わらない限り
+// 使い回す。参照が消えたら一緒に消えるので、持ち続けにはならない。
+const luminanceCache = new WeakMap<Uint8ClampedArray, Float64Array>();
+
 function toLuminance(pixels: Uint8ClampedArray): Float64Array {
+  const cached = luminanceCache.get(pixels);
+  if (cached?.length === pixels.length / 4) {
+    return cached;
+  }
+
   const luminance = new Float64Array(pixels.length / 4);
 
   for (let pixelIndex = 0; pixelIndex < luminance.length; pixelIndex++) {
@@ -35,6 +45,7 @@ function toLuminance(pixels: Uint8ClampedArray): Float64Array {
     luminance[pixelIndex] = 0.299 * r + 0.587 * g + 0.114 * b;
   }
 
+  luminanceCache.set(pixels, luminance);
   return luminance;
 }
 

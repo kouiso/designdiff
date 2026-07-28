@@ -172,6 +172,24 @@ export const ClusterTelemetrySchema = z.object({
   regionCount: z.number().int().nonnegative(),
 });
 
+// 差分が画面全体に広がると、領域分割は成立せず一定サイズのタイルしか作れない。
+// そのタイルを差分領域として返すと「直す場所がタイルの数だけある」と読めてしまう。
+// 分割できなかったという事実そのものを、別の形で返すための入れ物。
+export const ClusterCollapseSchema = z.object({
+  collapsed: z.literal(true),
+  reason: z.enum([
+    "grid-empty-with-diff",
+    "wall-budget-exceeded",
+    "region-count-exceeded",
+    "hot-cell-ratio-exceeded",
+  ]),
+  // 分割を諦めた時点で作られていたタイルの数。位置の手がかりにはならない。
+  coarseTileCount: z.number().int().nonnegative(),
+  message: z.string(),
+  // 空で返すと「分割できなかったが、確認することも無い」という読み方ができてしまう。
+  checks: z.array(z.string()).min(1),
+});
+
 export const GridSummaryCellSchema = z.object({
   row: z.number().int().nonnegative(),
   col: z.number().int().nonnegative(),
@@ -259,6 +277,12 @@ export const RegionScoreSchema = z.object({
   regionId: z.string(),
   bbox: DiffBoundingBoxSchema,
   figmaNodeId: z.string().optional(),
+  // "root" は比較対象そのものを指す行。子の行と一緒に集計すると同じ画素を
+  // 二重に数えるため、重み付けと見出しの集計からは外す。局所比較で
+  // 「対象ノードが見つからない」を出さないために、行としては必ず持たせる。
+  scope: z.enum(["section", "root"]).optional(),
+  // まとめた際に下へ隠れた兄弟のID。直し先を辿れなくしないために残す。
+  overlappingNodeIds: z.array(z.string()).optional(),
   structure: z.number().min(0).max(1),
   color: z.number().nonnegative(),
   shape: z.number().nonnegative(),
@@ -308,7 +332,13 @@ export const DiffReportSchema = z.object({
   perceptibleDiffRatio: z.number().min(0).max(1).optional(),
 });
 
-export const CritiqueConcernSchema = z.enum(["regression", "oscillation", "plateau", "healthy"]);
+export const CritiqueConcernSchema = z.enum([
+  "regression",
+  "oscillation",
+  "plateau",
+  "healthy",
+  "capture-changed",
+]);
 
 export const CritiqueNoteSchema = z.object({
   concern: CritiqueConcernSchema,
@@ -330,6 +360,8 @@ export const PreflightWarningCodeSchema = z.enum([
   // ノードが未指定のとき前回使用したノードを自動補完したことを通知する。
   "last_used_node",
   "logical_physical_width",
+  // 指定ノードが今の Figma に無く、キャッシュ画像で比較していることを通知する。
+  "design_node_missing",
 ]);
 
 export const PreflightSeveritySchema = z.enum(["info", "warning", "critical"]);
@@ -462,42 +494,55 @@ export const TokenDiffReportSchema = z.object({
 /** どの経路が最終的な合否を決めたか。無言で劣化させないために必ず載せる。 */
 export const VerdictRouteSchema = z.enum(["token-diff", "pixel"]);
 
-export const CompareDesignResultSchema = z.object({
-  // UNCERTAIN: 判定の確からしさを損なう条件 (設定ミス疑い / 構造判定 inconclusive)
-  // が検出された状態。PASS でも FAIL でもなく「人間のレビューが必要」を意味する。
-  status: z.enum(["PASS", "FAIL", "UNCERTAIN"]).optional(),
-  comparisonId: z.string(),
-  matchRate: z.number().min(0).max(100),
-  diffPixelCount: z.number().int().nonnegative(),
-  // ignoreRegions が画像全体を覆うケースでは 0 が正当。
-  totalPixelCount: z.number().int().nonnegative(),
-  remainingIssues: z.number().int().nonnegative().optional(),
-  diffRegions: z.array(DiffRegionSchema),
-  totalRegionCount: z.number().int().nonnegative().optional(),
-  returnedRegionCount: z.number().int().nonnegative().optional(),
-  regionsTruncated: z.boolean().optional(),
-  regionsDetailPath: z.string().optional(),
-  completionCriteria: CompletionCriteriaSchema.optional(),
-  nextAction: z.string().optional(),
-  suggestion: z.string(),
-  clusterTelemetry: ClusterTelemetrySchema.optional(),
-  gridSummary: GridSummarySchema.optional(),
-  diffReport: DiffReportSchema.optional(),
-  critique: CritiqueNoteSchema.optional(),
-  preflight: PreflightReportSchema.optional(),
-  normalization: NormalizationReportSchema.optional(),
-  diagnosis: ComparisonDiagnosisSchema.optional(),
-  comparisonHeadline: ComparisonHeadlineSchema.optional(),
-  loopGuard: LoopGuardReportSchema.optional(),
-  // 実機スクショに写り込む帯 (開発時のトースト等) のマスク候補。
-  // 自動では適用しない。画素だけではトーストと正しい暗色帯を区別できないため。
-  toastBandCandidates: z.array(ToastBandCandidateSchema).optional(),
-  tokenDiff: TokenDiffReportSchema.optional(),
-  /** 合否を決めた経路。token-diff が働いたときだけ "token-diff"。 */
-  verdictRoute: VerdictRouteSchema.optional(),
-  diffImagePath: z.string().optional(),
-  diffImageBase64: z.string().optional(),
-});
+export const CompareDesignResultSchema = z
+  .object({
+    // UNCERTAIN: 判定の確からしさを損なう条件 (設定ミス疑い / 構造判定 inconclusive)
+    // が検出された状態。PASS でも FAIL でもなく「人間のレビューが必要」を意味する。
+    status: z.enum(["PASS", "FAIL", "UNCERTAIN"]).optional(),
+    comparisonId: z.string(),
+    matchRate: z.number().min(0).max(100),
+    diffPixelCount: z.number().int().nonnegative(),
+    // ignoreRegions が画像全体を覆うケースでは 0 が正当。
+    totalPixelCount: z.number().int().nonnegative(),
+    remainingIssues: z.number().int().nonnegative().optional(),
+    diffRegions: z.array(DiffRegionSchema),
+    totalRegionCount: z.number().int().nonnegative().optional(),
+    returnedRegionCount: z.number().int().nonnegative().optional(),
+    regionsTruncated: z.boolean().optional(),
+    regionsDetailPath: z.string().optional(),
+    completionCriteria: CompletionCriteriaSchema.optional(),
+    nextAction: z.string().optional(),
+    suggestion: z.string(),
+    clusterTelemetry: ClusterTelemetrySchema.optional(),
+    clusterCollapse: ClusterCollapseSchema.optional(),
+    gridSummary: GridSummarySchema.optional(),
+    diffReport: DiffReportSchema.optional(),
+    critique: CritiqueNoteSchema.optional(),
+    preflight: PreflightReportSchema.optional(),
+    normalization: NormalizationReportSchema.optional(),
+    diagnosis: ComparisonDiagnosisSchema.optional(),
+    comparisonHeadline: ComparisonHeadlineSchema.optional(),
+    loopGuard: LoopGuardReportSchema.optional(),
+    // 実機スクショに写り込む帯 (開発時のトースト等) のマスク候補。
+    // 自動では適用しない。画素だけではトーストと正しい暗色帯を区別できないため。
+    toastBandCandidates: z.array(ToastBandCandidateSchema).optional(),
+    tokenDiff: TokenDiffReportSchema.optional(),
+    /** 合否を決めた経路。token-diff が働いたときだけ "token-diff"。 */
+    verdictRoute: VerdictRouteSchema.optional(),
+    diffImagePath: z.string().optional(),
+    diffImageBase64: z.string().optional(),
+  })
+  .superRefine((result, ctx) => {
+    // 分割できなかったと言いながら領域も返すと、受け取る側はどちらを信じてよいか
+    // 分からなくなる。両立しない組み合わせは、作られた時点で弾く。
+    if (result.clusterCollapse && result.diffRegions.length > 0) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["diffRegions"],
+        message: "clusterCollapse がある結果では diffRegions を空にしてください",
+      });
+    }
+  });
 
 // --- Crop Region Schema ---
 

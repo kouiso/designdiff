@@ -205,3 +205,64 @@ describe("electronCapabilities", () => {
     expect(electronCapabilities.hasSecureTokenStorage).toBe(true);
   });
 });
+
+describe("electronAdapter 残りの経路", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  // 未保存を「持っている」と誤って答えると、トークン要求の案内が出ずに
+  // 後段の Figma 呼び出しが理由の分からんエラーで落ちる。
+  it("token.has は未保存を false、保存済みを true にする", async () => {
+    vi.mocked(window.electronAPI.getFigmaToken).mockResolvedValue(null);
+    await expect(electronAdapter.token.has()).resolves.toBe(false);
+
+    vi.mocked(window.electronAPI.getFigmaToken).mockResolvedValue("figd_0123456789012345678901");
+    await expect(electronAdapter.token.has()).resolves.toBe(true);
+  });
+
+  it("overlay.updateOffset がずれ量をそのまま渡す", () => {
+    electronOverlayAdapter.updateOffset({ x: 4, y: -8 });
+    expect(window.electronAPI.overlay.updateOffset).toHaveBeenCalledWith({ x: 4, y: -8 });
+  });
+
+  it("overlay.updateOpacity / removeOverlay / captureScreenshot が届く", () => {
+    electronOverlayAdapter.updateOpacity(0.35);
+    electronOverlayAdapter.removeOverlay();
+    electronOverlayAdapter.captureScreenshot();
+
+    expect(window.electronAPI.overlay.updateOpacity).toHaveBeenCalledWith(0.35);
+    expect(window.electronAPI.overlay.removeOverlay).toHaveBeenCalledTimes(1);
+    expect(window.electronAPI.overlay.captureScreenshot).toHaveBeenCalledTimes(1);
+  });
+
+  it("project.save / delete が引数そのままで渡る", async () => {
+    const project = {
+      id: "p1",
+      name: "Site",
+      pages: [],
+      createdAt: "2026-01-01T00:00:00.000Z",
+      updatedAt: "2026-01-01T00:00:00.000Z",
+    };
+    vi.mocked(window.electronAPI.project.save).mockResolvedValue(undefined);
+    vi.mocked(window.electronAPI.project.delete).mockResolvedValue(undefined);
+
+    await electronAdapter.project.save(project);
+    await electronAdapter.project.delete("p1");
+
+    expect(window.electronAPI.project.save).toHaveBeenCalledWith(project);
+    expect(window.electronAPI.project.delete).toHaveBeenCalledWith("p1");
+  });
+
+  it("oauth の各操作が main プロセスへ素通しされる", async () => {
+    await electronAdapter.oauth.start();
+    await electronAdapter.oauth.logout();
+    await electronAdapter.oauth.saveClient("client-id", "client-secret");
+    await electronAdapter.oauth.getClientId();
+
+    expect(window.electronAPI.oauth.start).toHaveBeenCalledTimes(1);
+    expect(window.electronAPI.oauth.logout).toHaveBeenCalledTimes(1);
+    expect(window.electronAPI.oauth.saveClient).toHaveBeenCalledWith("client-id", "client-secret");
+    expect(window.electronAPI.oauth.getClientId).toHaveBeenCalledTimes(1);
+  });
+});
