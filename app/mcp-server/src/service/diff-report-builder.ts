@@ -4,6 +4,7 @@ import {
   computeMeanDeltaE2000,
   computePerceptibleDiffRatio,
   computeSsimForRegion,
+  selectScoringRegions,
   computeVerdict,
   detectHighTextureRegion,
   type CropRegion,
@@ -517,39 +518,49 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
     }
   }
 
-  if (childRegions.length > 0) {
-    return childRegions;
-  }
-
   const wholeFrameBbox = toWholeFrameRegion(width, height);
   // letterbox 余白を含めると SSIM / 色差が不当に悪化するため、content rect 内で評価する。
   const contentBbox = toContentRegion(width, height, paddingMask);
 
-  return [
-    {
-      regionId: "whole-frame",
-      bbox: wholeFrameBbox,
-      structure: computeSsimForRegion(designPixels, screenshotPixels, width, height, contentBbox),
-      color: buildColorDifference(
-        designPixels,
-        screenshotPixels,
-        width,
-        height,
-        paddingMask ? contentBbox : undefined,
-      ),
-      flatColorMismatch: buildFlatColorMismatch(
-        designPixels,
-        screenshotPixels,
-        width,
-        height,
-        contentBbox,
-      ),
-      shape: computeHausdorff(designPixels, screenshotPixels, width, height, contentBbox),
-      layout: 0,
-      textureScore: getTextureScore(wholeFrameBbox),
-      figmaNodeId: options.figmaNodeId,
-    },
-  ];
+  // 比較対象そのものの行。子の行があっても必ず1件持たせる。
+  // 単一ノードを比べたとき、子の行しか無いと「対象ノードが見つからない」で
+  // verify_fix が落ち、局所的な修正を自分で確かめられなくなる。
+  // 集計では scope: "root" を外すので、重み付けと見出しの値は変わらない。
+  //
+  // 遅延で作る。子が無い経路では下の fallback が同じ計算をやり直すため、
+  // 先に作ると画素を舐める処理が丸ごと二重になる。
+  const buildRootRegion = (): RegionScore => ({
+    regionId: "whole-frame",
+    scope: "root",
+    bbox: wholeFrameBbox,
+    structure: computeSsimForRegion(designPixels, screenshotPixels, width, height, contentBbox),
+    color: buildColorDifference(
+      designPixels,
+      screenshotPixels,
+      width,
+      height,
+      paddingMask ? contentBbox : undefined,
+    ),
+    flatColorMismatch: buildFlatColorMismatch(
+      designPixels,
+      screenshotPixels,
+      width,
+      height,
+      contentBbox,
+    ),
+    shape: computeHausdorff(designPixels, screenshotPixels, width, height, contentBbox),
+    layout: 0,
+    textureScore: getTextureScore(wholeFrameBbox),
+    // 比較元のノードIDが解決できない検体でも、この行を名前で引けるようにする。
+    // 引けないと、対象そのものを指定した検証がその経路だけ通らない。
+    figmaNodeId: options.figmaNodeId ?? figmaRootNode?.id,
+  });
+
+  if (childRegions.length > 0) {
+    return [...childRegions, buildRootRegion()];
+  }
+
+  return [buildRootRegion()];
 }
 
 function selectAnchorsForScoring<T>(anchors: readonly T[]): T[] {
@@ -644,7 +655,9 @@ export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
     residual,
   };
 
-  const issues = buildIssues(regionScores, options);
+  // 比較対象そのものの行は子と範囲が重なる。合否を決める不具合をここから作ると、
+  // 子が全部合格でも背景の色差だけで不合格へ倒れる。集計と同じ行だけを使う。
+  const issues = buildIssues(selectScoringRegions(regionScores), options);
 
   // An accepted global alignment correction can hide a real regression: e.g.
   // a page that scrolled/shifted is itself often the bug under test, not a

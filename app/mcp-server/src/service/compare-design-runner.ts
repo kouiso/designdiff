@@ -22,6 +22,7 @@ import {
   PERCEPTIBLE_DELTA_E,
   PERCEPTIBLE_DIFF_CONTRADICTION_RATIO,
   runPreflight,
+  selectScoringRegions,
   selfCritique,
   type ClusterCollapse,
   type CompareDesignResult,
@@ -500,6 +501,9 @@ export function buildTargetNodeIds(
   const candidates: string[] = [];
 
   const rankedRegionScores = [...(diffReport?.regionScores ?? [])]
+    // 比較対象そのものの行は全部の子を覆う。並べると、上限5件の枠を奪って
+    // 本当に崩れている子が案内から落ちる。
+    .filter((score) => score.scope !== "root")
     .filter((score) => typeof score.figmaNodeId === "string" && score.figmaNodeId.length > 0)
     .sort((a, b) => a.structure - b.structure);
 
@@ -1402,7 +1406,9 @@ export async function runCompareDesign(
   const comparisonHeadline = buildComparisonHeadline(regionScores, comparison.matchRate);
   const diagnosis = diagnoseComparison({
     matchRate: comparison.matchRate,
-    regionScores,
+    // 比較対象そのものの行は子と範囲が重なる。平均に入れると同じ画素を二重に
+    // 数えて、しきい値をまたぐかどうかが変わる。
+    regionScores: selectScoringRegions(regionScores),
     preflightWarnings: preflight.warnings,
     normalization: comparison.normalization,
   });

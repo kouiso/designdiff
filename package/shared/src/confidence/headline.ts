@@ -2,7 +2,7 @@
 // 純粋関数。既存 regionScores の structure / color を集約するだけで、微細な色ノイズが
 // 「全部違う」に見える問題を解消する。
 
-import type { ComparisonHeadline, RegionScore } from "../type.js";
+import { selectScoringRegions, type ComparisonHeadline, type RegionScore } from "../type.js";
 
 // buildIssues() (diff-report-builder.ts) emits a critical "color" issue at
 // color >= 2 — keep this headline's colorOnlyRegions count on the same
@@ -15,9 +15,11 @@ const PERCENT = 100;
 const STRUCTURE_MATCH_DECIMAL_PLACES = 2;
 
 export function buildComparisonHeadline(
-  regionScores: RegionScore[],
+  allRegionScores: RegionScore[],
   matchRate: number,
 ): ComparisonHeadline {
+  // 比較対象そのものを指す行は子の行と範囲が重なるため、集計からは外す。
+  const regionScores = selectScoringRegions(allRegionScores);
   if (regionScores.length === 0) {
     return {
       structureMatch: matchRate,
