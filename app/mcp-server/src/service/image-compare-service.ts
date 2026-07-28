@@ -737,8 +737,13 @@ export async function compareImages(
 
   // Resize design to match screenshot WIDTH first (maintaining aspect ratio)
   // This normalizes coordinate spaces before crop
+  //
+  // crop 前のこの寸法が、後段でノード bbox をスクリーンショット空間へ写すときの
+  // 基準になる。crop 後の寸法を使うと、切り落とした分だけ倍率がずれる。
+  let normalizedDesignHeight = designHeight;
   if (designWidth !== screenshotWidth) {
     const resizeHeight = Math.round(designHeight * (screenshotWidth / designWidth));
+    normalizedDesignHeight = resizeHeight;
     designBuffer = await createSharp(designBuffer)
       .resize(screenshotWidth, resizeHeight)
       .ensureAlpha()
@@ -979,7 +984,19 @@ export async function compareImages(
 
   // Match diff regions to Figma nodes if available
   if (figmaRootNode) {
-    diffRegions = matchDiffRegionsToNodes(diffRegions, figmaRootNode);
+    // 変換を渡さないと、ノード側は Figma canvas 座標 (x が数万になることもある)、
+    // 差分領域は crop 後のスクリーンショット座標のままで突き合わせることになり、
+    // 包含判定が一度も成立せずノード名が全件空で返る。
+    // 倍率の基準は crop 前の正規化済み design 寸法。実パイプラインが
+    // 「幅合わせ → crop」の順で処理するため、高さも幅合わせ後の値を渡す。
+    const appliedCropOrigin = cropRegion
+      ? resolveAppliedCropOrigin(cropRegion, screenshotWidth, normalizedDesignHeight)
+      : null;
+    diffRegions = matchDiffRegionsToNodes(diffRegions, figmaRootNode, {
+      fullScreenshotWidth: screenshotWidth,
+      fullScreenshotHeight: normalizedDesignHeight,
+      cropOrigin: appliedCropOrigin ?? undefined,
+    });
     clusterTelemetry.regionCount = diffRegions.length;
   }
 
@@ -1009,6 +1026,45 @@ export async function compareImages(
       appliedScale,
     },
   };
+}
+
+/**
+ * cropImageBuffer が実際に切り出す原点を、同じ丸めとクリップで先に求める。
+ * 切り出しが成立しない場合は null を返す (画像がそのまま通るため原点は 0)。
+ *
+ * ノード bbox をスクリーンショット空間へ写すとき、要求値ではなく実際に
+ * 適用された原点を引かないと、切り出しが無効だった回だけ座標が丸ごとずれる。
+ */
+export function resolveAppliedCropOrigin(
+  cropRegion: CropRegion,
+  imageWidth: number,
+  imageHeight: number,
+): { x: number; y: number } | null {
+  if (imageWidth <= 0 || imageHeight <= 0) {
+    return null;
+  }
+
+  if (
+    !Number.isFinite(cropRegion.x) ||
+    !Number.isFinite(cropRegion.y) ||
+    !Number.isFinite(cropRegion.width) ||
+    !Number.isFinite(cropRegion.height) ||
+    cropRegion.width <= 0 ||
+    cropRegion.height <= 0
+  ) {
+    return null;
+  }
+
+  const left = Math.max(0, Math.floor(cropRegion.x));
+  const top = Math.max(0, Math.floor(cropRegion.y));
+  const right = Math.min(imageWidth, Math.floor(cropRegion.x + cropRegion.width));
+  const bottom = Math.min(imageHeight, Math.floor(cropRegion.y + cropRegion.height));
+
+  if (left >= right || top >= bottom) {
+    return null;
+  }
+
+  return { x: left, y: top };
 }
 
 /**

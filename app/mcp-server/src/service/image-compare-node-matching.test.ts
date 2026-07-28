@@ -1,0 +1,152 @@
+import sharp from "sharp";
+import { describe, it, expect } from "vitest";
+
+import type { FigmaNode } from "@figdiff/shared";
+
+import { compareImages, resolveAppliedCropOrigin } from "./image-compare-service.js";
+
+// 実物の sharp と実物の node-matcher を使う。ここを差し替えると、
+// 「座標系が違うので一致しない」という本題そのものが検証できなくなる。
+
+const WIDTH = 200;
+const HEIGHT = 400;
+
+/** 全面白の上に、指定矩形だけ黒を置いた PNG を作る。 */
+async function makePng(rect?: { x: number; y: number; w: number; h: number }): Promise<string> {
+  const pixels = Buffer.alloc(WIDTH * HEIGHT * 4, 255);
+  if (rect) {
+    for (let y = rect.y; y < rect.y + rect.h; y++) {
+      for (let x = rect.x; x < rect.x + rect.w; x++) {
+        const offset = (y * WIDTH + x) * 4;
+        pixels[offset] = 0;
+        pixels[offset + 1] = 0;
+        pixels[offset + 2] = 0;
+        pixels[offset + 3] = 255;
+      }
+    }
+  }
+  const png = await sharp(pixels, { raw: { width: WIDTH, height: HEIGHT, channels: 4 } })
+    .png()
+    .toBuffer();
+  return png.toString("base64");
+}
+
+// Figma canvas 上で (1000, 2000) にある 100x200 のフレーム。
+// 書き出しは scale 2 なので、スクリーンショット空間では 200x400 になる。
+const rootNode: FigmaNode = {
+  id: "0:1",
+  name: "Root",
+  type: "FRAME",
+  absoluteBoundingBox: { x: 1000, y: 2000, width: 100, height: 200 },
+  absoluteRenderBounds: null,
+  fills: [],
+  strokes: [],
+  effects: [],
+  children: [
+    {
+      id: "0:2",
+      name: "Header",
+      type: "FRAME",
+      absoluteBoundingBox: { x: 1000, y: 2000, width: 100, height: 50 },
+      absoluteRenderBounds: null,
+      fills: [],
+      strokes: [],
+      effects: [],
+      children: [],
+    },
+    {
+      id: "0:3",
+      name: "Body",
+      type: "FRAME",
+      absoluteBoundingBox: { x: 1000, y: 2100, width: 100, height: 100 },
+      absoluteRenderBounds: null,
+      fills: [],
+      strokes: [],
+      effects: [],
+      children: [],
+    },
+  ],
+};
+
+describe("compareImages がノードを差分領域へ対応づけること", () => {
+  it("Body の位置に差分を作ると、その領域に Body のノードIDが付くこと", async () => {
+    // Body の画面上の範囲は y∈[200, 400)。中心が確実にそこへ入る位置へ置く。
+    const designBase64 = await makePng();
+    const screenshotBase64 = await makePng({ x: 60, y: 250, w: 80, h: 60 });
+
+    const result = await compareImages(
+      { designBase64, screenshotBase64, threshold: 0.1 },
+      rootNode,
+    );
+
+    expect(result.diffRegions.length).toBeGreaterThan(0);
+    const matched = result.diffRegions.filter((region) => region.nearbyNodeIds.length > 0);
+    expect(matched.length).toBeGreaterThan(0);
+    expect(matched[0].nearbyNodeIds).toContain("0:3");
+    expect(matched[0].nearbyNodeNames).toContain("Body");
+  });
+
+  it("Header の位置に差分を作ると、Body ではなく Header が付くこと", async () => {
+    // Header の画面上の範囲は y∈[0, 100)。取り違えを検出するための対の検査。
+    const designBase64 = await makePng();
+    const screenshotBase64 = await makePng({ x: 60, y: 30, w: 80, h: 40 });
+
+    const result = await compareImages(
+      { designBase64, screenshotBase64, threshold: 0.1 },
+      rootNode,
+    );
+
+    const matched = result.diffRegions.filter((region) => region.nearbyNodeIds.length > 0);
+    expect(matched.length).toBeGreaterThan(0);
+    expect(matched[0].nearbyNodeIds).toContain("0:2");
+    expect(matched[0].nearbyNodeIds).not.toContain("0:3");
+  });
+
+  it("切り出しを指定しても、切り出した分だけずれずに対応づくこと", async () => {
+    // 上100pxを落とすと、Body は切り出し後 y∈[100, 300) へ移る。
+    const designBase64 = await makePng();
+    const screenshotBase64 = await makePng({ x: 60, y: 250, w: 80, h: 60 });
+
+    const result = await compareImages(
+      {
+        designBase64,
+        screenshotBase64,
+        threshold: 0.1,
+        cropRegion: { x: 0, y: 100, width: WIDTH, height: HEIGHT - 100 },
+      },
+      rootNode,
+    );
+
+    const matched = result.diffRegions.filter((region) => region.nearbyNodeIds.length > 0);
+    expect(matched.length).toBeGreaterThan(0);
+    expect(matched[0].nearbyNodeIds).toContain("0:3");
+  });
+});
+
+describe("resolveAppliedCropOrigin", () => {
+  it("実際に切り出される原点を、切り捨てと画像内へのクリップ込みで返すこと", () => {
+    expect(resolveAppliedCropOrigin({ x: 10.7, y: 20.9, width: 50, height: 50 }, 200, 400)).toEqual(
+      {
+        x: 10,
+        y: 20,
+      },
+    );
+  });
+
+  it("負の原点は 0 へ寄せること", () => {
+    expect(resolveAppliedCropOrigin({ x: -5, y: -5, width: 50, height: 50 }, 200, 400)).toEqual({
+      x: 0,
+      y: 0,
+    });
+  });
+
+  it("画像の外に出る指定では null を返すこと（切り出しが起きないため原点も無い）", () => {
+    expect(
+      resolveAppliedCropOrigin({ x: 500, y: 500, width: 50, height: 50 }, 200, 400),
+    ).toBeNull();
+  });
+
+  it("幅か高さが 0 以下なら null を返すこと", () => {
+    expect(resolveAppliedCropOrigin({ x: 0, y: 0, width: 0, height: 50 }, 200, 400)).toBeNull();
+  });
+});
