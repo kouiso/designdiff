@@ -179,6 +179,14 @@ interface ClusterDiffResult {
 
 // 分割を諦めたときに、次に何を疑えばよいかを毎回同じ順で示す。
 // ここが空だと「60箇所直せ」という読み方に戻ってしまう。
+// 分割を諦めた理由のうち、「差分が全面に広がっている」と言い切れるもの。
+// 時間切れ (wall-budget-exceeded) は処理が重かっただけで、広がりの証拠にならない。
+function isWidespreadDiffReason(
+  reason: NonNullable<ClusterTelemetry["fallbackReason"]>,
+): reason is "hot-cell-ratio-exceeded" | "region-count-exceeded" {
+  return reason === "hot-cell-ratio-exceeded" || reason === "region-count-exceeded";
+}
+
 const CLUSTER_COLLAPSE_CHECKS = [
   "撮影条件が設計と揃っているか（撮影幅・倍率・スクロール位置）",
   "比較元のFigmaフレームが、撮影した画面と同じものか",
@@ -263,14 +271,20 @@ function clusterDiffRegions(args: {
   if (useGrid && diffRegions.length === 0 && diffPixelCount > 0 && shouldSkipFloodFallback) {
     const coarseTiles = clusterDiffPixelsQuickTiles(diffPixelData, width, height);
     fallbackReason = fallbackReason ?? "grid-empty-with-diff";
-    clusterCollapse = {
-      collapsed: true,
-      reason: fallbackReason,
-      coarseTileCount: coarseTiles.length,
-      message:
-        "差分が画面全体に広がっているため、直す場所を領域に分けられませんでした。個別のCSS修正へ進む前に、比較の前提を先に確認してください。",
-      checks: CLUSTER_COLLAPSE_CHECKS,
-    };
+    if (isWidespreadDiffReason(fallbackReason)) {
+      clusterCollapse = {
+        collapsed: true,
+        reason: fallbackReason,
+        coarseTileCount: coarseTiles.length,
+        message:
+          "差分が画面全体に広がっているため、直す場所を領域に分けられませんでした。個別のCSS修正へ進む前に、比較の前提を先に確認してください。",
+        checks: CLUSTER_COLLAPSE_CHECKS,
+      };
+    } else {
+      // 時間切れは「差分が全面に広がっている」証拠にならない。局所的な差分でも
+      // 大きい画像なら起きる。せっかく見つけた大まかな位置を捨てずに返す。
+      diffRegions = coarseTiles;
+    }
   }
 
   return {
@@ -1016,8 +1030,10 @@ export async function compareImages(
     // 包含判定が一度も成立せずノード名が全件空で返る。
     // 倍率の基準は crop 前の正規化済み design 寸法。実パイプラインが
     // 「幅合わせ → crop」の順で処理するため、高さも幅合わせ後の値を渡す。
+    // 差分領域は撮影側の座標で出るので、切り出し原点も撮影側の寸法で決める。
+    // 設計側の寸法で決めると、片方だけ切り出しが成立した回に原点がずれる。
     const appliedCropOrigin = cropRegion
-      ? resolveAppliedCropOrigin(cropRegion, screenshotWidth, normalizedDesignHeight)
+      ? resolveAppliedCropOrigin(cropRegion, screenshotWidth, screenshotHeight)
       : null;
     diffRegions = matchDiffRegionsToNodes(diffRegions, figmaRootNode, {
       fullScreenshotWidth: screenshotWidth,

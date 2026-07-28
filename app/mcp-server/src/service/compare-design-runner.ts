@@ -1379,7 +1379,9 @@ export async function runCompareDesign(
 
   const finalPreflight = { warnings: finalPreflightWarnings };
 
-  const regionCount = comparison.diffRegions.length;
+  // 分割できなかった回は領域が空になるが、差分が無いわけではない。
+  // 0 のまま流すと「残課題ゼロ」と読める行が出るので、1件として数える。
+  const regionCount = comparison.clusterCollapse ? 1 : comparison.diffRegions.length;
   const targetNodeIds = buildTargetNodeIds(comparison.diffReport, comparison.diffRegions);
   const structuralReviewResult = resolveStructuralVerdict(
     comparison.diffReport,

@@ -11,10 +11,32 @@ import { compareImages, resolveAppliedCropOrigin } from "./image-compare-service
 const WIDTH = 200;
 const HEIGHT = 400;
 
+/**
+ * 画像の外や整数でない矩形を弾く。Buffer は範囲外の書き込みを黙って捨てるので、
+ * 気づかないまま「入力と違う絵」でテストが通ってしまう。
+ */
+function assertRectInside(
+  rect: { x: number; y: number; w: number; h: number },
+  width: number,
+  height: number,
+): void {
+  const values = [rect.x, rect.y, rect.w, rect.h];
+  if (!values.every((value) => Number.isInteger(value))) {
+    throw new Error(`fixture rect must be integers: ${JSON.stringify(rect)}`);
+  }
+  if (rect.w <= 0 || rect.h <= 0) {
+    throw new Error(`fixture rect must be positive: ${JSON.stringify(rect)}`);
+  }
+  if (rect.x < 0 || rect.y < 0 || rect.x + rect.w > width || rect.y + rect.h > height) {
+    throw new Error(`fixture rect is outside ${width}x${height}: ${JSON.stringify(rect)}`);
+  }
+}
+
 /** 全面白の上に、指定矩形だけ黒を置いた PNG を作る。 */
 async function makePng(rect?: { x: number; y: number; w: number; h: number }): Promise<string> {
   const pixels = Buffer.alloc(WIDTH * HEIGHT * 4, 255);
   if (rect) {
+    assertRectInside(rect, WIDTH, HEIGHT);
     for (let y = rect.y; y < rect.y + rect.h; y++) {
       for (let x = rect.x; x < rect.x + rect.w; x++) {
         const offset = (y * WIDTH + x) * 4;
@@ -241,6 +263,7 @@ describe("設計が撮影より縦長で、縮めて貼り付ける経路", () =
   ): Promise<string> {
     const pixels = Buffer.alloc(width * height * 4, 255);
     if (rect) {
+      assertRectInside(rect, width, height);
       for (let y = rect.y; y < rect.y + rect.h; y++) {
         for (let x = rect.x; x < rect.x + rect.w; x++) {
           const offset = (y * width + x) * 4;
@@ -276,5 +299,29 @@ describe("設計が撮影より縦長で、縮めて貼り付ける経路", () =
     expect(matched.length).toBeGreaterThan(0);
     expect(matched[0].nearbyNodeIds).toContain(nodeIds.body);
     expect(matched[0].nearbyNodeIds).not.toContain(nodeIds.header);
+  });
+});
+
+describe("分割できなかった結果の伝わり方", () => {
+  it("報告文が「差分なし・完全一致」と言わないこと", async () => {
+    const { generateMarkdownReport } = await import("./report-generator.js");
+    const markdown = generateMarkdownReport({
+      comparisonId: "cmp-collapse",
+      matchRate: 12.5,
+      diffPixelCount: 1_000_000,
+      totalPixelCount: 1_200_000,
+      diffRegions: [],
+      suggestion: "",
+      clusterCollapse: {
+        collapsed: true,
+        reason: "hot-cell-ratio-exceeded",
+        coarseTileCount: 56,
+        message: "差分が画面全体に広がっているため、直す場所を領域に分けられませんでした。",
+        checks: ["撮影条件が設計と揃っているか"],
+      },
+    });
+
+    expect(markdown).not.toContain("match perfectly");
+    expect(markdown).toContain("撮影条件が設計と揃っているか");
   });
 });
