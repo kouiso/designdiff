@@ -30,6 +30,8 @@ export interface LoopIterationInput {
   sourceKey: string;
   comparisonId: string;
   matchRate: number;
+  captureWidth?: number;
+  captureHeight?: number;
   diffPixelCount?: number;
   regionCount?: number;
   /**
@@ -46,6 +48,8 @@ export interface LoopIterationInput {
 const LoopStateEntrySchema = z.object({
   comparisonId: z.string(),
   matchRate: z.number(),
+  captureWidth: z.number().optional(),
+  captureHeight: z.number().optional(),
   diffPixelCount: z.number().optional(),
   regionCount: z.number().optional(),
   perceptibleDiffRatio: z.number().optional(),
@@ -142,6 +146,22 @@ function formatRatio(ratio: number): string {
   return `${(ratio * 100).toFixed(2)}%`;
 }
 
+function hasMatchingCaptureDimensions(entry: LoopStateEntry, input: LoopIterationInput): boolean {
+  return (
+    typeof input.captureWidth === "number" &&
+    typeof input.captureHeight === "number" &&
+    entry.captureWidth === input.captureWidth &&
+    entry.captureHeight === input.captureHeight
+  );
+}
+
+function comparablePriorEntries(
+  entries: LoopStateEntry[],
+  input: LoopIterationInput,
+): LoopStateEntry[] {
+  return entries.every((entry) => hasMatchingCaptureDimensions(entry, input)) ? entries : [];
+}
+
 /**
  * 今回の比較結果をループ履歴に記録し、続行/停止の判定を返す。
  * 判定優先順: PASS到達 > UNCERTAIN > 反復上限 > 収束停滞 > 続行。
@@ -158,11 +178,15 @@ export async function recordIterationAndEvaluate(
   const prior = (await loadEntries(filePath)).filter(
     (entry) => now - entry.timestamp < LOOP_STATE_TTL_MS,
   );
+  // 撮影条件が違う結果を同じ改善系列に混ぜると、撮り直し自体を悪化と誤認する。
+  const comparablePrior = comparablePriorEntries(prior, input);
   const entries: LoopStateEntry[] = [
-    ...prior,
+    ...comparablePrior,
     {
       comparisonId: input.comparisonId,
       matchRate: input.matchRate,
+      captureWidth: input.captureWidth,
+      captureHeight: input.captureHeight,
       diffPixelCount: input.diffPixelCount,
       regionCount: input.regionCount,
       perceptibleDiffRatio: input.perceptibleDiffRatio,

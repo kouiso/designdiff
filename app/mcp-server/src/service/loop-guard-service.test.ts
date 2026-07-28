@@ -29,6 +29,8 @@ describe("loop-guard-service", () => {
       sourceKey: "figma:file:1:2",
       comparisonId: `cmp-${Math.random().toString(36).slice(2)}`,
       matchRate: 80,
+      captureWidth: 1440,
+      captureHeight: 900,
       structuralVerdict: "fail",
       status: "FAIL",
       ...overrides,
@@ -200,6 +202,55 @@ describe("loop-guard-service", () => {
 
     expect(report.decision).toBe("stop");
     expect(report.reason).toContain("悪化");
+  });
+
+  it("撮影寸法が変わったら悪化履歴をリセットする", async () => {
+    await recordIterationAndEvaluate(input({ matchRate: 90 }), {
+      stateDir,
+      now: baseNow,
+    });
+    await recordIterationAndEvaluate(input({ matchRate: 85 }), {
+      stateDir,
+      now: baseNow + 1000,
+    });
+
+    const report = await recordIterationAndEvaluate(
+      input({
+        matchRate: 80,
+        captureWidth: 2166,
+        captureHeight: 1354,
+      }),
+      {
+        stateDir,
+        now: baseNow + 2000,
+      },
+    );
+
+    expect(report.iteration).toBe(1);
+    expect(report.decision).toBe("continue");
+    expect(report.reason).not.toContain("悪化");
+  });
+
+  it("寸法がない古い履歴は新しい撮影条件と比較しない", async () => {
+    await recordIterationAndEvaluate(
+      input({
+        matchRate: 90,
+        captureWidth: undefined,
+        captureHeight: undefined,
+      }),
+      {
+        stateDir,
+        now: baseNow,
+      },
+    );
+
+    const report = await recordIterationAndEvaluate(input({ matchRate: 80 }), {
+      stateDir,
+      now: baseNow + 1000,
+    });
+
+    expect(report.iteration).toBe(1);
+    expect(report.decision).toBe("continue");
   });
 
   it("resetLoopState clears the history for the key", async () => {

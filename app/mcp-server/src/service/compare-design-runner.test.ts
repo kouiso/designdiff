@@ -7,7 +7,7 @@ const mocks = vi.hoisted(() => ({
   compareImages: vi.fn(),
   redactImageBase64ForPublicExport: vi.fn(async (imageBase64: string) => imageBase64),
   createFigmaService: vi.fn(),
-  getRecentReports: vi.fn(() => []),
+  getRecentComparisons: vi.fn<() => ComparisonHistoryModule.RecentComparison[]>(() => []),
   recordComparison: vi.fn(async () => undefined),
   sharp: vi.fn(),
   captureUrl: vi.fn(),
@@ -52,7 +52,7 @@ vi.mock("./comparison-history.js", async (importOriginal) => {
   const actual = await importOriginal<ComparisonHistoryModule>();
   return {
     ...actual,
-    getRecentReports: mocks.getRecentReports,
+    getRecentComparisons: mocks.getRecentComparisons,
     recordComparison: mocks.recordComparison,
   };
 });
@@ -516,6 +516,105 @@ describe("runCompareDesign", () => {
     });
     expect(output.result.status).toBe("PASS");
     expect(output.result.matchRate).toBe(100);
+  });
+
+  it("撮影幅を変えた比較は regression ではなく capture-changed を返す", async () => {
+    tmpRoot = await fs.mkdtemp(path.join(process.cwd(), "tmp-figdiff-runner-"));
+    const designPath = path.join(tmpRoot, "design.png");
+    const screenshotPath = path.join(tmpRoot, "captured.png");
+    await fs.writeFile(designPath, Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+    await fs.writeFile(screenshotPath, Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+
+    let captureWidth = 1440;
+    let captureHeight = 900;
+    let weightedStructure = 0.8;
+    let comparisonId = "cmp-1440";
+    mocks.captureUrl.mockResolvedValue({ screenshotPath });
+    mocks.sharp.mockReturnValue({
+      metadata: vi.fn(async () => ({ width: captureWidth, height: captureHeight })),
+    });
+    mocks.compareImages.mockImplementation(async () => ({
+      comparisonId,
+      matchRate: 90,
+      diffPixelCount: 10,
+      totalPixelCount: captureWidth * captureHeight,
+      diffRegions: [],
+      suggestion: "structural test fixture",
+      diffReport: {
+        alignment: {
+          translation: { x: 0, y: 0 },
+          scale: { x: 1, y: 1 },
+          rotation: 0,
+          confidence: 1,
+          residual: 0,
+        },
+        regionScores: [],
+        issues: [],
+        weightedAggregate: {
+          weightedStructure,
+          weightedColor: 1,
+          totalWeight: 1,
+        },
+        aggregateVerdict: "fail" as const,
+        rationale: "capture dimension test",
+      },
+      normalization: {
+        designNativeWidth: 1440,
+        designNativeHeight: 900,
+        screenshotWidth: captureWidth,
+        screenshotHeight: captureHeight,
+        cropApplied: false,
+        containResized: false,
+        appliedScale: 1,
+      },
+    }));
+
+    const first = await runCompareDesign({
+      design_source: designPath,
+      screenshot_url: "https://example.test",
+      capture_width: 1440,
+    });
+    if (!first.result.diffReport) {
+      throw new Error("first comparison must include a diff report");
+    }
+    mocks.getRecentComparisons.mockReturnValue([
+      {
+        report: first.result.diffReport,
+        captureWidth: 1440,
+        captureHeight: 900,
+      },
+    ]);
+
+    captureWidth = 2166;
+    captureHeight = 1354;
+    weightedStructure = 0.7;
+    comparisonId = "cmp-2166";
+    const second = await runCompareDesign({
+      design_source: designPath,
+      screenshot_url: "https://example.test",
+      capture_width: 2166,
+    });
+
+    expect(second.result.critique).toEqual({
+      concern: "capture-changed",
+      advice:
+        "撮影条件（撮影幅 1440px → 2166px）が変わったため、前回との悪化判定は行っていません。",
+    });
+    expect(second.result.critique?.concern).not.toBe("regression");
+    expect(mocks.recordComparison).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        captureWidth: 1440,
+        captureHeight: 900,
+      }),
+    );
+    expect(mocks.recordComparison).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        captureWidth: 2166,
+        captureHeight: 1354,
+      }),
+    );
   });
 
   it("auto_mask_dynamic:false では2回目の撮影を要求しない", async () => {

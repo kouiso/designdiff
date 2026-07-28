@@ -25,6 +25,7 @@ import {
   selfCritique,
   type CompareDesignResult,
   type ComparisonDiagnosis,
+  type CritiqueNote,
   type CropRegion,
   type DiffReport,
   type DiffVerdict,
@@ -47,7 +48,8 @@ import {
 
 import {
   buildComparisonSourceKey,
-  getRecentReports,
+  getRecentComparisons,
+  type RecentComparison,
   recordComparison,
 } from "./comparison-history.js";
 import { getCropRegionForComparison } from "./crop-region-store.js";
@@ -1185,6 +1187,41 @@ async function evaluateLoopGuardSafely(
   }
 }
 
+function buildCaptureAwareCritique(
+  report: DiffReport | undefined,
+  priorComparisons: RecentComparison[],
+  captureWidth: number | undefined,
+  captureHeight: number | undefined,
+): CritiqueNote | undefined {
+  if (
+    !report ||
+    priorComparisons.length === 0 ||
+    typeof captureWidth !== "number" ||
+    typeof captureHeight !== "number"
+  ) {
+    return undefined;
+  }
+
+  const comparableReports = priorComparisons
+    .filter((entry) => entry.captureWidth === captureWidth && entry.captureHeight === captureHeight)
+    .map((entry) => entry.report);
+  if (comparableReports.length > 0) {
+    return selfCritique(report, comparableReports);
+  }
+
+  for (let index = priorComparisons.length - 1; index >= 0; index--) {
+    const prior = priorComparisons[index];
+    if (typeof prior.captureWidth === "number" && typeof prior.captureHeight === "number") {
+      return {
+        concern: "capture-changed",
+        advice: `撮影条件（撮影幅 ${prior.captureWidth}px → ${captureWidth}px）が変わったため、前回との悪化判定は行っていません。`,
+      };
+    }
+  }
+
+  return undefined;
+}
+
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: 既存コードの複雑度であり本PRの変更対象外。別途リファクタで対応予定。
 export async function runCompareDesign(
   args: CompareDesignRunArgs,
@@ -1377,11 +1414,15 @@ export async function runCompareDesign(
     comparison.diffPixelCount,
   );
   const sourceKey = buildComparisonSourceKey(parsedDesignSource, resolvedNodeId);
-  const priorReports = getRecentReports(sourceKey);
-  const critique =
-    comparison.diffReport && priorReports.length > 0
-      ? selfCritique(comparison.diffReport, priorReports)
-      : undefined;
+  const priorComparisons = getRecentComparisons(sourceKey);
+  const captureWidth = comparison.normalization?.screenshotWidth;
+  const captureHeight = comparison.normalization?.screenshotHeight;
+  const critique = buildCaptureAwareCritique(
+    comparison.diffReport,
+    priorComparisons,
+    captureWidth,
+    captureHeight,
+  );
   const perceptibleDiffRatio = comparison.diffReport?.perceptibleDiffRatio;
   const pixelsContradictPass = isPassContradictedByPixels(
     structuralReviewResult.verdict,
@@ -1430,6 +1471,8 @@ export async function runCompareDesign(
     sourceKey,
     comparisonId: comparison.comparisonId,
     matchRate: comparison.matchRate,
+    captureWidth,
+    captureHeight,
     diffPixelCount: comparison.diffPixelCount,
     regionCount,
     perceptibleDiffRatio,
@@ -1486,6 +1529,8 @@ export async function runCompareDesign(
     comparisonId: result.comparisonId,
     sourceKey,
     result,
+    captureWidth: result.normalization?.screenshotWidth,
+    captureHeight: result.normalization?.screenshotHeight,
   });
 
   // 成功後に使用ノードを記憶し、次回の自動補完に活かす。

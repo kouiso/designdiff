@@ -10,6 +10,7 @@ import {
   buildComparisonSourceKey,
   clearComparisonHistory,
   getComparisonEntry,
+  getRecentComparisons,
   getRecentReports,
   recordComparison,
 } from "./comparison-history.js";
@@ -79,6 +80,40 @@ describe("comparison-history", () => {
     expect(getRecentReports(sourceKey)).toHaveLength(5);
     expect(await getComparisonEntry("cmp-0")).toBeUndefined();
     expect((await getComparisonEntry("cmp-5"))?.comparisonId).toBe("cmp-5");
+  });
+
+  it("撮影寸法が違う履歴を判別して除外できる", async () => {
+    clearComparisonHistory();
+    const sourceKey = "figma:file:dimensions";
+    const report1440 = createReport(0.8);
+    const report2166 = createReport(0.7);
+
+    await recordComparison({
+      comparisonId: "cmp-1440",
+      sourceKey,
+      result: createResult("cmp-1440", report1440),
+      captureWidth: 1440,
+      captureHeight: 900,
+    });
+    await recordComparison({
+      comparisonId: "cmp-2166",
+      sourceKey,
+      result: createResult("cmp-2166", report2166),
+      captureWidth: 2166,
+      captureHeight: 1354,
+    });
+
+    const matchingComparisons = getRecentComparisons(sourceKey).filter(
+      (entry) => entry.captureWidth === 2166 && entry.captureHeight === 1354,
+    );
+
+    expect(matchingComparisons).toEqual([
+      {
+        report: report2166,
+        captureWidth: 2166,
+        captureHeight: 1354,
+      },
+    ]);
   });
 
   it("履歴上限から外れた比較の永続化ファイルを削除する", async () => {
