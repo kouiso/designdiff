@@ -32,6 +32,8 @@ export interface LoopIterationInput {
   matchRate: number;
   captureWidth?: number;
   captureHeight?: number;
+  /** URLを開いて撮った場合は true。高さが中身の量で決まるため条件から外す。 */
+  heightIsContentDriven?: boolean;
   diffPixelCount?: number;
   regionCount?: number;
   /**
@@ -50,6 +52,7 @@ const LoopStateEntrySchema = z.object({
   matchRate: z.number(),
   captureWidth: z.number().optional(),
   captureHeight: z.number().optional(),
+  heightIsContentDriven: z.boolean().optional(),
   diffPixelCount: z.number().optional(),
   regionCount: z.number().optional(),
   perceptibleDiffRatio: z.number().optional(),
@@ -147,13 +150,20 @@ function formatRatio(ratio: number): string {
 }
 
 /**
- * 撮影条件が同じかどうかは幅だけで見る。
+ * 撮影条件が同じかどうかの見方は、撮り方で変わる。
  *
- * ページ全体を撮ると高さは中身の量で決まるので、実装で1行足しただけでも変わる。
- * 高さを条件に入れると、実装を直すたびに履歴が捨てられて停止判定が働かない。
+ * URLを開いてページ全体を撮る場合、高さは中身の量で決まる。実装で1行足しただけ
+ * でも変わるので、高さを条件にすると履歴が毎回捨てられ、停止判定が働かない。
+ * 画像を渡す場合や端末から撮る場合は、高さも撮る側が決めた値なので条件に入れる。
  */
 function hasMatchingCaptureDimensions(entry: LoopStateEntry, input: LoopIterationInput): boolean {
-  return typeof input.captureWidth === "number" && entry.captureWidth === input.captureWidth;
+  if (typeof input.captureWidth !== "number" || entry.captureWidth !== input.captureWidth) {
+    return false;
+  }
+  if (input.heightIsContentDriven === true) {
+    return true;
+  }
+  return entry.captureHeight === input.captureHeight;
 }
 
 function comparablePriorEntries(

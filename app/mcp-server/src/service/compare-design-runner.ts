@@ -1188,30 +1188,45 @@ async function evaluateLoopGuardSafely(
 }
 
 /**
- * 撮影条件が同じかどうかは幅だけで見る。
+ * 撮影条件が同じかどうかの見方は、撮り方で変わる。
  *
- * ページ全体を撮ると、高さは中身の量で決まる。実装で1行足しただけでも変わるので、
- * 高さを条件に入れると「実装を直したから比べられない」という逆立ちが起きる。
- * 幅は撮る側が決める値なので、条件として使えるのはこちらだけ。
+ * URLを開いてページ全体を撮る場合、高さは中身の量で決まる。実装で1行足しただけ
+ * でも変わるので、高さを条件に入れると「実装を直したから比べられない」という
+ * 逆立ちが起きる。この場合は幅だけで見る。
+ *
+ * 画像を渡す場合や端末から撮る場合は、高さも撮る側が決めた値。違う高さを同じ
+ * 条件として扱うと、別の大きさの絵で出した数値を並べて比べることになる。
  */
 function isSameCaptureCondition(
   entry: RecentComparison,
   captureWidth: number,
-): entry is RecentComparison & { captureWidth: number } {
-  return entry.captureWidth === captureWidth;
+  captureHeight: number | undefined,
+  heightIsContentDriven: boolean,
+): boolean {
+  if (entry.captureWidth !== captureWidth) {
+    return false;
+  }
+  if (heightIsContentDriven) {
+    return true;
+  }
+  return entry.captureHeight === captureHeight;
 }
 
 function buildCaptureAwareCritique(
   report: DiffReport | undefined,
   priorComparisons: RecentComparison[],
   captureWidth: number | undefined,
+  captureHeight: number | undefined,
+  heightIsContentDriven: boolean,
 ): CritiqueNote | undefined {
   if (!report || priorComparisons.length === 0 || typeof captureWidth !== "number") {
     return undefined;
   }
 
   const comparableReports = priorComparisons
-    .filter((entry) => isSameCaptureCondition(entry, captureWidth))
+    .filter((entry) =>
+      isSameCaptureCondition(entry, captureWidth, captureHeight, heightIsContentDriven),
+    )
     .map((entry) => entry.report);
   if (comparableReports.length > 0) {
     return selfCritique(report, comparableReports);
@@ -1425,7 +1440,15 @@ export async function runCompareDesign(
   const priorComparisons = getRecentComparisons(sourceKey);
   const captureWidth = comparison.normalization?.screenshotWidth;
   const captureHeight = comparison.normalization?.screenshotHeight;
-  const critique = buildCaptureAwareCritique(comparison.diffReport, priorComparisons, captureWidth);
+  // URLを開いて撮る場合だけ、高さは中身の量で決まる。
+  const heightIsContentDriven = typeof args.screenshot_url === "string";
+  const critique = buildCaptureAwareCritique(
+    comparison.diffReport,
+    priorComparisons,
+    captureWidth,
+    captureHeight,
+    heightIsContentDriven,
+  );
   const perceptibleDiffRatio = comparison.diffReport?.perceptibleDiffRatio;
   const pixelsContradictPass = isPassContradictedByPixels(
     structuralReviewResult.verdict,
@@ -1476,6 +1499,7 @@ export async function runCompareDesign(
     matchRate: comparison.matchRate,
     captureWidth,
     captureHeight,
+    heightIsContentDriven,
     diffPixelCount: comparison.diffPixelCount,
     regionCount,
     perceptibleDiffRatio,

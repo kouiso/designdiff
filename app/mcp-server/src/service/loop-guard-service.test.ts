@@ -204,23 +204,39 @@ describe("loop-guard-service", () => {
     expect(report.reason).toContain("悪化");
   });
 
-  // ページ全体を撮ると高さは中身の量で決まる。実装で1行足すだけで変わるので、
+  // URLを開いて撮ると高さは中身の量で決まる。実装で1行足すだけで変わるので、
   // 高さを条件にすると実装を直すたびに履歴が捨てられ、停止判定が働かない。
-  it("幅が同じなら、高さが変わっても悪化の履歴を捨てないこと", async () => {
-    await recordIterationAndEvaluate(input({ matchRate: 80, captureHeight: 3000 }), {
+  it("URL撮影なら、高さが変わっても悪化の履歴を捨てないこと", async () => {
+    const urlCapture = { heightIsContentDriven: true };
+    await recordIterationAndEvaluate(input({ ...urlCapture, matchRate: 80, captureHeight: 3000 }), {
       stateDir,
       now: baseNow,
     });
-    await recordIterationAndEvaluate(input({ matchRate: 70, captureHeight: 3200 }), {
+    await recordIterationAndEvaluate(input({ ...urlCapture, matchRate: 70, captureHeight: 3200 }), {
       stateDir,
       now: baseNow + 1000,
     });
-    const third = await recordIterationAndEvaluate(input({ matchRate: 60, captureHeight: 3400 }), {
-      stateDir,
-      now: baseNow + 2000,
-    });
+    const third = await recordIterationAndEvaluate(
+      input({ ...urlCapture, matchRate: 60, captureHeight: 3400 }),
+      { stateDir, now: baseNow + 2000 },
+    );
 
     expect(third.iteration).toBe(3);
+  });
+
+  // 画像を渡す場合の高さは撮る側が決めた値。違う高さを同じ条件として扱うと、
+  // 別の大きさの絵で出した数値を並べて比べることになる。
+  it("画像を渡す場合は、高さが変わったら別の撮影条件として扱うこと", async () => {
+    await recordIterationAndEvaluate(input({ matchRate: 80, captureHeight: 900 }), {
+      stateDir,
+      now: baseNow,
+    });
+    const second = await recordIterationAndEvaluate(input({ matchRate: 70, captureHeight: 1200 }), {
+      stateDir,
+      now: baseNow + 1000,
+    });
+
+    expect(second.iteration).toBe(1);
   });
 
   it("撮影寸法が変わったら悪化履歴をリセットする", async () => {
