@@ -162,3 +162,13 @@ describe("resolveAlignment", () => {
     expect(result.alignment.rotation).toBe(0);
   });
 });
+
+describe("countSsdOffset の入力検査", () => {
+  it("0 や負の刻みは弾くこと", () => {
+    const image = makeImage(0);
+
+    // 走査が終わらずプロセスが固まるより、その場で止める。
+    expect(() => countSsdOffset(image, image, WIDTH, HEIGHT, 0, 0, 0)).toThrow(/positive integer/);
+    expect(() => countSsdOffset(image, image, WIDTH, HEIGHT, 0, 0, -1)).toThrow(/positive integer/);
+  });
+});

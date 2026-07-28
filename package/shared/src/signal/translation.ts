@@ -15,12 +15,14 @@ export const COARSE_SAMPLE_STEP = 4;
 export const DIFF_THRESHOLD_SQ = 625; // per-channel RGB distance threshold (25^2)
 
 /**
- * Count differing pixels between design (offset by dx,dy) and screenshot,
- * sampling every sampleStep pixels. No array allocation — direct index math.
+ * 位置をずらしたときに違って見える画素を数える。
  *
- * alwaysPenalizeOob: when true, every OOB pixel counts as a diff (used in the
- * improvement-check gate to prevent transparent-vs-black false matches).
- * When false (default for detection), OOB only penalizes visible screen content.
+ * 配列を作らずに添字だけで走る。数百万画素を何十回も走るので、途中の配列を
+ * 作ると確保と解放だけで時間が溶ける。
+ *
+ * alwaysPenalizeOob: 画像の外へ出た画素を必ず違いとして数えるか。
+ * 数えないと、透明な余白が黒い実装と「一致」に見える。ずれを探すときは
+ * 数えず（画面に見えている中身だけを罰する）、動かす価値を測るときは数える。
  */
 export const countSsdOffset = (
   design: Uint8ClampedArray,
@@ -32,6 +34,12 @@ export const countSsdOffset = (
   sampleStep: number,
   alwaysPenalizeOob = false,
 ): number => {
+  // 0 や負の刻みを渡されると、走査が終わらずプロセスが固まる。
+  // 公開した以上、呼ぶ側を信用せずここで止める。
+  if (!Number.isInteger(sampleStep) || sampleStep <= 0) {
+    throw new Error(`sampleStep must be a positive integer: got ${sampleStep}`);
+  }
+
   let diff = 0;
   for (let y = 0; y < height; y += sampleStep) {
     for (let x = 0; x < width; x += sampleStep) {
@@ -62,9 +70,10 @@ export const countSsdOffset = (
 };
 
 /**
- * Detect translation offset between design and screenshot pixels.
- * Coarse search (±50px, step 5px, sampled) then fine (±5px, full resolution).
- * Returns { dx, dy } such that shifting design by (dx,dy) minimises pixel diff.
+ * 設計と撮影の間の平行移動を探す。
+ *
+ * 粗く広く探してから、その周りを細かく探す。最初から1px刻みで±50pxを見ると
+ * 候補が1万通りになり、実寸の画像では終わらない。
  */
 export const detectTranslation = (
   design: Uint8ClampedArray,
@@ -91,18 +100,13 @@ export const detectTranslation = (
     }
   }
 
-  // bestDiff from the coarse pass is a sampled count (every COARSE_SAMPLE_STEP
-  // pixels), not comparable to the fine pass's full-resolution count — reset
-  // before the fine pass so it doesn't spuriously "win" against every full-res
-  // candidate purely because it summed far fewer samples.
+  // 粗い探索の値は間引いて数えたもので、細かい探索の値とは桁が違う。
+  // 持ち越すと、単に数えた点が少ないという理由で粗い側が勝ち続ける。
   const coarseDx = bestDx;
   const coarseDy = bestDy;
   bestDiff = Infinity;
-  // The fine pass runs FINE_RANGE*2+1 squared candidates; a step of 1 on a
-  // large screenshot (e.g. a 1080x2340 real-device capture) means over 100
-  // full-resolution scans. Sample on a stride for large images — the fine
-  // pass only needs to discriminate between candidates 10px apart, so a
-  // coarser sample than 1px is still discriminating at that scale.
+  // 大きい画像で1px刻みのまま全画素を100回以上走ると時間が持たない。
+  // 細かい探索が見分けたいのは10px以内の差なので、間引いても区別はつく。
   const fineSampleStep = width * height > 1_000_000 ? 2 : 1;
   for (let dy = coarseDy - FINE_RANGE; dy <= coarseDy + FINE_RANGE; dy++) {
     for (let dx = coarseDx - FINE_RANGE; dx <= coarseDx + FINE_RANGE; dx++) {
@@ -115,10 +119,8 @@ export const detectTranslation = (
     }
   }
 
-  // bestDiff is a count over the fineSampleStep grid, not every pixel — normalize
-  // by the actual number of sampled positions (matches countSsdOffset's
-  // `for (i = 0; i < n; i += step)` iteration count), not the raw pixel count,
-  // or a strided scan underreports residual by roughly step^2.
+  // 間引いて数えた回数で割る。全画素数で割ると、間引いた分だけ残差が
+  // 小さく出て「ほぼ一致している」と誤って読める。
   const sampledPositionCount =
     Math.ceil(width / fineSampleStep) * Math.ceil(height / fineSampleStep);
   const residual = sampledPositionCount === 0 ? 0 : bestDiff / sampledPositionCount;
@@ -129,8 +131,10 @@ export const detectTranslation = (
 };
 
 /**
- * Shift design pixels by (dx, dy) to apply alignment correction.
- * Pixels shifted outside bounds become transparent.
+ * 設計の画素を (dx, dy) だけ動かした新しい並びを返す。
+ *
+ * 動かした先が無い画素は透明のままにする。既定色で埋めると、埋めた色と
+ * 撮影側の差が新しい崩れとして数えられる。
  */
 export const shiftPixels = (
   src: Uint8ClampedArray,
