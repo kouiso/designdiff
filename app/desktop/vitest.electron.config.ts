@@ -8,14 +8,12 @@ export default defineConfig({
     environment: "node",
     include: ["electron/**/*.test.ts"],
     globals: true,
-    // Electron のメインプロセス側 2,348 行は、これまで一度も測られていなかった。
-    // 画面側だけを測った数字を「デスクトップ全体の値」として報告しており、
-    // 出荷しているコードの約2割が計測の外にあった。
+    // Electron のメインプロセス側は、以前は一度も測られていなかった。画面側だけを
+    // 測った数字を「デスクトップ全体の値」として報告しており、出荷しているコードの
+    // 約2割が計測の外にあった。
     //
-    // 2026-07-28 実測: statements 51.22 / branches 85.82 / functions 88.18 /
-    // lines 51.22。重ね合わせの窓口を足した分だけ上がった。行の数で目標の80%へ
-    // 届くには、起動処理(234行)と案件・ファイルの窓口が残っている。
-    // 実測値を下限に置いて、これ以上下がったら止まるようにする。
+    // 2026-07-28 実測: statements 82.35 / branches 87.46 / functions 92.85 /
+    // lines 82.35。document.md Phase E の目標 (4軸すべて80%) を満たした。
     // 下限を下げて通すのは禁止。下がったら原因を直すこと。
     coverage: {
       provider: "v8",
@@ -24,10 +22,10 @@ export default defineConfig({
       // 分母だけが膨らむ。テストの書きようも無い。
       exclude: ["electron/**/*.test.ts", "electron/type/**"],
       thresholds: {
-        statements: 51,
+        statements: 80,
         branches: 85,
-        functions: 88,
-        lines: 51,
+        functions: 90,
+        lines: 80,
       },
     },
   },
