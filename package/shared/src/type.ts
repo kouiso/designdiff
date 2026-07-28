@@ -197,6 +197,9 @@ export interface RegionScore {
   // "root" は比較対象そのものを指す行。子の行と範囲が重なるので集計からは外す。
   // 局所比較で「対象ノードが見つからない」を出さないために、行としては必ず持たせる。
   scope?: "section" | "root";
+  // 同じ位置・同じ大きさの兄弟をまとめたとき、下に隠れた層のID。
+  // 落とすと、重なりの下側で起きた崩れの直し先へ辿れなくなる。
+  overlappingNodeIds?: string[];
   structure: number;
   color: number;
   shape: number;

@@ -981,7 +981,9 @@ export async function compareImages(
   const height = finalScreenshotHeight;
   const screenshotPixels = Uint8ClampedArray.from(screenshotRaw);
   const pixelmatchDesignPixels = Uint8ClampedArray.from(designRaw);
-  let reportDesignPixels = paddingMask ? Uint8ClampedArray.from(designRaw) : pixelmatchDesignPixels;
+  const reportDesignPixels = paddingMask
+    ? Uint8ClampedArray.from(designRaw)
+    : pixelmatchDesignPixels;
 
   if (paddingMask) {
     // contain の余白は比較対象ではないため、その領域だけをスクリーンショット側に合わせて差分から除外する。
@@ -992,7 +994,13 @@ export async function compareImages(
       height,
       paddingMask,
     );
-    preserveLegacyWhitePaddingForReport(reportDesignPixels, width, height, paddingMask);
+    preserveLegacyWhitePaddingForReport(
+      reportDesignPixels,
+      width,
+      height,
+      paddingMask,
+      parseBackgroundColor(options.designBackground ?? DEFAULT_DESIGN_BACKGROUND),
+    );
   }
 
   // ignoreRegions 前処理: matchRate 算出の分母から引く mask ピクセル数を計算し、
@@ -1054,17 +1062,16 @@ export async function compareImages(
   // 一致率は変わらない。構造・色・輪郭を測る側は生の RGB を読むため、下地を
   // 敷かないと透明が黒として評価に入る。
 
-  let reportScreenshotPixels = screenshotPixels;
+  // ここに来る時点で pixelmatch は終わっており、元の透明度を読む処理はもう無い。
+  // 複製すると、上限いっぱいの画像で 96MB の確保が増えて OOM の上限が形骸化する。
+  // 同じ配列をそのまま塗り替える。
   if (hasTransparentPixel(reportDesignPixels)) {
-    if (reportDesignPixels === pixelmatchDesignPixels) {
-      reportDesignPixels = Uint8ClampedArray.from(reportDesignPixels);
-    }
     flattenTransparentPixels(reportDesignPixels, backgroundColor);
   }
   if (hasTransparentPixel(screenshotPixels)) {
-    reportScreenshotPixels = Uint8ClampedArray.from(screenshotPixels);
-    flattenTransparentPixels(reportScreenshotPixels, backgroundColor);
+    flattenTransparentPixels(screenshotPixels, backgroundColor);
   }
+  const reportScreenshotPixels = screenshotPixels;
 
   const perceptibleMask = new Uint8Array(width * height);
   const diffReport = buildDiffReport({
@@ -1458,6 +1465,9 @@ function preserveLegacyWhitePaddingForReport(
   imageWidth: number,
   imageHeight: number,
   content: PaddingMask,
+  // 余白を何色で埋めるか。白で固定すると、黒地の画面を比べるときに
+  // 余白だけが白のまま残り、一致しているのに崩れとして数えられる。
+  background: { r: number; g: number; b: number },
 ): void {
   const contentRight = content.left + content.width;
   const contentBottom = content.top + content.height;
@@ -1467,9 +1477,9 @@ function preserveLegacyWhitePaddingForReport(
       if (x < content.left || x >= contentRight || y < content.top || y >= contentBottom) {
         const i = (y * imageWidth + x) * 4;
         if (designPixels[i + 3] === 0) {
-          designPixels[i] = 255;
-          designPixels[i + 1] = 255;
-          designPixels[i + 2] = 255;
+          designPixels[i] = background.r;
+          designPixels[i + 1] = background.g;
+          designPixels[i + 2] = background.b;
           designPixels[i + 3] = 255;
         }
       }

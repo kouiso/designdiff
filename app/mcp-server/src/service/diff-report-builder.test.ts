@@ -765,4 +765,32 @@ describe("同じ矩形の子が複数あるときの扱い", () => {
     expect(ids).not.toContain("under");
     expect(ids).not.toContain("middle");
   });
+
+  it("下に隠れた層のIDも残すこと", async () => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    const designPixels = await createSolidRgba(200, 200, WHITE_RGB);
+    const screenshotPixels = await createSolidRgba(200, 200, BLUE_RGB);
+
+    const report = buildDiffReport({
+      designPixels,
+      screenshotPixels,
+      width: 200,
+      height: 200,
+      figmaRootNode: {
+        id: "root",
+        name: "Frame",
+        type: "FRAME",
+        absoluteBoundingBox: { x: 0, y: 0, width: 200, height: 200 },
+        absoluteRenderBounds: null,
+        fills: [],
+        strokes: [],
+        effects: [],
+        children: [makeChild("under"), makeChild("middle"), makeChild("on-top")],
+      },
+    });
+
+    // 半透明や部分的な塗りだと下の層も見えている。直し先を辿れる状態を保つ。
+    const merged = report.regionScores.find((score) => score.figmaNodeId === "on-top");
+    expect(merged?.overlappingNodeIds).toEqual(["under", "middle"]);
+  });
 });

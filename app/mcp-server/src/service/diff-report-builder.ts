@@ -478,9 +478,11 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
       // 同じ位置・同じ大きさの子が複数あると、同じ範囲の領域が重複して並ぶ。
       // 受け取る側には、直す場所がその数だけあるように見える。1件へまとめる。
       //
-      // 残すのは最後の子。Figma は後に並ぶ子ほど手前に描くので、画面に見えて
-      // いるのは最後の1枚。配列の先頭を残すと、下に隠れた層の名前を返してしまう。
-      .filter(buildLastOfEqualBoxFilter())
+      // 残すのは最後の子。Figma は後に並ぶ子ほど手前に描くので、いちばん手前に
+      // あるのは最後の1枚。ただし半透明や部分的な塗りだと下の層も見えているので、
+      // 隠れた側のIDも一緒に持たせて、直し先を辿れる状態を保つ。
+      .map(collectOverlappingSiblings)
+      .filter((section) => section !== null)
       .sort((a, b) => {
         if (a.bbox.y !== b.bbox.y) {
           return a.bbox.y - b.bbox.y;
@@ -511,6 +513,7 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
         regionId: section.child.id,
         bbox,
         figmaNodeId: section.child.id,
+        overlappingNodeIds: section.overlappingNodeIds,
         structure: computeSsimForRegion(designPixels, screenshotPixels, width, height, bbox),
         color: buildColorDifference(designPixels, screenshotPixels, width, height, bbox),
         flatColorMismatch: buildFlatColorMismatch(
@@ -572,26 +575,47 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
   return [buildRootRegion()];
 }
 
+interface SectionAnchor {
+  child: FigmaNode;
+  bbox: DiffBoundingBox;
+  overlappingNodeIds?: string[];
+}
+
+const boxKey = (bbox: DiffBoundingBox): string => `${bbox.x},${bbox.y},${bbox.w},${bbox.h}`;
+
 /**
- * 同じ矩形の子のうち、最後の1件だけを通す判定を作る。
+ * 同じ矩形の兄弟を1件へまとめ、隠れた側のIDを手前の1件へ集める。
  *
- * 走査のたびに配列を頭から探すと、子の数の2乗に比例して重くなる。
- * 層が数千ある画面で比較が目に見えて遅くなるため、一度数えて引き当てる。
+ * 走査のたびに配列を頭から探すと、子の数の2乗に比例して重くなる。層が数千ある
+ * 画面で比較が目に見えて遅くなるため、一度だけ数えてから引き当てる。
  */
-function buildLastOfEqualBoxFilter(): (
-  section: { bbox: DiffBoundingBox },
+function collectOverlappingSiblings(
+  section: { child: FigmaNode; bbox: DiffBoundingBox },
   index: number,
-  sections: readonly { bbox: DiffBoundingBox }[],
-) => boolean {
-  const lastIndexByBox = new Map<string, number>();
-  const boxKey = (bbox: DiffBoundingBox): string => `${bbox.x},${bbox.y},${bbox.w},${bbox.h}`;
-  return (section, index, sections) => {
-    if (lastIndexByBox.size === 0) {
-      sections.forEach((entry, entryIndex) => {
-        lastIndexByBox.set(boxKey(entry.bbox), entryIndex);
-      });
+  sections: readonly { child: FigmaNode; bbox: DiffBoundingBox }[],
+): SectionAnchor | null {
+  const key = boxKey(section.bbox);
+  const sameBox = sections.filter((entry) => boxKey(entry.bbox) === key);
+  if (sameBox.length === 1) {
+    return section;
+  }
+
+  let lastIndex = -1;
+  for (let position = sections.length - 1; position >= 0; position--) {
+    if (boxKey(sections[position].bbox) === key) {
+      lastIndex = position;
+      break;
     }
-    return lastIndexByBox.get(boxKey(section.bbox)) === index;
+  }
+  if (lastIndex !== index) {
+    return null;
+  }
+
+  return {
+    ...section,
+    overlappingNodeIds: sameBox
+      .filter((entry) => entry.child.id !== section.child.id)
+      .map((entry) => entry.child.id),
   };
 }
 

@@ -117,28 +117,43 @@ describe("hasTransparentPixel", () => {
 });
 
 describe("下地に白以外を指定したとき", () => {
-  it("一致率と差分画素も、その下地を敷いてから数えること", async () => {
-    // 設計は透明、実装は黒地。白のままだと画素比較が全面差分になる。
+  // 期待値は検体の作り方から手で出す。実装の出した数値どうしを比べると、
+  // 合成と集計が同じ向きに間違っていても検査を通ってしまう。
+  //
+  // 検体は 64x64。中央の 16x16 だけが黒で、残り 4096 - 256 = 3840 画素が下地。
+  // 設計は下地が透明、実装は下地が黒。
+  //   黒を敷く  → 下地どうしが一致し、違う画素は 0
+  //   白のまま  → 下地が白 対 黒で全部違い、違う画素は 3840
+  const BACKGROUND_PIXELS = SIZE * SIZE - MARK.w * MARK.h;
+
+  it("黒を敷けば、違う画素は 0 になること", async () => {
     const designBase64 = await makePng({ r: 0, g: 0, b: 0, a: 0 });
     const screenshotBase64 = await makePng({ r: 0, g: 0, b: 0, a: 255 });
 
-    const onWhite = await compareImages({ designBase64, screenshotBase64, threshold: 0.1 });
-    const onBlack = await compareImages({
+    const result = await compareImages({
       designBase64,
       screenshotBase64,
       threshold: 0.1,
       designBackground: "#000000",
     });
 
-    expect(onBlack.diffPixelCount).toBeLessThan(onWhite.diffPixelCount);
-    expect(onBlack.matchRate).toBeGreaterThan(onWhite.matchRate);
+    expect(result.diffPixelCount).toBe(0);
+    expect(result.matchRate).toBe(100);
   });
 
-  it("下地を指定しなければ、画素比較の結果は変わらないこと", async () => {
+  it("白のままなら、下地の画素数だけ違いが出ること", async () => {
+    const designBase64 = await makePng({ r: 0, g: 0, b: 0, a: 0 });
+    const screenshotBase64 = await makePng({ r: 0, g: 0, b: 0, a: 255 });
+
+    const result = await compareImages({ designBase64, screenshotBase64, threshold: 0.1 });
+
+    expect(result.diffPixelCount).toBe(BACKGROUND_PIXELS);
+  });
+
+  it("白を明示しても、指定しない場合と同じ数になること", async () => {
     const designBase64 = await makePng({ r: 0, g: 0, b: 0, a: 0 });
     const screenshotBase64 = await makePng({ r: 255, g: 255, b: 255, a: 255 });
 
-    const implicit = await compareImages({ designBase64, screenshotBase64, threshold: 0.1 });
     const explicitWhite = await compareImages({
       designBase64,
       screenshotBase64,
@@ -146,7 +161,7 @@ describe("下地に白以外を指定したとき", () => {
       designBackground: "#FFFFFF",
     });
 
-    expect(explicitWhite.diffPixelCount).toBe(implicit.diffPixelCount);
-    expect(explicitWhite.matchRate).toBe(implicit.matchRate);
+    // 設計の透明が白へ、実装も白。中央の黒だけが一致するので違いは 0。
+    expect(explicitWhite.diffPixelCount).toBe(0);
   });
 });

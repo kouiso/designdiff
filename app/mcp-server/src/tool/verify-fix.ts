@@ -135,6 +135,13 @@ export function registerVerifyFix(server: McpServer): void {
         screenshot: z.string().describe("修正後スクリーンショットのローカルパス"),
         frame_name: z.string().optional().describe("Figma URLにnode-idがない場合のフレーム名"),
         threshold: z.number().min(0).max(1).default(0.1).describe("pixelmatch の閾値"),
+        design_background: z
+          .string()
+          .regex(/^#?([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/, "design_background must be a hex color")
+          .optional()
+          .describe(
+            "基準にした比較で指定した下地の色（#RRGGBB）。同じ値を渡さないと、白で置いた今回と別の色で置いた前回を比べることになり、直したのに改善なしと出る。",
+          ),
         project_id: z
           .string()
           .optional()
@@ -166,6 +173,7 @@ export function registerVerifyFix(server: McpServer): void {
           threshold: args.threshold,
           project_id: args.project_id,
           ignore_regions: args.ignore_regions,
+          design_background: args.design_background,
         });
 
         if (!comparison.result.diffReport) {

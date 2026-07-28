@@ -514,6 +514,11 @@ export function buildTargetNodeIds(
 
   for (const score of rankedRegionScores) {
     if (score.figmaNodeId) candidates.push(score.figmaNodeId);
+    // 重なりでまとめた下側の層も直し先の候補に入れる。半透明や部分的な塗りだと
+    // 手前の層だけを直しても画面が変わらないことがある。
+    for (const overlappingNodeId of score.overlappingNodeIds ?? []) {
+      candidates.push(overlappingNodeId);
+    }
   }
 
   for (const region of diffRegions) {
