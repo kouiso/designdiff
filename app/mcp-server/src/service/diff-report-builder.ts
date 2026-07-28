@@ -409,9 +409,10 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
       // だけで同じ物理領域の regionId が変わる。self-critique (package/shared/
       // src/self-critique.ts) は regionId で前回スコアと結びつけて改善/悪化を
       // 判定するため、順位由来の ID は誤った回帰検出を招く。座標由来の安定した
-      // ID にする。
+      // ID にする。x,y だけだと、同じ左上原点で大きさだけ違う別クラスタ
+      // (入れ子/重なる形状) が衝突するため w,h も含める。
       diffClusterRegions.push({
-        regionId: `diff-cluster-${bbox.x}-${bbox.y}`,
+        regionId: `diff-cluster-${bbox.x}-${bbox.y}-${bbox.w}-${bbox.h}`,
         bbox,
         structure: computeSsimForRegion(designPixels, screenshotPixels, width, height, bbox),
         color: buildColorDifference(designPixels, screenshotPixels, width, height, bbox),
@@ -584,16 +585,30 @@ export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
   const rightMargin = alignmentApplied && dx < 0 ? -dx : 0;
   const topMargin = alignmentApplied && dy > 0 ? dy : 0;
   const bottomMargin = alignmentApplied && dy < 0 ? -dy : 0;
+  // 境界帯に「触れた」だけで丸ごと除外すると、有効な内側の面積が大半を占める
+  // クラスタまで捨ててしまい、単独クラスタなら fallback で whole-frame 平均へ
+  // 薄まり、他のクラスタが残る場合は root 行ごと除外される。どちらの経路も
+  // 局所差分の見逃しにつながるため、除外ではなく有効矩形へクリップする。
+  const clipToAlignedCanvas = (
+    bbox: DiffBoundingBox & { diffPixelCount?: number },
+  ): (DiffBoundingBox & { diffPixelCount?: number }) | null => {
+    const x = Math.max(bbox.x, leftMargin);
+    const y = Math.max(bbox.y, topMargin);
+    const right = Math.min(bbox.x + bbox.w, width - rightMargin);
+    const bottom = Math.min(bbox.y + bbox.h, height - bottomMargin);
+    const w = right - x;
+    const h = bottom - y;
+    if (w <= 0 || h <= 0) {
+      return null;
+    }
+    return { ...bbox, x, y, w, h };
+  };
   const alignedOptions = {
     ...options,
     designPixels: alignedDesignPixels,
-    diffRegions: options.diffRegions?.filter(
-      (bbox) =>
-        bbox.x >= leftMargin &&
-        bbox.y >= topMargin &&
-        bbox.x + bbox.w <= width - rightMargin &&
-        bbox.y + bbox.h <= height - bottomMargin,
-    ),
+    diffRegions: options.diffRegions
+      ?.map((bbox) => clipToAlignedCanvas(bbox))
+      .filter((bbox): bbox is DiffBoundingBox & { diffPixelCount?: number } => bbox !== null),
   };
   const regionScores = buildRegionScores(alignedOptions);
 

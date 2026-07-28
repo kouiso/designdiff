@@ -703,7 +703,7 @@ describe("diffRegions による局所採点 (Issue #56)", () => {
     expect(withClusterHint.weightedAggregate?.weightedStructure ?? 1).toBeLessThan(
       PASS_STRUCTURE_THRESHOLD,
     );
-    const expectedClusterRegionId = `diff-cluster-${LOCAL_DIFF_X}-${LOCAL_DIFF_Y}`;
+    const expectedClusterRegionId = `diff-cluster-${LOCAL_DIFF_X}-${LOCAL_DIFF_Y}-${LOCAL_DIFF_SIZE}-${LOCAL_DIFF_SIZE}`;
     const clusterRegion = withClusterHint.regionScores.find(
       (score) => score.regionId === expectedClusterRegionId,
     );
@@ -788,7 +788,7 @@ describe("diffRegions による局所採点 (Issue #56)", () => {
     });
 
     expect(
-      report.regionScores.some((score) => score.regionId === `diff-cluster-100-${thinDiffY}`),
+      report.regionScores.some((score) => score.regionId === `diff-cluster-100-${thinDiffY}-40-1`),
     ).toBe(true);
   });
 
@@ -871,8 +871,8 @@ describe("diffRegions による局所採点 (Issue #56)", () => {
       ],
     });
 
-    const idsForRegionA = `diff-cluster-${regionA.x}-${regionA.y}`;
-    const idsForRegionB = `diff-cluster-${regionB.x}-${regionB.y}`;
+    const idsForRegionA = `diff-cluster-${regionA.x}-${regionA.y}-${regionA.w}-${regionA.h}`;
+    const idsForRegionB = `diff-cluster-${regionB.x}-${regionB.y}-${regionB.w}-${regionB.h}`;
     expect(firstPass.regionScores.some((score) => score.regionId === idsForRegionA)).toBe(true);
     expect(firstPass.regionScores.some((score) => score.regionId === idsForRegionB)).toBe(true);
     expect(secondPass.regionScores.some((score) => score.regionId === idsForRegionA)).toBe(true);
@@ -915,7 +915,7 @@ describe("diffRegions による局所採点 (Issue #56)", () => {
     return { designPixels, screenshotPixels };
   }
 
-  it("位置ずれ補正が適用された回、境界付近のクラスタは除外すること", async () => {
+  it("位置ずれ補正が適用された回、境界帯に完全に収まるクラスタは除外すること", async () => {
     const { buildDiffReport } = await import("./diff-report-builder.js");
     const size = 200;
     const shift = 6;
@@ -923,21 +923,41 @@ describe("diffRegions による局所採点 (Issue #56)", () => {
     // buildAlignedShiftFixtures は screenshot(x,y)=design(x+shift,y+shift) を作るため、
     // resolveAlignment は dx=dy=-shift を検出する。shiftPixels の srcX=x-dx=x+shift は
     // 右端 (x>=width-shift) と下端 (y>=height-shift) だけを空で埋める。
-    const edgeX = size - 20;
-    const edgeY = size - 20;
-
+    // このクラスタは丸ごとその帯の内側 (x=195..200) にあり、クリップすると
+    // 幅が0以下になるので除外される。
     const report = buildDiffReport({
       designPixels,
       screenshotPixels,
       width: size,
       height: size,
-      // 補正前の座標系で作った、はみ出しが実際に生じる右下の境界に接するクラスタ。
-      diffRegions: [{ x: edgeX, y: edgeY, w: 20, h: 20 }],
+      diffRegions: [{ x: 195, y: 195, w: 5, h: 5 }],
     });
 
     expect(
-      report.regionScores.some((score) => score.regionId === `diff-cluster-${edgeX}-${edgeY}`),
+      report.regionScores.some((score) => score.regionId.startsWith("diff-cluster-195-195")),
     ).toBe(false);
+  });
+
+  it("位置ずれ補正が適用された回、境界帯にまたがるクラスタは切り捨てて有効な内側だけ採点すること", async () => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    const size = 200;
+    const shift = 6;
+    const { designPixels, screenshotPixels } = buildAlignedShiftFixtures(size, shift);
+    // x:180..200 (幅20) は右端の境界帯 (194..200, 幅6) にまたがる。丸ごと除外
+    // すると内側の有効な14px分まで捨ててしまうため、194 でクリップして残す。
+    const report = buildDiffReport({
+      designPixels,
+      screenshotPixels,
+      width: size,
+      height: size,
+      diffRegions: [{ x: 180, y: 180, w: 20, h: 20 }],
+    });
+
+    const clipped = report.regionScores.find((score) =>
+      score.regionId.startsWith("diff-cluster-180-180"),
+    );
+    expect(clipped).toBeDefined();
+    expect(clipped?.bbox).toEqual({ x: 180, y: 180, w: 14, h: 14 });
   });
 
   it("位置ずれ補正がかかっても、ずれと無関係な辺のクラスタは除外しないこと", async () => {
@@ -956,7 +976,9 @@ describe("diffRegions による局所採点 (Issue #56)", () => {
       diffRegions: [{ x: 0, y: 0, w: 20, h: 20 }],
     });
 
-    expect(report.regionScores.some((score) => score.regionId === "diff-cluster-0-0")).toBe(true);
+    expect(report.regionScores.some((score) => score.regionId === "diff-cluster-0-0-20-20")).toBe(
+      true,
+    );
   });
 
   it("位置ずれ補正が適用された回でも、境界から離れたクラスタは局所採点を使うこと", async () => {
@@ -987,7 +1009,7 @@ describe("diffRegions による局所採点 (Issue #56)", () => {
 
     expect(
       report.regionScores.some(
-        (score) => score.regionId === `diff-cluster-${localDiffX}-${localDiffY}`,
+        (score) => score.regionId === `diff-cluster-${localDiffX}-${localDiffY}-30-30`,
       ),
     ).toBe(true);
   });
