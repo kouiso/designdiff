@@ -20,6 +20,7 @@ import {
   type DiagnosisCauseCodeSchema,
   type DiagnosisVerdictSchema,
   type NormalizationReportSchema,
+  type ScrollCaptureReportSchema,
   type PreflightReportSchema,
   type PreflightSeveritySchema,
   type PreflightWarningSchema,
@@ -115,6 +116,7 @@ export type PreflightSeverity = z.infer<typeof PreflightSeveritySchema>;
 export type PreflightWarning = z.infer<typeof PreflightWarningSchema>;
 export type PreflightReport = z.infer<typeof PreflightReportSchema>;
 export type NormalizationReport = z.infer<typeof NormalizationReportSchema>;
+export type ScrollCaptureReport = z.infer<typeof ScrollCaptureReportSchema>;
 export type ComparisonHeadline = z.infer<typeof ComparisonHeadlineSchema>;
 export type DiagnosisVerdict = z.infer<typeof DiagnosisVerdictSchema>;
 export type DiagnosisCauseCode = z.infer<typeof DiagnosisCauseCodeSchema>;

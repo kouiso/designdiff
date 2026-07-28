@@ -3,6 +3,9 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
   test: {
     environment: "node",
+    // スクロール撮影の検査は、撮るたびに描画が落ち着くまでの待ちが入る。
+    // 上端へ戻す動きも足したので、既定の5秒では足りん。
+    testTimeout: 30_000,
     coverage: {
       provider: "v8",
       include: ["src/**/*.ts"],

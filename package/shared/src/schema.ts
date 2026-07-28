@@ -392,6 +392,30 @@ export const NormalizationReportSchema = z.object({
   autoCropped: z.boolean().optional(),
 });
 
+// スクロール結合で撮ったときの内訳。1画面に収まらない画面を比較したとき、
+// 「何枚繋いだか」「下端まで届いたか」を出さないと、途中までの画像を
+// 完全な1枚として扱ってしまう。
+export const ScrollCaptureReportSchema = z.object({
+  captureCount: z.number().int().positive(),
+  stitchedWidth: z.number().int().positive(),
+  stitchedHeight: z.number().int().positive(),
+  /** 繋ぐ前の1画面の寸法。向きの判定はこちらを使う。繋いだ後は必ず縦長になる。 */
+  viewportWidth: z.number().int().positive(),
+  viewportHeight: z.number().int().positive(),
+  /** 全フレームで固定だった帯。繋いだ画像には1回だけ入っている。 */
+  fixedHeaderHeight: z.number().int().nonnegative(),
+  fixedFooterHeight: z.number().int().nonnegative(),
+  reachedBottom: z.boolean(),
+  /** 撮影上限で打ち切ったか。true のとき繋いだ画像はコンテンツの途中まで。 */
+  truncatedAtCaptureLimit: z.boolean(),
+  /** 1回送っても画面が変わらんかったか。1画面ぶんしか撮れとらんことを意味する。 */
+  didNotScroll: z.boolean(),
+  /** 撮り始める前に上端まで戻せたか。false のとき画像は画面の途中から始まる。 */
+  startedAtTop: z.boolean(),
+  /** 固定帯の判定を捨てた、近似で繋いだ等、結果を疑う理由になる注記。 */
+  notes: z.array(z.string()),
+});
+
 export const ComparisonHeadlineSchema = z.object({
   structureMatch: z.number().min(0).max(100),
   colorOnlyRegions: z.number().int().nonnegative(),
@@ -520,6 +544,8 @@ export const CompareDesignResultSchema = z
     critique: CritiqueNoteSchema.optional(),
     preflight: PreflightReportSchema.optional(),
     normalization: NormalizationReportSchema.optional(),
+    // capture_scroll でスクロール結合したときだけ入る。
+    scrollCapture: ScrollCaptureReportSchema.optional(),
     diagnosis: ComparisonDiagnosisSchema.optional(),
     comparisonHeadline: ComparisonHeadlineSchema.optional(),
     loopGuard: LoopGuardReportSchema.optional(),

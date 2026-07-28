@@ -5,7 +5,11 @@ import * as path from "node:path";
 import sharp, { type Metadata } from "sharp";
 import { z } from "zod";
 
-import { captureDeviceScreenshot, type CaptureDevice } from "@figdiff/mobile-capture";
+import {
+  captureDeviceScreenshot,
+  captureDeviceScrollingScreenshot,
+  type CaptureDevice,
+} from "@figdiff/mobile-capture";
 import {
   buildComparisonHeadline,
   buildSystemBarIgnoreRegions,
@@ -28,6 +32,7 @@ import {
   type CompareDesignResult,
   type ComparisonDiagnosis,
   type CritiqueNote,
+  type ScrollCaptureReport,
   type CropRegion,
   type DiffReport,
   type DiffVerdict,
@@ -173,6 +178,8 @@ export interface CompareDesignRunArgs {
   screenshot?: string;
   screenshot_url?: string;
   capture_device?: CaptureDevice;
+  /** capture_device 経路で、1画面に収まらん画面をスクロールしながら撮って繋ぐ。 */
+  capture_scroll?: boolean;
   capture_width?: number;
   frame_name?: string;
   threshold?: number;
@@ -665,6 +672,8 @@ interface ResolvedScreenshot {
    * 手渡しの PNG や実機スクショからは取れないので、その場合は画素経路だけで判定する。
    */
   domStyles?: DomElementStyle[];
+  /** capture_scroll でスクロール結合したときだけ入る。 */
+  scrollCapture?: ScrollCaptureReport;
 }
 
 async function resolveScreenshotPath(
@@ -684,8 +693,37 @@ async function resolveScreenshotPath(
     );
   }
 
+  if (args.capture_scroll === true && !args.capture_device) {
+    throw new Error(
+      "capture_scroll は capture_device と一緒に指定してください。端末をスクロールしながら撮る指定なので、撮る端末が要ります。",
+    );
+  }
+
   if (args.capture_device) {
-    return { screenshotPath: await captureDeviceScreenshot({ device: args.capture_device }) };
+    if (args.capture_scroll !== true) {
+      return { screenshotPath: await captureDeviceScreenshot({ device: args.capture_device }) };
+    }
+    // 1画面に収まらん画面は、1枚撮っただけでは比較の単位が合わん。
+    // スクロールしながら撮って縦長1枚へ繋ぐ。何枚繋いだか、下端まで届いたかを
+    // 一緒に返さんと、途中までの画像を完全な1枚として扱ってしまう。
+    const outcome = await captureDeviceScrollingScreenshot({ device: args.capture_device });
+    return {
+      screenshotPath: outcome.screenshotPath,
+      scrollCapture: {
+        captureCount: outcome.captureCount,
+        stitchedWidth: outcome.width,
+        stitchedHeight: outcome.height,
+        viewportWidth: outcome.viewportWidth,
+        viewportHeight: outcome.viewportHeight,
+        fixedHeaderHeight: outcome.fixedHeaderHeight,
+        fixedFooterHeight: outcome.fixedFooterHeight,
+        reachedBottom: outcome.reachedBottom,
+        truncatedAtCaptureLimit: outcome.truncatedAtCaptureLimit,
+        didNotScroll: outcome.didNotScroll,
+        startedAtTop: outcome.startedAtTop,
+        notes: outcome.notes,
+      },
+    };
   }
 
   if (!args.screenshot_url) {
@@ -1166,19 +1204,45 @@ function resolvePreflightDimensions(
   };
 }
 
+/**
+ * スクロール撮影が画面全体を撮れとらん理由を返す。撮れとるなら undefined。
+ *
+ * 途中までの絵を完全な1枚として扱うと、下に残っとる差分を見んまま合格が出る。
+ * 理由が付く場合は判定を人へ回し、その理由をそのまま次の手として返す。
+ */
+export function describeIncompleteScrollCapture(
+  report: ScrollCaptureReport | undefined,
+): string | undefined {
+  if (report === undefined) return undefined;
+  if (report.didNotScroll) {
+    return "スクロール撮影を頼まれましたが、1回送っても画面が変わりませんでした。1画面ぶんしか撮れとらんので、この結果で合否は決められません。スクロールできる画面か、送る場所が正しいかを確かめてください。";
+  }
+  if (!report.startedAtTop) {
+    return "スクロール撮影で上端まで戻し切れませんでした。繋いだ画像が画面の途中から始まっとる可能性があるので、この結果で合否は決められません。端末を手で上端まで戻してから、もう一度実行してください。";
+  }
+  if (report.truncatedAtCaptureLimit) {
+    return `スクロール撮影が上限 ${report.captureCount} 枚で打ち切られ、画面の下端まで届いていません。繋いだ画像はコンテンツの途中までなので、この結果で合否は決められません。set_crop_region で節ごとに分けて比べてください。`;
+  }
+  return undefined;
+}
+
 function buildSystemIgnoreRegionsForComparison(
   args: CompareDesignRunArgs,
   screenshotMeta: Metadata,
   cropRegion: CropRegion | undefined,
+  scrollCapture: ScrollCaptureReport | undefined,
 ): IgnoreRegion[] {
   const maskSystemUi = args.mask_system_ui ?? args.capture_device !== undefined;
   if (!maskSystemUi) {
     return [];
   }
 
+  // 繋いだ後の画像は必ず縦長になる。その寸法から向きを推すと、横向きで撮った
+  // 画面が縦向き扱いになり、OSの帯の位置と厚みを取り違えて本文を隠してしまう。
+  // 帯の判定には、繋ぐ前の1画面の寸法を使う。
   return buildSystemBarIgnoreRegions(
-    screenshotMeta.width ?? 0,
-    screenshotMeta.height ?? 0,
+    scrollCapture?.viewportWidth ?? screenshotMeta.width ?? 0,
+    scrollCapture?.viewportHeight ?? screenshotMeta.height ?? 0,
     args.capture_device ?? "android",
     cropRegion,
   );
@@ -1349,7 +1413,12 @@ export async function runCompareDesign(
   const cropRegion = manualCropRegion ?? autoCropRegion;
   const ignoreRegions = [
     ...projectIgnoreRegions,
-    ...buildSystemIgnoreRegionsForComparison(args, screenshotMeta, cropRegion),
+    ...buildSystemIgnoreRegionsForComparison(
+      args,
+      screenshotMeta,
+      cropRegion,
+      resolvedScreenshot.scrollCapture,
+    ),
     ...shiftRegionsIntoCropSpace(dynamicIgnoreRegions, cropRegion),
   ];
 
@@ -1481,7 +1550,10 @@ export async function runCompareDesign(
   const captureWidth = comparison.normalization?.screenshotWidth;
   const captureHeight = comparison.normalization?.screenshotHeight;
   // URLを開いて撮る場合だけ、高さは中身の量で決まる。
-  const heightIsContentDriven = typeof args.screenshot_url === "string";
+  // 繋いだ縦長画像の高さは、実装の中身の量と重なりの測り方で毎回わずかに変わる。
+  // 撮影条件が変わったと見なすと、履歴が毎回リセットされて足踏みを検出できん。
+  const heightIsContentDriven =
+    typeof args.screenshot_url === "string" || resolvedScreenshot.scrollCapture !== undefined;
   const critique = buildCaptureAwareCritique(
     comparison.diffReport,
     priorComparisons,
@@ -1512,12 +1584,19 @@ export async function runCompareDesign(
   // 決められん。crop 済みなら比較範囲は揃っとるので対象外。
   const aspectMismatchInconclusive = isFullPageAgainstShorterCapture(comparison.normalization);
 
+  // スクロール撮影が画面全体を撮り切れとらんとき、その画像は「途中まで」でしかない。
+  // 途中までの絵がたまたま設計と合っても、その下がどうなっとるかは見とらん。
+  // 合格を出すとループがそこで止まるので、人が見る状態にする。
+  const scrollCaptureIncomplete = describeIncompleteScrollCapture(resolvedScreenshot.scrollCapture);
+
   const status = buildStatus(
     structuralReviewResult.verdict,
     diagnosis.likelyMisconfig,
     perceptibleDiffRatio,
     tokenDiffBlocking.length,
-    aspectMismatchInconclusive || missingNodeId !== undefined,
+    aspectMismatchInconclusive ||
+      missingNodeId !== undefined ||
+      scrollCaptureIncomplete !== undefined,
   );
   // 経路を必ず出す。無言で画素経路へ落ちていることに呼び出し側が気づけないと、
   // 「色は見てもらえている」と誤解したまま作業が進む。
@@ -1531,13 +1610,15 @@ export async function runCompareDesign(
       ? buildPixelContradictionNextAction(perceptibleDiffRatio)
       : tokenDiffSummary !== undefined
         ? `${tokenDiffSummary} 値が分かっているので、該当箇所の指定を設計側の値へ直してください。`
-        : (buildDiagnosisNextAction(diagnosis) ??
-          buildNextAction(
-            structuralReviewResult.verdict,
-            regionCount,
-            targetNodeIds,
-            comparison.clusterCollapse,
-          ));
+        : scrollCaptureIncomplete !== undefined
+          ? scrollCaptureIncomplete
+          : (buildDiagnosisNextAction(diagnosis) ??
+            buildNextAction(
+              structuralReviewResult.verdict,
+              regionCount,
+              targetNodeIds,
+              comparison.clusterCollapse,
+            ));
   const loopGuard = await evaluateLoopGuardSafely({
     sourceKey,
     comparisonId: comparison.comparisonId,
@@ -1560,6 +1641,7 @@ export async function runCompareDesign(
   const result = CompareDesignResultSchema.parse({
     status,
     ...comparison,
+    scrollCapture: resolvedScreenshot.scrollCapture,
     normalization: comparison.normalization
       ? { ...comparison.normalization, autoCropped: autoCropRegion !== undefined }
       : comparison.normalization,
