@@ -204,6 +204,25 @@ describe("loop-guard-service", () => {
     expect(report.reason).toContain("悪化");
   });
 
+  // ページ全体を撮ると高さは中身の量で決まる。実装で1行足すだけで変わるので、
+  // 高さを条件にすると実装を直すたびに履歴が捨てられ、停止判定が働かない。
+  it("幅が同じなら、高さが変わっても悪化の履歴を捨てないこと", async () => {
+    await recordIterationAndEvaluate(input({ matchRate: 80, captureHeight: 3000 }), {
+      stateDir,
+      now: baseNow,
+    });
+    await recordIterationAndEvaluate(input({ matchRate: 70, captureHeight: 3200 }), {
+      stateDir,
+      now: baseNow + 1000,
+    });
+    const third = await recordIterationAndEvaluate(input({ matchRate: 60, captureHeight: 3400 }), {
+      stateDir,
+      now: baseNow + 2000,
+    });
+
+    expect(third.iteration).toBe(3);
+  });
+
   it("撮影寸法が変わったら悪化履歴をリセットする", async () => {
     await recordIterationAndEvaluate(input({ matchRate: 90 }), {
       stateDir,

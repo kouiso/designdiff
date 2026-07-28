@@ -146,13 +146,14 @@ function formatRatio(ratio: number): string {
   return `${(ratio * 100).toFixed(2)}%`;
 }
 
+/**
+ * 撮影条件が同じかどうかは幅だけで見る。
+ *
+ * ページ全体を撮ると高さは中身の量で決まるので、実装で1行足しただけでも変わる。
+ * 高さを条件に入れると、実装を直すたびに履歴が捨てられて停止判定が働かない。
+ */
 function hasMatchingCaptureDimensions(entry: LoopStateEntry, input: LoopIterationInput): boolean {
-  return (
-    typeof input.captureWidth === "number" &&
-    typeof input.captureHeight === "number" &&
-    entry.captureWidth === input.captureWidth &&
-    entry.captureHeight === input.captureHeight
-  );
+  return typeof input.captureWidth === "number" && entry.captureWidth === input.captureWidth;
 }
 
 function comparablePriorEntries(

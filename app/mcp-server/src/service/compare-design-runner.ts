@@ -1187,23 +1187,31 @@ async function evaluateLoopGuardSafely(
   }
 }
 
+/**
+ * 撮影条件が同じかどうかは幅だけで見る。
+ *
+ * ページ全体を撮ると、高さは中身の量で決まる。実装で1行足しただけでも変わるので、
+ * 高さを条件に入れると「実装を直したから比べられない」という逆立ちが起きる。
+ * 幅は撮る側が決める値なので、条件として使えるのはこちらだけ。
+ */
+function isSameCaptureCondition(
+  entry: RecentComparison,
+  captureWidth: number,
+): entry is RecentComparison & { captureWidth: number } {
+  return entry.captureWidth === captureWidth;
+}
+
 function buildCaptureAwareCritique(
   report: DiffReport | undefined,
   priorComparisons: RecentComparison[],
   captureWidth: number | undefined,
-  captureHeight: number | undefined,
 ): CritiqueNote | undefined {
-  if (
-    !report ||
-    priorComparisons.length === 0 ||
-    typeof captureWidth !== "number" ||
-    typeof captureHeight !== "number"
-  ) {
+  if (!report || priorComparisons.length === 0 || typeof captureWidth !== "number") {
     return undefined;
   }
 
   const comparableReports = priorComparisons
-    .filter((entry) => entry.captureWidth === captureWidth && entry.captureHeight === captureHeight)
+    .filter((entry) => isSameCaptureCondition(entry, captureWidth))
     .map((entry) => entry.report);
   if (comparableReports.length > 0) {
     return selfCritique(report, comparableReports);
@@ -1211,7 +1219,7 @@ function buildCaptureAwareCritique(
 
   for (let index = priorComparisons.length - 1; index >= 0; index--) {
     const prior = priorComparisons[index];
-    if (typeof prior.captureWidth === "number" && typeof prior.captureHeight === "number") {
+    if (typeof prior.captureWidth === "number") {
       return {
         concern: "capture-changed",
         advice: `撮影条件（撮影幅 ${prior.captureWidth}px → ${captureWidth}px）が変わったため、前回との悪化判定は行っていません。`,
@@ -1417,12 +1425,7 @@ export async function runCompareDesign(
   const priorComparisons = getRecentComparisons(sourceKey);
   const captureWidth = comparison.normalization?.screenshotWidth;
   const captureHeight = comparison.normalization?.screenshotHeight;
-  const critique = buildCaptureAwareCritique(
-    comparison.diffReport,
-    priorComparisons,
-    captureWidth,
-    captureHeight,
-  );
+  const critique = buildCaptureAwareCritique(comparison.diffReport, priorComparisons, captureWidth);
   const perceptibleDiffRatio = comparison.diffReport?.perceptibleDiffRatio;
   const pixelsContradictPass = isPassContradictedByPixels(
     structuralReviewResult.verdict,
