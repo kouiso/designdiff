@@ -23,6 +23,7 @@
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
+import { registerCompareAnimation } from "./tool/compare-animation.js";
 import { registerCompareDesign } from "./tool/compare-design.js";
 import { registerCreateProject } from "./tool/create-project.js";
 import { registerDeleteIgnoreRegion } from "./tool/delete-ignore-region.js";
@@ -104,6 +105,7 @@ export function createMcpServer(): McpServer {
   registerCreateProject(server);
   registerDeleteProject(server);
   registerCompareDesign(server);
+  registerCompareAnimation(server);
   registerInspectNode(server);
   registerGetDesignTokens(server);
   registerListFrames(server);

@@ -1,12 +1,13 @@
 {
   "test": "MCP tool listing",
   "timestamp": "2026-04-30T00:00:00.000Z",
-  "toolCount": 16,
+  "toolCount": 17,
   "tools": [
     "list_projects",
     "create_project",
     "delete_project",
     "compare_design",
+    "compare_animation",
     "inspect_node",
     "get_design_tokens",
     "list_figma_frames",

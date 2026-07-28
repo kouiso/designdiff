@@ -645,3 +645,61 @@ export const FigmaAuthStateSchema = z.object({
   mode: z.enum(["oauth", "pat", "none"]),
   expiresAt: z.number().optional(),
 });
+
+/**
+ * 時間で並んだフレーム列の比較結果。
+ *
+ * 1枚ごとの合否と、設計の時刻に対する実装の時刻のズレを分けて持つ。
+ * ズレを測っていない場合に0を返すと、測った結果と見分けが付かんようになるので、
+ * 測ったかどうかを別の項目で必ず示す。
+ */
+export const FrameComparisonSchema = z.object({
+  atMs: z.number().int().nonnegative(),
+  screenshotPath: z.string(),
+  status: z.enum(["PASS", "FAIL", "UNCERTAIN"]),
+  matchRate: z.number(),
+  comparisonId: z.string(),
+  diffImagePath: z.string().optional(),
+});
+
+export const FrameAlignmentSchema = z.object({
+  designAtMs: z.number().int().nonnegative(),
+  matchedAtMs: z.number().int().nullable(),
+  driftMs: z.number().int().nullable(),
+  mismatchRate: z.number().nullable(),
+  reason: z.string().optional(),
+});
+
+export const TemporalVerdictSchema = z.object({
+  status: z.enum(["PASS", "FAIL", "UNCERTAIN"]),
+  rationale: z.string(),
+  maxAbsDriftMs: z.number().nullable(),
+  orderViolation: z.boolean(),
+});
+
+export const CompareAnimationResultSchema = z
+  .object({
+    frames: z.array(FrameComparisonSchema),
+    alignments: z.array(FrameAlignmentSchema),
+    temporal: TemporalVerdictSchema,
+    driftMeasured: z.boolean(),
+    driftUnmeasuredReason: z.string().optional(),
+    evidencePaths: z.array(z.string()),
+    frameTimeSource: z.enum(["seek", "wall-clock"]).optional(),
+  })
+  .superRefine((value, ctx) => {
+    if (!value.driftMeasured && value.temporal.maxAbsDriftMs !== null) {
+      ctx.addIssue({
+        code: "custom",
+        message: "時刻のズレを測っていないのに、ズレの値が入っています。",
+        path: ["temporal", "maxAbsDriftMs"],
+      });
+    }
+    if (!value.driftMeasured && value.driftUnmeasuredReason === undefined) {
+      ctx.addIssue({
+        code: "custom",
+        message: "時刻のズレを測っていない場合は、その理由が要ります。",
+        path: ["driftUnmeasuredReason"],
+      });
+    }
+  });
