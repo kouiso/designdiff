@@ -703,8 +703,9 @@ describe("diffRegions による局所採点 (Issue #56)", () => {
     expect(withClusterHint.weightedAggregate?.weightedStructure ?? 1).toBeLessThan(
       PASS_STRUCTURE_THRESHOLD,
     );
+    const expectedClusterRegionId = `diff-cluster-${LOCAL_DIFF_X}-${LOCAL_DIFF_Y}`;
     const clusterRegion = withClusterHint.regionScores.find(
-      (score) => score.regionId === "diff-cluster-0",
+      (score) => score.regionId === expectedClusterRegionId,
     );
     expect(clusterRegion).toBeDefined();
     expect(clusterRegion?.bbox).toEqual({
@@ -716,7 +717,7 @@ describe("diffRegions による局所採点 (Issue #56)", () => {
     expect(clusterRegion?.color).toBeGreaterThanOrEqual(2);
     expect(
       withClusterHint.issues.some(
-        (issue) => issue.regionId === "diff-cluster-0" && issue.kind === "color",
+        (issue) => issue.regionId === expectedClusterRegionId && issue.kind === "color",
       ),
     ).toBe(true);
   });
@@ -786,7 +787,9 @@ describe("diffRegions による局所採点 (Issue #56)", () => {
       diffRegions: [{ x: 100, y: thinDiffY, w: 40, h: 1 }],
     });
 
-    expect(report.regionScores.some((score) => score.regionId === "diff-cluster-0")).toBe(true);
+    expect(
+      report.regionScores.some((score) => score.regionId === `diff-cluster-100-${thinDiffY}`),
+    ).toBe(true);
   });
 
   it("上限を超えるクラスタ数のとき、均等間引きではなく diffPixelCount が大きい順に残すこと", async () => {
@@ -834,9 +837,49 @@ describe("diffRegions による局所採点 (Issue #56)", () => {
     expect(scored?.structure).toBeLessThan(1);
   });
 
-  it("位置ずれ補正が適用された回は diffRegions による局所採点を使わないこと", async () => {
+  it("regionId が重大度の順位ではなく座標由来で、比較のたびに安定すること", async () => {
     const { buildDiffReport } = await import("./diff-report-builder.js");
-    const size = 200;
+    const designPixels = await createSolidRgba(FRAME_SIZE, FRAME_SIZE, WHITE_RGB);
+    const screenshotPixels = Uint8ClampedArray.from(designPixels);
+    const regionA = { x: 20, y: 20, w: 10, h: 10 };
+    const regionB = { x: 200, y: 200, w: 10, h: 10 };
+
+    // 1回目: A の方が重大度 (diffPixelCount) が高い。
+    const firstPass = buildDiffReport({
+      designPixels,
+      screenshotPixels,
+      width: FRAME_SIZE,
+      height: FRAME_SIZE,
+      diffRegions: [
+        { ...regionA, diffPixelCount: 100 },
+        { ...regionB, diffPixelCount: 10 },
+      ],
+    });
+
+    // 2回目: 順位が入れ替わり B の方が重大度が高い。座標由来の ID なら
+    // 同じ regionId が同じ物理領域を指し続けるはず。self-critique
+    // (package/shared/src/self-critique.ts) は regionId で前回スコアと
+    // 突き合わせるため、順位由来の ID だと入れ替わりで誤った回帰検出になる。
+    const secondPass = buildDiffReport({
+      designPixels,
+      screenshotPixels,
+      width: FRAME_SIZE,
+      height: FRAME_SIZE,
+      diffRegions: [
+        { ...regionA, diffPixelCount: 10 },
+        { ...regionB, diffPixelCount: 100 },
+      ],
+    });
+
+    const idsForRegionA = `diff-cluster-${regionA.x}-${regionA.y}`;
+    const idsForRegionB = `diff-cluster-${regionB.x}-${regionB.y}`;
+    expect(firstPass.regionScores.some((score) => score.regionId === idsForRegionA)).toBe(true);
+    expect(firstPass.regionScores.some((score) => score.regionId === idsForRegionB)).toBe(true);
+    expect(secondPass.regionScores.some((score) => score.regionId === idsForRegionA)).toBe(true);
+    expect(secondPass.regionScores.some((score) => score.regionId === idsForRegionB)).toBe(true);
+  });
+
+  function buildAlignedShiftFixtures(size: number, shift: number) {
     const checkerBlock = 20;
     // 位置ずれ検出はSSDのオフセット探索なので、単色画像では常にオフセット0が
     // 最善に見えて検出が働かない。市松模様にして実際に検出できるようにする。
@@ -852,13 +895,13 @@ describe("diffRegions による局所採点 (Issue #56)", () => {
         designPixels[index + 3] = 255;
       }
     }
-    // スクリーンショット側を左上へ 6px シフトさせ、割に合う位置ずれ補正が
+    // スクリーンショット側を左上へ shift px シフトさせ、割に合う位置ずれ補正が
     // 掛かる状況を作る (境界にはみ出し分が残る)。
     const screenshotPixels = new Uint8ClampedArray(size * size * 4);
     for (let y = 0; y < size; y++) {
       for (let x = 0; x < size; x++) {
-        const srcX = x + 6;
-        const srcY = y + 6;
+        const srcX = x + shift;
+        const srcY = y + shift;
         const dstIndex = (y * size + x) * 4;
         if (srcX < size && srcY < size) {
           const srcIndex = (srcY * size + srcX) * 4;
@@ -869,18 +912,59 @@ describe("diffRegions による局所採点 (Issue #56)", () => {
         }
       }
     }
+    return { designPixels, screenshotPixels };
+  }
+
+  it("位置ずれ補正が適用された回、境界付近のクラスタは除外すること", async () => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    const size = 200;
+    const shift = 6;
+    const { designPixels, screenshotPixels } = buildAlignedShiftFixtures(size, shift);
 
     const report = buildDiffReport({
       designPixels,
       screenshotPixels,
       width: size,
       height: size,
-      // 補正前の座標系で作った (実際にはずれた) クラスタ。補正が掛かった回は
-      // 使われないはずなので、境界のはみ出し塗りを誤って critical と拾わない。
+      // 補正前の座標系で作った、境界 (0,0) に接するクラスタ。補正後は
+      // shiftPixels のはみ出し塗り (透明/RGB0) を拾ってしまうため除外される。
       diffRegions: [{ x: 0, y: 0, w: 20, h: 20 }],
     });
 
-    expect(report.regionScores.some((score) => score.regionId === "diff-cluster-0")).toBe(false);
+    expect(report.regionScores.some((score) => score.regionId === "diff-cluster-0-0")).toBe(false);
+  });
+
+  it("位置ずれ補正が適用された回でも、境界から離れたクラスタは局所採点を使うこと", async () => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    const size = 200;
+    const shift = 6;
+    const { designPixels, screenshotPixels } = buildAlignedShiftFixtures(size, shift);
+    // 中央付近に本物の局所差分 (市松模様と無関係な単色パッチ) を追加する。
+    const localDiffX = 100;
+    const localDiffY = 100;
+    for (let y = localDiffY; y < localDiffY + 30; y++) {
+      for (let x = localDiffX; x < localDiffX + 30; x++) {
+        const index = (y * size + x) * 4;
+        screenshotPixels[index] = 128;
+        screenshotPixels[index + 1] = 128;
+        screenshotPixels[index + 2] = 128;
+      }
+    }
+
+    const report = buildDiffReport({
+      designPixels,
+      screenshotPixels,
+      width: size,
+      height: size,
+      // 境界から十分離れているので、シフト量(6px)の余白フィルタに掛からない。
+      diffRegions: [{ x: localDiffX, y: localDiffY, w: 30, h: 30 }],
+    });
+
+    expect(
+      report.regionScores.some(
+        (score) => score.regionId === `diff-cluster-${localDiffX}-${localDiffY}`,
+      ),
+    ).toBe(true);
   });
 });
 

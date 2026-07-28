@@ -404,9 +404,14 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
       .sort((a, b) => (b.diffPixelCount ?? 0) - (a.diffPixelCount ?? 0))
       .slice(0, MAX_REGION_SCORE_COUNT);
 
-    for (const [index, bbox] of selectedClusters.entries()) {
+    for (const bbox of selectedClusters) {
+      // ソート後の index を ID にすると、2 回の比較で重大度の順位が入れ替わった
+      // だけで同じ物理領域の regionId が変わる。self-critique (package/shared/
+      // src/self-critique.ts) は regionId で前回スコアと結びつけて改善/悪化を
+      // 判定するため、順位由来の ID は誤った回帰検出を招く。座標由来の安定した
+      // ID にする。
       diffClusterRegions.push({
-        regionId: `diff-cluster-${index}`,
+        regionId: `diff-cluster-${bbox.x}-${bbox.y}`,
         bbox,
         structure: computeSsimForRegion(designPixels, screenshotPixels, width, height, bbox),
         color: buildColorDifference(designPixels, screenshotPixels, width, height, bbox),
@@ -567,14 +572,22 @@ export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
 
   // diffRegions は補正前 (resolveAlignment 前) の pixelmatch 座標系。補正が
   // 適用されると、alignedDesignPixels は境界からのはみ出し分を透明/RGB0で
-  // 埋めるため (shiftPixels)、境界付近の元クラスタがその塗り分を拾って
-  // 「許容していたはずの小さなずれ」が誤って critical 差分に化ける。補正が
-  // かかった回は diffRegions 由来の採点を使わず、既存の whole-frame 採点に
-  // 留める (安全側)。座標系を揃えて再クラスタ化する対応は別途追跡する。
+  // 埋めるため (shiftPixels)、境界付近の元クラスタだけがその塗り分を拾って
+  // 「許容していたはずの小さなずれ」を誤って critical 差分に化ける。
+  // 補正がかかった回に diffRegions を丸ごと無効化すると、シフトと局所差分が
+  // 同時に起きたケースで #56 の誤 PASS がそのまま復活するため、はみ出しの
+  // 影響を受ける境界帯のクラスタだけを除外し、それ以外はそのまま採点する。
+  const alignmentMargin = alignmentApplied ? Math.max(Math.abs(dx), Math.abs(dy)) : 0;
   const alignedOptions = {
     ...options,
     designPixels: alignedDesignPixels,
-    diffRegions: alignmentApplied ? undefined : options.diffRegions,
+    diffRegions: options.diffRegions?.filter(
+      (bbox) =>
+        bbox.x >= alignmentMargin &&
+        bbox.y >= alignmentMargin &&
+        bbox.x + bbox.w <= width - alignmentMargin &&
+        bbox.y + bbox.h <= height - alignmentMargin,
+    ),
   };
   const regionScores = buildRegionScores(alignedOptions);
 
