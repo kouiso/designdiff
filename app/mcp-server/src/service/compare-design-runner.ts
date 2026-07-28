@@ -499,6 +499,9 @@ export function buildTargetNodeIds(
   const candidates: string[] = [];
 
   const rankedRegionScores = [...(diffReport?.regionScores ?? [])]
+    // 比較対象そのものの行は全部の子を覆う。並べると、上限5件の枠を奪って
+    // 本当に崩れている子が案内から落ちる。
+    .filter((score) => score.scope !== "root")
     .filter((score) => typeof score.figmaNodeId === "string" && score.figmaNodeId.length > 0)
     .sort((a, b) => a.structure - b.structure);
 

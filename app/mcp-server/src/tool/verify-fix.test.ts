@@ -14,6 +14,8 @@ import { axisContribution, buildVerdict, resolveSessionStatus } from "./verify-f
 const FIXTURES_ROOT = path.resolve(import.meta.dirname, "../../../../verification/fixture");
 
 const PAIR02_DIR = path.join(FIXTURES_ROOT, "pair-02-multi-section-lp");
+// 検体の expected.json が持つ比較元ノードのID。期待値とテストデータを1か所に寄せる。
+const FIXTURE_ROOT_NODE_ID = "frame-root";
 
 const TextContentSchema = z.object({
   content: z.array(
@@ -189,6 +191,7 @@ describe("verify_fix", () => {
 
   // 局所比較では子の行しか無く、対象ノード自身の行が無いと引き当てに失敗していた。
   // 自分の修正を自分で確かめられないと、任せっきりの前提が崩れる。
+  // 検体は子3件を持つので、子の行がある経路をそのまま通る。
   it("比較対象そのもののノードIDでも引き当てられること", async () => {
     const designPath = path.join(PAIR02_DIR, "figma-export.png");
     const priorScreenshot = path.join(PAIR02_DIR, "impl-single-section-regression.png");
@@ -210,14 +213,14 @@ describe("verify_fix", () => {
         design_source: designPath,
         screenshot: currentScreenshot,
         prior_comparison_id: priorData.comparisonId,
-        expected_target_node_id: "whole-frame",
+        expected_target_node_id: FIXTURE_ROOT_NODE_ID,
         threshold: 0.1,
       },
     });
 
     expect(result.isError).toBeFalsy();
     const data = JSON.parse(extractText(result));
-    expect(data.fixedNode).toBe("whole-frame");
+    expect(data.fixedNode).toBe(FIXTURE_ROOT_NODE_ID);
   });
 
   it("引き当てに失敗したときは、引ける名前を添えて返すこと", async () => {
@@ -247,7 +250,11 @@ describe("verify_fix", () => {
     });
 
     expect(result.isError).toBeTruthy();
-    expect(extractText(result)).toContain("available:");
+    const message = extractText(result);
+    // 「候補あり」とだけ言われても、正解の名前が分からないまま探し直しになる。
+    expect(message).toContain("available:");
+    expect(message).toContain(FIXTURE_ROOT_NODE_ID);
+    expect(message).not.toContain("(なし)");
   });
 
   // verdict は対象ノードが良くなったかだけを答える。比較そのものが人間レビューへ

@@ -602,6 +602,9 @@ describe("buildDiffReport global alignment shift severity", () => {
   });
 });
 
+// テストデータと期待値で同じ値を参照する。分散させると検証対象が黙ってずれる。
+const SCOPE_FIXTURE_NODE_IDS = { root: "scope-root", banner: "scope-banner" };
+
 describe("比較対象そのものの行が他の判断へ漏れないこと", () => {
   const makeNode = (
     id: string,
@@ -639,8 +642,10 @@ describe("比較対象そのものの行が他の判断へ漏れないこと", (
       width: size,
       height: size,
       figmaRootNode: {
-        ...makeNode("root", { x: 0, y: 0, width: size, height: size }),
-        children: [makeNode("banner", { x: 0, y: 0, width: size, height: 40 })],
+        ...makeNode(SCOPE_FIXTURE_NODE_IDS.root, { x: 0, y: 0, width: size, height: size }),
+        children: [
+          makeNode(SCOPE_FIXTURE_NODE_IDS.banner, { x: 0, y: 0, width: size, height: 40 }),
+        ],
       },
     });
 

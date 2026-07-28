@@ -551,38 +551,16 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
     shape: computeHausdorff(designPixels, screenshotPixels, width, height, contentBbox),
     layout: 0,
     textureScore: getTextureScore(wholeFrameBbox),
-    figmaNodeId: options.figmaNodeId,
+    // 比較元のノードIDが解決できない検体でも、この行を名前で引けるようにする。
+    // 引けないと、対象そのものを指定した検証がその経路だけ通らない。
+    figmaNodeId: options.figmaNodeId ?? figmaRootNode?.id,
   });
 
   if (childRegions.length > 0) {
     return [...childRegions, buildRootRegion()];
   }
 
-  return [
-    {
-      regionId: "whole-frame",
-      bbox: wholeFrameBbox,
-      structure: computeSsimForRegion(designPixels, screenshotPixels, width, height, contentBbox),
-      color: buildColorDifference(
-        designPixels,
-        screenshotPixels,
-        width,
-        height,
-        paddingMask ? contentBbox : undefined,
-      ),
-      flatColorMismatch: buildFlatColorMismatch(
-        designPixels,
-        screenshotPixels,
-        width,
-        height,
-        contentBbox,
-      ),
-      shape: computeHausdorff(designPixels, screenshotPixels, width, height, contentBbox),
-      layout: 0,
-      textureScore: getTextureScore(wholeFrameBbox),
-      figmaNodeId: options.figmaNodeId,
-    },
-  ];
+  return [buildRootRegion()];
 }
 
 function selectAnchorsForScoring<T>(anchors: readonly T[]): T[] {

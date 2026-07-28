@@ -352,8 +352,11 @@ export const computeVerdict = (
   const hasCriticalIssue = report.issues.some((issue) => issue.severity === "critical");
   // P2 では region 面積で重み付けし、単一セクションの暴走で全体 verdict が即死しないようにする。
   const weightedAggregate = normalizeWeightedAggregate(report.regionScores);
-  const textureRationaleSuffix = buildTextureRationaleSuffix(report.regionScores);
-  const worstRegionEvidenceSuffix = buildWorstRegionEvidenceSuffix(report.regionScores);
+  // 理由の文面も集計と同じ行から作る。片方だけ全部の行を見ると、判定は子から
+  // 出しているのに「いちばん悪いのは画面全体」と書く食い違いが起きる。
+  const scoringRegions = selectScoringRegions(report.regionScores);
+  const textureRationaleSuffix = buildTextureRationaleSuffix(scoringRegions);
+  const worstRegionEvidenceSuffix = buildWorstRegionEvidenceSuffix(scoringRegions);
 
   if (hasCriticalIssue) {
     return {
