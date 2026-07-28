@@ -14,6 +14,7 @@ import {
   generateMatchSuggestion,
   matchDiffRegionsToNodes,
   type CompareDesignResult,
+  type ClusterCollapse,
   type ClusterTelemetry,
   type CropRegion,
   type FigmaNode,
@@ -173,7 +174,16 @@ interface GridCellGeometry {
 interface ClusterDiffResult {
   diffRegions: CompareDesignResult["diffRegions"];
   clusterTelemetry: ClusterTelemetry;
+  clusterCollapse?: ClusterCollapse;
 }
+
+// 分割を諦めたときに、次に何を疑えばよいかを毎回同じ順で示す。
+// ここが空だと「60箇所直せ」という読み方に戻ってしまう。
+const CLUSTER_COLLAPSE_CHECKS = [
+  "撮影条件が設計と揃っているか（撮影幅・倍率・スクロール位置）",
+  "比較元のFigmaフレームが、撮影した画面と同じものか",
+  "実装がまだ着手前の状態になっていないか",
+];
 
 interface QuickTileCandidate {
   left: number;
@@ -245,13 +255,27 @@ function clusterDiffRegions(args: {
     fallbackReason = fallbackReason ?? "grid-empty-with-diff";
     diffRegions = clusterDiffPixels(diffPixelData, width, height);
   }
+  // 差分が広すぎて分割できなかった場合。以前はここで作った等間隔タイルを
+  // そのまま差分領域として返していたが、タイルは位置の手がかりを持たない。
+  // 「直す場所がタイルの数だけある」と読めてしまうので、領域としては返さず、
+  // 分割できなかったという事実として返す。
+  let clusterCollapse: ClusterCollapse | undefined;
   if (useGrid && diffRegions.length === 0 && diffPixelCount > 0 && shouldSkipFloodFallback) {
-    diffRegions = clusterDiffPixelsQuickTiles(diffPixelData, width, height);
+    const coarseTiles = clusterDiffPixelsQuickTiles(diffPixelData, width, height);
     fallbackReason = fallbackReason ?? "grid-empty-with-diff";
+    clusterCollapse = {
+      collapsed: true,
+      reason: fallbackReason,
+      coarseTileCount: coarseTiles.length,
+      message:
+        "差分が画面全体に広がっているため、直す場所を領域に分けられませんでした。個別のCSS修正へ進む前に、比較の前提を先に確認してください。",
+      checks: CLUSTER_COLLAPSE_CHECKS,
+    };
   }
 
   return {
     diffRegions,
+    clusterCollapse,
     clusterTelemetry: {
       requestedMode: clusterMode,
       usedMode,
@@ -980,7 +1004,7 @@ export async function compareImages(
     gridOptions,
   });
   let { diffRegions } = clustered;
-  const { clusterTelemetry } = clustered;
+  const { clusterTelemetry, clusterCollapse } = clustered;
 
   // Match diff regions to Figma nodes if available
   if (figmaRootNode) {
@@ -1013,6 +1037,7 @@ export async function compareImages(
     diffRegions,
     suggestion,
     clusterTelemetry,
+    clusterCollapse,
     gridSummary,
     diffReport,
     diffImageBase64,

@@ -123,6 +123,41 @@ describe("compareImages がノードを差分領域へ対応づけること", ()
   });
 });
 
+describe("差分が全面に広がって分割できないとき", () => {
+  // 分割を諦める条件に入るには、比較画素が FLOOD_FALLBACK_MAX_PIXELS (1,800,000) を
+  // 超え、かつ格子の大半が差分で埋まっている必要がある。
+  const BIG_WIDTH = 1500;
+  const BIG_HEIGHT = 1300;
+
+  async function makeSolidPng(value: number): Promise<string> {
+    const pixels = Buffer.alloc(BIG_WIDTH * BIG_HEIGHT * 4, value);
+    for (let i = 3; i < pixels.length; i += 4) {
+      pixels[i] = 255;
+    }
+    const png = await sharp(pixels, {
+      raw: { width: BIG_WIDTH, height: BIG_HEIGHT, channels: 4 },
+    })
+      .png()
+      .toBuffer();
+    return png.toString("base64");
+  }
+
+  it("等間隔タイルを差分領域として返さず、分割できなかった事実を返すこと", async () => {
+    const designBase64 = await makeSolidPng(0);
+    const screenshotBase64 = await makeSolidPng(255);
+
+    const result = await compareImages({ designBase64, screenshotBase64, threshold: 0.1 });
+
+    expect(result.clusterTelemetry?.fallbackReason).toBe("hot-cell-ratio-exceeded");
+    expect(result.clusterCollapse?.collapsed).toBe(true);
+    expect(result.clusterCollapse?.checks.length).toBeGreaterThan(0);
+    // 位置の手がかりを持たないタイルを、直す場所として返さないこと。
+    expect(result.diffRegions).toHaveLength(0);
+    // 差分が無いわけではないことは、画素数で分かる形を保つ。
+    expect(result.diffPixelCount).toBeGreaterThan(0);
+  }, 60_000);
+});
+
 describe("resolveAppliedCropOrigin", () => {
   it("実際に切り出される原点を、切り捨てと画像内へのクリップ込みで返すこと", () => {
     expect(resolveAppliedCropOrigin({ x: 10.7, y: 20.9, width: 50, height: 50 }, 200, 400)).toEqual(

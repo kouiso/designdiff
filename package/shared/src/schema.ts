@@ -172,6 +172,23 @@ export const ClusterTelemetrySchema = z.object({
   regionCount: z.number().int().nonnegative(),
 });
 
+// 差分が画面全体に広がると、領域分割は成立せず一定サイズのタイルしか作れない。
+// そのタイルを差分領域として返すと「直す場所がタイルの数だけある」と読めてしまう。
+// 分割できなかったという事実そのものを、別の形で返すための入れ物。
+export const ClusterCollapseSchema = z.object({
+  collapsed: z.literal(true),
+  reason: z.enum([
+    "grid-empty-with-diff",
+    "wall-budget-exceeded",
+    "region-count-exceeded",
+    "hot-cell-ratio-exceeded",
+  ]),
+  // 分割を諦めた時点で作られていたタイルの数。位置の手がかりにはならない。
+  coarseTileCount: z.number().int().nonnegative(),
+  message: z.string(),
+  checks: z.array(z.string()),
+});
+
 export const GridSummaryCellSchema = z.object({
   row: z.number().int().nonnegative(),
   col: z.number().int().nonnegative(),
@@ -483,6 +500,7 @@ export const CompareDesignResultSchema = z.object({
   nextAction: z.string().optional(),
   suggestion: z.string(),
   clusterTelemetry: ClusterTelemetrySchema.optional(),
+  clusterCollapse: ClusterCollapseSchema.optional(),
   gridSummary: GridSummarySchema.optional(),
   diffReport: DiffReportSchema.optional(),
   critique: CritiqueNoteSchema.optional(),

@@ -23,6 +23,7 @@ import {
   PERCEPTIBLE_DIFF_CONTRADICTION_RATIO,
   runPreflight,
   selfCritique,
+  type ClusterCollapse,
   type CompareDesignResult,
   type ComparisonDiagnosis,
   type CropRegion,
@@ -519,7 +520,15 @@ function buildNextAction(
   structuralVerdict: DiffVerdict,
   regionCount: number,
   targetNodeIds: string[],
+  clusterCollapse?: ClusterCollapse,
 ): string {
+  // 分割できなかった回に「N箇所を確認せよ」と言うと、位置の手がかりを持たない
+  // タイルの数だけ修正箇所があるように読める。先に前提の確認へ回す。
+  if (clusterCollapse) {
+    const checks = clusterCollapse.checks.map((check, index) => `${index + 1}. ${check}`).join(" ");
+    return `${clusterCollapse.message} ${checks}`;
+  }
+
   if (structuralVerdict === "pass") {
     return "構造SSIM判定はPASSです。matchRate%は参考値として扱い、差分画像に重大な崩れがないことを確認して完了してください。";
   }
@@ -1425,7 +1434,12 @@ export async function runCompareDesign(
       : tokenDiffSummary !== undefined
         ? `${tokenDiffSummary} 値が分かっているので、該当箇所の指定を設計側の値へ直してください。`
         : (buildDiagnosisNextAction(diagnosis) ??
-          buildNextAction(structuralReviewResult.verdict, regionCount, targetNodeIds));
+          buildNextAction(
+            structuralReviewResult.verdict,
+            regionCount,
+            targetNodeIds,
+            comparison.clusterCollapse,
+          ));
   const loopGuard = await evaluateLoopGuardSafely({
     sourceKey,
     comparisonId: comparison.comparisonId,

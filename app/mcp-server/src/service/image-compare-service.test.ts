@@ -1119,7 +1119,7 @@ describe("compareImages", () => {
     expect(result.clusterTelemetry?.wallMs).toBeGreaterThanOrEqual(0);
   });
 
-  it("大きな画像で grid が予算超過した場合は flood をスキップしてタイル領域を返すこと", async () => {
+  it("大きな画像で grid が予算超過した場合は flood をスキップし、分割できなかった事実を返すこと", async () => {
     const pixelmatchMock = await import("pixelmatch");
     const sharedMock = await import("@figdiff/shared");
 
@@ -1196,18 +1196,17 @@ describe("compareImages", () => {
       fallbackReason: "wall-budget-exceeded",
       budgetMs: 5000,
     });
-    expect(result.diffRegions).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          bounds: { x: 0, y: 0, width: 192, height: 192 },
-          diffPixelCount: 64,
-        }),
-      ]),
-    );
+    // 分割は成立していないので、差分領域は空。事実は clusterCollapse 側に載る。
+    expect(result.diffRegions).toHaveLength(0);
+    expect(result.clusterCollapse).toMatchObject({
+      collapsed: true,
+      reason: "wall-budget-exceeded",
+    });
+    expect(result.clusterCollapse?.coarseTileCount).toBeGreaterThan(0);
     // 1501×1200×4 ≈ 7.2 MB buffer + pixel loop is slow on CI runners; 15 s avoids flaky timeout.
   }, 60000);
 
-  it("quick tile fallback はリージョン数を上限で打ち切り、決定的な順序で返すこと", async () => {
+  it("quick tile fallback は数えるタイルを上限で打ち切ること", async () => {
     const pixelmatchMock = await import("pixelmatch");
     const sharedMock = await import("@figdiff/shared");
 
@@ -1263,15 +1262,12 @@ describe("compareImages", () => {
       screenshotBase64: dummyBase64,
     });
 
-    expect(result.diffRegions.length).toBeLessThanOrEqual(60);
-    expect(result.diffRegions[0]?.id).toBe(0);
-    expect(result.diffRegions[0]?.bounds).toEqual({
-      x: 0,
-      y: 0,
-      width: 192,
-      height: 192,
-    });
-    expect(result.diffRegions.at(-1)?.id).toBe(result.diffRegions.length - 1);
+    // タイルは位置の手がかりを持たないので、差分領域としては返さない。
+    // 打ち切りが効いていることは、数えたタイル数の側で確かめる。
+    expect(result.diffRegions).toHaveLength(0);
+    expect(result.clusterCollapse?.collapsed).toBe(true);
+    expect(result.clusterCollapse?.coarseTileCount).toBeLessThanOrEqual(60);
+    expect(result.clusterCollapse?.coarseTileCount).toBeGreaterThan(0);
     // 1600×1200×4 ≈ 7.7 MB buffer + pixel loop is slow on CI runners; 15 s avoids flaky timeout.
   }, 60000);
   it("大きな anchor 探索でも stride 後の精密化で正しい offset を返すこと", async () => {
