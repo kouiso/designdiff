@@ -55,6 +55,15 @@ export interface StitchResult {
  */
 export const MAX_FIXED_BAND_RATIO = 0.4;
 
+/**
+ * 繋いだ1枚の画素数の上限。
+ *
+ * 1440x3200 の端末で20枚繋ぐと、およそ5,700万画素で 229MB の領域を一度に確保する。
+ * 元の各フレームもまだ持っとるので、比較側の上限（4,000万画素）に届く前に
+ * この工程だけでメモリを使い切る。確保する前に、理由の分かる失敗として弾く。
+ */
+export const MAX_STITCHED_PIXELS = 40_000_000;
+
 /** 完全一致候補のうち、画素まで検証する上限。一様な画面では候補が大量に出る。 */
 const MAX_EXACT_CANDIDATE_VERIFICATIONS = 16;
 
@@ -71,6 +80,41 @@ function assertSameDimensions(frames: readonly RawImage[]): void {
       );
     }
   }
+}
+
+/**
+ * 下端かどうかを見るときに、どれだけの行が変わっていても「同じ画面」と見なすか。
+ *
+ * 読み込み中の輪、点滅するカーソル、動画、時計が写っとると、下端で撮った2枚は
+ * 決してバイト単位では一致せん。一致だけを条件にすると下端に着いたと分からず、
+ * 同じ画面を上限まで撮り続けて、それを近似で繋いだ嘘の縦長画像になる。
+ * 数行ぶんの揺れは無視して、本文が送られたかどうかで判断する。
+ */
+export const BOTTOM_CHANGED_ROW_RATIO = 0.05;
+
+/**
+ * 2枚が実質同じ画面か。変わった行の割合がしきい値以下なら同じと見なす。
+ * 行の一部だけ変わっても、その行は「変わった」と数える。
+ */
+export function imagesNearlyIdentical(
+  a: RawImage,
+  b: RawImage,
+  changedRowRatio: number = BOTTOM_CHANGED_ROW_RATIO,
+): boolean {
+  if (a.width !== b.width || a.height !== b.height || a.data.length !== b.data.length) {
+    return false;
+  }
+  if (!Number.isFinite(changedRowRatio) || changedRowRatio < 0 || changedRowRatio > 1) {
+    throw new Error(`changedRowRatio must be between 0 and 1: got ${String(changedRowRatio)}`);
+  }
+  const allowedChangedRows = Math.floor(a.height * changedRowRatio);
+  let changedRows = 0;
+  for (let y = 0; y < a.height; y++) {
+    if (rowsEqual(a, y, b, y)) continue;
+    changedRows++;
+    if (changedRows > allowedChangedRows) return false;
+  }
+  return true;
 }
 
 export function imagesIdentical(a: RawImage, b: RawImage): boolean {
@@ -318,6 +362,15 @@ export function stitchScrollFrames(
     bodyHeight +
     newRowsPerFrame.reduce((sum, rows) => sum + rows, 0) +
     bands.footerHeight;
+
+  // 領域を確保する前に上限で弾く。確保してから落ちると、原因が
+  // 「メモリが足りん」としか分からず、どう直せばええかが伝わらん。
+  const stitchedPixelCount = first.width * totalHeight;
+  if (stitchedPixelCount > MAX_STITCHED_PIXELS) {
+    throw new Error(
+      `Stitched capture would be ${first.width}x${totalHeight} (${stitchedPixelCount} px), above the ${MAX_STITCHED_PIXELS} px ceiling. Capture fewer frames with maxCaptures, or compare one section at a time with set_crop_region.`,
+    );
+  }
 
   const image: RawImage = {
     width: first.width,

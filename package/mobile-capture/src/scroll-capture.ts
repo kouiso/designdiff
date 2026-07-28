@@ -1,7 +1,12 @@
 import * as fs from "node:fs/promises";
 
 import { resolveCaptureOutputPath } from "./path.js";
-import { imagesIdentical, stitchScrollFrames, type RawImage } from "./stitch.js";
+import {
+  detectFixedBands,
+  imagesNearlyIdentical,
+  stitchScrollFrames,
+  type RawImage,
+} from "./stitch.js";
 
 import type { CaptureDevice, DeviceCaptureProvider, DeviceScrollOptions } from "./types.js";
 
@@ -35,6 +40,8 @@ export interface ScrollFrameDriver {
 export interface CollectScrollFramesOptions {
   maxCaptures?: number;
   settleMs?: number;
+  /** 撮り始める前に上端まで戻すか。既定 true。 */
+  rewindToTop?: boolean;
 }
 
 export interface CollectedScrollFrames {
@@ -44,7 +51,29 @@ export interface CollectedScrollFrames {
   truncatedAtCaptureLimit: boolean;
   /** 1回目のスクロールで画面が動かなかったか。スクロールしない画面の判定に使う。 */
   didNotScroll: boolean;
+  /** 撮り始める前に上端まで戻せたか。戻せんかった場合、繋いだ画像は途中から始まる。 */
+  startedAtTop: boolean;
   notes: string[];
+}
+
+/**
+ * 繋ぐ前の1画面を返す。向きの判定と、見込みの重なりの計算に使う。
+ * 撮影が1枚も返さんかった場合は、黙って空の結果を作らずに落とす。
+ */
+export function resolveViewport(frames: readonly RawImage[]): RawImage {
+  const [first] = frames;
+  if (first === undefined) {
+    throw new Error("Scroll capture produced no frames.");
+  }
+  return first;
+}
+
+function assertSameSize(expected: RawImage, actual: RawImage): void {
+  if (actual.width !== expected.width || actual.height !== expected.height) {
+    throw new Error(
+      `Scroll captures changed dimensions mid-scroll (${expected.width}x${expected.height} → ${actual.width}x${actual.height}). The screen rotated or a keyboard appeared.`,
+    );
+  }
 }
 
 function delay(ms: number): Promise<void> {
@@ -67,9 +96,39 @@ export async function collectScrollFrames(
   const settleMs = options.settleMs ?? SCROLL_SETTLE_MS;
   const notes: string[] = [];
 
-  const firstFrame = await driver.captureFrame();
-  const frames: RawImage[] = [firstFrame];
+  let firstFrame = await driver.captureFrame();
   const distancePx = Math.max(1, Math.round(firstFrame.height * SCROLL_VIEWPORT_FRACTION));
+
+  // 撮り終わると端末は下端に居る。次にこの経路を通ると、その下端から
+  // 撮り始めて「1回送っても変わらん＝下端」と読み、画面の下の一部だけを
+  // 完全な1枚として返してしまう。撮る前に必ず上端まで戻す。
+  let startedAtTop = true;
+  if (options.rewindToTop !== false) {
+    startedAtTop = false;
+    for (let attempt = 0; attempt < maxCaptures; attempt++) {
+      await driver.scroll({
+        distancePx: -distancePx,
+        width: firstFrame.width,
+        height: firstFrame.height,
+      });
+      await delay(settleMs);
+      const rewound = await driver.captureFrame();
+      assertSameSize(firstFrame, rewound);
+      const unchanged = imagesNearlyIdentical(rewound, firstFrame);
+      firstFrame = rewound;
+      if (unchanged) {
+        startedAtTop = true;
+        break;
+      }
+    }
+    if (!startedAtTop) {
+      notes.push(
+        `上端まで戻し切れませんでした（${maxCaptures} 回さかのぼっても画面が変わり続けています）。繋いだ画像は画面の途中から始まっている可能性があります。`,
+      );
+    }
+  }
+
+  const frames: RawImage[] = [firstFrame];
 
   let reachedBottom = false;
   let didNotScroll = false;
@@ -78,12 +137,8 @@ export async function collectScrollFrames(
     await driver.scroll({ distancePx, width: firstFrame.width, height: firstFrame.height });
     await delay(settleMs);
     const frame = await driver.captureFrame();
-    if (frame.width !== firstFrame.width || frame.height !== firstFrame.height) {
-      throw new Error(
-        `Scroll captures changed dimensions mid-scroll (${firstFrame.width}x${firstFrame.height} → ${frame.width}x${frame.height}). The screen rotated or a keyboard appeared.`,
-      );
-    }
-    if (imagesIdentical(frame, frames[frames.length - 1])) {
+    assertSameSize(firstFrame, frame);
+    if (imagesNearlyIdentical(frame, frames[frames.length - 1])) {
       reachedBottom = true;
       if (frames.length === 1) {
         didNotScroll = true;
@@ -103,7 +158,7 @@ export async function collectScrollFrames(
     );
   }
 
-  return { frames, reachedBottom, truncatedAtCaptureLimit, didNotScroll, notes };
+  return { frames, reachedBottom, truncatedAtCaptureLimit, didNotScroll, startedAtTop, notes };
 }
 
 export interface CaptureDeviceScrollOptions {
@@ -117,10 +172,17 @@ export interface ScrollCaptureOutcome {
   captureCount: number;
   width: number;
   height: number;
+  /** 繋ぐ前の1画面の寸法。向きの判定はこちらを使う。繋いだ後は必ず縦長になる。 */
+  viewportWidth: number;
+  viewportHeight: number;
   fixedHeaderHeight: number;
   fixedFooterHeight: number;
   reachedBottom: boolean;
   truncatedAtCaptureLimit: boolean;
+  /** 1回送っても画面が変わらんかったか。1画面ぶんしか撮れとらんことを意味する。 */
+  didNotScroll: boolean;
+  /** 撮り始める前に上端まで戻せたか。 */
+  startedAtTop: boolean;
   notes: string[];
 }
 
@@ -162,38 +224,68 @@ export async function captureDeviceScrollScreenshot(
     },
   };
 
-  const collected = await collectScrollFrames(driver, { maxCaptures: options.maxCaptures });
-  const expectedOverlap =
-    collected.frames.length > 0
-      ? Math.max(
-          1,
-          collected.frames[0].height -
-            Math.round(collected.frames[0].height * SCROLL_VIEWPORT_FRACTION),
-        )
-      : undefined;
-  const stitched = stitchScrollFrames(collected.frames, { expectedOverlap });
+  const cleanupNotes: string[] = [];
+  const removeFrameFiles = async (): Promise<void> => {
+    // 繋いだ1枚だけを残す。素材を残すとキャッシュが撮影枚数ぶん膨らむ。
+    // 途中で落ちた場合も必ずここを通す。消せんかったら黙らずに書き残す。
+    const failures: string[] = [];
+    await Promise.all(
+      framePaths.map(async (framePath) => {
+        try {
+          await fs.rm(framePath, { force: true });
+        } catch {
+          failures.push(framePath);
+        }
+      }),
+    );
+    if (failures.length > 0) {
+      cleanupNotes.push(
+        `撮影の素材 ${failures.length} 件を消せませんでした: ${failures.join(", ")}`,
+      );
+    }
+  };
 
-  const outputPath = await resolveCaptureOutputPath(options.device, options.outputDir);
-  await sharp(stitched.image.data, {
-    raw: { width: stitched.image.width, height: stitched.image.height, channels: 4 },
-  })
-    .png()
-    .toFile(outputPath);
+  let collected: Awaited<ReturnType<typeof collectScrollFrames>>;
+  let stitched: ReturnType<typeof stitchScrollFrames>;
+  let outputPath: string;
+  try {
+    collected = await collectScrollFrames(driver, { maxCaptures: options.maxCaptures });
+    // 見込みの重なりは、固定帯を除いた本文の高さから出す。画面全体から出すと、
+    // ヘッダーとフッターのぶんだけ大きく見積もり、一様な行が続く画面で
+    // 繋ぎ目が本文の高さぶんずれる。
+    const bands = detectFixedBands(collected.frames);
+    const first = resolveViewport(collected.frames);
+    const bodyHeight = first.height - bands.headerHeight - bands.footerHeight;
+    const advance = Math.round(first.height * SCROLL_VIEWPORT_FRACTION);
+    stitched = stitchScrollFrames(collected.frames, {
+      expectedOverlap: Math.max(1, bodyHeight - advance),
+    });
 
-  // 繋いだ1枚だけを残す。素材を残すとキャッシュが撮影枚数ぶん膨らむ。
-  await Promise.all(
-    framePaths.map((framePath) => fs.rm(framePath, { force: true }).catch(() => undefined)),
-  );
+    outputPath = await resolveCaptureOutputPath(options.device, options.outputDir);
+    await sharp(stitched.image.data, {
+      raw: { width: stitched.image.width, height: stitched.image.height, channels: 4 },
+    })
+      .png()
+      .toFile(outputPath);
+  } finally {
+    await removeFrameFiles();
+  }
+
+  const viewport = resolveViewport(collected.frames);
 
   return {
     screenshotPath: outputPath,
     captureCount: collected.frames.length,
     width: stitched.image.width,
     height: stitched.image.height,
+    viewportWidth: viewport.width,
+    viewportHeight: viewport.height,
     fixedHeaderHeight: stitched.headerHeight,
     fixedFooterHeight: stitched.footerHeight,
     reachedBottom: collected.reachedBottom,
     truncatedAtCaptureLimit: collected.truncatedAtCaptureLimit,
-    notes: [...collected.notes, ...stitched.notes],
+    didNotScroll: collected.didNotScroll,
+    startedAtTop: collected.startedAtTop,
+    notes: [...collected.notes, ...stitched.notes, ...cleanupNotes],
   };
 }

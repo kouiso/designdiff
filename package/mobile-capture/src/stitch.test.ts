@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  BOTTOM_CHANGED_ROW_RATIO,
+  MAX_STITCHED_PIXELS,
   detectFixedBands,
   detectOverlap,
   imagesIdentical,
+  imagesNearlyIdentical,
   MAX_FIXED_BAND_RATIO,
   stitchScrollFrames,
   type RawImage,
@@ -212,5 +215,48 @@ describe("stitchScrollFrames 重なりが完全一致せんとき", () => {
     // 共通の行が無いので、近似は「全部が重なり」と読む。落とす行は無いが、
     // 繋ぎ目が信用できんことは注記で分かる形にしてある。
     expect(result.image.height).toBe(previous.height);
+  });
+});
+
+describe("imagesNearlyIdentical", () => {
+  it("数行だけ変わっとる2枚は同じ画面と見なす", () => {
+    const rows = sequence(0, 100);
+    const changed = [...rows];
+    changed[50] = 999;
+
+    expect(imagesNearlyIdentical(imageFromRows(rows), imageFromRows(changed))).toBe(true);
+  });
+
+  it("しきい値を超えて変わっとれば別の画面と見なす", () => {
+    const rows = sequence(0, 100);
+    const changed = rows.map((value, index) => (index < 20 ? 999 : value));
+
+    expect(imagesNearlyIdentical(imageFromRows(rows), imageFromRows(changed))).toBe(false);
+  });
+
+  it("寸法が違えば別の画面と見なす", () => {
+    expect(imagesNearlyIdentical(imageFromRows([1, 2]), imageFromRows([1, 2, 3]))).toBe(false);
+  });
+
+  it("許す割合の指定が範囲外なら落とす", () => {
+    const image = imageFromRows([1, 2]);
+    expect(() => imagesNearlyIdentical(image, image, -0.1)).toThrow(/between 0 and 1/);
+    expect(() => imagesNearlyIdentical(image, image, 1.5)).toThrow(/between 0 and 1/);
+  });
+
+  it("既定のしきい値は0より大きく1未満", () => {
+    expect(BOTTOM_CHANGED_ROW_RATIO).toBeGreaterThan(0);
+    expect(BOTTOM_CHANGED_ROW_RATIO).toBeLessThan(1);
+  });
+});
+
+describe("stitchScrollFrames の大きさの上限", () => {
+  it("繋いだ結果が上限を超えるなら、領域を確保する前に落とす", () => {
+    // 幅を大きく取って、少ない枚数で上限を超えさせる。
+    const width = Math.ceil(MAX_STITCHED_PIXELS / 30);
+    const previous = imageFromRows(sequence(0, 20), width);
+    const next = imageFromRows(sequence(10, 20), width);
+
+    expect(() => stitchScrollFrames([previous, next])).toThrow(/ceiling/);
   });
 });

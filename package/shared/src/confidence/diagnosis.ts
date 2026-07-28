@@ -102,7 +102,7 @@ function normalizationCause(normalization?: NormalizationReport): DiagnosisCause
       confidence: CONFIDENCE_NORMALIZATION,
       message: `Figma フレームはスクリーンショットより縦に長いフルページ相当です（幅正規化後の高さ比 約 ${ratio.toFixed(2)}x）。単一ビューポート撮影との差分が混ざっている可能性が高く、これは通常の実装差分とは限りません。`,
       suggestedFix:
-        "単一ビューポート同士を比較するなら set_crop_region で Figma 側を viewport 高に切り出してください。フルページ比較をしたい場合は、実機/Simulator なら compare_design に capture_scroll: true を渡すとスクロールしながら撮って1枚に繋ぎます。それ以外は、フルページ撮影した screenshot を使ってください。",
+        "単一ビューポート同士を比較するなら set_crop_region で Figma 側を viewport 高に切り出してください。フルページ比較をしたい場合は、Android 実機なら compare_design に capture_scroll: true を渡すとスクロールしながら撮って1枚に繋ぎます。iOS はスワイプを送る手段が無いので、フルページ撮影した screenshot を渡すか、set_crop_region で節ごとに比べてください。",
     };
   }
   if (!normalization.cropApplied && classification === "wrong_frame_or_misconfig") {

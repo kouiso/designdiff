@@ -55,7 +55,7 @@ class FakeScrollingDevice implements DeviceCaptureProvider {
     }
     this.scrollCalls.push(options);
     const distance = options.fromY - options.toY;
-    this.offsetY = Math.min(this.offsetY + distance, PAGE_HEIGHT - VIEW_HEIGHT);
+    this.offsetY = Math.min(Math.max(this.offsetY + distance, 0), PAGE_HEIGHT - VIEW_HEIGHT);
     return Promise.resolve();
   }
 }
@@ -134,7 +134,8 @@ describe("captureDeviceScrollScreenshot", () => {
       maxCaptures: 3,
     });
 
-    const [first] = device.scrollCalls;
+    // 1回目は上端へ戻す動き。送りたい距離を測るのは、そのあとの前向きの1回。
+    const [first] = device.scrollCalls.filter((call) => call.fromY > call.toY);
     expect(first.x).toBe(Math.round(VIEW_WIDTH / 2));
     expect(first.fromY - first.toY).toBe(Math.round(VIEW_HEIGHT * 0.6));
     expect(first.durationMs).toBeGreaterThan(0);

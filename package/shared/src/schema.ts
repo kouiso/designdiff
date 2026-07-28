@@ -399,12 +399,19 @@ export const ScrollCaptureReportSchema = z.object({
   captureCount: z.number().int().positive(),
   stitchedWidth: z.number().int().positive(),
   stitchedHeight: z.number().int().positive(),
+  /** 繋ぐ前の1画面の寸法。向きの判定はこちらを使う。繋いだ後は必ず縦長になる。 */
+  viewportWidth: z.number().int().positive(),
+  viewportHeight: z.number().int().positive(),
   /** 全フレームで固定だった帯。繋いだ画像には1回だけ入っている。 */
   fixedHeaderHeight: z.number().int().nonnegative(),
   fixedFooterHeight: z.number().int().nonnegative(),
   reachedBottom: z.boolean(),
   /** 撮影上限で打ち切ったか。true のとき繋いだ画像はコンテンツの途中まで。 */
   truncatedAtCaptureLimit: z.boolean(),
+  /** 1回送っても画面が変わらんかったか。1画面ぶんしか撮れとらんことを意味する。 */
+  didNotScroll: z.boolean(),
+  /** 撮り始める前に上端まで戻せたか。false のとき画像は画面の途中から始まる。 */
+  startedAtTop: z.boolean(),
   /** 固定帯の判定を捨てた、近似で繋いだ等、結果を疑う理由になる注記。 */
   notes: z.array(z.string()),
 });
