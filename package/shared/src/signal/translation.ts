@@ -89,10 +89,19 @@ export const detectTranslation = (
   let bestDy = 0;
   let bestDiff = Infinity;
 
+  // 同点のときは動かさない側を残す。一様な画像や繰り返し模様ではどの位置でも
+  // 同じ数になり、走査順の先頭がそのまま「ずれ」として報告されてしまう。
+  const isBetter = (diff: number, dx: number, dy: number): boolean => {
+    if (diff !== bestDiff) {
+      return diff < bestDiff;
+    }
+    return dx * dx + dy * dy < bestDx * bestDx + bestDy * bestDy;
+  };
+
   for (let dy = -COARSE_RANGE; dy <= COARSE_RANGE; dy += COARSE_STEP) {
     for (let dx = -COARSE_RANGE; dx <= COARSE_RANGE; dx += COARSE_STEP) {
       const d = countSsdOffset(design, screenshot, width, height, dx, dy, COARSE_SAMPLE_STEP);
-      if (d < bestDiff) {
+      if (isBetter(d, dx, dy)) {
         bestDiff = d;
         bestDx = dx;
         bestDy = dy;
@@ -105,13 +114,17 @@ export const detectTranslation = (
   const coarseDx = bestDx;
   const coarseDy = bestDy;
   bestDiff = Infinity;
+  // 細かい探索は粗い探索の当たりを起点にする。同点判定の比較対象も
+  // その位置へ戻さないと、前段の値と混ざる。
+  bestDx = coarseDx;
+  bestDy = coarseDy;
   // 大きい画像で1px刻みのまま全画素を100回以上走ると時間が持たない。
   // 細かい探索が見分けたいのは10px以内の差なので、間引いても区別はつく。
   const fineSampleStep = width * height > 1_000_000 ? 2 : 1;
   for (let dy = coarseDy - FINE_RANGE; dy <= coarseDy + FINE_RANGE; dy++) {
     for (let dx = coarseDx - FINE_RANGE; dx <= coarseDx + FINE_RANGE; dx++) {
       const d = countSsdOffset(design, screenshot, width, height, dx, dy, fineSampleStep);
-      if (d < bestDiff) {
+      if (isBetter(d, dx, dy)) {
         bestDiff = d;
         bestDx = dx;
         bestDy = dy;

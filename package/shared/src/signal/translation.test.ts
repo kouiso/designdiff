@@ -172,3 +172,24 @@ describe("countSsdOffset の入力検査", () => {
     expect(() => countSsdOffset(image, image, WIDTH, HEIGHT, 0, 0, -1)).toThrow(/positive integer/);
   });
 });
+
+describe("手がかりの無い画像の扱い", () => {
+  it("一様な画像では、動かさない位置を選ぶこと", () => {
+    const flat = makeImage(0);
+
+    const result = detectTranslation(flat, flat, WIDTH, HEIGHT);
+
+    // どの位置でも同じ数になる。走査順の先頭を拾うと、無いずれを報告してしまう。
+    expect(result.dx).toBe(0);
+    expect(result.dy).toBe(0);
+  });
+
+  it("一様な画像では位置合わせも適用しないこと", () => {
+    const flat = makeImage(0);
+
+    const result = resolveAlignment(flat, flat, WIDTH, HEIGHT);
+
+    expect(result.alignment.translation).toEqual({ x: 0, y: 0 });
+    expect(result.applied).toBe(false);
+  });
+});
