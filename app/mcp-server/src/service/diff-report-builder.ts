@@ -50,10 +50,11 @@ interface BuildDiffReportOptions {
   // contain-resize の余白矩形 (content rect)。与えられると whole-frame の
   // SSIM / 色差を余白 (透明帯) を除いた content rect 内だけで計算する。
   paddingMask?: PaddingMaskRect;
-  // pixelmatch の差分クラスタ (bbox のみ)。Figma ノード木が無い比較 (PNG手渡し)
-  // では局所化の唯一の手がかりがこれになる。figmaRootNode 由来の子行が無い
-  // ときだけ採点単位として使う (Issue #56)。
-  diffRegions?: DiffBoundingBox[];
+  // pixelmatch の差分クラスタ。Figma ノード木が無い比較 (PNG手渡し) では
+  // 局所化の唯一の手がかりがこれになる。figmaRootNode 由来の子行が無い
+  // ときだけ採点単位として使う (Issue #56)。diffPixelCount は上限超過時に
+  // 疑わしい順で残すための重大度シグナル。
+  diffRegions?: (DiffBoundingBox & { diffPixelCount?: number })[];
 }
 
 const MAX_REGION_SCORE_COUNT = 24;
@@ -390,10 +391,18 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
   // は変えない。
   const diffClusterRegions: RegionScore[] = [];
   if (childRegions.length === 0 && options.diffRegions && options.diffRegions.length > 0) {
-    const scoreableClusters = options.diffRegions.filter(
-      (bbox) => bbox.w > 0 && bbox.h > 0 && bbox.w * bbox.h >= MIN_REGION_PIXEL_AREA,
-    );
-    const selectedClusters = selectAnchorsForScoring(scoreableClusters);
+    // pixelmatch のクラスタリング (clusterDiffPixels 系) が既に自前の連結画素数
+    // 閾値でノイズを除いている。子ノード用の MIN_REGION_PIXEL_AREA (64px^2) を
+    // ここでも適用すると、1x40 の細い欠落のような正当な小面積差分まで捨てて
+    // whole-frame 平均へフォールバックし、#56 と同じ薄まりが再発する。
+    const scoreableClusters = options.diffRegions.filter((bbox) => bbox.w > 0 && bbox.h > 0);
+    // 上限超過時は先頭から均等間引きせず、diffPixelCount が大きい (=疑わしい)
+    // 順に残す。均等間引きだと本命のクラスタがたまたま非採用インデックスに
+    // 落ちて丸ごと見逃され、他の採用クラスタのせいで whole-frame fallback も
+    // 効かなくなり、誤 PASS が再発する。
+    const selectedClusters = [...scoreableClusters]
+      .sort((a, b) => (b.diffPixelCount ?? 0) - (a.diffPixelCount ?? 0))
+      .slice(0, MAX_REGION_SCORE_COUNT);
 
     for (const [index, bbox] of selectedClusters.entries()) {
       diffClusterRegions.push({
@@ -556,7 +565,17 @@ export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
   } = resolveAlignment(designPixels, screenshotPixels, width, height);
   const { x: dx, y: dy } = alignment.translation;
 
-  const alignedOptions = { ...options, designPixels: alignedDesignPixels };
+  // diffRegions は補正前 (resolveAlignment 前) の pixelmatch 座標系。補正が
+  // 適用されると、alignedDesignPixels は境界からのはみ出し分を透明/RGB0で
+  // 埋めるため (shiftPixels)、境界付近の元クラスタがその塗り分を拾って
+  // 「許容していたはずの小さなずれ」が誤って critical 差分に化ける。補正が
+  // かかった回は diffRegions 由来の採点を使わず、既存の whole-frame 採点に
+  // 留める (安全側)。座標系を揃えて再クラスタ化する対応は別途追跡する。
+  const alignedOptions = {
+    ...options,
+    designPixels: alignedDesignPixels,
+    diffRegions: alignmentApplied ? undefined : options.diffRegions,
+  };
   const regionScores = buildRegionScores(alignedOptions);
 
   // 比較対象そのものの行は子と範囲が重なる。合否を決める不具合をここから作ると、

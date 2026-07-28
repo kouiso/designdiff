@@ -1107,12 +1107,14 @@ export async function compareImages(
     ignoreMask: ignoreMaskResult.mask,
     perceptibleMask,
     // Figma ノード写像 (matchDiffRegionsToNodes) より前の素の bbox でよい。
-    // 採点は座標だけを使い、ノード名は使わない。
+    // 採点は座標と diffPixelCount (上限超過時の重大度順ソート用) だけを使い、
+    // ノード名は使わない。
     diffRegions: earlyClusterForScoring.diffRegions.map((region) => ({
       x: region.bounds.x,
       y: region.bounds.y,
       w: region.bounds.width,
       h: region.bounds.height,
+      diffPixelCount: region.diffPixelCount,
     })),
   });
 
