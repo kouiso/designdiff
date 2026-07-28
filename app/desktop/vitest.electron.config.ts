@@ -12,9 +12,10 @@ export default defineConfig({
     // 画面側だけを測った数字を「デスクトップ全体の値」として報告しており、
     // 出荷しているコードの約2割が計測の外にあった。
     //
-    // 2026-07-28 実測: statements 23.16 / branches 75.00 / functions 69.38 /
-    // lines 23.16。画面側と中身が同じだった変換を共有側へ寄せ、画面へ差し込む
-    // 文字列の組み立て12本に検査を足した分だけ上がった。目標の80%にはまだ遠い。
+    // 2026-07-28 実測: statements 31.94 / branches 85.43 / functions 86.45 /
+    // lines 31.94。画面へ差し込む文字列、画像の保管、資格情報の受け渡し、
+    // 画面側へ公開する窓口に検査を足した分だけ上がった。行の数では目標の80%に
+    // まだ遠い。残りは重ね合わせのIPC(376行)と起動処理(234行)。
     // 実測値を下限に置いて、これ以上下がったら止まるようにする。
     // 下限を下げて通すのは禁止。下がったら原因を直すこと。
     coverage: {
@@ -24,10 +25,10 @@ export default defineConfig({
       // 分母だけが膨らむ。テストの書きようも無い。
       exclude: ["electron/**/*.test.ts", "electron/type/**"],
       thresholds: {
-        statements: 23,
-        branches: 74,
-        functions: 68,
-        lines: 23,
+        statements: 31,
+        branches: 85,
+        functions: 86,
+        lines: 31,
       },
     },
   },
