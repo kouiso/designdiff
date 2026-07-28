@@ -63,6 +63,19 @@ export {
   type ResolvedAlignment,
 } from "./signal/translation.js";
 export {
+  DEFAULT_DRIFT_FAIL_MS,
+  DEFAULT_DRIFT_WINDOW_MS,
+  MAX_FRAMES,
+  aggregateTemporalVerdict,
+  alignFrame,
+  detectOrderViolation,
+  parseFrameTimestamps,
+  selectCandidates,
+  type FrameAlignment,
+  type FrameMismatch,
+  type TemporalVerdict,
+} from "./signal/temporal-align.js";
+export {
   compareFlatRegionColor,
   detectFlatRegionColor,
   type FlatRegionColor,
@@ -149,6 +162,10 @@ export {
   PreflightWarningCodeSchema,
   CropRegionSchema,
   IgnoreRegionSchema,
+  CompareAnimationResultSchema,
+  FrameComparisonSchema,
+  FrameAlignmentSchema,
+  TemporalVerdictSchema,
   IgnoreRegionConfigEntrySchema,
   IgnoreRegionConfigFileSchema,
   DesignTokenSchema,

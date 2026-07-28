@@ -56,6 +56,7 @@ FIGMA_TOKEN = "figd_your_token_here"
 |---|---|
 | **`compare_design`** | Primary tool. Pixel diff between Figma design and implementation screenshot. Always start here. |
 | `inspect_node` | Get CSS/layout details for a Figma node (`figma_url` + optional `node_id`/`node_ids`) |
+| `compare_animation` | Compare a time-aligned sequence of frames to verify motion, not just one instant |
 | `verify_fix` | Re-run comparison after a CSS fix to confirm improvement |
 | `list_figma_frames` | List frames in a Figma file with dimensions |
 | `list_projects` | List saved projects |

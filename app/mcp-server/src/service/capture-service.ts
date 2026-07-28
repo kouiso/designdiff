@@ -2,7 +2,7 @@ import * as crypto from "node:crypto";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 
-import type { DomElementStyle } from "@figdiff/shared";
+import { type DomElementStyle, parseFrameTimestamps } from "@figdiff/shared";
 
 import { getCaptureCacheDir } from "../util/figdiff-paths.js";
 
@@ -23,6 +23,13 @@ export interface CaptureOptions {
   dynamicSampleDelayMs?: number;
   /** 追加で撮る枚数。既定 DEFAULT_DYNAMIC_SAMPLE_COUNT。 */
   dynamicSampleCount?: number;
+  /**
+   * 動きを確かめるために、指定した時刻で連続して撮る（ms、読み込み完了を0とする）。
+   *
+   * 指定した場合は、動きを止める指定を入れずに撮る。止めたままでは、
+   * 動いている途中の見た目が原理的に1枚も写らんため。
+   */
+  frameTimestampsMs?: number[];
 }
 
 export interface CaptureResult {
@@ -36,6 +43,18 @@ export interface CaptureResult {
   dynamicSamplePaths?: string[];
   /** collectDomStyles 指定時のみ。採取に失敗した場合は undefined のまま。 */
   domStyles?: DomElementStyle[];
+  /**
+   * frameTimestampsMs 指定時のみ。指定した時刻ごとの撮影結果。
+   *
+   * actualAtMs は実際にその絵が表す時刻。巻き戻せる動きなら要求した時刻と一致する。
+   * 実時間で待った場合は、撮影にかかった時間ぶん後ろへずれた実測値が入る。
+   */
+  framePaths?: { path: string; atMs: number; actualAtMs: number }[];
+  /**
+   * フレーム列の時刻をどうやって合わせたか。
+   * seek=動きを止めてその時刻へ巻き戻した / wall-clock=実時間で待った。
+   */
+  frameTimeSource?: "seek" | "wall-clock";
 }
 
 /**
@@ -166,11 +185,16 @@ export async function captureUrl(url: string, options: CaptureOptions): Promise<
     await page.goto(url, { waitUntil: "networkidle", timeout: 60_000 });
     await page.evaluate(() => document.fonts.ready);
 
-    // Disable animations for deterministic screenshots (e.g., hero carousels)
-    await page.addStyleTag({
-      content:
-        "*,*::before,*::after{animation-duration:0s!important;animation-delay:0s!important;transition-duration:0s!important;transition-delay:0s!important;}",
-    });
+    // 動きを止めると、撮るたびに同じ絵になって差分が安定する。ただしフレーム列を
+    // 撮るときだけは止めん。止めたままでは、動いている途中の見た目が1枚も写らん。
+    const capturesFrameSequence =
+      options.frameTimestampsMs !== undefined && options.frameTimestampsMs.length > 0;
+    if (!capturesFrameSequence) {
+      await page.addStyleTag({
+        content:
+          "*,*::before,*::after{animation-duration:0s!important;animation-delay:0s!important;transition-duration:0s!important;transition-delay:0s!important;}",
+      });
+    }
 
     // fullPage:true は要求された幅を無視し、DOMのscrollHeightはレイアウト領域を
     // 過小報告する（ビューポート高で止まる）ことがあるため、測定とキャプチャの
@@ -194,6 +218,8 @@ export async function captureUrl(url: string, options: CaptureOptions): Promise<
     const client = await page.context().newCDPSession(page);
     let contentHeight: number;
     let dynamicSamplePaths: string[] | undefined;
+    let framePaths: { path: string; atMs: number; actualAtMs: number }[] | undefined;
+    let frameTimeSource: "seek" | "wall-clock" | undefined;
     try {
       if (!(options.width > 0)) {
         throw new Error(`キャプチャ幅が不正です (width=${options.width})。`);
@@ -219,7 +245,49 @@ export async function captureUrl(url: string, options: CaptureOptions): Promise<
         await fs.writeFile(outPath, Buffer.from(shot.data, "base64"));
       };
 
-      await shootTo(screenshotPath);
+      if (capturesFrameSequence) {
+        const timestamps = parseFrameTimestamps(options.frameTimestampsMs ?? []);
+
+        // 動きを止めて、任意の時刻へ巻き戻せるかを先に見る。巻き戻せるなら、
+        // 待たずにその時刻の絵を出せるので、撮影にかかった時間のぶんズレる問題が
+        // そもそも起きん。ページの読み込みを待つ間に動きが終わっとっても、
+        // 0へ戻してから撮れる。
+        const seekable = await page.evaluate(() => {
+          const animations = document.getAnimations();
+          if (animations.length === 0) return false;
+          for (const animation of animations) animation.pause();
+          return true;
+        });
+
+        const frames: { path: string; atMs: number; actualAtMs: number }[] = [];
+        const startedAt = Date.now();
+        for (const [index, atMs] of timestamps.entries()) {
+          let actualAtMs = atMs;
+          if (seekable) {
+            await page.evaluate((target: number) => {
+              for (const animation of document.getAnimations()) animation.currentTime = target;
+            }, atMs);
+          } else {
+            // 巻き戻せん動き（描画を自前で回しとる画面など）は、実時間で待つしかない。
+            // 撮影自体にも時間がかかるので、待ちは開始時刻からの残りで計算し、
+            // 実際に撮れた時刻をそのまま記録する。要求した時刻を名乗ると、
+            // 測ったズレが撮影の遅れなのか実装の遅れなのか分からんようになる。
+            const remaining = atMs - (Date.now() - startedAt);
+            if (remaining > 0) await page.waitForTimeout(remaining);
+            actualAtMs = Date.now() - startedAt;
+          }
+          // 1枚目だけは既存の戻り値と同じ場所へ置く。呼び出し側が1枚だけを
+          // 見る経路（従来の比較）と、そのまま繋がる形にするため。
+          const framePath =
+            index === 0 ? screenshotPath : path.join(captureDir, `capture-${id}-frame-${atMs}.png`);
+          await shootTo(framePath);
+          frames.push({ path: framePath, atMs, actualAtMs });
+        }
+        framePaths = frames;
+        frameTimeSource = seekable ? "seek" : "wall-clock";
+      } else {
+        await shootTo(screenshotPath);
+      }
 
       if (options.detectDynamic === true) {
         // 同じページ・同じレイアウトのまま少し待ってもう一度撮る。
@@ -245,6 +313,8 @@ export async function captureUrl(url: string, options: CaptureOptions): Promise<
       height: contentHeight,
       dynamicSamplePaths,
       domStyles,
+      framePaths,
+      frameTimeSource,
     };
   };
 
