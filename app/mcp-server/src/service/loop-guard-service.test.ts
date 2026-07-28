@@ -29,6 +29,8 @@ describe("loop-guard-service", () => {
       sourceKey: "figma:file:1:2",
       comparisonId: `cmp-${Math.random().toString(36).slice(2)}`,
       matchRate: 80,
+      captureWidth: 1440,
+      captureHeight: 900,
       structuralVerdict: "fail",
       status: "FAIL",
       ...overrides,
@@ -200,6 +202,90 @@ describe("loop-guard-service", () => {
 
     expect(report.decision).toBe("stop");
     expect(report.reason).toContain("悪化");
+  });
+
+  // URLを開いて撮ると高さは中身の量で決まる。実装で1行足すだけで変わるので、
+  // 高さを条件にすると実装を直すたびに履歴が捨てられ、停止判定が働かない。
+  it("URL撮影なら、高さが変わっても悪化の履歴を捨てないこと", async () => {
+    const urlCapture = { heightIsContentDriven: true };
+    await recordIterationAndEvaluate(input({ ...urlCapture, matchRate: 80, captureHeight: 3000 }), {
+      stateDir,
+      now: baseNow,
+    });
+    await recordIterationAndEvaluate(input({ ...urlCapture, matchRate: 70, captureHeight: 3200 }), {
+      stateDir,
+      now: baseNow + 1000,
+    });
+    const third = await recordIterationAndEvaluate(
+      input({ ...urlCapture, matchRate: 60, captureHeight: 3400 }),
+      { stateDir, now: baseNow + 2000 },
+    );
+
+    expect(third.iteration).toBe(3);
+  });
+
+  // 画像を渡す場合の高さは撮る側が決めた値。違う高さを同じ条件として扱うと、
+  // 別の大きさの絵で出した数値を並べて比べることになる。
+  it("画像を渡す場合は、高さが変わったら別の撮影条件として扱うこと", async () => {
+    await recordIterationAndEvaluate(input({ matchRate: 80, captureHeight: 900 }), {
+      stateDir,
+      now: baseNow,
+    });
+    const second = await recordIterationAndEvaluate(input({ matchRate: 70, captureHeight: 1200 }), {
+      stateDir,
+      now: baseNow + 1000,
+    });
+
+    expect(second.iteration).toBe(1);
+  });
+
+  it("撮影寸法が変わったら悪化履歴をリセットする", async () => {
+    await recordIterationAndEvaluate(input({ matchRate: 90 }), {
+      stateDir,
+      now: baseNow,
+    });
+    await recordIterationAndEvaluate(input({ matchRate: 85 }), {
+      stateDir,
+      now: baseNow + 1000,
+    });
+
+    const report = await recordIterationAndEvaluate(
+      input({
+        matchRate: 80,
+        captureWidth: 2166,
+        captureHeight: 1354,
+      }),
+      {
+        stateDir,
+        now: baseNow + 2000,
+      },
+    );
+
+    expect(report.iteration).toBe(1);
+    expect(report.decision).toBe("continue");
+    expect(report.reason).not.toContain("悪化");
+  });
+
+  it("寸法がない古い履歴は新しい撮影条件と比較しない", async () => {
+    await recordIterationAndEvaluate(
+      input({
+        matchRate: 90,
+        captureWidth: undefined,
+        captureHeight: undefined,
+      }),
+      {
+        stateDir,
+        now: baseNow,
+      },
+    );
+
+    const report = await recordIterationAndEvaluate(input({ matchRate: 80 }), {
+      stateDir,
+      now: baseNow + 1000,
+    });
+
+    expect(report.iteration).toBe(1);
+    expect(report.decision).toBe("continue");
   });
 
   it("resetLoopState clears the history for the key", async () => {

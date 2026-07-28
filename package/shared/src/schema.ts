@@ -326,7 +326,13 @@ export const DiffReportSchema = z.object({
   perceptibleDiffRatio: z.number().min(0).max(1).optional(),
 });
 
-export const CritiqueConcernSchema = z.enum(["regression", "oscillation", "plateau", "healthy"]);
+export const CritiqueConcernSchema = z.enum([
+  "regression",
+  "oscillation",
+  "plateau",
+  "healthy",
+  "capture-changed",
+]);
 
 export const CritiqueNoteSchema = z.object({
   concern: CritiqueConcernSchema,

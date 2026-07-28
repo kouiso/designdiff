@@ -26,6 +26,7 @@ import {
   type ClusterCollapse,
   type CompareDesignResult,
   type ComparisonDiagnosis,
+  type CritiqueNote,
   type CropRegion,
   type DiffReport,
   type DiffVerdict,
@@ -48,7 +49,8 @@ import {
 
 import {
   buildComparisonSourceKey,
-  getRecentReports,
+  getRecentComparisons,
+  type RecentComparison,
   recordComparison,
 } from "./comparison-history.js";
 import { getCropRegionForComparison } from "./crop-region-store.js";
@@ -1200,6 +1202,64 @@ async function evaluateLoopGuardSafely(
   }
 }
 
+/**
+ * 撮影条件が同じかどうかの見方は、撮り方で変わる。
+ *
+ * URLを開いてページ全体を撮る場合、高さは中身の量で決まる。実装で1行足しただけ
+ * でも変わるので、高さを条件に入れると「実装を直したから比べられない」という
+ * 逆立ちが起きる。この場合は幅だけで見る。
+ *
+ * 画像を渡す場合や端末から撮る場合は、高さも撮る側が決めた値。違う高さを同じ
+ * 条件として扱うと、別の大きさの絵で出した数値を並べて比べることになる。
+ */
+function isSameCaptureCondition(
+  entry: RecentComparison,
+  captureWidth: number,
+  captureHeight: number | undefined,
+  heightIsContentDriven: boolean,
+): boolean {
+  if (entry.captureWidth !== captureWidth) {
+    return false;
+  }
+  if (heightIsContentDriven) {
+    return true;
+  }
+  return entry.captureHeight === captureHeight;
+}
+
+function buildCaptureAwareCritique(
+  report: DiffReport | undefined,
+  priorComparisons: RecentComparison[],
+  captureWidth: number | undefined,
+  captureHeight: number | undefined,
+  heightIsContentDriven: boolean,
+): CritiqueNote | undefined {
+  if (!report || priorComparisons.length === 0 || typeof captureWidth !== "number") {
+    return undefined;
+  }
+
+  const comparableReports = priorComparisons
+    .filter((entry) =>
+      isSameCaptureCondition(entry, captureWidth, captureHeight, heightIsContentDriven),
+    )
+    .map((entry) => entry.report);
+  if (comparableReports.length > 0) {
+    return selfCritique(report, comparableReports);
+  }
+
+  for (let index = priorComparisons.length - 1; index >= 0; index--) {
+    const prior = priorComparisons[index];
+    if (typeof prior.captureWidth === "number") {
+      return {
+        concern: "capture-changed",
+        advice: `撮影条件（撮影幅 ${prior.captureWidth}px → ${captureWidth}px）が変わったため、前回との悪化判定は行っていません。`,
+      };
+    }
+  }
+
+  return undefined;
+}
+
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: 既存コードの複雑度であり本PRの変更対象外。別途リファクタで対応予定。
 export async function runCompareDesign(
   args: CompareDesignRunArgs,
@@ -1394,11 +1454,18 @@ export async function runCompareDesign(
     comparison.diffPixelCount,
   );
   const sourceKey = buildComparisonSourceKey(parsedDesignSource, resolvedNodeId);
-  const priorReports = getRecentReports(sourceKey);
-  const critique =
-    comparison.diffReport && priorReports.length > 0
-      ? selfCritique(comparison.diffReport, priorReports)
-      : undefined;
+  const priorComparisons = getRecentComparisons(sourceKey);
+  const captureWidth = comparison.normalization?.screenshotWidth;
+  const captureHeight = comparison.normalization?.screenshotHeight;
+  // URLを開いて撮る場合だけ、高さは中身の量で決まる。
+  const heightIsContentDriven = typeof args.screenshot_url === "string";
+  const critique = buildCaptureAwareCritique(
+    comparison.diffReport,
+    priorComparisons,
+    captureWidth,
+    captureHeight,
+    heightIsContentDriven,
+  );
   const perceptibleDiffRatio = comparison.diffReport?.perceptibleDiffRatio;
   const pixelsContradictPass = isPassContradictedByPixels(
     structuralReviewResult.verdict,
@@ -1452,6 +1519,9 @@ export async function runCompareDesign(
     sourceKey,
     comparisonId: comparison.comparisonId,
     matchRate: comparison.matchRate,
+    captureWidth,
+    captureHeight,
+    heightIsContentDriven,
     diffPixelCount: comparison.diffPixelCount,
     regionCount,
     perceptibleDiffRatio,
@@ -1508,6 +1578,8 @@ export async function runCompareDesign(
     comparisonId: result.comparisonId,
     sourceKey,
     result,
+    captureWidth: result.normalization?.screenshotWidth,
+    captureHeight: result.normalization?.screenshotHeight,
   });
 
   // 成功後に使用ノードを記憶し、次回の自動補完に活かす。
