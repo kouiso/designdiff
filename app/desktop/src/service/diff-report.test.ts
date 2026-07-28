@@ -74,6 +74,21 @@ describe("形と位置合わせを実際に使うこと", () => {
   const WIDTH = 120;
   const HEIGHT = 90;
 
+  // 範囲外の矩形は、別の行の画素を書き換えたり黙って捨てられたりする。
+  // 入力と違う絵のままテストが通ると、通ったこと自体が嘘になる。
+  function assertRectInside(rect: { x: number; y: number; w: number; h: number }): void {
+    const values = [rect.x, rect.y, rect.w, rect.h];
+    if (!values.every((value) => Number.isInteger(value))) {
+      throw new Error(`fixture rect must be integers: ${JSON.stringify(rect)}`);
+    }
+    if (rect.w <= 0 || rect.h <= 0) {
+      throw new Error(`fixture rect must be positive: ${JSON.stringify(rect)}`);
+    }
+    if (rect.x < 0 || rect.y < 0 || rect.x + rect.w > WIDTH || rect.y + rect.h > HEIGHT) {
+      throw new Error(`fixture rect is outside ${WIDTH}x${HEIGHT}: ${JSON.stringify(rect)}`);
+    }
+  }
+
   function makeImage(
     base: number,
     mark?: { x: number; y: number; w: number; h: number; value: number },
@@ -86,6 +101,7 @@ describe("形と位置合わせを実際に使うこと", () => {
       pixels[index + 3] = 255;
     }
     if (mark) {
+      assertRectInside(mark);
       for (let y = mark.y; y < mark.y + mark.h; y++) {
         for (let x = mark.x; x < mark.x + mark.w; x++) {
           const offset = (y * WIDTH + x) * 4;
@@ -162,6 +178,46 @@ describe("形と位置合わせを実際に使うこと", () => {
         width: WIDTH,
         height: HEIGHT,
       }),
-    ).toThrow(/Pixel buffer too small/);
+    ).toThrow(
+      new RegExp(
+        `Pixel buffer too small for ${WIDTH}x${HEIGHT}: design=10, screenshot=10, expected>=${WIDTH * HEIGHT * 4}`,
+      ),
+    );
+  });
+
+  it("寸法そのものが壊れている場合も弾くこと", () => {
+    const image = makeImage(0);
+
+    for (const [width, height] of [
+      [0, HEIGHT],
+      [WIDTH, -1],
+      [Number.NaN, HEIGHT],
+      [12.5, HEIGHT],
+    ]) {
+      expect(() =>
+        buildDiffReport({
+          designPixels: image,
+          screenshotPixels: image,
+          width,
+          height,
+        }),
+      ).toThrow(/Invalid image dimensions/);
+    }
+  });
+
+  it("大きくずれた画面は、位置を合わせても合格にしないこと", () => {
+    // 位置を合わせて測ると、ずれていた事実そのものは数値から消える。
+    const design = makeImage(0, { x: 0, y: 10, w: 100, h: 70, value: 255 });
+    const screenshot = makeImage(0, { x: 15, y: 10, w: 100, h: 70, value: 255 });
+
+    const report = buildDiffReport({
+      designPixels: design,
+      screenshotPixels: screenshot,
+      width: WIDTH,
+      height: HEIGHT,
+    });
+
+    expect(report.issues.some((issue) => issue.kind === "position")).toBe(true);
+    expect(report.aggregateVerdict).toBe("fail");
   });
 });

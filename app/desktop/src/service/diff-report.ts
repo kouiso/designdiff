@@ -25,6 +25,12 @@ interface RegionWindow {
 
 const GRID_SIZE = 3;
 
+// 描画のにじみや倍率の丸めで生じるずれはこの範囲に収まる。ここを超えたら
+// 見て分かるずれとして扱う。
+const GLOBAL_SHIFT_ISSUE_THRESHOLD_PX = 2;
+// この大きさのずれは、書き出しと撮影の誤差では説明がつかない。合否を止める。
+const GLOBAL_SHIFT_CRITICAL_THRESHOLD_PX = 10;
+
 const buildRegionWindows = (width: number, height: number): RegionWindow[] => {
   const horizontalNames = ["left", "center", "right"];
   const verticalNames = ["top", "middle", "bottom"];
@@ -138,6 +144,12 @@ function buildIssues(regionScores: DiffReport["regionScores"]): DiffReport["issu
 export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
   const { designPixels, screenshotPixels, width, height } = options;
 
+  // 寸法そのものが壊れていると、画素数の計算が NaN や 0 になって検査を素通りする。
+  // 座標の計算も画像処理も、その状態のまま走らせない。
+  if (!Number.isInteger(width) || !Number.isInteger(height) || width <= 0 || height <= 0) {
+    throw new Error(`Invalid image dimensions: width=${width}, height=${height}`);
+  }
+
   // 画素の並びが足りないまま輪郭の計算へ渡すと、素の例外が画面へ出る。
   // どの寸法に対して何画素足りないのかを、その場で言う。
   const expectedLength = width * height * 4;
@@ -149,12 +161,11 @@ export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
 
   // 位置を合わせてから測る。合わせずに測ると、全体が数px ずれているだけの画面で
   // 全部の領域が崩れとして出る。
-  const { alignment, alignedDesignPixels } = resolveAlignment(
-    designPixels,
-    screenshotPixels,
-    width,
-    height,
-  );
+  const {
+    alignment,
+    alignedDesignPixels,
+    applied: alignmentApplied,
+  } = resolveAlignment(designPixels, screenshotPixels, width, height);
   const windows = buildRegionWindows(width, height);
 
   const regionScores = windows.map((window) => {
@@ -189,6 +200,31 @@ export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
   });
 
   const issues = buildIssues(regionScores);
+
+  // 位置を合わせて測ると、ずれていた事実そのものは数値から消える。合わせた量が
+  // 大きいときに黙って合格にすると、全体がずれた画面を「合っている」と報告する。
+  const shiftMagnitude = Math.sqrt(
+    alignment.translation.x * alignment.translation.x +
+      alignment.translation.y * alignment.translation.y,
+  );
+  if (alignmentApplied && shiftMagnitude >= GLOBAL_SHIFT_ISSUE_THRESHOLD_PX) {
+    const isCritical = shiftMagnitude >= GLOBAL_SHIFT_CRITICAL_THRESHOLD_PX;
+    issues.push({
+      regionId: "whole-frame",
+      bbox: { x: 0, y: 0, w: width, h: height },
+      kind: "position",
+      severity: isCritical ? "critical" : "major",
+      evidence: {
+        signal: "translation_offset",
+        value: shiftMagnitude,
+        threshold: isCritical
+          ? GLOBAL_SHIFT_CRITICAL_THRESHOLD_PX
+          : GLOBAL_SHIFT_ISSUE_THRESHOLD_PX,
+        expected: { x: 0, y: 0 },
+        actual: alignment.translation,
+      },
+    });
+  }
   const verdict = computeVerdict({ alignment, regionScores, issues });
 
   return {
