@@ -5,7 +5,11 @@ import * as path from "node:path";
 import sharp, { type Metadata } from "sharp";
 import { z } from "zod";
 
-import { captureDeviceScreenshot, type CaptureDevice } from "@figdiff/mobile-capture";
+import {
+  captureDeviceScreenshot,
+  captureDeviceScrollingScreenshot,
+  type CaptureDevice,
+} from "@figdiff/mobile-capture";
 import {
   buildComparisonHeadline,
   buildSystemBarIgnoreRegions,
@@ -28,6 +32,7 @@ import {
   type CompareDesignResult,
   type ComparisonDiagnosis,
   type CritiqueNote,
+  type ScrollCaptureReport,
   type CropRegion,
   type DiffReport,
   type DiffVerdict,
@@ -173,6 +178,8 @@ export interface CompareDesignRunArgs {
   screenshot?: string;
   screenshot_url?: string;
   capture_device?: CaptureDevice;
+  /** capture_device 経路で、1画面に収まらん画面をスクロールしながら撮って繋ぐ。 */
+  capture_scroll?: boolean;
   capture_width?: number;
   frame_name?: string;
   threshold?: number;
@@ -665,6 +672,8 @@ interface ResolvedScreenshot {
    * 手渡しの PNG や実機スクショからは取れないので、その場合は画素経路だけで判定する。
    */
   domStyles?: DomElementStyle[];
+  /** capture_scroll でスクロール結合したときだけ入る。 */
+  scrollCapture?: ScrollCaptureReport;
 }
 
 async function resolveScreenshotPath(
@@ -685,7 +694,26 @@ async function resolveScreenshotPath(
   }
 
   if (args.capture_device) {
-    return { screenshotPath: await captureDeviceScreenshot({ device: args.capture_device }) };
+    if (args.capture_scroll !== true) {
+      return { screenshotPath: await captureDeviceScreenshot({ device: args.capture_device }) };
+    }
+    // 1画面に収まらん画面は、1枚撮っただけでは比較の単位が合わん。
+    // スクロールしながら撮って縦長1枚へ繋ぐ。何枚繋いだか、下端まで届いたかを
+    // 一緒に返さんと、途中までの画像を完全な1枚として扱ってしまう。
+    const outcome = await captureDeviceScrollingScreenshot({ device: args.capture_device });
+    return {
+      screenshotPath: outcome.screenshotPath,
+      scrollCapture: {
+        captureCount: outcome.captureCount,
+        stitchedWidth: outcome.width,
+        stitchedHeight: outcome.height,
+        fixedHeaderHeight: outcome.fixedHeaderHeight,
+        fixedFooterHeight: outcome.fixedFooterHeight,
+        reachedBottom: outcome.reachedBottom,
+        truncatedAtCaptureLimit: outcome.truncatedAtCaptureLimit,
+        notes: outcome.notes,
+      },
+    };
   }
 
   if (!args.screenshot_url) {
@@ -1560,6 +1588,7 @@ export async function runCompareDesign(
   const result = CompareDesignResultSchema.parse({
     status,
     ...comparison,
+    scrollCapture: resolvedScreenshot.scrollCapture,
     normalization: comparison.normalization
       ? { ...comparison.normalization, autoCropped: autoCropRegion !== undefined }
       : comparison.normalization,

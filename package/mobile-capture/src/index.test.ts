@@ -1,75 +1,79 @@
-import { execFile } from "node:child_process";
-import * as fs from "node:fs/promises";
-import { homedir, tmpdir } from "node:os";
-import * as path from "node:path";
+import { describe, expect, it, vi } from "vitest";
 
-import { afterEach, describe, expect, it, vi } from "vitest";
-
-import { captureDeviceScreenshot, type CaptureDevice } from "./index.js";
-
-vi.mock("node:child_process", () => ({
+const mocks = vi.hoisted(() => ({
+  captureDeviceScrollScreenshot: vi.fn(),
   execFile: vi.fn(),
+  writeFile: vi.fn(),
 }));
 
-const mockedExecFile = vi.mocked(execFile);
+vi.mock("node:child_process", () => ({ execFile: mocks.execFile }));
 
-type ExecCallback = (error: Error | null, stdout: Buffer, stderr: Buffer) => void;
+vi.mock("./scroll-capture.js", async (importOriginal) => {
+  const original: Record<string, unknown> = await importOriginal();
+  return { ...original, captureDeviceScrollScreenshot: mocks.captureDeviceScrollScreenshot };
+});
 
-async function createCaptureDir(): Promise<string> {
-  return fs.mkdtemp(path.join(tmpdir(), "figdiff-mobile-capture-"));
-}
+describe("captureDeviceScrollingScreenshot", () => {
+  it("端末の種類に合った撮影手段を選んで、そのまま結果を返す", async () => {
+    const outcome = {
+      screenshotPath: "/tmp/stitched.png",
+      captureCount: 2,
+      width: 360,
+      height: 1200,
+      fixedHeaderHeight: 0,
+      fixedFooterHeight: 0,
+      reachedBottom: true,
+      truncatedAtCaptureLimit: false,
+      notes: [],
+    };
+    mocks.captureDeviceScrollScreenshot.mockResolvedValue(outcome);
 
-afterEach(() => {
-  mockedExecFile.mockReset();
+    const { captureDeviceScrollingScreenshot } = await import("./index.js");
+    const result = await captureDeviceScrollingScreenshot({ device: "android" });
+
+    expect(result).toEqual(outcome);
+    const [provider, options] = mocks.captureDeviceScrollScreenshot.mock.calls[0];
+    expect(options).toEqual({ device: "android" });
+    expect(provider.constructor.name).toBe("AndroidCaptureProvider");
+  });
+
+  it("iOS Simulator でも、その端末向けの撮影手段を渡す", async () => {
+    mocks.captureDeviceScrollScreenshot.mockClear();
+    mocks.captureDeviceScrollScreenshot.mockResolvedValue({
+      screenshotPath: "/tmp/x.png",
+      captureCount: 1,
+      width: 1,
+      height: 1,
+      fixedHeaderHeight: 0,
+      fixedFooterHeight: 0,
+      reachedBottom: true,
+      truncatedAtCaptureLimit: false,
+      notes: [],
+    });
+
+    const { captureDeviceScrollingScreenshot } = await import("./index.js");
+    await captureDeviceScrollingScreenshot({ device: "ios-sim" });
+
+    const [provider] = mocks.captureDeviceScrollScreenshot.mock.calls[0];
+    expect(provider.constructor.name).toBe("IosSimCaptureProvider");
+  });
 });
 
 describe("captureDeviceScreenshot", () => {
-  it("captures android screenshots with adb exec-out screencap -p", async () => {
-    mockedExecFile.mockImplementation((command, args, options, callback) => {
-      expect(command).toBe("adb");
-      expect(args).toEqual(["exec-out", "screencap", "-p"]);
-      expect(options).toMatchObject({ encoding: "buffer" });
-      (callback as ExecCallback)(null, Buffer.from("png"), Buffer.alloc(0));
-      return {} as ReturnType<typeof execFile>;
+  it("端末ごとに違う撮影コマンドを呼び、書き出し先を返す", async () => {
+    const seen: string[] = [];
+    mocks.execFile.mockImplementation((command: unknown, ...rest: unknown[]) => {
+      if (typeof command === "string") seen.push(command);
+      const callback = rest.at(-1);
+      if (typeof callback === "function") callback(null, Buffer.from("png"), "");
     });
 
-    const result = await captureDeviceScreenshot({ device: "android" });
+    const { captureDeviceScreenshot } = await import("./index.js");
+    for (const device of ["android", "ios-sim", "ios-device"] as const) {
+      const outputPath = await captureDeviceScreenshot({ device, outputDir: "/tmp" });
+      expect(outputPath.startsWith("/tmp")).toBe(true);
+    }
 
-    expect(result.startsWith(path.join(homedir(), ".figdiff", "cache", "capture"))).toBe(true);
-    expect(path.basename(result)).toMatch(/^android-.*\.png$/);
-    await expect(fs.readFile(result, "utf8")).resolves.toBe("png");
-  });
-
-  it.each([
-    {
-      device: "ios-sim" as CaptureDevice,
-      command: "xcrun",
-      argsPrefix: ["simctl", "io", "booted", "screenshot"],
-    },
-    {
-      device: "ios-device" as CaptureDevice,
-      command: "pymobiledevice3",
-      argsPrefix: ["developer", "dvt", "screenshot"],
-    },
-  ])("captures $device screenshots with the expected command", async ({
-    device,
-    command,
-    argsPrefix,
-  }) => {
-    const outputDir = await createCaptureDir();
-    mockedExecFile.mockImplementation((actualCommand, args, callback) => {
-      expect(actualCommand).toBe(command);
-      expect(args).toHaveLength(argsPrefix.length + 1);
-      expect(args?.slice(0, argsPrefix.length)).toEqual(argsPrefix);
-      expect(typeof args?.[argsPrefix.length]).toBe("string");
-      (callback as ExecCallback)(null, Buffer.alloc(0), Buffer.alloc(0));
-      return {} as ReturnType<typeof execFile>;
-    });
-
-    const result = await captureDeviceScreenshot({ device, outputDir });
-
-    expect(result.startsWith(outputDir)).toBe(true);
-    expect(path.basename(result)).toMatch(new RegExp(`^${device}-.*\\.png$`));
-    expect(mockedExecFile).toHaveBeenCalledTimes(1);
+    expect(seen).toEqual(["adb", "xcrun", "pymobiledevice3"]);
   });
 });

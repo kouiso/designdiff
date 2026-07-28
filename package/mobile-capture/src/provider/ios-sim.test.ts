@@ -70,3 +70,19 @@ describe("IosSimCaptureProvider", () => {
     expect(resolved).toBe(0);
   });
 });
+
+describe("IosSimCaptureProvider の scroll", () => {
+  it("対応していないことを、理由と回避策つきで返すこと", async () => {
+    await expect(
+      new IosSimCaptureProvider().scroll({ x: 1, fromY: 2, toY: 3, durationMs: 4 }),
+    ).rejects.toThrow(/xcrun/);
+  });
+
+  it("成功したように見せず、撮影も走らせないこと", async () => {
+    mocks.execFile.mockClear();
+    await expect(
+      new IosSimCaptureProvider().scroll({ x: 1, fromY: 2, toY: 3, durationMs: 4 }),
+    ).rejects.toBeInstanceOf(Error);
+    expect(mocks.execFile).not.toHaveBeenCalled();
+  });
+});

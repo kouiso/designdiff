@@ -199,3 +199,18 @@ describe("stitchScrollFrames", () => {
     expect(() => stitchScrollFrames([])).toThrow(/at least one/i);
   });
 });
+
+describe("stitchScrollFrames 重なりが完全一致せんとき", () => {
+  it("近似で繋いだことを注記に残す", () => {
+    // 2枚に共通する行が1つも無い。完全一致は取れんので近似へ落ちる。
+    const previous = imageFromRows(sequence(1, 10));
+    const next = imageFromRows(sequence(101, 10));
+
+    const result = stitchScrollFrames([previous, next]);
+
+    expect(result.notes.join("")).toMatch(/近似/);
+    // 共通の行が無いので、近似は「全部が重なり」と読む。落とす行は無いが、
+    // 繋ぎ目が信用できんことは注記で分かる形にしてある。
+    expect(result.image.height).toBe(previous.height);
+  });
+});

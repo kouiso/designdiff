@@ -138,21 +138,18 @@ export function detectFixedBands(frames: readonly RawImage[]): FixedBands {
   const { height } = first;
   const limit = Math.floor(height * MAX_FIXED_BAND_RATIO);
 
+  // 比べる行を引数で渡す。ループ内で関数を作って外側の変数を掴むと、
+  // 掴んだ時点の値かどうかが読みで分からんようになる。
+  const allFramesShareRow = (row: number): boolean =>
+    frames.every((frame) => rowsEqual(frame, row, first, row));
+
   let headerHeight = 0;
-  while (
-    headerHeight < height &&
-    frames.every((frame) => rowsEqual(frame, headerHeight, first, headerHeight))
-  ) {
+  while (headerHeight < height && allFramesShareRow(headerHeight)) {
     headerHeight++;
   }
 
   let footerHeight = 0;
-  while (
-    footerHeight < height - headerHeight &&
-    frames.every((frame) =>
-      rowsEqual(frame, height - 1 - footerHeight, first, height - 1 - footerHeight),
-    )
-  ) {
+  while (footerHeight < height - headerHeight && allFramesShareRow(height - 1 - footerHeight)) {
     footerHeight++;
   }
 
@@ -232,7 +229,10 @@ export function detectOverlap(
     if (verified) return { overlap, method: "exact" };
   }
 
-  return { overlap: bestEffortOverlap(previous, next, headerHeight, bodyHeight), method: "best-effort" };
+  return {
+    overlap: bestEffortOverlap(previous, next, headerHeight, bodyHeight),
+    method: "best-effort",
+  };
 }
 
 function bestEffortOverlap(

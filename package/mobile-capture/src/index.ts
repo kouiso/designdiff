@@ -5,8 +5,8 @@ import { IosDeviceCaptureProvider } from "./provider/ios-device.js";
 import { IosSimCaptureProvider } from "./provider/ios-sim.js";
 import { captureDeviceScrollScreenshot } from "./scroll-capture.js";
 
-import type { CaptureDevice, DeviceCaptureProvider } from "./types.js";
 import type { CaptureDeviceScrollOptions, ScrollCaptureOutcome } from "./scroll-capture.js";
+import type { CaptureDevice, DeviceCaptureProvider } from "./types.js";
 
 export { runFlutterGolden };
 export type { RunFlutterGoldenOptions } from "./flutter-golden.js";

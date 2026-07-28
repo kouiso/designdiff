@@ -1,6 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { collectScrollFrames, MAX_SCROLL_CAPTURES, SCROLL_VIEWPORT_FRACTION } from "./scroll-capture.js";
+import {
+  collectScrollFrames,
+  MAX_SCROLL_CAPTURES,
+  SCROLL_VIEWPORT_FRACTION,
+} from "./scroll-capture.js";
 
 import type { RawImage } from "./stitch.js";
 

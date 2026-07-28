@@ -291,6 +291,12 @@ export function registerCompareDesign(server: McpServer): void {
       .describe(
         "接続済みモバイル端末/SimulatorからPNGを撮影し、screenshotの代わりに使用する。android=adb、ios-sim=xcrun simctl、ios-device=pymobiledevice3。",
       ),
+    capture_scroll: z
+      .boolean()
+      .optional()
+      .describe(
+        "capture_device 経路で、1画面に収まらん画面をスクロールしながら撮って縦長1枚へ繋ぐ。既定false。繋いだ内訳（何枚繋いだか・下端まで届いたか）は scrollCapture に返る。",
+      ),
     capture_width: z
       .number()
       .int()

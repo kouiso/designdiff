@@ -91,3 +91,28 @@ describe("AndroidCaptureProvider", () => {
     await expect(new AndroidCaptureProvider().capture(OUTPUT_PATH)).rejects.toBe(failure);
   });
 });
+
+describe("AndroidCaptureProvider の scroll", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("画面をなぞる指示を adb の swipe へそのまま渡すこと", async () => {
+    respondWith(null);
+
+    await new AndroidCaptureProvider().scroll({ x: 540, fromY: 1800, toY: 600, durationMs: 600 });
+
+    const [command, args] = mocks.execFile.mock.calls[0];
+    expect(command).toBe("adb");
+    expect(args).toEqual(["shell", "input", "swipe", "540", "1800", "540", "600", "600"]);
+  });
+
+  it("なぞれんかったら、そのエラーで終わること", async () => {
+    const failure = new Error("device offline");
+    respondWith(failure);
+
+    await expect(
+      new AndroidCaptureProvider().scroll({ x: 1, fromY: 2, toY: 3, durationMs: 4 }),
+    ).rejects.toBe(failure);
+  });
+});
