@@ -175,6 +175,11 @@ export interface CompareDesignRunArgs {
   frame_name?: string;
   threshold?: number;
   profile?: ComparisonProfile;
+  /**
+   * 背景の塗りが無いノードを、どの色の上に置いて評価するか (#RRGGBB、既定は白)。
+   * 実装側が白地でない画面を比べるときに指定する。
+   */
+  design_background?: string;
   project_id?: string;
   mask_system_ui?: boolean;
   /**
@@ -1356,6 +1361,7 @@ export async function runCompareDesign(
       cropRegion,
       figmaNodeId: resolvedNodeId,
       ignoreRegions,
+      designBackground: args.design_background,
     },
     figmaRootNode,
     `cmp-${randomUUID()}`,

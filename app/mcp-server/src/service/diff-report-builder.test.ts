@@ -653,3 +653,73 @@ describe("比較対象そのものの行が他の判断へ漏れないこと", (
     expect(report.issues.every((issue) => issue.regionId !== "whole-frame")).toBe(true);
   });
 });
+
+// テストデータと期待値で同じ値を参照する。分散させると検証対象が黙ってずれる。
+const VISIBILITY_FIXTURE_NODE_IDS = { visible: "layer-visible", hidden: "layer-hidden" };
+const VARIANT_FIXTURE_NODE_IDS = { a: "variant-a", b: "variant-b", c: "variant-c" };
+
+describe("buildRegionScores の対象選び", () => {
+  const makeChild = (
+    id: string,
+    box: { x: number; y: number; width: number; height: number },
+    visible?: boolean,
+  ): FigmaNode => ({
+    id,
+    name: id,
+    type: "FRAME",
+    visible,
+    absoluteBoundingBox: box,
+    absoluteRenderBounds: null,
+    fills: [],
+    strokes: [],
+    effects: [],
+    children: [],
+  });
+
+  const makeRoot = (children: FigmaNode[]): FigmaNode => ({
+    id: "root",
+    name: "Frame",
+    type: "FRAME",
+    absoluteBoundingBox: { x: 0, y: 0, width: 200, height: 200 },
+    absoluteRenderBounds: null,
+    fills: [],
+    strokes: [],
+    effects: [],
+    children,
+  });
+
+  async function scoreIdsFor(children: FigmaNode[]): Promise<string[]> {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    const designPixels = await createSolidRgba(200, 200, WHITE_RGB);
+    const screenshotPixels = await createSolidRgba(200, 200, BLUE_RGB);
+    const report = buildDiffReport({
+      designPixels,
+      screenshotPixels,
+      width: 200,
+      height: 200,
+      figmaRootNode: makeRoot(children),
+    });
+    return report.regionScores.map((score) => score.figmaNodeId ?? score.regionId);
+  }
+
+  it("非表示の子は評価対象に入れないこと", async () => {
+    const ids = await scoreIdsFor([
+      makeChild(VISIBILITY_FIXTURE_NODE_IDS.visible, { x: 0, y: 0, width: 200, height: 100 }),
+      makeChild(VISIBILITY_FIXTURE_NODE_IDS.hidden, { x: 0, y: 100, width: 200, height: 100 }, false),
+    ]);
+
+    expect(ids).toContain(VISIBILITY_FIXTURE_NODE_IDS.visible);
+    expect(ids).not.toContain(VISIBILITY_FIXTURE_NODE_IDS.hidden);
+  });
+
+  it("同じ位置・同じ大きさの子は1件だけ残すこと", async () => {
+    const ids = await scoreIdsFor([
+      makeChild(VARIANT_FIXTURE_NODE_IDS.a, { x: 0, y: 0, width: 200, height: 100 }),
+      makeChild(VARIANT_FIXTURE_NODE_IDS.b, { x: 0, y: 0, width: 200, height: 100 }),
+      makeChild(VARIANT_FIXTURE_NODE_IDS.c, { x: 0, y: 0, width: 200, height: 100 }),
+    ]);
+
+    const variants = ids.filter((id) => id.startsWith("variant-"));
+    expect(variants).toHaveLength(1);
+  });
+});

@@ -329,6 +329,13 @@ export function registerCompareDesign(server: McpServer): void {
       .describe(
         "色差の許容閾値（0-1）。直接指定時は profile より優先される。省略時は profile の値か 0.1。",
       ),
+    design_background: z
+      .string()
+      .regex(/^#?([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/, "design_background must be a hex color")
+      .optional()
+      .describe(
+        "背景の塗りが無いFigmaノードを、どの色の上に置いて評価するか（#RRGGBB、既定は白）。実装側の画面が白地でない場合に指定する。",
+      ),
     profile: z
       .enum(["strict", "balanced", "layout"])
       .optional()

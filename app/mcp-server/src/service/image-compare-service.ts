@@ -66,6 +66,8 @@ interface CompareImagesOptions {
   // 既知の意図的差分マスク。各矩形内の差分ピクセルは matchRate / clustering から除外。
   // 矩形は cropRegion 適用後の座標系 (= screenshot ピクセル座標) で指定する。
   ignoreRegions?: IgnoreRegion[];
+  // 背景の塗りが無いノードを、どの色の上に置いて評価するか (#RRGGBB)。既定は白。
+  designBackground?: string;
 }
 
 // Above this total pixel count, "auto" picks grid clustering. Full-page PC
@@ -88,6 +90,63 @@ const QUICK_TILE_MAX_REGIONS = 60;
 const QUICK_TILE_BUDGET_MS = 1500;
 
 const PUBLIC_EXPORT_REDACTION_COLOR = { r: 0, g: 0, b: 0, alpha: 1 };
+
+// 背景の塗りが無いノードを置く既定の下地。実装側の画面が白地で描かれることが多い。
+const DEFAULT_DESIGN_BACKGROUND = "#FFFFFF";
+
+/** #RRGGBB / #RGB を RGB 値へ。解釈できない指定は白として扱う。 */
+export function parseBackgroundColor(value: string): { r: number; g: number; b: number } {
+  const hex = value.trim().replace(/^#/, "");
+  const expanded =
+    hex.length === 3
+      ? hex
+          .split("")
+          .map((char) => char + char)
+          .join("")
+      : hex;
+  if (!/^[0-9a-fA-F]{6}$/.test(expanded)) {
+    return { r: 255, g: 255, b: 255 };
+  }
+  return {
+    r: Number.parseInt(expanded.slice(0, 2), 16),
+    g: Number.parseInt(expanded.slice(2, 4), 16),
+    b: Number.parseInt(expanded.slice(4, 6), 16),
+  };
+}
+
+export function hasTransparentPixel(pixels: Uint8ClampedArray): boolean {
+  for (let index = 3; index < pixels.length; index += 4) {
+    if (pixels[index] !== 255) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * 透明・半透明の画素を background の上に置いて不透明にする。
+ *
+ * pixelmatch は半透明を白へ混ぜて評価するので一致率は妥当に出るが、
+ * 構造・色・輪郭を測る側は生の RGB を読むため、透明が黒として入る。
+ * 背景の塗りが無い Figma ノードを白地の実装と比べると、そこだけで
+ * 「一致率は高いのに構造一致は0%」という食い違いが起きる。
+ */
+export function flattenTransparentPixels(
+  pixels: Uint8ClampedArray,
+  background: { r: number; g: number; b: number },
+): void {
+  for (let index = 0; index < pixels.length; index += 4) {
+    const alpha = pixels[index + 3];
+    if (alpha === 255) {
+      continue;
+    }
+    const ratio = alpha / 255;
+    pixels[index] = Math.round(pixels[index] * ratio + background.r * (1 - ratio));
+    pixels[index + 1] = Math.round(pixels[index + 1] * ratio + background.g * (1 - ratio));
+    pixels[index + 2] = Math.round(pixels[index + 2] * ratio + background.b * (1 - ratio));
+    pixels[index + 3] = 255;
+  }
+}
 
 export async function redactImageBase64ForPublicExport(
   imageBase64: string,
@@ -914,9 +973,7 @@ export async function compareImages(
   const height = finalScreenshotHeight;
   const screenshotPixels = Uint8ClampedArray.from(screenshotRaw);
   const pixelmatchDesignPixels = Uint8ClampedArray.from(designRaw);
-  const reportDesignPixels = paddingMask
-    ? Uint8ClampedArray.from(designRaw)
-    : pixelmatchDesignPixels;
+  let reportDesignPixels = paddingMask ? Uint8ClampedArray.from(designRaw) : pixelmatchDesignPixels;
 
   if (paddingMask) {
     // contain の余白は比較対象ではないため、その領域だけをスクリーンショット側に合わせて差分から除外する。
@@ -972,10 +1029,28 @@ export async function compareImages(
   // 判定と証拠を先に作る。矛盾で人間レビューへ回すとき、pixelmatch の閾値では
   // 1画素も差分にならないことがある。そのままだと差分画像が真っ黒、領域0件で
   // 「見てくれ」と渡すことになるので、見える差のあった画素を証拠として使う。
+  // 判定側だけを不透明化する。pixelmatch の入力は触らないので一致率は変わらない。
+  // pixelmatch は半透明を白へ混ぜて見るが、構造・色・輪郭を測る側は生の RGB を
+  // 読むため、下地を敷かないと透明が黒として評価に入る。
+  const backgroundColor = parseBackgroundColor(
+    options.designBackground ?? DEFAULT_DESIGN_BACKGROUND,
+  );
+  let reportScreenshotPixels = screenshotPixels;
+  if (hasTransparentPixel(reportDesignPixels)) {
+    if (reportDesignPixels === pixelmatchDesignPixels) {
+      reportDesignPixels = Uint8ClampedArray.from(reportDesignPixels);
+    }
+    flattenTransparentPixels(reportDesignPixels, backgroundColor);
+  }
+  if (hasTransparentPixel(screenshotPixels)) {
+    reportScreenshotPixels = Uint8ClampedArray.from(screenshotPixels);
+    flattenTransparentPixels(reportScreenshotPixels, backgroundColor);
+  }
+
   const perceptibleMask = new Uint8Array(width * height);
   const diffReport = buildDiffReport({
     designPixels: reportDesignPixels,
-    screenshotPixels,
+    screenshotPixels: reportScreenshotPixels,
     width,
     height,
     figmaRootNode,

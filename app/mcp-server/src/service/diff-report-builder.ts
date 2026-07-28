@@ -462,6 +462,9 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
 
   if (figmaRootNode) {
     const allSectionAnchors = figmaRootNode.children
+      // 非表示のバリアントは画面に出ないので、評価対象にすると
+      // 実装が正しくても差分として残り続ける。
+      .filter((child: FigmaNode) => child.visible !== false)
       .map((child: FigmaNode) => {
         const bbox = toScreenshotBbox(child, figmaRootNode, width, height, fullFrame, cropRegion);
         if (!bbox || bbox.w === 0 || bbox.h === 0) {
@@ -472,6 +475,16 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
       })
       .filter((section): section is { child: FigmaNode; bbox: DiffBoundingBox } => section !== null)
       .filter((section) => section.bbox.w * section.bbox.h >= MIN_REGION_PIXEL_AREA)
+      // 同じ位置・同じ大きさの子が複数あると、同じ範囲の領域が重複して並ぶ。
+      // 受け取る側には、直す場所がその数だけあるように見える。先頭だけ残す。
+      .filter((section, index, sections) => {
+        const key = `${section.bbox.x},${section.bbox.y},${section.bbox.w},${section.bbox.h}`;
+        return (
+          sections.findIndex(
+            (other) => `${other.bbox.x},${other.bbox.y},${other.bbox.w},${other.bbox.h}` === key,
+          ) === index
+        );
+      })
       .sort((a, b) => {
         if (a.bbox.y !== b.bbox.y) {
           return a.bbox.y - b.bbox.y;
