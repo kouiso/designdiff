@@ -75,6 +75,8 @@ const FixtureFigmaNodeSchema: z.ZodType<FigmaNode> = z.lazy(() =>
     id: z.string(),
     name: z.string(),
     type: z.string(),
+    // 落とすと、非表示の子を除く処理がローカル検体の経路だけ効かなくなる。
+    visible: z.boolean().optional(),
     children: z.array(FixtureFigmaNodeSchema).default([]),
     absoluteBoundingBox: z
       .object({
@@ -176,8 +178,8 @@ export interface CompareDesignRunArgs {
   threshold?: number;
   profile?: ComparisonProfile;
   /**
-   * 背景の塗りが無いノードを、どの色の上に置いて評価するか (#RRGGBB、既定は白)。
-   * 実装側が白地でない画面を比べるときに指定する。
+   * 画素の比較と、構造・色の評価を同じ下地の上で行うために要る。
+   * 片方だけ白のままだと、一致率と構造判定が別の絵を見て食い違う。
    */
   design_background?: string;
   project_id?: string;
@@ -1470,7 +1472,11 @@ export async function runCompareDesign(
     comparison.diffReport,
     comparison.diffPixelCount,
   );
-  const sourceKey = buildComparisonSourceKey(parsedDesignSource, resolvedNodeId);
+  const sourceKey = buildComparisonSourceKey(
+    parsedDesignSource,
+    resolvedNodeId,
+    args.design_background,
+  );
   const priorComparisons = getRecentComparisons(sourceKey);
   const captureWidth = comparison.normalization?.screenshotWidth;
   const captureHeight = comparison.normalization?.screenshotHeight;

@@ -461,7 +461,7 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
   };
 
   if (figmaRootNode) {
-    const allSectionAnchors = figmaRootNode.children
+    const scoreableChildren = figmaRootNode.children
       // 非表示のバリアントは画面に出ないので、評価対象にすると
       // 実装が正しくても差分として残り続ける。
       .filter((child: FigmaNode) => child.visible !== false)
@@ -474,22 +474,17 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
         return { child, bbox };
       })
       .filter((section): section is { child: FigmaNode; bbox: DiffBoundingBox } => section !== null)
-      .filter((section) => section.bbox.w * section.bbox.h >= MIN_REGION_PIXEL_AREA)
-      // 同じ位置・同じ大きさの子が複数あると、同じ範囲の領域が重複して並ぶ。
-      // 受け取る側には、直す場所がその数だけあるように見える。1件へまとめる。
-      //
-      // 残すのは最後の子。Figma は後に並ぶ子ほど手前に描くので、いちばん手前に
-      // あるのは最後の1枚。ただし半透明や部分的な塗りだと下の層も見えているので、
-      // 隠れた側のIDも一緒に持たせて、直し先を辿れる状態を保つ。
-      .map(collectOverlappingSiblings)
-      .filter((section) => section !== null)
-      .sort((a, b) => {
-        if (a.bbox.y !== b.bbox.y) {
-          return a.bbox.y - b.bbox.y;
-        }
+      .filter((section) => section.bbox.w * section.bbox.h >= MIN_REGION_PIXEL_AREA);
 
-        return b.bbox.w * b.bbox.h - a.bbox.w * a.bbox.h;
-      });
+    // 同じ位置・同じ大きさの子が複数あると、同じ範囲の領域が重複して並ぶ。
+    // 受け取る側には、直す場所がその数だけあるように見える。1件へまとめる。
+    const allSectionAnchors = mergeEqualBoxSiblings(scoreableChildren).sort((a, b) => {
+      if (a.bbox.y !== b.bbox.y) {
+        return a.bbox.y - b.bbox.y;
+      }
+
+      return b.bbox.w * b.bbox.h - a.bbox.w * a.bbox.h;
+    });
 
     const sectionAnchors = selectAnchorsForScoring(allSectionAnchors);
 
@@ -586,37 +581,39 @@ const boxKey = (bbox: DiffBoundingBox): string => `${bbox.x},${bbox.y},${bbox.w}
 /**
  * 同じ矩形の兄弟を1件へまとめ、隠れた側のIDを手前の1件へ集める。
  *
- * 走査のたびに配列を頭から探すと、子の数の2乗に比例して重くなる。層が数千ある
- * 画面で比較が目に見えて遅くなるため、一度だけ数えてから引き当てる。
+ * 一度だけ全体を走って矩形ごとの並びを作り、そこから引き当てる。走査のたびに
+ * 配列を頭から探すと子の数の2乗に比例し、層が数千ある画面で比較が目に見えて遅くなる。
  */
-function collectOverlappingSiblings(
-  section: { child: FigmaNode; bbox: DiffBoundingBox },
-  index: number,
+function mergeEqualBoxSiblings(
   sections: readonly { child: FigmaNode; bbox: DiffBoundingBox }[],
-): SectionAnchor | null {
-  const key = boxKey(section.bbox);
-  const sameBox = sections.filter((entry) => boxKey(entry.bbox) === key);
-  if (sameBox.length === 1) {
-    return section;
-  }
-
-  let lastIndex = -1;
-  for (let position = sections.length - 1; position >= 0; position--) {
-    if (boxKey(sections[position].bbox) === key) {
-      lastIndex = position;
-      break;
+): SectionAnchor[] {
+  const membersByBox = new Map<string, { child: FigmaNode; bbox: DiffBoundingBox }[]>();
+  for (const section of sections) {
+    const key = boxKey(section.bbox);
+    const members = membersByBox.get(key);
+    if (members) {
+      members.push(section);
+    } else {
+      membersByBox.set(key, [section]);
     }
   }
-  if (lastIndex !== index) {
-    return null;
+
+  const merged: SectionAnchor[] = [];
+  for (const members of membersByBox.values()) {
+    // Figma は後に並ぶ子ほど手前に描くので、いちばん手前は最後の1枚。
+    // ただし半透明や部分的な塗りだと下の層も見えているので、IDは残す。
+    const front = members[members.length - 1];
+    merged.push(
+      members.length === 1
+        ? front
+        : {
+            ...front,
+            overlappingNodeIds: members.slice(0, -1).map((member) => member.child.id),
+          },
+    );
   }
 
-  return {
-    ...section,
-    overlappingNodeIds: sameBox
-      .filter((entry) => entry.child.id !== section.child.id)
-      .map((entry) => entry.child.id),
-  };
+  return merged;
 }
 
 function selectAnchorsForScoring<T>(anchors: readonly T[]): T[] {

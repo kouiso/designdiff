@@ -42,14 +42,29 @@ export function resolveSessionStatus(
 /**
  * 対象ノードの行を引く。
  *
- * Figma の URL から写した ID は 49792-73431 のようにハイフン区切りで、
- * 保存側は 49792:73431 のコロン区切り。素の文字列比較だと一生一致しない。
+ * Figma の URL から写した ID はハイフン区切り、保存側はコロン区切りで、
+ * 素の文字列比較だと一生一致しない。
+ *
+ * 同じ矩形の兄弟は1件へまとめてある。まとめられて消えた側のIDも直し先として
+ * 案内しているので、その名前でも引けるようにする。引けないと修正を確かめられない。
  */
 function findRegion(regions: RegionScore[], targetNodeId: string): RegionScore | undefined {
   const target = normalizeNodeId(targetNodeId);
-  return regions.find(
+  const direct = regions.find(
     (region) => normalizeNodeId(region.figmaNodeId ?? region.regionId) === target,
   );
+  if (direct) {
+    return direct;
+  }
+
+  return regions.find((region) =>
+    (region.overlappingNodeIds ?? []).some((nodeId) => normalizeNodeId(nodeId) === target),
+  );
+}
+
+/** まとめた側も含めて、その行が指すID全部。副作用の重複判定に使う。 */
+function regionNodeIds(region: RegionScore): string[] {
+  return [region.figmaNodeId ?? region.regionId, ...(region.overlappingNodeIds ?? [])];
 }
 
 /**
@@ -57,7 +72,7 @@ function findRegion(regions: RegionScore[], targetNodeId: string): RegionScore |
  * 呼ぶ側は正解の名前が分からないまま総当たりで探し直すことになる。
  */
 function describeAvailableRegionIds(regions: RegionScore[]): string {
-  const ids = regions.map((region) => region.figmaNodeId ?? region.regionId);
+  const ids = regions.flatMap(regionNodeIds);
   return ids.length > 0 ? ids.join(", ") : "(なし)";
 }
 
@@ -223,9 +238,12 @@ export function registerVerifyFix(server: McpServer): void {
           // 比較対象そのものの行は全部の子と範囲が重なる。副作用として並べると、
           // 対象自身や既に報告済みの子が二重に出る。
           .filter((region) => region.scope !== "root")
+          // まとめられて消えた側を直し先に選んだ場合も、その行は対象そのもの。
           .filter(
             (region) =>
-              normalizeNodeId(region.figmaNodeId ?? region.regionId) !== normalizedTargetNodeId,
+              !regionNodeIds(region).some(
+                (nodeId) => normalizeNodeId(nodeId) === normalizedTargetNodeId,
+              ),
           )
           .flatMap((region) => {
             const nodeId = region.figmaNodeId ?? region.regionId;

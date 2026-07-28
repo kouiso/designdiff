@@ -143,6 +143,12 @@ export function flattenTransparentPixels(
   pixels: Uint8ClampedArray,
   background: { r: number; g: number; b: number },
 ): void {
+  // 4で割り切れない長さは RGBA として壊れている。最後の1画素の透明度が
+  // 読めず NaN を書き込んで黙って絵を壊すより、その場で止める。
+  if (pixels.length % 4 !== 0) {
+    throw new Error(`RGBA buffer length must be a multiple of 4: got ${pixels.length}`);
+  }
+
   for (let index = 0; index < pixels.length; index += 4) {
     const alpha = pixels[index + 3];
     if (alpha === 255) {

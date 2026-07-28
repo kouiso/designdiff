@@ -165,3 +165,12 @@ describe("下地に白以外を指定したとき", () => {
     expect(explicitWhite.diffPixelCount).toBe(0);
   });
 });
+
+describe("flattenTransparentPixels の入力検査", () => {
+  it("4で割り切れない長さは弾くこと", () => {
+    // 最後の1画素の透明度が読めず NaN を書き込むより、その場で止める。
+    expect(() =>
+      flattenTransparentPixels(Uint8ClampedArray.from([0, 0, 0]), { r: 255, g: 255, b: 255 }),
+    ).toThrow(/multiple of 4/);
+  });
+});

@@ -705,7 +705,11 @@ describe("buildRegionScores の対象選び", () => {
   it("非表示の子は評価対象に入れないこと", async () => {
     const ids = await scoreIdsFor([
       makeChild(VISIBILITY_FIXTURE_NODE_IDS.visible, { x: 0, y: 0, width: 200, height: 100 }),
-      makeChild(VISIBILITY_FIXTURE_NODE_IDS.hidden, { x: 0, y: 100, width: 200, height: 100 }, false),
+      makeChild(
+        VISIBILITY_FIXTURE_NODE_IDS.hidden,
+        { x: 0, y: 100, width: 200, height: 100 },
+        false,
+      ),
     ]);
 
     expect(ids).toContain(VISIBILITY_FIXTURE_NODE_IDS.visible);
