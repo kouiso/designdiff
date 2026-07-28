@@ -1,7 +1,10 @@
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { describe, expect, it } from "vitest";
 
 import type { CompareDesignResult } from "@figdiff/shared";
 
+import { createMcpServer } from "../server.js";
 import { buildSummaryText } from "./compare-design.js";
 
 function makeResult(overrides: Partial<CompareDesignResult> = {}): CompareDesignResult {
@@ -181,5 +184,32 @@ describe("帯のマスク候補の出力", () => {
 
     expect(text).toContain("自動では除外していません");
     expect(text).toContain("画面上部");
+  });
+});
+
+describe("compare_design input errors", () => {
+  it("does not describe an omitted screenshot as an empty file", async () => {
+    const server = createMcpServer();
+    const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+    const client = new Client({ name: "compare-design-input-test", version: "1.0.0" });
+    await Promise.all([client.connect(clientTransport), server.connect(serverTransport)]);
+
+    try {
+      const result = await client.callTool({
+        name: "compare_design",
+        arguments: {
+          design_source: "./design.png",
+          screenshot_path: "./implementation.png",
+        },
+      });
+      const message = result.content
+        .map((content) => (content.type === "text" ? content.text : ""))
+        .join("\n");
+
+      expect(message).toMatch(/screenshot が指定されていません/);
+      expect(message).not.toMatch(/must not be empty/);
+    } finally {
+      await client.close();
+    }
   });
 });
