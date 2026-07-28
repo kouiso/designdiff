@@ -723,3 +723,46 @@ describe("buildRegionScores の対象選び", () => {
     expect(variants).toHaveLength(1);
   });
 });
+
+describe("同じ矩形の子が複数あるときの扱い", () => {
+  const makeChild = (id: string): FigmaNode => ({
+    id,
+    name: id,
+    type: "FRAME",
+    absoluteBoundingBox: { x: 0, y: 0, width: 200, height: 100 },
+    absoluteRenderBounds: null,
+    fills: [],
+    strokes: [],
+    effects: [],
+    children: [],
+  });
+
+  it("手前に描かれる最後の子の名前を残すこと", async () => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    const designPixels = await createSolidRgba(200, 200, WHITE_RGB);
+    const screenshotPixels = await createSolidRgba(200, 200, BLUE_RGB);
+
+    const report = buildDiffReport({
+      designPixels,
+      screenshotPixels,
+      width: 200,
+      height: 200,
+      figmaRootNode: {
+        id: "root",
+        name: "Frame",
+        type: "FRAME",
+        absoluteBoundingBox: { x: 0, y: 0, width: 200, height: 200 },
+        absoluteRenderBounds: null,
+        fills: [],
+        strokes: [],
+        effects: [],
+        children: [makeChild("under"), makeChild("middle"), makeChild("on-top")],
+      },
+    });
+
+    const ids = report.regionScores.map((score) => score.figmaNodeId);
+    expect(ids).toContain("on-top");
+    expect(ids).not.toContain("under");
+    expect(ids).not.toContain("middle");
+  });
+});

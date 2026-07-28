@@ -115,3 +115,38 @@ describe("hasTransparentPixel", () => {
     expect(hasTransparentPixel(Uint8ClampedArray.from([1, 2, 3, 255, 4, 5, 6, 254]))).toBe(true);
   });
 });
+
+describe("下地に白以外を指定したとき", () => {
+  it("一致率と差分画素も、その下地を敷いてから数えること", async () => {
+    // 設計は透明、実装は黒地。白のままだと画素比較が全面差分になる。
+    const designBase64 = await makePng({ r: 0, g: 0, b: 0, a: 0 });
+    const screenshotBase64 = await makePng({ r: 0, g: 0, b: 0, a: 255 });
+
+    const onWhite = await compareImages({ designBase64, screenshotBase64, threshold: 0.1 });
+    const onBlack = await compareImages({
+      designBase64,
+      screenshotBase64,
+      threshold: 0.1,
+      designBackground: "#000000",
+    });
+
+    expect(onBlack.diffPixelCount).toBeLessThan(onWhite.diffPixelCount);
+    expect(onBlack.matchRate).toBeGreaterThan(onWhite.matchRate);
+  });
+
+  it("下地を指定しなければ、画素比較の結果は変わらないこと", async () => {
+    const designBase64 = await makePng({ r: 0, g: 0, b: 0, a: 0 });
+    const screenshotBase64 = await makePng({ r: 255, g: 255, b: 255, a: 255 });
+
+    const implicit = await compareImages({ designBase64, screenshotBase64, threshold: 0.1 });
+    const explicitWhite = await compareImages({
+      designBase64,
+      screenshotBase64,
+      threshold: 0.1,
+      designBackground: "#FFFFFF",
+    });
+
+    expect(explicitWhite.diffPixelCount).toBe(implicit.diffPixelCount);
+    expect(explicitWhite.matchRate).toBe(implicit.matchRate);
+  });
+});

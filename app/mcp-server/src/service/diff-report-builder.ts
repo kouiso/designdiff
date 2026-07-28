@@ -476,15 +476,11 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
       .filter((section): section is { child: FigmaNode; bbox: DiffBoundingBox } => section !== null)
       .filter((section) => section.bbox.w * section.bbox.h >= MIN_REGION_PIXEL_AREA)
       // 同じ位置・同じ大きさの子が複数あると、同じ範囲の領域が重複して並ぶ。
-      // 受け取る側には、直す場所がその数だけあるように見える。先頭だけ残す。
-      .filter((section, index, sections) => {
-        const key = `${section.bbox.x},${section.bbox.y},${section.bbox.w},${section.bbox.h}`;
-        return (
-          sections.findIndex(
-            (other) => `${other.bbox.x},${other.bbox.y},${other.bbox.w},${other.bbox.h}` === key,
-          ) === index
-        );
-      })
+      // 受け取る側には、直す場所がその数だけあるように見える。1件へまとめる。
+      //
+      // 残すのは最後の子。Figma は後に並ぶ子ほど手前に描くので、画面に見えて
+      // いるのは最後の1枚。配列の先頭を残すと、下に隠れた層の名前を返してしまう。
+      .filter(buildLastOfEqualBoxFilter())
       .sort((a, b) => {
         if (a.bbox.y !== b.bbox.y) {
           return a.bbox.y - b.bbox.y;
@@ -574,6 +570,29 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
   }
 
   return [buildRootRegion()];
+}
+
+/**
+ * 同じ矩形の子のうち、最後の1件だけを通す判定を作る。
+ *
+ * 走査のたびに配列を頭から探すと、子の数の2乗に比例して重くなる。
+ * 層が数千ある画面で比較が目に見えて遅くなるため、一度数えて引き当てる。
+ */
+function buildLastOfEqualBoxFilter(): (
+  section: { bbox: DiffBoundingBox },
+  index: number,
+  sections: readonly { bbox: DiffBoundingBox }[],
+) => boolean {
+  const lastIndexByBox = new Map<string, number>();
+  const boxKey = (bbox: DiffBoundingBox): string => `${bbox.x},${bbox.y},${bbox.w},${bbox.h}`;
+  return (section, index, sections) => {
+    if (lastIndexByBox.size === 0) {
+      sections.forEach((entry, entryIndex) => {
+        lastIndexByBox.set(boxKey(entry.bbox), entryIndex);
+      });
+    }
+    return lastIndexByBox.get(boxKey(section.bbox)) === index;
+  };
 }
 
 function selectAnchorsForScoring<T>(anchors: readonly T[]): T[] {

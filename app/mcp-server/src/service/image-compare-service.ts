@@ -94,7 +94,11 @@ const PUBLIC_EXPORT_REDACTION_COLOR = { r: 0, g: 0, b: 0, alpha: 1 };
 // 背景の塗りが無いノードを置く既定の下地。実装側の画面が白地で描かれることが多い。
 const DEFAULT_DESIGN_BACKGROUND = "#FFFFFF";
 
-/** #RRGGBB / #RGB を RGB 値へ。解釈できない指定は白として扱う。 */
+/**
+ * 解釈できない指定を投げずに白へ倒す。ここで例外を投げると、色の書き方を
+ * 1文字間違えただけで比較そのものが実行できなくなる。既定と同じ白へ落ちれば、
+ * 少なくとも従来どおりの結果は得られる。
+ */
 export function parseBackgroundColor(value: string): { r: number; g: number; b: number } {
   const hex = value.trim().replace(/^#/, "");
   const expanded =
@@ -112,6 +116,10 @@ export function parseBackgroundColor(value: string): { r: number; g: number; b: 
     g: Number.parseInt(expanded.slice(2, 4), 16),
     b: Number.parseInt(expanded.slice(4, 6), 16),
   };
+}
+
+function isWhite(color: { r: number; g: number; b: number }): boolean {
+  return color.r === 255 && color.g === 255 && color.b === 255;
 }
 
 export function hasTransparentPixel(pixels: Uint8ClampedArray): boolean {
@@ -1009,6 +1017,19 @@ export async function compareImages(
 
   // Run pixelmatch
   const diffPixelData = new Uint8ClampedArray(width * height * 4);
+  const backgroundColor = parseBackgroundColor(
+    options.designBackground ?? DEFAULT_DESIGN_BACKGROUND,
+  );
+
+  // 白以外を指定された場合は、画素どうしの比較にも同じ下地を敷いてから数える。
+  // pixelmatch は半透明を白へ混ぜて見るので、敷かないと一致率と差分画像だけが
+  // 白基準のまま残り、「構造は合格なのに画面が真っ赤」という食い違いになる。
+  // 白のときは pixelmatch の内部処理と同じ結果になるので、触らずに残す。
+  if (options.designBackground !== undefined && !isWhite(backgroundColor)) {
+    flattenTransparentPixels(pixelmatchDesignPixels, backgroundColor);
+    flattenTransparentPixels(screenshotPixels, backgroundColor);
+  }
+
   const diffPixelCount = pixelmatch(
     pixelmatchDesignPixels,
     screenshotPixels,
@@ -1029,12 +1050,10 @@ export async function compareImages(
   // 判定と証拠を先に作る。矛盾で人間レビューへ回すとき、pixelmatch の閾値では
   // 1画素も差分にならないことがある。そのままだと差分画像が真っ黒、領域0件で
   // 「見てくれ」と渡すことになるので、見える差のあった画素を証拠として使う。
-  // 判定側だけを不透明化する。pixelmatch の入力は触らないので一致率は変わらない。
-  // pixelmatch は半透明を白へ混ぜて見るが、構造・色・輪郭を測る側は生の RGB を
-  // 読むため、下地を敷かないと透明が黒として評価に入る。
-  const backgroundColor = parseBackgroundColor(
-    options.designBackground ?? DEFAULT_DESIGN_BACKGROUND,
-  );
+  // 判定へ渡す側を不透明化する。既定の白では pixelmatch の入力を触らないので
+  // 一致率は変わらない。構造・色・輪郭を測る側は生の RGB を読むため、下地を
+  // 敷かないと透明が黒として評価に入る。
+
   let reportScreenshotPixels = screenshotPixels;
   if (hasTransparentPixel(reportDesignPixels)) {
     if (reportDesignPixels === pixelmatchDesignPixels) {
