@@ -52,7 +52,10 @@ function findRegion(regions: RegionScore[], targetNodeId: string): RegionScore |
   );
 }
 
-/** 引けなかったときに、何なら引けるのかを示す。 */
+/**
+ * 引けなかったときに何なら引けるのかを添える。名前だけ返すと、
+ * 呼ぶ側は正解の名前が分からないまま総当たりで探し直すことになる。
+ */
 function describeAvailableRegionIds(regions: RegionScore[]): string {
   const ids = regions.map((region) => region.figmaNodeId ?? region.regionId);
   return ids.length > 0 ? ids.join(", ") : "(なし)";
@@ -178,6 +181,16 @@ export function registerVerifyFix(server: McpServer): void {
           args.expected_target_node_id,
         );
 
+        if (currentRegion && !previousRegion && currentRegion.scope === "root") {
+          // 比較対象そのものの行は後から入った。それ以前に保存された比較には
+          // この行が無く、画素はもう残っていないので後から足せない。
+          // 何を直せばよいかを名指しで返し、探し直させない。
+          throw new Error(
+            `baseline predates the whole-frame row: ${args.prior_comparison_id}. ` +
+              "run compare_design once more to record a usable baseline, then retry verify_fix.",
+          );
+        }
+
         if (!previousRegion || !currentRegion) {
           const available = describeAvailableRegionIds(comparison.result.diffReport.regionScores);
           throw new Error(
@@ -191,17 +204,24 @@ export function registerVerifyFix(server: McpServer): void {
         const shapeDelta = currentRegion.shape - previousRegion.shape;
         const previousById = new Map<string, RegionScore>();
 
+        // 引き当てと同じ表記へ揃える。片方だけ生の文字列で比べると、
+        // 直した当人が「別の場所で悪化した」として二重に報告される。
         for (const region of priorEntry.result.diffReport.regionScores) {
-          previousById.set(region.figmaNodeId ?? region.regionId, region);
+          previousById.set(normalizeNodeId(region.figmaNodeId ?? region.regionId), region);
         }
 
+        const normalizedTargetNodeId = normalizeNodeId(args.expected_target_node_id);
         const sideEffects = comparison.result.diffReport.regionScores
+          // 比較対象そのものの行は全部の子と範囲が重なる。副作用として並べると、
+          // 対象自身や既に報告済みの子が二重に出る。
+          .filter((region) => region.scope !== "root")
           .filter(
-            (region) => (region.figmaNodeId ?? region.regionId) !== args.expected_target_node_id,
+            (region) =>
+              normalizeNodeId(region.figmaNodeId ?? region.regionId) !== normalizedTargetNodeId,
           )
           .flatMap((region) => {
             const nodeId = region.figmaNodeId ?? region.regionId;
-            const previous = previousById.get(nodeId);
+            const previous = previousById.get(normalizeNodeId(nodeId));
             if (!previous) {
               return [];
             }

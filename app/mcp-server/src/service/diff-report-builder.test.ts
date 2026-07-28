@@ -601,3 +601,50 @@ describe("buildDiffReport global alignment shift severity", () => {
     expect(result.aggregateVerdict).toBe("fail");
   });
 });
+
+describe("比較対象そのものの行が他の判断へ漏れないこと", () => {
+  const makeNode = (
+    id: string,
+    box: { x: number; y: number; width: number; height: number },
+  ): FigmaNode => ({
+    id,
+    name: id,
+    type: "FRAME",
+    absoluteBoundingBox: box,
+    absoluteRenderBounds: null,
+    fills: [],
+    strokes: [],
+    effects: [],
+    children: [],
+  });
+
+  it("子が全部合格なら、背景だけの色差で不合格にしないこと", async () => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    const size = 200;
+    // 子は上端の帯だけ。そこは一致させ、残りの背景だけ大きく色を変える。
+    const designPixels = await createSolidRgba(size, size, WHITE_RGB);
+    const screenshotPixels = Uint8ClampedArray.from(designPixels);
+    for (let y = 60; y < size; y++) {
+      for (let x = 0; x < size; x++) {
+        const index = (y * size + x) * 4;
+        screenshotPixels[index] = BLUE_RGB.r;
+        screenshotPixels[index + 1] = BLUE_RGB.g;
+        screenshotPixels[index + 2] = BLUE_RGB.b;
+      }
+    }
+
+    const report = buildDiffReport({
+      designPixels,
+      screenshotPixels,
+      width: size,
+      height: size,
+      figmaRootNode: {
+        ...makeNode("root", { x: 0, y: 0, width: size, height: size }),
+        children: [makeNode("banner", { x: 0, y: 0, width: size, height: 40 })],
+      },
+    });
+
+    // 合否を決める不具合が、比較対象そのものの行から作られていないこと。
+    expect(report.issues.every((issue) => issue.regionId !== "whole-frame")).toBe(true);
+  });
+});

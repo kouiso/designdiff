@@ -240,9 +240,11 @@ function buildMaskCandidateLines(result: CompareDesignResult): string[] {
   const report = result.diffReport;
   if (!report || report.aggregateVerdict === "pass") return [];
 
-  const candidates = report.regionScores.filter(
-    (r) => (r.textureScore ?? 0) > 0.5 || (r.structure >= 0.9 && r.color < 0.7),
-  );
+  const candidates = report.regionScores
+    // 比較対象そのものの行は画面全体を覆う。写真の多い画面で候補に入ると、
+    // 「画面全部を無視しろ」という案内になり、あらゆる崩れが隠れる。
+    .filter((r) => r.scope !== "root")
+    .filter((r) => (r.textureScore ?? 0) > 0.5 || (r.structure >= 0.9 && r.color < 0.7));
 
   if (candidates.length === 0) return [];
 

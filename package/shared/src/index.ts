@@ -232,4 +232,4 @@ export type {
   Project,
   ProjectPage,
 } from "./type.js";
-export { computeVerdict } from "./type.js";
+export { computeVerdict, selectScoringRegions } from "./type.js";

@@ -4,6 +4,7 @@ import {
   computeMeanDeltaE2000,
   computePerceptibleDiffRatio,
   computeSsimForRegion,
+  selectScoringRegions,
   computeVerdict,
   detectHighTextureRegion,
   type CropRegion,
@@ -525,7 +526,10 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
   // 単一ノードを比べたとき、子の行しか無いと「対象ノードが見つからない」で
   // verify_fix が落ち、局所的な修正を自分で確かめられなくなる。
   // 集計では scope: "root" を外すので、重み付けと見出しの値は変わらない。
-  const rootRegion: RegionScore = {
+  //
+  // 遅延で作る。子が無い経路では下の fallback が同じ計算をやり直すため、
+  // 先に作ると画素を舐める処理が丸ごと二重になる。
+  const buildRootRegion = (): RegionScore => ({
     regionId: "whole-frame",
     scope: "root",
     bbox: wholeFrameBbox,
@@ -548,10 +552,10 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
     layout: 0,
     textureScore: getTextureScore(wholeFrameBbox),
     figmaNodeId: options.figmaNodeId,
-  };
+  });
 
   if (childRegions.length > 0) {
-    return [...childRegions, rootRegion];
+    return [...childRegions, buildRootRegion()];
   }
 
   return [
@@ -673,7 +677,9 @@ export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
     residual,
   };
 
-  const issues = buildIssues(regionScores, options);
+  // 比較対象そのものの行は子と範囲が重なる。合否を決める不具合をここから作ると、
+  // 子が全部合格でも背景の色差だけで不合格へ倒れる。集計と同じ行だけを使う。
+  const issues = buildIssues(selectScoringRegions(regionScores), options);
 
   // An accepted global alignment correction can hide a real regression: e.g.
   // a page that scrolled/shifted is itself often the bug under test, not a
