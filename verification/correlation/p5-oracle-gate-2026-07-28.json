@@ -1,0 +1,25 @@
+{
+  "recordedAt": "2026-07-28",
+  "commit": "d2936d3",
+  "judge": "independent-oracle",
+  "note": "仕組みが動くことの確認。2回目の撮影は設計画像とバイト単位で同一のため、実画面の雑音に対する校正にはなっていない。",
+  "threshold": 0.005,
+  "designSha256": "228b8fdde68e8a350f552692f86b1359e1688445861470b3ffab3547437949c3",
+  "turns": [
+    {
+      "turn": 1,
+      "screenshot": "turn-01.png",
+      "residual": 0.6124031007751938,
+      "widthMismatch": false,
+      "sizeMismatch": true
+    },
+    {
+      "turn": 2,
+      "screenshot": "turn-02.png",
+      "residual": 0,
+      "widthMismatch": false,
+      "sizeMismatch": false
+    }
+  ],
+  "pass": true
+}
