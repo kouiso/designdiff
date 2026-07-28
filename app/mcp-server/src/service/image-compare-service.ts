@@ -14,6 +14,7 @@ import {
   generateMatchSuggestion,
   matchDiffRegionsToNodes,
   type CompareDesignResult,
+  type ClusterCollapse,
   type ClusterTelemetry,
   type CropRegion,
   type FigmaNode,
@@ -173,7 +174,24 @@ interface GridCellGeometry {
 interface ClusterDiffResult {
   diffRegions: CompareDesignResult["diffRegions"];
   clusterTelemetry: ClusterTelemetry;
+  clusterCollapse?: ClusterCollapse;
 }
+
+// 分割を諦めたときに、次に何を疑えばよいかを毎回同じ順で示す。
+// ここが空だと「60箇所直せ」という読み方に戻ってしまう。
+// 分割を諦めた理由のうち、「差分が全面に広がっている」と言い切れるもの。
+// 時間切れ (wall-budget-exceeded) は処理が重かっただけで、広がりの証拠にならない。
+function isWidespreadDiffReason(
+  reason: NonNullable<ClusterTelemetry["fallbackReason"]>,
+): reason is "hot-cell-ratio-exceeded" | "region-count-exceeded" {
+  return reason === "hot-cell-ratio-exceeded" || reason === "region-count-exceeded";
+}
+
+const CLUSTER_COLLAPSE_CHECKS = [
+  "撮影条件が設計と揃っているか（撮影幅・倍率・スクロール位置）",
+  "比較元のFigmaフレームが、撮影した画面と同じものか",
+  "実装がまだ着手前の状態になっていないか",
+];
 
 interface QuickTileCandidate {
   left: number;
@@ -245,13 +263,33 @@ function clusterDiffRegions(args: {
     fallbackReason = fallbackReason ?? "grid-empty-with-diff";
     diffRegions = clusterDiffPixels(diffPixelData, width, height);
   }
+  // 差分が広すぎて分割できなかった場合。以前はここで作った等間隔タイルを
+  // そのまま差分領域として返していたが、タイルは位置の手がかりを持たない。
+  // 「直す場所がタイルの数だけある」と読めてしまうので、領域としては返さず、
+  // 分割できなかったという事実として返す。
+  let clusterCollapse: ClusterCollapse | undefined;
   if (useGrid && diffRegions.length === 0 && diffPixelCount > 0 && shouldSkipFloodFallback) {
-    diffRegions = clusterDiffPixelsQuickTiles(diffPixelData, width, height);
+    const coarseTiles = clusterDiffPixelsQuickTiles(diffPixelData, width, height);
     fallbackReason = fallbackReason ?? "grid-empty-with-diff";
+    if (isWidespreadDiffReason(fallbackReason)) {
+      clusterCollapse = {
+        collapsed: true,
+        reason: fallbackReason,
+        coarseTileCount: coarseTiles.length,
+        message:
+          "差分が画面全体に広がっているため、直す場所を領域に分けられませんでした。個別のCSS修正へ進む前に、比較の前提を先に確認してください。",
+        checks: CLUSTER_COLLAPSE_CHECKS,
+      };
+    } else {
+      // 時間切れは「差分が全面に広がっている」証拠にならない。局所的な差分でも
+      // 大きい画像なら起きる。せっかく見つけた大まかな位置を捨てずに返す。
+      diffRegions = coarseTiles;
+    }
   }
 
   return {
     diffRegions,
+    clusterCollapse,
     clusterTelemetry: {
       requestedMode: clusterMode,
       usedMode,
@@ -737,8 +775,13 @@ export async function compareImages(
 
   // Resize design to match screenshot WIDTH first (maintaining aspect ratio)
   // This normalizes coordinate spaces before crop
+  //
+  // crop 前のこの寸法が、後段でノード bbox をスクリーンショット空間へ写すときの
+  // 基準になる。crop 後の寸法を使うと、切り落とした分だけ倍率がずれる。
+  let normalizedDesignHeight = designHeight;
   if (designWidth !== screenshotWidth) {
     const resizeHeight = Math.round(designHeight * (screenshotWidth / designWidth));
+    normalizedDesignHeight = resizeHeight;
     designBuffer = await createSharp(designBuffer)
       .resize(screenshotWidth, resizeHeight)
       .ensureAlpha()
@@ -764,6 +807,8 @@ export async function compareImages(
   let paddingMask: PaddingMask | null = null;
   let wasComposited = false;
   let appliedScale = 1;
+  // 合成した場合の貼り付け位置。ノード bbox を同じ空間へ写すときに要る。
+  let compositeOffset = { x: 0, y: 0 };
   if (finalDesignWidth !== finalScreenshotWidth || finalDesignHeight !== finalScreenshotHeight) {
     const scale = Math.min(
       finalScreenshotWidth / finalDesignWidth,
@@ -828,6 +873,7 @@ export async function compareImages(
         }
       : null;
     wasComposited = true;
+    compositeOffset = { x: left, y: top };
     finalDesignBuffer = await createSharp({
       create: {
         width: finalScreenshotWidth,
@@ -975,11 +1021,29 @@ export async function compareImages(
     gridOptions,
   });
   let { diffRegions } = clustered;
-  const { clusterTelemetry } = clustered;
+  const { clusterTelemetry, clusterCollapse } = clustered;
 
   // Match diff regions to Figma nodes if available
   if (figmaRootNode) {
-    diffRegions = matchDiffRegionsToNodes(diffRegions, figmaRootNode);
+    // 変換を渡さないと、ノード側は Figma canvas 座標 (x が数万になることもある)、
+    // 差分領域は crop 後のスクリーンショット座標のままで突き合わせることになり、
+    // 包含判定が一度も成立せずノード名が全件空で返る。
+    // 倍率の基準は crop 前の正規化済み design 寸法。実パイプラインが
+    // 「幅合わせ → crop」の順で処理するため、高さも幅合わせ後の値を渡す。
+    // 差分領域は撮影側の座標で出るので、切り出し原点も撮影側の寸法で決める。
+    // 設計側の寸法で決めると、片方だけ切り出しが成立した回に原点がずれる。
+    const appliedCropOrigin = cropRegion
+      ? resolveAppliedCropOrigin(cropRegion, screenshotWidth, screenshotHeight)
+      : null;
+    diffRegions = matchDiffRegionsToNodes(diffRegions, figmaRootNode, {
+      fullScreenshotWidth: screenshotWidth,
+      fullScreenshotHeight: normalizedDesignHeight,
+      cropOrigin: appliedCropOrigin ?? undefined,
+      // 切り出しの後にさらに縮めて貼り付けた場合は、その倍率と位置も反映する。
+      // 反映しないと、その経路だけ座標がずれて違うノード名が付く。
+      contentScale: wasComposited ? appliedScale : undefined,
+      contentOffset: wasComposited ? compositeOffset : undefined,
+    });
     clusterTelemetry.regionCount = diffRegions.length;
   }
 
@@ -996,6 +1060,7 @@ export async function compareImages(
     diffRegions,
     suggestion,
     clusterTelemetry,
+    clusterCollapse,
     gridSummary,
     diffReport,
     diffImageBase64,
@@ -1009,6 +1074,45 @@ export async function compareImages(
       appliedScale,
     },
   };
+}
+
+/**
+ * cropImageBuffer が実際に切り出す原点を、同じ丸めとクリップで先に求める。
+ * 切り出しが成立しない場合は null を返す (画像がそのまま通るため原点は 0)。
+ *
+ * ノード bbox をスクリーンショット空間へ写すとき、要求値ではなく実際に
+ * 適用された原点を引かないと、切り出しが無効だった回だけ座標が丸ごとずれる。
+ */
+export function resolveAppliedCropOrigin(
+  cropRegion: CropRegion,
+  imageWidth: number,
+  imageHeight: number,
+): { x: number; y: number } | null {
+  if (imageWidth <= 0 || imageHeight <= 0) {
+    return null;
+  }
+
+  if (
+    !Number.isFinite(cropRegion.x) ||
+    !Number.isFinite(cropRegion.y) ||
+    !Number.isFinite(cropRegion.width) ||
+    !Number.isFinite(cropRegion.height) ||
+    cropRegion.width <= 0 ||
+    cropRegion.height <= 0
+  ) {
+    return null;
+  }
+
+  const left = Math.max(0, Math.floor(cropRegion.x));
+  const top = Math.max(0, Math.floor(cropRegion.y));
+  const right = Math.min(imageWidth, Math.floor(cropRegion.x + cropRegion.width));
+  const bottom = Math.min(imageHeight, Math.floor(cropRegion.y + cropRegion.height));
+
+  if (left >= right || top >= bottom) {
+    return null;
+  }
+
+  return { x: left, y: top };
 }
 
 /**

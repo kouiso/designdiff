@@ -8,6 +8,7 @@ import {
   type BorderRadiusSchema,
   type ChildNodeSummarySchema,
   type CritiqueNoteSchema,
+  type ClusterCollapseSchema,
   type ClusterTelemetrySchema,
   type CompareDesignResultSchema,
   type LoopGuardReportSchema,
@@ -103,6 +104,7 @@ export type TokenDiffReport = z.infer<typeof TokenDiffReportSchema>;
 export type VerdictRoute = z.infer<typeof VerdictRouteSchema>;
 
 export type ClusterTelemetry = z.infer<typeof ClusterTelemetrySchema>;
+export type ClusterCollapse = z.infer<typeof ClusterCollapseSchema>;
 export type GridSummary = z.infer<typeof GridSummarySchema>;
 export type GridSummaryCell = z.infer<typeof GridSummaryCellSchema>;
 
