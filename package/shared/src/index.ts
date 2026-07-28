@@ -25,6 +25,9 @@ export {
 // CSS Suggestion Generator
 export { generateCssSuggestion, figmaColorToHex } from "./css-suggestion.js";
 
+// Figma Node → 検査結果への変換
+export { transformNode } from "./transform-node.js";
+
 // Node Matcher (diff region → Figma node)
 export {
   matchDiffRegionsToNodes,
