@@ -3,10 +3,19 @@ import { describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   captureDeviceScrollScreenshot: vi.fn(),
   execFile: vi.fn(),
-  writeFile: vi.fn(),
+  writeFile: vi.fn(async () => undefined),
+  mkdir: vi.fn(async () => undefined),
 }));
 
 vi.mock("node:child_process", () => ({ execFile: mocks.execFile }));
+
+// 実際にファイルを書かせん。書かせると検査のたびに /tmp へ残り、
+// 消す責任が誰にも無いまま溜まっていく。
+vi.mock("node:fs/promises", () => ({
+  mkdir: mocks.mkdir,
+  writeFile: mocks.writeFile,
+  default: { mkdir: mocks.mkdir, writeFile: mocks.writeFile },
+}));
 
 vi.mock("./scroll-capture.js", async (importOriginal) => {
   const original: Record<string, unknown> = await importOriginal();
@@ -75,5 +84,7 @@ describe("captureDeviceScreenshot", () => {
     }
 
     expect(seen).toEqual(["adb", "xcrun", "pymobiledevice3"]);
+    // 画像を書くのは android 経路だけ。iOS の2本はコマンド側が直接書く。
+    expect(mocks.writeFile).toHaveBeenCalledTimes(1);
   });
 });

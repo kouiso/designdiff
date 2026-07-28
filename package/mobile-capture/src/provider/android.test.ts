@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { AndroidCaptureProvider } from "./android.js";
+import { ADB_TIMEOUT_MS, AndroidCaptureProvider } from "./android.js";
 
 // 型アサーションを使わずに差し替えるため、モック本体を先に作ってから
 // モジュールへ差し込む。vi.mocked() 経由だと本来の戻り値の型を満たす必要があり、
@@ -114,5 +114,41 @@ describe("AndroidCaptureProvider の scroll", () => {
     await expect(
       new AndroidCaptureProvider().scroll({ x: 1, fromY: 2, toY: 3, durationMs: 4 }),
     ).rejects.toBe(failure);
+  });
+});
+
+describe("AndroidCaptureProvider の入力検査と待ちの上限", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("負の座標や小数を、端末へ渡す前に弾く", async () => {
+    const provider = new AndroidCaptureProvider();
+    await expect(provider.scroll({ x: -1, fromY: 2, toY: 3, durationMs: 4 })).rejects.toThrow(
+      /0以上の整数/,
+    );
+    await expect(provider.scroll({ x: 1.5, fromY: 2, toY: 3, durationMs: 4 })).rejects.toThrow(
+      /0以上の整数/,
+    );
+    expect(mocks.execFile).not.toHaveBeenCalled();
+  });
+
+  it("動く時間が0なら弾く", async () => {
+    await expect(
+      new AndroidCaptureProvider().scroll({ x: 1, fromY: 2, toY: 3, durationMs: 0 }),
+    ).rejects.toThrow(/1以上/);
+    expect(mocks.execFile).not.toHaveBeenCalled();
+  });
+
+  it("撮影となぞる操作の両方に、待ちの上限を渡す", async () => {
+    respondWith(null, Buffer.from("png"));
+
+    await new AndroidCaptureProvider().capture(OUTPUT_PATH);
+    await new AndroidCaptureProvider().scroll({ x: 1, fromY: 2, toY: 3, durationMs: 4 });
+
+    for (const call of mocks.execFile.mock.calls) {
+      const options = call[2];
+      expect(options).toMatchObject({ timeout: ADB_TIMEOUT_MS });
+    }
   });
 });
