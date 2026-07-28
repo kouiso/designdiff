@@ -455,6 +455,17 @@ describe("runCompareDesign", () => {
       runCompareDesign({
         design_source: "./design.png",
       }),
+    ).rejects.toThrow(
+      /screenshot が指定されていません。受け取った引数: design_source。画像のパスは screenshot に渡してください/,
+    );
+  });
+
+  it("keeps the existing error when screenshot is truly empty", async () => {
+    await expect(
+      runCompareDesign({
+        design_source: "./design.png",
+        screenshot: "   ",
+      }),
     ).rejects.toThrow(/screenshot must not be empty/);
   });
 

@@ -671,7 +671,13 @@ async function resolveScreenshotPath(
   }
 
   if (!args.screenshot_url) {
-    if (!args.screenshot || args.screenshot.trim() === "") {
+    if (args.screenshot === undefined) {
+      const receivedArguments = Object.keys(args).join(", ");
+      throw new Error(
+        `screenshot が指定されていません。受け取った引数: ${receivedArguments || "なし"}。画像のパスは screenshot に渡してください（screenshot_url / capture_device も可）。`,
+      );
+    }
+    if (args.screenshot.trim() === "") {
       throw new Error(EMPTY_SCREENSHOT_INPUT_MESSAGE);
     }
     return { screenshotPath: await resolveScreenshotInputPath(args.screenshot) };
