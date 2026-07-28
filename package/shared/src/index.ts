@@ -47,6 +47,19 @@ export { computeSsim, computeSsimForRegion, type SsimRegion } from "./signal/ssi
 export { detectHighTextureRegion } from "./signal/texture.js";
 export { computeHausdorff } from "./signal/hausdorff.js";
 export {
+  ALIGNMENT_IMPROVEMENT_THRESHOLD,
+  COARSE_RANGE,
+  COARSE_SAMPLE_STEP,
+  COARSE_STEP,
+  DIFF_THRESHOLD_SQ,
+  FINE_RANGE,
+  countSsdOffset,
+  detectTranslation,
+  resolveAlignment,
+  shiftPixels,
+  type ResolvedAlignment,
+} from "./signal/translation.js";
+export {
   compareFlatRegionColor,
   detectFlatRegionColor,
   type FlatRegionColor,
