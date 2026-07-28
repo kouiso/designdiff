@@ -920,18 +920,43 @@ describe("diffRegions による局所採点 (Issue #56)", () => {
     const size = 200;
     const shift = 6;
     const { designPixels, screenshotPixels } = buildAlignedShiftFixtures(size, shift);
+    // buildAlignedShiftFixtures は screenshot(x,y)=design(x+shift,y+shift) を作るため、
+    // resolveAlignment は dx=dy=-shift を検出する。shiftPixels の srcX=x-dx=x+shift は
+    // 右端 (x>=width-shift) と下端 (y>=height-shift) だけを空で埋める。
+    const edgeX = size - 20;
+    const edgeY = size - 20;
 
     const report = buildDiffReport({
       designPixels,
       screenshotPixels,
       width: size,
       height: size,
-      // 補正前の座標系で作った、境界 (0,0) に接するクラスタ。補正後は
-      // shiftPixels のはみ出し塗り (透明/RGB0) を拾ってしまうため除外される。
+      // 補正前の座標系で作った、はみ出しが実際に生じる右下の境界に接するクラスタ。
+      diffRegions: [{ x: edgeX, y: edgeY, w: 20, h: 20 }],
+    });
+
+    expect(
+      report.regionScores.some((score) => score.regionId === `diff-cluster-${edgeX}-${edgeY}`),
+    ).toBe(false);
+  });
+
+  it("位置ずれ補正がかかっても、ずれと無関係な辺のクラスタは除外しないこと", async () => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    const size = 200;
+    const shift = 6;
+    const { designPixels, screenshotPixels } = buildAlignedShiftFixtures(size, shift);
+    // dx=dy=-shift のとき、はみ出しが生じるのは右端・下端だけ。左上 (0,0) の
+    // クラスタは影響を受けないので除外されるべきではない (対称マージンだと
+    // 誤って除外してしまっていた)。
+    const report = buildDiffReport({
+      designPixels,
+      screenshotPixels,
+      width: size,
+      height: size,
       diffRegions: [{ x: 0, y: 0, w: 20, h: 20 }],
     });
 
-    expect(report.regionScores.some((score) => score.regionId === "diff-cluster-0-0")).toBe(false);
+    expect(report.regionScores.some((score) => score.regionId === "diff-cluster-0-0")).toBe(true);
   });
 
   it("位置ずれ補正が適用された回でも、境界から離れたクラスタは局所採点を使うこと", async () => {

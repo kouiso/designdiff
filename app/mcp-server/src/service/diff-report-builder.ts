@@ -577,16 +577,22 @@ export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
   // 補正がかかった回に diffRegions を丸ごと無効化すると、シフトと局所差分が
   // 同時に起きたケースで #56 の誤 PASS がそのまま復活するため、はみ出しの
   // 影響を受ける境界帯のクラスタだけを除外し、それ以外はそのまま採点する。
-  const alignmentMargin = alignmentApplied ? Math.max(Math.abs(dx), Math.abs(dy)) : 0;
+  // shiftPixels (srcX = x - dx) は dx>0 なら左端、dx<0 なら右端だけを空にする
+  // (y/dy も同様)。4辺に同じマージンをかけると、ずれが片方向にしか無いのに
+  // 無関係な反対側の辺まで除外して局所差分を見逃す。軸・符号ごとに独立させる。
+  const leftMargin = alignmentApplied && dx > 0 ? dx : 0;
+  const rightMargin = alignmentApplied && dx < 0 ? -dx : 0;
+  const topMargin = alignmentApplied && dy > 0 ? dy : 0;
+  const bottomMargin = alignmentApplied && dy < 0 ? -dy : 0;
   const alignedOptions = {
     ...options,
     designPixels: alignedDesignPixels,
     diffRegions: options.diffRegions?.filter(
       (bbox) =>
-        bbox.x >= alignmentMargin &&
-        bbox.y >= alignmentMargin &&
-        bbox.x + bbox.w <= width - alignmentMargin &&
-        bbox.y + bbox.h <= height - alignmentMargin,
+        bbox.x >= leftMargin &&
+        bbox.y >= topMargin &&
+        bbox.x + bbox.w <= width - rightMargin &&
+        bbox.y + bbox.h <= height - bottomMargin,
     ),
   };
   const regionScores = buildRegionScores(alignedOptions);

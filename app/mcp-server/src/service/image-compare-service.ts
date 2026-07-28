@@ -1119,11 +1119,12 @@ export async function compareImages(
   });
 
   let maskPainted = false;
+  let paintedPixelCount = 0;
   if (
     diffPixelCount === 0 &&
     (diffReport.perceptibleDiffRatio ?? 0) > PERCEPTIBLE_DIFF_CONTRADICTION_RATIO
   ) {
-    paintPerceptibleMask(diffPixelData, perceptibleMask);
+    paintedPixelCount = paintPerceptibleMask(diffPixelData, perceptibleMask);
     maskPainted = true;
   }
 
@@ -1147,11 +1148,14 @@ export async function compareImages(
   //
   // 塗り足しが起きた回だけ計算し直す。先読みクラスタリングは重い (壁時計予算つき)
   // ため、大半を占める塗り足し無しの回まで毎回2回走らせるとその分だけ遅くなる。
+  // diffPixelCount は塗り足した画素数を渡す。0 のままだと clusterDiffRegions
+  // 内の flood/collapse フォールバック分岐 (どちらも diffPixelCount > 0 が条件)
+  // が発火せず、grid が空を返したときに空の diffRegions のまま返ってしまう。
   const clustered = maskPainted
     ? clusterDiffRegions({
         clusterMode,
         totalPixelCount,
-        diffPixelCount,
+        diffPixelCount: paintedPixelCount,
         diffPixelData,
         width,
         height,
@@ -1530,7 +1534,12 @@ function preserveLegacyWhitePaddingForReport(
  */
 // pixelmatch の差分可視化と同じ赤で塗る。証拠の出どころが違っても、
 // 人が見る色は揃えておく。
-function paintPerceptibleMask(diffPixelData: Uint8ClampedArray, mask: Uint8Array): void {
+// 戻り値の塗った画素数は、矛盾ケースの再クラスタリングへ渡す diffPixelCount に使う。
+// 渡さずに元の 0 のままだと、クラスタリング内部のフォールバック分岐 (flood/collapse
+// のどちらも diffPixelCount > 0 を条件にしている) が発火せず、grid が空を返した
+// ときに空の diffRegions のまま返ってしまう。
+function paintPerceptibleMask(diffPixelData: Uint8ClampedArray, mask: Uint8Array): number {
+  let paintedCount = 0;
   for (let i = 0; i < mask.length; i += 1) {
     if (mask[i] !== 1) continue;
     const offset = i * 4;
@@ -1538,7 +1547,9 @@ function paintPerceptibleMask(diffPixelData: Uint8ClampedArray, mask: Uint8Array
     diffPixelData[offset + 1] = 0;
     diffPixelData[offset + 2] = 0;
     diffPixelData[offset + 3] = 255;
+    paintedCount += 1;
   }
+  return paintedCount;
 }
 
 async function generateDiffImage(
