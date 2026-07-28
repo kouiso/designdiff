@@ -248,4 +248,4 @@ export type {
   Project,
   ProjectPage,
 } from "./type.js";
-export { computeVerdict, selectScoringRegions } from "./type.js";
+export { computeVerdict, selectScoringRegions, UNIMPLEMENTED_LAYOUT_SCORE } from "./type.js";

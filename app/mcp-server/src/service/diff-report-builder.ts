@@ -5,6 +5,7 @@ import {
   computePerceptibleDiffRatio,
   computeSsimForRegion,
   resolveAlignment,
+  UNIMPLEMENTED_LAYOUT_SCORE,
   selectScoringRegions,
   computeVerdict,
   detectHighTextureRegion,
@@ -372,7 +373,7 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
           bbox,
         ),
         shape: computeHausdorff(designPixels, screenshotPixels, width, height, bbox),
-        layout: 0,
+        layout: UNIMPLEMENTED_LAYOUT_SCORE,
         textureScore: getTextureScore(bbox),
       });
     }
@@ -409,7 +410,7 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
       contentBbox,
     ),
     shape: computeHausdorff(designPixels, screenshotPixels, width, height, contentBbox),
-    layout: 0,
+    layout: UNIMPLEMENTED_LAYOUT_SCORE,
     textureScore: getTextureScore(wholeFrameBbox),
     // 比較元のノードIDが解決できない検体でも、この行を名前で引けるようにする。
     // 引けないと、対象そのものを指定した検証がその経路だけ通らない。

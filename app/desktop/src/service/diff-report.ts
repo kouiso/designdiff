@@ -1,7 +1,10 @@
 import {
+  computeHausdorff,
   computeMeanDeltaE2000,
   computeSsim,
   computeVerdict,
+  resolveAlignment,
+  UNIMPLEMENTED_LAYOUT_SCORE,
   type DiffReport,
 } from "@figdiff/shared";
 
@@ -134,10 +137,28 @@ function buildIssues(regionScores: DiffReport["regionScores"]): DiffReport["issu
 
 export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
   const { designPixels, screenshotPixels, width, height } = options;
+
+  // 画素の並びが足りないまま輪郭の計算へ渡すと、素の例外が画面へ出る。
+  // どの寸法に対して何画素足りないのかを、その場で言う。
+  const expectedLength = width * height * 4;
+  if (designPixels.length < expectedLength || screenshotPixels.length < expectedLength) {
+    throw new Error(
+      `Pixel buffer too small for ${width}x${height}: design=${designPixels.length}, screenshot=${screenshotPixels.length}, expected>=${expectedLength}`,
+    );
+  }
+
+  // 位置を合わせてから測る。合わせずに測ると、全体が数px ずれているだけの画面で
+  // 全部の領域が崩れとして出る。
+  const { alignment, alignedDesignPixels } = resolveAlignment(
+    designPixels,
+    screenshotPixels,
+    width,
+    height,
+  );
   const windows = buildRegionWindows(width, height);
 
   const regionScores = windows.map((window) => {
-    const designRegionPixels = sampleRegionPixels(designPixels, width, window);
+    const designRegionPixels = sampleRegionPixels(alignedDesignPixels, width, window);
     const screenshotRegionPixels = sampleRegionPixels(screenshotPixels, width, window);
     const structure = computeSsim(designRegionPixels, screenshotRegionPixels, window.w, window.h);
     const color = computeMeanDeltaE2000(
@@ -155,20 +176,17 @@ export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
       bbox: { x: window.x, y: window.y, w: window.w, h: window.h },
       structure,
       color,
-      // P1 は shape/layout 未実装のため 0 固定で返す。
-      shape: 0,
-      layout: 0,
+      // 輪郭の食い違い。全画面の並びと範囲を渡す決まりなので、切り出した画素ではなく
+      // 元の並びを渡す。
+      shape: computeHausdorff(alignedDesignPixels, screenshotPixels, width, height, {
+        x: window.x,
+        y: window.y,
+        w: window.w,
+        h: window.h,
+      }),
+      layout: UNIMPLEMENTED_LAYOUT_SCORE,
     };
   });
-
-  const alignment = {
-    // P1 は位置合わせ未実装なので identity transform を返す。
-    translation: { x: 0, y: 0 },
-    scale: { x: 1, y: 1 },
-    rotation: 0,
-    confidence: 1,
-    residual: 0,
-  };
 
   const issues = buildIssues(regionScores);
   const verdict = computeVerdict({ alignment, regionScores, issues });

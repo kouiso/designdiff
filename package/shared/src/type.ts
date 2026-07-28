@@ -213,6 +213,14 @@ export interface RegionScore {
   };
 }
 
+/**
+ * layout スコアは未実装。定義が決まっていないので 0 のままにする。
+ *
+ * 合否の判定はこの値を読んでいない。決めていない数字を入れると、読む側は
+ * 測った結果だと受け取る。名前を付けて「意図した 0」だと分かる形にする。
+ */
+export const UNIMPLEMENTED_LAYOUT_SCORE = 0;
+
 export interface Alignment {
   translation: { x: number; y: number };
   scale: { x: number; y: number };
