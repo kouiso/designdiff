@@ -655,6 +655,367 @@ describe("比較対象そのものの行が他の判断へ漏れないこと", (
 });
 
 // テストデータと期待値で同じ値を参照する。分散させると検証対象が黙ってずれる。
+const ISSUE_56_FIXTURE_NODE_IDS = { root: "issue-56-root", child: "issue-56-child" };
+
+describe("diffRegions による局所採点 (Issue #56)", () => {
+  const FRAME_SIZE = 300;
+  const LOCAL_DIFF_SIZE = 40;
+  const LOCAL_DIFF_X = 130;
+  const LOCAL_DIFF_Y = 130;
+
+  it("figmaRootNode が無い比較で、小面積の局所差分が whole-frame 平均に薄まらないこと", async () => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    const designPixels = await createSolidRgba(FRAME_SIZE, FRAME_SIZE, WHITE_RGB);
+    const screenshotPixels = Uint8ClampedArray.from(designPixels);
+    for (let y = LOCAL_DIFF_Y; y < LOCAL_DIFF_Y + LOCAL_DIFF_SIZE; y++) {
+      for (let x = LOCAL_DIFF_X; x < LOCAL_DIFF_X + LOCAL_DIFF_SIZE; x++) {
+        const index = (y * FRAME_SIZE + x) * 4;
+        screenshotPixels[index] = 20;
+        screenshotPixels[index + 1] = 20;
+        screenshotPixels[index + 2] = 20;
+      }
+    }
+
+    const withoutClusterHint = buildDiffReport({
+      designPixels,
+      screenshotPixels,
+      width: FRAME_SIZE,
+      height: FRAME_SIZE,
+    });
+
+    // クラスタ情報を渡さない従来経路: whole-frame 1行の面積重み平均に薄まり、
+    // 40x40 (面積比 1.78%) は 0.95 の pass 閾値を超えてしまう。これが #56 の症状。
+    expect(withoutClusterHint.weightedAggregate?.weightedStructure ?? 0).toBeGreaterThanOrEqual(
+      PASS_STRUCTURE_THRESHOLD,
+    );
+
+    const withClusterHint = buildDiffReport({
+      designPixels,
+      screenshotPixels,
+      width: FRAME_SIZE,
+      height: FRAME_SIZE,
+      diffRegions: [{ x: LOCAL_DIFF_X, y: LOCAL_DIFF_Y, w: LOCAL_DIFF_SIZE, h: LOCAL_DIFF_SIZE }],
+    });
+
+    // クラスタを採点単位に使うと、局所差分がそのまま structure へ反映され pass 閾値を割る。
+    // aggregateVerdict (FigDiff 自身の合否) ではなく、weightedStructure・
+    // regionScores・issues という独立した個々の信号で検証する。
+    expect(withClusterHint.weightedAggregate?.weightedStructure ?? 1).toBeLessThan(
+      PASS_STRUCTURE_THRESHOLD,
+    );
+    const expectedClusterRegionId = `diff-cluster-${LOCAL_DIFF_X}-${LOCAL_DIFF_Y}-${LOCAL_DIFF_SIZE}-${LOCAL_DIFF_SIZE}`;
+    const clusterRegion = withClusterHint.regionScores.find(
+      (score) => score.regionId === expectedClusterRegionId,
+    );
+    expect(clusterRegion).toBeDefined();
+    expect(clusterRegion?.bbox).toEqual({
+      x: LOCAL_DIFF_X,
+      y: LOCAL_DIFF_Y,
+      w: LOCAL_DIFF_SIZE,
+      h: LOCAL_DIFF_SIZE,
+    });
+    expect(clusterRegion?.color).toBeGreaterThanOrEqual(2);
+    expect(
+      withClusterHint.issues.some(
+        (issue) => issue.regionId === expectedClusterRegionId && issue.kind === "color",
+      ),
+    ).toBe(true);
+  });
+
+  it("figmaRootNode がある比較では diffRegions を渡しても子ノード優先の挙動を変えないこと", async () => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    const designPixels = await createSolidRgba(FRAME_SIZE, FRAME_SIZE, WHITE_RGB);
+    const screenshotPixels = Uint8ClampedArray.from(designPixels);
+
+    const report = buildDiffReport({
+      designPixels,
+      screenshotPixels,
+      width: FRAME_SIZE,
+      height: FRAME_SIZE,
+      figmaRootNode: {
+        id: ISSUE_56_FIXTURE_NODE_IDS.root,
+        name: ISSUE_56_FIXTURE_NODE_IDS.root,
+        type: "FRAME",
+        absoluteBoundingBox: { x: 0, y: 0, width: FRAME_SIZE, height: FRAME_SIZE },
+        absoluteRenderBounds: null,
+        fills: [],
+        strokes: [],
+        effects: [],
+        children: [
+          {
+            id: ISSUE_56_FIXTURE_NODE_IDS.child,
+            name: ISSUE_56_FIXTURE_NODE_IDS.child,
+            type: "FRAME",
+            absoluteBoundingBox: { x: 0, y: 0, width: FRAME_SIZE, height: 40 },
+            absoluteRenderBounds: null,
+            fills: [],
+            strokes: [],
+            effects: [],
+            children: [],
+          },
+        ],
+      },
+      diffRegions: [{ x: LOCAL_DIFF_X, y: LOCAL_DIFF_Y, w: LOCAL_DIFF_SIZE, h: LOCAL_DIFF_SIZE }],
+    });
+
+    expect(report.regionScores.some((score) => score.regionId === "diff-cluster-0")).toBe(false);
+    expect(
+      report.regionScores.some((score) => score.regionId === ISSUE_56_FIXTURE_NODE_IDS.child),
+    ).toBe(true);
+  });
+
+  it("64px^2 未満の小さいクラスタも捨てずに採点すること", async () => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    const designPixels = await createSolidRgba(FRAME_SIZE, FRAME_SIZE, WHITE_RGB);
+    const screenshotPixels = Uint8ClampedArray.from(designPixels);
+    // 1x40 の細い欠落 (面積 40 < MIN_REGION_PIXEL_AREA=64)。
+    // pixelmatch のクラスタリングは自前の連結画素数閾値で既にノイズ除去済みなので、
+    // ここで子ノード用の面積フィルタを再適用して捨てるべきではない。
+    const thinDiffY = 150;
+    for (let x = 100; x < 140; x++) {
+      const index = (thinDiffY * FRAME_SIZE + x) * 4;
+      screenshotPixels[index] = 20;
+      screenshotPixels[index + 1] = 20;
+      screenshotPixels[index + 2] = 20;
+    }
+
+    const report = buildDiffReport({
+      designPixels,
+      screenshotPixels,
+      width: FRAME_SIZE,
+      height: FRAME_SIZE,
+      diffRegions: [{ x: 100, y: thinDiffY, w: 40, h: 1 }],
+    });
+
+    expect(
+      report.regionScores.some((score) => score.regionId === `diff-cluster-100-${thinDiffY}-40-1`),
+    ).toBe(true);
+  });
+
+  it("上限を超えるクラスタ数のとき、均等間引きではなく diffPixelCount が大きい順に残すこと", async () => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    const designPixels = await createSolidRgba(FRAME_SIZE, FRAME_SIZE, WHITE_RGB);
+    const screenshotPixels = Uint8ClampedArray.from(designPixels);
+    for (let y = LOCAL_DIFF_Y; y < LOCAL_DIFF_Y + LOCAL_DIFF_SIZE; y++) {
+      for (let x = LOCAL_DIFF_X; x < LOCAL_DIFF_X + LOCAL_DIFF_SIZE; x++) {
+        const index = (y * FRAME_SIZE + x) * 4;
+        screenshotPixels[index] = 20;
+        screenshotPixels[index + 1] = 20;
+        screenshotPixels[index + 2] = 20;
+      }
+    }
+
+    // 25件目 (MAX_REGION_SCORE_COUNT=24 超過) の末尾に、本命の大きな差分を置く。
+    // 均等間引きなら先頭寄りのインデックスが優先され、この本命が漏れる。
+    const noiseRegions = Array.from({ length: 24 }, (_, i) => ({
+      x: i * 4,
+      y: 0,
+      w: 8,
+      h: 8,
+      diffPixelCount: 1,
+    }));
+    const realDefect = {
+      x: LOCAL_DIFF_X,
+      y: LOCAL_DIFF_Y,
+      w: LOCAL_DIFF_SIZE,
+      h: LOCAL_DIFF_SIZE,
+      diffPixelCount: 1600,
+    };
+
+    const report = buildDiffReport({
+      designPixels,
+      screenshotPixels,
+      width: FRAME_SIZE,
+      height: FRAME_SIZE,
+      diffRegions: [...noiseRegions, realDefect],
+    });
+
+    const scored = report.regionScores.find(
+      (score) => score.bbox.x === LOCAL_DIFF_X && score.bbox.y === LOCAL_DIFF_Y,
+    );
+    expect(scored).toBeDefined();
+    expect(scored?.structure).toBeLessThan(1);
+  });
+
+  it("regionId が重大度の順位ではなく座標由来で、比較のたびに安定すること", async () => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    const designPixels = await createSolidRgba(FRAME_SIZE, FRAME_SIZE, WHITE_RGB);
+    const screenshotPixels = Uint8ClampedArray.from(designPixels);
+    const regionA = { x: 20, y: 20, w: 10, h: 10 };
+    const regionB = { x: 200, y: 200, w: 10, h: 10 };
+
+    // 1回目: A の方が重大度 (diffPixelCount) が高い。
+    const firstPass = buildDiffReport({
+      designPixels,
+      screenshotPixels,
+      width: FRAME_SIZE,
+      height: FRAME_SIZE,
+      diffRegions: [
+        { ...regionA, diffPixelCount: 100 },
+        { ...regionB, diffPixelCount: 10 },
+      ],
+    });
+
+    // 2回目: 順位が入れ替わり B の方が重大度が高い。座標由来の ID なら
+    // 同じ regionId が同じ物理領域を指し続けるはず。self-critique
+    // (package/shared/src/self-critique.ts) は regionId で前回スコアと
+    // 突き合わせるため、順位由来の ID だと入れ替わりで誤った回帰検出になる。
+    const secondPass = buildDiffReport({
+      designPixels,
+      screenshotPixels,
+      width: FRAME_SIZE,
+      height: FRAME_SIZE,
+      diffRegions: [
+        { ...regionA, diffPixelCount: 10 },
+        { ...regionB, diffPixelCount: 100 },
+      ],
+    });
+
+    const idsForRegionA = `diff-cluster-${regionA.x}-${regionA.y}-${regionA.w}-${regionA.h}`;
+    const idsForRegionB = `diff-cluster-${regionB.x}-${regionB.y}-${regionB.w}-${regionB.h}`;
+    expect(firstPass.regionScores.some((score) => score.regionId === idsForRegionA)).toBe(true);
+    expect(firstPass.regionScores.some((score) => score.regionId === idsForRegionB)).toBe(true);
+    expect(secondPass.regionScores.some((score) => score.regionId === idsForRegionA)).toBe(true);
+    expect(secondPass.regionScores.some((score) => score.regionId === idsForRegionB)).toBe(true);
+  });
+
+  function buildAlignedShiftFixtures(size: number, shift: number) {
+    const checkerBlock = 20;
+    // 位置ずれ検出はSSDのオフセット探索なので、単色画像では常にオフセット0が
+    // 最善に見えて検出が働かない。市松模様にして実際に検出できるようにする。
+    const designPixels = new Uint8ClampedArray(size * size * 4);
+    for (let y = 0; y < size; y++) {
+      for (let x = 0; x < size; x++) {
+        const index = (y * size + x) * 4;
+        const dark = (Math.floor(x / checkerBlock) + Math.floor(y / checkerBlock)) % 2 === 0;
+        const value = dark ? 20 : 230;
+        designPixels[index] = value;
+        designPixels[index + 1] = value;
+        designPixels[index + 2] = value;
+        designPixels[index + 3] = 255;
+      }
+    }
+    // スクリーンショット側を左上へ shift px シフトさせ、割に合う位置ずれ補正が
+    // 掛かる状況を作る (境界にはみ出し分が残る)。
+    const screenshotPixels = new Uint8ClampedArray(size * size * 4);
+    for (let y = 0; y < size; y++) {
+      for (let x = 0; x < size; x++) {
+        const srcX = x + shift;
+        const srcY = y + shift;
+        const dstIndex = (y * size + x) * 4;
+        if (srcX < size && srcY < size) {
+          const srcIndex = (srcY * size + srcX) * 4;
+          screenshotPixels[dstIndex] = designPixels[srcIndex];
+          screenshotPixels[dstIndex + 1] = designPixels[srcIndex + 1];
+          screenshotPixels[dstIndex + 2] = designPixels[srcIndex + 2];
+          screenshotPixels[dstIndex + 3] = 255;
+        }
+      }
+    }
+    return { designPixels, screenshotPixels };
+  }
+
+  it("位置ずれ補正が適用された回、境界帯に完全に収まるクラスタは除外すること", async () => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    const size = 200;
+    const shift = 6;
+    const { designPixels, screenshotPixels } = buildAlignedShiftFixtures(size, shift);
+    // buildAlignedShiftFixtures は screenshot(x,y)=design(x+shift,y+shift) を作るため、
+    // resolveAlignment は dx=dy=-shift を検出する。shiftPixels の srcX=x-dx=x+shift は
+    // 右端 (x>=width-shift) と下端 (y>=height-shift) だけを空で埋める。
+    // このクラスタは丸ごとその帯の内側 (x=195..200) にあり、クリップすると
+    // 幅が0以下になるので除外される。
+    const report = buildDiffReport({
+      designPixels,
+      screenshotPixels,
+      width: size,
+      height: size,
+      diffRegions: [{ x: 195, y: 195, w: 5, h: 5 }],
+    });
+
+    expect(
+      report.regionScores.some((score) => score.regionId.startsWith("diff-cluster-195-195")),
+    ).toBe(false);
+  });
+
+  it("位置ずれ補正が適用された回、境界帯にまたがるクラスタは切り捨てて有効な内側だけ採点すること", async () => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    const size = 200;
+    const shift = 6;
+    const { designPixels, screenshotPixels } = buildAlignedShiftFixtures(size, shift);
+    // x:180..200 (幅20) は右端の境界帯 (194..200, 幅6) にまたがる。丸ごと除外
+    // すると内側の有効な14px分まで捨ててしまうため、194 でクリップして残す。
+    const report = buildDiffReport({
+      designPixels,
+      screenshotPixels,
+      width: size,
+      height: size,
+      diffRegions: [{ x: 180, y: 180, w: 20, h: 20 }],
+    });
+
+    const clipped = report.regionScores.find((score) =>
+      score.regionId.startsWith("diff-cluster-180-180"),
+    );
+    expect(clipped).toBeDefined();
+    expect(clipped?.bbox).toEqual({ x: 180, y: 180, w: 14, h: 14 });
+  });
+
+  it("位置ずれ補正がかかっても、ずれと無関係な辺のクラスタは除外しないこと", async () => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    const size = 200;
+    const shift = 6;
+    const { designPixels, screenshotPixels } = buildAlignedShiftFixtures(size, shift);
+    // dx=dy=-shift のとき、はみ出しが生じるのは右端・下端だけ。左上 (0,0) の
+    // クラスタは影響を受けないので除外されるべきではない (対称マージンだと
+    // 誤って除外してしまっていた)。
+    const report = buildDiffReport({
+      designPixels,
+      screenshotPixels,
+      width: size,
+      height: size,
+      diffRegions: [{ x: 0, y: 0, w: 20, h: 20 }],
+    });
+
+    expect(report.regionScores.some((score) => score.regionId === "diff-cluster-0-0-20-20")).toBe(
+      true,
+    );
+  });
+
+  it("位置ずれ補正が適用された回でも、境界から離れたクラスタは局所採点を使うこと", async () => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    const size = 200;
+    const shift = 6;
+    const { designPixels, screenshotPixels } = buildAlignedShiftFixtures(size, shift);
+    // 中央付近に本物の局所差分 (市松模様と無関係な単色パッチ) を追加する。
+    const localDiffX = 100;
+    const localDiffY = 100;
+    for (let y = localDiffY; y < localDiffY + 30; y++) {
+      for (let x = localDiffX; x < localDiffX + 30; x++) {
+        const index = (y * size + x) * 4;
+        screenshotPixels[index] = 128;
+        screenshotPixels[index + 1] = 128;
+        screenshotPixels[index + 2] = 128;
+      }
+    }
+
+    const report = buildDiffReport({
+      designPixels,
+      screenshotPixels,
+      width: size,
+      height: size,
+      // 境界から十分離れているので、シフト量(6px)の余白フィルタに掛からない。
+      diffRegions: [{ x: localDiffX, y: localDiffY, w: 30, h: 30 }],
+    });
+
+    expect(
+      report.regionScores.some(
+        (score) => score.regionId === `diff-cluster-${localDiffX}-${localDiffY}-30-30`,
+      ),
+    ).toBe(true);
+  });
+});
+
+// テストデータと期待値で同じ値を参照する。分散させると検証対象が黙ってずれる。
 const VISIBILITY_FIXTURE_NODE_IDS = { visible: "layer-visible", hidden: "layer-hidden" };
 const VARIANT_FIXTURE_NODE_IDS = { a: "variant-a", b: "variant-b", c: "variant-c" };
 

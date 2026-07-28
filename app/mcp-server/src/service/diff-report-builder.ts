@@ -50,6 +50,11 @@ interface BuildDiffReportOptions {
   // contain-resize の余白矩形 (content rect)。与えられると whole-frame の
   // SSIM / 色差を余白 (透明帯) を除いた content rect 内だけで計算する。
   paddingMask?: PaddingMaskRect;
+  // pixelmatch の差分クラスタ。Figma ノード木が無い比較 (PNG手渡し) では
+  // 局所化の唯一の手がかりがこれになる。figmaRootNode 由来の子行が無い
+  // ときだけ採点単位として使う (Issue #56)。diffPixelCount は上限超過時に
+  // 疑わしい順で残すための重大度シグナル。
+  diffRegions?: (DiffBoundingBox & { diffPixelCount?: number })[];
 }
 
 const MAX_REGION_SCORE_COUNT = 24;
@@ -379,6 +384,52 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
     }
   }
 
+  // Figma ノード木が無い比較では childRegions が作れず、面積重み付き平均が
+  // whole-frame 1行だけになる。局所差分が面積比で薄まって合否を通り抜ける
+  // (Issue #56)。pixelmatch の差分クラスタは局所化を既に正しく行えているため、
+  // これを採点単位に転用する。figmaRootNode 側の挙動 (childRegions がある場合)
+  // は変えない。
+  const diffClusterRegions: RegionScore[] = [];
+  if (childRegions.length === 0 && options.diffRegions && options.diffRegions.length > 0) {
+    // pixelmatch のクラスタリング (clusterDiffPixels 系) が既に自前の連結画素数
+    // 閾値でノイズを除いている。子ノード用の MIN_REGION_PIXEL_AREA (64px^2) を
+    // ここでも適用すると、1x40 の細い欠落のような正当な小面積差分まで捨てて
+    // whole-frame 平均へフォールバックし、#56 と同じ薄まりが再発する。
+    const scoreableClusters = options.diffRegions.filter((bbox) => bbox.w > 0 && bbox.h > 0);
+    // 上限超過時は先頭から均等間引きせず、diffPixelCount が大きい (=疑わしい)
+    // 順に残す。均等間引きだと本命のクラスタがたまたま非採用インデックスに
+    // 落ちて丸ごと見逃され、他の採用クラスタのせいで whole-frame fallback も
+    // 効かなくなり、誤 PASS が再発する。
+    const selectedClusters = [...scoreableClusters]
+      .sort((a, b) => (b.diffPixelCount ?? 0) - (a.diffPixelCount ?? 0))
+      .slice(0, MAX_REGION_SCORE_COUNT);
+
+    for (const bbox of selectedClusters) {
+      // ソート後の index を ID にすると、2 回の比較で重大度の順位が入れ替わった
+      // だけで同じ物理領域の regionId が変わる。self-critique (package/shared/
+      // src/self-critique.ts) は regionId で前回スコアと結びつけて改善/悪化を
+      // 判定するため、順位由来の ID は誤った回帰検出を招く。座標由来の安定した
+      // ID にする。x,y だけだと、同じ左上原点で大きさだけ違う別クラスタ
+      // (入れ子/重なる形状) が衝突するため w,h も含める。
+      diffClusterRegions.push({
+        regionId: `diff-cluster-${bbox.x}-${bbox.y}-${bbox.w}-${bbox.h}`,
+        bbox,
+        structure: computeSsimForRegion(designPixels, screenshotPixels, width, height, bbox),
+        color: buildColorDifference(designPixels, screenshotPixels, width, height, bbox),
+        flatColorMismatch: buildFlatColorMismatch(
+          designPixels,
+          screenshotPixels,
+          width,
+          height,
+          bbox,
+        ),
+        shape: computeHausdorff(designPixels, screenshotPixels, width, height, bbox),
+        layout: UNIMPLEMENTED_LAYOUT_SCORE,
+        textureScore: getTextureScore(bbox),
+      });
+    }
+  }
+
   const wholeFrameBbox = toWholeFrameRegion(width, height);
   // letterbox 余白を含めると SSIM / 色差が不当に悪化するため、content rect 内で評価する。
   const contentBbox = toContentRegion(width, height, paddingMask);
@@ -419,6 +470,10 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
 
   if (childRegions.length > 0) {
     return [...childRegions, buildRootRegion()];
+  }
+
+  if (diffClusterRegions.length > 0) {
+    return [...diffClusterRegions, buildRootRegion()];
   }
 
   return [buildRootRegion()];
@@ -516,7 +571,45 @@ export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
   } = resolveAlignment(designPixels, screenshotPixels, width, height);
   const { x: dx, y: dy } = alignment.translation;
 
-  const alignedOptions = { ...options, designPixels: alignedDesignPixels };
+  // diffRegions は補正前 (resolveAlignment 前) の pixelmatch 座標系。補正が
+  // 適用されると、alignedDesignPixels は境界からのはみ出し分を透明/RGB0で
+  // 埋めるため (shiftPixels)、境界付近の元クラスタだけがその塗り分を拾って
+  // 「許容していたはずの小さなずれ」を誤って critical 差分に化ける。
+  // 補正がかかった回に diffRegions を丸ごと無効化すると、シフトと局所差分が
+  // 同時に起きたケースで #56 の誤 PASS がそのまま復活するため、はみ出しの
+  // 影響を受ける境界帯のクラスタだけを除外し、それ以外はそのまま採点する。
+  // shiftPixels (srcX = x - dx) は dx>0 なら左端、dx<0 なら右端だけを空にする
+  // (y/dy も同様)。4辺に同じマージンをかけると、ずれが片方向にしか無いのに
+  // 無関係な反対側の辺まで除外して局所差分を見逃す。軸・符号ごとに独立させる。
+  const leftMargin = alignmentApplied && dx > 0 ? dx : 0;
+  const rightMargin = alignmentApplied && dx < 0 ? -dx : 0;
+  const topMargin = alignmentApplied && dy > 0 ? dy : 0;
+  const bottomMargin = alignmentApplied && dy < 0 ? -dy : 0;
+  // 境界帯に「触れた」だけで丸ごと除外すると、有効な内側の面積が大半を占める
+  // クラスタまで捨ててしまい、単独クラスタなら fallback で whole-frame 平均へ
+  // 薄まり、他のクラスタが残る場合は root 行ごと除外される。どちらの経路も
+  // 局所差分の見逃しにつながるため、除外ではなく有効矩形へクリップする。
+  const clipToAlignedCanvas = (
+    bbox: DiffBoundingBox & { diffPixelCount?: number },
+  ): (DiffBoundingBox & { diffPixelCount?: number }) | null => {
+    const x = Math.max(bbox.x, leftMargin);
+    const y = Math.max(bbox.y, topMargin);
+    const right = Math.min(bbox.x + bbox.w, width - rightMargin);
+    const bottom = Math.min(bbox.y + bbox.h, height - bottomMargin);
+    const w = right - x;
+    const h = bottom - y;
+    if (w <= 0 || h <= 0) {
+      return null;
+    }
+    return { ...bbox, x, y, w, h };
+  };
+  const alignedOptions = {
+    ...options,
+    designPixels: alignedDesignPixels,
+    diffRegions: options.diffRegions
+      ?.map((bbox) => clipToAlignedCanvas(bbox))
+      .filter((bbox): bbox is DiffBoundingBox & { diffPixelCount?: number } => bbox !== null),
+  };
   const regionScores = buildRegionScores(alignedOptions);
 
   // 比較対象そのものの行は子と範囲が重なる。合否を決める不具合をここから作ると、
