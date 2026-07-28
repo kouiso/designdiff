@@ -75,6 +75,8 @@ const FixtureFigmaNodeSchema: z.ZodType<FigmaNode> = z.lazy(() =>
     id: z.string(),
     name: z.string(),
     type: z.string(),
+    // 落とすと、非表示の子を除く処理がローカル検体の経路だけ効かなくなる。
+    visible: z.boolean().optional(),
     children: z.array(FixtureFigmaNodeSchema).default([]),
     absoluteBoundingBox: z
       .object({
@@ -175,6 +177,11 @@ export interface CompareDesignRunArgs {
   frame_name?: string;
   threshold?: number;
   profile?: ComparisonProfile;
+  /**
+   * 画素の比較と、構造・色の評価を同じ下地の上で行うために要る。
+   * 片方だけ白のままだと、一致率と構造判定が別の絵を見て食い違う。
+   */
+  design_background?: string;
   project_id?: string;
   mask_system_ui?: boolean;
   /**
@@ -509,6 +516,11 @@ export function buildTargetNodeIds(
 
   for (const score of rankedRegionScores) {
     if (score.figmaNodeId) candidates.push(score.figmaNodeId);
+    // 重なりでまとめた下側の層も直し先の候補に入れる。半透明や部分的な塗りだと
+    // 手前の層だけを直しても画面が変わらないことがある。
+    for (const overlappingNodeId of score.overlappingNodeIds ?? []) {
+      candidates.push(overlappingNodeId);
+    }
   }
 
   for (const region of diffRegions) {
@@ -1356,6 +1368,7 @@ export async function runCompareDesign(
       cropRegion,
       figmaNodeId: resolvedNodeId,
       ignoreRegions,
+      designBackground: args.design_background,
     },
     figmaRootNode,
     `cmp-${randomUUID()}`,
@@ -1459,7 +1472,11 @@ export async function runCompareDesign(
     comparison.diffReport,
     comparison.diffPixelCount,
   );
-  const sourceKey = buildComparisonSourceKey(parsedDesignSource, resolvedNodeId);
+  const sourceKey = buildComparisonSourceKey(
+    parsedDesignSource,
+    resolvedNodeId,
+    args.design_background,
+  );
   const priorComparisons = getRecentComparisons(sourceKey);
   const captureWidth = comparison.normalization?.screenshotWidth;
   const captureHeight = comparison.normalization?.screenshotHeight;

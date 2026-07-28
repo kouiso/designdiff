@@ -188,7 +188,15 @@ interface FlattenedNode {
   absoluteBoundingBox?: BoundingBox | null;
 }
 
+/**
+ * 非表示のノードは画面に出ない。名前を返すと、直しても画面が変わらない層を
+ * 直せという案内になる。枝ごと落とすのは、非表示の親の下は全部出ないため。
+ */
 function flattenNodeTree(node: FigmaNode, depth: number): FlattenedNode[] {
+  if (node.visible === false) {
+    return [];
+  }
+
   const result: FlattenedNode[] = [
     {
       id: node.id,

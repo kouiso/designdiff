@@ -44,12 +44,16 @@ function hasDiffReport(entry: ComparisonHistoryEntry): entry is ComparisonHistor
 export function buildComparisonSourceKey(
   parsedDesign: ParsedDesignInput,
   resolvedNodeId?: string,
+  // 下地の色を変えると、同じ画面でも構造と色の数値が別物になる。
+  // 履歴を分けないと、下地を変えただけの回が「実装が悪化した」として並ぶ。
+  designBackground?: string,
 ): string {
+  const backgroundSuffix = designBackground ? `@${designBackground.toLowerCase()}` : "";
   if (parsedDesign.type === "figma_url") {
-    return `figma:${parsedDesign.fileKey}:${resolvedNodeId ?? parsedDesign.nodeId ?? "root"}`;
+    return `figma:${parsedDesign.fileKey}:${resolvedNodeId ?? parsedDesign.nodeId ?? "root"}${backgroundSuffix}`;
   }
 
-  return `local:${path.resolve(parsedDesign.filePath)}`;
+  return `local:${path.resolve(parsedDesign.filePath)}${backgroundSuffix}`;
 }
 
 export async function recordComparison(entry: ComparisonHistoryEntry): Promise<void> {

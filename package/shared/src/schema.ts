@@ -281,6 +281,8 @@ export const RegionScoreSchema = z.object({
   // 二重に数えるため、重み付けと見出しの集計からは外す。局所比較で
   // 「対象ノードが見つからない」を出さないために、行としては必ず持たせる。
   scope: z.enum(["section", "root"]).optional(),
+  // まとめた際に下へ隠れた兄弟のID。直し先を辿れなくしないために残す。
+  overlappingNodeIds: z.array(z.string()).optional(),
   structure: z.number().min(0).max(1),
   color: z.number().nonnegative(),
   shape: z.number().nonnegative(),

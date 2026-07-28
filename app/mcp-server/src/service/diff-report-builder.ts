@@ -461,7 +461,10 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
   };
 
   if (figmaRootNode) {
-    const allSectionAnchors = figmaRootNode.children
+    const scoreableChildren = figmaRootNode.children
+      // 非表示のバリアントは画面に出ないので、評価対象にすると
+      // 実装が正しくても差分として残り続ける。
+      .filter((child: FigmaNode) => child.visible !== false)
       .map((child: FigmaNode) => {
         const bbox = toScreenshotBbox(child, figmaRootNode, width, height, fullFrame, cropRegion);
         if (!bbox || bbox.w === 0 || bbox.h === 0) {
@@ -471,14 +474,17 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
         return { child, bbox };
       })
       .filter((section): section is { child: FigmaNode; bbox: DiffBoundingBox } => section !== null)
-      .filter((section) => section.bbox.w * section.bbox.h >= MIN_REGION_PIXEL_AREA)
-      .sort((a, b) => {
-        if (a.bbox.y !== b.bbox.y) {
-          return a.bbox.y - b.bbox.y;
-        }
+      .filter((section) => section.bbox.w * section.bbox.h >= MIN_REGION_PIXEL_AREA);
 
-        return b.bbox.w * b.bbox.h - a.bbox.w * a.bbox.h;
-      });
+    // 同じ位置・同じ大きさの子が複数あると、同じ範囲の領域が重複して並ぶ。
+    // 受け取る側には、直す場所がその数だけあるように見える。1件へまとめる。
+    const allSectionAnchors = mergeEqualBoxSiblings(scoreableChildren).sort((a, b) => {
+      if (a.bbox.y !== b.bbox.y) {
+        return a.bbox.y - b.bbox.y;
+      }
+
+      return b.bbox.w * b.bbox.h - a.bbox.w * a.bbox.h;
+    });
 
     const sectionAnchors = selectAnchorsForScoring(allSectionAnchors);
 
@@ -502,6 +508,7 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
         regionId: section.child.id,
         bbox,
         figmaNodeId: section.child.id,
+        overlappingNodeIds: section.overlappingNodeIds,
         structure: computeSsimForRegion(designPixels, screenshotPixels, width, height, bbox),
         color: buildColorDifference(designPixels, screenshotPixels, width, height, bbox),
         flatColorMismatch: buildFlatColorMismatch(
@@ -561,6 +568,52 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
   }
 
   return [buildRootRegion()];
+}
+
+interface SectionAnchor {
+  child: FigmaNode;
+  bbox: DiffBoundingBox;
+  overlappingNodeIds?: string[];
+}
+
+const boxKey = (bbox: DiffBoundingBox): string => `${bbox.x},${bbox.y},${bbox.w},${bbox.h}`;
+
+/**
+ * 同じ矩形の兄弟を1件へまとめ、隠れた側のIDを手前の1件へ集める。
+ *
+ * 一度だけ全体を走って矩形ごとの並びを作り、そこから引き当てる。走査のたびに
+ * 配列を頭から探すと子の数の2乗に比例し、層が数千ある画面で比較が目に見えて遅くなる。
+ */
+function mergeEqualBoxSiblings(
+  sections: readonly { child: FigmaNode; bbox: DiffBoundingBox }[],
+): SectionAnchor[] {
+  const membersByBox = new Map<string, { child: FigmaNode; bbox: DiffBoundingBox }[]>();
+  for (const section of sections) {
+    const key = boxKey(section.bbox);
+    const members = membersByBox.get(key);
+    if (members) {
+      members.push(section);
+    } else {
+      membersByBox.set(key, [section]);
+    }
+  }
+
+  const merged: SectionAnchor[] = [];
+  for (const members of membersByBox.values()) {
+    // Figma は後に並ぶ子ほど手前に描くので、いちばん手前は最後の1枚。
+    // ただし半透明や部分的な塗りだと下の層も見えているので、IDは残す。
+    const front = members[members.length - 1];
+    merged.push(
+      members.length === 1
+        ? front
+        : {
+            ...front,
+            overlappingNodeIds: members.slice(0, -1).map((member) => member.child.id),
+          },
+    );
+  }
+
+  return merged;
 }
 
 function selectAnchorsForScoring<T>(anchors: readonly T[]): T[] {
