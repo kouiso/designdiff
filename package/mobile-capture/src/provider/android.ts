@@ -1,9 +1,34 @@
 import { execFile } from "node:child_process";
 import * as fs from "node:fs/promises";
 
-import type { DeviceCaptureProvider } from "../types.js";
+import type { DeviceCaptureProvider, DeviceScrollOptions } from "../types.js";
 
 export class AndroidCaptureProvider implements DeviceCaptureProvider {
+  async scroll(options: DeviceScrollOptions): Promise<void> {
+    await new Promise<void>((resolve, reject) => {
+      execFile(
+        "adb",
+        [
+          "shell",
+          "input",
+          "swipe",
+          String(options.x),
+          String(options.fromY),
+          String(options.x),
+          String(options.toY),
+          String(options.durationMs),
+        ],
+        (error) => {
+          if (error) {
+            reject(error);
+            return;
+          }
+          resolve();
+        },
+      );
+    });
+  }
+
   async capture(outputPath: string): Promise<void> {
     const screenshot = await new Promise<Buffer>((resolve, reject) => {
       execFile(
