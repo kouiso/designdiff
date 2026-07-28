@@ -54,7 +54,7 @@ export function assertNoUnknownToolArguments(
   const rawToolCall = rawToolCalls.get(extra.requestId);
   rawToolCalls.delete(extra.requestId);
 
-  if (!rawToolCall || rawToolCall.name !== toolName) {
+  if (rawToolCall?.name !== toolName) {
     return;
   }
 

@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import type { CompareDesignResult } from "@figdiff/shared";
 
 import { createMcpServer } from "../server.js";
+
 import { buildSummaryText } from "./compare-design.js";
 
 function makeResult(overrides: Partial<CompareDesignResult> = {}): CompareDesignResult {
