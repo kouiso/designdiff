@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
 
+// しきい値ちょうど／超えの境界テストは、この定数から値を導出する。
+// リテラル値を直接書くと、oracle-threshold.mjs 側でしきい値を動かした時に
+// テストの境界がズレたまま気づかず残る（収束判定とCIの検査が別々の「正解」を
+// 黙って持つ、という既知の危険）。
+import { LIVE_RESIDUAL_FAIL_THRESHOLD } from "../../../../script/oracle-threshold.mjs";
 // 収束の判定は FigDiff の外側にある。ここから FigDiff のコードを読み込むと、
 // 外側で測る意味が無くなるので、判定の関数だけを直接呼ぶ。
 import { evaluateOracleRun } from "../../../../verification/script/p5-oracle-gate.mjs";
@@ -22,13 +27,17 @@ describe("evaluateOracleRun", () => {
   });
 
   it("しきい値ちょうどは合格にすること", () => {
-    const result = evaluateOracleRun({ turns: [turn(0.08), turn(0.005)] });
+    const result = evaluateOracleRun({
+      turns: [turn(0.08), turn(LIVE_RESIDUAL_FAIL_THRESHOLD)],
+    });
 
     expect(result.pass).toBe(true);
   });
 
   it("しきい値を超えたら不合格にすること", () => {
-    const result = evaluateOracleRun({ turns: [turn(0.08), turn(0.0051)] });
+    const result = evaluateOracleRun({
+      turns: [turn(0.08), turn(LIVE_RESIDUAL_FAIL_THRESHOLD + 0.0001)],
+    });
 
     expect(result.pass).toBe(false);
     expect(result.reason).toContain("しきい値");
