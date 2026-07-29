@@ -51,6 +51,12 @@ ext-sideload-test.mjs
 .tmp-oracle/
 # compare-design-runner-system-ui.test.ts が cwd に作るフィクスチャ置き場
 **/tmp-system-ui-mask-test/
+# verification/script/live-noise-calibration.mjs が書き出す生成物。
+# ソースは fixture.html / fixture-defect.html の2枚のみで、他は実行のたびに
+# 再生成できる。ハッシュは verification/receipt/live-noise-calibration-2026-07-28.md
+# と script/oracle-threshold.mjs のコメントに記録済み。
+verification/fixture/live-noise-calibration/*.png
+verification/fixture/live-noise-calibration/calibration-report.json
 
 # Debug
 npm-debug.log*
