@@ -214,11 +214,11 @@ export function computeCorrelationMetrics(rows) {
     pearson: {
       structure: calculatePearsonCorrelation(structureScores, humanSeverities),
       color: calculatePearsonCorrelation(colorScores, humanSeverities),
-      // weightedColor is "bigger = worse" while humanSeverity is "bigger = better",
-      // so the raw Pearson r is expected to be negative when the signal is working
-      // correctly. colorAligned negates it so both fields in this report use the
-      // same "higher r = better agreement with human judgment" convention, and the
-      // design doc's "0.95 or higher" bar applies to this aligned value, not the raw one.
+      // weightedColorは値が大きいほど悪い、humanSeverityは値が大きいほど良いという
+      // 逆向きの物差しなので、生のPearson rは信号が正しく効いていれば負になる。
+      // colorAlignedは符号を揃えた診断用の値で、設計書(figdiff-v2-final-design.md)の
+      // 「verdict=passがhuman QAの判定と0.95以上相関する」という本来の受け入れ基準とは
+      // 別物。その基準はこのレポートのverdictAccuracyで別途追う。
       colorAligned: (() => {
         const raw = calculatePearsonCorrelation(colorScores, humanSeverities);
         return raw === null ? null : round(-raw, 6);
@@ -469,8 +469,11 @@ export function renderBaselineMarkdown(rows, metrics, snapshotTimestamp) {
     `- Human severity mapping: correct=1.0, borderline=0.5, broken=0.0`,
     "- Note: weightedColor is a defect magnitude (bigger = worse) while human severity is",
     "  bigger = better, so the raw color Pearson r is expected to be negative when the",
-    "  signal works correctly. The design doc's 0.95 bar applies to the severity-aligned",
-    "  value above, not the raw signed r.",
+    "  signal works correctly. colorAligned is a diagnostic value with the sign flipped for",
+    "  readability. The design doc's actual 0.95 acceptance bar",
+    "  (docs/design/figdiff-v2-final-design.md) is defined as `verdict=pass` correlating",
+    "  >=0.95 with human QA judgment, tracked separately above as Verdict accuracy",
+    "  (not the same as this Pearson r on the continuous structure/color scores).",
     "",
     "## False Classifications",
     "",

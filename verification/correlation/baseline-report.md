@@ -36,8 +36,11 @@
 - Human severity mapping: correct=1.0, borderline=0.5, broken=0.0
 - Note: weightedColor is a defect magnitude (bigger = worse) while human severity is
   bigger = better, so the raw color Pearson r is expected to be negative when the
-  signal works correctly. The design doc's 0.95 bar applies to the severity-aligned
-  value above, not the raw signed r.
+  signal works correctly. colorAligned is a diagnostic value with the sign flipped for
+  readability. The design doc's actual 0.95 acceptance bar
+  (docs/design/figdiff-v2-final-design.md) is defined as `verdict=pass` correlating
+  >=0.95 with human QA judgment, tracked separately above as Verdict accuracy
+  (not the same as this Pearson r on the continuous structure/color scores).
 
 ## False Classifications
 
