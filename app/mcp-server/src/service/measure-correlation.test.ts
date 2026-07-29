@@ -143,4 +143,51 @@ describe("measure correlation metrics", () => {
     expect(calculatePearsonCorrelation([1, 0.5, 0], [1, 0.5, 0])).toBe(1);
     expect(calculatePearsonCorrelation([0, 1, 2], [1, 0.5, 0])).toBe(-1);
   });
+
+  it("colorAligned が raw の符号を反転した値であること(weightedColorは大きいほど悪い、humanSeverityは大きいほど良いため)", () => {
+    const metrics = computeCorrelationMetrics([
+      {
+        fixtureId: "pair-a",
+        variantName: "correct",
+        expectedVerdict: "pass",
+        computedVerdict: "pass",
+        expectedIssueKinds: [],
+        computedIssueKinds: [],
+        weightedStructure: 1,
+        weightedColor: 0,
+        humanSeverity: 1,
+        matchesVerdict: true,
+        issueKindRecall: null,
+        issueKindPrecision: null,
+        matchedIssueKinds: [],
+        missedIssueKinds: [],
+        unexpectedIssueKinds: [],
+        worstSectionId: "whole-frame",
+        worstSectionScore: 1,
+      },
+      {
+        fixtureId: "pair-a",
+        variantName: "broken",
+        expectedVerdict: "fail",
+        computedVerdict: "fail",
+        expectedIssueKinds: ["color"],
+        computedIssueKinds: ["color"],
+        weightedStructure: 0.5,
+        weightedColor: 10,
+        humanSeverity: 0,
+        matchesVerdict: true,
+        issueKindRecall: 1,
+        issueKindPrecision: 1,
+        matchedIssueKinds: ["color"],
+        missedIssueKinds: [],
+        unexpectedIssueKinds: [],
+        worstSectionId: "whole-frame",
+        worstSectionScore: 0.5,
+      },
+    ]);
+
+    expect(metrics.pearson.color).toBeLessThan(0);
+    expect(metrics.pearson.colorAligned).toBe(-metrics.pearson.color);
+    expect(metrics.pearson.colorAligned).toBeGreaterThan(0);
+  });
 });
