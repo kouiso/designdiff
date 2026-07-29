@@ -24,10 +24,14 @@
     },
     "snapshotTimestamp": "2026-07-28T09:47:35-07:00",
     "baselineSignalsInEffect": {
-      "active": ["P1 issue typing and verdict logic", "P2 multi-region SSIM weighting"],
-      "inactive": ["P3 Hausdorff", "P4 texture"]
+      "active": [
+        "P1 issue typing and verdict logic",
+        "P2 multi-region SSIM weighting",
+        "P4 texture-adjusted weighting"
+      ],
+      "computedButNotWired": ["P3 Hausdorff (shape field on RegionScore)"]
     },
-    "nextMeasurementTrigger": "Re-run after P3 and P4 merge to develop"
+    "nextMeasurementTrigger": "Re-run after P3 is wired into weightedStructure/weightedColor"
   },
   "rows": [
     {

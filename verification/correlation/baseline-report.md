@@ -1,6 +1,7 @@
 # L7 Baseline Correlation Report
 
 ## Summary
+
 - Verdict accuracy: 100.0% (14/14)
 - Pairs tested: 5
 - Variants tested: 14
@@ -9,6 +10,7 @@
 - Snapshot timestamp: 2026-07-28T09:47:35-07:00
 
 ## Data Table
+
 | Fixture | Variant | Human Severity | Expected Verdict | Computed Verdict | Match | Expected Kinds | Computed Kinds | Recall | Precision | Weighted Structure | Weighted Color | Worst Section | Worst Section Score |
 | --- | --- | ---: | --- | --- | --- | --- | --- | ---: | ---: | ---: | ---: | --- | ---: |
 | pair-01-simple-static-lp | color-off | 0.0 | fail | fail | yes | color | color | 1.000 | 1.000 | 0.918716 | 18.346351 | diff-cluster-100-100-200-100 | 0.918716 |
@@ -27,6 +29,7 @@
 | pair-05-localized-diff | localized-diff | 0.0 | fail | fail | yes | color | color | 1.000 | 1.000 | 0.165611 | 88.385829 | diff-cluster-180-130-40-40 | 0.165611 |
 
 ## Correlation Analysis
+
 - Structure Pearson r: 0.500863
 - Color Pearson r (raw): -0.526033
 - Color Pearson r (severity-aligned, = -raw): 0.526033
@@ -37,11 +40,14 @@
   value above, not the raw signed r.
 
 ## False Classifications
+
 - None
 
 ## Baseline Signals In Effect
+
 - Active: P1 issue typing and verdict logic, P2 multi-region SSIM weighting, P4 texture-adjusted weighting
 - Computed but not wired into weightedStructure/weightedColor yet: P3 Hausdorff (shape field on RegionScore)
 
 ## Next Measurement Trigger
-- Re-run `pnpm node verification/script/measure-correlation.mjs` after P3 and P4 merge to `develop`.
+
+- Re-run after P3 is wired into weightedStructure/weightedColor (`pnpm node verification/script/measure-correlation.mjs`).

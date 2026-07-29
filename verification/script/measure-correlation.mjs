@@ -51,6 +51,20 @@ const FixtureExpectationSchema = z.object({
   variants: z.array(FixtureVariantSchema).min(1),
 });
 
+// Single source of truth for which scoring signals feed weightedStructure/weightedColor.
+// Both the JSON and Markdown reports read this constant so they cannot silently disagree
+// about which signals are active (see verification/receipt/p5-oracle-gate-2026-07-28.md
+// for the exact hazard this guards against: two copies of the same fact drifting apart).
+const BASELINE_SIGNALS = Object.freeze({
+  active: [
+    "P1 issue typing and verdict logic",
+    "P2 multi-region SSIM weighting",
+    "P4 texture-adjusted weighting",
+  ],
+  computedButNotWired: ["P3 Hausdorff (shape field on RegionScore)"],
+});
+const NEXT_MEASUREMENT_TRIGGER = "Re-run after P3 is wired into weightedStructure/weightedColor";
+
 const HUMAN_SEVERITY_BY_VARIANT = Object.freeze({
   correct: 1,
   "single-section-regression": 0.5,
@@ -434,6 +448,7 @@ export function renderBaselineMarkdown(rows, metrics, snapshotTimestamp) {
     "# L7 Baseline Correlation Report",
     "",
     "## Summary",
+    "",
     `- Verdict accuracy: ${formatPercent(metrics.verdictAccuracy.percentage)} (${metrics.verdictAccuracy.matched}/${metrics.verdictAccuracy.total})`,
     `- Pairs tested: ${metrics.pairsTested}`,
     `- Variants tested: ${metrics.variantsTested}`,
@@ -442,10 +457,12 @@ export function renderBaselineMarkdown(rows, metrics, snapshotTimestamp) {
     `- Snapshot timestamp: ${snapshotTimestamp ?? "unknown"}`,
     "",
     "## Data Table",
+    "",
     ...tableHeader,
     ...tableRows.map((row) => `| ${row} |`),
     "",
     "## Correlation Analysis",
+    "",
     `- Structure Pearson r: ${formatNumber(metrics.pearson.structure, 6)}`,
     `- Color Pearson r (raw): ${formatNumber(metrics.pearson.color, 6)}`,
     `- Color Pearson r (severity-aligned, = -raw): ${formatNumber(metrics.pearson.colorAligned, 6)}`,
@@ -456,14 +473,17 @@ export function renderBaselineMarkdown(rows, metrics, snapshotTimestamp) {
     "  value above, not the raw signed r.",
     "",
     "## False Classifications",
+    "",
     ...falseClassificationLines,
     "",
     "## Baseline Signals In Effect",
-    "- Active: P1 issue typing and verdict logic, P2 multi-region SSIM weighting, P4 texture-adjusted weighting",
-    "- Computed but not wired into weightedStructure/weightedColor yet: P3 Hausdorff (shape field on RegionScore)",
+    "",
+    `- Active: ${BASELINE_SIGNALS.active.join(", ")}`,
+    `- Computed but not wired into weightedStructure/weightedColor yet: ${BASELINE_SIGNALS.computedButNotWired.join(", ")}`,
     "",
     "## Next Measurement Trigger",
-    "- Re-run `pnpm node verification/script/measure-correlation.mjs` after P3 and P4 merge to `develop`.",
+    "",
+    `- ${NEXT_MEASUREMENT_TRIGGER} (\`pnpm node verification/script/measure-correlation.mjs\`).`,
     "",
   ].join("\n");
 }
@@ -483,11 +503,8 @@ function buildBaselineReport(rows, metrics, snapshotTimestamp) {
       issueKindPrecision: metrics.issueKindPrecision,
       pearson: metrics.pearson,
       snapshotTimestamp,
-      baselineSignalsInEffect: {
-        active: ["P1 issue typing and verdict logic", "P2 multi-region SSIM weighting"],
-        inactive: ["P3 Hausdorff", "P4 texture"],
-      },
-      nextMeasurementTrigger: "Re-run after P3 and P4 merge to develop",
+      baselineSignalsInEffect: BASELINE_SIGNALS,
+      nextMeasurementTrigger: NEXT_MEASUREMENT_TRIGGER,
     },
     rows,
     falseClassifications: metrics.falseClassifications,
@@ -545,7 +562,7 @@ async function main() {
   }
 
   console.info(
-    `L7 BASELINE: accuracy=${formatPercent(metrics.verdictAccuracy.percentage)}, structure_r=${formatNumber(metrics.pearson.structure, 6)}, color_r=${formatNumber(metrics.pearson.color, 6)}, pending_P3P4`,
+    `L7 BASELINE: accuracy=${formatPercent(metrics.verdictAccuracy.percentage)}, structure_r=${formatNumber(metrics.pearson.structure, 6)}, color_r_aligned=${formatNumber(metrics.pearson.colorAligned, 6)}, pending_P3`,
   );
 }
 
