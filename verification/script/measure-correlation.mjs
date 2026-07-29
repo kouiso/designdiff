@@ -8,7 +8,7 @@ import { z } from "zod";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const FIXTURES_ROOT = path.resolve(__dirname, "../fixtures");
+const FIXTURES_ROOT = path.resolve(__dirname, "../fixture");
 const OUTPUT_DIR = path.resolve(__dirname, "../correlation");
 const JSON_OUTPUT_PATH = path.join(OUTPUT_DIR, "baseline-report.json");
 const MARKDOWN_OUTPUT_PATH = path.join(OUTPUT_DIR, "baseline-report.md");
@@ -112,6 +112,7 @@ const HUMAN_SEVERITY_BY_VARIANT = Object.freeze({
  *   pearson: {
  *     structure: number | null;
  *     color: number | null;
+ *     colorAligned: number | null;
  *   };
  *   falseClassifications: CorrelationRow[];
  * }} CorrelationMetrics
@@ -199,6 +200,15 @@ export function computeCorrelationMetrics(rows) {
     pearson: {
       structure: calculatePearsonCorrelation(structureScores, humanSeverities),
       color: calculatePearsonCorrelation(colorScores, humanSeverities),
+      // weightedColor is "bigger = worse" while humanSeverity is "bigger = better",
+      // so the raw Pearson r is expected to be negative when the signal is working
+      // correctly. colorAligned negates it so both fields in this report use the
+      // same "higher r = better agreement with human judgment" convention, and the
+      // design doc's "0.95 or higher" bar applies to this aligned value, not the raw one.
+      colorAligned: (() => {
+        const raw = calculatePearsonCorrelation(colorScores, humanSeverities);
+        return raw === null ? null : round(-raw, 6);
+      })(),
     },
     falseClassifications: rows.filter((row) => !row.matchesVerdict),
   };
@@ -437,15 +447,20 @@ export function renderBaselineMarkdown(rows, metrics, snapshotTimestamp) {
     "",
     "## Correlation Analysis",
     `- Structure Pearson r: ${formatNumber(metrics.pearson.structure, 6)}`,
-    `- Color Pearson r: ${formatNumber(metrics.pearson.color, 6)}`,
+    `- Color Pearson r (raw): ${formatNumber(metrics.pearson.color, 6)}`,
+    `- Color Pearson r (severity-aligned, = -raw): ${formatNumber(metrics.pearson.colorAligned, 6)}`,
     `- Human severity mapping: correct=1.0, borderline=0.5, broken=0.0`,
+    "- Note: weightedColor is a defect magnitude (bigger = worse) while human severity is",
+    "  bigger = better, so the raw color Pearson r is expected to be negative when the",
+    "  signal works correctly. The design doc's 0.95 bar applies to the severity-aligned",
+    "  value above, not the raw signed r.",
     "",
     "## False Classifications",
     ...falseClassificationLines,
     "",
     "## Baseline Signals In Effect",
-    "- Active: P1 issue typing and verdict logic, P2 multi-region SSIM weighting",
-    "- Not active yet: P3 Hausdorff, P4 texture",
+    "- Active: P1 issue typing and verdict logic, P2 multi-region SSIM weighting, P4 texture-adjusted weighting",
+    "- Computed but not wired into weightedStructure/weightedColor yet: P3 Hausdorff (shape field on RegionScore)",
     "",
     "## Next Measurement Trigger",
     "- Re-run `pnpm node verification/script/measure-correlation.mjs` after P3 and P4 merge to `develop`.",
