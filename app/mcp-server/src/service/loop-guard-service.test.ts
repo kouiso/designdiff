@@ -51,7 +51,7 @@ describe("loop-guard-service", () => {
     );
 
     expect(report.decision).toBe("stop");
-    expect(report.reason).toContain("PASS");
+    expect(report.message).toContain("PASS");
   });
 
   it("stops and requests human review when status is UNCERTAIN", async () => {
@@ -61,14 +61,14 @@ describe("loop-guard-service", () => {
     });
 
     expect(report.decision).toBe("stop");
-    expect(report.reason).toContain("UNCERTAIN");
-    expect(report.reason).toContain("人間");
+    expect(report.message).toContain("UNCERTAIN");
+    expect(report.message).toContain("人間");
   });
 
   it("stops when the iteration limit is reached", async () => {
     let report: Awaited<ReturnType<typeof recordIterationAndEvaluate>> | undefined;
     // 反復ごとに matchRate を大きく動かし、停滞判定に先に引っかからないようにする。
-    const rates = [10, 30, 50, 70, 90];
+    const rates = Array.from({ length: MAX_LOOP_ITERATIONS }, (_, index) => (index + 1) * 10);
     for (let i = 0; i < MAX_LOOP_ITERATIONS; i++) {
       report = await recordIterationAndEvaluate(input({ matchRate: rates[i] }), {
         stateDir,
@@ -78,7 +78,7 @@ describe("loop-guard-service", () => {
 
     expect(report?.iteration).toBe(MAX_LOOP_ITERATIONS);
     expect(report?.decision).toBe("stop");
-    expect(report?.reason).toContain("上限");
+    expect(report?.message).toContain("上限");
   });
 
   it("stops on stagnation: two consecutive sub-threshold matchRate deltas", async () => {
@@ -93,7 +93,7 @@ describe("loop-guard-service", () => {
 
     expect(report?.iteration).toBe(3);
     expect(report?.decision).toBe("stop");
-    expect(report?.reason).toContain("停滞");
+    expect(report?.message).toContain("停滞");
   });
 
   it("stops with identical-result reason for three identical comparison outputs", async () => {
@@ -107,8 +107,8 @@ describe("loop-guard-service", () => {
 
     expect(report?.iteration).toBe(3);
     expect(report?.decision).toBe("stop");
-    expect(report?.reason).toContain("完全に同一");
-    expect(report?.reason).toContain("diffPixelCount");
+    expect(report?.message).toContain("完全に同一");
+    expect(report?.message).toContain("diffPixelCount");
   });
 
   it("does not use identical-result stop when diffPixelCount differs", async () => {
@@ -123,8 +123,8 @@ describe("loop-guard-service", () => {
 
     expect(report?.iteration).toBe(3);
     expect(report?.decision).toBe("stop");
-    expect(report?.reason).toContain("停滞");
-    expect(report?.reason).not.toContain("完全に同一");
+    expect(report?.message).toContain("停滞");
+    expect(report?.message).not.toContain("完全に同一");
   });
 
   it("keeps continuing while matchRate is still improving", async () => {
@@ -201,7 +201,7 @@ describe("loop-guard-service", () => {
     }
 
     expect(report.decision).toBe("stop");
-    expect(report.reason).toContain("悪化");
+    expect(report.message).toContain("悪化");
   });
 
   // URLを開いて撮ると高さは中身の量で決まる。実装で1行足すだけで変わるので、
@@ -263,7 +263,7 @@ describe("loop-guard-service", () => {
 
     expect(report.iteration).toBe(1);
     expect(report.decision).toBe("continue");
-    expect(report.reason).not.toContain("悪化");
+    expect(report.message).not.toContain("悪化");
   });
 
   it("寸法がない古い履歴は新しい撮影条件と比較しない", async () => {
@@ -327,7 +327,7 @@ describe("loop-guard-service", () => {
       ]);
 
       expect(report.decision).toBe("continue");
-      expect(report.reason).toContain("人が見て分かる差");
+      expect(report.message).toContain("人が見て分かる差");
     });
 
     it("matchRate も見える差も止まっていれば停止する", async () => {
@@ -338,8 +338,8 @@ describe("loop-guard-service", () => {
       ]);
 
       expect(report.decision).toBe("stop");
-      expect(report.reason).toContain("停滞");
-      expect(report.reason).toContain("どちらも動いていません");
+      expect(report.message).toContain("停滞");
+      expect(report.message).toContain("どちらも動いていません");
     });
 
     it("見える差の記録が無ければ従来どおり matchRate だけで停滞と判定する", async () => {
@@ -350,7 +350,7 @@ describe("loop-guard-service", () => {
       ]);
 
       expect(report.decision).toBe("stop");
-      expect(report.reason).toContain("停滞");
+      expect(report.message).toContain("停滞");
     });
 
     it("3件のうち1件でも見える差が欠けていれば matchRate だけで判定する", async () => {
@@ -361,7 +361,7 @@ describe("loop-guard-service", () => {
       ]);
 
       expect(report.decision).toBe("stop");
-      expect(report.reason).toContain("停滞");
+      expect(report.message).toContain("停滞");
     });
 
     it("見える差が2回続けて増えたら matchRate が改善していても停止する", async () => {
@@ -372,7 +372,7 @@ describe("loop-guard-service", () => {
       ]);
 
       expect(report.decision).toBe("stop");
-      expect(report.reason).toContain("人が見て分かる差が2回続けて増えています");
+      expect(report.message).toContain("人が見て分かる差が2回続けて増えています");
     });
 
     it("見える差が増えても1回だけなら停止しない", async () => {
@@ -393,8 +393,8 @@ describe("loop-guard-service", () => {
       ]);
 
       expect(report.decision).toBe("stop");
-      expect(report.reason).toContain("停滞");
-      expect(report.reason).not.toContain("悪化");
+      expect(report.message).toContain("停滞");
+      expect(report.message).not.toContain("悪化");
     });
 
     it("matchRate の悪化判定は見える差より先に効く", async () => {
@@ -405,7 +405,7 @@ describe("loop-guard-service", () => {
       ]);
 
       expect(report.decision).toBe("stop");
-      expect(report.reason).toContain("matchRate が2回続けて悪化");
+      expect(report.message).toContain("matchRate が2回続けて悪化");
     });
   });
 });

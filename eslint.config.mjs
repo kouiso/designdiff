@@ -1,10 +1,10 @@
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import eslintComments from "@eslint-community/eslint-plugin-eslint-comments";
 import js from "@eslint/js";
 import importPlugin from "eslint-plugin-import";
 import reactHooksPlugin from "eslint-plugin-react-hooks";
 import globals from "globals";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import typescriptEslint from "typescript-eslint";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -261,7 +261,7 @@ export default [
 
   // Verification + repo-root Node.js utility scripts
   {
-    files: ["verification/script/**/*.mjs", "script/**/*.mjs", "app/desktop/*.mjs"],
+    files: ["verification/**/*.mjs", "script/**/*.mjs", "app/desktop/*.mjs"],
     languageOptions: {
       globals: {
         ...globals.node,

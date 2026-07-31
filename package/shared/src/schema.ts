@@ -450,12 +450,27 @@ export const ComparisonDiagnosisSchema = z.object({
   headline: z.string(),
 });
 
+export const LoopGuardReasonSchema = z.enum([
+  "no-regression",
+  "regression",
+  "max-steps",
+  "uncertain",
+  "continue",
+]);
+
 // 自走ループの停止判定。compare_design が呼び出し履歴から反復回数と
 // 収束状況を評価して続行/停止を返す。
+// AI は `stop` だけを判定材料にし、`matchRate` や status を勝手に再解釈しない。
 export const LoopGuardReportSchema = z.object({
-  iteration: z.number().int().positive(),
-  decision: z.enum(["continue", "stop"]),
-  reason: z.string(),
+  stop: z.boolean(),
+  step: z.number().int().positive(),
+  maxSteps: z.number().int().positive(),
+  remainingSteps: z.number().int().nonnegative(),
+  reason: LoopGuardReasonSchema,
+  message: z.string(),
+  // 既存クライアントとの互換 (非推奨)
+  iteration: z.number().int().positive().optional(),
+  decision: z.enum(["continue", "stop"]).optional(),
 });
 
 export const ToastBandCandidateSchema = z.object({

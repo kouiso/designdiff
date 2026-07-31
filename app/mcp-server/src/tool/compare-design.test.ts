@@ -91,9 +91,14 @@ describe("buildSummaryText — loop guard", () => {
     const result = makeResult({
       status: "FAIL",
       loopGuard: {
+        stop: true,
+        step: 5,
+        maxSteps: 10,
+        remainingSteps: 0,
+        reason: "max-steps",
+        message: "反復回数が上限 (10 回) に達しました。",
         iteration: 5,
         decision: "stop",
-        reason: "反復回数が上限 (5 回) に達しました。",
       },
     });
 
@@ -106,14 +111,19 @@ describe("buildSummaryText — loop guard", () => {
     const result = makeResult({
       status: "FAIL",
       loopGuard: {
+        stop: true,
+        step: 5,
+        maxSteps: 10,
+        remainingSteps: 0,
+        reason: "max-steps",
+        message: "反復回数が上限 (10 回) に達しました。",
         iteration: 5,
         decision: "stop",
-        reason: "反復回数が上限 (5 回) に達しました。",
       },
     });
 
     const text = buildSummaryText(result);
-    expect(text).toContain("反復回数が上限 (5 回) に達しました。");
+    expect(text).toContain("反復回数が上限 (10 回) に達しました。");
     expect(text).toContain("5");
   });
 
@@ -122,9 +132,14 @@ describe("buildSummaryText — loop guard", () => {
     const result = makeResult({
       status: "FAIL",
       loopGuard: {
+        stop: true,
+        step: 6,
+        maxSteps: 10,
+        remainingSteps: 0,
+        reason: "max-steps",
+        message: "反復回数が上限 (10 回) に達しました。",
         iteration: 6,
         decision: "stop",
-        reason: "反復回数が上限 (5 回) に達しました。",
       },
     });
 
@@ -137,7 +152,16 @@ describe("buildSummaryText — loop guard", () => {
   it("shows continue when the loop may proceed", () => {
     const result = makeResult({
       status: "FAIL",
-      loopGuard: { iteration: 2, decision: "continue", reason: "改善の余地があります。" },
+      loopGuard: {
+        stop: false,
+        step: 2,
+        maxSteps: 10,
+        remainingSteps: 8,
+        reason: "continue",
+        message: "改善の余地があります。",
+        iteration: 2,
+        decision: "continue",
+      },
     });
 
     const firstLine = buildSummaryText(result).split("\n")[0];

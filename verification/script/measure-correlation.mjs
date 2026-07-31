@@ -10,8 +10,8 @@ const __dirname = path.dirname(__filename);
 
 const FIXTURES_ROOT = path.resolve(__dirname, "../fixture");
 const OUTPUT_DIR = path.resolve(__dirname, "../correlation");
-const JSON_OUTPUT_PATH = path.join(OUTPUT_DIR, "baseline-report.json");
-const MARKDOWN_OUTPUT_PATH = path.join(OUTPUT_DIR, "baseline-report.md");
+const JSON_REPORT_FILENAME = "baseline-report.json";
+const MARKDOWN_REPORT_FILENAME = "baseline-report.md";
 const THRESHOLD = 0.1;
 let compareImagesPromise = null;
 
@@ -137,7 +137,7 @@ function round(value, digits = 4) {
   return Math.round(value * factor) / factor;
 }
 
-function percentage(numerator, denominator, digits = 1) {
+export function percentage(numerator, denominator, digits = 1) {
   if (denominator === 0) {
     return null;
   }
@@ -232,7 +232,7 @@ export function computeCorrelationMetrics(rows) {
  * @param {FixtureVariant} variant
  * @returns {number}
  */
-function getHumanSeverity(variant) {
+export function getHumanSeverity(variant) {
   const explicit = HUMAN_SEVERITY_BY_VARIANT[variant.name];
   if (explicit !== undefined) {
     return explicit;
@@ -240,12 +240,12 @@ function getHumanSeverity(variant) {
   return variant.expectedVerdict === "pass" ? 1 : 0;
 }
 
-function getExpectedIssueKinds(variant) {
+export function getExpectedIssueKinds(variant) {
   const source = variant.expectedIssueKinds ?? variant.expectedKinds;
   return [...new Set(source)].sort((left, right) => left.localeCompare(right));
 }
 
-async function readJson(filePath, schema) {
+export async function readJson(filePath, schema) {
   const raw = await fs.readFile(filePath, "utf8");
   return schema.parse(JSON.parse(raw));
 }
@@ -333,9 +333,14 @@ function buildSnapshotTimestamp() {
  * @param {string} fixtureDirName
  * @returns {Promise<CorrelationRow[]>}
  */
-async function measureFixture(fixtureDirName) {
-  const compareImages = await loadCompareImages();
-  const fixtureDir = path.join(FIXTURES_ROOT, fixtureDirName);
+/**
+ * @param {string} fixtureDirName
+ * @param {MeasureCorrelationOptions} [options]
+ */
+async function measureFixture(fixtureDirName, options = {}) {
+  const compareImages = options.compareImagesFn ?? (await loadCompareImages());
+  const fixtureRoot = options.fixtureRoot ?? FIXTURES_ROOT;
+  const fixtureDir = path.join(fixtureRoot, fixtureDirName);
   const expectedPath = path.join(fixtureDir, "expected.json");
   const expectation = await readJson(expectedPath, FixtureExpectationSchema);
   const designBase64 = await loadBase64(path.join(fixtureDir, expectation.figmaFrame));
@@ -496,7 +501,7 @@ export function renderBaselineMarkdown(rows, metrics, snapshotTimestamp) {
  * @param {CorrelationMetrics} metrics
  * @param {string | null} snapshotTimestamp
  */
-function buildBaselineReport(rows, metrics, snapshotTimestamp) {
+export function buildBaselineReport(rows, metrics, snapshotTimestamp) {
   return {
     summary: {
       verdictAccuracy: metrics.verdictAccuracy,
@@ -514,8 +519,27 @@ function buildBaselineReport(rows, metrics, snapshotTimestamp) {
   };
 }
 
-export async function measureCorrelation() {
-  const entries = await fs.readdir(FIXTURES_ROOT, { withFileTypes: true });
+/**
+ * @typedef {{
+ *   fixtureRoot?: string;
+ *   outputDir?: string;
+ *   jsonOutputPath?: string;
+ *   markdownOutputPath?: string;
+ *   compareImagesFn?: (input: object, rootNode?: object) => Promise<object>;
+ *   buildSnapshotTimestampFn?: () => string | null;
+ * }} MeasureCorrelationOptions
+ *
+ * @param {MeasureCorrelationOptions} [options]
+ */
+export async function measureCorrelation(options = {}) {
+  const fixtureRoot = options.fixtureRoot ?? FIXTURES_ROOT;
+  const outputDir = options.outputDir ?? OUTPUT_DIR;
+  const jsonOutputPath = options.jsonOutputPath ?? path.join(outputDir, JSON_REPORT_FILENAME);
+  const markdownOutputPath =
+    options.markdownOutputPath ?? path.join(outputDir, MARKDOWN_REPORT_FILENAME);
+  const buildSnapshotTimestampFn = options.buildSnapshotTimestampFn ?? buildSnapshotTimestamp;
+
+  const entries = await fs.readdir(fixtureRoot, { withFileTypes: true });
   const fixtureDirs = entries
     .filter((entry) => entry.isDirectory() && entry.name.startsWith("pair-"))
     .map((entry) => entry.name)
@@ -523,25 +547,25 @@ export async function measureCorrelation() {
 
   const nestedRows = [];
   for (const fixtureDir of fixtureDirs) {
-    nestedRows.push(await measureFixture(fixtureDir));
+    nestedRows.push(await measureFixture(fixtureDir, options));
   }
 
   const rows = nestedRows.flat();
   const metrics = computeCorrelationMetrics(rows);
-  const snapshotTimestamp = buildSnapshotTimestamp();
+  const snapshotTimestamp = buildSnapshotTimestampFn();
   const reportJson = buildBaselineReport(rows, metrics, snapshotTimestamp);
   const reportMarkdown = renderBaselineMarkdown(rows, metrics, snapshotTimestamp);
 
-  await fs.mkdir(OUTPUT_DIR, { recursive: true });
-  await fs.writeFile(JSON_OUTPUT_PATH, `${JSON.stringify(reportJson, null, 2)}\n`);
-  await fs.writeFile(MARKDOWN_OUTPUT_PATH, reportMarkdown);
+  await fs.mkdir(outputDir, { recursive: true });
+  await fs.writeFile(jsonOutputPath, `${JSON.stringify(reportJson, null, 2)}\n`);
+  await fs.writeFile(markdownOutputPath, reportMarkdown);
 
   return {
     rows,
     metrics,
     snapshotTimestamp,
-    reportJsonPath: JSON_OUTPUT_PATH,
-    reportMarkdownPath: MARKDOWN_OUTPUT_PATH,
+    reportJsonPath: jsonOutputPath,
+    reportMarkdownPath: markdownOutputPath,
   };
 }
 
