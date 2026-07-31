@@ -1,7 +1,7 @@
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   compareImages: vi.fn(),
@@ -61,9 +61,14 @@ vi.mock("./comparison-history.js", async (importOriginal) => {
 // loop-guard 自体の判定ロジックは loop-guard-service.test.ts で検証する。
 vi.mock("./loop-guard-service.js", () => ({
   recordIterationAndEvaluate: vi.fn(async () => ({
+    stop: false,
+    step: 1,
+    maxSteps: 10,
+    remainingSteps: 9,
+    reason: "continue",
+    message: "test",
     iteration: 1,
     decision: "continue" as const,
-    reason: "test",
   })),
 }));
 
@@ -1509,7 +1514,16 @@ describe("runCompareDesign", () => {
   it("wires loopGuard from recordIterationAndEvaluate through to the result", async () => {
     const { result } = await runLocalStructuralComparison("pass", 0, 100);
 
-    expect(result.loopGuard).toEqual({ iteration: 1, decision: "continue", reason: "test" });
+    expect(result.loopGuard).toEqual({
+      stop: false,
+      step: 1,
+      maxSteps: 10,
+      remainingSteps: 9,
+      reason: "continue",
+      message: "test",
+      iteration: 1,
+      decision: "continue",
+    });
   });
 
   // compareImages の戻り値を直接差し込めるローカル比較ヘルパ。

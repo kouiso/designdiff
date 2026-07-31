@@ -4,7 +4,7 @@ import * as path from "node:path";
 
 import { z } from "zod";
 
-import type { DiffVerdict, LoopGuardReport } from "@figdiff/shared";
+import type { DiffVerdict, LoopGuardReason, LoopGuardReport } from "@figdiff/shared";
 
 import { getFigdiffLoopStateDir } from "../util/figdiff-paths.js";
 
@@ -17,7 +17,7 @@ import { getFigdiffLoopStateDir } from "../util/figdiff-paths.js";
 // 状態は ~/.figdiff/loop-state/ に sourceKey 単位で永続化し、
 // プロセスをまたいでも同一ループとして数えられるようにする。
 
-export const MAX_LOOP_ITERATIONS = 5;
+export const MAX_LOOP_ITERATIONS = 10;
 // matchRate の変化 (パーセントポイント) がこの値未満なら「進捗なし」とみなす。
 export const STAGNATION_DELTA = 0.5;
 // 見える差の割合 (0..1) の変化がこの値未満なら「進捗なし」とみなす。
@@ -173,6 +173,24 @@ function comparablePriorEntries(
   return entries.every((entry) => hasMatchingCaptureDimensions(entry, input)) ? entries : [];
 }
 
+function buildLoopGuardReport(
+  step: number,
+  reason: LoopGuardReason,
+  message: string,
+): LoopGuardReport {
+  const stop = reason !== "continue";
+  return {
+    stop,
+    step,
+    maxSteps: MAX_LOOP_ITERATIONS,
+    remainingSteps: Math.max(0, MAX_LOOP_ITERATIONS - step),
+    reason,
+    message,
+    iteration: step,
+    decision: stop ? "stop" : "continue",
+  };
+}
+
 /**
  * 今回の比較結果をループ履歴に記録し、続行/停止の判定を返す。
  * 判定優先順: PASS到達 > UNCERTAIN > 反復上限 > 収束停滞 > 続行。
@@ -214,34 +232,37 @@ export async function recordIterationAndEvaluate(
     // 完了したキャンペーンの履歴を持ち越さない。残すと次の修正キャンペーンが
     // 初回から反復済み扱いになり、上限/停滞判定が早発する。
     await resetLoopState(input.sourceKey, { stateDir });
-    return {
+    return buildLoopGuardReport(
       iteration,
-      decision: "stop",
-      reason: `PASS に到達しました (反復 ${iteration} 回)。ループを終了してください。`,
-    };
+      "no-regression",
+      `PASS に到達しました (反復 ${iteration} 回)。ループを終了してください。`,
+    );
   }
 
   if (input.status === "UNCERTAIN") {
     await resetLoopState(input.sourceKey, { stateDir });
-    return {
+    return buildLoopGuardReport(
       iteration,
-      decision: "stop",
-      reason:
-        "判定が UNCERTAIN です。この比較は判定の確からしさを損なう条件を含むため、自動修正を止めて人間のレビューに回してください。",
-    };
+      "uncertain",
+      "判定が UNCERTAIN です。この比較は判定の確からしさを損なう条件を含むため、自動修正を止めて人間のレビューに回してください。",
+    );
   }
 
   // 上限・停滞・悪化で止めたあとも履歴を残すと、人間が原因を直して再実行しても
   // TTL (2時間) のあいだ stop を返し続ける。sourceKey は Figma ファイル/ノードしか
   // 含まず実装側やキャンペーンを区別できないため、同じノードの独立した比較まで
   // 巻き添えになる。停止を一度返した時点でこのキャンペーンの役目は終わりなので破棄する。
-  const stopAndReset = async (reason: string): Promise<LoopGuardReport> => {
+  const stopAndReset = async (
+    reason: LoopGuardReason,
+    message: string,
+  ): Promise<LoopGuardReport> => {
     await resetLoopState(input.sourceKey, { stateDir });
-    return { iteration, decision: "stop", reason };
+    return buildLoopGuardReport(iteration, reason, message);
   };
 
   if (iteration >= MAX_LOOP_ITERATIONS) {
     return await stopAndReset(
+      "max-steps",
       `反復回数が上限 (${MAX_LOOP_ITERATIONS} 回) に達しました。これ以上の自動修正は止めて、現状と残差分を人間に報告してください。`,
     );
   }
@@ -261,6 +282,7 @@ export async function recordIterationAndEvaluate(
       prev1.regionCount === prev2.regionCount
     ) {
       return await stopAndReset(
+        "regression",
         "直近3回の比較結果（matchRate・diffPixelCount・差分領域数）が完全に同一です。提案された修正が実際には適用/反映されていない可能性が高いため、自動修正を止めて設定（capture_width / crop / node選択）を人間が確認してください。",
       );
     }
@@ -274,6 +296,7 @@ export async function recordIterationAndEvaluate(
     const signed2 = prev1.matchRate - prev2.matchRate;
     if (signed1 <= -STAGNATION_DELTA && signed2 <= -STAGNATION_DELTA) {
       return await stopAndReset(
+        "regression",
         `matchRate が2回続けて悪化しています (${prev2.matchRate.toFixed(2)} → ${prev1.matchRate.toFixed(2)} → ${latest.matchRate.toFixed(2)})。修正が逆効果になっているため、自動修正を止めて直前の変更を戻すか人間に報告してください。`,
       );
     }
@@ -288,6 +311,7 @@ export async function recordIterationAndEvaluate(
       perceptible.signed2 >= PERCEPTIBLE_STAGNATION_DELTA
     ) {
       return await stopAndReset(
+        "regression",
         `人が見て分かる差が2回続けて増えています (${formatRatio(perceptible.values[0])} → ${formatRatio(perceptible.values[1])} → ${formatRatio(perceptible.values[2])})。修正が逆効果になっているため、自動修正を止めて直前の変更を戻すか人間に報告してください。`,
       );
     }
@@ -303,6 +327,7 @@ export async function recordIterationAndEvaluate(
     if (matchRateStagnant) {
       if (perceptible === undefined) {
         return await stopAndReset(
+          "regression",
           `収束が停滞しています (直近2回の matchRate 変化 ${delta2.toFixed(2)}pt → ${delta1.toFixed(2)}pt、いずれも ${STAGNATION_DELTA}pt 未満)。修正が効いていないため、自動修正を止めて人間に報告してください。`,
         );
       }
@@ -310,22 +335,23 @@ export async function recordIterationAndEvaluate(
       const pDelta2 = Math.abs(perceptible.signed2);
       if (pDelta1 < PERCEPTIBLE_STAGNATION_DELTA && pDelta2 < PERCEPTIBLE_STAGNATION_DELTA) {
         return await stopAndReset(
+          "regression",
           `収束が停滞しています (matchRate の変化 ${delta2.toFixed(2)}pt → ${delta1.toFixed(2)}pt、人が見て分かる差の変化 ${formatRatio(pDelta2)} → ${formatRatio(pDelta1)}。どちらも動いていません)。修正が効いていないため、自動修正を止めて人間に報告してください。`,
         );
       }
-      return {
+      return buildLoopGuardReport(
         iteration,
-        decision: "continue",
-        reason: `反復 ${iteration}/${MAX_LOOP_ITERATIONS} 回。matchRate は止まっていますが、人が見て分かる差は ${formatRatio(perceptible.values[0])} → ${formatRatio(perceptible.values[2])} と動いています。修正は効いているので続行できます。`,
-      };
+        "continue",
+        `反復 ${iteration}/${MAX_LOOP_ITERATIONS} 回。matchRate は止まっていますが、人が見て分かる差は ${formatRatio(perceptible.values[0])} → ${formatRatio(perceptible.values[2])} と動いています。修正は効いているので続行できます。`,
+      );
     }
   }
 
-  return {
+  return buildLoopGuardReport(
     iteration,
-    decision: "continue",
-    reason: `反復 ${iteration}/${MAX_LOOP_ITERATIONS} 回。改善の余地があるため修正を続行できます。`,
-  };
+    "continue",
+    `反復 ${iteration}/${MAX_LOOP_ITERATIONS} 回。改善の余地があるため修正を続行できます。`,
+  );
 }
 
 /** ループ履歴を破棄する (新しい修正キャンペーンを開始するとき用)。 */

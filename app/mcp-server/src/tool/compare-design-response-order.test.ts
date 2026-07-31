@@ -45,9 +45,14 @@ function makeResult() {
       remainingIssues: { required: 0, current: 5, status: "FAIL" },
     },
     loopGuard: {
+      stop: true,
+      step: 6,
+      maxSteps: 10,
+      remainingSteps: 0,
+      reason: "max-steps",
+      message: "反復回数が上限 (10 回) に達しました。",
       iteration: 6,
       decision: "stop",
-      reason: "反復回数が上限 (5 回) に達しました。",
     },
   };
 }

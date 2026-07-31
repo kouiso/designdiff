@@ -113,9 +113,14 @@
       "headline": "構造一致 0.04% / 色のみ差分 0領域 / 構造差分 1領域"
     },
     "loopGuard": {
+      "stop": false,
+      "step": 1,
+      "maxSteps": 10,
+      "remainingSteps": 9,
+      "reason": "continue",
+      "message": "反復 1/10 回。改善の余地があるため修正を続行できます。",
       "iteration": 1,
-      "decision": "continue",
-      "reason": "反復 1/5 回。改善の余地があるため修正を続行できます。"
+      "decision": "continue"
     },
     "verdictRoute": "pixel",
     "diffImagePath": "/tmp/figdiff-mcp/cmp-evidence.png"

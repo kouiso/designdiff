@@ -14,7 +14,6 @@ import {
 
 import { writeActiveSession } from "../service/active-session.js";
 import { runCompareDesign } from "../service/compare-design-runner.js";
-import { MAX_LOOP_ITERATIONS } from "../service/loop-guard-service.js";
 import { persistDetailJson } from "../service/persist-detail.js";
 import { assertNoUnknownToolArguments } from "../util/raw-tool-arguments.js";
 
@@ -62,7 +61,35 @@ capture_device 指定時は、画面上下のべた塗り帯（開発時のト�
   "./design/home.png"
   "./screenshots/home.png"
 
-ローカルの design_source はカレントディレクトリまたは ~/.figdiff/cache 配下に置くか、FIGDIFF_ALLOWED_DIRS で許可ディレクトリを追加してください。screenshot のローカルパスはこの allowlist の対象外です。`;
+ローカルの design_source はカレントディレクトリまたは ~/.figdiff/cache 配下に置くか、FIGDIFF_ALLOWED_DIRS で許可ディレクトリを追加してください。screenshot のローカルパスはこの allowlist の対象外です。
+
+## 停止判定 (loopGuard)
+
+compare_design は自走ループの停止判定を loopGuard として返します。呼び出し側は loopGuard.stop の真偽だけを判定材料にしてください。matchRate や status を勝手に再解釈してはいけません。
+
+maxSteps の既定値は 10 です。stop === true になったら、それ以上 compare_design を呼ばずに人間へ報告してください。
+
+~~~json
+{
+  "loopGuard": {
+    "stop": false,
+    "step": 1,
+    "maxSteps": 10,
+    "remainingSteps": 9,
+    "reason": "continue",
+    "message": "反復 1/10 回。改善の余地があるため修正を続行できます。",
+    "iteration": 1,
+    "decision": "continue"
+  }
+}
+~~~
+
+reason は次のいずれかです:
+- no-regression: PASS に到達 (成功、ループ終了)
+- regression: 悪化・停滞・同一結果 (修正が効いていない、または逆効果)
+- max-steps: 反復上限 (10 回) に達した
+- uncertain: 判定が UNCERTAIN (人間レビューが必要)
+- continue: まだ続行可能`;
 
 const CONFIDENCE_TO_PERCENTAGE = 100;
 
@@ -161,15 +188,20 @@ function buildLoopGuardLines(result: CompareDesignResult): string[] {
     ];
   }
 
-  const verdict = guard.decision === "stop" ? "停止" : "続行";
-  // iteration は上限を超えて増え続けるため "6/5 回" のような読み手を混乱させる分数を
-  // 出さない。上限は続行中だけ残量の目安として意味を持つ。
-  const progress =
-    guard.decision === "stop"
-      ? `反復 ${guard.iteration} 回目`
-      : `反復 ${guard.iteration} 回目 / 上限 ${MAX_LOOP_ITERATIONS}`;
+  // 旧フィールドが来ても動くよう、新しい `stop` / `step` / `maxSteps` を優先しつつ
+  // `decision` / `iteration` はフォールバックに使う。
+  const stop = guard.stop ?? guard.decision === "stop";
+  const step = guard.step ?? guard.iteration ?? 1;
+  const maxSteps = guard.maxSteps ?? step + (guard.remainingSteps ?? 0);
+  const verdict = stop ? "停止" : "続行";
+  // 上限を超えた step で "6/5" のような分数を出さない。上限は続行中だけ残量目安となる。
+  const progress = stop
+    ? `反復 ${step} 回目`
+    : `反復 ${step} 回目 / 上限 ${maxSteps} 回 (残り ${guard.remainingSteps ?? Math.max(0, maxSteps - step)} 回)`;
+  // 旧形式のテストデータなどで message が無い場合は reason をそのまま表示する。
+  const message = guard.message ?? guard.reason;
   // 区切りの空行は後続セクションが自分の前に足す規約なので、ここでは足さない。
-  return [`ループ判定: ${verdict} (${progress})`, guard.reason];
+  return [`ループ判定: ${verdict} (${progress})`, message];
 }
 
 // 色と文字は画素やなく値そのもので比べられる。どちらの経路で判定したかを必ず出す。

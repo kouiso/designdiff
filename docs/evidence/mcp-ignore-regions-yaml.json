@@ -117,9 +117,14 @@
       "headline": "構造一致 100% / 色のみ差分 0領域 / 構造差分 0領域"
     },
     "loopGuard": {
+      "stop": true,
+      "step": 1,
+      "maxSteps": 10,
+      "remainingSteps": 9,
+      "reason": "no-regression",
+      "message": "PASS に到達しました (反復 1 回)。ループを終了してください。",
       "iteration": 1,
-      "decision": "stop",
-      "reason": "PASS に到達しました (反復 1 回)。ループを終了してください。"
+      "decision": "stop"
     },
     "verdictRoute": "pixel"
   }
