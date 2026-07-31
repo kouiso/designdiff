@@ -7,8 +7,10 @@ against a Figma design, with zero human intervention until the tool itself
 decides to stop. This is the "AI にフル任せで完成するツール" contract: a human
 supplies a Figma URL and an implementation location; the AI drives the rest.
 
-The goal is to maximize `matchRate` by fixing genuine CSS/structural discrepancies —
-not by gaming thresholds, and not by masking real content as "noise."
+The goal is to converge the implementation to the Figma design. The tool decides when to
+stop via `loopGuard.stop`; do not use `matchRate` as a completion gate. Fix genuine
+CSS/structural discrepancies — not by gaming thresholds, and not by masking real content
+as "noise."
 
 ---
 
@@ -30,19 +32,33 @@ compare_design(project_id) → read status/loopGuard → act → repeat
 Every `compare_design` result includes a `loopGuard` field:
 
 ```json
-{ "iteration": 3, "decision": "continue" | "stop", "reason": "..." }
+{
+  "loopGuard": {
+    "stop": true | false,
+    "step": 3,
+    "maxSteps": 10,
+    "remainingSteps": 7,
+    "reason": "continue" | "no-regression" | "regression" | "max-steps" | "uncertain",
+    "message": "...",
+    "iteration": 3,
+    "decision": "continue" | "stop"
+  }
+}
 ```
 
-`decision: "stop"` means: do not call `compare_design` again for this campaign.
-Report the current state (status, matchRate, remaining diffRegions) and end the
-turn. The tool stops for you on any of:
-- `status: "PASS"` — the campaign succeeded, loop-state resets automatically
-- `status: "UNCERTAIN"` — the comparison itself is unreliable (see below);
-  loop-state resets automatically, hand this to a human
-- iteration limit (5) reached with no PASS
-- stagnation: matchRate changed <0.5pt across the last 2 iterations
+`loopGuard.stop` is the only stop signal. When it is `true`, do not call `compare_design`
+again for this campaign. Report the current state (status, loopGuard, remaining diffRegions)
+and end the turn. `maxSteps` defaults to 10. The tool stops for you on any of:
+- `reason: "no-regression"` (`status: "PASS"`) — the campaign succeeded, loop-state resets
+  automatically
+- `reason: "uncertain"` (`status: "UNCERTAIN"`) — the comparison itself is unreliable (see
+  below); loop-state resets automatically, hand this to a human
+- `reason: "max-steps"` — the iteration limit (10) was reached with no PASS
+- `reason: "regression"` — the result is worsening, stagnating, or identical across
+  consecutive iterations; the tool has already determined further automatic fixing is not
+  productive
 
-Never keep calling `compare_design` after `decision: "stop"` hoping for a
+Never keep calling `compare_design` after `loopGuard.stop === true` hoping for a
 different result — the tool has already determined further automatic fixing
 is not productive.
 
@@ -79,7 +95,9 @@ compare_design(
   screenshot as a workaround — the tool's refusal to auto-crop that region is a
   signal the region needs a real decision (design range confirmation, or a
   legitimate CSS fix), not a whitespace trim.
-- Read `matchRate` directly from the `compare_design` tool result JSON.
+- Read `loopGuard.stop` from the `compare_design` tool result JSON; the campaign continues
+  only while `stop` is `false`.
+- Read `matchRate` only as a reference metric, not as a completion gate.
 - Read the diff image to identify which regions are red (mismatched).
 
 ### Step 2: inspect_node
@@ -107,8 +125,9 @@ Apply `cssSuggestion` values. Target the exact property — do not change other 
 
 ### Step 4: Re-compare
 
-Re-run `compare_design` and compare the new diff image + matchRate.
-A genuine fix reduces the diff image file size and increases matchRate.
+Re-run `compare_design` and compare the new diff image.
+A genuine fix reduces the diff image mismatch area. Use `loopGuard.stop` to decide
+whether the campaign is complete; do not chase `matchRate` to 100%.
 
 ---
 
@@ -182,8 +201,8 @@ Autonomous campaign loop for Flutter:
 2. Edit the Flutter widget/theme/layout code.
 3. Re-run `figdiff-flutter-golden` for the known test target and golden path.
 4. Feed the printed PNG path into `compare_design` as `screenshot`.
-5. Read `loopGuard`, `status`, `matchRate`, and `diffRegions` exactly like the
-   web workflow above; stop when `loopGuard.decision` is `stop`.
+5. Read `loopGuard`, `status`, and `diffRegions` exactly like the
+   web workflow above; stop when `loopGuard.stop` is `true`.
 
 Live real-device capture remains the separate `capture_device` workflow. Use this
 Flutter golden workflow only when the desired input is deterministic golden-test
@@ -286,17 +305,19 @@ ignore because the target node improved.
 
 ## Ending a campaign — what to report
 
-When `loopGuard.decision === "stop"`, report exactly this, without inflating
+When `loopGuard.stop === true`, report exactly this, without inflating
 partial progress into a completion claim:
 
-- final `status` (PASS / FAIL / UNCERTAIN) and `matchRate`
-- `loopGuard.reason` verbatim (why it stopped: PASS / UNCERTAIN / iteration
-  limit / stagnation)
-- for FAIL/UNCERTAIN stops: the remaining `diffRegions` and `diagnosis.headline`,
-  so a human can decide the next campaign (adjust thresholds, confirm which
-  side — design or implementation — is stale, or accept a real CSS gap)
+- final `status` (PASS / FAIL / UNCERTAIN)
+- `loopGuard.reason` and `loopGuard.message` (why it stopped)
+- `loopGuard.step` / `loopGuard.maxSteps` / `loopGuard.remainingSteps` so the
+  human knows how many iterations were used
+- for `regression` / `max-steps` / `uncertain` stops: the remaining `diffRegions`
+  and `diagnosis.headline`, so a human can decide the next campaign (adjust
+  thresholds, confirm which side — design or implementation — is stale, or
+  accept a real CSS gap)
 - every `ignore_regions` mask applied this campaign, with its label/rationale
 
-A `stop` on FAIL or UNCERTAIN is NOT a failure of the workflow — it is the
-tool correctly refusing to keep guessing. Report it plainly; do not reframe a
-stalled or uncertain campaign as "done."
+A `stop` on FAIL, `regression`, `max-steps`, or `uncertain` is NOT a failure of
+the workflow — it is the tool correctly refusing to keep guessing. Report it
+plainly; do not reframe a stalled or uncertain campaign as "done."

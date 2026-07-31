@@ -81,18 +81,20 @@ export function createMcpServer(): McpServer {
 6. If issues persist after code fix, check "マスク候補" in compare_design output. For each candidate: confirm it is an intentional diff (photo area, theme color, etc.), then call set_ignore_regions to register it. Do NOT auto-mask without confirmation.
 7. Re-run compare_design to verify fixes and masks.
 8. verify_fix で claimed fix の改善有無と副作用を確認する。
-9. STOP CONDITION — compare_design returns two text blocks: the first is JSON, the
-   second is a human-readable summary. The summary block STARTS with a "ループ判定" line
-   saying 停止 (stop) or 続行 (continue) plus the reason; the same data is in the JSON
-   block's "loopGuard" field. When it says 停止, stop editing immediately and report the
-   current state to the human. Do NOT keep iterating past it.
-   If the line reads 取得できません, the stop evaluation itself failed — treat that as 停止
-   and report, never as permission to continue.
+9. STOP CONDITION — compare_design returns loopGuard in the JSON and a ループ判定 line
+   in the human-readable summary. Use ONLY loopGuard.stop (boolean) to decide whether to
+   stop. loopGuard.step / loopGuard.maxSteps / loopGuard.remainingSteps tell you where
+   you are in the campaign (maxSteps defaults to 10). When stop is true, stop editing
+   immediately and report the current state to the human. Do NOT keep iterating past it.
+   reason is one of no-regression / regression / max-steps / uncertain / continue;
+   message is the human-readable explanation. If the ループ判定 line reads 取得できません,
+   the stop evaluation itself failed — treat that as 停止 and report, never as permission
+   to continue.
    NEVER use match_rate as the stop condition. It is a reference metric only: font
    antialiasing means an identical page still never reaches 100%, so "loop until 100%"
-   never terminates. The blocking gate is completionCriteria.structuralReview in the JSON.
-   UNCERTAIN is not a failure — it means the comparison was routed to human review by
-   design because its confidence was not trustworthy. Report it, do not retry blindly.
+   never terminates. UNCERTAIN is not a failure — it means the comparison was routed to
+   human review by design because its confidence was not trustworthy. Report it, do not
+   retry blindly.
 10. 使いにくさ・バグを発見したら report_issue で即起票してください。`,
       capabilities: {
         tools: {},
