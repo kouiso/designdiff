@@ -52,7 +52,9 @@ jobs:
             const issue = context.payload.issue;
 
             const message = `!swe
-[${issue.title}]\n<@${process.env.DEVIN_USER_ID}> Please handle this issue. First, create a plan and share it before implementing. Think in English, respond in Japanese.\n${issue.html_url}`;
+[${issue.title}]
+<@${process.env.DEVIN_USER_ID}> Please handle this issue. First, create a plan and share it before implementing. Think in English, respond in Japanese.
+${issue.html_url}`;
 
             const resp = await fetch('https://slack.com/api/chat.postMessage', {
               method: 'POST',
