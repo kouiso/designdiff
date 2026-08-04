@@ -2,13 +2,21 @@ import * as fs from "node:fs/promises";
 import { tmpdir } from "node:os";
 import * as path from "node:path";
 
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import {
   collectProjectNames,
   detectForeignProjectNames,
   formatForeignProjectError,
 } from "./cross-project-guard.js";
+
+// node:fs/promises の名前空間は素の import だと configurable でなく vi.spyOn できない。
+// 実装を素通しする形で一度ラップし、個別テストで一部だけ差し替え可能にする。
+// 他のテストは (実装は変わらないので) 引き続き実ファイルシステムに対して動く。
+vi.mock("node:fs/promises", async (importOriginal) => {
+  const actual = await importOriginal();
+  return { ...actual };
+});
 
 const KNOWN = ["acme-inc", "widget-native", "widget-web", "designdiff", "kouiso", "prompt", "docs"];
 
@@ -124,13 +132,20 @@ describe("collectProjectNames", () => {
   it("読めない置き場は素通しせず例外にする", async () => {
     const locked = path.join(root, "locked");
     await fs.mkdir(locked, { recursive: true });
-    await fs.chmod(locked, 0o000);
+    // chmod(dir, 0o000) は root 実行下では EACCES を起こさない (root はパーミッション
+    // ビットを無視する)。コンテナ/CI は root で動くことが珍しくないため、実パーミッションに
+    // 頼ると検証したい分岐 (ENOENT/ENOTDIR 以外の I/O 障害を握り潰さず例外化する) が
+    // 実行環境によっては一度も通らないまま緑になる。readdir 自体を直接失敗させ、
+    // 実行ユーザーに関わらず同じ経路を確実に踏む。
+    const readdirSpy = vi
+      .spyOn(fs, "readdir")
+      .mockRejectedValueOnce(Object.assign(new Error("simulated I/O failure"), { code: "EIO" }));
     try {
       await expect(
         detectForeignProjectNames("なんでもいい", { projectRoot: locked }),
       ).rejects.toThrow(/調べられませんでした/);
     } finally {
-      await fs.chmod(locked, 0o755);
+      readdirSpy.mockRestore();
     }
   });
 
