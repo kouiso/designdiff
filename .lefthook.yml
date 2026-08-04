@@ -1,3 +1,8 @@
+commit-msg:
+  commands:
+    project-guard:
+      run: node script/commit-msg-project-guard.mjs {1}
+
 pre-push:
   commands:
     ci-fast:
