@@ -17,8 +17,11 @@ const sharp = require(path.join(__dirname, "../app/mcp-server/node_modules/sharp
 const pixelmatch = require(path.join(__dirname, "../app/mcp-server/node_modules/pixelmatch"));
 
 const TMP_DIR = path.join(__dirname, "../.tmp-oracle");
-const COARSE_STEP = 5;
-const COARSE_RANGE = 50;
+// COARSE_RANGE は実機のシステム UI 帯オフセット(最大72px程度)まで届く値に
+// する。粗探索の候補数は変えたくないので、STEP も比例して大きくした
+// (441候補のまま: 50/5=10刻み → 100/10=同じ刻み数)。
+const COARSE_STEP = 10;
+const COARSE_RANGE = 100;
 const FINE_RANGE = 5;
 
 /**
@@ -148,6 +151,34 @@ async function loadImage(filePath, canvasWidth, canvasHeight) {
 }
 
 /**
+ * 宣言済み ignore region を両方の画像で同じ値に潰し、その領域の差分を
+ * 常にゼロ扱いにする。region 自体は expected.json に書かれた座標(検体作成者が
+ * 独立に定めた値)をそのまま使う。FigDiff 側のマスク算出コードは一切呼ばない
+ * ので、self-certify ban には抵触しない。
+ */
+function zeroIgnoreRegions(pixelsA, pixelsB, width, height, regions) {
+  if (!regions || regions.length === 0) return 0;
+  let maskedPixelCount = 0;
+  for (const region of regions) {
+    const left = Math.max(0, Math.floor(region.x));
+    const top = Math.max(0, Math.floor(region.y));
+    const right = Math.min(width, Math.ceil(region.x + region.width));
+    const bottom = Math.min(height, Math.ceil(region.y + region.height));
+    for (let y = top; y < bottom; y++) {
+      for (let x = left; x < right; x++) {
+        const idx = (y * width + x) * 4;
+        pixelsA[idx] = pixelsB[idx] = 0;
+        pixelsA[idx + 1] = pixelsB[idx + 1] = 0;
+        pixelsA[idx + 2] = pixelsB[idx + 2] = 0;
+        pixelsA[idx + 3] = pixelsB[idx + 3] = 0;
+        maskedPixelCount++;
+      }
+    }
+  }
+  return maskedPixelCount;
+}
+
+/**
  * Save Uint8ClampedArray as PNG via Sharp.
  */
 async function saveImage(pixels, width, height, outPath) {
@@ -249,8 +280,18 @@ async function selfTest() {
 /**
  * Compare two image files and write diff PNG.
  * Returns summary including detected translation and residual rate.
+ *
+ * ignoreRegions が渡されたら、その領域は比較の分母(comparablePixels)から除外する。
+ * 除外しないと、マスク前提の検体(例: システム UI 帯)が常に大きな残差を持ってしまい、
+ * 独立オラクルが正当な pass を fail と誤判定する。
+ *
+ * マスクは「位置合わせ後の画像」に対して座標そのまま適用する。位置合わせ前の
+ * design にマスクを焼き込んでからズラすと、ズラした分だけマスクの影が本来
+ * 塗りつぶされるべきでない行にズレて乗り、そこが偽の不一致として数えられて
+ * しまう(baseline は無補正なので座標がズレず安全だが、corrected は補正で
+ * 座標がズレるため、マスクは補正後に適用する必要がある)。
  */
-async function compareFiles(designPath, screenshotPath, outDiffPath) {
+async function compareFiles(designPath, screenshotPath, outDiffPath, ignoreRegions) {
   // Probe dimensions first so we know whether padding-normalization is needed.
   const [designMeta, screenshotMeta] = await Promise.all([
     sharp(designPath).metadata(),
@@ -271,26 +312,45 @@ async function compareFiles(designPath, screenshotPath, outDiffPath) {
     throw new Error(`Zero-dimension image: width=${width}, height=${height}`);
   }
 
-  // Baseline diff (no alignment)
+  // Baseline diff (no alignment) — マスクは座標がズレないここでだけ焼き込む。
+  const baselineDesign = Uint8ClampedArray.from(design.pixels);
+  const baselineScreenshot = Uint8ClampedArray.from(screenshot.pixels);
+  const maskedPixelCount = zeroIgnoreRegions(
+    baselineDesign,
+    baselineScreenshot,
+    width,
+    height,
+    ignoreRegions,
+  );
+  const comparablePixels = Math.max(1, width * height - maskedPixelCount);
   const baselineDiffPng = new Uint8ClampedArray(width * height * 4);
   const baselineDiffCount = pixelmatch(
-    design.pixels,
-    screenshot.pixels,
+    baselineDesign,
+    baselineScreenshot,
     baselineDiffPng,
     width,
     height,
     { threshold: 0.1 },
   );
 
-  // Detect translation
+  // Detect translation — マスクの影響を受けないよう、無加工のピクセルで探す。
   const detection = detectTranslationCoarse(design.pixels, screenshot.pixels, width, height);
 
-  // Apply correction
+  // Apply correction, then mask in the now-shared (post-alignment) coordinate frame.
   const correctedDesign = shiftPixels(design.pixels, width, height, detection.dx, detection.dy);
+  const correctedScreenshot = Uint8ClampedArray.from(screenshot.pixels);
+  const correctedMaskedPixelCount = zeroIgnoreRegions(
+    correctedDesign,
+    correctedScreenshot,
+    width,
+    height,
+    ignoreRegions,
+  );
+  const correctedComparablePixels = Math.max(1, width * height - correctedMaskedPixelCount);
   const correctedDiffPng = new Uint8ClampedArray(width * height * 4);
   const correctedDiffCount = pixelmatch(
     correctedDesign,
-    screenshot.pixels,
+    correctedScreenshot,
     correctedDiffPng,
     width,
     height,
@@ -309,11 +369,15 @@ async function compareFiles(designPath, screenshotPath, outDiffPath) {
     designOriginalSize: { width: design.originalWidth, height: design.originalHeight },
     screenshotOriginalSize: { width: screenshot.originalWidth, height: screenshot.originalHeight },
     totalPixels: width * height,
+    maskedPixelCount,
+    comparablePixels,
     baselineDiffPixels: baselineDiffCount,
-    baselineResidualRate: baselineDiffCount / (width * height),
+    baselineResidualRate: baselineDiffCount / comparablePixels,
     detectedOffset: { x: detection.dx, y: detection.dy },
+    correctedMaskedPixelCount,
+    correctedComparablePixels,
     correctedDiffPixels: correctedDiffCount,
-    correctedResidualRate: correctedDiffCount / (width * height),
+    correctedResidualRate: correctedDiffCount / correctedComparablePixels,
     improvement: baselineDiffCount - correctedDiffCount,
   };
 }
@@ -333,12 +397,23 @@ if (mode === "self-test" || !mode) {
       process.exit(2);
     });
 } else if (mode === "compare") {
-  const [designPath, screenshotPath, outDiffPath] = args;
+  const [designPath, screenshotPath, outDiffPath, ignoreRegionsJson] = args;
   if (!designPath || !screenshotPath) {
-    console.error("Usage: oracle-compare.mjs compare <design> <screenshot> [out-diff]");
+    console.error(
+      "Usage: oracle-compare.mjs compare <design> <screenshot> [out-diff] [ignore-regions-json]",
+    );
     process.exit(1);
   }
-  compareFiles(designPath, screenshotPath, outDiffPath)
+  let ignoreRegions;
+  if (ignoreRegionsJson) {
+    try {
+      ignoreRegions = JSON.parse(ignoreRegionsJson);
+    } catch (err) {
+      console.error("Invalid ignore-regions-json:", err.message);
+      process.exit(1);
+    }
+  }
+  compareFiles(designPath, screenshotPath, outDiffPath, ignoreRegions)
     .then((results) => {
       console.info(JSON.stringify(results, null, 2));
     })

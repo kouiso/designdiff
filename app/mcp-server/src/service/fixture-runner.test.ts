@@ -249,13 +249,13 @@ describe("golden fixture runner", () => {
           ? { width: metadata.width, height: metadata.height }
           : { width: 0, height: 0 },
       );
-      const stableRuns: Array<{
+      const stableRuns: {
         matchRate: number;
         diffPixelCount: number;
         totalPixelCount: number;
         translation: { x: number; y: number } | undefined;
         diffSha256: string;
-      }> = [];
+      }[] = [];
       for (let run = 0; run < repetitions; run += 1) {
         const result = await compareImages(
           {
