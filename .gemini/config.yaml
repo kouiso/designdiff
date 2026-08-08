@@ -1,4 +1,0 @@
-code_review:
-  comment_language: ja
-  max_comments: 10
-  pull_request_scope: diff_only
