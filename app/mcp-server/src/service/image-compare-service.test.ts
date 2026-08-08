@@ -132,6 +132,55 @@ describe("compareImages", () => {
     expect(result.normalization?.screenshotHeight).toBe(4200);
   });
 
+  it("24M超40M以下のstitched画像ではsystem UI座標を縮小後の実寸へ揃えること", async () => {
+    const { scaleComparisonGeometry } = await import("./image-compare-service.js");
+    const nativeWidth = 1080;
+    const nativeHeight = 30_000;
+    const capScale = Math.sqrt(24_000_000 / (nativeWidth * nativeHeight));
+    const workingWidth = Math.floor(nativeWidth * capScale);
+    const workingHeight = Math.floor(nativeHeight * capScale);
+
+    const scaled = scaleComparisonGeometry(
+      {
+        cropRegion: { x: 0, y: 2400, width: nativeWidth, height: 4800 },
+        ignoreRegions: [
+          { x: 0, y: 0, width: nativeWidth, height: 72, label: "system:status-bar" },
+          {
+            x: 0,
+            y: nativeHeight - 72,
+            width: nativeWidth,
+            height: 72,
+            label: "system:navigation-bar",
+          },
+        ],
+        verifiedSystemUiTopInset: 72,
+      },
+      { width: nativeWidth, height: nativeHeight },
+      { width: workingWidth, height: workingHeight },
+    );
+
+    expect(nativeWidth * nativeHeight).toBeGreaterThan(24_000_000);
+    expect(nativeWidth * nativeHeight).toBeLessThanOrEqual(40_000_000);
+    expect(workingWidth * workingHeight).toBeLessThanOrEqual(24_000_000);
+    expect(scaled.verifiedSystemUiTopInset).toBe(62);
+    expect(scaled.ignoreRegions).toEqual([
+      { x: 0, y: 0, width: workingWidth, height: 62, label: "system:status-bar" },
+      {
+        x: 0,
+        y: workingHeight - 62,
+        width: workingWidth,
+        height: 62,
+        label: "system:navigation-bar",
+      },
+    ]);
+    expect(scaled.cropRegion).toEqual({
+      x: 0,
+      y: 2065,
+      width: workingWidth,
+      height: 4132,
+    });
+  });
+
   it("gridSummary でセル別の matchRate と diffPixels を返すこと", async () => {
     const pixelmatchMock = await import("pixelmatch");
 

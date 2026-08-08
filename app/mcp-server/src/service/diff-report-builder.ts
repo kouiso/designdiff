@@ -14,6 +14,7 @@ import {
   type DiffReport,
   type FigmaNode,
   type RegionScore,
+  type ResolvedAlignment,
 } from "@figdiff/shared";
 
 // contain-resize で生じた余白を表す矩形 (= 実コンテンツの占有範囲)。
@@ -33,6 +34,11 @@ interface BuildDiffReportOptions {
   height: number;
   // 比較の対象外に置いた画素 (1 = 対象外)。矛盾判定の分母から外す。
   ignoreMask?: Uint8Array;
+  // capture_device が内部 preset から確定した status bar 高さ。
+  // 同じ量の下方向シフトだけを OS inset 補正として扱う。
+  verifiedSystemUiTopInset?: number;
+  // 一次pixelmatchが採用した位置補正。渡された場合は同じ画素を再移動しない。
+  resolvedAlignment?: ResolvedAlignment;
   // 見える差のあった画素を 1 で書き込む先。人間レビューへ回すときの証拠に使う。
   perceptibleMask?: Uint8Array;
   figmaRootNode?: FigmaNode;
@@ -73,12 +79,22 @@ const buildColorDifference = (
   width: number,
   height: number,
   bbox?: DiffBoundingBox,
+  ignoreMask?: Uint8Array,
 ): number => {
   const startX = bbox ? Math.max(0, Math.floor(bbox.x)) : 0;
   const startY = bbox ? Math.max(0, Math.floor(bbox.y)) : 0;
   const endX = bbox ? Math.min(Math.ceil(bbox.x + bbox.w), width) : width;
   const endY = bbox ? Math.min(Math.ceil(bbox.y + bbox.h), height) : height;
-  return computeMeanDeltaE2000(designPixels, screenshotPixels, startX, startY, endX, endY, width);
+  return computeMeanDeltaE2000(
+    designPixels,
+    screenshotPixels,
+    startX,
+    startY,
+    endX,
+    endY,
+    width,
+    ignoreMask,
+  );
 };
 
 // ΔE2000 は知覚距離なのでトークン1段のズレ (例 #22AA88 vs #28AA88) が閾値 2 を
@@ -90,8 +106,16 @@ const buildFlatColorMismatch = (
   width: number,
   height: number,
   bbox?: DiffBoundingBox,
+  ignoreMask?: Uint8Array,
 ): RegionScore["flatColorMismatch"] => {
-  const comparison = compareFlatRegionColor(designPixels, screenshotPixels, width, height, bbox);
+  const comparison = compareFlatRegionColor(
+    designPixels,
+    screenshotPixels,
+    width,
+    height,
+    bbox,
+    ignoreMask,
+  );
   if (!comparison.mismatch || !comparison.design || !comparison.screenshot) return undefined;
   return {
     designHex: comparison.design.hex,
@@ -306,8 +330,16 @@ function toScreenshotBbox(
 }
 
 function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
-  const { designPixels, screenshotPixels, width, height, figmaRootNode, cropRegion, paddingMask } =
-    options;
+  const {
+    designPixels,
+    screenshotPixels,
+    width,
+    height,
+    ignoreMask,
+    figmaRootNode,
+    cropRegion,
+    paddingMask,
+  } = options;
   const childRegions: RegionScore[] = [];
   const fullFrame = resolveFullFrame(width, height, cropRegion, options.fullFrame);
 
@@ -368,16 +400,31 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
         bbox,
         figmaNodeId: section.child.id,
         overlappingNodeIds: section.overlappingNodeIds,
-        structure: computeSsimForRegion(designPixels, screenshotPixels, width, height, bbox),
-        color: buildColorDifference(designPixels, screenshotPixels, width, height, bbox),
+        structure: computeSsimForRegion(
+          designPixels,
+          screenshotPixels,
+          width,
+          height,
+          bbox,
+          ignoreMask,
+        ),
+        color: buildColorDifference(
+          designPixels,
+          screenshotPixels,
+          width,
+          height,
+          bbox,
+          ignoreMask,
+        ),
         flatColorMismatch: buildFlatColorMismatch(
           designPixels,
           screenshotPixels,
           width,
           height,
           bbox,
+          ignoreMask,
         ),
-        shape: computeHausdorff(designPixels, screenshotPixels, width, height, bbox),
+        shape: computeHausdorff(designPixels, screenshotPixels, width, height, bbox, ignoreMask),
         layout: UNIMPLEMENTED_LAYOUT_SCORE,
         textureScore: getTextureScore(bbox),
       });
@@ -414,16 +461,31 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
       diffClusterRegions.push({
         regionId: `diff-cluster-${bbox.x}-${bbox.y}-${bbox.w}-${bbox.h}`,
         bbox,
-        structure: computeSsimForRegion(designPixels, screenshotPixels, width, height, bbox),
-        color: buildColorDifference(designPixels, screenshotPixels, width, height, bbox),
+        structure: computeSsimForRegion(
+          designPixels,
+          screenshotPixels,
+          width,
+          height,
+          bbox,
+          ignoreMask,
+        ),
+        color: buildColorDifference(
+          designPixels,
+          screenshotPixels,
+          width,
+          height,
+          bbox,
+          ignoreMask,
+        ),
         flatColorMismatch: buildFlatColorMismatch(
           designPixels,
           screenshotPixels,
           width,
           height,
           bbox,
+          ignoreMask,
         ),
-        shape: computeHausdorff(designPixels, screenshotPixels, width, height, bbox),
+        shape: computeHausdorff(designPixels, screenshotPixels, width, height, bbox, ignoreMask),
         layout: UNIMPLEMENTED_LAYOUT_SCORE,
         textureScore: getTextureScore(bbox),
       });
@@ -445,13 +507,21 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
     regionId: "whole-frame",
     scope: "root",
     bbox: wholeFrameBbox,
-    structure: computeSsimForRegion(designPixels, screenshotPixels, width, height, contentBbox),
+    structure: computeSsimForRegion(
+      designPixels,
+      screenshotPixels,
+      width,
+      height,
+      contentBbox,
+      ignoreMask,
+    ),
     color: buildColorDifference(
       designPixels,
       screenshotPixels,
       width,
       height,
       paddingMask ? contentBbox : undefined,
+      ignoreMask,
     ),
     flatColorMismatch: buildFlatColorMismatch(
       designPixels,
@@ -459,8 +529,9 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
       width,
       height,
       contentBbox,
+      ignoreMask,
     ),
-    shape: computeHausdorff(designPixels, screenshotPixels, width, height, contentBbox),
+    shape: computeHausdorff(designPixels, screenshotPixels, width, height, contentBbox, ignoreMask),
     layout: UNIMPLEMENTED_LAYOUT_SCORE,
     textureScore: getTextureScore(wholeFrameBbox),
     // 比較元のノードIDが解決できない検体でも、この行を名前で引けるようにする。
@@ -564,11 +635,27 @@ export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
     );
   }
 
+  const verifiedSystemUiTopInset = options.verifiedSystemUiTopInset;
+  // preset 値だけを孤立候補にすると、実際は 1px 違う回でも最善値に見えてしまう。
+  // 両隣も測り、preset と完全一致した回だけを後段で system UI 補正と認める。
   const {
     alignment,
     alignedDesignPixels,
     applied: alignmentApplied,
-  } = resolveAlignment(designPixels, screenshotPixels, width, height);
+  } = options.resolvedAlignment ??
+  resolveAlignment(
+    designPixels,
+    screenshotPixels,
+    width,
+    height,
+    options.ignoreMask,
+    verifiedSystemUiTopInset === undefined
+      ? []
+      : [-1, 0, 1].map((delta) => ({
+          dx: 0,
+          dy: verifiedSystemUiTopInset + delta,
+        })),
+  );
   const { x: dx, y: dy } = alignment.translation;
 
   // diffRegions は補正前 (resolveAlignment 前) の pixelmatch 座標系。補正が
@@ -606,6 +693,7 @@ export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
   const alignedOptions = {
     ...options,
     designPixels: alignedDesignPixels,
+    screenshotPixels,
     diffRegions: options.diffRegions
       ?.map((bbox) => clipToAlignedCanvas(bbox))
       .filter((bbox): bbox is DiffBoundingBox & { diffPixelCount?: number } => bbox !== null),
@@ -623,9 +711,16 @@ export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
   // same hasCriticalIssue path "color" already uses (computeVerdict itself
   // is untouched); a smaller accepted shift stays a visible, non-blocking
   // note — preserving the original false-"全面ズレ" fix this alignment
-  // correction exists for.
+  // correction exists for. capture_device の内部 preset と完全一致する下方向だけは
+  // 実装差分ではないため issue にせず、一般の 10px 閾値は変えない。
   const shiftMagnitude = Math.sqrt(dx * dx + dy * dy);
-  if (alignmentApplied && shiftMagnitude >= GLOBAL_SHIFT_ISSUE_THRESHOLD_PX) {
+  const isVerifiedSystemUiShift =
+    dx === 0 && verifiedSystemUiTopInset !== undefined && dy === verifiedSystemUiTopInset;
+  if (
+    alignmentApplied &&
+    shiftMagnitude >= GLOBAL_SHIFT_ISSUE_THRESHOLD_PX &&
+    !isVerifiedSystemUiShift
+  ) {
     const isCriticalShift = shiftMagnitude >= GLOBAL_SHIFT_CRITICAL_THRESHOLD_PX;
     issues.push({
       regionId: "whole-frame",

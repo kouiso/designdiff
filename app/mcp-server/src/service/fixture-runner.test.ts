@@ -1,10 +1,18 @@
+import { createHash } from "node:crypto";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
+import { isDeepStrictEqual } from "node:util";
 
+import sharp from "sharp";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 
-import type { CompareDesignResult, FigmaNode } from "@figdiff/shared";
+import {
+  resolveFixtureVerifiedSystemUiTopInset,
+  SystemUiFixtureMetadataSchema,
+  type CompareDesignResult,
+  type FigmaNode,
+} from "@figdiff/shared";
 
 const FigmaNodeSchema: z.ZodType<FigmaNode> = z.lazy(() =>
   z.object({
@@ -59,24 +67,37 @@ const FigmaNodeSchema: z.ZodType<FigmaNode> = z.lazy(() =>
   }),
 );
 
-const FixtureVariantSchema = z.object({
-  name: z.string().min(1),
-  image: z.string().min(1),
-  expectedVerdict: z.enum(["pass", "fail", "inconclusive"]),
-  expectedKinds: z.array(z.string()),
-  expectedIssueKinds: z
-    .array(z.enum(["color", "position", "size", "missing", "extra", "typography"]))
-    .optional(),
-  notes: z.string().optional(),
-  expectedWeightedStructureMin: z.number().optional(),
-  expectedWeightedStructureMax: z.number().optional(),
-  expectedWeightedColorMin: z.number().optional(),
-  expectedWeightedColorMax: z.number().optional(),
-  expectedWorstRegionIds: z.array(z.string()).optional(),
-  expectedRegionStructure: z
-    .record(z.string(), z.object({ min: z.number().optional(), max: z.number().optional() }))
-    .optional(),
-});
+const FixtureVariantSchema = z
+  .object({
+    name: z.string().min(1),
+    image: z.string().min(1),
+    expectedVerdict: z.enum(["pass", "fail", "inconclusive"]),
+    expectedKinds: z.array(z.string()),
+    expectedIssueKinds: z
+      .array(z.enum(["color", "position", "size", "missing", "extra", "typography"]))
+      .optional(),
+    ignoreRegions: z
+      .array(
+        z.object({
+          x: z.number(),
+          y: z.number(),
+          width: z.number().positive(),
+          height: z.number().positive(),
+          label: z.string().optional(),
+        }),
+      )
+      .optional(),
+    notes: z.string().optional(),
+    expectedWeightedStructureMin: z.number().optional(),
+    expectedWeightedStructureMax: z.number().optional(),
+    expectedWeightedColorMin: z.number().optional(),
+    expectedWeightedColorMax: z.number().optional(),
+    expectedWorstRegionIds: z.array(z.string()).optional(),
+    expectedRegionStructure: z
+      .record(z.string(), z.object({ min: z.number().optional(), max: z.number().optional() }))
+      .optional(),
+  })
+  .and(SystemUiFixtureMetadataSchema);
 
 const FixtureExpectationSchema = z.object({
   pairId: z.string().min(1),
@@ -207,7 +228,7 @@ describe("golden fixture runner", () => {
     vi.doUnmock("@figdiff/shared");
   });
 
-  async function runFixture(pairId: string): Promise<void> {
+  async function runFixture(pairId: string, repetitions = 1): Promise<void> {
     const { compareImages } = await import("./image-compare-service.js");
     const pairDir = path.join(FIXTURES_ROOT, pairId);
     const expectationRaw = await fs.readFile(path.join(pairDir, "expected.json"), "utf8");
@@ -216,22 +237,66 @@ describe("golden fixture runner", () => {
 
     for (const variant of expectation.variants) {
       const screenshotBase64 = await loadBase64(path.join(pairDir, variant.image));
-      const result = await compareImages(
-        {
-          designBase64,
-          screenshotBase64,
-          threshold: 0.1,
-        },
-        expectation.figmaRootNode,
+      const metadata = variant.captureDevice
+        ? await sharp(Buffer.from(screenshotBase64, "base64")).metadata()
+        : undefined;
+      if (metadata && (!metadata.width || !metadata.height)) {
+        throw new Error(`${expectation.pairId}/${variant.name}: screenshot dimensions are missing`);
+      }
+      const verifiedSystemUiTopInset = resolveFixtureVerifiedSystemUiTopInset(
+        variant,
+        metadata?.width && metadata.height
+          ? { width: metadata.width, height: metadata.height }
+          : { width: 0, height: 0 },
       );
+      const stableRuns: Array<{
+        matchRate: number;
+        diffPixelCount: number;
+        totalPixelCount: number;
+        translation: { x: number; y: number } | undefined;
+        diffSha256: string;
+      }> = [];
+      for (let run = 0; run < repetitions; run += 1) {
+        const result = await compareImages(
+          {
+            designBase64,
+            screenshotBase64,
+            threshold: 0.1,
+            ignoreRegions: variant.ignoreRegions,
+            verifiedSystemUiTopInset,
+          },
+          expectation.figmaRootNode,
+        );
 
-      expect(result.diffReport?.aggregateVerdict).toBe(variant.expectedVerdict);
-      assertWeightedStructure(result, variant);
-      assertWeightedColor(result, variant);
-      assertRegionStructure(result, variant);
-      assertIssuePresence(result, variant);
-      assertIssueKinds(result, variant);
-      assertWorstRegions(result, variant);
+        expect(result.diffReport?.aggregateVerdict).toBe(variant.expectedVerdict);
+        assertWeightedStructure(result, variant);
+        assertWeightedColor(result, variant);
+        assertRegionStructure(result, variant);
+        assertIssuePresence(result, variant);
+        assertIssueKinds(result, variant);
+        assertWorstRegions(result, variant);
+        if (!result.diffImageBase64) {
+          throw new Error(`${expectation.pairId}/${variant.name}: diff image is missing`);
+        }
+        stableRuns.push({
+          matchRate: result.matchRate,
+          diffPixelCount: result.diffPixelCount,
+          totalPixelCount: result.totalPixelCount,
+          translation: result.diffReport?.alignment.translation,
+          diffSha256: createHash("sha256")
+            .update(Buffer.from(result.diffImageBase64, "base64"))
+            .digest("hex"),
+        });
+      }
+      expect(stableRuns.every((run) => isDeepStrictEqual(run, stableRuns[0]))).toBe(true);
+      if (verifiedSystemUiTopInset !== undefined) {
+        expect(stableRuns[0]?.matchRate).toBe(100);
+        expect(stableRuns[0]?.diffPixelCount).toBe(0);
+        expect(stableRuns[0]?.translation).toEqual({
+          x: 0,
+          y: verifiedSystemUiTopInset,
+        });
+      }
     }
   }
 
@@ -271,6 +336,14 @@ describe("golden fixture runner", () => {
     "pair-05-localized-diff の期待 verdict を満たすこと (Issue #56 回帰防止)",
     async () => {
       await runFixture("pair-05-localized-diff");
+    },
+    FIXTURE_TEST_TIMEOUT_MS,
+  );
+
+  it(
+    "pair-06-system-ui-alignment の stitched mask と位置補正を満たすこと",
+    async () => {
+      await runFixture("pair-06-system-ui-alignment", 3);
     },
     FIXTURE_TEST_TIMEOUT_MS,
   );

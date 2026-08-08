@@ -158,4 +158,30 @@ describe("compareFlatRegionColor", () => {
 
     expect(compareFlatRegionColor(design, screenshot, WIDTH, HEIGHT).mismatch).toBe(false);
   });
+
+  it("ignores a different fill that exists only inside the mask", () => {
+    const design = makeCanvas(WIDTH, HEIGHT, solid(0x22, 0xaa, 0x88));
+    const screenshot = makeCanvas(WIDTH, HEIGHT, (_x, y) =>
+      y < HEIGHT / 2 ? [0xff, 0x00, 0x00] : [0x22, 0xaa, 0x88],
+    );
+    const ignoreMask = new Uint8Array(WIDTH * HEIGHT);
+    ignoreMask.fill(1, 0, WIDTH * (HEIGHT / 2));
+
+    expect(
+      compareFlatRegionColor(design, screenshot, WIDTH, HEIGHT, undefined, ignoreMask).mismatch,
+    ).toBe(false);
+  });
+
+  it("keeps an unmasked fill mismatch under a large mask", () => {
+    const design = makeCanvas(WIDTH, HEIGHT, solid(0x22, 0xaa, 0x88));
+    const screenshot = makeCanvas(WIDTH, HEIGHT, (_x, y) =>
+      y < HEIGHT - 16 ? [0xff, 0x00, 0x00] : [0x28, 0xaa, 0x88],
+    );
+    const ignoreMask = new Uint8Array(WIDTH * HEIGHT);
+    ignoreMask.fill(1, 0, WIDTH * (HEIGHT - 16));
+
+    const result = compareFlatRegionColor(design, screenshot, WIDTH, HEIGHT, undefined, ignoreMask);
+    expect(result.mismatch).toBe(true);
+    expect(result.maxChannelDelta).toBe(6);
+  });
 });

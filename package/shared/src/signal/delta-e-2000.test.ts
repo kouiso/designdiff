@@ -49,6 +49,29 @@ describe("computeMeanDeltaE2000", () => {
 
     expect(computeMeanDeltaE2000(a, b, 0, 0, W, H, W)).toBeLessThan(PERCEPTIBLE_DELTA_E);
   });
+
+  it("excludes masked pixels from the mean while retaining an unmasked defect", () => {
+    const a = canvas(W, H, () => [20, 20, 20]);
+    const b = canvas(W, H, (_x, y) => (y < 90 ? [255, 255, 255] : [200, 20, 20]));
+    const ignoreMask = new Uint8Array(W * H);
+    for (let y = 0; y < 90; y++) {
+      ignoreMask.fill(1, y * W, (y + 1) * W);
+    }
+
+    const score = computeMeanDeltaE2000(a, b, 0, 0, W, H, W, ignoreMask);
+    expect(score).toBeGreaterThan(PERCEPTIBLE_DELTA_E);
+  });
+
+  it("does not let masked content affect the mean", () => {
+    const a = canvas(W, H, () => [20, 20, 20]);
+    const b = canvas(W, H, (_x, y) => (y < 90 ? [255, 255, 255] : [20, 20, 20]));
+    const ignoreMask = new Uint8Array(W * H);
+    for (let y = 0; y < 90; y++) {
+      ignoreMask.fill(1, y * W, (y + 1) * W);
+    }
+
+    expect(computeMeanDeltaE2000(a, b, 0, 0, W, H, W, ignoreMask)).toBe(0);
+  });
 });
 
 // 平均 ΔE は広い無変化領域に引きずられて閾値を下回る。「画面の過半が目に見えて

@@ -97,4 +97,38 @@ describe("computeHausdorff", () => {
     expect(result).toBeGreaterThanOrEqual(0);
     expect(result).toBeLessThanOrEqual(1);
   });
+
+  it("マスク内の内容とその境界から偽の輪郭を作らない", () => {
+    const width = 48;
+    const height = 32;
+    const imageA = createBlankImage(width, height);
+    const imageB = createBlankImage(width, height);
+    const ignoreMask = new Uint8Array(width * height);
+    ignoreMask.forEach((_value, pixel) => {
+      if (pixel % width < 24) ignoreMask[pixel] = 1;
+    });
+    drawRect(imageA, width, 4, 8, 8, 8);
+    drawRect(imageB, width, 12, 8, 8, 8);
+    drawRect(imageA, width, 30, 8, 8, 8);
+    drawRect(imageB, width, 30, 8, 8, 8);
+
+    expect(computeHausdorff(imageA, imageB, width, height, undefined, ignoreMask)).toBe(0);
+  });
+
+  it("広いマスクの外にある輪郭ずれは残す", () => {
+    const width = 48;
+    const height = 32;
+    const imageA = createBlankImage(width, height);
+    const imageB = createBlankImage(width, height);
+    const ignoreMask = new Uint8Array(width * height);
+    ignoreMask.forEach((_value, pixel) => {
+      if (pixel % width < 24) ignoreMask[pixel] = 1;
+    });
+    drawRect(imageA, width, 28, 8, 8, 8);
+    drawRect(imageB, width, 36, 8, 8, 8);
+
+    expect(computeHausdorff(imageA, imageB, width, height, undefined, ignoreMask)).toBeGreaterThan(
+      0.1,
+    );
+  });
 });

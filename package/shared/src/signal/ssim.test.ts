@@ -101,4 +101,110 @@ describe("computeSsimForRegion", () => {
 
     expect(result).toBe(1);
   });
+
+  it("マスクなしでは端数窓を従来どおり1窓として均等平均する", () => {
+    const width = 33;
+    const height = 8;
+    const imageA = createSolidImage(width, height, 0);
+    const imageB = createSolidImage(width, height, 0);
+
+    for (let y = 0; y < height; y++) {
+      const offset = (y * width + (width - 1)) * 4;
+      imageB[offset] = 255;
+      imageB[offset + 1] = 255;
+      imageB[offset + 2] = 255;
+    }
+
+    const edgeWindowScore = computeSsimForRegion(imageA, imageB, width, height, {
+      x: width - 1,
+      y: 0,
+      w: 1,
+      h: height,
+    });
+    const result = computeSsimForRegion(imageA, imageB, width, height, {
+      x: 0,
+      y: 0,
+      w: width,
+      h: height,
+    });
+
+    expect(result).toBeCloseTo((4 + edgeWindowScore) / 5, 10);
+  });
+
+  it("マスクありでは各窓の有効画素数で重み付けする", () => {
+    const width = 16;
+    const height = 8;
+    const imageA = createSolidImage(width, height, 0);
+    const imageB = createSolidImage(width, height, 0);
+    const ignoreMask = new Uint8Array(width * height);
+
+    imageB[0] = 255;
+    imageB[1] = 255;
+    imageB[2] = 255;
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < 8; x++) {
+        ignoreMask[y * width + x] = 1;
+      }
+    }
+    ignoreMask[0] = 0;
+
+    const differingPixelScore = computeSsimForRegion(imageA, imageB, width, height, {
+      x: 0,
+      y: 0,
+      w: 1,
+      h: 1,
+    });
+    const result = computeSsimForRegion(
+      imageA,
+      imageB,
+      width,
+      height,
+      { x: 0, y: 0, w: width, h: height },
+      ignoreMask,
+    );
+
+    expect(result).toBeCloseTo((differingPixelScore + 64) / 65, 10);
+  });
+
+  it("マスク内の画素値を統計と分母から除外する", () => {
+    const imageA = createSolidImage(16, 16, 32);
+    const imageB = createSolidImage(16, 16, 32);
+    const ignoreMask = new Uint8Array(16 * 16);
+
+    for (let y = 0; y < 8; y++) {
+      for (let x = 0; x < 16; x++) {
+        const pixel = y * 16 + x;
+        const offset = pixel * 4;
+        ignoreMask[pixel] = 1;
+        imageB[offset] = 255;
+        imageB[offset + 1] = 255;
+        imageB[offset + 2] = 255;
+      }
+    }
+
+    expect(
+      computeSsimForRegion(imageA, imageB, 16, 16, { x: 0, y: 0, w: 16, h: 16 }, ignoreMask),
+    ).toBeCloseTo(1, 6);
+  });
+
+  it("広いマスクがあっても対象内の実差分は残す", () => {
+    const imageA = createSolidImage(16, 16, 0);
+    const imageB = createSolidImage(16, 16, 0);
+    const ignoreMask = new Uint8Array(16 * 16).fill(1);
+
+    for (let y = 8; y < 16; y++) {
+      for (let x = 8; x < 16; x++) {
+        const pixel = y * 16 + x;
+        const offset = pixel * 4;
+        ignoreMask[pixel] = 0;
+        imageB[offset] = 255;
+        imageB[offset + 1] = 255;
+        imageB[offset + 2] = 255;
+      }
+    }
+
+    expect(
+      computeSsimForRegion(imageA, imageB, 16, 16, { x: 0, y: 0, w: 16, h: 16 }, ignoreMask),
+    ).toBeLessThan(0.001);
+  });
 });

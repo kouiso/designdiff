@@ -70,7 +70,11 @@ export function detectFlatRegionColor(
   width: number,
   height: number,
   bbox?: DiffBoundingBox,
+  ignoreMask?: Uint8Array,
 ): FlatRegionColor | null {
+  if (ignoreMask !== undefined && ignoreMask.length !== width * height) {
+    throw new Error("ignoreMask length must equal width * height");
+  }
   const { startX, startY, endX, endY } = clampBounds(bbox, width, height);
   const regionWidth = endX - startX;
   const regionHeight = endY - startY;
@@ -87,13 +91,15 @@ export function detectFlatRegionColor(
   let sampled = 0;
   for (let y = startY; y < endY; y += stride) {
     for (let x = startX; x < endX; x += stride) {
-      const index = (y * width + x) * 4;
+      const pixelIndex = y * width + x;
+      if (ignoreMask?.[pixelIndex] === 1) continue;
+      const index = pixelIndex * 4;
       const key = (pixels[index] << 16) | (pixels[index + 1] << 8) | pixels[index + 2];
       counts.set(key, (counts.get(key) ?? 0) + 1);
       sampled += 1;
     }
   }
-  if (sampled === 0) return null;
+  if (sampled < MIN_FLAT_PIXELS) return null;
 
   let modalKey = 0;
   let modalCount = 0;
@@ -135,9 +141,10 @@ export function compareFlatRegionColor(
   width: number,
   height: number,
   bbox?: DiffBoundingBox,
+  ignoreMask?: Uint8Array,
 ): FlatRegionColorComparison {
-  const design = detectFlatRegionColor(designPixels, width, height, bbox);
-  const screenshot = detectFlatRegionColor(screenshotPixels, width, height, bbox);
+  const design = detectFlatRegionColor(designPixels, width, height, bbox, ignoreMask);
+  const screenshot = detectFlatRegionColor(screenshotPixels, width, height, bbox, ignoreMask);
   if (!design || !screenshot) {
     return { design, screenshot, mismatch: false };
   }

@@ -24,23 +24,38 @@ const computeWindowStats = (
   startY: number,
   windowWidth: number,
   windowHeight: number,
+  ignoreMask?: Uint8Array,
 ): {
   meanA: number;
   meanB: number;
   varianceA: number;
   varianceB: number;
   covariance: number;
+  sampleCount: number;
 } => {
-  const sampleCount = windowWidth * windowHeight;
+  let sampleCount = 0;
   let sumA = 0;
   let sumB = 0;
 
   for (let offsetY = 0; offsetY < windowHeight; offsetY++) {
     for (let offsetX = 0; offsetX < windowWidth; offsetX++) {
       const index = (startY + offsetY) * width + startX + offsetX;
+      if (ignoreMask?.[index] === 1) continue;
       sumA += luminanceA[index];
       sumB += luminanceB[index];
+      sampleCount += 1;
     }
+  }
+
+  if (sampleCount === 0) {
+    return {
+      meanA: 0,
+      meanB: 0,
+      varianceA: 0,
+      varianceB: 0,
+      covariance: 0,
+      sampleCount: 0,
+    };
   }
 
   const meanA = sumA / sampleCount;
@@ -52,6 +67,7 @@ const computeWindowStats = (
   for (let offsetY = 0; offsetY < windowHeight; offsetY++) {
     for (let offsetX = 0; offsetX < windowWidth; offsetX++) {
       const index = (startY + offsetY) * width + startX + offsetX;
+      if (ignoreMask?.[index] === 1) continue;
       const centeredA = luminanceA[index] - meanA;
       const centeredB = luminanceB[index] - meanB;
       varianceAccumulatorA += centeredA * centeredA;
@@ -66,6 +82,7 @@ const computeWindowStats = (
     varianceA: varianceAccumulatorA / sampleCount,
     varianceB: varianceAccumulatorB / sampleCount,
     covariance: covarianceAccumulator / sampleCount,
+    sampleCount,
   };
 };
 
@@ -108,9 +125,13 @@ export const computeSsimForRegion = (
   width: number,
   height: number,
   bbox: SsimRegion,
+  ignoreMask?: Uint8Array,
 ): number => {
   if (imgA.length !== width * height * 4 || imgB.length !== width * height * 4) {
     throw new Error("Image data length must equal width * height * 4");
+  }
+  if (ignoreMask !== undefined && ignoreMask.length !== width * height) {
+    throw new Error("ignoreMask length must equal width * height");
   }
 
   const region = clampRegion(bbox, width, height);
@@ -122,6 +143,7 @@ export const computeSsimForRegion = (
   const luminanceB = toLuminance(imgB);
   let ssimSum = 0;
   let windowCount = 0;
+  let sampleCount = 0;
 
   // 窓は 8x8 のボックスで固定する。ガウス窓へ変えると、判定の基準が
   // これまでの記録と繋がらなくなる。
@@ -140,17 +162,29 @@ export const computeSsimForRegion = (
         startY,
         windowWidth,
         windowHeight,
+        ignoreMask,
       );
-      ssimSum += computeWindowSsim(stats);
-      windowCount += 1;
+      if (stats.sampleCount === 0) continue;
+      const windowSsim = computeWindowSsim(stats);
+      if (ignoreMask === undefined) {
+        // mask が無い比較は従来の窓単位平均を維持する。端数窓を画素数で軽くすると、
+        // 既存fixtureの構造スコアと0.95判定境界がこの機能と無関係に変わるため。
+        ssimSum += windowSsim;
+        windowCount += 1;
+      } else {
+        // mask 内の画素を除いた窓は、有効画素が少ないほど寄与も小さくする。
+        ssimSum += windowSsim * stats.sampleCount;
+        sampleCount += stats.sampleCount;
+      }
     }
   }
 
-  if (windowCount === 0) {
+  const divisor = ignoreMask === undefined ? windowCount : sampleCount;
+  if (divisor === 0) {
     return 1;
   }
 
-  const averageSsim = ssimSum / windowCount;
+  const averageSsim = ssimSum / divisor;
   return Math.min(1, Math.max(0, averageSsim));
 };
 

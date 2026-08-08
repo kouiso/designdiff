@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { buildSystemBarIgnoreRegions } from "./system-bar-ignore-regions.js";
+import {
+  buildSystemBarIgnoreRegions,
+  getVerifiedSystemBarTopInset,
+} from "./system-bar-ignore-regions.js";
 
 describe("buildSystemBarIgnoreRegions", () => {
   it("Pixel 7 screenshot の上下 system bar マスク座標を返すこと", () => {
@@ -50,5 +53,29 @@ describe("buildSystemBarIgnoreRegions", () => {
       { x: 0, y: 0, width: 2556, height: 96, label: "system:status-bar" },
       { x: 0, y: 1083, width: 2556, height: 96, label: "system:navigation-bar" },
     ]);
+  });
+
+  it("スクロール結合画像では navigation bar を viewport 末尾ではなく結合画像末尾へ置くこと", () => {
+    expect(buildSystemBarIgnoreRegions(360, 800, "android", undefined, 1600)).toEqual([
+      { x: 0, y: 0, width: 360, height: 48, label: "system:status-bar" },
+      { x: 0, y: 1568, width: 360, height: 32, label: "system:navigation-bar" },
+    ]);
+  });
+
+  it("スクロール結合画像の crop 後も末尾 navigation bar を post-crop 座標へ変換すること", () => {
+    expect(
+      buildSystemBarIgnoreRegions(
+        360,
+        800,
+        "android",
+        { x: 0, y: 100, width: 360, height: 1500 },
+        1600,
+      ),
+    ).toEqual([{ x: 0, y: 1468, width: 360, height: 32, label: "system:navigation-bar" }]);
+  });
+
+  it("verified insetは完全一致presetだけを返すこと", () => {
+    expect(getVerifiedSystemBarTopInset(1080, 2400, "android")).toBe(72);
+    expect(getVerifiedSystemBarTopInset(360, 800, "android")).toBeUndefined();
   });
 });

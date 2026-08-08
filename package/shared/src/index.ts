@@ -22,6 +22,12 @@ export {
   type FigmaTypeStyle,
 } from "./figma-client.js";
 
+export {
+  resolveFixtureVerifiedSystemUiTopInset,
+  SystemUiFixtureMetadataSchema,
+  type SystemUiFixtureMetadata,
+} from "./verification-fixture.js";
+
 // CSS Suggestion Generator
 export { figmaColorToHex, generateCssSuggestion } from "./css-suggestion.js";
 
@@ -119,6 +125,7 @@ export { buildComparisonHeadline } from "./confidence/headline.js";
 export { runPreflight, type PreflightInput } from "./confidence/preflight.js";
 export {
   buildSystemBarIgnoreRegions,
+  getVerifiedSystemBarTopInset,
   type MobileSystemBarPlatform,
 } from "./confidence/system-bar-ignore-regions.js";
 

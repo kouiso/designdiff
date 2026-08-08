@@ -49,11 +49,27 @@ function toLuminance(pixels: Uint8ClampedArray): Float64Array {
   return luminance;
 }
 
+function kernelTouchesIgnoreMask(
+  ignoreMask: Uint8Array | undefined,
+  width: number,
+  x: number,
+  y: number,
+): boolean {
+  if (!ignoreMask) return false;
+  for (let offsetY = -1; offsetY <= 1; offsetY++) {
+    for (let offsetX = -1; offsetX <= 1; offsetX++) {
+      if (ignoreMask[(y + offsetY) * width + x + offsetX] === 1) return true;
+    }
+  }
+  return false;
+}
+
 function detectEdges(
   luminance: Float64Array,
   width: number,
   height: number,
   bbox: DiffBoundingBox,
+  ignoreMask?: Uint8Array,
 ): Point[] {
   const region = clampRegion(bbox, width, height);
   if (region.w < 3 || region.h < 3) {
@@ -68,6 +84,10 @@ function detectEdges(
 
   for (let y = startY; y < endY; y++) {
     for (let x = startX; x < endX; x++) {
+      // Sobel の 3x3 窓に除外画素が一つでもあれば、その中心点も評価しない。
+      // 値を黒へ置換するとマスク境界そのものが偽の輪郭になるため。
+      if (kernelTouchesIgnoreMask(ignoreMask, width, x, y)) continue;
+
       let gx = 0;
       let gy = 0;
       let kernelIndex = 0;
@@ -136,9 +156,13 @@ export const computeHausdorff = (
   width: number,
   height: number,
   bbox?: DiffBoundingBox,
+  ignoreMask?: Uint8Array,
 ): number => {
   if (imgA.length !== width * height * 4 || imgB.length !== width * height * 4) {
     throw new Error("Image data length must equal width * height * 4");
+  }
+  if (ignoreMask !== undefined && ignoreMask.length !== width * height) {
+    throw new Error("ignoreMask length must equal width * height");
   }
 
   const region = bbox ? clampRegion(bbox, width, height) : { x: 0, y: 0, w: width, h: height };
@@ -148,8 +172,8 @@ export const computeHausdorff = (
 
   const luminanceA = toLuminance(imgA);
   const luminanceB = toLuminance(imgB);
-  const edgesA = detectEdges(luminanceA, width, height, region);
-  const edgesB = detectEdges(luminanceB, width, height, region);
+  const edgesA = detectEdges(luminanceA, width, height, region, ignoreMask);
+  const edgesB = detectEdges(luminanceB, width, height, region, ignoreMask);
 
   if (edgesA.length === 0 && edgesB.length === 0) {
     return 0;
