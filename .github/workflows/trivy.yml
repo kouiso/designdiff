@@ -27,7 +27,6 @@ jobs:
     name: Dependency & Misconfiguration Scan
     runs-on: ${{ vars.RUNNER_LINUX }}
     timeout-minutes: 15
-    if: github.actor != 'dependabot[bot]'
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -50,7 +49,12 @@ jobs:
       # 同等になるよう MEDIUM 以上にしている（GitHub Advisory の moderate ≒ Trivy の MEDIUM）。
       # exit-code 0 は、置き換え元が warn-only だったのに合わせている。
       # 既存の findings を解消したあとにハードゲート化する想定。
+      #
+      # shell: bash を明示しているのは pipefail を効かせるため。GitHub Actions は
+      # shell を省略すると `bash -e` のみで `-o pipefail` は付かず、`trivy fs | tee`
+      # の trivy 側の失敗（DB取得失敗等）が tee の成功で握りつぶされてしまう。
       - name: Scan
+        shell: bash
         run: |
           trivy fs \
             --scanners vuln,misconfig \
