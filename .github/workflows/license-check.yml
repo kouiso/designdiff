@@ -33,16 +33,22 @@ jobs:
         run: npm install -g license-checker
 
       - name: Check licenses
+        shell: bash
         run: |
+          set -o pipefail
+
           # 旧識別子（GPL-2.0 等）と現行 SPDX 識別子（GPL-2.0-only / -or-later 等）の
           # 両方を含める。license-checker の --failOn は完全一致のため、削除した
           # dependency-review.yml の deny-licenses（現行識別子）をここに統合している。
+          #
+          # --failOn は nopt の String 型オプションで、CLI 上で複数回渡すと最後の値
+          # だけが残り、他は黙って無視される（license-checker 25.0.1 で実測確認済み）。
+          # 必ずセミコロン区切りの1文字列として1回だけ渡す。
           DISALLOW="GPL-2.0;GPL-2.0-only;GPL-2.0-or-later;GPL-3.0;GPL-3.0-only;GPL-3.0-or-later;LGPL-2.0;LGPL-2.0-only;LGPL-2.0-or-later;LGPL-3.0;LGPL-3.0-only;LGPL-3.0-or-later;AGPL-3.0;AGPL-3.0-only;AGPL-3.0-or-later;SSPL-1.0;CDDL-1.0;EPL-1.0"
-          FAIL_ON=$(echo "$DISALLOW" | tr ';' ' ' | xargs -n1 echo "--failOn" | tr '\n' ' ')
 
           echo "## License Check Results" >> "$GITHUB_STEP_SUMMARY"
 
-          license-checker --production --summary $FAIL_ON | tee license-summary.txt
+          license-checker --production --summary --failOn "$DISALLOW" | tee license-summary.txt
 
           echo '```' >> "$GITHUB_STEP_SUMMARY"
           cat license-summary.txt >> "$GITHUB_STEP_SUMMARY"
