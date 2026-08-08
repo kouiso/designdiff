@@ -9,6 +9,7 @@ import sharp, { type Sharp } from "sharp";
 
 import {
   PERCEPTIBLE_DIFF_CONTRADICTION_RATIO,
+  buildVerifiedInsetCandidates,
   clusterDiffPixels,
   clusterDiffPixelsGridDetailed,
   generateMatchSuggestion,
@@ -1085,12 +1086,7 @@ export async function compareImages(
     width,
     height,
     alignmentIgnoreMask,
-    verifiedSystemUiTopInset === undefined
-      ? []
-      : [-1, 0, 1].map((delta) => ({
-          dx: 0,
-          dy: verifiedSystemUiTopInset + delta,
-        })),
+    buildVerifiedInsetCandidates(verifiedSystemUiTopInset),
   );
   const pixelmatchDesignPixels = resolvedAlignment.alignedDesignPixels;
   const reportDesignPixels = paddingMask

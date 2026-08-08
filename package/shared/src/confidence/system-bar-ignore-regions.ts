@@ -176,22 +176,28 @@ export function buildSystemBarIgnoreRegions(
     ? Math.min(insets.bottom, landscapeInsetCap)
     : insets.bottom;
 
+  // outputHeight が bar の高さより小さい(結合後の出力を極端に切り詰めた等)
+  // 場合、bar の高さをそのまま使うと領域が画像の外へはみ出す。
+  // outputHeight に収まるよう切り詰める。
+  const clampedStatusBarHeight = Math.min(statusBarHeight, outputHeight);
+  const clampedNavBarHeight = Math.min(navBarHeight, outputHeight);
+
   const fullScreenshotRegions: IgnoreRegion[] = [];
-  if (statusBarHeight > 0) {
+  if (clampedStatusBarHeight > 0) {
     fullScreenshotRegions.push({
       x: 0,
       y: 0,
       width: screenshotWidth,
-      height: statusBarHeight,
+      height: clampedStatusBarHeight,
       label: "system:status-bar",
     });
   }
-  if (navBarHeight > 0) {
+  if (clampedNavBarHeight > 0) {
     fullScreenshotRegions.push({
       x: 0,
-      y: Math.max(0, outputHeight - navBarHeight),
+      y: Math.max(0, outputHeight - clampedNavBarHeight),
       width: screenshotWidth,
-      height: navBarHeight,
+      height: clampedNavBarHeight,
       label: "system:navigation-bar",
     });
   }

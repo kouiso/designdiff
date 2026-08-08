@@ -1,4 +1,5 @@
 import {
+  buildVerifiedInsetCandidates,
   compareFlatRegionColor,
   computeHausdorff,
   computeMeanDeltaE2000,
@@ -649,12 +650,7 @@ export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
     width,
     height,
     options.ignoreMask,
-    verifiedSystemUiTopInset === undefined
-      ? []
-      : [-1, 0, 1].map((delta) => ({
-          dx: 0,
-          dy: verifiedSystemUiTopInset + delta,
-        })),
+    buildVerifiedInsetCandidates(verifiedSystemUiTopInset),
   );
   const { x: dx, y: dy } = alignment.translation;
 

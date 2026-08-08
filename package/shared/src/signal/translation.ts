@@ -14,7 +14,7 @@ export const FINE_RANGE = 5;
 export const COARSE_SAMPLE_STEP = 4;
 export const DIFF_THRESHOLD_SQ = 625; // per-channel RGB distance threshold (25^2)
 
-interface TranslationCandidate {
+export interface TranslationCandidate {
   dx: number;
   dy: number;
 }
@@ -27,6 +27,23 @@ function validateIgnoreMask(
   if (ignoreMask && ignoreMask.length < width * height) {
     throw new Error(
       `ignoreMask buffer too small for ${width}x${height}: got ${ignoreMask.length}, expected>=${width * height}`,
+    );
+  }
+}
+
+// 短い buffer を渡されると TypedArray の範囲外読取りは undefined になり、
+// 差分が NaN になる。NaN > しきい値 は常に false なので、実データが
+// 足りていないのに「差分0」を返してしまう。事前に長さで弾く。
+function validatePixelBuffer(
+  pixels: Uint8ClampedArray,
+  width: number,
+  height: number,
+  label: string,
+): void {
+  const required = width * height * 4;
+  if (pixels.length < required) {
+    throw new Error(
+      `${label} buffer too small for ${width}x${height}: got ${pixels.length}, expected>=${required}`,
     );
   }
 }
@@ -68,6 +85,8 @@ export const countSsdOffset = (
     throw new Error(`sampleStep must be a positive integer: got ${sampleStep}`);
   }
   validateIgnoreMask(ignoreMask, width, height);
+  validatePixelBuffer(design, width, height, "design");
+  validatePixelBuffer(screenshot, width, height, "screenshot");
 
   let diff = 0;
   for (let y = 0; y < height; y += sampleStep) {
@@ -245,7 +264,11 @@ export const detectTranslation = (
   const sampledPositionCount = countSampledPositions(width, height, fineSampleStep, ignoreMask);
   const residual = sampledPositionCount === 0 ? 0 : bestDiff / sampledPositionCount;
   const offsetMagnitude = Math.sqrt(bestDx * bestDx + bestDy * bestDy);
-  const confidence = Math.max(0, 1 - offsetMagnitude / (COARSE_RANGE * Math.SQRT2));
+  // 比較した画素が1つも無いのに confidence=1(完全一致相当)を返すと、
+  // 根拠ゼロの判定を「確信を持って一致」と読める形で外へ出してしまう。
+  // 全画素が mask されたとき(理論上のみ、通常は起きない)は 0 にする。
+  const confidence =
+    sampledPositionCount === 0 ? 0 : Math.max(0, 1 - offsetMagnitude / (COARSE_RANGE * Math.SQRT2));
 
   return { dx: bestDx, dy: bestDy, confidence, residual };
 };
@@ -283,6 +306,16 @@ export const shiftPixels = (
 // 一様な色の画像ではどの位置でも同じくらい良く見えるので、この門が無いと
 // 偽の最小値へ寄せてしまう。
 export const ALIGNMENT_IMPROVEMENT_THRESHOLD = 0.85;
+
+// preset 完全一致した回だけを system UI 補正と認める判定の前提。
+// 一次比較(image-compare-service.ts)とレポート(diff-report-builder.ts)が
+// 別々にこの候補幅を持つと、片方だけ変えたときに採用される候補が食い違う。
+export function buildVerifiedInsetCandidates(
+  verifiedSystemUiTopInset: number | undefined,
+): readonly TranslationCandidate[] {
+  if (verifiedSystemUiTopInset === undefined) return [];
+  return [-1, 0, 1].map((delta) => ({ dx: 0, dy: verifiedSystemUiTopInset + delta }));
+}
 
 export interface ResolvedAlignment {
   alignment: Alignment;

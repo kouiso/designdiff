@@ -345,6 +345,10 @@ describe("golden fixture runner", () => {
     async () => {
       await runFixture("pair-06-system-ui-alignment", 3);
     },
-    FIXTURE_TEST_TIMEOUT_MS,
+    // 1080x4800 のフル解像度画像を3回連続で比較する重い検体。coverage計装
+    // (v8) が乗ると通常の4〜5倍かかり、共通の FIXTURE_TEST_TIMEOUT_MS(60s)
+    // では coverage 付き CI job でだけ timeout していた。この検体だけ余裕を
+    // 持たせる。
+    FIXTURE_TEST_TIMEOUT_MS * 3,
   );
 });

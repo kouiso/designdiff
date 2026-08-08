@@ -98,6 +98,7 @@ export {
 } from "./signal/toast-band.js";
 export {
   ALIGNMENT_IMPROVEMENT_THRESHOLD,
+  buildVerifiedInsetCandidates,
   COARSE_RANGE,
   COARSE_SAMPLE_STEP,
   COARSE_STEP,
@@ -108,6 +109,7 @@ export {
   resolveAlignment,
   shiftPixels,
   type ResolvedAlignment,
+  type TranslationCandidate,
 } from "./signal/translation.js";
 
 // Comparison Confidence Layer (pre-flight / diagnosis / headline)
