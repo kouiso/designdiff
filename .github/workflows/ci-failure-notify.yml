@@ -7,7 +7,6 @@ on:
       - "Build"
       - "CI"
       - "Conventional Commits"
-      - "Dependency Review"
       - "Deploy Web"
       - "Fix Issue Headings"
       - "License Check"
@@ -17,6 +16,7 @@ on:
       - "Pull Request Labeler"
       - "Release"
       - "Semgrep Code Scan"
+      - "Trivy"
       - "TruffleHog Secret Scan"
     types: [completed]
     branches: [main, develop]

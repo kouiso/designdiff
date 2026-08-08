@@ -68,10 +68,10 @@ Verified at develop tip: `app/figma-plugin/src/code.test.ts`, `app/figma-plugin/
 |----------|-----------|--------------------|
 | `ci.yml` | `pnpm check` (Biome format + lint), `pnpm lint:eslint` (ESLint v9 type-aware), `pnpm typecheck`, `pnpm test` matrix per `check-type` | Yes |
 | `build.yml` | Electron Build per OS (Linux / macOS / Windows). Guard: `if: github.event.pull_request.draft == false` only — **no `paths` filter**, so it runs on every non-draft PR including docs-only ones (jobs may still be no-ops if turbo cache hits) | Yes |
-| `dependency-review.yml` | Diff lockfile against vuln DB | Advisory |
 | `labeler.yml` | Auto-label PRs by path | Status only |
 | `license-check.yml` | License compatibility scan | Advisory |
 | `semgrep.yml` | SAST | Advisory |
+| `trivy.yml` | Lockfile vuln scan + IaC misconfiguration scan. Replaced `dependency-review.yml`, which needs GitHub Advanced Security on private repos | Advisory |
 | `trufflehog.yml` | Secret scan | Advisory |
 
 Bot reviewers wired by repo settings: gemini-code-assist (line-level review on every PR), CodeRabbit (full review on non-draft PRs). Neither blocks merge but both must be addressed (fix or debate).

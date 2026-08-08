@@ -1,0 +1,64 @@
+name: Trivy
+
+on:
+  pull_request:
+    paths:
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "**/package.json"
+      - ".github/workflows/**"
+      - "**/Dockerfile"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  TRIVY_VERSION: "0.73.0"
+  TRIVY_SHA256: "2edd39da482bb4e9831962487b68f68e3928ec3137794757f54d00383d79547b"
+
+jobs:
+  trivy:
+    name: Dependency & Misconfiguration Scan
+    runs-on: ${{ vars.RUNNER_LINUX }}
+    timeout-minutes: 15
+    if: github.actor != 'dependabot[bot]'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # 公式コンテナは Alpine ベースで、コンテナジョブ内では JS アクションが musl 非互換で
+      # 動かないため、リリース資産を取得してチェックサムで検証する形にしている。
+      - name: Install Trivy
+        run: |
+          ARCHIVE="trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz"
+          curl -sSfL -o "$ARCHIVE" \
+            "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/${ARCHIVE}"
+          echo "${TRIVY_SHA256}  ${ARCHIVE}" | sha256sum -c -
+          mkdir -p "$HOME/.local/bin"
+          tar xzf "$ARCHIVE" -C "$HOME/.local/bin" trivy
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          rm -f "$ARCHIVE"
+
+      # exit-code 0 は、置き換え元の dependency-review が warn-only だったのに合わせている。
+      # 既存の HIGH を解消したあとにハードゲート化する想定。
+      - name: Scan
+        run: |
+          trivy fs \
+            --scanners vuln,misconfig \
+            --severity HIGH,CRITICAL \
+            --exit-code 0 \
+            --no-progress \
+            --format table \
+            . | tee trivy-report.txt
+
+          {
+            echo "## Trivy Scan Results"
+            echo '```'
+            cat trivy-report.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
