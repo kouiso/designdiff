@@ -8,6 +8,8 @@ on:
       - "**/package.json"
       - ".github/workflows/**"
       - "**/Dockerfile"
+      - ".lefthook.yml"
+      - "Taskfile.yml"
 
 permissions:
   contents: read
@@ -44,13 +46,15 @@ jobs:
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
           rm -f "$ARCHIVE"
 
-      # exit-code 0 は、置き換え元の dependency-review が warn-only だったのに合わせている。
-      # 既存の HIGH を解消したあとにハードゲート化する想定。
+      # severity は置き換え元の dependency-review-action の fail-on-severity: moderate と
+      # 同等になるよう MEDIUM 以上にしている（GitHub Advisory の moderate ≒ Trivy の MEDIUM）。
+      # exit-code 0 は、置き換え元が warn-only だったのに合わせている。
+      # 既存の findings を解消したあとにハードゲート化する想定。
       - name: Scan
         run: |
           trivy fs \
             --scanners vuln,misconfig \
-            --severity HIGH,CRITICAL \
+            --severity MEDIUM,HIGH,CRITICAL \
             --exit-code 0 \
             --no-progress \
             --format table \

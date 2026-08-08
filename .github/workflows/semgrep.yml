@@ -30,6 +30,8 @@ jobs:
         with:
           persist-credentials: false
 
-      # --config auto はメトリクス送信が必須で無効化できず、private 化した際に
-      # リポジトリのメタデータが外部へ出る。明示的なルールパックなら送信なしで動く。
+      # --metrics=off は使用状況メトリクスの送信のみを無効化する。ルール自体は
+      # p/default 指定時に Semgrep Registry から取得するため通信は残る。
+      # --config auto は metrics=off と併用できずエラーになるため、private 化に
+      # 備えて明示的なルールパック指定に変更している。
       - run: semgrep scan --config p/default --metrics=off
