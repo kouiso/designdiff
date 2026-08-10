@@ -30,4 +30,8 @@ jobs:
         with:
           persist-credentials: false
 
-      - run: semgrep scan --config auto
+      # --metrics=off は使用状況メトリクスの送信のみを無効化する。ルール自体は
+      # p/default 指定時に Semgrep Registry から取得するため通信は残る。
+      # --config auto は metrics=off と併用できずエラーになるため、private 化に
+      # 備えて明示的なルールパック指定に変更している。
+      - run: semgrep scan --config p/default --metrics=off
