@@ -113,6 +113,72 @@ async function loadBase64(filePath: string): Promise<string> {
   return buffer.toString("base64");
 }
 
+const assertIndependentSystemUiAlignment = async (
+  designBase64: string,
+  screenshotBase64: string,
+  variant: z.infer<typeof FixtureVariantSchema>,
+): Promise<{ matchRate: number; diffPixelCount: number }> => {
+  const [design, screenshot] = await Promise.all(
+    [designBase64, screenshotBase64].map((base64) =>
+      sharp(Buffer.from(base64, "base64"))
+        .ensureAlpha()
+        .raw()
+        .toBuffer({ resolveWithObject: true }),
+    ),
+  );
+  if (
+    design.info.width !== screenshot.info.width ||
+    design.info.height !== screenshot.info.height
+  ) {
+    throw new Error("system UI fixture images must have identical dimensions");
+  }
+  const width = design.info.width;
+  const height = design.info.height;
+  const expected = variant.expectedSystemUiAlignment;
+  if (!expected) {
+    throw new Error("independent system UI alignment requires explicit expectations");
+  }
+  const ignored = new Uint8Array(width * height);
+  for (const region of variant.ignoreRegions ?? []) {
+    const left = Math.max(0, Math.floor(region.x));
+    const top = Math.max(0, Math.floor(region.y));
+    const right = Math.min(width, Math.floor(region.x + region.width));
+    const bottom = Math.min(height, Math.floor(region.y + region.height));
+    for (let y = top; y < bottom; y += 1) {
+      ignored.fill(1, y * width + left, y * width + right);
+    }
+  }
+  let evaluatedPixelCount = 0;
+  let diffPixelCount = 0;
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      if (ignored[y * width + x] === 1) continue;
+      evaluatedPixelCount += 1;
+      const sourceX = x - expected.translation.x;
+      const sourceY = y - expected.translation.y;
+      const destinationOffset = (y * width + x) * 4;
+      const sourceInBounds = sourceX >= 0 && sourceX < width && sourceY >= 0 && sourceY < height;
+      if (!sourceInBounds) {
+        diffPixelCount += 1;
+        continue;
+      }
+      const sourceOffset = (sourceY * width + sourceX) * 4;
+      if (
+        design.data[sourceOffset] !== screenshot.data[destinationOffset] ||
+        design.data[sourceOffset + 1] !== screenshot.data[destinationOffset + 1] ||
+        design.data[sourceOffset + 2] !== screenshot.data[destinationOffset + 2] ||
+        design.data[sourceOffset + 3] !== screenshot.data[destinationOffset + 3]
+      ) {
+        diffPixelCount += 1;
+      }
+    }
+  }
+  return {
+    matchRate: (100 * (evaluatedPixelCount - diffPixelCount)) / evaluatedPixelCount,
+    diffPixelCount,
+  };
+};
+
 function assertWeightedStructure(
   result: CompareDesignResult,
   variant: z.infer<typeof FixtureVariantSchema>,
@@ -288,6 +354,17 @@ describe("golden fixture runner", () => {
       }
       expect(stableRuns.every((run) => isDeepStrictEqual(run, stableRuns[0]))).toBe(true);
       if (variant.expectedSystemUiAlignment !== undefined) {
+        // tool出力だけを期待値にすると、実装の自己申告をfixtureが追認してしまう。
+        // 生画像を独立に再配置して、system UI帯を除く画素の一致を先に検証する。
+        const independent = await assertIndependentSystemUiAlignment(
+          designBase64,
+          screenshotBase64,
+          variant,
+        );
+        expect(independent).toEqual({
+          matchRate: variant.expectedSystemUiAlignment.matchRate,
+          diffPixelCount: variant.expectedSystemUiAlignment.diffPixelCount,
+        });
         expect(stableRuns[0]?.matchRate).toBe(variant.expectedSystemUiAlignment.matchRate);
         expect(stableRuns[0]?.diffPixelCount).toBe(
           variant.expectedSystemUiAlignment.diffPixelCount,

@@ -43,6 +43,7 @@
 - `variants[].image`: pair ディレクトリからの相対パス
 - `variants[].expectedVerdict`: `pass` / `fail` / `inconclusive`
 - `variants[].expectedKinds`: 人手で期待する差分カテゴリ。現時点の runner は verdict を主判定に使い、この配列は将来の issue correlation 用メタデータとして保持します
+- `variants[].expectedIssueKinds`: runnerが出力するIssueKindの期待値。`expectedKinds`と異なる分類体系を持つ場合に明示します
 - `figmaRootNode`: 任意。P2 以降の section-aware DiffReport 用に top-level Figma section を埋め込めます
 - `variants[].expectedWeightedStructureMin/Max`: 任意。weighted aggregate の期待レンジ
 - `variants[].expectedRegionStructure`: 任意。`figmaNodeId` ごとの structure 期待レンジ

@@ -115,6 +115,9 @@ export const computeMeanDeltaE2000 = (
   width: number,
   ignoreMask?: Uint8Array,
 ): number => {
+  if (!Number.isSafeInteger(width) || width <= 0) {
+    throw new Error("computeMeanDeltaE2000: width must be a positive safe integer");
+  }
   if (pixels1.length === 0 || pixels2.length === 0) {
     throw new Error("computeMeanDeltaE2000: pixel buffers must not be empty");
   }

@@ -150,6 +150,24 @@ test("release can be retried after cleanup failure", async () => {
   assert.equal(await lock.release(), true);
 });
 
+test("concurrent release calls share one cleanup attempt", async () => {
+  const temporaryDirectory = await fs.mkdtemp(
+    path.join(os.tmpdir(), "figdiff-exclusive-process-lock-test-"),
+  );
+  temporaryDirectories.push(temporaryDirectory);
+  const lockPath = path.join(temporaryDirectory, "concurrent-release.lock");
+  const lock = await acquireExclusiveProcessLock({
+    repositoryRoot: temporaryDirectory,
+    task: "concurrent-release",
+    lockPath,
+  });
+
+  const results = await Promise.all([lock.release(), lock.release()]);
+  assert.deepEqual(results, [true, true]);
+  await assert.rejects(fs.access(lockPath), { code: "ENOENT" });
+  assert.equal(await lock.release(), false);
+});
+
 test("SIGTERM keeps the lock through callback cleanup and releases it before exit", async () => {
   const temporaryDirectory = await fs.mkdtemp(
     path.join(os.tmpdir(), "figdiff-exclusive-process-lock-test-"),

@@ -18,7 +18,8 @@
       "name": "layout-off",
       "image": "impl-layout-off.png",
       "expectedVerdict": "fail",
-      "expectedKinds": ["position", "size"]
+      "expectedKinds": ["structure", "position", "size"],
+      "expectedIssueKinds": ["position", "size"]
     }
   ]
 }

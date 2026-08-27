@@ -51,6 +51,15 @@ describe("computeMeanDeltaE2000", () => {
     ).toThrow(/complete RGBA/);
   });
 
+  it("rejects a non-positive or unsafe width", () => {
+    const image = canvas(W, H, () => [120, 130, 140]);
+    for (const width of [0, -1, 0.5, Number.NaN, Number.MAX_SAFE_INTEGER + 1]) {
+      expect(() => computeMeanDeltaE2000(image, image, 0, 0, W, H, width)).toThrow(
+        /width must be a positive safe integer/,
+      );
+    }
+  });
+
   it("returns 0 for identical images", () => {
     const a = canvas(W, H, () => [120, 130, 140]);
     expect(computeMeanDeltaE2000(a, a, 0, 0, W, H, W)).toBe(0);

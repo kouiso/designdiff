@@ -310,14 +310,23 @@ export const acquireExclusiveProcessLock = async ({ repositoryRoot, task, lockPa
   await acquireLockFile(resolvedLockPath, metadata);
 
   let released = false;
+  let releasePromise;
   return {
     lockPath: resolvedLockPath,
     metadata,
-    async release() {
+    release: async () => {
       if (released) return false;
-      const removed = await unlinkIfTokenMatches(resolvedLockPath, metadata.ownerToken);
-      released = true;
-      return removed;
+      if (releasePromise) return releasePromise;
+      releasePromise = (async () => {
+        const removed = await unlinkIfTokenMatches(resolvedLockPath, metadata.ownerToken);
+        released = true;
+        return removed;
+      })();
+      try {
+        return await releasePromise;
+      } finally {
+        if (!released) releasePromise = undefined;
+      }
     },
   };
 };
