@@ -31,6 +31,9 @@ vi.mock("../service/figma-service.js", async () => {
             `Requested Figma node not found: Node "${_nodeId}" not found in file ${_fileKey}. The id may not exist, or the format may be wrong (expected "1:23" with a colon; dash-format ids from Figma URLs are auto-converted). Run list_figma_frames to see valid node ids.`,
           );
         }
+        if (_nodeId === "network:error") {
+          throw new TypeError("fetch failed");
+        }
         if (_nodeId === "tiny") return makeLargeNode(0, _nodeId);
         return makeLargeNode(_nodeId.startsWith("compact") ? 26 : 100, _nodeId);
       },
@@ -246,6 +249,18 @@ describe("MCP response budget — responses never exceed archive threshold", () 
       );
       expect(text).toContain('expected "1:23" with a colon');
       expect(text).toContain("Run list_figma_frames to see valid node ids.");
+    });
+
+    it("network error は秘密を出さず再試行手順を返す", async () => {
+      const result = await client.callTool({
+        name: "inspect_node",
+        arguments: { figma_url: FIGMA_URL, node_id: "network:error" },
+      });
+
+      expect(result.isError).toBe(true);
+      expect(extractText(result)).toBe(
+        "Error: Unable to reach the Figma API. Check network access and retry.",
+      );
     });
 
     it("multi-node (10 nodes) with 100 children each: response text < 4096 chars", async () => {
