@@ -82,7 +82,14 @@ const FixtureVariantSchema = z
       .object({
         matchRate: z.number().min(0).max(100),
         diffPixelCount: z.number().int().nonnegative(),
-        translation: z.object({ x: z.number(), y: z.number() }),
+        translation: z.object({ x: z.number().int().safe(), y: z.number().int().safe() }),
+      })
+      .optional(),
+    independentSystemUiAlignment: z
+      .object({
+        matchRate: z.number().min(0).max(100),
+        diffPixelCount: z.number().int().nonnegative(),
+        translation: z.object({ x: z.number().int().safe(), y: z.number().int().safe() }),
       })
       .optional(),
     notes: z.string().optional(),
@@ -134,9 +141,9 @@ const assertIndependentSystemUiAlignment = async (
   }
   const width = design.info.width;
   const height = design.info.height;
-  const expected = variant.expectedSystemUiAlignment;
+  const expected = variant.independentSystemUiAlignment;
   if (!expected) {
-    throw new Error("independent system UI alignment requires explicit expectations");
+    throw new Error("independent system UI alignment requires separate explicit expectations");
   }
   const ignored = new Uint8Array(width * height);
   for (const region of variant.ignoreRegions ?? []) {
@@ -173,8 +180,12 @@ const assertIndependentSystemUiAlignment = async (
       }
     }
   }
+  if (evaluatedPixelCount === 0) {
+    throw new Error("independent system UI alignment must leave at least one pixel unmasked");
+  }
   return {
-    matchRate: (100 * (evaluatedPixelCount - diffPixelCount)) / evaluatedPixelCount,
+    matchRate:
+      Math.round((100 * (evaluatedPixelCount - diffPixelCount) * 100) / evaluatedPixelCount) / 100,
     diffPixelCount,
   };
 };
@@ -356,14 +367,15 @@ describe("golden fixture runner", () => {
       if (variant.expectedSystemUiAlignment !== undefined) {
         // tool出力だけを期待値にすると、実装の自己申告をfixtureが追認してしまう。
         // 生画像を独立に再配置して、system UI帯を除く画素の一致を先に検証する。
+        // 独立側は厳密な raw pixel oracle とし、tool 側とは期待値を分離する。
         const independent = await assertIndependentSystemUiAlignment(
           designBase64,
           screenshotBase64,
           variant,
         );
         expect(independent).toEqual({
-          matchRate: variant.expectedSystemUiAlignment.matchRate,
-          diffPixelCount: variant.expectedSystemUiAlignment.diffPixelCount,
+          matchRate: variant.independentSystemUiAlignment?.matchRate,
+          diffPixelCount: variant.independentSystemUiAlignment?.diffPixelCount,
         });
         expect(stableRuns[0]?.matchRate).toBe(variant.expectedSystemUiAlignment.matchRate);
         expect(stableRuns[0]?.diffPixelCount).toBe(
