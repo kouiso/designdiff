@@ -65,12 +65,25 @@ function clampBounds(
 /**
  * 領域がベタ面なら、その最頻色を返す。ベタ面でなければ null。
  */
-export function detectFlatRegionColor(
+export const detectFlatRegionColor = (
   pixels: Uint8ClampedArray,
   width: number,
   height: number,
   bbox?: DiffBoundingBox,
-): FlatRegionColor | null {
+  ignoreMask?: Uint8Array,
+): FlatRegionColor | null => {
+  if (!Number.isSafeInteger(width) || width <= 0 || !Number.isSafeInteger(height) || height <= 0) {
+    throw new Error(`detectFlatRegionColor: width and height must be positive safe integers`);
+  }
+  const expectedBufferLength = width * height * 4;
+  if (pixels.length !== expectedBufferLength) {
+    throw new Error(
+      `detectFlatRegionColor: pixel buffer length must equal ${expectedBufferLength} (got ${pixels.length})`,
+    );
+  }
+  if (ignoreMask !== undefined && ignoreMask.length !== width * height) {
+    throw new Error("ignoreMask length must equal width * height");
+  }
   const { startX, startY, endX, endY } = clampBounds(bbox, width, height);
   const regionWidth = endX - startX;
   const regionHeight = endY - startY;
@@ -87,13 +100,15 @@ export function detectFlatRegionColor(
   let sampled = 0;
   for (let y = startY; y < endY; y += stride) {
     for (let x = startX; x < endX; x += stride) {
-      const index = (y * width + x) * 4;
+      const pixelIndex = y * width + x;
+      if (ignoreMask?.[pixelIndex] === 1) continue;
+      const index = pixelIndex * 4;
       const key = (pixels[index] << 16) | (pixels[index + 1] << 8) | pixels[index + 2];
       counts.set(key, (counts.get(key) ?? 0) + 1);
       sampled += 1;
     }
   }
-  if (sampled === 0) return null;
+  if (sampled < MIN_FLAT_PIXELS) return null;
 
   let modalKey = 0;
   let modalCount = 0;
@@ -124,7 +139,7 @@ export function detectFlatRegionColor(
   if (coverage < FLAT_COVERAGE) return null;
 
   return { hex: toHex(r, g, b), r, g, b, coverage };
-}
+};
 
 /**
  * design / screenshot 双方がベタ面のときだけ、色の食い違いを判定する。
@@ -135,9 +150,10 @@ export function compareFlatRegionColor(
   width: number,
   height: number,
   bbox?: DiffBoundingBox,
+  ignoreMask?: Uint8Array,
 ): FlatRegionColorComparison {
-  const design = detectFlatRegionColor(designPixels, width, height, bbox);
-  const screenshot = detectFlatRegionColor(screenshotPixels, width, height, bbox);
+  const design = detectFlatRegionColor(designPixels, width, height, bbox, ignoreMask);
+  const screenshot = detectFlatRegionColor(screenshotPixels, width, height, bbox, ignoreMask);
   if (!design || !screenshot) {
     return { design, screenshot, mismatch: false };
   }

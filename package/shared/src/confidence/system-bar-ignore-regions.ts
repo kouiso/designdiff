@@ -114,6 +114,19 @@ function getSystemChromeInsets(
   return getFallbackInsets(width, height, platform);
 }
 
+export function getVerifiedSystemBarTopInset(
+  width: number,
+  height: number,
+  platform: MobileSystemBarPlatform,
+): number | undefined {
+  if (width <= 0 || height <= 0) return undefined;
+  const preset = getPresetInsets(width, height, platform);
+  if (!preset) return undefined;
+  return isLandscape(width, height)
+    ? Math.min(preset.top, getLandscapeInsetCap(width, height, platform))
+    : preset.top;
+}
+
 function intersectSystemRegionWithCrop(
   region: IgnoreRegion,
   cropRegion: CropRegion,
@@ -146,8 +159,11 @@ export function buildSystemBarIgnoreRegions(
   screenshotHeight: number,
   platform: MobileSystemBarPlatform,
   cropRegion?: CropRegion,
+  // スクロール結合後は viewport の高さと mask を置く画像の高さが違う。
+  // inset の推定は screenshotHeight、下端の座標だけ outputHeight を使う。
+  outputHeight = screenshotHeight,
 ): IgnoreRegion[] {
-  if (screenshotWidth <= 0 || screenshotHeight <= 0) {
+  if (screenshotWidth <= 0 || screenshotHeight <= 0 || outputHeight <= 0) {
     return [];
   }
 
@@ -160,22 +176,28 @@ export function buildSystemBarIgnoreRegions(
     ? Math.min(insets.bottom, landscapeInsetCap)
     : insets.bottom;
 
+  // outputHeight が bar の高さより小さい(結合後の出力を極端に切り詰めた等)
+  // 場合、bar の高さをそのまま使うと領域が画像の外へはみ出す。
+  // outputHeight に収まるよう切り詰める。
+  const clampedStatusBarHeight = Math.min(statusBarHeight, outputHeight);
+  const clampedNavBarHeight = Math.min(navBarHeight, outputHeight);
+
   const fullScreenshotRegions: IgnoreRegion[] = [];
-  if (statusBarHeight > 0) {
+  if (clampedStatusBarHeight > 0) {
     fullScreenshotRegions.push({
       x: 0,
       y: 0,
       width: screenshotWidth,
-      height: statusBarHeight,
+      height: clampedStatusBarHeight,
       label: "system:status-bar",
     });
   }
-  if (navBarHeight > 0) {
+  if (clampedNavBarHeight > 0) {
     fullScreenshotRegions.push({
       x: 0,
-      y: Math.max(0, screenshotHeight - navBarHeight),
+      y: Math.max(0, outputHeight - clampedNavBarHeight),
       width: screenshotWidth,
-      height: navBarHeight,
+      height: clampedNavBarHeight,
       label: "system:navigation-bar",
     });
   }

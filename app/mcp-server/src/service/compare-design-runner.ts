@@ -13,6 +13,7 @@ import {
 import {
   buildComparisonHeadline,
   buildSystemBarIgnoreRegions,
+  getVerifiedSystemBarTopInset,
   CompareDesignResultSchema,
   detectDynamicRegionsAcrossSamples,
   detectToastBands,
@@ -361,7 +362,10 @@ function resolveStructuralVerdict(
   diffPixelCount: number,
 ): { verdict: DiffVerdict; rationale: string | undefined } {
   if (diffReport) {
-    return { verdict: diffReport.aggregateVerdict, rationale: diffReport.rationale };
+    return {
+      verdict: diffReport.aggregateVerdict,
+      rationale: diffReport.rationale,
+    };
   }
 
   return {
@@ -590,7 +594,10 @@ function buildSuggestion(
 async function resolveLastUsedFallback(
   args: CompareDesignRunArgs,
   fileKey: string,
-): Promise<{ fallbackNodeId: string | undefined; lastUsedNodeNote: string | undefined }> {
+): Promise<{
+  fallbackNodeId: string | undefined;
+  lastUsedNodeNote: string | undefined;
+}> {
   if (!args.project_id || args.frame_name) {
     return { fallbackNodeId: undefined, lastUsedNodeNote: undefined };
   }
@@ -633,7 +640,10 @@ async function enhanceBlankFrameWarning(
     );
     return warnings.map((w) =>
       w.code === "blank_frame"
-        ? { ...w, suggestedFix: `コンテンツを持つフレームを選択してください:\n${candidateText}` }
+        ? {
+            ...w,
+            suggestedFix: `コンテンツを持つフレームを選択してください:\n${candidateText}`,
+          }
         : w,
     );
   } catch {
@@ -701,12 +711,18 @@ async function resolveScreenshotPath(
 
   if (args.capture_device) {
     if (args.capture_scroll !== true) {
-      return { screenshotPath: await captureDeviceScreenshot({ device: args.capture_device }) };
+      return {
+        screenshotPath: await captureDeviceScreenshot({
+          device: args.capture_device,
+        }),
+      };
     }
     // 1画面に収まらん画面は、1枚撮っただけでは比較の単位が合わん。
     // スクロールしながら撮って縦長1枚へ繋ぐ。何枚繋いだか、下端まで届いたかを
     // 一緒に返さんと、途中までの画像を完全な1枚として扱ってしまう。
-    const outcome = await captureDeviceScrollingScreenshot({ device: args.capture_device });
+    const outcome = await captureDeviceScrollingScreenshot({
+      device: args.capture_device,
+    });
     return {
       screenshotPath: outcome.screenshotPath,
       scrollCapture: {
@@ -736,7 +752,9 @@ async function resolveScreenshotPath(
     if (args.screenshot.trim() === "") {
       throw new Error(EMPTY_SCREENSHOT_INPUT_MESSAGE);
     }
-    return { screenshotPath: await resolveScreenshotInputPath(args.screenshot) };
+    return {
+      screenshotPath: await resolveScreenshotInputPath(args.screenshot),
+    };
   }
 
   const { captureUrl } = await import("./capture-service.js");
@@ -945,7 +963,12 @@ async function resolveDesignAssets(
       );
     }
 
-    return { designBase64: frameImage.base64, figmaRootNode, resolvedNodeId, missingNodeId };
+    return {
+      designBase64: frameImage.base64,
+      figmaRootNode,
+      resolvedNodeId,
+      missingNodeId,
+    };
   }
 
   // ローカルファイルのパス — 許可ディレクトリ内に存在するか検証する
@@ -960,7 +983,12 @@ async function resolveDesignAssets(
   }
   const designBase64 = designBuffer.toString("base64");
   const figmaRootNode = await loadLocalFixtureNode(safePath);
-  return { designBase64, figmaRootNode, resolvedNodeId: undefined, missingNodeId: undefined };
+  return {
+    designBase64,
+    figmaRootNode,
+    resolvedNodeId: undefined,
+    missingNodeId: undefined,
+  };
 }
 
 interface ProjectRegions {
@@ -1226,26 +1254,71 @@ export function describeIncompleteScrollCapture(
   return undefined;
 }
 
-function buildSystemIgnoreRegionsForComparison(
+export interface SystemIgnoreRegionsForComparison {
+  regions: IgnoreRegion[];
+  verifiedTopInset: number | undefined;
+}
+
+function cropIncludesFullStatusBar(
+  cropRegion: CropRegion | undefined,
+  statusBarHeight: number,
+): boolean {
+  if (!cropRegion) return true;
+  const appliedTop = Math.max(0, Math.floor(cropRegion.y));
+  const appliedBottom = Math.floor(cropRegion.y + cropRegion.height);
+  return appliedTop === 0 && appliedBottom >= statusBarHeight;
+}
+
+export function buildSystemIgnoreRegionsForComparison(
   args: CompareDesignRunArgs,
   screenshotMeta: Metadata,
   cropRegion: CropRegion | undefined,
   scrollCapture: ScrollCaptureReport | undefined,
-): IgnoreRegion[] {
+): SystemIgnoreRegionsForComparison {
   const maskSystemUi = args.mask_system_ui ?? args.capture_device !== undefined;
   if (!maskSystemUi) {
-    return [];
+    return { regions: [], verifiedTopInset: undefined };
   }
 
   // 繋いだ後の画像は必ず縦長になる。その寸法から向きを推すと、横向きで撮った
   // 画面が縦向き扱いになり、OSの帯の位置と厚みを取り違えて本文を隠してしまう。
   // 帯の判定には、繋ぐ前の1画面の寸法を使う。
-  return buildSystemBarIgnoreRegions(
-    scrollCapture?.viewportWidth ?? screenshotMeta.width ?? 0,
-    scrollCapture?.viewportHeight ?? screenshotMeta.height ?? 0,
+  const viewportWidth = scrollCapture?.viewportWidth ?? screenshotMeta.width ?? 0;
+  const viewportHeight = scrollCapture?.viewportHeight ?? screenshotMeta.height ?? 0;
+  const outputHeight = screenshotMeta.height ?? scrollCapture?.stitchedHeight ?? 0;
+  const fullRegions = buildSystemBarIgnoreRegions(
+    viewportWidth,
+    viewportHeight,
     args.capture_device ?? "android",
-    cropRegion,
+    undefined,
+    outputHeight,
   );
+  const regions = cropRegion
+    ? buildSystemBarIgnoreRegions(
+        viewportWidth,
+        viewportHeight,
+        args.capture_device ?? "android",
+        cropRegion,
+        outputHeight,
+      )
+    : fullRegions;
+  const fullStatusBarRegion = fullRegions.find((region) => region.label === "system:status-bar");
+  const verifiedTopInset =
+    args.capture_device === undefined
+      ? undefined
+      : getVerifiedSystemBarTopInset(viewportWidth, viewportHeight, args.capture_device);
+  return {
+    regions,
+    // post-crop の短い mask を端末 inset と誤認すると、同じ量のレイアウト回帰を
+    // 許容してしまう。crop 前の全高を保持し、その帯を丸ごと含む場合だけ使う。
+    verifiedTopInset:
+      fullStatusBarRegion &&
+      verifiedTopInset !== undefined &&
+      fullStatusBarRegion.height === verifiedTopInset &&
+      cropIncludesFullStatusBar(cropRegion, fullStatusBarRegion.height)
+        ? verifiedTopInset
+        : undefined,
+  };
 }
 
 interface FigmaProvenance {
@@ -1411,14 +1484,15 @@ export async function runCompareDesign(
     screenshotBuffer,
   );
   const cropRegion = manualCropRegion ?? autoCropRegion;
+  const systemIgnoreRegions = buildSystemIgnoreRegionsForComparison(
+    args,
+    screenshotMeta,
+    cropRegion,
+    resolvedScreenshot.scrollCapture,
+  );
   const ignoreRegions = [
     ...projectIgnoreRegions,
-    ...buildSystemIgnoreRegionsForComparison(
-      args,
-      screenshotMeta,
-      cropRegion,
-      resolvedScreenshot.scrollCapture,
-    ),
+    ...systemIgnoreRegions.regions,
     ...shiftRegionsIntoCropSpace(dynamicIgnoreRegions, cropRegion),
   ];
 
@@ -1437,6 +1511,7 @@ export async function runCompareDesign(
       cropRegion,
       figmaNodeId: resolvedNodeId,
       ignoreRegions,
+      verifiedSystemUiTopInset: systemIgnoreRegions.verifiedTopInset,
       designBackground: args.design_background,
     },
     figmaRootNode,
@@ -1643,7 +1718,10 @@ export async function runCompareDesign(
     ...comparison,
     scrollCapture: resolvedScreenshot.scrollCapture,
     normalization: comparison.normalization
-      ? { ...comparison.normalization, autoCropped: autoCropRegion !== undefined }
+      ? {
+          ...comparison.normalization,
+          autoCropped: autoCropRegion !== undefined,
+        }
       : comparison.normalization,
     diffImagePath:
       comparison.diffImageBase64 && persistDiffImageNeeded

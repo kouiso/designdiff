@@ -1,9 +1,16 @@
-import { execFileSync } from "node:child_process";
+import { randomUUID } from "node:crypto";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import sharp from "sharp";
 import { z } from "zod";
+
+import {
+  IgnoreRegionSchema,
+  resolveFixtureVerifiedSystemUiTopInset,
+  SystemUiFixtureMetadataSchema,
+} from "../../package/shared/dist/index.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -12,11 +19,12 @@ const FIXTURES_ROOT = path.resolve(__dirname, "../fixture");
 const OUTPUT_DIR = path.resolve(__dirname, "../correlation");
 const JSON_REPORT_FILENAME = "baseline-report.json";
 const MARKDOWN_REPORT_FILENAME = "baseline-report.md";
+const ACTIVE_GENERATION_FILENAME = ".active-generation";
+const GENERATION_DIRNAME = ".generations";
 const THRESHOLD = 0.1;
 let compareImagesPromise = null;
 
 const DiffIssueKindSchema = z.enum(["color", "position", "size", "missing", "extra", "typography"]);
-
 const FigmaNodeSchema = z.lazy(() =>
   z.object({
     id: z.string(),
@@ -35,16 +43,19 @@ const FigmaNodeSchema = z.lazy(() =>
   }),
 );
 
-const FixtureVariantSchema = z.object({
-  name: z.string().min(1),
-  image: z.string().min(1),
-  expectedVerdict: z.enum(["pass", "fail", "inconclusive"]),
-  expectedKinds: z.array(z.string()).default([]),
-  expectedIssueKinds: z.array(DiffIssueKindSchema).optional(),
-  notes: z.string().optional(),
-});
+export const FixtureVariantSchema = z
+  .object({
+    name: z.string().min(1),
+    image: z.string().min(1),
+    expectedVerdict: z.enum(["pass", "fail", "inconclusive"]),
+    expectedKinds: z.array(z.string()).default([]),
+    expectedIssueKinds: z.array(DiffIssueKindSchema).optional(),
+    ignoreRegions: z.array(IgnoreRegionSchema).optional(),
+    notes: z.string().optional(),
+  })
+  .and(SystemUiFixtureMetadataSchema);
 
-const FixtureExpectationSchema = z.object({
+export const FixtureExpectationSchema = z.object({
   pairId: z.string().min(1),
   figmaFrame: z.string().min(1),
   figmaRootNode: FigmaNodeSchema.optional(),
@@ -302,31 +313,7 @@ function getWorstSection(regionScores) {
 }
 
 function buildSnapshotTimestamp() {
-  try {
-    const fixtureTimestamp = execFileSync(
-      "git",
-      ["log", "-1", "--format=%cI", "--", "verification/fixture"],
-      {
-        cwd: path.resolve(__dirname, "../.."),
-        encoding: "utf8",
-      },
-    ).trim();
-    if (fixtureTimestamp.length > 0) {
-      return fixtureTimestamp;
-    }
-  } catch {
-    // noop
-  }
-
-  try {
-    const headTimestamp = execFileSync("git", ["show", "-s", "--format=%cI", "HEAD"], {
-      cwd: path.resolve(__dirname, "../.."),
-      encoding: "utf8",
-    }).trim();
-    return headTimestamp.length > 0 ? headTimestamp : null;
-  } catch {
-    return null;
-  }
+  return new Date().toISOString();
 }
 
 /**
@@ -352,11 +339,27 @@ async function measureFixture(fixtureDirName, options = {}) {
 
   for (const variant of variants) {
     const screenshotBase64 = await loadBase64(path.join(fixtureDir, variant.image));
+    const metadata = variant.captureDevice
+      ? options.readImageMetadataFn
+        ? await options.readImageMetadataFn(screenshotBase64)
+        : await sharp(Buffer.from(screenshotBase64, "base64")).metadata()
+      : undefined;
+    if (metadata && (!metadata.width || !metadata.height)) {
+      throw new Error(`${expectation.pairId}/${variant.name}: screenshot dimensions are missing`);
+    }
+    const verifiedSystemUiTopInset = resolveFixtureVerifiedSystemUiTopInset(
+      variant,
+      metadata?.width && metadata.height
+        ? { width: metadata.width, height: metadata.height }
+        : { width: 0, height: 0 },
+    );
     const result = await compareImages(
       {
         designBase64,
         screenshotBase64,
         threshold: THRESHOLD,
+        ignoreRegions: variant.ignoreRegions,
+        verifiedSystemUiTopInset,
       },
       expectation.figmaRootNode,
     );
@@ -519,6 +522,101 @@ export function buildBaselineReport(rows, metrics, snapshotTimestamp) {
   };
 }
 
+const publishReportFilesAtomically = async (files) => {
+  if (files.length === 0) throw new Error("at least one report file is required");
+  const reportDir = path.dirname(files[0].targetPath);
+  if (files.some(({ targetPath }) => path.dirname(targetPath) !== reportDir)) {
+    throw new Error("report files must share one output directory");
+  }
+  const transactionId = `${process.pid}-${Date.now()}-${randomUUID()}`;
+  const generationName = `generation-${transactionId}`;
+  const generationRoot = path.join(reportDir, GENERATION_DIRNAME);
+  const stagingDir = path.join(generationRoot, `.staging-${generationName}`);
+  const generationDir = path.join(generationRoot, generationName);
+  const pointerPath = path.join(reportDir, ACTIVE_GENERATION_FILENAME);
+  const pointerStagingPath = `${pointerPath}.tmp-${transactionId}`;
+
+  await fs.mkdir(generationRoot, { recursive: true });
+  try {
+    await fs.mkdir(stagingDir, { recursive: true });
+    await Promise.all(
+      files.map(({ targetPath, content }) =>
+        fs.writeFile(path.join(stagingDir, path.basename(targetPath)), content),
+      ),
+    );
+    await fs.rename(stagingDir, generationDir);
+    await fs.writeFile(pointerStagingPath, `${generationName}\n`, "utf8");
+    // reader はこの pointer を一度だけ解決するため、JSON と Markdown が
+    // 別世代になる窓がない。個別ファイルを順番に置き換えない。
+    await fs.rename(pointerStagingPath, pointerPath);
+  } catch (error) {
+    const rollbackErrors = [];
+    await Promise.all(
+      [
+        fs.rm(stagingDir, { recursive: true, force: true }),
+        fs.rm(generationDir, { recursive: true, force: true }),
+        fs.rm(pointerStagingPath, { force: true }),
+      ].map(async (operation) => {
+        try {
+          await operation;
+        } catch (rollbackError) {
+          rollbackErrors.push(rollbackError);
+        }
+      }),
+    );
+    if (rollbackErrors.length > 0) {
+      process.emitWarning(new AggregateError(rollbackErrors, "report publication rollback failed"));
+    }
+    throw error;
+  }
+
+  const reportPaths = Object.fromEntries(
+    files.map(({ targetPath }) => [
+      targetPath,
+      path.join(generationDir, path.basename(targetPath)),
+    ]),
+  );
+  return { pointerPath, generationDir, reportPaths };
+};
+
+const readActiveGeneration = async (outputDir) => {
+  const pointer = (
+    await fs.readFile(path.join(outputDir, ACTIVE_GENERATION_FILENAME), "utf8")
+  ).trim();
+  if (!/^generation-[A-Za-z0-9-]+$/.test(pointer)) {
+    throw new Error(`invalid active report generation pointer: ${pointer}`);
+  }
+  return pointer;
+};
+
+const assertSafeReportFilename = (filename) => {
+  if (
+    typeof filename !== "string" ||
+    filename.length === 0 ||
+    path.basename(filename) !== filename
+  ) {
+    throw new Error(`invalid report filename: ${filename}`);
+  }
+};
+
+export const resolveActiveReportPaths = async (outputDir, filenames) => {
+  if (!Array.isArray(filenames) || filenames.length === 0) {
+    throw new Error("at least one report filename is required");
+  }
+  const generation = await readActiveGeneration(outputDir);
+  return Object.fromEntries(
+    filenames.map((filename) => {
+      assertSafeReportFilename(filename);
+      return [filename, path.join(outputDir, GENERATION_DIRNAME, generation, filename)];
+    }),
+  );
+};
+
+export const resolveActiveReportPath = async (outputDir, filename) => {
+  const paths = await resolveActiveReportPaths(outputDir, [filename]);
+  return paths[filename];
+};
+
 /**
  * @typedef {{
  *   fixtureRoot?: string;
@@ -527,6 +625,7 @@ export function buildBaselineReport(rows, metrics, snapshotTimestamp) {
  *   markdownOutputPath?: string;
  *   compareImagesFn?: (input: object, rootNode?: object) => Promise<object>;
  *   buildSnapshotTimestampFn?: () => string | null;
+ *   readImageMetadataFn?: (imageBase64: string) => Promise<{width?: number; height?: number}>;
  * }} MeasureCorrelationOptions
  *
  * @param {MeasureCorrelationOptions} [options]
@@ -556,16 +655,23 @@ export async function measureCorrelation(options = {}) {
   const reportJson = buildBaselineReport(rows, metrics, snapshotTimestamp);
   const reportMarkdown = renderBaselineMarkdown(rows, metrics, snapshotTimestamp);
 
-  await fs.mkdir(outputDir, { recursive: true });
-  await fs.writeFile(jsonOutputPath, `${JSON.stringify(reportJson, null, 2)}\n`);
-  await fs.writeFile(markdownOutputPath, reportMarkdown);
+  const publication = await publishReportFilesAtomically([
+    {
+      targetPath: jsonOutputPath,
+      content: `${JSON.stringify(reportJson, null, 2)}\n`,
+    },
+    {
+      targetPath: markdownOutputPath,
+      content: reportMarkdown,
+    },
+  ]);
 
   return {
     rows,
     metrics,
     snapshotTimestamp,
-    reportJsonPath: jsonOutputPath,
-    reportMarkdownPath: markdownOutputPath,
+    reportJsonPath: publication.reportPaths[jsonOutputPath],
+    reportMarkdownPath: publication.reportPaths[markdownOutputPath],
   };
 }
 

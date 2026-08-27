@@ -46,6 +46,13 @@
 - `figmaRootNode`: 任意。P2 以降の section-aware DiffReport 用に top-level Figma section を埋め込めます
 - `variants[].expectedWeightedStructureMin/Max`: 任意。weighted aggregate の期待レンジ
 - `variants[].expectedRegionStructure`: 任意。`figmaNodeId` ごとの structure 期待レンジ
+- `variants[].ignoreRegions`: 任意。fixture 固有の比較対象外領域
+- `variants[].captureDevice`: system UI presetを使う検体の端末種別
+- `variants[].viewportWidth/viewportHeight`: 結合前viewportの実px寸法
+- `variants[].imageWidth/imageHeight`: 結合後の画像の幅・高さ
+- `variants[].verifiedSystemUiTopInset`: 本番presetから期待するstatus bar高さ
+
+`captureDevice`、`viewportWidth`、`viewportHeight`、`imageWidth`、`imageHeight`、`verifiedSystemUiTopInset` は同時指定が必須です。runnerは結合画像の幅・高さとは別にviewport寸法を本番presetへ渡し、期待insetと一致しない検体を拒否します。
 
 ## 追加手順
 

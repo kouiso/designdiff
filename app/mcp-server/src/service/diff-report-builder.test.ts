@@ -109,6 +109,109 @@ describe("buildDiffReport", () => {
     }
   });
 
+  it("マスク内の内容を全指標の分母から外し、偽の境界を作らないこと", async () => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    const width = 100;
+    const height = 100;
+    const maskedRows = 84;
+    const designPixels = await createSolidRgba(width, height, { r: 0x22, g: 0xaa, b: 0x88 });
+    const screenshotPixels = Uint8ClampedArray.from(designPixels);
+    const ignoreMask = new Uint8Array(width * height);
+
+    for (let y = 0; y < maskedRows; y++) {
+      for (let x = 0; x < width; x++) {
+        const pixel = y * width + x;
+        const offset = pixel * 4;
+        ignoreMask[pixel] = 1;
+        screenshotPixels[offset] = 255;
+        screenshotPixels[offset + 1] = 0;
+        screenshotPixels[offset + 2] = 0;
+      }
+    }
+
+    const result = buildDiffReport({
+      designPixels,
+      screenshotPixels,
+      width,
+      height,
+      ignoreMask,
+      resolvedAlignment: {
+        alignment: {
+          translation: { x: 0, y: 0 },
+          scale: { x: 1, y: 1 },
+          rotation: 0,
+          confidence: 1,
+          residual: 0,
+        },
+        alignedDesignPixels: designPixels,
+        applied: false,
+      },
+    });
+
+    expect(result.aggregateVerdict).toBe("pass");
+    expect(result.regionScores[0]).toMatchObject({
+      structure: 1,
+      color: 0,
+      shape: 0,
+    });
+    expect(result.regionScores[0].flatColorMismatch).toBeUndefined();
+  });
+
+  it("84%をマスクしても残り領域の実差分を fail にすること", async () => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    const width = 100;
+    const height = 100;
+    const maskedRows = 84;
+    const designPixels = await createSolidRgba(width, height, { r: 0x22, g: 0xaa, b: 0x88 });
+    const screenshotPixels = await createSolidRgba(width, height, {
+      r: 0x28,
+      g: 0xaa,
+      b: 0x88,
+    });
+    const ignoreMask = new Uint8Array(width * height);
+
+    for (let y = 0; y < maskedRows; y++) {
+      ignoreMask.fill(1, y * width, (y + 1) * width);
+      for (let x = 0; x < width; x++) {
+        const offset = (y * width + x) * 4;
+        screenshotPixels[offset] = 255;
+        screenshotPixels[offset + 1] = 0;
+        screenshotPixels[offset + 2] = 0;
+      }
+    }
+
+    const result = buildDiffReport({
+      designPixels,
+      screenshotPixels,
+      width,
+      height,
+      ignoreMask,
+      resolvedAlignment: {
+        alignment: {
+          translation: { x: 0, y: 0 },
+          scale: { x: 1, y: 1 },
+          rotation: 0,
+          confidence: 1,
+          residual: 0,
+        },
+        alignedDesignPixels: designPixels,
+        applied: false,
+      },
+    });
+
+    expect(result.aggregateVerdict).toBe("fail");
+    expect(result.regionScores[0].flatColorMismatch).toMatchObject({ maxChannelDelta: 6 });
+    expect(result.issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          kind: "color",
+          severity: "critical",
+          evidence: expect.objectContaining({ signal: "flat_region_color" }),
+        }),
+      ]),
+    );
+  });
+
   it("figmaRootNode.children があれば section ごとの regionScore を返す", async () => {
     const { buildDiffReport } = await import("./diff-report-builder.js");
     const designPixels = await createSolidRgba(32, 24, { r: 255, g: 255, b: 255 });
@@ -552,6 +655,45 @@ describe("buildDiffReport global alignment shift severity", () => {
     return { design: build(0), screenshot: build(dx) };
   }
 
+  function createSystemInsetPattern(
+    width: number,
+    height: number,
+    inset: number,
+  ): {
+    design: Uint8ClampedArray;
+    screenshot: Uint8ClampedArray;
+    ignoreMask: Uint8Array;
+  } {
+    const design = new Uint8ClampedArray(width * height * 4);
+    const screenshot = new Uint8ClampedArray(design.length);
+    const ignoreMask = new Uint8Array(width * height);
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const pixel = y * width + x;
+        const offset = pixel * 4;
+        const value = (y * 37 + x * 11) % 251;
+        design[offset] = value;
+        design[offset + 1] = (value + 47) % 251;
+        design[offset + 2] = (value + 89) % 251;
+        design[offset + 3] = 255;
+      }
+    }
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const pixel = y * width + x;
+        const offset = pixel * 4;
+        if (y < inset) {
+          ignoreMask[pixel] = 1;
+          screenshot.set(design.subarray(offset, offset + 4), offset);
+          continue;
+        }
+        const sourceOffset = ((y - inset) * width + x) * 4;
+        screenshot.set(design.subarray(sourceOffset, sourceOffset + 4), offset);
+      }
+    }
+    return { design, screenshot, ignoreMask };
+  }
+
   it("小さい許容範囲内のシフト(1px)はグローバルシフトのcritical化を発火させないこと", async () => {
     const { buildDiffReport } = await import("./diff-report-builder.js");
     const width = 100;
@@ -598,6 +740,80 @@ describe("buildDiffReport global alignment shift severity", () => {
     // これが今回の修正の核心: 補正後の region score は綺麗に見えても、
     // critical position issue が computeVerdict の hasCriticalIssue を
     // 通じて verdict を fail にする（グローバルシフトが黙って消えない）。
+    expect(result.aggregateVerdict).toBe("fail");
+  });
+
+  it("内部検証済み status bar inset と一致する下方向だけは critical にしないこと", async () => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    const width = 100;
+    const height = 100;
+    const inset = 72;
+    const { design, screenshot, ignoreMask } = createSystemInsetPattern(width, height, inset);
+    const designBefore = Uint8ClampedArray.from(design);
+    const screenshotBefore = Uint8ClampedArray.from(screenshot);
+
+    const result = buildDiffReport({
+      designPixels: design,
+      screenshotPixels: screenshot,
+      width,
+      height,
+      ignoreMask,
+      verifiedSystemUiTopInset: inset,
+    });
+
+    expect(result.alignment.translation).toEqual({ x: 0, y: inset });
+    const positionIssue = result.issues.find(
+      (issue) => issue.evidence.signal === "translation_offset",
+    );
+    expect(positionIssue).toBeUndefined();
+    expect(result.aggregateVerdict).toBe("pass");
+    expect(design).toEqual(designBefore);
+    expect(screenshot).toEqual(screenshotBefore);
+  });
+
+  it("status bar inset と一致しない大きな縦シフトは従来どおり critical にすること", async () => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    const width = 100;
+    const height = 100;
+    const inset = 72;
+    const { design, screenshot, ignoreMask } = createSystemInsetPattern(width, height, inset);
+
+    const result = buildDiffReport({
+      designPixels: design,
+      screenshotPixels: screenshot,
+      width,
+      height,
+      ignoreMask,
+      // 候補幅の実装詳細に依存させず、実際のずれ量から十分離れた値を使う。
+      verifiedSystemUiTopInset: 40,
+    });
+
+    const positionIssue = result.issues.find(
+      (issue) => issue.evidence.signal === "translation_offset",
+    );
+    expect(positionIssue?.severity).toBe("critical");
+    expect(result.aggregateVerdict).toBe("fail");
+  });
+
+  it("status bar inset と同じ量でも横シフトは従来どおり critical にすること", async () => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    const width = 100;
+    const height = 100;
+    const inset = 15;
+    const { design, screenshot } = await createShiftedPattern(width, height, inset);
+
+    const result = buildDiffReport({
+      designPixels: design,
+      screenshotPixels: screenshot,
+      width,
+      height,
+      verifiedSystemUiTopInset: inset,
+    });
+
+    const positionIssue = result.issues.find(
+      (issue) => issue.evidence.signal === "translation_offset",
+    );
+    expect(positionIssue?.severity).toBe("critical");
     expect(result.aggregateVerdict).toBe("fail");
   });
 });

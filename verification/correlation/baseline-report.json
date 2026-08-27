@@ -1,16 +1,16 @@
 {
   "summary": {
     "verdictAccuracy": {
-      "matched": 14,
-      "total": 14,
+      "matched": 15,
+      "total": 15,
       "percentage": 100
     },
-    "pairsTested": 5,
-    "variantsTested": 14,
+    "pairsTested": 6,
+    "variantsTested": 15,
     "issueKindRecall": {
       "matched": 12,
-      "expected": 13,
-      "percentage": 92.3
+      "expected": 12,
+      "percentage": 100
     },
     "issueKindPrecision": {
       "matched": 12,
@@ -18,11 +18,11 @@
       "percentage": 63.2
     },
     "pearson": {
-      "structure": 0.500863,
-      "color": -0.526033,
-      "colorAligned": 0.526033
+      "structure": 0.514628,
+      "color": -0.541966,
+      "colorAligned": 0.541966
     },
-    "snapshotTimestamp": "2026-07-28T19:45:46-07:00",
+    "snapshotTimestamp": "2026-08-07T13:08:58.839Z",
     "baselineSignalsInEffect": {
       "active": [
         "P1 issue typing and verdict logic",
@@ -79,7 +79,7 @@
       "computedVerdict": "fail",
       "expectedIssueKinds": ["position", "size", "structure"],
       "computedIssueKinds": ["color", "position", "size"],
-      "weightedStructure": 0.730133,
+      "weightedStructure": 0.727615,
       "weightedColor": 27.768456,
       "humanSeverity": 0,
       "matchesVerdict": true,
@@ -89,7 +89,7 @@
       "missedIssueKinds": ["structure"],
       "unexpectedIssueKinds": ["color"],
       "worstSectionId": "diff-cluster-100-100-200-100",
-      "worstSectionScore": 0.730009
+      "worstSectionScore": 0.723942
     },
     {
       "fixtureId": "pair-02-multi-section-lp",
@@ -136,7 +136,7 @@
       "computedVerdict": "fail",
       "expectedIssueKinds": ["position", "size"],
       "computedIssueKinds": ["color", "position", "size"],
-      "weightedStructure": 0.920419,
+      "weightedStructure": 0.92047,
       "weightedColor": 22.299401,
       "humanSeverity": 0.5,
       "matchesVerdict": true,
@@ -146,7 +146,7 @@
       "missedIssueKinds": [],
       "unexpectedIssueKinds": ["color"],
       "worstSectionId": "section-footer",
-      "worstSectionScore": 0.890345
+      "worstSectionScore": 0.890414
     },
     {
       "fixtureId": "pair-03-typography-layout",
@@ -212,7 +212,7 @@
       "computedVerdict": "fail",
       "expectedIssueKinds": ["color"],
       "computedIssueKinds": ["color"],
-      "weightedStructure": 0.968913,
+      "weightedStructure": 0.967845,
       "weightedColor": 11.467875,
       "humanSeverity": 0,
       "matchesVerdict": true,
@@ -222,7 +222,7 @@
       "missedIssueKinds": [],
       "unexpectedIssueKinds": [],
       "worstSectionId": "color-button-primary",
-      "worstSectionScore": 0.786944
+      "worstSectionScore": 0.779053
     },
     {
       "fixtureId": "pair-04-color-system",
@@ -250,7 +250,7 @@
       "computedVerdict": "fail",
       "expectedIssueKinds": ["color"],
       "computedIssueKinds": ["color"],
-      "weightedStructure": 0.977135,
+      "weightedStructure": 0.976482,
       "weightedColor": 4.866668,
       "humanSeverity": 0.5,
       "matchesVerdict": true,
@@ -260,7 +260,7 @@
       "missedIssueKinds": [],
       "unexpectedIssueKinds": [],
       "worstSectionId": "color-button-tertiary",
-      "worstSectionScore": 0.972581
+      "worstSectionScore": 0.971798
     },
     {
       "fixtureId": "pair-05-localized-diff",
@@ -299,6 +299,25 @@
       "unexpectedIssueKinds": [],
       "worstSectionId": "diff-cluster-180-130-40-40",
       "worstSectionScore": 0.165611
+    },
+    {
+      "fixtureId": "pair-06-system-ui-alignment",
+      "variantName": "stitched-system-ui",
+      "expectedVerdict": "pass",
+      "computedVerdict": "pass",
+      "expectedIssueKinds": [],
+      "computedIssueKinds": [],
+      "weightedStructure": 1,
+      "weightedColor": 0,
+      "humanSeverity": 1,
+      "matchesVerdict": true,
+      "issueKindRecall": null,
+      "issueKindPrecision": null,
+      "matchedIssueKinds": [],
+      "missedIssueKinds": [],
+      "unexpectedIssueKinds": [],
+      "worstSectionId": "whole-frame",
+      "worstSectionScore": 1
     }
   ],
   "falseClassifications": []

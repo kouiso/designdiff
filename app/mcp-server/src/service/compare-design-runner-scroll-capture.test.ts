@@ -6,11 +6,18 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 const WORK_DIR = path.join(process.cwd(), "tmp-scroll-capture-test");
 const STITCHED_PATH = path.join(WORK_DIR, "stitched.png");
+const SYSTEM_UI_STITCHED_PATH = path.join(WORK_DIR, "system-ui-stitched.png");
 const SINGLE_PATH = path.join(WORK_DIR, "single.png");
 const DESIGN_PATH = path.join(WORK_DIR, "design.png");
+const SYSTEM_UI_DESIGN_PATH = path.join(WORK_DIR, "system-ui-design.png");
 const WIDTH = 360;
 const STITCHED_HEIGHT = 1_600;
 const SINGLE_HEIGHT = 800;
+const SYSTEM_UI_WIDTH = 1_080;
+const SYSTEM_UI_STITCHED_HEIGHT = 4_800;
+const SYSTEM_UI_SINGLE_HEIGHT = 2_400;
+const STATUS_BAR_HEIGHT = 72;
+const NAVIGATION_BAR_HEIGHT = 72;
 
 const mocks = vi.hoisted(() => ({
   captureDeviceScreenshot: vi.fn(),
@@ -30,11 +37,54 @@ async function writeSolid(filePath: string, height: number): Promise<void> {
     .toFile(filePath);
 }
 
+async function writeSystemUiFixturePair(): Promise<void> {
+  // 実機の status bar は本文を下へ押し出すため、screenshot の本文を design の
+  // STATUS_BAR_HEIGHT 行前から作り、その状況を合成で再現する。上下の system UI
+  // 帯は mask 対象で中身を比較しないため RGB=0 で埋める。1080x2400 は preset
+  // 登録済み端末寸法なので、preset を変えると verified inset 経路の意味を失う。
+  const design = Buffer.alloc(SYSTEM_UI_WIDTH * SYSTEM_UI_STITCHED_HEIGHT * 4);
+  const screenshot = Buffer.alloc(design.length);
+  for (let y = 0; y < SYSTEM_UI_STITCHED_HEIGHT; y++) {
+    for (let x = 0; x < SYSTEM_UI_WIDTH; x++) {
+      const offset = (y * SYSTEM_UI_WIDTH + x) * 4;
+      const value = (y * 37 + x * 11) % 251;
+      design[offset] = value;
+      design[offset + 1] = (value + 47) % 251;
+      design[offset + 2] = (value + 89) % 251;
+      design[offset + 3] = 255;
+
+      if (y < STATUS_BAR_HEIGHT || y >= SYSTEM_UI_STITCHED_HEIGHT - NAVIGATION_BAR_HEIGHT) {
+        screenshot[offset + 3] = 255;
+        continue;
+      }
+      const sourceOffset = ((y - STATUS_BAR_HEIGHT) * SYSTEM_UI_WIDTH + x) * 4;
+      screenshot[offset] = design[sourceOffset];
+      screenshot[offset + 1] = design[sourceOffset + 1];
+      screenshot[offset + 2] = design[sourceOffset + 2];
+      screenshot[offset + 3] = design[sourceOffset + 3];
+    }
+  }
+
+  await Promise.all([
+    sharp(design, {
+      raw: { width: SYSTEM_UI_WIDTH, height: SYSTEM_UI_STITCHED_HEIGHT, channels: 4 },
+    })
+      .png()
+      .toFile(SYSTEM_UI_DESIGN_PATH),
+    sharp(screenshot, {
+      raw: { width: SYSTEM_UI_WIDTH, height: SYSTEM_UI_STITCHED_HEIGHT, channels: 4 },
+    })
+      .png()
+      .toFile(SYSTEM_UI_STITCHED_PATH),
+  ]);
+}
+
 beforeAll(async () => {
   await fs.mkdir(WORK_DIR, { recursive: true });
   await writeSolid(STITCHED_PATH, STITCHED_HEIGHT);
   await writeSolid(SINGLE_PATH, SINGLE_HEIGHT);
   await writeSolid(DESIGN_PATH, STITCHED_HEIGHT);
+  await writeSystemUiFixturePair();
 });
 
 afterAll(async () => {
@@ -100,6 +150,50 @@ describe("compare_design の capture_scroll", () => {
     expect(mocks.captureDeviceScrollingScreenshot).not.toHaveBeenCalled();
     expect(output.result.scrollCapture).toBeUndefined();
   });
+
+  it("結合画像末尾の system UI を mask し、status bar inset と一致する本文を安定して補正する", async () => {
+    mocks.captureDeviceScreenshot.mockClear();
+    mocks.captureDeviceScrollingScreenshot.mockClear();
+    mocks.captureDeviceScrollingScreenshot.mockResolvedValue({
+      screenshotPath: SYSTEM_UI_STITCHED_PATH,
+      captureCount: 3,
+      width: SYSTEM_UI_WIDTH,
+      height: SYSTEM_UI_STITCHED_HEIGHT,
+      viewportWidth: SYSTEM_UI_WIDTH,
+      viewportHeight: SYSTEM_UI_SINGLE_HEIGHT,
+      fixedHeaderHeight: 0,
+      fixedFooterHeight: 0,
+      reachedBottom: true,
+      truncatedAtCaptureLimit: false,
+      didNotScroll: false,
+      startedAtTop: true,
+      notes: [],
+    });
+
+    const { runCompareDesign } = await import("./compare-design-runner.js");
+    const output = await runCompareDesign({
+      design_source: SYSTEM_UI_DESIGN_PATH,
+      capture_device: "android",
+      capture_scroll: true,
+      threshold: 0,
+    });
+
+    expect(output.result.totalPixelCount).toBe(
+      SYSTEM_UI_WIDTH * (SYSTEM_UI_STITCHED_HEIGHT - STATUS_BAR_HEIGHT - NAVIGATION_BAR_HEIGHT),
+    );
+    expect(output.result.diffPixelCount).toBe(0);
+    expect(output.result.matchRate).toBe(100);
+    expect(output.result.diffReport?.alignment.translation).toEqual({
+      x: 0,
+      y: STATUS_BAR_HEIGHT,
+    });
+    const systemInsetIssue = output.result.diffReport?.issues.find(
+      (issue) => issue.evidence.signal === "translation_offset",
+    );
+    expect(systemInsetIssue).toBeUndefined();
+    expect(output.result.diffReport?.aggregateVerdict).not.toBe("fail");
+    expect(output.result.status).toBe("PASS");
+  }, 60_000);
 });
 
 describe("capture_scroll の指定の検査", () => {

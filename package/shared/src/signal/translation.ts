@@ -14,6 +14,50 @@ export const FINE_RANGE = 5;
 export const COARSE_SAMPLE_STEP = 4;
 export const DIFF_THRESHOLD_SQ = 625; // per-channel RGB distance threshold (25^2)
 
+export interface TranslationCandidate {
+  dx: number;
+  dy: number;
+}
+
+function validateIgnoreMask(
+  ignoreMask: Uint8Array | undefined,
+  width: number,
+  height: number,
+): void {
+  if (ignoreMask && ignoreMask.length < width * height) {
+    throw new Error(
+      `ignoreMask buffer too small for ${width}x${height}: got ${ignoreMask.length}, expected>=${width * height}`,
+    );
+  }
+}
+
+// 短い buffer を渡されると TypedArray の範囲外読取りは undefined になり、
+// 差分が NaN になる。NaN > しきい値 は常に false なので、実データが
+// 足りていないのに「差分0」を返してしまう。事前に長さで弾く。
+function validatePixelBuffer(
+  pixels: Uint8ClampedArray,
+  width: number,
+  height: number,
+  label: string,
+): void {
+  const required = width * height * 4;
+  if (pixels.length < required) {
+    throw new Error(
+      `${label} buffer too small for ${width}x${height}: got ${pixels.length}, expected>=${required}`,
+    );
+  }
+}
+
+function validateTranslationCandidates(candidates: readonly TranslationCandidate[]): void {
+  for (const candidate of candidates) {
+    if (!Number.isInteger(candidate.dx) || !Number.isInteger(candidate.dy)) {
+      throw new Error(
+        `translation candidate must use integer pixels: dx=${candidate.dx}, dy=${candidate.dy}`,
+      );
+    }
+  }
+}
+
 /**
  * 位置をずらしたときに違って見える画素を数える。
  *
@@ -33,16 +77,21 @@ export const countSsdOffset = (
   dy: number,
   sampleStep: number,
   alwaysPenalizeOob = false,
+  ignoreMask?: Uint8Array,
 ): number => {
   // 0 や負の刻みを渡されると、走査が終わらずプロセスが固まる。
   // 公開した以上、呼ぶ側を信用せずここで止める。
   if (!Number.isInteger(sampleStep) || sampleStep <= 0) {
     throw new Error(`sampleStep must be a positive integer: got ${sampleStep}`);
   }
+  validateIgnoreMask(ignoreMask, width, height);
+  validatePixelBuffer(design, width, height, "design");
+  validatePixelBuffer(screenshot, width, height, "screenshot");
 
   let diff = 0;
   for (let y = 0; y < height; y += sampleStep) {
     for (let x = 0; x < width; x += sampleStep) {
+      if (ignoreMask && ignoreMask[y * width + x] !== 0) continue;
       const bIdx = (y * width + x) * 4;
       const srcX = x - dx;
       const srcY = y - dy;
@@ -69,6 +118,44 @@ export const countSsdOffset = (
   return diff;
 };
 
+function scoreTranslationCandidate(
+  design: Uint8ClampedArray,
+  screenshot: Uint8ClampedArray,
+  width: number,
+  height: number,
+  candidate: TranslationCandidate,
+  sampleStep: number,
+  ignoreMask: Uint8Array | undefined,
+): number {
+  return countSsdOffset(
+    design,
+    screenshot,
+    width,
+    height,
+    candidate.dx,
+    candidate.dy,
+    sampleStep,
+    false,
+    ignoreMask,
+  );
+}
+
+function countSampledPositions(
+  width: number,
+  height: number,
+  sampleStep: number,
+  ignoreMask: Uint8Array | undefined,
+): number {
+  let count = 0;
+  for (let y = 0; y < height; y += sampleStep) {
+    for (let x = 0; x < width; x += sampleStep) {
+      if (ignoreMask && ignoreMask[y * width + x] !== 0) continue;
+      count++;
+    }
+  }
+  return count;
+}
+
 /**
  * 設計と撮影の間の平行移動を探す。
  *
@@ -80,7 +167,11 @@ export const detectTranslation = (
   screenshot: Uint8ClampedArray,
   width: number,
   height: number,
+  ignoreMask?: Uint8Array,
+  additionalCandidates: readonly TranslationCandidate[] = [],
 ): { dx: number; dy: number; confidence: number; residual: number } => {
+  validateIgnoreMask(ignoreMask, width, height);
+  validateTranslationCandidates(additionalCandidates);
   if (width * height < 64) {
     return { dx: 0, dy: 0, confidence: 1, residual: 0 };
   }
@@ -100,7 +191,15 @@ export const detectTranslation = (
 
   for (let dy = -COARSE_RANGE; dy <= COARSE_RANGE; dy += COARSE_STEP) {
     for (let dx = -COARSE_RANGE; dx <= COARSE_RANGE; dx += COARSE_STEP) {
-      const d = countSsdOffset(design, screenshot, width, height, dx, dy, COARSE_SAMPLE_STEP);
+      const d = scoreTranslationCandidate(
+        design,
+        screenshot,
+        width,
+        height,
+        { dx, dy },
+        COARSE_SAMPLE_STEP,
+        ignoreMask,
+      );
       if (isBetter(d, dx, dy)) {
         bestDiff = d;
         bestDx = dx;
@@ -123,7 +222,15 @@ export const detectTranslation = (
   const fineSampleStep = width * height > 1_000_000 ? 2 : 1;
   for (let dy = coarseDy - FINE_RANGE; dy <= coarseDy + FINE_RANGE; dy++) {
     for (let dx = coarseDx - FINE_RANGE; dx <= coarseDx + FINE_RANGE; dx++) {
-      const d = countSsdOffset(design, screenshot, width, height, dx, dy, fineSampleStep);
+      const d = scoreTranslationCandidate(
+        design,
+        screenshot,
+        width,
+        height,
+        { dx, dy },
+        fineSampleStep,
+        ignoreMask,
+      );
       if (isBetter(d, dx, dy)) {
         bestDiff = d;
         bestDx = dx;
@@ -132,13 +239,36 @@ export const detectTranslation = (
     }
   }
 
+  // 端末 preset のように出所を検証済みの候補は、一般探索の範囲を広げず
+  // その座標だけ追加で比べる。iOS の大きな inset のために全候補を広げると、
+  // 本物のレイアウト回帰まで位置合わせで隠してしまう。
+  for (const candidate of additionalCandidates) {
+    const d = scoreTranslationCandidate(
+      design,
+      screenshot,
+      width,
+      height,
+      candidate,
+      fineSampleStep,
+      ignoreMask,
+    );
+    if (isBetter(d, candidate.dx, candidate.dy)) {
+      bestDiff = d;
+      bestDx = candidate.dx;
+      bestDy = candidate.dy;
+    }
+  }
+
   // 間引いて数えた回数で割る。全画素数で割ると、間引いた分だけ残差が
   // 小さく出て「ほぼ一致している」と誤って読める。
-  const sampledPositionCount =
-    Math.ceil(width / fineSampleStep) * Math.ceil(height / fineSampleStep);
+  const sampledPositionCount = countSampledPositions(width, height, fineSampleStep, ignoreMask);
   const residual = sampledPositionCount === 0 ? 0 : bestDiff / sampledPositionCount;
   const offsetMagnitude = Math.sqrt(bestDx * bestDx + bestDy * bestDy);
-  const confidence = Math.max(0, 1 - offsetMagnitude / (COARSE_RANGE * Math.SQRT2));
+  // 比較した画素が1つも無いのに confidence=1(完全一致相当)を返すと、
+  // 根拠ゼロの判定を「確信を持って一致」と読める形で外へ出してしまう。
+  // 全画素が mask されたとき(理論上のみ、通常は起きない)は 0 にする。
+  const confidence =
+    sampledPositionCount === 0 ? 0 : Math.max(0, 1 - offsetMagnitude / (COARSE_RANGE * Math.SQRT2));
 
   return { dx: bestDx, dy: bestDy, confidence, residual };
 };
@@ -177,6 +307,16 @@ export const shiftPixels = (
 // 偽の最小値へ寄せてしまう。
 export const ALIGNMENT_IMPROVEMENT_THRESHOLD = 0.85;
 
+// preset 完全一致した回だけを system UI 補正と認める判定の前提。
+// 一次比較(image-compare-service.ts)とレポート(diff-report-builder.ts)が
+// 別々にこの候補幅を持つと、片方だけ変えたときに採用される候補が食い違う。
+export function buildVerifiedInsetCandidates(
+  verifiedSystemUiTopInset: number | undefined,
+): readonly TranslationCandidate[] {
+  if (verifiedSystemUiTopInset === undefined) return [];
+  return [-1, 0, 1].map((delta) => ({ dx: 0, dy: verifiedSystemUiTopInset + delta }));
+}
+
 export interface ResolvedAlignment {
   alignment: Alignment;
   alignedDesignPixels: Uint8ClampedArray;
@@ -194,12 +334,16 @@ export const resolveAlignment = (
   screenshotPixels: Uint8ClampedArray,
   width: number,
   height: number,
+  ignoreMask?: Uint8Array,
+  additionalCandidates: readonly TranslationCandidate[] = [],
 ): ResolvedAlignment => {
   const { dx, dy, confidence, residual } = detectTranslation(
     designPixels,
     screenshotPixels,
     width,
     height,
+    ignoreMask,
+    additionalCandidates,
   );
 
   let alignedDesignPixels = designPixels;
@@ -216,6 +360,7 @@ export const resolveAlignment = (
       0,
       COARSE_SAMPLE_STEP,
       true,
+      ignoreMask,
     );
     const correctedDiff = countSsdOffset(
       designPixels,
@@ -226,6 +371,7 @@ export const resolveAlignment = (
       dy,
       COARSE_SAMPLE_STEP,
       true,
+      ignoreMask,
     );
     if (baselineDiff > 0 && correctedDiff < baselineDiff * ALIGNMENT_IMPROVEMENT_THRESHOLD) {
       alignedDesignPixels = shiftPixels(designPixels, width, height, dx, dy);

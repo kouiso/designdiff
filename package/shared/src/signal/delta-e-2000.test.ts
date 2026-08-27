@@ -30,6 +30,27 @@ const H = 100;
 
 // 走査ロジックを computePerceptibleDiffRatio と共有させたので、平均側も固定する。
 describe("computeMeanDeltaE2000", () => {
+  it("rejects empty, mismatched, and partial RGBA buffers", () => {
+    const image = canvas(W, H, () => [120, 130, 140]);
+    expect(() => computeMeanDeltaE2000(new Uint8ClampedArray(), image, 0, 0, W, H, W)).toThrow(
+      /must not be empty/,
+    );
+    expect(() =>
+      computeMeanDeltaE2000(image, image.subarray(0, image.length - 4), 0, 0, W, H, W),
+    ).toThrow(/equal lengths/);
+    expect(() =>
+      computeMeanDeltaE2000(
+        image.subarray(0, image.length - 1),
+        image.subarray(0, image.length - 1),
+        0,
+        0,
+        W,
+        H,
+        W,
+      ),
+    ).toThrow(/complete RGBA/);
+  });
+
   it("returns 0 for identical images", () => {
     const a = canvas(W, H, () => [120, 130, 140]);
     expect(computeMeanDeltaE2000(a, a, 0, 0, W, H, W)).toBe(0);
@@ -48,6 +69,29 @@ describe("computeMeanDeltaE2000", () => {
     const b = canvas(W, H, (_x, y) => (y < 60 ? [126, 130, 140] : [120, 130, 140]));
 
     expect(computeMeanDeltaE2000(a, b, 0, 0, W, H, W)).toBeLessThan(PERCEPTIBLE_DELTA_E);
+  });
+
+  it("excludes masked pixels from the mean while retaining an unmasked defect", () => {
+    const a = canvas(W, H, () => [20, 20, 20]);
+    const b = canvas(W, H, (_x, y) => (y < 90 ? [255, 255, 255] : [200, 20, 20]));
+    const ignoreMask = new Uint8Array(W * H);
+    for (let y = 0; y < 90; y++) {
+      ignoreMask.fill(1, y * W, (y + 1) * W);
+    }
+
+    const score = computeMeanDeltaE2000(a, b, 0, 0, W, H, W, ignoreMask);
+    expect(score).toBeGreaterThan(PERCEPTIBLE_DELTA_E);
+  });
+
+  it("does not let masked content affect the mean", () => {
+    const a = canvas(W, H, () => [20, 20, 20]);
+    const b = canvas(W, H, (_x, y) => (y < 90 ? [255, 255, 255] : [20, 20, 20]));
+    const ignoreMask = new Uint8Array(W * H);
+    for (let y = 0; y < 90; y++) {
+      ignoreMask.fill(1, y * W, (y + 1) * W);
+    }
+
+    expect(computeMeanDeltaE2000(a, b, 0, 0, W, H, W, ignoreMask)).toBe(0);
   });
 });
 

@@ -253,4 +253,83 @@ describe("runCompareDesign system UI masks", () => {
       await fs.rm(projectDir, { recursive: true, force: true });
     }
   }, 60_000);
+
+  it("status bar の一部だけを crop した mask 高さを verified inset に使わないこと", async () => {
+    const { buildSystemIgnoreRegionsForComparison } = await import("./compare-design-runner.js");
+
+    const result = buildSystemIgnoreRegionsForComparison(
+      { design_source: designPath, capture_device: "android" },
+      { width: 1080, height: 2400 },
+      { x: 0, y: 0, width: 1080, height: 20 },
+      undefined,
+    );
+
+    expect(result.regions).toEqual([
+      { x: 0, y: 0, width: 1080, height: 20, label: "system:status-bar" },
+    ]);
+    expect(result.verifiedTopInset).toBeUndefined();
+  });
+
+  it("完全一致presetでcropしない場合はverified insetを返すこと", async () => {
+    const { buildSystemIgnoreRegionsForComparison } = await import("./compare-design-runner.js");
+
+    const result = buildSystemIgnoreRegionsForComparison(
+      { design_source: designPath, capture_device: "android" },
+      { width: 1080, height: 2400 },
+      undefined,
+      undefined,
+    );
+
+    expect(result.verifiedTopInset).toBe(72);
+  });
+
+  it("完全一致presetのstatus bar全体を含むcropだけはverified insetを維持すること", async () => {
+    const { buildSystemIgnoreRegionsForComparison } = await import("./compare-design-runner.js");
+
+    const result = buildSystemIgnoreRegionsForComparison(
+      { design_source: designPath, capture_device: "android" },
+      { width: 1080, height: 2400 },
+      { x: 0, y: 0, width: 1080, height: 72 },
+      undefined,
+    );
+
+    expect(result.regions).toEqual([
+      { x: 0, y: 0, width: 1080, height: 72, label: "system:status-bar" },
+    ]);
+    expect(result.verifiedTopInset).toBe(72);
+  });
+
+  it("完全一致presetでもstatus barを切り落とすcropはverified insetを返さないこと", async () => {
+    const { buildSystemIgnoreRegionsForComparison } = await import("./compare-design-runner.js");
+
+    const result = buildSystemIgnoreRegionsForComparison(
+      { design_source: designPath, capture_device: "android" },
+      { width: 1080, height: 2400 },
+      { x: 0, y: 120, width: 1080, height: 2160 },
+      undefined,
+    );
+
+    expect(result.regions).toEqual([]);
+    expect(result.verifiedTopInset).toBeUndefined();
+  });
+
+  it("presetにない端末寸法のfallback maskをverified insetに使わないこと", async () => {
+    const { buildSystemIgnoreRegionsForComparison } = await import("./compare-design-runner.js");
+
+    const result = buildSystemIgnoreRegionsForComparison(
+      { design_source: designPath, capture_device: "android" },
+      { width: 360, height: 800 },
+      undefined,
+      undefined,
+    );
+
+    expect(result.regions[0]).toEqual({
+      x: 0,
+      y: 0,
+      width: 360,
+      height: 48,
+      label: "system:status-bar",
+    });
+    expect(result.verifiedTopInset).toBeUndefined();
+  });
 });

@@ -22,6 +22,12 @@ export {
   type FigmaTypeStyle,
 } from "./figma-client.js";
 
+export {
+  resolveFixtureVerifiedSystemUiTopInset,
+  SystemUiFixtureMetadataSchema,
+  type SystemUiFixtureMetadata,
+} from "./verification-fixture.js";
+
 // CSS Suggestion Generator
 export { figmaColorToHex, generateCssSuggestion } from "./css-suggestion.js";
 
@@ -92,6 +98,7 @@ export {
 } from "./signal/toast-band.js";
 export {
   ALIGNMENT_IMPROVEMENT_THRESHOLD,
+  buildVerifiedInsetCandidates,
   COARSE_RANGE,
   COARSE_SAMPLE_STEP,
   COARSE_STEP,
@@ -102,6 +109,7 @@ export {
   resolveAlignment,
   shiftPixels,
   type ResolvedAlignment,
+  type TranslationCandidate,
 } from "./signal/translation.js";
 
 // Comparison Confidence Layer (pre-flight / diagnosis / headline)
@@ -119,6 +127,7 @@ export { buildComparisonHeadline } from "./confidence/headline.js";
 export { runPreflight, type PreflightInput } from "./confidence/preflight.js";
 export {
   buildSystemBarIgnoreRegions,
+  getVerifiedSystemBarTopInset,
   type MobileSystemBarPlatform,
 } from "./confidence/system-bar-ignore-regions.js";
 

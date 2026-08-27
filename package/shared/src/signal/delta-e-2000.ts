@@ -105,7 +105,7 @@ const MAX_DENSE_SAMPLE_PIXELS = 1_000_000;
 /**
  * 矩形領域の平均 CIEDE2000 色差。両側とも完全に透明な画素は数えない。
  */
-export function computeMeanDeltaE2000(
+export const computeMeanDeltaE2000 = (
   pixels1: Uint8ClampedArray,
   pixels2: Uint8ClampedArray,
   startX: number,
@@ -113,16 +113,44 @@ export function computeMeanDeltaE2000(
   endX: number,
   endY: number,
   width: number,
-): number {
+  ignoreMask?: Uint8Array,
+): number => {
+  if (pixels1.length === 0 || pixels2.length === 0) {
+    throw new Error("computeMeanDeltaE2000: pixel buffers must not be empty");
+  }
+  if (pixels1.length !== pixels2.length) {
+    throw new Error(
+      `computeMeanDeltaE2000: pixel buffers must have equal lengths (got ${pixels1.length} and ${pixels2.length})`,
+    );
+  }
+  if (pixels1.length % 4 !== 0 || pixels2.length % 4 !== 0) {
+    throw new Error("computeMeanDeltaE2000: pixel buffers must contain complete RGBA pixels");
+  }
+  const pixelCount = pixels1.length / 4;
+  if (ignoreMask !== undefined && ignoreMask.length !== pixelCount) {
+    throw new Error(
+      `computeMeanDeltaE2000: ignoreMask must cover every pixel (got ${ignoreMask.length}, expected ${pixelCount})`,
+    );
+  }
   let total = 0;
   let count = 0;
-  forEachSampledPixel(pixels1, pixels2, startX, startY, endX, endY, width, (deltaE) => {
-    total += deltaE;
-    count++;
-  });
+  forEachSampledPixel(
+    pixels1,
+    pixels2,
+    startX,
+    startY,
+    endX,
+    endY,
+    width,
+    (deltaE) => {
+      total += deltaE;
+      count++;
+    },
+    ignoreMask,
+  );
 
   return count === 0 ? 0 : total / count;
-}
+};
 
 // 知覚の境目。パイプラインは平均 CIEDE2000 が 2 で critical としているので、
 // 同じ値を境目に使う。
@@ -318,6 +346,7 @@ function forEachSampledPixel(
   endY: number,
   width: number,
   visit: (deltaE: number) => void,
+  ignoreMask?: Uint8Array,
 ): void {
   const height = Math.min(pixels1.length / 4 / width || 0, pixels2.length / 4 / width || 0);
   const { clampedStartX, clampedStartY, clampedEndX, clampedEndY } = clampRegion(
@@ -364,7 +393,9 @@ function forEachSampledPixel(
     ) {
       const x = Math.min(clampedEndX - 1, blockStartX + (blockY % stride));
       const y = Math.min(clampedEndY - 1, blockStartY + (blockX % stride));
-      const i = (y * width + x) * 4;
+      const pixelIndex = y * width + x;
+      if (ignoreMask?.[pixelIndex] === 1) continue;
+      const i = pixelIndex * 4;
       if (pixels1[i + 3] === 0 && pixels2[i + 3] === 0) continue;
       visit(
         deltaE2000(

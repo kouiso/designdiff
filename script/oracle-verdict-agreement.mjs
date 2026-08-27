@@ -27,8 +27,12 @@ import { RESIDUAL_FAIL_THRESHOLD } from "./oracle-threshold.mjs";
 // しきい値は1箇所に置く。ここと収束の判定で別々に持つと、黙って
 // 別々の「正解」を持つことになる。
 
-function oracleVerdict(designPath, screenshotPath) {
-  const run = spawnSync(process.execPath, [ORACLE, "compare", designPath, screenshotPath], {
+function oracleVerdict(designPath, screenshotPath, ignoreRegions) {
+  const oracleArgs = [ORACLE, "compare", designPath, screenshotPath, ""];
+  if (ignoreRegions && ignoreRegions.length > 0) {
+    oracleArgs.push(JSON.stringify(ignoreRegions));
+  }
+  const run = spawnSync(process.execPath, oracleArgs, {
     encoding: "utf8",
   });
   if (run.status !== 0) {
@@ -38,7 +42,11 @@ function oracleVerdict(designPath, screenshotPath) {
   if (result.sizeMismatch) {
     return { verdict: "fail", residual: null, note: "寸法が違う" };
   }
-  const residual = result.baselineResidualRate;
+  // FigDiff 自身も「位置合わせしてから判定する」ので、独立オラクルも
+  // 補正後(correctedResidualRate)で判定しないと、位置ズレを含む検体
+  // (例: システム UI マスク検体)を無条件に fail 扱いしてしまい、
+  // 独立確認として成立しない。
+  const residual = result.correctedResidualRate;
   return {
     verdict: residual > RESIDUAL_FAIL_THRESHOLD ? "fail" : "pass",
     residual,
@@ -59,7 +67,11 @@ for (const dir of collectPairs()) {
   const expected = JSON.parse(readFileSync(path.join(dir, "expected.json"), "utf8"));
   const designPath = path.join(dir, expected.figmaFrame);
   for (const variant of expected.variants) {
-    const { verdict, residual, note } = oracleVerdict(designPath, path.join(dir, variant.image));
+    const { verdict, residual, note } = oracleVerdict(
+      designPath,
+      path.join(dir, variant.image),
+      variant.ignoreRegions,
+    );
     const agrees = verdict === variant.expectedVerdict;
     if (!agrees) {
       disagreements += 1;

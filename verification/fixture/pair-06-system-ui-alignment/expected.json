@@ -1,0 +1,44 @@
+{
+  "pairId": "pair-06-system-ui-alignment",
+  "figmaFrame": "figma-export.png",
+  "variants": [
+    {
+      "name": "stitched-system-ui",
+      "image": "impl-stitched-system-ui.png",
+      "expectedVerdict": "pass",
+      "expectedKinds": [],
+      "expectedIssueKinds": [],
+      "captureDevice": "android",
+      "viewportWidth": 1080,
+      "viewportHeight": 2400,
+      "imageWidth": 1080,
+      "imageHeight": 4800,
+      "ignoreRegions": [
+        {
+          "x": 0,
+          "y": 0,
+          "width": 1080,
+          "height": 72,
+          "label": "system:status-bar"
+        },
+        {
+          "x": 0,
+          "y": 4728,
+          "width": 1080,
+          "height": 72,
+          "label": "system:navigation-bar"
+        }
+      ],
+      "verifiedSystemUiTopInset": 72,
+      "expectedSystemUiAlignment": {
+        "matchRate": 100,
+        "diffPixelCount": 0,
+        "translation": {
+          "x": 0,
+          "y": 72
+        }
+      },
+      "notes": "Issue #1579: Pixel 7 presetの1080x2400 viewportを1080x4800へ結合した検体。上端72pxと結合画像末尾72pxを除外し、本文は検証済みinsetと同じ72pxだけ補正する。"
+    }
+  ]
+}

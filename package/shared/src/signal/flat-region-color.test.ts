@@ -47,6 +47,15 @@ const WIDTH = 240;
 const HEIGHT = 120;
 
 describe("detectFlatRegionColor", () => {
+  it("rejects invalid dimensions and RGBA buffer lengths", () => {
+    const image = makeCanvas(WIDTH, HEIGHT, solid(1, 2, 3));
+    expect(() => detectFlatRegionColor(image, 0, HEIGHT)).toThrow(/positive safe integers/);
+    expect(() => detectFlatRegionColor(image, WIDTH, 1.5)).toThrow(/positive safe integers/);
+    expect(() => detectFlatRegionColor(image.subarray(0, image.length - 4), WIDTH, HEIGHT)).toThrow(
+      /buffer length must equal/,
+    );
+  });
+
   it("reports the fill colour of a solid region", () => {
     const flat = detectFlatRegionColor(
       makeCanvas(WIDTH, HEIGHT, solid(0x22, 0xaa, 0x88)),
@@ -157,5 +166,31 @@ describe("compareFlatRegionColor", () => {
     const screenshot = makeCanvas(WIDTH, HEIGHT, solidWithText());
 
     expect(compareFlatRegionColor(design, screenshot, WIDTH, HEIGHT).mismatch).toBe(false);
+  });
+
+  it("ignores a different fill that exists only inside the mask", () => {
+    const design = makeCanvas(WIDTH, HEIGHT, solid(0x22, 0xaa, 0x88));
+    const screenshot = makeCanvas(WIDTH, HEIGHT, (_x, y) =>
+      y < HEIGHT / 2 ? [0xff, 0x00, 0x00] : [0x22, 0xaa, 0x88],
+    );
+    const ignoreMask = new Uint8Array(WIDTH * HEIGHT);
+    ignoreMask.fill(1, 0, WIDTH * (HEIGHT / 2));
+
+    expect(
+      compareFlatRegionColor(design, screenshot, WIDTH, HEIGHT, undefined, ignoreMask).mismatch,
+    ).toBe(false);
+  });
+
+  it("keeps an unmasked fill mismatch under a large mask", () => {
+    const design = makeCanvas(WIDTH, HEIGHT, solid(0x22, 0xaa, 0x88));
+    const screenshot = makeCanvas(WIDTH, HEIGHT, (_x, y) =>
+      y < HEIGHT - 16 ? [0xff, 0x00, 0x00] : [0x28, 0xaa, 0x88],
+    );
+    const ignoreMask = new Uint8Array(WIDTH * HEIGHT);
+    ignoreMask.fill(1, 0, WIDTH * (HEIGHT - 16));
+
+    const result = compareFlatRegionColor(design, screenshot, WIDTH, HEIGHT, undefined, ignoreMask);
+    expect(result.mismatch).toBe(true);
+    expect(result.maxChannelDelta).toBe(6);
   });
 });

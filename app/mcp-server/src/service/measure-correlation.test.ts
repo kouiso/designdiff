@@ -10,12 +10,14 @@ import {
   buildBaselineReport,
   calculatePearsonCorrelation,
   computeCorrelationMetrics,
+  FixtureExpectationSchema,
   getExpectedIssueKinds,
   getHumanSeverity,
   measureCorrelation,
   percentage,
   readJson,
   renderBaselineMarkdown,
+  resolveActiveReportPaths,
 } from "../../../../verification/script/measure-correlation.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -326,6 +328,15 @@ describe("measureCorrelation integration surface", () => {
     expect(result.metrics.verdictAccuracy.percentage).toBe(0);
     expect(await fs.readFile(result.reportJsonPath, "utf8")).toContain('"variantsTested": 0');
     expect(await fs.readFile(result.reportMarkdownPath, "utf8")).toContain("## Data Table");
+    const activePaths = await resolveActiveReportPaths(outputDir, [
+      "baseline-report.json",
+      "baseline-report.md",
+    ]);
+    const activeJsonPath = activePaths["baseline-report.json"];
+    const activeMarkdownPath = activePaths["baseline-report.md"];
+    expect(activeJsonPath).toBe(result.reportJsonPath);
+    expect(activeMarkdownPath).toBe(result.reportMarkdownPath);
+    expect(path.dirname(activeJsonPath)).toBe(path.dirname(activeMarkdownPath));
 
     await Promise.all([
       fs.rm(fixtureRoot, { recursive: true, force: true }),
@@ -354,6 +365,21 @@ describe("measureCorrelation integration surface", () => {
               image: "impl-color-pass.png",
               expectedVerdict: "pass",
               expectedKinds: [],
+              ignoreRegions: [
+                {
+                  x: 0,
+                  y: 0,
+                  width: 1080,
+                  height: 72,
+                  label: "system:status-bar",
+                },
+              ],
+              captureDevice: "android",
+              viewportWidth: 1080,
+              viewportHeight: 2400,
+              imageWidth: 1080,
+              imageHeight: 4800,
+              verifiedSystemUiTopInset: 72,
             },
           ],
         },
@@ -376,6 +402,7 @@ describe("measureCorrelation integration surface", () => {
       fixtureRoot,
       outputDir,
       compareImagesFn,
+      readImageMetadataFn: async () => ({ width: 1080, height: 4800 }),
       buildSnapshotTimestampFn: () => "2026-01-01T00:00:00.000Z",
     });
 
@@ -384,6 +411,120 @@ describe("measureCorrelation integration surface", () => {
     expect(result.rows[0].matchesVerdict).toBe(true);
     expect(result.rows[0].humanSeverity).toBe(1);
     expect(compareImagesFn).toHaveBeenCalledTimes(1);
+    expect(compareImagesFn).toHaveBeenCalledWith(
+      expect.objectContaining({
+        ignoreRegions: [
+          {
+            x: 0,
+            y: 0,
+            width: 1080,
+            height: 72,
+            label: "system:status-bar",
+          },
+        ],
+        verifiedSystemUiTopInset: 72,
+      }),
+      undefined,
+    );
+
+    const invalidExpectation = FixtureExpectationSchema.parse(
+      JSON.parse(await fs.readFile(path.join(pairDir, "expected.json"), "utf8")),
+    );
+    invalidExpectation.variants[0].verifiedSystemUiTopInset = 71;
+    await fs.writeFile(
+      path.join(pairDir, "expected.json"),
+      JSON.stringify(invalidExpectation, null, 2),
+    );
+    await expect(
+      measureCorrelation({
+        fixtureRoot,
+        outputDir,
+        compareImagesFn,
+        readImageMetadataFn: async () => ({ width: 1080, height: 4800 }),
+      }),
+    ).rejects.toThrow("is not a production preset");
+
+    await Promise.all([
+      fs.rm(fixtureRoot, { recursive: true, force: true }),
+      fs.rm(outputDir, { recursive: true, force: true }),
+    ]);
+  });
+
+  it("verified insetはcaptureDeviceとviewport寸法の同時指定を必須にする", async () => {
+    const fixtureRoot = await fs.mkdtemp(path.join(tmpdir(), "measure-correlation-preset-schema-"));
+    const outputDir = await fs.mkdtemp(path.join(tmpdir(), "measure-correlation-preset-output-"));
+    const pairDir = path.join(fixtureRoot, "pair-preset-schema");
+    await fs.mkdir(pairDir, { recursive: true });
+    await fs.writeFile(path.join(pairDir, "figma-export.png"), "figma");
+    await fs.writeFile(path.join(pairDir, "impl.png"), "impl");
+    await fs.writeFile(
+      path.join(pairDir, "expected.json"),
+      JSON.stringify({
+        pairId: "pair-preset-schema",
+        figmaFrame: "figma-export.png",
+        variants: [
+          {
+            name: "missing-device-metadata",
+            image: "impl.png",
+            expectedVerdict: "pass",
+            verifiedSystemUiTopInset: 72,
+          },
+        ],
+      }),
+    );
+
+    await expect(
+      measureCorrelation({
+        fixtureRoot,
+        outputDir,
+        compareImagesFn: vi.fn(),
+      }),
+    ).rejects.toThrow("must be specified together");
+
+    await Promise.all([
+      fs.rm(fixtureRoot, { recursive: true, force: true }),
+      fs.rm(outputDir, { recursive: true, force: true }),
+    ]);
+  });
+
+  it("明示viewportが本番presetと一致しないfixtureをcompare前に拒否する", async () => {
+    const fixtureRoot = await fs.mkdtemp(path.join(tmpdir(), "measure-correlation-preset-value-"));
+    const outputDir = await fs.mkdtemp(path.join(tmpdir(), "measure-correlation-preset-output-"));
+    const pairDir = path.join(fixtureRoot, "pair-preset-value");
+    const compareImagesFn = vi.fn();
+    await fs.mkdir(pairDir, { recursive: true });
+    await fs.writeFile(path.join(pairDir, "figma-export.png"), "figma");
+    await fs.writeFile(path.join(pairDir, "impl.png"), "impl");
+    await fs.writeFile(
+      path.join(pairDir, "expected.json"),
+      JSON.stringify({
+        pairId: "pair-preset-value",
+        figmaFrame: "figma-export.png",
+        variants: [
+          {
+            name: "wrong-inset",
+            image: "impl.png",
+            expectedVerdict: "pass",
+            captureDevice: "android",
+            viewportWidth: 1080,
+            viewportHeight: 2400,
+            imageWidth: 1080,
+            imageHeight: 4800,
+            verifiedSystemUiTopInset: 73,
+          },
+        ],
+      }),
+    );
+
+    await expect(
+      measureCorrelation({
+        fixtureRoot,
+        outputDir,
+        compareImagesFn,
+        readImageMetadataFn: async () => ({ width: 1080, height: 4800 }),
+      }),
+    ).rejects.toThrow("is not a production preset");
+    expect(compareImagesFn).not.toHaveBeenCalled();
 
     await Promise.all([
       fs.rm(fixtureRoot, { recursive: true, force: true }),
