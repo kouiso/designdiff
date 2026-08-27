@@ -9,6 +9,8 @@ import { extractFileKey } from "@figdiff/shared";
 
 import { createFigmaService } from "../service/figma-service.js";
 
+import { mcpToolError } from "./error.js";
+
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
 const DEFAULT_LIMIT = 15;
@@ -107,11 +109,7 @@ export function registerListFrames(server: McpServer): void {
           ],
         };
       } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        return {
-          content: [{ type: "text" as const, text: `Error: ${message}` }],
-          isError: true,
-        };
+        return mcpToolError(error);
       }
     },
   );
