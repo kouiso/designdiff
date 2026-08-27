@@ -175,6 +175,15 @@ export default [
     },
   },
 
+  // Hoistingで宣言順の不具合を隠さないため、MCP error boundaryは
+  // 関数宣言を禁止し、const arrow functionだけを受け付ける。
+  {
+    files: ["app/mcp-server/src/tool/error.ts"],
+    rules: {
+      "func-style": ["error", "expression", { allowArrowFunctions: true }],
+    },
+  },
+
   // Every eslint-disable / eslint-enable directive must carry a justification
   // (prohibition #8). Applies to TS, TSX, and plain JS/MJS scripts alike so the
   // repo scripts under script/** and verification/script/** are also covered.
