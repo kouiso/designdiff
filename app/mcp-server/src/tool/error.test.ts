@@ -30,6 +30,22 @@ describe("MCP tool secret-safe error formatter", () => {
     expect(message).toBe("MCP tool failed.");
   });
 
+  it("returns an actionable fixed message for fetch failures", () => {
+    expect(formatMcpToolError(new TypeError("fetch failed"))).toBe(
+      "Unable to reach the Figma API. Check network access and retry.",
+    );
+  });
+
+  it("classifies a network error by cause code without exposing its host", () => {
+    const cause = Object.assign(new Error("getaddrinfo ENOTFOUND private.example"), {
+      code: "ENOTFOUND",
+    });
+    const message = formatMcpToolError(new Error("request failed", { cause }));
+
+    expect(message).toBe("Unable to reach the Figma API. Check network access and retry.");
+    expect(message).not.toContain("private.example");
+  });
+
   it("formats MCP error responses with fixed text for non-Error throws", () => {
     const result = mcpToolError("figd_secret_token_value_12345");
 
