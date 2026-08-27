@@ -34,6 +34,20 @@ vi.mock("../service/figma-service.js", async () => {
         if (_nodeId === "network:error") {
           throw new TypeError("fetch failed");
         }
+        if (_nodeId === "auth:error") {
+          throw Object.assign(new Error("Figma token is invalid or expired (401)"), {
+            status: 401,
+          });
+        }
+        if (_nodeId === "forbidden:error") {
+          throw Object.assign(new Error("Access denied (403)"), { status: 403 });
+        }
+        if (_nodeId === "rate_limit:error") {
+          throw Object.assign(new Error("Figma API rate limit exceeded (429)"), { status: 429 });
+        }
+        if (_nodeId === "server:error") {
+          throw Object.assign(new Error("Figma server error (503)"), { status: 503 });
+        }
         if (_nodeId === "tiny") return makeLargeNode(0, _nodeId);
         return makeLargeNode(_nodeId.startsWith("compact") ? 26 : 100, _nodeId);
       },
@@ -265,8 +279,54 @@ describe("MCP response budget — responses never exceed archive threshold", () 
 
       expect(result.isError).toBe(true);
       expect(extractText(result)).toBe(
-        "Error: Unable to reach the Figma API. Check network access and retry.",
+        "Error: Unable to reach the Figma API. Check that FIGMA_TOKEN is configured, check network access, and retry.",
       );
+    });
+
+    it("authentication error は固定案内を返し、トークンを含めない", async () => {
+      const result = await client.callTool({
+        name: "inspect_node",
+        arguments: { figma_url: FIGMA_URL, node_id: "auth:error" },
+      });
+
+      expect(result.isError).toBe(true);
+      expect(extractText(result)).toBe(
+        "Error: Figma authentication failed. Check that FIGMA_TOKEN is configured and valid, then retry.",
+      );
+    });
+
+    it("forbidden error はファイル権限の固定案内を返す", async () => {
+      const result = await client.callTool({
+        name: "inspect_node",
+        arguments: { figma_url: FIGMA_URL, node_id: "forbidden:error" },
+      });
+
+      expect(result.isError).toBe(true);
+      expect(extractText(result)).toBe(
+        "Error: Figma access denied. Check that your token has access to this Figma file, then retry.",
+      );
+    });
+
+    it("rate-limit error は待機を促す固定案内を返す", async () => {
+      const result = await client.callTool({
+        name: "inspect_node",
+        arguments: { figma_url: FIGMA_URL, node_id: "rate_limit:error" },
+      });
+
+      expect(result.isError).toBe(true);
+      expect(extractText(result)).toBe(
+        "Error: Figma API rate limit exceeded. Wait a moment and retry.",
+      );
+    });
+
+    it("server error は再試行を促す固定案内を返す", async () => {
+      const result = await client.callTool({
+        name: "inspect_node",
+        arguments: { figma_url: FIGMA_URL, node_id: "server:error" },
+      });
+
+      expect(result.isError).toBe(true);
+      expect(extractText(result)).toBe("Error: Figma server error. Please try again later.");
     });
 
     it("multi-node (10 nodes) with 100 children each: response text < 4096 chars", async () => {
@@ -432,7 +492,7 @@ describe("MCP response budget — responses never exceed archive threshold", () 
 
       expect(result.isError).toBe(true);
       expect(extractText(result)).toBe(
-        "Error: Unable to reach the Figma API. Check network access and retry.",
+        "Error: Unable to reach the Figma API. Check that FIGMA_TOKEN is configured, check network access, and retry.",
       );
     });
   });

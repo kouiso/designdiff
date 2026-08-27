@@ -60,7 +60,7 @@ async function capInspectionChildren(inspection: Inspection): Promise<CappedInsp
   return inspection;
 }
 
-export function registerInspectNode(server: McpServer): void {
+export const registerInspectNode = (server: McpServer): void => {
   server.registerTool(
     "inspect_node",
     {
@@ -158,4 +158,4 @@ export function registerInspectNode(server: McpServer): void {
       }
     },
   );
-}
+};
