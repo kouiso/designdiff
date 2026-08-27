@@ -128,6 +128,22 @@ export interface FrameImageResult {
 // 位置ズレは差分そのものより誤解を招くため、四捨五入した矩形が書き出し画像を
 // はみ出す場合は切らずに諦める (無言でズラさない)。
 const EFFECT_MARGIN_EPSILON = 0.5;
+// Figma のラスター化で丸めた右端が最大1pxだけ外れる場合は、論理ボックスが
+// renderBounds 内に収まることを確認したうえで画像端まで切り詰める。
+const EFFECT_MARGIN_ROUNDING_TOLERANCE_PX = 1;
+const EFFECT_MARGIN_ROUNDING_FLOAT_EPSILON = 1e-6;
+
+const isLogicalBoxContainedInRenderBox = (bounds: FrameImageNodeBounds | undefined): boolean => {
+  const logical = bounds?.logicalBox;
+  const render = bounds?.renderBox;
+  if (!logical || !render) return false;
+  return (
+    logical.x >= render.x &&
+    logical.y >= render.y &&
+    logical.x + logical.width <= render.x + render.width &&
+    logical.y + logical.height <= render.y + render.height
+  );
+};
 
 /**
  * Figma の書き出しは影などの効果を含む外接矩形 (absoluteRenderBounds) を
@@ -193,7 +209,30 @@ async function cropEffectMargin(
   // (例 幅100 に left=0.6 / width=99.8) は丸めると 1px はみ出しうる。
   // sharp.extract は範囲外で例外を投げて compare_design ごと落とすので、
   // 丸めた後の矩形を実測寸法に対して測り直す。
-  if (crop.left + crop.width > imageWidth || crop.top + crop.height > imageHeight) {
+  const widthOverflow = crop.left + crop.width - imageWidth;
+  const heightOverflow = crop.top + crop.height - imageHeight;
+  const canTrimRasterRounding =
+    isLogicalBoxContainedInRenderBox(bounds) &&
+    widthOverflow >= 0 &&
+    widthOverflow <= EFFECT_MARGIN_ROUNDING_TOLERANCE_PX + EFFECT_MARGIN_ROUNDING_FLOAT_EPSILON &&
+    heightOverflow >= 0 &&
+    heightOverflow <= EFFECT_MARGIN_ROUNDING_TOLERANCE_PX + EFFECT_MARGIN_ROUNDING_FLOAT_EPSILON;
+  // 論理ボックスが実際のキャンバス内にある場合だけ端まで詰める。
+  // それ以外はクリップされた内容を隠さないため、従来どおり未加工で返す。
+  const safeCrop = canTrimRasterRounding
+    ? {
+        ...crop,
+        width: Math.min(crop.width, imageWidth - crop.left),
+        height: Math.min(crop.height, imageHeight - crop.top),
+      }
+    : crop;
+
+  if (
+    safeCrop.width <= 0 ||
+    safeCrop.height <= 0 ||
+    safeCrop.left + safeCrop.width > imageWidth ||
+    safeCrop.top + safeCrop.height > imageHeight
+  ) {
     console.error(
       `[figma-service] effect-margin crop exceeds the exported image (${crop.left + crop.width}x${crop.top + crop.height}px vs ${imageWidth}x${imageHeight}px); keeping the uncropped export`,
     );
@@ -201,10 +240,15 @@ async function cropEffectMargin(
   }
 
   const cropped = await sharp(buffer)
-    .extract({ left: crop.left, top: crop.top, width: crop.width, height: crop.height })
+    .extract({
+      left: safeCrop.left,
+      top: safeCrop.top,
+      width: safeCrop.width,
+      height: safeCrop.height,
+    })
     .png()
     .toBuffer();
-  return { base64: cropped.toString("base64"), effectMarginCrop: crop };
+  return { base64: cropped.toString("base64"), effectMarginCrop: safeCrop };
 }
 
 export class FigmaService {
