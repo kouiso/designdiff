@@ -1312,7 +1312,6 @@ export function buildSystemIgnoreRegionsForComparison(
     // post-crop の短い mask を端末 inset と誤認すると、同じ量のレイアウト回帰を
     // 許容してしまう。crop 前の全高を保持し、その帯を丸ごと含む場合だけ使う。
     verifiedTopInset:
-      args.capture_device !== undefined &&
       fullStatusBarRegion &&
       verifiedTopInset !== undefined &&
       fullStatusBarRegion.height === verifiedTopInset &&

@@ -288,7 +288,7 @@ export function resolveTaskLockPath(repositoryRoot, task) {
   return path.join(os.tmpdir(), "figdiff-exclusive-locks", `${digest}.lock`);
 }
 
-export async function acquireExclusiveProcessLock({ repositoryRoot, task, lockPath }) {
+export const acquireExclusiveProcessLock = async ({ repositoryRoot, task, lockPath }) => {
   const resolvedLockPath = lockPath ?? resolveTaskLockPath(repositoryRoot, task);
   const observedProcessStartTime = readProcessStartTime(process.pid);
   const processStartTimeSource = observedProcessStartTime === null ? "node-uptime-estimate" : "ps";
@@ -315,14 +315,16 @@ export async function acquireExclusiveProcessLock({ repositoryRoot, task, lockPa
     metadata,
     async release() {
       if (released) return false;
+      const removed = await unlinkIfTokenMatches(resolvedLockPath, metadata.ownerToken);
       released = true;
-      return unlinkIfTokenMatches(resolvedLockPath, metadata.ownerToken);
+      return removed;
     },
   };
-}
+};
 
-export async function runWithExclusiveProcessLock(options, callback) {
+export const runWithExclusiveProcessLock = async (options, callback) => {
   const lock = await acquireExclusiveProcessLock(options);
+  const abortController = new AbortController();
   let pendingSignalExitCode;
   const signalHandlers = new Map();
 
@@ -332,20 +334,41 @@ export async function runWithExclusiveProcessLock(options, callback) {
   ]) {
     const handler = () => {
       pendingSignalExitCode ??= exitCode;
+      if (!abortController.signal.aborted) {
+        abortController.abort(new Error(`received ${signal}`));
+      }
     };
     signalHandlers.set(signal, handler);
     process.once(signal, handler);
   }
 
+  let callbackFailed = false;
+  let callbackResult;
+  let callbackError;
+  let releaseError;
   try {
-    return await callback(lock);
+    callbackResult = await callback(lock, abortController.signal);
+  } catch (error) {
+    callbackFailed = true;
+    callbackError = error;
   } finally {
     for (const [signal, handler] of signalHandlers) {
       process.removeListener(signal, handler);
     }
-    await lock.release();
+    try {
+      await lock.release();
+    } catch (error) {
+      if (callbackFailed) {
+        process.emitWarning(error);
+      } else {
+        releaseError = error;
+      }
+    }
     if (pendingSignalExitCode !== undefined) {
       process.exit(pendingSignalExitCode);
     }
   }
-}
+  if (callbackFailed) throw callbackError;
+  if (releaseError) throw releaseError;
+  return callbackResult;
+};

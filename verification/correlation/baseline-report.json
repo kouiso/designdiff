@@ -9,8 +9,8 @@
     "variantsTested": 15,
     "issueKindRecall": {
       "matched": 12,
-      "expected": 13,
-      "percentage": 92.3
+      "expected": 12,
+      "percentage": 100
     },
     "issueKindPrecision": {
       "matched": 12,

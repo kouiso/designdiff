@@ -5,7 +5,7 @@
 - Verdict accuracy: 100.0% (15/15)
 - Pairs tested: 6
 - Variants tested: 15
-- Issue kind recall: 92.3% (12/13)
+- Issue kind recall: 100.0% (12/12)
 - Issue kind precision: 63.2% (12/19)
 - Snapshot timestamp: 2026-08-07T13:08:58.839Z
 
@@ -15,7 +15,7 @@
 | --- | --- | ---: | --- | --- | --- | --- | --- | ---: | ---: | ---: | ---: | --- | ---: |
 | pair-01-simple-static-lp | color-off | 0.0 | fail | fail | yes | color | color | 1.000 | 1.000 | 0.918716 | 18.346351 | diff-cluster-100-100-200-100 | 0.918716 |
 | pair-01-simple-static-lp | correct | 1.0 | pass | pass | yes | - | - | n/a | n/a | 1.000000 | 0.000000 | whole-frame | 1.000000 |
-| pair-01-simple-static-lp | layout-off | 0.0 | fail | fail | yes | position, size, structure | color, position, size | 0.667 | 0.667 | 0.727615 | 27.768456 | diff-cluster-100-100-200-100 | 0.723942 |
+| pair-01-simple-static-lp | layout-off | 0.0 | fail | fail | yes | position, size | color, position, size | 1.000 | 0.667 | 0.727615 | 27.768456 | diff-cluster-100-100-200-100 | 0.723942 |
 | pair-02-multi-section-lp | correct | 1.0 | pass | pass | yes | - | - | n/a | n/a | 1.000000 | 0.000000 | frame-root | 1.000000 |
 | pair-02-multi-section-lp | multi-section-drift | 0.0 | fail | fail | yes | position, size | color, position, size | 1.000 | 0.667 | 0.839675 | 13.080491 | section-header | 0.635797 |
 | pair-02-multi-section-lp | single-section-regression | 0.5 | fail | fail | yes | position, size | color, position, size | 1.000 | 0.667 | 0.920470 | 22.299401 | section-footer | 0.890414 |

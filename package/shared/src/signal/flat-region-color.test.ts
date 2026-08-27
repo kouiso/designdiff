@@ -47,6 +47,15 @@ const WIDTH = 240;
 const HEIGHT = 120;
 
 describe("detectFlatRegionColor", () => {
+  it("rejects invalid dimensions and RGBA buffer lengths", () => {
+    const image = makeCanvas(WIDTH, HEIGHT, solid(1, 2, 3));
+    expect(() => detectFlatRegionColor(image, 0, HEIGHT)).toThrow(/positive safe integers/);
+    expect(() => detectFlatRegionColor(image, WIDTH, 1.5)).toThrow(/positive safe integers/);
+    expect(() => detectFlatRegionColor(image.subarray(0, image.length - 4), WIDTH, HEIGHT)).toThrow(
+      /buffer length must equal/,
+    );
+  });
+
   it("reports the fill colour of a solid region", () => {
     const flat = detectFlatRegionColor(
       makeCanvas(WIDTH, HEIGHT, solid(0x22, 0xaa, 0x88)),

@@ -10,12 +10,14 @@ import {
   buildBaselineReport,
   calculatePearsonCorrelation,
   computeCorrelationMetrics,
+  FixtureExpectationSchema,
   getExpectedIssueKinds,
   getHumanSeverity,
   measureCorrelation,
   percentage,
   readJson,
   renderBaselineMarkdown,
+  resolveActiveReportPaths,
 } from "../../../../verification/script/measure-correlation.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -326,6 +328,15 @@ describe("measureCorrelation integration surface", () => {
     expect(result.metrics.verdictAccuracy.percentage).toBe(0);
     expect(await fs.readFile(result.reportJsonPath, "utf8")).toContain('"variantsTested": 0');
     expect(await fs.readFile(result.reportMarkdownPath, "utf8")).toContain("## Data Table");
+    const activePaths = await resolveActiveReportPaths(outputDir, [
+      "baseline-report.json",
+      "baseline-report.md",
+    ]);
+    const activeJsonPath = activePaths["baseline-report.json"];
+    const activeMarkdownPath = activePaths["baseline-report.md"];
+    expect(activeJsonPath).toBe(result.reportJsonPath);
+    expect(activeMarkdownPath).toBe(result.reportMarkdownPath);
+    expect(path.dirname(activeJsonPath)).toBe(path.dirname(activeMarkdownPath));
 
     await Promise.all([
       fs.rm(fixtureRoot, { recursive: true, force: true }),
@@ -416,8 +427,8 @@ describe("measureCorrelation integration surface", () => {
       undefined,
     );
 
-    const invalidExpectation = JSON.parse(
-      await fs.readFile(path.join(pairDir, "expected.json"), "utf8"),
+    const invalidExpectation = FixtureExpectationSchema.parse(
+      JSON.parse(await fs.readFile(path.join(pairDir, "expected.json"), "utf8")),
     );
     invalidExpectation.variants[0].verifiedSystemUiTopInset = 71;
     await fs.writeFile(

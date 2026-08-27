@@ -38,6 +38,7 @@
         "noDoubleEquals": "error"
       },
       "complexity": {
+        "useArrowFunction": "error",
         "noExcessiveCognitiveComplexity": {
           "level": "warn",
           "options": {

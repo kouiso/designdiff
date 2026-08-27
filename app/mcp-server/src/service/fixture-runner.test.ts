@@ -10,6 +10,7 @@ import { z } from "zod";
 import {
   resolveFixtureVerifiedSystemUiTopInset,
   SystemUiFixtureMetadataSchema,
+  IgnoreRegionSchema,
   type CompareDesignResult,
   type FigmaNode,
 } from "@figdiff/shared";
@@ -76,16 +77,13 @@ const FixtureVariantSchema = z
     expectedIssueKinds: z
       .array(z.enum(["color", "position", "size", "missing", "extra", "typography"]))
       .optional(),
-    ignoreRegions: z
-      .array(
-        z.object({
-          x: z.number(),
-          y: z.number(),
-          width: z.number().positive(),
-          height: z.number().positive(),
-          label: z.string().optional(),
-        }),
-      )
+    ignoreRegions: z.array(IgnoreRegionSchema).optional(),
+    expectedSystemUiAlignment: z
+      .object({
+        matchRate: z.number().min(0).max(100),
+        diffPixelCount: z.number().int().nonnegative(),
+        translation: z.object({ x: z.number(), y: z.number() }),
+      })
       .optional(),
     notes: z.string().optional(),
     expectedWeightedStructureMin: z.number().optional(),
@@ -289,13 +287,12 @@ describe("golden fixture runner", () => {
         });
       }
       expect(stableRuns.every((run) => isDeepStrictEqual(run, stableRuns[0]))).toBe(true);
-      if (verifiedSystemUiTopInset !== undefined) {
-        expect(stableRuns[0]?.matchRate).toBe(100);
-        expect(stableRuns[0]?.diffPixelCount).toBe(0);
-        expect(stableRuns[0]?.translation).toEqual({
-          x: 0,
-          y: verifiedSystemUiTopInset,
-        });
+      if (variant.expectedSystemUiAlignment !== undefined) {
+        expect(stableRuns[0]?.matchRate).toBe(variant.expectedSystemUiAlignment.matchRate);
+        expect(stableRuns[0]?.diffPixelCount).toBe(
+          variant.expectedSystemUiAlignment.diffPixelCount,
+        );
+        expect(stableRuns[0]?.translation).toEqual(variant.expectedSystemUiAlignment.translation);
       }
     }
   }

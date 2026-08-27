@@ -31,7 +31,7 @@ function spawnWorker(lockPath, bundlePath, contents, holdMilliseconds) {
     process.execPath,
     [WORKER, lockPath, bundlePath, contents, String(holdMilliseconds)],
     {
-      stdio: ["ignore", "pipe", "pipe"],
+      stdio: ["pipe", "pipe", "pipe"],
     },
   );
   let stdout = "";
@@ -80,6 +80,7 @@ test("a concurrent process is rejected without changing the successful bundle", 
   assert.equal(secondResult.signal, null);
   assert.match(secondResult.stderr, /held by another process/);
 
+  first.child.stdin.end("RELEASE\n");
   const firstResult = await first.completed;
   assert.equal(firstResult.code, 0);
   assert.equal(firstResult.signal, null);
@@ -110,6 +111,45 @@ test("a thrown exception releases only the acquired lock", async () => {
   await assert.rejects(fs.access(lockPath), { code: "ENOENT" });
 });
 
+test("callback failure remains the primary error when lock release also fails", async () => {
+  const temporaryDirectory = await fs.mkdtemp(
+    path.join(os.tmpdir(), "figdiff-exclusive-process-lock-test-"),
+  );
+  temporaryDirectories.push(temporaryDirectory);
+  const lockPath = path.join(temporaryDirectory, "release-error.lock");
+  await assert.rejects(
+    runWithExclusiveProcessLock(
+      {
+        repositoryRoot: temporaryDirectory,
+        task: "release-error",
+        lockPath,
+      },
+      async () => {
+        await fs.writeFile(lockPath, "malformed\n", "utf8");
+        throw new Error("primary callback failure");
+      },
+    ),
+    /primary callback failure/,
+  );
+});
+
+test("release can be retried after cleanup failure", async () => {
+  const temporaryDirectory = await fs.mkdtemp(
+    path.join(os.tmpdir(), "figdiff-exclusive-process-lock-test-"),
+  );
+  temporaryDirectories.push(temporaryDirectory);
+  const lockPath = path.join(temporaryDirectory, "retry-release.lock");
+  const lock = await acquireExclusiveProcessLock({
+    repositoryRoot: temporaryDirectory,
+    task: "retry-release",
+    lockPath,
+  });
+  await fs.writeFile(lockPath, "malformed\n", "utf8");
+  await assert.rejects(lock.release(), /malformed process lock/);
+  await fs.writeFile(lockPath, `${JSON.stringify(lock.metadata)}\n`, "utf8");
+  assert.equal(await lock.release(), true);
+});
+
 test("SIGTERM keeps the lock through callback cleanup and releases it before exit", async () => {
   const temporaryDirectory = await fs.mkdtemp(
     path.join(os.tmpdir(), "figdiff-exclusive-process-lock-test-"),
@@ -121,8 +161,9 @@ test("SIGTERM keeps the lock through callback cleanup and releases it before exi
 
   await waitForOutput(worker, "LOCKED\n");
   worker.child.kill("SIGTERM");
-  await new Promise((resolve) => setTimeout(resolve, 30));
+  await waitForOutput(worker, "ABORTED\n");
   await fs.access(lockPath);
+  worker.child.stdin.end("RELEASE\n");
   const result = await worker.completed;
   assert.equal(result.code, 143);
   assert.equal(result.signal, null);

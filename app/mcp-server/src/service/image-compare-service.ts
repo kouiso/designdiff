@@ -1079,7 +1079,8 @@ export async function compareImages(
   const height = finalScreenshotHeight;
   const screenshotPixels = Uint8ClampedArray.from(screenshotRaw);
   const originalDesignPixels = Uint8ClampedArray.from(designRaw);
-  const alignmentIgnoreMask = buildIgnoreMask(width, height, ignoreRegions).mask;
+  const ignoreMask = buildIgnoreMask(width, height, ignoreRegions);
+  const alignmentIgnoreMask = ignoreMask.mask;
   const resolvedAlignment = resolveAlignment(
     originalDesignPixels,
     screenshotPixels,
@@ -1121,6 +1122,7 @@ export async function compareImages(
     width,
     height,
     ignoreRegions,
+    ignoreMask,
   );
   const { maskedPixelCount } = ignoreMaskResult;
   // paddingMask がある (= design / screenshot 寸法不一致で contain resize した) 場合、
@@ -1128,7 +1130,14 @@ export async function compareImages(
   // で意図的差分が再出現する。同じ mask を当てて足並みを揃える。
   // 戻り値のカウントはここでは使わない (元 zeroIgnoreRegions で既に集計済)。
   if (reportDesignPixels !== pixelmatchDesignPixels) {
-    zeroIgnoreRegions(reportDesignPixels, screenshotPixels, width, height, ignoreRegions);
+    zeroIgnoreRegions(
+      reportDesignPixels,
+      screenshotPixels,
+      width,
+      height,
+      ignoreRegions,
+      ignoreMask,
+    );
   }
 
   // Run pixelmatch
@@ -1425,16 +1434,17 @@ async function cropImageBuffer(buffer: Buffer, cropRegion: CropRegion): Promise<
 // 戻り値の diffPixelCount にも diff 可視化マークにも mask 範囲が
 // 含まれなくなる。OR 結合 (重なるピクセルは 1 度のみカウント)。
 // 戻り値は mask が覆ったユニークピクセル数 — matchRate 分母から引く。
-function zeroIgnoreRegions(
+const zeroIgnoreRegions = (
   designPixels: Uint8ClampedArray,
   screenshotPixels: Uint8ClampedArray,
   width: number,
   height: number,
   ignoreRegions: readonly IgnoreRegion[] | undefined,
-): IgnoreMaskResult {
+  precomputed?: IgnoreMaskResult,
+): IgnoreMaskResult => {
   if (!ignoreRegions || ignoreRegions.length === 0) return { maskedPixelCount: 0 };
 
-  const { maskedPixelCount, mask } = buildIgnoreMask(width, height, ignoreRegions);
+  const { maskedPixelCount, mask } = precomputed ?? buildIgnoreMask(width, height, ignoreRegions);
   for (const region of ignoreRegions) {
     const screenshotOnly = isScreenshotOnlyIgnoreRegion(region);
     const left = Math.max(0, Math.floor(region.x));
@@ -1466,7 +1476,7 @@ function zeroIgnoreRegions(
     }
   }
   return { maskedPixelCount, mask };
-}
+};
 
 function buildIgnoreMask(
   width: number,
