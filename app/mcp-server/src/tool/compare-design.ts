@@ -15,6 +15,11 @@ import {
 import { writeActiveSession } from "../service/active-session.js";
 import { runCompareDesign } from "../service/compare-design-runner.js";
 import { persistDetailJson } from "../service/persist-detail.js";
+import {
+  assertFigdiffStorageWritable,
+  isFigdiffStorageError,
+  toFigdiffStorageErrorPayload,
+} from "../service/storage-permission.js";
 import { assertNoUnknownToolArguments } from "../util/raw-tool-arguments.js";
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
@@ -407,6 +412,9 @@ export function registerCompareDesign(server: McpServer): void {
         // strict schema では SDK の汎用エラーに変わるだけで誤記を案内できないため、
         // parse 前に transport が保存した引数名を shape と照合する。
         assertNoUnknownToolArguments("compare_design", Object.keys(inputSchema), extra);
+        // 永続化を伴う比較を始める前に全保存先を検査する。途中で EPERM が出ると
+        // 履歴や差分画像だけが残り、次回のループ判定へ不完全な記録が混ざる。
+        await assertFigdiffStorageWritable();
         const comparison = await runCompareDesign(args);
         const result = comparison.result;
 
@@ -474,6 +482,14 @@ export function registerCompareDesign(server: McpServer): void {
 
         return { content, structuredContent: slimResultData };
       } catch (error) {
+        if (isFigdiffStorageError(error)) {
+          const payload = toFigdiffStorageErrorPayload(error);
+          return {
+            content: [{ type: "text", text: JSON.stringify(payload, null, 2) }],
+            structuredContent: payload,
+            isError: true,
+          };
+        }
         const message = error instanceof Error ? error.message : String(error);
         return {
           content: [{ type: "text", text: `Error: ${message}` }],

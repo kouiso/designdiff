@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   runCompareDesign: vi.fn(),
   writeActiveSession: vi.fn(),
   persistDetailJson: vi.fn(),
+  assertFigdiffStorageWritable: vi.fn(),
 }));
 
 vi.mock("../service/compare-design-runner.js", () => ({
@@ -19,10 +20,33 @@ vi.mock("../service/active-session.js", () => ({
 vi.mock("../service/persist-detail.js", () => ({
   persistDetailJson: mocks.persistDetailJson,
 }));
+vi.mock("../service/storage-permission.js", () => ({
+  assertFigdiffStorageWritable: mocks.assertFigdiffStorageWritable,
+  isFigdiffStorageError: (error: unknown) =>
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    error.code === "FIGDIFF_STORAGE_NOT_WRITABLE",
+  toFigdiffStorageErrorPayload: (error: unknown) => ({
+    code: "FIGDIFF_STORAGE_NOT_WRITABLE",
+    message:
+      "FigDiff storage is not writable. Grant write permission or set FIGDIFF_HOME to a writable directory, then retry.",
+    location:
+      typeof error === "object" && error !== null && "location" in error
+        ? error.location
+        : "unknown",
+    actions: [
+      "Grant write permission to the FigDiff storage directory.",
+      "Set FIGDIFF_HOME to a writable directory and clear conflicting FIGDIFF_*_DIR overrides.",
+    ],
+    retryable: true,
+  }),
+}));
 
 interface ToolResponse {
   content: { type: "text"; text: string }[];
   structuredContent?: Record<string, unknown>;
+  isError?: boolean;
 }
 type ToolHandler = (args: Record<string, unknown>) => Promise<ToolResponse>;
 
@@ -64,6 +88,7 @@ describe("compare_design レスポンスの並び順", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.assertFigdiffStorageWritable.mockResolvedValue(undefined);
     mocks.runCompareDesign.mockResolvedValue({
       parsedDesignSource: { type: "local_path" },
       result: makeResult(),
@@ -92,5 +117,36 @@ describe("compare_design レスポンスの並び順", () => {
       loopGuard?: { decision?: string };
     };
     expect(parsed.loopGuard?.decision).toBe("stop");
+  });
+
+  it("保存先が書けない場合は構造化エラーを返し、比較記録を作らないこと", async () => {
+    const storageError = Object.assign(new Error("EPERM: operation not permitted"), {
+      code: "FIGDIFF_STORAGE_NOT_WRITABLE",
+      location: "results",
+    });
+    mocks.assertFigdiffStorageWritable.mockRejectedValue(storageError);
+
+    const res = await handler({ design_source: "./a.png", screenshot: "./b.png" });
+    const payload = JSON.parse(res.content[0].text) as {
+      code?: string;
+      message?: string;
+      location?: string;
+      actions?: string[];
+      retryable?: boolean;
+    };
+
+    expect(res.isError).toBe(true);
+    expect(payload).toMatchObject({
+      code: "FIGDIFF_STORAGE_NOT_WRITABLE",
+      location: "results",
+      retryable: true,
+    });
+    expect(payload.message).toContain("FIGDIFF_HOME");
+    expect(payload.actions).toHaveLength(2);
+    expect(res.content[0].text).not.toContain("EPERM");
+    expect(res.content[0].text).not.toContain("operation not permitted");
+    expect(mocks.runCompareDesign).not.toHaveBeenCalled();
+    expect(mocks.persistDetailJson).not.toHaveBeenCalled();
+    expect(mocks.writeActiveSession).not.toHaveBeenCalled();
   });
 });
