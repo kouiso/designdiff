@@ -31,13 +31,15 @@ vi.mock("../service/figma-service.js", async () => {
             `Requested Figma node not found: Node "${_nodeId}" not found in file ${_fileKey}. The id may not exist, or the format may be wrong (expected "1:23" with a colon; dash-format ids from Figma URLs are auto-converted). Run list_figma_frames to see valid node ids.`,
           );
         }
-        if (_nodeId === "network:error") {
-          throw new TypeError("fetch failed");
-        }
         if (_nodeId === "tiny") return makeLargeNode(0, _nodeId);
         return makeLargeNode(_nodeId.startsWith("compact") ? 26 : 100, _nodeId);
       },
-      getFrames: async (_fileKey: string): Promise<Frame[]> => makeManyFrames(150),
+      getFrames: async (_fileKey: string): Promise<Frame[]> => {
+        if (_fileKey === "NETWORKERROR") {
+          throw new TypeError("fetch failed");
+        }
+        return makeManyFrames(150);
+      },
     }),
     getFigmaCredentialStatus: () => ({
       envName: "FIGMA_TOKEN",
@@ -131,6 +133,7 @@ function extractText(result: unknown): string {
 
 const ARCHIVE_THRESHOLD = 4096;
 const FIGMA_URL = "https://www.figma.com/design/MOCKFILEKEY/Mock?node-id=frame-root";
+const NETWORK_ERROR_FIGMA_URL = "https://www.figma.com/design/NETWORKERROR/Mock";
 
 // ── Test suite ────────────────────────────────────────────────────────────────
 
@@ -249,18 +252,6 @@ describe("MCP response budget — responses never exceed archive threshold", () 
       );
       expect(text).toContain('expected "1:23" with a colon');
       expect(text).toContain("Run list_figma_frames to see valid node ids.");
-    });
-
-    it("network error は秘密を出さず再試行手順を返す", async () => {
-      const result = await client.callTool({
-        name: "inspect_node",
-        arguments: { figma_url: FIGMA_URL, node_id: "network:error" },
-      });
-
-      expect(result.isError).toBe(true);
-      expect(extractText(result)).toBe(
-        "Error: Unable to reach the Figma API. Check network access and retry.",
-      );
     });
 
     it("multi-node (10 nodes) with 100 children each: response text < 4096 chars", async () => {
@@ -416,6 +407,18 @@ describe("MCP response budget — responses never exceed archive threshold", () 
       });
       const data = JSON.parse(extractText(result));
       expect(data.frameCount).toBe(150);
+    });
+
+    it("network error は秘密を出さず再試行手順を返す", async () => {
+      const result = await client.callTool({
+        name: "list_figma_frames",
+        arguments: { figma_url: NETWORK_ERROR_FIGMA_URL },
+      });
+
+      expect(result.isError).toBe(true);
+      expect(extractText(result)).toBe(
+        "Error: Unable to reach the Figma API. Check network access and retry.",
+      );
     });
   });
 });
