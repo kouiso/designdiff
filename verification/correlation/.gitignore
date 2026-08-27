@@ -1,0 +1,3 @@
+.active-generation.tmp-*
+.generations/generation-[0-9]*/
+.generations/.staging-*/
