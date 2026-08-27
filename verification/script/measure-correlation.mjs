@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -6,6 +7,7 @@ import sharp from "sharp";
 import { z } from "zod";
 
 import {
+  IgnoreRegionSchema,
   resolveFixtureVerifiedSystemUiTopInset,
   SystemUiFixtureMetadataSchema,
 } from "../../package/shared/dist/index.js";
@@ -17,18 +19,12 @@ const FIXTURES_ROOT = path.resolve(__dirname, "../fixture");
 const OUTPUT_DIR = path.resolve(__dirname, "../correlation");
 const JSON_REPORT_FILENAME = "baseline-report.json";
 const MARKDOWN_REPORT_FILENAME = "baseline-report.md";
+const ACTIVE_GENERATION_FILENAME = ".active-generation";
+const GENERATION_DIRNAME = ".generations";
 const THRESHOLD = 0.1;
 let compareImagesPromise = null;
 
 const DiffIssueKindSchema = z.enum(["color", "position", "size", "missing", "extra", "typography"]);
-const IgnoreRegionSchema = z.object({
-  x: z.number(),
-  y: z.number(),
-  width: z.number().positive(),
-  height: z.number().positive(),
-  label: z.string().optional(),
-});
-
 const FigmaNodeSchema = z.lazy(() =>
   z.object({
     id: z.string(),
@@ -47,7 +43,7 @@ const FigmaNodeSchema = z.lazy(() =>
   }),
 );
 
-const FixtureVariantSchema = z
+export const FixtureVariantSchema = z
   .object({
     name: z.string().min(1),
     image: z.string().min(1),
@@ -59,7 +55,7 @@ const FixtureVariantSchema = z
   })
   .and(SystemUiFixtureMetadataSchema);
 
-const FixtureExpectationSchema = z.object({
+export const FixtureExpectationSchema = z.object({
   pairId: z.string().min(1),
   figmaFrame: z.string().min(1),
   figmaRootNode: FigmaNodeSchema.optional(),
@@ -526,58 +522,100 @@ export function buildBaselineReport(rows, metrics, snapshotTimestamp) {
   };
 }
 
-async function publishReportFilesAtomically(files) {
-  const transactionId = `${process.pid}-${Date.now()}`;
-  const entries = files.map(({ targetPath, content }) => ({
-    targetPath,
-    content,
-    stagingPath: `${targetPath}.tmp-${transactionId}`,
-    backupPath: `${targetPath}.backup-${transactionId}`,
-    targetExisted: false,
-    installed: false,
-  }));
+const publishReportFilesAtomically = async (files) => {
+  if (files.length === 0) throw new Error("at least one report file is required");
+  const reportDir = path.dirname(files[0].targetPath);
+  if (files.some(({ targetPath }) => path.dirname(targetPath) !== reportDir)) {
+    throw new Error("report files must share one output directory");
+  }
+  const transactionId = `${process.pid}-${Date.now()}-${randomUUID()}`;
+  const generationName = `generation-${transactionId}`;
+  const generationRoot = path.join(reportDir, GENERATION_DIRNAME);
+  const stagingDir = path.join(generationRoot, `.staging-${generationName}`);
+  const generationDir = path.join(generationRoot, generationName);
+  const pointerPath = path.join(reportDir, ACTIVE_GENERATION_FILENAME);
+  const pointerStagingPath = `${pointerPath}.tmp-${transactionId}`;
 
-  await Promise.all(
-    entries.map(async (entry) => {
-      await fs.mkdir(path.dirname(entry.targetPath), { recursive: true });
-      await fs.writeFile(entry.stagingPath, entry.content);
+  await fs.mkdir(generationRoot, { recursive: true });
+  try {
+    await fs.mkdir(stagingDir, { recursive: true });
+    await Promise.all(
+      files.map(({ targetPath, content }) =>
+        fs.writeFile(path.join(stagingDir, path.basename(targetPath)), content),
+      ),
+    );
+    await fs.rename(stagingDir, generationDir);
+    await fs.writeFile(pointerStagingPath, `${generationName}\n`, "utf8");
+    // reader はこの pointer を一度だけ解決するため、JSON と Markdown が
+    // 別世代になる窓がない。個別ファイルを順番に置き換えない。
+    await fs.rename(pointerStagingPath, pointerPath);
+  } catch (error) {
+    const rollbackErrors = [];
+    await Promise.all(
+      [
+        fs.rm(stagingDir, { recursive: true, force: true }),
+        fs.rm(generationDir, { recursive: true, force: true }),
+        fs.rm(pointerStagingPath, { force: true }),
+      ].map(async (operation) => {
+        try {
+          await operation;
+        } catch (rollbackError) {
+          rollbackErrors.push(rollbackError);
+        }
+      }),
+    );
+    if (rollbackErrors.length > 0) {
+      process.emitWarning(new AggregateError(rollbackErrors, "report publication rollback failed"));
+    }
+    throw error;
+  }
+
+  const reportPaths = Object.fromEntries(
+    files.map(({ targetPath }) => [
+      targetPath,
+      path.join(generationDir, path.basename(targetPath)),
+    ]),
+  );
+  return { pointerPath, generationDir, reportPaths };
+};
+
+const readActiveGeneration = async (outputDir) => {
+  const pointer = (
+    await fs.readFile(path.join(outputDir, ACTIVE_GENERATION_FILENAME), "utf8")
+  ).trim();
+  if (!/^generation-[A-Za-z0-9-]+$/.test(pointer)) {
+    throw new Error(`invalid active report generation pointer: ${pointer}`);
+  }
+  return pointer;
+};
+
+const assertSafeReportFilename = (filename) => {
+  if (
+    typeof filename !== "string" ||
+    filename.length === 0 ||
+    path.basename(filename) !== filename
+  ) {
+    throw new Error(`invalid report filename: ${filename}`);
+  }
+};
+
+export const resolveActiveReportPaths = async (outputDir, filenames) => {
+  if (!Array.isArray(filenames) || filenames.length === 0) {
+    throw new Error("at least one report filename is required");
+  }
+  const generation = await readActiveGeneration(outputDir);
+  return Object.fromEntries(
+    filenames.map((filename) => {
+      assertSafeReportFilename(filename);
+      return [filename, path.join(outputDir, GENERATION_DIRNAME, generation, filename)];
     }),
   );
+};
 
-  let succeeded = false;
-  try {
-    for (const entry of entries) {
-      try {
-        await fs.rename(entry.targetPath, entry.backupPath);
-        entry.targetExisted = true;
-      } catch (error) {
-        if (error?.code !== "ENOENT") throw error;
-      }
-    }
-    for (const entry of entries) {
-      await fs.rename(entry.stagingPath, entry.targetPath);
-      entry.installed = true;
-    }
-    succeeded = true;
-  } finally {
-    if (!succeeded) {
-      for (const entry of [...entries].reverse()) {
-        if (entry.installed) {
-          await fs.rm(entry.targetPath, { force: true });
-        }
-        if (entry.targetExisted) {
-          await fs.rename(entry.backupPath, entry.targetPath);
-        }
-      }
-    }
-    await Promise.all(
-      entries.flatMap((entry) => [
-        fs.rm(entry.stagingPath, { force: true }),
-        fs.rm(entry.backupPath, { force: true }),
-      ]),
-    );
-  }
-}
+export const resolveActiveReportPath = async (outputDir, filename) => {
+  const paths = await resolveActiveReportPaths(outputDir, [filename]);
+  return paths[filename];
+};
 
 /**
  * @typedef {{
@@ -617,7 +655,7 @@ export async function measureCorrelation(options = {}) {
   const reportJson = buildBaselineReport(rows, metrics, snapshotTimestamp);
   const reportMarkdown = renderBaselineMarkdown(rows, metrics, snapshotTimestamp);
 
-  await publishReportFilesAtomically([
+  const publication = await publishReportFilesAtomically([
     {
       targetPath: jsonOutputPath,
       content: `${JSON.stringify(reportJson, null, 2)}\n`,
@@ -632,8 +670,8 @@ export async function measureCorrelation(options = {}) {
     rows,
     metrics,
     snapshotTimestamp,
-    reportJsonPath: jsonOutputPath,
-    reportMarkdownPath: markdownOutputPath,
+    reportJsonPath: publication.reportPaths[jsonOutputPath],
+    reportMarkdownPath: publication.reportPaths[markdownOutputPath],
   };
 }
 

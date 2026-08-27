@@ -51,10 +51,13 @@ function makeVerticalPattern(): Uint8ClampedArray {
   return pixels;
 }
 
-function shiftDownForSystemInset(
+const shiftDownForSystemInset = (
   design: Uint8ClampedArray,
   inset: number,
-): { screenshot: Uint8ClampedArray; ignoreMask: Uint8Array } {
+): { screenshot: Uint8ClampedArray; ignoreMask: Uint8Array } => {
+  if (!Number.isInteger(inset) || inset < 0 || inset >= HEIGHT) {
+    throw new Error(`inset must be an integer from 0 through ${HEIGHT - 1}`);
+  }
   const screenshot = new Uint8ClampedArray(design.length);
   const ignoreMask = new Uint8Array(WIDTH * HEIGHT);
   for (let y = 0; y < HEIGHT; y++) {
@@ -77,7 +80,7 @@ function shiftDownForSystemInset(
     }
   }
   return { screenshot, ignoreMask };
-}
+};
 
 // 下地を黒にする。白地だと、画像の外へ出た画素の罰が平行移動の得より大きくなり、
 // 「ずれているが動かさない方が良い」という別の正しい判断が出てしまう。
@@ -285,6 +288,13 @@ describe("countSsdOffset の入力検査", () => {
     expect(() =>
       detectTranslation(image, image, WIDTH, HEIGHT, undefined, [{ dx: 0, dy: 1.5 }]),
     ).toThrow(/integer pixels/);
+  });
+
+  it("system UI inset fixture は範囲外の値を弾くこと", () => {
+    const image = makeVerticalPattern();
+    expect(() => shiftDownForSystemInset(image, -1)).toThrow(/integer/);
+    expect(() => shiftDownForSystemInset(image, 0.5)).toThrow(/integer/);
+    expect(() => shiftDownForSystemInset(image, HEIGHT)).toThrow(/integer/);
   });
 });
 

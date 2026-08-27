@@ -38,6 +38,10 @@ async function writeSolid(filePath: string, height: number): Promise<void> {
 }
 
 async function writeSystemUiFixturePair(): Promise<void> {
+  // 実機の status bar は本文を下へ押し出すため、screenshot の本文を design の
+  // STATUS_BAR_HEIGHT 行前から作り、その状況を合成で再現する。上下の system UI
+  // 帯は mask 対象で中身を比較しないため RGB=0 で埋める。1080x2400 は preset
+  // 登録済み端末寸法なので、preset を変えると verified inset 経路の意味を失う。
   const design = Buffer.alloc(SYSTEM_UI_WIDTH * SYSTEM_UI_STITCHED_HEIGHT * 4);
   const screenshot = Buffer.alloc(design.length);
   for (let y = 0; y < SYSTEM_UI_STITCHED_HEIGHT; y++) {

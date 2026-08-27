@@ -30,6 +30,27 @@ const H = 100;
 
 // 走査ロジックを computePerceptibleDiffRatio と共有させたので、平均側も固定する。
 describe("computeMeanDeltaE2000", () => {
+  it("rejects empty, mismatched, and partial RGBA buffers", () => {
+    const image = canvas(W, H, () => [120, 130, 140]);
+    expect(() => computeMeanDeltaE2000(new Uint8ClampedArray(), image, 0, 0, W, H, W)).toThrow(
+      /must not be empty/,
+    );
+    expect(() =>
+      computeMeanDeltaE2000(image, image.subarray(0, image.length - 4), 0, 0, W, H, W),
+    ).toThrow(/equal lengths/);
+    expect(() =>
+      computeMeanDeltaE2000(
+        image.subarray(0, image.length - 1),
+        image.subarray(0, image.length - 1),
+        0,
+        0,
+        W,
+        H,
+        W,
+      ),
+    ).toThrow(/complete RGBA/);
+  });
+
   it("returns 0 for identical images", () => {
     const a = canvas(W, H, () => [120, 130, 140]);
     expect(computeMeanDeltaE2000(a, a, 0, 0, W, H, W)).toBe(0);

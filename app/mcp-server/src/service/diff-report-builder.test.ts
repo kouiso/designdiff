@@ -784,7 +784,8 @@ describe("buildDiffReport global alignment shift severity", () => {
       width,
       height,
       ignoreMask,
-      verifiedSystemUiTopInset: inset - 1,
+      // 候補幅の実装詳細に依存させず、実際のずれ量から十分離れた値を使う。
+      verifiedSystemUiTopInset: 40,
     });
 
     const positionIssue = result.issues.find(

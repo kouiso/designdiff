@@ -553,7 +553,7 @@ async function writeComparisonSheet(outputDir, tool, independent, images) {
     .toFile(path.join(outputDir, "comparison-sheet.png"));
 }
 
-async function publishDirectoriesAtomically(directories, assertPublishedState) {
+const publishDirectoriesAtomically = async (directories, assertPublishedState) => {
   const transactionId = `${process.pid}-${Date.now()}`;
   const entries = directories.map(({ stagingDir, targetDir }) => ({
     stagingDir,
@@ -563,6 +563,9 @@ async function publishDirectoriesAtomically(directories, assertPublishedState) {
     installed: false,
   }));
   let succeeded = false;
+  let publicationError;
+  let rollbackError;
+  let cleanupError;
 
   try {
     for (const entry of entries) {
@@ -579,22 +582,43 @@ async function publishDirectoriesAtomically(directories, assertPublishedState) {
     }
     await assertPublishedState(entries);
     succeeded = true;
+  } catch (error) {
+    publicationError = error;
   } finally {
+    const rollbackErrors = [];
     if (!succeeded) {
       for (const entry of [...entries].reverse()) {
-        if (entry.installed) {
-          await fs.rm(entry.targetDir, { recursive: true, force: true });
-        }
-        if (entry.targetExisted) {
-          await fs.rename(entry.backupDir, entry.targetDir);
+        try {
+          if (entry.installed) {
+            await fs.rm(entry.targetDir, { recursive: true, force: true });
+          }
+          if (entry.targetExisted) {
+            await fs.rename(entry.backupDir, entry.targetDir);
+          }
+        } catch (error) {
+          rollbackErrors.push(error);
         }
       }
     }
-    await Promise.all(
-      entries.map((entry) => fs.rm(entry.backupDir, { recursive: true, force: true })),
-    );
+    if (rollbackErrors.length > 0) {
+      rollbackError = new AggregateError(rollbackErrors, "evidence publication rollback failed");
+    } else {
+      try {
+        await Promise.all(
+          entries.map((entry) => fs.rm(entry.backupDir, { recursive: true, force: true })),
+        );
+      } catch (error) {
+        cleanupError = error;
+      }
+    }
   }
-}
+  if (publicationError) {
+    if (rollbackError) process.emitWarning(rollbackError);
+    throw publicationError;
+  }
+  if (rollbackError) throw rollbackError;
+  if (cleanupError) throw cleanupError;
+};
 
 async function hashFiles(baseDir, filenames) {
   const entries = await Promise.all(
@@ -760,8 +784,13 @@ async function main() {
       fs.writeFile(path.join(evidenceStagingDir, "stitched-capture.png"), screenshotBuffer),
     ]);
 
+    const independent = await computeIndependentResidual(ignoreRegions, designPath, screenshotPath);
     const runs = [];
-    let firstIndependent;
+    const firstIndependent = independent;
+    await fs.writeFile(
+      path.join(evidenceStagingDir, "aligned-design.png"),
+      independent.alignedDesignPng,
+    );
     for (let run = 1; run <= RUN_COUNT; run += 1) {
       const result = await compareImages({
         designBase64,
@@ -774,22 +803,10 @@ async function main() {
       const diffSha256 = createHash("sha256").update(diff).digest("hex");
       const diffVisiblePixelCount = await countVisiblePixels(diff);
       await fs.writeFile(path.join(evidenceStagingDir, `diff-run-${run}.png`), diff);
-      const independent = await computeIndependentResidual(
-        ignoreRegions,
-        designPath,
-        screenshotPath,
-      );
       await fs.writeFile(
         path.join(evidenceStagingDir, `residual-run-${run}.png`),
         independent.residualPng,
       );
-      if (run === 1) {
-        firstIndependent = independent;
-        await fs.writeFile(
-          path.join(evidenceStagingDir, "aligned-design.png"),
-          independent.alignedDesignPng,
-        );
-      }
       const stable = {
         tool: stableToolResult(result, diffSha256, diffVisiblePixelCount),
         independent: independent.metrics,

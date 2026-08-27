@@ -78,4 +78,11 @@ describe("buildSystemBarIgnoreRegions", () => {
     expect(getVerifiedSystemBarTopInset(1080, 2400, "android")).toBe(72);
     expect(getVerifiedSystemBarTopInset(360, 800, "android")).toBeUndefined();
   });
+
+  it("出力画像が bar より短くても領域を画像外へはみ出させないこと", () => {
+    expect(buildSystemBarIgnoreRegions(1080, 2400, "android", undefined, 10)).toEqual([
+      { x: 0, y: 0, width: 1080, height: 10, label: "system:status-bar" },
+      { x: 0, y: 0, width: 1080, height: 10, label: "system:navigation-bar" },
+    ]);
+  });
 });

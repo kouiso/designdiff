@@ -65,13 +65,22 @@ function clampBounds(
 /**
  * 領域がベタ面なら、その最頻色を返す。ベタ面でなければ null。
  */
-export function detectFlatRegionColor(
+export const detectFlatRegionColor = (
   pixels: Uint8ClampedArray,
   width: number,
   height: number,
   bbox?: DiffBoundingBox,
   ignoreMask?: Uint8Array,
-): FlatRegionColor | null {
+): FlatRegionColor | null => {
+  if (!Number.isSafeInteger(width) || width <= 0 || !Number.isSafeInteger(height) || height <= 0) {
+    throw new Error(`detectFlatRegionColor: width and height must be positive safe integers`);
+  }
+  const expectedBufferLength = width * height * 4;
+  if (pixels.length !== expectedBufferLength) {
+    throw new Error(
+      `detectFlatRegionColor: pixel buffer length must equal ${expectedBufferLength} (got ${pixels.length})`,
+    );
+  }
   if (ignoreMask !== undefined && ignoreMask.length !== width * height) {
     throw new Error("ignoreMask length must equal width * height");
   }
@@ -130,7 +139,7 @@ export function detectFlatRegionColor(
   if (coverage < FLAT_COVERAGE) return null;
 
   return { hex: toHex(r, g, b), r, g, b, coverage };
-}
+};
 
 /**
  * design / screenshot 双方がベタ面のときだけ、色の食い違いを判定する。

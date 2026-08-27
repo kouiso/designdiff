@@ -30,6 +30,14 @@
         }
       ],
       "verifiedSystemUiTopInset": 72,
+      "expectedSystemUiAlignment": {
+        "matchRate": 100,
+        "diffPixelCount": 0,
+        "translation": {
+          "x": 0,
+          "y": 72
+        }
+      },
       "notes": "Issue #1579: Pixel 7 presetの1080x2400 viewportを1080x4800へ結合した検体。上端72pxと結合画像末尾72pxを除外し、本文は検証済みinsetと同じ72pxだけ補正する。"
     }
   ]
