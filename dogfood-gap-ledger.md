@@ -163,3 +163,23 @@ PASS になっていた。CIEDE2000 は同じ色差ペアを ~40 ΔE として�
 - `package/shared/src/index.ts`（エクスポート追加）
 - `app/mcp-server/src/service/diff-report-builder.ts`（buildColorDifference → computeMeanDeltaE2000、threshold 3→2）
 - `app/desktop/src/service/diff-report.ts`（同上）
+
+---
+
+## 2026-08-27 HorseManager formal監査向け bounded triage（Issue #58 / #59）
+
+### Issue #58 alignment補正後の局所差分bbox
+
+- 現行develop（PR #99 merge後）の `image-compare-service.ts` は、`resolveAlignment` の `alignedDesignPixels` を pixelmatchへ渡した後に `earlyClusterForScoring` を生成する（1092行、1197行付近）。Issue本文の「補正前クラスタを補正後スコアへ流す」経路は現行コードでは成立しない。
+- 120x90の合成画像で、実装を右へ7px移動し、補正後座標へ20x20の局所欠陥を置く再現を実行した。結果は `translation={x:7,y:0}`、補正適用、`diffRegions` は左端OOBと局所欠陥 `x=40..60,y=30..50` だった。補正前右境界bboxは返らず、局所欠陥の座標は補正後空間と一致した。
+- したがってHorseManagerのformal監査を直接阻害する明確な再現はなく、追加修正PRは作成しない。再現は一時テストで実行し、リポジトリへ残骸を保存していない。
+
+### Issue #59 capture_width振動
+
+- `figma-service.test.ts` の `recommended capture width convergence (#275)` を現行developで実行し、2 test files / 31 testsがPASSした。effect-margin cropありの反復は `[390, 390, 390]` に収束し、cropなしの旧欠陥は `[430, 474]` と再現する。
+- 修正履歴は `e35873e`（#275 effect-margin crop）および `6830aed`（#234 capture_width CDP loop guard）。現行のFigma URL撮影は、フレーム幅を自動取得して `capture_width` に使う実装（`compare-design-runner.ts` 762〜783行付近）である。
+- 現行developでIssue #59の1080→1191→1314発散は再現せず、HorseManager formal監査を直接阻害する証拠はない。追加修正PRは作成せず、Issue #59は既修正・今回スコープ外として扱う。
+
+### 判定
+
+Issue #58/#59とも、今回のFigma formal監査に対する直接阻害は未確認。既存修正と現行実測を根拠に、今回の作業では追加PRを起票しない。
