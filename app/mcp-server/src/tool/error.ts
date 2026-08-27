@@ -47,9 +47,15 @@ type FigmaApiFailure =
   | "server_error"
   | "api_error";
 
+interface ErrorWithStatus {
+  status: unknown;
+}
+
+const hasErrorStatus = (error: object): error is ErrorWithStatus => "status" in error;
+
 const readErrorStatus = (error: unknown): number | undefined => {
   if (typeof error !== "object" || error === null) return undefined;
-  const status = Object.getOwnPropertyDescriptor(error, "status")?.value;
+  const status = hasErrorStatus(error) ? error.status : undefined;
   return typeof status === "number" && Number.isInteger(status) ? status : undefined;
 };
 
