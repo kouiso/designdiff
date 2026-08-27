@@ -341,6 +341,32 @@ describe("FigmaService.getFrameImage — effect margin removal on a real PNG", (
     expect(result.effectMarginCrop).toBeUndefined();
     expect(result.base64).toBe(exported);
   });
+
+  it("keeps a one-pixel Figma export margin out of the normalized width", async () => {
+    const exported = (
+      await sharp({
+        create: { width: 391, height: 692, channels: 3, background: { r: 10, g: 20, b: 30 } },
+      })
+        .png()
+        .toBuffer()
+    ).toString("base64");
+    vi.spyOn(FigmaClient.prototype, "downloadImageAsBase64").mockResolvedValue(exported);
+
+    const service = new FigmaService(
+      "figd_1234567890abcdef",
+      path.join(tmpdir(), "figdiff-test-cache"),
+    );
+    // 390pxの論理フレームをFigmaが効果込み391pxで書き出すと、丸めた切り出しが
+    // 1+391pxとなる。端まで安全に詰めないとcompare_designが391pxを報告する。
+    const result = await service.getFrameImage("FILEKEY", "1:1", 390, 390, undefined, {
+      logicalBox: { x: 0.5, y: 0, width: 390, height: 692 },
+      renderBox: { x: 0, y: 0, width: 390.51, height: 692 },
+    });
+
+    const meta = await sharp(Buffer.from(result.base64, "base64")).metadata();
+    expect(meta.width).toBe(390);
+    expect(result.effectMarginCrop?.width).toBe(390);
+  });
 });
 
 // #275 の本体: 推奨 capture_width が毎回 renderBounds/boundingBox 倍に膨らむ発散。
