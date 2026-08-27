@@ -74,6 +74,7 @@ pnpm build          # Build all packages
 pnpm test           # Run all Vitest tests
 pnpm typecheck      # TypeScript type check
 pnpm lint           # Biome lint
+pnpm lint:arrow     # Reject newly added function declarations in MCP source
 pnpm lint:eslint    # ESLint v9 (type-aware, import order)
 pnpm check          # Biome check (format + lint)
 ```

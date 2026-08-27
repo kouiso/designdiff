@@ -81,6 +81,13 @@ FIGMA_TOKEN = "figd_your_token_here"
 4. compare_design(...)  ← repeat until status "PASS"
 ```
 
+## Arrow-function rule
+
+`pnpm lint` runs `lint:arrow` before the package lint tasks. It checks the added lines in
+`app/mcp-server/src` and rejects new `function` declarations or function expressions. Existing
+declarations are left untouched so this rule can be adopted without a risky bulk rewrite; any
+new or edited behavior must use an arrow function assigned to a `const`.
+
 ## Notes
 
 - `compare_design` returns a diff image as an `image` content block when differences exist
