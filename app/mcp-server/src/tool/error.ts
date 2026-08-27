@@ -5,7 +5,15 @@ interface McpErrorResult {
 }
 
 const GENERIC_TOOL_ERROR_MESSAGE = "MCP tool failed.";
-const NETWORK_TOOL_ERROR_MESSAGE = "Unable to reach the Figma API. Check network access and retry.";
+const AUTH_TOOL_ERROR_MESSAGE =
+  "Figma authentication failed. Check that FIGMA_TOKEN is configured and valid, then retry.";
+const ACCESS_TOOL_ERROR_MESSAGE =
+  "Figma access denied. Check that your token has access to this Figma file, then retry.";
+const RATE_LIMIT_TOOL_ERROR_MESSAGE = "Figma API rate limit exceeded. Wait a moment and retry.";
+const SERVER_TOOL_ERROR_MESSAGE = "Figma server error. Please try again later.";
+const API_TOOL_ERROR_MESSAGE = "Figma API request failed. Check the request and retry.";
+const NETWORK_TOOL_ERROR_MESSAGE =
+  "Unable to reach the Figma API. Check that FIGMA_TOKEN is configured, check network access, and retry.";
 const NETWORK_ERROR_CODES = new Set([
   "ECONNREFUSED",
   "ECONNRESET",
@@ -32,6 +40,68 @@ const SECRET_SAFE_ERROR_PREFIXES = [
   "Invalid project ID",
 ];
 
+type FigmaApiFailure =
+  | "invalid_token"
+  | "access_denied"
+  | "rate_limited"
+  | "server_error"
+  | "api_error";
+
+interface ErrorWithStatus {
+  status: unknown;
+}
+
+const hasErrorStatus = (error: object): error is ErrorWithStatus => "status" in error;
+
+const readErrorStatus = (error: unknown): number | undefined => {
+  if (typeof error !== "object" || error === null) return undefined;
+  const status = hasErrorStatus(error) ? error.status : undefined;
+  return typeof status === "number" && Number.isInteger(status) ? status : undefined;
+};
+
+const classifyFigmaApiFailure = (
+  error: unknown,
+  seen = new Set<unknown>(),
+): FigmaApiFailure | null => {
+  if (typeof error !== "object" || error === null || seen.has(error)) return null;
+  seen.add(error);
+
+  const status = readErrorStatus(error);
+  if (status === 401) return "invalid_token";
+  if (status === 403) return "access_denied";
+  if (status === 429) return "rate_limited";
+  if (status !== undefined && status >= 500 && status <= 599) return "server_error";
+
+  if (error instanceof Error) {
+    if (
+      /Figma token is invalid or expired \(401\)|Invalid Figma token|(?:error|status) 401/i.test(
+        error.message,
+      )
+    ) {
+      return "invalid_token";
+    }
+    if (/Access denied \(403\)|(?:error|status) 403/i.test(error.message)) {
+      return "access_denied";
+    }
+    if (/rate limit exceeded \(429\)|(?:error|status) 429/i.test(error.message)) {
+      return "rate_limited";
+    }
+    if (/Figma server error \((?:5\d\d)\)|(?:error|status) 5\d\d/i.test(error.message)) {
+      return "server_error";
+    }
+    if (/Figma API error \d{3}(?::|$)/i.test(error.message)) return "api_error";
+  }
+
+  if (error instanceof AggregateError) {
+    for (const nested of error.errors) {
+      const classification = classifyFigmaApiFailure(nested, seen);
+      if (classification) return classification;
+    }
+  }
+
+  return error instanceof Error ? classifyFigmaApiFailure(error.cause, seen) : null;
+};
+
 const isNetworkFailure = (error: unknown, seen = new Set<unknown>()): boolean => {
   if (typeof error !== "object" || error === null || seen.has(error)) return false;
   seen.add(error);
@@ -51,6 +121,18 @@ const isNetworkFailure = (error: unknown, seen = new Set<unknown>()): boolean =>
 };
 
 export const formatMcpToolError = (error: unknown): string => {
+  // 秘密を含む文面は状態分類せず、どの経路でも認証情報を返さない。
+  if (error instanceof Error && SECRET_LIKE_PATTERN.test(error.message)) {
+    return GENERIC_TOOL_ERROR_MESSAGE;
+  }
+
+  const figmaApiFailure = classifyFigmaApiFailure(error);
+  if (figmaApiFailure === "invalid_token") return AUTH_TOOL_ERROR_MESSAGE;
+  if (figmaApiFailure === "access_denied") return ACCESS_TOOL_ERROR_MESSAGE;
+  if (figmaApiFailure === "rate_limited") return RATE_LIMIT_TOOL_ERROR_MESSAGE;
+  if (figmaApiFailure === "server_error") return SERVER_TOOL_ERROR_MESSAGE;
+  if (figmaApiFailure === "api_error") return API_TOOL_ERROR_MESSAGE;
+
   if (isNetworkFailure(error)) return NETWORK_TOOL_ERROR_MESSAGE;
 
   if (
