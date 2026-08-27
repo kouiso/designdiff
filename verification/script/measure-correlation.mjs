@@ -20,7 +20,8 @@ const OUTPUT_DIR = path.resolve(__dirname, "../correlation");
 const JSON_REPORT_FILENAME = "baseline-report.json";
 const MARKDOWN_REPORT_FILENAME = "baseline-report.md";
 const ACTIVE_GENERATION_FILENAME = ".active-generation";
-const GENERATION_DIRNAME = ".generations";
+const RUNTIME_ACTIVE_GENERATION_FILENAME = ".active-generation.runtime";
+const GENERATION_DIRNAME = ".generation";
 const THRESHOLD = 0.1;
 let compareImagesPromise = null;
 
@@ -533,7 +534,7 @@ const publishReportFilesAtomically = async (files) => {
   const generationRoot = path.join(reportDir, GENERATION_DIRNAME);
   const stagingDir = path.join(generationRoot, `.staging-${generationName}`);
   const generationDir = path.join(generationRoot, generationName);
-  const pointerPath = path.join(reportDir, ACTIVE_GENERATION_FILENAME);
+  const pointerPath = path.join(reportDir, RUNTIME_ACTIVE_GENERATION_FILENAME);
   const pointerStagingPath = `${pointerPath}.tmp-${transactionId}`;
 
   await fs.mkdir(generationRoot, { recursive: true });
@@ -580,9 +581,20 @@ const publishReportFilesAtomically = async (files) => {
 };
 
 const readActiveGeneration = async (outputDir) => {
-  const pointer = (
-    await fs.readFile(path.join(outputDir, ACTIVE_GENERATION_FILENAME), "utf8")
-  ).trim();
+  let pointer;
+  for (const filename of [RUNTIME_ACTIVE_GENERATION_FILENAME, ACTIVE_GENERATION_FILENAME]) {
+    try {
+      pointer = (await fs.readFile(path.join(outputDir, filename), "utf8")).trim();
+      break;
+    } catch (error) {
+      if (error?.code !== "ENOENT") throw error;
+    }
+  }
+  if (!pointer) {
+    throw new Error(
+      `active report generation pointer is missing: expected ${RUNTIME_ACTIVE_GENERATION_FILENAME} or ${ACTIVE_GENERATION_FILENAME}`,
+    );
+  }
   if (!/^generation-[A-Za-z0-9-]+$/.test(pointer)) {
     throw new Error(`invalid active report generation pointer: ${pointer}`);
   }
