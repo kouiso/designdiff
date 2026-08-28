@@ -163,9 +163,9 @@ const analyzeRasterPixels = (
   background: readonly number[],
   foreground: readonly number[],
   ignoreMask?: Uint8Array,
-): { sharedCore: Set<number>; changed: number[] } | undefined => {
-  const sharedCore = new Set<number>();
-  const changed: number[] = [];
+): { sharedCorePixelCount: number; changedPixelCount: number } | undefined => {
+  let sharedCorePixelCount = 0;
+  let changedPixelCount = 0;
   for (let y = window.top; y < window.bottom; y++) {
     for (let x = window.left; x < window.right; x++) {
       const pixelIndex = y * width + x;
@@ -180,37 +180,75 @@ const analyzeRasterPixels = (
       const designCore = designBlend.alpha >= CORE_ALPHA;
       const screenshotCore = screenshotBlend.alpha >= CORE_ALPHA;
       if (designCore !== screenshotCore) return undefined;
-      if (designCore) sharedCore.add(pixelIndex);
+      if (designCore) sharedCorePixelCount++;
       if (maxChannelDelta(design, screenshot) <= CHANNEL_TOLERANCE) continue;
       const alphas = [designBlend.alpha, screenshotBlend.alpha];
       if (alphas.some((alpha) => alpha <= EDGE_ALPHA_MIN || alpha >= EDGE_ALPHA_MAX)) {
         return undefined;
       }
-      changed.push(pixelIndex);
+      if (
+        !changeTouchesCore(
+          designPixels,
+          screenshotPixels,
+          width,
+          window,
+          x,
+          y,
+          background,
+          foreground,
+          ignoreMask,
+        )
+      ) {
+        return undefined;
+      }
+      changedPixelCount++;
     }
   }
-  return changed.length > 0 && sharedCore.size > 0 ? { sharedCore, changed } : undefined;
+  return changedPixelCount > 0 && sharedCorePixelCount > 0
+    ? { sharedCorePixelCount, changedPixelCount }
+    : undefined;
 };
 
-const everyChangeTouchesCore = (
-  changed: number[],
-  sharedCore: Set<number>,
+const changeTouchesCore = (
+  designPixels: Uint8ClampedArray,
+  screenshotPixels: Uint8ClampedArray,
   width: number,
-  height: number,
-): boolean =>
-  changed.every((pixelIndex) => {
-    const x = pixelIndex % width;
-    const y = Math.floor(pixelIndex / width);
-    for (let dy = -1; dy <= 1; dy++) {
-      for (let dx = -1; dx <= 1; dx++) {
-        const neighborX = x + dx;
-        const neighborY = y + dy;
-        if (neighborX < 0 || neighborX >= width || neighborY < 0 || neighborY >= height) continue;
-        if (sharedCore.has(neighborY * width + neighborX)) return true;
+  window: RasterWindow,
+  x: number,
+  y: number,
+  background: readonly number[],
+  foreground: readonly number[],
+  ignoreMask?: Uint8Array,
+): boolean => {
+  for (let dy = -1; dy <= 1; dy++) {
+    for (let dx = -1; dx <= 1; dx++) {
+      const neighborX = x + dx;
+      const neighborY = y + dy;
+      if (
+        neighborX < window.left ||
+        neighborX >= window.right ||
+        neighborY < window.top ||
+        neighborY >= window.bottom
+      ) {
+        continue;
       }
+      const neighborIndex = neighborY * width + neighborX;
+      if (ignoreMask?.[neighborIndex]) continue;
+      const design = blendAlphaAndResidual(
+        colorAt(designPixels, neighborIndex),
+        background,
+        foreground,
+      );
+      const screenshot = blendAlphaAndResidual(
+        colorAt(screenshotPixels, neighborIndex),
+        background,
+        foreground,
+      );
+      if (design.alpha >= CORE_ALPHA && screenshot.alpha >= CORE_ALPHA) return true;
     }
-    return false;
-  });
+  }
+  return false;
+};
 
 export const classifyGlyphEdgeRasterization = (
   designPixels: Uint8ClampedArray,
@@ -248,14 +286,12 @@ export const classifyGlyphEdgeRasterization = (
     foreground,
     ignoreMask,
   );
-  if (!analysis || !everyChangeTouchesCore(analysis.changed, analysis.sharedCore, width, height)) {
-    return undefined;
-  }
+  if (!analysis) return undefined;
 
   return {
     classification: "glyph-edge-rasterization",
-    changedPixelCount: analysis.changed.length,
-    sharedCorePixelCount: analysis.sharedCore.size,
+    changedPixelCount: analysis.changedPixelCount,
+    sharedCorePixelCount: analysis.sharedCorePixelCount,
     backgroundHex: toHex(background),
     foregroundHex: toHex(foreground),
   };

@@ -164,9 +164,8 @@ function buildIssues(
           ...evidenceProvenance,
         },
         suggestedCssFix:
-          "文字の不透明core形状と色トークンは一致しています。描画エンジン由来の縁だけが異なります。",
+          "文字の不透明core形状と色トークンは一致しています。描画エンジン差の可能性がありますが、位置と寸法を確認してください。",
       });
-      continue;
     }
     // ベタ面どうしの hex 不一致は「塗りのトークンが違う」という離散的な事実で、
     // ΔE の連続量では表現できない。critical に上げて computeVerdict の

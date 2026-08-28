@@ -509,11 +509,12 @@ describe("buildDiffReport — glyph edge rasterization (#102)", () => {
     });
   };
 
-  it("同一geometryの中間alpha差を非構造判定として理由に出す", async () => {
+  it("同一coreの中間alpha差を診断しつつFAIL採点を維持する", async () => {
     const result = await compare(makeGlyph(96), makeGlyph(144));
 
-    expect(result.aggregateVerdict).toBe("pass");
+    expect(result.aggregateVerdict).toBe("fail");
     expect(result.rationale).toContain("glyph-edge rasterization");
+    expect(result.rationale).toContain("retained in scoring");
     expect(result.regionScores[0].glyphEdgeRasterization).toMatchObject({
       classification: "glyph-edge-rasterization",
       changedPixelCount: 5,

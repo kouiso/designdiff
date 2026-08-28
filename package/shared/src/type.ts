@@ -295,8 +295,7 @@ const clamp01 = (value: number): number => Math.min(1, Math.max(0, value));
  */
 export const selectScoringRegions = (regionScores: RegionScore[]): RegionScore[] => {
   const sections = regionScores.filter((score) => score.scope !== "root");
-  const selected = sections.length > 0 ? sections : regionScores;
-  return selected.filter((score) => !score.glyphEdgeRasterization);
+  return sections.length > 0 ? sections : regionScores;
 };
 
 const normalizeWeightedAggregate = (allRegionScores: RegionScore[]): WeightedAggregate => {
@@ -374,7 +373,7 @@ const buildGlyphEdgeRationaleSuffix = (regionScores: RegionScore[]): string => {
   const glyphEdgeCount = regionScores.filter((score) => score.glyphEdgeRasterization).length;
   return glyphEdgeCount === 0
     ? ""
-    : `; ${glyphEdgeCount} glyph-edge rasterization region(s) classified as non-structural`;
+    : `; ${glyphEdgeCount} glyph-edge rasterization diagnostic region(s) retained in scoring`;
 };
 
 export const computeVerdict = (
