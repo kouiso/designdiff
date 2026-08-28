@@ -10,6 +10,9 @@ import {
 import type { FigmaFileResponse, FigmaNode } from "./figma-client.js";
 
 const token = "figd_valid_token_12345";
+const makeTestNodeId = (page: number, nodeId: number): string => `${page}:${nodeId}`;
+const REPEATED_FETCH_FILE_KEY = "fixture-file";
+const REPEATED_FETCH_NODE_ID = makeTestNodeId(7, 11);
 const node = {
   id: "1:1",
   name: "Frame",
@@ -132,7 +135,7 @@ describe("FigmaClient", () => {
       );
 
       expect(fetchMock.mock.calls[0]?.[0]).toBe(
-        "https://api.figma.com/v1/images/FILE?ids=1:1&format=png&scale=2",
+        "https://api.figma.com/v1/images/FILE?ids=1:1&format=png&scale=2&use_absolute_bounds=true",
       );
     });
 
@@ -150,7 +153,7 @@ describe("FigmaClient", () => {
       );
 
       expect(fetchMock.mock.calls[0]?.[0]).toBe(
-        "https://api.figma.com/v1/images/FILE?ids=1:1&format=png&scale=2&version=123%2F456",
+        "https://api.figma.com/v1/images/FILE?ids=1:1&format=png&scale=2&use_absolute_bounds=true&version=123%2F456",
       );
     });
   });
@@ -174,10 +177,70 @@ describe("FigmaClient", () => {
 
       expect(base64).toBe(Buffer.from([1, 2, 3]).toString("base64"));
       expect(fetchMock.mock.calls[0]?.[0]).toBe(
-        "https://api.figma.com/v1/images/FILE?ids=1:1&format=png&scale=3&version=1234567890",
+        "https://api.figma.com/v1/images/FILE?ids=1:1&format=png&scale=3&use_absolute_bounds=true&version=1234567890",
       );
-      expect(cache.get).toHaveBeenCalledWith("FILE", "1:1", 3, "1234567890");
-      expect(cache.set).toHaveBeenCalledWith("FILE", "1:1", 3, "1234567890", base64);
+      expect(cache.get).toHaveBeenCalledWith(
+        "FILE",
+        "1:1__figdiff_absolute_bounds_v1",
+        3,
+        "1234567890",
+      );
+      expect(cache.set).toHaveBeenCalledWith(
+        "FILE",
+        "1:1__figdiff_absolute_bounds_v1",
+        3,
+        "1234567890",
+        base64,
+      );
+    });
+
+    it("keeps the absolute-bounds request and cache key stable for three repeated reads", async () => {
+      const values = new Map<string, string>();
+      const cache = {
+        get: vi.fn(async (_fileKey: string, nodeId: string, scale: number) =>
+          values.get(`${nodeId}:${scale}`),
+        ),
+        set: vi.fn(
+          async (
+            _fileKey: string,
+            nodeId: string,
+            scale: number,
+            _version: string | undefined,
+            value: string,
+          ) => {
+            values.set(`${nodeId}:${scale}`, value);
+          },
+        ),
+      };
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValueOnce(
+          new Response(
+            JSON.stringify({
+              images: { [REPEATED_FETCH_NODE_ID]: "https://image.example/absolute.png" },
+            }),
+          ),
+        )
+        .mockResolvedValueOnce(new Response(new Uint8Array([3, 9, 0, 9, 8, 1])));
+      vi.stubGlobal("fetch", fetchMock);
+      const client = new FigmaClient(token, cache);
+
+      const results = [];
+      for (let index = 0; index < 3; index += 1) {
+        results.push(
+          await client.downloadImageAsBase64(REPEATED_FETCH_FILE_KEY, REPEATED_FETCH_NODE_ID, 1),
+        );
+      }
+
+      expect(new Set(results).size).toBe(1);
+      expect(fetchMock.mock.calls[0]?.[0]).toBe(
+        `https://api.figma.com/v1/images/${REPEATED_FETCH_FILE_KEY}?ids=${REPEATED_FETCH_NODE_ID}&format=png&scale=1&use_absolute_bounds=true`,
+      );
+      expect(cache.get.mock.calls.map((call) => call[1])).toEqual([
+        `${REPEATED_FETCH_NODE_ID}__figdiff_absolute_bounds_v1`,
+        `${REPEATED_FETCH_NODE_ID}__figdiff_absolute_bounds_v1`,
+        `${REPEATED_FETCH_NODE_ID}__figdiff_absolute_bounds_v1`,
+      ]);
     });
   });
 });
