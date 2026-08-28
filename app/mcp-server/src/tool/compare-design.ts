@@ -98,7 +98,7 @@ reason は次のいずれかです:
 
 const CONFIDENCE_TO_PERCENTAGE = 100;
 
-const buildDiagnosisLines =(result: CompareDesignResult, hasPriorLines: boolean): string[]  => {
+const buildDiagnosisLines = (result: CompareDesignResult, hasPriorLines: boolean): string[]  => {
   if (!result.diagnosis) {
     return [];
   }
@@ -115,7 +115,7 @@ const buildDiagnosisLines =(result: CompareDesignResult, hasPriorLines: boolean)
   return lines;
 };
 
-const buildPreflightWarningLines =(result: CompareDesignResult): string[]  => {
+const buildPreflightWarningLines = (result: CompareDesignResult): string[]  => {
   const warnings = result.preflight?.warnings ?? [];
   if (warnings.length === 0) {
     return [];
@@ -128,7 +128,7 @@ const buildPreflightWarningLines =(result: CompareDesignResult): string[]  => {
   return lines;
 };
 
-const buildNormalizationLines =(result: CompareDesignResult): string[]  => {
+const buildNormalizationLines = (result: CompareDesignResult): string[]  => {
   if (!result.normalization) {
     return [];
   }
@@ -153,7 +153,7 @@ const buildNormalizationLines =(result: CompareDesignResult): string[]  => {
 // 並び順は「結論 → 原因 → 内訳 → 警告」。AI/ユーザーが最初の数行で
 // 「実差分か設定ミスか」を即断でき、likely_misconfig の時だけ確度順に原因を
 // 列挙して最優先の対処に誘導するため、この順序と簡潔な箇条書き形式にしている。
-export const buildSummaryText =(result: CompareDesignResult): string  => {
+export const buildSummaryText = (result: CompareDesignResult): string  => {
   const lines: string[] = [];
 
   lines.push(...buildLoopGuardLines(result));
@@ -181,7 +181,7 @@ export const buildSummaryText =(result: CompareDesignResult): string  => {
 
 // 停止判定を見落とすと、止まるべきループが不要な反復を続ける。サマリーの最初の1行に置く。
 // 末尾では長い出力に埋もれて同じ状態に戻る。
-const buildLoopGuardLines =(result: CompareDesignResult): string[]  => {
+const buildLoopGuardLines = (result: CompareDesignResult): string[]  => {
   const guard = result.loopGuard;
   // compare_design は必ず停止判定を評価するので、undefined は「評価に失敗した」を意味する
   // (状態ファイルが書けない等)。黙って行を落とすと停止判定が見えない元の状態に戻るため、
@@ -211,7 +211,7 @@ const buildLoopGuardLines =(result: CompareDesignResult): string[]  => {
 
 // 色と文字は画素やなく値そのもので比べられる。どちらの経路で判定したかを必ず出す。
 // 出さんと、画素経路へ静かに落ちとることに読み手が気づけへん。
-const buildTokenDiffLines =(result: CompareDesignResult): string[]  => {
+const buildTokenDiffLines = (result: CompareDesignResult): string[]  => {
   const report = result.tokenDiff;
   if (!report) return [];
 
@@ -253,7 +253,7 @@ const buildTokenDiffLines =(result: CompareDesignResult): string[]  => {
 
 // 実機スクショの帯 (開発時のトースト等) は、比較対象の画面と無関係やのに
 // 毎回差分に乗る。自動では消さず、そのまま貼れるコマンドとして提案する。
-const buildToastBandLines =(result: CompareDesignResult): string[]  => {
+const buildToastBandLines = (result: CompareDesignResult): string[]  => {
   const candidates = result.toastBandCandidates ?? [];
   if (candidates.length === 0) return [];
 
@@ -274,7 +274,7 @@ const buildToastBandLines =(result: CompareDesignResult): string[]  => {
   return lines;
 };
 
-const buildMaskCandidateLines =(result: CompareDesignResult): string[]  => {
+const buildMaskCandidateLines = (result: CompareDesignResult): string[]  => {
   const report = result.diffReport;
   if (!report || report.aggregateVerdict === "pass") return [];
 
@@ -302,7 +302,7 @@ const buildMaskCandidateLines =(result: CompareDesignResult): string[]  => {
   return lines;
 };
 
-export const registerCompareDesign =(server: McpServer): void  => {
+export const registerCompareDesign = (server: McpServer): void => {
   const inputSchema = {
     design_source: z
       .string()
