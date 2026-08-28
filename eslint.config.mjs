@@ -268,9 +268,8 @@ export default [
     },
   },
 
-  // The primary compare_design tool is intentionally declaration-free. Keeping
-  // its helpers as arrows makes initialization order explicit and avoids
-  // relying on hoisting when the tool grows.
+  // compare_design の初期化順を明示し、機能追加時も巻き上げへ依存させないため、
+  // このファイルの補助関数はアロー関数だけに限定する。
   {
     files: ["app/mcp-server/src/tool/compare-design.ts"],
     rules: {
