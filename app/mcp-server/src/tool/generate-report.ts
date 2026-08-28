@@ -11,6 +11,7 @@ import { z } from "zod";
 import { CompareDesignResultSchema } from "@figdiff/shared";
 
 import { getComparisonEntry } from "../service/comparison-history.js";
+import { normalizeLegacyLoopGuard } from "../service/comparison-result-compat.js";
 import { generateMarkdownReport, generateJsonReport } from "../service/report-generator.js";
 import { getFigdiffResultsDir } from "../util/figdiff-paths.js";
 
@@ -21,10 +22,9 @@ const DESCRIPTION =
 
 const comparisonResultInputSchema = z.union([z.string(), z.object({}).passthrough()]);
 const comparisonResultRecordSchema = z.record(z.string(), z.unknown());
-
-function normalizeComparisonResultInput(
+export const normalizeComparisonResultInput = (
   input: z.infer<typeof comparisonResultInputSchema>,
-): unknown {
+): unknown => {
   const parsed: unknown = typeof input === "string" ? JSON.parse(input) : input;
 
   if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
@@ -44,8 +44,9 @@ function normalizeComparisonResultInput(
     totalPixelCount: result.totalPixelCount ?? result.totalPixels,
     diffRegions: result.diffRegions ?? result.regions ?? [],
     suggestion: result.suggestion ?? "",
+    loopGuard: normalizeLegacyLoopGuard(result.loopGuard),
   };
-}
+};
 
 export function registerGenerateReport(server: McpServer): void {
   server.registerTool(

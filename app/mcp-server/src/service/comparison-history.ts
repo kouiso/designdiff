@@ -6,6 +6,7 @@ import type { CompareDesignResult, DiffReport, ParsedDesignInput } from "@figdif
 
 import { getFigdiffResultsDir } from "../util/figdiff-paths.js";
 
+import { normalizeLegacyLoopGuard } from "./comparison-result-compat.js";
 import { diffImageFileName } from "./persist-detail.js";
 
 const MAX_REPORTS_PER_KEY = 5;
@@ -118,7 +119,10 @@ export async function getComparisonEntry(
     const captureWidth = parsed.captureWidth;
     const captureHeight = parsed.captureHeight;
     const rawResult = parsed.result;
-    const result = CompareDesignResultSchema.parse(rawResult);
+    const normalizedResult = isRecord(rawResult)
+      ? { ...rawResult, loopGuard: normalizeLegacyLoopGuard(rawResult.loopGuard) }
+      : rawResult;
+    const result = CompareDesignResultSchema.parse(normalizedResult);
     return {
       comparisonId: typeof storedId === "string" ? storedId : comparisonId,
       sourceKey: typeof sourceKey === "string" ? sourceKey : "unknown",
