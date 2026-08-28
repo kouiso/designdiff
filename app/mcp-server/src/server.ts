@@ -7,6 +7,7 @@
  * - create_project (Utility): Create a new FigDiff project
  * - delete_project (Utility): Delete a FigDiff project
  * - compare_design (Primary): Pixel diff between Figma design and implementation
+ * - measure_diff (Primary): Numeric diff of size / spacing / type scale between design and DOM
  * - inspect_node (Secondary): Dev Mode-like node detail inspection
  * - get_design_tokens (Secondary): Extract design tokens from a Figma frame
  * - list_figma_frames (Utility): List frames in a Figma file
@@ -35,6 +36,7 @@ import { registerGetIgnoreRegions } from "./tool/get-ignore-regions.js";
 import { registerInspectNode } from "./tool/inspect-node.js";
 import { registerListFrames } from "./tool/list-frames.js";
 import { registerListProjects } from "./tool/list-projects.js";
+import { registerMeasureDiff } from "./tool/measure-diff.js";
 import { registerReportIssue } from "./tool/report-issue.js";
 import { registerSetCropRegion } from "./tool/set-crop-region.js";
 import { registerSetFigmaToken } from "./tool/set-figma-token.js";
@@ -55,6 +57,7 @@ export function createMcpServer(): McpServer {
 - create_project: Create a new FigDiff project
 - delete_project: Delete a FigDiff project and its saved settings
 - compare_design: Pixel-level diff between Figma design and implementation screenshot
+- measure_diff: 寸法・余白・文字の大きさを数値で突き合わせる（画素では埋もれる 15px→16px のズレ用）
 - inspect_node: Dev Mode-like node detail inspection with CSS suggestions
 - get_design_tokens: Extract design tokens (colors, spacing, typography) from Figma frames
 - list_figma_frames: List all frames in a Figma file
@@ -107,6 +110,7 @@ export function createMcpServer(): McpServer {
   registerCreateProject(server);
   registerDeleteProject(server);
   registerCompareDesign(server);
+  registerMeasureDiff(server);
   registerCompareAnimation(server);
   registerInspectNode(server);
   registerGetDesignTokens(server);

@@ -2,7 +2,7 @@ import * as crypto from "node:crypto";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 
-import { type DomElementStyle, parseFrameTimestamps } from "@figdiff/shared";
+import { type DomElementStyle, type DomLayoutBox, parseFrameTimestamps } from "@figdiff/shared";
 
 import { getCaptureCacheDir } from "../util/figdiff-paths.js";
 
@@ -14,6 +14,12 @@ export interface CaptureOptions {
    * 画素を数える経路と違い、アンチエイリアスの影響を受けずに比べられる。
    */
   collectDomStyles?: boolean;
+  /**
+   * 寸法・余白を測るための箱を、文字も背景も持たない入れ物まで含めて採取する。
+   * collectDomStyles は色と文字を持つ要素だけを残すため、間隔だけを担う
+   * 透明なコンテナが採取の時点で消える。その gap や padding は後から復元できない。
+   */
+  collectLayoutBoxes?: boolean;
   /**
    * 動的コンテンツ検出のために2回撮る。時計・カウンタ・カルーセルのような
    * 撮るたびに変わる要素を、実装の誤りと切り分けるため。
@@ -43,6 +49,8 @@ export interface CaptureResult {
   dynamicSamplePaths?: string[];
   /** collectDomStyles 指定時のみ。採取に失敗した場合は undefined のまま。 */
   domStyles?: DomElementStyle[];
+  /** collectLayoutBoxes 指定時のみ。採取に失敗した場合は undefined のまま。 */
+  layoutBoxes?: DomLayoutBox[];
   /**
    * frameTimestampsMs 指定時のみ。指定した時刻ごとの撮影結果。
    *
@@ -146,6 +154,158 @@ function harvestDomStyles(maxElements: number): DomElementStyle[] {
 }
 
 /**
+ * ブラウザ側で実行され、寸法・余白を測るための箱を親子関係つきで返す。
+ *
+ * harvestDomStyles と違って、文字も背景も持たない要素も落とさない。
+ * 間隔だけを担う入れ物を落とすと、その gap や padding を後から測る手段が無い。
+ *
+ * この関数の中身は文字列化されてブラウザへ送られるため、外側の変数を掴めない。
+ * 外へ公開しているのは、別の撮影経路 (既存ブラウザへの接続や検証用の一時ハーネス)
+ * が同じ採取処理を使えるようにするため。写しを作ると、測った値の出所が
+ * どのコードなのか後から言えなくなる。
+ */
+export function harvestLayoutBoxes(maxElements: number): DomLayoutBox[] {
+  /**
+   * box-shadow の指定を、外側へ落ちる影と縁として描かれた内側の影に分ける。
+   * 内側の影は箱の中に描かれるので、デザイン側のドロップシャドウとは別物。
+   * 混ぜると、縁を付けただけの要素が「影が付いている」と誤って報告される。
+   */
+  const splitShadows = (value: string): { outer?: string; ring?: string } => {
+    if (value === "" || value === "none") return {};
+    const segments: string[] = [];
+    let depth = 0;
+    let current = "";
+    for (const char of value) {
+      if (char === "(") depth++;
+      if (char === ")") depth--;
+      if (char === "," && depth === 0) {
+        segments.push(current.trim());
+        current = "";
+        continue;
+      }
+      current += char;
+    }
+    if (current.trim() !== "") segments.push(current.trim());
+    const outer = segments.filter((segment) => !segment.includes("inset"));
+    const ring = segments.filter((segment) => segment.includes("inset"));
+    const result: { outer?: string; ring?: string } = {};
+    if (outer.length > 0) result.outer = outer.join(", ");
+    if (ring.length > 0) result.ring = ring.join(", ");
+    return result;
+  };
+
+  // 単位が % の値は px へ直せない。推測で数値を作ると、存在しない不一致になる。
+  const pxOrUndefined = (raw: string): number | undefined => {
+    if (raw.includes("%")) return undefined;
+    const parsed = Number.parseFloat(raw);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  };
+
+  const px = (raw: string): number => {
+    const parsed = Number.parseFloat(raw);
+    return Number.isFinite(parsed) ? parsed : 0;
+  };
+
+  // 直接の子テキストだけを見る。子孫まで数えると、同じ文字列が祖先にも計上される。
+  const ownTextOf = (element: Element): string => {
+    let text = "";
+    for (const child of element.childNodes) {
+      if (child.nodeType === Node.TEXT_NODE) text += child.nodeValue ?? "";
+    }
+    return text.replace(/\s+/g, " ").trim();
+  };
+
+  const isHidden = (style: CSSStyleDeclaration, rect: DOMRect): boolean =>
+    rect.width <= 0 ||
+    rect.height <= 0 ||
+    style.visibility === "hidden" ||
+    style.display === "none" ||
+    Number(style.opacity) === 0;
+
+  const applyTypography = (
+    entry: DomLayoutBox,
+    style: CSSStyleDeclaration,
+    ownText: string,
+  ): void => {
+    if (ownText === "") return;
+    entry.text = ownText.slice(0, 120);
+    entry.color = style.color;
+    entry.fontSize = pxOrUndefined(style.fontSize);
+    entry.fontWeight = pxOrUndefined(style.fontWeight);
+    entry.lineHeight = pxOrUndefined(style.lineHeight);
+  };
+
+  const applyDecoration = (entry: DomLayoutBox, style: CSSStyleDeclaration): void => {
+    entry.rowGap = pxOrUndefined(style.rowGap);
+    entry.columnGap = pxOrUndefined(style.columnGap);
+    entry.borderRadius = pxOrUndefined(style.borderTopLeftRadius);
+    entry.flexDirection = style.flexDirection === "" ? undefined : style.flexDirection;
+    const background = style.backgroundColor;
+    const hasBackground =
+      background !== "" &&
+      background !== "transparent" &&
+      !background.startsWith("rgba(0, 0, 0, 0");
+    entry.backgroundColor = hasBackground ? background : undefined;
+    const shadows = splitShadows(style.boxShadow);
+    entry.outerShadow = shadows.outer;
+    entry.ringShadow = shadows.ring;
+  };
+
+  const buildEntry = (
+    element: Element,
+    style: CSSStyleDeclaration,
+    rect: DOMRect,
+    ref: number,
+    parentRef: number | undefined,
+    depth: number,
+  ): DomLayoutBox => {
+    const entry: DomLayoutBox = {
+      ref,
+      parentRef,
+      depth,
+      tag: element.tagName.toLowerCase(),
+      x: Math.round((rect.left + window.scrollX) * 100) / 100,
+      y: Math.round((rect.top + window.scrollY) * 100) / 100,
+      width: Math.round(rect.width * 100) / 100,
+      height: Math.round(rect.height * 100) / 100,
+      paddingTop: px(style.paddingTop),
+      paddingRight: px(style.paddingRight),
+      paddingBottom: px(style.paddingBottom),
+      paddingLeft: px(style.paddingLeft),
+      marginTop: px(style.marginTop),
+      marginRight: px(style.marginRight),
+      marginBottom: px(style.marginBottom),
+      marginLeft: px(style.marginLeft),
+      display: style.display,
+    };
+    applyTypography(entry, style, ownTextOf(element));
+    applyDecoration(entry, style);
+    return entry;
+  };
+
+  const collected: DomLayoutBox[] = [];
+  const walk = (element: Element, depth: number, parentRef: number | undefined): void => {
+    if (collected.length >= maxElements) return;
+    const rect = element.getBoundingClientRect();
+    const style = window.getComputedStyle(element);
+    const hidden = isHidden(style, rect);
+
+    let ownRef = parentRef;
+    let childDepth = depth;
+    if (!hidden) {
+      const ref = collected.length;
+      collected.push(buildEntry(element, style, rect, ref, parentRef, depth));
+      ownRef = ref;
+      childDepth = depth + 1;
+    }
+    for (const child of element.children) walk(child, childDepth, ownRef);
+  };
+
+  walk(document.body, 0, undefined);
+  return collected;
+}
+
+/**
  * Capture a URL as a full-page PNG screenshot with fidelity guarantees:
  * - waitUntil: "networkidle" — deferred images and web fonts fully loaded
  * - document.fonts.ready — font-face rendering complete before screenshot
@@ -209,6 +369,20 @@ export async function captureUrl(url: string, options: CaptureOptions): Promise<
         // 採取に失敗しても撮影自体は続ける。画素経路だけで判定できる。
         console.warn(
           `[capture] DOM スタイルの採取に失敗しました: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+        );
+      }
+    }
+
+    let layoutBoxes: DomLayoutBox[] | undefined;
+    if (options.collectLayoutBoxes === true) {
+      try {
+        layoutBoxes = await page.evaluate(harvestLayoutBoxes, MAX_DOM_STYLE_ELEMENTS);
+      } catch (error) {
+        // 採取に失敗しても撮影自体は続ける。画素経路だけで判定できる。
+        console.warn(
+          `[capture] レイアウト実測の採取に失敗しました: ${
             error instanceof Error ? error.message : String(error)
           }`,
         );
@@ -313,6 +487,7 @@ export async function captureUrl(url: string, options: CaptureOptions): Promise<
       height: contentHeight,
       dynamicSamplePaths,
       domStyles,
+      layoutBoxes,
       framePaths,
       frameTimeSource,
     };

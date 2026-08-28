@@ -539,6 +539,129 @@ export const TokenDiffReportSchema = z.object({
   demotionReason: z.string().optional(),
 });
 
+// --- Measure Diff (寸法・余白を数値で突き合わせる経路) ---
+
+/**
+ * DOM の実測1件。文字も背景も持たない「間隔だけを担う箱」も落とさずに拾う。
+ *
+ * 色と文字だけを見る DomElementStyle は、採取の時点で透明なコンテナを捨てる。
+ * 捨てた箱の gap や padding は、あとから突合をどう工夫しても復元できない。
+ */
+export const DomLayoutBoxSchema = z.object({
+  /** 走査順の通し番号。親子を辿るための鍵。 */
+  ref: z.number().int().nonnegative(),
+  parentRef: z.number().int().nonnegative().optional(),
+  depth: z.number().int().nonnegative(),
+  tag: z.string(),
+  text: z.string().optional(),
+  x: z.number(),
+  y: z.number(),
+  width: z.number().nonnegative(),
+  height: z.number().nonnegative(),
+  paddingTop: z.number(),
+  paddingRight: z.number(),
+  paddingBottom: z.number(),
+  paddingLeft: z.number(),
+  /**
+   * 外側の余白。Figma には margin の概念が無いので直接は比べられないが、
+   * 積み上げの検算では実装側の勘定に必ず入る。落とすと残差の説明がつかない。
+   */
+  marginTop: z.number(),
+  marginRight: z.number(),
+  marginBottom: z.number(),
+  marginLeft: z.number(),
+  rowGap: z.number().optional(),
+  columnGap: z.number().optional(),
+  borderRadius: z.number().optional(),
+  display: z.string().optional(),
+  flexDirection: z.string().optional(),
+  fontSize: z.number().optional(),
+  fontWeight: z.number().optional(),
+  lineHeight: z.number().optional(),
+  color: z.string().optional(),
+  backgroundColor: z.string().optional(),
+  /** 外側へ落ちる影。実体のある影だけがここに入る。 */
+  outerShadow: z.string().optional(),
+  /**
+   * 縁として描かれた内側の box-shadow。ユーティリティCSSの ring 指定がこれになる。
+   * 影の比較からは外すが、外した事実を残さないと誤検知の説明ができない。
+   */
+  ringShadow: z.string().optional(),
+});
+
+/** 寸法・余白の食い違い1件。デザイン側の値と実装側の値を px で並べる。 */
+export const MeasureMismatchSchema = z.object({
+  property: z.string(),
+  nodeId: z.string(),
+  nodeName: z.string(),
+  nodeType: z.string(),
+  /** デザイン側の値 (px)。スクリーンショット倍率を掛けた後の値。 */
+  designPx: z.number(),
+  implPx: z.number(),
+  /** implPx - designPx。並べ替えて大きいものから直せるように符号付きで持つ。 */
+  deltaPx: z.number(),
+  severity: DiffSeveritySchema,
+  /** 実装側の該当要素。人がコードの行を探すための手掛かり。 */
+  implRef: z.number().int().nonnegative(),
+  implTag: z.string(),
+  implRect: DiffBoundingBoxSchema,
+});
+
+/**
+ * 対応付けできなかったデザインノード。件数ではなく1件ずつ名前で出す。
+ * 数だけを出すと、中身を隠したまま「全部見た」と言えてしまう。
+ */
+export const UnmatchedDesignNodeSchema = z.object({
+  nodeId: z.string(),
+  nodeName: z.string(),
+  nodeType: z.string(),
+  rect: DiffBoundingBoxSchema,
+  reason: z.string(),
+  /**
+   * unmatched = 対応する実装側の要素を見つけられなかった (道具の負け、または実装漏れ)。
+   * not-compared = 構造として実装側に相手が存在しない (アイコン部品の中身など)。
+   * 混ぜると、未照合率がアイコンの内部で水増しされて信頼度の判定が壊れる。
+   */
+  category: z.enum(["unmatched", "not-compared"]),
+});
+
+/**
+ * 積み上げの検算。
+ * 親の寸法 = 開始余白 + 子の寸法の和 + 間隔×(個数-1) + 終了余白 が
+ * デザイン側・実装側の両方で成り立つかを見る。片側だけ残差が出る親は、
+ * 勘定に入っていない要素をその中に持っている。
+ */
+export const StackCheckSchema = z.object({
+  nodeId: z.string(),
+  nodeName: z.string(),
+  axis: z.enum(["horizontal", "vertical"]),
+  designChildCount: z.number().int().nonnegative(),
+  implChildCount: z.number().int().nonnegative(),
+  designResidualPx: z.number(),
+  implResidualPx: z.number(),
+  verified: z.boolean(),
+  note: z.string().optional(),
+});
+
+export const MeasureDiffReportSchema = z.object({
+  designNodeCount: z.number().int().nonnegative(),
+  matchedNodeCount: z.number().int().nonnegative(),
+  unmatchedNodeCount: z.number().int().nonnegative(),
+  /** 構造として実装側に相手が無いノード数。未照合率の分母から外す。 */
+  notComparedNodeCount: z.number().int().nonnegative(),
+  unmatchedRatio: z.number().min(0).max(1),
+  checkedPropertyCount: z.number().int().nonnegative(),
+  /** スクリーンショット幅 ÷ デザインフレーム幅。1 から離れると文字の比較は行わない。 */
+  scale: z.number().positive(),
+  mismatches: z.array(MeasureMismatchSchema),
+  unmatchedDesignNodes: z.array(UnmatchedDesignNodeSchema),
+  stackChecks: z.array(StackCheckSchema),
+  reliable: z.boolean(),
+  demotionReason: z.string().optional(),
+  /** 比較を行わなかった項目とその理由。黙って落とさないために残す。 */
+  skipped: z.array(z.string()),
+});
+
 /** どの経路が最終的な合否を決めたか。無言で劣化させないために必ず載せる。 */
 export const VerdictRouteSchema = z.enum(["token-diff", "pixel"]);
 

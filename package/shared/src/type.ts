@@ -35,6 +35,11 @@ import {
   type ImageDimensionsSchema,
   type LoopGuardReasonSchema,
   type LoopGuardReportSchema,
+  type DomLayoutBoxSchema,
+  type MeasureMismatchSchema,
+  type UnmatchedDesignNodeSchema,
+  type StackCheckSchema,
+  type MeasureDiffReportSchema,
   type NodeAppearanceSchema,
   type NodeEffectSchema,
   type NodeFillSchema,
@@ -105,6 +110,14 @@ export type DomElementStyle = z.infer<typeof DomElementStyleSchema>;
 export type TokenMismatch = z.infer<typeof TokenMismatchSchema>;
 export type TokenDiffReport = z.infer<typeof TokenDiffReportSchema>;
 export type VerdictRoute = z.infer<typeof VerdictRouteSchema>;
+
+// --- Measure Diff (寸法・余白を数値で突き合わせる経路) ---
+
+export type DomLayoutBox = z.infer<typeof DomLayoutBoxSchema>;
+export type MeasureMismatch = z.infer<typeof MeasureMismatchSchema>;
+export type UnmatchedDesignNode = z.infer<typeof UnmatchedDesignNodeSchema>;
+export type StackCheck = z.infer<typeof StackCheckSchema>;
+export type MeasureDiffReport = z.infer<typeof MeasureDiffReportSchema>;
 
 export type ClusterTelemetry = z.infer<typeof ClusterTelemetrySchema>;
 export type ClusterCollapse = z.infer<typeof ClusterCollapseSchema>;
