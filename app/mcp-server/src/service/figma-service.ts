@@ -153,8 +153,25 @@ const isLogicalBoxContainedInRenderBox = (bounds: FrameImageNodeBounds | undefin
  * 毎回 renderBounds/boundingBox 倍に膨らんで発散する (#275)。
  * 論理boxへ揃った軸を再度切らず、処理を冪等に保つ。
  */
-const isNearRasterSize = (actual: number, expected: number): boolean =>
-  Math.abs(actual - expected) <= EFFECT_MARGIN_ROUNDING_TOLERANCE_PX;
+type RasterBoundsSource = "logical" | "render";
+
+const selectRasterBoundsSource = (
+  actual: number,
+  logicalExpected: number,
+  renderExpected: number,
+): RasterBoundsSource | null => {
+  const logicalError = Math.abs(actual - logicalExpected);
+  const renderError = Math.abs(actual - renderExpected);
+  const logicalMatches = logicalError <= EFFECT_MARGIN_ROUNDING_TOLERANCE_PX;
+  const renderMatches = renderError <= EFFECT_MARGIN_ROUNDING_TOLERANCE_PX;
+
+  if (!logicalMatches && !renderMatches) return null;
+  if (logicalExpected === renderExpected) return logicalMatches ? "logical" : null;
+  if (logicalMatches && !renderMatches) return "logical";
+  if (!logicalMatches && renderMatches) return "render";
+  if (logicalError === renderError) return null;
+  return logicalError < renderError ? "logical" : "render";
+};
 
 export const computeEffectMarginCrop = (
   bounds: FrameImageNodeBounds | undefined,
@@ -181,20 +198,13 @@ export const computeEffectMarginCrop = (
   const renderWidth = render.width * requestedScale;
   const renderHeight = render.height * requestedScale;
 
-  const widthUsesLogicalBounds = isNearRasterSize(exportedWidth, logicalWidth);
-  const widthUsesRenderBounds = isNearRasterSize(exportedWidth, renderWidth);
-  const heightUsesLogicalBounds = isNearRasterSize(exportedHeight, logicalHeight);
-  const heightUsesRenderBounds = isNearRasterSize(exportedHeight, renderHeight);
-  if (
-    (!widthUsesLogicalBounds && !widthUsesRenderBounds) ||
-    (!heightUsesLogicalBounds && !heightUsesRenderBounds)
-  ) {
-    return null;
-  }
+  const widthSource = selectRasterBoundsSource(exportedWidth, logicalWidth, renderWidth);
+  const heightSource = selectRasterBoundsSource(exportedHeight, logicalHeight, renderHeight);
+  if (!widthSource || !heightSource) return null;
 
   const effectiveScale = requestedScale;
-  const left = widthUsesLogicalBounds ? 0 : (logical.x - render.x) * effectiveScale;
-  const top = heightUsesLogicalBounds ? 0 : (logical.y - render.y) * effectiveScale;
+  const left = widthSource === "logical" ? 0 : (logical.x - render.x) * effectiveScale;
+  const top = heightSource === "logical" ? 0 : (logical.y - render.y) * effectiveScale;
   const width = logicalWidth;
   const height = logicalHeight;
 

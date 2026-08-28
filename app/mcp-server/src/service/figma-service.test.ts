@@ -258,6 +258,34 @@ describe("computeEffectMarginCrop", () => {
 
     expect(crop).toBeNull();
   });
+
+  it("selects render bounds when a one-pixel render width exactly matches the raster", () => {
+    const crop = computeEffectMarginCrop(
+      {
+        logicalBox: { x: 1, y: 0, width: 100, height: 80 },
+        renderBox: { x: 0, y: 0, width: 101, height: 80 },
+      },
+      101,
+      80,
+      1,
+    );
+
+    expect(crop).toEqual({ left: 1, top: 0, width: 100, height: 80, effectiveScale: 1 });
+  });
+
+  it("returns null when logical and render bounds are equally close to the raster", () => {
+    const crop = computeEffectMarginCrop(
+      {
+        logicalBox: { x: 1, y: 0, width: 100, height: 80 },
+        renderBox: { x: 0, y: 0, width: 102, height: 80 },
+      },
+      101,
+      80,
+      1,
+    );
+
+    expect(crop).toBeNull();
+  });
 });
 
 // 純粋関数が正しい矩形を返しても、実際に切れていなければ発散は止まらない。
