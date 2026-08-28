@@ -132,6 +132,7 @@ const EFFECT_MARGIN_EPSILON = 0.5;
 // renderBounds 内に収まることを確認したうえで画像端まで切り詰める。
 const EFFECT_MARGIN_ROUNDING_TOLERANCE_PX = 1;
 const EFFECT_MARGIN_ROUNDING_FLOAT_EPSILON = 1e-6;
+const MISSING_RENDER_BOUNDS_SYMMETRY_TOLERANCE_PX = 1;
 
 const isLogicalBoxContainedInRenderBox = (bounds: FrameImageNodeBounds | undefined): boolean => {
   const logical = bounds?.logicalBox;
@@ -193,18 +194,57 @@ export function computeEffectMarginCrop(
   return { ...rect, effectiveScale };
 }
 
-async function cropEffectMargin(
+export const computeMissingRenderBoundsCrop = (
+  bounds: FrameImageNodeBounds | undefined,
+  exportedWidth: number,
+  exportedHeight: number,
+  expectedWidth: number | undefined,
+): EffectMarginCrop | null => {
+  const logical = bounds?.logicalBox;
+  if (!logical || bounds?.renderBox || expectedWidth === undefined) return null;
+  if (
+    !(logical.width > 0) ||
+    !(logical.height > 0) ||
+    !(expectedWidth > 0) ||
+    !(exportedWidth > 0) ||
+    !(exportedHeight > 0)
+  ) {
+    return null;
+  }
+
+  const effectiveScale = expectedWidth / logical.width;
+  const width = Math.round(logical.width * effectiveScale);
+  const height = Math.round(logical.height * effectiveScale);
+  const horizontalMargin = exportedWidth - width;
+  const verticalMargin = exportedHeight - height;
+  if (horizontalMargin <= 0 || verticalMargin <= 0) return null;
+  if (Math.abs(horizontalMargin - verticalMargin) > MISSING_RENDER_BOUNDS_SYMMETRY_TOLERANCE_PX) {
+    return null;
+  }
+
+  return {
+    left: Math.floor(horizontalMargin / 2),
+    top: Math.floor(verticalMargin / 2),
+    width,
+    height,
+    effectiveScale,
+  };
+};
+
+const cropEffectMargin = async (
   base64: string,
   exportedWidth: number,
   bounds: FrameImageNodeBounds | undefined,
-): Promise<FrameImageResult> {
-  const crop = computeEffectMarginCrop(bounds, exportedWidth);
-  if (!crop) return { base64 };
-
+  expectedWidth?: number,
+): Promise<FrameImageResult> => {
   const buffer = Buffer.from(base64, "base64");
   const meta = await sharp(buffer).metadata();
   const imageWidth = meta.width ?? 0;
   const imageHeight = meta.height ?? 0;
+  const crop =
+    computeEffectMarginCrop(bounds, exportedWidth) ??
+    computeMissingRenderBoundsCrop(bounds, imageWidth, imageHeight, expectedWidth);
+  if (!crop) return { base64 };
   // 収まるかの判定は四捨五入の前に小数で行っているため、境界ぎりぎりの寸法
   // (例 幅100 に left=0.6 / width=99.8) は丸めると 1px はみ出しうる。
   // sharp.extract は範囲外で例外を投げて compare_design ごと落とすので、
@@ -249,7 +289,7 @@ async function cropEffectMargin(
     .png()
     .toBuffer();
   return { base64: cropped.toString("base64"), effectMarginCrop: safeCrop };
-}
+};
 
 export class FigmaService {
   private client: FigmaClient;
@@ -294,7 +334,7 @@ export class FigmaService {
           actualWidth = await getImageWidth(base64);
         }
       }
-      return await cropEffectMargin(base64, actualWidth, nodeBounds);
+      return await cropEffectMargin(base64, actualWidth, nodeBounds, targetWidth);
     }
 
     const initialScale = 2;

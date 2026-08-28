@@ -9,6 +9,7 @@ import { FigmaClient } from "@figdiff/shared";
 
 import {
   computeEffectMarginCrop,
+  computeMissingRenderBoundsCrop,
   computeOptimalScale,
   createFigmaService,
   FileSystemCacheStrategy,
@@ -229,6 +230,30 @@ describe("computeEffectMarginCrop", () => {
   });
 });
 
+describe("computeMissingRenderBoundsCrop", () => {
+  it("trims equal child-effect margins when Figma omits root render bounds", () => {
+    expect(
+      computeMissingRenderBoundsCrop(
+        { logicalBox: { x: 0, y: 0, width: 390, height: 981 }, renderBox: null },
+        402,
+        993,
+        390,
+      ),
+    ).toEqual({ left: 6, top: 6, width: 390, height: 981, effectiveScale: 1 });
+  });
+
+  it("does not guess a crop when missing margins are asymmetric", () => {
+    expect(
+      computeMissingRenderBoundsCrop(
+        { logicalBox: { x: 0, y: 0, width: 390, height: 981 }, renderBox: null },
+        402,
+        1000,
+        390,
+      ),
+    ).toBeNull();
+  });
+});
+
 // 純粋関数が正しい矩形を返しても、実際に切れていなければ発散は止まらない。
 // 本物の PNG を本物の sharp で切って、出力の寸法と画素で確かめる。
 describe("FigmaService.getFrameImage — effect margin removal on a real PNG", () => {
@@ -299,7 +324,93 @@ describe("FigmaService.getFrameImage — effect margin removal on a real PNG", (
     expect([data[0], data[1], data[2]]).toEqual([0, 160, 0]);
   });
 
-  it("leaves the export untouched when the node has no render bounds", async () => {
+  it("keeps native dimensions and pixels stable across three repeated node fetches (#104)", async () => {
+    const exported = await makeShadowedExport();
+    const download = vi
+      .spyOn(FigmaClient.prototype, "downloadImageAsBase64")
+      .mockResolvedValue(exported);
+    const service = new FigmaService(
+      "figd_1234567890abcdef",
+      path.join(tmpdir(), "figdiff-test-cache"),
+    );
+
+    const results = await Promise.all(
+      Array.from({ length: 3 }, () =>
+        service.getFrameImage(
+          "FILEKEY",
+          "1:1",
+          ISSUE_275_LOGICAL.width,
+          ISSUE_275_LOGICAL.width,
+          undefined,
+          { logicalBox: ISSUE_275_LOGICAL, renderBox: ISSUE_275_RENDER },
+        ),
+      ),
+    );
+    const metadata = await Promise.all(
+      results.map(({ base64 }) => sharp(Buffer.from(base64, "base64")).metadata()),
+    );
+
+    expect(metadata.map(({ width, height }) => [width, height])).toEqual([
+      [390, 80],
+      [390, 80],
+      [390, 80],
+    ]);
+    expect(new Set(results.map(({ base64 }) => base64)).size).toBe(1);
+    expect(download).toHaveBeenCalledTimes(3);
+  });
+
+  it("keeps missing-render-bounds exports at the logical size for three runs (#104)", async () => {
+    const exported = (
+      await sharp({
+        create: { width: 402, height: 993, channels: 3, background: { r: 200, g: 0, b: 0 } },
+      })
+        .composite([
+          {
+            input: await sharp({
+              create: {
+                width: 390,
+                height: 981,
+                channels: 3,
+                background: { r: 0, g: 160, b: 0 },
+              },
+            })
+              .png()
+              .toBuffer(),
+            left: 6,
+            top: 6,
+          },
+        ])
+        .png()
+        .toBuffer()
+    ).toString("base64");
+    vi.spyOn(FigmaClient.prototype, "downloadImageAsBase64").mockResolvedValue(exported);
+    const service = new FigmaService(
+      "figd_1234567890abcdef",
+      path.join(tmpdir(), "figdiff-test-cache"),
+    );
+
+    const results = [];
+    for (let index = 0; index < 3; index += 1) {
+      results.push(
+        await service.getFrameImage("FILEKEY", "1:1", 390, 390, undefined, {
+          logicalBox: { x: 0, y: 0, width: 390, height: 981 },
+          renderBox: null,
+        }),
+      );
+    }
+    const metadata = await Promise.all(
+      results.map(({ base64 }) => sharp(Buffer.from(base64, "base64")).metadata()),
+    );
+
+    expect(metadata.map(({ width, height }) => [width, height])).toEqual([
+      [390, 981],
+      [390, 981],
+      [390, 981],
+    ]);
+    expect(new Set(results.map(({ base64 }) => base64)).size).toBe(1);
+  });
+
+  it("trims symmetric effect margins when the node has no render bounds", async () => {
     const exported = await makeShadowedExport();
     vi.spyOn(FigmaClient.prototype, "downloadImageAsBase64").mockResolvedValue(exported);
 
@@ -311,8 +422,15 @@ describe("FigmaService.getFrameImage — effect margin removal on a real PNG", (
       logicalBox: ISSUE_275_LOGICAL,
     });
 
-    expect(result.effectMarginCrop).toBeUndefined();
-    expect(result.base64).toBe(exported);
+    expect(result.effectMarginCrop).toEqual({
+      left: 20,
+      top: 20,
+      width: 390,
+      height: 80,
+      effectiveScale: 1,
+    });
+    const metadata = await sharp(Buffer.from(result.base64, "base64")).metadata();
+    expect([metadata.width, metadata.height]).toEqual([390, 80]);
   });
 
   // 収まるかの判定は丸める前の小数で行うので、境界ぎりぎりの寸法は丸めると
