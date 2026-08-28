@@ -231,6 +231,10 @@ export class FigmaApiError extends Error {
 const MIN_TOKEN_LENGTH = 20;
 const API_TIMEOUT_MS = 30_000;
 const IMAGE_DOWNLOAD_TIMEOUT_MS = 60_000;
+const ABSOLUTE_BOUNDS_CACHE_SUFFIX = "__figdiff_absolute_bounds_v1";
+
+const getAbsoluteBoundsCacheNodeId = (nodeId: string): string =>
+  `${nodeId}${ABSOLUTE_BOUNDS_CACHE_SUFFIX}`;
 
 export type FigmaAuthMode = "pat" | "oauth";
 
@@ -257,7 +261,7 @@ export class FigmaClient {
   /** 一時画像URLを取得（約24時間で失効） */
   async getImageUrl(fileKey: string, nodeId: string, scale = 2, version?: string): Promise<string> {
     const versionQuery = version === undefined ? "" : `&version=${encodeURIComponent(version)}`;
-    const url = `${FIGMA_API_BASE}/images/${fileKey}?ids=${nodeId}&format=png&scale=${scale}${versionQuery}`;
+    const url = `${FIGMA_API_BASE}/images/${fileKey}?ids=${nodeId}&format=png&scale=${scale}&use_absolute_bounds=true${versionQuery}`;
     const json = await this.fetchApi(url);
     const response = FigmaImagesResponseSchema.parse(json);
 
@@ -292,7 +296,8 @@ export class FigmaClient {
     scale = 2,
     version?: string,
   ): Promise<string> {
-    const cached = await this.cache.get(fileKey, nodeId, scale, version);
+    const cacheNodeId = getAbsoluteBoundsCacheNodeId(nodeId);
+    const cached = await this.cache.get(fileKey, cacheNodeId, scale, version);
     if (cached) {
       return cached;
     }
@@ -322,7 +327,7 @@ export class FigmaClient {
     clearTimeout(timer);
     const base64 = this.arrayBufferToBase64(new Uint8Array(arrayBuffer));
 
-    await this.cache.set(fileKey, nodeId, scale, version, base64);
+    await this.cache.set(fileKey, cacheNodeId, scale, version, base64);
 
     return base64;
   }
