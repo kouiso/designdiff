@@ -268,6 +268,22 @@ export default [
     },
   },
 
+  // compare_design の初期化順を明示し、機能追加時も巻き上げへ依存させないため、
+  // このファイルの補助関数はアロー関数だけに限定する。
+  {
+    files: ["app/mcp-server/src/tool/compare-design.ts"],
+    rules: {
+      "func-style": ["error", "expression", { allowArrowFunctions: true }],
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: "FunctionExpression",
+          message: "Use an arrow function in the compare_design tool.",
+        },
+      ],
+    },
+  },
+
   // Verification + repo-root Node.js utility scripts
   {
     files: ["verification/**/*.mjs", "script/**/*.mjs", "app/desktop/*.mjs"],
