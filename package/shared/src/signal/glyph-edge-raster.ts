@@ -196,13 +196,17 @@ const everyChangeTouchesCore = (
   changed: number[],
   sharedCore: Set<number>,
   width: number,
+  height: number,
 ): boolean =>
   changed.every((pixelIndex) => {
     const x = pixelIndex % width;
     const y = Math.floor(pixelIndex / width);
     for (let dy = -1; dy <= 1; dy++) {
       for (let dx = -1; dx <= 1; dx++) {
-        if (sharedCore.has((y + dy) * width + x + dx)) return true;
+        const neighborX = x + dx;
+        const neighborY = y + dy;
+        if (neighborX < 0 || neighborX >= width || neighborY < 0 || neighborY >= height) continue;
+        if (sharedCore.has(neighborY * width + neighborX)) return true;
       }
     }
     return false;
@@ -244,7 +248,7 @@ export const classifyGlyphEdgeRasterization = (
     foreground,
     ignoreMask,
   );
-  if (!analysis || !everyChangeTouchesCore(analysis.changed, analysis.sharedCore, width)) {
+  if (!analysis || !everyChangeTouchesCore(analysis.changed, analysis.sharedCore, width, height)) {
     return undefined;
   }
 

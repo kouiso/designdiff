@@ -469,8 +469,11 @@ describe("buildDiffReport — glyph edge rasterization (#102)", () => {
 
   const makeGlyph = (edgeValue: number, xOffset = 0, coreHeight = 5): Uint8ClampedArray => {
     const pixels = new Uint8ClampedArray(width * height * 4).fill(255);
+    const coreX = 4 + xOffset;
+    if (coreX - 1 < 0 || coreX >= width || coreHeight <= 0 || 2 + coreHeight > height) {
+      throw new RangeError("glyph fixture coordinates are outside the canvas");
+    }
     for (let y = 2; y < 2 + coreHeight; y++) {
-      const coreX = 4 + xOffset;
       for (const [x, value] of [
         [coreX - 1, edgeValue],
         [coreX, 0],

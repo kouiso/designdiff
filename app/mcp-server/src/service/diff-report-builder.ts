@@ -158,7 +158,7 @@ function buildIssues(
         evidence: {
           signal: "glyph_edge_rasterization",
           value: glyphEdge.changedPixelCount,
-          threshold: 0.85,
+          threshold: 1,
           expected: `${glyphEdge.foregroundHex} on ${glyphEdge.backgroundHex}`,
           actual: `${glyphEdge.changedPixelCount} edge pixels / ${glyphEdge.sharedCorePixelCount} shared core pixels`,
           ...evidenceProvenance,

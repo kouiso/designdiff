@@ -9,9 +9,12 @@ const WHITE = 255;
 const makeGlyph = (edgeValue: number, xOffset = 0, coreHeight = 5): Uint8ClampedArray => {
   const pixels = new Uint8ClampedArray(WIDTH * HEIGHT * 4).fill(WHITE);
   for (let pixel = 0; pixel < WIDTH * HEIGHT; pixel++) pixels[pixel * 4 + 3] = 255;
+  const coreX = 4 + xOffset;
+  const edgeX = coreX - 1;
+  if (edgeX < 0 || coreX >= WIDTH || coreHeight <= 0 || 2 + coreHeight > HEIGHT) {
+    throw new RangeError("glyph fixture coordinates are outside the canvas");
+  }
   for (let y = 2; y < 2 + coreHeight; y++) {
-    const coreX = 4 + xOffset;
-    const edgeX = coreX - 1;
     for (const [x, value] of [
       [edgeX, edgeValue],
       [coreX, 0],
@@ -50,5 +53,32 @@ describe("classifyGlyphEdgeRasterization", () => {
     const design = new Uint8ClampedArray(WIDTH * HEIGHT * 4).fill(255);
     const screenshot = new Uint8ClampedArray(WIDTH * HEIGHT * 4).fill(248);
     expect(classify(design, screenshot)).toBeUndefined();
+  });
+
+  it("左右端を越えた別行のcoreを隣接扱いしない", () => {
+    const design = new Uint8ClampedArray(WIDTH * HEIGHT * 4).fill(255);
+    const screenshot = Uint8ClampedArray.from(design);
+    const edgeIndex = 3 * WIDTH * 4;
+    const wrappedCoreIndex = (1 * WIDTH + WIDTH - 1) * 4;
+    for (let channel = 0; channel < 3; channel++) {
+      design[edgeIndex + channel] = 96;
+      screenshot[edgeIndex + channel] = 144;
+      design[wrappedCoreIndex + channel] = 0;
+      screenshot[wrappedCoreIndex + channel] = 0;
+    }
+
+    expect(
+      classifyGlyphEdgeRasterization(design, screenshot, WIDTH, HEIGHT, {
+        x: 0,
+        y: 0,
+        w: WIDTH,
+        h: HEIGHT,
+      }),
+    ).toBeUndefined();
+  });
+
+  it("範囲外fixtureを拒否する", () => {
+    expect(() => makeGlyph(96, -4)).toThrow(RangeError);
+    expect(() => makeGlyph(96, 0, HEIGHT)).toThrow(RangeError);
   });
 });
