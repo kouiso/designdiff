@@ -121,7 +121,7 @@ describe("generate_diff_report comparison_id compatibility", () => {
       });
 
       expect(response.isError).toBeFalsy();
-      const content = response.content as Array<{ type: string; text?: string }>;
+      const content = response.content as { type: string; text?: string }[];
       const report = JSON.parse(content.find((item) => item.type === "text")?.text ?? "");
       expect(report.comparisonId).toBe(comparisonId);
       expect(report.loopGuard).toMatchObject({
