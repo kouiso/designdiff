@@ -268,6 +268,23 @@ export default [
     },
   },
 
+  // The primary compare_design tool is intentionally declaration-free. Keeping
+  // its helpers as arrows makes initialization order explicit and avoids
+  // relying on hoisting when the tool grows.
+  {
+    files: ["app/mcp-server/src/tool/compare-design.ts"],
+    rules: {
+      "func-style": ["error", "expression", { allowArrowFunctions: true }],
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: "FunctionExpression",
+          message: "Use an arrow function in the compare_design tool.",
+        },
+      ],
+    },
+  },
+
   // Verification + repo-root Node.js utility scripts
   {
     files: ["verification/**/*.mjs", "script/**/*.mjs", "app/desktop/*.mjs"],
