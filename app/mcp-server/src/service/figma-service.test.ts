@@ -192,15 +192,19 @@ describe("computeEffectMarginCrop", () => {
     const crop = computeEffectMarginCrop(
       { logicalBox: ISSUE_275_LOGICAL, renderBox: ISSUE_275_RENDER },
       430,
+      120,
+      1,
     );
 
     expect(crop).toEqual({ left: 20, top: 20, width: 390, height: 80, effectiveScale: 1 });
   });
 
-  it("derives the scale from the exported width instead of trusting the requested scale", () => {
+  it("trims render bounds at the requested retina scale", () => {
     const crop = computeEffectMarginCrop(
       { logicalBox: ISSUE_275_LOGICAL, renderBox: ISSUE_275_RENDER },
       860,
+      240,
+      2,
     );
 
     expect(crop).toEqual({ left: 40, top: 40, width: 780, height: 160, effectiveScale: 2 });
@@ -208,11 +212,11 @@ describe("computeEffectMarginCrop", () => {
 
   it("returns null when the node has no effects (export already equals the logical box)", () => {
     const box = { x: 0, y: 0, width: 390, height: 80 };
-    expect(computeEffectMarginCrop({ logicalBox: box, renderBox: box }, 390)).toBeNull();
+    expect(computeEffectMarginCrop({ logicalBox: box, renderBox: box }, 390, 80, 1)).toBeNull();
   });
 
   it("returns null when render bounds are missing", () => {
-    expect(computeEffectMarginCrop({ logicalBox: ISSUE_275_LOGICAL }, 430)).toBeNull();
+    expect(computeEffectMarginCrop({ logicalBox: ISSUE_275_LOGICAL }, 430, 120, 1)).toBeNull();
   });
 
   // clipsContent などで renderBounds が boundingBox より小さいとき、切ると内容を失う。
@@ -223,6 +227,33 @@ describe("computeEffectMarginCrop", () => {
         renderBox: { x: 10, y: 10, width: 200, height: 40 },
       },
       200,
+      40,
+      1,
+    );
+
+    expect(crop).toBeNull();
+  });
+
+  it("trims only the vertical effect margin when absolute bounds already fixed the width", () => {
+    const crop = computeEffectMarginCrop(
+      {
+        logicalBox: { x: 0, y: 3, width: 390, height: 1099 },
+        renderBox: { x: 0, y: 0, width: 390, height: 1105 },
+      },
+      390,
+      1105,
+      1,
+    );
+
+    expect(crop).toEqual({ left: 0, top: 3, width: 390, height: 1099, effectiveScale: 1 });
+  });
+
+  it("does not trim an export that is already at the logical absolute bounds", () => {
+    const crop = computeEffectMarginCrop(
+      { logicalBox: ISSUE_275_LOGICAL, renderBox: ISSUE_275_RENDER },
+      390,
+      80,
+      1,
     );
 
     expect(crop).toBeNull();
@@ -387,6 +418,8 @@ describe("recommended capture width convergence (#275)", () => {
       const crop = computeEffectMarginCrop(
         { logicalBox: ISSUE_275_LOGICAL, renderBox: ISSUE_275_RENDER },
         exported,
+        ISSUE_275_RENDER.height * scale,
+        scale,
       );
       const designWidth = crop ? crop.width : exported;
       observed.push(designWidth);

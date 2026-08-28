@@ -115,7 +115,7 @@ export interface EffectMarginCrop {
   top: number;
   width: number;
   height: number;
-  /** 書き出し PNG の実測幅から逆算した実効倍率 */
+  /** Figma exportへ指定した倍率 */
   effectiveScale: number;
 }
 
@@ -146,22 +146,29 @@ const isLogicalBoxContainedInRenderBox = (bounds: FrameImageNodeBounds | undefin
 };
 
 /**
- * Figma の書き出しは影などの効果を含む外接矩形 (absoluteRenderBounds) を
- * キャンバスにする。実装側のスクリーンショットは要素のレイアウトボックス
- * (absoluteBoundingBox) しか持たないため、そのまま比べると幅が食い違う。
+ * Figma のabsolute bounds書き出しは軸ごとに論理boxまたはrender boundsへ
+ * 揃う。実装側のスクリーンショットは要素のレイアウトボックス
+ * (absoluteBoundingBox) を持つため、render boundsの軸だけ効果余白を落とす。
  * その食い違いを「撮影幅が足りない」と誤診すると、推奨 capture_width が
  * 毎回 renderBounds/boundingBox 倍に膨らんで発散する (#275)。
- * 書き出し側から効果マージンを落として論理ボックスへ揃える。
+ * 論理boxへ揃った軸を再度切らず、処理を冪等に保つ。
  */
-export function computeEffectMarginCrop(
+const isNearRasterSize = (actual: number, expected: number): boolean =>
+  Math.abs(actual - expected) <= EFFECT_MARGIN_ROUNDING_TOLERANCE_PX;
+
+export const computeEffectMarginCrop = (
   bounds: FrameImageNodeBounds | undefined,
   exportedWidth: number,
-): EffectMarginCrop | null {
+  exportedHeight: number,
+  requestedScale: number,
+): EffectMarginCrop | null => {
   const logical = bounds?.logicalBox;
   const render = bounds?.renderBox;
   if (!logical || !render) return null;
   if (
     !(exportedWidth > 0) ||
+    !(exportedHeight > 0) ||
+    !(requestedScale > 0) ||
     !(render.width > 0) ||
     !(logical.width > 0) ||
     !(logical.height > 0)
@@ -169,16 +176,33 @@ export function computeEffectMarginCrop(
     return null;
   }
 
-  const effectiveScale = exportedWidth / render.width;
-  const left = (logical.x - render.x) * effectiveScale;
-  const top = (logical.y - render.y) * effectiveScale;
-  const width = logical.width * effectiveScale;
-  const height = logical.height * effectiveScale;
+  const logicalWidth = logical.width * requestedScale;
+  const logicalHeight = logical.height * requestedScale;
+  const renderWidth = render.width * requestedScale;
+  const renderHeight = render.height * requestedScale;
+
+  const widthUsesLogicalBounds = isNearRasterSize(exportedWidth, logicalWidth);
+  const widthUsesRenderBounds = isNearRasterSize(exportedWidth, renderWidth);
+  const heightUsesLogicalBounds = isNearRasterSize(exportedHeight, logicalHeight);
+  const heightUsesRenderBounds = isNearRasterSize(exportedHeight, renderHeight);
+  if (
+    (!widthUsesLogicalBounds && !widthUsesRenderBounds) ||
+    (!heightUsesLogicalBounds && !heightUsesRenderBounds)
+  ) {
+    return null;
+  }
+
+  const effectiveScale = requestedScale;
+  const left = widthUsesLogicalBounds ? 0 : (logical.x - render.x) * effectiveScale;
+  const top = heightUsesLogicalBounds ? 0 : (logical.y - render.y) * effectiveScale;
+  const width = logicalWidth;
+  const height = logicalHeight;
 
   // 論理ボックスが書き出しキャンバスに収まらない場合 (clipsContent などで
   // renderBounds が boundingBox より小さい) は、切ると内容を失う。
   if (left < -EFFECT_MARGIN_EPSILON || top < -EFFECT_MARGIN_EPSILON) return null;
   if (left + width > exportedWidth + EFFECT_MARGIN_EPSILON) return null;
+  if (top + height > exportedHeight + EFFECT_MARGIN_EPSILON) return null;
 
   const rect = {
     left: Math.round(left),
@@ -187,24 +211,30 @@ export function computeEffectMarginCrop(
     height: Math.round(height),
   };
   // 効果が無ければ書き出しは論理ボックスと一致するので、切る必要が無い。
-  if (rect.left === 0 && rect.top === 0 && rect.width === Math.round(exportedWidth)) return null;
+  if (
+    rect.left === 0 &&
+    rect.top === 0 &&
+    rect.width === Math.round(exportedWidth) &&
+    rect.height === Math.round(exportedHeight)
+  ) {
+    return null;
+  }
   if (rect.width <= 0 || rect.height <= 0) return null;
 
   return { ...rect, effectiveScale };
-}
+};
 
-async function cropEffectMargin(
+const cropEffectMargin = async (
   base64: string,
-  exportedWidth: number,
   bounds: FrameImageNodeBounds | undefined,
-): Promise<FrameImageResult> {
-  const crop = computeEffectMarginCrop(bounds, exportedWidth);
-  if (!crop) return { base64 };
-
+  requestedScale: number,
+): Promise<FrameImageResult> => {
   const buffer = Buffer.from(base64, "base64");
   const meta = await sharp(buffer).metadata();
   const imageWidth = meta.width ?? 0;
   const imageHeight = meta.height ?? 0;
+  const crop = computeEffectMarginCrop(bounds, imageWidth, imageHeight, requestedScale);
+  if (!crop) return { base64 };
   // 収まるかの判定は四捨五入の前に小数で行っているため、境界ぎりぎりの寸法
   // (例 幅100 に left=0.6 / width=99.8) は丸めると 1px はみ出しうる。
   // sharp.extract は範囲外で例外を投げて compare_design ごと落とすので、
@@ -249,7 +279,7 @@ async function cropEffectMargin(
     .png()
     .toBuffer();
   return { base64: cropped.toString("base64"), effectMarginCrop: safeCrop };
-}
+};
 
 export class FigmaService {
   private client: FigmaClient;
@@ -279,6 +309,7 @@ export class FigmaService {
   ): Promise<FrameImageResult> {
     if (targetWidth && logicalWidth && logicalWidth > 0) {
       const optimalScale = computeOptimalScale(targetWidth, logicalWidth);
+      let usedScale = optimalScale;
       let base64 = await this.client.downloadImageAsBase64(fileKey, nodeId, optimalScale, version);
       let actualWidth = await getImageWidth(base64);
       if (actualWidth > 0 && actualWidth < targetWidth * 0.8) {
@@ -291,27 +322,28 @@ export class FigmaService {
             `[figma-service] Image smaller than expected (${actualWidth}px vs target ${targetWidth}px), retrying with scale=${fallbackScale}`,
           );
           base64 = await this.client.downloadImageAsBase64(fileKey, nodeId, fallbackScale, version);
+          usedScale = fallbackScale;
           actualWidth = await getImageWidth(base64);
         }
       }
-      return await cropEffectMargin(base64, actualWidth, nodeBounds);
+      return await cropEffectMargin(base64, nodeBounds, usedScale);
     }
 
     const initialScale = 2;
     let base64 = await this.client.downloadImageAsBase64(fileKey, nodeId, initialScale, version);
 
     if (!targetWidth) {
-      return await cropEffectMargin(base64, await getImageWidth(base64), nodeBounds);
+      return await cropEffectMargin(base64, nodeBounds, initialScale);
     }
 
     const initialWidth = await getImageWidth(base64);
     if (initialWidth === 0 || initialWidth >= targetWidth * 0.8) {
-      return await cropEffectMargin(base64, initialWidth, nodeBounds);
+      return await cropEffectMargin(base64, nodeBounds, initialScale);
     }
 
     const neededScale = Math.min(4, Math.ceil(targetWidth / (initialWidth / initialScale)));
     if (neededScale <= initialScale)
-      return await cropEffectMargin(base64, initialWidth, nodeBounds);
+      return await cropEffectMargin(base64, nodeBounds, initialScale);
 
     console.error(
       `[figma-service] Image too small (${initialWidth}px vs target ${targetWidth}px), retrying with scale=${neededScale}`,
@@ -325,7 +357,7 @@ export class FigmaService {
       );
     }
 
-    return await cropEffectMargin(base64, retryWidth, nodeBounds);
+    return await cropEffectMargin(base64, nodeBounds, neededScale);
   }
 
   /**
