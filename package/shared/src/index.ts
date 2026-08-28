@@ -75,6 +75,10 @@ export {
   type FlatRegionColor,
   type FlatRegionColorComparison,
 } from "./signal/flat-region-color.js";
+export {
+  classifyGlyphEdgeRasterization,
+  type GlyphEdgeRasterEvidence,
+} from "./signal/glyph-edge-raster.js";
 export { computeHausdorff } from "./signal/hausdorff.js";
 export { computeSsim, computeSsimForRegion, type SsimRegion } from "./signal/ssim.js";
 export {

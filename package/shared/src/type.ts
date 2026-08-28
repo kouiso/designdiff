@@ -215,6 +215,14 @@ export interface RegionScore {
     screenshotHex: string;
     maxChannelDelta: number;
   };
+  // 背景・前景トークンと不透明core形状が一致し、中間alphaだけが違う文字縁。
+  glyphEdgeRasterization?: {
+    classification: "glyph-edge-rasterization";
+    changedPixelCount: number;
+    sharedCorePixelCount: number;
+    backgroundHex: string;
+    foregroundHex: string;
+  };
 }
 
 /**
@@ -361,6 +369,13 @@ const buildWorstRegionEvidenceSuffix = (regionScores: RegionScore[]): string => 
   )}, color ΔE ${worstRegion.color.toFixed(3)}; lower=better, critical threshold 2)`;
 };
 
+const buildGlyphEdgeRationaleSuffix = (regionScores: RegionScore[]): string => {
+  const glyphEdgeCount = regionScores.filter((score) => score.glyphEdgeRasterization).length;
+  return glyphEdgeCount === 0
+    ? ""
+    : `; ${glyphEdgeCount} glyph-edge rasterization diagnostic region(s) retained in scoring`;
+};
+
 export const computeVerdict = (
   report: Omit<DiffReport, "aggregateVerdict" | "rationale">,
 ): { verdict: DiffVerdict; rationale: string; weightedAggregate: WeightedAggregate } => {
@@ -372,11 +387,12 @@ export const computeVerdict = (
   const scoringRegions = selectScoringRegions(report.regionScores);
   const textureRationaleSuffix = buildTextureRationaleSuffix(scoringRegions);
   const worstRegionEvidenceSuffix = buildWorstRegionEvidenceSuffix(scoringRegions);
+  const glyphEdgeRationaleSuffix = buildGlyphEdgeRationaleSuffix(report.regionScores);
 
   if (hasCriticalIssue) {
     return {
       verdict: "fail",
-      rationale: `critical severity issue detected${worstRegionEvidenceSuffix}${textureRationaleSuffix}`,
+      rationale: `critical severity issue detected${worstRegionEvidenceSuffix}${textureRationaleSuffix}${glyphEdgeRationaleSuffix}`,
       weightedAggregate,
     };
   }
@@ -388,7 +404,7 @@ export const computeVerdict = (
         3,
       )} is below fail threshold 0.800 (weighted color ${weightedAggregate.weightedColor.toFixed(
         3,
-      )}, totalWeight ${weightedAggregate.totalWeight.toFixed(3)})${worstRegionEvidenceSuffix}${textureRationaleSuffix}`,
+      )}, totalWeight ${weightedAggregate.totalWeight.toFixed(3)})${worstRegionEvidenceSuffix}${textureRationaleSuffix}${glyphEdgeRationaleSuffix}`,
       weightedAggregate,
     };
   }
@@ -401,7 +417,7 @@ export const computeVerdict = (
         3,
       )} meets pass threshold, and weighted color difference ${weightedAggregate.weightedColor.toFixed(
         3,
-      )} is below 3.000 (totalWeight ${weightedAggregate.totalWeight.toFixed(3)})${worstRegionEvidenceSuffix}${textureRationaleSuffix}`,
+      )} is below 3.000 (totalWeight ${weightedAggregate.totalWeight.toFixed(3)})${worstRegionEvidenceSuffix}${textureRationaleSuffix}${glyphEdgeRationaleSuffix}`,
       weightedAggregate,
     };
   }
@@ -414,7 +430,7 @@ export const computeVerdict = (
       3,
     )} do not satisfy pass thresholds (totalWeight ${weightedAggregate.totalWeight.toFixed(
       3,
-    )})${worstRegionEvidenceSuffix}${textureRationaleSuffix}`,
+    )})${worstRegionEvidenceSuffix}${textureRationaleSuffix}${glyphEdgeRationaleSuffix}`,
     weightedAggregate,
   };
 };

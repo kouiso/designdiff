@@ -296,6 +296,15 @@ export const RegionScoreSchema = z.object({
       maxChannelDelta: z.number().nonnegative(),
     })
     .optional(),
+  glyphEdgeRasterization: z
+    .object({
+      classification: z.literal("glyph-edge-rasterization"),
+      changedPixelCount: z.number().int().positive(),
+      sharedCorePixelCount: z.number().int().positive(),
+      backgroundHex: z.string(),
+      foregroundHex: z.string(),
+    })
+    .optional(),
 });
 
 export const WeightedAggregateSchema = z.object({

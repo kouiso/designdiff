@@ -463,6 +463,85 @@ describe("buildDiffReport — flat fill colour (#269)", () => {
   });
 });
 
+describe("buildDiffReport — glyph edge rasterization (#102)", () => {
+  const width = 9;
+  const height = 9;
+
+  const makeGlyph = (edgeValue: number, xOffset = 0, coreHeight = 5): Uint8ClampedArray => {
+    const pixels = new Uint8ClampedArray(width * height * 4).fill(255);
+    const coreX = 4 + xOffset;
+    if (coreX - 1 < 0 || coreX >= width || coreHeight <= 0 || 2 + coreHeight > height) {
+      throw new RangeError("glyph fixture coordinates are outside the canvas");
+    }
+    for (let y = 2; y < 2 + coreHeight; y++) {
+      for (const [x, value] of [
+        [coreX - 1, edgeValue],
+        [coreX, 0],
+      ] as const) {
+        const offset = (y * width + x) * 4;
+        pixels[offset] = value;
+        pixels[offset + 1] = value;
+        pixels[offset + 2] = value;
+      }
+    }
+    return pixels;
+  };
+
+  const compare = async (designPixels: Uint8ClampedArray, screenshotPixels: Uint8ClampedArray) => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    return buildDiffReport({
+      designPixels,
+      screenshotPixels,
+      width,
+      height,
+      diffRegions: [{ x: 2, y: 1, w: 5, h: 7, diffPixelCount: 5 }],
+      resolvedAlignment: {
+        alignment: {
+          translation: { x: 0, y: 0 },
+          scale: { x: 1, y: 1 },
+          rotation: 0,
+          confidence: 1,
+          residual: 0,
+        },
+        alignedDesignPixels: designPixels,
+        applied: false,
+      },
+    });
+  };
+
+  it("同一coreの中間alpha差を診断しつつFAIL採点を維持する", async () => {
+    const result = await compare(makeGlyph(96), makeGlyph(144));
+
+    expect(result.aggregateVerdict).toBe("fail");
+    expect(result.rationale).toContain("glyph-edge rasterization");
+    expect(result.rationale).toContain("retained in scoring");
+    expect(result.regionScores[0].glyphEdgeRasterization).toMatchObject({
+      classification: "glyph-edge-rasterization",
+      changedPixelCount: 5,
+    });
+    expect(result.issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          severity: "minor",
+          evidence: expect.objectContaining({ signal: "glyph_edge_rasterization" }),
+        }),
+      ]),
+    );
+  });
+
+  it("1pxの座標差はFAILを維持する", async () => {
+    const result = await compare(makeGlyph(96), makeGlyph(96, 1));
+    expect(result.aggregateVerdict).toBe("fail");
+    expect(result.regionScores[0].glyphEdgeRasterization).toBeUndefined();
+  });
+
+  it("文字サイズや行高に相当するcore形状差はFAILを維持する", async () => {
+    const result = await compare(makeGlyph(96, 0, 5), makeGlyph(96, 0, 4));
+    expect(result.aggregateVerdict).toBe("fail");
+    expect(result.regionScores[0].glyphEdgeRasterization).toBeUndefined();
+  });
+});
+
 describe("buildDiffReport coordinate-space fixes", () => {
   beforeEach(() => {
     vi.resetModules();
