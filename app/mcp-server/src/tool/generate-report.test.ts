@@ -1,0 +1,73 @@
+import { describe, expect, it } from "vitest";
+
+import { CompareDesignResultSchema } from "@figdiff/shared";
+
+import { normalizeComparisonResultInput } from "./generate-report.js";
+
+const baseResult = {
+  comparisonId: "cmp-loop-guard-compat",
+  status: "FAIL",
+  matchRate: 73.48,
+  diffPixelCount: 598829,
+  totalPixelCount: 2258100,
+  remainingIssues: 60,
+  diffRegions: [],
+  suggestion: "差分があります",
+} as const;
+
+describe("normalizeComparisonResultInput loopGuard compatibility", () => {
+  it("保存済み旧partial loopGuardを現行形式へ正規化する", () => {
+    const normalized = normalizeComparisonResultInput({
+      ...baseResult,
+      loopGuard: {
+        iteration: 1,
+        decision: "continue",
+        reason: "反復 1/5 回。改善の余地があるため修正を続行できます。",
+      },
+    });
+
+    const parsed = CompareDesignResultSchema.parse(normalized);
+    expect(parsed.loopGuard).toEqual({
+      stop: false,
+      step: 1,
+      maxSteps: 5,
+      remainingSteps: 4,
+      reason: "continue",
+      message: "反復 1/5 回。改善の余地があるため修正を続行できます。",
+      iteration: 1,
+      decision: "continue",
+    });
+  });
+
+  it("現行loopGuardを変更せず厳格schemaで受理する", () => {
+    const loopGuard = {
+      stop: true,
+      step: 5,
+      maxSteps: 5,
+      remainingSteps: 0,
+      reason: "max-steps",
+      message: "反復回数が上限に達しました。",
+      iteration: 5,
+      decision: "stop",
+    } as const;
+    const normalized = normalizeComparisonResultInput({ ...baseResult, loopGuard });
+    const parsed = CompareDesignResultSchema.parse(normalized);
+
+    expect(parsed.loopGuard).toEqual(loopGuard);
+  });
+
+  it("旧形式ではない不完全な現行loopGuardを救済しない", () => {
+    const normalized = normalizeComparisonResultInput({
+      ...baseResult,
+      loopGuard: {
+        step: 1,
+        maxSteps: 5,
+        remainingSteps: 4,
+        reason: "continue",
+        message: "続行します。",
+      },
+    });
+
+    expect(CompareDesignResultSchema.safeParse(normalized).success).toBe(false);
+  });
+});

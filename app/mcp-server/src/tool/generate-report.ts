@@ -8,7 +8,7 @@ import * as path from "node:path";
 
 import { z } from "zod";
 
-import { CompareDesignResultSchema } from "@figdiff/shared";
+import { CompareDesignResultSchema, LoopGuardReportSchema } from "@figdiff/shared";
 
 import { getComparisonEntry } from "../service/comparison-history.js";
 import { generateMarkdownReport, generateJsonReport } from "../service/report-generator.js";
@@ -21,10 +21,61 @@ const DESCRIPTION =
 
 const comparisonResultInputSchema = z.union([z.string(), z.object({}).passthrough()]);
 const comparisonResultRecordSchema = z.record(z.string(), z.unknown());
+const LEGACY_MAX_STEPS = 5;
+const legacyLoopGuardSchema = z
+  .object({
+    iteration: z.number().int().positive(),
+    decision: z.enum(["continue", "stop"]),
+    reason: z.string().min(1),
+  })
+  .strict();
 
-function normalizeComparisonResultInput(
+const normalizeLegacyLoopGuard = (value: unknown): unknown => {
+  const current = LoopGuardReportSchema.safeParse(value);
+  if (current.success) {
+    return value;
+  }
+
+  const legacy = legacyLoopGuardSchema.safeParse(value);
+  if (!legacy.success) {
+    return value;
+  }
+
+  const { iteration, decision, reason: message } = legacy.data;
+  const steps = message.match(/(\d+)\s*\/\s*(\d+)/);
+  const upperBound = message.match(/上限\s*\((\d+)\s*回\)/);
+  const maxStepsText = steps?.[2] ?? upperBound?.[1];
+  const parsedMaxSteps = maxStepsText === undefined ? undefined : Number(maxStepsText);
+  const maxSteps =
+    parsedMaxSteps !== undefined && Number.isSafeInteger(parsedMaxSteps)
+      ? Math.max(iteration, parsedMaxSteps)
+      : Math.max(iteration, LEGACY_MAX_STEPS);
+  const reason =
+    decision === "continue"
+      ? "continue"
+      : message.includes("UNCERTAIN")
+        ? "uncertain"
+        : message.includes("PASS")
+          ? "no-regression"
+          : message.includes("上限")
+            ? "max-steps"
+            : "regression";
+
+  return {
+    stop: decision === "stop",
+    step: iteration,
+    maxSteps,
+    remainingSteps: maxSteps - iteration,
+    reason,
+    message,
+    iteration,
+    decision,
+  };
+};
+
+export const normalizeComparisonResultInput = (
   input: z.infer<typeof comparisonResultInputSchema>,
-): unknown {
+): unknown => {
   const parsed: unknown = typeof input === "string" ? JSON.parse(input) : input;
 
   if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
@@ -44,8 +95,9 @@ function normalizeComparisonResultInput(
     totalPixelCount: result.totalPixelCount ?? result.totalPixels,
     diffRegions: result.diffRegions ?? result.regions ?? [],
     suggestion: result.suggestion ?? "",
+    loopGuard: normalizeLegacyLoopGuard(result.loopGuard),
   };
-}
+};
 
 export function registerGenerateReport(server: McpServer): void {
   server.registerTool(
