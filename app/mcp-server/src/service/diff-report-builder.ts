@@ -1,5 +1,6 @@
 import {
   buildVerifiedInsetCandidates,
+  classifyGlyphEdgeRasterization,
   compareFlatRegionColor,
   computeHausdorff,
   computeMeanDeltaE2000,
@@ -7,7 +8,6 @@ import {
   computeSsimForRegion,
   resolveAlignment,
   UNIMPLEMENTED_LAYOUT_SCORE,
-  selectScoringRegions,
   computeVerdict,
   detectHighTextureRegion,
   type CropRegion,
@@ -125,6 +125,16 @@ const buildFlatColorMismatch = (
   };
 };
 
+const buildGlyphEdgeRasterization = (
+  designPixels: Uint8ClampedArray,
+  screenshotPixels: Uint8ClampedArray,
+  width: number,
+  height: number,
+  bbox: DiffBoundingBox,
+  ignoreMask?: Uint8Array,
+): RegionScore["glyphEdgeRasterization"] =>
+  classifyGlyphEdgeRasterization(designPixels, screenshotPixels, width, height, bbox, ignoreMask);
+
 function buildIssues(
   regionScores: RegionScore[],
   options: BuildDiffReportOptions,
@@ -137,6 +147,27 @@ function buildIssues(
   };
 
   for (const regionScore of regionScores) {
+    const glyphEdge = regionScore.glyphEdgeRasterization;
+    if (glyphEdge) {
+      issues.push({
+        regionId: regionScore.regionId,
+        bbox: regionScore.bbox,
+        kind: "color",
+        severity: "minor",
+        figmaNodeId: regionScore.figmaNodeId,
+        evidence: {
+          signal: "glyph_edge_rasterization",
+          value: glyphEdge.changedPixelCount,
+          threshold: 0.85,
+          expected: `${glyphEdge.foregroundHex} on ${glyphEdge.backgroundHex}`,
+          actual: `${glyphEdge.changedPixelCount} edge pixels / ${glyphEdge.sharedCorePixelCount} shared core pixels`,
+          ...evidenceProvenance,
+        },
+        suggestedCssFix:
+          "文字の不透明core形状と色トークンは一致しています。描画エンジン由来の縁だけが異なります。",
+      });
+      continue;
+    }
     // ベタ面どうしの hex 不一致は「塗りのトークンが違う」という離散的な事実で、
     // ΔE の連続量では表現できない。critical に上げて computeVerdict の
     // hasCriticalIssue 経路へ乗せる。
@@ -425,6 +456,14 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
           bbox,
           ignoreMask,
         ),
+        glyphEdgeRasterization: buildGlyphEdgeRasterization(
+          designPixels,
+          screenshotPixels,
+          width,
+          height,
+          bbox,
+          ignoreMask,
+        ),
         shape: computeHausdorff(designPixels, screenshotPixels, width, height, bbox, ignoreMask),
         layout: UNIMPLEMENTED_LAYOUT_SCORE,
         textureScore: getTextureScore(bbox),
@@ -486,6 +525,14 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
           bbox,
           ignoreMask,
         ),
+        glyphEdgeRasterization: buildGlyphEdgeRasterization(
+          designPixels,
+          screenshotPixels,
+          width,
+          height,
+          bbox,
+          ignoreMask,
+        ),
         shape: computeHausdorff(designPixels, screenshotPixels, width, height, bbox, ignoreMask),
         layout: UNIMPLEMENTED_LAYOUT_SCORE,
         textureScore: getTextureScore(bbox),
@@ -525,6 +572,14 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
       ignoreMask,
     ),
     flatColorMismatch: buildFlatColorMismatch(
+      designPixels,
+      screenshotPixels,
+      width,
+      height,
+      contentBbox,
+      ignoreMask,
+    ),
+    glyphEdgeRasterization: buildGlyphEdgeRasterization(
       designPixels,
       screenshotPixels,
       width,
@@ -698,7 +753,8 @@ export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
 
   // 比較対象そのものの行は子と範囲が重なる。合否を決める不具合をここから作ると、
   // 子が全部合格でも背景の色差だけで不合格へ倒れる。集計と同じ行だけを使う。
-  const issues = buildIssues(selectScoringRegions(regionScores), options);
+  const issueRegions = regionScores.filter((score) => score.scope !== "root");
+  const issues = buildIssues(issueRegions.length > 0 ? issueRegions : regionScores, options);
 
   // An accepted global alignment correction can hide a real regression: e.g.
   // a page that scrolled/shifted is itself often the bug under test, not a
