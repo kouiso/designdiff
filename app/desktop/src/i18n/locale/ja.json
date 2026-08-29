@@ -238,6 +238,8 @@
       "max-steps": "反復回数の上限",
       "uncertain": "人のレビューが必要",
       "continue": "継続中"
-    }
+    },
+    "campaignLatest": "最新 ({{count}} 反復)",
+    "campaignPast": "{{n}} 回前 ({{count}} 反復)"
   }
 }

@@ -7,7 +7,12 @@ import type { ConvergenceCampaign } from "@figdiff/shared";
 import { ConvergenceStepRow } from "@/component/convergence/convergence-step-row";
 import { LoadingCard } from "@/component/ui/spinner";
 import { cn } from "@/lib/util";
-import { latestCampaign, useConvergenceStore, useConvergenceSync } from "@/store/convergence-store";
+import {
+  latestCampaign,
+  useConvergenceStore,
+  useConvergenceSync,
+  visibleCampaigns,
+} from "@/store/convergence-store";
 
 // キャンペーンが「まだ動いとる」と見なす猶予。active-session と同じ 60 秒に合わせる。
 const RUNNING_THRESHOLD_MS = 60 * 1000;
@@ -77,6 +82,8 @@ export function ConvergencePage() {
   const histories = useConvergenceStore((state) => state.histories);
   const selectedSourceKey = useConvergenceStore((state) => state.selectedSourceKey);
   const selectSourceKey = useConvergenceStore((state) => state.selectSourceKey);
+  const selectedCampaignId = useConvergenceStore((state) => state.selectedCampaignId);
+  const selectCampaign = useConvergenceStore((state) => state.selectCampaign);
   const loading = useConvergenceStore((state) => state.loading);
   const unavailable = useConvergenceStore((state) => state.unavailable);
 
@@ -84,7 +91,10 @@ export function ConvergencePage() {
     () => histories.find((entry) => entry.sourceKey === selectedSourceKey),
     [histories, selectedSourceKey],
   );
-  const campaign = latestCampaign(history);
+  const campaigns = visibleCampaigns(history);
+  // 選んだ回が消えとる (履歴の切り詰め) ことがあるので、無ければ最新へ落とす。
+  const campaign =
+    campaigns.find((entry) => entry.campaignId === selectedCampaignId) ?? campaigns[0];
   const now = Date.now();
 
   if (unavailable) {
@@ -152,6 +162,32 @@ export function ConvergencePage() {
                 </p>
               )}
             </header>
+
+            {campaigns.length > 1 && (
+              <div className="flex flex-wrap gap-1" data-testid="convergence-campaign-picker">
+                {campaigns.map((entry, index) => (
+                  <button
+                    key={entry.campaignId}
+                    type="button"
+                    onClick={() => selectCampaign(entry.campaignId)}
+                    aria-current={entry.campaignId === campaign.campaignId}
+                    className={cn(
+                      "fd-chip",
+                      entry.campaignId === campaign.campaignId &&
+                        "bg-[var(--cobalt-soft)] text-[var(--cobalt)]",
+                    )}
+                  >
+                    {index === 0
+                      ? t("convergence.campaignLatest", { count: entry.iterations.length })
+                      : t("convergence.campaignPast", {
+                          // index 0 が最新なので、1つ前は index 1。
+                          n: index,
+                          count: entry.iterations.length,
+                        })}
+                  </button>
+                ))}
+              </div>
+            )}
 
             <TrendBars campaign={campaign} />
 

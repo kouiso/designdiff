@@ -59,6 +59,7 @@ beforeEach(() => {
   useConvergenceStore.setState({
     histories: [],
     selectedSourceKey: null,
+    selectedCampaignId: null,
     loading: true,
     unavailable: false,
   });
@@ -110,6 +111,53 @@ describe("ConvergencePage", () => {
     });
     fireEvent.click(screen.getByText("other.png"));
     expect(useConvergenceStore.getState().selectedSourceKey).toBe("local:/other.png");
+  });
+
+  // 直前のキャンペーンを見返せんと、いま直した結果しか分からん。
+  it("キャンペーンが複数あるときは切り替えられる", async () => {
+    const base = campaignHistory();
+    const twoCampaigns: ConvergenceHistory = {
+      ...base,
+      campaigns: [
+        {
+          ...base.campaigns[0],
+          campaignId: "camp-old",
+          iterations: [
+            {
+              comparisonId: "cmp-old",
+              matchRate: 70.5,
+              structuralVerdict: "fail",
+              status: "FAIL",
+              timestamp: 500,
+            },
+          ],
+        },
+        base.campaigns[0],
+      ],
+    };
+    listMock.mockResolvedValue([twoCampaigns]);
+    render(<ConvergencePage />);
+
+    // 既定はいちばん新しい回。
+    await waitFor(() => {
+      expect(screen.getAllByTestId("convergence-step-row")).toHaveLength(2);
+    });
+
+    expect(screen.getByRole("button", { name: "最新 (2 反復)" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "1 回前 (1 反復)" }));
+    await waitFor(() => {
+      expect(screen.getAllByTestId("convergence-step-row")).toHaveLength(1);
+    });
+    expect(screen.getByText("70.5")).toBeInTheDocument();
+  });
+
+  it("キャンペーンが1つだけなら切替は出さん", async () => {
+    listMock.mockResolvedValue([campaignHistory()]);
+    render(<ConvergencePage />);
+    await waitFor(() => {
+      expect(screen.getAllByTestId("convergence-step-row")).toHaveLength(2);
+    });
+    expect(screen.queryByTestId("convergence-campaign-picker")).not.toBeInTheDocument();
   });
 
   // Web ビルドでは ~/.figdiff を読めん。空の履歴と同じ見た目にすると、

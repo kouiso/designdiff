@@ -238,6 +238,8 @@
       "max-steps": "Iteration limit",
       "uncertain": "Needs human review",
       "continue": "In progress"
-    }
+    },
+    "campaignLatest": "Latest ({{count}} steps)",
+    "campaignPast": "{{n}} runs ago ({{count}} steps)"
   }
 }

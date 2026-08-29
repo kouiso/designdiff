@@ -9,11 +9,14 @@ import { getConvergence } from "@/lib/platform";
 interface ConvergenceState {
   histories: ConvergenceHistory[];
   selectedSourceKey: string | null;
+  /** null なら「いちばん新しいキャンペーン」を見る。 */
+  selectedCampaignId: string | null;
   loading: boolean;
   /** 収束履歴を読めん環境 (Web ビルド等) かどうか。空の履歴と区別する。 */
   unavailable: boolean;
   setHistories: (histories: ConvergenceHistory[]) => void;
   selectSourceKey: (sourceKey: string | null) => void;
+  selectCampaign: (campaignId: string | null) => void;
   setLoading: (loading: boolean) => void;
   setUnavailable: (unavailable: boolean) => void;
 }
@@ -21,6 +24,7 @@ interface ConvergenceState {
 export const useConvergenceStore = create<ConvergenceState>((set) => ({
   histories: [],
   selectedSourceKey: null,
+  selectedCampaignId: null,
   loading: true,
   unavailable: false,
   setHistories: (histories) =>
@@ -30,16 +34,22 @@ export const useConvergenceStore = create<ConvergenceState>((set) => ({
       selectedSourceKey: state.selectedSourceKey ?? histories[0]?.sourceKey ?? null,
       loading: false,
     })),
-  selectSourceKey: (selectedSourceKey) => set({ selectedSourceKey }),
+  // 対象を変えたらキャンペーンの選択は捨てる。別対象の id を持ち越すと、
+  // 選んだつもりの無い回が開く。
+  selectSourceKey: (selectedSourceKey) => set({ selectedSourceKey, selectedCampaignId: null }),
+  selectCampaign: (selectedCampaignId) => set({ selectedCampaignId }),
   setLoading: (loading) => set({ loading }),
   setUnavailable: (unavailable) => set({ unavailable, loading: false }),
 }));
 
-/** 直近のキャンペーン。反復が1件も無いものは表示対象にならん。 */
+/** 表示できるキャンペーン。反復が1件も無いものは出さん。新しい順。 */
+export const visibleCampaigns = (history: ConvergenceHistory | undefined): ConvergenceCampaign[] =>
+  [...(history?.campaigns ?? [])].filter((campaign) => campaign.iterations.length > 0).reverse();
+
+/** 直近のキャンペーン。 */
 export const latestCampaign = (
   history: ConvergenceHistory | undefined,
-): ConvergenceCampaign | undefined =>
-  history?.campaigns.filter((campaign) => campaign.iterations.length > 0).at(-1);
+): ConvergenceCampaign | undefined => visibleCampaigns(history)[0];
 
 export const selectedHistory = (state: ConvergenceState): ConvergenceHistory | undefined =>
   state.histories.find((history) => history.sourceKey === state.selectedSourceKey);
