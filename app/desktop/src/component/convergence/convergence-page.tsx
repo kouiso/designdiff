@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { useTranslation } from "react-i18next";
 
@@ -16,6 +16,8 @@ import {
 
 // キャンペーンが「まだ動いとる」と見なす猶予。active-session と同じ 60 秒に合わせる。
 const RUNNING_THRESHOLD_MS = 60 * 1000;
+// 「実行中」の表示を落とすための時刻更新の間隔。
+const RUNNING_TICK_MS = 5 * 1000;
 
 const isRunning = (campaign: ConvergenceCampaign, now: number): boolean =>
   campaign.endedAt === undefined && now - campaign.updatedAt < RUNNING_THRESHOLD_MS;
@@ -86,6 +88,7 @@ export function ConvergencePage() {
   const selectCampaign = useConvergenceStore((state) => state.selectCampaign);
   const loading = useConvergenceStore((state) => state.loading);
   const unavailable = useConvergenceStore((state) => state.unavailable);
+  const error = useConvergenceStore((state) => state.error);
 
   const history = useMemo(
     () => histories.find((entry) => entry.sourceKey === selectedSourceKey),
@@ -95,10 +98,31 @@ export function ConvergencePage() {
   // 選んだ回が消えとる (履歴の切り詰め) ことがあるので、無ければ最新へ落とす。
   const campaign =
     campaigns.find((entry) => entry.campaignId === selectedCampaignId) ?? campaigns[0];
-  const now = Date.now();
+  // 時刻をレンダー時に読むだけやと、他の更新が来ん限り「実行中」が出っぱなしになる。
+  // 止まったときこそ見たい表示なので、開いとるキャンペーンがある間は自分で刻む。
+  const [now, setNow] = useState(() => Date.now());
+  const hasOpenCampaign = histories.some((entry) =>
+    entry.campaigns.some((campaign) => campaign.endedAt === undefined),
+  );
+  useEffect(() => {
+    if (!hasOpenCampaign) return;
+    const timer = setInterval(() => setNow(Date.now()), RUNNING_TICK_MS);
+    return () => clearInterval(timer);
+  }, [hasOpenCampaign]);
 
   if (unavailable) {
     return <div className="p-6 text-sm text-[var(--muted-fg)]">{t("convergence.unavailable")}</div>;
+  }
+  // 読めんかったことを空の履歴と同じ見た目にすると、記録が無いのか読めてへんのか
+  // 区別がつかん。理由をそのまま出す。
+  if (error !== null) {
+    return (
+      <div className="p-6 text-sm" data-testid="convergence-error" style={{ color: "var(--diff)" }}>
+        {t("convergence.readFailed")}
+        {" — "}
+        {error}
+      </div>
+    );
   }
   if (loading) return <LoadingCard message={t("convergence.loading")} />;
 

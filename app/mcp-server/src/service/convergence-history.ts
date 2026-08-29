@@ -33,6 +33,28 @@ export interface ConvergenceRecordInput {
   campaignId?: string;
 }
 
+// 同じ比較対象への記録を直列化する。MCP SDK は複数のツール呼び出しを並行に捌くので、
+// read-modify-write が重なると片方の反復が消えるか、rename が ENOENT で落ちる。
+// キーは履歴ファイルのパス。最後の待ち手が終わったら捨てて、際限なく増やさん。
+const writeQueues = new Map<string, Promise<unknown>>();
+
+const runSerially = async <T>(key: string, task: () => Promise<T>): Promise<T> => {
+  const previous = writeQueues.get(key) ?? Promise.resolve();
+  // 前の記録が失敗しても次は走らせる。1件の失敗で以降が全部止まると、
+  // 履歴が丸ごと欠けて原因も分からんようになる。
+  const run = previous.then(task, task);
+  const tracked = run.then(
+    () => undefined,
+    () => undefined,
+  );
+  writeQueues.set(key, tracked);
+  try {
+    return await run;
+  } finally {
+    if (writeQueues.get(key) === tracked) writeQueues.delete(key);
+  }
+};
+
 export const getConvergenceDir = (): string => getFigdiffConvergenceDir();
 
 const historyFilePath = (sourceKey: string, dir: string): string => {
@@ -86,6 +108,14 @@ const isOpen = (campaign: ConvergenceCampaign, now: number): boolean =>
  */
 export const recordConvergenceIteration = async (
   input: ConvergenceRecordInput,
+): Promise<ConvergenceCampaign> =>
+  await runSerially(
+    historyFilePath(input.sourceKey, getConvergenceDir()),
+    async () => await writeConvergenceIteration(input),
+  );
+
+const writeConvergenceIteration = async (
+  input: ConvergenceRecordInput,
 ): Promise<ConvergenceCampaign> => {
   const dir = getConvergenceDir();
   await fs.mkdir(dir, { recursive: true });
@@ -135,7 +165,8 @@ export const recordConvergenceIteration = async (
     campaigns: campaigns.slice(-MAX_CAMPAIGNS_PER_KEY),
   };
 
-  const tmp = `${filePath}.tmp`;
+  // 一時ファイル名を固定にすると、同じ対象への並行書き込みで互いを踏む。
+  const tmp = `${filePath}.${crypto.randomUUID()}.tmp`;
   await fs.writeFile(tmp, JSON.stringify(next, null, 2));
   await fs.rename(tmp, filePath);
   await pruneOldHistories(dir, filePath);

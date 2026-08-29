@@ -62,6 +62,7 @@ beforeEach(() => {
     selectedCampaignId: null,
     loading: true,
     unavailable: false,
+    error: null,
   });
 });
 
@@ -181,6 +182,16 @@ describe("ConvergencePage", () => {
       expect(screen.getAllByTestId("convergence-step-row")).toHaveLength(2);
     });
     expect(screen.queryByTestId("convergence-campaign-picker")).not.toBeInTheDocument();
+  });
+
+  // 読めんかったのか記録が無いのかを取り違えると、直す先を間違える。
+  it("読み取りに失敗したら理由を出す", async () => {
+    listMock.mockRejectedValue(new Error("EACCES: permission denied"));
+    render(<ConvergencePage />);
+
+    const shown = await screen.findByTestId("convergence-error");
+    expect(shown).toHaveTextContent("収束の記録を読めませんでした");
+    expect(shown).toHaveTextContent("EACCES: permission denied");
   });
 
   // Web ビルドでは ~/.figdiff を読めん。空の履歴と同じ見た目にすると、

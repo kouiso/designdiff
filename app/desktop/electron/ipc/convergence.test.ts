@@ -103,9 +103,20 @@ describe("registerConvergenceHandlers", () => {
     expect(listed).toHaveLength(1);
   });
 
-  it("履歴が無いときは空配列を返す", async () => {
-    mocks.readdir.mockRejectedValue(new Error("ENOENT"));
+  it("置き場がまだ無いときは空配列を返す", async () => {
+    const missing: NodeJS.ErrnoException = new Error("ENOENT");
+    missing.code = "ENOENT";
+    mocks.readdir.mockRejectedValue(missing);
     expect(await handlerFor("convergence:list")(null)).toEqual([]);
+  });
+
+  // 読めてへんことを空履歴として返すと、記録が無いのと区別がつかんようになる。
+  it("権限やI/Oの失敗は握り潰さず伝える", async () => {
+    const denied: NodeJS.ErrnoException = new Error("EACCES: permission denied");
+    denied.code = "EACCES";
+    mocks.readdir.mockRejectedValue(denied);
+
+    await expect(handlerFor("convergence:list")(null)).rejects.toThrow(/EACCES/);
   });
 
   it("sourceKey を指定すると1件だけ返す", async () => {

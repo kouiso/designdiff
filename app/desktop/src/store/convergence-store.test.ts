@@ -27,8 +27,10 @@ beforeEach(() => {
   useConvergenceStore.setState({
     histories: [],
     selectedSourceKey: null,
+    selectedCampaignId: null,
     loading: true,
     unavailable: false,
+    error: null,
   });
 });
 
@@ -48,6 +50,24 @@ describe("useConvergenceStore", () => {
       .setHistories([history("local:/c.png", 1), history("local:/b.png", 1)]);
 
     expect(useConvergenceStore.getState().selectedSourceKey).toBe("local:/b.png");
+  });
+
+  // 保持上限で対象が消えたのに選択が残ると、履歴があるのに詳細が空になる。
+  it("選択中の対象が履歴から消えたら先頭へ落とす", () => {
+    useConvergenceStore.getState().setHistories([history("local:/a.png", 1)]);
+    useConvergenceStore.getState().selectCampaign("camp-local:/a.png");
+
+    useConvergenceStore.getState().setHistories([history("local:/b.png", 1)]);
+
+    expect(useConvergenceStore.getState().selectedSourceKey).toBe("local:/b.png");
+    // 別対象のキャンペーン id を持ち越すと、選んだつもりの無い回が開く。
+    expect(useConvergenceStore.getState().selectedCampaignId).toBeNull();
+  });
+
+  it("読み取り失敗は空の履歴と区別して持つ", () => {
+    useConvergenceStore.getState().setError("EACCES");
+    expect(useConvergenceStore.getState().error).toBe("EACCES");
+    expect(useConvergenceStore.getState().loading).toBe(false);
   });
 
   it("読めん環境では unavailable を立てて読み込みを終える", () => {

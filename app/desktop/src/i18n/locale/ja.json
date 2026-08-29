@@ -240,6 +240,7 @@
       "continue": "継続中"
     },
     "campaignLatest": "最新 ({{count}} 反復)",
-    "campaignPast": "{{n}} 回前 ({{count}} 反復)"
+    "campaignPast": "{{n}} 回前 ({{count}} 反復)",
+    "readFailed": "収束の記録を読めませんでした"
   }
 }

@@ -159,6 +159,9 @@ function harvestDomStyles(maxElements: number): DomElementStyle[] {
  * instead of launching a new browser. Useful in WSL/sandbox where localhost
  * on the MCP server side cannot reach the host dev server.
  */
+/** lazy メディアの読み込みを待つ上限。これを超えたら撮らずに落とす。 */
+const LAZY_MEDIA_TIMEOUT_MS = 15_000;
+
 /**
  * native lazy-loading の画像・iframe を撮影前に読み切らせる。
  *
@@ -170,40 +173,75 @@ function harvestDomStyles(maxElements: number): DomElementStyle[] {
  * 空の画像は実装を直しても消えん恒久的な差分になり、ループガードが
  * 「収束が停滞」と誤判定して自動修正を止めてしまう。撮影側の欠陥であって
  * 実装の差ではないため、撮る前に eager へ倒して読み切らせる。
- */
-/**
+ *
  * ブラウザ側で走る本体。page.evaluate へ渡すため、外の変数を掴まん形で書く。
  * 切り出してあるのは、実ブラウザを立てずに単体で確かめられるようにするため
  * (この package は playwright をモックする方針で、実ブラウザは E2E 側で扱う)。
+ *
+ * 期限を切ってあるのは、load も error も発火せん相手 (応答を返さんサーバ等) に
+ * 当たったとき、撮影が永久に止まるのを防ぐため。page.goto のタイムアウトは
+ * evaluate の中までは効かん。時間切れの相手は戻り値で名指しして返し、
+ * 呼び出し側が撮影を失敗させる。黙って撮ると、また空の画像が写る。
  */
-export const forceEagerMediaInPage = async (): Promise<void> => {
-  for (const element of document.querySelectorAll('img[loading="lazy"]')) {
+export const forceEagerMediaInPage = async (timeoutMs: number): Promise<string[]> => {
+  const waiting: { source: string; settled: Promise<void> }[] = [];
+
+  const track = (source: string, element: HTMLElement): void => {
+    waiting.push({
+      source,
+      settled: new Promise<void>((resolve) => {
+        element.addEventListener("load", () => resolve(), { once: true });
+        element.addEventListener("error", () => resolve(), { once: true });
+      }),
+    });
+  };
+
+  // iframe は complete を持たんので、eager へ倒した分だけを待つ。
+  // 既に読み込み済みの iframe は load が二度と来んため、待つと必ず時間切れになる。
+  for (const element of document.querySelectorAll("iframe")) {
+    if (element.getAttribute("loading") !== "lazy") continue;
     element.setAttribute("loading", "eager");
+    track(element.src, element);
   }
-  for (const element of document.querySelectorAll('iframe[loading="lazy"]')) {
-    element.setAttribute("loading", "eager");
+
+  for (const element of document.querySelectorAll("img")) {
+    if (element.getAttribute("loading") === "lazy") element.setAttribute("loading", "eager");
+    if (!element.complete) track(element.currentSrc || element.src, element);
   }
-  const pending = Array.from(document.images).filter((image) => !image.complete);
+
+  const timedOut: string[] = [];
   await Promise.all(
-    pending.map(
-      (image) =>
-        new Promise<void>((resolve) => {
-          image.addEventListener("load", () => resolve(), { once: true });
-          image.addEventListener("error", () => resolve(), { once: true });
-        }),
+    waiting.map(
+      async (entry) =>
+        await Promise.race([
+          entry.settled,
+          new Promise<void>((resolve) => {
+            setTimeout(() => {
+              timedOut.push(entry.source);
+              resolve();
+            }, timeoutMs);
+          }),
+        ]),
     ),
   );
+  return timedOut;
 };
 
 const loadLazyMedia = async (page: {
-  evaluate: (fn: () => Promise<void>) => Promise<void>;
+  evaluate: (fn: (timeoutMs: number) => Promise<string[]>, arg: number) => Promise<string[]>;
   waitForLoadState?: (state: "networkidle") => Promise<void>;
 }): Promise<void> => {
-  await page.evaluate(forceEagerMediaInPage);
-  // eager へ倒した直後に発行されたリクエストが落ち着くのを待つ。待てん実装
-  // (テストのモック等) では省いてよい。撮影自体は続けられる。
-  const settled = page.waitForLoadState?.("networkidle");
-  if (settled !== undefined) await settled.catch(() => undefined);
+  const timedOut = await page.evaluate(forceEagerMediaInPage, LAZY_MEDIA_TIMEOUT_MS);
+  if (Array.isArray(timedOut) && timedOut.length > 0) {
+    throw new Error(
+      `${timedOut.length} 件のメディアが ${LAZY_MEDIA_TIMEOUT_MS}ms 以内に読み込まれませんでした。` +
+        `空のまま撮ると実装と関係のない差分になるため撮影を中止します: ${timedOut.slice(0, 5).join(", ")}`,
+    );
+  }
+  // eager へ倒した直後に発行されたリクエストが落ち着くのを待つ。
+  // 待てん実装 (テストのモック等) では省く。待てる実装が失敗したときは、
+  // 読み切れてへん可能性があるので握り潰さず落とす。
+  await page.waitForLoadState?.("networkidle");
 };
 
 export async function captureUrl(url: string, options: CaptureOptions): Promise<CaptureResult> {

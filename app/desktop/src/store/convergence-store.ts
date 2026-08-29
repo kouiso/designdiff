@@ -14,11 +14,14 @@ interface ConvergenceState {
   loading: boolean;
   /** 収束履歴を読めん環境 (Web ビルド等) かどうか。空の履歴と区別する。 */
   unavailable: boolean;
+  /** 読み取りに失敗したときの理由。空の履歴と区別する。 */
+  error: string | null;
   setHistories: (histories: ConvergenceHistory[]) => void;
   selectSourceKey: (sourceKey: string | null) => void;
   selectCampaign: (campaignId: string | null) => void;
   setLoading: (loading: boolean) => void;
   setUnavailable: (unavailable: boolean) => void;
+  setError: (error: string | null) => void;
 }
 
 export const useConvergenceStore = create<ConvergenceState>((set) => ({
@@ -27,19 +30,31 @@ export const useConvergenceStore = create<ConvergenceState>((set) => ({
   selectedCampaignId: null,
   loading: true,
   unavailable: false,
+  error: null,
   setHistories: (histories) =>
-    set((state) => ({
-      histories,
-      // 何も選んでへんときだけ先頭を開く。人が選んだ対象を、裏の更新で奪わん。
-      selectedSourceKey: state.selectedSourceKey ?? histories[0]?.sourceKey ?? null,
-      loading: false,
-    })),
+    set((state) => {
+      // 人が選んだ対象は裏の更新で奪わん。ただし保持上限で消えた対象を持ったままやと、
+      // 履歴があるのに詳細が空のままになるので、その時だけ先頭へ落とす。
+      const stillThere = histories.some((entry) => entry.sourceKey === state.selectedSourceKey);
+      const selectedSourceKey = stillThere
+        ? state.selectedSourceKey
+        : (histories[0]?.sourceKey ?? null);
+      return {
+        histories,
+        selectedSourceKey,
+        selectedCampaignId:
+          selectedSourceKey === state.selectedSourceKey ? state.selectedCampaignId : null,
+        loading: false,
+        error: null,
+      };
+    }),
   // 対象を変えたらキャンペーンの選択は捨てる。別対象の id を持ち越すと、
   // 選んだつもりの無い回が開く。
   selectSourceKey: (selectedSourceKey) => set({ selectedSourceKey, selectedCampaignId: null }),
   selectCampaign: (selectedCampaignId) => set({ selectedCampaignId }),
   setLoading: (loading) => set({ loading }),
   setUnavailable: (unavailable) => set({ unavailable, loading: false }),
+  setError: (error) => set({ error, loading: false }),
 }));
 
 /** 表示できるキャンペーン。反復が1件も無いものは出さん。新しい順。 */
@@ -71,7 +86,8 @@ export function useConvergenceSync(): void {
         return;
       }
 
-      const histories = await convergence.list().catch(() => []);
+      // 読み取りの失敗を空配列へ潰すと、履歴があるのに「記録がありません」と出る。
+      const histories = await convergence.list();
       if (cancelled) return;
       useConvergenceStore.getState().setHistories(histories);
 
@@ -79,8 +95,11 @@ export function useConvergenceSync(): void {
         useConvergenceStore.getState().setHistories(updated);
       });
     };
-    sync().catch(() => {
-      useConvergenceStore.getState().setUnavailable(true);
+    sync().catch((reason: unknown) => {
+      if (cancelled) return;
+      useConvergenceStore
+        .getState()
+        .setError(reason instanceof Error ? reason.message : String(reason));
     });
 
     return () => {

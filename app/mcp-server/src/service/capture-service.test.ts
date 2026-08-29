@@ -128,7 +128,19 @@ describe("captureUrl — launch path (no FIGDIFF_CDP_ENDPOINT)", () => {
   it("撮る前に lazy な画像を eager へ倒す関数をページで走らせる", async () => {
     await captureUrl("http://localhost:3000", { width: 1440 });
 
-    expect(mockEvaluate).toHaveBeenCalledWith(forceEagerMediaInPage);
+    expect(mockEvaluate).toHaveBeenCalledWith(forceEagerMediaInPage, expect.any(Number));
+  });
+
+  // 空のまま撮ると、実装と関係のない差分が出て収束が止まる。黙って撮らん。
+  it("読み切れんメディアがあったら撮らずに落とす", async () => {
+    // 1回目は document.fonts.ready、2回目が lazy メディアの待機。
+    mockEvaluate
+      .mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce(["https://example.test/stuck.png"]);
+
+    await expect(captureUrl("http://localhost:3000", { width: 1440 })).rejects.toThrow(
+      /stuck\.png/,
+    );
   });
 
   it("captures via CDP captureScreenshot with captureBeyondViewport and the requested width", async () => {

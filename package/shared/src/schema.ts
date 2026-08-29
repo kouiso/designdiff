@@ -491,11 +491,13 @@ export const LoopGuardReportSchema = z.object({
 /** 自走ループ1反復ぶんの記録。 */
 export const ConvergenceIterationSchema = z.object({
   comparisonId: z.string(),
-  matchRate: z.number(),
-  diffPixelCount: z.number().nonnegative().optional(),
-  regionCount: z.number().nonnegative().optional(),
+  // 画面は 0〜100 の一致率として描く。範囲外を通すと、あり得ん点数が出る。
+  matchRate: z.number().min(0).max(100),
+  diffPixelCount: z.number().int().nonnegative().optional(),
+  regionCount: z.number().int().nonnegative().optional(),
   // matchRate は文字の縁のぼかしで動くので、人が見て分かる差の割合を併記する。
-  perceptibleDiffRatio: z.number().optional(),
+  // 割合なので 0〜1。
+  perceptibleDiffRatio: z.number().min(0).max(1).optional(),
   structuralVerdict: DiffVerdictSchema,
   status: z.enum(["PASS", "FAIL", "UNCERTAIN"]),
   timestamp: z.number(),

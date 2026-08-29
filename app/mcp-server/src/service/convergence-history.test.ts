@@ -115,6 +115,37 @@ describe("recordConvergenceIteration", () => {
   });
 });
 
+// MCP SDK は複数のツール呼び出しを並行に捌く。直列化せんと、後から書いた側が
+// 先に読んだ古い履歴で上書きして、片方の反復が消える。
+describe("同じ比較対象への並行記録", () => {
+  it("同時に積んでも両方の反復が残る", async () => {
+    await Promise.all([
+      recordConvergenceIteration({ sourceKey: "local:/a.png", iteration: iteration(90, 1000) }),
+      recordConvergenceIteration({ sourceKey: "local:/a.png", iteration: iteration(95, 2000) }),
+    ]);
+
+    const { campaigns } = await readConvergenceHistory("local:/a.png");
+    const rates = campaigns.flatMap((campaign) =>
+      campaign.iterations.map((entry) => entry.matchRate),
+    );
+    expect(rates.sort((a, b) => a - b)).toEqual([90, 95]);
+  });
+
+  it("一時ファイルを残さん", async () => {
+    await Promise.all(
+      Array.from({ length: 5 }, (_, index) =>
+        recordConvergenceIteration({
+          sourceKey: "local:/a.png",
+          iteration: iteration(90 + index, 1000 + index),
+        }),
+      ),
+    );
+
+    const leftovers = (await fs.readdir(dir)).filter((name) => name.endsWith(".tmp"));
+    expect(leftovers).toEqual([]);
+  });
+});
+
 describe("listConvergenceHistories", () => {
   it("最後に動いた順で返す", async () => {
     await recordConvergenceIteration({

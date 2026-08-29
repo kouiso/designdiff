@@ -118,7 +118,9 @@ export const electronConvergenceAdapter: ConvergenceAdapter = {
 
 export const electronCapabilities: PlatformCapabilities = {
   hasOverlay: true,
-  hasConvergenceHistory: true,
+  // getConvergence() と同じ条件で見る。片方だけ true やと、
+  // 「使える」と言うたのに null が返る食い違いが起きる。
+  hasConvergenceHistory: window.electronAPI?.convergence !== undefined,
   hasLocalFileAccess: true,
   hasSecureTokenStorage: true,
 };

@@ -240,6 +240,7 @@
       "continue": "In progress"
     },
     "campaignLatest": "Latest ({{count}} steps)",
-    "campaignPast": "{{n}} runs ago ({{count}} steps)"
+    "campaignPast": "{{n}} runs ago ({{count}} steps)",
+    "readFailed": "Could not read convergence records"
   }
 }

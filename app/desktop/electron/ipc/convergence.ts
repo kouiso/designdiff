@@ -34,13 +34,24 @@ const readHistoryFile = async (filePath: string): Promise<ConvergenceHistory | n
 const lastTouched = (history: ConvergenceHistory): number =>
   history.campaigns.reduce((latest, campaign) => Math.max(latest, campaign.updatedAt), 0);
 
+const errorCode = (error: unknown): string | undefined => {
+  if (typeof error === "object" && error !== null && "code" in error) {
+    const { code } = error;
+    if (typeof code === "string") return code;
+  }
+  return undefined;
+};
+
 const listHistories = async (): Promise<ConvergenceHistory[]> => {
   const dir = getConvergenceDir();
   let names: string[];
   try {
     names = await fsPromises.readdir(dir);
-  } catch {
-    return [];
+  } catch (error: unknown) {
+    // 置き場が無いのは「まだ1回も比較してへん」。それ以外 (EACCES/EIO 等) を
+    // 空履歴として返すと、読めてへんことと記録が無いことの区別がつかんようになる。
+    if (errorCode(error) === "ENOENT") return [];
+    throw error;
   }
 
   const histories: ConvergenceHistory[] = [];

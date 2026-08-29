@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { forceEagerMediaInPage } from "./capture-service.js";
 
@@ -7,25 +7,39 @@ import { forceEagerMediaInPage } from "./capture-service.js";
 // 実ブラウザでの挙動 (captureBeyondViewport がスクロールせんため lazy が
 // 発火せんこと) は E2E と実測で確認済み。
 
-interface FakeElement {
-  attributes: Record<string, string>;
-  setAttribute(name: string, value: string): void;
-}
+const TIMEOUT_MS = 15_000;
 
-interface FakeImage extends FakeElement {
+interface FakeElement {
+  tag: "img" | "iframe";
+  attributes: Record<string, string>;
+  src: string;
+  currentSrc: string;
   complete: boolean;
   listeners: Record<string, (() => void)[]>;
+  getAttribute(name: string): string | null;
+  setAttribute(name: string, value: string): void;
   addEventListener(type: string, listener: () => void, options?: { once?: boolean }): void;
   fire(type: string): void;
 }
 
-const createImage = (loading: string | null, complete: boolean): FakeImage => ({
+const createElement = (
+  tag: "img" | "iframe",
+  loading: string | null,
+  complete: boolean,
+  src = `https://example.test/${tag}.png`,
+): FakeElement => ({
+  tag,
   attributes: loading === null ? {} : { loading },
+  src,
+  currentSrc: src,
+  complete,
+  listeners: {},
+  getAttribute(name) {
+    return this.attributes[name] ?? null;
+  },
   setAttribute(name, value) {
     this.attributes[name] = value;
   },
-  complete,
-  listeners: {},
   addEventListener(type, listener) {
     const existing = this.listeners[type] ?? [];
     existing.push(listener);
@@ -36,13 +50,10 @@ const createImage = (loading: string | null, complete: boolean): FakeImage => ({
   },
 });
 
-const installFakeDocument = (images: FakeImage[], iframes: FakeElement[] = []): void => {
+const installFakeDocument = (elements: FakeElement[]): void => {
   const fakeDocument = {
-    images,
-    querySelectorAll: (selector: string): FakeElement[] => {
-      if (selector.startsWith("img")) return images.filter((i) => i.attributes.loading === "lazy");
-      return iframes.filter((f) => f.attributes.loading === "lazy");
-    },
+    querySelectorAll: (selector: string): FakeElement[] =>
+      elements.filter((element) => element.tag === selector),
   };
   Object.defineProperty(globalThis, "document", {
     value: fakeDocument,
@@ -53,39 +64,42 @@ const installFakeDocument = (images: FakeImage[], iframes: FakeElement[] = []): 
 
 afterEach(() => {
   Reflect.deleteProperty(globalThis, "document");
+  vi.useRealTimers();
 });
 
 describe("forceEagerMediaInPage", () => {
   it("lazy な img を eager へ倒す", async () => {
-    const lazyImage = createImage("lazy", true);
+    const lazyImage = createElement("img", "lazy", true);
     installFakeDocument([lazyImage]);
 
-    await forceEagerMediaInPage();
+    await forceEagerMediaInPage(TIMEOUT_MS);
 
     expect(lazyImage.attributes.loading).toBe("eager");
   });
 
   it("lazy な iframe も eager へ倒す", async () => {
-    const lazyFrame: FakeElement = {
-      attributes: { loading: "lazy" },
-      setAttribute(name, value) {
-        this.attributes[name] = value;
-      },
-    };
-    installFakeDocument([], [lazyFrame]);
+    const lazyFrame = createElement("iframe", "lazy", false);
+    installFakeDocument([lazyFrame]);
 
-    await forceEagerMediaInPage();
+    const done = forceEagerMediaInPage(TIMEOUT_MS);
+    lazyFrame.fire("load");
 
+    expect(await done).toEqual([]);
     expect(lazyFrame.attributes.loading).toBe("eager");
   });
 
-  // 倒すだけで撮ると、読み込みが間に合わんまま写る。
+  // 既に読み込み済みの iframe は load が二度と来ん。待つと必ず時間切れになる。
+  it("lazy やない iframe は待たん", async () => {
+    installFakeDocument([createElement("iframe", null, false)]);
+    expect(await forceEagerMediaInPage(TIMEOUT_MS)).toEqual([]);
+  });
+
   it("読み込み中の画像を待ってから返る", async () => {
-    const pendingImage = createImage("lazy", false);
+    const pendingImage = createElement("img", "lazy", false);
     installFakeDocument([pendingImage]);
 
     let settled = false;
-    const done = forceEagerMediaInPage().then(() => {
+    const done = forceEagerMediaInPage(TIMEOUT_MS).then(() => {
       settled = true;
     });
 
@@ -97,21 +111,30 @@ describe("forceEagerMediaInPage", () => {
     expect(settled).toBe(true);
   });
 
-  // 1枚の失敗で撮影全体を止めん。壊れた画像はデザイン側にも写らんだけ。
   it("読み込みに失敗した画像でも止まらん", async () => {
-    const brokenImage = createImage("lazy", false);
+    const brokenImage = createElement("img", "lazy", false);
     installFakeDocument([brokenImage]);
 
-    const done = forceEagerMediaInPage();
+    const done = forceEagerMediaInPage(TIMEOUT_MS);
     brokenImage.fire("error");
 
-    await expect(done).resolves.toBeUndefined();
+    expect(await done).toEqual([]);
   });
 
   it("読み終わっとる画像は待たん", async () => {
-    const loadedImage = createImage(null, true);
-    installFakeDocument([loadedImage]);
+    installFakeDocument([createElement("img", null, true)]);
+    expect(await forceEagerMediaInPage(TIMEOUT_MS)).toEqual([]);
+  });
 
-    await expect(forceEagerMediaInPage()).resolves.toBeUndefined();
+  // load も error も来ん相手に当たると、期限が無ければ撮影が永久に止まる。
+  it("期限を過ぎたメディアは名指しして返す", async () => {
+    vi.useFakeTimers();
+    const stuck = createElement("img", "lazy", false, "https://example.test/stuck.png");
+    installFakeDocument([stuck]);
+
+    const done = forceEagerMediaInPage(1000);
+    await vi.advanceTimersByTimeAsync(1000);
+
+    expect(await done).toEqual(["https://example.test/stuck.png"]);
   });
 });
