@@ -171,28 +171,35 @@ function harvestDomStyles(maxElements: number): DomElementStyle[] {
  * 「収束が停滞」と誤判定して自動修正を止めてしまう。撮影側の欠陥であって
  * 実装の差ではないため、撮る前に eager へ倒して読み切らせる。
  */
+/**
+ * ブラウザ側で走る本体。page.evaluate へ渡すため、外の変数を掴まん形で書く。
+ * 切り出してあるのは、実ブラウザを立てずに単体で確かめられるようにするため
+ * (この package は playwright をモックする方針で、実ブラウザは E2E 側で扱う)。
+ */
+export const forceEagerMediaInPage = async (): Promise<void> => {
+  for (const element of document.querySelectorAll('img[loading="lazy"]')) {
+    element.setAttribute("loading", "eager");
+  }
+  for (const element of document.querySelectorAll('iframe[loading="lazy"]')) {
+    element.setAttribute("loading", "eager");
+  }
+  const pending = Array.from(document.images).filter((image) => !image.complete);
+  await Promise.all(
+    pending.map(
+      (image) =>
+        new Promise<void>((resolve) => {
+          image.addEventListener("load", () => resolve(), { once: true });
+          image.addEventListener("error", () => resolve(), { once: true });
+        }),
+    ),
+  );
+};
+
 const loadLazyMedia = async (page: {
   evaluate: (fn: () => Promise<void>) => Promise<void>;
   waitForLoadState?: (state: "networkidle") => Promise<void>;
 }): Promise<void> => {
-  await page.evaluate(async () => {
-    for (const element of document.querySelectorAll('img[loading="lazy"]')) {
-      element.setAttribute("loading", "eager");
-    }
-    for (const element of document.querySelectorAll('iframe[loading="lazy"]')) {
-      element.setAttribute("loading", "eager");
-    }
-    const pending = Array.from(document.images).filter((image) => !image.complete);
-    await Promise.all(
-      pending.map(
-        (image) =>
-          new Promise<void>((resolve) => {
-            image.addEventListener("load", () => resolve(), { once: true });
-            image.addEventListener("error", () => resolve(), { once: true });
-          }),
-      ),
-    );
-  });
+  await page.evaluate(forceEagerMediaInPage);
   // eager へ倒した直後に発行されたリクエストが落ち着くのを待つ。待てん実装
   // (テストのモック等) では省いてよい。撮影自体は続けられる。
   const settled = page.waitForLoadState?.("networkidle");

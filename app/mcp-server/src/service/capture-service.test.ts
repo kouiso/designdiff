@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { captureUrl } from "./capture-service.js";
+import { captureUrl, forceEagerMediaInPage } from "./capture-service.js";
 
 // ---------------------------------------------------------------------------
 // Playwright mock
@@ -122,6 +122,13 @@ describe("captureUrl — launch path (no FIGDIFF_CDP_ENDPOINT)", () => {
     expect(result.screenshotPath).toMatch(/capture-.*\.png$/);
     expect(result.width).toBe(1440);
     expect(result.height).toBe(900);
+  });
+
+  // 関数があっても呼ばれてへんかったら、折り返しより下の画像は空のまま写る。
+  it("撮る前に lazy な画像を eager へ倒す関数をページで走らせる", async () => {
+    await captureUrl("http://localhost:3000", { width: 1440 });
+
+    expect(mockEvaluate).toHaveBeenCalledWith(forceEagerMediaInPage);
   });
 
   it("captures via CDP captureScreenshot with captureBeyondViewport and the requested width", async () => {
