@@ -815,9 +815,13 @@ describe("runCompareDesign", () => {
 
   it("persists a runner diff PNG path when rounded matchRate is 100 but diff pixels exist", async () => {
     const originalHome = process.env.HOME;
+    const originalFigdiffHome = process.env.FIGDIFF_HOME;
     tmpRoot = await fs.mkdtemp(path.join(process.cwd(), "tmp-figdiff-runner-"));
     const testHome = path.join(tmpRoot, "home");
     process.env.HOME = testHome;
+    // HOME を差し替えて解決先を見る検体。vitest.setup.ts の FIGDIFF_HOME が
+    // 残っとるとそちらが勝つので、同じ場所へ向け直す。
+    process.env.FIGDIFF_HOME = path.join(testHome, ".figdiff");
     const designPath = path.join(tmpRoot, "design.png");
     const screenshotPath = path.join(tmpRoot, "screenshot.png");
     await fs.writeFile(designPath, Buffer.from([0x89, 0x50, 0x4e, 0x47]));
@@ -878,14 +882,20 @@ describe("runCompareDesign", () => {
     } finally {
       if (originalHome === undefined) delete process.env.HOME;
       else process.env.HOME = originalHome;
+      if (originalFigdiffHome === undefined) delete process.env.FIGDIFF_HOME;
+      else process.env.FIGDIFF_HOME = originalFigdiffHome;
     }
   });
 
   it("does not persist a transparent diff PNG for a perfect match", async () => {
     const originalHome = process.env.HOME;
+    const originalFigdiffHome = process.env.FIGDIFF_HOME;
     tmpRoot = await fs.mkdtemp(path.join(process.cwd(), "tmp-figdiff-runner-"));
     const testHome = path.join(tmpRoot, "home");
     process.env.HOME = testHome;
+    // HOME を差し替えて解決先を見る検体。vitest.setup.ts の FIGDIFF_HOME が
+    // 残っとるとそちらが勝つので、同じ場所へ向け直す。
+    process.env.FIGDIFF_HOME = path.join(testHome, ".figdiff");
     const designPath = path.join(tmpRoot, "design.png");
     const screenshotPath = path.join(tmpRoot, "screenshot.png");
     await fs.writeFile(designPath, Buffer.from([0x89, 0x50, 0x4e, 0x47]));
@@ -939,6 +949,8 @@ describe("runCompareDesign", () => {
     } finally {
       if (originalHome === undefined) delete process.env.HOME;
       else process.env.HOME = originalHome;
+      if (originalFigdiffHome === undefined) delete process.env.FIGDIFF_HOME;
+      else process.env.FIGDIFF_HOME = originalFigdiffHome;
     }
   });
 
@@ -1726,9 +1738,13 @@ describe("runCompareDesign", () => {
 
   it("persists a diff image on a structural FAIL even when matchRate rounds to 100 and diffPixelCount is 0", async () => {
     const originalHome = process.env.HOME;
+    const originalFigdiffHome = process.env.FIGDIFF_HOME;
     tmpRoot = await fs.mkdtemp(path.join(process.cwd(), "tmp-figdiff-runner-"));
     const testHome = path.join(tmpRoot, "home");
     process.env.HOME = testHome;
+    // HOME を差し替えて解決先を見る検体。vitest.setup.ts の FIGDIFF_HOME が
+    // 残っとるとそちらが勝つので、同じ場所へ向け直す。
+    process.env.FIGDIFF_HOME = path.join(testHome, ".figdiff");
     const designPath = path.join(tmpRoot, "design.png");
     const screenshotPath = path.join(tmpRoot, "screenshot.png");
     await fs.writeFile(designPath, Buffer.from([0x89, 0x50, 0x4e, 0x47]));
@@ -1787,6 +1803,8 @@ describe("runCompareDesign", () => {
     } finally {
       if (originalHome === undefined) delete process.env.HOME;
       else process.env.HOME = originalHome;
+      if (originalFigdiffHome === undefined) delete process.env.FIGDIFF_HOME;
+      else process.env.FIGDIFF_HOME = originalFigdiffHome;
     }
   });
 

@@ -120,6 +120,25 @@ describe("ComparePage", () => {
     expect(screen.getByText("matchRate: 95.5%")).toBeInTheDocument();
   });
 
+  // 一致率だけで pass を出すと、共有の computeVerdict (構造と色で見る) と
+  // 別の物差しが画面上にもう1つ生まれる。判定を作らず保留にする。
+  it("diffReport が無い比較には合否を付けず INCONCLUSIVE のままにする", () => {
+    useCompareStore.setState({
+      designImage: "d",
+      screenshotImage: "s",
+      compareResult: {
+        comparisonId: "cmp-2",
+        matchRate: 99.9,
+        diffPixelCount: 1,
+        totalPixelCount: 1000,
+        suggestion: "compare.suggestionMinor",
+        diffRegions: [],
+      },
+    });
+    render(<ComparePage />);
+    expect(screen.getByTestId("compare-score-verdict-badge")).toHaveTextContent("INCONCLUSIVE");
+  });
+
   it("error あり → エラーメッセージ表示", () => {
     useCompareStore.setState({ error: "比較エラー" });
     render(<ComparePage />);

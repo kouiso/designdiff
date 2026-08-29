@@ -19,6 +19,9 @@ const MAX_CAMPAIGNS_PER_KEY = 5;
 const MAX_ITERATIONS_PER_CAMPAIGN = 20;
 // 最後の反復からこれ以上空いたら、別のキャンペーンとして開き直す。
 const CAMPAIGN_IDLE_MS = 2 * 60 * 60 * 1000;
+// 残す比較対象の数。対象ごとに1ファイル増えるので、上限が無いと
+// ~/.figdiff/convergence が使うほど増え続ける。
+const MAX_SOURCE_KEYS = 50;
 
 export interface ConvergenceRecordInput {
   sourceKey: string;
@@ -135,7 +138,40 @@ export const recordConvergenceIteration = async (
   const tmp = `${filePath}.tmp`;
   await fs.writeFile(tmp, JSON.stringify(next, null, 2));
   await fs.rename(tmp, filePath);
+  await pruneOldHistories(dir, filePath);
   return closed;
+};
+
+/**
+ * 比較対象の数が上限を超えたら、古い順に捨てる。
+ * 記録は振り返りのためのもので、全期間を保つ必要は無い。
+ */
+const pruneOldHistories = async (dir: string, keepPath: string): Promise<void> => {
+  let names: string[];
+  try {
+    names = (await fs.readdir(dir)).filter((name) => name.endsWith(".json"));
+  } catch {
+    return;
+  }
+  if (names.length <= MAX_SOURCE_KEYS) return;
+
+  const stamped: { filePath: string; modifiedAt: number }[] = [];
+  for (const name of names) {
+    const filePath = path.join(dir, name);
+    if (filePath === keepPath) continue;
+    try {
+      const stat = await fs.stat(filePath);
+      stamped.push({ filePath, modifiedAt: stat.mtimeMs });
+    } catch {
+      // 消えとるファイルは対象外。並行して別プロセスが片付けた場合に起きる。
+    }
+  }
+  stamped.sort((a, b) => a.modifiedAt - b.modifiedAt);
+
+  const removeCount = names.length - MAX_SOURCE_KEYS;
+  for (const entry of stamped.slice(0, removeCount)) {
+    await fs.rm(entry.filePath, { force: true });
+  }
 };
 
 /** 1つの比較対象の履歴を読む。無ければ空の履歴を返す。 */

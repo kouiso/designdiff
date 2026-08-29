@@ -12,9 +12,55 @@ export interface CredentialStoreInfo {
 }
 
 let _backend: Backend | undefined;
+let _keychainReader: KeychainBackend | null | undefined;
+
+/**
+ * file backend が選ばれとるときに、読むだけ試す keychain。
+ *
+ * desktop はトークンを OS keychain へ保存する (平文保存を禁じとるため)。
+ * 一方 MCP サーバは対話でけん経路で動くので、書き込みを伴う
+ * probeKeychainAvailability() を避けて file backend を明示的に選ぶ。
+ * その結果「desktop でログインしたのに MCP からは未ログインに見える」が起きとった。
+ *
+ * probe はせず get だけ試す。読めん環境では例外を握って null になるだけで、
+ * file backend の動作は変わらん。keychain へ触れたくない環境では
+ * FIGDIFF_DISABLE_KEYCHAIN_READ=1 で止められる。
+ */
+function getKeychainReader(): KeychainBackend | null {
+  if (_keychainReader !== undefined) return _keychainReader;
+  if (process.env.FIGDIFF_DISABLE_KEYCHAIN_READ === "1") {
+    _keychainReader = null;
+    return _keychainReader;
+  }
+  try {
+    _keychainReader = createKeychainBackend();
+  } catch {
+    // keychain の無い環境ではネイティブ側で落ちる。file backend だけで動く
+    // 従来の挙動へ戻すだけなので、読み取りは失敗として扱う。
+    _keychainReader = null;
+  }
+  return _keychainReader;
+}
+
+/** keychain 側の読み書きは、失敗しても file backend の結果を壊さん。 */
+function tryKeychain<T>(action: (backend: KeychainBackend) => T): T | null {
+  const reader = getKeychainReader();
+  if (reader === null) return null;
+  try {
+    return action(reader);
+  } catch {
+    return null;
+  }
+}
 
 export function selectFileCredentialBackend(): void {
   _backend = createFileBackend();
+}
+
+/** テスト用: backend の選択と keychain 読み取りのキャッシュを捨てる。 */
+export function _resetCredentialBackendForTesting(): void {
+  _backend = undefined;
+  _keychainReader = undefined;
 }
 
 export function getBackend(): Backend {
@@ -41,7 +87,10 @@ export function getCredential(account: string): string | null {
   if (backend.type === "keychain") {
     return createFileBackend().get(account);
   }
-  return null;
+  // 逆向きも要る。file backend しか見んと、desktop が keychain へ保存した
+  // トークンが MCP から見えず、「デスクトップでログインしてください」という
+  // 案内どおりにしても直らん袋小路になる。
+  return tryKeychain((keychain) => keychain.get(account)) ?? null;
 }
 
 export function setCredential(account: string, value: string): void {
@@ -56,6 +105,12 @@ export function deleteCredential(account: string): void {
   // keychain選択時は file backend からも削除する。
   if (backend.type === "keychain") {
     createFileBackend().delete(account);
+  }
+  // 読む側と揃える。片方に残ると、消したはずのトークンが次の get で復活する。
+  if (backend.type === "file") {
+    tryKeychain((keychain) => {
+      keychain.delete(account);
+    });
   }
 }
 

@@ -138,3 +138,21 @@ describe("listConvergenceHistories", () => {
     expect(await listConvergenceHistories()).toEqual([]);
   });
 });
+
+// 対象ごとに1ファイル増える。上限が無いと ~/.figdiff が使うほど太り続ける。
+describe("履歴ファイルの上限", () => {
+  it("比較対象が 50 を超えたら古いものから捨てる", async () => {
+    for (let index = 0; index < 55; index += 1) {
+      await recordConvergenceIteration({
+        sourceKey: `local:/target-${index}.png`,
+        iteration: iteration(90, 1000 + index),
+      });
+    }
+
+    const names = (await fs.readdir(dir)).filter((name) => name.endsWith(".json"));
+    expect(names).toHaveLength(50);
+    // いま書いた対象は必ず残る。
+    expect((await readConvergenceHistory("local:/target-54.png")).campaigns).toHaveLength(1);
+    expect((await readConvergenceHistory("local:/target-0.png")).campaigns).toHaveLength(0);
+  });
+});
