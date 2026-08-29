@@ -234,7 +234,7 @@
     "emptyHint": "compare_design を実行すると、反復ごとの一致率と停止理由がここに積まれます。",
     "reason": {
       "no-regression": "PASS に到達",
-      "regression": "悪化を検出",
+      "regression": "悪化または停滞",
       "max-steps": "反復回数の上限",
       "uncertain": "人のレビューが必要",
       "continue": "継続中"

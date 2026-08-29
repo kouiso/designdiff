@@ -113,6 +113,29 @@ describe("ConvergencePage", () => {
     expect(useConvergenceStore.getState().selectedSourceKey).toBe("local:/other.png");
   });
 
+  // regression の枠は「悪化」と「3回とも同一（修正が効いてへん）」の両方が入る。
+  // 片方だけの語にすると、居らん悪化を探しに行かせてしまう。
+  it("停止理由の見出しは悪化と停滞の両方に当たる語にする", async () => {
+    const base = campaignHistory();
+    listMock.mockResolvedValue([
+      {
+        ...base,
+        campaigns: [
+          {
+            ...base.campaigns[0],
+            endReason: "regression" as const,
+            endMessage: "直近3回の比較結果が完全に同一です。",
+          },
+        ],
+      },
+    ]);
+    render(<ConvergencePage />);
+
+    const reason = await screen.findByTestId("convergence-end-reason");
+    expect(reason).toHaveTextContent("悪化または停滞");
+    expect(reason).toHaveTextContent("直近3回の比較結果が完全に同一です。");
+  });
+
   // 直前のキャンペーンを見返せんと、いま直した結果しか分からん。
   it("キャンペーンが複数あるときは切り替えられる", async () => {
     const base = campaignHistory();

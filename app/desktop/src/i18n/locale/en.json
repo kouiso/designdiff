@@ -234,7 +234,7 @@
     "emptyHint": "Run compare_design and each iteration's match rate and stop reason will appear here.",
     "reason": {
       "no-regression": "Reached PASS",
-      "regression": "Regression detected",
+      "regression": "Regression or stall",
       "max-steps": "Iteration limit",
       "uncertain": "Needs human review",
       "continue": "In progress"
