@@ -8,6 +8,11 @@ import { getConvergenceDir, getFigdiffHome } from "./figdiff-home.js";
 // MCP サーバ側 (app/mcp-server/src/util/figdiff-paths.ts) と同じ規則で解決できてへんと、
 // FIGDIFF_HOME を設定した環境で書いた側と読む側が別ディレクトリを見る。
 
+// 実装は path.resolve を通すので、期待値も同じ規則で作る。POSIX 前提の
+// リテラルで比べると Windows (ドライブレターが付く) で落ちる。
+const HOME_DIR = path.resolve("/tmp/figdiff-home");
+const ELSEWHERE_DIR = path.resolve("/tmp/elsewhere");
+
 afterEach(() => {
   vi.unstubAllEnvs();
 });
@@ -19,8 +24,8 @@ describe("getFigdiffHome", () => {
   });
 
   it("FIGDIFF_HOME を指定するとそこへ移る", () => {
-    vi.stubEnv("FIGDIFF_HOME", "/tmp/figdiff-home");
-    expect(getFigdiffHome()).toBe("/tmp/figdiff-home");
+    vi.stubEnv("FIGDIFF_HOME", HOME_DIR);
+    expect(getFigdiffHome()).toBe(HOME_DIR);
   });
 
   it("空文字は指定なしとして扱う", () => {
@@ -36,14 +41,14 @@ describe("getFigdiffHome", () => {
 
 describe("getConvergenceDir", () => {
   it("既定は FIGDIFF_HOME 配下の convergence", () => {
-    vi.stubEnv("FIGDIFF_HOME", "/tmp/figdiff-home");
+    vi.stubEnv("FIGDIFF_HOME", HOME_DIR);
     vi.stubEnv("FIGDIFF_CONVERGENCE_DIR", undefined);
-    expect(getConvergenceDir()).toBe(path.join("/tmp/figdiff-home", "convergence"));
+    expect(getConvergenceDir()).toBe(path.join(HOME_DIR, "convergence"));
   });
 
   it("FIGDIFF_CONVERGENCE_DIR が勝つ", () => {
-    vi.stubEnv("FIGDIFF_HOME", "/tmp/figdiff-home");
-    vi.stubEnv("FIGDIFF_CONVERGENCE_DIR", "/tmp/elsewhere");
-    expect(getConvergenceDir()).toBe("/tmp/elsewhere");
+    vi.stubEnv("FIGDIFF_HOME", HOME_DIR);
+    vi.stubEnv("FIGDIFF_CONVERGENCE_DIR", ELSEWHERE_DIR);
+    expect(getConvergenceDir()).toBe(ELSEWHERE_DIR);
   });
 });

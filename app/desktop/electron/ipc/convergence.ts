@@ -20,17 +20,6 @@ const getMainWindow = (): BrowserWindow | null => BrowserWindow.getAllWindows()[
 let watcher: fs.FSWatcher | null = null;
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
-const readHistoryFile = async (filePath: string): Promise<ConvergenceHistory | null> => {
-  try {
-    const raw = await fsPromises.readFile(filePath, "utf-8");
-    const parsed: unknown = JSON.parse(raw);
-    const result = ConvergenceHistorySchema.safeParse(parsed);
-    return result.success ? result.data : null;
-  } catch {
-    return null;
-  }
-};
-
 const lastTouched = (history: ConvergenceHistory): number =>
   history.campaigns.reduce((latest, campaign) => Math.max(latest, campaign.updatedAt), 0);
 
@@ -40,6 +29,29 @@ const errorCode = (error: unknown): string | undefined => {
     if (typeof code === "string") return code;
   }
   return undefined;
+};
+
+const readHistoryFile = async (filePath: string): Promise<ConvergenceHistory | null> => {
+  let raw: string;
+  try {
+    raw = await fsPromises.readFile(filePath, "utf-8");
+  } catch (error: unknown) {
+    // 消えた直後 (保持上限の切り詰めと一覧の間) は「無い」で正しい。
+    // それ以外 (EACCES/EIO 等) を null へ潰すと、読めてへん記録が一覧から
+    // 黙って抜けて、反復が減ったように見える。呼び出し元へ伝える。
+    if (errorCode(error) === "ENOENT") return null;
+    throw error;
+  }
+
+  // 壊れた JSON・スキーマ違いは「この1件は表示できん」であって、
+  // 他の対象まで道連れにする理由は無いので null で飛ばす。
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    const result = ConvergenceHistorySchema.safeParse(parsed);
+    return result.success ? result.data : null;
+  } catch {
+    return null;
+  }
 };
 
 const listHistories = async (): Promise<ConvergenceHistory[]> => {

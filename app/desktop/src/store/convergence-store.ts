@@ -24,6 +24,10 @@ interface ConvergenceState {
   setError: (error: string | null) => void;
 }
 
+/** 表示できるキャンペーン。反復が1件も無いものは出さん。新しい順。 */
+export const visibleCampaigns = (history: ConvergenceHistory | undefined): ConvergenceCampaign[] =>
+  [...(history?.campaigns ?? [])].filter((campaign) => campaign.iterations.length > 0).reverse();
+
 export const useConvergenceStore = create<ConvergenceState>((set) => ({
   histories: [],
   selectedSourceKey: null,
@@ -39,11 +43,20 @@ export const useConvergenceStore = create<ConvergenceState>((set) => ({
       const selectedSourceKey = stillThere
         ? state.selectedSourceKey
         : (histories[0]?.sourceKey ?? null);
+      // 対象が残っとっても、選んどった回そのものが保持上限で消えることがある。
+      // 消えた id を握ったままやと「最新へ落ちた」のに選択チップだけ古い回を
+      // 指したままになるので、残っとる回に無ければ null (= 最新) へ戻す。
+      const nextHistory = histories.find((entry) => entry.sourceKey === selectedSourceKey);
+      const campaignStillThere = visibleCampaigns(nextHistory).some(
+        (campaign) => campaign.campaignId === state.selectedCampaignId,
+      );
       return {
         histories,
         selectedSourceKey,
         selectedCampaignId:
-          selectedSourceKey === state.selectedSourceKey ? state.selectedCampaignId : null,
+          selectedSourceKey === state.selectedSourceKey && campaignStillThere
+            ? state.selectedCampaignId
+            : null,
         loading: false,
         error: null,
       };
@@ -56,10 +69,6 @@ export const useConvergenceStore = create<ConvergenceState>((set) => ({
   setUnavailable: (unavailable) => set({ unavailable, loading: false }),
   setError: (error) => set({ error, loading: false }),
 }));
-
-/** 表示できるキャンペーン。反復が1件も無いものは出さん。新しい順。 */
-export const visibleCampaigns = (history: ConvergenceHistory | undefined): ConvergenceCampaign[] =>
-  [...(history?.campaigns ?? [])].filter((campaign) => campaign.iterations.length > 0).reverse();
 
 /** 直近のキャンペーン。 */
 export const latestCampaign = (

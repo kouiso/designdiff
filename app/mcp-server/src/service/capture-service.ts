@@ -186,6 +186,14 @@ const LAZY_MEDIA_TIMEOUT_MS = 15_000;
 export const forceEagerMediaInPage = async (timeoutMs: number): Promise<string[]> => {
   const waiting: { source: string; settled: Promise<void> }[] = [];
 
+  // loading は ASCII 大文字小文字を区別せん列挙属性なので、属性値をそのまま
+  // "lazy" と比べると LAZY / Lazy を取りこぼす。取りこぼすと eager へ倒れず、
+  // 折り返しより下が空のまま写って実装と関係のない差分になる。
+  // 前後の空白は詰めん — 列挙属性は空白入りを無効値として扱い、
+  // ブラウザ側では eager 扱いになるため。
+  const isLazy = (element: Element): boolean =>
+    element.getAttribute("loading")?.toLowerCase() === "lazy";
+
   const track = (source: string, element: HTMLElement): void => {
     waiting.push({
       source,
@@ -199,13 +207,13 @@ export const forceEagerMediaInPage = async (timeoutMs: number): Promise<string[]
   // iframe は complete を持たんので、eager へ倒した分だけを待つ。
   // 既に読み込み済みの iframe は load が二度と来んため、待つと必ず時間切れになる。
   for (const element of document.querySelectorAll("iframe")) {
-    if (element.getAttribute("loading") !== "lazy") continue;
+    if (!isLazy(element)) continue;
     element.setAttribute("loading", "eager");
     track(element.src, element);
   }
 
   for (const element of document.querySelectorAll("img")) {
-    if (element.getAttribute("loading") === "lazy") element.setAttribute("loading", "eager");
+    if (isLazy(element)) element.setAttribute("loading", "eager");
     if (!element.complete) track(element.currentSrc || element.src, element);
   }
 

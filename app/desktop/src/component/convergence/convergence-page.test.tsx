@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { ConvergenceHistory } from "@figdiff/shared";
@@ -173,6 +173,42 @@ describe("ConvergencePage", () => {
       expect(screen.getAllByTestId("convergence-step-row")).toHaveLength(1);
     });
     expect(screen.getByText("70.5")).toBeInTheDocument();
+  });
+
+  // 「実行中」は時刻で落ちるので、開いとる間だけ自分で時計を刻む。
+  // endedAt が付かんまま放置された回 (プロセスが落ちた等) を条件にすると、
+  // 誰も見てへん画面で 5 秒ごとの再描画が永久に回り続ける。
+  it("実行中に見えんようになったら時刻の更新を止める", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      const base = campaignHistory();
+      listMock.mockResolvedValue([
+        {
+          ...base,
+          campaigns: [
+            {
+              ...base.campaigns[0],
+              endedAt: undefined,
+              endReason: undefined,
+              endMessage: undefined,
+              updatedAt: Date.now(),
+            },
+          ],
+        },
+      ]);
+      render(<ConvergencePage />);
+
+      expect(await screen.findByText(/実行中/)).toBeInTheDocument();
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(70_000);
+      });
+
+      expect(screen.queryByText(/実行中/)).not.toBeInTheDocument();
+      expect(vi.getTimerCount()).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("キャンペーンが1つだけなら切替は出さん", async () => {

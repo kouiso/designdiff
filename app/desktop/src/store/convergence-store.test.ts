@@ -4,11 +4,15 @@ import type { ConvergenceHistory } from "@figdiff/shared";
 
 import { latestCampaign, useConvergenceStore } from "./convergence-store";
 
-const history = (sourceKey: string, iterations: number): ConvergenceHistory => ({
+const history = (
+  sourceKey: string,
+  iterations: number,
+  campaignId = `camp-${sourceKey}`,
+): ConvergenceHistory => ({
   sourceKey,
   campaigns: [
     {
-      campaignId: `camp-${sourceKey}`,
+      campaignId,
       sourceKey,
       startedAt: 1000,
       updatedAt: 1000 + iterations,
@@ -62,6 +66,27 @@ describe("useConvergenceStore", () => {
     expect(useConvergenceStore.getState().selectedSourceKey).toBe("local:/b.png");
     // 別対象のキャンペーン id を持ち越すと、選んだつもりの無い回が開く。
     expect(useConvergenceStore.getState().selectedCampaignId).toBeNull();
+  });
+
+  // 対象が残っとっても、選んどった回だけが保持上限で消えることがある。
+  // id を握ったままやと、画面は最新を出しとるのにチップは古い回を指したままになる。
+  it("選択中のキャンペーンが消えたら最新へ戻す", () => {
+    useConvergenceStore.getState().setHistories([history("local:/a.png", 1, "camp-old")]);
+    useConvergenceStore.getState().selectCampaign("camp-old");
+
+    useConvergenceStore.getState().setHistories([history("local:/a.png", 1, "camp-new")]);
+
+    expect(useConvergenceStore.getState().selectedSourceKey).toBe("local:/a.png");
+    expect(useConvergenceStore.getState().selectedCampaignId).toBeNull();
+  });
+
+  it("残っとるキャンペーンの選択は保つ", () => {
+    useConvergenceStore.getState().setHistories([history("local:/a.png", 1, "camp-keep")]);
+    useConvergenceStore.getState().selectCampaign("camp-keep");
+
+    useConvergenceStore.getState().setHistories([history("local:/a.png", 2, "camp-keep")]);
+
+    expect(useConvergenceStore.getState().selectedCampaignId).toBe("camp-keep");
   });
 
   it("読み取り失敗は空の履歴と区別して持つ", () => {

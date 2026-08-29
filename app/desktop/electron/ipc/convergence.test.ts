@@ -1,11 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { ConvergenceHistorySchema } from "@figdiff/shared";
+
 // MCP サーバが書いた収束履歴を読むだけの経路。読み取り範囲と、
 // 壊れたファイルを混ぜたときに残りが読めることを見る。
+
+type Handler = (event: unknown, ...args: unknown[]) => Promise<unknown>;
+
 const mocks = vi.hoisted(() => {
   const mainWindow = { webContents: { send: vi.fn() } };
   return {
-    handle: vi.fn(),
+    // handler を型付きで受けておく。ここを緩くすると、取り出すときに
+    // 型アサーションが要るようになる (このリポジトリでは `as` を使わん)。
+    handle: vi.fn<(channel: string, handler: Handler) => void>(),
     getAllWindows: vi.fn(() => [mainWindow]),
     mainWindow,
     readFile: vi.fn(),
@@ -34,8 +41,6 @@ vi.mock("node:fs", () => ({
 
 const { registerConvergenceHandlers } = await import("./convergence.js");
 
-type Handler = (event: unknown, ...args: unknown[]) => Promise<unknown>;
-
 const history = (sourceKey: string, updatedAt: number) => ({
   sourceKey,
   campaigns: [
@@ -60,7 +65,7 @@ const history = (sourceKey: string, updatedAt: number) => ({
 const handlerFor = (channel: string): Handler => {
   const entry = mocks.handle.mock.calls.find((call) => call[0] === channel);
   if (!entry) throw new Error(`handler not registered: ${channel}`);
-  return entry[1] as Handler;
+  return entry[1];
 };
 
 beforeEach(() => {
@@ -84,12 +89,10 @@ describe("registerConvergenceHandlers", () => {
         : JSON.stringify(history("local:/old.png", 1000)),
     );
 
-    const listed = await handlerFor("convergence:list")(null);
-    expect(listed).toHaveLength(2);
-    expect((listed as { sourceKey: string }[]).map((h) => h.sourceKey)).toEqual([
-      "local:/new.png",
-      "local:/old.png",
-    ]);
+    const listed = ConvergenceHistorySchema.array().parse(
+      await handlerFor("convergence:list")(null),
+    );
+    expect(listed.map((entry) => entry.sourceKey)).toEqual(["local:/new.png", "local:/old.png"]);
   });
 
   // 1つ壊れとるだけで全部見えんようになると、直す手掛かりまで消える。
@@ -101,6 +104,32 @@ describe("registerConvergenceHandlers", () => {
 
     const listed = await handlerFor("convergence:list")(null);
     expect(listed).toHaveLength(1);
+  });
+
+  // ファイル単位でも同じ。読めてへん1件を黙って落とすと、反復が減ったように見える。
+  it("個々のファイルの権限やI/Oの失敗も握り潰さず伝える", async () => {
+    mocks.readdir.mockResolvedValue(["denied.json"]);
+    const denied: NodeJS.ErrnoException = new Error("EACCES: permission denied");
+    denied.code = "EACCES";
+    mocks.readFile.mockRejectedValue(denied);
+
+    await expect(handlerFor("convergence:list")(null)).rejects.toThrow(/EACCES/);
+  });
+
+  // 一覧を取った後に保持上限で消えることはある。それは「無い」で正しい。
+  it("読む直前に消えたファイルは飛ばす", async () => {
+    mocks.readdir.mockResolvedValue(["gone.json", "ok.json"]);
+    const missing: NodeJS.ErrnoException = new Error("ENOENT");
+    missing.code = "ENOENT";
+    mocks.readFile.mockImplementation(async (filePath: string) => {
+      if (filePath.endsWith("gone.json")) throw missing;
+      return JSON.stringify(history("local:/ok.png", 2000));
+    });
+
+    const listed = ConvergenceHistorySchema.array().parse(
+      await handlerFor("convergence:list")(null),
+    );
+    expect(listed.map((entry) => entry.sourceKey)).toEqual(["local:/ok.png"]);
   });
 
   it("置き場がまだ無いときは空配列を返す", async () => {
@@ -127,8 +156,10 @@ describe("registerConvergenceHandlers", () => {
         : JSON.stringify(history("local:/b.png", 2000)),
     );
 
-    const found = await handlerFor("convergence:read")(null, "local:/a.png");
-    expect((found as { sourceKey: string }).sourceKey).toBe("local:/a.png");
+    const found = ConvergenceHistorySchema.parse(
+      await handlerFor("convergence:read")(null, "local:/a.png"),
+    );
+    expect(found.sourceKey).toBe("local:/a.png");
     expect(await handlerFor("convergence:read")(null, "local:/missing.png")).toBeNull();
   });
 });

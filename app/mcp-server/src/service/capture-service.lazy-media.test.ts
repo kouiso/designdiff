@@ -121,6 +121,21 @@ describe("forceEagerMediaInPage", () => {
     expect(await done).toEqual([]);
   });
 
+  // loading は大文字小文字を区別せん列挙属性。属性値をそのまま比べる実装やと
+  // ここで取りこぼして、折り返しより下が空のまま写る。
+  it("大文字混じりの loading も lazy として扱う", async () => {
+    const upperImage = createElement("img", "LAZY", true);
+    const mixedFrame = createElement("iframe", "Lazy", false);
+    installFakeDocument([upperImage, mixedFrame]);
+
+    const done = forceEagerMediaInPage(TIMEOUT_MS);
+    mixedFrame.fire("load");
+
+    expect(await done).toEqual([]);
+    expect(upperImage.attributes.loading).toBe("eager");
+    expect(mixedFrame.attributes.loading).toBe("eager");
+  });
+
   it("読み終わっとる画像は待たん", async () => {
     installFakeDocument([createElement("img", null, true)]);
     expect(await forceEagerMediaInPage(TIMEOUT_MS)).toEqual([]);

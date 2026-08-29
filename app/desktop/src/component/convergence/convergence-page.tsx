@@ -101,8 +101,10 @@ export function ConvergencePage() {
   // 時刻をレンダー時に読むだけやと、他の更新が来ん限り「実行中」が出っぱなしになる。
   // 止まったときこそ見たい表示なので、開いとるキャンペーンがある間は自分で刻む。
   const [now, setNow] = useState(() => Date.now());
+  // 「終わってへん」やのうて「まだ実行中に見える」で刻む。endedAt が付かんまま
+  // 放置された回 (プロセスが落ちた等) を条件にすると、タイマーが永久に回り続ける。
   const hasOpenCampaign = histories.some((entry) =>
-    entry.campaigns.some((campaign) => campaign.endedAt === undefined),
+    entry.campaigns.some((entryCampaign) => isRunning(entryCampaign, now)),
   );
   useEffect(() => {
     if (!hasOpenCampaign) return;
@@ -202,11 +204,15 @@ export function ConvergencePage() {
                     )}
                   >
                     {index === 0
-                      ? t("convergence.campaignLatest", { count: entry.iterations.length })
+                      ? t("convergence.campaignLatest", {
+                          steps: t("convergence.stepCount", { count: entry.iterations.length }),
+                        })
                       : t("convergence.campaignPast", {
                           // index 0 が最新なので、1つ前は index 1。
-                          n: index,
-                          count: entry.iterations.length,
+                          // count を「何回前か」に充てて複数形を i18next へ任せる。
+                          // 反復数は自前の複数形キーを通してから文字列で差し込む。
+                          count: index,
+                          steps: t("convergence.stepCount", { count: entry.iterations.length }),
                         })}
                   </button>
                 ))}

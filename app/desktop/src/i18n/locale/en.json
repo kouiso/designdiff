@@ -239,8 +239,11 @@
       "uncertain": "Needs human review",
       "continue": "In progress"
     },
-    "campaignLatest": "Latest ({{count}} steps)",
-    "campaignPast": "{{n}} runs ago ({{count}} steps)",
+    "campaignLatest": "Latest ({{steps}})",
+    "campaignPast_one": "Previous run ({{steps}})",
+    "campaignPast_other": "{{count}} runs ago ({{steps}})",
+    "stepCount_one": "{{count}} step",
+    "stepCount_other": "{{count}} steps",
     "readFailed": "Could not read convergence records"
   }
 }
