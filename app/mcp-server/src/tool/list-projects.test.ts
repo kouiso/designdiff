@@ -45,6 +45,16 @@ const VALID_PROJECT_2 = {
   updatedAt: "2026-05-29T08:00:00+09:00",
 };
 
+// この検体は homedir から ~/.figdiff を解決する経路そのものを見る。
+// vitest.setup.ts が全体へ入れとる FIGDIFF_HOME はここでは外す。
+beforeEach(() => {
+  vi.stubEnv("FIGDIFF_HOME", undefined);
+});
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
+
 describe("listProjects", () => {
   let testDir: string;
 

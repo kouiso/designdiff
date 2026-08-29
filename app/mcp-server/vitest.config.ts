@@ -10,6 +10,8 @@ export default defineConfig({
   },
   test: {
     globals: true,
+    // 実ホームへ書かせん。理由は vitest.setup.ts に書いた。
+    setupFiles: ["./vitest.setup.ts"],
     // v8 coverage instrumentation adds meaningful overhead to the
     // sharp/pixelmatch-heavy tests in this package; the default 5000ms
     // vitest timeout is regularly exceeded under `test:coverage` on CI

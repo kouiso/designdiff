@@ -19,6 +19,7 @@
     "app/desktop/src/**/*.tsx",
     "app/desktop/electron/**/*.ts",
     "app/mcp-server/src/**/*.ts",
+    "app/mcp-server/vitest.setup.ts",
     "app/chrome-extension/src/**/*.ts",
     "app/figma-plugin/src/**/*.ts"
   ],

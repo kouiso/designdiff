@@ -60,6 +60,7 @@ import {
   type RecentComparison,
   recordComparison,
 } from "./comparison-history.js";
+import { recordConvergenceIteration } from "./convergence-history.js";
 import { getCropRegionForComparison } from "./crop-region-store.js";
 import { createFigmaService, type FigmaService } from "./figma-service.js";
 import { getIgnoreRegionsForComparison } from "./ignore-region-store.js";
@@ -211,6 +212,11 @@ export interface CompareDesignRunArgs {
 export interface CompareDesignRunOutput {
   parsedDesignSource: ReturnType<typeof parseDesignInput>;
   result: CompareDesignResult;
+  /**
+   * 比較対象 (Figma ノード / ローカル画像) を指す鍵。comparisonId は毎回変わるので、
+   * 「同じ対象への連続した修正」をまとめるにはこちらが要る。
+   */
+  sourceKey: string;
 }
 
 async function resolveNodeId(
@@ -1765,6 +1771,35 @@ export async function runCompareDesign(
     captureHeight: result.normalization?.screenshotHeight,
   });
 
+  // ループガードの状態は停止判定を返した時点で捨てられる。捨てんと再実行が
+  // 巻き添えで止まるためで、ガードとしては正しい。ただしそれだけやと
+  // 「何回でどう詰めたか」が残らんので、消えん記録を別に積む。
+  // 記録に失敗しても比較結果は成立するため、落とさず警告に留める。
+  try {
+    await recordConvergenceIteration({
+      sourceKey,
+      designSource: args.design_source,
+      implementationUrl: args.screenshot_url,
+      loopGuard,
+      iteration: {
+        comparisonId: result.comparisonId,
+        matchRate: result.matchRate,
+        diffPixelCount: result.diffPixelCount,
+        regionCount,
+        perceptibleDiffRatio,
+        structuralVerdict: structuralReviewResult.verdict,
+        status,
+        timestamp: Date.now(),
+        diffImagePath: result.diffImagePath,
+      },
+    });
+  } catch (e: unknown) {
+    console.warn(
+      "[compare_design] convergence history save failed:",
+      e instanceof Error ? e.message : e,
+    );
+  }
+
   // 成功後に使用ノードを記憶し、次回の自動補完に活かす。
   if (args.project_id && parsedDesignSource.type === "figma_url" && resolvedNodeId) {
     try {
@@ -1785,5 +1820,6 @@ export async function runCompareDesign(
   return {
     parsedDesignSource,
     result,
+    sourceKey,
   };
 }

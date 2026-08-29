@@ -8,6 +8,7 @@ import {
 } from "@figdiff/shared";
 
 import type {
+  ConvergenceAdapter,
   FileAdapter,
   FigmaAdapter,
   OAuthAdapter,
@@ -109,8 +110,17 @@ export const electronAdapter: PlatformAdapter = {
   oauth: electronOAuthAdapter,
 };
 
+export const electronConvergenceAdapter: ConvergenceAdapter = {
+  list: () => window.electronAPI.convergence.list(),
+  read: (sourceKey) => window.electronAPI.convergence.read(sourceKey),
+  onUpdated: (callback) => window.electronAPI.convergence.onUpdated(callback),
+};
+
 export const electronCapabilities: PlatformCapabilities = {
   hasOverlay: true,
+  // getConvergence() と同じ条件で見る。片方だけ true やと、
+  // 「使える」と言うたのに null が返る食い違いが起きる。
+  hasConvergenceHistory: window.electronAPI?.convergence !== undefined,
   hasLocalFileAccess: true,
   hasSecureTokenStorage: true,
 };

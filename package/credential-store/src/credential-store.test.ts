@@ -120,3 +120,85 @@ describe("getCredential — keychain-unavailable-data fallback", () => {
     expect(getCredential("figma-pat")).toBeNull();
   });
 });
+
+// desktop は OS keychain へ、MCP は file backend へ。読む方向が片側だけやと
+// 「デスクトップでログインしたのに MCP からは未ログイン」の袋小路になる。
+describe("getCredential — file backend から keychain への read-only フォールバック", () => {
+  beforeEach(() => {
+    mkdirSync(TMP_DIR, { recursive: true });
+    vi.resetModules();
+    delete process.env.FIGDIFF_DISABLE_KEYCHAIN_READ;
+  });
+
+  afterEach(() => {
+    if (existsSync(TMP_DIR)) {
+      rmSync(TMP_DIR, { recursive: true, force: true });
+    }
+    delete process.env.FIGDIFF_DISABLE_KEYCHAIN_READ;
+  });
+
+  const mockKeychain = (stored: Map<string, string>, calls: string[] = []) => {
+    vi.doMock("./keychain-backend.js", () => ({
+      probeKeychainAvailability: () => {
+        calls.push("probe");
+        return true;
+      },
+      createKeychainBackend: () => ({
+        type: "keychain" as const,
+        get: (account: string) => {
+          calls.push(`get:${account}`);
+          return stored.get(account) ?? null;
+        },
+        set: () => {
+          throw new Error("set must not be called on the read-only fallback");
+        },
+        delete: (account: string) => {
+          calls.push(`delete:${account}`);
+          stored.delete(account);
+        },
+      }),
+    }));
+  };
+
+  it("file backend に無いトークンを keychain から読む", async () => {
+    mockKeychain(new Map([["figma-pat", "from-desktop"]]));
+    const api = await import("./credential-store.js");
+    api.selectFileCredentialBackend();
+
+    expect(api.getCredential("figma-pat")).toBe("from-desktop");
+  });
+
+  // 書き込みを伴う probe を踏むと、対話でけん MCP が固まる余地ができる。
+  it("フォールバックでは probe を踏まん", async () => {
+    const calls: string[] = [];
+    mockKeychain(new Map([["figma-pat", "from-desktop"]]), calls);
+    const api = await import("./credential-store.js");
+    api.selectFileCredentialBackend();
+    api.getCredential("figma-pat");
+
+    expect(calls).not.toContain("probe");
+  });
+
+  it("FIGDIFF_DISABLE_KEYCHAIN_READ=1 なら keychain へ触らん", async () => {
+    process.env.FIGDIFF_DISABLE_KEYCHAIN_READ = "1";
+    const calls: string[] = [];
+    mockKeychain(new Map([["figma-pat", "from-desktop"]]), calls);
+    const api = await import("./credential-store.js");
+    api.selectFileCredentialBackend();
+
+    expect(api.getCredential("figma-pat")).toBeNull();
+    expect(calls).toEqual([]);
+  });
+
+  // 消す側を揃えんと、削除したトークンが次の get で復活する。
+  it("file backend からの削除は keychain 側も消す", async () => {
+    const stored = new Map([["figma-pat", "from-desktop"]]);
+    mockKeychain(stored);
+    const api = await import("./credential-store.js");
+    api.selectFileCredentialBackend();
+
+    api.deleteCredential("figma-pat");
+    expect(api.getCredential("figma-pat")).toBeNull();
+    expect(stored.has("figma-pat")).toBe(false);
+  });
+});

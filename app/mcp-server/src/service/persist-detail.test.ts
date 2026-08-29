@@ -1,12 +1,11 @@
 import * as fs from "node:fs/promises";
-import * as os from "node:os";
 import * as path from "node:path";
 
 import { afterEach, describe, expect, it } from "vitest";
 
-import { persistDetailJson } from "./persist-detail.js";
+import { getFigdiffResultsDir } from "../util/figdiff-paths.js";
 
-const TEST_RESULTS_DIR = path.join(os.homedir(), ".figdiff", "results");
+import { persistDetailJson } from "./persist-detail.js";
 
 const createdFiles: string[] = [];
 
@@ -22,7 +21,7 @@ describe("persistDetailJson", () => {
     const filePath = await persistDetailJson(payload, "test-persist-basic");
     createdFiles.push(filePath);
 
-    expect(filePath).toContain(TEST_RESULTS_DIR);
+    expect(filePath).toContain(getFigdiffResultsDir());
     expect(filePath).toMatch(/test-persist-basic\.json$/);
 
     const stat = await fs.stat(filePath);

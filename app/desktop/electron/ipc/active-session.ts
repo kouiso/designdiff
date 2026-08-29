@@ -1,10 +1,11 @@
 import * as fs from "node:fs";
 import * as fsPromises from "node:fs/promises";
-import { homedir } from "node:os";
 import * as path from "node:path";
 
 import { BrowserWindow, ipcMain } from "electron";
 import { z } from "zod";
+
+import { getFigdiffHome } from "../util/figdiff-home.js";
 
 declare module "node:fs" {
   interface FSWatcher {
@@ -28,7 +29,7 @@ export const ActiveSessionPayloadSchema = z.object({
 
 export type ActiveSessionPayload = z.infer<typeof ActiveSessionPayloadSchema>;
 
-const FIGDIFF_DIR = path.join(homedir(), ".figdiff");
+const FIGDIFF_DIR = getFigdiffHome();
 const ACTIVE_SESSION_PATH = path.join(FIGDIFF_DIR, "active-session.json");
 
 const getMainWindow = (): BrowserWindow | null => {

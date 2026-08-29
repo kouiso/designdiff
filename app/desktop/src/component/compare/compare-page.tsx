@@ -51,9 +51,10 @@ function formatScore(score: number): string {
 
 function getVerdict(compareResult: ResultWithDiffImage | null): DiffVerdict {
   if (compareResult?.diffReport) return compareResult.diffReport.aggregateVerdict;
-  if (!compareResult) return "inconclusive";
-  if (compareResult.matchRate >= 95) return "pass";
-  return "fail";
+  // diffReport が無い比較に、ここだけの基準で合否を付けん。
+  // 一致率だけで pass を出すと、構造と色で見る共有の computeVerdict と
+  // 別の物差しが画面上にもう1つ生まれて、どちらを見とるか分からんようになる。
+  return "inconclusive";
 }
 
 function getPrimaryIssues(compareResult: ResultWithDiffImage | null): DiffIssue[] {

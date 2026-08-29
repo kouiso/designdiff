@@ -119,11 +119,15 @@ describe("comparison-history", () => {
   it("履歴上限から外れた比較の永続化ファイルを削除する", async () => {
     clearComparisonHistory();
     const originalHome = process.env.HOME;
+    const originalFigdiffHome = process.env.FIGDIFF_HOME;
     const testHome = await fs.mkdtemp(path.join(tmpdir(), "figdiff-history-evict-"));
     const sourceKey = "figma:file:evict";
 
     try {
       process.env.HOME = testHome;
+      // HOME を差し替えて解決先を見る検体。vitest.setup.ts の FIGDIFF_HOME が
+      // 残っとるとそちらが勝つので、同じ場所へ向け直す。
+      process.env.FIGDIFF_HOME = path.join(testHome, ".figdiff");
       const resultsDir = path.join(testHome, ".figdiff", "results");
       await fs.mkdir(resultsDir, { recursive: true });
 
@@ -147,6 +151,8 @@ describe("comparison-history", () => {
     } finally {
       if (originalHome === undefined) delete process.env.HOME;
       else process.env.HOME = originalHome;
+      if (originalFigdiffHome === undefined) delete process.env.FIGDIFF_HOME;
+      else process.env.FIGDIFF_HOME = originalFigdiffHome;
       clearComparisonHistory();
       await fs.rm(testHome, { recursive: true, force: true });
     }
@@ -155,10 +161,14 @@ describe("comparison-history", () => {
   it("メモリ履歴がない場合はディスクから比較結果を復元する", async () => {
     clearComparisonHistory();
     const originalHome = process.env.HOME;
+    const originalFigdiffHome = process.env.FIGDIFF_HOME;
     const testHome = await fs.mkdtemp(path.join(tmpdir(), "figdiff-history-"));
 
     try {
       process.env.HOME = testHome;
+      // HOME を差し替えて解決先を見る検体。vitest.setup.ts の FIGDIFF_HOME が
+      // 残っとるとそちらが勝つので、同じ場所へ向け直す。
+      process.env.FIGDIFF_HOME = path.join(testHome, ".figdiff");
       const comparisonId = `cmp-disk-${Date.now()}`;
       const sourceKey = "figma:file:disk";
 
@@ -185,6 +195,8 @@ describe("comparison-history", () => {
     } finally {
       if (originalHome === undefined) delete process.env.HOME;
       else process.env.HOME = originalHome;
+      if (originalFigdiffHome === undefined) delete process.env.FIGDIFF_HOME;
+      else process.env.FIGDIFF_HOME = originalFigdiffHome;
       await fs.rm(testHome, { recursive: true, force: true });
     }
   });

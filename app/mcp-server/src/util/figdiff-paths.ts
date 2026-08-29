@@ -59,6 +59,16 @@ export function getFigdiffLoopStateDir(): string {
   return path.join(getFigdiffHome(), "loop-state");
 }
 
+/**
+ * 収束履歴 (キャンペーン単位の反復記録) の置き場。
+ *
+ * loop-state はガードが停止を返した時点で捨てられる。捨てんと再実行が
+ * 巻き添えで止まるためで、ガードとしては正しい。ただし「何回でどう詰めたか」を
+ * あとから見る手段が無くなるので、消えん記録をここに分けて持つ。
+ */
+export const getFigdiffConvergenceDir = (): string =>
+  readEnvDir("FIGDIFF_CONVERGENCE_DIR") ?? path.join(getFigdiffHome(), "convergence");
+
 /** 直近の比較セッションを記録するファイル。 */
 export function getActiveSessionPath(): string {
   return path.join(getFigdiffHome(), "active-session.json");

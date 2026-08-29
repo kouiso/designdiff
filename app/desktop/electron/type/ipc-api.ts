@@ -1,4 +1,11 @@
-import type { FigmaAuthState, Frame, NodeInspection, Project, ViewMode } from "@figdiff/shared";
+import type {
+  ConvergenceHistory,
+  FigmaAuthState,
+  Frame,
+  NodeInspection,
+  Project,
+  ViewMode,
+} from "@figdiff/shared";
 
 export type OverlayViewMode = ViewMode;
 export type OverlayScaleMode = "fit_width" | "actual_size";
@@ -38,6 +45,16 @@ export interface ActiveSessionAPI {
 }
 
 /**
+ * MCP サーバが積んだ収束履歴を読む。読み取り専用。
+ * デスクトップから書き換えられると、AI が実際に踏んだ反復と画面の反復がズレる。
+ */
+export interface ConvergenceAPI {
+  list(): Promise<ConvergenceHistory[]>;
+  read(sourceKey: string): Promise<ConvergenceHistory | null>;
+  onUpdated(callback: (histories: ConvergenceHistory[]) => void): () => void;
+}
+
+/**
  * Renderer プロセスから呼び出せる IPC API の型定義
  * contextBridge 経由で window.electronAPI として公開される
  */
@@ -56,6 +73,7 @@ export interface ElectronAPI {
   project: ProjectAPI;
   oauth: OAuthAPI;
   activeSession: ActiveSessionAPI;
+  convergence: ConvergenceAPI;
 }
 
 export interface OAuthAPI {

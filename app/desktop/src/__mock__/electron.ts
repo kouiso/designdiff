@@ -26,6 +26,11 @@ const electronAPI = {
     saveClient: vi.fn().mockResolvedValue(undefined),
     getClientId: vi.fn().mockResolvedValue(null),
   },
+  convergence: {
+    list: vi.fn().mockResolvedValue([]),
+    read: vi.fn().mockResolvedValue(null),
+    onUpdated: vi.fn().mockReturnValue(() => undefined),
+  },
   activeSession: {
     read: vi.fn().mockResolvedValue(null),
     readImage: vi.fn().mockResolvedValue(null),

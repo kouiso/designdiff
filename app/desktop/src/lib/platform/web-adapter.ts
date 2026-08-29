@@ -232,6 +232,7 @@ export const webAdapter: PlatformAdapter = {
 
 export const webCapabilities: PlatformCapabilities = {
   hasOverlay: false,
+  hasConvergenceHistory: false,
   hasLocalFileAccess: false,
   hasSecureTokenStorage: false,
 };

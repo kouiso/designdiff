@@ -33,6 +33,9 @@ import {
   type IgnoreRegionConfigFileSchema,
   type IgnoreRegionSchema,
   type ImageDimensionsSchema,
+  type ConvergenceCampaignSchema,
+  type ConvergenceHistorySchema,
+  type ConvergenceIterationSchema,
   type LoopGuardReasonSchema,
   type LoopGuardReportSchema,
   type NodeAppearanceSchema,
@@ -97,6 +100,9 @@ export type ParsedDesignInput = z.infer<typeof ParsedDesignInputSchema>;
 export type CompareDesignResult = z.infer<typeof CompareDesignResultSchema>;
 export type LoopGuardReport = z.infer<typeof LoopGuardReportSchema>;
 export type LoopGuardReason = z.infer<typeof LoopGuardReasonSchema>;
+export type ConvergenceIteration = z.infer<typeof ConvergenceIterationSchema>;
+export type ConvergenceCampaign = z.infer<typeof ConvergenceCampaignSchema>;
+export type ConvergenceHistory = z.infer<typeof ConvergenceHistorySchema>;
 export type DiffRegion = z.infer<typeof DiffRegionSchema>;
 
 // --- Token Diff (色・文字を数値で突き合わせる経路) ---
