@@ -482,6 +482,47 @@ export const LoopGuardReportSchema = z.object({
   decision: z.enum(["continue", "stop"]).optional(),
 });
 
+// --- 収束履歴 (Convergence History) ---
+// ループガードの状態 (~/.figdiff/loop-state) は、停止判定を返した時点で捨てられる。
+// 捨てんと、人が原因を直して再実行しても TTL のあいだ停止を返し続けるためで、
+// ガードとしては正しい。ただしそのせいで「AI が何回で、どう詰めていったか」が
+// どこにも残らず、あとから振り返れん。ガードの状態とは別に、消えん記録を持つ。
+
+/** 自走ループ1反復ぶんの記録。 */
+export const ConvergenceIterationSchema = z.object({
+  comparisonId: z.string(),
+  matchRate: z.number(),
+  diffPixelCount: z.number().nonnegative().optional(),
+  regionCount: z.number().nonnegative().optional(),
+  // matchRate は文字の縁のぼかしで動くので、人が見て分かる差の割合を併記する。
+  perceptibleDiffRatio: z.number().optional(),
+  structuralVerdict: DiffVerdictSchema,
+  status: z.enum(["PASS", "FAIL", "UNCERTAIN"]),
+  timestamp: z.number(),
+  /** その反復の差分画像。残っていれば前後を並べて見られる。 */
+  diffImagePath: z.string().optional(),
+});
+
+/** 同じ比較対象に対する一続きの修正キャンペーン。停止判定が出た時点で閉じる。 */
+export const ConvergenceCampaignSchema = z.object({
+  campaignId: z.string(),
+  sourceKey: z.string(),
+  designSource: z.string().optional(),
+  implementationUrl: z.string().optional(),
+  startedAt: z.number(),
+  updatedAt: z.number(),
+  endedAt: z.number().optional(),
+  endReason: LoopGuardReasonSchema.optional(),
+  endMessage: z.string().optional(),
+  iterations: z.array(ConvergenceIterationSchema),
+});
+
+/** sourceKey 単位のキャンペーン履歴ファイルの中身。 */
+export const ConvergenceHistorySchema = z.object({
+  sourceKey: z.string(),
+  campaigns: z.array(ConvergenceCampaignSchema),
+});
+
 export const ToastBandCandidateSchema = z.object({
   x: z.number().nonnegative(),
   y: z.number().nonnegative(),

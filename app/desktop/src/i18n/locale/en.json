@@ -13,7 +13,8 @@
     "compare": "Compare",
     "settings": "Settings",
     "breadcrumb": "Breadcrumb",
-    "liveOverlay": "Live Overlay"
+    "liveOverlay": "Live Overlay",
+    "convergence": "Convergence"
   },
   "header": {
     "newCompare": "New Comparison",
@@ -217,5 +218,26 @@
   },
   "error": {
     "bothImagesRequired": "Both images are required"
+  },
+  "convergence": {
+    "title": "AI convergence record",
+    "targets": "Targets",
+    "step": "#{{n}}",
+    "stepCount": "{{count}} steps",
+    "running": "running",
+    "perceptible": "perceptible diff",
+    "regions": "{{count}} diff regions",
+    "barTitle": "Step {{n}}: match {{rate}}%",
+    "loading": "Loading convergence records...",
+    "unavailable": "Convergence records are available in the desktop app only.",
+    "emptyTitle": "No records yet",
+    "emptyHint": "Run compare_design and each iteration's match rate and stop reason will appear here.",
+    "reason": {
+      "no-regression": "Reached PASS",
+      "regression": "Regression detected",
+      "max-steps": "Iteration limit",
+      "uncertain": "Needs human review",
+      "continue": "In progress"
+    }
   }
 }

@@ -35,6 +35,7 @@ describe("platform 解決", () => {
     const first = await getCapabilities();
     expect(first).toEqual({
       hasOverlay: true,
+      hasConvergenceHistory: true,
       hasLocalFileAccess: true,
       hasSecureTokenStorage: true,
     });

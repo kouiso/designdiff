@@ -448,7 +448,9 @@ export const registerCompareDesign = (server: McpServer): void => {
               : undefined;
           await writeActiveSession({
             comparisonId: resultData.comparisonId,
-            sourceKey: resultData.comparisonId,
+            // 比較対象そのものを指す鍵。comparisonId を入れると毎回別対象に見えて、
+            // 「同じ画面を直し続けとる」ことが後から辿れんようになる。
+            sourceKey: comparison.sourceKey,
             implementationUrl: args.screenshot_url ?? undefined,
             designSource: args.design_source,
             designImagePath,

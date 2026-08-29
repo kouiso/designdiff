@@ -47,6 +47,7 @@ const mocks = vi.hoisted(() => {
     registerProjectHandlers: vi.fn(),
     registerOAuthHandlers: vi.fn(),
     registerActiveSessionHandlers: vi.fn(),
+    registerConvergenceHandlers: vi.fn(),
     isPackaged: false,
   };
 });
@@ -78,6 +79,9 @@ vi.mock("./ipc/project", () => ({ registerProjectHandlers: mocks.registerProject
 vi.mock("./ipc/oauth", () => ({ registerOAuthHandlers: mocks.registerOAuthHandlers }));
 vi.mock("./ipc/active-session", () => ({
   registerActiveSessionHandlers: mocks.registerActiveSessionHandlers,
+}));
+vi.mock("./ipc/convergence", () => ({
+  registerConvergenceHandlers: mocks.registerConvergenceHandlers,
 }));
 
 type Listener = (...args: unknown[]) => unknown;
@@ -122,6 +126,7 @@ describe("起動処理", () => {
     expect(mocks.registerProjectHandlers).toHaveBeenCalledOnce();
     expect(mocks.registerOAuthHandlers).toHaveBeenCalledOnce();
     expect(mocks.registerActiveSessionHandlers).toHaveBeenCalledOnce();
+    expect(mocks.registerConvergenceHandlers).toHaveBeenCalledOnce();
     expect(mocks.BrowserWindow).toHaveBeenCalled();
   });
 

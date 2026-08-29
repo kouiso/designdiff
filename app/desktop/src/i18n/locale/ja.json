@@ -13,7 +13,8 @@
     "compare": "比較",
     "settings": "設定",
     "breadcrumb": "パンくずリスト",
-    "liveOverlay": "ライブオーバーレイ"
+    "liveOverlay": "ライブオーバーレイ",
+    "convergence": "収束"
   },
   "header": {
     "newCompare": "新規比較",
@@ -217,5 +218,26 @@
   },
   "error": {
     "bothImagesRequired": "両方の画像が必要です"
+  },
+  "convergence": {
+    "title": "AI の収束の記録",
+    "targets": "比較対象",
+    "step": "#{{n}}",
+    "stepCount": "{{count}} 反復",
+    "running": "実行中",
+    "perceptible": "見える差",
+    "regions": "差分 {{count}} 領域",
+    "barTitle": "反復 {{n}}: 一致率 {{rate}}%",
+    "loading": "収束の記録を読み込み中...",
+    "unavailable": "収束の記録はデスクトップアプリでのみ表示できます。",
+    "emptyTitle": "まだ記録がありません",
+    "emptyHint": "compare_design を実行すると、反復ごとの一致率と停止理由がここに積まれます。",
+    "reason": {
+      "no-regression": "PASS に到達",
+      "regression": "悪化を検出",
+      "max-steps": "反復回数の上限",
+      "uncertain": "人のレビューが必要",
+      "continue": "継続中"
+    }
   }
 }

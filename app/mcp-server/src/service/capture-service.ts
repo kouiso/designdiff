@@ -147,7 +147,8 @@ function harvestDomStyles(maxElements: number): DomElementStyle[] {
 
 /**
  * Capture a URL as a full-page PNG screenshot with fidelity guarantees:
- * - waitUntil: "networkidle" — deferred images and web fonts fully loaded
+ * - waitUntil: "networkidle" — in-flight requests settled before measuring
+ * - loading="lazy" を eager へ倒して読み切る — 下端の画像が空のまま写るのを防ぐ
  * - document.fonts.ready — font-face rendering complete before screenshot
  * - animation/transition CSS zeroed — non-deterministic diff prevention
  * - fullPage: true
@@ -158,6 +159,46 @@ function harvestDomStyles(maxElements: number): DomElementStyle[] {
  * instead of launching a new browser. Useful in WSL/sandbox where localhost
  * on the MCP server side cannot reach the host dev server.
  */
+/**
+ * native lazy-loading の画像・iframe を撮影前に読み切らせる。
+ *
+ * 撮影は CDP の captureScreenshot + captureBeyondViewport で行っており、
+ * ページをスクロールせんままビューポート外まで描画する。loading="lazy" は
+ * 交差判定で発火するため、この経路では下端の要素が一度もビューポートへ入らず、
+ * 空のまま写る。networkidle は「まだ発行されてへんリクエスト」を待てんので効かん。
+ *
+ * 空の画像は実装を直しても消えん恒久的な差分になり、ループガードが
+ * 「収束が停滞」と誤判定して自動修正を止めてしまう。撮影側の欠陥であって
+ * 実装の差ではないため、撮る前に eager へ倒して読み切らせる。
+ */
+const loadLazyMedia = async (page: {
+  evaluate: (fn: () => Promise<void>) => Promise<void>;
+  waitForLoadState?: (state: "networkidle") => Promise<void>;
+}): Promise<void> => {
+  await page.evaluate(async () => {
+    for (const element of document.querySelectorAll('img[loading="lazy"]')) {
+      element.setAttribute("loading", "eager");
+    }
+    for (const element of document.querySelectorAll('iframe[loading="lazy"]')) {
+      element.setAttribute("loading", "eager");
+    }
+    const pending = Array.from(document.images).filter((image) => !image.complete);
+    await Promise.all(
+      pending.map(
+        (image) =>
+          new Promise<void>((resolve) => {
+            image.addEventListener("load", () => resolve(), { once: true });
+            image.addEventListener("error", () => resolve(), { once: true });
+          }),
+      ),
+    );
+  });
+  // eager へ倒した直後に発行されたリクエストが落ち着くのを待つ。待てん実装
+  // (テストのモック等) では省いてよい。撮影自体は続けられる。
+  const settled = page.waitForLoadState?.("networkidle");
+  if (settled !== undefined) await settled.catch(() => undefined);
+};
+
 export async function captureUrl(url: string, options: CaptureOptions): Promise<CaptureResult> {
   const loadPw = async () => {
     try {
@@ -184,6 +225,7 @@ export async function captureUrl(url: string, options: CaptureOptions): Promise<
   const takeScreenshot = async (page: PwPage): Promise<CaptureResult> => {
     await page.goto(url, { waitUntil: "networkidle", timeout: 60_000 });
     await page.evaluate(() => document.fonts.ready);
+    await loadLazyMedia(page);
 
     // 動きを止めると、撮るたびに同じ絵になって差分が安定する。ただしフレーム列を
     // 撮るときだけは止めん。止めたままでは、動いている途中の見た目が1枚も写らん。

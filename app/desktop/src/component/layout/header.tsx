@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-import { BarChart2, Home, Layers, Settings, SlidersHorizontal } from "lucide-react";
+import { Activity, BarChart2, Home, Layers, Settings, SlidersHorizontal } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { Logo } from "@/component/layout/logo";
@@ -28,6 +28,7 @@ export function Header({ currentPage, onNavigate }: HeaderProps) {
     { id: "project", icon: <SlidersHorizontal size={15} />, label: t("nav.project") },
     { id: "compare", icon: <BarChart2 size={15} />, label: t("nav.compare") },
     { id: "live_overlay", icon: <Layers size={15} />, label: t("nav.liveOverlay") },
+    { id: "convergence", icon: <Activity size={15} />, label: t("nav.convergence") },
     { id: "settings", icon: <Settings size={15} />, label: t("nav.settings") },
   ];
 

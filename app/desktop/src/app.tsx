@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { ComparePage } from "./component/compare/compare-page";
+import { ConvergencePage } from "./component/convergence/convergence-page";
 import { HomePage } from "./component/home/home-page";
 import { Header } from "./component/layout/header";
 import { TabBar } from "./component/layout/tab-bar";
@@ -17,7 +18,14 @@ import { useProjectListStore } from "./store/project-list-store";
 import { useSettingStore } from "./store/setting-store";
 import { useTabStore } from "./store/tab-store";
 
-export type Page = "home" | "project" | "compare" | "live_overlay" | "settings" | "project_view";
+export type Page =
+  | "home"
+  | "project"
+  | "compare"
+  | "live_overlay"
+  | "settings"
+  | "project_view"
+  | "convergence";
 
 const QUICK_COMPARE_PROJECT_ID = "quick-compare";
 
@@ -61,6 +69,14 @@ export const App = () => {
 
       if (target === "live_overlay") {
         setStandalonePage("live_overlay");
+        useTabStore.getState().setActiveTab(null);
+        return;
+      }
+
+      // 収束の記録はプロジェクト横断で見る。タブに紐づけると、
+      // 対象が別プロジェクトのときに開けんようになる。
+      if (target === "convergence") {
+        setStandalonePage("convergence");
         useTabStore.getState().setActiveTab(null);
         return;
       }
@@ -129,6 +145,7 @@ export const App = () => {
             <LiveOverlayPage onNavigate={handleNavigate} />
           )}
           {!showHome && currentPage === "settings" && <SettingsScreen />}
+          {!showHome && currentPage === "convergence" && <ConvergencePage />}
         </main>
         <TokenRequiredDialog />
       </div>

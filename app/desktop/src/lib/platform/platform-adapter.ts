@@ -1,4 +1,10 @@
-import type { FigmaAuthState, Frame, NodeInspection, Project } from "@figdiff/shared";
+import type {
+  ConvergenceHistory,
+  FigmaAuthState,
+  Frame,
+  NodeInspection,
+  Project,
+} from "@figdiff/shared";
 
 import type { OverlayScaleMode, OverlayViewMode } from "@/store/overlay-store";
 
@@ -80,8 +86,20 @@ export interface OverlayAdapter {
   toggleStop(): Promise<void>;
 }
 
+/**
+ * MCP サーバが積んだ収束履歴の読み取り。Electron 専用 —
+ * 利用前に hasConvergenceHistory を確認すること。
+ * Web 版はローカルの ~/.figdiff を読めんので原理的に提供できん。
+ */
+export interface ConvergenceAdapter {
+  list(): Promise<ConvergenceHistory[]>;
+  read(sourceKey: string): Promise<ConvergenceHistory | null>;
+  onUpdated(callback: (histories: ConvergenceHistory[]) => void): () => void;
+}
+
 export interface PlatformCapabilities {
   readonly hasOverlay: boolean;
+  readonly hasConvergenceHistory: boolean;
   readonly hasLocalFileAccess: boolean;
   readonly hasSecureTokenStorage: boolean;
 }

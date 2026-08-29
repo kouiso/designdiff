@@ -279,7 +279,8 @@ export function registerVerifyFix(server: McpServer): void {
         try {
           await writeActiveSession({
             comparisonId: comparison.result.comparisonId,
-            sourceKey: comparison.result.comparisonId,
+            // comparisonId ではなく比較対象の鍵を入れる (compare_design と同じ理由)。
+            sourceKey: comparison.sourceKey,
             implementationUrl: undefined,
             designSource: args.design_source,
             matchRate: comparison.result.matchRate,

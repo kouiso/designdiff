@@ -185,7 +185,10 @@ describe("verify_fix", () => {
 
     const activeSession = await readActiveSession();
     expect(activeSession?.comparisonId).not.toBe(priorData.comparisonId);
-    expect(activeSession?.sourceKey).toBe(activeSession?.comparisonId);
+    // sourceKey は比較対象を指す。comparisonId と同じ値になったら、同じ画面への
+    // 連続した修正をまとめられず、収束の推移が辿れんようになる。
+    expect(activeSession?.sourceKey).not.toBe(activeSession?.comparisonId);
+    expect(activeSession?.sourceKey).toBe(`local:${designPath}`);
     expect(activeSession?.matchRate).toBe(100);
   });
 
