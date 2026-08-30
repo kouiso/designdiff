@@ -51,7 +51,14 @@ export interface ActiveSessionAPI {
 export interface ConvergenceAPI {
   list(): Promise<ConvergenceHistory[]>;
   read(sourceKey: string): Promise<ConvergenceHistory | null>;
-  /** 記録が変わったことだけ伝える。中身は list() で取り直す。 */
+  /**
+   * 記録が変わったことだけ伝える。中身は list() で取り直す。
+   *
+   * 履歴そのものを payload に載せんのは、読み取り経路を list() の1本に保つため。
+   * main 側でも読んで結果を積む形にすると経路が2本になり、片方が失敗を握り潰して
+   * 古い履歴を出したまま黙る状態が生まれる (実際にそうなっとった)。
+   * 読むのが1本なら、失敗の伝わり方も1本で揃う。
+   */
   onUpdated(callback: () => void): () => void;
 }
 
