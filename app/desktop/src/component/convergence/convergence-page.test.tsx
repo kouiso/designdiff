@@ -296,6 +296,52 @@ describe("ConvergencePage", () => {
     expect(screen.getAllByTestId("convergence-step-row")).toHaveLength(2);
   });
 
+  // 初回の読み取り (list() は readdir + ファイル数ぶんの readFile) は通知の
+  // デバウンス 200ms より長くなり得る。購読を後から張ると、その間に来た通知を
+  // 取りこぼして、次の変更が来るまで古いまま出続ける。
+  it("初回の読み取りより先に購読を張る", async () => {
+    onUpdatedMock.mockClear();
+    let releaseFirst: (value: ConvergenceHistory[]) => void = () => undefined;
+    listMock.mockImplementationOnce(
+      async () =>
+        await new Promise<ConvergenceHistory[]>((resolve) => {
+          releaseFirst = resolve;
+        }),
+    );
+    render(<ConvergencePage />);
+
+    // 初回がまだ返ってへん時点で購読が張れとること。
+    await waitFor(() => {
+      expect(onUpdatedMock).toHaveBeenCalled();
+    });
+
+    await act(async () => {
+      releaseFirst([campaignHistory()]);
+    });
+    await waitFor(() => {
+      expect(screen.getAllByTestId("convergence-step-row")).toHaveLength(2);
+    });
+  });
+
+  // 購読を張り終える前に unmount されると、cleanup は unsubscribe をまだ
+  // 持っとらん。自分で外さんとリスナーが残る。
+  it("初回の途中で閉じてもリスナーを残さん", async () => {
+    onUpdatedMock.mockClear();
+    const stop = vi.fn();
+    onUpdatedMock.mockReturnValueOnce(stop);
+    // 解決させん Promise。閉じるまで初回の読み取りが返らん状態を作る。
+    listMock.mockImplementationOnce(
+      async () => await new Promise<ConvergenceHistory[]>(() => undefined),
+    );
+
+    const { unmount } = render(<ConvergencePage />);
+    await waitFor(() => {
+      expect(onUpdatedMock).toHaveBeenCalled();
+    });
+    unmount();
+    expect(stop).toHaveBeenCalled();
+  });
+
   // Web ビルドでは ~/.figdiff を読めん。空の履歴と同じ見た目にすると、
   // 「まだ動かしてへん」のか「見られへん」のか区別がつかん。
   it("読めん環境ではその旨を出す", async () => {
