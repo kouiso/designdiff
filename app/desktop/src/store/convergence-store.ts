@@ -103,10 +103,21 @@ export function useConvergenceSync(): void {
       }
 
       // 読み取りの失敗を空配列へ潰すと、履歴があるのに「記録がありません」と出る。
+      // 通知が続けて来ると list() が重なる。返ってくる順は投げた順とは限らんので
+      // (readdir + ファイル数ぶんの readFile で、通知の間隔 200ms を超え得る)、
+      // 素直に書くと古い結果や古いエラーが新しい表示を上書きする。
+      // 最後に投げた1本だけを採る。
+      let latest = 0;
       const load = async (): Promise<void> => {
-        const histories = await convergence.list();
-        if (cancelled) return;
-        useConvergenceStore.getState().setHistories(histories);
+        const seq = ++latest;
+        try {
+          const histories = await convergence.list();
+          if (cancelled || seq !== latest) return;
+          useConvergenceStore.getState().setHistories(histories);
+        } catch (reason: unknown) {
+          if (cancelled || seq !== latest) return;
+          fail(reason);
+        }
       };
 
       await load();
@@ -115,6 +126,7 @@ export function useConvergenceSync(): void {
       // main 側で読んだ結果を積んで貰う形にすると読み取り経路が2本になり、
       // 片方だけ失敗を伝えん状態が生まれる（実際にそうなっとった）。
       unsubscribe = convergence.onUpdated(() => {
+        // load は自分で握るので実質ここへは来ん。想定外の失敗を落とさんため残す。
         load().catch(fail);
       });
     };

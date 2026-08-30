@@ -255,6 +255,47 @@ describe("ConvergencePage", () => {
     expect(shown).toHaveTextContent("EACCES: permission denied");
   });
 
+  // 通知が続けて来ると list() が重なる。返る順は投げた順とは限らんので、
+  // 素直に書くと遅れて返った古い結果が新しい表示を上書きする。
+  it("読み取りが重なっても、最後に投げた結果だけを採る", async () => {
+    onUpdatedMock.mockClear();
+    const base = campaignHistory();
+    const oneStep: ConvergenceHistory = {
+      ...base,
+      campaigns: [{ ...base.campaigns[0], iterations: [base.campaigns[0].iterations[0]] }],
+    };
+    listMock.mockResolvedValueOnce([oneStep]);
+    render(<ConvergencePage />);
+    await waitFor(() => {
+      expect(screen.getAllByTestId("convergence-step-row")).toHaveLength(1);
+    });
+
+    // 1本目は遅れて「古い1反復」を返し、2本目は先に「新しい2反復」を返す。
+    let releaseStale: (value: ConvergenceHistory[]) => void = () => undefined;
+    listMock.mockImplementationOnce(
+      async () =>
+        await new Promise<ConvergenceHistory[]>((resolve) => {
+          releaseStale = resolve;
+        }),
+    );
+    listMock.mockResolvedValueOnce([base]);
+
+    const notify = onUpdatedMock.mock.calls.at(-1)?.[0];
+    await act(async () => {
+      notify();
+      notify();
+    });
+    await waitFor(() => {
+      expect(screen.getAllByTestId("convergence-step-row")).toHaveLength(2);
+    });
+
+    // 追い越された1本目が後から返っても、新しい表示を巻き戻さん。
+    await act(async () => {
+      releaseStale([oneStep]);
+    });
+    expect(screen.getAllByTestId("convergence-step-row")).toHaveLength(2);
+  });
+
   // Web ビルドでは ~/.figdiff を読めん。空の履歴と同じ見た目にすると、
   // 「まだ動かしてへん」のか「見られへん」のか区別がつかん。
   it("読めん環境ではその旨を出す", async () => {
