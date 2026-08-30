@@ -51,7 +51,8 @@ export interface ActiveSessionAPI {
 export interface ConvergenceAPI {
   list(): Promise<ConvergenceHistory[]>;
   read(sourceKey: string): Promise<ConvergenceHistory | null>;
-  onUpdated(callback: (histories: ConvergenceHistory[]) => void): () => void;
+  /** 記録が変わったことだけ伝える。中身は list() で取り直す。 */
+  onUpdated(callback: () => void): () => void;
 }
 
 /**

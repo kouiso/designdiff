@@ -87,6 +87,13 @@ export function useConvergenceSync(): void {
     let unsubscribe: (() => void) | undefined;
     let cancelled = false;
 
+    const fail = (reason: unknown): void => {
+      if (cancelled) return;
+      useConvergenceStore
+        .getState()
+        .setError(reason instanceof Error ? reason.message : String(reason));
+    };
+
     const sync = async (): Promise<void> => {
       const convergence = await getConvergence();
       if (cancelled) return;
@@ -96,20 +103,22 @@ export function useConvergenceSync(): void {
       }
 
       // 読み取りの失敗を空配列へ潰すと、履歴があるのに「記録がありません」と出る。
-      const histories = await convergence.list();
-      if (cancelled) return;
-      useConvergenceStore.getState().setHistories(histories);
+      const load = async (): Promise<void> => {
+        const histories = await convergence.list();
+        if (cancelled) return;
+        useConvergenceStore.getState().setHistories(histories);
+      };
 
-      unsubscribe = convergence.onUpdated((updated) => {
-        useConvergenceStore.getState().setHistories(updated);
+      await load();
+
+      // 更新の通知は「変わった」だけ。中身は初回と同じ list() で取り直す。
+      // main 側で読んだ結果を積んで貰う形にすると読み取り経路が2本になり、
+      // 片方だけ失敗を伝えん状態が生まれる（実際にそうなっとった）。
+      unsubscribe = convergence.onUpdated(() => {
+        load().catch(fail);
       });
     };
-    sync().catch((reason: unknown) => {
-      if (cancelled) return;
-      useConvergenceStore
-        .getState()
-        .setError(reason instanceof Error ? reason.message : String(reason));
-    });
+    sync().catch(fail);
 
     return () => {
       cancelled = true;

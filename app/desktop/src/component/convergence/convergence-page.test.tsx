@@ -230,6 +230,31 @@ describe("ConvergencePage", () => {
     expect(shown).toHaveTextContent("EACCES: permission denied");
   });
 
+  // 開いたまま読めんようになる場合がある（保持上限の切り詰め中・権限変更・I/O エラー）。
+  // 更新の通知は「変わった」しか運ばんので、中身は初回と同じ list() で取り直す。
+  // main 側で読んだ結果を積んで貰う形やと読み取り経路が2本になり、
+  // 通知側だけ失敗を伝えんまま古い履歴を出し続ける。
+  it("開いた後に読めんようになったら、古い履歴のまま黙らずに理由を出す", async () => {
+    onUpdatedMock.mockClear();
+    listMock.mockResolvedValueOnce([campaignHistory()]);
+    render(<ConvergencePage />);
+
+    await waitFor(() => {
+      expect(screen.getAllByTestId("convergence-step-row")).toHaveLength(2);
+    });
+
+    // 次の読み取りは失敗する
+    listMock.mockRejectedValueOnce(new Error("EACCES: permission denied"));
+    const notify = onUpdatedMock.mock.calls.at(-1)?.[0];
+    expect(notify).toBeTypeOf("function");
+    await act(async () => {
+      notify();
+    });
+
+    const shown = await screen.findByTestId("convergence-error");
+    expect(shown).toHaveTextContent("EACCES: permission denied");
+  });
+
   // Web ビルドでは ~/.figdiff を読めん。空の履歴と同じ見た目にすると、
   // 「まだ動かしてへん」のか「見られへん」のか区別がつかん。
   it("読めん環境ではその旨を出す", async () => {

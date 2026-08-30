@@ -80,10 +80,14 @@ const readHistory = async (sourceKey: string): Promise<ConvergenceHistory | null
   return histories.find((history) => history.sourceKey === sourceKey) ?? null;
 };
 
-const broadcast = async (): Promise<void> => {
-  const win = getMainWindow();
-  if (!win) return;
-  win.webContents.send("convergence:updated", await listHistories());
+// 「変わった」ことだけ知らせる。中身は renderer が convergence:list を呼び直して取る。
+//
+// 以前はここで listHistories() を呼んで結果を積んどった。そうすると読み取りが
+// IPC ハンドラとこの通知の2経路になり、こちら側は失敗を握り潰しとった。
+// 画面を開いたまま読めんようになると、古い履歴を出したまま黙る。
+// 読むのを1本に寄せれば、失敗の伝わり方も1本になって、また食い違うことがない。
+const notifyUpdated = (): void => {
+  getMainWindow()?.webContents.send("convergence:updated");
 };
 
 const startWatcher = (): void => {
@@ -92,9 +96,7 @@ const startWatcher = (): void => {
     watcher = fs.watch(getConvergenceDir(), { persistent: false }, (_event, filename) => {
       if (!filename?.endsWith(".json")) return;
       if (debounceTimer) clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(() => {
-        broadcast().catch(() => undefined);
-      }, WATCH_DEBOUNCE_MS);
+      debounceTimer = setTimeout(notifyUpdated, WATCH_DEBOUNCE_MS);
     });
     watcher.on("error", () => {
       watcher?.close();

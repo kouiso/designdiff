@@ -1,7 +1,5 @@
 import { contextBridge, ipcRenderer, webUtils } from "electron";
 
-import type { ConvergenceHistory } from "@figdiff/shared";
-
 import type { ActiveSessionPayload } from "./ipc/active-session";
 import type { ElectronAPI } from "./type/ipc-api";
 
@@ -86,9 +84,10 @@ const api: ElectronAPI = {
   convergence: {
     list: () => ipcRenderer.invoke("convergence:list"),
     read: (sourceKey: string) => ipcRenderer.invoke("convergence:read", sourceKey),
-    onUpdated: (callback: (histories: ConvergenceHistory[]) => void) => {
-      const handler = (_event: Electron.IpcRendererEvent, histories: ConvergenceHistory[]) =>
-        callback(histories);
+    onUpdated: (callback: () => void) => {
+      const handler = () => {
+        callback();
+      };
       ipcRenderer.on("convergence:updated", handler);
       return () => {
         ipcRenderer.removeListener("convergence:updated", handler);

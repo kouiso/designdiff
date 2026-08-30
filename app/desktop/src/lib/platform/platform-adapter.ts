@@ -94,7 +94,8 @@ export interface OverlayAdapter {
 export interface ConvergenceAdapter {
   list(): Promise<ConvergenceHistory[]>;
   read(sourceKey: string): Promise<ConvergenceHistory | null>;
-  onUpdated(callback: (histories: ConvergenceHistory[]) => void): () => void;
+  /** 記録が変わったことだけ伝える。中身は list() で取り直す。 */
+  onUpdated(callback: () => void): () => void;
 }
 
 export interface PlatformCapabilities {
