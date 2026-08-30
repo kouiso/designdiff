@@ -230,6 +230,118 @@ describe("ConvergencePage", () => {
     expect(shown).toHaveTextContent("EACCES: permission denied");
   });
 
+  // 開いたまま読めんようになる場合がある（保持上限の切り詰め中・権限変更・I/O エラー）。
+  // 更新の通知は「変わった」しか運ばんので、中身は初回と同じ list() で取り直す。
+  // main 側で読んだ結果を積んで貰う形やと読み取り経路が2本になり、
+  // 通知側だけ失敗を伝えんまま古い履歴を出し続ける。
+  it("開いた後に読めんようになったら、古い履歴のまま黙らずに理由を出す", async () => {
+    onUpdatedMock.mockClear();
+    listMock.mockResolvedValueOnce([campaignHistory()]);
+    render(<ConvergencePage />);
+
+    await waitFor(() => {
+      expect(screen.getAllByTestId("convergence-step-row")).toHaveLength(2);
+    });
+
+    // 次の読み取りは失敗する
+    listMock.mockRejectedValueOnce(new Error("EACCES: permission denied"));
+    const notify = onUpdatedMock.mock.calls.at(-1)?.[0];
+    expect(notify).toBeTypeOf("function");
+    await act(async () => {
+      notify();
+    });
+
+    const shown = await screen.findByTestId("convergence-error");
+    expect(shown).toHaveTextContent("EACCES: permission denied");
+  });
+
+  // 通知が続けて来ると list() が重なる。返る順は投げた順とは限らんので、
+  // 素直に書くと遅れて返った古い結果が新しい表示を上書きする。
+  it("読み取りが重なっても、最後に投げた結果だけを採る", async () => {
+    onUpdatedMock.mockClear();
+    const base = campaignHistory();
+    const oneStep: ConvergenceHistory = {
+      ...base,
+      campaigns: [{ ...base.campaigns[0], iterations: [base.campaigns[0].iterations[0]] }],
+    };
+    listMock.mockResolvedValueOnce([oneStep]);
+    render(<ConvergencePage />);
+    await waitFor(() => {
+      expect(screen.getAllByTestId("convergence-step-row")).toHaveLength(1);
+    });
+
+    // 1本目は遅れて「古い1反復」を返し、2本目は先に「新しい2反復」を返す。
+    let releaseStale: (value: ConvergenceHistory[]) => void = () => undefined;
+    listMock.mockImplementationOnce(
+      async () =>
+        await new Promise<ConvergenceHistory[]>((resolve) => {
+          releaseStale = resolve;
+        }),
+    );
+    listMock.mockResolvedValueOnce([base]);
+
+    const notify = onUpdatedMock.mock.calls.at(-1)?.[0];
+    await act(async () => {
+      notify();
+      notify();
+    });
+    await waitFor(() => {
+      expect(screen.getAllByTestId("convergence-step-row")).toHaveLength(2);
+    });
+
+    // 追い越された1本目が後から返っても、新しい表示を巻き戻さん。
+    await act(async () => {
+      releaseStale([oneStep]);
+    });
+    expect(screen.getAllByTestId("convergence-step-row")).toHaveLength(2);
+  });
+
+  // 初回の読み取り (list() は readdir + ファイル数ぶんの readFile) は通知の
+  // デバウンス 200ms より長くなり得る。購読を後から張ると、その間に来た通知を
+  // 取りこぼして、次の変更が来るまで古いまま出続ける。
+  it("初回の読み取りより先に購読を張る", async () => {
+    onUpdatedMock.mockClear();
+    let releaseFirst: (value: ConvergenceHistory[]) => void = () => undefined;
+    listMock.mockImplementationOnce(
+      async () =>
+        await new Promise<ConvergenceHistory[]>((resolve) => {
+          releaseFirst = resolve;
+        }),
+    );
+    render(<ConvergencePage />);
+
+    // 初回がまだ返ってへん時点で購読が張れとること。
+    await waitFor(() => {
+      expect(onUpdatedMock).toHaveBeenCalled();
+    });
+
+    await act(async () => {
+      releaseFirst([campaignHistory()]);
+    });
+    await waitFor(() => {
+      expect(screen.getAllByTestId("convergence-step-row")).toHaveLength(2);
+    });
+  });
+
+  // 購読を張り終える前に unmount されると、cleanup は unsubscribe をまだ
+  // 持っとらん。自分で外さんとリスナーが残る。
+  it("初回の途中で閉じてもリスナーを残さん", async () => {
+    onUpdatedMock.mockClear();
+    const stop = vi.fn();
+    onUpdatedMock.mockReturnValueOnce(stop);
+    // 解決させん Promise。閉じるまで初回の読み取りが返らん状態を作る。
+    listMock.mockImplementationOnce(
+      async () => await new Promise<ConvergenceHistory[]>(() => undefined),
+    );
+
+    const { unmount } = render(<ConvergencePage />);
+    await waitFor(() => {
+      expect(onUpdatedMock).toHaveBeenCalled();
+    });
+    unmount();
+    expect(stop).toHaveBeenCalled();
+  });
+
   // Web ビルドでは ~/.figdiff を読めん。空の履歴と同じ見た目にすると、
   // 「まだ動かしてへん」のか「見られへん」のか区別がつかん。
   it("読めん環境ではその旨を出す", async () => {

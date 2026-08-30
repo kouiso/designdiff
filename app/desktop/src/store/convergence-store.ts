@@ -87,6 +87,13 @@ export function useConvergenceSync(): void {
     let unsubscribe: (() => void) | undefined;
     let cancelled = false;
 
+    const fail = (reason: unknown): void => {
+      if (cancelled) return;
+      useConvergenceStore
+        .getState()
+        .setError(reason instanceof Error ? reason.message : String(reason));
+    };
+
     const sync = async (): Promise<void> => {
       const convergence = await getConvergence();
       if (cancelled) return;
@@ -96,20 +103,50 @@ export function useConvergenceSync(): void {
       }
 
       // 読み取りの失敗を空配列へ潰すと、履歴があるのに「記録がありません」と出る。
-      const histories = await convergence.list();
-      if (cancelled) return;
-      useConvergenceStore.getState().setHistories(histories);
+      // 通知が続けて来ると list() が重なる。返ってくる順は投げた順とは限らんので
+      // (readdir + ファイル数ぶんの readFile で、通知の間隔 200ms を超え得る)、
+      // 素直に書くと古い結果や古いエラーが新しい表示を上書きする。
+      // 最後に投げた1本だけを画面へ反映する。
+      let latest = 0;
+      const load = async (): Promise<void> => {
+        const seq = ++latest;
+        try {
+          const histories = await convergence.list();
+          if (cancelled || seq !== latest) return;
+          useConvergenceStore.getState().setHistories(histories);
+        } catch (reason: unknown) {
+          if (cancelled || seq !== latest) {
+            // 画面へ出すのは最新の1本だけやが、I/O の失敗そのものを消したら
+            // 追い越された読みが黙って死ぬ。表に出さん分はログへ残す。
+            console.error("[convergence] 追い越された読み取りが失敗:", reason);
+            return;
+          }
+          fail(reason);
+        }
+      };
 
-      unsubscribe = convergence.onUpdated((updated) => {
-        useConvergenceStore.getState().setHistories(updated);
+      // 更新の通知は「変わった」だけ。中身は初回と同じ list() で取り直す。
+      // main 側で読んだ結果を積んで貰う形にすると読み取り経路が2本になり、
+      // 片方だけ失敗を伝えん状態が生まれる（実際にそうなっとった）。
+      //
+      // 購読は初回の読み取りより先に張る。逆にすると、読んどる最中に来た通知を
+      // 取りこぼして、次の変更が来るまで古いまま出続ける
+      // (初回の list() は通知のデバウンス 200ms より長くなり得る)。
+      const stop = convergence.onUpdated(() => {
+        // load は自分で握るので実質ここへは来ん。想定外の失敗を落とさんため残す。
+        load().catch(fail);
       });
+      // 購読を張るまでの間に unmount されとると、cleanup は unsubscribe を
+      // まだ持っとらん。ここで自分で外さんとリスナーが残る。
+      if (cancelled) {
+        stop();
+        return;
+      }
+      unsubscribe = stop;
+
+      await load();
     };
-    sync().catch((reason: unknown) => {
-      if (cancelled) return;
-      useConvergenceStore
-        .getState()
-        .setError(reason instanceof Error ? reason.message : String(reason));
-    });
+    sync().catch(fail);
 
     return () => {
       cancelled = true;
