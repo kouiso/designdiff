@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import type { CompareDesignResult, DiffIssue, DiffVerdict } from "@figdiff/shared";
 
 import { ScoreBar } from "@/component/ui/score-bar";
-import { ScoreRing } from "@/component/ui/score-ring";
+import { ScoreRing, type ScoreTone } from "@/component/ui/score-ring";
 import { LoadingOverlay, Spinner } from "@/component/ui/spinner";
 import { getPlatform } from "@/lib/platform";
 import { cn } from "@/lib/util";
@@ -56,6 +56,14 @@ function getVerdict(compareResult: ResultWithDiffImage | null): DiffVerdict {
   // 別の物差しが画面上にもう1つ生まれて、どちらを見とるか分からんようになる。
   return "inconclusive";
 }
+
+// リングの色は点数やのうて判定に合わせる。一致率が高いだけで緑にすると、
+// 構造が違う回に緑の大きい数字が出て、判定バッジより先に目へ入る。
+const VERDICT_TONE: Record<DiffVerdict, ScoreTone> = {
+  pass: "pass",
+  fail: "fail",
+  inconclusive: "warn",
+};
 
 function getPrimaryIssues(compareResult: ResultWithDiffImage | null): DiffIssue[] {
   return compareResult?.diffReport?.issues ?? [];
@@ -474,7 +482,7 @@ export function ComparePage() {
           style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
         >
           <div className="flex items-center gap-4">
-            <ScoreRing score={score} size={128} stroke={9} />
+            <ScoreRing score={score} tone={VERDICT_TONE[verdict]} size={128} stroke={9} />
             <div className="min-w-0 flex-1">
               <p className="font-semibold text-sm" style={{ color: "var(--muted-fg)" }}>
                 {t("compare.matchRate")}

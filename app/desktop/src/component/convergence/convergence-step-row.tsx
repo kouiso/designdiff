@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import type { ConvergenceIteration } from "@figdiff/shared";
 
 import { CompareVerdictBadge } from "@/component/compare/compare-verdict-badge";
-import { ScoreRing } from "@/component/ui/score-ring";
+import { ScoreRing, type ScoreTone } from "@/component/ui/score-ring";
 import { StatusPill, type StatusType } from "@/component/ui/status-pill";
 import { cn } from "@/lib/util";
 
@@ -15,7 +15,7 @@ interface ConvergenceStepRowProps {
   onSelect?: () => void;
 }
 
-const STATUS_PILL: Record<ConvergenceIteration["status"], StatusType> = {
+const STATUS_PILL: Record<ConvergenceIteration["status"], StatusType & ScoreTone> = {
   PASS: "pass",
   FAIL: "fail",
   UNCERTAIN: "warn",
@@ -69,7 +69,11 @@ export function ConvergenceStepRow({
         {t("convergence.step", { n: step })}
       </span>
 
-      <ScoreRing score={Math.round(iteration.matchRate * 100) / 100} size={52} />
+      <ScoreRing
+        score={Math.round(iteration.matchRate * 100) / 100}
+        tone={STATUS_PILL[iteration.status]}
+        size={52}
+      />
 
       <span className="flex min-w-0 flex-1 flex-col gap-1">
         <span className="flex items-center gap-2">

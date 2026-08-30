@@ -51,6 +51,15 @@ describe("ConvergenceStepRow", () => {
     expect(screen.queryByText(/pt$/)).not.toBeInTheDocument();
   });
 
+  // 一致率が高いだけで緑のリングを出すと、赤い FAIL より緑の大きい数字が先に目へ入る。
+  // バグCで潰した「高い一致率＝合格」を、色で復活させんため。
+  it("落ちとる反復は一致率が高くてもリングを合格色にせん", () => {
+    render(<ConvergenceStepRow step={1} iteration={iteration({ matchRate: 96.96 })} />);
+    expect(screen.getByTestId("score-ring-value").style.color.replaceAll(" ", "")).toBe(
+      "var(--diff)",
+    );
+  });
+
   it("PASS の反復は PASS の表示になる", () => {
     render(
       <ConvergenceStepRow

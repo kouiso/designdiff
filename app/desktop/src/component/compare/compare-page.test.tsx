@@ -139,6 +139,26 @@ describe("ComparePage", () => {
     expect(screen.getByTestId("compare-score-verdict-badge")).toHaveTextContent("INCONCLUSIVE");
   });
 
+  // 判定が保留やのにリングだけ緑にすると、判定バッジより先に緑の数字が目へ入る。
+  it("判定が保留の比較はリングも合格色にせん", () => {
+    useCompareStore.setState({
+      designImage: "d",
+      screenshotImage: "s",
+      compareResult: {
+        comparisonId: "cmp-3",
+        matchRate: 99.9,
+        diffPixelCount: 1,
+        totalPixelCount: 1000,
+        suggestion: "compare.suggestionMinor",
+        diffRegions: [],
+      },
+    });
+    render(<ComparePage />);
+    expect(screen.getByTestId("score-ring-value").style.color.replaceAll(" ", "")).toBe(
+      "var(--warn)",
+    );
+  });
+
   it("error あり → エラーメッセージ表示", () => {
     useCompareStore.setState({ error: "比較エラー" });
     render(<ComparePage />);
