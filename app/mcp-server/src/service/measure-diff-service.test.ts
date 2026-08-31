@@ -11,7 +11,8 @@ import { describe, expect, it } from "vitest";
 
 import type { DomElementStyle, DomLayoutBox, FigmaNode } from "@figdiff/shared";
 
-import { runMeasureDiff } from "./measure-diff-service.js";
+import type { DesignNode, ParentPair } from "./measure-diff-service.js";
+import { pairScore, runMeasureDiff } from "./measure-diff-service.js";
 import { runTokenDiff } from "./token-diff-service.js";
 
 const FRAME_WIDTH = 375;
@@ -463,5 +464,155 @@ describe("既存の値経路が見ていなかった範囲", () => {
       ),
     );
     expect(spatial).toEqual([]);
+  });
+});
+
+/** pairScore を直接叩くための最小の DesignNode。 */
+function designNode(
+  id: string,
+  name: string,
+  rect: { x: number; y: number; width: number; height: number },
+  children: DesignNode[] = [],
+): DesignNode {
+  return {
+    id,
+    name,
+    type: "FRAME",
+    node: node({ id, name, type: "FRAME" }),
+    rect,
+    children,
+    notCompared: false,
+  };
+}
+
+describe("pairScore — 位置が合っているだけでは通さない", () => {
+  const parent: ParentPair = {
+    design: { x: 0, y: 0, width: 375, height: 84 },
+    impl: { x: 0, y: 0, width: 375, height: 84 },
+  };
+
+  // dev-f のプレイリスト行で実際に踏んだ組み合わせ。
+  // 80x84 のサムネ枠に対して、同じ左上に居る 72x12 の飾り帯が当たっていた。
+  const table: { label: string; design: [number, number]; impl: [number, number]; offset: number; pass: boolean }[] =
+    [
+      { label: "枠84に対して飾り帯12", design: [80, 84], impl: [72, 12], offset: 0, pass: false },
+      { label: "枠84に対して本体80", design: [80, 84], impl: [80, 80], offset: 0, pass: true },
+      { label: "1px の箱", design: [80, 84], impl: [1, 1], offset: 0, pass: false },
+      { label: "同じ大きさで少しずれる", design: [80, 84], impl: [80, 84], offset: 8, pass: true },
+    ];
+
+  for (const entry of table) {
+    it(`${entry.label} は ${entry.pass ? "候補になる" : "候補にしない"}`, () => {
+      const design = designNode("2:1", "サムネ", {
+        x: 0,
+        y: 0,
+        width: entry.design[0],
+        height: entry.design[1],
+      });
+      const score = pairScore(
+        design,
+        box({
+          ref: 1,
+          parentRef: 0,
+          depth: 1,
+          tag: "div",
+          x: entry.offset,
+          y: 0,
+          width: entry.impl[0],
+          height: entry.impl[1],
+        }),
+        parent,
+      );
+      if (entry.pass) expect(score).toBeGreaterThan(0);
+      else expect(score).toBe(0);
+    });
+  }
+});
+
+describe("runMeasureDiff — dev-f のプレイリスト行で踏んだ誤検知を出さない", () => {
+  // デザイン: 80x84 のサムネ枠 (角丸8)。
+  // 実装: 枠 80x84 > 飾り帯 72x12 (上だけ角丸) + 本体 80x80 (角丸8)。
+  const design = node({
+    id: "1:1",
+    name: "行",
+    type: "FRAME",
+    absoluteBoundingBox: { x: 0, y: 0, width: FRAME_WIDTH, height: 84 },
+    children: [
+      node({
+        id: "2:1",
+        name: "image 6",
+        type: "RECTANGLE",
+        cornerRadius: 8,
+        absoluteBoundingBox: { x: 16, y: 0, width: 80, height: 84 },
+      }),
+    ],
+  });
+
+  const boxes: DomLayoutBox[] = [
+    box({ ref: 0, depth: 0, tag: "body", x: 0, y: 0, width: FRAME_WIDTH, height: 84 }),
+    box({ ref: 1, parentRef: 0, depth: 1, tag: "div", x: 16, y: 0, width: 80, height: 84 }),
+    box({ ref: 2, parentRef: 1, depth: 2, tag: "div", x: 20, y: 0, width: 72, height: 12 }),
+    box({
+      ref: 3,
+      parentRef: 1,
+      depth: 2,
+      tag: "div",
+      x: 16,
+      y: 4,
+      width: 80,
+      height: 80,
+      borderRadius: 8,
+    }),
+  ];
+
+  it("飾り帯をサムネ枠に当てず、高さも角丸も1件も出さない", () => {
+    const report = run(design, boxes);
+    expect(keys(report)).toEqual([]);
+  });
+});
+
+describe("runMeasureDiff — デザイン側にだけ余る繰り返し", () => {
+  const rows = (count: number) =>
+    node({
+      id: "1:1",
+      name: "一覧",
+      type: "FRAME",
+      absoluteBoundingBox: { x: 0, y: 0, width: FRAME_WIDTH, height: 100 * count },
+      children: Array.from({ length: count }, (_, index) =>
+        node({
+          id: `2:${index + 1}`,
+          name: "投稿行",
+          type: "FRAME",
+          absoluteBoundingBox: { x: 0, y: 100 * index, width: FRAME_WIDTH, height: 100 },
+          children: [
+            node({
+              id: `3:${index + 1}`,
+              name: "サムネ",
+              type: "RECTANGLE",
+              absoluteBoundingBox: { x: 16, y: 100 * index + 10, width: 80, height: 80 },
+            }),
+          ],
+        }),
+      ),
+    });
+
+  it("実装に1行しか無くても、未照合率の分子には入れない", () => {
+    const boxes: DomLayoutBox[] = [
+      box({ ref: 0, depth: 0, tag: "body", x: 0, y: 0, width: FRAME_WIDTH, height: 800 }),
+      box({ ref: 1, parentRef: 0, depth: 1, tag: "div", x: 0, y: 0, width: FRAME_WIDTH, height: 100 }),
+      box({ ref: 2, parentRef: 1, depth: 2, tag: "div", x: 16, y: 10, width: 80, height: 80 }),
+    ];
+    const report = runMeasureDiff({
+      figmaRootNode: rows(8),
+      domBoxes: boxes,
+      screenshotWidth: FRAME_WIDTH,
+    });
+    expect(report.unmatchedDesignNodes.filter((entry) => entry.category === "unmatched")).toEqual(
+      [],
+    );
+    expect(
+      report.unmatchedDesignNodes.filter((entry) => entry.category === "surplus-design").length,
+    ).toBe(14);
+    expect(report.unmatchedRatio).toBe(0);
   });
 });

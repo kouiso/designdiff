@@ -19,7 +19,13 @@ import type {
   UnmatchedDesignNode,
 } from "@figdiff/shared";
 
-/** 対応付けに要求する重なりの下限 (Intersection over Union)。 */
+/**
+ * 親の外まで探しに行く時に要求する重なりの下限。
+ *
+ * 小さいほうの矩形が、どれだけ相手に覆われているかで見る。IoU で見ると、
+ * Figma のテキスト枠が幅いっぱいで実装が文字幅ぴったり、という「どちらも正しい」
+ * 差だけで落ちてしまう。
+ */
 export const MIN_OVERLAP_RATIO = 0.3;
 
 /** 未照合がこの割合を超えたら、座標系ごとずれている疑いが強いので判定に使わない。 */
@@ -61,14 +67,14 @@ export interface MeasureDiffInput {
   screenshotWidth: number;
 }
 
-interface Rect {
+export interface Rect {
   x: number;
   y: number;
   width: number;
   height: number;
 }
 
-interface DesignNode {
+export interface DesignNode {
   id: string;
   name: string;
   type: string;
@@ -94,6 +100,19 @@ export function overlapRatio(a: Rect, b: Rect): number {
   const union = a.width * a.height + b.width * b.height - intersection;
   if (union <= 0) return 0;
   return intersection / union;
+}
+
+/** 小さいほうの矩形が相手にどれだけ覆われているか (0〜1)。 */
+export function coverageRatio(a: Rect, b: { x: number; y: number; width: number; height: number }): number {
+  const left = Math.max(a.x, b.x);
+  const top = Math.max(a.y, b.y);
+  const right = Math.min(a.x + a.width, b.x + b.width);
+  const bottom = Math.min(a.y + a.height, b.y + b.height);
+  if (right <= left || bottom <= top) return 0;
+  const intersection = (right - left) * (bottom - top);
+  const smaller = Math.min(a.width * a.height, b.width * b.height);
+  if (smaller <= 0) return 0;
+  return intersection / smaller;
 }
 
 /**
@@ -142,7 +161,7 @@ function buildDesignTree(
 }
 
 /** 親どうしの対応。子は親からの相対位置で突き合わせる。 */
-interface ParentPair {
+export interface ParentPair {
   design: Rect;
   impl: { x: number; y: number; width: number; height: number };
 }
@@ -167,6 +186,21 @@ export const TEXT_MATCH_MAX_RELATIVE_OFFSET_PX = 80;
 
 /** 文字以外の突き合わせで、これを下回る点数の組は候補にしない。 */
 export const MIN_PAIR_SCORE = 0.9;
+
+/**
+ * 縦横それぞれで要求する大きさの比の下限。
+ *
+ * 位置の点は「親の中で同じ場所にある」だけで満点になるので、大きさを合計差で
+ * 見ていると、1px の箱でも足切りを通り抜ける。軸ごとに比を取って門前払いする。
+ */
+export const MIN_AXIS_RATIO = 0.55;
+
+/** 2つの長さの比 (0〜1)。1 は同じ長さ。 */
+function axisRatio(a: number, b: number): number {
+  const longer = Math.max(a, b);
+  if (longer <= 0) return 1;
+  return Math.max(0, Math.min(a, b)) / longer;
+}
 
 /**
  * 1組の当てはまり具合を返す。0 は候補外。
@@ -196,8 +230,13 @@ export function pairScore(node: DesignNode, box: DomLayoutBox, parent: ParentPai
     return 0;
   }
 
-  const sizeDiff = Math.abs(node.rect.width - box.width) + Math.abs(node.rect.height - box.height);
-  const sizeTerm = 1 - Math.min(1, sizeDiff / Math.max(8, node.rect.width + node.rect.height));
+  // 大きさは縦横それぞれで見る。合計の差で見ると、幅が合っていれば高さが
+  // 何分の一でも通ってしまう。同じ左上に置かれた飾り帯が、その上に載る本体の
+  // 枠として当たる事故がこれで起きる。
+  const widthRatio = axisRatio(node.rect.width, box.width);
+  const heightRatio = axisRatio(node.rect.height, box.height);
+  if (widthRatio < MIN_AXIS_RATIO || heightRatio < MIN_AXIS_RATIO) return 0;
+  const sizeTerm = (widthRatio + heightRatio) / 2;
   const positionTerm =
     1 - Math.min(1, offset / Math.max(24, (parent.design.width + parent.design.height) / 4));
   const score = sizeTerm + positionTerm;
@@ -388,7 +427,16 @@ function assignTree(
     // 階層の一致を絶対条件にすると、そこから下が丸ごと落ちる。
     const leftover = comparable.filter((node) => !takenNodes.has(node.id));
     if (leftover.length > 0 && allBoxes.length > scope.length) {
-      takeGreedy(collectPairs(leftover, allBoxes, parent), accepted, takenNodes);
+      // 逃げ道ではあるが、画面のどこからでも拾えるわけではない。絶対座標で
+      // 実際に重なっている相手だけを候補にする。重なりを見ないと、遠くにある
+      // 同じ大きさの箱へ当たって、位置のズレが消えたまま通ってしまう。
+      for (const node of leftover) {
+        const reachable = allBoxes.filter(
+          (candidate) => coverageRatio(node.rect, candidate) >= MIN_OVERLAP_RATIO,
+        );
+        if (reachable.length === 0) continue;
+        takeGreedy(collectPairs([node], reachable, parent), accepted, takenNodes);
+      }
     }
 
     // 並びの向きに沿った位置で並べ直してから、順序として矛盾しない組だけを残す。
@@ -471,34 +519,76 @@ function assignTree(
       );
     }
   }
+  // デザイン側にだけ余っている繰り返しを、実装のズレから切り離す。
+  //
+  // モックは投稿行を8つ並べていても、測った画面には1件しか入っていないことが
+  // ある。これは実装のズレではなく中身の件数の差で、未照合率の分子に入れると
+  // 画面ごと「座標系がずれている」と誤って切り捨ててしまう。
+  //
+  // 条件は2つ。(1) 同じ名前・種類・大きさのノードが、どこかで対応付けできている
+  // こと。(2) その位置に、同じくらいの大きさの実装側の要素が1つも無いこと。
+  // ただの描き忘れは (1) を満たさないし、ズレて描かれているものは (2) を
+  // 満たさないので、どちらも未照合のまま残る。
+  const repeatKey = (node: DesignNode): string =>
+    `${node.name}|${node.type}|${Math.round(node.rect.width)}x${Math.round(node.rect.height)}`;
+  const everyNode: DesignNode[] = [];
+  const walk = (node: DesignNode): void => {
+    everyNode.push(node);
+    for (const child of node.children) walk(child);
+  };
+  for (const root of roots) walk(root);
+  const matchedKeys = new Set<string>();
+  for (const node of everyNode) {
+    if (matched.has(node.id)) matchedKeys.add(repeatKey(node));
+  }
+  const byId = new Map(everyNode.map((node) => [node.id, node]));
+  for (const entry of unmatched) {
+    if (entry.category !== "unmatched") continue;
+    const node = byId.get(entry.nodeId);
+    if (node === undefined || !matchedKeys.has(repeatKey(node))) continue;
+    const occupied = allBoxes.some((box) => overlapRatio(node.rect, box) >= MIN_OVERLAP_RATIO);
+    if (occupied) continue;
+    entry.category = "surplus-design";
+    entry.reason =
+      "同じものが別の場所で対応付けできていて、この位置には実装側の要素がありません。デザイン側の繰り返しの数が多いだけなので、判定には使いません。";
+  }
+
   return { matched, unmatched };
 }
 
 /** 同じ見た目の箱と見なす寸法差 (px)。 */
 export const SAME_RECT_TOLERANCE_PX = 1;
 
+/** 角丸・影の宣言先として辿る子孫の、親に対する面積の下限。 */
+export const COVERING_AREA_RATIO = 0.8;
+
 /**
- * 同じ矩形を共有する入れ子の並び。
+ * その箱の見た目を作っている入れ子の並び。
  *
  * ひとつの見た目の箱が、実装では div > div > button のように何枚にも分かれる。
  * 余白・角丸・影がどの枚に載っているかは実装の自由なので、外側だけを見て
- * 「余白0」と報告すると、実際には内側に付いている値を見落とす。
+ * 「角丸0」と報告すると、実際には内側に付いている値を見落とす。
+ *
+ * 「同じ矩形の子」だけを辿ると、外枠が中身より数 px 高いだけで辿れなくなる。
+ * 中に収まっていて面積の大半を占める子孫まで広げる。飾りの細帯は面積で落ちる。
  */
-function sameRectChain(index: BoxIndex, box: DomLayoutBox): DomLayoutBox[] {
+function coveringChain(index: BoxIndex, box: DomLayoutBox): DomLayoutBox[] {
+  const area = box.width * box.height;
+  if (area <= 0) return [box];
   const chain = [box];
-  let current = box;
-  for (;;) {
-    const children = index.childrenOf.get(current.ref) ?? [];
-    const next = children.find(
-      (child) =>
-        Math.abs(child.x - box.x) <= SAME_RECT_TOLERANCE_PX &&
-        Math.abs(child.y - box.y) <= SAME_RECT_TOLERANCE_PX &&
-        Math.abs(child.width - box.width) <= SAME_RECT_TOLERANCE_PX &&
-        Math.abs(child.height - box.height) <= SAME_RECT_TOLERANCE_PX,
-    );
-    if (next === undefined) break;
-    chain.push(next);
-    current = next;
+  const queue = [...(index.childrenOf.get(box.ref) ?? [])];
+  while (queue.length > 0) {
+    const child = queue.shift();
+    if (!child) break;
+    const contained =
+      child.x >= box.x - SAME_RECT_TOLERANCE_PX &&
+      child.y >= box.y - SAME_RECT_TOLERANCE_PX &&
+      child.x + child.width <= box.x + box.width + SAME_RECT_TOLERANCE_PX &&
+      child.y + child.height <= box.y + box.height + SAME_RECT_TOLERANCE_PX;
+    if (!contained) continue;
+    if ((child.width * child.height) / area < COVERING_AREA_RATIO) continue;
+    chain.push(child);
+    queue.push(...(index.childrenOf.get(child.ref) ?? []));
   }
   return chain;
 }
@@ -644,7 +734,7 @@ function comparePair(context: CompareContext, node: DesignNode, box: DomLayoutBo
   }
 
   const figma = node.node;
-  const chain = sameRectChain(context.index, box);
+  const chain = coveringChain(context.index, box);
 
   const implRadius = resolveRadius(chain);
   if (figma.cornerRadius !== undefined && implRadius !== undefined) {
@@ -1045,7 +1135,7 @@ export function runMeasureDiff(input: MeasureDiffInput): MeasureDiffReport {
   }
 
   const notComparedNodeCount = unmatched.filter(
-    (entry) => entry.category === "not-compared",
+    (entry) => entry.category !== "unmatched",
   ).length;
   const unmatchedNodeCount = unmatched.length - notComparedNodeCount;
   // 分母は「突き合わせる相手が構造として存在するノード」だけ。アイコンの中身を

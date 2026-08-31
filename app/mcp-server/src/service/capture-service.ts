@@ -238,7 +238,17 @@ export function harvestLayoutBoxes(maxElements: number): DomLayoutBox[] {
   const applyDecoration = (entry: DomLayoutBox, style: CSSStyleDeclaration): void => {
     entry.rowGap = pxOrUndefined(style.rowGap);
     entry.columnGap = pxOrUndefined(style.columnGap);
-    entry.borderRadius = pxOrUndefined(style.borderTopLeftRadius);
+    // 4隅が揃っている時だけ角丸として扱う。左上だけを読むと、上辺だけ丸めた
+    // 飾りが「全周に角丸あり」に見えて、デザインとの差が出ないまま通る。
+    // 隅ごとに違う値は比べる相手 (Figma の cornerRadius は1値) がいないので出さない。
+    const corners = [
+      pxOrUndefined(style.borderTopLeftRadius),
+      pxOrUndefined(style.borderTopRightRadius),
+      pxOrUndefined(style.borderBottomRightRadius),
+      pxOrUndefined(style.borderBottomLeftRadius),
+    ];
+    const [topLeft] = corners;
+    entry.borderRadius = corners.every((corner) => corner === topLeft) ? topLeft : undefined;
     entry.flexDirection = style.flexDirection === "" ? undefined : style.flexDirection;
     const background = style.backgroundColor;
     const hasBackground =

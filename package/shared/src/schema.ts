@@ -622,7 +622,7 @@ export const UnmatchedDesignNodeSchema = z.object({
    * not-compared = 構造として実装側に相手が存在しない (アイコン部品の中身など)。
    * 混ぜると、未照合率がアイコンの内部で水増しされて信頼度の判定が壊れる。
    */
-  category: z.enum(["unmatched", "not-compared"]),
+  category: z.enum(["unmatched", "not-compared", "surplus-design"]),
 });
 
 /**
