@@ -85,8 +85,9 @@ describe("telemetry", () => {
 
     expect(() => initTelemetryIfConsented()).not.toThrow();
     // client が無いので capture は呼ばれず、戻り値だけ確認できる (例外は出ない)
-    expect(trackTelemetryEventUnsafe("app_started", { appVersion: "1.0.0", platform: "darwin" }))
-      .toBe(true);
+    expect(
+      trackTelemetryEventUnsafe("app_started", { appVersion: "1.0.0", platform: "darwin" }),
+    ).toBe(true);
   });
 
   it("許可リストに無いイベント名は拒否され false を返すこと", async () => {
@@ -133,9 +134,7 @@ describe("telemetry", () => {
     const { captureTelemetryException } = await loadTelemetry();
 
     // 型上は "main" | "renderer" だが、呼び出し境界を壊す入力への耐性を確かめる。
-    expect(() =>
-      captureTelemetryException("main", new TypeError("boom"), true),
-    ).not.toThrow();
+    expect(() => captureTelemetryException("main", new TypeError("boom"), true)).not.toThrow();
   });
 
   it("captureTelemetryException は message/stack を一切読まず、種類のみ扱うこと", async () => {
