@@ -1,2 +1,2 @@
-# SOPS: private prompt files encrypted at rest (see .sops.yaml, secrets/README.md)
-# git-crypt was retired in favor of SOPS + 1Password — see secrets/README.md
+# 個人用プロンプトを SOPS で静的暗号化している (.sops.yaml, secret/README.md 参照)
+# git-crypt は SOPS + 1Password へ移行済み (2026-09-02) — 詳細は secret/README.md

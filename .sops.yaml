@@ -1,5 +1,5 @@
 creation_rules:
-  - path_regex: secrets/.*\.enc\.env$
+  - path_regex: secret/.*\.enc\.env$
     age: age18phkzhpjf6qquag6mus0qru9kv8dhds7sedgc3xgxvgfmnjunfhsuzjj4e
   # 旧 git-crypt 対象だったプロンプト系ファイル。中身は散文の Markdown なので
   # key=value 化はせず、ファイル全体を1つの値として暗号化する (binary mode)。

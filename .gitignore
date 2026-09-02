@@ -14,6 +14,11 @@ coverage/
 # 手で取った .env のバックアップ。中身は本物の秘密情報なので、日付や連番が
 # ついた派生ファイルもまとめて追跡対象から外す。
 .env*.bak*
+# secret/ 配下は *.enc.env (SOPS暗号文) だけ追跡対象。sops -d の出力先を
+# 誤ってそこへ書いても git add で拾わないよう、復号済みファイルは除外する。
+secret/*
+!secret/*.enc.env
+!secret/README.md
 
 # OS
 .DS_Store

@@ -178,13 +178,13 @@ See [docs/migration/v1-to-v2.md](docs/migration/v1-to-v2.md) for migration steps
 
 ## Encrypted Files
 
-Some files in this repository are encrypted with [git-crypt](https://github.com/AGWA/git-crypt) (personal/internal configuration). The application works fully without decrypting them.
-
-To decrypt (if you have the key):
-
-```bash
-git-crypt unlock /path/to/git-crypt-key
-```
+Some files in this repository are encrypted at rest with [SOPS](https://github.com/getsops/sops)
+(personal/internal configuration and API secrets). The application works fully without
+decrypting them — `CLAUDE.md`, `prompt/instruction/persona.md`, `prompt/instruction/core.md`,
+`prompt/instruction/data-driven-execution.md`, and `.claude/commands/top5.md` are confidential
+prose encrypted whole-file, so they read as ciphertext until decrypted; see
+[secret/README.md](secret/README.md) for the decrypt/edit steps and the 1Password item that
+holds the private key. (git-crypt was retired in favor of SOPS — see that file for details.)
 
 ## License
 
