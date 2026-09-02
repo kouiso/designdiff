@@ -24,6 +24,8 @@ export function SettingsScreen() {
     startFigmaLogin,
     logoutFigma,
     loadOAuthStatus,
+    telemetryConsent,
+    setTelemetryConsent,
   } = useSettingStore();
 
   const [tokenInput, setTokenInput] = useState("");
@@ -329,6 +331,19 @@ export function SettingsScreen() {
             description={t("settings.autoCompareDesc")}
             checked={autoCompare}
             onChange={setAutoCompare}
+          />
+        </SetSection>
+
+        <SetSection title={t("settings.privacy")}>
+          <SetToggle
+            label={t("settings.telemetryConsent")}
+            description={t("settings.telemetryConsentDesc")}
+            checked={telemetryConsent}
+            onChange={(v) => {
+              setTelemetryConsent(v).catch((err: unknown) => {
+                console.error("Failed to update telemetry consent:", err);
+              });
+            }}
           />
         </SetSection>
       </div>

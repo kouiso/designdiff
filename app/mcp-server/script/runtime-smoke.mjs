@@ -29,6 +29,11 @@ child.stderr.on("data", (chunk) => {
   stderr += chunk.toString();
 });
 
+let stdout = "";
+child.stdout.on("data", (chunk) => {
+  stdout += chunk.toString();
+});
+
 const exitCode = await new Promise((resolveExit) => {
   child.once("exit", (code, signal) => {
     resolveExit({ code, signal });
@@ -54,4 +59,17 @@ if (!stopped) {
   throw new Error(`MCP server did not stop within ${shutdownMs}ms after SIGTERM.`);
 }
 
-process.stdout.write(`MCP server stayed alive for ${probeMs}ms and shut down cleanly.\n`);
+// stdout は JSON-RPC の本線。posthog-node など依存が stderr 以外へログを漏らしていないか
+// ここで確認する — 空行以外の全行が有効な JSON であることを要求する。
+const stdoutLines = stdout.split("\n").filter((line) => line.length > 0);
+for (const line of stdoutLines) {
+  try {
+    JSON.parse(line);
+  } catch {
+    throw new Error(`MCP server wrote a non-JSON-RPC line to stdout: ${JSON.stringify(line)}`);
+  }
+}
+
+process.stdout.write(
+  `MCP server stayed alive for ${probeMs}ms, shut down cleanly, and stdout carried ${stdoutLines.length} line(s), all valid JSON-RPC.\n`,
+);

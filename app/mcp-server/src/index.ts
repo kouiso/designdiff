@@ -10,6 +10,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { selectFileCredentialBackend } from "@figdiff/credential-store";
 
 import { createMcpServer } from "./server.js";
+import { initMcpTelemetry, shutdownMcpTelemetry } from "./telemetry.js";
 import { recordRawToolArguments, releaseRawToolArguments } from "./util/raw-tool-arguments.js";
 
 import type {
@@ -57,8 +58,21 @@ class RawToolArgumentsTransport implements Transport {
   }
 }
 
+const shutdown = (signal: NodeJS.Signals): void => {
+  shutdownMcpTelemetry()
+    .catch((error: unknown) => {
+      console.error("[mcp] telemetry shutdown failed:", error);
+    })
+    .finally(() => {
+      process.exit(signal === "SIGINT" ? 130 : 143);
+    });
+};
+
 async function main(): Promise<void> {
   selectFileCredentialBackend();
+  initMcpTelemetry();
+  process.on("SIGINT", () => shutdown("SIGINT"));
+  process.on("SIGTERM", () => shutdown("SIGTERM"));
   const server = createMcpServer();
   const transport = new RawToolArgumentsTransport(new StdioServerTransport());
   await server.connect(transport);

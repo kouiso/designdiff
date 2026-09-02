@@ -66,6 +66,12 @@ export interface ConvergenceAPI {
  * Renderer プロセスから呼び出せる IPC API の型定義
  * contextBridge 経由で window.electronAPI として公開される
  */
+export interface AnalyticsAPI {
+  getConsent(): Promise<boolean>;
+  setConsent(consent: boolean): Promise<void>;
+  track(name: string, properties: Record<string, unknown>): Promise<void>;
+}
+
 export interface ElectronAPI {
   getFigmaFrames(fileKey: string): Promise<Frame[]>;
   getFigmaPageFrames(fileKey: string, pageNodeId: string): Promise<Frame[]>;
@@ -82,6 +88,7 @@ export interface ElectronAPI {
   oauth: OAuthAPI;
   activeSession: ActiveSessionAPI;
   convergence: ConvergenceAPI;
+  analytics: AnalyticsAPI;
 }
 
 export interface OAuthAPI {

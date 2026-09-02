@@ -167,7 +167,11 @@
     "languageEnglish": "English",
     "autoCompare": "自動再比較",
     "autoCompareDesc": "スクリーンショット取得後に自動で比較を実行する",
-    "toggleTheme": "テーマ切替"
+    "toggleTheme": "テーマ切替",
+    "privacy": "プライバシー",
+    "telemetryConsent": "匿名の利用状況を送信する",
+    "telemetryConsentDesc": "FigDiff改善のため、個人を特定しない匿名の利用イベントを送信します。Figmaのファイル名・ファイルキー・スクリーンショット・ローカルパス・トークンは一切送信しません。既定はオフです。",
+    "privacyPolicyLink": "プライバシーポリシーを読む"
   },
   "tokenDialog": {
     "title": "Figma Tokenが必要です",

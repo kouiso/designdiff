@@ -10,6 +10,7 @@ import {
 import { transformNode } from "@figdiff/shared";
 
 import type {
+  AnalyticsAdapter,
   FileAdapter,
   FigmaAdapter,
   OAuthAdapter,
@@ -222,12 +223,25 @@ const webOAuthAdapter: OAuthAdapter = {
   getClientId: async () => null,
 };
 
+// v1 では Web ビルドの計測は完全 no-op。正本は Electron main のファイルで、
+// Web にはその同期先が無い。
+const webAnalyticsAdapter: AnalyticsAdapter = {
+  getConsent: async () => false,
+  setConsent: async () => {
+    return;
+  },
+  track: async () => {
+    return;
+  },
+};
+
 export const webAdapter: PlatformAdapter = {
   figma: webFigmaAdapter,
   token: webTokenAdapter,
   file: webFileAdapter,
   project: webProjectAdapter,
   oauth: webOAuthAdapter,
+  analytics: webAnalyticsAdapter,
 };
 
 export const webCapabilities: PlatformCapabilities = {

@@ -9,7 +9,15 @@ import { registerFileHandlers } from "./ipc/file";
 import { registerOAuthHandlers } from "./ipc/oauth";
 import { registerOverlayHandlers } from "./ipc/overlay";
 import { registerProjectHandlers } from "./ipc/project";
+import { registerTelemetryHandlers } from "./ipc/telemetry-handler";
 import { registerTokenHandlers } from "./ipc/token";
+import {
+  captureTelemetryException,
+  ensureTelemetryConfig,
+  initTelemetryIfConsented,
+  shutdownTelemetry,
+  trackAppStarted,
+} from "./telemetry";
 import { migrateCredentials } from "./util/migrate-credentials";
 
 const ALLOWED_EXTERNAL_HOSTS = ["figma.com", "github.com"];
@@ -144,6 +152,7 @@ const createWindow = (): void => {
 
   mainWindow.webContents.on("render-process-gone", (_event, details) => {
     console.error("[main] render-process-gone:", details);
+    captureTelemetryException("renderer", new Error(details.reason), true);
   });
 
   mainWindow.webContents.on("unresponsive", () => {
@@ -183,6 +192,11 @@ const createWindow = (): void => {
   }
 };
 
+process.on("uncaughtException", (error) => {
+  console.error("[main] uncaughtException:", error);
+  captureTelemetryException("main", error, true);
+});
+
 if (!app.requestSingleInstanceLock()) {
   app.quit();
 }
@@ -200,6 +214,12 @@ app.on("second-instance", () => {
 app
   .whenReady()
   .then(() => {
+    // telemetry-config の読み書きは内部で全て catch 済み。失敗しても投げ返さんので、
+    // ここで例外が起きて起動失敗ダイアログ (下の .catch) に化けることは無い。
+    ensureTelemetryConfig();
+    initTelemetryIfConsented();
+    trackAppStarted();
+
     if (!app.isPackaged) {
       // 未署名devビルドではmacOS Keychainが errSecInteractionNotAllowed を返すため、
       // plaintext暗号化にフォールバック（本番ビルドでは実OS暗号化を使用）
@@ -215,6 +235,7 @@ app
     registerOAuthHandlers();
     registerActiveSessionHandlers();
     registerConvergenceHandlers();
+    registerTelemetryHandlers();
     createWindow();
 
     app.on("activate", () => {
@@ -233,4 +254,10 @@ app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
     app.quit();
   }
+});
+
+app.on("before-quit", () => {
+  shutdownTelemetry().catch((error: unknown) => {
+    console.error("[main] telemetry shutdown failed:", error);
+  });
 });

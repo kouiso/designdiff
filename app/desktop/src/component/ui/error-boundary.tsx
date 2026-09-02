@@ -2,6 +2,8 @@ import { Component, type ErrorInfo, type ReactNode } from "react";
 
 import i18next from "i18next";
 
+import { getPlatform } from "@/lib/platform";
+
 import { Button } from "./button";
 
 interface ErrorBoundaryProps {
@@ -25,6 +27,22 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
   override componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error("ErrorBoundary caught:", error, errorInfo);
+    // ここで throw すると React に捕まらず白画面になるため、必ず try/catch で包む。
+    try {
+      getPlatform()
+        .then((platform) =>
+          platform.analytics.track("app_error_captured", {
+            process: "renderer",
+            errorName: error.name,
+            fatal: false,
+          }),
+        )
+        .catch((trackError: unknown) => {
+          console.error("Failed to report error to telemetry:", trackError);
+        });
+    } catch (trackError) {
+      console.error("Failed to report error to telemetry:", trackError);
+    }
   }
 
   handleReset = () => {

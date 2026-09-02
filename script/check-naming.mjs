@@ -16,6 +16,7 @@ const EXEMPT_BASENAMES = new Set([
   "LICENSE",
   "CHANGELOG.md",
   "SECURITY.md",
+  "PRIVACY.md",
   "TODO.md",
   "AGENTS.md",
   "CLAUDE.md",

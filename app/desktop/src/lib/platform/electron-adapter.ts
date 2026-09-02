@@ -8,6 +8,7 @@ import {
 } from "@figdiff/shared";
 
 import type {
+  AnalyticsAdapter,
   ConvergenceAdapter,
   FileAdapter,
   FigmaAdapter,
@@ -102,12 +103,19 @@ const electronOAuthAdapter: OAuthAdapter = {
   getClientId: () => window.electronAPI.oauth.getClientId(),
 };
 
+const electronAnalyticsAdapter: AnalyticsAdapter = {
+  getConsent: () => window.electronAPI.analytics.getConsent(),
+  setConsent: (consent) => window.electronAPI.analytics.setConsent(consent),
+  track: (name, properties) => window.electronAPI.analytics.track(name, properties),
+};
+
 export const electronAdapter: PlatformAdapter = {
   figma: electronFigmaAdapter,
   token: electronTokenAdapter,
   file: electronFileAdapter,
   project: electronProjectAdapter,
   oauth: electronOAuthAdapter,
+  analytics: electronAnalyticsAdapter,
 };
 
 export const electronConvergenceAdapter: ConvergenceAdapter = {

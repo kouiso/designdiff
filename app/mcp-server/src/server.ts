@@ -23,6 +23,7 @@
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
+import { wrapServerToolsWithTelemetry } from "./telemetry.js";
 import { registerCompareAnimation } from "./tool/compare-animation.js";
 import { registerCompareDesign } from "./tool/compare-design.js";
 import { registerCreateProject } from "./tool/create-project.js";
@@ -102,24 +103,28 @@ export function createMcpServer(): McpServer {
     },
   );
 
+  // 計測は tool 登録層でのみ仕込む。各 tool の引数は一切読まず、
+  // tool 名・所要時間・成否だけを送る (テレメトリ未同意なら no-op)。
+  const instrumentedServer = wrapServerToolsWithTelemetry(server);
+
   // Register all tools
-  registerListProjects(server);
-  registerCreateProject(server);
-  registerDeleteProject(server);
-  registerCompareDesign(server);
-  registerCompareAnimation(server);
-  registerInspectNode(server);
-  registerGetDesignTokens(server);
-  registerListFrames(server);
-  registerGenerateReport(server);
-  registerGetCropRegion(server);
-  registerSetCropRegion(server);
-  registerGetIgnoreRegions(server);
-  registerSetIgnoreRegions(server);
-  registerDeleteIgnoreRegion(server);
-  registerVerifyFix(server);
-  registerSetFigmaToken(server);
-  registerReportIssue(server);
+  registerListProjects(instrumentedServer);
+  registerCreateProject(instrumentedServer);
+  registerDeleteProject(instrumentedServer);
+  registerCompareDesign(instrumentedServer);
+  registerCompareAnimation(instrumentedServer);
+  registerInspectNode(instrumentedServer);
+  registerGetDesignTokens(instrumentedServer);
+  registerListFrames(instrumentedServer);
+  registerGenerateReport(instrumentedServer);
+  registerGetCropRegion(instrumentedServer);
+  registerSetCropRegion(instrumentedServer);
+  registerGetIgnoreRegions(instrumentedServer);
+  registerSetIgnoreRegions(instrumentedServer);
+  registerDeleteIgnoreRegion(instrumentedServer);
+  registerVerifyFix(instrumentedServer);
+  registerSetFigmaToken(instrumentedServer);
+  registerReportIssue(instrumentedServer);
 
   return server;
 }

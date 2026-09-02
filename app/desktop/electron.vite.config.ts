@@ -11,6 +11,12 @@ const appVersion =
 export default defineConfig({
   main: {
     plugins: [externalizeDepsPlugin()],
+    define: {
+      // 未設定なら空文字 = telemetry.ts が黙って no-op になる。renderer には配らん
+      // (main 専用の define なので renderer バンドルに焼き込まれることは無い)。
+      __POSTHOG_KEY__: JSON.stringify(process.env.POSTHOG_KEY ?? ""),
+      __POSTHOG_HOST__: JSON.stringify(process.env.POSTHOG_HOST ?? "https://eu.i.posthog.com"),
+    },
     build: {
       outDir: "dist/main",
       rollupOptions: {

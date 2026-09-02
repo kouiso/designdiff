@@ -11,6 +11,8 @@ interface SettingState {
   defaultThreshold: number;
   isLoading: boolean;
   showTokenDialog: boolean;
+  // 表示用のミラー。正本は Electron main 側の telemetry-config.json。
+  telemetryConsent: boolean;
 
   setFigmaToken: (token: string) => Promise<void>;
   removeFigmaToken: () => Promise<void>;
@@ -19,6 +21,7 @@ interface SettingState {
   setDefaultThreshold: (threshold: number) => void;
   requireToken: () => void;
   closeTokenDialog: () => void;
+  setTelemetryConsent: (consent: boolean) => Promise<void>;
 
   startFigmaLogin: () => Promise<void>;
   logoutFigma: () => Promise<void>;
@@ -33,6 +36,7 @@ export const useSettingStore = create<SettingState>((set) => ({
   defaultThreshold: 0.1,
   isLoading: false,
   showTokenDialog: false,
+  telemetryConsent: false,
 
   setFigmaToken: async (token: string) => {
     const platform = await getPlatform();
@@ -50,14 +54,15 @@ export const useSettingStore = create<SettingState>((set) => ({
     set({ isLoading: true });
     try {
       const platform = await getPlatform();
-      const [token, oauthState] = await Promise.all([
+      const [token, oauthState, telemetryConsent] = await Promise.all([
         platform.token.get(),
         platform.oauth.status(),
+        platform.analytics.getConsent(),
       ]);
       const saved = localStorage.getItem("figdiff-theme");
       const theme = saved === "light" ? "light" : "dark";
       document.documentElement.classList.toggle("dark", theme === "dark");
-      set({ figmaToken: token, oauthState, theme });
+      set({ figmaToken: token, oauthState, theme, telemetryConsent });
     } finally {
       set({ isLoading: false });
     }
@@ -74,6 +79,12 @@ export const useSettingStore = create<SettingState>((set) => ({
   requireToken: () => set({ showTokenDialog: true }),
 
   closeTokenDialog: () => set({ showTokenDialog: false }),
+
+  setTelemetryConsent: async (consent: boolean) => {
+    const platform = await getPlatform();
+    await platform.analytics.setConsent(consent);
+    set({ telemetryConsent: consent });
+  },
 
   startFigmaLogin: async () => {
     const platform = await getPlatform();

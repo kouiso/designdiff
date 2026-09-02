@@ -41,6 +41,17 @@ export interface PlatformAdapter {
   readonly file: FileAdapter;
   readonly project: ProjectAdapter;
   readonly oauth: OAuthAdapter;
+  readonly analytics: AnalyticsAdapter;
+}
+
+/**
+ * Web ビルドでは v1 は完全 no-op。正本は Electron main 側のファイルであり、
+ * Web にはその同期先が無いため。
+ */
+export interface AnalyticsAdapter {
+  getConsent(): Promise<boolean>;
+  setConsent(consent: boolean): Promise<void>;
+  track(name: string, properties: Record<string, unknown>): Promise<void>;
 }
 
 export interface FigmaAdapter {

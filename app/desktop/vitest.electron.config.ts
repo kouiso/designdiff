@@ -3,6 +3,8 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
   define: {
     __APP_VERSION__: JSON.stringify("0.0.0-test"),
+    __POSTHOG_KEY__: JSON.stringify(""),
+    __POSTHOG_HOST__: JSON.stringify("https://eu.i.posthog.com"),
   },
   test: {
     environment: "node",

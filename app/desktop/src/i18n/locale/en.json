@@ -167,7 +167,11 @@
     "languageEnglish": "English",
     "autoCompare": "Auto Re-Compare",
     "autoCompareDesc": "Automatically run comparison after screenshot capture",
-    "toggleTheme": "Toggle theme"
+    "toggleTheme": "Toggle theme",
+    "privacy": "Privacy",
+    "telemetryConsent": "Share anonymous usage data",
+    "telemetryConsentDesc": "Sends anonymous, non-identifying usage events to help us improve FigDiff. No Figma file names, file keys, screenshots, local paths, or tokens are ever sent. Off by default.",
+    "privacyPolicyLink": "Read the privacy policy"
   },
   "tokenDialog": {
     "title": "Figma Token Required",

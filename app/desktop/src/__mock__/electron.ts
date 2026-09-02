@@ -51,6 +51,11 @@ const electronAPI = {
     toggleStart: vi.fn(),
     toggleStop: vi.fn(),
   },
+  analytics: {
+    getConsent: vi.fn().mockResolvedValue(false),
+    setConsent: vi.fn().mockResolvedValue(undefined),
+    track: vi.fn().mockResolvedValue(undefined),
+  },
 };
 
 Object.defineProperty(window, "electronAPI", {

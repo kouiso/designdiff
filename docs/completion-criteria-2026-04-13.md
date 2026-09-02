@@ -143,7 +143,7 @@ Phase 5: 完了
 | Y2 | 自動更新 (electron-updater) | 方針未決定 | electron-updater 統合 or README に「手動更新」明記 |
 | Y3 | ログローテーション | `~/Library/Logs/FigDiff/` のローテーション未実装 | electron-log 設定でサイズ上限 + ローテーション |
 | Y4 | キャッシュ LRU 削除 | `~/.figdiff/cache/` のサイズ上限なし | LRU 削除ポリシー実装（デフォルト 1GB） |
-| Y5 | Sentry クラッシュレポート | 未導入 | opt-in テレメトリ + Sentry 統合 |
+| Y5 | Sentry クラッシュレポート | opt-in テレメトリ (PostHog) 導入済み。Sentry は配布ユーザー0人のため未導入 | 配布ユーザー50人超、または native クラッシュ取り逃しが発生したら Sentry 統合を検討 |
 | Y6 | アクセシビリティ WCAG AA | 未監査 | Lighthouse + axe-core 監査 |
 | Y7 | `pnpm audit` セキュリティ監査 | 現状スナップショット未取得 | `pnpm audit` 実行 → high 以上ゼロ確認 |
 

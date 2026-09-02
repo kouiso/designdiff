@@ -289,3 +289,22 @@ export type {
   VerdictRoute,
   WeightedAggregate,
 } from "./type.js";
+
+// Telemetry event allowlist (types + Zod schemas only — no SDK, no network code)
+export {
+  AppErrorCapturedPropertiesSchema,
+  AppStartedPropertiesSchema,
+  CompareDesignCompletedPropertiesSchema,
+  ConsentChangedPropertiesSchema,
+  McpToolInvokedPropertiesSchema,
+  TELEMETRY_EVENT_NAMES,
+  TelemetryEventNameSchema,
+  TelemetryEventSchema,
+  type AppErrorCapturedProperties,
+  type AppStartedProperties,
+  type CompareDesignCompletedProperties,
+  type ConsentChangedProperties,
+  type McpToolInvokedProperties,
+  type TelemetryEvent,
+  type TelemetryEventName,
+} from "./telemetry-event.js";

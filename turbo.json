@@ -3,7 +3,8 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": ["dist/**"]
+      "outputs": ["dist/**"],
+      "env": ["POSTHOG_KEY", "POSTHOG_HOST"]
     },
     "dev": {
       "cache": false,

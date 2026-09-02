@@ -29,12 +29,13 @@ FigDiff runs as an Electron desktop application and a local MCP server. The prim
 | Figma API requests | HTTPS only. Token attached as `X-Figma-Token` header. No third-party endpoints. |
 | Image cache (`~/.figdiff/cache/`) | Treated as untrusted on read; decoded with `sharp` (validated image bytes). |
 | Project files (`~/.figdiff/projects/<id>/project.json`) | Trusted local user data. Atomic write via tmp+rename. Schema validated by Zod on read. |
+| Telemetry (PostHog, opt-in) | Off by default. Whitelist-only event/property schemas in `package/shared/src/telemetry-event.ts` — no Figma file keys, frame names, local paths, screenshot URLs, or tokens are ever sent. See `PRIVACY.md`. |
 
 ## Known Limitations
 
-- **Electron CVE backlog**: As of 2026-05-18, GitHub Dependabot reports 29 OPEN Electron alerts (8 HIGH) on the current pin (35.7.5). Upstream patches first land in Electron v38 / v39. Major version bump is on the roadmap but not yet executed because of breaking-change cost. Mitigations in place: renderer `contextIsolation: true`, `sandbox: true` (verify in `app/desktop/electron/main.ts`), and external URL allowlist via `shell.openExternal` wrapper.
+- **Electron CVE backlog**: As of 2026-05-18, GitHub Dependabot reports 29 OPEN Electron alerts (8 HIGH) on the current pin (35.7.5). Upstream patches first land in Electron v38 / v39. Major version bump is on the roadmap but not yet executed because of breaking-change cost. Mitigations in place: renderer `contextIsolation: true` (see `app/desktop/electron/main.ts`) and external URL allowlist via `shell.openExternal` wrapper. Note: `sandbox: true` is **not** currently set on the `BrowserWindow`'s `webPreferences` — `contextIsolation` + `nodeIntegration: false` are the enforced boundary today.
 - **No code signing / notarization**: Released artifacts are not yet signed. Users must allow execution manually on first launch.
-- **No telemetry / Sentry**: User-reported incidents must be reproduced manually; we do not collect remote crash logs.
+- **Telemetry (opt-in, off by default)**: FigDiff can send anonymous, whitelist-only usage events to PostHog if the user explicitly opts in from Settings (desktop) or via `~/.figdiff/telemetry.json` (MCP server). No crash dumps, session replay, or personally identifying data are collected. See `PRIVACY.md` for exactly what is and is not sent, and `SECURITY.md`'s Threat Model table above.
 
 ## Cryptographic / Auth Notes
 

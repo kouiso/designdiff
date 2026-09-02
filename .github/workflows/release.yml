@@ -44,6 +44,10 @@ jobs:
         run: pnpm --filter @figdiff/shared build
 
       - name: Build Electron app
+        env:
+          # phc_ で始まる公開キー。未設定ならビルドは通り、テレメトリは黙って no-op になる。
+          POSTHOG_KEY: ${{ vars.POSTHOG_KEY }}
+          POSTHOG_HOST: ${{ vars.POSTHOG_HOST }}
         run: pnpm --filter @figdiff/desktop build
 
       - name: Package & publish to GitHub Releases

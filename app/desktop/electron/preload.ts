@@ -94,6 +94,12 @@ const api: ElectronAPI = {
       };
     },
   },
+
+  analytics: {
+    getConsent: () => ipcRenderer.invoke("telemetry:get-consent"),
+    setConsent: (consent) => ipcRenderer.invoke("telemetry:set-consent", consent),
+    track: (name, properties) => ipcRenderer.invoke("telemetry:track", name, properties),
+  },
 };
 
 contextBridge.exposeInMainWorld("electronAPI", api);

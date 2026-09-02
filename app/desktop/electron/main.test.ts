@@ -48,6 +48,12 @@ const mocks = vi.hoisted(() => {
     registerOAuthHandlers: vi.fn(),
     registerActiveSessionHandlers: vi.fn(),
     registerConvergenceHandlers: vi.fn(),
+    registerTelemetryHandlers: vi.fn(),
+    ensureTelemetryConfig: vi.fn(),
+    initTelemetryIfConsented: vi.fn(),
+    trackAppStarted: vi.fn(),
+    captureTelemetryException: vi.fn(),
+    shutdownTelemetry: vi.fn(() => Promise.resolve()),
     isPackaged: false,
   };
 });
@@ -82,6 +88,16 @@ vi.mock("./ipc/active-session", () => ({
 }));
 vi.mock("./ipc/convergence", () => ({
   registerConvergenceHandlers: mocks.registerConvergenceHandlers,
+}));
+vi.mock("./ipc/telemetry-handler", () => ({
+  registerTelemetryHandlers: mocks.registerTelemetryHandlers,
+}));
+vi.mock("./telemetry", () => ({
+  ensureTelemetryConfig: mocks.ensureTelemetryConfig,
+  initTelemetryIfConsented: mocks.initTelemetryIfConsented,
+  trackAppStarted: mocks.trackAppStarted,
+  captureTelemetryException: mocks.captureTelemetryException,
+  shutdownTelemetry: mocks.shutdownTelemetry,
 }));
 
 type Listener = (...args: unknown[]) => unknown;
