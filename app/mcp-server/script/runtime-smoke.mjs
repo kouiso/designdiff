@@ -56,15 +56,9 @@ if (exitCode) {
   );
 }
 
-if (stdoutOverflowed) {
-  // throw の前に必ず kill する。先に throw すると、プロセスが終了しないまま
-  // このスクリプトだけが例外で抜け、子プロセスが残り続ける。
-  child.kill("SIGTERM");
-  throw new Error(
-    `MCP server wrote more than ${MAX_STDOUT_BYTES} bytes to stdout during the ${probeMs}ms probe; aborting.`,
-  );
-}
-
+// overflow を検知した後も、通常終了と同じ SIGTERM → close 待機 → SIGKILL の手順を
+// 必ず最後まで終わらせてから throw する。ここで即 throw すると、SIGTERM を無視する
+// 子プロセスが kill されないまま probe だけ抜けてしまう。
 child.kill("SIGTERM");
 
 // "exit" はプロセス終了の合図でしかなく、stdio ストリームがまだ開いている場合がある。
@@ -77,6 +71,11 @@ const stopped = await new Promise((resolveStopped) => {
 
 if (!stopped) {
   child.kill("SIGKILL");
+  if (stdoutOverflowed) {
+    throw new Error(
+      `MCP server wrote more than ${MAX_STDOUT_BYTES} bytes to stdout during the ${probeMs}ms probe, and did not stop within ${shutdownMs}ms after SIGTERM; sent SIGKILL.`,
+    );
+  }
   throw new Error(`MCP server did not stop within ${shutdownMs}ms after SIGTERM.`);
 }
 

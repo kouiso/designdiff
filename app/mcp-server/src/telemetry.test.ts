@@ -2,9 +2,14 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 
+import { PostHog } from "posthog-node";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { MCP_TOOL_NAMES } from "@figdiff/shared";
+
+// resolvePostHogHost の既定値。telemetry.ts はこの値を export していないため、
+// PRIVACY.md が公開している既定ホストの文字列をそのままテスト側の固定値として使う。
+const DEFAULT_POSTHOG_HOST = "https://eu.i.posthog.com";
 
 // PostHog クライアントは実ネットワークへ繋がずスパイだけで検証する。実クライアントを
 // そのまま使うと flushAt:1 で毎回バックグラウンド送信を試み、CI でも無駄な通信が走る。
@@ -48,6 +53,7 @@ describe("mcp-server telemetry", () => {
     delete process.env.CI;
     posthogMocks.capture.mockClear();
     posthogMocks.shutdown.mockClear();
+    vi.mocked(PostHog).mockClear();
     vi.resetModules();
   });
 
@@ -181,6 +187,35 @@ describe("mcp-server telemetry", () => {
     expect(isMcpTelemetryEnabled()).toBe(true);
     expect(errorSpy).toHaveBeenCalledWith(
       expect.stringContaining("not an allowlisted HTTPS origin"),
+    );
+    // 警告ログが出ただけでは、実際に既定ホストへ差し替わったかは分からない。
+    // PostHog コンストラクタへ渡された host そのものを検証する。
+    expect(vi.mocked(PostHog)).toHaveBeenCalledWith(
+      "phc_dummy_test_key",
+      expect.objectContaining({ host: DEFAULT_POSTHOG_HOST }),
+    );
+    errorSpy.mockRestore();
+    await shutdownMcpTelemetry();
+  });
+
+  it("許可リスト外の HTTPS origin も既定ホストへフォールバックすること", async () => {
+    await writeConsentFile(true);
+    process.env.FIGDIFF_POSTHOG_KEY = "phc_dummy_test_key";
+    process.env.FIGDIFF_POSTHOG_HOST = "https://evil.example.com";
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const { initMcpTelemetry, isMcpTelemetryEnabled, shutdownMcpTelemetry } = await import(
+      "./telemetry.js"
+    );
+
+    initMcpTelemetry();
+
+    expect(isMcpTelemetryEnabled()).toBe(true);
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.stringContaining("not an allowlisted HTTPS origin"),
+    );
+    expect(vi.mocked(PostHog)).toHaveBeenCalledWith(
+      "phc_dummy_test_key",
+      expect.objectContaining({ host: DEFAULT_POSTHOG_HOST }),
     );
     errorSpy.mockRestore();
     await shutdownMcpTelemetry();
