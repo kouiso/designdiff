@@ -88,6 +88,10 @@ docs/evidence/*.log
 error.log
 .codex
 .claude/scheduled_tasks.lock
+# .omc/ は稼働中セッションの実状態ファイル。中身は消さず ignore のみ
+.omc/
+# ローカル検証で生成されるスクリーンショット置き場
+lp-screenshots/
 
 # Serena tool auto-generated config (differs per machine/session)
 .serena/project.yml
