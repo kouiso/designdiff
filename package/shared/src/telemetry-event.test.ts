@@ -31,16 +31,23 @@ describe("TelemetryEventSchema — PIIホワイトリスト", () => {
     expect(serialized).not.toContain("figmaFileKey");
   });
 
-  it("Figma PAT を toolName に紛れ込ませても許可リストの型で弾かれる", () => {
+  it("Figma PAT を toolName に紛れ込ませても enum で拒否される", () => {
     const result = McpToolInvokedPropertiesSchema.safeParse({
       toolName: FAKE_FIGMA_TOKEN,
       durationMs: 12,
       ok: true,
     });
 
-    // toolName は string なので値自体は通るが、この関数は呼び出し側 (main プロセス) が
-    // tool 名の文字列リテラルしか渡さない設計であることを型テストとして固定する。
-    // ここでは「余計なキーは絶対に通らない」ことのみ厳密に確認する。
+    expect(result.success).toBe(false);
+  });
+
+  it("実在する MCP tool 名は許可リストの型で通る", () => {
+    const result = McpToolInvokedPropertiesSchema.safeParse({
+      toolName: "compare_design",
+      durationMs: 12,
+      ok: true,
+    });
+
     expect(result.success).toBe(true);
     expect(Object.keys(result.success ? result.data : {})).toEqual([
       "toolName",
@@ -65,6 +72,17 @@ describe("TelemetryEventSchema — PIIホワイトリスト", () => {
     expect(serialized).not.toContain(FAKE_FIGMA_TOKEN);
     expect(serialized).not.toContain("message");
     expect(serialized).not.toContain("stack");
+  });
+
+  it("未知の errorName は UnknownError へ丸められる (IPC 経由の自由文字列対策)", () => {
+    const result = AppErrorCapturedPropertiesSchema.safeParse({
+      process: "renderer",
+      errorName: FAKE_FIGMA_FILE_PATH,
+      fatal: false,
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.success ? result.data.errorName : null).toBe("UnknownError");
   });
 
   it("未知の event 名は拒否する (許可リストの外)", () => {

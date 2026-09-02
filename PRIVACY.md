@@ -45,24 +45,44 @@ FigDiff never sends:
 - Figma Personal Access Tokens, OAuth tokens, or any other credential
 - Exception messages or stack traces (only the error's class name, e.g. `TypeError`, is sent —
   never `error.message` or `error.stack`, which can contain paths or tokens)
-- IP address (`$ip` is explicitly set to `null`, and geolocation lookup is disabled)
 - Session recordings, screen recordings, or keystroke/click autocapture — none of these features
   are enabled, ever
 
+We also do not let PostHog **enrich or store** your IP address as event data: the `$ip` property
+is explicitly set to `null` on every event, and geolocation lookup is disabled. This does not mean
+PostHog's servers never observe your IP — any HTTPS request necessarily reveals the source IP to
+the receiving network endpoint, the same way it would for any other site your machine connects to.
+What these settings prevent is PostHog attaching that address to your event data or deriving a
+location from it.
+
 ## Where it is sent
 
-Anonymous events are sent to [PostHog](https://posthog.com) (EU region:
-`https://eu.i.posthog.com`), a third-party analytics processor. No other third-party analytics or
-crash-reporting service (e.g. Sentry) is currently integrated — see `SECURITY.md` for the
-reasoning and the conditions under which that may change.
+Anonymous events are sent to [PostHog](https://posthog.com), a third-party analytics processor.
+The destination host is configurable per install:
+
+- **Desktop app**: `POSTHOG_HOST`, baked in at build time (see `app/desktop/electron.vite.config.ts`).
+- **MCP server**: `FIGDIFF_POSTHOG_HOST`, read at process start (see `app/mcp-server/src/telemetry.ts`).
+
+Both default to the EU region (`https://eu.i.posthog.com`) and are validated at build/read time
+against an allowlist of PostHog's official regional hosts (`https://eu.i.posthog.com`,
+`https://us.i.posthog.com`) — an unset or invalid value always falls back to the EU default, it
+never silently sends to an arbitrary host. EU-region transmission is guaranteed only when neither
+variable is set, or is explicitly set to the EU host; setting either to the US host routes that
+process's events to PostHog's US region instead. No other third-party analytics or crash-reporting
+service (e.g. Sentry) is currently integrated — see `SECURITY.md` for the reasoning and the
+conditions under which that may change.
 
 ## Libraries and MCP tool arguments
 
 FigDiff's shared libraries (`@figdiff/shared`, `@figdiff/credential-store`,
-`@figdiff/mobile-capture`) never contain telemetry code — they are embedded into other people's
-processes (via the MCP server) and must not phone home on their own. The MCP server's tool
-arguments (which can contain your Figma PAT, file keys, and local paths) are never read by the
-telemetry code path — only the tool's name, duration, and success/failure are recorded.
+`@figdiff/mobile-capture`) never create a PostHog client or send anything over the network — they
+are embedded into other people's processes (via the MCP server) and must not phone home on their
+own. `@figdiff/shared` does contain the telemetry event **allowlist** (types and Zod schemas that
+define what an event is allowed to look like, in `telemetry-event.ts`), but that file has no SDK
+dependency and performs no I/O; only the Electron main process and the MCP server actually send
+events. The MCP server's tool arguments (which can contain your Figma PAT, file keys, and local
+paths) are never read by the telemetry code path — only the tool's name, duration, and
+success/failure are recorded.
 
 ## Questions
 

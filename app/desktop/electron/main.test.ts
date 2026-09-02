@@ -238,6 +238,31 @@ describe("起動処理", () => {
     }
   });
 
+  it("終了時はテレメトリの停止を待ってから、一度だけ終了させること", async () => {
+    await bootMain();
+    mocks.appQuit.mockClear();
+    let resolveShutdown: () => void = () => undefined;
+    mocks.shutdownTelemetry.mockReturnValueOnce(
+      new Promise<void>((resolve) => {
+        resolveShutdown = resolve;
+      }),
+    );
+
+    const listener = findAppListener("before-quit");
+    const preventDefault = vi.fn();
+    listener({ preventDefault });
+
+    // shutdownTelemetry がまだ終わっていない間は quit しない。
+    expect(preventDefault).toHaveBeenCalledOnce();
+    expect(mocks.appQuit).not.toHaveBeenCalled();
+
+    resolveShutdown();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(mocks.appQuit).toHaveBeenCalledOnce();
+  });
+
   it("通信の許可範囲を、開発と出荷で分けて差し込むこと", async () => {
     await bootMain();
 

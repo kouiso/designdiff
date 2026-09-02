@@ -58,14 +58,17 @@ const readConfig = (): { config: TelemetryConfig; fromDisk: boolean } => {
   return { config: fresh, fromDisk: false };
 };
 
+/**
+ * 書き込み失敗を握りつぶさない。ここで catch すると「renderer には consent:false
+ * が返るのにディスク上は前の値のまま」という表示とディスクの食い違いが起きる
+ * (実際に指摘された)。呼び出し側 (ensureTelemetryConfig は try/catch 済み、
+ * setTelemetryConsent は呼び出し元の IPC ハンドラまで reject を伝播させる) に
+ * 判断を委ねる。
+ */
 const writeConfig = (config: TelemetryConfig): void => {
+  mkdirSync(dirname(getConfigPath()), { recursive: true });
+  writeFileSync(getConfigPath(), JSON.stringify(config), "utf-8");
   cachedConfig = config;
-  try {
-    mkdirSync(dirname(getConfigPath()), { recursive: true });
-    writeFileSync(getConfigPath(), JSON.stringify(config), "utf-8");
-  } catch (error) {
-    console.error("[telemetry] failed to persist config (non-fatal):", error);
-  }
 };
 
 /** 起動時に一度だけ呼ぶ。install id を確定させ、設定ファイルを用意する。失敗しても起動は止めん。 */
@@ -99,9 +102,17 @@ const startClient = (): void => {
   if (client) return;
   if (!__POSTHOG_KEY__) return; // キー未設定なら黙って no-op
   client = new PostHog(__POSTHOG_KEY__, {
+    // __POSTHOG_HOST__ は electron.vite.config.ts のビルド時に許可済み HTTPS
+    // origin へ検証済み (electron.vite.config.ts 参照)。ここでは受け取った値を
+    // そのまま使ってよい。
     host: __POSTHOG_HOST__ || "https://eu.i.posthog.com",
     disableGeoip: true,
     flushAt: 1,
+    // posthog-node は既定で isServer:true を付け、全イベントに $is_server:true を
+    // 付与する (サーバー側計測との区別用)。デスクトップアプリは CLI/クライアント
+    // 相当の実行環境なので false にし、OS 帰属が通常のクライアントと同じように
+    // 効くようにする。
+    isServer: false,
   });
 };
 

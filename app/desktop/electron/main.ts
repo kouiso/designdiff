@@ -192,9 +192,21 @@ const createWindow = (): void => {
   }
 };
 
+// uncaughtException にリスナーを1つでも登録すると、Node/Electron 既定の
+// 「ログを出して即終了」という挙動が抑制される。ログとテレメトリ送信だけして
+// 生き続けると、壊れた状態のプロセスがそのまま動き続ける恐れがあるため、
+// テレメトリを最大2秒だけ待ってから明示的に終了する — 元の「fatal は即終了」
+// という挙動を、テレメトリの送信猶予つきで再現する。
 process.on("uncaughtException", (error) => {
   console.error("[main] uncaughtException:", error);
   captureTelemetryException("main", error, true);
+  shutdownTelemetry()
+    .catch((shutdownError: unknown) => {
+      console.error("[main] telemetry shutdown after uncaughtException failed:", shutdownError);
+    })
+    .finally(() => {
+      app.exit(1);
+    });
 });
 
 if (!app.requestSingleInstanceLock()) {
@@ -256,8 +268,21 @@ app.on("window-all-closed", () => {
   }
 });
 
-app.on("before-quit", () => {
-  shutdownTelemetry().catch((error: unknown) => {
-    console.error("[main] telemetry shutdown failed:", error);
-  });
+let isQuittingAfterTelemetryShutdown = false;
+
+app.on("before-quit", (event) => {
+  // before-quit は非同期処理の完了を待たない。preventDefault + 再入防止フラグで
+  // shutdownTelemetry() の完了 (最大2秒) を待ってから app.quit() を一度だけ
+  // 呼び直す — でないと PostHog の in-flight イベントが flush 前にプロセスごと
+  // 終了する恐れがある。
+  if (isQuittingAfterTelemetryShutdown) return;
+  isQuittingAfterTelemetryShutdown = true;
+  event.preventDefault();
+  shutdownTelemetry()
+    .catch((error: unknown) => {
+      console.error("[main] telemetry shutdown failed:", error);
+    })
+    .finally(() => {
+      app.quit();
+    });
 });

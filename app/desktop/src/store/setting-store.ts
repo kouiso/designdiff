@@ -83,7 +83,11 @@ export const useSettingStore = create<SettingState>((set) => ({
   setTelemetryConsent: async (consent: boolean) => {
     const platform = await getPlatform();
     await platform.analytics.setConsent(consent);
-    set({ telemetryConsent: consent });
+    // 要求値をそのまま反映しない。Web 版の setConsent は no-op で常に false を
+    // 返すため、要求値を鵜呑みにすると「押したら有効に見えるのに実際は何も
+    // 起きていない」表示になる。実効値を読み直して初めて表示と実態が揃う。
+    const effectiveConsent = await platform.analytics.getConsent();
+    set({ telemetryConsent: effectiveConsent });
   },
 
   startFigmaLogin: async () => {

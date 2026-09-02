@@ -29,8 +29,17 @@ child.stderr.on("data", (chunk) => {
   stderr += chunk.toString();
 });
 
+// 異常な依存が stdout へ大量出力しても probe 中にメモリを食い潰さないよう上限を設ける。
+const MAX_STDOUT_BYTES = 1024 * 1024; // 1 MiB
 let stdout = "";
+let stdoutBytes = 0;
+let stdoutOverflowed = false;
 child.stdout.on("data", (chunk) => {
+  stdoutBytes += chunk.length;
+  if (stdoutBytes > MAX_STDOUT_BYTES) {
+    stdoutOverflowed = true;
+    return;
+  }
   stdout += chunk.toString();
 });
 
@@ -47,10 +56,19 @@ if (exitCode) {
   );
 }
 
+if (stdoutOverflowed) {
+  throw new Error(
+    `MCP server wrote more than ${MAX_STDOUT_BYTES} bytes to stdout during the ${probeMs}ms probe; aborting.`,
+  );
+}
+
 child.kill("SIGTERM");
 
+// "exit" はプロセス終了の合図でしかなく、stdio ストリームがまだ開いている場合がある。
+// "close" を待つと、stdout/stderr の書き込みが完全に終わってから検証できる —
+// 終了直前の最後の書き込みを取りこぼさないため。
 const stopped = await new Promise((resolveStopped) => {
-  child.once("exit", () => resolveStopped(true));
+  child.once("close", () => resolveStopped(true));
   setTimeout(() => resolveStopped(false), shutdownMs);
 });
 
@@ -59,14 +77,38 @@ if (!stopped) {
   throw new Error(`MCP server did not stop within ${shutdownMs}ms after SIGTERM.`);
 }
 
+if (stdoutOverflowed) {
+  throw new Error(
+    `MCP server wrote more than ${MAX_STDOUT_BYTES} bytes to stdout; aborting before validation.`,
+  );
+}
+
+// JSON 構文が通るだけでは JSON-RPC とは言えない (`42` や `{"level":"info"}` も通ってしまう)。
+// request/notification は method を、response は id と result/error のどちらかを持つ、
+// という JSON-RPC 2.0 のエンベロープ最低限を確認する。
+const isJsonRpcMessage = (value) => {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
+  if (value.jsonrpc !== "2.0") return false;
+  if (typeof value.method === "string") return true; // request または notification
+  const hasResult = Object.hasOwn(value, "result");
+  const hasError = typeof value.error === "object" && value.error !== null;
+  return (hasResult || hasError) && Object.hasOwn(value, "id");
+};
+
 // stdout は JSON-RPC の本線。posthog-node など依存が stderr 以外へログを漏らしていないか
-// ここで確認する — 空行以外の全行が有効な JSON であることを要求する。
+// ここで確認する — 空行以外の全行が有効な JSON-RPC メッセージであることを要求する。
 const stdoutLines = stdout.split("\n").filter((line) => line.length > 0);
 for (const line of stdoutLines) {
+  let parsed;
   try {
-    JSON.parse(line);
+    parsed = JSON.parse(line);
   } catch {
     throw new Error(`MCP server wrote a non-JSON-RPC line to stdout: ${JSON.stringify(line)}`);
+  }
+  if (!isJsonRpcMessage(parsed)) {
+    throw new Error(
+      `MCP server wrote a JSON line that is not a JSON-RPC 2.0 message: ${JSON.stringify(line)}`,
+    );
   }
 }
 

@@ -82,6 +82,22 @@ describe("useSettingStore", () => {
       expect(useSettingStore.getState().defaultThreshold).toBe(0.5);
     });
   });
+
+  describe("setTelemetryConsent", () => {
+    it("setConsent 後の実効値 (getConsent) をストアへ反映する", async () => {
+      // Web 版アダプターは setConsent が no-op で常に false を返す。要求値を
+      // そのまま信じると「ON にしたのに実は無効」という表示になるため、
+      // getConsent を読み直した結果だけを信頼する設計を固定するテスト。
+      vi.mocked(window.electronAPI.analytics.setConsent).mockResolvedValueOnce(undefined);
+      vi.mocked(window.electronAPI.analytics.getConsent).mockResolvedValueOnce(false);
+
+      await useSettingStore.getState().setTelemetryConsent(true);
+
+      expect(window.electronAPI.analytics.setConsent).toHaveBeenCalledWith(true);
+      expect(window.electronAPI.analytics.getConsent).toHaveBeenCalled();
+      expect(useSettingStore.getState().telemetryConsent).toBe(false);
+    });
+  });
 });
 
 describe("Figma のログイン状態", () => {

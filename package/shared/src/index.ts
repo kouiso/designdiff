@@ -290,7 +290,9 @@ export type {
   WeightedAggregate,
 } from "./type.js";
 
-// Telemetry event allowlist (types + Zod schemas only — no SDK, no network code)
+// テレメトリイベントの許可リスト（型 + Zod スキーマのみ）。SDK も送信コードも
+// ここには置かない — renderer にもバンドルされるバレルなので、送信処理を混ぜると
+// 信頼境界 (main / MCP server) の外から直接 PostHog へ発火できる経路になる。
 export {
   AppErrorCapturedPropertiesSchema,
   AppStartedPropertiesSchema,

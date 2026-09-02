@@ -78,6 +78,20 @@ describe("telemetry", () => {
     expect(getTelemetryConsent()).toBe(false);
   });
 
+  it("設定ファイルの永続化に失敗したら setTelemetryConsent は例外を投げ、表示と実態を食い違わせないこと", async () => {
+    // 書き込み先ディレクトリが無く mkdir も失敗するパス (ファイルの下にディレクトリは作れない) を
+    // userData として渡し、書き込み失敗を再現する。
+    const blockedPath = path.join(userDataDir, "not-a-directory");
+    await fs.promises.writeFile(blockedPath, "blocker", "utf-8");
+    mocks.getPath.mockReturnValue(path.join(blockedPath, "nested"));
+    const { setTelemetryConsent, getTelemetryConsent } = await loadTelemetry();
+
+    expect(() => setTelemetryConsent(true)).toThrow();
+    // 書き込みが失敗した以上、consent は前の既定値 (false) のまま — ディスクと
+    // メモリ上の状態が食い違わない。
+    expect(getTelemetryConsent()).toBe(false);
+  });
+
   it("キー未設定ビルド (テスト環境) では同意ONでも PostHog へは繋がず、track は無音で失敗すること", async () => {
     const { setTelemetryConsent, initTelemetryIfConsented, trackTelemetryEventUnsafe } =
       await loadTelemetry();

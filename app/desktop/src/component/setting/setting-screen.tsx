@@ -345,6 +345,19 @@ export function SettingsScreen() {
               });
             }}
           />
+          <a
+            href="https://github.com/kouiso/designdiff/blob/develop/PRIVACY.md"
+            target="_blank"
+            rel="noreferrer"
+            style={{
+              fontSize: 12,
+              color: "var(--muted-fg)",
+              textDecoration: "underline",
+              alignSelf: "flex-start",
+            }}
+          >
+            {t("settings.privacyPolicyLink")}
+          </a>
         </SetSection>
       </div>
     </div>

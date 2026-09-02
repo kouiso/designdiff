@@ -1,14 +1,16 @@
 // =============================================================================
-// Telemetry event allowlist (types + Zod schemas only)
+// テレメトリイベントの許可リスト（型 + Zod スキーマのみ）
 // =============================================================================
-// This barrel is bundled into the browser renderer as well as Node targets
-// (Electron main, MCP server). It MUST NOT depend on posthog-* or any
-// node-only API — it only declares what an event is allowed to look like.
-// Sending events is the caller's responsibility (Electron main / MCP server).
+// このファイルはブラウザ renderer にも Node 側 (Electron main / MCP server) にも
+// バンドルされる。renderer 側は file:// 起点で動くため、posthog-* を混ぜると
+// 送信コード自体が renderer に紛れ込み、信頼境界 (main / MCP server) の外から
+// PostHog へ直接発火できてしまう。だから送信は呼び出し側の責務とし、ここには
+// 「どんな形なら送っていいか」の定義だけを置く。
 //
-// PII rule: every property list below is a WHITELIST, not a filter. Never add
-// a free-text/string field without checking it cannot carry a Figma file key,
-// frame name, local absolute path, screenshot URL, or credential.
+// プロパティは「フィルタ」ではなく「ホワイトリスト」。ここに載っていない
+// フィールドは追加しない。フリーテキストの string を足す前に、Figma のファイル
+// キー・frame 名・ローカル絶対パス・スクリーンショット URL・認証情報が
+// 混入し得ないか必ず確認する（自由文字列は事故の温床）。
 
 import { z } from "zod";
 
@@ -24,7 +26,10 @@ export type TelemetryEventName = (typeof TELEMETRY_EVENT_NAMES)[number];
 
 export const TelemetryEventNameSchema = z.enum(TELEMETRY_EVENT_NAMES);
 
-// --- Per-event property schemas -------------------------------------------
+// --- イベントごとにプロパティのスキーマを分ける -----------------------------
+// discriminated union (下部) で name と properties を一対一に固定するため。
+// 1つの巨大な object にまとめると、イベント A 用のプロパティを B のイベント名で
+// 送っても構文上は通ってしまい、ホワイトリストの意味が薄れる。
 
 export const AppStartedPropertiesSchema = z.object({
   appVersion: z.string(),
@@ -41,19 +46,60 @@ export const CompareDesignCompletedPropertiesSchema = z.object({
   verdict: z.enum(["pass", "fail", "inconclusive"]),
 });
 
+// MCP サーバーが実際に registerTool している tool 名の一覧。z.string() のままだと
+// 任意の文字列が通ってしまい、呼び出し側の書き間違いをホワイトリストが検出できない。
+export const MCP_TOOL_NAMES = [
+  "list_projects",
+  "create_project",
+  "delete_project",
+  "compare_design",
+  "compare_animation",
+  "inspect_node",
+  "get_design_tokens",
+  "list_figma_frames",
+  "generate_diff_report",
+  "get_crop_region",
+  "set_crop_region",
+  "get_ignore_regions",
+  "set_ignore_regions",
+  "delete_ignore_region",
+  "verify_fix",
+  "set_figma_token",
+  "report_issue",
+] as const;
+
 export const McpToolInvokedPropertiesSchema = z.object({
-  toolName: z.string(),
+  toolName: z.enum(MCP_TOOL_NAMES),
   durationMs: z.number().nonnegative(),
   ok: z.boolean(),
 });
 
+// JS の組み込み例外クラス名だけを許可する。error.name は呼び出し元 (IPC 経由の
+// renderer 含む) が自由に書ける値なので、ここを z.string() のままにすると
+// パス・トークンを errorName として送りつける迂回路になる。未知の値は
+// catch() で "UnknownError" に落とし、リスト外の値でも送信自体は落とさない。
+const KNOWN_ERROR_NAMES = [
+  "Error",
+  "TypeError",
+  "RangeError",
+  "SyntaxError",
+  "ReferenceError",
+  "EvalError",
+  "URIError",
+  "AggregateError",
+  "UnknownError",
+] as const;
+
 export const AppErrorCapturedPropertiesSchema = z.object({
   process: z.enum(["main", "renderer"]),
-  errorName: z.string(),
+  errorName: z.enum(KNOWN_ERROR_NAMES).catch("UnknownError"),
   fatal: z.boolean(),
 });
 
-// --- Discriminated union of all telemetry events ---------------------------
+// --- 全イベントの discriminated union ---------------------------------------
+// name の literal 値でどの properties スキーマが対応するかを固定する。SDK を
+// ここで公開しない理由は先頭コメントの通り: 送信コードは main / MCP server
+// (信頼境界の内側) にだけ置き、この契約ファイルには型と検証だけを残す。
 
 export const TelemetryEventSchema = z.discriminatedUnion("name", [
   z.object({ name: z.literal("app_started"), properties: AppStartedPropertiesSchema }),

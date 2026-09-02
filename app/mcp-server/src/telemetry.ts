@@ -21,29 +21,80 @@ import { McpToolInvokedPropertiesSchema } from "@figdiff/shared";
 
 import { getFigdiffHome } from "./util/figdiff-paths.js";
 
-import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-
 const POSTHOG_KEY = process.env.FIGDIFF_POSTHOG_KEY ?? "";
-const POSTHOG_HOST = process.env.FIGDIFF_POSTHOG_HOST ?? "https://eu.i.posthog.com";
 
+// PostHog の公式リージョンホストだけを許可する。HTTP や未知の origin を通すと、
+// 同意済みイベントと API key が平文で、または関係ない宛先へ送られる恐れがある。
+const ALLOWED_POSTHOG_HOSTS: string[] = ["https://us.i.posthog.com", "https://eu.i.posthog.com"];
+const DEFAULT_POSTHOG_HOST = "https://eu.i.posthog.com";
+
+const resolvePostHogHost = (raw: string | undefined): string => {
+  if (!raw) return DEFAULT_POSTHOG_HOST;
+  if (!ALLOWED_POSTHOG_HOSTS.includes(raw)) {
+    console.error(
+      `[telemetry] FIGDIFF_POSTHOG_HOST "${raw}" is not an allowlisted HTTPS origin; falling back to ${DEFAULT_POSTHOG_HOST}`,
+    );
+    return DEFAULT_POSTHOG_HOST;
+  }
+  return raw;
+};
+
+const POSTHOG_HOST = resolvePostHogHost(process.env.FIGDIFF_POSTHOG_HOST);
+
+// installId は任意。PRIVACY.md が案内する最小の同意ファイルは { "consent": true }
+// だけで、installId は初回起動時にこちら側が生成して書き戻す。ここを必須にすると
+// ドキュメント通りに書いたファイルが safeParse に落ち、同意済みなのに無通信のまま
+// になる (実際に起きたバグ)。
 const TelemetryConfigSchema = z.object({
   consent: z.boolean(),
-  installId: z.string(),
+  installId: z.string().optional(),
 });
 
-type TelemetryConfig = z.infer<typeof TelemetryConfigSchema>;
+interface TelemetryConfig {
+  consent: boolean;
+  installId: string;
+}
 
 const getConfigPath = (): string => join(getFigdiffHome(), "telemetry.json");
 
-const readConfig = (): TelemetryConfig => {
+/**
+ * ENOENT (ファイル未作成) だけを「未同意」として静かに扱う。EACCES や壊れた
+ * JSON、schema 不一致まで同じ扱いにすると、既に同意した利用者が設定破損や
+ * 権限変更に気づけないまま計測が止まり続ける。中身は出さず、失敗した事実だけ
+ * stderr に記録する。
+ *
+ * fromDisk=false は「installId をこちらで生成した (まだファイルに書いていない
+ * か、書いてある値と食い違う)」印。呼び出し側はこの時だけ書き戻しを検討する。
+ */
+const readConfig = (): { config: TelemetryConfig; fromDisk: boolean } => {
   try {
     const raw = readFileSync(getConfigPath(), "utf-8");
     const parsed = TelemetryConfigSchema.safeParse(JSON.parse(raw));
-    if (parsed.success) return parsed.data;
-  } catch {
-    // ファイルが無い、壊れている、権限が無い — 既定 (OFF) へフォールバック
+    if (parsed.success) {
+      if (parsed.data.installId) {
+        return {
+          config: { consent: parsed.data.consent, installId: parsed.data.installId },
+          fromDisk: true,
+        };
+      }
+      return {
+        config: { consent: parsed.data.consent, installId: randomUUID() },
+        fromDisk: false,
+      };
+    }
+    console.error("[telemetry] config failed schema validation; telemetry remains disabled");
+  } catch (error: unknown) {
+    const code = error instanceof Error && "code" in error ? error.code : undefined;
+    if (code !== "ENOENT") {
+      console.error("[telemetry] config read failed; telemetry remains disabled:", error);
+    }
   }
-  return { consent: false, installId: "" };
+  return { config: { consent: false, installId: randomUUID() }, fromDisk: false };
+};
+
+const writeConfig = (config: TelemetryConfig): void => {
+  mkdirSync(dirname(getConfigPath()), { recursive: true });
+  writeFileSync(getConfigPath(), JSON.stringify(config), "utf-8");
 };
 
 const isForcedOff = (): boolean => process.env.FIGDIFF_TELEMETRY === "0";
@@ -58,10 +109,17 @@ export const isMcpTelemetryEnabled = (): boolean => client !== null;
 export const initMcpTelemetry = (): void => {
   if (isForcedOff() || isCi()) return;
   if (!POSTHOG_KEY) return;
-  const config = readConfig();
+  const { config, fromDisk } = readConfig();
   if (!config.consent) return;
+  if (!fromDisk) {
+    try {
+      writeConfig(config);
+    } catch (error) {
+      console.error("[telemetry] failed to persist install id (non-fatal):", error);
+    }
+  }
   try {
-    installId = config.installId || randomUUID();
+    installId = config.installId;
     client = new PostHog(POSTHOG_KEY, {
       host: POSTHOG_HOST,
       disableGeoip: true,
@@ -75,11 +133,9 @@ export const initMcpTelemetry = (): void => {
 
 /** CLI から同意を切り替える用（現状は手動でファイル編集する運用。将来 tool 化する場合の土台）。 */
 export const setMcpTelemetryConsent = (consent: boolean): void => {
-  const config = readConfig();
-  const nextInstallId = config.installId || randomUUID();
+  const { config } = readConfig();
   try {
-    mkdirSync(dirname(getConfigPath()), { recursive: true });
-    writeFileSync(getConfigPath(), JSON.stringify({ consent, installId: nextInstallId }), "utf-8");
+    writeConfig({ ...config, consent });
   } catch (error) {
     console.error("[telemetry] failed to persist consent (non-fatal):", error);
   }
@@ -105,11 +161,30 @@ export const shutdownMcpTelemetry = async (): Promise<void> => {
   await current.shutdown(2000);
 };
 
+/** resolve された tool 結果が { isError: true } を持つ失敗応答かどうかだけ見る。中身は読まない。 */
+const isErrorResult = (result: unknown): boolean =>
+  typeof result === "object" && result !== null && "isError" in result && result.isError === true;
+
 /**
  * server.registerTool を Proxy でラップし、全 tool のハンドラに計測を仕込む。
  * 引数は一切読まない — tool 名・所要時間・成否だけを送る。
+ *
+ * T を generic にして McpServer 型そのものではなく registerTool の構造だけを
+ * 要求する。テストで `as unknown as McpServer` のような型アサーションを使わず、
+ * registerTool だけ持つ最小の fake server をそのまま渡せるようにするため
+ * (リポジトリは `as` を禁止している)。
+ *
+ * 制約はメソッド構文 (`registerTool(...): unknown`) で書く。プロパティ構文の
+ * 関数型 (`registerTool: (...) => unknown`) だと strictFunctionTypes の下で
+ * 引数が反変チェックされ、McpServer 本体の厳密な registerTool シグネチャが
+ * この緩い制約へ代入できずコンパイルが通らない。メソッド構文は双変チェックの
+ * ため、実装側 (McpServer) もテストの fake server も同じ制約を満たせる。
  */
-export const wrapServerToolsWithTelemetry = (server: McpServer): McpServer => {
+export const wrapServerToolsWithTelemetry = <
+  T extends { registerTool(...args: unknown[]): unknown },
+>(
+  server: T,
+): T => {
   return new Proxy(server, {
     get(target, prop, receiver): unknown {
       const value: unknown = Reflect.get(target, prop, receiver);
@@ -128,7 +203,9 @@ export const wrapServerToolsWithTelemetry = (server: McpServer): McpServer => {
           const start = Date.now();
           let ok = true;
           try {
-            return await Reflect.apply(callback, undefined, callbackArgs);
+            const result: unknown = await Reflect.apply(callback, undefined, callbackArgs);
+            ok = !isErrorResult(result);
+            return result;
           } catch (error) {
             ok = false;
             throw error;
