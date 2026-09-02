@@ -1,9 +1,2 @@
-# git-crypt: Private files encrypted at rest
-prompt/instruction/persona.md filter=git-crypt diff=git-crypt
-prompt/instruction/core.md filter=git-crypt diff=git-crypt
-prompt/instruction/data-driven-execution.md filter=git-crypt diff=git-crypt
-.claude/commands/top5.md filter=git-crypt diff=git-crypt
-CLAUDE.md filter=git-crypt diff=git-crypt
-.github/instructions/persona.instructions.md filter=git-crypt diff=git-crypt
-.github/instructions/core.instructions.md filter=git-crypt diff=git-crypt
-.github/instructions/data-driven-execution.instructions.md filter=git-crypt diff=git-crypt
+# SOPS: private prompt files encrypted at rest (see .sops.yaml, secrets/README.md)
+# git-crypt was retired in favor of SOPS + 1Password — see secrets/README.md

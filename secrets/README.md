@@ -4,6 +4,23 @@ Files here (`*.enc.env`) are safe to commit: every value is encrypted with
 [SOPS](https://github.com/getsops/sops) against an [age](https://github.com/FiloSottile/age)
 public key. Only the key names stay in cleartext; the values do not.
 
+## The repo also SOPS-encrypts 5 prompt files in place
+
+`CLAUDE.md`, `prompt/instruction/persona.md`, `prompt/instruction/core.md`,
+`prompt/instruction/data-driven-execution.md`, `.claude/commands/top5.md` are confidential
+prose, not key/value secrets, so they're encrypted whole-file (`sops --input-type binary
+--output-type binary`) instead of living in `secrets/`. Same age key as everything else here.
+
+```sh
+export SOPS_AGE_KEY_FILE=~/.config/sops/age/keys.txt
+sops -d --input-type binary --output-type binary CLAUDE.md   # read
+sops --input-type binary --output-type binary CLAUDE.md      # edit (opens plaintext in $EDITOR, re-encrypts on save)
+```
+
+These replace the repo's former `git-crypt` setup (retired 2026-09-02). The old
+`designdiff git-crypt key` 1Password item is kept only so old commits that still hold
+git-crypt ciphertext can be decrypted if ever needed — it decrypts nothing going forward.
+
 ## Decrypt
 
 1. Pull the private age key from 1Password (RITMO vault, item
