@@ -19,16 +19,19 @@ but no further events are sent.
 ## What is sent
 
 Telemetry events are validated against a fixed, code-reviewed whitelist
-(`package/shared/src/telemetry-event.ts`) before they leave your machine. Only these event
-kinds exist, and only these properties are attached to them:
+(`package/shared/src/telemetry-event.ts`) before they leave your machine. An event kind existing
+in that whitelist does not by itself mean it is currently sent — the table below lists only the
+event kinds an actual code path emits today:
 
 | Event | Properties sent |
 |---|---|
 | `app_started` | app version, OS platform (`darwin` / `win32` / `linux`) |
-| `consent_changed` | the new consent boolean |
-| `compare_design_completed` | match percentage, duration (ms), verdict (`pass`/`fail`/`inconclusive`) |
 | `mcp_tool_invoked` | MCP tool name (e.g. `compare_design`), duration (ms), success boolean |
 | `app_error_captured` | which process crashed (`main`/`renderer`), the JS error **class name** only (e.g. `TypeError`), and whether it was fatal |
+
+The whitelist also reserves `consent_changed` and `compare_design_completed` for future use; no
+code currently calls them, so nothing under those names leaves your machine yet. If that changes,
+this table will be updated in the same PR that adds the emitting code.
 
 An anonymous, randomly generated install ID (not tied to your name, email, or Figma account) is
 sent as the distinct ID so repeat events can be grouped. It cannot be reversed to identify you.

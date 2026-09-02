@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // 起動処理は読み込んだだけで走る。境界を全部差し替えて、登録した処理を
 // 後から呼ぶ形で確かめる。
@@ -30,6 +30,7 @@ const mocks = vi.hoisted(() => {
     mainWindow,
     appOn: vi.fn(),
     appQuit: vi.fn(),
+    appExit: vi.fn(),
     isReady: vi.fn(() => true),
     requestSingleInstanceLock: vi.fn(() => true),
     whenReady: vi.fn(() => Promise.resolve()),
@@ -62,6 +63,7 @@ vi.mock("electron", () => ({
   app: {
     on: mocks.appOn,
     quit: mocks.appQuit,
+    exit: mocks.appExit,
     isReady: mocks.isReady,
     requestSingleInstanceLock: mocks.requestSingleInstanceLock,
     whenReady: mocks.whenReady,
@@ -119,6 +121,12 @@ async function bootMain(): Promise<void> {
   await Promise.resolve();
 }
 
+// main.ts は読み込みの度に process.on("uncaughtException", ...) を登録し、
+// 二度と外さない (本番は1プロセスに1回しか読み込まれないので問題ない)。
+// このテストは vi.resetModules() で毎回再読込するため、掃除せんと
+// このファイルのテストを走らせる度にリスナーが積み上がる。
+let uncaughtExceptionListenersBefore: NodeJS.UncaughtExceptionListener[] = [];
+
 describe("起動処理", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -129,6 +137,15 @@ describe("起動処理", () => {
     mocks.whenReady.mockImplementation(() => Promise.resolve());
     mocks.getAllWindows.mockReturnValue([mocks.mainWindow]);
     mocks.BrowserWindow.mockReturnValue(mocks.mainWindow);
+    uncaughtExceptionListenersBefore = process.listeners("uncaughtException").slice();
+  });
+
+  afterEach(() => {
+    for (const listener of process.listeners("uncaughtException")) {
+      if (!uncaughtExceptionListenersBefore.includes(listener)) {
+        process.removeListener("uncaughtException", listener);
+      }
+    }
   });
 
   it("起動時に窓口の登録を全部済ませ、窓を作ること", async () => {
@@ -261,6 +278,47 @@ describe("起動処理", () => {
     await Promise.resolve();
 
     expect(mocks.appQuit).toHaveBeenCalledOnce();
+  });
+
+  it("終了処理は二重発火せず、2回目の before-quit は preventDefault を呼ばないこと", async () => {
+    await bootMain();
+    // shutdownTelemetry を未解決のままにし、1回目の処理が終わる前に
+    // 2回目が来た状況を再現する。
+    mocks.shutdownTelemetry.mockReturnValueOnce(new Promise<void>(() => undefined));
+
+    const listener = findAppListener("before-quit");
+    const preventDefault1 = vi.fn();
+    listener({ preventDefault: preventDefault1 });
+    expect(preventDefault1).toHaveBeenCalledOnce();
+
+    const preventDefault2 = vi.fn();
+    listener({ preventDefault: preventDefault2 });
+    // 再入防止フラグが立っているので、2回目は即 return し preventDefault を呼ばない
+    // (呼ぶと event が二重に保留され、quit する手段が無くなる)。
+    expect(preventDefault2).not.toHaveBeenCalled();
+  });
+
+  it("uncaughtException では例外を記録し、テレメトリの停止を待ってから終了すること", async () => {
+    await bootMain();
+    let resolveShutdown: () => void = () => undefined;
+    mocks.shutdownTelemetry.mockReturnValueOnce(
+      new Promise<void>((resolve) => {
+        resolveShutdown = resolve;
+      }),
+    );
+
+    const error = new Error("boom");
+    process.emit("uncaughtException", error);
+
+    expect(mocks.captureTelemetryException).toHaveBeenCalledWith("main", error, true);
+    // shutdownTelemetry が終わるまでは exit しない。
+    expect(mocks.appExit).not.toHaveBeenCalled();
+
+    resolveShutdown();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(mocks.appExit).toHaveBeenCalledWith(1);
   });
 
   it("通信の許可範囲を、開発と出荷で分けて差し込むこと", async () => {

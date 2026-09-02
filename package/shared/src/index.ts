@@ -298,6 +298,7 @@ export {
   AppStartedPropertiesSchema,
   CompareDesignCompletedPropertiesSchema,
   ConsentChangedPropertiesSchema,
+  MCP_TOOL_NAMES,
   McpToolInvokedPropertiesSchema,
   TELEMETRY_EVENT_NAMES,
   TelemetryEventNameSchema,

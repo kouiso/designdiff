@@ -57,6 +57,9 @@ if (exitCode) {
 }
 
 if (stdoutOverflowed) {
+  // throw の前に必ず kill する。先に throw すると、プロセスが終了しないまま
+  // このスクリプトだけが例外で抜け、子プロセスが残り続ける。
+  child.kill("SIGTERM");
   throw new Error(
     `MCP server wrote more than ${MAX_STDOUT_BYTES} bytes to stdout during the ${probeMs}ms probe; aborting.`,
   );

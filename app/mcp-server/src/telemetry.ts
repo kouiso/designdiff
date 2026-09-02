@@ -146,7 +146,15 @@ export const hasMcpTelemetryConfig = (): boolean => existsSync(getConfigPath());
 export const trackMcpToolInvoked = (toolName: string, durationMs: number, ok: boolean): void => {
   if (!client) return;
   const properties = McpToolInvokedPropertiesSchema.safeParse({ toolName, durationMs, ok });
-  if (!properties.success) return;
+  if (!properties.success) {
+    // toolName が MCP_TOOL_NAMES (package/shared/src/telemetry-event.ts) の許可リストに
+    // 無い時にここへ落ちる。新しい tool を足してリストの更新を忘れると、その tool の
+    // 計測がここで黙って消え続ける — ログだけは残す。
+    console.error(
+      `[telemetry] rejected mcp_tool_invoked for unknown tool "${toolName}" (not sent)`,
+    );
+    return;
+  }
   client.capture({
     distinctId: installId,
     event: "mcp_tool_invoked",

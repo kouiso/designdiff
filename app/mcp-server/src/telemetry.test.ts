@@ -4,6 +4,8 @@ import * as path from "node:path";
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { MCP_TOOL_NAMES } from "@figdiff/shared";
+
 // PostHog クライアントは実ネットワークへ繋がずスパイだけで検証する。実クライアントを
 // そのまま使うと flushAt:1 で毎回バックグラウンド送信を試み、CI でも無駄な通信が走る。
 const posthogMocks = vi.hoisted(() => ({
@@ -275,5 +277,23 @@ describe("mcp-server telemetry", () => {
     const wrapped = wrapServerToolsWithTelemetry(fakeServer);
 
     expect(wrapped.name).toBe("figdiff");
+  });
+
+  it("MCP_TOOL_NAMES は実際に registerTool している tool 名と過不足なく一致すること", async () => {
+    // toolName の許可リスト (package/shared/src/telemetry-event.ts) が実装から
+    // ずれると、新しい tool の計測が trackMcpToolInvoked で黙って弾かれ続ける。
+    // src/tool/*.ts が実際に登録している名前と突き合わせて、ずれを検出する。
+    const toolDir = path.join(import.meta.dirname, "tool");
+    const files = await fs.promises.readdir(toolDir);
+    const registeredNames = new Set<string>();
+    for (const file of files) {
+      if (!file.endsWith(".ts") || file.endsWith(".test.ts")) continue;
+      const content = await fs.promises.readFile(path.join(toolDir, file), "utf-8");
+      const match = /registerTool\(\s*"([a-z_]+)"/.exec(content);
+      if (match?.[1]) registeredNames.add(match[1]);
+    }
+
+    expect(registeredNames.size).toBeGreaterThan(0);
+    expect([...registeredNames].sort()).toEqual([...MCP_TOOL_NAMES].sort());
   });
 });
