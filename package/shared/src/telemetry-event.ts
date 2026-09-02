@@ -26,6 +26,17 @@ export type TelemetryEventName = (typeof TELEMETRY_EVENT_NAMES)[number];
 
 export const TelemetryEventNameSchema = z.enum(TELEMETRY_EVENT_NAMES);
 
+// renderer プロセスからの IPC 経由で main へ届けてよいイベント名だけを列挙する。
+// TelemetryEventSchema 全体は main 側の内部発火 (app_started 等) にも使い回して
+// いるため、IPC の受け口をこの schema だけで守ると renderer が任意のイベント名を
+// 名乗って main 発のイベントを偽装できてしまう (例: 偽の appVersion を積んだ
+// app_started を送りつけ、ファイルパスやトークンを紛れ込ませる)。IPC ハンドラは
+// 必ずこのリストで名前を絞ってから TelemetryEventSchema へ渡すこと。
+// plain string[] にしておく。呼び出し側は `.includes(name)` で
+// name: string を渡すため、`as const` タプルにすると引数の型が合わず `as` による
+// アサーションが要る (このリポジトリでは禁止) ことになる。
+export const RENDERER_TELEMETRY_EVENT_NAMES: string[] = ["app_error_captured"];
+
 // --- イベントごとにプロパティのスキーマを分ける -----------------------------
 // discriminated union (下部) で name と properties を一対一に固定するため。
 // 1つの巨大な object にまとめると、イベント A 用のプロパティを B のイベント名で

@@ -11,7 +11,11 @@ FigDiff does not collect any usage data unless you explicitly turn it on.
 - **Desktop app**: Settings → Privacy → "Share anonymous usage data". Default: **off**.
 - **MCP server**: consent lives in `~/.figdiff/telemetry.json` (`{ "consent": true }`), default:
   **off**. The environment variable `FIGDIFF_TELEMETRY=0` always forces it off regardless of that
-  file. Telemetry is also always skipped when the `CI` environment variable is set.
+  file. Telemetry is also always skipped when the `CI` environment variable is set. Even with
+  consent on, the MCP server also needs a PostHog project API key in the `FIGDIFF_POSTHOG_KEY`
+  environment variable at process start — without it, `initMcpTelemetry()` silently no-ops and no
+  client is ever created, the same way the desktop app no-ops when its build-time key is unset.
+  Set this in the environment your MCP client (e.g. Claude Code) launches the server with.
 
 You can turn telemetry off at any time; no historical data is deleted retroactively by that action,
 but no further events are sent.

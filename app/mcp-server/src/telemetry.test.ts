@@ -233,6 +233,25 @@ describe("mcp-server telemetry", () => {
     await expect(shutdownMcpTelemetry()).resolves.toBeUndefined();
   });
 
+  it("稼働中に telemetry.json が consent:false へ書き換わったら、再起動なしで送信を止めること", async () => {
+    // MCP サーバーは長時間稼働する。init 時に consent:true を読んで client を作った後、
+    // エディタを再起動せずファイルだけ consent:false に書き換えられても送信が続いては
+    // opt-out の約束が守れない。
+    await writeConsentFile(true);
+    process.env.FIGDIFF_POSTHOG_KEY = "phc_dummy_test_key";
+    const { initMcpTelemetry, isMcpTelemetryEnabled, trackMcpToolInvoked } = await import(
+      "./telemetry.js"
+    );
+    initMcpTelemetry();
+    expect(isMcpTelemetryEnabled()).toBe(true);
+
+    await writeConsentFile(false);
+    trackMcpToolInvoked("compare_design", 12, true);
+
+    expect(posthogMocks.capture).not.toHaveBeenCalled();
+    expect(isMcpTelemetryEnabled()).toBe(false);
+  });
+
   it("wrapServerToolsWithTelemetry は registerTool の引数を素通しし、handler 実行を計測すること", async () => {
     // trackMcpToolInvoked 自体は client=null なので no-op。ここではラップした handler が
     // 例外なく素通しで結果を返すことと、引数を素通しすることだけを確認する。

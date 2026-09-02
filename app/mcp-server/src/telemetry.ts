@@ -145,6 +145,16 @@ export const hasMcpTelemetryConfig = (): boolean => existsSync(getConfigPath());
 
 export const trackMcpToolInvoked = (toolName: string, durationMs: number, ok: boolean): void => {
   if (!client) return;
+  // MCP サーバーは長時間稼働するプロセスで、consent は init 時にしか読んでいなかった。
+  // 稼働中に ~/.figdiff/telemetry.json を consent:false へ書き換えられても、client は
+  // 生きたまま送信を続けてしまう (実際に指摘された)。呼び出しのたびにディスクの consent
+  // を読み直し、false になっていたらここで client を止めて以後の送信を止める。
+  if (!readConfig().config.consent) {
+    shutdownMcpTelemetry().catch((error: unknown) => {
+      console.error("[telemetry] shutdown after opt-out failed (non-fatal):", error);
+    });
+    return;
+  }
   const properties = McpToolInvokedPropertiesSchema.safeParse({ toolName, durationMs, ok });
   if (!properties.success) {
     // toolName が MCP_TOOL_NAMES (package/shared/src/telemetry-event.ts) の許可リストに

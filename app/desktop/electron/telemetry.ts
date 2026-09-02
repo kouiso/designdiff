@@ -9,6 +9,7 @@ import { z } from "zod";
 import {
   AppErrorCapturedPropertiesSchema,
   AppStartedPropertiesSchema,
+  RENDERER_TELEMETRY_EVENT_NAMES,
   TelemetryEventSchema,
   type AppErrorCapturedProperties,
   type TelemetryEvent,
@@ -51,8 +52,16 @@ const readConfig = (): { config: TelemetryConfig; fromDisk: boolean } => {
       cachedConfig = parsed.data;
       return { config: parsed.data, fromDisk: true };
     }
-  } catch {
-    // ファイルが無い、壊れている、権限が無い — いずれも既定値へフォールバック
+    console.error("[telemetry] config failed schema validation; treating as first launch");
+  } catch (error: unknown) {
+    // ENOENT (初回起動でファイルが無い) だけを静かに扱う。壊れた JSON や権限エラー
+    // まで無言でフォールバックすると、ensureTelemetryConfig が「初回だから」と
+    // 判定して既存の同意と install id ごと consent:false で上書きしてしまう
+    // (実際に指摘された)。中身は出さず、失敗した事実だけ stderr に残す。
+    const code = error instanceof Error && "code" in error ? error.code : undefined;
+    if (code !== "ENOENT") {
+      console.error("[telemetry] config read failed; treating as first launch:", error);
+    }
   }
   const fresh: TelemetryConfig = { ...DEFAULT_CONFIG, installId: randomUUID() };
   return { config: fresh, fromDisk: false };
@@ -145,8 +154,20 @@ export const trackTelemetryEvent = (event: TelemetryEvent): void => {
   });
 };
 
-/** name/properties が許可リストに沿うか main 側 (信頼境界) で検証してから送る。 */
+/**
+ * name/properties が許可リストに沿うか main 側 (信頼境界) で検証してから送る。
+ *
+ * name はまず RENDERER_TELEMETRY_EVENT_NAMES で絞る。TelemetryEventSchema だけで
+ * 検証すると、renderer が "app_started" のような main 発のイベント名を名乗って
+ * 偽の appVersion (パスやトークンを含む自由文字列) を送りつけられてしまう
+ * (実際に指摘された)。app_started は main が起動時に直接 trackTelemetryEvent を
+ * 呼ぶので、この IPC 経由の入口を通す必要が無い。
+ */
 export const trackTelemetryEventUnsafe = (name: string, properties: unknown): boolean => {
+  if (!RENDERER_TELEMETRY_EVENT_NAMES.includes(name)) {
+    console.error(`[telemetry] rejected renderer-originated event "${name}" (not renderer-owned)`);
+    return false;
+  }
   const parsed = TelemetryEventSchema.safeParse({ name, properties });
   if (!parsed.success) {
     console.error(

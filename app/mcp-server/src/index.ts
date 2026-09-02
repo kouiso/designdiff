@@ -31,7 +31,15 @@ class RawToolArgumentsTransport implements Transport {
   }
 
   async start(): Promise<void> {
-    this.transport.onclose = () => this.onclose?.();
+    this.transport.onclose = () => {
+      // 通常の stdio 切断 (stdin が閉じる) は SIGINT/SIGTERM を経由しない。ここを
+      // 呼ばないと、OS シグナル無しでクライアントが接続を切った時に in-flight の
+      // テレメトリが flush されないまま取りこぼされる (実際に指摘された)。
+      shutdownMcpTelemetry().catch((error: unknown) => {
+        console.error("[mcp] telemetry shutdown on transport close failed:", error);
+      });
+      this.onclose?.();
+    };
     this.transport.onerror = (error) => this.onerror?.(error);
     this.transport.onmessage = (message, extra) => {
       // SDK の shape parse で未知キーが消える前に、callback と同じ request id へ結び付ける。

@@ -300,6 +300,7 @@ export {
   ConsentChangedPropertiesSchema,
   MCP_TOOL_NAMES,
   McpToolInvokedPropertiesSchema,
+  RENDERER_TELEMETRY_EVENT_NAMES,
   TELEMETRY_EVENT_NAMES,
   TelemetryEventNameSchema,
   TelemetryEventSchema,

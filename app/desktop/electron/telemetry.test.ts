@@ -52,6 +52,28 @@ describe("telemetry", () => {
     expect(getTelemetryConsent()).toBe(false);
   });
 
+  it("壊れた設定ファイルは ENOENT と違い stderr にログを残すこと", async () => {
+    await fs.promises.mkdir(userDataDir, { recursive: true });
+    await fs.promises.writeFile(configPath(), "{not valid json", "utf-8");
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const { ensureTelemetryConfig } = await loadTelemetry();
+
+    ensureTelemetryConfig();
+
+    expect(errorSpy).toHaveBeenCalled();
+    errorSpy.mockRestore();
+  });
+
+  it("初回起動 (ファイル無し) は ENOENT なので stderr にログを出さないこと", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const { ensureTelemetryConfig } = await loadTelemetry();
+
+    ensureTelemetryConfig();
+
+    expect(errorSpy).not.toHaveBeenCalled();
+    errorSpy.mockRestore();
+  });
+
   it("設定ファイルの書き込み先が無いディレクトリでも throw しないこと", async () => {
     mocks.getPath.mockReturnValue(path.join(userDataDir, "does", "not", "exist", "yet"));
     const { ensureTelemetryConfig } = await loadTelemetry();
@@ -100,7 +122,11 @@ describe("telemetry", () => {
     expect(() => initTelemetryIfConsented()).not.toThrow();
     // client が無いので capture は呼ばれず、戻り値だけ確認できる (例外は出ない)
     expect(
-      trackTelemetryEventUnsafe("app_started", { appVersion: "1.0.0", platform: "darwin" }),
+      trackTelemetryEventUnsafe("app_error_captured", {
+        process: "renderer",
+        errorName: "TypeError",
+        fatal: false,
+      }),
     ).toBe(true);
   });
 
@@ -112,13 +138,29 @@ describe("telemetry", () => {
     expect(ok).toBe(false);
   });
 
-  it("プロパティの型が合わないイベントは拒否されること", async () => {
+  it("renderer が app_started を名乗っても IPC 経由では拒否されること", async () => {
+    // app_started は main が起動時に直接送る専用のイベントで、renderer が IPC 経由で
+    // 名乗れると偽の appVersion (パスやトークン) を送りつける迂回路になる。
     const { trackTelemetryEventUnsafe } = await loadTelemetry();
 
-    const ok = trackTelemetryEventUnsafe("mcp_tool_invoked", {
-      toolName: "compare_design",
-      durationMs: "not-a-number",
-      ok: true,
+    const ok = trackTelemetryEventUnsafe("app_started", {
+      appVersion: "file:///Users/x/secret",
+      platform: "darwin",
+    });
+
+    expect(ok).toBe(false);
+  });
+
+  it("プロパティの型が合わないイベントは拒否されること", async () => {
+    // errorName は許可リスト外の値を "UnknownError" へ丸めて通す設計 (.catch())
+    // なので、ここでは process という enum 外の値で検証する — .catch() を持たず
+    // 不正な値がそのまま schema 失敗になるフィールド。
+    const { trackTelemetryEventUnsafe } = await loadTelemetry();
+
+    const ok = trackTelemetryEventUnsafe("app_error_captured", {
+      process: "not-a-known-process",
+      errorName: "TypeError",
+      fatal: true,
     });
 
     expect(ok).toBe(false);
