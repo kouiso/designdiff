@@ -97,6 +97,12 @@ test("classifyDevMessage は行頭に固定し、行中の error は数えない
     "error",
   );
   assert.equal(classifyDevMessage("[0903/003025.705923:WARNING:gpu.cc(1)] slow"), "warn");
+  assert.equal(
+    classifyDevMessage(
+      "[26058:0903/004627.203911:ERROR:net/socket/ssl_client_socket_impl.cc:924] handshake failed",
+    ),
+    "error",
+  );
   // Ctrl-C のたびに出る症状行。数えると毎回 ✖ になる
   assert.equal(classifyDevMessage("ELIFECYCLE  Command failed."), "info");
   assert.equal(classifyDevMessage("FATAL: out of memory"), "error");

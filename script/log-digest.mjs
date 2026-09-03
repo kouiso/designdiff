@@ -82,8 +82,9 @@ const TURBO_PREFIX = /^[@\w./-]+:[\w:-]+: /;
 // 行頭に固定した判定だけを使う。行中の "error" (error-boundary.tsx のコンパイル行など) は数えない。
 // pnpm の ` ELIFECYCLE  Command failed` は数えない: Ctrl-C で止めるたびに出る症状行で、原因は別の行にある。
 const LEVEL_HEAD = /^(?:[✘×]\s*)?\[?(ERROR|WARN(?:ING)?|FATAL)\]?\b/i;
-// Chromium / Electron 本体の形式: `[0903/003025.705923:FATAL:electron_main_delegate.cc(216)] ...`
-const CHROMIUM_HEAD = /^\[\d+\/\d+\.\d+:(ERROR|WARNING|FATAL):/;
+// Chromium / Electron 本体の形式。pid 付き `[26058:0903/004627.203911:ERROR:ssl_client_socket_impl.cc(924)]`
+// と pid 無し `[0903/003025.705923:FATAL:electron_main_delegate.cc(216)]` の両方がある。
+const CHROMIUM_HEAD = /^\[(?:\d+:)?\d+\/\d+\.\d+:(ERROR|WARNING|FATAL):/;
 const VITE_HEAD = /^\[(?:vite|electron-vite)\] (Internal server error|error|warning)\b/i;
 
 const toEpoch = (y, mo, d, h, mi, s, ms = "0") =>
