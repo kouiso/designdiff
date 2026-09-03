@@ -141,7 +141,7 @@ Phase 5: 完了
 |---|-----|------|--------------|
 | Y1 | 署名済みインストーラ配布 | CI に `build.yml` あるが署名未設定 | Apple Developer / Windows Code Signing 証明書設定 |
 | Y2 | 自動更新 (electron-updater) | 方針未決定 | electron-updater 統合 or README に「手動更新」明記 |
-| Y3 | ログローテーション | `~/Library/Logs/FigDiff/` のローテーション未実装 | electron-log 設定でサイズ上限 + ローテーション |
+| Y3 | ログローテーション | 導入済み (electron-log、`~/Library/Logs/FigDiff/main.log`、5 MB で `.old.log` へ 1 世代) | — |
 | Y4 | キャッシュ LRU 削除 | `~/.figdiff/cache/` のサイズ上限なし | LRU 削除ポリシー実装（デフォルト 1GB） |
 | Y5 | Sentry クラッシュレポート | 未導入 | opt-in テレメトリ + Sentry 統合 |
 | Y6 | アクセシビリティ WCAG AA | 未監査 | Lighthouse + axe-core 監査 |
