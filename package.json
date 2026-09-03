@@ -3,7 +3,8 @@
   "private": true,
   "scripts": {
     "build": "turbo run build",
-    "dev": "turbo run dev",
+    "dev": "node script/dev-log.mjs -- turbo run dev --ui=stream --log-order=stream",
+    "dev:raw": "turbo run dev",
     "verify:native": "pnpm --filter @figdiff/desktop verify:native",
     "lint": "pnpm run lint:arrow && turbo run lint",
     "lint:arrow": "node script/check-arrow-functions.mjs",
@@ -18,7 +19,7 @@
     "eval:sample-project-lp-figma:ready": "node script/eval/sample-project-lp-figma-readiness.mjs",
     "eval:sample-corporate-figma:ready": "node script/eval/sample-corporate-figma-readiness.mjs",
     "typecheck": "turbo run typecheck && pnpm --filter @figdiff/shared typecheck:test",
-    "test": "turbo run test",
+    "test": "turbo run test && node --test script/dev-log.test.mjs script/log-digest.test.mjs",
     "format": "biome format --write .",
     "check": "biome check .",
     "check:naming": "node script/check-naming.mjs",
@@ -28,7 +29,8 @@
     "eval:sample-project-lp-figma:sbi-regression:watchdog": "node script/eval/sample-project-lp-figma-readiness-watchdog.mjs --out-dir /tmp/designdiff-sbi-regression-watchdog --figma-manifest verification/fixture/sample-project-lp-figma-pages.sbi-regression.json",
     "eval:sample-project-lp-figma:sbi-regression:validate": "node script/eval/ingest-figma-pages.mjs --figma-manifest verification/fixture/sample-project-lp-figma-pages.sbi-regression.json --out /tmp/designdiff-sbi-regression-validate-only --summary-json /tmp/designdiff-sbi-regression-validate-only/figma-ingest-summary.json --validate-only",
     "guard:figma-credentials": "node script/figma-credential-guard.mjs",
-    "eval:sample-corporate-figma": "node script/eval/sample-corporate-figma-compare.mjs"
+    "eval:sample-corporate-figma": "node script/eval/sample-corporate-figma-compare.mjs",
+    "logs:digest": "node script/log-digest.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.15",

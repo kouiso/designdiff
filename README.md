@@ -64,7 +64,9 @@ pnpm install
 ### Development
 
 ```bash
-pnpm dev            # Start Electron + Vite HMR dev server
+pnpm dev            # Start Electron + Vite HMR dev server (terminal output is also kept in .logs/dev-<timestamp>.log)
+pnpm dev:raw        # Same, without the .logs/ capture
+pnpm logs:digest    # warn/error from main.log, .logs/ and ~/.figdiff/logs, grouped with counts (--since 2h)
 pnpm build          # Build all packages
 ```
 
