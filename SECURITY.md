@@ -32,7 +32,7 @@ FigDiff runs as an Electron desktop application and a local MCP server. The prim
 
 ## Known Limitations
 
-- **Electron CVE backlog**: As of 2026-05-18, GitHub Dependabot reports 29 OPEN Electron alerts (8 HIGH) on the current pin (35.7.5). Upstream patches first land in Electron v38 / v39. Major version bump is on the roadmap but not yet executed because of breaking-change cost. Mitigations in place: renderer `contextIsolation: true`, `sandbox: true` (verify in `app/desktop/electron/main.ts`), and external URL allowlist via `shell.openExternal` wrapper.
+- **Electron CVE backlog**: The current pin is `^39.8.10` (`app/desktop/package.json`), bumped from the 35.7.5 backlog described in earlier revisions of this document. Re-check open advisories before relying on that: `gh api "repos/kouiso/designdiff/dependabot/alerts?state=open&package=electron"` — alert counts change as new advisories are published, so this document deliberately records no number. Mitigations in place regardless of alert count: renderer `contextIsolation: true` and `nodeIntegration: false` (set explicitly in `app/desktop/electron/main.ts`), the Chromium renderer sandbox (on by default since Electron 20; not configured explicitly), and the external URL allowlist around `shell.openExternal`.
 - **No code signing / notarization**: Released artifacts are not yet signed. Users must allow execution manually on first launch.
 - **No telemetry / Sentry**: User-reported incidents must be reproduced manually; we do not collect remote crash logs.
 
