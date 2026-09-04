@@ -147,6 +147,21 @@ describe("redactSecrets", () => {
     );
   });
 
+  it("閉じ引用符の無い値が次の行を巻き込まないこと", () => {
+    // redactSecrets は複数行の文字列にもかかる (Error のスタック、引数を繋いだ 1 本)。
+    // 引用符付きの一致に改行を許すと、次の行の引用符まで飲んで間のログを消してしまう。
+    const multiline =
+      'password="unterminated\n[main] user said "hello" to nobody\n[main] next line';
+    expect(redactSecrets(multiline)).toBe(
+      'password="***\n[main] user said "hello" to nobody\n[main] next line',
+    );
+  });
+
+  it("閉じ引用符の無い値の途中にエスケープされた引用符があっても伏せること", () => {
+    // `\"` を終端とみなすと、この行はどの分岐にも当たらず平文で残る。
+    expect(redactSecrets('password="abc\\"def')).toBe('password="***');
+  });
+
   it("伏字は冪等であること (main.ts が引数を跨いでもう一度当てるため)", () => {
     const once = redactSecrets('{"access_token":"a.b.c"} password="hunter2"');
     expect(redactSecrets(once)).toBe(once);

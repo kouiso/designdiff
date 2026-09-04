@@ -133,9 +133,11 @@ test("normalizeMessage は数値・ID・パスを伏せる", () => {
     normalizeMessage("failed /Users/me/proj/a.png after 1200ms id=deadbeefcafe 0x1f"),
     "failed a.png after #ms id=# 0x#",
   );
+  // `token=` は鍵と値の形なので、値の中身に関係なく丸ごと伏せる
+  // (以前は figd_ の形だけを見ていたので `token=figd_***` が残っていた)。
   assert.equal(
     normalizeMessage("Authorization: Bearer eyJ.secret token=figd_private-123 ghp_abcdef123456"),
-    "Authorization: Bearer *** token=figd_*** [REDACTED]",
+    "Authorization: Bearer *** token=*** [REDACTED]",
   );
 });
 
@@ -378,4 +380,24 @@ test("mcpLogDir は環境変数の前後の空白を落としてから解決す�
     mcpLogDir({ home: "/h", env: { FIGDIFF_LOGS_DIR: "   " } }),
     join("/h", ".figdiff", "logs"),
   );
+});
+
+test("normalizeMessage は URL のクエリに混ざった鍵も伏せる", () => {
+  // dev ログは端末出力の生写しで、書き込み時には誰も伏字にしていない。
+  // ここで落とさないと digest の表と --json に鍵がそのまま出る。
+  const normalized = normalizeMessage(
+    "fetch failed https://api.example.com/v1/frames?api_key=SUPERSECRET123",
+  );
+  assert.ok(!normalized.includes("SUPERSECRET"), `鍵が残っている: ${normalized}`);
+  assert.match(normalized, /api_key=\*\*\*/);
+});
+
+test("scrubPaths は URL をパスとして食わない", () => {
+  // `s://host/a/b` をドライブレターのパスとして食うと、行が別物に化ける。
+  assert.equal(
+    scrubPaths("fetch failed https://api.example.com/v1/frames"),
+    "fetch failed https://api.example.com/v1/frames",
+  );
+  // 通常の絶対パスは今までどおり basename にする。
+  assert.equal(scrubPaths("C:\\Users\\x\\a.png missing"), "a.png missing");
 });

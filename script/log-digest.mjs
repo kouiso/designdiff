@@ -253,29 +253,63 @@ export const readEntries = (source) => {
 // 「空白入りパスを basename まで畳み切れない」より「文章を壊さない」を採る
 // (空白入りパスも先頭のディレクトリ群は落ちる)。
 // node:path の basename は POSIX ビルドだとバックスラッシュで切らないので使わない。
-const PATH_SEGMENT = `[^\\s/\\\\"'\`()]+`;
+// `?` `#` もセグメントに含めない。含めると URL のクエリが basename の一部として
+// 残り、`.../frames?api_key=SECRET` の鍵が digest の表と --json にそのまま出る。
+const PATH_SEGMENT = `[^\\s/\\\\"'\`()?#]+`;
 const SPACED_SEGMENT = PATH_SEGMENT;
 const ABSOLUTE_PATH = new RegExp(
   [
     // UNC (\\\\server\\share\\...)。ドライブレターより先に見る —
     // 後回しにすると `/+` 側が途中から食って先頭の `\\\\server` が残る。
     `\\\\{2,}(?:${SPACED_SEGMENT}\\\\+)*${PATH_SEGMENT}`,
-    `[A-Za-z]:[\\\\/]+(?:${SPACED_SEGMENT}[\\\\/]+)*${PATH_SEGMENT}`,
+    // ドライブレターの前が語の途中なら、それは URL のスキーム末尾 —
+    // `https://host/a/b` の `s://host/a/b` をドライブパスとして食ってしまう。
+    `(?<![\\w:])[A-Za-z]:[\\\\/]+(?:${SPACED_SEGMENT}[\\\\/]+)*${PATH_SEGMENT}`,
     // 中間ディレクトリが 0 個でも拾う (`/app` や `/secret.txt` もパスとして扱う)。
-    // 直前が英数字なら分数や比 (`1/2`、`(1/2)`) なのでパスとは見なさない。
-    `(?<![\\w])/+(?:${SPACED_SEGMENT}/+)*${PATH_SEGMENT}`,
+    // 直前が英数字なら分数や比 (`1/2`、`(1/2)`)、`:` や `/` なら URL の `//` なので、
+    // どちらもパスとは見なさない。URL を食うと `https://api.example.com/v1/x` が
+    // `httpx` のような別物に化けて、行の意味が分からなくなる。
+    `(?<![\\w:/])/+(?:${SPACED_SEGMENT}/+)*${PATH_SEGMENT}`,
   ].join("|"),
   "g",
 );
 export const scrubPaths = (text) =>
   text.replace(ABSOLUTE_PATH, (match) => match.split(/[\\/]/).filter(Boolean).at(-1));
 
-/** 数値・ID・絶対パスを伏せて「同じ種類の行」にまとめる。 */
-export const normalizeMessage = (message) =>
-  scrubPaths(message)
+// 鍵と値の形も伏せる。`.logs/dev-*.log` は端末出力をそのまま写した生ログで、
+// 書き込み時には誰も伏字にしていない (伏字が入っているのは electron-log と
+// mcp-server のログだけ)。ここで落とさないと、Vite のエラー行に混ざった
+// `?api_key=...` がそのまま digest の表と --json に出る。
+// 形は app/desktop の renderer-log.ts / app/mcp-server の local-log.ts と揃えている
+// (3 箇所の重複。共有するには TS と .mjs の壁を越える必要があるので、今は写している)。
+const SECRET_PREFIX = "(?:[A-Za-z0-9]+[_-])*";
+const SECRET_KEY =
+  `${SECRET_PREFIX}(?:(?:access|refresh|id|api|auth|client)[_-]?)?(?:token|secret|password|passwd)` +
+  `|${SECRET_PREFIX}(?:api|auth|client|secret|private|signing)[_-]?key`;
+const QUOTED_SECRET = new RegExp(
+  `\\b((?:${SECRET_KEY})["']?\\s*[:=]\\s*)(["'])(?:\\\\.|[^\\\\\\r\\n])*?\\2`,
+  "gi",
+);
+const UNTERMINATED_SECRET = new RegExp(
+  `\\b((?:${SECRET_KEY})["']?\\s*[:=]\\s*)(["'])(?:\\\\.|(?!\\2)[^\\n])*$`,
+  "gim",
+);
+const BARE_SECRET = new RegExp(`\\b((?:${SECRET_KEY})["']?\\s*[:=]\\s*)[^\\s"'&,;]+`, "gi");
+const URL_USERINFO = /\b([a-zA-Z][\w+.-]*:\/\/)[^/\s?#]*@/g;
+
+export const redactSecrets = (text) =>
+  text
     .replace(/figd_[A-Za-z0-9_-]+/g, "figd_***")
     .replace(/\b(?:gh[pousr]|github_pat)_[A-Za-z0-9_]+\b/g, "[REDACTED]")
     .replace(/\bBearer\s+[A-Za-z0-9._~+/=-]+/g, "Bearer ***")
+    .replace(URL_USERINFO, (_match, scheme) => `${scheme}***@`)
+    .replace(QUOTED_SECRET, (_match, head, quote) => `${head}${quote}***${quote}`)
+    .replace(UNTERMINATED_SECRET, (_match, head, quote) => `${head}${quote}***`)
+    .replace(BARE_SECRET, (_match, head) => `${head}***`);
+
+/** 数値・ID・絶対パス・秘密を伏せて「同じ種類の行」にまとめる。 */
+export const normalizeMessage = (message) =>
+  redactSecrets(scrubPaths(message))
     .replace(/0x[0-9a-f]+/gi, "«HEX»")
     .replace(/\b[0-9a-f]{8,}\b/gi, "#")
     .replace(/\d+/g, "#")

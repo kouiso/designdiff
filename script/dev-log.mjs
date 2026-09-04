@@ -165,8 +165,24 @@ export const printSummary = (
 /**
  * 子を起動して tee する。解決したら { code, logPath }。
  * stdin は inherit: Vite / electron-vite のキー操作 (r/u/o/q) を壊さない。
+ *
+ * onStarted は spawn 直後に子を渡すだけ。ログのパスは onLogReady で、
+ * ストリームが実際に open してから渡す — createWriteStream は open 前に返るので、
+ * spawn 直後に知らせると EISDIR などで開けなかったパスまで「在る」と伝えてしまう。
+ * stamp はテストから固定するための注入点 (ファイル名は秒までしか持たないので、
+ * テストが別に now を読むと秒をまたいだときに別名を見て静かに素通りする)。
  */
-export const runTee = ({ command, args, cwd, env, logDir, onStarted, stdin = process.stdin }) =>
+export const runTee = ({
+  command,
+  args,
+  cwd,
+  env,
+  logDir,
+  onStarted,
+  onLogReady,
+  stdin = process.stdin,
+  stamp = fileStamp(),
+}) =>
   new Promise((resolveRun) => {
     // 書けなくても dev は止めない。ここで拾わないと unhandled 'error' や同期例外で
     // ラッパーだけが落ち、turbo が孤児になる — あるいは dev がそもそも起動しない。
@@ -177,7 +193,7 @@ export const runTee = ({ command, args, cwd, env, logDir, onStarted, stdin = pro
       process.stderr.write(`dev log disabled (${reason}); passthrough only\n`);
     };
 
-    const logPath = join(logDir, `dev-${fileStamp()}.log`);
+    const logPath = join(logDir, `dev-${stamp}.log`);
     // 「通常ファイルとして在るか」。existsSync だと、同名のディレクトリが居座っている
     // ケース (createWriteStream が EISDIR で落ちる形) を在ると判定してしまう。
     const logFileExists = () => {
@@ -211,6 +227,8 @@ export const runTee = ({ command, args, cwd, env, logDir, onStarted, stdin = pro
         if (!isMissing(error)) throw error;
       }
       file = createWriteStream(logPath, { flags: "a" });
+      // open が通ってから初めてパスを知らせる。EISDIR や権限不足はここまで来ない。
+      file.on("open", () => onLogReady?.(logPath));
       file.on("error", (error) => stopLogging(error.message));
     } catch (error) {
       stopLogging(error instanceof Error ? error.message : String(error));
@@ -236,7 +254,7 @@ export const runTee = ({ command, args, cwd, env, logDir, onStarted, stdin = pro
       stdio: ["inherit", "pipe", "pipe"],
       shell: process.platform === "win32",
     });
-    onStarted?.({ logPath: file ? logPath : null, child });
+    onStarted?.({ child });
 
     child.stdout.on("data", (chunk) => {
       process.stdout.write(chunk);
@@ -306,9 +324,7 @@ const main = async () => {
     cwd,
     env,
     logDir,
-    onStarted: (started) => {
-      if (started.logPath) process.stderr.write(`dev log → ${started.logPath}\n`);
-    },
+    onLogReady: (path) => process.stderr.write(`dev log → ${path}\n`),
   });
   // ログを開けなかったときは要約する対象が無い。理由は stopLogging が既に出している。
   if (logPath) printSummary(logPath, digestScript);

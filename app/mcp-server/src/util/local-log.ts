@@ -60,15 +60,18 @@ const SECRET_KEY =
   `|${SECRET_PREFIX}(?:api|auth|client|secret|private|signing)[_-]?key`;
 // 引用符付きの値は閉じ引用符まで飲む。空白や `,` で止めると
 // `password="correct horse battery staple"` が先頭だけ伏字になって残る。
+// 値に改行は含めない。redactSecrets は複数行の文字列 (Error のスタックや、
+// 引数を繋いだ 1 本) にもかかるので、改行を許すと閉じ引用符の無い
+// `password="...` が次の行の引用符まで一致し、間のログを丸ごと消してしまう。
 const QUOTED_SECRET = new RegExp(
-  `\\b((?:${SECRET_KEY})["']?\\s*[:=]\\s*)(["'])(?:\\\\.|[^\\\\])*?\\2`,
+  `\\b((?:${SECRET_KEY})["']?\\s*[:=]\\s*)(["'])(?:\\\\.|[^\\\\\\r\\n])*?\\2`,
   "gi",
 );
 // 閉じ引用符が無いまま行が終わる形 (途中で切れたログなど) は行末まで伏せる。
 // 閉じ引用符が「その行に無い」ことを条件にする — でないと、直前の QUOTED_SECRET が
 // 伏せ終えた `password="***"` の閉じ引用符から後ろまで巻き込んで消してしまう。
 const UNTERMINATED_SECRET = new RegExp(
-  `\\b((?:${SECRET_KEY})["']?\\s*[:=]\\s*)(["'])(?:(?!\\2)[^\\n])*$`,
+  `\\b((?:${SECRET_KEY})["']?\\s*[:=]\\s*)(["'])(?:\\\\.|(?!\\2)[^\\n])*$`,
   "gim",
 );
 const BARE_SECRET = new RegExp(`\\b((?:${SECRET_KEY})["']?\\s*[:=]\\s*)[^\\s"'&,;]+`, "gi");

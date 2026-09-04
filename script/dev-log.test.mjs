@@ -172,6 +172,7 @@ test("runTee は SIGINT を受けたら (非 TTY のとき) 子へ転送し、�
     const script =
       'process.on("SIGINT", () => { process.stdout.write("bye\\n"); process.exit(130); }); process.stdout.write("started\\n"); setInterval(() => {}, 1000);';
     let started;
+    let readyPath;
     const done = runTee({
       command: process.execPath,
       args: ["-e", script],
@@ -182,6 +183,9 @@ test("runTee は SIGINT を受けたら (非 TTY のとき) 子へ転送し、�
       onStarted: (info) => {
         started = info;
       },
+      onLogReady: (path) => {
+        readyPath = path;
+      },
     });
     await new Promise((resolveWait) => setTimeout(resolveWait, 400));
     // ラッパー自身が SIGINT を受けた状況を再現する (端末からではないので転送される)。
@@ -189,7 +193,7 @@ test("runTee は SIGINT を受けたら (非 TTY のとき) 子へ転送し、�
     const { code, logPath } = await done;
 
     assert.equal(code, 130);
-    assert.equal(started.logPath, logPath);
+    assert.equal(readyPath, logPath, "open が通ってからパスが知らされる");
     const text = readFileSync(logPath, "utf8");
     assert.match(text, /\[out\] started\n/);
     assert.match(text, /\[out\] bye\n/);
@@ -272,7 +276,7 @@ test("runTee はログを開けなくても子を動かし、通過だけ続け�
       });
       assert.equal(code, 7, "子はふつうに動いて終了コードも透過する");
       assert.equal(logPath, null, "残せなかったログのパスは返さない");
-      assert.equal(started.logPath, null);
+      assert.ok(started.child, "子は渡される");
     } finally {
       process.stderr.write = originalWrite;
     }
@@ -309,7 +313,10 @@ test("runTee はログを開けなかったときにパスを返さない (存�
   withTempDir(async (dir) => {
     // createWriteStream は開けなくても同期では失敗せず、EISDIR を後から error で返す。
     // 同名のディレクトリを先に置いて、その経路を通す。
-    const logPath = join(dir, `dev-${fileStamp()}.log`);
+    // runTee と同じスタンプを使う。別々に now を読むと、秒をまたいだ瞬間に
+    // runTee が別名の通常ファイルを作り、EISDIR が起きないままテストが素通りする。
+    const stamp = fileStamp();
+    const logPath = join(dir, `dev-${stamp}.log`);
     mkdirSync(logPath);
     const stderr = [];
     const originalWrite = process.stderr.write.bind(process.stderr);
@@ -318,6 +325,7 @@ test("runTee はログを開けなかったときにパスを返さない (存�
       return true;
     };
     let result;
+    let readyPath = "not called";
     try {
       result = await runTee({
         command: process.execPath,
@@ -326,12 +334,17 @@ test("runTee はログを開けなかったときにパスを返さない (存�
         env: process.env,
         logDir: dir,
         stdin: { isTTY: false },
+        stamp,
+        onLogReady: (path) => {
+          readyPath = path;
+        },
       });
     } finally {
       process.stderr.write = originalWrite;
     }
     assert.equal(result.code, 0, "子はふつうに動く");
     assert.equal(result.logPath, null, "開けなかったログのパスは返さない");
+    assert.equal(readyPath, "not called", "開けていないパスは知らせない");
     assert.ok(
       stderr.some((line) => line.includes("dev log disabled")),
       `理由を出す: ${JSON.stringify(stderr)}`,

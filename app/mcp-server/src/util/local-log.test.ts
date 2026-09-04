@@ -128,6 +128,12 @@ describe("local-log", () => {
     );
   });
 
+  it("閉じ引用符の無い値が次の行やエスケープを取りこぼさないこと", () => {
+    const multiline = 'password="unterminated\n[mcp] said "hi" here\n[mcp] next';
+    expect(redactSecrets(multiline)).toBe('password="***\n[mcp] said "hi" here\n[mcp] next');
+    expect(redactSecrets('password="abc\\"def')).toBe('password="***');
+  });
+
   it("引数を跨いだ `password:` と値をまとめて伏せること", () => {
     // console.error("password:", value) の形。1 引数ずつ見ると鍵と値が別々なので
     // どちらも伏字の条件を満たさない。ここは繋いでから伏せる。
