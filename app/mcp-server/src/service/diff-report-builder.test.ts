@@ -315,68 +315,81 @@ describe("buildDiffReport", () => {
     const { buildDiffReport } = await import("./diff-report-builder.js");
     const designPixels = await createSolidRgba(HEAVY_FRAME_SIZE, HEAVY_FRAME_SIZE, WHITE_RGB);
     const screenshotPixels = Uint8ClampedArray.from(designPixels);
+    // stdio transport の stdout は JSON-RPC 専用。上限超過の通知が stdout へ漏れると
+    // クライアント側のフレーム解析が壊れるので、stderr (console.warn) だけに出ることを固定する。
+    const stdoutWrite = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
 
-    const figmaRootNode: FigmaNode = {
-      id: "root",
-      name: "Frame",
-      type: "FRAME",
-      absoluteBoundingBox: { x: 0, y: 0, width: HEAVY_FRAME_SIZE, height: HEAVY_FRAME_SIZE },
-      absoluteRenderBounds: null,
-      fills: [],
-      strokes: [],
-      effects: [],
-      children: [
-        ...Array.from({ length: TINY_REGION_COUNT }, (_, index) => ({
-          id: `tiny-${index}`,
-          name: `Tiny ${index}`,
-          type: "FRAME" as const,
-          absoluteBoundingBox: {
-            x: 0,
-            y: index * TINY_REGION_Y_STEP,
-            width: TINY_REGION_SIZE,
-            height: TINY_REGION_SIZE,
-          },
-          absoluteRenderBounds: null,
-          fills: [],
-          strokes: [],
-          effects: [],
-          children: [],
-        })),
-        ...Array.from({ length: SECTION_REGION_COUNT }, (_, index) => ({
-          id: `section-${index}`,
-          name: `Section ${index}`,
-          type: "FRAME" as const,
-          absoluteBoundingBox: {
-            x: 0,
-            y: index * SECTION_REGION_Y_STEP,
-            width: SECTION_REGION_WIDTH,
-            height: SECTION_REGION_HEIGHT,
-          },
-          absoluteRenderBounds: null,
-          fills: [],
-          strokes: [],
-          effects: [],
-          children: [],
-        })),
-      ],
-    };
+    try {
+      const figmaRootNode: FigmaNode = {
+        id: "root",
+        name: "Frame",
+        type: "FRAME",
+        absoluteBoundingBox: { x: 0, y: 0, width: HEAVY_FRAME_SIZE, height: HEAVY_FRAME_SIZE },
+        absoluteRenderBounds: null,
+        fills: [],
+        strokes: [],
+        effects: [],
+        children: [
+          ...Array.from({ length: TINY_REGION_COUNT }, (_, index) => ({
+            id: `tiny-${index}`,
+            name: `Tiny ${index}`,
+            type: "FRAME" as const,
+            absoluteBoundingBox: {
+              x: 0,
+              y: index * TINY_REGION_Y_STEP,
+              width: TINY_REGION_SIZE,
+              height: TINY_REGION_SIZE,
+            },
+            absoluteRenderBounds: null,
+            fills: [],
+            strokes: [],
+            effects: [],
+            children: [],
+          })),
+          ...Array.from({ length: SECTION_REGION_COUNT }, (_, index) => ({
+            id: `section-${index}`,
+            name: `Section ${index}`,
+            type: "FRAME" as const,
+            absoluteBoundingBox: {
+              x: 0,
+              y: index * SECTION_REGION_Y_STEP,
+              width: SECTION_REGION_WIDTH,
+              height: SECTION_REGION_HEIGHT,
+            },
+            absoluteRenderBounds: null,
+            fills: [],
+            strokes: [],
+            effects: [],
+            children: [],
+          })),
+        ],
+      };
 
-    const result = buildDiffReport({
-      designPixels,
-      screenshotPixels,
-      width: HEAVY_FRAME_SIZE,
-      height: HEAVY_FRAME_SIZE,
-      figmaRootNode,
-    });
+      const result = buildDiffReport({
+        designPixels,
+        screenshotPixels,
+        width: HEAVY_FRAME_SIZE,
+        height: HEAVY_FRAME_SIZE,
+        figmaRootNode,
+      });
 
-    // 最後の1件は比較対象そのものを指す行。上限は section の行に対して効く。
-    const sectionScores = result.regionScores.filter((score) => score.scope !== "root");
-    const rootScores = result.regionScores.filter((score) => score.scope === "root");
-    expect(sectionScores).toHaveLength(EXPECTED_CAPPED_REGION_COUNT);
-    expect(rootScores).toHaveLength(1);
-    expect(sectionScores.every((score) => score.regionId.startsWith("section-"))).toBe(true);
-    expect(sectionScores[0].regionId).toBe("section-0");
-    expect(sectionScores.at(-1)?.regionId).toBe(`section-${SECTION_REGION_COUNT - 1}`);
+      // 最後の1件は比較対象そのものを指す行。上限は section の行に対して効く。
+      const sectionScores = result.regionScores.filter((score) => score.scope !== "root");
+      const rootScores = result.regionScores.filter((score) => score.scope === "root");
+      expect(sectionScores).toHaveLength(EXPECTED_CAPPED_REGION_COUNT);
+      expect(rootScores).toHaveLength(1);
+      expect(sectionScores.every((score) => score.regionId.startsWith("section-"))).toBe(true);
+      expect(sectionScores[0].regionId).toBe("section-0");
+      expect(sectionScores.at(-1)?.regionId).toBe(`section-${SECTION_REGION_COUNT - 1}`);
+      expect(stdoutWrite).not.toHaveBeenCalled();
+      expect(warn).toHaveBeenCalledWith(
+        `[diff-report] regionScores capped from ${SECTION_REGION_COUNT} to ${EXPECTED_CAPPED_REGION_COUNT}`,
+      );
+    } finally {
+      stdoutWrite.mockRestore();
+      warn.mockRestore();
+    }
   });
 
   it("pass 閾値未達の中間差分は pass にならないこと", async () => {

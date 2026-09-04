@@ -284,6 +284,34 @@ export default [
     },
   },
 
+  // MCP server は stdio transport で動くので、stdout は JSON-RPC の通信路そのもの。
+  // console.info / console.log は stdout へ書くため、テストを含む src 全体で
+  // stderr 系 (warn / error) だけを許し、process.stdout への直接アクセスも禁止する。
+  {
+    files: ["app/mcp-server/src/**/*.ts"],
+    rules: {
+      "no-console": ["error", { allow: ["error", "warn"] }],
+      "no-restricted-properties": [
+        "error",
+        {
+          object: "process",
+          property: "stdout",
+          message:
+            "MCP server の stdout は JSON-RPC の通信路。ログや診断は console.warn / console.error (stderr) へ出す。",
+        },
+      ],
+    },
+  },
+
+  // MCP server のテストだけは「stdout へ何も書かれない」ことを証明するために
+  // process.stdout.write を spy する必要がある。console の縛りはテストにも残す。
+  {
+    files: ["app/mcp-server/src/**/*.test.ts"],
+    rules: {
+      "no-restricted-properties": "off",
+    },
+  },
+
   // Verification + repo-root Node.js utility scripts
   {
     files: ["verification/**/*.mjs", "script/**/*.mjs", "app/desktop/*.mjs"],

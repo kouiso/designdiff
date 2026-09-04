@@ -92,6 +92,23 @@
       "semicolons": "always"
     }
   },
+  "overrides": [
+    {
+      "includes": ["app/mcp-server/src/**"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noConsole": {
+              "level": "error",
+              "options": {
+                "allow": ["error", "warn"]
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
   "files": {
     "includes": [
       "**",
