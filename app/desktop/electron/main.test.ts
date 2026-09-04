@@ -3,12 +3,18 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 // 起動処理は読み込んだだけで走る。境界を全部差し替えて、登録した処理を
 // 後から呼ぶ形で確かめる。
 type ResolvePathFn = (variables: { home: string; appData: string; fileName?: string }) => string;
+interface LogHookMessage {
+  data: unknown[];
+  level: string;
+}
+type LogHook = (message: LogHookMessage) => LogHookMessage;
 
 const mocks = vi.hoisted(() => {
   // main.ts が代入するまでは未設定。関数経由で型だけ union に固定する
   // (const に undefined を入れると narrowing で undefined 型になる)。
   const initialResolvePathFn = (): ResolvePathFn | undefined => undefined;
   const resolvePathFn = initialResolvePathFn();
+  const logHooks: LogHook[] = [];
   const webContents = {
     on: vi.fn(),
     once: vi.fn(),
@@ -54,6 +60,7 @@ const mocks = vi.hoisted(() => {
     registerOAuthHandlers: vi.fn(),
     registerActiveSessionHandlers: vi.fn(),
     registerConvergenceHandlers: vi.fn(),
+    logHooks,
     logError: vi.fn(),
     logWarn: vi.fn(),
     logInfo: vi.fn(),
@@ -89,6 +96,7 @@ vi.mock("electron-log/main", () => ({
       verbose: mocks.logDebug,
       silly: mocks.logDebug,
     },
+    hooks: mocks.logHooks,
     transports: {
       file: mocks.fileTransport,
     },
@@ -306,6 +314,27 @@ describe("起動処理", () => {
     expect(mocks.logInfo).toHaveBeenCalledWith(
       expect.stringContaining("[main] log file: /tmp/figdiff-test/main.log"),
     );
+  });
+
+  it("main出力を永続化前に伏せ、直列化不能値でも停止しないこと", async () => {
+    await bootMain();
+    const hook = mocks.logHooks.at(-1);
+    if (!hook) throw new Error("log hook was not registered");
+    const cyclic = Object.create(null) as Record<string, unknown>;
+    cyclic.self = cyclic;
+
+    const result = hook({
+      data: [
+        'payload={"client_secret":"before \\"quoted\\" after"}',
+        cyclic,
+        "https://user:plain-password@example.test/?api_key=plain-key&next=ok",
+      ],
+      level: "warn",
+    });
+    const text = result.data.join(" ");
+    expect(text).not.toMatch(/before|quoted|after|plain-password|plain-key/);
+    expect(text).toContain("[unserializable]");
+    expect(text).toContain("next=ok");
   });
 
   it("dev 起動なら DevTools を開き、FIGDIFF_DEVTOOLS=0 なら開かんこと", async () => {

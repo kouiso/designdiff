@@ -1,11 +1,12 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
 
 import {
   classifyDevMessage,
+  defaultSources,
   dedupe,
   devFileDate,
   digest,
@@ -106,6 +107,12 @@ test("classifyDevMessage は行頭に固定し、行中の error は数えない
   // Ctrl-C のたびに出る症状行。数えると毎回 ✖ になる
   assert.equal(classifyDevMessage("ELIFECYCLE  Command failed."), "info");
   assert.equal(classifyDevMessage("FATAL: out of memory"), "error");
+  assert.equal(classifyDevMessage("npm ERR! command failed"), "error");
+  assert.equal(classifyDevMessage("npm error lifecycle failed"), "error");
+  assert.equal(classifyDevMessage("pnpm ERR_PNPM_FETCH_500 request failed"), "error");
+  assert.equal(classifyDevMessage("UnhandledPromiseRejectionWarning: Error: boom"), "error");
+  assert.equal(classifyDevMessage("(node:1) ExperimentalWarning: feature"), "warn");
+  assert.equal(classifyDevMessage("npm errors are documented here"), "info");
 });
 
 test("stripAnsi / devFileDate", () => {
@@ -118,6 +125,20 @@ test("stripAnsi / devFileDate", () => {
   assert.equal(devFileDate("/x/main.log"), null);
 });
 
+test("defaultSources は同一秒のsuffix付きdevログも読む", () => {
+  const dir = mkdtempSync(join(tmpdir(), "figdiff-digest-sources-"));
+  try {
+    const logDir = join(dir, ".logs");
+    mkdirSync(logDir);
+    writeFileSync(join(logDir, "dev-20260902-103045.log"), "first");
+    writeFileSync(join(logDir, "dev-20260902-103045-1.log"), "second");
+    const dev = defaultSources(dir).find((source) => source.kind === "dev");
+    assert.equal(dev?.paths.length, 2);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test("normalizeMessage は数値・ID・パスを伏せる", () => {
   assert.equal(
     normalizeMessage("failed /Users/me/proj/a.png after 1200ms id=deadbeefcafe 0x1f"),
@@ -125,8 +146,26 @@ test("normalizeMessage は数値・ID・パスを伏せる", () => {
   );
   assert.equal(
     normalizeMessage("Authorization: Bearer eyJ.secret token=figd_private-123 ghp_abcdef123456"),
-    "Authorization: Bearer *** token=figd_*** [REDACTED]",
+    "Authorization: *** token=*** [REDACTED]",
   );
+});
+
+test("normalizeMessage はJSON tokenと空白を含むパスを伏せ、URLを保つ", () => {
+  const normalized = normalizeMessage(
+    '{"access_token":"secret value"} /Users/x/Patient Name/a.png C:\\Users\\John Doe\\b.png \\\\server\\share\\Jane Doe\\c.png https://example.test/a/b',
+  );
+  assert.doesNotMatch(normalized, /secret value|Patient Name|John Doe|Jane Doe/);
+  assert.match(normalized, /a\.png b\.png c\.png/);
+  assert.match(normalized, /https:\/\/example\.test\/a\/b/);
+});
+
+test("normalizeMessage はURL内のtokenも伏せる", () => {
+  const normalized = normalizeMessage(
+    "GET https://example.test/api?token=figd_SECRET&access_token=ghp_abcdef123456&next=ok",
+  );
+  assert.doesNotMatch(normalized, /SECRET|ghp_abcdef123456/);
+  assert.match(normalized, /https:\/\/example\.test\/api/);
+  assert.match(normalized, /next=ok/);
 });
 
 test("dedupe は main.log と dev ログの同じ行を ±5 秒で 1 件に畳み、app を残す", () => {
@@ -169,8 +208,51 @@ test("parseSince は相対と絶対の両方", () => {
   assert.equal(parseSince("2h", now), now - 2 * 3_600_000);
   assert.equal(parseSince("1d", now), now - 86_400_000);
   assert.equal(parseSince("2026-09-02T09:00:00", now), at(9, 0, 0));
+  assert.equal(parseSince("2024-02-29T09:00:00Z", now), Date.UTC(2024, 1, 29, 9));
+  for (const invalid of [
+    "2026-02-29T09:00:00Z",
+    "2026-04-31T09:00:00Z",
+    "2026-09-02T24:00:00Z",
+    "2026-09-02T09:60:00Z",
+    "2026-09-02T09:00:60Z",
+    "2026-09-02T09:00:00+24:00",
+    "2026-09-02T09:00:00+01:60",
+    "9007199254740991d",
+    "9007199254740992d",
+  ]) {
+    assert.equal(parseSince(invalid, now), null, invalid);
+  }
   assert.equal(parseSince("soon", now), null);
+  assert.equal(parseSince("5", now), null);
   assert.equal(parseSince(undefined, now), null);
+});
+
+test("readEntries は削除競合したファイルを飛ばして次を読む", () => {
+  const dir = mkdtempSync(join(tmpdir(), "figdiff-digest-race-"));
+  try {
+    const existing = join(dir, "dev-20260902-100000.log");
+    writeFileSync(existing, "[10:00:00] [err] error: kept\n");
+    const entries = readEntries({
+      kind: "dev",
+      paths: [join(dir, "dev-20260902-095959.log"), existing],
+    });
+    assert.equal(entries.length, 1);
+    assert.equal(entries[0].message, "error: kept");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("readEntries は日をまたぐ dev ログを翌日として扱う", () => {
+  const dir = mkdtempSync(join(tmpdir(), "figdiff-digest-"));
+  try {
+    const dev = join(dir, "dev-20260902-235900-1.log");
+    writeFileSync(dev, "[23:59:59] [err] error before\n[00:00:01] [err] error after\n");
+    const entries = readEntries({ kind: "dev", paths: [dev] });
+    assert.equal(entries[1].time - entries[0].time, 2000);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 test("readEntries は実ファイルから読み、summarize / formatTable が件数を出す", () => {
