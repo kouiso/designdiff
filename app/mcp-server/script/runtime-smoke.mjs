@@ -106,7 +106,12 @@ const isJsonRpcMessage = (value) => {
     typeof error.message === "string";
   // レスポンスは result と error のどちらか片方だけ (JSON-RPC 2.0 §5)。
   if (hasResult && Object.hasOwn(value, "error")) return false;
-  return (hasResult || hasError) && Object.hasOwn(value, "id");
+  // id は string / number / null のいずれか (§5)。真偽値やオブジェクトは弾く —
+  // 「持っているか」だけを見ると、形の壊れたレスポンスを通してしまう。
+  const id = value.id;
+  const hasValidId =
+    Object.hasOwn(value, "id") && (typeof id === "string" || typeof id === "number" || id === null);
+  return (hasResult || hasError) && hasValidId;
 };
 
 // stdout は JSON-RPC の本線。依存ライブラリやログが stderr 以外へ漏れていないか

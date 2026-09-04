@@ -66,9 +66,17 @@ const QUOTED_SECRET = new RegExp(
   `\\b((?:${SECRET_KEY})["']?\\s*[:=]\\s*)(["'])(?:\\\\.|[^\\\\])*?\\2`,
   "gi",
 );
+// 閉じ引用符が無いまま行が終わる形 (途中で切れたログなど) は行末まで伏せる。
+// 閉じ引用符が「その行に無い」ことを条件にする — でないと、直前の QUOTED_SECRET が
+// 伏せ終えた `password="***"` の閉じ引用符から後ろまで巻き込んで消してしまう。
+const UNTERMINATED_SECRET = new RegExp(
+  `\\b((?:${SECRET_KEY})["']?\\s*[:=]\\s*)(["'])(?:(?!\\2)[^\\n])*$`,
+  "gim",
+);
 const BARE_SECRET = new RegExp(`\\b((?:${SECRET_KEY})["']?\\s*[:=]\\s*)[^\\s"'&,;]+`, "gi");
 // URL の userinfo (https://alice:s3cr3t@host)。鍵の名前が付かないので上の 2 つでは拾えない。
-const URL_USERINFO = /\b([a-zA-Z][\w+.-]*:\/\/)[^/\s:@]+(?::[^/\s@]*)?@/g;
+// 利用者名が空の `https://:s3cr3t@host` も同じ形なので、どちらも 0 文字以上で受ける。
+const URL_USERINFO = /\b([a-zA-Z][\w+.-]*:\/\/)[^/\s:@]*(?::[^/\s@]*)?@/g;
 
 export const redactSecrets = (text: string): string =>
   text
@@ -77,6 +85,7 @@ export const redactSecrets = (text: string): string =>
     .replace(BEARER_TOKEN, "Bearer ***")
     .replace(URL_USERINFO, (_match, scheme: string) => `${scheme}***@`)
     .replace(QUOTED_SECRET, (_match, head: string, quote: string) => `${head}${quote}***${quote}`)
+    .replace(UNTERMINATED_SECRET, (_match, head: string, quote: string) => `${head}${quote}***`)
     .replace(BARE_SECRET, (_match, head: string) => `${head}***`);
 
 export const formatRendererConsoleMessage = (details: RendererConsoleDetails): string =>

@@ -68,8 +68,20 @@ describe("redactSecrets", () => {
     expect(redactSecrets("client_secret: 's3cr3t value here'")).toBe("client_secret: '***'");
   });
 
+  it("閉じ引用符が無い値は行末まで伏せること", () => {
+    expect(redactSecrets('password="unterminated secret here')).toBe('password="***');
+    // 閉じ引用符がある行は、後ろの内容を巻き込まないこと。
+    expect(redactSecrets('{"access_token":"a.b.c","expires_in":3600}')).toBe(
+      '{"access_token":"***","expires_in":3600}',
+    );
+  });
+
   it("URL の userinfo も伏せること", () => {
     expect(redactSecrets("open https://alice:s3cr3t@example.com/x failed")).toBe(
+      "open https://***@example.com/x failed",
+    );
+    // 利用者名が空の形も同じ扱い。
+    expect(redactSecrets("open https://:s3cr3t@example.com/x failed")).toBe(
       "open https://***@example.com/x failed",
     );
     expect(redactSecrets("open https://example.com/x failed")).toBe(

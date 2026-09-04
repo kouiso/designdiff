@@ -284,6 +284,25 @@ test("readEntries は大量の行でも RangeError にならない", () =>
     assert.equal(entries.length, 200_000);
   }));
 
+test("日をまたいだ行は、\\r で割れた断片も全部翌日になる", () =>
+  withTempDir((dir) => {
+    const dev = join(dir, "dev-20260902-235900.log");
+    writeFileSync(
+      dev,
+      [
+        "[23:59:59] [err] error before midnight",
+        "[00:00:01] [err] error first\rerror second",
+        "",
+      ].join("\n"),
+    );
+
+    const entries = readEntries({ kind: "dev", paths: [dev] });
+    assert.equal(entries.length, 3);
+    for (const entry of entries.slice(1)) {
+      assert.equal(new Date(entry.time).getDate(), 3);
+    }
+  }));
+
 test("日をまたいだ dev ログは翌日として扱う", () => {
   const dir = mkdtempSync(join(tmpdir(), "figdiff-digest-"));
   try {

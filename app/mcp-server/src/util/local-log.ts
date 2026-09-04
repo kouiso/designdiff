@@ -55,9 +55,17 @@ const QUOTED_SECRET = new RegExp(
   `\\b((?:${SECRET_KEY})["']?\\s*[:=]\\s*)(["'])(?:\\\\.|[^\\\\])*?\\2`,
   "gi",
 );
+// 閉じ引用符が無いまま行が終わる形 (途中で切れたログなど) は行末まで伏せる。
+// 閉じ引用符が「その行に無い」ことを条件にする — でないと、直前の QUOTED_SECRET が
+// 伏せ終えた `password="***"` の閉じ引用符から後ろまで巻き込んで消してしまう。
+const UNTERMINATED_SECRET = new RegExp(
+  `\\b((?:${SECRET_KEY})["']?\\s*[:=]\\s*)(["'])(?:(?!\\2)[^\\n])*$`,
+  "gim",
+);
 const BARE_SECRET = new RegExp(`\\b((?:${SECRET_KEY})["']?\\s*[:=]\\s*)[^\\s"'&,;]+`, "gi");
 // URL の userinfo (https://alice:s3cr3t@host)。鍵の名前が付かないので上の 2 つでは拾えない。
-const URL_USERINFO = /\b([a-zA-Z][\w+.-]*:\/\/)[^/\s:@]+(?::[^/\s@]*)?@/g;
+// 利用者名が空の `https://:s3cr3t@host` も同じ形なので、どちらも 0 文字以上で受ける。
+const URL_USERINFO = /\b([a-zA-Z][\w+.-]*:\/\/)[^/\s:@]*(?::[^/\s@]*)?@/g;
 
 export const redactSecrets = (text: string): string =>
   text
@@ -66,6 +74,7 @@ export const redactSecrets = (text: string): string =>
     .replace(BEARER_TOKEN, "Bearer ***")
     .replace(URL_USERINFO, (_match, scheme: string) => `${scheme}***@`)
     .replace(QUOTED_SECRET, (_match, head: string, quote: string) => `${head}${quote}***${quote}`)
+    .replace(UNTERMINATED_SECRET, (_match, head: string, quote: string) => `${head}${quote}***`)
     .replace(BARE_SECRET, (_match, head: string) => `${head}***`);
 
 export interface LocalLogOptions {
@@ -97,8 +106,10 @@ const rotateIfNeeded = (filePath: string, maxBytes: number): void => {
   if (size < maxBytes) return;
   const oldPath = filePath.replace(/\.log$/, ".old.log");
   try {
-    // Windows の rename は既存の移動先を置換せん。古い一世代を先に消してから回す。
-    rmSync(oldPath, { force: true });
+    // POSIX の rename は移動先を不可分に置き換えるので、先に消してはいけない —
+    // 消してから rename するまでの隙間に、別プロセスが回した世代を巻き添えにする。
+    // 置換してくれない Windows のときだけ、先に古い一世代を消す。
+    if (process.platform === "win32") rmSync(oldPath, { force: true });
     renameSync(filePath, oldPath);
   } catch (error) {
     // ENOENT は「別プロセスが先に回した」の形。次の書き込みで作り直されるので黙る。

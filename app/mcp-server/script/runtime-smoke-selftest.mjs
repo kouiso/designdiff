@@ -21,8 +21,14 @@ const runSmoke = async (env, cwd) => {
     stderr += chunk.toString();
   });
 
+  // "exit" は stdio の終了を保証しない。close を待たないと、末尾の stderr を
+  // 取りこぼして self-test が気まぐれに落ちる (スモーク本体と同じ理由)。
   const exit = await new Promise((resolveExit) => {
-    child.once("exit", (code, signal) => resolveExit({ code, signal }));
+    let status = { code: null, signal: null };
+    child.once("exit", (code, signal) => {
+      status = { code, signal };
+    });
+    child.once("close", () => resolveExit(status));
   });
 
   return { ...exit, stderr, stdout };

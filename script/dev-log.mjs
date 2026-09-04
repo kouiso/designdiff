@@ -150,8 +150,19 @@ export const runTee = ({ command, args, cwd, env, logDir, onStarted, stdin = pro
     mkdirSync(logDir, { recursive: true });
     // これから 1 本増えるので、その分だけ先に空けておく。上限ちょうどで走ると
     // 毎回 1 本超えた状態になってしまう。
-    pruneLogs(logDir, { maxFiles: MAX_FILES - 1 });
+    pruneLogs(logDir, {
+      maxFiles: MAX_FILES - 1,
+      maxTotalBytes: MAX_TOTAL_BYTES - MAX_FILE_BYTES,
+    });
     const logPath = join(logDir, `dev-${fileStamp()}.log`);
+    // 追記で開くので、同じ秒に二度走って同名になった場合は既存分から数え始める。
+    // 0 から数えると、上限の判定が実際のファイルサイズとずれる。
+    let written = 0;
+    try {
+      written = statSync(logPath).size;
+    } catch {
+      // まだ無い = 0 から。
+    }
     const file = createWriteStream(logPath, { flags: "a" });
     // 書けなくなっても (読み取り専用の作業ディレクトリ、ディスク満杯) dev は止めない。
     // ここで拾わないと unhandled 'error' でラッパーだけが落ち、turbo が孤児になる。
@@ -162,7 +173,6 @@ export const runTee = ({ command, args, cwd, env, logDir, onStarted, stdin = pro
       process.stderr.write(`dev log disabled (${reason}); passthrough only\n`);
     };
     file.on("error", (error) => stopLogging(error.message));
-    let written = 0;
     const sink = (text) => {
       if (!logging) return;
       // 1 行が上限より大きいこともある (改行なしで延々と出す子)。書いた後ではなく

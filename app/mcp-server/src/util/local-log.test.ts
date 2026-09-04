@@ -51,6 +51,10 @@ describe("local-log", () => {
 
   it("引用符付きの値と URL の userinfo も伏せること", () => {
     expect(redactSecrets('password="correct horse battery staple"')).toBe('password="***"');
+    expect(redactSecrets('password="unterminated secret here')).toBe('password="***');
+    expect(redactSecrets("open https://:s3cr3t@example.com/x")).toBe(
+      "open https://***@example.com/x",
+    );
     expect(redactSecrets("open https://alice:s3cr3t@example.com/x")).toBe(
       "open https://***@example.com/x",
     );

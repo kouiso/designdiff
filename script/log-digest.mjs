@@ -183,13 +183,16 @@ const readDevEntries = (path, lines) => {
   let previousClock = null;
   const entries = [];
   for (const line of lines) {
+    // 1 行が `\r` で複数の断片に割れることがある。日付の判定は行ごとに先に済ませ、
+    // その行の全断片を同じ dayOffset で読む — 断片ごとに直すと、2 つめ以降が
+    // 前日のままになる。
+    const [first] = parseDevLine(line, date, dayOffset);
+    if (!first) continue;
+    if (previousClock !== null && first.clock < previousClock - HALF_DAY_SECONDS) {
+      dayOffset += 1;
+    }
+    previousClock = first.clock;
     for (const entry of parseDevLine(line, date, dayOffset)) {
-      if (previousClock !== null && entry.clock < previousClock - HALF_DAY_SECONDS) {
-        dayOffset += 1;
-        const [shifted] = parseDevLine(line, date, dayOffset);
-        if (shifted) entry.time = shifted.time;
-      }
-      previousClock = entry.clock;
       entries.push({ ...entry, source: "dev", file: path, raw: line });
     }
   }
