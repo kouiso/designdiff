@@ -73,3 +73,10 @@ export const getFigdiffConvergenceDir = (): string =>
 export function getActiveSessionPath(): string {
   return path.join(getFigdiffHome(), "active-session.json");
 }
+
+/**
+ * MCP サーバー自身のログ置き場。stderr は Claude Code の裏に埋もれて見えんので、
+ * ここにも同じものを残す (src/util/local-log.ts)。
+ */
+export const getFigdiffLogsDir = (): string =>
+  readEnvDir("FIGDIFF_LOGS_DIR") ?? path.join(getFigdiffHome(), "logs");

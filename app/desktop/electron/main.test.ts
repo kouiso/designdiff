@@ -2,7 +2,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // 起動処理は読み込んだだけで走る。境界を全部差し替えて、登録した処理を
 // 後から呼ぶ形で確かめる。
+type ResolvePathFn = (variables: { home: string; appData: string; fileName?: string }) => string;
+
 const mocks = vi.hoisted(() => {
+  // main.ts が代入するまでは未設定。関数経由で型だけ union に固定する
+  // (const に undefined を入れると narrowing で undefined 型になる)。
+  const initialResolvePathFn = (): ResolvePathFn | undefined => undefined;
+  const resolvePathFn = initialResolvePathFn();
   const webContents = {
     on: vi.fn(),
     once: vi.fn(),
@@ -48,9 +54,46 @@ const mocks = vi.hoisted(() => {
     registerOAuthHandlers: vi.fn(),
     registerActiveSessionHandlers: vi.fn(),
     registerConvergenceHandlers: vi.fn(),
+    logError: vi.fn(),
+    logWarn: vi.fn(),
+    logInfo: vi.fn(),
+    logDebug: vi.fn(),
+    getLogFile: vi.fn(() => ({ path: "/tmp/figdiff-test/main.log" })),
+    fileTransport: {
+      maxSize: 0,
+      format: "",
+      level: "info",
+      resolvePathFn,
+      getFile: vi.fn(() => ({ path: "/tmp/figdiff-test/main.log" })),
+    },
     isPackaged: false,
   };
 });
+
+// main.ts は読み込んだ時点で console を electron-log の関数に差し替える。
+// `functions` の全キーを埋めんと、console.error が undefined になって同じファイルの
+// 他のテストが落ちる。
+vi.mock("electron-log/main", () => ({
+  default: {
+    initialize: vi.fn(),
+    error: mocks.logError,
+    warn: mocks.logWarn,
+    info: mocks.logInfo,
+    debug: mocks.logDebug,
+    functions: {
+      log: mocks.logInfo,
+      error: mocks.logError,
+      warn: mocks.logWarn,
+      info: mocks.logInfo,
+      debug: mocks.logDebug,
+      verbose: mocks.logDebug,
+      silly: mocks.logDebug,
+    },
+    transports: {
+      file: mocks.fileTransport,
+    },
+  },
+}));
 
 vi.mock("electron", () => ({
   app: {
@@ -85,6 +128,15 @@ vi.mock("./ipc/convergence", () => ({
 }));
 
 type Listener = (...args: unknown[]) => unknown;
+
+function findWebContentsListener(event: string): Listener {
+  for (const [name, listener] of mocks.webContents.on.mock.calls) {
+    if (name === event && typeof listener === "function") {
+      return listener;
+    }
+  }
+  throw new Error(`webContents listener not registered: ${event}`);
+}
 
 function findAppListener(event: string): Listener {
   for (const [name, listener] of mocks.appOn.mock.calls) {
@@ -243,5 +295,77 @@ describe("起動処理", () => {
       .map(([, value]) => value.join(" "))
       .join(" ");
     expect(devPolicy).toContain("default-src");
+  });
+
+  it("起動したら、ログファイルの場所を 1 行出すこと", async () => {
+    await bootMain();
+
+    expect(mocks.logInfo).toHaveBeenCalledWith(
+      expect.stringContaining("[main] log file: /tmp/figdiff-test/main.log"),
+    );
+  });
+
+  it("dev 起動なら DevTools を開き、FIGDIFF_DEVTOOLS=0 なら開かんこと", async () => {
+    const originalUrl = process.env.ELECTRON_RENDERER_URL;
+    const originalFlag = process.env.FIGDIFF_DEVTOOLS;
+    process.env.ELECTRON_RENDERER_URL = "http://localhost:5173";
+    delete process.env.FIGDIFF_DEVTOOLS;
+    try {
+      await bootMain();
+      expect(mocks.mainWindow.loadURL).toHaveBeenCalledWith("http://localhost:5173");
+      expect(mocks.webContents.openDevTools).toHaveBeenCalledWith({ mode: "bottom" });
+
+      mocks.webContents.openDevTools.mockClear();
+      process.env.FIGDIFF_DEVTOOLS = "0";
+      await bootMain();
+      expect(mocks.webContents.openDevTools).not.toHaveBeenCalled();
+    } finally {
+      if (originalUrl === undefined) delete process.env.ELECTRON_RENDERER_URL;
+      else process.env.ELECTRON_RENDERER_URL = originalUrl;
+      if (originalFlag === undefined) delete process.env.FIGDIFF_DEVTOOLS;
+      else process.env.FIGDIFF_DEVTOOLS = originalFlag;
+    }
+  });
+
+  it("packaged なら DevTools を開かんこと", async () => {
+    mocks.isPackaged = true;
+
+    await bootMain();
+
+    expect(mocks.mainWindow.loadFile).toHaveBeenCalled();
+    expect(mocks.webContents.openDevTools).not.toHaveBeenCalled();
+  });
+
+  it("renderer の console は packaged でもファイルへ転送し、PAT を伏せること", async () => {
+    mocks.isPackaged = true;
+    await bootMain();
+
+    findWebContentsListener("console-message")({
+      level: "warning",
+      message: "compare failed figd_abc123",
+      sourceId: "file:///app/dist/renderer/assets/index.js?v=1",
+      lineNumber: 7,
+    });
+
+    expect(mocks.logWarn).toHaveBeenCalledWith("[renderer] compare failed figd_*** (index.js:7)");
+  });
+
+  it("ログの置き場は userData を動かさず FigDiff 配下に固定すること", async () => {
+    await bootMain();
+    const resolvePath = mocks.fileTransport.resolvePathFn;
+    if (typeof resolvePath !== "function") throw new Error("resolvePathFn not set");
+    const variables = { home: "/Users/me", appData: "/Users/me/.config", fileName: "main.log" };
+    const original = process.platform;
+
+    Object.defineProperty(process, "platform", { value: "darwin", configurable: true });
+    expect(resolvePath(variables)).toBe("/Users/me/Library/Logs/FigDiff/main.log");
+
+    Object.defineProperty(process, "platform", { value: "linux", configurable: true });
+    expect(resolvePath(variables)).toBe("/Users/me/.config/FigDiff/logs/main.log");
+    expect(resolvePath({ ...variables, fileName: undefined })).toBe(
+      "/Users/me/.config/FigDiff/logs/main.log",
+    );
+
+    Object.defineProperty(process, "platform", { value: original, configurable: true });
   });
 });

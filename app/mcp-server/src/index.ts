@@ -10,6 +10,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { selectFileCredentialBackend } from "@figdiff/credential-store";
 
 import { createMcpServer } from "./server.js";
+import { installLocalLog } from "./util/local-log.js";
 import { recordRawToolArguments, releaseRawToolArguments } from "./util/raw-tool-arguments.js";
 
 import type {
@@ -58,6 +59,14 @@ class RawToolArgumentsTransport implements Transport {
 }
 
 async function main(): Promise<void> {
+  // stderr はそのまま。Claude Code に起動されると stderr は見えんので、ファイルにも残す。
+  const localLog = installLocalLog();
+  if (localLog) {
+    // console.info は stdout (JSON-RPC の本線) に出るので使えん。stderr とファイルへ直接書く。
+    const startupLine = `[mcp] log file: ${localLog.filePath}`;
+    process.stderr.write(`${startupLine}\n`);
+    localLog.write("info", [startupLine]);
+  }
   selectFileCredentialBackend();
   const server = createMcpServer();
   const transport = new RawToolArgumentsTransport(new StdioServerTransport());

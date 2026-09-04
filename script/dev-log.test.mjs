@@ -1,0 +1,206 @@
+import assert from "node:assert/strict";
+import { mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { test } from "node:test";
+
+import {
+  clockStamp,
+  createLineWriter,
+  fileStamp,
+  printSummary,
+  pruneLogs,
+  runTee,
+} from "./dev-log.mjs";
+
+const withTempDir = (fn) => {
+  const dir = mkdtempSync(join(tmpdir(), "figdiff-dev-log-"));
+  const cleanup = () => rmSync(dir, { recursive: true, force: true });
+  let result;
+  try {
+    result = fn(dir);
+  } catch (error) {
+    cleanup();
+    throw error;
+  }
+  // async のときは終わるまで消さない (finally で即消すと子の書き込み先が消える)。
+  if (result && typeof result.then === "function") return result.finally(cleanup);
+  cleanup();
+  return result;
+};
+
+test("clockStamp / fileStamp はゼロ埋めした固定幅", () => {
+  const date = new Date(2026, 8, 2, 9, 5, 7);
+  assert.equal(clockStamp(date), "09:05:07");
+  assert.equal(fileStamp(date), "20260902-090507");
+});
+
+test("createLineWriter はチャンク途中で切れた行を結合し、時刻と stream 名を付ける", () => {
+  const out = [];
+  const writer = createLineWriter(
+    (text) => out.push(text),
+    "out",
+    () => "10:00:00",
+  );
+
+  writer.write(Buffer.from("vite v6 ready"));
+  writer.write(Buffer.from(" in 300ms\n  ➜  Local: http://localhost:5173/\npart"));
+  assert.deepEqual(out, [
+    "[10:00:00] [out] vite v6 ready in 300ms\n",
+    "[10:00:00] [out]   ➜  Local: http://localhost:5173/\n",
+  ]);
+
+  writer.write(Buffer.from("ial\n"));
+  assert.equal(out[2], "[10:00:00] [out] partial\n");
+
+  writer.write(Buffer.from("no newline at exit"));
+  writer.flush();
+  assert.equal(out[3], "[10:00:00] [out] no newline at exit\n");
+  writer.flush();
+  assert.equal(out.length, 4);
+});
+
+test("createLineWriter は \\r と ANSI をそのまま残す (解析は digest の仕事)", () => {
+  const out = [];
+  const writer = createLineWriter(
+    (text) => out.push(text),
+    "err",
+    () => "10:00:00",
+  );
+  writer.write("[33mwarning[0m 1\rwarning 2\n");
+  assert.equal(out[0], "[10:00:00] [err] [33mwarning[0m 1\rwarning 2\n");
+});
+
+test("pruneLogs は本数と合計バイトの上限を超えた分だけ古い順に消す", () =>
+  withTempDir((dir) => {
+    for (let i = 1; i <= 5; i += 1) {
+      writeFileSync(join(dir, `dev-20260902-10000${i}.log`), "x".repeat(100));
+    }
+    writeFileSync(join(dir, "unrelated.log"), "keep me");
+
+    const removedByCount = pruneLogs(dir, { maxFiles: 3, maxTotalBytes: 10_000 });
+    assert.equal(removedByCount.length, 2);
+    assert.deepEqual(readdirSync(dir).sort(), [
+      "dev-20260902-100003.log",
+      "dev-20260902-100004.log",
+      "dev-20260902-100005.log",
+      "unrelated.log",
+    ]);
+
+    const removedByBytes = pruneLogs(dir, { maxFiles: 10, maxTotalBytes: 250 });
+    assert.deepEqual(
+      removedByBytes.map((p) => p.endsWith("100003.log")),
+      [true],
+    );
+  }));
+
+test("pruneLogs は dir が無くても落ちない", () => {
+  assert.deepEqual(pruneLogs("/nonexistent/figdiff-logs"), []);
+});
+
+test("runTee は子の出力を画面とファイルの両方へ流し、終了コードを透過する", async () =>
+  withTempDir(async (dir) => {
+    const script =
+      'process.stdout.write("hello\\n"); process.stderr.write("warning: careful\\n"); process.stdout.write("tail-no-newline"); process.exit(3);';
+    const { code, logPath } = await runTee({
+      command: process.execPath,
+      args: ["-e", script],
+      cwd: dir,
+      env: process.env,
+      logDir: dir,
+      stdin: { isTTY: false },
+    });
+
+    assert.equal(code, 3);
+    const lines = readFileSync(logPath, "utf8").trimEnd().split("\n");
+    assert.match(
+      lines.find((l) => l.includes("hello")),
+      /^\[\d{2}:\d{2}:\d{2}\] \[out\] hello$/,
+    );
+    assert.match(
+      lines.find((l) => l.includes("careful")),
+      /^\[\d{2}:\d{2}:\d{2}\] \[err\] warning: careful$/,
+    );
+    assert.ok(
+      lines.some((l) => l.endsWith("[out] tail-no-newline")),
+      "残余バッファが flush される",
+    );
+  }));
+
+test("runTee は SIGINT を受けたら (非 TTY のとき) 子へ転送し、末尾行を落とさず終わる", async () =>
+  withTempDir(async (dir) => {
+    const script =
+      'process.on("SIGINT", () => { process.stdout.write("bye\\n"); process.exit(130); }); process.stdout.write("started\\n"); setInterval(() => {}, 1000);';
+    let started;
+    const done = runTee({
+      command: process.execPath,
+      args: ["-e", script],
+      cwd: dir,
+      env: process.env,
+      logDir: dir,
+      stdin: { isTTY: false },
+      onStarted: (info) => {
+        started = info;
+      },
+    });
+    await new Promise((resolveWait) => setTimeout(resolveWait, 400));
+    // ラッパー自身が SIGINT を受けた状況を再現する (端末からではないので転送される)。
+    process.emit("SIGINT");
+    const { code, logPath } = await done;
+
+    assert.equal(code, 130);
+    assert.equal(started.logPath, logPath);
+    const text = readFileSync(logPath, "utf8");
+    assert.match(text, /\[out\] started\n/);
+    assert.match(text, /\[out\] bye\n/);
+    assert.equal(started.child.exitCode, 130, "子は終了している (孤児なし)");
+  }));
+
+test("runTee のシグナル転送は孫プロセス (turbo → Electron の形) まで届く", async () =>
+  withTempDir(async (dir) => {
+    // 子は SIGINT で自分だけ終わり、孫 (sleep) を残す。ラッパーが木ごと送るので孫も消えるはず。
+    const script =
+      'const { spawn } = require("node:child_process"); spawn("sleep", ["12345"], { stdio: "ignore" }); process.on("SIGINT", () => process.exit(130)); setInterval(() => {}, 1000);';
+    const done = runTee({
+      command: process.execPath,
+      args: ["-e", script],
+      cwd: dir,
+      env: process.env,
+      logDir: dir,
+      stdin: { isTTY: false },
+    });
+    await new Promise((resolveWait) => setTimeout(resolveWait, 500));
+    process.emit("SIGINT");
+    const { code } = await done;
+    await new Promise((resolveWait) => setTimeout(resolveWait, 300));
+
+    assert.equal(code, 130);
+    const { spawnSync } = await import("node:child_process");
+    const survivors = spawnSync("pgrep", ["-f", "^sleep 12345$"], {
+      encoding: "utf8",
+    }).stdout.trim();
+    assert.equal(survivors, "", "孫の sleep が孤児として残っていない");
+  }));
+
+test("runTee は起動できないコマンドでも解決し、理由をファイルに残す", async () =>
+  withTempDir(async (dir) => {
+    const { code, logPath } = await runTee({
+      command: join(dir, "no-such-command"),
+      args: [],
+      cwd: dir,
+      env: process.env,
+      logDir: dir,
+      stdin: { isTTY: false },
+    });
+    assert.equal(code, 1);
+    assert.match(readFileSync(logPath, "utf8"), /\[err\] failed to start/);
+  }));
+
+test("printSummary は digest が無ければパスだけ出す", () =>
+  withTempDir((dir) => {
+    const logPath = join(dir, "dev-20260902-100000.log");
+    writeFileSync(logPath, "");
+    const out = [];
+    printSummary(logPath, join(dir, "missing-digest.mjs"), (text) => out.push(text));
+    assert.deepEqual(out, [`dev log → ${logPath}\n`]);
+  }));

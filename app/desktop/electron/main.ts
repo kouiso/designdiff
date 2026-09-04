@@ -1,6 +1,7 @@
 import { join } from "node:path";
 
 import { BrowserWindow, app, dialog, safeStorage, session, shell } from "electron";
+import log from "electron-log/main";
 
 import { registerActiveSessionHandlers } from "./ipc/active-session";
 import { registerConvergenceHandlers } from "./ipc/convergence";
@@ -11,6 +12,29 @@ import { registerOverlayHandlers } from "./ipc/overlay";
 import { registerProjectHandlers } from "./ipc/project";
 import { registerTokenHandlers } from "./ipc/token";
 import { migrateCredentials } from "./util/migrate-credentials";
+import { attachRendererConsoleForwarding } from "./util/renderer-log";
+
+// ログはファイルにも残す。以前は端末に流れて消えるだけで、packaged app で何が起きたかは
+// 誰にも分からなかった。場所は起動時に 1 行出す (whenReady 内)。
+// renderer 側には何も注入しない (`electron-log/renderer` は使わない)。
+log.initialize({ preload: false });
+log.transports.file.maxSize = 5 * 1024 * 1024;
+log.transports.file.format = "[{y}-{m}-{d} {h}:{i}:{s}.{ms}] [{level}] {text}";
+// dev でも info 止まり。5 MB ≒ 4 万行なので、描画ループの debug 1 種類で探している警告が
+// 押し出される。細かく見たいときだけ FIGDIFF_LOG_LEVEL=debug。
+log.transports.file.level = process.env.FIGDIFF_LOG_LEVEL === "debug" ? "debug" : "info";
+// dev では app.name が "@figdiff/desktop" (直接起動なら "Electron") になり、ログの置き場も
+// その名前になる。userData (資格情報・キャッシュ) は動かさず、ログだけ "FigDiff" 配下へ寄せる。
+// electron-log の libraryTemplate は Linux/Windows だと userData 由来で {appName} を含まんので、
+// appData / home から自分で組む (script/log-digest.mjs の探索先と揃える)。
+log.transports.file.resolvePathFn = (variables) =>
+  join(
+    process.platform === "darwin"
+      ? join(variables.home, "Library", "Logs", "FigDiff")
+      : join(variables.appData, "FigDiff", "logs"),
+    variables.fileName ?? "main.log",
+  );
+Object.assign(console, log.functions);
 
 const ALLOWED_EXTERNAL_HOSTS = ["figma.com", "github.com"];
 
@@ -135,12 +159,7 @@ const createWindow = (): void => {
     console.error("[main] did-fail-load:", code, desc);
   });
 
-  mainWindow.webContents.on("console-message", (details) => {
-    if (app.isPackaged) return;
-    console.warn(
-      `[renderer:${details.level}] ${details.message} (${details.sourceId}:${details.lineNumber})`,
-    );
-  });
+  attachRendererConsoleForwarding(mainWindow.webContents, log);
 
   mainWindow.webContents.on("render-process-gone", (_event, details) => {
     console.error("[main] render-process-gone:", details);
@@ -178,6 +197,10 @@ const createWindow = (): void => {
 
   if (!app.isPackaged && process.env.ELECTRON_RENDERER_URL) {
     mainWindow.loadURL(process.env.ELECTRON_RENDERER_URL);
+    // 毎回手で開いていた。要らんときは FIGDIFF_DEVTOOLS=0。
+    if (process.env.FIGDIFF_DEVTOOLS !== "0") {
+      mainWindow.webContents.openDevTools({ mode: "bottom" });
+    }
   } else {
     mainWindow.loadFile(join(__dirname, "../renderer/index.html"));
   }
@@ -200,6 +223,7 @@ app.on("second-instance", () => {
 app
   .whenReady()
   .then(() => {
+    console.info(`[main] log file: ${log.transports.file.getFile().path}`);
     if (!app.isPackaged) {
       // 未署名devビルドではmacOS Keychainが errSecInteractionNotAllowed を返すため、
       // plaintext暗号化にフォールバック（本番ビルドでは実OS暗号化を使用）
