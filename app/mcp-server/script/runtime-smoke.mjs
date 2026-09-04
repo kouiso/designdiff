@@ -89,6 +89,8 @@ if (stdoutOverflowed) {
 // request/notification は method を、response は id と result/error のどちらかを持つ、
 // という JSON-RPC 2.0 のエンベロープ最低限を確認する。
 const isJsonRpcMessage = (value) => {
+  // 配列 (JSON-RPC のバッチ) は弾く。このサーバーはバッチを出さないので、
+  // 出てきたら仕様上は妥当でも「想定外のものが stdout に出た」として扱いたい。
   if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
   if (value.jsonrpc !== "2.0") return false;
   if (typeof value.method === "string") return true; // request または notification
