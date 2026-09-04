@@ -295,6 +295,9 @@ describe("起動処理", () => {
       .map(([, value]) => value.join(" "))
       .join(" ");
     expect(devPolicy).toContain("default-src");
+    expect(devPolicy).toContain("font-src 'self'");
+    expect(devPolicy).not.toContain("fonts.googleapis.com");
+    expect(devPolicy).not.toContain("fonts.gstatic.com");
   });
 
   it("起動したら、ログファイルの場所を 1 行出すこと", async () => {
