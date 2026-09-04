@@ -1,4 +1,4 @@
-import { appendFileSync, mkdirSync, renameSync, statSync } from "node:fs";
+import { appendFileSync, mkdirSync, renameSync, rmSync, statSync } from "node:fs";
 import * as path from "node:path";
 
 import { getFigdiffLogsDir } from "./figdiff-paths.js";
@@ -38,6 +38,13 @@ const stringify = (value: unknown): string => {
   }
 };
 
+/** 永続ログへ書く直前に、既知の認証情報を必ず伏せる。 */
+export const redactSecrets = (text: string): string =>
+  text
+    .replace(/figd_[A-Za-z0-9_-]+/g, "figd_***")
+    .replace(/\b(?:gh[pousr]|github_pat)_[A-Za-z0-9_]+\b/g, "[REDACTED]")
+    .replace(/\bBearer\s+[A-Za-z0-9._~+/=-]+/g, "Bearer ***");
+
 export interface LocalLogOptions {
   readonly dir?: string;
   readonly maxBytes?: number;
@@ -58,7 +65,10 @@ const rotateIfNeeded = (filePath: string, maxBytes: number): void => {
     return;
   }
   if (size < maxBytes) return;
-  renameSync(filePath, filePath.replace(/\.log$/, ".old.log"));
+  const oldPath = filePath.replace(/\.log$/, ".old.log");
+  // Windows の rename は既存の移動先を置換せん。古い一世代を先に消してから回す。
+  rmSync(oldPath, { force: true });
+  renameSync(filePath, oldPath);
 };
 
 /** ファイルへの追記だけを担う。失敗は 1 回だけ stderr に出して、以後は黙る。 */
@@ -74,7 +84,7 @@ export const createLocalLogWriter = (options: LocalLogOptions = {}): LocalLogWri
     try {
       mkdirSync(dir, { recursive: true });
       rotateIfNeeded(filePath, maxBytes);
-      const text = params.map(stringify).join(" ");
+      const text = redactSecrets(params.map(stringify).join(" "));
       appendFileSync(filePath, `[${timestamp(now())}] [${level}] ${text}\n`);
     } catch (error) {
       broken = true;

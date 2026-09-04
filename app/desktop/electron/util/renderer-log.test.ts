@@ -43,6 +43,7 @@ describe("basenameOf", () => {
 describe("redactSecrets", () => {
   it("Figma PAT と Bearer トークンを伏せること", () => {
     expect(redactSecrets("token figd_abc-DEF_123 saved")).toBe("token figd_*** saved");
+    expect(redactSecrets("token ghp_abcdef123456 saved")).toBe("token [REDACTED] saved");
     expect(redactSecrets("Authorization: Bearer eyJ.abc-def_ghi")).toBe(
       "Authorization: Bearer ***",
     );

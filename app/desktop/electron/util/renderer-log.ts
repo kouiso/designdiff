@@ -50,6 +50,7 @@ export const basenameOf = (source: string): string => {
 export const redactSecrets = (text: string): string =>
   text
     .replace(/figd_[A-Za-z0-9_-]+/g, "figd_***")
+    .replace(/\b(?:gh[pousr]|github_pat)_[A-Za-z0-9_]+\b/g, "[REDACTED]")
     .replace(/\bBearer\s+[A-Za-z0-9._~+/=-]+/g, "Bearer ***");
 
 export const formatRendererConsoleMessage = (details: RendererConsoleDetails): string =>
