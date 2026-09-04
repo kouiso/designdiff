@@ -250,8 +250,16 @@ test("normalizeMessage は Windows のパスも basename にする", () => {
     normalizeMessage(`failed C:${backslash}Users${backslash}alice${backslash}secret.png`),
     "failed secret.png",
   );
-  assert.equal(normalizeMessage("failed /Users/x/My Project/a.png"), "failed a.png");
+  // 空白入りのディレクトリは basename まで畳み切らない。畳もうとすると、後ろに `/` を
+  // 持つ普通の文章まで飲んでしまうため (下のテストを参照)。マシン固有の先頭部分
+  // (`/Users/x`) は落ちるので、機種をまたいだ grouping には影響しない。
+  assert.equal(normalizeMessage("failed /Users/x/My Project/a.png"), "failed My Project/a.png");
   assert.equal(scrubPaths("plain 1/2 done"), "plain 1/2 done");
+});
+
+test("scrubPaths は後ろに / を持つ普通の文章を食わない", () => {
+  assert.equal(scrubPaths("see /tmp/a and/b.txt"), "see a and/b.txt");
+  assert.equal(scrubPaths("error at /tmp/a while/foo failed"), "error at a while/foo failed");
 });
 
 test("readEntries は読めないファイルがあっても残りを返す", () =>
@@ -354,7 +362,8 @@ test("classifyDevMessage は記号で終わる level 語も拾う", () => {
 
 test("normalizeMessage は UNC パスも basename にする", () => {
   const normalized = normalizeMessage("read \\\\nas01\\share\\My Docs\\secret.png failed");
-  assert.equal(normalized, "read secret.png failed");
+  // サーバー名と共有名 (マシン固有の部分) は落ちる。空白入りディレクトリは残る。
+  assert.equal(normalized, "read My Docs\\secret.png failed");
 });
 
 test("mcpLogDir は環境変数の前後の空白を落としてから解決する", () => {

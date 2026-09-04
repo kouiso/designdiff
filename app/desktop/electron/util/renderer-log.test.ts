@@ -132,6 +132,21 @@ describe("redactSecrets", () => {
     );
   });
 
+  it("userinfo の判定は query / fragment を越えないこと", () => {
+    // `/` が無い URL の query に `@` があると、貪欲な一致が authority を抜けて
+    // そこまで飲み、userinfo の無い URL を壊す。
+    expect(redactSecrets("open https://example.test?email=a@b.test")).toBe(
+      "open https://example.test?email=a@b.test",
+    );
+    expect(redactSecrets("open https://example.test#tag@v1")).toBe(
+      "open https://example.test#tag@v1",
+    );
+    // userinfo が在る場合は、query を巻き込まずに userinfo だけを伏せる。
+    expect(redactSecrets("open https://user:pass@example.test?mail=a@b.test")).toBe(
+      "open https://***@example.test?mail=a@b.test",
+    );
+  });
+
   it("伏字は冪等であること (main.ts が引数を跨いでもう一度当てるため)", () => {
     const once = redactSecrets('{"access_token":"a.b.c"} password="hunter2"');
     expect(redactSecrets(once)).toBe(once);

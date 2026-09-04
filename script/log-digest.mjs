@@ -245,11 +245,16 @@ export const readEntries = (source) => {
 
 // --- 集計 ---------------------------------------------------------------------
 
-// 中間セグメントは空白を許す — "/Users/x/My Project/a.png" のようなフォルダ名でも
-// パス全体を1つとして拾うため。末尾は空白を許さない (後続の語まで飲み込むため)。
+// セグメントに空白は許さない。"/Users/x/My Project/a.png" を 1 つとして拾うために
+// 中間セグメントの空白を許していたが、それだと後ろに `/` がある普通の文章まで
+// パスとして飲む — `see /tmp/a and/b.txt` が `see b.txt` に、
+// `error at /tmp/a while/foo failed` が `error at foo failed` になり、意味が消える。
+// ここは grouping のための正規化であって秘密の境界ではないので、
+// 「空白入りパスを basename まで畳み切れない」より「文章を壊さない」を採る
+// (空白入りパスも先頭のディレクトリ群は落ちる)。
 // node:path の basename は POSIX ビルドだとバックスラッシュで切らないので使わない。
 const PATH_SEGMENT = `[^\\s/\\\\"'\`()]+`;
-const SPACED_SEGMENT = `${PATH_SEGMENT}(?:[ \\t]+${PATH_SEGMENT})*`;
+const SPACED_SEGMENT = PATH_SEGMENT;
 const ABSOLUTE_PATH = new RegExp(
   [
     // UNC (\\\\server\\share\\...)。ドライブレターより先に見る —

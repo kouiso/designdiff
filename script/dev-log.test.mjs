@@ -304,3 +304,68 @@ test("pruneLogs は消せなかった 1 本を数え続け、次の候補へ進�
     assert.equal(removed.length, 3);
     assert.ok(!removed.includes(undeletable), "消せなかったものを消した扱いにしない");
   }));
+
+test("runTee はログを開けなかったときにパスを返さない (存在しない要約を出さないため)", async () =>
+  withTempDir(async (dir) => {
+    // createWriteStream は開けなくても同期では失敗せず、EISDIR を後から error で返す。
+    // 同名のディレクトリを先に置いて、その経路を通す。
+    const logPath = join(dir, `dev-${fileStamp()}.log`);
+    mkdirSync(logPath);
+    const stderr = [];
+    const originalWrite = process.stderr.write.bind(process.stderr);
+    process.stderr.write = (text) => {
+      stderr.push(String(text));
+      return true;
+    };
+    let result;
+    try {
+      result = await runTee({
+        command: process.execPath,
+        args: ["-e", 'process.stdout.write("running\\n"); process.exit(0);'],
+        cwd: dir,
+        env: process.env,
+        logDir: dir,
+        stdin: { isTTY: false },
+      });
+    } finally {
+      process.stderr.write = originalWrite;
+    }
+    assert.equal(result.code, 0, "子はふつうに動く");
+    assert.equal(result.logPath, null, "開けなかったログのパスは返さない");
+    assert.ok(
+      stderr.some((line) => line.includes("dev log disabled")),
+      `理由を出す: ${JSON.stringify(stderr)}`,
+    );
+  }));
+
+test("pruneLogs は既に消えている候補を「残っている」と数えない", () =>
+  withTempDir((dir) => {
+    // 別の dev ラッパーが readdir と unlink の隙間に同じファイルを消した形。
+    // 残っていると数えると、その分だけ新しいログを余計に消してしまう
+    // (11 本を 9 本にする 2 本を相手が消した直後に、こちらが更に 2 本消して 7 本になる)。
+    for (let i = 1; i <= 5; i += 1) {
+      writeFileSync(join(dir, `dev-2026090${i}-100000.log`), "x".repeat(100));
+    }
+    const vanished = new Set([
+      join(dir, "dev-20260901-100000.log"),
+      join(dir, "dev-20260902-100000.log"),
+    ]);
+    const unlinked = [];
+    const unlink = (path) => {
+      if (vanished.has(path)) {
+        const error = new Error(`ENOENT: no such file or directory, unlink '${path}'`);
+        error.code = "ENOENT";
+        throw error;
+      }
+      unlinked.push(path);
+      rmSync(path);
+    };
+
+    // 5 本を 3 本に。古い 2 本は既に消えているので、実際に消すものは無いのが正解。
+    const removed = pruneLogs(dir, { maxFiles: 3, maxTotalBytes: 10_000, unlink });
+
+    // 既に無い 2 本を「無い」と数えれば残りは 3 本、つまり上限ちょうど。
+    // 数え損なうと、まだ必要な新しいログを 2 本消してしまう。
+    assert.deepEqual(unlinked, [], "本物のログは 1 本も消さない");
+    assert.deepEqual(removed, []);
+  }));

@@ -119,6 +119,13 @@ describe("local-log", () => {
     expect(redactSecrets("mail a@b.test and https://example.test/x")).toBe(
       "mail a@b.test and https://example.test/x",
     );
+    // query / fragment は越えない (userinfo の無い URL を壊さない)。
+    expect(redactSecrets("open https://example.test?email=a@b.test")).toBe(
+      "open https://example.test?email=a@b.test",
+    );
+    expect(redactSecrets("open https://user:pass@example.test?mail=a@b.test")).toBe(
+      "open https://***@example.test?mail=a@b.test",
+    );
   });
 
   it("引数を跨いだ `password:` と値をまとめて伏せること", () => {

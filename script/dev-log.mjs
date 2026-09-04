@@ -22,6 +22,9 @@ const MAX_TOTAL_BYTES = 50 * 1024 * 1024;
 // 画面への転送だけ続ける (dev を止めない方が大事)。
 const MAX_FILE_BYTES = 20 * 1024 * 1024;
 
+/** ファイルが「もう無い」形の失敗か。掴まれている・権限が無い等と区別する。 */
+const isMissing = (error) => error instanceof Error && "code" in error && error.code === "ENOENT";
+
 const pad2 = (n) => String(n).padStart(2, "0");
 
 export const clockStamp = (date = new Date()) =>
@@ -59,7 +62,12 @@ export const createLineWriter = (sink, streamName, now = clockStamp) => {
 };
 
 /** 古い順に消して、本数と合計バイト数を上限内に収める。 */
-export const pruneLogs = (dir, { maxFiles = MAX_FILES, maxTotalBytes = MAX_TOTAL_BYTES } = {}) => {
+export const pruneLogs = (
+  dir,
+  // unlink は差し替え可能にしてある。readdir と unlink の隙間に別プロセスが同じ
+  // ファイルを消す競合は、実ファイルだけでは再現できないため (signalTree の run と同じ形)。
+  { maxFiles = MAX_FILES, maxTotalBytes = MAX_TOTAL_BYTES, unlink = unlinkSync } = {},
+) => {
   let entries;
   try {
     entries = readdirSync(dir)
@@ -84,12 +92,19 @@ export const pruneLogs = (dir, { maxFiles = MAX_FILES, maxTotalBytes = MAX_TOTAL
     const oldest = entries[index];
     index += 1;
     try {
-      unlinkSync(oldest.path);
+      unlink(oldest.path);
       removed.push(oldest.path);
       remaining -= 1;
       total -= oldest.size;
-    } catch {
-      // 消せなくても dev を止める理由にはならない。次の候補へ進む。
+    } catch (error) {
+      // ENOENT は「もう無い」— 別の dev ラッパーが先に消した形。残っているものとして
+      // 数え続けると、その分だけ新しいログを余計に消してしまう (11 本を 9 本にする 2 本を
+      // 相手が消した直後に、こちらが更に 2 本消して 7 本になる)。無いものは無いと数える。
+      if (isMissing(error)) {
+        remaining -= 1;
+        total -= oldest.size;
+      }
+      // 掴まれている・権限が無いなど本当に消せないものは、残っているものとして数える。
     }
   }
   return removed;
@@ -163,6 +178,15 @@ export const runTee = ({ command, args, cwd, env, logDir, onStarted, stdin = pro
     };
 
     const logPath = join(logDir, `dev-${fileStamp()}.log`);
+    // 「通常ファイルとして在るか」。existsSync だと、同名のディレクトリが居座っている
+    // ケース (createWriteStream が EISDIR で落ちる形) を在ると判定してしまう。
+    const logFileExists = () => {
+      try {
+        return statSync(logPath).isFile();
+      } catch {
+        return false;
+      }
+    };
     let file = null;
     let written = 0;
     // mkdirSync / createWriteStream は読み取り専用の作業ディレクトリやディスク満杯で
@@ -180,8 +204,11 @@ export const runTee = ({ command, args, cwd, env, logDir, onStarted, stdin = pro
       // 0 から数えると、上限の判定が実際のファイルサイズとずれる。
       try {
         written = statSync(logPath).size;
-      } catch {
-        // まだ無い = 0 から。
+      } catch (error) {
+        // 「まだ無い」なら 0 から。それ以外 (一時的な I/O エラーなど) で 0 と決めつけると、
+        // 中身のあるファイルに更に上限いっぱい書けてしまう。既存量が分からない以上、
+        // 書かない方を選ぶ。
+        if (!isMissing(error)) throw error;
       }
       file = createWriteStream(logPath, { flags: "a" });
       file.on("error", (error) => stopLogging(error.message));
@@ -238,12 +265,18 @@ export const runTee = ({ command, args, cwd, env, logDir, onStarted, stdin = pro
       process.off("SIGTERM", onSigterm);
       out.flush();
       err.flush();
+      // 実際にファイルが在るときだけパスを返す。createWriteStream は開けなくても
+      // 同期では失敗せず、EISDIR や権限不足を後から error で知らせる — その場合
+      // ファイルは 1 度も作られていないので、パスを返すと呼び出し側が
+      // 「存在しないログの要約」を出してしまう (warn 0 / error 0 と嘘をつく)。
+      const settle = () => resolveRun({ code, logPath: logFileExists() ? logPath : null });
       if (!file) {
-        resolveRun({ code, logPath: null });
+        settle();
         return;
       }
       // process.exit 直行は WriteStream の末尾を落とす。書き終わるまで待つ。
-      file.end(() => resolveRun({ code, logPath }));
+      // 既に error で destroy 済みでも end のコールバックは呼ばれる (確認済み)。
+      file.end(settle);
     };
     child.on("close", (code, signal) => finish(code ?? (signal ? 1 : 0)));
     child.on("error", (error) => {

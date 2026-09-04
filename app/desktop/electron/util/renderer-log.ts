@@ -87,8 +87,10 @@ const BARE_SECRET = new RegExp(`\\b((?:${SECRET_KEY})["']?\\s*[:=]\\s*)[^\\s"'&,
 // 利用者名が空の `https://:s3cr3t@host` も同じ形なので 0 文字以上で受ける。
 // `@` の手前までを貪欲に飲むのは、パスワードに `@` が入る形 (`https://user:p@ss@host`、
 // URL としては password=`p@ss`) で最初の `@` で止めると残りが平文で残るため。
-// userinfo に `/` と空白は入らないので、URL の外まで食うことはない。
-const URL_USERINFO = /\b([a-zA-Z][\w+.-]*:\/\/)[^/\s]*@/g;
+// ただし `?` と `#` は越えない。越えると authority を抜けて query / fragment の `@` まで
+// 飲み、userinfo の無い `https://example.com?email=a@b.com` を `https://***@b.com` に
+// 壊してしまう (伏せるどころか、秘密でない URL を破壊する)。
+const URL_USERINFO = /\b([a-zA-Z][\w+.-]*:\/\/)[^/\s?#]*@/g;
 
 export const redactSecrets = (text: string): string =>
   text
