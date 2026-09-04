@@ -123,6 +123,10 @@ test("normalizeMessage は数値・ID・パスを伏せる", () => {
     normalizeMessage("failed /Users/me/proj/a.png after 1200ms id=deadbeefcafe 0x1f"),
     "failed a.png after #ms id=# 0x#",
   );
+  assert.equal(
+    normalizeMessage("Authorization: Bearer eyJ.secret token=figd_private-123 ghp_abcdef123456"),
+    "Authorization: Bearer *** token=figd_*** [REDACTED]",
+  );
 });
 
 test("dedupe は main.log と dev ログの同じ行を ±5 秒で 1 件に畳み、app を残す", () => {
@@ -151,7 +155,7 @@ test("digest は warn/error だけを集計し、since と level で絞れる", 
   assert.equal(rows[0].level, "error");
   assert.equal(rows[1].count, 2);
   assert.equal(rows[1].message, "slow #ms");
-  assert.equal(rows[1].sample, "slow 10ms");
+  assert.equal(rows[1].sample, "slow #ms");
   assert.equal(rows[1].first, at(9, 0, 1));
   assert.equal(rows[1].last, at(9, 30, 0));
 

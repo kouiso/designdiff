@@ -52,14 +52,16 @@ export const basenameOf = (source: string): string => {
  * `token=` `client_secret: "..."` のような key=value の両方を伏せる。
  * mcp-server 側の `tool/error.ts` `service/github-service.ts` と同じ形を揃えている。
  */
-const TOKEN_SHAPES = /\b(figd_|gh[opsur]_|github_pat_)[A-Za-z0-9_-]+/g;
+const FIGMA_PAT = /figd_[A-Za-z0-9_-]+/g;
+const GITHUB_TOKEN = /\b(?:gh[pousr]|github_pat)_[A-Za-z0-9_]+\b/g;
 const BEARER_TOKEN = /\bBearer\s+[A-Za-z0-9._~+/=-]+/g;
 const KEYED_SECRET =
   /\b((?:access_|refresh_|id_|api_|auth_)?token|client_secret|secret|password|api[_-]?key)(["']?\s*[:=]\s*["']?)[^\s"'&,;]+/gi;
 
 export const redactSecrets = (text: string): string =>
   text
-    .replace(TOKEN_SHAPES, (_match, prefix: string) => `${prefix}***`)
+    .replace(FIGMA_PAT, "figd_***")
+    .replace(GITHUB_TOKEN, "[REDACTED]")
     .replace(BEARER_TOKEN, "Bearer ***")
     .replace(KEYED_SECRET, (_match, key: string, separator: string) => `${key}${separator}***`);
 

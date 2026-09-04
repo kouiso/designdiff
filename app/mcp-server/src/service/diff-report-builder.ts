@@ -656,7 +656,8 @@ function selectAnchorsForScoring<T>(anchors: readonly T[]): T[] {
     return [...anchors];
   }
 
-  console.info(
+  // MCP の stdout は JSON-RPC 専用。診断行は stderr 側へ出す。
+  console.warn(
     `[diff-report] regionScores capped from ${anchors.length} to ${MAX_REGION_SCORE_COUNT}`,
   );
 

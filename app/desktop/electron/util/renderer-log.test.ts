@@ -43,14 +43,15 @@ describe("basenameOf", () => {
 describe("redactSecrets", () => {
   it("Figma PAT と Bearer トークンを伏せること", () => {
     expect(redactSecrets("token figd_abc-DEF_123 saved")).toBe("token figd_*** saved");
+    expect(redactSecrets("token ghp_abcdef123456 saved")).toBe("token [REDACTED] saved");
     expect(redactSecrets("Authorization: Bearer eyJ.abc-def_ghi")).toBe(
       "Authorization: Bearer ***",
     );
   });
 
   it("GitHub のトークンと key=value 形式も伏せること", () => {
-    expect(redactSecrets("failed with ghp_AbCdEf0123456789")).toBe("failed with ghp_***");
-    expect(redactSecrets("github_pat_11ABCDE_xyz denied")).toBe("github_pat_*** denied");
+    expect(redactSecrets("failed with ghp_AbCdEf0123456789")).toBe("failed with [REDACTED]");
+    expect(redactSecrets("github_pat_11ABCDE_xyz denied")).toBe("[REDACTED] denied");
     expect(redactSecrets("GET /oauth?token=abc123&scope=file_read")).toBe(
       "GET /oauth?token=***&scope=file_read",
     );

@@ -1,4 +1,4 @@
-import { appendFileSync, mkdirSync, renameSync, statSync } from "node:fs";
+import { appendFileSync, mkdirSync, renameSync, rmSync, statSync } from "node:fs";
 import * as path from "node:path";
 
 import { getFigdiffLogsDir } from "./figdiff-paths.js";
@@ -28,23 +28,6 @@ const timestamp = (date: Date): string =>
   `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ` +
   `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}.${String(date.getMilliseconds()).padStart(3, "0")}`;
 
-/**
- * ファイルに残る前に token 類を伏せる。呼び出し側 (formatMcpToolError など) が
- * 伏せてくれる前提には立たない — 直接 console.error(rawError) する箇所が 1 つでも
- * 増えたら、ここが無ければ平文でディスクに残るため。
- * 形は tool/error.ts と service/github-service.ts に揃えている。
- */
-const TOKEN_SHAPES = /\b(figd_|gh[opsur]_|github_pat_)[A-Za-z0-9_-]+/g;
-const BEARER_TOKEN = /\bBearer\s+[A-Za-z0-9._~+/=-]+/g;
-const KEYED_SECRET =
-  /\b((?:access_|refresh_|id_|api_|auth_)?token|client_secret|secret|password|api[_-]?key)(["']?\s*[:=]\s*["']?)[^\s"'&,;]+/gi;
-
-export const scrubSecrets = (text: string): string =>
-  text
-    .replace(TOKEN_SHAPES, (_match, prefix: string) => `${prefix}***`)
-    .replace(BEARER_TOKEN, "Bearer ***")
-    .replace(KEYED_SECRET, (_match, key: string, separator: string) => `${key}${separator}***`);
-
 const stringify = (value: unknown): string => {
   if (typeof value === "string") return value;
   if (value instanceof Error) return value.stack ?? value.message;
@@ -54,6 +37,25 @@ const stringify = (value: unknown): string => {
     return String(value);
   }
 };
+
+/**
+ * 永続ログへ書く直前に、既知の認証情報を必ず伏せる。
+ * 呼び出し側 (formatMcpToolError など) が伏せてくれる前提には立たない —
+ * 直接 console.error(rawError) する箇所が 1 つでも増えたら、ここが無ければ
+ * 平文でディスクに残るため。形は app/desktop の renderer-log と揃えている。
+ */
+const FIGMA_PAT = /figd_[A-Za-z0-9_-]+/g;
+const GITHUB_TOKEN = /\b(?:gh[pousr]|github_pat)_[A-Za-z0-9_]+\b/g;
+const BEARER_TOKEN = /\bBearer\s+[A-Za-z0-9._~+/=-]+/g;
+const KEYED_SECRET =
+  /\b((?:access_|refresh_|id_|api_|auth_)?token|client_secret|secret|password|api[_-]?key)(["']?\s*[:=]\s*["']?)[^\s"'&,;]+/gi;
+
+export const redactSecrets = (text: string): string =>
+  text
+    .replace(FIGMA_PAT, "figd_***")
+    .replace(GITHUB_TOKEN, "[REDACTED]")
+    .replace(BEARER_TOKEN, "Bearer ***")
+    .replace(KEYED_SECRET, (_match, key: string, separator: string) => `${key}${separator}***`);
 
 export interface LocalLogOptions {
   readonly dir?: string;
@@ -75,7 +77,10 @@ const rotateIfNeeded = (filePath: string, maxBytes: number): void => {
     return;
   }
   if (size < maxBytes) return;
-  renameSync(filePath, filePath.replace(/\.log$/, ".old.log"));
+  const oldPath = filePath.replace(/\.log$/, ".old.log");
+  // Windows の rename は既存の移動先を置換せん。古い一世代を先に消してから回す。
+  rmSync(oldPath, { force: true });
+  renameSync(filePath, oldPath);
 };
 
 /** ファイルへの追記だけを担う。失敗は 1 回だけ stderr に出して、以後は黙る。 */
@@ -91,7 +96,7 @@ export const createLocalLogWriter = (options: LocalLogOptions = {}): LocalLogWri
     try {
       mkdirSync(dir, { recursive: true });
       rotateIfNeeded(filePath, maxBytes);
-      const text = scrubSecrets(params.map(stringify).join(" "));
+      const text = redactSecrets(params.map(stringify).join(" "));
       appendFileSync(filePath, `[${timestamp(now())}] [${level}] ${text}\n`);
     } catch (error) {
       broken = true;

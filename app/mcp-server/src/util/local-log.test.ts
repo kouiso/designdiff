@@ -4,7 +4,7 @@ import * as path from "node:path";
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { createLocalLogWriter, installLocalLog, scrubSecrets } from "./local-log.js";
+import { createLocalLogWriter, installLocalLog, redactSecrets } from "./local-log.js";
 
 describe("local-log", () => {
   let dir: string;
@@ -35,31 +35,47 @@ describe("local-log", () => {
   it("トークンはファイルに落ちる前に伏せること", () => {
     const writer = createLocalLogWriter({ dir });
 
-    writer.write("error", ["figma call failed with figd_abcdef0123 and ghp_ZZZ999"]);
+    writer.write("error", ["figma call failed with figd_abcdef0123 and ghp_ZZZ999abc"]);
     writer.write("error", ['{"access_token":"a.b.c"}']);
     writer.write("error", ["GET /x?token=abc123&scope=read"]);
 
     const text = readFileSync(writer.filePath, "utf8");
     expect(text).toContain("figd_***");
-    expect(text).toContain("ghp_***");
+    expect(text).toContain("[REDACTED]");
     expect(text).toContain('"access_token":"***"');
     expect(text).toContain("token=***&scope=read");
     expect(text).not.toContain("figd_abcdef0123");
+    expect(text).not.toContain("ghp_ZZZ999abc");
     expect(text).not.toContain("a.b.c");
   });
 
   it("秘密が無い行は素通しすること", () => {
-    expect(scrubSecrets("[mcp] ready on stdio")).toBe("[mcp] ready on stdio");
+    expect(redactSecrets("[mcp] ready on stdio")).toBe("[mcp] ready on stdio");
   });
 
   it("上限を超えたら .old.log へ回して書き続けること", () => {
     const writer = createLocalLogWriter({ dir, maxBytes: 64 });
     writer.write("info", ["x".repeat(80)]);
+    writeFileSync(path.join(dir, "mcp-server.old.log"), "stale generation");
     writer.write("info", ["after rotation"]);
 
     const names = readdirSync(dir).sort();
     expect(names).toEqual(["mcp-server.log", "mcp-server.old.log"]);
     expect(readFileSync(path.join(dir, "mcp-server.log"), "utf8")).toContain("after rotation");
+    expect(readFileSync(path.join(dir, "mcp-server.old.log"), "utf8")).not.toContain(
+      "stale generation",
+    );
+  });
+
+  it("永続ログへ認証情報を書かんこと", () => {
+    const writer = createLocalLogWriter({ dir });
+    writer.write("error", ["figd_secret-123", "Bearer eyJ.secret", "ghp_abcdef123456"]);
+
+    const text = readFileSync(writer.filePath, "utf8");
+    expect(text).not.toContain("secret-123");
+    expect(text).not.toContain("eyJ.secret");
+    expect(text).not.toContain("ghp_abcdef123456");
+    expect(redactSecrets("Bearer safe-token")).toBe("Bearer ***");
   });
 
   it("書けない場所でも throw せず、以後は黙ること", () => {
