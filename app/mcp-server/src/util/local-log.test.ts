@@ -4,7 +4,7 @@ import * as path from "node:path";
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { createLocalLogWriter, installLocalLog } from "./local-log.js";
+import { createLocalLogWriter, installLocalLog, scrubSecrets } from "./local-log.js";
 
 describe("local-log", () => {
   let dir: string;
@@ -30,6 +30,26 @@ describe("local-log", () => {
     expect(text.trimEnd().split("\n").at(-1)).toBe(
       '[2026-09-02 10:30:45.007] [info] ready {"port":1}',
     );
+  });
+
+  it("トークンはファイルに落ちる前に伏せること", () => {
+    const writer = createLocalLogWriter({ dir });
+
+    writer.write("error", ["figma call failed with figd_abcdef0123 and ghp_ZZZ999"]);
+    writer.write("error", ['{"access_token":"a.b.c"}']);
+    writer.write("error", ["GET /x?token=abc123&scope=read"]);
+
+    const text = readFileSync(writer.filePath, "utf8");
+    expect(text).toContain("figd_***");
+    expect(text).toContain("ghp_***");
+    expect(text).toContain('"access_token":"***"');
+    expect(text).toContain("token=***&scope=read");
+    expect(text).not.toContain("figd_abcdef0123");
+    expect(text).not.toContain("a.b.c");
+  });
+
+  it("秘密が無い行は素通しすること", () => {
+    expect(scrubSecrets("[mcp] ready on stdio")).toBe("[mcp] ready on stdio");
   });
 
   it("上限を超えたら .old.log へ回して書き続けること", () => {

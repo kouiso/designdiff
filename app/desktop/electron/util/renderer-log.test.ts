@@ -48,8 +48,21 @@ describe("redactSecrets", () => {
     );
   });
 
+  it("GitHub のトークンと key=value 形式も伏せること", () => {
+    expect(redactSecrets("failed with ghp_AbCdEf0123456789")).toBe("failed with ghp_***");
+    expect(redactSecrets("github_pat_11ABCDE_xyz denied")).toBe("github_pat_*** denied");
+    expect(redactSecrets("GET /oauth?token=abc123&scope=file_read")).toBe(
+      "GET /oauth?token=***&scope=file_read",
+    );
+    expect(redactSecrets('{"access_token":"abc.def","expires_in":3600}')).toBe(
+      '{"access_token":"***","expires_in":3600}',
+    );
+    expect(redactSecrets("client_secret: s3cr3t-value")).toBe("client_secret: ***");
+  });
+
   it("秘密が無ければ変えないこと", () => {
     expect(redactSecrets("[main] did-finish-load")).toBe("[main] did-finish-load");
+    expect(redactSecrets("token refreshed successfully")).toBe("token refreshed successfully");
   });
 });
 

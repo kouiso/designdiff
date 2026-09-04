@@ -28,6 +28,23 @@ const timestamp = (date: Date): string =>
   `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ` +
   `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}.${String(date.getMilliseconds()).padStart(3, "0")}`;
 
+/**
+ * ファイルに残る前に token 類を伏せる。呼び出し側 (formatMcpToolError など) が
+ * 伏せてくれる前提には立たない — 直接 console.error(rawError) する箇所が 1 つでも
+ * 増えたら、ここが無ければ平文でディスクに残るため。
+ * 形は tool/error.ts と service/github-service.ts に揃えている。
+ */
+const TOKEN_SHAPES = /\b(figd_|gh[opsur]_|github_pat_)[A-Za-z0-9_-]+/g;
+const BEARER_TOKEN = /\bBearer\s+[A-Za-z0-9._~+/=-]+/g;
+const KEYED_SECRET =
+  /\b((?:access_|refresh_|id_|api_|auth_)?token|client_secret|secret|password|api[_-]?key)(["']?\s*[:=]\s*["']?)[^\s"'&,;]+/gi;
+
+export const scrubSecrets = (text: string): string =>
+  text
+    .replace(TOKEN_SHAPES, (_match, prefix: string) => `${prefix}***`)
+    .replace(BEARER_TOKEN, "Bearer ***")
+    .replace(KEYED_SECRET, (_match, key: string, separator: string) => `${key}${separator}***`);
+
 const stringify = (value: unknown): string => {
   if (typeof value === "string") return value;
   if (value instanceof Error) return value.stack ?? value.message;
@@ -74,7 +91,7 @@ export const createLocalLogWriter = (options: LocalLogOptions = {}): LocalLogWri
     try {
       mkdirSync(dir, { recursive: true });
       rotateIfNeeded(filePath, maxBytes);
-      const text = params.map(stringify).join(" ");
+      const text = scrubSecrets(params.map(stringify).join(" "));
       appendFileSync(filePath, `[${timestamp(now())}] [${level}] ${text}\n`);
     } catch (error) {
       broken = true;
