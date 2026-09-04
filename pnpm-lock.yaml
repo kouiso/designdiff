@@ -86,6 +86,15 @@ importers:
       '@figdiff/shared':
         specifier: workspace:*
         version: link:../../package/shared
+      '@fontsource-variable/hanken-grotesk':
+        specifier: ^5.3.0
+        version: 5.3.0
+      '@fontsource-variable/jetbrains-mono':
+        specifier: ^5.3.0
+        version: 5.3.0
+      '@fontsource-variable/noto-sans-jp':
+        specifier: ^5.3.0
+        version: 5.3.0
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
@@ -933,6 +942,15 @@ packages:
 
   '@figma/plugin-typings@1.125.0':
     resolution: {integrity: sha512-8cXB4iKyRFl+/DryImvTngkFtgnowZUeFu/dt/jSaFL04mOKhGoZE1d1Vz+sUKUdZWXibGIWexCCdFK5gH5zxg==}
+
+  '@fontsource-variable/hanken-grotesk@5.3.0':
+    resolution: {integrity: sha512-DOd0FqL+3cH2dfNy0JtSq9tUfxBz5mLmHMjTU0DOr3E9Zo6wxuatCl53DIPNrSPgCsnuKyM739BTIG5glCLirw==}
+
+  '@fontsource-variable/jetbrains-mono@5.3.0':
+    resolution: {integrity: sha512-F32xpS2NsGYoQi2ADSkKTgpJj7ozajsGgDJ8woTnqjmIB+dxDIqImjl4pXZVEExu8UFZ2ndhmX18EBS/hdz3Lw==}
+
+  '@fontsource-variable/noto-sans-jp@5.3.0':
+    resolution: {integrity: sha512-XVL9GfGBRjj523v9w3Bctu4mNq7E5rUa+AMZm8DK1EM3LAGlKC3DZMvuqkLn4DB4TwwoAjcsJUCiRpUTDzzOkw==}
 
   '@hono/node-server@1.19.14':
     resolution: {integrity: sha512-GwtvgtXxnWsucXvbQXkRgqksiH2Qed37H9xHZocE5sA3N8O8O8/8FA3uclQXxXVzc9XBZuEOMK7+r02FmSpHtw==}
@@ -4860,6 +4878,12 @@ snapshots:
       levn: 0.4.1
 
   '@figma/plugin-typings@1.125.0': {}
+
+  '@fontsource-variable/hanken-grotesk@5.3.0': {}
+
+  '@fontsource-variable/jetbrains-mono@5.3.0': {}
+
+  '@fontsource-variable/noto-sans-jp@5.3.0': {}
 
   '@hono/node-server@1.19.14(hono@4.12.19)':
     dependencies:

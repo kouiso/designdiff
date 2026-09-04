@@ -1,5 +1,8 @@
 import { StrictMode } from "react";
 
+import "@fontsource-variable/hanken-grotesk";
+import "@fontsource-variable/jetbrains-mono";
+import "@fontsource-variable/noto-sans-jp";
 import { createRoot } from "react-dom/client";
 
 import { App } from "./app";
