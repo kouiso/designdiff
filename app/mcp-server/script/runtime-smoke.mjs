@@ -95,7 +95,17 @@ const isJsonRpcMessage = (value) => {
   if (value.jsonrpc !== "2.0") return false;
   if (typeof value.method === "string") return true; // request または notification
   const hasResult = Object.hasOwn(value, "result");
-  const hasError = typeof value.error === "object" && value.error !== null;
+  // error は「オブジェクトで、code (数値) と message (文字列) を持つ」まで見る。
+  // 配列やただの真値を通すと、壊れたレスポンスを「正しい JSON-RPC」と報告してしまう。
+  const error = value.error;
+  const hasError =
+    typeof error === "object" &&
+    error !== null &&
+    !Array.isArray(error) &&
+    typeof error.code === "number" &&
+    typeof error.message === "string";
+  // レスポンスは result と error のどちらか片方だけ (JSON-RPC 2.0 §5)。
+  if (hasResult && Object.hasOwn(value, "error")) return false;
   return (hasResult || hasError) && Object.hasOwn(value, "id");
 };
 

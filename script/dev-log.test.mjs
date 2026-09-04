@@ -11,6 +11,7 @@ import {
   printSummary,
   pruneLogs,
   runTee,
+  signalTree,
 } from "./dev-log.mjs";
 
 const withTempDir = (fn) => {
@@ -93,6 +94,45 @@ test("pruneLogs は本数と合計バイトの上限を超えた分だけ古い�
       [true],
     );
   }));
+
+test("createLineWriter はチャンクを跨いだ日本語を壊さない", () => {
+  const written = [];
+  const writer = createLineWriter(
+    (text) => written.push(text),
+    "out",
+    () => "00:00:00",
+  );
+  const bytes = Buffer.from("警告: 失敗\n", "utf8");
+  // マルチバイト文字の途中で切る。チャンク単位で toString すると置換文字になる。
+  writer.write(bytes.subarray(0, 4));
+  writer.write(bytes.subarray(4));
+  writer.flush();
+
+  assert.deepEqual(written, ["[00:00:00] [out] 警告: 失敗\n"]);
+});
+
+test("pruneLogs は消せなかったファイルを消した扱いにしない", () =>
+  withTempDir((dir) => {
+    for (let i = 1; i <= 3; i += 1) {
+      writeFileSync(join(dir, `dev-20260902-10000${i}.log`), "x".repeat(100));
+    }
+    // 消せないファイルを 1 本混ぜる代わりに、削除できないことを readonly ディレクトリで作るのは
+    // root で走ると再現せんので、戻り値と実ファイルの一致で「消したと言い張らない」ことを見る。
+    const removed = pruneLogs(dir, { maxFiles: 1, maxTotalBytes: 10_000 });
+    const left = readdirSync(dir).sort();
+    for (const path of removed) assert.ok(!left.includes(path.split("/").at(-1)));
+    assert.equal(left.length, 1);
+  }));
+
+test("signalTree は Windows では taskkill /T で木ごと落とす", () => {
+  const calls = [];
+  signalTree(4321, "SIGINT", "win32", (command, args) => {
+    calls.push([command, args]);
+    return { status: 0 };
+  });
+
+  assert.deepEqual(calls, [["taskkill", ["/pid", "4321", "/T", "/F"]]]);
+});
 
 test("pruneLogs は dir が無くても落ちない", () => {
   assert.deepEqual(pruneLogs("/nonexistent/figdiff-logs"), []);

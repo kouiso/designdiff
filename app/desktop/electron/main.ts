@@ -12,7 +12,9 @@ import { registerOverlayHandlers } from "./ipc/overlay";
 import { registerProjectHandlers } from "./ipc/project";
 import { registerTokenHandlers } from "./ipc/token";
 import { migrateCredentials } from "./util/migrate-credentials";
-import { attachRendererConsoleForwarding } from "./util/renderer-log";
+import { attachRendererConsoleForwarding, redactSecrets } from "./util/renderer-log";
+
+import type { LogMessage } from "electron-log";
 
 // ログはファイルにも残す。以前は端末に流れて消えるだけで、packaged app で何が起きたかは
 // 誰にも分からなかった。場所は起動時に 1 行出す (whenReady 内)。
@@ -34,6 +36,17 @@ log.transports.file.resolvePathFn = (variables) =>
       : join(variables.appData, "FigDiff", "logs"),
     variables.fileName ?? "main.log",
   );
+// ファイルに残る全ての行を伏字に通す。renderer 経由だけを伏せても、main 側の
+// console (例: electron/ipc/overlay.ts が読み込み失敗時に出す候補 URL) は素通りで、
+// URL に token や userinfo が入っていれば平文でディスクに残る。
+log.hooks.push(
+  (message: LogMessage): LogMessage => ({
+    ...message,
+    data: message.data.map((item: unknown) =>
+      typeof item === "string" ? redactSecrets(item) : item,
+    ),
+  }),
+);
 Object.assign(console, log.functions);
 
 const ALLOWED_EXTERNAL_HOSTS = ["figma.com", "github.com"];

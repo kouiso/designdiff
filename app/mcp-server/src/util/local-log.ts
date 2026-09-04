@@ -69,6 +69,13 @@ export interface LocalLogWriter {
   readonly write: (level: ConsoleLevel, params: readonly unknown[]) => void;
 }
 
+/**
+ * ローテーションだけは失敗しても書き込みを諦めない。
+ * 同じ FIGDIFF_HOME に対して MCP サーバーが 2 つ動いている場合 (Claude Code の
+ * セッションが 2 つなど)、両方が同時に上限を跨いで rename しに来ることがある。
+ * 片方が先に回した直後の ENOENT でここを broken 扱いにすると、そのサーバーは
+ * 以後ずっと何も残さなくなる。回せなければ、そのまま追記を続ける方がまし。
+ */
 const rotateIfNeeded = (filePath: string, maxBytes: number): void => {
   let size = 0;
   try {
@@ -78,9 +85,13 @@ const rotateIfNeeded = (filePath: string, maxBytes: number): void => {
   }
   if (size < maxBytes) return;
   const oldPath = filePath.replace(/\.log$/, ".old.log");
-  // Windows の rename は既存の移動先を置換せん。古い一世代を先に消してから回す。
-  rmSync(oldPath, { force: true });
-  renameSync(filePath, oldPath);
+  try {
+    // Windows の rename は既存の移動先を置換せん。古い一世代を先に消してから回す。
+    rmSync(oldPath, { force: true });
+    renameSync(filePath, oldPath);
+  } catch {
+    // 別プロセスが先に回した / 掴んでいる。次の書き込みで作り直される。
+  }
 };
 
 /** ファイルへの追記だけを担う。失敗は 1 回だけ stderr に出して、以後は黙る。 */

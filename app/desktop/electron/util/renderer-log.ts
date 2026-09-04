@@ -32,6 +32,9 @@ export const toLogLevel = (level: string): RendererLogLevel => {
     case "warning":
     case "warn":
       return "warn";
+    // Electron の console-message は最下位を "verbose" で返す。既定の file level が
+    // info なので、debug に落とせば冗長な行がファイルを埋めずに済む。
+    case "verbose":
     case "debug":
       return "debug";
     default:

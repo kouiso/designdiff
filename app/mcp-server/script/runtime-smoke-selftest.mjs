@@ -93,6 +93,19 @@ assert(
   `runtime smoke must report the line count. stdout=${validEnvelopeResult.stdout}`,
 );
 
+const bothMembersResult = await withStubServer(
+  'process.stdout.write(JSON.stringify({ jsonrpc: "2.0", id: 1, result: {}, error: { code: -1, message: "x" } }) + "\\n");',
+);
+assert(
+  bothMembersResult.code !== 0,
+  "runtime smoke must reject a response carrying both result and error.",
+);
+
+const badErrorShapeResult = await withStubServer(
+  'process.stdout.write(JSON.stringify({ jsonrpc: "2.0", id: 1, error: ["nope"] }) + "\\n");',
+);
+assert(badErrorShapeResult.code !== 0, "runtime smoke must reject a malformed error member.");
+
 const overflowResult = await withStubServer(
   'process.stdout.write("x".repeat(1024 * 1024 + 1) + "\\n");',
 );

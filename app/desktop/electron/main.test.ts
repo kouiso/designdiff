@@ -3,12 +3,15 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 // 起動処理は読み込んだだけで走る。境界を全部差し替えて、登録した処理を
 // 後から呼ぶ形で確かめる。
 type ResolvePathFn = (variables: { home: string; appData: string; fileName?: string }) => string;
+type LogHookMessage = { data: unknown[]; level: string };
+type LogHook = (message: LogHookMessage) => LogHookMessage;
 
 const mocks = vi.hoisted(() => {
   // main.ts が代入するまでは未設定。関数経由で型だけ union に固定する
   // (const に undefined を入れると narrowing で undefined 型になる)。
   const initialResolvePathFn = (): ResolvePathFn | undefined => undefined;
   const resolvePathFn = initialResolvePathFn();
+  const logHooks: LogHook[] = [];
   const webContents = {
     on: vi.fn(),
     once: vi.fn(),
@@ -54,6 +57,7 @@ const mocks = vi.hoisted(() => {
     registerOAuthHandlers: vi.fn(),
     registerActiveSessionHandlers: vi.fn(),
     registerConvergenceHandlers: vi.fn(),
+    logHooks,
     logError: vi.fn(),
     logWarn: vi.fn(),
     logInfo: vi.fn(),
@@ -89,6 +93,7 @@ vi.mock("electron-log/main", () => ({
       verbose: mocks.logDebug,
       silly: mocks.logDebug,
     },
+    hooks: mocks.logHooks,
     transports: {
       file: mocks.fileTransport,
     },
@@ -303,6 +308,22 @@ describe("起動処理", () => {
     expect(mocks.logInfo).toHaveBeenCalledWith(
       expect.stringContaining("[main] log file: /tmp/figdiff-test/main.log"),
     );
+  });
+
+  it("main プロセスの出力もファイルに残る前に伏字を通ること", async () => {
+    await bootMain();
+
+    // renderer 経由だけでなく、main の console.warn (例: overlay の候補 URL) も通す。
+    // bootMain はテストごとに main.ts を読み直すので、直近に積まれたものを見る。
+    const hook = mocks.logHooks.at(-1);
+    if (!hook) throw new Error("log hook was not registered");
+    const result = hook({
+      data: ["[overlay] load failed: https://example.test/?token=abc123", { keep: true }],
+      level: "warn",
+    });
+
+    expect(result.data[0]).toBe("[overlay] load failed: https://example.test/?token=***");
+    expect(result.data[1]).toEqual({ keep: true });
   });
 
   it("dev 起動なら DevTools を開き、FIGDIFF_DEVTOOLS=0 なら開かんこと", async () => {

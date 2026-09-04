@@ -17,10 +17,12 @@ describe("toLogLevel", () => {
     expect(toLogLevel("warn")).toBe("warn");
     expect(toLogLevel("debug")).toBe("debug");
     expect(toLogLevel("info")).toBe("info");
+    // Electron は最下位を "verbose" で返す。既定の file level (info) で落ちるよう debug 扱い。
+    expect(toLogLevel("verbose")).toBe("debug");
   });
 
   it("知らない値は info に落とすこと", () => {
-    expect(toLogLevel("verbose")).toBe("info");
+    expect(toLogLevel("trace")).toBe("info");
     expect(toLogLevel("")).toBe("info");
   });
 });

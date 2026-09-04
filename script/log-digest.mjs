@@ -33,13 +33,20 @@ export const electronLogDir = (
   return join(home, ".config", appName, "logs");
 };
 
-export const mcpLogDir = ({ home = homedir(), env = process.env } = {}) =>
-  join(
-    env.FIGDIFF_HOME && env.FIGDIFF_HOME.trim().length > 0
-      ? resolve(env.FIGDIFF_HOME)
-      : join(home, ".figdiff"),
+/**
+ * サーバー側 (app/mcp-server/src/util/figdiff-paths.ts) と同じ順で解決する。
+ * FIGDIFF_LOGS_DIR を見ないと、そこへ書かせている環境で digest が
+ * 「MCP のログ 0 件」と言い切ってしまう。
+ */
+export const mcpLogDir = ({ home = homedir(), env = process.env } = {}) => {
+  const logsDir = env.FIGDIFF_LOGS_DIR;
+  if (logsDir && logsDir.trim().length > 0) return resolve(logsDir);
+  const figdiffHome = env.FIGDIFF_HOME;
+  return join(
+    figdiffHome && figdiffHome.trim().length > 0 ? resolve(figdiffHome) : join(home, ".figdiff"),
     "logs",
   );
+};
 
 const withOld = (path) => [path.replace(/\.log$/, ".old.log"), path];
 
@@ -81,11 +88,16 @@ const DEV_FILE_DATE = /dev-(\d{4})(\d{2})(\d{2})-\d{6}\.log$/;
 const TURBO_PREFIX = /^[@\w./-]+:[\w:-]+: /;
 // 行頭に固定した判定だけを使う。行中の "error" (error-boundary.tsx のコンパイル行など) は数えない。
 // pnpm の ` ELIFECYCLE  Command failed` は数えない: Ctrl-C で止めるたびに出る症状行で、原因は別の行にある。
-const LEVEL_HEAD = /^(?:[✘×]\s*)?\[?(ERROR|WARN(?:ING)?|FATAL)\]?\b/i;
+// 続きは区切り (`:` 空白 `]` 行末) に限る。`\b` だけだと "warning-free ..." や
+// "error-boundary.tsx ..." が行頭に来たときに level として数えてしまう。
+const LEVEL_HEAD = /^(?:[✘×]\s*)?\[?(ERROR|WARN(?:ING)?|FATAL)\]?(?=[:\s\]]|$)/i;
 // Chromium / Electron 本体の形式。pid 付き `[26058:0903/004627.203911:ERROR:ssl_client_socket_impl.cc(924)]`
 // と pid 無し `[0903/003025.705923:FATAL:electron_main_delegate.cc(216)]` の両方がある。
 const CHROMIUM_HEAD = /^\[(?:\d+:)?\d+\/\d+\.\d+:(ERROR|WARNING|FATAL):/;
 const VITE_HEAD = /^\[(?:vite|electron-vite)\] (Internal server error|error|warning)\b/i;
+// Node 本体の警告。`(node:12345) Warning: ...` / `(node:12345) DeprecationWarning: ...`。
+// 行頭が level 語ではないので、これを見ないと warn を集めるという digest の目的から漏れる。
+const NODE_WARNING_HEAD = /^\(node:\d+\)\s*(?:\[[\w-]+\]\s*)?[A-Za-z]*Warning\b/;
 
 const toEpoch = (y, mo, d, h, mi, s, ms = "0") =>
   new Date(
@@ -137,6 +149,7 @@ export const classifyDevMessage = (message) => {
   if (chromium) return normalizeLevel(chromium[1]);
   const vite = VITE_HEAD.exec(message);
   if (vite) return /warn/i.test(vite[1]) ? "warn" : "error";
+  if (NODE_WARNING_HEAD.test(message)) return "warn";
   return "info";
 };
 
@@ -186,7 +199,15 @@ export const readEntries = (source) => {
   const entries = [];
   for (const path of source.paths) {
     if (!existsSync(path)) continue;
-    const lines = readFileSync(path, "utf8").split("\n");
+    // 別の pnpm dev が .logs を掃除している最中など、existsSync の直後に消えることがある。
+    // 1 本読めないだけで digest 全体を落とすと、読めた他のログまで見えなくなる。
+    let lines;
+    try {
+      lines = readFileSync(path, "utf8").split("\n");
+    } catch (error) {
+      process.stderr.write(`skip ${path}: ${error.message}\n`);
+      continue;
+    }
     entries.push(
       ...(source.kind === "dev"
         ? readDevEntries(path, lines)
@@ -198,13 +219,27 @@ export const readEntries = (source) => {
 
 // --- 集計 ---------------------------------------------------------------------
 
+// 中間セグメントは空白を許す — "/Users/x/My Project/a.png" のようなフォルダ名でも
+// パス全体を1つとして拾うため。末尾は空白を許さない (後続の語まで飲み込むため)。
+// node:path の basename は POSIX ビルドだとバックスラッシュで切らないので使わない。
+const PATH_SEGMENT = `[^\\s/\\\\"'\`()]+`;
+const SPACED_SEGMENT = `${PATH_SEGMENT}(?:[ \\t]+${PATH_SEGMENT})*`;
+const ABSOLUTE_PATH = new RegExp(
+  [
+    `[A-Za-z]:[\\\\/]+(?:${SPACED_SEGMENT}[\\\\/]+)*${PATH_SEGMENT}`,
+    `/+(?:${SPACED_SEGMENT}/+)*${SPACED_SEGMENT}/+${PATH_SEGMENT}`,
+  ].join("|"),
+  "g",
+);
+export const scrubPaths = (text) =>
+  text.replace(ABSOLUTE_PATH, (match) => match.split(/[\\/]/).filter(Boolean).at(-1));
+
 /** 数値・ID・絶対パスを伏せて「同じ種類の行」にまとめる。 */
 export const normalizeMessage = (message) =>
-  message
+  scrubPaths(message)
     .replace(/figd_[A-Za-z0-9_-]+/g, "figd_***")
     .replace(/\b(?:gh[pousr]|github_pat)_[A-Za-z0-9_]+\b/g, "[REDACTED]")
     .replace(/\bBearer\s+[A-Za-z0-9._~+/=-]+/g, "Bearer ***")
-    .replace(/(?:[A-Za-z]:)?(?:\/[^\s"'()]+)+/g, (path) => basename(path))
     .replace(/0x[0-9a-f]+/gi, "«HEX»")
     .replace(/\b[0-9a-f]{8,}\b/gi, "#")
     .replace(/\d+/g, "#")
@@ -220,15 +255,25 @@ const DEDUPE_WINDOW_MS = 5000;
  * 正規化メッセージが同じで時刻が ±5 秒以内なら dev 側を落とす (app が正)。
  */
 export const dedupe = (entries) => {
-  const app = entries.filter((entry) => entry.source === "app");
+  // 総当たりだと app 数 × dev 数の比較になり、両方が数万行になる長時間セッションで
+  // digest が事実上止まる。正規化は 1 行につき 1 回だけにして、5 秒バケットで引く。
+  const bucketOf = (time) => Math.floor(time / DEDUPE_WINDOW_MS);
+  const appKeys = new Map();
+  for (const entry of entries) {
+    if (entry.source !== "app") continue;
+    const key = normalizeMessage(entry.message);
+    const bucket = bucketOf(entry.time);
+    // ±5 秒を跨ぐ組み合わせを拾うため、隣のバケットにも登録する。
+    for (const b of [bucket - 1, bucket, bucket + 1]) {
+      const times = appKeys.get(`${b}\u0000${key}`);
+      if (times) times.push(entry.time);
+      else appKeys.set(`${b}\u0000${key}`, [entry.time]);
+    }
+  }
   return entries.filter((entry) => {
     if (entry.source !== "dev") return true;
-    const key = normalizeMessage(entry.message);
-    return !app.some(
-      (other) =>
-        Math.abs(other.time - entry.time) <= DEDUPE_WINDOW_MS &&
-        normalizeMessage(other.message) === key,
-    );
+    const times = appKeys.get(`${bucketOf(entry.time)}\u0000${normalizeMessage(entry.message)}`);
+    return !times?.some((time) => Math.abs(time - entry.time) <= DEDUPE_WINDOW_MS);
   });
 };
 

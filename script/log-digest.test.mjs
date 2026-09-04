@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
@@ -13,6 +13,7 @@ import {
   formatTable,
   mcpLogDir,
   normalizeMessage,
+  scrubPaths,
   parseDevLine,
   parseElectronLine,
   parseSince,
@@ -20,6 +21,15 @@ import {
   stripAnsi,
   summarize,
 } from "./log-digest.mjs";
+
+const withTempDir = (fn) => {
+  const dir = mkdtempSync(join(tmpdir(), "figdiff-digest-"));
+  try {
+    return fn(dir);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+};
 
 const at = (h, m, s) => new Date(2026, 8, 2, h, m, s).getTime();
 
@@ -201,6 +211,49 @@ test("readEntries は実ファイルから読み、summarize / formatTable が�
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test("mcpLogDir は FIGDIFF_LOGS_DIR を優先する", () => {
+  assert.equal(
+    mcpLogDir({ home: "/h", env: { FIGDIFF_LOGS_DIR: "/custom/logs" } }),
+    "/custom/logs",
+  );
+  assert.equal(mcpLogDir({ home: "/h", env: { FIGDIFF_HOME: "/fh" } }), join("/fh", "logs"));
+  assert.equal(mcpLogDir({ home: "/h", env: {} }), join("/h", ".figdiff", "logs"));
+});
+
+test("classifyDevMessage は Node の警告を拾い、level 語で始まる別語は拾わない", () => {
+  assert.equal(classifyDevMessage("(node:12345) Warning: something"), "warn");
+  assert.equal(classifyDevMessage("(node:1) DeprecationWarning: x"), "warn");
+  assert.equal(classifyDevMessage("(node:1) [DEP0040] DeprecationWarning: y"), "warn");
+  assert.equal(classifyDevMessage("warning-free line"), "info");
+  assert.equal(classifyDevMessage("error-boundary.tsx:1:1 compiled"), "info");
+  assert.equal(classifyDevMessage("warning: real one"), "warn");
+});
+
+test("normalizeMessage は Windows のパスも basename にする", () => {
+  const backslash = String.fromCharCode(92);
+  assert.equal(
+    normalizeMessage(`failed C:${backslash}Users${backslash}alice${backslash}secret.png`),
+    "failed secret.png",
+  );
+  assert.equal(normalizeMessage("failed /Users/x/My Project/a.png"), "failed a.png");
+  assert.equal(scrubPaths("plain 1/2 done"), "plain 1/2 done");
+});
+
+test("readEntries は読めないファイルがあっても残りを返す", () =>
+  withTempDir((dir) => {
+    const good = join(dir, "dev-20260902-100000.log");
+    writeFileSync(good, "[10:00:00] [err] error real one\n");
+    const missing = join(dir, "dev-20260902-110000.log");
+    writeFileSync(missing, "placeholder");
+    // existsSync の後に消えた状態を作る: ディレクトリに置き換えると readFileSync が EISDIR。
+    rmSync(missing);
+    mkdirSync(missing);
+
+    const entries = readEntries({ kind: "dev", paths: [missing, good] });
+    assert.equal(entries.length, 1);
+    assert.equal(entries[0].message, "error real one");
+  }));
 
 test("日をまたいだ dev ログは翌日として扱う", () => {
   const dir = mkdtempSync(join(tmpdir(), "figdiff-digest-"));
