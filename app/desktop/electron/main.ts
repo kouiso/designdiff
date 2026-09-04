@@ -60,14 +60,37 @@ const redactLogArgument = (item: unknown): unknown => {
   return redacted === serialized ? item : redacted;
 };
 
+/** 伏字の判定にだけ使う文字列化。表示には使わない。 */
+const serializeForRedaction = (item: unknown): string => {
+  if (typeof item === "string") return item;
+  if (item instanceof Error) return item.stack ?? `${item.name}: ${item.message}`;
+  if (typeof item !== "object" || item === null) return String(item);
+  try {
+    return JSON.stringify(item) ?? String(item);
+  } catch {
+    return "[unserializable]";
+  }
+};
+
+/**
+ * 1 引数ずつ伏せたうえで、引数を跨いだ形も確かめる。
+ * `console.error("password:", token)` は引数単体で見ると鍵と値が別々なので、
+ * どちらも伏字の条件を満たさないまま平文でディスクに残る。electron-log が
+ * ファイルへ並べる形 (空白区切り) にしてもう一度当て、そこで初めて消えるものが
+ * あれば 1 本の文字列に畳む。伏字は冪等なので、既に伏せ済みの行が畳まれることはない。
+ */
+const redactLogData = (data: readonly unknown[]): unknown[] => {
+  const perArgument = data.map(redactLogArgument);
+  const joined = perArgument.map(serializeForRedaction).join(" ");
+  const redacted = redactSecrets(joined);
+  return redacted === joined ? perArgument : [redacted];
+};
+
 // ファイルに残る全ての行を伏字に通す。renderer 経由だけを伏せても、main 側の
 // console (例: electron/ipc/overlay.ts が読み込み失敗時に出す候補 URL) は素通りで、
 // URL に token や userinfo が入っていれば平文でディスクに残る。
 log.hooks.push(
-  (message: LogMessage): LogMessage => ({
-    ...message,
-    data: message.data.map(redactLogArgument),
-  }),
+  (message: LogMessage): LogMessage => ({ ...message, data: redactLogData(message.data) }),
 );
 Object.assign(console, log.functions);
 

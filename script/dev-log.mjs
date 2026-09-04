@@ -74,13 +74,19 @@ export const pruneLogs = (dir, { maxFiles = MAX_FILES, maxTotalBytes = MAX_TOTAL
   }
   const removed = [];
   let total = entries.reduce((sum, entry) => sum + entry.size, 0);
-  while (entries.length > 0 && (entries.length > maxFiles || total > maxTotalBytes)) {
-    const oldest = entries.shift();
+  // 本数もバイト数も「消せたときだけ」減らす。shift() で候補を配列から外すと、
+  // 消せなかったファイル (Windows で他プロセスが開いている等) まで減ったことになり、
+  // 1 本もディスクから消えていないのに上限内と判断して抜けてしまう。
+  // 進むのは index だけなので、全部消せなくても必ず止まる。
+  let remaining = entries.length;
+  let index = 0;
+  while (index < entries.length && (remaining > maxFiles || total > maxTotalBytes)) {
+    const oldest = entries[index];
+    index += 1;
     try {
       unlinkSync(oldest.path);
       removed.push(oldest.path);
-      // 消せたときだけ減らす。消せないファイル (Windows で他プロセスが開いている等) を
-      // 減算してしまうと、1本も消えていないのに「上限内」と判断して抜けてしまう。
+      remaining -= 1;
       total -= oldest.size;
     } catch {
       // 消せなくても dev を止める理由にはならない。次の候補へ進む。
@@ -147,34 +153,43 @@ export const printSummary = (
  */
 export const runTee = ({ command, args, cwd, env, logDir, onStarted, stdin = process.stdin }) =>
   new Promise((resolveRun) => {
-    mkdirSync(logDir, { recursive: true });
-    // これから 1 本増えるので、その分だけ先に空けておく。上限ちょうどで走ると
-    // 毎回 1 本超えた状態になってしまう。
-    pruneLogs(logDir, {
-      maxFiles: MAX_FILES - 1,
-      maxTotalBytes: MAX_TOTAL_BYTES - MAX_FILE_BYTES,
-    });
-    const logPath = join(logDir, `dev-${fileStamp()}.log`);
-    // 追記で開くので、同じ秒に二度走って同名になった場合は既存分から数え始める。
-    // 0 から数えると、上限の判定が実際のファイルサイズとずれる。
-    let written = 0;
-    try {
-      written = statSync(logPath).size;
-    } catch {
-      // まだ無い = 0 から。
-    }
-    const file = createWriteStream(logPath, { flags: "a" });
-    // 書けなくなっても (読み取り専用の作業ディレクトリ、ディスク満杯) dev は止めない。
-    // ここで拾わないと unhandled 'error' でラッパーだけが落ち、turbo が孤児になる。
+    // 書けなくても dev は止めない。ここで拾わないと unhandled 'error' や同期例外で
+    // ラッパーだけが落ち、turbo が孤児になる — あるいは dev がそもそも起動しない。
     let logging = true;
     const stopLogging = (reason) => {
       if (!logging) return;
       logging = false;
       process.stderr.write(`dev log disabled (${reason}); passthrough only\n`);
     };
-    file.on("error", (error) => stopLogging(error.message));
+
+    const logPath = join(logDir, `dev-${fileStamp()}.log`);
+    let file = null;
+    let written = 0;
+    // mkdirSync / createWriteStream は読み取り専用の作業ディレクトリやディスク満杯で
+    // 同期例外を投げる。Promise の実行関数の中なので、拾わないと reject に化けて
+    // 「ログが残せない」が「dev が動かない」に化ける。準備はまとめて try に入れる。
+    try {
+      mkdirSync(logDir, { recursive: true });
+      // これから 1 本増えるので、その分だけ先に空けておく。上限ちょうどで走ると
+      // 毎回 1 本超えた状態になってしまう。
+      pruneLogs(logDir, {
+        maxFiles: MAX_FILES - 1,
+        maxTotalBytes: MAX_TOTAL_BYTES - MAX_FILE_BYTES,
+      });
+      // 追記で開くので、同じ秒に二度走って同名になった場合は既存分から数え始める。
+      // 0 から数えると、上限の判定が実際のファイルサイズとずれる。
+      try {
+        written = statSync(logPath).size;
+      } catch {
+        // まだ無い = 0 から。
+      }
+      file = createWriteStream(logPath, { flags: "a" });
+      file.on("error", (error) => stopLogging(error.message));
+    } catch (error) {
+      stopLogging(error instanceof Error ? error.message : String(error));
+    }
     const sink = (text) => {
-      if (!logging) return;
+      if (!logging || !file) return;
       // 1 行が上限より大きいこともある (改行なしで延々と出す子)。書いた後ではなく
       // 書く前に、この 1 回分を足した結果で判定する。
       const size = Buffer.byteLength(text);
@@ -194,7 +209,7 @@ export const runTee = ({ command, args, cwd, env, logDir, onStarted, stdin = pro
       stdio: ["inherit", "pipe", "pipe"],
       shell: process.platform === "win32",
     });
-    onStarted?.({ logPath, child });
+    onStarted?.({ logPath: file ? logPath : null, child });
 
     child.stdout.on("data", (chunk) => {
       process.stdout.write(chunk);
@@ -223,6 +238,10 @@ export const runTee = ({ command, args, cwd, env, logDir, onStarted, stdin = pro
       process.off("SIGTERM", onSigterm);
       out.flush();
       err.flush();
+      if (!file) {
+        resolveRun({ code, logPath: null });
+        return;
+      }
       // process.exit 直行は WriteStream の末尾を落とす。書き終わるまで待つ。
       file.end(() => resolveRun({ code, logPath }));
     };
@@ -254,9 +273,12 @@ const main = async () => {
     cwd,
     env,
     logDir,
-    onStarted: (started) => process.stderr.write(`dev log → ${started.logPath}\n`),
+    onStarted: (started) => {
+      if (started.logPath) process.stderr.write(`dev log → ${started.logPath}\n`);
+    },
   });
-  printSummary(logPath, digestScript);
+  // ログを開けなかったときは要約する対象が無い。理由は stopLogging が既に出している。
+  if (logPath) printSummary(logPath, digestScript);
   process.exitCode = code;
 };
 

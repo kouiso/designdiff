@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
@@ -243,4 +243,64 @@ test("printSummary は digest が無ければパスだけ出す", () =>
     const out = [];
     printSummary(logPath, join(dir, "missing-digest.mjs"), (text) => out.push(text));
     assert.deepEqual(out, [`dev log → ${logPath}\n`]);
+  }));
+
+test("runTee はログを開けなくても子を動かし、通過だけ続ける", async () =>
+  withTempDir(async (dir) => {
+    // logDir と同じ名前のファイルを置く。mkdirSync が ENOTDIR / EEXIST で同期例外を投げ、
+    // 拾わなければ Promise が reject してラッパーごと落ちる = dev が起動しない。
+    const blocked = join(dir, "blocked");
+    writeFileSync(blocked, "not a directory");
+    const stderr = [];
+    const originalWrite = process.stderr.write.bind(process.stderr);
+    process.stderr.write = (text) => {
+      stderr.push(String(text));
+      return true;
+    };
+    let started;
+    try {
+      const { code, logPath } = await runTee({
+        command: process.execPath,
+        args: ["-e", 'process.stdout.write("still running\\n"); process.exit(7);'],
+        cwd: dir,
+        env: process.env,
+        logDir: blocked,
+        stdin: { isTTY: false },
+        onStarted: (info) => {
+          started = info;
+        },
+      });
+      assert.equal(code, 7, "子はふつうに動いて終了コードも透過する");
+      assert.equal(logPath, null, "残せなかったログのパスは返さない");
+      assert.equal(started.logPath, null);
+    } finally {
+      process.stderr.write = originalWrite;
+    }
+    assert.ok(
+      stderr.some((line) => line.includes("dev log disabled")),
+      `理由を 1 度は出す: ${JSON.stringify(stderr)}`,
+    );
+  }));
+
+test("pruneLogs は消せなかった 1 本を数え続け、次の候補へ進む", () =>
+  withTempDir((dir) => {
+    // 消せない候補を確実に作る: 同じ名前のディレクトリは statSync では読めるが
+    // unlinkSync が EISDIR / EPERM で落ちる (chmod は root で走ると効かない)。
+    const undeletable = join(dir, "dev-20260901-100000.log");
+    mkdirSync(undeletable);
+    for (let i = 2; i <= 4; i += 1) {
+      writeFileSync(join(dir, `dev-2026090${i}-100000.log`), "x".repeat(100));
+    }
+
+    const removed = pruneLogs(dir, { maxFiles: 1, maxTotalBytes: 10_000 });
+
+    // 消せなかった 1 本を「減った」と数えていた頃は、本数の条件がここで満たされ、
+    // まだ消せるファイルが 1 本残ったまま抜けていた。
+    const files = readdirSync(dir, { withFileTypes: true }).filter((e) => e.isFile());
+    assert.deepEqual(
+      files.map((e) => e.name),
+      [],
+    );
+    assert.equal(removed.length, 3);
+    assert.ok(!removed.includes(undeletable), "消せなかったものを消した扱いにしない");
   }));

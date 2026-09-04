@@ -340,6 +340,23 @@ describe("起動処理", () => {
     expect(String(withObject.data[0])).toContain("***@example.test");
   });
 
+  it("引数を跨いだ鍵と値も伏せること", async () => {
+    await bootMain();
+    const hook = mocks.logHooks.at(-1);
+    if (!hook) throw new Error("log hook was not registered");
+
+    // console.error("client_secret:", value) の形。1 引数ずつ見ると鍵と値が別々なので
+    // どちらも伏字の条件を満たさず、そのまま平文でディスクに残っていた。
+    const split = hook({ data: ["[oauth] client_secret:", "s3cr3t-value"], level: "error" });
+    expect(split.data.map(String).join(" ")).not.toContain("s3cr3t-value");
+    expect(split.data.map(String).join(" ")).toContain("client_secret: ***");
+
+    // 秘密が無い行は畳まずに、引数の形のまま渡す (表示の質を落とさない)。
+    const clean = hook({ data: ["[main] ready", { keep: true }], level: "info" });
+    expect(clean.data).toHaveLength(2);
+    expect(clean.data[1]).toEqual({ keep: true });
+  });
+
   it("dev 起動なら DevTools を開き、FIGDIFF_DEVTOOLS=0 なら開かんこと", async () => {
     const originalUrl = process.env.ELECTRON_RENDERER_URL;
     const originalFlag = process.env.FIGDIFF_DEVTOOLS;

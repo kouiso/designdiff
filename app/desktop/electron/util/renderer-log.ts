@@ -58,8 +58,17 @@ export const basenameOf = (source: string): string => {
 const FIGMA_PAT = /figd_[A-Za-z0-9_-]+/g;
 const GITHUB_TOKEN = /\b(?:gh[pousr]|github_pat)_[A-Za-z0-9_]+\b/g;
 const BEARER_TOKEN = /\bBearer\s+[A-Za-z0-9._~+/=-]+/g;
+// このリポジトリが実際に使う名前まで含める。safe-storage.ts は camelCase
+// (accessToken / refreshToken / clientSecret) を使い、環境変数は
+// FIGMA_OAUTH_CLIENT_SECRET のように前置きが付く。`\b` は `_` の後から始まらないので、
+// 前置き (FIGMA_OAUTH_) は「英数字 + 区切り」の並びとして明示的に受ける。
+// `key` だけは単独で拾わない — `{"key":"frame-1"}` のような普通のログまで伏せてしまい、
+// 秘密でない行が読めなくなる。api / auth / client / secret / private / signing が
+// 付いたときだけ鍵とみなす。
+const SECRET_PREFIX = "(?:[A-Za-z0-9]+[_-])*";
 const SECRET_KEY =
-  "(?:access_|refresh_|id_|api_|auth_)?token|client_secret|secret|password|api[_-]?key";
+  `${SECRET_PREFIX}(?:(?:access|refresh|id|api|auth|client)[_-]?)?(?:token|secret|password|passwd)` +
+  `|${SECRET_PREFIX}(?:api|auth|client|secret|private|signing)[_-]?key`;
 // 引用符付きの値は閉じ引用符まで飲む。空白や `,` で止めると
 // `password="correct horse battery staple"` が先頭だけ伏字になって残る。
 const QUOTED_SECRET = new RegExp(
@@ -75,8 +84,11 @@ const UNTERMINATED_SECRET = new RegExp(
 );
 const BARE_SECRET = new RegExp(`\\b((?:${SECRET_KEY})["']?\\s*[:=]\\s*)[^\\s"'&,;]+`, "gi");
 // URL の userinfo (https://alice:s3cr3t@host)。鍵の名前が付かないので上の 2 つでは拾えない。
-// 利用者名が空の `https://:s3cr3t@host` も同じ形なので、どちらも 0 文字以上で受ける。
-const URL_USERINFO = /\b([a-zA-Z][\w+.-]*:\/\/)[^/\s:@]*(?::[^/\s@]*)?@/g;
+// 利用者名が空の `https://:s3cr3t@host` も同じ形なので 0 文字以上で受ける。
+// `@` の手前までを貪欲に飲むのは、パスワードに `@` が入る形 (`https://user:p@ss@host`、
+// URL としては password=`p@ss`) で最初の `@` で止めると残りが平文で残るため。
+// userinfo に `/` と空白は入らないので、URL の外まで食うことはない。
+const URL_USERINFO = /\b([a-zA-Z][\w+.-]*:\/\/)[^/\s]*@/g;
 
 export const redactSecrets = (text: string): string =>
   text

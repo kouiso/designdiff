@@ -39,12 +39,18 @@ export const electronLogDir = (
  * 「MCP のログ 0 件」と言い切ってしまう。
  */
 export const mcpLogDir = ({ home = homedir(), env = process.env } = {}) => {
-  const logsDir = env.FIGDIFF_LOGS_DIR;
-  if (logsDir && logsDir.trim().length > 0) return resolve(logsDir);
-  const figdiffHome = env.FIGDIFF_HOME;
-  return join(
-    figdiffHome && figdiffHome.trim().length > 0 ? resolve(figdiffHome) : join(home, ".figdiff"),
-    "logs",
+  // trim してから resolve する。サーバー側の readEnvDir() が trim 済みの値を
+  // resolve するので、末尾に改行や空白が付いた環境変数 (`export FIGDIFF_HOME=$(...)`
+  // の取りこぼしなど) で、書き手と読み手が別のディレクトリを指してしまう。
+  const readEnvDir = (name) => {
+    const value = env[name];
+    if (value === undefined) return undefined;
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? resolve(trimmed) : undefined;
+  };
+  return (
+    readEnvDir("FIGDIFF_LOGS_DIR") ??
+    join(readEnvDir("FIGDIFF_HOME") ?? join(home, ".figdiff"), "logs")
   );
 };
 
@@ -88,9 +94,10 @@ const DEV_FILE_DATE = /dev-(\d{4})(\d{2})(\d{2})-\d{6}\.log$/;
 const TURBO_PREFIX = /^[@\w./-]+:[\w:-]+: /;
 // 行頭に固定した判定だけを使う。行中の "error" (error-boundary.tsx のコンパイル行など) は数えない。
 // pnpm の ` ELIFECYCLE  Command failed` は数えない: Ctrl-C で止めるたびに出る症状行で、原因は別の行にある。
-// 続きは区切り (`:` 空白 `]` 行末) に限る。`\b` だけだと "warning-free ..." や
-// "error-boundary.tsx ..." が行頭に来たときに level として数えてしまう。
-const LEVEL_HEAD = /^(?:[✘×]\s*)?\[?(ERROR|WARN(?:ING)?|FATAL)\]?(?=[:\s\]]|$)/i;
+// 続きは「語が続かないこと」だけを条件にする。`\b` だけだと "warning-free ..." や
+// "error-boundary.tsx ..." を level として数えてしまう一方、区切りを `:` 空白 `]` に
+// 限ると `ERROR!` `WARNING,` `FATAL.` を取りこぼす — 記号で終わる方が普通にある。
+const LEVEL_HEAD = /^(?:[✘×]\s*)?\[?(ERROR|WARN(?:ING)?|FATAL)\]?(?![\w-])/i;
 // Chromium / Electron 本体の形式。pid 付き `[26058:0903/004627.203911:ERROR:ssl_client_socket_impl.cc(924)]`
 // と pid 無し `[0903/003025.705923:FATAL:electron_main_delegate.cc(216)]` の両方がある。
 const CHROMIUM_HEAD = /^\[(?:\d+:)?\d+\/\d+\.\d+:(ERROR|WARNING|FATAL):/;
@@ -165,8 +172,12 @@ export const devFileDate = (path) => {
   return { y: m[1], mo: m[2], d: m[3] };
 };
 
-// 巻き戻りが「真夜中をまたいだ」ものか、DST の 1 時間戻しかを分ける閾値。
-const HALF_DAY_SECONDS = 12 * 60 * 60;
+// 巻き戻りが「真夜中をまたいだ」ものか、DST の戻しかを分ける閾値。
+// 12 時間にすると、夜のあいだ何も出力せずに走り続けた dev を取りこぼす —
+// 13:00 の次が翌 09:00 なら巻き戻りは 4 時間しかなく、日付が進まないまま
+// 前の行より過去の時刻になる。同じ日のうちに起きうる巻き戻りは DST の秋の戻しだけで、
+// 最大でも 2 時間 (Troll 基地の 2 時間が世界最大)。それを超えたら日をまたいだと見る。
+const MAX_SAME_DAY_REWIND_SECONDS = 2 * 60 * 60;
 
 /**
  * dev ログの行は時刻しか持たず、日付はファイル名から補う。日をまたいで走り続けた
@@ -177,8 +188,8 @@ const readDevEntries = (path, lines) => {
   const date = devFileDate(path);
   if (!date) return [];
   // 日付はカレンダーで進める。固定の 24 時間を足すと、DST のある地域で
-  // 春の切り替え日が 1 時間ずれる。巻き戻りも「真夜中をまたいだ」ときだけ数える —
-  // 秋の切り替えでは 01:59 の次に 01:00 が来るが、日付は変わっていない。
+  // 春の切り替え日が 1 時間ずれる。秋の切り替え (01:59 の次に 01:00) では
+  // 日付が変わっていないので、小さな巻き戻りは日跨ぎとして数えない。
   let dayOffset = 0;
   let previousClock = null;
   const entries = [];
@@ -188,7 +199,7 @@ const readDevEntries = (path, lines) => {
     // 前日のままになる。
     const [first] = parseDevLine(line, date, dayOffset);
     if (!first) continue;
-    if (previousClock !== null && first.clock < previousClock - HALF_DAY_SECONDS) {
+    if (previousClock !== null && first.clock < previousClock - MAX_SAME_DAY_REWIND_SECONDS) {
       dayOffset += 1;
     }
     previousClock = first.clock;
@@ -241,6 +252,9 @@ const PATH_SEGMENT = `[^\\s/\\\\"'\`()]+`;
 const SPACED_SEGMENT = `${PATH_SEGMENT}(?:[ \\t]+${PATH_SEGMENT})*`;
 const ABSOLUTE_PATH = new RegExp(
   [
+    // UNC (\\\\server\\share\\...)。ドライブレターより先に見る —
+    // 後回しにすると `/+` 側が途中から食って先頭の `\\\\server` が残る。
+    `\\\\{2,}(?:${SPACED_SEGMENT}\\\\+)*${PATH_SEGMENT}`,
     `[A-Za-z]:[\\\\/]+(?:${SPACED_SEGMENT}[\\\\/]+)*${PATH_SEGMENT}`,
     // 中間ディレクトリが 0 個でも拾う (`/app` や `/secret.txt` もパスとして扱う)。
     // 直前が英数字なら分数や比 (`1/2`、`(1/2)`) なのでパスとは見なさない。

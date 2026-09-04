@@ -103,6 +103,33 @@ describe("local-log", () => {
     expect(redactSecrets("Bearer safe-token")).toBe("Bearer ***");
   });
 
+  it("camelCase と前置き付きの鍵名も伏せ、秘密でない key は残すこと", () => {
+    // desktop 側 (electron/util/renderer-log.ts) と同じ形を保つ。
+    expect(redactSecrets('{"accessToken":"a.b.c"}')).toBe('{"accessToken":"***"}');
+    expect(redactSecrets("clientSecret: s3cr3t-value")).toBe("clientSecret: ***");
+    expect(redactSecrets("FIGMA_OAUTH_CLIENT_SECRET=abc123")).toBe("FIGMA_OAUTH_CLIENT_SECRET=***");
+    expect(redactSecrets('{"key":"frame-1"}')).toBe('{"key":"frame-1"}');
+    expect(redactSecrets("keyboard shortcut registered")).toBe("keyboard shortcut registered");
+  });
+
+  it("パスワードに @ が入った URL も userinfo 全体を伏せること", () => {
+    expect(redactSecrets("open https://user:p@ss@example.test/y")).toBe(
+      "open https://***@example.test/y",
+    );
+    expect(redactSecrets("mail a@b.test and https://example.test/x")).toBe(
+      "mail a@b.test and https://example.test/x",
+    );
+  });
+
+  it("引数を跨いだ `password:` と値をまとめて伏せること", () => {
+    // console.error("password:", value) の形。1 引数ずつ見ると鍵と値が別々なので
+    // どちらも伏字の条件を満たさない。ここは繋いでから伏せる。
+    const writer = createLocalLogWriter({ dir });
+    writer.write("error", ["client_secret:", "s3cr3t-value"]);
+
+    expect(readFileSync(writer.filePath, "utf8")).not.toContain("s3cr3t-value");
+  });
+
   it("書けない場所でも throw せず、以後は黙ること", () => {
     const blocked = path.join(dir, "not-a-dir");
     writeFileSync(blocked, "occupied");

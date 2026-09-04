@@ -93,6 +93,49 @@ describe("redactSecrets", () => {
     expect(redactSecrets("[main] did-finish-load")).toBe("[main] did-finish-load");
     expect(redactSecrets("token refreshed successfully")).toBe("token refreshed successfully");
   });
+
+  it("このリポジトリが実際に使う camelCase の鍵名を伏せること", () => {
+    // safe-storage.ts が保存するのは accessToken / refreshToken / clientSecret。
+    // snake_case だけを見ていると、この 3 つが素通りする。
+    expect(redactSecrets('{"accessToken":"a.b.c","refreshToken":"d.e.f"}')).toBe(
+      '{"accessToken":"***","refreshToken":"***"}',
+    );
+    expect(redactSecrets("clientSecret: s3cr3t-value")).toBe("clientSecret: ***");
+    expect(redactSecrets("apiKey=abcdef123")).toBe("apiKey=***");
+  });
+
+  it("前置きの付いた環境変数名も伏せること", () => {
+    expect(redactSecrets("FIGMA_OAUTH_CLIENT_SECRET=abc123")).toBe("FIGMA_OAUTH_CLIENT_SECRET=***");
+    expect(redactSecrets("FIGDIFF_API_KEY=abc123")).toBe("FIGDIFF_API_KEY=***");
+  });
+
+  it("秘密でない `key` は伏せないこと (ログが読めなくなるため)", () => {
+    expect(redactSecrets('{"key":"frame-1","name":"Hero"}')).toBe(
+      '{"key":"frame-1","name":"Hero"}',
+    );
+    expect(redactSecrets("cache key: node-42")).toBe("cache key: node-42");
+    expect(redactSecrets("keyboard shortcut registered")).toBe("keyboard shortcut registered");
+    expect(redactSecrets("monkey business as usual")).toBe("monkey business as usual");
+  });
+
+  it("パスワードに @ が入った URL も userinfo 全体を伏せること", () => {
+    // URL としては password=`p@ss`。最初の `@` で止めると `ss` が平文で残る。
+    expect(redactSecrets("open https://user:p@ss@example.test/y failed")).toBe(
+      "open https://***@example.test/y failed",
+    );
+    // URL の外にある `@` (メールアドレス) は触らない。
+    expect(redactSecrets("mail a@b.test and https://example.test/x")).toBe(
+      "mail a@b.test and https://example.test/x",
+    );
+    expect(redactSecrets("https://example.test/p?u=a@b.test")).toBe(
+      "https://example.test/p?u=a@b.test",
+    );
+  });
+
+  it("伏字は冪等であること (main.ts が引数を跨いでもう一度当てるため)", () => {
+    const once = redactSecrets('{"access_token":"a.b.c"} password="hunter2"');
+    expect(redactSecrets(once)).toBe(once);
+  });
 });
 
 describe("formatRendererConsoleMessage", () => {

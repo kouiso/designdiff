@@ -321,3 +321,52 @@ test("日をまたいだ dev ログは翌日として扱う", () => {
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test("夜のあいだ何も出さずに走り続けた dev ログも、翌日として扱う", () =>
+  withTempDir((dir) => {
+    // 13:00 の次が翌 09:00。巻き戻りは 4 時間しかないので、12 時間を閾値にすると
+    // 日が進まず、前の行より過去の時刻の行ができてしまう。
+    const dev = join(dir, "dev-20260902-125900.log");
+    writeFileSync(
+      dev,
+      [
+        "[13:00:00] [err] error before the quiet night",
+        "[09:00:00] [err] error next morning",
+        "",
+      ].join("\n"),
+    );
+
+    const entries = readEntries({ kind: "dev", paths: [dev] });
+    assert.equal(entries.length, 2);
+    assert.equal(new Date(entries[0].time).getDate(), 2);
+    assert.equal(new Date(entries[1].time).getDate(), 3);
+    assert.ok(entries[1].time > entries[0].time);
+  }));
+
+test("classifyDevMessage は記号で終わる level 語も拾う", () => {
+  assert.equal(classifyDevMessage("ERROR! build blew up"), "error");
+  assert.equal(classifyDevMessage("WARNING, deprecated option"), "warn");
+  assert.equal(classifyDevMessage("FATAL. giving up"), "error");
+  // 語が続くものは今まで通り拾わない。
+  assert.equal(classifyDevMessage("error-boundary.tsx compiled"), "info");
+  assert.equal(classifyDevMessage("errors happened later"), "info");
+});
+
+test("normalizeMessage は UNC パスも basename にする", () => {
+  const normalized = normalizeMessage("read \\\\nas01\\share\\My Docs\\secret.png failed");
+  assert.equal(normalized, "read secret.png failed");
+});
+
+test("mcpLogDir は環境変数の前後の空白を落としてから解決する", () => {
+  // サーバー側 (figdiff-paths.ts の readEnvDir) が trim してから resolve するので、
+  // ここで trim しないと書き手と読み手が別のディレクトリを指す。
+  assert.equal(
+    mcpLogDir({ home: "/h", env: { FIGDIFF_LOGS_DIR: " /custom/logs \n" } }),
+    "/custom/logs",
+  );
+  assert.equal(mcpLogDir({ home: "/h", env: { FIGDIFF_HOME: "  /fh  " } }), join("/fh", "logs"));
+  assert.equal(
+    mcpLogDir({ home: "/h", env: { FIGDIFF_LOGS_DIR: "   " } }),
+    join("/h", ".figdiff", "logs"),
+  );
+});
