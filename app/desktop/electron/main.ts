@@ -12,7 +12,7 @@ import { registerOverlayHandlers } from "./ipc/overlay";
 import { registerProjectHandlers } from "./ipc/project";
 import { registerTokenHandlers } from "./ipc/token";
 import { migrateCredentials } from "./util/migrate-credentials";
-import { attachRendererConsoleForwarding } from "./util/renderer-log";
+import { attachRendererConsoleForwarding, sanitizeLogArgument } from "./util/renderer-log";
 
 // ログはファイルにも残す。以前は端末に流れて消えるだけで、packaged app で何が起きたかは
 // 誰にも分からなかった。場所は起動時に 1 行出す (whenReady 内)。
@@ -34,6 +34,10 @@ log.transports.file.resolvePathFn = (variables) =>
       : join(variables.appData, "FigDiff", "logs"),
     variables.fileName ?? "main.log",
   );
+log.hooks.push((message) => ({
+  ...message,
+  data: message.data.map(sanitizeLogArgument),
+}));
 Object.assign(console, log.functions);
 
 const ALLOWED_EXTERNAL_HOSTS = ["figma.com", "github.com"];

@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import * as path from "node:path";
 
@@ -46,6 +46,20 @@ describe("local-log", () => {
     );
   });
 
+  it("rotationのEISDIRを成功扱いせずwriterを停止すること", () => {
+    const writer = createLocalLogWriter({ dir, maxBytes: 1 });
+    writer.write("info", ["first"]);
+    mkdirSync(path.join(dir, "mcp-server.old.log"));
+    const stderr = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+
+    writer.write("info", ["must not be appended"]);
+    writer.write("info", ["still disabled"]);
+
+    expect(readFileSync(writer.filePath, "utf8")).not.toContain("must not be appended");
+    expect(stderr).toHaveBeenCalledTimes(1);
+    stderr.mockRestore();
+  });
+
   it("永続ログへ認証情報を書かんこと", () => {
     const writer = createLocalLogWriter({ dir });
     writer.write("error", ["figd_secret-123", "Bearer eyJ.secret", "ghp_abcdef123456"]);
@@ -55,6 +69,68 @@ describe("local-log", () => {
     expect(text).not.toContain("eyJ.secret");
     expect(text).not.toContain("ghp_abcdef123456");
     expect(redactSecrets("Bearer safe-token")).toBe("Bearer ***");
+    expect(redactSecrets("FIGD_SECRET X-Figma-Token: abc access_token=xyz")).toBe(
+      "figd_*** X-Figma-Token: *** access_token=***",
+    );
+  });
+
+  it("JSON tokenと空白を含む各OSパスを伏せ、特殊値も記録できること", () => {
+    const writer = createLocalLogWriter({ dir });
+    writer.write("error", [
+      '{"access_token":"secret value"}',
+      "/Users/x/Patient Name/a.png",
+      "C:\\Users\\John Doe\\b.png",
+      "\\\\server\\share\\Jane Doe\\c.png",
+      undefined,
+      Symbol("safe"),
+    ]);
+    const text = readFileSync(writer.filePath, "utf8");
+    expect(text).not.toMatch(/secret value|Patient Name|John Doe|Jane Doe/);
+    expect(text).toContain("a.png b.png c.png undefined Symbol(safe)");
+  });
+
+  it("URL内のtokenも伏せること", () => {
+    const sanitized = redactSecrets(
+      "GET https://example.test/api?token=figd_SECRET&access_token=ghp_abcdef123456&next=ok",
+    );
+    expect(sanitized).not.toMatch(/SECRET|ghp_abcdef123456/);
+    expect(sanitized).toContain("https://example.test/api");
+    expect(sanitized).toContain("next=ok");
+  });
+
+  it("escaped JSON、汎用secret、URL passwordを伏せ、特殊値後も書き続けること", () => {
+    const writer = createLocalLogWriter({ dir });
+    const cyclic = Object.create(null) as Record<string, unknown>;
+    cyclic.self = cyclic;
+    const hostile = {
+      toJSON: () => {
+        throw new Error("json failed");
+      },
+      toString: () => {
+        throw new Error("string failed");
+      },
+    };
+    writer.write("error", [
+      '{"token":"secret \\"quoted\\" tail"}',
+      "api_key=generic-api refresh_token=generic-refresh client_secret=generic-client",
+      "https://user:url-password@example.test/path",
+      cyclic,
+      hostile,
+    ]);
+    writer.write("info", ["still alive"]);
+    const text = readFileSync(writer.filePath, "utf8");
+    expect(text).not.toMatch(/quoted|tail|generic-api|generic-refresh|generic-client|url-password/);
+    expect(text.match(/\[unserializable\]/g)).toHaveLength(2);
+    expect(text).toContain("still alive");
+  });
+
+  it("同じ console へ二度導入しても二重記録しないこと", () => {
+    const target = { error: vi.fn(), warn: vi.fn(), info: vi.fn() };
+    const first = installLocalLog({ dir }, target, {});
+    const second = installLocalLog({ dir }, target, {});
+    expect(second).toBe(first);
+    target.info("once");
+    expect(readFileSync(first?.filePath ?? "", "utf8").match(/once/g)).toHaveLength(1);
   });
 
   it("書けない場所でも throw せず、以後は黙ること", () => {

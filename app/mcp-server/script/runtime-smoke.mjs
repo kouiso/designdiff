@@ -3,13 +3,17 @@ import { access } from "node:fs/promises";
 import { resolve } from "node:path";
 
 const entry = resolve("dist/index.js");
+const MAX_TIMER_MS = 2_147_483_647;
 const readDuration = (envName, fallbackMs, minMs) => {
   const rawValue = process.env[envName];
   if (!rawValue) return fallbackMs;
 
-  const parsedValue = Number.parseInt(rawValue, 10);
-  if (!Number.isFinite(parsedValue) || parsedValue < minMs) {
-    throw new Error(`${envName} must be an integer >= ${minMs}.`);
+  if (!/^\d+$/.test(rawValue)) {
+    throw new Error(`${envName} must be an integer between ${minMs} and ${MAX_TIMER_MS}.`);
+  }
+  const parsedValue = Number(rawValue);
+  if (!Number.isSafeInteger(parsedValue) || parsedValue < minMs || parsedValue > MAX_TIMER_MS) {
+    throw new Error(`${envName} must be an integer between ${minMs} and ${MAX_TIMER_MS}.`);
   }
 
   return parsedValue;
@@ -91,10 +95,22 @@ if (stdoutOverflowed) {
 const isJsonRpcMessage = (value) => {
   if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
   if (value.jsonrpc !== "2.0") return false;
-  if (typeof value.method === "string") return true; // request または notification
+  const hasId = Object.hasOwn(value, "id");
+  const validId =
+    value.id === null ||
+    typeof value.id === "string" ||
+    (typeof value.id === "number" && Number.isFinite(value.id));
+  if (typeof value.method === "string") return !hasId || validId; // request または notification
   const hasResult = Object.hasOwn(value, "result");
-  const hasError = typeof value.error === "object" && value.error !== null;
-  return (hasResult || hasError) && Object.hasOwn(value, "id");
+  const error = value.error;
+  const hasError =
+    typeof error === "object" &&
+    error !== null &&
+    !Array.isArray(error) &&
+    Number.isInteger(error.code) &&
+    typeof error.message === "string";
+  if (hasResult && Object.hasOwn(value, "error")) return false;
+  return (hasResult || hasError) && hasId && validId;
 };
 
 // stdout は JSON-RPC の本線。依存ライブラリやログが stderr 以外へ漏れていないか

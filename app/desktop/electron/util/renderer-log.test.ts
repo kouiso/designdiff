@@ -5,6 +5,8 @@ import {
   basenameOf,
   formatRendererConsoleMessage,
   redactSecrets,
+  sanitizeLogArgument,
+  sanitizeLogText,
   toLogLevel,
 } from "./renderer-log";
 
@@ -20,7 +22,7 @@ describe("toLogLevel", () => {
   });
 
   it("知らない値は info に落とすこと", () => {
-    expect(toLogLevel("verbose")).toBe("info");
+    expect(toLogLevel("verbose")).toBe("debug");
     expect(toLogLevel("")).toBe("info");
   });
 });
@@ -44,9 +46,46 @@ describe("redactSecrets", () => {
   it("Figma PAT と Bearer トークンを伏せること", () => {
     expect(redactSecrets("token figd_abc-DEF_123 saved")).toBe("token figd_*** saved");
     expect(redactSecrets("token ghp_abcdef123456 saved")).toBe("token [REDACTED] saved");
-    expect(redactSecrets("Authorization: Bearer eyJ.abc-def_ghi")).toBe(
-      "Authorization: Bearer ***",
+    expect(redactSecrets("Authorization: Bearer eyJ.abc-def_ghi")).toBe("Authorization: ***");
+    expect(redactSecrets("FIGD_SECRET X-Figma-Token=abc access_token='xyz'")).toBe(
+      "figd_*** X-Figma-Token=*** access_token=***",
     );
+  });
+
+  it("JSON tokenと空白を含む各OSパスを伏せ、URLを保つこと", () => {
+    const text = sanitizeLogText(
+      '{"access_token":"secret value"} /Users/x/Patient Name/a.png C:\\Users\\John Doe\\b.png \\\\server\\share\\Jane Doe\\c.png https://example.test/a/b?token=figd_URL_SECRET',
+    );
+    expect(text).not.toMatch(/secret value|Patient Name|John Doe|Jane Doe|URL_SECRET/);
+    expect(text).toContain("a.png b.png c.png");
+    expect(text).toContain("https://example.test/a/b");
+  });
+
+  it("main引数向けサニタイズも8192文字を超えないこと", () => {
+    expect(sanitizeLogText("x".repeat(20_000))).toHaveLength(8192);
+  });
+
+  it("escaped JSON、汎用secret、URL passwordを値全体で伏せること", () => {
+    const text = sanitizeLogText(
+      '{"token":"secret \\"quoted\\" tail"} api_key=generic-api refresh_token=generic-refresh client_secret=generic-client https://user:url-password@example.test/path',
+    );
+    expect(text).not.toMatch(/quoted|tail|generic-api|generic-refresh|generic-client|url-password/);
+  });
+
+  it("循環null-prototypeとstring化例外でもloggerを止めないこと", () => {
+    const cyclic = Object.create(null) as Record<string, unknown>;
+    cyclic.self = cyclic;
+    const hostile = {
+      toJSON: () => {
+        throw new Error("json failed");
+      },
+      toString: () => {
+        throw new Error("string failed");
+      },
+    };
+    expect(sanitizeLogArgument(cyclic)).toBe("[unserializable]");
+    expect(sanitizeLogArgument(hostile)).toBe("[unserializable]");
+    expect(sanitizeLogArgument("still alive")).toBe("still alive");
   });
 
   it("秘密が無ければ変えないこと", () => {
@@ -64,6 +103,17 @@ describe("formatRendererConsoleMessage", () => {
         lineNumber: 42,
       }),
     ).toBe("[renderer] compare failed for figd_*** (convergence-store.ts:42)");
+  });
+
+  it("長大な renderer 出力を上限内へ切ること", () => {
+    const text = formatRendererConsoleMessage({
+      level: "info",
+      message: "x".repeat(5000),
+      sourceId: "",
+      lineNumber: 0,
+    });
+    expect(text).toHaveLength(2048);
+    expect(text).toMatch(/\[truncated\]$/);
   });
 });
 
