@@ -3,7 +3,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 // 起動処理は読み込んだだけで走る。境界を全部差し替えて、登録した処理を
 // 後から呼ぶ形で確かめる。
 type ResolvePathFn = (variables: { home: string; appData: string; fileName?: string }) => string;
-type LogHookMessage = { data: unknown[]; level: string };
+interface LogHookMessage {
+  data: unknown[];
+  level: string;
+}
 type LogHook = (message: LogHookMessage) => LogHookMessage;
 
 const mocks = vi.hoisted(() => {
