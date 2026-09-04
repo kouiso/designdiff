@@ -146,24 +146,52 @@ export const devFileDate = (path) => {
   return { y: m[1], mo: m[2], d: m[3] };
 };
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * dev ログの行は時刻しか持たず、日付はファイル名から補う。日をまたいで走り続けた
+ * セッションでは 23:59 の次が 00:00 になるので、時刻が巻き戻ったところで 1 日進める
+ * (tee は時系列に書くため、巻き戻り = 日付が変わった)。
+ */
+const readDevEntries = (path, lines) => {
+  const date = devFileDate(path);
+  if (!date) return [];
+  const entries = [];
+  let dayShift = 0;
+  let previous = null;
+  for (const line of lines) {
+    for (const entry of parseDevLine(line, date)) {
+      let time = entry.time + dayShift;
+      if (previous !== null && time < previous) {
+        dayShift += DAY_MS;
+        time += DAY_MS;
+      }
+      previous = time;
+      entries.push({ ...entry, time, source: "dev", file: path, raw: line });
+    }
+  }
+  return entries;
+};
+
+const readAppEntries = (path, lines, kind) => {
+  const entries = [];
+  for (const line of lines) {
+    const entry = parseElectronLine(line);
+    if (entry) entries.push({ ...entry, source: kind, file: path, raw: line });
+  }
+  return entries;
+};
+
 export const readEntries = (source) => {
   const entries = [];
   for (const path of source.paths) {
     if (!existsSync(path)) continue;
     const lines = readFileSync(path, "utf8").split("\n");
-    if (source.kind === "dev") {
-      const date = devFileDate(path);
-      if (!date) continue;
-      for (const line of lines) {
-        for (const entry of parseDevLine(line, date))
-          entries.push({ ...entry, source: source.kind, file: path, raw: line });
-      }
-    } else {
-      for (const line of lines) {
-        const entry = parseElectronLine(line);
-        if (entry) entries.push({ ...entry, source: source.kind, file: path, raw: line });
-      }
-    }
+    entries.push(
+      ...(source.kind === "dev"
+        ? readDevEntries(path, lines)
+        : readAppEntries(path, lines, source.kind)),
+    );
   }
   return entries;
 };

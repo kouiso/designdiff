@@ -46,12 +46,24 @@ export const basenameOf = (source: string): string => {
   return segments[segments.length - 1] ?? "";
 };
 
-/** Figma の PAT と Bearer トークンはログに残さない。 */
+/**
+ * ログファイルに残る前の最後の砦。renderer が fetch のレスポンスや URL をそのまま
+ * console に吐いた場合を想定し、トークンの形 (Figma PAT / GitHub token / Bearer) と
+ * `token=` `client_secret: "..."` のような key=value の両方を伏せる。
+ * mcp-server 側の `tool/error.ts` `service/github-service.ts` と同じ形を揃えている。
+ */
+const FIGMA_PAT = /figd_[A-Za-z0-9_-]+/g;
+const GITHUB_TOKEN = /\b(?:gh[pousr]|github_pat)_[A-Za-z0-9_]+\b/g;
+const BEARER_TOKEN = /\bBearer\s+[A-Za-z0-9._~+/=-]+/g;
+const KEYED_SECRET =
+  /\b((?:access_|refresh_|id_|api_|auth_)?token|client_secret|secret|password|api[_-]?key)(["']?\s*[:=]\s*["']?)[^\s"'&,;]+/gi;
+
 export const redactSecrets = (text: string): string =>
   text
-    .replace(/figd_[A-Za-z0-9_-]+/g, "figd_***")
-    .replace(/\b(?:gh[pousr]|github_pat)_[A-Za-z0-9_]+\b/g, "[REDACTED]")
-    .replace(/\bBearer\s+[A-Za-z0-9._~+/=-]+/g, "Bearer ***");
+    .replace(FIGMA_PAT, "figd_***")
+    .replace(GITHUB_TOKEN, "[REDACTED]")
+    .replace(BEARER_TOKEN, "Bearer ***")
+    .replace(KEYED_SECRET, (_match, key: string, separator: string) => `${key}${separator}***`);
 
 export const formatRendererConsoleMessage = (details: RendererConsoleDetails): string =>
   redactSecrets(

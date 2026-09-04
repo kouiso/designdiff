@@ -38,12 +38,24 @@ const stringify = (value: unknown): string => {
   }
 };
 
-/** 永続ログへ書く直前に、既知の認証情報を必ず伏せる。 */
+/**
+ * 永続ログへ書く直前に、既知の認証情報を必ず伏せる。
+ * 呼び出し側 (formatMcpToolError など) が伏せてくれる前提には立たない —
+ * 直接 console.error(rawError) する箇所が 1 つでも増えたら、ここが無ければ
+ * 平文でディスクに残るため。形は app/desktop の renderer-log と揃えている。
+ */
+const FIGMA_PAT = /figd_[A-Za-z0-9_-]+/g;
+const GITHUB_TOKEN = /\b(?:gh[pousr]|github_pat)_[A-Za-z0-9_]+\b/g;
+const BEARER_TOKEN = /\bBearer\s+[A-Za-z0-9._~+/=-]+/g;
+const KEYED_SECRET =
+  /\b((?:access_|refresh_|id_|api_|auth_)?token|client_secret|secret|password|api[_-]?key)(["']?\s*[:=]\s*["']?)[^\s"'&,;]+/gi;
+
 export const redactSecrets = (text: string): string =>
   text
-    .replace(/figd_[A-Za-z0-9_-]+/g, "figd_***")
-    .replace(/\b(?:gh[pousr]|github_pat)_[A-Za-z0-9_]+\b/g, "[REDACTED]")
-    .replace(/\bBearer\s+[A-Za-z0-9._~+/=-]+/g, "Bearer ***");
+    .replace(FIGMA_PAT, "figd_***")
+    .replace(GITHUB_TOKEN, "[REDACTED]")
+    .replace(BEARER_TOKEN, "Bearer ***")
+    .replace(KEYED_SECRET, (_match, key: string, separator: string) => `${key}${separator}***`);
 
 export interface LocalLogOptions {
   readonly dir?: string;

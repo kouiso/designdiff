@@ -201,3 +201,22 @@ test("readEntries は実ファイルから読み、summarize / formatTable が�
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test("日をまたいだ dev ログは翌日として扱う", () => {
+  const dir = mkdtempSync(join(tmpdir(), "figdiff-digest-"));
+  try {
+    const dev = join(dir, "dev-20260902-235900.log");
+    writeFileSync(
+      dev,
+      ["[23:59:59] [err] error before midnight", "[00:00:01] [err] error after midnight", ""].join(
+        "\n",
+      ),
+    );
+    const entries = readEntries({ kind: "dev", paths: [dev] });
+    assert.equal(entries.length, 2);
+    assert.equal(entries[1].time - entries[0].time, 2000);
+    assert.equal(new Date(entries[1].time).getDate(), 3);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
