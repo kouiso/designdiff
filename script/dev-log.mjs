@@ -165,11 +165,14 @@ export const runTee = ({ command, args, cwd, env, logDir, onStarted, stdin = pro
     let written = 0;
     const sink = (text) => {
       if (!logging) return;
-      if (written >= MAX_FILE_BYTES) {
+      // 1 行が上限より大きいこともある (改行なしで延々と出す子)。書いた後ではなく
+      // 書く前に、この 1 回分を足した結果で判定する。
+      const size = Buffer.byteLength(text);
+      if (written + size > MAX_FILE_BYTES) {
         stopLogging(`over ${MAX_FILE_BYTES} bytes`);
         return;
       }
-      written += Buffer.byteLength(text);
+      written += size;
       file.write(text);
     };
     const out = createLineWriter(sink, "out");

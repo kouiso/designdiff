@@ -63,6 +63,20 @@ describe("redactSecrets", () => {
     expect(redactSecrets("client_secret: s3cr3t-value")).toBe("client_secret: ***");
   });
 
+  it("引用符付きの値は閉じ引用符まで伏せること", () => {
+    expect(redactSecrets('password="correct horse battery staple"')).toBe('password="***"');
+    expect(redactSecrets("client_secret: 's3cr3t value here'")).toBe("client_secret: '***'");
+  });
+
+  it("URL の userinfo も伏せること", () => {
+    expect(redactSecrets("open https://alice:s3cr3t@example.com/x failed")).toBe(
+      "open https://***@example.com/x failed",
+    );
+    expect(redactSecrets("open https://example.com/x failed")).toBe(
+      "open https://example.com/x failed",
+    );
+  });
+
   it("秘密が無ければ変えないこと", () => {
     expect(redactSecrets("[main] did-finish-load")).toBe("[main] did-finish-load");
     expect(redactSecrets("token refreshed successfully")).toBe("token refreshed successfully");

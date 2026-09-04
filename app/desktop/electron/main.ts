@@ -36,15 +36,37 @@ log.transports.file.resolvePathFn = (variables) =>
       : join(variables.appData, "FigDiff", "logs"),
     variables.fileName ?? "main.log",
   );
+/**
+ * 文字列だけを伏せると、Error やオブジェクトに紛れた認証情報が素通りする
+ * (例: ipc/overlay.ts は loadURL 失敗時に候補 URL と Error を一緒に出す)。
+ * electron-log が並べる形に近い文字列へ落としてから伏せ、伏字が必要だったものだけ
+ * 文字列に差し替える。無害な値は元のまま渡し、表示の質を落とさない。
+ */
+const redactLogArgument = (item: unknown): unknown => {
+  if (typeof item === "string") return redactSecrets(item);
+  if (item instanceof Error) {
+    const serialized = item.stack ?? `${item.name}: ${item.message}`;
+    const redacted = redactSecrets(serialized);
+    return redacted === serialized ? item : redacted;
+  }
+  if (typeof item !== "object" || item === null) return item;
+  let serialized: string;
+  try {
+    serialized = JSON.stringify(item) ?? String(item);
+  } catch {
+    return "[unserializable]";
+  }
+  const redacted = redactSecrets(serialized);
+  return redacted === serialized ? item : redacted;
+};
+
 // ファイルに残る全ての行を伏字に通す。renderer 経由だけを伏せても、main 側の
 // console (例: electron/ipc/overlay.ts が読み込み失敗時に出す候補 URL) は素通りで、
 // URL に token や userinfo が入っていれば平文でディスクに残る。
 log.hooks.push(
   (message: LogMessage): LogMessage => ({
     ...message,
-    data: message.data.map((item: unknown) =>
-      typeof item === "string" ? redactSecrets(item) : item,
-    ),
+    data: message.data.map(redactLogArgument),
   }),
 );
 Object.assign(console, log.functions);

@@ -15,7 +15,8 @@
     "lint": "biome check src/",
     "lint:fix": "biome check --write src/",
     "dev": "tsc --watch",
-    "test": "vitest run",
+    "test": "vitest run && node script/runtime-smoke-selftest.mjs",
+    "test:smoke-selftest": "node script/runtime-smoke-selftest.mjs",
     "test:coverage": "vitest run --coverage",
     "prebuild": "pnpm --filter @figdiff/credential-store build"
   },

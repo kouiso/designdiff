@@ -212,6 +212,20 @@ test("readEntries は実ファイルから読み、summarize / formatTable が�
   }
 });
 
+test("時刻が少しだけ戻っても (DST の 1 時間戻し) 日は進めない", () =>
+  withTempDir((dir) => {
+    const dev = join(dir, "dev-20260902-013000.log");
+    writeFileSync(
+      dev,
+      ["[01:59:00] [err] error before", "[01:00:00] [err] error after", ""].join("\n"),
+    );
+
+    const entries = readEntries({ kind: "dev", paths: [dev] });
+    assert.equal(entries.length, 2);
+    assert.equal(new Date(entries[0].time).getDate(), 2);
+    assert.equal(new Date(entries[1].time).getDate(), 2);
+  }));
+
 test("mcpLogDir は FIGDIFF_LOGS_DIR を優先する", () => {
   assert.equal(
     mcpLogDir({ home: "/h", env: { FIGDIFF_LOGS_DIR: "/custom/logs" } }),
@@ -253,6 +267,21 @@ test("readEntries は読めないファイルがあっても残りを返す", ()
     const entries = readEntries({ kind: "dev", paths: [missing, good] });
     assert.equal(entries.length, 1);
     assert.equal(entries[0].message, "error real one");
+  }));
+
+test("normalizeMessage はルート直下のパスも basename にする", () => {
+  assert.equal(normalizeMessage("failed /app and /secret.txt"), "failed app and secret.txt");
+});
+
+test("readEntries は大量の行でも RangeError にならない", () =>
+  withTempDir((dir) => {
+    const dev = join(dir, "dev-20260902-100000.log");
+    const lines = [];
+    for (let i = 0; i < 200_000; i += 1) lines.push("[10:00:00] [err] error many");
+    writeFileSync(dev, `${lines.join("\n")}\n`);
+
+    const entries = readEntries({ kind: "dev", paths: [dev] });
+    assert.equal(entries.length, 200_000);
   }));
 
 test("日をまたいだ dev ログは翌日として扱う", () => {

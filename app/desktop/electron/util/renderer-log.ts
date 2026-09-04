@@ -58,15 +58,26 @@ export const basenameOf = (source: string): string => {
 const FIGMA_PAT = /figd_[A-Za-z0-9_-]+/g;
 const GITHUB_TOKEN = /\b(?:gh[pousr]|github_pat)_[A-Za-z0-9_]+\b/g;
 const BEARER_TOKEN = /\bBearer\s+[A-Za-z0-9._~+/=-]+/g;
-const KEYED_SECRET =
-  /\b((?:access_|refresh_|id_|api_|auth_)?token|client_secret|secret|password|api[_-]?key)(["']?\s*[:=]\s*["']?)[^\s"'&,;]+/gi;
+const SECRET_KEY =
+  "(?:access_|refresh_|id_|api_|auth_)?token|client_secret|secret|password|api[_-]?key";
+// 引用符付きの値は閉じ引用符まで飲む。空白や `,` で止めると
+// `password="correct horse battery staple"` が先頭だけ伏字になって残る。
+const QUOTED_SECRET = new RegExp(
+  `\\b((?:${SECRET_KEY})["']?\\s*[:=]\\s*)(["'])(?:\\\\.|[^\\\\])*?\\2`,
+  "gi",
+);
+const BARE_SECRET = new RegExp(`\\b((?:${SECRET_KEY})["']?\\s*[:=]\\s*)[^\\s"'&,;]+`, "gi");
+// URL の userinfo (https://alice:s3cr3t@host)。鍵の名前が付かないので上の 2 つでは拾えない。
+const URL_USERINFO = /\b([a-zA-Z][\w+.-]*:\/\/)[^/\s:@]+(?::[^/\s@]*)?@/g;
 
 export const redactSecrets = (text: string): string =>
   text
     .replace(FIGMA_PAT, "figd_***")
     .replace(GITHUB_TOKEN, "[REDACTED]")
     .replace(BEARER_TOKEN, "Bearer ***")
-    .replace(KEYED_SECRET, (_match, key: string, separator: string) => `${key}${separator}***`);
+    .replace(URL_USERINFO, (_match, scheme: string) => `${scheme}***@`)
+    .replace(QUOTED_SECRET, (_match, head: string, quote: string) => `${head}${quote}***${quote}`)
+    .replace(BARE_SECRET, (_match, head: string) => `${head}***`);
 
 export const formatRendererConsoleMessage = (details: RendererConsoleDetails): string =>
   redactSecrets(

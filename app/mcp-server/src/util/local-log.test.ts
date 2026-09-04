@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import * as path from "node:path";
 
@@ -47,6 +47,27 @@ describe("local-log", () => {
     expect(text).not.toContain("figd_abcdef0123");
     expect(text).not.toContain("ghp_ZZZ999abc");
     expect(text).not.toContain("a.b.c");
+  });
+
+  it("引用符付きの値と URL の userinfo も伏せること", () => {
+    expect(redactSecrets('password="correct horse battery staple"')).toBe('password="***"');
+    expect(redactSecrets("open https://alice:s3cr3t@example.com/x")).toBe(
+      "open https://***@example.com/x",
+    );
+  });
+
+  it("回せない理由が競合以外なら握り潰さんこと", () => {
+    const writer = createLocalLogWriter({ dir, maxBytes: 64 });
+    writer.write("info", ["x".repeat(80)]);
+    // .old.log をディレクトリにして rename を EEXIST/ENOTEMPTY で失敗させる。
+    rmSync(path.join(dir, "mcp-server.old.log"), { force: true });
+    mkdirSync(path.join(dir, "mcp-server.old.log"));
+    mkdirSync(path.join(dir, "mcp-server.old.log", "keep"));
+    writer.write("info", ["after failed rotation"]);
+
+    // broken 扱いになるので、以後は書かない (上限を超えたまま追記し続けない)。
+    const text = readFileSync(writer.filePath, "utf8");
+    expect(text).not.toContain("after failed rotation");
   });
 
   it("秘密が無い行は素通しすること", () => {

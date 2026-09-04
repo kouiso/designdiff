@@ -327,6 +327,17 @@ describe("起動処理", () => {
 
     expect(result.data[0]).toBe("[overlay] load failed: https://example.test/?token=***");
     expect(result.data[1]).toEqual({ keep: true });
+
+    // 文字列以外に紛れた認証情報も伏せる (overlay は Error も一緒に出す)。
+    const withError = hook({
+      data: [new Error("load failed for https://example.test/?token=abc123")],
+      level: "error",
+    });
+    expect(String(withError.data[0])).toContain("token=***");
+    expect(String(withError.data[0])).not.toContain("abc123");
+
+    const withObject = hook({ data: [{ url: "https://alice:pw@example.test/" }], level: "warn" });
+    expect(String(withObject.data[0])).toContain("***@example.test");
   });
 
   it("dev 起動なら DevTools を開き、FIGDIFF_DEVTOOLS=0 なら開かんこと", async () => {

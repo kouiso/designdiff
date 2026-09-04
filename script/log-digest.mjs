@@ -130,16 +130,22 @@ export const parseElectronLine = (line) => {
 };
 
 /** dev ログ 1 行。`\r` で区切った各断片を独立した行として判定する。 */
-export const parseDevLine = (line, fileDate) => {
+/**
+ * dayOffset はファイル名の日付から進めるカレンダー日数。Date に日を足させるので、
+ * DST のある地域でも 1 日は 1 日として扱われる (固定の 24 時間を足さない)。
+ * clock は「その行の時刻が 0 時から何秒か」。日跨ぎの判定に使う。
+ */
+export const parseDevLine = (line, fileDate, dayOffset = 0) => {
   const m = DEV_LINE.exec(line);
   if (!m) return [];
-  const time = toEpoch(fileDate.y, fileDate.mo, fileDate.d, m[1], m[2], m[3]);
+  const time = toEpoch(fileDate.y, fileDate.mo, Number(fileDate.d) + dayOffset, m[1], m[2], m[3]);
+  const clock = Number(m[1]) * 3600 + Number(m[2]) * 60 + Number(m[3]);
   const stream = m[4];
   return stripAnsi(m[5])
     .split("\r")
     .map((fragment) => fragment.replace(TURBO_PREFIX, "").trim())
     .filter((fragment) => fragment.length > 0)
-    .map((message) => ({ time, level: classifyDevMessage(message), stream, message }));
+    .map((message) => ({ time, clock, level: classifyDevMessage(message), stream, message }));
 };
 
 export const classifyDevMessage = (message) => {
@@ -159,7 +165,8 @@ export const devFileDate = (path) => {
   return { y: m[1], mo: m[2], d: m[3] };
 };
 
-const DAY_MS = 24 * 60 * 60 * 1000;
+// 巻き戻りが「真夜中をまたいだ」ものか、DST の 1 時間戻しかを分ける閾値。
+const HALF_DAY_SECONDS = 12 * 60 * 60;
 
 /**
  * dev ログの行は時刻しか持たず、日付はファイル名から補う。日をまたいで走り続けた
@@ -169,18 +176,21 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 const readDevEntries = (path, lines) => {
   const date = devFileDate(path);
   if (!date) return [];
+  // 日付はカレンダーで進める。固定の 24 時間を足すと、DST のある地域で
+  // 春の切り替え日が 1 時間ずれる。巻き戻りも「真夜中をまたいだ」ときだけ数える —
+  // 秋の切り替えでは 01:59 の次に 01:00 が来るが、日付は変わっていない。
+  let dayOffset = 0;
+  let previousClock = null;
   const entries = [];
-  let dayShift = 0;
-  let previous = null;
   for (const line of lines) {
-    for (const entry of parseDevLine(line, date)) {
-      let time = entry.time + dayShift;
-      if (previous !== null && time < previous) {
-        dayShift += DAY_MS;
-        time += DAY_MS;
+    for (const entry of parseDevLine(line, date, dayOffset)) {
+      if (previousClock !== null && entry.clock < previousClock - HALF_DAY_SECONDS) {
+        dayOffset += 1;
+        const [shifted] = parseDevLine(line, date, dayOffset);
+        if (shifted) entry.time = shifted.time;
       }
-      previous = time;
-      entries.push({ ...entry, time, source: "dev", file: path, raw: line });
+      previousClock = entry.clock;
+      entries.push({ ...entry, source: "dev", file: path, raw: line });
     }
   }
   return entries;
@@ -208,11 +218,13 @@ export const readEntries = (source) => {
       process.stderr.write(`skip ${path}: ${error.message}\n`);
       continue;
     }
-    entries.push(
-      ...(source.kind === "dev"
+    // spread で push すると、行数が多いログで引数の上限に当たって
+    // RangeError: Maximum call stack size exceeded になる (.logs は 50MiB まで許す)。
+    const parsed =
+      source.kind === "dev"
         ? readDevEntries(path, lines)
-        : readAppEntries(path, lines, source.kind)),
-    );
+        : readAppEntries(path, lines, source.kind);
+    for (const entry of parsed) entries.push(entry);
   }
   return entries;
 };
@@ -227,7 +239,9 @@ const SPACED_SEGMENT = `${PATH_SEGMENT}(?:[ \\t]+${PATH_SEGMENT})*`;
 const ABSOLUTE_PATH = new RegExp(
   [
     `[A-Za-z]:[\\\\/]+(?:${SPACED_SEGMENT}[\\\\/]+)*${PATH_SEGMENT}`,
-    `/+(?:${SPACED_SEGMENT}/+)*${SPACED_SEGMENT}/+${PATH_SEGMENT}`,
+    // 中間ディレクトリが 0 個でも拾う (`/app` や `/secret.txt` もパスとして扱う)。
+    // 直前が英数字なら分数や比 (`1/2`、`(1/2)`) なのでパスとは見なさない。
+    `(?<![\\w])/+(?:${SPACED_SEGMENT}/+)*${PATH_SEGMENT}`,
   ].join("|"),
   "g",
 );
