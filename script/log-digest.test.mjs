@@ -168,6 +168,15 @@ test("normalizeMessage はURL内のtokenも伏せる", () => {
   assert.match(normalized, /next=ok/);
 });
 
+test("normalizeMessage は閉じ引用符の無い値で次の行を巻き込まない", () => {
+  // 改行を越える一致は、間のログ行を丸ごと消してしまう。
+  const kv = normalizeMessage('password="unterminated\n[main] user said "hello" here\n[main] next');
+  assert.match(kv, /\[main\] user said "hello" here/);
+  assert.match(kv, /password=\*\*\*/);
+  const json = normalizeMessage('{"password":"unterminated\n[main] said "hello": 1\n[main] next');
+  assert.match(json, /\[main\] said "hello"/);
+});
+
 test("dedupe は main.log と dev ログの同じ行を ±5 秒で 1 件に畳み、app を残す", () => {
   const entries = [
     { source: "app", time: at(10, 0, 0) + 200, level: "warn", message: "[main] slow 12ms" },

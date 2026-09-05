@@ -72,6 +72,17 @@ describe("redactSecrets", () => {
     expect(text).not.toMatch(/quoted|tail|generic-api|generic-refresh|generic-client|url-password/);
   });
 
+  it("閉じ引用符の無い値が次の行を巻き込まないこと", () => {
+    // sanitizeLogArgument は Error のスタック (複数行) をそのまま通す。
+    // 引用符付きの一致に改行を許すと、次の行の引用符まで飲んで間のログを消す。
+    const kv = 'password="unterminated\n[main] user said "hello" to nobody\n[main] next line';
+    expect(redactSecrets(kv)).toBe(
+      'password=***\n[main] user said "hello" to nobody\n[main] next line',
+    );
+    const json = '{"password":"unterminated\n[main] said "hello": 1\n[main] next';
+    expect(redactSecrets(json)).toBe('{"password":***\n[main] said "hello": 1\n[main] next');
+  });
+
   it("循環null-prototypeとstring化例外でもloggerを止めないこと", () => {
     const cyclic = Object.create(null) as Record<string, unknown>;
     cyclic.self = cyclic;

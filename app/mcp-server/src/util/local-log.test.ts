@@ -98,6 +98,15 @@ describe("local-log", () => {
     expect(sanitized).toContain("next=ok");
   });
 
+  it("閉じ引用符の無い値が次の行を巻き込まないこと", () => {
+    // write は params を繋いで 1 本の複数行文字列として伏せる。
+    // 改行を越える一致は、秘密と無関係な次の行まで *** に置き換えて保存してしまう。
+    const kv = 'password="unterminated\n[mcp] said "hi" here\n[mcp] next';
+    expect(redactSecrets(kv)).toBe('password=***\n[mcp] said "hi" here\n[mcp] next');
+    const json = '{"password":"unterminated\n[mcp] said "hi": 1\n[mcp] next';
+    expect(redactSecrets(json)).toBe('{"password":***\n[mcp] said "hi": 1\n[mcp] next');
+  });
+
   it("escaped JSON、汎用secret、URL passwordを伏せ、特殊値後も書き続けること", () => {
     const writer = createLocalLogWriter({ dir });
     const cyclic = Object.create(null) as Record<string, unknown>;
