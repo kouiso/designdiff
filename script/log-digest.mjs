@@ -209,7 +209,13 @@ const ABSOLUTE_PATH_PATTERN = new RegExp(
 );
 const URL_PATTERN = /https?:\/\/[^\s"'<>]+/gi;
 const URL_MARKER_PATTERN = /__LOG_URL_(\d+)__/g;
-const JSON_MEMBER_PATTERN = /("((?:\\.|[^"\\])*)"\s*:\s*)("(?:\\.|[^"\\])*"|[^,}\]\s]+)/gu;
+// 引用符付きの値に改行は含めない。伏字は複数行の文字列 (Error のスタック、
+// 引数を繋いだ 1 本) にもかかるので、改行を許すと閉じ引用符の無い値が次の行の
+// 引用符まで一致し、間のログ行を丸ごと消してしまう。
+// 閉じ引用符が同じ行に無い値は、引用符から行末までを値とみなす。ここが無いと
+// 引用符なしの分岐に落ちて最初の空白で止まり、`"my super secret` の後半が平文で残る。
+const JSON_MEMBER_PATTERN =
+  /("((?:\\.|[^"\\\r\n])*)"\s*:\s*)("(?:\\.|[^"\\\r\n])*"|"[^\r\n]*|[^,}\]\s]+)/gu;
 const SECRET_KEY_SOURCE =
   "x-figma-token|token|(?:access|refresh|id|api|auth)[_-]?token|client[_-]?secret|secret|password|passwd|api[_-]?key|authorization|cookie|set-cookie";
 const normalizeKey = (key) => key.replace(/([a-z\d])([A-Z])/g, "$1_$2").toLowerCase();
@@ -263,7 +269,7 @@ const scrubPaths = (text) => {
 const redactKeyValue = (text, keys) =>
   text.replace(
     new RegExp(
-      `(["']?(?:${keys})["']?\\s*[:=]\\s*)(?:"(?:\\\\.|[^"\\\\])*"|'(?:\\\\.|[^'\\\\])*'|[^\\s,;}&]+)`,
+      `(["']?(?:${keys})["']?\\s*[:=]\\s*)(?:"(?:\\\\.|[^"\\\\\\r\\n])*"|'(?:\\\\.|[^'\\\\\\r\\n])*'|["'][^\\r\\n]*|[^\\s,;}&]+)`,
       "giu",
     ),
     "$1***",
