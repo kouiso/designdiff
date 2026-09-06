@@ -180,6 +180,9 @@ test("normalizeMessage は閉じ引用符の無い値で次の行を巻き込ま
     '{"password":"my super secret\n[main] said "hello": 1\n[main] next',
   );
   assert.match(json, /\[main\] said "hello"/);
+  // 値だけが伏字になり、メンバーごと消えていないこと。後続の行も残ること。
+  assert.match(json, /\{"password":\*\*\* \[main\]/);
+  assert.match(json, /\[main\] next$/);
   assert.doesNotMatch(json, /super|secret/);
 });
 
