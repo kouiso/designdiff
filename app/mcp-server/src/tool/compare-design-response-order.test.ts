@@ -197,6 +197,14 @@ describe("compare_design レスポンスの並び順", () => {
         arguments: { design_source: "./a.png", screenshot: "./b.png" },
       });
       expect(success.isError).toBeFalsy();
+      expect(success.structuredContent).toMatchObject({
+        comparisonId: "cmp-order",
+        matchRate: 68,
+        diffPixelCount: 940,
+        totalPixelCount: 3000,
+        diffRegions: [],
+        suggestion: "-",
+      });
       expect(JSON.parse(success.content[0].text)).toMatchObject({
         comparisonId: "cmp-order",
         matchRate: 68,
