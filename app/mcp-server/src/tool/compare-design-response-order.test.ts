@@ -1,11 +1,11 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
+import { McpServer as McpServerImpl } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { registerCompareDesign } from "./compare-design.js";
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { McpServer as McpServerImpl } from "@modelcontextprotocol/sdk/server/mcp.js";
 
 const mocks = vi.hoisted(() => ({
   runCompareDesign: vi.fn(),
