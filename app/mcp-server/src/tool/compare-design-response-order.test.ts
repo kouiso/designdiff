@@ -1,8 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 
 import { registerCompareDesign } from "./compare-design.js";
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { McpServer as McpServerImpl } from "@modelcontextprotocol/sdk/server/mcp.js";
 
 const mocks = vi.hoisted(() => ({
   runCompareDesign: vi.fn(),
@@ -148,5 +151,63 @@ describe("compare_design レスポンスの並び順", () => {
     expect(mocks.runCompareDesign).not.toHaveBeenCalled();
     expect(mocks.persistDetailJson).not.toHaveBeenCalled();
     expect(mocks.writeActiveSession).not.toHaveBeenCalled();
+  });
+
+  it("SDK Client.callTool が保存先エラーを読み、成功schemaもtools/listに残ること", async () => {
+    const storageError = Object.assign(new Error("EPERM"), {
+      code: "FIGDIFF_STORAGE_NOT_WRITABLE",
+      location: "home",
+    });
+    mocks.assertFigdiffStorageWritable.mockRejectedValue(storageError);
+    const server = new McpServerImpl({ name: "test", version: "1" });
+    registerCompareDesign(server);
+    const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+    const client = new Client({ name: "test-client", version: "1" });
+    await Promise.all([client.connect(clientTransport), server.connect(serverTransport)]);
+    try {
+      const listed = await client.listTools();
+      const tool = listed.tools.find((entry) => entry.name === "compare_design");
+      expect(tool?.outputSchema).toBeDefined();
+      expect(tool?.outputSchema?.properties).toMatchObject({
+        comparisonId: expect.any(Object),
+        matchRate: expect.any(Object),
+        diffPixelCount: expect.any(Object),
+        totalPixelCount: expect.any(Object),
+        diffRegions: expect.any(Object),
+        suggestion: expect.any(Object),
+      });
+
+      const result = await client.callTool({
+        name: "compare_design",
+        arguments: { design_source: "./a.png", screenshot: "./b.png" },
+      });
+      const payload = JSON.parse(result.content[0].text);
+      expect(result.isError).toBe(true);
+      expect(result.structuredContent).toBeUndefined();
+      expect(payload).toMatchObject({
+        code: "FIGDIFF_STORAGE_NOT_WRITABLE",
+        location: "home",
+        retryable: true,
+        actions: expect.any(Array),
+      });
+
+      mocks.assertFigdiffStorageWritable.mockResolvedValue(undefined);
+      const success = await client.callTool({
+        name: "compare_design",
+        arguments: { design_source: "./a.png", screenshot: "./b.png" },
+      });
+      expect(success.isError).toBeFalsy();
+      expect(JSON.parse(success.content[0].text)).toMatchObject({
+        comparisonId: "cmp-order",
+        matchRate: 68,
+        diffPixelCount: 940,
+        totalPixelCount: 3000,
+        diffRegions: [],
+        suggestion: "-",
+      });
+    } finally {
+      await client.close();
+      await server.close();
+    }
   });
 });
