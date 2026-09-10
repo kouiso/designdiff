@@ -5,7 +5,10 @@ import { inflateSync, deflateSync } from "node:zlib";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-const fixtureDir = path.join(path.dirname(fileURLToPath(import.meta.url)), "../doc/evidence/pr-merge/pr-142-alignment-fixture");
+const fixtureDir = path.join(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "../doc/evidence/pr-merge/pr-142-alignment-fixture",
+);
 
 function readPng(buffer) {
   const signature = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
@@ -23,7 +26,14 @@ function readPng(buffer) {
     if (type === "IHDR") {
       width = data.readUInt32BE(0);
       height = data.readUInt32BE(4);
-      if (data[8] !== 8 || ![2, 6].includes(data[9]) || data[10] !== 0 || data[11] !== 0 || data[12] !== 0) throw new Error("unsupported PNG format");
+      if (
+        data[8] !== 8 ||
+        ![2, 6].includes(data[9]) ||
+        data[10] !== 0 ||
+        data[11] !== 0 ||
+        data[12] !== 0
+      )
+        throw new Error("unsupported PNG format");
       channels = data[9] === 6 ? 4 : 3;
     } else if (type === "IDAT") compressed.push(data);
   }
@@ -40,7 +50,21 @@ function readPng(buffer) {
       const above = prior?.[x] ?? 0;
       const upperLeft = x >= channels && prior ? prior[x - channels] : 0;
       const value = scanlines[sourceOffset++];
-      row[x] = filter === 0 ? value : filter === 1 ? value + left : filter === 2 ? value + above : filter === 3 ? value + Math.floor((left + above) / 2) : value + (left + above - upperLeft < Math.min(left, above) ? Math.max(left, above) : left + above - upperLeft > Math.max(left, above) ? Math.min(left, above) : left + above - upperLeft);
+      row[x] =
+        filter === 0
+          ? value
+          : filter === 1
+            ? value + left
+            : filter === 2
+              ? value + above
+              : filter === 3
+                ? value + Math.floor((left + above) / 2)
+                : value +
+                  (left + above - upperLeft < Math.min(left, above)
+                    ? Math.max(left, above)
+                    : left + above - upperLeft > Math.max(left, above)
+                      ? Math.min(left, above)
+                      : left + above - upperLeft);
     }
   }
   const pixels = new Uint8ClampedArray(width * height * 4);
@@ -77,14 +101,22 @@ function writePng(pixels, width, height) {
   for (let y = 0; y < height; y++) {
     const rowOffset = y * (width * 4 + 1);
     scanlines[rowOffset] = 0;
-    Buffer.from(pixels.buffer, pixels.byteOffset + y * width * 4, width * 4).copy(scanlines, rowOffset + 1);
+    Buffer.from(pixels.buffer, pixels.byteOffset + y * width * 4, width * 4).copy(
+      scanlines,
+      rowOffset + 1,
+    );
   }
   const header = Buffer.alloc(13);
   header.writeUInt32BE(width, 0);
   header.writeUInt32BE(height, 4);
   header[8] = 8;
   header[9] = 6;
-  return Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), pngChunk("IHDR", header), pngChunk("IDAT", deflateSync(scanlines)), pngChunk("IEND", Buffer.alloc(0))]);
+  return Buffer.concat([
+    Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]),
+    pngChunk("IHDR", header),
+    pngChunk("IDAT", deflateSync(scanlines)),
+    pngChunk("IEND", Buffer.alloc(0)),
+  ]);
 }
 
 function shiftPixels(source, width, height, dx, dy) {
@@ -113,7 +145,13 @@ async function writeRgba(file, pixels, width, height) {
 function countDiff(left, right, width, height) {
   let count = 0;
   for (let i = 0; i < width * height * 4; i += 4) {
-    if (left[i] !== right[i] || left[i + 1] !== right[i + 1] || left[i + 2] !== right[i + 2] || left[i + 3] !== right[i + 3]) count++;
+    if (
+      left[i] !== right[i] ||
+      left[i + 1] !== right[i + 1] ||
+      left[i + 2] !== right[i + 2] ||
+      left[i + 3] !== right[i + 3]
+    )
+      count++;
   }
   return count;
 }
@@ -128,7 +166,13 @@ async function main() {
   }
 
   if (process.argv.includes("--write-shifted")) {
-    const generated = shiftPixels(source.pixels, source.width, source.height, expected.translation.x, expected.translation.y);
+    const generated = shiftPixels(
+      source.pixels,
+      source.width,
+      source.height,
+      expected.translation.x,
+      expected.translation.y,
+    );
     await writeRgba(shiftedPath, generated, source.width, source.height);
   }
   const shifted = await readRgba(shiftedPath);
@@ -136,22 +180,42 @@ async function main() {
     throw new Error(`unexpected shifted dimensions: ${shifted.width}x${shifted.height}`);
   }
 
-  const mathematicallyExpected = shiftPixels(source.pixels, source.width, source.height, expected.translation.x, expected.translation.y);
-  const exactGroundTruthDiff = countDiff(mathematicallyExpected, shifted.pixels, source.width, source.height);
+  const mathematicallyExpected = shiftPixels(
+    source.pixels,
+    source.width,
+    source.height,
+    expected.translation.x,
+    expected.translation.y,
+  );
+  const exactGroundTruthDiff = countDiff(
+    mathematicallyExpected,
+    shifted.pixels,
+    source.width,
+    source.height,
+  );
   const sameImageDiff = countDiff(source.pixels, source.pixels, source.width, source.height);
   const shiftedImageDiff = countDiff(source.pixels, shifted.pixels, source.width, source.height);
   if (sameImageDiff !== 0 || exactGroundTruthDiff !== 0 || shiftedImageDiff === 0) {
-    throw new Error(`groundtruth checks failed: same=${sameImageDiff}, exact=${exactGroundTruthDiff}, shifted=${shiftedImageDiff}`);
+    throw new Error(
+      `groundtruth checks failed: same=${sameImageDiff}, exact=${exactGroundTruthDiff}, shifted=${shiftedImageDiff}`,
+    );
   }
-  console.log(JSON.stringify({
-    fixture: path.relative(path.join(fixtureDir, "../.."), sourcePath),
-    dimensions: { width: source.width, height: source.height },
-    expectedTranslation: expected.translation,
-    sameImageDiffPixels: sameImageDiff,
-    shiftedImageDiffPixels: shiftedImageDiff,
-    exactGroundTruthDiffPixels: exactGroundTruthDiff,
-    visualEvidence: "source.png is the reviewed 1080x2340 manual capture; shifted-left-2px.png is the same capture with a known native-pixel translation.",
-  }, null, 2));
+  process.stdout.write(
+    `${JSON.stringify(
+      {
+        fixture: path.relative(path.join(fixtureDir, "../.."), sourcePath),
+        dimensions: { width: source.width, height: source.height },
+        expectedTranslation: expected.translation,
+        sameImageDiffPixels: sameImageDiff,
+        shiftedImageDiffPixels: shiftedImageDiff,
+        exactGroundTruthDiffPixels: exactGroundTruthDiff,
+        visualEvidence:
+          "source.png is the reviewed 1080x2340 manual capture; shifted-left-2px.png is the same capture with a known native-pixel translation.",
+      },
+      null,
+      2,
+    )}\n`,
+  );
 }
 
 await main();
