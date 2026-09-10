@@ -976,6 +976,18 @@ export async function compareImages(
   const appliedCropRegion = cropRegion
     ? resolveAppliedCropRegion(cropRegion, screenshotWidth, screenshotHeight)
     : null;
+  // working crop は上限縮小後の座標。外部へ出す native 座標は、実際に適用した
+  // working 矩形の両端を同じ倍率で戻す。端を切り上げるのは、縮小時の丸めで
+  // native 側の比較範囲を欠落させないため。
+  const nativeAppliedCropRegion = appliedCropRegion
+    ? scaleWorkingCropToNative(
+        appliedCropRegion,
+        nativeScreenshotWidth,
+        nativeScreenshotHeight,
+        screenshotWidth,
+        screenshotHeight,
+      )
+    : null;
   if (cropRegion) {
     designBuffer = await cropImageBuffer(designBuffer, cropRegion);
     screenshotBuffer = await cropImageBuffer(screenshotBuffer, cropRegion);
@@ -1358,7 +1370,8 @@ export async function compareImages(
       cropApplied: appliedCropRegion !== null,
       containResized: wasComposited,
       appliedScale,
-      cropRegion: appliedCropRegion ?? undefined,
+      cropRegion: nativeAppliedCropRegion ?? undefined,
+      workingCropRegion: appliedCropRegion ?? undefined,
     },
   };
 }
@@ -1416,6 +1429,25 @@ export function resolveAppliedCropRegion(
     y: origin.y,
     width: right - origin.x,
     height: bottom - origin.y,
+  };
+}
+
+export function scaleWorkingCropToNative(
+  cropRegion: CropRegion,
+  nativeWidth: number,
+  nativeHeight: number,
+  workingWidth: number,
+  workingHeight: number,
+): CropRegion {
+  const scaleX = nativeWidth / workingWidth;
+  const scaleY = nativeHeight / workingHeight;
+  const nativeX = Math.floor(cropRegion.x * scaleX);
+  const nativeY = Math.floor(cropRegion.y * scaleY);
+  return {
+    x: nativeX,
+    y: nativeY,
+    width: Math.ceil((cropRegion.x + cropRegion.width) * scaleX) - nativeX,
+    height: Math.ceil((cropRegion.y + cropRegion.height) * scaleY) - nativeY,
   };
 }
 

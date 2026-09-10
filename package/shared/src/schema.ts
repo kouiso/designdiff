@@ -411,6 +411,16 @@ export const NormalizationReportSchema = z.object({
       height: z.number().nonnegative(),
     })
     .optional(),
+  // 比較処理で使った縮小後の座標。cropRegion は native 座標を返すため、
+  // 作業画素の原点やサイズが必要な診断だけこちらを使う。
+  workingCropRegion: z
+    .object({
+      x: z.number(),
+      y: z.number(),
+      width: z.number().nonnegative(),
+      height: z.number().nonnegative(),
+    })
+    .optional(),
   cropSource: z.enum(["none", "explicit-project", "auto"]).optional(),
 });
 

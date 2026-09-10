@@ -1665,4 +1665,12 @@ describe("classifyAlignmentSource", () => {
       "auto",
     );
   });
+
+  it("縮小後cropの端をnative座標へ戻し、範囲を欠落させないこと", async () => {
+    const { scaleWorkingCropToNative } = await import("./image-compare-service.js");
+
+    expect(
+      scaleWorkingCropToNative({ x: 10, y: 11, width: 20, height: 21 }, 1000, 1000, 333, 333),
+    ).toEqual({ x: 30, y: 33, width: 61, height: 64 });
+  });
 });

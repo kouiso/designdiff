@@ -101,7 +101,8 @@ new or edited behavior must use an arrow function assigned to a `const`.
 
 - `normalization.screenshotWidth` / `screenshotHeight`: crop前の実スクリーンショットのnative px
 - `normalization.designNativeWidth` / `designNativeHeight`: Figma exportの寸法（export px）
-- `diffReport`の画素、`alignment.translation`、`normalization.cropRegion`: 比較に使ったworking px
+- `diffReport`の画素、`alignment.translation`、`normalization.workingCropRegion`: 比較に使ったworking px
+- `normalization.cropRegion`: native pxへ換算した実適用crop
 
 結果のmetadataは、少なくとも次の項目を確認します。
 
@@ -114,6 +115,7 @@ new or edited behavior must use an arrow function assigned to a `const`.
     "containResized": false,
     "appliedScale": 1,
     "cropRegion": { "x": 0, "y": 24, "width": 390, "height": 844 },
+    "workingCropRegion": { "x": 0, "y": 12, "width": 195, "height": 422 },
     "cropSource": "explicit-project"
   },
   "diffReport": {
