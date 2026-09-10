@@ -809,11 +809,11 @@ describe("buildDiffReport global alignment shift severity", () => {
     expect(globalShiftIssue).toBeUndefined();
   });
 
-  it("採用された大きな(>=10px)グローバルシフトは position issue が critical になり aggregateVerdict が fail すること", async () => {
+  it("採用されたグローバルシフト (>=2 working px)は position issue が critical になり aggregateVerdict が fail すること", async () => {
     const { buildDiffReport } = await import("./diff-report-builder.js");
-    const width = 100;
-    const height = 100;
-    const { design, screenshot } = await createShiftedPattern(width, height, 15);
+    const width = 1000;
+    const height = 1000;
+    const { design, screenshot } = await createShiftedPattern(width, height, 5);
 
     const result = buildDiffReport({
       designPixels: design,
@@ -823,9 +823,11 @@ describe("buildDiffReport global alignment shift severity", () => {
     });
 
     // 補正が採用されている (アライメント検知が機能している証拠)。
-    expect(Math.abs(result.alignment.translation.x)).toBeGreaterThanOrEqual(10);
+    expect(Math.abs(result.alignment.translation.x)).toBeGreaterThanOrEqual(2);
 
-    const positionIssue = result.issues.find((issue) => issue.kind === "position");
+    const positionIssue = result.issues.find(
+      (issue) => issue.evidence.signal === "translation_offset",
+    );
     expect(positionIssue).toBeDefined();
     expect(positionIssue?.severity).toBe("critical");
 

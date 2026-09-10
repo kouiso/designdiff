@@ -156,6 +156,10 @@ function countSampledPositions(
   return count;
 }
 
+function residualSampleStep(width: number, height: number): number {
+  return width * height > 1_000_000 ? 2 : 1;
+}
+
 /**
  * 設計と撮影の間の平行移動を探す。
  *
@@ -219,7 +223,7 @@ export const detectTranslation = (
   bestDy = coarseDy;
   // 大きい画像で1px刻みのまま全画素を100回以上走ると時間が持たない。
   // 細かい探索が見分けたいのは10px以内の差なので、間引いても区別はつく。
-  const fineSampleStep = width * height > 1_000_000 ? 2 : 1;
+  const fineSampleStep = residualSampleStep(width, height);
   for (let dy = coarseDy - FINE_RANGE; dy <= coarseDy + FINE_RANGE; dy++) {
     for (let dx = coarseDx - FINE_RANGE; dx <= coarseDx + FINE_RANGE; dx++) {
       const d = scoreTranslationCandidate(
@@ -348,6 +352,35 @@ export const resolveAlignment = (
 
   let alignedDesignPixels = designPixels;
   let applied = false;
+  // scoreTranslationCandidate と同じOOB非罰則の不一致数を、既存 residual と
+  // 同じくサンプル1点あたりへ正規化して記録する。raw countや別の罰則を
+  // 混ぜると、候補スコアとの比較ができない。
+  const residualStep = residualSampleStep(width, height);
+  const residualSampleCount = countSampledPositions(width, height, residualStep, ignoreMask);
+  const baselineResidual =
+    residualSampleCount === 0
+      ? undefined
+      : scoreTranslationCandidate(
+          designPixels,
+          screenshotPixels,
+          width,
+          height,
+          { dx: 0, dy: 0 },
+          residualStep,
+          ignoreMask,
+        ) / residualSampleCount;
+  const correctedResidual =
+    residualSampleCount === 0
+      ? undefined
+      : scoreTranslationCandidate(
+          designPixels,
+          screenshotPixels,
+          width,
+          height,
+          { dx, dy },
+          residualStep,
+          ignoreMask,
+        ) / residualSampleCount;
   if (dx !== 0 || dy !== 0) {
     // 画像の外へ出た画素を必ず違いとして数える。数えないと、透明な余白が
     // 黒い実装と「一致」に見えてしまう。
@@ -388,6 +421,9 @@ export const resolveAlignment = (
       rotation: 0,
       confidence,
       residual,
+      baselineResidual,
+      correctedResidual,
+      applied,
     },
     alignedDesignPixels,
     applied,

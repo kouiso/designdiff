@@ -1727,6 +1727,15 @@ export async function runCompareDesign(
       ? {
           ...comparison.normalization,
           autoCropped: autoCropRegion !== undefined,
+          cropRegion: cropRegion
+            ? {
+                x: cropRegion.x,
+                y: cropRegion.y,
+                width: cropRegion.width,
+                height: cropRegion.height,
+              }
+            : undefined,
+          cropSource: manualCropRegion ? "explicit-project" : autoCropRegion ? "auto" : "none",
         }
       : comparison.normalization,
     diffImagePath:

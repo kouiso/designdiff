@@ -23,6 +23,7 @@ import {
   type GridClusterOptions,
   type GridSummary,
   type IgnoreRegion,
+  type Alignment,
 } from "@figdiff/shared";
 
 import { buildDiffReport } from "./diff-report-builder.js";
@@ -79,6 +80,24 @@ interface ComparisonGeometry {
   cropRegion?: CropRegion;
   ignoreRegions?: IgnoreRegion[];
   verifiedSystemUiTopInset?: number;
+}
+
+export function classifyAlignmentSource(
+  alignment: Pick<Alignment, "translation" | "applied">,
+  verifiedSystemUiTopInset: number | undefined,
+): Alignment["source"] {
+  if (
+    alignment.applied &&
+    verifiedSystemUiTopInset !== undefined &&
+    alignment.translation.x === 0 &&
+    alignment.translation.y === verifiedSystemUiTopInset
+  ) {
+    return "verified-system-ui";
+  }
+  if (alignment.translation.x !== 0 || alignment.translation.y !== 0) {
+    return "auto";
+  }
+  return "none";
 }
 
 interface ImageDimensions {
@@ -1089,6 +1108,11 @@ export async function compareImages(
     alignmentIgnoreMask,
     buildVerifiedInsetCandidates(verifiedSystemUiTopInset),
   );
+  const alignmentSource = classifyAlignmentSource(
+    resolvedAlignment.alignment,
+    verifiedSystemUiTopInset,
+  );
+  resolvedAlignment.alignment.source = alignmentSource;
   const pixelmatchDesignPixels = resolvedAlignment.alignedDesignPixels;
   const reportDesignPixels = paddingMask
     ? Uint8ClampedArray.from(pixelmatchDesignPixels)

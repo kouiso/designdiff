@@ -318,6 +318,10 @@ export const AlignmentSchema = z.object({
     x: z.number(),
     y: z.number(),
   }),
+  source: z.enum(["none", "auto", "explicit", "verified-system-ui"]).optional(),
+  applied: z.boolean().optional(),
+  baselineResidual: z.number().nonnegative().optional(),
+  correctedResidual: z.number().nonnegative().optional(),
   scale: z.object({
     x: z.number(),
     y: z.number(),
@@ -399,6 +403,15 @@ export const NormalizationReportSchema = z.object({
   // ツールが自動でフレーム範囲へcropしたか。人間がcropRegionを手設定する
   // 手間を無くすための自動化 (#237系: 真の完成に向けた手動介入の自動化)。
   autoCropped: z.boolean().optional(),
+  cropRegion: z
+    .object({
+      x: z.number(),
+      y: z.number(),
+      width: z.number().nonnegative(),
+      height: z.number().nonnegative(),
+    })
+    .optional(),
+  cropSource: z.enum(["none", "explicit-project", "auto"]).optional(),
 });
 
 // スクロール結合で撮ったときの内訳。1画面に収まらない画面を比較したとき、

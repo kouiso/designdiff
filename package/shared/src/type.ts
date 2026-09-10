@@ -241,6 +241,10 @@ export const UNIMPLEMENTED_LAYOUT_SCORE = 0;
 
 export interface Alignment {
   translation: { x: number; y: number };
+  source?: "none" | "auto" | "explicit" | "verified-system-ui";
+  applied?: boolean;
+  baselineResidual?: number;
+  correctedResidual?: number;
   scale: { x: number; y: number };
   rotation: number;
   confidence: number;

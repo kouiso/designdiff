@@ -676,10 +676,10 @@ const GLOBAL_SHIFT_ISSUE_THRESHOLD_PX = 2;
 // that a "major" issue alone never blocks PASS (computeVerdict only checks
 // severity==="critical"); below this size we keep the shift as a visible,
 // non-blocking note (preserves the original false-"全面ズレ" fix for
-// capture-scale noise). At or above it, treat as a real position defect —
+// capture-scale noise). At or above 2 working px, treat as a real position defect —
 // escalate to "critical" so it fails through the same path "color" already
 // uses, without touching computeVerdict itself.
-const GLOBAL_SHIFT_CRITICAL_THRESHOLD_PX = 10;
+const GLOBAL_SHIFT_CRITICAL_THRESHOLD_PX = 2;
 
 export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
   const { designPixels, screenshotPixels, width, height, paddingMask } = options;
@@ -764,7 +764,7 @@ export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
   // is untouched); a smaller accepted shift stays a visible, non-blocking
   // note — preserving the original false-"全面ズレ" fix this alignment
   // correction exists for. capture_device の内部 preset と完全一致する下方向だけは
-  // 実装差分ではないため issue にせず、一般の 10px 閾値は変えない。
+  // 実装差分ではないため issue にせず、一般の 2px 閾値は変えない。
   const shiftMagnitude = Math.sqrt(dx * dx + dy * dy);
   const isVerifiedSystemUiShift =
     dx === 0 && verifiedSystemUiTopInset !== undefined && dy === verifiedSystemUiTopInset;

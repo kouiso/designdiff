@@ -207,6 +207,14 @@ describe("resolveAlignment", () => {
     const result = resolveAlignment(design, screenshot, WIDTH, HEIGHT);
 
     expect(result.applied).toBe(true);
+    expect(result.alignment.applied).toBe(true);
+    expect(result.alignment.baselineResidual).toBeGreaterThan(
+      result.alignment.correctedResidual ?? 0,
+    );
+    const sampledCount = WIDTH * HEIGHT;
+    expect(result.alignment.correctedResidual).toBe(
+      countSsdOffset(design, screenshot, WIDTH, HEIGHT, 7, 0, 1, false) / sampledCount,
+    );
     expect(result.alignment.translation).toEqual({ x: 7, y: 0 });
     expect(result.alignedDesignPixels).not.toBe(design);
   });
@@ -220,6 +228,7 @@ describe("resolveAlignment", () => {
     // ずれ自体は検出しつつ、動かすと損になるので適用しない。
     expect(result.alignment.translation).toEqual({ x: 7, y: 0 });
     expect(result.applied).toBe(false);
+    expect(result.alignment.applied).toBe(false);
     expect(result.alignedDesignPixels).toBe(design);
   });
 
@@ -230,6 +239,17 @@ describe("resolveAlignment", () => {
 
     expect(result.applied).toBe(false);
     expect(result.alignedDesignPixels).toBe(image);
+  });
+
+  it("移動量が0でも不一致の残差を測定すること", () => {
+    const design = makeImage(0, { x: 30, y: 20, w: 20, h: 20, value: 255 });
+    const screenshot = makeImage(0, { x: 30, y: 20, w: 20, h: 20, value: 128 });
+
+    const result = resolveAlignment(design, screenshot, WIDTH, HEIGHT);
+
+    expect(result.alignment.translation).toEqual({ x: 0, y: 0 });
+    expect(result.alignment.baselineResidual).toBeGreaterThan(0);
+    expect(result.alignment.correctedResidual).toBe(result.alignment.baselineResidual);
   });
 
   it("倍率と回転は常に恒等で返すこと", () => {

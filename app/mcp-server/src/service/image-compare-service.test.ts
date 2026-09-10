@@ -1611,3 +1611,40 @@ describe("compareImages", () => {
     expect(detectBestAnchorOffset(designProfile, referenceProfile, 10_000)).toBe(trueOffset);
   });
 });
+
+describe("classifyAlignmentSource", () => {
+  it("検出したずれを適用しない場合も自動検出として記録すること", async () => {
+    const { classifyAlignmentSource } = await import("./image-compare-service.js");
+
+    expect(
+      classifyAlignmentSource({ translation: { x: 7, y: 0 }, applied: false }, undefined),
+    ).toBe("auto");
+  });
+
+  it("自動検出したずれを適用した場合も自動検出として記録すること", async () => {
+    const { classifyAlignmentSource } = await import("./image-compare-service.js");
+
+    expect(classifyAlignmentSource({ translation: { x: 7, y: 0 }, applied: true }, undefined)).toBe(
+      "auto",
+    );
+  });
+
+  it("移動量0の不一致は位置合わせなしとして記録すること", async () => {
+    const { classifyAlignmentSource } = await import("./image-compare-service.js");
+
+    expect(
+      classifyAlignmentSource({ translation: { x: 0, y: 0 }, applied: false }, undefined),
+    ).toBe("none");
+  });
+
+  it("検証済みsystem UIの補正だけは専用の出所として記録すること", async () => {
+    const { classifyAlignmentSource } = await import("./image-compare-service.js");
+
+    expect(classifyAlignmentSource({ translation: { x: 0, y: 24 }, applied: true }, 24)).toBe(
+      "verified-system-ui",
+    );
+    expect(classifyAlignmentSource({ translation: { x: 0, y: 24 }, applied: false }, 24)).toBe(
+      "auto",
+    );
+  });
+});
