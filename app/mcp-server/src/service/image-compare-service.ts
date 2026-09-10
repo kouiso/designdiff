@@ -23,6 +23,7 @@ import {
   type GridClusterOptions,
   type GridSummary,
   type IgnoreRegion,
+  type Alignment,
 } from "@figdiff/shared";
 
 import { buildDiffReport } from "./diff-report-builder.js";
@@ -68,6 +69,8 @@ interface CompareImagesOptions {
   // 既知の意図的差分マスク。各矩形内の差分ピクセルは matchRate / clustering から除外。
   // 矩形は cropRegion 適用後の座標系 (= screenshot ピクセル座標) で指定する。
   ignoreRegions?: IgnoreRegion[];
+  // crop が共通範囲を持たず中止された場合に使う、crop 前の完全な mask 集合。
+  fallbackIgnoreRegions?: IgnoreRegion[];
   // runner が端末 preset と crop 条件から内部検証した status bar 高さ。
   // user region の label から推測すると偽装できるため、別経路で渡す。
   verifiedSystemUiTopInset?: number;
@@ -78,8 +81,27 @@ interface CompareImagesOptions {
 interface ComparisonGeometry {
   cropRegion?: CropRegion;
   ignoreRegions?: IgnoreRegion[];
+  fallbackIgnoreRegions?: IgnoreRegion[];
   verifiedSystemUiTopInset?: number;
 }
+
+export const classifyAlignmentSource = (
+  alignment: Pick<Alignment, "translation" | "applied">,
+  verifiedSystemUiTopInset: number | undefined,
+): Alignment["source"] => {
+  if (
+    alignment.applied &&
+    verifiedSystemUiTopInset !== undefined &&
+    alignment.translation.x === 0 &&
+    alignment.translation.y === verifiedSystemUiTopInset
+  ) {
+    return "verified-system-ui";
+  }
+  if (alignment.translation.x !== 0 || alignment.translation.y !== 0) {
+    return "auto";
+  }
+  return "none";
+};
 
 interface ImageDimensions {
   width: number;
@@ -109,18 +131,22 @@ export function scaleComparisonGeometry(
   workingDimensions: ImageDimensions,
 ): ComparisonGeometry {
   if (
-    nativeDimensions.width === workingDimensions.width &&
-    nativeDimensions.height === workingDimensions.height
-  ) {
-    return geometry;
-  }
-  if (
+    !Number.isFinite(nativeDimensions.width) ||
+    !Number.isFinite(nativeDimensions.height) ||
+    !Number.isFinite(workingDimensions.width) ||
+    !Number.isFinite(workingDimensions.height) ||
     nativeDimensions.width <= 0 ||
     nativeDimensions.height <= 0 ||
     workingDimensions.width <= 0 ||
     workingDimensions.height <= 0
   ) {
     throw new Error("Image dimensions must be positive when scaling comparison geometry");
+  }
+  if (
+    nativeDimensions.width === workingDimensions.width &&
+    nativeDimensions.height === workingDimensions.height
+  ) {
+    return geometry;
   }
 
   const scaleX = workingDimensions.width / nativeDimensions.width;
@@ -130,6 +156,10 @@ export function scaleComparisonGeometry(
       ? scaleRegionToWorkingPixels(geometry.cropRegion, scaleX, scaleY)
       : undefined,
     ignoreRegions: geometry.ignoreRegions?.map((region) => ({
+      ...scaleRegionToWorkingPixels(region, scaleX, scaleY),
+      label: region.label,
+    })),
+    fallbackIgnoreRegions: geometry.fallbackIgnoreRegions?.map((region) => ({
       ...scaleRegionToWorkingPixels(region, scaleX, scaleY),
       label: region.label,
     })),
@@ -880,9 +910,11 @@ export async function compareImages(
   } = options;
   const nativeCropRegion = options.cropRegion;
   const nativeIgnoreRegions = options.ignoreRegions;
+  const nativeFallbackIgnoreRegions = options.fallbackIgnoreRegions;
   const nativeVerifiedSystemUiTopInset = options.verifiedSystemUiTopInset;
   let cropRegion = nativeCropRegion;
   let ignoreRegions = nativeIgnoreRegions;
+  let fallbackIgnoreRegions = nativeFallbackIgnoreRegions;
   let verifiedSystemUiTopInset = nativeVerifiedSystemUiTopInset;
 
   // Decode base64 to buffers
@@ -928,6 +960,7 @@ export async function compareImages(
       {
         cropRegion: nativeCropRegion,
         ignoreRegions: nativeIgnoreRegions,
+        fallbackIgnoreRegions: nativeFallbackIgnoreRegions,
         verifiedSystemUiTopInset: nativeVerifiedSystemUiTopInset,
       },
       { width: nativeScreenshotWidth, height: nativeScreenshotHeight },
@@ -935,6 +968,7 @@ export async function compareImages(
     );
     cropRegion = scaledGeometry.cropRegion;
     ignoreRegions = scaledGeometry.ignoreRegions;
+    fallbackIgnoreRegions = scaledGeometry.fallbackIgnoreRegions;
     verifiedSystemUiTopInset = scaledGeometry.verifiedSystemUiTopInset;
   }
 
@@ -954,9 +988,77 @@ export async function compareImages(
   }
 
   // Apply crop region if provided (now both images are in the same coordinate space)
-  if (cropRegion) {
-    designBuffer = await cropImageBuffer(designBuffer, cropRegion);
-    screenshotBuffer = await cropImageBuffer(screenshotBuffer, cropRegion);
+  // 片側の端に合わせて切り詰めると、もう片側に残る差分まで比較から消える。
+  // 各画像で解決した矩形が一致する場合だけ、要求された範囲として扱う。
+  const appliedCropRegion = (() => {
+    if (!cropRegion) return null;
+    const designCrop = resolveAppliedCropRegion(
+      cropRegion,
+      screenshotWidth,
+      normalizedDesignHeight,
+    );
+    const screenshotCrop = resolveAppliedCropRegion(cropRegion, screenshotWidth, screenshotHeight);
+    if (
+      designCrop === null ||
+      screenshotCrop === null ||
+      designCrop.x !== screenshotCrop.x ||
+      designCrop.y !== screenshotCrop.y ||
+      designCrop.width !== screenshotCrop.width ||
+      designCrop.height !== screenshotCrop.height
+    ) {
+      return null;
+    }
+    return designCrop;
+  })();
+  if (cropRegion && !appliedCropRegion) {
+    const restoredPostCropIgnoreRegions = ignoreRegions?.length
+      ? (() => {
+          const screenshotCropOrigin = resolveAppliedCropOrigin(
+            cropRegion,
+            screenshotWidth,
+            screenshotHeight,
+          );
+          if (!screenshotCropOrigin) {
+            throw new Error(
+              "Cannot restore post-crop ignore regions without a valid screenshot crop origin.",
+            );
+          }
+          return ignoreRegions.map((region) => ({
+            ...region,
+            x: region.x + screenshotCropOrigin.x,
+            y: region.y + screenshotCropOrigin.y,
+          }));
+        })()
+      : [];
+    if (fallbackIgnoreRegions?.length) {
+      ignoreRegions = [...fallbackIgnoreRegions, ...restoredPostCropIgnoreRegions];
+    } else if (restoredPostCropIgnoreRegions.length) {
+      ignoreRegions = restoredPostCropIgnoreRegions;
+    } else {
+      ignoreRegions = nativeIgnoreRegions;
+    }
+    console.warn(
+      "Crop region has no valid common image bounds; returning both original image buffers.",
+    );
+  }
+  // design側が短い場合にscreenshot側だけ切り出すと、後段の再配置が要求外の
+  // 領域を比較したように見せる。共通範囲が無い場合は両方とも元画像を使う。
+  cropRegion = appliedCropRegion ?? undefined;
+  // working crop は上限縮小後の座標。外部へ出す native 座標は、実際に適用した
+  // working 矩形の両端を同じ倍率で戻す。端を切り上げるのは、縮小時の丸めで
+  // native 側の比較範囲を欠落させないため。
+  const nativeAppliedCropRegion = appliedCropRegion
+    ? scaleWorkingCropToNative(
+        appliedCropRegion,
+        nativeScreenshotWidth,
+        nativeScreenshotHeight,
+        screenshotWidth,
+        screenshotHeight,
+      )
+    : null;
+  if (appliedCropRegion) {
+    designBuffer = await cropImageBuffer(designBuffer, appliedCropRegion);
+    screenshotBuffer = await cropImageBuffer(screenshotBuffer, appliedCropRegion);
   }
 
   // Get final dimensions after crop
@@ -1089,6 +1191,11 @@ export async function compareImages(
     alignmentIgnoreMask,
     buildVerifiedInsetCandidates(verifiedSystemUiTopInset),
   );
+  const alignmentSource = classifyAlignmentSource(
+    resolvedAlignment.alignment,
+    verifiedSystemUiTopInset,
+  );
+  resolvedAlignment.alignment.source = alignmentSource;
   const pixelmatchDesignPixels = resolvedAlignment.alignedDesignPixels;
   const reportDesignPixels = paddingMask
     ? Uint8ClampedArray.from(pixelmatchDesignPixels)
@@ -1328,9 +1435,11 @@ export async function compareImages(
       designNativeHeight: designHeight,
       screenshotWidth: nativeScreenshotWidth,
       screenshotHeight: nativeScreenshotHeight,
-      cropApplied: Boolean(nativeCropRegion),
+      cropApplied: appliedCropRegion !== null,
       containResized: wasComposited,
       appliedScale,
+      cropRegion: nativeAppliedCropRegion ?? undefined,
+      workingCropRegion: appliedCropRegion ?? undefined,
     },
   };
 }
@@ -1347,7 +1456,12 @@ export function resolveAppliedCropOrigin(
   imageWidth: number,
   imageHeight: number,
 ): { x: number; y: number } | null {
-  if (imageWidth <= 0 || imageHeight <= 0) {
+  if (
+    !Number.isFinite(imageWidth) ||
+    !Number.isFinite(imageHeight) ||
+    imageWidth <= 0 ||
+    imageHeight <= 0
+  ) {
     return null;
   }
 
@@ -1373,6 +1487,64 @@ export function resolveAppliedCropOrigin(
 
   return { x: left, y: top };
 }
+
+export const resolveAppliedCropRegion = (
+  cropRegion: CropRegion,
+  imageWidth: number,
+  imageHeight: number,
+): CropRegion | null => {
+  const origin = resolveAppliedCropOrigin(cropRegion, imageWidth, imageHeight);
+  if (origin === null) return null;
+  const right = Math.min(imageWidth, Math.floor(cropRegion.x + cropRegion.width));
+  const bottom = Math.min(imageHeight, Math.floor(cropRegion.y + cropRegion.height));
+  return {
+    x: origin.x,
+    y: origin.y,
+    width: right - origin.x,
+    height: bottom - origin.y,
+  };
+};
+
+export const scaleWorkingCropToNative = (
+  cropRegion: CropRegion,
+  nativeWidth: number,
+  nativeHeight: number,
+  workingWidth: number,
+  workingHeight: number,
+): CropRegion => {
+  if (
+    !Number.isFinite(cropRegion.x) ||
+    !Number.isFinite(cropRegion.y) ||
+    !Number.isFinite(cropRegion.width) ||
+    !Number.isFinite(cropRegion.height) ||
+    cropRegion.width <= 0 ||
+    cropRegion.height <= 0
+  ) {
+    throw new Error("Crop region must be finite with positive width and height");
+  }
+  if (
+    !Number.isFinite(nativeWidth) ||
+    !Number.isFinite(nativeHeight) ||
+    !Number.isFinite(workingWidth) ||
+    !Number.isFinite(workingHeight) ||
+    nativeWidth <= 0 ||
+    nativeHeight <= 0 ||
+    workingWidth <= 0 ||
+    workingHeight <= 0
+  ) {
+    throw new Error("Image dimensions must be finite and positive when scaling crop geometry");
+  }
+  const scaleX = nativeWidth / workingWidth;
+  const scaleY = nativeHeight / workingHeight;
+  const nativeX = Math.floor(cropRegion.x * scaleX);
+  const nativeY = Math.floor(cropRegion.y * scaleY);
+  return {
+    x: nativeX,
+    y: nativeY,
+    width: Math.ceil((cropRegion.x + cropRegion.width) * scaleX) - nativeX,
+    height: Math.ceil((cropRegion.y + cropRegion.height) * scaleY) - nativeY,
+  };
+};
 
 /**
  * Crop image buffer using sharp

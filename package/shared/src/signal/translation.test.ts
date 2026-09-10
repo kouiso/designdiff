@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   COARSE_SAMPLE_STEP,
+  buildVerifiedInsetCandidates,
   countSsdOffset,
   detectTranslation,
   resolveAlignment,
@@ -207,6 +208,14 @@ describe("resolveAlignment", () => {
     const result = resolveAlignment(design, screenshot, WIDTH, HEIGHT);
 
     expect(result.applied).toBe(true);
+    expect(result.alignment.applied).toBe(true);
+    expect(result.alignment.baselineResidual).toBeGreaterThan(
+      result.alignment.correctedResidual ?? 0,
+    );
+    const sampledCount = WIDTH * HEIGHT;
+    expect(result.alignment.correctedResidual).toBe(
+      countSsdOffset(design, screenshot, WIDTH, HEIGHT, 7, 0, 1, false) / sampledCount,
+    );
     expect(result.alignment.translation).toEqual({ x: 7, y: 0 });
     expect(result.alignedDesignPixels).not.toBe(design);
   });
@@ -220,6 +229,8 @@ describe("resolveAlignment", () => {
     // ずれ自体は検出しつつ、動かすと損になるので適用しない。
     expect(result.alignment.translation).toEqual({ x: 7, y: 0 });
     expect(result.applied).toBe(false);
+    expect(result.alignment.applied).toBe(false);
+    expect(result.alignment.source).toBe("auto");
     expect(result.alignedDesignPixels).toBe(design);
   });
 
@@ -230,6 +241,17 @@ describe("resolveAlignment", () => {
 
     expect(result.applied).toBe(false);
     expect(result.alignedDesignPixels).toBe(image);
+  });
+
+  it("移動量が0でも不一致の残差を測定すること", () => {
+    const design = makeImage(0, { x: 30, y: 20, w: 20, h: 20, value: 255 });
+    const screenshot = makeImage(0, { x: 30, y: 20, w: 20, h: 20, value: 128 });
+
+    const result = resolveAlignment(design, screenshot, WIDTH, HEIGHT);
+
+    expect(result.alignment.translation).toEqual({ x: 0, y: 0 });
+    expect(result.alignment.baselineResidual).toBeGreaterThan(0);
+    expect(result.alignment.correctedResidual).toBe(result.alignment.baselineResidual);
   });
 
   it("倍率と回転は常に恒等で返すこと", () => {
@@ -246,12 +268,37 @@ describe("resolveAlignment", () => {
     const design = makeVerticalPattern();
     const { screenshot, ignoreMask } = shiftDownForSystemInset(design, inset);
 
-    const result = resolveAlignment(design, screenshot, WIDTH, HEIGHT, ignoreMask, [
-      { dx: 0, dy: inset },
-    ]);
+    const result = resolveAlignment(
+      design,
+      screenshot,
+      WIDTH,
+      HEIGHT,
+      ignoreMask,
+      buildVerifiedInsetCandidates(inset),
+    );
 
     expect(result.applied).toBe(true);
     expect(result.alignment.translation).toEqual({ x: 0, y: inset });
+    expect(result.alignment.source).toBe("verified-system-ui");
+  });
+
+  it("system UI inset の±1px候補は自動補正として記録すること", () => {
+    const inset = 72;
+    const design = makeVerticalPattern();
+    const { screenshot, ignoreMask } = shiftDownForSystemInset(design, inset + 1);
+
+    const result = resolveAlignment(
+      design,
+      screenshot,
+      WIDTH,
+      HEIGHT,
+      ignoreMask,
+      buildVerifiedInsetCandidates(inset),
+    );
+
+    expect(result.applied).toBe(true);
+    expect(result.alignment.translation).toEqual({ x: 0, y: inset + 1 });
+    expect(result.alignment.source).toBe("auto");
   });
 });
 
@@ -299,6 +346,21 @@ describe("countSsdOffset の入力検査", () => {
 });
 
 describe("手がかりの無い画像の扱い", () => {
+  it("64px未満の不一致でもdetectTranslationとresolveAlignmentの残差を揃えること", () => {
+    const design = new Uint8ClampedArray(4 * 4 * 4);
+    const screenshot = new Uint8ClampedArray(4 * 4 * 4);
+    design[0] = 255;
+    screenshot[0] = 0;
+    screenshot[4] = 255;
+
+    const detected = detectTranslation(design, screenshot, 4, 4);
+    const resolved = resolveAlignment(design, screenshot, 4, 4);
+
+    expect(detected.residual).toBeGreaterThan(0);
+    expect(resolved.alignment.baselineResidual).toBe(detected.residual);
+    expect(resolved.alignment.correctedResidual).toBe(detected.residual);
+  });
+
   it("一様な画像では、動かさない位置を選ぶこと", () => {
     const flat = makeImage(0);
 
@@ -316,5 +378,33 @@ describe("手がかりの無い画像の扱い", () => {
 
     expect(result.alignment.translation).toEqual({ x: 0, y: 0 });
     expect(result.applied).toBe(false);
+  });
+});
+
+describe("位置合わせの画像寸法検査", () => {
+  const invalidDimensions = [0, -1, 1.5, Number.NaN, Number.POSITIVE_INFINITY];
+
+  it.each(invalidDimensions)("detectTranslationは不正なwidth=%sを弾くこと", (width) => {
+    const image = new Uint8ClampedArray(0);
+
+    expect(() => detectTranslation(image, image, width, 1)).toThrow(/positive safe integers/);
+  });
+
+  it.each(invalidDimensions)("detectTranslationは不正なheight=%sを弾くこと", (height) => {
+    const image = new Uint8ClampedArray(0);
+
+    expect(() => detectTranslation(image, image, 1, height)).toThrow(/positive safe integers/);
+  });
+
+  it.each(invalidDimensions)("resolveAlignmentは不正なwidth=%sを弾くこと", (width) => {
+    const image = new Uint8ClampedArray(0);
+
+    expect(() => resolveAlignment(image, image, width, 1)).toThrow(/positive safe integers/);
+  });
+
+  it.each(invalidDimensions)("resolveAlignmentは不正なheight=%sを弾くこと", (height) => {
+    const image = new Uint8ClampedArray(0);
+
+    expect(() => resolveAlignment(image, image, 1, height)).toThrow(/positive safe integers/);
   });
 });

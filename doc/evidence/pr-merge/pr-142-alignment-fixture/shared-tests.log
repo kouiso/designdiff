@@ -1,0 +1,10 @@
+
+ RUN  v3.2.6 <worktree>/package/shared
+
+ ✓ src/signal/translation.test.ts (41 tests) 72ms
+
+ Test Files  1 passed (1)
+      Tests  41 passed (41)
+   Start at  11:37:29
+   Duration  278ms (transform 27ms, setup 0ms, collect 29ms, tests 72ms, environment 0ms, prepare 26ms)
+

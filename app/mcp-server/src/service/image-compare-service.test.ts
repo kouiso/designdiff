@@ -181,6 +181,24 @@ describe("compareImages", () => {
     });
   });
 
+  it.each([
+    0,
+    -1,
+    Number.NaN,
+    Number.POSITIVE_INFINITY,
+  ])("scaleComparisonGeometryは同寸法でも無効な画像寸法を弾くこと (%s)", async (invalidDimension) => {
+    const { scaleComparisonGeometry } = await import("./image-compare-service.js");
+    const geometry = { cropRegion: { x: 0, y: 0, width: 10, height: 10 } };
+
+    expect(() =>
+      scaleComparisonGeometry(
+        geometry,
+        { width: invalidDimension, height: invalidDimension },
+        { width: invalidDimension, height: invalidDimension },
+      ),
+    ).toThrow(/dimensions must be positive/);
+  });
+
   it("gridSummary でセル別の matchRate と diffPixels を返すこと", async () => {
     const pixelmatchMock = await import("pixelmatch");
 
@@ -388,6 +406,153 @@ describe("compareImages", () => {
       100,
       { threshold: 0.1, diffMask: true },
     );
+  });
+
+  it("高さが異なる画像でも全体が収まるcropは同じ矩形で適用すること", async () => {
+    const pixelmatchMock = await import("pixelmatch");
+    const metadata = [
+      { width: 100, height: 100 },
+      { width: 100, height: 200 },
+      { width: 100, height: 100 },
+      { width: 100, height: 50 },
+      { width: 100, height: 200 },
+      { width: 100, height: 50 },
+      { width: 100, height: 50 },
+      { width: 100, height: 50 },
+    ];
+    const instances = Array.from({ length: 10 }, () =>
+      createMockSharpInstance({ width: 100, height: 50 }),
+    );
+    for (const [index, instance] of instances.entries()) {
+      if (metadata[index]) instance.metadata.mockResolvedValue(metadata[index]);
+    }
+    const queue = [...instances];
+    mockSharpFn.mockImplementation(
+      () => queue.shift() ?? createMockSharpInstance({ width: 100, height: 50 }),
+    );
+    vi.mocked(pixelmatchMock.default).mockReturnValue(0);
+
+    const { compareImages } = await import("./image-compare-service.js");
+    const dummyBase64 = Buffer.alloc(100).toString("base64");
+    const result = await compareImages({
+      designBase64: dummyBase64,
+      screenshotBase64: dummyBase64,
+      cropRegion: { x: 0, y: 50, width: 100, height: 50 },
+    });
+
+    expect(instances[3].extract).toHaveBeenCalledWith({ left: 0, top: 50, width: 100, height: 50 });
+    expect(instances[5].extract).toHaveBeenCalledWith({ left: 0, top: 50, width: 100, height: 50 });
+    expect(result.normalization?.cropApplied).toBe(true);
+    expect(result.normalization?.workingCropRegion).toEqual({
+      x: 0,
+      y: 50,
+      width: 100,
+      height: 50,
+    });
+  });
+
+  it.each([
+    [100, 200],
+    [200, 100],
+  ])("共通crop範囲が無い場合は両画像を切り出さないこと (%i/%i)", async (designHeight, screenshotHeight) => {
+    const pixelmatchMock = await import("pixelmatch");
+    const instances = Array.from({ length: 8 }, () =>
+      createMockSharpInstance({ width: 100, height: 200 }),
+    );
+    instances[0].metadata.mockResolvedValue({ width: 100, height: designHeight });
+    instances[1].metadata.mockResolvedValue({ width: 100, height: screenshotHeight });
+    for (const instance of instances) {
+      instance.toBuffer.mockResolvedValue(Buffer.alloc(100 * 200 * 4));
+    }
+    const queue = [...instances];
+    mockSharpFn.mockImplementation(
+      () => queue.shift() ?? createMockSharpInstance({ width: 100, height: 200 }),
+    );
+    vi.mocked(pixelmatchMock.default).mockReturnValue(0);
+
+    const { compareImages } = await import("./image-compare-service.js");
+    const dummyBase64 = Buffer.alloc(100).toString("base64");
+    const result = await compareImages({
+      designBase64: dummyBase64,
+      screenshotBase64: dummyBase64,
+      cropRegion: { x: 0, y: 150, width: 100, height: 50 },
+    });
+
+    expect(result.normalization?.cropApplied).toBe(false);
+    expect(result.normalization?.cropRegion).toBeUndefined();
+    expect(instances.every((instance) => instance.extract.mock.calls.length === 0)).toBe(true);
+  });
+
+  it.each([
+    [100, 200],
+    [200, 100],
+  ])("片側だけcrop領域が切り詰められる場合は適用しないこと (%i/%i)", async (designHeight, screenshotHeight) => {
+    const pixelmatchMock = await import("pixelmatch");
+    const instances = Array.from({ length: 8 }, () =>
+      createMockSharpInstance({ width: 100, height: 200 }),
+    );
+    instances[0].metadata.mockResolvedValue({ width: 100, height: designHeight });
+    instances[1].metadata.mockResolvedValue({ width: 100, height: screenshotHeight });
+    for (const instance of instances) {
+      instance.toBuffer.mockResolvedValue(Buffer.alloc(100 * 200 * 4));
+    }
+    const queue = [...instances];
+    mockSharpFn.mockImplementation(
+      () => queue.shift() ?? createMockSharpInstance({ width: 100, height: 200 }),
+    );
+    vi.mocked(pixelmatchMock.default).mockReturnValue(0);
+
+    const { compareImages } = await import("./image-compare-service.js");
+    const result = await compareImages({
+      designBase64: Buffer.alloc(100).toString("base64"),
+      screenshotBase64: Buffer.alloc(100).toString("base64"),
+      cropRegion: { x: 0, y: 0, width: 100, height: 200 },
+    });
+
+    expect(result.normalization?.cropApplied).toBe(false);
+    expect(instances.every((instance) => instance.extract.mock.calls.length === 0)).toBe(true);
+  });
+
+  it.each([
+    200, 100,
+  ])("crop中止時のmaskを元画像の位置へ戻すか拒否すること (%i)", async (screenshotHeight) => {
+    const pixelmatchMock = await import("pixelmatch");
+    const instances = Array.from({ length: 10 }, () =>
+      createMockSharpInstance({ width: 100, height: 200 }),
+    );
+    instances[0].metadata.mockResolvedValue({ width: 100, height: 100 });
+    instances[1].metadata.mockResolvedValue({ width: 100, height: screenshotHeight });
+    for (const instance of instances)
+      instance.toBuffer.mockImplementation(async () => Buffer.alloc(100 * 200 * 4, 255));
+    const queue = [...instances];
+    mockSharpFn.mockImplementation(
+      () => queue.shift() ?? createMockSharpInstance({ width: 100, height: 200 }),
+    );
+    vi.mocked(pixelmatchMock.default).mockImplementation((designPixels, screenshotPixels) => {
+      // fallbackIgnoreRegions はcrop前の領域を保持し、crop後入力も従来どおり復元する。
+      expect(designPixels[0]).toBe(0);
+      expect(screenshotPixels[0]).toBe(0);
+      expect(designPixels[100 * 100 * 4]).toBe(255);
+      expect(screenshotPixels[150 * 100 * 4]).toBe(0);
+      return 0;
+    });
+    const { compareImages } = await import("./image-compare-service.js");
+    const pending = compareImages({
+      designBase64: Buffer.alloc(100).toString("base64"),
+      screenshotBase64: Buffer.alloc(100).toString("base64"),
+      cropRegion: { x: 0, y: 150, width: 100, height: 50 },
+      ignoreRegions: [{ x: 0, y: 0, width: 10, height: 10 }],
+      fallbackIgnoreRegions: [{ x: 0, y: 0, width: 10, height: 72 }],
+    });
+    if (screenshotHeight === 100) {
+      await expect(pending).rejects.toThrow("Cannot restore post-crop ignore regions");
+      expect(pixelmatchMock.default).not.toHaveBeenCalled();
+    } else {
+      const result = await pending;
+      expect(result.normalization?.cropApplied).toBe(false);
+      expect(pixelmatchMock.default).toHaveBeenCalledOnce();
+    }
+    expect(instances.every((instance) => instance.extract.mock.calls.length === 0)).toBe(true);
   });
 
   it("高さ差がある場合は輝度プロファイルの相関で top offset を検出すること", async () => {
@@ -855,7 +1020,7 @@ describe("compareImages", () => {
     const { compareImages } = await import("./image-compare-service.js");
 
     const dummyBase64 = Buffer.alloc(100).toString("base64");
-    await compareImages({
+    const result = await compareImages({
       designBase64: dummyBase64,
       screenshotBase64: dummyBase64,
       cropRegion: { x: 90, y: 95, width: 50, height: 50 },
@@ -870,6 +1035,13 @@ describe("compareImages", () => {
     expect(screenshotCropInstance.extract).toHaveBeenCalledWith({
       left: 90,
       top: 95,
+      width: 10,
+      height: 5,
+    });
+    expect(result.normalization?.cropApplied).toBe(true);
+    expect(result.normalization?.cropRegion).toEqual({
+      x: 90,
+      y: 95,
       width: 10,
       height: 5,
     });
@@ -940,7 +1112,7 @@ describe("compareImages", () => {
     const { compareImages } = await import("./image-compare-service.js");
 
     const dummyBase64 = Buffer.alloc(100).toString("base64");
-    await compareImages({
+    const result = await compareImages({
       designBase64: dummyBase64,
       screenshotBase64: dummyBase64,
       cropRegion: { x: -10, y: -5, width: 20, height: 20 },
@@ -955,6 +1127,13 @@ describe("compareImages", () => {
     expect(screenshotCropInstance.extract).toHaveBeenCalledWith({
       left: 0,
       top: 0,
+      width: 10,
+      height: 15,
+    });
+    expect(result.normalization?.cropApplied).toBe(true);
+    expect(result.normalization?.cropRegion).toEqual({
+      x: 0,
+      y: 0,
       width: 10,
       height: 15,
     });
@@ -1016,15 +1195,20 @@ describe("compareImages", () => {
     const { compareImages } = await import("./image-compare-service.js");
 
     const dummyBase64 = Buffer.alloc(100).toString("base64");
-    await compareImages({
+    const result = await compareImages({
       designBase64: dummyBase64,
       screenshotBase64: dummyBase64,
       cropRegion: { x: Number.NaN, y: 0, width: 10, height: 10 },
     });
 
-    expect(warnSpy).toHaveBeenCalledTimes(2);
+    expect(warnSpy).toHaveBeenCalledOnce();
+    expect(warnSpy).toHaveBeenCalledWith(
+      "Crop region has no valid common image bounds; returning both original image buffers.",
+    );
     expect(designCropMetadataInstance.extract).not.toHaveBeenCalled();
     expect(screenshotCropMetadataInstance.extract).not.toHaveBeenCalled();
+    expect(result.normalization?.cropApplied).toBe(false);
+    expect(result.normalization?.cropRegion).toBeUndefined();
   });
 
   it("cropRegion が画像範囲外の場合は警告して元のバッファを使うこと", async () => {
@@ -1083,15 +1267,20 @@ describe("compareImages", () => {
     const { compareImages } = await import("./image-compare-service.js");
 
     const dummyBase64 = Buffer.alloc(100).toString("base64");
-    await compareImages({
+    const result = await compareImages({
       designBase64: dummyBase64,
       screenshotBase64: dummyBase64,
       cropRegion: { x: 100, y: 0, width: 10, height: 10 },
     });
 
-    expect(warnSpy).toHaveBeenCalledTimes(2);
+    expect(warnSpy).toHaveBeenCalledOnce();
+    expect(warnSpy).toHaveBeenCalledWith(
+      "Crop region has no valid common image bounds; returning both original image buffers.",
+    );
     expect(designCropMetadataInstance.extract).not.toHaveBeenCalled();
     expect(screenshotCropMetadataInstance.extract).not.toHaveBeenCalled();
+    expect(result.normalization?.cropApplied).toBe(false);
+    expect(result.normalization?.cropRegion).toBeUndefined();
   });
 
   it("無効な画像データを渡すとエラーになること", async () => {
@@ -1609,5 +1798,121 @@ describe("compareImages", () => {
     referenceProfile.set(designProfile, trueOffset);
 
     expect(detectBestAnchorOffset(designProfile, referenceProfile, 10_000)).toBe(trueOffset);
+  });
+});
+
+describe("classifyAlignmentSource", () => {
+  it.each([
+    0,
+    -1,
+    Number.NaN,
+    Number.POSITIVE_INFINITY,
+  ])("resolveAppliedCropOriginは無効な画像寸法をnullにすること (%s)", async (invalidDimension) => {
+    const { resolveAppliedCropOrigin, resolveAppliedCropRegion } = await import(
+      "./image-compare-service.js"
+    );
+    const crop = { x: 0, y: 0, width: 10, height: 10 };
+    expect(resolveAppliedCropOrigin(crop, invalidDimension, 100)).toBeNull();
+    expect(resolveAppliedCropOrigin(crop, 100, invalidDimension)).toBeNull();
+    expect(resolveAppliedCropRegion(crop, invalidDimension, 100)).toBeNull();
+    expect(resolveAppliedCropRegion(crop, 100, invalidDimension)).toBeNull();
+  });
+
+  it("検出したずれを適用しない場合も自動検出として記録すること", async () => {
+    const { classifyAlignmentSource } = await import("./image-compare-service.js");
+
+    expect(
+      classifyAlignmentSource({ translation: { x: 7, y: 0 }, applied: false }, undefined),
+    ).toBe("auto");
+  });
+
+  it("自動検出したずれを適用した場合も自動検出として記録すること", async () => {
+    const { classifyAlignmentSource } = await import("./image-compare-service.js");
+
+    expect(classifyAlignmentSource({ translation: { x: 7, y: 0 }, applied: true }, undefined)).toBe(
+      "auto",
+    );
+  });
+
+  it("移動量0の不一致は位置合わせなしとして記録すること", async () => {
+    const { classifyAlignmentSource } = await import("./image-compare-service.js");
+
+    expect(
+      classifyAlignmentSource({ translation: { x: 0, y: 0 }, applied: false }, undefined),
+    ).toBe("none");
+  });
+
+  it("検証済みsystem UIの補正だけは専用の出所として記録すること", async () => {
+    const { classifyAlignmentSource } = await import("./image-compare-service.js");
+
+    expect(classifyAlignmentSource({ translation: { x: 0, y: 24 }, applied: true }, 24)).toBe(
+      "verified-system-ui",
+    );
+    expect(classifyAlignmentSource({ translation: { x: 0, y: 24 }, applied: false }, 24)).toBe(
+      "auto",
+    );
+  });
+
+  it("縮小後cropの端をnative座標へ戻し、範囲を欠落させないこと", async () => {
+    const { scaleWorkingCropToNative } = await import("./image-compare-service.js");
+
+    expect(
+      scaleWorkingCropToNative({ x: 10, y: 11, width: 20, height: 21 }, 1000, 1000, 333, 333),
+    ).toEqual({ x: 30, y: 33, width: 61, height: 64 });
+  });
+
+  it.each([
+    0,
+    -1,
+    Number.NaN,
+    Number.POSITIVE_INFINITY,
+  ])("crop座標変換はworking高さ幅が有限の正数でない場合を弾くこと (%s)", async (invalidDimension) => {
+    const { scaleWorkingCropToNative } = await import("./image-compare-service.js");
+
+    expect(() =>
+      scaleWorkingCropToNative(
+        { x: 0, y: 0, width: 10, height: 10 },
+        100,
+        100,
+        invalidDimension,
+        100,
+      ),
+    ).toThrow(/finite and positive/);
+    expect(() =>
+      scaleWorkingCropToNative(
+        { x: 0, y: 0, width: 10, height: 10 },
+        100,
+        100,
+        100,
+        invalidDimension,
+      ),
+    ).toThrow(/finite and positive/);
+  });
+
+  it("scaleWorkingCropToNativeは負のcrop原点を許容すること", async () => {
+    const { scaleWorkingCropToNative } = await import("./image-compare-service.js");
+
+    expect(
+      scaleWorkingCropToNative({ x: -10, y: -5, width: 20, height: 15 }, 100, 100, 100, 100),
+    ).toEqual({
+      x: -10,
+      y: -5,
+      width: 20,
+      height: 15,
+    });
+  });
+
+  it.each([
+    { x: Number.NaN, y: 0, width: 10, height: 10 },
+    { x: 0, y: Number.POSITIVE_INFINITY, width: 10, height: 10 },
+    { x: 0, y: 0, width: 0, height: 10 },
+    { x: 0, y: 0, width: -1, height: 10 },
+    { x: 0, y: 0, width: 10, height: Number.NaN },
+  ])("scaleWorkingCropToNativeは無効なcrop矩形を弾くこと (%s)", async (cropRegion) => {
+    const { scaleWorkingCropToNative } = await import("./image-compare-service.js");
+
+    expect(() => scaleWorkingCropToNative(cropRegion, 100, 100, 100, 100)).toThrow(
+      /Crop region must be finite/,
+    );
   });
 });

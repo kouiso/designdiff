@@ -1,0 +1,7 @@
+{
+  "source": "source.png",
+  "shifted": "shifted-left-2px.png",
+  "translation": { "x": -2, "y": 0 },
+  "dimensions": { "width": 1080, "height": 2340 },
+  "groundTruth": "The shifted image is produced by moving every source pixel two native pixels left and filling the exposed right edge with transparent pixels."
+}

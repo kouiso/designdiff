@@ -1,0 +1,72 @@
+{
+  "artifact": "PR142 current alignment verification",
+  "tested_revision": {
+    "repository": "kouiso/designdiff",
+    "commit": "0b64d54f5c16ba4429b9a718a506577548336407",
+    "tracked_source_clean_at_execution": true
+  },
+  "scope": "MCP image comparison and corrected PNG translation fixture; Figma parity and installed MCP rollout are not verified.",
+  "tests": {
+    "mcp_image_compare_and_fixture": {
+      "status": "PASS",
+      "test_files": 4,
+      "image_compare_passed": 58,
+      "dynamic_mask_passed": 6,
+      "runner_system_ui_passed": 10,
+      "fixture_passed": 1,
+      "passed": 75,
+      "log": "mcp-tests.log",
+      "log_sha256": "3e0ebf4478470fa282f66b3c2aaefc0522ed48479b0492c59f34fa0e825b9ba8",
+      "storage": "Task-specific FIGDIFF directories; no writes to user configuration."
+    },
+    "shared_translation": {
+      "status": "PASS",
+      "passed": 41,
+      "log": "shared-tests.log",
+      "log_sha256": "88ccaf423faaea3a9abb3112cbb3df5dba16f9e803a951658079d9eeb833ba47",
+      "tested_commit": "4acc8d50ff33cdb34af8af5316fa55dd32b208b6",
+      "source_unchanged_at_current_commit": true
+    },
+    "oracle_input_boundaries": {
+      "status": "PASS",
+      "passed": 4,
+      "log": "oracle-tests.log",
+      "log_sha256": "b9bf500790aa6de3a1d6a1ccae5f938dc510c9130d5b44dcd9619316aa3bfa4c"
+    }
+  },
+  "independent_ground_truth": {
+    "status": "PASS",
+    "script": "../../../../script/repro-pr142-alignment-fixture.mjs",
+    "script_sha256": "d226ed120a6e024e44463631ad5df918088d2cfb1e25b295dc4651ae9a6dd9e7",
+    "log": "oracle.log",
+    "log_sha256": "b8e4e1fd1e7c09a9b9bcbf512b64afdc98b29470aca92f5f3138ce6f9252aecf",
+    "dimensions": {
+      "width": 1080,
+      "height": 2340
+    },
+    "expected_translation": {
+      "x": -2,
+      "y": 0
+    },
+    "same_image_diff_pixels": 0,
+    "shifted_image_diff_pixels": 160906,
+    "exact_ground_truth_diff_pixels": 0,
+    "pillow_rgba_check": {
+      "decoder": "Pillow",
+      "dimensions": [1080, 2340],
+      "different_rgba_bytes": 0,
+      "actual_rgba_sha256": "3098884fa97429fb35a9b3dbcda23b4a1cdf415a66b6fd5e6d60a1701b2bb406",
+      "expected_rgba_sha256": "3098884fa97429fb35a9b3dbcda23b4a1cdf415a66b6fd5e6d60a1701b2bb406"
+    }
+  },
+  "inputs": {
+    "source": "source.png",
+    "source_sha256": "8e58703e8e1c56d9680a5f0aac59cc48ff10271ea00018009aef3a12914fd40b",
+    "shifted": "shifted-left-2px.png",
+    "shifted_sha256": "300998fca404918ed1940bc9a514bc4b48de1842647b13e46ca904f9938cafd9"
+  },
+  "historical_evidence": "historical-before-paeth contains superseded records with invalid independent-ground-truth claims.",
+  "review_readback": {
+    "sharp_mock_order": "cropImageBuffer creates a metadata instance and a separate extract instance per image. Extract assertions at indices 3 and 5 are correct; proposed indices 2 and 3 are not. Current 59-test run exercises these assertions."
+  }
+}

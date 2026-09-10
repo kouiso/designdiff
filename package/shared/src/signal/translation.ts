@@ -13,10 +13,21 @@ export const COARSE_STEP = 5;
 export const FINE_RANGE = 5;
 export const COARSE_SAMPLE_STEP = 4;
 export const DIFF_THRESHOLD_SQ = 625; // per-channel RGB distance threshold (25^2)
+export const GLOBAL_SHIFT_ISSUE_THRESHOLD_PX = 2;
+export const GLOBAL_SHIFT_CRITICAL_THRESHOLD_PX = 2;
 
 export interface TranslationCandidate {
   dx: number;
   dy: number;
+  source?: "verified-system-ui";
+}
+
+function validateImageDimensions(width: number, height: number): void {
+  if (!Number.isSafeInteger(width) || !Number.isSafeInteger(height) || width <= 0 || height <= 0) {
+    throw new Error(
+      `image dimensions must be positive safe integers: width=${width}, height=${height}`,
+    );
+  }
 }
 
 function validateIgnoreMask(
@@ -156,6 +167,10 @@ function countSampledPositions(
   return count;
 }
 
+function residualSampleStep(width: number, height: number): number {
+  return width * height > 1_000_000 ? 2 : 1;
+}
+
 /**
  * 設計と撮影の間の平行移動を探す。
  *
@@ -169,15 +184,43 @@ export const detectTranslation = (
   height: number,
   ignoreMask?: Uint8Array,
   additionalCandidates: readonly TranslationCandidate[] = [],
-): { dx: number; dy: number; confidence: number; residual: number } => {
+): {
+  dx: number;
+  dy: number;
+  confidence: number;
+  residual: number;
+  verifiedSystemUiCandidate: boolean;
+} => {
+  validateImageDimensions(width, height);
   validateIgnoreMask(ignoreMask, width, height);
   validateTranslationCandidates(additionalCandidates);
   if (width * height < 64) {
-    return { dx: 0, dy: 0, confidence: 1, residual: 0 };
+    const sampleStep = residualSampleStep(width, height);
+    const sampledPositionCount = countSampledPositions(width, height, sampleStep, ignoreMask);
+    const residual =
+      sampledPositionCount === 0
+        ? 0
+        : scoreTranslationCandidate(
+            design,
+            screenshot,
+            width,
+            height,
+            { dx: 0, dy: 0 },
+            sampleStep,
+            ignoreMask,
+          ) / sampledPositionCount;
+    return {
+      dx: 0,
+      dy: 0,
+      confidence: sampledPositionCount === 0 ? 0 : 1,
+      residual,
+      verifiedSystemUiCandidate: false,
+    };
   }
 
   let bestDx = 0;
   let bestDy = 0;
+  let bestVerifiedSystemUiCandidate = false;
   let bestDiff = Infinity;
 
   // 同点のときは動かさない側を残す。一様な画像や繰り返し模様ではどの位置でも
@@ -204,6 +247,7 @@ export const detectTranslation = (
         bestDiff = d;
         bestDx = dx;
         bestDy = dy;
+        bestVerifiedSystemUiCandidate = false;
       }
     }
   }
@@ -217,9 +261,10 @@ export const detectTranslation = (
   // その位置へ戻さないと、前段の値と混ざる。
   bestDx = coarseDx;
   bestDy = coarseDy;
+  bestVerifiedSystemUiCandidate = false;
   // 大きい画像で1px刻みのまま全画素を100回以上走ると時間が持たない。
   // 細かい探索が見分けたいのは10px以内の差なので、間引いても区別はつく。
-  const fineSampleStep = width * height > 1_000_000 ? 2 : 1;
+  const fineSampleStep = residualSampleStep(width, height);
   for (let dy = coarseDy - FINE_RANGE; dy <= coarseDy + FINE_RANGE; dy++) {
     for (let dx = coarseDx - FINE_RANGE; dx <= coarseDx + FINE_RANGE; dx++) {
       const d = scoreTranslationCandidate(
@@ -235,6 +280,7 @@ export const detectTranslation = (
         bestDiff = d;
         bestDx = dx;
         bestDy = dy;
+        bestVerifiedSystemUiCandidate = false;
       }
     }
   }
@@ -252,10 +298,17 @@ export const detectTranslation = (
       fineSampleStep,
       ignoreMask,
     );
-    if (isBetter(d, candidate.dx, candidate.dy)) {
+    if (
+      isBetter(d, candidate.dx, candidate.dy) ||
+      (candidate.source === "verified-system-ui" &&
+        d === bestDiff &&
+        candidate.dx === bestDx &&
+        candidate.dy === bestDy)
+    ) {
       bestDiff = d;
       bestDx = candidate.dx;
       bestDy = candidate.dy;
+      bestVerifiedSystemUiCandidate = candidate.source === "verified-system-ui";
     }
   }
 
@@ -270,7 +323,13 @@ export const detectTranslation = (
   const confidence =
     sampledPositionCount === 0 ? 0 : Math.max(0, 1 - offsetMagnitude / (COARSE_RANGE * Math.SQRT2));
 
-  return { dx: bestDx, dy: bestDy, confidence, residual };
+  return {
+    dx: bestDx,
+    dy: bestDy,
+    confidence,
+    residual,
+    verifiedSystemUiCandidate: bestVerifiedSystemUiCandidate,
+  };
 };
 
 /**
@@ -314,7 +373,12 @@ export function buildVerifiedInsetCandidates(
   verifiedSystemUiTopInset: number | undefined,
 ): readonly TranslationCandidate[] {
   if (verifiedSystemUiTopInset === undefined) return [];
-  return [-1, 0, 1].map((delta) => ({ dx: 0, dy: verifiedSystemUiTopInset + delta }));
+  const candidates = [-1, 0, 1].map((delta) => ({
+    dx: 0,
+    dy: verifiedSystemUiTopInset + delta,
+    ...(delta === 0 ? { source: "verified-system-ui" as const } : {}),
+  }));
+  return candidates;
 }
 
 export interface ResolvedAlignment {
@@ -337,7 +401,8 @@ export const resolveAlignment = (
   ignoreMask?: Uint8Array,
   additionalCandidates: readonly TranslationCandidate[] = [],
 ): ResolvedAlignment => {
-  const { dx, dy, confidence, residual } = detectTranslation(
+  validateImageDimensions(width, height);
+  const { dx, dy, confidence, residual, verifiedSystemUiCandidate } = detectTranslation(
     designPixels,
     screenshotPixels,
     width,
@@ -348,6 +413,35 @@ export const resolveAlignment = (
 
   let alignedDesignPixels = designPixels;
   let applied = false;
+  // scoreTranslationCandidate と同じOOB非罰則の不一致数を、既存 residual と
+  // 同じくサンプル1点あたりへ正規化して記録する。raw countや別の罰則を
+  // 混ぜると、候補スコアとの比較ができない。
+  const residualStep = residualSampleStep(width, height);
+  const residualSampleCount = countSampledPositions(width, height, residualStep, ignoreMask);
+  const baselineResidual =
+    residualSampleCount === 0
+      ? undefined
+      : scoreTranslationCandidate(
+          designPixels,
+          screenshotPixels,
+          width,
+          height,
+          { dx: 0, dy: 0 },
+          residualStep,
+          ignoreMask,
+        ) / residualSampleCount;
+  const correctedResidual =
+    residualSampleCount === 0
+      ? undefined
+      : scoreTranslationCandidate(
+          designPixels,
+          screenshotPixels,
+          width,
+          height,
+          { dx, dy },
+          residualStep,
+          ignoreMask,
+        ) / residualSampleCount;
   if (dx !== 0 || dy !== 0) {
     // 画像の外へ出た画素を必ず違いとして数える。数えないと、透明な余白が
     // 黒い実装と「一致」に見えてしまう。
@@ -384,10 +478,19 @@ export const resolveAlignment = (
       // 適用しなかった場合も検出値をそのまま載せる。0 に伏せると、
       // 「ずれは見つけたが割に合わないので直さなかった」という事実が消える。
       translation: { x: dx, y: dy },
+      source:
+        dx === 0 && dy === 0
+          ? "none"
+          : verifiedSystemUiCandidate && applied
+            ? "verified-system-ui"
+            : "auto",
       scale: { x: 1, y: 1 },
       rotation: 0,
       confidence,
       residual,
+      baselineResidual,
+      correctedResidual,
+      applied,
     },
     alignedDesignPixels,
     applied,

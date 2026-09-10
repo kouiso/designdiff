@@ -1,0 +1,98 @@
+{
+  "valid_for_release": false,
+  "superseded": true,
+  "invalid_reason": "The former Paeth decoder invalidates the recorded independent oracle and exact-ground-truth checks.",
+  "current_receipt": "../receipt.json",
+  "correction_receipt": "../paeth-correction-receipt-8b7f6e4.json",
+  "artifact": "PR142 alignment verification",
+  "source": {
+    "repository": "kouiso/designdiff",
+    "commit": "d06685287d4823de35def2a720e00625883c5d22",
+    "scope": "PR142 source after crop metadata and desktop threshold fixes"
+  },
+  "stages": {
+    "initial_sbi138": "Included in the final source; intermediate source was not independently assessed by this receipt",
+    "crop_metadata_fix": "Included in the source commit; the MCP receipt below predates this fix",
+    "desktop_threshold_fix": "Included in the source commit; the desktop receipt below is recorded separately"
+  },
+  "verification": {
+    "mcp": {
+      "status": "PASS",
+      "passed": 126,
+      "total": 126,
+      "tested_revision": "aab1001",
+      "scope": "MCP tests were run at aab1001 and were not rerun after d066852",
+      "log": "/private/tmp/hm-sbi142-tests.log",
+      "log_sha256": "d06f1f9d53db59d46b1ffa9323961cf133cdfcd50e9f3e30970ee821ae4cf4f6"
+    },
+    "desktop": {
+      "status": "PASS",
+      "passed": 11,
+      "total": 11,
+      "log": "/private/tmp/hm-sbi142-desktop-tests.log",
+      "log_sha256": "9b9d25dee4a9ab56f7fb65a425619d5f9b49b451b1f13c4e7d3b437a0c443e07"
+    },
+    "independent_review": {
+      "status": "PASS"
+    }
+  },
+  "independent_fixture": {
+    "directory": "doc/evidence/pr-merge/pr-142-alignment-fixture",
+    "source": "source.png",
+    "source_sha256": "8e58703e8e1c56d9680a5f0aac59cc48ff10271ea00018009aef3a12914fd40b",
+    "shifted": "shifted-left-2px.png",
+    "shifted_sha256": "3392fd4b9838f57ea34440783cd89cb62794446fdd42e55af8abf58eef27282d",
+    "expected_translation": {
+      "x": -2,
+      "y": 0
+    },
+    "script": "script/repro-pr142-alignment-fixture.mjs",
+    "oracle": "independent exact RGBA pixel comparison; no FigDiff verdict or compare_design import",
+    "checks": {
+      "dimensions": "1080x2340 native pixels",
+      "same_image_diff_pixels": 0,
+      "shifted_image_diff_pixels": 281638,
+      "exact_groundtruth_diff_pixels": 0
+    },
+    "visual_basis": "source.png is the reviewed manual capture; the image was inspected before fixture creation and contains no visible personal information."
+  },
+  "real_image": {
+    "evidence": "/private/tmp/hm-sbi138-real-image.json",
+    "tested_revision": "SBI138 initial implementation; exact commit was not recorded",
+    "scope": "Temporary real-image comparison predates the PR142 fixes and was not rerun at d066852",
+    "source_sha256": "8e58703e8e1c56d9680a5f0aac59cc48ff10271ea00018009aef3a12914fd40b",
+    "shifted_left_2px_sha256": "153ce6d368f5f9e1bacb6f32a990e7f6e262a4201a6694a72ec19d553c2d8e3f",
+    "dimensions": {
+      "width": 1080,
+      "height": 2340
+    },
+    "same_image": {
+      "translation": {
+        "x": 0,
+        "y": 0
+      },
+      "source": "none",
+      "applied": false,
+      "aggregate_verdict": "pass"
+    },
+    "shifted_left_2px": {
+      "translation": {
+        "x": -2,
+        "y": 0
+      },
+      "source": "auto",
+      "applied": true,
+      "aggregate_verdict": "fail",
+      "position_issue": true
+    },
+    "image_body_stored": false,
+    "test_log": "/private/tmp/hm-sbi138-real-image-test.log",
+    "test_log_sha256": "50aca4e20ae2c8f076dad10c245d53edec6ea97e98f0a24b4f4a6fbfbfb89ee5"
+  },
+  "not_verified": {
+    "figma_parity_verified": false,
+    "figma_parity_reason": "Same-viewport Figma parity was not performed; the available Figma image is 390x896 while the real image is 1080x2340",
+    "installed_mcp_updated": false
+  },
+  "latest_durable_verification": "pr-142-alignment-fixture/receipt.json"
+}

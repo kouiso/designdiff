@@ -1,0 +1,13 @@
+
+ RUN  v3.2.6 /private/tmp/hm-designdiff-138/app/mcp-server
+
+·······stderr | src/service/image-compare-service.test.ts > compareImages > 高さが異なる画像のcropは共通範囲を同じ矩形で適用すること
+Crop region is outside image bounds; returning original image buffer.
+
+···········································
+
+ Test Files  2 passed (2)
+      Tests  50 passed (50)
+   Start at  09:55:12
+   Duration  2.64s (transform 125ms, setup 20ms, collect 206ms, tests 4.48s, environment 0ms, prepare 54ms)
+

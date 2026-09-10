@@ -94,3 +94,45 @@ new or edited behavior must use an arrow function assigned to a `const`.
 - Use `ignore_regions` to mask known intentional differences (placeholder text, embedded maps)
 - Use `threshold` (0–1, default 0.1) to adjust color-diff sensitivity
 - For large CSS-only diff (colors, shadows): check `threshold` and `ignore_regions` before spending time on pixel-perfect alignment
+
+## 座標と位置合わせの読み方
+
+比較結果の座標は、次の3つの単位を混ぜずに扱います。
+
+- `normalization.screenshotWidth` / `screenshotHeight`: crop前の実スクリーンショットのnative px
+- `normalization.designNativeWidth` / `designNativeHeight`: Figma exportの寸法（export px）
+- `diffReport`の画素、`alignment.translation`、`normalization.workingCropRegion`: 比較に使ったworking px
+- `normalization.cropRegion`: native pxへ換算した実適用crop
+
+結果のmetadataは、少なくとも次の項目を確認します。
+
+```json
+{
+  "normalization": {
+    "designNativeWidth": 390,
+    "screenshotWidth": 412,
+    "cropApplied": true,
+    "containResized": false,
+    "appliedScale": 1,
+    "cropRegion": { "x": 0, "y": 24, "width": 390, "height": 844 },
+    "workingCropRegion": { "x": 0, "y": 12, "width": 195, "height": 422 },
+    "cropSource": "explicit-project"
+  },
+  "diffReport": {
+    "alignment": {
+      "translation": { "x": 0, "y": 0 },
+      "source": "none",
+      "applied": false,
+      "residual": 0,
+      "baselineResidual": 0,
+      "correctedResidual": 0
+    }
+  }
+}
+```
+
+projectに保存した明示的なcropがある場合は、runnerの自動cropより優先されます。`cropSource`が`explicit-project`なら、寸法を見てauto cropへ置き換えたと解釈しません。自動cropの場合は`auto`、cropなしは`none`です。
+
+`baselineResidual`と`correctedResidual`はpixelmatchのdiff率ではありません。位置候補のscoreと同じ不一致数を、working pxのサンプル点数で割った値です。`residual`も同じサンプル単位で読むため、raw pixel countやexport pxの寸法と直接比較しません。移動が検出されても採用されなかった場合は、`alignment.translation`に検出値を残し、`applied: false`と`source: "auto"`で区別します。
+
+自動位置合わせで未知の移動を補正しても、実UIのずれを合格にしません。working pxで2px以上の採用済み移動はposition issueをcriticalとして扱い、PASSにしません。1px未満の描画誤差は許容範囲です。`verified-system-ui`は、capture deviceから検証済みのtop inset候補と完全一致し、実際に補正を適用した場合だけです。背景一致や、候補が不採用だったことだけではsystem UI例外になりません。

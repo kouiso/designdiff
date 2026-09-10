@@ -747,6 +747,30 @@ describe("buildDiffReport global alignment shift severity", () => {
     return { design: build(0), screenshot: build(dx) };
   }
 
+  const createDenseShiftedPattern = async (
+    width: number,
+    height: number,
+    dx: number,
+  ): Promise<{ design: Uint8ClampedArray; screenshot: Uint8ClampedArray }> => {
+    const build = (offsetX: number): Uint8ClampedArray => {
+      const pixels = new Uint8ClampedArray(width * height * 4);
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          const idx = (y * width + x) * 4;
+          const sourceX = x + offsetX;
+          const hash = (Math.imul(sourceX, 2_654_435_761) ^ Math.imul(y, 1_597_334_677)) >>> 0;
+          pixels[idx] = hash;
+          pixels[idx + 1] = (hash * 3 + 41) % 256;
+          pixels[idx + 2] = (hash * 7 + 83) % 256;
+          pixels[idx + 3] = 255;
+        }
+      }
+      return pixels;
+    };
+
+    return { design: build(0), screenshot: build(dx) };
+  };
+
   function createSystemInsetPattern(
     width: number,
     height: number,
@@ -809,11 +833,11 @@ describe("buildDiffReport global alignment shift severity", () => {
     expect(globalShiftIssue).toBeUndefined();
   });
 
-  it("採用された大きな(>=10px)グローバルシフトは position issue が critical になり aggregateVerdict が fail すること", async () => {
+  it("採用されたグローバルシフト (>=2 working px)は position issue が critical になり aggregateVerdict が fail すること", async () => {
     const { buildDiffReport } = await import("./diff-report-builder.js");
-    const width = 100;
-    const height = 100;
-    const { design, screenshot } = await createShiftedPattern(width, height, 15);
+    const width = 1000;
+    const height = 1000;
+    const { design, screenshot } = await createShiftedPattern(width, height, 5);
 
     const result = buildDiffReport({
       designPixels: design,
@@ -823,9 +847,11 @@ describe("buildDiffReport global alignment shift severity", () => {
     });
 
     // 補正が採用されている (アライメント検知が機能している証拠)。
-    expect(Math.abs(result.alignment.translation.x)).toBeGreaterThanOrEqual(10);
+    expect(Math.abs(result.alignment.translation.x)).toBeGreaterThanOrEqual(2);
 
-    const positionIssue = result.issues.find((issue) => issue.kind === "position");
+    const positionIssue = result.issues.find(
+      (issue) => issue.evidence.signal === "translation_offset",
+    );
     expect(positionIssue).toBeDefined();
     expect(positionIssue?.severity).toBe("critical");
 
@@ -833,6 +859,76 @@ describe("buildDiffReport global alignment shift severity", () => {
     // critical position issue が computeVerdict の hasCriticalIssue を
     // 通じて verdict を fail にする（グローバルシフトが黙って消えない）。
     expect(result.aggregateVerdict).toBe("fail");
+  });
+
+  it("採用された境界値の2pxシフトはcriticalになりaggregateVerdictがfailすること", async () => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    const width = 1000;
+    const height = 1000;
+    const { design, screenshot } = await createDenseShiftedPattern(width, height, 2);
+
+    const result = buildDiffReport({
+      designPixels: design,
+      screenshotPixels: screenshot,
+      width,
+      height,
+      resolvedAlignment: {
+        alignment: {
+          translation: { x: -2, y: 0 },
+          source: "auto",
+          applied: true,
+          scale: { x: 1, y: 1 },
+          rotation: 0,
+          confidence: 1,
+          residual: 0,
+        },
+        alignedDesignPixels: screenshot,
+        applied: true,
+      },
+    });
+
+    expect(Math.abs(result.alignment.translation.x)).toBe(2);
+    expect(result.alignment.applied).toBe(true);
+    const positionIssue = result.issues.find(
+      (issue) => issue.evidence.signal === "translation_offset",
+    );
+    expect(positionIssue?.severity).toBe("critical");
+    expect(result.aggregateVerdict).toBe("fail");
+  });
+
+  it("採用された1pxシフトはcriticalへ昇格しないこと", async () => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    const width = 1000;
+    const height = 1000;
+    const { design, screenshot } = await createDenseShiftedPattern(width, height, 1);
+
+    const result = buildDiffReport({
+      designPixels: design,
+      screenshotPixels: screenshot,
+      width,
+      height,
+      resolvedAlignment: {
+        alignment: {
+          translation: { x: -1, y: 0 },
+          source: "auto",
+          applied: true,
+          scale: { x: 1, y: 1 },
+          rotation: 0,
+          confidence: 1,
+          residual: 0,
+        },
+        alignedDesignPixels: screenshot,
+        applied: true,
+      },
+    });
+
+    expect(Math.abs(result.alignment.translation.x)).toBe(1);
+    expect(result.alignment.applied).toBe(true);
+    const positionIssue = result.issues.find(
+      (issue) => issue.evidence.signal === "translation_offset",
+    );
+    expect(positionIssue).toBeUndefined();
+    expect(result.aggregateVerdict).not.toBe("fail");
   });
 
   it("内部検証済み status bar inset と一致する下方向だけは critical にしないこと", async () => {
