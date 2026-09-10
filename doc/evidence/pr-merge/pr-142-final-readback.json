@@ -1,0 +1,24 @@
+{
+  "repository": "kouiso/designdiff",
+  "pr": 142,
+  "head": "a656f2bdfd3562cbcfc941562413c5eba60af27f",
+  "recorded_at": "2026-09-10T19:10:00.336439+00:00",
+  "state": "OPEN",
+  "draft": false,
+  "merge_state": "CLEAN",
+  "ci": "SUCCESS",
+  "unresolved_threads": 0,
+  "closing_issues": [],
+  "closing_issues_has_next_page": false,
+  "authorization": "User approved merges and all pending approvals in this thread.",
+  "merge_method": "merge",
+  "done_gate": {
+    "code_review": "PASS",
+    "current_mcp_tests": 75,
+    "oracle_negative_tests": 4,
+    "shared_tests_reused_unchanged_source": 41,
+    "ci_test_coverage_e2e_oracle": "SUCCESS",
+    "pbi_137_sbi_138_remain_open": true,
+    "installed_mcp_rollout_and_real_figma_verification": "not complete"
+  }
+}

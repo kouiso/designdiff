@@ -1,0 +1,65 @@
+{
+  "recorded_at": "2026-09-10T19:30:35.755996+00:00",
+  "source_commit": "a656f2bdfd3562cbcfc941562413c5eba60af27f",
+  "merged_as": "346afa2006fae7e3e319172c5e1af1b8c93af282",
+  "runtime": "Isolated compiled MCP using same-worktree shared package; installed MCP configuration untouched",
+  "build": "TypeScript build completed successfully",
+  "comparison_id": "cmp-bf7415ce-88f4-4f37-86d6-6dd753f61bf8",
+  "status": "PASS",
+  "alignment": {
+    "translation": {
+      "x": -1,
+      "y": 0
+    },
+    "source": "auto",
+    "applied": false,
+    "baselineResidual": 0.005803402335194243,
+    "correctedResidual": 0.005567906723976088,
+    "scale": {
+      "x": 1,
+      "y": 1
+    },
+    "rotation": 0,
+    "confidence": 0.9858578643762691,
+    "residual": 0.005567906723976088
+  },
+  "normalization": {
+    "designNativeWidth": 390,
+    "designNativeHeight": 692,
+    "screenshotWidth": 1170,
+    "screenshotHeight": 2076,
+    "cropApplied": false,
+    "containResized": false,
+    "appliedScale": 1,
+    "autoCropped": false,
+    "cropSource": "none"
+  },
+  "match_rate_is_not_overall_completion": true,
+  "files": [
+    {
+      "role": "report",
+      "name": "hm-splash023-pr142-full-report.json",
+      "sha256": "85ac9a7f17d2d71dc8a170dd19826d7693c604ec1b13b49e454584d1483afe19"
+    },
+    {
+      "role": "mcp_entry",
+      "name": "index.js",
+      "sha256": "2f3782ac72d3f6ee4e3ed9e396ff44771b270995296c29cb0d02f875929f793e"
+    },
+    {
+      "role": "translation",
+      "name": "translation.js",
+      "sha256": "6b9e85b5e1f0092701842ff9a424b1cecc958baa7742ecea9100ce60b2d95ee5"
+    },
+    {
+      "role": "build_log",
+      "name": "hm-dd142-isolated-build.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "not_verified": [
+    "installed MCP entry upgraded",
+    "all Figma screens",
+    "physical device visual equivalence"
+  ]
+}
