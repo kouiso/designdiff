@@ -68,7 +68,7 @@
     },
     {
       "role": "reproducible_evidence",
-      "name": "pr-143-runtime/verify_fixture.py",
+      "name": "pr-143-runtime/verify-fixture.py",
       "sha256": "b391f9264c5458f1351b06586f183eb90eabf0c80cf2e822c52cfd0a14c157f6"
     }
   ],
@@ -80,7 +80,7 @@
   "status_source": "Observed MCP response for local private Figma inputs; not an independent correctness verdict.",
   "independent_reproducible_verification": {
     "inputs": "pr-142-alignment-fixture/expected.json",
-    "script": "pr-143-runtime/verify_fixture.py",
+    "script": "pr-143-runtime/verify-fixture.py",
     "oracle": "pr-143-runtime/oracle.json",
     "mcp_report": "pr-143-runtime/mcp-report.json",
     "result": "Exact 2px translation independently verified with Pillow; MCP detects same translation and retains FAIL for layout displacement."
