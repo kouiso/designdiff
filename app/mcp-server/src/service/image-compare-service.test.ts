@@ -408,7 +408,7 @@ describe("compareImages", () => {
     );
   });
 
-  it("高さが異なる画像のcropは共通範囲を同じ矩形で適用すること", async () => {
+  it("高さが異なる画像でも全体が収まるcropは同じ矩形で適用すること", async () => {
     const pixelmatchMock = await import("pixelmatch");
     const metadata = [
       { width: 100, height: 100 },
@@ -437,7 +437,7 @@ describe("compareImages", () => {
     const result = await compareImages({
       designBase64: dummyBase64,
       screenshotBase64: dummyBase64,
-      cropRegion: { x: 0, y: 50, width: 100, height: 100 },
+      cropRegion: { x: 0, y: 50, width: 100, height: 50 },
     });
 
     expect(instances[3].extract).toHaveBeenCalledWith({ left: 0, top: 50, width: 100, height: 50 });
@@ -480,6 +480,36 @@ describe("compareImages", () => {
 
     expect(result.normalization?.cropApplied).toBe(false);
     expect(result.normalization?.cropRegion).toBeUndefined();
+    expect(instances.every((instance) => instance.extract.mock.calls.length === 0)).toBe(true);
+  });
+
+  it.each([
+    [100, 200],
+    [200, 100],
+  ])("片側だけcrop領域が切り詰められる場合は適用しないこと (%i/%i)", async (designHeight, screenshotHeight) => {
+    const pixelmatchMock = await import("pixelmatch");
+    const instances = Array.from({ length: 8 }, () =>
+      createMockSharpInstance({ width: 100, height: 200 }),
+    );
+    instances[0].metadata.mockResolvedValue({ width: 100, height: designHeight });
+    instances[1].metadata.mockResolvedValue({ width: 100, height: screenshotHeight });
+    for (const instance of instances) {
+      instance.toBuffer.mockResolvedValue(Buffer.alloc(100 * 200 * 4));
+    }
+    const queue = [...instances];
+    mockSharpFn.mockImplementation(
+      () => queue.shift() ?? createMockSharpInstance({ width: 100, height: 200 }),
+    );
+    vi.mocked(pixelmatchMock.default).mockReturnValue(0);
+
+    const { compareImages } = await import("./image-compare-service.js");
+    const result = await compareImages({
+      designBase64: Buffer.alloc(100).toString("base64"),
+      screenshotBase64: Buffer.alloc(100).toString("base64"),
+      cropRegion: { x: 0, y: 0, width: 100, height: 200 },
+    });
+
+    expect(result.normalization?.cropApplied).toBe(false);
     expect(instances.every((instance) => instance.extract.mock.calls.length === 0)).toBe(true);
   });
 

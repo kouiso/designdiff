@@ -977,13 +977,28 @@ export async function compareImages(
   }
 
   // Apply crop region if provided (now both images are in the same coordinate space)
-  const appliedCropRegion = cropRegion
-    ? resolveAppliedCropRegion(
-        cropRegion,
-        screenshotWidth,
-        Math.min(normalizedDesignHeight, screenshotHeight),
-      )
-    : null;
+  // 片側の端に合わせて切り詰めると、もう片側に残る差分まで比較から消える。
+  // 各画像で解決した矩形が一致する場合だけ、要求された範囲として扱う。
+  const appliedCropRegion = (() => {
+    if (!cropRegion) return null;
+    const designCrop = resolveAppliedCropRegion(
+      cropRegion,
+      screenshotWidth,
+      normalizedDesignHeight,
+    );
+    const screenshotCrop = resolveAppliedCropRegion(cropRegion, screenshotWidth, screenshotHeight);
+    if (
+      designCrop === null ||
+      screenshotCrop === null ||
+      designCrop.x !== screenshotCrop.x ||
+      designCrop.y !== screenshotCrop.y ||
+      designCrop.width !== screenshotCrop.width ||
+      designCrop.height !== screenshotCrop.height
+    ) {
+      return null;
+    }
+    return designCrop;
+  })();
   if (cropRegion && !appliedCropRegion) {
     if (ignoreRegions?.length) {
       const screenshotCropOrigin = resolveAppliedCropOrigin(
