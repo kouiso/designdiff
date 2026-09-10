@@ -1,0 +1,34 @@
+TAP version 13
+# Subtest: rejects oversized PNG dimensions
+ok 1 - rejects oversized PNG dimensions
+  ---
+  duration_ms: 0.77625
+  type: 'test'
+  ...
+# Subtest: rejects truncated scanlines after bounded inflate
+ok 2 - rejects truncated scanlines after bounded inflate
+  ---
+  duration_ms: 0.210333
+  type: 'test'
+  ...
+# Subtest: rejects unsupported filter 5 even with valid CRC and deflate
+ok 3 - rejects unsupported filter 5 even with valid CRC and deflate
+  ---
+  duration_ms: 0.206208
+  type: 'test'
+  ...
+# Subtest: rejects fractional pixel translations
+ok 4 - rejects fractional pixel translations
+  ---
+  duration_ms: 0.062709
+  type: 'test'
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 4
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 32.553166

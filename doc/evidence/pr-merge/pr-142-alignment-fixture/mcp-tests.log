@@ -1,6 +1,7 @@
 
  RUN  v3.2.6 <worktree>/app/mcp-server
 
+ ✓ src/service/dynamic-mask.test.ts (6 tests) 2ms
 stderr | src/service/image-compare-service.test.ts > compareImages > 共通crop範囲が無い場合は両画像を切り出さないこと (100/200)
 Crop region has no valid common image bounds; returning both original image buffers.
 
@@ -16,15 +17,21 @@ Crop region has no valid common image bounds; returning both original image buff
 stderr | src/service/image-compare-service.test.ts > compareImages > crop中止時のmaskを元画像の位置へ戻すか拒否すること (200)
 Crop region has no valid common image bounds; returning both original image buffers.
 
- ✓ src/service/pr142-alignment-fixture.test.ts (1 test) 2016ms
-   ✓ PR142 durable alignment fixture > 現行compareImagesでも既知2px左移動を補正後にposition issueとして残すこと  2016ms
- ✓ src/service/image-compare-service.test.ts (58 tests) 2723ms
-   ✓ compareImages > grid が差分領域を返せない場合は flood fallback を telemetry に記録すること  360ms
-   ✓ compareImages > 大きな画像で grid が予算超過した場合は flood をスキップしてタイル領域を返すこと  659ms
-   ✓ compareImages > quick tile fallback はリージョン数を上限で打ち切り、決定的な順序で返すこと  1099ms
+ ✓ src/service/pr142-alignment-fixture.test.ts (1 test) 2070ms
+   ✓ PR142 durable alignment fixture > 現行compareImagesでも既知2px左移動を補正後にposition issueとして残すこと  2070ms
+ ✓ src/service/image-compare-service.test.ts (58 tests) 2802ms
+   ✓ compareImages > grid が差分領域を返せない場合は flood fallback を telemetry に記録すること  373ms
+   ✓ compareImages > 大きな画像で grid が予算超過した場合は flood をスキップしてタイル領域を返すこと  685ms
+   ✓ compareImages > quick tile fallback はリージョン数を上限で打ち切り、決定的な順序で返すこと  1118ms
+ ✓ src/service/compare-design-runner-system-ui.test.ts (10 tests) 5025ms
+   ✓ runCompareDesign system UI masks > capture_device 比較では system bar マスクが user region と結合されること  1341ms
+   ✓ runCompareDesign system UI masks > mask_system_ui:false では capture_device でも system bar マスクを追加しないこと  1087ms
+   ✓ runCompareDesign system UI masks > 通常 screenshot では既定で system bar マスクを追加しないこと  911ms
+   ✓ runCompareDesign system UI masks > screenshot_url では既定で system bar マスクを追加しないこと  877ms
+   ✓ runCompareDesign system UI masks > capture_device と cropRegion.y>0 の併用では post-crop 上端の実コンテンツを mask しないこと  768ms
 
- Test Files  2 passed (2)
-      Tests  59 passed (59)
-   Start at  11:36:16
-   Duration  2.94s (transform 149ms, setup 32ms, collect 255ms, tests 4.74s, environment 0ms, prepare 61ms)
+ Test Files  4 passed (4)
+      Tests  75 passed (75)
+   Start at  11:58:25
+   Duration  5.26s (transform 281ms, setup 63ms, collect 550ms, tests 9.90s, environment 0ms, prepare 142ms)
 
