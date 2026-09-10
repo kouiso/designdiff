@@ -1,4 +1,9 @@
 {
+  "valid_for_release": false,
+  "superseded": true,
+  "invalid_reason": "The former Paeth decoder invalidates the recorded independent oracle and exact-ground-truth checks.",
+  "current_receipt": "../receipt.json",
+  "correction_receipt": "../paeth-correction-receipt-8b7f6e4.json",
   "artifact": "PR142 alignment durable fixture receipt",
   "tested_revision": {
     "repository": "kouiso/designdiff",

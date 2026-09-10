@@ -2,7 +2,7 @@
   "artifact": "PR142 current alignment verification summary",
   "source": {
     "repository": "kouiso/designdiff",
-    "commit": "f0746c99a28fdccbacc9aaaeef1dbcf9be12dc33",
+    "commit": "4acc8d50ff33cdb34af8af5316fa55dd32b208b6",
     "tracked_source_clean_at_execution": true
   },
   "verification": {
@@ -13,7 +13,13 @@
       "fixture_passed": 1,
       "passed": 59,
       "log": "pr-142-alignment-fixture/mcp-tests.log",
-      "log_sha256": "d1ecf768c868e27283aa43f5317c1b9342c0b3a8250a0cac5185c8989e3697f4"
+      "log_sha256": "551a92a00d42f53285b701ad527576754306a21d8275996ff0fd82fa942d3457"
+    },
+    "shared_translation": {
+      "status": "PASS",
+      "passed": 41,
+      "log": "pr-142-alignment-fixture/shared-tests.log",
+      "log_sha256": "88ccaf423faaea3a9abb3112cbb3df5dba16f9e803a951658079d9eeb833ba47"
     }
   },
   "independent_fixture": {
@@ -23,7 +29,7 @@
     "shifted_sha256": "300998fca404918ed1940bc9a514bc4b48de1842647b13e46ca904f9938cafd9",
     "status": "PASS",
     "script": "../../../script/repro-pr142-alignment-fixture.mjs",
-    "script_sha256": "71aaacbab38b9f58772e121372fcfbca6a54c8d2ea460d58aefc6bad351726c3",
+    "script_sha256": "ca84c7d5d2301c4f289bd447d3cb166f6569981e281e0eb3ff1e28546bf10f74",
     "log": "pr-142-alignment-fixture/oracle.log",
     "log_sha256": "b8e4e1fd1e7c09a9b9bcbf512b64afdc98b29470aca92f5f3138ce6f9252aecf",
     "dimensions": {
@@ -49,7 +55,7 @@
   "not_verified": {
     "figma_parity_verified": false,
     "installed_mcp_updated": false,
-    "latest_ci": "Pending for the new crop change; earlier CI belongs to previous source."
+    "latest_ci": "Pending for the new input-validation change; earlier CI belongs to previous source."
   },
   "latest_durable_verification": "pr-142-alignment-fixture/receipt.json",
   "superseded_records": "pr-142-alignment-fixture/historical-before-paeth/README.md"
