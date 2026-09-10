@@ -1,0 +1,34 @@
+HEAD 8b7f6e40b321b11f101fa9170b0395ffa6b9c9a9
+MCP
+
+ RUN  v3.2.6 <worktree>/app/mcp-server
+
+stderr | src/service/image-compare-service.test.ts > compareImages > 共通crop範囲が無い場合は両画像を切り出さないこと (100/200)
+Crop region has no valid common image bounds; returning both original image buffers.
+
+stderr | src/service/image-compare-service.test.ts > compareImages > 共通crop範囲が無い場合は両画像を切り出さないこと (200/100)
+Crop region has no valid common image bounds; returning both original image buffers.
+
+ ✓ src/service/image-compare-service.test.ts (50 tests) 2356ms
+   ✓ compareImages > grid が差分領域を返せない場合は flood fallback を telemetry に記録すること  328ms
+   ✓ compareImages > 大きな画像で grid が予算超過した場合は flood をスキップしてタイル領域を返すこと  587ms
+   ✓ compareImages > quick tile fallback はリージョン数を上限で打ち切り、決定的な順序で返すこと  967ms
+ ✓ src/service/pr142-alignment-fixture.test.ts (1 test) 1771ms
+   ✓ PR142 durable alignment fixture > 現行compareImagesでも既知2px左移動を補正後にposition issueとして残すこと  1771ms
+
+ Test Files  2 passed (2)
+      Tests  51 passed (51)
+   Start at  10:37:56
+   Duration  4.39s (transform 130ms, setup 17ms, collect 98ms, tests 4.13s, environment 0ms, prepare 57ms)
+
+SHARED
+
+ RUN  v3.2.6 <worktree>/package/shared
+
+ ✓ src/signal/translation.test.ts (21 tests) 67ms
+
+ Test Files  1 passed (1)
+      Tests  21 passed (21)
+   Start at  10:38:01
+   Duration  158ms (transform 22ms, setup 0ms, collect 20ms, tests 67ms, environment 0ms, prepare 25ms)
+

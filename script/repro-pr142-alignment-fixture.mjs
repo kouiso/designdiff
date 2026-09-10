@@ -50,6 +50,16 @@ function readPng(buffer) {
       const above = prior?.[x] ?? 0;
       const upperLeft = x >= channels && prior ? prior[x - channels] : 0;
       const value = scanlines[sourceOffset++];
+      const predictor = left + above - upperLeft;
+      const distanceLeft = Math.abs(predictor - left);
+      const distanceAbove = Math.abs(predictor - above);
+      const distanceUpperLeft = Math.abs(predictor - upperLeft);
+      const paeth =
+        distanceLeft <= distanceAbove && distanceLeft <= distanceUpperLeft
+          ? left
+          : distanceAbove <= distanceUpperLeft
+            ? above
+            : upperLeft;
       row[x] =
         filter === 0
           ? value
@@ -59,12 +69,7 @@ function readPng(buffer) {
               ? value + above
               : filter === 3
                 ? value + Math.floor((left + above) / 2)
-                : value +
-                  (left + above - upperLeft < Math.min(left, above)
-                    ? Math.max(left, above)
-                    : left + above - upperLeft > Math.max(left, above)
-                      ? Math.min(left, above)
-                      : left + above - upperLeft);
+                : value + paeth;
     }
   }
   const pixels = new Uint8ClampedArray(width * height * 4);

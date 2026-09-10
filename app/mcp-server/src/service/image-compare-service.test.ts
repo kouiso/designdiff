@@ -483,6 +483,44 @@ describe("compareImages", () => {
     expect(instances.every((instance) => instance.extract.mock.calls.length === 0)).toBe(true);
   });
 
+  it.each([
+    200, 100,
+  ])("crop中止時のmaskを元画像の位置へ戻すか拒否すること (%i)", async (screenshotHeight) => {
+    const pixelmatchMock = await import("pixelmatch");
+    const instances = Array.from({ length: 10 }, () =>
+      createMockSharpInstance({ width: 100, height: 200 }),
+    );
+    instances[0].metadata.mockResolvedValue({ width: 100, height: 100 });
+    instances[1].metadata.mockResolvedValue({ width: 100, height: screenshotHeight });
+    for (const instance of instances)
+      instance.toBuffer.mockImplementation(async () => Buffer.alloc(100 * 200 * 4, 255));
+    const queue = [...instances];
+    mockSharpFn.mockImplementation(
+      () => queue.shift() ?? createMockSharpInstance({ width: 100, height: 200 }),
+    );
+    vi.mocked(pixelmatchMock.default).mockImplementation((_design, screenshotPixels) => {
+      expect(screenshotPixels[0]).toBe(255);
+      expect(screenshotPixels[150 * 100 * 4]).toBe(0);
+      return 0;
+    });
+    const { compareImages } = await import("./image-compare-service.js");
+    const pending = compareImages({
+      designBase64: Buffer.alloc(100).toString("base64"),
+      screenshotBase64: Buffer.alloc(100).toString("base64"),
+      cropRegion: { x: 0, y: 150, width: 100, height: 50 },
+      ignoreRegions: [{ x: 0, y: 0, width: 10, height: 10 }],
+    });
+    if (screenshotHeight === 100) {
+      await expect(pending).rejects.toThrow("Cannot restore post-crop ignore regions");
+      expect(pixelmatchMock.default).not.toHaveBeenCalled();
+    } else {
+      const result = await pending;
+      expect(result.normalization?.cropApplied).toBe(false);
+      expect(pixelmatchMock.default).toHaveBeenCalledOnce();
+    }
+    expect(instances.every((instance) => instance.extract.mock.calls.length === 0)).toBe(true);
+  });
+
   it("高さ差がある場合は輝度プロファイルの相関で top offset を検出すること", async () => {
     const pixelmatchMock = await import("pixelmatch");
 
@@ -1730,6 +1768,22 @@ describe("compareImages", () => {
 });
 
 describe("classifyAlignmentSource", () => {
+  it.each([
+    0,
+    -1,
+    Number.NaN,
+    Number.POSITIVE_INFINITY,
+  ])("resolveAppliedCropOriginは無効な画像寸法をnullにすること (%s)", async (invalidDimension) => {
+    const { resolveAppliedCropOrigin, resolveAppliedCropRegion } = await import(
+      "./image-compare-service.js"
+    );
+    const crop = { x: 0, y: 0, width: 10, height: 10 };
+    expect(resolveAppliedCropOrigin(crop, invalidDimension, 100)).toBeNull();
+    expect(resolveAppliedCropOrigin(crop, 100, invalidDimension)).toBeNull();
+    expect(resolveAppliedCropRegion(crop, invalidDimension, 100)).toBeNull();
+    expect(resolveAppliedCropRegion(crop, 100, invalidDimension)).toBeNull();
+  });
+
   it("検出したずれを適用しない場合も自動検出として記録すること", async () => {
     const { classifyAlignmentSource } = await import("./image-compare-service.js");
 

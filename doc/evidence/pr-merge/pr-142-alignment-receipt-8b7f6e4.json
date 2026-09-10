@@ -1,0 +1,37 @@
+{
+  "artifact": "PR142 alignment premerge receipt",
+  "tested_revision": {
+    "repository": "kouiso/designdiff",
+    "commit": "8b7f6e40b321b11f101fa9170b0395ffa6b9c9a9",
+    "worktree_status": "Tracked source clean before and after execution; only this receipt was untracked."
+  },
+  "verification": {
+    "clean_source_regression": {
+      "status": "PASS",
+      "mcp_tests": 50,
+      "fixture_tests": 1,
+      "shared_translation_tests": 21,
+      "log": "doc/evidence/pr-merge/pr-142-alignment-fixture/review-regressions-8b7f6e4.log",
+      "log_sha256": "01224d6bb28e58f108333d8286800892376c3b87b3255acbc8890552044ee967",
+      "original_log_sha256": "c9ec80c89d180304a1b31262a834b7a4d15e56f67989edc8219ae824f4028fa0",
+      "normalization": "Replace only the absolute worktree prefix with <worktree>."
+    }
+  },
+  "source_sha256": {
+    "app/mcp-server/src/service/image-compare-service.test.ts": "48061ce26bc77c46a0993902eca32432d3d68fc48b08baedeab43cfd6e983a22",
+    "app/mcp-server/src/service/image-compare-service.ts": "384466da65905b5fa23ffc568b9458c302ac7d25418f4e22260e24dffa53f401",
+    "package/shared/src/signal/translation.test.ts": "60728a89330d95d5c4e29d0fcc76205bec66f0c9e4955047bad98f42c5e00f9c",
+    "package/shared/src/signal/translation.ts": "35dee846f46f91595baf1731864f845664a95ea296e28eacd96f6adca14c41c2"
+  },
+  "review_corrections": [
+    "Preserve original Sharp mock instances while consuming a separate queue, including both image-height orientations.",
+    "Crop both images only to their common valid region; skip both with one warning when no valid common region exists.",
+    "Carry exact verified inset provenance through shared candidate selection; adjacent and unapplied nonzero candidates remain auto."
+  ],
+  "release_scope": {
+    "pbi137_sbi138": "Refs/NoClose: Figma parity verification and installed MCP rollout remain incomplete",
+    "ci": "running at receipt creation; success is not asserted"
+  },
+  "raw_logs_stored": false,
+  "fixture_verification_correction": "Historical test execution only. The fixture oracle at this revision had a Paeth decoder defect. See pr-142-alignment-fixture/paeth-correction-receipt-8b7f6e4.json; the old independent-ground-truth claim is invalid."
+}

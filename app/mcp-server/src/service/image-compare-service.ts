@@ -985,6 +985,24 @@ export async function compareImages(
       )
     : null;
   if (cropRegion && !appliedCropRegion) {
+    if (ignoreRegions?.length) {
+      const screenshotCropOrigin = resolveAppliedCropOrigin(
+        cropRegion,
+        screenshotWidth,
+        screenshotHeight,
+      );
+      if (!screenshotCropOrigin) {
+        throw new Error(
+          "Cannot restore post-crop ignore regions without a valid screenshot crop origin.",
+        );
+      }
+      // cropを中止してもmaskはcrop後の座標のまま届くため、元画像の原点へ戻す。
+      ignoreRegions = ignoreRegions.map((region) => ({
+        ...region,
+        x: region.x + screenshotCropOrigin.x,
+        y: region.y + screenshotCropOrigin.y,
+      }));
+    }
     console.warn(
       "Crop region has no valid common image bounds; returning both original image buffers.",
     );
@@ -1404,7 +1422,12 @@ export function resolveAppliedCropOrigin(
   imageWidth: number,
   imageHeight: number,
 ): { x: number; y: number } | null {
-  if (imageWidth <= 0 || imageHeight <= 0) {
+  if (
+    !Number.isFinite(imageWidth) ||
+    !Number.isFinite(imageHeight) ||
+    imageWidth <= 0 ||
+    imageHeight <= 0
+  ) {
     return null;
   }
 

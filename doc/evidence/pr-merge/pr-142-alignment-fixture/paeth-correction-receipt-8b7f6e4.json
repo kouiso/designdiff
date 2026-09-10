@@ -1,0 +1,54 @@
+{
+  "artifact": "PR142 alignment fixture Paeth decoder correction",
+  "correction": {
+    "script": "../../../../script/repro-pr142-alignment-fixture.mjs",
+    "script_sha256": "71aaacbab38b9f58772e121372fcfbca6a54c8d2ea460d58aefc6bad351726c3",
+    "reason": "The previous filter-4 branch selected the Paeth predictor in the opposite direction for out-of-range estimates. The PNG Paeth rule selects the smallest absolute distance among left, above, and upper-left.",
+    "source_png_sha256": "8e58703e8e1c56d9680a5f0aac59cc48ff10271ea00018009aef3a12914fd40b",
+    "paeth_rows_observed": 788
+  },
+  "regenerated_fixture": {
+    "shifted_png": "shifted-left-2px.png",
+    "shifted_png_sha256": "300998fca404918ed1940bc9a514bc4b48de1842647b13e46ca904f9938cafd9",
+    "dimensions": {
+      "width": 1080,
+      "height": 2340
+    },
+    "expected_translation": {
+      "x": -2,
+      "y": 0
+    },
+    "script_log_sha256": "b8e4e1fd1e7c09a9b9bcbf512b64afdc98b29470aca92f5f3138ce6f9252aecf",
+    "script_checks": {
+      "same_image_diff_pixels": 0,
+      "shifted_image_diff_pixels": 160906,
+      "exact_ground_truth_diff_pixels": 0
+    },
+    "external_rgba_check": {
+      "decoder": "ImageMagick",
+      "exact_ground_truth_diff_bytes": 0
+    },
+    "pillow_rgba_check": {
+      "decoder": "Pillow",
+      "dimensions": [
+        1080,
+        2340
+      ],
+      "different_rgba_bytes": 0,
+      "actual_rgba_sha256": "3098884fa97429fb35a9b3dbcda23b4a1cdf415a66b6fd5e6d60a1701b2bb406",
+      "expected_rgba_sha256": "3098884fa97429fb35a9b3dbcda23b4a1cdf415a66b6fd5e6d60a1701b2bb406"
+    }
+  },
+  "supersedes": {
+    "prior_fixture_state": "The prior shifted PNG was generated with the incorrect Paeth decoder; the prior exact-ground-truth result is invalid.",
+    "prior_exact_ground_truth_diff_pixels": 1266785
+  },
+  "mcp_fixture_test": {
+    "status": "PASS",
+    "image_compare_tests": 56,
+    "fixture_tests": 1,
+    "log_sha256": "82ba8654136302c82bf92d49f9e9a4d006a0085346f4f13b7cdc1b93fb8a57c9"
+  },
+  "base_revision": "8b7f6e40b321b11f101fa9170b0395ffa6b9c9a9",
+  "tested_revision_note": "Uncommitted correction on the base revision; exact script and PNG hashes are recorded."
+}
