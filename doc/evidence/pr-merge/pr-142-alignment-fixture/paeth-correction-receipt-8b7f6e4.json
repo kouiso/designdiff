@@ -30,10 +30,7 @@
     },
     "pillow_rgba_check": {
       "decoder": "Pillow",
-      "dimensions": [
-        1080,
-        2340
-      ],
+      "dimensions": [1080, 2340],
       "different_rgba_bytes": 0,
       "actual_rgba_sha256": "3098884fa97429fb35a9b3dbcda23b4a1cdf415a66b6fd5e6d60a1701b2bb406",
       "expected_rgba_sha256": "3098884fa97429fb35a9b3dbcda23b4a1cdf415a66b6fd5e6d60a1701b2bb406"
