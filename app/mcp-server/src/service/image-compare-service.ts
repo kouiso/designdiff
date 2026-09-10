@@ -977,9 +977,22 @@ export async function compareImages(
   }
 
   // Apply crop region if provided (now both images are in the same coordinate space)
-  const appliedCropRegion = cropRegion
+  const screenshotCropRegion = cropRegion
     ? resolveAppliedCropRegion(cropRegion, screenshotWidth, screenshotHeight)
     : null;
+  const appliedCropRegion = cropRegion
+    ? resolveAppliedCropRegion(
+        cropRegion,
+        screenshotWidth,
+        Math.min(normalizedDesignHeight, screenshotHeight),
+      )
+    : null;
+  // design側が短い場合にscreenshot側だけ切り出すと、後段の再配置が要求外の
+  // 領域を比較したように見せる。共通範囲が無い場合は両方とも元画像を使う。
+  cropRegion = appliedCropRegion ?? undefined;
+  const cropForBothImages =
+    appliedCropRegion ??
+    (cropRegion === undefined && screenshotCropRegion === null ? nativeCropRegion : undefined);
   // working crop は上限縮小後の座標。外部へ出す native 座標は、実際に適用した
   // working 矩形の両端を同じ倍率で戻す。端を切り上げるのは、縮小時の丸めで
   // native 側の比較範囲を欠落させないため。
@@ -992,9 +1005,9 @@ export async function compareImages(
         screenshotHeight,
       )
     : null;
-  if (cropRegion) {
-    designBuffer = await cropImageBuffer(designBuffer, cropRegion);
-    screenshotBuffer = await cropImageBuffer(screenshotBuffer, cropRegion);
+  if (cropForBothImages) {
+    designBuffer = await cropImageBuffer(designBuffer, cropForBothImages);
+    screenshotBuffer = await cropImageBuffer(screenshotBuffer, cropForBothImages);
   }
 
   // Get final dimensions after crop

@@ -408,6 +408,72 @@ describe("compareImages", () => {
     );
   });
 
+  it("高さが異なる画像のcropは共通範囲を同じ矩形で適用すること", async () => {
+    const pixelmatchMock = await import("pixelmatch");
+    const metadata = [
+      { width: 100, height: 100 },
+      { width: 100, height: 200 },
+      { width: 100, height: 100 },
+      { width: 100, height: 200 },
+      { width: 100, height: 50 },
+      { width: 100, height: 50 },
+    ];
+    const instances = Array.from({ length: 10 }, () =>
+      createMockSharpInstance({ width: 100, height: 50 }),
+    );
+    for (const [index, instance] of instances.entries()) {
+      if (metadata[index]) instance.metadata.mockResolvedValue(metadata[index]);
+    }
+    mockSharpFn.mockImplementation(
+      () => instances.shift() ?? createMockSharpInstance({ width: 100, height: 50 }),
+    );
+    vi.mocked(pixelmatchMock.default).mockReturnValue(0);
+
+    const { compareImages } = await import("./image-compare-service.js");
+    const dummyBase64 = Buffer.alloc(100).toString("base64");
+    const result = await compareImages({
+      designBase64: dummyBase64,
+      screenshotBase64: dummyBase64,
+      cropRegion: { x: 0, y: 50, width: 100, height: 100 },
+    });
+
+    expect(result.normalization?.cropApplied).toBe(true);
+    expect(result.normalization?.workingCropRegion).toEqual({
+      x: 0,
+      y: 50,
+      width: 100,
+      height: 50,
+    });
+  });
+
+  it("共通crop範囲が無い場合は両画像を切り出さないこと", async () => {
+    const pixelmatchMock = await import("pixelmatch");
+    const instances = Array.from({ length: 8 }, () =>
+      createMockSharpInstance({ width: 100, height: 200 }),
+    );
+    instances[0].metadata.mockResolvedValue({ width: 100, height: 100 });
+    instances[1].metadata.mockResolvedValue({ width: 100, height: 200 });
+    for (const instance of instances) {
+      instance.toBuffer.mockResolvedValue(Buffer.alloc(100 * 200 * 4));
+    }
+    mockSharpFn.mockImplementation(
+      () => instances.shift() ?? createMockSharpInstance({ width: 100, height: 200 }),
+    );
+    vi.mocked(pixelmatchMock.default).mockReturnValue(0);
+
+    const { compareImages } = await import("./image-compare-service.js");
+    const dummyBase64 = Buffer.alloc(100).toString("base64");
+    const result = await compareImages({
+      designBase64: dummyBase64,
+      screenshotBase64: dummyBase64,
+      cropRegion: { x: 0, y: 150, width: 100, height: 50 },
+    });
+
+    expect(result.normalization?.cropApplied).toBe(false);
+    expect(result.normalization?.cropRegion).toBeUndefined();
+    expect(instances.every((instance) => instance.extract.mock.calls.length === 0)).toBe(true);
+  });
+
   it("高さ差がある場合は輝度プロファイルの相関で top offset を検出すること", async () => {
     const pixelmatchMock = await import("pixelmatch");
 

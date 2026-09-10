@@ -39,6 +39,7 @@ describe("buildDiffReport", () => {
       "bottom-center",
       "bottom-right",
     ]);
+    expect(report.alignment.source).toBe("none");
   });
 
   it("差分が集中した領域だけ issue に現れる", () => {
@@ -153,6 +154,7 @@ describe("形と位置合わせを実際に使うこと", () => {
     });
 
     expect(report.alignment.translation).toEqual({ x: 7, y: 0 });
+    expect(report.alignment.source).toBe("auto");
   });
 
   it("MCPと同じworking px閾値で1/2/5/9/10pxの重大度を判定すること", () => {

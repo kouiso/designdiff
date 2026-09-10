@@ -433,6 +433,7 @@ export const resolveAlignment = (
       // 適用しなかった場合も検出値をそのまま載せる。0 に伏せると、
       // 「ずれは見つけたが割に合わないので直さなかった」という事実が消える。
       translation: { x: dx, y: dy },
+      source: dx === 0 && dy === 0 ? "none" : "auto",
       scale: { x: 1, y: 1 },
       rotation: 0,
       confidence,

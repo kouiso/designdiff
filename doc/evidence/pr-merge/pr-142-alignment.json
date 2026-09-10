@@ -31,6 +31,23 @@
       "status": "PASS"
     }
   },
+  "independent_fixture": {
+    "directory": "doc/evidence/pr-merge/pr-142-alignment-fixture",
+    "source": "source.png",
+    "source_sha256": "8e58703e8e1c56d9680a5f0aac59cc48ff10271ea00018009aef3a12914fd40b",
+    "shifted": "shifted-left-2px.png",
+    "shifted_sha256": "3392fd4b9838f57ea34440783cd89cb62794446fdd42e55af8abf58eef27282d",
+    "expected_translation": { "x": -2, "y": 0 },
+    "script": "script/repro-pr142-alignment-fixture.mjs",
+    "oracle": "independent exact RGBA pixel comparison; no FigDiff verdict or compare_design import",
+    "checks": {
+      "dimensions": "1080x2340 native pixels",
+      "same_image_diff_pixels": 0,
+      "shifted_image_diff_pixels": 281638,
+      "exact_groundtruth_diff_pixels": 0
+    },
+    "visual_basis": "source.png is the reviewed manual capture; the image was inspected before fixture creation and contains no visible personal information."
+  },
   "real_image": {
     "evidence": "/private/tmp/hm-sbi138-real-image.json",
     "tested_revision": "SBI138 initial implementation; exact commit was not recorded",
