@@ -9,7 +9,7 @@
     "y": 0
   },
   "sameImageDiffPixels": 0,
-  "shiftedImageDiffPixels": 160906,
+  "shiftedImageDiffPixels": 281638,
   "exactGroundTruthDiffPixels": 0,
   "visualEvidence": "source.png is the reviewed 1080x2340 manual capture; shifted-left-2px.png is the same capture with a known native-pixel translation."
 }

@@ -1,13 +1,30 @@
 
- RUN  v3.2.6 /private/tmp/hm-designdiff-138/app/mcp-server
+ RUN  v3.2.6 <worktree>/app/mcp-server
 
-·······stderr | src/service/image-compare-service.test.ts > compareImages > 高さが異なる画像のcropは共通範囲を同じ矩形で適用すること
-Crop region is outside image bounds; returning original image buffer.
+stderr | src/service/image-compare-service.test.ts > compareImages > 共通crop範囲が無い場合は両画像を切り出さないこと (100/200)
+Crop region has no valid common image bounds; returning both original image buffers.
 
-···········································
+stderr | src/service/image-compare-service.test.ts > compareImages > 共通crop範囲が無い場合は両画像を切り出さないこと (200/100)
+Crop region has no valid common image bounds; returning both original image buffers.
+
+stderr | src/service/image-compare-service.test.ts > compareImages > 片側だけcrop領域が切り詰められる場合は適用しないこと (100/200)
+Crop region has no valid common image bounds; returning both original image buffers.
+
+stderr | src/service/image-compare-service.test.ts > compareImages > 片側だけcrop領域が切り詰められる場合は適用しないこと (200/100)
+Crop region has no valid common image bounds; returning both original image buffers.
+
+stderr | src/service/image-compare-service.test.ts > compareImages > crop中止時のmaskを元画像の位置へ戻すか拒否すること (200)
+Crop region has no valid common image bounds; returning both original image buffers.
+
+ ✓ src/service/pr142-alignment-fixture.test.ts (1 test) 1680ms
+   ✓ PR142 durable alignment fixture > 現行compareImagesでも既知2px左移動を補正後にposition issueとして残すこと  1679ms
+ ✓ src/service/image-compare-service.test.ts (58 tests) 2462ms
+   ✓ compareImages > grid が差分領域を返せない場合は flood fallback を telemetry に記録すること  340ms
+   ✓ compareImages > 大きな画像で grid が予算超過した場合は flood をスキップしてタイル領域を返すこと  621ms
+   ✓ compareImages > quick tile fallback はリージョン数を上限で打ち切り、決定的な順序で返すこと  957ms
 
  Test Files  2 passed (2)
-      Tests  50 passed (50)
-   Start at  09:55:12
-   Duration  2.64s (transform 125ms, setup 20ms, collect 206ms, tests 4.48s, environment 0ms, prepare 54ms)
+      Tests  59 passed (59)
+   Start at  11:12:08
+   Duration  2.66s (transform 129ms, setup 16ms, collect 209ms, tests 4.14s, environment 0ms, prepare 59ms)
 

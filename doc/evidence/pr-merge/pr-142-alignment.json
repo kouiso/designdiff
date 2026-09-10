@@ -1,93 +1,56 @@
 {
-  "artifact": "PR142 alignment verification",
+  "artifact": "PR142 current alignment verification summary",
   "source": {
     "repository": "kouiso/designdiff",
-    "commit": "d06685287d4823de35def2a720e00625883c5d22",
-    "scope": "PR142 source after crop metadata and desktop threshold fixes"
-  },
-  "stages": {
-    "initial_sbi138": "Included in the final source; intermediate source was not independently assessed by this receipt",
-    "crop_metadata_fix": "Included in the source commit; the MCP receipt below predates this fix",
-    "desktop_threshold_fix": "Included in the source commit; the desktop receipt below is recorded separately"
+    "commit": "f0746c99a28fdccbacc9aaaeef1dbcf9be12dc33",
+    "tracked_source_clean_at_execution": true
   },
   "verification": {
-    "mcp": {
+    "mcp_image_compare_and_fixture": {
       "status": "PASS",
-      "passed": 126,
-      "total": 126,
-      "tested_revision": "aab1001",
-      "scope": "MCP tests were run at aab1001 and were not rerun after d066852",
-      "log": "/private/tmp/hm-sbi142-tests.log",
-      "log_sha256": "d06f1f9d53db59d46b1ffa9323961cf133cdfcd50e9f3e30970ee821ae4cf4f6"
-    },
-    "desktop": {
-      "status": "PASS",
-      "passed": 11,
-      "total": 11,
-      "log": "/private/tmp/hm-sbi142-desktop-tests.log",
-      "log_sha256": "9b9d25dee4a9ab56f7fb65a425619d5f9b49b451b1f13c4e7d3b437a0c443e07"
-    },
-    "independent_review": {
-      "status": "PASS"
+      "test_files": 2,
+      "image_compare_passed": 58,
+      "fixture_passed": 1,
+      "passed": 59,
+      "log": "pr-142-alignment-fixture/mcp-tests.log",
+      "log_sha256": "d1ecf768c868e27283aa43f5317c1b9342c0b3a8250a0cac5185c8989e3697f4"
     }
   },
   "independent_fixture": {
-    "directory": "doc/evidence/pr-merge/pr-142-alignment-fixture",
     "source": "source.png",
     "source_sha256": "8e58703e8e1c56d9680a5f0aac59cc48ff10271ea00018009aef3a12914fd40b",
     "shifted": "shifted-left-2px.png",
-    "shifted_sha256": "3392fd4b9838f57ea34440783cd89cb62794446fdd42e55af8abf58eef27282d",
-    "expected_translation": {
-      "x": -2,
-      "y": 0
-    },
-    "script": "script/repro-pr142-alignment-fixture.mjs",
-    "oracle": "independent exact RGBA pixel comparison; no FigDiff verdict or compare_design import",
-    "checks": {
-      "dimensions": "1080x2340 native pixels",
-      "same_image_diff_pixels": 0,
-      "shifted_image_diff_pixels": 281638,
-      "exact_groundtruth_diff_pixels": 0
-    },
-    "visual_basis": "source.png is the reviewed manual capture; the image was inspected before fixture creation and contains no visible personal information."
-  },
-  "real_image": {
-    "evidence": "/private/tmp/hm-sbi138-real-image.json",
-    "tested_revision": "SBI138 initial implementation; exact commit was not recorded",
-    "scope": "Temporary real-image comparison predates the PR142 fixes and was not rerun at d066852",
-    "source_sha256": "8e58703e8e1c56d9680a5f0aac59cc48ff10271ea00018009aef3a12914fd40b",
-    "shifted_left_2px_sha256": "153ce6d368f5f9e1bacb6f32a990e7f6e262a4201a6694a72ec19d553c2d8e3f",
+    "shifted_sha256": "300998fca404918ed1940bc9a514bc4b48de1842647b13e46ca904f9938cafd9",
+    "status": "PASS",
+    "script": "../../../script/repro-pr142-alignment-fixture.mjs",
+    "script_sha256": "71aaacbab38b9f58772e121372fcfbca6a54c8d2ea460d58aefc6bad351726c3",
+    "log": "pr-142-alignment-fixture/oracle.log",
+    "log_sha256": "b8e4e1fd1e7c09a9b9bcbf512b64afdc98b29470aca92f5f3138ce6f9252aecf",
     "dimensions": {
       "width": 1080,
       "height": 2340
     },
-    "same_image": {
-      "translation": {
-        "x": 0,
-        "y": 0
-      },
-      "source": "none",
-      "applied": false,
-      "aggregate_verdict": "pass"
+    "expected_translation": {
+      "x": -2,
+      "y": 0
     },
-    "shifted_left_2px": {
-      "translation": {
-        "x": -2,
-        "y": 0
-      },
-      "source": "auto",
-      "applied": true,
-      "aggregate_verdict": "fail",
-      "position_issue": true
+    "same_image_diff_pixels": 0,
+    "shifted_image_diff_pixels": 160906,
+    "exact_ground_truth_diff_pixels": 0,
+    "pillow_rgba_check": {
+      "decoder": "Pillow",
+      "dimensions": [1080, 2340],
+      "different_rgba_bytes": 0,
+      "actual_rgba_sha256": "3098884fa97429fb35a9b3dbcda23b4a1cdf415a66b6fd5e6d60a1701b2bb406",
+      "expected_rgba_sha256": "3098884fa97429fb35a9b3dbcda23b4a1cdf415a66b6fd5e6d60a1701b2bb406"
     },
-    "image_body_stored": false,
-    "test_log": "/private/tmp/hm-sbi138-real-image-test.log",
-    "test_log_sha256": "50aca4e20ae2c8f076dad10c245d53edec6ea97e98f0a24b4f4a6fbfbfb89ee5"
+    "directory": "doc/evidence/pr-merge/pr-142-alignment-fixture"
   },
   "not_verified": {
     "figma_parity_verified": false,
-    "figma_parity_reason": "Same-viewport Figma parity was not performed; the available Figma image is 390x896 while the real image is 1080x2340",
-    "installed_mcp_updated": false
+    "installed_mcp_updated": false,
+    "latest_ci": "Pending for the new crop change; earlier CI belongs to previous source."
   },
-  "latest_durable_verification": "pr-142-alignment-fixture/receipt.json"
+  "latest_durable_verification": "pr-142-alignment-fixture/receipt.json",
+  "superseded_records": "pr-142-alignment-fixture/historical-before-paeth/README.md"
 }
