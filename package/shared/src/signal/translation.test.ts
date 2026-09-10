@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   COARSE_SAMPLE_STEP,
+  buildVerifiedInsetCandidates,
   countSsdOffset,
   detectTranslation,
   resolveAlignment,
@@ -229,6 +230,7 @@ describe("resolveAlignment", () => {
     expect(result.alignment.translation).toEqual({ x: 7, y: 0 });
     expect(result.applied).toBe(false);
     expect(result.alignment.applied).toBe(false);
+    expect(result.alignment.source).toBe("auto");
     expect(result.alignedDesignPixels).toBe(design);
   });
 
@@ -266,12 +268,37 @@ describe("resolveAlignment", () => {
     const design = makeVerticalPattern();
     const { screenshot, ignoreMask } = shiftDownForSystemInset(design, inset);
 
-    const result = resolveAlignment(design, screenshot, WIDTH, HEIGHT, ignoreMask, [
-      { dx: 0, dy: inset },
-    ]);
+    const result = resolveAlignment(
+      design,
+      screenshot,
+      WIDTH,
+      HEIGHT,
+      ignoreMask,
+      buildVerifiedInsetCandidates(inset),
+    );
 
     expect(result.applied).toBe(true);
     expect(result.alignment.translation).toEqual({ x: 0, y: inset });
+    expect(result.alignment.source).toBe("verified-system-ui");
+  });
+
+  it("system UI inset の±1px候補は自動補正として記録すること", () => {
+    const inset = 72;
+    const design = makeVerticalPattern();
+    const { screenshot, ignoreMask } = shiftDownForSystemInset(design, inset + 1);
+
+    const result = resolveAlignment(
+      design,
+      screenshot,
+      WIDTH,
+      HEIGHT,
+      ignoreMask,
+      buildVerifiedInsetCandidates(inset),
+    );
+
+    expect(result.applied).toBe(true);
+    expect(result.alignment.translation).toEqual({ x: 0, y: inset + 1 });
+    expect(result.alignment.source).toBe("auto");
   });
 });
 

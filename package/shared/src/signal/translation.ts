@@ -19,6 +19,7 @@ export const GLOBAL_SHIFT_CRITICAL_THRESHOLD_PX = 2;
 export interface TranslationCandidate {
   dx: number;
   dy: number;
+  source?: "verified-system-ui";
 }
 
 function validateIgnoreMask(
@@ -175,7 +176,13 @@ export const detectTranslation = (
   height: number,
   ignoreMask?: Uint8Array,
   additionalCandidates: readonly TranslationCandidate[] = [],
-): { dx: number; dy: number; confidence: number; residual: number } => {
+): {
+  dx: number;
+  dy: number;
+  confidence: number;
+  residual: number;
+  verifiedSystemUiCandidate: boolean;
+} => {
   validateIgnoreMask(ignoreMask, width, height);
   validateTranslationCandidates(additionalCandidates);
   if (width * height < 64) {
@@ -193,11 +200,18 @@ export const detectTranslation = (
             sampleStep,
             ignoreMask,
           ) / sampledPositionCount;
-    return { dx: 0, dy: 0, confidence: sampledPositionCount === 0 ? 0 : 1, residual };
+    return {
+      dx: 0,
+      dy: 0,
+      confidence: sampledPositionCount === 0 ? 0 : 1,
+      residual,
+      verifiedSystemUiCandidate: false,
+    };
   }
 
   let bestDx = 0;
   let bestDy = 0;
+  let bestVerifiedSystemUiCandidate = false;
   let bestDiff = Infinity;
 
   // 同点のときは動かさない側を残す。一様な画像や繰り返し模様ではどの位置でも
@@ -224,6 +238,7 @@ export const detectTranslation = (
         bestDiff = d;
         bestDx = dx;
         bestDy = dy;
+        bestVerifiedSystemUiCandidate = false;
       }
     }
   }
@@ -237,6 +252,7 @@ export const detectTranslation = (
   // その位置へ戻さないと、前段の値と混ざる。
   bestDx = coarseDx;
   bestDy = coarseDy;
+  bestVerifiedSystemUiCandidate = false;
   // 大きい画像で1px刻みのまま全画素を100回以上走ると時間が持たない。
   // 細かい探索が見分けたいのは10px以内の差なので、間引いても区別はつく。
   const fineSampleStep = residualSampleStep(width, height);
@@ -255,6 +271,7 @@ export const detectTranslation = (
         bestDiff = d;
         bestDx = dx;
         bestDy = dy;
+        bestVerifiedSystemUiCandidate = false;
       }
     }
   }
@@ -272,10 +289,17 @@ export const detectTranslation = (
       fineSampleStep,
       ignoreMask,
     );
-    if (isBetter(d, candidate.dx, candidate.dy)) {
+    if (
+      isBetter(d, candidate.dx, candidate.dy) ||
+      (candidate.source === "verified-system-ui" &&
+        d === bestDiff &&
+        candidate.dx === bestDx &&
+        candidate.dy === bestDy)
+    ) {
       bestDiff = d;
       bestDx = candidate.dx;
       bestDy = candidate.dy;
+      bestVerifiedSystemUiCandidate = candidate.source === "verified-system-ui";
     }
   }
 
@@ -290,7 +314,13 @@ export const detectTranslation = (
   const confidence =
     sampledPositionCount === 0 ? 0 : Math.max(0, 1 - offsetMagnitude / (COARSE_RANGE * Math.SQRT2));
 
-  return { dx: bestDx, dy: bestDy, confidence, residual };
+  return {
+    dx: bestDx,
+    dy: bestDy,
+    confidence,
+    residual,
+    verifiedSystemUiCandidate: bestVerifiedSystemUiCandidate,
+  };
 };
 
 /**
@@ -334,7 +364,12 @@ export function buildVerifiedInsetCandidates(
   verifiedSystemUiTopInset: number | undefined,
 ): readonly TranslationCandidate[] {
   if (verifiedSystemUiTopInset === undefined) return [];
-  return [-1, 0, 1].map((delta) => ({ dx: 0, dy: verifiedSystemUiTopInset + delta }));
+  const candidates = [-1, 0, 1].map((delta) => ({
+    dx: 0,
+    dy: verifiedSystemUiTopInset + delta,
+    ...(delta === 0 ? { source: "verified-system-ui" as const } : {}),
+  }));
+  return candidates;
 }
 
 export interface ResolvedAlignment {
@@ -357,7 +392,7 @@ export const resolveAlignment = (
   ignoreMask?: Uint8Array,
   additionalCandidates: readonly TranslationCandidate[] = [],
 ): ResolvedAlignment => {
-  const { dx, dy, confidence, residual } = detectTranslation(
+  const { dx, dy, confidence, residual, verifiedSystemUiCandidate } = detectTranslation(
     designPixels,
     screenshotPixels,
     width,
@@ -433,7 +468,12 @@ export const resolveAlignment = (
       // 適用しなかった場合も検出値をそのまま載せる。0 に伏せると、
       // 「ずれは見つけたが割に合わないので直さなかった」という事実が消える。
       translation: { x: dx, y: dy },
-      source: dx === 0 && dy === 0 ? "none" : "auto",
+      source:
+        dx === 0 && dy === 0
+          ? "none"
+          : verifiedSystemUiCandidate && applied
+            ? "verified-system-ui"
+            : "auto",
       scale: { x: 1, y: 1 },
       rotation: 0,
       confidence,

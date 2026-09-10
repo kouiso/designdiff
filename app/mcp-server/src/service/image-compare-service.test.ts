@@ -414,7 +414,9 @@ describe("compareImages", () => {
       { width: 100, height: 100 },
       { width: 100, height: 200 },
       { width: 100, height: 100 },
+      { width: 100, height: 50 },
       { width: 100, height: 200 },
+      { width: 100, height: 50 },
       { width: 100, height: 50 },
       { width: 100, height: 50 },
     ];
@@ -424,8 +426,9 @@ describe("compareImages", () => {
     for (const [index, instance] of instances.entries()) {
       if (metadata[index]) instance.metadata.mockResolvedValue(metadata[index]);
     }
+    const queue = [...instances];
     mockSharpFn.mockImplementation(
-      () => instances.shift() ?? createMockSharpInstance({ width: 100, height: 50 }),
+      () => queue.shift() ?? createMockSharpInstance({ width: 100, height: 50 }),
     );
     vi.mocked(pixelmatchMock.default).mockReturnValue(0);
 
@@ -437,6 +440,8 @@ describe("compareImages", () => {
       cropRegion: { x: 0, y: 50, width: 100, height: 100 },
     });
 
+    expect(instances[3].extract).toHaveBeenCalledWith({ left: 0, top: 50, width: 100, height: 50 });
+    expect(instances[5].extract).toHaveBeenCalledWith({ left: 0, top: 50, width: 100, height: 50 });
     expect(result.normalization?.cropApplied).toBe(true);
     expect(result.normalization?.workingCropRegion).toEqual({
       x: 0,
@@ -446,18 +451,22 @@ describe("compareImages", () => {
     });
   });
 
-  it("共通crop範囲が無い場合は両画像を切り出さないこと", async () => {
+  it.each([
+    [100, 200],
+    [200, 100],
+  ])("共通crop範囲が無い場合は両画像を切り出さないこと (%i/%i)", async (designHeight, screenshotHeight) => {
     const pixelmatchMock = await import("pixelmatch");
     const instances = Array.from({ length: 8 }, () =>
       createMockSharpInstance({ width: 100, height: 200 }),
     );
-    instances[0].metadata.mockResolvedValue({ width: 100, height: 100 });
-    instances[1].metadata.mockResolvedValue({ width: 100, height: 200 });
+    instances[0].metadata.mockResolvedValue({ width: 100, height: designHeight });
+    instances[1].metadata.mockResolvedValue({ width: 100, height: screenshotHeight });
     for (const instance of instances) {
       instance.toBuffer.mockResolvedValue(Buffer.alloc(100 * 200 * 4));
     }
+    const queue = [...instances];
     mockSharpFn.mockImplementation(
-      () => instances.shift() ?? createMockSharpInstance({ width: 100, height: 200 }),
+      () => queue.shift() ?? createMockSharpInstance({ width: 100, height: 200 }),
     );
     vi.mocked(pixelmatchMock.default).mockReturnValue(0);
 
@@ -1120,7 +1129,10 @@ describe("compareImages", () => {
       cropRegion: { x: Number.NaN, y: 0, width: 10, height: 10 },
     });
 
-    expect(warnSpy).toHaveBeenCalledTimes(2);
+    expect(warnSpy).toHaveBeenCalledOnce();
+    expect(warnSpy).toHaveBeenCalledWith(
+      "Crop region has no valid common image bounds; returning both original image buffers.",
+    );
     expect(designCropMetadataInstance.extract).not.toHaveBeenCalled();
     expect(screenshotCropMetadataInstance.extract).not.toHaveBeenCalled();
     expect(result.normalization?.cropApplied).toBe(false);
@@ -1189,7 +1201,10 @@ describe("compareImages", () => {
       cropRegion: { x: 100, y: 0, width: 10, height: 10 },
     });
 
-    expect(warnSpy).toHaveBeenCalledTimes(2);
+    expect(warnSpy).toHaveBeenCalledOnce();
+    expect(warnSpy).toHaveBeenCalledWith(
+      "Crop region has no valid common image bounds; returning both original image buffers.",
+    );
     expect(designCropMetadataInstance.extract).not.toHaveBeenCalled();
     expect(screenshotCropMetadataInstance.extract).not.toHaveBeenCalled();
     expect(result.normalization?.cropApplied).toBe(false);
