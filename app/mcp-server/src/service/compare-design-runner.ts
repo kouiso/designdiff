@@ -1262,6 +1262,7 @@ export function describeIncompleteScrollCapture(
 
 export interface SystemIgnoreRegionsForComparison {
   regions: IgnoreRegion[];
+  preCropRegions: IgnoreRegion[];
   verifiedTopInset: number | undefined;
 }
 
@@ -1283,7 +1284,7 @@ export function buildSystemIgnoreRegionsForComparison(
 ): SystemIgnoreRegionsForComparison {
   const maskSystemUi = args.mask_system_ui ?? args.capture_device !== undefined;
   if (!maskSystemUi) {
-    return { regions: [], verifiedTopInset: undefined };
+    return { regions: [], preCropRegions: [], verifiedTopInset: undefined };
   }
 
   // 繋いだ後の画像は必ず縦長になる。その寸法から向きを推すと、横向きで撮った
@@ -1315,6 +1316,7 @@ export function buildSystemIgnoreRegionsForComparison(
       : getVerifiedSystemBarTopInset(viewportWidth, viewportHeight, args.capture_device);
   return {
     regions,
+    preCropRegions: fullRegions,
     // post-crop の短い mask を端末 inset と誤認すると、同じ量のレイアウト回帰を
     // 許容してしまう。crop 前の全高を保持し、その帯を丸ごと含む場合だけ使う。
     verifiedTopInset:
@@ -1501,6 +1503,7 @@ export async function runCompareDesign(
     ...systemIgnoreRegions.regions,
     ...shiftRegionsIntoCropSpace(dynamicIgnoreRegions, cropRegion),
   ];
+  const fallbackIgnoreRegions = [...dynamicIgnoreRegions, ...systemIgnoreRegions.preCropRegions];
 
   // 既に適用したマスクが分かってから候補を出す。二重の提案を避けるため。
   const toastBandCandidates = await detectToastBandCandidates(
@@ -1517,6 +1520,7 @@ export async function runCompareDesign(
       cropRegion,
       figmaNodeId: resolvedNodeId,
       ignoreRegions,
+      fallbackIgnoreRegions,
       verifiedSystemUiTopInset: systemIgnoreRegions.verifiedTopInset,
       designBackground: args.design_background,
     },

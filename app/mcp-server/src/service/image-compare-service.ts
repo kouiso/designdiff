@@ -69,6 +69,8 @@ interface CompareImagesOptions {
   // 既知の意図的差分マスク。各矩形内の差分ピクセルは matchRate / clustering から除外。
   // 矩形は cropRegion 適用後の座標系 (= screenshot ピクセル座標) で指定する。
   ignoreRegions?: IgnoreRegion[];
+  // crop が共通範囲を持たず中止された場合に使う、crop 前の完全な mask 集合。
+  fallbackIgnoreRegions?: IgnoreRegion[];
   // runner が端末 preset と crop 条件から内部検証した status bar 高さ。
   // user region の label から推測すると偽装できるため、別経路で渡す。
   verifiedSystemUiTopInset?: number;
@@ -79,6 +81,7 @@ interface CompareImagesOptions {
 interface ComparisonGeometry {
   cropRegion?: CropRegion;
   ignoreRegions?: IgnoreRegion[];
+  fallbackIgnoreRegions?: IgnoreRegion[];
   verifiedSystemUiTopInset?: number;
 }
 
@@ -153,6 +156,10 @@ export function scaleComparisonGeometry(
       ? scaleRegionToWorkingPixels(geometry.cropRegion, scaleX, scaleY)
       : undefined,
     ignoreRegions: geometry.ignoreRegions?.map((region) => ({
+      ...scaleRegionToWorkingPixels(region, scaleX, scaleY),
+      label: region.label,
+    })),
+    fallbackIgnoreRegions: geometry.fallbackIgnoreRegions?.map((region) => ({
       ...scaleRegionToWorkingPixels(region, scaleX, scaleY),
       label: region.label,
     })),
@@ -903,9 +910,11 @@ export async function compareImages(
   } = options;
   const nativeCropRegion = options.cropRegion;
   const nativeIgnoreRegions = options.ignoreRegions;
+  const nativeFallbackIgnoreRegions = options.fallbackIgnoreRegions;
   const nativeVerifiedSystemUiTopInset = options.verifiedSystemUiTopInset;
   let cropRegion = nativeCropRegion;
   let ignoreRegions = nativeIgnoreRegions;
+  let fallbackIgnoreRegions = nativeFallbackIgnoreRegions;
   let verifiedSystemUiTopInset = nativeVerifiedSystemUiTopInset;
 
   // Decode base64 to buffers
@@ -951,6 +960,7 @@ export async function compareImages(
       {
         cropRegion: nativeCropRegion,
         ignoreRegions: nativeIgnoreRegions,
+        fallbackIgnoreRegions: nativeFallbackIgnoreRegions,
         verifiedSystemUiTopInset: nativeVerifiedSystemUiTopInset,
       },
       { width: nativeScreenshotWidth, height: nativeScreenshotHeight },
@@ -958,6 +968,7 @@ export async function compareImages(
     );
     cropRegion = scaledGeometry.cropRegion;
     ignoreRegions = scaledGeometry.ignoreRegions;
+    fallbackIgnoreRegions = scaledGeometry.fallbackIgnoreRegions;
     verifiedSystemUiTopInset = scaledGeometry.verifiedSystemUiTopInset;
   }
 
@@ -1000,23 +1011,31 @@ export async function compareImages(
     return designCrop;
   })();
   if (cropRegion && !appliedCropRegion) {
-    if (ignoreRegions?.length) {
-      const screenshotCropOrigin = resolveAppliedCropOrigin(
-        cropRegion,
-        screenshotWidth,
-        screenshotHeight,
-      );
-      if (!screenshotCropOrigin) {
-        throw new Error(
-          "Cannot restore post-crop ignore regions without a valid screenshot crop origin.",
-        );
-      }
-      // cropを中止してもmaskはcrop後の座標のまま届くため、元画像の原点へ戻す。
-      ignoreRegions = ignoreRegions.map((region) => ({
-        ...region,
-        x: region.x + screenshotCropOrigin.x,
-        y: region.y + screenshotCropOrigin.y,
-      }));
+    const restoredPostCropIgnoreRegions = ignoreRegions?.length
+      ? (() => {
+          const screenshotCropOrigin = resolveAppliedCropOrigin(
+            cropRegion,
+            screenshotWidth,
+            screenshotHeight,
+          );
+          if (!screenshotCropOrigin) {
+            throw new Error(
+              "Cannot restore post-crop ignore regions without a valid screenshot crop origin.",
+            );
+          }
+          return ignoreRegions.map((region) => ({
+            ...region,
+            x: region.x + screenshotCropOrigin.x,
+            y: region.y + screenshotCropOrigin.y,
+          }));
+        })()
+      : [];
+    if (fallbackIgnoreRegions?.length) {
+      ignoreRegions = [...fallbackIgnoreRegions, ...restoredPostCropIgnoreRegions];
+    } else if (restoredPostCropIgnoreRegions.length) {
+      ignoreRegions = restoredPostCropIgnoreRegions;
+    } else {
+      ignoreRegions = nativeIgnoreRegions;
     }
     console.warn(
       "Crop region has no valid common image bounds; returning both original image buffers.",

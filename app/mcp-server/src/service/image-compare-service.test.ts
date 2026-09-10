@@ -528,8 +528,11 @@ describe("compareImages", () => {
     mockSharpFn.mockImplementation(
       () => queue.shift() ?? createMockSharpInstance({ width: 100, height: 200 }),
     );
-    vi.mocked(pixelmatchMock.default).mockImplementation((_design, screenshotPixels) => {
-      expect(screenshotPixels[0]).toBe(255);
+    vi.mocked(pixelmatchMock.default).mockImplementation((designPixels, screenshotPixels) => {
+      // fallbackIgnoreRegions はcrop前の領域を保持し、crop後入力も従来どおり復元する。
+      expect(designPixels[0]).toBe(0);
+      expect(screenshotPixels[0]).toBe(0);
+      expect(designPixels[100 * 100 * 4]).toBe(255);
       expect(screenshotPixels[150 * 100 * 4]).toBe(0);
       return 0;
     });
@@ -539,6 +542,7 @@ describe("compareImages", () => {
       screenshotBase64: Buffer.alloc(100).toString("base64"),
       cropRegion: { x: 0, y: 150, width: 100, height: 50 },
       ignoreRegions: [{ x: 0, y: 0, width: 10, height: 10 }],
+      fallbackIgnoreRegions: [{ x: 0, y: 0, width: 10, height: 72 }],
     });
     if (screenshotHeight === 100) {
       await expect(pending).rejects.toThrow("Cannot restore post-crop ignore regions");

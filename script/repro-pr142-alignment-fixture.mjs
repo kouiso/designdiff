@@ -3,7 +3,7 @@
 import { promises as fs } from "node:fs";
 import { inflateSync, deflateSync } from "node:zlib";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const fixtureDir = path.join(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -17,15 +17,28 @@ function readPng(buffer) {
   let width = 0;
   let height = 0;
   let channels = 0;
+  let sawHeader = false;
   const compressed = [];
   while (offset < buffer.length) {
     const length = buffer.readUInt32BE(offset);
     const type = buffer.toString("ascii", offset + 4, offset + 8);
+    if (offset + 12 + length > buffer.length) throw new Error("truncated PNG chunk");
     const data = buffer.subarray(offset + 8, offset + 8 + length);
     offset += length + 12;
     if (type === "IHDR") {
+      if (sawHeader || data.length < 13) throw new Error("invalid PNG IHDR");
+      sawHeader = true;
       width = data.readUInt32BE(0);
       height = data.readUInt32BE(4);
+      if (
+        !Number.isInteger(width) ||
+        !Number.isInteger(height) ||
+        width < 1 ||
+        height < 1 ||
+        width * height > 24_000_000
+      ) {
+        throw new Error(`unsupported PNG dimensions: ${width}x${height}`);
+      }
       if (
         data[8] !== 8 ||
         ![2, 6].includes(data[9]) ||
@@ -37,7 +50,15 @@ function readPng(buffer) {
       channels = data[9] === 6 ? 4 : 3;
     } else if (type === "IDAT") compressed.push(data);
   }
-  const scanlines = inflateSync(Buffer.concat(compressed));
+  const expectedScanlineLength = height * (1 + width * channels);
+  const scanlines = inflateSync(Buffer.concat(compressed), {
+    maxOutputLength: expectedScanlineLength,
+  });
+  if (scanlines.length !== expectedScanlineLength) {
+    throw new Error(
+      `unexpected PNG scanline length: ${scanlines.length} (expected ${expectedScanlineLength})`,
+    );
+  }
   const stride = width * channels;
   const rows = Buffer.alloc(height * stride);
   let sourceOffset = 0;
@@ -75,6 +96,7 @@ function readPng(buffer) {
                 : value + paeth;
     }
   }
+  if (!sawHeader || channels === 0) throw new Error("missing PNG IHDR");
   const pixels = new Uint8ClampedArray(width * height * 4);
   for (let i = 0; i < width * height; i++) {
     pixels[i * 4] = rows[i * channels];
@@ -128,6 +150,14 @@ function writePng(pixels, width, height) {
 }
 
 function shiftPixels(source, width, height, dx, dy) {
+  if (
+    !Number.isFinite(dx) ||
+    !Number.isInteger(dx) ||
+    !Number.isFinite(dy) ||
+    !Number.isInteger(dy)
+  ) {
+    throw new Error(`translation must use finite integer pixels: ${dx},${dy}`);
+  }
   const shifted = new Uint8ClampedArray(source.length);
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
@@ -226,4 +256,8 @@ async function main() {
   );
 }
 
-await main();
+if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
+  await main();
+}
+
+export { readPng, shiftPixels, writePng };
