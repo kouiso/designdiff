@@ -1,0 +1,13 @@
+
+ RUN  v3.2.6 /private/tmp/hm-designdiff-138/app/desktop
+
+stdout | src/service/diff-report.test.ts
+🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙
+
+···········
+
+ Test Files  1 passed (1)
+      Tests  11 passed (11)
+   Start at  09:55:30
+   Duration  538ms (transform 105ms, setup 55ms, collect 137ms, tests 71ms, environment 137ms, prepare 33ms)
+

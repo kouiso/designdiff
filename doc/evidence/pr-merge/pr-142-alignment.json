@@ -37,7 +37,10 @@
     "source_sha256": "8e58703e8e1c56d9680a5f0aac59cc48ff10271ea00018009aef3a12914fd40b",
     "shifted": "shifted-left-2px.png",
     "shifted_sha256": "3392fd4b9838f57ea34440783cd89cb62794446fdd42e55af8abf58eef27282d",
-    "expected_translation": { "x": -2, "y": 0 },
+    "expected_translation": {
+      "x": -2,
+      "y": 0
+    },
     "script": "script/repro-pr142-alignment-fixture.mjs",
     "oracle": "independent exact RGBA pixel comparison; no FigDiff verdict or compare_design import",
     "checks": {
@@ -85,5 +88,6 @@
     "figma_parity_verified": false,
     "figma_parity_reason": "Same-viewport Figma parity was not performed; the available Figma image is 390x896 while the real image is 1080x2340",
     "installed_mcp_updated": false
-  }
+  },
+  "latest_durable_verification": "pr-142-alignment-fixture/receipt.json"
 }
