@@ -110,6 +110,8 @@ export {
   detectTranslation,
   DIFF_THRESHOLD_SQ,
   FINE_RANGE,
+  GLOBAL_SHIFT_CRITICAL_THRESHOLD_PX,
+  GLOBAL_SHIFT_ISSUE_THRESHOLD_PX,
   resolveAlignment,
   shiftPixels,
   type ResolvedAlignment,

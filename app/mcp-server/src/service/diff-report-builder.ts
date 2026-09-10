@@ -6,6 +6,8 @@ import {
   computeMeanDeltaE2000,
   computePerceptibleDiffRatio,
   computeSsimForRegion,
+  GLOBAL_SHIFT_CRITICAL_THRESHOLD_PX,
+  GLOBAL_SHIFT_ISSUE_THRESHOLD_PX,
   resolveAlignment,
   UNIMPLEMENTED_LAYOUT_SCORE,
   computeVerdict,
@@ -668,7 +670,6 @@ function selectAnchorsForScoring<T>(anchors: readonly T[]): T[] {
 }
 
 // Sub-pixel/anti-aliasing tolerance for the global-shift visibility issue below.
-const GLOBAL_SHIFT_ISSUE_THRESHOLD_PX = 2;
 // A shift at or above this magnitude is implausible as mere rendering/DPR
 // noise between a Figma export and a real screenshot (that noise lives in
 // the 0-2px range this alignment correction exists to absorb — see the
@@ -679,7 +680,6 @@ const GLOBAL_SHIFT_ISSUE_THRESHOLD_PX = 2;
 // capture-scale noise). At or above 2 working px, treat as a real position defect —
 // escalate to "critical" so it fails through the same path "color" already
 // uses, without touching computeVerdict itself.
-const GLOBAL_SHIFT_CRITICAL_THRESHOLD_PX = 2;
 
 export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
   const { designPixels, screenshotPixels, width, height, paddingMask } = options;

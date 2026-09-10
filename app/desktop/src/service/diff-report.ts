@@ -3,9 +3,13 @@ import {
   computeMeanDeltaE2000,
   computeSsim,
   computeVerdict,
+  GLOBAL_SHIFT_CRITICAL_THRESHOLD_PX,
+  GLOBAL_SHIFT_ISSUE_THRESHOLD_PX,
+  buildVerifiedInsetCandidates,
   resolveAlignment,
   UNIMPLEMENTED_LAYOUT_SCORE,
   type DiffReport,
+  type ResolvedAlignment,
 } from "@figdiff/shared";
 
 interface BuildDiffReportOptions {
@@ -13,6 +17,8 @@ interface BuildDiffReportOptions {
   screenshotPixels: Uint8ClampedArray;
   width: number;
   height: number;
+  verifiedSystemUiTopInset?: number;
+  resolvedAlignment?: ResolvedAlignment;
 }
 
 interface RegionWindow {
@@ -27,9 +33,7 @@ const GRID_SIZE = 3;
 
 // 描画のにじみや倍率の丸めで生じるずれはこの範囲に収まる。ここを超えたら
 // 見て分かるずれとして扱う。
-const GLOBAL_SHIFT_ISSUE_THRESHOLD_PX = 2;
 // この大きさのずれは、書き出しと撮影の誤差では説明がつかない。合否を止める。
-const GLOBAL_SHIFT_CRITICAL_THRESHOLD_PX = 10;
 
 const buildRegionWindows = (width: number, height: number): RegionWindow[] => {
   const horizontalNames = ["left", "center", "right"];
@@ -165,7 +169,15 @@ export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
     alignment,
     alignedDesignPixels,
     applied: alignmentApplied,
-  } = resolveAlignment(designPixels, screenshotPixels, width, height);
+  } = options.resolvedAlignment ??
+  resolveAlignment(
+    designPixels,
+    screenshotPixels,
+    width,
+    height,
+    undefined,
+    buildVerifiedInsetCandidates(options.verifiedSystemUiTopInset),
+  );
   const windows = buildRegionWindows(width, height);
 
   const regionScores = windows.map((window) => {
@@ -207,7 +219,15 @@ export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
     alignment.translation.x * alignment.translation.x +
       alignment.translation.y * alignment.translation.y,
   );
-  if (alignmentApplied && shiftMagnitude >= GLOBAL_SHIFT_ISSUE_THRESHOLD_PX) {
+  const isVerifiedSystemUiShift =
+    alignment.translation.x === 0 &&
+    options.verifiedSystemUiTopInset !== undefined &&
+    alignment.translation.y === options.verifiedSystemUiTopInset;
+  if (
+    alignmentApplied &&
+    shiftMagnitude >= GLOBAL_SHIFT_ISSUE_THRESHOLD_PX &&
+    !isVerifiedSystemUiShift
+  ) {
     const isCritical = shiftMagnitude >= GLOBAL_SHIFT_CRITICAL_THRESHOLD_PX;
     issues.push({
       regionId: "whole-frame",

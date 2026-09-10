@@ -155,6 +155,66 @@ describe("形と位置合わせを実際に使うこと", () => {
     expect(report.alignment.translation).toEqual({ x: 7, y: 0 });
   });
 
+  it("MCPと同じworking px閾値で1/2/5/9/10pxの重大度を判定すること", () => {
+    const image = makeImage(0, { x: 10, y: 10, w: 100, h: 70, value: 255 });
+    for (const shift of [1, 2, 5, 9, 10]) {
+      const report = buildDiffReport({
+        designPixels: image,
+        screenshotPixels: image,
+        width: WIDTH,
+        height: HEIGHT,
+        resolvedAlignment: {
+          alignment: {
+            translation: { x: shift, y: 0 },
+            source: "auto",
+            applied: true,
+            scale: { x: 1, y: 1 },
+            rotation: 0,
+            confidence: 1,
+            residual: 0,
+          },
+          alignedDesignPixels: image,
+          applied: true,
+        },
+      });
+      const issue = report.issues.find((item) => item.evidence.signal === "translation_offset");
+      if (shift === 1) {
+        expect(issue).toBeUndefined();
+      } else {
+        expect(issue?.severity).toBe("critical");
+        expect(report.aggregateVerdict).toBe("fail");
+      }
+    }
+  });
+
+  it("検証済みsystem UIの移動は共通閾値のcritical判定から除外すること", () => {
+    const image = makeImage(0, { x: 10, y: 10, w: 100, h: 70, value: 255 });
+    const report = buildDiffReport({
+      designPixels: image,
+      screenshotPixels: image,
+      width: WIDTH,
+      height: HEIGHT,
+      verifiedSystemUiTopInset: 72,
+      resolvedAlignment: {
+        alignment: {
+          translation: { x: 0, y: 72 },
+          source: "verified-system-ui",
+          applied: true,
+          scale: { x: 1, y: 1 },
+          rotation: 0,
+          confidence: 1,
+          residual: 0,
+        },
+        alignedDesignPixels: image,
+        applied: true,
+      },
+    });
+
+    expect(
+      report.issues.find((item) => item.evidence.signal === "translation_offset"),
+    ).toBeUndefined();
+  });
+
   it("配置の値は意図した 0 のままであること", () => {
     const image = makeImage(0, { x: 30, y: 20, w: 40, h: 40, value: 255 });
 

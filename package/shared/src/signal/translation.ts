@@ -13,6 +13,8 @@ export const COARSE_STEP = 5;
 export const FINE_RANGE = 5;
 export const COARSE_SAMPLE_STEP = 4;
 export const DIFF_THRESHOLD_SQ = 625; // per-channel RGB distance threshold (25^2)
+export const GLOBAL_SHIFT_ISSUE_THRESHOLD_PX = 2;
+export const GLOBAL_SHIFT_CRITICAL_THRESHOLD_PX = 2;
 
 export interface TranslationCandidate {
   dx: number;
