@@ -747,11 +747,11 @@ describe("buildDiffReport global alignment shift severity", () => {
     return { design: build(0), screenshot: build(dx) };
   }
 
-  async function createDenseShiftedPattern(
+  const createDenseShiftedPattern = async (
     width: number,
     height: number,
     dx: number,
-  ): Promise<{ design: Uint8ClampedArray; screenshot: Uint8ClampedArray }> {
+  ): Promise<{ design: Uint8ClampedArray; screenshot: Uint8ClampedArray }> => {
     const build = (offsetX: number): Uint8ClampedArray => {
       const pixels = new Uint8ClampedArray(width * height * 4);
       for (let y = 0; y < height; y++) {
@@ -769,7 +769,7 @@ describe("buildDiffReport global alignment shift severity", () => {
     };
 
     return { design: build(0), screenshot: build(dx) };
-  }
+  };
 
   function createSystemInsetPattern(
     width: number,

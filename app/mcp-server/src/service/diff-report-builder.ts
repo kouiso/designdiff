@@ -669,17 +669,10 @@ function selectAnchorsForScoring<T>(anchors: readonly T[]): T[] {
   });
 }
 
-// Sub-pixel/anti-aliasing tolerance for the global-shift visibility issue below.
-// A shift at or above this magnitude is implausible as mere rendering/DPR
-// noise between a Figma export and a real screenshot (that noise lives in
-// the 0-2px range this alignment correction exists to absorb — see the
-// ae45d66 commit this feature originated from). Codex correctly flagged
-// that a "major" issue alone never blocks PASS (computeVerdict only checks
-// severity==="critical"); below this size we keep the shift as a visible,
-// non-blocking note (preserves the original false-"全面ズレ" fix for
-// capture-scale noise). At or above 2 working px, treat as a real position defect —
-// escalate to "critical" so it fails through the same path "color" already
-// uses, without touching computeVerdict itself.
+// Figma exportと実機撮影の描画差はおおむね2 working px未満に収まるため、
+// それ未満は表示しつつ非ブロッキングとし、2px以上は実レイアウトずれとして
+// criticalにする。computeVerdictの共通判定経路へ乗せるため、ここでseverityを
+// 上げる。補正がずれを隠すと検出できないため、補正後もこの判定を適用する。
 
 export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
   const { designPixels, screenshotPixels, width, height, paddingMask } = options;
@@ -756,15 +749,10 @@ export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
   const issueRegions = regionScores.filter((score) => score.scope !== "root");
   const issues = buildIssues(issueRegions.length > 0 ? issueRegions : regionScores, options);
 
-  // An accepted global alignment correction can hide a real regression: e.g.
-  // a page that scrolled/shifted is itself often the bug under test, not a
-  // capture artifact to silently correct away. A shift >= the critical
-  // threshold is escalated to severity="critical" so it fails through the
-  // same hasCriticalIssue path "color" already uses (computeVerdict itself
-  // is untouched); a smaller accepted shift stays a visible, non-blocking
-  // note — preserving the original false-"全面ズレ" fix this alignment
-  // correction exists for. capture_device の内部 preset と完全一致する下方向だけは
-  // 実装差分ではないため issue にせず、一般の 2px 閾値は変えない。
+  // 位置合わせを適用できても、ページ全体のスクロールや配置ずれを
+  // 撮影由来の補正として隠してはならない。2px以上はcriticalへ上げ、
+  // 2px未満は可視の非ブロッキング記録にする。capture_deviceの検証済み
+  // presetと完全一致する下方向だけは実装差分として扱わない。
   const shiftMagnitude = Math.sqrt(dx * dx + dy * dy);
   const isVerifiedSystemUiShift =
     dx === 0 && verifiedSystemUiTopInset !== undefined && dy === verifiedSystemUiTopInset;

@@ -319,6 +319,21 @@ describe("countSsdOffset の入力検査", () => {
 });
 
 describe("手がかりの無い画像の扱い", () => {
+  it("64px未満の不一致でもdetectTranslationとresolveAlignmentの残差を揃えること", () => {
+    const design = new Uint8ClampedArray(4 * 4 * 4);
+    const screenshot = new Uint8ClampedArray(4 * 4 * 4);
+    design[0] = 255;
+    screenshot[0] = 0;
+    screenshot[4] = 255;
+
+    const detected = detectTranslation(design, screenshot, 4, 4);
+    const resolved = resolveAlignment(design, screenshot, 4, 4);
+
+    expect(detected.residual).toBeGreaterThan(0);
+    expect(resolved.alignment.baselineResidual).toBe(detected.residual);
+    expect(resolved.alignment.correctedResidual).toBe(detected.residual);
+  });
+
   it("一様な画像では、動かさない位置を選ぶこと", () => {
     const flat = makeImage(0);
 

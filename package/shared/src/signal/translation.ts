@@ -179,7 +179,21 @@ export const detectTranslation = (
   validateIgnoreMask(ignoreMask, width, height);
   validateTranslationCandidates(additionalCandidates);
   if (width * height < 64) {
-    return { dx: 0, dy: 0, confidence: 1, residual: 0 };
+    const sampleStep = residualSampleStep(width, height);
+    const sampledPositionCount = countSampledPositions(width, height, sampleStep, ignoreMask);
+    const residual =
+      sampledPositionCount === 0
+        ? 0
+        : scoreTranslationCandidate(
+            design,
+            screenshot,
+            width,
+            height,
+            { dx: 0, dy: 0 },
+            sampleStep,
+            ignoreMask,
+          ) / sampledPositionCount;
+    return { dx: 0, dy: 0, confidence: sampledPositionCount === 0 ? 0 : 1, residual };
   }
 
   let bestDx = 0;

@@ -82,10 +82,10 @@ interface ComparisonGeometry {
   verifiedSystemUiTopInset?: number;
 }
 
-export function classifyAlignmentSource(
+export const classifyAlignmentSource = (
   alignment: Pick<Alignment, "translation" | "applied">,
   verifiedSystemUiTopInset: number | undefined,
-): Alignment["source"] {
+): Alignment["source"] => {
   if (
     alignment.applied &&
     verifiedSystemUiTopInset !== undefined &&
@@ -98,7 +98,7 @@ export function classifyAlignmentSource(
     return "auto";
   }
   return "none";
-}
+};
 
 interface ImageDimensions {
   width: number;
@@ -128,18 +128,22 @@ export function scaleComparisonGeometry(
   workingDimensions: ImageDimensions,
 ): ComparisonGeometry {
   if (
-    nativeDimensions.width === workingDimensions.width &&
-    nativeDimensions.height === workingDimensions.height
-  ) {
-    return geometry;
-  }
-  if (
+    !Number.isFinite(nativeDimensions.width) ||
+    !Number.isFinite(nativeDimensions.height) ||
+    !Number.isFinite(workingDimensions.width) ||
+    !Number.isFinite(workingDimensions.height) ||
     nativeDimensions.width <= 0 ||
     nativeDimensions.height <= 0 ||
     workingDimensions.width <= 0 ||
     workingDimensions.height <= 0
   ) {
     throw new Error("Image dimensions must be positive when scaling comparison geometry");
+  }
+  if (
+    nativeDimensions.width === workingDimensions.width &&
+    nativeDimensions.height === workingDimensions.height
+  ) {
+    return geometry;
   }
 
   const scaleX = workingDimensions.width / nativeDimensions.width;
@@ -1415,11 +1419,11 @@ export function resolveAppliedCropOrigin(
   return { x: left, y: top };
 }
 
-export function resolveAppliedCropRegion(
+export const resolveAppliedCropRegion = (
   cropRegion: CropRegion,
   imageWidth: number,
   imageHeight: number,
-): CropRegion | null {
+): CropRegion | null => {
   const origin = resolveAppliedCropOrigin(cropRegion, imageWidth, imageHeight);
   if (origin === null) return null;
   const right = Math.min(imageWidth, Math.floor(cropRegion.x + cropRegion.width));
@@ -1430,15 +1434,37 @@ export function resolveAppliedCropRegion(
     width: right - origin.x,
     height: bottom - origin.y,
   };
-}
+};
 
-export function scaleWorkingCropToNative(
+export const scaleWorkingCropToNative = (
   cropRegion: CropRegion,
   nativeWidth: number,
   nativeHeight: number,
   workingWidth: number,
   workingHeight: number,
-): CropRegion {
+): CropRegion => {
+  if (
+    !Number.isFinite(cropRegion.x) ||
+    !Number.isFinite(cropRegion.y) ||
+    !Number.isFinite(cropRegion.width) ||
+    !Number.isFinite(cropRegion.height) ||
+    cropRegion.width <= 0 ||
+    cropRegion.height <= 0
+  ) {
+    throw new Error("Crop region must be finite with positive width and height");
+  }
+  if (
+    !Number.isFinite(nativeWidth) ||
+    !Number.isFinite(nativeHeight) ||
+    !Number.isFinite(workingWidth) ||
+    !Number.isFinite(workingHeight) ||
+    nativeWidth <= 0 ||
+    nativeHeight <= 0 ||
+    workingWidth <= 0 ||
+    workingHeight <= 0
+  ) {
+    throw new Error("Image dimensions must be finite and positive when scaling crop geometry");
+  }
   const scaleX = nativeWidth / workingWidth;
   const scaleY = nativeHeight / workingHeight;
   const nativeX = Math.floor(cropRegion.x * scaleX);
@@ -1449,7 +1475,7 @@ export function scaleWorkingCropToNative(
     width: Math.ceil((cropRegion.x + cropRegion.width) * scaleX) - nativeX,
     height: Math.ceil((cropRegion.y + cropRegion.height) * scaleY) - nativeY,
   };
-}
+};
 
 /**
  * Crop image buffer using sharp

@@ -181,6 +181,24 @@ describe("compareImages", () => {
     });
   });
 
+  it.each([
+    0,
+    -1,
+    Number.NaN,
+    Number.POSITIVE_INFINITY,
+  ])("scaleComparisonGeometryは同寸法でも無効な画像寸法を弾くこと (%s)", async (invalidDimension) => {
+    const { scaleComparisonGeometry } = await import("./image-compare-service.js");
+    const geometry = { cropRegion: { x: 0, y: 0, width: 10, height: 10 } };
+
+    expect(() =>
+      scaleComparisonGeometry(
+        geometry,
+        { width: invalidDimension, height: invalidDimension },
+        { width: invalidDimension, height: invalidDimension },
+      ),
+    ).toThrow(/dimensions must be positive/);
+  });
+
   it("gridSummary でセル別の matchRate と diffPixels を返すこと", async () => {
     const pixelmatchMock = await import("pixelmatch");
 
@@ -1672,5 +1690,60 @@ describe("classifyAlignmentSource", () => {
     expect(
       scaleWorkingCropToNative({ x: 10, y: 11, width: 20, height: 21 }, 1000, 1000, 333, 333),
     ).toEqual({ x: 30, y: 33, width: 61, height: 64 });
+  });
+
+  it.each([
+    0,
+    -1,
+    Number.NaN,
+    Number.POSITIVE_INFINITY,
+  ])("crop座標変換はworking高さ幅が有限の正数でない場合を弾くこと (%s)", async (invalidDimension) => {
+    const { scaleWorkingCropToNative } = await import("./image-compare-service.js");
+
+    expect(() =>
+      scaleWorkingCropToNative(
+        { x: 0, y: 0, width: 10, height: 10 },
+        100,
+        100,
+        invalidDimension,
+        100,
+      ),
+    ).toThrow(/finite and positive/);
+    expect(() =>
+      scaleWorkingCropToNative(
+        { x: 0, y: 0, width: 10, height: 10 },
+        100,
+        100,
+        100,
+        invalidDimension,
+      ),
+    ).toThrow(/finite and positive/);
+  });
+
+  it("scaleWorkingCropToNativeは負のcrop原点を許容すること", async () => {
+    const { scaleWorkingCropToNative } = await import("./image-compare-service.js");
+
+    expect(
+      scaleWorkingCropToNative({ x: -10, y: -5, width: 20, height: 15 }, 100, 100, 100, 100),
+    ).toEqual({
+      x: -10,
+      y: -5,
+      width: 20,
+      height: 15,
+    });
+  });
+
+  it.each([
+    { x: Number.NaN, y: 0, width: 10, height: 10 },
+    { x: 0, y: Number.POSITIVE_INFINITY, width: 10, height: 10 },
+    { x: 0, y: 0, width: 0, height: 10 },
+    { x: 0, y: 0, width: -1, height: 10 },
+    { x: 0, y: 0, width: 10, height: Number.NaN },
+  ])("scaleWorkingCropToNativeは無効なcrop矩形を弾くこと (%s)", async (cropRegion) => {
+    const { scaleWorkingCropToNative } = await import("./image-compare-service.js");
+
+    expect(() => scaleWorkingCropToNative(cropRegion, 100, 100, 100, 100)).toThrow(
+      /Crop region must be finite/,
+    );
   });
 });
