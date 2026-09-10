@@ -1,0 +1,9 @@
+{
+  "oracle": "Pillow pixel translation, independent of DesignDiff decoder/alignment",
+  "dimensions": [1080, 2340],
+  "expected_rgba_sha256": "3098884fa97429fb35a9b3dbcda23b4a1cdf415a66b6fd5e6d60a1701b2bb406",
+  "actual_rgba_sha256": "3098884fa97429fb35a9b3dbcda23b4a1cdf415a66b6fd5e6d60a1701b2bb406",
+  "exact_translation_verified": true,
+  "mcp_translation_matches_oracle": true,
+  "layout_displacement_remains_blocking": true
+}

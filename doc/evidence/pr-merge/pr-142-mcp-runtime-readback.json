@@ -3,7 +3,7 @@
   "source_commit": "a656f2bdfd3562cbcfc941562413c5eba60af27f",
   "merged_as": "346afa2006fae7e3e319172c5e1af1b8c93af282",
   "runtime": "Isolated compiled MCP using same-worktree shared package; installed MCP configuration untouched",
-  "build": "TypeScript build completed successfully",
+  "build": "Successful silent TypeScript build; command, process exit code, source revision and captured output retained in build_record.",
   "comparison_id": "cmp-bf7415ce-88f4-4f37-86d6-6dd753f61bf8",
   "status": "PASS",
   "alignment": {
@@ -52,14 +52,39 @@
       "sha256": "6b9e85b5e1f0092701842ff9a424b1cecc958baa7742ecea9100ce60b2d95ee5"
     },
     {
-      "role": "build_log",
-      "name": "hm-dd142-isolated-build.log",
-      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      "role": "reproducible_evidence",
+      "name": "pr-143-runtime/build.json",
+      "sha256": "0f6747aa5a39ed814a109463e8d4054813bdeeda0145d39a0d7720787d9baabe"
+    },
+    {
+      "role": "reproducible_evidence",
+      "name": "pr-143-runtime/oracle.json",
+      "sha256": "d28df8dc4d8bce81ab647aa4de48374c205715c072e4f7ac358eb8f49741a923"
+    },
+    {
+      "role": "reproducible_evidence",
+      "name": "pr-143-runtime/mcp-report.json",
+      "sha256": "e99662be5d3167170ea6f22ab37ea869cbf923f41e9632a752c15056ee6429b0"
+    },
+    {
+      "role": "reproducible_evidence",
+      "name": "pr-143-runtime/verify_fixture.py",
+      "sha256": "b391f9264c5458f1351b06586f183eb90eabf0c80cf2e822c52cfd0a14c157f6"
     }
   ],
   "not_verified": [
     "installed MCP entry upgraded",
     "all Figma screens",
     "physical device visual equivalence"
-  ]
+  ],
+  "status_source": "Observed MCP response for local private Figma inputs; not an independent correctness verdict.",
+  "independent_reproducible_verification": {
+    "inputs": "pr-142-alignment-fixture/expected.json",
+    "script": "pr-143-runtime/verify_fixture.py",
+    "oracle": "pr-143-runtime/oracle.json",
+    "mcp_report": "pr-143-runtime/mcp-report.json",
+    "result": "Exact 2px translation independently verified with Pillow; MCP detects same translation and retains FAIL for layout displacement."
+  },
+  "build_record": "pr-143-runtime/build.json",
+  "private_input_limit": "Candidate023 Figma inputs remain private local observations; no independent Figma correctness claim."
 }

@@ -1,0 +1,10 @@
+{
+  "command": ["node", "typescript/bin/tsc", "-b", "--force", "app/mcp-server"],
+  "node_version": "v22.23.2",
+  "source_commit": "27f7c8aac7f9bed6f10701f4df402466829c553f",
+  "started_at_utc": "2026-09-10T19:41:10.704787+00:00",
+  "exit_code": 0,
+  "stdout": "",
+  "stderr": "",
+  "silent_output_note": "Successful TypeScript builds are silent; process exit code is captured separately."
+}
