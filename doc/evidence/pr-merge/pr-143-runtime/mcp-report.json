@@ -1,0 +1,522 @@
+{
+  "status": "FAIL",
+  "comparisonId": "cmp-fba6b318-7187-4736-bb44-8d305b32b441",
+  "matchRate": 100,
+  "diffPixelCount": 0,
+  "totalPixelCount": 2527200,
+  "remainingIssues": 0,
+  "diffRegions": [],
+  "completionCriteria": {
+    "structuralReview": {
+      "required": 1,
+      "current": 0,
+      "status": "FAIL",
+      "blocking": true,
+      "note": "critical severity issue detected; weakest region whole-frame (structure 1.000, color \u0394E 0.000; lower=better, critical threshold 2) with texture-adjusted weights active (alpha 0.700, photo-like cap 0.300)"
+    },
+    "consistencyReview": {
+      "required": 0.5,
+      "current": 0,
+      "status": "PASS",
+      "blocking": false,
+      "note": "Not evaluated: the contradiction check only applies to a passing structural review."
+    },
+    "tokenReview": {
+      "required": 0,
+      "current": 0,
+      "status": "UNCERTAIN",
+      "blocking": false,
+      "note": "Not evaluated: token comparison needs both a Figma node tree and a FigDiff-captured URL."
+    },
+    "matchRate": {
+      "required": 100,
+      "current": 100,
+      "status": "PASS",
+      "blocking": false,
+      "note": "Reference metric only. Do not use matchRate% as the completion gate."
+    },
+    "diffPixelCount": {
+      "required": 0,
+      "current": 0,
+      "status": "PASS",
+      "blocking": false,
+      "note": "Reference metric. Structural SSIM review is the blocking gate."
+    },
+    "remainingIssues": {
+      "required": 0,
+      "current": 0,
+      "status": "FAIL",
+      "blocking": true,
+      "note": "Blocking only while structural SSIM review has not passed."
+    }
+  },
+  "nextAction": "inspect_node \u3092\u4f7f\u3063\u3066 0 \u7b87\u6240\u306e diffRegions \u306e\u8a73\u7d30\u3092\u78ba\u8a8d\u3057\u3001CSS\u3092\u4fee\u6b63\u3057\u3066\u304f\u3060\u3055\u3044\u3002\u4fee\u6b63\u5f8c\u306f\u518d\u5ea6 compare_design \u3067\u691c\u8a3c\u3057\u3066\u304f\u3060\u3055\u3044\u3002",
+  "suggestion": "matchRate\u306f\u9ad8\u3044\u3067\u3059\u304c\u3001\u69cb\u9020SSIM\u5224\u5b9a\u306fFAIL\u3067\u3059\u3002\u5c40\u6240\u7684\u306a\u7c97\u30920\u7b87\u6240\u78ba\u8a8d\u3057\u3066\u304f\u3060\u3055\u3044\u3002",
+  "clusterTelemetry": {
+    "requestedMode": "auto",
+    "usedMode": "grid",
+    "fallbackUsed": false,
+    "wallMs": 7.34,
+    "budgetMs": 5000,
+    "regionCount": 0
+  },
+  "gridSummary": {
+    "rows": 8,
+    "cols": 4,
+    "cells": [
+      {
+        "row": 0,
+        "col": 0,
+        "x": 0,
+        "y": 0,
+        "width": 270,
+        "height": 292,
+        "diffPixels": 0,
+        "totalPixels": 78840,
+        "matchRate": 100
+      },
+      {
+        "row": 0,
+        "col": 1,
+        "x": 270,
+        "y": 0,
+        "width": 270,
+        "height": 292,
+        "diffPixels": 0,
+        "totalPixels": 78840,
+        "matchRate": 100
+      },
+      {
+        "row": 0,
+        "col": 2,
+        "x": 540,
+        "y": 0,
+        "width": 270,
+        "height": 292,
+        "diffPixels": 0,
+        "totalPixels": 78840,
+        "matchRate": 100
+      },
+      {
+        "row": 0,
+        "col": 3,
+        "x": 810,
+        "y": 0,
+        "width": 270,
+        "height": 292,
+        "diffPixels": 0,
+        "totalPixels": 78840,
+        "matchRate": 100
+      },
+      {
+        "row": 1,
+        "col": 0,
+        "x": 0,
+        "y": 292,
+        "width": 270,
+        "height": 293,
+        "diffPixels": 0,
+        "totalPixels": 79110,
+        "matchRate": 100
+      },
+      {
+        "row": 1,
+        "col": 1,
+        "x": 270,
+        "y": 292,
+        "width": 270,
+        "height": 293,
+        "diffPixels": 0,
+        "totalPixels": 79110,
+        "matchRate": 100
+      },
+      {
+        "row": 1,
+        "col": 2,
+        "x": 540,
+        "y": 292,
+        "width": 270,
+        "height": 293,
+        "diffPixels": 0,
+        "totalPixels": 79110,
+        "matchRate": 100
+      },
+      {
+        "row": 1,
+        "col": 3,
+        "x": 810,
+        "y": 292,
+        "width": 270,
+        "height": 293,
+        "diffPixels": 0,
+        "totalPixels": 79110,
+        "matchRate": 100
+      },
+      {
+        "row": 2,
+        "col": 0,
+        "x": 0,
+        "y": 585,
+        "width": 270,
+        "height": 292,
+        "diffPixels": 0,
+        "totalPixels": 78840,
+        "matchRate": 100
+      },
+      {
+        "row": 2,
+        "col": 1,
+        "x": 270,
+        "y": 585,
+        "width": 270,
+        "height": 292,
+        "diffPixels": 0,
+        "totalPixels": 78840,
+        "matchRate": 100
+      },
+      {
+        "row": 2,
+        "col": 2,
+        "x": 540,
+        "y": 585,
+        "width": 270,
+        "height": 292,
+        "diffPixels": 0,
+        "totalPixels": 78840,
+        "matchRate": 100
+      },
+      {
+        "row": 2,
+        "col": 3,
+        "x": 810,
+        "y": 585,
+        "width": 270,
+        "height": 292,
+        "diffPixels": 0,
+        "totalPixels": 78840,
+        "matchRate": 100
+      },
+      {
+        "row": 3,
+        "col": 0,
+        "x": 0,
+        "y": 877,
+        "width": 270,
+        "height": 293,
+        "diffPixels": 0,
+        "totalPixels": 79110,
+        "matchRate": 100
+      },
+      {
+        "row": 3,
+        "col": 1,
+        "x": 270,
+        "y": 877,
+        "width": 270,
+        "height": 293,
+        "diffPixels": 0,
+        "totalPixels": 79110,
+        "matchRate": 100
+      },
+      {
+        "row": 3,
+        "col": 2,
+        "x": 540,
+        "y": 877,
+        "width": 270,
+        "height": 293,
+        "diffPixels": 0,
+        "totalPixels": 79110,
+        "matchRate": 100
+      },
+      {
+        "row": 3,
+        "col": 3,
+        "x": 810,
+        "y": 877,
+        "width": 270,
+        "height": 293,
+        "diffPixels": 0,
+        "totalPixels": 79110,
+        "matchRate": 100
+      },
+      {
+        "row": 4,
+        "col": 0,
+        "x": 0,
+        "y": 1170,
+        "width": 270,
+        "height": 292,
+        "diffPixels": 0,
+        "totalPixels": 78840,
+        "matchRate": 100
+      },
+      {
+        "row": 4,
+        "col": 1,
+        "x": 270,
+        "y": 1170,
+        "width": 270,
+        "height": 292,
+        "diffPixels": 0,
+        "totalPixels": 78840,
+        "matchRate": 100
+      },
+      {
+        "row": 4,
+        "col": 2,
+        "x": 540,
+        "y": 1170,
+        "width": 270,
+        "height": 292,
+        "diffPixels": 0,
+        "totalPixels": 78840,
+        "matchRate": 100
+      },
+      {
+        "row": 4,
+        "col": 3,
+        "x": 810,
+        "y": 1170,
+        "width": 270,
+        "height": 292,
+        "diffPixels": 0,
+        "totalPixels": 78840,
+        "matchRate": 100
+      },
+      {
+        "row": 5,
+        "col": 0,
+        "x": 0,
+        "y": 1462,
+        "width": 270,
+        "height": 293,
+        "diffPixels": 0,
+        "totalPixels": 79110,
+        "matchRate": 100
+      },
+      {
+        "row": 5,
+        "col": 1,
+        "x": 270,
+        "y": 1462,
+        "width": 270,
+        "height": 293,
+        "diffPixels": 0,
+        "totalPixels": 79110,
+        "matchRate": 100
+      },
+      {
+        "row": 5,
+        "col": 2,
+        "x": 540,
+        "y": 1462,
+        "width": 270,
+        "height": 293,
+        "diffPixels": 0,
+        "totalPixels": 79110,
+        "matchRate": 100
+      },
+      {
+        "row": 5,
+        "col": 3,
+        "x": 810,
+        "y": 1462,
+        "width": 270,
+        "height": 293,
+        "diffPixels": 0,
+        "totalPixels": 79110,
+        "matchRate": 100
+      },
+      {
+        "row": 6,
+        "col": 0,
+        "x": 0,
+        "y": 1755,
+        "width": 270,
+        "height": 292,
+        "diffPixels": 0,
+        "totalPixels": 78840,
+        "matchRate": 100
+      },
+      {
+        "row": 6,
+        "col": 1,
+        "x": 270,
+        "y": 1755,
+        "width": 270,
+        "height": 292,
+        "diffPixels": 0,
+        "totalPixels": 78840,
+        "matchRate": 100
+      },
+      {
+        "row": 6,
+        "col": 2,
+        "x": 540,
+        "y": 1755,
+        "width": 270,
+        "height": 292,
+        "diffPixels": 0,
+        "totalPixels": 78840,
+        "matchRate": 100
+      },
+      {
+        "row": 6,
+        "col": 3,
+        "x": 810,
+        "y": 1755,
+        "width": 270,
+        "height": 292,
+        "diffPixels": 0,
+        "totalPixels": 78840,
+        "matchRate": 100
+      },
+      {
+        "row": 7,
+        "col": 0,
+        "x": 0,
+        "y": 2047,
+        "width": 270,
+        "height": 293,
+        "diffPixels": 0,
+        "totalPixels": 79110,
+        "matchRate": 100
+      },
+      {
+        "row": 7,
+        "col": 1,
+        "x": 270,
+        "y": 2047,
+        "width": 270,
+        "height": 293,
+        "diffPixels": 0,
+        "totalPixels": 79110,
+        "matchRate": 100
+      },
+      {
+        "row": 7,
+        "col": 2,
+        "x": 540,
+        "y": 2047,
+        "width": 270,
+        "height": 293,
+        "diffPixels": 0,
+        "totalPixels": 79110,
+        "matchRate": 100
+      },
+      {
+        "row": 7,
+        "col": 3,
+        "x": 810,
+        "y": 2047,
+        "width": 270,
+        "height": 293,
+        "diffPixels": 0,
+        "totalPixels": 79110,
+        "matchRate": 100
+      }
+    ]
+  },
+  "diffReport": {
+    "alignment": {
+      "translation": {
+        "x": -2,
+        "y": 0
+      },
+      "source": "auto",
+      "applied": true,
+      "baselineResidual": 0.03149889205444761,
+      "correctedResidual": 0,
+      "scale": {
+        "x": 1,
+        "y": 1
+      },
+      "rotation": 0,
+      "confidence": 0.9717157287525381,
+      "residual": 0
+    },
+    "regionScores": [
+      {
+        "regionId": "whole-frame",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "w": 1080,
+          "h": 2340
+        },
+        "scope": "root",
+        "structure": 1,
+        "color": 0,
+        "shape": 0,
+        "layout": 0,
+        "textureScore": 0.3710175662962685
+      }
+    ],
+    "issues": [
+      {
+        "regionId": "whole-frame",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "w": 1080,
+          "h": 2340
+        },
+        "kind": "position",
+        "severity": "critical",
+        "evidence": {
+          "signal": "translation_offset",
+          "value": 2,
+          "threshold": 2,
+          "expected": "< 2px",
+          "actual": "dx=-2, dy=0"
+        },
+        "suggestedCssFix": "\u753b\u9762\u5168\u4f53\u304c\u5e73\u884c\u79fb\u52d5\u3057\u3066\u3044\u307e\u3059\u3002\u610f\u56f3\u3057\u305f\u30b9\u30af\u30ed\u30fc\u30eb/\u30de\u30fc\u30b8\u30f3\u5909\u66f4\u304b\u3001\u30ec\u30a4\u30a2\u30a6\u30c8\u56de\u5e30\u304b\u3092\u78ba\u8a8d\u3057\u3066\u304f\u3060\u3055\u3044\u3002"
+      }
+    ],
+    "weightedAggregate": {
+      "weightedStructure": 1,
+      "weightedColor": 0,
+      "totalWeight": 0.7402877035926121
+    },
+    "aggregateVerdict": "fail",
+    "rationale": "critical severity issue detected; weakest region whole-frame (structure 1.000, color \u0394E 0.000; lower=better, critical threshold 2) with texture-adjusted weights active (alpha 0.700, photo-like cap 0.300)"
+  },
+  "preflight": {
+    "warnings": []
+  },
+  "normalization": {
+    "designNativeWidth": 1080,
+    "designNativeHeight": 2340,
+    "screenshotWidth": 1080,
+    "screenshotHeight": 2340,
+    "cropApplied": false,
+    "containResized": false,
+    "appliedScale": 1,
+    "autoCropped": false,
+    "cropSource": "none"
+  },
+  "diagnosis": {
+    "verdict": "clean",
+    "likelyMisconfig": false,
+    "rankedCauses": [],
+    "headline": "\u5dee\u5206\u306f\u307b\u307c\u3042\u308a\u307e\u305b\u3093\u3002"
+  },
+  "comparisonHeadline": {
+    "structureMatch": 100,
+    "colorOnlyRegions": 0,
+    "structuralRegions": 0,
+    "headline": "\u69cb\u9020\u4e00\u81f4 100% / \u8272\u306e\u307f\u5dee\u5206 0\u9818\u57df / \u69cb\u9020\u5dee\u5206 0\u9818\u57df"
+  },
+  "loopGuard": {
+    "stop": false,
+    "step": 1,
+    "maxSteps": 10,
+    "remainingSteps": 9,
+    "reason": "continue",
+    "message": "\u53cd\u5fa9 1/10 \u56de\u3002\u6539\u5584\u306e\u4f59\u5730\u304c\u3042\u308b\u305f\u3081\u4fee\u6b63\u3092\u7d9a\u884c\u3067\u304d\u307e\u3059\u3002",
+    "iteration": 1,
+    "decision": "continue"
+  },
+  "verdictRoute": "pixel"
+}

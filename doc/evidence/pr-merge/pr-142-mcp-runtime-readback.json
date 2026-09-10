@@ -1,0 +1,90 @@
+{
+  "recorded_at": "2026-09-10T19:30:35.755996+00:00",
+  "source_commit": "a656f2bdfd3562cbcfc941562413c5eba60af27f",
+  "merged_as": "346afa2006fae7e3e319172c5e1af1b8c93af282",
+  "runtime": "Isolated compiled MCP using same-worktree shared package; installed MCP configuration untouched",
+  "build": "Successful silent TypeScript build; command, process exit code, source revision and captured output retained in build_record.",
+  "comparison_id": "cmp-bf7415ce-88f4-4f37-86d6-6dd753f61bf8",
+  "status": "PASS",
+  "alignment": {
+    "translation": {
+      "x": -1,
+      "y": 0
+    },
+    "source": "auto",
+    "applied": false,
+    "baselineResidual": 0.005803402335194243,
+    "correctedResidual": 0.005567906723976088,
+    "scale": {
+      "x": 1,
+      "y": 1
+    },
+    "rotation": 0,
+    "confidence": 0.9858578643762691,
+    "residual": 0.005567906723976088
+  },
+  "normalization": {
+    "designNativeWidth": 390,
+    "designNativeHeight": 692,
+    "screenshotWidth": 1170,
+    "screenshotHeight": 2076,
+    "cropApplied": false,
+    "containResized": false,
+    "appliedScale": 1,
+    "autoCropped": false,
+    "cropSource": "none"
+  },
+  "match_rate_is_not_overall_completion": true,
+  "files": [
+    {
+      "role": "report",
+      "name": "hm-splash023-pr142-full-report.json",
+      "sha256": "85ac9a7f17d2d71dc8a170dd19826d7693c604ec1b13b49e454584d1483afe19"
+    },
+    {
+      "role": "mcp_entry",
+      "name": "index.js",
+      "sha256": "2f3782ac72d3f6ee4e3ed9e396ff44771b270995296c29cb0d02f875929f793e"
+    },
+    {
+      "role": "translation",
+      "name": "translation.js",
+      "sha256": "6b9e85b5e1f0092701842ff9a424b1cecc958baa7742ecea9100ce60b2d95ee5"
+    },
+    {
+      "role": "reproducible_evidence",
+      "name": "pr-143-runtime/build.json",
+      "sha256": "0f6747aa5a39ed814a109463e8d4054813bdeeda0145d39a0d7720787d9baabe"
+    },
+    {
+      "role": "reproducible_evidence",
+      "name": "pr-143-runtime/oracle.json",
+      "sha256": "d28df8dc4d8bce81ab647aa4de48374c205715c072e4f7ac358eb8f49741a923"
+    },
+    {
+      "role": "reproducible_evidence",
+      "name": "pr-143-runtime/mcp-report.json",
+      "sha256": "e99662be5d3167170ea6f22ab37ea869cbf923f41e9632a752c15056ee6429b0"
+    },
+    {
+      "role": "reproducible_evidence",
+      "name": "pr-143-runtime/verify-fixture.py",
+      "sha256": "b391f9264c5458f1351b06586f183eb90eabf0c80cf2e822c52cfd0a14c157f6"
+    }
+  ],
+  "not_verified": [
+    "installed MCP entry upgraded",
+    "all Figma screens",
+    "physical device visual equivalence"
+  ],
+  "status_source": "Observed MCP response for local private Figma inputs; not an independent correctness verdict.",
+  "independent_reproducible_verification": {
+    "inputs": "pr-142-alignment-fixture/expected.json",
+    "script": "pr-143-runtime/verify-fixture.py",
+    "oracle": "pr-143-runtime/oracle.json",
+    "mcp_report": "pr-143-runtime/mcp-report.json",
+    "result": "Exact 2px translation independently verified with Pillow; MCP detects same translation and retains FAIL for layout displacement."
+  },
+  "build_record": "pr-143-runtime/build.json",
+  "private_input_limit": "Candidate023 Figma inputs remain private local observations; no independent Figma correctness claim."
+}
