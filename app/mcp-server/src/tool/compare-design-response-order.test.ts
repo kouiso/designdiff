@@ -136,6 +136,7 @@ describe("compare_design レスポンスの並び順", () => {
     };
 
     expect(res.isError).toBe(true);
+    expect(res.structuredContent).toBeUndefined();
     expect(payload).toMatchObject({
       code: "FIGDIFF_STORAGE_NOT_WRITABLE",
       location: "results",
