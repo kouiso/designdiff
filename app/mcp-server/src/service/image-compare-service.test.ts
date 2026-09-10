@@ -855,7 +855,7 @@ describe("compareImages", () => {
     const { compareImages } = await import("./image-compare-service.js");
 
     const dummyBase64 = Buffer.alloc(100).toString("base64");
-    await compareImages({
+    const result = await compareImages({
       designBase64: dummyBase64,
       screenshotBase64: dummyBase64,
       cropRegion: { x: 90, y: 95, width: 50, height: 50 },
@@ -870,6 +870,13 @@ describe("compareImages", () => {
     expect(screenshotCropInstance.extract).toHaveBeenCalledWith({
       left: 90,
       top: 95,
+      width: 10,
+      height: 5,
+    });
+    expect(result.normalization?.cropApplied).toBe(true);
+    expect(result.normalization?.cropRegion).toEqual({
+      x: 90,
+      y: 95,
       width: 10,
       height: 5,
     });
@@ -940,7 +947,7 @@ describe("compareImages", () => {
     const { compareImages } = await import("./image-compare-service.js");
 
     const dummyBase64 = Buffer.alloc(100).toString("base64");
-    await compareImages({
+    const result = await compareImages({
       designBase64: dummyBase64,
       screenshotBase64: dummyBase64,
       cropRegion: { x: -10, y: -5, width: 20, height: 20 },
@@ -955,6 +962,13 @@ describe("compareImages", () => {
     expect(screenshotCropInstance.extract).toHaveBeenCalledWith({
       left: 0,
       top: 0,
+      width: 10,
+      height: 15,
+    });
+    expect(result.normalization?.cropApplied).toBe(true);
+    expect(result.normalization?.cropRegion).toEqual({
+      x: 0,
+      y: 0,
       width: 10,
       height: 15,
     });
@@ -1016,7 +1030,7 @@ describe("compareImages", () => {
     const { compareImages } = await import("./image-compare-service.js");
 
     const dummyBase64 = Buffer.alloc(100).toString("base64");
-    await compareImages({
+    const result = await compareImages({
       designBase64: dummyBase64,
       screenshotBase64: dummyBase64,
       cropRegion: { x: Number.NaN, y: 0, width: 10, height: 10 },
@@ -1025,6 +1039,8 @@ describe("compareImages", () => {
     expect(warnSpy).toHaveBeenCalledTimes(2);
     expect(designCropMetadataInstance.extract).not.toHaveBeenCalled();
     expect(screenshotCropMetadataInstance.extract).not.toHaveBeenCalled();
+    expect(result.normalization?.cropApplied).toBe(false);
+    expect(result.normalization?.cropRegion).toBeUndefined();
   });
 
   it("cropRegion が画像範囲外の場合は警告して元のバッファを使うこと", async () => {
@@ -1083,7 +1099,7 @@ describe("compareImages", () => {
     const { compareImages } = await import("./image-compare-service.js");
 
     const dummyBase64 = Buffer.alloc(100).toString("base64");
-    await compareImages({
+    const result = await compareImages({
       designBase64: dummyBase64,
       screenshotBase64: dummyBase64,
       cropRegion: { x: 100, y: 0, width: 10, height: 10 },
@@ -1092,6 +1108,8 @@ describe("compareImages", () => {
     expect(warnSpy).toHaveBeenCalledTimes(2);
     expect(designCropMetadataInstance.extract).not.toHaveBeenCalled();
     expect(screenshotCropMetadataInstance.extract).not.toHaveBeenCalled();
+    expect(result.normalization?.cropApplied).toBe(false);
+    expect(result.normalization?.cropRegion).toBeUndefined();
   });
 
   it("無効な画像データを渡すとエラーになること", async () => {

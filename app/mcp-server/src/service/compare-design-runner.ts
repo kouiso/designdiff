@@ -1532,12 +1532,13 @@ export async function runCompareDesign(
         }
       : undefined;
   applyFigmaProvenance(comparison, figmaProvenance);
+  const appliedCropRegion = comparison.normalization?.cropRegion;
 
   // 確信度レイヤー: 設定ミスを検知・説明し、結果ヘッドラインを構造/色に分離する。
   const figmaFrameBox = figmaRootNode?.absoluteBoundingBox ?? undefined;
   const regionScores = comparison.diffReport?.regionScores ?? [];
   const preflightDimensions = resolvePreflightDimensions(
-    cropRegion,
+    appliedCropRegion,
     comparison.normalization,
     screenshotMeta,
     figmaFrameBox,
@@ -1726,16 +1727,15 @@ export async function runCompareDesign(
     normalization: comparison.normalization
       ? {
           ...comparison.normalization,
-          autoCropped: autoCropRegion !== undefined,
-          cropRegion: cropRegion
-            ? {
-                x: cropRegion.x,
-                y: cropRegion.y,
-                width: cropRegion.width,
-                height: cropRegion.height,
-              }
-            : undefined,
-          cropSource: manualCropRegion ? "explicit-project" : autoCropRegion ? "auto" : "none",
+          autoCropped: autoCropRegion !== undefined && comparison.normalization.cropApplied,
+          cropRegion: appliedCropRegion,
+          cropSource: comparison.normalization.cropApplied
+            ? manualCropRegion
+              ? "explicit-project"
+              : autoCropRegion
+                ? "auto"
+                : "none"
+            : "none",
         }
       : comparison.normalization,
     diffImagePath:

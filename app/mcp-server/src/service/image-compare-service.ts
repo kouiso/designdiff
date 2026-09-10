@@ -973,6 +973,9 @@ export async function compareImages(
   }
 
   // Apply crop region if provided (now both images are in the same coordinate space)
+  const appliedCropRegion = cropRegion
+    ? resolveAppliedCropRegion(cropRegion, screenshotWidth, screenshotHeight)
+    : null;
   if (cropRegion) {
     designBuffer = await cropImageBuffer(designBuffer, cropRegion);
     screenshotBuffer = await cropImageBuffer(screenshotBuffer, cropRegion);
@@ -1352,9 +1355,10 @@ export async function compareImages(
       designNativeHeight: designHeight,
       screenshotWidth: nativeScreenshotWidth,
       screenshotHeight: nativeScreenshotHeight,
-      cropApplied: Boolean(nativeCropRegion),
+      cropApplied: appliedCropRegion !== null,
       containResized: wasComposited,
       appliedScale,
+      cropRegion: appliedCropRegion ?? undefined,
     },
   };
 }
@@ -1396,6 +1400,23 @@ export function resolveAppliedCropOrigin(
   }
 
   return { x: left, y: top };
+}
+
+export function resolveAppliedCropRegion(
+  cropRegion: CropRegion,
+  imageWidth: number,
+  imageHeight: number,
+): CropRegion | null {
+  const origin = resolveAppliedCropOrigin(cropRegion, imageWidth, imageHeight);
+  if (origin === null) return null;
+  const right = Math.min(imageWidth, Math.floor(cropRegion.x + cropRegion.width));
+  const bottom = Math.min(imageHeight, Math.floor(cropRegion.y + cropRegion.height));
+  return {
+    x: origin.x,
+    y: origin.y,
+    width: right - origin.x,
+    height: bottom - origin.y,
+  };
 }
 
 /**
