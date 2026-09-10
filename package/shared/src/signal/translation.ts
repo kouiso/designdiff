@@ -22,6 +22,14 @@ export interface TranslationCandidate {
   source?: "verified-system-ui";
 }
 
+function validateImageDimensions(width: number, height: number): void {
+  if (!Number.isSafeInteger(width) || !Number.isSafeInteger(height) || width <= 0 || height <= 0) {
+    throw new Error(
+      `image dimensions must be positive safe integers: width=${width}, height=${height}`,
+    );
+  }
+}
+
 function validateIgnoreMask(
   ignoreMask: Uint8Array | undefined,
   width: number,
@@ -183,6 +191,7 @@ export const detectTranslation = (
   residual: number;
   verifiedSystemUiCandidate: boolean;
 } => {
+  validateImageDimensions(width, height);
   validateIgnoreMask(ignoreMask, width, height);
   validateTranslationCandidates(additionalCandidates);
   if (width * height < 64) {
@@ -392,6 +401,7 @@ export const resolveAlignment = (
   ignoreMask?: Uint8Array,
   additionalCandidates: readonly TranslationCandidate[] = [],
 ): ResolvedAlignment => {
+  validateImageDimensions(width, height);
   const { dx, dy, confidence, residual, verifiedSystemUiCandidate } = detectTranslation(
     designPixels,
     screenshotPixels,

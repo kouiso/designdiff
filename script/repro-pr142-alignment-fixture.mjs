@@ -43,6 +43,9 @@ function readPng(buffer) {
   let sourceOffset = 0;
   for (let y = 0; y < height; y++) {
     const filter = scanlines[sourceOffset++];
+    if (filter === undefined || filter > 4) {
+      throw new Error(`Unsupported PNG scanline filter: ${filter}`);
+    }
     const row = rows.subarray(y * stride, (y + 1) * stride);
     const prior = y === 0 ? null : rows.subarray((y - 1) * stride, y * stride);
     for (let x = 0; x < stride; x++) {

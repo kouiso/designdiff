@@ -380,3 +380,31 @@ describe("手がかりの無い画像の扱い", () => {
     expect(result.applied).toBe(false);
   });
 });
+
+describe("位置合わせの画像寸法検査", () => {
+  const invalidDimensions = [0, -1, 1.5, Number.NaN, Number.POSITIVE_INFINITY];
+
+  it.each(invalidDimensions)("detectTranslationは不正なwidth=%sを弾くこと", (width) => {
+    const image = new Uint8ClampedArray(0);
+
+    expect(() => detectTranslation(image, image, width, 1)).toThrow(/positive safe integers/);
+  });
+
+  it.each(invalidDimensions)("detectTranslationは不正なheight=%sを弾くこと", (height) => {
+    const image = new Uint8ClampedArray(0);
+
+    expect(() => detectTranslation(image, image, 1, height)).toThrow(/positive safe integers/);
+  });
+
+  it.each(invalidDimensions)("resolveAlignmentは不正なwidth=%sを弾くこと", (width) => {
+    const image = new Uint8ClampedArray(0);
+
+    expect(() => resolveAlignment(image, image, width, 1)).toThrow(/positive safe integers/);
+  });
+
+  it.each(invalidDimensions)("resolveAlignmentは不正なheight=%sを弾くこと", (height) => {
+    const image = new Uint8ClampedArray(0);
+
+    expect(() => resolveAlignment(image, image, 1, height)).toThrow(/positive safe integers/);
+  });
+});
