@@ -1,10 +1,12 @@
 import { describe, it, expect, vi } from "vitest";
 
 vi.mock("@figdiff/shared", () => ({
-  FigmaClient: vi.fn().mockImplementation(() => ({
-    getFile: vi.fn().mockResolvedValue({ document: { children: [] } }),
-    downloadImageAsBase64: vi.fn().mockResolvedValue("base64data"),
-  })),
+  FigmaClient: vi.fn().mockImplementation(function FigmaClientMock() {
+    return {
+      getFile: vi.fn().mockResolvedValue({ document: { children: [] } }),
+      downloadImageAsBase64: vi.fn().mockResolvedValue("base64data"),
+    };
+  }),
   extractFrames: vi
     .fn()
     .mockReturnValue([{ id: "1:1", name: "Frame 1", width: 1440, height: 900 }]),

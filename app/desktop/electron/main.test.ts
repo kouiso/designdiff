@@ -46,7 +46,9 @@ const mocks = vi.hoisted(() => {
     requestSingleInstanceLock: vi.fn(() => true),
     whenReady: vi.fn(() => Promise.resolve()),
     getAllWindows: vi.fn(() => [mainWindow]),
-    BrowserWindow: vi.fn(() => mainWindow),
+    BrowserWindow: vi.fn(function BrowserWindowMock() {
+      return mainWindow;
+    }),
     onHeadersReceived: vi.fn(),
     openExternal: vi.fn(() => Promise.resolve()),
     showErrorBox: vi.fn(),
@@ -146,6 +148,13 @@ function findWebContentsListener(event: string): Listener {
   throw new Error(`webContents listener not registered: ${event}`);
 }
 
+function findLatestWebContentsListener(event: string): Listener {
+  for (const [name, listener] of [...mocks.webContents.on.mock.calls].reverse()) {
+    if (name === event && typeof listener === "function") return listener;
+  }
+  throw new Error(`latest webContents listener not registered: ${event}`);
+}
+
 function findAppListener(event: string): Listener {
   for (const [name, listener] of mocks.appOn.mock.calls) {
     if (name === event && typeof listener === "function") {
@@ -172,7 +181,6 @@ describe("起動処理", () => {
     // 未処理として扱われる。呼ばれた時点で作る。
     mocks.whenReady.mockImplementation(() => Promise.resolve());
     mocks.getAllWindows.mockReturnValue([mocks.mainWindow]);
-    mocks.BrowserWindow.mockReturnValue(mocks.mainWindow);
   });
 
   it("起動時に窓口の登録を全部済ませ、窓を作ること", async () => {
@@ -380,6 +388,113 @@ describe("起動処理", () => {
     });
 
     expect(mocks.logWarn).toHaveBeenCalledWith("[renderer] compare failed figd_*** (index.js:7)");
+  });
+
+  it("窓の読み込み結果と renderer 異常を処理すること", async () => {
+    await bootMain();
+
+    findWebContentsListener("did-finish-load")();
+    expect(mocks.mainWindow.show).toHaveBeenCalledOnce();
+    expect(mocks.mainWindow.moveTop).toHaveBeenCalledOnce();
+    expect(mocks.mainWindow.focus).toHaveBeenCalledOnce();
+
+    findWebContentsListener("did-fail-load")({}, -2, "connection refused");
+    findWebContentsListener("render-process-gone")({}, { reason: "crashed" });
+    findWebContentsListener("unresponsive")();
+    findWebContentsListener("preload-error")({}, "preload.cjs", new Error("load failed"));
+    expect(mocks.logError).toHaveBeenCalledWith("[main] did-fail-load:", -2, "connection refused");
+    expect(mocks.logError).toHaveBeenCalledWith("[main] render-process-gone:", {
+      reason: "crashed",
+    });
+    expect(mocks.logError).toHaveBeenCalledWith(
+      "[main] preload-error:",
+      "preload.cjs",
+      expect.any(Error),
+    );
+    expect(mocks.logError).toHaveBeenCalledWith("[main] renderer became unresponsive");
+
+    const willNavigate = findWebContentsListener("will-navigate");
+    const allowedEvent = { preventDefault: vi.fn() };
+    willNavigate(allowedEvent, "https://github.com/kouiso/figdiff");
+    expect(allowedEvent.preventDefault).toHaveBeenCalledOnce();
+
+    const blockedEvent = { preventDefault: vi.fn() };
+    willNavigate(blockedEvent, "https://evil.example/");
+    expect(blockedEvent.preventDefault).toHaveBeenCalledOnce();
+  });
+
+  it("macOS の窓を前面に固定し、focus 後に解除すること", async () => {
+    const original = process.platform;
+    Object.defineProperty(process, "platform", { value: "darwin", configurable: true });
+    try {
+      await bootMain();
+
+      findWebContentsListener("did-finish-load")();
+      expect(mocks.mainWindow.setAlwaysOnTop).toHaveBeenCalledWith(true);
+      const focusCall = mocks.mainWindow.once.mock.calls.find(([event]) => event === "focus");
+      if (!focusCall || typeof focusCall[1] !== "function") {
+        throw new Error("focus cleanup listener not registered");
+      }
+      focusCall[1]();
+      expect(mocks.mainWindow.setAlwaysOnTop).toHaveBeenCalledWith(false);
+    } finally {
+      Object.defineProperty(process, "platform", { value: original, configurable: true });
+    }
+  });
+
+  it("空の renderer を一度だけ再読み込みし、検査失敗を記録すること", async () => {
+    const originalUrl = process.env.ELECTRON_RENDERER_URL;
+    process.env.ELECTRON_RENDERER_URL = "http://localhost:5173";
+    try {
+      await bootMain();
+      mocks.webContents.executeJavaScript.mockResolvedValueOnce(false);
+      findLatestWebContentsListener("dom-ready")();
+      await new Promise((resolve) => setTimeout(resolve, 850));
+      expect(mocks.mainWindow.reload).toHaveBeenCalledOnce();
+
+      mocks.mainWindow.reload.mockClear();
+      findLatestWebContentsListener("dom-ready")();
+      await new Promise((resolve) => setTimeout(resolve, 850));
+      expect(mocks.mainWindow.reload).not.toHaveBeenCalled();
+
+      mocks.webContents.executeJavaScript.mockRejectedValueOnce(new Error("renderer unavailable"));
+      await bootMain();
+      findLatestWebContentsListener("dom-ready")();
+      await new Promise((resolve) => setTimeout(resolve, 850));
+      expect(mocks.logError).toHaveBeenCalledWith(
+        "[main] failed to inspect renderer root:",
+        expect.any(Error),
+      );
+    } finally {
+      if (originalUrl === undefined) delete process.env.ELECTRON_RENDERER_URL;
+      else process.env.ELECTRON_RENDERER_URL = originalUrl;
+    }
+  });
+
+  it("外部サイトの起動失敗をログに残すこと", async () => {
+    await bootMain();
+    mocks.openExternal.mockRejectedValueOnce(new Error("browser unavailable"));
+
+    const handlerCall = mocks.webContents.setWindowOpenHandler.mock.calls[0];
+    const handler = handlerCall?.[0];
+    if (typeof handler !== "function") throw new Error("window open handler not registered");
+    expect(handler({ url: "https://github.com/kouiso" })).toEqual({ action: "deny" });
+    await Promise.resolve();
+    expect(mocks.logError).toHaveBeenCalledWith(
+      "[main] failed to open external URL:",
+      "https://github.com/kouiso",
+      expect.any(Error),
+    );
+  });
+
+  it("activate で窓が無ければ作り直すこと", async () => {
+    await bootMain();
+    mocks.getAllWindows.mockReturnValue([]);
+    mocks.BrowserWindow.mockClear();
+
+    findAppListener("activate")();
+
+    expect(mocks.BrowserWindow).toHaveBeenCalledOnce();
   });
 
   it("ログの置き場は userData を動かさず FigDiff 配下に固定すること", async () => {

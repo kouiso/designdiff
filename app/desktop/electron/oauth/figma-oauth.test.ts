@@ -2,6 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { MockInstance } from "vitest";
 
+const packagedMock = vi.hoisted(() => ({ value: false }));
+
 const httpMock = vi.hoisted(() => {
   type Handler = (...args: unknown[]) => void;
 
@@ -88,29 +90,39 @@ const httpMock = vi.hoisted(() => {
     activeServer = server;
   }
 
-  const createServer = vi.fn(() => new MockServer());
-  const request = vi.fn((options: { path?: string }, callback?: (res: MockResponse) => void) => {
-    const errorHandlers: Handler[] = [];
-
-    return {
-      on(event: string, handler: Handler) {
-        if (event === "error") errorHandlers.push(handler);
-        return this;
-      },
-      end() {
-        if (!activeServer) {
-          for (const handler of errorHandlers) handler(new Error("No active mock server"));
-          return;
-        }
-
-        const response = new MockResponse();
-        if (callback) callback(response);
-        activeServer.emit("request", { method: "GET", url: options.path ?? "/" }, response);
-      },
-    };
+  let latestServer: MockServer | null = null;
+  const createServer = vi.fn(() => {
+    latestServer = new MockServer();
+    return latestServer;
   });
+  const request = vi.fn(
+    (options: { method?: string; path?: string }, callback?: (res: MockResponse) => void) => {
+      const errorHandlers: Handler[] = [];
 
-  return { createServer, request };
+      return {
+        on(event: string, handler: Handler) {
+          if (event === "error") errorHandlers.push(handler);
+          return this;
+        },
+        end() {
+          if (!activeServer) {
+            for (const handler of errorHandlers) handler(new Error("No active mock server"));
+            return;
+          }
+
+          const response = new MockResponse();
+          if (callback) callback(response);
+          activeServer.emit(
+            "request",
+            { method: options.method ?? "GET", url: options.path ?? "/" },
+            response,
+          );
+        },
+      };
+    },
+  );
+
+  return { createServer, request, getLatestServer: () => latestServer };
 });
 
 vi.mock("node:http", () => httpMock);
@@ -118,7 +130,11 @@ vi.mock("node:http", () => httpMock);
 const { request: httpRequest } = await import("node:http");
 
 vi.mock("electron", () => ({
-  app: { isPackaged: false },
+  app: {
+    get isPackaged() {
+      return packagedMock.value;
+    },
+  },
   shell: { openExternal: vi.fn() },
 }));
 
@@ -182,10 +198,13 @@ function getCallback(path: string): void {
   req.end();
 }
 
-function getCallbackWithResponse(path: string): Promise<{ status: number; body: string }> {
+function getCallbackWithResponse(
+  path: string,
+  method = "GET",
+): Promise<{ status: number; body: string }> {
   return new Promise((resolve, reject) => {
     const req = httpRequest(
-      { hostname: "127.0.0.1", port: LOOPBACK_PORT, path, agent: false },
+      { hostname: "127.0.0.1", port: LOOPBACK_PORT, path, method, agent: false },
       (res) => {
         let body = "";
         res.on("data", (chunk: Buffer) => {
@@ -380,6 +399,84 @@ describe("startFigmaOAuth — error cases", () => {
     await startFigmaOAuth();
   });
 
+  it("rejects and closes the flow when the callback times out", async () => {
+    vi.useFakeTimers();
+    try {
+      vi.mocked(shell.openExternal).mockResolvedValue(undefined);
+      const pending = startFigmaOAuth();
+      const rejection = expect(pending).rejects.toThrow(/timed out after 120 seconds/);
+      await vi.advanceTimersByTimeAsync(0);
+      await vi.advanceTimersByTimeAsync(120_000);
+
+      await rejection;
+      expect(httpMock.getLatestServer()).not.toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("answers Figma's private-network preflight before accepting the callback", async () => {
+    makeFetchOk();
+    let preflight: { status: number; body: string } | undefined;
+    const fetchDone = new Promise<void>((resolve) => {
+      vi.mocked(shell.openExternal).mockImplementation(async (url: string) => {
+        const state = new URL(url).searchParams.get("state") ?? "";
+        setImmediate(async () => {
+          preflight = await getCallbackWithResponse("/callback", "OPTIONS");
+          getCallback(`/callback?code=preflight-code&state=${state}`);
+          resolve();
+        });
+      });
+    });
+
+    await Promise.all([startFigmaOAuth(), fetchDone]);
+    expect(preflight?.status).toBe(204);
+  });
+
+  it("rejects when Figma refuses the authorization-code exchange", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("invalid code", { status: 400 }));
+    vi.mocked(shell.openExternal).mockImplementation(async (url: string) => {
+      const state = new URL(url).searchParams.get("state") ?? "";
+      setImmediate(() => getCallback(`/callback?code=expired&state=${state}`));
+    });
+
+    await expect(startFigmaOAuth()).rejects.toThrow(/Token exchange failed \(400\): invalid code/);
+    expect(credentialStore.saveOAuthTokens).not.toHaveBeenCalled();
+  });
+
+  it("falls back to the configured client credentials in packaged mode", async () => {
+    const originalPackaged = packagedMock.value;
+    packagedMock.value = true;
+    vi.mocked(credentialStore.getOAuthClientCredentials).mockReturnValue({
+      clientId: FAKE_CLIENT_ID,
+      clientSecret: FAKE_CLIENT_SECRET,
+    });
+    makeFetchOk();
+    vi.mocked(shell.openExternal).mockImplementation(async (url: string) => {
+      const state = new URL(url).searchParams.get("state") ?? "";
+      setImmediate(() => getCallback(`/callback?code=stored-creds&state=${state}`));
+    });
+
+    try {
+      await startFigmaOAuth();
+      expect(credentialStore.getOAuthClientCredentials).toHaveBeenCalledOnce();
+    } finally {
+      packagedMock.value = originalPackaged;
+    }
+  });
+
+  it("rejects packaged mode when client credentials are absent", async () => {
+    const originalPackaged = packagedMock.value;
+    packagedMock.value = true;
+    vi.mocked(credentialStore.getOAuthClientCredentials).mockReturnValue(null);
+
+    try {
+      await expect(startFigmaOAuth()).rejects.toThrow(/client_id と client_secret/);
+    } finally {
+      packagedMock.value = originalPackaged;
+    }
+  });
+
   it("rejects when missing env vars", async () => {
     delete process.env.FIGMA_OAUTH_CLIENT_ID;
     delete process.env.FIGMA_OAUTH_CLIENT_SECRET;
@@ -406,6 +503,50 @@ describe("startFigmaOAuth — error cases", () => {
 
     await startFigmaOAuth();
     await firstRejection;
+  });
+
+  it("rejects and closes the callback flow when the browser cannot open", async () => {
+    vi.mocked(shell.openExternal).mockRejectedValue(new Error("browser unavailable"));
+
+    await expect(startFigmaOAuth()).rejects.toThrow(/Failed to open browser/);
+
+    vi.mocked(shell.openExternal).mockImplementationOnce(async (url: string) => {
+      const state = new URL(url).searchParams.get("state") ?? "";
+      setImmediate(() => getCallback(`/callback?code=retry-code&state=${state}`));
+    });
+    makeFetchOk();
+    await startFigmaOAuth();
+    expect(vi.mocked(credentialStore.saveOAuthTokens)).toHaveBeenCalled();
+  });
+
+  it("rejects an in-flight flow when the callback server fails after listening", async () => {
+    vi.mocked(shell.openExternal).mockImplementation(async () => {
+      httpMock.getLatestServer()?.emit("error", new Error("socket broken"));
+    });
+
+    await expect(startFigmaOAuth()).rejects.toThrow(/callback server error: socket broken/);
+    expect(httpMock.getLatestServer()).not.toBeNull();
+  });
+
+  it("falls back to IPv4 when the IPv6 callback listener is unavailable", async () => {
+    makeFetchOk();
+    vi.mocked(shell.openExternal).mockImplementation(async (url: string) => {
+      const state = new URL(url).searchParams.get("state") ?? "";
+      setImmediate(() => getCallback(`/callback?code=ipv4-fallback&state=${state}`));
+    });
+
+    const pending = startFigmaOAuth();
+    const server = httpMock.getLatestServer();
+    if (!server) throw new Error("callback server was not created");
+    const unavailable = Object.assign(new Error("IPv6 unavailable"), {
+      code: "EAFNOSUPPORT",
+    });
+    server.emit("error", unavailable);
+
+    await pending;
+    expect(credentialStore.saveOAuthTokens).toHaveBeenCalledWith(
+      expect.objectContaining({ accessToken: "fake-access-token" }),
+    );
   });
 });
 
@@ -484,5 +625,23 @@ describe("resolveAccessToken", () => {
     vi.mocked(credentialStore.resolveFigmaAccessToken).mockResolvedValue(null);
 
     await expect(resolveAccessToken()).rejects.toThrow(/Token not found/);
+  });
+});
+
+describe("getOAuthStatus", () => {
+  it("reports no session when tokens are absent", async () => {
+    vi.mocked(credentialStore.getOAuthTokens).mockReturnValue(null);
+    const { getOAuthStatus } = await import("./figma-oauth");
+    expect(getOAuthStatus()).toEqual({ mode: "none" });
+  });
+
+  it("reports the stored OAuth expiry", async () => {
+    vi.mocked(credentialStore.getOAuthTokens).mockReturnValue({
+      accessToken: "access",
+      refreshToken: "refresh",
+      expiresAt: 12345,
+    });
+    const { getOAuthStatus } = await import("./figma-oauth");
+    expect(getOAuthStatus()).toEqual({ mode: "oauth", expiresAt: 12345 });
   });
 });

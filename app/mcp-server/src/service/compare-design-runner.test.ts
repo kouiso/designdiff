@@ -14,6 +14,7 @@ const mocks = vi.hoisted(() => ({
   captureDeviceScreenshot: vi.fn(),
   getLastUsedNode: vi.fn(),
   setLastUsedNode: vi.fn(async () => undefined),
+  recordConvergenceIteration: vi.fn(async () => undefined),
   getCropRegionForComparison: vi.fn(async () => undefined),
 }));
 
@@ -46,6 +47,10 @@ vi.mock("./crop-region-store.js", () => ({
 vi.mock("./last-used-node-store.js", () => ({
   getLastUsedNode: mocks.getLastUsedNode,
   setLastUsedNode: mocks.setLastUsedNode,
+}));
+
+vi.mock("./convergence-history.js", () => ({
+  recordConvergenceIteration: mocks.recordConvergenceIteration,
 }));
 
 vi.mock("./comparison-history.js", async (importOriginal) => {
@@ -455,6 +460,48 @@ describe("runCompareDesign", () => {
     });
   }
 
+  async function runProjectFigmaComparison() {
+    tmpRoot = await fs.mkdtemp(path.join(process.cwd(), "tmp-figdiff-runner-"));
+    const screenshotPath = path.join(tmpRoot, "screenshot.png");
+    await fs.writeFile(screenshotPath, Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+    mocks.createFigmaService.mockReturnValue({
+      getNodeDetails: vi.fn(async () => ({
+        id: "9:9",
+        name: "Stored Frame",
+        type: "FRAME",
+        children: [],
+        absoluteBoundingBox: { x: 0, y: 0, width: 390, height: 844 },
+        fills: [],
+        strokes: [],
+        effects: [],
+      })),
+      getFrameImage: vi.fn(async () => ({ base64: Buffer.from("design").toString("base64") })),
+    });
+    mocks.sharp.mockReturnValue({ metadata: vi.fn(async () => ({ width: 390, height: 844 })) });
+    mocks.compareImages.mockResolvedValue({
+      comparisonId: "cmp-save-failure",
+      matchRate: 100,
+      diffPixelCount: 0,
+      totalPixelCount: 390 * 844,
+      diffRegions: [],
+      suggestion: "一致率100%です。差分はありません。",
+      normalization: {
+        designNativeWidth: 390,
+        designNativeHeight: 844,
+        screenshotWidth: 390,
+        screenshotHeight: 844,
+        cropApplied: false,
+        containResized: false,
+        appliedScale: 1,
+      },
+    });
+    return runCompareDesign({
+      design_source: "https://www.figma.com/design/FILEKEY123/Test?node-id=9-9",
+      screenshot: screenshotPath,
+      project_id: "project-save-failure",
+    });
+  }
+
   it("throws a named-options error when no screenshot source is provided", async () => {
     await expect(
       runCompareDesign({
@@ -811,6 +858,23 @@ describe("runCompareDesign", () => {
       expect(output.result.verdictRoute).toBe("pixel");
       expect(output.result.completionCriteria?.tokenReview.status).toBe("UNCERTAIN");
     });
+
+    it("token-diffの例外は比較結果を失わず画素経路へ戻す", async () => {
+      const explodingStyle = new Proxy(
+        {},
+        {
+          get(): never {
+            throw new Error("invalid DOM style");
+          },
+        },
+      );
+      const output = await runWithDomStyles([explodingStyle]);
+
+      expect(output.result.tokenDiff).toBeUndefined();
+      expect(output.result.verdictRoute).toBe("pixel");
+      expect(output.result.status).toBe("PASS");
+      expect(mocks.compareImages).toHaveBeenCalledOnce();
+    });
   });
 
   it("persists a runner diff PNG path when rounded matchRate is 100 but diff pixels exist", async () => {
@@ -1018,6 +1082,43 @@ describe("runCompareDesign", () => {
       expect.stringMatching(/^cmp-/),
     );
     expect(consoleError).toHaveBeenCalledWith(expect.stringContaining('"Home" (2:2)'));
+  });
+
+  it("reports a useful error when the requested frame name is missing", async () => {
+    tmpRoot = await fs.mkdtemp(path.join(process.cwd(), "tmp-figdiff-runner-"));
+    const screenshotPath = path.join(tmpRoot, "screenshot.png");
+    await fs.writeFile(screenshotPath, Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+    mocks.createFigmaService.mockReturnValue({
+      getFrames: vi.fn(async () => [{ id: "1:1", name: "Home", width: 390, height: 844 }]),
+    });
+
+    await expect(
+      runCompareDesign({
+        design_source: "https://www.figma.com/design/FILEKEY123/Test",
+        screenshot: screenshotPath,
+        frame_name: "Settings",
+      }),
+    ).rejects.toThrow(/Frame "Settings" not found.*Home/s);
+  });
+
+  it("reports all matching frames when a frame name is ambiguous", async () => {
+    tmpRoot = await fs.mkdtemp(path.join(process.cwd(), "tmp-figdiff-runner-"));
+    const screenshotPath = path.join(tmpRoot, "screenshot.png");
+    await fs.writeFile(screenshotPath, Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+    mocks.createFigmaService.mockReturnValue({
+      getFrames: vi.fn(async () => [
+        { id: "1:1", name: "Home", width: 390, height: 844 },
+        { id: "2:2", name: "home", width: 1440, height: 900 },
+      ]),
+    });
+
+    await expect(
+      runCompareDesign({
+        design_source: "https://www.figma.com/design/FILEKEY123/Test",
+        screenshot: screenshotPath,
+        frame_name: "HOME",
+      }),
+    ).rejects.toThrow(/Ambiguous frame name "HOME": 2 frames match.*1:1.*2:2/s);
   });
 
   // #29。ノードが今の Figma に無くても、画像はキャッシュから出るので比較が
@@ -1241,6 +1342,81 @@ describe("runCompareDesign", () => {
         code: "last_used_node",
         message: expect.stringContaining("(12:34)"),
       }),
+    );
+  });
+
+  it("keeps comparing when reading the last-used node fails", async () => {
+    tmpRoot = await fs.mkdtemp(path.join(process.cwd(), "tmp-figdiff-runner-"));
+    const screenshotPath = path.join(tmpRoot, "screenshot.png");
+    await fs.writeFile(screenshotPath, Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+    mocks.getLastUsedNode.mockRejectedValue(new Error("history unavailable"));
+    const getNodeDetails = vi.fn(async () => ({
+      id: "9:9",
+      name: "Explicit Frame",
+      type: "FRAME",
+      children: [],
+      absoluteBoundingBox: { x: 0, y: 0, width: 390, height: 844 },
+      fills: [],
+      strokes: [],
+      effects: [],
+    }));
+    mocks.createFigmaService.mockReturnValue({
+      getNodeDetails,
+      getFrameImage: vi.fn(async () => ({ base64: Buffer.from("design").toString("base64") })),
+    });
+    mocks.sharp.mockReturnValue({ metadata: vi.fn(async () => ({ width: 390, height: 844 })) });
+    mocks.compareImages.mockResolvedValue({
+      comparisonId: "cmp-last-used-error",
+      matchRate: 100,
+      diffPixelCount: 0,
+      totalPixelCount: 390 * 844,
+      diffRegions: [],
+      suggestion: "一致率100%です。差分はありません。",
+      normalization: {
+        designNativeWidth: 390,
+        designNativeHeight: 844,
+        screenshotWidth: 390,
+        screenshotHeight: 844,
+        cropApplied: false,
+        containResized: false,
+        appliedScale: 1,
+      },
+    });
+
+    const output = await runCompareDesign({
+      design_source: "https://www.figma.com/design/FILEKEY123/Test?node-id=9-9",
+      screenshot: screenshotPath,
+      project_id: "project-last-used",
+    });
+
+    expect(output.result.status).toBe("PASS");
+    expect(getNodeDetails).toHaveBeenCalledWith("FILEKEY123", "9:9");
+    expect(mocks.compareImages).toHaveBeenCalledOnce();
+  });
+
+  it("keeps the comparison result when convergence history saving fails", async () => {
+    mocks.recordConvergenceIteration.mockRejectedValueOnce(new Error("history unavailable"));
+
+    const output = await runProjectFigmaComparison();
+
+    expect(output.result.status).toBe("PASS");
+    expect(output.result.comparisonId).toBe("cmp-save-failure");
+    expect(mocks.recordComparison).toHaveBeenCalledOnce();
+  });
+
+  it("keeps the comparison result when last-used node saving fails", async () => {
+    mocks.setLastUsedNode.mockRejectedValueOnce(new Error("last-used store unavailable"));
+
+    const output = await runProjectFigmaComparison();
+
+    expect(output.result.status).toBe("PASS");
+    expect(output.result.comparisonId).toBe("cmp-save-failure");
+    expect(mocks.recordComparison).toHaveBeenCalledOnce();
+    expect(mocks.setLastUsedNode).toHaveBeenCalledWith(
+      "project-save-failure",
+      "FILEKEY123",
+      "9:9",
+      "Stored Frame",
     );
   });
 

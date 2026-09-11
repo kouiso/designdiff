@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { getPlatform } from "@/lib/platform";
 import { useCompareStore } from "@/store/compare-store";
 import { useProjectStore } from "@/store/project-store";
 
@@ -183,5 +184,114 @@ describe("ComparePage", () => {
     render(<ComparePage />);
 
     expect(useCompareStore.getState().designImage).toBe("data:image/png;base64,frame");
+  });
+
+  it("ローカル画像を読み込むとスクリーンショット状態になる", async () => {
+    const platform = await getPlatform();
+    vi.mocked(platform.file.readLocalImage).mockResolvedValueOnce("local-image");
+    useCompareStore.setState({ designImage: "base64design" });
+    render(<ComparePage />);
+
+    fireEvent.change(
+      screen.getByPlaceholderText("URL またはファイルパス（例: http://localhost:3000）"),
+      {
+        target: { value: "/tmp/screenshot.png" },
+      },
+    );
+    fireEvent.click(screen.getByRole("button", { name: "実装スクリーンショット" }));
+
+    expect(await screen.findByText("読み込み済み")).toBeInTheDocument();
+    expect(useCompareStore.getState().screenshotImage).toBe("data:image/png;base64,local-image");
+  });
+
+  it("URL画像は選択フレーム寸法でキャプチャする", async () => {
+    const platform = await getPlatform();
+    vi.mocked(platform.file.captureUrlScreenshot).mockResolvedValueOnce("remote-image");
+    useProjectStore.setState({
+      selectedFrame: { id: "frame", name: "Desktop", x: 0, y: 0, width: 375.6, height: 812.4 },
+    });
+    useCompareStore.setState({ designImage: "base64design" });
+    render(<ComparePage />);
+
+    fireEvent.change(
+      screen.getByPlaceholderText("URL またはファイルパス（例: http://localhost:3000）"),
+      {
+        target: { value: "https://example.com" },
+      },
+    );
+    fireEvent.click(screen.getByRole("button", { name: "実装スクリーンショット" }));
+
+    await screen.findByText("読み込み済み");
+    expect(platform.file.captureUrlScreenshot).toHaveBeenCalledWith(
+      "https://example.com",
+      376,
+      812,
+    );
+  });
+
+  it("画像読み込み失敗時はエラーを表示する", async () => {
+    const platform = await getPlatform();
+    vi.mocked(platform.file.readLocalImage).mockRejectedValueOnce(new Error("read failed"));
+    useCompareStore.setState({ designImage: "base64design" });
+    render(<ComparePage />);
+
+    fireEvent.change(
+      screen.getByPlaceholderText("URL またはファイルパス（例: http://localhost:3000）"),
+      {
+        target: { value: "/missing.png" },
+      },
+    );
+    fireEvent.click(screen.getByRole("button", { name: "実装スクリーンショット" }));
+
+    expect(
+      await screen.findByText("画像の読み込みに失敗しました: Error: read failed"),
+    ).toBeInTheDocument();
+  });
+
+  it("読み込み済み画像を変更するとスクリーンショットをクリアする", async () => {
+    const platform = await getPlatform();
+    vi.mocked(platform.file.readLocalImage).mockResolvedValueOnce("image");
+    useCompareStore.setState({ designImage: "base64design" });
+    render(<ComparePage />);
+    fireEvent.change(
+      screen.getByPlaceholderText("URL またはファイルパス（例: http://localhost:3000）"),
+      {
+        target: { value: "/screenshot.png" },
+      },
+    );
+    fireEvent.click(screen.getByRole("button", { name: "実装スクリーンショット" }));
+    await screen.findByText("読み込み済み");
+
+    fireEvent.click(screen.getByText("変更"));
+
+    expect(useCompareStore.getState().screenshotImage).toBeNull();
+    expect(
+      screen.getByPlaceholderText("URL またはファイルパス（例: http://localhost:3000）"),
+    ).toBeInTheDocument();
+  });
+
+  it("表示モードと透明度を操作できる", () => {
+    useCompareStore.setState({ designImage: "d", screenshotImage: "s" });
+    render(<ComparePage />);
+
+    fireEvent.click(screen.getByRole("button", { name: "ピクセル差分" }));
+    expect(useCompareStore.getState().viewMode).toBe("pixel_diff");
+    fireEvent.click(screen.getByRole("button", { name: "分割画面" }));
+    expect(useCompareStore.getState().viewMode).toBe("split_screen");
+    fireEvent.click(screen.getByRole("button", { name: "透過オーバーレイ" }));
+    const slider = screen.getByRole("slider");
+    fireEvent.change(slider, { target: { value: "0.8" } });
+    expect(useCompareStore.getState().overlayOpacity).toBe(0.8);
+  });
+
+  it("課題タブは比較結果がない場合の案内を表示する", () => {
+    useCompareStore.setState({ designImage: "d", screenshotImage: "s" });
+    render(<ComparePage />);
+
+    fireEvent.click(screen.getByText("課題"));
+
+    expect(
+      screen.getByText("「差分を検出」ボタンをクリックして比較を実行します。"),
+    ).toBeInTheDocument();
   });
 });

@@ -3,11 +3,23 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 // 重ね合わせの窓口は、外側の窓・別セッション・実際の通信を全部触る。
 // 本物を動かせないので、境界だけを差し替えて配線と分岐を見る。
 const mocks = vi.hoisted(() => {
+  const onHandlers = new Map<string, (...args: unknown[]) => void>();
+  const headerCallback = { current: (..._args: unknown[]) => undefined };
+  const headers = {
+    onHeadersReceived: vi.fn((...args: unknown[]) => {
+      const callback = args[1];
+      if (typeof callback === "function") {
+        headerCallback.current = (...callbackArgs) => callback(...callbackArgs);
+      }
+    }),
+  };
   const webContents = {
     executeJavaScript: vi.fn(),
     loadURL: vi.fn(),
     capturePage: vi.fn(),
-    on: vi.fn(),
+    on: vi.fn((event: string, callback: (...args: unknown[]) => void) => {
+      onHandlers.set(event, callback);
+    }),
     send: vi.fn(),
     getURL: vi.fn(() => "https://example.test/"),
     setWindowOpenHandler: vi.fn(),
@@ -26,11 +38,16 @@ const mocks = vi.hoisted(() => {
   return {
     handle: vi.fn(),
     getAllWindows: vi.fn(() => [mainWindow]),
-    fromPartition: vi.fn(() => ({ webRequest: { onHeadersReceived: vi.fn() } })),
+    fromPartition: vi.fn(() => ({ webRequest: headers })),
     webContents,
     view,
     mainWindow,
-    WebContentsView: vi.fn(() => view),
+    WebContentsView: vi.fn(function WebContentsViewMock() {
+      return view;
+    }),
+    onHandlers,
+    headers,
+    headerCallback,
   };
 });
 
@@ -72,8 +89,9 @@ const VALID_BASE64 = "aGVsbG8=";
 describe("registerOverlayHandlers", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.onHandlers.clear();
+    mocks.headers.onHeadersReceived.mockClear();
     mocks.getAllWindows.mockReturnValue([mocks.mainWindow]);
-    mocks.WebContentsView.mockReturnValue(mocks.view);
     mocks.webContents.loadURL.mockResolvedValue(undefined);
     mocks.webContents.executeJavaScript.mockResolvedValue(undefined);
     vi.stubGlobal(
@@ -147,6 +165,15 @@ describe("registerOverlayHandlers", () => {
     );
   }, 20_000);
 
+  it("接続失敗がError以外でも内容を含めて扱うこと", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue("offline"));
+    const handlers = await registerAndCollect();
+
+    await expect(invoke(handlers, "overlay:open", "http://localhost:5173/")).rejects.toThrow(
+      /offline/,
+    );
+  }, 20_000);
+
   it("開いていない状態で画像を差し込もうとしたら、その旨で終わること", async () => {
     const handlers = await registerAndCollect();
 
@@ -177,6 +204,39 @@ describe("registerOverlayHandlers", () => {
     await invoke(handlers, "overlay:update-scale", 1.5, "fit_width");
     expect(mocks.webContents.executeJavaScript).toHaveBeenCalledWith(
       expect.stringContaining("1.50"),
+    );
+  });
+
+  it("画面遷移をメイン画面へ通知し、セキュリティヘッダーを除くこと", async () => {
+    const handlers = await registerAndCollect();
+    await invoke(handlers, "overlay:open", "https://example.test/");
+
+    mocks.onHandlers.get("did-navigate")?.({}, "https://example.test/next");
+    mocks.onHandlers.get("did-navigate-in-page")?.({}, "https://example.test/hash");
+    mocks.webContents.getURL.mockReturnValue("https://example.test/ready");
+    mocks.onHandlers.get("dom-ready")?.();
+    mocks.onHandlers.get("did-frame-finish-load")?.();
+
+    expect(mocks.mainWindow.webContents.send).toHaveBeenCalledWith(
+      "overlay:navigated",
+      "https://example.test/next",
+    );
+    expect(mocks.mainWindow.webContents.send).toHaveBeenCalledWith(
+      "overlay:navigated",
+      "https://example.test/ready",
+    );
+
+    mocks.headerCallback.current(
+      {
+        responseHeaders: {
+          "X-Frame-Options": ["DENY"],
+          "Content-Security-Policy": ["default-src 'none'"],
+          "Content-Type": ["text/html"],
+        },
+      },
+      (result: { responseHeaders: Record<string, string[]> }) => {
+        expect(result.responseHeaders).toEqual({ "Content-Type": ["text/html"] });
+      },
     );
   });
 
@@ -228,7 +288,9 @@ describe("表示の切り替え", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.getAllWindows.mockReturnValue([mocks.mainWindow]);
-    mocks.WebContentsView.mockReturnValue(mocks.view);
+    mocks.WebContentsView.mockImplementation(function WebContentsViewMock() {
+      return mocks.view;
+    });
     mocks.webContents.loadURL.mockResolvedValue(undefined);
     mocks.webContents.executeJavaScript.mockResolvedValue(undefined);
     vi.stubGlobal(
@@ -326,7 +388,9 @@ describe("繋がらないときの粘り方", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.getAllWindows.mockReturnValue([mocks.mainWindow]);
-    mocks.WebContentsView.mockReturnValue(mocks.view);
+    mocks.WebContentsView.mockImplementation(function WebContentsViewMock() {
+      return mocks.view;
+    });
     mocks.webContents.executeJavaScript.mockResolvedValue(undefined);
   });
 
@@ -340,7 +404,7 @@ describe("繋がらないときの粘り方", () => {
       vi.fn(() => Promise.resolve({ ok: true })),
     );
     mocks.webContents.loadURL
-      .mockRejectedValueOnce(new Error("net::ERR_CONNECTION_RESET"))
+      .mockRejectedValueOnce(new Error("net::ERR_CONNECTION_RESET", { cause: new Error("reset") }))
       .mockResolvedValue(undefined);
     const handlers = await registerAndCollect();
 

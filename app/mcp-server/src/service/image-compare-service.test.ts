@@ -55,7 +55,10 @@ vi.mock("sharp", () => ({
 
 describe("compareImages", () => {
   beforeEach(() => {
+    vi.restoreAllMocks();
     vi.clearAllMocks();
+    mockSharpFn.mockReset();
+    vi.resetModules();
   });
 
   afterEach(() => {
@@ -1606,6 +1609,8 @@ describe("compareImages", () => {
 
   it("非一様な上端 gap は paddingMask で差分から除外しないこと", async () => {
     const pixelmatchMock = await import("pixelmatch");
+    const sharedMock = await import("@figdiff/shared");
+    vi.mocked(sharedMock.clusterDiffPixels).mockReset().mockReturnValue([]);
     const width = 2;
     const designHeight = 2;
     const screenshotHeight = 3;
@@ -1656,6 +1661,8 @@ describe("compareImages", () => {
 
   it("一様な上端 gap は従来どおり paddingMask で差分から除外すること", async () => {
     const pixelmatchMock = await import("pixelmatch");
+    const sharedMock = await import("@figdiff/shared");
+    vi.mocked(sharedMock.clusterDiffPixels).mockReset().mockReturnValue([]);
     const width = 2;
     const designHeight = 2;
     const screenshotHeight = 3;

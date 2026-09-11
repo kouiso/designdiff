@@ -44,6 +44,7 @@ describe("token IPC secret-safe error contract", () => {
 
     expect(message).toBe("Failed to save Figma token.");
     expect(message).not.toContain(secretValue);
+    expect(formatTokenSaveError("storage unavailable")).toBe("Failed to save Figma token.");
   });
 
   it("registers token:save with fixed logging and fixed unknown-error response", async () => {
@@ -64,5 +65,55 @@ describe("token IPC secret-safe error contract", () => {
     expect(consoleError).not.toHaveBeenCalledWith(expect.anything(), expect.anything());
 
     consoleError.mockRestore();
+  });
+
+  it("token:getとtoken:deleteを登録し、保存領域へ委譲すること", async () => {
+    const { registerTokenHandlers } = await import("./token");
+    getToken.mockReturnValue("figd_saved_token");
+    registerTokenHandlers();
+
+    const handlers = new Map<string, (...args: unknown[]) => unknown>();
+    for (const [channel, handler] of ipcMainHandle.mock.calls) {
+      if (typeof channel === "string" && typeof handler === "function") {
+        handlers.set(channel, handler);
+      }
+    }
+
+    expect(handlers.get("token:get")?.({})).toBe("figd_saved_token");
+    handlers.get("token:delete")?.({});
+    expect(getToken).toHaveBeenCalledOnce();
+    expect(deleteToken).toHaveBeenCalledOnce();
+  });
+
+  it("token:saveが保存に成功したら値を返さず完了すること", async () => {
+    const { registerTokenHandlers } = await import("./token");
+    registerTokenHandlers();
+
+    const saveHandler = ipcMainHandle.mock.calls.find(([channel]) => channel === "token:save")?.[1];
+    expect(typeof saveHandler).toBe("function");
+    if (typeof saveHandler !== "function") throw new Error("save handler was not registered");
+
+    expect(saveHandler({}, "figd_valid_token_12345")).toBeUndefined();
+    expect(saveToken).toHaveBeenCalledWith("figd_valid_token_12345");
+  });
+
+  it("token:saveは既知の保存エラーだけをそのまま返すこと", async () => {
+    const { registerTokenHandlers } = await import("./token");
+    registerTokenHandlers();
+    const saveHandler = ipcMainHandle.mock.calls.find(([channel]) => channel === "token:save")?.[1];
+    expect(typeof saveHandler).toBe("function");
+    if (typeof saveHandler !== "function") throw new Error("save handler was not registered");
+
+    saveToken.mockImplementationOnce(() => {
+      throw new Error(invalidTokenMessage);
+    });
+    await expect(() => saveHandler({}, "bad-token")).toThrow(invalidTokenMessage);
+
+    saveToken.mockImplementationOnce(() => {
+      throw new Error(osKeychainUnavailableMessage);
+    });
+    await expect(() => saveHandler({}, "figd_valid_token_12345")).toThrow(
+      osKeychainUnavailableMessage,
+    );
   });
 });

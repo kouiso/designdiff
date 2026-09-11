@@ -25,6 +25,26 @@ describe("registerFileHandlers", () => {
   beforeEach(async () => {
     workDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), "figdiff-file-"));
     mocks.handle.mockClear();
+    mocks.BrowserWindow.mockImplementation(function BrowserWindowMock() {
+      const listeners = new Map<string, (...args: unknown[]) => void>();
+      const webContents = {
+        on: vi.fn((event: string, callback: (...args: unknown[]) => void) => {
+          listeners.set(event, callback);
+        }),
+        once: vi.fn((event: string, callback: (...args: unknown[]) => void) => {
+          listeners.set(event, callback);
+        }),
+        capturePage: vi.fn(async () => ({ toPNG: () => Buffer.from([1, 2, 3]) })),
+      };
+      return {
+        webContents,
+        loadURL: vi.fn(async () => {
+          listeners.get("did-finish-load")?.();
+          listeners.get("paint")?.();
+        }),
+        destroy: vi.fn(),
+      };
+    });
     vi.resetModules();
 
     const { registerFileHandlers } = await import("./file.js");
@@ -92,5 +112,40 @@ describe("registerFileHandlers", () => {
       /http/,
     );
     expect(mocks.BrowserWindow).not.toHaveBeenCalled();
+  });
+
+  it("URLを読み込み、描画後の画像を返して窓を閉じること", async () => {
+    const result = await invoke("file:capture-url-screenshot", "https://example.test", 320, 240);
+
+    expect(result).toBe(Buffer.from([1, 2, 3]).toString("base64"));
+    const windowInstance = mocks.BrowserWindow.mock.results[0]?.value;
+    expect(windowInstance.loadURL).toHaveBeenCalledWith("https://example.test");
+    expect(windowInstance.destroy).toHaveBeenCalledOnce();
+  });
+
+  it("読み込み失敗時も窓を閉じてエラーを返すこと", async () => {
+    mocks.BrowserWindow.mockImplementationOnce(function BrowserWindowFailureMock() {
+      const listeners = new Map<string, (...args: unknown[]) => void>();
+      const webContents = {
+        on: vi.fn((event: string, callback: (...args: unknown[]) => void) => {
+          listeners.set(event, callback);
+        }),
+        once: vi.fn(),
+        capturePage: vi.fn(),
+      };
+      return {
+        webContents,
+        loadURL: vi.fn(async () => {
+          listeners.get("did-fail-load")?.({}, -2, "offline");
+        }),
+        destroy: vi.fn(),
+      };
+    });
+
+    await expect(
+      invoke("file:capture-url-screenshot", "http://example.test", 100, 100),
+    ).rejects.toThrow("ページの読み込みに失敗: -2 offline");
+    const windowInstance = mocks.BrowserWindow.mock.results[0]?.value;
+    expect(windowInstance.destroy).toHaveBeenCalledOnce();
   });
 });

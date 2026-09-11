@@ -119,6 +119,84 @@ describe("useCanvasZoomPan", () => {
   });
 
   describe("mouse events with container", () => {
+    const renderAttached = (options?: Parameters<typeof useCanvasZoomPan>[0]) => {
+      const div = document.createElement("div");
+      document.body.appendChild(div);
+      const rendered = renderHook(() => {
+        const hook = useCanvasZoomPan(options);
+        hook.containerRef.current = div;
+        return hook;
+      });
+      return { ...rendered, div };
+    };
+
+    it("通常ホイールは垂直パンし、shiftホイールは水平パンする", () => {
+      const { result, div, unmount } = renderAttached();
+
+      act(() => {
+        div.dispatchEvent(new WheelEvent("wheel", { deltaX: 3, deltaY: 8, bubbles: true }));
+        div.dispatchEvent(new WheelEvent("wheel", { deltaY: 5, shiftKey: true, bubbles: true }));
+      });
+
+      expect(result.current.offset).toEqual({ x: -8, y: -8 });
+      unmount();
+      div.remove();
+    });
+
+    it("ctrlホイールはカーソル中心で倍率を上下限に収める", () => {
+      const { result, div, unmount } = renderAttached({ minScale: 0.5, maxScale: 2 });
+      Object.defineProperty(div, "getBoundingClientRect", {
+        value: () => ({ left: 10, top: 20 }),
+      });
+
+      act(() => {
+        div.dispatchEvent(
+          new WheelEvent("wheel", { clientX: 20, clientY: 30, deltaY: -10_000, ctrlKey: true }),
+        );
+      });
+      expect(result.current.scale).toBe(2);
+      act(() => {
+        div.dispatchEvent(
+          new WheelEvent("wheel", { clientX: 20, clientY: 30, deltaY: 10_000, ctrlKey: true }),
+        );
+      });
+      expect(result.current.scale).toBe(0.5);
+      unmount();
+      div.remove();
+    });
+
+    it("中クリックのドラッグをコンテナ外のmousemoveでも追従する", () => {
+      const { result, div, unmount } = renderAttached();
+
+      act(() => {
+        div.dispatchEvent(new MouseEvent("mousedown", { button: 1, clientX: 10, clientY: 20 }));
+        window.dispatchEvent(new MouseEvent("mousemove", { clientX: 18, clientY: 26 }));
+        window.dispatchEvent(new MouseEvent("mouseup"));
+      });
+
+      expect(result.current.offset).toEqual({ x: 8, y: 6 });
+      expect(div.style.cursor).toBe("");
+      unmount();
+      div.remove();
+    });
+
+    it("space+左ドラッグを開始し、spaceを離すとパンを中断する", () => {
+      const { result, div, unmount } = renderAttached();
+
+      act(() => {
+        window.dispatchEvent(new KeyboardEvent("keydown", { code: "Space" }));
+        div.dispatchEvent(new MouseEvent("mousedown", { button: 0, clientX: 2, clientY: 3 }));
+        window.dispatchEvent(new MouseEvent("mousemove", { clientX: 5, clientY: 7 }));
+        window.dispatchEvent(new KeyboardEvent("keyup", { code: "Space" }));
+        window.dispatchEvent(new MouseEvent("mousemove", { clientX: 20, clientY: 20 }));
+      });
+
+      expect(result.current.offset).toEqual({ x: 3, y: 4 });
+      expect(div.style.cursor).toBe("");
+      unmount();
+      div.remove();
+    });
+
     it("containerRef がアタッチされた要素でホイールイベントが処理される (pan)", () => {
       const { result } = renderHook(() => useCanvasZoomPan());
 

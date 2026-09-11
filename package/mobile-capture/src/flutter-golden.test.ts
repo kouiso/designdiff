@@ -86,4 +86,21 @@ describe("runFlutterGolden", () => {
       }),
     ).rejects.toThrow("flutter test --update-goldens failed: golden mismatch details");
   });
+
+  it("uses the process error when flutter exits without stderr", async () => {
+    const projectDir = await createFlutterProjectDir();
+
+    mockedExecFile.mockImplementation((_command, _args, _options, callback) => {
+      callback(new Error("flutter binary unavailable"), "", "");
+      return undefined;
+    });
+
+    await expect(
+      runFlutterGolden({
+        testTarget: "test/widget_test.dart",
+        flutterProjectDir: projectDir,
+        goldenRelativePath: "test/widget/goldens/welcome_screen.png",
+      }),
+    ).rejects.toThrow("flutter test --update-goldens failed: flutter binary unavailable");
+  });
 });
