@@ -65,9 +65,12 @@ describe("set_figma_token MCP handler", () => {
     expect(invalidateFigmaService).not.toHaveBeenCalled();
   });
 
-  it("stringifies non-Error credential failures without leaking the token", async () => {
+  it.each([
+    "credential backend unavailable",
+    { toString: () => "credential backend unavailable" },
+  ])("stringifies non-Error credential failure %s without leaking the token", async (failure) => {
     savePat.mockImplementationOnce(() => {
-      throw "credential backend unavailable";
+      throw failure;
     });
     const token = "figd_12345678901234567890";
     const response = await callSetToken(token);
@@ -75,5 +78,6 @@ describe("set_figma_token MCP handler", () => {
     const text = response.content.find((item) => item.type === "text")?.text ?? "";
     expect(text).toContain("credential backend unavailable");
     expect(text).not.toContain(token);
+    expect(invalidateFigmaService).not.toHaveBeenCalled();
   });
 });

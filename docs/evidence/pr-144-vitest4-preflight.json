@@ -47,6 +47,10 @@
     {
       "name": "hm-dd144-final-coverage6.log",
       "sha256": "a423410e0a30d9aeb078c334458ba203f4d9bab9b58844dd1b1159485a1709bc"
+    },
+    {
+      "name": "hm-dd144-eslint-correction.log",
+      "sha256": "17f372a0beebe89fc917d7d8f836787b1f9fb44cc994965230758e8260ae10c1"
     }
   ],
   "files": [
@@ -178,7 +182,7 @@
     {
       "path": "app/mcp-server/src/tool/set-figma-token.test.ts",
       "type": "test",
-      "sha256": "fb1c04da35104c0a148c30bd12f10f3bbb8dbfc0eb41f923ad846cc06adefdc7"
+      "sha256": "d4ab34179c7d2c2cac6095687aa7d7a8b1f46faf86892c59a4eaf7595803a561"
     },
     {
       "path": "app/mcp-server/src/tool/set-ignore-regions.test.ts",
@@ -215,5 +219,12 @@
       "type": "CI/config",
       "sha256": "74df42b7bb2c7fd8e55b36b57bd781dd2db85efc3a3a5f1a95a6e9077c9b4ad1"
     }
-  ]
+  ],
+  "followupVerification": {
+    "reason": "GitHub lint also runs ESLint, which the initial local pnpm lint does not include",
+    "eslint": "passed across workspace",
+    "targetedTokenTests": 5,
+    "coverageRecordScope": "655-test coverage run before the test-only string/object parameterization; product code unchanged",
+    "independentReview": "no outstanding findings"
+  }
 }
