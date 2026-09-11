@@ -460,7 +460,7 @@ describe("runCompareDesign", () => {
     });
   }
 
-  async function runProjectFigmaComparison() {
+  const runProjectFigmaComparison = async () => {
     tmpRoot = await fs.mkdtemp(path.join(process.cwd(), "tmp-figdiff-runner-"));
     const screenshotPath = path.join(tmpRoot, "screenshot.png");
     await fs.writeFile(screenshotPath, Buffer.from([0x89, 0x50, 0x4e, 0x47]));
@@ -500,7 +500,7 @@ describe("runCompareDesign", () => {
       screenshot: screenshotPath,
       project_id: "project-save-failure",
     });
-  }
+  };
 
   it("throws a named-options error when no screenshot source is provided", async () => {
     await expect(

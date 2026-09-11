@@ -91,11 +91,13 @@ describe("compare_animation MCP handler", () => {
     });
     expect(both.isError).toBe(true);
     expect(both.content[0]).toMatchObject({ type: "text" });
-    expect(String((both.content[0] as { text?: string }).text)).toContain("同時に指定できません");
+    expect(both.content[0]?.type === "text" ? both.content[0].text : undefined).toContain(
+      "同時に指定できません",
+    );
 
     const missing = await callAnimation({ design_source: fixture });
     expect(missing.isError).toBe(true);
-    expect(String((missing.content[0] as { text?: string }).text)).toContain(
+    expect(missing.content[0]?.type === "text" ? missing.content[0].text : undefined).toContain(
       "実装側の絵がありません",
     );
   });
@@ -107,7 +109,7 @@ describe("compare_animation MCP handler", () => {
     });
 
     expect(response.isError).toBe(true);
-    expect(String((response.content[0] as { text?: string }).text)).toContain(
+    expect(response.content[0]?.type === "text" ? response.content[0].text : undefined).toContain(
       "capture_frames_ms も指定してください",
     );
     expect(captureUrl).not.toHaveBeenCalled();
@@ -224,9 +226,9 @@ describe("compare_animation MCP handler", () => {
       screenshot_frames: [],
     });
     expect(emptyFrames.isError).toBe(true);
-    expect(String((emptyFrames.content[0] as { text?: string }).text)).toContain(
-      "1つ以上指定してください",
-    );
+    expect(
+      emptyFrames.content[0]?.type === "text" ? emptyFrames.content[0].text : undefined,
+    ).toContain("1つ以上指定してください");
 
     captureUrl.mockResolvedValueOnce({ framePaths: [] });
     const emptyCapture = await callAnimation({
@@ -235,9 +237,9 @@ describe("compare_animation MCP handler", () => {
       capture_frames_ms: [0],
     });
     expect(emptyCapture.isError).toBe(true);
-    expect(String((emptyCapture.content[0] as { text?: string }).text)).toContain(
-      "フレームが1枚も返りませんでした",
-    );
+    expect(
+      emptyCapture.content[0]?.type === "text" ? emptyCapture.content[0].text : undefined,
+    ).toContain("フレームが1枚も返りませんでした");
 
     captureUrl.mockResolvedValueOnce({ framePaths: undefined });
     const missingCaptureFrames = await callAnimation({
@@ -246,9 +248,11 @@ describe("compare_animation MCP handler", () => {
       capture_frames_ms: [0],
     });
     expect(missingCaptureFrames.isError).toBe(true);
-    expect(String((missingCaptureFrames.content[0] as { text?: string }).text)).toContain(
-      "フレームが1枚も返りませんでした",
-    );
+    expect(
+      missingCaptureFrames.content[0]?.type === "text"
+        ? missingCaptureFrames.content[0].text
+        : undefined,
+    ).toContain("フレームが1枚も返りませんでした");
 
     const emptyDesignFrames = await callAnimation({
       design_source: "/tmp/design.png",
@@ -256,9 +260,9 @@ describe("compare_animation MCP handler", () => {
       design_frames: [],
     });
     expect(emptyDesignFrames.isError).toBe(true);
-    expect(String((emptyDesignFrames.content[0] as { text?: string }).text)).toContain(
-      "1つ以上指定してください",
-    );
+    expect(
+      emptyDesignFrames.content[0]?.type === "text" ? emptyDesignFrames.content[0].text : undefined,
+    ).toContain("1つ以上指定してください");
   });
 
   it("reports a non-Error comparison failure and uses the fallback reason for null matches", async () => {
@@ -268,7 +272,7 @@ describe("compare_animation MCP handler", () => {
       screenshot_frames: [{ path: "/tmp/frame.png", at_ms: 0 }],
     });
     expect(failed.isError).toBe(true);
-    expect(String((failed.content[0] as { text?: string }).text)).toContain(
+    expect(failed.content[0]?.type === "text" ? failed.content[0].text : undefined).toContain(
       "comparison service unavailable",
     );
 

@@ -48,7 +48,9 @@ describe("set_crop_region MCP handler", () => {
       width: 390,
       height: 692,
     });
-    expect(String((response.content[0] as { text?: string }).text)).toContain('"success": true');
+    expect(response.content[0]?.type === "text" ? response.content[0].text : undefined).toContain(
+      '"success": true',
+    );
   });
 
   it("rejects invalid project IDs and non-positive rectangle dimensions", async () => {
@@ -76,7 +78,7 @@ describe("set_crop_region MCP handler", () => {
       region: { x: 0, y: 0, width: 1, height: 1 },
     });
     expect(response.isError).toBe(true);
-    expect(String((response.content[0] as { text?: string }).text)).toContain(
+    expect(response.content[0]?.type === "text" ? response.content[0].text : undefined).toContain(
       "cannot write crop config",
     );
   });
@@ -89,7 +91,7 @@ describe("set_crop_region MCP handler", () => {
       region: { x: 0, y: 0, width: 1, height: 1 },
     });
     expect(response.isError).toBe(true);
-    expect(String((response.content[0] as { text?: string }).text)).toContain(
+    expect(response.content[0]?.type === "text" ? response.content[0].text : undefined).toContain(
       "crop store unavailable",
     );
   });

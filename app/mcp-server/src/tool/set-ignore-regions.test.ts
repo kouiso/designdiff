@@ -35,7 +35,9 @@ describe("set_ignore_regions MCP handler", () => {
     expect(response.isError).toBeFalsy();
     expect(setIgnoreRegionConfig).toHaveBeenCalledWith("project_1", regions);
     expect(response.content[0]).toMatchObject({ type: "text" });
-    expect(String((response.content[0] as { text?: string }).text)).toContain('"regionCount": 1');
+    expect(response.content[0]?.type === "text" ? response.content[0].text : undefined).toContain(
+      '"regionCount": 1',
+    );
   });
 
   it("rejects invalid project IDs and rectangle dimensions at the public boundary", async () => {
@@ -60,7 +62,7 @@ describe("set_ignore_regions MCP handler", () => {
       regions: [{ id: "r", x: 0, y: 0, width: 1, height: 1 }],
     });
     expect(response.isError).toBe(true);
-    expect(String((response.content[0] as { text?: string }).text)).toContain(
+    expect(response.content[0]?.type === "text" ? response.content[0].text : undefined).toContain(
       "project does not exist",
     );
   });
@@ -72,7 +74,7 @@ describe("set_ignore_regions MCP handler", () => {
       regions: [{ id: "r", x: 0, y: 0, width: 1, height: 1 }],
     });
     expect(response.isError).toBe(true);
-    expect(String((response.content[0] as { text?: string }).text)).toContain(
+    expect(response.content[0]?.type === "text" ? response.content[0].text : undefined).toContain(
       "ignore store unavailable",
     );
   });

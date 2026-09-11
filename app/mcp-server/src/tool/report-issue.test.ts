@@ -81,7 +81,9 @@ describe("report_issue MCP handler", () => {
     const response = await callReport({ title: "Bug", body: "Details" });
     expect(response.isError).toBe(true);
     expect(createGithubService).not.toHaveBeenCalled();
-    expect(String((response.content[0] as { text?: string }).text)).toContain("credential error");
+    expect(response.content[0]?.type === "text" ? response.content[0].text : undefined).toContain(
+      "credential error",
+    );
   });
 
   it("blocks foreign project names after sanitization", async () => {
@@ -90,7 +92,9 @@ describe("report_issue MCP handler", () => {
     const response = await callReport({ title: "Bug", body: "Other product leaked" });
     expect(response.isError).toBe(true);
     expect(service.createIssue).not.toHaveBeenCalled();
-    expect(String((response.content[0] as { text?: string }).text)).toContain("他プロジェクト");
+    expect(response.content[0]?.type === "text" ? response.content[0].text : undefined).toContain(
+      "他プロジェクト",
+    );
   });
 
   it("sends category, comparison context, and sanitized design source", async () => {
@@ -133,7 +137,9 @@ describe("report_issue MCP handler", () => {
     service.createIssue.mockRejectedValueOnce(new Error("network failure"));
     const failed = await callReport({ title: "Failure", body: "Body", include_context: false });
     expect(failed.isError).toBe(true);
-    expect(String((failed.content[0] as { text?: string }).text)).toContain("network failure");
+    expect(failed.content[0]?.type === "text" ? failed.content[0].text : undefined).toContain(
+      "network failure",
+    );
   });
 
   it("omits the context footer when no active session exists", async () => {
@@ -151,7 +157,7 @@ describe("report_issue MCP handler", () => {
     service.createIssue.mockRejectedValueOnce("upstream unavailable");
     const response = await callReport({ title: "Failure", body: "Body", include_context: false });
     expect(response.isError).toBe(true);
-    expect(String((response.content[0] as { text?: string }).text)).toContain(
+    expect(response.content[0]?.type === "text" ? response.content[0].text : undefined).toContain(
       "upstream unavailable",
     );
   });

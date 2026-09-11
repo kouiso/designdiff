@@ -1,0 +1,34 @@
+{
+  "base": "3305bcdf64ebc1de58cd42425ab3c06cd5ee093e",
+  "platform": "Ubuntu on WSL2; not Windows native",
+  "runtime": {
+    "node": "25.6.1",
+    "pnpm": "9.15.9",
+    "vitest": "4.1.11"
+  },
+  "sourceSha256": {
+    "app/desktop/src/component/compare/compare-canvas.test.tsx": "894028881cd4cf3284fde3770f2897dbceb655e9222540276c93aca3ab4e1548",
+    "app/mcp-server/src/service/compare-design-runner.test.ts": "e08efabe6600b525d24d1fda4c7a709112ea37589b3e21d539ee8e02f4fb211a",
+    "app/mcp-server/src/tool/compare-animation.test.ts": "be05d626f93ad4f5378a4570ebff6f5ec5fb8c593521364983b2da16fa8e9d7e",
+    "app/mcp-server/src/tool/report-issue.test.ts": "aeeead8bf0b6d249c3ec3d560dd0f0c3d630d01a4f17fe9cc95571c8cc8df238",
+    "app/mcp-server/src/tool/set-crop-region.test.ts": "2ce6ff3af17655c943dcaee7f00ecca801e8573e65fa3236687ebab89aabbe94",
+    "app/mcp-server/src/tool/set-figma-token.test.ts": "0a6380a19ea07a24542d1b88fd0a81f09538c54c91ec244721e971b210f9fab4",
+    "app/mcp-server/src/tool/set-ignore-regions.test.ts": "569d2f327d8b4761c4d89649005948277ab8805ed6e806c10abcc1f74c1b4cfa"
+  },
+  "checks": {
+    "pnpm build": "passed",
+    "pnpm typecheck": "passed",
+    "pnpm lint": "passed after two arrow-function corrections",
+    "pnpm test": "passed; MCP 656 tests",
+    "pnpm check": "passed",
+    "pnpm lint:eslint": "passed",
+    "pnpm -r run test:coverage": "passed all seven packages",
+    "pnpm --filter @figdiff/desktop run e2e": "passed 29 Chromium tests"
+  },
+  "evidenceRoot": "WSL /tmp/figdiff-01a08ee2-pr144-*.log",
+  "limitations": [
+    "Changes are test-only. These checks do not prove all product workflows.",
+    "GitHub CI and merge gates must be verified after push."
+  ],
+  "review": "Independent code review found no remaining code defects in the seven test-file corrections."
+}

@@ -131,7 +131,7 @@ describe("CompareCanvas", () => {
       movementX: { value: 12 },
       movementY: { value: -6 },
     });
-    canvas.dispatchEvent(moveEvent);
+    fireEvent(canvas, moveEvent);
     await waitFor(() => {
       expect(context?.drawImage.mock.calls).toEqual([[expect.any(TestImage), 6, -3]]);
     });
@@ -183,7 +183,7 @@ describe("CompareCanvas", () => {
       clientX: { value: -90 },
       clientY: { value: 10 },
     });
-    canvas.dispatchEvent(leftMoveEvent);
+    fireEvent(canvas, leftMoveEvent);
     await waitFor(() => {
       const events = context?.__getEvents() ?? [];
       expect(events).toEqual(
@@ -206,7 +206,7 @@ describe("CompareCanvas", () => {
       clientX: { value: 210 },
       clientY: { value: 10 },
     });
-    canvas.dispatchEvent(rightMoveEvent);
+    fireEvent(canvas, rightMoveEvent);
     await waitFor(() => {
       const events = context?.__getEvents() ?? [];
       expect(events).toEqual(
@@ -221,13 +221,61 @@ describe("CompareCanvas", () => {
     fireEvent.mouseUp(canvas);
   });
 
-  it("画像が読み込まれた各表示モードを描画する", async () => {
+  it.each([
+    { viewMode: "design_only", sources: ["design"], alphas: [1], operations: ["source-over"] },
+    {
+      viewMode: "implementation",
+      sources: ["screenshot"],
+      alphas: [1],
+      operations: ["source-over"],
+    },
+    {
+      viewMode: "transparent_overlay",
+      sources: ["screenshot", "design"],
+      alphas: [1, 0.5],
+      operations: ["source-over", "source-over"],
+    },
+    {
+      viewMode: "split_screen",
+      sources: ["design", "screenshot"],
+      alphas: [1, 1],
+      operations: ["source-over", "source-over"],
+    },
+    {
+      viewMode: "blended_diff",
+      sources: ["design", "screenshot"],
+      alphas: [0.5, 0.5],
+      operations: ["source-over", "difference"],
+    },
+    {
+      viewMode: "draggable_overlay",
+      sources: ["screenshot", "design"],
+      alphas: [1, 0.5],
+      operations: ["source-over", "source-over"],
+    },
+    {
+      viewMode: "pixel_diff",
+      sources: ["data:image/png;base64,diff"],
+      alphas: [1],
+      operations: ["source-over"],
+    },
+  ] as const)("$viewMode は指定された画像と合成方法で描画する", async ({
+    viewMode,
+    sources,
+    alphas,
+    operations,
+  }) => {
     class TestImage {
       width = 100;
       height = 60;
       onload: (() => void) | null = null;
       onerror: (() => void) | null = null;
-      set src(_value: string) {
+      private source = "";
+      get src() {
+        return this.source;
+      }
+      set src(value: string) {
+        this.source = value;
         this.onload?.();
       }
     }
@@ -235,22 +283,49 @@ describe("CompareCanvas", () => {
     useCompareStore.setState({
       designImage: "design",
       screenshotImage: "screenshot",
-      compareResult: { diffImageBase64: "diff" } as never,
+      viewMode,
+      compareResult: {
+        comparisonId: "cmp-canvas-mode",
+        matchRate: 50,
+        diffPixelCount: 3000,
+        totalPixelCount: 6000,
+        diffRegions: [],
+        suggestion: "fixture",
+        diffImageBase64: "diff",
+      },
     });
     render(<CompareCanvas />);
+    const canvas = screen.getByRole("img");
+    if (!(canvas instanceof HTMLCanvasElement)) throw new Error("Canvas element missing");
+    const context = canvas.getContext("2d");
+    if (!context) throw new Error("Canvas context missing");
+    const draws: { source: string; x: number; y: number; alpha: number; operation: string }[] = [];
+    const drawSpy = vi.spyOn(context, "drawImage").mockImplementation((image, x, y) => {
+      if (!(image instanceof TestImage)) throw new Error("Unexpected image source");
+      draws.push({
+        source: image.src,
+        x,
+        y,
+        alpha: context.globalAlpha,
+        operation: context.globalCompositeOperation,
+      });
+    });
+    const rectSpy = vi.spyOn(context, "rect");
 
-    await waitFor(() => expect(screen.getByRole("img")).toBeInTheDocument());
-    for (const viewMode of [
-      "design_only",
-      "implementation",
-      "transparent_overlay",
-      "split_screen",
-      "blended_diff",
-      "draggable_overlay",
-      "pixel_diff",
-    ] as const) {
-      useCompareStore.setState({ viewMode });
-      await waitFor(() => expect(useCompareStore.getState().viewMode).toBe(viewMode));
+    try {
+      await waitFor(() => expect(draws.map((draw) => draw.source)).toEqual(sources));
+      expect(draws.map((draw) => draw.alpha)).toEqual(alphas);
+      expect(draws.map((draw) => draw.operation)).toEqual(operations);
+      expect(draws.every((draw) => draw.x === 0 && draw.y === 0)).toBe(true);
+      expect(canvas.width).toBe(100);
+      expect(canvas.height).toBe(60);
+      if (viewMode === "split_screen") {
+        expect(rectSpy).toHaveBeenNthCalledWith(1, 0, 0, 50, 60);
+        expect(rectSpy).toHaveBeenNthCalledWith(2, 50, 0, 50, 60);
+      }
+    } finally {
+      drawSpy.mockRestore();
+      rectSpy.mockRestore();
     }
   });
 });

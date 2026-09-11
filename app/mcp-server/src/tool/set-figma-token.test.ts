@@ -12,7 +12,7 @@ const { savePat, invalidateFigmaService } = vi.hoisted(() => ({
 vi.mock("@figdiff/credential-store", () => ({ savePat }));
 vi.mock("../service/figma-service.js", () => ({ invalidateFigmaService }));
 
-async function callSetToken(token: unknown) {
+const callSetToken = async (token: unknown) => {
   const server = createMcpServer();
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
   const client = new Client({ name: "set-figma-token-test", version: "1.0.0" });
@@ -22,7 +22,7 @@ async function callSetToken(token: unknown) {
   } finally {
     await client.close();
   }
-}
+};
 
 describe("set_figma_token MCP handler", () => {
   beforeEach(() => {
