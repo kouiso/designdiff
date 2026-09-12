@@ -11,6 +11,74 @@ import type { DeviceCaptureProvider, DeviceScrollOptions } from "../types.js";
  */
 export const ADB_TIMEOUT_MS = 60_000;
 
+export interface AndroidDevice {
+  serial: string;
+  state: string;
+}
+
+export async function listAndroidDevices(): Promise<AndroidDevice[]> {
+  const output = await new Promise<string>((resolve, reject) => {
+    execFile(
+      "adb",
+      ["devices", "-l"],
+      { encoding: "utf8", timeout: ADB_TIMEOUT_MS },
+      (error, stdout) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+        resolve(stdout);
+      },
+    );
+  });
+  const devices: AndroidDevice[] = [];
+  for (const line of output.split(/\r?\n/)) {
+    if (line.trim() === "" || line.startsWith("List of devices attached")) continue;
+    const [serial, state] = line.trim().split(/\s+/);
+    if (!serial || !state) {
+      throw new Error("Could not parse adb devices output. Check adb devices -l before retrying.");
+    }
+    devices.push({
+      serial,
+      state: state === "no" && /\bno permissions\b/.test(line) ? "no permissions" : state,
+    });
+  }
+  return devices;
+}
+
+async function resolveAndroidSerial(requestedSerial?: string): Promise<string> {
+  if (
+    requestedSerial !== undefined &&
+    (!/^\S+$/.test(requestedSerial) || requestedSerial.includes("\0"))
+  ) {
+    throw new Error("Android device serial must be nonempty and contain no whitespace or NUL.");
+  }
+  const devices = await listAndroidDevices();
+  if (requestedSerial !== undefined) {
+    const selected = devices.find((device) => device.serial === requestedSerial);
+    if (!selected) {
+      throw new Error(`Android device ${requestedSerial} is not connected. Check adb devices -l.`);
+    }
+    if (selected.state !== "device") {
+      throw new Error(
+        `Android device ${requestedSerial} is ${selected.state}. Reconnect it and authorize USB debugging before retrying.`,
+      );
+    }
+    return selected.serial;
+  }
+  const ready = devices.filter((device) => device.state === "device");
+  if (ready.length === 1) return ready[0].serial;
+  if (ready.length > 1) {
+    throw new Error(
+      `Multiple Android devices are connected: ${ready.map((device) => device.serial).join(", ")}. Set deviceSerial or ANDROID_SERIAL.`,
+    );
+  }
+  const states = devices.map((device) => `${device.serial}: ${device.state}`).join(", ");
+  throw new Error(
+    `No Android device is ready${states ? ` (${states})` : ""}. Connect a device or emulator and authorize USB debugging.`,
+  );
+}
+
 /**
  * 端末へ渡す座標と時間を検査する。
  *
@@ -36,12 +104,27 @@ function assertScrollOptions(options: DeviceScrollOptions): void {
 }
 
 export class AndroidCaptureProvider implements DeviceCaptureProvider {
+  private serial: Promise<string> | undefined;
+
+  constructor(private readonly deviceSerial?: string) {}
+
+  private selectedSerial(): Promise<string> {
+    // 連続撮影の途中で接続が変わっても、別端末の画像や操作へ切り替えない。
+    this.serial ??= resolveAndroidSerial(
+      this.deviceSerial ?? (process.env.ANDROID_SERIAL || undefined),
+    );
+    return this.serial;
+  }
+
   async scroll(options: DeviceScrollOptions): Promise<void> {
     assertScrollOptions(options);
+    const serial = await this.selectedSerial();
     await new Promise<void>((resolve, reject) => {
       execFile(
         "adb",
         [
+          "-s",
+          serial,
           "shell",
           "input",
           "swipe",
@@ -64,10 +147,11 @@ export class AndroidCaptureProvider implements DeviceCaptureProvider {
   }
 
   async capture(outputPath: string): Promise<void> {
+    const serial = await this.selectedSerial();
     const screenshot = await new Promise<Buffer>((resolve, reject) => {
       execFile(
         "adb",
-        ["exec-out", "screencap", "-p"],
+        ["-s", serial, "exec-out", "screencap", "-p"],
         { encoding: "buffer", maxBuffer: 50 * 1024 * 1024, timeout: ADB_TIMEOUT_MS },
         (error, stdout) => {
           if (error) {
