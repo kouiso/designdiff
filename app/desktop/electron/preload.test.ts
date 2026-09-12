@@ -51,6 +51,12 @@ function asGroup(value: unknown): ExposedApi {
 }
 
 describe("画面側へ公開する窓口", () => {
+  it("レポートの保存は専用 IPC に内容と形式だけを渡す", async () => {
+    const api = await loadApi();
+    const request = { result: { comparisonId: "fixture" }, format: "json" };
+    asFunction(api.saveComparisonReport)(request);
+    expect(mocks.invoke).toHaveBeenCalledWith("file:save-comparison-report", request);
+  });
   beforeEach(() => {
     vi.clearAllMocks();
   });

@@ -16,6 +16,7 @@ import type {
   PlatformAdapter,
   PlatformCapabilities,
   ProjectAdapter,
+  ReportExportAdapter,
   TokenAdapter,
 } from "./platform-adapter";
 
@@ -57,6 +58,10 @@ const electronFileAdapter: FileAdapter = {
   captureUrlScreenshot: async (url, width, height) => {
     return window.electronAPI.captureUrlScreenshot(url, Math.round(width), Math.round(height));
   },
+};
+
+export const electronReportExportAdapter: ReportExportAdapter = {
+  save: (result, format) => window.electronAPI.saveComparisonReport({ result, format }),
 };
 
 export const electronOverlayAdapter: OverlayAdapter = {

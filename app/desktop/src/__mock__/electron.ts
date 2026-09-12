@@ -9,6 +9,7 @@ const electronAPI = {
   getFigmaToken: vi.fn(),
   deleteFigmaToken: vi.fn(),
   readLocalImage: vi.fn(),
+  saveComparisonReport: vi.fn(),
   getPathForFile: vi.fn((file: File) => `/mock/${file.name}`),
   captureUrlScreenshot: vi.fn(),
   // 本物の preload には project がある。ここに無いと、

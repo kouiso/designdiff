@@ -6,6 +6,7 @@ import {
   computeMeanDeltaE2000,
   computePerceptibleDiffRatio,
   computeSsimForRegion,
+  computeWholeImageStructure,
   GLOBAL_SHIFT_CRITICAL_THRESHOLD_PX,
   GLOBAL_SHIFT_ISSUE_THRESHOLD_PX,
   resolveAlignment,
@@ -786,6 +787,18 @@ export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
   }
 
   const verdict = computeVerdict({ alignment, regionScores, issues });
+  const structuralAssessment = computeWholeImageStructure(
+    alignedDesignPixels,
+    screenshotPixels,
+    width,
+    height,
+    toContentRegion(width, height, paddingMask),
+    options.ignoreMask,
+  );
+  if (issues.some((issue) => issue.kind === "position" && issue.severity === "critical")) {
+    structuralAssessment.verdict = "fail";
+    structuralAssessment.rationale += " A critical position difference remains after alignment.";
+  }
 
   // 判定と独立した証拠。ただし矛盾を疑うのは「判定が pass」のときだけなので、
   // それ以外では走査そのものを行わない。全画素が違う比較 (= fail になる比較) で
@@ -812,6 +825,7 @@ export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
     issues,
     weightedAggregate: verdict.weightedAggregate,
     aggregateVerdict: verdict.verdict,
+    structuralAssessment,
     rationale: verdict.rationale,
     perceptibleDiffRatio,
   };

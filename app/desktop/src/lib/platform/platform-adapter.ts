@@ -1,4 +1,5 @@
 import type {
+  CompareDesignResult,
   ConvergenceHistory,
   FigmaAuthState,
   Frame,
@@ -59,6 +60,10 @@ export interface TokenAdapter {
 export interface FileAdapter {
   readLocalImage(path: string): Promise<string>;
   captureUrlScreenshot(url: string, width: number, height: number): Promise<string>;
+}
+
+export interface ReportExportAdapter {
+  save(result: CompareDesignResult, format: "markdown" | "json"): Promise<string | null>;
 }
 
 /**

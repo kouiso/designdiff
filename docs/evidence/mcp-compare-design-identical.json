@@ -24,6 +24,13 @@
         "blocking": true,
         "note": "no critical issues, weighted structure score 1.000 meets pass threshold, and weighted color difference 0.000 is below 3.000 (totalWeight 1.000); weakest region whole-frame (structure 1.000, color ΔE 0.000; lower=better, critical threshold 2) with texture-adjusted weights active (alpha 0.700, photo-like cap 0.300)"
       },
+      "wholeImageStructure": {
+        "required": 0.95,
+        "current": 1,
+        "status": "PASS",
+        "blocking": false,
+        "note": "Area-weighted contrast and structure over disjoint 8x8 windows. Uniform luminance shifts are excluded; contrast changes remain. Local issues and the aggregate gate remain independent."
+      },
       "consistencyReview": {
         "required": 0.5,
         "current": 0,
@@ -80,7 +87,8 @@
       "cropApplied": false,
       "containResized": false,
       "appliedScale": 1,
-      "autoCropped": false
+      "autoCropped": false,
+      "cropSource": "none"
     },
     "diagnosis": {
       "verdict": "clean",
