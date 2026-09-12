@@ -105,6 +105,20 @@ describe("detectFixedBands", () => {
       /dimension/i,
     );
   });
+
+  it("returns no bands for an empty frame list", () => {
+    expect(detectFixedBands([])).toEqual({ headerHeight: 0, footerHeight: 0, notes: [] });
+  });
+
+  it("under-crops an implausibly tall fixed footer", () => {
+    const footer = sequence(700, 9);
+    const frames = [imageFromRows([1, ...footer]), imageFromRows([2, ...footer])];
+
+    const bands = detectFixedBands(frames);
+
+    expect(bands.footerHeight).toBe(0);
+    expect(bands.notes.join(" ")).toContain("フッター");
+  });
 });
 
 describe("detectOverlap", () => {
@@ -154,6 +168,13 @@ describe("detectOverlap", () => {
 
     expect(result.method).toBe("best-effort");
     expect(result.overlap).toBeGreaterThanOrEqual(0);
+  });
+
+  it("rejects fixed bands that leave no scrollable body", () => {
+    const frame = imageFromRows([1, 2]);
+    expect(() => detectOverlap(frame, frame, { headerHeight: 1, footerHeight: 1 })).toThrow(
+      /leave no scrollable body/,
+    );
   });
 });
 

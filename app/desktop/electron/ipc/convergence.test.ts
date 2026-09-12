@@ -18,7 +18,7 @@ const mocks = vi.hoisted(() => {
     readFile: vi.fn(),
     readdir: vi.fn(),
     mkdir: vi.fn(() => Promise.resolve(undefined)),
-    watch: vi.fn(),
+    watch: vi.fn((..._args: unknown[]) => ({ on: vi.fn(), close: vi.fn() })),
   };
 });
 
@@ -39,7 +39,7 @@ vi.mock("node:fs", () => ({
   watch: mocks.watch,
 }));
 
-const { registerConvergenceHandlers } = await import("./convergence.js");
+let registerConvergenceHandlers: () => void;
 
 const history = (sourceKey: string, updatedAt: number) => ({
   sourceKey,
@@ -68,10 +68,18 @@ const handlerFor = (channel: string): Handler => {
   return entry[1];
 };
 
-beforeEach(() => {
+beforeEach(async () => {
   mocks.handle.mockClear();
   mocks.readFile.mockReset();
   mocks.readdir.mockReset();
+  mocks.mkdir.mockReset();
+  mocks.mkdir.mockResolvedValue(undefined);
+  mocks.watch.mockImplementation(() => ({ on: vi.fn(), close: vi.fn() }));
+  mocks.getAllWindows.mockReturnValue([mocks.mainWindow]);
+  mocks.mainWindow.webContents.send.mockClear();
+  vi.resetModules();
+  const module = await import("./convergence.js");
+  registerConvergenceHandlers = module.registerConvergenceHandlers;
   registerConvergenceHandlers();
 });
 
@@ -161,5 +169,39 @@ describe("registerConvergenceHandlers", () => {
     );
     expect(found.sourceKey).toBe("local:/a.png");
     expect(await handlerFor("convergence:read")(null, "local:/missing.png")).toBeNull();
+  });
+
+  it("履歴ファイルの更新を画面へ通知すること", async () => {
+    await Promise.resolve();
+    const callback = mocks.watch.mock.calls[0]?.[2];
+    expect(callback).toBeTypeOf("function");
+    if (typeof callback !== "function") throw new Error("watch callback was not registered");
+    callback("change", "history.json");
+    await new Promise((resolve) => setTimeout(resolve, 220));
+    expect(mocks.mainWindow.webContents.send).toHaveBeenCalledWith("convergence:updated");
+  });
+
+  it("JSON以外の更新は通知せず、画面が無ければ通知もしないこと", async () => {
+    await Promise.resolve();
+    const callback = mocks.watch.mock.calls[0]?.[2];
+    expect(callback).toBeTypeOf("function");
+    if (typeof callback !== "function") throw new Error("watch callback was not registered");
+    mocks.mainWindow.webContents.send.mockClear();
+    callback("change", "notes.txt");
+    expect(mocks.mainWindow.webContents.send).not.toHaveBeenCalled();
+    mocks.getAllWindows.mockReturnValue([]);
+    mocks.mainWindow.webContents.send.mockClear();
+    callback("change", "history.json");
+    await new Promise((resolve) => setTimeout(resolve, 220));
+    expect(mocks.mainWindow.webContents.send).not.toHaveBeenCalled();
+  });
+
+  it("監視対象の作成に失敗しても読み取り窓口を登録すること", async () => {
+    mocks.mkdir.mockRejectedValue(new Error("mkdir failed"));
+    vi.resetModules();
+    const { registerConvergenceHandlers: register } = await import("./convergence.js");
+    register();
+    await Promise.resolve();
+    expect(mocks.handle).toHaveBeenCalledWith("convergence:list", expect.any(Function));
   });
 });

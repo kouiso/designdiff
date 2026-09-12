@@ -12,7 +12,7 @@ const mocks = vi.hoisted(() => {
     mainWindow,
     readFile: vi.fn(),
     mkdir: vi.fn(() => Promise.resolve(undefined)),
-    watch: vi.fn(),
+    watch: vi.fn((..._args: unknown[]) => ({ on: vi.fn(), close: vi.fn() })),
   };
 });
 
@@ -64,6 +64,7 @@ describe("registerActiveSessionHandlers", () => {
   beforeEach(async () => {
     vi.clearAllMocks();
     mocks.mkdir.mockReturnValue(Promise.resolve(undefined));
+    mocks.watch.mockImplementation(() => ({ on: vi.fn(), close: vi.fn() }));
     mocks.getAllWindows.mockReturnValue([mocks.mainWindow]);
     vi.resetModules();
 
@@ -126,5 +127,48 @@ describe("registerActiveSessionHandlers", () => {
     );
 
     expect(result).toBe(bytes.toString("base64"));
+  });
+
+  it("監視対象の更新を読み取り、画面へ通知すること", async () => {
+    mocks.readFile.mockResolvedValue(JSON.stringify(VALID_PAYLOAD));
+    await Promise.resolve();
+
+    const callback = mocks.watch.mock.calls[0]?.[2];
+    expect(callback).toBeTypeOf("function");
+    if (typeof callback !== "function") throw new Error("watch callback was not registered");
+
+    callback("change", "unrelated.json");
+    expect(mocks.mainWindow.webContents.send).not.toHaveBeenCalled();
+    callback("change", "active-session.json");
+    await new Promise((resolve) => setTimeout(resolve, 220));
+
+    expect(mocks.mainWindow.webContents.send).toHaveBeenCalledWith(
+      "active-session:updated",
+      VALID_PAYLOAD,
+    );
+  });
+
+  it("画面が無い場合は更新を通知しないこと", async () => {
+    mocks.getAllWindows.mockReturnValue([]);
+    mocks.readFile.mockResolvedValue(JSON.stringify(VALID_PAYLOAD));
+    await Promise.resolve();
+
+    const callback = mocks.watch.mock.calls[0]?.[2];
+    expect(callback).toBeTypeOf("function");
+    if (typeof callback !== "function") throw new Error("watch callback was not registered");
+    callback("change", "active-session.json");
+    await new Promise((resolve) => setTimeout(resolve, 220));
+
+    expect(mocks.mainWindow.webContents.send).not.toHaveBeenCalled();
+  });
+
+  it("監視対象の作成に失敗しても読み取り窓口を登録すること", async () => {
+    mocks.mkdir.mockRejectedValue(new Error("mkdir failed"));
+    vi.resetModules();
+    const { registerActiveSessionHandlers } = await import("./active-session.js");
+    registerActiveSessionHandlers();
+    await Promise.resolve();
+
+    expect(mocks.handle).toHaveBeenCalledWith("active-session:read", expect.any(Function));
   });
 });

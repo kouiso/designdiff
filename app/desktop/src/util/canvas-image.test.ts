@@ -7,7 +7,12 @@ import {
   imageElementToData,
   loadImageElement,
   resizeImageData,
+  resizeImageDataContainTop,
 } from "./canvas-image";
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 describe("loadImageElement", () => {
   afterEach(() => {
@@ -18,7 +23,7 @@ describe("loadImageElement", () => {
     const OriginalImage = globalThis.Image;
     let capturedImg: HTMLImageElement | null = null;
 
-    vi.spyOn(globalThis, "Image").mockImplementation(() => {
+    vi.spyOn(globalThis, "Image").mockImplementation(function ImageMock() {
       capturedImg = new OriginalImage();
       setTimeout(() => {
         capturedImg?.onload?.(new Event("load"));
@@ -33,7 +38,7 @@ describe("loadImageElement", () => {
   it("onerror で reject する", async () => {
     const OriginalImage = globalThis.Image;
 
-    vi.spyOn(globalThis, "Image").mockImplementation(() => {
+    vi.spyOn(globalThis, "Image").mockImplementation(function ImageMock() {
       const img = new OriginalImage();
       setTimeout(() => {
         img.onerror?.(new Event("error"));
@@ -78,6 +83,32 @@ describe("resizeImageData", () => {
   });
 });
 
+describe("resizeImageDataContainTop", () => {
+  it("canvas source を上寄せcontainで指定サイズへ描画する", () => {
+    const source = document.createElement("canvas");
+    source.width = 100;
+    source.height = 200;
+
+    const result = resizeImageDataContainTop(source, 200, 200);
+
+    expect(result).toBeInstanceOf(ImageData);
+    expect(result.width).toBe(200);
+    expect(result.height).toBe(200);
+  });
+
+  it("image source のnaturalサイズを使ってcontainする", () => {
+    const source = new Image();
+    Object.defineProperty(source, "naturalWidth", { value: 200 });
+    Object.defineProperty(source, "naturalHeight", { value: 100 });
+
+    const result = resizeImageDataContainTop(source, 200, 200);
+
+    expect(result).toBeInstanceOf(ImageData);
+    expect(result.width).toBe(200);
+    expect(result.height).toBe(200);
+  });
+});
+
 describe("imageDataToCanvas", () => {
   it("putImageData が呼ばれ canvas が返る", () => {
     const imageData = new ImageData(2, 2);
@@ -93,5 +124,30 @@ describe("imageDataToBase64", () => {
     const imageData = new ImageData(2, 2);
     const result = imageDataToBase64(imageData);
     expect(typeof result).toBe("string");
+  });
+
+  it("data URLにカンマがない場合は空文字を返す", () => {
+    const imageData = new ImageData(1, 1);
+    const canvas = imageDataToCanvas(imageData);
+    vi.spyOn(canvas, "toDataURL").mockReturnValue("image/png");
+    vi.spyOn(document, "createElement").mockReturnValueOnce(canvas);
+
+    expect(imageDataToBase64(imageData)).toBe("");
+  });
+});
+
+describe("canvas context errors", () => {
+  it("各画像操作はcontext取得失敗を明示的に返す", () => {
+    vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(null);
+    const img = new Image();
+    Object.defineProperty(img, "naturalWidth", { value: 10 });
+    Object.defineProperty(img, "naturalHeight", { value: 10 });
+    const source = document.createElement("canvas");
+
+    expect(() => imageElementToData(img)).toThrow("Failed to get canvas context");
+    expect(() => cropImageElement(img, 0, 0, 10, 10)).toThrow("Failed to get canvas context");
+    expect(() => resizeImageData(source, 10, 10)).toThrow("Failed to get canvas context");
+    expect(() => resizeImageDataContainTop(source, 10, 10)).toThrow("Failed to get canvas context");
+    expect(() => imageDataToCanvas(new ImageData(1, 1))).toThrow("Failed to get canvas context");
   });
 });

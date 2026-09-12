@@ -77,6 +77,7 @@ function resetPageMocks() {
   mockLaunch.mockClear();
   mockConnectOverCDP.mockClear();
   mockEvaluate.mockClear();
+  mockEvaluate.mockResolvedValue(undefined);
   mockCdpSend.mockClear();
   mockCdpDetach.mockClear();
   mockNewCDPSession.mockClear();
@@ -95,6 +96,7 @@ describe("captureUrl — launch path (no FIGDIFF_CDP_ENDPOINT)", () => {
   });
 
   afterEach(() => {
+    vi.unstubAllGlobals();
     if (originalEnv === undefined) {
       delete process.env.FIGDIFF_CDP_ENDPOINT;
     } else {
@@ -155,6 +157,179 @@ describe("captureUrl — launch path (no FIGDIFF_CDP_ENDPOINT)", () => {
       }),
     );
     expect(mockCdpDetach).toHaveBeenCalledOnce();
+  });
+
+  it("collects visible DOM styles while filtering unusable elements and truncating text", async () => {
+    const text = "visible text ".repeat(10);
+    const elements = [
+      {
+        tagName: "DIV",
+        childNodes: [{ nodeType: 3, nodeValue: text }],
+        getBoundingClientRect: () => ({ left: 10, top: 20, width: 100, height: 40 }),
+      },
+      {
+        tagName: "SECTION",
+        childNodes: [{ nodeType: 3, nodeValue: "section" }],
+        getBoundingClientRect: () => ({ left: 0, top: 0, width: 20, height: 20 }),
+      },
+      {
+        tagName: "P",
+        childNodes: [],
+        getBoundingClientRect: () => ({ left: 0, top: 0, width: 20, height: 20 }),
+      },
+      {
+        tagName: "SPAN",
+        childNodes: [],
+        getBoundingClientRect: () => ({ left: 0, top: 0, width: 20, height: 20 }),
+      },
+      {
+        tagName: "I",
+        childNodes: [],
+        getBoundingClientRect: () => ({ left: 0, top: 0, width: 0, height: 20 }),
+      },
+      {
+        tagName: "ARTICLE",
+        childNodes: [],
+        getBoundingClientRect: () => ({ left: 0, top: 0, width: 20, height: 20 }),
+      },
+      {
+        tagName: "EM",
+        childNodes: [{ nodeType: 1, nodeValue: "nested text" }],
+        getBoundingClientRect: () => ({ left: 0, top: 0, width: 20, height: 20 }),
+      },
+      {
+        tagName: "SMALL",
+        childNodes: [],
+        getBoundingClientRect: () => ({ left: 0, top: 0, width: 20, height: 20 }),
+      },
+      {
+        tagName: "ASIDE",
+        childNodes: [],
+        getBoundingClientRect: () => ({ left: 0, top: 0, width: 20, height: 20 }),
+      },
+    ];
+    const styles = new Map([
+      [
+        elements[0],
+        {
+          visibility: "visible",
+          display: "block",
+          opacity: "1",
+          backgroundColor: "transparent",
+          color: "#111",
+          fontSize: "bad",
+          fontWeight: "bold",
+          fontFamily: "sans",
+          lineHeight: "normal",
+          letterSpacing: "normal",
+        },
+      ],
+      [
+        elements[1],
+        {
+          visibility: "visible",
+          display: "block",
+          opacity: "1",
+          backgroundColor: "rgb(1, 2, 3)",
+          color: "#222",
+          fontSize: "16px",
+          fontWeight: "400",
+          fontFamily: "sans",
+          lineHeight: "20px",
+          letterSpacing: "0px",
+        },
+      ],
+      [
+        elements[2],
+        { visibility: "hidden", display: "block", opacity: "1", backgroundColor: "red" },
+      ],
+      [
+        elements[3],
+        { visibility: "visible", display: "none", opacity: "1", backgroundColor: "red" },
+      ],
+      [
+        elements[4],
+        { visibility: "visible", display: "block", opacity: "1", backgroundColor: "red" },
+      ],
+      [
+        elements[5],
+        { visibility: "visible", display: "block", opacity: "0", backgroundColor: "red" },
+      ],
+      [
+        elements[6],
+        { visibility: "visible", display: "block", opacity: "1", backgroundColor: "transparent" },
+      ],
+      [
+        elements[7],
+        {
+          visibility: "visible",
+          display: "block",
+          opacity: "1",
+          backgroundColor: "rgba(0, 0, 0, 0.0)",
+        },
+      ],
+      [
+        elements[8],
+        { visibility: "visible", display: "block", opacity: "1", backgroundColor: "rgb(4, 5, 6)" },
+      ],
+    ]);
+    vi.stubGlobal("Node", { TEXT_NODE: 3 });
+    vi.stubGlobal("document", { querySelectorAll: () => elements });
+    vi.stubGlobal("window", {
+      scrollX: 5,
+      scrollY: 7,
+      getComputedStyle: (element: object) => styles.get(element),
+    });
+    mockEvaluate.mockImplementation(async (fn, arg) => {
+      if (arg === 3_000 && typeof fn === "function") return fn(arg);
+      return undefined;
+    });
+
+    const result = await captureUrl("http://localhost:3001", {
+      width: 1440,
+      collectDomStyles: true,
+    });
+
+    expect(result.domStyles).toHaveLength(3);
+    expect(result.domStyles?.[0]).toMatchObject({
+      tag: "div",
+      x: 15,
+      y: 27,
+      text: text.slice(0, 60),
+      color: "#111",
+    });
+    expect(result.domStyles?.[0]).not.toHaveProperty("fontSize");
+    expect(result.domStyles?.[1]).toMatchObject({
+      tag: "section",
+      backgroundColor: "rgb(1, 2, 3)",
+    });
+    expect(result.domStyles?.[1]).toMatchObject({
+      fontSize: 16,
+      fontWeight: 400,
+      lineHeight: 20,
+      letterSpacing: 0,
+    });
+    expect(result.domStyles?.[2]).toMatchObject({ tag: "aside", backgroundColor: "rgb(4, 5, 6)" });
+
+    const evaluator = mockEvaluate.mock.calls.find((call) => call[1] === 3_000)?.[0];
+    expect(evaluator).toBeTypeOf("function");
+    if (typeof evaluator !== "function") throw new Error("style evaluator was not passed");
+    expect(evaluator(1)).toHaveLength(1);
+  });
+
+  it("DOMスタイル採取に失敗してもスクリーンショットを返すこと", async () => {
+    mockEvaluate.mockImplementation(async (_fn, arg) => {
+      if (arg === 3_000) throw new Error("style evaluator failed");
+      return undefined;
+    });
+
+    const result = await captureUrl("http://localhost:3001", {
+      width: 1440,
+      collectDomStyles: true,
+    });
+
+    expect(result.screenshotPath).toMatch(/capture-.*\.png$/);
+    expect(result.domStyles).toBeUndefined();
   });
 });
 

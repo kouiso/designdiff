@@ -1,0 +1,230 @@
+{
+  "schemaVersion": 1,
+  "pullRequest": 144,
+  "sbi": 145,
+  "relatedPbi": 1,
+  "baseHead": "1c4086dce7fcec1741c2240d67f6c66b9b463bf6",
+  "runtime": {
+    "node": "25.6.1",
+    "pnpm": "9.15.9"
+  },
+  "productionChanged": false,
+  "coverageThresholdsChanged": false,
+  "coverageExclusionsChanged": false,
+  "verification": {
+    "build": "passed",
+    "check": "passed",
+    "lint": "passed",
+    "typecheck": "passed",
+    "workspaceTest": "passed; final added animation input case separately revalidated in MCP coverage",
+    "rootNodeTests": 48,
+    "mcpTests": 655,
+    "mcpBranches": {
+      "covered": 2057,
+      "total": 2571
+    },
+    "otherCoverageSuites": "credential-store, shared, mobile-capture, figma-plugin, chrome-extension, desktop renderer and Electron passed",
+    "independentCodeReview": "no outstanding findings; final input case reviewed separately",
+    "remoteCi": "pending after push"
+  },
+  "logs": [
+    {
+      "name": "hm-dd144-ci-node25.log",
+      "sha256": "83b55e43083ef708848ff28d1fc2dee91f35ecb530ddb80ede42c49244440c4e"
+    },
+    {
+      "name": "hm-dd144-ci-node25-final2.log",
+      "sha256": "ecfaafc0a51142cf3bb45f510aeddcd4a3e9fd1668b69b306498a306c7baa3f8"
+    },
+    {
+      "name": "hm-dd144-final-gates2.log",
+      "sha256": "b8aaee03adb6284ed69eb7b6008723633c4a1646b062532e71bad004126def53"
+    },
+    {
+      "name": "hm-dd144-final-gates3.log",
+      "sha256": "50c332ac383645d1172579a8bbbfea708ef4846c326a0d8e8d784a3d9af168ce"
+    },
+    {
+      "name": "hm-dd144-final-coverage6.log",
+      "sha256": "a423410e0a30d9aeb078c334458ba203f4d9bab9b58844dd1b1159485a1709bc"
+    },
+    {
+      "name": "hm-dd144-eslint-correction.log",
+      "sha256": "17f372a0beebe89fc917d7d8f836787b1f9fb44cc994965230758e8260ae10c1"
+    }
+  ],
+  "files": [
+    {
+      "path": "app/chrome-extension/package.json",
+      "type": "CI/config",
+      "sha256": "15e297aef941f2afd63f1578996311ee317a02e4ad3f3da85ab4f496fac6592e"
+    },
+    {
+      "path": "app/chrome-extension/src/service/figma-service.test.ts",
+      "type": "test",
+      "sha256": "aa6e922dc6b4143dd2a5000e3d7f53e5f0cdad96041b8f7ffadd6d0185cead8a"
+    },
+    {
+      "path": "app/desktop/electron/ipc/active-session.test.ts",
+      "type": "test",
+      "sha256": "fc3a6cb77f55079108e9002d6fa99de3f4896b5960a703a5fca8e11123d518ad"
+    },
+    {
+      "path": "app/desktop/electron/ipc/convergence.test.ts",
+      "type": "test",
+      "sha256": "8e3919437ba4756349fb40f63e2bfc4e69f026cc54b9dd1b4f24e9a2f58baab8"
+    },
+    {
+      "path": "app/desktop/electron/ipc/figma.test.ts",
+      "type": "test",
+      "sha256": "bb30b4fa5cf9ee23e2bde757525c05e0bddf7ea415ae547a696b70add0a7b0ef"
+    },
+    {
+      "path": "app/desktop/electron/ipc/file.test.ts",
+      "type": "test",
+      "sha256": "4edaa0da091db19cd28f2f50dd9c6f2b20ca8c0d70ae182092f326d6d069d1d3"
+    },
+    {
+      "path": "app/desktop/electron/ipc/overlay.test.ts",
+      "type": "test",
+      "sha256": "97e2d38a080fbf737c992d8704659f2b79fdab3aa26693ab405f26af83b4271b"
+    },
+    {
+      "path": "app/desktop/electron/ipc/token.test.ts",
+      "type": "test",
+      "sha256": "8bd865993bfb35e03f165cc82bb183cecc32eb8bdfea1a0cbc92406acb8923e0"
+    },
+    {
+      "path": "app/desktop/electron/main.test.ts",
+      "type": "test",
+      "sha256": "30f9ff201f96cbf5e7a442c7ff7311d4b59985a7fafcfd6461d35c1a559d2356"
+    },
+    {
+      "path": "app/desktop/electron/oauth/figma-oauth.test.ts",
+      "type": "test",
+      "sha256": "c0c85ac9d2f0193053d9faa2508e888d60dec3434f1f0bc97f5e1e3226af4221"
+    },
+    {
+      "path": "app/desktop/package.json",
+      "type": "CI/config",
+      "sha256": "65b1517e71e492116fc091e21138d12ac5429d42173af989e68b486d29d6462a"
+    },
+    {
+      "path": "app/desktop/src/component/compare/compare-canvas.test.tsx",
+      "type": "test",
+      "sha256": "990cd9c5082b48e268d8b231fba044a1cd462108f5a04cad9b1d8c91d509f33a"
+    },
+    {
+      "path": "app/desktop/src/component/compare/compare-page.test.tsx",
+      "type": "test",
+      "sha256": "6f245a84d7e8ef235cb105393827505d5b9ae5a8da130081992d15d92ec19f50"
+    },
+    {
+      "path": "app/desktop/src/component/compare/crop-region-selector.test.tsx",
+      "type": "test",
+      "sha256": "17dd086c89c84f3c6ab3c765fa820c64b6025d3419ba7465904ba55ccc4fd975"
+    },
+    {
+      "path": "app/desktop/src/component/home/home-page.test.tsx",
+      "type": "test",
+      "sha256": "229937292aee4bea99e69c4b5b5c38a49c5c395618027d13679bfd92851805fd"
+    },
+    {
+      "path": "app/desktop/src/hook/use-canvas-zoom-pan.test.ts",
+      "type": "test",
+      "sha256": "c12c5648392ff77c825f5cbba5e3ee05d3ee3d4b71cd339f73dd64ea00cb3e05"
+    },
+    {
+      "path": "app/desktop/src/util/canvas-image.test.ts",
+      "type": "test",
+      "sha256": "2fbb47ae6c5f97bc5c8e365d5a9f87684ed316b3df3c6e5ef3256e12c518964a"
+    },
+    {
+      "path": "app/figma-plugin/package.json",
+      "type": "CI/config",
+      "sha256": "32b221431fa4afdaf58d60881504fc6c7b1eb55aaa26980cdbaee202c9cc84c8"
+    },
+    {
+      "path": "app/mcp-server/package.json",
+      "type": "CI/config",
+      "sha256": "20dae71020dd2f5b7b42816e4e040c8db5125d998e473a311295e1269fa11d39"
+    },
+    {
+      "path": "app/mcp-server/src/service/capture-service.test.ts",
+      "type": "test",
+      "sha256": "4fa81c966ad7de35aeb1e4fc7486119d898776d43c0f1cc24d4d2ff59f53ca46"
+    },
+    {
+      "path": "app/mcp-server/src/service/compare-design-runner.test.ts",
+      "type": "test",
+      "sha256": "b3692421a47d1ae6172f974236edddec61d8626da798481315a47a7619c79282"
+    },
+    {
+      "path": "app/mcp-server/src/service/image-compare-service.test.ts",
+      "type": "test",
+      "sha256": "29fb28dd483c47969867e35d3782b4f464e18b4cc073e7733f22badf293e82f4"
+    },
+    {
+      "path": "app/mcp-server/src/tool/compare-animation.test.ts",
+      "type": "test",
+      "sha256": "7abc630152bd05bfe0114730847446e65482317e325d355ea5112d165fbcafde"
+    },
+    {
+      "path": "app/mcp-server/src/tool/report-issue.test.ts",
+      "type": "test",
+      "sha256": "145ff7b8a160a76d692a38662ed8f7f1d6099609abe9c567fa74f3f8f8f44d26"
+    },
+    {
+      "path": "app/mcp-server/src/tool/set-crop-region.test.ts",
+      "type": "test",
+      "sha256": "5e57099f86fd166dee3d6c1d07af260257bdca46a3bca91f0c5905d47fa5eaaa"
+    },
+    {
+      "path": "app/mcp-server/src/tool/set-figma-token.test.ts",
+      "type": "test",
+      "sha256": "d4ab34179c7d2c2cac6095687aa7d7a8b1f46faf86892c59a4eaf7595803a561"
+    },
+    {
+      "path": "app/mcp-server/src/tool/set-ignore-regions.test.ts",
+      "type": "test",
+      "sha256": "a355f9258741b226febe0b36e6ec2b6a7a08688d5d343650654765037493444e"
+    },
+    {
+      "path": "package/credential-store/package.json",
+      "type": "CI/config",
+      "sha256": "a94431312a3a6ebf29d0987cc64948741a0880cfee66d940543e38d5ca6db19c"
+    },
+    {
+      "path": "package/mobile-capture/package.json",
+      "type": "CI/config",
+      "sha256": "6d4b64b1722474731c34db3a90b8f267c89ba50d31cd522ef473775d43c49f37"
+    },
+    {
+      "path": "package/mobile-capture/src/flutter-golden.test.ts",
+      "type": "test",
+      "sha256": "bd796c9ff4274e3d3d72d2a82548776b9951ad31250512f08c8c6507bbdebc4e"
+    },
+    {
+      "path": "package/mobile-capture/src/stitch.test.ts",
+      "type": "test",
+      "sha256": "a474d9336977fb4d7db19ca183644fcb58c148fd989aeaa3b9acb4f2bd63d1cc"
+    },
+    {
+      "path": "package/shared/package.json",
+      "type": "CI/config",
+      "sha256": "28d99d511b36b14c87d0dd6bba63b6985083412c323502a13ba212c9ed7d585f"
+    },
+    {
+      "path": "pnpm-lock.yaml",
+      "type": "CI/config",
+      "sha256": "74df42b7bb2c7fd8e55b36b57bd781dd2db85efc3a3a5f1a95a6e9077c9b4ad1"
+    }
+  ],
+  "followupVerification": {
+    "reason": "GitHub lint also runs ESLint, which the initial local pnpm lint does not include",
+    "eslint": "passed across workspace",
+    "targetedTokenTests": 5,
+    "coverageRecordScope": "655-test coverage run before the test-only string/object parameterization; product code unchanged",
+    "independentReview": "no outstanding findings"
+  }
+}
