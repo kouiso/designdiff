@@ -8,6 +8,7 @@ import { z } from "zod";
 
 import {
   CompareDesignResultSchema,
+  ComparisonCampaignIdSchema,
   IgnoreRegionSchema,
   type CompareDesignResult,
 } from "@figdiff/shared";
@@ -51,6 +52,7 @@ const DESCRIPTION = `デザインと実装のピクセル差分を検出しま�
 - threshold: 色差の許容閾値（0-1）。profile を指定した場合はそちらが既定値になる
 - profile: 比較プロファイル（strict/balanced/layout）。threshold 直接指定で上書き可
 - project_id: Crop Region・ignore_regions・前回使用ノード自動補完に使うプロジェクトID（省略可）
+- campaign_id: 独立した修正作業を識別するID。同じ作業の反復では同じIDを使い、新しいブランチ・作業では別IDにする。省略時は従来の対象単位の履歴を使う
 - ignore_regions: 既知の意図的差分マスク（省略可）。project_id の保存済みマスク、自動 system UI マスクと結合される。WP原文 vs Figmaプレースホルダ、Google Map埋め込み等の false-positive 抑制に使用。各矩形 {x,y,width,height,label?} 内のピクセルは差分検出/matchRate 分母から除外される
 - mask_system_ui: モバイル実機/Simulator撮影のOSステータスバー/ナビゲーションバーを自動マスクするか。capture_device指定時は既定true、それ以外は既定false。set_ignore_regionsで追加の微調整が可能
 - auto_mask_dynamic: screenshot_url経路で同じページを2回撮り、変わった領域を自動マスクする（既定true）。時計/カウンタ/カルーセル等が毎回差分に出て収束しなくなるのを防ぐ
@@ -286,12 +288,15 @@ const buildMaskCandidateLines = (result: CompareDesignResult): string[] => {
 
   if (candidates.length === 0) return [];
 
-  const lines = ["", "マスク候補（意図的差分の可能性・採否はAIループが判断）:"];
+  const lines = [
+    "",
+    "マスク候補（自動では除外していません。内容を確認し、採否は利用者が判断してください）:",
+  ];
   for (const c of candidates) {
     const reason =
       (c.textureScore ?? 0) > 0.5
-        ? `texture=${(c.textureScore ?? 0).toFixed(2)} (写真/画像領域)`
-        : `structure=${c.structure.toFixed(2)} / color=${c.color.toFixed(2)} (意図的な色差)`;
+        ? `texture=${(c.textureScore ?? 0).toFixed(2)} (画素の変化が細かい領域。文章やボタンも含まれ得るため、写真とは判定していません)`
+        : `structure=${c.structure.toFixed(2)} / color=${c.color.toFixed(2)} (構造が近く色が異なる領域。意図した差か確認してください)`;
     lines.push(
       `  - ${c.regionId}: {x:${c.bbox.x},y:${c.bbox.y},w:${c.bbox.w},h:${c.bbox.h}} (${reason})`,
     );
@@ -304,6 +309,21 @@ const buildMaskCandidateLines = (result: CompareDesignResult): string[] => {
 
 export const registerCompareDesign = (server: McpServer): void => {
   const inputSchema = {
+    figma_contents_only: z
+      .boolean()
+      .optional()
+      .describe(
+        "Figma 書き出しで対象ノードの内容だけを含める（既定 true）。false は重なる周辺レイヤーも含むため、その背景やレイヤーを比較する意図がある場合だけ指定する。",
+      ),
+    figma_use_absolute_bounds: z
+      .boolean()
+      .optional()
+      .describe(
+        "Figma 書き出しにノード全体の境界を使う（既定 true）。false は描画内容の境界を使う。非表示ノードの空白出力を調べる場合も、取得できた画像に設計内容があるか確認する。",
+      ),
+    campaign_id: ComparisonCampaignIdSchema.optional().describe(
+      "修正キャンペーンのID（1〜128文字）。同じ作業では同じIDで履歴を継続し、新しい作業では別IDで初回から始める。省略時は従来どおり対象単位の履歴を使う。過去の比較証跡は削除しない。",
+    ),
     design_source: z
       .string()
       .describe(
@@ -327,6 +347,14 @@ export const registerCompareDesign = (server: McpServer): void => {
       .optional()
       .describe(
         "接続済みモバイル端末/SimulatorからPNGを撮影し、screenshotの代わりに使用する。android=adb、ios-sim=xcrun simctl、ios-device=pymobiledevice3。",
+      ),
+    capture_device_serial: z
+      .string()
+      .trim()
+      .min(1)
+      .optional()
+      .describe(
+        "撮影対象のAndroid端末serial。capture_device: androidと併用。省略時はANDROID_SERIALまたは単一の接続端末を使用し、複数なら選択を求める。",
       ),
     capture_scroll: z
       .boolean()

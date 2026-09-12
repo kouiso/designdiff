@@ -222,6 +222,7 @@ export const CompletionCriterionSchema = z.object({
 
 export const CompletionCriteriaSchema = z.object({
   structuralReview: CompletionCriterionSchema,
+  wholeImageStructure: CompletionCriterionSchema.optional(),
   // 判定器が pass と言っているのに画素の大半が違う状態を検出する行。
   consistencyReview: CompletionCriterionSchema.optional(),
   // 色と文字を値そのもので突き合わせた行。使えなかったときは UNCERTAIN で残し、
@@ -333,11 +334,23 @@ export const AlignmentSchema = z.object({
 
 export const DiffVerdictSchema = z.enum(["pass", "fail", "inconclusive"]);
 
+export const StructuralAssessmentSchema = z.object({
+  metric: z.literal("ssim-contrast-structure-area-v1"),
+  score: z.number().min(0).max(1).nullable(),
+  evaluatedPixelCount: z.number().int().nonnegative(),
+  excludedPixelCount: z.number().int().nonnegative(),
+  passThreshold: z.number().min(0).max(1),
+  failThreshold: z.number().min(0).max(1),
+  verdict: DiffVerdictSchema,
+  rationale: z.string(),
+});
+
 export const DiffReportSchema = z.object({
   alignment: AlignmentSchema,
   regionScores: z.array(RegionScoreSchema),
   issues: z.array(DiffIssueSchema),
   weightedAggregate: WeightedAggregateSchema.optional(),
+  structuralAssessment: StructuralAssessmentSchema.optional(),
   aggregateVerdict: DiffVerdictSchema,
   rationale: z.string(),
   // 知覚できる差 (ΔE2000 > 2) を持つ画素の割合。pixelmatch の threshold にも
@@ -375,6 +388,8 @@ export const PreflightWarningCodeSchema = z.enum([
   "logical_physical_width",
   // 指定ノードが今の Figma に無く、キャッシュ画像で比較していることを通知する。
   "design_node_missing",
+  "figma_export_hidden_blank",
+  "figma_export_background_missing",
 ]);
 
 export const PreflightSeveritySchema = z.enum(["info", "warning", "critical"]);
@@ -387,6 +402,20 @@ export const PreflightWarningSchema = z.object({
 });
 
 export const PreflightReportSchema = z.object({
+  warnings: z.array(PreflightWarningSchema),
+});
+
+export const FigmaExportReportSchema = z.object({
+  conditions: z.object({
+    contentsOnly: z.boolean(),
+    useAbsoluteBounds: z.boolean(),
+    scale: z.number().positive(),
+    version: z.string().optional(),
+  }),
+  nodeVisible: z.boolean().optional(),
+  opaqueFillExpected: z.boolean(),
+  uniformRaster: z.boolean(),
+  interiorTransparentRatio: z.number().min(0).max(1),
   warnings: z.array(PreflightWarningSchema),
 });
 
@@ -463,6 +492,7 @@ export const DiagnosisCauseCodeSchema = z.enum([
   "aspect_mismatch",
   "global_color_shift",
   "blank_or_wrong_node",
+  "figma_export_conditions",
 ]);
 
 export const DiagnosisCauseSchema = z.object({
@@ -634,6 +664,7 @@ export const CompareDesignResultSchema = z
     critique: CritiqueNoteSchema.optional(),
     preflight: PreflightReportSchema.optional(),
     normalization: NormalizationReportSchema.optional(),
+    figmaExport: FigmaExportReportSchema.optional(),
     // capture_scroll でスクロール結合したときだけ入る。
     scrollCapture: ScrollCaptureReportSchema.optional(),
     diagnosis: ComparisonDiagnosisSchema.optional(),

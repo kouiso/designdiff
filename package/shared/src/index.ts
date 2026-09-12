@@ -1,3 +1,9 @@
+export {
+  ComparisonCampaignIdSchema,
+  parseComparisonCampaignKey,
+  scopeComparisonCampaign,
+} from "./campaign-key.js";
+
 // Figma Client
 export {
   collectNestedFrames,
@@ -16,6 +22,7 @@ export {
   type FigmaEffect,
   type FigmaFileResponse,
   type FigmaImagesResponse,
+  type FigmaImageExportOptions,
   type FigmaNode,
   type FigmaNodesResponse,
   type FigmaPaint,
@@ -80,7 +87,12 @@ export {
   type GlyphEdgeRasterEvidence,
 } from "./signal/glyph-edge-raster.js";
 export { computeHausdorff } from "./signal/hausdorff.js";
-export { computeSsim, computeSsimForRegion, type SsimRegion } from "./signal/ssim.js";
+export {
+  computeSsim,
+  computeSsimForRegion,
+  computeWholeImageStructure,
+  type SsimRegion,
+} from "./signal/ssim.js";
 export {
   aggregateTemporalVerdict,
   alignFrame,
@@ -209,6 +221,8 @@ export {
   NodeStrokeSchema,
   NodeTypographySchema,
   NormalizationReportSchema,
+  StructuralAssessmentSchema,
+  FigmaExportReportSchema,
   ParsedDesignInputSchema,
   PreflightReportSchema,
   PreflightSeveritySchema,
@@ -277,6 +291,8 @@ export type {
   NodeStroke,
   NodeTypography,
   NormalizationReport,
+  StructuralAssessment,
+  FigmaExportReport,
   ParsedDesignInput,
   PreflightReport,
   PreflightSeverity,
@@ -291,3 +307,5 @@ export type {
   VerdictRoute,
   WeightedAggregate,
 } from "./type.js";
+
+export { generateMarkdownReport, generateJsonReport } from "./report-generator.js";

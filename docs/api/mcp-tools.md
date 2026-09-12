@@ -26,6 +26,8 @@ Defined in `app/mcp-server/src/tool/compare-design.ts`.
 ```json
 {
   "design_source": "string",
+  "figma_contents_only": "boolean? (default true)",
+  "figma_use_absolute_bounds": "boolean? (default true)",
   "screenshot": "string?",
   "screenshot_url": "string?",
   "capture_device": "android | ios-sim | ios-device?",

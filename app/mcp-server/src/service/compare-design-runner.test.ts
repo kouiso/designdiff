@@ -1071,11 +1071,19 @@ describe("runCompareDesign", () => {
     });
 
     expect(getFrames).toHaveBeenCalledWith("FILEKEY123");
-    expect(getNodeDetails).toHaveBeenCalledWith("FILEKEY123", "2:2");
-    expect(getFrameImage).toHaveBeenCalledWith("FILEKEY123", "2:2", 1440, 1440, undefined, {
-      logicalBox: { x: 0, y: 0, width: 1440, height: 1800 },
-      renderBox: undefined,
-    });
+    expect(getNodeDetails).toHaveBeenCalledWith("FILEKEY123", "2:2", undefined, undefined);
+    expect(getFrameImage).toHaveBeenCalledWith(
+      "FILEKEY123",
+      "2:2",
+      1440,
+      1440,
+      undefined,
+      {
+        logicalBox: { x: 0, y: 0, width: 1440, height: 1800 },
+        renderBox: undefined,
+      },
+      expect.objectContaining({ node: expect.objectContaining({ type: "FRAME" }) }),
+    );
     expect(mocks.compareImages).toHaveBeenCalledWith(
       expect.objectContaining({ figmaNodeId: "2:2" }),
       expect.objectContaining({ id: "2:2" }),
@@ -1266,10 +1274,19 @@ describe("runCompareDesign", () => {
       screenshot: screenshotPath,
     });
 
-    expect(getFrameImage).toHaveBeenCalledWith("FILEKEY123", "2:2", 1440, 1440, "987654321", {
-      logicalBox: { x: 0, y: 0, width: 1440, height: 1800 },
-      renderBox: undefined,
-    });
+    expect(getNodeDetails).toHaveBeenCalledWith("FILEKEY123", "2:2", undefined, "987654321");
+    expect(getFrameImage).toHaveBeenCalledWith(
+      "FILEKEY123",
+      "2:2",
+      1440,
+      1440,
+      "987654321",
+      {
+        logicalBox: { x: 0, y: 0, width: 1440, height: 1800 },
+        renderBox: undefined,
+      },
+      expect.objectContaining({ node: expect.objectContaining({ type: "FRAME" }) }),
+    );
   });
 
   it("normalizes last-used fallback node ids for screenshot capture width and Figma assets", async () => {
@@ -1332,11 +1349,19 @@ describe("runCompareDesign", () => {
       detectDynamic: true,
       collectDomStyles: true,
     });
-    expect(getNodeDetails).toHaveBeenCalledWith("FILEKEY123", "12:34");
-    expect(getFrameImage).toHaveBeenCalledWith("FILEKEY123", "12:34", 375, 375, undefined, {
-      logicalBox: { x: 0, y: 0, width: 375, height: 812 },
-      renderBox: undefined,
-    });
+    expect(getNodeDetails).toHaveBeenCalledWith("FILEKEY123", "12:34", undefined, undefined);
+    expect(getFrameImage).toHaveBeenCalledWith(
+      "FILEKEY123",
+      "12:34",
+      375,
+      375,
+      undefined,
+      {
+        logicalBox: { x: 0, y: 0, width: 375, height: 812 },
+        renderBox: undefined,
+      },
+      expect.objectContaining({ node: expect.objectContaining({ type: "FRAME" }) }),
+    );
     expect(output.result.preflight?.warnings[0]).toEqual(
       expect.objectContaining({
         code: "last_used_node",
@@ -1485,6 +1510,16 @@ describe("runCompareDesign", () => {
         },
         aggregateVerdict: "fail",
         rationale: "localized CTA flaw detected",
+        structuralAssessment: {
+          metric: "ssim-contrast-structure-area-v1",
+          score: 0.999,
+          evaluatedPixelCount: 390 * 844,
+          excludedPixelCount: 0,
+          passThreshold: 0.95,
+          failThreshold: 0.8,
+          verdict: "pass",
+          rationale: "Whole-image structure passes; local defect remains independent.",
+        },
       },
       normalization: {
         designNativeWidth: 390,
@@ -1505,6 +1540,11 @@ describe("runCompareDesign", () => {
     expect(result.status).toBe("FAIL");
     expect(result.completionCriteria?.structuralReview.status).toBe("FAIL");
     expect(result.completionCriteria?.matchRate.blocking).toBe(false);
+    expect(result.completionCriteria?.wholeImageStructure).toMatchObject({
+      status: "PASS",
+      current: 0.999,
+      blocking: false,
+    });
     expect(result.suggestion).toContain("matchRateは高いですが");
   });
 
@@ -1855,7 +1895,7 @@ describe("runCompareDesign", () => {
     expect(result.nextAction).toContain("inconclusive");
     expect(result.suggestion).toContain("だけでは判断できません");
     expect(result.completionCriteria?.structuralReview.note).toBe(
-      "Structural SSIM verdict is inconclusive; treat this as not complete and ask for review.",
+      "Aggregate visual verdict is inconclusive; treat this as not complete and ask for review.",
     );
   });
 

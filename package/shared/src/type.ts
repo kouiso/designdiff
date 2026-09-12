@@ -24,6 +24,7 @@ import {
   type DiffRegionSchema,
   type DomElementStyleSchema,
   type FigmaAuthStateSchema,
+  type FigmaExportReportSchema,
   type FigmaOAuthTokenResponseSchema,
   type FigmaTokenSchema,
   type FrameSchema,
@@ -46,6 +47,7 @@ import {
   type NodeStrokeSchema,
   type NodeTypographySchema,
   type NormalizationReportSchema,
+  type StructuralAssessmentSchema,
   type ParsedDesignInputSchema,
   type PreflightReportSchema,
   type PreflightSeveritySchema,
@@ -123,6 +125,10 @@ export type PreflightWarningCode = z.infer<typeof PreflightWarningCodeSchema>;
 export type PreflightSeverity = z.infer<typeof PreflightSeveritySchema>;
 export type PreflightWarning = z.infer<typeof PreflightWarningSchema>;
 export type PreflightReport = z.infer<typeof PreflightReportSchema>;
+export type StructuralAssessment = z.infer<typeof StructuralAssessmentSchema>;
+
+export type FigmaExportReport = z.infer<typeof FigmaExportReportSchema>;
+
 export type NormalizationReport = z.infer<typeof NormalizationReportSchema>;
 export type ScrollCaptureReport = z.infer<typeof ScrollCaptureReportSchema>;
 export type ComparisonHeadline = z.infer<typeof ComparisonHeadlineSchema>;
@@ -258,6 +264,7 @@ export interface DiffReport {
   regionScores: RegionScore[];
   issues: DiffIssue[];
   weightedAggregate?: WeightedAggregate;
+  structuralAssessment?: StructuralAssessment;
   aggregateVerdict: DiffVerdict;
   rationale: string;
   // 知覚できる差 (ΔE2000 > 2) を持つ画素の割合 (0..1)。

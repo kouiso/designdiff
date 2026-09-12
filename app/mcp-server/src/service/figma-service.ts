@@ -16,11 +16,15 @@ import {
   extractFrames,
   extractNestedFrames,
   type FigmaFileResponse,
+  type FigmaExportReport,
+  type FigmaImageExportOptions,
   type FigmaNode,
 } from "@figdiff/shared";
 import type { Frame } from "@figdiff/shared";
 
 import { getFigdiffCacheDir } from "../util/figdiff-paths.js";
+
+import { inspectFigmaExport } from "./figma-export-inspection.js";
 
 export class FileSystemCacheStrategy implements FigmaCacheStrategy {
   private cacheDir: string;
@@ -123,6 +127,7 @@ export interface FrameImageResult {
   base64: string;
   /** 効果マージンを切り落としたときだけ入る。切っていなければ undefined */
   effectMarginCrop?: EffectMarginCrop;
+  figmaExport?: FigmaExportReport;
 }
 
 // 位置ズレは差分そのものより誤解を招くため、四捨五入した矩形が書き出し画像を
@@ -316,11 +321,28 @@ export class FigmaService {
     logicalWidth?: number,
     version?: string,
     nodeBounds?: FrameImageNodeBounds,
+    options: FigmaImageExportOptions & { node?: FigmaNode } = {},
   ): Promise<FrameImageResult> {
+    const finish = async (base64: string, scale: number): Promise<FrameImageResult> => {
+      const image = await cropEffectMargin(base64, nodeBounds, scale);
+      const figmaExport = await inspectFigmaExport(image.base64, options.node, {
+        contentsOnly: options.contentsOnly ?? true,
+        useAbsoluteBounds: options.useAbsoluteBounds ?? true,
+        scale,
+        version,
+      });
+      return { ...image, figmaExport };
+    };
     if (targetWidth && logicalWidth && logicalWidth > 0) {
       const optimalScale = computeOptimalScale(targetWidth, logicalWidth);
       let usedScale = optimalScale;
-      let base64 = await this.client.downloadImageAsBase64(fileKey, nodeId, optimalScale, version);
+      let base64 = await this.client.downloadImageAsBase64(
+        fileKey,
+        nodeId,
+        optimalScale,
+        version,
+        options,
+      );
       let actualWidth = await getImageWidth(base64);
       if (actualWidth > 0 && actualWidth < targetWidth * 0.8) {
         const fallbackScale = Math.min(
@@ -331,35 +353,52 @@ export class FigmaService {
           console.error(
             `[figma-service] Image smaller than expected (${actualWidth}px vs target ${targetWidth}px), retrying with scale=${fallbackScale}`,
           );
-          base64 = await this.client.downloadImageAsBase64(fileKey, nodeId, fallbackScale, version);
+          base64 = await this.client.downloadImageAsBase64(
+            fileKey,
+            nodeId,
+            fallbackScale,
+            version,
+            options,
+          );
           usedScale = fallbackScale;
           actualWidth = await getImageWidth(base64);
         }
       }
-      return await cropEffectMargin(base64, nodeBounds, usedScale);
+      return await finish(base64, usedScale);
     }
 
     const initialScale = 2;
-    let base64 = await this.client.downloadImageAsBase64(fileKey, nodeId, initialScale, version);
+    let base64 = await this.client.downloadImageAsBase64(
+      fileKey,
+      nodeId,
+      initialScale,
+      version,
+      options,
+    );
 
     if (!targetWidth) {
-      return await cropEffectMargin(base64, nodeBounds, initialScale);
+      return await finish(base64, initialScale);
     }
 
     const initialWidth = await getImageWidth(base64);
     if (initialWidth === 0 || initialWidth >= targetWidth * 0.8) {
-      return await cropEffectMargin(base64, nodeBounds, initialScale);
+      return await finish(base64, initialScale);
     }
 
     const neededScale = Math.min(4, Math.ceil(targetWidth / (initialWidth / initialScale)));
-    if (neededScale <= initialScale)
-      return await cropEffectMargin(base64, nodeBounds, initialScale);
+    if (neededScale <= initialScale) return await finish(base64, initialScale);
 
     console.error(
       `[figma-service] Image too small (${initialWidth}px vs target ${targetWidth}px), retrying with scale=${neededScale}`,
     );
 
-    base64 = await this.client.downloadImageAsBase64(fileKey, nodeId, neededScale, version);
+    base64 = await this.client.downloadImageAsBase64(
+      fileKey,
+      nodeId,
+      neededScale,
+      version,
+      options,
+    );
     const retryWidth = await getImageWidth(base64);
     if (retryWidth > 0 && retryWidth < targetWidth * 0.8) {
       console.error(
@@ -367,14 +406,19 @@ export class FigmaService {
       );
     }
 
-    return await cropEffectMargin(base64, nodeBounds, neededScale);
+    return await finish(base64, neededScale);
   }
 
   /**
    * Get node details (Dev Mode-like information)
    */
-  async getNodeDetails(fileKey: string, nodeId: string, depth?: number): Promise<FigmaNode> {
-    return this.client.getNode(fileKey, nodeId, depth);
+  async getNodeDetails(
+    fileKey: string,
+    nodeId: string,
+    depth?: number,
+    version?: string,
+  ): Promise<FigmaNode> {
+    return this.client.getNode(fileKey, nodeId, depth, version);
   }
 
   async getFile(fileKey: string, depth?: number): Promise<FigmaFileResponse> {

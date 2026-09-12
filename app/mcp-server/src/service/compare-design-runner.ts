@@ -29,6 +29,7 @@ import {
   runPreflight,
   selectScoringRegions,
   selfCritique,
+  scopeComparisonCampaign,
   type ClusterCollapse,
   type CompareDesignResult,
   type ComparisonDiagnosis,
@@ -36,12 +37,15 @@ import {
   type ScrollCaptureReport,
   type CropRegion,
   type DiffReport,
+  type StructuralAssessment,
   type DiffVerdict,
   type DomElementStyle,
   type FigmaNode,
   type IgnoreRegion,
   type LoopGuardReport,
   type PreflightWarning,
+  type FigmaExportReport,
+  type FigmaImageExportOptions,
   type ToastBandCandidate,
   type TokenDiffReport,
   type TokenMismatch,
@@ -177,9 +181,13 @@ function resolveThreshold(
 
 export interface CompareDesignRunArgs {
   design_source: string;
+  campaign_id?: string;
+  figma_contents_only?: boolean;
+  figma_use_absolute_bounds?: boolean;
   screenshot?: string;
   screenshot_url?: string;
   capture_device?: CaptureDevice;
+  capture_device_serial?: string;
   /** capture_device 経路で、1画面に収まらん画面をスクロールしながら撮って繋ぐ。 */
   capture_scroll?: boolean;
   capture_width?: number;
@@ -264,6 +272,19 @@ async function resolveNodeId(
   return autoSelected.id;
 }
 
+const wholeImageStructureCriterion = (assessment: StructuralAssessment | undefined) => ({
+  required: assessment?.passThreshold ?? 0.95,
+  current: assessment?.score ?? 0,
+  status:
+    assessment?.verdict === "pass"
+      ? ("PASS" as const)
+      : assessment?.verdict === "fail"
+        ? ("FAIL" as const)
+        : ("UNCERTAIN" as const),
+  blocking: false,
+  note: assessment?.rationale ?? "Not evaluated: whole-image structure is unavailable.",
+});
+
 function buildCompletionCriteria(
   matchRate: number,
   diffPixelCount: number,
@@ -272,8 +293,10 @@ function buildCompletionCriteria(
   structuralRationale: string | undefined,
   perceptibleDiffRatio: number | undefined,
   tokenDiff: TokenDiffReport | undefined,
+  structuralAssessment: StructuralAssessment | undefined,
 ): Record<
   | "structuralReview"
+  | "wholeImageStructure"
   | "consistencyReview"
   | "tokenReview"
   | "matchRate"
@@ -299,6 +322,7 @@ function buildCompletionCriteria(
   const tokenBlocking = tokenDiff ? blockingMismatches(tokenDiff) : [];
 
   return {
+    wholeImageStructure: wholeImageStructureCriterion(structuralAssessment),
     structuralReview: {
       required: 1,
       current: structuralVerdict === "pass" ? 1 : 0,
@@ -306,8 +330,9 @@ function buildCompletionCriteria(
       blocking: true,
       note:
         structuralVerdict === "inconclusive"
-          ? "Structural SSIM verdict is inconclusive; treat this as not complete and ask for review."
-          : (structuralRationale ?? "Structural SSIM verdict from diffReport.aggregateVerdict."),
+          ? "Aggregate visual verdict is inconclusive; treat this as not complete and ask for review."
+          : (structuralRationale ??
+            "Aggregate visual verdict including local issues and color from diffReport.aggregateVerdict."),
     },
     consistencyReview: {
       required: PERCEPTIBLE_DIFF_CONTRADICTION_RATIO,
@@ -709,6 +734,10 @@ async function resolveScreenshotPath(
     );
   }
 
+  if (args.capture_device_serial !== undefined && args.capture_device !== "android") {
+    throw new Error("capture_device_serial requires capture_device: android.");
+  }
+
   if (args.capture_scroll === true && !args.capture_device) {
     throw new Error(
       "capture_scroll は capture_device と一緒に指定してください。端末をスクロールしながら撮る指定なので、撮る端末が要ります。",
@@ -720,6 +749,9 @@ async function resolveScreenshotPath(
       return {
         screenshotPath: await captureDeviceScreenshot({
           device: args.capture_device,
+          ...(args.capture_device_serial !== undefined
+            ? { deviceSerial: args.capture_device_serial }
+            : {}),
         }),
       };
     }
@@ -728,6 +760,9 @@ async function resolveScreenshotPath(
     // 一緒に返さんと、途中までの画像を完全な1枚として扱ってしまう。
     const outcome = await captureDeviceScrollingScreenshot({
       device: args.capture_device,
+      ...(args.capture_device_serial !== undefined
+        ? { deviceSerial: args.capture_device_serial }
+        : {}),
     });
     return {
       screenshotPath: outcome.screenshotPath,
@@ -915,8 +950,10 @@ async function resolveDesignAssets(
   targetWidth: number | undefined,
   targetHeight: number | undefined,
   fallbackNodeId?: string,
+  exportOptions?: FigmaImageExportOptions,
 ): Promise<{
   designBase64: string;
+  figmaExport?: FigmaExportReport;
   figmaRootNode: FigmaNode | undefined;
   resolvedNodeId: string | undefined;
   // ノードが今の Figma に無かった時だけ入る。画像はキャッシュから出るので、
@@ -939,7 +976,12 @@ async function resolveDesignAssets(
     let figmaRootNode: FigmaNode | undefined;
     let missingNodeId: string | undefined;
     try {
-      figmaRootNode = await figmaService.getNodeDetails(parsedDesignSource.fileKey, resolvedNodeId);
+      figmaRootNode = await figmaService.getNodeDetails(
+        parsedDesignSource.fileKey,
+        resolvedNodeId,
+        undefined,
+        parsedDesignSource.version,
+      );
     } catch (nodeError) {
       const message = nodeError instanceof Error ? nodeError.message : String(nodeError);
       console.error("[compare_design] node details fetch failed, proceeding without:", message);
@@ -957,11 +999,12 @@ async function resolveDesignAssets(
       resolvedNodeId,
       targetWidth,
       logicalWidth,
-      parsedDesignSource.version,
+      parsedDesignSource.version ?? figmaRootNode?.sourceVersion,
       {
         logicalBox: figmaRootNode?.absoluteBoundingBox,
         renderBox: figmaRootNode?.absoluteRenderBounds,
       },
+      { ...exportOptions, node: figmaRootNode },
     );
     if (frameImage.effectMarginCrop) {
       console.error(
@@ -971,6 +1014,7 @@ async function resolveDesignAssets(
 
     return {
       designBase64: frameImage.base64,
+      figmaExport: frameImage.figmaExport,
       figmaRootNode,
       resolvedNodeId,
       missingNodeId,
@@ -1465,13 +1509,15 @@ export async function runCompareDesign(
   }
   const targetWidth = screenshotMeta.width;
 
-  const { designBase64, figmaRootNode, resolvedNodeId, missingNodeId } = await resolveDesignAssets(
-    parsedDesignSource,
-    args.frame_name,
-    targetWidth,
-    screenshotMeta.height,
-    fallbackNodeId,
-  );
+  const { designBase64, figmaExport, figmaRootNode, resolvedNodeId, missingNodeId } =
+    await resolveDesignAssets(
+      parsedDesignSource,
+      args.frame_name,
+      targetWidth,
+      screenshotMeta.height,
+      fallbackNodeId,
+      { contentsOnly: args.figma_contents_only, useAbsoluteBounds: args.figma_use_absolute_bounds },
+    );
 
   const {
     cropRegion: manualCropRegion,
@@ -1570,6 +1616,8 @@ export async function runCompareDesign(
     figmaNodeType: figmaRootNode?.type,
   });
 
+  preflight.warnings.push(...(figmaExport?.warnings ?? []));
+
   // 診断は元の preflight 警告で行い、その後に表示用の拡張を加える。
   const comparisonHeadline = buildComparisonHeadline(regionScores, comparison.matchRate);
   const diagnosis = diagnoseComparison({
@@ -1627,10 +1675,12 @@ export async function runCompareDesign(
     comparison.diffReport,
     comparison.diffPixelCount,
   );
-  const sourceKey = buildComparisonSourceKey(
-    parsedDesignSource,
-    resolvedNodeId,
-    args.design_background,
+  const sourceKey = scopeComparisonCampaign(
+    buildComparisonSourceKey(parsedDesignSource, resolvedNodeId, args.design_background, {
+      contentsOnly: args.figma_contents_only,
+      useAbsoluteBounds: args.figma_use_absolute_bounds,
+    }),
+    args.campaign_id,
   );
   const priorComparisons = getRecentComparisons(sourceKey);
   const captureWidth = comparison.normalization?.screenshotWidth;
@@ -1758,6 +1808,7 @@ export async function runCompareDesign(
       structuralReviewResult.rationale,
       perceptibleDiffRatio,
       tokenDiff,
+      comparison.diffReport?.structuralAssessment,
     ),
     tokenDiff,
     verdictRoute,
@@ -1770,6 +1821,7 @@ export async function runCompareDesign(
           buildSuggestion(structuralReviewResult.verdict, comparison.matchRate, regionCount)),
     critique,
     preflight: finalPreflight,
+    figmaExport,
     comparisonHeadline,
     diagnosis,
     loopGuard,

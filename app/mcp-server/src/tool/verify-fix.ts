@@ -1,6 +1,11 @@
 import { z } from "zod";
 
-import { IgnoreRegionSchema, normalizeNodeId, type RegionScore } from "@figdiff/shared";
+import {
+  IgnoreRegionSchema,
+  normalizeNodeId,
+  parseComparisonCampaignKey,
+  type RegionScore,
+} from "@figdiff/shared";
 
 import { writeActiveSession } from "../service/active-session.js";
 import { runCompareDesign } from "../service/compare-design-runner.js";
@@ -183,6 +188,9 @@ export function registerVerifyFix(server: McpServer): void {
 
         const comparison = await runCompareDesign({
           design_source: args.design_source,
+          campaign_id: parseComparisonCampaignKey(priorEntry.sourceKey).campaignId,
+          figma_contents_only: priorEntry.result.figmaExport?.conditions.contentsOnly,
+          figma_use_absolute_bounds: priorEntry.result.figmaExport?.conditions.useAbsoluteBounds,
           screenshot: args.screenshot,
           frame_name: args.frame_name,
           threshold: args.threshold,
