@@ -63,6 +63,12 @@
     "framePreviewAlt": "Frame preview"
   },
   "compare": {
+    "reportExportFormat": "Report format",
+    "reportExportSave": "Save report",
+    "reportExportSaving": "Saving…",
+    "reportExportSaved": "Saved to {{path}}",
+    "reportExportCanceled": "Save canceled",
+    "reportExportFailed": "Could not save the report. Please try again.",
     "pageTitle": "Compare Design and Implementation",
     "pageDescription": "Add an implementation screenshot and detect differences with the Figma design.",
     "currentStatus": "Current Status",
@@ -188,6 +194,7 @@
     "canvasLabel": "Crop region canvas"
   },
   "common": {
+    "notMeasured": "Not measured",
     "loading": "Loading...",
     "error": "Error",
     "cancel": "Cancel",
@@ -220,6 +227,7 @@
     "bothImagesRequired": "Both images are required"
   },
   "convergence": {
+    "invalidCampaignKey": "Unable to read comparison target identifier",
     "title": "AI convergence record",
     "targets": "Targets",
     "step": "#{{n}}",

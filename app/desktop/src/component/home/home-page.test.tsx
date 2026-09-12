@@ -111,6 +111,10 @@ describe("HomePage", () => {
     render(<HomePage onNavigate={vi.fn()} />);
     expect(screen.getByText("テストプロジェクト")).toBeInTheDocument();
     expect(screen.getByText("http://localhost:3000")).toBeInTheDocument();
+    expect(screen.queryByText("確認中")).not.toBeInTheDocument();
+    expect(screen.queryByText("確認中")).not.toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "未実行" })).toBeInTheDocument();
+    expect(screen.getByTestId("score-ring-value")).toHaveTextContent("—");
   });
 
   it("3ステップの説明カードが表示される", () => {

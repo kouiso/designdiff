@@ -1,10 +1,12 @@
+import { useTranslation } from "react-i18next";
+
 import { cn } from "@/lib/util";
 
 /** 合否が分かっとる呼び出し元が渡す色の根拠。 */
 export type ScoreTone = "pass" | "fail" | "warn";
 
 interface ScoreRingProps {
-  score: number;
+  score: number | null;
   /**
    * 合否が確定しとる画面はこれを渡す。渡さんかったら点数の高低だけで色を決める。
    *
@@ -32,16 +34,21 @@ function ringColor(score: number, tone?: ScoreTone): string {
 }
 
 export function ScoreRing({ score, tone, size = 64, stroke = 5, className }: ScoreRingProps) {
-  const clampedScore = Math.min(100, Math.max(0, score));
+  const { t } = useTranslation();
+  const clampedScore = Math.min(100, Math.max(0, score ?? 0));
   const r = (size - stroke) / 2;
   const circ = 2 * Math.PI * r;
   const offset = circ - (clampedScore / 100) * circ;
-  const color = ringColor(clampedScore, tone);
+  const color = score === null ? "var(--muted-fg)" : ringColor(clampedScore, tone);
+  const unmeasuredLabel = score === null ? t("common.notMeasured") : undefined;
 
   return (
     <span
       className={cn("relative inline-flex flex-col items-center justify-center", className)}
       style={{ width: size, height: size }}
+      role="img"
+      aria-label={unmeasuredLabel ?? String(score)}
+      title={unmeasuredLabel}
     >
       <svg
         aria-hidden="true"
@@ -75,7 +82,7 @@ export function ScoreRing({ score, tone, size = 64, stroke = 5, className }: Sco
         data-testid="score-ring-value"
         style={{ fontSize: size * 0.23, fontWeight: 700, color }}
       >
-        {score}
+        {score ?? "—"}
       </span>
     </span>
   );

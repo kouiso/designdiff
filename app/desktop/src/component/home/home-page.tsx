@@ -10,7 +10,6 @@ import { Input } from "@/component/ui/input";
 import { ScoreRing } from "@/component/ui/score-ring";
 import { Spinner } from "@/component/ui/spinner";
 import { StatusPill } from "@/component/ui/status-pill";
-import type { StatusType } from "@/component/ui/status-pill";
 import { useActiveSessionStore, useActiveSessionSync } from "@/store/active-session-store";
 import { useOverlayStore } from "@/store/overlay-store";
 import { useProjectListStore } from "@/store/project-list-store";
@@ -26,12 +25,6 @@ import type { Page } from "../../app";
 interface HomePageProps {
   onNavigate: (page: Page) => void;
 }
-
-const projectScore = (): number => 0;
-
-const projectStatus = (pageCount: number): StatusType => {
-  return pageCount > 0 ? "checking" : "idle";
-};
 
 export const HomePage = ({ onNavigate }: HomePageProps) => {
   const { t } = useTranslation();
@@ -551,8 +544,6 @@ export const HomePage = ({ onNavigate }: HomePageProps) => {
         {projects.length > 0 ? (
           <div className="grid gap-3">
             {projects.map((project) => {
-              const score = projectScore();
-              const status = projectStatus(project.pageCount);
               return (
                 <article
                   key={project.id}
@@ -583,8 +574,8 @@ export const HomePage = ({ onNavigate }: HomePageProps) => {
                       </span>
                     </div>
                   </div>
-                  <ScoreRing score={score} size={52} stroke={5} />
-                  <StatusPill status={status} />
+                  <ScoreRing score={null} size={52} stroke={5} />
+                  <StatusPill status="idle" />
                   <div className="flex items-center justify-end gap-2">
                     <button
                       type="button"

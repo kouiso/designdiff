@@ -63,6 +63,12 @@
     "framePreviewAlt": "フレームプレビュー"
   },
   "compare": {
+    "reportExportFormat": "レポートの形式",
+    "reportExportSave": "レポートを保存",
+    "reportExportSaving": "保存中…",
+    "reportExportSaved": "保存しました: {{path}}",
+    "reportExportCanceled": "保存をキャンセルしました",
+    "reportExportFailed": "レポートを保存できませんでした。もう一度お試しください。",
     "pageTitle": "デザインと実装を比較",
     "pageDescription": "実装スクリーンショットを追加して、Figmaデザインとの差分を検出します。",
     "currentStatus": "現在の状態",
@@ -188,6 +194,7 @@
     "canvasLabel": "範囲選択キャンバス"
   },
   "common": {
+    "notMeasured": "未実行",
     "loading": "読み込み中...",
     "error": "エラー",
     "cancel": "キャンセル",
@@ -220,6 +227,7 @@
     "bothImagesRequired": "両方の画像が必要です"
   },
   "convergence": {
+    "invalidCampaignKey": "比較対象の識別情報を読めません",
     "title": "AI の収束の記録",
     "targets": "比較対象",
     "step": "#{{n}}",
