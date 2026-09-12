@@ -1,4 +1,5 @@
 import type {
+  CompareDesignResult,
   ConvergenceHistory,
   FigmaAuthState,
   Frame,
@@ -75,6 +76,10 @@ export interface ElectronAPI {
   getFigmaToken(): Promise<string | null>;
   deleteFigmaToken(): Promise<void>;
   readLocalImage(path: string): Promise<string>;
+  saveComparisonReport(request: {
+    result: CompareDesignResult;
+    format: "markdown" | "json";
+  }): Promise<string | null>;
   getPathForFile(file: File): string;
   captureUrlScreenshot(url: string, width: number, height: number): Promise<string>;
   overlay: OverlayAPI;

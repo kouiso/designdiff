@@ -42,6 +42,13 @@
         "blocking": true,
         "note": "no critical issues, weighted structure score 1.000 meets pass threshold, and weighted color difference 0.000 is below 3.000 (totalWeight 1.000); weakest region whole-frame (structure 1.000, color ΔE 0.000; lower=better, critical threshold 2)"
       },
+      "wholeImageStructure": {
+        "required": 0.95,
+        "current": 0,
+        "status": "UNCERTAIN",
+        "blocking": false,
+        "note": "No pixels were evaluated; structural similarity is unknown."
+      },
       "consistencyReview": {
         "required": 0.5,
         "current": 0,
@@ -102,7 +109,8 @@
       "cropApplied": false,
       "containResized": false,
       "appliedScale": 1,
-      "autoCropped": false
+      "autoCropped": false,
+      "cropSource": "none"
     },
     "diagnosis": {
       "verdict": "clean",

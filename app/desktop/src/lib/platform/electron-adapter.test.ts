@@ -1,6 +1,9 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-
-import { electronAdapter, electronCapabilities, electronOverlayAdapter } from "./electron-adapter";
+import {
+  electronAdapter,
+  electronCapabilities,
+  electronOverlayAdapter,
+  electronReportExportAdapter,
+} from "./electron-adapter";
 
 describe("electronAdapter", () => {
   beforeEach(() => {
@@ -264,5 +267,29 @@ describe("electronAdapter 残りの経路", () => {
     expect(window.electronAPI.oauth.logout).toHaveBeenCalledTimes(1);
     expect(window.electronAPI.oauth.saveClient).toHaveBeenCalledWith("client-id", "client-secret");
     expect(window.electronAPI.oauth.getClientId).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("electronReportExportAdapter", () => {
+  it("レポート保存の結果とキャンセルを変換せず返す", async () => {
+    const result = {
+      comparisonId: "fixture",
+      matchRate: 50,
+      diffPixelCount: 5,
+      totalPixelCount: 10,
+      diffRegions: [],
+      suggestion: "Review",
+    };
+    vi.mocked(window.electronAPI.saveComparisonReport)
+      .mockResolvedValueOnce("/tmp/report.md")
+      .mockResolvedValueOnce(null);
+    await expect(electronReportExportAdapter.save(result, "markdown")).resolves.toBe(
+      "/tmp/report.md",
+    );
+    expect(window.electronAPI.saveComparisonReport).toHaveBeenCalledWith({
+      result,
+      format: "markdown",
+    });
+    await expect(electronReportExportAdapter.save(result, "json")).resolves.toBeNull();
   });
 });

@@ -23,6 +23,8 @@ const api: ElectronAPI = {
 
   readLocalImage: (path) => ipcRenderer.invoke("file:read-local-image", path),
 
+  saveComparisonReport: (request) => ipcRenderer.invoke("file:save-comparison-report", request),
+
   getPathForFile: (file) => webUtils.getPathForFile(file),
 
   captureUrlScreenshot: (url, width, height) =>

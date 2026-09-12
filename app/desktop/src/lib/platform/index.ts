@@ -3,6 +3,7 @@ import type {
   OverlayAdapter,
   PlatformAdapter,
   PlatformCapabilities,
+  ReportExportAdapter,
 } from "./platform-adapter";
 
 export type {
@@ -10,6 +11,7 @@ export type {
   OverlayAdapter,
   PlatformAdapter,
   PlatformCapabilities,
+  ReportExportAdapter,
 } from "./platform-adapter";
 export type { FigmaAdapter, TokenAdapter, FileAdapter } from "./platform-adapter";
 
@@ -51,6 +53,14 @@ export const getOverlay = async (): Promise<OverlayAdapter | null> => {
   if (!window.electronAPI?.overlay) return null;
   const { electronOverlayAdapter } = await import("./electron-adapter");
   return electronOverlayAdapter;
+};
+
+export const getReportExport = async (): Promise<ReportExportAdapter | null> => {
+  if (!isElectronEnv() || typeof window.electronAPI?.saveComparisonReport !== "function") {
+    return null;
+  }
+  const { electronReportExportAdapter } = await import("./electron-adapter");
+  return electronReportExportAdapter;
 };
 
 /**
