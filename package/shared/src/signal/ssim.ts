@@ -1,3 +1,5 @@
+import type { StructuralAssessment } from "../type.js";
+
 const WINDOW_SIZE = 8;
 const C1 = (0.01 * 255) ** 2;
 const C2 = (0.03 * 255) ** 2;
@@ -14,6 +16,81 @@ const toLuminance = (pixels: Uint8ClampedArray): Float64Array => {
   }
 
   return luminance;
+};
+
+export const computeWholeImageStructure = (
+  imgA: Uint8ClampedArray,
+  imgB: Uint8ClampedArray,
+  width: number,
+  height: number,
+  bbox: SsimRegion = { x: 0, y: 0, w: width, h: height },
+  ignoreMask?: Uint8Array,
+): StructuralAssessment => {
+  if (
+    !Number.isSafeInteger(width) ||
+    !Number.isSafeInteger(height) ||
+    width <= 0 ||
+    height <= 0 ||
+    imgA.length !== width * height * 4 ||
+    imgB.length !== width * height * 4
+  ) {
+    throw new Error(
+      "Structural assessment requires positive image dimensions and complete RGBA buffers",
+    );
+  }
+  if (ignoreMask !== undefined && ignoreMask.length !== width * height) {
+    throw new Error("ignoreMask length must equal width * height");
+  }
+  if (![bbox.x, bbox.y, bbox.w, bbox.h].every(Number.isFinite) || bbox.w < 0 || bbox.h < 0) {
+    throw new Error("Structural assessment bounds must be finite and nonnegative in size");
+  }
+  const region = clampRegion(bbox, width, height);
+  const luminanceA = toLuminance(imgA);
+  const luminanceB = toLuminance(imgB);
+  let weightedSum = 0;
+  let evaluatedPixelCount = 0;
+  for (let y = region.y; y < region.y + region.h; y += WINDOW_SIZE) {
+    for (let x = region.x; x < region.x + region.w; x += WINDOW_SIZE) {
+      const stats = computeWindowStats(
+        luminanceA,
+        luminanceB,
+        width,
+        x,
+        y,
+        Math.min(WINDOW_SIZE, region.x + region.w - x),
+        Math.min(WINDOW_SIZE, region.y + region.h - y),
+        ignoreMask,
+      );
+      // 局所差分の領域だけで再正規化せず、測定した全画素を一度ずつ重みに使う。
+      // SSIM の輝度平均項を除き、背景色の差は既存の色差ゲートへ残す。
+      const contrastStructure =
+        (2 * stats.covariance + C2) / (stats.varianceA + stats.varianceB + C2);
+      weightedSum += Math.max(0, Math.min(1, contrastStructure)) * stats.sampleCount;
+      evaluatedPixelCount += stats.sampleCount;
+    }
+  }
+  const score = evaluatedPixelCount === 0 ? null : weightedSum / evaluatedPixelCount;
+  const verdict =
+    score === null
+      ? "inconclusive"
+      : score >= 0.95
+        ? "pass"
+        : score < 0.8
+          ? "fail"
+          : "inconclusive";
+  return {
+    metric: "ssim-contrast-structure-area-v1",
+    score,
+    evaluatedPixelCount,
+    excludedPixelCount: width * height - evaluatedPixelCount,
+    passThreshold: 0.95,
+    failThreshold: 0.8,
+    verdict,
+    rationale:
+      score === null
+        ? "No pixels were evaluated; structural similarity is unknown."
+        : "Area-weighted contrast and structure over disjoint 8x8 windows. Uniform luminance shifts are excluded; contrast changes remain. Local issues and the aggregate gate remain independent.",
+  };
 };
 
 const computeWindowStats = (
