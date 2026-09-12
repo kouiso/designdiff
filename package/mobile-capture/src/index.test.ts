@@ -1,3 +1,5 @@
+import * as path from "node:path";
+
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { DeviceCaptureProvider } from "./types.js";
@@ -95,7 +97,7 @@ describe("captureDeviceScreenshot", () => {
     const { captureDeviceScreenshot } = await import("./index.js");
     for (const device of ["android", "ios-sim", "ios-device"] as const) {
       const outputPath = await captureDeviceScreenshot({ device, outputDir: "/tmp" });
-      expect(outputPath.startsWith("/tmp")).toBe(true);
+      expect(path.dirname(outputPath)).toBe(path.normalize("/tmp"));
     }
 
     expect(seen).toEqual(["adb", "adb", "xcrun", "pymobiledevice3"]);

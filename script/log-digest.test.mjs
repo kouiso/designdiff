@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, normalize, resolve } from "node:path";
 import { test } from "node:test";
 
 import {
@@ -28,11 +28,11 @@ test("electronLogDir は OS ごとの electron-log 既定の置き場を返す",
   const home = "/Users/me";
   assert.equal(
     electronLogDir("FigDiff", { platform: "darwin", home }),
-    "/Users/me/Library/Logs/FigDiff",
+    normalize("/Users/me/Library/Logs/FigDiff"),
   );
   assert.equal(
     electronLogDir("FigDiff", { platform: "linux", home }),
-    "/Users/me/.config/FigDiff/logs",
+    normalize("/Users/me/.config/FigDiff/logs"),
   );
   assert.equal(
     electronLogDir("FigDiff", {
@@ -45,8 +45,11 @@ test("electronLogDir は OS ごとの electron-log 既定の置き場を返す",
 });
 
 test("mcpLogDir は FIGDIFF_HOME を尊重する", () => {
-  assert.equal(mcpLogDir({ home: "/Users/me", env: {} }), "/Users/me/.figdiff/logs");
-  assert.equal(mcpLogDir({ home: "/Users/me", env: { FIGDIFF_HOME: "/tmp/fh" } }), "/tmp/fh/logs");
+  assert.equal(mcpLogDir({ home: "/Users/me", env: {} }), normalize("/Users/me/.figdiff/logs"));
+  assert.equal(
+    mcpLogDir({ home: "/Users/me", env: { FIGDIFF_HOME: "/tmp/fh" } }),
+    resolve("/tmp/fh", "logs"),
+  );
 });
 
 test("parseElectronLine は ms の有無どちらの format も読む (roentgen 既存 / designdiff 新)", () => {

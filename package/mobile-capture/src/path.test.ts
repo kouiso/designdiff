@@ -13,7 +13,7 @@ describe("resolveCaptureOutputPath", () => {
   it("置き場所を渡したらそこへ作る", async () => {
     const outputPath = await resolveCaptureOutputPath("android", "/tmp/figdiff-test-dir");
 
-    expect(path.dirname(outputPath)).toBe("/tmp/figdiff-test-dir");
+    expect(path.dirname(outputPath)).toBe(path.normalize("/tmp/figdiff-test-dir"));
     expect(outputPath.endsWith(".png")).toBe(true);
     expect(path.basename(outputPath).startsWith("android-")).toBe(true);
   });
