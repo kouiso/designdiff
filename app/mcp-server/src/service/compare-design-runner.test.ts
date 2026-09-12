@@ -1415,7 +1415,7 @@ describe("runCompareDesign", () => {
     });
 
     expect(output.result.status).toBe("PASS");
-    expect(getNodeDetails).toHaveBeenCalledWith("FILEKEY123", "9:9");
+    expect(getNodeDetails).toHaveBeenCalledWith("FILEKEY123", "9:9", undefined, undefined);
     expect(mocks.compareImages).toHaveBeenCalledOnce();
   });
 
