@@ -9,6 +9,7 @@ import type { CaptureDeviceScrollOptions, ScrollCaptureOutcome } from "./scroll-
 import type { CaptureDevice, DeviceCaptureProvider } from "./types.js";
 
 export { runFlutterGolden };
+export { listAndroidDevices, type AndroidDevice } from "./provider/android.js";
 export type { RunFlutterGoldenOptions } from "./flutter-golden.js";
 export type { CaptureDevice } from "./types.js";
 export { MAX_SCROLL_CAPTURES } from "./scroll-capture.js";
@@ -16,13 +17,17 @@ export type { ScrollCaptureOutcome } from "./scroll-capture.js";
 
 export interface CaptureDeviceScreenshotOptions {
   device: CaptureDevice;
+  deviceSerial?: string;
   outputDir?: string;
 }
 
-function createProvider(device: CaptureDevice): DeviceCaptureProvider {
+function createProvider(device: CaptureDevice, deviceSerial?: string): DeviceCaptureProvider {
+  if (deviceSerial !== undefined && device !== "android") {
+    throw new Error("deviceSerial is only supported for Android captures.");
+  }
   switch (device) {
     case "android":
-      return new AndroidCaptureProvider();
+      return new AndroidCaptureProvider(deviceSerial);
     case "ios-device":
       return new IosDeviceCaptureProvider();
     case "ios-sim":
@@ -33,8 +38,8 @@ function createProvider(device: CaptureDevice): DeviceCaptureProvider {
 export async function captureDeviceScreenshot(
   opts: CaptureDeviceScreenshotOptions,
 ): Promise<string> {
+  const provider = createProvider(opts.device, opts.deviceSerial);
   const outputPath = await resolveCaptureOutputPath(opts.device, opts.outputDir);
-  const provider = createProvider(opts.device);
   await provider.capture(outputPath);
   return outputPath;
 }
@@ -48,5 +53,5 @@ export async function captureDeviceScreenshot(
 export async function captureDeviceScrollingScreenshot(
   opts: CaptureDeviceScrollOptions,
 ): Promise<ScrollCaptureOutcome> {
-  return captureDeviceScrollScreenshot(createProvider(opts.device), opts);
+  return captureDeviceScrollScreenshot(createProvider(opts.device, opts.deviceSerial), opts);
 }
