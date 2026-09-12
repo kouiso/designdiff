@@ -7,7 +7,6 @@ import type { CompareDesignResult, DiffReport, ParsedDesignInput } from "@figdif
 import { getFigdiffResultsDir } from "../util/figdiff-paths.js";
 
 import { normalizeLegacyLoopGuard } from "./comparison-result-compat.js";
-import { diffImageFileName } from "./persist-detail.js";
 
 const MAX_REPORTS_PER_KEY = 5;
 
@@ -48,10 +47,15 @@ export function buildComparisonSourceKey(
   // 下地の色を変えると、同じ画面でも構造と色の数値が別物になる。
   // 履歴を分けないと、下地を変えただけの回が「実装が悪化した」として並ぶ。
   designBackground?: string,
+  exportOptions?: { contentsOnly?: boolean; useAbsoluteBounds?: boolean },
 ): string {
   const backgroundSuffix = designBackground ? `@${designBackground.toLowerCase()}` : "";
   if (parsedDesign.type === "figma_url") {
-    return `figma:${parsedDesign.fileKey}:${resolvedNodeId ?? parsedDesign.nodeId ?? "root"}${backgroundSuffix}`;
+    const exportSuffix =
+      exportOptions?.contentsOnly === false || exportOptions?.useAbsoluteBounds === false
+        ? `@export-v1-c${Number(exportOptions?.contentsOnly ?? true)}-a${Number(exportOptions?.useAbsoluteBounds ?? true)}`
+        : "";
+    return `figma:${parsedDesign.fileKey}:${resolvedNodeId ?? parsedDesign.nodeId ?? "root"}${backgroundSuffix}${exportSuffix}`;
   }
 
   return `local:${path.resolve(parsedDesign.filePath)}${backgroundSuffix}`;
@@ -64,16 +68,9 @@ export async function recordComparison(entry: ComparisonHistoryEntry): Promise<v
   while (nextEntries.length > MAX_REPORTS_PER_KEY) {
     const removed = nextEntries.shift();
     if (removed) {
+      // 直近の評価用キャッシュだけを絞る。比較 ID は監査証跡として参照されるため、
+      // 永続化した JSON・画像・領域は再比較で削除せず、必要時にディスクから読む。
       historyByComparisonId.delete(removed.comparisonId);
-      try {
-        const dir = resultsDir();
-        await fs.rm(path.join(dir, `${removed.comparisonId}.json`), { force: true });
-        await fs.rm(path.join(dir, diffImageFileName(removed.comparisonId)), { force: true });
-        await fs.rm(path.join(dir, `${removed.comparisonId}.png`), { force: true });
-        await fs.rm(path.join(dir, `${removed.comparisonId}.regions.json`), { force: true });
-      } catch {
-        // 古い履歴の削除失敗は現在の比較結果の保存を妨げないため無視する。
-      }
     }
   }
 
