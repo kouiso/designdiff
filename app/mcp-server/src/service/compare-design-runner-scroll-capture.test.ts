@@ -2,7 +2,7 @@ import * as fs from "node:fs/promises";
 import * as path from "node:path";
 
 import sharp from "sharp";
-import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const WORK_DIR = path.join(process.cwd(), "tmp-scroll-capture-test");
 const STITCHED_PATH = path.join(WORK_DIR, "stitched.png");
@@ -92,6 +92,39 @@ afterAll(async () => {
 });
 
 describe("compare_design の capture_scroll", () => {
+  beforeEach(() => {
+    mocks.captureDeviceScreenshot.mockClear();
+    mocks.captureDeviceScrollingScreenshot.mockClear();
+  });
+  it.each([false, true])("選択したAndroid端末を撮影へ渡す scroll=%s", async (captureScroll) => {
+    const capture = captureScroll
+      ? mocks.captureDeviceScrollingScreenshot
+      : mocks.captureDeviceScreenshot;
+    capture.mockRejectedValueOnce(new Error("capture-selected"));
+    const { runCompareDesign } = await import("./compare-design-runner.js");
+    await expect(
+      runCompareDesign({
+        design_source: DESIGN_PATH,
+        capture_device: "android",
+        capture_device_serial: "selected-device",
+        capture_scroll: captureScroll,
+      }),
+    ).rejects.toThrow("capture-selected");
+    expect(capture).toHaveBeenCalledWith({ device: "android", deviceSerial: "selected-device" });
+  });
+
+  it("Android以外の端末指定を撮影前に拒否する", async () => {
+    const { runCompareDesign } = await import("./compare-design-runner.js");
+    await expect(
+      runCompareDesign({
+        design_source: DESIGN_PATH,
+        capture_device: "ios-sim",
+        capture_device_serial: "selected-device",
+      }),
+    ).rejects.toThrow("capture_device_serial");
+    expect(mocks.captureDeviceScreenshot).not.toHaveBeenCalled();
+  });
+
   it("指定するとスクロール撮影を呼び、繋いだ内訳を結果へ載せる", async () => {
     mocks.captureDeviceScreenshot.mockResolvedValue(SINGLE_PATH);
     mocks.captureDeviceScrollingScreenshot.mockResolvedValue({

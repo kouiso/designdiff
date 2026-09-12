@@ -112,71 +112,104 @@ Configure the MCP server in your AI tool (Claude Code, Cursor, etc.):
 }
 ```
 
-Then the AI agent can use these MCP tools in a loop:
+Start with the instructions and input schemas returned by MCP initialization and `tools/list`.
+They describe every available tool without requiring a separate personal skill.
+Build the server with `pnpm install --frozen-lockfile` and `pnpm build` before connecting it.
+Use absolute paths in the MCP configuration. Restart the server after updating the build.
 
-1. `list_figma_frames` — Get frame IDs from a Figma file
-2. `compare_design` — Compare a Figma frame with a screenshot, returns match rate + diff image path + diff regions
-3. `inspect_node` — Get CSS properties of a Figma node to guide code fixes
-4. `generate_diff_report` — Generate a diff report after the loop completes
+1. Call `list_projects` to find existing comparison settings. For a new target, use
+   `list_figma_frames` to choose the intended frame and `create_project` to save it.
+2. Use the Figma URL and implementation URL or screenshot supplied by the project.
+   Reuse configured authentication. If required information is unavailable, identify
+   the missing input; never guess a frame, credential, or project.
+3. Call `compare_design` with `design_source` and one screenshot source.
+4. Inspect the comparison conditions and original images before editing the implementation.
+   Use `inspect_node` and `get_design_tokens` for node and token details.
+5. Keep the same `campaign_id` while fixing one task. Use a new ID for a new branch or task.
+   Re-capture, compare again, and use `verify_fix` to check the claimed improvement.
+6. Stop when `loopGuard.stop` is true and report its reason. Missing stop information
+   or `UNCERTAIN` requires investigation, not blind retries. A high `matchRate` alone
+   does not prove correctness; do not loop until it reaches 100%.
+7. Retrieve the full result with `generate_diff_report` using the returned `comparisonId`.
 
-A typical AI loop: `compare_design` (detect diff) → fix code → re-screenshot → `compare_design` (verify improvement) → repeat until match rate reaches 100%.
+### Compare an existing screenshot
 
-Example Claude Code MCP call:
+The image must exist and be readable by the server process.
 
-```text
-Use the figdiff MCP tool compare_design with:
-- figma_url: https://www.figma.com/design/FILE_KEY/Project?node-id=1-2
-- screenshot_path: /absolute/path/to/screenshot.png
+```json
+{
+  "name": "compare_design",
+  "arguments": {
+    "design_source": "https://www.figma.com/design/FILE_KEY/Project?node-id=1-2",
+    "screenshot": "/absolute/path/to/screenshot.png",
+    "campaign_id": "homepage-layout-task"
+  }
+}
 ```
 
-`compare_design` supports two capture modes:
+Replace `FILE_KEY` and the node ID with the actual selected frame.
+The old `figma_url` and `screenshot_path` names are not `compare_design` arguments.
+Other tools such as `inspect_node` still use their own `figma_url` argument; inspect each schema.
 
-**Option A — Pre-captured screenshot (always works):**
+### Capture a web page
 
-```bash
-npx playwright screenshot http://localhost:5173 /tmp/figdiff-screenshot.png
+Pass `screenshot_url` in place of `screenshot`. Set a known viewport width when needed.
+
+```json
+{
+  "name": "compare_design",
+  "arguments": {
+    "design_source": "https://www.figma.com/design/FILE_KEY/Project?node-id=1-2",
+    "screenshot_url": "http://localhost:5173",
+    "campaign_id": "homepage-layout-task"
+  }
+}
 ```
 
-```text
-Use the figdiff MCP tool compare_design with:
-- figma_url: https://www.figma.com/design/FILE_KEY/Project?node-id=1-2
-- screenshot_path: /tmp/figdiff-screenshot.png
+For connected mobile devices, use `capture_device` (`android`, `ios-sim`, or `ios-device`)
+instead of the screenshot path or URL. Device tools and a connected target are prerequisites.
+
+In WSL or a sandbox, the server's `localhost` may not reach the host's development server.
+`FIGDIFF_CDP_ENDPOINT` can point to an existing, reachable host Chrome debugging endpoint.
+Check connectivity from the server environment; do not assume `localhost:9222` crosses that boundary.
+Without this setting, FigDiff launches its own Chromium. Install the browser when required by Playwright.
+
+### Retrieve the full report
+
+Replace the example ID with the exact `comparisonId` from the comparison response.
+
+```json
+{
+  "name": "generate_diff_report",
+  "arguments": {
+    "comparison_id": "cmp-from-compare-design",
+    "format": "json"
+  }
+}
 ```
 
-**Option B — `screenshot_url` with internal Playwright capture:**
+`compare_design` returns a compact structured result and a text summary. The full
+`diffReport` and `gridSummary` are retrieved through `generate_diff_report`.
+The report includes alignment, region scores, issues and their rationale. Keep the
+original images and comparison conditions as independent evidence of the reported differences.
 
-Pass `screenshot_url` instead of `screenshot_path` and figdiff captures the page internally.
+### Discover other operations
 
-```text
-Use the figdiff MCP tool compare_design with:
-- figma_url: https://www.figma.com/design/FILE_KEY/Project?node-id=1-2
-- screenshot_url: http://localhost:5173
-```
+| Task | MCP tools |
+|---|---|
+| Projects | `list_projects`, `create_project`, `delete_project` |
+| Design inspection | `list_figma_frames`, `inspect_node`, `get_design_tokens` |
+| Comparison and reports | `compare_design`, `compare_animation`, `verify_fix`, `generate_diff_report` |
+| Focused comparison | `get_crop_region`, `set_crop_region` |
+| Intentional differences | `get_ignore_regions`, `set_ignore_regions`, `delete_ignore_region` |
+| Authentication and feedback | `set_figma_token`, `report_issue` |
 
-> **WSL / sandbox network isolation**: If the MCP server runs in WSL or a sandboxed environment, `localhost` inside figdiff may not reach the host's dev server. Fix by setting `FIGDIFF_CDP_ENDPOINT` in `.mcp.json` to a Chrome instance running on the host:
->
-> ```json
-> {
->   "mcpServers": {
->     "figdiff": {
->       "env": {
->         "FIGDIFF_CDP_ENDPOINT": "http://localhost:9222"
->       }
->     }
->   }
-> }
-> ```
->
-> Then start Chrome on the host with `--remote-debugging-port=9222`. figdiff will capture via that Chrome (which can reach host `localhost`) instead of launching its own Chromium.
-> If `FIGDIFF_CDP_ENDPOINT` is not set, figdiff launches its own Chromium (default behaviour, no config needed in single-network environments).
+Do not hide genuine layout or text defects with ignore regions. Mask suggestions are candidates,
+not proof that a region is a photo or an intentional difference. Before reporting a product issue,
+check existing issues and PRs for the same reproduction and cause.
 
-## v2.0 DiffReport Pipeline
-
-- `compare_design` now returns a structured `diffReport` with `aggregateVerdict`, `regionScores`, `issues`, `alignment`, and `weightedAggregate`. The source of truth is `package/shared/src/type.ts` and `package/shared/src/schema.ts`.
-- `matchRate` still exists for backward compatibility, but `diffReport.aggregateVerdict` is now the canonical verdict for AI agents, MCP integrations, and QA tooling.
-- Multi-region scoring can attach `figmaNodeId` to section-level feedback, so agents can target the exact Figma section instead of treating the page as a single scalar score.
-
-See [docs/migration/v1-to-v2.md](docs/migration/v1-to-v2.md) for migration steps and [docs/api/diff-report-schema.md](docs/api/diff-report-schema.md) for the schema reference.
+See [the MCP reference](docs/api/mcp-tools.md) for input and response details and
+[the report schema](docs/api/diff-report-schema.md) for the full comparison report.
 
 ## Encrypted Files
 

@@ -253,12 +253,28 @@ function isSevereSquish(normalization?: NormalizationReport): boolean {
   return scale > 0 && (scale < SEVERE_SCALE_LOW || scale > SEVERE_SCALE_HIGH);
 }
 
+function figmaExportCause(warnings: PreflightWarning[]): DiagnosisCause | undefined {
+  const warning = warnings.find(
+    (entry) =>
+      entry.code === "figma_export_hidden_blank" ||
+      entry.code === "figma_export_background_missing",
+  );
+  if (!warning) return undefined;
+  return {
+    code: "figma_export_conditions",
+    confidence: 0.95,
+    message: warning.message,
+    suggestedFix: warning.suggestedFix ?? "Figma の書き出し条件と画像を確認してください。",
+  };
+}
+
 export function diagnoseComparison(input: DiagnosisInput): ComparisonDiagnosis {
   const lowMatchThreshold = input.lowMatchThreshold ?? DEFAULT_LOW_MATCH_THRESHOLD;
   const avgStructure = mean(input.regionScores.map((score) => score.structure));
   const avgColor = mean(input.regionScores.map((score) => score.color));
 
   const causes = [
+    figmaExportCause(input.preflightWarnings),
     widthMismatchCause(input.preflightWarnings),
     aspectRatioPreflightCause(input.preflightWarnings),
     normalizationCause(input.normalization),

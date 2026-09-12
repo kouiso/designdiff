@@ -7,7 +7,7 @@ import { z } from "zod";
 
 import { createMcpServer } from "../server.js";
 import { readActiveSession } from "../service/active-session.js";
-import { clearComparisonHistory } from "../service/comparison-history.js";
+import { clearComparisonHistory, getComparisonEntry } from "../service/comparison-history.js";
 
 import { axisContribution, buildVerdict, resolveSessionStatus } from "./verify-fix.js";
 
@@ -190,6 +190,39 @@ describe("verify_fix", () => {
     expect(activeSession?.sourceKey).not.toBe(activeSession?.comparisonId);
     expect(activeSession?.sourceKey).toBe(`local:${designPath}`);
     expect(activeSession?.matchRate).toBe(100);
+  });
+
+  it("前回比較のキャンペーンを引き継ぎ、既定履歴へ混ぜない", async () => {
+    const fixtureDirectory = path.join(FIXTURES_ROOT, "pair-01-simple-static-lp");
+    const designPath = path.join(fixtureDirectory, "figma-export.png");
+    const screenshotPath = path.join(fixtureDirectory, "impl-layout-off.png");
+    const prior = await client.callTool({
+      name: "compare_design",
+      arguments: {
+        design_source: designPath,
+        screenshot: screenshotPath,
+        campaign_id: "verify-fix-campaign",
+      },
+    });
+    const priorData = z.object({ comparisonId: z.string() }).parse(JSON.parse(extractText(prior)));
+    const priorEntry = await getComparisonEntry(priorData.comparisonId);
+
+    const result = await client.callTool({
+      name: "verify_fix",
+      arguments: {
+        design_source: designPath,
+        screenshot: screenshotPath,
+        prior_comparison_id: priorData.comparisonId,
+        expected_target_node_id: "whole-frame",
+      },
+    });
+    expect(result.isError).toBeFalsy();
+    const activeSession = await readActiveSession();
+    const currentId = z.string().parse(activeSession?.comparisonId);
+    const currentEntry = await getComparisonEntry(currentId);
+    expect(currentEntry?.sourceKey).toBe(priorEntry?.sourceKey);
+    expect(currentEntry?.sourceKey).not.toBe(`local:${designPath}`);
+    expect(currentEntry?.result.loopGuard?.step).toBe(2);
   });
 
   // 局所比較では子の行しか無く、対象ノード自身の行が無いと引き当てに失敗していた。
