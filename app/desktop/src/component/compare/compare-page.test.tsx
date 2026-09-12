@@ -11,6 +11,7 @@ vi.mock("@/lib/platform", () => ({
   getPlatform: vi.fn().mockReturnValue({
     file: { readLocalImage: vi.fn(), captureUrlScreenshot: vi.fn() },
   }),
+  getReportExport: vi.fn().mockResolvedValue(null),
 }));
 
 vi.mock("./compare-canvas", () => ({
@@ -37,6 +38,14 @@ beforeEach(() => {
 });
 
 describe("ComparePage", () => {
+  it("比較前は未計測を表示してゼロ点や判定を表示しない", () => {
+    render(<ComparePage />);
+    expect(screen.getByRole("img", { name: "未実行" })).toBeInTheDocument();
+    expect(screen.getByTestId("score-ring-value")).toHaveTextContent("—");
+    expect(screen.queryByText("0%")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("compare-score-verdict-badge")).not.toBeInTheDocument();
+  });
+
   it("タイトルが表示される", () => {
     render(<ComparePage />);
     expect(screen.getByText("デザインと実装を比較")).toBeInTheDocument();

@@ -10,6 +10,20 @@ const ringColor = (): string =>
   screen.getByTestId("score-ring-value").style.color.replaceAll(" ", "");
 
 describe("ScoreRing", () => {
+  it("未計測はゼロ点と区別して中立色とラベルを表示する", () => {
+    render(<ScoreRing score={null} tone="fail" />);
+    expect(screen.getByRole("img", { name: "未実行" })).toBeInTheDocument();
+    expect(screen.getByTestId("score-ring-value")).toHaveTextContent("—");
+    expect(ringColor()).toBe("var(--muted-fg)");
+  });
+
+  it("計測済みのゼロ点は数値と差分色を保つ", () => {
+    render(<ScoreRing score={0} />);
+    expect(screen.getByTestId("score-ring-value")).toHaveTextContent(/^0$/);
+    expect(ringColor()).toBe("var(--diff)");
+    expect(screen.queryByRole("img", { name: "未実行" })).not.toBeInTheDocument();
+  });
+
   it("判定が無いときは点数の高さで色を決める", () => {
     render(<ScoreRing score={96.96} />);
     expect(ringColor()).toBe("var(--match)");

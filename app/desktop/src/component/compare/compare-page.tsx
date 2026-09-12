@@ -15,6 +15,7 @@ import { useProjectStore } from "@/store/project-store";
 
 import { CompareCanvas } from "./compare-canvas";
 import { CompareDiffReport } from "./compare-diff-report";
+import { CompareReportExport } from "./compare-report-export";
 import { CompareVerdictBadge } from "./compare-verdict-badge";
 import { CropRegionSelector } from "./crop-region-selector";
 
@@ -35,17 +36,20 @@ const FLOW_VIEW_MODES: FlowMode[] = [
   { id: "split_screen", label: "SIDE-BY-SIDE", icon: Split },
 ];
 
-function scoreColor(score: number): string {
+function scoreColor(score: number | null): string {
+  if (score === null) return "var(--muted-fg)";
   if (score >= 90) return "var(--match)";
   if (score >= 70) return "var(--warn)";
   return "var(--diff)";
 }
 
-function clampScore(value: number): number {
+function clampScore(value: number | null): number | null {
+  if (value === null) return null;
   return Math.max(0, Math.min(100, Math.round(value)));
 }
 
-function formatScore(score: number): string {
+function formatScore(score: number | null): string {
+  if (score === null) return "—";
   return `${clampScore(score)}%`;
 }
 
@@ -69,12 +73,21 @@ function getPrimaryIssues(compareResult: ResultWithDiffImage | null): DiffIssue[
   return compareResult?.diffReport?.issues ?? [];
 }
 
+const ScoreStatus = ({ compareResult }: { compareResult: ResultWithDiffImage | null }) => {
+  const { t } = useTranslation();
+  return compareResult ? (
+    <CompareVerdictBadge verdict={getVerdict(compareResult)} testId="compare-score-verdict-badge" />
+  ) : (
+    <span style={{ color: "var(--muted-fg)" }}>{t("common.notMeasured")}</span>
+  );
+};
+
 function buildScoreBreakdown(compareResult: ResultWithDiffImage | null) {
   if (!compareResult) {
     return [
-      { label: "MATCH", score: 0 },
-      { label: "PIXELS", score: 0 },
-      { label: "REGIONS", score: 0 },
+      { label: "MATCH", score: null },
+      { label: "PIXELS", score: null },
+      { label: "REGIONS", score: null },
     ];
   }
 
@@ -343,7 +356,7 @@ export function ComparePage() {
   const hasScreenshot = !!screenshotImage;
   const hasBothImages = hasDesign && hasScreenshot;
   const canCompare = hasBothImages && !isComparing;
-  const score = clampScore(compareResult?.matchRate ?? 0);
+  const score = clampScore(compareResult?.matchRate ?? null);
   const verdict = getVerdict(compareResult);
   const issues = getPrimaryIssues(compareResult);
   const scoreBreakdown = useMemo(() => buildScoreBreakdown(compareResult), [compareResult]);
@@ -491,10 +504,14 @@ export function ComparePage() {
                 {formatScore(score)}
               </p>
               <div className="mt-2">
-                <CompareVerdictBadge verdict={verdict} testId="compare-score-verdict-badge" />
+                <ScoreStatus compareResult={compareResult} />
               </div>
             </div>
           </div>
+
+          {compareResult && !isComparing ? (
+            <CompareReportExport key={compareResult.comparisonId} result={compareResult} />
+          ) : null}
 
           <div className="grid grid-cols-3 gap-2">
             <div
@@ -504,7 +521,7 @@ export function ComparePage() {
               <p className="text-xs" style={{ color: "var(--muted-fg)" }}>
                 {t("compare.diffRegions")}
               </p>
-              <p className="mono font-bold text-lg">{compareResult?.diffRegions.length ?? 0}</p>
+              <p className="mono font-bold text-lg">{compareResult?.diffRegions.length ?? "—"}</p>
             </div>
             <div
               className="rounded-[var(--radius-sm-token)] p-3"
@@ -513,7 +530,7 @@ export function ComparePage() {
               <p className="text-xs" style={{ color: "var(--muted-fg)" }}>
                 {t("compare.diffPixels")}
               </p>
-              <p className="mono font-bold text-lg">{compareResult?.diffPixelCount ?? 0}</p>
+              <p className="mono font-bold text-lg">{compareResult?.diffPixelCount ?? "—"}</p>
             </div>
             <div
               className="rounded-[var(--radius-sm-token)] p-3"
@@ -522,7 +539,7 @@ export function ComparePage() {
               <p className="text-xs" style={{ color: "var(--muted-fg)" }}>
                 {t("compare.issuesTitle")}
               </p>
-              <p className="mono font-bold text-lg">{issues.length}</p>
+              <p className="mono font-bold text-lg">{compareResult ? issues.length : "—"}</p>
             </div>
           </div>
 

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { useTranslation } from "react-i18next";
 
-import type { ConvergenceCampaign } from "@figdiff/shared";
+import { parseComparisonCampaignKey, type ConvergenceCampaign } from "@figdiff/shared";
 
 import { ConvergenceStepRow } from "@/component/convergence/convergence-step-row";
 import { LoadingCard } from "@/component/ui/spinner";
@@ -26,16 +26,27 @@ const isRunning = (campaign: ConvergenceCampaign, now: number): boolean =>
  * 一覧の見出しは sourceKey から作る。designSource から作ると、別のノードでも
  * 同じファイル名が出て一覧で見分けがつかんようになる。sourceKey は比較対象の同定そのもの。
  */
-const shortLabel = (sourceKey: string): string => {
+const sourceLabel = (sourceKey: string): string => {
   if (sourceKey.startsWith("local:")) {
     const tail = sourceKey.slice("local:".length).split(/[/\\]/).at(-1);
     return tail !== undefined && tail.length > 0 ? tail : sourceKey;
   }
   if (sourceKey.startsWith("figma:")) {
-    const [, fileKey = "", nodeId = ""] = sourceKey.split(":");
+    const [fileKey = "", ...nodeParts] = sourceKey.slice("figma:".length).split(":");
+    const nodeId = nodeParts.join(":");
     return nodeId.length > 0 ? `${nodeId} · ${fileKey.slice(0, 6)}` : sourceKey;
   }
   return sourceKey;
+};
+
+const shortLabel = (key: string, invalidLabel: string): string => {
+  try {
+    const { sourceKey, campaignId } = parseComparisonCampaignKey(key);
+    const label = sourceLabel(sourceKey);
+    return campaignId === undefined ? label : `${label} · ${campaignId}`;
+  } catch {
+    return invalidLabel;
+  }
 };
 
 interface TrendBarsProps {
@@ -160,7 +171,9 @@ export function ConvergencePage() {
                       : "hover:bg-[var(--bg-2)]",
                   )}
                 >
-                  <span className="truncate text-sm">{shortLabel(entry.sourceKey)}</span>
+                  <span className="truncate text-sm" title={entry.sourceKey}>
+                    {shortLabel(entry.sourceKey, t("convergence.invalidCampaignKey"))}
+                  </span>
                   <span className="mono text-[11px] text-[var(--muted-fg)]">
                     {t("convergence.stepCount", { count: entryCampaign?.iterations.length ?? 0 })}
                     {entryCampaign &&
@@ -181,7 +194,12 @@ export function ConvergencePage() {
           <div className="flex flex-col gap-4">
             <header className="flex flex-col gap-1">
               <h2 className="text-base font-semibold">{t("convergence.title")}</h2>
-              <p className="mono truncate text-xs text-[var(--muted-fg)]">{campaign.sourceKey}</p>
+              <p
+                className="mono truncate text-xs text-[var(--muted-fg)]"
+                title={campaign.sourceKey}
+              >
+                {shortLabel(campaign.sourceKey, t("convergence.invalidCampaignKey"))}
+              </p>
               {campaign.implementationUrl !== undefined && (
                 <p className="mono truncate text-xs text-[var(--muted-fg)]">
                   {campaign.implementationUrl}

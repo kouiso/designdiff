@@ -14,13 +14,12 @@ import {
 import { useTranslation } from "react-i18next";
 
 import { parseDesignInput } from "@figdiff/shared";
-import type { DesignSource, ProjectPage } from "@figdiff/shared";
+import type { DesignSource } from "@figdiff/shared";
 
 import type { Page } from "@/app";
 import { Input } from "@/component/ui/input";
 import { ScoreRing } from "@/component/ui/score-ring";
 import { StatusPill } from "@/component/ui/status-pill";
-import type { StatusType } from "@/component/ui/status-pill";
 import { useCompareStore } from "@/store/compare-store";
 import { generateId, useProjectListStore } from "@/store/project-list-store";
 import { useProjectStore } from "@/store/project-store";
@@ -29,12 +28,6 @@ import { useSettingStore } from "@/store/setting-store";
 interface ProjectViewProps {
   onNavigate: (page: Page) => void;
 }
-
-const pageScore = (_page: ProjectPage): number => 0;
-
-const pageStatus = (page: ProjectPage): StatusType => {
-  return page.designSources.length > 0 ? "checking" : "idle";
-};
 
 const sourceLabel = (source: DesignSource): string => {
   return source.type === "figma" ? source.figmaUrl : source.filePath;
@@ -75,8 +68,7 @@ export const ProjectView = ({ onNavigate }: ProjectViewProps) => {
   }
 
   const selectedPage = currentProject.pages.find((p) => p.id === selectedPageId);
-  const selectedScore = selectedPage ? pageScore(selectedPage) : 0;
-  const selectedStatus = selectedPage ? pageStatus(selectedPage) : "idle";
+  const selectedStatus = "idle";
   const primarySource = selectedPage?.designSources[0] ?? null;
   const isFigmaConnected = oauthState.mode === "oauth" || oauthState.mode === "pat" || !!figmaToken;
 
@@ -305,10 +297,10 @@ export const ProjectView = ({ onNavigate }: ProjectViewProps) => {
                       {page.name}
                     </div>
                   </div>
-                  <ScoreRing score={pageScore(page)} size={38} stroke={4} />
+                  <ScoreRing score={null} size={38} stroke={4} />
                 </div>
                 <div className="mt-2 flex items-center justify-between gap-2">
-                  <StatusPill status={pageStatus(page)} />
+                  <StatusPill status="idle" />
                   <span className="mono" style={{ color: "var(--muted-fg)", fontSize: 11 }}>
                     {page.designSources.length}
                   </span>
@@ -361,7 +353,7 @@ export const ProjectView = ({ onNavigate }: ProjectViewProps) => {
                   {selectedPage.name}
                 </h1>
               </div>
-              <ScoreRing score={selectedScore} size={80} stroke={7} />
+              <ScoreRing score={null} size={80} stroke={7} />
             </section>
 
             <section

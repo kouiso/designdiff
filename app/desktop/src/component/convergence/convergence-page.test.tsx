@@ -1,7 +1,7 @@
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { ConvergenceHistory } from "@figdiff/shared";
+import { scopeComparisonCampaign, type ConvergenceHistory } from "@figdiff/shared";
 
 import { useConvergenceStore } from "@/store/convergence-store";
 
@@ -69,6 +69,56 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("ConvergencePage", () => {
+  it("キャンペーン付きの比較対象を読める名前で表示し、元のキーで選択する", async () => {
+    const history = campaignHistory();
+    const sourceKey = scopeComparisonCampaign(history.sourceKey, "session-a");
+    listMock.mockResolvedValue([
+      history,
+      {
+        ...history,
+        sourceKey,
+        campaigns: history.campaigns.map((campaign) => ({ ...campaign, sourceKey })),
+      },
+    ]);
+    render(<ConvergencePage />);
+    const target = await screen.findByRole("button", {
+      name: /lp-design-baseline.png · session-a/,
+    });
+    fireEvent.click(target);
+    expect(useConvergenceStore.getState().selectedSourceKey).toBe(sourceKey);
+    expect(screen.getAllByText("lp-design-baseline.png · session-a")).toHaveLength(2);
+    expect(screen.queryByText(sourceKey)).not.toBeInTheDocument();
+  });
+
+  it("Figma のノードIDとキャンペーン名を省略せず表示する", async () => {
+    const sourceKey = scopeComparisonCampaign("figma:ABCDEFfile:12:34", "review");
+    const history = campaignHistory();
+    listMock.mockResolvedValue([
+      {
+        ...history,
+        sourceKey,
+        campaigns: history.campaigns.map((campaign) => ({ ...campaign, sourceKey })),
+      },
+    ]);
+    render(<ConvergencePage />);
+    expect(await screen.findAllByText("12:34 · ABCDEF · review")).toHaveLength(2);
+  });
+
+  it("壊れたキャンペーンキーは画面を落とさず読めないことを示す", async () => {
+    const sourceKey = "campaign:v1:broken";
+    const history = campaignHistory();
+    listMock.mockResolvedValue([
+      {
+        ...history,
+        sourceKey,
+        campaigns: history.campaigns.map((campaign) => ({ ...campaign, sourceKey })),
+      },
+    ]);
+    render(<ConvergencePage />);
+    expect(await screen.findAllByText("比較対象の識別情報を読めません")).toHaveLength(2);
+    expect(screen.getAllByTestId("convergence-step-row")).toHaveLength(2);
+  });
+
   it("記録がまだ無いときは、何をすれば貯まるかを出す", async () => {
     render(<ConvergencePage />);
     expect(await screen.findByText("まだ記録がありません")).toBeInTheDocument();
