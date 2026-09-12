@@ -59,13 +59,38 @@ function createResult(comparisonId: string, diffReport: DiffReport): CompareDesi
 }
 
 describe("comparison-history", () => {
+  it("isolates nondefault Figma export conditions without changing the default key", () => {
+    const parsed: ParsedDesignInput = {
+      type: "figma_url",
+      fileKey: "fixture",
+      nodeId: [8, 13].join(":"),
+    };
+    const baseline = buildComparisonSourceKey(parsed);
+    expect(
+      buildComparisonSourceKey(parsed, undefined, undefined, {
+        contentsOnly: true,
+        useAbsoluteBounds: true,
+      }),
+    ).toBe(baseline);
+    const keys = [
+      baseline,
+      buildComparisonSourceKey(parsed, undefined, undefined, { contentsOnly: false }),
+      buildComparisonSourceKey(parsed, undefined, undefined, { useAbsoluteBounds: false }),
+      buildComparisonSourceKey(parsed, undefined, undefined, {
+        contentsOnly: false,
+        useAbsoluteBounds: false,
+      }),
+    ];
+    expect(new Set(keys).size).toBe(4);
+  });
+
   it("figma source は fileKey と nodeId でキー化する", () => {
     const parsed: ParsedDesignInput = { type: "figma_url", fileKey: "abc123", nodeId: "1:2" };
 
     expect(buildComparisonSourceKey(parsed)).toBe("figma:abc123:1:2");
   });
 
-  it("履歴は 1 キーあたり 5 件まで保持する", async () => {
+  it("直近の履歴は 5 件に絞っても過去の比較 ID は読み戻せる", async () => {
     clearComparisonHistory();
     const sourceKey = "figma:file:node";
 
@@ -78,7 +103,7 @@ describe("comparison-history", () => {
     }
 
     expect(getRecentReports(sourceKey)).toHaveLength(5);
-    expect(await getComparisonEntry("cmp-0")).toBeUndefined();
+    expect((await getComparisonEntry("cmp-0"))?.comparisonId).toBe("cmp-0");
     expect((await getComparisonEntry("cmp-5"))?.comparisonId).toBe("cmp-5");
   });
 
@@ -116,26 +141,28 @@ describe("comparison-history", () => {
     ]);
   });
 
-  it("履歴上限から外れた比較の永続化ファイルを削除する", async () => {
+  it("再比較とメモリ消去後も全比較の JSON・画像・領域を保持する", async () => {
     clearComparisonHistory();
-    const originalHome = process.env.HOME;
     const originalFigdiffHome = process.env.FIGDIFF_HOME;
     const testHome = await fs.mkdtemp(path.join(tmpdir(), "figdiff-history-evict-"));
     const sourceKey = "figma:file:evict";
+    const png = Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aM5sAAAAASUVORK5CYII=",
+      "base64",
+    );
+    const regions = JSON.stringify([{ bounds: { x: 0, y: 0, width: 1, height: 1 } }]);
+    const comparisonCount = 12;
 
     try {
-      process.env.HOME = testHome;
-      // HOME を差し替えて解決先を見る検体。vitest.setup.ts の FIGDIFF_HOME が
-      // 残っとるとそちらが勝つので、同じ場所へ向け直す。
       process.env.FIGDIFF_HOME = path.join(testHome, ".figdiff");
       const resultsDir = path.join(testHome, ".figdiff", "results");
       await fs.mkdir(resultsDir, { recursive: true });
 
-      for (let index = 0; index < 6; index++) {
+      for (let index = 0; index < comparisonCount; index++) {
         const comparisonId = `cmp-evict-${index}`;
-        await fs.writeFile(path.join(resultsDir, `diff-${comparisonId}.png`), "diff");
-        await fs.writeFile(path.join(resultsDir, `${comparisonId}.png`), "legacy");
-        await fs.writeFile(path.join(resultsDir, `${comparisonId}.regions.json`), "[]");
+        await fs.writeFile(path.join(resultsDir, `diff-${comparisonId}.png`), png);
+        await fs.writeFile(path.join(resultsDir, `${comparisonId}.png`), png);
+        await fs.writeFile(path.join(resultsDir, `${comparisonId}.regions.json`), regions);
         await recordComparison({
           comparisonId,
           sourceKey,
@@ -143,14 +170,28 @@ describe("comparison-history", () => {
         });
       }
 
-      await expect(fs.stat(path.join(resultsDir, "diff-cmp-evict-0.png"))).rejects.toThrow();
-      await expect(fs.stat(path.join(resultsDir, "cmp-evict-0.png"))).rejects.toThrow();
-      await expect(fs.stat(path.join(resultsDir, "cmp-evict-0.regions.json"))).rejects.toThrow();
-      await expect(fs.stat(path.join(resultsDir, "diff-cmp-evict-5.png"))).resolves.toBeDefined();
       expect(getRecentReports(sourceKey)).toHaveLength(5);
+      clearComparisonHistory();
+
+      for (let index = 0; index < comparisonCount; index++) {
+        const comparisonId = `cmp-evict-${index}`;
+        const restored = await getComparisonEntry(comparisonId);
+        expect(restored?.comparisonId).toBe(comparisonId);
+        expect(restored?.sourceKey).toBe(sourceKey);
+        expect(restored?.result).toEqual(
+          createResult(comparisonId, createReport(0.8 + index * 0.01)),
+        );
+        await expect(
+          fs.readFile(path.join(resultsDir, `diff-${comparisonId}.png`)),
+        ).resolves.toEqual(png);
+        await expect(fs.readFile(path.join(resultsDir, `${comparisonId}.png`))).resolves.toEqual(
+          png,
+        );
+        await expect(
+          fs.readFile(path.join(resultsDir, `${comparisonId}.regions.json`), "utf-8"),
+        ).resolves.toBe(regions);
+      }
     } finally {
-      if (originalHome === undefined) delete process.env.HOME;
-      else process.env.HOME = originalHome;
       if (originalFigdiffHome === undefined) delete process.env.FIGDIFF_HOME;
       else process.env.FIGDIFF_HOME = originalFigdiffHome;
       clearComparisonHistory();
