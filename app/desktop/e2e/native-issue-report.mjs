@@ -67,11 +67,11 @@ if (filesystem.bavail * filesystem.bsize < 512 * 1024 * 1024) {
 }
 const startedAt = new Date().toISOString();
 const buildAtStart = await captureBuild();
-const revision = execFileSync("/usr/bin/git", ["rev-parse", "HEAD"], {
+const revision = execFileSync("git", ["rev-parse", "HEAD"], {
   cwd: repository,
   encoding: "utf8",
 }).trim();
-const dirtyState = execFileSync("/usr/bin/git", ["status", "--porcelain=v1"], {
+const dirtyState = execFileSync("git", ["status", "--porcelain=v1"], {
   cwd: repository,
   encoding: "utf8",
 })

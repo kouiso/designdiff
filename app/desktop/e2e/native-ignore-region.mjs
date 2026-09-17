@@ -77,11 +77,11 @@ if (filesystem.bavail * filesystem.bsize < 512 * 1024 * 1024) {
 }
 const startedAt = new Date().toISOString();
 const buildAtStart = await captureBuild();
-const revision = execFileSync("/usr/bin/git", ["rev-parse", "HEAD"], {
+const revision = execFileSync("git", ["rev-parse", "HEAD"], {
   cwd: repository,
   encoding: "utf8",
 }).trim();
-const dirtyState = execFileSync("/usr/bin/git", ["status", "--porcelain=v1"], {
+const dirtyState = execFileSync("git", ["status", "--porcelain=v1"], {
   cwd: repository,
   encoding: "utf8",
 })
@@ -379,19 +379,38 @@ try {
   const durableSavedConfig = join(evidence, "ignore-regions-saved.yaml");
   await writeFile(durableSavedConfig, savedConfigBytes);
 
-  await chmod(projectDirectory, 0o500);
+  // 書込み拒否の作り方はOSで異なる: POSIX は chmod 0o500、Windows では
+  // chmod が効かないため icacls で現在ユーザーの WriteData を拒否する。
+  const isWindows = process.platform === "win32";
+  const currentPrincipal = `${process.env.USERDOMAIN ? `${process.env.USERDOMAIN}\\` : ""}${process.env.USERNAME ?? ""}`;
+  const denyWrites = async () => {
+    if (isWindows) {
+      execFileSync("icacls", [projectDirectory, "/deny", `${currentPrincipal}:(W)`]);
+      return;
+    }
+    await chmod(projectDirectory, 0o500);
+  };
+  const allowWrites = async () => {
+    if (isWindows) {
+      execFileSync("icacls", [projectDirectory, "/remove:d", currentPrincipal]);
+      return;
+    }
+    await chmod(projectDirectory, 0o700);
+  };
+  await denyWrites();
   let ioError;
   try {
-    await assert.rejects(writeFile(join(projectDirectory, "independent-write-probe"), "probe"), {
-      code: "EACCES",
-    });
+    await assert.rejects(
+      writeFile(join(projectDirectory, "independent-write-probe"), "probe"),
+      (error) => error.code === "EACCES" || error.code === "EPERM",
+    );
     ioError = await saveError(page, {
       ...expectedRightHalfEntry,
       id: "io-denied",
     });
-    assert.match(ioError ?? "", /EACCES|permission denied/i);
+    assert.match(ioError ?? "", /EACCES|EPERM|permission denied|not permitted/i);
   } finally {
-    await chmod(projectDirectory, 0o700);
+    await allowWrites();
   }
   assert.deepEqual(await listRegions(page), [expectedRightHalfEntry]);
 

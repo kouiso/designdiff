@@ -133,4 +133,5 @@ PR144修正SHA：`032d96252683b6a8ac1fe5d5d2509dea53b76f7e`。既存PRブラン�
     1. `state.error` が renderFigmaTab 内にしか描画されず、Upload/Token タブ滞在中の capture/compare/overlay 失敗はユーザーに完全不可視（chrome-ext-r1 の `X01_compare_dom` が証拠）。
     2. ページ遷移で content 側 overlay は消えるが popup の `overlayActive` は残留 → 遷移後の toggle が "Hide Overlay" のまま（`X02_state_after_nav`）。
     3. `captureVisibleTab` は `<all_urls>` か activeTab が要る — popup を tab として開く自動化では activeTab が付与されず失敗する（実ユーザーは toolbar クリックで付与、native-extension-host r1 がその経路を実証済）。特定 host_permissions では不足。
-- 未完: X05 Android実機（0台=blocked見込）、X06 iOS実機、M12 実GitHub起票（外部write要承認）、desktop経路のWindows/macOS実行、chrome-ext の macOS/Windows 実行、台帳記入と2巡。
+  - 3platform横断 (92ec88e7): macOS は SSH 経由 `--headless=new` で実施、Windows は実機 GUI セッション。両platformで出荷manifest実行は X02全項+token往復 PASS・compare不可視を再現（platform共通の実挙動）、権限複製では macOS `48.96%`、Windows `43.5%` の実match-rateを確認。証跡 `chrome-ext-mac-r1(-granted)` / `chrome-ext-win-r1(-granted)`。
+- 未完: X05 Android実機（0台=blocked見込）、X06 iOS実機、M12 実GitHub起票（外部write要承認）、desktop経路のWindows/macOS実行、台帳記入と2巡。
