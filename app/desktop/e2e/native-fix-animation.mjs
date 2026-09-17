@@ -323,9 +323,12 @@ try {
   await page
     .getByLabel("設計フレームを追加")
     .setInputFiles([inputPaths.animationDesign0, inputPaths.animationDesign100]);
+  // フレーム行は画像decode後に描画されるため、時刻欄を待ってから埋める
+  await expect(page.getByLabel("設計フレーム 2 時刻")).toBeVisible();
   await page
     .getByLabel("実装フレームを追加")
     .setInputFiles([inputPaths.animationImpl20, inputPaths.animationImpl120]);
+  await expect(page.getByLabel("実装フレーム 2 時刻")).toBeVisible();
   await page.getByLabel("設計フレーム 1 時刻").fill("0");
   await page.getByLabel("設計フレーム 2 時刻").fill("100");
   await page.getByLabel("実装フレーム 1 時刻").fill("20");

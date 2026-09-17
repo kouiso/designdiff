@@ -473,7 +473,27 @@ try {
     { steps: 5 },
   );
   await page.mouse.up();
-  await expect(page.getByText("x: 10, y: 10, w: 180, h: 180", { exact: true })).toBeVisible();
+  // マウス→canvas座標の丸めはOS/DPIで±1pxずれ得るため、表示値を読んで
+  // 公差内か確認し、以降の期待値は実際に適用された座標を使う。
+  const cropLabel = page.getByText(/^x: \d+, y: \d+, w: \d+, h: \d+$/);
+  await expect(cropLabel).toBeVisible();
+  const cropMatch = /^x: (\d+), y: (\d+), w: (\d+), h: (\d+)$/.exec(
+    (await cropLabel.textContent()) ?? "",
+  );
+  assert.ok(cropMatch, "crop region label must show applied coordinates");
+  const actualCrop = {
+    x: Number(cropMatch[1]),
+    y: Number(cropMatch[2]),
+    width: Number(cropMatch[3]),
+    height: Number(cropMatch[4]),
+  };
+  assert.ok(
+    Math.abs(actualCrop.x - fixture.crop.x) <= 1 &&
+      Math.abs(actualCrop.y - fixture.crop.y) <= 1 &&
+      Math.abs(actualCrop.width - fixture.crop.width) <= 1 &&
+      Math.abs(actualCrop.height - fixture.crop.height) <= 1,
+    `crop region must be within 1px of the drag, got ${JSON.stringify(actualCrop)}`,
+  );
 
   await page.getByRole("button", { name: "差分を検出", exact: true }).click();
   await expect(page.getByTestId("compare-score-verdict-badge")).toBeVisible();
@@ -574,7 +594,7 @@ try {
     (entry) => entry.phase === "request" && entry.channel === "ignore-region:save",
   );
   assert.equal(maskSaves.length, 1);
-  assert.deepEqual(maskSaves[0].args[1].coordinate_context.crop_region, fixture.crop);
+  assert.deepEqual(maskSaves[0].args[1].coordinate_context.crop_region, actualCrop);
   assert.equal(maskSaves[0].args[1].coordinate_context.canvas_width, fixture.crop.width);
   assert.equal(maskSaves[0].args[1].coordinate_context.canvas_height, fixture.crop.height);
 
