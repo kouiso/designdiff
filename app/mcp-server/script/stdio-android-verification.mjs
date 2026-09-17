@@ -6,7 +6,18 @@
 // 判定は adb 直接撮影・実 PNG 寸法・scrollCapture 報告で行う
 // (FigDiff の status/matchRate はオラクルにしない)。
 //
-// 前提: `adb devices` に ready な端末が2台以上あること (X05 検証のため)。
+// 前提: `adb devices` に ready な端末が1台以上あること。
+// X05 の複数台拒否は2台以上見える時のみ検証する (単端末環境では実機1台の
+// 撮影・scroll のみを証跡化し、複数台ケースは複数台環境の証跡で担保する)。
+// 環境変数:
+//   ANDROID_EXPECT_SERIALS  見えているべき serial のカンマ区切り一覧
+//   ANDROID_SCROLL_DEVICE   scroll 試験に使う serial (既定: emulator優先、
+//                           無ければ先頭端末)
+//   ANDROID_PAGE_URL        scroll 対象ページの URL。既定は driver が立てる
+//                           ローカルサーバ (emulator は 10.0.2.2、実機は
+//                           adb reverse + 127.0.0.1)。実機と driver ホストが
+//                           別ネットワークの時は同一LAN上のURLを渡す —
+//                           adb reverse は複数 adb ホスト接続下で不安定なため。
 // 証跡dirを第1引数に取る。
 
 import assert from "node:assert/strict";
@@ -55,16 +66,23 @@ const devices = devicesOut
   });
 evidence.results.connectedDevices = devices;
 const ready = devices.filter((d) => d.state === "device");
-assert.ok(ready.length >= 2, `X05 needs >=2 ready android devices, got ${ready.length}`);
-const [emulator, physical] = [
-  ready.find((d) => d.serial.startsWith("emulator-")) ?? ready[0],
-  ready.find((d) => !d.serial.startsWith("emulator-")) ?? ready[1],
-];
-assert.ok(emulator && physical && emulator.serial !== physical.serial, "need two distinct devices");
+assert.ok(ready.length >= 1, `X05 needs >=1 ready android device, got ${ready.length}`);
+const expectedSerials = process.env.ANDROID_EXPECT_SERIALS?.split(",").map((s) => s.trim()).filter(Boolean);
+if (expectedSerials) {
+  assert.deepEqual(
+    ready.map((d) => d.serial).sort(),
+    [...expectedSerials].sort(),
+    `ready devices ${ready.map((d) => d.serial)} must match ANDROID_EXPECT_SERIALS ${expectedSerials}`,
+  );
+}
+evidence.results.deviceSelectionMode = ready.length >= 2 ? "multi-device" : "single-device";
+const emulator = ready.find((d) => d.serial.startsWith("emulator-")) ?? null;
+const physical = ready.find((d) => !d.serial.startsWith("emulator-")) ?? null;
+const captureTargets = [emulator, physical].filter((d) => d !== null);
 
 // adb 直接撮影 (製品を通さない基準画像)。
 const directShots = {};
-for (const dev of [emulator, physical]) {
+for (const dev of captureTargets) {
   const p = join(evidenceDir, `adb-direct-${dev.serial}.png`);
   const { stdout } = await execFileAsync(
     "adb",
@@ -111,56 +129,53 @@ await sharp({
   .toFile(designPath);
 
 // X05a: serial 未指定 + 2台接続 → どちらかへ黙って切り替わらず明示拒否。
-const ambiguous = await call("compare_design", {
-  design_source: designPath,
-  capture_device: "android",
-});
-evidence.results.X05_ambiguous_rejected = {
-  isError: ambiguous.isError === true,
-  text: text(ambiguous).slice(0, 500),
-};
-assert.ok(ambiguous.isError === true, "two devices without serial must be rejected, not silently picked");
-assert.match(text(ambiguous), /serial|device|ANDROID_SERIAL/i);
+// 単端末環境では対象外 — serial 省略の自動選択が動くことだけ記録する。
+if (ready.length >= 2) {
+  const ambiguous = await call("compare_design", {
+    design_source: designPath,
+    capture_device: "android",
+  });
+  evidence.results.X05_ambiguous_rejected = {
+    isError: ambiguous.isError === true,
+    text: text(ambiguous).slice(0, 500),
+  };
+  assert.ok(ambiguous.isError === true, "two devices without serial must be rejected, not silently picked");
+  assert.match(text(ambiguous), /serial|device|ANDROID_SERIAL/i);
+} else {
+  const sole = await call("compare_design", {
+    design_source: designPath,
+    capture_device: "android",
+  });
+  evidence.results.X05_single_device_auto = {
+    isError: sole.isError === true,
+    note: "single-device environment: serial-less call must pick the only device",
+    text: text(sole).slice(0, 500),
+  };
+  assert.ok(!sole.isError, `single-device serial-less capture failed: ${text(sole)}`);
+}
 
-// X05b: emulator serial 指定 → 撮れる画像がその端末の寸法と一致。
-const emuCapture = await call("compare_design", {
-  design_source: designPath,
-  capture_device: "android",
-  capture_device_serial: emulator.serial,
-});
-assert.ok(!emuCapture.isError, `emulator capture failed: ${text(emuCapture)}`);
 const captureDir = join(home, ".figdiff", "cache", "capture");
-const emuShots = (await readdir(captureDir)).sort();
-const emuLatest = emuShots.at(-1);
-const emuMeta = await sharp(join(captureDir, emuLatest)).metadata();
-evidence.results.X05_emulator_capture = {
-  serial: emulator.serial,
-  captured: emuLatest,
-  width: emuMeta.width,
-  height: emuMeta.height,
-};
-assert.equal(emuMeta.width, directShots[emulator.serial].width, "emulator capture width must match adb direct");
-assert.equal(emuMeta.height, directShots[emulator.serial].height, "emulator capture height must match adb direct");
-
-// X05c: physical serial 指定 → その端末の寸法の画像が来る。
-const phyCapture = await call("compare_design", {
-  design_source: designPath,
-  capture_device: "android",
-  capture_device_serial: physical.serial,
-});
-assert.ok(!phyCapture.isError, `physical capture failed: ${text(phyCapture)}`);
-const phyShots = (await readdir(captureDir)).sort();
-const phyLatest = phyShots.at(-1);
-const phyMeta = await sharp(join(captureDir, phyLatest)).metadata();
-evidence.results.X05_physical_capture = {
-  serial: physical.serial,
-  captured: phyLatest,
-  width: phyMeta.width,
-  height: phyMeta.height,
-};
-assert.equal(phyMeta.width, directShots[physical.serial].width, "physical capture width must match adb direct");
-assert.equal(phyMeta.height, directShots[physical.serial].height, "physical capture height must match adb direct");
-assert.notEqual(phyLatest, emuLatest, "each device must produce its own capture file");
+evidence.results.X05_device_captures = {};
+for (const dev of captureTargets) {
+  // X05b/c: serial 指定 → 撮れる画像がその端末の寸法と一致。
+  const res = await call("compare_design", {
+    design_source: designPath,
+    capture_device: "android",
+    capture_device_serial: dev.serial,
+  });
+  assert.ok(!res.isError, `capture via ${dev.serial} failed: ${text(res)}`);
+  const shots = (await readdir(captureDir)).sort();
+  const latest = shots.at(-1);
+  const meta = await sharp(join(captureDir, latest)).metadata();
+  evidence.results.X05_device_captures[dev.serial] = {
+    kind: dev === emulator ? "emulator" : "physical",
+    captured: latest,
+    width: meta.width,
+    height: meta.height,
+  };
+  assert.equal(meta.width, directShots[dev.serial].width, `capture width must match adb direct for ${dev.serial}`);
+  assert.equal(meta.height, directShots[dev.serial].height, `capture height must match adb direct for ${dev.serial}`);
+}
 
 // X05d: 不存在 serial → 明示拒否。
 const bogus = await call("compare_design", {
@@ -175,23 +190,41 @@ evidence.results.X05_bogus_serial = {
 assert.ok(bogus.isError === true, "nonexistent serial must be an explicit error");
 assert.match(text(bogus), /not connected|not found|no-such-serial/i);
 
-// X07: emulator に長いページを開かせて capture_scroll → 分割撮影→結合。
-// emulator からホスト loopback は 10.0.2.2 で届く。
-const tallHtml = `<!doctype html><html><body style="margin:0"><div style="height:400px;background:#e33">top</div><div style="height:400px;background:#3e3">mid1</div><div style="height:400px;background:#33e">mid2</div><div style="height:400px;background:#ee3">bottom</div></body></html>`;
-const pageServer = createServer((req, res) => {
-  res.writeHead(200, { "content-type": "text/html" });
-  res.end(tallHtml);
-});
-await new Promise((r) => pageServer.listen(0, "127.0.0.1", r));
-const pagePort = pageServer.address().port;
-await adb(["-s", emulator.serial, "shell", "am", "start", "-a", "android.intent.action.VIEW", "-d", `http://10.0.2.2:${pagePort}/tall.html`]);
+// X07: 対象端末に長いページを開かせて capture_scroll → 分割撮影→結合。
+// emulator はホスト loopback が 10.0.2.2、実機は adb reverse で
+// 端末側 127.0.0.1 をホストのこのプロセスのポートへ向ける。
+const scrollDevice =
+  ready.find((d) => d.serial === process.env.ANDROID_SCROLL_DEVICE) ?? emulator ?? ready[0];
+// 実機は CSS ピクセル換算でビューポートが狭いので、分割が確実に起きる
+// 長さ (6000px超) にしておく。
+const tallHtml = `<!doctype html><html><body style="margin:0">${["#e33", "#3e3", "#33e", "#ee3", "#3ee", "#e3e", "#963", "#369"].map((c, i) => `<div style="height:800px;background:${c}">block${i}</div>`).join("")}</body></html>`;
+let pageServer;
+let pageUrl;
+if (process.env.ANDROID_PAGE_URL) {
+  pageUrl = process.env.ANDROID_PAGE_URL;
+} else {
+  pageServer = createServer((req, res) => {
+    res.writeHead(200, { "content-type": "text/html" });
+    res.end(tallHtml);
+  });
+  await new Promise((r) => pageServer.listen(0, "127.0.0.1", r));
+  const pagePort = pageServer.address().port;
+  if (scrollDevice.serial.startsWith("emulator-")) {
+    pageUrl = `http://10.0.2.2:${pagePort}/tall.html`;
+  } else {
+    await adb(["-s", scrollDevice.serial, "reverse", `tcp:${pagePort}`, `tcp:${pagePort}`]);
+    pageUrl = `http://127.0.0.1:${pagePort}/tall.html`;
+  }
+}
+evidence.results.scrollTarget = { serial: scrollDevice.serial, pageUrl };
+await adb(["-s", scrollDevice.serial, "shell", "am", "start", "-a", "android.intent.action.VIEW", "-d", pageUrl]);
 // ブラウザ描画待ち
 await new Promise((r) => setTimeout(r, 8000));
 
 const scrollResult = await call("compare_design", {
   design_source: designPath,
   capture_device: "android",
-  capture_device_serial: emulator.serial,
+  capture_device_serial: scrollDevice.serial,
   capture_scroll: true,
 });
 const scrollPayload = scrollResult.structuredContent ?? {};
@@ -219,7 +252,7 @@ if (!scrollResult.isError) {
 } else {
   evidence.results.X07_android_scroll.note = "scroll capture returned error — see textHead";
 }
-pageServer.close();
+pageServer?.close();
 
 assert.equal(protocolErrors.length, 0, `protocol errors: ${protocolErrors.join(" | ")}`);
 await writeFile(join(evidenceDir, "evidence.json"), `${JSON.stringify(evidence, null, 2)}\n`);
