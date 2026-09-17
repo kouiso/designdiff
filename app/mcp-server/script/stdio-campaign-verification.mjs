@@ -127,7 +127,13 @@ await Promise.all([
 ]);
 
 const sha256 = (bytes) => createHash("sha256").update(bytes).digest("hex");
-const biomeExecutable = createRequire(import.meta.url).resolve("@biomejs/biome/bin/biome");
+let biomeExecutable;
+try {
+  biomeExecutable = createRequire(import.meta.url).resolve("@biomejs/biome/bin/biome");
+} catch {
+  // biome 未install環境では証跡の整形を諦め、plain JSON に落とす。
+  biomeExecutable = undefined;
+}
 const redactPublicPaths = (value) => {
   if (typeof value === "string") {
     return value
@@ -146,13 +152,19 @@ const redactPublicPaths = (value) => {
 };
 const writeFormattedJson = async (filePath, value) => {
   const publicValue = redactPublicPaths(value);
-  const bytes = Buffer.from(
-    execFileSync(biomeExecutable, ["format", "--stdin-file-path", filePath], {
+  let text = `${JSON.stringify(publicValue, null, 2)}\n`;
+  try {
+    if (biomeExecutable === undefined) throw new Error("biome unavailable");
+    text = execFileSync(biomeExecutable, ["format", "--stdin-file-path", filePath], {
       cwd: root,
-      input: `${JSON.stringify(publicValue, null, 2)}\n`,
+      input: text,
       encoding: "utf8",
-    }),
-  );
+    });
+  } catch {
+    // biome の platform binary が無い環境 (未installの remote 等) でも
+    // 証跡の書き出し自体は失敗させない。
+  }
+  const bytes = Buffer.from(text);
   await writeFile(filePath, bytes);
   return { path: relative(root, filePath), sha256: sha256(bytes) };
 };
@@ -180,11 +192,15 @@ const startClient = async (name) => {
     cwd: work,
     env: {
       HOME: home,
+      // Windows の homedir() は HOME でなく USERPROFILE を見る。ここを
+      // 隔離しないと file backend が実ユーザーの ~/.figdiff を汚す。
+      USERPROFILE: home,
       PATH: dirname(process.execPath),
       FIGDIFF_HOME: store,
       FIGDIFF_ALLOWED_DIRS: evidenceDir,
       PLAYWRIGHT_BROWSERS_PATH:
-        process.env.PLAYWRIGHT_BROWSERS_PATH ?? join(process.env.HOME, ".cache/ms-playwright"),
+        process.env.PLAYWRIGHT_BROWSERS_PATH ??
+        join(process.env.HOME ?? process.env.USERPROFILE ?? home, ".cache/ms-playwright"),
     },
     stderr: "pipe",
   });
@@ -306,13 +322,53 @@ try {
     const ok = await call(client, "set_figma_token", { token: fakePat });
     assert.ok(!isErrorResult(ok), text(ok));
     assert.ok(!text(ok).includes(fakePat), "response must not echo the token");
-    // HOME を隔離した file backend (~/.figdiff/credentials.json) に残ることを確認する。
+    // file backend (~/.figdiff/credentials.json) に残ることを確認する。
+    // keychain backend (Windows Credential Manager 等) が選ばれた環境では
+    // ファイルは作られないため、新規プロセスが token を認識するかで判断する。
     const credentialsPath = join(home, ".figdiff", "credentials.json");
-    const stored = JSON.parse(await readFile(credentialsPath, "utf8"));
-    assert.equal(stored["figma-pat"], fakePat);
+    let backend = "file";
+    try {
+      const stored = JSON.parse(await readFile(credentialsPath, "utf8"));
+      assert.equal(stored["figma-pat"], fakePat);
+    } catch (error) {
+      if (error.code !== "ENOENT") throw error;
+      backend = "keychain";
+      const fresh = await startClient("m03-fresh");
+      try {
+        const probe = await call(fresh, "inspect_node", {
+          figma_url: "https://www.figma.com/design/AAAAAAAAAAAAAAAAAAAAAA/x?node-id=0-1",
+        });
+        const probeText = text(probe);
+        assert.ok(
+          isErrorResult(probe),
+          "fake token must fail the API call, not be silently accepted",
+        );
+        assert.ok(
+          !probeText.includes("Figma token not configured"),
+          `token must be recognized by a fresh process, got: ${probeText}`,
+        );
+      } finally {
+        await closeClient(fresh);
+      }
+      // keychain は HOME 隔離の効かない実環境の領域なので、検証に使った
+      // 偽トークンは確実に消して残さない。
+      try {
+        // @napi-rs/keyring は credential-store の依存なので、その package を
+        // 起点に解決する (pnpm は依存を巻き上げないため script 位置からは見えない)。
+        const req = createRequire(
+          join(root, "package/credential-store/package.json"),
+        );
+        const { Entry } = req("@napi-rs/keyring");
+        new Entry("figdiff", "figma-pat").deletePassword();
+      } catch {
+        // backend が file なら import 自体が失敗する環境もある。消せなくても
+        // 偽値しか書いていないため実害は限定的だが、証跡には残す。
+        backend = "keychain-cleanup-failed";
+      }
+    }
     return {
       expected: "invalid rejected, valid persisted without echo",
-      actual: { persisted: true, echoed: false },
+      actual: { persisted: true, echoed: false, backend },
     };
   });
 
