@@ -134,4 +134,9 @@ PR144修正SHA：`032d96252683b6a8ac1fe5d5d2509dea53b76f7e`。既存PRブラン�
     2. ページ遷移で content 側 overlay は消えるが popup の `overlayActive` は残留 → 遷移後の toggle が "Hide Overlay" のまま（`X02_state_after_nav`）。
     3. `captureVisibleTab` は `<all_urls>` か activeTab が要る — popup を tab として開く自動化では activeTab が付与されず失敗する（実ユーザーは toolbar クリックで付与、native-extension-host r1 がその経路を実証済）。特定 host_permissions では不足。
   - 3platform横断 (92ec88e7): macOS は SSH 経由 `--headless=new` で実施、Windows は実機 GUI セッション。両platformで出荷manifest実行は X02全項+token往復 PASS・compare不可視を再現（platform共通の実挙動）、権限複製では macOS `48.96%`、Windows `43.5%` の実match-rateを確認。証跡 `chrome-ext-mac-r1(-granted)` / `chrome-ext-win-r1(-granted)`。
-- 未完: X05 Android実機（0台=blocked見込）、X06 iOS実機、M12 実GitHub起票（外部write要承認）、desktop経路のWindows/macOS実行、台帳記入と2巡。
+- **desktop native経路の3platform化**（e2319f5a / 23c0e9e2 / 0caff367 / 41f4ea24）:
+  - driver移植修正: `/usr/bin/git` hardcode → PATH解決、ignore-region の chmod EACCES probe を Windows では icacls deny-write に（実EPERM確認）、fix-animation のフレーム時刻欄を描画待ちに、nodefix の crop/採点数を±1px公差＋実値読取に。
+  - Windows実機: ignore/score/fix-anim/nodefix/issue の5本 PASS（証跡 `*-win-r*`, C:\figdiff-salvage）。`native-report-export` は xwininfo+libX11+ImageMagick 依存で Linux native dialog 経路固有のまま。
+  - macOS (macmini, GUI session 経由Electron起動可): 同5本 PASS（証跡 `*-mac-r*`、headless不要）。
+  - 観測: Windows nodefix r2 で figma HTTP/IPC 系列がちょうど2回走る flake を1回だけ記録（r3 は再現せず）。framenavigated 観測を driver に追加済みで再発時に原因が取れる。
+- 未完: X05 Android実機（0台=blocked見込）、X06 iOS実機、M12 実GitHub起票（外部write要承認）、Playwright spec経路のWindows/macOS実施要否確認、台帳記入と2巡。
