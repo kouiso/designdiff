@@ -24,7 +24,10 @@ const evidenceDir = process.argv[2] ? resolve(process.argv[2]) : undefined;
 if (!evidenceDir) throw new Error("evidence dir argument is required");
 
 const credentials = JSON.parse(
-  await readFile(join(process.env.HOME, ".figdiff/credentials.json"), "utf8"),
+  await readFile(
+    join(process.env.HOME ?? process.env.USERPROFILE ?? "", ".figdiff/credentials.json"),
+    "utf8",
+  ),
 );
 const token = credentials["figma-pat"];
 assert.ok(typeof token === "string" && token.startsWith("figd_"), "figma-pat missing");
@@ -53,6 +56,8 @@ const transport = new StdioClientTransport({
   cwd: work,
   env: {
     HOME: home,
+    // Windows の homedir() は USERPROFILE を見る。隔離しないと実環境を汚す。
+    USERPROFILE: home,
     PATH: dirname(process.execPath),
     FIGDIFF_HOME: store,
     FIGDIFF_ALLOWED_DIRS: evidenceDir,
