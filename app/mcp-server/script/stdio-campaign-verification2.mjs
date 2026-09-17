@@ -227,9 +227,14 @@ const startClient = async (name, overrides = {}) => {
       FIGDIFF_HOME: store,
       FIGDIFF_ALLOWED_DIRS: evidenceDir,
       // 隔離 HOME には browser cache が無いので、実環境側の cache を明示する。
+      // 既定位置は OS ごとに違う (win: %LOCALAPPDATA%, mac: ~/Library/Caches)。
       PLAYWRIGHT_BROWSERS_PATH:
         process.env.PLAYWRIGHT_BROWSERS_PATH ??
-        join(process.env.HOME ?? process.env.USERPROFILE ?? home, ".cache/ms-playwright"),
+        (process.platform === "win32"
+          ? join(process.env.LOCALAPPDATA ?? join(process.env.USERPROFILE ?? home, "AppData", "Local"), "ms-playwright")
+          : process.platform === "darwin"
+            ? join(process.env.HOME ?? home, "Library", "Caches", "ms-playwright")
+            : join(process.env.HOME ?? home, ".cache", "ms-playwright")),
       ...overrides,
     },
     stderr: "pipe",
