@@ -101,7 +101,7 @@ const results = {};
     for (const file of await walk(join(root, pkg, "src"))) {
       const src = await readFile(file, "utf8");
       if (/from\s+["']pixelmatch["']|import\s+pixelmatch|require\(["']pixelmatch/.test(src)) {
-        users.push(relative(root, file));
+        users.push(relative(root, file).replaceAll("\\", "/"));
       }
     }
   }
