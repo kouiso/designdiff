@@ -139,4 +139,5 @@ PR144修正SHA：`032d96252683b6a8ac1fe5d5d2509dea53b76f7e`。既存PRブラン�
   - Windows実機: ignore/score/fix-anim/nodefix/issue の5本 PASS（証跡 `*-win-r*`, C:\figdiff-salvage）。`native-report-export` は xwininfo+libX11+ImageMagick 依存で Linux native dialog 経路固有のまま。
   - macOS (macmini, GUI session 経由Electron起動可): 同5本 PASS（証跡 `*-mac-r*`、headless不要）。
   - 観測: Windows nodefix r2 で figma HTTP/IPC 系列がちょうど2回走る flake を1回だけ記録（r3 は再現せず）。framenavigated 観測を driver に追加済みで再発時に原因が取れる。
-- 未完: X05 Android実機（0台=blocked見込）、X06 iOS実機、M12 実GitHub起票（外部write要承認）、Playwright spec経路のWindows/macOS実施要否確認、台帳記入と2巡。
+- **X06 iOS実機実証**（stdio-ios-device-verification.mjs 新規, a25f42d7）: macminiにpaired済みの iPhone 12 mini (iOS 26.5.2) を発見。`capture_device:"ios-device"` で 1125×2436 の実PNG取り込み、pymobiledevice3直接撮影と寸法一致、system:status-bar 108px + system:navigation-bar 68px の自動マスク、scroll明示拒否。証跡 `ios-device-r3`。環境fix: macminiの pymobiledevice3 mise shim が非loginで壊れるため uv tool install で実体化し driver PATHに `~/.local/bin` を前置。
+- 未完: X05/X07-Android実機（adb 0台=blocked見込）、M12 実GitHub起票（外部write要承認）、X03/X04 pluginのWindows/macOS実施、X08同一検体の4面横断、M09/M11/M13/M14/M15の個別証跡確認、台帳記入と2巡。
