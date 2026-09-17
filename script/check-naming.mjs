@@ -79,12 +79,16 @@ const PLURAL_DIRS = new Set([
 const KEBAB_FILE = /^[a-z0-9]+(-[a-z0-9]+)*(\.[a-z0-9]+(-[a-z0-9]+)*)*$/;
 // kebab-case dir, or the __x__ testing convention (e.g. __mock__).
 const KEBAB_DIR = /^([a-z0-9]+(-[a-z0-9]+)*|__[a-z0-9]+__)$/;
+// セッションログは日時を ISO 8601 の T 区切りで記録する既存の永続形式。
+const HISTORICAL_SESSION_LOG =
+  /^logs\/\d{4}\/\d{2}\/\d{4}-\d{2}-\d{2}T\d{4}(?:--[a-z0-9]+(?:-[a-z0-9]+)*){3}--[a-f0-9]{8}\.md$/;
 
 const files = execSync("git ls-files", { encoding: "utf8" }).split(/\r?\n/).filter(Boolean);
 
 const violations = [];
 for (const file of files) {
   if (EXEMPT_PREFIXES.some((p) => file.startsWith(p))) continue;
+  if (HISTORICAL_SESSION_LOG.test(file)) continue;
 
   const parts = file.split("/");
   const base = parts.pop();

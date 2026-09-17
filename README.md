@@ -126,11 +126,25 @@ Use absolute paths in the MCP configuration. Restart the server after updating t
 4. Inspect the comparison conditions and original images before editing the implementation.
    Use `inspect_node` and `get_design_tokens` for node and token details.
 5. Keep the same `campaign_id` while fixing one task. Use a new ID for a new branch or task.
+
    Re-capture, compare again, and use `verify_fix` to check the claimed improvement.
 6. Stop when `loopGuard.stop` is true and report its reason. Missing stop information
    or `UNCERTAIN` requires investigation, not blind retries. A high `matchRate` alone
    does not prove correctness; do not loop until it reaches 100%.
 7. Retrieve the full result with `generate_diff_report` using the returned `comparisonId`.
+
+Image dimensions describe the canvas, not necessarily the device viewport. Before changing
+positions in CSS, provide `comparison_conditions` when the viewport and coordinate origin
+are known. Each `design` / `screenshot` side accepts `viewport: {width, height}` in logical
+pixels, `pixelRatio` in physical pixels per logical pixel, and `origin: {x, y}` for the
+image's top-left position in a common reference coordinate system (logical pixels).
+For example, two 390×1839 canvases can represent viewport heights of 693 and 1839;
+a bottom sheet will then appear at different positions without proving a CSS defect.
+The response separates measured canvas dimensions from declared conditions and reports
+`compatible`, `mismatch`, or `unverified`. Missing fields remain unverified; equal declarations
+are not independent proof. A viewport/origin mismatch returns `UNCERTAIN` and asks you to
+check capture conditions before editing the product. These declarations do not move or crop
+images. Actual normalization and alignment remain in `normalization` and `diffReport.alignment`.
 
 ### Compare an existing screenshot
 

@@ -1,7 +1,10 @@
 import * as path from "node:path";
+import { copyFile, mkdtemp, rename } from "node:fs/promises";
+import { tmpdir } from "node:os";
 
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
+import sharp from "sharp";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { z } from "zod";
 
@@ -164,6 +167,7 @@ describe("verify_fix", () => {
     });
 
     const priorData = JSON.parse(extractText(prior));
+    const priorEntry = await getComparisonEntry(priorData.comparisonId);
     const result = await client.callTool({
       name: "verify_fix",
       arguments: {
@@ -175,7 +179,7 @@ describe("verify_fix", () => {
       },
     });
 
-    expect(result.isError).toBeFalsy();
+    expect(result.isError, extractText(result)).toBeFalsy();
 
     const data = JSON.parse(extractText(result));
     expect(data.fixedNode).toBe("section-footer");
@@ -190,6 +194,40 @@ describe("verify_fix", () => {
     expect(activeSession?.sourceKey).not.toBe(activeSession?.comparisonId);
     expect(activeSession?.sourceKey).toBe(`local:${designPath}`);
     expect(activeSession?.matchRate).toBe(100);
+    const currentEntry = activeSession
+      ? await getComparisonEntry(activeSession.comparisonId)
+      : undefined;
+    expect(priorEntry?.result.normalization?.screenshotHeight).toBe(1548);
+    expect(currentEntry?.result.normalization?.screenshotHeight).toBe(600);
+    expect(priorEntry?.result.normalization?.containResized).toBe(true);
+    expect(currentEntry?.result.normalization?.containResized).toBe(false);
+  });
+
+  it("ディスクから復元したbaselineでもverification contextを照合する", async () => {
+    const fixtureDirectory = path.join(FIXTURES_ROOT, "pair-01-simple-static-lp");
+    const designPath = path.join(fixtureDirectory, "figma-export.png");
+    const screenshotPath = path.join(fixtureDirectory, "impl-layout-off.png");
+    const prior = await client.callTool({
+      name: "compare_design",
+      arguments: { design_source: designPath, screenshot: screenshotPath },
+    });
+    const priorData = z.object({ comparisonId: z.string() }).parse(JSON.parse(extractText(prior)));
+
+    clearComparisonHistory();
+    const restored = await getComparisonEntry(priorData.comparisonId);
+    expect(restored?.result.verificationContext?.fingerprint).toMatch(/^[0-9a-f]{64}$/);
+
+    const result = await client.callTool({
+      name: "verify_fix",
+      arguments: {
+        design_source: designPath,
+        screenshot: screenshotPath,
+        prior_comparison_id: priorData.comparisonId,
+        expected_target_node_id: "whole-frame",
+      },
+    });
+
+    expect(result.isError, extractText(result)).toBeFalsy();
   });
 
   it("前回比較のキャンペーンを引き継ぎ、既定履歴へ混ぜない", async () => {
@@ -223,6 +261,43 @@ describe("verify_fix", () => {
     expect(currentEntry?.sourceKey).toBe(priorEntry?.sourceKey);
     expect(currentEntry?.sourceKey).not.toBe(`local:${designPath}`);
     expect(currentEntry?.result.loopGuard?.step).toBe(2);
+  });
+
+  it("whole-frame行を持たない旧baselineには再記録手順を返す", async () => {
+    const fixtureDirectory = path.join(FIXTURES_ROOT, "pair-01-simple-static-lp");
+    const designPath = path.join(fixtureDirectory, "figma-export.png");
+    const screenshotPath = path.join(fixtureDirectory, "impl-layout-off.png");
+    const prior = await client.callTool({
+      name: "compare_design",
+      arguments: { design_source: designPath, screenshot: screenshotPath },
+    });
+    const priorData = z.object({ comparisonId: z.string() }).parse(JSON.parse(extractText(prior)));
+    const priorEntry = await getComparisonEntry(priorData.comparisonId);
+    if (!priorEntry?.result.diffReport) {
+      throw new Error("prior diff report not found");
+    }
+
+    // whole-frame 行を導入する前の保存形式を再現する。通常の missing と同じ文言だと、
+    // 呼ぶ側は存在しない node ID を探し続けて baseline の取り直しへ進めない。
+    priorEntry.result.diffReport.regionScores = priorEntry.result.diffReport.regionScores.filter(
+      (score) => score.scope !== "root",
+    );
+
+    const result = await client.callTool({
+      name: "verify_fix",
+      arguments: {
+        design_source: designPath,
+        screenshot: screenshotPath,
+        prior_comparison_id: priorData.comparisonId,
+        expected_target_node_id: "whole-frame",
+      },
+    });
+
+    expect(result.isError).toBeTruthy();
+    expect(extractText(result)).toContain(
+      `baseline predates the whole-frame row: ${priorData.comparisonId}`,
+    );
+    expect(extractText(result)).toContain("run compare_design once more");
   });
 
   // 局所比較では子の行しか無く、対象ノード自身の行が無いと引き当てに失敗していた。
@@ -395,5 +470,370 @@ describe("verify_fix", () => {
     const data = JSON.parse(extractText(result));
     expect(data.verdict).toBe("regressed");
     expect(data.structureDelta).toBeLessThan(-0.05);
+  });
+
+  it("threshold がbaselineから変わった場合は領域比較を拒否する", async () => {
+    const fixtureDirectory = path.join(FIXTURES_ROOT, "pair-01-simple-static-lp");
+    const designPath = path.join(fixtureDirectory, "figma-export.png");
+    const screenshotPath = path.join(fixtureDirectory, "impl-layout-off.png");
+    const prior = await client.callTool({
+      name: "compare_design",
+      arguments: { design_source: designPath, screenshot: screenshotPath, threshold: 0.1 },
+    });
+    const priorData = z.object({ comparisonId: z.string() }).parse(JSON.parse(extractText(prior)));
+    const result = await client.callTool({
+      name: "verify_fix",
+      arguments: {
+        design_source: designPath,
+        screenshot: screenshotPath,
+        prior_comparison_id: priorData.comparisonId,
+        expected_target_node_id: "whole-frame",
+        threshold: 0.2,
+      },
+    });
+
+    expect(result.isError).toBeTruthy();
+    expect(extractText(result)).toContain("comparison.effectiveThreshold");
+  });
+
+  it("effective thresholdが同じでもprofile指定が変われば拒否する", async () => {
+    const fixtureDirectory = path.join(FIXTURES_ROOT, "pair-01-simple-static-lp");
+    const designPath = path.join(fixtureDirectory, "figma-export.png");
+    const screenshotPath = path.join(fixtureDirectory, "impl-layout-off.png");
+    const prior = await client.callTool({
+      name: "compare_design",
+      arguments: { design_source: designPath, screenshot: screenshotPath },
+    });
+    const priorData = z.object({ comparisonId: z.string() }).parse(JSON.parse(extractText(prior)));
+    const result = await client.callTool({
+      name: "verify_fix",
+      arguments: {
+        design_source: designPath,
+        screenshot: screenshotPath,
+        prior_comparison_id: priorData.comparisonId,
+        expected_target_node_id: "whole-frame",
+        profile: "balanced",
+      },
+    });
+
+    expect(result.isError).toBeTruthy();
+    expect(extractText(result)).toContain("comparison.profile");
+  });
+
+  it("baselineのdeclared comparison conditionsを省略時に復元する", async () => {
+    const fixtureDirectory = path.join(FIXTURES_ROOT, "pair-01-simple-static-lp");
+    const designPath = path.join(fixtureDirectory, "figma-export.png");
+    const screenshotPath = path.join(fixtureDirectory, "impl-layout-off.png");
+    const comparisonConditions = {
+      design: { viewport: { width: 400, height: 300 }, pixelRatio: 1, origin: { x: 0, y: 0 } },
+      screenshot: {
+        viewport: { width: 400, height: 300 },
+        pixelRatio: 1,
+        origin: { x: 0, y: 0 },
+      },
+    };
+    const prior = await client.callTool({
+      name: "compare_design",
+      arguments: {
+        design_source: designPath,
+        screenshot: screenshotPath,
+        comparison_conditions: comparisonConditions,
+      },
+    });
+    const priorData = z.object({ comparisonId: z.string() }).parse(JSON.parse(extractText(prior)));
+    const result = await client.callTool({
+      name: "verify_fix",
+      arguments: {
+        design_source: designPath,
+        screenshot: screenshotPath,
+        prior_comparison_id: priorData.comparisonId,
+        expected_target_node_id: "whole-frame",
+      },
+    });
+
+    expect(result.isError, extractText(result)).toBeFalsy();
+  });
+
+  it("明示したcomparison conditionsがbaselineから変われば拒否する", async () => {
+    const fixtureDirectory = path.join(FIXTURES_ROOT, "pair-01-simple-static-lp");
+    const designPath = path.join(fixtureDirectory, "figma-export.png");
+    const screenshotPath = path.join(fixtureDirectory, "impl-layout-off.png");
+    const prior = await client.callTool({
+      name: "compare_design",
+      arguments: {
+        design_source: designPath,
+        screenshot: screenshotPath,
+        comparison_conditions: {
+          design: { pixelRatio: 1 },
+          screenshot: { pixelRatio: 1 },
+        },
+      },
+    });
+    const priorData = z.object({ comparisonId: z.string() }).parse(JSON.parse(extractText(prior)));
+    const result = await client.callTool({
+      name: "verify_fix",
+      arguments: {
+        design_source: designPath,
+        screenshot: screenshotPath,
+        prior_comparison_id: priorData.comparisonId,
+        expected_target_node_id: "whole-frame",
+        comparison_conditions: {
+          design: { pixelRatio: 2 },
+          screenshot: { pixelRatio: 2 },
+        },
+      },
+    });
+
+    expect(result.isError).toBeTruthy();
+    expect(extractText(result)).toContain("comparison.declaredConditions");
+  });
+
+  it("同じmask IDの座標が変わった場合は領域比較を拒否する", async () => {
+    const fixtureDirectory = path.join(FIXTURES_ROOT, "pair-01-simple-static-lp");
+    const designPath = path.join(fixtureDirectory, "figma-export.png");
+    const screenshotPath = path.join(fixtureDirectory, "impl-layout-off.png");
+    const projectId = `verify-mask-${crypto.randomUUID()}`;
+    const created = await client.callTool({
+      name: "create_project",
+      arguments: { id: projectId, name: projectId, implementation_url: "https://example.test" },
+    });
+    expect(created.isError, extractText(created)).toBeFalsy();
+    await client.callTool({
+      name: "set_ignore_regions",
+      arguments: {
+        project_id: projectId,
+        regions: [{ id: "same-id", x: 0, y: 0, width: 10, height: 10 }],
+      },
+    });
+    const prior = await client.callTool({
+      name: "compare_design",
+      arguments: { design_source: designPath, screenshot: screenshotPath, project_id: projectId },
+    });
+    const priorData = z.object({ comparisonId: z.string() }).parse(JSON.parse(extractText(prior)));
+    await client.callTool({
+      name: "set_ignore_regions",
+      arguments: {
+        project_id: projectId,
+        regions: [{ id: "same-id", x: 20, y: 0, width: 10, height: 10 }],
+      },
+    });
+    const result = await client.callTool({
+      name: "verify_fix",
+      arguments: {
+        design_source: designPath,
+        screenshot: screenshotPath,
+        project_id: projectId,
+        prior_comparison_id: priorData.comparisonId,
+        expected_target_node_id: "whole-frame",
+      },
+    });
+
+    expect(result.isError).toBeTruthy();
+    expect(extractText(result)).toMatch(/mask\.(effectiveRegions|maskSha256)/);
+  });
+
+  it("適用cropが変わった場合は領域比較を拒否する", async () => {
+    const fixtureDirectory = path.join(FIXTURES_ROOT, "pair-01-simple-static-lp");
+    const designPath = path.join(fixtureDirectory, "figma-export.png");
+    const screenshotPath = path.join(fixtureDirectory, "impl-layout-off.png");
+    const projectId = `verify-crop-${crypto.randomUUID()}`;
+    const created = await client.callTool({
+      name: "create_project",
+      arguments: { id: projectId, name: projectId, implementation_url: "https://example.test" },
+    });
+    expect(created.isError, extractText(created)).toBeFalsy();
+    await client.callTool({
+      name: "set_crop_region",
+      arguments: {
+        project_id: projectId,
+        frame_name: "",
+        region: { x: 0, y: 0, width: 400, height: 300 },
+      },
+    });
+    const prior = await client.callTool({
+      name: "compare_design",
+      arguments: { design_source: designPath, screenshot: screenshotPath, project_id: projectId },
+    });
+    const priorData = z.object({ comparisonId: z.string() }).parse(JSON.parse(extractText(prior)));
+    await client.callTool({
+      name: "set_crop_region",
+      arguments: {
+        project_id: projectId,
+        frame_name: "",
+        region: { x: 1, y: 0, width: 399, height: 300 },
+      },
+    });
+    const result = await client.callTool({
+      name: "verify_fix",
+      arguments: {
+        design_source: designPath,
+        screenshot: screenshotPath,
+        project_id: projectId,
+        prior_comparison_id: priorData.comparisonId,
+        expected_target_node_id: "whole-frame",
+      },
+    });
+
+    expect(result.isError).toBeTruthy();
+    expect(extractText(result)).toContain("comparison.geometry");
+  });
+
+  it("design sourceが変わった場合は領域比較を拒否する", async () => {
+    const baselineDirectory = path.join(FIXTURES_ROOT, "pair-01-simple-static-lp");
+    const currentDirectory = path.join(FIXTURES_ROOT, "pair-02-multi-section-lp");
+    const baselineDesign = path.join(baselineDirectory, "figma-export.png");
+    const baselineScreenshot = path.join(baselineDirectory, "impl-layout-off.png");
+    const currentDesign = path.join(currentDirectory, "figma-export.png");
+    const currentScreenshot = path.join(currentDirectory, "impl-correct.png");
+    const prior = await client.callTool({
+      name: "compare_design",
+      arguments: { design_source: baselineDesign, screenshot: baselineScreenshot },
+    });
+    const priorData = z.object({ comparisonId: z.string() }).parse(JSON.parse(extractText(prior)));
+    const priorEntry = await getComparisonEntry(priorData.comparisonId);
+    expect(JSON.stringify(priorEntry?.result.verificationContext)).not.toContain(baselineDesign);
+    const result = await client.callTool({
+      name: "verify_fix",
+      arguments: {
+        design_source: currentDesign,
+        screenshot: currentScreenshot,
+        prior_comparison_id: priorData.comparisonId,
+        expected_target_node_id: "whole-frame",
+      },
+    });
+
+    expect(result.isError).toBeTruthy();
+    expect(extractText(result)).toMatch(/design\.(sourceIdentitySha256|imageSha256)/);
+  });
+
+  it("同じdesign pathのPNG bytesが変わった場合は領域比較を拒否する", async () => {
+    const fixtureDirectory = path.join(FIXTURES_ROOT, "pair-01-simple-static-lp");
+    const sourceDesign = path.join(fixtureDirectory, "figma-export.png");
+    const screenshotPath = path.join(fixtureDirectory, "impl-layout-off.png");
+    const temporaryDirectory = await mkdtemp(path.join(tmpdir(), "figdiff-verify-design-"));
+    const designPath = path.join(temporaryDirectory, "design.png");
+    const changedPath = path.join(temporaryDirectory, "changed.png");
+    await copyFile(sourceDesign, designPath);
+    process.env.FIGDIFF_ALLOWED_DIRS = temporaryDirectory;
+    const prior = await client.callTool({
+      name: "compare_design",
+      arguments: { design_source: designPath, screenshot: screenshotPath },
+    });
+    const priorData = z.object({ comparisonId: z.string() }).parse(JSON.parse(extractText(prior)));
+    await sharp(designPath)
+      .composite([
+        {
+          input: {
+            create: {
+              width: 1,
+              height: 1,
+              channels: 4,
+              background: { r: 255, g: 0, b: 255, alpha: 1 },
+            },
+          },
+          left: 0,
+          top: 0,
+        },
+      ])
+      .png()
+      .toFile(changedPath);
+    await rename(changedPath, designPath);
+    const result = await client.callTool({
+      name: "verify_fix",
+      arguments: {
+        design_source: designPath,
+        screenshot: screenshotPath,
+        prior_comparison_id: priorData.comparisonId,
+        expected_target_node_id: "whole-frame",
+      },
+    });
+
+    expect(result.isError).toBeTruthy();
+    expect(extractText(result)).toContain("design.imageSha256");
+  });
+
+  it("design backgroundが変わった場合は領域比較を拒否する", async () => {
+    const fixtureDirectory = path.join(FIXTURES_ROOT, "pair-01-simple-static-lp");
+    const designPath = path.join(fixtureDirectory, "figma-export.png");
+    const screenshotPath = path.join(fixtureDirectory, "impl-layout-off.png");
+    const prior = await client.callTool({
+      name: "compare_design",
+      arguments: {
+        design_source: designPath,
+        screenshot: screenshotPath,
+        design_background: "#fff",
+      },
+    });
+    const priorData = z.object({ comparisonId: z.string() }).parse(JSON.parse(extractText(prior)));
+    const result = await client.callTool({
+      name: "verify_fix",
+      arguments: {
+        design_source: designPath,
+        screenshot: screenshotPath,
+        design_background: "#000",
+        prior_comparison_id: priorData.comparisonId,
+        expected_target_node_id: "whole-frame",
+      },
+    });
+
+    expect(result.isError).toBeTruthy();
+    expect(extractText(result)).toContain("design.background");
+  });
+
+  it("verification contextのない旧baselineには再取得手順を返す", async () => {
+    const fixtureDirectory = path.join(FIXTURES_ROOT, "pair-01-simple-static-lp");
+    const designPath = path.join(fixtureDirectory, "figma-export.png");
+    const screenshotPath = path.join(fixtureDirectory, "impl-layout-off.png");
+    const prior = await client.callTool({
+      name: "compare_design",
+      arguments: { design_source: designPath, screenshot: screenshotPath },
+    });
+    const priorData = z.object({ comparisonId: z.string() }).parse(JSON.parse(extractText(prior)));
+    const priorEntry = await getComparisonEntry(priorData.comparisonId);
+    if (!priorEntry) throw new Error("prior comparison missing");
+    priorEntry.result.verificationContext = undefined;
+    const result = await client.callTool({
+      name: "verify_fix",
+      arguments: {
+        design_source: designPath,
+        screenshot: screenshotPath,
+        prior_comparison_id: priorData.comparisonId,
+        expected_target_node_id: "whole-frame",
+      },
+    });
+
+    expect(result.isError).toBeTruthy();
+    expect(extractText(result)).toContain("baseline predates verification context");
+    expect(extractText(result)).toContain("run compare_design once more");
+  });
+
+  it("fingerprintがpayloadと一致しないbaselineを拒否する", async () => {
+    const fixtureDirectory = path.join(FIXTURES_ROOT, "pair-01-simple-static-lp");
+    const designPath = path.join(fixtureDirectory, "figma-export.png");
+    const screenshotPath = path.join(fixtureDirectory, "impl-layout-off.png");
+    const prior = await client.callTool({
+      name: "compare_design",
+      arguments: { design_source: designPath, screenshot: screenshotPath },
+    });
+    const priorData = z.object({ comparisonId: z.string() }).parse(JSON.parse(extractText(prior)));
+    const priorEntry = await getComparisonEntry(priorData.comparisonId);
+    if (!priorEntry?.result.verificationContext) {
+      throw new Error("prior verification context missing");
+    }
+    priorEntry.result.verificationContext.fingerprint = "0".repeat(64);
+
+    const result = await client.callTool({
+      name: "verify_fix",
+      arguments: {
+        design_source: designPath,
+        screenshot: screenshotPath,
+        prior_comparison_id: priorData.comparisonId,
+        expected_target_node_id: "whole-frame",
+      },
+    });
+
+    expect(result.isError).toBeTruthy();
+    expect(extractText(result)).toContain("baseline verification context is invalid");
+    expect(extractText(result)).toContain("run compare_design once more");
   });
 });

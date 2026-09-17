@@ -53,4 +53,36 @@ describe("CompareAnimationResultSchema", () => {
     });
     expect(result.success).toBe(true);
   });
+
+  it.each([
+    -0.01,
+    1.01,
+    Number.NaN,
+    Number.POSITIVE_INFINITY,
+  ])("frame matchRate %s を0..1外として弾く", (matchRate) => {
+    expect(
+      CompareAnimationResultSchema.safeParse({
+        ...base,
+        frames: [{ ...base.frames[0], matchRate }],
+      }).success,
+    ).toBe(false);
+  });
+
+  it.each([
+    -0.01,
+    1.01,
+    Number.NaN,
+    Number.POSITIVE_INFINITY,
+  ])("alignment mismatchRate %s を0..1外として弾く", (mismatchRate) => {
+    expect(
+      CompareAnimationResultSchema.safeParse({
+        ...base,
+        driftMeasured: true,
+        driftUnmeasuredReason: undefined,
+        temporal: { ...base.temporal, maxAbsDriftMs: 0 },
+        alignments: [{ designAtMs: 0, matchedAtMs: 0, driftMs: 0, mismatchRate }],
+        frameTimeSource: "seek",
+      }).success,
+    ).toBe(false);
+  });
 });

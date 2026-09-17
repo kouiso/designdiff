@@ -116,3 +116,29 @@ MCPとdesktopに同じ入力・設定を渡す。共通の入力情報がある�
 7. 修正が入ったら巡回番号をリセットする。失敗・未実行・ブロックが残る限り完了とはしない。
 
 Windows／WSLで実行不能の項目は、失敗したコマンドと復旧後の実行手順を `handoff/windows-wsl-verification.md` に残す。
+
+
+## 最終巡回台帳の照合
+
+`docs/evidence/campaign-ledger.json` に最終製品SHA、2巡それぞれの異なる実行ID・開始終了時刻、実行記録を保存する。各記録は巡回実行IDと巡回内の実行時刻、case・platform・route、製品SHA、clean状態、build digest、環境・入力・手順・期待・実測・独立oracle、証跡パスとSHA-256を持つ。2巡目は1巡目終了後に実施する。証跡revisionは製品SHAと分離する。
+
+`script/verify-campaign-evidence.mjs` は台帳と証跡ファイルの整合を検査する。内容の意味や実際の動作を認定するものではなく、独立レビュー・実利用の証明と併用する。未固定SHA、必須経路の欠落、FAIL/BLOCKED/NOT RUN、重複、dirtyな製品、異なる製品SHA、改変・欠落した証跡を拒否する。
+
+必須経路は以下の組合せで固定する。OS固有の非対応経路はこの表に含めない。表にある経路の前提不足はBLOCKEDであり、N/Aで省略しない。
+
+| ケース | OS | 経路（各2巡） |
+| --- | --- | --- |
+| C01–C13 | WSL/Linux、Windows、macOS | MCP、desktop |
+| M01–M16 | WSL/Linux、Windows、macOS | MCP |
+| D01–D10 | WSL/Linux、Windows、macOS | desktop |
+| X01–X02 | WSL/Linux、Windows、macOS | Chrome拡張 |
+| X03–X04 | WSL/Linux、Windows、macOS | Figma plugin |
+| X05 | WSL/Linux、Windows、macOS | Android（2台） |
+| X06 | macOS | iOS Simulator、iOS実機 |
+| X07 | WSL/Linux、Windows、macOS | Android |
+| X07 | macOS | iOS Simulator、iOS実機 |
+| X08 | WSL/Linux、Windows、macOS | MCP、desktop、Chrome拡張、Figma plugin |
+| X09 | WSL/Linux、Windows、macOS | MCP、desktop |
+| X10 | リポジトリ共通 | 依存グラフ |
+
+49ケースをOS・経路・2巡へ展開すると394記録になる。複数ケースを同じ実行で検証してもよいが、各ケースの期待・実測と参照証跡を区別し、1巡目の記録を2巡目の実行証明に再利用しない。

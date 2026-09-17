@@ -1,8 +1,11 @@
 import type {
   CompareDesignResult,
   ConvergenceHistory,
+  DesignToken,
   FigmaAuthState,
   Frame,
+  IgnoreRegionConfigEntry,
+  IgnoreRegionConfigFile,
   NodeInspection,
   Project,
   ViewMode,
@@ -72,6 +75,7 @@ export interface ElectronAPI {
   getFigmaPageFrames(fileKey: string, pageNodeId: string): Promise<Frame[]>;
   getFigmaFrameImage(fileKey: string, nodeId: string, scale?: number): Promise<string>;
   getFigmaNodeDetail(fileKey: string, nodeId: string, depth?: number): Promise<NodeInspection>;
+  getFigmaDesignTokens(fileKey: string, nodeId: string, depth?: number): Promise<DesignToken[]>;
   saveFigmaToken(token: string): Promise<void>;
   getFigmaToken(): Promise<string | null>;
   deleteFigmaToken(): Promise<void>;
@@ -87,6 +91,68 @@ export interface ElectronAPI {
   oauth: OAuthAPI;
   activeSession: ActiveSessionAPI;
   convergence: ConvergenceAPI;
+  ignoreRegion: IgnoreRegionAPI;
+  issueReport: IssueReportAPI;
+  figmaNodeVerification: FigmaNodeVerificationAPI;
+}
+
+export interface FigmaNodeVerificationInput {
+  fileKey: string;
+  frameNodeId: string;
+  targetNodeId: string;
+  scale?: number;
+}
+
+export interface FigmaNodeVerificationSource {
+  sourceVersion: string;
+  frameNodeId: string;
+  targetNodeId: string;
+  targetNodeName: string;
+  rootBox: { x: number; y: number; width: number; height: number };
+  targetBox: { x: number; y: number; width: number; height: number };
+  imageBase64: string;
+  requestedScale: number;
+}
+
+export interface FigmaNodeVerificationAPI {
+  load(input: FigmaNodeVerificationInput): Promise<FigmaNodeVerificationSource>;
+}
+
+export type IssueReportCategory = "bug" | "usability" | "enhancement" | "docs";
+
+export interface IssueReportInput {
+  title: string;
+  body: string;
+  category?: IssueReportCategory;
+}
+
+export interface IssueReportPreview {
+  draftId: string;
+  repository: { owner: string; repo: string };
+  title: string;
+  body: string;
+  labels: string[];
+  maskedCount: number;
+  duplicate: { status: "found"; issueNumber: number; issueUrl: string } | { status: "none" };
+}
+
+export interface IssueReportSubmitResult {
+  issueUrl: string;
+  issueNumber: number;
+  deduped: boolean;
+  maskedCount: number;
+}
+
+export interface IssueReportAPI {
+  prepare(input: IssueReportInput): Promise<IssueReportPreview>;
+  submit(draftId: string): Promise<IssueReportSubmitResult>;
+  discard(draftId: string): Promise<void>;
+}
+
+export interface IgnoreRegionAPI {
+  list(projectId: string, frameName?: string): Promise<IgnoreRegionConfigEntry[]>;
+  save(projectId: string, entry: IgnoreRegionConfigEntry): Promise<IgnoreRegionConfigFile>;
+  delete(projectId: string, regionId: string): Promise<IgnoreRegionConfigFile>;
 }
 
 export interface OAuthAPI {

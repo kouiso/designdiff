@@ -180,9 +180,14 @@ export function registerCompareAnimation(server: McpServer): void {
           }
           // 実際にその絵が表す時刻を使う。要求した時刻をそのまま名乗ると、
           // 測ったズレが撮影の遅れなのか実装の遅れなのか分からんようになる。
-          implFrames = capture.framePaths.map((frame) => ({
+          // capture結果も外部境界として検査する。wall-clockの重複や逆行を黙って通すと、
+          // service側が同じ時刻の別画像を区別できず、撮れていないフレームを比較したことになる。
+          const actualTimestamps = parseFrameTimestamps(
+            capture.framePaths.map((frame) => frame.actualAtMs),
+          );
+          implFrames = capture.framePaths.map((frame, index) => ({
             path: frame.path,
-            atMs: frame.actualAtMs,
+            atMs: actualTimestamps[index],
           }));
           frameTimeSource = capture.frameTimeSource;
         } else {
@@ -209,7 +214,8 @@ export function registerCompareAnimation(server: McpServer): void {
           });
           return {
             status: comparison.result.status ?? "UNCERTAIN",
-            matchRate: comparison.result.matchRate,
+            // 静止画の百分率を、時系列比較の0〜1契約へ変換する。
+            matchRate: comparison.result.matchRate / 100,
             comparisonId: comparison.result.comparisonId,
             diffImagePath: comparison.result.diffImagePath,
           };

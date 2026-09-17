@@ -4,14 +4,19 @@
  * Node.js native (no Canvas API)
  */
 
-import pixelmatch from "pixelmatch";
+import { createHash } from "node:crypto";
+
 import sharp, { type Sharp } from "sharp";
 
 import {
   PERCEPTIBLE_DIFF_CONTRADICTION_RATIO,
+  applyIgnoreRegions as zeroIgnoreRegions,
+  buildIgnoreMask,
+  classifyIgnoreRegionEntries,
   buildVerifiedInsetCandidates,
   clusterDiffPixels,
   clusterDiffPixelsGridDetailed,
+  comparePixels,
   generateMatchSuggestion,
   matchDiffRegionsToNodes,
   resolveAlignment,
@@ -23,6 +28,8 @@ import {
   type GridClusterOptions,
   type GridSummary,
   type IgnoreRegion,
+  type IgnoreRegionConfigEntry,
+  type IgnoreRegionCoordinateContext,
   type Alignment,
 } from "@figdiff/shared";
 
@@ -69,6 +76,9 @@ interface CompareImagesOptions {
   // 既知の意図的差分マスク。各矩形内の差分ピクセルは matchRate / clustering から除外。
   // 矩形は cropRegion 適用後の座標系 (= screenshot ピクセル座標) で指定する。
   ignoreRegions?: IgnoreRegion[];
+  ignoreRegionEntries?: IgnoreRegionConfigEntry[];
+  ignoreRegionFileKey?: string;
+  ignoreRegionNodeId?: string;
   // crop が共通範囲を持たず中止された場合に使う、crop 前の完全な mask 集合。
   fallbackIgnoreRegions?: IgnoreRegion[];
   // runner が端末 preset と crop 条件から内部検証した status bar 高さ。
@@ -107,6 +117,29 @@ interface ImageDimensions {
   width: number;
   height: number;
 }
+
+const clipIgnoreRegions = (
+  regions: readonly IgnoreRegion[] | undefined,
+  width: number,
+  height: number,
+): IgnoreRegion[] => {
+  return (regions ?? []).flatMap((region) => {
+    const left = Math.max(0, Math.floor(region.x));
+    const top = Math.max(0, Math.floor(region.y));
+    const right = Math.min(width, Math.floor(region.x + region.width));
+    const bottom = Math.min(height, Math.floor(region.y + region.height));
+    if (right <= left || bottom <= top) return [];
+    return [
+      {
+        x: left,
+        y: top,
+        width: right - left,
+        height: bottom - top,
+        ...(region.label === undefined ? {} : { label: region.label }),
+      },
+    ];
+  });
+};
 
 function scaleRegionToWorkingPixels(
   region: CropRegion,
@@ -333,12 +366,6 @@ interface PaddingMask {
   height: number;
 }
 
-interface IgnoreMaskResult {
-  maskedPixelCount: number;
-  // 比較の対象外に置いた画素。1 = 対象外。
-  mask?: Uint8Array;
-}
-
 interface GridCellGeometry {
   row: number;
   col: number;
@@ -376,10 +403,6 @@ interface QuickTileCandidate {
   width: number;
   height: number;
   diffPixelCount: number;
-}
-
-function isScreenshotOnlyIgnoreRegion(region: IgnoreRegion): boolean {
-  return region.label?.startsWith("system:") ?? false;
 }
 
 const isVisibleDiffPixelAtIndex = (diffPixelData: Uint8ClampedArray, idx: number): boolean => {
@@ -909,7 +932,7 @@ export async function compareImages(
     figmaNodeId,
   } = options;
   const nativeCropRegion = options.cropRegion;
-  const nativeIgnoreRegions = options.ignoreRegions;
+  let nativeIgnoreRegions = options.ignoreRegions;
   const nativeFallbackIgnoreRegions = options.fallbackIgnoreRegions;
   const nativeVerifiedSystemUiTopInset = options.verifiedSystemUiTopInset;
   let cropRegion = nativeCropRegion;
@@ -933,6 +956,30 @@ export async function compareImages(
   if (designWidth === 0 || designHeight === 0 || screenshotWidth === 0 || screenshotHeight === 0) {
     throw new Error("Invalid image dimensions");
   }
+
+  const contextCropRegion = nativeCropRegion
+    ? resolveAppliedCropRegion(nativeCropRegion, screenshotWidth, screenshotHeight)
+    : null;
+  const ignoreRegionContext: IgnoreRegionCoordinateContext = {
+    canvas_width: contextCropRegion?.width ?? screenshotWidth,
+    canvas_height: contextCropRegion?.height ?? screenshotHeight,
+    design_original_width: designWidth,
+    design_original_height: designHeight,
+    screenshot_original_width: screenshotWidth,
+    screenshot_original_height: screenshotHeight,
+    file_key: options.ignoreRegionFileKey,
+    node_id: options.ignoreRegionNodeId,
+    crop_region: contextCropRegion ?? undefined,
+  };
+  const ignoreRegionResolution = classifyIgnoreRegionEntries(
+    options.ignoreRegionEntries ?? [],
+    ignoreRegionContext,
+  );
+  const resolvedPersistedRegions = ignoreRegionResolution.applicable.map(
+    ({ x, y, width, height, label }) => ({ x, y, width, height, label }),
+  );
+  nativeIgnoreRegions = [...(nativeIgnoreRegions ?? []), ...resolvedPersistedRegions];
+  ignoreRegions = nativeIgnoreRegions;
 
   // normalization レポートとアスペクト比診断は撮影時の実寸を使う。
   // 作業解像度ガードで縮小しても、報告値は native のまま維持する。
@@ -1262,7 +1309,7 @@ export async function compareImages(
     flattenTransparentPixels(screenshotPixels, backgroundColor);
   }
 
-  const diffPixelCount = pixelmatch(
+  const diffPixelCount = comparePixels(
     pixelmatchDesignPixels,
     screenshotPixels,
     diffPixelData,
@@ -1277,7 +1324,7 @@ export async function compareImages(
   const totalPixelCount = width * height - maskedPixelCount;
   const matchRate =
     totalPixelCount === 0
-      ? 100
+      ? 0
       : Math.round(((totalPixelCount - diffPixelCount) / totalPixelCount) * 100 * 100) / 100;
   // 判定と証拠を先に作る。矛盾で人間レビューへ回すとき、pixelmatch の閾値では
   // 1画素も差分にならないことがある。そのままだと差分画像が真っ黒、領域0件で
@@ -1312,7 +1359,7 @@ export async function compareImages(
   });
 
   const perceptibleMask = new Uint8Array(width * height);
-  const diffReport = buildDiffReport({
+  let diffReport = buildDiffReport({
     designPixels: reportDesignPixels,
     screenshotPixels: reportScreenshotPixels,
     width,
@@ -1341,6 +1388,32 @@ export async function compareImages(
       diffPixelCount: region.diffPixelCount,
     })),
   });
+  if (totalPixelCount === 0) {
+    diffReport = {
+      ...diffReport,
+      aggregateVerdict: "inconclusive",
+      rationale: "Ignore regions cover the entire canvas; no pixels remain for evaluation.",
+      structuralAssessment: diffReport.structuralAssessment
+        ? {
+            ...diffReport.structuralAssessment,
+            score: null,
+            evaluatedPixelCount: 0,
+            excludedPixelCount: width * height,
+            verdict: "inconclusive",
+            rationale: "All pixels were excluded by ignore regions.",
+          }
+        : undefined,
+    };
+  }
+  if (totalPixelCount === 0) {
+    diffReport.aggregateVerdict = "inconclusive";
+    diffReport.rationale =
+      "Ignore regions cover the entire comparison canvas, so no pixels remain for a reliable verdict.";
+    if (diffReport.structuralAssessment) {
+      diffReport.structuralAssessment.verdict = "inconclusive";
+      diffReport.structuralAssessment.rationale = diffReport.rationale;
+    }
+  }
 
   let maskPainted = false;
   let paintedPixelCount = 0;
@@ -1417,6 +1490,10 @@ export async function compareImages(
   const diffImageBase64 = await generateDiffImage(diffPixelData, width, height);
 
   const suggestion = generateMatchSuggestion(matchRate);
+  const contextApplicableIds = ignoreRegionResolution.applicable.map((entry) => entry.id);
+  const contextIncompatibleIds = ignoreRegionResolution.incompatible.map((entry) => entry.id);
+  const effectiveRegions = clipIgnoreRegions(ignoreRegions, width, height);
+  const effectiveMask = ignoreMaskResult.mask ?? new Uint8Array(width * height);
 
   return {
     comparisonId: comparisonId ?? `cmp-${Date.now()}`,
@@ -1425,6 +1502,7 @@ export async function compareImages(
     totalPixelCount,
     diffRegions,
     suggestion,
+    ...(totalPixelCount === 0 ? { status: "UNCERTAIN" as const } : {}),
     clusterTelemetry,
     clusterCollapse,
     gridSummary,
@@ -1440,6 +1518,16 @@ export async function compareImages(
       appliedScale,
       cropRegion: nativeAppliedCropRegion ?? undefined,
       workingCropRegion: appliedCropRegion ?? undefined,
+    },
+    ignoreRegionResolution: {
+      coordinateContext: ignoreRegionContext,
+      appliedIds: contextApplicableIds,
+      incompatibleIds: contextIncompatibleIds,
+      legacyIds: ignoreRegionResolution.legacy.map((entry) => entry.id),
+      effectiveCanvas: { width, height },
+      effectiveRegions,
+      maskedPixelCount,
+      maskSha256: createHash("sha256").update(effectiveMask).digest("hex"),
     },
   };
 }
@@ -1596,87 +1684,6 @@ async function cropImageBuffer(buffer: Buffer, cropRegion: CropRegion): Promise<
       height,
     })
     .toBuffer();
-}
-
-// ignoreRegions 前処理。各矩形を画像境界にクリップし、通常の user mask は
-// design / screenshot ピクセルを同一色 (0,0,0,0) で上書きする。
-// system:* mask は screenshot 側だけを design と同じピクセルへ揃える。
-// これで後段の pixelmatch は mask 範囲を「一致」として扱いながら、
-// device chrome preset で Figma 側の上端/下端を黒塗りしない。
-// 戻り値の diffPixelCount にも diff 可視化マークにも mask 範囲が
-// 含まれなくなる。OR 結合 (重なるピクセルは 1 度のみカウント)。
-// 戻り値は mask が覆ったユニークピクセル数 — matchRate 分母から引く。
-const zeroIgnoreRegions = (
-  designPixels: Uint8ClampedArray,
-  screenshotPixels: Uint8ClampedArray,
-  width: number,
-  height: number,
-  ignoreRegions: readonly IgnoreRegion[] | undefined,
-  precomputed?: IgnoreMaskResult,
-): IgnoreMaskResult => {
-  if (!ignoreRegions || ignoreRegions.length === 0) return { maskedPixelCount: 0 };
-
-  const { maskedPixelCount, mask } = precomputed ?? buildIgnoreMask(width, height, ignoreRegions);
-  for (const region of ignoreRegions) {
-    const screenshotOnly = isScreenshotOnlyIgnoreRegion(region);
-    const left = Math.max(0, Math.floor(region.x));
-    const top = Math.max(0, Math.floor(region.y));
-    const right = Math.min(width, Math.floor(region.x + region.width));
-    const bottom = Math.min(height, Math.floor(region.y + region.height));
-    if (right <= left || bottom <= top) continue;
-    for (let y = top; y < bottom; y += 1) {
-      const rowBase = y * width;
-      for (let x = left; x < right; x += 1) {
-        const i = rowBase + x;
-        const offset = i * 4;
-        if (screenshotOnly) {
-          screenshotPixels[offset] = designPixels[offset];
-          screenshotPixels[offset + 1] = designPixels[offset + 1];
-          screenshotPixels[offset + 2] = designPixels[offset + 2];
-          screenshotPixels[offset + 3] = designPixels[offset + 3];
-        } else {
-          designPixels[offset] = 0;
-          designPixels[offset + 1] = 0;
-          designPixels[offset + 2] = 0;
-          designPixels[offset + 3] = 0;
-          screenshotPixels[offset] = 0;
-          screenshotPixels[offset + 1] = 0;
-          screenshotPixels[offset + 2] = 0;
-          screenshotPixels[offset + 3] = 0;
-        }
-      }
-    }
-  }
-  return { maskedPixelCount, mask };
-};
-
-function buildIgnoreMask(
-  width: number,
-  height: number,
-  ignoreRegions: readonly IgnoreRegion[] | undefined,
-): IgnoreMaskResult {
-  if (!ignoreRegions || ignoreRegions.length === 0) return { maskedPixelCount: 0 };
-
-  // 位置補正と一次diffが同じ除外範囲を見るため、画素を書き換えずmaskだけ先に作る。
-  const mask = new Uint8Array(width * height);
-  let maskedPixelCount = 0;
-  for (const region of ignoreRegions) {
-    const left = Math.max(0, Math.floor(region.x));
-    const top = Math.max(0, Math.floor(region.y));
-    const right = Math.min(width, Math.floor(region.x + region.width));
-    const bottom = Math.min(height, Math.floor(region.y + region.height));
-    if (right <= left || bottom <= top) continue;
-    for (let y = top; y < bottom; y += 1) {
-      const rowBase = y * width;
-      for (let x = left; x < right; x += 1) {
-        const index = rowBase + x;
-        if (mask[index] !== 0) continue;
-        mask[index] = 1;
-        maskedPixelCount += 1;
-      }
-    }
-  }
-  return { maskedPixelCount, mask };
 }
 
 function buildGridSummary(

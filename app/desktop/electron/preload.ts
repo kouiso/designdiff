@@ -15,6 +15,9 @@ const api: ElectronAPI = {
   getFigmaNodeDetail: (fileKey, nodeId, depth = 3) =>
     ipcRenderer.invoke("figma:get-node-detail", fileKey, nodeId, depth),
 
+  getFigmaDesignTokens: (fileKey, nodeId, depth = 2) =>
+    ipcRenderer.invoke("figma:get-design-tokens", fileKey, nodeId, depth),
+
   saveFigmaToken: (token) => ipcRenderer.invoke("token:save", token),
 
   getFigmaToken: () => ipcRenderer.invoke("token:get"),
@@ -95,6 +98,20 @@ const api: ElectronAPI = {
         ipcRenderer.removeListener("convergence:updated", handler);
       };
     },
+  },
+  ignoreRegion: {
+    list: (projectId, frameName) => ipcRenderer.invoke("ignore-region:list", projectId, frameName),
+    save: (projectId, entry) => ipcRenderer.invoke("ignore-region:save", projectId, entry),
+    delete: (projectId, regionId) =>
+      ipcRenderer.invoke("ignore-region:delete", projectId, regionId),
+  },
+  issueReport: {
+    prepare: (input) => ipcRenderer.invoke("issue-report:prepare", input),
+    submit: (draftId) => ipcRenderer.invoke("issue-report:submit", draftId),
+    discard: (draftId) => ipcRenderer.invoke("issue-report:discard", draftId),
+  },
+  figmaNodeVerification: {
+    load: (input) => ipcRenderer.invoke("figma:get-node-verification-source", input),
   },
 };
 

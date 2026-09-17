@@ -273,7 +273,19 @@ export function diagnoseComparison(input: DiagnosisInput): ComparisonDiagnosis {
   const avgStructure = mean(input.regionScores.map((score) => score.structure));
   const avgColor = mean(input.regionScores.map((score) => score.color));
 
+  const conditionsWarning = input.preflightWarnings.find(
+    (warning) => warning.code === "comparison_conditions_mismatch",
+  );
+  const conditionsCause: DiagnosisCause | undefined = conditionsWarning
+    ? {
+        code: "comparison_conditions",
+        confidence: 1,
+        message: conditionsWarning.message,
+        suggestedFix: conditionsWarning.suggestedFix ?? conditionsWarning.message,
+      }
+    : undefined;
   const causes = [
+    conditionsCause,
     figmaExportCause(input.preflightWarnings),
     widthMismatchCause(input.preflightWarnings),
     aspectRatioPreflightCause(input.preflightWarnings),

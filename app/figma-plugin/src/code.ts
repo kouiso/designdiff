@@ -24,9 +24,9 @@ figma.showUI(__html__, { width: 360, height: 480, themeColors: true });
 
 type PluginMessage =
   | { type: "get-selection" }
-  | { type: "export-frame"; nodeId?: string }
-  | { type: "inspect-node"; nodeId?: string }
-  | { type: "compare-images"; designBase64: string; screenshotBase64: string }
+  | { type: "export-frame"; nodeId?: string; requestId?: string }
+  | { type: "inspect-node"; nodeId?: string; requestId?: string }
+  | { type: "compare-images"; designBase64: string; screenshotBase64: string; requestId?: string }
   | { type: "resize"; width: number; height: number }
   | { type: "close" };
 
@@ -36,13 +36,13 @@ figma.ui.onmessage = async (msg: PluginMessage) => {
       await handleGetSelection();
       break;
     case "export-frame":
-      await handleExportFrame(msg.nodeId);
+      await handleExportFrame(msg.nodeId, msg.requestId);
       break;
     case "inspect-node":
-      await handleInspectNode(msg.nodeId);
+      await handleInspectNode(msg.nodeId, msg.requestId);
       break;
     case "compare-images":
-      await handleCompareImages(msg.designBase64, msg.screenshotBase64);
+      await handleCompareImages(msg.designBase64, msg.screenshotBase64, msg.requestId);
       break;
     case "resize":
       figma.ui.resize(msg.width, msg.height);
@@ -97,7 +97,7 @@ export function toSceneNode(node: BaseNode | null): SceneNode | null {
   return node;
 }
 
-async function handleExportFrame(nodeId?: string): Promise<void> {
+async function handleExportFrame(nodeId?: string, requestId?: string): Promise<void> {
   let node: SceneNode | null = null;
 
   if (nodeId) {
@@ -107,7 +107,7 @@ async function handleExportFrame(nodeId?: string): Promise<void> {
   }
 
   if (!node) {
-    figma.ui.postMessage({ type: "export-result", error: "No node selected" });
+    figma.ui.postMessage({ type: "export-result", requestId, error: "No node selected" });
     return;
   }
 
@@ -121,6 +121,7 @@ async function handleExportFrame(nodeId?: string): Promise<void> {
 
     figma.ui.postMessage({
       type: "export-result",
+      requestId,
       base64,
       nodeId: node.id,
       nodeName: node.name,
@@ -131,6 +132,7 @@ async function handleExportFrame(nodeId?: string): Promise<void> {
     const message = error instanceof Error ? error.message : String(error);
     figma.ui.postMessage({
       type: "export-result",
+      requestId,
       error: `Export failed: ${message}`,
     });
   }
@@ -139,7 +141,7 @@ async function handleExportFrame(nodeId?: string): Promise<void> {
 /**
  * Inspect selected node and return Dev Mode-like properties
  */
-async function handleInspectNode(nodeId?: string): Promise<void> {
+async function handleInspectNode(nodeId?: string, requestId?: string): Promise<void> {
   let node: SceneNode | null = null;
 
   if (nodeId) {
@@ -149,22 +151,27 @@ async function handleInspectNode(nodeId?: string): Promise<void> {
   }
 
   if (!node) {
-    figma.ui.postMessage({ type: "inspect-result", error: "No node selected" });
+    figma.ui.postMessage({ type: "inspect-result", requestId, error: "No node selected" });
     return;
   }
 
   const inspection = extractNodeInspection(node);
-  figma.ui.postMessage({ type: "inspect-result", inspection });
+  figma.ui.postMessage({ type: "inspect-result", requestId, inspection });
 }
 
 /**
  * Compare two images using pixelmatch (delegated to UI iframe for Canvas access)
  */
-async function handleCompareImages(designBase64: string, screenshotBase64: string): Promise<void> {
+async function handleCompareImages(
+  designBase64: string,
+  screenshotBase64: string,
+  requestId?: string,
+): Promise<void> {
   // pixelmatch runs in UI iframe since it needs Canvas API
   // Just forward the request back
   figma.ui.postMessage({
     type: "run-comparison",
+    requestId,
     designBase64,
     screenshotBase64,
   });

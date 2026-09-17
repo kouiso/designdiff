@@ -32,6 +32,7 @@ import {
   type GridSummarySchema,
   type IgnoreRegionConfigEntrySchema,
   type IgnoreRegionConfigFileSchema,
+  type IgnoreRegionCoordinateContextSchema,
   type IgnoreRegionSchema,
   type ImageDimensionsSchema,
   type ConvergenceCampaignSchema,
@@ -144,6 +145,7 @@ export type CropRegion = z.infer<typeof CropRegionSchema>;
 // --- Ignore Region (PR #57) ---
 
 export type IgnoreRegion = z.infer<typeof IgnoreRegionSchema>;
+export type IgnoreRegionCoordinateContext = z.infer<typeof IgnoreRegionCoordinateContextSchema>;
 export type IgnoreRegionConfigEntry = z.infer<typeof IgnoreRegionConfigEntrySchema>;
 export type IgnoreRegionConfigFile = z.infer<typeof IgnoreRegionConfigFileSchema>;
 

@@ -41,7 +41,7 @@ describe("public onboarding contract", () => {
     const { tools } = await client.listTools();
     const validator = new AjvJsonSchemaValidator();
     const examples: z.infer<typeof callSchema>[] = [];
-    for (const match of readme.matchAll(/^```json\n([\s\S]*?)\n```/gm)) {
+    for (const match of readme.matchAll(/^```json\r?\n([\s\S]*?)\r?\n```/gm)) {
       const parsed = callSchema.safeParse(JSON.parse(match[1]));
       if (parsed.success) examples.push(parsed.data);
     }
@@ -57,5 +57,12 @@ describe("public onboarding contract", () => {
         expect(Object.hasOwn(tool.inputSchema.properties ?? {}, key), key).toBe(true);
       }
     }
+  });
+
+  it("keeps the package README tool inventory equal to the live advertised tools", async () => {
+    const readme = await readFile(new URL("../README.md", import.meta.url), "utf8");
+    const documented = [...readme.matchAll(/^\| `([a-z_]+)` \|/gm)].map((match) => match[1]);
+    const { tools } = await client.listTools();
+    expect(documented.sort()).toEqual(tools.map((tool) => tool.name).sort());
   });
 });

@@ -26,6 +26,7 @@ export function generateMarkdownReport(result: CompareDesignResult): string {
   lines.push("");
 
   appendComplianceBenchmark(lines, result, remainingIssues);
+  appendComparisonConditions(lines, result);
   appendTypedDiffEvidence(lines, result.diffReport);
 
   if (result.clusterCollapse) {
@@ -92,6 +93,12 @@ function appendComplianceBenchmark(
   if (finalStatus) {
     lines.push(`| Final Status | PASS | ${finalStatus} | ${finalStatus} |`);
   }
+  if (completionCriteria?.conditionsReview) {
+    const conditions = completionCriteria.conditionsReview;
+    lines.push(
+      `| Coordinate Conditions | compatible declarations | ${conditions.current} | ${conditions.status} |`,
+    );
+  }
   if (completionCriteria?.consistencyReview) {
     const consistency = completionCriteria.consistencyReview;
     lines.push(
@@ -118,6 +125,63 @@ function appendComplianceBenchmark(
   }
 
   lines.push("");
+}
+
+function appendComparisonConditions(lines: string[], result: CompareDesignResult): void {
+  const report = result.comparisonConditions;
+  if (!report) return;
+  lines.push(
+    "## Comparison Conditions",
+    "",
+    `Status: **${report.status}**`,
+    "",
+    report.message,
+    "",
+  );
+  lines.push(
+    "| Side | Canvas (physical px; measured) | Viewport (logical px; declared) | Pixel ratio (declared) | Origin (logical px; declared) | Unverified |",
+    "| --- | --- | --- | --- | --- | --- |",
+  );
+  const captureNotes: string[] = [];
+  for (const key of ["design", "screenshot"] as const) {
+    const side = report[key];
+    const { viewport, pixelRatio, origin } = side.declared ?? {};
+    lines.push(
+      `| ${key} | ${side.canvas.width}×${side.canvas.height} (${side.canvasSource}) | ${viewport ? `${viewport.width}×${viewport.height}` : "unknown"} | ${pixelRatio ?? "unknown"} | ${origin ? `${origin.x}, ${origin.y}` : "unknown"} | ${side.unverified.join(", ") || "none (declarations only)"} |`,
+    );
+    if (side.observed) {
+      captureNotes.push(
+        "",
+        `${key} observed raster viewport: ${side.observed.viewportPixels.width}×${side.observed.viewportPixels.height} physical px (${side.observed.source}).`,
+        "",
+      );
+    }
+    if (side.requested) {
+      captureNotes.push(
+        "",
+        `${key} requested export ratio: ${side.requested.pixelRatio} (${side.requested.source}; request, not measurement).`,
+        "",
+      );
+    }
+  }
+  lines.push(...captureNotes);
+  // 適用範囲と根拠は実際の処理結果を出し、申告値から別の変換を作らない。
+  lines.push(
+    "",
+    "### Applied normalization and alignment",
+    "",
+    "```json",
+    JSON.stringify(
+      {
+        normalization: result.normalization ?? null,
+        alignment: result.diffReport?.alignment ?? null,
+      },
+      null,
+      2,
+    ),
+    "```",
+    "",
+  );
 }
 
 function appendTypedDiffEvidence(

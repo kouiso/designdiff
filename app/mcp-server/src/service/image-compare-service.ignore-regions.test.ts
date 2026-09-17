@@ -22,7 +22,7 @@ async function solidPng(
 }
 
 describe("compareImages — ignoreRegions マスク", () => {
-  it("ignoreRegions が画像全体を覆う場合、matchRate=100 になり diffPixelCount=0 になること", async () => {
+  it("ignoreRegions が画像全体を覆う場合、比較不能を明示すること", async () => {
     const design = await solidPng(20, 20, { r: 255, g: 0, b: 0, alpha: 1 });
     const screenshot = await solidPng(20, 20, { r: 0, g: 0, b: 255, alpha: 1 });
 
@@ -33,10 +33,13 @@ describe("compareImages — ignoreRegions マスク", () => {
       ignoreRegions: [{ x: 0, y: 0, width: 20, height: 20, label: "全体マスク" }],
     });
 
-    expect(result.matchRate).toBe(100);
+    expect(result.matchRate).toBe(0);
     expect(result.diffPixelCount).toBe(0);
     expect(result.totalPixelCount).toBe(0);
     expect(result.diffRegions).toEqual([]);
+    expect(result.status).toBe("UNCERTAIN");
+    expect(result.diffReport?.aggregateVerdict).toBe("inconclusive");
+    expect(result.diffReport?.aggregateVerdict).toBe("inconclusive");
     // bot review: totalPixelCount=0 が CompareDesignResultSchema 違反で
     // runtime crash する回帰を防ぐ。schema が nonnegative を許容することを確認。
     expect(() => CompareDesignResultSchema.parse(result)).not.toThrow();
@@ -56,7 +59,8 @@ describe("compareImages — ignoreRegions マスク", () => {
 
     // 全面マスクなので diffReport にも差分は出ないはず
     expect(result.diffPixelCount).toBe(0);
-    expect(result.matchRate).toBe(100);
+    expect(result.matchRate).toBe(0);
+    expect(result.status).toBe("UNCERTAIN");
   });
 
   it("ignoreRegions 指定なしの場合は通常通り全ピクセル差分が検出されること", async () => {
@@ -72,6 +76,88 @@ describe("compareImages — ignoreRegions マスク", () => {
     expect(result.totalPixelCount).toBe(100);
     expect(result.diffPixelCount).toBeGreaterThan(0);
     expect(result.matchRate).toBeLessThan(100);
+  });
+
+  it("context-bound YAML entry is applied only when source identity and geometry match", async () => {
+    const fileKey = crypto.randomUUID();
+    const nodeId = crypto.randomUUID();
+    const design = await solidPng(10, 10, { r: 255, g: 0, b: 0, alpha: 1 });
+    const screenshot = await solidPng(10, 10, { r: 0, g: 0, b: 255, alpha: 1 });
+    const entry = {
+      id: "confirmed",
+      x: 0,
+      y: 0,
+      width: 5,
+      height: 10,
+      coordinate_context: {
+        canvas_width: 10,
+        canvas_height: 10,
+        design_original_width: 10,
+        design_original_height: 10,
+        screenshot_original_width: 10,
+        screenshot_original_height: 10,
+        file_key: fileKey,
+        node_id: nodeId,
+      },
+    };
+    const matching = await compareImages({
+      designBase64: design,
+      screenshotBase64: screenshot,
+      ignoreRegionEntries: [entry],
+      ignoreRegionFileKey: fileKey,
+      ignoreRegionNodeId: nodeId,
+    });
+    const mismatching = await compareImages({
+      designBase64: design,
+      screenshotBase64: screenshot,
+      ignoreRegionEntries: [entry],
+      ignoreRegionFileKey: fileKey,
+      ignoreRegionNodeId: crypto.randomUUID(),
+    });
+    expect(matching.totalPixelCount).toBe(50);
+    expect(matching.ignoreRegionResolution?.appliedIds).toEqual(["confirmed"]);
+    expect(mismatching.totalPixelCount).toBe(100);
+    expect(mismatching.ignoreRegionResolution?.incompatibleIds).toEqual(["confirmed"]);
+  });
+
+  it("crop が短い design に適用できなくても復元した保存 mask を適用済みと報告する", async () => {
+    const fileKey = crypto.randomUUID();
+    const nodeId = crypto.randomUUID();
+    const design = await solidPng(10, 5, { r: 255, g: 0, b: 0, alpha: 1 });
+    const screenshot = await solidPng(10, 10, { r: 0, g: 0, b: 255, alpha: 1 });
+    const cropRegion = { x: 0, y: 5, width: 10, height: 5 };
+    const result = await compareImages({
+      designBase64: design,
+      screenshotBase64: screenshot,
+      cropRegion,
+      ignoreRegionEntries: [
+        {
+          id: "same-id",
+          x: 0,
+          y: 0,
+          width: 10,
+          height: 5,
+          coordinate_context: {
+            canvas_width: 10,
+            canvas_height: 5,
+            design_original_width: 10,
+            design_original_height: 5,
+            screenshot_original_width: 10,
+            screenshot_original_height: 10,
+            file_key: fileKey,
+            node_id: nodeId,
+            crop_region: cropRegion,
+          },
+        },
+      ],
+      ignoreRegionFileKey: fileKey,
+      ignoreRegionNodeId: nodeId,
+    });
+
+    expect(result.normalization?.cropApplied).toBe(false);
+    expect(result.totalPixelCount).toBe(50);
+    expect(result.ignoreRegionResolution?.appliedIds).toEqual(["same-id"]);
+    expect(result.ignoreRegionResolution?.incompatibleIds).toEqual([]);
   });
 
   it("ignoreRegions が一部を覆う場合、覆われた範囲だけ分母 / 差分から引かれること", async () => {

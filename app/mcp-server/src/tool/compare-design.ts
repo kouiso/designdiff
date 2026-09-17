@@ -9,6 +9,7 @@ import { z } from "zod";
 import {
   CompareDesignResultSchema,
   ComparisonCampaignIdSchema,
+  ComparisonConditionsInputSchema,
   IgnoreRegionSchema,
   type CompareDesignResult,
 } from "@figdiff/shared";
@@ -53,6 +54,7 @@ const DESCRIPTION = `デザインと実装のピクセル差分を検出しま�
 - profile: 比較プロファイル（strict/balanced/layout）。threshold 直接指定で上書き可
 - project_id: Crop Region・ignore_regions・前回使用ノード自動補完に使うプロジェクトID（省略可）
 - campaign_id: 独立した修正作業を識別するID。同じ作業の反復では同じIDを使い、新しいブランチ・作業では別IDにする。省略時は従来の対象単位の履歴を使う
+- comparison_conditions: design / screenshotそれぞれのviewport{width,height}(論理px)、pixelRatio(物理px/論理px)、origin{x,y}(画像左上の共通参照座標、論理px)の申告。画像外寸はキャンバス寸法であり端末の高さとは限らない。未指定は未確認として報告し、異なる表示領域・原点ならCSS修正の前に撮影条件を確認する。申告値による自動変換は行わない
 - ignore_regions: 既知の意図的差分マスク（省略可）。project_id の保存済みマスク、自動 system UI マスクと結合される。WP原文 vs Figmaプレースホルダ、Google Map埋め込み等の false-positive 抑制に使用。各矩形 {x,y,width,height,label?} 内のピクセルは差分検出/matchRate 分母から除外される
 - mask_system_ui: モバイル実機/Simulator撮影のOSステータスバー/ナビゲーションバーを自動マスクするか。capture_device指定時は既定true、それ以外は既定false。set_ignore_regionsで追加の微調整が可能
 - auto_mask_dynamic: screenshot_url経路で同じページを2回撮り、変わった領域を自動マスクする（既定true）。時計/カウンタ/カルーセル等が毎回差分に出て収束しなくなるのを防ぐ
@@ -159,6 +161,9 @@ export const buildSummaryText = (result: CompareDesignResult): string => {
   const lines: string[] = [];
 
   lines.push(...buildLoopGuardLines(result));
+  if (result.comparisonConditions) {
+    lines.push("", result.comparisonConditions.message);
+  }
   lines.push(...buildTokenDiffLines(result));
 
   if (result.diffReport) {
@@ -370,6 +375,9 @@ export const registerCompareDesign = (server: McpServer): void => {
       .describe(
         "撮影幅(px)。省略時はFigmaフレームの実幅を自動取得。screenshot_url指定時のみ有効。",
       ),
+    comparison_conditions: ComparisonConditionsInputSchema.optional().describe(
+      "両画像の表示領域・倍率・共通原点の申告。各sideはviewport{width,height}(論理px), pixelRatio(物理px/論理px), origin{x,y}(画像左上の共通参照座標、論理px)。画像の移動・cropには使用しない。",
+    ),
     mask_system_ui: z
       .boolean()
       .optional()

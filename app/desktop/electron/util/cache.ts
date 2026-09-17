@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -17,14 +18,16 @@ export class NodeFsCacheStrategy implements FigmaCacheStrategy {
     mkdirSync(this.cacheDir, { recursive: true });
   }
 
-  private getCachePath(fileKey: string, nodeId: string, scale: number): string {
+  private getCachePath(fileKey: string, nodeId: string, scale: number, version?: string): string {
     const safeFileKey = fileKey.replace(/[^a-zA-Z0-9_-]/g, "_");
     const safeNodeId = nodeId.replace(/:/g, "_");
-    return join(this.cacheDir, `${safeFileKey}_${safeNodeId}_${scale}x.png`);
+    // version未指定は旧ファイル名を維持し、保存済みcacheを無効化しない。
+    const versionSuffix = version ? `-v${createHash("sha256").update(version).digest("hex")}` : "";
+    return join(this.cacheDir, `${safeFileKey}_${safeNodeId}_${scale}x${versionSuffix}.png`);
   }
 
-  async get(fileKey: string, nodeId: string, scale: number): Promise<string | null> {
-    const path = this.getCachePath(fileKey, nodeId, scale);
+  get: FigmaCacheStrategy["get"] = async (fileKey, nodeId, scale, version) => {
+    const path = this.getCachePath(fileKey, nodeId, scale, version);
     if (!existsSync(path)) return null;
 
     try {
@@ -34,11 +37,11 @@ export class NodeFsCacheStrategy implements FigmaCacheStrategy {
       console.warn("[cache] キャッシュファイルの読み込みに失敗:", e);
       return null;
     }
-  }
+  };
 
-  async set(fileKey: string, nodeId: string, scale: number, base64: string): Promise<void> {
-    const path = this.getCachePath(fileKey, nodeId, scale);
+  set: FigmaCacheStrategy["set"] = async (fileKey, nodeId, scale, version, base64) => {
+    const path = this.getCachePath(fileKey, nodeId, scale, version);
     const buffer = Buffer.from(base64, "base64");
     writeFileSync(path, buffer);
-  }
+  };
 }

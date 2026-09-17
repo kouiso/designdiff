@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 
@@ -15,6 +15,14 @@ import {
   buildSystemBarIgnoreRegions,
   getVerifiedSystemBarTopInset,
   CompareDesignResultSchema,
+  ComparisonConditionsInputSchema,
+  canonicalizeVerificationContextPayload,
+  describeComparisonConditions,
+  normalizeVerificationContextPayload,
+  type ComparisonConditionsInput,
+  type ComparisonConditionsReport,
+  type CompletionCriteria,
+  type CompletionCriterion,
   detectDynamicRegionsAcrossSamples,
   detectToastBands,
   FIGMA_NODE_NOT_FOUND_MARKER,
@@ -42,6 +50,7 @@ import {
   type DomElementStyle,
   type FigmaNode,
   type IgnoreRegion,
+  type IgnoreRegionConfigEntry,
   type LoopGuardReport,
   type PreflightWarning,
   type FigmaExportReport,
@@ -50,6 +59,8 @@ import {
   type TokenDiffReport,
   type TokenMismatch,
   type VerdictRoute,
+  type VerificationContext,
+  type VerificationContextPayload,
 } from "@figdiff/shared";
 
 import {
@@ -67,7 +78,7 @@ import {
 import { recordConvergenceIteration } from "./convergence-history.js";
 import { getCropRegionForComparison } from "./crop-region-store.js";
 import { createFigmaService, type FigmaService } from "./figma-service.js";
-import { getIgnoreRegionsForComparison } from "./ignore-region-store.js";
+import { getIgnoreRegionConfigForComparison } from "./ignore-region-store.js";
 import { compareImages, redactImageBase64ForPublicExport } from "./image-compare-service.js";
 import { getLastUsedNode, setLastUsedNode } from "./last-used-node-store.js";
 import { recordIterationAndEvaluate } from "./loop-guard-service.js";
@@ -179,6 +190,22 @@ function resolveThreshold(
   return 0.1;
 }
 
+const normalizeDesignBackground = (value: string | undefined): string => {
+  const raw = value?.trim().replace(/^#/, "") ?? "FFFFFF";
+  const expanded = raw.length === 3 ? raw.replace(/./g, (character) => character.repeat(2)) : raw;
+  return /^[0-9a-fA-F]{6}$/.test(expanded) ? `#${expanded.toUpperCase()}` : "#FFFFFF";
+};
+
+const buildVerificationContext = (input: VerificationContextPayload): VerificationContext => {
+  const normalized = normalizeVerificationContextPayload(input);
+  return {
+    ...normalized,
+    fingerprint: createHash("sha256")
+      .update(canonicalizeVerificationContextPayload(normalized))
+      .digest("hex"),
+  };
+};
+
 export interface CompareDesignRunArgs {
   design_source: string;
   campaign_id?: string;
@@ -191,6 +218,7 @@ export interface CompareDesignRunArgs {
   /** capture_device 経路で、1画面に収まらん画面をスクロールしながら撮って繋ぐ。 */
   capture_scroll?: boolean;
   capture_width?: number;
+  comparison_conditions?: ComparisonConditionsInput;
   frame_name?: string;
   threshold?: number;
   profile?: ComparisonProfile;
@@ -285,6 +313,51 @@ const wholeImageStructureCriterion = (assessment: StructuralAssessment | undefin
   note: assessment?.rationale ?? "Not evaluated: whole-image structure is unavailable.",
 });
 
+const conditionsReviewCriterion = (report?: ComparisonConditionsReport): CompletionCriterion => ({
+  required: 1,
+  current: report?.status === "compatible" ? 1 : 0,
+  status: report?.status === "compatible" ? "PASS" : "UNCERTAIN",
+  blocking: report?.status === "mismatch",
+  note: report?.message ?? "撮影条件は未確認です。",
+});
+
+const buildTokenReviewCriterion = (
+  tokenDiff: TokenDiffReport | undefined,
+  tokenBlockingCount: number,
+): CompletionCriterion => {
+  if (!tokenDiff) {
+    return {
+      required: 0,
+      current: 0,
+      status: "UNCERTAIN",
+      blocking: false,
+      note: "Not evaluated: token comparison needs both a Figma node tree and a FigDiff-captured URL.",
+    };
+  }
+  if (!tokenDiff.reliable) {
+    return {
+      required: 0,
+      current: tokenBlockingCount,
+      status: "UNCERTAIN",
+      blocking: tokenBlockingCount > 0,
+      note: `Not used as evidence. ${tokenDiff.demotionReason ?? ""}`.trim(),
+    };
+  }
+  return {
+    required: 0,
+    current: tokenBlockingCount,
+    status: tokenBlockingCount === 0 ? "PASS" : "FAIL",
+    blocking: tokenBlockingCount > 0,
+    note:
+      tokenBlockingCount === 0
+        ? `Colour and typography values match across ${tokenDiff.matchedNodeCount} nodes (${tokenDiff.checkedPropertyCount} properties).`
+        : `${tokenBlockingCount} colour/typography values differ from the design. These are exact values, not perceptual guesses.`,
+  };
+};
+
+const declaredCoordinates = (side: ComparisonConditionsInput["design"]) =>
+  side && Object.values(side).some((value) => value !== undefined) ? side : undefined;
+
 function buildCompletionCriteria(
   matchRate: number,
   diffPixelCount: number,
@@ -294,22 +367,8 @@ function buildCompletionCriteria(
   perceptibleDiffRatio: number | undefined,
   tokenDiff: TokenDiffReport | undefined,
   structuralAssessment: StructuralAssessment | undefined,
-): Record<
-  | "structuralReview"
-  | "wholeImageStructure"
-  | "consistencyReview"
-  | "tokenReview"
-  | "matchRate"
-  | "diffPixelCount"
-  | "remainingIssues",
-  {
-    required: number;
-    current: number;
-    status: "PASS" | "FAIL" | "UNCERTAIN";
-    blocking: boolean;
-    note: string;
-  }
-> {
+  comparisonConditions: ComparisonConditionsReport | undefined,
+): CompletionCriteria {
   // inconclusive を FAIL と書くと「直せば PASS になる」と読まれる。実際は
   // 判定の確からしさが足りていない状態なので、status も UNCERTAIN で揃える。
   const structuralStatus =
@@ -322,6 +381,7 @@ function buildCompletionCriteria(
   const tokenBlocking = tokenDiff ? blockingMismatches(tokenDiff) : [];
 
   return {
+    conditionsReview: conditionsReviewCriterion(comparisonConditions),
     wholeImageStructure: wholeImageStructureCriterion(structuralAssessment),
     structuralReview: {
       required: 1,
@@ -347,20 +407,7 @@ function buildCompletionCriteria(
     },
     // 色と文字は値そのもので比べられる。使えたときはこれが色の正本になり、
     // 使えなかったときは「見ていない」と分かるように理由を残す。
-    tokenReview: {
-      required: 0,
-      current: tokenBlocking.length,
-      status: !tokenDiff?.reliable ? "UNCERTAIN" : tokenBlocking.length === 0 ? "PASS" : "FAIL",
-      blocking: tokenBlocking.length > 0,
-      note:
-        tokenDiff === undefined
-          ? "Not evaluated: token comparison needs both a Figma node tree and a FigDiff-captured URL."
-          : !tokenDiff.reliable
-            ? `Not used as evidence. ${tokenDiff.demotionReason ?? ""}`.trim()
-            : tokenBlocking.length === 0
-              ? `Colour and typography values match across ${tokenDiff.matchedNodeCount} nodes (${tokenDiff.checkedPropertyCount} properties).`
-              : `${tokenBlocking.length} colour/typography values differ from the design. These are exact values, not perceptual guesses.`,
-    },
+    tokenReview: buildTokenReviewCriterion(tokenDiff, tokenBlocking.length),
     matchRate: {
       required: 100,
       current: matchRate,
@@ -1048,6 +1095,7 @@ interface ProjectRegions {
   cropCapturedWidth: number | undefined;
   cropCapturedHeight: number | undefined;
   ignoreRegions: IgnoreRegion[];
+  ignoreRegionEntries: IgnoreRegionConfigEntry[];
 }
 
 async function resolveProjectRegions(
@@ -1059,21 +1107,22 @@ async function resolveProjectRegions(
   let cropUpdatedAt: string | undefined;
   let cropCapturedWidth: number | undefined;
   let cropCapturedHeight: number | undefined;
-  let persistedIgnoreRegions: IgnoreRegion[] = [];
+  let persistedIgnoreRegionEntries: IgnoreRegionConfigEntry[] = [];
   if (projectId) {
     const region = await getCropRegionForComparison(projectId, frameName);
     cropRegion = region?.region;
     cropUpdatedAt = region?.updatedAt;
     cropCapturedWidth = region?.capturedWidth;
     cropCapturedHeight = region?.capturedHeight;
-    persistedIgnoreRegions = await getIgnoreRegionsForComparison(projectId, frameName);
+    persistedIgnoreRegionEntries = await getIgnoreRegionConfigForComparison(projectId, frameName);
   }
   return {
     cropRegion,
     cropUpdatedAt,
     cropCapturedWidth,
     cropCapturedHeight,
-    ignoreRegions: [...persistedIgnoreRegions, ...(extraIgnoreRegions ?? [])],
+    ignoreRegions: extraIgnoreRegions ?? [],
+    ignoreRegionEntries: persistedIgnoreRegionEntries,
   };
 }
 
@@ -1525,6 +1574,7 @@ export async function runCompareDesign(
     cropCapturedWidth,
     cropCapturedHeight,
     ignoreRegions: projectIgnoreRegions,
+    ignoreRegionEntries: projectIgnoreRegionEntries,
   } = await resolveProjectRegions(
     args.project_id,
     args.frame_name ?? figmaRootNode?.name,
@@ -1551,13 +1601,6 @@ export async function runCompareDesign(
   ];
   const fallbackIgnoreRegions = [...dynamicIgnoreRegions, ...systemIgnoreRegions.preCropRegions];
 
-  // 既に適用したマスクが分かってから候補を出す。二重の提案を避けるため。
-  const toastBandCandidates = await detectToastBandCandidates(
-    screenshotPath,
-    args.capture_device !== undefined,
-    ignoreRegions,
-  );
-
   const comparison = await compareImages(
     {
       designBase64,
@@ -1566,12 +1609,24 @@ export async function runCompareDesign(
       cropRegion,
       figmaNodeId: resolvedNodeId,
       ignoreRegions,
+      ignoreRegionEntries: projectIgnoreRegionEntries,
+      ignoreRegionFileKey:
+        parsedDesignSource.type === "figma_url" ? parsedDesignSource.fileKey : undefined,
+      ignoreRegionNodeId: resolvedNodeId,
       fallbackIgnoreRegions,
       verifiedSystemUiTopInset: systemIgnoreRegions.verifiedTopInset,
       designBackground: args.design_background,
     },
     figmaRootNode,
     `cmp-${randomUUID()}`,
+  );
+  const effectiveIgnoreRegions =
+    comparison.ignoreRegionResolution?.effectiveRegions ?? ignoreRegions;
+  // 座標条件を照合した保存済みマスクも含めてから候補を出し、同じ帯を二重提案しない。
+  const toastBandCandidates = await detectToastBandCandidates(
+    screenshotPath,
+    args.capture_device !== undefined,
+    effectiveIgnoreRegions,
   );
   const figmaProvenance =
     parsedDesignSource.type === "figma_url"
@@ -1582,6 +1637,39 @@ export async function runCompareDesign(
         }
       : undefined;
   applyFigmaProvenance(comparison, figmaProvenance);
+  const comparisonConditions = comparison.normalization
+    ? describeComparisonConditions(
+        {
+          design: {
+            width: comparison.normalization.designNativeWidth,
+            height: comparison.normalization.designNativeHeight,
+          },
+          screenshot: { width: screenshotMeta.width ?? 0, height: screenshotMeta.height ?? 0 },
+        },
+        args.comparison_conditions,
+        {
+          design: figmaExport
+            ? {
+                requested: {
+                  source: "figma-export-request",
+                  pixelRatio: figmaExport.conditions.scale,
+                },
+              }
+            : undefined,
+          screenshot: resolvedScreenshot.scrollCapture
+            ? {
+                observed: {
+                  source: "scroll-capture",
+                  viewportPixels: {
+                    width: resolvedScreenshot.scrollCapture.viewportWidth,
+                    height: resolvedScreenshot.scrollCapture.viewportHeight,
+                  },
+                },
+              }
+            : undefined,
+        },
+      )
+    : undefined;
   const appliedCropRegion = comparison.normalization?.cropRegion;
 
   // 確信度レイヤー: 設定ミスを検知・説明し、結果ヘッドラインを構造/色に分離する。
@@ -1617,6 +1705,14 @@ export async function runCompareDesign(
   });
 
   preflight.warnings.push(...(figmaExport?.warnings ?? []));
+  if (comparisonConditions?.status === "mismatch") {
+    preflight.warnings.push({
+      code: "comparison_conditions_mismatch",
+      severity: "critical",
+      message: comparisonConditions.message,
+      suggestedFix: comparisonConditions.message,
+    });
+  }
 
   // 診断は元の preflight 警告で行い、その後に表示用の拡張を加える。
   const comparisonHeadline = buildComparisonHeadline(regionScores, comparison.matchRate);
@@ -1675,11 +1771,38 @@ export async function runCompareDesign(
     comparison.diffReport,
     comparison.diffPixelCount,
   );
-  const sourceKey = scopeComparisonCampaign(
-    buildComparisonSourceKey(parsedDesignSource, resolvedNodeId, args.design_background, {
+  const baseSourceKey = buildComparisonSourceKey(
+    parsedDesignSource,
+    resolvedNodeId,
+    args.design_background,
+    {
       contentsOnly: args.figma_contents_only,
       useAbsoluteBounds: args.figma_use_absolute_bounds,
-    }),
+    },
+  );
+  // 中身の高さは修正のたびに変わる。座標条件だけを鍵にし、未指定の既存履歴は維持する。
+  const coordinateIdentity = comparisonConditions
+    ? {
+        design: {
+          declared: declaredCoordinates(comparisonConditions.design.declared),
+          requested: comparisonConditions.design.requested,
+        },
+        screenshot: {
+          declared: declaredCoordinates(comparisonConditions.screenshot.declared),
+          observed: comparisonConditions.screenshot.observed,
+        },
+      }
+    : undefined;
+  const hasCoordinateIdentity =
+    coordinateIdentity !== undefined &&
+    (coordinateIdentity.design.declared !== undefined ||
+      coordinateIdentity.screenshot.declared !== undefined ||
+      coordinateIdentity.screenshot.observed !== undefined);
+  const coordinateSuffix = hasCoordinateIdentity
+    ? `|conditions:${createHash("sha256").update(JSON.stringify(coordinateIdentity)).digest("hex")}`
+    : "";
+  const sourceKey = scopeComparisonCampaign(
+    `${baseSourceKey}${coordinateSuffix}`,
     args.campaign_id,
   );
   const priorComparisons = getRecentComparisons(sourceKey);
@@ -1730,7 +1853,8 @@ export async function runCompareDesign(
     diagnosis.likelyMisconfig,
     perceptibleDiffRatio,
     tokenDiffBlocking.length,
-    aspectMismatchInconclusive ||
+    comparisonConditions?.status === "mismatch" ||
+      aspectMismatchInconclusive ||
       missingNodeId !== undefined ||
       scrollCaptureIncomplete !== undefined,
   );
@@ -1740,21 +1864,24 @@ export async function runCompareDesign(
 
   // 呼び出し側は nextAction に従うよう案内しているので、status が人間レビューを
   // 指しているのに nextAction が「完了を確認せよ」と言う状態を作らない。
-  const diagnosisNextAction = diagnosis.likelyMisconfig
-    ? buildMisconfigNextAction(diagnosis)
-    : pixelsContradictPass
-      ? buildPixelContradictionNextAction(perceptibleDiffRatio)
-      : tokenDiffSummary !== undefined
-        ? `${tokenDiffSummary} 値が分かっているので、該当箇所の指定を設計側の値へ直してください。`
-        : scrollCaptureIncomplete !== undefined
-          ? scrollCaptureIncomplete
-          : (buildDiagnosisNextAction(diagnosis) ??
-            buildNextAction(
-              structuralReviewResult.verdict,
-              regionCount,
-              targetNodeIds,
-              comparison.clusterCollapse,
-            ));
+  const diagnosisNextAction =
+    comparisonConditions?.status === "mismatch"
+      ? comparisonConditions.message
+      : diagnosis.likelyMisconfig
+        ? buildMisconfigNextAction(diagnosis)
+        : pixelsContradictPass
+          ? buildPixelContradictionNextAction(perceptibleDiffRatio)
+          : tokenDiffSummary !== undefined
+            ? `${tokenDiffSummary} 値が分かっているので、該当箇所の指定を設計側の値へ直してください。`
+            : scrollCaptureIncomplete !== undefined
+              ? scrollCaptureIncomplete
+              : (buildDiagnosisNextAction(diagnosis) ??
+                buildNextAction(
+                  structuralReviewResult.verdict,
+                  regionCount,
+                  targetNodeIds,
+                  comparison.clusterCollapse,
+                ));
   const loopGuard = await evaluateLoopGuardSafely({
     sourceKey,
     comparisonId: comparison.comparisonId,
@@ -1774,28 +1901,93 @@ export async function runCompareDesign(
     comparison.matchRate,
     comparison.diffPixelCount,
   );
+  const resultNormalization = comparison.normalization
+    ? {
+        ...comparison.normalization,
+        autoCropped: autoCropRegion !== undefined && comparison.normalization.cropApplied,
+        cropRegion: appliedCropRegion,
+        cropSource: comparison.normalization.cropApplied
+          ? manualCropRegion
+            ? ("explicit-project" as const)
+            : autoCropRegion
+              ? ("auto" as const)
+              : ("none" as const)
+          : ("none" as const),
+      }
+    : undefined;
+  const maskResolution = comparison.ignoreRegionResolution;
+  const verificationContext =
+    resultNormalization &&
+    maskResolution?.effectiveCanvas &&
+    maskResolution.effectiveRegions &&
+    maskResolution.maskedPixelCount !== undefined &&
+    maskResolution.maskSha256
+      ? buildVerificationContext({
+          version: 1,
+          design: {
+            sourceIdentitySha256: createHash("sha256").update(baseSourceKey).digest("hex"),
+            imageSha256: createHash("sha256")
+              .update(Buffer.from(designBase64, "base64"))
+              .digest("hex"),
+            background: normalizeDesignBackground(args.design_background),
+            figmaExportConditions: figmaExport?.conditions ?? null,
+          },
+          comparison: {
+            effectiveThreshold,
+            profile: args.profile ?? null,
+            declaredConditions: ComparisonConditionsInputSchema.parse(
+              args.comparison_conditions ?? {},
+            ),
+            geometry: {
+              designNativeWidth: resultNormalization.designNativeWidth,
+              designNativeHeight: resultNormalization.designNativeHeight,
+              screenshotWidth: resultNormalization.screenshotWidth,
+              cropApplied: resultNormalization.cropApplied,
+              autoCropped: resultNormalization.autoCropped,
+              cropRegion: resultNormalization.cropRegion,
+              workingCropRegion: resultNormalization.workingCropRegion,
+              cropSource: resultNormalization.cropSource,
+            },
+          },
+          mask:
+            maskResolution.maskedPixelCount === 0 || maskResolution.effectiveRegions.length === 0
+              ? { status: "none" }
+              : {
+                  status: "applied",
+                  coordinateContext: {
+                    canvas_width: maskResolution.coordinateContext.canvas_width,
+                    canvas_height: maskResolution.coordinateContext.canvas_height,
+                    design_original_width: maskResolution.coordinateContext.design_original_width,
+                    design_original_height: maskResolution.coordinateContext.design_original_height,
+                    screenshot_original_width:
+                      maskResolution.coordinateContext.screenshot_original_width,
+                    screenshot_original_height:
+                      maskResolution.coordinateContext.screenshot_original_height,
+                    crop_region: maskResolution.coordinateContext.crop_region,
+                  },
+                  effectiveCanvas: maskResolution.effectiveCanvas,
+                  effectiveRegions: maskResolution.effectiveRegions,
+                  maskedPixelCount: maskResolution.maskedPixelCount,
+                  maskSha256: maskResolution.maskSha256,
+                  appliedIds: maskResolution.appliedIds,
+                  legacyIds: maskResolution.legacyIds,
+                },
+        })
+      : undefined;
   const result = CompareDesignResultSchema.parse({
     status,
     ...comparison,
+    comparisonConditions,
     scrollCapture: resolvedScreenshot.scrollCapture,
-    normalization: comparison.normalization
-      ? {
-          ...comparison.normalization,
-          autoCropped: autoCropRegion !== undefined && comparison.normalization.cropApplied,
-          cropRegion: appliedCropRegion,
-          cropSource: comparison.normalization.cropApplied
-            ? manualCropRegion
-              ? "explicit-project"
-              : autoCropRegion
-                ? "auto"
-                : "none"
-            : "none",
-        }
-      : comparison.normalization,
+    normalization: resultNormalization,
+    verificationContext,
     diffImagePath:
       comparison.diffImageBase64 && persistDiffImageNeeded
         ? await persistDiffImage(
-            await redactImageBase64ForPublicExport(comparison.diffImageBase64, ignoreRegions),
+            await redactImageBase64ForPublicExport(
+              comparison.diffImageBase64,
+              effectiveIgnoreRegions,
+            ),
             comparison.comparisonId,
           )
         : undefined,
@@ -1809,10 +2001,14 @@ export async function runCompareDesign(
       perceptibleDiffRatio,
       tokenDiff,
       comparison.diffReport?.structuralAssessment,
+      comparisonConditions,
     ),
     tokenDiff,
     verdictRoute,
-    nextAction: diagnosisNextAction,
+    nextAction:
+      comparisonConditions?.status === "unverified"
+        ? `${comparisonConditions.message} ${diagnosisNextAction}`
+        : diagnosisNextAction,
     suggestion: diagnosis.likelyMisconfig
       ? diagnosis.headline
       : pixelsContradictPass
@@ -1848,6 +2044,7 @@ export async function runCompareDesign(
       loopGuard,
       iteration: {
         comparisonId: result.comparisonId,
+        comparisonConditions,
         matchRate: result.matchRate,
         diffPixelCount: result.diffPixelCount,
         regionCount,

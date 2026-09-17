@@ -1,28 +1,48 @@
 import { useEffect, useMemo, useState } from "react";
 
-import { Check, FileText, ImageIcon, Layers, ScanSearch, Split, Upload, Zap } from "lucide-react";
+import {
+  Check,
+  FileText,
+  Film,
+  ImageIcon,
+  Layers,
+  MessageSquareWarning,
+  MousePointer2,
+  ScanSearch,
+  ShieldOff,
+  Split,
+  Upload,
+  Zap,
+} from "lucide-react";
 import { useTranslation } from "react-i18next";
 
-import type { CompareDesignResult, DiffIssue, DiffVerdict } from "@figdiff/shared";
+import type { DiffIssue, DiffVerdict } from "@figdiff/shared";
 
 import { ScoreBar } from "@/component/ui/score-bar";
 import { ScoreRing, type ScoreTone } from "@/component/ui/score-ring";
 import { LoadingOverlay, Spinner } from "@/component/ui/spinner";
 import { getPlatform } from "@/lib/platform";
 import { cn } from "@/lib/util";
+import type { DesktopCompareResult } from "@/service/image-compare";
 import { useCompareStore, type ViewMode } from "@/store/compare-store";
+import { useProjectListStore } from "@/store/project-list-store";
 import { useProjectStore } from "@/store/project-store";
 
+import { AnimationComparisonPanel } from "./animation-comparison-panel";
 import { CompareCanvas } from "./compare-canvas";
 import { CompareDiffReport } from "./compare-diff-report";
 import { CompareReportExport } from "./compare-report-export";
 import { CompareVerdictBadge } from "./compare-verdict-badge";
 import { CropRegionSelector } from "./crop-region-selector";
+import { FixVerificationPanel } from "./fix-verification-panel";
+import { IgnoreRegionPanel } from "./ignore-region-panel";
+import { IssueReportDialog } from "./issue-report-dialog";
+import { type InspectionCandidate, NodeInspectionPanel } from "./node-inspection-panel";
 
 import type { LucideIcon } from "lucide-react";
 
-type ResultWithDiffImage = CompareDesignResult & { diffImageBase64?: string };
-type ResultTab = "issues" | "report";
+type ResultWithDiffImage = DesktopCompareResult;
+type ResultTab = "animation" | "fix" | "ignore" | "issues" | "node" | "report";
 
 interface FlowMode {
   id: ViewMode;
@@ -290,12 +310,177 @@ function IssueList({
   );
 }
 
+function buildInspectionCandidates(
+  selectedFrame: { id: string; name: string } | null,
+  compareResult: ResultWithDiffImage | null,
+): InspectionCandidate[] {
+  const candidates = new Map<string, string>();
+  if (selectedFrame) candidates.set(selectedFrame.id, selectedFrame.name);
+  for (const region of compareResult?.diffRegions ?? []) {
+    region.nearbyNodeIds.forEach((nodeId, index) => {
+      candidates.set(nodeId, region.nearbyNodeNames[index] ?? nodeId);
+    });
+  }
+  return [...candidates].map(([nodeId, nodeName]) => ({ nodeId, nodeName }));
+}
+
+function ResultTabButton({
+  active,
+  icon: Icon,
+  label,
+  onClick,
+}: {
+  active: boolean;
+  icon?: LucideIcon;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      className="min-w-0 rounded-[10px] px-3 py-2 font-semibold text-sm"
+      onClick={onClick}
+      style={{
+        background: active ? "var(--surface)" : "transparent",
+        color: active ? "var(--fg)" : "var(--muted-fg)",
+      }}
+    >
+      <span className="inline-flex items-center justify-center gap-1.5">
+        {Icon ? <Icon className="h-4 w-4" /> : null}
+        {label}
+      </span>
+    </button>
+  );
+}
+
+function ResultTabContent({
+  activeTab,
+  compareResult,
+  currentFileKey,
+  inspectionCandidates,
+  issues,
+  projectId,
+  frameName,
+}: Omit<Parameters<typeof ResultTabs>[0], "onChange">) {
+  const { t } = useTranslation();
+  if (activeTab === "issues") return <IssueList issues={issues} compareResult={compareResult} />;
+  if (activeTab === "ignore") {
+    return (
+      <IgnoreRegionPanel
+        projectId={projectId}
+        frameName={frameName}
+        compareResult={compareResult}
+      />
+    );
+  }
+  if (activeTab === "fix") return <FixVerificationPanel />;
+  if (activeTab === "animation") return <AnimationComparisonPanel />;
+  if (activeTab === "node") {
+    return (
+      <NodeInspectionPanel
+        key={JSON.stringify([currentFileKey, inspectionCandidates[0]?.nodeId])}
+        fileKey={currentFileKey}
+        candidates={inspectionCandidates}
+      />
+    );
+  }
+  if (compareResult?.diffReport) return <CompareDiffReport compareResult={compareResult} />;
+  return (
+    <div
+      className="rounded-[var(--radius-token)] p-4 text-sm"
+      style={{ background: "var(--surface-2)", color: "var(--muted-fg)" }}
+    >
+      {t("compare.diffReportTitle")}
+    </div>
+  );
+}
+
+function ResultTabs({
+  activeTab,
+  compareResult,
+  currentFileKey,
+  inspectionCandidates,
+  issues,
+  projectId,
+  frameName,
+  onChange,
+}: {
+  activeTab: ResultTab;
+  compareResult: ResultWithDiffImage | null;
+  currentFileKey: string | null;
+  inspectionCandidates: InspectionCandidate[];
+  issues: DiffIssue[];
+  projectId: string | null;
+  frameName: string | null;
+  onChange: (tab: ResultTab) => void;
+}) {
+  const { t } = useTranslation();
+  return (
+    <div className="space-y-3">
+      <div
+        className="grid grid-cols-2 gap-1 rounded-[var(--radius-sm-token)] p-1"
+        data-testid="result-tabs"
+        style={{ background: "var(--surface-2)" }}
+      >
+        <ResultTabButton
+          active={activeTab === "issues"}
+          label={t("compare.tabIssues")}
+          onClick={() => onChange("issues")}
+        />
+        <ResultTabButton
+          active={activeTab === "ignore"}
+          icon={ShieldOff}
+          label={t("compare.tabIgnore")}
+          onClick={() => onChange("ignore")}
+        />
+        <ResultTabButton
+          active={activeTab === "fix"}
+          icon={ScanSearch}
+          label={t("compare.tabFix")}
+          onClick={() => onChange("fix")}
+        />
+        <ResultTabButton
+          active={activeTab === "animation"}
+          icon={Film}
+          label={t("compare.tabAnimation")}
+          onClick={() => onChange("animation")}
+        />
+        <ResultTabButton
+          active={activeTab === "report"}
+          icon={FileText}
+          label={t("compare.tabReport")}
+          onClick={() => onChange("report")}
+        />
+        <ResultTabButton
+          active={activeTab === "node"}
+          icon={MousePointer2}
+          label={t("compare.tabNode")}
+          onClick={() => onChange("node")}
+        />
+      </div>
+      <ResultTabContent
+        activeTab={activeTab}
+        compareResult={compareResult}
+        currentFileKey={currentFileKey}
+        inspectionCandidates={inspectionCandidates}
+        issues={issues}
+        projectId={projectId}
+        frameName={frameName}
+      />
+    </div>
+  );
+}
+
 export function ComparePage() {
   const { t } = useTranslation();
   const [screenshotPath, setScreenshotPath] = useState("");
   const [isLoadingScreenshot, setIsLoadingScreenshot] = useState(false);
+  const [isIssueReportOpen, setIsIssueReportOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<ResultTab>("report");
   const frameImage = useProjectStore((s) => s.frameImage);
+  const selectedFrame = useProjectStore((s) => s.selectedFrame);
+  const currentFileKey = useProjectStore((s) => s.currentFileKey);
+  const currentProjectId = useProjectListStore((s) => s.currentProject?.id ?? null);
   const designImage = useCompareStore((s) => s.designImage);
   const screenshotImage = useCompareStore((s) => s.screenshotImage);
   const compareResult = useCompareStore((s) => s.compareResult);
@@ -303,6 +488,7 @@ export function ComparePage() {
   const viewMode = useCompareStore((s) => s.viewMode);
   const cropRegion = useCompareStore((s) => s.cropRegion);
   const isComparing = useCompareStore((s) => s.isComparing);
+  const isLoadingFixTarget = useCompareStore((s) => s.isLoadingFixTarget);
   const error = useCompareStore((s) => s.error);
   const setDesignImage = useCompareStore((s) => s.setDesignImage);
   const setScreenshotImage = useCompareStore((s) => s.setScreenshotImage);
@@ -355,11 +541,20 @@ export function ComparePage() {
   const hasDesign = !!designImage;
   const hasScreenshot = !!screenshotImage;
   const hasBothImages = hasDesign && hasScreenshot;
-  const canCompare = hasBothImages && !isComparing;
+  const canCompare = hasBothImages && !isComparing && !isLoadingFixTarget;
   const score = clampScore(compareResult?.matchRate ?? null);
   const verdict = getVerdict(compareResult);
   const issues = getPrimaryIssues(compareResult);
   const scoreBreakdown = useMemo(() => buildScoreBreakdown(compareResult), [compareResult]);
+  const inspectionCandidates = useMemo(
+    () => buildInspectionCandidates(selectedFrame, compareResult),
+    [compareResult, selectedFrame],
+  );
+  const issueReportScopeKey = JSON.stringify([
+    currentProjectId,
+    currentFileKey,
+    selectedFrame?.id ?? null,
+  ]);
 
   return (
     <div className="flex h-full flex-col" style={{ background: "var(--bg)", color: "var(--fg)" }}>
@@ -400,6 +595,10 @@ export function ComparePage() {
             onLoad={handleLoadScreenshot}
             onClear={handleClearScreenshot}
           />
+          <button type="button" className="fd-btn" onClick={() => setIsIssueReportOpen(true)}>
+            <MessageSquareWarning className="h-4 w-4" />
+            {t("issueReport.open")}
+          </button>
           <button
             type="button"
             className="fd-btn primary"
@@ -552,51 +751,16 @@ export function ComparePage() {
             </div>
           </div>
 
-          <div className="space-y-3">
-            <div
-              className="flex rounded-[var(--radius-sm-token)] p-1"
-              style={{ background: "var(--surface-2)" }}
-            >
-              <button
-                type="button"
-                className="flex-1 rounded-[10px] px-3 py-2 font-semibold text-sm"
-                onClick={() => setActiveTab("issues")}
-                style={{
-                  background: activeTab === "issues" ? "var(--surface)" : "transparent",
-                  color: activeTab === "issues" ? "var(--fg)" : "var(--muted-fg)",
-                }}
-              >
-                {t("compare.tabIssues")}
-              </button>
-              <button
-                type="button"
-                className="flex-1 rounded-[10px] px-3 py-2 font-semibold text-sm"
-                onClick={() => setActiveTab("report")}
-                style={{
-                  background: activeTab === "report" ? "var(--surface)" : "transparent",
-                  color: activeTab === "report" ? "var(--fg)" : "var(--muted-fg)",
-                }}
-              >
-                <span className="inline-flex items-center justify-center gap-1.5">
-                  <FileText className="h-4 w-4" />
-                  {t("compare.tabReport")}
-                </span>
-              </button>
-            </div>
-
-            {activeTab === "issues" ? (
-              <IssueList issues={issues} compareResult={compareResult} />
-            ) : compareResult?.diffReport ? (
-              <CompareDiffReport compareResult={compareResult} />
-            ) : (
-              <div
-                className="rounded-[var(--radius-token)] p-4 text-sm"
-                style={{ background: "var(--surface-2)", color: "var(--muted-fg)" }}
-              >
-                {t("compare.diffReportTitle")}
-              </div>
-            )}
-          </div>
+          <ResultTabs
+            activeTab={activeTab}
+            compareResult={compareResult}
+            currentFileKey={currentFileKey}
+            inspectionCandidates={inspectionCandidates}
+            issues={issues}
+            projectId={currentProjectId}
+            frameName={selectedFrame?.name ?? null}
+            onChange={setActiveTab}
+          />
 
           {compareResult?.suggestion && (
             <div
@@ -608,6 +772,12 @@ export function ComparePage() {
           )}
         </aside>
       </div>
+      <IssueReportDialog
+        key={issueReportScopeKey}
+        open={isIssueReportOpen}
+        scopeKey={issueReportScopeKey}
+        onOpenChange={setIsIssueReportOpen}
+      />
     </div>
   );
 }

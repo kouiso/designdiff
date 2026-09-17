@@ -25,35 +25,77 @@ test.beforeAll(() => {
   fs.mkdirSync(EVIDENCE_DIR, { recursive: true });
 });
 
-const SAMPLES = 5;
+// 20件未満ではp95が最大値になり、単発のプロセス停止を継続的な性能劣化と区別できない。
+const SAMPLES = 20;
 const PAGE_LOAD_P95_THRESHOLD_MS = 1000;
 const INTERACTION_P95_THRESHOLD_MS = 200;
 
 function p95(samples: number[]): number {
+  if (samples.length === 0) {
+    throw new Error("p95 requires at least one sample");
+  }
+
   const sorted = [...samples].sort((a, b) => a - b);
-  const idx = Math.floor(sorted.length * 0.95);
-  return sorted[Math.min(idx, sorted.length - 1)];
+  const idx = Math.ceil(sorted.length * 0.95) - 1;
+  const result = sorted[idx];
+  if (result === undefined) {
+    throw new Error("p95 sample index is out of bounds");
+  }
+  return result;
 }
 
 test.describe("Performance measurements", () => {
   test("Page load p95 ≤ 1000ms", async ({ page }) => {
     const loadTimes: number[] = [];
+    const sampleDetails: Array<{
+      totalMs: number;
+      gotoMs: number;
+      networkIdleWaitMs: number;
+      browserNavigation: {
+        domContentLoadedMs: number;
+        loadEventMs: number;
+        responseEndMs: number;
+        resourceCount: number;
+      } | null;
+    }> = [];
 
     // 初回のVite/ブラウザ側ウォームアップを性能サンプルから除外する。
     await page.goto("/");
     await page.waitForLoadState("networkidle");
 
     for (let i = 0; i < SAMPLES; i++) {
-      const start = Date.now();
+      const start = performance.now();
       await page.goto("/");
+      const gotoFinished = performance.now();
       await page.waitForLoadState("networkidle");
-      loadTimes.push(Date.now() - start);
+      const completed = performance.now();
+      const browserNavigation = await page.evaluate(() => {
+        const navigation = performance.getEntriesByType("navigation")[0];
+        if (!(navigation instanceof PerformanceNavigationTiming)) {
+          return null;
+        }
+        return {
+          domContentLoadedMs: Math.round(navigation.domContentLoadedEventEnd),
+          loadEventMs: Math.round(navigation.loadEventEnd),
+          responseEndMs: Math.round(navigation.responseEnd),
+          resourceCount: performance.getEntriesByType("resource").length,
+        };
+      });
+      const totalMs = Math.round(completed - start);
+      loadTimes.push(totalMs);
+      sampleDetails.push({
+        totalMs,
+        gotoMs: Math.round(gotoFinished - start),
+        networkIdleWaitMs: Math.round(completed - gotoFinished),
+        browserNavigation,
+      });
     }
 
     const p95ms = p95(loadTimes);
     const report = {
       metric: "page-load",
       samples: loadTimes,
+      sampleDetails,
       p95Ms: p95ms,
       thresholdMs: PAGE_LOAD_P95_THRESHOLD_MS,
       pass: p95ms <= PAGE_LOAD_P95_THRESHOLD_MS,

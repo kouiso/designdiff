@@ -1,5 +1,7 @@
 import type {
   ConvergenceAdapter,
+  FigmaNodeVerificationAdapter,
+  IssueReportAdapter,
   OverlayAdapter,
   PlatformAdapter,
   PlatformCapabilities,
@@ -8,6 +10,13 @@ import type {
 
 export type {
   ConvergenceAdapter,
+  FigmaNodeVerificationAdapter,
+  FigmaNodeVerificationInput,
+  FigmaNodeVerificationSource,
+  IssueReportAdapter,
+  IssueReportInput,
+  IssueReportPreview,
+  IssueReportSubmitResult,
   OverlayAdapter,
   PlatformAdapter,
   PlatformCapabilities,
@@ -61,6 +70,18 @@ export const getReportExport = async (): Promise<ReportExportAdapter | null> => 
   }
   const { electronReportExportAdapter } = await import("./electron-adapter");
   return electronReportExportAdapter;
+};
+
+export const getIssueReporter = async (): Promise<IssueReportAdapter | null> => {
+  if (!isElectronEnv() || !window.electronAPI?.issueReport) return null;
+  const { electronIssueReportAdapter } = await import("./electron-adapter");
+  return electronIssueReportAdapter;
+};
+
+export const getFigmaNodeVerifier = async (): Promise<FigmaNodeVerificationAdapter | null> => {
+  if (!isElectronEnv() || !window.electronAPI?.figmaNodeVerification) return null;
+  const { electronFigmaNodeVerificationAdapter } = await import("./electron-adapter");
+  return electronFigmaNodeVerificationAdapter;
 };
 
 /**

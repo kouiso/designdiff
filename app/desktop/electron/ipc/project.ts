@@ -9,9 +9,11 @@ import {
 } from "node:fs";
 import { join } from "node:path";
 
-import { app, ipcMain } from "electron";
+import { ipcMain } from "electron";
 
 import { ProjectSchema } from "@figdiff/shared";
+
+import { getFigdiffProjectsDir } from "../util/figdiff-home.js";
 
 const PROJECT_ID_PATTERN = /^[a-zA-Z0-9_-]+$/;
 
@@ -20,7 +22,7 @@ const isValidProjectId = (id: string): boolean => {
 };
 
 const getProjectsDir = (): string => {
-  const dir = join(app.getPath("home"), ".figdiff", "projects");
+  const dir = getFigdiffProjectsDir();
   if (!existsSync(dir)) {
     mkdirSync(dir, { recursive: true });
   }

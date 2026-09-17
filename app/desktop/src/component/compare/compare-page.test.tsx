@@ -29,6 +29,13 @@ beforeEach(() => {
     designImage: null,
     screenshotImage: null,
     compareResult: null,
+    currentComparison: null,
+    fixBaseline: null,
+    fixVerification: null,
+    fixTarget: null,
+    isLoadingFixTarget: false,
+    selectedFixTargetId: null,
+    fixError: null,
     isComparing: false,
     error: null,
     viewMode: "transparent_overlay",
@@ -49,6 +56,15 @@ describe("ComparePage", () => {
   it("タイトルが表示される", () => {
     render(<ComparePage />);
     expect(screen.getByText("デザインと実装を比較")).toBeInTheDocument();
+  });
+
+  it("比較前でも上部ボタンから問題報告を開ける", () => {
+    render(<ComparePage />);
+    fireEvent.click(screen.getByRole("button", { name: "問題を報告" }));
+
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(screen.getByLabelText("タイトル")).toBeInTheDocument();
+    expect(screen.getByLabelText("内容")).toBeInTheDocument();
   });
 
   it("designImage なし → デザイン未読み込み状態", () => {
@@ -85,6 +101,17 @@ describe("ComparePage", () => {
     });
     render(<ComparePage />);
     expect(screen.getByText("画像を比較中...")).toBeInTheDocument();
+  });
+
+  it("version-bound node読込中は差分検出を無効にする", () => {
+    useCompareStore.setState({
+      designImage: "base64design",
+      screenshotImage: "base64screenshot",
+      isLoadingFixTarget: true,
+    });
+    render(<ComparePage />);
+
+    expect(screen.getByRole("button", { name: "差分を検出" })).toBeDisabled();
   });
 
   it("compareResult あり → matchRate バッジ表示", () => {
@@ -188,11 +215,43 @@ describe("ComparePage", () => {
     expect(mockRunComparison).toHaveBeenCalled();
   });
 
+  it("修正確認タブから一時baseline導線へ到達できる", () => {
+    render(<ComparePage />);
+    expect(screen.getByTestId("result-tabs")).toHaveClass("grid-cols-2");
+    fireEvent.click(screen.getByRole("button", { name: "修正確認" }));
+
+    expect(screen.getByText("修正前後を確認")).toBeInTheDocument();
+    expect(screen.getByText(/この画面を閉じるまでの一時的な修正前データ/)).toBeInTheDocument();
+  });
+
+  it("アニメーション比較タブから時系列入力へ到達できる", () => {
+    render(<ComparePage />);
+    fireEvent.click(screen.getByRole("button", { name: "動き" }));
+
+    expect(screen.getByText("アニメーション比較")).toBeInTheDocument();
+    expect(screen.getByLabelText("設計フレームを追加")).toBeInTheDocument();
+    expect(screen.getByLabelText("実装フレームを追加")).toBeInTheDocument();
+  });
+
   it("frameImage あり → designImage に自動セット", () => {
     useProjectStore.setState({ frameImage: "data:image/png;base64,frame" });
     render(<ComparePage />);
 
     expect(useCompareStore.getState().designImage).toBe("data:image/png;base64,frame");
+  });
+
+  it("ノードタブは現在のFigmaファイルで選択したフレームを検査候補にする", () => {
+    const nodeId = crypto.randomUUID();
+    useProjectStore.setState({
+      currentFileKey: crypto.randomUUID(),
+      selectedFrame: { id: nodeId, name: "Selected frame", width: 320, height: 180 },
+    });
+    render(<ComparePage />);
+
+    fireEvent.click(screen.getByRole("button", { name: "ノード" }));
+
+    expect(screen.getByLabelText("ノードID")).toHaveValue(nodeId);
+    expect(screen.getByRole("option", { name: /Selected frame/ })).toBeInTheDocument();
   });
 
   it("ローカル画像を読み込むとスクリーンショット状態になる", async () => {

@@ -1,5 +1,7 @@
 import {
   electronAdapter,
+  electronFigmaNodeVerificationAdapter,
+  electronIssueReportAdapter,
   electronCapabilities,
   electronOverlayAdapter,
   electronReportExportAdapter,
@@ -85,6 +87,29 @@ describe("electronAdapter", () => {
       await electronAdapter.figma.getNodeDetail("ABC", "1:1", 1);
 
       expect(window.electronAPI.getFigmaNodeDetail).toHaveBeenCalledWith("ABC", "1:1", 1);
+    });
+
+    it("getDesignTokens が IPC 応答を検証して depth を渡す", async () => {
+      const tokens = [
+        {
+          nodeId: "fixture-node",
+          nodeName: "Fixture",
+          nodeType: "FRAME",
+          property: "width",
+          value: 100,
+          unit: "px",
+        },
+      ];
+      vi.mocked(window.electronAPI.getFigmaDesignTokens).mockResolvedValueOnce(tokens);
+
+      await expect(
+        electronAdapter.figma.getDesignTokens("ABC", "fixture-node", 1),
+      ).resolves.toEqual(tokens);
+      expect(window.electronAPI.getFigmaDesignTokens).toHaveBeenCalledWith(
+        "ABC",
+        "fixture-node",
+        1,
+      );
     });
   });
 
@@ -291,5 +316,89 @@ describe("electronReportExportAdapter", () => {
       format: "markdown",
     });
     await expect(electronReportExportAdapter.save(result, "json")).resolves.toBeNull();
+  });
+});
+
+describe("electronIssueReportAdapter", () => {
+  it("reviewed draftをprepareし、submit/discardはdraft IDだけを渡す", async () => {
+    const input = { title: "Problem", body: "Details", category: "bug" as const };
+    const preview = {
+      draftId: "draft-1",
+      repository: { owner: "kouiso", repo: "designdiff" },
+      title: "[bug] Problem",
+      body: "Details",
+      labels: ["desktop-feedback", "bug"],
+      maskedCount: 0,
+      duplicate: { status: "none" as const },
+    };
+    const submitted = {
+      issueUrl: "https://github.com/kouiso/designdiff/issues/42",
+      issueNumber: 42,
+      deduped: false,
+      maskedCount: 0,
+    };
+    vi.mocked(window.electronAPI.issueReport.prepare).mockResolvedValue(preview);
+    vi.mocked(window.electronAPI.issueReport.submit).mockResolvedValue(submitted);
+
+    await expect(electronIssueReportAdapter.prepare(input)).resolves.toEqual(preview);
+    await expect(electronIssueReportAdapter.submit("draft-1")).resolves.toEqual(submitted);
+    await electronIssueReportAdapter.discard("draft-1");
+
+    expect(window.electronAPI.issueReport.prepare).toHaveBeenCalledWith(input);
+    expect(window.electronAPI.issueReport.submit).toHaveBeenCalledWith("draft-1");
+    expect(window.electronAPI.issueReport.discard).toHaveBeenCalledWith("draft-1");
+  });
+
+  it("mainから壊れたpreviewが返った場合はrendererへ渡さない", async () => {
+    vi.mocked(window.electronAPI.issueReport.prepare).mockResolvedValue({
+      draftId: "",
+      repository: { owner: "", repo: "" },
+      title: "Problem",
+      body: "Details",
+      labels: [],
+      maskedCount: -1,
+      duplicate: { status: "none" },
+    });
+
+    await expect(
+      electronIssueReportAdapter.prepare({ title: "Problem", body: "Details" }),
+    ).rejects.toThrow();
+  });
+});
+
+describe("electronFigmaNodeVerificationAdapter", () => {
+  const source = {
+    sourceVersion: "version-7",
+    frameNodeId: "1:2",
+    targetNodeId: "3:4",
+    targetNodeName: "Button",
+    rootBox: { x: 10, y: 20, width: 390, height: 844 },
+    targetBox: { x: 30, y: 60, width: 120, height: 48 },
+    imageBase64: "png-base64",
+    requestedScale: 2,
+  };
+
+  it("version固定された最小geometryとPNGだけを返す", async () => {
+    vi.mocked(window.electronAPI.figmaNodeVerification.load).mockResolvedValueOnce(source);
+    const input = { fileKey: "FILE123", frameNodeId: "1:2", targetNodeId: "3:4", scale: 2 };
+
+    await expect(electronFigmaNodeVerificationAdapter.load(input)).resolves.toEqual(source);
+    expect(window.electronAPI.figmaNodeVerification.load).toHaveBeenCalledWith(input);
+  });
+
+  it("mainから壊れたversionやbboxが返った場合はrendererへ渡さない", async () => {
+    vi.mocked(window.electronAPI.figmaNodeVerification.load).mockResolvedValueOnce({
+      ...source,
+      sourceVersion: "",
+      targetBox: { ...source.targetBox, width: 0 },
+    });
+
+    await expect(
+      electronFigmaNodeVerificationAdapter.load({
+        fileKey: "FILE123",
+        frameNodeId: "1:2",
+        targetNodeId: "3:4",
+      }),
+    ).rejects.toThrow();
   });
 });

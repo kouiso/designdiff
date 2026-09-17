@@ -1,10 +1,41 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
+import type * as FsPromises from "node:fs/promises";
+
+const sqliteMocks = vi.hoisted(() => ({ close: vi.fn(), exec: vi.fn() }));
+
 vi.mock("node:fs", () => ({
+  chmodSync: vi.fn(),
   constants: { F_OK: 0 },
   existsSync: vi.fn(),
 }));
-vi.mock("node:fs/promises");
+vi.mock("node:fs/promises", async (importOriginal) => {
+  const original = await importOriginal<typeof FsPromises>();
+  return {
+    ...original,
+    access: vi.fn(),
+    mkdir: vi.fn(),
+    readFile: vi.fn(),
+    rename: vi.fn(),
+    rm: vi.fn(),
+    writeFile: vi.fn(),
+  };
+});
+vi.mock("node:sqlite", () => ({
+  DatabaseSync: class {
+    isTransaction = false;
+
+    exec(sql: string): void {
+      sqliteMocks.exec(sql);
+      if (sql === "BEGIN IMMEDIATE") this.isTransaction = true;
+      if (sql === "COMMIT" || sql === "ROLLBACK") this.isTransaction = false;
+    }
+
+    close(): void {
+      sqliteMocks.close();
+    }
+  },
+}));
 
 const mockNodeFs = await import("node:fs");
 const mockFs = await import("node:fs/promises");
@@ -90,6 +121,48 @@ regions:
     await expect(getIgnoreRegionsForComparison("project-1", "Home")).resolves.toHaveLength(2);
   });
 
+  it("keeps legacy masks but only applies bound entries with the exact coordinate context", async () => {
+    vi.mocked(mockFs.readFile).mockResolvedValue(`version: 1
+regions:
+  - id: legacy
+    x: 0
+    y: 0
+    width: 1
+    height: 1
+  - id: bound
+    x: 1
+    y: 1
+    width: 1
+    height: 1
+    coordinate_context:
+      canvas_width: 10
+      canvas_height: 10
+      design_original_width: 10
+      design_original_height: 10
+      screenshot_original_width: 10
+      screenshot_original_height: 10
+`);
+    const { getIgnoreRegionsForComparison } = await import("./ignore-region-store.js");
+    const context = {
+      canvas_width: 10,
+      canvas_height: 10,
+      design_original_width: 10,
+      design_original_height: 10,
+      screenshot_original_width: 10,
+      screenshot_original_height: 10,
+    };
+    await expect(getIgnoreRegionsForComparison("project-1")).resolves.toHaveLength(1);
+    await expect(
+      getIgnoreRegionsForComparison("project-1", undefined, context),
+    ).resolves.toHaveLength(2);
+    await expect(
+      getIgnoreRegionsForComparison("project-1", undefined, {
+        ...context,
+        screenshot_original_width: 11,
+      }),
+    ).resolves.toHaveLength(1);
+  });
+
   it("invalid schema fails with project path and Zod issue summary", async () => {
     vi.mocked(mockFs.readFile).mockResolvedValue(`version: 1
 regions:
@@ -120,7 +193,10 @@ regions:
       { id: "home-copy", frame_name: "Home", x: 1, y: 2, width: 3, height: 4 },
     ]);
 
-    const writePath = String(vi.mocked(mockFs.writeFile).mock.calls[0][0]);
+    const writeCall = vi
+      .mocked(mockFs.writeFile)
+      .mock.calls.find(([filePath]) => String(filePath).includes(".tmp"));
+    const writePath = String(writeCall?.[0]);
     const renameFrom = String(vi.mocked(mockFs.rename).mock.calls[0][0]);
     const renameTo = String(vi.mocked(mockFs.rename).mock.calls[0][1]);
 
@@ -199,9 +275,11 @@ regions:
     const config = await deleteIgnoreRegion("project-1", "r1");
 
     expect(config.regions.map((region) => region.id)).toEqual(["r2"]);
-    expect(vi.mocked(mockFs.writeFile)).toHaveBeenCalledOnce();
-    expect(String(vi.mocked(mockFs.writeFile).mock.calls[0][1])).toContain("id: r2");
-    expect(String(vi.mocked(mockFs.writeFile).mock.calls[0][1])).not.toContain("id: r1");
+    const yaml = vi
+      .mocked(mockFs.writeFile)
+      .mock.calls.find(([filePath]) => String(filePath).includes(".tmp"));
+    expect(String(yaml?.[1])).toContain("id: r2");
+    expect(String(yaml?.[1])).not.toContain("id: r1");
   });
 
   it("deleteIgnoreRegion keeps existing regions when the id is unknown", async () => {
@@ -223,15 +301,17 @@ regions:
     const config = await deleteIgnoreRegion("project-1", "unknown");
 
     expect(config.regions.map((region) => region.id)).toEqual(["r1"]);
-    expect(vi.mocked(mockFs.writeFile)).toHaveBeenCalledOnce();
-    expect(String(vi.mocked(mockFs.writeFile).mock.calls[0][1])).toContain("id: r1");
+    const yaml = vi
+      .mocked(mockFs.writeFile)
+      .mock.calls.find(([filePath]) => String(filePath).includes(".tmp"));
+    expect(String(yaml?.[1])).toContain("id: r1");
   });
 
   it("write failure removes temp file", async () => {
     const error = new Error("disk full");
     vi.mocked(mockFs.readFile).mockRejectedValue(makeEnoentError());
     vi.mocked(mockFs.mkdir).mockResolvedValue(undefined);
-    vi.mocked(mockFs.writeFile).mockRejectedValue(error);
+    vi.mocked(mockFs.writeFile).mockRejectedValueOnce(error);
     vi.mocked(mockFs.rm).mockResolvedValue(undefined);
 
     const { setIgnoreRegionConfig } = await import("./ignore-region-store.js");

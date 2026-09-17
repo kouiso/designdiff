@@ -26,6 +26,15 @@ vi.mock("@/util/canvas-image", () => {
   };
 });
 
+const mockImageElement = (width: number, height: number): HTMLImageElement => {
+  const image = document.createElement("img");
+  Object.defineProperties(image, {
+    naturalWidth: { value: width },
+    naturalHeight: { value: height },
+  });
+  return image;
+};
+
 describe("generateSuggestion", () => {
   it("100 → compare.suggestionPerfect", () => {
     expect(generateSuggestion(100)).toBe("compare.suggestionPerfect");
@@ -261,6 +270,64 @@ describe("compareImages", () => {
     expect(loadImageElement).toHaveBeenCalledWith("def456");
   });
 
+  it("matching coordinate context masks pixels and excludes them from the denominator", async () => {
+    const context = {
+      canvas_width: 10,
+      canvas_height: 10,
+      design_original_width: 10,
+      design_original_height: 10,
+      screenshot_original_width: 10,
+      screenshot_original_height: 10,
+    };
+    const result = await compareImages({
+      designImage: "abc",
+      screenshotImage: "def",
+      ignoreRegionEntries: [
+        { id: "confirmed", x: 0, y: 0, width: 2, height: 2, coordinate_context: context },
+      ],
+    });
+    expect(result.totalPixelCount).toBe(96);
+    expect(result.ignoredRegionIds).toEqual(["confirmed"]);
+    expect(result.incompatibleIgnoreRegionIds).toEqual([]);
+  });
+
+  it("does not apply a context-bound mask after source geometry changes", async () => {
+    const result = await compareImages({
+      designImage: "abc",
+      screenshotImage: "def",
+      ignoreRegionEntries: [
+        {
+          id: "stale",
+          x: 0,
+          y: 0,
+          width: 10,
+          height: 10,
+          coordinate_context: {
+            canvas_width: 10,
+            canvas_height: 10,
+            design_original_width: 11,
+            design_original_height: 10,
+            screenshot_original_width: 10,
+            screenshot_original_height: 10,
+          },
+        },
+      ],
+    });
+    expect(result.totalPixelCount).toBe(100);
+    expect(result.ignoredRegionIds).toEqual([]);
+    expect(result.incompatibleIgnoreRegionIds).toEqual(["stale"]);
+  });
+
+  it("rejects a mask that leaves no pixels to compare", async () => {
+    await expect(
+      compareImages({
+        designImage: "abc",
+        screenshotImage: "def",
+        ignoreRegionEntries: [{ id: "legacy-full", x: 0, y: 0, width: 10, height: 10 }],
+      }),
+    ).rejects.toThrow("no pixels remain to compare");
+  });
+
   it("diffPixelCount=0 の場合 matchRate=100", async () => {
     const pixelmatch = await import("pixelmatch");
     vi.mocked(pixelmatch.default).mockReturnValue(0);
@@ -270,5 +337,127 @@ describe("compareImages", () => {
     expect(result.suggestion).toBe("compare.suggestionPerfect");
     expect(result.diffReport?.aggregateVerdict).toBe("pass");
     expect(result.diffReport?.regionScores).toHaveLength(9);
+  });
+
+  it("Figmaノード座標をrequested scaleではなくdecode済み画像寸法から比較canvasへ写す", async () => {
+    const { imageElementToData, loadImageElement, resizeImageData, resizeImageDataContainTop } =
+      await import("@/util/canvas-image");
+    const makeImageData = (width: number, height: number) => ({
+      data: new Uint8ClampedArray(width * height * 4),
+      width,
+      height,
+      colorSpace: "srgb" as const,
+    });
+    vi.mocked(loadImageElement)
+      .mockResolvedValueOnce(mockImageElement(40, 20))
+      .mockResolvedValueOnce(mockImageElement(20, 20));
+    vi.mocked(imageElementToData)
+      .mockReturnValueOnce(makeImageData(40, 20))
+      .mockReturnValueOnce(makeImageData(20, 20));
+    vi.mocked(resizeImageData).mockReturnValueOnce(makeImageData(20, 10));
+    vi.mocked(resizeImageDataContainTop).mockReturnValueOnce(makeImageData(20, 20));
+
+    const result = await compareImages({
+      designImage: "design",
+      screenshotImage: "actual",
+      fixTarget: {
+        sourceVersion: "version-1",
+        rootNodeId: "1:1",
+        targetNodeId: "12:34",
+        targetNodeName: "Button label",
+        rootBox: { x: 100, y: 50, width: 40, height: 20 },
+        targetBox: { x: 120, y: 50, width: 20, height: 20 },
+      },
+    });
+
+    expect(result.fixTargetRegion).toMatchObject({
+      status: "measured",
+      nodeId: "12:34",
+      score: { bbox: { x: 10, y: 0, w: 10, h: 10 } },
+      evaluatedPixelCount: 100,
+      totalPixelCount: 100,
+    });
+  });
+
+  it("crop後のcanvas外にあるFigmaノードは未計測として返す", async () => {
+    const { cropImageSource } = await import("@/util/canvas-image");
+    const cropped = {
+      data: new Uint8ClampedArray(5 * 5 * 4),
+      width: 5,
+      height: 5,
+      colorSpace: "srgb" as const,
+    };
+    vi.mocked(cropImageSource).mockReturnValueOnce(cropped).mockReturnValueOnce(cropped);
+    const result = await compareImages({
+      designImage: "design",
+      screenshotImage: "actual",
+      cropRegion: { x: 0, y: 0, width: 5, height: 5 },
+      fixTarget: {
+        sourceVersion: "version-1",
+        rootNodeId: "1:1",
+        targetNodeId: "12:34",
+        targetNodeName: "Outside",
+        rootBox: { x: 0, y: 0, width: 10, height: 10 },
+        targetBox: { x: 8, y: 8, width: 2, height: 2 },
+      },
+    });
+
+    expect(result.fixTargetRegion).toEqual({
+      status: "unmeasured",
+      nodeId: "12:34",
+      nodeName: "Outside",
+      reason: "outside-canvas",
+    });
+  });
+
+  it("mask穴を平行移動して任意nodeの人工差分にせず、全体shiftの不合格は保持する", async () => {
+    const { imageElementToData, loadImageElement } = await import("@/util/canvas-image");
+    const width = 120;
+    const height = 90;
+    const makeShiftedImage = (x: number) => {
+      const data = new Uint8ClampedArray(width * height * 4);
+      for (let index = 0; index < data.length; index += 4) data[index + 3] = 255;
+      for (let y = 10; y < 80; y += 1) {
+        for (let pixelX = x; pixelX < x + 100; pixelX += 1) {
+          const index = (y * width + pixelX) * 4;
+          data[index] = 220;
+          data[index + 1] = 30;
+          data[index + 2] = 40;
+        }
+      }
+      return { data, width, height, colorSpace: "srgb" as const };
+    };
+    vi.mocked(loadImageElement)
+      .mockResolvedValueOnce(mockImageElement(width, height))
+      .mockResolvedValueOnce(mockImageElement(width, height));
+    vi.mocked(imageElementToData)
+      .mockReturnValueOnce(makeShiftedImage(10))
+      .mockReturnValueOnce(makeShiftedImage(17));
+
+    const result = await compareImages({
+      designImage: "design",
+      screenshotImage: "actual",
+      ignoreRegionEntries: [{ id: "partial", x: 20, y: 20, width: 2, height: 10 }],
+      fixTarget: {
+        sourceVersion: "version-1",
+        rootNodeId: "1:1",
+        targetNodeId: "12:34",
+        targetNodeName: "Shifted node",
+        rootBox: { x: 0, y: 0, width, height },
+        targetBox: { x: 20, y: 20, width: 10, height: 10 },
+      },
+    });
+
+    expect(result.diffReport?.alignment.translation).toEqual({ x: 7, y: 0 });
+    expect(result.diffReport?.aggregateVerdict).toBe("fail");
+    expect(result.fixTargetRegion).toMatchObject({
+      status: "measured",
+      score: {
+        bbox: { x: 27, y: 20, w: 10, h: 10 },
+        structure: 1,
+        color: 0,
+        shape: 0,
+      },
+    });
   });
 });

@@ -2,7 +2,7 @@
 
 > 統合元: `~/.devin/plans/plan-34d1cec42c70a667.md`（セッション goal）+ `docs/implementation-plan.md`（本計画）+ `docs/work-status.md`（台帳）
 > 詳細な検証ケースは `docs/test-specification.md`（49 ケース）を参照。
-> 最終更新: 2026-09-12 / 作業場所: `~/ghq/kouiso/designdiff-wt-dogfood` @ `codex/full-dogfood-resolution`
+> 最終更新: 2026-09-13 / 作業場所: `~/ghq/kouiso/designdiff-wt-dogfood` @ `codex/campaign-recovery-20260913-004811`
 
 ---
 
@@ -35,7 +35,7 @@ macmini 再起動で `/private/tmp/figdiff-01a08ee2-implementation` が消失。
 | Phase | 内容 | 状態 |
 |---|---|---|
 | 0 | サルベージ・worktree・再構成・push・build/lint/test 緑 | ✅ 完了（Vitest4 rebase 後の全テスト再検証中） |
-| 1 | PR #144・#146 解消 | 🔄 #144 マージ済・#146 dependabot rebase 待ち |
+| 1 | PR #144・#146 解消 | ✅ #144・#146 マージ済、#145 CLOSEDを再確認 |
 | 2 | 残 Issue 解消（下表） | 🔄 進行中 |
 | 3 | test-spec 全 49 ケース・同一 SHA 2 巡 | ⬜ 0 巡完了 |
 | 4 | work-status 更新・handoff・完了報告 | ⬜ |
@@ -48,8 +48,8 @@ macmini 再起動で `/private/tmp/figdiff-01a08ee2-implementation` が消失。
 
 | 対象 | タイトル要約 | 再構成コミット | 状態 |
 |---|---|---|---|
-| PR #144 / #145 | Vitest 4.1.11 coverage 移行 | — | ✅ マージ済（#145 連動クローズ確認要） |
-| PR #146 | sharp 0.35.4 (dependabot) | — | 🔄 rebase 後マージ |
+| PR #144 / #145 | Vitest 4.1.11 coverage 移行 | — | ✅ マージ済（#145 CLOSED確認済） |
+| PR #146 | sharp 0.35.4 (dependabot) | — | ✅ 2026-09-12 マージ済 |
 | #109 | 同一 source 再比較で証跡が暗黙削除 | `0605d857` | 🔧 再起動後の旧ID・画像読込みを実検証 |
 | #114 | list_projects が有効プロジェクトを返さない | `44e14064` | 🔧 実 MCP 経由で検証 |
 | #131 | 比較ループが stale 履歴を再利用 | `50f36406`+campaign-key | 🔧 campaign 分離の互換性検証 |
@@ -98,7 +98,7 @@ macmini 再起動で `/private/tmp/figdiff-01a08ee2-implementation` が消失。
 ## 6. 保留中の承認・外部依存
 
 - **#69 履歴書き換え**: 実行時に明示承認（計画内・tree 不変検証付き）
-- **#146 マージ**: dependabot rebase → CI 緑 → 承認済みなのでマージ可
+- **#146 マージ**: 完了。merge SHA `40c458e442e52fc2bb4a4c71b3a80403165db432` は作業HEADの祖先。
 - **Figma PAT**: 実 API 検証に必要。環境変数/キーチェーン確認、無ければ要所残しで進行
-- **macOS disk**: 残約 1.3GiB と少ない。証跡配置に注意
+- **macOS disk**: 初回記録では残約1.3GiB。実行時に対象checkoutの容量を確認する。
 - **実行不能項**: `handoff/windows-wsl-verification.md` へ失敗理由・コマンド・期待値・証跡先を記録（未実行を成功扱いしない）

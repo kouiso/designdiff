@@ -5,6 +5,9 @@
 
 import { z } from "zod";
 
+import { ComparisonConditionsReportSchema } from "./comparison-conditions.js";
+import { VerificationContextSchema } from "./verification-context.js";
+
 // --- Frame Schema ---
 
 export const FrameSchema = z.object({
@@ -222,6 +225,7 @@ export const CompletionCriterionSchema = z.object({
 
 export const CompletionCriteriaSchema = z.object({
   structuralReview: CompletionCriterionSchema,
+  conditionsReview: CompletionCriterionSchema.optional(),
   wholeImageStructure: CompletionCriterionSchema.optional(),
   // 判定器が pass と言っているのに画素の大半が違う状態を検出する行。
   consistencyReview: CompletionCriterionSchema.optional(),
@@ -390,6 +394,7 @@ export const PreflightWarningCodeSchema = z.enum([
   "design_node_missing",
   "figma_export_hidden_blank",
   "figma_export_background_missing",
+  "comparison_conditions_mismatch",
 ]);
 
 export const PreflightSeveritySchema = z.enum(["info", "warning", "critical"]);
@@ -493,6 +498,7 @@ export const DiagnosisCauseCodeSchema = z.enum([
   "global_color_shift",
   "blank_or_wrong_node",
   "figma_export_conditions",
+  "comparison_conditions",
 ]);
 
 export const DiagnosisCauseSchema = z.object({
@@ -544,6 +550,7 @@ export const LoopGuardReportSchema = z.object({
 /** 自走ループ1反復ぶんの記録。 */
 export const ConvergenceIterationSchema = z.object({
   comparisonId: z.string(),
+  comparisonConditions: ComparisonConditionsReportSchema.optional(),
   // 画面は 0〜100 の一致率として描く。範囲外を通すと、あり得ん点数が出る。
   matchRate: z.number().min(0).max(100),
   diffPixelCount: z.number().int().nonnegative().optional(),
@@ -664,6 +671,22 @@ export const CompareDesignResultSchema = z
     critique: CritiqueNoteSchema.optional(),
     preflight: PreflightReportSchema.optional(),
     normalization: NormalizationReportSchema.optional(),
+    ignoreRegionResolution: z
+      .object({
+        coordinateContext: z.lazy(() => IgnoreRegionCoordinateContextSchema),
+        appliedIds: z.array(z.string()),
+        incompatibleIds: z.array(z.string()),
+        legacyIds: z.array(z.string()),
+        effectiveCanvas: z.lazy(() => ImageDimensionsSchema).optional(),
+        effectiveRegions: z.array(z.lazy(() => IgnoreRegionSchema)).optional(),
+        maskedPixelCount: z.number().int().nonnegative().optional(),
+        maskSha256: z
+          .string()
+          .regex(/^[0-9a-f]{64}$/)
+          .optional(),
+      })
+      .optional(),
+    comparisonConditions: ComparisonConditionsReportSchema.optional(),
     figmaExport: FigmaExportReportSchema.optional(),
     // capture_scroll でスクロール結合したときだけ入る。
     scrollCapture: ScrollCaptureReportSchema.optional(),
@@ -676,6 +699,7 @@ export const CompareDesignResultSchema = z
     tokenDiff: TokenDiffReportSchema.optional(),
     /** 合否を決めた経路。token-diff が働いたときだけ "token-diff"。 */
     verdictRoute: VerdictRouteSchema.optional(),
+    verificationContext: VerificationContextSchema.optional(),
     diffImagePath: z.string().optional(),
     diffImageBase64: z.string().optional(),
   })
@@ -715,10 +739,32 @@ export const IgnoreRegionSchema = z.object({
   label: z.string().optional(),
 });
 
+export const IgnoreRegionCoordinateContextSchema = z
+  .object({
+    canvas_width: z.number().int().positive(),
+    canvas_height: z.number().int().positive(),
+    design_original_width: z.number().int().positive(),
+    design_original_height: z.number().int().positive(),
+    screenshot_original_width: z.number().int().positive(),
+    screenshot_original_height: z.number().int().positive(),
+    file_key: z.string().min(1).optional(),
+    node_id: z.string().min(1).optional(),
+    crop_region: z
+      .object({
+        x: z.number().nonnegative(),
+        y: z.number().nonnegative(),
+        width: z.number().positive(),
+        height: z.number().positive(),
+      })
+      .optional(),
+  })
+  .strict();
+
 export const IgnoreRegionConfigEntrySchema = IgnoreRegionSchema.extend({
   id: z.string().regex(/^[a-zA-Z0-9_-]+$/),
   frame_name: z.string().optional(),
   note: z.string().optional(),
+  coordinate_context: IgnoreRegionCoordinateContextSchema.optional(),
 }).strict();
 
 export const IgnoreRegionConfigFileSchema = z
@@ -727,6 +773,22 @@ export const IgnoreRegionConfigFileSchema = z
     regions: z.array(IgnoreRegionConfigEntrySchema),
   })
   .strict();
+
+export const IgnoreRegionResolutionSchema = z.object({
+  coordinateContext: IgnoreRegionCoordinateContextSchema,
+  appliedIds: z.array(z.string()),
+  incompatibleIds: z.array(z.string()),
+  legacyIds: z.array(z.string()),
+  effectiveCanvas: z
+    .object({ width: z.number().int().positive(), height: z.number().int().positive() })
+    .optional(),
+  effectiveRegions: z.array(IgnoreRegionSchema).optional(),
+  maskedPixelCount: z.number().int().nonnegative().optional(),
+  maskSha256: z
+    .string()
+    .regex(/^[0-9a-f]{64}$/)
+    .optional(),
+});
 
 // --- Design Source Schema (v4: Figma URL or local image per page) ---
 
@@ -804,7 +866,7 @@ export const FrameComparisonSchema = z.object({
   atMs: z.number().int().nonnegative(),
   screenshotPath: z.string(),
   status: z.enum(["PASS", "FAIL", "UNCERTAIN"]),
-  matchRate: z.number(),
+  matchRate: z.number().min(0).max(1),
   comparisonId: z.string(),
   diffImagePath: z.string().optional(),
 });
@@ -813,7 +875,7 @@ export const FrameAlignmentSchema = z.object({
   designAtMs: z.number().int().nonnegative(),
   matchedAtMs: z.number().int().nullable(),
   driftMs: z.number().int().nullable(),
-  mismatchRate: z.number().nullable(),
+  mismatchRate: z.number().min(0).max(1).nullable(),
   reason: z.string().optional(),
 });
 
