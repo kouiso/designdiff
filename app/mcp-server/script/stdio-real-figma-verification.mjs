@@ -167,6 +167,178 @@ assert.match(
   "opaque fill node must record opaqueFillExpected:true",
 );
 
+// M04: list_figma_frames — 実ファイルのページ/フレーム列挙、ページング、
+// 軽量投影、壊れたURLの拒否。
+const FILE_URL = `https://www.figma.com/design/${FILE_KEY}/figdiff-verify`;
+const framesFull = await call("list_figma_frames", { figma_url: FILE_URL });
+assert.ok(!framesFull.isError, "list_figma_frames should succeed");
+const framesData = JSON.parse(framesFull.content.map((c) => c.text).join(""));
+evidence.results.M04_list_frames = { structuredContent: framesData };
+assert.ok(framesData.frameCount >= 5, "real file must list multiple frames");
+assert.ok(
+  framesData.frames.some((f) => f.id === HIDDEN_NODE || f.id === OPAQUE_NODE) ||
+    framesData.frames.length > 0,
+  "frames must carry id/name",
+);
+const framesPage = await call("list_figma_frames", {
+  figma_url: FILE_URL,
+  offset: 0,
+  limit: 2,
+  fields: "id_name",
+});
+const pageData = JSON.parse(framesPage.content.map((c) => c.text).join(""));
+assert.equal(pageData.frames.length, 2, "limit=2 must return 2 frames");
+assert.equal(pageData.hasMore, true, "paging must report hasMore");
+assert.equal(pageData.nextOffset, 2);
+assert.deepEqual(
+  Object.keys(pageData.frames[0]).sort(),
+  ["id", "name"],
+  "id_name projection must only carry id and name",
+);
+const badUrl = await call("list_figma_frames", {
+  figma_url: "https://example.com/not-figma",
+});
+evidence.results.M04_bad_url = {
+  isError: badUrl.isError === true,
+  text: badUrl.content?.map((c) => c.text).join("\n"),
+};
+assert.ok(badUrl.isError === true, "non-figma URL must be rejected");
+
+// M06: inspect_node — 実ノードのTEXT・影・opacity属性が実値で返ること。
+// 検体は raw REST (本driver外の独立API呼び出し) で選定済み:
+//   9883:7750 = TEXT "HORSE MANAGER" + DROP_SHADOW
+//   10198:32  = FRAME "Image" opacity 0.05
+const textInspect = await call("inspect_node", { figma_url: figmaUrl("9883:7750") });
+const textPayload = JSON.stringify(
+  textInspect.structuredContent ?? textInspect.content ?? {},
+);
+evidence.results.M06_inspect_text_shadow = {
+  isError: textInspect.isError === true,
+  structuredContent: textInspect.structuredContent,
+};
+assert.ok(!textInspect.isError, "inspect_node on TEXT node should succeed");
+assert.match(textPayload, /TEXT/, "node type must be TEXT");
+assert.match(textPayload, /DROP_SHADOW/, "shadow effect must be reported");
+assert.match(textPayload, /HORSE MANAGER|fontSize/i, "text metadata must be present");
+
+const opacityInspect = await call("inspect_node", { figma_url: figmaUrl("10198:32") });
+const opacityPayload = JSON.stringify(
+  opacityInspect.structuredContent ?? opacityInspect.content ?? {},
+);
+evidence.results.M06_inspect_opacity = {
+  isError: opacityInspect.isError === true,
+  structuredContent: opacityInspect.structuredContent,
+};
+assert.ok(!opacityInspect.isError, "inspect_node on opacity node should succeed");
+assert.match(opacityPayload, /0\.0?5|opacity/i, "opacity must be reported");
+
+// M10実経路: 実Figma比較を baseline に verify_fix で改善判定を取る。
+// verify_fix は「同じ撮影条件の修正後スクショ」を要求する (context の
+// geometry/design sha が一致しないと拒否される — それ自体が別の保証)。
+// 製品が比較に使う export (scale・bounds込み) と同じ画素が要るため、
+// RF-02 で温まった製品キャッシュの export を読み、そこから defect/修正版を作る。
+const { readdir } = await import("node:fs/promises");
+const cacheFiles = await readdir(join(store, "cache"));
+const opaqueCache = cacheFiles.find((n) =>
+  n.includes(OPAQUE_NODE.replace(":", "_")) && n.endsWith(".png"),
+);
+assert.ok(opaqueCache, "product-cached export for opaque node must exist");
+const exportBuf = await readFile(join(store, "cache", opaqueCache));
+const exportMeta = await sharp(exportBuf).metadata();
+const fixedPath = join(evidenceDir, "input-fixed-screenshot.png");
+const defectPath = join(evidenceDir, "input-defect-screenshot.png");
+await writeFile(fixedPath, exportBuf);
+// 実装側の「バグ」= export 上に赤い矩形を1箇所描き込んだ同寸法画像。
+await sharp(exportBuf)
+  .composite([
+    {
+      input: Buffer.from(
+        `<svg width="${exportMeta.width}" height="${exportMeta.height}"><rect x="40" y="200" width="200" height="80" fill="#e5484d"/></svg>`,
+      ),
+      top: 0,
+      left: 0,
+    },
+  ])
+  .png()
+  .toFile(defectPath);
+
+const m10Baseline = await call("compare_design", {
+  design_source: figmaUrl(OPAQUE_NODE),
+  screenshot: defectPath,
+});
+const m10Base = m10Baseline.structuredContent ?? {};
+// regionScores は応答ではなく保存履歴に載る。verify_fix も履歴から読むため、
+// driver は同じストア (FIGDIFF_HOME/results/<id>.json) を直接読んで対象を選ぶ。
+const baselineEntry = JSON.parse(
+  await readFile(join(store, "results", `${m10Base.comparisonId}.json`), "utf8"),
+);
+const regionScores = baselineEntry.result?.diffReport?.regionScores ?? [];
+// defect矩形 (40,200,200x80) と重なる非root領域を対象にする。
+const overlaps = (r) =>
+  r.bbox &&
+  r.scope !== "root" &&
+  r.bbox.x < 240 &&
+  r.bbox.x + r.bbox.w > 40 &&
+  r.bbox.y < 280 &&
+  r.bbox.y + r.bbox.h > 200;
+const target =
+  regionScores.find(overlaps) ??
+  regionScores.find((r) => r.scope !== "root" && (r.figmaNodeId ?? r.regionId)) ??
+  regionScores[0];
+evidence.results.M10_baseline = {
+  isError: m10Baseline.isError === true,
+  status: m10Base.status,
+  regionScoreCount: regionScores.length,
+  regionIds: regionScores.map((r) => r.figmaNodeId ?? r.regionId).slice(0, 10),
+};
+assert.ok(target, "real baseline must produce node-scored regions");
+const targetNodeId = target.figmaNodeId ?? target.regionId;
+
+const verifyImproved = await call("verify_fix", {
+  design_source: figmaUrl(OPAQUE_NODE),
+  screenshot: fixedPath,
+  prior_comparison_id: m10Base.comparisonId,
+  expected_target_node_id: targetNodeId,
+});
+const verifyImprovedData = verifyImproved.structuredContent ?? {};
+evidence.results.M10_verify_improved = {
+  isError: verifyImproved.isError === true,
+  structuredContent: verifyImprovedData,
+  text: verifyImproved.content?.map((c) => c.text).join("\n"),
+};
+assert.ok(
+  !verifyImproved.isError,
+  `verify_fix on real baseline should succeed: ${verifyImproved.content?.map((c) => c.text).join("\n")}`,
+);
+assert.equal(
+  verifyImprovedData.verdict,
+  "improved",
+  `design-identical screenshot must verify as improved, got ${verifyImprovedData.verdict} ` +
+    `deltas s=${verifyImprovedData.structureDelta} c=${verifyImprovedData.colorDelta} ` +
+    `sh=${verifyImprovedData.shapeDelta} target=${targetNodeId} ` +
+    `priorScores=${JSON.stringify(regionScores.map((r) => ({ id: r.figmaNodeId ?? r.regionId, s: r.structure, c: r.color, sh: r.shape })))}`,
+);
+
+const verifyUnchanged = await call("verify_fix", {
+  design_source: figmaUrl(OPAQUE_NODE),
+  screenshot: defectPath,
+  prior_comparison_id: m10Base.comparisonId,
+  expected_target_node_id: targetNodeId,
+});
+evidence.results.M10_verify_unchanged = {
+  isError: verifyUnchanged.isError === true,
+  structuredContent: verifyUnchanged.structuredContent,
+};
+assert.ok(
+  !verifyUnchanged.isError,
+  `verify_fix rerun should succeed: ${verifyUnchanged.content?.map((c) => c.text).join("\n")}`,
+);
+assert.notEqual(
+  verifyUnchanged.structuredContent?.verdict,
+  "improved",
+  "identical defect screenshot must not verify as improved",
+);
+
 // 実キャッシュ画像の SHA を証跡化 (export が本物のAPI結果である証拠)
 const cacheDir = join(store, "cache");
 const cached = [];
