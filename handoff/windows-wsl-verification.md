@@ -81,8 +81,9 @@ node app/mcp-server/script/stdio-android-verification.mjs <evidence-dir>
 - WSL / Windows では実機1台のみ見えるため「複数台接続時の serial 省略拒否」
   は macOS 側の2台証跡 (`android-mac-r5`) で担保する。単端末環境では
   serial 省略の自動選択が成功することを記録する。
-- emulator `x08emu` は現状ネットワーク不通 (`10.0.2.2`・LAN 双方
-  `ERR_ADDRESS_UNREACHABLE`)。scroll 試験は実機で代用した。emulator で
-  scroll 証跡を取りたい場合は cold boot (`-no-snapshot-load`) からやり直し。
+- emulator `x08emu` はスナップショット復元するとネットワークが死ぬ
+  (`10.0.2.2`・LAN 双方 `ERR_ADDRESS_UNREACHABLE`)。cold boot
+  (`emulator -avd x08emu -no-snapshot-load -no-window`) で復旧した。
+  復旧後は emulator への scroll も通る (`android-mac-r6`)。
 - 実機の Chrome はテキスト入りページで翻訳ポップアップを出し swipe を
   食う。検体はテキストなしの縞模様にしてある。
