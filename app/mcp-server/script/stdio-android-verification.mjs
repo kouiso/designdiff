@@ -196,8 +196,13 @@ assert.match(text(bogus), /not connected|not found|no-such-serial/i);
 const scrollDevice =
   ready.find((d) => d.serial === process.env.ANDROID_SCROLL_DEVICE) ?? emulator ?? ready[0];
 // 実機は CSS ピクセル換算でビューポートが狭いので、分割が確実に起きる
-// 長さ (6000px超) にしておく。
-const tallHtml = `<!doctype html><html><body style="margin:0">${["#e33", "#3e3", "#33e", "#ee3", "#3ee", "#e3e", "#963", "#369"].map((c, i) => `<div style="height:800px;background:${c}">block${i}</div>`).join("")}</body></html>`;
+// 長さ (6000px超) にしておく。テキストは入れない — Chrome の翻訳
+// ポップアップが出て swipe を食うのを防ぐため。全面ベタ塗りだと
+// フレーム間の重なり判定が付かず縫い目が曖昧になるので、行毎に一意な
+// 縞模様を敷く。
+const stripe = (c, i) =>
+  `height:800px;background:repeating-linear-gradient(0deg,${c},${c} ${40 + i * 8}px,#111 ${40 + i * 8}px,#111 ${80 + i * 8}px)`;
+const tallHtml = `<!doctype html><html><head><meta name="viewport" content="width=device-width"></head><body style="margin:0">${["#e33", "#3e3", "#33e", "#ee3", "#3ee", "#e3e", "#963", "#369"].map((c, i) => `<div style="${stripe(c, i)}"></div>`).join("")}</body></html>`;
 let pageServer;
 let pageUrl;
 if (process.env.ANDROID_PAGE_URL) {
