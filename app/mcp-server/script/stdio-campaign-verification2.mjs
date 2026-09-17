@@ -670,6 +670,78 @@ await check("M15_capture_width_stable", async () => {
   };
 });
 
+// X09: MCP↔desktop の保存形式相互読込み。desktop は ~/.figdiff/projects/{id}/project.json を
+// 読む (e2e 各 driver が seed する形式)。MCP 作成物が同じ形式・同じ場所にあり、
+// desktop 形式で seed した案件を MCP が読めることを確認する。
+await check("X09_mcp_desktop_interop", async () => {
+  // (a) MCP が作った案件ファイルが desktop の seed 形式と同じ形であること。
+  const created = data(
+    await call(client, "create_project", {
+      name: "Interop check",
+      figma_url: "https://www.figma.com/design/ABC123/Interop",
+      implementation_url: "http://localhost:3000",
+    }),
+  );
+  const projectDir = join(store, "projects", created.project_id);
+  const projectFile = JSON.parse(await readFile(join(projectDir, "project.json"), "utf8"));
+  assert.equal(projectFile.id, created.project_id);
+  assert.ok(projectFile.name && Array.isArray(projectFile.pages), "project.json must have desktop-compatible shape");
+
+  // (b) desktop e2e が seed する形式の案件を MCP が list/get で読めること。
+  const desktopId = "x09-desktop-seed";
+  const desktopDir = join(store, "projects", desktopId);
+  await mkdir(desktopDir, { recursive: true });
+  const desktopProject = {
+    id: desktopId,
+    name: "Desktop-seeded project",
+    implementationUrl: "http://localhost:3000",
+    pages: [
+      {
+        id: "fixture-page",
+        name: "Fixture page",
+        path: "/",
+        designSources: [
+          {
+            id: "fixture-image",
+            type: "local_image",
+            label: "Fixture design",
+            filePath: fixturePaths.design,
+          },
+        ],
+      },
+    ],
+    createdAt: "2026-01-01T00:00:00Z",
+    updatedAt: "2026-01-01T00:00:00Z",
+  };
+  await writeFile(join(desktopDir, "project.json"), JSON.stringify(desktopProject, null, 2));
+
+  const listed = data(await call(client, "list_projects", {}));
+  const found = (listed.projects ?? listed).find?.((p) => p.id === desktopId || p.project_id === desktopId);
+  assert.ok(found, `desktop-seeded project must be listed by MCP: ${JSON.stringify(listed).slice(0, 300)}`);
+
+  // (c) 旧形式データ (driver1 の X09 で作成済み想定の legacy 形状) が消されないこと —
+  // ここでは desktop seed が schema 準拠で読めることを project-store 側でも確認する。
+  const crop = data(
+    await call(client, "set_crop_region", {
+      project_id: desktopId,
+      frame_name: "fixture-page",
+      region: { x: 10, y: 20, width: 100, height: 80 },
+      screenshot_width: W,
+      screenshot_height: H,
+    }),
+  );
+  const reread = JSON.parse(await readFile(join(desktopDir, "project.json"), "utf8"));
+  assert.equal(reread.id, desktopId, "desktop file must not be rewritten to another shape");
+  return {
+    expected: "MCP-written project readable as desktop shape; desktop-seeded project readable by MCP",
+    actual: {
+      mcpCreatedId: created.project_id,
+      desktopSeedListed: Boolean(found),
+      cropOnDesktopProject: crop.ok ?? crop ?? "ok",
+    },
+  };
+});
+
 await client.close();
 server.close();
 
