@@ -113,3 +113,24 @@ PR144修正SHA：`032d96252683b6a8ac1fe5d5d2509dea53b76f7e`。既存PRブラン�
 - 全ツールの実 inputSchema キーを機械抽出して doc と突合（script で全走査）。収載9ツール中残存差分0を確認。
 - ゲート: `pnpm test` turbo 10/10 + script 59 pass/1 skip、`pnpm typecheck` 10/10、`pnpm lint` 9/9（warning のみ、既存の complexity 警告）。
 - docs-only 変更のため runtime 証跡の再実行は不要。最終製品SHAは依然未確定。
+
+## 2026-09-18の追加検証（dogfood, 3platform driver + iOS sim実証）
+
+- 候補SHA `7f40a848`（= driver群込みの最新HEAD）。worktree clean。bundle で Windows/macmini へ配布済み。
+- **stdio-campaign-verification.mjs**（新規, 14件）: M02/M03/M05/M07/M08/M10契約/C04-C08/C11契約/C12/X09。3platform全てで 14/14 PASS。
+  - linux-wsl: `.../stdio-campaign-r4`
+  - macOS (macmini, node 25.6.1): `.../macos-smoke-r2`
+  - Windows (実機, node 25.6.1): `.../windows-smoke-r5`
+- **実Figma拡張**（stdio-real-figma-verification.mjs）: M04 list_figma_frames（312 frames実列挙・paging・id_name投影・不正URL拒否）、M06 inspect_node（TEXT+DROP_SHADOW `9883:7750`、opacity 0.05 `10198:32`、いずれもraw RESTで選定した実ノード）、M10 verify_fix 実経路（実baseline→同寸法defect画像→`verdict:"improved"` for `9525:4762`、同一defect再送→`unchanged`）、M16相当（generate_diff_report が comparison_id から実ファイル出力）。証跡 `.../real-figma-r6`。
+- **iOS Simulator実証**（stdio-ios-sim-verification.mjs, macmini）: booted sim `devin-ios-verify-20260916` から `capture_device:"ios-sim"` で 1206x2622 の実PNG取り込み、simctl直接撮影と寸法一致、system:status-bar 162px 自動マスク、capture_scroll は明示拒否（嘘の結合を返さない）。証跡 `.../ios-sim-r2`。
+- **M01 新規AI導入**: fresh subagent（個人スキルなし）にリポジトリパスのみ渡し → READMEからstdio起動を自力発見、tools/list で17tool、schema適合の compare_design 完走（diff領域が注入矩形と完全一致）。**発見した実ギャップ**: mcp-server README に Node>=25 要件が未記載（Node22だと `node:sqlite` で即死→clientは不透明な -32000 しか見えない）。
+- **driver修正（d4159e47）**: Windowsで `os.homedir()` が USERPROFILE を見るため sandbox HOME が効かず、set_figma_token が実ユーザーの credentials.json を汚染する問題を修正（USERPROFILE も隔離）。実ファイルはWSLの実tokenで復元済み。biome binary 不在環境では plain JSON fallback。
+- **既知の腐ったscript**: `app/chrome-extension/script/background-error-contract-smoke.mjs` / `token-contract-smoke.mjs` は現行ソースに存在しない関数（formatTokenSetError 等）を参照する死にscript — X01/X02 の実Chrome検証は未整備。
+- **X01/X02 実Chrome拡張 E2E**（script/real-chrome-e2e.mjs 新規, xvfb + 実Chromium + dist読み込み）:
+  - 出荷manifestそのまま (chrome-ext-r1): popup表示・Upload→実画像読込・Show Overlayで実ページに `#figdiff-overlay` 実挿入、blob URL画像、opacity 0.25 実適用、Draggable Overlay で実マウスドラッグ `translate(80px,60px)`、scrollY=1500 でも fixed で不動、ページ遷移でoverlay漏洩なし、Hide後にページ実クリック可。
+  - 権限拡張複製manifest (`<all_urls>` host権限のみ差分, chrome-ext-r1-granted): Capture & Compare が captureVisibleTab→OffscreenCanvas pixelmatch移植→`.match-rate: 43.44%` 実描画、Token タブで SW chrome.storage 往復・clear を実証。
+  - **発見した実欠陥/ギャップ**:
+    1. `state.error` が renderFigmaTab 内にしか描画されず、Upload/Token タブ滞在中の capture/compare/overlay 失敗はユーザーに完全不可視（chrome-ext-r1 の `X01_compare_dom` が証拠）。
+    2. ページ遷移で content 側 overlay は消えるが popup の `overlayActive` は残留 → 遷移後の toggle が "Hide Overlay" のまま（`X02_state_after_nav`）。
+    3. `captureVisibleTab` は `<all_urls>` か activeTab が要る — popup を tab として開く自動化では activeTab が付与されず失敗する（実ユーザーは toolbar クリックで付与、native-extension-host r1 がその経路を実証済）。特定 host_permissions では不足。
+- 未完: X05 Android実機（0台=blocked見込）、X06 iOS実機、M12 実GitHub起票（外部write要承認）、desktop経路のWindows/macOS実行、chrome-ext の macOS/Windows 実行、台帳記入と2巡。

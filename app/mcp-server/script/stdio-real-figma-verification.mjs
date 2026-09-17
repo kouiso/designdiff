@@ -339,6 +339,23 @@ assert.notEqual(
   "identical defect screenshot must not verify as improved",
 );
 
+// M16相当のloop完結: baseline比較の comparison_id から report を生成し、
+// ファイルが実際に書かれることと、内容に比較結果が含まれることを確認する。
+const reportPath = join(evidenceDir, "m10-report.md");
+const reportRes = await call("generate_diff_report", {
+  comparison_id: m10Base.comparisonId,
+  format: "markdown",
+  output_path: reportPath,
+});
+evidence.results.M16_generate_report = {
+  isError: reportRes.isError === true,
+  text: reportRes.content?.map((c) => c.text).join("\n")?.slice(0, 500),
+};
+assert.ok(!reportRes.isError, "generate_diff_report should succeed");
+const reportBody = await readFile(reportPath, "utf8");
+assert.ok(reportBody.length > 100, "report file must be written with content");
+assert.match(reportBody, /9525|diff|比較|match/i, "report must reference the comparison");
+
 // 実キャッシュ画像の SHA を証跡化 (export が本物のAPI結果である証拠)
 const cacheDir = join(store, "cache");
 const cached = [];

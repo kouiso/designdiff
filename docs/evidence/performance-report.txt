@@ -1,114 +1,125 @@
 {
   "metric": "page-load",
   "samples": [
-    712,
-    670,
+    743,
+    695,
+    686,
+    668,
+    688,
+    659,
+    675,
     679,
+    660,
+    664,
     676,
+    678,
+    654,
+    676,
+    685,
+    657,
     661,
-    666,
-    646,
-    648,
-    664,
-    640,
-    664,
-    636,
-    636,
-    648,
-    638,
-    638,
-    656,
-    642,
-    638,
-    655
+    663,
+    650,
+    654
   ],
   "sampleDetails": [
     {
-      "totalMs": 712,
-      "gotoMs": 123,
-      "networkIdleWaitMs": 589,
+      "totalMs": 743,
+      "gotoMs": 147,
+      "networkIdleWaitMs": 595,
       "browserNavigation": {
-        "domContentLoadedMs": 113,
-        "loadEventMs": 117,
-        "responseEndMs": 5,
-        "resourceCount": 145
+        "domContentLoadedMs": 137,
+        "loadEventMs": 141,
+        "responseEndMs": 8,
+        "resourceCount": 147
       }
     },
     {
-      "totalMs": 670,
-      "gotoMs": 125,
+      "totalMs": 695,
+      "gotoMs": 146,
+      "networkIdleWaitMs": 549,
+      "browserNavigation": {
+        "domContentLoadedMs": 139,
+        "loadEventMs": 143,
+        "responseEndMs": 5,
+        "resourceCount": 147
+      }
+    },
+    {
+      "totalMs": 686,
+      "gotoMs": 142,
       "networkIdleWaitMs": 544,
       "browserNavigation": {
-        "domContentLoadedMs": 117,
-        "loadEventMs": 121,
+        "domContentLoadedMs": 137,
+        "loadEventMs": 140,
         "responseEndMs": 4,
-        "resourceCount": 145
+        "resourceCount": 147
+      }
+    },
+    {
+      "totalMs": 668,
+      "gotoMs": 122,
+      "networkIdleWaitMs": 546,
+      "browserNavigation": {
+        "domContentLoadedMs": 117,
+        "loadEventMs": 120,
+        "responseEndMs": 5,
+        "resourceCount": 147
+      }
+    },
+    {
+      "totalMs": 688,
+      "gotoMs": 132,
+      "networkIdleWaitMs": 556,
+      "browserNavigation": {
+        "domContentLoadedMs": 127,
+        "loadEventMs": 130,
+        "responseEndMs": 5,
+        "resourceCount": 147
+      }
+    },
+    {
+      "totalMs": 659,
+      "gotoMs": 116,
+      "networkIdleWaitMs": 543,
+      "browserNavigation": {
+        "domContentLoadedMs": 112,
+        "loadEventMs": 114,
+        "responseEndMs": 4,
+        "resourceCount": 147
+      }
+    },
+    {
+      "totalMs": 675,
+      "gotoMs": 123,
+      "networkIdleWaitMs": 552,
+      "browserNavigation": {
+        "domContentLoadedMs": 118,
+        "loadEventMs": 120,
+        "responseEndMs": 4,
+        "resourceCount": 147
       }
     },
     {
       "totalMs": 679,
-      "gotoMs": 125,
+      "gotoMs": 126,
       "networkIdleWaitMs": 553,
       "browserNavigation": {
         "domContentLoadedMs": 120,
         "loadEventMs": 123,
         "responseEndMs": 4,
-        "resourceCount": 145
+        "resourceCount": 147
       }
     },
     {
-      "totalMs": 676,
-      "gotoMs": 125,
-      "networkIdleWaitMs": 550,
+      "totalMs": 660,
+      "gotoMs": 118,
+      "networkIdleWaitMs": 542,
       "browserNavigation": {
-        "domContentLoadedMs": 121,
-        "loadEventMs": 124,
-        "responseEndMs": 5,
-        "resourceCount": 145
-      }
-    },
-    {
-      "totalMs": 661,
-      "gotoMs": 123,
-      "networkIdleWaitMs": 538,
-      "browserNavigation": {
-        "domContentLoadedMs": 115,
-        "loadEventMs": 118,
+        "domContentLoadedMs": 114,
+        "loadEventMs": 117,
         "responseEndMs": 4,
-        "resourceCount": 145
-      }
-    },
-    {
-      "totalMs": 666,
-      "gotoMs": 122,
-      "networkIdleWaitMs": 544,
-      "browserNavigation": {
-        "domContentLoadedMs": 115,
-        "loadEventMs": 118,
-        "responseEndMs": 5,
-        "resourceCount": 145
-      }
-    },
-    {
-      "totalMs": 646,
-      "gotoMs": 106,
-      "networkIdleWaitMs": 539,
-      "browserNavigation": {
-        "domContentLoadedMs": 101,
-        "loadEventMs": 104,
-        "responseEndMs": 4,
-        "resourceCount": 145
-      }
-    },
-    {
-      "totalMs": 648,
-      "gotoMs": 103,
-      "networkIdleWaitMs": 545,
-      "browserNavigation": {
-        "domContentLoadedMs": 97,
-        "loadEventMs": 101,
-        "responseEndMs": 4,
-        "resourceCount": 145
+        "resourceCount": 147
       }
     },
     {
@@ -116,164 +127,153 @@
       "gotoMs": 118,
       "networkIdleWaitMs": 546,
       "browserNavigation": {
-        "domContentLoadedMs": 114,
-        "loadEventMs": 117,
+        "domContentLoadedMs": 113,
+        "loadEventMs": 116,
         "responseEndMs": 4,
-        "resourceCount": 145
+        "resourceCount": 147
       }
     },
     {
-      "totalMs": 640,
-      "gotoMs": 98,
-      "networkIdleWaitMs": 542,
+      "totalMs": 676,
+      "gotoMs": 132,
+      "networkIdleWaitMs": 544,
       "browserNavigation": {
-        "domContentLoadedMs": 94,
-        "loadEventMs": 97,
+        "domContentLoadedMs": 128,
+        "loadEventMs": 130,
         "responseEndMs": 4,
-        "resourceCount": 145
+        "resourceCount": 147
       }
     },
     {
-      "totalMs": 664,
-      "gotoMs": 113,
-      "networkIdleWaitMs": 551,
+      "totalMs": 678,
+      "gotoMs": 124,
+      "networkIdleWaitMs": 554,
       "browserNavigation": {
-        "domContentLoadedMs": 109,
-        "loadEventMs": 112,
+        "domContentLoadedMs": 119,
+        "loadEventMs": 123,
         "responseEndMs": 4,
-        "resourceCount": 145
+        "resourceCount": 147
       }
     },
     {
-      "totalMs": 636,
-      "gotoMs": 101,
-      "networkIdleWaitMs": 535,
+      "totalMs": 654,
+      "gotoMs": 110,
+      "networkIdleWaitMs": 544,
       "browserNavigation": {
-        "domContentLoadedMs": 95,
-        "loadEventMs": 98,
+        "domContentLoadedMs": 106,
+        "loadEventMs": 109,
         "responseEndMs": 4,
-        "resourceCount": 145
+        "resourceCount": 147
       }
     },
     {
-      "totalMs": 636,
-      "gotoMs": 102,
-      "networkIdleWaitMs": 535,
+      "totalMs": 676,
+      "gotoMs": 126,
+      "networkIdleWaitMs": 550,
       "browserNavigation": {
-        "domContentLoadedMs": 97,
-        "loadEventMs": 100,
-        "responseEndMs": 5,
-        "resourceCount": 145
-      }
-    },
-    {
-      "totalMs": 648,
-      "gotoMs": 102,
-      "networkIdleWaitMs": 546,
-      "browserNavigation": {
-        "domContentLoadedMs": 98,
-        "loadEventMs": 101,
+        "domContentLoadedMs": 120,
+        "loadEventMs": 124,
         "responseEndMs": 4,
-        "resourceCount": 145
+        "resourceCount": 147
       }
     },
     {
-      "totalMs": 638,
-      "gotoMs": 101,
-      "networkIdleWaitMs": 538,
-      "browserNavigation": {
-        "domContentLoadedMs": 96,
-        "loadEventMs": 99,
-        "responseEndMs": 4,
-        "resourceCount": 145
-      }
-    },
-    {
-      "totalMs": 638,
-      "gotoMs": 101,
-      "networkIdleWaitMs": 537,
-      "browserNavigation": {
-        "domContentLoadedMs": 96,
-        "loadEventMs": 99,
-        "responseEndMs": 4,
-        "resourceCount": 145
-      }
-    },
-    {
-      "totalMs": 656,
-      "gotoMs": 107,
+      "totalMs": 685,
+      "gotoMs": 136,
       "networkIdleWaitMs": 549,
+      "browserNavigation": {
+        "domContentLoadedMs": 131,
+        "loadEventMs": 134,
+        "responseEndMs": 5,
+        "resourceCount": 147
+      }
+    },
+    {
+      "totalMs": 657,
+      "gotoMs": 112,
+      "networkIdleWaitMs": 545,
+      "browserNavigation": {
+        "domContentLoadedMs": 107,
+        "loadEventMs": 110,
+        "responseEndMs": 6,
+        "resourceCount": 147
+      }
+    },
+    {
+      "totalMs": 661,
+      "gotoMs": 116,
+      "networkIdleWaitMs": 545,
+      "browserNavigation": {
+        "domContentLoadedMs": 112,
+        "loadEventMs": 115,
+        "responseEndMs": 4,
+        "resourceCount": 147
+      }
+    },
+    {
+      "totalMs": 663,
+      "gotoMs": 115,
+      "networkIdleWaitMs": 548,
+      "browserNavigation": {
+        "domContentLoadedMs": 110,
+        "loadEventMs": 113,
+        "responseEndMs": 4,
+        "resourceCount": 147
+      }
+    },
+    {
+      "totalMs": 650,
+      "gotoMs": 107,
+      "networkIdleWaitMs": 543,
       "browserNavigation": {
         "domContentLoadedMs": 103,
         "loadEventMs": 106,
-        "responseEndMs": 4,
-        "resourceCount": 145
+        "responseEndMs": 5,
+        "resourceCount": 147
       }
     },
     {
-      "totalMs": 642,
-      "gotoMs": 98,
-      "networkIdleWaitMs": 543,
+      "totalMs": 654,
+      "gotoMs": 116,
+      "networkIdleWaitMs": 538,
       "browserNavigation": {
-        "domContentLoadedMs": 94,
-        "loadEventMs": 97,
+        "domContentLoadedMs": 111,
+        "loadEventMs": 114,
         "responseEndMs": 4,
-        "resourceCount": 145
-      }
-    },
-    {
-      "totalMs": 638,
-      "gotoMs": 98,
-      "networkIdleWaitMs": 540,
-      "browserNavigation": {
-        "domContentLoadedMs": 94,
-        "loadEventMs": 96,
-        "responseEndMs": 4,
-        "resourceCount": 145
-      }
-    },
-    {
-      "totalMs": 655,
-      "gotoMs": 101,
-      "networkIdleWaitMs": 553,
-      "browserNavigation": {
-        "domContentLoadedMs": 97,
-        "loadEventMs": 100,
-        "responseEndMs": 4,
-        "resourceCount": 145
+        "resourceCount": 147
       }
     }
   ],
-  "p95Ms": 679,
+  "p95Ms": 695,
   "thresholdMs": 1000,
   "pass": true,
   "interactionMetric": "new-project-button",
   "interactionSamples": [
-    46,
-    51,
     45,
-    51,
-    47,
-    48,
-    33,
-    33,
-    43,
-    34,
     49,
     50,
-    35,
-    48,
-    32,
-    36,
     49,
-    45,
+    50,
+    50,
+    49,
+    51,
+    64,
+    51,
+    36,
     35,
-    33
+    51,
+    48,
+    50,
+    33,
+    36,
+    51,
+    50,
+    34
   ],
   "interactionP95Ms": 51,
   "interactionThresholdMs": 200,
   "interactionPass": true,
-  "settingsScreenP95Ms": 66,
+  "settingsScreenP95Ms": 58,
   "settingsScreenThresholdMs": 200,
   "settingsScreenPass": true
 }
