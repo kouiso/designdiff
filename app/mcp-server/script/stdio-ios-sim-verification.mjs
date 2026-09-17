@@ -117,8 +117,9 @@ evidence.results.X06_ios_sim_capture = {
   comparisonConditions: payload.comparisonConditions,
 };
 assert.ok(!captureResult.isError, `capture via ios-sim failed: ${text(captureResult)}`);
-// 撮影画像が cache/capture 配下に残っていることを確認 (実撮影の物的証拠)
-const captureDir = join(store, "cache", "capture");
+// 撮影画像は mobile-capture が homedir 側 (~/.figdiff/cache/capture) に
+// 書く。HOME を隔離した sandbox 配下なので実ユーザーの store は汚れない。
+const captureDir = join(home, ".figdiff", "cache", "capture");
 const captured = await readdir(captureDir).catch(() => []);
 assert.ok(captured.length > 0, "captured screenshot must be stored under cache/capture");
 const capturedMeta = await sharp(join(captureDir, captured[0])).metadata();
