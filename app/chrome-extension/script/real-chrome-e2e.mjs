@@ -76,9 +76,14 @@ await sharp({
   .toFile(designPath);
 
 const profileDir = await mkdtemp(join(tmpdir(), "figdiff-ext-profile-"));
+// ディスプレイ無し環境(SSHのmacOS等)は FIGDIFF_HEADLESS=new で新headlessに
+// 切替える。拡張読み込みは新headlessでも動くが、captureVisibleTab の可否は
+// 環境依存なので evidence の outcome で判定する。
+const headlessNew = process.env.FIGDIFF_HEADLESS === "new";
 const context = await chromium.launchPersistentContext(profileDir, {
   headless: false,
   args: [
+    ...(headlessNew ? ["--headless=new"] : []),
     `--disable-extensions-except=${extDir}`,
     `--load-extension=${extDir}`,
     "--no-first-run",
