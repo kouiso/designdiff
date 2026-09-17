@@ -508,9 +508,17 @@ try {
   await expect(page.getByText("この画像条件で確認済み", { exact: true })).toBeVisible();
 
   await page.getByRole("button", { name: "修正確認", exact: true }).click();
-  await expect(
-    page.getByText("Deep targetを1600画素中800画素で採点しました。", { exact: true }),
-  ).toBeVisible();
+  // crop の ±1px ずれは mask との重なりを最大 mask.height 画素変え得るため、
+  // 採点数は実値を読んで公差で検証する。
+  const scoredEl = page.getByText(/Deep targetを1600画素中\d+画素で採点しました。/);
+  await expect(scoredEl).toBeVisible();
+  const scoredMatch = /1600画素中(\d+)画素/.exec((await scoredEl.textContent()) ?? "");
+  assert.ok(scoredMatch, "scored pixel count must be reported");
+  const scoredPixels = Number(scoredMatch[1]);
+  assert.ok(
+    Math.abs(scoredPixels - pixelOracle.before.targetDifference) <= fixture.mask.height,
+    `scored pixels ${scoredPixels} must be within one crop column (${fixture.mask.height}) of ${pixelOracle.before.targetDifference}`,
+  );
   await page.getByRole("button", { name: "修正前として固定", exact: true }).click();
   await expect(page.getByText(`対象領域: ${fixture.targetNodeId}`, { exact: true })).toBeVisible();
   await page.screenshot({
@@ -595,8 +603,8 @@ try {
   );
   assert.equal(maskSaves.length, 1);
   assert.deepEqual(maskSaves[0].args[1].coordinate_context.crop_region, actualCrop);
-  assert.equal(maskSaves[0].args[1].coordinate_context.canvas_width, fixture.crop.width);
-  assert.equal(maskSaves[0].args[1].coordinate_context.canvas_height, fixture.crop.height);
+  assert.equal(maskSaves[0].args[1].coordinate_context.canvas_width, actualCrop.width);
+  assert.equal(maskSaves[0].args[1].coordinate_context.canvas_height, actualCrop.height);
 
   const screenshots = [
     "version-pinned-masked-cropped-before.png",
