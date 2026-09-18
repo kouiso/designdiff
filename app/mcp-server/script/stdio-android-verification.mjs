@@ -22,9 +22,9 @@
 
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
-import { mkdir, mkdtemp, readFile, readdir, writeFile } from "node:fs/promises";
+import { copyFile, mkdir, mkdtemp, readFile, readdir, writeFile } from "node:fs/promises";
 import { createServer } from "node:http";
-import { tmpdir } from "node:os";
+import { homedir, tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
@@ -190,6 +190,41 @@ evidence.results.X05_bogus_serial = {
 assert.ok(bogus.isError === true, "nonexistent serial must be an explicit error");
 assert.match(text(bogus), /not connected|not found|no-such-serial/i);
 
+// X05e: 切断済み端末。ANDROID_TCP_SERIAL に adb disconnect 可能な
+// tcp serial を渡した時だけ検証する (USB serial は disconnect 不可、
+// emulator は emu kill 以外の切断手段がない)。
+const tcpSerial = process.env.ANDROID_TCP_SERIAL;
+if (tcpSerial) {
+  const waitState = async (want, timeout = 30_000) => {
+    const deadline = Date.now() + timeout;
+    while (Date.now() < deadline) {
+      const { stdout } = await adb(["devices"]);
+      const line = stdout.split(/\r?\n/).find((l) => l.startsWith(tcpSerial));
+      const state = line?.split(/\s+/)[1] ?? "absent";
+      if (want === "device" ? state === "device" : state !== "device") return state;
+      await new Promise((r) => setTimeout(r, 1000));
+    }
+    return "timeout";
+  };
+  await adb(["connect", tcpSerial]).catch(() => {});
+  assert.equal(await waitState("device"), "device", `${tcpSerial} must be connected first`);
+  await adb(["disconnect", tcpSerial]);
+  const after = await waitState("gone");
+  const gone = await call("compare_design", {
+    design_source: designPath,
+    capture_device: "android",
+    capture_device_serial: tcpSerial,
+  });
+  evidence.results.X05_disconnected = {
+    stateAfterDisconnect: after,
+    isError: gone.isError === true,
+    text: text(gone).slice(0, 400),
+  };
+  assert.ok(gone.isError === true, "disconnected serial must be an explicit error");
+  await adb(["connect", tcpSerial]);
+  assert.equal(await waitState("device"), "device", `${tcpSerial} must reconnect`);
+}
+
 // X07: 対象端末に長いページを開かせて capture_scroll → 分割撮影→結合。
 // emulator はホスト loopback が 10.0.2.2、実機は adb reverse で
 // 端末側 127.0.0.1 をホストのこのプロセスのポートへ向ける。
@@ -258,6 +293,78 @@ if (!scrollResult.isError) {
   evidence.results.X07_android_scroll.note = "scroll capture returned error — see textHead";
 }
 pageServer?.close();
+
+// X05f: 未認証端末。adbkey を未承認の別鍵へすり替えて adb server を
+// 再起動すると、端末は unauthorized 状態になる — その状態での撮影が
+// 明示エラーになることを検証する。adb server 再起動で全接続が切れる
+// ため最後に実行する。ANDROID_UNAUTHORIZED_SERIAL に対象 serial を渡す。
+const unauthSerial = process.env.ANDROID_UNAUTHORIZED_SERIAL;
+if (unauthSerial?.includes(":")) {
+  // tcpip の adbd はクライアント鍵の RSA 認証を強制しない — 実測で
+  // rogue key にすり替えても `device` のままだった。クライアント側
+  // では unauthorized 状態を作れない transport なので、この経路は
+  // assert せず環境不適として記録する (USB/emulator serial で検証)。
+  evidence.results.X05_unauthorized = {
+    serial: unauthSerial,
+    inapplicable: "tcpip adbd accepts rogue client key (measured: stays `device`)",
+  };
+} else if (unauthSerial) {
+  const androidDir = join(homedir(), ".android");
+  const keyBackup = join(sandbox, "adbkey-backup");
+  const keyPubBackup = join(sandbox, "adbkey-pub-backup");
+  const rogueKey = join(sandbox, "rogue-adbkey");
+  await adb(["keygen", rogueKey]);
+  const deviceState = async () => {
+    const { stdout } = await adb(["devices"]);
+    const line = stdout.split(/\r?\n/).find((l) => l.startsWith(unauthSerial));
+    return line?.split(/\s+/)[1] ?? "absent";
+  };
+  try {
+    await copyFile(join(androidDir, "adbkey"), keyBackup);
+    await copyFile(join(androidDir, "adbkey.pub"), keyPubBackup);
+    await copyFile(rogueKey, join(androidDir, "adbkey"));
+    await copyFile(`${rogueKey}.pub`, join(androidDir, "adbkey.pub"));
+    await adb(["kill-server"]);
+    if (unauthSerial.includes(":")) await adb(["connect", unauthSerial]).catch(() => {});
+    // unauthorized が現れるまで待つ (USB は自動再接続で handshake する)
+    const deadline = Date.now() + 30_000;
+    let state = await deviceState();
+    while (state !== "unauthorized" && Date.now() < deadline) {
+      await new Promise((r) => setTimeout(r, 1000));
+      state = await deviceState();
+    }
+    const unauth = await call("compare_design", {
+      design_source: designPath,
+      capture_device: "android",
+      capture_device_serial: unauthSerial,
+    });
+    evidence.results.X05_unauthorized = {
+      deviceState: state,
+      isError: unauth.isError === true,
+      text: text(unauth).slice(0, 400),
+    };
+    assert.equal(state, "unauthorized", `${unauthSerial} must be unauthorized under rogue key`);
+    assert.ok(unauth.isError === true, "unauthorized device must be an explicit error");
+  } finally {
+    // 必ず承認済み鍵へ戻す。戻せなければ後続の検証が全滅する。
+    await copyFile(keyBackup, join(androidDir, "adbkey"));
+    await copyFile(keyPubBackup, join(androidDir, "adbkey.pub"));
+    await adb(["kill-server"]);
+    if (unauthSerial.includes(":")) {
+      await adb(["connect", unauthSerial]).catch(() => {});
+    } else {
+      await adb(["devices"]).catch(() => {});
+    }
+    const deadline = Date.now() + 30_000;
+    let state = await deviceState();
+    while (state !== "device" && Date.now() < deadline) {
+      await new Promise((r) => setTimeout(r, 1000));
+      state = await deviceState();
+    }
+    evidence.results.X05_unauthorized_recovery = { state };
+    assert.equal(state, "device", `${unauthSerial} must be authorized again after key restore`);
+  }
+}
 
 assert.equal(protocolErrors.length, 0, `protocol errors: ${protocolErrors.join(" | ")}`);
 await writeFile(join(evidenceDir, "evidence.json"), `${JSON.stringify(evidence, null, 2)}\n`);
