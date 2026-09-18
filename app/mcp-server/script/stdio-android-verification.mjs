@@ -257,6 +257,12 @@ if (process.env.ANDROID_PAGE_URL) {
   }
 }
 evidence.results.scrollTarget = { serial: scrollDevice.serial, pageUrl };
+// cold boot 直後などは Chrome が古いタブの静止画を出したまま renderer が
+// 生きておらず swipe を受け付けない。force-stop してから開き直して
+// 確実に生きた renderer へ描画させる。
+await adb(["-s", scrollDevice.serial, "shell", "am", "force-stop", "com.android.chrome"]).catch(
+  () => {},
+);
 await adb(["-s", scrollDevice.serial, "shell", "am", "start", "-a", "android.intent.action.VIEW", "-d", pageUrl]);
 // ブラウザ描画待ち
 await new Promise((r) => setTimeout(r, 8000));
