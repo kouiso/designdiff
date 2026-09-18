@@ -114,6 +114,27 @@ const canvasDoc = {
   ],
 };
 
+// 単一 frame だけを持つ CANVAS。frames.length===1 の auto-load 分岐を踏む。
+const singleCanvasDoc = {
+  id: "7:20",
+  name: "Single Page",
+  type: "CANVAS",
+  children: [
+    {
+      id: "7:21",
+      name: "唯一のフレーム",
+      type: "FRAME",
+      absoluteBoundingBox: { x: 0, y: 0, width: 120, height: 80 },
+    },
+  ],
+};
+
+// エラー注入と再試行用の node。CANVAS 以外の正常応答を返し、
+// tryPageDetection の nodeType!==CANVAS 分岐を例外経由ではなくクリーンに通す。
+const exportableNodeIds = [
+  "7:8", "7:9", "7:10", "7:11", "7:12", "7:13", "7:14", "7:15", "7:16", "7:21",
+];
+
 const bootstrap = join(sandbox, "bootstrap.mjs");
 await writeFile(
   bootstrap,
@@ -130,6 +151,8 @@ const requestLog = ${JSON.stringify(requestLog)};
 const modeFile = ${JSON.stringify(modeFile)};
 const framePng = Buffer.from(${JSON.stringify(framePng.toString("base64"))}, "base64");
 const canvasDoc = ${JSON.stringify(canvasDoc)};
+const singleCanvasDoc = ${JSON.stringify(singleCanvasDoc)};
+const exportableNodeIds = ${JSON.stringify(exportableNodeIds)};
 globalThis.fetch = async (input, init = {}) => {
   const url = typeof input === "string" ? input : input.url;
   appendFileSync(requestLog, JSON.stringify({ url }) + "\\n");
@@ -145,15 +168,23 @@ globalThis.fetch = async (input, init = {}) => {
     }
     if (parsed.pathname === "/v1/files/FD01/nodes") {
       const id = parsed.searchParams.get("ids");
-      if (id !== "7:7") throw new Error("unexpected node request: " + id);
-      return Response.json({ nodes: { "7:7": { document: canvasDoc } } });
+      if (id === "7:7") return Response.json({ nodes: { "7:7": { document: canvasDoc } } });
+      if (id === "7:20") return Response.json({ nodes: { "7:20": { document: singleCanvasDoc } } });
+      if (exportableNodeIds.includes(id)) {
+        return Response.json({ nodes: { [id]: { document: {
+          id,
+          name: "Synthetic Frame " + id,
+          type: "FRAME",
+          absoluteBoundingBox: { x: 0, y: 0, width: 100, height: 100 },
+        } } } });
+      }
+      throw new Error("unexpected node request: " + id);
     }
     if (parsed.pathname === "/v1/images/FD01") {
       const id = parsed.searchParams.get("ids");
       // D09 はエラーモードごとに別 node を使う。cache key が異なれば cache
       // clear なしで必ず API 応答を踏める (Windows では稼働中の cache を消せない)。
-      const allowed = ["7:8", "7:9", "7:10", "7:11", "7:12", "7:13", "7:14", "7:15"];
-      if (!allowed.includes(id)) throw new Error("unexpected export: " + id);
+      if (!exportableNodeIds.includes(id)) throw new Error("unexpected export: " + id);
       return Response.json({ images: { [id]: "https://figma-fixture.invalid/" + id.replace(":", "_") + ".png" } });
     }
     throw new Error("unexpected figma api path: " + parsed.pathname);
@@ -230,10 +261,33 @@ await page.getByText("Figma Tokenが必要です", { exact: true }).waitFor();
 await page.getByText("Figma Token を設定してください", { exact: false }).waitFor();
 assert.equal(figmaRequests().length, 0, "token-less submit must not reach the API");
 
+// もう1系統の token check: handleCreateProject 内の designUrl チェック。
+// name+implUrl 必須ガードを先に通す必要があるため、作成フォームを開いて
+// 両方を埋めてから「作成」を押す (designUrl は前段の入力が state に残る)。
+await page.keyboard.press("Escape");
+await page.getByText("Figma Tokenが必要です", { exact: true }).waitFor({ state: "hidden" });
+await page.getByText("新規プロジェクト", { exact: true }).first().click();
+await page.getByPlaceholder("プロジェクト名（例: コーポレートサイト）").fill("未作成テスト");
+await page.getByPlaceholder("実装URL（例: http://localhost:3000）").fill(implUrl);
+await page.getByRole("button", { name: "作成", exact: true }).click();
+await page.getByText("Figma Tokenが必要です", { exact: true }).waitFor({ timeout: 15_000 });
+assert.equal(figmaRequests().length, 0, "token-less create must not reach the API");
+assert.equal(
+  (await readdir(projectsDirectory)).length,
+  0,
+  "project created despite missing token",
+);
+evidence.results.D01.tokenlessPaths = ["quickCompareSubmit", "createProjectForm"];
+
 // PAT を dialog 経由で保存 → file backend の credentials.json ができる。
 await page.locator("#token-input").fill("figd_dcases_fixture_token_0000001");
 await page.getByRole("button", { name: "保存", exact: true }).click();
 await page.getByText("Figma Tokenが必要です", { exact: true }).waitFor({ state: "hidden" });
+
+// implUrl が残っていると navigateAfterLoad が live_overlay へ分岐するので空に戻し、
+// 作成フォームは開いたまま残るのでキャンセルで閉じる。
+await page.getByPlaceholder("実装URL（任意、例: http://localhost:3000）").fill("");
+await page.getByRole("button", { name: "キャンセル", exact: true }).click();
 const credentialPath = join(isolatedHome, ".figdiff", "credentials.json");
 assert.ok(existsSync(credentialPath), "credentials.json not written by token save");
 const savedToken = JSON.parse(readFileSync(credentialPath, "utf-8"));
@@ -406,7 +460,7 @@ for (const [mode, nodeId] of [["401", "7:10"], ["403", "7:11"]]) {
 for (const [mode, nodeId, pattern] of [
   ["429", "7:12", /rate limit|429/],
   ["500", "7:13", /server error|500/],
-  ["offline", "7:14", /fetch failed|invoking|Error/],
+  ["offline", "7:14", /fetch failed/],
 ]) {
   await setMode(mode);
   const url = nodeUrl(nodeId);
@@ -431,6 +485,36 @@ assert.ok(
   recoveryHits.some((u) => u.includes("ids=7%3A15") || u.includes("ids=7:15")),
   "retry after recovery did not reach export",
 );
+
+// 同一 URL の再試行: 500 で失敗した 7:16 を mode 復帰後にそのまま再送する。
+// 失敗した export は cache されないので、同じ URL の再送が実ユーザーの自然な操作になる。
+await nav(page, "ホーム").click();
+await setMode("500");
+const retryUrl = nodeUrl("7:16");
+await submitDesign(retryUrl);
+await page.getByText(/server error|500/).first().waitFor({ timeout: 15_000 });
+assert.equal(await figmaUrlInput.inputValue(), retryUrl, "input lost before same-URL retry");
+await setMode("ok");
+const beforeRetry = figmaRequests().length;
+await submitDesign(retryUrl);
+const retryHits = await waitForExport(beforeRetry, 15_000);
+assert.ok(
+  retryHits.some((u) => u.includes("ids=7%3A16") || u.includes("ids=7:16")),
+  "same-URL retry did not reach export",
+);
+d09.sameUrlRetry = { node: "7:16", exported: retryHits[0] };
+
+// 単一 frame の page (7:20) は一覧を出さず直接 load される (frames.length===1 分岐)。
+await nav(page, "ホーム").click();
+const beforeSingle = figmaRequests().length;
+await submitDesign(nodeUrl("7:20"));
+const singleHits = await waitForExport(beforeSingle, 15_000);
+assert.ok(
+  singleHits.some((u) => u.includes("ids=7%3A21") || u.includes("ids=7:21")),
+  "single-frame page did not auto-export 7:21",
+);
+evidence.results.D01.singleFrameAutoLoad = singleHits[0];
+
 evidence.results.D09 = { ...d09, retryAfterRecovery: "export succeeded" };
 
 // ---- D10: キーボード / 狭いウィンドウ / 日本語名 ----
@@ -440,14 +524,18 @@ await nav(page, "ホーム").click();
 await figmaUrlInput.waitFor({ timeout: 15_000 });
 
 const d10 = {};
-// キーボードのみで design URL 送信 (Enter)。
-// home の入力値はセクション間で残るのでキー送信前に空にする。
-await figmaUrlInput.click();
-await figmaUrlInput.fill("");
-await figmaUrlInput.pressSequentially("https://www.figma.com/design/FD01/Fixture?node-id=7-7");
+// キーボードのみで design URL 送信 (Enter)。hero 側入力は DesignInput と同じ
+// designUrl state に繋がる別コントロールで、Enter は handleLauncherSubmit
+// (implUrl 空なら handleLegacySubmit に委譲) を通る — こちらの経路を踏む。
+const heroInput = page
+  .getByPlaceholder("Figma URL またはローカル画像パス...")
+  .first();
+await heroInput.click();
+await heroInput.fill("");
+await heroInput.pressSequentially("https://www.figma.com/design/FD01/Fixture?node-id=7-7");
 await page.keyboard.press("Enter");
 await page.getByText("カード", { exact: true }).waitFor({ timeout: 15_000 });
-d10.keyboardSubmit = "frame list appeared";
+d10.keyboardSubmit = "frame list appeared via hero input";
 
 // 日本語プロジェクト名。
 await nav(page, "ホーム").click();
@@ -567,14 +655,33 @@ await page2.getByText("デスクトップ", { exact: true }).waitFor({ timeout: 
 await page2.getByRole("heading", { name: "トップ", exact: true }).waitFor();
 d08.d01ProjectContents = { page: "トップ", source: "デスクトップ" };
 
-// 案件切替: MCP経由案件を開く → 別内容が出て、戻ると元に戻る。
+// 案件切替: MCP経由案件を開く → 空の案件内容が出ることを実画面で確認する。
+// (一覧の article タイトルにも案件名は出るため、画面遷移の確証は空状態表示で取る)
 await nav(page2, "ホーム").click();
 await page2.locator("article", { has: page2.locator("h3", { hasText: "MCP経由案件" }) }).first().click();
-await page2.waitForTimeout(1000);
+await page2.getByText("Add Your First Page", { exact: true }).waitFor({ timeout: 15_000 });
 const mcpView = await page2.locator("body").textContent();
-assert.ok(mcpView.includes("example.com") || mcpView.includes("MCP経由案件"),
-  "MCP project did not open its own content");
-d08.switching = "isolated per project";
+assert.ok(
+  !mcpView.includes("デスクトップ"),
+  "D01 source contents leaked into MCP project view",
+);
+
+// 別案件を開いた直後の「比較」タブ状態を観測する。
+// compare store は共通のため、前案件の画像が残る実挙動があり得る — 記録して台帳へ渡す。
+await nav(page2, "比較").click();
+await page2.waitForTimeout(800);
+const compareAfterSwitch = await page2.evaluate(() => {
+  const imgs = [...document.querySelectorAll("img")].map((i) => i.src.slice(0, 60));
+  const canvases = document.querySelectorAll("canvas").length;
+  return { imgCount: imgs.length, imgSrcs: imgs.slice(0, 4), canvasCount: canvases };
+});
+d08.compareAfterProjectSwitch = compareAfterSwitch;
+
+// D01案件へ戻ると元の内容が復元される (往復で切替の実効性を確認)。
+await nav(page2, "ホーム").click();
+await page2.locator("article", { has: page2.locator("h3", { hasText: "D01案件" }) }).first().click();
+await page2.getByText("デスクトップ", { exact: true }).waitFor({ timeout: 15_000 });
+d08.switching = "round-trip verified";
 
 // X09 側の確認: MCP が書いた project.json を desktop の schema で load できている
 // (一覧表示 + オープン成功がその証左)。
@@ -588,6 +695,22 @@ evidence.results.D08 = d08;
 
 await application2.close();
 server.close();
+
+// 実挙動として観測した製品欠陥。assert はせず証跡として台帳へ渡す。
+evidence.knownDefects = [
+  {
+    id: "token-dialog-cancel-stuck",
+    detail:
+      "PAT 保存成功後も TokenRequiredDialog の isSubmitting が false に戻らず、再オープン時にキャンセルボタンが disabled のまま残る (Escape/onOpenChange 経路は生存)",
+    observedIn: "D09.401/403.cancelDisabled",
+  },
+  {
+    id: "narrow-header-overflow",
+    detail:
+      "430px viewport で header が 211-226px 横 overflow する (nav 中央の hit-test は到達可だが、タブ帯が click point を覆う挙動を別 run で観測)",
+    observedIn: "D10.narrowViewport",
+  },
+];
 
 assert.equal(evidence.pageErrors.length, 0, `page errors: ${evidence.pageErrors.join(" | ")}`);
 await writeFile(join(evidenceDir, "evidence.json"), `${JSON.stringify(evidence, null, 2)}\n`);
