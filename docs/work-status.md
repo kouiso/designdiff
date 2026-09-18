@@ -153,4 +153,12 @@ PR144修正SHA：`032d96252683b6a8ac1fe5d5d2509dea53b76f7e`。既存PRブラン�
   - 発見した実欠陥: 破損画像のcompare失敗がユーザーに `[object Event]` としか見えない（loadImageElementのonerrorをString(e)で表示）。Upload/Tokenタブのエラー不可視に続く2件目のUX欠陥。
   - 発見した実挙動: regionScoreは3x3固定グリッド（`top-left`等）でissueは閾値超え時のみ、透明画素はcheckerboard=falseで白blend（v5互換）、crop canvasは初回drag中に画像サイズへリサイズされる。
 - **X05/X07 Android追加**（aca647f8, `android-mac-r10`）: macOSでUSB実機の本物unauthorized試験を実施 — rogue adbkeyで `unauthorized` 状態化・撮影明示拒否・承認鍵復旧で `device` 復帰。scrollは実機12枚→11339px結合。WSL側はtcpip transportのrogue key不適用を実測記録 (`android-wsl-r7`)。
+- **desktop D-case実E2E**（app/desktop/e2e/desktop-d-cases.mjs 新規, 2338cfdf）: D01/D03/D08/D09/D10 + X09-desktop を実Electron UIで1本のdriverとして実行。合成figma境界 (FD01: canvas 7:7 配下に frame 7:8/7:9 + エラーモード注入用 7:10-7:15) で実fetchを記録し、FigDiff自身のmatchRateには依存しない。
+  - D01: 初回onboarding表示→token未設定でfigma URL送信→API無呼出でtoken dialog→PAT保存でcredentials.json実生成→page detection (node 7:7 CANVAS)→frame一覧 (ヘッダー/カード)→カード選択で `ids=7:9` exportのみ→案件作成で project.json 実永続化→page「トップ」+source「デスクトップ」追加→Compareで `ids=7:8` export。
+  - D03: project view drop zone へ実 File (input[type=file] 経由で実パス付き) を drop→「読み込み済み」、compare page で local path 読込・URL入力で hidden BrowserWindow が実 fetch (`/capture-target` 1 request)・不存在パスでエラー表示+入力保持。
+  - D09: 401/403→token dialog再表示+URL入力保持、429/500/offline→理由付きエラーバナー、mode復帰後の再送で `ids=7:15` export成功。モードごとに別 node id で cache key をずらす設計 (稼働中の cache は Windows で削除不能のため)。
+  - D10: Enterキー送信でframe一覧、日本語案件名・日本語ファイル名 `実装-比較テスト.png`、430px viewport で横 overflow 実測。
+  - D08/X09: 再起動後に3案件 (D01案件・比較テスト案件・MCP create_project 製 `mcp-made-project`) が一覧復元、D01案件の page/source 保持、案件切替分離。MCP書き→desktop読みの相互互換を実stdio MCPサーバで検証。
+  - 3platform PASS (`desktop-d-wsl-r11`/`desktop-d-mac-r2`/`desktop-d-win-r2`)、pageErrors 全 platform で 0。
+  - 発見した実欠陥: (1) PAT保存成功後も token dialog の `isSubmitting` が戻らず、再オープン時にキャンセルボタンが disabled のまま (Escape/onOpenChange 経路は生存、3platform共通)。 (2) 430px viewport で header が 211-226px 横 overflow する (nav 中央の hit-test は到達可だが click point によってはタブ帯に覆われる実挙動を WSL で一度観測)。
 - 未完: 台帳記入と2巡（394件×2roundの組み立て）。
