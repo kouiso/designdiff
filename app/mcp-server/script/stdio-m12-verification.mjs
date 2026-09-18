@@ -71,6 +71,12 @@ const text = (result) =>
     env: {
       HOME: join(sandbox, "home2"),
       USERPROFILE: join(sandbox, "home2"),
+      // gh CLI の資格情報は %APPDATA%\GitHub CLI (Windows) と
+      // $XDG_CONFIG_HOME/gh (Linux/mac) にも居る。全部 sandbox へ向けないと
+      // token 未設定経路が実 token を拾って本当に起票する。
+      APPDATA: join(sandbox, "home2", "AppData", "Roaming"),
+      LOCALAPPDATA: join(sandbox, "home2", "AppData", "Local"),
+      XDG_CONFIG_HOME: join(sandbox, "home2", ".config"),
       PATH: process.env.PATH,
       FIGDIFF_HOME: join(sandbox, "store2"),
       // GITHUB_TOKEN/GH_TOKEN を意図的に渡さない
