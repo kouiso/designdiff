@@ -145,3 +145,12 @@ PR144修正SHA：`032d96252683b6a8ac1fe5d5d2509dea53b76f7e`。既存PRブラン�
   - WSL (`android-wsl-r6`) / Windows (`android-win-r1`): `adb tcpip 5555` + mac側承認済み adbkey 複製で Pixel を `192.168.11.12:5555` として直接接続（リモート adb server は多端末で不安定のため不採用）。1台環境では serial 省略の自動選択・実機撮影・不存在 serial 拒否・実機 scroll 12枚→11359/11352px 結合を確認。
   - 環境知見: 実機ページ配信は `adb reverse` より同一LAN上の http URL が堅い（reverse は複数 adb host 接続下で死んだ transport に向くことがある）。scroll 検体はベタ塗りだと縫い目が曖昧・文字があると翻訳ポップアップが swipe を食うので、縞模様+viewport meta+テキストなしにした。emulator `x08emu` はスナップショット復元でネットワークが死ぬことがあり、`-no-snapshot-load` cold boot で復旧した。
 - 未完: M12 実GitHub起票（外部write要承認）、台帳記入と2巡。
+- **M12 実GitHub起票**（stdio-m12-verification.mjs, 先はユーザー選択B=`kouiso/designdiff`）: 実POSTで issue 起票・dedup確認・sanitize(機微2件マスク)・no-token明示拒否を実SDK経由で検証。3platform PASS: WSL #151、macOS #152、Windows #155（#149/#150はindex遅延dedup raceで発生→cleanup済、#153はWindows未隔離gh fallbackで発生→cleanup済＋driver修正）。証跡 `m12-wsl-r2`/`m12-mac`/`m12-win-r2`。
+  - 発見: GitHub search index 遅延で連続2POSTするとdedup不発（実製品race）。Windowsでは `gh auth token` fallbackが %APPDATA% を読むため HOME/USERPROFILE 隔離だけでは不足 → APPDATA/LOCALAPPDATA/XDG_CONFIG_HOME も隔離に修正 (aca647f8)。
+- **M01 新規AI導入**（stdio-m01-verification.mjs）: tools/list→schema適合呼出のonboarding経路。3platform PASS (`m01-wsl`/`m01-mac`/`m01-win`)。
+- **desktop C-case実E2E**（app/desktop/e2e/desktop-c-cases.mjs 新規, 63fb5978）: C01-C13を実Electron UIで実行。独立oracle（regionScore cell低下・diffPixels・crop寸法・合成figma境界の実fetch記録）で検証、FigDiff自身のmatchRateには依存しない。
+  - 3platform PASS: `desktop-c-wsl-r26`/`desktop-c-mac-r1`/`desktop-c-win-r1`。C09 hidden=1% vs visible=100%（実figma export mock経路）、C12 corrupt画像→エラーバナー表示。
+  - 発見した実欠陥: 破損画像のcompare失敗がユーザーに `[object Event]` としか見えない（loadImageElementのonerrorをString(e)で表示）。Upload/Tokenタブのエラー不可視に続く2件目のUX欠陥。
+  - 発見した実挙動: regionScoreは3x3固定グリッド（`top-left`等）でissueは閾値超え時のみ、透明画素はcheckerboard=falseで白blend（v5互換）、crop canvasは初回drag中に画像サイズへリサイズされる。
+- **X05/X07 Android追加**（aca647f8, `android-mac-r10`）: macOSでUSB実機の本物unauthorized試験を実施 — rogue adbkeyで `unauthorized` 状態化・撮影明示拒否・承認鍵復旧で `device` 復帰。scrollは実機12枚→11339px結合。WSL側はtcpip transportのrogue key不適用を実測記録 (`android-wsl-r7`)。
+- 未完: 台帳記入と2巡（394件×2roundの組み立て）。
