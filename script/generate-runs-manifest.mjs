@@ -49,9 +49,19 @@ const sharedEvidenceDir = (driver, evidenceRoot) =>
     : `${evidenceRoot}/${basename(driver).replace(/\.mjs$/, "")}`;
 
 // driver が書く結果ファイル名。省略時は evidence.json。
+// desktop native driver 系は evidence.json ではなく固有の結果 json を書く。
 const evidenceFileFor = (driver) => {
   const x08 = /^app\/mcp-server\/script\/x08\/(mcp|desktop|extension|plugin)\.mjs$/.exec(driver);
-  return x08 ? `x08-${x08[1]}.json` : undefined;
+  if (x08) return `x08-${x08[1]}.json`;
+  const named = {
+    "app/desktop/e2e/native-unmeasured-score.mjs": "after-native.json",
+    "app/desktop/e2e/native-ignore-region.mjs": "native-ignore-result.json",
+    "app/desktop/e2e/native-figma-node-fix.mjs": "native-figma-node-fix.json",
+    "app/desktop/e2e/native-fix-animation.mjs": "native-fix-animation.json",
+    "app/desktop/e2e/native-issue-report.mjs": "native-issue-report.json",
+    "app/figma-plugin/e2e/real-iframe-host.mjs": "manifest.json",
+  };
+  return named[driver];
 };
 
 // driver の実行前提。runner の skip 判定と operator 向けメモに使う。
