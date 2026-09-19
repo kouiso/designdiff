@@ -1,0 +1,616 @@
+{
+  "comparisonId": "cmp-0045511f-48c1-4b4e-899d-c85498806639",
+  "sourceKey": "figma:15giveDl0JkKddxasif6VA:9883:7789",
+  "captureWidth": 390,
+  "captureHeight": 844,
+  "result": {
+    "status": "UNCERTAIN",
+    "comparisonId": "cmp-0045511f-48c1-4b4e-899d-c85498806639",
+    "matchRate": 86.22,
+    "diffPixelCount": 37200,
+    "totalPixelCount": 269880,
+    "remainingIssues": 1,
+    "diffRegions": [
+      {
+        "id": 0,
+        "bounds": {
+          "x": 40,
+          "y": 200,
+          "width": 310,
+          "height": 120
+        },
+        "diffPixelCount": 37200,
+        "nearbyNodeIds": [],
+        "nearbyNodeNames": []
+      }
+    ],
+    "completionCriteria": {
+      "structuralReview": {
+        "required": 1,
+        "current": 0,
+        "status": "FAIL",
+        "blocking": true,
+        "note": "critical severity issue detected; weakest region 9883:7801 (structure 0.671, color ΔE 33.663; lower=better, critical threshold 2) with texture-adjusted weights active (alpha 0.700, photo-like cap 0.300)"
+      },
+      "conditionsReview": {
+        "required": 1,
+        "current": 0,
+        "status": "UNCERTAIN",
+        "blocking": false,
+        "note": "表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。"
+      },
+      "wholeImageStructure": {
+        "required": 0.95,
+        "current": 0.9964904200722106,
+        "status": "PASS",
+        "blocking": false,
+        "note": "Area-weighted contrast and structure over disjoint 8x8 windows. Uniform luminance shifts are excluded; contrast changes remain. Local issues and the aggregate gate remain independent."
+      },
+      "consistencyReview": {
+        "required": 0.5,
+        "current": 0,
+        "status": "PASS",
+        "blocking": false,
+        "note": "Not evaluated: the contradiction check only applies to a passing structural review."
+      },
+      "tokenReview": {
+        "required": 0,
+        "current": 0,
+        "status": "UNCERTAIN",
+        "blocking": false,
+        "note": "Not evaluated: token comparison needs both a Figma node tree and a FigDiff-captured URL."
+      },
+      "matchRate": {
+        "required": 100,
+        "current": 86.22,
+        "status": "FAIL",
+        "blocking": false,
+        "note": "Reference metric only. Do not use matchRate% as the completion gate."
+      },
+      "diffPixelCount": {
+        "required": 0,
+        "current": 37200,
+        "status": "FAIL",
+        "blocking": false,
+        "note": "Reference metric. Structural SSIM review is the blocking gate."
+      },
+      "remainingIssues": {
+        "required": 0,
+        "current": 1,
+        "status": "FAIL",
+        "blocking": true,
+        "note": "Blocking only while structural SSIM review has not passed."
+      }
+    },
+    "nextAction": "表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。 ⚠️ セットアップ問題の可能性が高いです。CSS修正の前に、まず設定を見直してください: Figma の表示状態と対象ノードを確認してください。figma_use_absolute_bounds: false を明示して再取得できますが、取得画像に設計内容があるか確認する必要があります。 解消後に再度 compare_design で検証してください。",
+    "suggestion": "⚠️ これは実装差分ではなくセットアップ問題の可能性が高いです（一致率 86.22%）。最有力原因: 非表示の Figma ノードから単色の画像が返されました。設計内容が書き出されていない可能性があります。",
+    "clusterTelemetry": {
+      "requestedMode": "auto",
+      "usedMode": "flood",
+      "fallbackUsed": false,
+      "wallMs": 18.36,
+      "regionCount": 1
+    },
+    "gridSummary": {
+      "rows": 3,
+      "cols": 2,
+      "cells": [
+        {
+          "row": 0,
+          "col": 0,
+          "x": 0,
+          "y": 0,
+          "width": 195,
+          "height": 230,
+          "diffPixels": 4650,
+          "totalPixels": 44850,
+          "matchRate": 89.63
+        },
+        {
+          "row": 0,
+          "col": 1,
+          "x": 195,
+          "y": 0,
+          "width": 195,
+          "height": 230,
+          "diffPixels": 4650,
+          "totalPixels": 44850,
+          "matchRate": 89.63
+        },
+        {
+          "row": 1,
+          "col": 0,
+          "x": 0,
+          "y": 230,
+          "width": 195,
+          "height": 231,
+          "diffPixels": 13950,
+          "totalPixels": 45045,
+          "matchRate": 69.03
+        },
+        {
+          "row": 1,
+          "col": 1,
+          "x": 195,
+          "y": 230,
+          "width": 195,
+          "height": 231,
+          "diffPixels": 13950,
+          "totalPixels": 45045,
+          "matchRate": 69.03
+        },
+        {
+          "row": 2,
+          "col": 0,
+          "x": 0,
+          "y": 461,
+          "width": 195,
+          "height": 231,
+          "diffPixels": 0,
+          "totalPixels": 45045,
+          "matchRate": 100
+        },
+        {
+          "row": 2,
+          "col": 1,
+          "x": 195,
+          "y": 461,
+          "width": 195,
+          "height": 231,
+          "diffPixels": 0,
+          "totalPixels": 45045,
+          "matchRate": 100
+        }
+      ]
+    },
+    "diffReport": {
+      "alignment": {
+        "translation": {
+          "x": 0,
+          "y": 0
+        },
+        "source": "none",
+        "applied": false,
+        "baselineResidual": 1,
+        "correctedResidual": 1,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "rotation": 0,
+        "confidence": 1,
+        "residual": 1
+      },
+      "regionScores": [
+        {
+          "regionId": "9883:7790",
+          "bbox": {
+            "x": 123,
+            "y": 64,
+            "w": 144,
+            "h": 215
+          },
+          "figmaNodeId": "9883:7790",
+          "structure": 0.8775526602636362,
+          "color": 18.207924254220874,
+          "shape": 1,
+          "layout": 0,
+          "textureScore": 0.03327622511081198
+        },
+        {
+          "regionId": "9883:7801",
+          "bbox": {
+            "x": 40,
+            "y": 279,
+            "w": 309,
+            "h": 58
+          },
+          "figmaNodeId": "9883:7801",
+          "structure": 0.6713681140487626,
+          "color": 33.66337100050934,
+          "shape": 1,
+          "layout": 0,
+          "textureScore": 0.10377784523591177
+        },
+        {
+          "regionId": "9883:7827",
+          "bbox": {
+            "x": 137,
+            "y": 337,
+            "w": 116,
+            "h": 56
+          },
+          "figmaNodeId": "9883:7827",
+          "structure": 0.9997854927909204,
+          "color": 1.4782155390095801,
+          "shape": 0,
+          "layout": 0,
+          "textureScore": 3.612238859193675e-17,
+          "flatColorMismatch": {
+            "designHex": "#FFFFFF",
+            "screenshotHex": "#FAFAF8",
+            "maxChannelDelta": 7
+          }
+        },
+        {
+          "regionId": "10267:7785",
+          "bbox": {
+            "x": 35,
+            "y": 393,
+            "w": 326,
+            "h": 132
+          },
+          "figmaNodeId": "10267:7785",
+          "structure": 0.9997854927909203,
+          "color": 1.478215539011189,
+          "shape": 0,
+          "layout": 0,
+          "textureScore": 3.61223885919507e-17,
+          "flatColorMismatch": {
+            "designHex": "#FFFFFF",
+            "screenshotHex": "#FAFAF8",
+            "maxChannelDelta": 7
+          }
+        },
+        {
+          "regionId": "9883:7794",
+          "bbox": {
+            "x": 0,
+            "y": 417,
+            "w": 390,
+            "h": 275
+          },
+          "figmaNodeId": "9883:7794",
+          "structure": 0.9997854927909661,
+          "color": 1.4782155390122944,
+          "shape": 0,
+          "layout": 0,
+          "textureScore": 3.612238859189524e-17,
+          "flatColorMismatch": {
+            "designHex": "#FFFFFF",
+            "screenshotHex": "#FAFAF8",
+            "maxChannelDelta": 7
+          }
+        },
+        {
+          "regionId": "whole-frame",
+          "bbox": {
+            "x": 0,
+            "y": 0,
+            "w": 390,
+            "h": 692
+          },
+          "figmaNodeId": "9883:7789",
+          "scope": "root",
+          "structure": 0.952178969723384,
+          "color": 7.754057324425102,
+          "shape": 1,
+          "layout": 0,
+          "textureScore": 0.07354858726748506
+        }
+      ],
+      "issues": [
+        {
+          "regionId": "9883:7790",
+          "bbox": {
+            "x": 123,
+            "y": 64,
+            "w": 144,
+            "h": 215
+          },
+          "kind": "color",
+          "severity": "critical",
+          "evidence": {
+            "signal": "delta_e_2000",
+            "value": 18.207924254220874,
+            "threshold": 2,
+            "expected": "< 2",
+            "actual": 18.207924254220874,
+            "figmaFileKey": "15giveDl0JkKddxasif6VA",
+            "figmaNodeId": "9883:7789",
+            "figmaPageName": "iPhone SE - 20"
+          },
+          "figmaNodeId": "9883:7790",
+          "suggestedCssFix": "背景色や塗り色のトークン値をデザイン基準に合わせてください。"
+        },
+        {
+          "regionId": "9883:7801",
+          "bbox": {
+            "x": 40,
+            "y": 279,
+            "w": 309,
+            "h": 58
+          },
+          "kind": "color",
+          "severity": "critical",
+          "evidence": {
+            "signal": "delta_e_2000",
+            "value": 33.66337100050934,
+            "threshold": 2,
+            "expected": "< 2",
+            "actual": 33.66337100050934,
+            "figmaFileKey": "15giveDl0JkKddxasif6VA",
+            "figmaNodeId": "9883:7789",
+            "figmaPageName": "iPhone SE - 20"
+          },
+          "figmaNodeId": "9883:7801",
+          "suggestedCssFix": "背景色や塗り色のトークン値をデザイン基準に合わせてください。"
+        },
+        {
+          "regionId": "9883:7827",
+          "bbox": {
+            "x": 137,
+            "y": 337,
+            "w": 116,
+            "h": 56
+          },
+          "kind": "color",
+          "severity": "critical",
+          "evidence": {
+            "signal": "flat_region_color",
+            "value": 7,
+            "threshold": 1,
+            "expected": "#FFFFFF",
+            "actual": "#FAFAF8",
+            "figmaFileKey": "15giveDl0JkKddxasif6VA",
+            "figmaNodeId": "9883:7789",
+            "figmaPageName": "iPhone SE - 20"
+          },
+          "figmaNodeId": "9883:7827",
+          "suggestedCssFix": "ベタ面の塗りが #FFFFFF ではなく #FAFAF8 になっています。色トークンをデザイン基準に合わせてください。"
+        },
+        {
+          "regionId": "10267:7785",
+          "bbox": {
+            "x": 35,
+            "y": 393,
+            "w": 326,
+            "h": 132
+          },
+          "kind": "color",
+          "severity": "critical",
+          "evidence": {
+            "signal": "flat_region_color",
+            "value": 7,
+            "threshold": 1,
+            "expected": "#FFFFFF",
+            "actual": "#FAFAF8",
+            "figmaFileKey": "15giveDl0JkKddxasif6VA",
+            "figmaNodeId": "9883:7789",
+            "figmaPageName": "iPhone SE - 20"
+          },
+          "figmaNodeId": "10267:7785",
+          "suggestedCssFix": "ベタ面の塗りが #FFFFFF ではなく #FAFAF8 になっています。色トークンをデザイン基準に合わせてください。"
+        },
+        {
+          "regionId": "9883:7794",
+          "bbox": {
+            "x": 0,
+            "y": 417,
+            "w": 390,
+            "h": 275
+          },
+          "kind": "color",
+          "severity": "critical",
+          "evidence": {
+            "signal": "flat_region_color",
+            "value": 7,
+            "threshold": 1,
+            "expected": "#FFFFFF",
+            "actual": "#FAFAF8",
+            "figmaFileKey": "15giveDl0JkKddxasif6VA",
+            "figmaNodeId": "9883:7789",
+            "figmaPageName": "iPhone SE - 20"
+          },
+          "figmaNodeId": "9883:7794",
+          "suggestedCssFix": "ベタ面の塗りが #FFFFFF ではなく #FAFAF8 になっています。色トークンをデザイン基準に合わせてください。"
+        }
+      ],
+      "weightedAggregate": {
+        "weightedStructure": 0.9548304921987119,
+        "weightedColor": 6.589304538137963,
+        "totalWeight": 0.9901629051335985
+      },
+      "structuralAssessment": {
+        "metric": "ssim-contrast-structure-area-v1",
+        "score": 0.9964904200722106,
+        "evaluatedPixelCount": 269880,
+        "excludedPixelCount": 0,
+        "passThreshold": 0.95,
+        "failThreshold": 0.8,
+        "verdict": "pass",
+        "rationale": "Area-weighted contrast and structure over disjoint 8x8 windows. Uniform luminance shifts are excluded; contrast changes remain. Local issues and the aggregate gate remain independent."
+      },
+      "aggregateVerdict": "fail",
+      "rationale": "critical severity issue detected; weakest region 9883:7801 (structure 0.671, color ΔE 33.663; lower=better, critical threshold 2) with texture-adjusted weights active (alpha 0.700, photo-like cap 0.300)"
+    },
+    "preflight": {
+      "warnings": [
+        {
+          "code": "figma_export_hidden_blank",
+          "severity": "critical",
+          "message": "非表示の Figma ノードから単色の画像が返されました。設計内容が書き出されていない可能性があります。",
+          "suggestedFix": "Figma の表示状態と対象ノードを確認してください。figma_use_absolute_bounds: false を明示して再取得できますが、取得画像に設計内容があるか確認する必要があります。"
+        }
+      ]
+    },
+    "normalization": {
+      "designNativeWidth": 390,
+      "designNativeHeight": 692,
+      "screenshotWidth": 390,
+      "screenshotHeight": 844,
+      "cropApplied": true,
+      "containResized": false,
+      "appliedScale": 1,
+      "autoCropped": true,
+      "cropRegion": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 692
+      },
+      "workingCropRegion": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 692
+      },
+      "cropSource": "auto"
+    },
+    "ignoreRegionResolution": {
+      "coordinateContext": {
+        "canvas_width": 390,
+        "canvas_height": 692,
+        "design_original_width": 390,
+        "design_original_height": 692,
+        "screenshot_original_width": 390,
+        "screenshot_original_height": 844,
+        "file_key": "15giveDl0JkKddxasif6VA",
+        "node_id": "9883:7789",
+        "crop_region": {
+          "x": 0,
+          "y": 0,
+          "width": 390,
+          "height": 692
+        }
+      },
+      "appliedIds": [],
+      "incompatibleIds": [],
+      "legacyIds": [],
+      "effectiveCanvas": {
+        "width": 390,
+        "height": 692
+      },
+      "effectiveRegions": [],
+      "maskedPixelCount": 0,
+      "maskSha256": "03ed39fc59e4348659e5fc7bc81f5c963aaa7c7e383245b50d718fbed61fbf9c"
+    },
+    "comparisonConditions": {
+      "status": "unverified",
+      "design": {
+        "canvas": {
+          "width": 390,
+          "height": 692
+        },
+        "canvasSource": "image-metadata",
+        "requested": {
+          "pixelRatio": 1,
+          "source": "figma-export-request"
+        },
+        "unverified": [
+          "viewport",
+          "pixelRatio",
+          "origin"
+        ]
+      },
+      "screenshot": {
+        "canvas": {
+          "width": 390,
+          "height": 844
+        },
+        "canvasSource": "image-metadata",
+        "unverified": [
+          "viewport",
+          "pixelRatio",
+          "origin"
+        ]
+      },
+      "differences": [],
+      "message": "表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。"
+    },
+    "figmaExport": {
+      "conditions": {
+        "contentsOnly": true,
+        "useAbsoluteBounds": true,
+        "scale": 1,
+        "version": "2399718388612486137"
+      },
+      "nodeVisible": false,
+      "opaqueFillExpected": false,
+      "uniformRaster": true,
+      "interiorTransparentRatio": 1,
+      "warnings": [
+        {
+          "code": "figma_export_hidden_blank",
+          "severity": "critical",
+          "message": "非表示の Figma ノードから単色の画像が返されました。設計内容が書き出されていない可能性があります。",
+          "suggestedFix": "Figma の表示状態と対象ノードを確認してください。figma_use_absolute_bounds: false を明示して再取得できますが、取得画像に設計内容があるか確認する必要があります。"
+        }
+      ]
+    },
+    "diagnosis": {
+      "verdict": "likely_misconfig",
+      "likelyMisconfig": true,
+      "rankedCauses": [
+        {
+          "code": "figma_export_conditions",
+          "confidence": 0.95,
+          "message": "非表示の Figma ノードから単色の画像が返されました。設計内容が書き出されていない可能性があります。",
+          "suggestedFix": "Figma の表示状態と対象ノードを確認してください。figma_use_absolute_bounds: false を明示して再取得できますが、取得画像に設計内容があるか確認する必要があります。"
+        }
+      ],
+      "headline": "⚠️ これは実装差分ではなくセットアップ問題の可能性が高いです（一致率 86.22%）。最有力原因: 非表示の Figma ノードから単色の画像が返されました。設計内容が書き出されていない可能性があります。"
+    },
+    "comparisonHeadline": {
+      "structureMatch": 90.97,
+      "colorOnlyRegions": 0,
+      "structuralRegions": 2,
+      "headline": "構造一致 90.97% / 色のみ差分 0領域 / 構造差分 2領域"
+    },
+    "loopGuard": {
+      "stop": true,
+      "step": 1,
+      "maxSteps": 10,
+      "remainingSteps": 9,
+      "reason": "uncertain",
+      "message": "判定が UNCERTAIN です。この比較は判定の確からしさを損なう条件を含むため、自動修正を止めて人間のレビューに回してください。",
+      "iteration": 1,
+      "decision": "stop"
+    },
+    "verdictRoute": "pixel",
+    "verificationContext": {
+      "version": 1,
+      "design": {
+        "sourceIdentitySha256": "1f2a6edccb3d9f35f87a9155a01e2f13db1e2498e6eea910105785d53c4b6ba0",
+        "imageSha256": "4fcd29c358db045fd5c01b3afea042177db3226855e84eb4e85e7bfa3878cb51",
+        "background": "#FFFFFF",
+        "figmaExportConditions": {
+          "contentsOnly": true,
+          "useAbsoluteBounds": true,
+          "scale": 1,
+          "version": "2399718388612486137"
+        }
+      },
+      "comparison": {
+        "effectiveThreshold": 0.1,
+        "profile": null,
+        "declaredConditions": {},
+        "geometry": {
+          "designNativeWidth": 390,
+          "designNativeHeight": 692,
+          "screenshotWidth": 390,
+          "cropApplied": true,
+          "autoCropped": true,
+          "cropRegion": {
+            "x": 0,
+            "y": 0,
+            "width": 390,
+            "height": 692
+          },
+          "workingCropRegion": {
+            "x": 0,
+            "y": 0,
+            "width": 390,
+            "height": 692
+          },
+          "cropSource": "auto"
+        }
+      },
+      "mask": {
+        "status": "none"
+      },
+      "fingerprint": "81b071631a448e93d6c028b2f56ec455e5efaf17b629a8417404f930b8aee457"
+    },
+    "diffImagePath": "/home/kouiso/ghq/kouiso/designdiff-wt-dogfood/docs/evidence/shakedown-wsl/mcp-real-figma/figdiff-home/results/diff-cmp-0045511f-48c1-4b4e-899d-c85498806639.png"
+  }
+}

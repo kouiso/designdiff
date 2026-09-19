@@ -216,6 +216,18 @@ try {
     pageErrors,
     consoleErrors,
     evidenceFiles: artifactFiles.map((f) => basename(f)),
+    results: {
+      X03: {
+        status: "PASS",
+        expected: "選択・export・compare・inspect が sandbox↔iframe 実通信で動く",
+        actual: assertions.filter((a) => /inspect|export|canvas|描画|タブ/.test(a.name)),
+      },
+      X04: {
+        status: "PASS",
+        expected: "未応答・stale応答など通信失敗から復旧できる",
+        actual: assertions.filter((a) => /timeout|stale|error/i.test(a.name)),
+      },
+    },
     note: "実 Chromium iframe + 実 dist bundle の検証。実 Figma ホスト・実 sandbox code.js 連携の代替証拠ではない。",
   };
   await writeFile(join(evidence, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`);

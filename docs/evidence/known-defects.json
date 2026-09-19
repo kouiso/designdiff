@@ -1,0 +1,20 @@
+[
+  {
+    "id": "token-dialog-cancel-stuck",
+    "summary": "PAT 保存成功後に TokenRequiredDialog を再オープンするとキャンセルボタンが disabled のまま残る (Escape/onOpenChange 経路は生存)",
+    "firstObserved": "desktop-d-wsl-r19 ほか3面",
+    "disposition": "既知不具合として台帳へ記録。完了宣言前に製品側の対処要否を判定する"
+  },
+  {
+    "id": "compare-store-shared-across-projects",
+    "summary": "design 画像を載せた直後に別案件の「比較」を開くと、前案件の画像+pill がそのまま残る",
+    "firstObserved": "desktop-d-wsl-r19 ほか3面",
+    "disposition": "既知不具合として台帳へ記録。完了宣言前に製品側の対処要否を判定する"
+  },
+  {
+    "id": "narrow-viewport-overflow",
+    "summary": "430px viewport で横 overflow が発生する",
+    "firstObserved": "desktop-d-wsl-r19 ほか3面",
+    "disposition": "既知不具合として台帳へ記録。完了宣言前に製品側の対処要否を判定する"
+  }
+]

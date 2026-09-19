@@ -451,6 +451,14 @@ try {
         },
         scope:
           "Synthetic native Electron issue-report prepare/review/edit/discard and credential-failure flow. GitHub search is a recorded GET-only mock; submission is forbidden and untested.",
+        results: {
+          D07: {
+            status: "PASS",
+            expected: "報告対象・内容を確認して送れる",
+            actual:
+              "prepare→確認→編集/破棄を実IPCで検証。POST投稿0件・認証エラー復旧を確認。実外部投稿は未検証で範囲外",
+          },
+        },
         artifacts,
       },
       null,

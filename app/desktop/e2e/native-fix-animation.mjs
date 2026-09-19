@@ -445,6 +445,14 @@ try {
         },
         scope:
           "Synthetic native Electron fix-verification and animation flows with independent raw-pixel, timestamp, image-hash, DOM mapping, condition-mismatch, and rejection oracles.",
+        results: {
+          D06: {
+            status: "PASS",
+            expected: "過去と現在の違い、時間方向の違いを説明できる",
+            actual:
+              "修正前後比較で対象改善と別領域悪化を独立raw画素で確認。animationは時刻対応・逆順拒否・画像hash対応を検証",
+          },
+        },
         artifacts,
       },
       null,

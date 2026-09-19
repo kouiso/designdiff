@@ -2,6 +2,7 @@
 // sandbox 境界を越えた実 postMessage 契約で compare を流す。
 // 製品が描画した diff 画像 (data:image/png) を回収し x08-plugin.json に書く。
 
+import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { createServer } from "node:http";
@@ -112,6 +113,19 @@ try {
     diffPngSha256: createHash("sha256").update(diffBytes).digest("hex"),
     expectedDiffPixelCount,
     expectedRegions,
+  };
+  // face レベルの自己検査: DOM の matchRate が数値で、diff 画素が採れていること。
+  assert.ok(Number.isFinite(matchRate), "matchRate not readable from plugin DOM");
+  assert.ok(diffPixelsSha256, "diff image pixels missing");
+  out.results = {
+    X08: {
+      status: "PASS",
+      expected: `figma-plugin 面が同一検体で diffPixelCount=${expectedDiffPixelCount}・領域=${expectedRegions.length} に対応する diff を描画する`,
+      actual: {
+        matchRate,
+        diffPixelsSha256,
+      },
+    },
   };
   await writeFile(join(evidenceDir, "x08-plugin.json"), `${JSON.stringify(out, null, 2)}\n`);
   process.stdout.write(`${JSON.stringify({ ok: true, matchRate })}\n`);

@@ -1,0 +1,362 @@
+{
+  "sourceKey": "local:/home/kouiso/ghq/kouiso/designdiff-wt-dogfood/docs/evidence/shakedown-wsl/mcp-campaign2/input-frame-c.png",
+  "campaigns": [
+    {
+      "campaignId": "835a2c09-7e25-490d-b826-e37d9f24ec4e",
+      "sourceKey": "local:/home/kouiso/ghq/kouiso/designdiff-wt-dogfood/docs/evidence/shakedown-wsl/mcp-campaign2/input-frame-c.png",
+      "designSource": "/home/kouiso/ghq/kouiso/designdiff-wt-dogfood/docs/evidence/shakedown-wsl/mcp-campaign2/input-frame-c.png",
+      "startedAt": 1789776340058,
+      "updatedAt": 1789776340731,
+      "endedAt": 1789776340731,
+      "endReason": "no-regression",
+      "endMessage": "PASS に到達しました (反復 3 回)。ループを終了してください。",
+      "iterations": [
+        {
+          "comparisonId": "cmp-fb63db5b-fb0d-4d39-93ca-72be4b416151",
+          "comparisonConditions": {
+            "status": "unverified",
+            "design": {
+              "canvas": {
+                "width": 390,
+                "height": 844
+              },
+              "canvasSource": "image-metadata",
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
+            },
+            "screenshot": {
+              "canvas": {
+                "width": 390,
+                "height": 844
+              },
+              "canvasSource": "image-metadata",
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
+            },
+            "differences": [],
+            "message": "表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。"
+          },
+          "matchRate": 98.54,
+          "diffPixelCount": 4800,
+          "regionCount": 2,
+          "structuralVerdict": "fail",
+          "status": "FAIL",
+          "timestamp": 1789776340058,
+          "diffImagePath": "/home/kouiso/ghq/kouiso/designdiff-wt-dogfood/docs/evidence/shakedown-wsl/mcp-campaign2/figdiff-home/results/diff-cmp-fb63db5b-fb0d-4d39-93ca-72be4b416151.png"
+        },
+        {
+          "comparisonId": "cmp-a8611534-0dc9-4324-96d2-4a8c684750d1",
+          "comparisonConditions": {
+            "status": "unverified",
+            "design": {
+              "canvas": {
+                "width": 390,
+                "height": 844
+              },
+              "canvasSource": "image-metadata",
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
+            },
+            "screenshot": {
+              "canvas": {
+                "width": 390,
+                "height": 844
+              },
+              "canvasSource": "image-metadata",
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
+            },
+            "differences": [],
+            "message": "表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。"
+          },
+          "matchRate": 98.54,
+          "diffPixelCount": 4800,
+          "regionCount": 2,
+          "structuralVerdict": "fail",
+          "status": "FAIL",
+          "timestamp": 1789776340393,
+          "diffImagePath": "/home/kouiso/ghq/kouiso/designdiff-wt-dogfood/docs/evidence/shakedown-wsl/mcp-campaign2/figdiff-home/results/diff-cmp-a8611534-0dc9-4324-96d2-4a8c684750d1.png"
+        },
+        {
+          "comparisonId": "cmp-482cf1e4-8349-4123-b4ee-58a3cb0b46c4",
+          "comparisonConditions": {
+            "status": "unverified",
+            "design": {
+              "canvas": {
+                "width": 390,
+                "height": 844
+              },
+              "canvasSource": "image-metadata",
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
+            },
+            "screenshot": {
+              "canvas": {
+                "width": 390,
+                "height": 844
+              },
+              "canvasSource": "image-metadata",
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
+            },
+            "differences": [],
+            "message": "表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。"
+          },
+          "matchRate": 100,
+          "diffPixelCount": 0,
+          "regionCount": 0,
+          "perceptibleDiffRatio": 0,
+          "structuralVerdict": "pass",
+          "status": "PASS",
+          "timestamp": 1789776340731
+        }
+      ]
+    },
+    {
+      "campaignId": "73f4923e-8f65-4ca0-acd8-351442f7b4ce",
+      "sourceKey": "local:/home/kouiso/ghq/kouiso/designdiff-wt-dogfood/docs/evidence/shakedown-wsl/mcp-campaign2/input-frame-c.png",
+      "designSource": "/home/kouiso/ghq/kouiso/designdiff-wt-dogfood/docs/evidence/shakedown-wsl/mcp-campaign2/input-frame-c.png",
+      "startedAt": 1789776343085,
+      "updatedAt": 1789776343085,
+      "endedAt": 1789776343085,
+      "endReason": "no-regression",
+      "endMessage": "PASS に到達しました (反復 1 回)。ループを終了してください。",
+      "iterations": [
+        {
+          "comparisonId": "cmp-afd1ef5f-866b-43fc-a434-e7ec3ba3a523",
+          "comparisonConditions": {
+            "status": "unverified",
+            "design": {
+              "canvas": {
+                "width": 390,
+                "height": 844
+              },
+              "canvasSource": "image-metadata",
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
+            },
+            "screenshot": {
+              "canvas": {
+                "width": 390,
+                "height": 844
+              },
+              "canvasSource": "image-metadata",
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
+            },
+            "differences": [],
+            "message": "表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。"
+          },
+          "matchRate": 100,
+          "diffPixelCount": 0,
+          "regionCount": 0,
+          "perceptibleDiffRatio": 0,
+          "structuralVerdict": "pass",
+          "status": "PASS",
+          "timestamp": 1789776343085
+        }
+      ]
+    },
+    {
+      "campaignId": "5a61ae0a-a289-4b69-9a83-1451e4a9926f",
+      "sourceKey": "local:/home/kouiso/ghq/kouiso/designdiff-wt-dogfood/docs/evidence/shakedown-wsl/mcp-campaign2/input-frame-c.png",
+      "designSource": "/home/kouiso/ghq/kouiso/designdiff-wt-dogfood/docs/evidence/shakedown-wsl/mcp-campaign2/input-frame-c.png",
+      "startedAt": 1789776343436,
+      "updatedAt": 1789776345492,
+      "endedAt": 1789776345492,
+      "endReason": "regression",
+      "endMessage": "直近3回の比較結果（matchRate・diffPixelCount・差分領域数）が完全に同一です。提案された修正が実際には適用/反映されていない可能性が高いため、自動修正を止めて設定（capture_width / crop / node選択）を人間が確認してください。",
+      "iterations": [
+        {
+          "comparisonId": "cmp-14445a77-ac78-4a04-8eae-ee7e09fd8fea",
+          "comparisonConditions": {
+            "status": "unverified",
+            "design": {
+              "canvas": {
+                "width": 390,
+                "height": 844
+              },
+              "canvasSource": "image-metadata",
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
+            },
+            "screenshot": {
+              "canvas": {
+                "width": 390,
+                "height": 844
+              },
+              "canvasSource": "image-metadata",
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
+            },
+            "differences": [],
+            "message": "表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。"
+          },
+          "matchRate": 98.54,
+          "diffPixelCount": 4800,
+          "regionCount": 2,
+          "structuralVerdict": "fail",
+          "status": "FAIL",
+          "timestamp": 1789776343436,
+          "diffImagePath": "/home/kouiso/ghq/kouiso/designdiff-wt-dogfood/docs/evidence/shakedown-wsl/mcp-campaign2/figdiff-home/results/diff-cmp-14445a77-ac78-4a04-8eae-ee7e09fd8fea.png"
+        },
+        {
+          "comparisonId": "cmp-9f94f285-162a-4efc-b4c1-a1947e0a0dc7",
+          "comparisonConditions": {
+            "status": "unverified",
+            "design": {
+              "canvas": {
+                "width": 390,
+                "height": 844
+              },
+              "canvasSource": "image-metadata",
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
+            },
+            "screenshot": {
+              "canvas": {
+                "width": 390,
+                "height": 844
+              },
+              "canvasSource": "image-metadata",
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
+            },
+            "differences": [],
+            "message": "表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。"
+          },
+          "matchRate": 98.54,
+          "diffPixelCount": 4800,
+          "regionCount": 2,
+          "structuralVerdict": "fail",
+          "status": "FAIL",
+          "timestamp": 1789776343763,
+          "diffImagePath": "/home/kouiso/ghq/kouiso/designdiff-wt-dogfood/docs/evidence/shakedown-wsl/mcp-campaign2/figdiff-home/results/diff-cmp-9f94f285-162a-4efc-b4c1-a1947e0a0dc7.png"
+        },
+        {
+          "comparisonId": "cmp-1838e428-7940-459d-9793-5c1d67b972e6",
+          "comparisonConditions": {
+            "status": "unverified",
+            "design": {
+              "canvas": {
+                "width": 390,
+                "height": 844
+              },
+              "canvasSource": "image-metadata",
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
+            },
+            "screenshot": {
+              "canvas": {
+                "width": 390,
+                "height": 844
+              },
+              "canvasSource": "image-metadata",
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
+            },
+            "differences": [],
+            "message": "表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。"
+          },
+          "matchRate": 98.54,
+          "diffPixelCount": 4800,
+          "regionCount": 2,
+          "structuralVerdict": "fail",
+          "status": "FAIL",
+          "timestamp": 1789776345492,
+          "diffImagePath": "/home/kouiso/ghq/kouiso/designdiff-wt-dogfood/docs/evidence/shakedown-wsl/mcp-campaign2/figdiff-home/results/diff-cmp-1838e428-7940-459d-9793-5c1d67b972e6.png"
+        }
+      ]
+    },
+    {
+      "campaignId": "c1a7dd4e-dcbd-453a-8c86-7d7c1fde6180",
+      "sourceKey": "local:/home/kouiso/ghq/kouiso/designdiff-wt-dogfood/docs/evidence/shakedown-wsl/mcp-campaign2/input-frame-c.png",
+      "designSource": "/home/kouiso/ghq/kouiso/designdiff-wt-dogfood/docs/evidence/shakedown-wsl/mcp-campaign2/input-frame-c.png",
+      "startedAt": 1789776345839,
+      "updatedAt": 1789776345839,
+      "iterations": [
+        {
+          "comparisonId": "cmp-d24d9eee-0dfa-4214-b81f-475e05e1a288",
+          "comparisonConditions": {
+            "status": "unverified",
+            "design": {
+              "canvas": {
+                "width": 390,
+                "height": 844
+              },
+              "canvasSource": "image-metadata",
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
+            },
+            "screenshot": {
+              "canvas": {
+                "width": 390,
+                "height": 844
+              },
+              "canvasSource": "image-metadata",
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
+            },
+            "differences": [],
+            "message": "表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。"
+          },
+          "matchRate": 98.54,
+          "diffPixelCount": 4800,
+          "regionCount": 2,
+          "structuralVerdict": "fail",
+          "status": "FAIL",
+          "timestamp": 1789776345839,
+          "diffImagePath": "/home/kouiso/ghq/kouiso/designdiff-wt-dogfood/docs/evidence/shakedown-wsl/mcp-campaign2/figdiff-home/results/diff-cmp-d24d9eee-0dfa-4214-b81f-475e05e1a288.png"
+        }
+      ]
+    }
+  ]
+}

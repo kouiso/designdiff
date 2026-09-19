@@ -136,9 +136,10 @@ Windows／WSLで実行不能の項目は、失敗したコマンドと復旧後�
 | X05 | WSL/Linux、Windows、macOS | Android（2台） |
 | X06 | macOS | iOS Simulator、iOS実機 |
 | X07 | WSL/Linux、Windows、macOS | Android |
-| X07 | macOS | iOS Simulator、iOS実機 |
 | X08 | WSL/Linux、Windows、macOS | MCP、desktop、Chrome拡張、Figma plugin |
 | X09 | WSL/Linux、Windows、macOS | MCP、desktop |
 | X10 | リポジトリ共通 | 依存グラフ |
 
-49ケースをOS・経路・2巡へ展開すると394記録になる。複数ケースを同じ実行で検証してもよいが、各ケースの期待・実測と参照証跡を区別し、1巡目の記録を2巡目の実行証明に再利用しない。
+X07 の iOS 経路（iOS Simulator・iOS実機）は表に含めない。理由: 製品は iOS の分割撮影を提供せず `capture_scroll` を明示拒否する（嘘の結合を返さない挙動を X06 で検証済み）。pymobiledevice3 に実機への swipe 注入手段が無く、OS 固有の非対応機能として本表から外す。
+
+49ケースをOS・経路・2巡へ展開すると390記録になる。複数ケースを同じ実行で検証してもよいが、各ケースの期待・実測と参照証跡を区別し、1巡目の記録を2巡目の実行証明に再利用しない。

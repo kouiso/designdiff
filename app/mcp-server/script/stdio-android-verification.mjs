@@ -276,7 +276,8 @@ const scrollResult = await call("compare_design", {
 const scrollPayload = scrollResult.structuredContent ?? {};
 evidence.results.X07_android_scroll = {
   isError: scrollResult.isError === true,
-  status: scrollPayload.status,
+  status: scrollResult.isError ? "FAIL" : "PASS",
+  comparisonStatus: scrollPayload.status,
   scrollCapture: scrollPayload.scrollCapture,
   ignoreRegionResolution: scrollPayload.ignoreRegionResolution
     ? {

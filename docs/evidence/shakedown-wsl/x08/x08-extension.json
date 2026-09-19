@@ -1,0 +1,45 @@
+{
+  "surface": "chrome-extension",
+  "diffPixelCount": 832,
+  "matchRate": 90.97,
+  "regions": [
+    {
+      "x": 16,
+      "y": 16,
+      "width": 32,
+      "height": 24
+    },
+    {
+      "x": 4,
+      "y": 64,
+      "width": 8,
+      "height": 8
+    }
+  ],
+  "expectedDiffPixelCount": 832,
+  "expectedRegions": [
+    {
+      "x": 16,
+      "y": 16,
+      "width": 32,
+      "height": 24
+    },
+    {
+      "x": 4,
+      "y": 64,
+      "width": 8,
+      "height": 8
+    }
+  ],
+  "results": {
+    "X08": {
+      "status": "PASS",
+      "expected": "chrome-extension 面が同一検体で diffPixelCount=832・領域=2 を返す",
+      "actual": {
+        "diffPixelCount": 832,
+        "matchRate": 90.97,
+        "regionCount": 2
+      }
+    }
+  }
+}

@@ -1,0 +1,68 @@
+[
+  {
+    "comparisonId": "cmp-e8e076e5-021a-4fbb-83ae-4538742e563c",
+    "matchRate": 25.15,
+    "captureWidth": 1080,
+    "captureHeight": 2400,
+    "diffPixelCount": 1823604,
+    "regionCount": 1,
+    "structuralVerdict": "fail",
+    "status": "FAIL",
+    "timestamp": 1789778097198
+  },
+  {
+    "comparisonId": "cmp-3c1f8875-8bab-4403-92a3-6ef2a39e2fc6",
+    "matchRate": 25.15,
+    "captureWidth": 1080,
+    "captureHeight": 2400,
+    "diffPixelCount": 1823604,
+    "regionCount": 1,
+    "structuralVerdict": "fail",
+    "status": "FAIL",
+    "timestamp": 1789778099495
+  },
+  {
+    "comparisonId": "cmp-bf32705e-cd7e-492e-95a2-aba6382be83d",
+    "matchRate": 90.14,
+    "captureWidth": 1080,
+    "captureHeight": 2400,
+    "diffPixelCount": 240224,
+    "regionCount": 11,
+    "structuralVerdict": "fail",
+    "status": "FAIL",
+    "timestamp": 1789778118227
+  },
+  {
+    "comparisonId": "cmp-8a25d4d3-7e1a-4a47-a396-b3285c2bb8b9",
+    "matchRate": 90.14,
+    "captureWidth": 1080,
+    "captureHeight": 2400,
+    "diffPixelCount": 240224,
+    "regionCount": 11,
+    "structuralVerdict": "fail",
+    "status": "FAIL",
+    "timestamp": 1789778120247
+  },
+  {
+    "comparisonId": "cmp-4c4e57c9-8331-4922-b293-6aa6e1275987",
+    "matchRate": 52.45,
+    "captureWidth": 1080,
+    "captureHeight": 2400,
+    "diffPixelCount": 1158579,
+    "regionCount": 1,
+    "structuralVerdict": "fail",
+    "status": "FAIL",
+    "timestamp": 1789778184356
+  },
+  {
+    "comparisonId": "cmp-180eecd0-b52d-4d31-9b5b-f77929beb8ad",
+    "matchRate": 52.45,
+    "captureWidth": 1080,
+    "captureHeight": 2400,
+    "diffPixelCount": 1158579,
+    "regionCount": 1,
+    "structuralVerdict": "fail",
+    "status": "FAIL",
+    "timestamp": 1789778185954
+  }
+]

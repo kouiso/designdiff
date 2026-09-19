@@ -701,6 +701,20 @@ try {
         },
         scope:
           "Synthetic native Electron Figma-node fix flow through real main/preload/IPC/renderer. Independent raw pixels assert masked cropped target improvement and another 3x3 grid regression; HTTP requests assert version-pinned node/export, scale, and root containment rejection.",
+        results: {
+          D05: {
+            status: "PASS",
+            expected: "ノード詳細・トークン表示へ画面から到達でき、選択した対象だけに適用する",
+            actual:
+              "版固定・deep ancestry・scale2 exportを実IPC経由で検証し、選択nodeだけが詳細対象になることをHTTP要求と画素で確認",
+          },
+          D06: {
+            status: "PASS",
+            expected: "修正前後の違いを説明できる",
+            actual:
+              "mask適用対象の改善(raw差分800→0)と別grid悪化(0→1600)を独立raw画素で計測し、対象IMPROVEDと全体FAILの併存を確認",
+          },
+        },
         artifacts,
       },
       null,

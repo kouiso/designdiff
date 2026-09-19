@@ -1026,6 +1026,214 @@ const d08ExportHits = figmaRequests()
   .filter((u) => u.includes("ids=7%3A8") || u.includes("ids=7:8"));
 d08.comparePositiveControl = { ...compareControl, apiHitsForSource: d08ExportHits.length };
 
+// D04: compare の全表示モード・zoom・pan・crop を実操作で検証する。
+// 表示が実際の入力・差分と一致することを canvas 実測で確認し、
+// この区間の例外と console error を別途収集して空を assert する。
+const d04 = { consoleErrors: [] };
+const d04ConsoleListener = (message) => {
+  if (message.type() === "error") d04.consoleErrors.push(message.text());
+};
+page2.on("console", d04ConsoleListener);
+const canvasContainer = page2.getByTestId("compare-canvas-container");
+const transformOf = () =>
+  canvasContainer
+    .locator("> div")
+    .first()
+    .evaluate((el) => el.style.transform ?? "");
+try {
+  // 1. 3表示モードを順に切替え、アクティブ化と fixture canvas の残存を確認する。
+  //    aria-label が表示テキストを上書きするため日本語ラベルで選ぶ。
+  const modeObservations = {};
+  for (const mode of [
+    { label: "ピクセル差分", id: "pixel_diff" },
+    { label: "透過オーバーレイ", id: "transparent_overlay" },
+    { label: "分割画面", id: "split_screen" },
+  ]) {
+    const button = page2.getByRole("button", { name: mode.label, exact: true });
+    await button.click();
+    // 切替後も design fixture の canvas が残ることを確認する。
+    await page2.waitForFunction(
+      () =>
+        [...document.querySelectorAll("canvas")].some(
+          (c) => c.width === 200 && c.height === 120,
+        ),
+      { timeout: 5_000, polling: 200 },
+    );
+    modeObservations[mode.id] = {
+      activeClass: (await button.getAttribute("class"))?.includes("primary") ?? false,
+    };
+  }
+  d04.viewModes = modeObservations;
+  for (const [id, obs] of Object.entries(modeObservations)) {
+    assert.ok(obs.activeClass, `view mode ${id} did not activate`);
+  }
+
+  // 2. zoom: Ctrl+wheel で transform の scale が変わることを実測する。
+  const transformBefore = await transformOf();
+  await canvasContainer.hover();
+  await page2.keyboard.down("Control");
+  await page2.mouse.wheel(0, -400);
+  await page2.keyboard.up("Control");
+  await page2.waitForFunction(
+    (before) => {
+      const el = document.querySelector(
+        '[data-testid="compare-canvas-container"] > div',
+      );
+      return el && el.style.transform !== before && /scale\([^)]*\)/.test(el.style.transform);
+    },
+    transformBefore,
+    { timeout: 5_000, polling: 100 },
+  );
+  d04.zoom = { before: transformBefore, after: await transformOf() };
+
+  // 3. pan: middle-drag で translate が変わることを実測する。
+  const panBefore = await transformOf();
+  const canvasBox = await canvasContainer.boundingBox();
+  await page2.mouse.move(canvasBox.x + canvasBox.width / 2, canvasBox.y + canvasBox.height / 2);
+  await page2.mouse.down({ button: "middle" });
+  await page2.mouse.move(
+    canvasBox.x + canvasBox.width / 2 + 60,
+    canvasBox.y + canvasBox.height / 2 + 40,
+    { steps: 3 },
+  );
+  await page2.mouse.up({ button: "middle" });
+  await page2.waitForFunction(
+    (before) => {
+      const el = document.querySelector(
+        '[data-testid="compare-canvas-container"] > div',
+      );
+      return el && el.style.transform !== before;
+    },
+    panBefore,
+    { timeout: 5_000, polling: 100 },
+  );
+  d04.pan = { before: panBefore, after: await transformOf() };
+
+  // 4. Ctrl+0 で scale(1) へ戻ること。
+  await page2.keyboard.press("Control+0");
+  await page2.waitForFunction(
+    () => {
+      const el = document.querySelector(
+        '[data-testid="compare-canvas-container"] > div',
+      );
+      return el && /scale\(1\)/.test(el.style.transform ?? "");
+    },
+    { timeout: 5_000, polling: 100 },
+  );
+  d04.reset = await transformOf();
+
+  // 5. crop: 範囲選択キャンバスを 10px 超 drag → 座標表示 → クリアで消去。
+  //    比較領域の下端にあるため視界へ出してから座標を取る (画面外クリックは当たらない)。
+  const cropCanvas = page2.locator('canvas[aria-label="範囲選択キャンバス"]');
+  await cropCanvas.scrollIntoViewIfNeeded();
+  // smooth scroll の収束を rect 安定で待つ。未到達のまま down すると、
+  // isSelecting の描画で canvas が縮み pointer が外に出て onMouseLeave が
+  // 選択をキャンセルする (domEvents で mouseleave@同座標 を実測)。
+  await page2.waitForFunction(
+    () => {
+      const c = document.querySelector('canvas[aria-label="範囲選択キャンバス"]');
+      if (!c) return false;
+      const r = c.getBoundingClientRect();
+      const key = `${r.x},${r.y},${r.width},${r.height}`;
+      const stable = window.__lastCropRect === key;
+      window.__lastCropRect = key;
+      return stable;
+    },
+    { timeout: 5_000, polling: 100 },
+  );
+  // DOMイベントの到達を直接記録して切り分ける (React handler 不発か入力未到達か)。
+  await page2.evaluate(() => {
+    const c = document.querySelector('canvas[aria-label="範囲選択キャンバス"]');
+    window.__cropEvents = [];
+    for (const type of ["mousedown", "mousemove", "mouseup", "mouseleave"]) {
+      c.addEventListener(type, (e) =>
+        window.__cropEvents.push(`${type}@${e.clientX},${e.clientY}`),
+      );
+    }
+  });
+  // 初回の isSelecting 描画で canvas が既定 300x150 から画像寸法へ縮み、
+  // flex-1 の再配置で要素自体が移動する。その移動が onMouseLeave を発火させて
+  // drag をキャンセルするため、先に一度選択を起こして最終寸法へ落ち着かせる。
+  await cropCanvas.hover({ position: { x: 10, y: 10 } });
+  await page2.mouse.down();
+  try {
+    await page2.waitForFunction(
+      () => {
+        const c = document.querySelector('canvas[aria-label="範囲選択キャンバス"]');
+        return c && c.width === 200 && c.height === 120;
+      },
+      { timeout: 5_000, polling: 100 },
+    );
+  } catch {
+    // img 未読込だと resize が起きず既定寸法のまま安定している — そのまま進める。
+  }
+  await page2.mouse.up();
+  // 縮小後の位置収束を rect 安定で待ってから本番 drag する。
+  await page2.waitForFunction(
+    () => {
+      const c = document.querySelector('canvas[aria-label="範囲選択キャンバス"]');
+      if (!c) return false;
+      const r = c.getBoundingClientRect();
+      const key = `${r.x},${r.y},${r.width},${r.height}`;
+      const stable = window.__lastCropRect === key;
+      window.__lastCropRect = key;
+      return stable;
+    },
+    { timeout: 5_000, polling: 100 },
+  );
+  await cropCanvas.hover({ position: { x: 10, y: 10 } });
+  await page2.mouse.down();
+  // React の isSelecting commit を実表示で待つ。commit 前の mousemove/mouseup は
+  // 古い handler (isSelecting=false) に捌かれて領域が作られない。
+  await page2.getByRole("button", { name: "選択中...", exact: true }).waitFor({ timeout: 5_000 });
+  await cropCanvas.hover({ position: { x: 90, y: 70 } });
+  // move の DOM 到達を計装ログで確認してから放す (未到達なら領域は作られない)。
+  await page2.waitForFunction(
+    () => window.__cropEvents?.some((e) => e.startsWith("mousemove")),
+    { timeout: 5_000, polling: 100 },
+  );
+  await page2.mouse.up();
+  const cropText = page2.getByText(/^x: \d+, y: \d+, w: \d+, h: \d+$/, { exact: false });
+  try {
+    await cropText.waitFor({ timeout: 5_000 });
+  } catch (error) {
+    // drag が領域を作らなかった時の切り分け: 実座標に居る要素・canvas 実寸・
+    // 親の overflow 状態を証跡へ残す。座標は evaluate 内で canvas rect から引く。
+    d04.cropDebug = await page2.evaluate(() => {
+      const hitAt = (x, y) => {
+        const el = document.elementFromPoint(x, y);
+        return el ? `${el.tagName}.${el.className}` : null;
+      };
+      const canvas = document.querySelector('canvas[aria-label="範囲選択キャンバス"]');
+      const rect = canvas?.getBoundingClientRect();
+      const parent = canvas?.parentElement;
+      const style = parent ? getComputedStyle(parent) : null;
+      return {
+        hitAtStart: rect ? hitAt(rect.x + 10, rect.y + 10) : null,
+        hitAtMid: rect ? hitAt(rect.x + 50, rect.y + 40) : null,
+        selectingVisible: [...document.querySelectorAll("button")].some(
+          (b) => b.textContent === "選択中...",
+        ),
+        domEvents: window.__cropEvents ?? null,
+        canvasRect: rect ? { x: rect.x, y: rect.y, w: rect.width, h: rect.height } : null,
+        canvasSize: canvas ? { w: canvas.width, h: canvas.height } : null,
+        parentOverflow: style ? `${style.overflow}/${style.overflowX}/${style.overflowY}` : null,
+      };
+    });
+    await page2.screenshot({ path: join(evidenceDir, "d04-crop-stuck.png") });
+    throw error;
+  }
+  d04.crop = { region: await cropText.textContent() };
+  await page2.getByRole("button", { name: "クリア", exact: true }).click();
+  await cropText.waitFor({ state: "detached", timeout: 5_000 });
+  d04.crop.cleared = true;
+} finally {
+  page2.off("console", d04ConsoleListener);
+  // 途中失敗でも観測済みの区間を証跡へ残す (再実行なしに切り分けられるように)。
+  evidence.results.D04 = d04;
+}
+assert.deepEqual(d04.consoleErrors, [], `D04 console errors: ${d04.consoleErrors.join(" | ")}`);
+
 // 案件切替: MCP経由案件を開く → 空の案件内容が出ることを実画面で確認する。
 // (一覧の article タイトルにも案件名は出るため、画面遷移の確証は空状態表示で取る)
 await nav(page2, "ホーム").click();

@@ -52,7 +52,7 @@ const fixture = async (run) => {
 
 test("49ケース・2巡・必須経路を網羅した台帳の整合を受理する", () =>
   fixture(async (ledger, directory) => {
-    assert.equal(requiredCampaignRuns.length, 394);
+    assert.equal(requiredCampaignRuns.length, 390);
     assert.equal(new Set(requiredCampaignRuns.map((run) => run.case)).size, 49);
     assert.deepEqual(new Set(requiredCampaignRuns.map((run) => run.round)), new Set([1, 2]));
     assert.deepEqual(await validateCampaignEvidence(ledger, directory), []);
@@ -129,13 +129,7 @@ test("必須OSと経路の契約を実装から独立した組合せで固定す
     X04: ["linux-wsl/figma-plugin", "windows/figma-plugin", "macos/figma-plugin"],
     X05: ["linux-wsl/android", "windows/android", "macos/android"],
     X06: ["macos/ios-simulator", "macos/ios-device"],
-    X07: [
-      "linux-wsl/android",
-      "windows/android",
-      "macos/android",
-      "macos/ios-simulator",
-      "macos/ios-device",
-    ],
+    X07: ["linux-wsl/android", "windows/android", "macos/android"],
     X08: [
       "linux-wsl/mcp",
       "linux-wsl/desktop",

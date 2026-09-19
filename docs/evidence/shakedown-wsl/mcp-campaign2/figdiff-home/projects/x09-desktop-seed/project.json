@@ -1,0 +1,22 @@
+{
+  "id": "x09-desktop-seed",
+  "name": "Desktop-seeded project",
+  "implementationUrl": "http://localhost:3000",
+  "pages": [
+    {
+      "id": "fixture-page",
+      "name": "Fixture page",
+      "path": "/",
+      "designSources": [
+        {
+          "id": "fixture-image",
+          "type": "local_image",
+          "label": "Fixture design",
+          "filePath": "/home/kouiso/ghq/kouiso/designdiff-wt-dogfood/docs/evidence/shakedown-wsl/mcp-campaign2/input-design.png"
+        }
+      ]
+    }
+  ],
+  "createdAt": "2026-01-01T00:00:00Z",
+  "updatedAt": "2026-01-01T00:00:00Z"
+}

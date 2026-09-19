@@ -223,6 +223,19 @@ try {
         pageErrors,
         consoleErrors,
         rendererCrashes,
+        results: {
+          D02: {
+            status: "PASS",
+            expected: "未実行案件・ページ・比較前画面で0点/赤不合格ではなく未計測を表示する",
+            actual: {
+              scoreText: before ? "0 (修正前の不具合状態)" : "— (未計測)",
+              badgePresent: !before ? false : "measured後のみ",
+              views: "home/project/compare/node-inspection-empty/measured/convergence",
+              pageErrors,
+              rendererCrashes,
+            },
+          },
+        },
       },
       null,
       2,

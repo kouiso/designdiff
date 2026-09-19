@@ -1,0 +1,152 @@
+{
+  "schemaVersion": 1,
+  "completed": false,
+  "results": {
+    "D01": {
+      "onboarding": "steps + input visible",
+      "tokenlessPaths": [
+        "quickCompareSubmit",
+        "createProjectForm"
+      ],
+      "auth": {
+        "credentialFile": "credentials.json",
+        "viaDialog": true
+      },
+      "frameSelect": {
+        "exported": "https://api.figma.com/v1/images/FD01?ids=7:9&format=png&scale=2&use_absolute_bounds=true",
+        "framesListed": [
+          "ヘッダー",
+          "カード"
+        ]
+      },
+      "project": {
+        "id": "1789775476273-yvpt8ng",
+        "persisted": true
+      },
+      "sourceCompare": {
+        "exported": "https://api.figma.com/v1/images/FD01?ids=7:8&format=png&scale=2&use_absolute_bounds=true"
+      },
+      "singleFrameAutoLoad": "https://api.figma.com/v1/images/FD01?ids=7:21&format=png&scale=2&use_absolute_bounds=true"
+    },
+    "D03": {
+      "drop": {
+        "screenshotLoaded": true,
+        "via": "scoped zone text"
+      },
+      "localFile": "loaded",
+      "webCapture": {
+        "url": "/capture-target",
+        "requests": 1
+      },
+      "inputRetainedOnFailure": true
+    },
+    "D09": {
+      "401": {
+        "surfaced": "token re-entry dialog",
+        "cancelDisabled": true
+      },
+      "403": {
+        "surfaced": "token re-entry dialog",
+        "cancelDisabled": true
+      },
+      "429": {
+        "surfaced": "Error: Error invoking remote method 'figma:get-frame-image': Error: Figma API rate limit exceeded (429). Please wait 7 seconds."
+      },
+      "500": {
+        "surfaced": "Error: Error invoking remote method 'figma:get-frame-image': Error: Figma server error (500). Please try again later."
+      },
+      "offline": {
+        "surfaced": "Error: Error invoking remote method 'figma:get-frame-image': Error: fetch failed"
+      },
+      "sameUrlRetry": {
+        "node": "7:16",
+        "exported": "https://api.figma.com/v1/images/FD01?ids=7:16&format=png&scale=2&use_absolute_bounds=true"
+      },
+      "retryAfterRecovery": "export succeeded"
+    },
+    "D10": {
+      "keyboardSubmit": "frame list appeared via hero input (node 7:30)",
+      "japaneseProject": "1789775501011-ejz79dr",
+      "narrowViewport": {
+        "width": 430,
+        "view": "compare",
+        "overflowPx": 226,
+        "overflowElements": [
+          "nav right=496",
+          "button right=433",
+          "button right=496",
+          "svg right=458",
+          "path right=457",
+          "circle right=454"
+        ],
+        "homeNav": {
+          "found": true,
+          "reachable": true
+        }
+      },
+      "japaneseFilename": {
+        "loaded": "実装-比較テスト.png",
+        "canvas": "50x50",
+        "canvases": [
+          {
+            "width": 50,
+            "height": 50
+          },
+          {
+            "width": 300,
+            "height": 150
+          }
+        ],
+        "via": "shotInput path"
+      }
+    },
+    "D04": {
+      "consoleErrors": [],
+      "viewModes": {
+        "pixel_diff": {
+          "activeClass": true
+        },
+        "transparent_overlay": {
+          "activeClass": true
+        },
+        "split_screen": {
+          "activeClass": true
+        }
+      },
+      "zoom": {
+        "before": "translate(0px, 0px) scale(1)",
+        "after": "translate(-188.483px, -55.2255px) scale(1.49212)"
+      },
+      "pan": {
+        "before": "translate(-188.483px, -55.2255px) scale(1.49212)",
+        "after": "translate(-128.483px, -15.2255px) scale(1.49212)"
+      },
+      "reset": "translate(0px, 0px) scale(1)",
+      "cropDebug": {
+        "hitAtStart": "CANVAS.cursor-crosshair border bg-muted",
+        "hitAtMid": "CANVAS.cursor-crosshair border bg-muted",
+        "selectingVisible": false,
+        "domEvents": [
+          "mousemove@56,591",
+          "mousedown@56,591",
+          "mouseleave@56,591",
+          "mousemove@136,681",
+          "mouseup@136,681"
+        ],
+        "canvasRect": {
+          "x": 45,
+          "y": 610,
+          "w": 202,
+          "h": 122
+        },
+        "canvasSize": {
+          "w": 200,
+          "h": 120
+        },
+        "parentOverflow": "visible/visible/visible"
+      }
+    }
+  },
+  "pageErrors": [],
+  "fatalError": "locator.waitFor: Timeout 5000ms exceeded.\nCall log:\n  - waiting for getByText(/^x: \\d+, y: \\d+, w: \\d+, h: \\d+$/) to be visible\n\n    at /home/kouiso/ghq/kouiso/designdiff-wt-dogfood/app/desktop/e2e/desktop-d-cases.mjs:1170:20"
+}

@@ -137,6 +137,17 @@ assert.match(
   /nodeVisible.{0,4}false|uniformRaster.{0,4}true/,
   "figmaExport report must record nodeVisible/uniformRaster",
 );
+// C09 の台帳帰属: 非表示フレーム比較で空白書出しを実装不良と断定せず
+// 原因 (figma_export_hidden_blank) と nodeVisible を返すことを上の assert が保証する。
+evidence.results.C09_hidden_blank = {
+  status: "PASS",
+  expected: "非表示フレームの比較で figma_export_hidden_blank と nodeVisible:false を返し原因を示す",
+  actual: {
+    warning: /figma_export_hidden_blank/.test(hiddenPayload),
+    nodeVisibleRecorded: /nodeVisible.{0,4}false|uniformRaster.{0,4}true/.test(hiddenPayload),
+    isError: hiddenCompare.isError === true,
+  },
+};
 
 // RF-02: 不透明fillの可視ノードでは background_missing が出ないこと。
 // design側のexportをそのまま screenshot として渡し、正常系の誤発火を見る。
@@ -290,12 +301,17 @@ const target =
   regionScores.find(overlaps) ??
   regionScores.find((r) => r.scope !== "root" && (r.figmaNodeId ?? r.regionId)) ??
   regionScores[0];
+// 植え付けた欠陥を製品が検出するのが期待動作なので、製品判定 FAIL は正しい。
+// ledger の status は「この検証が観測できたか」なので PASS を記録し、
+// 製品判定は comparisonStatus として別途残す。
 evidence.results.M10_baseline = {
   isError: m10Baseline.isError === true,
-  status: m10Base.status,
+  status: "PASS",
+  comparisonStatus: m10Base.status,
   regionScoreCount: regionScores.length,
   regionIds: regionScores.map((r) => r.figmaNodeId ?? r.regionId).slice(0, 10),
 };
+assert.equal(m10Base.status, "FAIL", "planted defect must be detected by baseline compare");
 assert.ok(target, "real baseline must produce node-scored regions");
 const targetNodeId = target.figmaNodeId ?? target.regionId;
 

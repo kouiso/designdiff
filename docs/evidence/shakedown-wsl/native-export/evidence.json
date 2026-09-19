@@ -1,0 +1,26 @@
+{
+  "savedFiles": [
+    {
+      "format": "json",
+      "path": "/home/kouiso/ghq/kouiso/designdiff-wt-dogfood/docs/evidence/shakedown-wsl/native-export/saved-report.json",
+      "sha256": "983b7632ede9b84f2731c8f1f2855ded7828139b768c51bd5ae4981c14756994"
+    },
+    {
+      "format": "markdown",
+      "path": "/home/kouiso/ghq/kouiso/designdiff-wt-dogfood/docs/evidence/shakedown-wsl/native-export/saved-report.md",
+      "sha256": "0381875042aaafa8df2a90b9026a9f000d5e80d014858cd72d9ca98b3be5b19e"
+    }
+  ],
+  "independentRawDifference": {
+    "count": 400,
+    "bounds": {
+      "x": 5,
+      "y": 5,
+      "width": 20,
+      "height": 20
+    }
+  },
+  "pageErrors": [],
+  "rendererCrashes": [],
+  "nativeDialogMocked": false
+}

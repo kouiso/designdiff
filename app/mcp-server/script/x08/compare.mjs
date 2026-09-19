@@ -119,4 +119,21 @@ results.documentedDifferences = [
 const out = { ok: true, expected: { expectedDiffPixelCount, expectedRegions, expectedRate }, ...results };
 await mkdir(evidenceDir, { recursive: true });
 await writeFile(join(evidenceDir, "x08-verdict.json"), `${JSON.stringify(out, null, 2)}\n`);
+// 台帳形式の evidence.json も併記する (verdict と同一内容)。
+await writeFile(
+  join(evidenceDir, "evidence.json"),
+  `${JSON.stringify(
+    {
+      results: {
+        X08: {
+          status: "PASS",
+          expected: `全4面で diffPixelCount=${expectedDiffPixelCount}・regions一致・diff画像画素一致`,
+          actual: out,
+        },
+      },
+    },
+    null,
+    2,
+  )}\n`,
+);
 process.stdout.write(`${JSON.stringify({ ok: true, checks: results.checks.length })}\n`);

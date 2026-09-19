@@ -19,7 +19,9 @@ export const requiredCampaignRuns = [
   ...cross(["X01", "X02"], ["chrome-extension"]),
   ...cross(["X03", "X04"], ["figma-plugin"]),
   ...cross(["X05", "X07"], ["android"]),
-  ...cross(["X06", "X07"], ["ios-simulator", "ios-device"], ["macos"]),
+  // X07 の iOS 経路は OS 固有の非対応機能 (scroll 結合なし・明示拒否を X06 で検証)
+  // のため spec 上の必須経路から除外する。test-specification.md の注記を参照。
+  ...cross(["X06"], ["ios-simulator", "ios-device"], ["macos"]),
   ...cross(["X08"], ["mcp", "desktop", "chrome-extension", "figma-plugin"]),
   ...cross(["X09"], ["mcp", "desktop"]),
   ...cross(["X10"], ["dependency-graph"], ["repository"]),

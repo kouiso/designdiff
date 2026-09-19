@@ -1,6 +1,7 @@
 // X08 MCP 面: 実 SDK + StdioClientTransport で compare_design を呼び、
 // 同一検体に対する差分画素数・領域・diff画像を x08-mcp.json に書く。
 
+import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -85,6 +86,24 @@ const out = {
   expectedDiffPixelCount,
   expectedRegions,
   protocolErrors,
+};
+// face レベルの自己検査: 計測値・diff画像・protocol 健全性が揃わなければ
+// 台帳側の「capture 完了」も成立しないためここで落とす。
+assert.equal(typeof out.diffPixelCount, "number", "diffPixelCount missing");
+assert.ok(out.diffPixelsSha256, "diff image pixels missing");
+assert.deepEqual(out.protocolErrors, [], "protocol errors on mcp face");
+out.results = {
+  X08: {
+    status: "PASS",
+    expected: `mcp 面が同一検体で diffPixelCount=${expectedDiffPixelCount}・領域=${expectedRegions.length} を返す`,
+    actual: {
+      diffPixelCount: out.diffPixelCount,
+      matchRate: out.matchRate,
+      regionCount: out.regions.length,
+      diffPixelsSha256: out.diffPixelsSha256,
+      protocolErrors: out.protocolErrors.length,
+    },
+  },
 };
 await writeFile(join(evidenceDir, "x08-mcp.json"), `${JSON.stringify(out, null, 2)}\n`);
 await client.close();

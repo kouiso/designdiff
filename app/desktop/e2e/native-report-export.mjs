@@ -289,6 +289,21 @@ try {
       .toBe(true);
     return tree;
   };
+  // WSLg では root window が巨大化し import -window root が失敗し得るため、
+  // 対象 window の id を直接指定して撮る。
+  const captureWindowImage = (tree, titlePattern, path, label) => {
+    const match = tree.match(new RegExp(`(0x[0-9a-f]+) "${titlePattern}"`));
+    assert.ok(match, `${label} window id must be discoverable`);
+    execFileSync("import", ["-window", match[1], path], { env: environment });
+  };
+  const captureNativeDialogImage = async (path) => {
+    const tree = await captureNativeDialogTree();
+    captureWindowImage(tree, "Save File", path, "Save File dialog");
+  };
+  const captureAppWindowImage = (path) => {
+    const { tree } = inspectNativeDialog();
+    captureWindowImage(tree, "FigDiff", path, "FigDiff app");
+  };
   const nativeKeys = (text) =>
     execFileSync(
       "python3",
@@ -337,15 +352,11 @@ x.XSync(d, 0)
     await saveButton.click();
     await expect(page.getByRole("button", { name: "保存中…", exact: true })).toBeVisible();
     await waitForNativeDialog(true);
-    execFileSync("import", ["-window", "root", join(evidence, `native-dialog-${format}.png`)], {
-      env: environment,
-    });
+    await captureNativeDialogImage(join(evidence, `native-dialog-${format}.png`));
     await writeFile(join(evidence, `native-window-${format}.txt`), await captureNativeDialogTree());
     nativeKeys(`\x0c\x01${destination}\n\n`);
     await waitForNativeDialog(false);
-    execFileSync("import", ["-window", "root", join(evidence, `after-input-${format}.png`)], {
-      env: environment,
-    });
+    captureAppWindowImage(join(evidence, `after-input-${format}.png`));
     const readSavedFile = async () => {
       try {
         return await readFile(destination, "utf8");
@@ -432,6 +443,14 @@ x.XSync(d, 0)
         },
         scope:
           "Native Electron report export through real save dialogs, saved file readback and independent raw pixel difference.",
+        results: {
+          D07: {
+            status: "PASS",
+            expected: "実ファイルが読め、保存内容が差分実測と一致する",
+            actual:
+              "実Gtk保存ダイアログからJSON/Markdownへ保存し読み戻した。原画像の独立raw差分・bboxをファイル内容へ照合。キャンセル時bytes不変も確認",
+          },
+        },
         artifacts,
       },
       null,

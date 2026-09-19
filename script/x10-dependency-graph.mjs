@@ -146,5 +146,22 @@ if (evidenceDir) {
   const { mkdir, writeFile } = await import("node:fs/promises");
   await mkdir(evidenceDir, { recursive: true });
   await writeFile(join(evidenceDir, "x10-dependency-graph.json"), `${JSON.stringify(results, null, 2)}\n`);
+  // 台帳形式の evidence.json も併記する。check 本体は上の manifest と同じ内容。
+  await writeFile(
+    join(evidenceDir, "evidence.json"),
+    `${JSON.stringify(
+      {
+        results: {
+          X10: {
+            status: "PASS",
+            expected: "共通処理を複製せず、UIとAIの都合をコアへ持ち込まない",
+            actual: results,
+          },
+        },
+      },
+      null,
+      2,
+    )}\n`,
+  );
 }
 process.stdout.write(`${JSON.stringify({ ok: true, checks: Object.keys(results).length })}\n`);

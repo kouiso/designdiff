@@ -119,7 +119,8 @@ const captureResult = await call("compare_design", {
 const payload = captureResult.structuredContent ?? {};
 evidence.results.X06_ios_device_capture = {
   isError: captureResult.isError === true,
-  status: payload.status,
+  status: captureResult.isError ? "FAIL" : "PASS",
+  comparisonStatus: payload.status,
   verificationContext: payload.verificationContext
     ? {
         screenshot: payload.verificationContext.screenshot,

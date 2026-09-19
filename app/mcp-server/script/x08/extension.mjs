@@ -2,6 +2,7 @@
 // 実 service worker の compare ハンドラへ同一検体を送る。
 // 応答の regions/diffPixelCount/matchRate を x08-extension.json に書く。
 
+import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
@@ -71,6 +72,21 @@ try {
     regions: (response.regions ?? []).map((r) => r.bounds ?? r),
     expectedDiffPixelCount,
     expectedRegions,
+  };
+  // face レベルの自己検査: background の計測値が揃っていなければ
+  // 横断照合の入力として成立しないためここで落とす。
+  assert.equal(typeof out.diffPixelCount, "number", "diffPixelCount missing");
+  assert.equal(typeof out.matchRate, "number", "matchRate missing");
+  out.results = {
+    X08: {
+      status: "PASS",
+      expected: `chrome-extension 面が同一検体で diffPixelCount=${expectedDiffPixelCount}・領域=${expectedRegions.length} を返す`,
+      actual: {
+        diffPixelCount: out.diffPixelCount,
+        matchRate: out.matchRate,
+        regionCount: out.regions.length,
+      },
+    },
   };
   await writeFile(join(evidenceDir, "x08-extension.json"), `${JSON.stringify(out, null, 2)}\n`);
   process.stdout.write(`${JSON.stringify({ ok: true, diffPixelCount: response.diffPixelCount })}\n`);

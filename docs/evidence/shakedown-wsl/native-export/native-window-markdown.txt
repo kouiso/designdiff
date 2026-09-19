@@ -1,0 +1,42 @@
+
+xwininfo: Window id: 0x438 (the root window) (has no name)
+
+  Root window id: 0x438 (the root window) (has no name)
+  Parent window id: 0x0 (none)
+     16 children:
+     0x14005ae "electron": ("electron" "Electron")  2x2+0+0  +0+0
+        1 child:
+        0x14005af (has no name): ()  1x1+-1+-1  +-1+-1
+     0x200eb5 (has no name): ()  1200x918+3411+3104  +3411+3104
+        1 child:
+        0x1400489 "Save File": ("electron" "Electron")  1124x821+38+59  +3449+3163
+           1 child:
+           0x140048a (has no name): ()  1x1+-1+-1  +3448+3162
+     0x140000f "electron": ()  10x10+-100+-100  +-100+-100
+     0x1400003 (has no name): ()  1x1+-1+-1  +-1+-1
+     0x200dc1 (has no name): ()  1276x897+448+1677  +448+1677
+        1 child:
+        0x1200004 "FigDiff": ("electron" "Electron")  1200x800+38+59  +486+1736
+     0x1200006 (has no name): ()  1x1+0+0  +0+0
+     0x1400001 "electron": ("electron" "Electron")  10x10+10+10  +10+10
+     0x1200000 "Chromium clipboard": ()  10x10+-100+-100  +-100+-100
+     0x200d6f (has no name): ()  176x165+2634+3869  +2634+3869
+        1 child:
+        0x1000024 "xmessage": ("xmessage" "Xmessage")  100x68+38+59  +2672+3928
+           1 child:
+           0x1000025 (has no name): ()  100x68+0+0  +2672+3928
+              2 children:
+              0x1000029 (has no name): ()  90x26+4+4  +2676+3932
+                 1 child:
+                 0x100002a (has no name): ()  14x26+-1+-1  +2676+3932
+              0x1000026 (has no name): ()  47x25+4+37  +2676+3965
+     0x200028 (has no name): ()  715x576+2177+2345  +2177+2345
+        1 child:
+        0x600004 "about:blank - Google Chrome": ("google-chrome (/home/kouiso/.cache/claude-cdp/profile-headed)" "Google-chrome")  639x479+38+59  +2215+2404
+     0x600006 (has no name): ()  1x1+0+0  +0+0
+     0x800001 "google-chrome": ("google-chrome" "Google-chrome")  10x10+10+10  +10+10
+     0x600000 "Chromium clipboard": ()  10x10+-100+-100  +-100+-100
+     0x200027 "Weston WM": ()  10x10+0+0  +0+0
+     0x200002 (has no name): ()  8192x8192+0+0  +0+0
+     0x200001 (has no name): ()  10x10+0+0  +0+0
+

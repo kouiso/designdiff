@@ -1,0 +1,2510 @@
+{
+  "comparisonId": "cmp-96a3c453-cd8c-4361-be78-a7dbcc9a76b6",
+  "sourceKey": "figma:15giveDl0JkKddxasif6VA:9525:4760",
+  "captureWidth": 390,
+  "captureHeight": 844,
+  "result": {
+    "status": "FAIL",
+    "comparisonId": "cmp-96a3c453-cd8c-4361-be78-a7dbcc9a76b6",
+    "matchRate": 83.49,
+    "diffPixelCount": 44485,
+    "totalPixelCount": 269490,
+    "remainingIssues": 90,
+    "diffRegions": [
+      {
+        "id": 0,
+        "bounds": {
+          "x": 21,
+          "y": 48,
+          "width": 46,
+          "height": 14
+        },
+        "diffPixelCount": 346,
+        "nearbyNodeIds": [
+          "9525:4822",
+          "9525:4821",
+          "9551:5156"
+        ],
+        "nearbyNodeNames": [
+          "連続体重登録",
+          "Frame 26086733",
+          "Frame 26086750"
+        ]
+      },
+      {
+        "id": 1,
+        "bounds": {
+          "x": 69,
+          "y": 48,
+          "width": 14,
+          "height": 14
+        },
+        "diffPixelCount": 146,
+        "nearbyNodeIds": [
+          "9525:4822",
+          "9525:4821",
+          "9551:5156"
+        ],
+        "nearbyNodeNames": [
+          "連続体重登録",
+          "Frame 26086733",
+          "Frame 26086750"
+        ]
+      },
+      {
+        "id": 2,
+        "bounds": {
+          "x": 86,
+          "y": 48,
+          "width": 13,
+          "height": 14
+        },
+        "diffPixelCount": 124,
+        "nearbyNodeIds": [
+          "9525:4822",
+          "9525:4821",
+          "9551:5156"
+        ],
+        "nearbyNodeNames": [
+          "連続体重登録",
+          "Frame 26086733",
+          "Frame 26086750"
+        ]
+      },
+      {
+        "id": 3,
+        "bounds": {
+          "x": 100,
+          "y": 48,
+          "width": 15,
+          "height": 15
+        },
+        "diffPixelCount": 135,
+        "nearbyNodeIds": [
+          "9525:4822",
+          "9525:4821",
+          "9551:5156"
+        ],
+        "nearbyNodeNames": [
+          "連続体重登録",
+          "Frame 26086733",
+          "Frame 26086750"
+        ]
+      },
+      {
+        "id": 4,
+        "bounds": {
+          "x": 333,
+          "y": 59,
+          "width": 21,
+          "height": 9
+        },
+        "diffPixelCount": 104,
+        "nearbyNodeIds": [
+          "9551:5151",
+          "9551:5152",
+          "9551:5156"
+        ],
+        "nearbyNodeNames": [
+          "一時停止",
+          "Frame 26086748",
+          "Frame 26086750"
+        ]
+      },
+      {
+        "id": 5,
+        "bounds": {
+          "x": 305,
+          "y": 60,
+          "width": 3,
+          "height": 7
+        },
+        "diffPixelCount": 21,
+        "nearbyNodeIds": [
+          "9551:5154",
+          "9551:5155",
+          "9551:5152"
+        ],
+        "nearbyNodeNames": [
+          "Rectangle 12470",
+          "Frame 26086749",
+          "Frame 26086748"
+        ]
+      },
+      {
+        "id": 6,
+        "bounds": {
+          "x": 310,
+          "y": 60,
+          "width": 3,
+          "height": 7
+        },
+        "diffPixelCount": 21,
+        "nearbyNodeIds": [
+          "9551:5153",
+          "9551:5155",
+          "9551:5152"
+        ],
+        "nearbyNodeNames": [
+          "Rectangle 12469",
+          "Frame 26086749",
+          "Frame 26086748"
+        ]
+      },
+      {
+        "id": 7,
+        "bounds": {
+          "x": 355,
+          "y": 61,
+          "width": 9,
+          "height": 7
+        },
+        "diffPixelCount": 25,
+        "nearbyNodeIds": [
+          "9551:5151",
+          "9551:5152",
+          "9551:5156"
+        ],
+        "nearbyNodeNames": [
+          "一時停止",
+          "Frame 26086748",
+          "Frame 26086750"
+        ]
+      },
+      {
+        "id": 8,
+        "bounds": {
+          "x": 94,
+          "y": 74,
+          "width": 3,
+          "height": 8
+        },
+        "diffPixelCount": 10,
+        "nearbyNodeIds": [
+          "9525:4823",
+          "9525:4821",
+          "9551:5156"
+        ],
+        "nearbyNodeNames": [
+          "2026/5/11（火）",
+          "Frame 26086733",
+          "Frame 26086750"
+        ]
+      },
+      {
+        "id": 9,
+        "bounds": {
+          "x": 306,
+          "y": 80,
+          "width": 58,
+          "height": 1
+        },
+        "diffPixelCount": 58,
+        "nearbyNodeIds": [
+          "9551:5156",
+          "9525:4760"
+        ],
+        "nearbyNodeNames": [
+          "Frame 26086750",
+          "体重登録-入力画面"
+        ]
+      },
+      {
+        "id": 10,
+        "bounds": {
+          "x": 341,
+          "y": 96,
+          "width": 5,
+          "height": 6
+        },
+        "diffPixelCount": 20,
+        "nearbyNodeIds": [
+          "9553:6255",
+          "9553:6241",
+          "9553:6240"
+        ],
+        "nearbyNodeNames": [
+          "6 / 12",
+          "Frame 26086738",
+          "Frame 26086765"
+        ]
+      },
+      {
+        "id": 11,
+        "bounds": {
+          "x": 356,
+          "y": 96,
+          "width": 3,
+          "height": 7
+        },
+        "diffPixelCount": 10,
+        "nearbyNodeIds": [
+          "9553:6255",
+          "9553:6241",
+          "9553:6240"
+        ],
+        "nearbyNodeNames": [
+          "6 / 12",
+          "Frame 26086738",
+          "Frame 26086765"
+        ]
+      },
+      {
+        "id": 12,
+        "bounds": {
+          "x": 25,
+          "y": 97,
+          "width": 19,
+          "height": 4
+        },
+        "diffPixelCount": 72,
+        "nearbyNodeIds": [
+          "9553:6243",
+          "9553:6242",
+          "9553:6241"
+        ],
+        "nearbyNodeNames": [
+          "Rectangle 12456",
+          "Frame 26086734",
+          "Frame 26086738"
+        ]
+      },
+      {
+        "id": 13,
+        "bounds": {
+          "x": 50,
+          "y": 97,
+          "width": 19,
+          "height": 4
+        },
+        "diffPixelCount": 72,
+        "nearbyNodeIds": [
+          "9553:6244",
+          "9553:6242",
+          "9553:6241"
+        ],
+        "nearbyNodeNames": [
+          "Rectangle 12445",
+          "Frame 26086734",
+          "Frame 26086738"
+        ]
+      },
+      {
+        "id": 14,
+        "bounds": {
+          "x": 75,
+          "y": 97,
+          "width": 19,
+          "height": 4
+        },
+        "diffPixelCount": 72,
+        "nearbyNodeIds": [
+          "9553:6245",
+          "9553:6242",
+          "9553:6241"
+        ],
+        "nearbyNodeNames": [
+          "Rectangle 12447",
+          "Frame 26086734",
+          "Frame 26086738"
+        ]
+      },
+      {
+        "id": 15,
+        "bounds": {
+          "x": 100,
+          "y": 97,
+          "width": 19,
+          "height": 4
+        },
+        "diffPixelCount": 72,
+        "nearbyNodeIds": [
+          "9553:6246",
+          "9553:6242",
+          "9553:6241"
+        ],
+        "nearbyNodeNames": [
+          "Rectangle 12446",
+          "Frame 26086734",
+          "Frame 26086738"
+        ]
+      },
+      {
+        "id": 16,
+        "bounds": {
+          "x": 125,
+          "y": 97,
+          "width": 19,
+          "height": 4
+        },
+        "diffPixelCount": 72,
+        "nearbyNodeIds": [
+          "9553:6247",
+          "9553:6242",
+          "9553:6241"
+        ],
+        "nearbyNodeNames": [
+          "Rectangle 12448",
+          "Frame 26086734",
+          "Frame 26086738"
+        ]
+      },
+      {
+        "id": 17,
+        "bounds": {
+          "x": 150,
+          "y": 97,
+          "width": 19,
+          "height": 4
+        },
+        "diffPixelCount": 72,
+        "nearbyNodeIds": [
+          "9553:6248",
+          "9553:6242",
+          "9553:6241"
+        ],
+        "nearbyNodeNames": [
+          "Rectangle 12449",
+          "Frame 26086734",
+          "Frame 26086738"
+        ]
+      },
+      {
+        "id": 18,
+        "bounds": {
+          "x": 175,
+          "y": 97,
+          "width": 19,
+          "height": 4
+        },
+        "diffPixelCount": 72,
+        "nearbyNodeIds": [
+          "9553:6249",
+          "9553:6242",
+          "9553:6241"
+        ],
+        "nearbyNodeNames": [
+          "Rectangle 12450",
+          "Frame 26086734",
+          "Frame 26086738"
+        ]
+      },
+      {
+        "id": 19,
+        "bounds": {
+          "x": 200,
+          "y": 97,
+          "width": 19,
+          "height": 4
+        },
+        "diffPixelCount": 72,
+        "nearbyNodeIds": [
+          "9553:6250",
+          "9553:6242",
+          "9553:6241"
+        ],
+        "nearbyNodeNames": [
+          "Rectangle 12451",
+          "Frame 26086734",
+          "Frame 26086738"
+        ]
+      },
+      {
+        "id": 20,
+        "bounds": {
+          "x": 225,
+          "y": 97,
+          "width": 19,
+          "height": 4
+        },
+        "diffPixelCount": 72,
+        "nearbyNodeIds": [
+          "9553:6251",
+          "9553:6242",
+          "9553:6241"
+        ],
+        "nearbyNodeNames": [
+          "Rectangle 12452",
+          "Frame 26086734",
+          "Frame 26086738"
+        ]
+      },
+      {
+        "id": 21,
+        "bounds": {
+          "x": 250,
+          "y": 97,
+          "width": 19,
+          "height": 4
+        },
+        "diffPixelCount": 72,
+        "nearbyNodeIds": [
+          "9553:6252",
+          "9553:6242",
+          "9553:6241"
+        ],
+        "nearbyNodeNames": [
+          "Rectangle 12453",
+          "Frame 26086734",
+          "Frame 26086738"
+        ]
+      },
+      {
+        "id": 22,
+        "bounds": {
+          "x": 275,
+          "y": 97,
+          "width": 19,
+          "height": 4
+        },
+        "diffPixelCount": 72,
+        "nearbyNodeIds": [
+          "9553:6253",
+          "9553:6242",
+          "9553:6241"
+        ],
+        "nearbyNodeNames": [
+          "Rectangle 12454",
+          "Frame 26086734",
+          "Frame 26086738"
+        ]
+      },
+      {
+        "id": 23,
+        "bounds": {
+          "x": 300,
+          "y": 97,
+          "width": 19,
+          "height": 4
+        },
+        "diffPixelCount": 72,
+        "nearbyNodeIds": [
+          "9553:6254",
+          "9553:6242",
+          "9553:6241"
+        ],
+        "nearbyNodeNames": [
+          "Rectangle 12455",
+          "Frame 26086734",
+          "Frame 26086738"
+        ]
+      },
+      {
+        "id": 24,
+        "bounds": {
+          "x": 121,
+          "y": 105,
+          "width": 76,
+          "height": 26
+        },
+        "diffPixelCount": 1615,
+        "nearbyNodeIds": [
+          "9553:6257",
+          "9553:6256",
+          "9553:6240"
+        ],
+        "nearbyNodeNames": [
+          "6頭目",
+          "Frame 26086735",
+          "Frame 26086765"
+        ]
+      },
+      {
+        "id": 25,
+        "bounds": {
+          "x": 147,
+          "y": 115,
+          "width": 11,
+          "height": 7
+        },
+        "diffPixelCount": 45,
+        "nearbyNodeIds": [
+          "9553:6257",
+          "9553:6256",
+          "9553:6240"
+        ],
+        "nearbyNodeNames": [
+          "6頭目",
+          "Frame 26086735",
+          "Frame 26086765"
+        ]
+      },
+      {
+        "id": 26,
+        "bounds": {
+          "x": 158,
+          "y": 115,
+          "width": 3,
+          "height": 5
+        },
+        "diffPixelCount": 10,
+        "nearbyNodeIds": [
+          "9553:6257",
+          "9553:6256",
+          "9553:6240"
+        ],
+        "nearbyNodeNames": [
+          "6頭目",
+          "Frame 26086735",
+          "Frame 26086765"
+        ]
+      },
+      {
+        "id": 27,
+        "bounds": {
+          "x": 181,
+          "y": 154,
+          "width": 4,
+          "height": 5
+        },
+        "diffPixelCount": 10,
+        "nearbyNodeIds": [
+          "9525:4856",
+          "9525:4860",
+          "9525:4893"
+        ],
+        "nearbyNodeNames": [
+          "ルバーノ",
+          "Frame 26086737",
+          "Frame 26086739"
+        ]
+      },
+      {
+        "id": 28,
+        "bounds": {
+          "x": 122,
+          "y": 155,
+          "width": 10,
+          "height": 28
+        },
+        "diffPixelCount": 112,
+        "nearbyNodeIds": [
+          "9525:4856",
+          "9525:4860",
+          "9525:4893"
+        ],
+        "nearbyNodeNames": [
+          "ルバーノ",
+          "Frame 26086737",
+          "Frame 26086739"
+        ]
+      },
+      {
+        "id": 29,
+        "bounds": {
+          "x": 138,
+          "y": 155,
+          "width": 15,
+          "height": 28
+        },
+        "diffPixelCount": 159,
+        "nearbyNodeIds": [
+          "9525:4856",
+          "9525:4860",
+          "9525:4893"
+        ],
+        "nearbyNodeNames": [
+          "ルバーノ",
+          "Frame 26086737",
+          "Frame 26086739"
+        ]
+      },
+      {
+        "id": 30,
+        "bounds": {
+          "x": 230,
+          "y": 155,
+          "width": 24,
+          "height": 28
+        },
+        "diffPixelCount": 142,
+        "nearbyNodeIds": [
+          "9525:4856",
+          "9525:4860",
+          "9525:4893"
+        ],
+        "nearbyNodeNames": [
+          "ルバーノ",
+          "Frame 26086737",
+          "Frame 26086739"
+        ]
+      },
+      {
+        "id": 31,
+        "bounds": {
+          "x": 175,
+          "y": 157,
+          "width": 13,
+          "height": 25
+        },
+        "diffPixelCount": 108,
+        "nearbyNodeIds": [
+          "9525:4856",
+          "9525:4860",
+          "9525:4893"
+        ],
+        "nearbyNodeNames": [
+          "ルバーノ",
+          "Frame 26086737",
+          "Frame 26086739"
+        ]
+      },
+      {
+        "id": 32,
+        "bounds": {
+          "x": 157,
+          "y": 158,
+          "width": 13,
+          "height": 24
+        },
+        "diffPixelCount": 105,
+        "nearbyNodeIds": [
+          "9525:4856",
+          "9525:4860",
+          "9525:4893"
+        ],
+        "nearbyNodeNames": [
+          "ルバーノ",
+          "Frame 26086737",
+          "Frame 26086739"
+        ]
+      },
+      {
+        "id": 33,
+        "bounds": {
+          "x": 64,
+          "y": 164,
+          "width": 14,
+          "height": 27
+        },
+        "diffPixelCount": 213,
+        "nearbyNodeIds": [
+          "9525:4865",
+          "9525:4866",
+          "9525:4862"
+        ],
+        "nearbyNodeNames": [
+          "Group",
+          "Vector",
+          "Ellipse 74"
+        ]
+      },
+      {
+        "id": 34,
+        "bounds": {
+          "x": 195,
+          "y": 166,
+          "width": 28,
+          "height": 4
+        },
+        "diffPixelCount": 112,
+        "nearbyNodeIds": [
+          "9525:4856",
+          "9525:4860",
+          "9525:4893"
+        ],
+        "nearbyNodeNames": [
+          "ルバーノ",
+          "Frame 26086737",
+          "Frame 26086739"
+        ]
+      },
+      {
+        "id": 35,
+        "bounds": {
+          "x": 40,
+          "y": 196,
+          "width": 310,
+          "height": 139
+        },
+        "diffPixelCount": 36739,
+        "nearbyNodeIds": [
+          "9525:4855",
+          "9525:4762",
+          "9525:4760"
+        ],
+        "nearbyNodeNames": [
+          "Frame 26086736",
+          "Frame 26086508",
+          "体重登録-入力画面"
+        ]
+      },
+      {
+        "id": 36,
+        "bounds": {
+          "x": 206,
+          "y": 198,
+          "width": 5,
+          "height": 4
+        },
+        "diffPixelCount": 11,
+        "nearbyNodeIds": [
+          "9525:4858",
+          "9525:4860",
+          "9525:4893"
+        ],
+        "nearbyNodeNames": [
+          "前回　488kg ・ 前々回　471kg",
+          "Frame 26086737",
+          "Frame 26086739"
+        ]
+      },
+      {
+        "id": 37,
+        "bounds": {
+          "x": 308,
+          "y": 322,
+          "width": 8,
+          "height": 14
+        },
+        "diffPixelCount": 44,
+        "nearbyNodeIds": [
+          "9525:4882",
+          "9525:4855",
+          "9525:4762"
+        ],
+        "nearbyNodeNames": [
+          "kg",
+          "Frame 26086736",
+          "Frame 26086508"
+        ]
+      },
+      {
+        "id": 38,
+        "bounds": {
+          "x": 319,
+          "y": 325,
+          "width": 9,
+          "height": 14
+        },
+        "diffPixelCount": 52,
+        "nearbyNodeIds": [
+          "9525:4882",
+          "9525:4855",
+          "9525:4762"
+        ],
+        "nearbyNodeNames": [
+          "kg",
+          "Frame 26086736",
+          "Frame 26086508"
+        ]
+      },
+      {
+        "id": 39,
+        "bounds": {
+          "x": 66,
+          "y": 360,
+          "width": 258,
+          "height": 1
+        },
+        "diffPixelCount": 258,
+        "nearbyNodeIds": [
+          "9525:4855",
+          "9525:4762",
+          "9525:4760"
+        ],
+        "nearbyNodeNames": [
+          "Frame 26086736",
+          "Frame 26086508",
+          "体重登録-入力画面"
+        ]
+      },
+      {
+        "id": 40,
+        "bounds": {
+          "x": 79,
+          "y": 418,
+          "width": 1,
+          "height": 28
+        },
+        "diffPixelCount": 28,
+        "nearbyNodeIds": [
+          "9525:4890",
+          "9525:4883",
+          "9525:4760"
+        ],
+        "nearbyNodeNames": [
+          "Rectangle 12453",
+          "Frame 26086736",
+          "体重登録-入力画面"
+        ]
+      },
+      {
+        "id": 41,
+        "bounds": {
+          "x": 298,
+          "y": 421,
+          "width": 10,
+          "height": 7
+        },
+        "diffPixelCount": 30,
+        "nearbyNodeIds": [
+          "9547:4934",
+          "9547:4933",
+          "9547:4929"
+        ],
+        "nearbyNodeNames": [
+          "ディープ⋯",
+          "Frame 26086742",
+          "Frame 26086745"
+        ]
+      },
+      {
+        "id": 42,
+        "bounds": {
+          "x": 137,
+          "y": 422,
+          "width": 4,
+          "height": 8
+        },
+        "diffPixelCount": 12,
+        "nearbyNodeIds": [
+          "9547:4917",
+          "9547:4920",
+          "9547:4921"
+        ],
+        "nearbyNodeNames": [
+          "カレン⋯",
+          "Frame 26086742",
+          "Frame 26086743"
+        ]
+      },
+      {
+        "id": 43,
+        "bounds": {
+          "x": 238,
+          "y": 422,
+          "width": 4,
+          "height": 8
+        },
+        "diffPixelCount": 14,
+        "nearbyNodeIds": [
+          "9547:4927",
+          "9547:4926",
+          "9547:4922"
+        ],
+        "nearbyNodeNames": [
+          "ゴール⋯",
+          "Frame 26086742",
+          "Frame 26086744"
+        ]
+      },
+      {
+        "id": 44,
+        "bounds": {
+          "x": 98,
+          "y": 426,
+          "width": 6,
+          "height": 12
+        },
+        "diffPixelCount": 42,
+        "nearbyNodeIds": [
+          "9547:4905",
+          "9547:4906",
+          "9547:4907"
+        ],
+        "nearbyNodeNames": [
+          "Group",
+          "Vector",
+          "Frame 26086741"
+        ]
+      },
+      {
+        "id": 45,
+        "bounds": {
+          "x": 185,
+          "y": 426,
+          "width": 6,
+          "height": 12
+        },
+        "diffPixelCount": 42,
+        "nearbyNodeIds": [
+          "9547:4924",
+          "9547:4925",
+          "9547:4923"
+        ],
+        "nearbyNodeNames": [
+          "Group",
+          "Vector",
+          "Frame 26086741"
+        ]
+      },
+      {
+        "id": 46,
+        "bounds": {
+          "x": 272,
+          "y": 426,
+          "width": 6,
+          "height": 12
+        },
+        "diffPixelCount": 42,
+        "nearbyNodeIds": [
+          "9547:4931",
+          "9547:4932",
+          "9547:4930"
+        ],
+        "nearbyNodeNames": [
+          "Group",
+          "Vector",
+          "Frame 26086741"
+        ]
+      },
+      {
+        "id": 47,
+        "bounds": {
+          "x": 45,
+          "y": 429,
+          "width": 7,
+          "height": 6
+        },
+        "diffPixelCount": 21,
+        "nearbyNodeIds": [
+          "9525:4889",
+          "9525:4883",
+          "9525:4760"
+        ],
+        "nearbyNodeNames": [
+          "次 →",
+          "Frame 26086736",
+          "体重登録-入力画面"
+        ]
+      },
+      {
+        "id": 48,
+        "bounds": {
+          "x": 59,
+          "y": 432,
+          "width": 6,
+          "height": 4
+        },
+        "diffPixelCount": 12,
+        "nearbyNodeIds": [
+          "9525:4889",
+          "9525:4883",
+          "9525:4760"
+        ],
+        "nearbyNodeNames": [
+          "次 →",
+          "Frame 26086736",
+          "体重登録-入力画面"
+        ]
+      },
+      {
+        "id": 49,
+        "bounds": {
+          "x": 124,
+          "y": 437,
+          "width": 4,
+          "height": 7
+        },
+        "diffPixelCount": 12,
+        "nearbyNodeIds": [
+          "9547:4918",
+          "9547:4920",
+          "9547:4921"
+        ],
+        "nearbyNodeNames": [
+          "467kg",
+          "Frame 26086742",
+          "Frame 26086743"
+        ]
+      },
+      {
+        "id": 50,
+        "bounds": {
+          "x": 130,
+          "y": 437,
+          "width": 5,
+          "height": 6
+        },
+        "diffPixelCount": 19,
+        "nearbyNodeIds": [
+          "9547:4918",
+          "9547:4920",
+          "9547:4921"
+        ],
+        "nearbyNodeNames": [
+          "467kg",
+          "Frame 26086742",
+          "Frame 26086743"
+        ]
+      },
+      {
+        "id": 51,
+        "bounds": {
+          "x": 142,
+          "y": 437,
+          "width": 4,
+          "height": 5
+        },
+        "diffPixelCount": 12,
+        "nearbyNodeIds": [
+          "9547:4918",
+          "9547:4920",
+          "9547:4921"
+        ],
+        "nearbyNodeNames": [
+          "467kg",
+          "Frame 26086742",
+          "Frame 26086743"
+        ]
+      },
+      {
+        "id": 52,
+        "bounds": {
+          "x": 211,
+          "y": 437,
+          "width": 4,
+          "height": 7
+        },
+        "diffPixelCount": 12,
+        "nearbyNodeIds": [
+          "9547:4928",
+          "9547:4926",
+          "9547:4922"
+        ],
+        "nearbyNodeNames": [
+          "467kg",
+          "Frame 26086742",
+          "Frame 26086744"
+        ]
+      },
+      {
+        "id": 53,
+        "bounds": {
+          "x": 217,
+          "y": 437,
+          "width": 5,
+          "height": 6
+        },
+        "diffPixelCount": 19,
+        "nearbyNodeIds": [
+          "9547:4928",
+          "9547:4926",
+          "9547:4922"
+        ],
+        "nearbyNodeNames": [
+          "467kg",
+          "Frame 26086742",
+          "Frame 26086744"
+        ]
+      },
+      {
+        "id": 54,
+        "bounds": {
+          "x": 229,
+          "y": 437,
+          "width": 4,
+          "height": 5
+        },
+        "diffPixelCount": 12,
+        "nearbyNodeIds": [
+          "9547:4928",
+          "9547:4926",
+          "9547:4922"
+        ],
+        "nearbyNodeNames": [
+          "467kg",
+          "Frame 26086742",
+          "Frame 26086744"
+        ]
+      },
+      {
+        "id": 55,
+        "bounds": {
+          "x": 298,
+          "y": 437,
+          "width": 4,
+          "height": 7
+        },
+        "diffPixelCount": 12,
+        "nearbyNodeIds": [
+          "9547:4935",
+          "9547:4933",
+          "9547:4929"
+        ],
+        "nearbyNodeNames": [
+          "467kg",
+          "Frame 26086742",
+          "Frame 26086745"
+        ]
+      },
+      {
+        "id": 56,
+        "bounds": {
+          "x": 304,
+          "y": 437,
+          "width": 5,
+          "height": 6
+        },
+        "diffPixelCount": 19,
+        "nearbyNodeIds": [
+          "9547:4935",
+          "9547:4933",
+          "9547:4929"
+        ],
+        "nearbyNodeNames": [
+          "467kg",
+          "Frame 26086742",
+          "Frame 26086745"
+        ]
+      },
+      {
+        "id": 57,
+        "bounds": {
+          "x": 316,
+          "y": 437,
+          "width": 4,
+          "height": 5
+        },
+        "diffPixelCount": 12,
+        "nearbyNodeIds": [
+          "9547:4935",
+          "9547:4933",
+          "9547:4929"
+        ],
+        "nearbyNodeNames": [
+          "467kg",
+          "Frame 26086742",
+          "Frame 26086745"
+        ]
+      },
+      {
+        "id": 58,
+        "bounds": {
+          "x": 147,
+          "y": 440,
+          "width": 5,
+          "height": 6
+        },
+        "diffPixelCount": 14,
+        "nearbyNodeIds": [
+          "9547:4918",
+          "9547:4920",
+          "9547:4921"
+        ],
+        "nearbyNodeNames": [
+          "467kg",
+          "Frame 26086742",
+          "Frame 26086743"
+        ]
+      },
+      {
+        "id": 59,
+        "bounds": {
+          "x": 234,
+          "y": 440,
+          "width": 5,
+          "height": 6
+        },
+        "diffPixelCount": 14,
+        "nearbyNodeIds": [
+          "9547:4928",
+          "9547:4926",
+          "9547:4922"
+        ],
+        "nearbyNodeNames": [
+          "467kg",
+          "Frame 26086742",
+          "Frame 26086744"
+        ]
+      },
+      {
+        "id": 60,
+        "bounds": {
+          "x": 321,
+          "y": 440,
+          "width": 5,
+          "height": 6
+        },
+        "diffPixelCount": 14,
+        "nearbyNodeIds": [
+          "9547:4935",
+          "9547:4933",
+          "9547:4929"
+        ],
+        "nearbyNodeNames": [
+          "467kg",
+          "Frame 26086742",
+          "Frame 26086745"
+        ]
+      },
+      {
+        "id": 61,
+        "bounds": {
+          "x": 143,
+          "y": 477,
+          "width": 9,
+          "height": 11
+        },
+        "diffPixelCount": 58,
+        "nearbyNodeIds": [
+          "9525:4783",
+          "9525:4760"
+        ],
+        "nearbyNodeNames": [
+          "マイクを押しながら体重を読み上げる",
+          "体重登録-入力画面"
+        ]
+      },
+      {
+        "id": 62,
+        "bounds": {
+          "x": 214,
+          "y": 477,
+          "width": 10,
+          "height": 11
+        },
+        "diffPixelCount": 80,
+        "nearbyNodeIds": [
+          "9525:4783",
+          "9525:4760"
+        ],
+        "nearbyNodeNames": [
+          "マイクを押しながら体重を読み上げる",
+          "体重登録-入力画面"
+        ]
+      },
+      {
+        "id": 63,
+        "bounds": {
+          "x": 238,
+          "y": 477,
+          "width": 11,
+          "height": 11
+        },
+        "diffPixelCount": 82,
+        "nearbyNodeIds": [
+          "9525:4783",
+          "9525:4760"
+        ],
+        "nearbyNodeNames": [
+          "マイクを押しながら体重を読み上げる",
+          "体重登録-入力画面"
+        ]
+      },
+      {
+        "id": 64,
+        "bounds": {
+          "x": 266,
+          "y": 477,
+          "width": 1,
+          "height": 10
+        },
+        "diffPixelCount": 10,
+        "nearbyNodeIds": [
+          "9525:4783",
+          "9525:4760"
+        ],
+        "nearbyNodeNames": [
+          "マイクを押しながら体重を読み上げる",
+          "体重登録-入力画面"
+        ]
+      },
+      {
+        "id": 65,
+        "bounds": {
+          "x": 287,
+          "y": 478,
+          "width": 8,
+          "height": 9
+        },
+        "diffPixelCount": 32,
+        "nearbyNodeIds": [
+          "9525:4783",
+          "9525:4760"
+        ],
+        "nearbyNodeNames": [
+          "マイクを押しながら体重を読み上げる",
+          "体重登録-入力画面"
+        ]
+      },
+      {
+        "id": 66,
+        "bounds": {
+          "x": 131,
+          "y": 479,
+          "width": 7,
+          "height": 9
+        },
+        "diffPixelCount": 28,
+        "nearbyNodeIds": [
+          "9525:4783",
+          "9525:4760"
+        ],
+        "nearbyNodeNames": [
+          "マイクを押しながら体重を読み上げる",
+          "体重登録-入力画面"
+        ]
+      },
+      {
+        "id": 67,
+        "bounds": {
+          "x": 205,
+          "y": 479,
+          "width": 5,
+          "height": 7
+        },
+        "diffPixelCount": 18,
+        "nearbyNodeIds": [
+          "9525:4783",
+          "9525:4760"
+        ],
+        "nearbyNodeNames": [
+          "マイクを押しながら体重を読み上げる",
+          "体重登録-入力画面"
+        ]
+      },
+      {
+        "id": 68,
+        "bounds": {
+          "x": 227,
+          "y": 479,
+          "width": 7,
+          "height": 9
+        },
+        "diffPixelCount": 28,
+        "nearbyNodeIds": [
+          "9525:4783",
+          "9525:4760"
+        ],
+        "nearbyNodeNames": [
+          "マイクを押しながら体重を読み上げる",
+          "体重登録-入力画面"
+        ]
+      },
+      {
+        "id": 69,
+        "bounds": {
+          "x": 180,
+          "y": 480,
+          "width": 5,
+          "height": 4
+        },
+        "diffPixelCount": 11,
+        "nearbyNodeIds": [
+          "9525:4783",
+          "9525:4760"
+        ],
+        "nearbyNodeNames": [
+          "マイクを押しながら体重を読み上げる",
+          "体重登録-入力画面"
+        ]
+      },
+      {
+        "id": 70,
+        "bounds": {
+          "x": 249,
+          "y": 482,
+          "width": 4,
+          "height": 5
+        },
+        "diffPixelCount": 11,
+        "nearbyNodeIds": [
+          "9525:4783",
+          "9525:4760"
+        ],
+        "nearbyNodeNames": [
+          "マイクを押しながら体重を読み上げる",
+          "体重登録-入力画面"
+        ]
+      },
+      {
+        "id": 71,
+        "bounds": {
+          "x": 169,
+          "y": 484,
+          "width": 6,
+          "height": 3
+        },
+        "diffPixelCount": 12,
+        "nearbyNodeIds": [
+          "9525:4783",
+          "9525:4760"
+        ],
+        "nearbyNodeNames": [
+          "マイクを押しながら体重を読み上げる",
+          "体重登録-入力画面"
+        ]
+      },
+      {
+        "id": 72,
+        "bounds": {
+          "x": 50,
+          "y": 520,
+          "width": 6,
+          "height": 12
+        },
+        "diffPixelCount": 22,
+        "nearbyNodeIds": [
+          "9525:4903",
+          "9525:4901",
+          "9525:4760"
+        ],
+        "nearbyNodeNames": [
+          "Vector",
+          "Frame 26086739",
+          "体重登録-入力画面"
+        ]
+      },
+      {
+        "id": 73,
+        "bounds": {
+          "x": 336,
+          "y": 520,
+          "width": 6,
+          "height": 12
+        },
+        "diffPixelCount": 22,
+        "nearbyNodeIds": [
+          "9525:4898",
+          "9525:4895",
+          "9525:4760"
+        ],
+        "nearbyNodeNames": [
+          "Vector",
+          "Frame 26086735",
+          "体重登録-入力画面"
+        ]
+      },
+      {
+        "id": 74,
+        "bounds": {
+          "x": 65,
+          "y": 522,
+          "width": 9,
+          "height": 9
+        },
+        "diffPixelCount": 53,
+        "nearbyNodeIds": [
+          "9525:4902",
+          "9525:4901",
+          "9525:4760"
+        ],
+        "nearbyNodeNames": [
+          "前の馬",
+          "Frame 26086739",
+          "体重登録-入力画面"
+        ]
+      },
+      {
+        "id": 75,
+        "bounds": {
+          "x": 86,
+          "y": 522,
+          "width": 8,
+          "height": 9
+        },
+        "diffPixelCount": 52,
+        "nearbyNodeIds": [
+          "9525:4902",
+          "9525:4901",
+          "9525:4760"
+        ],
+        "nearbyNodeNames": [
+          "前の馬",
+          "Frame 26086739",
+          "体重登録-入力画面"
+        ]
+      },
+      {
+        "id": 76,
+        "bounds": {
+          "x": 318,
+          "y": 522,
+          "width": 9,
+          "height": 9
+        },
+        "diffPixelCount": 53,
+        "nearbyNodeIds": [
+          "9525:4896",
+          "9525:4895",
+          "9525:4760"
+        ],
+        "nearbyNodeNames": [
+          "次の馬",
+          "Frame 26086735",
+          "体重登録-入力画面"
+        ]
+      },
+      {
+        "id": 77,
+        "bounds": {
+          "x": 75,
+          "y": 523,
+          "width": 7,
+          "height": 6
+        },
+        "diffPixelCount": 21,
+        "nearbyNodeIds": [
+          "9525:4902",
+          "9525:4901",
+          "9525:4760"
+        ],
+        "nearbyNodeNames": [
+          "前の馬",
+          "Frame 26086739",
+          "体重登録-入力画面"
+        ]
+      },
+      {
+        "id": 78,
+        "bounds": {
+          "x": 299,
+          "y": 523,
+          "width": 8,
+          "height": 7
+        },
+        "diffPixelCount": 24,
+        "nearbyNodeIds": [
+          "9525:4896",
+          "9525:4895",
+          "9525:4760"
+        ],
+        "nearbyNodeNames": [
+          "次の馬",
+          "Frame 26086735",
+          "体重登録-入力画面"
+        ]
+      },
+      {
+        "id": 79,
+        "bounds": {
+          "x": 308,
+          "y": 523,
+          "width": 7,
+          "height": 6
+        },
+        "diffPixelCount": 20,
+        "nearbyNodeIds": [
+          "9525:4896",
+          "9525:4895",
+          "9525:4760"
+        ],
+        "nearbyNodeNames": [
+          "次の馬",
+          "Frame 26086735",
+          "体重登録-入力画面"
+        ]
+      },
+      {
+        "id": 80,
+        "bounds": {
+          "x": 187,
+          "y": 556,
+          "width": 18,
+          "height": 36
+        },
+        "diffPixelCount": 564,
+        "nearbyNodeIds": [
+          "9525:4782",
+          "9525:4780",
+          "9525:4779"
+        ],
+        "nearbyNodeNames": [
+          "Vector",
+          "Group",
+          "マイクのアイコンその10 1"
+        ]
+      },
+      {
+        "id": 81,
+        "bounds": {
+          "x": 176,
+          "y": 581,
+          "width": 40,
+          "height": 33
+        },
+        "diffPixelCount": 231,
+        "nearbyNodeIds": [
+          "9525:4781",
+          "9525:4780",
+          "9525:4779"
+        ],
+        "nearbyNodeNames": [
+          "Vector",
+          "Group",
+          "マイクのアイコンその10 1"
+        ]
+      },
+      {
+        "id": 82,
+        "bounds": {
+          "x": 60,
+          "y": 587,
+          "width": 20,
+          "height": 15
+        },
+        "diffPixelCount": 57,
+        "nearbyNodeIds": [
+          "9525:4773",
+          "9525:4771",
+          "9525:4770"
+        ],
+        "nearbyNodeNames": [
+          "Vector",
+          "Vector",
+          "Group"
+        ]
+      },
+      {
+        "id": 83,
+        "bounds": {
+          "x": 314,
+          "y": 589,
+          "width": 13,
+          "height": 2
+        },
+        "diffPixelCount": 26,
+        "nearbyNodeIds": [
+          "9547:5139",
+          "9547:5137",
+          "9525:4775"
+        ],
+        "nearbyNodeNames": [
+          "Vector",
+          "solar:keyboard-outline",
+          "手書きボタン"
+        ]
+      },
+      {
+        "id": 84,
+        "bounds": {
+          "x": 70,
+          "y": 592,
+          "width": 5,
+          "height": 6
+        },
+        "diffPixelCount": 13,
+        "nearbyNodeIds": [
+          "9525:4771",
+          "9525:4770",
+          "9525:4769"
+        ],
+        "nearbyNodeNames": [
+          "Vector",
+          "Group",
+          "履歴ボタン"
+        ]
+      },
+      {
+        "id": 85,
+        "bounds": {
+          "x": 309,
+          "y": 593,
+          "width": 2,
+          "height": 7
+        },
+        "diffPixelCount": 14,
+        "nearbyNodeIds": [
+          "9547:5139",
+          "9547:5137",
+          "9525:4775"
+        ],
+        "nearbyNodeNames": [
+          "Vector",
+          "solar:keyboard-outline",
+          "手書きボタン"
+        ]
+      },
+      {
+        "id": 86,
+        "bounds": {
+          "x": 329,
+          "y": 594,
+          "width": 2,
+          "height": 7
+        },
+        "diffPixelCount": 14,
+        "nearbyNodeIds": [
+          "9547:5139",
+          "9547:5137",
+          "9525:4775"
+        ],
+        "nearbyNodeNames": [
+          "Vector",
+          "solar:keyboard-outline",
+          "手書きボタン"
+        ]
+      },
+      {
+        "id": 87,
+        "bounds": {
+          "x": 315,
+          "y": 600,
+          "width": 10,
+          "height": 2
+        },
+        "diffPixelCount": 20,
+        "nearbyNodeIds": [
+          "9547:5139",
+          "9547:5137",
+          "9525:4775"
+        ],
+        "nearbyNodeNames": [
+          "Vector",
+          "solar:keyboard-outline",
+          "手書きボタン"
+        ]
+      },
+      {
+        "id": 88,
+        "bounds": {
+          "x": 68,
+          "y": 603,
+          "width": 8,
+          "height": 3
+        },
+        "diffPixelCount": 12,
+        "nearbyNodeIds": [
+          "9525:4771",
+          "9525:4770",
+          "9525:4769"
+        ],
+        "nearbyNodeNames": [
+          "Vector",
+          "Group",
+          "履歴ボタン"
+        ]
+      },
+      {
+        "id": 89,
+        "bounds": {
+          "x": 313,
+          "y": 603,
+          "width": 13,
+          "height": 2
+        },
+        "diffPixelCount": 26,
+        "nearbyNodeIds": [
+          "9547:5139",
+          "9547:5137",
+          "9525:4775"
+        ],
+        "nearbyNodeNames": [
+          "Vector",
+          "solar:keyboard-outline",
+          "手書きボタン"
+        ]
+      }
+    ],
+    "completionCriteria": {
+      "structuralReview": {
+        "required": 1,
+        "current": 0,
+        "status": "FAIL",
+        "blocking": true,
+        "note": "critical severity issue detected; weakest region 9525:4783 (structure 0.535, color ΔE 2.860; lower=better, critical threshold 2) with texture-adjusted weights active (alpha 0.700, photo-like cap 0.300)"
+      },
+      "conditionsReview": {
+        "required": 1,
+        "current": 0,
+        "status": "UNCERTAIN",
+        "blocking": false,
+        "note": "表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。"
+      },
+      "wholeImageStructure": {
+        "required": 0.95,
+        "current": 0.8267425580888028,
+        "status": "UNCERTAIN",
+        "blocking": false,
+        "note": "Area-weighted contrast and structure over disjoint 8x8 windows. Uniform luminance shifts are excluded; contrast changes remain. Local issues and the aggregate gate remain independent."
+      },
+      "consistencyReview": {
+        "required": 0.5,
+        "current": 0,
+        "status": "PASS",
+        "blocking": false,
+        "note": "Not evaluated: the contradiction check only applies to a passing structural review."
+      },
+      "tokenReview": {
+        "required": 0,
+        "current": 0,
+        "status": "UNCERTAIN",
+        "blocking": false,
+        "note": "Not evaluated: token comparison needs both a Figma node tree and a FigDiff-captured URL."
+      },
+      "matchRate": {
+        "required": 100,
+        "current": 83.49,
+        "status": "FAIL",
+        "blocking": false,
+        "note": "Reference metric only. Do not use matchRate% as the completion gate."
+      },
+      "diffPixelCount": {
+        "required": 0,
+        "current": 44485,
+        "status": "FAIL",
+        "blocking": false,
+        "note": "Reference metric. Structural SSIM review is the blocking gate."
+      },
+      "remainingIssues": {
+        "required": 0,
+        "current": 90,
+        "status": "FAIL",
+        "blocking": true,
+        "note": "Blocking only while structural SSIM review has not passed."
+      }
+    },
+    "nextAction": "表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。 inspect_node を使って 90 箇所の diffRegions の詳細を確認してください。まず 9525:4783 -> 9553:6240 -> 9525:4883 -> 9525:4762 -> 9525:4901 の順で確認し、CSSを修正したら再度 compare_design で検証してください。",
+    "suggestion": "大きな差分が90箇所あります。inspect_nodeで各差分領域を確認し、修正してください。",
+    "clusterTelemetry": {
+      "requestedMode": "auto",
+      "usedMode": "flood",
+      "fallbackUsed": false,
+      "wallMs": 13.66,
+      "regionCount": 90
+    },
+    "gridSummary": {
+      "rows": 3,
+      "cols": 2,
+      "cells": [
+        {
+          "row": 0,
+          "col": 0,
+          "x": 0,
+          "y": 0,
+          "width": 195,
+          "height": 230,
+          "diffPixels": 8328,
+          "totalPixels": 44850,
+          "matchRate": 81.43
+        },
+        {
+          "row": 0,
+          "col": 1,
+          "x": 195,
+          "y": 0,
+          "width": 195,
+          "height": 230,
+          "diffPixels": 5574,
+          "totalPixels": 44850,
+          "matchRate": 87.57
+        },
+        {
+          "row": 1,
+          "col": 0,
+          "x": 0,
+          "y": 230,
+          "width": 195,
+          "height": 230,
+          "diffPixels": 14225,
+          "totalPixels": 44850,
+          "matchRate": 68.28
+        },
+        {
+          "row": 1,
+          "col": 1,
+          "x": 195,
+          "y": 230,
+          "width": 195,
+          "height": 230,
+          "diffPixels": 14540,
+          "totalPixels": 44850,
+          "matchRate": 67.58
+        },
+        {
+          "row": 2,
+          "col": 0,
+          "x": 0,
+          "y": 460,
+          "width": 195,
+          "height": 231,
+          "diffPixels": 776,
+          "totalPixels": 45045,
+          "matchRate": 98.28
+        },
+        {
+          "row": 2,
+          "col": 1,
+          "x": 195,
+          "y": 460,
+          "width": 195,
+          "height": 231,
+          "diffPixels": 1042,
+          "totalPixels": 45045,
+          "matchRate": 97.69
+        }
+      ]
+    },
+    "diffReport": {
+      "alignment": {
+        "translation": {
+          "x": 0,
+          "y": 0
+        },
+        "source": "none",
+        "applied": false,
+        "baselineResidual": 0.1907343500686482,
+        "correctedResidual": 0.1907343500686482,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "rotation": 0,
+        "confidence": 1,
+        "residual": 0.1907343500686482
+      },
+      "regionScores": [
+        {
+          "regionId": "9551:5156",
+          "bbox": {
+            "x": 20,
+            "y": 40,
+            "w": 357,
+            "h": 51
+          },
+          "figmaNodeId": "9551:5156",
+          "structure": 0.7622635853946438,
+          "color": 4.277603988011426,
+          "shape": 1,
+          "layout": 0,
+          "textureScore": 3.61223885919473e-17
+        },
+        {
+          "regionId": "9553:6240",
+          "bbox": {
+            "x": 24,
+            "y": 91,
+            "w": 343,
+            "h": 40
+          },
+          "figmaNodeId": "9553:6240",
+          "structure": 0.5710214680231028,
+          "color": 5.867757542367785,
+          "shape": 1,
+          "layout": 0,
+          "textureScore": 3.6122388591945324e-17
+        },
+        {
+          "regionId": "9525:4762",
+          "bbox": {
+            "x": 20,
+            "y": 122,
+            "w": 350,
+            "h": 282
+          },
+          "figmaNodeId": "9525:4762",
+          "structure": 0.7019928480773232,
+          "color": 19.173336408085454,
+          "shape": 0.16910237255132415,
+          "layout": 0,
+          "textureScore": 0.20004459802312793
+        },
+        {
+          "regionId": "9525:4883",
+          "bbox": {
+            "x": 23,
+            "y": 404,
+            "w": 344,
+            "h": 71
+          },
+          "figmaNodeId": "9525:4883",
+          "structure": 0.6948463704986367,
+          "color": 3.4176724298643335,
+          "shape": 1,
+          "layout": 0,
+          "textureScore": 3.612238859194882e-17
+        },
+        {
+          "regionId": "9525:4783",
+          "bbox": {
+            "x": 93,
+            "y": 475,
+            "w": 204,
+            "h": 30
+          },
+          "figmaNodeId": "9525:4783",
+          "structure": 0.5348583086961278,
+          "color": 2.8601386937469746,
+          "shape": 1,
+          "layout": 0,
+          "textureScore": 3.612238859193577e-17
+        },
+        {
+          "regionId": "9525:4895",
+          "bbox": {
+            "x": 276,
+            "y": 505,
+            "w": 88,
+            "h": 42
+          },
+          "figmaNodeId": "9525:4895",
+          "structure": 0.7212017594767282,
+          "color": 2.7427641151787685,
+          "shape": 1,
+          "layout": 0,
+          "textureScore": 3.612238859193953e-17
+        },
+        {
+          "regionId": "9525:4901",
+          "bbox": {
+            "x": 28,
+            "y": 505,
+            "w": 88,
+            "h": 42
+          },
+          "figmaNodeId": "9525:4901",
+          "structure": 0.7108342804703176,
+          "color": 2.827633166878738,
+          "shape": 1,
+          "layout": 0,
+          "textureScore": 3.612238859193953e-17
+        },
+        {
+          "regionId": "9525:4777",
+          "bbox": {
+            "x": 139,
+            "y": 528,
+            "w": 114,
+            "h": 114
+          },
+          "figmaNodeId": "9525:4777",
+          "structure": 0.8012763371094753,
+          "color": 3.3212405644579452,
+          "shape": 1,
+          "layout": 0,
+          "textureScore": 3.612238859194506e-17
+        },
+        {
+          "regionId": "9525:4769",
+          "bbox": {
+            "x": 40,
+            "y": 567,
+            "w": 60,
+            "h": 60
+          },
+          "figmaNodeId": "9525:4769",
+          "structure": 0.7980826876671423,
+          "color": 2.307904116020806,
+          "shape": 1,
+          "layout": 0,
+          "textureScore": 3.612238859193974e-17
+        },
+        {
+          "regionId": "9525:4775",
+          "bbox": {
+            "x": 290,
+            "y": 567,
+            "w": 60,
+            "h": 124
+          },
+          "figmaNodeId": "9525:4775",
+          "structure": 0.8732269069101048,
+          "color": 1.16286304067196,
+          "shape": 1,
+          "layout": 0,
+          "textureScore": 3.612238859193887e-17
+        },
+        {
+          "regionId": "whole-frame",
+          "bbox": {
+            "x": 0,
+            "y": 0,
+            "w": 390,
+            "h": 691
+          },
+          "figmaNodeId": "9525:4760",
+          "scope": "root",
+          "structure": 0.793601859831916,
+          "color": 8.222577468054242,
+          "shape": 0.3705284194458382,
+          "layout": 0,
+          "textureScore": 0.07365471874084355
+        }
+      ],
+      "issues": [
+        {
+          "regionId": "9551:5156",
+          "bbox": {
+            "x": 20,
+            "y": 40,
+            "w": 357,
+            "h": 51
+          },
+          "kind": "color",
+          "severity": "critical",
+          "evidence": {
+            "signal": "delta_e_2000",
+            "value": 4.277603988011426,
+            "threshold": 2,
+            "expected": "< 2",
+            "actual": 4.277603988011426,
+            "figmaFileKey": "15giveDl0JkKddxasif6VA",
+            "figmaNodeId": "9525:4760",
+            "figmaPageName": "体重登録-入力画面"
+          },
+          "figmaNodeId": "9551:5156",
+          "suggestedCssFix": "背景色や塗り色のトークン値をデザイン基準に合わせてください。"
+        },
+        {
+          "regionId": "9553:6240",
+          "bbox": {
+            "x": 24,
+            "y": 91,
+            "w": 343,
+            "h": 40
+          },
+          "kind": "color",
+          "severity": "critical",
+          "evidence": {
+            "signal": "delta_e_2000",
+            "value": 5.867757542367785,
+            "threshold": 2,
+            "expected": "< 2",
+            "actual": 5.867757542367785,
+            "figmaFileKey": "15giveDl0JkKddxasif6VA",
+            "figmaNodeId": "9525:4760",
+            "figmaPageName": "体重登録-入力画面"
+          },
+          "figmaNodeId": "9553:6240",
+          "suggestedCssFix": "背景色や塗り色のトークン値をデザイン基準に合わせてください。"
+        },
+        {
+          "regionId": "9525:4762",
+          "bbox": {
+            "x": 20,
+            "y": 122,
+            "w": 350,
+            "h": 282
+          },
+          "kind": "color",
+          "severity": "critical",
+          "evidence": {
+            "signal": "delta_e_2000",
+            "value": 19.173336408085454,
+            "threshold": 2,
+            "expected": "< 2",
+            "actual": 19.173336408085454,
+            "figmaFileKey": "15giveDl0JkKddxasif6VA",
+            "figmaNodeId": "9525:4760",
+            "figmaPageName": "体重登録-入力画面"
+          },
+          "figmaNodeId": "9525:4762",
+          "suggestedCssFix": "背景色や塗り色のトークン値をデザイン基準に合わせてください。"
+        },
+        {
+          "regionId": "9525:4883",
+          "bbox": {
+            "x": 23,
+            "y": 404,
+            "w": 344,
+            "h": 71
+          },
+          "kind": "color",
+          "severity": "critical",
+          "evidence": {
+            "signal": "delta_e_2000",
+            "value": 3.4176724298643335,
+            "threshold": 2,
+            "expected": "< 2",
+            "actual": 3.4176724298643335,
+            "figmaFileKey": "15giveDl0JkKddxasif6VA",
+            "figmaNodeId": "9525:4760",
+            "figmaPageName": "体重登録-入力画面"
+          },
+          "figmaNodeId": "9525:4883",
+          "suggestedCssFix": "背景色や塗り色のトークン値をデザイン基準に合わせてください。"
+        },
+        {
+          "regionId": "9525:4783",
+          "bbox": {
+            "x": 93,
+            "y": 475,
+            "w": 204,
+            "h": 30
+          },
+          "kind": "color",
+          "severity": "critical",
+          "evidence": {
+            "signal": "delta_e_2000",
+            "value": 2.8601386937469746,
+            "threshold": 2,
+            "expected": "< 2",
+            "actual": 2.8601386937469746,
+            "figmaFileKey": "15giveDl0JkKddxasif6VA",
+            "figmaNodeId": "9525:4760",
+            "figmaPageName": "体重登録-入力画面"
+          },
+          "figmaNodeId": "9525:4783",
+          "suggestedCssFix": "背景色や塗り色のトークン値をデザイン基準に合わせてください。"
+        },
+        {
+          "regionId": "9525:4895",
+          "bbox": {
+            "x": 276,
+            "y": 505,
+            "w": 88,
+            "h": 42
+          },
+          "kind": "color",
+          "severity": "critical",
+          "evidence": {
+            "signal": "delta_e_2000",
+            "value": 2.7427641151787685,
+            "threshold": 2,
+            "expected": "< 2",
+            "actual": 2.7427641151787685,
+            "figmaFileKey": "15giveDl0JkKddxasif6VA",
+            "figmaNodeId": "9525:4760",
+            "figmaPageName": "体重登録-入力画面"
+          },
+          "figmaNodeId": "9525:4895",
+          "suggestedCssFix": "背景色や塗り色のトークン値をデザイン基準に合わせてください。"
+        },
+        {
+          "regionId": "9525:4901",
+          "bbox": {
+            "x": 28,
+            "y": 505,
+            "w": 88,
+            "h": 42
+          },
+          "kind": "color",
+          "severity": "critical",
+          "evidence": {
+            "signal": "delta_e_2000",
+            "value": 2.827633166878738,
+            "threshold": 2,
+            "expected": "< 2",
+            "actual": 2.827633166878738,
+            "figmaFileKey": "15giveDl0JkKddxasif6VA",
+            "figmaNodeId": "9525:4760",
+            "figmaPageName": "体重登録-入力画面"
+          },
+          "figmaNodeId": "9525:4901",
+          "suggestedCssFix": "背景色や塗り色のトークン値をデザイン基準に合わせてください。"
+        },
+        {
+          "regionId": "9525:4777",
+          "bbox": {
+            "x": 139,
+            "y": 528,
+            "w": 114,
+            "h": 114
+          },
+          "kind": "color",
+          "severity": "critical",
+          "evidence": {
+            "signal": "delta_e_2000",
+            "value": 3.3212405644579452,
+            "threshold": 2,
+            "expected": "< 2",
+            "actual": 3.3212405644579452,
+            "figmaFileKey": "15giveDl0JkKddxasif6VA",
+            "figmaNodeId": "9525:4760",
+            "figmaPageName": "体重登録-入力画面"
+          },
+          "figmaNodeId": "9525:4777",
+          "suggestedCssFix": "背景色や塗り色のトークン値をデザイン基準に合わせてください。"
+        },
+        {
+          "regionId": "9525:4769",
+          "bbox": {
+            "x": 40,
+            "y": 567,
+            "w": 60,
+            "h": 60
+          },
+          "kind": "color",
+          "severity": "critical",
+          "evidence": {
+            "signal": "delta_e_2000",
+            "value": 2.307904116020806,
+            "threshold": 2,
+            "expected": "< 2",
+            "actual": 2.307904116020806,
+            "figmaFileKey": "15giveDl0JkKddxasif6VA",
+            "figmaNodeId": "9525:4760",
+            "figmaPageName": "体重登録-入力画面"
+          },
+          "figmaNodeId": "9525:4769",
+          "suggestedCssFix": "背景色や塗り色のトークン値をデザイン基準に合わせてください。"
+        }
+      ],
+      "weightedAggregate": {
+        "weightedStructure": 0.708240152850396,
+        "weightedColor": 11.005209775206374,
+        "totalWeight": 0.9282390807978343
+      },
+      "structuralAssessment": {
+        "metric": "ssim-contrast-structure-area-v1",
+        "score": 0.8267425580888028,
+        "evaluatedPixelCount": 269490,
+        "excludedPixelCount": 0,
+        "passThreshold": 0.95,
+        "failThreshold": 0.8,
+        "verdict": "inconclusive",
+        "rationale": "Area-weighted contrast and structure over disjoint 8x8 windows. Uniform luminance shifts are excluded; contrast changes remain. Local issues and the aggregate gate remain independent."
+      },
+      "aggregateVerdict": "fail",
+      "rationale": "critical severity issue detected; weakest region 9525:4783 (structure 0.535, color ΔE 2.860; lower=better, critical threshold 2) with texture-adjusted weights active (alpha 0.700, photo-like cap 0.300)"
+    },
+    "preflight": {
+      "warnings": []
+    },
+    "normalization": {
+      "designNativeWidth": 390,
+      "designNativeHeight": 691,
+      "screenshotWidth": 390,
+      "screenshotHeight": 844,
+      "cropApplied": true,
+      "containResized": false,
+      "appliedScale": 1,
+      "autoCropped": true,
+      "cropRegion": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 691
+      },
+      "workingCropRegion": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 691
+      },
+      "cropSource": "auto"
+    },
+    "ignoreRegionResolution": {
+      "coordinateContext": {
+        "canvas_width": 390,
+        "canvas_height": 691,
+        "design_original_width": 390,
+        "design_original_height": 691,
+        "screenshot_original_width": 390,
+        "screenshot_original_height": 844,
+        "file_key": "15giveDl0JkKddxasif6VA",
+        "node_id": "9525:4760",
+        "crop_region": {
+          "x": 0,
+          "y": 0,
+          "width": 390,
+          "height": 691
+        }
+      },
+      "appliedIds": [],
+      "incompatibleIds": [],
+      "legacyIds": [],
+      "effectiveCanvas": {
+        "width": 390,
+        "height": 691
+      },
+      "effectiveRegions": [],
+      "maskedPixelCount": 0,
+      "maskSha256": "8770b58a77da7b6eb16406b3016ac6840f9a1bae1fa22db5fad6016499afc10c"
+    },
+    "comparisonConditions": {
+      "status": "unverified",
+      "design": {
+        "canvas": {
+          "width": 390,
+          "height": 691
+        },
+        "canvasSource": "image-metadata",
+        "requested": {
+          "pixelRatio": 1,
+          "source": "figma-export-request"
+        },
+        "unverified": [
+          "viewport",
+          "pixelRatio",
+          "origin"
+        ]
+      },
+      "screenshot": {
+        "canvas": {
+          "width": 390,
+          "height": 844
+        },
+        "canvasSource": "image-metadata",
+        "unverified": [
+          "viewport",
+          "pixelRatio",
+          "origin"
+        ]
+      },
+      "differences": [],
+      "message": "表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。"
+    },
+    "figmaExport": {
+      "conditions": {
+        "contentsOnly": true,
+        "useAbsoluteBounds": true,
+        "scale": 1,
+        "version": "2399718388612486137"
+      },
+      "opaqueFillExpected": true,
+      "uniformRaster": false,
+      "interiorTransparentRatio": 0,
+      "warnings": []
+    },
+    "diagnosis": {
+      "verdict": "real_diff",
+      "likelyMisconfig": false,
+      "rankedCauses": [],
+      "headline": "実装差分を検出しました（一致率 83.49%）。"
+    },
+    "comparisonHeadline": {
+      "structureMatch": 71.7,
+      "colorOnlyRegions": 0,
+      "structuralRegions": 10,
+      "headline": "構造一致 71.7% / 色のみ差分 0領域 / 構造差分 10領域"
+    },
+    "loopGuard": {
+      "stop": false,
+      "step": 1,
+      "maxSteps": 10,
+      "remainingSteps": 9,
+      "reason": "continue",
+      "message": "反復 1/10 回。改善の余地があるため修正を続行できます。",
+      "iteration": 1,
+      "decision": "continue"
+    },
+    "verdictRoute": "pixel",
+    "verificationContext": {
+      "version": 1,
+      "design": {
+        "sourceIdentitySha256": "6c89c9b929bbf49d44e5ebf95acc406c9c9642e729e7eb5b018c0d4f00750def",
+        "imageSha256": "d753ddd5fb4d4c8c557cd7a205d8b7f6acc0f98bc62a66f8ae1195d3a358a3ca",
+        "background": "#FFFFFF",
+        "figmaExportConditions": {
+          "contentsOnly": true,
+          "useAbsoluteBounds": true,
+          "scale": 1,
+          "version": "2399718388612486137"
+        }
+      },
+      "comparison": {
+        "effectiveThreshold": 0.1,
+        "profile": null,
+        "declaredConditions": {},
+        "geometry": {
+          "designNativeWidth": 390,
+          "designNativeHeight": 691,
+          "screenshotWidth": 390,
+          "cropApplied": true,
+          "autoCropped": true,
+          "cropRegion": {
+            "x": 0,
+            "y": 0,
+            "width": 390,
+            "height": 691
+          },
+          "workingCropRegion": {
+            "x": 0,
+            "y": 0,
+            "width": 390,
+            "height": 691
+          },
+          "cropSource": "auto"
+        }
+      },
+      "mask": {
+        "status": "none"
+      },
+      "fingerprint": "9e390785ee4b789bc0d9cb3a6e2a175e319c1a3eea3d29bd22cd47a02326bf40"
+    },
+    "diffImagePath": "/home/kouiso/ghq/kouiso/designdiff-wt-dogfood/docs/evidence/shakedown-wsl/mcp-real-figma/figdiff-home/results/diff-cmp-96a3c453-cd8c-4361-be78-a7dbcc9a76b6.png"
+  }
+}

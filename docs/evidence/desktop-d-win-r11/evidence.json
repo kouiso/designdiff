@@ -1,0 +1,249 @@
+{
+  "schemaVersion": 1,
+  "completed": true,
+  "results": {
+    "D01": {
+      "onboarding": "steps + input visible",
+      "tokenlessPaths": [
+        "quickCompareSubmit",
+        "createProjectForm"
+      ],
+      "auth": {
+        "credentialFile": "credentials.json",
+        "viaDialog": true
+      },
+      "frameSelect": {
+        "exported": "https://api.figma.com/v1/images/FD01?ids=7:9&format=png&scale=2&use_absolute_bounds=true",
+        "framesListed": [
+          "ヘッダー",
+          "カード"
+        ]
+      },
+      "project": {
+        "id": "1789775865766-mexxbzs",
+        "persisted": true
+      },
+      "sourceCompare": {
+        "exported": "https://api.figma.com/v1/images/FD01?ids=7:8&format=png&scale=2&use_absolute_bounds=true"
+      },
+      "singleFrameAutoLoad": "https://api.figma.com/v1/images/FD01?ids=7:21&format=png&scale=2&use_absolute_bounds=true"
+    },
+    "D03": {
+      "drop": {
+        "screenshotLoaded": true,
+        "via": "scoped zone text"
+      },
+      "localFile": "loaded",
+      "webCapture": {
+        "url": "/capture-target",
+        "requests": 1
+      },
+      "inputRetainedOnFailure": true
+    },
+    "D09": {
+      "401": {
+        "surfaced": "token re-entry dialog",
+        "cancelDisabled": true
+      },
+      "403": {
+        "surfaced": "token re-entry dialog",
+        "cancelDisabled": true
+      },
+      "429": {
+        "surfaced": "Error: Error invoking remote method 'figma:get-frame-image': Error: Figma API rate limit exceeded (429). Please wait 7 seconds."
+      },
+      "500": {
+        "surfaced": "Error: Error invoking remote method 'figma:get-frame-image': Error: Figma server error (500). Please try again later."
+      },
+      "offline": {
+        "surfaced": "Error: Error invoking remote method 'figma:get-frame-image': Error: fetch failed"
+      },
+      "sameUrlRetry": {
+        "node": "7:16",
+        "exported": "https://api.figma.com/v1/images/FD01?ids=7:16&format=png&scale=2&use_absolute_bounds=true"
+      },
+      "retryAfterRecovery": "export succeeded"
+    },
+    "D10": {
+      "keyboardSubmit": "frame list appeared via hero input (node 7:30)",
+      "japaneseProject": "1789775891298-4c320mb",
+      "narrowViewport": {
+        "width": 430,
+        "view": "compare",
+        "overflowPx": 221,
+        "overflowElements": [
+          "nav right=492",
+          "button right=429",
+          "button right=492",
+          "svg right=454",
+          "path right=453",
+          "circle right=451"
+        ],
+        "homeNav": {
+          "found": true,
+          "reachable": true
+        }
+      },
+      "japaneseFilename": {
+        "loaded": "実装-比較テスト.png",
+        "canvas": "50x50",
+        "canvases": [
+          {
+            "width": 50,
+            "height": 50
+          },
+          {
+            "width": 300,
+            "height": 150
+          }
+        ],
+        "via": "shotInput path"
+      }
+    },
+    "D04": {
+      "consoleErrors": [],
+      "viewModes": {
+        "pixel_diff": {
+          "activeClass": true
+        },
+        "transparent_overlay": {
+          "activeClass": true
+        },
+        "split_screen": {
+          "activeClass": true
+        }
+      },
+      "zoom": {
+        "before": "translate(0px, 0px) scale(1)",
+        "after": "translate(-185.202px, -42.5892px) scale(1.49212)"
+      },
+      "pan": {
+        "before": "translate(-185.202px, -42.5892px) scale(1.49212)",
+        "after": "translate(-125.202px, -2.58916px) scale(1.49212)"
+      },
+      "reset": "translate(0px, 0px) scale(1)",
+      "crop": {
+        "region": "x: 9, y: 10, w: 80, h: 60",
+        "cleared": true
+      }
+    },
+    "X09": {
+      "direction": "mcp-write → desktop-read",
+      "project": "mcp-made-project",
+      "listed": true,
+      "opened": true
+    },
+    "D08": {
+      "restored": [
+        "D01案件",
+        "比較テスト案件",
+        "MCP経由案件"
+      ],
+      "d01ProjectContents": {
+        "page": "トップ",
+        "source": "デスクトップ"
+      },
+      "comparePositiveControl": {
+        "canvasCount": 2,
+        "canvases": [
+          {
+            "width": 200,
+            "height": 120
+          },
+          {
+            "width": 300,
+            "height": 150
+          }
+        ],
+        "apiHitsForSource": 0
+      },
+      "compareAfterProjectSwitch": {
+        "canvases": [
+          {
+            "width": 200,
+            "height": 120
+          },
+          {
+            "width": 300,
+            "height": 150
+          }
+        ],
+        "fixtureCanvas": "200x120",
+        "centerPixel": [
+          255,
+          255,
+          255
+        ],
+        "matchesFixture": false,
+        "designPill": true
+      },
+      "switching": "close-and-reopen round-trip verified"
+    }
+  },
+  "pageErrors": [],
+  "networkBoundary": {
+    "mainFetchRequests": 28,
+    "chromiumRequests": 1,
+    "sessionsObserved": 2,
+    "offBoundary": [],
+    "unexpectedThrows": 0,
+    "tokenlessPhaseEndTs": 1789775863648
+  },
+  "knownDefects": [
+    {
+      "id": "token-dialog-cancel-stuck",
+      "detail": "PAT 保存成功後に TokenRequiredDialog を再オープンするとキャンセルボタンが disabled のまま残る (Escape/onOpenChange 経路は生存)",
+      "observedIn": "D09.401/403.cancelDisabled",
+      "observed": {
+        "401": true,
+        "403": true
+      },
+      "hypothesis": "dialog の isSubmitting が保存成功後に false へ戻らない可能性"
+    },
+    {
+      "id": "compare-store-shared-across-projects",
+      "detail": "design 画像を載せた直後に別案件の「比較」を開くと、前案件の画像+pill がそのまま残る",
+      "observedIn": "D08.compareAfterProjectSwitch",
+      "observed": {
+        "canvases": [
+          {
+            "width": 200,
+            "height": 120
+          },
+          {
+            "width": 300,
+            "height": 150
+          }
+        ],
+        "fixtureCanvas": "200x120",
+        "centerPixel": [
+          255,
+          255,
+          255
+        ],
+        "matchesFixture": false,
+        "designPill": true
+      },
+      "hypothesis": "compare store が案件非依存で共有されている可能性"
+    },
+    {
+      "id": "narrow-viewport-overflow",
+      "detail": "430px viewport で横 overflow が発生する",
+      "observedIn": "D10.narrowViewport",
+      "observed": {
+        "overflowPx": 221,
+        "homeNavReachable": true,
+        "view": "compare",
+        "overflowElements": [
+          "nav right=492",
+          "button right=429",
+          "button right=492",
+          "svg right=454",
+          "path right=453",
+          "circle right=451"
+        ]
+      },
+      "hypothesis": "タブ帯が nav ボタンを覆い click point を遮断し得る (過去 run で一度観測)"
+    }
+  ]
+}

@@ -2,6 +2,7 @@
 // 実装スクリーンショット → 差分を検出 まで実 UI 操作で流す。
 // 表示された diff 画像と DOM 上の採点数を x08-desktop.json に書く。
 
+import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { mkdir, mkdtemp, statfs, writeFile } from "node:fs/promises";
@@ -153,6 +154,22 @@ try {
     expectedDiffPixelCount,
     expectedRegions,
     pageErrors,
+  };
+  // face レベルの自己検査: DOM 採点が数値として読め、page error が無いことを確認する。
+  assert.ok(Number.isFinite(diffPixelCountDom), "diffPixelCount not readable from DOM");
+  assert.ok(Number.isFinite(regionCountDom), "regionCount not readable from DOM");
+  assert.deepEqual(pageErrors, [], `page errors: ${pageErrors.join(" | ")}`);
+  out.results = {
+    X08: {
+      status: "PASS",
+      expected: `desktop 面が同一検体で diffPixelCount=${expectedDiffPixelCount}・領域=${expectedRegions.length} を描画する`,
+      actual: {
+        diffPixelCountDom,
+        regionCountDom,
+        diffPixelsSha256: out.diffPixelsSha256,
+        pageErrors: pageErrors.length,
+      },
+    },
   };
   await writeFile(join(evidenceDir, "x08-desktop.json"), `${JSON.stringify(out, null, 2)}\n`);
   process.stdout.write(`${JSON.stringify({ ok: true, diffPixelCountDom, regionCountDom })}\n`);

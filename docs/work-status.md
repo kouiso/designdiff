@@ -161,4 +161,4 @@ PR144修正SHA：`032d96252683b6a8ac1fe5d5d2509dea53b76f7e`。既存PRブラン�
   - D08/X09: 再起動後に3案件 (D01案件・比較テスト案件・MCP create_project 製 `mcp-made-project`) が一覧復元、D01案件の page/source 保持、案件切替分離。MCP書き→desktop読みの相互互換を実stdio MCPサーバで検証。
   - 3platform PASS (`desktop-d-wsl-r11`/`desktop-d-mac-r2`/`desktop-d-win-r2`)、pageErrors 全 platform で 0。
   - 発見した実欠陥: (1) PAT保存成功後も token dialog の `isSubmitting` が戻らず、再オープン時にキャンセルボタンが disabled のまま (Escape/onOpenChange 経路は生存、3platform共通)。 (2) 430px viewport で header が 211-226px 横 overflow する (nav 中央の hit-test は到達可だが click point によってはタブ帯に覆われる実挙動を WSL で一度観測)。
-- 未完: 台帳記入と2巡（394件×2roundの組み立て）。
+- 未完: 台帳記入と2巡（195件/巡×2round=390件の組み立て。X07のiOS経路は製品の明示拒否設計につき spec の OS固有非対応ルールで必須経路から除外）。

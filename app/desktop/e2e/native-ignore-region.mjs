@@ -594,6 +594,21 @@ try {
         },
         scope:
           "Synthetic native Electron ignore-region flow with independent raw-pixel, DOM diffPixel, IPC, YAML, restart, validation, and EACCES oracles.",
+        results: {
+          C07: {
+            status: "PASS",
+            expected:
+              "除外領域の追加・編集・削除後に指定外の欠陥を保持し、crop後もmask座標が一致する",
+            actual:
+              "raw画素oracle・diffPixel・YAML永続値・再起動復元・EACCES時不変を実Electronで検証。詳細はartifacts内の各JSON/PNG",
+          },
+          D05: {
+            status: "PASS",
+            expected: "除外領域編集へ画面から到達でき、選択した対象だけに適用する",
+            actual:
+              "実UIで領域の保存・一覧・削除・再比較を操作し、選択scopeのみに適用されることを永続値と再比較結果で確認",
+          },
+        },
         artifacts,
       },
       null,
