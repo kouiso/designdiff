@@ -1,0 +1,20 @@
+{
+  "case": "D02",
+  "route": "desktop",
+  "platform": "linux-wsl",
+  "drivers": [
+    "app/desktop/e2e/native-unmeasured-score.mjs"
+  ],
+  "checks": [
+    "D02"
+  ],
+  "actual": {
+    "native-unmeasured-score:D02": {
+      "scoreText": "— (未計測)",
+      "badgePresent": false,
+      "views": "home/project/compare/node-inspection-empty/measured/convergence",
+      "pageErrors": [],
+      "rendererCrashes": []
+    }
+  }
+}

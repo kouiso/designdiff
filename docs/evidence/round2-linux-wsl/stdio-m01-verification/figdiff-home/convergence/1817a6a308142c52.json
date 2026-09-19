@@ -1,0 +1,107 @@
+{
+  "sourceKey": "local:/home/ubuntu/repos/designdiff/docs/evidence/round2-linux-wsl/stdio-m01-verification/input-design.png",
+  "campaigns": [
+    {
+      "campaignId": "9b7b254d-295e-4d86-9786-543a17ed3c04",
+      "sourceKey": "local:/home/ubuntu/repos/designdiff/docs/evidence/round2-linux-wsl/stdio-m01-verification/input-design.png",
+      "designSource": "/home/ubuntu/repos/designdiff/docs/evidence/round2-linux-wsl/stdio-m01-verification/input-design.png",
+      "startedAt": 1789793309219,
+      "updatedAt": 1789793309219,
+      "endedAt": 1789793309219,
+      "endReason": "no-regression",
+      "endMessage": "PASS に到達しました (反復 1 回)。ループを終了してください。",
+      "iterations": [
+        {
+          "comparisonId": "cmp-6a05bd36-ecd0-42ca-b385-12006f5da8ee",
+          "comparisonConditions": {
+            "status": "unverified",
+            "design": {
+              "canvas": {
+                "width": 64,
+                "height": 64
+              },
+              "canvasSource": "image-metadata",
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
+            },
+            "screenshot": {
+              "canvas": {
+                "width": 64,
+                "height": 64
+              },
+              "canvasSource": "image-metadata",
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
+            },
+            "differences": [],
+            "message": "表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。"
+          },
+          "matchRate": 100,
+          "diffPixelCount": 0,
+          "regionCount": 0,
+          "perceptibleDiffRatio": 0,
+          "structuralVerdict": "pass",
+          "status": "PASS",
+          "timestamp": 1789793309219
+        }
+      ]
+    },
+    {
+      "campaignId": "69bb60d1-0f38-4a8d-be43-bbf003f527e1",
+      "sourceKey": "local:/home/ubuntu/repos/designdiff/docs/evidence/round2-linux-wsl/stdio-m01-verification/input-design.png",
+      "designSource": "/home/ubuntu/repos/designdiff/docs/evidence/round2-linux-wsl/stdio-m01-verification/input-design.png",
+      "startedAt": 1789794495499,
+      "updatedAt": 1789794495499,
+      "iterations": [
+        {
+          "comparisonId": "cmp-8c83fcb7-520b-4885-a43b-4746fde58a1c",
+          "comparisonConditions": {
+            "status": "unverified",
+            "design": {
+              "canvas": {
+                "width": 64,
+                "height": 64
+              },
+              "canvasSource": "image-metadata",
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
+            },
+            "screenshot": {
+              "canvas": {
+                "width": 64,
+                "height": 64
+              },
+              "canvasSource": "image-metadata",
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
+            },
+            "differences": [],
+            "message": "表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。"
+          },
+          "matchRate": 100,
+          "diffPixelCount": 0,
+          "regionCount": 0,
+          "perceptibleDiffRatio": 0,
+          "structuralVerdict": "pass",
+          "status": "PASS",
+          "timestamp": 1789794495499
+        }
+      ],
+      "endedAt": 1789794495499,
+      "endReason": "no-regression",
+      "endMessage": "PASS に到達しました (反復 1 回)。ループを終了してください。"
+    }
+  ]
+}

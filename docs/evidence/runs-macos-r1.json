@@ -1,0 +1,221 @@
+{
+  "platform": "macos",
+  "round": 1,
+  "roundExecutionId": "round1",
+  "generatedAt": "2026-09-19T05:21:03.456Z",
+  "entries": [
+    {
+      "driver": "app/mcp-server/script/stdio-campaign-verification.mjs",
+      "evidenceDir": "docs/evidence/round1-macos/stdio-campaign-verification",
+      "passEvidenceVia": "argv2",
+      "requires": []
+    },
+    {
+      "driver": "app/mcp-server/script/stdio-campaign-verification2.mjs",
+      "evidenceDir": "docs/evidence/round1-macos/stdio-campaign-verification2",
+      "passEvidenceVia": "argv2",
+      "requires": []
+    },
+    {
+      "driver": "app/mcp-server/script/stdio-real-figma-verification.mjs",
+      "evidenceDir": "docs/evidence/round1-macos/stdio-real-figma-verification",
+      "passEvidenceVia": "argv2",
+      "requires": [
+        "figma-token"
+      ],
+      "note": "実Figma認証経路。C09はhidden nodeのfigma_export_hidden_blank警告で証跡。M16は個人スキルなしの実セッション証跡と併用"
+    },
+    {
+      "driver": "app/mcp-server/script/stdio-m01-verification.mjs",
+      "evidenceDir": "docs/evidence/round1-macos/stdio-m01-verification",
+      "passEvidenceVia": "argv2",
+      "requires": [],
+      "note": "M01 の機械的経路。実走証跡は別途 subagent 記録"
+    },
+    {
+      "driver": "app/mcp-server/script/stdio-m12-verification.mjs",
+      "evidenceDir": "docs/evidence/round1-macos/stdio-m12-verification",
+      "passEvidenceVia": "argv2",
+      "requires": [
+        "github-token-write"
+      ],
+      "note": "実投稿は外部write。承認なしでは dedup/sanitize 経路のみ"
+    },
+    {
+      "driver": "app/mcp-server/script/stdio-issue-verification.mjs",
+      "evidenceDir": "docs/evidence/round1-macos/stdio-issue-verification",
+      "passEvidenceVia": "argv2",
+      "requires": [],
+      "optional": true,
+      "note": "campaign1/2 が主証跡。issue経路の追加確認は補強として併記"
+    },
+    {
+      "driver": "app/desktop/e2e/desktop-c-cases.mjs",
+      "evidenceDir": "docs/evidence/round1-macos/desktop-c-cases",
+      "passEvidenceVia": "argv2",
+      "requires": [
+        "display-or-xvfb",
+        "electron"
+      ],
+      "note": "C07はnative-ignore-regionが実UI編集込みで証跡"
+    },
+    {
+      "driver": "app/desktop/e2e/desktop-d-cases.mjs",
+      "evidenceDir": "docs/evidence/round1-macos/desktop-d-cases",
+      "passEvidenceVia": "argv2",
+      "requires": [
+        "display-or-xvfb",
+        "electron"
+      ]
+    },
+    {
+      "driver": "app/desktop/e2e/native-unmeasured-score.mjs",
+      "evidenceDir": "docs/evidence/round1-macos/native-unmeasured-score",
+      "evidenceFile": "after-native.json",
+      "passEvidenceVia": "env:FIGDIFF_SCORE_EVIDENCE",
+      "requires": [
+        "display-or-xvfb",
+        "electron"
+      ]
+    },
+    {
+      "driver": "app/desktop/e2e/native-ignore-region.mjs",
+      "evidenceDir": "docs/evidence/round1-macos/native-ignore-region",
+      "evidenceFile": "manifest.json",
+      "passEvidenceVia": "env:FIGDIFF_IGNORE_EVIDENCE",
+      "requires": [
+        "display-or-xvfb",
+        "electron"
+      ]
+    },
+    {
+      "driver": "app/desktop/e2e/native-figma-node-fix.mjs",
+      "evidenceDir": "docs/evidence/round1-macos/native-figma-node-fix",
+      "evidenceFile": "manifest.json",
+      "passEvidenceVia": "env:FIGDIFF_FIGMA_NODE_FIX_EVIDENCE",
+      "requires": [
+        "display-or-xvfb",
+        "electron"
+      ]
+    },
+    {
+      "driver": "app/desktop/e2e/native-fix-animation.mjs",
+      "evidenceDir": "docs/evidence/round1-macos/native-fix-animation",
+      "evidenceFile": "manifest.json",
+      "passEvidenceVia": "env:FIGDIFF_FIX_ANIMATION_EVIDENCE",
+      "requires": [
+        "display-or-xvfb",
+        "electron"
+      ]
+    },
+    {
+      "driver": "app/desktop/e2e/native-issue-report.mjs",
+      "evidenceDir": "docs/evidence/round1-macos/native-issue-report",
+      "evidenceFile": "manifest.json",
+      "passEvidenceVia": "env:FIGDIFF_ISSUE_REPORT_EVIDENCE",
+      "requires": [
+        "display-or-xvfb",
+        "electron"
+      ]
+    },
+    {
+      "driver": "app/desktop/e2e/native-report-export.mjs",
+      "evidenceDir": "docs/evidence/round1-macos/native-report-export",
+      "evidenceFile": "manifest.json",
+      "passEvidenceVia": "env:FIGDIFF_REPORT_EVIDENCE",
+      "requires": [
+        "display-or-xvfb",
+        "electron"
+      ]
+    },
+    {
+      "driver": "app/chrome-extension/script/real-chrome-e2e.mjs",
+      "evidenceDir": "docs/evidence/round1-macos/real-chrome-e2e",
+      "passEvidenceVia": "argv2",
+      "requires": [
+        "chrome"
+      ]
+    },
+    {
+      "driver": "app/figma-plugin/e2e/real-iframe-host.mjs",
+      "evidenceDir": "docs/evidence/round1-macos/real-iframe-host",
+      "evidenceFile": "manifest.json",
+      "passEvidenceVia": "env:FIGDIFF_PLUGIN_HOST_EVIDENCE",
+      "requires": [
+        "figma-plugin-sandbox"
+      ],
+      "note": "iframe証跡は実Figma sandbox証跡に数えない。実Figma接続は別途"
+    },
+    {
+      "driver": "app/mcp-server/script/stdio-android-verification.mjs",
+      "evidenceDir": "docs/evidence/round1-macos/stdio-android-verification",
+      "passEvidenceVia": "argv2",
+      "requires": [
+        "android-devices"
+      ],
+      "note": "X05の複数台拒否は2台以上見える環境でのみ検証"
+    },
+    {
+      "driver": "app/mcp-server/script/stdio-ios-sim-verification.mjs",
+      "evidenceDir": "docs/evidence/round1-macos/stdio-ios-sim-verification",
+      "passEvidenceVia": "argv2",
+      "requires": [
+        "ios-simulator"
+      ],
+      "note": "capture_scroll は ios-sim 非対応(明示拒否を検証済)。X07/ios は spec の OS固有非対応ルールで必須経路から除外済み"
+    },
+    {
+      "driver": "app/mcp-server/script/stdio-ios-device-verification.mjs",
+      "evidenceDir": "docs/evidence/round1-macos/stdio-ios-device-verification",
+      "passEvidenceVia": "argv2",
+      "requires": [
+        "ios-device-tethered"
+      ],
+      "note": "X07/ios-device も同様に spec の OS固有非対応ルールで必須経路から除外済み"
+    },
+    {
+      "driver": "app/mcp-server/script/x08/mcp.mjs",
+      "evidenceDir": "docs/evidence/round1-macos/x08",
+      "evidenceFile": "x08-mcp.json",
+      "passEvidenceVia": "argv2",
+      "requires": [],
+      "note": "x08-mcp.json に face 計測+results.X08 を吐く。runs-manifest は evidenceFile: x08-mcp.json を指定する"
+    },
+    {
+      "driver": "app/mcp-server/script/x08/desktop.mjs",
+      "evidenceDir": "docs/evidence/round1-macos/x08",
+      "evidenceFile": "x08-desktop.json",
+      "passEvidenceVia": "argv2",
+      "requires": [
+        "display-or-xvfb",
+        "electron"
+      ],
+      "note": "evidenceFile: x08-desktop.json"
+    },
+    {
+      "driver": "app/mcp-server/script/x08/extension.mjs",
+      "evidenceDir": "docs/evidence/round1-macos/x08",
+      "evidenceFile": "x08-extension.json",
+      "passEvidenceVia": "argv2",
+      "requires": [
+        "chrome"
+      ],
+      "note": "evidenceFile: x08-extension.json"
+    },
+    {
+      "driver": "app/mcp-server/script/x08/plugin.mjs",
+      "evidenceDir": "docs/evidence/round1-macos/x08",
+      "evidenceFile": "x08-plugin.json",
+      "passEvidenceVia": "argv2",
+      "requires": [],
+      "note": "evidenceFile: x08-plugin.json"
+    },
+    {
+      "driver": "app/mcp-server/script/x08/compare.mjs",
+      "evidenceDir": "docs/evidence/round1-macos/x08",
+      "passEvidenceVia": "argv2",
+      "requires": [],
+      "note": "4面横断verdict。全X08 routeの必須provider"
+    }
+  ]
+}

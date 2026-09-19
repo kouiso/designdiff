@@ -1,0 +1,19 @@
+{
+  "case": "M08",
+  "route": "mcp",
+  "platform": "linux-wsl",
+  "drivers": [
+    "app/mcp-server/script/stdio-campaign-verification.mjs"
+  ],
+  "checks": [
+    "M08_ignore_regions"
+  ],
+  "actual": {
+    "stdio-campaign-verification:M08_ignore_regions": {
+      "afterAdd": 2,
+      "afterDelete": 1,
+      "missingIdNoOp": true,
+      "note": "missing id is idempotent no-op; regionCount lets caller diagnose"
+    }
+  }
+}

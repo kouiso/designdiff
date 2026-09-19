@@ -1,0 +1,17 @@
+{
+  "case": "M16",
+  "route": "mcp",
+  "platform": "linux-wsl",
+  "drivers": [
+    "app/mcp-server/script/stdio-real-figma-verification.mjs"
+  ],
+  "checks": [
+    "M16_generate_report"
+  ],
+  "actual": {
+    "stdio-real-figma-verification:M16_generate_report": {
+      "isError": false,
+      "text": "# FigDiff Comparison Report\n\n**Comparison ID:** cmp-c160b504-0510-44fb-b8c3-235e8cada54b\n**Match Rate:** 94.21%\n**Diff Pixels:** 15,594 / 269,490\n**Remaining Issues:** 1\n**Suggested Next Action:** 表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。 inspect_node を使って 1 箇所の diffRegions の詳細を確認してください。まず 9525:4762 -> 9551:5156 -> 9553:6240 -> 9525:4883 -> 9525:4783 の順で確認し、CSSを修正したら再度 compare_design で検証してください。\n\n## Compliance Benchmark Snapshot\n\n| Check | Target"
+    }
+  }
+}

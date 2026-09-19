@@ -1,0 +1,42 @@
+{
+  "case": "X10",
+  "route": "dependency-graph",
+  "platform": "repository",
+  "drivers": [
+    "script/x10-dependency-graph.mjs"
+  ],
+  "checks": [
+    "X10"
+  ],
+  "actual": {
+    "x10-dependency-graph:X10": {
+      "packageDeps": {
+        "@figdiff/shared": [],
+        "@figdiff/credential-store": [],
+        "@figdiff/mobile-capture": [],
+        "@figdiff/desktop": [
+          "@figdiff/credential-store",
+          "@figdiff/shared"
+        ],
+        "@figdiff/chrome-extension": [
+          "@figdiff/shared"
+        ],
+        "@figdiff/figma-plugin": [
+          "@figdiff/shared"
+        ],
+        "@figdiff/mcp-server": [
+          "@figdiff/credential-store",
+          "@figdiff/mobile-capture",
+          "@figdiff/shared"
+        ]
+      },
+      "coreToAppImports": "none",
+      "pixelmatchImporters": [
+        "package/shared/src/pixel-compare.ts"
+      ],
+      "coreBannedRefs": [],
+      "documentedDifference": "chrome-extension vendors a pixelmatch-compatible YIQ diff (no pixelmatch dep allowed in extension scope)",
+      "ok": true
+    }
+  }
+}

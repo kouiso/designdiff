@@ -1,0 +1,98 @@
+{
+  "execution": {
+    "status": "passed",
+    "exitCode": 0
+  },
+  "fixture": {
+    "artificial": true,
+    "input": {
+      "repository": {
+        "owner": "kouiso",
+        "repo": "designdiff"
+      },
+      "input": {
+        "title": "Artificial token ghp_nativeFixture123",
+        "body": "Artificial path /home/fixture/private/reproduction.txt",
+        "category": "bug"
+      },
+      "expectedPreview": {
+        "title": "[bug] Artificial token [REDACTED]",
+        "body": "Artificial path ~/private/reproduction.txt",
+        "labels": [
+          "desktop-feedback",
+          "bug"
+        ],
+        "maskedCount": 2
+      }
+    }
+  },
+  "observed": {
+    "preloadSurface": {
+      "prepare": "function",
+      "submit": "function",
+      "discard": "function"
+    },
+    "valid": {
+      "prepareRequestCount": 2,
+      "preparedDraftIds": [
+        "f8fedef1-acfc-478c-ac3b-22eb3ef43c15",
+        "887769f5-c5d5-411f-b532-539fe31b4f3e"
+      ],
+      "discardedDraftIds": [
+        "f8fedef1-acfc-478c-ac3b-22eb3ef43c15",
+        "887769f5-c5d5-411f-b532-539fe31b4f3e"
+      ],
+      "submitRequestCount": 0,
+      "githubReadMockRequests": [
+        {
+          "method": "GET",
+          "url": "https://api.github.com/search/issues?q=repo%3Akouiso%2Fdesigndiff%20type%3Aissue%20state%3Aopen%20in%3Atitle%20%22%5Bbug%5D%20Artificial%20token%20%5BREDACTED%5D%22&per_page=5"
+        },
+        {
+          "method": "GET",
+          "url": "https://api.github.com/search/issues?q=repo%3Akouiso%2Fdesigndiff%20type%3Aissue%20state%3Aopen%20in%3Atitle%20%22%5Bbug%5D%20Artificial%20token%20%5BREDACTED%5D%22&per_page=5"
+        }
+      ]
+    },
+    "invalidCredential": {
+      "ipc": [
+        {
+          "phase": "request",
+          "channel": "issue-report:prepare",
+          "args": [
+            {
+              "title": "Artificial token ghp_nativeFixture123",
+              "body": "Artificial path /home/fixture/private/reproduction.txt",
+              "category": "bug"
+            }
+          ]
+        },
+        {
+          "phase": "error",
+          "channel": "issue-report:prepare",
+          "error": "Error: GITHUB_TOKEN に不正な文字が含まれています。"
+        }
+      ],
+      "githubReadMockRequests": []
+    }
+  },
+  "boundaries": {
+    "real": [
+      "Electron main",
+      "contextBridge preload",
+      "IPC handlers",
+      "draft service",
+      "renderer UI"
+    ],
+    "mocked": [
+      "GitHub search GET only; returns an explicit empty issue list and records every request"
+    ],
+    "forbidden": [
+      "GitHub POST",
+      "live GitHub credentials",
+      "non-fixture report input"
+    ]
+  },
+  "pageErrors": [],
+  "rendererCrashes": []
+}

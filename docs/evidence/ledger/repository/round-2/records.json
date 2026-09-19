@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "platform": "repository",
+  "round": 2,
+  "productSha": "4e9145e5e051d4efe78a922723f7b3245005a05e",
+  "generatedAt": "2026-09-19T05:25:04.803Z",
+  "recordCount": 1,
+  "records": [
+    {
+      "case": "X10",
+      "round": 2,
+      "platform": "repository",
+      "route": "dependency-graph",
+      "roundExecutionId": "round2",
+      "executedAt": "2026-09-19T05:19:42.270Z",
+      "productSha": "4e9145e5e051d4efe78a922723f7b3245005a05e",
+      "dirty": false,
+      "status": "PASS",
+      "newBugs": 0,
+      "observedKnownDefects": [],
+      "buildDigest": "5219080ed0e89b389a5cfb976107ab6019a927575654a4678f188ca33c7eb745",
+      "environment": "repository",
+      "input": "本番依存グラフと全7パッケージ",
+      "steps": "依存グラフの照合 [drivers: script/x10-dependency-graph.mjs]",
+      "expected": "X10: 共通処理を複製せず、UIとAIの都合をコアへ持ち込まない",
+      "actual": "{\"x10-dependency-graph:X10\":{\"packageDeps\":{\"@figdiff/shared\":[],\"@figdiff/credential-store\":[],\"@figdiff/mobile-capture\":[],\"@figdiff/desktop\":[\"@figdiff/credential-store\",\"@figdiff/shared\"],\"@figdiff/chrome-extension\":[\"@figdiff/shared\"],\"@figdiff/figma-plugin\":[\"@figdiff/shared\"],\"@figdiff/mcp-server\":[\"@figdiff/credential-store\",\"@figdiff/mobile-capture\",\"@figdiff/shared\"]},\"coreToAppImports\":\"none\",\"pixelmatchImporters\":[\"package/shared/src/pixel-compare.ts\"],\"coreBannedRefs\":[],\"documentedDifference\":\"chrome-extension vendors a pixelmatch-compatible YIQ diff (no pixelmatch dep allowed in extension scope)\",\"ok\":true}}",
+      "oracle": {
+        "kind": "dependency-graph",
+        "description": "共通処理を複製せず、UIとAIの都合をコアへ持ち込まない"
+      },
+      "evidence": [
+        {
+          "path": "ledger/repository/round-2/X10/dependency-graph/x10-dependency-graph-evidence.json",
+          "sha256": "0f715cce068031780dea3f13b1c875d0abd500f820dc9363fbbe01df7a4807ba"
+        },
+        {
+          "path": "ledger/repository/round-2/X10/dependency-graph/X10-result.json",
+          "sha256": "2b15d8d205b1ba3ebb45b50c4d2eb25ee4c98a1f69c4fcc66f76ed16f150cf69"
+        }
+      ]
+    }
+  ],
+  "skipped": []
+}

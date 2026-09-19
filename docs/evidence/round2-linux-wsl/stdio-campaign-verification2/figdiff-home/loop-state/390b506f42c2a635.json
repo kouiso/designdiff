@@ -1,0 +1,24 @@
+[
+  {
+    "comparisonId": "cmp-1c46405d-2953-46a8-879f-3081f3a5347c",
+    "matchRate": 99.97,
+    "captureWidth": 390,
+    "captureHeight": 844,
+    "diffPixelCount": 96,
+    "regionCount": 2,
+    "structuralVerdict": "fail",
+    "status": "FAIL",
+    "timestamp": 1789794456332
+  },
+  {
+    "comparisonId": "cmp-b63c929a-d337-46a1-a8af-7d6164cecef4",
+    "matchRate": 99.88,
+    "captureWidth": 390,
+    "captureHeight": 844,
+    "diffPixelCount": 400,
+    "regionCount": 2,
+    "structuralVerdict": "fail",
+    "status": "FAIL",
+    "timestamp": 1789794456814
+  }
+]

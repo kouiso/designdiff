@@ -1,0 +1,17 @@
+{
+  "case": "D07",
+  "route": "desktop",
+  "platform": "linux-wsl",
+  "drivers": [
+    "app/desktop/e2e/native-issue-report.mjs",
+    "app/desktop/e2e/native-report-export.mjs"
+  ],
+  "checks": [
+    "D07",
+    "D07"
+  ],
+  "actual": {
+    "native-issue-report:D07": "prepare→確認→編集/破棄を実IPCで検証。POST投稿0件・認証エラー復旧を確認。実外部投稿は未検証で範囲外",
+    "native-report-export:D07": "実Gtk保存ダイアログからJSON/Markdownへ保存し読み戻した。原画像の独立raw差分・bboxをファイル内容へ照合。キャンセル時bytes不変も確認"
+  }
+}

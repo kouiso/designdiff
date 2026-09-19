@@ -1,0 +1,42 @@
+{
+  "case": "C04",
+  "route": "mcp",
+  "platform": "linux-wsl",
+  "drivers": [
+    "app/mcp-server/script/stdio-campaign-verification.mjs"
+  ],
+  "checks": [
+    "C04_dpr"
+  ],
+  "actual": {
+    "stdio-campaign-verification:C04_dpr": [
+      {
+        "name": "dpr1",
+        "matchRate": 100,
+        "pixelRatio": 1,
+        "canvas": {
+          "width": 390,
+          "height": 844
+        }
+      },
+      {
+        "name": "dpr2",
+        "matchRate": 100,
+        "pixelRatio": 2,
+        "canvas": {
+          "width": 780,
+          "height": 1688
+        }
+      },
+      {
+        "name": "dpr3",
+        "matchRate": 99.95,
+        "pixelRatio": 3,
+        "canvas": {
+          "width": 1170,
+          "height": 2532
+        }
+      }
+    ]
+  }
+}

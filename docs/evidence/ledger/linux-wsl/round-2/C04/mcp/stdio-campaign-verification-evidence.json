@@ -1,0 +1,207 @@
+{
+  "generatedAt": "2026-09-19T05:07:33.878Z",
+  "driver": "app/mcp-server/script/stdio-campaign-verification.mjs",
+  "product": {
+    "transport": "mcp sdk client + stdio",
+    "entry": "app/mcp-server/dist/index.js",
+    "buildDigest": "da4a551faec001f09e6f00320613bef5c1fa93aeaf9ba31422822db0cd73cbb7",
+    "buildFileCount": 397
+  },
+  "protocolErrors": [],
+  "verificationFailures": [],
+  "results": {
+    "M02_project_lifecycle": {
+      "expected": "create→list→corrupt skipped→delete→absent",
+      "actual": {
+        "projectId": "1789794413878-2fbf16ca",
+        "deleted": true
+      },
+      "status": "PASS"
+    },
+    "M03_set_figma_token": {
+      "expected": "invalid rejected, valid persisted without echo",
+      "actual": {
+        "persisted": true,
+        "echoed": false,
+        "backend": "file"
+      },
+      "status": "PASS"
+    },
+    "M07_crop_region": {
+      "expected": {
+        "regionCount": 1,
+        "roundTrip": {
+          "x": 10,
+          "y": 30,
+          "width": 370,
+          "height": 780
+        },
+        "unknownProject": false
+      },
+      "actual": {
+        "regionCount": 1,
+        "unknownProject": false
+      },
+      "status": "PASS"
+    },
+    "M08_ignore_regions": {
+      "expected": {
+        "afterAdd": 2,
+        "afterDelete": 1,
+        "missingIdNoOp": true
+      },
+      "actual": {
+        "afterAdd": 2,
+        "afterDelete": 1,
+        "missingIdNoOp": true,
+        "note": "missing id is idempotent no-op; regionCount lets caller diagnose"
+      },
+      "status": "PASS"
+    },
+    "C04_dpr": {
+      "expected": "pixelRatio 1/2/3 recorded; logical dims reconstructable",
+      "actual": [
+        {
+          "name": "dpr1",
+          "matchRate": 100,
+          "pixelRatio": 1,
+          "canvas": {
+            "width": 390,
+            "height": 844
+          }
+        },
+        {
+          "name": "dpr2",
+          "matchRate": 100,
+          "pixelRatio": 2,
+          "canvas": {
+            "width": 780,
+            "height": 1688
+          }
+        },
+        {
+          "name": "dpr3",
+          "matchRate": 99.95,
+          "pixelRatio": 3,
+          "canvas": {
+            "width": 1170,
+            "height": 2532
+          }
+        }
+      ],
+      "status": "PASS"
+    },
+    "C05_size_mismatch": {
+      "expected": "different-height input reported via normalization, not stretched to PASS",
+      "actual": {
+        "matchRate": 99.49,
+        "status": "UNCERTAIN"
+      },
+      "status": "PASS"
+    },
+    "C06_crop_applied": {
+      "expected": "defect outside crop is excluded from scoring",
+      "actual": {
+        "diffPixelCount": 400,
+        "status": "FAIL"
+      },
+      "status": "PASS"
+    },
+    "C07_mask": {
+      "expected": {
+        "maskedDiff": 400,
+        "defectBPreserved": true
+      },
+      "actual": {
+        "maskedDiff": 400,
+        "noMaskDiff": 800
+      },
+      "status": "PASS"
+    },
+    "C08_transparent_design": {
+      "expected": "white background closer than black for white-panel screenshot",
+      "actual": {
+        "onWhite": 0,
+        "onBlack": 324360
+      },
+      "status": "PASS"
+    },
+    "C11_scroll_contract": {
+      "expected": "scroll without device is a clear error; tall stitched input is accepted",
+      "actual": {
+        "rejectedWithReason": true,
+        "tallStatus": "UNCERTAIN"
+      },
+      "status": "PASS"
+    },
+    "C12_edge_inputs": {
+      "expected": "corrupt input is an error with reason; edge sizes do not crash",
+      "actual": {
+        "onePx": {
+          "isError": false,
+          "text": "{\n  \"status\": \"UNCERTAIN\",\n  \"comparisonId\": \"cmp-2c1aff2b-5826-4def-b059-5d731d8c7626\",\n  \"matchRate\": 100,\n  \"diffPixelCount\": 0,\n  \"totalPixelCount\": 1,\n  \"remainingIssues\": 0,\n  \"diffRegions\": [],",
+          "status": "UNCERTAIN"
+        },
+        "corrupt": {
+          "isError": true,
+          "text": "Error: Screenshot must be a PNG, JPEG, or WebP image file: docs/evidence/round2-linux-wsl/stdio-campaign-verification/input-corrupt.png\n\nProvide a screenshot via one of: "
+        },
+        "hugeDims": {
+          "isError": true,
+          "text": "Error: Input image exceeds pixel limit"
+        }
+      },
+      "status": "PASS"
+    },
+    "M05_screenshot_url": {
+      "expected": "web URL capture path executes end to end",
+      "actual": {
+        "matchRate": 98.13,
+        "status": "UNCERTAIN"
+      },
+      "status": "PASS"
+    },
+    "M10_verify_fix_contract": {
+      "expected": "verify_fix refuses baselines without node scores and unknown ids",
+      "actual": {
+        "localRejected": true,
+        "unknownIdRejected": true
+      },
+      "status": "PASS"
+    },
+    "X09_legacy_data": {
+      "expected": "legacy record readable, secret not leaked",
+      "actual": {
+        "listed": true,
+        "secretPresent": false
+      },
+      "status": "PASS"
+    }
+  },
+  "coverage": {
+    "verified": [
+      "M02_project_lifecycle",
+      "M03_set_figma_token",
+      "M07_crop_region",
+      "M08_ignore_regions",
+      "C04_dpr",
+      "C05_size_mismatch",
+      "C06_crop_applied",
+      "C07_mask",
+      "C08_transparent_design",
+      "C11_scroll_contract",
+      "C12_edge_inputs",
+      "M05_screenshot_url",
+      "M10_verify_fix_contract",
+      "X09_legacy_data"
+    ],
+    "failed": [],
+    "notRun": [
+      "M04 real Figma frames (see stdio-real-figma-verification)",
+      "M06 real Figma node inspect (see stdio-real-figma-verification)",
+      "mobile capture_device routes (no device attached)",
+      "M12 report_issue real submission (external write)"
+    ],
+    "oracle": "synthetic fixtures, raw file contents, and independent pixel math; product status/matchRate never used as the acceptance oracle"
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "case": "X03",
+  "route": "figma-plugin",
+  "platform": "linux-wsl",
+  "drivers": [
+    "app/figma-plugin/e2e/real-iframe-host.mjs"
+  ],
+  "checks": [
+    "X03"
+  ],
+  "actual": {
+    "real-iframe-host:X03": [
+      {
+        "name": "初期描画でタブが2枚出る",
+        "ok": true
+      },
+      {
+        "name": "inspect-node requestId 付き送信",
+        "ok": true
+      },
+      {
+        "name": "一致 requestId の応答で結果描画",
+        "ok": true
+      },
+      {
+        "name": "export-frame requestId 付き送信",
+        "ok": true
+      },
+      {
+        "name": "実canvas比較で全相違を低一致率として描画",
+        "ok": true,
+        "matchText": "0%",
+        "statsText": "4 / 4"
+      }
+    ]
+  }
+}

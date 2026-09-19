@@ -1,0 +1,14 @@
+{
+  "platform": "repository",
+  "round": 1,
+  "roundExecutionId": "round1",
+  "generatedAt": "2026-09-19T05:21:03.517Z",
+  "entries": [
+    {
+      "driver": "script/x10-dependency-graph.mjs",
+      "evidenceDir": "docs/evidence/round1-repository/x10-dependency-graph",
+      "passEvidenceVia": "argv2",
+      "requires": []
+    }
+  ]
+}

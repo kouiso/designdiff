@@ -1,0 +1,50 @@
+{
+  "case": "M09",
+  "route": "mcp",
+  "platform": "linux-wsl",
+  "drivers": [
+    "app/mcp-server/script/stdio-campaign-verification2.mjs",
+    "app/mcp-server/script/stdio-issue-verification.mjs"
+  ],
+  "checks": [
+    "M09_report_old_id",
+    "M09_issue109"
+  ],
+  "actual": {
+    "stdio-campaign-verification2:M09_report_old_id": {
+      "oldId": "cmp-88a55dbf-e032-4f54-90b2-cb0a50e864a9",
+      "jsonBytes": 13426,
+      "mdBytes": 3251,
+      "restarted": true
+    },
+    "stdio-issue-verification:M09_issue109": {
+      "retainedComparisonCount": 7,
+      "oldestId": "cmp-4c02df04-c91e-4bf7-bc75-c46c6824ac1c",
+      "reportComparisonId": "cmp-4c02df04-c91e-4bf7-bc75-c46c6824ac1c",
+      "reportRegionCount": 1,
+      "artifacts": {
+        "jsonSha256": "5f1dd600438f1091d589d861312153d12aa80276bd3f95772ea32a6eb93890b7",
+        "pngSha256": "35237f80cc533018f8a8da83931fda0fe28f5b8ccbaea89ad6d9e5217ff87320"
+      },
+      "durableArtifacts": [
+        {
+          "path": "docs/evidence/round1-linux-wsl/stdio-issue-verification/retained-oldest-report.json",
+          "canonicalJsonSha256": "1dccee5e5237252983c93681def7f2a02864f3917a6a5d146ca43e1ad58950ea",
+          "formattedArtifactSha256": "4702ce3cdefc2adb2206fbdfac35235751b966059a1ad7f1965530ebc8c99ff4",
+          "publicPathRedacted": true,
+          "rawProduct": {
+            "path": "docs/evidence/round1-linux-wsl/stdio-issue-verification/retained-oldest-report.raw.txt",
+            "sha256": "064605c9c54db709cbdc7047810a7774b70c9890698494c60555d0ec5e70c299",
+            "byteLength": 11203,
+            "mediaType": "application/json",
+            "representation": "exact UTF-8 MCP tool response bytes; intentionally not formatter-normalized"
+          }
+        },
+        {
+          "path": "docs/evidence/round1-linux-wsl/stdio-issue-verification/retained-oldest-diff.png",
+          "sha256": "35237f80cc533018f8a8da83931fda0fe28f5b8ccbaea89ad6d9e5217ff87320"
+        }
+      ]
+    }
+  }
+}

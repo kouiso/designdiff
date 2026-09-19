@@ -1,0 +1,20 @@
+{
+  "case": "X09",
+  "route": "desktop",
+  "platform": "linux-wsl",
+  "drivers": [
+    "app/desktop/e2e/desktop-d-cases.mjs"
+  ],
+  "checks": [
+    "X09",
+    "X09"
+  ],
+  "actual": {
+    "desktop-d-cases:X09": {
+      "direction": "mcp-write → desktop-read",
+      "project": "mcp-made-project",
+      "listed": true,
+      "opened": true
+    }
+  }
+}

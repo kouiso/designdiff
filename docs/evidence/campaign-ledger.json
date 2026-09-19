@@ -1725,6 +1725,111 @@
       ]
     },
     {
+      "case": "D08",
+      "round": 1,
+      "platform": "linux-wsl",
+      "route": "desktop",
+      "roundExecutionId": "round1",
+      "executedAt": "2026-09-19T04:54:56.518Z",
+      "productSha": "4e9145e5e051d4efe78a922723f7b3245005a05e",
+      "dirty": false,
+      "status": "PASS",
+      "newBugs": 0,
+      "observedKnownDefects": [
+        "compare-store-shared-across-projects"
+      ],
+      "buildDigest": "5c7389709621ee2f9c8e24595e724c78f61874a7b7093258e785a50f24c66eae",
+      "environment": "linux-wsl",
+      "input": "保存→終了→再起動・案件切替・タブ切替",
+      "steps": "永続化・再起動・切替 [drivers: app/desktop/e2e/desktop-d-cases.mjs]",
+      "expected": "設定・履歴を復元し、別案件へ状態が混ざらない",
+      "actual": "{\"desktop-d-cases:D08\":{\"restored\":[\"D01案件\",\"比較テスト案件\",\"MCP経由案件\"],\"d01ProjectContents\":{\"page\":\"トップ\",\"source\":\"デスクトップ\"},\"comparePositiveControl\":{\"canvasCount\":2,\"canvases\":[{\"width\":200,\"height\":120},{\"width\":300,\"height\":150}],\"apiHitsForSource\":0},\"compareAfterProjectSwitch\":{\"canvases\":[{\"width\":200,\"height\":120},{\"width\":300,\"height\":150}],\"fixtureCanvas\":\"200x120\",\"centerPixel\":[255,255,255],\"matchesFixture\":false,\"designPill\":true},\"switching\":\"close-and-reopen round-trip verified\"}}",
+      "oracle": {
+        "kind": "dom-geometry",
+        "description": "設定・履歴を復元し、別案件へ状態が混ざらない"
+      },
+      "evidence": [
+        {
+          "path": "ledger/linux-wsl/round-1/D08/desktop/desktop-d-cases-evidence.json",
+          "sha256": "6fd1684d418fe8d68730020baf7f6100e1ad07a5d7a9d932d8265d59f6560a9b"
+        },
+        {
+          "path": "ledger/linux-wsl/round-1/D08/desktop/D08-result.json",
+          "sha256": "1f673f128b6029b11038cb3707bb0954897c3ce5583ced3fe4b90248d36fdf75"
+        }
+      ]
+    },
+    {
+      "case": "D09",
+      "round": 1,
+      "platform": "linux-wsl",
+      "route": "desktop",
+      "roundExecutionId": "round1",
+      "executedAt": "2026-09-19T04:54:56.518Z",
+      "productSha": "4e9145e5e051d4efe78a922723f7b3245005a05e",
+      "dirty": false,
+      "status": "PASS",
+      "newBugs": 0,
+      "observedKnownDefects": [
+        "token-dialog-cancel-stuck"
+      ],
+      "buildDigest": "5c7389709621ee2f9c8e24595e724c78f61874a7b7093258e785a50f24c66eae",
+      "environment": "linux-wsl",
+      "input": "401/403/429/5xx・オフライン・失敗後の再試行",
+      "steps": "各エラー注入と復旧操作 [drivers: app/desktop/e2e/desktop-d-cases.mjs]",
+      "expected": "失敗理由と復旧操作を表示し、操作不能状態に残らない",
+      "actual": "{\"desktop-d-cases:D09\":{\"401\":{\"surfaced\":\"token re-entry dialog\",\"cancelDisabled\":true},\"403\":{\"surfaced\":\"token re-entry dialog\",\"cancelDisabled\":true},\"429\":{\"surfaced\":\"Error: Error invoking remote method 'figma:get-frame-image': Error: Figma API rate limit exceeded (429). Please wait 7 seconds.\"},\"500\":{\"surfaced\":\"Error: Error invoking remote method 'figma:get-frame-image': Error: Figma server error (500). Please try again later.\"},\"offline\":{\"surfaced\":\"Error: Error invoking remote method 'figma:get-frame-image': Error: fetch failed\"},\"sameUrlRetry\":{\"node\":\"7:16\",\"exported\":\"https://api.figma.com/v1/images/FD01?ids=7:16&format=png&scale=2&use_absolute_bounds=true\"},\"retryAfterRecovery\":\"export succeeded\"}}",
+      "oracle": {
+        "kind": "host-observation",
+        "description": "失敗理由と復旧操作を表示し、操作不能状態に残らない"
+      },
+      "evidence": [
+        {
+          "path": "ledger/linux-wsl/round-1/D09/desktop/desktop-d-cases-evidence.json",
+          "sha256": "6fd1684d418fe8d68730020baf7f6100e1ad07a5d7a9d932d8265d59f6560a9b"
+        },
+        {
+          "path": "ledger/linux-wsl/round-1/D09/desktop/D09-result.json",
+          "sha256": "1c0e075bc63b4e6162921191e34fbdc72663413e362481f7fbf7539a0b8e3257"
+        }
+      ]
+    },
+    {
+      "case": "D10",
+      "round": 1,
+      "platform": "linux-wsl",
+      "route": "desktop",
+      "roundExecutionId": "round1",
+      "executedAt": "2026-09-19T04:54:56.518Z",
+      "productSha": "4e9145e5e051d4efe78a922723f7b3245005a05e",
+      "dirty": false,
+      "status": "PASS",
+      "newBugs": 0,
+      "observedKnownDefects": [
+        "narrow-viewport-overflow"
+      ],
+      "buildDigest": "5c7389709621ee2f9c8e24595e724c78f61874a7b7093258e785a50f24c66eae",
+      "environment": "linux-wsl",
+      "input": "キーボード操作・狭いウィンドウ・日本語ファイル名",
+      "steps": "キーボード到達・430px viewport・日本語名 [drivers: app/desktop/e2e/desktop-d-cases.mjs]",
+      "expected": "操作対象へ到達でき、表示切れや文字化けで操作が失われない",
+      "actual": "{\"desktop-d-cases:D10\":{\"keyboardSubmit\":\"frame list appeared via hero input (node 7:30)\",\"japaneseProject\":\"1789793726131-ilu92jc\",\"narrowViewport\":{\"width\":430,\"view\":\"compare\",\"overflowPx\":226,\"overflowElements\":[\"nav right=496\",\"button right=433\",\"button right=496\",\"svg right=458\",\"path right=457\",\"circle right=454\"],\"homeNav\":{\"found\":true,\"reachable\":true}},\"japaneseFilename\":{\"loaded\":\"実装-比較テスト.png\",\"canvas\":\"50x50\",\"canvases\":[{\"width\":50,\"height\":50},{\"width\":300,\"height\":150}],\"via\":\"shotInput path\"}}}",
+      "oracle": {
+        "kind": "dom-geometry",
+        "description": "操作対象へ到達でき、表示切れや文字化けで操作が失われない"
+      },
+      "evidence": [
+        {
+          "path": "ledger/linux-wsl/round-1/D10/desktop/desktop-d-cases-evidence.json",
+          "sha256": "6fd1684d418fe8d68730020baf7f6100e1ad07a5d7a9d932d8265d59f6560a9b"
+        },
+        {
+          "path": "ledger/linux-wsl/round-1/D10/desktop/D10-result.json",
+          "sha256": "26deb366fb4aecd599e1bfa1caa87b22ff946ef92486a6312a9c379f58f08060"
+        }
+      ]
+    },
+    {
       "case": "X01",
       "round": 1,
       "platform": "linux-wsl",
@@ -3828,6 +3933,111 @@
         {
           "path": "ledger/linux-wsl/round-2/D07/desktop/D07-result.json",
           "sha256": "17d8abef3306236d61a9236a34268e2a6f82f3e26fe8c88ac005e02d9e0864e5"
+        }
+      ]
+    },
+    {
+      "case": "D08",
+      "round": 2,
+      "platform": "linux-wsl",
+      "route": "desktop",
+      "roundExecutionId": "round2",
+      "executedAt": "2026-09-19T05:09:04.635Z",
+      "productSha": "4e9145e5e051d4efe78a922723f7b3245005a05e",
+      "dirty": false,
+      "status": "PASS",
+      "newBugs": 0,
+      "observedKnownDefects": [
+        "compare-store-shared-across-projects"
+      ],
+      "buildDigest": "5c7389709621ee2f9c8e24595e724c78f61874a7b7093258e785a50f24c66eae",
+      "environment": "linux-wsl",
+      "input": "保存→終了→再起動・案件切替・タブ切替",
+      "steps": "永続化・再起動・切替 [drivers: app/desktop/e2e/desktop-d-cases.mjs]",
+      "expected": "設定・履歴を復元し、別案件へ状態が混ざらない",
+      "actual": "{\"desktop-d-cases:D08\":{\"restored\":[\"D01案件\",\"比較テスト案件\",\"MCP経由案件\"],\"d01ProjectContents\":{\"page\":\"トップ\",\"source\":\"デスクトップ\"},\"comparePositiveControl\":{\"canvasCount\":2,\"canvases\":[{\"width\":200,\"height\":120},{\"width\":300,\"height\":150}],\"apiHitsForSource\":0},\"compareAfterProjectSwitch\":{\"canvases\":[{\"width\":200,\"height\":120},{\"width\":300,\"height\":150}],\"fixtureCanvas\":\"200x120\",\"centerPixel\":[255,255,255],\"matchesFixture\":false,\"designPill\":true},\"switching\":\"close-and-reopen round-trip verified\"}}",
+      "oracle": {
+        "kind": "dom-geometry",
+        "description": "設定・履歴を復元し、別案件へ状態が混ざらない"
+      },
+      "evidence": [
+        {
+          "path": "ledger/linux-wsl/round-2/D08/desktop/desktop-d-cases-evidence.json",
+          "sha256": "8540c267794316028de7effa82d3222f3c99a33ba7e538226f036cbda404b1ec"
+        },
+        {
+          "path": "ledger/linux-wsl/round-2/D08/desktop/D08-result.json",
+          "sha256": "1f673f128b6029b11038cb3707bb0954897c3ce5583ced3fe4b90248d36fdf75"
+        }
+      ]
+    },
+    {
+      "case": "D09",
+      "round": 2,
+      "platform": "linux-wsl",
+      "route": "desktop",
+      "roundExecutionId": "round2",
+      "executedAt": "2026-09-19T05:09:04.635Z",
+      "productSha": "4e9145e5e051d4efe78a922723f7b3245005a05e",
+      "dirty": false,
+      "status": "PASS",
+      "newBugs": 0,
+      "observedKnownDefects": [
+        "token-dialog-cancel-stuck"
+      ],
+      "buildDigest": "5c7389709621ee2f9c8e24595e724c78f61874a7b7093258e785a50f24c66eae",
+      "environment": "linux-wsl",
+      "input": "401/403/429/5xx・オフライン・失敗後の再試行",
+      "steps": "各エラー注入と復旧操作 [drivers: app/desktop/e2e/desktop-d-cases.mjs]",
+      "expected": "失敗理由と復旧操作を表示し、操作不能状態に残らない",
+      "actual": "{\"desktop-d-cases:D09\":{\"401\":{\"surfaced\":\"token re-entry dialog\",\"cancelDisabled\":true},\"403\":{\"surfaced\":\"token re-entry dialog\",\"cancelDisabled\":true},\"429\":{\"surfaced\":\"Error: Error invoking remote method 'figma:get-frame-image': Error: Figma API rate limit exceeded (429). Please wait 7 seconds.\"},\"500\":{\"surfaced\":\"Error: Error invoking remote method 'figma:get-frame-image': Error: Figma server error (500). Please try again later.\"},\"offline\":{\"surfaced\":\"Error: Error invoking remote method 'figma:get-frame-image': Error: fetch failed\"},\"sameUrlRetry\":{\"node\":\"7:16\",\"exported\":\"https://api.figma.com/v1/images/FD01?ids=7:16&format=png&scale=2&use_absolute_bounds=true\"},\"retryAfterRecovery\":\"export succeeded\"}}",
+      "oracle": {
+        "kind": "host-observation",
+        "description": "失敗理由と復旧操作を表示し、操作不能状態に残らない"
+      },
+      "evidence": [
+        {
+          "path": "ledger/linux-wsl/round-2/D09/desktop/desktop-d-cases-evidence.json",
+          "sha256": "8540c267794316028de7effa82d3222f3c99a33ba7e538226f036cbda404b1ec"
+        },
+        {
+          "path": "ledger/linux-wsl/round-2/D09/desktop/D09-result.json",
+          "sha256": "1c0e075bc63b4e6162921191e34fbdc72663413e362481f7fbf7539a0b8e3257"
+        }
+      ]
+    },
+    {
+      "case": "D10",
+      "round": 2,
+      "platform": "linux-wsl",
+      "route": "desktop",
+      "roundExecutionId": "round2",
+      "executedAt": "2026-09-19T05:09:04.635Z",
+      "productSha": "4e9145e5e051d4efe78a922723f7b3245005a05e",
+      "dirty": false,
+      "status": "PASS",
+      "newBugs": 0,
+      "observedKnownDefects": [
+        "narrow-viewport-overflow"
+      ],
+      "buildDigest": "5c7389709621ee2f9c8e24595e724c78f61874a7b7093258e785a50f24c66eae",
+      "environment": "linux-wsl",
+      "input": "キーボード操作・狭いウィンドウ・日本語ファイル名",
+      "steps": "キーボード到達・430px viewport・日本語名 [drivers: app/desktop/e2e/desktop-d-cases.mjs]",
+      "expected": "操作対象へ到達でき、表示切れや文字化けで操作が失われない",
+      "actual": "{\"desktop-d-cases:D10\":{\"keyboardSubmit\":\"frame list appeared via hero input (node 7:30)\",\"japaneseProject\":\"1789794574307-ou8l7ab\",\"narrowViewport\":{\"width\":430,\"view\":\"compare\",\"overflowPx\":226,\"overflowElements\":[\"nav right=496\",\"button right=433\",\"button right=496\",\"svg right=458\",\"path right=457\",\"circle right=454\"],\"homeNav\":{\"found\":true,\"reachable\":true}},\"japaneseFilename\":{\"loaded\":\"実装-比較テスト.png\",\"canvas\":\"50x50\",\"canvases\":[{\"width\":50,\"height\":50},{\"width\":300,\"height\":150}],\"via\":\"shotInput path\"}}}",
+      "oracle": {
+        "kind": "dom-geometry",
+        "description": "操作対象へ到達でき、表示切れや文字化けで操作が失われない"
+      },
+      "evidence": [
+        {
+          "path": "ledger/linux-wsl/round-2/D10/desktop/desktop-d-cases-evidence.json",
+          "sha256": "8540c267794316028de7effa82d3222f3c99a33ba7e538226f036cbda404b1ec"
+        },
+        {
+          "path": "ledger/linux-wsl/round-2/D10/desktop/D10-result.json",
+          "sha256": "4813b98be6a5baaccc5b31a4bf4f09cc59750b708dcb58f25854b11158dc3e41"
         }
       ]
     },

@@ -1,0 +1,53 @@
+{
+  "sourceKey": "campaign:v1:[\"local:/home/ubuntu/repos/designdiff/docs/evidence/round1-linux-wsl/stdio-campaign-verification2/input-design.png\",\"c03\"]",
+  "campaigns": [
+    {
+      "campaignId": "ca19c834-9e26-416f-ada5-2b153a0d094f",
+      "sourceKey": "campaign:v1:[\"local:/home/ubuntu/repos/designdiff/docs/evidence/round1-linux-wsl/stdio-campaign-verification2/input-design.png\",\"c03\"]",
+      "designSource": "/home/ubuntu/repos/designdiff/docs/evidence/round1-linux-wsl/stdio-campaign-verification2/input-design.png",
+      "startedAt": 1789793636240,
+      "updatedAt": 1789793636240,
+      "iterations": [
+        {
+          "comparisonId": "cmp-2fd3e908-cc98-4107-9eda-81a1cd0944c7",
+          "comparisonConditions": {
+            "status": "unverified",
+            "design": {
+              "canvas": {
+                "width": 390,
+                "height": 844
+              },
+              "canvasSource": "image-metadata",
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
+            },
+            "screenshot": {
+              "canvas": {
+                "width": 390,
+                "height": 844
+              },
+              "canvasSource": "image-metadata",
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
+            },
+            "differences": [],
+            "message": "表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。"
+          },
+          "matchRate": 99.91,
+          "diffPixelCount": 300,
+          "regionCount": 3,
+          "structuralVerdict": "fail",
+          "status": "FAIL",
+          "timestamp": 1789793636240,
+          "diffImagePath": "/home/ubuntu/repos/designdiff/docs/evidence/round1-linux-wsl/stdio-campaign-verification2/figdiff-home/results/diff-cmp-2fd3e908-cc98-4107-9eda-81a1cd0944c7.png"
+        }
+      ]
+    }
+  ]
+}

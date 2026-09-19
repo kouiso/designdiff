@@ -1,0 +1,50 @@
+{
+  "case": "X02",
+  "route": "chrome-extension",
+  "platform": "linux-wsl",
+  "drivers": [
+    "app/chrome-extension/script/real-chrome-e2e.mjs"
+  ],
+  "checks": [
+    "X02_opacity",
+    "X02_drag",
+    "X02_scroll",
+    "X02_navigation",
+    "X02_state_after_nav",
+    "X02_close"
+  ],
+  "actual": {
+    "real-chrome-e2e:X02_opacity": {
+      "applied": 0.25
+    },
+    "real-chrome-e2e:X02_drag": {
+      "before": "matrix(1, 0, 0, 1, 0, 0)",
+      "after": "translate(80px, 60px)"
+    },
+    "real-chrome-e2e:X02_scroll": {
+      "preScroll": {
+        "x": 80,
+        "y": 60,
+        "width": 1280,
+        "height": 720
+      },
+      "postScroll": {
+        "x": 80,
+        "y": 60,
+        "width": 1280,
+        "height": 720
+      },
+      "scrollY": 1500
+    },
+    "real-chrome-e2e:X02_navigation": {
+      "overlayLeaked": false
+    },
+    "real-chrome-e2e:X02_state_after_nav": {
+      "toggleLabel": "Hide Overlay"
+    },
+    "real-chrome-e2e:X02_close": {
+      "overlayRemoved": true,
+      "pageClickWorked": true
+    }
+  }
+}

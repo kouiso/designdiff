@@ -1,0 +1,70 @@
+{
+  "native": true,
+  "preload": true,
+  "execution": {
+    "status": "passed",
+    "exitCode": 0
+  },
+  "oracle": {
+    "fix": {
+      "before": {
+        "count": 400,
+        "bounds": {
+          "x": 5,
+          "y": 5,
+          "width": 20,
+          "height": 20
+        }
+      },
+      "after": {
+        "count": 400,
+        "bounds": {
+          "x": 65,
+          "y": 65,
+          "width": 20,
+          "height": 20
+        }
+      }
+    },
+    "animation": {
+      "designTimesMs": [
+        0,
+        100
+      ],
+      "implementationTimesMs": [
+        20,
+        120
+      ],
+      "expectedMappings": [
+        {
+          "designAtMs": 0,
+          "implementationAtMs": 20
+        },
+        {
+          "designAtMs": 100,
+          "implementationAtMs": 120
+        }
+      ],
+      "inputHashes": {
+        "design": "354fc272c706174f99284137f3954fe2ac68feac9c7c12b8e7981137ead62a3e",
+        "before": "4f4f1d01aa2c8ef1ae363f1f9eb2ac443a5e99e78b63d491c0bbb347701ce284",
+        "after": "03f70cfcea9a5ee9e62a301dbafcef8d9071f6fde99b2070eabe8416e9dd0f71",
+        "changedGeometry": "8d1fbcaef11309815179cae914d906a3826967946002b1c534c5564609c6198a",
+        "animationDesign0": "eeab517a8ecc6fb1c46bbd9e13e25c34e1db59c44a2d97e6cf66ebaeae4be5d1",
+        "animationDesign100": "94bfce1b6650aa2d86b7429709a0e46a55a7c7556fd91c6b266adb7dc1fdaf2a",
+        "animationImpl20": "eeab517a8ecc6fb1c46bbd9e13e25c34e1db59c44a2d97e6cf66ebaeae4be5d1",
+        "animationImpl120": "94bfce1b6650aa2d86b7429709a0e46a55a7c7556fd91c6b266adb7dc1fdaf2a"
+      }
+    }
+  },
+  "screenshots": {
+    "fix-before-pinned.png": "8f939889e8f43eee1e860a6e0d142248c686d733cbf677e9e3f28960da5b8fdc",
+    "fix-improved-with-side-effect.png": "108dd72ee419c460b25f1f9b83c23ef35d9d869345220d0820f5fe6dd0b7838b",
+    "fix-condition-mismatch.png": "acbc04f1919d6ea986e7f4874e4f6a039b3a6df35a0ad4bcbb474daa76d9f306",
+    "animation-two-frame-mapping.png": "4e94f387b48d2b4e49ad78f5e35eba697a9fb942a438ce553c84addf79347918",
+    "animation-single-design-unmeasured.png": "25935868da1319091340753318ee472ddff9017e4772dbc129c170b452b5a25d",
+    "animation-reversed-time-rejected.png": "b57153850efa1dfe1a902554100524fb75d47e66c9372dae02bf186a982c32c4"
+  },
+  "pageErrors": [],
+  "rendererCrashes": []
+}

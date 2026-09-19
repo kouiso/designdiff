@@ -1,0 +1,49 @@
+{
+  "case": "D10",
+  "route": "desktop",
+  "platform": "linux-wsl",
+  "drivers": [
+    "app/desktop/e2e/desktop-d-cases.mjs"
+  ],
+  "checks": [
+    "D10"
+  ],
+  "actual": {
+    "desktop-d-cases:D10": {
+      "keyboardSubmit": "frame list appeared via hero input (node 7:30)",
+      "japaneseProject": "1789793726131-ilu92jc",
+      "narrowViewport": {
+        "width": 430,
+        "view": "compare",
+        "overflowPx": 226,
+        "overflowElements": [
+          "nav right=496",
+          "button right=433",
+          "button right=496",
+          "svg right=458",
+          "path right=457",
+          "circle right=454"
+        ],
+        "homeNav": {
+          "found": true,
+          "reachable": true
+        }
+      },
+      "japaneseFilename": {
+        "loaded": "実装-比較テスト.png",
+        "canvas": "50x50",
+        "canvases": [
+          {
+            "width": 50,
+            "height": 50
+          },
+          {
+            "width": 300,
+            "height": 150
+          }
+        ],
+        "via": "shotInput path"
+      }
+    }
+  }
+}

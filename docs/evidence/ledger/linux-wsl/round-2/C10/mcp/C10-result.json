@@ -1,0 +1,78 @@
+{
+  "case": "C10",
+  "route": "mcp",
+  "platform": "linux-wsl",
+  "drivers": [
+    "app/mcp-server/script/stdio-campaign-verification2.mjs",
+    "app/mcp-server/script/stdio-issue-verification.mjs"
+  ],
+  "checks": [
+    "C10_small_text_diff",
+    "C10_issue112_real_typography"
+  ],
+  "actual": {
+    "stdio-campaign-verification2:C10_small_text_diff": {
+      "matchRate": 99.25,
+      "regionCount": 2,
+      "largestRegion": {
+        "x": 63,
+        "y": 230,
+        "width": 261,
+        "height": 9
+      },
+      "coversWholePage": false,
+      "status": "FAIL"
+    },
+    "stdio-issue-verification:C10_issue112_real_typography": {
+      "diffPixelCount": 53,
+      "diffRegions": [
+        {
+          "bounds": {
+            "x": 77,
+            "y": 92,
+            "width": 11,
+            "height": 11
+          },
+          "diffPixelCount": 42
+        }
+      ],
+      "reportIssues": [
+        {
+          "bbox": {
+            "x": 77,
+            "y": 92,
+            "w": 11,
+            "h": 11
+          },
+          "kind": "color",
+          "severity": "critical"
+        }
+      ],
+      "implementationDifferenceElement": {
+        "x": 76,
+        "y": 92,
+        "width": 13,
+        "height": 11
+      },
+      "implementationButton": {
+        "x": 44,
+        "y": 148,
+        "width": 160,
+        "height": 40
+      },
+      "durableReport": {
+        "path": "docs/evidence/round2-linux-wsl/stdio-issue-verification/real-typography-report.json",
+        "canonicalJsonSha256": "3f46e12275690569a338cf61c9b39356da78b7612a7cc27fe443119442303198",
+        "formattedArtifactSha256": "33fb3fb8c61df2b4c0c65732a9dead4b31207c9c371b3f9cd10921f985f7639a",
+        "publicPathRedacted": true,
+        "rawProduct": {
+          "path": "docs/evidence/round2-linux-wsl/stdio-issue-verification/real-typography-report.raw.txt",
+          "sha256": "fae2d125ddba3776fa8a9b432182e6d1d3b847c8c442366fc2cdb240310f39f5",
+          "byteLength": 10903,
+          "mediaType": "application/json",
+          "representation": "exact UTF-8 MCP tool response bytes; intentionally not formatter-normalized"
+        }
+      }
+    }
+  }
+}

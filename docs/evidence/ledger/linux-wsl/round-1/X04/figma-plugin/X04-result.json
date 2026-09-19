@@ -1,0 +1,27 @@
+{
+  "case": "X04",
+  "route": "figma-plugin",
+  "platform": "linux-wsl",
+  "drivers": [
+    "app/figma-plugin/e2e/real-iframe-host.mjs"
+  ],
+  "checks": [
+    "X04"
+  ],
+  "actual": {
+    "real-iframe-host:X04": [
+      {
+        "name": "stale requestId の応答を棄却",
+        "ok": true
+      },
+      {
+        "name": "応答なしで timeout alert と loading 解除",
+        "ok": true
+      },
+      {
+        "name": "build digest 不変・page/console error 0",
+        "ok": true
+      }
+    ]
+  }
+}

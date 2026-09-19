@@ -1,0 +1,40 @@
+{
+  "case": "D04",
+  "route": "desktop",
+  "platform": "linux-wsl",
+  "drivers": [
+    "app/desktop/e2e/desktop-d-cases.mjs"
+  ],
+  "checks": [
+    "D04"
+  ],
+  "actual": {
+    "desktop-d-cases:D04": {
+      "consoleErrors": [],
+      "viewModes": {
+        "pixel_diff": {
+          "activeClass": true
+        },
+        "transparent_overlay": {
+          "activeClass": true
+        },
+        "split_screen": {
+          "activeClass": true
+        }
+      },
+      "zoom": {
+        "before": "translate(0px, 0px) scale(1)",
+        "after": "translate(-188.483px, -55.2255px) scale(1.49212)"
+      },
+      "pan": {
+        "before": "translate(-188.483px, -55.2255px) scale(1.49212)",
+        "after": "translate(-128.483px, -15.2255px) scale(1.49212)"
+      },
+      "reset": "translate(0px, 0px) scale(1)",
+      "crop": {
+        "region": "x: 11, y: 11, w: 80, h: 60",
+        "cleared": true
+      }
+    }
+  }
+}

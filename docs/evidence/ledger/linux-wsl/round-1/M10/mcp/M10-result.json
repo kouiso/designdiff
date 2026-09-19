@@ -1,0 +1,64 @@
+{
+  "case": "M10",
+  "route": "mcp",
+  "platform": "linux-wsl",
+  "drivers": [
+    "app/mcp-server/script/stdio-campaign-verification.mjs",
+    "app/mcp-server/script/stdio-real-figma-verification.mjs"
+  ],
+  "checks": [
+    "M10_verify_fix_contract",
+    "M10_baseline",
+    "M10_verify_improved",
+    "M10_verify_unchanged"
+  ],
+  "actual": {
+    "stdio-campaign-verification:M10_verify_fix_contract": {
+      "localRejected": true,
+      "unknownIdRejected": true
+    },
+    "stdio-real-figma-verification:M10_baseline": {
+      "isError": false,
+      "status": "PASS",
+      "comparisonStatus": "FAIL",
+      "regionScoreCount": 11,
+      "regionIds": [
+        "9551:5156",
+        "9553:6240",
+        "9525:4762",
+        "9525:4883",
+        "9525:4783",
+        "9525:4895",
+        "9525:4901",
+        "9525:4777",
+        "9525:4769",
+        "9525:4775"
+      ]
+    },
+    "stdio-real-figma-verification:M10_verify_improved": {
+      "isError": false,
+      "structuredContent": {
+        "fixedNode": "9525:4762",
+        "structureDelta": 0.09109716971869919,
+        "colorDelta": -6.823902160156291,
+        "shapeDelta": -0.08258917462797895,
+        "verdict": "improved",
+        "comparisonStatus": "PASS",
+        "sideEffects": []
+      },
+      "text": "{\n  \"fixedNode\": \"9525:4762\",\n  \"structureDelta\": 0.09109716971869919,\n  \"colorDelta\": -6.823902160156291,\n  \"shapeDelta\": -0.08258917462797895,\n  \"verdict\": \"improved\",\n  \"comparisonStatus\": \"PASS\",\n  \"sideEffects\": []\n}"
+    },
+    "stdio-real-figma-verification:M10_verify_unchanged": {
+      "isError": false,
+      "structuredContent": {
+        "fixedNode": "9525:4762",
+        "structureDelta": 0,
+        "colorDelta": 0,
+        "shapeDelta": 0,
+        "verdict": "unchanged",
+        "comparisonStatus": "FAIL",
+        "sideEffects": []
+      }
+    }
+  }
+}

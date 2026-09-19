@@ -1,0 +1,13 @@
+[
+  {
+    "comparisonId": "cmp-50f44872-eecd-4229-940a-66123b1ad60e",
+    "matchRate": 98.54,
+    "captureWidth": 390,
+    "captureHeight": 844,
+    "diffPixelCount": 4800,
+    "regionCount": 2,
+    "structuralVerdict": "fail",
+    "status": "FAIL",
+    "timestamp": 1789793651761
+  }
+]

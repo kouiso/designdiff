@@ -1,0 +1,28 @@
+{
+  "case": "C12",
+  "route": "mcp",
+  "platform": "linux-wsl",
+  "drivers": [
+    "app/mcp-server/script/stdio-campaign-verification.mjs"
+  ],
+  "checks": [
+    "C12_edge_inputs"
+  ],
+  "actual": {
+    "stdio-campaign-verification:C12_edge_inputs": {
+      "onePx": {
+        "isError": false,
+        "text": "{\n  \"status\": \"UNCERTAIN\",\n  \"comparisonId\": \"cmp-2c1aff2b-5826-4def-b059-5d731d8c7626\",\n  \"matchRate\": 100,\n  \"diffPixelCount\": 0,\n  \"totalPixelCount\": 1,\n  \"remainingIssues\": 0,\n  \"diffRegions\": [],",
+        "status": "UNCERTAIN"
+      },
+      "corrupt": {
+        "isError": true,
+        "text": "Error: Screenshot must be a PNG, JPEG, or WebP image file: docs/evidence/round2-linux-wsl/stdio-campaign-verification/input-corrupt.png\n\nProvide a screenshot via one of: "
+      },
+      "hugeDims": {
+        "isError": true,
+        "text": "Error: Input image exceeds pixel limit"
+      }
+    }
+  }
+}

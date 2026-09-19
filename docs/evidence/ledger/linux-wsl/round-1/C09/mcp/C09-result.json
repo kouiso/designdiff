@@ -1,0 +1,18 @@
+{
+  "case": "C09",
+  "route": "mcp",
+  "platform": "linux-wsl",
+  "drivers": [
+    "app/mcp-server/script/stdio-real-figma-verification.mjs"
+  ],
+  "checks": [
+    "C09_hidden_blank"
+  ],
+  "actual": {
+    "stdio-real-figma-verification:C09_hidden_blank": {
+      "warning": true,
+      "nodeVisibleRecorded": true,
+      "isError": false
+    }
+  }
+}

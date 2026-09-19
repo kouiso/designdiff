@@ -1,0 +1,325 @@
+{
+  "case": "X08",
+  "route": "figma-plugin",
+  "platform": "linux-wsl",
+  "drivers": [
+    "app/mcp-server/script/x08/plugin.mjs",
+    "app/mcp-server/script/x08/compare.mjs"
+  ],
+  "checks": [
+    "X08",
+    "X08"
+  ],
+  "actual": {
+    "plugin:X08": {
+      "matchRate": 90.97,
+      "diffPixelsSha256": "881671c2f5cc8ef9ed1348762782d32c70d4feceab7810efe926848dcd95596f"
+    },
+    "compare:X08": {
+      "ok": true,
+      "expected": {
+        "expectedDiffPixelCount": 832,
+        "expectedRegions": [
+          {
+            "x": 16,
+            "y": 16,
+            "width": 32,
+            "height": 24
+          },
+          {
+            "x": 4,
+            "y": 64,
+            "width": 8,
+            "height": 8
+          }
+        ],
+        "expectedRate": 90.97
+      },
+      "checks": [
+        {
+          "name": "diffPixelCount==expected",
+          "ok": true,
+          "detail": 832
+        },
+        {
+          "name": "diffPixelCount==expected (ext)",
+          "ok": true,
+          "detail": 832
+        },
+        {
+          "name": "diffPixelCount==expected (desktop DOM)",
+          "ok": true,
+          "detail": 832
+        },
+        {
+          "name": "matchRate mcp",
+          "ok": true,
+          "detail": {
+            "rate": 90.97,
+            "expectedRate": 90.97
+          }
+        },
+        {
+          "name": "matchRate extension",
+          "ok": true,
+          "detail": {
+            "rate": 90.97,
+            "expectedRate": 90.97
+          }
+        },
+        {
+          "name": "matchRate plugin",
+          "ok": true,
+          "detail": {
+            "rate": 90.97,
+            "expectedRate": 90.97
+          }
+        },
+        {
+          "name": "regions mcp",
+          "ok": true,
+          "detail": [
+            {
+              "x": 16,
+              "y": 16,
+              "width": 32,
+              "height": 24
+            },
+            {
+              "x": 4,
+              "y": 64,
+              "width": 8,
+              "height": 8
+            }
+          ]
+        },
+        {
+          "name": "regions ext",
+          "ok": true,
+          "detail": [
+            {
+              "x": 16,
+              "y": 16,
+              "width": 32,
+              "height": 24
+            },
+            {
+              "x": 4,
+              "y": 64,
+              "width": 8,
+              "height": 8
+            }
+          ]
+        },
+        {
+          "name": "region count desktop DOM",
+          "ok": true,
+          "detail": 2
+        },
+        {
+          "name": "diff mask equality",
+          "ok": true,
+          "detail": {
+            "mcp": "4d3da6cbe0a6ab9e15885a0b12ad445d400abcf7cc25c28076c4a7ec8caea8bd",
+            "desktop": "4d3da6cbe0a6ab9e15885a0b12ad445d400abcf7cc25c28076c4a7ec8caea8bd",
+            "plugin": "4d3da6cbe0a6ab9e15885a0b12ad445d400abcf7cc25c28076c4a7ec8caea8bd"
+          }
+        },
+        {
+          "name": "derived regions mcp",
+          "ok": true,
+          "detail": [
+            "16,16,32,24",
+            "4,64,8,8"
+          ]
+        },
+        {
+          "name": "derived regions desktop",
+          "ok": true,
+          "detail": [
+            "16,16,32,24",
+            "4,64,8,8"
+          ]
+        },
+        {
+          "name": "derived regions plugin",
+          "ok": true,
+          "detail": [
+            "16,16,32,24",
+            "4,64,8,8"
+          ]
+        }
+      ],
+      "surfaces": {
+        "mcp": {
+          "surface": "mcp",
+          "diffPixelCount": 832,
+          "matchRate": 90.97,
+          "regions": [
+            {
+              "x": 16,
+              "y": 16,
+              "width": 32,
+              "height": 24
+            },
+            {
+              "x": 4,
+              "y": 64,
+              "width": 8,
+              "height": 8
+            }
+          ],
+          "diffPixelsSha256": "7d0da44f7b88c359673cd0d3ede91c01a1dc9761646f4a4bcc62885594fe890b",
+          "diffImagePath": "/home/ubuntu/repos/designdiff/docs/evidence/round1-linux-wsl/x08/figdiff-home/results/diff-cmp-4a32684a-fb35-4fcd-8e39-69cb79ac8a24.png",
+          "expectedDiffPixelCount": 832,
+          "expectedRegions": [
+            {
+              "x": 16,
+              "y": 16,
+              "width": 32,
+              "height": 24
+            },
+            {
+              "x": 4,
+              "y": 64,
+              "width": 8,
+              "height": 8
+            }
+          ],
+          "protocolErrors": [],
+          "results": {
+            "X08": {
+              "status": "PASS",
+              "expected": "mcp 面が同一検体で diffPixelCount=832・領域=2 を返す",
+              "actual": {
+                "diffPixelCount": 832,
+                "matchRate": 90.97,
+                "regionCount": 2,
+                "diffPixelsSha256": "7d0da44f7b88c359673cd0d3ede91c01a1dc9761646f4a4bcc62885594fe890b",
+                "protocolErrors": 0
+              }
+            }
+          }
+        },
+        "desktop": {
+          "surface": "desktop",
+          "diffPixelsSha256": "881671c2f5cc8ef9ed1348762782d32c70d4feceab7810efe926848dcd95596f",
+          "diffPngBase64": "iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAYAAADimHc4AAACDklEQVR4AeycwY7DIAwFac/9/y/NPXulCpK1ATOETqRIWSz8YEa+rfo+fVAC7+KDElAAir8UBSgAJgDHOwEKgAnA8U6AAmACcLwToACAwEKRTgAsQwEKgAnA8U6AAmACcHz/BLxepZBvefbTL+DZ98dPrwBYgQIUABOA4ydOAHzTReMVAItRgAJgAnC8E6AAmAAc7wQoACYAxzsBCoAJwPFOQLKAqL0CIkLJdQUkA47aKyAilFxXQDLgqL0CIkLJdQUkA47aKyAilFxXQDLgqH2/gPMshXyjGy5e7xew+AVXP96eAlanXp1PARUM4lMBBPUqUwEVDOJTAQT1KlMBFQzic3sBx3GUzLdX2vYCegFl71dANuGgvwICQNllBWQTDvoPFBAkWW4SUEATy7xFBcxj3UxSQBPLvEUFzGPdTFJAE8u8RQXMY91MUkATy7xFBcxj3UxSQBPLvEUFdLLu3X4VEP32T2+i+78IXAV8lf0jm4ACsgkH/RUQAMouKyCbcNBfAQGg7LICsgkH/RUQAMouXwVE/+uffaIf638V8GMA6Os+UwBNbWC+AgbCvNNKAXeoDdyjgIEw77RSwB1qA/coYCDMO622F/D5fErmewd6vWd7AfVlV/xWAGxFAQqACcDx/5gA+KSbxisAFqsABcAE4HgnQAEwATjeCVAATACOdwIUABOA452AQEB2+Q8AAP//CoOsigAAAAZJREFUAwDdvRdfUY2vmgAAAABJRU5ErkJggg==",
+          "diffPngSha256": "bf8e760bc63ab259866199aa02cc1585409912065859c0f544ff354c9d9baa03",
+          "diffPixelCountDom": 832,
+          "regionCountDom": 2,
+          "expectedDiffPixelCount": 832,
+          "expectedRegions": [
+            {
+              "x": 16,
+              "y": 16,
+              "width": 32,
+              "height": 24
+            },
+            {
+              "x": 4,
+              "y": 64,
+              "width": 8,
+              "height": 8
+            }
+          ],
+          "pageErrors": [],
+          "results": {
+            "X08": {
+              "status": "PASS",
+              "expected": "desktop 面が同一検体で diffPixelCount=832・領域=2 を描画する",
+              "actual": {
+                "diffPixelCountDom": 832,
+                "regionCountDom": 2,
+                "diffPixelsSha256": "881671c2f5cc8ef9ed1348762782d32c70d4feceab7810efe926848dcd95596f",
+                "pageErrors": 0
+              }
+            }
+          }
+        },
+        "extension": {
+          "surface": "chrome-extension",
+          "diffPixelCount": 832,
+          "matchRate": 90.97,
+          "regions": [
+            {
+              "x": 16,
+              "y": 16,
+              "width": 32,
+              "height": 24
+            },
+            {
+              "x": 4,
+              "y": 64,
+              "width": 8,
+              "height": 8
+            }
+          ],
+          "expectedDiffPixelCount": 832,
+          "expectedRegions": [
+            {
+              "x": 16,
+              "y": 16,
+              "width": 32,
+              "height": 24
+            },
+            {
+              "x": 4,
+              "y": 64,
+              "width": 8,
+              "height": 8
+            }
+          ],
+          "results": {
+            "X08": {
+              "status": "PASS",
+              "expected": "chrome-extension 面が同一検体で diffPixelCount=832・領域=2 を返す",
+              "actual": {
+                "diffPixelCount": 832,
+                "matchRate": 90.97,
+                "regionCount": 2
+              }
+            }
+          }
+        },
+        "plugin": {
+          "surface": "figma-plugin",
+          "matchRate": 90.97,
+          "diffPixelsSha256": "881671c2f5cc8ef9ed1348762782d32c70d4feceab7810efe926848dcd95596f",
+          "diffPngBase64": "iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAYAAADimHc4AAACDklEQVR4AeycwY7DIAwFac/9/y/NPXulCpK1ATOETqRIWSz8YEa+rfo+fVAC7+KDElAAir8UBSgAJgDHOwEKgAnA8U6AAmACcLwToACAwEKRTgAsQwEKgAnA8U6AAmACcHz/BLxepZBvefbTL+DZ98dPrwBYgQIUABOA4ydOAHzTReMVAItRgAJgAnC8E6AAmAAc7wQoACYAxzsBCoAJwPFOQLKAqL0CIkLJdQUkA47aKyAilFxXQDLgqL0CIkLJdQUkA47aKyAilFxXQDLgqH2/gPMshXyjGy5e7xew+AVXP96eAlanXp1PARUM4lMBBPUqUwEVDOJTAQT1KlMBFQzic3sBx3GUzLdX2vYCegFl71dANuGgvwICQNllBWQTDvoPFBAkWW4SUEATy7xFBcxj3UxSQBPLvEUFzGPdTFJAE8u8RQXMY91MUkATy7xFBcxj3UxSQBPLvEUFdLLu3X4VEP32T2+i+78IXAV8lf0jm4ACsgkH/RUQAMouKyCbcNBfAQGg7LICsgkH/RUQAMouXwVE/+uffaIf638V8GMA6Os+UwBNbWC+AgbCvNNKAXeoDdyjgIEw77RSwB1qA/coYCDMO622F/D5fErmewd6vWd7AfVlV/xWAGxFAQqACcDx/5gA+KSbxisAFqsABcAE4HgnQAEwATjeCVAATACOdwIUABOA452AQEB2+Q8AAP//CoOsigAAAAZJREFUAwDdvRdfUY2vmgAAAABJRU5ErkJggg==",
+          "diffPngSha256": "bf8e760bc63ab259866199aa02cc1585409912065859c0f544ff354c9d9baa03",
+          "expectedDiffPixelCount": 832,
+          "expectedRegions": [
+            {
+              "x": 16,
+              "y": 16,
+              "width": 32,
+              "height": 24
+            },
+            {
+              "x": 4,
+              "y": 64,
+              "width": 8,
+              "height": 8
+            }
+          ],
+          "results": {
+            "X08": {
+              "status": "PASS",
+              "expected": "figma-plugin 面が同一検体で diffPixelCount=832・領域=2 に対応する diff を描画する",
+              "actual": {
+                "matchRate": 90.97,
+                "diffPixelsSha256": "881671c2f5cc8ef9ed1348762782d32c70d4feceab7810efe926848dcd95596f"
+              }
+            }
+          }
+        }
+      },
+      "documentedDifferences": [
+        "chrome-extension: pixelmatch を deps に持てないため YIQ 移植版 (pixel-diff-service.ts)。同一検体で同じ diffPixelCount/regions を返すことを上記で実証。",
+        "desktop: clusterDiffRegions (独自 floodFill+>=10px) を使用。shared clusterDiffPixels と同規則で、region 数の一致を DOM 経由で確認。",
+        "figma-plugin: 領域を UI に出さないため diff 画像画素の一致で等価性を確認。"
+      ]
+    }
+  }
+}

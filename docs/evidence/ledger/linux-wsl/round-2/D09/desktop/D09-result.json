@@ -1,0 +1,37 @@
+{
+  "case": "D09",
+  "route": "desktop",
+  "platform": "linux-wsl",
+  "drivers": [
+    "app/desktop/e2e/desktop-d-cases.mjs"
+  ],
+  "checks": [
+    "D09"
+  ],
+  "actual": {
+    "desktop-d-cases:D09": {
+      "401": {
+        "surfaced": "token re-entry dialog",
+        "cancelDisabled": true
+      },
+      "403": {
+        "surfaced": "token re-entry dialog",
+        "cancelDisabled": true
+      },
+      "429": {
+        "surfaced": "Error: Error invoking remote method 'figma:get-frame-image': Error: Figma API rate limit exceeded (429). Please wait 7 seconds."
+      },
+      "500": {
+        "surfaced": "Error: Error invoking remote method 'figma:get-frame-image': Error: Figma server error (500). Please try again later."
+      },
+      "offline": {
+        "surfaced": "Error: Error invoking remote method 'figma:get-frame-image': Error: fetch failed"
+      },
+      "sameUrlRetry": {
+        "node": "7:16",
+        "exported": "https://api.figma.com/v1/images/FD01?ids=7:16&format=png&scale=2&use_absolute_bounds=true"
+      },
+      "retryAfterRecovery": "export succeeded"
+    }
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "case": "C07",
+  "route": "desktop",
+  "platform": "linux-wsl",
+  "drivers": [
+    "app/desktop/e2e/native-ignore-region.mjs"
+  ],
+  "checks": [
+    "C07"
+  ],
+  "actual": {
+    "native-ignore-region:C07": "raw画素oracle・diffPixel・YAML永続値・再起動復元・EACCES時不変を実Electronで検証。詳細はartifacts内の各JSON/PNG"
+  }
+}

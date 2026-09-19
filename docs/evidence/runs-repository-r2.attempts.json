@@ -1,0 +1,13 @@
+[
+  {
+    "driver": "script/x10-dependency-graph.mjs",
+    "startedAt": "2026-09-19T05:19:42.270Z",
+    "status": "ok",
+    "exitStatus": 0,
+    "signal": null,
+    "evidenceExists": true,
+    "buildDigest": "",
+    "stdoutTail": "{\"ok\":true,\"checks\":6}\n",
+    "stderrTail": ""
+  }
+]

@@ -1,0 +1,26 @@
+{
+  "savedFiles": [
+    {
+      "format": "json",
+      "path": "/home/ubuntu/repos/designdiff/docs/evidence/round2-linux-wsl/native-report-export/saved-report.json",
+      "sha256": "71e14ae8b814fcd6aaadfe0817a73081b17995f7e03932b99d84019c8a14607e"
+    },
+    {
+      "format": "markdown",
+      "path": "/home/ubuntu/repos/designdiff/docs/evidence/round2-linux-wsl/native-report-export/saved-report.md",
+      "sha256": "391f5cae33375e625cee1fc55fdea3008018b17b210d0b1ad84549c61f918dcc"
+    }
+  ],
+  "independentRawDifference": {
+    "count": 400,
+    "bounds": {
+      "x": 5,
+      "y": 5,
+      "width": 20,
+      "height": 20
+    }
+  },
+  "pageErrors": [],
+  "rendererCrashes": [],
+  "nativeDialogMocked": false
+}

@@ -1,0 +1,54 @@
+{
+  "case": "X01",
+  "route": "chrome-extension",
+  "platform": "linux-wsl",
+  "drivers": [
+    "app/chrome-extension/script/real-chrome-e2e.mjs"
+  ],
+  "checks": [
+    "X01_service_worker",
+    "X01_popup_rendered",
+    "X01_upload_loaded",
+    "X01_overlay_shown",
+    "X01_overlay_img",
+    "X01_compare_dom",
+    "X01_compare",
+    "X01_token"
+  ],
+  "actual": {
+    "real-chrome-e2e:X01_service_worker": {
+      "url": "chrome-extension://ecmlfaipgekhkcamphaoaamofckjfjfo/background.js",
+      "extensionId": "ecmlfaipgekhkcamphaoaamofckjfjfo"
+    },
+    "real-chrome-e2e:X01_popup_rendered": {
+      "tabs": [
+        "Figma",
+        "Upload",
+        "Token",
+        "Fetch Frames"
+      ]
+    },
+    "real-chrome-e2e:X01_upload_loaded": true,
+    "real-chrome-e2e:X01_overlay_shown": {
+      "box": {
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 720
+      }
+    },
+    "real-chrome-e2e:X01_overlay_img": {
+      "blobUrl": true
+    },
+    "real-chrome-e2e:X01_compare_dom": {
+      "appText": "Figma\nUpload\nToken\nUpload Design Image\nDesign loaded\nClear\nShow Overlay\nCapture & Compare"
+    },
+    "real-chrome-e2e:X01_compare": {
+      "outcome": "no-visible-result"
+    },
+    "real-chrome-e2e:X01_token": {
+      "roundTrip": true,
+      "cleared": true
+    }
+  }
+}
