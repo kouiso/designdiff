@@ -17,6 +17,7 @@ import {
 } from "@/service/fix-verification";
 import { compareImages, type DesktopCompareResult } from "@/service/image-compare";
 import { useProjectStore } from "@/store/project-store";
+import { useTabStore } from "@/store/tab-store";
 
 export type ViewMode =
   | "design_only"
@@ -81,6 +82,21 @@ useProjectStore.subscribe((state, previous) => {
   ) {
     projectTargetGeneration += 1;
   }
+});
+
+// 比較対象はアクティブなプロジェクト(タブ)に紐づく。別案件へ切り替えたのに
+// 前案件の画像や修復対象が残ると誤った差分が出るので、切替時に両方の
+// プロジェクト単位storeを初期化する。プロジェクト外(ホーム等)への移動では
+// 直前の案件を保持し、同じ案件に戻ればそのまま続きから作業できる。
+let lastProjectContextId: string | null = null;
+useTabStore.subscribe((state) => {
+  const nextContextId = state.tabs.find((tab) => tab.id === state.activeTabId)?.projectId ?? null;
+  if (nextContextId === null || nextContextId === lastProjectContextId) return;
+  const hadProjectContext = lastProjectContextId !== null;
+  lastProjectContextId = nextContextId;
+  if (!hadProjectContext) return;
+  useProjectStore.getState().reset();
+  useCompareStore.getState().reset();
 });
 
 const copyIgnoreRegionEntries = (
