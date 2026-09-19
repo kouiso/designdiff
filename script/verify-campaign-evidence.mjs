@@ -105,7 +105,7 @@ const checkRounds = (ledger) => {
   return { errors, rounds };
 };
 
-const checkArtifact = async (item, root) => {
+const checkArtifact = async (item, root, productSha) => {
   if (
     !isRecord(item) ||
     !nonempty(item.path) ||
@@ -121,9 +121,28 @@ const checkArtifact = async (item, root) => {
       return ["evidence escapes durable directory"];
     }
     const bytes = await readFile(target);
-    return bytes.length === 0 || createHash("sha256").update(bytes).digest("hex") !== item.sha256
-      ? [`empty or changed evidence ${item.path}`]
-      : [];
+    if (bytes.length === 0 || createHash("sha256").update(bytes).digest("hex") !== item.sha256) {
+      return [`empty or changed evidence ${item.path}`];
+    }
+    // driver が記録した実行時リビジョンを凍結 SHA と照合する。
+    // 台帳の productSha は宣言値でしかないため、証跡側の revision が
+    // 一致しなければ別コミットで取られた証跡であり記録条件を満たさない。
+    if (item.path.endsWith(".json")) {
+      try {
+        const evidenceDoc = JSON.parse(bytes.toString("utf8"));
+        if (typeof evidenceDoc?.revision === "string" && evidenceDoc.revision !== productSha) {
+          return [`evidence revision ${evidenceDoc.revision} differs from frozen sha`];
+        }
+        // exit-writer 型 driver の部分証跡 (completed:false) は途中落ちの
+        // 印であり、完走証跡として受理しない。
+        if (evidenceDoc?.completed === false) {
+          return [`partial evidence (completed=false) ${item.path}`];
+        }
+      } catch {
+        // JSON 以外の拡張子混入や破損は sha 照合が既に担保する。
+      }
+    }
+    return [];
   } catch (error) {
     return [`evidence unreadable (${error instanceof Error ? error.message : String(error)})`];
   }
@@ -157,7 +176,9 @@ export const validateCampaignEvidence = async (ledger, evidenceDirectory) => {
     );
     if (!Array.isArray(run.evidence)) continue;
     for (const item of run.evidence) {
-      errors.push(...(await checkArtifact(item, root)).map((error) => `${id}: ${error}`));
+      errors.push(
+        ...(await checkArtifact(item, root, ledger.productSha)).map((error) => `${id}: ${error}`),
+      );
     }
   }
   for (const id of required) if (!seen.has(id)) errors.push(`${id}: NOT RUN`);

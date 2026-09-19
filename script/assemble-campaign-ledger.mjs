@@ -52,9 +52,7 @@ const providersFor = (caseId, route, platform) =>
 
 // results のキーは `C04` または `C04_xxx` 形式 — 接頭辞でケースへ帰属させる。
 const entriesForCase = (results, caseId) =>
-  Object.entries(results ?? {}).filter(
-    ([key]) => key === caseId || key.startsWith(`${caseId}_`),
-  );
+  Object.entries(results ?? {}).filter(([key]) => key === caseId || key.startsWith(`${caseId}_`));
 
 const readJson = async (path) => JSON.parse(await readFile(path, "utf8"));
 
@@ -80,14 +78,48 @@ const assemble = async ({ sha, round, platform, runsPath, outDir, knownDefectsPa
   );
 
   const evidenceByDriver = new Map();
+  const disqualifiedByDriver = new Map();
   for (const entry of runManifest) {
     const dir = resolve(root, entry.evidenceDir);
     const evidencePath = join(dir, entry.evidenceFile ?? "evidence.json");
+    const evidence = await readJson(evidencePath);
+    // driver が記録した実リビジョンと凍結 SHA を照合する。evidence を
+    // 別コミットで取ったまま --sha を指すと台帳は全部PASSに見えるが、
+    // 記録の「同一凍結SHA」条件が実質崩れるため取込自体を拒否する。
+    if (evidence.revision !== undefined && evidence.revision !== sha) {
+      disqualifiedByDriver.set(
+        entry.driver,
+        `evidence revision ${evidence.revision} != frozen ${sha}`,
+      );
+      continue;
+    }
+    // 収集中のツリー差分は証跡dirの未追跡化で必ず出るため、docs/evidence
+    // 配下だけを許容する。それ以外の dirty は「凍結品とは別物が動いた」
+    // 印なので取込を拒否する。
+    const dirtyState = evidence.dirtyState;
+    if (Array.isArray(dirtyState)) {
+      const outsideEvidence = dirtyState.filter(
+        (line) => typeof line === "string" && !line.includes("docs/evidence/"),
+      );
+      if (outsideEvidence.length > 0) {
+        disqualifiedByDriver.set(
+          entry.driver,
+          `dirty tree outside docs/evidence: ${outsideEvidence.join(", ")}`,
+        );
+        continue;
+      }
+    }
+    // exit-writer 型 driver は fatal で途中落ちしても部分証跡を書く。
+    // completed:false の部分結果を「全項 PASS」に見せないため取込拒否。
+    if (evidence.completed === false) {
+      disqualifiedByDriver.set(entry.driver, "partial evidence (completed=false)");
+      continue;
+    }
     evidenceByDriver.set(entry.driver, {
       manifest: entry,
       dir,
       evidencePath,
-      evidence: await readJson(evidencePath),
+      evidence,
     });
   }
 
@@ -111,7 +143,12 @@ const assemble = async ({ sha, round, platform, runsPath, outDir, knownDefectsPa
     for (const provider of [...requiredProviders, ...optionalProviders]) {
       const bundle = evidenceByDriver.get(provider.driver);
       if (!bundle) {
-        if (!provider.optional) missing.push(provider.driver);
+        if (!provider.optional) {
+          const disqualifiedReason = disqualifiedByDriver.get(provider.driver);
+          missing.push(
+            disqualifiedReason ? `${provider.driver} (${disqualifiedReason})` : provider.driver,
+          );
+        }
         continue;
       }
       const entries = entriesForCase(bundle.evidence.results, required.case);
@@ -154,11 +191,7 @@ const assemble = async ({ sha, round, platform, runsPath, outDir, knownDefectsPa
     const copied = new Set();
     for (const { provider, bundle, key, result } of contributions) {
       const driverSlug = basename(provider.driver).replace(/\.mjs$/, "");
-      const full = await copyArtifact(
-        bundle.evidencePath,
-        caseDir,
-        `${driverSlug}-evidence.json`,
-      );
+      const full = await copyArtifact(bundle.evidencePath, caseDir, `${driverSlug}-evidence.json`);
       evidenceRefs.push(full);
       copied.add(bundle.evidencePath);
       // screenshot や manifest 等の副産物も case 証跡として収める。
@@ -174,8 +207,14 @@ const assemble = async ({ sha, round, platform, runsPath, outDir, knownDefectsPa
       if (result.expected) expectedParts.push(`${key}: ${result.expected}`);
       for (const id of (Array.isArray(result.knownDefects) ? result.knownDefects : []).map(idOf))
         observedDefects.add(id);
-      for (const d of Array.isArray(bundle.evidence.knownDefects) ? bundle.evidence.knownDefects : []) {
-        if (typeof d === "object" && typeof d.observedIn === "string" && d.observedIn.split(".")[0] === required.case)
+      for (const d of Array.isArray(bundle.evidence.knownDefects)
+        ? bundle.evidence.knownDefects
+        : []) {
+        if (
+          typeof d === "object" &&
+          typeof d.observedIn === "string" &&
+          d.observedIn.split(".")[0] === required.case
+        )
           observedDefects.add(idOf(d));
       }
       buildDigest ||= bundle.manifest.buildDigest ?? bundle.evidence.product?.buildDigest ?? "";
@@ -187,7 +226,10 @@ const assemble = async ({ sha, round, platform, runsPath, outDir, knownDefectsPa
     const defectList = [...observedDefects];
     const newDefects = defectList.filter((id) => !knownDefectIds.has(id));
     if (newDefects.length > 0) {
-      skipped.push({ ...required, reason: `uncatalogued defects observed: ${newDefects.join(",")}` });
+      skipped.push({
+        ...required,
+        reason: `uncatalogued defects observed: ${newDefects.join(",")}`,
+      });
       continue;
     }
 
@@ -215,7 +257,8 @@ const assemble = async ({ sha, round, platform, runsPath, outDir, knownDefectsPa
       environment,
       input: description.input,
       steps: `${description.steps} [drivers: ${driverNames.join(", ")}]`,
-      expected: expectedParts.length > 0 ? expectedParts.join(" | ") : description.oracle.description,
+      expected:
+        expectedParts.length > 0 ? expectedParts.join(" | ") : description.oracle.description,
       actual: JSON.stringify(actualByDriver),
       oracle: description.oracle,
       evidence: evidenceRefs.map((a) => ({
@@ -263,7 +306,8 @@ const mergePartials = async ({ ledgerRoot, sha, roundsPath, outFile }) => {
   const ledger = {
     version: 1,
     productSha: sha,
-    scope: "Final 49-case campaign, two rounds and mandatory platform routes. Pre-final recovery evidence is not a completed run.",
+    scope:
+      "Final 49-case campaign, two rounds and mandatory platform routes. Pre-final recovery evidence is not a completed run.",
     rounds,
     runs,
   };
