@@ -264,8 +264,32 @@ await adb(["-s", scrollDevice.serial, "shell", "am", "force-stop", "com.android.
   () => {},
 );
 await adb(["-s", scrollDevice.serial, "shell", "am", "start", "-a", "android.intent.action.VIEW", "-d", pageUrl]);
-// ブラウザ描画待ち
-await new Promise((r) => setTimeout(r, 8000));
+// ブラウザ描画待ち。低速エミュレータでは固定時間待ちだとページ未描画のまま
+// scroll が走って1枚しか撮れないので、縞模様の彩色画素が出るまで待つ。
+const waitForPageRender = async () => {
+  const deadline = Date.now() + 60_000;
+  let attempts = 0;
+  while (Date.now() < deadline) {
+    attempts++;
+    const { stdout } = await adb([
+      "-s", scrollDevice.serial, "exec-out", "screencap", "-p",
+    ], { encoding: "buffer", maxBuffer: 50 * 1024 * 1024 });
+    const { data, info } = await sharp(Buffer.isBuffer(stdout) ? stdout : Buffer.from(stdout))
+      .raw()
+      .toBuffer({ resolveWithObject: true });
+    let colored = 0;
+    const step = 997 * info.channels;
+    for (let i = 0; i + 2 < data.length; i += step) {
+      const r = data[i], g = data[i + 1], b = data[i + 2];
+      if (Math.max(Math.abs(r - g), Math.abs(g - b), Math.abs(r - b)) > 60) colored++;
+    }
+    if (colored > 200) return { rendered: true, attempts, coloredSamples: colored };
+    await new Promise((r) => setTimeout(r, 2000));
+  }
+  return { rendered: false, attempts };
+};
+const pageRenderWait = await waitForPageRender();
+evidence.results.pageRenderWait = pageRenderWait;
 
 const scrollResult = await call("compare_design", {
   design_source: designPath,

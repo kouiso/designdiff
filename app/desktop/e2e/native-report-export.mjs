@@ -251,12 +251,24 @@ try {
   await expect(page.getByText("デザインと実装を比較", { exact: true })).toBeVisible();
   await loadScreenshotAndCompare(page, inputPaths.before);
 
+  // win32 では xwininfo/XTest が使えんため、同じ `0xhwnd "title"` 形式を
+  // 返す win32-native-dialog.ps1 (EnumWindows/SendKeys/System.Drawing) に切替える。
+  const isWin32 = process.platform === "win32";
+  const winDialogHelper = join(directory, "win32-native-dialog.ps1");
+  const winDialog = (args, timeout = 10_000) =>
+    spawnSync(
+      "powershell.exe",
+      ["-STA", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", winDialogHelper, ...args],
+      { env: environment, encoding: "utf8", timeout },
+    );
   const inspectNativeDialog = () => {
-    const result = spawnSync("xwininfo", ["-root", "-tree"], {
-      env: environment,
-      encoding: "utf8",
-      timeout: 2_000,
-    });
+    const result = isWin32
+      ? winDialog(["tree"], 8_000)
+      : spawnSync("xwininfo", ["-root", "-tree"], {
+          env: environment,
+          encoding: "utf8",
+          timeout: 2_000,
+        });
     return { tree: result.stdout ?? "", complete: result.status === 0 };
   };
   const nativeDialogState = () => {
@@ -294,6 +306,11 @@ try {
   const captureWindowImage = (tree, titlePattern, path, label) => {
     const match = tree.match(new RegExp(`(0x[0-9a-f]+) "${titlePattern}"`));
     assert.ok(match, `${label} window id must be discoverable`);
+    if (isWin32) {
+      const result = winDialog(["shot", match[1], path]);
+      assert.equal(result.status, 0, `${label} capture failed: ${result.stderr ?? ""}`);
+      return;
+    }
     execFileSync("import", ["-window", match[1], path], { env: environment });
   };
   const captureNativeDialogImage = async (path) => {
@@ -343,18 +360,47 @@ x.XSync(d, 0)
       ],
       { env: environment, timeout: 5_000 },
     );
+  // GTK では Ctrl+L→Ctrl+A→path→Enter。win32 ではフォーカス依存の入力が
+  // 他窓に吸われ得るため、WM_CHAR で filename Edit に直接入力してから
+  // Save ボタンへ BM_CLICK を投げる (フォーカス不要の経路)。
+  const sendDialogInput = (text) => {
+    if (isWin32) {
+      const found = winDialog(["find"]);
+      assert.equal(
+        found.status,
+        0,
+        `Save File dialog hwnd must be discoverable (status=${found.status} stderr=${found.stderr ?? ""})`,
+      );
+      const hwnd = found.stdout.trim();
+      const result = winDialog(["save", hwnd, text], 20_000);
+      assert.equal(result.status, 0, `dialog input failed (hwnd=${hwnd}): ${result.stderr ?? ""}`);
+      return;
+    }
+    nativeKeys(`\x0c\x01${text}\n\n`);
+  };
+  const sendDialogCancel = () => {
+    if (isWin32) {
+      const found = winDialog(["find"]);
+      if (found.status === 0) winDialog(["cancel", found.stdout.trim()], 15_000);
+      return;
+    }
+    nativeKeys("\x1b");
+  };
   const saveButton = page.getByRole("button", { name: "レポートを保存", exact: true });
   await expect(saveButton).toBeVisible();
   const savedFiles = [];
   for (const format of ["json", "markdown"]) {
     await page.getByLabel("レポートの形式").selectOption(format);
     const destination = join(evidence, format === "json" ? "saved-report.json" : "saved-report.md");
+    // 既存ファイルがあるとネイティブ側で上書き確認が出て、modal 応答の
+    // 自動化が別問題になる。新規書込みを検証したいので事前に消しておく。
+    await rm(destination, { force: true });
     await saveButton.click();
     await expect(page.getByRole("button", { name: "保存中…", exact: true })).toBeVisible();
     await waitForNativeDialog(true);
     await captureNativeDialogImage(join(evidence, `native-dialog-${format}.png`));
     await writeFile(join(evidence, `native-window-${format}.txt`), await captureNativeDialogTree());
-    nativeKeys(`\x0c\x01${destination}\n\n`);
+    sendDialogInput(destination);
     await waitForNativeDialog(false);
     captureAppWindowImage(join(evidence, `after-input-${format}.png`));
     const readSavedFile = async () => {
@@ -386,7 +432,7 @@ x.XSync(d, 0)
   }
   await saveButton.click();
   await waitForNativeDialog(true);
-  nativeKeys("\x1b");
+  sendDialogCancel();
   await waitForNativeDialog(false);
   await expect(saveButton).toBeEnabled();
   await expect(page.getByText("保存をキャンセルしました", { exact: true })).toBeVisible();

@@ -232,7 +232,9 @@ const redactPublicPaths = (value) => {
 };
 const formatJsonBytes = (value, filePath) =>
   Buffer.from(
-    execFileSync(biomeExecutable, ["format", "--stdin-file-path", filePath], {
+    // bin/biome は node script なので、shebang を実行できない Windows でも
+    // 動くよう node 経由で起動する。
+    execFileSync(process.execPath, [biomeExecutable, "format", "--stdin-file-path", filePath], {
       cwd: root,
       input: `${JSON.stringify(value, null, 2)}\n`,
       encoding: "utf8",
@@ -355,8 +357,15 @@ const startClient = async (name) => {
       PATH: dirname(process.execPath),
       FIGDIFF_HOME: store,
       FIGDIFF_ALLOWED_DIRS: evidenceDir,
+      // 子の HOME は sandbox を指すので、browser が実際に居る実 profile の
+      // 既定 cache dir を platform 別に渡す。Windows に HOME は無い。
       PLAYWRIGHT_BROWSERS_PATH:
-        process.env.PLAYWRIGHT_BROWSERS_PATH ?? join(process.env.HOME, ".cache/ms-playwright"),
+        process.env.PLAYWRIGHT_BROWSERS_PATH ??
+        (process.platform === "win32"
+          ? join(process.env.LOCALAPPDATA ?? join(process.env.USERPROFILE ?? home, "AppData", "Local"), "ms-playwright")
+          : process.platform === "darwin"
+            ? join(process.env.HOME ?? home, "Library", "Caches", "ms-playwright")
+            : join(process.env.HOME ?? home, ".cache", "ms-playwright")),
     },
     stderr: "pipe",
   });
@@ -624,11 +633,12 @@ try {
   await writeFormattedJson(join(evidenceDir, "animation-verification.json"), {
     status: results.M11_compareAnimation.status,
     executedAt: new Date().toISOString(),
-    revision: execFileSync("/usr/bin/git", ["rev-parse", "HEAD"], {
+    // Windows に /usr/bin/git は無いので PATH 解決に任せる。
+    revision: execFileSync("git", ["rev-parse", "HEAD"], {
       cwd: root,
       encoding: "utf8",
     }).trim(),
-    dirtyState: execFileSync("/usr/bin/git", ["status", "--porcelain=v1"], {
+    dirtyState: execFileSync("git", ["status", "--porcelain=v1"], {
       cwd: root,
       encoding: "utf8",
     })
@@ -736,7 +746,7 @@ try {
     await writeFormattedJson(join(evidenceDir, "c10-semantic-failure.json"), {
       status: "FAIL",
       executedAt: new Date().toISOString(),
-      revision: execFileSync("/usr/bin/git", ["rev-parse", "HEAD"], {
+      revision: execFileSync("git", ["rev-parse", "HEAD"], {
         cwd: root,
         encoding: "utf8",
       }).trim(),
@@ -1218,11 +1228,11 @@ const buildUnchanged = postBuildDigest === buildDigest;
 
 const evidence = {
   schemaVersion: 1,
-  revision: execFileSync("/usr/bin/git", ["rev-parse", "HEAD"], {
+  revision: execFileSync("git", ["rev-parse", "HEAD"], {
     cwd: root,
     encoding: "utf8",
   }).trim(),
-  dirtyState: execFileSync("/usr/bin/git", ["status", "--porcelain=v1"], {
+  dirtyState: execFileSync("git", ["status", "--porcelain=v1"], {
     cwd: root,
     encoding: "utf8",
   })
