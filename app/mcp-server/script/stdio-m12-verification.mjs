@@ -77,7 +77,11 @@ const text = (result) =>
       APPDATA: join(sandbox, "home2", "AppData", "Roaming"),
       LOCALAPPDATA: join(sandbox, "home2", "AppData", "Local"),
       XDG_CONFIG_HOME: join(sandbox, "home2", ".config"),
-      PATH: process.env.PATH,
+      // gh CLI の config リダイレクトだけでは PATH 上の gh が ambient な
+      // credential helper / wrapper 経由で token を解決し得る
+      // (Devin 環境で実測: no-token 経路が実 issue を起票してしまった)。
+      // node だけが見える PATH に絞って gh fallback 経路ごと遮断する。
+      PATH: dirname(process.execPath),
       FIGDIFF_HOME: join(sandbox, "store2"),
       // GITHUB_TOKEN/GH_TOKEN を意図的に渡さない
     },
