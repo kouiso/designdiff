@@ -58,6 +58,7 @@ export function Header({ currentPage, onNavigate }: HeaderProps) {
           padding: "0 12px 0 0",
           display: "flex",
           alignItems: "center",
+          flexShrink: 0,
         }}
       >
         <Logo size={28} variant="full" />
@@ -74,8 +75,12 @@ export function Header({ currentPage, onNavigate }: HeaderProps) {
         }}
       />
 
-      {/* ナビゲーション */}
-      <nav style={{ display: "flex", gap: 2 }} aria-label="Main navigation">
+      {/* ナビゲーション。狭い幅では縮んで内部スクロールする(タブバーと同じ作法)。 */}
+      <nav
+        className="scroll"
+        style={{ display: "flex", gap: 2, minWidth: 0, overflowX: "auto" }}
+        aria-label="Main navigation"
+      >
         {navItems.map((item) => {
           const active = activeId === item.id;
           return (
@@ -98,6 +103,8 @@ export function Header({ currentPage, onNavigate }: HeaderProps) {
                 cursor: "pointer",
                 transition: "all 0.14s",
                 fontFamily: "inherit",
+                flexShrink: 0,
+                whiteSpace: "nowrap",
               }}
               onMouseEnter={(e) => {
                 if (!active) {
@@ -121,8 +128,8 @@ export function Header({ currentPage, onNavigate }: HeaderProps) {
 
       <span style={{ flex: 1 }} />
 
-      {/* 右側: テーマ切替と新規比較 */}
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      {/* 右側: テーマ切替と新規比較。狭い幅でも縮まずnav側が吸収する。 */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
         <button
           type="button"
           onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
