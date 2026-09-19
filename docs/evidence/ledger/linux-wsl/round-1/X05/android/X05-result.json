@@ -1,0 +1,31 @@
+{
+  "case": "X05",
+  "route": "android",
+  "platform": "linux-wsl",
+  "drivers": [
+    "app/mcp-server/script/stdio-android-verification.mjs"
+  ],
+  "checks": [
+    "X05_ambiguous_rejected",
+    "X05_device_captures",
+    "X05_bogus_serial"
+  ],
+  "actual": {
+    "stdio-android-verification:X05_ambiguous_rejected": {
+      "isError": true,
+      "text": "Error: Multiple Android devices are connected: emulator-5554, emulator-5556. Set deviceSerial or ANDROID_SERIAL."
+    },
+    "stdio-android-verification:X05_device_captures": {
+      "emulator-5554": {
+        "kind": "emulator",
+        "captured": "android-1789803393233-287c5e5f-c25c-4fbb-a8f4-35243227013e.png",
+        "width": 1080,
+        "height": 2400
+      }
+    },
+    "stdio-android-verification:X05_bogus_serial": {
+      "isError": true,
+      "text": "Error: Android device no-such-serial-000 is not connected. Check adb devices -l."
+    }
+  }
+}

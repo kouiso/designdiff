@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "protocolErrors": [],
+  "results": {
+    "connectedDevices": [
+      {
+        "serial": "emulator-5554",
+        "state": "device",
+        "model": "sdk_gphone64_x86_64"
+      },
+      {
+        "serial": "emulator-5556",
+        "state": "device",
+        "model": "sdk_gphone64_x86_64"
+      }
+    ],
+    "deviceSelectionMode": "multi-device",
+    "directCaptures": {
+      "emulator-5554": {
+        "width": 1080,
+        "height": 2400,
+        "model": "sdk_gphone64_x86_64"
+      }
+    },
+    "X05_ambiguous_rejected": {
+      "isError": true,
+      "text": "Error: Multiple Android devices are connected: emulator-5554, emulator-5556. Set deviceSerial or ANDROID_SERIAL."
+    },
+    "X05_device_captures": {
+      "emulator-5554": {
+        "kind": "emulator",
+        "captured": "android-1789803393233-287c5e5f-c25c-4fbb-a8f4-35243227013e.png",
+        "width": 1080,
+        "height": 2400
+      }
+    },
+    "X05_bogus_serial": {
+      "isError": true,
+      "text": "Error: Android device no-such-serial-000 is not connected. Check adb devices -l."
+    },
+    "scrollTarget": {
+      "serial": "emulator-5554",
+      "pageUrl": "http://10.0.2.2:46265/tall.html"
+    },
+    "pageRenderWait": {
+      "rendered": true,
+      "attempts": 2,
+      "coloredSamples": 1099
+    },
+    "X07_android_scroll": {
+      "isError": false,
+      "status": "PASS",
+      "comparisonStatus": "UNCERTAIN",
+      "scrollCapture": {
+        "captureCount": 10,
+        "stitchedWidth": 1080,
+        "stitchedHeight": 12131,
+        "viewportWidth": 1080,
+        "viewportHeight": 2400,
+        "fixedHeaderHeight": 128,
+        "fixedFooterHeight": 63,
+        "reachedBottom": true,
+        "truncatedAtCaptureLimit": false,
+        "didNotScroll": false,
+        "startedAtTop": true,
+        "notes": [
+          "3 箇所で重なりの完全一致が取れず、行の平均輝度による近似で繋いでいます。繋ぎ目の位置がずれている可能性があります。"
+        ]
+      },
+      "ignoreRegionResolution": {
+        "effectiveRegions": [
+          {
+            "x": 0,
+            "y": 0,
+            "width": 1080,
+            "height": 72,
+            "label": "system:status-bar"
+          },
+          {
+            "x": 0,
+            "y": 12059,
+            "width": 1080,
+            "height": 72,
+            "label": "system:navigation-bar"
+          }
+        ],
+        "maskedPixelCount": 155520,
+        "maskSha256": "b694dd82db5ce691c794b0ecc431af28aaf8da0f0fe33c13959f80db967c914d"
+      },
+      "textHead": "{\n  \"status\": \"UNCERTAIN\",\n  \"comparisonId\": \"cmp-8627bf3c-e7d6-43f9-8475-b952cc0196f6\",\n  \"matchRate\": 1.74,\n  \"diffPixelCount\": 12721247,\n  \"totalPixelCount\": 12945960,\n  \"remainingIssues\": 1,\n  \"diffRegions\": [],\n  \"totalRegionCount\": 0,\n  \"returnedRegionCount\": 0,\n  \"regionsTruncated\": false,\n  \"completionCriteria\": {\n    \"structuralReview\": {\n      \"required\": 1,\n      \"current\": 0,\n      \"st"
+    }
+  }
+}

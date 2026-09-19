@@ -1,0 +1,1453 @@
+{
+  "comparisonId": "cmp-fac2b09a-9f35-42e2-bed3-595021efb09d",
+  "sourceKey": "local:/home/ubuntu/repos/designdiff/docs/evidence/round2-linux-wsl/stdio-android-verification/input-design.png|conditions:093a42935a15851c432d224821f51cf63da27ef4e148b1d24d2dd2b84894a1d2",
+  "captureWidth": 1080,
+  "captureHeight": 12106,
+  "result": {
+    "status": "UNCERTAIN",
+    "comparisonId": "cmp-fac2b09a-9f35-42e2-bed3-595021efb09d",
+    "matchRate": 1.74,
+    "diffPixelCount": 12694115,
+    "totalPixelCount": 12918960,
+    "remainingIssues": 1,
+    "diffRegions": [],
+    "completionCriteria": {
+      "structuralReview": {
+        "required": 1,
+        "current": 0,
+        "status": "FAIL",
+        "blocking": true,
+        "note": "critical severity issue detected; weakest region whole-frame (structure 0.529, color ΔE 58.947; lower=better, critical threshold 2) with texture-adjusted weights active (alpha 0.700, photo-like cap 0.300)"
+      },
+      "conditionsReview": {
+        "required": 1,
+        "current": 0,
+        "status": "UNCERTAIN",
+        "blocking": false,
+        "note": "表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。"
+      },
+      "wholeImageStructure": {
+        "required": 0.95,
+        "current": 0.947274701376849,
+        "status": "UNCERTAIN",
+        "blocking": false,
+        "note": "Area-weighted contrast and structure over disjoint 8x8 windows. Uniform luminance shifts are excluded; contrast changes remain. Local issues and the aggregate gate remain independent."
+      },
+      "consistencyReview": {
+        "required": 0.5,
+        "current": 0,
+        "status": "PASS",
+        "blocking": false,
+        "note": "Not evaluated: the contradiction check only applies to a passing structural review."
+      },
+      "tokenReview": {
+        "required": 0,
+        "current": 0,
+        "status": "UNCERTAIN",
+        "blocking": false,
+        "note": "Not evaluated: token comparison needs both a Figma node tree and a FigDiff-captured URL."
+      },
+      "matchRate": {
+        "required": 100,
+        "current": 1.74,
+        "status": "FAIL",
+        "blocking": false,
+        "note": "Reference metric only. Do not use matchRate% as the completion gate."
+      },
+      "diffPixelCount": {
+        "required": 0,
+        "current": 12694115,
+        "status": "FAIL",
+        "blocking": false,
+        "note": "Reference metric. Structural SSIM review is the blocking gate."
+      },
+      "remainingIssues": {
+        "required": 0,
+        "current": 1,
+        "status": "FAIL",
+        "blocking": true,
+        "note": "Blocking only while structural SSIM review has not passed."
+      }
+    },
+    "nextAction": "表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。 ⚠️ セットアップ問題の可能性が高いです。CSS修正の前に、まず設定を見直してください: 端末キャプチャは物理ピクセルで返るため、Figma フレームを同じスケール（例: DPR込みの 1080px 幅）でレンダリングして比較してください。 サイト実装が vw ベースのレスポンシブ幅を使っている場合は、ブラウザの viewport 幅やスクロールバー有無で固定pxの Figma フレームと描画幅がずれることがあるため、意図した viewport / scrollbar 条件も確認してください。 解消後に再度 compare_design で検証してください。",
+    "suggestion": "⚠️ これは実装差分ではなくセットアップ問題の可能性が高いです（一致率 1.74%）。最有力原因: 撮影幅と Figma フレーム幅が一致していません。レイアウト自体は合っていても全面が差分になります。",
+    "clusterTelemetry": {
+      "requestedMode": "auto",
+      "usedMode": "grid",
+      "fallbackUsed": true,
+      "fallbackReason": "hot-cell-ratio-exceeded",
+      "wallMs": 145.4,
+      "budgetMs": 5000,
+      "regionCount": 0
+    },
+    "clusterCollapse": {
+      "collapsed": true,
+      "reason": "hot-cell-ratio-exceeded",
+      "coarseTileCount": 60,
+      "message": "差分が画面全体に広がっているため、直す場所を領域に分けられませんでした。個別のCSS修正へ進む前に、比較の前提を先に確認してください。",
+      "checks": [
+        "撮影条件が設計と揃っているか（撮影幅・倍率・スクロール位置）",
+        "比較元のFigmaフレームが、撮影した画面と同じものか",
+        "実装がまだ着手前の状態になっていないか"
+      ]
+    },
+    "gridSummary": {
+      "rows": 24,
+      "cols": 4,
+      "cells": [
+        {
+          "row": 0,
+          "col": 0,
+          "x": 0,
+          "y": 0,
+          "width": 270,
+          "height": 504,
+          "diffPixels": 62808,
+          "totalPixels": 116640,
+          "matchRate": 46.15
+        },
+        {
+          "row": 0,
+          "col": 1,
+          "x": 270,
+          "y": 0,
+          "width": 270,
+          "height": 504,
+          "diffPixels": 58074,
+          "totalPixels": 116640,
+          "matchRate": 50.21
+        },
+        {
+          "row": 0,
+          "col": 2,
+          "x": 540,
+          "y": 0,
+          "width": 270,
+          "height": 504,
+          "diffPixels": 57387,
+          "totalPixels": 116640,
+          "matchRate": 50.8
+        },
+        {
+          "row": 0,
+          "col": 3,
+          "x": 810,
+          "y": 0,
+          "width": 270,
+          "height": 504,
+          "diffPixels": 63446,
+          "totalPixels": 116640,
+          "matchRate": 45.61
+        },
+        {
+          "row": 1,
+          "col": 0,
+          "x": 0,
+          "y": 504,
+          "width": 270,
+          "height": 504,
+          "diffPixels": 136080,
+          "totalPixels": 136080,
+          "matchRate": 0
+        },
+        {
+          "row": 1,
+          "col": 1,
+          "x": 270,
+          "y": 504,
+          "width": 270,
+          "height": 504,
+          "diffPixels": 136080,
+          "totalPixels": 136080,
+          "matchRate": 0
+        },
+        {
+          "row": 1,
+          "col": 2,
+          "x": 540,
+          "y": 504,
+          "width": 270,
+          "height": 504,
+          "diffPixels": 136080,
+          "totalPixels": 136080,
+          "matchRate": 0
+        },
+        {
+          "row": 1,
+          "col": 3,
+          "x": 810,
+          "y": 504,
+          "width": 270,
+          "height": 504,
+          "diffPixels": 136080,
+          "totalPixels": 136080,
+          "matchRate": 0
+        },
+        {
+          "row": 2,
+          "col": 0,
+          "x": 0,
+          "y": 1008,
+          "width": 270,
+          "height": 505,
+          "diffPixels": 136350,
+          "totalPixels": 136350,
+          "matchRate": 0
+        },
+        {
+          "row": 2,
+          "col": 1,
+          "x": 270,
+          "y": 1008,
+          "width": 270,
+          "height": 505,
+          "diffPixels": 136350,
+          "totalPixels": 136350,
+          "matchRate": 0
+        },
+        {
+          "row": 2,
+          "col": 2,
+          "x": 540,
+          "y": 1008,
+          "width": 270,
+          "height": 505,
+          "diffPixels": 136350,
+          "totalPixels": 136350,
+          "matchRate": 0
+        },
+        {
+          "row": 2,
+          "col": 3,
+          "x": 810,
+          "y": 1008,
+          "width": 270,
+          "height": 505,
+          "diffPixels": 136350,
+          "totalPixels": 136350,
+          "matchRate": 0
+        },
+        {
+          "row": 3,
+          "col": 0,
+          "x": 0,
+          "y": 1513,
+          "width": 270,
+          "height": 504,
+          "diffPixels": 136080,
+          "totalPixels": 136080,
+          "matchRate": 0
+        },
+        {
+          "row": 3,
+          "col": 1,
+          "x": 270,
+          "y": 1513,
+          "width": 270,
+          "height": 504,
+          "diffPixels": 136080,
+          "totalPixels": 136080,
+          "matchRate": 0
+        },
+        {
+          "row": 3,
+          "col": 2,
+          "x": 540,
+          "y": 1513,
+          "width": 270,
+          "height": 504,
+          "diffPixels": 136080,
+          "totalPixels": 136080,
+          "matchRate": 0
+        },
+        {
+          "row": 3,
+          "col": 3,
+          "x": 810,
+          "y": 1513,
+          "width": 270,
+          "height": 504,
+          "diffPixels": 136080,
+          "totalPixels": 136080,
+          "matchRate": 0
+        },
+        {
+          "row": 4,
+          "col": 0,
+          "x": 0,
+          "y": 2017,
+          "width": 270,
+          "height": 505,
+          "diffPixels": 136350,
+          "totalPixels": 136350,
+          "matchRate": 0
+        },
+        {
+          "row": 4,
+          "col": 1,
+          "x": 270,
+          "y": 2017,
+          "width": 270,
+          "height": 505,
+          "diffPixels": 136350,
+          "totalPixels": 136350,
+          "matchRate": 0
+        },
+        {
+          "row": 4,
+          "col": 2,
+          "x": 540,
+          "y": 2017,
+          "width": 270,
+          "height": 505,
+          "diffPixels": 136350,
+          "totalPixels": 136350,
+          "matchRate": 0
+        },
+        {
+          "row": 4,
+          "col": 3,
+          "x": 810,
+          "y": 2017,
+          "width": 270,
+          "height": 505,
+          "diffPixels": 136350,
+          "totalPixels": 136350,
+          "matchRate": 0
+        },
+        {
+          "row": 5,
+          "col": 0,
+          "x": 0,
+          "y": 2522,
+          "width": 270,
+          "height": 504,
+          "diffPixels": 136080,
+          "totalPixels": 136080,
+          "matchRate": 0
+        },
+        {
+          "row": 5,
+          "col": 1,
+          "x": 270,
+          "y": 2522,
+          "width": 270,
+          "height": 504,
+          "diffPixels": 136080,
+          "totalPixels": 136080,
+          "matchRate": 0
+        },
+        {
+          "row": 5,
+          "col": 2,
+          "x": 540,
+          "y": 2522,
+          "width": 270,
+          "height": 504,
+          "diffPixels": 136080,
+          "totalPixels": 136080,
+          "matchRate": 0
+        },
+        {
+          "row": 5,
+          "col": 3,
+          "x": 810,
+          "y": 2522,
+          "width": 270,
+          "height": 504,
+          "diffPixels": 136080,
+          "totalPixels": 136080,
+          "matchRate": 0
+        },
+        {
+          "row": 6,
+          "col": 0,
+          "x": 0,
+          "y": 3026,
+          "width": 270,
+          "height": 504,
+          "diffPixels": 136080,
+          "totalPixels": 136080,
+          "matchRate": 0
+        },
+        {
+          "row": 6,
+          "col": 1,
+          "x": 270,
+          "y": 3026,
+          "width": 270,
+          "height": 504,
+          "diffPixels": 136080,
+          "totalPixels": 136080,
+          "matchRate": 0
+        },
+        {
+          "row": 6,
+          "col": 2,
+          "x": 540,
+          "y": 3026,
+          "width": 270,
+          "height": 504,
+          "diffPixels": 136080,
+          "totalPixels": 136080,
+          "matchRate": 0
+        },
+        {
+          "row": 6,
+          "col": 3,
+          "x": 810,
+          "y": 3026,
+          "width": 270,
+          "height": 504,
+          "diffPixels": 136080,
+          "totalPixels": 136080,
+          "matchRate": 0
+        },
+        {
+          "row": 7,
+          "col": 0,
+          "x": 0,
+          "y": 3530,
+          "width": 270,
+          "height": 505,
+          "diffPixels": 136350,
+          "totalPixels": 136350,
+          "matchRate": 0
+        },
+        {
+          "row": 7,
+          "col": 1,
+          "x": 270,
+          "y": 3530,
+          "width": 270,
+          "height": 505,
+          "diffPixels": 136350,
+          "totalPixels": 136350,
+          "matchRate": 0
+        },
+        {
+          "row": 7,
+          "col": 2,
+          "x": 540,
+          "y": 3530,
+          "width": 270,
+          "height": 505,
+          "diffPixels": 136350,
+          "totalPixels": 136350,
+          "matchRate": 0
+        },
+        {
+          "row": 7,
+          "col": 3,
+          "x": 810,
+          "y": 3530,
+          "width": 270,
+          "height": 505,
+          "diffPixels": 136350,
+          "totalPixels": 136350,
+          "matchRate": 0
+        },
+        {
+          "row": 8,
+          "col": 0,
+          "x": 0,
+          "y": 4035,
+          "width": 270,
+          "height": 504,
+          "diffPixels": 136080,
+          "totalPixels": 136080,
+          "matchRate": 0
+        },
+        {
+          "row": 8,
+          "col": 1,
+          "x": 270,
+          "y": 4035,
+          "width": 270,
+          "height": 504,
+          "diffPixels": 136080,
+          "totalPixels": 136080,
+          "matchRate": 0
+        },
+        {
+          "row": 8,
+          "col": 2,
+          "x": 540,
+          "y": 4035,
+          "width": 270,
+          "height": 504,
+          "diffPixels": 136080,
+          "totalPixels": 136080,
+          "matchRate": 0
+        },
+        {
+          "row": 8,
+          "col": 3,
+          "x": 810,
+          "y": 4035,
+          "width": 270,
+          "height": 504,
+          "diffPixels": 136080,
+          "totalPixels": 136080,
+          "matchRate": 0
+        },
+        {
+          "row": 9,
+          "col": 0,
+          "x": 0,
+          "y": 4539,
+          "width": 270,
+          "height": 505,
+          "diffPixels": 136350,
+          "totalPixels": 136350,
+          "matchRate": 0
+        },
+        {
+          "row": 9,
+          "col": 1,
+          "x": 270,
+          "y": 4539,
+          "width": 270,
+          "height": 505,
+          "diffPixels": 136350,
+          "totalPixels": 136350,
+          "matchRate": 0
+        },
+        {
+          "row": 9,
+          "col": 2,
+          "x": 540,
+          "y": 4539,
+          "width": 270,
+          "height": 505,
+          "diffPixels": 136350,
+          "totalPixels": 136350,
+          "matchRate": 0
+        },
+        {
+          "row": 9,
+          "col": 3,
+          "x": 810,
+          "y": 4539,
+          "width": 270,
+          "height": 505,
+          "diffPixels": 136350,
+          "totalPixels": 136350,
+          "matchRate": 0
+        },
+        {
+          "row": 10,
+          "col": 0,
+          "x": 0,
+          "y": 5044,
+          "width": 270,
+          "height": 504,
+          "diffPixels": 136080,
+          "totalPixels": 136080,
+          "matchRate": 0
+        },
+        {
+          "row": 10,
+          "col": 1,
+          "x": 270,
+          "y": 5044,
+          "width": 270,
+          "height": 504,
+          "diffPixels": 136080,
+          "totalPixels": 136080,
+          "matchRate": 0
+        },
+        {
+          "row": 10,
+          "col": 2,
+          "x": 540,
+          "y": 5044,
+          "width": 270,
+          "height": 504,
+          "diffPixels": 136080,
+          "totalPixels": 136080,
+          "matchRate": 0
+        },
+        {
+          "row": 10,
+          "col": 3,
+          "x": 810,
+          "y": 5044,
+          "width": 270,
+          "height": 504,
+          "diffPixels": 136080,
+          "totalPixels": 136080,
+          "matchRate": 0
+        },
+        {
+          "row": 11,
+          "col": 0,
+          "x": 0,
+          "y": 5548,
+          "width": 270,
+          "height": 505,
+          "diffPixels": 136350,
+          "totalPixels": 136350,
+          "matchRate": 0
+        },
+        {
+          "row": 11,
+          "col": 1,
+          "x": 270,
+          "y": 5548,
+          "width": 270,
+          "height": 505,
+          "diffPixels": 136350,
+          "totalPixels": 136350,
+          "matchRate": 0
+        },
+        {
+          "row": 11,
+          "col": 2,
+          "x": 540,
+          "y": 5548,
+          "width": 270,
+          "height": 505,
+          "diffPixels": 136350,
+          "totalPixels": 136350,
+          "matchRate": 0
+        },
+        {
+          "row": 11,
+          "col": 3,
+          "x": 810,
+          "y": 5548,
+          "width": 270,
+          "height": 505,
+          "diffPixels": 136350,
+          "totalPixels": 136350,
+          "matchRate": 0
+        },
+        {
+          "row": 12,
+          "col": 0,
+          "x": 0,
+          "y": 6053,
+          "width": 270,
+          "height": 504,
+          "diffPixels": 136080,
+          "totalPixels": 136080,
+          "matchRate": 0
+        },
+        {
+          "row": 12,
+          "col": 1,
+          "x": 270,
+          "y": 6053,
+          "width": 270,
+          "height": 504,
+          "diffPixels": 136080,
+          "totalPixels": 136080,
+          "matchRate": 0
+        },
+        {
+          "row": 12,
+          "col": 2,
+          "x": 540,
+          "y": 6053,
+          "width": 270,
+          "height": 504,
+          "diffPixels": 136080,
+          "totalPixels": 136080,
+          "matchRate": 0
+        },
+        {
+          "row": 12,
+          "col": 3,
+          "x": 810,
+          "y": 6053,
+          "width": 270,
+          "height": 504,
+          "diffPixels": 136080,
+          "totalPixels": 136080,
+          "matchRate": 0
+        },
+        {
+          "row": 13,
+          "col": 0,
+          "x": 0,
+          "y": 6557,
+          "width": 270,
+          "height": 504,
+          "diffPixels": 136080,
+          "totalPixels": 136080,
+          "matchRate": 0
+        },
+        {
+          "row": 13,
+          "col": 1,
+          "x": 270,
+          "y": 6557,
+          "width": 270,
+          "height": 504,
+          "diffPixels": 136080,
+          "totalPixels": 136080,
+          "matchRate": 0
+        },
+        {
+          "row": 13,
+          "col": 2,
+          "x": 540,
+          "y": 6557,
+          "width": 270,
+          "height": 504,
+          "diffPixels": 136080,
+          "totalPixels": 136080,
+          "matchRate": 0
+        },
+        {
+          "row": 13,
+          "col": 3,
+          "x": 810,
+          "y": 6557,
+          "width": 270,
+          "height": 504,
+          "diffPixels": 136080,
+          "totalPixels": 136080,
+          "matchRate": 0
+        },
+        {
+          "row": 14,
+          "col": 0,
+          "x": 0,
+          "y": 7061,
+          "width": 270,
+          "height": 505,
+          "diffPixels": 136350,
+          "totalPixels": 136350,
+          "matchRate": 0
+        },
+        {
+          "row": 14,
+          "col": 1,
+          "x": 270,
+          "y": 7061,
+          "width": 270,
+          "height": 505,
+          "diffPixels": 136350,
+          "totalPixels": 136350,
+          "matchRate": 0
+        },
+        {
+          "row": 14,
+          "col": 2,
+          "x": 540,
+          "y": 7061,
+          "width": 270,
+          "height": 505,
+          "diffPixels": 136350,
+          "totalPixels": 136350,
+          "matchRate": 0
+        },
+        {
+          "row": 14,
+          "col": 3,
+          "x": 810,
+          "y": 7061,
+          "width": 270,
+          "height": 505,
+          "diffPixels": 136350,
+          "totalPixels": 136350,
+          "matchRate": 0
+        },
+        {
+          "row": 15,
+          "col": 0,
+          "x": 0,
+          "y": 7566,
+          "width": 270,
+          "height": 504,
+          "diffPixels": 136080,
+          "totalPixels": 136080,
+          "matchRate": 0
+        },
+        {
+          "row": 15,
+          "col": 1,
+          "x": 270,
+          "y": 7566,
+          "width": 270,
+          "height": 504,
+          "diffPixels": 136080,
+          "totalPixels": 136080,
+          "matchRate": 0
+        },
+        {
+          "row": 15,
+          "col": 2,
+          "x": 540,
+          "y": 7566,
+          "width": 270,
+          "height": 504,
+          "diffPixels": 136080,
+          "totalPixels": 136080,
+          "matchRate": 0
+        },
+        {
+          "row": 15,
+          "col": 3,
+          "x": 810,
+          "y": 7566,
+          "width": 270,
+          "height": 504,
+          "diffPixels": 136080,
+          "totalPixels": 136080,
+          "matchRate": 0
+        },
+        {
+          "row": 16,
+          "col": 0,
+          "x": 0,
+          "y": 8070,
+          "width": 270,
+          "height": 505,
+          "diffPixels": 136350,
+          "totalPixels": 136350,
+          "matchRate": 0
+        },
+        {
+          "row": 16,
+          "col": 1,
+          "x": 270,
+          "y": 8070,
+          "width": 270,
+          "height": 505,
+          "diffPixels": 136350,
+          "totalPixels": 136350,
+          "matchRate": 0
+        },
+        {
+          "row": 16,
+          "col": 2,
+          "x": 540,
+          "y": 8070,
+          "width": 270,
+          "height": 505,
+          "diffPixels": 136350,
+          "totalPixels": 136350,
+          "matchRate": 0
+        },
+        {
+          "row": 16,
+          "col": 3,
+          "x": 810,
+          "y": 8070,
+          "width": 270,
+          "height": 505,
+          "diffPixels": 136350,
+          "totalPixels": 136350,
+          "matchRate": 0
+        },
+        {
+          "row": 17,
+          "col": 0,
+          "x": 0,
+          "y": 8575,
+          "width": 270,
+          "height": 504,
+          "diffPixels": 136080,
+          "totalPixels": 136080,
+          "matchRate": 0
+        },
+        {
+          "row": 17,
+          "col": 1,
+          "x": 270,
+          "y": 8575,
+          "width": 270,
+          "height": 504,
+          "diffPixels": 136080,
+          "totalPixels": 136080,
+          "matchRate": 0
+        },
+        {
+          "row": 17,
+          "col": 2,
+          "x": 540,
+          "y": 8575,
+          "width": 270,
+          "height": 504,
+          "diffPixels": 136080,
+          "totalPixels": 136080,
+          "matchRate": 0
+        },
+        {
+          "row": 17,
+          "col": 3,
+          "x": 810,
+          "y": 8575,
+          "width": 270,
+          "height": 504,
+          "diffPixels": 136080,
+          "totalPixels": 136080,
+          "matchRate": 0
+        },
+        {
+          "row": 18,
+          "col": 0,
+          "x": 0,
+          "y": 9079,
+          "width": 270,
+          "height": 504,
+          "diffPixels": 136080,
+          "totalPixels": 136080,
+          "matchRate": 0
+        },
+        {
+          "row": 18,
+          "col": 1,
+          "x": 270,
+          "y": 9079,
+          "width": 270,
+          "height": 504,
+          "diffPixels": 136080,
+          "totalPixels": 136080,
+          "matchRate": 0
+        },
+        {
+          "row": 18,
+          "col": 2,
+          "x": 540,
+          "y": 9079,
+          "width": 270,
+          "height": 504,
+          "diffPixels": 136080,
+          "totalPixels": 136080,
+          "matchRate": 0
+        },
+        {
+          "row": 18,
+          "col": 3,
+          "x": 810,
+          "y": 9079,
+          "width": 270,
+          "height": 504,
+          "diffPixels": 136080,
+          "totalPixels": 136080,
+          "matchRate": 0
+        },
+        {
+          "row": 19,
+          "col": 0,
+          "x": 0,
+          "y": 9583,
+          "width": 270,
+          "height": 505,
+          "diffPixels": 136350,
+          "totalPixels": 136350,
+          "matchRate": 0
+        },
+        {
+          "row": 19,
+          "col": 1,
+          "x": 270,
+          "y": 9583,
+          "width": 270,
+          "height": 505,
+          "diffPixels": 136350,
+          "totalPixels": 136350,
+          "matchRate": 0
+        },
+        {
+          "row": 19,
+          "col": 2,
+          "x": 540,
+          "y": 9583,
+          "width": 270,
+          "height": 505,
+          "diffPixels": 136350,
+          "totalPixels": 136350,
+          "matchRate": 0
+        },
+        {
+          "row": 19,
+          "col": 3,
+          "x": 810,
+          "y": 9583,
+          "width": 270,
+          "height": 505,
+          "diffPixels": 136350,
+          "totalPixels": 136350,
+          "matchRate": 0
+        },
+        {
+          "row": 20,
+          "col": 0,
+          "x": 0,
+          "y": 10088,
+          "width": 270,
+          "height": 504,
+          "diffPixels": 136080,
+          "totalPixels": 136080,
+          "matchRate": 0
+        },
+        {
+          "row": 20,
+          "col": 1,
+          "x": 270,
+          "y": 10088,
+          "width": 270,
+          "height": 504,
+          "diffPixels": 136080,
+          "totalPixels": 136080,
+          "matchRate": 0
+        },
+        {
+          "row": 20,
+          "col": 2,
+          "x": 540,
+          "y": 10088,
+          "width": 270,
+          "height": 504,
+          "diffPixels": 136080,
+          "totalPixels": 136080,
+          "matchRate": 0
+        },
+        {
+          "row": 20,
+          "col": 3,
+          "x": 810,
+          "y": 10088,
+          "width": 270,
+          "height": 504,
+          "diffPixels": 136080,
+          "totalPixels": 136080,
+          "matchRate": 0
+        },
+        {
+          "row": 21,
+          "col": 0,
+          "x": 0,
+          "y": 10592,
+          "width": 270,
+          "height": 505,
+          "diffPixels": 136350,
+          "totalPixels": 136350,
+          "matchRate": 0
+        },
+        {
+          "row": 21,
+          "col": 1,
+          "x": 270,
+          "y": 10592,
+          "width": 270,
+          "height": 505,
+          "diffPixels": 136350,
+          "totalPixels": 136350,
+          "matchRate": 0
+        },
+        {
+          "row": 21,
+          "col": 2,
+          "x": 540,
+          "y": 10592,
+          "width": 270,
+          "height": 505,
+          "diffPixels": 136350,
+          "totalPixels": 136350,
+          "matchRate": 0
+        },
+        {
+          "row": 21,
+          "col": 3,
+          "x": 810,
+          "y": 10592,
+          "width": 270,
+          "height": 505,
+          "diffPixels": 136350,
+          "totalPixels": 136350,
+          "matchRate": 0
+        },
+        {
+          "row": 22,
+          "col": 0,
+          "x": 0,
+          "y": 11097,
+          "width": 270,
+          "height": 504,
+          "diffPixels": 136080,
+          "totalPixels": 136080,
+          "matchRate": 0
+        },
+        {
+          "row": 22,
+          "col": 1,
+          "x": 270,
+          "y": 11097,
+          "width": 270,
+          "height": 504,
+          "diffPixels": 136080,
+          "totalPixels": 136080,
+          "matchRate": 0
+        },
+        {
+          "row": 22,
+          "col": 2,
+          "x": 540,
+          "y": 11097,
+          "width": 270,
+          "height": 504,
+          "diffPixels": 136080,
+          "totalPixels": 136080,
+          "matchRate": 0
+        },
+        {
+          "row": 22,
+          "col": 3,
+          "x": 810,
+          "y": 11097,
+          "width": 270,
+          "height": 504,
+          "diffPixels": 136080,
+          "totalPixels": 136080,
+          "matchRate": 0
+        },
+        {
+          "row": 23,
+          "col": 0,
+          "x": 0,
+          "y": 11601,
+          "width": 270,
+          "height": 505,
+          "diffPixels": 116910,
+          "totalPixels": 116910,
+          "matchRate": 0
+        },
+        {
+          "row": 23,
+          "col": 1,
+          "x": 270,
+          "y": 11601,
+          "width": 270,
+          "height": 505,
+          "diffPixels": 116910,
+          "totalPixels": 116910,
+          "matchRate": 0
+        },
+        {
+          "row": 23,
+          "col": 2,
+          "x": 540,
+          "y": 11601,
+          "width": 270,
+          "height": 505,
+          "diffPixels": 116910,
+          "totalPixels": 116910,
+          "matchRate": 0
+        },
+        {
+          "row": 23,
+          "col": 3,
+          "x": 810,
+          "y": 11601,
+          "width": 270,
+          "height": 505,
+          "diffPixels": 116910,
+          "totalPixels": 116910,
+          "matchRate": 0
+        }
+      ]
+    },
+    "diffReport": {
+      "alignment": {
+        "translation": {
+          "x": 0,
+          "y": 0
+        },
+        "source": "none",
+        "applied": false,
+        "baselineResidual": 0.983087802733347,
+        "correctedResidual": 0.983087802733347,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "rotation": 0,
+        "confidence": 1,
+        "residual": 0.983087802733347
+      },
+      "regionScores": [
+        {
+          "regionId": "whole-frame",
+          "bbox": {
+            "x": 0,
+            "y": 0,
+            "w": 1080,
+            "h": 12106
+          },
+          "scope": "root",
+          "structure": 0.529164107989934,
+          "color": 58.947494501424266,
+          "shape": 1,
+          "layout": 0,
+          "textureScore": 0.050135681754519636
+        }
+      ],
+      "issues": [
+        {
+          "regionId": "whole-frame",
+          "bbox": {
+            "x": 0,
+            "y": 0,
+            "w": 1080,
+            "h": 12106
+          },
+          "kind": "color",
+          "severity": "critical",
+          "evidence": {
+            "signal": "delta_e_2000",
+            "value": 58.947494501424266,
+            "threshold": 2,
+            "expected": "< 2",
+            "actual": 58.947494501424266
+          },
+          "suggestedCssFix": "背景色や塗り色のトークン値をデザイン基準に合わせてください。"
+        }
+      ],
+      "weightedAggregate": {
+        "weightedStructure": 0.529164107989934,
+        "weightedColor": 58.947494501424266,
+        "totalWeight": 0.9649050227718362
+      },
+      "structuralAssessment": {
+        "metric": "ssim-contrast-structure-area-v1",
+        "score": 0.947274701376849,
+        "evaluatedPixelCount": 12918960,
+        "excludedPixelCount": 155520,
+        "passThreshold": 0.95,
+        "failThreshold": 0.8,
+        "verdict": "inconclusive",
+        "rationale": "Area-weighted contrast and structure over disjoint 8x8 windows. Uniform luminance shifts are excluded; contrast changes remain. Local issues and the aggregate gate remain independent."
+      },
+      "aggregateVerdict": "fail",
+      "rationale": "critical severity issue detected; weakest region whole-frame (structure 0.529, color ΔE 58.947; lower=better, critical threshold 2) with texture-adjusted weights active (alpha 0.700, photo-like cap 0.300)"
+    },
+    "preflight": {
+      "warnings": [
+        {
+          "code": "width_mismatch",
+          "severity": "critical",
+          "message": "Figma レンダリング画像幅 360px に対し、スクリーンショット幅は 1080px です。幅が違うと要素が横方向にズレ、全面が差分として検出されます。",
+          "suggestedFix": "端末キャプチャは物理ピクセルで返るため、Figma フレームを同じスケール（例: DPR込みの 1080px 幅）でレンダリングして比較してください。 サイト実装が vw ベースのレスポンシブ幅を使っている場合は、ブラウザの viewport 幅やスクロールバー有無で固定pxの Figma フレームと描画幅がずれることがあるため、意図した viewport / scrollbar 条件も確認してください。"
+        }
+      ]
+    },
+    "normalization": {
+      "designNativeWidth": 360,
+      "designNativeHeight": 800,
+      "screenshotWidth": 1080,
+      "screenshotHeight": 12106,
+      "cropApplied": false,
+      "containResized": true,
+      "appliedScale": 1,
+      "autoCropped": false,
+      "cropSource": "none"
+    },
+    "ignoreRegionResolution": {
+      "coordinateContext": {
+        "canvas_width": 1080,
+        "canvas_height": 12106,
+        "design_original_width": 360,
+        "design_original_height": 800,
+        "screenshot_original_width": 1080,
+        "screenshot_original_height": 12106
+      },
+      "appliedIds": [],
+      "incompatibleIds": [],
+      "legacyIds": [],
+      "effectiveCanvas": {
+        "width": 1080,
+        "height": 12106
+      },
+      "effectiveRegions": [
+        {
+          "x": 0,
+          "y": 0,
+          "width": 1080,
+          "height": 72,
+          "label": "system:status-bar"
+        },
+        {
+          "x": 0,
+          "y": 12034,
+          "width": 1080,
+          "height": 72,
+          "label": "system:navigation-bar"
+        }
+      ],
+      "maskedPixelCount": 155520,
+      "maskSha256": "1c0d8b2b712e1ffd7ed207e7a7d5d3eebb8b3287d010db61b05c817789635bb4"
+    },
+    "comparisonConditions": {
+      "status": "unverified",
+      "design": {
+        "canvas": {
+          "width": 360,
+          "height": 800
+        },
+        "canvasSource": "image-metadata",
+        "unverified": [
+          "viewport",
+          "pixelRatio",
+          "origin"
+        ]
+      },
+      "screenshot": {
+        "canvas": {
+          "width": 1080,
+          "height": 12106
+        },
+        "canvasSource": "image-metadata",
+        "observed": {
+          "viewportPixels": {
+            "width": 1080,
+            "height": 2400
+          },
+          "source": "scroll-capture"
+        },
+        "unverified": [
+          "viewport",
+          "pixelRatio",
+          "origin"
+        ]
+      },
+      "differences": [],
+      "message": "表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。"
+    },
+    "scrollCapture": {
+      "captureCount": 10,
+      "stitchedWidth": 1080,
+      "stitchedHeight": 12106,
+      "viewportWidth": 1080,
+      "viewportHeight": 2400,
+      "fixedHeaderHeight": 128,
+      "fixedFooterHeight": 63,
+      "reachedBottom": true,
+      "truncatedAtCaptureLimit": false,
+      "didNotScroll": false,
+      "startedAtTop": true,
+      "notes": [
+        "3 箇所で重なりの完全一致が取れず、行の平均輝度による近似で繋いでいます。繋ぎ目の位置がずれている可能性があります。"
+      ]
+    },
+    "diagnosis": {
+      "verdict": "likely_misconfig",
+      "likelyMisconfig": true,
+      "rankedCauses": [
+        {
+          "code": "width_mismatch",
+          "confidence": 0.9,
+          "message": "撮影幅と Figma フレーム幅が一致していません。レイアウト自体は合っていても全面が差分になります。",
+          "suggestedFix": "端末キャプチャは物理ピクセルで返るため、Figma フレームを同じスケール（例: DPR込みの 1080px 幅）でレンダリングして比較してください。 サイト実装が vw ベースのレスポンシブ幅を使っている場合は、ブラウザの viewport 幅やスクロールバー有無で固定pxの Figma フレームと描画幅がずれることがあるため、意図した viewport / scrollbar 条件も確認してください。"
+        },
+        {
+          "code": "aspect_mismatch",
+          "confidence": 0.45,
+          "message": "Figma フレームとスクリーンショットに軽い縦横比差があります。contain 正規化のレターボックス余白は差分から除外済みです。",
+          "suggestedFix": "余白部分ではなく、残っている diffRegions を実際の視覚差分として確認してください。必要なら viewport に合わせた crop を設定してください。",
+          "classification": "mild_aspect_mismatch"
+        }
+      ],
+      "headline": "⚠️ これは実装差分ではなくセットアップ問題の可能性が高いです（一致率 1.74%）。最有力原因: 撮影幅と Figma フレーム幅が一致していません。レイアウト自体は合っていても全面が差分になります。"
+    },
+    "comparisonHeadline": {
+      "structureMatch": 52.92,
+      "colorOnlyRegions": 0,
+      "structuralRegions": 1,
+      "headline": "構造一致 52.92% / 色のみ差分 0領域 / 構造差分 1領域"
+    },
+    "loopGuard": {
+      "stop": true,
+      "step": 1,
+      "maxSteps": 10,
+      "remainingSteps": 9,
+      "reason": "uncertain",
+      "message": "判定が UNCERTAIN です。この比較は判定の確からしさを損なう条件を含むため、自動修正を止めて人間のレビューに回してください。",
+      "iteration": 1,
+      "decision": "stop"
+    },
+    "toastBandCandidates": [
+      {
+        "x": 0,
+        "y": 7369,
+        "width": 1080,
+        "height": 189,
+        "contrast": 107,
+        "position": "bottom"
+      },
+      {
+        "x": 0,
+        "y": 7663,
+        "width": 1080,
+        "height": 189,
+        "contrast": 107,
+        "position": "bottom"
+      }
+    ],
+    "verdictRoute": "pixel",
+    "verificationContext": {
+      "version": 1,
+      "design": {
+        "sourceIdentitySha256": "899b21b5d35dea3bfd6af7bb4bdd39fd24f87404b4668d6bfca6c3378e9ba6ff",
+        "imageSha256": "2c09bc21b2615c5a4130e79c84cdaf0d150abfeefc5c44ad29ab1e7a384a8f88",
+        "background": "#FFFFFF",
+        "figmaExportConditions": null
+      },
+      "comparison": {
+        "effectiveThreshold": 0.1,
+        "profile": null,
+        "declaredConditions": {},
+        "geometry": {
+          "designNativeWidth": 360,
+          "designNativeHeight": 800,
+          "screenshotWidth": 1080,
+          "cropApplied": false,
+          "autoCropped": false,
+          "cropSource": "none"
+        }
+      },
+      "mask": {
+        "status": "applied",
+        "coordinateContext": {
+          "canvas_width": 1080,
+          "canvas_height": 12106,
+          "design_original_width": 360,
+          "design_original_height": 800,
+          "screenshot_original_width": 1080,
+          "screenshot_original_height": 12106
+        },
+        "effectiveCanvas": {
+          "width": 1080,
+          "height": 12106
+        },
+        "effectiveRegions": [
+          {
+            "x": 0,
+            "y": 0,
+            "width": 1080,
+            "height": 72,
+            "label": "system:status-bar"
+          },
+          {
+            "x": 0,
+            "y": 12034,
+            "width": 1080,
+            "height": 72,
+            "label": "system:navigation-bar"
+          }
+        ],
+        "maskedPixelCount": 155520,
+        "maskSha256": "1c0d8b2b712e1ffd7ed207e7a7d5d3eebb8b3287d010db61b05c817789635bb4",
+        "appliedIds": [],
+        "legacyIds": []
+      },
+      "fingerprint": "5b45a83427f03299a67a15965a4ed7b08c3add3e6ab3f21b92591cca84aa3fc0"
+    },
+    "diffImagePath": "/home/ubuntu/repos/designdiff/docs/evidence/round2-linux-wsl/stdio-android-verification/figdiff-home/results/diff-cmp-fac2b09a-9f35-42e2-bed3-595021efb09d.png"
+  }
+}

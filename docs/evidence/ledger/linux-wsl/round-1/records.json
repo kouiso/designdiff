@@ -4,7 +4,7 @@
   "round": 1,
   "productSha": "4e9145e5e051d4efe78a922723f7b3245005a05e",
   "generatedAt": "2026-09-19T05:25:03.946Z",
-  "recordCount": 62,
+  "recordCount": 64,
   "records": [
     {
       "case": "C01",
@@ -2215,6 +2215,80 @@
         {
           "path": "ledger/linux-wsl/round-1/X09/desktop/X09-result.json",
           "sha256": "4ecd0a5fcefaefc7bb4ef681bc16f03395cb3225fffccb4db7783f07c0a5c737"
+        }
+      ]
+    },
+    {
+      "case": "X05",
+      "round": 1,
+      "platform": "linux-wsl",
+      "route": "android",
+      "roundExecutionId": "round1",
+      "executedAt": "2026-09-19T07:33:30.000Z",
+      "productSha": "4e9145e5e051d4efe78a922723f7b3245005a05e",
+      "dirty": false,
+      "status": "PASS",
+      "newBugs": 0,
+      "observedKnownDefects": [],
+      "buildDigest": "da4a551faec001f09e6f00320613bef5c1fa93aeaf9ba31422822db0cd73cbb7",
+      "environment": "linux-wsl",
+      "input": "Android2台接続・対象端末指定・切断・未認証端末",
+      "steps": "指定端末の撮影と誤切替確認 [drivers: app/mcp-server/script/stdio-android-verification.mjs]",
+      "expected": "指定端末を撮影し、誤端末へ黙って切り替わらない",
+      "actual": "{\"stdio-android-verification:X05_ambiguous_rejected\":{\"isError\":true,\"text\":\"Error: Multiple Android devices are connected: emulator-5554, emulator-5556. Set deviceSerial or ANDROID_SERIAL.\"},\"stdio-android-verification:X05_device_captures\":{\"emulator-5554\":{\"kind\":\"emulator\",\"captured\":\"android-1789803393233-287c5e5f-c25c-4fbb-a8f4-35243227013e.png\",\"width\":1080,\"height\":2400}},\"stdio-android-verification:X05_bogus_serial\":{\"isError\":true,\"text\":\"Error: Android device no-such-serial-000 is not connected. Check adb devices -l.\"}}",
+      "oracle": {
+        "kind": "host-observation",
+        "description": "指定端末を撮影し、誤端末へ黙って切り替わらない"
+      },
+      "evidence": [
+        {
+          "path": "ledger/linux-wsl/round-1/X05/android/stdio-android-verification-evidence.json",
+          "sha256": "15649fb57d9b5a9a0a5059d9136e1f495cbd830533adf345a94d9c8882f23245"
+        },
+        {
+          "path": "ledger/linux-wsl/round-1/X05/android/stdio-android-verification-evidence.json",
+          "sha256": "15649fb57d9b5a9a0a5059d9136e1f495cbd830533adf345a94d9c8882f23245"
+        },
+        {
+          "path": "ledger/linux-wsl/round-1/X05/android/stdio-android-verification-evidence.json",
+          "sha256": "15649fb57d9b5a9a0a5059d9136e1f495cbd830533adf345a94d9c8882f23245"
+        },
+        {
+          "path": "ledger/linux-wsl/round-1/X05/android/X05-result.json",
+          "sha256": "e89d9fc862d76a5dc3420b45de4d27012da38ca4d36849496b988d2c796f6c1a"
+        }
+      ]
+    },
+    {
+      "case": "X07",
+      "round": 1,
+      "platform": "linux-wsl",
+      "route": "android",
+      "roundExecutionId": "round1",
+      "executedAt": "2026-09-19T07:33:30.000Z",
+      "productSha": "4e9145e5e051d4efe78a922723f7b3245005a05e",
+      "dirty": false,
+      "status": "PASS",
+      "newBugs": 0,
+      "observedKnownDefects": [],
+      "buildDigest": "da4a551faec001f09e6f00320613bef5c1fa93aeaf9ba31422822db0cd73cbb7",
+      "environment": "linux-wsl",
+      "input": "モバイルの長い画面・system UI mask・トースト",
+      "steps": "分割撮影・結合・除外 [drivers: app/mcp-server/script/stdio-android-verification.mjs]",
+      "expected": "正規UIを隠さず、結合・除外の根拠を追跡できる",
+      "actual": "{\"stdio-android-verification:X07_android_scroll\":{\"isError\":false,\"status\":\"PASS\",\"comparisonStatus\":\"UNCERTAIN\",\"scrollCapture\":{\"captureCount\":10,\"stitchedWidth\":1080,\"stitchedHeight\":12131,\"viewportWidth\":1080,\"viewportHeight\":2400,\"fixedHeaderHeight\":128,\"fixedFooterHeight\":63,\"reachedBottom\":true,\"truncatedAtCaptureLimit\":false,\"didNotScroll\":false,\"startedAtTop\":true,\"notes\":[\"3 箇所で重なりの完全一致が取れず、行の平均輝度による近似で繋いでいます。繋ぎ目の位置がずれている可能性があります。\"]},\"ignoreRegionResolution\":{\"effectiveRegions\":[{\"x\":0,\"y\":0,\"width\":1080,\"height\":72,\"label\":\"system:status-bar\"},{\"x\":0,\"y\":12059,\"width\":1080,\"height\":72,\"label\":\"system:navigation-bar\"}],\"maskedPixelCount\":155520,\"maskSha256\":\"b694dd82db5ce691c794b0ecc431af28aaf8da0f0fe33c13959f80db967c914d\"},\"textHead\":\"{\\n  \\\"status\\\": \\\"UNCERTAIN\\\",\\n  \\\"comparisonId\\\": \\\"cmp-8627bf3c-e7d6-43f9-8475-b952cc0196f6\\\",\\n  \\\"matchRate\\\": 1.74,\\n  \\\"diffPixelCount\\\": 12721247,\\n  \\\"totalPixelCount\\\": 12945960,\\n  \\\"remainingIssues\\\": 1,\\n  \\\"diffRegions\\\": [],\\n  \\\"totalRegionCount\\\": 0,\\n  \\\"returnedRegionCount\\\": 0,\\n  \\\"regionsTruncated\\\": false,\\n  \\\"completionCriteria\\\": {\\n    \\\"structuralReview\\\": {\\n      \\\"required\\\": 1,\\n      \\\"current\\\": 0,\\n      \\\"st\"}}",
+      "oracle": {
+        "kind": "source-pixels",
+        "description": "正規UIを隠さず、結合・除外の根拠を追跡できる"
+      },
+      "evidence": [
+        {
+          "path": "ledger/linux-wsl/round-1/X07/android/stdio-android-verification-evidence.json",
+          "sha256": "15649fb57d9b5a9a0a5059d9136e1f495cbd830533adf345a94d9c8882f23245"
+        },
+        {
+          "path": "ledger/linux-wsl/round-1/X07/android/X07-result.json",
+          "sha256": "88801a048d23d1c1711a5e97e10eae22e8387a086f8098ac48cce9faa9a4b180"
         }
       ]
     }
