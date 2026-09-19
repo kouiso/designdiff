@@ -253,7 +253,10 @@ try {
 
   // win32 では xwininfo/XTest が使えんため、同じ `0xhwnd "title"` 形式を
   // 返す win32-native-dialog.ps1 (EnumWindows/SendKeys/System.Drawing) に切替える。
+  // darwin も X11 ツールが存在せんため、同契約の darwin-native-dialog.jxa
+  // (CGWindowListCopyWindowInfo + System Events keystroke) を使う。
   const isWin32 = process.platform === "win32";
+  const isDarwin = process.platform === "darwin";
   const winDialogHelper = join(directory, "win32-native-dialog.ps1");
   const winDialog = (args, timeout = 10_000) =>
     spawnSync(
@@ -261,14 +264,23 @@ try {
       ["-STA", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", winDialogHelper, ...args],
       { env: environment, encoding: "utf8", timeout },
     );
+  const macDialogHelper = join(directory, "darwin-native-dialog.jxa");
+  const macDialog = (args, timeout = 10_000) =>
+    spawnSync("osascript", ["-l", "JavaScript", macDialogHelper, ...args], {
+      env: environment,
+      encoding: "utf8",
+      timeout,
+    });
   const inspectNativeDialog = () => {
     const result = isWin32
       ? winDialog(["tree"], 8_000)
-      : spawnSync("xwininfo", ["-root", "-tree"], {
-          env: environment,
-          encoding: "utf8",
-          timeout: 2_000,
-        });
+      : isDarwin
+        ? macDialog(["tree"], 8_000)
+        : spawnSync("xwininfo", ["-root", "-tree"], {
+            env: environment,
+            encoding: "utf8",
+            timeout: 2_000,
+          });
     return { tree: result.stdout ?? "", complete: result.status === 0 };
   };
   const nativeDialogState = () => {
@@ -308,6 +320,11 @@ try {
     assert.ok(match, `${label} window id must be discoverable`);
     if (isWin32) {
       const result = winDialog(["shot", match[1], path]);
+      assert.equal(result.status, 0, `${label} capture failed: ${result.stderr ?? ""}`);
+      return;
+    }
+    if (isDarwin) {
+      const result = macDialog(["shot", match[1], path]);
       assert.equal(result.status, 0, `${label} capture failed: ${result.stderr ?? ""}`);
       return;
     }
@@ -362,7 +379,9 @@ x.XSync(d, 0)
     );
   // GTK では Ctrl+L→Ctrl+A→path→Enter。win32 ではフォーカス依存の入力が
   // 他窓に吸われ得るため、WM_CHAR で filename Edit に直接入力してから
-  // Save ボタンへ BM_CLICK を投げる (フォーカス不要の経路)。
+  // Save ボタンへ BM_CLICK を投げる (フォーカス不要の経路)。darwin では
+  // NSSavePanel の Go to folder sheet へ POSIX path を keystroke する
+  // (System Events 経由、アクセシビリティ権限が必要)。
   const sendDialogInput = (text) => {
     if (isWin32) {
       const found = winDialog(["find"]);
@@ -376,12 +395,33 @@ x.XSync(d, 0)
       assert.equal(result.status, 0, `dialog input failed (hwnd=${hwnd}): ${result.stderr ?? ""}`);
       return;
     }
+    if (isDarwin) {
+      const found = macDialog(["find"]);
+      assert.equal(
+        found.status,
+        0,
+        `Save File dialog id must be discoverable (status=${found.status} stderr=${found.stderr ?? ""})`,
+      );
+      const windowId = found.stdout.trim();
+      const result = macDialog(["save", windowId, text], 20_000);
+      assert.equal(
+        result.status,
+        0,
+        `dialog input failed (windowId=${windowId}): ${result.stderr ?? ""}`,
+      );
+      return;
+    }
     nativeKeys(`\x0c\x01${text}\n\n`);
   };
   const sendDialogCancel = () => {
     if (isWin32) {
       const found = winDialog(["find"]);
       if (found.status === 0) winDialog(["cancel", found.stdout.trim()], 15_000);
+      return;
+    }
+    if (isDarwin) {
+      const found = macDialog(["find"]);
+      if (found.status === 0) macDialog(["cancel", found.stdout.trim()], 15_000);
       return;
     }
     nativeKeys("\x1b");
