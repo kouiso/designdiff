@@ -12,7 +12,10 @@ export const caseDescriptions = {
   C01: {
     input: "不透明な同一画像2枚",
     steps: "比較・詳細表示・出力を実施",
-    oracle: { kind: px, description: "元画素の一致を独立計算し、存在しない欠陥が報告されないことを確認" },
+    oracle: {
+      kind: px,
+      description: "元画素の一致を独立計算し、存在しない欠陥が報告されないことを確認",
+    },
   },
   C02: {
     input: "内容を左右上下に1px・2px移動した画像群",
@@ -82,12 +85,18 @@ export const caseDescriptions = {
   M02: {
     input: "create_project/list_projects/delete_project 正常・既存・無効ファイル",
     steps: "作成・再起動・一覧・無効データ・削除",
-    oracle: { kind: schema, description: "保存と一覧が一致し、無効データを診断でき別案件を変更しない" },
+    oracle: {
+      kind: schema,
+      description: "保存と一覧が一致し、無効データを診断でき別案件を変更しない",
+    },
   },
   M03: {
     input: "set_figma_token 有効・無効認証",
     steps: "保存・再起動",
-    oracle: { kind: schema, description: "秘密値を応答やログへ漏らさず、接続可否と復旧方法が分かる" },
+    oracle: {
+      kind: schema,
+      description: "秘密値を応答やログへ漏らさず、接続可否と復旧方法が分かる",
+    },
   },
   M04: {
     input: "list_figma_frames 複数ページ・大量フレーム・node指定・不正URL",
@@ -137,12 +146,18 @@ export const caseDescriptions = {
   M13: {
     input: "エラー契約 書込み不可保存先・無効入力・通信失敗",
     steps: "各エラー経路をSDK経由で呼出し",
-    oracle: { kind: schema, description: "元のエラーと復旧手順を取得し、成功スキーマ違反で隠れない" },
+    oracle: {
+      kind: schema,
+      description: "元のエラーと復旧手順を取得し、成功スキーマ違反で隠れない",
+    },
   },
   M14: {
     input: "比較ループ 同一対象反復・別campaign開始・プロセス再起動",
     steps: "継続・新規・再起動の各経路",
-    oracle: { kind: schema, description: "新規作業が過去の停止履歴に巻き込まれず、同一作業は履歴を維持" },
+    oracle: {
+      kind: schema,
+      description: "新規作業が過去の停止履歴に巻き込まれず、同一作業は履歴を維持",
+    },
   },
   M15: {
     input: "撮影幅 推奨幅を適用して3回撮影",
@@ -152,7 +167,10 @@ export const caseDescriptions = {
   M16: {
     input: "自律利用 対象探索→撮影→比較→根拠確認→修正→再比較→レポート",
     steps: "個人スキルなしのAIへ実対象を完走させる",
-    oracle: { kind: host, description: "手順補足なしで適切に進み、停止理由を説明できる。実行会話と画像を残す" },
+    oracle: {
+      kind: host,
+      description: "手順補足なしで適切に進み、停止理由を説明できる。実行会話と画像を残す",
+    },
   },
   D01: {
     input: "初回起動→認証→案件作成→フレーム選択",
@@ -207,7 +225,10 @@ export const caseDescriptions = {
   X01: {
     input: "実Chrome拡張を分離プロファイルへ読み込み",
     steps: "popup→撮影→比較→overlay",
-    oracle: { kind: host, description: "popup→background→contentの実通信と実画面を確認。再現DOM注入で代用しない" },
+    oracle: {
+      kind: host,
+      description: "popup→background→contentの実通信と実画面を確認。再現DOM注入で代用しない",
+    },
   },
   X02: {
     input: "overlayの移動・スクロール・透明度・ページ遷移・閉じる",
@@ -263,7 +284,21 @@ export const driverCoverage = [
   {
     driver: "app/mcp-server/script/stdio-campaign-verification.mjs",
     route: "mcp",
-    provides: ["C04", "C05", "C06", "C07", "C08", "C11", "C12", "M02", "M03", "M05", "M07", "M08", "M10"],
+    provides: [
+      "C04",
+      "C05",
+      "C06",
+      "C07",
+      "C08",
+      "C11",
+      "C12",
+      "M02",
+      "M03",
+      "M05",
+      "M07",
+      "M08",
+      "M10",
+    ],
   },
   {
     driver: "app/mcp-server/script/stdio-campaign-verification2.mjs",

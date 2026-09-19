@@ -24,11 +24,7 @@ const PACKAGES = [
   "app/figma-plugin",
   "app/mcp-server",
 ];
-const CORE = new Set([
-  "@figdiff/shared",
-  "@figdiff/credential-store",
-  "@figdiff/mobile-capture",
-]);
+const CORE = new Set(["@figdiff/shared", "@figdiff/credential-store", "@figdiff/mobile-capture"]);
 const CORE_DIRS = ["package/shared", "package/credential-store", "package/mobile-capture"];
 const APP_PACKAGES = new Set([
   "@figdiff/desktop",
@@ -39,10 +35,15 @@ const APP_PACKAGES = new Set([
 
 const walk = async (dir, out = []) => {
   for (const entry of await readdir(dir, { withFileTypes: true })) {
-    if (entry.name === "node_modules" || entry.name === "dist" || entry.name.startsWith(".")) continue;
+    if (entry.name === "node_modules" || entry.name === "dist" || entry.name.startsWith("."))
+      continue;
     const p = join(dir, entry.name);
     if (entry.isDirectory()) out.push(...(await walk(p)));
-    else if (/\.(ts|tsx|mts)$/.test(entry.name) && !entry.name.endsWith(".test.ts") && !entry.name.endsWith(".test.tsx")) {
+    else if (
+      /\.(ts|tsx|mts)$/.test(entry.name) &&
+      !entry.name.endsWith(".test.ts") &&
+      !entry.name.endsWith(".test.tsx")
+    ) {
       out.push(p);
     }
   }
@@ -114,7 +115,8 @@ const results = {};
 // 4. コア層への UI/AI 都合の混入
 {
   // Figma API の document フィールドと区別するため DOM アクセス形だけを見る。
-  const banned = /electron|playwright|@modelcontextprotocol|document\.(?:createElement|getElementById|querySelector|body|title)|OffscreenCanvas|chrome\.(?:runtime|tabs|storage)/;
+  const banned =
+    /electron|playwright|@modelcontextprotocol|document\.(?:createElement|getElementById|querySelector|body|title)|OffscreenCanvas|chrome\.(?:runtime|tabs|storage)/;
   const violations = [];
   for (const dir of CORE_DIRS) {
     for (const file of await walk(join(root, dir, "src"))) {
@@ -145,7 +147,10 @@ results.ok = true;
 if (evidenceDir) {
   const { mkdir, writeFile } = await import("node:fs/promises");
   await mkdir(evidenceDir, { recursive: true });
-  await writeFile(join(evidenceDir, "x10-dependency-graph.json"), `${JSON.stringify(results, null, 2)}\n`);
+  await writeFile(
+    join(evidenceDir, "x10-dependency-graph.json"),
+    `${JSON.stringify(results, null, 2)}\n`,
+  );
   // 台帳形式の evidence.json も併記する。check 本体は上の manifest と同じ内容。
   await writeFile(
     join(evidenceDir, "evidence.json"),
