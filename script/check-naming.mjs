@@ -8,7 +8,16 @@ import { execSync } from "node:child_process";
 
 // Path prefixes fully exempt from ALL naming checks (harness / tooling dirs
 // whose layout is dictated by the tool, not by us).
-const EXEMPT_PREFIXES = [".github/", ".claude/", ".gemini/", ".agents/", ".vscode/", ".idea/"];
+const EXEMPT_PREFIXES = [
+  ".github/",
+  ".claude/",
+  ".gemini/",
+  ".agents/",
+  ".vscode/",
+  ".idea/",
+  // driver が出力する検証証跡はツール側の命名規約に従うため、リポジトリ側でリネームしない
+  "docs/evidence/",
+];
 
 // Uppercase / non-kebab basenames that are established tool conventions.
 const EXEMPT_BASENAMES = new Set([
