@@ -4,6 +4,7 @@ import type { DesktopCompareResult } from "@/service/image-compare";
 
 import { useCompareStore } from "./compare-store";
 import { useProjectStore } from "./project-store";
+import { useTabStore } from "./tab-store";
 
 vi.mock("@/service/image-compare", () => ({
   compareImages: vi.fn(),
@@ -36,6 +37,7 @@ const initialState = {
 function resetStore() {
   useCompareStore.setState(initialState);
   useProjectStore.setState({ currentFileKey: null, selectedFrame: null });
+  useTabStore.setState({ tabs: [], activeTabId: null });
 }
 
 function deferred<T>() {
@@ -696,5 +698,50 @@ describe("useCompareStore", () => {
       expect(useCompareStore.getState().currentComparison?.result.comparisonId).toBe("current");
       expect(useCompareStore.getState().compareResult?.comparisonId).toBe("current");
     });
+  });
+});
+
+describe("プロジェクト切り替え時の状態クリア", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    resetStore();
+  });
+
+  it("別プロジェクトのタブへ切り替えると比較状態とデザイン状態がクリアされる", () => {
+    useTabStore.getState().openTab("project-a", "Project A");
+    useCompareStore.getState().setDesignImage("data:image/png;base64,project-a-image");
+    useCompareStore.setState({
+      fixTarget: { ...nodeSource, fileKey: "file-a", designImage: "img" },
+      screenshotImage: "data:image/png;base64,shot-a",
+    });
+    useProjectStore.setState({ currentFileKey: "file-a" });
+
+    useTabStore.getState().openTab("project-b", "Project B");
+
+    const compare = useCompareStore.getState();
+    expect(compare.designImage).toBeNull();
+    expect(compare.screenshotImage).toBeNull();
+    expect(compare.fixTarget).toBeNull();
+    expect(useProjectStore.getState().currentFileKey).toBeNull();
+  });
+
+  it("同じプロジェクトのタブに戻っても比較状態は維持される", () => {
+    const tabId = useTabStore.getState().openTab("project-c", "Project C");
+    useCompareStore.getState().setDesignImage("data:image/png;base64,project-c-image");
+
+    useTabStore.getState().setActiveTab(null);
+    useTabStore.getState().setActiveTab(tabId);
+
+    expect(useCompareStore.getState().designImage).toBe("data:image/png;base64,project-c-image");
+  });
+
+  it("タブを閉じて別プロジェクトがアクティブになった場合もクリアされる", () => {
+    useTabStore.getState().openTab("project-d", "Project D");
+    const tabE = useTabStore.getState().openTab("project-e", "Project E");
+    useCompareStore.getState().setDesignImage("data:image/png;base64,project-e-image");
+
+    useTabStore.getState().closeTab(tabE);
+
+    expect(useCompareStore.getState().designImage).toBeNull();
   });
 });
