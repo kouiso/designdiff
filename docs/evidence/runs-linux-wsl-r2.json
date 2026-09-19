@@ -1,8 +1,8 @@
 {
   "platform": "linux-wsl",
   "round": 2,
-  "roundExecutionId": "round2-linux-wsl",
-  "generatedAt": "2026-09-19T04:35:48.427Z",
+  "roundExecutionId": "round2",
+  "generatedAt": "2026-09-19T05:21:03.359Z",
   "entries": [
     {
       "driver": "app/mcp-server/script/stdio-campaign-verification.mjs",
@@ -71,6 +71,7 @@
     {
       "driver": "app/desktop/e2e/native-unmeasured-score.mjs",
       "evidenceDir": "docs/evidence/round2-linux-wsl/native-unmeasured-score",
+      "evidenceFile": "after-native.json",
       "passEvidenceVia": "env:FIGDIFF_SCORE_EVIDENCE",
       "requires": [
         "display-or-xvfb",
@@ -80,6 +81,7 @@
     {
       "driver": "app/desktop/e2e/native-ignore-region.mjs",
       "evidenceDir": "docs/evidence/round2-linux-wsl/native-ignore-region",
+      "evidenceFile": "manifest.json",
       "passEvidenceVia": "env:FIGDIFF_IGNORE_EVIDENCE",
       "requires": [
         "display-or-xvfb",
@@ -89,6 +91,7 @@
     {
       "driver": "app/desktop/e2e/native-figma-node-fix.mjs",
       "evidenceDir": "docs/evidence/round2-linux-wsl/native-figma-node-fix",
+      "evidenceFile": "manifest.json",
       "passEvidenceVia": "env:FIGDIFF_FIGMA_NODE_FIX_EVIDENCE",
       "requires": [
         "display-or-xvfb",
@@ -98,6 +101,7 @@
     {
       "driver": "app/desktop/e2e/native-fix-animation.mjs",
       "evidenceDir": "docs/evidence/round2-linux-wsl/native-fix-animation",
+      "evidenceFile": "manifest.json",
       "passEvidenceVia": "env:FIGDIFF_FIX_ANIMATION_EVIDENCE",
       "requires": [
         "display-or-xvfb",
@@ -107,6 +111,7 @@
     {
       "driver": "app/desktop/e2e/native-issue-report.mjs",
       "evidenceDir": "docs/evidence/round2-linux-wsl/native-issue-report",
+      "evidenceFile": "manifest.json",
       "passEvidenceVia": "env:FIGDIFF_ISSUE_REPORT_EVIDENCE",
       "requires": [
         "display-or-xvfb",
@@ -116,6 +121,7 @@
     {
       "driver": "app/desktop/e2e/native-report-export.mjs",
       "evidenceDir": "docs/evidence/round2-linux-wsl/native-report-export",
+      "evidenceFile": "manifest.json",
       "passEvidenceVia": "env:FIGDIFF_REPORT_EVIDENCE",
       "requires": [
         "display-or-xvfb",
@@ -133,6 +139,7 @@
     {
       "driver": "app/figma-plugin/e2e/real-iframe-host.mjs",
       "evidenceDir": "docs/evidence/round2-linux-wsl/real-iframe-host",
+      "evidenceFile": "manifest.json",
       "passEvidenceVia": "env:FIGDIFF_PLUGIN_HOST_EVIDENCE",
       "requires": [
         "figma-plugin-sandbox"

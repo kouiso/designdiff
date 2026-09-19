@@ -49,19 +49,18 @@ const sharedEvidenceDir = (driver, evidenceRoot) =>
     : `${evidenceRoot}/${basename(driver).replace(/\.mjs$/, "")}`;
 
 // driver が書く結果ファイル名。省略時は evidence.json。
-// desktop native driver 系は evidence.json ではなく固有の結果 json を書く。
+// native系は各証跡dirの manifest.json に results+revision+dirtyState を書く。
+// 台帳はケース帰属を results で判定するため、これらは manifest.json を指す必要がある。
 const evidenceFileFor = (driver) => {
   const x08 = /^app\/mcp-server\/script\/x08\/(mcp|desktop|extension|plugin)\.mjs$/.exec(driver);
   if (x08) return `x08-${x08[1]}.json`;
-  const named = {
-    "app/desktop/e2e/native-unmeasured-score.mjs": "after-native.json",
-    "app/desktop/e2e/native-ignore-region.mjs": "native-ignore-result.json",
-    "app/desktop/e2e/native-figma-node-fix.mjs": "native-figma-node-fix.json",
-    "app/desktop/e2e/native-fix-animation.mjs": "native-fix-animation.json",
-    "app/desktop/e2e/native-issue-report.mjs": "native-issue-report.json",
-    "app/figma-plugin/e2e/real-iframe-host.mjs": "manifest.json",
-  };
-  return named[driver];
+  if (driver === "app/desktop/e2e/native-unmeasured-score.mjs") return "after-native.json";
+  if (
+    /^app\/desktop\/e2e\/native-/.test(driver) ||
+    driver === "app/figma-plugin/e2e/real-iframe-host.mjs"
+  )
+    return "manifest.json";
+  return undefined;
 };
 
 // driver の実行前提。runner の skip 判定と operator 向けメモに使う。
@@ -123,7 +122,9 @@ if (!args.platform || !args.round || !args["evidence-root"] || !args.out) {
   const plan = {
     platform: args.platform,
     round: Number(args.round),
-    roundExecutionId: `round${args.round}-${args.platform}`,
+    // roundExecutionId は round 全体で一意であることが台帳の契約。
+    // platform 毎の sweep は別々の runner で非同期に走るが同一 round の記録となる。
+    roundExecutionId: `round${args.round}`,
     generatedAt: new Date().toISOString(),
     entries,
   };

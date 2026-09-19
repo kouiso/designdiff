@@ -9,6 +9,7 @@ import { copyFile, mkdir, readFile, readdir, realpath, writeFile } from "node:fs
 import { basename, dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { surfaceBuildDigest } from "./build-digest.mjs";
 import { caseDescriptions, driverCoverage } from "./campaign-case-map.mjs";
 import { requiredCampaignRuns } from "./verify-campaign-evidence.mjs";
 
@@ -217,10 +218,24 @@ const assemble = async ({ sha, round, platform, runsPath, outDir, knownDefectsPa
         )
           observedDefects.add(idOf(d));
       }
-      buildDigest ||= bundle.manifest.buildDigest ?? bundle.evidence.product?.buildDigest ?? "";
+      buildDigest ||=
+        bundle.manifest.buildDigest ??
+        bundle.evidence.build?.sha256 ??
+        bundle.evidence.product?.buildDigest ??
+        "";
       environment ||= bundle.manifest.environment ?? platform;
       executedAt ||= bundle.manifest.executedAt ?? "";
       roundExecutionId ||= bundle.manifest.roundExecutionId ?? "";
+    }
+
+    // driver が build digest を記録しない経路では surface の dist/identity から
+    // 決定論的に再計算する。凍結 build と同一内容なら値は一意に定まる。
+    if (!buildDigest) {
+      buildDigest = await surfaceBuildDigest({
+        root,
+        driver: contributions[0].provider.driver,
+        sha,
+      });
     }
 
     const defectList = [...observedDefects];

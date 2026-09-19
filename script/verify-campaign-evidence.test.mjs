@@ -172,11 +172,32 @@ test("必須OSと経路の契約を実装から独立した組合せで固定す
 test("同一実行の巡回番号変更や実行時刻のコピーを拒否する", () =>
   fixture(async (ledger, directory) => {
     ledger.rounds[1].executionId = ledger.rounds[0].executionId;
-    ledger.rounds[1].startedAt = ledger.rounds[0].startedAt;
     ledger.runs[1].roundExecutionId = ledger.runs[0].roundExecutionId;
     ledger.runs[0].executedAt = "2026-09-12T01:00:00Z";
     const errors = (await validateCampaignEvidence(ledger, directory)).join("\n");
     assert.match(errors, /distinct execution IDs/);
-    assert.match(errors, /Round 2 must follow/);
     assert.match(errors, /outside its round/);
+  }));
+
+// platform sweep は非同期に走るため、2巡の成立は大域的な時系列ではなく
+// 同一 case/platform/route の round2 実施時刻が round1 より後であることで担保する。
+test("同一caseのround2がround1より前に実行された記録を拒否する", () =>
+  fixture(async (ledger, directory) => {
+    const target = ledger.runs.find((run) => run.round === 2);
+    target.executedAt = "2026-09-13T00:15:00Z";
+    ledger.rounds[1].startedAt = "2026-09-13T00:10:00Z";
+    ledger.rounds[1].finishedAt = "2026-09-13T02:30:00Z";
+    const errors = (await validateCampaignEvidence(ledger, directory)).join("\n");
+    assert.match(errors, /round 2 does not follow round 1/);
+  }));
+
+test("platform窓が重なってもcase毎のround順序が正しければ受理する", () =>
+  fixture(async (ledger, directory) => {
+    ledger.rounds[0].finishedAt = "2026-09-13T02:30:00Z";
+    ledger.rounds[1].startedAt = "2026-09-13T01:00:00Z";
+    ledger.rounds[1].finishedAt = "2026-09-13T03:00:00Z";
+    for (const run of ledger.runs) {
+      run.executedAt = `2026-09-13T0${run.round}:45:00Z`;
+    }
+    assert.deepEqual(await validateCampaignEvidence(ledger, directory), []);
   }));

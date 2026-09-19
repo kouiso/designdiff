@@ -96,12 +96,8 @@ const checkRounds = (ledger) => {
   const first = rounds.get(1);
   const second = rounds.get(2);
   if (!first || !second) errors.push("Both execution rounds are required");
-  else {
-    if (first.executionId === second.executionId)
-      errors.push("Rounds must have distinct execution IDs");
-    if (Date.parse(second.startedAt) < Date.parse(first.finishedAt))
-      errors.push("Round 2 must follow round 1");
-  }
+  else if (first.executionId === second.executionId)
+    errors.push("Rounds must have distinct execution IDs");
   return { errors, rounds };
 };
 
@@ -180,6 +176,22 @@ export const validateCampaignEvidence = async (ledger, evidenceDirectory) => {
         ...(await checkArtifact(item, root, ledger.productSha)).map((error) => `${id}: ${error}`),
       );
     }
+  }
+  // platform sweep は非同期で走るため、2巡の成立条件は case 単位の実行順序で検査する。
+  // 大域的な時系列窓は multi-platform の証跡収集では前提にできない。
+  const executedAtByCase = new Map();
+  for (const run of ledger.runs) {
+    if (!isRecord(run)) continue;
+    const caseId = `${run.case}|${run.platform}|${run.route}`;
+    const perRound = executedAtByCase.get(caseId) ?? new Map();
+    perRound.set(run.round, run.executedAt);
+    executedAtByCase.set(caseId, perRound);
+  }
+  for (const [caseId, perRound] of executedAtByCase) {
+    const first = Date.parse(perRound.get(1));
+    const second = Date.parse(perRound.get(2));
+    if (Number.isFinite(first) && Number.isFinite(second) && second <= first)
+      errors.push(`${caseId}: round 2 does not follow round 1`);
   }
   for (const id of required) if (!seen.has(id)) errors.push(`${id}: NOT RUN`);
   return errors;
