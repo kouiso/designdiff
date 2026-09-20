@@ -1,0 +1,21 @@
+Screen Recording permission unavailable; CGWindowList metadata follows.
+[
+  {
+    "kCGWindowLayer": 0,
+    "kCGWindowAlpha": 1,
+    "kCGWindowMemoryUsage": 2368,
+    "kCGWindowIsOnscreen": true,
+    "kCGWindowSharingState": 1,
+    "kCGWindowOwnerPID": 14111,
+    "kCGWindowOwnerName": "Electron",
+    "kCGWindowNumber": 1984,
+    "kCGWindowStoreType": 1,
+    "kCGWindowBounds": {
+      "X": 615,
+      "Height": 204,
+      "Y": 251,
+      "Width": 370
+    },
+    "kCGWindowName": "Save"
+  }
+]

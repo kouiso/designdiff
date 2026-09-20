@@ -1,0 +1,78 @@
+{
+  "case": "C10",
+  "route": "mcp",
+  "platform": "macos",
+  "drivers": [
+    "app/mcp-server/script/stdio-campaign-verification2.mjs",
+    "app/mcp-server/script/stdio-issue-verification.mjs"
+  ],
+  "checks": [
+    "C10_small_text_diff",
+    "C10_issue112_real_typography"
+  ],
+  "actual": {
+    "stdio-campaign-verification2:C10_small_text_diff": {
+      "matchRate": 99.25,
+      "regionCount": 2,
+      "largestRegion": {
+        "x": 63,
+        "y": 230,
+        "width": 261,
+        "height": 9
+      },
+      "coversWholePage": false,
+      "status": "FAIL"
+    },
+    "stdio-issue-verification:C10_issue112_real_typography": {
+      "diffPixelCount": 63,
+      "diffRegions": [
+        {
+          "bounds": {
+            "x": 77,
+            "y": 91,
+            "width": 11,
+            "height": 10
+          },
+          "diffPixelCount": 63
+        }
+      ],
+      "reportIssues": [
+        {
+          "bbox": {
+            "x": 77,
+            "y": 91,
+            "w": 11,
+            "h": 10
+          },
+          "kind": "color",
+          "severity": "critical"
+        }
+      ],
+      "implementationDifferenceElement": {
+        "x": 76,
+        "y": 91,
+        "width": 13,
+        "height": 11
+      },
+      "implementationButton": {
+        "x": 44,
+        "y": 148,
+        "width": 160,
+        "height": 40
+      },
+      "durableReport": {
+        "path": "docs/evidence/round1-macos/stdio-issue-verification/real-typography-report.json",
+        "canonicalJsonSha256": "30059fbc61acb1db7cff72d407d58505d9c34a600647d70326468ccc25bbde87",
+        "formattedArtifactSha256": "3e207d0bcd98919db96fb3927dabb7aa1de973cc74aac7691f1768f85dd9b89e",
+        "publicPathRedacted": true,
+        "rawProduct": {
+          "path": "docs/evidence/round1-macos/stdio-issue-verification/real-typography-report.raw.txt",
+          "sha256": "6cd3f66329a44c66f30aca3cc2d9f93d1291e5524edaccf3c74f30d9ec21fe31",
+          "byteLength": 10960,
+          "mediaType": "application/json",
+          "representation": "exact UTF-8 MCP tool response bytes; intentionally not formatter-normalized"
+        }
+      }
+    }
+  }
+}

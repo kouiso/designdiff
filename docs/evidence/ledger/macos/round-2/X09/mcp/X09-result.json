@@ -1,0 +1,38 @@
+{
+  "case": "X09",
+  "route": "mcp",
+  "platform": "macos",
+  "drivers": [
+    "app/mcp-server/script/stdio-campaign-verification.mjs",
+    "app/mcp-server/script/stdio-campaign-verification2.mjs"
+  ],
+  "checks": [
+    "X09_legacy_data",
+    "X09_mcp_desktop_interop"
+  ],
+  "actual": {
+    "stdio-campaign-verification:X09_legacy_data": {
+      "listed": true,
+      "secretPresent": false
+    },
+    "stdio-campaign-verification2:X09_mcp_desktop_interop": {
+      "mcpCreatedId": "1789912218296-69aebe97",
+      "desktopSeedListed": true,
+      "cropOnDesktopProject": {
+        "success": true,
+        "entry": {
+          "frameName": "fixture-page",
+          "region": {
+            "x": 10,
+            "y": 20,
+            "width": 100,
+            "height": 80
+          },
+          "updatedAt": "2026-09-20T13:50:18.304Z",
+          "capturedWidth": 390,
+          "capturedHeight": 844
+        }
+      }
+    }
+  }
+}

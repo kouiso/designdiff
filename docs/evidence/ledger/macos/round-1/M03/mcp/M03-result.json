@@ -1,0 +1,18 @@
+{
+  "case": "M03",
+  "route": "mcp",
+  "platform": "macos",
+  "drivers": [
+    "app/mcp-server/script/stdio-campaign-verification.mjs"
+  ],
+  "checks": [
+    "M03_set_figma_token"
+  ],
+  "actual": {
+    "stdio-campaign-verification:M03_set_figma_token": {
+      "persisted": true,
+      "echoed": false,
+      "backend": "file"
+    }
+  }
+}

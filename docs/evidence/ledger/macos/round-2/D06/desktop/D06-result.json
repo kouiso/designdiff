@@ -1,0 +1,17 @@
+{
+  "case": "D06",
+  "route": "desktop",
+  "platform": "macos",
+  "drivers": [
+    "app/desktop/e2e/native-figma-node-fix.mjs",
+    "app/desktop/e2e/native-fix-animation.mjs"
+  ],
+  "checks": [
+    "D06",
+    "D06"
+  ],
+  "actual": {
+    "native-figma-node-fix:D06": "mask適用対象の改善(raw差分800→0)と別grid悪化(0→1600)を独立raw画素で計測し、対象IMPROVEDと全体FAILの併存を確認",
+    "native-fix-animation:D06": "修正前後比較で対象改善と別領域悪化を独立raw画素で確認。animationは時刻対応・逆順拒否・画像hash対応を検証"
+  }
+}

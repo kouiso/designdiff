@@ -1,0 +1,53 @@
+{
+  "sourceKey": "campaign:v1:[\"local:/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/input-design.png\",\"m14-b\"]",
+  "campaigns": [
+    {
+      "campaignId": "fcc2ea1c-0e8a-495f-a85f-eb5429e6aa7b",
+      "sourceKey": "campaign:v1:[\"local:/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/input-design.png\",\"m14-b\"]",
+      "designSource": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/input-design.png",
+      "startedAt": 1789911586604,
+      "updatedAt": 1789911586604,
+      "iterations": [
+        {
+          "comparisonId": "cmp-5c004c35-a008-4a78-859a-98e87c3facd5",
+          "comparisonConditions": {
+            "status": "unverified",
+            "design": {
+              "canvas": {
+                "width": 390,
+                "height": 844
+              },
+              "canvasSource": "image-metadata",
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
+            },
+            "screenshot": {
+              "canvas": {
+                "width": 390,
+                "height": 844
+              },
+              "canvasSource": "image-metadata",
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
+            },
+            "differences": [],
+            "message": "表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。"
+          },
+          "matchRate": 99.91,
+          "diffPixelCount": 300,
+          "regionCount": 3,
+          "structuralVerdict": "fail",
+          "status": "FAIL",
+          "timestamp": 1789911586604,
+          "diffImagePath": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/figdiff-home/results/diff-cmp-5c004c35-a008-4a78-859a-98e87c3facd5.png"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "case": "C05",
+  "route": "desktop",
+  "platform": "macos",
+  "drivers": [
+    "app/desktop/e2e/desktop-c-cases.mjs"
+  ],
+  "checks": [
+    "C05"
+  ],
+  "actual": {
+    "desktop-c-cases:C05": {
+      "padded": {
+        "matchRate": 40,
+        "diffPixels": 8336,
+        "diffImageDims": {
+          "w": 140,
+          "h": 100
+        }
+      },
+      "wide": {
+        "matchRate": 60,
+        "diffPixels": 4461,
+        "diffImageDims": {
+          "w": 140,
+          "h": 80
+        }
+      },
+      "tall": {
+        "matchRate": 80,
+        "diffPixels": 2400,
+        "diffImageDims": {
+          "w": 120,
+          "h": 100
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "case": "M13",
+  "route": "mcp",
+  "platform": "macos",
+  "drivers": [
+    "app/mcp-server/script/stdio-campaign-verification2.mjs"
+  ],
+  "checks": [
+    "M13_error_contracts"
+  ],
+  "actual": {
+    "stdio-campaign-verification2:M13_error_contracts": {
+      "unknownArg": {
+        "isError": true,
+        "text": "Error: no_such_arg という引数は受け取っていません。compare_design で使用できる引数: figma_contents_only, figma_use_absolute_bounds, campaign_id, design_source, screenshot, screenshot_url, capture_device, capture_device_seria"
+      },
+      "badType": {
+        "isError": true,
+        "text": "MCP error -32602: Input validation error: Invalid arguments for tool compare_design: [\n  {\n    \"expected\": \"number\",\n    \"code\": \"invalid_type\",\n    \"path\": [\n      \"threshold\"\n    ],\n    \"message\": \""
+      },
+      "unreachable": {
+        "isError": true,
+        "text": "Error: page.goto: net::ERR_UNSAFE_PORT at http://127.0.0.1:1/unreachable\nCall log:\n  - navigating to \"http://127.0.0.1:1/unreachable\", waiting until \"networkidle\"\n"
+      },
+      "blockedStore": {
+        "isError": true,
+        "text": "MCP error -32602: Input validation error: Invalid arguments for tool create_project: [\n  {\n    \"expected\": \"string\",\n    \"code\": \"invalid_type\",\n    \"path\": [\n      \"implementation_url\"\n    ],\n    \"message\": \"Invalid input: expected string, received undefined\"\n  }\n]"
+      }
+    }
+  }
+}

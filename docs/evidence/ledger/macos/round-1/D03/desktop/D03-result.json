@@ -1,0 +1,25 @@
+{
+  "case": "D03",
+  "route": "desktop",
+  "platform": "macos",
+  "drivers": [
+    "app/desktop/e2e/desktop-d-cases.mjs"
+  ],
+  "checks": [
+    "D03"
+  ],
+  "actual": {
+    "desktop-d-cases:D03": {
+      "drop": {
+        "screenshotLoaded": true,
+        "via": "scoped zone text"
+      },
+      "localFile": "loaded",
+      "webCapture": {
+        "url": "/capture-target",
+        "requests": 1
+      },
+      "inputRetainedOnFailure": true
+    }
+  }
+}

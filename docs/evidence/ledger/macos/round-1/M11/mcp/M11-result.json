@@ -1,0 +1,89 @@
+{
+  "case": "M11",
+  "route": "mcp",
+  "platform": "macos",
+  "drivers": [
+    "app/mcp-server/script/stdio-campaign-verification2.mjs",
+    "app/mcp-server/script/stdio-issue-verification.mjs"
+  ],
+  "checks": [
+    "M11_compare_animation",
+    "M11_compareAnimation"
+  ],
+  "actual": {
+    "stdio-campaign-verification2:M11_compare_animation": {
+      "sameOrder": {
+        "temporal": {
+          "status": "PASS",
+          "rationale": "全フレームの見た目が一致し、時刻のズレも最大 0ms に収まっとる。",
+          "maxAbsDriftMs": 0,
+          "orderViolation": false
+        },
+        "frames": [
+          "PASS",
+          "PASS",
+          "PASS"
+        ]
+      },
+      "swapped": {
+        "temporal": {
+          "status": "FAIL",
+          "rationale": "対応づいた時刻の前後が入れ替わっとる。動きの緩急が設計と違う。",
+          "maxAbsDriftMs": 200,
+          "orderViolation": true
+        },
+        "orderViolation": true
+      },
+      "missingCount": 2,
+      "unreadableIsError": true,
+      "unreadableText": "Error: Screenshot file not found: docs/evidence/round1-macos/stdio-campaign-verification2/no-such-frame.png\n\nProvide a screenshot via one of: (1) a local PNG/JPEG/WebP fi"
+    },
+    "stdio-issue-verification:M11_compareAnimation": {
+      "frames": [
+        {
+          "atMs": 0,
+          "screenshotPath": "docs/evidence/round1-macos/stdio-issue-verification/input-animation-impl-000ms.png",
+          "status": "PASS",
+          "matchRate": 1,
+          "comparisonId": "cmp-7efd97b6-7d2a-4df4-8819-227272eea200"
+        },
+        {
+          "atMs": 100,
+          "screenshotPath": "docs/evidence/round1-macos/stdio-issue-verification/input-animation-impl-100ms.png",
+          "status": "FAIL",
+          "matchRate": 0,
+          "comparisonId": "cmp-15eed966-34a6-41de-a760-432b3befc732",
+          "diffImagePath": "<store>/results/diff-cmp-15eed966-34a6-41de-a760-432b3befc732.png"
+        }
+      ],
+      "alignments": [
+        {
+          "designAtMs": 0,
+          "matchedAtMs": 0,
+          "driftMs": 0,
+          "mismatchRate": 0
+        },
+        {
+          "designAtMs": 100,
+          "matchedAtMs": 100,
+          "driftMs": 0,
+          "mismatchRate": 1
+        }
+      ],
+      "temporal": {
+        "status": "FAIL",
+        "rationale": "見た目が設計と違うフレームがある。",
+        "maxAbsDriftMs": 0,
+        "orderViolation": false
+      },
+      "reportDiffPixelCounts": [
+        0,
+        4096
+      ],
+      "durableDiff": {
+        "path": "docs/evidence/round1-macos/stdio-issue-verification/animation-diff-100ms.png",
+        "sha256": "ff3feec9f79e0f72cfe5f71c8378112d62d4cca6e4733cf2ef6eae9fdfcf8a28"
+      }
+    }
+  }
+}

@@ -1,0 +1,300 @@
+{
+  "schemaVersion": 1,
+  "protocolErrors": [],
+  "results": {
+    "C01_identical_opaque": {
+      "status": "PASS",
+      "expected": "zero diff pixels, zero regions, 100% match",
+      "actual": {
+        "matchRate": 100,
+        "diffPixelCount": 0,
+        "status": "PASS",
+        "fixtureSha256": "031f8c275e7796f9"
+      }
+    },
+    "C02_shift_tracking": {
+      "status": "PASS",
+      "expected": "each shift is detected and reported with observable diff regions",
+      "actual": [
+        {
+          "name": "r1",
+          "dx": 1,
+          "dy": 0,
+          "matchRate": 99.99,
+          "diffPixelCount": 48,
+          "regions": [
+            {
+              "x": 30,
+              "y": 60,
+              "width": 1,
+              "height": 24
+            },
+            {
+              "x": 230,
+              "y": 60,
+              "width": 1,
+              "height": 24
+            }
+          ],
+          "alignment": null,
+          "totalRegionCount": 2
+        },
+        {
+          "name": "d2",
+          "dx": 0,
+          "dy": 2,
+          "matchRate": 99.76,
+          "diffPixelCount": 800,
+          "regions": [
+            {
+              "x": 30,
+              "y": 60,
+              "width": 200,
+              "height": 2
+            },
+            {
+              "x": 30,
+              "y": 84,
+              "width": 200,
+              "height": 2
+            }
+          ],
+          "alignment": null,
+          "totalRegionCount": 2
+        },
+        {
+          "name": "l2",
+          "dx": -2,
+          "dy": 0,
+          "matchRate": 99.97,
+          "diffPixelCount": 96,
+          "regions": [
+            {
+              "x": 28,
+              "y": 60,
+              "width": 2,
+              "height": 24
+            },
+            {
+              "x": 228,
+              "y": 60,
+              "width": 2,
+              "height": 24
+            }
+          ],
+          "alignment": null,
+          "totalRegionCount": 2
+        },
+        {
+          "name": "u1",
+          "dx": 0,
+          "dy": -1,
+          "matchRate": 99.88,
+          "diffPixelCount": 400,
+          "regions": [
+            {
+              "x": 30,
+              "y": 59,
+              "width": 200,
+              "height": 1
+            },
+            {
+              "x": 30,
+              "y": 83,
+              "width": 200,
+              "height": 1
+            }
+          ],
+          "alignment": null,
+          "totalRegionCount": 2
+        }
+      ]
+    },
+    "C03_defect_bbox": {
+      "status": "PASS",
+      "expected": "a diff region overlaps the known defect at {\"x\":120,\"y\":400,\"width\":18,\"height\":14,\"fill\":\"#0033cc\"}",
+      "actual": {
+        "matchRate": 99.91,
+        "hitBounds": [
+          {
+            "x": 121,
+            "y": 400,
+            "width": 18,
+            "height": 14
+          }
+        ],
+        "regionCount": 3
+      }
+    },
+    "C10_small_text_diff": {
+      "status": "PASS",
+      "expected": "local 13x11 text diff detected as a bounded region, not whole-page",
+      "actual": {
+        "matchRate": 99.25,
+        "regionCount": 2,
+        "largestRegion": {
+          "x": 63,
+          "y": 230,
+          "width": 261,
+          "height": 9
+        },
+        "coversWholePage": false,
+        "status": "FAIL"
+      }
+    },
+    "C13_scaled_marker": {
+      "status": "PASS",
+      "expected": "marker defect located in a consistent coordinate space",
+      "actual": {
+        "canvas": {
+          "canvas_width": 780,
+          "canvas_height": 1688,
+          "design_original_width": 390,
+          "design_original_height": 844,
+          "screenshot_original_width": 780,
+          "screenshot_original_height": 1688
+        },
+        "hitLogical": [],
+        "hitPhysical": [
+          {
+            "x": 240,
+            "y": 800,
+            "width": 36,
+            "height": 28
+          }
+        ],
+        "regionCount": 2
+      }
+    },
+    "M09_report_old_id": {
+      "status": "PASS",
+      "expected": "old comparison_id resolvable after 6+ recompares and process restart",
+      "actual": {
+        "oldId": "cmp-d095a3dc-4c3e-4de3-ade8-452776b465c4",
+        "jsonBytes": 13422,
+        "mdBytes": 3247,
+        "restarted": true
+      }
+    },
+    "M11_compare_animation": {
+      "status": "PASS",
+      "expected": "order/missing/unreadable cases distinguishable",
+      "actual": {
+        "sameOrder": {
+          "temporal": {
+            "status": "PASS",
+            "rationale": "全フレームの見た目が一致し、時刻のズレも最大 0ms に収まっとる。",
+            "maxAbsDriftMs": 0,
+            "orderViolation": false
+          },
+          "frames": ["PASS", "PASS", "PASS"]
+        },
+        "swapped": {
+          "temporal": {
+            "status": "FAIL",
+            "rationale": "対応づいた時刻の前後が入れ替わっとる。動きの緩急が設計と違う。",
+            "maxAbsDriftMs": 200,
+            "orderViolation": true
+          },
+          "orderViolation": true
+        },
+        "missingCount": 2,
+        "unreadableIsError": true,
+        "unreadableText": "Error: Screenshot file not found: docs/evidence/round2-macos/stdio-campaign-verification2/no-such-frame.png\n\nProvide a screenshot via one of: (1) a local PNG/JPEG/WebP fi"
+      }
+    },
+    "M13_error_contracts": {
+      "status": "PASS",
+      "expected": "errors surface as MCP errors with reason",
+      "actual": {
+        "unknownArg": {
+          "isError": true,
+          "text": "Error: no_such_arg という引数は受け取っていません。compare_design で使用できる引数: figma_contents_only, figma_use_absolute_bounds, campaign_id, design_source, screenshot, screenshot_url, capture_device, capture_device_seria"
+        },
+        "badType": {
+          "isError": true,
+          "text": "MCP error -32602: Input validation error: Invalid arguments for tool compare_design: [\n  {\n    \"expected\": \"number\",\n    \"code\": \"invalid_type\",\n    \"path\": [\n      \"threshold\"\n    ],\n    \"message\": \""
+        },
+        "unreachable": {
+          "isError": true,
+          "text": "Error: page.goto: net::ERR_UNSAFE_PORT at http://127.0.0.1:1/unreachable\nCall log:\n  - navigating to \"http://127.0.0.1:1/unreachable\", waiting until \"networkidle\"\n"
+        },
+        "blockedStore": {
+          "isError": true,
+          "text": "MCP error -32602: Input validation error: Invalid arguments for tool create_project: [\n  {\n    \"expected\": \"string\",\n    \"code\": \"invalid_type\",\n    \"path\": [\n      \"implementation_url\"\n    ],\n    \"message\": \"Invalid input: expected string, received undefined\"\n  }\n]"
+        }
+      }
+    },
+    "M14_loop_isolation": {
+      "status": "PASS",
+      "expected": "same campaign iterates, different campaign isolated, restart keeps history",
+      "actual": {
+        "a1": 1,
+        "a2": 2,
+        "b1": 1,
+        "a3": 3,
+        "a2guard": {
+          "stop": false,
+          "step": 2,
+          "maxSteps": 10,
+          "remainingSteps": 8,
+          "reason": "continue",
+          "message": "反復 2/10 回。改善の余地があるため修正を続行できます。",
+          "iteration": 2,
+          "decision": "continue"
+        },
+        "b1guard": {
+          "stop": false,
+          "step": 1,
+          "maxSteps": 10,
+          "remainingSteps": 9,
+          "reason": "continue",
+          "message": "反復 1/10 回。改善の余地があるため修正を続行できます。",
+          "iteration": 1,
+          "decision": "continue"
+        }
+      }
+    },
+    "M15_capture_width_stable": {
+      "status": "PASS",
+      "expected": "3 captures at capture_width=320 all produce 320-wide screenshots",
+      "actual": {
+        "widths": [320, 320, 320],
+        "pageUrl": "http://127.0.0.1:54968/page.html"
+      }
+    },
+    "X09_mcp_desktop_interop": {
+      "status": "PASS",
+      "expected": "MCP-written project readable as desktop shape; desktop-seeded project readable by MCP",
+      "actual": {
+        "mcpCreatedId": "1789912218296-69aebe97",
+        "desktopSeedListed": true,
+        "cropOnDesktopProject": {
+          "success": true,
+          "entry": {
+            "frameName": "fixture-page",
+            "region": {
+              "x": 10,
+              "y": 20,
+              "width": 100,
+              "height": 80
+            },
+            "updatedAt": "2026-09-20T13:50:18.304Z",
+            "capturedWidth": 390,
+            "capturedHeight": 844
+          }
+        }
+      }
+    }
+  },
+  "summary": {
+    "total": 11,
+    "passed": 11,
+    "failed": [],
+    "uncovered": [
+      "M01 fresh-agent discovery (separate evidence)",
+      "M04/M06/M10/M16 real Figma (see stdio-real-figma-verification)",
+      "M12 report_issue real submission (external write authorization required)"
+    ]
+  }
+}

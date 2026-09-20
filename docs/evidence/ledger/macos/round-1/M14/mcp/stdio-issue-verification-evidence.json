@@ -1,0 +1,4598 @@
+{
+  "schemaVersion": 1,
+  "revision": "4e9145e5e051d4efe78a922723f7b3245005a05e",
+  "dirtyState": [
+    "A  docs/evidence/runs-macos-r1.json",
+    "?? docs/evidence/round1-macos/",
+    "?? docs/evidence/runs-macos-r1.attempts.json",
+    "?? docs/evidence/runs-macos-r1.manifest.json"
+  ],
+  "build": {
+    "roots": ["app/mcp-server/dist", "package/shared/dist", "package/credential-store/dist"],
+    "identityFiles": [
+      "pnpm-lock.yaml",
+      "package.json",
+      "app/mcp-server/package.json",
+      "package/shared/package.json",
+      "package/credential-store/package.json"
+    ],
+    "fileCount": 397,
+    "sha256": "da4a551faec001f09e6f00320613bef5c1fa93aeaf9ba31422822db0cd73cbb7",
+    "files": [
+      {
+        "path": "app/mcp-server/dist/index.d.ts",
+        "size": 158,
+        "sha256": "360f1c3430b0b24743bf3ba8fcccb287da60f36babab9ef7f5de82dbd2fffc75"
+      },
+      {
+        "path": "app/mcp-server/dist/index.d.ts.map",
+        "size": 116,
+        "sha256": "750cd8bce1b86a5912d07525f5ae0c2c9f6453303278a38d1a2250bc54453107"
+      },
+      {
+        "path": "app/mcp-server/dist/index.js",
+        "size": 2360,
+        "sha256": "2f3782ac72d3f6ee4e3ed9e396ff44771b270995296c29cb0d02f875929f793e"
+      },
+      {
+        "path": "app/mcp-server/dist/index.js.map",
+        "size": 1987,
+        "sha256": "2d63b683978bba47cf0694e1eb655193fe22754f74b139b74ad120b44d62ebd3"
+      },
+      {
+        "path": "app/mcp-server/dist/server.d.ts",
+        "size": 1444,
+        "sha256": "7228438b7a013b85e8dda28ff7ff5a1bbbaabacc726f70ae9a3d9bd7dbb73230"
+      },
+      {
+        "path": "app/mcp-server/dist/server.d.ts.map",
+        "size": 214,
+        "sha256": "3c81714c4dcf4ea92299cc3deac723158525abe15b29c6e69862d21e702ac2ef"
+      },
+      {
+        "path": "app/mcp-server/dist/server.js",
+        "size": 7379,
+        "sha256": "7e40362e78f716dd816cba0b51d00c05fde79b48c3d7715ce32481ba1bc71caa"
+      },
+      {
+        "path": "app/mcp-server/dist/server.js.map",
+        "size": 1781,
+        "sha256": "09fd0d2fc6c9a54af0124c7b3976a9a34d361a36f97a7c3746ce430deb65872d"
+      },
+      {
+        "path": "app/mcp-server/dist/service/active-session.d.ts",
+        "size": 824,
+        "sha256": "3fc2e9bae275505798e77c6f472e686f384f298a3a240cda7d6ffec20791627a"
+      },
+      {
+        "path": "app/mcp-server/dist/service/active-session.d.ts.map",
+        "size": 425,
+        "sha256": "9db6234def26a503f631fc9c809816eb335806c4b6ff7747b43d93886c2c83ff"
+      },
+      {
+        "path": "app/mcp-server/dist/service/active-session.js",
+        "size": 1163,
+        "sha256": "e70cf956b2b5e277695a577168c915dcbd974e87c2d1624886fe54c0cf43c2bf"
+      },
+      {
+        "path": "app/mcp-server/dist/service/active-session.js.map",
+        "size": 1415,
+        "sha256": "909d6d568a99aef458673b885fa6ed5cbe6f5ad2993d59cd31d77850516964ec"
+      },
+      {
+        "path": "app/mcp-server/dist/service/animation-compare-service.d.ts",
+        "size": 229,
+        "sha256": "5d3a4b158c2ece717d6301c80c375f6e3cb3f759cae6cf5db431502dece74343"
+      },
+      {
+        "path": "app/mcp-server/dist/service/animation-compare-service.d.ts.map",
+        "size": 282,
+        "sha256": "69d0571da4cca3b1dc60905894a202ee06f9b28fa4ca9e0fff48de2acb78c35c"
+      },
+      {
+        "path": "app/mcp-server/dist/service/animation-compare-service.js",
+        "size": 109,
+        "sha256": "312ec422ed7ed5841222a76f37621785637c4ab1aad2c9ed4cc936e421b2e593"
+      },
+      {
+        "path": "app/mcp-server/dist/service/animation-compare-service.js.map",
+        "size": 197,
+        "sha256": "c4f728da33e37fa85e883a515d9322ce5fbb387e5aedc7aa42121d29cfbd4e24"
+      },
+      {
+        "path": "app/mcp-server/dist/service/capture-service.d.ts",
+        "size": 5483,
+        "sha256": "5cfc36003a64c0b56a61dc1fef9cf6b4c4d9fb28f671c18d91427a6580d0e8be"
+      },
+      {
+        "path": "app/mcp-server/dist/service/capture-service.d.ts.map",
+        "size": 1248,
+        "sha256": "6b313e7bd7b3524d2a1b0ffaa6888fce6c345e1156678518c618478250656a6a"
+      },
+      {
+        "path": "app/mcp-server/dist/service/capture-service.js",
+        "size": 19087,
+        "sha256": "97300537682e04d2cb7b44ebc6845a94f46dac3ee206e4f509962e0339d6a97b"
+      },
+      {
+        "path": "app/mcp-server/dist/service/capture-service.js.map",
+        "size": 11271,
+        "sha256": "98efda537cfb408d8d1dd7f846890a5c0a23a630785217a80e599d631a7e7506"
+      },
+      {
+        "path": "app/mcp-server/dist/service/compare-design-runner.d.ts",
+        "size": 4195,
+        "sha256": "0248192512ee21122790dd025720ef84fcd695c20a49b0fe04a2c8ea9e358cd5"
+      },
+      {
+        "path": "app/mcp-server/dist/service/compare-design-runner.d.ts.map",
+        "size": 2253,
+        "sha256": "dd058fdfbb8539842c607fa8eb411d976613b3ed023355cc58bbbf9bc2216995"
+      },
+      {
+        "path": "app/mcp-server/dist/service/compare-design-runner.js",
+        "size": 77851,
+        "sha256": "baa3435d38824300a4acdc00e408d7ceb4b4d2766d8d8c0edfffaa0978eb577b"
+      },
+      {
+        "path": "app/mcp-server/dist/service/compare-design-runner.js.map",
+        "size": 50396,
+        "sha256": "b82996e4beb2eefcfc6eaf29afc18d0aae61494527c4910f06b7ae7fe5e06a95"
+      },
+      {
+        "path": "app/mcp-server/dist/service/comparison-history.d.ts",
+        "size": 1077,
+        "sha256": "9c1f56671fb22956a9b8924ae46b9c646be4f4eb2aa621d4061a0e533d7f684c"
+      },
+      {
+        "path": "app/mcp-server/dist/service/comparison-history.d.ts.map",
+        "size": 1013,
+        "sha256": "8ddbd23e72c2fdfbb6109e155a0777b42589ddc7f1f538f285be129fc727df10"
+      },
+      {
+        "path": "app/mcp-server/dist/service/comparison-history.js",
+        "size": 5060,
+        "sha256": "cf24b08795b05aac24f8c1489766ec440308eef5af371ccd89b891f832b4cec4"
+      },
+      {
+        "path": "app/mcp-server/dist/service/comparison-history.js.map",
+        "size": 4449,
+        "sha256": "c824ddbb36e9bb84062ba8c6aafac8ac1b093c7bc02956ff176ff8523eeb37d5"
+      },
+      {
+        "path": "app/mcp-server/dist/service/comparison-result-compat.d.ts",
+        "size": 130,
+        "sha256": "ebf47f7a6d7e7969ca7602b4cace33ca6b4ed0d26328428244fe67f53ddbd5d7"
+      },
+      {
+        "path": "app/mcp-server/dist/service/comparison-result-compat.d.ts.map",
+        "size": 206,
+        "sha256": "33724215f57785426d4d03fdc975e9e4a0b30b8e1237095271cd5e42f928ffcd"
+      },
+      {
+        "path": "app/mcp-server/dist/service/comparison-result-compat.js",
+        "size": 1680,
+        "sha256": "61f2eac9eaba06ee5494a62a530e5ae7e521725186bb6174a37de90a243d7b96"
+      },
+      {
+        "path": "app/mcp-server/dist/service/comparison-result-compat.js.map",
+        "size": 1857,
+        "sha256": "5d475872dcabdb35140ad07de9eddf68180dc9adce3ba37fa75128fa812392e2"
+      },
+      {
+        "path": "app/mcp-server/dist/service/convergence-history.d.ts",
+        "size": 1226,
+        "sha256": "80126a459626ca9121bbfa509f9307346d3b1c174bc225ccf8e3810de80c2371"
+      },
+      {
+        "path": "app/mcp-server/dist/service/convergence-history.d.ts.map",
+        "size": 754,
+        "sha256": "61cb7f4503a36d5a0b89161117e53750adc6294166135969167123b98a97ab4f"
+      },
+      {
+        "path": "app/mcp-server/dist/service/convergence-history.js",
+        "size": 8144,
+        "sha256": "8c65aa13e556e0744398faa2db8e72e9d098f55cc0b76b025361f5b932856ff8"
+      },
+      {
+        "path": "app/mcp-server/dist/service/convergence-history.js.map",
+        "size": 7305,
+        "sha256": "f0227894300a4c4948b0749b44a0715f56e59b859f6c7c008936a099cb60b94b"
+      },
+      {
+        "path": "app/mcp-server/dist/service/crop-region-store.d.ts",
+        "size": 1803,
+        "sha256": "9bc39c9e4132556736af1e2984fa5d5f3f76beedec6ac177c43056ba3f3f712d"
+      },
+      {
+        "path": "app/mcp-server/dist/service/crop-region-store.d.ts.map",
+        "size": 857,
+        "sha256": "f475532f6d33604c297b6c5a18e44c2bec4ae0c6d0718f6d6f35cc45d787acdd"
+      },
+      {
+        "path": "app/mcp-server/dist/service/crop-region-store.js",
+        "size": 4571,
+        "sha256": "2d7af2532ec1cd46412bc7a3f9e5fe2a24d60f72e5d020077f5071940649130f"
+      },
+      {
+        "path": "app/mcp-server/dist/service/crop-region-store.js.map",
+        "size": 3738,
+        "sha256": "b85f12ae04e4008d1c04cc2005343852e84f24f7ca71c1d2403ec820c2272bb4"
+      },
+      {
+        "path": "app/mcp-server/dist/service/cross-project-guard.d.ts",
+        "size": 106,
+        "sha256": "aec26ba20ebcbcdc23f9c685e01206d5e2bbef44a92b58e6be80056f2139e2c6"
+      },
+      {
+        "path": "app/mcp-server/dist/service/cross-project-guard.d.ts.map",
+        "size": 164,
+        "sha256": "2dfacb706f333907314d5c4d837248cabe2b3af1899f4dcbe6699b2a5afa0ca3"
+      },
+      {
+        "path": "app/mcp-server/dist/service/cross-project-guard.js",
+        "size": 104,
+        "sha256": "e432cd082ea7eb1d214fdbfb500bccddbc45baca841b2e673922eb50c6b99ea3"
+      },
+      {
+        "path": "app/mcp-server/dist/service/cross-project-guard.js.map",
+        "size": 162,
+        "sha256": "d2124a28a48303848d0ee2b7ec70ba71ea3c6043361626087edc5f2568afb8f2"
+      },
+      {
+        "path": "app/mcp-server/dist/service/diff-report-builder.d.ts",
+        "size": 1009,
+        "sha256": "c9cb173b034b305e1e73517c7c1eed9a4a00cc1b533879284a66cc7882448d78"
+      },
+      {
+        "path": "app/mcp-server/dist/service/diff-report-builder.d.ts.map",
+        "size": 1049,
+        "sha256": "a95029a2354e64fcd4431b415d532b90cb53a42273def9f8b8bb73f2a3cf181e"
+      },
+      {
+        "path": "app/mcp-server/dist/service/diff-report-builder.js",
+        "size": 29678,
+        "sha256": "390e9b98f8fca8afd1df3c3dd8bb97bfeafe69b5c1c681bb7bbc094ee2657cee"
+      },
+      {
+        "path": "app/mcp-server/dist/service/diff-report-builder.js.map",
+        "size": 19674,
+        "sha256": "90e0ac70487992900dc2ba7c3be8d429537a10cf6a4481b49d598df1ed6f74c6"
+      },
+      {
+        "path": "app/mcp-server/dist/service/figma-export-inspection.d.ts",
+        "size": 285,
+        "sha256": "9948c79bbcc7582901334fd543570e935be27b84dde84ed1e8473121277da40b"
+      },
+      {
+        "path": "app/mcp-server/dist/service/figma-export-inspection.d.ts.map",
+        "size": 342,
+        "sha256": "e0a6e1b5dd2ce26b1788b6b9893850e8fffa37c190cdbb453bb56f46cb6f1d47"
+      },
+      {
+        "path": "app/mcp-server/dist/service/figma-export-inspection.js",
+        "size": 3474,
+        "sha256": "2e9fe89d3174afea19d894f9940997be5f389415c943046b311be4637cc9dcb9"
+      },
+      {
+        "path": "app/mcp-server/dist/service/figma-export-inspection.js.map",
+        "size": 2910,
+        "sha256": "0aa83be06d360beb4df3e9616f8d2ec61f2a986f03eeff6f4003c0904e0417f1"
+      },
+      {
+        "path": "app/mcp-server/dist/service/figma-node-transformer.d.ts",
+        "size": 491,
+        "sha256": "8c4089deba7e9104ab5d94a866970ac6579e39d29f55ced4795bdda3936d9ec1"
+      },
+      {
+        "path": "app/mcp-server/dist/service/figma-node-transformer.d.ts.map",
+        "size": 337,
+        "sha256": "b0756914a7245bf8ad234f21e34cce64769468ee0753c974e08d28a949442e63"
+      },
+      {
+        "path": "app/mcp-server/dist/service/figma-node-transformer.js",
+        "size": 5505,
+        "sha256": "97d5f572bcc84f9e22af2562dd33af7bbcb493f31e85c65bb759f5bbcaaf84a2"
+      },
+      {
+        "path": "app/mcp-server/dist/service/figma-node-transformer.js.map",
+        "size": 5825,
+        "sha256": "1e9aee82ef095cd3191512a2ac1364837d9e96832921ee82085c4fedf47a1943"
+      },
+      {
+        "path": "app/mcp-server/dist/service/figma-service.d.ts",
+        "size": 3409,
+        "sha256": "228419eed4767193bec767af1a224f1db8441b11b7c1754194a3238928305d98"
+      },
+      {
+        "path": "app/mcp-server/dist/service/figma-service.d.ts.map",
+        "size": 2902,
+        "sha256": "9900e3e99fb9a160af080979cf909ddf308a3228beea030175d3c78699fdecfd"
+      },
+      {
+        "path": "app/mcp-server/dist/service/figma-service.js",
+        "size": 15555,
+        "sha256": "49beffed9260c2594a2dca723969caef32446b2239fb8f292a7adea95500829c"
+      },
+      {
+        "path": "app/mcp-server/dist/service/figma-service.js.map",
+        "size": 13390,
+        "sha256": "116719fda66e12967a1b2a1d4a642367872b56ad6e963bea746617cb7924bb21"
+      },
+      {
+        "path": "app/mcp-server/dist/service/github-service.d.ts",
+        "size": 155,
+        "sha256": "fd165228d6e3831644caac98af030d666a995f2295c721287846d8ee5c000b90"
+      },
+      {
+        "path": "app/mcp-server/dist/service/github-service.d.ts.map",
+        "size": 199,
+        "sha256": "2565867b531e4ad81ab5e21a7af08d19ed15fdb1dc9972aee8b31066358484fe"
+      },
+      {
+        "path": "app/mcp-server/dist/service/github-service.js",
+        "size": 153,
+        "sha256": "e0f03e56c76790a76bd26640c4d7a6a477fdae1d8d598e22684d079822a99e14"
+      },
+      {
+        "path": "app/mcp-server/dist/service/github-service.js.map",
+        "size": 197,
+        "sha256": "7f711f61e4bdb7bcc1544920e9d52f05f1daf92eb4bd83c64bca47623b600750"
+      },
+      {
+        "path": "app/mcp-server/dist/service/ignore-region-store.d.ts",
+        "size": 1418,
+        "sha256": "21c7c639b08716f562d1e340cc623dc705d94054940fbb3b06279d0e4dc5a9e4"
+      },
+      {
+        "path": "app/mcp-server/dist/service/ignore-region-store.d.ts.map",
+        "size": 465,
+        "sha256": "de6a20f1fbd9f54dda24da956a9aa4c857e8dfa37446bb1374b36cb21cb3418e"
+      },
+      {
+        "path": "app/mcp-server/dist/service/ignore-region-store.js",
+        "size": 819,
+        "sha256": "e58a3d9677969e5f58ab3a833085aac653cbceb4651250d9468c2ac6ba948172"
+      },
+      {
+        "path": "app/mcp-server/dist/service/ignore-region-store.js.map",
+        "size": 741,
+        "sha256": "be335a07836b1ce33a0bce1e354283639876f84f952f06f0fe9be8e458362735"
+      },
+      {
+        "path": "app/mcp-server/dist/service/image-compare-service.d.ts",
+        "size": 4790,
+        "sha256": "4bd4a3c55b5d418ba6e39c196cea494048e74e0c6c01a6ee64c8cce1ead35bb4"
+      },
+      {
+        "path": "app/mcp-server/dist/service/image-compare-service.d.ts.map",
+        "size": 3131,
+        "sha256": "3d6979db747ed46df5c3058e4502f459ae12efad8ea3139ac33e549b42cfe10a"
+      },
+      {
+        "path": "app/mcp-server/dist/service/image-compare-service.js",
+        "size": 64374,
+        "sha256": "2f9f662dd1a79b1cde29d1d79fe7b7f8e85022466c42d070624f8253900c8a83"
+      },
+      {
+        "path": "app/mcp-server/dist/service/image-compare-service.js.map",
+        "size": 51783,
+        "sha256": "e695cf3e30f2411278e6711667b1000a3740717fd07a606bd258c4039bdfc172"
+      },
+      {
+        "path": "app/mcp-server/dist/service/last-used-node-store.d.ts",
+        "size": 439,
+        "sha256": "d10c66cb8fe9e8f13a8225874ea6bbd21c7d7fd4a935d620b9673060f537096d"
+      },
+      {
+        "path": "app/mcp-server/dist/service/last-used-node-store.d.ts.map",
+        "size": 515,
+        "sha256": "f697ac9606ce27a09f7517dddc2b22c72bed97bcc6ed830081ed62b2321d5563"
+      },
+      {
+        "path": "app/mcp-server/dist/service/last-used-node-store.js",
+        "size": 2637,
+        "sha256": "53abce8b73b7db423fdd04cd29cace3574cb7c40a05e5e765d0111eb04a6b743"
+      },
+      {
+        "path": "app/mcp-server/dist/service/last-used-node-store.js.map",
+        "size": 2966,
+        "sha256": "107447d43517f1f11b256f58dea9b4f84e90706aa7535219858824c2f2fcac6d"
+      },
+      {
+        "path": "app/mcp-server/dist/service/loop-guard-service.d.ts",
+        "size": 1897,
+        "sha256": "331918bbdf8b83508156b105c956a2a3af33cdb086bfde5b7969eb609a7d97e8"
+      },
+      {
+        "path": "app/mcp-server/dist/service/loop-guard-service.d.ts.map",
+        "size": 1094,
+        "sha256": "916deb5eafb9722105c8e15aea0eea73ef7c11e0b2b7cdf6a94770febaab77e8"
+      },
+      {
+        "path": "app/mcp-server/dist/service/loop-guard-service.js",
+        "size": 14148,
+        "sha256": "44e1c61f011ad448abca911a632058813feb55ab314945e5104a96ed89a2007e"
+      },
+      {
+        "path": "app/mcp-server/dist/service/loop-guard-service.js.map",
+        "size": 9250,
+        "sha256": "ddf51525211f2dfb42876783f9bea93a5315de6b1baa18e61836bc969544c3de"
+      },
+      {
+        "path": "app/mcp-server/dist/service/persist-detail.d.ts",
+        "size": 310,
+        "sha256": "2fe6ad9e0ce36a2f9fb2bce732a565501af1d306fcf0b338efb802039ac1f8b9"
+      },
+      {
+        "path": "app/mcp-server/dist/service/persist-detail.d.ts.map",
+        "size": 367,
+        "sha256": "cd017427a17dbc667e1e7b7982a2b34f12bd5fc3362ccd5e8a9be56012721b02"
+      },
+      {
+        "path": "app/mcp-server/dist/service/persist-detail.js",
+        "size": 926,
+        "sha256": "b2e22b08856052d5b4e0d54d6ee038c6c44b798c4ff19af4c334d1517cd45f3d"
+      },
+      {
+        "path": "app/mcp-server/dist/service/persist-detail.js.map",
+        "size": 1054,
+        "sha256": "15335eb28441d0bf1e15b4f4010eee33eb3b47c7ab2e5791f19898e9149461c2"
+      },
+      {
+        "path": "app/mcp-server/dist/service/project-store.d.ts",
+        "size": 751,
+        "sha256": "21c8eb62921099d2e7a5f70beae14bdc347264b4aef2dcf470cc4de3e4f8c5d2"
+      },
+      {
+        "path": "app/mcp-server/dist/service/project-store.d.ts.map",
+        "size": 699,
+        "sha256": "b26855abb8366ef88fb98c92af29af86ec5fd89dbfc60fc3ae1826352ffc7aa9"
+      },
+      {
+        "path": "app/mcp-server/dist/service/project-store.js",
+        "size": 1765,
+        "sha256": "ff8683506b6b194aef0dad1ad6fedce800342ee81bf822fdadd1143da32563b2"
+      },
+      {
+        "path": "app/mcp-server/dist/service/project-store.js.map",
+        "size": 1827,
+        "sha256": "51b9b59c2a4a43c74e07bbb809d3e27636a326504f3c8310d7d007f2f344fcb7"
+      },
+      {
+        "path": "app/mcp-server/dist/service/report-generator.d.ts",
+        "size": 124,
+        "sha256": "40bfce1af715968b7eb593f7f61697bb0a9176109ee31dbacf4e78b2603e1d25"
+      },
+      {
+        "path": "app/mcp-server/dist/service/report-generator.d.ts.map",
+        "size": 192,
+        "sha256": "230e427421e0faba8d18aa881cb8847ee2be0a729c08406786b69afe071d2162"
+      },
+      {
+        "path": "app/mcp-server/dist/service/report-generator.js",
+        "size": 122,
+        "sha256": "86d8abb5b9e78209804cd1acee4b7fd738048bfc88b6b99bb1aef68e9227c67b"
+      },
+      {
+        "path": "app/mcp-server/dist/service/report-generator.js.map",
+        "size": 190,
+        "sha256": "c40a942cc818bc7e499b839772418b5a96db76801a35f20225e2aa71e28d964d"
+      },
+      {
+        "path": "app/mcp-server/dist/service/storage-permission.d.ts",
+        "size": 1443,
+        "sha256": "147066059f295dc04dd1067b4d50ce22ed6096b7594b6db44f6597e1fd96daf9"
+      },
+      {
+        "path": "app/mcp-server/dist/service/storage-permission.d.ts.map",
+        "size": 942,
+        "sha256": "8f1270175bac095d2b691eb4ea68d920a9586f68a40862096cd8bd2f2f745151"
+      },
+      {
+        "path": "app/mcp-server/dist/service/storage-permission.js",
+        "size": 3037,
+        "sha256": "cb485417f01be9b543005fd2853cbc431e8be2c77e2f95b38fcead7fa0549e3b"
+      },
+      {
+        "path": "app/mcp-server/dist/service/storage-permission.js.map",
+        "size": 2535,
+        "sha256": "0f24b1af2e53e63937047739e48d0c460417b7c34b5e28c6b00bf55e59251e4b"
+      },
+      {
+        "path": "app/mcp-server/dist/service/token-diff-service.d.ts",
+        "size": 3719,
+        "sha256": "2347a0fe96672a2e7a5748bc54370fb7ba809f96e91f2a5f268315e5b4e22c07"
+      },
+      {
+        "path": "app/mcp-server/dist/service/token-diff-service.d.ts.map",
+        "size": 1217,
+        "sha256": "c24be5dce4d86096bebb2705fd77802ab8bfb3ea45d6a7a72fbc00ef16c3a0f5"
+      },
+      {
+        "path": "app/mcp-server/dist/service/token-diff-service.js",
+        "size": 15686,
+        "sha256": "3191dbfc17a3ad12188adb777703f1697b5ed64bbde729ad388890eb1016b33c"
+      },
+      {
+        "path": "app/mcp-server/dist/service/token-diff-service.js.map",
+        "size": 12609,
+        "sha256": "f3e895748858c3c944c88ad329e24cac55bd1b566c9f5a1187ec04188865f513"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/compare-animation.d.ts",
+        "size": 626,
+        "sha256": "797357672bdbece299aa7ac199a43a834145f3537778d40a4c9ef63cf78dfc07"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/compare-animation.d.ts.map",
+        "size": 256,
+        "sha256": "f0f9dda1546100aad3a2e5ad783cb3bbbf29018a61a96777cc6caa9f86f423a1"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/compare-animation.js",
+        "size": 11016,
+        "sha256": "aad2e870b21ba605eb245cf61d57631a9107a620478c5d2467bc08f40f7e1a58"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/compare-animation.js.map",
+        "size": 6993,
+        "sha256": "4c23f6fed40ce72353721d1e6ce1f5e759ea984a6441d35a33d85edae41123a4"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/compare-design.d.ts",
+        "size": 492,
+        "sha256": "ccdfadce8dfe7bdc8fbba0c3fcdfc9cdcfed4bc99e4784e75d3fb6e7ce006998"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/compare-design.d.ts.map",
+        "size": 353,
+        "sha256": "85c24f55f6e14bcc3163cb8d1825d3bd83f3f6df96f8c401e773eafff50b6702"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/compare-design.js",
+        "size": 28081,
+        "sha256": "faad95d62fd51d10ed108db4cb95e6471e503bec921060a5a12eb5db69f259ef"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/compare-design.js.map",
+        "size": 13123,
+        "sha256": "bd1e08fa03b8dd7573fae8464e048a4a7c7aab240b7b5e6af99426452ffe703a"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/create-project.d.ts",
+        "size": 385,
+        "sha256": "ec7da84ab53d12866613e40967771f80d131d4a34f732f79c2a0d68cd8a9d32d"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/create-project.d.ts.map",
+        "size": 247,
+        "sha256": "11150c06aaa7cbbbc5cfc2cf723aa8bd41ae845e15235480775c6e488b93c335"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/create-project.js",
+        "size": 4426,
+        "sha256": "b8a6f375918e08e4377c44e309511f7711086049d86eb8d08d547e7c4b2fbc90"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/create-project.js.map",
+        "size": 2805,
+        "sha256": "c9144599bb692b1887f221767bb76b1961f6e9b1c4856144a665a02abf1b827a"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/delete-ignore-region.d.ts",
+        "size": 311,
+        "sha256": "c3e7a14e997a3c465777634bb1d24c4a4ec49ff1136b4657efca17cfa7c1b961"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/delete-ignore-region.d.ts.map",
+        "size": 257,
+        "sha256": "64d2439dfa1a7598e3c57b5692aee8cf4c1a20450fa48004c9f87ccc33435a6c"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/delete-ignore-region.js",
+        "size": 1915,
+        "sha256": "6bf35d9f335eebb9b50c255368d230ab370e744e7c2d4258f4b47fce11cfb205"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/delete-ignore-region.js.map",
+        "size": 1360,
+        "sha256": "a61e7f084c9d61b01eb5acdff5f703375ce956720e92e3615f8fdd36c36df8e2"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/delete-project.d.ts",
+        "size": 296,
+        "sha256": "d4386badcccde4608b9344968bafcf3377c02352df1cf5d07d6830ad24e26de1"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/delete-project.d.ts.map",
+        "size": 245,
+        "sha256": "c0012a81fa89a13bdb869c1eaa2b2c6dd59eb9090684f51254019b95ec92f08d"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/delete-project.js",
+        "size": 1944,
+        "sha256": "da4ca8c084321a02af58e15d15e6ab684448af813dbcf357044a378c736f21fe"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/delete-project.js.map",
+        "size": 1389,
+        "sha256": "388c95ca08c104d76d336a3688ef575f6e150bf085ce34d5eb6957c9bf4392e4"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/error.d.ts",
+        "size": 330,
+        "sha256": "311ba48f14d6cefe199bed7abdbff8c8949bc693a6dfa6814b4766a973b4a99b"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/error.d.ts.map",
+        "size": 385,
+        "sha256": "3568fac85c5c774071b99eec4858b2249ab104d3238ddc9c8dcfa293cc450b28"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/error.js",
+        "size": 5263,
+        "sha256": "0208091e5ea006b4aa305a0702dae2f708954a4181843dffb2632a434fc92a14"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/error.js.map",
+        "size": 4148,
+        "sha256": "ac9fd2603100a3651f9ef75bf3db9d2409ebbdf1c4ef808845e382337c7fdf7a"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/generate-report.d.ts",
+        "size": 578,
+        "sha256": "2554e678285f5d50691fc7af065ece63729bdfd8cbac4fa11d62e9617a0dfeef"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/generate-report.d.ts.map",
+        "size": 410,
+        "sha256": "58e749102e22ff192ad0ea303d74d3aba3687849adcc61d229d75928b22d765e"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/generate-report.js",
+        "size": 5362,
+        "sha256": "0bfa09fafe2ee860a75d67b95b690e1bcdc406af1bb42eece142778b8d9e9635"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/generate-report.js.map",
+        "size": 3750,
+        "sha256": "e13d31098c5ba284509372bdccfbe1143d443a01210a08e42e448ade44ea1fe0"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/get-crop-region.d.ts",
+        "size": 285,
+        "sha256": "bc6f32127c8758d4fea36b6f7a0f38c31219e1b53fd310b6ddd8d8f4a630a331"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/get-crop-region.d.ts.map",
+        "size": 247,
+        "sha256": "7203da59b81e9f22a309a4ef3c16bec67a34f986bcceeb02587e2aa001d86fbe"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/get-crop-region.js",
+        "size": 2283,
+        "sha256": "3c02cc77c8a1d295b45fefadd101b2673be94b74696218465f27e4c2ce814c51"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/get-crop-region.js.map",
+        "size": 1536,
+        "sha256": "3f7d7cb198d3a0c5fc6383e0e2da60e086f75334c35752512f8430f5a8d5cc48"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/get-design-tokens.d.ts",
+        "size": 384,
+        "sha256": "a89d67eb823ab87722594cb0341931252badffa23e0d505791d5315b159c4128"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/get-design-tokens.d.ts.map",
+        "size": 252,
+        "sha256": "e1276517ca766a6aec5da8fa09f17fe95d5d2f997860134702bfb82da6cf8ff9"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/get-design-tokens.js",
+        "size": 5685,
+        "sha256": "358a177693f9d02dbea42e19edd53bd7bc995511c158cb6c54b5ca42d8da08f1"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/get-design-tokens.js.map",
+        "size": 3613,
+        "sha256": "bbddc108ce98b102cfafa8654296fe1d1d70f98fb33b1bb2f43df37b4ad05375"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/get-ignore-regions.d.ts",
+        "size": 295,
+        "sha256": "11e485ac89a7c0e829efa9d980f7440c2bf580dabe27a99ac1f3a1ccc836367a"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/get-ignore-regions.d.ts.map",
+        "size": 253,
+        "sha256": "434f175d21eeb55310dbe1eae444bc096e3ec27160c6d4a8f26ce737434008f3"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/get-ignore-regions.js",
+        "size": 2314,
+        "sha256": "7c57ec2edc76250527dd94977f615ff082de839ad8b51398d9064007e837fcf0"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/get-ignore-regions.js.map",
+        "size": 1546,
+        "sha256": "1f341dce5711a2f465d24f0f2c511523a380f17e1bc147f3e506b462d44c95ac"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/inspect-node.d.ts",
+        "size": 343,
+        "sha256": "215514c958d03fa17f290679d22b5542e5d1de347fb564d28d3231304d3d50b9"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/inspect-node.d.ts.map",
+        "size": 241,
+        "sha256": "2f67656482d40a9473b0d7126aabd5549fd649cac1a474974660f68b2743938f"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/inspect-node.js",
+        "size": 5693,
+        "sha256": "271a04d84f040f77d6d6a91ee91a3ee963873ba8cff62bfcae82206e4828a720"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/inspect-node.js.map",
+        "size": 4006,
+        "sha256": "d2a2eb66105a137fe483a53ad09605855331532c011aeb50c6974b91376055ed"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/list-frames.d.ts",
+        "size": 270,
+        "sha256": "18337dda5d9a61aa1f1caf2edc3450f9bc47792537dcbf958c7e90569e519b9f"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/list-frames.d.ts.map",
+        "size": 240,
+        "sha256": "d53c2ecd7107f86ab04183c469894222db1a00d52e5e92601985ba4a6417a3c1"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/list-frames.js",
+        "size": 3860,
+        "sha256": "cf185c6bf1f61cc5373033c90805adfde62c07d72f4cc1e14174bceb05b89c94"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/list-frames.js.map",
+        "size": 2861,
+        "sha256": "12fc858f71e86739749f2e512908852ae36eef6203ffff4e9b43adf51657e2ed"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/list-projects.d.ts",
+        "size": 579,
+        "sha256": "accac1ed33a2ebd0c637c1ad7f334ed4830e79d676be9ffae1ddd2e3f61dbf13"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/list-projects.d.ts.map",
+        "size": 522,
+        "sha256": "821ed086077482c2003b790c060dfa684773b29a5b4b00f55dd568af5f3a40b1"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/list-projects.js",
+        "size": 3279,
+        "sha256": "57ed9d1d5246f79ccc5e0bfbc8c16ae5de752517e5bb074ec51d0eaa294928f9"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/list-projects.js.map",
+        "size": 2374,
+        "sha256": "29cbd467cb30c2563d034ca87347c0fd97b72e3a2dfa50ade086b8f5c02bb1b0"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/report-issue.d.ts",
+        "size": 186,
+        "sha256": "7dc71616861f51529092d57ca596b0849346f16839ca237db691c1bde0a195ed"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/report-issue.d.ts.map",
+        "size": 231,
+        "sha256": "2fc5729664f0e15abd0d412c150bced308a22b3df48b1e1fe9765155d4807777"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/report-issue.js",
+        "size": 8055,
+        "sha256": "7046e6439c45c1e558fa14de2602f8608df7c9e3e7bfa3efad398be179ec0333"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/report-issue.js.map",
+        "size": 5354,
+        "sha256": "bca99b3bea7dc1087254e3736825c93d11e5b638e2ce78e2ecf785264031b5f1"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/set-crop-region.d.ts",
+        "size": 292,
+        "sha256": "9a36bfb0c2b401241ed73d5dcc587d42e1735726f016f74e884b337822948447"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/set-crop-region.d.ts.map",
+        "size": 247,
+        "sha256": "0568c5a04fa2bb464d5e6c795563d1bf099bb7b4b223e483cad220b00fd9b3f4"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/set-crop-region.js",
+        "size": 3034,
+        "sha256": "fbd04122717ef78b4aa0174f7700e14edcdeb374a51c5e3d2458ac59419453b0"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/set-crop-region.js.map",
+        "size": 2047,
+        "sha256": "12794d831e0ff0e7e23365eeffc46cd3a56585e185d1fc3e471152fb9a02d114"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/set-figma-token.d.ts",
+        "size": 308,
+        "sha256": "1ab356d2e2f5ee35300e81b91d50436cbf2deae9511094994e444e439107010c"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/set-figma-token.d.ts.map",
+        "size": 247,
+        "sha256": "aee4f772865beb6586e38b953243991359ee7f9e5a73629b83c53a4aa0253b4b"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/set-figma-token.js",
+        "size": 1738,
+        "sha256": "2e86ee43cf5dc41d4122c9f50e022dd0efe9ced8100be8a848e95ea43e16ab76"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/set-figma-token.js.map",
+        "size": 1163,
+        "sha256": "f457ad8075086b97947501006a0374b42f14b1304f42c5b43ae17475452e18c5"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/set-ignore-regions.d.ts",
+        "size": 304,
+        "sha256": "310b6aacd22ffe867ad26946fdebea64bcda80dff29a11beaa68acc4e220a3b8"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/set-ignore-regions.d.ts.map",
+        "size": 253,
+        "sha256": "9769a569a084f79dd368c7345301678852a280a705f75f83781b8d37086211bd"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/set-ignore-regions.js",
+        "size": 2160,
+        "sha256": "04db4173e35595151aa096a45aeb5b1f49fc30197d6e2336ee6a0e84fd9dff22"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/set-ignore-regions.js.map",
+        "size": 1244,
+        "sha256": "6e3891095f5374d822510dd8f0f29331e10ffb4853c81f525b029ba074062d9e"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/verify-fix.d.ts",
+        "size": 423,
+        "sha256": "53c0901c03b31ec56ee17917b8acce0f5eb22723db5f59a6c78be91905db1338"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/verify-fix.d.ts.map",
+        "size": 423,
+        "sha256": "8d502e225f5b045e130af3cc194a5ded56bb2cbdff9715192586658bddb53199"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/verify-fix.js",
+        "size": 11888,
+        "sha256": "a7911543698f2e9d23b73a3e5bc519da359edc62beea136b3d8d6cc180ed7c01"
+      },
+      {
+        "path": "app/mcp-server/dist/tool/verify-fix.js.map",
+        "size": 8710,
+        "sha256": "9fccc59dac4d91226fb6862a4ee6f3ea4ea0bf3c35d5dc5c486de26adc9965bc"
+      },
+      {
+        "path": "app/mcp-server/dist/util/figdiff-paths.d.ts",
+        "size": 1693,
+        "sha256": "0b410d69d786af6dbddd33474eca508e3ee997248c693576e7705eab888adb19"
+      },
+      {
+        "path": "app/mcp-server/dist/util/figdiff-paths.d.ts.map",
+        "size": 565,
+        "sha256": "18f5ca23b2a46f99147fae65a109d951c60e1b4b93598ad76252475177006b74"
+      },
+      {
+        "path": "app/mcp-server/dist/util/figdiff-paths.js",
+        "size": 3399,
+        "sha256": "15e9d7b9cd2359f8985ebba18f90ce29e58c5fe861285a8d6f300d1f6cb4bff2"
+      },
+      {
+        "path": "app/mcp-server/dist/util/figdiff-paths.js.map",
+        "size": 2017,
+        "sha256": "5b207edc0713c5548439ea863d81ba52f3a9bdeadcfdf4e94d2e5f21da5dec71"
+      },
+      {
+        "path": "app/mcp-server/dist/util/local-log.d.ts",
+        "size": 1092,
+        "sha256": "14add827dfcabef302917f98888a138511e5f63a79d1e92ebc8f1d0b464a6fd6"
+      },
+      {
+        "path": "app/mcp-server/dist/util/local-log.d.ts.map",
+        "size": 817,
+        "sha256": "fa5fc4cb96ba28b9d7323e6a46bb40c3c958296dcb88e43b92bdb917efe2b4dc"
+      },
+      {
+        "path": "app/mcp-server/dist/util/local-log.js",
+        "size": 8580,
+        "sha256": "81dd4a193fe820796feeedcbf270778eb5b58046c88c29364da82390cd629fc2"
+      },
+      {
+        "path": "app/mcp-server/dist/util/local-log.js.map",
+        "size": 7250,
+        "sha256": "c84d25bd82a637bda1eac2a7d947f1dde2ae454a42a1b063d580182d589341ae"
+      },
+      {
+        "path": "app/mcp-server/dist/util/path-guard.d.ts",
+        "size": 1043,
+        "sha256": "401e2614e0c1999bcc54d3b892586434c7839f0b27e71c3037a043423554a19c"
+      },
+      {
+        "path": "app/mcp-server/dist/util/path-guard.d.ts.map",
+        "size": 326,
+        "sha256": "af2a479ee889d36b93be8bd70cd3ef9f2157f9dc1084760f025606d23ff9e53c"
+      },
+      {
+        "path": "app/mcp-server/dist/util/path-guard.js",
+        "size": 4957,
+        "sha256": "bbc0ac6e9d7b42f0bb6e63405b8d1b0ddb6a9a4621041a21cc45551d6b00ddad"
+      },
+      {
+        "path": "app/mcp-server/dist/util/path-guard.js.map",
+        "size": 4466,
+        "sha256": "3b597d21a3f1378a3cb8973e1111216f303579d2e0b6d15e62ab12768fa9d46b"
+      },
+      {
+        "path": "app/mcp-server/dist/util/raw-tool-arguments.d.ts",
+        "size": 479,
+        "sha256": "7373284f387cc78bf6333a586b85941bbdc4adac980d569b480b2f63314a77d6"
+      },
+      {
+        "path": "app/mcp-server/dist/util/raw-tool-arguments.d.ts.map",
+        "size": 465,
+        "sha256": "66b4e5830ff667838237d38e1b01696a03007aec943847962b340cb28067a873"
+      },
+      {
+        "path": "app/mcp-server/dist/util/raw-tool-arguments.js",
+        "size": 1992,
+        "sha256": "ff1970bb5f421b198780bf12ec1344dcf76fc9964993ecacbdcea84609f943d1"
+      },
+      {
+        "path": "app/mcp-server/dist/util/raw-tool-arguments.js.map",
+        "size": 1887,
+        "sha256": "991201517ca2715673077ea548b9e7d83b8bd7bc4b69fd0266d470a27ea541f5"
+      },
+      {
+        "path": "app/mcp-server/package.json",
+        "size": 1311,
+        "sha256": "667f9c85eff3b0c7c96d34836f0aa066a13128307ff29dcb3c0cde1842cc8b2a"
+      },
+      {
+        "path": "package.json",
+        "size": 3365,
+        "sha256": "ee120f940a0a2092a0ff1e7b30a8fc45038f991e37e15042ef5521f7b013d4ea"
+      },
+      {
+        "path": "package/credential-store/dist/credential-store.d.ts",
+        "size": 843,
+        "sha256": "5dfe9c48354f8924df94b2e77590da94d590536d284197ae582e20d0a7e38418"
+      },
+      {
+        "path": "package/credential-store/dist/credential-store.d.ts.map",
+        "size": 679,
+        "sha256": "65a156a9bad1fa732a6350d1f10fac9ceb95d7420774fb84ee2bb2068061d010"
+      },
+      {
+        "path": "package/credential-store/dist/credential-store.js",
+        "size": 4532,
+        "sha256": "a75ce28e55f3efcf26155862e8af6621b4f9d4e7af9b0ea96cb655d0f9ac455b"
+      },
+      {
+        "path": "package/credential-store/dist/credential-store.js.map",
+        "size": 2458,
+        "sha256": "5293065f057571578c805b86c096a95737d2e083d8bf50d137d28e20284541c0"
+      },
+      {
+        "path": "package/credential-store/dist/figma-credentials.d.ts",
+        "size": 1178,
+        "sha256": "c0e976127005c24add719b51261311f86b6e8b7ec7b3fd0532095687c7f1335c"
+      },
+      {
+        "path": "package/credential-store/dist/figma-credentials.d.ts.map",
+        "size": 746,
+        "sha256": "1c454dd75f48c960d61f6344e4425931a9baa6ecd98a067f24a043a731c69df3"
+      },
+      {
+        "path": "package/credential-store/dist/figma-credentials.js",
+        "size": 2182,
+        "sha256": "62d8e0203ef253d6b45109e31d2738bb11760faf15ac141a3fbb61ddf4e7355a"
+      },
+      {
+        "path": "package/credential-store/dist/figma-credentials.js.map",
+        "size": 2004,
+        "sha256": "7d78b00135303fe6f285b7f18e4167f521299ade87ab8198fef4788aad5fa6ce"
+      },
+      {
+        "path": "package/credential-store/dist/figma-refresh.d.ts",
+        "size": 330,
+        "sha256": "ec9530d15adea7e07fed4619e4f6c3da8be2124c4368ab84d2c4883261bed3a1"
+      },
+      {
+        "path": "package/credential-store/dist/figma-refresh.d.ts.map",
+        "size": 336,
+        "sha256": "34f7aa7148d09b544db155942caa2b28dd2c4ac9e6f1d596ca1bf89b13e8f5d3"
+      },
+      {
+        "path": "package/credential-store/dist/figma-refresh.js",
+        "size": 1735,
+        "sha256": "0d529faf43f8a7c9507a8c40e4166040634931f498e12c22a39d8b56139d7dcf"
+      },
+      {
+        "path": "package/credential-store/dist/figma-refresh.js.map",
+        "size": 1688,
+        "sha256": "53e8372c6ada9834d2c1640e4e9af1b91131f1c5f1acea06f01a360a9b1d9618"
+      },
+      {
+        "path": "package/credential-store/dist/file-backend.d.ts",
+        "size": 274,
+        "sha256": "a4e86e3f9aef32f690d9e9a9a44206e83f9db4d219ff3b7bb4b8216e2a07337a"
+      },
+      {
+        "path": "package/credential-store/dist/file-backend.d.ts.map",
+        "size": 374,
+        "sha256": "12ac4f732ee6857280714fe71e6a6f9bdf31331340765efba90167d2b151970d"
+      },
+      {
+        "path": "package/credential-store/dist/file-backend.js",
+        "size": 1879,
+        "sha256": "ba8a574919e0e493cc3a2e456db861c758965669dccf7bf299fc80bc91d36b75"
+      },
+      {
+        "path": "package/credential-store/dist/file-backend.js.map",
+        "size": 2046,
+        "sha256": "a49d35a5313da48ca8d89621d6a917a6040ae84edff263c7e0720ea2dce73aef"
+      },
+      {
+        "path": "package/credential-store/dist/index.d.ts",
+        "size": 766,
+        "sha256": "4446adfc9c4347aee47b3f5a729b0c55febf3e723b612941fc4041b4bcdb8981"
+      },
+      {
+        "path": "package/credential-store/dist/index.d.ts.map",
+        "size": 596,
+        "sha256": "e3a2c521f8fd96b0ad229e16923a853120c8e40ff6f536df9561bec3c1cb9943"
+      },
+      {
+        "path": "package/credential-store/dist/index.js",
+        "size": 537,
+        "sha256": "e4d3b986372504869a3614e39f049a08128f81c1de203a8dc74f3c22ab4d432e"
+      },
+      {
+        "path": "package/credential-store/dist/index.js.map",
+        "size": 439,
+        "sha256": "a45a316821f15f6de0dd7a067dc2311ea39c30ad9fcd7c897cc3a3988f3401b4"
+      },
+      {
+        "path": "package/credential-store/dist/keychain-backend.d.ts",
+        "size": 356,
+        "sha256": "31cb0f88a8e438a9d4a3895041b6b0f97fc835c117c6d4918b7ba74fa9d20c4f"
+      },
+      {
+        "path": "package/credential-store/dist/keychain-backend.d.ts.map",
+        "size": 417,
+        "sha256": "de81f13d75bb369917bed9a18ec693fcbdc1b2b6bf04934ed022c57d65a471f2"
+      },
+      {
+        "path": "package/credential-store/dist/keychain-backend.js",
+        "size": 1408,
+        "sha256": "88d5297b8ce37e0cc681a7ec9d982d2de5ef1bb93b7910763f76cc3a68a94f66"
+      },
+      {
+        "path": "package/credential-store/dist/keychain-backend.js.map",
+        "size": 1372,
+        "sha256": "b2977ffc847a5c6a3ed48d3e67720334a1a1ffa33c1bdf709d92a891c1351cca"
+      },
+      {
+        "path": "package/credential-store/dist/resolve-figma-token.d.ts",
+        "size": 259,
+        "sha256": "ec4be425e8f9c781c04ed604526e8407e8a3d6076005771f205d5b8db3b4c8b1"
+      },
+      {
+        "path": "package/credential-store/dist/resolve-figma-token.d.ts.map",
+        "size": 319,
+        "sha256": "4f073fd170551e3beb4b2d362d6a6ae996a90f29b731f4a0033ee100a5a6f4cf"
+      },
+      {
+        "path": "package/credential-store/dist/resolve-figma-token.js",
+        "size": 1122,
+        "sha256": "2775a16c086b676aa3026b40056b9005c7ad2589ce3367eb4be61f26a5a651a6"
+      },
+      {
+        "path": "package/credential-store/dist/resolve-figma-token.js.map",
+        "size": 1115,
+        "sha256": "4c1171bd6bfc73337095bc5f2c3aca112850c03066f12b9e768f7ea0e2c4d7ea"
+      },
+      {
+        "path": "package/credential-store/package.json",
+        "size": 643,
+        "sha256": "a94431312a3a6ebf29d0987cc64948741a0880cfee66d940543e38d5ca6db19c"
+      },
+      {
+        "path": "package/shared/dist/animation-comparison.d.ts",
+        "size": 2514,
+        "sha256": "693a29c1ebedbacaa4c2686305d2bedbdceac83cbf95ac0945e78120b0fb4a91"
+      },
+      {
+        "path": "package/shared/dist/animation-comparison.d.ts.map",
+        "size": 1373,
+        "sha256": "3e47c6640fb4a428f50c36f4d11ff4dd6802a2818cc9f49f589fdd43b3ba37ab"
+      },
+      {
+        "path": "package/shared/dist/animation-comparison.js",
+        "size": 6616,
+        "sha256": "50d16a795b2b7866afab425646afc3113fbf7c9da4749d9e82391459629f30fd"
+      },
+      {
+        "path": "package/shared/dist/animation-comparison.js.map",
+        "size": 4561,
+        "sha256": "22e2f868a309df64cd456e8043e3fdc6b27c0eb60d501d6f2eb234ac05c2cbc3"
+      },
+      {
+        "path": "package/shared/dist/campaign-key.d.ts",
+        "size": 352,
+        "sha256": "0829d3e7eeb3c88bcdd30520c62616098aeb01e627e4afd2631389d31fe941eb"
+      },
+      {
+        "path": "package/shared/dist/campaign-key.d.ts.map",
+        "size": 370,
+        "sha256": "60b6cb10fd6ef5c933975746e30e9e30150d80491bf2a294173e388c33d46302"
+      },
+      {
+        "path": "package/shared/dist/campaign-key.js",
+        "size": 1162,
+        "sha256": "e91978159d67f4681b76be1fcbf74f6eb72ccd0bea21b1fcf5216a29b4187394"
+      },
+      {
+        "path": "package/shared/dist/campaign-key.js.map",
+        "size": 1159,
+        "sha256": "fca8e8b63cbdfcfda8ccdf90a3d09d5fc86652b9c259fd266b39934d631e96ba"
+      },
+      {
+        "path": "package/shared/dist/comparison-conditions.d.ts",
+        "size": 5373,
+        "sha256": "4fe7baf8b25dc70cf943321bd0904c08d39acbf0e787d1110958f52345ea72ac"
+      },
+      {
+        "path": "package/shared/dist/comparison-conditions.d.ts.map",
+        "size": 940,
+        "sha256": "7f6397e3b1fe5d1c0d9ceb54f2b8f0b5c2c006e44e1f1d102738c1fe57a17cac"
+      },
+      {
+        "path": "package/shared/dist/comparison-conditions.js",
+        "size": 5711,
+        "sha256": "08b92d5db94a96f0bb1a7f4e514796d5519d0f3b414b872e46f21508154559e9"
+      },
+      {
+        "path": "package/shared/dist/comparison-conditions.js.map",
+        "size": 5533,
+        "sha256": "b99a4fbb85e7f1cd8581cfc2108a9909e9ee7e320b2e9fa4e02e1dbf3181a9d5"
+      },
+      {
+        "path": "package/shared/dist/confidence/diagnosis.d.ts",
+        "size": 1084,
+        "sha256": "83bbdcb7fecbda0aa846287650ddf7b023e6ae0ab13224cacd91ece4a0e75ad5"
+      },
+      {
+        "path": "package/shared/dist/confidence/diagnosis.d.ts.map",
+        "size": 534,
+        "sha256": "794dde7f0a7e602df71a19f2d749c4a6a99f99d7906f6b5b930880bc455711cd"
+      },
+      {
+        "path": "package/shared/dist/confidence/diagnosis.js",
+        "size": 15258,
+        "sha256": "08452a90761e4c91be5e4d455cc1df06cde3189ab1c1364860233053580ac210"
+      },
+      {
+        "path": "package/shared/dist/confidence/diagnosis.js.map",
+        "size": 8852,
+        "sha256": "94abcefb877ddda8fe97ca8fef75f77cd84aff368f9160db6b90d42d50dc6d38"
+      },
+      {
+        "path": "package/shared/dist/confidence/frame-guidance.d.ts",
+        "size": 494,
+        "sha256": "5bc96c47eab3517b9740e265eb33ce35032e52b17eaee89bee338781e877ff2c"
+      },
+      {
+        "path": "package/shared/dist/confidence/frame-guidance.d.ts.map",
+        "size": 596,
+        "sha256": "97215d645cffb1d4ee031c78309b4ff8b83947dbd7af87927f5c1b8f4f20ae2e"
+      },
+      {
+        "path": "package/shared/dist/confidence/frame-guidance.js",
+        "size": 4481,
+        "sha256": "962b7362a02bb887c1be43dfcade35587ba15b12b25013f3ebbb5185f9ccced1"
+      },
+      {
+        "path": "package/shared/dist/confidence/frame-guidance.js.map",
+        "size": 3742,
+        "sha256": "7aecfa468078ed44619c19a823b81502bbd0c69949b106206048714c46d49800"
+      },
+      {
+        "path": "package/shared/dist/confidence/headline.d.ts",
+        "size": 230,
+        "sha256": "59aeedf764801d6878c05f3875cc5a644efa6c6ebcd8108e26b259afe63755a1"
+      },
+      {
+        "path": "package/shared/dist/confidence/headline.d.ts.map",
+        "size": 273,
+        "sha256": "6dfe98ac0ad77eb0a8dd61708ba52c9a158c1dd4fd390220e43815ab7f29a6b2"
+      },
+      {
+        "path": "package/shared/dist/confidence/headline.js",
+        "size": 2104,
+        "sha256": "8ab2d2733213fb6d77735712ffc1d8464d1b0e85a35db6ebe2f5f2e24de804c7"
+      },
+      {
+        "path": "package/shared/dist/confidence/headline.js.map",
+        "size": 1337,
+        "sha256": "23525be2234d5186bf63fd0d88b53560dd5a06e126792dd8000fa865c17128da"
+      },
+      {
+        "path": "package/shared/dist/confidence/preflight.d.ts",
+        "size": 796,
+        "sha256": "ab5d9100b7f0db31d02d9aff4e6eb8b12acd17b366077e80517b11bb2bfcf5c9"
+      },
+      {
+        "path": "package/shared/dist/confidence/preflight.d.ts.map",
+        "size": 850,
+        "sha256": "90a1c1e10b009d23be6240a8f69ecb700a62795379a274ea675bd30d5a5ec632"
+      },
+      {
+        "path": "package/shared/dist/confidence/preflight.js",
+        "size": 12645,
+        "sha256": "26c6b124b2f28ac5e2be267ac53481e21ca807c7dde219897ae7ed3f85c876e3"
+      },
+      {
+        "path": "package/shared/dist/confidence/preflight.js.map",
+        "size": 7606,
+        "sha256": "5d6cc4494f96a1c5e09d073260c6723d9093121a4bc33adad0a2c791c41eac72"
+      },
+      {
+        "path": "package/shared/dist/confidence/system-bar-ignore-regions.d.ts",
+        "size": 534,
+        "sha256": "4ff73a7ba14bdb12ff667413faa0c1e37f6102e369993b0077dd9e4eb00d5459"
+      },
+      {
+        "path": "package/shared/dist/confidence/system-bar-ignore-regions.d.ts.map",
+        "size": 534,
+        "sha256": "e1bdf5a020108fab43dc6ef751a2a3d53fd8d173dc551aa3cd1c530d645df98f"
+      },
+      {
+        "path": "package/shared/dist/confidence/system-bar-ignore-regions.js",
+        "size": 5953,
+        "sha256": "929d8157b34eea432a3ebc4a1a09ddada84bcc781ad38d8f0b303e980fd03e01"
+      },
+      {
+        "path": "package/shared/dist/confidence/system-bar-ignore-regions.js.map",
+        "size": 6176,
+        "sha256": "dd2a7337cb54d898d51ba11e4ac42cc70c83764234f5d978d7bd0685540b5c35"
+      },
+      {
+        "path": "package/shared/dist/css-suggestion.d.ts",
+        "size": 621,
+        "sha256": "0a12aa5c6d4b5ff8a08c0a3317e1b6a84ea301cbaaa1d3902037e84516f48192"
+      },
+      {
+        "path": "package/shared/dist/css-suggestion.d.ts.map",
+        "size": 439,
+        "sha256": "6701b8c740d5ba148fc43ccc67fc023b9cca3446d32876260a5df9cac53bcf61"
+      },
+      {
+        "path": "package/shared/dist/css-suggestion.js",
+        "size": 7753,
+        "sha256": "b0e52bcdbd6c72b640c44b9004866e7bdc1097fe6ed75984e3d2ef290193241f"
+      },
+      {
+        "path": "package/shared/dist/css-suggestion.js.map",
+        "size": 8751,
+        "sha256": "585de713f52b77edc957d7c0238d89d5de8516ed91ae38a2416af403274017c2"
+      },
+      {
+        "path": "package/shared/dist/design-token-extractor.d.ts",
+        "size": 358,
+        "sha256": "a137d5133990d084b0a4d5dd4d293aebb2253ded62d55e089658eb8a204bd8c9"
+      },
+      {
+        "path": "package/shared/dist/design-token-extractor.d.ts.map",
+        "size": 318,
+        "sha256": "13fecb9fe902cf3e03613e8aaf39c0c3bc2c2fe9c43b32854519b27b4102b083"
+      },
+      {
+        "path": "package/shared/dist/design-token-extractor.js",
+        "size": 7718,
+        "sha256": "ad2dc5af68c7d8f9775104adbf95d340437125430bee980cd5e1c1aa8268e66c"
+      },
+      {
+        "path": "package/shared/dist/design-token-extractor.js.map",
+        "size": 8637,
+        "sha256": "52d65235f03a95ae7e85538dd9ab29f936c437e9c7dc496cf05cdc1cedca79cc"
+      },
+      {
+        "path": "package/shared/dist/diff-cluster.d.ts",
+        "size": 2486,
+        "sha256": "4d24af655e90db514afd5e79e42de3fb21c0c79331a5c729ffdbf6ec4795840d"
+      },
+      {
+        "path": "package/shared/dist/diff-cluster.d.ts.map",
+        "size": 1170,
+        "sha256": "f13291f0a31f4744176ee602be9eb0c7b013fc9329dc7e4eade1e4fbff5972e5"
+      },
+      {
+        "path": "package/shared/dist/diff-cluster.js",
+        "size": 15283,
+        "sha256": "6392c11862d4f2c0a2cb8194917686ca9c0b9203d4c780f51de4ec2523c07df0"
+      },
+      {
+        "path": "package/shared/dist/diff-cluster.js.map",
+        "size": 13744,
+        "sha256": "e682ac9a2899fcd3eb3674cfded526977983bfe482f5015cf3ac30c78b4e6c28"
+      },
+      {
+        "path": "package/shared/dist/figma-client.d.ts",
+        "size": 4422,
+        "sha256": "594771221e198f8c2d997e96b135c69fa26d36685b319e32dd5cec2c36de067f"
+      },
+      {
+        "path": "package/shared/dist/figma-client.d.ts.map",
+        "size": 4208,
+        "sha256": "5e7ae9c4c82200fc5838c6d9dd0dabfb30dceea0c239899b702328db31d02e92"
+      },
+      {
+        "path": "package/shared/dist/figma-client.js",
+        "size": 12832,
+        "sha256": "343b57b6bbf4a0cb4b98fa3e756bf6efe55d71c0401121a5d07662fef98c6b6f"
+      },
+      {
+        "path": "package/shared/dist/figma-client.js.map",
+        "size": 12971,
+        "sha256": "e637ead0ac6b5e791ad04259f2d5f76870ab2e243844e9611b80182818dc6f28"
+      },
+      {
+        "path": "package/shared/dist/figma-geometry.d.ts",
+        "size": 2894,
+        "sha256": "82eea91b240ab5a257a76f159f364d102a75b2cf4fe44d6195c699d36dc23403"
+      },
+      {
+        "path": "package/shared/dist/figma-geometry.d.ts.map",
+        "size": 1695,
+        "sha256": "1eb6025d8a26e0b9fcb0349883a711655679991f23b9f8734fa0d9a3b9465b97"
+      },
+      {
+        "path": "package/shared/dist/figma-geometry.js",
+        "size": 5378,
+        "sha256": "6ddaf541f6cfdf2d903e6b5606f5a1af139221e1af63a998159b472371eafd6f"
+      },
+      {
+        "path": "package/shared/dist/figma-geometry.js.map",
+        "size": 6230,
+        "sha256": "653dd9d9d5fdb4f0089505a2a8808efb3a454cb5360e888ad6276ba120d61464"
+      },
+      {
+        "path": "package/shared/dist/figma-url-parser.d.ts",
+        "size": 1063,
+        "sha256": "197ef4ee0149e8206519dca58896afd8943b1ce574ef41eda6d23c9fd4bb090b"
+      },
+      {
+        "path": "package/shared/dist/figma-url-parser.d.ts.map",
+        "size": 589,
+        "sha256": "d64a6ba8e248569990c9bb04826347be0a871abda23d4a59efe63f5dfdd7bd73"
+      },
+      {
+        "path": "package/shared/dist/figma-url-parser.js",
+        "size": 3679,
+        "sha256": "eb4ffb542494f1617e63e88acf19dd56cce02b9a3608ae0c73792ddd767031c7"
+      },
+      {
+        "path": "package/shared/dist/figma-url-parser.js.map",
+        "size": 3133,
+        "sha256": "d6fa16f89e5a0ccf48da0a80762b728cf138fc0811e21bd760c80ddcbe494a27"
+      },
+      {
+        "path": "package/shared/dist/fix-region-comparison.d.ts",
+        "size": 849,
+        "sha256": "660ce2d2e51c760df7871c571beb1d9cf1391895b52a0cf5dc118c7bb097317e"
+      },
+      {
+        "path": "package/shared/dist/fix-region-comparison.d.ts.map",
+        "size": 876,
+        "sha256": "623e0c8008eb5d1437e973d3ae9ef66d1a6b47f9a9b071a42cae8b8de3f41e27"
+      },
+      {
+        "path": "package/shared/dist/fix-region-comparison.js",
+        "size": 4459,
+        "sha256": "83534aff641d018495f225799d7c6aa9332d9911061c851b49812d5c5a9b2d7e"
+      },
+      {
+        "path": "package/shared/dist/fix-region-comparison.js.map",
+        "size": 4085,
+        "sha256": "36f29c30d1ac4b0de1f7f0341547d84a649fbb0dcab0e2ba0dc466dab75b2ee4"
+      },
+      {
+        "path": "package/shared/dist/ignore-region-context.d.ts",
+        "size": 627,
+        "sha256": "925396fb96feea9543db0aadac7626dd40df5abe71dc34a7358321be663adc8d"
+      },
+      {
+        "path": "package/shared/dist/ignore-region-context.d.ts.map",
+        "size": 503,
+        "sha256": "21039d5595171669a01d5a3fc198672b6be8ebeca8c4b64de633edf36e3d7178"
+      },
+      {
+        "path": "package/shared/dist/ignore-region-context.js",
+        "size": 1400,
+        "sha256": "b25d1744f64a7fdde5c800a6f0e4ced98e540115cefff52b408c9b828a0fd279"
+      },
+      {
+        "path": "package/shared/dist/ignore-region-context.js.map",
+        "size": 1375,
+        "sha256": "7b5e3ecb6c352b6d34aa051ebcb46bb96854853779b0cbfd61a01e8b3c272fcc"
+      },
+      {
+        "path": "package/shared/dist/ignore-region-mask.d.ts",
+        "size": 563,
+        "sha256": "104416a3eccbbb0ba8b2a94f652f7b877bc17a5e8684e47617501c8ed6d4ef26"
+      },
+      {
+        "path": "package/shared/dist/ignore-region-mask.d.ts.map",
+        "size": 577,
+        "sha256": "aabd99b01c15450519aa937a432d56b35820ee86ab30702e459797112451271a"
+      },
+      {
+        "path": "package/shared/dist/ignore-region-mask.js",
+        "size": 2736,
+        "sha256": "05af9bd43457b667524188c59d37997a15487b76d572fe5e4fd3eedbfa0612ec"
+      },
+      {
+        "path": "package/shared/dist/ignore-region-mask.js.map",
+        "size": 3359,
+        "sha256": "b5e8b570c56d1ea79b720e19e5b136e67a2e907164b60f1529b3dec5f7ea6ebe"
+      },
+      {
+        "path": "package/shared/dist/index.d.ts",
+        "size": 8388,
+        "sha256": "bd7a3c022bf2d7e396a36e30797824d7df089ad847819072656068486af81feb"
+      },
+      {
+        "path": "package/shared/dist/index.d.ts.map",
+        "size": 5391,
+        "sha256": "76033579b764a561de96c1cc268865ba42832d205534ca72129407a15b347f05"
+      },
+      {
+        "path": "package/shared/dist/index.js",
+        "size": 6398,
+        "sha256": "6b5d60a9073838064c635af759f9f90b38a4f00b91f75630ddcb8d8a4f78a6ce"
+      },
+      {
+        "path": "package/shared/dist/index.js.map",
+        "size": 3851,
+        "sha256": "a3202bfa5c71ba0c76b3f8df8c4e870abbfa2316a9379bc138c229142290548a"
+      },
+      {
+        "path": "package/shared/dist/node-matcher.d.ts",
+        "size": 3168,
+        "sha256": "73f4f526adfda4ebddf9616d26d90033136402fa27d7ae73405c7c3e67509a66"
+      },
+      {
+        "path": "package/shared/dist/node-matcher.d.ts.map",
+        "size": 1393,
+        "sha256": "bb9b6256dafcc2cedf2aa55ee548da0cbb834b162c4d4d8826b8c2e46e3f8765"
+      },
+      {
+        "path": "package/shared/dist/node-matcher.js",
+        "size": 6460,
+        "sha256": "2dbcc56ed425e4b2a4ec9860ff89207943fd83d30f36b16d27b0fbe203887a37"
+      },
+      {
+        "path": "package/shared/dist/node-matcher.js.map",
+        "size": 4698,
+        "sha256": "030935437b79aaa78159ff23a1c5aba7103d1b069863261bb1ee281e79d17c9d"
+      },
+      {
+        "path": "package/shared/dist/node/github-service.d.ts",
+        "size": 2019,
+        "sha256": "cb30bdc0bd29dc34e9f19a7c4f1b087754ce83d33a1f1fdaf36a3d2c1d0fdb45"
+      },
+      {
+        "path": "package/shared/dist/node/github-service.d.ts.map",
+        "size": 1922,
+        "sha256": "40813caad235042dfa134d55c08b0c5cdc61499b12af28c03db95bdece463a63"
+      },
+      {
+        "path": "package/shared/dist/node/github-service.js",
+        "size": 8529,
+        "sha256": "137d0c21665153d35999e522504fb498bd18a2c56074b452658a9436aea43afe"
+      },
+      {
+        "path": "package/shared/dist/node/github-service.js.map",
+        "size": 7411,
+        "sha256": "f536fdbb4e26ecd7c9ab8c245625584989e545bc1eaa8b7454d24de60ef891f6"
+      },
+      {
+        "path": "package/shared/dist/node/ignore-region-store.d.ts",
+        "size": 1245,
+        "sha256": "0f21b51e0a721ee4201a201241bc6a3560f05530dcf82abe85518f6128a27b8e"
+      },
+      {
+        "path": "package/shared/dist/node/ignore-region-store.d.ts.map",
+        "size": 1143,
+        "sha256": "ec573fc662fa8c0238ee1920ebabe4b5d27df28315ee7cc8895a9ccd7831c698"
+      },
+      {
+        "path": "package/shared/dist/node/ignore-region-store.js",
+        "size": 12390,
+        "sha256": "16189df59fc28733030936bdae744177229958615302486b61f9544a415d4d6b"
+      },
+      {
+        "path": "package/shared/dist/node/ignore-region-store.js.map",
+        "size": 11688,
+        "sha256": "a630be00a425ea084186e5fc3dbc4796402f6085d654fc5bc03efb81657cd307"
+      },
+      {
+        "path": "package/shared/dist/node/public-issue-guard.d.ts",
+        "size": 1500,
+        "sha256": "d58135bc9afd43151af2f7d5ba7ad4593218bfc30c1e9a152796a28a5d28e905"
+      },
+      {
+        "path": "package/shared/dist/node/public-issue-guard.d.ts.map",
+        "size": 666,
+        "sha256": "bc1147dd29998cf7a79b332a7e8c086c94d0add931a4f724c453c37e2173e661"
+      },
+      {
+        "path": "package/shared/dist/node/public-issue-guard.js",
+        "size": 7937,
+        "sha256": "4e7f16ba0a91c862ef5dbc3147f87f7fdb56a086308ce7079298a62d9ec494ac"
+      },
+      {
+        "path": "package/shared/dist/node/public-issue-guard.js.map",
+        "size": 5143,
+        "sha256": "3032c6cf50ce196d654e4cc6c3fb65bd090b70786bc8759d3ad0c0fc484d6762"
+      },
+      {
+        "path": "package/shared/dist/pixel-compare.d.ts",
+        "size": 476,
+        "sha256": "77e5be18fe121a6be3058259c8292c00d977c7b36f1ace66fce1aa4e711f3731"
+      },
+      {
+        "path": "package/shared/dist/pixel-compare.d.ts.map",
+        "size": 449,
+        "sha256": "b96d01e7e742d4ab7f2c8227a8aad1106775ed46e8013976c4faa9902cbf514e"
+      },
+      {
+        "path": "package/shared/dist/pixel-compare.js",
+        "size": 879,
+        "sha256": "8dbe1988137f89879fa346b743270cd27aba1cc3839dff7714c2f225154e0e2e"
+      },
+      {
+        "path": "package/shared/dist/pixel-compare.js.map",
+        "size": 462,
+        "sha256": "0edac02e11054fb5c70aadf9dc1e01ff2ab853b8f991d8c215fa8a4b54f664d8"
+      },
+      {
+        "path": "package/shared/dist/public-issue-sanitizer.d.ts",
+        "size": 240,
+        "sha256": "e05890d2690188c4b8a53c065068719275de501f9fda019dc3a1b9dc3c5cd443"
+      },
+      {
+        "path": "package/shared/dist/public-issue-sanitizer.d.ts.map",
+        "size": 287,
+        "sha256": "7bdfd043d89275fbff04d99cc100aa21411da3a01ce302c421a213ad0202fa57"
+      },
+      {
+        "path": "package/shared/dist/public-issue-sanitizer.js",
+        "size": 2099,
+        "sha256": "ad87f95d097c2641317317f8997366111db38b0d36371bc18e9dd900438c1c90"
+      },
+      {
+        "path": "package/shared/dist/public-issue-sanitizer.js.map",
+        "size": 1735,
+        "sha256": "e2dcf28147f8ba36b6d5567b1b39a96924ce513cf8b6233be64b9c39f06fd219"
+      },
+      {
+        "path": "package/shared/dist/report-generator.d.ts",
+        "size": 452,
+        "sha256": "e47f893f712d184fff5ccdeed0815ed203e02accd4f34880820e1b847623ec5c"
+      },
+      {
+        "path": "package/shared/dist/report-generator.d.ts.map",
+        "size": 323,
+        "sha256": "28862a648f2c5ddac98945a1ec328af6a74799fb31d3a9fad2b1a43a3b716dc5"
+      },
+      {
+        "path": "package/shared/dist/report-generator.js",
+        "size": 8709,
+        "sha256": "86638f50e5d548721d10c53f0f15b5f8d36ebb7dcc97b3f0234199fbd5face9a"
+      },
+      {
+        "path": "package/shared/dist/report-generator.js.map",
+        "size": 7711,
+        "sha256": "79c6dc824a792aef7f5c14e0f0941daa3dd2a1e966e53cb55c533c0811bd0fbf"
+      },
+      {
+        "path": "package/shared/dist/schema.d.ts",
+        "size": 86013,
+        "sha256": "40d36ffeaa40e7985017687d2b788880821ebf2b9d1a4ffd3f97ec422b25b54d"
+      },
+      {
+        "path": "package/shared/dist/schema.d.ts.map",
+        "size": 4861,
+        "sha256": "a0d55edebddbbc070b7ef2e2d3b242196265abdcb47427e6e3143fbbe6834ae5"
+      },
+      {
+        "path": "package/shared/dist/schema.js",
+        "size": 34392,
+        "sha256": "be8b520af991c9367f80baaee94e47de68d8b36471335e4a70dcfb441b351584"
+      },
+      {
+        "path": "package/shared/dist/schema.js.map",
+        "size": 31697,
+        "sha256": "759787625b98405877460cf16ea0ddbb7b86afa91f7a01775801df0def8c61ce"
+      },
+      {
+        "path": "package/shared/dist/self-critique.d.ts",
+        "size": 202,
+        "sha256": "f535be16f205babd177a10729c7f157e21bdabf7c8fa5d7b24d4423ae3401843"
+      },
+      {
+        "path": "package/shared/dist/self-critique.d.ts.map",
+        "size": 255,
+        "sha256": "a2096bdec550ed56ba09f50fa7b720f3333491fba7aa45c728356b559589e748"
+      },
+      {
+        "path": "package/shared/dist/self-critique.js",
+        "size": 3334,
+        "sha256": "febc0c8ef6039cfdb8de5c3f918d11e901cb138fe87b73c69abd98077ab8a743"
+      },
+      {
+        "path": "package/shared/dist/self-critique.js.map",
+        "size": 2570,
+        "sha256": "e10e14618e4772cedafcdf28ae697d094968d856fb3ab1ec48516b9cc877be1c"
+      },
+      {
+        "path": "package/shared/dist/signal/delta-e-2000.d.ts",
+        "size": 1405,
+        "sha256": "43633f8e33b3c82d14e4f30df0f1d94a6b4201d478fd04f548b034cfac6dde0a"
+      },
+      {
+        "path": "package/shared/dist/signal/delta-e-2000.d.ts.map",
+        "size": 971,
+        "sha256": "2f7d0be1b6b126958a8c037696f76940b2b09edd8a87645816e91e297e292d60"
+      },
+      {
+        "path": "package/shared/dist/signal/delta-e-2000.js",
+        "size": 14636,
+        "sha256": "cd100086dd0f5ad6f96752df741734b7d74fe93aafb80c0814bd0c2d2e8760e8"
+      },
+      {
+        "path": "package/shared/dist/signal/delta-e-2000.js.map",
+        "size": 13955,
+        "sha256": "dbe1952e197308a672857c8499c15932575fdec215ebcd3331f381c1a0f1e1d4"
+      },
+      {
+        "path": "package/shared/dist/signal/dynamic-region.d.ts",
+        "size": 2495,
+        "sha256": "376661ca9b60312c8c547d0fc29c573fc0f794eed59a0601bff173e7193f21b0"
+      },
+      {
+        "path": "package/shared/dist/signal/dynamic-region.d.ts.map",
+        "size": 1042,
+        "sha256": "ad9216de66a6f1e4bb35f152374baeada8f4475ab84f55e77ea88cd6e7564d72"
+      },
+      {
+        "path": "package/shared/dist/signal/dynamic-region.js",
+        "size": 8666,
+        "sha256": "5288cf7d315aaf56d88ee804f7ca31dd8d8d5cdf00fd756f12fbb1d84e318fde"
+      },
+      {
+        "path": "package/shared/dist/signal/dynamic-region.js.map",
+        "size": 7995,
+        "sha256": "562b3bcf62d37617cffaf52f927c2121d805747d9da9b3de46b8a1173a32eb89"
+      },
+      {
+        "path": "package/shared/dist/signal/flat-region-color.d.ts",
+        "size": 1226,
+        "sha256": "8dd4842afb1d0cab128522b369217be9c3da6e65181daa657d836324b2f6a27b"
+      },
+      {
+        "path": "package/shared/dist/signal/flat-region-color.d.ts.map",
+        "size": 864,
+        "sha256": "887b3b6b8392515df35888fecfa5a67eb408fbe80f7699788cac4f1dced143f3"
+      },
+      {
+        "path": "package/shared/dist/signal/flat-region-color.js",
+        "size": 5771,
+        "sha256": "99a39e239dd59294742b324669d1dad90c0c1689c64c835c57ef04204a535b43"
+      },
+      {
+        "path": "package/shared/dist/signal/flat-region-color.js.map",
+        "size": 5043,
+        "sha256": "a3fbfdf9d47ac7a07ff5a527b8cd2a3026aef78d853e47499468fbea4349aa88"
+      },
+      {
+        "path": "package/shared/dist/signal/foreground-occupancy.d.ts",
+        "size": 696,
+        "sha256": "d88c76647f4f0ece3fef1c68f426007f2ea707c62c43d60fb9c78ac2119a7b75"
+      },
+      {
+        "path": "package/shared/dist/signal/foreground-occupancy.d.ts.map",
+        "size": 434,
+        "sha256": "cd5554566f2a37c54ba4d0e2234205a91ed46723d19c9d5a175edc970a5f3f4e"
+      },
+      {
+        "path": "package/shared/dist/signal/foreground-occupancy.js",
+        "size": 7507,
+        "sha256": "d8db893748fad7695e7cfeb89dde170ced689aed1e915855e75d1282f0d3b6c8"
+      },
+      {
+        "path": "package/shared/dist/signal/foreground-occupancy.js.map",
+        "size": 7639,
+        "sha256": "d21f6a64ab0bfdc94b54a0579ea1fde1660c4b26338ffd20535f8889f2d96787"
+      },
+      {
+        "path": "package/shared/dist/signal/glyph-edge-raster.d.ts",
+        "size": 553,
+        "sha256": "8d7f6139fa4ea589e9ee050ceb6f8bd14d8dd9c54f983c700093ebf4057a6584"
+      },
+      {
+        "path": "package/shared/dist/signal/glyph-edge-raster.d.ts.map",
+        "size": 500,
+        "sha256": "46ccc1da8a3c81ee6fa9304b43cadecb220ede452c0c26819d9e3018e4c268da"
+      },
+      {
+        "path": "package/shared/dist/signal/glyph-edge-raster.js",
+        "size": 8363,
+        "sha256": "089b8a913d823822a2339b2fb5b2ad0e97c291a6a224d89360bf2f8d0f71089a"
+      },
+      {
+        "path": "package/shared/dist/signal/glyph-edge-raster.js.map",
+        "size": 9615,
+        "sha256": "86fb1ff12bb57cc90f1ab872e5adf7f46f63c9768d661dfa8854f9932f1f5c29"
+      },
+      {
+        "path": "package/shared/dist/signal/hausdorff.d.ts",
+        "size": 271,
+        "sha256": "017b0f3cd799e842b459435f507c8d9bf1d282b8cff85b624f310b99b00055f2"
+      },
+      {
+        "path": "package/shared/dist/signal/hausdorff.d.ts.map",
+        "size": 305,
+        "sha256": "9dcbdbb8b71d20e1b92f6b8d56126baac55a08d70803bef425494fdc0a022726"
+      },
+      {
+        "path": "package/shared/dist/signal/hausdorff.js",
+        "size": 6165,
+        "sha256": "0efdc3207eb7fdbb0e9c06138739448881f4dbec1e84950d7f65a34b1d88388c"
+      },
+      {
+        "path": "package/shared/dist/signal/hausdorff.js.map",
+        "size": 6924,
+        "sha256": "bd5ed644a948cca3c57c6c0f4cfa599b5d3947610b358f7febf64e5f4ef8d455"
+      },
+      {
+        "path": "package/shared/dist/signal/ssim.d.ts",
+        "size": 688,
+        "sha256": "bb1a987c9d0c1497d2f2cfeb916dfbfe6cb4136f172e1e786311b97c37e26900"
+      },
+      {
+        "path": "package/shared/dist/signal/ssim.d.ts.map",
+        "size": 666,
+        "sha256": "e0e96bbf88ba41f6e1685f3c523a4fd0edf34f36deb9f3a72e39fa3357fa1cce"
+      },
+      {
+        "path": "package/shared/dist/signal/ssim.js",
+        "size": 8503,
+        "sha256": "af038bc7c32aba289b2386e28f0e12e7a899022bb2a499803e600cb535c672a9"
+      },
+      {
+        "path": "package/shared/dist/signal/ssim.js.map",
+        "size": 8590,
+        "sha256": "da99165fc1e9d2f802833582ef5938fcce4049228be5adcb126b477badd43ac2"
+      },
+      {
+        "path": "package/shared/dist/signal/temporal-align.d.ts",
+        "size": 4441,
+        "sha256": "f890c3e8597991a414a8b0ff8c2183c175d0ee9042307ae0647dbf0de090a52f"
+      },
+      {
+        "path": "package/shared/dist/signal/temporal-align.d.ts.map",
+        "size": 1404,
+        "sha256": "55d3d053a6a5764200782775a623ac7d05c45e394ed102a18379d4167c20b4c4"
+      },
+      {
+        "path": "package/shared/dist/signal/temporal-align.js",
+        "size": 7581,
+        "sha256": "9e29f05a649aa96636fb6f9fd56579b1d0ee71def0f8d1c436de8b4ab65b5f30"
+      },
+      {
+        "path": "package/shared/dist/signal/temporal-align.js.map",
+        "size": 4229,
+        "sha256": "2abe6dbeafd4f8da0e614bf6110eb2cf46d3af3f1df98340e5e715d676ab8dec"
+      },
+      {
+        "path": "package/shared/dist/signal/texture.d.ts",
+        "size": 275,
+        "sha256": "94ef9534c3e5ca7d0c8060c38acf76ae96a825a8e80e2e0615e756940581aa9b"
+      },
+      {
+        "path": "package/shared/dist/signal/texture.d.ts.map",
+        "size": 335,
+        "sha256": "92d4e0825129cfb8ac762c6277f577b02cd04cd65ee463fc9b6f59f7395db2e7"
+      },
+      {
+        "path": "package/shared/dist/signal/texture.js",
+        "size": 3394,
+        "sha256": "409108a0146e573c32caa89e89dfd32db2d17eacdaf5e7dfdf11177cbe10f0ca"
+      },
+      {
+        "path": "package/shared/dist/signal/texture.js.map",
+        "size": 4415,
+        "sha256": "c55c28a2d56598606730d5ae629d9ee0a8c18bbdcbc87c18083752f9a604d075"
+      },
+      {
+        "path": "package/shared/dist/signal/toast-band.d.ts",
+        "size": 770,
+        "sha256": "2b371bfaf499d396ddccb557182963869e21185d9d03722e41800f49224e6e42"
+      },
+      {
+        "path": "package/shared/dist/signal/toast-band.d.ts.map",
+        "size": 634,
+        "sha256": "171533a3b437a07c3a7ca76264a54111bde4bd2168b90bc4387589c98c1ba6b4"
+      },
+      {
+        "path": "package/shared/dist/signal/toast-band.js",
+        "size": 5095,
+        "sha256": "a9cbc65123c8130df390c6d46b76da0dacd1a6ea300f8afd61b2d588cf20b136"
+      },
+      {
+        "path": "package/shared/dist/signal/toast-band.js.map",
+        "size": 4951,
+        "sha256": "c5281cf476bf1aee135af571020d8c987812cc960ec5f1e1826de3b7d7c9ffc9"
+      },
+      {
+        "path": "package/shared/dist/signal/translation.d.ts",
+        "size": 3532,
+        "sha256": "3fc4584b50aef2435f94b9a777af9fc4e83f801ebdc35ff20f7ba689f4285ec3"
+      },
+      {
+        "path": "package/shared/dist/signal/translation.d.ts.map",
+        "size": 1537,
+        "sha256": "0b5adb10ccf3ede196ab29b690d2eb62ac61bc344af99b3c9a4ecc72b5061789"
+      },
+      {
+        "path": "package/shared/dist/signal/translation.js",
+        "size": 15600,
+        "sha256": "6b9e85b5e1f0092701842ff9a424b1cecc958baa7742ecea9100ce60b2d95ee5"
+      },
+      {
+        "path": "package/shared/dist/signal/translation.js.map",
+        "size": 11475,
+        "sha256": "b42a64f0e0885e453fe3e53af474eb46626cafe1dc94661b0b0e9417ebe30905"
+      },
+      {
+        "path": "package/shared/dist/transform-node.d.ts",
+        "size": 443,
+        "sha256": "fbdee218b2bcb9ac8c2809d8877ba769b41579c3f2bc97be6030935a45e37d16"
+      },
+      {
+        "path": "package/shared/dist/transform-node.d.ts.map",
+        "size": 250,
+        "sha256": "004289a64d426aebc816c18ff6a2b217dcb773f6f4690c186310dafe372d1aad"
+      },
+      {
+        "path": "package/shared/dist/transform-node.js",
+        "size": 4496,
+        "sha256": "153e66d207038b3eac0f1e7ecb8df3a68785e94f98c191a7857f68a2d7932e82"
+      },
+      {
+        "path": "package/shared/dist/transform-node.js.map",
+        "size": 4838,
+        "sha256": "c2ce04e91d1d41f210dfc6ad6507b6ba4068995522144615dcf8d9e0245d3bea"
+      },
+      {
+        "path": "package/shared/dist/type.d.ts",
+        "size": 9006,
+        "sha256": "f26bc136430a5547500f7372b17c2967bf56150ee71533737e6c7f01c258bb06"
+      },
+      {
+        "path": "package/shared/dist/type.d.ts.map",
+        "size": 7830,
+        "sha256": "bde1599af9ee544ffab7df7c63478c7f7bda564712843614f24698e1fe7666f7"
+      },
+      {
+        "path": "package/shared/dist/type.js",
+        "size": 7221,
+        "sha256": "87cf21afc90ba540bebc3edee45a6d40d8601cd1a84d6f809d51d387e4caf434"
+      },
+      {
+        "path": "package/shared/dist/type.js.map",
+        "size": 5359,
+        "sha256": "de8aa4f8e81edbaa3c77ab8953729cb643a91224626b1979aaab3c4378cfe2e8"
+      },
+      {
+        "path": "package/shared/dist/verification-context.d.ts",
+        "size": 8549,
+        "sha256": "d5f8d145cf022be1322e565d69e820fc3f9822fa4020f14e5eae9dda036bbfd8"
+      },
+      {
+        "path": "package/shared/dist/verification-context.d.ts.map",
+        "size": 708,
+        "sha256": "35853bf6895214649e1bd2085969ca0ec96895b5c010a9bb80b99b410852b0f5"
+      },
+      {
+        "path": "package/shared/dist/verification-context.js",
+        "size": 4485,
+        "sha256": "6ef9a8ed0e4c190d0be6ad171f9eabbe2bfb1004009b830da51f57e02474a751"
+      },
+      {
+        "path": "package/shared/dist/verification-context.js.map",
+        "size": 4832,
+        "sha256": "aff01cc538aa143f675a8796d36ad4018c846e26c814c61311d276aeca22cb13"
+      },
+      {
+        "path": "package/shared/dist/verification-fixture.d.ts",
+        "size": 815,
+        "sha256": "cc42470ad21afe73fd0159d1b8225dea37461cc94e445e22b271df7923b02763"
+      },
+      {
+        "path": "package/shared/dist/verification-fixture.d.ts.map",
+        "size": 430,
+        "sha256": "c1c17c0666dca737f00744aa38e688171592ada814a61e5eb88a9e931c3011b1"
+      },
+      {
+        "path": "package/shared/dist/verification-fixture.js",
+        "size": 2624,
+        "sha256": "a315ba71f74e825a4448dc631ca87bef4bd64b9da3f0afc9b7070edaceff3968"
+      },
+      {
+        "path": "package/shared/dist/verification-fixture.js.map",
+        "size": 2457,
+        "sha256": "9af8601541dc0218e9c80c7243572329782c8be5a313e92e9a7ccbd210d97067"
+      },
+      {
+        "path": "package/shared/dist/verify-fix-verdict.d.ts",
+        "size": 344,
+        "sha256": "2127da1cd50e7ca915abebc5728fcc2be98822d144055c182328190a60d2a425"
+      },
+      {
+        "path": "package/shared/dist/verify-fix-verdict.d.ts.map",
+        "size": 386,
+        "sha256": "0f1db4351f953b689c9b24333ba30c7bb78e8b10c95c5cb818d3661b4348d81b"
+      },
+      {
+        "path": "package/shared/dist/verify-fix-verdict.js",
+        "size": 1926,
+        "sha256": "55b0e07eb8947392001b756f0a25ae5fe6c6c950573f4a9933e2134fd85d51be"
+      },
+      {
+        "path": "package/shared/dist/verify-fix-verdict.js.map",
+        "size": 1167,
+        "sha256": "62dc3fa2d8d3b5d7eb1641d2b6f35f2fa0d642367874d0e03e3bd1df3426d06f"
+      },
+      {
+        "path": "package/shared/dist/view-mode.d.ts",
+        "size": 776,
+        "sha256": "4557870cd8b841d5f14719d149f528cc18a930777008e345374c022426f23b29"
+      },
+      {
+        "path": "package/shared/dist/view-mode.d.ts.map",
+        "size": 568,
+        "sha256": "b6615af9da7a139a2a14b5c929a0a3e5bd388062b465db0a75e57d1518ba837e"
+      },
+      {
+        "path": "package/shared/dist/view-mode.js",
+        "size": 2229,
+        "sha256": "693304f1c9566a9008911b85fa32df1a853d431af7f2c7b34048c918b3b1067c"
+      },
+      {
+        "path": "package/shared/dist/view-mode.js.map",
+        "size": 1527,
+        "sha256": "6a876af82022e335f4a02e27cbd9c7f50eb88122adef5a57314237e377581b75"
+      },
+      {
+        "path": "package/shared/package.json",
+        "size": 1526,
+        "sha256": "1541edfbcb2ccb91588617a85f338032f8012ce79b37447204f2b022927e0fa2"
+      },
+      {
+        "path": "pnpm-lock.yaml",
+        "size": 278665,
+        "sha256": "56531c503d0381614439af6aae83c0ece2985687482fd163722bdcf96e095681"
+      }
+    ],
+    "postRun": {
+      "fileCount": 397,
+      "sha256": "da4a551faec001f09e6f00320613bef5c1fa93aeaf9ba31422822db0cd73cbb7",
+      "files": [
+        {
+          "path": "app/mcp-server/dist/index.d.ts",
+          "size": 158,
+          "sha256": "360f1c3430b0b24743bf3ba8fcccb287da60f36babab9ef7f5de82dbd2fffc75"
+        },
+        {
+          "path": "app/mcp-server/dist/index.d.ts.map",
+          "size": 116,
+          "sha256": "750cd8bce1b86a5912d07525f5ae0c2c9f6453303278a38d1a2250bc54453107"
+        },
+        {
+          "path": "app/mcp-server/dist/index.js",
+          "size": 2360,
+          "sha256": "2f3782ac72d3f6ee4e3ed9e396ff44771b270995296c29cb0d02f875929f793e"
+        },
+        {
+          "path": "app/mcp-server/dist/index.js.map",
+          "size": 1987,
+          "sha256": "2d63b683978bba47cf0694e1eb655193fe22754f74b139b74ad120b44d62ebd3"
+        },
+        {
+          "path": "app/mcp-server/dist/server.d.ts",
+          "size": 1444,
+          "sha256": "7228438b7a013b85e8dda28ff7ff5a1bbbaabacc726f70ae9a3d9bd7dbb73230"
+        },
+        {
+          "path": "app/mcp-server/dist/server.d.ts.map",
+          "size": 214,
+          "sha256": "3c81714c4dcf4ea92299cc3deac723158525abe15b29c6e69862d21e702ac2ef"
+        },
+        {
+          "path": "app/mcp-server/dist/server.js",
+          "size": 7379,
+          "sha256": "7e40362e78f716dd816cba0b51d00c05fde79b48c3d7715ce32481ba1bc71caa"
+        },
+        {
+          "path": "app/mcp-server/dist/server.js.map",
+          "size": 1781,
+          "sha256": "09fd0d2fc6c9a54af0124c7b3976a9a34d361a36f97a7c3746ce430deb65872d"
+        },
+        {
+          "path": "app/mcp-server/dist/service/active-session.d.ts",
+          "size": 824,
+          "sha256": "3fc2e9bae275505798e77c6f472e686f384f298a3a240cda7d6ffec20791627a"
+        },
+        {
+          "path": "app/mcp-server/dist/service/active-session.d.ts.map",
+          "size": 425,
+          "sha256": "9db6234def26a503f631fc9c809816eb335806c4b6ff7747b43d93886c2c83ff"
+        },
+        {
+          "path": "app/mcp-server/dist/service/active-session.js",
+          "size": 1163,
+          "sha256": "e70cf956b2b5e277695a577168c915dcbd974e87c2d1624886fe54c0cf43c2bf"
+        },
+        {
+          "path": "app/mcp-server/dist/service/active-session.js.map",
+          "size": 1415,
+          "sha256": "909d6d568a99aef458673b885fa6ed5cbe6f5ad2993d59cd31d77850516964ec"
+        },
+        {
+          "path": "app/mcp-server/dist/service/animation-compare-service.d.ts",
+          "size": 229,
+          "sha256": "5d3a4b158c2ece717d6301c80c375f6e3cb3f759cae6cf5db431502dece74343"
+        },
+        {
+          "path": "app/mcp-server/dist/service/animation-compare-service.d.ts.map",
+          "size": 282,
+          "sha256": "69d0571da4cca3b1dc60905894a202ee06f9b28fa4ca9e0fff48de2acb78c35c"
+        },
+        {
+          "path": "app/mcp-server/dist/service/animation-compare-service.js",
+          "size": 109,
+          "sha256": "312ec422ed7ed5841222a76f37621785637c4ab1aad2c9ed4cc936e421b2e593"
+        },
+        {
+          "path": "app/mcp-server/dist/service/animation-compare-service.js.map",
+          "size": 197,
+          "sha256": "c4f728da33e37fa85e883a515d9322ce5fbb387e5aedc7aa42121d29cfbd4e24"
+        },
+        {
+          "path": "app/mcp-server/dist/service/capture-service.d.ts",
+          "size": 5483,
+          "sha256": "5cfc36003a64c0b56a61dc1fef9cf6b4c4d9fb28f671c18d91427a6580d0e8be"
+        },
+        {
+          "path": "app/mcp-server/dist/service/capture-service.d.ts.map",
+          "size": 1248,
+          "sha256": "6b313e7bd7b3524d2a1b0ffaa6888fce6c345e1156678518c618478250656a6a"
+        },
+        {
+          "path": "app/mcp-server/dist/service/capture-service.js",
+          "size": 19087,
+          "sha256": "97300537682e04d2cb7b44ebc6845a94f46dac3ee206e4f509962e0339d6a97b"
+        },
+        {
+          "path": "app/mcp-server/dist/service/capture-service.js.map",
+          "size": 11271,
+          "sha256": "98efda537cfb408d8d1dd7f846890a5c0a23a630785217a80e599d631a7e7506"
+        },
+        {
+          "path": "app/mcp-server/dist/service/compare-design-runner.d.ts",
+          "size": 4195,
+          "sha256": "0248192512ee21122790dd025720ef84fcd695c20a49b0fe04a2c8ea9e358cd5"
+        },
+        {
+          "path": "app/mcp-server/dist/service/compare-design-runner.d.ts.map",
+          "size": 2253,
+          "sha256": "dd058fdfbb8539842c607fa8eb411d976613b3ed023355cc58bbbf9bc2216995"
+        },
+        {
+          "path": "app/mcp-server/dist/service/compare-design-runner.js",
+          "size": 77851,
+          "sha256": "baa3435d38824300a4acdc00e408d7ceb4b4d2766d8d8c0edfffaa0978eb577b"
+        },
+        {
+          "path": "app/mcp-server/dist/service/compare-design-runner.js.map",
+          "size": 50396,
+          "sha256": "b82996e4beb2eefcfc6eaf29afc18d0aae61494527c4910f06b7ae7fe5e06a95"
+        },
+        {
+          "path": "app/mcp-server/dist/service/comparison-history.d.ts",
+          "size": 1077,
+          "sha256": "9c1f56671fb22956a9b8924ae46b9c646be4f4eb2aa621d4061a0e533d7f684c"
+        },
+        {
+          "path": "app/mcp-server/dist/service/comparison-history.d.ts.map",
+          "size": 1013,
+          "sha256": "8ddbd23e72c2fdfbb6109e155a0777b42589ddc7f1f538f285be129fc727df10"
+        },
+        {
+          "path": "app/mcp-server/dist/service/comparison-history.js",
+          "size": 5060,
+          "sha256": "cf24b08795b05aac24f8c1489766ec440308eef5af371ccd89b891f832b4cec4"
+        },
+        {
+          "path": "app/mcp-server/dist/service/comparison-history.js.map",
+          "size": 4449,
+          "sha256": "c824ddbb36e9bb84062ba8c6aafac8ac1b093c7bc02956ff176ff8523eeb37d5"
+        },
+        {
+          "path": "app/mcp-server/dist/service/comparison-result-compat.d.ts",
+          "size": 130,
+          "sha256": "ebf47f7a6d7e7969ca7602b4cace33ca6b4ed0d26328428244fe67f53ddbd5d7"
+        },
+        {
+          "path": "app/mcp-server/dist/service/comparison-result-compat.d.ts.map",
+          "size": 206,
+          "sha256": "33724215f57785426d4d03fdc975e9e4a0b30b8e1237095271cd5e42f928ffcd"
+        },
+        {
+          "path": "app/mcp-server/dist/service/comparison-result-compat.js",
+          "size": 1680,
+          "sha256": "61f2eac9eaba06ee5494a62a530e5ae7e521725186bb6174a37de90a243d7b96"
+        },
+        {
+          "path": "app/mcp-server/dist/service/comparison-result-compat.js.map",
+          "size": 1857,
+          "sha256": "5d475872dcabdb35140ad07de9eddf68180dc9adce3ba37fa75128fa812392e2"
+        },
+        {
+          "path": "app/mcp-server/dist/service/convergence-history.d.ts",
+          "size": 1226,
+          "sha256": "80126a459626ca9121bbfa509f9307346d3b1c174bc225ccf8e3810de80c2371"
+        },
+        {
+          "path": "app/mcp-server/dist/service/convergence-history.d.ts.map",
+          "size": 754,
+          "sha256": "61cb7f4503a36d5a0b89161117e53750adc6294166135969167123b98a97ab4f"
+        },
+        {
+          "path": "app/mcp-server/dist/service/convergence-history.js",
+          "size": 8144,
+          "sha256": "8c65aa13e556e0744398faa2db8e72e9d098f55cc0b76b025361f5b932856ff8"
+        },
+        {
+          "path": "app/mcp-server/dist/service/convergence-history.js.map",
+          "size": 7305,
+          "sha256": "f0227894300a4c4948b0749b44a0715f56e59b859f6c7c008936a099cb60b94b"
+        },
+        {
+          "path": "app/mcp-server/dist/service/crop-region-store.d.ts",
+          "size": 1803,
+          "sha256": "9bc39c9e4132556736af1e2984fa5d5f3f76beedec6ac177c43056ba3f3f712d"
+        },
+        {
+          "path": "app/mcp-server/dist/service/crop-region-store.d.ts.map",
+          "size": 857,
+          "sha256": "f475532f6d33604c297b6c5a18e44c2bec4ae0c6d0718f6d6f35cc45d787acdd"
+        },
+        {
+          "path": "app/mcp-server/dist/service/crop-region-store.js",
+          "size": 4571,
+          "sha256": "2d7af2532ec1cd46412bc7a3f9e5fe2a24d60f72e5d020077f5071940649130f"
+        },
+        {
+          "path": "app/mcp-server/dist/service/crop-region-store.js.map",
+          "size": 3738,
+          "sha256": "b85f12ae04e4008d1c04cc2005343852e84f24f7ca71c1d2403ec820c2272bb4"
+        },
+        {
+          "path": "app/mcp-server/dist/service/cross-project-guard.d.ts",
+          "size": 106,
+          "sha256": "aec26ba20ebcbcdc23f9c685e01206d5e2bbef44a92b58e6be80056f2139e2c6"
+        },
+        {
+          "path": "app/mcp-server/dist/service/cross-project-guard.d.ts.map",
+          "size": 164,
+          "sha256": "2dfacb706f333907314d5c4d837248cabe2b3af1899f4dcbe6699b2a5afa0ca3"
+        },
+        {
+          "path": "app/mcp-server/dist/service/cross-project-guard.js",
+          "size": 104,
+          "sha256": "e432cd082ea7eb1d214fdbfb500bccddbc45baca841b2e673922eb50c6b99ea3"
+        },
+        {
+          "path": "app/mcp-server/dist/service/cross-project-guard.js.map",
+          "size": 162,
+          "sha256": "d2124a28a48303848d0ee2b7ec70ba71ea3c6043361626087edc5f2568afb8f2"
+        },
+        {
+          "path": "app/mcp-server/dist/service/diff-report-builder.d.ts",
+          "size": 1009,
+          "sha256": "c9cb173b034b305e1e73517c7c1eed9a4a00cc1b533879284a66cc7882448d78"
+        },
+        {
+          "path": "app/mcp-server/dist/service/diff-report-builder.d.ts.map",
+          "size": 1049,
+          "sha256": "a95029a2354e64fcd4431b415d532b90cb53a42273def9f8b8bb73f2a3cf181e"
+        },
+        {
+          "path": "app/mcp-server/dist/service/diff-report-builder.js",
+          "size": 29678,
+          "sha256": "390e9b98f8fca8afd1df3c3dd8bb97bfeafe69b5c1c681bb7bbc094ee2657cee"
+        },
+        {
+          "path": "app/mcp-server/dist/service/diff-report-builder.js.map",
+          "size": 19674,
+          "sha256": "90e0ac70487992900dc2ba7c3be8d429537a10cf6a4481b49d598df1ed6f74c6"
+        },
+        {
+          "path": "app/mcp-server/dist/service/figma-export-inspection.d.ts",
+          "size": 285,
+          "sha256": "9948c79bbcc7582901334fd543570e935be27b84dde84ed1e8473121277da40b"
+        },
+        {
+          "path": "app/mcp-server/dist/service/figma-export-inspection.d.ts.map",
+          "size": 342,
+          "sha256": "e0a6e1b5dd2ce26b1788b6b9893850e8fffa37c190cdbb453bb56f46cb6f1d47"
+        },
+        {
+          "path": "app/mcp-server/dist/service/figma-export-inspection.js",
+          "size": 3474,
+          "sha256": "2e9fe89d3174afea19d894f9940997be5f389415c943046b311be4637cc9dcb9"
+        },
+        {
+          "path": "app/mcp-server/dist/service/figma-export-inspection.js.map",
+          "size": 2910,
+          "sha256": "0aa83be06d360beb4df3e9616f8d2ec61f2a986f03eeff6f4003c0904e0417f1"
+        },
+        {
+          "path": "app/mcp-server/dist/service/figma-node-transformer.d.ts",
+          "size": 491,
+          "sha256": "8c4089deba7e9104ab5d94a866970ac6579e39d29f55ced4795bdda3936d9ec1"
+        },
+        {
+          "path": "app/mcp-server/dist/service/figma-node-transformer.d.ts.map",
+          "size": 337,
+          "sha256": "b0756914a7245bf8ad234f21e34cce64769468ee0753c974e08d28a949442e63"
+        },
+        {
+          "path": "app/mcp-server/dist/service/figma-node-transformer.js",
+          "size": 5505,
+          "sha256": "97d5f572bcc84f9e22af2562dd33af7bbcb493f31e85c65bb759f5bbcaaf84a2"
+        },
+        {
+          "path": "app/mcp-server/dist/service/figma-node-transformer.js.map",
+          "size": 5825,
+          "sha256": "1e9aee82ef095cd3191512a2ac1364837d9e96832921ee82085c4fedf47a1943"
+        },
+        {
+          "path": "app/mcp-server/dist/service/figma-service.d.ts",
+          "size": 3409,
+          "sha256": "228419eed4767193bec767af1a224f1db8441b11b7c1754194a3238928305d98"
+        },
+        {
+          "path": "app/mcp-server/dist/service/figma-service.d.ts.map",
+          "size": 2902,
+          "sha256": "9900e3e99fb9a160af080979cf909ddf308a3228beea030175d3c78699fdecfd"
+        },
+        {
+          "path": "app/mcp-server/dist/service/figma-service.js",
+          "size": 15555,
+          "sha256": "49beffed9260c2594a2dca723969caef32446b2239fb8f292a7adea95500829c"
+        },
+        {
+          "path": "app/mcp-server/dist/service/figma-service.js.map",
+          "size": 13390,
+          "sha256": "116719fda66e12967a1b2a1d4a642367872b56ad6e963bea746617cb7924bb21"
+        },
+        {
+          "path": "app/mcp-server/dist/service/github-service.d.ts",
+          "size": 155,
+          "sha256": "fd165228d6e3831644caac98af030d666a995f2295c721287846d8ee5c000b90"
+        },
+        {
+          "path": "app/mcp-server/dist/service/github-service.d.ts.map",
+          "size": 199,
+          "sha256": "2565867b531e4ad81ab5e21a7af08d19ed15fdb1dc9972aee8b31066358484fe"
+        },
+        {
+          "path": "app/mcp-server/dist/service/github-service.js",
+          "size": 153,
+          "sha256": "e0f03e56c76790a76bd26640c4d7a6a477fdae1d8d598e22684d079822a99e14"
+        },
+        {
+          "path": "app/mcp-server/dist/service/github-service.js.map",
+          "size": 197,
+          "sha256": "7f711f61e4bdb7bcc1544920e9d52f05f1daf92eb4bd83c64bca47623b600750"
+        },
+        {
+          "path": "app/mcp-server/dist/service/ignore-region-store.d.ts",
+          "size": 1418,
+          "sha256": "21c7c639b08716f562d1e340cc623dc705d94054940fbb3b06279d0e4dc5a9e4"
+        },
+        {
+          "path": "app/mcp-server/dist/service/ignore-region-store.d.ts.map",
+          "size": 465,
+          "sha256": "de6a20f1fbd9f54dda24da956a9aa4c857e8dfa37446bb1374b36cb21cb3418e"
+        },
+        {
+          "path": "app/mcp-server/dist/service/ignore-region-store.js",
+          "size": 819,
+          "sha256": "e58a3d9677969e5f58ab3a833085aac653cbceb4651250d9468c2ac6ba948172"
+        },
+        {
+          "path": "app/mcp-server/dist/service/ignore-region-store.js.map",
+          "size": 741,
+          "sha256": "be335a07836b1ce33a0bce1e354283639876f84f952f06f0fe9be8e458362735"
+        },
+        {
+          "path": "app/mcp-server/dist/service/image-compare-service.d.ts",
+          "size": 4790,
+          "sha256": "4bd4a3c55b5d418ba6e39c196cea494048e74e0c6c01a6ee64c8cce1ead35bb4"
+        },
+        {
+          "path": "app/mcp-server/dist/service/image-compare-service.d.ts.map",
+          "size": 3131,
+          "sha256": "3d6979db747ed46df5c3058e4502f459ae12efad8ea3139ac33e549b42cfe10a"
+        },
+        {
+          "path": "app/mcp-server/dist/service/image-compare-service.js",
+          "size": 64374,
+          "sha256": "2f9f662dd1a79b1cde29d1d79fe7b7f8e85022466c42d070624f8253900c8a83"
+        },
+        {
+          "path": "app/mcp-server/dist/service/image-compare-service.js.map",
+          "size": 51783,
+          "sha256": "e695cf3e30f2411278e6711667b1000a3740717fd07a606bd258c4039bdfc172"
+        },
+        {
+          "path": "app/mcp-server/dist/service/last-used-node-store.d.ts",
+          "size": 439,
+          "sha256": "d10c66cb8fe9e8f13a8225874ea6bbd21c7d7fd4a935d620b9673060f537096d"
+        },
+        {
+          "path": "app/mcp-server/dist/service/last-used-node-store.d.ts.map",
+          "size": 515,
+          "sha256": "f697ac9606ce27a09f7517dddc2b22c72bed97bcc6ed830081ed62b2321d5563"
+        },
+        {
+          "path": "app/mcp-server/dist/service/last-used-node-store.js",
+          "size": 2637,
+          "sha256": "53abce8b73b7db423fdd04cd29cace3574cb7c40a05e5e765d0111eb04a6b743"
+        },
+        {
+          "path": "app/mcp-server/dist/service/last-used-node-store.js.map",
+          "size": 2966,
+          "sha256": "107447d43517f1f11b256f58dea9b4f84e90706aa7535219858824c2f2fcac6d"
+        },
+        {
+          "path": "app/mcp-server/dist/service/loop-guard-service.d.ts",
+          "size": 1897,
+          "sha256": "331918bbdf8b83508156b105c956a2a3af33cdb086bfde5b7969eb609a7d97e8"
+        },
+        {
+          "path": "app/mcp-server/dist/service/loop-guard-service.d.ts.map",
+          "size": 1094,
+          "sha256": "916deb5eafb9722105c8e15aea0eea73ef7c11e0b2b7cdf6a94770febaab77e8"
+        },
+        {
+          "path": "app/mcp-server/dist/service/loop-guard-service.js",
+          "size": 14148,
+          "sha256": "44e1c61f011ad448abca911a632058813feb55ab314945e5104a96ed89a2007e"
+        },
+        {
+          "path": "app/mcp-server/dist/service/loop-guard-service.js.map",
+          "size": 9250,
+          "sha256": "ddf51525211f2dfb42876783f9bea93a5315de6b1baa18e61836bc969544c3de"
+        },
+        {
+          "path": "app/mcp-server/dist/service/persist-detail.d.ts",
+          "size": 310,
+          "sha256": "2fe6ad9e0ce36a2f9fb2bce732a565501af1d306fcf0b338efb802039ac1f8b9"
+        },
+        {
+          "path": "app/mcp-server/dist/service/persist-detail.d.ts.map",
+          "size": 367,
+          "sha256": "cd017427a17dbc667e1e7b7982a2b34f12bd5fc3362ccd5e8a9be56012721b02"
+        },
+        {
+          "path": "app/mcp-server/dist/service/persist-detail.js",
+          "size": 926,
+          "sha256": "b2e22b08856052d5b4e0d54d6ee038c6c44b798c4ff19af4c334d1517cd45f3d"
+        },
+        {
+          "path": "app/mcp-server/dist/service/persist-detail.js.map",
+          "size": 1054,
+          "sha256": "15335eb28441d0bf1e15b4f4010eee33eb3b47c7ab2e5791f19898e9149461c2"
+        },
+        {
+          "path": "app/mcp-server/dist/service/project-store.d.ts",
+          "size": 751,
+          "sha256": "21c8eb62921099d2e7a5f70beae14bdc347264b4aef2dcf470cc4de3e4f8c5d2"
+        },
+        {
+          "path": "app/mcp-server/dist/service/project-store.d.ts.map",
+          "size": 699,
+          "sha256": "b26855abb8366ef88fb98c92af29af86ec5fd89dbfc60fc3ae1826352ffc7aa9"
+        },
+        {
+          "path": "app/mcp-server/dist/service/project-store.js",
+          "size": 1765,
+          "sha256": "ff8683506b6b194aef0dad1ad6fedce800342ee81bf822fdadd1143da32563b2"
+        },
+        {
+          "path": "app/mcp-server/dist/service/project-store.js.map",
+          "size": 1827,
+          "sha256": "51b9b59c2a4a43c74e07bbb809d3e27636a326504f3c8310d7d007f2f344fcb7"
+        },
+        {
+          "path": "app/mcp-server/dist/service/report-generator.d.ts",
+          "size": 124,
+          "sha256": "40bfce1af715968b7eb593f7f61697bb0a9176109ee31dbacf4e78b2603e1d25"
+        },
+        {
+          "path": "app/mcp-server/dist/service/report-generator.d.ts.map",
+          "size": 192,
+          "sha256": "230e427421e0faba8d18aa881cb8847ee2be0a729c08406786b69afe071d2162"
+        },
+        {
+          "path": "app/mcp-server/dist/service/report-generator.js",
+          "size": 122,
+          "sha256": "86d8abb5b9e78209804cd1acee4b7fd738048bfc88b6b99bb1aef68e9227c67b"
+        },
+        {
+          "path": "app/mcp-server/dist/service/report-generator.js.map",
+          "size": 190,
+          "sha256": "c40a942cc818bc7e499b839772418b5a96db76801a35f20225e2aa71e28d964d"
+        },
+        {
+          "path": "app/mcp-server/dist/service/storage-permission.d.ts",
+          "size": 1443,
+          "sha256": "147066059f295dc04dd1067b4d50ce22ed6096b7594b6db44f6597e1fd96daf9"
+        },
+        {
+          "path": "app/mcp-server/dist/service/storage-permission.d.ts.map",
+          "size": 942,
+          "sha256": "8f1270175bac095d2b691eb4ea68d920a9586f68a40862096cd8bd2f2f745151"
+        },
+        {
+          "path": "app/mcp-server/dist/service/storage-permission.js",
+          "size": 3037,
+          "sha256": "cb485417f01be9b543005fd2853cbc431e8be2c77e2f95b38fcead7fa0549e3b"
+        },
+        {
+          "path": "app/mcp-server/dist/service/storage-permission.js.map",
+          "size": 2535,
+          "sha256": "0f24b1af2e53e63937047739e48d0c460417b7c34b5e28c6b00bf55e59251e4b"
+        },
+        {
+          "path": "app/mcp-server/dist/service/token-diff-service.d.ts",
+          "size": 3719,
+          "sha256": "2347a0fe96672a2e7a5748bc54370fb7ba809f96e91f2a5f268315e5b4e22c07"
+        },
+        {
+          "path": "app/mcp-server/dist/service/token-diff-service.d.ts.map",
+          "size": 1217,
+          "sha256": "c24be5dce4d86096bebb2705fd77802ab8bfb3ea45d6a7a72fbc00ef16c3a0f5"
+        },
+        {
+          "path": "app/mcp-server/dist/service/token-diff-service.js",
+          "size": 15686,
+          "sha256": "3191dbfc17a3ad12188adb777703f1697b5ed64bbde729ad388890eb1016b33c"
+        },
+        {
+          "path": "app/mcp-server/dist/service/token-diff-service.js.map",
+          "size": 12609,
+          "sha256": "f3e895748858c3c944c88ad329e24cac55bd1b566c9f5a1187ec04188865f513"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/compare-animation.d.ts",
+          "size": 626,
+          "sha256": "797357672bdbece299aa7ac199a43a834145f3537778d40a4c9ef63cf78dfc07"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/compare-animation.d.ts.map",
+          "size": 256,
+          "sha256": "f0f9dda1546100aad3a2e5ad783cb3bbbf29018a61a96777cc6caa9f86f423a1"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/compare-animation.js",
+          "size": 11016,
+          "sha256": "aad2e870b21ba605eb245cf61d57631a9107a620478c5d2467bc08f40f7e1a58"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/compare-animation.js.map",
+          "size": 6993,
+          "sha256": "4c23f6fed40ce72353721d1e6ce1f5e759ea984a6441d35a33d85edae41123a4"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/compare-design.d.ts",
+          "size": 492,
+          "sha256": "ccdfadce8dfe7bdc8fbba0c3fcdfc9cdcfed4bc99e4784e75d3fb6e7ce006998"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/compare-design.d.ts.map",
+          "size": 353,
+          "sha256": "85c24f55f6e14bcc3163cb8d1825d3bd83f3f6df96f8c401e773eafff50b6702"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/compare-design.js",
+          "size": 28081,
+          "sha256": "faad95d62fd51d10ed108db4cb95e6471e503bec921060a5a12eb5db69f259ef"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/compare-design.js.map",
+          "size": 13123,
+          "sha256": "bd1e08fa03b8dd7573fae8464e048a4a7c7aab240b7b5e6af99426452ffe703a"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/create-project.d.ts",
+          "size": 385,
+          "sha256": "ec7da84ab53d12866613e40967771f80d131d4a34f732f79c2a0d68cd8a9d32d"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/create-project.d.ts.map",
+          "size": 247,
+          "sha256": "11150c06aaa7cbbbc5cfc2cf723aa8bd41ae845e15235480775c6e488b93c335"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/create-project.js",
+          "size": 4426,
+          "sha256": "b8a6f375918e08e4377c44e309511f7711086049d86eb8d08d547e7c4b2fbc90"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/create-project.js.map",
+          "size": 2805,
+          "sha256": "c9144599bb692b1887f221767bb76b1961f6e9b1c4856144a665a02abf1b827a"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/delete-ignore-region.d.ts",
+          "size": 311,
+          "sha256": "c3e7a14e997a3c465777634bb1d24c4a4ec49ff1136b4657efca17cfa7c1b961"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/delete-ignore-region.d.ts.map",
+          "size": 257,
+          "sha256": "64d2439dfa1a7598e3c57b5692aee8cf4c1a20450fa48004c9f87ccc33435a6c"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/delete-ignore-region.js",
+          "size": 1915,
+          "sha256": "6bf35d9f335eebb9b50c255368d230ab370e744e7c2d4258f4b47fce11cfb205"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/delete-ignore-region.js.map",
+          "size": 1360,
+          "sha256": "a61e7f084c9d61b01eb5acdff5f703375ce956720e92e3615f8fdd36c36df8e2"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/delete-project.d.ts",
+          "size": 296,
+          "sha256": "d4386badcccde4608b9344968bafcf3377c02352df1cf5d07d6830ad24e26de1"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/delete-project.d.ts.map",
+          "size": 245,
+          "sha256": "c0012a81fa89a13bdb869c1eaa2b2c6dd59eb9090684f51254019b95ec92f08d"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/delete-project.js",
+          "size": 1944,
+          "sha256": "da4ca8c084321a02af58e15d15e6ab684448af813dbcf357044a378c736f21fe"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/delete-project.js.map",
+          "size": 1389,
+          "sha256": "388c95ca08c104d76d336a3688ef575f6e150bf085ce34d5eb6957c9bf4392e4"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/error.d.ts",
+          "size": 330,
+          "sha256": "311ba48f14d6cefe199bed7abdbff8c8949bc693a6dfa6814b4766a973b4a99b"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/error.d.ts.map",
+          "size": 385,
+          "sha256": "3568fac85c5c774071b99eec4858b2249ab104d3238ddc9c8dcfa293cc450b28"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/error.js",
+          "size": 5263,
+          "sha256": "0208091e5ea006b4aa305a0702dae2f708954a4181843dffb2632a434fc92a14"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/error.js.map",
+          "size": 4148,
+          "sha256": "ac9fd2603100a3651f9ef75bf3db9d2409ebbdf1c4ef808845e382337c7fdf7a"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/generate-report.d.ts",
+          "size": 578,
+          "sha256": "2554e678285f5d50691fc7af065ece63729bdfd8cbac4fa11d62e9617a0dfeef"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/generate-report.d.ts.map",
+          "size": 410,
+          "sha256": "58e749102e22ff192ad0ea303d74d3aba3687849adcc61d229d75928b22d765e"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/generate-report.js",
+          "size": 5362,
+          "sha256": "0bfa09fafe2ee860a75d67b95b690e1bcdc406af1bb42eece142778b8d9e9635"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/generate-report.js.map",
+          "size": 3750,
+          "sha256": "e13d31098c5ba284509372bdccfbe1143d443a01210a08e42e448ade44ea1fe0"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/get-crop-region.d.ts",
+          "size": 285,
+          "sha256": "bc6f32127c8758d4fea36b6f7a0f38c31219e1b53fd310b6ddd8d8f4a630a331"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/get-crop-region.d.ts.map",
+          "size": 247,
+          "sha256": "7203da59b81e9f22a309a4ef3c16bec67a34f986bcceeb02587e2aa001d86fbe"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/get-crop-region.js",
+          "size": 2283,
+          "sha256": "3c02cc77c8a1d295b45fefadd101b2673be94b74696218465f27e4c2ce814c51"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/get-crop-region.js.map",
+          "size": 1536,
+          "sha256": "3f7d7cb198d3a0c5fc6383e0e2da60e086f75334c35752512f8430f5a8d5cc48"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/get-design-tokens.d.ts",
+          "size": 384,
+          "sha256": "a89d67eb823ab87722594cb0341931252badffa23e0d505791d5315b159c4128"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/get-design-tokens.d.ts.map",
+          "size": 252,
+          "sha256": "e1276517ca766a6aec5da8fa09f17fe95d5d2f997860134702bfb82da6cf8ff9"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/get-design-tokens.js",
+          "size": 5685,
+          "sha256": "358a177693f9d02dbea42e19edd53bd7bc995511c158cb6c54b5ca42d8da08f1"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/get-design-tokens.js.map",
+          "size": 3613,
+          "sha256": "bbddc108ce98b102cfafa8654296fe1d1d70f98fb33b1bb2f43df37b4ad05375"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/get-ignore-regions.d.ts",
+          "size": 295,
+          "sha256": "11e485ac89a7c0e829efa9d980f7440c2bf580dabe27a99ac1f3a1ccc836367a"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/get-ignore-regions.d.ts.map",
+          "size": 253,
+          "sha256": "434f175d21eeb55310dbe1eae444bc096e3ec27160c6d4a8f26ce737434008f3"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/get-ignore-regions.js",
+          "size": 2314,
+          "sha256": "7c57ec2edc76250527dd94977f615ff082de839ad8b51398d9064007e837fcf0"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/get-ignore-regions.js.map",
+          "size": 1546,
+          "sha256": "1f341dce5711a2f465d24f0f2c511523a380f17e1bc147f3e506b462d44c95ac"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/inspect-node.d.ts",
+          "size": 343,
+          "sha256": "215514c958d03fa17f290679d22b5542e5d1de347fb564d28d3231304d3d50b9"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/inspect-node.d.ts.map",
+          "size": 241,
+          "sha256": "2f67656482d40a9473b0d7126aabd5549fd649cac1a474974660f68b2743938f"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/inspect-node.js",
+          "size": 5693,
+          "sha256": "271a04d84f040f77d6d6a91ee91a3ee963873ba8cff62bfcae82206e4828a720"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/inspect-node.js.map",
+          "size": 4006,
+          "sha256": "d2a2eb66105a137fe483a53ad09605855331532c011aeb50c6974b91376055ed"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/list-frames.d.ts",
+          "size": 270,
+          "sha256": "18337dda5d9a61aa1f1caf2edc3450f9bc47792537dcbf958c7e90569e519b9f"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/list-frames.d.ts.map",
+          "size": 240,
+          "sha256": "d53c2ecd7107f86ab04183c469894222db1a00d52e5e92601985ba4a6417a3c1"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/list-frames.js",
+          "size": 3860,
+          "sha256": "cf185c6bf1f61cc5373033c90805adfde62c07d72f4cc1e14174bceb05b89c94"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/list-frames.js.map",
+          "size": 2861,
+          "sha256": "12fc858f71e86739749f2e512908852ae36eef6203ffff4e9b43adf51657e2ed"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/list-projects.d.ts",
+          "size": 579,
+          "sha256": "accac1ed33a2ebd0c637c1ad7f334ed4830e79d676be9ffae1ddd2e3f61dbf13"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/list-projects.d.ts.map",
+          "size": 522,
+          "sha256": "821ed086077482c2003b790c060dfa684773b29a5b4b00f55dd568af5f3a40b1"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/list-projects.js",
+          "size": 3279,
+          "sha256": "57ed9d1d5246f79ccc5e0bfbc8c16ae5de752517e5bb074ec51d0eaa294928f9"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/list-projects.js.map",
+          "size": 2374,
+          "sha256": "29cbd467cb30c2563d034ca87347c0fd97b72e3a2dfa50ade086b8f5c02bb1b0"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/report-issue.d.ts",
+          "size": 186,
+          "sha256": "7dc71616861f51529092d57ca596b0849346f16839ca237db691c1bde0a195ed"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/report-issue.d.ts.map",
+          "size": 231,
+          "sha256": "2fc5729664f0e15abd0d412c150bced308a22b3df48b1e1fe9765155d4807777"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/report-issue.js",
+          "size": 8055,
+          "sha256": "7046e6439c45c1e558fa14de2602f8608df7c9e3e7bfa3efad398be179ec0333"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/report-issue.js.map",
+          "size": 5354,
+          "sha256": "bca99b3bea7dc1087254e3736825c93d11e5b638e2ce78e2ecf785264031b5f1"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/set-crop-region.d.ts",
+          "size": 292,
+          "sha256": "9a36bfb0c2b401241ed73d5dcc587d42e1735726f016f74e884b337822948447"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/set-crop-region.d.ts.map",
+          "size": 247,
+          "sha256": "0568c5a04fa2bb464d5e6c795563d1bf099bb7b4b223e483cad220b00fd9b3f4"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/set-crop-region.js",
+          "size": 3034,
+          "sha256": "fbd04122717ef78b4aa0174f7700e14edcdeb374a51c5e3d2458ac59419453b0"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/set-crop-region.js.map",
+          "size": 2047,
+          "sha256": "12794d831e0ff0e7e23365eeffc46cd3a56585e185d1fc3e471152fb9a02d114"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/set-figma-token.d.ts",
+          "size": 308,
+          "sha256": "1ab356d2e2f5ee35300e81b91d50436cbf2deae9511094994e444e439107010c"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/set-figma-token.d.ts.map",
+          "size": 247,
+          "sha256": "aee4f772865beb6586e38b953243991359ee7f9e5a73629b83c53a4aa0253b4b"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/set-figma-token.js",
+          "size": 1738,
+          "sha256": "2e86ee43cf5dc41d4122c9f50e022dd0efe9ced8100be8a848e95ea43e16ab76"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/set-figma-token.js.map",
+          "size": 1163,
+          "sha256": "f457ad8075086b97947501006a0374b42f14b1304f42c5b43ae17475452e18c5"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/set-ignore-regions.d.ts",
+          "size": 304,
+          "sha256": "310b6aacd22ffe867ad26946fdebea64bcda80dff29a11beaa68acc4e220a3b8"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/set-ignore-regions.d.ts.map",
+          "size": 253,
+          "sha256": "9769a569a084f79dd368c7345301678852a280a705f75f83781b8d37086211bd"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/set-ignore-regions.js",
+          "size": 2160,
+          "sha256": "04db4173e35595151aa096a45aeb5b1f49fc30197d6e2336ee6a0e84fd9dff22"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/set-ignore-regions.js.map",
+          "size": 1244,
+          "sha256": "6e3891095f5374d822510dd8f0f29331e10ffb4853c81f525b029ba074062d9e"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/verify-fix.d.ts",
+          "size": 423,
+          "sha256": "53c0901c03b31ec56ee17917b8acce0f5eb22723db5f59a6c78be91905db1338"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/verify-fix.d.ts.map",
+          "size": 423,
+          "sha256": "8d502e225f5b045e130af3cc194a5ded56bb2cbdff9715192586658bddb53199"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/verify-fix.js",
+          "size": 11888,
+          "sha256": "a7911543698f2e9d23b73a3e5bc519da359edc62beea136b3d8d6cc180ed7c01"
+        },
+        {
+          "path": "app/mcp-server/dist/tool/verify-fix.js.map",
+          "size": 8710,
+          "sha256": "9fccc59dac4d91226fb6862a4ee6f3ea4ea0bf3c35d5dc5c486de26adc9965bc"
+        },
+        {
+          "path": "app/mcp-server/dist/util/figdiff-paths.d.ts",
+          "size": 1693,
+          "sha256": "0b410d69d786af6dbddd33474eca508e3ee997248c693576e7705eab888adb19"
+        },
+        {
+          "path": "app/mcp-server/dist/util/figdiff-paths.d.ts.map",
+          "size": 565,
+          "sha256": "18f5ca23b2a46f99147fae65a109d951c60e1b4b93598ad76252475177006b74"
+        },
+        {
+          "path": "app/mcp-server/dist/util/figdiff-paths.js",
+          "size": 3399,
+          "sha256": "15e9d7b9cd2359f8985ebba18f90ce29e58c5fe861285a8d6f300d1f6cb4bff2"
+        },
+        {
+          "path": "app/mcp-server/dist/util/figdiff-paths.js.map",
+          "size": 2017,
+          "sha256": "5b207edc0713c5548439ea863d81ba52f3a9bdeadcfdf4e94d2e5f21da5dec71"
+        },
+        {
+          "path": "app/mcp-server/dist/util/local-log.d.ts",
+          "size": 1092,
+          "sha256": "14add827dfcabef302917f98888a138511e5f63a79d1e92ebc8f1d0b464a6fd6"
+        },
+        {
+          "path": "app/mcp-server/dist/util/local-log.d.ts.map",
+          "size": 817,
+          "sha256": "fa5fc4cb96ba28b9d7323e6a46bb40c3c958296dcb88e43b92bdb917efe2b4dc"
+        },
+        {
+          "path": "app/mcp-server/dist/util/local-log.js",
+          "size": 8580,
+          "sha256": "81dd4a193fe820796feeedcbf270778eb5b58046c88c29364da82390cd629fc2"
+        },
+        {
+          "path": "app/mcp-server/dist/util/local-log.js.map",
+          "size": 7250,
+          "sha256": "c84d25bd82a637bda1eac2a7d947f1dde2ae454a42a1b063d580182d589341ae"
+        },
+        {
+          "path": "app/mcp-server/dist/util/path-guard.d.ts",
+          "size": 1043,
+          "sha256": "401e2614e0c1999bcc54d3b892586434c7839f0b27e71c3037a043423554a19c"
+        },
+        {
+          "path": "app/mcp-server/dist/util/path-guard.d.ts.map",
+          "size": 326,
+          "sha256": "af2a479ee889d36b93be8bd70cd3ef9f2157f9dc1084760f025606d23ff9e53c"
+        },
+        {
+          "path": "app/mcp-server/dist/util/path-guard.js",
+          "size": 4957,
+          "sha256": "bbc0ac6e9d7b42f0bb6e63405b8d1b0ddb6a9a4621041a21cc45551d6b00ddad"
+        },
+        {
+          "path": "app/mcp-server/dist/util/path-guard.js.map",
+          "size": 4466,
+          "sha256": "3b597d21a3f1378a3cb8973e1111216f303579d2e0b6d15e62ab12768fa9d46b"
+        },
+        {
+          "path": "app/mcp-server/dist/util/raw-tool-arguments.d.ts",
+          "size": 479,
+          "sha256": "7373284f387cc78bf6333a586b85941bbdc4adac980d569b480b2f63314a77d6"
+        },
+        {
+          "path": "app/mcp-server/dist/util/raw-tool-arguments.d.ts.map",
+          "size": 465,
+          "sha256": "66b4e5830ff667838237d38e1b01696a03007aec943847962b340cb28067a873"
+        },
+        {
+          "path": "app/mcp-server/dist/util/raw-tool-arguments.js",
+          "size": 1992,
+          "sha256": "ff1970bb5f421b198780bf12ec1344dcf76fc9964993ecacbdcea84609f943d1"
+        },
+        {
+          "path": "app/mcp-server/dist/util/raw-tool-arguments.js.map",
+          "size": 1887,
+          "sha256": "991201517ca2715673077ea548b9e7d83b8bd7bc4b69fd0266d470a27ea541f5"
+        },
+        {
+          "path": "app/mcp-server/package.json",
+          "size": 1311,
+          "sha256": "667f9c85eff3b0c7c96d34836f0aa066a13128307ff29dcb3c0cde1842cc8b2a"
+        },
+        {
+          "path": "package.json",
+          "size": 3365,
+          "sha256": "ee120f940a0a2092a0ff1e7b30a8fc45038f991e37e15042ef5521f7b013d4ea"
+        },
+        {
+          "path": "package/credential-store/dist/credential-store.d.ts",
+          "size": 843,
+          "sha256": "5dfe9c48354f8924df94b2e77590da94d590536d284197ae582e20d0a7e38418"
+        },
+        {
+          "path": "package/credential-store/dist/credential-store.d.ts.map",
+          "size": 679,
+          "sha256": "65a156a9bad1fa732a6350d1f10fac9ceb95d7420774fb84ee2bb2068061d010"
+        },
+        {
+          "path": "package/credential-store/dist/credential-store.js",
+          "size": 4532,
+          "sha256": "a75ce28e55f3efcf26155862e8af6621b4f9d4e7af9b0ea96cb655d0f9ac455b"
+        },
+        {
+          "path": "package/credential-store/dist/credential-store.js.map",
+          "size": 2458,
+          "sha256": "5293065f057571578c805b86c096a95737d2e083d8bf50d137d28e20284541c0"
+        },
+        {
+          "path": "package/credential-store/dist/figma-credentials.d.ts",
+          "size": 1178,
+          "sha256": "c0e976127005c24add719b51261311f86b6e8b7ec7b3fd0532095687c7f1335c"
+        },
+        {
+          "path": "package/credential-store/dist/figma-credentials.d.ts.map",
+          "size": 746,
+          "sha256": "1c454dd75f48c960d61f6344e4425931a9baa6ecd98a067f24a043a731c69df3"
+        },
+        {
+          "path": "package/credential-store/dist/figma-credentials.js",
+          "size": 2182,
+          "sha256": "62d8e0203ef253d6b45109e31d2738bb11760faf15ac141a3fbb61ddf4e7355a"
+        },
+        {
+          "path": "package/credential-store/dist/figma-credentials.js.map",
+          "size": 2004,
+          "sha256": "7d78b00135303fe6f285b7f18e4167f521299ade87ab8198fef4788aad5fa6ce"
+        },
+        {
+          "path": "package/credential-store/dist/figma-refresh.d.ts",
+          "size": 330,
+          "sha256": "ec9530d15adea7e07fed4619e4f6c3da8be2124c4368ab84d2c4883261bed3a1"
+        },
+        {
+          "path": "package/credential-store/dist/figma-refresh.d.ts.map",
+          "size": 336,
+          "sha256": "34f7aa7148d09b544db155942caa2b28dd2c4ac9e6f1d596ca1bf89b13e8f5d3"
+        },
+        {
+          "path": "package/credential-store/dist/figma-refresh.js",
+          "size": 1735,
+          "sha256": "0d529faf43f8a7c9507a8c40e4166040634931f498e12c22a39d8b56139d7dcf"
+        },
+        {
+          "path": "package/credential-store/dist/figma-refresh.js.map",
+          "size": 1688,
+          "sha256": "53e8372c6ada9834d2c1640e4e9af1b91131f1c5f1acea06f01a360a9b1d9618"
+        },
+        {
+          "path": "package/credential-store/dist/file-backend.d.ts",
+          "size": 274,
+          "sha256": "a4e86e3f9aef32f690d9e9a9a44206e83f9db4d219ff3b7bb4b8216e2a07337a"
+        },
+        {
+          "path": "package/credential-store/dist/file-backend.d.ts.map",
+          "size": 374,
+          "sha256": "12ac4f732ee6857280714fe71e6a6f9bdf31331340765efba90167d2b151970d"
+        },
+        {
+          "path": "package/credential-store/dist/file-backend.js",
+          "size": 1879,
+          "sha256": "ba8a574919e0e493cc3a2e456db861c758965669dccf7bf299fc80bc91d36b75"
+        },
+        {
+          "path": "package/credential-store/dist/file-backend.js.map",
+          "size": 2046,
+          "sha256": "a49d35a5313da48ca8d89621d6a917a6040ae84edff263c7e0720ea2dce73aef"
+        },
+        {
+          "path": "package/credential-store/dist/index.d.ts",
+          "size": 766,
+          "sha256": "4446adfc9c4347aee47b3f5a729b0c55febf3e723b612941fc4041b4bcdb8981"
+        },
+        {
+          "path": "package/credential-store/dist/index.d.ts.map",
+          "size": 596,
+          "sha256": "e3a2c521f8fd96b0ad229e16923a853120c8e40ff6f536df9561bec3c1cb9943"
+        },
+        {
+          "path": "package/credential-store/dist/index.js",
+          "size": 537,
+          "sha256": "e4d3b986372504869a3614e39f049a08128f81c1de203a8dc74f3c22ab4d432e"
+        },
+        {
+          "path": "package/credential-store/dist/index.js.map",
+          "size": 439,
+          "sha256": "a45a316821f15f6de0dd7a067dc2311ea39c30ad9fcd7c897cc3a3988f3401b4"
+        },
+        {
+          "path": "package/credential-store/dist/keychain-backend.d.ts",
+          "size": 356,
+          "sha256": "31cb0f88a8e438a9d4a3895041b6b0f97fc835c117c6d4918b7ba74fa9d20c4f"
+        },
+        {
+          "path": "package/credential-store/dist/keychain-backend.d.ts.map",
+          "size": 417,
+          "sha256": "de81f13d75bb369917bed9a18ec693fcbdc1b2b6bf04934ed022c57d65a471f2"
+        },
+        {
+          "path": "package/credential-store/dist/keychain-backend.js",
+          "size": 1408,
+          "sha256": "88d5297b8ce37e0cc681a7ec9d982d2de5ef1bb93b7910763f76cc3a68a94f66"
+        },
+        {
+          "path": "package/credential-store/dist/keychain-backend.js.map",
+          "size": 1372,
+          "sha256": "b2977ffc847a5c6a3ed48d3e67720334a1a1ffa33c1bdf709d92a891c1351cca"
+        },
+        {
+          "path": "package/credential-store/dist/resolve-figma-token.d.ts",
+          "size": 259,
+          "sha256": "ec4be425e8f9c781c04ed604526e8407e8a3d6076005771f205d5b8db3b4c8b1"
+        },
+        {
+          "path": "package/credential-store/dist/resolve-figma-token.d.ts.map",
+          "size": 319,
+          "sha256": "4f073fd170551e3beb4b2d362d6a6ae996a90f29b731f4a0033ee100a5a6f4cf"
+        },
+        {
+          "path": "package/credential-store/dist/resolve-figma-token.js",
+          "size": 1122,
+          "sha256": "2775a16c086b676aa3026b40056b9005c7ad2589ce3367eb4be61f26a5a651a6"
+        },
+        {
+          "path": "package/credential-store/dist/resolve-figma-token.js.map",
+          "size": 1115,
+          "sha256": "4c1171bd6bfc73337095bc5f2c3aca112850c03066f12b9e768f7ea0e2c4d7ea"
+        },
+        {
+          "path": "package/credential-store/package.json",
+          "size": 643,
+          "sha256": "a94431312a3a6ebf29d0987cc64948741a0880cfee66d940543e38d5ca6db19c"
+        },
+        {
+          "path": "package/shared/dist/animation-comparison.d.ts",
+          "size": 2514,
+          "sha256": "693a29c1ebedbacaa4c2686305d2bedbdceac83cbf95ac0945e78120b0fb4a91"
+        },
+        {
+          "path": "package/shared/dist/animation-comparison.d.ts.map",
+          "size": 1373,
+          "sha256": "3e47c6640fb4a428f50c36f4d11ff4dd6802a2818cc9f49f589fdd43b3ba37ab"
+        },
+        {
+          "path": "package/shared/dist/animation-comparison.js",
+          "size": 6616,
+          "sha256": "50d16a795b2b7866afab425646afc3113fbf7c9da4749d9e82391459629f30fd"
+        },
+        {
+          "path": "package/shared/dist/animation-comparison.js.map",
+          "size": 4561,
+          "sha256": "22e2f868a309df64cd456e8043e3fdc6b27c0eb60d501d6f2eb234ac05c2cbc3"
+        },
+        {
+          "path": "package/shared/dist/campaign-key.d.ts",
+          "size": 352,
+          "sha256": "0829d3e7eeb3c88bcdd30520c62616098aeb01e627e4afd2631389d31fe941eb"
+        },
+        {
+          "path": "package/shared/dist/campaign-key.d.ts.map",
+          "size": 370,
+          "sha256": "60b6cb10fd6ef5c933975746e30e9e30150d80491bf2a294173e388c33d46302"
+        },
+        {
+          "path": "package/shared/dist/campaign-key.js",
+          "size": 1162,
+          "sha256": "e91978159d67f4681b76be1fcbf74f6eb72ccd0bea21b1fcf5216a29b4187394"
+        },
+        {
+          "path": "package/shared/dist/campaign-key.js.map",
+          "size": 1159,
+          "sha256": "fca8e8b63cbdfcfda8ccdf90a3d09d5fc86652b9c259fd266b39934d631e96ba"
+        },
+        {
+          "path": "package/shared/dist/comparison-conditions.d.ts",
+          "size": 5373,
+          "sha256": "4fe7baf8b25dc70cf943321bd0904c08d39acbf0e787d1110958f52345ea72ac"
+        },
+        {
+          "path": "package/shared/dist/comparison-conditions.d.ts.map",
+          "size": 940,
+          "sha256": "7f6397e3b1fe5d1c0d9ceb54f2b8f0b5c2c006e44e1f1d102738c1fe57a17cac"
+        },
+        {
+          "path": "package/shared/dist/comparison-conditions.js",
+          "size": 5711,
+          "sha256": "08b92d5db94a96f0bb1a7f4e514796d5519d0f3b414b872e46f21508154559e9"
+        },
+        {
+          "path": "package/shared/dist/comparison-conditions.js.map",
+          "size": 5533,
+          "sha256": "b99a4fbb85e7f1cd8581cfc2108a9909e9ee7e320b2e9fa4e02e1dbf3181a9d5"
+        },
+        {
+          "path": "package/shared/dist/confidence/diagnosis.d.ts",
+          "size": 1084,
+          "sha256": "83bbdcb7fecbda0aa846287650ddf7b023e6ae0ab13224cacd91ece4a0e75ad5"
+        },
+        {
+          "path": "package/shared/dist/confidence/diagnosis.d.ts.map",
+          "size": 534,
+          "sha256": "794dde7f0a7e602df71a19f2d749c4a6a99f99d7906f6b5b930880bc455711cd"
+        },
+        {
+          "path": "package/shared/dist/confidence/diagnosis.js",
+          "size": 15258,
+          "sha256": "08452a90761e4c91be5e4d455cc1df06cde3189ab1c1364860233053580ac210"
+        },
+        {
+          "path": "package/shared/dist/confidence/diagnosis.js.map",
+          "size": 8852,
+          "sha256": "94abcefb877ddda8fe97ca8fef75f77cd84aff368f9160db6b90d42d50dc6d38"
+        },
+        {
+          "path": "package/shared/dist/confidence/frame-guidance.d.ts",
+          "size": 494,
+          "sha256": "5bc96c47eab3517b9740e265eb33ce35032e52b17eaee89bee338781e877ff2c"
+        },
+        {
+          "path": "package/shared/dist/confidence/frame-guidance.d.ts.map",
+          "size": 596,
+          "sha256": "97215d645cffb1d4ee031c78309b4ff8b83947dbd7af87927f5c1b8f4f20ae2e"
+        },
+        {
+          "path": "package/shared/dist/confidence/frame-guidance.js",
+          "size": 4481,
+          "sha256": "962b7362a02bb887c1be43dfcade35587ba15b12b25013f3ebbb5185f9ccced1"
+        },
+        {
+          "path": "package/shared/dist/confidence/frame-guidance.js.map",
+          "size": 3742,
+          "sha256": "7aecfa468078ed44619c19a823b81502bbd0c69949b106206048714c46d49800"
+        },
+        {
+          "path": "package/shared/dist/confidence/headline.d.ts",
+          "size": 230,
+          "sha256": "59aeedf764801d6878c05f3875cc5a644efa6c6ebcd8108e26b259afe63755a1"
+        },
+        {
+          "path": "package/shared/dist/confidence/headline.d.ts.map",
+          "size": 273,
+          "sha256": "6dfe98ac0ad77eb0a8dd61708ba52c9a158c1dd4fd390220e43815ab7f29a6b2"
+        },
+        {
+          "path": "package/shared/dist/confidence/headline.js",
+          "size": 2104,
+          "sha256": "8ab2d2733213fb6d77735712ffc1d8464d1b0e85a35db6ebe2f5f2e24de804c7"
+        },
+        {
+          "path": "package/shared/dist/confidence/headline.js.map",
+          "size": 1337,
+          "sha256": "23525be2234d5186bf63fd0d88b53560dd5a06e126792dd8000fa865c17128da"
+        },
+        {
+          "path": "package/shared/dist/confidence/preflight.d.ts",
+          "size": 796,
+          "sha256": "ab5d9100b7f0db31d02d9aff4e6eb8b12acd17b366077e80517b11bb2bfcf5c9"
+        },
+        {
+          "path": "package/shared/dist/confidence/preflight.d.ts.map",
+          "size": 850,
+          "sha256": "90a1c1e10b009d23be6240a8f69ecb700a62795379a274ea675bd30d5a5ec632"
+        },
+        {
+          "path": "package/shared/dist/confidence/preflight.js",
+          "size": 12645,
+          "sha256": "26c6b124b2f28ac5e2be267ac53481e21ca807c7dde219897ae7ed3f85c876e3"
+        },
+        {
+          "path": "package/shared/dist/confidence/preflight.js.map",
+          "size": 7606,
+          "sha256": "5d6cc4494f96a1c5e09d073260c6723d9093121a4bc33adad0a2c791c41eac72"
+        },
+        {
+          "path": "package/shared/dist/confidence/system-bar-ignore-regions.d.ts",
+          "size": 534,
+          "sha256": "4ff73a7ba14bdb12ff667413faa0c1e37f6102e369993b0077dd9e4eb00d5459"
+        },
+        {
+          "path": "package/shared/dist/confidence/system-bar-ignore-regions.d.ts.map",
+          "size": 534,
+          "sha256": "e1bdf5a020108fab43dc6ef751a2a3d53fd8d173dc551aa3cd1c530d645df98f"
+        },
+        {
+          "path": "package/shared/dist/confidence/system-bar-ignore-regions.js",
+          "size": 5953,
+          "sha256": "929d8157b34eea432a3ebc4a1a09ddada84bcc781ad38d8f0b303e980fd03e01"
+        },
+        {
+          "path": "package/shared/dist/confidence/system-bar-ignore-regions.js.map",
+          "size": 6176,
+          "sha256": "dd2a7337cb54d898d51ba11e4ac42cc70c83764234f5d978d7bd0685540b5c35"
+        },
+        {
+          "path": "package/shared/dist/css-suggestion.d.ts",
+          "size": 621,
+          "sha256": "0a12aa5c6d4b5ff8a08c0a3317e1b6a84ea301cbaaa1d3902037e84516f48192"
+        },
+        {
+          "path": "package/shared/dist/css-suggestion.d.ts.map",
+          "size": 439,
+          "sha256": "6701b8c740d5ba148fc43ccc67fc023b9cca3446d32876260a5df9cac53bcf61"
+        },
+        {
+          "path": "package/shared/dist/css-suggestion.js",
+          "size": 7753,
+          "sha256": "b0e52bcdbd6c72b640c44b9004866e7bdc1097fe6ed75984e3d2ef290193241f"
+        },
+        {
+          "path": "package/shared/dist/css-suggestion.js.map",
+          "size": 8751,
+          "sha256": "585de713f52b77edc957d7c0238d89d5de8516ed91ae38a2416af403274017c2"
+        },
+        {
+          "path": "package/shared/dist/design-token-extractor.d.ts",
+          "size": 358,
+          "sha256": "a137d5133990d084b0a4d5dd4d293aebb2253ded62d55e089658eb8a204bd8c9"
+        },
+        {
+          "path": "package/shared/dist/design-token-extractor.d.ts.map",
+          "size": 318,
+          "sha256": "13fecb9fe902cf3e03613e8aaf39c0c3bc2c2fe9c43b32854519b27b4102b083"
+        },
+        {
+          "path": "package/shared/dist/design-token-extractor.js",
+          "size": 7718,
+          "sha256": "ad2dc5af68c7d8f9775104adbf95d340437125430bee980cd5e1c1aa8268e66c"
+        },
+        {
+          "path": "package/shared/dist/design-token-extractor.js.map",
+          "size": 8637,
+          "sha256": "52d65235f03a95ae7e85538dd9ab29f936c437e9c7dc496cf05cdc1cedca79cc"
+        },
+        {
+          "path": "package/shared/dist/diff-cluster.d.ts",
+          "size": 2486,
+          "sha256": "4d24af655e90db514afd5e79e42de3fb21c0c79331a5c729ffdbf6ec4795840d"
+        },
+        {
+          "path": "package/shared/dist/diff-cluster.d.ts.map",
+          "size": 1170,
+          "sha256": "f13291f0a31f4744176ee602be9eb0c7b013fc9329dc7e4eade1e4fbff5972e5"
+        },
+        {
+          "path": "package/shared/dist/diff-cluster.js",
+          "size": 15283,
+          "sha256": "6392c11862d4f2c0a2cb8194917686ca9c0b9203d4c780f51de4ec2523c07df0"
+        },
+        {
+          "path": "package/shared/dist/diff-cluster.js.map",
+          "size": 13744,
+          "sha256": "e682ac9a2899fcd3eb3674cfded526977983bfe482f5015cf3ac30c78b4e6c28"
+        },
+        {
+          "path": "package/shared/dist/figma-client.d.ts",
+          "size": 4422,
+          "sha256": "594771221e198f8c2d997e96b135c69fa26d36685b319e32dd5cec2c36de067f"
+        },
+        {
+          "path": "package/shared/dist/figma-client.d.ts.map",
+          "size": 4208,
+          "sha256": "5e7ae9c4c82200fc5838c6d9dd0dabfb30dceea0c239899b702328db31d02e92"
+        },
+        {
+          "path": "package/shared/dist/figma-client.js",
+          "size": 12832,
+          "sha256": "343b57b6bbf4a0cb4b98fa3e756bf6efe55d71c0401121a5d07662fef98c6b6f"
+        },
+        {
+          "path": "package/shared/dist/figma-client.js.map",
+          "size": 12971,
+          "sha256": "e637ead0ac6b5e791ad04259f2d5f76870ab2e243844e9611b80182818dc6f28"
+        },
+        {
+          "path": "package/shared/dist/figma-geometry.d.ts",
+          "size": 2894,
+          "sha256": "82eea91b240ab5a257a76f159f364d102a75b2cf4fe44d6195c699d36dc23403"
+        },
+        {
+          "path": "package/shared/dist/figma-geometry.d.ts.map",
+          "size": 1695,
+          "sha256": "1eb6025d8a26e0b9fcb0349883a711655679991f23b9f8734fa0d9a3b9465b97"
+        },
+        {
+          "path": "package/shared/dist/figma-geometry.js",
+          "size": 5378,
+          "sha256": "6ddaf541f6cfdf2d903e6b5606f5a1af139221e1af63a998159b472371eafd6f"
+        },
+        {
+          "path": "package/shared/dist/figma-geometry.js.map",
+          "size": 6230,
+          "sha256": "653dd9d9d5fdb4f0089505a2a8808efb3a454cb5360e888ad6276ba120d61464"
+        },
+        {
+          "path": "package/shared/dist/figma-url-parser.d.ts",
+          "size": 1063,
+          "sha256": "197ef4ee0149e8206519dca58896afd8943b1ce574ef41eda6d23c9fd4bb090b"
+        },
+        {
+          "path": "package/shared/dist/figma-url-parser.d.ts.map",
+          "size": 589,
+          "sha256": "d64a6ba8e248569990c9bb04826347be0a871abda23d4a59efe63f5dfdd7bd73"
+        },
+        {
+          "path": "package/shared/dist/figma-url-parser.js",
+          "size": 3679,
+          "sha256": "eb4ffb542494f1617e63e88acf19dd56cce02b9a3608ae0c73792ddd767031c7"
+        },
+        {
+          "path": "package/shared/dist/figma-url-parser.js.map",
+          "size": 3133,
+          "sha256": "d6fa16f89e5a0ccf48da0a80762b728cf138fc0811e21bd760c80ddcbe494a27"
+        },
+        {
+          "path": "package/shared/dist/fix-region-comparison.d.ts",
+          "size": 849,
+          "sha256": "660ce2d2e51c760df7871c571beb1d9cf1391895b52a0cf5dc118c7bb097317e"
+        },
+        {
+          "path": "package/shared/dist/fix-region-comparison.d.ts.map",
+          "size": 876,
+          "sha256": "623e0c8008eb5d1437e973d3ae9ef66d1a6b47f9a9b071a42cae8b8de3f41e27"
+        },
+        {
+          "path": "package/shared/dist/fix-region-comparison.js",
+          "size": 4459,
+          "sha256": "83534aff641d018495f225799d7c6aa9332d9911061c851b49812d5c5a9b2d7e"
+        },
+        {
+          "path": "package/shared/dist/fix-region-comparison.js.map",
+          "size": 4085,
+          "sha256": "36f29c30d1ac4b0de1f7f0341547d84a649fbb0dcab0e2ba0dc466dab75b2ee4"
+        },
+        {
+          "path": "package/shared/dist/ignore-region-context.d.ts",
+          "size": 627,
+          "sha256": "925396fb96feea9543db0aadac7626dd40df5abe71dc34a7358321be663adc8d"
+        },
+        {
+          "path": "package/shared/dist/ignore-region-context.d.ts.map",
+          "size": 503,
+          "sha256": "21039d5595171669a01d5a3fc198672b6be8ebeca8c4b64de633edf36e3d7178"
+        },
+        {
+          "path": "package/shared/dist/ignore-region-context.js",
+          "size": 1400,
+          "sha256": "b25d1744f64a7fdde5c800a6f0e4ced98e540115cefff52b408c9b828a0fd279"
+        },
+        {
+          "path": "package/shared/dist/ignore-region-context.js.map",
+          "size": 1375,
+          "sha256": "7b5e3ecb6c352b6d34aa051ebcb46bb96854853779b0cbfd61a01e8b3c272fcc"
+        },
+        {
+          "path": "package/shared/dist/ignore-region-mask.d.ts",
+          "size": 563,
+          "sha256": "104416a3eccbbb0ba8b2a94f652f7b877bc17a5e8684e47617501c8ed6d4ef26"
+        },
+        {
+          "path": "package/shared/dist/ignore-region-mask.d.ts.map",
+          "size": 577,
+          "sha256": "aabd99b01c15450519aa937a432d56b35820ee86ab30702e459797112451271a"
+        },
+        {
+          "path": "package/shared/dist/ignore-region-mask.js",
+          "size": 2736,
+          "sha256": "05af9bd43457b667524188c59d37997a15487b76d572fe5e4fd3eedbfa0612ec"
+        },
+        {
+          "path": "package/shared/dist/ignore-region-mask.js.map",
+          "size": 3359,
+          "sha256": "b5e8b570c56d1ea79b720e19e5b136e67a2e907164b60f1529b3dec5f7ea6ebe"
+        },
+        {
+          "path": "package/shared/dist/index.d.ts",
+          "size": 8388,
+          "sha256": "bd7a3c022bf2d7e396a36e30797824d7df089ad847819072656068486af81feb"
+        },
+        {
+          "path": "package/shared/dist/index.d.ts.map",
+          "size": 5391,
+          "sha256": "76033579b764a561de96c1cc268865ba42832d205534ca72129407a15b347f05"
+        },
+        {
+          "path": "package/shared/dist/index.js",
+          "size": 6398,
+          "sha256": "6b5d60a9073838064c635af759f9f90b38a4f00b91f75630ddcb8d8a4f78a6ce"
+        },
+        {
+          "path": "package/shared/dist/index.js.map",
+          "size": 3851,
+          "sha256": "a3202bfa5c71ba0c76b3f8df8c4e870abbfa2316a9379bc138c229142290548a"
+        },
+        {
+          "path": "package/shared/dist/node-matcher.d.ts",
+          "size": 3168,
+          "sha256": "73f4f526adfda4ebddf9616d26d90033136402fa27d7ae73405c7c3e67509a66"
+        },
+        {
+          "path": "package/shared/dist/node-matcher.d.ts.map",
+          "size": 1393,
+          "sha256": "bb9b6256dafcc2cedf2aa55ee548da0cbb834b162c4d4d8826b8c2e46e3f8765"
+        },
+        {
+          "path": "package/shared/dist/node-matcher.js",
+          "size": 6460,
+          "sha256": "2dbcc56ed425e4b2a4ec9860ff89207943fd83d30f36b16d27b0fbe203887a37"
+        },
+        {
+          "path": "package/shared/dist/node-matcher.js.map",
+          "size": 4698,
+          "sha256": "030935437b79aaa78159ff23a1c5aba7103d1b069863261bb1ee281e79d17c9d"
+        },
+        {
+          "path": "package/shared/dist/node/github-service.d.ts",
+          "size": 2019,
+          "sha256": "cb30bdc0bd29dc34e9f19a7c4f1b087754ce83d33a1f1fdaf36a3d2c1d0fdb45"
+        },
+        {
+          "path": "package/shared/dist/node/github-service.d.ts.map",
+          "size": 1922,
+          "sha256": "40813caad235042dfa134d55c08b0c5cdc61499b12af28c03db95bdece463a63"
+        },
+        {
+          "path": "package/shared/dist/node/github-service.js",
+          "size": 8529,
+          "sha256": "137d0c21665153d35999e522504fb498bd18a2c56074b452658a9436aea43afe"
+        },
+        {
+          "path": "package/shared/dist/node/github-service.js.map",
+          "size": 7411,
+          "sha256": "f536fdbb4e26ecd7c9ab8c245625584989e545bc1eaa8b7454d24de60ef891f6"
+        },
+        {
+          "path": "package/shared/dist/node/ignore-region-store.d.ts",
+          "size": 1245,
+          "sha256": "0f21b51e0a721ee4201a201241bc6a3560f05530dcf82abe85518f6128a27b8e"
+        },
+        {
+          "path": "package/shared/dist/node/ignore-region-store.d.ts.map",
+          "size": 1143,
+          "sha256": "ec573fc662fa8c0238ee1920ebabe4b5d27df28315ee7cc8895a9ccd7831c698"
+        },
+        {
+          "path": "package/shared/dist/node/ignore-region-store.js",
+          "size": 12390,
+          "sha256": "16189df59fc28733030936bdae744177229958615302486b61f9544a415d4d6b"
+        },
+        {
+          "path": "package/shared/dist/node/ignore-region-store.js.map",
+          "size": 11688,
+          "sha256": "a630be00a425ea084186e5fc3dbc4796402f6085d654fc5bc03efb81657cd307"
+        },
+        {
+          "path": "package/shared/dist/node/public-issue-guard.d.ts",
+          "size": 1500,
+          "sha256": "d58135bc9afd43151af2f7d5ba7ad4593218bfc30c1e9a152796a28a5d28e905"
+        },
+        {
+          "path": "package/shared/dist/node/public-issue-guard.d.ts.map",
+          "size": 666,
+          "sha256": "bc1147dd29998cf7a79b332a7e8c086c94d0add931a4f724c453c37e2173e661"
+        },
+        {
+          "path": "package/shared/dist/node/public-issue-guard.js",
+          "size": 7937,
+          "sha256": "4e7f16ba0a91c862ef5dbc3147f87f7fdb56a086308ce7079298a62d9ec494ac"
+        },
+        {
+          "path": "package/shared/dist/node/public-issue-guard.js.map",
+          "size": 5143,
+          "sha256": "3032c6cf50ce196d654e4cc6c3fb65bd090b70786bc8759d3ad0c0fc484d6762"
+        },
+        {
+          "path": "package/shared/dist/pixel-compare.d.ts",
+          "size": 476,
+          "sha256": "77e5be18fe121a6be3058259c8292c00d977c7b36f1ace66fce1aa4e711f3731"
+        },
+        {
+          "path": "package/shared/dist/pixel-compare.d.ts.map",
+          "size": 449,
+          "sha256": "b96d01e7e742d4ab7f2c8227a8aad1106775ed46e8013976c4faa9902cbf514e"
+        },
+        {
+          "path": "package/shared/dist/pixel-compare.js",
+          "size": 879,
+          "sha256": "8dbe1988137f89879fa346b743270cd27aba1cc3839dff7714c2f225154e0e2e"
+        },
+        {
+          "path": "package/shared/dist/pixel-compare.js.map",
+          "size": 462,
+          "sha256": "0edac02e11054fb5c70aadf9dc1e01ff2ab853b8f991d8c215fa8a4b54f664d8"
+        },
+        {
+          "path": "package/shared/dist/public-issue-sanitizer.d.ts",
+          "size": 240,
+          "sha256": "e05890d2690188c4b8a53c065068719275de501f9fda019dc3a1b9dc3c5cd443"
+        },
+        {
+          "path": "package/shared/dist/public-issue-sanitizer.d.ts.map",
+          "size": 287,
+          "sha256": "7bdfd043d89275fbff04d99cc100aa21411da3a01ce302c421a213ad0202fa57"
+        },
+        {
+          "path": "package/shared/dist/public-issue-sanitizer.js",
+          "size": 2099,
+          "sha256": "ad87f95d097c2641317317f8997366111db38b0d36371bc18e9dd900438c1c90"
+        },
+        {
+          "path": "package/shared/dist/public-issue-sanitizer.js.map",
+          "size": 1735,
+          "sha256": "e2dcf28147f8ba36b6d5567b1b39a96924ce513cf8b6233be64b9c39f06fd219"
+        },
+        {
+          "path": "package/shared/dist/report-generator.d.ts",
+          "size": 452,
+          "sha256": "e47f893f712d184fff5ccdeed0815ed203e02accd4f34880820e1b847623ec5c"
+        },
+        {
+          "path": "package/shared/dist/report-generator.d.ts.map",
+          "size": 323,
+          "sha256": "28862a648f2c5ddac98945a1ec328af6a74799fb31d3a9fad2b1a43a3b716dc5"
+        },
+        {
+          "path": "package/shared/dist/report-generator.js",
+          "size": 8709,
+          "sha256": "86638f50e5d548721d10c53f0f15b5f8d36ebb7dcc97b3f0234199fbd5face9a"
+        },
+        {
+          "path": "package/shared/dist/report-generator.js.map",
+          "size": 7711,
+          "sha256": "79c6dc824a792aef7f5c14e0f0941daa3dd2a1e966e53cb55c533c0811bd0fbf"
+        },
+        {
+          "path": "package/shared/dist/schema.d.ts",
+          "size": 86013,
+          "sha256": "40d36ffeaa40e7985017687d2b788880821ebf2b9d1a4ffd3f97ec422b25b54d"
+        },
+        {
+          "path": "package/shared/dist/schema.d.ts.map",
+          "size": 4861,
+          "sha256": "a0d55edebddbbc070b7ef2e2d3b242196265abdcb47427e6e3143fbbe6834ae5"
+        },
+        {
+          "path": "package/shared/dist/schema.js",
+          "size": 34392,
+          "sha256": "be8b520af991c9367f80baaee94e47de68d8b36471335e4a70dcfb441b351584"
+        },
+        {
+          "path": "package/shared/dist/schema.js.map",
+          "size": 31697,
+          "sha256": "759787625b98405877460cf16ea0ddbb7b86afa91f7a01775801df0def8c61ce"
+        },
+        {
+          "path": "package/shared/dist/self-critique.d.ts",
+          "size": 202,
+          "sha256": "f535be16f205babd177a10729c7f157e21bdabf7c8fa5d7b24d4423ae3401843"
+        },
+        {
+          "path": "package/shared/dist/self-critique.d.ts.map",
+          "size": 255,
+          "sha256": "a2096bdec550ed56ba09f50fa7b720f3333491fba7aa45c728356b559589e748"
+        },
+        {
+          "path": "package/shared/dist/self-critique.js",
+          "size": 3334,
+          "sha256": "febc0c8ef6039cfdb8de5c3f918d11e901cb138fe87b73c69abd98077ab8a743"
+        },
+        {
+          "path": "package/shared/dist/self-critique.js.map",
+          "size": 2570,
+          "sha256": "e10e14618e4772cedafcdf28ae697d094968d856fb3ab1ec48516b9cc877be1c"
+        },
+        {
+          "path": "package/shared/dist/signal/delta-e-2000.d.ts",
+          "size": 1405,
+          "sha256": "43633f8e33b3c82d14e4f30df0f1d94a6b4201d478fd04f548b034cfac6dde0a"
+        },
+        {
+          "path": "package/shared/dist/signal/delta-e-2000.d.ts.map",
+          "size": 971,
+          "sha256": "2f7d0be1b6b126958a8c037696f76940b2b09edd8a87645816e91e297e292d60"
+        },
+        {
+          "path": "package/shared/dist/signal/delta-e-2000.js",
+          "size": 14636,
+          "sha256": "cd100086dd0f5ad6f96752df741734b7d74fe93aafb80c0814bd0c2d2e8760e8"
+        },
+        {
+          "path": "package/shared/dist/signal/delta-e-2000.js.map",
+          "size": 13955,
+          "sha256": "dbe1952e197308a672857c8499c15932575fdec215ebcd3331f381c1a0f1e1d4"
+        },
+        {
+          "path": "package/shared/dist/signal/dynamic-region.d.ts",
+          "size": 2495,
+          "sha256": "376661ca9b60312c8c547d0fc29c573fc0f794eed59a0601bff173e7193f21b0"
+        },
+        {
+          "path": "package/shared/dist/signal/dynamic-region.d.ts.map",
+          "size": 1042,
+          "sha256": "ad9216de66a6f1e4bb35f152374baeada8f4475ab84f55e77ea88cd6e7564d72"
+        },
+        {
+          "path": "package/shared/dist/signal/dynamic-region.js",
+          "size": 8666,
+          "sha256": "5288cf7d315aaf56d88ee804f7ca31dd8d8d5cdf00fd756f12fbb1d84e318fde"
+        },
+        {
+          "path": "package/shared/dist/signal/dynamic-region.js.map",
+          "size": 7995,
+          "sha256": "562b3bcf62d37617cffaf52f927c2121d805747d9da9b3de46b8a1173a32eb89"
+        },
+        {
+          "path": "package/shared/dist/signal/flat-region-color.d.ts",
+          "size": 1226,
+          "sha256": "8dd4842afb1d0cab128522b369217be9c3da6e65181daa657d836324b2f6a27b"
+        },
+        {
+          "path": "package/shared/dist/signal/flat-region-color.d.ts.map",
+          "size": 864,
+          "sha256": "887b3b6b8392515df35888fecfa5a67eb408fbe80f7699788cac4f1dced143f3"
+        },
+        {
+          "path": "package/shared/dist/signal/flat-region-color.js",
+          "size": 5771,
+          "sha256": "99a39e239dd59294742b324669d1dad90c0c1689c64c835c57ef04204a535b43"
+        },
+        {
+          "path": "package/shared/dist/signal/flat-region-color.js.map",
+          "size": 5043,
+          "sha256": "a3fbfdf9d47ac7a07ff5a527b8cd2a3026aef78d853e47499468fbea4349aa88"
+        },
+        {
+          "path": "package/shared/dist/signal/foreground-occupancy.d.ts",
+          "size": 696,
+          "sha256": "d88c76647f4f0ece3fef1c68f426007f2ea707c62c43d60fb9c78ac2119a7b75"
+        },
+        {
+          "path": "package/shared/dist/signal/foreground-occupancy.d.ts.map",
+          "size": 434,
+          "sha256": "cd5554566f2a37c54ba4d0e2234205a91ed46723d19c9d5a175edc970a5f3f4e"
+        },
+        {
+          "path": "package/shared/dist/signal/foreground-occupancy.js",
+          "size": 7507,
+          "sha256": "d8db893748fad7695e7cfeb89dde170ced689aed1e915855e75d1282f0d3b6c8"
+        },
+        {
+          "path": "package/shared/dist/signal/foreground-occupancy.js.map",
+          "size": 7639,
+          "sha256": "d21f6a64ab0bfdc94b54a0579ea1fde1660c4b26338ffd20535f8889f2d96787"
+        },
+        {
+          "path": "package/shared/dist/signal/glyph-edge-raster.d.ts",
+          "size": 553,
+          "sha256": "8d7f6139fa4ea589e9ee050ceb6f8bd14d8dd9c54f983c700093ebf4057a6584"
+        },
+        {
+          "path": "package/shared/dist/signal/glyph-edge-raster.d.ts.map",
+          "size": 500,
+          "sha256": "46ccc1da8a3c81ee6fa9304b43cadecb220ede452c0c26819d9e3018e4c268da"
+        },
+        {
+          "path": "package/shared/dist/signal/glyph-edge-raster.js",
+          "size": 8363,
+          "sha256": "089b8a913d823822a2339b2fb5b2ad0e97c291a6a224d89360bf2f8d0f71089a"
+        },
+        {
+          "path": "package/shared/dist/signal/glyph-edge-raster.js.map",
+          "size": 9615,
+          "sha256": "86fb1ff12bb57cc90f1ab872e5adf7f46f63c9768d661dfa8854f9932f1f5c29"
+        },
+        {
+          "path": "package/shared/dist/signal/hausdorff.d.ts",
+          "size": 271,
+          "sha256": "017b0f3cd799e842b459435f507c8d9bf1d282b8cff85b624f310b99b00055f2"
+        },
+        {
+          "path": "package/shared/dist/signal/hausdorff.d.ts.map",
+          "size": 305,
+          "sha256": "9dcbdbb8b71d20e1b92f6b8d56126baac55a08d70803bef425494fdc0a022726"
+        },
+        {
+          "path": "package/shared/dist/signal/hausdorff.js",
+          "size": 6165,
+          "sha256": "0efdc3207eb7fdbb0e9c06138739448881f4dbec1e84950d7f65a34b1d88388c"
+        },
+        {
+          "path": "package/shared/dist/signal/hausdorff.js.map",
+          "size": 6924,
+          "sha256": "bd5ed644a948cca3c57c6c0f4cfa599b5d3947610b358f7febf64e5f4ef8d455"
+        },
+        {
+          "path": "package/shared/dist/signal/ssim.d.ts",
+          "size": 688,
+          "sha256": "bb1a987c9d0c1497d2f2cfeb916dfbfe6cb4136f172e1e786311b97c37e26900"
+        },
+        {
+          "path": "package/shared/dist/signal/ssim.d.ts.map",
+          "size": 666,
+          "sha256": "e0e96bbf88ba41f6e1685f3c523a4fd0edf34f36deb9f3a72e39fa3357fa1cce"
+        },
+        {
+          "path": "package/shared/dist/signal/ssim.js",
+          "size": 8503,
+          "sha256": "af038bc7c32aba289b2386e28f0e12e7a899022bb2a499803e600cb535c672a9"
+        },
+        {
+          "path": "package/shared/dist/signal/ssim.js.map",
+          "size": 8590,
+          "sha256": "da99165fc1e9d2f802833582ef5938fcce4049228be5adcb126b477badd43ac2"
+        },
+        {
+          "path": "package/shared/dist/signal/temporal-align.d.ts",
+          "size": 4441,
+          "sha256": "f890c3e8597991a414a8b0ff8c2183c175d0ee9042307ae0647dbf0de090a52f"
+        },
+        {
+          "path": "package/shared/dist/signal/temporal-align.d.ts.map",
+          "size": 1404,
+          "sha256": "55d3d053a6a5764200782775a623ac7d05c45e394ed102a18379d4167c20b4c4"
+        },
+        {
+          "path": "package/shared/dist/signal/temporal-align.js",
+          "size": 7581,
+          "sha256": "9e29f05a649aa96636fb6f9fd56579b1d0ee71def0f8d1c436de8b4ab65b5f30"
+        },
+        {
+          "path": "package/shared/dist/signal/temporal-align.js.map",
+          "size": 4229,
+          "sha256": "2abe6dbeafd4f8da0e614bf6110eb2cf46d3af3f1df98340e5e715d676ab8dec"
+        },
+        {
+          "path": "package/shared/dist/signal/texture.d.ts",
+          "size": 275,
+          "sha256": "94ef9534c3e5ca7d0c8060c38acf76ae96a825a8e80e2e0615e756940581aa9b"
+        },
+        {
+          "path": "package/shared/dist/signal/texture.d.ts.map",
+          "size": 335,
+          "sha256": "92d4e0825129cfb8ac762c6277f577b02cd04cd65ee463fc9b6f59f7395db2e7"
+        },
+        {
+          "path": "package/shared/dist/signal/texture.js",
+          "size": 3394,
+          "sha256": "409108a0146e573c32caa89e89dfd32db2d17eacdaf5e7dfdf11177cbe10f0ca"
+        },
+        {
+          "path": "package/shared/dist/signal/texture.js.map",
+          "size": 4415,
+          "sha256": "c55c28a2d56598606730d5ae629d9ee0a8c18bbdcbc87c18083752f9a604d075"
+        },
+        {
+          "path": "package/shared/dist/signal/toast-band.d.ts",
+          "size": 770,
+          "sha256": "2b371bfaf499d396ddccb557182963869e21185d9d03722e41800f49224e6e42"
+        },
+        {
+          "path": "package/shared/dist/signal/toast-band.d.ts.map",
+          "size": 634,
+          "sha256": "171533a3b437a07c3a7ca76264a54111bde4bd2168b90bc4387589c98c1ba6b4"
+        },
+        {
+          "path": "package/shared/dist/signal/toast-band.js",
+          "size": 5095,
+          "sha256": "a9cbc65123c8130df390c6d46b76da0dacd1a6ea300f8afd61b2d588cf20b136"
+        },
+        {
+          "path": "package/shared/dist/signal/toast-band.js.map",
+          "size": 4951,
+          "sha256": "c5281cf476bf1aee135af571020d8c987812cc960ec5f1e1826de3b7d7c9ffc9"
+        },
+        {
+          "path": "package/shared/dist/signal/translation.d.ts",
+          "size": 3532,
+          "sha256": "3fc4584b50aef2435f94b9a777af9fc4e83f801ebdc35ff20f7ba689f4285ec3"
+        },
+        {
+          "path": "package/shared/dist/signal/translation.d.ts.map",
+          "size": 1537,
+          "sha256": "0b5adb10ccf3ede196ab29b690d2eb62ac61bc344af99b3c9a4ecc72b5061789"
+        },
+        {
+          "path": "package/shared/dist/signal/translation.js",
+          "size": 15600,
+          "sha256": "6b9e85b5e1f0092701842ff9a424b1cecc958baa7742ecea9100ce60b2d95ee5"
+        },
+        {
+          "path": "package/shared/dist/signal/translation.js.map",
+          "size": 11475,
+          "sha256": "b42a64f0e0885e453fe3e53af474eb46626cafe1dc94661b0b0e9417ebe30905"
+        },
+        {
+          "path": "package/shared/dist/transform-node.d.ts",
+          "size": 443,
+          "sha256": "fbdee218b2bcb9ac8c2809d8877ba769b41579c3f2bc97be6030935a45e37d16"
+        },
+        {
+          "path": "package/shared/dist/transform-node.d.ts.map",
+          "size": 250,
+          "sha256": "004289a64d426aebc816c18ff6a2b217dcb773f6f4690c186310dafe372d1aad"
+        },
+        {
+          "path": "package/shared/dist/transform-node.js",
+          "size": 4496,
+          "sha256": "153e66d207038b3eac0f1e7ecb8df3a68785e94f98c191a7857f68a2d7932e82"
+        },
+        {
+          "path": "package/shared/dist/transform-node.js.map",
+          "size": 4838,
+          "sha256": "c2ce04e91d1d41f210dfc6ad6507b6ba4068995522144615dcf8d9e0245d3bea"
+        },
+        {
+          "path": "package/shared/dist/type.d.ts",
+          "size": 9006,
+          "sha256": "f26bc136430a5547500f7372b17c2967bf56150ee71533737e6c7f01c258bb06"
+        },
+        {
+          "path": "package/shared/dist/type.d.ts.map",
+          "size": 7830,
+          "sha256": "bde1599af9ee544ffab7df7c63478c7f7bda564712843614f24698e1fe7666f7"
+        },
+        {
+          "path": "package/shared/dist/type.js",
+          "size": 7221,
+          "sha256": "87cf21afc90ba540bebc3edee45a6d40d8601cd1a84d6f809d51d387e4caf434"
+        },
+        {
+          "path": "package/shared/dist/type.js.map",
+          "size": 5359,
+          "sha256": "de8aa4f8e81edbaa3c77ab8953729cb643a91224626b1979aaab3c4378cfe2e8"
+        },
+        {
+          "path": "package/shared/dist/verification-context.d.ts",
+          "size": 8549,
+          "sha256": "d5f8d145cf022be1322e565d69e820fc3f9822fa4020f14e5eae9dda036bbfd8"
+        },
+        {
+          "path": "package/shared/dist/verification-context.d.ts.map",
+          "size": 708,
+          "sha256": "35853bf6895214649e1bd2085969ca0ec96895b5c010a9bb80b99b410852b0f5"
+        },
+        {
+          "path": "package/shared/dist/verification-context.js",
+          "size": 4485,
+          "sha256": "6ef9a8ed0e4c190d0be6ad171f9eabbe2bfb1004009b830da51f57e02474a751"
+        },
+        {
+          "path": "package/shared/dist/verification-context.js.map",
+          "size": 4832,
+          "sha256": "aff01cc538aa143f675a8796d36ad4018c846e26c814c61311d276aeca22cb13"
+        },
+        {
+          "path": "package/shared/dist/verification-fixture.d.ts",
+          "size": 815,
+          "sha256": "cc42470ad21afe73fd0159d1b8225dea37461cc94e445e22b271df7923b02763"
+        },
+        {
+          "path": "package/shared/dist/verification-fixture.d.ts.map",
+          "size": 430,
+          "sha256": "c1c17c0666dca737f00744aa38e688171592ada814a61e5eb88a9e931c3011b1"
+        },
+        {
+          "path": "package/shared/dist/verification-fixture.js",
+          "size": 2624,
+          "sha256": "a315ba71f74e825a4448dc631ca87bef4bd64b9da3f0afc9b7070edaceff3968"
+        },
+        {
+          "path": "package/shared/dist/verification-fixture.js.map",
+          "size": 2457,
+          "sha256": "9af8601541dc0218e9c80c7243572329782c8be5a313e92e9a7ccbd210d97067"
+        },
+        {
+          "path": "package/shared/dist/verify-fix-verdict.d.ts",
+          "size": 344,
+          "sha256": "2127da1cd50e7ca915abebc5728fcc2be98822d144055c182328190a60d2a425"
+        },
+        {
+          "path": "package/shared/dist/verify-fix-verdict.d.ts.map",
+          "size": 386,
+          "sha256": "0f1db4351f953b689c9b24333ba30c7bb78e8b10c95c5cb818d3661b4348d81b"
+        },
+        {
+          "path": "package/shared/dist/verify-fix-verdict.js",
+          "size": 1926,
+          "sha256": "55b0e07eb8947392001b756f0a25ae5fe6c6c950573f4a9933e2134fd85d51be"
+        },
+        {
+          "path": "package/shared/dist/verify-fix-verdict.js.map",
+          "size": 1167,
+          "sha256": "62dc3fa2d8d3b5d7eb1641d2b6f35f2fa0d642367874d0e03e3bd1df3426d06f"
+        },
+        {
+          "path": "package/shared/dist/view-mode.d.ts",
+          "size": 776,
+          "sha256": "4557870cd8b841d5f14719d149f528cc18a930777008e345374c022426f23b29"
+        },
+        {
+          "path": "package/shared/dist/view-mode.d.ts.map",
+          "size": 568,
+          "sha256": "b6615af9da7a139a2a14b5c929a0a3e5bd388062b465db0a75e57d1518ba837e"
+        },
+        {
+          "path": "package/shared/dist/view-mode.js",
+          "size": 2229,
+          "sha256": "693304f1c9566a9008911b85fa32df1a853d431af7f2c7b34048c918b3b1067c"
+        },
+        {
+          "path": "package/shared/dist/view-mode.js.map",
+          "size": 1527,
+          "sha256": "6a876af82022e335f4a02e27cbd9c7f50eb88122adef5a57314237e377581b75"
+        },
+        {
+          "path": "package/shared/package.json",
+          "size": 1526,
+          "sha256": "1541edfbcb2ccb91588617a85f338032f8012ce79b37447204f2b022927e0fa2"
+        },
+        {
+          "path": "pnpm-lock.yaml",
+          "size": 278665,
+          "sha256": "56531c503d0381614439af6aae83c0ece2985687482fd163722bdcf96e095681"
+        }
+      ]
+    },
+    "unchangedDuringRun": true
+  },
+  "environment": {
+    "platform": "darwin",
+    "arch": "arm64",
+    "node": "v24.20.0"
+  },
+  "executedAt": "2026-09-20T13:40:48.312Z",
+  "transport": "@modelcontextprotocol/sdk Client + StdioClientTransport",
+  "protocolErrors": [],
+  "verificationFailures": [],
+  "fixtures": [
+    {
+      "name": "design",
+      "path": "docs/evidence/round1-macos/stdio-issue-verification/input-design.png",
+      "sha256": "caff22a913cf3108e80519121958872308dea55bc60249e9ecf13f396a1189ed"
+    },
+    {
+      "name": "identical",
+      "path": "docs/evidence/round1-macos/stdio-issue-verification/input-identical.png",
+      "sha256": "caff22a913cf3108e80519121958872308dea55bc60249e9ecf13f396a1189ed"
+    },
+    {
+      "name": "shifted",
+      "path": "docs/evidence/round1-macos/stdio-issue-verification/input-shifted.png",
+      "sha256": "75838e0153c316309731445e138ff7fecbd2504823f2aaca88af1b2170a4d277"
+    },
+    {
+      "name": "globalShiftDesign",
+      "path": "docs/evidence/round1-macos/stdio-issue-verification/input-global-shift-design.png",
+      "sha256": "3c3178f647ba821afa63936c1d42971f80d9718c3e21d4ae77c54c455bf74dba"
+    },
+    {
+      "name": "globalShiftScreenshot",
+      "path": "docs/evidence/round1-macos/stdio-issue-verification/input-global-shift-screenshot.png",
+      "sha256": "97da4d917c80499884604be0909a29a58c1c64aeda7cefe7c41102c6018bc6b2"
+    },
+    {
+      "name": "localized",
+      "path": "docs/evidence/round1-macos/stdio-issue-verification/input-localized-defect.png",
+      "sha256": "818dcb622b6c5938361b77553fffca50df0cd31f5b205dab49c02da43219458a"
+    },
+    {
+      "name": "modalDesign",
+      "path": "docs/evidence/round1-macos/stdio-issue-verification/input-modal-sheet-y313.png",
+      "sha256": "367edfa8122f06b03ab55e29eaf94591d7051eb549f14dc10af8ce2a24977c05"
+    },
+    {
+      "name": "modalMismatch",
+      "path": "docs/evidence/round1-macos/stdio-issue-verification/input-modal-sheet-y1459.png",
+      "sha256": "560f0a688399354c956b7346c4ec31110382f892bbeb564ed437fd93f65175da"
+    },
+    {
+      "name": "modalShift1",
+      "path": "docs/evidence/round1-macos/stdio-issue-verification/input-modal-sheet-y314.png",
+      "sha256": "6b3dc7da35178cba646086a8642803b4d63e5fb0457f526fea70f70471775f94"
+    },
+    {
+      "name": "modalShift2",
+      "path": "docs/evidence/round1-macos/stdio-issue-verification/input-modal-sheet-y315.png",
+      "sha256": "7b153aeb2b37a5586024723a6bf825ae64987b9cff8dba2716382d14004d39e5"
+    },
+    {
+      "name": "typographyDesign",
+      "path": "docs/evidence/round1-macos/stdio-issue-verification/input-typography-design.png",
+      "sha256": "2c78133041851faed8082a61093aff9e1651b49a016f55fe9f172e8172dc4343"
+    },
+    {
+      "name": "typographyImplOracle",
+      "path": "docs/evidence/round1-macos/stdio-issue-verification/input-typography-impl-oracle.png",
+      "sha256": "5be922663cb38dce055fbc767137524e28eecb69ce15a4ed7bc62f9d151b2f09"
+    },
+    {
+      "name": "animationDesign0",
+      "path": "docs/evidence/round1-macos/stdio-issue-verification/input-animation-design-000ms.png",
+      "sha256": "b8fb2e886aa7bf92569a6e4fd75ed8f89ca6c7556472268ca3c8ce34f3d3071f"
+    },
+    {
+      "name": "animationDesign100",
+      "path": "docs/evidence/round1-macos/stdio-issue-verification/input-animation-design-100ms.png",
+      "sha256": "83b696b8acbfd43df295c6dcd53271b67bddcf5a0fd4c892a7c0d8a72980574e"
+    },
+    {
+      "name": "animationImpl0",
+      "path": "docs/evidence/round1-macos/stdio-issue-verification/input-animation-impl-000ms.png",
+      "sha256": "b8fb2e886aa7bf92569a6e4fd75ed8f89ca6c7556472268ca3c8ce34f3d3071f"
+    },
+    {
+      "name": "animationImpl100",
+      "path": "docs/evidence/round1-macos/stdio-issue-verification/input-animation-impl-100ms.png",
+      "sha256": "d68c59c035fc9f28d681ebac54a6c45d6589625385b79edada451a4fa171d456"
+    }
+  ],
+  "results": {
+    "issue114_listProjectsProjection": {
+      "status": "PASS",
+      "expected": {
+        "projectCount": 1,
+        "pageCount": 1,
+        "designSourceCount": 1,
+        "secretPresent": false
+      },
+      "actual": {
+        "projectCount": 1,
+        "pageCount": 1,
+        "designSourceCount": 1,
+        "secretPresent": false
+      }
+    },
+    "C01": {
+      "status": "PASS",
+      "oracle": "raw RGBA byte comparison",
+      "expected": {
+        "differingPixelCount": 0,
+        "bounds": null
+      },
+      "actual": {
+        "diffPixelCount": 0,
+        "comparisonId": "cmp-296b0458-eda4-415a-9c87-47d1c88c72fc"
+      }
+    },
+    "legacySourceKey": {
+      "status": "PASS",
+      "expected": {
+        "omitted": "local:docs/evidence/round1-macos/stdio-issue-verification/input-design.png",
+        "emptyObject": "local:docs/evidence/round1-macos/stdio-issue-verification/input-design.png",
+        "emptyDesign": "local:docs/evidence/round1-macos/stdio-issue-verification/input-design.png"
+      },
+      "actual": {
+        "omitted": "local:docs/evidence/round1-macos/stdio-issue-verification/input-design.png",
+        "emptyObject": "local:docs/evidence/round1-macos/stdio-issue-verification/input-design.png",
+        "emptyDesign": "local:docs/evidence/round1-macos/stdio-issue-verification/input-design.png"
+      }
+    },
+    "C03_issue58_localized_geometry": {
+      "status": "PASS",
+      "oracle": "raw RGBA diff count and exact generated rectangle",
+      "expected": {
+        "differingPixelCount": 143,
+        "bounds": {
+          "x": 90,
+          "y": 336,
+          "width": 13,
+          "height": 11
+        }
+      },
+      "actual": {
+        "diffPixelCount": 143,
+        "diffRegions": [
+          {
+            "bounds": {
+              "x": 90,
+              "y": 336,
+              "width": 13,
+              "height": 11
+            },
+            "diffPixelCount": 143
+          }
+        ],
+        "reportIssues": [
+          {
+            "bbox": {
+              "x": 90,
+              "y": 336,
+              "w": 13,
+              "h": 11
+            },
+            "severity": "critical"
+          },
+          {
+            "bbox": {
+              "x": 90,
+              "y": 336,
+              "w": 13,
+              "h": 11
+            },
+            "severity": "critical"
+          }
+        ]
+      }
+    },
+    "M11_compareAnimation": {
+      "status": "PASS",
+      "oracle": "known solid-color frame pixels and declared 0ms/100ms timestamps",
+      "expected": {
+        "pixelDifferences": {
+          "at0": {
+            "differingPixelCount": 0,
+            "bounds": null
+          },
+          "at100": {
+            "differingPixelCount": 4096,
+            "bounds": {
+              "x": 0,
+              "y": 0,
+              "width": 64,
+              "height": 64
+            }
+          }
+        },
+        "matchedTimes": [0, 100],
+        "mismatchRateRange": {
+          "minimum": 0,
+          "maximum": 1
+        }
+      },
+      "actual": {
+        "frames": [
+          {
+            "atMs": 0,
+            "screenshotPath": "docs/evidence/round1-macos/stdio-issue-verification/input-animation-impl-000ms.png",
+            "status": "PASS",
+            "matchRate": 1,
+            "comparisonId": "cmp-7efd97b6-7d2a-4df4-8819-227272eea200"
+          },
+          {
+            "atMs": 100,
+            "screenshotPath": "docs/evidence/round1-macos/stdio-issue-verification/input-animation-impl-100ms.png",
+            "status": "FAIL",
+            "matchRate": 0,
+            "comparisonId": "cmp-15eed966-34a6-41de-a760-432b3befc732",
+            "diffImagePath": "<store>/results/diff-cmp-15eed966-34a6-41de-a760-432b3befc732.png"
+          }
+        ],
+        "alignments": [
+          {
+            "designAtMs": 0,
+            "matchedAtMs": 0,
+            "driftMs": 0,
+            "mismatchRate": 0
+          },
+          {
+            "designAtMs": 100,
+            "matchedAtMs": 100,
+            "driftMs": 0,
+            "mismatchRate": 1
+          }
+        ],
+        "temporal": {
+          "status": "FAIL",
+          "rationale": "見た目が設計と違うフレームがある。",
+          "maxAbsDriftMs": 0,
+          "orderViolation": false
+        },
+        "reportDiffPixelCounts": [0, 4096],
+        "durableDiff": {
+          "path": "docs/evidence/round1-macos/stdio-issue-verification/animation-diff-100ms.png",
+          "sha256": "ff3feec9f79e0f72cfe5f71c8378112d62d4cca6e4733cf2ef6eae9fdfcf8a28"
+        }
+      }
+    },
+    "C10_issue112_real_typography": {
+      "status": "PASS",
+      "oracle": "real Chromium DOMRect plus raw RGBA comparison of two real Chromium screenshots",
+      "expected": {
+        "differenceElement": {
+          "x": 76,
+          "y": 91,
+          "width": 13,
+          "height": 11
+        },
+        "unchangedButton": {
+          "x": 44,
+          "y": 148,
+          "width": 160,
+          "height": 40
+        },
+        "rawDifference": {
+          "differingPixelCount": 127,
+          "bounds": {
+            "x": 76,
+            "y": 91,
+            "width": 13,
+            "height": 11
+          }
+        },
+        "thresholdedDifference": {
+          "minimum": 1,
+          "maximum": 127,
+          "reason": "pixelmatch excludes anti-aliased edge pixels from the raw RGBA difference"
+        }
+      },
+      "actual": {
+        "diffPixelCount": 63,
+        "diffRegions": [
+          {
+            "bounds": {
+              "x": 77,
+              "y": 91,
+              "width": 11,
+              "height": 10
+            },
+            "diffPixelCount": 63
+          }
+        ],
+        "reportIssues": [
+          {
+            "bbox": {
+              "x": 77,
+              "y": 91,
+              "w": 11,
+              "h": 10
+            },
+            "kind": "color",
+            "severity": "critical"
+          }
+        ],
+        "implementationDifferenceElement": {
+          "x": 76,
+          "y": 91,
+          "width": 13,
+          "height": 11
+        },
+        "implementationButton": {
+          "x": 44,
+          "y": 148,
+          "width": 160,
+          "height": 40
+        },
+        "durableReport": {
+          "path": "docs/evidence/round1-macos/stdio-issue-verification/real-typography-report.json",
+          "canonicalJsonSha256": "30059fbc61acb1db7cff72d407d58505d9c34a600647d70326468ccc25bbde87",
+          "formattedArtifactSha256": "3e207d0bcd98919db96fb3927dabb7aa1de973cc74aac7691f1768f85dd9b89e",
+          "publicPathRedacted": true,
+          "rawProduct": {
+            "path": "docs/evidence/round1-macos/stdio-issue-verification/real-typography-report.raw.txt",
+            "sha256": "6cd3f66329a44c66f30aca3cc2d9f93d1291e5524edaccf3c74f30d9ec21fe31",
+            "byteLength": 10960,
+            "mediaType": "application/json",
+            "representation": "exact UTF-8 MCP tool response bytes; intentionally not formatter-normalized"
+          }
+        }
+      }
+    },
+    "C02_issue137_issue138": {
+      "status": "PASS",
+      "oracle": "generated high-contrast multi-feature canvas translated exactly +30px; separate low-contrast local movement remains uncorrected by design",
+      "expected": {
+        "translation": {
+          "x": 30,
+          "y": 0
+        },
+        "rawPixelDifference": {
+          "differingPixelCount": 72300,
+          "bounds": {
+            "x": 20,
+            "y": 20,
+            "width": 360,
+            "height": 780
+          }
+        }
+      },
+      "actual": {
+        "globalAlignment": {
+          "translation": {
+            "x": 30,
+            "y": 0
+          },
+          "source": "auto",
+          "applied": true,
+          "baselineResidual": 0.21965001822821728,
+          "correctedResidual": 0,
+          "scale": {
+            "x": 1,
+            "y": 1
+          },
+          "rotation": 0,
+          "confidence": 0.5757359312880714,
+          "residual": 0
+        },
+        "localMovement": {
+          "rawPixelDifference": {
+            "differingPixelCount": 48000,
+            "bounds": {
+              "x": 10,
+              "y": 30,
+              "width": 370,
+              "height": 780
+            }
+          },
+          "alignment": {
+            "translation": {
+              "x": 0,
+              "y": 0
+            },
+            "source": "none",
+            "applied": false,
+            "baselineResidual": 0.004374772147283996,
+            "correctedResidual": 0.004374772147283996,
+            "scale": {
+              "x": 1,
+              "y": 1
+            },
+            "rotation": 0,
+            "confidence": 1,
+            "residual": 0.004374772147283996
+          },
+          "note": "The #f5f5f5/#ffffff local panel delta is below the alignment RGB threshold; the local dark feature remains a raw visual difference."
+        }
+      }
+    },
+    "issue147_issue148_coordinate_conditions": {
+      "status": "PASS",
+      "oracle": "raw RGBA byte differences from generated 380px sheet positions",
+      "expected": {
+        "mismatch": {
+          "differingPixelCount": 284600,
+          "bounds": {
+            "x": 5,
+            "y": 313,
+            "width": 380,
+            "height": 1526
+          }
+        },
+        "onePixelShift": {
+          "differingPixelCount": 760,
+          "bounds": {
+            "x": 5,
+            "y": 313,
+            "width": 380,
+            "height": 381
+          }
+        },
+        "twoPixelShift": {
+          "differingPixelCount": 1520,
+          "bounds": {
+            "x": 5,
+            "y": 313,
+            "width": 380,
+            "height": 382
+          }
+        },
+        "metadataDoesNotTransformPixels": true,
+        "conditionScopedSteps": [1, 2, 1]
+      },
+      "actual": {
+        "withoutConditions": {
+          "status": "unverified",
+          "diffPixelCount": 284600
+        },
+        "mismatchedConditions": {
+          "status": "mismatch",
+          "conditions": {
+            "status": "mismatch",
+            "design": {
+              "canvas": {
+                "width": 390,
+                "height": 1839
+              },
+              "canvasSource": "image-metadata",
+              "declared": {
+                "viewport": {
+                  "width": 390,
+                  "height": 693
+                },
+                "pixelRatio": 1,
+                "origin": {
+                  "x": 0,
+                  "y": 0
+                }
+              },
+              "unverified": []
+            },
+            "screenshot": {
+              "canvas": {
+                "width": 390,
+                "height": 1839
+              },
+              "canvasSource": "image-metadata",
+              "declared": {
+                "viewport": {
+                  "width": 390,
+                  "height": 1839
+                },
+                "pixelRatio": 1,
+                "origin": {
+                  "x": 0,
+                  "y": 0
+                }
+              },
+              "unverified": []
+            },
+            "differences": ["viewport"],
+            "message": "表示領域・倍率・座標原点の申告、または撮影記録・書き出し要求と申告が一致しません。書き出し要求は実測値ではありません。位置差をCSSで修正する前に、撮影時の表示領域・倍率・共通原点を確認して揃えてください。申告値による画像の移動・切り抜きは行っていません。"
+          },
+          "resultStatus": "UNCERTAIN",
+          "nextAction": "表示領域・倍率・座標原点の申告、または撮影記録・書き出し要求と申告が一致しません。書き出し要求は実測値ではありません。位置差をCSSで修正する前に、撮影時の表示領域・倍率・共通原点を確認して揃えてください。申告値による画像の移動・切り抜きは行っていません。",
+          "diffPixelCount": 284600
+        },
+        "onePixelShift": {
+          "status": "compatible",
+          "diffPixelCount": 760
+        },
+        "twoPixelShift": {
+          "status": "compatible",
+          "diffPixelCount": 1520
+        },
+        "conditionScopedSteps": [1, 2, 1],
+        "restartPersistence": {
+          "jsonStatus": "mismatch",
+          "markdownIncludesConditions": true
+        }
+      }
+    },
+    "M15_issue59": {
+      "status": "PASS",
+      "oracle": "The page reports window.innerWidth to the independent local HTTP server for each real Playwright capture.",
+      "expected": {
+        "browserObservedWidths": [390, 390, 390]
+      },
+      "actual": {
+        "browserObservedWidths": [390, 390, 390],
+        "captures": [
+          {
+            "comparisonId": "cmp-4b253589-b7e2-44c4-b2cf-5205791455c1",
+            "responseWidth": 390,
+            "persistedWidth": 390
+          },
+          {
+            "comparisonId": "cmp-cdae9517-e615-4a3d-bbec-4371424dec3e",
+            "responseWidth": 390,
+            "persistedWidth": 390
+          },
+          {
+            "comparisonId": "cmp-5299dde4-b246-4be9-a4b4-395a068dc98e",
+            "responseWidth": 390,
+            "persistedWidth": 390
+          }
+        ]
+      }
+    },
+    "M09_issue109": {
+      "status": "PASS",
+      "expected": {
+        "retainedComparisonCount": 7,
+        "oldestReadableAfterRestart": true
+      },
+      "actual": {
+        "retainedComparisonCount": 7,
+        "oldestId": "cmp-1e4bc4ac-de7a-449d-b9cc-3c995febe58e",
+        "reportComparisonId": "cmp-1e4bc4ac-de7a-449d-b9cc-3c995febe58e",
+        "reportRegionCount": 1,
+        "artifacts": {
+          "jsonSha256": "195e5bc863cb7de8419cf90406134f16ebe48ece7af3bd158aa0acf867efe8a6",
+          "pngSha256": "35237f80cc533018f8a8da83931fda0fe28f5b8ccbaea89ad6d9e5217ff87320"
+        },
+        "durableArtifacts": [
+          {
+            "path": "docs/evidence/round1-macos/stdio-issue-verification/retained-oldest-report.json",
+            "canonicalJsonSha256": "5cf3832cc4b2814abd495878f931c2c4ceac5ec9aca3e4a6e8ab9fc626340e8a",
+            "formattedArtifactSha256": "9d03650c9d1863b6da6ca8e92ff096b611ab573558e917f115f55bb509fadcda",
+            "publicPathRedacted": true,
+            "rawProduct": {
+              "path": "docs/evidence/round1-macos/stdio-issue-verification/retained-oldest-report.raw.txt",
+              "sha256": "8e2e1243347aa096d099b3766958a42549bb484580bc805a9b9731242ebbf3e7",
+              "byteLength": 11247,
+              "mediaType": "application/json",
+              "representation": "exact UTF-8 MCP tool response bytes; intentionally not formatter-normalized"
+            }
+          },
+          {
+            "path": "docs/evidence/round1-macos/stdio-issue-verification/retained-oldest-diff.png",
+            "sha256": "35237f80cc533018f8a8da83931fda0fe28f5b8ccbaea89ad6d9e5217ff87320"
+          }
+        ]
+      }
+    },
+    "M14_issue131": {
+      "status": "PASS",
+      "expected": {
+        "campaignASteps": [1, 2, 3],
+        "campaignBFirstStep": 1,
+        "distinctStoredSourceKeys": true,
+        "resumedAfterRestart": true
+      },
+      "actual": {
+        "campaignASteps": [1, 2, 3],
+        "campaignBFirstStep": 1,
+        "distinctStoredSourceKeys": true,
+        "resumedStopReason": "regression"
+      }
+    }
+  },
+  "scope": {
+    "verifiedAssertions": [
+      "C01",
+      "C02 global x-axis translation",
+      "C03 exact localized rectangle",
+      "C10/#112 real Chromium Japanese typography localization",
+      "#147/#148 coordinate-condition contract",
+      "#114 list_projects projection and secret stripping",
+      "M09/#109",
+      "M11 compare_animation known real image frame output",
+      "M14/#131",
+      "M15/#59 real browser capture width"
+    ],
+    "notRun": ["external Figma API routes", "external network web capture routes"],
+    "oracle": "Synthetic geometry, real Chromium DOM rectangles, and raw RGBA byte comparisons are independent of FigDiff. Product status and matchRate are recorded nowhere as acceptance oracles."
+  }
+}

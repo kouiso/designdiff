@@ -1,0 +1,17 @@
+{
+  "case": "C11",
+  "route": "mcp",
+  "platform": "macos",
+  "drivers": [
+    "app/mcp-server/script/stdio-campaign-verification.mjs"
+  ],
+  "checks": [
+    "C11_scroll_contract"
+  ],
+  "actual": {
+    "stdio-campaign-verification:C11_scroll_contract": {
+      "rejectedWithReason": true,
+      "tallStatus": "UNCERTAIN"
+    }
+  }
+}

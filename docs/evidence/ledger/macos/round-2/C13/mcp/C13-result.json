@@ -1,0 +1,33 @@
+{
+  "case": "C13",
+  "route": "mcp",
+  "platform": "macos",
+  "drivers": [
+    "app/mcp-server/script/stdio-campaign-verification2.mjs"
+  ],
+  "checks": [
+    "C13_scaled_marker"
+  ],
+  "actual": {
+    "stdio-campaign-verification2:C13_scaled_marker": {
+      "canvas": {
+        "canvas_width": 780,
+        "canvas_height": 1688,
+        "design_original_width": 390,
+        "design_original_height": 844,
+        "screenshot_original_width": 780,
+        "screenshot_original_height": 1688
+      },
+      "hitLogical": [],
+      "hitPhysical": [
+        {
+          "x": 240,
+          "y": 800,
+          "width": 36,
+          "height": 28
+        }
+      ],
+      "regionCount": 2
+    }
+  }
+}

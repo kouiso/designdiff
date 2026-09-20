@@ -1,0 +1,50 @@
+{
+  "case": "M09",
+  "route": "mcp",
+  "platform": "macos",
+  "drivers": [
+    "app/mcp-server/script/stdio-campaign-verification2.mjs",
+    "app/mcp-server/script/stdio-issue-verification.mjs"
+  ],
+  "checks": [
+    "M09_report_old_id",
+    "M09_issue109"
+  ],
+  "actual": {
+    "stdio-campaign-verification2:M09_report_old_id": {
+      "oldId": "cmp-d095a3dc-4c3e-4de3-ade8-452776b465c4",
+      "jsonBytes": 13422,
+      "mdBytes": 3247,
+      "restarted": true
+    },
+    "stdio-issue-verification:M09_issue109": {
+      "retainedComparisonCount": 7,
+      "oldestId": "cmp-3e3e676f-82cd-4d99-90e7-bbf94864edeb",
+      "reportComparisonId": "cmp-3e3e676f-82cd-4d99-90e7-bbf94864edeb",
+      "reportRegionCount": 1,
+      "artifacts": {
+        "jsonSha256": "4c070efe49492759181c7aeeb3ec0666eed897319c916a80b10e9ab541b68345",
+        "pngSha256": "35237f80cc533018f8a8da83931fda0fe28f5b8ccbaea89ad6d9e5217ff87320"
+      },
+      "durableArtifacts": [
+        {
+          "path": "docs/evidence/round2-macos/stdio-issue-verification/retained-oldest-report.json",
+          "canonicalJsonSha256": "a71b902a50e89486e27224fdd2504a56f1136e00e6824e0973ab6416d47c010e",
+          "formattedArtifactSha256": "9ac3164cda761f8897dafc98aeb9aa62ee62ea4af1fe6b7693e18c4960f26596",
+          "publicPathRedacted": true,
+          "rawProduct": {
+            "path": "docs/evidence/round2-macos/stdio-issue-verification/retained-oldest-report.raw.txt",
+            "sha256": "4ade5e8f38a358eb48ff6e9d0b6b5b0027865f081cba0dbdc2f509d15d41767a",
+            "byteLength": 11247,
+            "mediaType": "application/json",
+            "representation": "exact UTF-8 MCP tool response bytes; intentionally not formatter-normalized"
+          }
+        },
+        {
+          "path": "docs/evidence/round2-macos/stdio-issue-verification/retained-oldest-diff.png",
+          "sha256": "35237f80cc533018f8a8da83931fda0fe28f5b8ccbaea89ad6d9e5217ff87320"
+        }
+      ]
+    }
+  }
+}

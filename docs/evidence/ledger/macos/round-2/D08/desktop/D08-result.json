@@ -1,0 +1,46 @@
+{
+  "case": "D08",
+  "route": "desktop",
+  "platform": "macos",
+  "drivers": [
+    "app/desktop/e2e/desktop-d-cases.mjs"
+  ],
+  "checks": [
+    "D08"
+  ],
+  "actual": {
+    "desktop-d-cases:D08": {
+      "restored": [
+        "D01案件",
+        "比較テスト案件",
+        "MCP経由案件"
+      ],
+      "d01ProjectContents": {
+        "page": "トップ",
+        "source": "デスクトップ"
+      },
+      "comparePositiveControl": {
+        "canvasCount": 2,
+        "canvases": [
+          {
+            "width": 200,
+            "height": 120
+          },
+          {
+            "width": 300,
+            "height": 150
+          }
+        ],
+        "apiHitsForSource": 0
+      },
+      "compareAfterProjectSwitch": {
+        "canvases": [],
+        "fixtureCanvas": null,
+        "centerPixel": null,
+        "matchesFixture": false,
+        "designPill": false
+      },
+      "switching": "close-and-reopen round-trip verified"
+    }
+  }
+}

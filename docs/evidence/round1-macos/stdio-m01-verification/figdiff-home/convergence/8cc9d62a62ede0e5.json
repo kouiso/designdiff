@@ -1,0 +1,56 @@
+{
+  "sourceKey": "local:/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-m01-verification/input-design.png",
+  "campaigns": [
+    {
+      "campaignId": "7ff4cb62-4bb0-43d2-b802-26bc1dd9cd0f",
+      "sourceKey": "local:/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-m01-verification/input-design.png",
+      "designSource": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-m01-verification/input-design.png",
+      "startedAt": 1789911605320,
+      "updatedAt": 1789911605320,
+      "iterations": [
+        {
+          "comparisonId": "cmp-c48057b9-f404-42a7-8eb1-d171e2c8f348",
+          "comparisonConditions": {
+            "status": "unverified",
+            "design": {
+              "canvas": {
+                "width": 64,
+                "height": 64
+              },
+              "canvasSource": "image-metadata",
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
+            },
+            "screenshot": {
+              "canvas": {
+                "width": 64,
+                "height": 64
+              },
+              "canvasSource": "image-metadata",
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
+            },
+            "differences": [],
+            "message": "表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。"
+          },
+          "matchRate": 100,
+          "diffPixelCount": 0,
+          "regionCount": 0,
+          "perceptibleDiffRatio": 0,
+          "structuralVerdict": "pass",
+          "status": "PASS",
+          "timestamp": 1789911605320
+        }
+      ],
+      "endedAt": 1789911605320,
+      "endReason": "no-regression",
+      "endMessage": "PASS に到達しました (反復 1 回)。ループを終了してください。"
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "case": "M06",
+  "route": "mcp",
+  "platform": "macos",
+  "drivers": [
+    "app/mcp-server/script/stdio-real-figma-verification.mjs"
+  ],
+  "checks": [
+    "M06_inspect_text_shadow",
+    "M06_inspect_opacity"
+  ],
+  "actual": {
+    "stdio-real-figma-verification:M06_inspect_text_shadow": {
+      "isError": false
+    },
+    "stdio-real-figma-verification:M06_inspect_opacity": {
+      "isError": false
+    }
+  }
+}

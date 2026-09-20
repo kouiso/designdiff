@@ -1,0 +1,58 @@
+{
+  "sourceKey": "campaign:v1:[\"local:/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/input-design.png|conditions:675b22c970119aa90b72b11698cccb7cd0dceddfd9bdbf475cee9ac6c85cd612\",\"c13\"]",
+  "campaigns": [
+    {
+      "campaignId": "0b23ba78-54a5-42d6-b05e-18ae81c9e61e",
+      "sourceKey": "campaign:v1:[\"local:/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/input-design.png|conditions:675b22c970119aa90b72b11698cccb7cd0dceddfd9bdbf475cee9ac6c85cd612\",\"c13\"]",
+      "designSource": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/input-design.png",
+      "startedAt": 1789911574349,
+      "updatedAt": 1789911574349,
+      "iterations": [
+        {
+          "comparisonId": "cmp-7b795293-0983-4343-9f24-409e4a65fbb3",
+          "comparisonConditions": {
+            "status": "unverified",
+            "design": {
+              "canvas": {
+                "width": 390,
+                "height": 844
+              },
+              "canvasSource": "image-metadata",
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
+            },
+            "screenshot": {
+              "canvas": {
+                "width": 780,
+                "height": 1688
+              },
+              "canvasSource": "image-metadata",
+              "declared": {
+                "viewport": {
+                  "width": 390,
+                  "height": 844
+                },
+                "pixelRatio": 2
+              },
+              "unverified": [
+                "origin"
+              ]
+            },
+            "differences": [],
+            "message": "表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。"
+          },
+          "matchRate": 98.15,
+          "diffPixelCount": 24357,
+          "regionCount": 2,
+          "structuralVerdict": "fail",
+          "status": "FAIL",
+          "timestamp": 1789911574349,
+          "diffImagePath": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/figdiff-home/results/diff-cmp-7b795293-0983-4343-9f24-409e4a65fbb3.png"
+        }
+      ]
+    }
+  ]
+}

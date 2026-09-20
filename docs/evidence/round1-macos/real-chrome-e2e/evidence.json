@@ -1,0 +1,139 @@
+{
+  "schemaVersion": 1,
+  "results": {
+    "extUnderTest": {
+      "dir": "<repo>/app/chrome-extension/dist",
+      "manifest": {
+        "manifest_version": 3,
+        "name": "PixelRay — FigDiff",
+        "description": "Compare Figma designs with implementation screenshots. 7-mode pixel-level diff detection for design QA.",
+        "version": "0.1.0",
+        "permissions": [
+          "activeTab",
+          "storage",
+          "tabs"
+        ],
+        "host_permissions": [
+          "https://api.figma.com/*",
+          "https://www.figma.com/*"
+        ],
+        "externally_connectable": {
+          "matches": [
+            "https://www.figma.com/*",
+            "https://figma.com/*"
+          ]
+        },
+        "action": {
+          "default_popup": "popup.html",
+          "default_title": "PixelRay"
+        },
+        "content_scripts": [
+          {
+            "matches": [
+              "<all_urls>"
+            ],
+            "js": [
+              "content.js"
+            ],
+            "css": [
+              "content.css"
+            ],
+            "run_at": "document_idle"
+          }
+        ],
+        "background": {
+          "service_worker": "background.js",
+          "type": "module"
+        },
+        "web_accessible_resources": [
+          {
+            "resources": [
+              "*.png",
+              "*.svg"
+            ],
+            "matches": [
+              "<all_urls>"
+            ]
+          }
+        ]
+      }
+    },
+    "X01_service_worker": {
+      "url": "chrome-extension://oihccimofolfggkdhdgkkbbmgbmofenj/background.js",
+      "extensionId": "oihccimofolfggkdhdgkkbbmgbmofenj"
+    },
+    "X01_popup_rendered": {
+      "tabs": [
+        "Figma",
+        "Upload",
+        "Token",
+        "Fetch Frames"
+      ]
+    },
+    "X01_upload_loaded": true,
+    "X01_overlay_shown": {
+      "box": {
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 720
+      }
+    },
+    "X01_overlay_img": {
+      "blobUrl": true
+    },
+    "X02_opacity": {
+      "applied": 0.25
+    },
+    "X02_drag": {
+      "before": "matrix(1, 0, 0, 1, 0, 0)",
+      "after": "translate(80px, 60px)"
+    },
+    "X02_scroll": {
+      "preScroll": {
+        "x": 80,
+        "y": 60,
+        "width": 1280,
+        "height": 720
+      },
+      "postScroll": {
+        "x": 80,
+        "y": 60,
+        "width": 1280,
+        "height": 720
+      },
+      "scrollY": 1500
+    },
+    "X02_navigation": {
+      "overlayLeaked": false
+    },
+    "X02_state_after_nav": {
+      "toggleLabel": "Hide Overlay"
+    },
+    "X02_close": {
+      "overlayRemoved": true,
+      "pageClickWorked": true
+    },
+    "X01_compare_dom": {
+      "appText": "Figma\nUpload\nToken\nUpload Design Image\nDesign loaded\nClear\nShow Overlay\nCapture & Compare"
+    },
+    "X01_compare": {
+      "outcome": "no-visible-result"
+    },
+    "X01_token": {
+      "roundTrip": true,
+      "cleared": true
+    },
+    "artifacts": {
+      "pageAScreenshot": {
+        "file": "pageA-with-overlay.png",
+        "sha256": "11e9c6a23929505bdd6243fbdf159e45cff1d6f21fe2f8d973edc87c1d398150"
+      },
+      "designPng": {
+        "file": "input-design.png",
+        "sha256": "c455fa3836b57f4ebc4698591ce7d0fc183a8f4108988d98bf7115809763a561"
+      }
+    }
+  },
+  "errors": []
+}

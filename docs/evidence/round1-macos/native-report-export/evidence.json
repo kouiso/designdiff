@@ -1,0 +1,26 @@
+{
+  "savedFiles": [
+    {
+      "format": "json",
+      "path": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/native-report-export/saved-report.json",
+      "sha256": "fa9904088dd4c3a4a4ddb77f0ea1071e079668baac0ab307f4c80c93eb0a8f68"
+    },
+    {
+      "format": "markdown",
+      "path": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/native-report-export/saved-report.md",
+      "sha256": "552d52ccbf1bad268b32a4ab0c9d54dec3de28efcb7f00b94be9eecfc9a60f57"
+    }
+  ],
+  "independentRawDifference": {
+    "count": 400,
+    "bounds": {
+      "x": 5,
+      "y": 5,
+      "width": 20,
+      "height": 20
+    }
+  },
+  "pageErrors": [],
+  "rendererCrashes": [],
+  "nativeDialogMocked": false
+}

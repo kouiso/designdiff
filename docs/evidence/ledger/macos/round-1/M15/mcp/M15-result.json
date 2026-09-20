@@ -1,0 +1,47 @@
+{
+  "case": "M15",
+  "route": "mcp",
+  "platform": "macos",
+  "drivers": [
+    "app/mcp-server/script/stdio-campaign-verification2.mjs",
+    "app/mcp-server/script/stdio-issue-verification.mjs"
+  ],
+  "checks": [
+    "M15_capture_width_stable",
+    "M15_issue59"
+  ],
+  "actual": {
+    "stdio-campaign-verification2:M15_capture_width_stable": {
+      "widths": [
+        320,
+        320,
+        320
+      ],
+      "pageUrl": "http://127.0.0.1:64960/page.html"
+    },
+    "stdio-issue-verification:M15_issue59": {
+      "browserObservedWidths": [
+        390,
+        390,
+        390
+      ],
+      "captures": [
+        {
+          "comparisonId": "cmp-4b253589-b7e2-44c4-b2cf-5205791455c1",
+          "responseWidth": 390,
+          "persistedWidth": 390
+        },
+        {
+          "comparisonId": "cmp-cdae9517-e615-4a3d-bbec-4371424dec3e",
+          "responseWidth": 390,
+          "persistedWidth": 390
+        },
+        {
+          "comparisonId": "cmp-5299dde4-b246-4be9-a4b4-395a068dc98e",
+          "responseWidth": 390,
+          "persistedWidth": 390
+        }
+      ]
+    }
+  }
+}

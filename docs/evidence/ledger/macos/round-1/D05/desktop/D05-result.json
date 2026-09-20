@@ -1,0 +1,17 @@
+{
+  "case": "D05",
+  "route": "desktop",
+  "platform": "macos",
+  "drivers": [
+    "app/desktop/e2e/native-ignore-region.mjs",
+    "app/desktop/e2e/native-figma-node-fix.mjs"
+  ],
+  "checks": [
+    "D05",
+    "D05"
+  ],
+  "actual": {
+    "native-ignore-region:D05": "実UIで領域の保存・一覧・削除・再比較を操作し、選択scopeのみに適用されることを永続値と再比較結果で確認",
+    "native-figma-node-fix:D05": "版固定・deep ancestry・scale2 exportを実IPC経由で検証し、選択nodeだけが詳細対象になることをHTTP要求と画素で確認"
+  }
+}

@@ -1,0 +1,173 @@
+{
+  "case": "C11",
+  "route": "desktop",
+  "platform": "macos",
+  "drivers": [
+    "app/desktop/e2e/desktop-c-cases.mjs"
+  ],
+  "checks": [
+    "C11"
+  ],
+  "actual": {
+    "desktop-c-cases:C11": {
+      "matchRate": 99,
+      "diffRegions": 1,
+      "diffPixels": 300,
+      "issues": 0,
+      "bboxes": [],
+      "issueKinds": [
+        "top-left",
+        "top-center",
+        "top-right",
+        "middle-left",
+        "middle-center",
+        "middle-right",
+        "bottom-left",
+        "bottom-center",
+        "bottom-right"
+      ],
+      "regionScores": [
+        {
+          "id": "top-left",
+          "bbox": {
+            "x": 0,
+            "y": 0,
+            "w": 40,
+            "h": 160
+          },
+          "scores": {
+            "structure": 1,
+            "color": 0,
+            "shape": 0,
+            "layout": 0
+          }
+        },
+        {
+          "id": "top-center",
+          "bbox": {
+            "x": 40,
+            "y": 0,
+            "w": 40,
+            "h": 160
+          },
+          "scores": {
+            "structure": 1,
+            "color": 0,
+            "shape": 0,
+            "layout": 0
+          }
+        },
+        {
+          "id": "top-right",
+          "bbox": {
+            "x": 80,
+            "y": 0,
+            "w": 40,
+            "h": 160
+          },
+          "scores": {
+            "structure": 1,
+            "color": 0,
+            "shape": 0,
+            "layout": 0
+          }
+        },
+        {
+          "id": "middle-left",
+          "bbox": {
+            "x": 0,
+            "y": 160,
+            "w": 40,
+            "h": 160
+          },
+          "scores": {
+            "structure": 0.961,
+            "color": 0.762,
+            "shape": 0.274,
+            "layout": 0
+          }
+        },
+        {
+          "id": "middle-center",
+          "bbox": {
+            "x": 40,
+            "y": 160,
+            "w": 40,
+            "h": 160
+          },
+          "scores": {
+            "structure": 0.958,
+            "color": 0.663,
+            "shape": 0.166,
+            "layout": 0
+          }
+        },
+        {
+          "id": "middle-right",
+          "bbox": {
+            "x": 80,
+            "y": 160,
+            "w": 40,
+            "h": 160
+          },
+          "scores": {
+            "structure": 1,
+            "color": 0,
+            "shape": 0,
+            "layout": 0
+          }
+        },
+        {
+          "id": "bottom-left",
+          "bbox": {
+            "x": 0,
+            "y": 320,
+            "w": 40,
+            "h": 160
+          },
+          "scores": {
+            "structure": 1,
+            "color": 0,
+            "shape": 0,
+            "layout": 0
+          }
+        },
+        {
+          "id": "bottom-center",
+          "bbox": {
+            "x": 40,
+            "y": 320,
+            "w": 40,
+            "h": 160
+          },
+          "scores": {
+            "structure": 1,
+            "color": 0,
+            "shape": 0,
+            "layout": 0
+          }
+        },
+        {
+          "id": "bottom-right",
+          "bbox": {
+            "x": 80,
+            "y": 320,
+            "w": 40,
+            "h": 160
+          },
+          "scores": {
+            "structure": 1,
+            "color": 0,
+            "shape": 0,
+            "layout": 0
+          }
+        }
+      ],
+      "diffImageDims": {
+        "w": 120,
+        "h": 480
+      },
+      "cropChip": []
+    }
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "case": "M14",
+  "route": "mcp",
+  "platform": "macos",
+  "drivers": [
+    "app/mcp-server/script/stdio-campaign-verification2.mjs",
+    "app/mcp-server/script/stdio-issue-verification.mjs"
+  ],
+  "checks": [
+    "M14_loop_isolation",
+    "M14_issue131"
+  ],
+  "actual": {
+    "stdio-campaign-verification2:M14_loop_isolation": {
+      "a1": 1,
+      "a2": 2,
+      "b1": 1,
+      "a3": 3,
+      "a2guard": {
+        "stop": false,
+        "step": 2,
+        "maxSteps": 10,
+        "remainingSteps": 8,
+        "reason": "continue",
+        "message": "反復 2/10 回。改善の余地があるため修正を続行できます。",
+        "iteration": 2,
+        "decision": "continue"
+      },
+      "b1guard": {
+        "stop": false,
+        "step": 1,
+        "maxSteps": 10,
+        "remainingSteps": 9,
+        "reason": "continue",
+        "message": "反復 1/10 回。改善の余地があるため修正を続行できます。",
+        "iteration": 1,
+        "decision": "continue"
+      }
+    },
+    "stdio-issue-verification:M14_issue131": {
+      "campaignASteps": [
+        1,
+        2,
+        3
+      ],
+      "campaignBFirstStep": 1,
+      "distinctStoredSourceKeys": true,
+      "resumedStopReason": "regression"
+    }
+  }
+}

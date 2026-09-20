@@ -1,0 +1,17 @@
+{
+  "case": "M07",
+  "route": "mcp",
+  "platform": "macos",
+  "drivers": [
+    "app/mcp-server/script/stdio-campaign-verification.mjs"
+  ],
+  "checks": [
+    "M07_crop_region"
+  ],
+  "actual": {
+    "stdio-campaign-verification:M07_crop_region": {
+      "regionCount": 1,
+      "unknownProject": false
+    }
+  }
+}

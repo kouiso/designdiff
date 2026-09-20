@@ -1,0 +1,365 @@
+{
+  "sourceKey": "local:/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/input-frame-b.png",
+  "campaigns": [
+    {
+      "campaignId": "4b37f9a2-48d6-4996-9de3-81467ee0f249",
+      "sourceKey": "local:/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/input-frame-b.png",
+      "designSource": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/input-frame-b.png",
+      "startedAt": 1789911578124,
+      "updatedAt": 1789911578452,
+      "endedAt": 1789911578452,
+      "endReason": "no-regression",
+      "endMessage": "PASS に到達しました (反復 2 回)。ループを終了してください。",
+      "iterations": [
+        {
+          "comparisonId": "cmp-5852303d-5952-47bd-8c84-cfd3729d0640",
+          "comparisonConditions": {
+            "status": "unverified",
+            "design": {
+              "canvas": {
+                "width": 390,
+                "height": 844
+              },
+              "canvasSource": "image-metadata",
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
+            },
+            "screenshot": {
+              "canvas": {
+                "width": 390,
+                "height": 844
+              },
+              "canvasSource": "image-metadata",
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
+            },
+            "differences": [],
+            "message": "表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。"
+          },
+          "matchRate": 98.54,
+          "diffPixelCount": 4800,
+          "regionCount": 2,
+          "structuralVerdict": "fail",
+          "status": "FAIL",
+          "timestamp": 1789911578124,
+          "diffImagePath": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/figdiff-home/results/diff-cmp-5852303d-5952-47bd-8c84-cfd3729d0640.png"
+        },
+        {
+          "comparisonId": "cmp-6e859357-46d0-4ecb-8283-0e8474e845e3",
+          "comparisonConditions": {
+            "status": "unverified",
+            "design": {
+              "canvas": {
+                "width": 390,
+                "height": 844
+              },
+              "canvasSource": "image-metadata",
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
+            },
+            "screenshot": {
+              "canvas": {
+                "width": 390,
+                "height": 844
+              },
+              "canvasSource": "image-metadata",
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
+            },
+            "differences": [],
+            "message": "表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。"
+          },
+          "matchRate": 100,
+          "diffPixelCount": 0,
+          "regionCount": 0,
+          "perceptibleDiffRatio": 0,
+          "structuralVerdict": "pass",
+          "status": "PASS",
+          "timestamp": 1789911578452
+        }
+      ]
+    },
+    {
+      "campaignId": "7b4aa204-b65b-46a7-8400-0a71ad1f4010",
+      "sourceKey": "local:/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/input-frame-b.png",
+      "designSource": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/input-frame-b.png",
+      "startedAt": 1789911578789,
+      "updatedAt": 1789911581509,
+      "endedAt": 1789911581509,
+      "endReason": "regression",
+      "endMessage": "直近3回の比較結果（matchRate・diffPixelCount・差分領域数）が完全に同一です。提案された修正が実際には適用/反映されていない可能性が高いため、自動修正を止めて設定（capture_width / crop / node選択）を人間が確認してください。",
+      "iterations": [
+        {
+          "comparisonId": "cmp-80365c00-877c-4623-abaf-be27b682aeb6",
+          "comparisonConditions": {
+            "status": "unverified",
+            "design": {
+              "canvas": {
+                "width": 390,
+                "height": 844
+              },
+              "canvasSource": "image-metadata",
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
+            },
+            "screenshot": {
+              "canvas": {
+                "width": 390,
+                "height": 844
+              },
+              "canvasSource": "image-metadata",
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
+            },
+            "differences": [],
+            "message": "表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。"
+          },
+          "matchRate": 98.54,
+          "diffPixelCount": 4800,
+          "regionCount": 2,
+          "structuralVerdict": "fail",
+          "status": "FAIL",
+          "timestamp": 1789911578789,
+          "diffImagePath": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/figdiff-home/results/diff-cmp-80365c00-877c-4623-abaf-be27b682aeb6.png"
+        },
+        {
+          "comparisonId": "cmp-e18e21f5-002f-42d7-9fce-41dd0d440589",
+          "comparisonConditions": {
+            "status": "unverified",
+            "design": {
+              "canvas": {
+                "width": 390,
+                "height": 844
+              },
+              "canvasSource": "image-metadata",
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
+            },
+            "screenshot": {
+              "canvas": {
+                "width": 390,
+                "height": 844
+              },
+              "canvasSource": "image-metadata",
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
+            },
+            "differences": [],
+            "message": "表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。"
+          },
+          "matchRate": 98.54,
+          "diffPixelCount": 4800,
+          "regionCount": 2,
+          "structuralVerdict": "fail",
+          "status": "FAIL",
+          "timestamp": 1789911581167,
+          "diffImagePath": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/figdiff-home/results/diff-cmp-e18e21f5-002f-42d7-9fce-41dd0d440589.png"
+        },
+        {
+          "comparisonId": "cmp-59e2faa4-7de1-4121-828b-1e2b454d2dc3",
+          "comparisonConditions": {
+            "status": "unverified",
+            "design": {
+              "canvas": {
+                "width": 390,
+                "height": 844
+              },
+              "canvasSource": "image-metadata",
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
+            },
+            "screenshot": {
+              "canvas": {
+                "width": 390,
+                "height": 844
+              },
+              "canvasSource": "image-metadata",
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
+            },
+            "differences": [],
+            "message": "表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。"
+          },
+          "matchRate": 98.54,
+          "diffPixelCount": 4800,
+          "regionCount": 2,
+          "structuralVerdict": "fail",
+          "status": "FAIL",
+          "timestamp": 1789911581509,
+          "diffImagePath": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/figdiff-home/results/diff-cmp-59e2faa4-7de1-4121-828b-1e2b454d2dc3.png"
+        }
+      ]
+    },
+    {
+      "campaignId": "804c0543-589d-43a4-bb36-d9b0ec5e47ef",
+      "sourceKey": "local:/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/input-frame-b.png",
+      "designSource": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/input-frame-b.png",
+      "startedAt": 1789911581852,
+      "updatedAt": 1789911581852,
+      "endedAt": 1789911581852,
+      "endReason": "no-regression",
+      "endMessage": "PASS に到達しました (反復 1 回)。ループを終了してください。",
+      "iterations": [
+        {
+          "comparisonId": "cmp-bdc4f7bc-0217-4b91-9462-707e224635a4",
+          "comparisonConditions": {
+            "status": "unverified",
+            "design": {
+              "canvas": {
+                "width": 390,
+                "height": 844
+              },
+              "canvasSource": "image-metadata",
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
+            },
+            "screenshot": {
+              "canvas": {
+                "width": 390,
+                "height": 844
+              },
+              "canvasSource": "image-metadata",
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
+            },
+            "differences": [],
+            "message": "表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。"
+          },
+          "matchRate": 100,
+          "diffPixelCount": 0,
+          "regionCount": 0,
+          "perceptibleDiffRatio": 0,
+          "structuralVerdict": "pass",
+          "status": "PASS",
+          "timestamp": 1789911581852
+        }
+      ]
+    },
+    {
+      "campaignId": "d5b639e5-add2-40c0-9c88-7692429d7289",
+      "sourceKey": "local:/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/input-frame-b.png",
+      "designSource": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/input-frame-b.png",
+      "startedAt": 1789911583908,
+      "updatedAt": 1789911584245,
+      "iterations": [
+        {
+          "comparisonId": "cmp-49f50bfc-a1b5-4e65-a469-cf984b865ed9",
+          "comparisonConditions": {
+            "status": "unverified",
+            "design": {
+              "canvas": {
+                "width": 390,
+                "height": 844
+              },
+              "canvasSource": "image-metadata",
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
+            },
+            "screenshot": {
+              "canvas": {
+                "width": 390,
+                "height": 844
+              },
+              "canvasSource": "image-metadata",
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
+            },
+            "differences": [],
+            "message": "表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。"
+          },
+          "matchRate": 98.54,
+          "diffPixelCount": 4800,
+          "regionCount": 2,
+          "structuralVerdict": "fail",
+          "status": "FAIL",
+          "timestamp": 1789911583908,
+          "diffImagePath": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/figdiff-home/results/diff-cmp-49f50bfc-a1b5-4e65-a469-cf984b865ed9.png"
+        },
+        {
+          "comparisonId": "cmp-a05b36d0-71f5-4431-9797-4c55a6528f25",
+          "comparisonConditions": {
+            "status": "unverified",
+            "design": {
+              "canvas": {
+                "width": 390,
+                "height": 844
+              },
+              "canvasSource": "image-metadata",
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
+            },
+            "screenshot": {
+              "canvas": {
+                "width": 390,
+                "height": 844
+              },
+              "canvasSource": "image-metadata",
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
+            },
+            "differences": [],
+            "message": "表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。"
+          },
+          "matchRate": 100,
+          "diffPixelCount": 0,
+          "regionCount": 0,
+          "perceptibleDiffRatio": 0,
+          "structuralVerdict": "pass",
+          "status": "PASS",
+          "timestamp": 1789911584245
+        }
+      ],
+      "endedAt": 1789911584245,
+      "endReason": "no-regression",
+      "endMessage": "PASS に到達しました (反復 2 回)。ループを終了してください。"
+    }
+  ]
+}

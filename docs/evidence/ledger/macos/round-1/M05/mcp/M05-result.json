@@ -1,0 +1,17 @@
+{
+  "case": "M05",
+  "route": "mcp",
+  "platform": "macos",
+  "drivers": [
+    "app/mcp-server/script/stdio-campaign-verification.mjs"
+  ],
+  "checks": [
+    "M05_screenshot_url"
+  ],
+  "actual": {
+    "stdio-campaign-verification:M05_screenshot_url": {
+      "matchRate": 98.13,
+      "status": "UNCERTAIN"
+    }
+  }
+}

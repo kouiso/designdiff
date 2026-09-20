@@ -1,0 +1,187 @@
+{
+  "comparisonId": "cmp-1789912368310",
+  "matchRate": 95.06,
+  "diffPixelCount": 400,
+  "totalPixelCount": 8100,
+  "diffRegions": [
+    {
+      "id": 0,
+      "bounds": {
+        "x": 5,
+        "y": 5,
+        "width": 20,
+        "height": 20
+      },
+      "diffPixelCount": 400,
+      "nearbyNodeIds": [],
+      "nearbyNodeNames": []
+    }
+  ],
+  "suggestion": "compare.suggestionMinor",
+  "diffReport": {
+    "alignment": {
+      "translation": {
+        "x": 0,
+        "y": 0
+      },
+      "source": "none",
+      "applied": false,
+      "baselineResidual": 0.04938271604938271,
+      "correctedResidual": 0.04938271604938271,
+      "scale": {
+        "x": 1,
+        "y": 1
+      },
+      "rotation": 0,
+      "confidence": 1,
+      "residual": 0.04938271604938271
+    },
+    "regionScores": [
+      {
+        "regionId": "top-left",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "w": 30,
+          "h": 30
+        },
+        "structure": 0.006826476188804648,
+        "color": 44.44444616296411,
+        "shape": 1,
+        "layout": 0
+      },
+      {
+        "regionId": "top-center",
+        "bbox": {
+          "x": 30,
+          "y": 0,
+          "w": 30,
+          "h": 30
+        },
+        "structure": 1,
+        "color": 0,
+        "shape": 0,
+        "layout": 0
+      },
+      {
+        "regionId": "top-right",
+        "bbox": {
+          "x": 60,
+          "y": 0,
+          "w": 30,
+          "h": 30
+        },
+        "structure": 1,
+        "color": 0,
+        "shape": 0,
+        "layout": 0
+      },
+      {
+        "regionId": "middle-left",
+        "bbox": {
+          "x": 0,
+          "y": 30,
+          "w": 30,
+          "h": 30
+        },
+        "structure": 1,
+        "color": 0,
+        "shape": 0,
+        "layout": 0
+      },
+      {
+        "regionId": "middle-center",
+        "bbox": {
+          "x": 30,
+          "y": 30,
+          "w": 30,
+          "h": 30
+        },
+        "structure": 1,
+        "color": 0,
+        "shape": 0,
+        "layout": 0
+      },
+      {
+        "regionId": "middle-right",
+        "bbox": {
+          "x": 60,
+          "y": 30,
+          "w": 30,
+          "h": 30
+        },
+        "structure": 1,
+        "color": 0,
+        "shape": 0,
+        "layout": 0
+      },
+      {
+        "regionId": "bottom-left",
+        "bbox": {
+          "x": 0,
+          "y": 60,
+          "w": 30,
+          "h": 30
+        },
+        "structure": 1,
+        "color": 0,
+        "shape": 0,
+        "layout": 0
+      },
+      {
+        "regionId": "bottom-center",
+        "bbox": {
+          "x": 30,
+          "y": 60,
+          "w": 30,
+          "h": 30
+        },
+        "structure": 1,
+        "color": 0,
+        "shape": 0,
+        "layout": 0
+      },
+      {
+        "regionId": "bottom-right",
+        "bbox": {
+          "x": 60,
+          "y": 60,
+          "w": 30,
+          "h": 30
+        },
+        "structure": 1,
+        "color": 0,
+        "shape": 0,
+        "layout": 0
+      }
+    ],
+    "issues": [
+      {
+        "regionId": "top-left",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "w": 30,
+          "h": 30
+        },
+        "kind": "color",
+        "severity": "critical",
+        "evidence": {
+          "signal": "delta_e_2000",
+          "value": 44.44444616296411,
+          "threshold": 2,
+          "expected": "< 2",
+          "actual": 44.44444616296411
+        },
+        "suggestedCssFix": "配色差分が大きいセクションです。該当エリアの色トークンをデザイン基準へ合わせてください。"
+      }
+    ],
+    "weightedAggregate": {
+      "weightedStructure": 0.8896473862432002,
+      "weightedColor": 4.9382717958849,
+      "totalWeight": 1.0000000000000002
+    },
+    "aggregateVerdict": "fail",
+    "rationale": "critical severity issue detected; weakest region top-left (structure 0.007, color ΔE 44.444; lower=better, critical threshold 2)"
+  }
+}
