@@ -1,0 +1,29 @@
+{
+  "case": "C04",
+  "route": "desktop",
+  "platform": "windows",
+  "drivers": [
+    "app/desktop/e2e/desktop-c-cases.mjs"
+  ],
+  "checks": [
+    "C04"
+  ],
+  "actual": {
+    "desktop-c-cases:C04": {
+      "dpr2": {
+        "matchRate": 100,
+        "diffImageDims": {
+          "w": 240,
+          "h": 160
+        }
+      },
+      "dpr3": {
+        "matchRate": 99,
+        "diffImageDims": {
+          "w": 360,
+          "h": 240
+        }
+      }
+    }
+  }
+}

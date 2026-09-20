@@ -1,0 +1,50 @@
+{
+  "surface": "mcp",
+  "diffPixelCount": 832,
+  "matchRate": 90.97,
+  "regions": [
+    {
+      "x": 16,
+      "y": 16,
+      "width": 32,
+      "height": 24
+    },
+    {
+      "x": 4,
+      "y": 64,
+      "width": 8,
+      "height": 8
+    }
+  ],
+  "diffPixelsSha256": "7d0da44f7b88c359673cd0d3ede91c01a1dc9761646f4a4bcc62885594fe890b",
+  "diffImagePath": "C:\\Users\\Administrator\\repos\\designdiff\\docs\\evidence\\round1-windows\\x08\\figdiff-home\\results\\diff-cmp-badb7dcb-0df5-41a9-96f2-65a205927ce4.png",
+  "expectedDiffPixelCount": 832,
+  "expectedRegions": [
+    {
+      "x": 16,
+      "y": 16,
+      "width": 32,
+      "height": 24
+    },
+    {
+      "x": 4,
+      "y": 64,
+      "width": 8,
+      "height": 8
+    }
+  ],
+  "protocolErrors": [],
+  "results": {
+    "X08": {
+      "status": "PASS",
+      "expected": "mcp 面が同一検体で diffPixelCount=832・領域=2 を返す",
+      "actual": {
+        "diffPixelCount": 832,
+        "matchRate": 90.97,
+        "regionCount": 2,
+        "diffPixelsSha256": "7d0da44f7b88c359673cd0d3ede91c01a1dc9761646f4a4bcc62885594fe890b",
+        "protocolErrors": 0
+      }
+    }
+  }
+}

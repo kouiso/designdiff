@@ -1,0 +1,513 @@
+{
+  "case": "C08",
+  "route": "desktop",
+  "platform": "windows",
+  "drivers": [
+    "app/desktop/e2e/desktop-c-cases.mjs"
+  ],
+  "checks": [
+    "C08"
+  ],
+  "actual": {
+    "desktop-c-cases:C08": {
+      "semantics": "transparent pixels blend onto white (checkerboard=false, v5 compat)",
+      "sameAlpha": {
+        "matchRate": 100,
+        "diffRegions": 0,
+        "diffPixels": 0,
+        "issues": 0,
+        "bboxes": [],
+        "issueKinds": [
+          "top-left",
+          "top-center",
+          "top-right",
+          "middle-left",
+          "middle-center",
+          "middle-right",
+          "bottom-left",
+          "bottom-center",
+          "bottom-right"
+        ],
+        "regionScores": [
+          {
+            "id": "top-left",
+            "bbox": {
+              "x": 0,
+              "y": 0,
+              "w": 40,
+              "h": 26
+            },
+            "scores": {
+              "structure": 1,
+              "color": 0,
+              "shape": 0,
+              "layout": 0
+            }
+          },
+          {
+            "id": "top-center",
+            "bbox": {
+              "x": 40,
+              "y": 0,
+              "w": 40,
+              "h": 26
+            },
+            "scores": {
+              "structure": 1,
+              "color": 0,
+              "shape": 0,
+              "layout": 0
+            }
+          },
+          {
+            "id": "top-right",
+            "bbox": {
+              "x": 80,
+              "y": 0,
+              "w": 40,
+              "h": 26
+            },
+            "scores": {
+              "structure": 1,
+              "color": 0,
+              "shape": 0,
+              "layout": 0
+            }
+          },
+          {
+            "id": "middle-left",
+            "bbox": {
+              "x": 0,
+              "y": 26,
+              "w": 40,
+              "h": 27
+            },
+            "scores": {
+              "structure": 1,
+              "color": 0,
+              "shape": 0,
+              "layout": 0
+            }
+          },
+          {
+            "id": "middle-center",
+            "bbox": {
+              "x": 40,
+              "y": 26,
+              "w": 40,
+              "h": 27
+            },
+            "scores": {
+              "structure": 1,
+              "color": 0,
+              "shape": 0,
+              "layout": 0
+            }
+          },
+          {
+            "id": "middle-right",
+            "bbox": {
+              "x": 80,
+              "y": 26,
+              "w": 40,
+              "h": 27
+            },
+            "scores": {
+              "structure": 1,
+              "color": 0,
+              "shape": 0,
+              "layout": 0
+            }
+          },
+          {
+            "id": "bottom-left",
+            "bbox": {
+              "x": 0,
+              "y": 53,
+              "w": 40,
+              "h": 27
+            },
+            "scores": {
+              "structure": 1,
+              "color": 0,
+              "shape": 0,
+              "layout": 0
+            }
+          },
+          {
+            "id": "bottom-center",
+            "bbox": {
+              "x": 40,
+              "y": 53,
+              "w": 40,
+              "h": 27
+            },
+            "scores": {
+              "structure": 1,
+              "color": 0,
+              "shape": 0,
+              "layout": 0
+            }
+          },
+          {
+            "id": "bottom-right",
+            "bbox": {
+              "x": 80,
+              "y": 53,
+              "w": 40,
+              "h": 27
+            },
+            "scores": {
+              "structure": 1,
+              "color": 0,
+              "shape": 0,
+              "layout": 0
+            }
+          }
+        ],
+        "diffImageDims": {
+          "w": 120,
+          "h": 80
+        },
+        "cropChip": []
+      },
+      "onWhite": {
+        "matchRate": 100,
+        "diffRegions": 0,
+        "diffPixels": 0,
+        "issues": 8,
+        "bboxes": [
+          "x:0, y:0, w:40, h:26",
+          "x:40, y:0, w:40, h:26",
+          "x:80, y:0, w:40, h:26",
+          "x:0, y:26, w:40, h:27",
+          "x:80, y:26, w:40, h:27",
+          "x:0, y:53, w:40, h:27",
+          "x:40, y:53, w:40, h:27",
+          "x:80, y:53, w:40, h:27"
+        ],
+        "issueKinds": [
+          "top-left",
+          "top-center",
+          "top-right",
+          "middle-left",
+          "middle-center",
+          "middle-right",
+          "bottom-left",
+          "bottom-center",
+          "bottom-right",
+          "color",
+          "color",
+          "color",
+          "color",
+          "color",
+          "color",
+          "color",
+          "color"
+        ],
+        "regionScores": [
+          {
+            "id": "top-left",
+            "bbox": {
+              "x": 0,
+              "y": 0,
+              "w": 40,
+              "h": 26
+            },
+            "scores": {
+              "structure": 0,
+              "color": 100,
+              "shape": 0,
+              "layout": 0
+            }
+          },
+          {
+            "id": "top-center",
+            "bbox": {
+              "x": 40,
+              "y": 0,
+              "w": 40,
+              "h": 26
+            },
+            "scores": {
+              "structure": 0,
+              "color": 96.154,
+              "shape": 0,
+              "layout": 0
+            }
+          },
+          {
+            "id": "top-right",
+            "bbox": {
+              "x": 80,
+              "y": 0,
+              "w": 40,
+              "h": 26
+            },
+            "scores": {
+              "structure": 0,
+              "color": 100,
+              "shape": 0,
+              "layout": 0
+            }
+          },
+          {
+            "id": "middle-left",
+            "bbox": {
+              "x": 0,
+              "y": 26,
+              "w": 40,
+              "h": 27
+            },
+            "scores": {
+              "structure": 0,
+              "color": 100,
+              "shape": 0,
+              "layout": 0
+            }
+          },
+          {
+            "id": "middle-center",
+            "bbox": {
+              "x": 40,
+              "y": 26,
+              "w": 40,
+              "h": 27
+            },
+            "scores": {
+              "structure": 1,
+              "color": 0,
+              "shape": 0,
+              "layout": 0
+            }
+          },
+          {
+            "id": "middle-right",
+            "bbox": {
+              "x": 80,
+              "y": 26,
+              "w": 40,
+              "h": 27
+            },
+            "scores": {
+              "structure": 0,
+              "color": 100,
+              "shape": 0,
+              "layout": 0
+            }
+          },
+          {
+            "id": "bottom-left",
+            "bbox": {
+              "x": 0,
+              "y": 53,
+              "w": 40,
+              "h": 27
+            },
+            "scores": {
+              "structure": 0,
+              "color": 100,
+              "shape": 0,
+              "layout": 0
+            }
+          },
+          {
+            "id": "bottom-center",
+            "bbox": {
+              "x": 40,
+              "y": 53,
+              "w": 40,
+              "h": 27
+            },
+            "scores": {
+              "structure": 0,
+              "color": 92.593,
+              "shape": 0,
+              "layout": 0
+            }
+          },
+          {
+            "id": "bottom-right",
+            "bbox": {
+              "x": 80,
+              "y": 53,
+              "w": 40,
+              "h": 27
+            },
+            "scores": {
+              "structure": 0,
+              "color": 100,
+              "shape": 0,
+              "layout": 0
+            }
+          }
+        ],
+        "diffImageDims": {
+          "w": 120,
+          "h": 80
+        },
+        "cropChip": []
+      },
+      "onBlack": {
+        "matchRate": 13,
+        "diffRegions": 1,
+        "diffPixels": 8400,
+        "issues": 0,
+        "bboxes": [],
+        "issueKinds": [
+          "top-left",
+          "top-center",
+          "top-right",
+          "middle-left",
+          "middle-center",
+          "middle-right",
+          "bottom-left",
+          "bottom-center",
+          "bottom-right"
+        ],
+        "regionScores": [
+          {
+            "id": "top-left",
+            "bbox": {
+              "x": 0,
+              "y": 0,
+              "w": 40,
+              "h": 26
+            },
+            "scores": {
+              "structure": 1,
+              "color": 0,
+              "shape": 0,
+              "layout": 0
+            }
+          },
+          {
+            "id": "top-center",
+            "bbox": {
+              "x": 40,
+              "y": 0,
+              "w": 40,
+              "h": 26
+            },
+            "scores": {
+              "structure": 1,
+              "color": 0,
+              "shape": 0,
+              "layout": 0
+            }
+          },
+          {
+            "id": "top-right",
+            "bbox": {
+              "x": 80,
+              "y": 0,
+              "w": 40,
+              "h": 26
+            },
+            "scores": {
+              "structure": 1,
+              "color": 0,
+              "shape": 0,
+              "layout": 0
+            }
+          },
+          {
+            "id": "middle-left",
+            "bbox": {
+              "x": 0,
+              "y": 26,
+              "w": 40,
+              "h": 27
+            },
+            "scores": {
+              "structure": 1,
+              "color": 0,
+              "shape": 0,
+              "layout": 0
+            }
+          },
+          {
+            "id": "middle-center",
+            "bbox": {
+              "x": 40,
+              "y": 26,
+              "w": 40,
+              "h": 27
+            },
+            "scores": {
+              "structure": 1,
+              "color": 0,
+              "shape": 0,
+              "layout": 0
+            }
+          },
+          {
+            "id": "middle-right",
+            "bbox": {
+              "x": 80,
+              "y": 26,
+              "w": 40,
+              "h": 27
+            },
+            "scores": {
+              "structure": 1,
+              "color": 0,
+              "shape": 0,
+              "layout": 0
+            }
+          },
+          {
+            "id": "bottom-left",
+            "bbox": {
+              "x": 0,
+              "y": 53,
+              "w": 40,
+              "h": 27
+            },
+            "scores": {
+              "structure": 1,
+              "color": 0,
+              "shape": 0,
+              "layout": 0
+            }
+          },
+          {
+            "id": "bottom-center",
+            "bbox": {
+              "x": 40,
+              "y": 53,
+              "w": 40,
+              "h": 27
+            },
+            "scores": {
+              "structure": 1,
+              "color": 0,
+              "shape": 0,
+              "layout": 0
+            }
+          },
+          {
+            "id": "bottom-right",
+            "bbox": {
+              "x": 80,
+              "y": 53,
+              "w": 40,
+              "h": 27
+            },
+            "scores": {
+              "structure": 1,
+              "color": 0,
+              "shape": 0,
+              "layout": 0
+            }
+          }
+        ],
+        "diffImageDims": {
+          "w": 120,
+          "h": 80
+        },
+        "cropChip": []
+      }
+    }
+  }
+}

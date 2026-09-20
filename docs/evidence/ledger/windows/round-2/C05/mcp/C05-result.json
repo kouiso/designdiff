@@ -1,0 +1,17 @@
+{
+  "case": "C05",
+  "route": "mcp",
+  "platform": "windows",
+  "drivers": [
+    "app/mcp-server/script/stdio-campaign-verification.mjs"
+  ],
+  "checks": [
+    "C05_size_mismatch"
+  ],
+  "actual": {
+    "stdio-campaign-verification:C05_size_mismatch": {
+      "matchRate": 99.49,
+      "status": "UNCERTAIN"
+    }
+  }
+}

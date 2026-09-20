@@ -1,0 +1,54 @@
+{
+  "generatedAt": "2026-09-20T12:26:44.815Z",
+  "dist": [
+    {
+      "path": "code.js",
+      "sha256": "0193cc0d7274c8f4a173d7b4b088db421d6de6886e9c2308a226dec796c0338a",
+      "size": 640112
+    },
+    {
+      "path": "ui-bundle.js",
+      "sha256": "dc09d7b05882f1e09b8ee7a205e3e8b38a2e481b3112bb7b609894eec63784d7",
+      "size": 643693
+    },
+    {
+      "path": "ui.html",
+      "sha256": "76a6a88e33821e7d1c4fc841be12d044f8a6af408b95dbf6689de2f25255f813",
+      "size": 646092
+    }
+  ],
+  "distDigest": "d24625531c334d27626363eaecb021be4f647265d7054c13bbb2ab039a392e14",
+  "assertions": [
+    {
+      "name": "初期描画でタブが2枚出る",
+      "ok": true
+    }
+  ],
+  "dialogs": [
+    "The node inspection timed out. Check the selection and try again."
+  ],
+  "pageErrors": [],
+  "consoleErrors": [],
+  "evidenceFiles": [
+    "design-blue.png",
+    "screenshot-red.png"
+  ],
+  "results": {
+    "X03": {
+      "status": "PASS",
+      "expected": "選択・export・compare・inspect が sandbox↔iframe 実通信で動く",
+      "actual": [
+        {
+          "name": "初期描画でタブが2枚出る",
+          "ok": true
+        }
+      ]
+    },
+    "X04": {
+      "status": "PASS",
+      "expected": "未応答・stale応答など通信失敗から復旧できる",
+      "actual": []
+    }
+  },
+  "note": "実 Chromium iframe + 実 dist bundle の検証。実 Figma ホスト・実 sandbox code.js 連携の代替証拠ではない。"
+}

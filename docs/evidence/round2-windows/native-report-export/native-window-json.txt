@@ -1,0 +1,7 @@
+0x3e037a "Save As"
+0x3e037a "Save File"
+0x6c030a "FigDiff"
+0x201d8 "New Tab - Google Chrome for Testing"
+0x30150 "Containers - Docker Desktop"
+0x2014c "Windows Input Experience"
+0x100ba "Program Manager"

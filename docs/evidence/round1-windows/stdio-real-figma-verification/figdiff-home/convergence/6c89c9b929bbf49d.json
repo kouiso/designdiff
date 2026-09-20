@@ -1,0 +1,198 @@
+{
+  "sourceKey": "figma:15giveDl0JkKddxasif6VA:9525:4760",
+  "campaigns": [
+    {
+      "campaignId": "a1492a85-8076-49c8-aa6f-7237918e3c18",
+      "sourceKey": "figma:15giveDl0JkKddxasif6VA:9525:4760",
+      "designSource": "https://www.figma.com/design/15giveDl0JkKddxasif6VA/figdiff-verify?node-id=9525-4760",
+      "startedAt": 1789906927576,
+      "updatedAt": 1789906931079,
+      "endedAt": 1789906931079,
+      "endReason": "no-regression",
+      "endMessage": "PASS に到達しました (反復 2 回)。ループを終了してください。",
+      "iterations": [
+        {
+          "comparisonId": "cmp-5fffef40-6bdc-4c11-b17d-7cc5fed923f0",
+          "comparisonConditions": {
+            "status": "unverified",
+            "design": {
+              "canvas": {
+                "width": 390,
+                "height": 691
+              },
+              "canvasSource": "image-metadata",
+              "requested": {
+                "pixelRatio": 1,
+                "source": "figma-export-request"
+              },
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
+            },
+            "screenshot": {
+              "canvas": {
+                "width": 390,
+                "height": 844
+              },
+              "canvasSource": "image-metadata",
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
+            },
+            "differences": [],
+            "message": "表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。"
+          },
+          "matchRate": 83.49,
+          "diffPixelCount": 44485,
+          "regionCount": 90,
+          "structuralVerdict": "fail",
+          "status": "FAIL",
+          "timestamp": 1789906927576,
+          "diffImagePath": "C:\\Users\\Administrator\\repos\\designdiff\\docs\\evidence\\round1-windows\\stdio-real-figma-verification\\figdiff-home\\results\\diff-cmp-5fffef40-6bdc-4c11-b17d-7cc5fed923f0.png"
+        },
+        {
+          "comparisonId": "cmp-fc23f3e8-f037-4d82-a967-f5bf5f880742",
+          "comparisonConditions": {
+            "status": "unverified",
+            "design": {
+              "canvas": {
+                "width": 390,
+                "height": 691
+              },
+              "canvasSource": "image-metadata",
+              "requested": {
+                "pixelRatio": 1,
+                "source": "figma-export-request"
+              },
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
+            },
+            "screenshot": {
+              "canvas": {
+                "width": 390,
+                "height": 691
+              },
+              "canvasSource": "image-metadata",
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
+            },
+            "differences": [],
+            "message": "表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。"
+          },
+          "matchRate": 94.21,
+          "diffPixelCount": 15594,
+          "regionCount": 1,
+          "structuralVerdict": "fail",
+          "status": "FAIL",
+          "timestamp": 1789906930142,
+          "diffImagePath": "C:\\Users\\Administrator\\repos\\designdiff\\docs\\evidence\\round1-windows\\stdio-real-figma-verification\\figdiff-home\\results\\diff-cmp-fc23f3e8-f037-4d82-a967-f5bf5f880742.png"
+        },
+        {
+          "comparisonId": "cmp-8f4e2298-f0c7-4aff-9915-fd4fa3afea24",
+          "comparisonConditions": {
+            "status": "unverified",
+            "design": {
+              "canvas": {
+                "width": 390,
+                "height": 691
+              },
+              "canvasSource": "image-metadata",
+              "requested": {
+                "pixelRatio": 1,
+                "source": "figma-export-request"
+              },
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
+            },
+            "screenshot": {
+              "canvas": {
+                "width": 390,
+                "height": 691
+              },
+              "canvasSource": "image-metadata",
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
+            },
+            "differences": [],
+            "message": "表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。"
+          },
+          "matchRate": 100,
+          "diffPixelCount": 0,
+          "regionCount": 0,
+          "perceptibleDiffRatio": 0,
+          "structuralVerdict": "pass",
+          "status": "PASS",
+          "timestamp": 1789906931079
+        }
+      ]
+    },
+    {
+      "campaignId": "12e8fd8f-a485-42c9-a617-937f4bc6ef89",
+      "sourceKey": "figma:15giveDl0JkKddxasif6VA:9525:4760",
+      "designSource": "https://www.figma.com/design/15giveDl0JkKddxasif6VA/figdiff-verify?node-id=9525-4760",
+      "startedAt": 1789906932012,
+      "updatedAt": 1789906932012,
+      "iterations": [
+        {
+          "comparisonId": "cmp-cf1e6a83-6377-4fe3-b2b0-bce6e8ecbb70",
+          "comparisonConditions": {
+            "status": "unverified",
+            "design": {
+              "canvas": {
+                "width": 390,
+                "height": 691
+              },
+              "canvasSource": "image-metadata",
+              "requested": {
+                "pixelRatio": 1,
+                "source": "figma-export-request"
+              },
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
+            },
+            "screenshot": {
+              "canvas": {
+                "width": 390,
+                "height": 691
+              },
+              "canvasSource": "image-metadata",
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
+            },
+            "differences": [],
+            "message": "表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。"
+          },
+          "matchRate": 94.21,
+          "diffPixelCount": 15594,
+          "regionCount": 1,
+          "structuralVerdict": "fail",
+          "status": "FAIL",
+          "timestamp": 1789906932012,
+          "diffImagePath": "C:\\Users\\Administrator\\repos\\designdiff\\docs\\evidence\\round1-windows\\stdio-real-figma-verification\\figdiff-home\\results\\diff-cmp-cf1e6a83-6377-4fe3-b2b0-bce6e8ecbb70.png"
+        }
+      ]
+    }
+  ]
+}

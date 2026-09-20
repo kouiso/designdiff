@@ -1,0 +1,38 @@
+{
+  "case": "C02",
+  "route": "desktop",
+  "platform": "windows",
+  "drivers": [
+    "app/desktop/e2e/desktop-c-cases.mjs"
+  ],
+  "checks": [
+    "C02"
+  ],
+  "actual": {
+    "desktop-c-cases:C02": {
+      "shifts": {
+        "e1": {
+          "matchRate": 96,
+          "diffPixels": 418,
+          "diffRegions": 4
+        },
+        "e2": {
+          "matchRate": 91,
+          "diffPixels": 829,
+          "diffRegions": 3
+        },
+        "s1": {
+          "matchRate": 97,
+          "diffPixels": 335,
+          "diffRegions": 2
+        },
+        "w2": {
+          "matchRate": 91,
+          "diffPixels": 843,
+          "diffRegions": 2
+        }
+      },
+      "note": "desktop exposes no alignment correction toggle; shift tracked as diff"
+    }
+  }
+}

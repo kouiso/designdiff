@@ -1,0 +1,39 @@
+{
+  "case": "C05",
+  "route": "desktop",
+  "platform": "windows",
+  "drivers": [
+    "app/desktop/e2e/desktop-c-cases.mjs"
+  ],
+  "checks": [
+    "C05"
+  ],
+  "actual": {
+    "desktop-c-cases:C05": {
+      "padded": {
+        "matchRate": 41,
+        "diffPixels": 8330,
+        "diffImageDims": {
+          "w": 140,
+          "h": 100
+        }
+      },
+      "wide": {
+        "matchRate": 59,
+        "diffPixels": 4584,
+        "diffImageDims": {
+          "w": 140,
+          "h": 80
+        }
+      },
+      "tall": {
+        "matchRate": 80,
+        "diffPixels": 2400,
+        "diffImageDims": {
+          "w": 120,
+          "h": 100
+        }
+      }
+    }
+  }
+}

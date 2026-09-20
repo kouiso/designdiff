@@ -1,0 +1,17 @@
+{
+  "case": "C08",
+  "route": "mcp",
+  "platform": "windows",
+  "drivers": [
+    "app/mcp-server/script/stdio-campaign-verification.mjs"
+  ],
+  "checks": [
+    "C08_transparent_design"
+  ],
+  "actual": {
+    "stdio-campaign-verification:C08_transparent_design": {
+      "onWhite": 0,
+      "onBlack": 324360
+    }
+  }
+}

@@ -1,0 +1,64 @@
+{
+  "case": "M01",
+  "route": "mcp",
+  "platform": "windows",
+  "drivers": [
+    "app/mcp-server/script/stdio-m01-verification.mjs"
+  ],
+  "checks": [
+    "M01_tools",
+    "M01_schema_keys",
+    "M01_first_call"
+  ],
+  "actual": {
+    "stdio-m01-verification:M01_tools": {
+      "count": 17,
+      "names": [
+        "compare_animation",
+        "compare_design",
+        "create_project",
+        "delete_ignore_region",
+        "delete_project",
+        "generate_diff_report",
+        "get_crop_region",
+        "get_design_tokens",
+        "get_ignore_regions",
+        "inspect_node",
+        "list_figma_frames",
+        "list_projects",
+        "report_issue",
+        "set_crop_region",
+        "set_figma_token",
+        "set_ignore_regions",
+        "verify_fix"
+      ]
+    },
+    "stdio-m01-verification:M01_schema_keys": [
+      "figma_contents_only",
+      "figma_use_absolute_bounds",
+      "campaign_id",
+      "design_source",
+      "screenshot",
+      "screenshot_url",
+      "capture_device",
+      "capture_device_serial",
+      "capture_scroll",
+      "capture_width",
+      "comparison_conditions",
+      "mask_system_ui",
+      "auto_mask_dynamic",
+      "token_diff",
+      "frame_name",
+      "threshold",
+      "design_background",
+      "profile",
+      "project_id",
+      "ignore_regions"
+    ],
+    "stdio-m01-verification:M01_first_call": {
+      "isError": false,
+      "status": "PASS",
+      "matchRate": 100
+    }
+  }
+}

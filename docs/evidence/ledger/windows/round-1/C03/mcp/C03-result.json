@@ -1,0 +1,61 @@
+{
+  "case": "C03",
+  "route": "mcp",
+  "platform": "windows",
+  "drivers": [
+    "app/mcp-server/script/stdio-campaign-verification2.mjs",
+    "app/mcp-server/script/stdio-issue-verification.mjs"
+  ],
+  "checks": [
+    "C03_defect_bbox",
+    "C03_issue58_localized_geometry"
+  ],
+  "actual": {
+    "stdio-campaign-verification2:C03_defect_bbox": {
+      "matchRate": 99.91,
+      "hitBounds": [
+        {
+          "x": 121,
+          "y": 400,
+          "width": 18,
+          "height": 14
+        }
+      ],
+      "regionCount": 3
+    },
+    "stdio-issue-verification:C03_issue58_localized_geometry": {
+      "diffPixelCount": 143,
+      "diffRegions": [
+        {
+          "bounds": {
+            "x": 90,
+            "y": 336,
+            "width": 13,
+            "height": 11
+          },
+          "diffPixelCount": 143
+        }
+      ],
+      "reportIssues": [
+        {
+          "bbox": {
+            "x": 90,
+            "y": 336,
+            "w": 13,
+            "h": 11
+          },
+          "severity": "critical"
+        },
+        {
+          "bbox": {
+            "x": 90,
+            "y": 336,
+            "w": 13,
+            "h": 11
+          },
+          "severity": "critical"
+        }
+      ]
+    }
+  }
+}

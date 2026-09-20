@@ -1,0 +1,181 @@
+{
+  "case": "C12",
+  "route": "desktop",
+  "platform": "windows",
+  "drivers": [
+    "app/desktop/e2e/desktop-c-cases.mjs"
+  ],
+  "checks": [
+    "C12"
+  ],
+  "actual": {
+    "desktop-c-cases:C12": {
+      "onePixel": {
+        "matchRate": 0,
+        "diffRegions": 0,
+        "diffPixels": 1,
+        "issues": 1,
+        "bboxes": [
+          "x:0, y:0, w:1, h:1"
+        ],
+        "issueKinds": [
+          "top-left",
+          "top-center",
+          "top-right",
+          "middle-left",
+          "middle-center",
+          "middle-right",
+          "bottom-left",
+          "bottom-center",
+          "bottom-right",
+          "color"
+        ],
+        "regionScores": [
+          {
+            "id": "top-left",
+            "bbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "scores": {
+              "structure": 1,
+              "color": 0,
+              "shape": 0,
+              "layout": 0
+            }
+          },
+          {
+            "id": "top-center",
+            "bbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "scores": {
+              "structure": 1,
+              "color": 0,
+              "shape": 0,
+              "layout": 0
+            }
+          },
+          {
+            "id": "top-right",
+            "bbox": {
+              "x": 0,
+              "y": 0,
+              "w": 1,
+              "h": 0
+            },
+            "scores": {
+              "structure": 1,
+              "color": 0,
+              "shape": 0,
+              "layout": 0
+            }
+          },
+          {
+            "id": "middle-left",
+            "bbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "scores": {
+              "structure": 1,
+              "color": 0,
+              "shape": 0,
+              "layout": 0
+            }
+          },
+          {
+            "id": "middle-center",
+            "bbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            },
+            "scores": {
+              "structure": 1,
+              "color": 0,
+              "shape": 0,
+              "layout": 0
+            }
+          },
+          {
+            "id": "middle-right",
+            "bbox": {
+              "x": 0,
+              "y": 0,
+              "w": 1,
+              "h": 0
+            },
+            "scores": {
+              "structure": 1,
+              "color": 0,
+              "shape": 0,
+              "layout": 0
+            }
+          },
+          {
+            "id": "bottom-left",
+            "bbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 1
+            },
+            "scores": {
+              "structure": 1,
+              "color": 0,
+              "shape": 0,
+              "layout": 0
+            }
+          },
+          {
+            "id": "bottom-center",
+            "bbox": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 1
+            },
+            "scores": {
+              "structure": 1,
+              "color": 0,
+              "shape": 0,
+              "layout": 0
+            }
+          },
+          {
+            "id": "bottom-right",
+            "bbox": {
+              "x": 0,
+              "y": 0,
+              "w": 1,
+              "h": 1
+            },
+            "scores": {
+              "structure": 0.923,
+              "color": 28.905,
+              "shape": 0,
+              "layout": 0
+            }
+          }
+        ],
+        "diffImageDims": {
+          "w": 1,
+          "h": 1
+        },
+        "cropChip": []
+      },
+      "missingError": "画像の読み込みに失敗しました: Error: Error invoking remote method 'file:read-local-image': Error: ENOENT: no such file or directory, open 'C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\figdiff-c-cases-R0NyhG\\home\\fixtures\\no-such-image.png'",
+      "corruptError": "[object Event]",
+      "pageErrors": []
+    }
+  }
+}

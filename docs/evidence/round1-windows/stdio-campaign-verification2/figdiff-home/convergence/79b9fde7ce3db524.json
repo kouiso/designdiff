@@ -1,0 +1,58 @@
+{
+  "sourceKey": "campaign:v1:[\"local:C:\\\\Users\\\\Administrator\\\\repos\\\\designdiff\\\\docs\\\\evidence\\\\round1-windows\\\\stdio-campaign-verification2\\\\input-design.png|conditions:675b22c970119aa90b72b11698cccb7cd0dceddfd9bdbf475cee9ac6c85cd612\",\"c13\"]",
+  "campaigns": [
+    {
+      "campaignId": "f3fdad13-2419-4a41-8521-4d7cdc49c51e",
+      "sourceKey": "campaign:v1:[\"local:C:\\\\Users\\\\Administrator\\\\repos\\\\designdiff\\\\docs\\\\evidence\\\\round1-windows\\\\stdio-campaign-verification2\\\\input-design.png|conditions:675b22c970119aa90b72b11698cccb7cd0dceddfd9bdbf475cee9ac6c85cd612\",\"c13\"]",
+      "designSource": "C:\\Users\\Administrator\\repos\\designdiff\\docs\\evidence\\round1-windows\\stdio-campaign-verification2\\input-design.png",
+      "startedAt": 1789906892602,
+      "updatedAt": 1789906892602,
+      "iterations": [
+        {
+          "comparisonId": "cmp-0c210b06-d424-4881-be41-232662a74d58",
+          "comparisonConditions": {
+            "status": "unverified",
+            "design": {
+              "canvas": {
+                "width": 390,
+                "height": 844
+              },
+              "canvasSource": "image-metadata",
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
+            },
+            "screenshot": {
+              "canvas": {
+                "width": 780,
+                "height": 1688
+              },
+              "canvasSource": "image-metadata",
+              "declared": {
+                "viewport": {
+                  "width": 390,
+                  "height": 844
+                },
+                "pixelRatio": 2
+              },
+              "unverified": [
+                "origin"
+              ]
+            },
+            "differences": [],
+            "message": "表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。"
+          },
+          "matchRate": 98.15,
+          "diffPixelCount": 24357,
+          "regionCount": 2,
+          "structuralVerdict": "fail",
+          "status": "FAIL",
+          "timestamp": 1789906892602,
+          "diffImagePath": "C:\\Users\\Administrator\\repos\\designdiff\\docs\\evidence\\round1-windows\\stdio-campaign-verification2\\figdiff-home\\results\\diff-cmp-0c210b06-d424-4881-be41-232662a74d58.png"
+        }
+      ]
+    }
+  ]
+}

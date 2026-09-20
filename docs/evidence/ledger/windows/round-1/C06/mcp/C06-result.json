@@ -1,0 +1,17 @@
+{
+  "case": "C06",
+  "route": "mcp",
+  "platform": "windows",
+  "drivers": [
+    "app/mcp-server/script/stdio-campaign-verification.mjs"
+  ],
+  "checks": [
+    "C06_crop_applied"
+  ],
+  "actual": {
+    "stdio-campaign-verification:C06_crop_applied": {
+      "diffPixelCount": 400,
+      "status": "FAIL"
+    }
+  }
+}

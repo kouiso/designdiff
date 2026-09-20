@@ -1,0 +1,26 @@
+{
+  "savedFiles": [
+    {
+      "format": "json",
+      "path": "C:\\Users\\Administrator\\repos\\designdiff\\docs\\evidence\\round1-windows\\native-report-export\\saved-report.json",
+      "sha256": "bc0a154a5684e690feab4f6d54371499a83dbd338563d220f05a60e2949e5f68"
+    },
+    {
+      "format": "markdown",
+      "path": "C:\\Users\\Administrator\\repos\\designdiff\\docs\\evidence\\round1-windows\\native-report-export\\saved-report.md",
+      "sha256": "f0f520903b4fd6f14ed097960cc06165eb28bcdf6dcb6f3ab80384d1f5495d82"
+    }
+  ],
+  "independentRawDifference": {
+    "count": 400,
+    "bounds": {
+      "x": 5,
+      "y": 5,
+      "width": 20,
+      "height": 20
+    }
+  },
+  "pageErrors": [],
+  "rendererCrashes": [],
+  "nativeDialogMocked": false
+}

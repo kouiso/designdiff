@@ -1,0 +1,97 @@
+{
+  "case": "C10",
+  "route": "mcp",
+  "platform": "windows",
+  "drivers": [
+    "app/mcp-server/script/stdio-campaign-verification2.mjs",
+    "app/mcp-server/script/stdio-issue-verification.mjs"
+  ],
+  "checks": [
+    "C10_small_text_diff",
+    "C10_issue112_real_typography"
+  ],
+  "actual": {
+    "stdio-campaign-verification2:C10_small_text_diff": {
+      "matchRate": 99.25,
+      "regionCount": 2,
+      "largestRegion": {
+        "x": 63,
+        "y": 230,
+        "width": 261,
+        "height": 9
+      },
+      "coversWholePage": false,
+      "status": "FAIL"
+    },
+    "stdio-issue-verification:C10_issue112_real_typography": {
+      "diffPixelCount": 54,
+      "diffRegions": [
+        {
+          "bounds": {
+            "x": 82,
+            "y": 93,
+            "width": 6,
+            "height": 10
+          },
+          "diffPixelCount": 38
+        },
+        {
+          "bounds": {
+            "x": 78,
+            "y": 97,
+            "width": 3,
+            "height": 5
+          },
+          "diffPixelCount": 12
+        }
+      ],
+      "reportIssues": [
+        {
+          "bbox": {
+            "x": 82,
+            "y": 93,
+            "w": 6,
+            "h": 10
+          },
+          "kind": "color",
+          "severity": "critical"
+        },
+        {
+          "bbox": {
+            "x": 78,
+            "y": 97,
+            "w": 3,
+            "h": 5
+          },
+          "kind": "color",
+          "severity": "critical"
+        }
+      ],
+      "implementationDifferenceElement": {
+        "x": 76,
+        "y": 93,
+        "width": 13,
+        "height": 11
+      },
+      "implementationButton": {
+        "x": 44,
+        "y": 152,
+        "width": 160,
+        "height": 40
+      },
+      "durableReport": {
+        "path": "docs\\evidence\\round1-windows\\stdio-issue-verification\\real-typography-report.json",
+        "canonicalJsonSha256": "02f5d60d554939235a7701660784676cb3df0c7509cb4eebf6778dc3448d1d3c",
+        "formattedArtifactSha256": "5900791a84a961df9af99d223d07db55c55661c637634656cb11ee6ed138a9df",
+        "publicPathRedacted": false,
+        "rawProduct": {
+          "path": "docs\\evidence\\round1-windows\\stdio-issue-verification\\real-typography-report.raw.txt",
+          "sha256": "d7a2f3ac52a6592adf436842f68965aa06198cd1b031302807984bdebd88297d",
+          "byteLength": 12052,
+          "mediaType": "application/json",
+          "representation": "exact UTF-8 MCP tool response bytes; intentionally not formatter-normalized"
+        }
+      }
+    }
+  }
+}

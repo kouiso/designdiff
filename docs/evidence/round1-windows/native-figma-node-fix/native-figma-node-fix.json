@@ -1,0 +1,77 @@
+{
+  "native": true,
+  "preload": true,
+  "execution": {
+    "status": "passed",
+    "exitCode": 0
+  },
+  "fixture": {
+    "fileKey": "NODEFIX123",
+    "sourceVersion": "version-fixture-42",
+    "frameNodeId": "1:2",
+    "targetNodeId": "3:4",
+    "outsideTargetNodeId": "9:9",
+    "outsideFrameNodeId": "8:8",
+    "scale": 2,
+    "rootBox": {
+      "x": 100,
+      "y": 200,
+      "width": 100,
+      "height": 100
+    },
+    "targetBox": {
+      "x": 110,
+      "y": 210,
+      "width": 20,
+      "height": 20
+    },
+    "crop": {
+      "x": 10,
+      "y": 10,
+      "width": 180,
+      "height": 180
+    },
+    "mask": {
+      "id": "target-left-half",
+      "x": 10,
+      "y": 10,
+      "width": 20,
+      "height": 40
+    }
+  },
+  "independentPixelOracle": {
+    "before": {
+      "targetDifference": 800,
+      "regressionGridDifference": 0,
+      "totalDifference": 800
+    },
+    "after": {
+      "targetDifference": 0,
+      "regressionGridDifference": 1600,
+      "totalDifference": 1600
+    }
+  },
+  "exportedImageMetadata": {
+    "width": 200,
+    "height": 200
+  },
+  "inputHashes": {
+    "design": "9a034bbc98c3362b69c1fb3235eb84513c41093140b5557b995593a09d1e3930",
+    "before": "2937ad6a6ec0386d1e5e961b79863e39b0f7c42bc3b7cdcda7c9f9a45e21a012",
+    "after": "f4321966d68a1706c8299a6b3b61a98294f93f10b6f91eaee01afdd083caf117"
+  },
+  "screenshots": {
+    "version-pinned-masked-cropped-before.png": "0597672b1d14c134adb57fe094ef64bca4b0bc56e086a97f222b3a9586343cc9",
+    "target-improved-grid-regressed.png": "3b0edd2c783fa044e053ddb60fd560b6b2d02ab63fc3a516bf14cf69321c0a6c"
+  },
+  "rootMismatch": "Error: Error invoking remote method 'figma:get-node-verification-source': Error: Figma frame geometry does not match the selected frame.",
+  "outsideTarget": "Error: Error invoking remote method 'figma:get-node-verification-source': Error: Figma target geometry is missing; node verification was not run.",
+  "requestCount": 11,
+  "ipcCount": 16,
+  "pinnedNodeRequestCount": 2,
+  "pinnedExportCount": 1,
+  "loadResponseCount": 1,
+  "navigations": [],
+  "pageErrors": [],
+  "rendererCrashes": []
+}

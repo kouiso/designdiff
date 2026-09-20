@@ -1,0 +1,157 @@
+{
+  "case": "C02",
+  "route": "mcp",
+  "platform": "windows",
+  "drivers": [
+    "app/mcp-server/script/stdio-campaign-verification2.mjs",
+    "app/mcp-server/script/stdio-issue-verification.mjs"
+  ],
+  "checks": [
+    "C02_shift_tracking",
+    "C02_issue137_issue138"
+  ],
+  "actual": {
+    "stdio-campaign-verification2:C02_shift_tracking": [
+      {
+        "name": "r1",
+        "dx": 1,
+        "dy": 0,
+        "matchRate": 99.99,
+        "diffPixelCount": 48,
+        "regions": [
+          {
+            "x": 30,
+            "y": 60,
+            "width": 1,
+            "height": 24
+          },
+          {
+            "x": 230,
+            "y": 60,
+            "width": 1,
+            "height": 24
+          }
+        ],
+        "alignment": null,
+        "totalRegionCount": 2
+      },
+      {
+        "name": "d2",
+        "dx": 0,
+        "dy": 2,
+        "matchRate": 99.76,
+        "diffPixelCount": 800,
+        "regions": [
+          {
+            "x": 30,
+            "y": 60,
+            "width": 200,
+            "height": 2
+          },
+          {
+            "x": 30,
+            "y": 84,
+            "width": 200,
+            "height": 2
+          }
+        ],
+        "alignment": null,
+        "totalRegionCount": 2
+      },
+      {
+        "name": "l2",
+        "dx": -2,
+        "dy": 0,
+        "matchRate": 99.97,
+        "diffPixelCount": 96,
+        "regions": [
+          {
+            "x": 28,
+            "y": 60,
+            "width": 2,
+            "height": 24
+          },
+          {
+            "x": 228,
+            "y": 60,
+            "width": 2,
+            "height": 24
+          }
+        ],
+        "alignment": null,
+        "totalRegionCount": 2
+      },
+      {
+        "name": "u1",
+        "dx": 0,
+        "dy": -1,
+        "matchRate": 99.88,
+        "diffPixelCount": 400,
+        "regions": [
+          {
+            "x": 30,
+            "y": 59,
+            "width": 200,
+            "height": 1
+          },
+          {
+            "x": 30,
+            "y": 83,
+            "width": 200,
+            "height": 1
+          }
+        ],
+        "alignment": null,
+        "totalRegionCount": 2
+      }
+    ],
+    "stdio-issue-verification:C02_issue137_issue138": {
+      "globalAlignment": {
+        "translation": {
+          "x": 30,
+          "y": 0
+        },
+        "source": "auto",
+        "applied": true,
+        "baselineResidual": 0.21965001822821728,
+        "correctedResidual": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "rotation": 0,
+        "confidence": 0.5757359312880714,
+        "residual": 0
+      },
+      "localMovement": {
+        "rawPixelDifference": {
+          "differingPixelCount": 48000,
+          "bounds": {
+            "x": 10,
+            "y": 30,
+            "width": 370,
+            "height": 780
+          }
+        },
+        "alignment": {
+          "translation": {
+            "x": 0,
+            "y": 0
+          },
+          "source": "none",
+          "applied": false,
+          "baselineResidual": 0.004374772147283996,
+          "correctedResidual": 0.004374772147283996,
+          "scale": {
+            "x": 1,
+            "y": 1
+          },
+          "rotation": 0,
+          "confidence": 1,
+          "residual": 0.004374772147283996
+        },
+        "note": "The #f5f5f5/#ffffff local panel delta is below the alignment RGB threshold; the local dark feature remains a raw visual difference."
+      }
+    }
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "sourceKey": "campaign:v1:[\"local:C:\\\\Users\\\\Administrator\\\\repos\\\\designdiff\\\\docs\\\\evidence\\\\round2-windows\\\\stdio-campaign-verification2\\\\input-design.png\",\"m14-b\"]",
+  "campaigns": [
+    {
+      "campaignId": "b3bc584e-1132-415c-a6ab-fdccee25653e",
+      "sourceKey": "campaign:v1:[\"local:C:\\\\Users\\\\Administrator\\\\repos\\\\designdiff\\\\docs\\\\evidence\\\\round2-windows\\\\stdio-campaign-verification2\\\\input-design.png\",\"m14-b\"]",
+      "designSource": "C:\\Users\\Administrator\\repos\\designdiff\\docs\\evidence\\round2-windows\\stdio-campaign-verification2\\input-design.png",
+      "startedAt": 1789907687366,
+      "updatedAt": 1789907687366,
+      "iterations": [
+        {
+          "comparisonId": "cmp-0cab9908-e602-4172-907c-188e7b16a994",
+          "comparisonConditions": {
+            "status": "unverified",
+            "design": {
+              "canvas": {
+                "width": 390,
+                "height": 844
+              },
+              "canvasSource": "image-metadata",
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
+            },
+            "screenshot": {
+              "canvas": {
+                "width": 390,
+                "height": 844
+              },
+              "canvasSource": "image-metadata",
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
+            },
+            "differences": [],
+            "message": "表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。"
+          },
+          "matchRate": 99.91,
+          "diffPixelCount": 300,
+          "regionCount": 3,
+          "structuralVerdict": "fail",
+          "status": "FAIL",
+          "timestamp": 1789907687366,
+          "diffImagePath": "C:\\Users\\Administrator\\repos\\designdiff\\docs\\evidence\\round2-windows\\stdio-campaign-verification2\\figdiff-home\\results\\diff-cmp-0cab9908-e602-4172-907c-188e7b16a994.png"
+        }
+      ]
+    }
+  ]
+}
