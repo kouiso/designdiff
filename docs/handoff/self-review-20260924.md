@@ -62,3 +62,32 @@ Critic の新規反論が Round 3 で「残存リスクの指摘」止まりと�
 - windows の digest 異常(§4記載の改行差)が spec の cross-platform 等価性要件を満たすかは要受入判断。
 - win 子の push 内容は未着。着次第 §B-1/§B-2 の手順で再検証する。
 - android/ios-device 4+2 件は本セッション内で解決不能な環境制約。ユーザーへ判断仰ぎ中。
+
+---
+
+## 第2ラウンド: windows子push取込み後の差分レビュー（同日 14:20Z）
+
+### 対象
+- `8e0c40a`（win子push、detached SHA での全脚再実行）の取込み
+- `ledger/ledger/windows/` 二重ネスト混入の修復（子も `--out` 入れ子バグを踏んでいた）
+- windows partial の現行アセンブラ再生成（r1=58, r2=54）+ 旧 D07 splice（×2巡）
+- 統合台帳 368記録化 + 最終レポート数値更新 + X06 ユーザー代替受入の反映
+
+### プレモーテム（差分追加分）
+| # | 仮説 | 確度 | 検証/対策 |
+|---|------|------|-----------|
+| H7 | spliceした Sep-20 D07 が新 partial の窓・順序を壊す | 済 | verifier 0 errors（round窓内・case順序 r2>r1 遵守）。artifact sha256 はディスク実物と一致確認済 |
+| H8 | 子の ledger/ledger/ 削除で孤児証跡を消した | 済 | 親側で全 partial 再生成済。子ネスト側の内容は全て同証跡のコピー（rename移動されただけ）で、再生成が同一内容を作る。D07 のみ履歴 023f8fd から復元 |
+| H9 | 派生数値のドリフト（oracle集計等）が残る | 発見→修正 | oracle 156→160（+4 X08分）。grep で他の集計値を総当たり確認、残存ドリフトなし |
+| H10 | 権限403（子へ指示不可）を「外部要因」として報告せず黙る | 回避済 | Slackへ正直に報告済み（slackbot は _org.is_user / org.devins.use 不足を実測） |
+| H11 | win子がこのpush後さらにpushした場合の取りこぼし | 監視中 | watch_children.py が 90s ポーリング継続中。再pushがあれば再取込み |
+
+### 敵対レビュー（第2ラウンド）
+- Proposer: 差分は健全 — X08 r1 の4記録は detached SHA での実測（verifier が artifact sha256 を全件通過）、D07 splice は macos splice と同根拠、ドキュメントは実数に整合。
+- Critic R1: 「Splice は古い executedAt を新巡に混ぜる」→ 記録は実時刻のまま、窓は真実を反映して延長済み。混ぜたのは記録単位であって時刻の改竄ではない。受入れ。
+- Critic R2: 「X08 が r1 だけあって r2 なしは非対称では」→ r2 の plugin/compare は実際に失敗（stderr 証跡あり）。NOT RUN は正直な状態。受入れ。
+- Critic R3: 「windows digest 混在（実測 vs 補完）は再燃しないか」→ §4 に既記載の既知限界。改行由来の差異で旨に検証済み、再燃点ではない。受入れ。
+- 新規の反論なし → 収束。
+
+### 収束判定（第2ラウンド）
+差分作業に新たな実害は検出されず、報告の数値ドリフト(H9)だけが捕捉・修正された。残 NOT RUN 20件（#199/#200）は今セッションの権限/環境では打ち手なし — 偽造せず issue 追跡が正しい終端。

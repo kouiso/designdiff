@@ -13,7 +13,7 @@
 | 195記録 × 2巡 = 390記録すべて PASS | **未達（368/390）** | PASS 368 / NOT RUN 22 / FAIL 0 |
 | 新規不具合 0 | 達成 | 全368記録 `newBugs: 0`、uncatalogued defect による取込拒否 0 |
 | 全記録が同一凍結SHA | 達成 | 368記録すべて `productSha = 4e9145e…`、`dirty: false` |
-| 独立 oracle | 達成 | source-pixels 156 / schema-contract 84 / dom-geometry 70 / host-observation 52 / dependency-graph 2（製品自己評価 0） |
+| 独立 oracle | 達成 | source-pixels 160 / schema-contract 84 / dom-geometry 70 / host-observation 52 / dependency-graph 2（製品自己評価 0） |
 | 既知不具合3件の disposition 凍結前確定 | 達成 | 3件とも凍結SHA以前の製品修正コミットで解消。§3 の linux-wsl 異常は 2026-09-24 の再取得で解消済み |
 
 verifier の残エラーは 22件すべて `NOT RUN`（記録が存在しない）で、存在する記録に対する整合性エラー（SHA / dirty / digest / round窓 / 実行順 / artifact sha256）は 0 件。
