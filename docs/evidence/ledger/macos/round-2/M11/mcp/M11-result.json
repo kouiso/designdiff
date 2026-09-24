@@ -45,15 +45,15 @@
           "screenshotPath": "docs/evidence/round2-macos/stdio-issue-verification/input-animation-impl-000ms.png",
           "status": "PASS",
           "matchRate": 1,
-          "comparisonId": "cmp-664d18fd-1efa-400b-9e17-1d958c4d630d"
+          "comparisonId": "cmp-ceb0f0e9-4f0f-4301-b32e-8f08266ae6af"
         },
         {
           "atMs": 100,
           "screenshotPath": "docs/evidence/round2-macos/stdio-issue-verification/input-animation-impl-100ms.png",
           "status": "FAIL",
           "matchRate": 0,
-          "comparisonId": "cmp-4703ebd0-3398-42f4-a88d-8bc03a9e3d74",
-          "diffImagePath": "<store>/results/diff-cmp-4703ebd0-3398-42f4-a88d-8bc03a9e3d74.png"
+          "comparisonId": "cmp-695366f2-41a0-43ce-a59a-403bfa4e005a",
+          "diffImagePath": "<store>/results/diff-cmp-695366f2-41a0-43ce-a59a-403bfa4e005a.png"
         }
       ],
       "alignments": [

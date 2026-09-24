@@ -171,7 +171,7 @@
             }
           ],
           "diffPixelsSha256": "7d0da44f7b88c359673cd0d3ede91c01a1dc9761646f4a4bcc62885594fe890b",
-          "diffImagePath": "/Users/devin/repos/designdiff/docs/evidence/round2-macos/x08/figdiff-home/results/diff-cmp-6fed4792-98ef-488b-b53b-a1131f845037.png",
+          "diffImagePath": "/Users/devin/repos/designdiff/docs/evidence/round2-macos/x08/figdiff-home/results/diff-cmp-43cd0d27-77f8-4e6f-9121-486cfcc01f15.png",
           "expectedDiffPixelCount": 832,
           "expectedRegions": [
             {

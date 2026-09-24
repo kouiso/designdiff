@@ -62,12 +62,12 @@
       },
       "durableReport": {
         "path": "docs/evidence/round2-macos/stdio-issue-verification/real-typography-report.json",
-        "canonicalJsonSha256": "059c473bfd379f84a7f6686af3212d946553556225dec78775a362da2a959f09",
-        "formattedArtifactSha256": "3a592ebd2b094451fdb7ddaaa7bd3e5e0ffceddad65a92dd47e9e38f5e868bcb",
+        "canonicalJsonSha256": "59cf69bf73a76ca25ff11bfbaf197bf4cbfedc0de667c2756a73d4f9d8b2d0bf",
+        "formattedArtifactSha256": "1163e5a4a66a1a7fecea1afca59826083349415a3e864d6a1fcd7d38d556e32a",
         "publicPathRedacted": true,
         "rawProduct": {
           "path": "docs/evidence/round2-macos/stdio-issue-verification/real-typography-report.raw.txt",
-          "sha256": "e3ad9d845ee22bc172e5b75839c4352ac2f63137a5c66d15647e2438641560e8",
+          "sha256": "4e146a855112aab2357b65b9213faea97a93701a9ab25b67e19a49f6f9e940e9",
           "byteLength": 10960,
           "mediaType": "application/json",
           "representation": "exact UTF-8 MCP tool response bytes; intentionally not formatter-normalized"

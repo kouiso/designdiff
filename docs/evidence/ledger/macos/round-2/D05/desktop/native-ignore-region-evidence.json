@@ -1,15 +1,11 @@
 {
   "schemaVersion": 1,
-  "startedAt": "2026-09-20T13:52:27.101Z",
-  "completedAt": "2026-09-20T13:52:32.486Z",
+  "startedAt": "2026-09-24T13:26:30.219Z",
+  "completedAt": "2026-09-24T13:26:35.123Z",
   "revision": "4e9145e5e051d4efe78a922723f7b3245005a05e",
   "dirtyState": [
-    "A  docs/evidence/runs-macos-r1.json",
     " M docs/evidence/runs-macos-r2.json",
-    "?? docs/evidence/round1-macos/",
     "?? docs/evidence/round2-macos/",
-    "?? docs/evidence/runs-macos-r1.attempts.json",
-    "?? docs/evidence/runs-macos-r1.manifest.json",
     "?? docs/evidence/runs-macos-r2.attempts.json",
     "?? docs/evidence/runs-macos-r2.manifest.json"
   ],
@@ -1799,8 +1795,8 @@
     },
     {
       "path": "ignore-context-mismatch.png",
-      "size": 86740,
-      "sha256": "914e24464b2f63d34fa9af625d7ec447f72b28a5c715d6e568a3e04a0f525f1e"
+      "size": 86738,
+      "sha256": "1ea040f3cabf096e09a5e4211bab1683072b96dae3115efadca363634029caae"
     },
     {
       "path": "ignore-deleted-recompare.png",
@@ -1854,8 +1850,8 @@
     },
     {
       "path": "native-ignore-result.json",
-      "size": 4679,
-      "sha256": "5fde35be1b9159f4470ad71ce5be6f5e8d005c1b38dd16540c3aa4d00c1c9353"
+      "size": 4678,
+      "sha256": "0328101c1dba306e96a062ba9d3906f6737c6bdccc151d4fb92f9fbf43bf3673"
     }
   ]
 }

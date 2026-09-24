@@ -2,12 +2,8 @@
   "schemaVersion": 1,
   "revision": "4e9145e5e051d4efe78a922723f7b3245005a05e",
   "dirtyState": [
-    "A  docs/evidence/runs-macos-r1.json",
     " M docs/evidence/runs-macos-r2.json",
-    "?? docs/evidence/round1-macos/",
     "?? docs/evidence/round2-macos/",
-    "?? docs/evidence/runs-macos-r1.attempts.json",
-    "?? docs/evidence/runs-macos-r1.manifest.json",
     "?? docs/evidence/runs-macos-r2.attempts.json",
     "?? docs/evidence/runs-macos-r2.manifest.json"
   ],
@@ -4007,7 +4003,7 @@
     "arch": "arm64",
     "node": "v24.20.0"
   },
-  "executedAt": "2026-09-20T13:51:03.136Z",
+  "executedAt": "2026-09-24T13:25:06.616Z",
   "transport": "@modelcontextprotocol/sdk Client + StdioClientTransport",
   "protocolErrors": [],
   "verificationFailures": [],
@@ -4118,7 +4114,7 @@
       },
       "actual": {
         "diffPixelCount": 0,
-        "comparisonId": "cmp-36dc0bf5-eb21-419e-bf4c-4a5f6a3dd514"
+        "comparisonId": "cmp-337964bf-f97e-4375-ada8-0663613d8d82"
       }
     },
     "legacySourceKey": {
@@ -4213,15 +4209,15 @@
             "screenshotPath": "docs/evidence/round2-macos/stdio-issue-verification/input-animation-impl-000ms.png",
             "status": "PASS",
             "matchRate": 1,
-            "comparisonId": "cmp-664d18fd-1efa-400b-9e17-1d958c4d630d"
+            "comparisonId": "cmp-ceb0f0e9-4f0f-4301-b32e-8f08266ae6af"
           },
           {
             "atMs": 100,
             "screenshotPath": "docs/evidence/round2-macos/stdio-issue-verification/input-animation-impl-100ms.png",
             "status": "FAIL",
             "matchRate": 0,
-            "comparisonId": "cmp-4703ebd0-3398-42f4-a88d-8bc03a9e3d74",
-            "diffImagePath": "<store>/results/diff-cmp-4703ebd0-3398-42f4-a88d-8bc03a9e3d74.png"
+            "comparisonId": "cmp-695366f2-41a0-43ce-a59a-403bfa4e005a",
+            "diffImagePath": "<store>/results/diff-cmp-695366f2-41a0-43ce-a59a-403bfa4e005a.png"
           }
         ],
         "alignments": [
@@ -4321,12 +4317,12 @@
         },
         "durableReport": {
           "path": "docs/evidence/round2-macos/stdio-issue-verification/real-typography-report.json",
-          "canonicalJsonSha256": "059c473bfd379f84a7f6686af3212d946553556225dec78775a362da2a959f09",
-          "formattedArtifactSha256": "3a592ebd2b094451fdb7ddaaa7bd3e5e0ffceddad65a92dd47e9e38f5e868bcb",
+          "canonicalJsonSha256": "59cf69bf73a76ca25ff11bfbaf197bf4cbfedc0de667c2756a73d4f9d8b2d0bf",
+          "formattedArtifactSha256": "1163e5a4a66a1a7fecea1afca59826083349415a3e864d6a1fcd7d38d556e32a",
           "publicPathRedacted": true,
           "rawProduct": {
             "path": "docs/evidence/round2-macos/stdio-issue-verification/real-typography-report.raw.txt",
-            "sha256": "e3ad9d845ee22bc172e5b75839c4352ac2f63137a5c66d15647e2438641560e8",
+            "sha256": "4e146a855112aab2357b65b9213faea97a93701a9ab25b67e19a49f6f9e940e9",
             "byteLength": 10960,
             "mediaType": "application/json",
             "representation": "exact UTF-8 MCP tool response bytes; intentionally not formatter-normalized"
@@ -4514,17 +4510,17 @@
         "browserObservedWidths": [390, 390, 390],
         "captures": [
           {
-            "comparisonId": "cmp-054a819d-fe7c-4764-9874-94eed8ff611b",
+            "comparisonId": "cmp-2b0ad543-46bf-4bdc-b804-7f19a0f8d0d1",
             "responseWidth": 390,
             "persistedWidth": 390
           },
           {
-            "comparisonId": "cmp-cdc0cc53-7671-4aca-888b-075587f3410b",
+            "comparisonId": "cmp-3126c29a-c69e-45c4-a3a4-80cb67631745",
             "responseWidth": 390,
             "persistedWidth": 390
           },
           {
-            "comparisonId": "cmp-0c74b1b5-936d-4272-afdc-4c66da1d915a",
+            "comparisonId": "cmp-fe9058dd-0ca1-4f8b-9bf7-1f855c4e5e83",
             "responseWidth": 390,
             "persistedWidth": 390
           }
@@ -4539,22 +4535,22 @@
       },
       "actual": {
         "retainedComparisonCount": 7,
-        "oldestId": "cmp-3e3e676f-82cd-4d99-90e7-bbf94864edeb",
-        "reportComparisonId": "cmp-3e3e676f-82cd-4d99-90e7-bbf94864edeb",
+        "oldestId": "cmp-fbfcd0d7-51b8-4dc1-8733-cd6b95711f4e",
+        "reportComparisonId": "cmp-fbfcd0d7-51b8-4dc1-8733-cd6b95711f4e",
         "reportRegionCount": 1,
         "artifacts": {
-          "jsonSha256": "4c070efe49492759181c7aeeb3ec0666eed897319c916a80b10e9ab541b68345",
+          "jsonSha256": "2b86e22235be713e383a3a02c7a2c8f195598e8694c9223aa1ab77b328126be0",
           "pngSha256": "35237f80cc533018f8a8da83931fda0fe28f5b8ccbaea89ad6d9e5217ff87320"
         },
         "durableArtifacts": [
           {
             "path": "docs/evidence/round2-macos/stdio-issue-verification/retained-oldest-report.json",
-            "canonicalJsonSha256": "a71b902a50e89486e27224fdd2504a56f1136e00e6824e0973ab6416d47c010e",
-            "formattedArtifactSha256": "9ac3164cda761f8897dafc98aeb9aa62ee62ea4af1fe6b7693e18c4960f26596",
+            "canonicalJsonSha256": "5cb1765aba3a36bbb2c47e28d02270c254528d0442baa192955e57a59ddf562e",
+            "formattedArtifactSha256": "6ec81d4a209c09e64ea373b41a539888c9d69e3516e47fbf3148cd63db4411ea",
             "publicPathRedacted": true,
             "rawProduct": {
               "path": "docs/evidence/round2-macos/stdio-issue-verification/retained-oldest-report.raw.txt",
-              "sha256": "4ade5e8f38a358eb48ff6e9d0b6b5b0027865f081cba0dbdc2f509d15d41767a",
+              "sha256": "7abe90a93296e785fea6d91f6485063ac51b9e24bbbffc1819cf9e68164ffbcf",
               "byteLength": 11247,
               "mediaType": "application/json",
               "representation": "exact UTF-8 MCP tool response bytes; intentionally not formatter-normalized"

@@ -20,7 +20,7 @@
         ]
       },
       "project": {
-        "id": "1789912284980-hds0h42",
+        "id": "1790256328476-y5lqzif",
         "persisted": true
       },
       "sourceCompare": {
@@ -66,7 +66,7 @@
     },
     "D10": {
       "keyboardSubmit": "frame list appeared via hero input (node 7:30)",
-      "japaneseProject": "1789912308939-p4zhlx2",
+      "japaneseProject": "1790256352148-9whdtav",
       "narrowViewport": {
         "width": 430,
         "view": "compare",
@@ -174,7 +174,7 @@
     "sessionsObserved": 2,
     "offBoundary": [],
     "unexpectedThrows": 0,
-    "tokenlessPhaseEndTs": 1789912283076
+    "tokenlessPhaseEndTs": 1790256326641
   },
   "knownDefects": []
 }

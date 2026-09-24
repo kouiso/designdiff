@@ -59,6 +59,24 @@
         "maskedPixelCount": 318384,
         "maskSha256": "b6f97ef8d1f1dd89280d8015237cc9f5cd1738972696ea8cd5ebe06688fcd324"
       },
+      "toastBandCandidates": [
+        {
+          "x": 0,
+          "y": 2261,
+          "width": 1206,
+          "height": 59,
+          "contrast": 59,
+          "position": "bottom"
+        },
+        {
+          "x": 0,
+          "y": 2512,
+          "width": 1206,
+          "height": 59,
+          "contrast": 89,
+          "position": "bottom"
+        }
+      ],
       "comparisonConditions": {
         "status": "unverified",
         "design": {

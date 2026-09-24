@@ -1,0 +1,763 @@
+{
+  "comparisonId": "cmp-502169f7-64d8-4834-9d3d-63a8544ccb43",
+  "sourceKey": "local:/Users/devin/repos/designdiff/docs/evidence/round2-macos/stdio-ios-sim-verification/input-design.png",
+  "captureWidth": 1206,
+  "captureHeight": 2622,
+  "result": {
+    "status": "FAIL",
+    "comparisonId": "cmp-502169f7-64d8-4834-9d3d-63a8544ccb43",
+    "matchRate": 27.24,
+    "diffPixelCount": 2069173,
+    "totalPixelCount": 2843748,
+    "remainingIssues": 1,
+    "diffRegions": [],
+    "completionCriteria": {
+      "structuralReview": {
+        "required": 1,
+        "current": 0,
+        "status": "FAIL",
+        "blocking": true,
+        "note": "critical severity issue detected; weakest region whole-frame (structure 0.790, color ΔE 23.252; lower=better, critical threshold 2) with texture-adjusted weights active (alpha 0.700, photo-like cap 0.300)"
+      },
+      "conditionsReview": {
+        "required": 1,
+        "current": 0,
+        "status": "UNCERTAIN",
+        "blocking": false,
+        "note": "表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。"
+      },
+      "wholeImageStructure": {
+        "required": 0.95,
+        "current": 0.8699696664993141,
+        "status": "UNCERTAIN",
+        "blocking": false,
+        "note": "Area-weighted contrast and structure over disjoint 8x8 windows. Uniform luminance shifts are excluded; contrast changes remain. Local issues and the aggregate gate remain independent."
+      },
+      "consistencyReview": {
+        "required": 0.5,
+        "current": 0,
+        "status": "PASS",
+        "blocking": false,
+        "note": "Not evaluated: the contradiction check only applies to a passing structural review."
+      },
+      "tokenReview": {
+        "required": 0,
+        "current": 0,
+        "status": "UNCERTAIN",
+        "blocking": false,
+        "note": "Not evaluated: token comparison needs both a Figma node tree and a FigDiff-captured URL."
+      },
+      "matchRate": {
+        "required": 100,
+        "current": 27.24,
+        "status": "FAIL",
+        "blocking": false,
+        "note": "Reference metric only. Do not use matchRate% as the completion gate."
+      },
+      "diffPixelCount": {
+        "required": 0,
+        "current": 2069173,
+        "status": "FAIL",
+        "blocking": false,
+        "note": "Reference metric. Structural SSIM review is the blocking gate."
+      },
+      "remainingIssues": {
+        "required": 0,
+        "current": 1,
+        "status": "FAIL",
+        "blocking": true,
+        "note": "Blocking only while structural SSIM review has not passed."
+      }
+    },
+    "nextAction": "表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。 端末キャプチャは物理ピクセルで返るため、Figma フレームを同じスケール（例: DPR込みの 1206px 幅）でレンダリングして比較してください。 サイト実装が vw ベースのレスポンシブ幅を使っている場合は、ブラウザの viewport 幅やスクロールバー有無で固定pxの Figma フレームと描画幅がずれることがあるため、意図した viewport / scrollbar 条件も確認してください。 実装差分を検出しました（一致率 27.24%）。",
+    "suggestion": "大きな差分が1箇所あります。inspect_nodeで各差分領域を確認し、修正してください。",
+    "clusterTelemetry": {
+      "requestedMode": "auto",
+      "usedMode": "grid",
+      "fallbackUsed": true,
+      "fallbackReason": "hot-cell-ratio-exceeded",
+      "wallMs": 30.27,
+      "budgetMs": 5000,
+      "regionCount": 0
+    },
+    "clusterCollapse": {
+      "collapsed": true,
+      "reason": "hot-cell-ratio-exceeded",
+      "coarseTileCount": 60,
+      "message": "差分が画面全体に広がっているため、直す場所を領域に分けられませんでした。個別のCSS修正へ進む前に、比較の前提を先に確認してください。",
+      "checks": [
+        "撮影条件が設計と揃っているか（撮影幅・倍率・スクロール位置）",
+        "比較元のFigmaフレームが、撮影した画面と同じものか",
+        "実装がまだ着手前の状態になっていないか"
+      ]
+    },
+    "gridSummary": {
+      "rows": 9,
+      "cols": 4,
+      "cells": [
+        {
+          "row": 0,
+          "col": 0,
+          "x": 0,
+          "y": 0,
+          "width": 301,
+          "height": 291,
+          "diffPixels": 21163,
+          "totalPixels": 38829,
+          "matchRate": 45.5
+        },
+        {
+          "row": 0,
+          "col": 1,
+          "x": 301,
+          "y": 0,
+          "width": 302,
+          "height": 291,
+          "diffPixels": 36588,
+          "totalPixels": 38958,
+          "matchRate": 6.08
+        },
+        {
+          "row": 0,
+          "col": 2,
+          "x": 603,
+          "y": 0,
+          "width": 301,
+          "height": 291,
+          "diffPixels": 32893,
+          "totalPixels": 38829,
+          "matchRate": 15.29
+        },
+        {
+          "row": 0,
+          "col": 3,
+          "x": 904,
+          "y": 0,
+          "width": 302,
+          "height": 291,
+          "diffPixels": 34393,
+          "totalPixels": 38958,
+          "matchRate": 11.72
+        },
+        {
+          "row": 1,
+          "col": 0,
+          "x": 0,
+          "y": 291,
+          "width": 301,
+          "height": 291,
+          "diffPixels": 79589,
+          "totalPixels": 87591,
+          "matchRate": 9.14
+        },
+        {
+          "row": 1,
+          "col": 1,
+          "x": 301,
+          "y": 291,
+          "width": 302,
+          "height": 291,
+          "diffPixels": 81730,
+          "totalPixels": 87882,
+          "matchRate": 7
+        },
+        {
+          "row": 1,
+          "col": 2,
+          "x": 603,
+          "y": 291,
+          "width": 301,
+          "height": 291,
+          "diffPixels": 13133,
+          "totalPixels": 87591,
+          "matchRate": 85.01
+        },
+        {
+          "row": 1,
+          "col": 3,
+          "x": 904,
+          "y": 291,
+          "width": 302,
+          "height": 291,
+          "diffPixels": 22303,
+          "totalPixels": 87882,
+          "matchRate": 74.62
+        },
+        {
+          "row": 2,
+          "col": 0,
+          "x": 0,
+          "y": 582,
+          "width": 301,
+          "height": 292,
+          "diffPixels": 73559,
+          "totalPixels": 87892,
+          "matchRate": 16.31
+        },
+        {
+          "row": 2,
+          "col": 1,
+          "x": 301,
+          "y": 582,
+          "width": 302,
+          "height": 292,
+          "diffPixels": 79008,
+          "totalPixels": 88184,
+          "matchRate": 10.41
+        },
+        {
+          "row": 2,
+          "col": 2,
+          "x": 603,
+          "y": 582,
+          "width": 301,
+          "height": 292,
+          "diffPixels": 39231,
+          "totalPixels": 87892,
+          "matchRate": 55.36
+        },
+        {
+          "row": 2,
+          "col": 3,
+          "x": 904,
+          "y": 582,
+          "width": 302,
+          "height": 292,
+          "diffPixels": 45694,
+          "totalPixels": 88184,
+          "matchRate": 48.18
+        },
+        {
+          "row": 3,
+          "col": 0,
+          "x": 0,
+          "y": 874,
+          "width": 301,
+          "height": 291,
+          "diffPixels": 51068,
+          "totalPixels": 87591,
+          "matchRate": 41.7
+        },
+        {
+          "row": 3,
+          "col": 1,
+          "x": 301,
+          "y": 874,
+          "width": 302,
+          "height": 291,
+          "diffPixels": 62983,
+          "totalPixels": 87882,
+          "matchRate": 28.33
+        },
+        {
+          "row": 3,
+          "col": 2,
+          "x": 603,
+          "y": 874,
+          "width": 301,
+          "height": 291,
+          "diffPixels": 51979,
+          "totalPixels": 87591,
+          "matchRate": 40.66
+        },
+        {
+          "row": 3,
+          "col": 3,
+          "x": 904,
+          "y": 874,
+          "width": 302,
+          "height": 291,
+          "diffPixels": 57589,
+          "totalPixels": 87882,
+          "matchRate": 34.47
+        },
+        {
+          "row": 4,
+          "col": 0,
+          "x": 0,
+          "y": 1165,
+          "width": 301,
+          "height": 291,
+          "diffPixels": 67767,
+          "totalPixels": 87591,
+          "matchRate": 22.63
+        },
+        {
+          "row": 4,
+          "col": 1,
+          "x": 301,
+          "y": 1165,
+          "width": 302,
+          "height": 291,
+          "diffPixels": 51904,
+          "totalPixels": 87882,
+          "matchRate": 40.94
+        },
+        {
+          "row": 4,
+          "col": 2,
+          "x": 603,
+          "y": 1165,
+          "width": 301,
+          "height": 291,
+          "diffPixels": 65509,
+          "totalPixels": 87591,
+          "matchRate": 25.21
+        },
+        {
+          "row": 4,
+          "col": 3,
+          "x": 904,
+          "y": 1165,
+          "width": 302,
+          "height": 291,
+          "diffPixels": 68939,
+          "totalPixels": 87882,
+          "matchRate": 21.56
+        },
+        {
+          "row": 5,
+          "col": 0,
+          "x": 0,
+          "y": 1456,
+          "width": 301,
+          "height": 292,
+          "diffPixels": 77508,
+          "totalPixels": 87892,
+          "matchRate": 11.81
+        },
+        {
+          "row": 5,
+          "col": 1,
+          "x": 301,
+          "y": 1456,
+          "width": 302,
+          "height": 292,
+          "diffPixels": 77618,
+          "totalPixels": 88184,
+          "matchRate": 11.98
+        },
+        {
+          "row": 5,
+          "col": 2,
+          "x": 603,
+          "y": 1456,
+          "width": 301,
+          "height": 292,
+          "diffPixels": 60304,
+          "totalPixels": 87892,
+          "matchRate": 31.39
+        },
+        {
+          "row": 5,
+          "col": 3,
+          "x": 904,
+          "y": 1456,
+          "width": 302,
+          "height": 292,
+          "diffPixels": 29790,
+          "totalPixels": 88184,
+          "matchRate": 66.22
+        },
+        {
+          "row": 6,
+          "col": 0,
+          "x": 0,
+          "y": 1748,
+          "width": 301,
+          "height": 291,
+          "diffPixels": 77633,
+          "totalPixels": 87591,
+          "matchRate": 11.37
+        },
+        {
+          "row": 6,
+          "col": 1,
+          "x": 301,
+          "y": 1748,
+          "width": 302,
+          "height": 291,
+          "diffPixels": 77884,
+          "totalPixels": 87882,
+          "matchRate": 11.38
+        },
+        {
+          "row": 6,
+          "col": 2,
+          "x": 603,
+          "y": 1748,
+          "width": 301,
+          "height": 291,
+          "diffPixels": 78362,
+          "totalPixels": 87591,
+          "matchRate": 10.54
+        },
+        {
+          "row": 6,
+          "col": 3,
+          "x": 904,
+          "y": 1748,
+          "width": 302,
+          "height": 291,
+          "diffPixels": 48886,
+          "totalPixels": 87882,
+          "matchRate": 44.37
+        },
+        {
+          "row": 7,
+          "col": 0,
+          "x": 0,
+          "y": 2039,
+          "width": 301,
+          "height": 291,
+          "diffPixels": 81141,
+          "totalPixels": 87591,
+          "matchRate": 7.36
+        },
+        {
+          "row": 7,
+          "col": 1,
+          "x": 301,
+          "y": 2039,
+          "width": 302,
+          "height": 291,
+          "diffPixels": 77498,
+          "totalPixels": 87882,
+          "matchRate": 11.82
+        },
+        {
+          "row": 7,
+          "col": 2,
+          "x": 603,
+          "y": 2039,
+          "width": 301,
+          "height": 291,
+          "diffPixels": 73979,
+          "totalPixels": 87591,
+          "matchRate": 15.54
+        },
+        {
+          "row": 7,
+          "col": 3,
+          "x": 904,
+          "y": 2039,
+          "width": 302,
+          "height": 291,
+          "diffPixels": 78366,
+          "totalPixels": 87882,
+          "matchRate": 10.83
+        },
+        {
+          "row": 8,
+          "col": 0,
+          "x": 0,
+          "y": 2330,
+          "width": 301,
+          "height": 292,
+          "diffPixels": 52381,
+          "totalPixels": 57190,
+          "matchRate": 8.41
+        },
+        {
+          "row": 8,
+          "col": 1,
+          "x": 301,
+          "y": 2330,
+          "width": 302,
+          "height": 292,
+          "diffPixels": 40275,
+          "totalPixels": 57380,
+          "matchRate": 29.81
+        },
+        {
+          "row": 8,
+          "col": 2,
+          "x": 603,
+          "y": 2330,
+          "width": 301,
+          "height": 292,
+          "diffPixels": 45603,
+          "totalPixels": 57190,
+          "matchRate": 20.26
+        },
+        {
+          "row": 8,
+          "col": 3,
+          "x": 904,
+          "y": 2330,
+          "width": 302,
+          "height": 292,
+          "diffPixels": 54923,
+          "totalPixels": 57380,
+          "matchRate": 4.28
+        }
+      ]
+    },
+    "diffReport": {
+      "alignment": {
+        "translation": {
+          "x": 0,
+          "y": 0
+        },
+        "source": "none",
+        "applied": false,
+        "baselineResidual": 0.8481792338842964,
+        "correctedResidual": 0.8481792338842964,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "rotation": 0,
+        "confidence": 1,
+        "residual": 0.8481792338842964
+      },
+      "regionScores": [
+        {
+          "regionId": "whole-frame",
+          "bbox": {
+            "x": 0,
+            "y": 0,
+            "w": 1206,
+            "h": 2622
+          },
+          "scope": "root",
+          "structure": 0.7903924391834659,
+          "color": 23.251746241090046,
+          "shape": 1,
+          "layout": 0,
+          "textureScore": 0.21594258279121545
+        }
+      ],
+      "issues": [
+        {
+          "regionId": "whole-frame",
+          "bbox": {
+            "x": 0,
+            "y": 0,
+            "w": 1206,
+            "h": 2622
+          },
+          "kind": "color",
+          "severity": "critical",
+          "evidence": {
+            "signal": "delta_e_2000",
+            "value": 23.251746241090046,
+            "threshold": 2,
+            "expected": "< 2",
+            "actual": 23.251746241090046
+          },
+          "suggestedCssFix": "背景色や塗り色のトークン値をデザイン基準に合わせてください。"
+        }
+      ],
+      "weightedAggregate": {
+        "weightedStructure": 0.7903924391834659,
+        "weightedColor": 23.251746241090046,
+        "totalWeight": 0.8488401920461492
+      },
+      "structuralAssessment": {
+        "metric": "ssim-contrast-structure-area-v1",
+        "score": 0.8699696664993141,
+        "evaluatedPixelCount": 2843748,
+        "excludedPixelCount": 318384,
+        "passThreshold": 0.95,
+        "failThreshold": 0.8,
+        "verdict": "inconclusive",
+        "rationale": "Area-weighted contrast and structure over disjoint 8x8 windows. Uniform luminance shifts are excluded; contrast changes remain. Local issues and the aggregate gate remain independent."
+      },
+      "aggregateVerdict": "fail",
+      "rationale": "critical severity issue detected; weakest region whole-frame (structure 0.790, color ΔE 23.252; lower=better, critical threshold 2) with texture-adjusted weights active (alpha 0.700, photo-like cap 0.300)"
+    },
+    "preflight": {
+      "warnings": [
+        {
+          "code": "aspect_ratio_mismatch",
+          "severity": "warning",
+          "message": "Figma レンダリング画像は 390x844px、スクリーンショットは 1206x2622px です。縦横比は近いものの解像度が違うため、DPR だけではない撮影条件差の可能性があります。",
+          "suggestedFix": "端末キャプチャは物理ピクセルで返るため、Figma フレームを同じスケール（例: DPR込みの 1206px 幅）でレンダリングして比較してください。 サイト実装が vw ベースのレスポンシブ幅を使っている場合は、ブラウザの viewport 幅やスクロールバー有無で固定pxの Figma フレームと描画幅がずれることがあるため、意図した viewport / scrollbar 条件も確認してください。"
+        }
+      ]
+    },
+    "normalization": {
+      "designNativeWidth": 390,
+      "designNativeHeight": 844,
+      "screenshotWidth": 1206,
+      "screenshotHeight": 2622,
+      "cropApplied": false,
+      "containResized": true,
+      "appliedScale": 1,
+      "autoCropped": false,
+      "cropSource": "none"
+    },
+    "ignoreRegionResolution": {
+      "coordinateContext": {
+        "canvas_width": 1206,
+        "canvas_height": 2622,
+        "design_original_width": 390,
+        "design_original_height": 844,
+        "screenshot_original_width": 1206,
+        "screenshot_original_height": 2622
+      },
+      "appliedIds": [],
+      "incompatibleIds": [],
+      "legacyIds": [],
+      "effectiveCanvas": {
+        "width": 1206,
+        "height": 2622
+      },
+      "effectiveRegions": [
+        {
+          "x": 0,
+          "y": 0,
+          "width": 1206,
+          "height": 162,
+          "label": "system:status-bar"
+        },
+        {
+          "x": 0,
+          "y": 2520,
+          "width": 1206,
+          "height": 102,
+          "label": "system:navigation-bar"
+        }
+      ],
+      "maskedPixelCount": 318384,
+      "maskSha256": "b6f97ef8d1f1dd89280d8015237cc9f5cd1738972696ea8cd5ebe06688fcd324"
+    },
+    "comparisonConditions": {
+      "status": "unverified",
+      "design": {
+        "canvas": {
+          "width": 390,
+          "height": 844
+        },
+        "canvasSource": "image-metadata",
+        "unverified": [
+          "viewport",
+          "pixelRatio",
+          "origin"
+        ]
+      },
+      "screenshot": {
+        "canvas": {
+          "width": 1206,
+          "height": 2622
+        },
+        "canvasSource": "image-metadata",
+        "unverified": [
+          "viewport",
+          "pixelRatio",
+          "origin"
+        ]
+      },
+      "differences": [],
+      "message": "表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。"
+    },
+    "diagnosis": {
+      "verdict": "real_diff",
+      "likelyMisconfig": false,
+      "rankedCauses": [
+        {
+          "code": "aspect_mismatch",
+          "confidence": 0.7,
+          "message": "Figma レンダリング画像とスクリーンショットの縦横比または解像度が一致していません。DPR だけではない撮影条件差の可能性があります。",
+          "suggestedFix": "端末キャプチャは物理ピクセルで返るため、Figma フレームを同じスケール（例: DPR込みの 1206px 幅）でレンダリングして比較してください。 サイト実装が vw ベースのレスポンシブ幅を使っている場合は、ブラウザの viewport 幅やスクロールバー有無で固定pxの Figma フレームと描画幅がずれることがあるため、意図した viewport / scrollbar 条件も確認してください。"
+        }
+      ],
+      "headline": "実装差分を検出しました（一致率 27.24%）。"
+    },
+    "comparisonHeadline": {
+      "structureMatch": 79.04,
+      "colorOnlyRegions": 0,
+      "structuralRegions": 1,
+      "headline": "構造一致 79.04% / 色のみ差分 0領域 / 構造差分 1領域"
+    },
+    "loopGuard": {
+      "stop": false,
+      "step": 1,
+      "maxSteps": 10,
+      "remainingSteps": 9,
+      "reason": "continue",
+      "message": "反復 1/10 回。改善の余地があるため修正を続行できます。",
+      "iteration": 1,
+      "decision": "continue"
+    },
+    "toastBandCandidates": [
+      {
+        "x": 0,
+        "y": 2261,
+        "width": 1206,
+        "height": 59,
+        "contrast": 59,
+        "position": "bottom"
+      },
+      {
+        "x": 0,
+        "y": 2512,
+        "width": 1206,
+        "height": 59,
+        "contrast": 89,
+        "position": "bottom"
+      }
+    ],
+    "verdictRoute": "pixel",
+    "verificationContext": {
+      "version": 1,
+      "design": {
+        "sourceIdentitySha256": "564f29e74fb5feb8e42d06e4c8ec7309f8cb7be366f712becc2a6dd38b280921",
+        "imageSha256": "d67867c55c09047c16b0fb6b2866d7cf377b8acca8a0b1f82ab15042081b1ec8",
+        "background": "#FFFFFF",
+        "figmaExportConditions": null
+      },
+      "comparison": {
+        "effectiveThreshold": 0.1,
+        "profile": null,
+        "declaredConditions": {},
+        "geometry": {
+          "designNativeWidth": 390,
+          "designNativeHeight": 844,
+          "screenshotWidth": 1206,
+          "cropApplied": false,
+          "autoCropped": false,
+          "cropSource": "none"
+        }
+      },
+      "mask": {
+        "status": "applied",
+        "coordinateContext": {
+          "canvas_width": 1206,
+          "canvas_height": 2622,
+          "design_original_width": 390,
+          "design_original_height": 844,
+          "screenshot_original_width": 1206,
+          "screenshot_original_height": 2622
+        },
+        "effectiveCanvas": {
+          "width": 1206,
+          "height": 2622
+        },
+        "effectiveRegions": [
+          {
+            "x": 0,
+            "y": 0,
+            "width": 1206,
+            "height": 162,
+            "label": "system:status-bar"
+          },
+          {
+            "x": 0,
+            "y": 2520,
+            "width": 1206,
+            "height": 102,
+            "label": "system:navigation-bar"
+          }
+        ],
+        "maskedPixelCount": 318384,
+        "maskSha256": "b6f97ef8d1f1dd89280d8015237cc9f5cd1738972696ea8cd5ebe06688fcd324",
+        "appliedIds": [],
+        "legacyIds": []
+      },
+      "fingerprint": "4577a229469cdf4dc44c8d829f93c7e38a838fe346736cec44ccf421c040800a"
+    },
+    "diffImagePath": "/Users/devin/repos/designdiff/docs/evidence/round2-macos/stdio-ios-sim-verification/figdiff-home/results/diff-cmp-502169f7-64d8-4834-9d3d-63a8544ccb43.png"
+  }
+}

@@ -16,7 +16,7 @@
       "secretPresent": false
     },
     "stdio-campaign-verification2:X09_mcp_desktop_interop": {
-      "mcpCreatedId": "1789912218296-69aebe97",
+      "mcpCreatedId": "1790256262155-93640e92",
       "desktopSeedListed": true,
       "cropOnDesktopProject": {
         "success": true,
@@ -28,7 +28,7 @@
             "width": 100,
             "height": 80
           },
-          "updatedAt": "2026-09-20T13:50:18.304Z",
+          "updatedAt": "2026-09-24T13:24:22.165Z",
           "capturedWidth": 390,
           "capturedHeight": 844
         }
