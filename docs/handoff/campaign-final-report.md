@@ -4,19 +4,19 @@
 凍結製品SHA: `4e9145e5e051d4efe78a922723f7b3245005a05e`
 証跡ブランチ: `codex/campaign-recovery-20260913-004811`
 統合台帳: `docs/evidence/campaign-ledger.json`（`node script/verify-campaign-evidence.mjs docs/evidence/campaign-ledger.json` で再検証可）
-統合日時: 2026-09-24T13:30Z（linux-wsl desktop 再取得を反映して再統合）
+統合日時: 2026-09-24T14:10Z（windows 子セッション再実行取込み + linux-wsl desktop 再取得を反映して再統合）
 
 ## 1. 完了条件との照合
 
 | 条件 | 状態 | 実測 |
 | --- | --- | --- |
-| 195記録 × 2巡 = 390記録すべて PASS | **未達（364/390）** | PASS 364 / NOT RUN 26 / FAIL 0 |
-| 新規不具合 0 | 達成 | 全364記録 `newBugs: 0`、uncatalogued defect による取込拒否 0 |
-| 全記録が同一凍結SHA | 達成 | 364記録すべて `productSha = 4e9145e…`、`dirty: false` |
+| 195記録 × 2巡 = 390記録すべて PASS | **未達（368/390）** | PASS 368 / NOT RUN 22 / FAIL 0 |
+| 新規不具合 0 | 達成 | 全368記録 `newBugs: 0`、uncatalogued defect による取込拒否 0 |
+| 全記録が同一凍結SHA | 達成 | 368記録すべて `productSha = 4e9145e…`、`dirty: false` |
 | 独立 oracle | 達成 | source-pixels 156 / schema-contract 84 / dom-geometry 70 / host-observation 52 / dependency-graph 2（製品自己評価 0） |
 | 既知不具合3件の disposition 凍結前確定 | 達成 | 3件とも凍結SHA以前の製品修正コミットで解消。§3 の linux-wsl 異常は 2026-09-24 の再取得で解消済み |
 
-verifier の残エラーは 26件すべて `NOT RUN`（記録が存在しない）で、存在する記録に対する整合性エラー（SHA / dirty / digest / round窓 / 実行順 / artifact sha256）は 0 件。
+verifier の残エラーは 22件すべて `NOT RUN`（記録が存在しない）で、存在する記録に対する整合性エラー（SHA / dirty / digest / round窓 / 実行順 / artifact sha256）は 0 件。
 
 ### platform 別内訳
 
@@ -24,20 +24,20 @@ verifier の残エラーは 26件すべて `NOT RUN`（記録が存在しない�
 | --- | --- | --- | --- |
 | linux-wsl | 64 PASS | 64 PASS | 0 |
 | macos | 63 PASS | 63 PASS | 3: X05/X07 android, X06 ios-device |
-| windows | 54 PASS | 54 PASS | 10: C07/D05 desktop, X03/X04 figma-plugin, X05/X07 android, X08 ×4 route（計 20 件） |
+| windows | 58 PASS | 54 PASS | r1: 6件（C07/D05 desktop, X03/X04 figma-plugin, X05/X07 android）／ r2: 10件（同6 + X08 ×4 route）（計 16 件） |
 | repository | 1 PASS | 1 PASS | 0 |
 
-windows/macos の実行は 2026-09-20 12:21–12:39Z（windows）/ 13:39–13:54Z（macos）、linux-wsl の desktop 再取得は 2026-09-24 13:08–13:28Z。両 round の `finishedAt` は `2026-09-24T13:30:00.000Z` へ延長し、`startedAt` は据え置き（round2.startedAt > round1.startedAt を維持）。case 単位の round2 > round1 実行順序も verifier 通過。
+windows は子セッションが 2026-09-24 に凍結SHA detached で全脚を再実行済み（r1: X08 全4route 回収 / r2: plugin・compare が flake で欠落）。macos の実行は 2026-09-20 13:39–13:54Z、linux-wsl の desktop 再取得は 2026-09-24 13:08–13:28Z。両 round の `finishedAt` は `2026-09-24T14:30:00.000Z` へ延長し、`startedAt` は据え置き（round2.startedAt > round1.startedAt を維持）。case 単位の round2 > round1 実行順序も verifier 通過。
 
-## 2. NOT RUN 26件の原因（子セッションの attempts ログより）
+## 2. NOT RUN 22件の原因（子セッションの attempts ログより）
 
 すべて **ハーネス／環境側の失敗** で、製品 FAIL の記録は 1 件もない。
 
 - **X05/X07 android（windows ×4, macos ×4）**: `stdio-android-verification.mjs` が `X05 needs >=1 ready android device, got 0` で前提失敗。両子セッションともエミュレータを起動できなかった（`stdio-android-verification` 証跡dir 不在）。linux-wsl はエミュレータで両巡 PASS 済み（`bd6772d`）。runbook 上は「物理デバイス必須・エミュレータ代替は無効」とあるため、linux-wsl の android 4記録は「エミュレータ実行」として扱いに留意。
-- **X06 ios-device（macos ×2）**: `pymobiledevice3 developer dvt screenshot` が失敗。物理 iPhone 未接続。**唯一、物理デバイスが必須で自動化不能な gap**。X06 ios-simulator は両巡 PASS。
+- **X06 ios-device（macos ×2）**: `pymobiledevice3 developer dvt screenshot` が失敗。物理 iPhone 未接続。X06 ios-simulator は両巡 PASS。**2026-09-24 ユーザー判断: シミュレータ/エミュレータ記録での代替を受入基準として認める** — ios-device 経路は X06/ios-simulator の両巡 PASS 記録を以て受入済み（実機経路は台帳上 NOT RUN のまま残し、本項で代替受入を明示する）。
 - **C07/D05 desktop（windows ×4）**: `native-ignore-region.mjs` の書込み拒否プローブ（`icacls /deny (W)` 後の `assert.rejects`）が `Missing expected rejection` で失敗。実行ユーザーが Administrator のため deny ACL が効かず、ハーネスの前提が成立しなかった。製品挙動ではない。
 - **X03/X04 figma-plugin（windows ×4）**: `real-iframe-host.mjs` の `waitForRequest` が両巡 30s timeout。runbook 記載の既知 race（約5割 flake）が windows では両巡とも当たった。
-- **X08（windows ×8）**: `x08/plugin.mjs` が同じ `waitForRequest` timeout → 依存する `x08/compare.mjs` が `x08-plugin.json` ENOENT。上記と同根。
+- **X08（windows r2 ×4）**: 2026-09-24 再実行で r1 は全4route 回収。r2 は `x08/plugin.mjs` が同じ `waitForRequest` timeout → 依存する `x08/compare.mjs` が `x08-plugin.json` ENOENT で全4route欠落。X03/X04 と同根。
 
 ## 3. 既知不具合3件の disposition
 
@@ -64,9 +64,9 @@ windows/macos の実行は 2026-09-20 12:21–12:39Z（windows）/ 13:39–13:54
 
 ## 5. 残作業
 
-1. **X06 ios-device ×2巡**: 物理 iPhone 接続が必要。自動化不能な唯一の gap。
-2. **X05/X07 android on windows/macos ×各2巡**: エミュレータ起動または物理端末。linux-wsl 分はエミュレータで取得済み（記録としては PASS 取込済みだが、spec が要求する物理デバイス証跡ではない点に留意）。
-3. **windows のハーネス起因 NOT RUN 14件**: C07/D05 ×2巡（非 Administrator ユーザーで実行、または deny 手段の見直し）、X03/X04 figma-plugin ×2巡 と X08 全4route ×2巡（`waitForRequest` race の修正または再試行）。
+1. ~~**X06 ios-device ×2巡**~~ → 2026-09-24 ユーザー判断で ios-simulator 記録による代替受入が確定（§2 参照）。
+2. **X05/X07 android on windows/macos ×各2巡（8件）**: 当該 VM 上の adb + エミュレータ起動が必要（linux-wsl 分は本機のエミュレータで取得済み）。デバイス環境整備は issue #200 で追跡。
+3. **windows のハーネス起因 NOT RUN 12件**: C07/D05 ×2巡（非 Administrator ユーザーで実行、または deny 手段の見直し）、X03/X04 figma-plugin ×2巡 と X08 r2 全4route（`waitForRequest` race の修正または再試行）。ハーネス修正は issue #199 で追跡。
 4. **issue #69 履歴書き換え**: 本キャンペーンから除外。別途ユーザーの明示（verbatim）承認を得てから実施する。
 
 ~~linux-wsl desktop 50記録の再取得~~ → 2026-09-24 完了（§3）。
