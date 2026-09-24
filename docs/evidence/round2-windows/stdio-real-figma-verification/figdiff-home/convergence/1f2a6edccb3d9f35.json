@@ -2,14 +2,14 @@
   "sourceKey": "figma:15giveDl0JkKddxasif6VA:9883:7789",
   "campaigns": [
     {
-      "campaignId": "b82ed16c-d55f-457a-b75a-763725f047bd",
+      "campaignId": "f6f142b7-6546-4f1e-a1a4-43f9bbca130d",
       "sourceKey": "figma:15giveDl0JkKddxasif6VA:9883:7789",
       "designSource": "https://www.figma.com/design/15giveDl0JkKddxasif6VA/figdiff-verify?node-id=9883-7789",
-      "startedAt": 1789907702584,
-      "updatedAt": 1789907702584,
+      "startedAt": 1790257032229,
+      "updatedAt": 1790257032229,
       "iterations": [
         {
-          "comparisonId": "cmp-8b4dabfe-456c-4ab2-8753-d1a321bec55d",
+          "comparisonId": "cmp-97973779-cf9c-40c2-bfc9-43caf71a8265",
           "comparisonConditions": {
             "status": "unverified",
             "design": {
@@ -48,11 +48,11 @@
           "regionCount": 1,
           "structuralVerdict": "fail",
           "status": "UNCERTAIN",
-          "timestamp": 1789907702584,
-          "diffImagePath": "C:\\Users\\Administrator\\repos\\designdiff\\docs\\evidence\\round2-windows\\stdio-real-figma-verification\\figdiff-home\\results\\diff-cmp-8b4dabfe-456c-4ab2-8753-d1a321bec55d.png"
+          "timestamp": 1790257032229,
+          "diffImagePath": "C:\\Users\\Administrator\\repos\\designdiff\\docs\\evidence\\round2-windows\\stdio-real-figma-verification\\figdiff-home\\results\\diff-cmp-97973779-cf9c-40c2-bfc9-43caf71a8265.png"
         }
       ],
-      "endedAt": 1789907702584,
+      "endedAt": 1790257032229,
       "endReason": "uncertain",
       "endMessage": "判定が UNCERTAIN です。この比較は判定の確からしさを損なう条件を含むため、自動修正を止めて人間のレビューに回してください。"
     }

@@ -1,0 +1,47 @@
+{
+  "case": "M15",
+  "route": "mcp",
+  "platform": "windows",
+  "drivers": [
+    "app/mcp-server/script/stdio-campaign-verification2.mjs",
+    "app/mcp-server/script/stdio-issue-verification.mjs"
+  ],
+  "checks": [
+    "M15_capture_width_stable",
+    "M15_issue59"
+  ],
+  "actual": {
+    "stdio-campaign-verification2:M15_capture_width_stable": {
+      "widths": [
+        320,
+        320,
+        320
+      ],
+      "pageUrl": "http://127.0.0.1:61463/page.html"
+    },
+    "stdio-issue-verification:M15_issue59": {
+      "browserObservedWidths": [
+        390,
+        390,
+        390
+      ],
+      "captures": [
+        {
+          "comparisonId": "cmp-5a3e63fd-c147-4be2-aee9-1db269f92443",
+          "responseWidth": 390,
+          "persistedWidth": 390
+        },
+        {
+          "comparisonId": "cmp-876e3cdd-9fe1-4838-8129-9d60b50e6222",
+          "responseWidth": 390,
+          "persistedWidth": 390
+        },
+        {
+          "comparisonId": "cmp-2a1dae13-1b64-4483-a20d-c14bbbd5844c",
+          "responseWidth": 390,
+          "persistedWidth": 390
+        }
+      ]
+    }
+  }
+}

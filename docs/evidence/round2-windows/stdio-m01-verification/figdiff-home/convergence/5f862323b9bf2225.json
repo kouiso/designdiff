@@ -2,14 +2,14 @@
   "sourceKey": "local:C:\\Users\\Administrator\\repos\\designdiff\\docs\\evidence\\round2-windows\\stdio-m01-verification\\input-design.png",
   "campaigns": [
     {
-      "campaignId": "e2967f1f-06b2-4ac4-954e-a33c5a350c41",
+      "campaignId": "dcd70cec-1b11-40a0-b03c-79460c558ee8",
       "sourceKey": "local:C:\\Users\\Administrator\\repos\\designdiff\\docs\\evidence\\round2-windows\\stdio-m01-verification\\input-design.png",
       "designSource": "C:\\Users\\Administrator\\repos\\designdiff\\docs\\evidence\\round2-windows\\stdio-m01-verification\\input-design.png",
-      "startedAt": 1789907709853,
-      "updatedAt": 1789907709853,
+      "startedAt": 1790257049010,
+      "updatedAt": 1790257049010,
       "iterations": [
         {
-          "comparisonId": "cmp-799f34ce-e131-4493-8186-20496e61ed19",
+          "comparisonId": "cmp-8fb77048-7528-42f9-babc-48643a2a082b",
           "comparisonConditions": {
             "status": "unverified",
             "design": {
@@ -45,10 +45,10 @@
           "perceptibleDiffRatio": 0,
           "structuralVerdict": "pass",
           "status": "PASS",
-          "timestamp": 1789907709853
+          "timestamp": 1790257049010
         }
       ],
-      "endedAt": 1789907709853,
+      "endedAt": 1790257049010,
       "endReason": "no-regression",
       "endMessage": "PASS に到達しました (反復 1 回)。ループを終了してください。"
     }

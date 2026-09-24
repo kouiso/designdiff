@@ -2,14 +2,14 @@
   "sourceKey": "campaign:v1:[\"local:C:\\\\Users\\\\Administrator\\\\repos\\\\designdiff\\\\docs\\\\evidence\\\\round1-windows\\\\stdio-campaign-verification2\\\\input-text-design.png\",\"c10\"]",
   "campaigns": [
     {
-      "campaignId": "1e86258a-1fa5-4feb-8914-9624aea69baf",
+      "campaignId": "9b90fabe-8527-4800-9a5e-75d39884951e",
       "sourceKey": "campaign:v1:[\"local:C:\\\\Users\\\\Administrator\\\\repos\\\\designdiff\\\\docs\\\\evidence\\\\round1-windows\\\\stdio-campaign-verification2\\\\input-text-design.png\",\"c10\"]",
       "designSource": "C:\\Users\\Administrator\\repos\\designdiff\\docs\\evidence\\round1-windows\\stdio-campaign-verification2\\input-text-design.png",
-      "startedAt": 1789906891703,
-      "updatedAt": 1789906891703,
+      "startedAt": 1790255536853,
+      "updatedAt": 1790255536853,
       "iterations": [
         {
-          "comparisonId": "cmp-1605f859-c553-474a-a467-92b0cc00504a",
+          "comparisonId": "cmp-625f6b08-8a58-4121-ba53-37dc3f5cc57b",
           "comparisonConditions": {
             "status": "unverified",
             "design": {
@@ -44,8 +44,8 @@
           "regionCount": 2,
           "structuralVerdict": "fail",
           "status": "FAIL",
-          "timestamp": 1789906891703,
-          "diffImagePath": "C:\\Users\\Administrator\\repos\\designdiff\\docs\\evidence\\round1-windows\\stdio-campaign-verification2\\figdiff-home\\results\\diff-cmp-1605f859-c553-474a-a467-92b0cc00504a.png"
+          "timestamp": 1790255536853,
+          "diffImagePath": "C:\\Users\\Administrator\\repos\\designdiff\\docs\\evidence\\round1-windows\\stdio-campaign-verification2\\figdiff-home\\results\\diff-cmp-625f6b08-8a58-4121-ba53-37dc3f5cc57b.png"
         }
       ]
     }

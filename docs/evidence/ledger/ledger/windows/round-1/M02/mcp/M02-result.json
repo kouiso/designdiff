@@ -1,0 +1,17 @@
+{
+  "case": "M02",
+  "route": "mcp",
+  "platform": "windows",
+  "drivers": [
+    "app/mcp-server/script/stdio-campaign-verification.mjs"
+  ],
+  "checks": [
+    "M02_project_lifecycle"
+  ],
+  "actual": {
+    "stdio-campaign-verification:M02_project_lifecycle": {
+      "projectId": "1790255485536-905c8fb0",
+      "deleted": true
+    }
+  }
+}

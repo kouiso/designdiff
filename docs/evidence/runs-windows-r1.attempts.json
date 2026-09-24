@@ -1,7 +1,7 @@
 [
   {
     "driver": "app/mcp-server/script/stdio-campaign-verification.mjs",
-    "startedAt": "2026-09-20T12:21:07.732Z",
+    "startedAt": "2026-09-24T13:11:24.829Z",
     "status": "ok",
     "exitStatus": 0,
     "signal": null,
@@ -12,7 +12,7 @@
   },
   {
     "driver": "app/mcp-server/script/stdio-campaign-verification2.mjs",
-    "startedAt": "2026-09-20T12:21:27.112Z",
+    "startedAt": "2026-09-24T13:12:09.416Z",
     "status": "ok",
     "exitStatus": 0,
     "signal": null,
@@ -23,7 +23,7 @@
   },
   {
     "driver": "app/mcp-server/script/stdio-real-figma-verification.mjs",
-    "startedAt": "2026-09-20T12:22:03.344Z",
+    "startedAt": "2026-09-24T13:12:53.676Z",
     "status": "ok",
     "exitStatus": 0,
     "signal": null,
@@ -34,7 +34,7 @@
   },
   {
     "driver": "app/mcp-server/script/stdio-m01-verification.mjs",
-    "startedAt": "2026-09-20T12:22:12.093Z",
+    "startedAt": "2026-09-24T13:13:06.462Z",
     "status": "ok",
     "exitStatus": 0,
     "signal": null,
@@ -45,7 +45,7 @@
   },
   {
     "driver": "app/mcp-server/script/stdio-m12-verification.mjs",
-    "startedAt": "2026-09-20T12:22:12.928Z",
+    "startedAt": "2026-09-24T13:13:07.967Z",
     "status": "ok",
     "exitStatus": 0,
     "signal": null,
@@ -56,7 +56,7 @@
   },
   {
     "driver": "app/mcp-server/script/stdio-issue-verification.mjs",
-    "startedAt": "2026-09-20T12:22:22.552Z",
+    "startedAt": "2026-09-24T13:13:17.693Z",
     "status": "ok",
     "exitStatus": 0,
     "signal": null,
@@ -67,7 +67,7 @@
   },
   {
     "driver": "app/desktop/e2e/desktop-c-cases.mjs",
-    "startedAt": "2026-09-20T12:23:00.330Z",
+    "startedAt": "2026-09-24T13:14:05.108Z",
     "status": "ok",
     "exitStatus": 0,
     "signal": null,
@@ -78,7 +78,7 @@
   },
   {
     "driver": "app/desktop/e2e/desktop-d-cases.mjs",
-    "startedAt": "2026-09-20T12:23:20.838Z",
+    "startedAt": "2026-09-24T13:14:32.483Z",
     "status": "ok",
     "exitStatus": 0,
     "signal": null,
@@ -89,7 +89,7 @@
   },
   {
     "driver": "app/desktop/e2e/native-unmeasured-score.mjs",
-    "startedAt": "2026-09-20T12:24:28.757Z",
+    "startedAt": "2026-09-24T13:15:42.942Z",
     "status": "ok",
     "exitStatus": 0,
     "signal": null,
@@ -100,18 +100,18 @@
   },
   {
     "driver": "app/desktop/e2e/native-ignore-region.mjs",
-    "startedAt": "2026-09-20T12:24:31.796Z",
+    "startedAt": "2026-09-24T13:15:46.772Z",
     "status": "failed",
     "exitStatus": 1,
     "signal": null,
     "evidenceExists": false,
     "buildDigest": "",
     "stdoutTail": "",
-    "stderrTail": "node:internal/modules/run_main:107\r\n    triggerUncaughtException(\r\n    ^\r\n\r\nAssertionError [ERR_ASSERTION]: Missing expected rejection.\r\n    at async file:///C:/Users/Administrator/repos/designdiff/app/desktop/e2e/native-ignore-region.mjs:403:5 {\r\n  generatedMessage: false,\r\n  code: 'ERR_ASSERTION',\r\n  actual: undefined,\r\n  expected: [Function (anonymous)],\r\n  operator: 'rejects',\r\n  diff: 'simple'\r\n}\r\n\r\nNode.js v25.6.1\r\n"
+    "stderrTail": "node:internal/modules/run_main:111\r\n    triggerUncaughtException(\r\n    ^\r\n\r\nAssertionError [ERR_ASSERTION]: Missing expected rejection.\r\n    at async file:///C:/Users/Administrator/repos/designdiff/app/desktop/e2e/native-ignore-region.mjs:403:5 {\r\n  generatedMessage: false,\r\n  code: 'ERR_ASSERTION',\r\n  actual: undefined,\r\n  expected: [Function (anonymous)],\r\n  operator: 'rejects',\r\n  diff: 'simple'\r\n}\r\n\r\nNode.js v26.10.0\r\n"
   },
   {
     "driver": "app/desktop/e2e/native-figma-node-fix.mjs",
-    "startedAt": "2026-09-20T12:24:34.573Z",
+    "startedAt": "2026-09-24T13:15:51.912Z",
     "status": "ok",
     "exitStatus": 0,
     "signal": null,
@@ -122,7 +122,7 @@
   },
   {
     "driver": "app/desktop/e2e/native-fix-animation.mjs",
-    "startedAt": "2026-09-20T12:24:38.772Z",
+    "startedAt": "2026-09-24T13:15:58.341Z",
     "status": "ok",
     "exitStatus": 0,
     "signal": null,
@@ -133,7 +133,7 @@
   },
   {
     "driver": "app/desktop/e2e/native-issue-report.mjs",
-    "startedAt": "2026-09-20T12:24:43.597Z",
+    "startedAt": "2026-09-24T13:16:04.227Z",
     "status": "ok",
     "exitStatus": 0,
     "signal": null,
@@ -144,18 +144,18 @@
   },
   {
     "driver": "app/desktop/e2e/native-report-export.mjs",
-    "startedAt": "2026-09-20T12:24:47.689Z",
-    "status": "ok",
-    "exitStatus": 0,
+    "startedAt": "2026-09-24T13:16:10.113Z",
+    "status": "failed",
+    "exitStatus": 1,
     "signal": null,
-    "evidenceExists": true,
-    "buildDigest": "9505e9740527c94053a222a21acffca5af9df3003b115cca4f474eb13bc7116d",
+    "evidenceExists": false,
+    "buildDigest": "",
     "stdoutTail": "",
-    "stderrTail": ""
+    "stderrTail": "node:internal/modules/run_main:111\r\n    triggerUncaughtException(\r\n    ^\r\n\r\nAssertionError [ERR_ASSERTION]: FigDiff app capture failed: \r\n\r\nnull !== 0\r\n\r\n    at captureWindowImage (file:///C:/Users/Administrator/repos/designdiff/app/desktop/e2e/native-report-export.mjs:323:14)\r\n    at captureAppWindowImage (file:///C:/Users/Administrator/repos/designdiff/app/desktop/e2e/native-report-export.mjs:339:5)\r\n    at file:///C:/Users/Administrator/repos/designdiff/app/desktop/e2e/native-report-export.mjs:445:5 {\r\n  generatedMessage: false,\r\n  code: 'ERR_ASSERTION',\r\n  actual: null,\r\n  expected: 0,\r\n  operator: 'strictEqual',\r\n  diff: 'simple'\r\n}\r\n\r\nNode.js v26.10.0\r\n"
   },
   {
     "driver": "app/chrome-extension/script/real-chrome-e2e.mjs",
-    "startedAt": "2026-09-20T12:25:50.418Z",
+    "startedAt": "2026-09-24T13:18:09.486Z",
     "status": "ok",
     "exitStatus": 0,
     "signal": null,
@@ -166,29 +166,29 @@
   },
   {
     "driver": "app/figma-plugin/e2e/real-iframe-host.mjs",
-    "startedAt": "2026-09-20T12:26:14.066Z",
+    "startedAt": "2026-09-24T13:18:34.833Z",
     "status": "failed",
     "exitStatus": 1,
     "signal": null,
     "evidenceExists": true,
     "buildDigest": "",
     "stdoutTail": "",
-    "stderrTail": "node:internal/modules/run_main:107\r\n    triggerUncaughtException(\r\n    ^\r\n\r\npage.waitForFunction: Timeout 30000ms exceeded.\r\n    at waitForRequest (C:\\Users\\Administrator\\repos\\designdiff\\app\\figma-plugin\\e2e\\real-iframe-host.mjs:124:16)\r\n    at async file:///C:/Users/Administrator/repos/designdiff/app/figma-plugin/e2e/real-iframe-host.mjs:139:26 {\r\n  name: 'TimeoutError'\r\n}\r\n\r\nNode.js v25.6.1\r\n"
+    "stderrTail": "node:internal/modules/run_main:111\r\n    triggerUncaughtException(\r\n    ^\r\n\r\npage.waitForFunction: Timeout 30000ms exceeded.\r\n    at waitForRequest (C:\\Users\\Administrator\\repos\\designdiff\\app\\figma-plugin\\e2e\\real-iframe-host.mjs:124:16)\r\n    at async file:///C:/Users/Administrator/repos/designdiff/app/figma-plugin/e2e/real-iframe-host.mjs:139:26 {\r\n  name: 'TimeoutError'\r\n}\r\n\r\nNode.js v26.10.0\r\n"
   },
   {
     "driver": "app/mcp-server/script/stdio-android-verification.mjs",
-    "startedAt": "2026-09-20T12:26:44.873Z",
+    "startedAt": "2026-09-24T13:19:05.667Z",
     "status": "failed",
     "exitStatus": 1,
     "signal": null,
     "evidenceExists": false,
     "buildDigest": "",
     "stdoutTail": "",
-    "stderrTail": "node:internal/modules/run_main:107\r\n    triggerUncaughtException(\r\n    ^\r\n\r\nAssertionError [ERR_ASSERTION]: X05 needs >=1 ready android device, got 0\r\n    at file:///C:/Users/Administrator/repos/designdiff/app/mcp-server/script/stdio-android-verification.mjs:69:8\r\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5) {\r\n  generatedMessage: false,\r\n  code: 'ERR_ASSERTION',\r\n  actual: false,\r\n  expected: true,\r\n  operator: '==',\r\n  diff: 'simple'\r\n}\r\n\r\nNode.js v25.6.1\r\n"
+    "stderrTail": "node:internal/modules/run_main:111\r\n    triggerUncaughtException(\r\n    ^\r\n\r\nAssertionError [ERR_ASSERTION]: X05 needs >=1 ready android device, got 0\r\n    at file:///C:/Users/Administrator/repos/designdiff/app/mcp-server/script/stdio-android-verification.mjs:69:8 {\r\n  generatedMessage: false,\r\n  code: 'ERR_ASSERTION',\r\n  actual: false,\r\n  expected: true,\r\n  operator: '==',\r\n  diff: 'simple'\r\n}\r\n\r\nNode.js v26.10.0\r\n"
   },
   {
     "driver": "app/mcp-server/script/x08/mcp.mjs",
-    "startedAt": "2026-09-20T12:26:45.147Z",
+    "startedAt": "2026-09-24T13:19:05.923Z",
     "status": "ok",
     "exitStatus": 0,
     "signal": null,
@@ -199,7 +199,7 @@
   },
   {
     "driver": "app/mcp-server/script/x08/desktop.mjs",
-    "startedAt": "2026-09-20T12:26:45.898Z",
+    "startedAt": "2026-09-24T13:19:06.716Z",
     "status": "ok",
     "exitStatus": 0,
     "signal": null,
@@ -210,7 +210,7 @@
   },
   {
     "driver": "app/mcp-server/script/x08/extension.mjs",
-    "startedAt": "2026-09-20T12:26:48.129Z",
+    "startedAt": "2026-09-24T13:19:10.069Z",
     "status": "ok",
     "exitStatus": 0,
     "signal": null,
@@ -221,24 +221,24 @@
   },
   {
     "driver": "app/mcp-server/script/x08/plugin.mjs",
-    "startedAt": "2026-09-20T12:26:49.877Z",
-    "status": "failed",
-    "exitStatus": 1,
+    "startedAt": "2026-09-24T13:19:14.110Z",
+    "status": "ok",
+    "exitStatus": 0,
     "signal": null,
-    "evidenceExists": false,
+    "evidenceExists": true,
     "buildDigest": "",
-    "stdoutTail": "",
-    "stderrTail": "node:internal/modules/run_main:107\r\n    triggerUncaughtException(\r\n    ^\r\n\r\npage.waitForFunction: Timeout 30000ms exceeded.\r\n    at waitForRequest (C:\\Users\\Administrator\\repos\\designdiff\\app\\mcp-server\\script\\x08\\plugin.mjs:77:16)\r\n    at async file:///C:/Users/Administrator/repos/designdiff/app/mcp-server/script/x08/plugin.mjs:94:25 {\r\n  name: 'TimeoutError'\r\n}\r\n\r\nNode.js v25.6.1\r\n"
+    "stdoutTail": "{\"ok\":true,\"matchRate\":90.97}\n",
+    "stderrTail": ""
   },
   {
     "driver": "app/mcp-server/script/x08/compare.mjs",
-    "startedAt": "2026-09-20T12:27:20.801Z",
-    "status": "failed",
-    "exitStatus": 1,
+    "startedAt": "2026-09-24T13:19:15.546Z",
+    "status": "ok",
+    "exitStatus": 0,
     "signal": null,
-    "evidenceExists": false,
+    "evidenceExists": true,
     "buildDigest": "",
-    "stdoutTail": "",
-    "stderrTail": "node:internal/fs/promises:636\r\n  return new FileHandle(await PromisePrototypeThen(\r\n                        ^\r\n\r\nError: ENOENT: no such file or directory, open 'C:\\Users\\Administrator\\repos\\designdiff\\docs\\evidence\\round1-windows\\x08\\x08-plugin.json'\r\n    at async open (node:internal/fs/promises:636:25)\r\n    at async readFile (node:internal/fs/promises:1269:14)\r\n    at async load (file:///C:/Users/Administrator/repos/designdiff/app/mcp-server/script/x08/compare.mjs:26:41)\r\n    at async file:///C:/Users/Administrator/repos/designdiff/app/mcp-server/script/x08/compare.mjs:30:16 {\r\n  errno: -4058,\r\n  code: 'ENOENT',\r\n  syscall: 'open',\r\n  path: 'C:\\\\Users\\\\Administrator\\\\repos\\\\designdiff\\\\docs\\\\evidence\\\\round1-windows\\\\x08\\\\x08-plugin.json'\r\n}\r\n\r\nNode.js v25.6.1\r\n"
+    "stdoutTail": "{\"ok\":true,\"checks\":13}\n",
+    "stderrTail": ""
   }
 ]

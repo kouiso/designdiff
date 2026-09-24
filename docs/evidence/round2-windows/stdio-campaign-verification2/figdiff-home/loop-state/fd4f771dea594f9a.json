@@ -1,6 +1,6 @@
 [
   {
-    "comparisonId": "cmp-3b53f91f-e97d-4592-8263-060deb069fbf",
+    "comparisonId": "cmp-cff02535-b811-4368-89df-0775c9072f73",
     "matchRate": 98.54,
     "captureWidth": 390,
     "captureHeight": 844,
@@ -8,6 +8,6 @@
     "regionCount": 2,
     "structuralVerdict": "fail",
     "status": "FAIL",
-    "timestamp": 1789907684918
+    "timestamp": 1790257009307
   }
 ]

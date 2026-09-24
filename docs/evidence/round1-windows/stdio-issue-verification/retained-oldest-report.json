@@ -1,6 +1,6 @@
 {
   "status": "FAIL",
-  "comparisonId": "cmp-da2f94f9-360d-4c87-afe0-2a58f3cb2271",
+  "comparisonId": "cmp-6534e6fc-62b0-4bd1-9742-2374f10a7e12",
   "matchRate": 99.96,
   "diffPixelCount": 143,
   "totalPixelCount": 329160,
@@ -83,7 +83,7 @@
     "requestedMode": "auto",
     "usedMode": "flood",
     "fallbackUsed": false,
-    "wallMs": 1.22,
+    "wallMs": 1.19,
     "regionCount": 1
   },
   "gridSummary": {
@@ -374,5 +374,5 @@
     },
     "fingerprint": "58750563339b2c0ea9f42f39ed5d93133987b0f59707c46bb3961c0b0b3f378c"
   },
-  "diffImagePath": "C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\figdiff-issue-verify-ZjzPnO\\store\\results\\diff-cmp-da2f94f9-360d-4c87-afe0-2a58f3cb2271.png"
+  "diffImagePath": "C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\figdiff-issue-verify-X9sv6N\\store\\results\\diff-cmp-6534e6fc-62b0-4bd1-9742-2374f10a7e12.png"
 }

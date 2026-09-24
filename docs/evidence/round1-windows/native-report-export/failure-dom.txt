@@ -1,0 +1,150 @@
+FigDiff
+ホーム
+フレーム選択
+比較
+ライブオーバーレイ
+収束
+設定
+新規比較
+Report fixture
+ステップ 3
+デザインと実装を比較
+
+実装スクリーンショットを追加して、Figmaデザインとの差分を検出します。
+
+デザイン画像（Figma）
+読み込み済み
+実装スクリーンショット
+読み込み済み
+変更
+問題を報告
+差分を検出
+DIFF
+OVERLAY
+SIDE-BY-SIDE
+透明度
+50%
+範囲指定
+100%
+Ctrl+ホイール: ズーム | ホイール: パン | Space+ドラッグ: パン
+リセット
+範囲指定
+95
+
+一致率
+
+95%
+
+FAIL
+Markdown (.md)
+JSON (.json)
+レポートを保存
+
+保存しました: C:\Users\Administrator\repos\designdiff\docs\evidence\round1-windows\native-report-export\saved-report.md
+
+差分領域
+
+1
+
+差分ピクセル
+
+400
+
+Issues
+
+1
+
+補助情報
+
+MATCH
+95
+PIXELS
+95
+REGIONS
+94
+STRUCT
+89
+課題
+除外
+修正確認
+動き
+レポートv2
+ノード
+
+Typed Diff Report
+
+FAIL
+
+判定理由
+
+critical severity issue detected; weakest region top-left (structure 0.007, color ΔE 44.444; lower=better, critical threshold 2)
+
+RegionScore Summary
+top-left
+x:0, y:0, w:30, h:30
+structure: 0.007
+color: 44.444
+shape: 1.000
+layout: 0.000
+top-center
+x:30, y:0, w:30, h:30
+structure: 1.000
+color: 0.000
+shape: 0.000
+layout: 0.000
+top-right
+x:60, y:0, w:30, h:30
+structure: 1.000
+color: 0.000
+shape: 0.000
+layout: 0.000
+middle-left
+x:0, y:30, w:30, h:30
+structure: 1.000
+color: 0.000
+shape: 0.000
+layout: 0.000
+middle-center
+x:30, y:30, w:30, h:30
+structure: 1.000
+color: 0.000
+shape: 0.000
+layout: 0.000
+middle-right
+x:60, y:30, w:30, h:30
+structure: 1.000
+color: 0.000
+shape: 0.000
+layout: 0.000
+bottom-left
+x:0, y:60, w:30, h:30
+structure: 1.000
+color: 0.000
+shape: 0.000
+layout: 0.000
+bottom-center
+x:30, y:60, w:30, h:30
+structure: 1.000
+color: 0.000
+shape: 0.000
+layout: 0.000
+bottom-right
+x:60, y:60, w:30, h:30
+structure: 1.000
+color: 0.000
+shape: 0.000
+layout: 0.000
+Issues
+color
+severity: critical
+x:0, y:0, w:30, h:30
+delta_e_2000: 44.444 / threshold 2.000
+補助情報
+
+matchRate: 95.06%
+
+diffRegions: 1
+
+diffPixels: 400
+
+軽微な差分が1箇所あります。inspect_nodeで差分領域のノードを確認してください。

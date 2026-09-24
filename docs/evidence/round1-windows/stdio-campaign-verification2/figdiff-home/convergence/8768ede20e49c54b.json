@@ -2,14 +2,14 @@
   "sourceKey": "campaign:v1:[\"local:C:\\\\Users\\\\Administrator\\\\repos\\\\designdiff\\\\docs\\\\evidence\\\\round1-windows\\\\stdio-campaign-verification2\\\\input-design.png\",\"c01\"]",
   "campaigns": [
     {
-      "campaignId": "e901f379-379d-48e9-82c8-f3d8247b4ad5",
+      "campaignId": "3df55281-ebfb-4816-9857-31c04002aeae",
       "sourceKey": "campaign:v1:[\"local:C:\\\\Users\\\\Administrator\\\\repos\\\\designdiff\\\\docs\\\\evidence\\\\round1-windows\\\\stdio-campaign-verification2\\\\input-design.png\",\"c01\"]",
       "designSource": "C:\\Users\\Administrator\\repos\\designdiff\\docs\\evidence\\round1-windows\\stdio-campaign-verification2\\input-design.png",
-      "startedAt": 1789906888535,
-      "updatedAt": 1789906888535,
+      "startedAt": 1790255531364,
+      "updatedAt": 1790255531364,
       "iterations": [
         {
-          "comparisonId": "cmp-bbab0bed-eacd-468b-8072-86b9d6fcdd66",
+          "comparisonId": "cmp-a60c7a90-0d74-4adb-9c2b-9e8731498eb4",
           "comparisonConditions": {
             "status": "unverified",
             "design": {
@@ -45,10 +45,10 @@
           "perceptibleDiffRatio": 0,
           "structuralVerdict": "pass",
           "status": "PASS",
-          "timestamp": 1789906888535
+          "timestamp": 1790255531364
         }
       ],
-      "endedAt": 1789906888535,
+      "endedAt": 1790255531364,
       "endReason": "no-regression",
       "endMessage": "PASS に到達しました (反復 1 回)。ループを終了してください。"
     }

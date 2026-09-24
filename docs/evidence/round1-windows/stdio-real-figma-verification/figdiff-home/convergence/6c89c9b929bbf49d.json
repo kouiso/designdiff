@@ -2,17 +2,17 @@
   "sourceKey": "figma:15giveDl0JkKddxasif6VA:9525:4760",
   "campaigns": [
     {
-      "campaignId": "a1492a85-8076-49c8-aa6f-7237918e3c18",
+      "campaignId": "dc0ca965-bacb-40d4-94c1-890e046d8f58",
       "sourceKey": "figma:15giveDl0JkKddxasif6VA:9525:4760",
       "designSource": "https://www.figma.com/design/15giveDl0JkKddxasif6VA/figdiff-verify?node-id=9525-4760",
-      "startedAt": 1789906927576,
-      "updatedAt": 1789906931079,
-      "endedAt": 1789906931079,
+      "startedAt": 1790255580146,
+      "updatedAt": 1790255585434,
+      "endedAt": 1790255585434,
       "endReason": "no-regression",
       "endMessage": "PASS に到達しました (反復 2 回)。ループを終了してください。",
       "iterations": [
         {
-          "comparisonId": "cmp-5fffef40-6bdc-4c11-b17d-7cc5fed923f0",
+          "comparisonId": "cmp-f9fe7215-a742-4e98-bcae-7c313c355a44",
           "comparisonConditions": {
             "status": "unverified",
             "design": {
@@ -51,11 +51,11 @@
           "regionCount": 90,
           "structuralVerdict": "fail",
           "status": "FAIL",
-          "timestamp": 1789906927576,
-          "diffImagePath": "C:\\Users\\Administrator\\repos\\designdiff\\docs\\evidence\\round1-windows\\stdio-real-figma-verification\\figdiff-home\\results\\diff-cmp-5fffef40-6bdc-4c11-b17d-7cc5fed923f0.png"
+          "timestamp": 1790255580146,
+          "diffImagePath": "C:\\Users\\Administrator\\repos\\designdiff\\docs\\evidence\\round1-windows\\stdio-real-figma-verification\\figdiff-home\\results\\diff-cmp-f9fe7215-a742-4e98-bcae-7c313c355a44.png"
         },
         {
-          "comparisonId": "cmp-fc23f3e8-f037-4d82-a967-f5bf5f880742",
+          "comparisonId": "cmp-693bcf93-ef15-4e36-83c3-af02e90c606d",
           "comparisonConditions": {
             "status": "unverified",
             "design": {
@@ -94,11 +94,11 @@
           "regionCount": 1,
           "structuralVerdict": "fail",
           "status": "FAIL",
-          "timestamp": 1789906930142,
-          "diffImagePath": "C:\\Users\\Administrator\\repos\\designdiff\\docs\\evidence\\round1-windows\\stdio-real-figma-verification\\figdiff-home\\results\\diff-cmp-fc23f3e8-f037-4d82-a967-f5bf5f880742.png"
+          "timestamp": 1790255583926,
+          "diffImagePath": "C:\\Users\\Administrator\\repos\\designdiff\\docs\\evidence\\round1-windows\\stdio-real-figma-verification\\figdiff-home\\results\\diff-cmp-693bcf93-ef15-4e36-83c3-af02e90c606d.png"
         },
         {
-          "comparisonId": "cmp-8f4e2298-f0c7-4aff-9915-fd4fa3afea24",
+          "comparisonId": "cmp-3107c032-f810-42af-87ca-46efa551536a",
           "comparisonConditions": {
             "status": "unverified",
             "design": {
@@ -138,19 +138,19 @@
           "perceptibleDiffRatio": 0,
           "structuralVerdict": "pass",
           "status": "PASS",
-          "timestamp": 1789906931079
+          "timestamp": 1790255585434
         }
       ]
     },
     {
-      "campaignId": "12e8fd8f-a485-42c9-a617-937f4bc6ef89",
+      "campaignId": "5b55c047-6225-4d3c-9ead-a153de11d1df",
       "sourceKey": "figma:15giveDl0JkKddxasif6VA:9525:4760",
       "designSource": "https://www.figma.com/design/15giveDl0JkKddxasif6VA/figdiff-verify?node-id=9525-4760",
-      "startedAt": 1789906932012,
-      "updatedAt": 1789906932012,
+      "startedAt": 1790255586384,
+      "updatedAt": 1790255586384,
       "iterations": [
         {
-          "comparisonId": "cmp-cf1e6a83-6377-4fe3-b2b0-bce6e8ecbb70",
+          "comparisonId": "cmp-102c9ac8-2b5e-437e-b97e-2ead189ed650",
           "comparisonConditions": {
             "status": "unverified",
             "design": {
@@ -189,8 +189,8 @@
           "regionCount": 1,
           "structuralVerdict": "fail",
           "status": "FAIL",
-          "timestamp": 1789906932012,
-          "diffImagePath": "C:\\Users\\Administrator\\repos\\designdiff\\docs\\evidence\\round1-windows\\stdio-real-figma-verification\\figdiff-home\\results\\diff-cmp-cf1e6a83-6377-4fe3-b2b0-bce6e8ecbb70.png"
+          "timestamp": 1790255586384,
+          "diffImagePath": "C:\\Users\\Administrator\\repos\\designdiff\\docs\\evidence\\round1-windows\\stdio-real-figma-verification\\figdiff-home\\results\\diff-cmp-102c9ac8-2b5e-437e-b97e-2ead189ed650.png"
         }
       ]
     }

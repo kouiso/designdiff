@@ -35,12 +35,12 @@
     "valid": {
       "prepareRequestCount": 2,
       "preparedDraftIds": [
-        "a4da7b6e-0cde-4d10-b5bb-fa89f0d2bf42",
-        "395d8619-81c7-45af-b0b2-afc3545afd83"
+        "51505030-0564-4a35-924e-c78cba12d766",
+        "1c81b431-cb00-47fd-8402-0e944892e5c6"
       ],
       "discardedDraftIds": [
-        "a4da7b6e-0cde-4d10-b5bb-fa89f0d2bf42",
-        "395d8619-81c7-45af-b0b2-afc3545afd83"
+        "51505030-0564-4a35-924e-c78cba12d766",
+        "1c81b431-cb00-47fd-8402-0e944892e5c6"
       ],
       "submitRequestCount": 0,
       "githubReadMockRequests": [

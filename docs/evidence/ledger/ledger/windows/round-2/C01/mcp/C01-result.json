@@ -1,0 +1,25 @@
+{
+  "case": "C01",
+  "route": "mcp",
+  "platform": "windows",
+  "drivers": [
+    "app/mcp-server/script/stdio-campaign-verification2.mjs",
+    "app/mcp-server/script/stdio-issue-verification.mjs"
+  ],
+  "checks": [
+    "C01_identical_opaque",
+    "C01"
+  ],
+  "actual": {
+    "stdio-campaign-verification2:C01_identical_opaque": {
+      "matchRate": 100,
+      "diffPixelCount": 0,
+      "status": "PASS",
+      "fixtureSha256": "031f8c275e7796f9"
+    },
+    "stdio-issue-verification:C01": {
+      "diffPixelCount": 0,
+      "comparisonId": "cmp-9102187f-f23f-4bad-9aad-276c21a67054"
+    }
+  }
+}

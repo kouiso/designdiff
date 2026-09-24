@@ -58,12 +58,12 @@
     }
   },
   "screenshots": {
-    "fix-before-pinned.png": "dd11dc8d1ac4b48d305ea470a14c66f8e00cb4a1d345851ea05e9924eb7c93f2",
-    "fix-improved-with-side-effect.png": "38eb0b3194e776b7a6c3d4d0e4af4eaea26a4780fb6dec9cf618032bc2a50d9b",
-    "fix-condition-mismatch.png": "572d7db106185643d372bff7d98621817c5baf900fcfe66bc73f9317968186fc",
-    "animation-two-frame-mapping.png": "07e57765a4bf5a89397033d50159755a4a661e97563a696e6cdf7a9cc1a310d0",
-    "animation-single-design-unmeasured.png": "8c5108c555d66f180a0da5380124b3a59d6996dfbb9cb3e04a18031562230a41",
-    "animation-reversed-time-rejected.png": "9487ed0c6edcca2cdc03aa10b9b56a190ee2981c9d6df049f1a8744599ab196d"
+    "fix-before-pinned.png": "ad309a8b1d11aa3ffb9e7543f43c0650d35941c152d33c43deb16c68b459a029",
+    "fix-improved-with-side-effect.png": "4ee8287f7c7f6e0522f99e334fe774210d5cfc2b1d0e6cd032240e2ff2de9335",
+    "fix-condition-mismatch.png": "47824e8a4aaf795f81b8bc3708c7bd6af593b543da8c69c501dd84e04d5d4af5",
+    "animation-two-frame-mapping.png": "823c82f253df4fbb6ee57e1586d7857471a69fb3d2c9725cb5ea27d680b86042",
+    "animation-single-design-unmeasured.png": "daa2e21e78ce6c691a54f80b28985a326b3d8af2df0755d542e72b16f9094032",
+    "animation-reversed-time-rejected.png": "50451dc4b2b99b4e414acbd706ad6fc340100bdfd6713962af75fea09053c817"
   },
   "pageErrors": [],
   "rendererCrashes": []

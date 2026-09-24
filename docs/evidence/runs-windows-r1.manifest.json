@@ -2,7 +2,7 @@
   {
     "driver": "app/mcp-server/script/stdio-campaign-verification.mjs",
     "evidenceDir": "docs/evidence/round1-windows/stdio-campaign-verification",
-    "executedAt": "2026-09-20T12:21:07.732Z",
+    "executedAt": "2026-09-24T13:11:24.829Z",
     "environment": "windows",
     "buildDigest": "4ea11b2a6c8e1db667767e9acfbc66d0d153bd2bf3373a3bec52b654e26d8481",
     "roundExecutionId": "round1"
@@ -10,7 +10,7 @@
   {
     "driver": "app/mcp-server/script/stdio-campaign-verification2.mjs",
     "evidenceDir": "docs/evidence/round1-windows/stdio-campaign-verification2",
-    "executedAt": "2026-09-20T12:21:27.112Z",
+    "executedAt": "2026-09-24T13:12:09.416Z",
     "environment": "windows",
     "buildDigest": "",
     "roundExecutionId": "round1"
@@ -18,7 +18,7 @@
   {
     "driver": "app/mcp-server/script/stdio-real-figma-verification.mjs",
     "evidenceDir": "docs/evidence/round1-windows/stdio-real-figma-verification",
-    "executedAt": "2026-09-20T12:22:03.344Z",
+    "executedAt": "2026-09-24T13:12:53.676Z",
     "environment": "windows",
     "buildDigest": "",
     "roundExecutionId": "round1"
@@ -26,7 +26,7 @@
   {
     "driver": "app/mcp-server/script/stdio-m01-verification.mjs",
     "evidenceDir": "docs/evidence/round1-windows/stdio-m01-verification",
-    "executedAt": "2026-09-20T12:22:12.093Z",
+    "executedAt": "2026-09-24T13:13:06.462Z",
     "environment": "windows",
     "buildDigest": "",
     "roundExecutionId": "round1"
@@ -34,7 +34,7 @@
   {
     "driver": "app/mcp-server/script/stdio-m12-verification.mjs",
     "evidenceDir": "docs/evidence/round1-windows/stdio-m12-verification",
-    "executedAt": "2026-09-20T12:22:12.928Z",
+    "executedAt": "2026-09-24T13:13:07.967Z",
     "environment": "windows",
     "buildDigest": "",
     "roundExecutionId": "round1"
@@ -42,7 +42,7 @@
   {
     "driver": "app/mcp-server/script/stdio-issue-verification.mjs",
     "evidenceDir": "docs/evidence/round1-windows/stdio-issue-verification",
-    "executedAt": "2026-09-20T12:22:22.552Z",
+    "executedAt": "2026-09-24T13:13:17.693Z",
     "environment": "windows",
     "buildDigest": "4ea11b2a6c8e1db667767e9acfbc66d0d153bd2bf3373a3bec52b654e26d8481",
     "roundExecutionId": "round1"
@@ -50,7 +50,7 @@
   {
     "driver": "app/desktop/e2e/desktop-c-cases.mjs",
     "evidenceDir": "docs/evidence/round1-windows/desktop-c-cases",
-    "executedAt": "2026-09-20T12:23:00.330Z",
+    "executedAt": "2026-09-24T13:14:05.108Z",
     "environment": "windows",
     "buildDigest": "",
     "roundExecutionId": "round1"
@@ -58,7 +58,7 @@
   {
     "driver": "app/desktop/e2e/desktop-d-cases.mjs",
     "evidenceDir": "docs/evidence/round1-windows/desktop-d-cases",
-    "executedAt": "2026-09-20T12:23:20.838Z",
+    "executedAt": "2026-09-24T13:14:32.483Z",
     "environment": "windows",
     "buildDigest": "",
     "roundExecutionId": "round1"
@@ -67,7 +67,7 @@
     "driver": "app/desktop/e2e/native-unmeasured-score.mjs",
     "evidenceDir": "docs/evidence/round1-windows/native-unmeasured-score",
     "evidenceFile": "after-native.json",
-    "executedAt": "2026-09-20T12:24:28.757Z",
+    "executedAt": "2026-09-24T13:15:42.942Z",
     "environment": "windows",
     "buildDigest": "",
     "roundExecutionId": "round1"
@@ -76,7 +76,7 @@
     "driver": "app/desktop/e2e/native-figma-node-fix.mjs",
     "evidenceDir": "docs/evidence/round1-windows/native-figma-node-fix",
     "evidenceFile": "manifest.json",
-    "executedAt": "2026-09-20T12:24:34.573Z",
+    "executedAt": "2026-09-24T13:15:51.912Z",
     "environment": "windows",
     "buildDigest": "9505e9740527c94053a222a21acffca5af9df3003b115cca4f474eb13bc7116d",
     "roundExecutionId": "round1"
@@ -85,7 +85,7 @@
     "driver": "app/desktop/e2e/native-fix-animation.mjs",
     "evidenceDir": "docs/evidence/round1-windows/native-fix-animation",
     "evidenceFile": "manifest.json",
-    "executedAt": "2026-09-20T12:24:38.772Z",
+    "executedAt": "2026-09-24T13:15:58.341Z",
     "environment": "windows",
     "buildDigest": "9505e9740527c94053a222a21acffca5af9df3003b115cca4f474eb13bc7116d",
     "roundExecutionId": "round1"
@@ -94,16 +94,7 @@
     "driver": "app/desktop/e2e/native-issue-report.mjs",
     "evidenceDir": "docs/evidence/round1-windows/native-issue-report",
     "evidenceFile": "manifest.json",
-    "executedAt": "2026-09-20T12:24:43.597Z",
-    "environment": "windows",
-    "buildDigest": "9505e9740527c94053a222a21acffca5af9df3003b115cca4f474eb13bc7116d",
-    "roundExecutionId": "round1"
-  },
-  {
-    "driver": "app/desktop/e2e/native-report-export.mjs",
-    "evidenceDir": "docs/evidence/round1-windows/native-report-export",
-    "evidenceFile": "manifest.json",
-    "executedAt": "2026-09-20T12:24:47.689Z",
+    "executedAt": "2026-09-24T13:16:04.227Z",
     "environment": "windows",
     "buildDigest": "9505e9740527c94053a222a21acffca5af9df3003b115cca4f474eb13bc7116d",
     "roundExecutionId": "round1"
@@ -111,7 +102,7 @@
   {
     "driver": "app/chrome-extension/script/real-chrome-e2e.mjs",
     "evidenceDir": "docs/evidence/round1-windows/real-chrome-e2e",
-    "executedAt": "2026-09-20T12:25:50.418Z",
+    "executedAt": "2026-09-24T13:18:09.486Z",
     "environment": "windows",
     "buildDigest": "",
     "roundExecutionId": "round1"
@@ -120,7 +111,7 @@
     "driver": "app/mcp-server/script/x08/mcp.mjs",
     "evidenceDir": "docs/evidence/round1-windows/x08",
     "evidenceFile": "x08-mcp.json",
-    "executedAt": "2026-09-20T12:26:45.147Z",
+    "executedAt": "2026-09-24T13:19:05.923Z",
     "environment": "windows",
     "buildDigest": "",
     "roundExecutionId": "round1"
@@ -129,7 +120,7 @@
     "driver": "app/mcp-server/script/x08/desktop.mjs",
     "evidenceDir": "docs/evidence/round1-windows/x08",
     "evidenceFile": "x08-desktop.json",
-    "executedAt": "2026-09-20T12:26:45.898Z",
+    "executedAt": "2026-09-24T13:19:06.716Z",
     "environment": "windows",
     "buildDigest": "",
     "roundExecutionId": "round1"
@@ -138,7 +129,24 @@
     "driver": "app/mcp-server/script/x08/extension.mjs",
     "evidenceDir": "docs/evidence/round1-windows/x08",
     "evidenceFile": "x08-extension.json",
-    "executedAt": "2026-09-20T12:26:48.129Z",
+    "executedAt": "2026-09-24T13:19:10.069Z",
+    "environment": "windows",
+    "buildDigest": "",
+    "roundExecutionId": "round1"
+  },
+  {
+    "driver": "app/mcp-server/script/x08/plugin.mjs",
+    "evidenceDir": "docs/evidence/round1-windows/x08",
+    "evidenceFile": "x08-plugin.json",
+    "executedAt": "2026-09-24T13:19:14.110Z",
+    "environment": "windows",
+    "buildDigest": "",
+    "roundExecutionId": "round1"
+  },
+  {
+    "driver": "app/mcp-server/script/x08/compare.mjs",
+    "evidenceDir": "docs/evidence/round1-windows/x08",
+    "executedAt": "2026-09-24T13:19:15.546Z",
     "environment": "windows",
     "buildDigest": "",
     "roundExecutionId": "round1"

@@ -1,18 +1,16 @@
 {
   "schemaVersion": 1,
-  "startedAt": "2026-09-20T12:37:42.856Z",
-  "completedAt": "2026-09-20T12:37:46.811Z",
+  "startedAt": "2026-09-24T13:40:29.113Z",
+  "completedAt": "2026-09-24T13:40:35.933Z",
   "revision": "4e9145e5e051d4efe78a922723f7b3245005a05e",
   "dirtyState": [
-    "A  docs/evidence/campaign-rounds.json",
     "A  docs/evidence/runs-windows-r1.json",
     "M  docs/evidence/runs-windows-r2.json",
+    "?? docs/evidence/mcp-stdio-campaign-verification/",
     "?? docs/evidence/round1-windows/",
     "?? docs/evidence/round2-windows/",
     "?? docs/evidence/runs-windows-r1.attempts.json",
-    "?? docs/evidence/runs-windows-r1.manifest.json",
-    "?? docs/evidence/runs-windows-r2.attempts.json",
-    "?? docs/evidence/runs-windows-r2.manifest.json"
+    "?? docs/evidence/runs-windows-r1.manifest.json"
   ],
   "command": "FIGDIFF_ISSUE_REPORT_EVIDENCE=<evidence> xvfb-run -a node app/desktop/e2e/native-issue-report.mjs",
   "build": {
@@ -1790,8 +1788,8 @@
   "artifacts": [
     {
       "path": "credential-failure-visible.png",
-      "size": 115975,
-      "sha256": "6be8606c95ae486805f53db5e4452e6d3670356786e3e852d675cfa734a4823f"
+      "size": 141835,
+      "sha256": "86bafe79b2355330d55ddd0c98f154726a504fa0e84198e1132bf34eda91a25a"
     },
     {
       "path": "fixture-input.json",
@@ -1806,12 +1804,12 @@
     {
       "path": "native-issue-report.json",
       "size": 2712,
-      "sha256": "22907fce0eed084a25b14dea614def66d5ca9d6838df3263af8ff56d4ce11c86"
+      "sha256": "7b5e74ba33b3b644e0c7f1c6582b8e001ce86690601ec6a32ae996bf37ff496a"
     },
     {
       "path": "reviewed-readonly-draft.png",
-      "size": 119659,
-      "sha256": "ff09d2c5eef31b34f0a3720b9c0bdbc51a15fcf36935ed814bbab118a8c4130f"
+      "size": 127535,
+      "sha256": "8c478df0a067a8dc86e27d5beef0924f5586ba1761996218e1b46cf5266e793b"
     },
     {
       "path": "valid-github-read-mock.jsonl",
@@ -1821,7 +1819,7 @@
     {
       "path": "valid-ipc.jsonl",
       "size": 1384,
-      "sha256": "f257f06ab3c7eecfc057203f7415945c372365400556221937636f27de3cd164"
+      "sha256": "95d804b94498d89d9f64f5c46d61d8a8b5a289a6d161d3d74fd194cfeff9c973"
     }
   ]
 }

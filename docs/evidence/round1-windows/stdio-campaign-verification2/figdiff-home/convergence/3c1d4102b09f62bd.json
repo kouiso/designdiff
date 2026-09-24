@@ -2,18 +2,18 @@
   "sourceKey": "campaign:v1:[\"local:C:\\\\Users\\\\Administrator\\\\repos\\\\designdiff\\\\docs\\\\evidence\\\\round1-windows\\\\stdio-campaign-verification2\\\\input-design.png\",\"m15\"]",
   "campaigns": [
     {
-      "campaignId": "e4a2e5cb-7d15-414b-b978-686c9228db51",
+      "campaignId": "e108acad-e921-42b5-8619-a21cc1201ebd",
       "sourceKey": "campaign:v1:[\"local:C:\\\\Users\\\\Administrator\\\\repos\\\\designdiff\\\\docs\\\\evidence\\\\round1-windows\\\\stdio-campaign-verification2\\\\input-design.png\",\"m15\"]",
       "designSource": "C:\\Users\\Administrator\\repos\\designdiff\\docs\\evidence\\round1-windows\\stdio-campaign-verification2\\input-design.png",
-      "implementationUrl": "http://127.0.0.1:59715/page.html",
-      "startedAt": 1789906915656,
-      "updatedAt": 1789906915656,
-      "endedAt": 1789906915656,
+      "implementationUrl": "http://127.0.0.1:61207/page.html",
+      "startedAt": 1790255564570,
+      "updatedAt": 1790255564570,
+      "endedAt": 1790255564570,
       "endReason": "uncertain",
       "endMessage": "判定が UNCERTAIN です。この比較は判定の確からしさを損なう条件を含むため、自動修正を止めて人間のレビューに回してください。",
       "iterations": [
         {
-          "comparisonId": "cmp-9dba61b7-9cf2-446e-aa74-1b9627402b2e",
+          "comparisonId": "cmp-6158f4c1-e30c-46a9-bf17-468e8151681b",
           "comparisonConditions": {
             "status": "unverified",
             "design": {
@@ -48,24 +48,24 @@
           "regionCount": 1,
           "structuralVerdict": "fail",
           "status": "UNCERTAIN",
-          "timestamp": 1789906915656,
-          "diffImagePath": "C:\\Users\\Administrator\\repos\\designdiff\\docs\\evidence\\round1-windows\\stdio-campaign-verification2\\figdiff-home\\results\\diff-cmp-9dba61b7-9cf2-446e-aa74-1b9627402b2e.png"
+          "timestamp": 1790255564570,
+          "diffImagePath": "C:\\Users\\Administrator\\repos\\designdiff\\docs\\evidence\\round1-windows\\stdio-campaign-verification2\\figdiff-home\\results\\diff-cmp-6158f4c1-e30c-46a9-bf17-468e8151681b.png"
         }
       ]
     },
     {
-      "campaignId": "f96ed994-59fa-4dc6-b0bc-262275ba15fa",
+      "campaignId": "7e4ebb6a-fbd7-4932-9d3d-4183caf7006b",
       "sourceKey": "campaign:v1:[\"local:C:\\\\Users\\\\Administrator\\\\repos\\\\designdiff\\\\docs\\\\evidence\\\\round1-windows\\\\stdio-campaign-verification2\\\\input-design.png\",\"m15\"]",
       "designSource": "C:\\Users\\Administrator\\repos\\designdiff\\docs\\evidence\\round1-windows\\stdio-campaign-verification2\\input-design.png",
-      "implementationUrl": "http://127.0.0.1:59715/page.html",
-      "startedAt": 1789906919480,
-      "updatedAt": 1789906919480,
-      "endedAt": 1789906919480,
+      "implementationUrl": "http://127.0.0.1:61207/page.html",
+      "startedAt": 1790255569474,
+      "updatedAt": 1790255569474,
+      "endedAt": 1790255569474,
       "endReason": "uncertain",
       "endMessage": "判定が UNCERTAIN です。この比較は判定の確からしさを損なう条件を含むため、自動修正を止めて人間のレビューに回してください。",
       "iterations": [
         {
-          "comparisonId": "cmp-2ce9695b-d5d8-475b-b5cd-ef93bd86300d",
+          "comparisonId": "cmp-380af1f9-407a-47f3-bde6-4a8ae2be8cac",
           "comparisonConditions": {
             "status": "unverified",
             "design": {
@@ -100,21 +100,21 @@
           "regionCount": 1,
           "structuralVerdict": "fail",
           "status": "UNCERTAIN",
-          "timestamp": 1789906919480,
-          "diffImagePath": "C:\\Users\\Administrator\\repos\\designdiff\\docs\\evidence\\round1-windows\\stdio-campaign-verification2\\figdiff-home\\results\\diff-cmp-2ce9695b-d5d8-475b-b5cd-ef93bd86300d.png"
+          "timestamp": 1790255569474,
+          "diffImagePath": "C:\\Users\\Administrator\\repos\\designdiff\\docs\\evidence\\round1-windows\\stdio-campaign-verification2\\figdiff-home\\results\\diff-cmp-380af1f9-407a-47f3-bde6-4a8ae2be8cac.png"
         }
       ]
     },
     {
-      "campaignId": "d1c9399b-ffde-41f6-a4c7-d15ea8dbd468",
+      "campaignId": "5ddd39ae-31a8-4ef9-9fe3-db2cf7c853e1",
       "sourceKey": "campaign:v1:[\"local:C:\\\\Users\\\\Administrator\\\\repos\\\\designdiff\\\\docs\\\\evidence\\\\round1-windows\\\\stdio-campaign-verification2\\\\input-design.png\",\"m15\"]",
       "designSource": "C:\\Users\\Administrator\\repos\\designdiff\\docs\\evidence\\round1-windows\\stdio-campaign-verification2\\input-design.png",
-      "implementationUrl": "http://127.0.0.1:59715/page.html",
-      "startedAt": 1789906923269,
-      "updatedAt": 1789906923269,
+      "implementationUrl": "http://127.0.0.1:61207/page.html",
+      "startedAt": 1790255573617,
+      "updatedAt": 1790255573617,
       "iterations": [
         {
-          "comparisonId": "cmp-77e6542b-c246-4f31-9557-be328c001208",
+          "comparisonId": "cmp-579d29e4-e6f1-40de-a3ad-87ba74769a81",
           "comparisonConditions": {
             "status": "unverified",
             "design": {
@@ -149,11 +149,11 @@
           "regionCount": 1,
           "structuralVerdict": "fail",
           "status": "UNCERTAIN",
-          "timestamp": 1789906923269,
-          "diffImagePath": "C:\\Users\\Administrator\\repos\\designdiff\\docs\\evidence\\round1-windows\\stdio-campaign-verification2\\figdiff-home\\results\\diff-cmp-77e6542b-c246-4f31-9557-be328c001208.png"
+          "timestamp": 1790255573617,
+          "diffImagePath": "C:\\Users\\Administrator\\repos\\designdiff\\docs\\evidence\\round1-windows\\stdio-campaign-verification2\\figdiff-home\\results\\diff-cmp-579d29e4-e6f1-40de-a3ad-87ba74769a81.png"
         }
       ],
-      "endedAt": 1789906923269,
+      "endedAt": 1790255573617,
       "endReason": "uncertain",
       "endMessage": "判定が UNCERTAIN です。この比較は判定の確からしさを損なう条件を含むため、自動修正を止めて人間のレビューに回してください。"
     }

@@ -1,8 +1,8 @@
 {"phase":"request","channel":"issue-report:prepare","args":[{"title":"Artificial token ghp_nativeFixture123","body":"Artificial path /home/fixture/private/reproduction.txt","category":"bug"}]}
-{"phase":"response","channel":"issue-report:prepare","result":{"draftId":"a4da7b6e-0cde-4d10-b5bb-fa89f0d2bf42","repository":{"owner":"kouiso","repo":"designdiff"},"title":"[bug] Artificial token [REDACTED]","body":"Artificial path ~/private/reproduction.txt","labels":["desktop-feedback","bug"],"maskedCount":2,"duplicate":{"status":"none"}}}
-{"phase":"request","channel":"issue-report:discard","args":["a4da7b6e-0cde-4d10-b5bb-fa89f0d2bf42"]}
+{"phase":"response","channel":"issue-report:prepare","result":{"draftId":"51505030-0564-4a35-924e-c78cba12d766","repository":{"owner":"kouiso","repo":"designdiff"},"title":"[bug] Artificial token [REDACTED]","body":"Artificial path ~/private/reproduction.txt","labels":["desktop-feedback","bug"],"maskedCount":2,"duplicate":{"status":"none"}}}
+{"phase":"request","channel":"issue-report:discard","args":["51505030-0564-4a35-924e-c78cba12d766"]}
 {"phase":"response","channel":"issue-report:discard"}
 {"phase":"request","channel":"issue-report:prepare","args":[{"title":"Artificial token ghp_nativeFixture123","body":"Artificial path /home/fixture/private/reproduction.txt","category":"bug"}]}
-{"phase":"response","channel":"issue-report:prepare","result":{"draftId":"395d8619-81c7-45af-b0b2-afc3545afd83","repository":{"owner":"kouiso","repo":"designdiff"},"title":"[bug] Artificial token [REDACTED]","body":"Artificial path ~/private/reproduction.txt","labels":["desktop-feedback","bug"],"maskedCount":2,"duplicate":{"status":"none"}}}
-{"phase":"request","channel":"issue-report:discard","args":["395d8619-81c7-45af-b0b2-afc3545afd83"]}
+{"phase":"response","channel":"issue-report:prepare","result":{"draftId":"1c81b431-cb00-47fd-8402-0e944892e5c6","repository":{"owner":"kouiso","repo":"designdiff"},"title":"[bug] Artificial token [REDACTED]","body":"Artificial path ~/private/reproduction.txt","labels":["desktop-feedback","bug"],"maskedCount":2,"duplicate":{"status":"none"}}}
+{"phase":"request","channel":"issue-report:discard","args":["1c81b431-cb00-47fd-8402-0e944892e5c6"]}
 {"phase":"response","channel":"issue-report:discard"}
