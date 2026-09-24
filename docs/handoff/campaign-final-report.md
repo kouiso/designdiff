@@ -4,7 +4,7 @@
 凍結製品SHA: `4e9145e5e051d4efe78a922723f7b3245005a05e`
 証跡ブランチ: `codex/campaign-recovery-20260913-004811`
 統合台帳: `docs/evidence/campaign-ledger.json`（`node script/verify-campaign-evidence.mjs docs/evidence/campaign-ledger.json` で再検証可）
-統合日時: 2026-09-20T20:03Z
+統合日時: 2026-09-24T13:30Z（linux-wsl desktop 再取得を反映して再統合）
 
 ## 1. 完了条件との照合
 
@@ -14,7 +14,7 @@
 | 新規不具合 0 | 達成 | 全364記録 `newBugs: 0`、uncatalogued defect による取込拒否 0 |
 | 全記録が同一凍結SHA | 達成 | 364記録すべて `productSha = 4e9145e…`、`dirty: false` |
 | 独立 oracle | 達成 | source-pixels 156 / schema-contract 84 / dom-geometry 70 / host-observation 52 / dependency-graph 2（製品自己評価 0） |
-| 既知不具合3件の disposition 凍結前確定 | 達成（ただし §3 の linux-wsl 観測を参照） | 3件とも凍結SHA以前の製品修正コミットで解消 |
+| 既知不具合3件の disposition 凍結前確定 | 達成 | 3件とも凍結SHA以前の製品修正コミットで解消。§3 の linux-wsl 異常は 2026-09-24 の再取得で解消済み |
 
 verifier の残エラーは 26件すべて `NOT RUN`（記録が存在しない）で、存在する記録に対する整合性エラー（SHA / dirty / digest / round窓 / 実行順 / artifact sha256）は 0 件。
 
@@ -24,10 +24,10 @@ verifier の残エラーは 26件すべて `NOT RUN`（記録が存在しない�
 | --- | --- | --- | --- |
 | linux-wsl | 64 PASS | 64 PASS | 0 |
 | macos | 63 PASS | 63 PASS | 3: X05/X07 android, X06 ios-device |
-| windows | 54 PASS | 54 PASS | 10: C07/D05 desktop, X03/X04 figma-plugin, X05/X07 android, X08 ×4 route |
+| windows | 54 PASS | 54 PASS | 10: C07/D05 desktop, X03/X04 figma-plugin, X05/X07 android, X08 ×4 route（計 20 件） |
 | repository | 1 PASS | 1 PASS | 0 |
 
-windows/macos の実行は 2026-09-20 12:21–12:39Z（windows）/ 13:39–13:54Z（macos）。両 round の `finishedAt` は統合時刻（2026-09-20T20:03:12Z）へ延長し、`startedAt` は据え置き（round2.startedAt > round1.startedAt を維持）。case 単位の round2 > round1 実行順序も verifier 通過。
+windows/macos の実行は 2026-09-20 12:21–12:39Z（windows）/ 13:39–13:54Z（macos）、linux-wsl の desktop 再取得は 2026-09-24 13:08–13:28Z。両 round の `finishedAt` は `2026-09-24T13:30:00.000Z` へ延長し、`startedAt` は据え置き（round2.startedAt > round1.startedAt を維持）。case 単位の round2 > round1 実行順序も verifier 通過。
 
 ## 2. NOT RUN 26件の原因（子セッションの attempts ログより）
 
@@ -51,25 +51,25 @@ windows/macos の実行は 2026-09-20 12:21–12:39Z（windows）/ 13:39–13:54
 
 **凍結SHAでの実測**: windows / macos の D08/D09/D10 記録は 3件とも非再現（`cancelDisabled:false` / `compareAfterProjectSwitch.designPill:false` / `overflowPx:0`）。
 
-**要注意 — linux-wsl だけ 3件とも再現している**: linux-wsl の D08/D09/D10（両巡・計6記録）は `observedKnownDefects` に 3件が載っており、実測値も `cancelDisabled:true` / `designPill:true` / `overflowPx:226` と修正前の挙動。verifier は catalogued な既知不具合として PASS 扱いにしているが、修正済み凍結SHAで再現するのは矛盾する。
+**linux-wsl の異常は解消済み（2026-09-24 再取得）**: 旧 linux-wsl 記録は D08/D09/D10 が修正前挙動のまま再現しており、desktop buildDigest `5c738970…` が凍結SHA相当の決定論的ビルド `6d76943b…` と不一致 → 修正コミット前の stale dist で実行されていたと判断し、desktop 系 25記録×2巡を全て再取得した。
 
-- 傍証: linux-wsl の desktop buildDigest は `5c738970…`。一方 macos の実測 digest と、本セッションで凍結SHA相当ツリーから再ビルドした digest はともに `6d76943b…` で一致する（desktop dist は決定論的）。→ linux-wsl 実行時の `app/desktop/dist` は凍結SHAのビルドと **内容が異なっていた** 可能性が高い（推測: 修正コミット前の stale dist）。
-- 影響範囲: linux-wsl desktop route 25記録 × 2巡 = 50記録の製品同一性が疑わしい。mcp / chrome-extension / figma-plugin route の digest は他 platform と一致しており影響なし。
-- 推奨: linux-wsl で `pnpm build` をやり直した上で desktop 系 driver（desktop-c-cases / desktop-d-cases / native-*）を再実行し、D08/D09/D10 の非再現と digest `6d76943b…` を確認してから完了宣言すること。
+- 再取得手順: `git checkout --detach 4e9145e`（driver が記録する `revision` を凍結SHAに一致させるため必須。証跡ブランチ HEAD 上で走らせると `revision != sha` でアセンブラが取込拒否する）、`app/desktop/dist` は digest `6d76943b…` の凍結相当ビルドを維持したまま `script/run-campaign-round.mjs` で desktop 系 13 driver × 2巡を再実行（`docs/evidence/runs-linux-wsl-r{1,2}.desktop-rerun.json`）。13/13 driver 両巡成功。
+- 結果: 新 linux-wsl 記録は D08 `cancelDisabled:false`、D09 `designPill:false`、D10 `overflowPx:0` で 3件とも非再現。desktop digest は `6d76943b…` に一致、証跡 `revision` は `4e9145e…`、`dirtyState` は docs/evidence 内のみ。旧記録の ephemeral artifact（timestamped project dir / uuid compare result）は新実行の同名相当物に置換された。
 
 ## 4. 統合時に行った台帳側の補正（証跡本体は無改変）
 
-- `docs/evidence/campaign-rounds.json`: 両 round の `finishedAt` を統合時刻へ延長（子セッション実行が元の窓の外だったため）。
+- `docs/evidence/campaign-rounds.json`: 両 round の `finishedAt` を統合時刻へ延長（子セッション実行が元の窓の外だったため）。2026-09-24 の linux-wsl 再取得に合わせ `2026-09-24T13:30:00.000Z` へ再延長。記録本体の `executedAt` は実測時刻のまま改変していない。
 - windows / macos の round partial（`docs/evidence/ledger/{windows,macos}/round-{1,2}/records.json`）を現行ブランチの `assemble-campaign-ledger.mjs` で再生成。子セッションは凍結SHA時点の旧アセンブラを使っており、(a) driver が digest を書かない route の `buildDigest` が空、(b) macos round-2 の `roundExecutionId` が旧 plan の `round2-macos` になっていた。再生成で (a) は surface dist からの決定論的再計算（`script/build-digest.mjs`）で補完、(b) は `runs-macos-r2.manifest.json` の値を現行 plan と同じ `round2` に揃えた。artifact の sha256 は全件不変。
   - 補完 digest はこのマシン（linux）で再ビルドした凍結ツリーから算出。mcp `da4a551f…` / desktop `6d76943b…` / chrome-extension `dc70b5a8…` / figma-plugin `c8029310…` は macos・linux-wsl の実測値と一致。windows で driver が実測した digest（mcp `4ea11b2a…`, desktop `9505e974…`）は改行等の差で異なるため、windows 記録は実測値と補完値が混在する。
 
 ## 5. 残作業
 
 1. **X06 ios-device ×2巡**: 物理 iPhone 接続が必要。自動化不能な唯一の gap。
-2. **X05/X07 android on windows/macos ×各2巡**: エミュレータ起動または物理端末。linux-wsl 分はエミュレータで取得済み。
-3. **windows のハーネス起因 NOT RUN 18件**: C07/D05（非 Administrator ユーザーで実行、または deny 手段の見直し）、X03/X04/X08（`waitForRequest` race の修正または再試行）。
-4. **linux-wsl desktop 50記録の再取得**（§3）。
-5. **issue #69 履歴書き換え**: 本キャンペーンから除外。別途ユーザーの明示（verbatim）承認を得てから実施する。
+2. **X05/X07 android on windows/macos ×各2巡**: エミュレータ起動または物理端末。linux-wsl 分はエミュレータで取得済み（記録としては PASS 取込済みだが、spec が要求する物理デバイス証跡ではない点に留意）。
+3. **windows のハーネス起因 NOT RUN 14件**: C07/D05 ×2巡（非 Administrator ユーザーで実行、または deny 手段の見直し）、X03/X04 figma-plugin ×2巡 と X08 全4route ×2巡（`waitForRequest` race の修正または再試行）。
+4. **issue #69 履歴書き換え**: 本キャンペーンから除外。別途ユーザーの明示（verbatim）承認を得てから実施する。
+
+~~linux-wsl desktop 50記録の再取得~~ → 2026-09-24 完了（§3）。
 
 ## 6. ローカル done-gate
 

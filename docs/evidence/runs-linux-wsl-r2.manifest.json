@@ -1,182 +1,182 @@
 [
- {
-  "driver": "app/mcp-server/script/stdio-campaign-verification.mjs",
-  "evidenceDir": "docs/evidence/round2-linux-wsl/stdio-campaign-verification",
-  "executedAt": "2026-09-19T05:06:53.426Z",
-  "environment": "linux-wsl",
-  "buildDigest": "da4a551faec001f09e6f00320613bef5c1fa93aeaf9ba31422822db0cd73cbb7",
-  "roundExecutionId": "round2"
- },
- {
-  "driver": "app/mcp-server/script/stdio-campaign-verification2.mjs",
-  "evidenceDir": "docs/evidence/round2-linux-wsl/stdio-campaign-verification2",
-  "executedAt": "2026-09-19T05:07:33.948Z",
-  "environment": "linux-wsl",
-  "buildDigest": "",
-  "roundExecutionId": "round2"
- },
- {
-  "driver": "app/mcp-server/script/stdio-real-figma-verification.mjs",
-  "evidenceDir": "docs/evidence/round2-linux-wsl/stdio-real-figma-verification",
-  "executedAt": "2026-09-19T05:08:06.427Z",
-  "environment": "linux-wsl",
-  "buildDigest": "",
-  "roundExecutionId": "round2"
- },
- {
-  "driver": "app/mcp-server/script/stdio-m01-verification.mjs",
-  "evidenceDir": "docs/evidence/round2-linux-wsl/stdio-m01-verification",
-  "executedAt": "2026-09-19T05:08:15.046Z",
-  "environment": "linux-wsl",
-  "buildDigest": "",
-  "roundExecutionId": "round2"
- },
- {
-  "driver": "app/mcp-server/script/stdio-issue-verification.mjs",
-  "evidenceDir": "docs/evidence/round2-linux-wsl/stdio-issue-verification",
-  "executedAt": "2026-09-19T05:04:36.038Z",
-  "environment": "linux-wsl",
-  "buildDigest": "da4a551faec001f09e6f00320613bef5c1fa93aeaf9ba31422822db0cd73cbb7",
-  "roundExecutionId": "round2"
- },
- {
-  "driver": "app/desktop/e2e/desktop-c-cases.mjs",
-  "evidenceDir": "docs/evidence/round2-linux-wsl/desktop-c-cases",
-  "executedAt": "2026-09-19T05:08:49.968Z",
-  "environment": "linux-wsl",
-  "buildDigest": "",
-  "roundExecutionId": "round2"
- },
- {
-  "driver": "app/desktop/e2e/desktop-d-cases.mjs",
-  "evidenceDir": "docs/evidence/round2-linux-wsl/desktop-d-cases",
-  "executedAt": "2026-09-19T05:09:04.635Z",
-  "environment": "linux-wsl",
-  "buildDigest": "",
-  "roundExecutionId": "round2"
- },
- {
-  "driver": "app/desktop/e2e/native-unmeasured-score.mjs",
-  "evidenceDir": "docs/evidence/round2-linux-wsl/native-unmeasured-score",
-  "evidenceFile": "after-native.json",
-  "executedAt": "2026-09-19T05:09:38.987Z",
-  "environment": "linux-wsl",
-  "buildDigest": "",
-  "roundExecutionId": "round2"
- },
- {
-  "driver": "app/desktop/e2e/native-ignore-region.mjs",
-  "evidenceDir": "docs/evidence/round2-linux-wsl/native-ignore-region",
-  "evidenceFile": "manifest.json",
-  "executedAt": "2026-09-19T05:09:41.307Z",
-  "environment": "linux-wsl",
-  "buildDigest": "",
-  "roundExecutionId": "round2"
- },
- {
-  "driver": "app/desktop/e2e/native-fix-animation.mjs",
-  "evidenceDir": "docs/evidence/round2-linux-wsl/native-fix-animation",
-  "evidenceFile": "manifest.json",
-  "executedAt": "2026-09-19T05:09:48.240Z",
-  "environment": "linux-wsl",
-  "buildDigest": "",
-  "roundExecutionId": "round2"
- },
- {
-  "driver": "app/desktop/e2e/native-report-export.mjs",
-  "evidenceDir": "docs/evidence/round2-linux-wsl/native-report-export",
-  "executedAt": "2026-09-19T05:09:53.517Z",
-  "environment": "linux-wsl",
-  "buildDigest": "",
-  "roundExecutionId": "round2",
-  "evidenceFile": "manifest.json"
- },
- {
-  "driver": "app/chrome-extension/script/real-chrome-e2e.mjs",
-  "evidenceDir": "docs/evidence/round2-linux-wsl/real-chrome-e2e",
-  "executedAt": "2026-09-19T05:09:58.119Z",
-  "environment": "linux-wsl",
-  "buildDigest": "",
-  "roundExecutionId": "round2"
- },
- {
-  "driver": "app/figma-plugin/e2e/real-iframe-host.mjs",
-  "evidenceDir": "docs/evidence/round2-linux-wsl/real-iframe-host",
-  "evidenceFile": "manifest.json",
-  "executedAt": "2026-09-19T05:05:52.186Z",
-  "environment": "linux-wsl",
-  "buildDigest": "",
-  "roundExecutionId": "round2"
- },
- {
-  "driver": "app/mcp-server/script/x08/mcp.mjs",
-  "evidenceDir": "docs/evidence/round2-linux-wsl/x08",
-  "evidenceFile": "x08-mcp.json",
-  "executedAt": "2026-09-19T05:10:31.639Z",
-  "environment": "linux-wsl",
-  "buildDigest": "",
-  "roundExecutionId": "round2"
- },
- {
-  "driver": "app/mcp-server/script/x08/desktop.mjs",
-  "evidenceDir": "docs/evidence/round2-linux-wsl/x08",
-  "evidenceFile": "x08-desktop.json",
-  "executedAt": "2026-09-19T05:10:32.082Z",
-  "environment": "linux-wsl",
-  "buildDigest": "",
-  "roundExecutionId": "round2"
- },
- {
-  "driver": "app/mcp-server/script/x08/extension.mjs",
-  "evidenceDir": "docs/evidence/round2-linux-wsl/x08",
-  "evidenceFile": "x08-extension.json",
-  "executedAt": "2026-09-19T05:10:33.566Z",
-  "environment": "linux-wsl",
-  "buildDigest": "",
-  "roundExecutionId": "round2"
- },
- {
-  "driver": "app/mcp-server/script/x08/plugin.mjs",
-  "evidenceDir": "docs/evidence/round2-linux-wsl/x08",
-  "evidenceFile": "x08-plugin.json",
-  "executedAt": "2026-09-19T05:10:34.178Z",
-  "environment": "linux-wsl",
-  "buildDigest": "",
-  "roundExecutionId": "round2"
- },
- {
-  "driver": "app/mcp-server/script/x08/compare.mjs",
-  "evidenceDir": "docs/evidence/round2-linux-wsl/x08",
-  "executedAt": "2026-09-19T05:10:34.814Z",
-  "environment": "linux-wsl",
-  "buildDigest": "",
-  "roundExecutionId": "round2"
- },
- {
-  "driver": "app/desktop/e2e/native-figma-node-fix.mjs",
-  "evidenceDir": "docs/evidence/round2-linux-wsl/native-figma-node-fix",
-  "evidenceFile": "manifest.json",
-  "executedAt": "2026-09-19T05:13:34.208Z",
-  "environment": "linux-wsl",
-  "buildDigest": "",
-  "roundExecutionId": "round2"
- },
- {
-  "driver": "app/desktop/e2e/native-issue-report.mjs",
-  "evidenceDir": "docs/evidence/round2-linux-wsl/native-issue-report",
-  "evidenceFile": "manifest.json",
-  "executedAt": "2026-09-19T05:13:37.235Z",
-  "environment": "linux-wsl",
-  "buildDigest": "",
-  "roundExecutionId": "round2"
- },
- {
-  "driver": "app/mcp-server/script/stdio-m12-verification.mjs",
-  "evidenceDir": "docs/evidence/round2-linux-wsl/stdio-m12-verification",
-  "evidenceFile": "evidence.json",
-  "executedAt": "2026-09-19T04:42:44.837Z",
-  "environment": "linux-wsl",
-  "buildDigest": "da4a551faec001f09e6f00320613bef5c1fa93aeaf9ba31422822db0cd73cbb7",
-  "roundExecutionId": "round2"
- }
+  {
+    "driver": "app/mcp-server/script/stdio-campaign-verification.mjs",
+    "evidenceDir": "docs/evidence/round2-linux-wsl/stdio-campaign-verification",
+    "executedAt": "2026-09-19T05:06:53.426Z",
+    "environment": "linux-wsl",
+    "buildDigest": "da4a551faec001f09e6f00320613bef5c1fa93aeaf9ba31422822db0cd73cbb7",
+    "roundExecutionId": "round2"
+  },
+  {
+    "driver": "app/mcp-server/script/stdio-campaign-verification2.mjs",
+    "evidenceDir": "docs/evidence/round2-linux-wsl/stdio-campaign-verification2",
+    "executedAt": "2026-09-19T05:07:33.948Z",
+    "environment": "linux-wsl",
+    "buildDigest": "",
+    "roundExecutionId": "round2"
+  },
+  {
+    "driver": "app/mcp-server/script/stdio-real-figma-verification.mjs",
+    "evidenceDir": "docs/evidence/round2-linux-wsl/stdio-real-figma-verification",
+    "executedAt": "2026-09-19T05:08:06.427Z",
+    "environment": "linux-wsl",
+    "buildDigest": "",
+    "roundExecutionId": "round2"
+  },
+  {
+    "driver": "app/mcp-server/script/stdio-m01-verification.mjs",
+    "evidenceDir": "docs/evidence/round2-linux-wsl/stdio-m01-verification",
+    "executedAt": "2026-09-19T05:08:15.046Z",
+    "environment": "linux-wsl",
+    "buildDigest": "",
+    "roundExecutionId": "round2"
+  },
+  {
+    "driver": "app/mcp-server/script/stdio-issue-verification.mjs",
+    "evidenceDir": "docs/evidence/round2-linux-wsl/stdio-issue-verification",
+    "executedAt": "2026-09-19T05:04:36.038Z",
+    "environment": "linux-wsl",
+    "buildDigest": "da4a551faec001f09e6f00320613bef5c1fa93aeaf9ba31422822db0cd73cbb7",
+    "roundExecutionId": "round2"
+  },
+  {
+    "driver": "app/chrome-extension/script/real-chrome-e2e.mjs",
+    "evidenceDir": "docs/evidence/round2-linux-wsl/real-chrome-e2e",
+    "executedAt": "2026-09-19T05:09:58.119Z",
+    "environment": "linux-wsl",
+    "buildDigest": "",
+    "roundExecutionId": "round2"
+  },
+  {
+    "driver": "app/figma-plugin/e2e/real-iframe-host.mjs",
+    "evidenceDir": "docs/evidence/round2-linux-wsl/real-iframe-host",
+    "evidenceFile": "manifest.json",
+    "executedAt": "2026-09-19T05:05:52.186Z",
+    "environment": "linux-wsl",
+    "buildDigest": "",
+    "roundExecutionId": "round2"
+  },
+  {
+    "driver": "app/mcp-server/script/stdio-m12-verification.mjs",
+    "evidenceDir": "docs/evidence/round2-linux-wsl/stdio-m12-verification",
+    "evidenceFile": "evidence.json",
+    "executedAt": "2026-09-19T04:42:44.837Z",
+    "environment": "linux-wsl",
+    "buildDigest": "da4a551faec001f09e6f00320613bef5c1fa93aeaf9ba31422822db0cd73cbb7",
+    "roundExecutionId": "round2"
+  },
+  {
+    "driver": "app/desktop/e2e/desktop-c-cases.mjs",
+    "evidenceDir": "docs/evidence/round2-linux-wsl/desktop-c-cases",
+    "executedAt": "2026-09-24T13:26:12.501Z",
+    "environment": "linux-wsl",
+    "buildDigest": "",
+    "roundExecutionId": "round2"
+  },
+  {
+    "driver": "app/desktop/e2e/desktop-d-cases.mjs",
+    "evidenceDir": "docs/evidence/round2-linux-wsl/desktop-d-cases",
+    "executedAt": "2026-09-24T13:26:28.309Z",
+    "environment": "linux-wsl",
+    "buildDigest": "",
+    "roundExecutionId": "round2"
+  },
+  {
+    "driver": "app/desktop/e2e/native-unmeasured-score.mjs",
+    "evidenceDir": "docs/evidence/round2-linux-wsl/native-unmeasured-score",
+    "evidenceFile": "after-native.json",
+    "executedAt": "2026-09-24T13:27:33.288Z",
+    "environment": "linux-wsl",
+    "buildDigest": "",
+    "roundExecutionId": "round2"
+  },
+  {
+    "driver": "app/desktop/e2e/native-ignore-region.mjs",
+    "evidenceDir": "docs/evidence/round2-linux-wsl/native-ignore-region",
+    "evidenceFile": "manifest.json",
+    "executedAt": "2026-09-24T13:27:35.667Z",
+    "environment": "linux-wsl",
+    "buildDigest": "6d76943b2f40b8eab22392fbc357f55dc89317ec12c5c02f9f4484d7dd03d075",
+    "roundExecutionId": "round2"
+  },
+  {
+    "driver": "app/desktop/e2e/native-figma-node-fix.mjs",
+    "evidenceDir": "docs/evidence/round2-linux-wsl/native-figma-node-fix",
+    "evidenceFile": "manifest.json",
+    "executedAt": "2026-09-24T13:27:40.159Z",
+    "environment": "linux-wsl",
+    "buildDigest": "6d76943b2f40b8eab22392fbc357f55dc89317ec12c5c02f9f4484d7dd03d075",
+    "roundExecutionId": "round2"
+  },
+  {
+    "driver": "app/desktop/e2e/native-fix-animation.mjs",
+    "evidenceDir": "docs/evidence/round2-linux-wsl/native-fix-animation",
+    "evidenceFile": "manifest.json",
+    "executedAt": "2026-09-24T13:27:43.504Z",
+    "environment": "linux-wsl",
+    "buildDigest": "6d76943b2f40b8eab22392fbc357f55dc89317ec12c5c02f9f4484d7dd03d075",
+    "roundExecutionId": "round2"
+  },
+  {
+    "driver": "app/desktop/e2e/native-issue-report.mjs",
+    "evidenceDir": "docs/evidence/round2-linux-wsl/native-issue-report",
+    "evidenceFile": "manifest.json",
+    "executedAt": "2026-09-24T13:27:47.368Z",
+    "environment": "linux-wsl",
+    "buildDigest": "6d76943b2f40b8eab22392fbc357f55dc89317ec12c5c02f9f4484d7dd03d075",
+    "roundExecutionId": "round2"
+  },
+  {
+    "driver": "app/desktop/e2e/native-report-export.mjs",
+    "evidenceDir": "docs/evidence/round2-linux-wsl/native-report-export",
+    "evidenceFile": "manifest.json",
+    "executedAt": "2026-09-24T13:27:51.138Z",
+    "environment": "linux-wsl",
+    "buildDigest": "6d76943b2f40b8eab22392fbc357f55dc89317ec12c5c02f9f4484d7dd03d075",
+    "roundExecutionId": "round2"
+  },
+  {
+    "driver": "app/mcp-server/script/x08/mcp.mjs",
+    "evidenceDir": "docs/evidence/round2-linux-wsl/x08",
+    "evidenceFile": "x08-mcp.json",
+    "executedAt": "2026-09-24T13:27:56.128Z",
+    "environment": "linux-wsl",
+    "buildDigest": "",
+    "roundExecutionId": "round2"
+  },
+  {
+    "driver": "app/mcp-server/script/x08/desktop.mjs",
+    "evidenceDir": "docs/evidence/round2-linux-wsl/x08",
+    "evidenceFile": "x08-desktop.json",
+    "executedAt": "2026-09-24T13:27:56.604Z",
+    "environment": "linux-wsl",
+    "buildDigest": "",
+    "roundExecutionId": "round2"
+  },
+  {
+    "driver": "app/mcp-server/script/x08/extension.mjs",
+    "evidenceDir": "docs/evidence/round2-linux-wsl/x08",
+    "evidenceFile": "x08-extension.json",
+    "executedAt": "2026-09-24T13:27:58.347Z",
+    "environment": "linux-wsl",
+    "buildDigest": "",
+    "roundExecutionId": "round2"
+  },
+  {
+    "driver": "app/mcp-server/script/x08/plugin.mjs",
+    "evidenceDir": "docs/evidence/round2-linux-wsl/x08",
+    "evidenceFile": "x08-plugin.json",
+    "executedAt": "2026-09-24T13:27:59.190Z",
+    "environment": "linux-wsl",
+    "buildDigest": "",
+    "roundExecutionId": "round2"
+  },
+  {
+    "driver": "app/mcp-server/script/x08/compare.mjs",
+    "evidenceDir": "docs/evidence/round2-linux-wsl/x08",
+    "executedAt": "2026-09-24T13:28:00.055Z",
+    "environment": "linux-wsl",
+    "buildDigest": "",
+    "roundExecutionId": "round2"
+  }
 ]

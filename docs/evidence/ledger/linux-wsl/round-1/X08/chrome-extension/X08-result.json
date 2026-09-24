@@ -171,7 +171,7 @@
             }
           ],
           "diffPixelsSha256": "7d0da44f7b88c359673cd0d3ede91c01a1dc9761646f4a4bcc62885594fe890b",
-          "diffImagePath": "/home/ubuntu/repos/designdiff/docs/evidence/round1-linux-wsl/x08/figdiff-home/results/diff-cmp-4a32684a-fb35-4fcd-8e39-69cb79ac8a24.png",
+          "diffImagePath": "/home/ubuntu/repos/designdiff/docs/evidence/round1-linux-wsl/x08/figdiff-home/results/diff-cmp-20df3e3f-1abf-403a-aaae-a2a7611d420b.png",
           "expectedDiffPixelCount": 832,
           "expectedRegions": [
             {

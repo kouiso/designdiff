@@ -3,7 +3,7 @@ xwininfo: Window id: 0x519 (the root window) (has no name)
 
   Root window id: 0x519 (the root window) (has no name)
   Parent window id: 0x0 (none)
-     54 children:
+     56 children:
      0x3800074 "electron": ("electron" "Electron")  2x2+0+0  +0+0
         1 child:
         0x3800075 (has no name): ()  1x1+-1+-1  +-1+-1
@@ -12,76 +12,78 @@ xwininfo: Window id: 0x519 (the root window) (has no name)
      0x3600006 (has no name): ()  1x1+0+0  +0+0
      0x3800001 "electron": ("electron" "Electron")  10x10+10+10  +10+10
      0x3600000 "Chromium clipboard": ()  10x10+-100+-100  +-100+-100
-     0x1202361 "KWin": ("kwin_x11" "kwin")  160x160+0+0  +0+0
-     0x2800006 (has no name): ()  1x1+0+0  +0+0
-     0x2a00003 "chrome": ("chrome" "Chrome")  200x200+0+0  +0+0
-        1 child:
-        0x2a00004 (has no name): ()  1x1+-1+-1  +-1+-1
-     0x2a00001 "chrome": ("chrome" "Chrome")  10x10+10+10  +10+10
-     0x2800000 "Chromium clipboard": ()  10x10+-100+-100  +-100+-100
+     0x1424e12 "KWin": ("kwin_x11" "kwin")  160x160+0+0  +0+0
+     0x2400041 "Qt Clipboard Requestor Window — Plasma": ()  3x3+0+0  +0+0
+     0x532 (has no name): ()  100x100+0+0  +0+0
      0x800005 (has no name): ()  1x1+0+0  +0+0
      0x800004 "Qt Selection Owner for kscreen_backend_launcher": ()  3x3+0+0  +0+0
-     0x2000035 "Plasma": ("plasmashell" "plasmashell")  669x516+629+640  +629+640
-     0x2000033 "Plasma": ("plasmashell" "plasmashell")  160x160+0+0  +0+0
-     0x2000031 "Plasma": ("plasmashell" "plasmashell")  62x13+0+0  +0+0
-     0x120003d (has no name): ()  1124x851+0+0  +0+0
-     0x2000016 (has no name): ()  1x1+0+0  +0+0
-     0x2000014 "Plasma": ("plasmashell" "plasmashell")  12x1156+0+0  +0+0
-     0x2000013 "Plasma": ()  1x1+0+0  +0+0
+     0x2400035 "Plasma": ("plasmashell" "plasmashell")  669x516+629+640  +629+640
+     0x2400033 "Plasma": ("plasmashell" "plasmashell")  160x160+0+0  +0+0
+     0x2400031 "Plasma": ("plasmashell" "plasmashell")  62x13+0+0  +0+0
+     0x1400081 (has no name): ()  1124x851+0+0  +0+0
+     0x2600006 (has no name): ()  1x1+0+0  +0+0
+     0x2400016 (has no name): ()  1x1+0+0  +0+0
+     0x2400014 "Plasma": ("plasmashell" "plasmashell")  12x1156+0+0  +0+0
+     0x2800003 "chrome": ("chrome" "Chrome")  200x200+0+0  +0+0
+        1 child:
+        0x2800004 (has no name): ()  1x1+-1+-1  +-1+-1
+     0x2800001 "chrome": ("chrome" "Chrome")  10x10+10+10  +10+10
+     0x2400013 "Plasma": ()  1x1+0+0  +0+0
+     0x2600000 "Chromium clipboard": ()  10x10+-100+-100  +-100+-100
+     0x1400024 (has no name): ()  1x1+0+0  +0+0
+     0x1400023 (has no name): ()  1x1+0+0  +0+0
+     0x1400016 (has no name): ()  1x1+0+0  +0+0
+     0x2000005 (has no name): ()  1x1+0+0  +0+0
+     0x2000004 "Qt Selection Owner for kactivitymanagerd": ()  3x3+0+0  +0+0
+     0xe00004 "Qt Selection Owner for gmenudbusmenuproxy": ()  3x3+0+0  +0+0
      0x1e00005 (has no name): ()  1x1+0+0  +0+0
-     0x2400004 "Qt Selection Owner for gmenudbusmenuproxy": ()  3x3+0+0  +0+0
-     0x1e00004 "Qt Selection Owner for kactivitymanagerd": ()  3x3+0+0  +0+0
-     0x1200024 (has no name): ()  1x1+0+0  +0+0
-     0x1200023 (has no name): ()  1x1+0+0  +0+0
-     0x2200005 (has no name): ()  1x1+0+0  +0+0
-     0xe00005 (has no name): ()  1x1+0+0  +0+0
-     0x1200016 (has no name): ()  1x1+0+0  +0+0
-     0x2200004 "Qt Selection Owner for kaccess": ()  3x3+0+0  +0+0
-     0x2000004 "Qt Selection Owner for plasmashell": ()  3x3+0+0  +0+0
-     0xe00004 "Qt Selection Owner for xembedsniproxy": ()  3x3+0+0  +0+0
-     0x1200014 "KWin": ("kwin_x11" "kwin")  160x160+0+0  +0+0
-     0x1200013 "KWin": ()  1x1+0+0  +0+0
-     0x1200011 "KWin": ("kwin_x11" "kwin")  160x160+0+0  +0+0
-     0x120000e (has no name): ()  1x1+-1+-1  +-1+-1
      0x1c00005 (has no name): ()  1x1+0+0  +0+0
+     0x2200005 (has no name): ()  1x1+0+0  +0+0
+     0x2400004 "Qt Selection Owner for plasmashell": ()  3x3+0+0  +0+0
+     0x2200004 "Qt Selection Owner for kaccess": ()  3x3+0+0  +0+0
+     0x1e00004 "Qt Selection Owner for xembedsniproxy": ()  3x3+0+0  +0+0
+     0x1400014 "KWin": ("kwin_x11" "kwin")  160x160+0+0  +0+0
+     0x1400013 "KWin": ()  1x1+0+0  +0+0
+     0x1400011 "KWin": ("kwin_x11" "kwin")  160x160+0+0  +0+0
+     0x140000e (has no name): ()  1x1+-1+-1  +-1+-1
      0x1c00004 "Qt Selection Owner for ksmserver": ()  3x3+0+0  +0+0
-     0x120000d (has no name): ()  1x1+0+0  +0+0
+     0x140000d (has no name): ()  1x1+0+0  +0+0
      0x1600002 (has no name): ()  1x1+0+0  +0+0
-     0x1400004 "Qt Selection Owner for kglobalaccel5": ()  3x3+0+0  +0+0
-     0x1200004 "Qt Selection Owner for kwin_x11": ()  3x3+0+0  +0+0
+     0x1400004 "Qt Selection Owner for kwin_x11": ()  3x3+0+0  +0+0
+     0x1200004 "Qt Selection Owner for kglobalaccel5": ()  3x3+0+0  +0+0
      0x1000004 "Qt Selection Owner for kded5": ()  3x3+0+0  +0+0
      0xc00001 (has no name): ()  1x1+0+0  +0+0
      0xa00004 "Qt Selection Owner for klauncher": ()  3x3+0+0  +0+0
      0x400001 (has no name): ()  10x10+-20+-20  +-20+-20
-     0x120000f "KWin": ()  1x1+0+0  +0+0
-     0x1200025 (has no name): ()  3x3+0+0  +0+0
-     0x120004d (has no name): ()  340x44+629+1156  +629+1156
+     0x140000f "KWin": ()  1x1+0+0  +0+0
+     0x1400025 (has no name): ()  3x3+0+0  +0+0
+     0x1400099 (has no name): ()  340x44+629+1156  +629+1156
         1 child:
-        0x120004e (has no name): ()  340x44+0+0  +629+1156
+        0x140009a (has no name): ()  340x44+0+0  +629+1156
            1 child:
-           0x200001f "Plasma": ("plasmashell" "plasmashell")  340x44+0+0  +629+1156
-     0x1203923 (has no name): ()  1144x861+228+152  +228+152
-     0x120391f (has no name): ()  1124x851+238+152  +238+152
+           0x240001f "Plasma": ("plasmashell" "plasmashell")  340x44+0+0  +629+1156
+     0x1436dfd (has no name): ()  1144x861+228+152  +228+152
+     0x1436df9 (has no name): ()  1124x851+238+152  +238+152
         1 child:
-        0x1203920 (has no name): ()  1124x822+0+29  +238+181
+        0x1436dfa (has no name): ()  1124x822+0+29  +238+181
            1 child:
            0x3800007 "Save File": ("electron" "Electron")  1124x822+0+0  +238+181
               1 child:
               0x3800008 (has no name): ()  1x1+-1+-1  +237+180
-     0x12038f0 (has no name): ()  1220x839+190+149  +190+149
-     0x12038ec (has no name): ()  1200x829+200+149  +200+149
+     0x1436d97 (has no name): ()  1220x839+190+149  +190+149
+     0x1436d93 (has no name): ()  1200x829+200+149  +200+149
         1 child:
-        0x12038ed (has no name): ()  1200x800+0+29  +200+178
+        0x1436d94 (has no name): ()  1200x800+0+29  +200+178
            1 child:
            0x3600004 "FigDiff": ("electron" "Electron")  1200x800+0+0  +200+178
-     0x1200074 (has no name): ()  1600x1122+0+0  +0+0
+     0x1400082 (has no name): ()  1600x1122+0+0  +0+0
         1 child:
-        0x1200075 (has no name): ()  1600x1122+0+0  +0+0
+        0x1400083 (has no name): ()  1600x1122+0+0  +0+0
            1 child:
-           0x2800004 "New Tab - Google Chrome for Testing": ("chromium-browser (/home/ubuntu/.browser_data_dir)" "Chromium-browser")  1600x1122+0+0  +0+0
-     0x1200039 (has no name): ()  1600x1200+0+0  +0+0
+           0x2600004 "Run macOS FigDiff Campaign - Google Chrome for Testing": ("chromium-browser (/home/ubuntu/.browser_data_dir)" "Chromium-browser")  1600x1122+0+0  +0+0
+     0x140007d (has no name): ()  1600x1200+0+0  +0+0
         1 child:
-        0x120003a (has no name): ()  1600x1200+0+0  +0+0
+        0x140007e (has no name): ()  1600x1200+0+0  +0+0
            1 child:
-           0x2000011 "Desktop — Plasma": ("plasmashell" "plasmashell")  1600x1200+0+0  +0+0
+           0x2400011 "Desktop — Plasma": ("plasmashell" "plasmashell")  1600x1200+0+0  +0+0
 

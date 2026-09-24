@@ -20,7 +20,7 @@
         ]
       },
       "project": {
-        "id": "1789794550678-b5lscfw",
+        "id": "1790256394529-upz46mw",
         "persisted": true
       },
       "sourceCompare": {
@@ -43,11 +43,11 @@
     "D09": {
       "401": {
         "surfaced": "token re-entry dialog",
-        "cancelDisabled": true
+        "cancelDisabled": false
       },
       "403": {
         "surfaced": "token re-entry dialog",
-        "cancelDisabled": true
+        "cancelDisabled": false
       },
       "429": {
         "surfaced": "Error: Error invoking remote method 'figma:get-frame-image': Error: Figma API rate limit exceeded (429). Please wait 7 seconds."
@@ -66,18 +66,18 @@
     },
     "D10": {
       "keyboardSubmit": "frame list appeared via hero input (node 7:30)",
-      "japaneseProject": "1789794574307-ou8l7ab",
+      "japaneseProject": "1790256418163-ovbireu",
       "narrowViewport": {
         "width": 430,
         "view": "compare",
-        "overflowPx": 226,
+        "overflowPx": 0,
         "overflowElements": [
-          "nav right=496",
-          "button right=433",
-          "button right=496",
-          "svg right=458",
-          "path right=457",
-          "circle right=454"
+          "button right=574",
+          "svg right=439",
+          "path right=438",
+          "path right=438",
+          "path right=438",
+          "button right=650"
         ],
         "homeNav": {
           "found": true,
@@ -158,24 +158,11 @@
         "apiHitsForSource": 0
       },
       "compareAfterProjectSwitch": {
-        "canvases": [
-          {
-            "width": 200,
-            "height": 120
-          },
-          {
-            "width": 300,
-            "height": 150
-          }
-        ],
-        "fixtureCanvas": "200x120",
-        "centerPixel": [
-          255,
-          255,
-          255
-        ],
+        "canvases": [],
+        "fixtureCanvas": null,
+        "centerPixel": null,
         "matchesFixture": false,
-        "designPill": true
+        "designPill": false
       },
       "switching": "close-and-reopen round-trip verified"
     }
@@ -187,63 +174,7 @@
     "sessionsObserved": 2,
     "offBoundary": [],
     "unexpectedThrows": 0,
-    "tokenlessPhaseEndTs": 1789794548777
+    "tokenlessPhaseEndTs": 1790256392586
   },
-  "knownDefects": [
-    {
-      "id": "token-dialog-cancel-stuck",
-      "detail": "PAT 保存成功後に TokenRequiredDialog を再オープンするとキャンセルボタンが disabled のまま残る (Escape/onOpenChange 経路は生存)",
-      "observedIn": "D09.401/403.cancelDisabled",
-      "observed": {
-        "401": true,
-        "403": true
-      },
-      "hypothesis": "dialog の isSubmitting が保存成功後に false へ戻らない可能性"
-    },
-    {
-      "id": "compare-store-shared-across-projects",
-      "detail": "design 画像を載せた直後に別案件の「比較」を開くと、前案件の画像+pill がそのまま残る",
-      "observedIn": "D08.compareAfterProjectSwitch",
-      "observed": {
-        "canvases": [
-          {
-            "width": 200,
-            "height": 120
-          },
-          {
-            "width": 300,
-            "height": 150
-          }
-        ],
-        "fixtureCanvas": "200x120",
-        "centerPixel": [
-          255,
-          255,
-          255
-        ],
-        "matchesFixture": false,
-        "designPill": true
-      },
-      "hypothesis": "compare store が案件非依存で共有されている可能性"
-    },
-    {
-      "id": "narrow-viewport-overflow",
-      "detail": "430px viewport で横 overflow が発生する",
-      "observedIn": "D10.narrowViewport",
-      "observed": {
-        "overflowPx": 226,
-        "homeNavReachable": true,
-        "view": "compare",
-        "overflowElements": [
-          "nav right=496",
-          "button right=433",
-          "button right=496",
-          "svg right=458",
-          "path right=457",
-          "circle right=454"
-        ]
-      },
-      "hypothesis": "タブ帯が nav ボタンを覆い click point を遮断し得る (過去 run で一度観測)"
-    }
-  ]
+  "knownDefects": []
 }

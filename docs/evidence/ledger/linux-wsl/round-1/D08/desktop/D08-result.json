@@ -34,24 +34,11 @@
         "apiHitsForSource": 0
       },
       "compareAfterProjectSwitch": {
-        "canvases": [
-          {
-            "width": 200,
-            "height": 120
-          },
-          {
-            "width": 300,
-            "height": 150
-          }
-        ],
-        "fixtureCanvas": "200x120",
-        "centerPixel": [
-          255,
-          255,
-          255
-        ],
+        "canvases": [],
+        "fixtureCanvas": null,
+        "centerPixel": null,
         "matchesFixture": false,
-        "designPill": true
+        "designPill": false
       },
       "switching": "close-and-reopen round-trip verified"
     }

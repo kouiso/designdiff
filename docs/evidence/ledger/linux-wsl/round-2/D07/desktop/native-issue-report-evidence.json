@@ -1,24 +1,17 @@
 {
   "schemaVersion": 1,
-  "startedAt": "2026-09-19T05:13:37.618Z",
-  "completedAt": "2026-09-19T05:13:40.615Z",
+  "startedAt": "2026-09-24T13:27:47.657Z",
+  "completedAt": "2026-09-24T13:27:51.119Z",
   "revision": "4e9145e5e051d4efe78a922723f7b3245005a05e",
   "dirtyState": [
-    " M docs/evidence/runs-linux-wsl-r2.json",
-    " M docs/evidence/runs-macos-r2.json",
-    " M docs/evidence/runs-repository-r2.json",
-    " M docs/evidence/runs-windows-r2.json",
-    "?? docs/evidence/m12-linux-r1/",
-    "?? docs/evidence/m12-linux-r2/",
     "?? docs/evidence/round1-linux-wsl/",
     "?? docs/evidence/round2-linux-wsl/",
-    "?? docs/evidence/round2-repository/",
-    "?? docs/evidence/runs-linux-wsl-r1.json",
-    "?? docs/evidence/runs-macos-r1.json",
-    "?? docs/evidence/runs-repository-r1.json",
-    "?? docs/evidence/runs-repository-r2.attempts.json",
-    "?? docs/evidence/runs-repository-r2.manifest.json",
-    "?? docs/evidence/runs-windows-r1.json"
+    "?? docs/evidence/runs-linux-wsl-r1.desktop-rerun.attempts.json",
+    "?? docs/evidence/runs-linux-wsl-r1.desktop-rerun.json",
+    "?? docs/evidence/runs-linux-wsl-r1.desktop-rerun.manifest.json",
+    "?? docs/evidence/runs-linux-wsl-r2.desktop-rerun.attempts.json",
+    "?? docs/evidence/runs-linux-wsl-r2.desktop-rerun.json",
+    "?? docs/evidence/runs-linux-wsl-r2.desktop-rerun.manifest.json"
   ],
   "command": "FIGDIFF_ISSUE_REPORT_EVIDENCE=<evidence> xvfb-run -a node app/desktop/e2e/native-issue-report.mjs",
   "build": {
@@ -35,7 +28,7 @@
       "package/credential-store/package.json"
     ],
     "fileCount": 348,
-    "sha256": "5c7389709621ee2f9c8e24595e724c78f61874a7b7093258e785a50f24c66eae",
+    "sha256": "6d76943b2f40b8eab22392fbc357f55dc89317ec12c5c02f9f4484d7dd03d075",
     "files": [
       {
         "path": "app/desktop/dist/main/main.js",
@@ -48,9 +41,9 @@
         "sha256": "22449452eb50781e4ec68e9c9c7d2d35aad25daa4481e2d94d77f8ac6bf8578d"
       },
       {
-        "path": "app/desktop/dist/renderer/assets/electron-adapter-DrLeqN06.js",
+        "path": "app/desktop/dist/renderer/assets/electron-adapter-CF6qzBs4.js",
         "size": 6967,
-        "sha256": "c75e031efc7aaf7a470242e43093d61517ef96c2a48b8846c61c5388ca148b63"
+        "sha256": "be63f29a80c1fd0151dea42b406c2d880fafcaa1db3e9048c974a360e306bf3e"
       },
       {
         "path": "app/desktop/dist/renderer/assets/hanken-grotesk-latin-ext-wght-normal-Dg-wlmqe.woff2",
@@ -93,14 +86,14 @@
         "sha256": "2288795da89dd97e648954b96e22b4501bd85dfc453264460b252f888b582ca2"
       },
       {
-        "path": "app/desktop/dist/renderer/assets/main-C5T1JcVY.js",
-        "size": 1393121,
-        "sha256": "582d46407e12b01243231b57391b7e2af8d23cb40aa6134c5272b6e263ff318e"
-      },
-      {
         "path": "app/desktop/dist/renderer/assets/main-FoEmJd3d.css",
         "size": 167925,
         "sha256": "3fbaaebdb06dc64586fa4c7c5943e995304acaf74c1540f4fcc13e65f8e063fa"
+      },
+      {
+        "path": "app/desktop/dist/renderer/assets/main-ZOivSHCM.js",
+        "size": 1394110,
+        "sha256": "e0b91b6495aba881a2caccb0b203d4ecc766d25e6613bdc15f84a1cd35e58851"
       },
       {
         "path": "app/desktop/dist/renderer/assets/noto-sans-jp-0-wght-normal-ChZwicxE.woff2",
@@ -723,14 +716,14 @@
         "sha256": "e626c1140e75fba1028fc0a8bb8f8fc29cbfa5d0b9b685873e01eff26c3a3c91"
       },
       {
-        "path": "app/desktop/dist/renderer/assets/web-adapter-CPYRzfwQ.js",
+        "path": "app/desktop/dist/renderer/assets/web-adapter-BxMcH7l_.js",
         "size": 23608,
-        "sha256": "4adeab103d516816495e0345026043476d75500566beeb93815115746007698d"
+        "sha256": "cdb5299dab1f6fbb384d480bd8aefa97adc481fe7c42bf259e987d44b18ece16"
       },
       {
         "path": "app/desktop/dist/renderer/index.html",
         "size": 436,
-        "sha256": "844435d446d081a25873a20cc711db55d7640420054a3e8909d43df11abe8e1e"
+        "sha256": "4ce1c34369c72495c56d79a0bb3f07047aa7a6d92f605d99de31397fe1a7da8b"
       },
       {
         "path": "app/desktop/package.json",
@@ -1779,7 +1772,7 @@
       }
     ]
   },
-  "buildEndSha256": "5c7389709621ee2f9c8e24595e724c78f61874a7b7093258e785a50f24c66eae",
+  "buildEndSha256": "6d76943b2f40b8eab22392fbc357f55dc89317ec12c5c02f9f4484d7dd03d075",
   "buildUnchanged": true,
   "driver": {
     "path": "app/desktop/e2e/native-issue-report.mjs",
@@ -1796,8 +1789,8 @@
   "artifacts": [
     {
       "path": "credential-failure-visible.png",
-      "size": 141812,
-      "sha256": "5587a1e9fe1c5fb9943f466e814b7ddfa0728d8715e29b0f930da04568650f64"
+      "size": 141821,
+      "sha256": "4fb80974be47f294b4e699ac0346a159241c4a5ab3d35d0b000a843d19e3b204"
     },
     {
       "path": "fixture-input.json",
@@ -1812,12 +1805,12 @@
     {
       "path": "native-issue-report.json",
       "size": 2712,
-      "sha256": "117749abedaf03526937834097a3907b75cb183bbd78824769671117ca05e1a8"
+      "sha256": "6c12cdbedf24803a3865efe999e7411a4ddcfe0408275c6c52aef95dca814ad0"
     },
     {
       "path": "reviewed-readonly-draft.png",
-      "size": 130982,
-      "sha256": "b6e1451e0c4564761912dd1c9e57540dd671092be155e16a2b9f8b0b8c0fd3e8"
+      "size": 130989,
+      "sha256": "2345b39d291009610a7a1df66594b98367ad49037a12e9581d24e5ddf968c1d2"
     },
     {
       "path": "valid-github-read-mock.jsonl",
@@ -1827,7 +1820,7 @@
     {
       "path": "valid-ipc.jsonl",
       "size": 1384,
-      "sha256": "8cba6efe3e7d782595b9318d87a4de19682a38c0a028c8c15f81bf14a10f0a65"
+      "sha256": "5a87c3df855cf28f06cad98e11afc0e62436b43ab9e89cdb78b6d82eed15d8dd"
     }
   ]
 }

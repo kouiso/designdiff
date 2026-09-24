@@ -173,7 +173,7 @@
         },
         "cropChip": []
       },
-      "missingError": "画像の読み込みに失敗しました: Error: Error invoking remote method 'file:read-local-image': Error: ENOENT: no such file or directory, open '/tmp/figdiff-c-cases-vXgCog/home/fixtures/no-such-image.png'",
+      "missingError": "画像の読み込みに失敗しました: Error: Error invoking remote method 'file:read-local-image': Error: ENOENT: no such file or directory, open '/tmp/figdiff-c-cases-fjoFPd/home/fixtures/no-such-image.png'",
       "corruptError": "[object Event]",
       "pageErrors": []
     }

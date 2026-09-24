@@ -1,0 +1,131 @@
+{
+ "platform": "linux-wsl",
+ "round": 1,
+ "roundExecutionId": "round1",
+ "generatedAt": "2026-09-19T05:21:03.326Z",
+ "entries": [
+  {
+   "driver": "app/desktop/e2e/desktop-c-cases.mjs",
+   "evidenceDir": "docs/evidence/round1-linux-wsl/desktop-c-cases",
+   "passEvidenceVia": "argv2",
+   "requires": [
+    "display-or-xvfb",
+    "electron"
+   ],
+   "note": "C07はnative-ignore-regionが実UI編集込みで証跡"
+  },
+  {
+   "driver": "app/desktop/e2e/desktop-d-cases.mjs",
+   "evidenceDir": "docs/evidence/round1-linux-wsl/desktop-d-cases",
+   "passEvidenceVia": "argv2",
+   "requires": [
+    "display-or-xvfb",
+    "electron"
+   ]
+  },
+  {
+   "driver": "app/desktop/e2e/native-unmeasured-score.mjs",
+   "evidenceDir": "docs/evidence/round1-linux-wsl/native-unmeasured-score",
+   "evidenceFile": "after-native.json",
+   "passEvidenceVia": "env:FIGDIFF_SCORE_EVIDENCE",
+   "requires": [
+    "display-or-xvfb",
+    "electron"
+   ]
+  },
+  {
+   "driver": "app/desktop/e2e/native-ignore-region.mjs",
+   "evidenceDir": "docs/evidence/round1-linux-wsl/native-ignore-region",
+   "evidenceFile": "manifest.json",
+   "passEvidenceVia": "env:FIGDIFF_IGNORE_EVIDENCE",
+   "requires": [
+    "display-or-xvfb",
+    "electron"
+   ]
+  },
+  {
+   "driver": "app/desktop/e2e/native-figma-node-fix.mjs",
+   "evidenceDir": "docs/evidence/round1-linux-wsl/native-figma-node-fix",
+   "evidenceFile": "manifest.json",
+   "passEvidenceVia": "env:FIGDIFF_FIGMA_NODE_FIX_EVIDENCE",
+   "requires": [
+    "display-or-xvfb",
+    "electron"
+   ]
+  },
+  {
+   "driver": "app/desktop/e2e/native-fix-animation.mjs",
+   "evidenceDir": "docs/evidence/round1-linux-wsl/native-fix-animation",
+   "evidenceFile": "manifest.json",
+   "passEvidenceVia": "env:FIGDIFF_FIX_ANIMATION_EVIDENCE",
+   "requires": [
+    "display-or-xvfb",
+    "electron"
+   ]
+  },
+  {
+   "driver": "app/desktop/e2e/native-issue-report.mjs",
+   "evidenceDir": "docs/evidence/round1-linux-wsl/native-issue-report",
+   "evidenceFile": "manifest.json",
+   "passEvidenceVia": "env:FIGDIFF_ISSUE_REPORT_EVIDENCE",
+   "requires": [
+    "display-or-xvfb",
+    "electron"
+   ]
+  },
+  {
+   "driver": "app/desktop/e2e/native-report-export.mjs",
+   "evidenceDir": "docs/evidence/round1-linux-wsl/native-report-export",
+   "evidenceFile": "manifest.json",
+   "passEvidenceVia": "env:FIGDIFF_REPORT_EVIDENCE",
+   "requires": [
+    "display-or-xvfb",
+    "electron"
+   ]
+  },
+  {
+   "driver": "app/mcp-server/script/x08/mcp.mjs",
+   "evidenceDir": "docs/evidence/round1-linux-wsl/x08",
+   "evidenceFile": "x08-mcp.json",
+   "passEvidenceVia": "argv2",
+   "requires": [],
+   "note": "x08-mcp.json に face 計測+results.X08 を吐く。runs-manifest は evidenceFile: x08-mcp.json を指定する"
+  },
+  {
+   "driver": "app/mcp-server/script/x08/desktop.mjs",
+   "evidenceDir": "docs/evidence/round1-linux-wsl/x08",
+   "evidenceFile": "x08-desktop.json",
+   "passEvidenceVia": "argv2",
+   "requires": [
+    "display-or-xvfb",
+    "electron"
+   ],
+   "note": "evidenceFile: x08-desktop.json"
+  },
+  {
+   "driver": "app/mcp-server/script/x08/extension.mjs",
+   "evidenceDir": "docs/evidence/round1-linux-wsl/x08",
+   "evidenceFile": "x08-extension.json",
+   "passEvidenceVia": "argv2",
+   "requires": [
+    "chrome"
+   ],
+   "note": "evidenceFile: x08-extension.json"
+  },
+  {
+   "driver": "app/mcp-server/script/x08/plugin.mjs",
+   "evidenceDir": "docs/evidence/round1-linux-wsl/x08",
+   "evidenceFile": "x08-plugin.json",
+   "passEvidenceVia": "argv2",
+   "requires": [],
+   "note": "evidenceFile: x08-plugin.json"
+  },
+  {
+   "driver": "app/mcp-server/script/x08/compare.mjs",
+   "evidenceDir": "docs/evidence/round1-linux-wsl/x08",
+   "passEvidenceVia": "argv2",
+   "requires": [],
+   "note": "4面横断verdict。全X08 routeの必須provider"
+  }
+ ]
+}

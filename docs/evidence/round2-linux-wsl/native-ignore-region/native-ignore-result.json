@@ -41,7 +41,7 @@
     ],
     "deleteReadback": [],
     "invalidInputRejected": "Error: Error invoking remote method 'ignore-region:save': [\n  {\n    \"origin\": \"number\",\n    \"code\": \"too_small\",\n    \"minimum\": 0,\n    \"inclusive\": true,\n    \"path\": [\n      \"x\"\n    ],\n    \"message\": \"Too small: expected number to be >=0\"\n  }\n]",
-    "ioWriteRejected": "Error: Error invoking remote method 'ignore-region:save': Error: EACCES: permission denied, open '/home/ubuntu/repos/designdiff/docs/evidence/round2-linux-wsl/native-ignore-region/native-ignore-ioWxc9/configured-projects/ignore-fixture/.ignore-regions.yaml.51468.ca82acb6-61a3-4592-a217-4a49a6870f01.tmp'"
+    "ioWriteRejected": "Error: Error invoking remote method 'ignore-region:save': Error: EACCES: permission denied, open '/home/ubuntu/repos/designdiff/docs/evidence/round2-linux-wsl/native-ignore-region/native-ignore-4PwKfk/configured-projects/ignore-fixture/.ignore-regions.yaml.36440.5ef86625-d7c4-451f-8233-9366a6310c63.tmp'"
   },
   "artifactHashes": {
     "driver": "1f15dbc62126d4907521778a617c26c5b663e03484d8ce4fb0b68e7da147aa3c",

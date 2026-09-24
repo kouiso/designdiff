@@ -3,12 +3,12 @@
     {
       "format": "json",
       "path": "/home/ubuntu/repos/designdiff/docs/evidence/round2-linux-wsl/native-report-export/saved-report.json",
-      "sha256": "71e14ae8b814fcd6aaadfe0817a73081b17995f7e03932b99d84019c8a14607e"
+      "sha256": "c88548f2ae02d5a41374c2c475eeb6c0aa23cec855f1f5f16287c1b85754b5c3"
     },
     {
       "format": "markdown",
       "path": "/home/ubuntu/repos/designdiff/docs/evidence/round2-linux-wsl/native-report-export/saved-report.md",
-      "sha256": "391f5cae33375e625cee1fc55fdea3008018b17b210d0b1ad84549c61f918dcc"
+      "sha256": "70d820b6d7c56ead10d21f45f70ba4d98ba7a7b5cf5c105dc28d078188517057"
     }
   ],
   "independentRawDifference": {

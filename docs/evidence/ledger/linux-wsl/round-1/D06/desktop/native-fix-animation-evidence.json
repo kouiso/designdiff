@@ -1,24 +1,16 @@
 {
   "schemaVersion": 1,
-  "startedAt": "2026-09-19T04:55:42.929Z",
-  "completedAt": "2026-09-19T04:55:46.017Z",
+  "startedAt": "2026-09-24T13:22:49.338Z",
+  "completedAt": "2026-09-24T13:22:52.480Z",
   "revision": "4e9145e5e051d4efe78a922723f7b3245005a05e",
   "dirtyState": [
-    " M docs/evidence/runs-linux-wsl-r2.json",
-    " M docs/evidence/runs-macos-r2.json",
-    " M docs/evidence/runs-repository-r2.json",
-    " M docs/evidence/runs-windows-r2.json",
-    "?? docs/evidence/m12-linux-r1/",
-    "?? docs/evidence/m12-linux-r2/",
     "?? docs/evidence/round1-linux-wsl/",
-    "?? docs/evidence/round2-linux-wsl/",
-    "?? docs/evidence/round2-repository/",
-    "?? docs/evidence/runs-linux-wsl-r1.json",
-    "?? docs/evidence/runs-macos-r1.json",
-    "?? docs/evidence/runs-repository-r1.json",
-    "?? docs/evidence/runs-repository-r2.attempts.json",
-    "?? docs/evidence/runs-repository-r2.manifest.json",
-    "?? docs/evidence/runs-windows-r1.json"
+    "?? docs/evidence/runs-linux-wsl-r1.desktop-rerun.attempts.json",
+    "?? docs/evidence/runs-linux-wsl-r1.desktop-rerun.json",
+    "?? docs/evidence/runs-linux-wsl-r1.desktop-rerun.manifest.json",
+    "?? docs/evidence/runs-linux-wsl-r2.desktop-rerun.attempts.json",
+    "?? docs/evidence/runs-linux-wsl-r2.desktop-rerun.json",
+    "?? docs/evidence/runs-linux-wsl-r2.desktop-rerun.manifest.json"
   ],
   "command": "FIGDIFF_FIX_ANIMATION_EVIDENCE=<evidence> xvfb-run -a node app/desktop/e2e/native-fix-animation.mjs",
   "build": {
@@ -35,7 +27,7 @@
       "package/credential-store/package.json"
     ],
     "fileCount": 348,
-    "sha256": "5c7389709621ee2f9c8e24595e724c78f61874a7b7093258e785a50f24c66eae",
+    "sha256": "6d76943b2f40b8eab22392fbc357f55dc89317ec12c5c02f9f4484d7dd03d075",
     "files": [
       {
         "path": "app/desktop/dist/main/main.js",
@@ -48,9 +40,9 @@
         "sha256": "22449452eb50781e4ec68e9c9c7d2d35aad25daa4481e2d94d77f8ac6bf8578d"
       },
       {
-        "path": "app/desktop/dist/renderer/assets/electron-adapter-DrLeqN06.js",
+        "path": "app/desktop/dist/renderer/assets/electron-adapter-CF6qzBs4.js",
         "size": 6967,
-        "sha256": "c75e031efc7aaf7a470242e43093d61517ef96c2a48b8846c61c5388ca148b63"
+        "sha256": "be63f29a80c1fd0151dea42b406c2d880fafcaa1db3e9048c974a360e306bf3e"
       },
       {
         "path": "app/desktop/dist/renderer/assets/hanken-grotesk-latin-ext-wght-normal-Dg-wlmqe.woff2",
@@ -93,14 +85,14 @@
         "sha256": "2288795da89dd97e648954b96e22b4501bd85dfc453264460b252f888b582ca2"
       },
       {
-        "path": "app/desktop/dist/renderer/assets/main-C5T1JcVY.js",
-        "size": 1393121,
-        "sha256": "582d46407e12b01243231b57391b7e2af8d23cb40aa6134c5272b6e263ff318e"
-      },
-      {
         "path": "app/desktop/dist/renderer/assets/main-FoEmJd3d.css",
         "size": 167925,
         "sha256": "3fbaaebdb06dc64586fa4c7c5943e995304acaf74c1540f4fcc13e65f8e063fa"
+      },
+      {
+        "path": "app/desktop/dist/renderer/assets/main-ZOivSHCM.js",
+        "size": 1394110,
+        "sha256": "e0b91b6495aba881a2caccb0b203d4ecc766d25e6613bdc15f84a1cd35e58851"
       },
       {
         "path": "app/desktop/dist/renderer/assets/noto-sans-jp-0-wght-normal-ChZwicxE.woff2",
@@ -723,14 +715,14 @@
         "sha256": "e626c1140e75fba1028fc0a8bb8f8fc29cbfa5d0b9b685873e01eff26c3a3c91"
       },
       {
-        "path": "app/desktop/dist/renderer/assets/web-adapter-CPYRzfwQ.js",
+        "path": "app/desktop/dist/renderer/assets/web-adapter-BxMcH7l_.js",
         "size": 23608,
-        "sha256": "4adeab103d516816495e0345026043476d75500566beeb93815115746007698d"
+        "sha256": "cdb5299dab1f6fbb384d480bd8aefa97adc481fe7c42bf259e987d44b18ece16"
       },
       {
         "path": "app/desktop/dist/renderer/index.html",
         "size": 436,
-        "sha256": "844435d446d081a25873a20cc711db55d7640420054a3e8909d43df11abe8e1e"
+        "sha256": "4ce1c34369c72495c56d79a0bb3f07047aa7a6d92f605d99de31397fe1a7da8b"
       },
       {
         "path": "app/desktop/package.json",
@@ -1779,7 +1771,7 @@
       }
     ]
   },
-  "buildEndSha256": "5c7389709621ee2f9c8e24595e724c78f61874a7b7093258e785a50f24c66eae",
+  "buildEndSha256": "6d76943b2f40b8eab22392fbc357f55dc89317ec12c5c02f9f4484d7dd03d075",
   "buildUnchanged": true,
   "driver": {
     "path": "app/desktop/e2e/native-fix-animation.mjs",
@@ -1816,18 +1808,18 @@
     },
     {
       "path": "animation-reversed-time-rejected.png",
-      "size": 113623,
-      "sha256": "b57153850efa1dfe1a902554100524fb75d47e66c9372dae02bf186a982c32c4"
+      "size": 114091,
+      "sha256": "082882c770b10b4f9de862a845c20101be77b27bb97dfb53f743f23e8736d4c7"
     },
     {
       "path": "animation-single-design-unmeasured.png",
-      "size": 118064,
-      "sha256": "25935868da1319091340753318ee472ddff9017e4772dbc129c170b452b5a25d"
+      "size": 117866,
+      "sha256": "b356b8793afd0c7318d86a4124bd62188151b6d1333b1e9bb7376f8dd959a856"
     },
     {
       "path": "animation-two-frame-mapping.png",
-      "size": 111455,
-      "sha256": "e62e9a96c0b21f63bf830c7df08f1cbd3f92df6c8777c97e9b32dd4c0f131664"
+      "size": 111188,
+      "sha256": "282254adbd201c5c491b54b027f2338e627a2a8cffc66932208c3c253cb54663"
     },
     {
       "path": "fix-after-changed-geometry.png",
@@ -1841,8 +1833,8 @@
     },
     {
       "path": "fix-before-pinned.png",
-      "size": 116037,
-      "sha256": "4eb1b4bddfead76fa8c976f166948a15403bd5299a5b5c86e6f7ea856fed37eb"
+      "size": 116086,
+      "sha256": "531b14b683dcfabceab232abf8065bde0f1ac33dcdd05d6d45a69109b899c6c7"
     },
     {
       "path": "fix-before.png",
@@ -1851,8 +1843,8 @@
     },
     {
       "path": "fix-condition-mismatch.png",
-      "size": 110226,
-      "sha256": "2f128996fdeaa0fe4551668eea97aa1335b6529fb8f198ae421028e6f3b79adc"
+      "size": 110383,
+      "sha256": "d4a7143ca652a630bacc42959699b5bf3a5875b1025d8818593545716c69b1fe"
     },
     {
       "path": "fix-design.png",
@@ -1861,13 +1853,13 @@
     },
     {
       "path": "fix-improved-with-side-effect.png",
-      "size": 108899,
-      "sha256": "d97661ab4dc86f757695568ebc1616396db365912bdd8dd422fc89922778f1ed"
+      "size": 108828,
+      "sha256": "fe68950c438d8b1e6b492044d41352ba6d1f4eb8f66a40553d2276bf313b3bbf"
     },
     {
       "path": "native-fix-animation.json",
       "size": 2293,
-      "sha256": "c9263c67232e441afa8177774b9fee69cbceddb1eedd1c4b63ef61b24e81ed36"
+      "sha256": "524074e8ddddcfc98e713ea5217857d5bbfede5e7eab74e59e6b26a5583a62bd"
     }
   ]
 }

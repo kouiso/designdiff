@@ -58,12 +58,12 @@
     }
   },
   "screenshots": {
-    "fix-before-pinned.png": "8f939889e8f43eee1e860a6e0d142248c686d733cbf677e9e3f28960da5b8fdc",
-    "fix-improved-with-side-effect.png": "108dd72ee419c460b25f1f9b83c23ef35d9d869345220d0820f5fe6dd0b7838b",
-    "fix-condition-mismatch.png": "acbc04f1919d6ea986e7f4874e4f6a039b3a6df35a0ad4bcbb474daa76d9f306",
-    "animation-two-frame-mapping.png": "4e94f387b48d2b4e49ad78f5e35eba697a9fb942a438ce553c84addf79347918",
-    "animation-single-design-unmeasured.png": "25935868da1319091340753318ee472ddff9017e4772dbc129c170b452b5a25d",
-    "animation-reversed-time-rejected.png": "b57153850efa1dfe1a902554100524fb75d47e66c9372dae02bf186a982c32c4"
+    "fix-before-pinned.png": "800dece688922895acd852bb1401b4877691d44da183154c1251722a4ceb21c3",
+    "fix-improved-with-side-effect.png": "20acd006b15d9e3f2e08a7c3b4b109e153eedc6cc49ad244c5ba3a83d6a811a0",
+    "fix-condition-mismatch.png": "35a3d6b78130d39da83699ce578eb13b84590ff239b9098e43fe8e881fff0861",
+    "animation-two-frame-mapping.png": "28d383e22912441ab74eebb439df35025683c62e1b37db46227ee116851075c8",
+    "animation-single-design-unmeasured.png": "374a27696ee23ae1bfe6829404e8cfde3e19f377b35e34ff2ad4c7be3d143643",
+    "animation-reversed-time-rejected.png": "fb62bfb9af0bb1738dac45f9ccb2be821c1738a7192f64ef53a7412defa7d77c"
   },
   "pageErrors": [],
   "rendererCrashes": []

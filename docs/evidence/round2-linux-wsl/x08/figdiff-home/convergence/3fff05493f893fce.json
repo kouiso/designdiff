@@ -2,14 +2,14 @@
   "sourceKey": "campaign:v1:[\"local:/home/ubuntu/repos/designdiff/docs/evidence/round2-linux-wsl/x08/x08-design.png\",\"x08-mcp\"]",
   "campaigns": [
     {
-      "campaignId": "9c3277d8-b8f1-465f-a0d7-d0a54e24a069",
+      "campaignId": "bcc723b7-23c2-4e42-a00e-3a44682472bb",
       "sourceKey": "campaign:v1:[\"local:/home/ubuntu/repos/designdiff/docs/evidence/round2-linux-wsl/x08/x08-design.png\",\"x08-mcp\"]",
       "designSource": "/home/ubuntu/repos/designdiff/docs/evidence/round2-linux-wsl/x08/x08-design.png",
-      "startedAt": 1789793383235,
-      "updatedAt": 1789794632058,
+      "startedAt": 1790256476580,
+      "updatedAt": 1790256476580,
       "iterations": [
         {
-          "comparisonId": "cmp-fa353b7e-d06c-46e6-925d-09fdc5ee344a",
+          "comparisonId": "cmp-9d2828db-c99b-41f7-b9bb-fc4697a48160",
           "comparisonConditions": {
             "status": "unverified",
             "design": {
@@ -44,47 +44,8 @@
           "regionCount": 2,
           "structuralVerdict": "fail",
           "status": "FAIL",
-          "timestamp": 1789793383235,
-          "diffImagePath": "/home/ubuntu/repos/designdiff/docs/evidence/round2-linux-wsl/x08/figdiff-home/results/diff-cmp-fa353b7e-d06c-46e6-925d-09fdc5ee344a.png"
-        },
-        {
-          "comparisonId": "cmp-527b7fe5-e9bb-4523-b6f7-2102b0bbbef5",
-          "comparisonConditions": {
-            "status": "unverified",
-            "design": {
-              "canvas": {
-                "width": 96,
-                "height": 96
-              },
-              "canvasSource": "image-metadata",
-              "unverified": [
-                "viewport",
-                "pixelRatio",
-                "origin"
-              ]
-            },
-            "screenshot": {
-              "canvas": {
-                "width": 96,
-                "height": 96
-              },
-              "canvasSource": "image-metadata",
-              "unverified": [
-                "viewport",
-                "pixelRatio",
-                "origin"
-              ]
-            },
-            "differences": [],
-            "message": "表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。"
-          },
-          "matchRate": 90.97,
-          "diffPixelCount": 832,
-          "regionCount": 2,
-          "structuralVerdict": "fail",
-          "status": "FAIL",
-          "timestamp": 1789794632058,
-          "diffImagePath": "/home/ubuntu/repos/designdiff/docs/evidence/round2-linux-wsl/x08/figdiff-home/results/diff-cmp-527b7fe5-e9bb-4523-b6f7-2102b0bbbef5.png"
+          "timestamp": 1790256476580,
+          "diffImagePath": "/home/ubuntu/repos/designdiff/docs/evidence/round2-linux-wsl/x08/figdiff-home/results/diff-cmp-9d2828db-c99b-41f7-b9bb-fc4697a48160.png"
         }
       ]
     }

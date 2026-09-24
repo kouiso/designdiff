@@ -1,24 +1,16 @@
 {
   "schemaVersion": 1,
-  "startedAt": "2026-09-19T04:55:39.904Z",
-  "completedAt": "2026-09-19T04:55:42.623Z",
+  "startedAt": "2026-09-24T13:22:46.155Z",
+  "completedAt": "2026-09-24T13:22:48.969Z",
   "revision": "4e9145e5e051d4efe78a922723f7b3245005a05e",
   "dirtyState": [
-    " M docs/evidence/runs-linux-wsl-r2.json",
-    " M docs/evidence/runs-macos-r2.json",
-    " M docs/evidence/runs-repository-r2.json",
-    " M docs/evidence/runs-windows-r2.json",
-    "?? docs/evidence/m12-linux-r1/",
-    "?? docs/evidence/m12-linux-r2/",
     "?? docs/evidence/round1-linux-wsl/",
-    "?? docs/evidence/round2-linux-wsl/",
-    "?? docs/evidence/round2-repository/",
-    "?? docs/evidence/runs-linux-wsl-r1.json",
-    "?? docs/evidence/runs-macos-r1.json",
-    "?? docs/evidence/runs-repository-r1.json",
-    "?? docs/evidence/runs-repository-r2.attempts.json",
-    "?? docs/evidence/runs-repository-r2.manifest.json",
-    "?? docs/evidence/runs-windows-r1.json"
+    "?? docs/evidence/runs-linux-wsl-r1.desktop-rerun.attempts.json",
+    "?? docs/evidence/runs-linux-wsl-r1.desktop-rerun.json",
+    "?? docs/evidence/runs-linux-wsl-r1.desktop-rerun.manifest.json",
+    "?? docs/evidence/runs-linux-wsl-r2.desktop-rerun.attempts.json",
+    "?? docs/evidence/runs-linux-wsl-r2.desktop-rerun.json",
+    "?? docs/evidence/runs-linux-wsl-r2.desktop-rerun.manifest.json"
   ],
   "command": "FIGDIFF_FIGMA_NODE_FIX_EVIDENCE=<private-evidence> xvfb-run -a node app/desktop/e2e/native-figma-node-fix.mjs",
   "build": {
@@ -35,7 +27,7 @@
       "package/credential-store/package.json"
     ],
     "fileCount": 348,
-    "sha256": "5c7389709621ee2f9c8e24595e724c78f61874a7b7093258e785a50f24c66eae",
+    "sha256": "6d76943b2f40b8eab22392fbc357f55dc89317ec12c5c02f9f4484d7dd03d075",
     "files": [
       {
         "path": "app/desktop/dist/main/main.js",
@@ -48,9 +40,9 @@
         "sha256": "22449452eb50781e4ec68e9c9c7d2d35aad25daa4481e2d94d77f8ac6bf8578d"
       },
       {
-        "path": "app/desktop/dist/renderer/assets/electron-adapter-DrLeqN06.js",
+        "path": "app/desktop/dist/renderer/assets/electron-adapter-CF6qzBs4.js",
         "size": 6967,
-        "sha256": "c75e031efc7aaf7a470242e43093d61517ef96c2a48b8846c61c5388ca148b63"
+        "sha256": "be63f29a80c1fd0151dea42b406c2d880fafcaa1db3e9048c974a360e306bf3e"
       },
       {
         "path": "app/desktop/dist/renderer/assets/hanken-grotesk-latin-ext-wght-normal-Dg-wlmqe.woff2",
@@ -93,14 +85,14 @@
         "sha256": "2288795da89dd97e648954b96e22b4501bd85dfc453264460b252f888b582ca2"
       },
       {
-        "path": "app/desktop/dist/renderer/assets/main-C5T1JcVY.js",
-        "size": 1393121,
-        "sha256": "582d46407e12b01243231b57391b7e2af8d23cb40aa6134c5272b6e263ff318e"
-      },
-      {
         "path": "app/desktop/dist/renderer/assets/main-FoEmJd3d.css",
         "size": 167925,
         "sha256": "3fbaaebdb06dc64586fa4c7c5943e995304acaf74c1540f4fcc13e65f8e063fa"
+      },
+      {
+        "path": "app/desktop/dist/renderer/assets/main-ZOivSHCM.js",
+        "size": 1394110,
+        "sha256": "e0b91b6495aba881a2caccb0b203d4ecc766d25e6613bdc15f84a1cd35e58851"
       },
       {
         "path": "app/desktop/dist/renderer/assets/noto-sans-jp-0-wght-normal-ChZwicxE.woff2",
@@ -723,14 +715,14 @@
         "sha256": "e626c1140e75fba1028fc0a8bb8f8fc29cbfa5d0b9b685873e01eff26c3a3c91"
       },
       {
-        "path": "app/desktop/dist/renderer/assets/web-adapter-CPYRzfwQ.js",
+        "path": "app/desktop/dist/renderer/assets/web-adapter-BxMcH7l_.js",
         "size": 23608,
-        "sha256": "4adeab103d516816495e0345026043476d75500566beeb93815115746007698d"
+        "sha256": "cdb5299dab1f6fbb384d480bd8aefa97adc481fe7c42bf259e987d44b18ece16"
       },
       {
         "path": "app/desktop/dist/renderer/index.html",
         "size": 436,
-        "sha256": "844435d446d081a25873a20cc711db55d7640420054a3e8909d43df11abe8e1e"
+        "sha256": "4ce1c34369c72495c56d79a0bb3f07047aa7a6d92f605d99de31397fe1a7da8b"
       },
       {
         "path": "app/desktop/package.json",
@@ -1779,7 +1771,7 @@
       }
     ]
   },
-  "buildEndSha256": "5c7389709621ee2f9c8e24595e724c78f61874a7b7093258e785a50f24c66eae",
+  "buildEndSha256": "6d76943b2f40b8eab22392fbc357f55dc89317ec12c5c02f9f4484d7dd03d075",
   "buildUnchanged": true,
   "driver": {
     "path": "app/desktop/e2e/native-figma-node-fix.mjs",
@@ -1876,7 +1868,7 @@
     {
       "path": "native-figma-node-fix.json",
       "size": 2112,
-      "sha256": "83b32a4462e6f07c423bfc1339f0ef3475b78716e18c1daf02f779b4790df90a"
+      "sha256": "0d798ee285aa1ce30828df7f5f4acdda83ccf8389ac2a7a5af9b37af2d228293"
     },
     {
       "path": "native-ipc.jsonl",
@@ -1885,13 +1877,13 @@
     },
     {
       "path": "target-improved-grid-regressed.png",
-      "size": 118030,
-      "sha256": "4ca61559a63827f1ca84229f520f153b2aaf0d83f18764aa5ea4052b66f00246"
+      "size": 117705,
+      "sha256": "eb3112eab8427b9aacd861b2ec688053ae79788a0f876162040beaae98673ceb"
     },
     {
       "path": "version-pinned-masked-cropped-before.png",
-      "size": 124322,
-      "sha256": "3105054ccf6010268f8841dbbeeef8720051384e10a6582979af3a6dc2561382"
+      "size": 124193,
+      "sha256": "4c5204005c4c640a756c363dee071d215029bbb3f47140f14473a6c4461306a1"
     }
   ]
 }

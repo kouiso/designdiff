@@ -12,11 +12,11 @@
     "desktop-d-cases:D09": {
       "401": {
         "surfaced": "token re-entry dialog",
-        "cancelDisabled": true
+        "cancelDisabled": false
       },
       "403": {
         "surfaced": "token re-entry dialog",
-        "cancelDisabled": true
+        "cancelDisabled": false
       },
       "429": {
         "surfaced": "Error: Error invoking remote method 'figma:get-frame-image': Error: Figma API rate limit exceeded (429). Please wait 7 seconds."

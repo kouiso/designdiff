@@ -1,11 +1,11 @@
 {
-  "comparisonId": "cmp-fa353b7e-d06c-46e6-925d-09fdc5ee344a",
-  "sourceKey": "campaign:v1:[\"local:/home/ubuntu/repos/designdiff/docs/evidence/round2-linux-wsl/x08/x08-design.png\",\"x08-mcp\"]",
+  "comparisonId": "cmp-20df3e3f-1abf-403a-aaae-a2a7611d420b",
+  "sourceKey": "campaign:v1:[\"local:/home/ubuntu/repos/designdiff/docs/evidence/round1-linux-wsl/x08/x08-design.png\",\"x08-mcp\"]",
   "captureWidth": 96,
   "captureHeight": 96,
   "result": {
     "status": "FAIL",
-    "comparisonId": "cmp-fa353b7e-d06c-46e6-925d-09fdc5ee344a",
+    "comparisonId": "cmp-20df3e3f-1abf-403a-aaae-a2a7611d420b",
     "matchRate": 90.97,
     "diffPixelCount": 832,
     "totalPixelCount": 9216,
@@ -100,7 +100,7 @@
       "requestedMode": "auto",
       "usedMode": "flood",
       "fallbackUsed": false,
-      "wallMs": 1.77,
+      "wallMs": 1.57,
       "regionCount": 2
     },
     "gridSummary": {
@@ -378,7 +378,7 @@
     "verificationContext": {
       "version": 1,
       "design": {
-        "sourceIdentitySha256": "3ff6ef787dc58a902c4f6959df7a5474c7273667b873fcb4cc27c3cc8d2e26f6",
+        "sourceIdentitySha256": "4e78ac075b9f4d9d17c8ab772d7d5b33c25d0f4c9be69464ec6d3365cefdf0dc",
         "imageSha256": "3674f91826b1c31b7f3a2f3349657946361037fe6965fc19156959407aba07f3",
         "background": "#FFFFFF",
         "figmaExportConditions": null
@@ -399,8 +399,8 @@
       "mask": {
         "status": "none"
       },
-      "fingerprint": "47f834e04cb57e06cb6d9751716a0f89c612e03676a78b8d3802d8d67eb60bc6"
+      "fingerprint": "dcda0596023056e0d6a83b8074148df0c6a2e78117d4ebb1710af2d3e07f46a7"
     },
-    "diffImagePath": "/home/ubuntu/repos/designdiff/docs/evidence/round2-linux-wsl/x08/figdiff-home/results/diff-cmp-fa353b7e-d06c-46e6-925d-09fdc5ee344a.png"
+    "diffImagePath": "/home/ubuntu/repos/designdiff/docs/evidence/round1-linux-wsl/x08/figdiff-home/results/diff-cmp-20df3e3f-1abf-403a-aaae-a2a7611d420b.png"
   }
 }

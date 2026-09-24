@@ -58,12 +58,12 @@
     }
   },
   "screenshots": {
-    "fix-before-pinned.png": "4eb1b4bddfead76fa8c976f166948a15403bd5299a5b5c86e6f7ea856fed37eb",
-    "fix-improved-with-side-effect.png": "d97661ab4dc86f757695568ebc1616396db365912bdd8dd422fc89922778f1ed",
-    "fix-condition-mismatch.png": "2f128996fdeaa0fe4551668eea97aa1335b6529fb8f198ae421028e6f3b79adc",
-    "animation-two-frame-mapping.png": "e62e9a96c0b21f63bf830c7df08f1cbd3f92df6c8777c97e9b32dd4c0f131664",
-    "animation-single-design-unmeasured.png": "25935868da1319091340753318ee472ddff9017e4772dbc129c170b452b5a25d",
-    "animation-reversed-time-rejected.png": "b57153850efa1dfe1a902554100524fb75d47e66c9372dae02bf186a982c32c4"
+    "fix-before-pinned.png": "531b14b683dcfabceab232abf8065bde0f1ac33dcdd05d6d45a69109b899c6c7",
+    "fix-improved-with-side-effect.png": "fe68950c438d8b1e6b492044d41352ba6d1f4eb8f66a40553d2276bf313b3bbf",
+    "fix-condition-mismatch.png": "d4a7143ca652a630bacc42959699b5bf3a5875b1025d8818593545716c69b1fe",
+    "animation-two-frame-mapping.png": "282254adbd201c5c491b54b027f2338e627a2a8cffc66932208c3c253cb54663",
+    "animation-single-design-unmeasured.png": "b356b8793afd0c7318d86a4124bd62188151b6d1333b1e9bb7376f8dd959a856",
+    "animation-reversed-time-rejected.png": "082882c770b10b4f9de862a845c20101be77b27bb97dfb53f743f23e8736d4c7"
   },
   "pageErrors": [],
   "rendererCrashes": []

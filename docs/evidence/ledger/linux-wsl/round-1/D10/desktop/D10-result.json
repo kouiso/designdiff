@@ -11,18 +11,18 @@
   "actual": {
     "desktop-d-cases:D10": {
       "keyboardSubmit": "frame list appeared via hero input (node 7:30)",
-      "japaneseProject": "1789793726131-ilu92jc",
+      "japaneseProject": "1790256124272-akhm11v",
       "narrowViewport": {
         "width": 430,
         "view": "compare",
-        "overflowPx": 226,
+        "overflowPx": 0,
         "overflowElements": [
-          "nav right=496",
-          "button right=433",
-          "button right=496",
-          "svg right=458",
-          "path right=457",
-          "circle right=454"
+          "button right=574",
+          "svg right=439",
+          "path right=438",
+          "path right=438",
+          "path right=438",
+          "button right=650"
         ],
         "homeNav": {
           "found": true,

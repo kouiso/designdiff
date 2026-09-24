@@ -2,14 +2,14 @@
   "sourceKey": "campaign:v1:[\"local:/home/ubuntu/repos/designdiff/docs/evidence/round1-linux-wsl/x08/x08-design.png\",\"x08-mcp\"]",
   "campaigns": [
     {
-      "campaignId": "01e7ce4f-b585-4ec6-a9bf-b83fd07852e7",
+      "campaignId": "47abee72-cde9-4333-ad57-abfd3b5419bf",
       "sourceKey": "campaign:v1:[\"local:/home/ubuntu/repos/designdiff/docs/evidence/round1-linux-wsl/x08/x08-design.png\",\"x08-mcp\"]",
       "designSource": "/home/ubuntu/repos/designdiff/docs/evidence/round1-linux-wsl/x08/x08-design.png",
-      "startedAt": 1789793810510,
-      "updatedAt": 1789793810510,
+      "startedAt": 1790256181038,
+      "updatedAt": 1790256181038,
       "iterations": [
         {
-          "comparisonId": "cmp-4a32684a-fb35-4fcd-8e39-69cb79ac8a24",
+          "comparisonId": "cmp-20df3e3f-1abf-403a-aaae-a2a7611d420b",
           "comparisonConditions": {
             "status": "unverified",
             "design": {
@@ -44,8 +44,8 @@
           "regionCount": 2,
           "structuralVerdict": "fail",
           "status": "FAIL",
-          "timestamp": 1789793810510,
-          "diffImagePath": "/home/ubuntu/repos/designdiff/docs/evidence/round1-linux-wsl/x08/figdiff-home/results/diff-cmp-4a32684a-fb35-4fcd-8e39-69cb79ac8a24.png"
+          "timestamp": 1790256181038,
+          "diffImagePath": "/home/ubuntu/repos/designdiff/docs/evidence/round1-linux-wsl/x08/figdiff-home/results/diff-cmp-20df3e3f-1abf-403a-aaae-a2a7611d420b.png"
         }
       ]
     }

@@ -1,16 +1,16 @@
 [
- {
-  "round": 1,
-  "executionId": "round1",
-  "productSha": "4e9145e5e051d4efe78a922723f7b3245005a05e",
-  "startedAt": "2026-09-19T04:42:25.440Z",
-  "finishedAt": "2026-09-20T20:03:12.000Z"
- },
- {
-  "round": 2,
-  "executionId": "round2",
-  "productSha": "4e9145e5e051d4efe78a922723f7b3245005a05e",
-  "startedAt": "2026-09-19T04:42:44.837Z",
-  "finishedAt": "2026-09-20T20:03:12.000Z"
- }
+  {
+    "round": 1,
+    "executionId": "round1",
+    "productSha": "4e9145e5e051d4efe78a922723f7b3245005a05e",
+    "startedAt": "2026-09-19T04:42:25.440Z",
+    "finishedAt": "2026-09-24T13:30:00.000Z"
+  },
+  {
+    "round": 2,
+    "executionId": "round2",
+    "productSha": "4e9145e5e051d4efe78a922723f7b3245005a05e",
+    "startedAt": "2026-09-19T04:42:44.837Z",
+    "finishedAt": "2026-09-24T13:30:00.000Z"
+  }
 ]

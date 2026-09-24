@@ -1,24 +1,16 @@
 {
   "schemaVersion": 1,
-  "startedAt": "2026-09-19T04:55:49.504Z",
-  "completedAt": "2026-09-19T04:55:56.032Z",
+  "startedAt": "2026-09-24T13:22:56.118Z",
+  "completedAt": "2026-09-24T13:23:00.549Z",
   "revision": "4e9145e5e051d4efe78a922723f7b3245005a05e",
   "dirtyState": [
-    " M docs/evidence/runs-linux-wsl-r2.json",
-    " M docs/evidence/runs-macos-r2.json",
-    " M docs/evidence/runs-repository-r2.json",
-    " M docs/evidence/runs-windows-r2.json",
-    "?? docs/evidence/m12-linux-r1/",
-    "?? docs/evidence/m12-linux-r2/",
     "?? docs/evidence/round1-linux-wsl/",
-    "?? docs/evidence/round2-linux-wsl/",
-    "?? docs/evidence/round2-repository/",
-    "?? docs/evidence/runs-linux-wsl-r1.json",
-    "?? docs/evidence/runs-macos-r1.json",
-    "?? docs/evidence/runs-repository-r1.json",
-    "?? docs/evidence/runs-repository-r2.attempts.json",
-    "?? docs/evidence/runs-repository-r2.manifest.json",
-    "?? docs/evidence/runs-windows-r1.json"
+    "?? docs/evidence/runs-linux-wsl-r1.desktop-rerun.attempts.json",
+    "?? docs/evidence/runs-linux-wsl-r1.desktop-rerun.json",
+    "?? docs/evidence/runs-linux-wsl-r1.desktop-rerun.manifest.json",
+    "?? docs/evidence/runs-linux-wsl-r2.desktop-rerun.attempts.json",
+    "?? docs/evidence/runs-linux-wsl-r2.desktop-rerun.json",
+    "?? docs/evidence/runs-linux-wsl-r2.desktop-rerun.manifest.json"
   ],
   "command": "FIGDIFF_REPORT_EVIDENCE=<evidence> xvfb-run -a node app/desktop/e2e/native-report-export.mjs",
   "build": {
@@ -35,7 +27,7 @@
       "package/credential-store/package.json"
     ],
     "fileCount": 348,
-    "sha256": "5c7389709621ee2f9c8e24595e724c78f61874a7b7093258e785a50f24c66eae",
+    "sha256": "6d76943b2f40b8eab22392fbc357f55dc89317ec12c5c02f9f4484d7dd03d075",
     "files": [
       {
         "path": "app/desktop/dist/main/main.js",
@@ -48,9 +40,9 @@
         "sha256": "22449452eb50781e4ec68e9c9c7d2d35aad25daa4481e2d94d77f8ac6bf8578d"
       },
       {
-        "path": "app/desktop/dist/renderer/assets/electron-adapter-DrLeqN06.js",
+        "path": "app/desktop/dist/renderer/assets/electron-adapter-CF6qzBs4.js",
         "size": 6967,
-        "sha256": "c75e031efc7aaf7a470242e43093d61517ef96c2a48b8846c61c5388ca148b63"
+        "sha256": "be63f29a80c1fd0151dea42b406c2d880fafcaa1db3e9048c974a360e306bf3e"
       },
       {
         "path": "app/desktop/dist/renderer/assets/hanken-grotesk-latin-ext-wght-normal-Dg-wlmqe.woff2",
@@ -93,14 +85,14 @@
         "sha256": "2288795da89dd97e648954b96e22b4501bd85dfc453264460b252f888b582ca2"
       },
       {
-        "path": "app/desktop/dist/renderer/assets/main-C5T1JcVY.js",
-        "size": 1393121,
-        "sha256": "582d46407e12b01243231b57391b7e2af8d23cb40aa6134c5272b6e263ff318e"
-      },
-      {
         "path": "app/desktop/dist/renderer/assets/main-FoEmJd3d.css",
         "size": 167925,
         "sha256": "3fbaaebdb06dc64586fa4c7c5943e995304acaf74c1540f4fcc13e65f8e063fa"
+      },
+      {
+        "path": "app/desktop/dist/renderer/assets/main-ZOivSHCM.js",
+        "size": 1394110,
+        "sha256": "e0b91b6495aba881a2caccb0b203d4ecc766d25e6613bdc15f84a1cd35e58851"
       },
       {
         "path": "app/desktop/dist/renderer/assets/noto-sans-jp-0-wght-normal-ChZwicxE.woff2",
@@ -723,14 +715,14 @@
         "sha256": "e626c1140e75fba1028fc0a8bb8f8fc29cbfa5d0b9b685873e01eff26c3a3c91"
       },
       {
-        "path": "app/desktop/dist/renderer/assets/web-adapter-CPYRzfwQ.js",
+        "path": "app/desktop/dist/renderer/assets/web-adapter-BxMcH7l_.js",
         "size": 23608,
-        "sha256": "4adeab103d516816495e0345026043476d75500566beeb93815115746007698d"
+        "sha256": "cdb5299dab1f6fbb384d480bd8aefa97adc481fe7c42bf259e987d44b18ece16"
       },
       {
         "path": "app/desktop/dist/renderer/index.html",
         "size": 436,
-        "sha256": "844435d446d081a25873a20cc711db55d7640420054a3e8909d43df11abe8e1e"
+        "sha256": "4ce1c34369c72495c56d79a0bb3f07047aa7a6d92f605d99de31397fe1a7da8b"
       },
       {
         "path": "app/desktop/package.json",
@@ -1779,7 +1771,7 @@
       }
     ]
   },
-  "buildEndSha256": "5c7389709621ee2f9c8e24595e724c78f61874a7b7093258e785a50f24c66eae",
+  "buildEndSha256": "6d76943b2f40b8eab22392fbc357f55dc89317ec12c5c02f9f4484d7dd03d075",
   "buildUnchanged": true,
   "driver": {
     "path": "app/desktop/e2e/native-report-export.mjs",
@@ -1796,23 +1788,23 @@
   "artifacts": [
     {
       "path": "after-input-json.png",
-      "size": 106878,
-      "sha256": "98be0ff0cc799579d610b25d06e43821790d44bcf89800d9987ac81c1ba2d25b"
+      "size": 106921,
+      "sha256": "fc570ce2920262c7e96be7cab804fc28b9d7832337272510ae7961421ae6229f"
     },
     {
       "path": "after-input-markdown.png",
-      "size": 106948,
-      "sha256": "0d4da5a1cffd2bdb9a09b5599b7beb679bcf0bf494e050b72f1d73335ed51bd4"
+      "size": 106953,
+      "sha256": "7476979df4eb8e77c43a17247a3861f7bf3a31913a2e1b5a4613b65360d978b9"
     },
     {
       "path": "canceled.png",
-      "size": 98414,
-      "sha256": "c885cf38cf1d2470e3af5048cb75726eea943e42070c8df3b12c88993c8dbf4d"
+      "size": 98429,
+      "sha256": "a51b3245d3d880e4f9ade0f359931ac01a5afe14d4b6f1293f646bd71149b58c"
     },
     {
       "path": "evidence.json",
       "size": 719,
-      "sha256": "9945b73de8bc27d93ebeabda80a41498d0fe8f14b46806283ac38a135a9520e3"
+      "sha256": "f2f819db35ca1afa00cd958ed787372de540b5fe877dfaf338de361dda827c6b"
     },
     {
       "path": "fix-before.png",
@@ -1826,43 +1818,43 @@
     },
     {
       "path": "native-dialog-json.png",
-      "size": 72562,
-      "sha256": "bd84453830811c1dac145ebd85e36fc313ba466890423434fcb4247ba1e4c0ed"
+      "size": 66901,
+      "sha256": "a4e7abd0c4059e4149810326baee6e6f6d12edcbd2da6c8ecd2c72363bd2cb77"
     },
     {
       "path": "native-dialog-markdown.png",
-      "size": 78392,
-      "sha256": "ad6775b08a975c884f15a2ab43382d101e260d463a3af3175eda2f7de7b240cc"
+      "size": 72554,
+      "sha256": "64d419b8a1f24a178c52471ae8c8c0e64c9819a4d8f28e11c14cec5415bedcab"
     },
     {
       "path": "native-window-json.txt",
-      "size": 4588,
-      "sha256": "1228b21a45876afec2ed4fe1cfb4f3d2846094aca542316a6d75b3963c578e7f"
+      "size": 4730,
+      "sha256": "461c72a503aa255caf8f96378e92d2f3b73ecf7179507edd46bbb65d1a1901fb"
     },
     {
       "path": "native-window-markdown.txt",
-      "size": 4585,
-      "sha256": "1cc5f2507d418a1b6a239fa04938a3f94bc50ca5dbad1a1e866acbe32ed32021"
+      "size": 4730,
+      "sha256": "0441b7849c5f99e323d2efad99e236113b096827beda4bb1f360b4ee113ba90d"
     },
     {
       "path": "saved-json.png",
-      "size": 103561,
-      "sha256": "e44ba132fef610c563ee4ac9462f59b402687c563428746d6c888e9f855bf1ab"
+      "size": 103605,
+      "sha256": "cd56520e3808bd995a19656d93bf60029ed9788b3f57bd2f150acec2e1db92d9"
     },
     {
       "path": "saved-markdown.png",
-      "size": 103600,
-      "sha256": "a2926c45077b6272045f8c1437dec7ce1614fd67aa6b4f9a5a087ee174f7818b"
+      "size": 103613,
+      "sha256": "43d1e4c4cb9d09876cb549405ee281c279cc5ea4228deb7745619f2ec16e16e9"
     },
     {
       "path": "saved-report.json",
       "size": 3939,
-      "sha256": "5b23cb103587702724c901f9d3102f5631dc45698342837c110ab24d48120486"
+      "sha256": "652c0a62cab62f6c09517e528e12cf0039d80c74da21f8b9fd6bebac5fa79d27"
     },
     {
       "path": "saved-report.md",
       "size": 945,
-      "sha256": "30dc23a4e65d581b62b75639e3fc7ffc9c5bf0c661df137e22b4d6e0178d3580"
+      "sha256": "42730ad1797cb7f5fb2c4156549327f53fd1e601238806f0dfde91eddc38d9c5"
     }
   ]
 }
