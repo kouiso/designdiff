@@ -1,6 +1,6 @@
 {
   "status": "FAIL",
-  "comparisonId": "cmp-b6ef9668-3dbf-47e6-be4b-2c9977685b06",
+  "comparisonId": "cmp-a230468b-071e-4a27-93c1-f62378794172",
   "matchRate": 99.91,
   "diffPixelCount": 300,
   "totalPixelCount": 329160,
@@ -107,7 +107,7 @@
     "requestedMode": "auto",
     "usedMode": "flood",
     "fallbackUsed": false,
-    "wallMs": 0.94,
+    "wallMs": 0.74,
     "regionCount": 3
   },
   "gridSummary": {
@@ -472,5 +472,5 @@
     },
     "fingerprint": "dcc0fe07038f38f8be465fa04dabc1a91262f2cf7677323f2d9a451b954fda1c"
   },
-  "diffImagePath": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/figdiff-home/results/diff-cmp-b6ef9668-3dbf-47e6-be4b-2c9977685b06.png"
+  "diffImagePath": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/figdiff-home/results/diff-cmp-a230468b-071e-4a27-93c1-f62378794172.png"
 }

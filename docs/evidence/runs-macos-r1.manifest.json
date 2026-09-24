@@ -2,7 +2,7 @@
   {
     "driver": "app/mcp-server/script/stdio-campaign-verification.mjs",
     "evidenceDir": "docs/evidence/round1-macos/stdio-campaign-verification",
-    "executedAt": "2026-09-20T13:39:15.946Z",
+    "executedAt": "2026-09-24T13:07:26.184Z",
     "environment": "macos",
     "buildDigest": "da4a551faec001f09e6f00320613bef5c1fa93aeaf9ba31422822db0cd73cbb7",
     "roundExecutionId": "round1"
@@ -10,7 +10,7 @@
   {
     "driver": "app/mcp-server/script/stdio-campaign-verification2.mjs",
     "evidenceDir": "docs/evidence/round1-macos/stdio-campaign-verification2",
-    "executedAt": "2026-09-20T13:39:30.882Z",
+    "executedAt": "2026-09-24T13:07:39.111Z",
     "environment": "macos",
     "buildDigest": "",
     "roundExecutionId": "round1"
@@ -18,7 +18,7 @@
   {
     "driver": "app/mcp-server/script/stdio-real-figma-verification.mjs",
     "evidenceDir": "docs/evidence/round1-macos/stdio-real-figma-verification",
-    "executedAt": "2026-09-20T13:39:57.878Z",
+    "executedAt": "2026-09-24T13:08:04.472Z",
     "environment": "macos",
     "buildDigest": "",
     "roundExecutionId": "round1"
@@ -26,7 +26,7 @@
   {
     "driver": "app/mcp-server/script/stdio-m01-verification.mjs",
     "evidenceDir": "docs/evidence/round1-macos/stdio-m01-verification",
-    "executedAt": "2026-09-20T13:40:04.991Z",
+    "executedAt": "2026-09-24T13:08:13.056Z",
     "environment": "macos",
     "buildDigest": "",
     "roundExecutionId": "round1"
@@ -34,7 +34,7 @@
   {
     "driver": "app/mcp-server/script/stdio-m12-verification.mjs",
     "evidenceDir": "docs/evidence/round1-macos/stdio-m12-verification",
-    "executedAt": "2026-09-20T13:40:05.336Z",
+    "executedAt": "2026-09-24T13:08:13.434Z",
     "environment": "macos",
     "buildDigest": "",
     "roundExecutionId": "round1"
@@ -42,7 +42,7 @@
   {
     "driver": "app/mcp-server/script/stdio-issue-verification.mjs",
     "evidenceDir": "docs/evidence/round1-macos/stdio-issue-verification",
-    "executedAt": "2026-09-20T13:40:19.235Z",
+    "executedAt": "2026-09-24T13:08:22.674Z",
     "environment": "macos",
     "buildDigest": "da4a551faec001f09e6f00320613bef5c1fa93aeaf9ba31422822db0cd73cbb7",
     "roundExecutionId": "round1"
@@ -50,7 +50,7 @@
   {
     "driver": "app/desktop/e2e/desktop-c-cases.mjs",
     "evidenceDir": "docs/evidence/round1-macos/desktop-c-cases",
-    "executedAt": "2026-09-20T13:40:48.368Z",
+    "executedAt": "2026-09-24T13:08:50.420Z",
     "environment": "macos",
     "buildDigest": "",
     "roundExecutionId": "round1"
@@ -58,7 +58,7 @@
   {
     "driver": "app/desktop/e2e/desktop-d-cases.mjs",
     "evidenceDir": "docs/evidence/round1-macos/desktop-d-cases",
-    "executedAt": "2026-09-20T13:41:04.007Z",
+    "executedAt": "2026-09-24T13:09:05.789Z",
     "environment": "macos",
     "buildDigest": "",
     "roundExecutionId": "round1"
@@ -67,7 +67,7 @@
     "driver": "app/desktop/e2e/native-unmeasured-score.mjs",
     "evidenceDir": "docs/evidence/round1-macos/native-unmeasured-score",
     "evidenceFile": "after-native.json",
-    "executedAt": "2026-09-20T13:42:09.993Z",
+    "executedAt": "2026-09-24T13:10:11.240Z",
     "environment": "macos",
     "buildDigest": "",
     "roundExecutionId": "round1"
@@ -76,7 +76,7 @@
     "driver": "app/desktop/e2e/native-ignore-region.mjs",
     "evidenceDir": "docs/evidence/round1-macos/native-ignore-region",
     "evidenceFile": "manifest.json",
-    "executedAt": "2026-09-20T13:42:13.018Z",
+    "executedAt": "2026-09-24T13:10:14.558Z",
     "environment": "macos",
     "buildDigest": "6d76943b2f40b8eab22392fbc357f55dc89317ec12c5c02f9f4484d7dd03d075",
     "roundExecutionId": "round1"
@@ -85,7 +85,7 @@
     "driver": "app/desktop/e2e/native-figma-node-fix.mjs",
     "evidenceDir": "docs/evidence/round1-macos/native-figma-node-fix",
     "evidenceFile": "manifest.json",
-    "executedAt": "2026-09-20T13:42:18.950Z",
+    "executedAt": "2026-09-24T13:10:21.485Z",
     "environment": "macos",
     "buildDigest": "6d76943b2f40b8eab22392fbc357f55dc89317ec12c5c02f9f4484d7dd03d075",
     "roundExecutionId": "round1"
@@ -94,7 +94,7 @@
     "driver": "app/desktop/e2e/native-fix-animation.mjs",
     "evidenceDir": "docs/evidence/round1-macos/native-fix-animation",
     "evidenceFile": "manifest.json",
-    "executedAt": "2026-09-20T13:42:22.783Z",
+    "executedAt": "2026-09-24T13:10:26.059Z",
     "environment": "macos",
     "buildDigest": "6d76943b2f40b8eab22392fbc357f55dc89317ec12c5c02f9f4484d7dd03d075",
     "roundExecutionId": "round1"
@@ -103,16 +103,7 @@
     "driver": "app/desktop/e2e/native-issue-report.mjs",
     "evidenceDir": "docs/evidence/round1-macos/native-issue-report",
     "evidenceFile": "manifest.json",
-    "executedAt": "2026-09-20T13:42:27.348Z",
-    "environment": "macos",
-    "buildDigest": "6d76943b2f40b8eab22392fbc357f55dc89317ec12c5c02f9f4484d7dd03d075",
-    "roundExecutionId": "round1"
-  },
-  {
-    "driver": "app/desktop/e2e/native-report-export.mjs",
-    "evidenceDir": "docs/evidence/round1-macos/native-report-export",
-    "evidenceFile": "manifest.json",
-    "executedAt": "2026-09-20T13:42:32.776Z",
+    "executedAt": "2026-09-24T13:10:30.715Z",
     "environment": "macos",
     "buildDigest": "6d76943b2f40b8eab22392fbc357f55dc89317ec12c5c02f9f4484d7dd03d075",
     "roundExecutionId": "round1"
@@ -120,7 +111,7 @@
   {
     "driver": "app/chrome-extension/script/real-chrome-e2e.mjs",
     "evidenceDir": "docs/evidence/round1-macos/real-chrome-e2e",
-    "executedAt": "2026-09-20T13:42:43.944Z",
+    "executedAt": "2026-09-24T13:10:54.828Z",
     "environment": "macos",
     "buildDigest": "",
     "roundExecutionId": "round1"
@@ -129,7 +120,7 @@
     "driver": "app/figma-plugin/e2e/real-iframe-host.mjs",
     "evidenceDir": "docs/evidence/round1-macos/real-iframe-host",
     "evidenceFile": "manifest.json",
-    "executedAt": "2026-09-20T13:43:09.152Z",
+    "executedAt": "2026-09-24T13:11:20.028Z",
     "environment": "macos",
     "buildDigest": "",
     "roundExecutionId": "round1"
@@ -137,7 +128,7 @@
   {
     "driver": "app/mcp-server/script/stdio-ios-sim-verification.mjs",
     "evidenceDir": "docs/evidence/round1-macos/stdio-ios-sim-verification",
-    "executedAt": "2026-09-20T13:43:20.784Z",
+    "executedAt": "2026-09-24T13:11:31.858Z",
     "environment": "macos",
     "buildDigest": "",
     "roundExecutionId": "round1"
@@ -146,7 +137,7 @@
     "driver": "app/mcp-server/script/x08/mcp.mjs",
     "evidenceDir": "docs/evidence/round1-macos/x08",
     "evidenceFile": "x08-mcp.json",
-    "executedAt": "2026-09-20T13:43:25.665Z",
+    "executedAt": "2026-09-24T13:11:36.967Z",
     "environment": "macos",
     "buildDigest": "",
     "roundExecutionId": "round1"
@@ -155,7 +146,7 @@
     "driver": "app/mcp-server/script/x08/desktop.mjs",
     "evidenceDir": "docs/evidence/round1-macos/x08",
     "evidenceFile": "x08-desktop.json",
-    "executedAt": "2026-09-20T13:43:25.990Z",
+    "executedAt": "2026-09-24T13:11:37.380Z",
     "environment": "macos",
     "buildDigest": "",
     "roundExecutionId": "round1"
@@ -164,7 +155,7 @@
     "driver": "app/mcp-server/script/x08/extension.mjs",
     "evidenceDir": "docs/evidence/round1-macos/x08",
     "evidenceFile": "x08-extension.json",
-    "executedAt": "2026-09-20T13:43:28.556Z",
+    "executedAt": "2026-09-24T13:11:40.981Z",
     "environment": "macos",
     "buildDigest": "",
     "roundExecutionId": "round1"
@@ -173,7 +164,7 @@
     "driver": "app/mcp-server/script/x08/plugin.mjs",
     "evidenceDir": "docs/evidence/round1-macos/x08",
     "evidenceFile": "x08-plugin.json",
-    "executedAt": "2026-09-20T13:43:30.424Z",
+    "executedAt": "2026-09-24T13:11:43.740Z",
     "environment": "macos",
     "buildDigest": "",
     "roundExecutionId": "round1"
@@ -181,7 +172,7 @@
   {
     "driver": "app/mcp-server/script/x08/compare.mjs",
     "evidenceDir": "docs/evidence/round1-macos/x08",
-    "executedAt": "2026-09-20T13:43:31.123Z",
+    "executedAt": "2026-09-24T13:11:44.418Z",
     "environment": "macos",
     "buildDigest": "",
     "roundExecutionId": "round1"

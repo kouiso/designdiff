@@ -1,13 +1,16 @@
 {
   "schemaVersion": 1,
-  "startedAt": "2026-09-20T13:42:19.209Z",
-  "completedAt": "2026-09-20T13:42:22.442Z",
+  "startedAt": "2026-09-24T13:10:21.740Z",
+  "completedAt": "2026-09-24T13:10:25.741Z",
   "revision": "4e9145e5e051d4efe78a922723f7b3245005a05e",
   "dirtyState": [
     "A  docs/evidence/runs-macos-r1.json",
+    " M docs/evidence/runs-macos-r2.json",
     "?? docs/evidence/round1-macos/",
     "?? docs/evidence/runs-macos-r1.attempts.json",
-    "?? docs/evidence/runs-macos-r1.manifest.json"
+    "?? docs/evidence/runs-macos-r1.manifest.json",
+    "?? docs/evidence/runs-macos-r2.attempts.json",
+    "?? docs/evidence/runs-macos-r2.manifest.json"
   ],
   "command": "FIGDIFF_FIGMA_NODE_FIX_EVIDENCE=<private-evidence> xvfb-run -a node app/desktop/e2e/native-figma-node-fix.mjs",
   "build": {
@@ -1865,7 +1868,7 @@
     {
       "path": "native-figma-node-fix.json",
       "size": 2112,
-      "sha256": "fc09f87cd1f9f93befa8a83e48a37892eba2174a041254a8660baddd10fb875a"
+      "sha256": "728b39349587a63618de7b2fa6713482518da20899a109cd978c9e463ad5b2a6"
     },
     {
       "path": "native-ipc.jsonl",
@@ -1874,13 +1877,13 @@
     },
     {
       "path": "target-improved-grid-regressed.png",
-      "size": 112349,
-      "sha256": "13ba0d849d41b14682529c0b3324a444e0d4f5745f48098d1311bdec672f90b6"
+      "size": 112184,
+      "sha256": "1ebc5588ddcd980aa583a6c4ea9843b784e77d3137c9559899447db6af2558dc"
     },
     {
       "path": "version-pinned-masked-cropped-before.png",
-      "size": 115964,
-      "sha256": "ebe0c72550eb69bac6134c9c18c82ef32e56ae22a0528c73921285c1dfa7b010"
+      "size": 115959,
+      "sha256": "0f5d6b5bef326037587358ba547e8e932f8bcb2b0e1d41447690f9c8194c5dd2"
     }
   ]
 }

@@ -1,13 +1,16 @@
 {
   "schemaVersion": 1,
-  "startedAt": "2026-09-20T13:42:27.717Z",
-  "completedAt": "2026-09-20T13:42:32.755Z",
+  "startedAt": "2026-09-24T13:10:30.950Z",
+  "completedAt": "2026-09-24T13:10:36.965Z",
   "revision": "4e9145e5e051d4efe78a922723f7b3245005a05e",
   "dirtyState": [
     "A  docs/evidence/runs-macos-r1.json",
+    " M docs/evidence/runs-macos-r2.json",
     "?? docs/evidence/round1-macos/",
     "?? docs/evidence/runs-macos-r1.attempts.json",
-    "?? docs/evidence/runs-macos-r1.manifest.json"
+    "?? docs/evidence/runs-macos-r1.manifest.json",
+    "?? docs/evidence/runs-macos-r2.attempts.json",
+    "?? docs/evidence/runs-macos-r2.manifest.json"
   ],
   "command": "FIGDIFF_ISSUE_REPORT_EVIDENCE=<evidence> xvfb-run -a node app/desktop/e2e/native-issue-report.mjs",
   "build": {
@@ -1801,7 +1804,7 @@
     {
       "path": "native-issue-report.json",
       "size": 2712,
-      "sha256": "8eb0d684adb0187d9ba9a13d6c6ecdc2b9848dfcd94a414ef1f0bf2f85985442"
+      "sha256": "f78ae05401e08aa43727c7c298250c1e418ea66515e2f3485dae45f57b2865ce"
     },
     {
       "path": "reviewed-readonly-draft.png",
@@ -1816,7 +1819,7 @@
     {
       "path": "valid-ipc.jsonl",
       "size": 1384,
-      "sha256": "c0760caacce42b58a1c110731404fb48bc12f11ad6c6762f6430f1a578f11aef"
+      "sha256": "0f94ea9eb202467ddd73b4f6da35ed3579592d67b47206295ef8f753b4666d86"
     }
   ]
 }

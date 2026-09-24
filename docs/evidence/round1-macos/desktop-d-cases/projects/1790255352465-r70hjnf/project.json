@@ -1,0 +1,24 @@
+{
+  "id": "1790255352465-r70hjnf",
+  "name": "D01案件",
+  "implementationUrl": "http://127.0.0.1:65532/page",
+  "pages": [
+    {
+      "id": "1790255352579-5cde04y",
+      "name": "トップ",
+      "path": "/",
+      "designSources": [
+        {
+          "type": "figma",
+          "id": "1790255352674-lkkueu7",
+          "label": "デスクトップ",
+          "figmaUrl": "https://www.figma.com/design/FD01/Fixture?node-id=7-8",
+          "fileKey": "FD01",
+          "nodeId": "7:8"
+        }
+      ]
+    }
+  ],
+  "createdAt": "2026-09-24T13:09:12.465Z",
+  "updatedAt": "2026-09-24T13:09:12.674Z"
+}

@@ -58,10 +58,10 @@
     }
   },
   "screenshots": {
-    "fix-before-pinned.png": "ea02a1a7b5822a11fd8df202902866f61782b6ae893ae7e6c8881ccd35e66019",
-    "fix-improved-with-side-effect.png": "7f4cf65d7d475c5661bbe85b25c69b08812295a999a4494ff05f58e89b17197f",
-    "fix-condition-mismatch.png": "772957c980a25f0903694ce7ef0ec844ea4a0240bf8168f4d4ee3bbb2dfb2e0a",
-    "animation-two-frame-mapping.png": "d1f0007e0cad0c20801c5f4def500d3b9c2b5da1479caac0a2a63a2ff8d95cd2",
+    "fix-before-pinned.png": "b5d4aad563cf392f7157d2d008cdef86b685380fb709a9f74b355a0f055eb4e9",
+    "fix-improved-with-side-effect.png": "4f28c6250426e6c49fe1100a221fa8e5cafbe2d3ec5055238a48faf070d64db0",
+    "fix-condition-mismatch.png": "1b99410f7d5d977d801bda03756c6235fef7084e1f788e52c12f76942b9a6990",
+    "animation-two-frame-mapping.png": "26de8d0e954ed5db12ba089ba9e24dfdb14ea4bae09ee036f9212e8753ebf6c9",
     "animation-single-design-unmeasured.png": "086ba93b02859b5113752607a8a736aed363bf28392a7a5015a46037ca0aa7cd",
     "animation-reversed-time-rejected.png": "162097ac9017bc37811f14a7f0f9f2d2d04f092e12c3fc705bd46b7a9f9eed87"
   },

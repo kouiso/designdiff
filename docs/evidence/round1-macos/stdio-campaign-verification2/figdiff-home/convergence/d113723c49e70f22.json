@@ -2,18 +2,18 @@
   "sourceKey": "campaign:v1:[\"local:/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/input-design.png\",\"m15\"]",
   "campaigns": [
     {
-      "campaignId": "5ce78f03-4988-4c2c-973b-b72d50b4331a",
+      "campaignId": "cb7c5b3c-f30c-486b-b606-346ce4126808",
       "sourceKey": "campaign:v1:[\"local:/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/input-design.png\",\"m15\"]",
       "designSource": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/input-design.png",
-      "implementationUrl": "http://127.0.0.1:64960/page.html",
-      "startedAt": 1789911590700,
-      "updatedAt": 1789911590700,
-      "endedAt": 1789911590700,
+      "implementationUrl": "http://127.0.0.1:64883/page.html",
+      "startedAt": 1790255277477,
+      "updatedAt": 1790255277477,
+      "endedAt": 1790255277477,
       "endReason": "uncertain",
       "endMessage": "判定が UNCERTAIN です。この比較は判定の確からしさを損なう条件を含むため、自動修正を止めて人間のレビューに回してください。",
       "iterations": [
         {
-          "comparisonId": "cmp-cef7a187-8ac2-459c-8720-f5f51d391372",
+          "comparisonId": "cmp-337f5ddd-f96d-45c4-be59-d8a81fac1d5a",
           "comparisonConditions": {
             "status": "unverified",
             "design": {
@@ -48,24 +48,24 @@
           "regionCount": 1,
           "structuralVerdict": "fail",
           "status": "UNCERTAIN",
-          "timestamp": 1789911590700,
-          "diffImagePath": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/figdiff-home/results/diff-cmp-cef7a187-8ac2-459c-8720-f5f51d391372.png"
+          "timestamp": 1790255277477,
+          "diffImagePath": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/figdiff-home/results/diff-cmp-337f5ddd-f96d-45c4-be59-d8a81fac1d5a.png"
         }
       ]
     },
     {
-      "campaignId": "905f0206-bf96-4331-a731-15016f8a1177",
+      "campaignId": "037c8190-658b-4cf3-9c28-233f26d93110",
       "sourceKey": "campaign:v1:[\"local:/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/input-design.png\",\"m15\"]",
       "designSource": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/input-design.png",
-      "implementationUrl": "http://127.0.0.1:64960/page.html",
-      "startedAt": 1789911594224,
-      "updatedAt": 1789911594224,
-      "endedAt": 1789911594224,
+      "implementationUrl": "http://127.0.0.1:64883/page.html",
+      "startedAt": 1790255280929,
+      "updatedAt": 1790255280929,
+      "endedAt": 1790255280929,
       "endReason": "uncertain",
       "endMessage": "判定が UNCERTAIN です。この比較は判定の確からしさを損なう条件を含むため、自動修正を止めて人間のレビューに回してください。",
       "iterations": [
         {
-          "comparisonId": "cmp-241fd3ec-107b-49d6-ba89-ee7d3b9c1675",
+          "comparisonId": "cmp-6f318196-f6cb-4be9-991c-7d0c3447ee1e",
           "comparisonConditions": {
             "status": "unverified",
             "design": {
@@ -100,21 +100,21 @@
           "regionCount": 1,
           "structuralVerdict": "fail",
           "status": "UNCERTAIN",
-          "timestamp": 1789911594224,
-          "diffImagePath": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/figdiff-home/results/diff-cmp-241fd3ec-107b-49d6-ba89-ee7d3b9c1675.png"
+          "timestamp": 1790255280929,
+          "diffImagePath": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/figdiff-home/results/diff-cmp-6f318196-f6cb-4be9-991c-7d0c3447ee1e.png"
         }
       ]
     },
     {
-      "campaignId": "806bb75c-b6f4-4a20-88ae-2c141581340a",
+      "campaignId": "bea9d697-2788-4f01-839c-7c36f2aa25bf",
       "sourceKey": "campaign:v1:[\"local:/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/input-design.png\",\"m15\"]",
       "designSource": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/input-design.png",
-      "implementationUrl": "http://127.0.0.1:64960/page.html",
-      "startedAt": 1789911597812,
-      "updatedAt": 1789911597812,
+      "implementationUrl": "http://127.0.0.1:64883/page.html",
+      "startedAt": 1790255284402,
+      "updatedAt": 1790255284402,
       "iterations": [
         {
-          "comparisonId": "cmp-e3a84be2-4078-456f-8b4a-12e9f93b536b",
+          "comparisonId": "cmp-4e4d9c53-166f-4c84-a386-1d452be25c3b",
           "comparisonConditions": {
             "status": "unverified",
             "design": {
@@ -149,11 +149,11 @@
           "regionCount": 1,
           "structuralVerdict": "fail",
           "status": "UNCERTAIN",
-          "timestamp": 1789911597812,
-          "diffImagePath": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/figdiff-home/results/diff-cmp-e3a84be2-4078-456f-8b4a-12e9f93b536b.png"
+          "timestamp": 1790255284402,
+          "diffImagePath": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/figdiff-home/results/diff-cmp-4e4d9c53-166f-4c84-a386-1d452be25c3b.png"
         }
       ],
-      "endedAt": 1789911597812,
+      "endedAt": 1790255284402,
       "endReason": "uncertain",
       "endMessage": "判定が UNCERTAIN です。この比較は判定の確からしさを損なう条件を含むため、自動修正を止めて人間のレビューに回してください。"
     }

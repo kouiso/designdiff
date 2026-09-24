@@ -1,13 +1,16 @@
 {
   "schemaVersion": 1,
-  "startedAt": "2026-09-20T13:42:13.303Z",
-  "completedAt": "2026-09-20T13:42:18.780Z",
+  "startedAt": "2026-09-24T13:10:14.785Z",
+  "completedAt": "2026-09-24T13:10:21.325Z",
   "revision": "4e9145e5e051d4efe78a922723f7b3245005a05e",
   "dirtyState": [
     "A  docs/evidence/runs-macos-r1.json",
+    " M docs/evidence/runs-macos-r2.json",
     "?? docs/evidence/round1-macos/",
     "?? docs/evidence/runs-macos-r1.attempts.json",
-    "?? docs/evidence/runs-macos-r1.manifest.json"
+    "?? docs/evidence/runs-macos-r1.manifest.json",
+    "?? docs/evidence/runs-macos-r2.attempts.json",
+    "?? docs/evidence/runs-macos-r2.manifest.json"
   ],
   "command": "FIGDIFF_IGNORE_EVIDENCE=<evidence> xvfb-run -a node app/desktop/e2e/native-ignore-region.mjs",
   "build": {
@@ -1850,8 +1853,8 @@
     },
     {
       "path": "native-ignore-result.json",
-      "size": 4679,
-      "sha256": "13d4175aba350fff50e7cf0735192d670b98498abd276a517f608ade5151e8a1"
+      "size": 4678,
+      "sha256": "085a295a702d39cf9f5d2a320db67c487d748ae4b8682d29efe0983f21b702c0"
     }
   ]
 }

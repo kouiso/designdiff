@@ -2,14 +2,14 @@
   "sourceKey": "figma:15giveDl0JkKddxasif6VA:9883:7789",
   "campaigns": [
     {
-      "campaignId": "3050e01c-bec6-4306-a099-e04d52a03cce",
+      "campaignId": "fca3ed66-9d5a-43c7-abba-e51f52f728e7",
       "sourceKey": "figma:15giveDl0JkKddxasif6VA:9883:7789",
       "designSource": "https://www.figma.com/design/15giveDl0JkKddxasif6VA/figdiff-verify?node-id=9883-7789",
-      "startedAt": 1789911599870,
-      "updatedAt": 1789911599870,
+      "startedAt": 1790255287074,
+      "updatedAt": 1790255287074,
       "iterations": [
         {
-          "comparisonId": "cmp-8c0cd659-6baa-4c6a-9a21-00a5f828ab06",
+          "comparisonId": "cmp-0e067de2-9263-4b0c-b570-cbf7c5342066",
           "comparisonConditions": {
             "status": "unverified",
             "design": {
@@ -48,11 +48,11 @@
           "regionCount": 1,
           "structuralVerdict": "fail",
           "status": "UNCERTAIN",
-          "timestamp": 1789911599870,
-          "diffImagePath": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-real-figma-verification/figdiff-home/results/diff-cmp-8c0cd659-6baa-4c6a-9a21-00a5f828ab06.png"
+          "timestamp": 1790255287074,
+          "diffImagePath": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-real-figma-verification/figdiff-home/results/diff-cmp-0e067de2-9263-4b0c-b570-cbf7c5342066.png"
         }
       ],
-      "endedAt": 1789911599870,
+      "endedAt": 1790255287074,
       "endReason": "uncertain",
       "endMessage": "判定が UNCERTAIN です。この比較は判定の確からしさを損なう条件を含むため、自動修正を止めて人間のレビューに回してください。"
     }

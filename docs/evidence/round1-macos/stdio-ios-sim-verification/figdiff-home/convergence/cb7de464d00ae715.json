@@ -2,14 +2,14 @@
   "sourceKey": "local:/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-ios-sim-verification/input-design.png",
   "campaigns": [
     {
-      "campaignId": "c4e67d38-1e3c-470e-9669-7b095490f1ce",
+      "campaignId": "d8d9796d-cf06-49b9-80f9-fef2e91adb44",
       "sourceKey": "local:/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-ios-sim-verification/input-design.png",
       "designSource": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-ios-sim-verification/input-design.png",
-      "startedAt": 1789911804871,
-      "updatedAt": 1789911804871,
+      "startedAt": 1790255495917,
+      "updatedAt": 1790255495917,
       "iterations": [
         {
-          "comparisonId": "cmp-83d9022a-8d06-4c86-8347-b03b9d6d47d1",
+          "comparisonId": "cmp-cdcdad6f-cebd-44b1-ab39-a826d41d9d48",
           "comparisonConditions": {
             "status": "unverified",
             "design": {
@@ -39,13 +39,13 @@
             "differences": [],
             "message": "表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。"
           },
-          "matchRate": 90.89,
-          "diffPixelCount": 258979,
-          "regionCount": 4,
+          "matchRate": 27.24,
+          "diffPixelCount": 2069173,
+          "regionCount": 1,
           "structuralVerdict": "fail",
           "status": "FAIL",
-          "timestamp": 1789911804871,
-          "diffImagePath": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-ios-sim-verification/figdiff-home/results/diff-cmp-83d9022a-8d06-4c86-8347-b03b9d6d47d1.png"
+          "timestamp": 1790255495917,
+          "diffImagePath": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-ios-sim-verification/figdiff-home/results/diff-cmp-cdcdad6f-cebd-44b1-ab39-a826d41d9d48.png"
         }
       ]
     }

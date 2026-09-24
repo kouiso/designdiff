@@ -2,17 +2,17 @@
   "sourceKey": "local:/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/input-frame-a.png",
   "campaigns": [
     {
-      "campaignId": "348af2a8-fe87-4157-9d41-b8beac3b0d89",
+      "campaignId": "cdde79b0-4c47-4b76-8b38-7ca7655672fb",
       "sourceKey": "local:/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/input-frame-a.png",
       "designSource": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/input-frame-a.png",
-      "startedAt": 1789911577117,
-      "updatedAt": 1789911577117,
-      "endedAt": 1789911577117,
+      "startedAt": 1790255264935,
+      "updatedAt": 1790255264935,
+      "endedAt": 1790255264935,
       "endReason": "no-regression",
       "endMessage": "PASS に到達しました (反復 1 回)。ループを終了してください。",
       "iterations": [
         {
-          "comparisonId": "cmp-796dd540-d1a0-4dd3-a9b4-50f5edbc66de",
+          "comparisonId": "cmp-cae55bc4-2ae5-418a-be9b-2240001bc4fe",
           "comparisonConditions": {
             "status": "unverified",
             "design": {
@@ -48,22 +48,22 @@
           "perceptibleDiffRatio": 0,
           "structuralVerdict": "pass",
           "status": "PASS",
-          "timestamp": 1789911577117
+          "timestamp": 1790255264935
         }
       ]
     },
     {
-      "campaignId": "0210c1c1-02c0-4a74-b9ee-8e9354849e62",
+      "campaignId": "607119d2-5bf8-4465-80da-2c5d45a32ed8",
       "sourceKey": "local:/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/input-frame-a.png",
       "designSource": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/input-frame-a.png",
-      "startedAt": 1789911577458,
-      "updatedAt": 1789911580141,
-      "endedAt": 1789911580141,
+      "startedAt": 1790255265247,
+      "updatedAt": 1790255267781,
+      "endedAt": 1790255267781,
       "endReason": "regression",
       "endMessage": "直近3回の比較結果（matchRate・diffPixelCount・差分領域数）が完全に同一です。提案された修正が実際には適用/反映されていない可能性が高いため、自動修正を止めて設定（capture_width / crop / node選択）を人間が確認してください。",
       "iterations": [
         {
-          "comparisonId": "cmp-667c79f5-3af0-48c6-802c-cba1437fcfff",
+          "comparisonId": "cmp-e763cd8e-af04-427e-9cd8-1540e206400d",
           "comparisonConditions": {
             "status": "unverified",
             "design": {
@@ -98,11 +98,11 @@
           "regionCount": 2,
           "structuralVerdict": "fail",
           "status": "FAIL",
-          "timestamp": 1789911577458,
-          "diffImagePath": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/figdiff-home/results/diff-cmp-667c79f5-3af0-48c6-802c-cba1437fcfff.png"
+          "timestamp": 1790255265247,
+          "diffImagePath": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/figdiff-home/results/diff-cmp-e763cd8e-af04-427e-9cd8-1540e206400d.png"
         },
         {
-          "comparisonId": "cmp-5d7c1697-35af-4966-b483-584016853b9b",
+          "comparisonId": "cmp-824677bb-12cd-43b8-9c59-a5577f6b05dd",
           "comparisonConditions": {
             "status": "unverified",
             "design": {
@@ -137,11 +137,11 @@
           "regionCount": 2,
           "structuralVerdict": "fail",
           "status": "FAIL",
-          "timestamp": 1789911577792,
-          "diffImagePath": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/figdiff-home/results/diff-cmp-5d7c1697-35af-4966-b483-584016853b9b.png"
+          "timestamp": 1790255265566,
+          "diffImagePath": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/figdiff-home/results/diff-cmp-824677bb-12cd-43b8-9c59-a5577f6b05dd.png"
         },
         {
-          "comparisonId": "cmp-b16bf245-c3b3-4ddc-a503-ba8b618db2be",
+          "comparisonId": "cmp-df0c33a1-cc85-42ab-b4f3-b42d9626e065",
           "comparisonConditions": {
             "status": "unverified",
             "design": {
@@ -176,23 +176,23 @@
           "regionCount": 2,
           "structuralVerdict": "fail",
           "status": "FAIL",
-          "timestamp": 1789911580141,
-          "diffImagePath": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/figdiff-home/results/diff-cmp-b16bf245-c3b3-4ddc-a503-ba8b618db2be.png"
+          "timestamp": 1790255267781,
+          "diffImagePath": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/figdiff-home/results/diff-cmp-df0c33a1-cc85-42ab-b4f3-b42d9626e065.png"
         }
       ]
     },
     {
-      "campaignId": "c4c8be9d-4c5b-4a09-91ad-d6f25712b3c2",
+      "campaignId": "bd5a8b81-fe4f-4ceb-9b18-6a91ae1e7e22",
       "sourceKey": "local:/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/input-frame-a.png",
       "designSource": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/input-frame-a.png",
-      "startedAt": 1789911580484,
-      "updatedAt": 1789911580484,
-      "endedAt": 1789911580484,
+      "startedAt": 1790255268100,
+      "updatedAt": 1790255268100,
+      "endedAt": 1790255268100,
       "endReason": "no-regression",
       "endMessage": "PASS に到達しました (反復 1 回)。ループを終了してください。",
       "iterations": [
         {
-          "comparisonId": "cmp-f00fb8eb-a60e-46a7-bb4f-91d88e14f6e6",
+          "comparisonId": "cmp-52353e86-9322-4ceb-a9b4-b684df6067b6",
           "comparisonConditions": {
             "status": "unverified",
             "design": {
@@ -228,22 +228,22 @@
           "perceptibleDiffRatio": 0,
           "structuralVerdict": "pass",
           "status": "PASS",
-          "timestamp": 1789911580484
+          "timestamp": 1790255268100
         }
       ]
     },
     {
-      "campaignId": "5a02ab09-b771-40b6-9ee4-47d4adba792c",
+      "campaignId": "633df3ab-7605-4d77-bd86-caf4ea66e4e8",
       "sourceKey": "local:/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/input-frame-a.png",
       "designSource": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/input-frame-a.png",
-      "startedAt": 1789911580824,
-      "updatedAt": 1789911583220,
-      "endedAt": 1789911583220,
+      "startedAt": 1790255268412,
+      "updatedAt": 1790255270592,
+      "endedAt": 1790255270592,
       "endReason": "no-regression",
       "endMessage": "PASS に到達しました (反復 2 回)。ループを終了してください。",
       "iterations": [
         {
-          "comparisonId": "cmp-1cd26a8b-b8c4-439d-94ac-f451823672db",
+          "comparisonId": "cmp-0e2f111e-424c-4c0c-8b42-185b757128c4",
           "comparisonConditions": {
             "status": "unverified",
             "design": {
@@ -278,11 +278,11 @@
           "regionCount": 2,
           "structuralVerdict": "fail",
           "status": "FAIL",
-          "timestamp": 1789911580824,
-          "diffImagePath": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/figdiff-home/results/diff-cmp-1cd26a8b-b8c4-439d-94ac-f451823672db.png"
+          "timestamp": 1790255268412,
+          "diffImagePath": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/figdiff-home/results/diff-cmp-0e2f111e-424c-4c0c-8b42-185b757128c4.png"
         },
         {
-          "comparisonId": "cmp-f35dc3f0-489d-4cdf-90e7-e8457d0275a5",
+          "comparisonId": "cmp-c7bb22d0-2f6b-44fe-b9f4-c83310c42b97",
           "comparisonConditions": {
             "status": "unverified",
             "design": {
@@ -318,19 +318,19 @@
           "perceptibleDiffRatio": 0,
           "structuralVerdict": "pass",
           "status": "PASS",
-          "timestamp": 1789911583220
+          "timestamp": 1790255270592
         }
       ]
     },
     {
-      "campaignId": "bd93fdef-0288-4ff9-8354-a10564a0329c",
+      "campaignId": "185fc28f-991f-41a2-a2c6-806343edec31",
       "sourceKey": "local:/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/input-frame-a.png",
       "designSource": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/input-frame-a.png",
-      "startedAt": 1789911583564,
-      "updatedAt": 1789911583564,
+      "startedAt": 1790255270902,
+      "updatedAt": 1790255270902,
       "iterations": [
         {
-          "comparisonId": "cmp-053cd11e-e029-48f0-9873-0a1201304135",
+          "comparisonId": "cmp-81083542-4351-41f5-986a-104a7c07dbee",
           "comparisonConditions": {
             "status": "unverified",
             "design": {
@@ -365,8 +365,8 @@
           "regionCount": 2,
           "structuralVerdict": "fail",
           "status": "FAIL",
-          "timestamp": 1789911583564,
-          "diffImagePath": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/figdiff-home/results/diff-cmp-053cd11e-e029-48f0-9873-0a1201304135.png"
+          "timestamp": 1790255270902,
+          "diffImagePath": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/figdiff-home/results/diff-cmp-81083542-4351-41f5-986a-104a7c07dbee.png"
         }
       ]
     }

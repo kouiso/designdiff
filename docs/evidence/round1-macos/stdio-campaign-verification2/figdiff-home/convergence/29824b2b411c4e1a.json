@@ -2,17 +2,17 @@
   "sourceKey": "campaign:v1:[\"local:/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/input-design.png\",\"m09\"]",
   "campaigns": [
     {
-      "campaignId": "1b11ff0f-0c45-4503-a61a-0d0c0fb7f1d4",
+      "campaignId": "d6bdf4f8-bee8-4496-8e54-8a4da3e2da55",
       "sourceKey": "campaign:v1:[\"local:/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/input-design.png\",\"m09\"]",
       "designSource": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/input-design.png",
-      "startedAt": 1789911574677,
-      "updatedAt": 1789911575327,
-      "endedAt": 1789911575327,
+      "startedAt": 1790255262606,
+      "updatedAt": 1790255263238,
+      "endedAt": 1790255263238,
       "endReason": "regression",
       "endMessage": "収束が停滞しています (直近2回の matchRate 変化 0.08pt → 0.08pt、いずれも 0.5pt 未満)。修正が効いていないため、自動修正を止めて人間に報告してください。",
       "iterations": [
         {
-          "comparisonId": "cmp-b6ef9668-3dbf-47e6-be4b-2c9977685b06",
+          "comparisonId": "cmp-a230468b-071e-4a27-93c1-f62378794172",
           "comparisonConditions": {
             "status": "unverified",
             "design": {
@@ -47,11 +47,11 @@
           "regionCount": 3,
           "structuralVerdict": "fail",
           "status": "FAIL",
-          "timestamp": 1789911574677,
-          "diffImagePath": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/figdiff-home/results/diff-cmp-b6ef9668-3dbf-47e6-be4b-2c9977685b06.png"
+          "timestamp": 1790255262606,
+          "diffImagePath": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/figdiff-home/results/diff-cmp-a230468b-071e-4a27-93c1-f62378794172.png"
         },
         {
-          "comparisonId": "cmp-281ad970-ad0f-49e4-bbdf-3195e189b4f8",
+          "comparisonId": "cmp-8c812569-0418-4486-8a89-5ced071357f4",
           "comparisonConditions": {
             "status": "unverified",
             "design": {
@@ -86,11 +86,11 @@
           "regionCount": 2,
           "structuralVerdict": "fail",
           "status": "FAIL",
-          "timestamp": 1789911575004,
-          "diffImagePath": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/figdiff-home/results/diff-cmp-281ad970-ad0f-49e4-bbdf-3195e189b4f8.png"
+          "timestamp": 1790255262922,
+          "diffImagePath": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/figdiff-home/results/diff-cmp-8c812569-0418-4486-8a89-5ced071357f4.png"
         },
         {
-          "comparisonId": "cmp-e5112125-7586-4054-8ab2-e4bc7e1ae579",
+          "comparisonId": "cmp-3142a70c-943e-41fe-bb15-5fa5546ab42b",
           "comparisonConditions": {
             "status": "unverified",
             "design": {
@@ -125,23 +125,23 @@
           "regionCount": 3,
           "structuralVerdict": "fail",
           "status": "FAIL",
-          "timestamp": 1789911575327,
-          "diffImagePath": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/figdiff-home/results/diff-cmp-e5112125-7586-4054-8ab2-e4bc7e1ae579.png"
+          "timestamp": 1790255263238,
+          "diffImagePath": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/figdiff-home/results/diff-cmp-3142a70c-943e-41fe-bb15-5fa5546ab42b.png"
         }
       ]
     },
     {
-      "campaignId": "baebef95-3447-4056-ac22-f2bfe67a37ac",
+      "campaignId": "773f638c-099e-4910-be96-c7b7d97518b4",
       "sourceKey": "campaign:v1:[\"local:/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/input-design.png\",\"m09\"]",
       "designSource": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/input-design.png",
-      "startedAt": 1789911575651,
-      "updatedAt": 1789911576298,
-      "endedAt": 1789911576298,
+      "startedAt": 1790255263538,
+      "updatedAt": 1790255264140,
+      "endedAt": 1790255264140,
       "endReason": "regression",
       "endMessage": "収束が停滞しています (直近2回の matchRate 変化 0.08pt → 0.08pt、いずれも 0.5pt 未満)。修正が効いていないため、自動修正を止めて人間に報告してください。",
       "iterations": [
         {
-          "comparisonId": "cmp-d82f6c20-3f4f-4ce2-82ff-fa35fd9fb03c",
+          "comparisonId": "cmp-d0be3180-d920-44a1-bcfa-51acbd6ce153",
           "comparisonConditions": {
             "status": "unverified",
             "design": {
@@ -176,11 +176,11 @@
           "regionCount": 2,
           "structuralVerdict": "fail",
           "status": "FAIL",
-          "timestamp": 1789911575651,
-          "diffImagePath": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/figdiff-home/results/diff-cmp-d82f6c20-3f4f-4ce2-82ff-fa35fd9fb03c.png"
+          "timestamp": 1790255263538,
+          "diffImagePath": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/figdiff-home/results/diff-cmp-d0be3180-d920-44a1-bcfa-51acbd6ce153.png"
         },
         {
-          "comparisonId": "cmp-3d47d736-d1bd-491f-9b1c-7ef312804426",
+          "comparisonId": "cmp-bd9fe13d-268b-4e70-8842-299c25b263e3",
           "comparisonConditions": {
             "status": "unverified",
             "design": {
@@ -215,11 +215,11 @@
           "regionCount": 3,
           "structuralVerdict": "fail",
           "status": "FAIL",
-          "timestamp": 1789911575979,
-          "diffImagePath": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/figdiff-home/results/diff-cmp-3d47d736-d1bd-491f-9b1c-7ef312804426.png"
+          "timestamp": 1790255263835,
+          "diffImagePath": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/figdiff-home/results/diff-cmp-bd9fe13d-268b-4e70-8842-299c25b263e3.png"
         },
         {
-          "comparisonId": "cmp-35187a7e-6811-49dd-b01b-353b63d34dfb",
+          "comparisonId": "cmp-410a320b-3a72-448e-bb71-9724840f763b",
           "comparisonConditions": {
             "status": "unverified",
             "design": {
@@ -254,20 +254,20 @@
           "regionCount": 2,
           "structuralVerdict": "fail",
           "status": "FAIL",
-          "timestamp": 1789911576298,
-          "diffImagePath": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/figdiff-home/results/diff-cmp-35187a7e-6811-49dd-b01b-353b63d34dfb.png"
+          "timestamp": 1790255264140,
+          "diffImagePath": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/figdiff-home/results/diff-cmp-410a320b-3a72-448e-bb71-9724840f763b.png"
         }
       ]
     },
     {
-      "campaignId": "78ed3ac1-8c7f-4d31-82dc-eb57e5f64d8f",
+      "campaignId": "92e18fa2-fb92-4913-b008-0d9c553d35ba",
       "sourceKey": "campaign:v1:[\"local:/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/input-design.png\",\"m09\"]",
       "designSource": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/input-design.png",
-      "startedAt": 1789911576624,
-      "updatedAt": 1789911576624,
+      "startedAt": 1790255264445,
+      "updatedAt": 1790255264445,
       "iterations": [
         {
-          "comparisonId": "cmp-0f9f70de-2889-431c-9b2b-3796bbaa604f",
+          "comparisonId": "cmp-eb3cb758-91a5-49c2-9a2f-f1dd161c740c",
           "comparisonConditions": {
             "status": "unverified",
             "design": {
@@ -302,8 +302,8 @@
           "regionCount": 3,
           "structuralVerdict": "fail",
           "status": "FAIL",
-          "timestamp": 1789911576624,
-          "diffImagePath": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/figdiff-home/results/diff-cmp-0f9f70de-2889-431c-9b2b-3796bbaa604f.png"
+          "timestamp": 1790255264445,
+          "diffImagePath": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/figdiff-home/results/diff-cmp-eb3cb758-91a5-49c2-9a2f-f1dd161c740c.png"
         }
       ]
     }

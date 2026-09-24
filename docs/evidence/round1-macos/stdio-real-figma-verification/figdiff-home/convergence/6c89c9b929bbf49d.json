@@ -2,17 +2,17 @@
   "sourceKey": "figma:15giveDl0JkKddxasif6VA:9525:4760",
   "campaigns": [
     {
-      "campaignId": "9fde4d14-2398-48a0-a018-3b4f91bcd116",
+      "campaignId": "7d46ec20-d38d-4076-a269-5e0a0de3f513",
       "sourceKey": "figma:15giveDl0JkKddxasif6VA:9525:4760",
       "designSource": "https://www.figma.com/design/15giveDl0JkKddxasif6VA/figdiff-verify?node-id=9525-4760",
-      "startedAt": 1789911601241,
-      "updatedAt": 1789911604222,
-      "endedAt": 1789911604222,
+      "startedAt": 1790255288925,
+      "updatedAt": 1790255292166,
+      "endedAt": 1790255292166,
       "endReason": "no-regression",
       "endMessage": "PASS に到達しました (反復 2 回)。ループを終了してください。",
       "iterations": [
         {
-          "comparisonId": "cmp-5d038ee0-16ba-4858-aeb4-c439923416fe",
+          "comparisonId": "cmp-e40c1d3a-bbb7-48ee-b81e-f63710bb2753",
           "comparisonConditions": {
             "status": "unverified",
             "design": {
@@ -51,11 +51,11 @@
           "regionCount": 90,
           "structuralVerdict": "fail",
           "status": "FAIL",
-          "timestamp": 1789911601241,
-          "diffImagePath": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-real-figma-verification/figdiff-home/results/diff-cmp-5d038ee0-16ba-4858-aeb4-c439923416fe.png"
+          "timestamp": 1790255288925,
+          "diffImagePath": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-real-figma-verification/figdiff-home/results/diff-cmp-e40c1d3a-bbb7-48ee-b81e-f63710bb2753.png"
         },
         {
-          "comparisonId": "cmp-b6899e44-946d-43ce-b6fb-f0c1cff643ac",
+          "comparisonId": "cmp-7a5f1726-ea19-4377-80cc-7b4563d7c54f",
           "comparisonConditions": {
             "status": "unverified",
             "design": {
@@ -94,11 +94,11 @@
           "regionCount": 1,
           "structuralVerdict": "fail",
           "status": "FAIL",
-          "timestamp": 1789911603470,
-          "diffImagePath": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-real-figma-verification/figdiff-home/results/diff-cmp-b6899e44-946d-43ce-b6fb-f0c1cff643ac.png"
+          "timestamp": 1790255291461,
+          "diffImagePath": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-real-figma-verification/figdiff-home/results/diff-cmp-7a5f1726-ea19-4377-80cc-7b4563d7c54f.png"
         },
         {
-          "comparisonId": "cmp-5cd92ff9-2878-4611-a6d7-e7a15cbf1ba9",
+          "comparisonId": "cmp-49b94efa-0612-430c-bc75-a66f2a0c7548",
           "comparisonConditions": {
             "status": "unverified",
             "design": {
@@ -138,19 +138,19 @@
           "perceptibleDiffRatio": 0,
           "structuralVerdict": "pass",
           "status": "PASS",
-          "timestamp": 1789911604222
+          "timestamp": 1790255292166
         }
       ]
     },
     {
-      "campaignId": "2a882893-3505-4fab-816a-dd18684629b2",
+      "campaignId": "865f2db7-8494-4454-b092-000fa654cd4f",
       "sourceKey": "figma:15giveDl0JkKddxasif6VA:9525:4760",
       "designSource": "https://www.figma.com/design/15giveDl0JkKddxasif6VA/figdiff-verify?node-id=9525-4760",
-      "startedAt": 1789911604965,
-      "updatedAt": 1789911604965,
+      "startedAt": 1790255293025,
+      "updatedAt": 1790255293025,
       "iterations": [
         {
-          "comparisonId": "cmp-4b858a34-7be6-4809-a28a-4a7ec5faf18a",
+          "comparisonId": "cmp-e3ee62a1-e6ce-4a2a-b276-c93ba4ff2b66",
           "comparisonConditions": {
             "status": "unverified",
             "design": {
@@ -189,8 +189,8 @@
           "regionCount": 1,
           "structuralVerdict": "fail",
           "status": "FAIL",
-          "timestamp": 1789911604965,
-          "diffImagePath": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-real-figma-verification/figdiff-home/results/diff-cmp-4b858a34-7be6-4809-a28a-4a7ec5faf18a.png"
+          "timestamp": 1790255293025,
+          "diffImagePath": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-real-figma-verification/figdiff-home/results/diff-cmp-e3ee62a1-e6ce-4a2a-b276-c93ba4ff2b66.png"
         }
       ]
     }

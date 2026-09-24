@@ -1,13 +1,16 @@
 {
   "schemaVersion": 1,
-  "startedAt": "2026-09-20T13:42:23.147Z",
-  "completedAt": "2026-09-20T13:42:27.085Z",
+  "startedAt": "2026-09-24T13:10:26.282Z",
+  "completedAt": "2026-09-24T13:10:30.436Z",
   "revision": "4e9145e5e051d4efe78a922723f7b3245005a05e",
   "dirtyState": [
     "A  docs/evidence/runs-macos-r1.json",
+    " M docs/evidence/runs-macos-r2.json",
     "?? docs/evidence/round1-macos/",
     "?? docs/evidence/runs-macos-r1.attempts.json",
-    "?? docs/evidence/runs-macos-r1.manifest.json"
+    "?? docs/evidence/runs-macos-r1.manifest.json",
+    "?? docs/evidence/runs-macos-r2.attempts.json",
+    "?? docs/evidence/runs-macos-r2.manifest.json"
   ],
   "command": "FIGDIFF_FIX_ANIMATION_EVIDENCE=<evidence> xvfb-run -a node app/desktop/e2e/native-fix-animation.mjs",
   "build": {
@@ -1815,8 +1818,8 @@
     },
     {
       "path": "animation-two-frame-mapping.png",
-      "size": 107438,
-      "sha256": "d1f0007e0cad0c20801c5f4def500d3b9c2b5da1479caac0a2a63a2ff8d95cd2"
+      "size": 107524,
+      "sha256": "26de8d0e954ed5db12ba089ba9e24dfdb14ea4bae09ee036f9212e8753ebf6c9"
     },
     {
       "path": "fix-after-changed-geometry.png",
@@ -1830,8 +1833,8 @@
     },
     {
       "path": "fix-before-pinned.png",
-      "size": 109823,
-      "sha256": "ea02a1a7b5822a11fd8df202902866f61782b6ae893ae7e6c8881ccd35e66019"
+      "size": 110077,
+      "sha256": "b5d4aad563cf392f7157d2d008cdef86b685380fb709a9f74b355a0f055eb4e9"
     },
     {
       "path": "fix-before.png",
@@ -1840,8 +1843,8 @@
     },
     {
       "path": "fix-condition-mismatch.png",
-      "size": 104286,
-      "sha256": "772957c980a25f0903694ce7ef0ec844ea4a0240bf8168f4d4ee3bbb2dfb2e0a"
+      "size": 104578,
+      "sha256": "1b99410f7d5d977d801bda03756c6235fef7084e1f788e52c12f76942b9a6990"
     },
     {
       "path": "fix-design.png",
@@ -1850,13 +1853,13 @@
     },
     {
       "path": "fix-improved-with-side-effect.png",
-      "size": 103972,
-      "sha256": "7f4cf65d7d475c5661bbe85b25c69b08812295a999a4494ff05f58e89b17197f"
+      "size": 104293,
+      "sha256": "4f28c6250426e6c49fe1100a221fa8e5cafbe2d3ec5055238a48faf070d64db0"
     },
     {
       "path": "native-fix-animation.json",
       "size": 2293,
-      "sha256": "557553426967e8387c2ae9fe20f981d90ecf16aa12bcaffeb45f0d56d3a9600f"
+      "sha256": "d9449e1cc5206a2115530e11162bdb27e1772bfa9a58e14543d263e5db50c420"
     }
   ]
 }

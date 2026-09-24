@@ -1,7 +1,7 @@
 [
   {
     "driver": "app/mcp-server/script/stdio-campaign-verification.mjs",
-    "startedAt": "2026-09-20T13:39:15.946Z",
+    "startedAt": "2026-09-24T13:07:26.184Z",
     "status": "ok",
     "exitStatus": 0,
     "signal": null,
@@ -12,7 +12,7 @@
   },
   {
     "driver": "app/mcp-server/script/stdio-campaign-verification2.mjs",
-    "startedAt": "2026-09-20T13:39:30.882Z",
+    "startedAt": "2026-09-24T13:07:39.111Z",
     "status": "ok",
     "exitStatus": 0,
     "signal": null,
@@ -23,7 +23,7 @@
   },
   {
     "driver": "app/mcp-server/script/stdio-real-figma-verification.mjs",
-    "startedAt": "2026-09-20T13:39:57.878Z",
+    "startedAt": "2026-09-24T13:08:04.472Z",
     "status": "ok",
     "exitStatus": 0,
     "signal": null,
@@ -34,7 +34,7 @@
   },
   {
     "driver": "app/mcp-server/script/stdio-m01-verification.mjs",
-    "startedAt": "2026-09-20T13:40:04.991Z",
+    "startedAt": "2026-09-24T13:08:13.056Z",
     "status": "ok",
     "exitStatus": 0,
     "signal": null,
@@ -45,7 +45,7 @@
   },
   {
     "driver": "app/mcp-server/script/stdio-m12-verification.mjs",
-    "startedAt": "2026-09-20T13:40:05.336Z",
+    "startedAt": "2026-09-24T13:08:13.434Z",
     "status": "ok",
     "exitStatus": 0,
     "signal": null,
@@ -56,7 +56,7 @@
   },
   {
     "driver": "app/mcp-server/script/stdio-issue-verification.mjs",
-    "startedAt": "2026-09-20T13:40:19.235Z",
+    "startedAt": "2026-09-24T13:08:22.674Z",
     "status": "ok",
     "exitStatus": 0,
     "signal": null,
@@ -67,7 +67,7 @@
   },
   {
     "driver": "app/desktop/e2e/desktop-c-cases.mjs",
-    "startedAt": "2026-09-20T13:40:48.368Z",
+    "startedAt": "2026-09-24T13:08:50.420Z",
     "status": "ok",
     "exitStatus": 0,
     "signal": null,
@@ -78,7 +78,7 @@
   },
   {
     "driver": "app/desktop/e2e/desktop-d-cases.mjs",
-    "startedAt": "2026-09-20T13:41:04.007Z",
+    "startedAt": "2026-09-24T13:09:05.789Z",
     "status": "ok",
     "exitStatus": 0,
     "signal": null,
@@ -89,7 +89,7 @@
   },
   {
     "driver": "app/desktop/e2e/native-unmeasured-score.mjs",
-    "startedAt": "2026-09-20T13:42:09.993Z",
+    "startedAt": "2026-09-24T13:10:11.240Z",
     "status": "ok",
     "exitStatus": 0,
     "signal": null,
@@ -100,7 +100,7 @@
   },
   {
     "driver": "app/desktop/e2e/native-ignore-region.mjs",
-    "startedAt": "2026-09-20T13:42:13.018Z",
+    "startedAt": "2026-09-24T13:10:14.558Z",
     "status": "ok",
     "exitStatus": 0,
     "signal": null,
@@ -111,7 +111,7 @@
   },
   {
     "driver": "app/desktop/e2e/native-figma-node-fix.mjs",
-    "startedAt": "2026-09-20T13:42:18.950Z",
+    "startedAt": "2026-09-24T13:10:21.485Z",
     "status": "ok",
     "exitStatus": 0,
     "signal": null,
@@ -122,7 +122,7 @@
   },
   {
     "driver": "app/desktop/e2e/native-fix-animation.mjs",
-    "startedAt": "2026-09-20T13:42:22.783Z",
+    "startedAt": "2026-09-24T13:10:26.059Z",
     "status": "ok",
     "exitStatus": 0,
     "signal": null,
@@ -133,7 +133,7 @@
   },
   {
     "driver": "app/desktop/e2e/native-issue-report.mjs",
-    "startedAt": "2026-09-20T13:42:27.348Z",
+    "startedAt": "2026-09-24T13:10:30.715Z",
     "status": "ok",
     "exitStatus": 0,
     "signal": null,
@@ -144,18 +144,18 @@
   },
   {
     "driver": "app/desktop/e2e/native-report-export.mjs",
-    "startedAt": "2026-09-20T13:42:32.776Z",
-    "status": "ok",
-    "exitStatus": 0,
+    "startedAt": "2026-09-24T13:10:36.980Z",
+    "status": "failed",
+    "exitStatus": 1,
     "signal": null,
-    "evidenceExists": true,
-    "buildDigest": "6d76943b2f40b8eab22392fbc357f55dc89317ec12c5c02f9f4484d7dd03d075",
+    "evidenceExists": false,
+    "buildDigest": "",
     "stdoutTail": "",
-    "stderrTail": ""
+    "stderrTail": "node:internal/modules/run_main:107\n    triggerUncaughtException(\n    ^\n\nExpectError: Native Save File dialog did not become visible\n\nNative Save File dialog did not become visible\n\nexpect(received).toBe(expected) // Object.is equality\n\nExpected: \"open\"\nReceived: \"unknown\"\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate\n    at captureRawStack (/Users/devin/repos/designdiff/node_modules/.pnpm/playwright-core@1.60.0/node_modules/playwright-core/lib/coreBundle.js:3130:17)\n    at callMatcherAsStep (/Users/devin/repos/designdiff/node_modules/.pnpm/playwright@1.60.0/node_modules/playwright/lib/matchers/expect.js:12873:57)\n    at Object.toBe (/Users/devin/repos/designdiff/node_modules/.pnpm/playwright@1.60.0/node_modules/playwright/lib/matchers/expect.js:12863:23)\n    at waitForNativeDialog (/Users/devin/repos/designdiff/app/desktop/e2e/native-report-export.mjs:297:8)\n    at /Users/devin/repos/designdiff/app/desktop/e2e/native-report-export.mjs:440:11 {\n  matcherResult: {\n    pass: false,\n    message: 'Native Save File dialog did not become visible\\n' +\n      '\\n' +\n      'expect(received).toBe(expected) // Object.is equality\\n' +\n      '\\n' +\n      'Expected: \"open\"\\n' +\n      'Received: \"unknown\"\\n' +\n      '\\n' +\n      'Call Log:\\n' +\n      '- Timeout 15000ms exceeded while waiting on the predicate',\n    name: 'toBe'\n  }\n}\n\nNode.js v24.20.0\n"
   },
   {
     "driver": "app/chrome-extension/script/real-chrome-e2e.mjs",
-    "startedAt": "2026-09-20T13:42:43.944Z",
+    "startedAt": "2026-09-24T13:10:54.828Z",
     "status": "ok",
     "exitStatus": 0,
     "signal": null,
@@ -166,7 +166,7 @@
   },
   {
     "driver": "app/figma-plugin/e2e/real-iframe-host.mjs",
-    "startedAt": "2026-09-20T13:43:09.152Z",
+    "startedAt": "2026-09-24T13:11:20.028Z",
     "status": "ok",
     "exitStatus": 0,
     "signal": null,
@@ -177,18 +177,18 @@
   },
   {
     "driver": "app/mcp-server/script/stdio-android-verification.mjs",
-    "startedAt": "2026-09-20T13:43:20.656Z",
+    "startedAt": "2026-09-24T13:11:31.602Z",
     "status": "failed",
     "exitStatus": 1,
     "signal": null,
     "evidenceExists": false,
     "buildDigest": "",
     "stdoutTail": "",
-    "stderrTail": "node:internal/modules/run_main:107\n    triggerUncaughtException(\n    ^\n\nAssertionError [ERR_ASSERTION]: X05 needs >=1 ready android device, got 0\n    at file:///Users/devin/repos/designdiff/app/mcp-server/script/stdio-android-verification.mjs:69:8 {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: false,\n  expected: true,\n  operator: '==',\n  diff: 'simple'\n}\n\nNode.js v24.20.0\n"
+    "stderrTail": "node:internal/child_process:287\n      const err = new ErrnoException(exitCode, syscall);\n                  ^\n\nError: spawn adb ENOENT\n    at ChildProcess._handle.onexit (node:internal/child_process:287:19)\n    at onErrorNT (node:internal/child_process:525:16)\n    at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {\n  errno: -2,\n  code: 'ENOENT',\n  syscall: 'spawn adb',\n  path: 'adb',\n  spawnargs: [ 'devices', '-l' ],\n  cmd: 'adb devices -l',\n  stdout: '',\n  stderr: ''\n}\n\nNode.js v24.20.0\n"
   },
   {
     "driver": "app/mcp-server/script/stdio-ios-sim-verification.mjs",
-    "startedAt": "2026-09-20T13:43:20.784Z",
+    "startedAt": "2026-09-24T13:11:31.858Z",
     "status": "ok",
     "exitStatus": 0,
     "signal": null,
@@ -199,7 +199,7 @@
   },
   {
     "driver": "app/mcp-server/script/stdio-ios-device-verification.mjs",
-    "startedAt": "2026-09-20T13:43:25.344Z",
+    "startedAt": "2026-09-24T13:11:36.541Z",
     "status": "failed",
     "exitStatus": 1,
     "signal": null,
@@ -210,7 +210,7 @@
   },
   {
     "driver": "app/mcp-server/script/x08/mcp.mjs",
-    "startedAt": "2026-09-20T13:43:25.665Z",
+    "startedAt": "2026-09-24T13:11:36.967Z",
     "status": "ok",
     "exitStatus": 0,
     "signal": null,
@@ -221,7 +221,7 @@
   },
   {
     "driver": "app/mcp-server/script/x08/desktop.mjs",
-    "startedAt": "2026-09-20T13:43:25.990Z",
+    "startedAt": "2026-09-24T13:11:37.380Z",
     "status": "ok",
     "exitStatus": 0,
     "signal": null,
@@ -232,7 +232,7 @@
   },
   {
     "driver": "app/mcp-server/script/x08/extension.mjs",
-    "startedAt": "2026-09-20T13:43:28.556Z",
+    "startedAt": "2026-09-24T13:11:40.981Z",
     "status": "ok",
     "exitStatus": 0,
     "signal": null,
@@ -243,7 +243,7 @@
   },
   {
     "driver": "app/mcp-server/script/x08/plugin.mjs",
-    "startedAt": "2026-09-20T13:43:30.424Z",
+    "startedAt": "2026-09-24T13:11:43.740Z",
     "status": "ok",
     "exitStatus": 0,
     "signal": null,
@@ -254,7 +254,7 @@
   },
   {
     "driver": "app/mcp-server/script/x08/compare.mjs",
-    "startedAt": "2026-09-20T13:43:31.123Z",
+    "startedAt": "2026-09-24T13:11:44.418Z",
     "status": "ok",
     "exitStatus": 0,
     "signal": null,

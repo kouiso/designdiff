@@ -2,14 +2,14 @@
   "sourceKey": "campaign:v1:[\"local:/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/input-design.png\",\"c01\"]",
   "campaigns": [
     {
-      "campaignId": "2d2317ab-1c11-41a5-84d4-36e4cedb244d",
+      "campaignId": "235db3e1-d56b-4dfc-a167-eaa82061e011",
       "sourceKey": "campaign:v1:[\"local:/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/input-design.png\",\"c01\"]",
       "designSource": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/input-design.png",
-      "startedAt": 1789911571614,
-      "updatedAt": 1789911571614,
+      "startedAt": 1790255259801,
+      "updatedAt": 1790255259801,
       "iterations": [
         {
-          "comparisonId": "cmp-d459f22a-ed1b-4891-a5df-c967a7185c3e",
+          "comparisonId": "cmp-3ac37e1f-5923-44b7-a5e4-13fe6502c44a",
           "comparisonConditions": {
             "status": "unverified",
             "design": {
@@ -45,10 +45,10 @@
           "perceptibleDiffRatio": 0,
           "structuralVerdict": "pass",
           "status": "PASS",
-          "timestamp": 1789911571614
+          "timestamp": 1790255259801
         }
       ],
-      "endedAt": 1789911571614,
+      "endedAt": 1790255259801,
       "endReason": "no-regression",
       "endMessage": "PASS に到達しました (反復 1 回)。ループを終了してください。"
     }

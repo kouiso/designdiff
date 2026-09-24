@@ -1,12 +1,15 @@
 {
   "status": "PASS",
-  "executedAt": "2026-09-20T13:40:21.397Z",
+  "executedAt": "2026-09-24T13:08:24.798Z",
   "revision": "4e9145e5e051d4efe78a922723f7b3245005a05e",
   "dirtyState": [
     "A  docs/evidence/runs-macos-r1.json",
+    " M docs/evidence/runs-macos-r2.json",
     "?? docs/evidence/round1-macos/",
     "?? docs/evidence/runs-macos-r1.attempts.json",
-    "?? docs/evidence/runs-macos-r1.manifest.json"
+    "?? docs/evidence/runs-macos-r1.manifest.json",
+    "?? docs/evidence/runs-macos-r2.attempts.json",
+    "?? docs/evidence/runs-macos-r2.manifest.json"
   ],
   "entrySha256": "2f3782ac72d3f6ee4e3ed9e396ff44771b270995296c29cb0d02f875929f793e",
   "build": {
@@ -2059,15 +2062,15 @@
           "screenshotPath": "docs/evidence/round1-macos/stdio-issue-verification/input-animation-impl-000ms.png",
           "status": "PASS",
           "matchRate": 1,
-          "comparisonId": "cmp-7efd97b6-7d2a-4df4-8819-227272eea200"
+          "comparisonId": "cmp-c4dd396b-ae3e-40e5-af2c-5f8daebda281"
         },
         {
           "atMs": 100,
           "screenshotPath": "docs/evidence/round1-macos/stdio-issue-verification/input-animation-impl-100ms.png",
           "status": "FAIL",
           "matchRate": 0,
-          "comparisonId": "cmp-15eed966-34a6-41de-a760-432b3befc732",
-          "diffImagePath": "<store>/results/diff-cmp-15eed966-34a6-41de-a760-432b3befc732.png"
+          "comparisonId": "cmp-f787a2f8-6187-4109-9347-5d72af19e3be",
+          "diffImagePath": "<store>/results/diff-cmp-f787a2f8-6187-4109-9347-5d72af19e3be.png"
         }
       ],
       "alignments": [

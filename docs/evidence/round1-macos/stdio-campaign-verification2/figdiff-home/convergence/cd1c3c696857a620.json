@@ -2,14 +2,14 @@
   "sourceKey": "campaign:v1:[\"local:/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/input-design.png\",\"c03\"]",
   "campaigns": [
     {
-      "campaignId": "d5503712-9a67-47ae-97dc-68b544b6de32",
+      "campaignId": "28f306f6-fcb5-4433-811b-87b05279d75d",
       "sourceKey": "campaign:v1:[\"local:/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/input-design.png\",\"c03\"]",
       "designSource": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/input-design.png",
-      "startedAt": 1789911573390,
-      "updatedAt": 1789911573390,
+      "startedAt": 1790255261405,
+      "updatedAt": 1790255261405,
       "iterations": [
         {
-          "comparisonId": "cmp-28c07402-4e25-432f-bdc3-4df695995b61",
+          "comparisonId": "cmp-91b537f1-12c6-45d0-9a2b-9ac33f92b7af",
           "comparisonConditions": {
             "status": "unverified",
             "design": {
@@ -44,8 +44,8 @@
           "regionCount": 3,
           "structuralVerdict": "fail",
           "status": "FAIL",
-          "timestamp": 1789911573390,
-          "diffImagePath": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/figdiff-home/results/diff-cmp-28c07402-4e25-432f-bdc3-4df695995b61.png"
+          "timestamp": 1790255261405,
+          "diffImagePath": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/figdiff-home/results/diff-cmp-91b537f1-12c6-45d0-9a2b-9ac33f92b7af.png"
         }
       ]
     }

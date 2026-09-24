@@ -2,17 +2,17 @@
   "sourceKey": "local:/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/input-frame-b.png",
   "campaigns": [
     {
-      "campaignId": "4b37f9a2-48d6-4996-9de3-81467ee0f249",
+      "campaignId": "9d0b110d-bd8d-454b-8e80-78434fcec4c4",
       "sourceKey": "local:/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/input-frame-b.png",
       "designSource": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/input-frame-b.png",
-      "startedAt": 1789911578124,
-      "updatedAt": 1789911578452,
-      "endedAt": 1789911578452,
+      "startedAt": 1790255265892,
+      "updatedAt": 1790255266217,
+      "endedAt": 1790255266217,
       "endReason": "no-regression",
       "endMessage": "PASS に到達しました (反復 2 回)。ループを終了してください。",
       "iterations": [
         {
-          "comparisonId": "cmp-5852303d-5952-47bd-8c84-cfd3729d0640",
+          "comparisonId": "cmp-1154f360-7c6b-48a2-a5c9-3aed915c95f6",
           "comparisonConditions": {
             "status": "unverified",
             "design": {
@@ -47,11 +47,11 @@
           "regionCount": 2,
           "structuralVerdict": "fail",
           "status": "FAIL",
-          "timestamp": 1789911578124,
-          "diffImagePath": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/figdiff-home/results/diff-cmp-5852303d-5952-47bd-8c84-cfd3729d0640.png"
+          "timestamp": 1790255265892,
+          "diffImagePath": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/figdiff-home/results/diff-cmp-1154f360-7c6b-48a2-a5c9-3aed915c95f6.png"
         },
         {
-          "comparisonId": "cmp-6e859357-46d0-4ecb-8283-0e8474e845e3",
+          "comparisonId": "cmp-37216fd3-f941-4bea-a007-e3fd6036a44e",
           "comparisonConditions": {
             "status": "unverified",
             "design": {
@@ -87,22 +87,22 @@
           "perceptibleDiffRatio": 0,
           "structuralVerdict": "pass",
           "status": "PASS",
-          "timestamp": 1789911578452
+          "timestamp": 1790255266217
         }
       ]
     },
     {
-      "campaignId": "7b4aa204-b65b-46a7-8400-0a71ad1f4010",
+      "campaignId": "acff3f92-0002-400a-ac10-a88b8e9c483c",
       "sourceKey": "local:/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/input-frame-b.png",
       "designSource": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/input-frame-b.png",
-      "startedAt": 1789911578789,
-      "updatedAt": 1789911581509,
-      "endedAt": 1789911581509,
+      "startedAt": 1790255266530,
+      "updatedAt": 1790255269044,
+      "endedAt": 1790255269044,
       "endReason": "regression",
       "endMessage": "直近3回の比較結果（matchRate・diffPixelCount・差分領域数）が完全に同一です。提案された修正が実際には適用/反映されていない可能性が高いため、自動修正を止めて設定（capture_width / crop / node選択）を人間が確認してください。",
       "iterations": [
         {
-          "comparisonId": "cmp-80365c00-877c-4623-abaf-be27b682aeb6",
+          "comparisonId": "cmp-d4b4783a-4bdd-4a19-b2f7-7af817b9f2db",
           "comparisonConditions": {
             "status": "unverified",
             "design": {
@@ -137,11 +137,11 @@
           "regionCount": 2,
           "structuralVerdict": "fail",
           "status": "FAIL",
-          "timestamp": 1789911578789,
-          "diffImagePath": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/figdiff-home/results/diff-cmp-80365c00-877c-4623-abaf-be27b682aeb6.png"
+          "timestamp": 1790255266530,
+          "diffImagePath": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/figdiff-home/results/diff-cmp-d4b4783a-4bdd-4a19-b2f7-7af817b9f2db.png"
         },
         {
-          "comparisonId": "cmp-e18e21f5-002f-42d7-9fce-41dd0d440589",
+          "comparisonId": "cmp-a5c6a4ab-9690-441c-b174-c4f2ae646003",
           "comparisonConditions": {
             "status": "unverified",
             "design": {
@@ -176,11 +176,11 @@
           "regionCount": 2,
           "structuralVerdict": "fail",
           "status": "FAIL",
-          "timestamp": 1789911581167,
-          "diffImagePath": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/figdiff-home/results/diff-cmp-e18e21f5-002f-42d7-9fce-41dd0d440589.png"
+          "timestamp": 1790255268728,
+          "diffImagePath": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/figdiff-home/results/diff-cmp-a5c6a4ab-9690-441c-b174-c4f2ae646003.png"
         },
         {
-          "comparisonId": "cmp-59e2faa4-7de1-4121-828b-1e2b454d2dc3",
+          "comparisonId": "cmp-d87ef6c2-03b9-447d-a612-6ff2df889f4e",
           "comparisonConditions": {
             "status": "unverified",
             "design": {
@@ -215,23 +215,23 @@
           "regionCount": 2,
           "structuralVerdict": "fail",
           "status": "FAIL",
-          "timestamp": 1789911581509,
-          "diffImagePath": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/figdiff-home/results/diff-cmp-59e2faa4-7de1-4121-828b-1e2b454d2dc3.png"
+          "timestamp": 1790255269044,
+          "diffImagePath": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/figdiff-home/results/diff-cmp-d87ef6c2-03b9-447d-a612-6ff2df889f4e.png"
         }
       ]
     },
     {
-      "campaignId": "804c0543-589d-43a4-bb36-d9b0ec5e47ef",
+      "campaignId": "15571c3f-8d13-4637-b5e0-8c0f12969169",
       "sourceKey": "local:/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/input-frame-b.png",
       "designSource": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/input-frame-b.png",
-      "startedAt": 1789911581852,
-      "updatedAt": 1789911581852,
-      "endedAt": 1789911581852,
+      "startedAt": 1790255269361,
+      "updatedAt": 1790255269361,
+      "endedAt": 1790255269361,
       "endReason": "no-regression",
       "endMessage": "PASS に到達しました (反復 1 回)。ループを終了してください。",
       "iterations": [
         {
-          "comparisonId": "cmp-bdc4f7bc-0217-4b91-9462-707e224635a4",
+          "comparisonId": "cmp-6522eb9a-d2df-4b12-a295-113108645d83",
           "comparisonConditions": {
             "status": "unverified",
             "design": {
@@ -267,19 +267,19 @@
           "perceptibleDiffRatio": 0,
           "structuralVerdict": "pass",
           "status": "PASS",
-          "timestamp": 1789911581852
+          "timestamp": 1790255269361
         }
       ]
     },
     {
-      "campaignId": "d5b639e5-add2-40c0-9c88-7692429d7289",
+      "campaignId": "05cfc027-0fb3-4494-8420-8b5051a75239",
       "sourceKey": "local:/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/input-frame-b.png",
       "designSource": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/input-frame-b.png",
-      "startedAt": 1789911583908,
-      "updatedAt": 1789911584245,
+      "startedAt": 1790255271215,
+      "updatedAt": 1790255271524,
       "iterations": [
         {
-          "comparisonId": "cmp-49f50bfc-a1b5-4e65-a469-cf984b865ed9",
+          "comparisonId": "cmp-7b39e8c8-f797-4b14-8ed0-63e8acc427c6",
           "comparisonConditions": {
             "status": "unverified",
             "design": {
@@ -314,11 +314,11 @@
           "regionCount": 2,
           "structuralVerdict": "fail",
           "status": "FAIL",
-          "timestamp": 1789911583908,
-          "diffImagePath": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/figdiff-home/results/diff-cmp-49f50bfc-a1b5-4e65-a469-cf984b865ed9.png"
+          "timestamp": 1790255271215,
+          "diffImagePath": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/figdiff-home/results/diff-cmp-7b39e8c8-f797-4b14-8ed0-63e8acc427c6.png"
         },
         {
-          "comparisonId": "cmp-a05b36d0-71f5-4431-9797-4c55a6528f25",
+          "comparisonId": "cmp-493a0998-5178-476c-9a39-61a47ce6cfd1",
           "comparisonConditions": {
             "status": "unverified",
             "design": {
@@ -354,10 +354,10 @@
           "perceptibleDiffRatio": 0,
           "structuralVerdict": "pass",
           "status": "PASS",
-          "timestamp": 1789911584245
+          "timestamp": 1790255271524
         }
       ],
-      "endedAt": 1789911584245,
+      "endedAt": 1790255271524,
       "endReason": "no-regression",
       "endMessage": "PASS に到達しました (反復 2 回)。ループを終了してください。"
     }

@@ -2,14 +2,14 @@
   "sourceKey": "local:/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-m01-verification/input-design.png",
   "campaigns": [
     {
-      "campaignId": "7ff4cb62-4bb0-43d2-b802-26bc1dd9cd0f",
+      "campaignId": "ff0f2d32-a6b7-40d3-8c36-c260cb5c7963",
       "sourceKey": "local:/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-m01-verification/input-design.png",
       "designSource": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-m01-verification/input-design.png",
-      "startedAt": 1789911605320,
-      "updatedAt": 1789911605320,
+      "startedAt": 1790255293414,
+      "updatedAt": 1790255293414,
       "iterations": [
         {
-          "comparisonId": "cmp-c48057b9-f404-42a7-8eb1-d171e2c8f348",
+          "comparisonId": "cmp-438978e3-c0f8-4929-a717-7a63e2963280",
           "comparisonConditions": {
             "status": "unverified",
             "design": {
@@ -45,10 +45,10 @@
           "perceptibleDiffRatio": 0,
           "structuralVerdict": "pass",
           "status": "PASS",
-          "timestamp": 1789911605320
+          "timestamp": 1790255293414
         }
       ],
-      "endedAt": 1789911605320,
+      "endedAt": 1790255293414,
       "endReason": "no-regression",
       "endMessage": "PASS に到達しました (反復 1 回)。ループを終了してください。"
     }

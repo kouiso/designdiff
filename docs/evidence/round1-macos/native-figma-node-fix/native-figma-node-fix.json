@@ -61,8 +61,8 @@
     "after": "f4321966d68a1706c8299a6b3b61a98294f93f10b6f91eaee01afdd083caf117"
   },
   "screenshots": {
-    "version-pinned-masked-cropped-before.png": "ebe0c72550eb69bac6134c9c18c82ef32e56ae22a0528c73921285c1dfa7b010",
-    "target-improved-grid-regressed.png": "13ba0d849d41b14682529c0b3324a444e0d4f5745f48098d1311bdec672f90b6"
+    "version-pinned-masked-cropped-before.png": "0f5d6b5bef326037587358ba547e8e932f8bcb2b0e1d41447690f9c8194c5dd2",
+    "target-improved-grid-regressed.png": "1ebc5588ddcd980aa583a6c4ea9843b784e77d3137c9559899447db6af2558dc"
   },
   "rootMismatch": "Error: Error invoking remote method 'figma:get-node-verification-source': Error: Figma frame geometry does not match the selected frame.",
   "outsideTarget": "Error: Error invoking remote method 'figma:get-node-verification-source': Error: Figma target geometry is missing; node verification was not run.",

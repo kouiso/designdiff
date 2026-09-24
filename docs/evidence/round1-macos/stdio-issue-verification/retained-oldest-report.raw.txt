@@ -1,6 +1,6 @@
 {
   "status": "FAIL",
-  "comparisonId": "cmp-1e4bc4ac-de7a-449d-b9cc-3c995febe58e",
+  "comparisonId": "cmp-1a37ba7d-bb4b-4183-8396-f27f85f87293",
   "matchRate": 99.96,
   "diffPixelCount": 143,
   "totalPixelCount": 329160,
@@ -83,7 +83,7 @@
     "requestedMode": "auto",
     "usedMode": "flood",
     "fallbackUsed": false,
-    "wallMs": 0.92,
+    "wallMs": 0.77,
     "regionCount": 1
   },
   "gridSummary": {
@@ -382,5 +382,5 @@
     },
     "fingerprint": "47da2bd81f65054a5c8a9fba5209ce9f86515c72d2b83f80e69dc8fc151a1dc7"
   },
-  "diffImagePath": "/var/folders/2j/fwfzfr5x639f8rbmqc9t9ym40000gn/T/figdiff-issue-verify-07GRLz/store/results/diff-cmp-1e4bc4ac-de7a-449d-b9cc-3c995febe58e.png"
+  "diffImagePath": "/var/folders/2j/fwfzfr5x639f8rbmqc9t9ym40000gn/T/figdiff-issue-verify-GnpqL1/store/results/diff-cmp-1a37ba7d-bb4b-4183-8396-f27f85f87293.png"
 }

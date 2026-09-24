@@ -1,8 +1,0 @@
-{"phase":"request","channel":"issue-report:prepare","args":[{"title":"Artificial token ghp_nativeFixture123","body":"Artificial path /home/fixture/private/reproduction.txt","category":"bug"}]}
-{"phase":"response","channel":"issue-report:prepare","result":{"draftId":"42802321-d3d6-4c9d-88f5-5aaf6b7943c9","repository":{"owner":"kouiso","repo":"designdiff"},"title":"[bug] Artificial token [REDACTED]","body":"Artificial path ~/private/reproduction.txt","labels":["desktop-feedback","bug"],"maskedCount":2,"duplicate":{"status":"none"}}}
-{"phase":"request","channel":"issue-report:discard","args":["42802321-d3d6-4c9d-88f5-5aaf6b7943c9"]}
-{"phase":"response","channel":"issue-report:discard"}
-{"phase":"request","channel":"issue-report:prepare","args":[{"title":"Artificial token ghp_nativeFixture123","body":"Artificial path /home/fixture/private/reproduction.txt","category":"bug"}]}
-{"phase":"response","channel":"issue-report:prepare","result":{"draftId":"e2226748-4ecb-476b-897a-b1ca7575a416","repository":{"owner":"kouiso","repo":"designdiff"},"title":"[bug] Artificial token [REDACTED]","body":"Artificial path ~/private/reproduction.txt","labels":["desktop-feedback","bug"],"maskedCount":2,"duplicate":{"status":"none"}}}
-{"phase":"request","channel":"issue-report:discard","args":["e2226748-4ecb-476b-897a-b1ca7575a416"]}
-{"phase":"response","channel":"issue-report:discard"}
