@@ -468,12 +468,27 @@ export async function showOverlayOnPage(): Promise<void> {
   render();
 }
 
-export async function hideOverlayOnPage(): Promise<void> {
-  state.overlayActive = false;
+interface ContentCommandResponse {
+  success?: boolean;
+  error?: string;
+}
+
+export async function hideOverlayOnPage(): Promise<boolean> {
+  const overlayWasActive = state.overlayActive;
   const message: ContentMessage = { type: "hide-overlay" };
-  // hide は失敗しても致命的ではないため、エラーは握りつぶさず state は更新済み。
-  await sendToActiveTab(message);
+  const result = await sendToActiveTab<ContentCommandResponse>(message);
+  const error = result.error ?? result.response?.error;
+  if (error || result.response?.success !== true) {
+    state.overlayActive = overlayWasActive;
+    state.error = error ?? "Overlay removal was not acknowledged";
+    render();
+    return false;
+  }
+
+  state.overlayActive = false;
+  state.error = null;
   render();
+  return true;
 }
 
 export async function sendModeUpdate(mode: ViewMode): Promise<void> {
@@ -489,8 +504,9 @@ export async function sendOpacityUpdate(opacity: number): Promise<void> {
 export async function captureAndCompare(): Promise<void> {
   if (!state.designBase64) return;
 
-  if (state.overlayActive) {
-    await hideOverlayOnPage();
+  const overlayWasActive = state.overlayActive;
+  if (overlayWasActive && !(await hideOverlayOnPage())) {
+    return;
   }
 
   const captureRes = await sendToBackground<{ dataUrl?: string; error?: string }>({
@@ -498,8 +514,9 @@ export async function captureAndCompare(): Promise<void> {
   });
 
   if (captureRes.error || !captureRes.dataUrl) {
-    state.error = captureRes.error ?? "Screenshot failed";
-    if (state.overlayActive) await showOverlayOnPage();
+    const captureError = captureRes.error ?? "Screenshot failed";
+    if (overlayWasActive) await showOverlayOnPage();
+    state.error = captureError;
     render();
     return;
   }
@@ -568,12 +585,14 @@ export function sendToBackground<T>(message: InternalMessage): Promise<T> {
 }
 
 // content script への送達結果。content script が居ないページでは error が入る。
-interface SendToActiveTabResult {
-  response?: unknown;
+interface SendToActiveTabResult<T> {
+  response?: T;
   error?: string;
 }
 
-export function sendToActiveTab(message: ContentMessage): Promise<SendToActiveTabResult> {
+export function sendToActiveTab<T = unknown>(
+  message: ContentMessage,
+): Promise<SendToActiveTabResult<T>> {
   return new Promise((resolve) => {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       const tabId = tabs[0]?.id;

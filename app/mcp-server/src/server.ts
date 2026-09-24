@@ -55,6 +55,7 @@ export function createMcpServer(): McpServer {
 - create_project: Create a new FigDiff project
 - delete_project: Delete a FigDiff project and its saved settings
 - compare_design: Pixel-level diff between Figma design and implementation screenshot
+- compare_animation: 動きのあるUIを、時間で並んだ複数の絵として比べる
 - inspect_node: Dev Mode-like node detail inspection with CSS suggestions
 - get_design_tokens: Extract design tokens (colors, spacing, typography) from Figma frames
 - list_figma_frames: List all frames in a Figma file
@@ -70,7 +71,7 @@ export function createMcpServer(): McpServer {
 
 **Workflow (follow this order):**
 1. list_projects — Start here to find registered projects and their IDs.
-2. compare_design — Detects pixel-level differences. Output includes "マスク候補" section listing regions likely to be intentional diffs (photos, intentional color changes).
+2. compare_design — Detects pixel-level differences. Output may include "マスク候補" based on texture or structure/color differences. These signals do not identify photos or prove an intentional difference. Candidates are not automatically masked; ask the user to confirm exclusions.
 3. Check "判定経路" in the summary. When it reads token-diff, colour and typography were
    compared as values rather than pixels, and the listed 要修正 items carry the exact value
    the design specifies — apply those directly instead of guessing from the diff image.

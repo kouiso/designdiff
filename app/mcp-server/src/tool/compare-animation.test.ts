@@ -148,9 +148,47 @@ describe("compare_animation MCP handler", () => {
     expect(response.isError).toBeFalsy();
   });
 
+  it.each([
+    {
+      name: "duplicate",
+      actualTimes: [41, 41],
+      expected: "小さい順に並べてください",
+    },
+    {
+      name: "reverse order",
+      actualTimes: [143, 41],
+      expected: "小さい順に並べてください",
+    },
+    {
+      name: "non-finite",
+      actualTimes: [41, Number.NaN],
+      expected: "0以上の整数",
+    },
+  ])("rejects $name actual capture times before comparison", async ({ actualTimes, expected }) => {
+    captureUrl.mockResolvedValueOnce({
+      framePaths: actualTimes.map((actualAtMs, index) => ({
+        path: `/tmp/frame-${index}.png`,
+        actualAtMs,
+      })),
+      frameTimeSource: "wall-clock",
+    });
+
+    const response = await callAnimation({
+      design_source: fixture,
+      screenshot_url: "https://example.test/animated",
+      capture_frames_ms: [0, 100],
+    });
+
+    expect(response.isError).toBe(true);
+    expect(response.content[0]?.type === "text" ? response.content[0].text : undefined).toContain(
+      expected,
+    );
+    expect(runAnimationCompare).not.toHaveBeenCalled();
+  });
+
   it("passes compare options and falls back to UNCERTAIN when status is absent", async () => {
     runCompareDesign.mockResolvedValue({
-      result: { matchRate: 0.73, comparisonId: "cmp-option", diffImagePath: "/tmp/diff.png" },
+      result: { matchRate: 73, comparisonId: "cmp-option", diffImagePath: "/tmp/diff.png" },
     });
     runAnimationCompare.mockImplementationOnce(async (input, compareOne) => {
       const frame = await compareOne(input.designSource, "/tmp/frame.png");
@@ -191,7 +229,7 @@ describe("compare_animation MCP handler", () => {
       design_background: "#fff",
     });
     expect(response.structuredContent).toMatchObject({
-      frames: [{ status: "UNCERTAIN", comparisonId: "cmp-option" }],
+      frames: [{ status: "UNCERTAIN", comparisonId: "cmp-option", matchRate: 0.73 }],
     });
   });
 

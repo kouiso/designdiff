@@ -540,7 +540,8 @@ describe("MCP Server E2E: compare_design", () => {
     expect(compareResult.isError).toBeFalsy();
 
     const data = JSON.parse(findTextContent(compareResult)!.text);
-    expect(data.matchRate).toBe(100);
+    expect(data.matchRate).toBe(0);
+    expect(data.status).toBe("UNCERTAIN");
     expect(data.diffPixelCount).toBe(0);
     expect(data.totalPixelCount).toBe(0);
 
@@ -619,7 +620,8 @@ describe("MCP Server E2E: compare_design", () => {
     expect(compareResult.isError).toBeFalsy();
 
     const data = JSON.parse(findTextContent(compareResult)!.text);
-    expect(data.matchRate).toBe(100);
+    expect(data.matchRate).toBe(0);
+    expect(data.status).toBe("UNCERTAIN");
     expect(data.diffPixelCount).toBe(0);
     expect(data.totalPixelCount).toBe(0);
   });

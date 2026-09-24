@@ -51,6 +51,12 @@ function asGroup(value: unknown): ExposedApi {
 }
 
 describe("画面側へ公開する窓口", () => {
+  it("レポートの保存は専用 IPC に内容と形式だけを渡す", async () => {
+    const api = await loadApi();
+    const request = { result: { comparisonId: "fixture" }, format: "json" };
+    asFunction(api.saveComparisonReport)(request);
+    expect(mocks.invoke).toHaveBeenCalledWith("file:save-comparison-report", request);
+  });
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -79,6 +85,9 @@ describe("画面側へ公開する窓口", () => {
 
     asFunction(api.getFigmaNodeDetail)("FILE", "1:2");
     expect(mocks.invoke).toHaveBeenCalledWith("figma:get-node-detail", "FILE", "1:2", 3);
+
+    asFunction(api.getFigmaDesignTokens)("FILE", "1:2");
+    expect(mocks.invoke).toHaveBeenCalledWith("figma:get-design-tokens", "FILE", "1:2", 2);
   });
 
   it("撮影の寸法は整数へ丸めて渡すこと", async () => {
@@ -160,6 +169,28 @@ describe("画面側へ公開する窓口", () => {
 
     asFunction(asGroup(api.activeSession).readImage)("/tmp/a.png");
     expect(mocks.invoke).toHaveBeenCalledWith("active-session:read-image", "/tmp/a.png");
+  });
+
+  it("問題報告は確認用draftとdraft IDだけを決まった宛先へ渡すこと", async () => {
+    const api = await loadApi();
+    const issueReport = asGroup(api.issueReport);
+    const input = { title: "Problem", body: "Details", category: "bug" };
+
+    asFunction(issueReport.prepare)(input);
+    expect(mocks.invoke).toHaveBeenCalledWith("issue-report:prepare", input);
+    asFunction(issueReport.submit)("draft-1", { title: "must not cross preload" });
+    expect(mocks.invoke).toHaveBeenCalledWith("issue-report:submit", "draft-1");
+    asFunction(issueReport.discard)("draft-1");
+    expect(mocks.invoke).toHaveBeenCalledWith("issue-report:discard", "draft-1");
+  });
+
+  it("任意ノード確認はfile/frame/target/scaleを専用IPCへ渡すこと", async () => {
+    const api = await loadApi();
+    const input = { fileKey: "FILE", frameNodeId: "1:2", targetNodeId: "3:4", scale: 2 };
+
+    asFunction(asGroup(api.figmaNodeVerification).load)(input);
+
+    expect(mocks.invoke).toHaveBeenCalledWith("figma:get-node-verification-source", input);
   });
 });
 

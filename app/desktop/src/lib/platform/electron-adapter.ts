@@ -3,21 +3,70 @@ import { z } from "zod";
 import {
   FigmaTokenSchema,
   FrameSchema,
+  IgnoreRegionConfigEntrySchema,
+  IgnoreRegionConfigFileSchema,
   NodeInspectionSchema,
   ProjectSchema,
+  DesignTokenSchema,
 } from "@figdiff/shared";
 
 import type {
   ConvergenceAdapter,
   FileAdapter,
   FigmaAdapter,
+  FigmaNodeVerificationAdapter,
+  IgnoreRegionAdapter,
+  IssueReportAdapter,
   OAuthAdapter,
   OverlayAdapter,
   PlatformAdapter,
   PlatformCapabilities,
   ProjectAdapter,
+  ReportExportAdapter,
   TokenAdapter,
 } from "./platform-adapter";
+
+const IssueReportPreviewSchema = z.object({
+  draftId: z.string().min(1),
+  repository: z.object({ owner: z.string().min(1), repo: z.string().min(1) }),
+  title: z.string(),
+  body: z.string(),
+  labels: z.array(z.string()),
+  maskedCount: z.number().int().nonnegative(),
+  duplicate: z.discriminatedUnion("status", [
+    z.object({
+      status: z.literal("found"),
+      issueNumber: z.number().int().positive(),
+      issueUrl: z.string().url(),
+    }),
+    z.object({ status: z.literal("none") }),
+  ]),
+});
+
+const IssueReportSubmitResultSchema = z.object({
+  issueUrl: z.string().url(),
+  issueNumber: z.number().int().positive(),
+  deduped: z.boolean(),
+  maskedCount: z.number().int().nonnegative(),
+});
+
+const GeometryBoxSchema = z.object({
+  x: z.number().finite(),
+  y: z.number().finite(),
+  width: z.number().finite().positive(),
+  height: z.number().finite().positive(),
+});
+
+const FigmaNodeVerificationSourceSchema = z.object({
+  sourceVersion: z.string().min(1),
+  frameNodeId: z.string().min(1),
+  targetNodeId: z.string().min(1),
+  targetNodeName: z.string(),
+  rootBox: GeometryBoxSchema,
+  targetBox: GeometryBoxSchema,
+  imageBase64: z.string().min(1),
+  requestedScale: z.number().finite().positive(),
+});
 
 const electronFigmaAdapter: FigmaAdapter = {
   getFrames: async (fileKey) => {
@@ -30,6 +79,10 @@ const electronFigmaAdapter: FigmaAdapter = {
   getNodeDetail: async (fileKey, nodeId, depth = 3) => {
     const result = await window.electronAPI.getFigmaNodeDetail(fileKey, nodeId, depth);
     return NodeInspectionSchema.parse(result);
+  },
+  getDesignTokens: async (fileKey, nodeId, depth = 2) => {
+    const result = await window.electronAPI.getFigmaDesignTokens(fileKey, nodeId, depth);
+    return z.array(DesignTokenSchema).parse(result);
   },
 };
 
@@ -57,6 +110,10 @@ const electronFileAdapter: FileAdapter = {
   captureUrlScreenshot: async (url, width, height) => {
     return window.electronAPI.captureUrlScreenshot(url, Math.round(width), Math.round(height));
   },
+};
+
+export const electronReportExportAdapter: ReportExportAdapter = {
+  save: (result, format) => window.electronAPI.saveComparisonReport({ result, format }),
 };
 
 export const electronOverlayAdapter: OverlayAdapter = {
@@ -102,12 +159,49 @@ const electronOAuthAdapter: OAuthAdapter = {
   getClientId: () => window.electronAPI.oauth.getClientId(),
 };
 
+export const electronIgnoreRegionAdapter: IgnoreRegionAdapter = {
+  async list(projectId, frameName) {
+    return z
+      .array(IgnoreRegionConfigEntrySchema)
+      .parse(await window.electronAPI.ignoreRegion.list(projectId, frameName));
+  },
+  async save(projectId, entry) {
+    return IgnoreRegionConfigFileSchema.parse(
+      await window.electronAPI.ignoreRegion.save(
+        projectId,
+        IgnoreRegionConfigEntrySchema.parse(entry),
+      ),
+    );
+  },
+  async delete(projectId, regionId) {
+    return IgnoreRegionConfigFileSchema.parse(
+      await window.electronAPI.ignoreRegion.delete(projectId, regionId),
+    );
+  },
+};
+
+export const electronIssueReportAdapter: IssueReportAdapter = {
+  prepare: async (input) =>
+    IssueReportPreviewSchema.parse(await window.electronAPI.issueReport.prepare(input)),
+  submit: async (draftId) =>
+    IssueReportSubmitResultSchema.parse(await window.electronAPI.issueReport.submit(draftId)),
+  discard: (draftId) => window.electronAPI.issueReport.discard(draftId),
+};
+
+export const electronFigmaNodeVerificationAdapter: FigmaNodeVerificationAdapter = {
+  load: async (input) =>
+    FigmaNodeVerificationSourceSchema.parse(
+      await window.electronAPI.figmaNodeVerification.load(input),
+    ),
+};
+
 export const electronAdapter: PlatformAdapter = {
   figma: electronFigmaAdapter,
   token: electronTokenAdapter,
   file: electronFileAdapter,
   project: electronProjectAdapter,
   oauth: electronOAuthAdapter,
+  ignoreRegion: electronIgnoreRegionAdapter,
 };
 
 export const electronConvergenceAdapter: ConvergenceAdapter = {

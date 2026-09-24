@@ -163,6 +163,7 @@ export async function collectScrollFrames(
 
 export interface CaptureDeviceScrollOptions {
   device: CaptureDevice;
+  deviceSerial?: string;
   outputDir?: string;
   maxCaptures?: number;
 }

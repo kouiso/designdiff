@@ -3,9 +3,11 @@ import {
   classifyGlyphEdgeRasterization,
   compareFlatRegionColor,
   computeHausdorff,
+  classifyForegroundOccupancyGeometry,
   computeMeanDeltaE2000,
   computePerceptibleDiffRatio,
   computeSsimForRegion,
+  computeWholeImageStructure,
   GLOBAL_SHIFT_CRITICAL_THRESHOLD_PX,
   GLOBAL_SHIFT_ISSUE_THRESHOLD_PX,
   resolveAlignment,
@@ -215,17 +217,19 @@ function buildIssues(
       });
     }
 
-    // position/size は structure (SSIM) が閾値を割った領域のうち、shape
-    // (Sobel エッジの Hausdorff 距離、色に依存しない) が実際にエッジ位置の
-    // ズレを示している場合のみ発火させる。SSIM の luminance 項は純色/輝度
-    // シフトだけでも押し下げられるため、SSIM 単独では「色だけ変わった」領域を
-    // 誤って position/size と分類してしまう（issue-kind precision 55%の
-    // 根本原因）。shape はエッジ（局所的な輝度勾配が閾値を超える箇所）の
-    // 空間位置を色に関わらず比較するため、エッジが動いていなければ 0 になる
-    // ——純色シフトの実測: 0.0000。実際の平行移動/リサイズでは shape > 0
-    // （実測: line-height-off 8pxシフト=0.052〜0.056、layout-off=0.141、
-    // single-section-regression=0.087、font-size-off=0.013〜0.019）。
-    const hasEdgeDisplacement = regionScore.shape > GEOMETRIC_SHAPE_EPSILON;
+    // 輝度勾配の閾値は色だけの変更でも輪郭集合を変えるため、Hausdorff単独で
+    // 位置ずれと断定しない。前景位置と双方向の色対応が保たれる場合は幾何issueを
+    // 抑え、上で生成した色issueと不合格判定は維持する。
+    const hasEdgeDisplacement =
+      regionScore.shape > GEOMETRIC_SHAPE_EPSILON &&
+      classifyForegroundOccupancyGeometry(
+        options.designPixels,
+        options.screenshotPixels,
+        options.width,
+        options.height,
+        regionScore.bbox,
+        options.ignoreMask,
+      ) === "different";
 
     if (regionScore.structure < 0.95 && hasEdgeDisplacement) {
       issues.push({
@@ -747,7 +751,7 @@ export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
   // 比較対象そのものの行は子と範囲が重なる。合否を決める不具合をここから作ると、
   // 子が全部合格でも背景の色差だけで不合格へ倒れる。集計と同じ行だけを使う。
   const issueRegions = regionScores.filter((score) => score.scope !== "root");
-  const issues = buildIssues(issueRegions.length > 0 ? issueRegions : regionScores, options);
+  const issues = buildIssues(issueRegions.length > 0 ? issueRegions : regionScores, alignedOptions);
 
   // 位置合わせを適用できても、ページ全体のスクロールや配置ずれを
   // 撮影由来の補正として隠してはならない。2px以上はcriticalへ上げ、
@@ -786,6 +790,18 @@ export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
   }
 
   const verdict = computeVerdict({ alignment, regionScores, issues });
+  const structuralAssessment = computeWholeImageStructure(
+    alignedDesignPixels,
+    screenshotPixels,
+    width,
+    height,
+    toContentRegion(width, height, paddingMask),
+    options.ignoreMask,
+  );
+  if (issues.some((issue) => issue.kind === "position" && issue.severity === "critical")) {
+    structuralAssessment.verdict = "fail";
+    structuralAssessment.rationale += " A critical position difference remains after alignment.";
+  }
 
   // 判定と独立した証拠。ただし矛盾を疑うのは「判定が pass」のときだけなので、
   // それ以外では走査そのものを行わない。全画素が違う比較 (= fail になる比較) で
@@ -812,6 +828,7 @@ export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
     issues,
     weightedAggregate: verdict.weightedAggregate,
     aggregateVerdict: verdict.verdict,
+    structuralAssessment,
     rationale: verdict.rationale,
     perceptibleDiffRatio,
   };

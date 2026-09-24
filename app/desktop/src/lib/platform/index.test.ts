@@ -4,6 +4,8 @@ import {
   _resetPlatformForTesting,
   _setPlatformForTesting,
   getCapabilities,
+  getFigmaNodeVerifier,
+  getIssueReporter,
   getOverlay,
   getPlatform,
 } from "./index";
@@ -46,6 +48,40 @@ describe("platform 解決", () => {
     const overlay = await getOverlay();
     expect(overlay).not.toBeNull();
     expect(typeof overlay?.open).toBe("function");
+  });
+
+  it("問題報告は Electron の専用adapterを返す", async () => {
+    const reporter = await getIssueReporter();
+    expect(reporter).not.toBeNull();
+    expect(typeof reporter?.prepare).toBe("function");
+    expect(typeof reporter?.submit).toBe("function");
+    expect(typeof reporter?.discard).toBe("function");
+  });
+
+  it("問題報告IPCが無い環境ではnullを返す", async () => {
+    const electronApi = window.electronAPI;
+    Reflect.set(window, "electronAPI", undefined);
+    try {
+      await expect(getIssueReporter()).resolves.toBeNull();
+    } finally {
+      Reflect.set(window, "electronAPI", electronApi);
+    }
+  });
+
+  it("任意Figmaノード確認はElectronの専用adapterを返す", async () => {
+    const verifier = await getFigmaNodeVerifier();
+    expect(verifier).not.toBeNull();
+    expect(typeof verifier?.load).toBe("function");
+  });
+
+  it("任意Figmaノード確認IPCが無い環境ではnullを返す", async () => {
+    const electronApi = window.electronAPI;
+    Reflect.set(window, "electronAPI", undefined);
+    try {
+      await expect(getFigmaNodeVerifier()).resolves.toBeNull();
+    } finally {
+      Reflect.set(window, "electronAPI", electronApi);
+    }
   });
 
   it("_setPlatformForTesting で差し替えた実装が使われる", async () => {

@@ -52,31 +52,33 @@ describe("figdiff-paths", () => {
 
   it("FIGDIFF_HOME を指定すると全部そこへ移る", () => {
     vi.stubEnv("FIGDIFF_HOME", "/tmp/figdiff-home");
-    expect(getFigdiffHome()).toBe("/tmp/figdiff-home");
-    expect(getFigdiffCacheDir()).toBe(path.join("/tmp/figdiff-home", "cache"));
-    expect(getFigdiffResultsDir()).toBe(path.join("/tmp/figdiff-home", "results"));
-    expect(getFigdiffProjectsDir()).toBe(path.join("/tmp/figdiff-home", "projects"));
-    expect(getFigdiffLoopStateDir()).toBe(path.join("/tmp/figdiff-home", "loop-state"));
-    expect(getActiveSessionPath()).toBe(path.join("/tmp/figdiff-home", "active-session.json"));
+    const expectedHome = path.resolve("/tmp/figdiff-home");
+    expect(getFigdiffHome()).toBe(expectedHome);
+    expect(getFigdiffCacheDir()).toBe(path.join(expectedHome, "cache"));
+    expect(getFigdiffResultsDir()).toBe(path.join(expectedHome, "results"));
+    expect(getFigdiffProjectsDir()).toBe(path.join(expectedHome, "projects"));
+    expect(getFigdiffLoopStateDir()).toBe(path.join(expectedHome, "loop-state"));
+    expect(getActiveSessionPath()).toBe(path.join(expectedHome, "active-session.json"));
   });
 
   it("FIGDIFF_CACHE_DIR はキャッシュだけを移す", () => {
     vi.stubEnv("FIGDIFF_CACHE_DIR", "/tmp/figdiff-cache");
-    expect(getFigdiffCacheDir()).toBe("/tmp/figdiff-cache");
-    expect(getCaptureCacheDir()).toBe(path.join("/tmp/figdiff-cache", "capture"));
+    const expectedCache = path.resolve("/tmp/figdiff-cache");
+    expect(getFigdiffCacheDir()).toBe(expectedCache);
+    expect(getCaptureCacheDir()).toBe(path.join(expectedCache, "capture"));
     expect(getFigdiffResultsDir()).toBe(path.join(homedir(), ".figdiff", "results"));
   });
 
   it("XDG_CACHE_HOME はキャッシュにだけ効く", () => {
     vi.stubEnv("XDG_CACHE_HOME", "/tmp/xdg");
-    expect(getFigdiffCacheDir()).toBe(path.join("/tmp/xdg", "figdiff"));
+    expect(getFigdiffCacheDir()).toBe(path.join(path.resolve("/tmp/xdg"), "figdiff"));
     expect(getFigdiffResultsDir()).toBe(path.join(homedir(), ".figdiff", "results"));
   });
 
   it("FIGDIFF_HOME があれば XDG_CACHE_HOME より優先される", () => {
     vi.stubEnv("FIGDIFF_HOME", "/tmp/figdiff-home");
     vi.stubEnv("XDG_CACHE_HOME", "/tmp/xdg");
-    expect(getFigdiffCacheDir()).toBe(path.join("/tmp/figdiff-home", "cache"));
+    expect(getFigdiffCacheDir()).toBe(path.join(path.resolve("/tmp/figdiff-home"), "cache"));
   });
 
   it("用途ごとの指定は FIGDIFF_HOME より優先される", () => {
@@ -84,9 +86,9 @@ describe("figdiff-paths", () => {
     vi.stubEnv("FIGDIFF_CACHE_DIR", "/tmp/cache-override");
     vi.stubEnv("FIGDIFF_RESULTS_DIR", "/tmp/results-override");
     vi.stubEnv("FIGDIFF_PROJECTS_DIR", "/tmp/projects-override");
-    expect(getFigdiffCacheDir()).toBe("/tmp/cache-override");
-    expect(getFigdiffResultsDir()).toBe("/tmp/results-override");
-    expect(getFigdiffProjectsDir()).toBe("/tmp/projects-override");
+    expect(getFigdiffCacheDir()).toBe(path.resolve("/tmp/cache-override"));
+    expect(getFigdiffResultsDir()).toBe(path.resolve("/tmp/results-override"));
+    expect(getFigdiffProjectsDir()).toBe(path.resolve("/tmp/projects-override"));
   });
 
   it("空文字や空白だけの指定は無視する", () => {

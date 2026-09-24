@@ -1,4 +1,8 @@
-import { describe, expect, it, vi } from "vitest";
+import * as path from "node:path";
+
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import type { DeviceCaptureProvider } from "./types.js";
 
 const mocks = vi.hoisted(() => ({
   captureDeviceScrollScreenshot: vi.fn(),
@@ -21,6 +25,12 @@ vi.mock("./scroll-capture.js", async (importOriginal) => {
   const original: Record<string, unknown> = await importOriginal();
   return { ...original, captureDeviceScrollScreenshot: mocks.captureDeviceScrollScreenshot };
 });
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  vi.stubEnv("ANDROID_SERIAL", "");
+});
+afterEach(() => vi.unstubAllEnvs());
 
 describe("captureDeviceScrollingScreenshot", () => {
   it("端末の種類に合った撮影手段を選んで、そのまま結果を返す", async () => {
@@ -74,17 +84,94 @@ describe("captureDeviceScreenshot", () => {
     mocks.execFile.mockImplementation((command: unknown, ...rest: unknown[]) => {
       if (typeof command === "string") seen.push(command);
       const callback = rest.at(-1);
-      if (typeof callback === "function") callback(null, Buffer.from("png"), "");
+      if (typeof callback === "function")
+        callback(
+          null,
+          Array.isArray(rest[0]) && rest[0][0] === "devices"
+            ? "List of devices attached\nphone-one\tdevice\n"
+            : Buffer.from("png"),
+          "",
+        );
     });
 
     const { captureDeviceScreenshot } = await import("./index.js");
     for (const device of ["android", "ios-sim", "ios-device"] as const) {
       const outputPath = await captureDeviceScreenshot({ device, outputDir: "/tmp" });
-      expect(outputPath.startsWith("/tmp")).toBe(true);
+      expect(path.dirname(outputPath)).toBe(path.normalize("/tmp"));
     }
 
-    expect(seen).toEqual(["adb", "xcrun", "pymobiledevice3"]);
+    expect(seen).toEqual(["adb", "adb", "xcrun", "pymobiledevice3"]);
     // 画像を書くのは android 経路だけ。iOS の2本はコマンド側が直接書く。
     expect(mocks.writeFile).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("capture deviceSerial forwarding", () => {
+  function respondWithTwoDevices(): void {
+    mocks.execFile.mockImplementation((_command: unknown, ...rest: unknown[]) => {
+      const callback = rest.at(-1);
+      if (typeof callback === "function")
+        callback(
+          null,
+          Array.isArray(rest[0]) && rest[0][0] === "devices"
+            ? "List of devices attached\nphone-one\tdevice\nphone-two\tdevice\n"
+            : Buffer.from("png"),
+          "",
+        );
+    });
+  }
+
+  it("単一撮影の対象を public API から渡す", async () => {
+    respondWithTwoDevices();
+    const { captureDeviceScreenshot } = await import("./index.js");
+    await captureDeviceScreenshot({
+      device: "android",
+      deviceSerial: "phone-two",
+      outputDir: "/tmp",
+    });
+    expect(mocks.execFile.mock.calls[1][1]).toEqual([
+      "-s",
+      "phone-two",
+      "exec-out",
+      "screencap",
+      "-p",
+    ]);
+  });
+
+  it("連続撮影へ渡す provider も指定した端末を使う", async () => {
+    respondWithTwoDevices();
+    mocks.captureDeviceScrollScreenshot.mockImplementation(
+      async (provider: DeviceCaptureProvider) => {
+        await provider.capture("/tmp/scroll-test.png");
+        return { screenshotPath: "/tmp/scroll-test.png" };
+      },
+    );
+    const { captureDeviceScrollingScreenshot } = await import("./index.js");
+    await captureDeviceScrollingScreenshot({ device: "android", deviceSerial: "phone-two" });
+    expect(mocks.execFile.mock.calls[1][1]).toEqual([
+      "-s",
+      "phone-two",
+      "exec-out",
+      "screencap",
+      "-p",
+    ]);
+  });
+
+  it.each([
+    "ios-sim",
+    "ios-device",
+  ] as const)("%s に serial を渡しても無視しない", async (device) => {
+    const { captureDeviceScreenshot, captureDeviceScrollingScreenshot } = await import(
+      "./index.js"
+    );
+    await expect(captureDeviceScreenshot({ device, deviceSerial: "phone-two" })).rejects.toThrow(
+      /only supported for Android/,
+    );
+    await expect(
+      captureDeviceScrollingScreenshot({ device, deviceSerial: "phone-two" }),
+    ).rejects.toThrow(/only supported for Android/);
+    expect(mocks.mkdir).not.toHaveBeenCalled();
+    expect(mocks.execFile).not.toHaveBeenCalled();
+    expect(mocks.captureDeviceScrollScreenshot).not.toHaveBeenCalled();
   });
 });

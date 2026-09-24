@@ -9,7 +9,7 @@ import { describe, expect, it } from "vitest";
 import { CompareDesignResultSchema } from "@figdiff/shared";
 
 import { createMcpServer } from "../server.js";
-import { clearComparisonHistory } from "../service/comparison-history.js";
+import { clearComparisonHistory, recordComparison } from "../service/comparison-history.js";
 
 import { normalizeComparisonResultInput } from "./generate-report.js";
 
@@ -82,6 +82,50 @@ describe("normalizeComparisonResultInput loopGuard compatibility", () => {
 });
 
 describe("generate_diff_report comparison_id compatibility", () => {
+  it("直近 5 件から外れた比較も新しいサーバーから ID だけで取得できる", async () => {
+    const originalFigdiffHome = process.env.FIGDIFF_HOME;
+    const testRoot = await fs.mkdtemp(path.join(tmpdir(), "figdiff-report-retention-"));
+    let client: Client | undefined;
+    const server = createMcpServer();
+
+    try {
+      process.env.FIGDIFF_HOME = testRoot;
+      clearComparisonHistory();
+      for (let index = 0; index < 12; index++) {
+        const comparisonId = `cmp-retained-${index}`;
+        await recordComparison({
+          comparisonId,
+          sourceKey: "local:retention-fixture",
+          result: { ...baseResult, comparisonId },
+        });
+      }
+      clearComparisonHistory();
+
+      const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+      client = new Client({ name: "generate-report-retention-test", version: "1.0.0" });
+      await Promise.all([client.connect(clientTransport), server.connect(serverTransport)]);
+
+      for (let index = 0; index < 12; index++) {
+        const comparisonId = `cmp-retained-${index}`;
+        const response = await client.callTool({
+          name: "generate_diff_report",
+          arguments: { comparison_id: comparisonId, format: "json" },
+        });
+        expect(response.isError).toBeFalsy();
+        const responseText = response.content.find((item) => item.type === "text")?.text;
+        const report = CompareDesignResultSchema.parse(JSON.parse(responseText ?? ""));
+        expect(report).toMatchObject({ ...baseResult, comparisonId });
+      }
+    } finally {
+      await client?.close();
+      await server.close();
+      clearComparisonHistory();
+      if (originalFigdiffHome === undefined) delete process.env.FIGDIFF_HOME;
+      else process.env.FIGDIFF_HOME = originalFigdiffHome;
+      await fs.rm(testRoot, { recursive: true, force: true });
+    }
+  });
+
   it("ディスク保存済み旧loopGuardをcomparison_id経路でレポート化する", async () => {
     const originalFigdiffHome = process.env.FIGDIFF_HOME;
     const testRoot = await fs.mkdtemp(path.join(tmpdir(), "figdiff-generate-report-legacy-"));

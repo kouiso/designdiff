@@ -3,7 +3,7 @@ import * as path from "node:path";
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { getConvergenceDir, getFigdiffHome } from "./figdiff-home.js";
+import { getConvergenceDir, getFigdiffHome, getFigdiffProjectsDir } from "./figdiff-home.js";
 
 // MCP サーバ側 (app/mcp-server/src/util/figdiff-paths.ts) と同じ規則で解決できてへんと、
 // FIGDIFF_HOME を設定した環境で書いた側と読む側が別ディレクトリを見る。
@@ -50,5 +50,25 @@ describe("getConvergenceDir", () => {
     vi.stubEnv("FIGDIFF_HOME", HOME_DIR);
     vi.stubEnv("FIGDIFF_CONVERGENCE_DIR", ELSEWHERE_DIR);
     expect(getConvergenceDir()).toBe(ELSEWHERE_DIR);
+  });
+});
+
+describe("getFigdiffProjectsDir", () => {
+  it("用途別の相対指定をFIGDIFF_HOMEより優先する", () => {
+    vi.stubEnv("FIGDIFF_HOME", HOME_DIR);
+    vi.stubEnv("FIGDIFF_PROJECTS_DIR", "  ./figdiff-projects-override  ");
+    expect(getFigdiffProjectsDir()).toBe(path.resolve("./figdiff-projects-override"));
+  });
+
+  it("空の用途別指定はFIGDIFF_HOME配下へ戻る", () => {
+    vi.stubEnv("FIGDIFF_HOME", HOME_DIR);
+    vi.stubEnv("FIGDIFF_PROJECTS_DIR", "  ");
+    expect(getFigdiffProjectsDir()).toBe(path.join(HOME_DIR, "projects"));
+  });
+
+  it("両指定がなければ既定ホームの案件領域を使う", () => {
+    vi.stubEnv("FIGDIFF_HOME", undefined);
+    vi.stubEnv("FIGDIFF_PROJECTS_DIR", undefined);
+    expect(getFigdiffProjectsDir()).toBe(path.join(homedir(), ".figdiff", "projects"));
   });
 });

@@ -7,6 +7,8 @@ import { registerActiveSessionHandlers } from "./ipc/active-session";
 import { registerConvergenceHandlers } from "./ipc/convergence";
 import { registerFigmaHandlers } from "./ipc/figma";
 import { registerFileHandlers } from "./ipc/file";
+import { registerIgnoreRegionHandlers } from "./ipc/ignore-region";
+import { registerIssueReportHandlers } from "./ipc/issue-report";
 import { registerOAuthHandlers } from "./ipc/oauth";
 import { registerOverlayHandlers } from "./ipc/overlay";
 import { registerProjectHandlers } from "./ipc/project";
@@ -243,6 +245,8 @@ app
     registerOAuthHandlers();
     registerActiveSessionHandlers();
     registerConvergenceHandlers();
+    registerIgnoreRegionHandlers();
+    registerIssueReportHandlers();
     createWindow();
 
     app.on("activate", () => {

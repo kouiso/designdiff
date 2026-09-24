@@ -50,36 +50,55 @@ FIGMA_TOKEN = "figd_your_token_here"
 2. Add the entry above to `~/.codex/config.toml` inside the cloud env, using the absolute path
 3. Set `FIGMA_TOKEN` as an environment secret in the cloud env settings
 
-## Available tools (11 total)
+## Available tools
+
+Use MCP initialization instructions and `tools/list` for the current input schemas.
 
 | Tool | Description |
 |---|---|
-| **`compare_design`** | Primary tool. Pixel diff between Figma design and implementation screenshot. Always start here. |
+| `compare_design` | Pixel diff between Figma design and implementation screenshot |
 | `inspect_node` | Get CSS/layout details for a Figma node (`figma_url` + optional `node_id`/`node_ids`) |
 | `compare_animation` | Compare a time-aligned sequence of frames to verify motion, not just one instant |
 | `verify_fix` | Re-run comparison after a CSS fix to confirm improvement |
 | `list_figma_frames` | List frames in a Figma file with dimensions |
 | `list_projects` | List saved projects |
+| `create_project` | Create a project with its comparison target and settings |
+| `delete_project` | Delete a project and its saved settings |
 | `get_design_tokens` | Extract design tokens (colors, typography) from a Figma file |
 | `generate_diff_report` | Generate a structured diff report from a comparison result |
 | `set_crop_region` | Save a crop region to focus comparison on a sub-area |
 | `get_crop_region` | Retrieve saved crop region |
 | `set_ignore_regions` | Save regions to exclude from diff (e.g. maps, ads) |
 | `get_ignore_regions` | Retrieve saved ignore regions |
+| `delete_ignore_region` | Delete one saved ignore region by ID |
+| `set_figma_token` | Store a Figma Personal Access Token in the shared credential store |
+| `report_issue` | Submit feedback to GitHub; confirm the destination and content before submitting |
 
 ## Minimal workflow
 
-```
-1. compare_design(design_source="https://figma.com/design/FILE?node-id=1-23", screenshot="/path/to/impl.png")
-   → status: "PASS" (done) or "FAIL" (continue)
+1. Call `list_projects` and use the intended saved target. For a new target, use
+   `list_figma_frames` and `create_project`; do not guess a frame or credential.
+2. Call `compare_design` with the design source and a readable screenshot or capture
+   source. Inspect the original images, comparison conditions and diff regions.
+3. Use `inspect_node` and `get_design_tokens` to investigate the relevant node before
+   editing the implementation. Keep the same `campaign_id` for the same task.
+4. Re-capture and use `verify_fix` with the previous comparison to check the claimed
+   improvement and side effects. Retrieve the full result with `generate_diff_report`.
+5. Stop when `loopGuard.stop` is true and report its reason. Missing stop information
+   or `UNCERTAIN` requires investigation. Neither `PASS` nor a high match rate alone
+   proves that the implementation is correct.
 
-2. inspect_node(figma_url="https://figma.com/design/FILE?node-id=1-23", node_id="1:23")
-   → CSS suggestions for diff regions
+The [root workflow](../../README.md#scenario-b-ai-agent-via-mcp-server) includes
+schema-checked examples and explains viewport, pixel ratio and coordinate origin.
 
-3. Fix the CSS in your implementation
+### Project storage
 
-4. compare_design(...)  ← repeat until status "PASS"
-```
+Desktop and MCP resolve saved projects and ignore regions in the same order:
+`FIGDIFF_PROJECTS_DIR`, then the `projects` directory under `FIGDIFF_HOME`, then
+the `projects` directory under the current user's `.figdiff` home directory.
+Set the same environment values for both processes when sharing settings. Blank
+values are ignored; relative values resolve against each process's working directory,
+so use absolute paths when the two processes start in different directories.
 
 ## Arrow-function rule
 

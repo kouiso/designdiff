@@ -36,6 +36,24 @@ const normalizationReport = (overrides?: Partial<NormalizationReport>): Normaliz
 const CONFIDENCE_NORMALIZATION_FOR_TEST = 0.8;
 
 describe("diagnoseComparison", () => {
+  it("同じ画素でも申告された表示領域差を撮影条件の問題として優先する", () => {
+    const message = "表示領域の申告が一致しません。撮影条件を確認してください。";
+    const result = diagnoseComparison({
+      matchRate: 100,
+      regionScores: [region({})],
+      preflightWarnings: [
+        {
+          code: "comparison_conditions_mismatch",
+          severity: "critical",
+          message,
+        },
+      ],
+    });
+    expect(result.verdict).toBe("likely_misconfig");
+    expect(result.rankedCauses[0]).toMatchObject({ code: "comparison_conditions", message });
+    expect(result.headline).toContain(message);
+  });
+
   it("一致率が高ければ clean", () => {
     const result = diagnoseComparison({
       matchRate: 99.5,

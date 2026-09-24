@@ -98,6 +98,33 @@ describe("ProjectView", () => {
     expect(screen.getByText("Add a page to start")).toBeInTheDocument();
   });
 
+  it("設計ソースの登録だけでは確認中にしない", () => {
+    useProjectListStore.setState({
+      currentProject: {
+        ...BASE_PROJECT,
+        pages: [
+          {
+            id: "ready",
+            name: "Ready",
+            path: "/",
+            designSources: [
+              {
+                type: "local_image",
+                id: "image",
+                label: "Reference",
+                filePath: "/tmp/reference.png",
+              },
+            ],
+          },
+        ],
+      },
+      selectedPageId: "ready",
+    });
+    render(<ProjectView onNavigate={vi.fn()} />);
+    expect(screen.queryByText("確認中")).not.toBeInTheDocument();
+    expect(screen.getAllByText("未実行").length).toBeGreaterThan(0);
+  });
+
   it("ページ一覧が表示される", () => {
     useProjectListStore.setState({
       currentProject: {
@@ -112,6 +139,10 @@ describe("ProjectView", () => {
     render(<ProjectView onNavigate={vi.fn()} />);
     expect(screen.getByText("/home")).toBeInTheDocument();
     expect(screen.getByText("/about")).toBeInTheDocument();
+    expect(screen.getAllByRole("img", { name: "未実行" })).toHaveLength(3);
+    for (const score of screen.getAllByTestId("score-ring-value")) {
+      expect(score).toHaveTextContent("—");
+    }
   });
 
   it("選択中ページのデザインソースが表示される", () => {

@@ -4,9 +4,33 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   resolve: {
-    alias: {
-      "@figdiff/shared": path.resolve(import.meta.dirname, "../../package/shared/src/index.ts"),
-    },
+    alias: [
+      {
+        find: "@figdiff/shared/node/ignore-region-store",
+        replacement: path.resolve(
+          import.meta.dirname,
+          "../../package/shared/src/node/ignore-region-store.ts",
+        ),
+      },
+      {
+        find: "@figdiff/shared/node/github-service",
+        replacement: path.resolve(
+          import.meta.dirname,
+          "../../package/shared/src/node/github-service.ts",
+        ),
+      },
+      {
+        find: "@figdiff/shared/node/public-issue-guard",
+        replacement: path.resolve(
+          import.meta.dirname,
+          "../../package/shared/src/node/public-issue-guard.ts",
+        ),
+      },
+      {
+        find: /^@figdiff\/shared$/,
+        replacement: path.resolve(import.meta.dirname, "../../package/shared/src/index.ts"),
+      },
+    ],
   },
   test: {
     globals: true,

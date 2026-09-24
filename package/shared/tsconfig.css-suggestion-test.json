@@ -8,6 +8,8 @@
     "src/css-suggestion.ts",
     "src/css-suggestion.test.ts",
     "src/schema.ts",
+    "src/verification-context.ts",
+    "src/comparison-conditions.ts",
     "src/type.ts"
   ],
   "exclude": ["dist", "node_modules"]

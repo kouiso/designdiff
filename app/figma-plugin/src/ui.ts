@@ -7,6 +7,8 @@
  * - Inspect: View Dev Mode-like properties of selected node
  */
 
+import { comparePixels } from "@figdiff/shared";
+
 // --- HTML Escaping ---
 export function escapeHtml(text: string): string {
   return text
@@ -64,11 +66,13 @@ interface SelectionMessage {
 }
 interface ExportResultMessage {
   type: "export-result";
+  requestId?: string;
   base64?: string;
   error?: string;
 }
 interface InspectResultMessage {
   type: "inspect-result";
+  requestId?: string;
   inspection?: InspectionResult;
   error?: string;
 }
@@ -97,6 +101,63 @@ const PLUGIN_RESPONSE_TYPES = new Set([
   "init",
 ]);
 
+export const PLUGIN_REQUEST_TIMEOUT_MS = 10_000;
+
+type RequestKind = "export-frame" | "inspect-node";
+
+let requestSequence = 0;
+let pendingRequest: {
+  id: string;
+  kind: RequestKind;
+  timeout: ReturnType<typeof setTimeout>;
+} | null = null;
+
+function clearPendingRequest(): void {
+  if (!pendingRequest) return;
+  clearTimeout(pendingRequest.timeout);
+  pendingRequest = null;
+}
+
+export function resetRequestTracking(): void {
+  clearPendingRequest();
+  requestSequence = 0;
+}
+
+function startPluginRequest(kind: RequestKind, nodeId: string): void {
+  clearPendingRequest();
+  const requestId = `${kind}-${++requestSequence}`;
+
+  if (kind === "export-frame") {
+    state.designBase64 = null;
+    state.comparisonResult = null;
+  } else {
+    state.inspectionResult = null;
+  }
+
+  state.loading = true;
+  pendingRequest = {
+    id: requestId,
+    kind,
+    timeout: setTimeout(() => {
+      if (pendingRequest?.id !== requestId) return;
+      pendingRequest = null;
+      state.loading = false;
+      const action = kind === "export-frame" ? "frame export" : "node inspection";
+      alert(`The ${action} timed out. Check the selection and try again.`);
+      render();
+    }, PLUGIN_REQUEST_TIMEOUT_MS),
+  };
+  render();
+  parent.postMessage({ pluginMessage: { type: kind, nodeId, requestId } }, "*");
+}
+
+function acceptsResponse(kind: RequestKind, requestId: string | undefined): boolean {
+  if (!pendingRequest) return requestId === undefined;
+  if (pendingRequest.kind !== kind || pendingRequest.id !== requestId) return false;
+  clearPendingRequest();
+  return true;
+}
+
 export function isPluginResponse(msg: unknown): msg is PluginResponse {
   if (typeof msg !== "object" || msg === null || !("type" in msg)) return false;
   const obj = msg as Record<string, unknown>;
@@ -115,6 +176,7 @@ export function handlePluginMessage(raw: unknown): void {
       break;
 
     case "export-result":
+      if (!acceptsResponse("export-frame", msg.requestId)) return;
       if (msg.error) {
         alert(msg.error);
         state.loading = false;
@@ -125,16 +187,22 @@ export function handlePluginMessage(raw: unknown): void {
         } else {
           state.loading = false;
         }
+      } else {
+        alert("Frame export returned no image. Check the selection and try again.");
+        state.loading = false;
       }
       render();
       break;
 
     case "inspect-result":
+      if (!acceptsResponse("inspect-node", msg.requestId)) return;
       state.loading = false;
       if (msg.error) {
         alert(msg.error);
       } else if (msg.inspection) {
         state.inspectionResult = msg.inspection;
+      } else {
+        alert("Node inspection returned no result. Check the selection and try again.");
       }
       render();
       break;
@@ -193,15 +261,16 @@ export async function runComparison(): Promise<void> {
     ssCtx.drawImage(screenshotImg, 0, 0, width, height);
     const ssData = ssCtx.getImageData(0, 0, width, height);
 
-    // Run pixelmatch (inline implementation for iframe)
+    // 全実行面と同じ pixelmatch を使う。独自の RGB 距離比較では
+    // 同じ画像でも desktop / MCP と差分が一致しないため (X08)。
     const diffData = new ImageData(width, height);
-    const diffPixelCount = pixelmatchSimple(
+    const diffPixelCount = comparePixels(
       designData.data,
       ssData.data,
       diffData.data,
       width,
       height,
-      0.1,
+      { threshold: 0.1 },
     );
 
     const totalPixelCount = width * height;
@@ -235,7 +304,12 @@ function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => resolve(img);
-    img.onerror = reject;
+    img.onerror = () =>
+      reject(
+        new Error(
+          "Could not decode the image. Re-export the design or choose a valid screenshot, then try again.",
+        ),
+      );
     img.src = src;
   });
 }
@@ -243,45 +317,6 @@ function loadImage(src: string): Promise<HTMLImageElement> {
 // 画像デコードの差し替え口。jsdom は <img> のデコードを実装しておらず onload が発火しないため、
 // テストからだけ load を差し替える。実行時は既定の loadImage がそのまま使われる。
 export const imageLoader = { load: loadImage };
-
-/**
- * Simple pixelmatch implementation for iframe (no npm dependency)
- * Compares two RGBA pixel arrays and highlights differences in red
- */
-export function pixelmatchSimple(
-  img1: Uint8ClampedArray,
-  img2: Uint8ClampedArray,
-  output: Uint8ClampedArray,
-  _width: number,
-  _height: number,
-  threshold: number,
-): number {
-  let diffCount = 0;
-  const maxDelta = 35215 * threshold * threshold; // 255*255*3 * threshold^2
-
-  for (let i = 0; i < img1.length; i += 4) {
-    const dr = img1[i] - img2[i];
-    const dg = img1[i + 1] - img2[i + 1];
-    const db = img1[i + 2] - img2[i + 2];
-    const delta = dr * dr + dg * dg + db * db;
-
-    if (delta > maxDelta) {
-      output[i] = 255; // R
-      output[i + 1] = 0; // G
-      output[i + 2] = 0; // B
-      output[i + 3] = 200; // A
-      diffCount++;
-    } else {
-      // Semi-transparent original
-      output[i] = img2[i];
-      output[i + 1] = img2[i + 1];
-      output[i + 2] = img2[i + 2];
-      output[i + 3] = 60;
-    }
-  }
-
-  return diffCount;
-}
 
 // --- File Input Handler ---
 
@@ -365,10 +400,7 @@ export function renderCompareTab(app: HTMLElement): void {
   if (state.screenshotBase64) {
     const btn = el("button", "btn", "Compare");
     btn.addEventListener("click", () => {
-      state.loading = true;
-      render();
-      // Request frame export from plugin code
-      parent.postMessage({ pluginMessage: { type: "export-frame", nodeId: selected.id } }, "*");
+      startPluginRequest("export-frame", selected.id);
     });
     app.appendChild(btn);
   }
@@ -413,9 +445,7 @@ export function renderInspectTab(app: HTMLElement): void {
 
   const btn = el("button", "btn", `Inspect: ${selected.name}`);
   btn.addEventListener("click", () => {
-    state.loading = true;
-    render();
-    parent.postMessage({ pluginMessage: { type: "inspect-node", nodeId: selected.id } }, "*");
+    startPluginRequest("inspect-node", selected.id);
   });
   app.appendChild(btn);
 
@@ -482,9 +512,7 @@ export function renderChildrenSection(
     childEl.innerHTML = `<div class="name">${escapeHtml(child.name)}</div><div class="detail">${escapeHtml(child.type)} — ${child.width}x${child.height}</div>`;
     childEl.style.cursor = "pointer";
     childEl.addEventListener("click", () => {
-      parent.postMessage({ pluginMessage: { type: "inspect-node", nodeId: child.id } }, "*");
-      state.loading = true;
-      render();
+      startPluginRequest("inspect-node", child.id);
     });
     section.appendChild(childEl);
   }

@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import {
+  extractDesignTokens,
   FigmaClient,
   FigmaTokenSchema,
   FrameSchema,
@@ -113,6 +114,11 @@ const webFigmaAdapter: FigmaAdapter = {
     const node = await client.getNode(fileKey, nodeId);
     const inspection = transformNode(node);
     return NodeInspectionSchema.parse(inspection);
+  },
+  getDesignTokens: async (fileKey, nodeId, depth = 2) => {
+    const client = createClient();
+    const node = await client.getNode(fileKey, nodeId, depth);
+    return extractDesignTokens(node, depth);
   },
 };
 
@@ -228,6 +234,7 @@ export const webAdapter: PlatformAdapter = {
   file: webFileAdapter,
   project: webProjectAdapter,
   oauth: webOAuthAdapter,
+  ignoreRegion: null,
 };
 
 export const webCapabilities: PlatformCapabilities = {

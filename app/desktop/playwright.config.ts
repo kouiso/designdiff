@@ -12,7 +12,7 @@ export default defineConfig({
   webServer: {
     command: "pnpm exec vite --config vite.web.config.ts --port 1420",
     port: 1420,
-    reuseExistingServer: true,
+    reuseExistingServer: false,
     timeout: 30000,
   },
   projects: [

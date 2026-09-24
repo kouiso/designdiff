@@ -18,6 +18,7 @@ const FigmaNodeSchema: z.ZodType<FigmaNode> = z.lazy(() =>
     name: z.string(),
     type: z.string(),
     visible: z.boolean().optional(),
+    rotation: z.number().finite().optional(),
     children: z.array(FigmaNodeSchema).default([]),
     absoluteBoundingBox: z
       .object({ x: z.number(), y: z.number(), width: z.number(), height: z.number() })
@@ -109,6 +110,7 @@ const FigmaImagesResponseSchema = z.object({
 });
 
 const FigmaNodesResponseSchema = z.object({
+  version: z.string().optional(),
   nodes: z.record(z.string(), z.object({ document: FigmaNodeSchema }).nullable()),
 });
 
@@ -122,6 +124,8 @@ export interface FigmaNode {
   name: string;
   type: string;
   visible?: boolean;
+  rotation?: number;
+  sourceVersion?: string;
   children: FigmaNode[];
   absoluteBoundingBox?: BoundingBox | null;
   absoluteRenderBounds?: BoundingBox | null;
@@ -233,8 +237,17 @@ const API_TIMEOUT_MS = 30_000;
 const IMAGE_DOWNLOAD_TIMEOUT_MS = 60_000;
 const ABSOLUTE_BOUNDS_CACHE_SUFFIX = "__figdiff_absolute_bounds_v1";
 
-const getAbsoluteBoundsCacheNodeId = (nodeId: string): string =>
-  `${nodeId}${ABSOLUTE_BOUNDS_CACHE_SUFFIX}`;
+export interface FigmaImageExportOptions {
+  contentsOnly?: boolean;
+  useAbsoluteBounds?: boolean;
+}
+
+const getExportCacheNodeId = (nodeId: string, options: FigmaImageExportOptions): string => {
+  const contentsOnly = options.contentsOnly ?? true;
+  const absoluteBounds = options.useAbsoluteBounds ?? true;
+  if (contentsOnly && absoluteBounds) return `${nodeId}${ABSOLUTE_BOUNDS_CACHE_SUFFIX}`;
+  return `${nodeId}__figdiff_export_v2_c${Number(contentsOnly)}_a${Number(absoluteBounds)}`;
+};
 
 export type FigmaAuthMode = "pat" | "oauth";
 
@@ -259,9 +272,16 @@ export class FigmaClient {
   }
 
   /** 一時画像URLを取得（約24時間で失効） */
-  async getImageUrl(fileKey: string, nodeId: string, scale = 2, version?: string): Promise<string> {
+  async getImageUrl(
+    fileKey: string,
+    nodeId: string,
+    scale = 2,
+    version?: string,
+    options: FigmaImageExportOptions = {},
+  ): Promise<string> {
     const versionQuery = version === undefined ? "" : `&version=${encodeURIComponent(version)}`;
-    const url = `${FIGMA_API_BASE}/images/${fileKey}?ids=${nodeId}&format=png&scale=${scale}&use_absolute_bounds=true${versionQuery}`;
+    const contentsQuery = options.contentsOnly === false ? "&contents_only=false" : "";
+    const url = `${FIGMA_API_BASE}/images/${fileKey}?ids=${nodeId}&format=png&scale=${scale}&use_absolute_bounds=${options.useAbsoluteBounds ?? true}${contentsQuery}${versionQuery}`;
     const json = await this.fetchApi(url);
     const response = FigmaImagesResponseSchema.parse(json);
 
@@ -273,10 +293,16 @@ export class FigmaClient {
     return imageUrl;
   }
 
-  async getNode(fileKey: string, nodeId: string, depth?: number): Promise<FigmaNode> {
+  async getNode(
+    fileKey: string,
+    nodeId: string,
+    depth?: number,
+    version?: string,
+  ): Promise<FigmaNode> {
     const normalizedNodeId = normalizeNodeId(nodeId);
     const depthQuery = depth === undefined ? "" : `&depth=${depth}`;
-    const url = `${FIGMA_API_BASE}/files/${fileKey}/nodes?ids=${normalizedNodeId}${depthQuery}`;
+    const versionQuery = version === undefined ? "" : `&version=${encodeURIComponent(version)}`;
+    const url = `${FIGMA_API_BASE}/files/${fileKey}/nodes?ids=${normalizedNodeId}${depthQuery}${versionQuery}`;
     const json = await this.fetchApi(url);
     const response = FigmaNodesResponseSchema.parse(json);
 
@@ -287,7 +313,9 @@ export class FigmaClient {
       );
     }
 
-    return wrapper.document;
+    return response.version === undefined
+      ? wrapper.document
+      : { ...wrapper.document, sourceVersion: response.version };
   }
 
   async downloadImageAsBase64(
@@ -295,14 +323,15 @@ export class FigmaClient {
     nodeId: string,
     scale = 2,
     version?: string,
+    options: FigmaImageExportOptions = {},
   ): Promise<string> {
-    const cacheNodeId = getAbsoluteBoundsCacheNodeId(nodeId);
+    const cacheNodeId = getExportCacheNodeId(nodeId, options);
     const cached = await this.cache.get(fileKey, cacheNodeId, scale, version);
     if (cached) {
       return cached;
     }
 
-    const imageUrl = await this.getImageUrl(fileKey, nodeId, scale, version);
+    const imageUrl = await this.getImageUrl(fileKey, nodeId, scale, version, options);
 
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), IMAGE_DOWNLOAD_TIMEOUT_MS);
