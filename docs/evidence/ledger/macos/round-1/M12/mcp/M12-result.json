@@ -20,16 +20,16 @@
     "stdio-m12-verification:M12_create": {
       "isError": false,
       "output": {
-        "issueUrl": "https://github.com/kouiso/designdiff/issues/182",
-        "issueNumber": 182,
+        "issueUrl": "https://github.com/kouiso/designdiff/issues/191",
+        "issueNumber": 191,
         "deduped": false,
         "maskedCount": 2
       },
-      "text": "issue #182 を起票しました: https://github.com/kouiso/designdiff/issues/182 (2件の機微情報をマスク済み)"
+      "text": "issue #191 を起票しました: https://github.com/kouiso/designdiff/issues/191 (2件の機微情報をマスク済み)"
     },
     "stdio-m12-verification:M12_remote": {
-      "number": 182,
-      "title": "[usability] M12 campaign verification 2026-09-20T13-40-05-705Z",
+      "number": 191,
+      "title": "[usability] M12 campaign verification 2026-09-24T13-08-13-831Z",
       "state": "open",
       "labels": [
         "mcp-feedback",
@@ -43,12 +43,12 @@
     "stdio-m12-verification:M12_dedup": {
       "isError": false,
       "output": {
-        "issueUrl": "https://github.com/kouiso/designdiff/issues/182",
-        "issueNumber": 182,
+        "issueUrl": "https://github.com/kouiso/designdiff/issues/191",
+        "issueNumber": 191,
         "deduped": true,
         "maskedCount": 0
       },
-      "text": "既存 issue に重複: #182 https://github.com/kouiso/designdiff/issues/182"
+      "text": "既存 issue に重複: #191 https://github.com/kouiso/designdiff/issues/191"
     }
   }
 }

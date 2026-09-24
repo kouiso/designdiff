@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-20T13:39:30.695Z",
+  "generatedAt": "2026-09-24T13:07:38.942Z",
   "driver": "app/mcp-server/script/stdio-campaign-verification.mjs",
   "product": {
     "transport": "mcp sdk client + stdio",
@@ -13,7 +13,7 @@
     "M02_project_lifecycle": {
       "expected": "create→list→corrupt skipped→delete→absent",
       "actual": {
-        "projectId": "1789911556369-9bd884ec",
+        "projectId": "1790255246525-c39b768f",
         "deleted": true
       },
       "status": "PASS"
@@ -139,7 +139,7 @@
       "actual": {
         "onePx": {
           "isError": false,
-          "text": "{\n  \"status\": \"UNCERTAIN\",\n  \"comparisonId\": \"cmp-6661624b-4352-4f2d-b666-ced1176aabc3\",\n  \"matchRate\": 100,\n  \"diffPixelCount\": 0,\n  \"totalPixelCount\": 1,\n  \"remainingIssues\": 0,\n  \"diffRegions\": [],",
+          "text": "{\n  \"status\": \"UNCERTAIN\",\n  \"comparisonId\": \"cmp-5d261c6a-54fb-44c7-a0c2-94268226f35c\",\n  \"matchRate\": 100,\n  \"diffPixelCount\": 0,\n  \"totalPixelCount\": 1,\n  \"remainingIssues\": 0,\n  \"diffRegions\": [],",
           "status": "UNCERTAIN"
         },
         "corrupt": {

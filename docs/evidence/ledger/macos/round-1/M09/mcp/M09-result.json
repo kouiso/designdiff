@@ -12,29 +12,29 @@
   ],
   "actual": {
     "stdio-campaign-verification2:M09_report_old_id": {
-      "oldId": "cmp-b6ef9668-3dbf-47e6-be4b-2c9977685b06",
+      "oldId": "cmp-a230468b-071e-4a27-93c1-f62378794172",
       "jsonBytes": 13422,
       "mdBytes": 3247,
       "restarted": true
     },
     "stdio-issue-verification:M09_issue109": {
       "retainedComparisonCount": 7,
-      "oldestId": "cmp-1e4bc4ac-de7a-449d-b9cc-3c995febe58e",
-      "reportComparisonId": "cmp-1e4bc4ac-de7a-449d-b9cc-3c995febe58e",
+      "oldestId": "cmp-1a37ba7d-bb4b-4183-8396-f27f85f87293",
+      "reportComparisonId": "cmp-1a37ba7d-bb4b-4183-8396-f27f85f87293",
       "reportRegionCount": 1,
       "artifacts": {
-        "jsonSha256": "195e5bc863cb7de8419cf90406134f16ebe48ece7af3bd158aa0acf867efe8a6",
+        "jsonSha256": "5e39d07009a0e4544679293bac63aa9fcea77a22d76bc6772fa7d75e10155986",
         "pngSha256": "35237f80cc533018f8a8da83931fda0fe28f5b8ccbaea89ad6d9e5217ff87320"
       },
       "durableArtifacts": [
         {
           "path": "docs/evidence/round1-macos/stdio-issue-verification/retained-oldest-report.json",
-          "canonicalJsonSha256": "5cf3832cc4b2814abd495878f931c2c4ceac5ec9aca3e4a6e8ab9fc626340e8a",
-          "formattedArtifactSha256": "9d03650c9d1863b6da6ca8e92ff096b611ab573558e917f115f55bb509fadcda",
+          "canonicalJsonSha256": "7a15b4946a1bce5cc561d78a4f50213a29735eff2f5d616613013be25e37f344",
+          "formattedArtifactSha256": "9127deb143d6c3529142238526490e8811910ab7da112e20abea53722c9e80fe",
           "publicPathRedacted": true,
           "rawProduct": {
             "path": "docs/evidence/round1-macos/stdio-issue-verification/retained-oldest-report.raw.txt",
-            "sha256": "8e2e1243347aa096d099b3766958a42549bb484580bc805a9b9731242ebbf3e7",
+            "sha256": "dfb4fa02679f6d5c3486bda8354570a42b1e3ecfa0fd4b1702c7909ca72ff8a3",
             "byteLength": 11247,
             "mediaType": "application/json",
             "representation": "exact UTF-8 MCP tool response bytes; intentionally not formatter-normalized"

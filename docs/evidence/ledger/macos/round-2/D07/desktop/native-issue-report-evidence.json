@@ -1,18 +1,19 @@
 {
   "schemaVersion": 1,
-  "startedAt": "2026-09-24T13:10:21.740Z",
-  "completedAt": "2026-09-24T13:10:25.741Z",
+  "startedAt": "2026-09-20T13:52:41.526Z",
+  "completedAt": "2026-09-20T13:52:46.181Z",
   "revision": "4e9145e5e051d4efe78a922723f7b3245005a05e",
   "dirtyState": [
     "A  docs/evidence/runs-macos-r1.json",
     " M docs/evidence/runs-macos-r2.json",
     "?? docs/evidence/round1-macos/",
+    "?? docs/evidence/round2-macos/",
     "?? docs/evidence/runs-macos-r1.attempts.json",
     "?? docs/evidence/runs-macos-r1.manifest.json",
     "?? docs/evidence/runs-macos-r2.attempts.json",
     "?? docs/evidence/runs-macos-r2.manifest.json"
   ],
-  "command": "FIGDIFF_FIGMA_NODE_FIX_EVIDENCE=<private-evidence> xvfb-run -a node app/desktop/e2e/native-figma-node-fix.mjs",
+  "command": "FIGDIFF_ISSUE_REPORT_EVIDENCE=<evidence> xvfb-run -a node app/desktop/e2e/native-issue-report.mjs",
   "build": {
     "roots": [
       "app/desktop/dist",
@@ -1774,116 +1775,52 @@
   "buildEndSha256": "6d76943b2f40b8eab22392fbc357f55dc89317ec12c5c02f9f4484d7dd03d075",
   "buildUnchanged": true,
   "driver": {
-    "path": "app/desktop/e2e/native-figma-node-fix.mjs",
-    "sha256": "02b9fc9da50c0794f5cb2daf35ae8c6d42a4b0e6fa41b06d83b98efde456c6f9"
+    "path": "app/desktop/e2e/native-issue-report.mjs",
+    "sha256": "2831928fc378a5f9c716fa0ca7a1170ea97bbe495ede7edfc6dbf660694fb0a2"
   },
-  "mockedBoundary": {
-    "service": "Figma HTTP only",
-    "fixture": "synthetic version/root/deep descendant/PNG",
-    "requestLog": "figma-http-requests.jsonl",
-    "requests": [
-      {
-        "method": "GET",
-        "url": "https://api.figma.com/v1/files/NODEFIX123?depth=3"
-      },
-      {
-        "method": "GET",
-        "url": "https://api.figma.com/v1/images/NODEFIX123?ids=1:2&format=png&scale=2&use_absolute_bounds=true"
-      },
-      {
-        "method": "GET",
-        "url": "https://figma-fixture.invalid/initial.png"
-      },
-      {
-        "method": "GET",
-        "url": "https://api.figma.com/v1/files/NODEFIX123/nodes?ids=1:2"
-      },
-      {
-        "method": "GET",
-        "url": "https://api.figma.com/v1/files/NODEFIX123/nodes?ids=1:2&version=version-fixture-42"
-      },
-      {
-        "method": "GET",
-        "url": "https://api.figma.com/v1/images/NODEFIX123?ids=1:2&format=png&scale=2&use_absolute_bounds=true&version=version-fixture-42"
-      },
-      {
-        "method": "GET",
-        "url": "https://figma-fixture.invalid/pinned.png"
-      },
-      {
-        "method": "GET",
-        "url": "https://api.figma.com/v1/files/NODEFIX123/nodes?ids=8:8"
-      },
-      {
-        "method": "GET",
-        "url": "https://api.figma.com/v1/files/NODEFIX123/nodes?ids=8:8&version=version-fixture-42"
-      },
-      {
-        "method": "GET",
-        "url": "https://api.figma.com/v1/files/NODEFIX123/nodes?ids=1:2"
-      },
-      {
-        "method": "GET",
-        "url": "https://api.figma.com/v1/files/NODEFIX123/nodes?ids=1:2&version=version-fixture-42"
-      }
-    ],
-    "unexpectedNetwork": "rejected",
-    "realFigmaUsed": false,
-    "externalWrites": false
-  },
-  "scope": "Synthetic native Electron Figma-node fix flow through real main/preload/IPC/renderer. Independent raw pixels assert masked cropped target improvement and another 3x3 grid regression; HTTP requests assert version-pinned node/export, scale, and root containment rejection.",
+  "scope": "Synthetic native Electron issue-report prepare/review/edit/discard and credential-failure flow. GitHub search is a recorded GET-only mock; submission is forbidden and untested.",
   "results": {
-    "D05": {
+    "D07": {
       "status": "PASS",
-      "expected": "ノード詳細・トークン表示へ画面から到達でき、選択した対象だけに適用する",
-      "actual": "版固定・deep ancestry・scale2 exportを実IPC経由で検証し、選択nodeだけが詳細対象になることをHTTP要求と画素で確認"
-    },
-    "D06": {
-      "status": "PASS",
-      "expected": "修正前後の違いを説明できる",
-      "actual": "mask適用対象の改善(raw差分800→0)と別grid悪化(0→1600)を独立raw画素で計測し、対象IMPROVEDと全体FAILの併存を確認"
+      "expected": "報告対象・内容を確認して送れる",
+      "actual": "prepare→確認→編集/破棄を実IPCで検証。POST投稿0件・認証エラー復旧を確認。実外部投稿は未検証で範囲外"
     }
   },
   "artifacts": [
     {
-      "path": "figma-http-requests.jsonl",
-      "size": 1042,
-      "sha256": "646793d16d97a6c3236b185339a5abe78b03218c8bbd47f0bfd86f1febeb1471"
+      "path": "credential-failure-visible.png",
+      "size": 141827,
+      "sha256": "b8372e18d96ae5f2c592556ffedd541ba71c2619fabe66e5a3b686f6411f20b0"
     },
     {
-      "path": "figma-version-pinned-design.png",
-      "size": 748,
-      "sha256": "9a034bbc98c3362b69c1fb3235eb84513c41093140b5557b995593a09d1e3930"
+      "path": "fixture-input.json",
+      "size": 456,
+      "sha256": "7e9ef6523e94d4684050307277867661c5f11c85632b05114c2b72da8c1ffc21"
     },
     {
-      "path": "implementation-after.png",
-      "size": 615,
-      "sha256": "f4321966d68a1706c8299a6b3b61a98294f93f10b6f91eaee01afdd083caf117"
+      "path": "invalid-credential-ipc.jsonl",
+      "size": 320,
+      "sha256": "0775433cb7a3a93fb051793549f05ea99e47353147016b4438c462242e370a52"
     },
     {
-      "path": "implementation-before.png",
-      "size": 741,
-      "sha256": "2937ad6a6ec0386d1e5e961b79863e39b0f7c42bc3b7cdcda7c9f9a45e21a012"
+      "path": "native-issue-report.json",
+      "size": 2712,
+      "sha256": "67de852383ad5496026f1faa2d3d5c6b73858d0edc5ee0e0d11ea538afc8bf50"
     },
     {
-      "path": "native-figma-node-fix.json",
-      "size": 2112,
-      "sha256": "728b39349587a63618de7b2fa6713482518da20899a109cd978c9e463ad5b2a6"
+      "path": "reviewed-readonly-draft.png",
+      "size": 130381,
+      "sha256": "c1232b5b23c0d44202b9f27e341148e861d72a1d81cbf33e7e2cbafd2756c294"
     },
     {
-      "path": "native-ipc.jsonl",
-      "size": 4147,
-      "sha256": "dcecc58ac90d3d2b2cefcf2aaec6f8481b5056a78a23c42745955a15454b2f38"
+      "path": "valid-github-read-mock.jsonl",
+      "size": 402,
+      "sha256": "70e9e1c42e2dc3536018dc6116bc3d51eb6127f46d6cf22aad302e8f53d867f3"
     },
     {
-      "path": "target-improved-grid-regressed.png",
-      "size": 112184,
-      "sha256": "1ebc5588ddcd980aa583a6c4ea9843b784e77d3137c9559899447db6af2558dc"
-    },
-    {
-      "path": "version-pinned-masked-cropped-before.png",
-      "size": 115959,
-      "sha256": "0f5d6b5bef326037587358ba547e8e932f8bcb2b0e1d41447690f9c8194c5dd2"
+      "path": "valid-ipc.jsonl",
+      "size": 1384,
+      "sha256": "95f43d412aed2e5610a33818f33631822644ab27e4bf58287d9cc75d2e2ff0ab"
     }
   ]
 }

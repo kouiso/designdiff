@@ -12,7 +12,7 @@
     "stdio-campaign-verification:C12_edge_inputs": {
       "onePx": {
         "isError": false,
-        "text": "{\n  \"status\": \"UNCERTAIN\",\n  \"comparisonId\": \"cmp-6661624b-4352-4f2d-b666-ced1176aabc3\",\n  \"matchRate\": 100,\n  \"diffPixelCount\": 0,\n  \"totalPixelCount\": 1,\n  \"remainingIssues\": 0,\n  \"diffRegions\": [],",
+        "text": "{\n  \"status\": \"UNCERTAIN\",\n  \"comparisonId\": \"cmp-5d261c6a-54fb-44c7-a0c2-94268226f35c\",\n  \"matchRate\": 100,\n  \"diffPixelCount\": 0,\n  \"totalPixelCount\": 1,\n  \"remainingIssues\": 0,\n  \"diffRegions\": [],",
         "status": "UNCERTAIN"
       },
       "corrupt": {

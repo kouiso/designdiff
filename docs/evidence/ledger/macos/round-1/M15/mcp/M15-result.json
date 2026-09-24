@@ -17,7 +17,7 @@
         320,
         320
       ],
-      "pageUrl": "http://127.0.0.1:64960/page.html"
+      "pageUrl": "http://127.0.0.1:64883/page.html"
     },
     "stdio-issue-verification:M15_issue59": {
       "browserObservedWidths": [
@@ -27,17 +27,17 @@
       ],
       "captures": [
         {
-          "comparisonId": "cmp-4b253589-b7e2-44c4-b2cf-5205791455c1",
+          "comparisonId": "cmp-4042b800-907e-45e6-94d3-52a484e40fd5",
           "responseWidth": 390,
           "persistedWidth": 390
         },
         {
-          "comparisonId": "cmp-cdae9517-e615-4a3d-bbec-4371424dec3e",
+          "comparisonId": "cmp-be03772b-e16c-4c4f-b973-5931daa4498e",
           "responseWidth": 390,
           "persistedWidth": 390
         },
         {
-          "comparisonId": "cmp-5299dde4-b246-4be9-a4b4-395a068dc98e",
+          "comparisonId": "cmp-47d03964-bd05-4917-b9c0-c1ad946f19cf",
           "responseWidth": 390,
           "persistedWidth": 390
         }

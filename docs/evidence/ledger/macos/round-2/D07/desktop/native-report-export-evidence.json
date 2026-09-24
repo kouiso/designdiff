@@ -1,18 +1,19 @@
 {
   "schemaVersion": 1,
-  "startedAt": "2026-09-24T13:10:21.740Z",
-  "completedAt": "2026-09-24T13:10:25.741Z",
+  "startedAt": "2026-09-20T13:52:46.441Z",
+  "completedAt": "2026-09-20T13:52:57.235Z",
   "revision": "4e9145e5e051d4efe78a922723f7b3245005a05e",
   "dirtyState": [
     "A  docs/evidence/runs-macos-r1.json",
     " M docs/evidence/runs-macos-r2.json",
     "?? docs/evidence/round1-macos/",
+    "?? docs/evidence/round2-macos/",
     "?? docs/evidence/runs-macos-r1.attempts.json",
     "?? docs/evidence/runs-macos-r1.manifest.json",
     "?? docs/evidence/runs-macos-r2.attempts.json",
     "?? docs/evidence/runs-macos-r2.manifest.json"
   ],
-  "command": "FIGDIFF_FIGMA_NODE_FIX_EVIDENCE=<private-evidence> xvfb-run -a node app/desktop/e2e/native-figma-node-fix.mjs",
+  "command": "FIGDIFF_REPORT_EVIDENCE=<evidence> xvfb-run -a node app/desktop/e2e/native-report-export.mjs",
   "build": {
     "roots": [
       "app/desktop/dist",
@@ -1774,116 +1775,107 @@
   "buildEndSha256": "6d76943b2f40b8eab22392fbc357f55dc89317ec12c5c02f9f4484d7dd03d075",
   "buildUnchanged": true,
   "driver": {
-    "path": "app/desktop/e2e/native-figma-node-fix.mjs",
-    "sha256": "02b9fc9da50c0794f5cb2daf35ae8c6d42a4b0e6fa41b06d83b98efde456c6f9"
+    "path": "app/desktop/e2e/native-report-export.mjs",
+    "sha256": "7e1aa98e000a445b2dbf64aea1634824be1304b7ebc04621387c0888d7284f86"
   },
-  "mockedBoundary": {
-    "service": "Figma HTTP only",
-    "fixture": "synthetic version/root/deep descendant/PNG",
-    "requestLog": "figma-http-requests.jsonl",
-    "requests": [
-      {
-        "method": "GET",
-        "url": "https://api.figma.com/v1/files/NODEFIX123?depth=3"
-      },
-      {
-        "method": "GET",
-        "url": "https://api.figma.com/v1/images/NODEFIX123?ids=1:2&format=png&scale=2&use_absolute_bounds=true"
-      },
-      {
-        "method": "GET",
-        "url": "https://figma-fixture.invalid/initial.png"
-      },
-      {
-        "method": "GET",
-        "url": "https://api.figma.com/v1/files/NODEFIX123/nodes?ids=1:2"
-      },
-      {
-        "method": "GET",
-        "url": "https://api.figma.com/v1/files/NODEFIX123/nodes?ids=1:2&version=version-fixture-42"
-      },
-      {
-        "method": "GET",
-        "url": "https://api.figma.com/v1/images/NODEFIX123?ids=1:2&format=png&scale=2&use_absolute_bounds=true&version=version-fixture-42"
-      },
-      {
-        "method": "GET",
-        "url": "https://figma-fixture.invalid/pinned.png"
-      },
-      {
-        "method": "GET",
-        "url": "https://api.figma.com/v1/files/NODEFIX123/nodes?ids=8:8"
-      },
-      {
-        "method": "GET",
-        "url": "https://api.figma.com/v1/files/NODEFIX123/nodes?ids=8:8&version=version-fixture-42"
-      },
-      {
-        "method": "GET",
-        "url": "https://api.figma.com/v1/files/NODEFIX123/nodes?ids=1:2"
-      },
-      {
-        "method": "GET",
-        "url": "https://api.figma.com/v1/files/NODEFIX123/nodes?ids=1:2&version=version-fixture-42"
-      }
-    ],
-    "unexpectedNetwork": "rejected",
-    "realFigmaUsed": false,
-    "externalWrites": false
-  },
-  "scope": "Synthetic native Electron Figma-node fix flow through real main/preload/IPC/renderer. Independent raw pixels assert masked cropped target improvement and another 3x3 grid regression; HTTP requests assert version-pinned node/export, scale, and root containment rejection.",
+  "scope": "Native Electron report export through real save dialogs, saved file readback and independent raw pixel difference.",
   "results": {
-    "D05": {
+    "D07": {
       "status": "PASS",
-      "expected": "ノード詳細・トークン表示へ画面から到達でき、選択した対象だけに適用する",
-      "actual": "版固定・deep ancestry・scale2 exportを実IPC経由で検証し、選択nodeだけが詳細対象になることをHTTP要求と画素で確認"
-    },
-    "D06": {
-      "status": "PASS",
-      "expected": "修正前後の違いを説明できる",
-      "actual": "mask適用対象の改善(raw差分800→0)と別grid悪化(0→1600)を独立raw画素で計測し、対象IMPROVEDと全体FAILの併存を確認"
+      "expected": "実ファイルが読め、保存内容が差分実測と一致する",
+      "actual": "実Gtk保存ダイアログからJSON/Markdownへ保存し読み戻した。原画像の独立raw差分・bboxをファイル内容へ照合。キャンセル時bytes不変も確認"
     }
   },
   "artifacts": [
     {
-      "path": "figma-http-requests.jsonl",
-      "size": 1042,
-      "sha256": "646793d16d97a6c3236b185339a5abe78b03218c8bbd47f0bfd86f1febeb1471"
+      "path": "after-input-json.png",
+      "size": 131418,
+      "sha256": "81815616399034175077746ce2c1a10268535d0969eaf0ab674f932a090c1301"
     },
     {
-      "path": "figma-version-pinned-design.png",
-      "size": 748,
-      "sha256": "9a034bbc98c3362b69c1fb3235eb84513c41093140b5557b995593a09d1e3930"
+      "path": "after-input-json.png.txt",
+      "size": 497,
+      "sha256": "7117164db118c8dd750f209cb8faa9bae3d5c03e688cada9d7d002b1b7b4edcb"
     },
     {
-      "path": "implementation-after.png",
-      "size": 615,
-      "sha256": "f4321966d68a1706c8299a6b3b61a98294f93f10b6f91eaee01afdd083caf117"
+      "path": "after-input-markdown.png",
+      "size": 131358,
+      "sha256": "b95540a623ac2d47d9a9f04e716d7a30be091df5e2b63f745a4624632cb298db"
     },
     {
-      "path": "implementation-before.png",
-      "size": 741,
-      "sha256": "2937ad6a6ec0386d1e5e961b79863e39b0f7c42bc3b7cdcda7c9f9a45e21a012"
+      "path": "after-input-markdown.png.txt",
+      "size": 497,
+      "sha256": "7117164db118c8dd750f209cb8faa9bae3d5c03e688cada9d7d002b1b7b4edcb"
     },
     {
-      "path": "native-figma-node-fix.json",
-      "size": 2112,
-      "sha256": "728b39349587a63618de7b2fa6713482518da20899a109cd978c9e463ad5b2a6"
+      "path": "canceled.png",
+      "size": 92829,
+      "sha256": "ef681dc8a9aec1e5609f335bc9c2b0287fecfc5190c59a8476ae1fd9e7f82590"
     },
     {
-      "path": "native-ipc.jsonl",
-      "size": 4147,
-      "sha256": "dcecc58ac90d3d2b2cefcf2aaec6f8481b5056a78a23c42745955a15454b2f38"
+      "path": "evidence.json",
+      "size": 711,
+      "sha256": "bc245c9043af27df45e60bec45cd8254867d1391266230aa93ecf1ef5e1d86c7"
     },
     {
-      "path": "target-improved-grid-regressed.png",
-      "size": 112184,
-      "sha256": "1ebc5588ddcd980aa583a6c4ea9843b784e77d3137c9559899447db6af2558dc"
+      "path": "fix-before.png",
+      "size": 305,
+      "sha256": "4f4f1d01aa2c8ef1ae363f1f9eb2ac443a5e99e78b63d491c0bbb347701ce284"
     },
     {
-      "path": "version-pinned-masked-cropped-before.png",
-      "size": 115959,
-      "sha256": "0f5d6b5bef326037587358ba547e8e932f8bcb2b0e1d41447690f9c8194c5dd2"
+      "path": "fix-design.png",
+      "size": 308,
+      "sha256": "354fc272c706174f99284137f3954fe2ac68feac9c7c12b8e7981137ead62a3e"
+    },
+    {
+      "path": "native-dialog-json.png",
+      "size": 17707,
+      "sha256": "0b648bc06d798e0706d183f7a08cbf46264f46356c86c0fa3fc7551543d0c1f5"
+    },
+    {
+      "path": "native-dialog-json.png.txt",
+      "size": 493,
+      "sha256": "c8546cfc374f7049118470b3f33cd717138bc024d661eb282e35218b867c192d"
+    },
+    {
+      "path": "native-dialog-markdown.png",
+      "size": 17500,
+      "sha256": "236484baafa2d10e7878275ce403444aafc9257460659ef6d05d5df6ea20811c"
+    },
+    {
+      "path": "native-dialog-markdown.png.txt",
+      "size": 493,
+      "sha256": "7c25dfda365e1192e88692cc6f4c0cc4259f5586d4d127814bda39d5c18e1366"
+    },
+    {
+      "path": "native-window-json.txt",
+      "size": 300,
+      "sha256": "5d9f0e11945c425d2eff0bd0b6f3412b4c56573a1b07964b5b7ed73f9ddd2800"
+    },
+    {
+      "path": "native-window-markdown.txt",
+      "size": 252,
+      "sha256": "d024dffe0570d2c4891a624a69cb01172bd8545a3fc3e549a9fbcd0c99817132"
+    },
+    {
+      "path": "saved-json.png",
+      "size": 97474,
+      "sha256": "6485d13114bdabef73e7c275d0f0df624a819ece32ebd76deced0c991bc7ac88"
+    },
+    {
+      "path": "saved-markdown.png",
+      "size": 97429,
+      "sha256": "5a6b7938663980df5304c1aceb04db9397cdd5a04ff9aec275e25e5d66784654"
+    },
+    {
+      "path": "saved-report.json",
+      "size": 3939,
+      "sha256": "d1c9a2d29ab57b70a0409421ca83be07cf81c26becdde457428f7ed7ff7e7685"
+    },
+    {
+      "path": "saved-report.md",
+      "size": 945,
+      "sha256": "1146a9c726f950dbeeb27dabbb9bad7ac2f4da219d9a8110763827161112886a"
     }
   ]
 }

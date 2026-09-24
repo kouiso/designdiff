@@ -170,7 +170,7 @@
       "status": "PASS",
       "expected": "old comparison_id resolvable after 6+ recompares and process restart",
       "actual": {
-        "oldId": "cmp-b6ef9668-3dbf-47e6-be4b-2c9977685b06",
+        "oldId": "cmp-a230468b-071e-4a27-93c1-f62378794172",
         "jsonBytes": 13422,
         "mdBytes": 3247,
         "restarted": true
@@ -260,14 +260,14 @@
       "expected": "3 captures at capture_width=320 all produce 320-wide screenshots",
       "actual": {
         "widths": [320, 320, 320],
-        "pageUrl": "http://127.0.0.1:64960/page.html"
+        "pageUrl": "http://127.0.0.1:64883/page.html"
       }
     },
     "X09_mcp_desktop_interop": {
       "status": "PASS",
       "expected": "MCP-written project readable as desktop shape; desktop-seeded project readable by MCP",
       "actual": {
-        "mcpCreatedId": "1789911597815-cca2a783",
+        "mcpCreatedId": "1790255284406-e068fb1e",
         "desktopSeedListed": true,
         "cropOnDesktopProject": {
           "success": true,
@@ -279,7 +279,7 @@
               "width": 100,
               "height": 80
             },
-            "updatedAt": "2026-09-20T13:39:57.824Z",
+            "updatedAt": "2026-09-24T13:08:04.418Z",
             "capturedWidth": 390,
             "capturedHeight": 844
           }
