@@ -702,10 +702,11 @@ export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
   );
   const { x: dx, y: dy } = alignment.translation;
 
-  // diffRegions は補正前 (resolveAlignment 前) の pixelmatch 座標系。補正が
-  // 適用されると、alignedDesignPixels は境界からのはみ出し分を透明/RGB0で
-  // 埋めるため (shiftPixels)、境界付近の元クラスタだけがその塗り分を拾って
-  // 「許容していたはずの小さなずれ」を誤って critical 差分に化ける。
+  // diffRegions は補正後 (alignedDesignPixels 基準) の pixelmatch 座標系。
+  // 補正が適用されると、alignedDesignPixels は境界からのはみ出し分を透明/RGB0で
+  // 埋めるため (shiftPixels)、その空き縁と撮影側コンテンツとの差がずれの
+  // 「影」として差分クラスタに残る。この影は全体の translation_offset 課題
+  // として既に報告されるため、局所採点では二重計上しないよう境界帯を除く。
   // 補正がかかった回に diffRegions を丸ごと無効化すると、シフトと局所差分が
   // 同時に起きたケースで #56 の誤 PASS がそのまま復活するため、はみ出しの
   // 影響を受ける境界帯のクラスタだけを除外し、それ以外はそのまま採点する。
