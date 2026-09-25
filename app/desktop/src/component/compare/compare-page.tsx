@@ -2,12 +2,15 @@ import { useEffect, useMemo, useState } from "react";
 
 import {
   Check,
+  Code2,
   FileText,
   Film,
   ImageIcon,
   Layers,
   MessageSquareWarning,
+  Minimize2,
   MousePointer2,
+  Move,
   ScanSearch,
   ShieldOff,
   Split,
@@ -50,10 +53,16 @@ interface FlowMode {
   icon: LucideIcon;
 }
 
+// canvas が実装する7モードを全て公開する。到達不能な表示モードは
+// ユーザーが差分の確認手段を持たない死角になるため、省略しない。
 const FLOW_VIEW_MODES: FlowMode[] = [
-  { id: "pixel_diff", label: "DIFF", icon: Zap },
+  { id: "design_only", label: "DESIGN", icon: ImageIcon },
+  { id: "implementation", label: "IMPL", icon: Code2 },
   { id: "transparent_overlay", label: "OVERLAY", icon: Layers },
   { id: "split_screen", label: "SIDE-BY-SIDE", icon: Split },
+  { id: "blended_diff", label: "BLEND", icon: Minimize2 },
+  { id: "draggable_overlay", label: "DRAG", icon: Move },
+  { id: "pixel_diff", label: "DIFF", icon: Zap },
 ];
 
 function scoreColor(score: number | null): string {
