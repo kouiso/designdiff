@@ -20,7 +20,7 @@
         ]
       },
       "project": {
-        "id": "1790324239246-xoo3hgi",
+        "id": "1790325553897-0p5xffk",
         "persisted": true
       },
       "sourceCompare": {
@@ -66,7 +66,7 @@
     },
     "D10": {
       "keyboardSubmit": "frame list appeared via hero input (node 7:30)",
-      "japaneseProject": "1790324262908-3r2j8lo",
+      "japaneseProject": "1790325577820-vbrepad",
       "narrowViewport": {
         "width": 430,
         "view": "compare",
@@ -217,13 +217,13 @@
   },
   "pageErrors": [],
   "meta": {
-    "runId": "dcase-1790324233340-19380",
-    "startedAt": "2026-09-25T08:17:13.340Z",
+    "runId": "dcase-1790325547936-29917",
+    "startedAt": "2026-09-25T08:39:07.936Z",
     "platform": "linux",
     "node": "v25.6.1",
-    "driverSha256": "70a7cf760a88a10e1ad57ff4ab86cd51621e56ef9b4a11f659e77188f674bc86",
-    "repoSha": "bd271ee03196e928ee0491df16e887454822a365",
-    "repoDirty": true,
+    "driverSha256": "0749eb65a797c35be2a661a864ad3f3ed3a576f5dad871780d12a34d95e9eb5f",
+    "repoSha": "5291b6c2b40c52ea24b25a917aafccac1ea4458c",
+    "repoDirty": false,
     "expectedResultKeys": 7
   },
   "networkBoundary": {
@@ -231,15 +231,15 @@
     "chromiumRequests": 4,
     "sessionsObserved": 6,
     "launchIds": [
-      "dcase-1790324233340-19380#1",
-      "dcase-1790324233340-19380#2",
-      "dcase-1790324233340-19380#3"
+      "dcase-1790325547936-29917#1",
+      "dcase-1790325547936-29917#2",
+      "dcase-1790325547936-29917#3"
     ],
     "probeRequestsObserved": 3,
-    "earlyErrorsObserved": 1,
+    "earlyErrorsObserved": 2,
     "offBoundary": [],
     "unexpectedThrows": 0,
-    "tokenlessPhaseEndTs": 1790324237418
+    "tokenlessPhaseEndTs": 1790325552032
   },
   "knownDefects": []
 }
