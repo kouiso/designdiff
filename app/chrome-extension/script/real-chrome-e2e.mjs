@@ -61,7 +61,12 @@ const port = server.address().port;
 // --- 検体画像: ページ要素と同位置の矩形 (overlay 内容の実在確認用) ---
 const designPath = join(evidenceDir, "input-design.png");
 await sharp({
-  create: { width: 800, height: 600, channels: 4, background: { r: 255, g: 255, b: 255, alpha: 1 } },
+  create: {
+    width: 800,
+    height: 600,
+    channels: 4,
+    background: { r: 255, g: 255, b: 255, alpha: 1 },
+  },
 })
   .composite([
     {
@@ -112,9 +117,7 @@ try {
 
   // Upload タブ → 検体画像を載せる
   await popup.evaluate(() => {
-    [...document.querySelectorAll("#app button")]
-      .find((b) => b.textContent === "Upload")
-      .click();
+    [...document.querySelectorAll("#app button")].find((b) => b.textContent === "Upload").click();
   });
   await popup.setInputFiles('#app input[type="file"]', designPath);
   await popup.waitForSelector("text=Design loaded", { timeout: 10_000 });
@@ -162,9 +165,7 @@ try {
     undefined,
     { timeout: 10_000 },
   );
-  const before = await pageA.$eval("#figdiff-overlay", (el) =>
-    getComputedStyle(el).transform,
-  );
+  const before = await pageA.$eval("#figdiff-overlay", (el) => getComputedStyle(el).transform);
   await pageA.mouse.move(400, 300);
   await pageA.mouse.down();
   await pageA.mouse.move(480, 360, { steps: 5 });
@@ -178,7 +179,11 @@ try {
   await pageA.evaluate(() => window.scrollTo(0, 1500));
   await pageA.waitForTimeout(150);
   const postScroll = await pageA.locator("#figdiff-overlay").boundingBox();
-  evidence.results.X02_scroll = { preScroll, postScroll, scrollY: await pageA.evaluate(() => scrollY) };
+  evidence.results.X02_scroll = {
+    preScroll,
+    postScroll,
+    scrollY: await pageA.evaluate(() => scrollY),
+  };
   assert.deepEqual(
     { x: postScroll.x, y: postScroll.y },
     { x: preScroll.x, y: preScroll.y },
@@ -200,9 +205,8 @@ try {
   await pageA.bringToFront();
   const staleLabel = await popup.evaluate(
     () =>
-      [...document.querySelectorAll("#app button")].find((b) =>
-        b.textContent?.endsWith("Overlay"),
-      )?.textContent ?? null,
+      [...document.querySelectorAll("#app button")].find((b) => b.textContent?.endsWith("Overlay"))
+        ?.textContent ?? null,
   );
   evidence.results.X02_state_after_nav = { toggleLabel: staleLabel };
   if (staleLabel === "Hide Overlay") {
@@ -213,9 +217,7 @@ try {
     });
     await popup.waitForFunction(
       () =>
-        [...document.querySelectorAll("#app button")].some(
-          (b) => b.textContent === "Show Overlay",
-        ),
+        [...document.querySelectorAll("#app button")].some((b) => b.textContent === "Show Overlay"),
       undefined,
       { timeout: 10_000 },
     );
@@ -247,9 +249,7 @@ try {
   let compareOutcome = "timeout-silent";
   try {
     await popup.waitForFunction(
-      () =>
-        document.querySelector("#app .match-rate") ??
-        document.querySelector("#app .error"),
+      () => document.querySelector("#app .match-rate") ?? document.querySelector("#app .error"),
       undefined,
       { timeout: 20_000 },
     );
@@ -280,9 +280,7 @@ try {
   // X01-token: Token タブで保存→SWの chrome.storage 往復→削除を確認する。
   // token 値そのものは証跡に残さず、往復が一致した事実だけ記録する。
   await popup.evaluate(() => {
-    [...document.querySelectorAll("#app button")]
-      .find((b) => b.textContent === "Token")
-      .click();
+    [...document.querySelectorAll("#app button")].find((b) => b.textContent === "Token").click();
   });
   await popup.fill('#app input[type="password"]', "e2e-fake-pat-not-real");
   await popup.evaluate(() => {
@@ -321,7 +319,7 @@ try {
   };
 
   await writeFile(join(evidenceDir, "evidence.json"), `${JSON.stringify(evidence, null, 2)}\n`);
-  console.log(join(evidenceDir, "evidence.json"));
+  process.stdout.write(`${join(evidenceDir, "evidence.json")}\n`);
 } catch (error) {
   evidence.errors.push(String(error?.stack ?? error));
   await writeFile(join(evidenceDir, "evidence.json"), `${JSON.stringify(evidence, null, 2)}\n`);

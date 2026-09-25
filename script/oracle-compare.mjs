@@ -14,7 +14,10 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const require = createRequire(import.meta.url);
 
 const sharp = require(path.join(__dirname, "../app/mcp-server/node_modules/sharp"));
-const pixelmatch = require(path.join(__dirname, "../app/mcp-server/node_modules/pixelmatch"));
+// pixelmatch v7 は ESM 化され、require 経由だと { default } を返す。
+// CJS 版(v5 系)との両対応として default を優先して取り出す。
+const pixelmatchModule = require(path.join(__dirname, "../app/mcp-server/node_modules/pixelmatch"));
+const pixelmatch = pixelmatchModule.default ?? pixelmatchModule;
 
 const TMP_DIR = path.join(__dirname, "../.tmp-oracle");
 // COARSE_RANGE は実機のシステム UI 帯オフセット(最大72px程度)まで届く値に

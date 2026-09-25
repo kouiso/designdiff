@@ -1,0 +1,245 @@
+{
+  "schemaVersion": 1,
+  "completed": true,
+  "results": {
+    "D01": {
+      "onboarding": "steps + input visible",
+      "tokenlessPaths": [
+        "quickCompareSubmit",
+        "createProjectForm"
+      ],
+      "auth": {
+        "credentialFile": "credentials.json",
+        "viaDialog": true
+      },
+      "frameSelect": {
+        "exported": "https://api.figma.com/v1/images/FD01?ids=7:9&format=png&scale=2&use_absolute_bounds=true",
+        "framesListed": [
+          "ヘッダー",
+          "カード"
+        ]
+      },
+      "project": {
+        "id": "1790326430993-2i0axrc",
+        "persisted": true
+      },
+      "sourceCompare": {
+        "exported": "https://api.figma.com/v1/images/FD01?ids=7:8&format=png&scale=2&use_absolute_bounds=true"
+      },
+      "singleFrameAutoLoad": "https://api.figma.com/v1/images/FD01?ids=7:21&format=png&scale=2&use_absolute_bounds=true"
+    },
+    "D03": {
+      "drop": {
+        "screenshotLoaded": true,
+        "via": "scoped zone text"
+      },
+      "localFile": "loaded",
+      "webCapture": {
+        "url": "/capture-target",
+        "requests": 1
+      },
+      "inputRetainedOnFailure": true
+    },
+    "D09": {
+      "401": {
+        "surfaced": "token re-entry dialog",
+        "cancelDisabled": false
+      },
+      "403": {
+        "surfaced": "token re-entry dialog",
+        "cancelDisabled": false
+      },
+      "429": {
+        "surfaced": "Error: Error invoking remote method 'figma:get-frame-image': Error: Figma API rate limit exceeded (429). Please wait 7 seconds."
+      },
+      "500": {
+        "surfaced": "Error: Error invoking remote method 'figma:get-frame-image': Error: Figma server error (500). Please try again later."
+      },
+      "offline": {
+        "surfaced": "Error: Error invoking remote method 'figma:get-frame-image': Error: fetch failed"
+      },
+      "sameUrlRetry": {
+        "node": "7:16",
+        "exported": "https://api.figma.com/v1/images/FD01?ids=7:16&format=png&scale=2&use_absolute_bounds=true"
+      },
+      "retryAfterRecovery": "export succeeded"
+    },
+    "D10": {
+      "keyboardSubmit": "frame list appeared via hero input (node 7:30)",
+      "japaneseProject": "1790326454855-hma11wb",
+      "narrowViewport": {
+        "width": 430,
+        "view": "compare",
+        "overflowPx": 0,
+        "overflowElements": [
+          "button right=574",
+          "svg right=439",
+          "path right=438",
+          "path right=438",
+          "path right=438",
+          "button right=650"
+        ],
+        "homeNav": {
+          "found": true,
+          "reachable": true
+        }
+      },
+      "japaneseFilename": {
+        "loaded": "実装-比較テスト.png",
+        "canvas": "50x50",
+        "canvases": [
+          {
+            "width": 50,
+            "height": 50
+          },
+          {
+            "width": 300,
+            "height": 150
+          }
+        ],
+        "via": "shotInput path"
+      }
+    },
+    "D04": {
+      "consoleErrors": [],
+      "pixelDiffFallback": "screenshot drawn (no diff image yet)",
+      "comparisonRun": "diff image drawn after runComparison",
+      "currentMode": "pixel_diff",
+      "viewModes": {
+        "design_only": {
+          "activeClass": true,
+          "pixelsMatched": 2
+        },
+        "implementation": {
+          "activeClass": true,
+          "pixelsMatched": 2
+        },
+        "transparent_overlay": {
+          "activeClass": true,
+          "pixelsMatched": 2
+        },
+        "split_screen": {
+          "activeClass": true,
+          "pixelsMatched": 3
+        },
+        "blended_diff": {
+          "activeClass": true,
+          "pixelsMatched": 2
+        },
+        "draggable_overlay": {
+          "activeClass": true,
+          "pixelsMatched": 2
+        },
+        "pixel_diff": {
+          "activeClass": true,
+          "pixelsMatched": 2
+        }
+      },
+      "zoom": {
+        "before": {
+          "x": 0,
+          "y": 0,
+          "scale": 1
+        },
+        "after": {
+          "x": -188.483,
+          "y": -44.7986,
+          "scale": 1.49212
+        }
+      },
+      "pan": {
+        "before": {
+          "x": -188.483,
+          "y": -44.7986,
+          "scale": 1.49212
+        },
+        "after": {
+          "x": -128.483,
+          "y": -4.7986,
+          "scale": 1.49212
+        }
+      },
+      "reset": {
+        "x": 0,
+        "y": 0,
+        "scale": 1
+      },
+      "cropFirstDrag": {
+        "canvasResized": "300x150→200x120"
+      },
+      "crop": {
+        "region": "x: 11, y: 11, w: 80, h: 60",
+        "expected": "x:10, y:10, w:80, h:60 (css-px scaled)",
+        "cleared": true
+      },
+      "cropDrawingCleared": true,
+      "finalMode": "transparent_overlay"
+    },
+    "X09": {
+      "direction": "mcp-write → desktop-read",
+      "project": "mcp-made-project",
+      "listed": true,
+      "opened": true
+    },
+    "D08": {
+      "restored": [
+        "D01案件",
+        "比較テスト案件",
+        "MCP経由案件"
+      ],
+      "d01ProjectContents": {
+        "page": "トップ",
+        "source": "デスクトップ"
+      },
+      "comparePositiveControl": {
+        "canvasCount": 2,
+        "canvases": [
+          {
+            "width": 200,
+            "height": 120
+          },
+          {
+            "width": 300,
+            "height": 150
+          }
+        ],
+        "apiHitsForSource": 0
+      },
+      "compareAfterProjectSwitch": {
+        "canvases": [],
+        "fixtureCanvas": null,
+        "centerPixel": null,
+        "matchesFixture": false,
+        "designPill": false
+      },
+      "switching": "close-and-reopen round-trip verified"
+    }
+  },
+  "pageErrors": [],
+  "meta": {
+    "runId": "dcase-1790326425098-40381",
+    "startedAt": "2026-09-25T08:53:45.098Z",
+    "platform": "linux",
+    "node": "v25.6.1",
+    "driverSha256": "5a8d8427a67282ed2b91f734db8eeb83bf5d5eec19bd474719afd6673d8a2a3f",
+    "repoSha": "03aa48b9f899735cddeb580b39587c0624724160",
+    "repoDirty": false,
+    "expectedResultKeys": 7
+  },
+  "networkBoundary": {
+    "mainFetchRequests": 28,
+    "chromiumRequests": 4,
+    "sessionsObserved": 6,
+    "launchIds": [
+      "dcase-1790326425098-40381#1",
+      "dcase-1790326425098-40381#2",
+      "dcase-1790326425098-40381#3"
+    ],
+    "probeRequestsObserved": 3,
+    "earlyErrorsObserved": 1,
+    "offBoundary": [],
+    "unexpectedThrows": 0,
+    "tokenlessPhaseEndTs": 1790326429186
+  },
+  "knownDefects": []
+}

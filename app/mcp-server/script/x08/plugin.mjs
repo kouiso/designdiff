@@ -53,7 +53,8 @@ window.__send = (msg) => iframe.contentWindow.postMessage({ pluginMessage: msg }
     const bytes = await readFile(join(pluginDist, basename(url.pathname)));
     res
       .writeHead(200, {
-        "content-type": MIME[url.pathname.slice(url.pathname.lastIndexOf("."))] ?? "application/octet-stream",
+        "content-type":
+          MIME[url.pathname.slice(url.pathname.lastIndexOf("."))] ?? "application/octet-stream",
       })
       .end(bytes);
   } catch {
@@ -97,7 +98,10 @@ try {
 
   const matchText = await frame.locator(".match-rate").textContent();
   const matchRate = Number.parseFloat(matchText);
-  const imgSrc = await frame.locator('img[src^="data:image/png;base64,"]').first().getAttribute("src");
+  const imgSrc = await frame
+    .locator('img[src^="data:image/png;base64,"]')
+    .first()
+    .getAttribute("src");
   const diffImageBase64 = imgSrc.replace("data:image/png;base64,", "");
   const diffBytes = Buffer.from(diffImageBase64, "base64");
 

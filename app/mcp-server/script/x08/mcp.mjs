@@ -64,8 +64,8 @@ const result = await client.callTool(
 );
 if (result.isError) throw new Error(JSON.stringify(result.content));
 
-const data = result.structuredContent ??
-  JSON.parse(result.content.find((i) => i.type === "text").text);
+const data =
+  result.structuredContent ?? JSON.parse(result.content.find((i) => i.type === "text").text);
 
 // diff 画像のデコード後画素 SHA (PNG encoder 差を排除するため画素で比較)。
 const diffImagePath = data.diffImagePath;
@@ -107,4 +107,6 @@ out.results = {
 };
 await writeFile(join(evidenceDir, "x08-mcp.json"), `${JSON.stringify(out, null, 2)}\n`);
 await client.close();
-process.stdout.write(`${JSON.stringify({ ok: true, diffPixelCount: data.diffPixelCount, regions: out.regions.length })}\n`);
+process.stdout.write(
+  `${JSON.stringify({ ok: true, diffPixelCount: data.diffPixelCount, regions: out.regions.length })}\n`,
+);

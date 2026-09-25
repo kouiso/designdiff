@@ -141,7 +141,8 @@ assert.match(
 // 原因 (figma_export_hidden_blank) と nodeVisible を返すことを上の assert が保証する。
 evidence.results.C09_hidden_blank = {
   status: "PASS",
-  expected: "非表示フレームの比較で figma_export_hidden_blank と nodeVisible:false を返し原因を示す",
+  expected:
+    "非表示フレームの比較で figma_export_hidden_blank と nodeVisible:false を返し原因を示す",
   actual: {
     warning: /figma_export_hidden_blank/.test(hiddenPayload),
     nodeVisibleRecorded: /nodeVisible.{0,4}false|uniformRaster.{0,4}true/.test(hiddenPayload),
@@ -225,9 +226,7 @@ assert.ok(badUrl.isError === true, "non-figma URL must be rejected");
 //   9883:7750 = TEXT "HORSE MANAGER" + DROP_SHADOW
 //   10198:32  = FRAME "Image" opacity 0.05
 const textInspect = await call("inspect_node", { figma_url: figmaUrl("9883:7750") });
-const textPayload = JSON.stringify(
-  textInspect.structuredContent ?? textInspect.content ?? {},
-);
+const textPayload = JSON.stringify(textInspect.structuredContent ?? textInspect.content ?? {});
 evidence.results.M06_inspect_text_shadow = {
   isError: textInspect.isError === true,
   structuredContent: textInspect.structuredContent,
@@ -255,8 +254,8 @@ assert.match(opacityPayload, /0\.0?5|opacity/i, "opacity must be reported");
 // RF-02 で温まった製品キャッシュの export を読み、そこから defect/修正版を作る。
 const { readdir } = await import("node:fs/promises");
 const cacheFiles = await readdir(join(store, "cache"));
-const opaqueCache = cacheFiles.find((n) =>
-  n.includes(OPAQUE_NODE.replace(":", "_")) && n.endsWith(".png"),
+const opaqueCache = cacheFiles.find(
+  (n) => n.includes(OPAQUE_NODE.replace(":", "_")) && n.endsWith(".png"),
 );
 assert.ok(opaqueCache, "product-cached export for opaque node must exist");
 const exportBuf = await readFile(join(store, "cache", opaqueCache));
@@ -370,7 +369,10 @@ const reportRes = await call("generate_diff_report", {
 });
 evidence.results.M16_generate_report = {
   isError: reportRes.isError === true,
-  text: reportRes.content?.map((c) => c.text).join("\n")?.slice(0, 500),
+  text: reportRes.content
+    ?.map((c) => c.text)
+    .join("\n")
+    ?.slice(0, 500),
 };
 assert.ok(!reportRes.isError, "generate_diff_report should succeed");
 const reportBody = await readFile(reportPath, "utf8");
@@ -404,4 +406,4 @@ assert.equal(protocolErrors.length, 0, `protocol errors: ${protocolErrors.join("
 evidence.protocolErrors = protocolErrors;
 await writeFile(join(evidenceDir, "evidence.json"), `${JSON.stringify(evidence, null, 2)}\n`);
 await client.close();
-console.log(join(evidenceDir, "evidence.json"));
+process.stdout.write(`${join(evidenceDir, "evidence.json")}\n`);

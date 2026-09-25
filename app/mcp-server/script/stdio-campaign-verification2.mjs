@@ -8,14 +8,7 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { createServer } from "node:http";
-import {
-  mkdir,
-  mkdtemp,
-  readFile,
-  readdir,
-  stat,
-  writeFile,
-} from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, readdir, stat, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { dirname, join, relative, resolve } from "node:path";
@@ -66,7 +59,9 @@ const panelSvg = (w, h, extraRects = []) =>
   );
 
 const panelPng = async (extraRects = []) =>
-  await sharp(panelSvg(W, H, extraRects)).png().toBuffer();
+  await sharp(panelSvg(W, H, extraRects))
+    .png()
+    .toBuffer();
 
 // 内容を dx,dy だけずらした画像。ずらしで生じる端の帯は既知の背景色で埋める。
 const shiftedPng = async (dx, dy, extraRects = []) => {
@@ -79,9 +74,7 @@ const shiftedPng = async (dx, dy, extraRects = []) => {
       height: H - Math.abs(dy),
     })
     .toBuffer();
-  return await sharp(
-    await solidPng(W, H, { r: 245, g: 245, b: 245 }),
-  )
+  return await sharp(await solidPng(W, H, { r: 245, g: 245, b: 245 }))
     .composite([{ input: img, left: Math.max(0, dx), top: Math.max(0, dy) }])
     .png()
     .toBuffer();
@@ -153,9 +146,18 @@ await Promise.all([
       .toBuffer(),
   ),
   // M11 用フレーム列: 色の違う 3 枚。順序差・欠落を区別できるよう別色。
-  writeFile(fixturePaths.frameA, await panelPng([{ x: 40, y: 700, width: 60, height: 40, fill: "#1144aa" }])),
-  writeFile(fixturePaths.frameB, await panelPng([{ x: 120, y: 700, width: 60, height: 40, fill: "#1144aa" }])),
-  writeFile(fixturePaths.frameC, await panelPng([{ x: 200, y: 700, width: 60, height: 40, fill: "#1144aa" }])),
+  writeFile(
+    fixturePaths.frameA,
+    await panelPng([{ x: 40, y: 700, width: 60, height: 40, fill: "#1144aa" }]),
+  ),
+  writeFile(
+    fixturePaths.frameB,
+    await panelPng([{ x: 120, y: 700, width: 60, height: 40, fill: "#1144aa" }]),
+  ),
+  writeFile(
+    fixturePaths.frameC,
+    await panelPng([{ x: 200, y: 700, width: 60, height: 40, fill: "#1144aa" }]),
+  ),
 ]);
 
 const sha256 = (bytes) => createHash("sha256").update(bytes).digest("hex");
@@ -231,7 +233,10 @@ const startClient = async (name, overrides = {}) => {
       PLAYWRIGHT_BROWSERS_PATH:
         process.env.PLAYWRIGHT_BROWSERS_PATH ??
         (process.platform === "win32"
-          ? join(process.env.LOCALAPPDATA ?? join(process.env.USERPROFILE ?? home, "AppData", "Local"), "ms-playwright")
+          ? join(
+              process.env.LOCALAPPDATA ?? join(process.env.USERPROFILE ?? home, "AppData", "Local"),
+              "ms-playwright",
+            )
           : process.platform === "darwin"
             ? join(process.env.HOME ?? home, "Library", "Caches", "ms-playwright")
             : join(process.env.HOME ?? home, ".cache", "ms-playwright")),
@@ -285,9 +290,7 @@ await check("C01_identical_opaque", async () => {
       campaign_id: "c01",
     }),
   );
-  const disk = JSON.parse(
-    await readFile(join(resultDir, `${result.comparisonId}.json`), "utf8"),
-  );
+  const disk = JSON.parse(await readFile(join(resultDir, `${result.comparisonId}.json`), "utf8"));
   assert.equal(result.diffPixelCount, 0, "identical images must have zero diff pixels");
   assert.equal(result.diffRegions?.length ?? 0, 0, "identical images must have no regions");
   assert.equal(result.matchRate, 100, "identical images must score 100%");
@@ -336,7 +339,10 @@ await check("C02_shift_tracking", async () => {
   // 移動は「差分」として観測されなければならない (補正で完全には消えないこと)。
   for (const run of runs) {
     assert.ok(run.diffPixelCount > 0, `${run.name}: shift must be detected, not hidden`);
-    assert.ok((run.regions?.length ?? 0) > 0 || run.totalRegionCount > 0, `${run.name}: shift must produce regions`);
+    assert.ok(
+      (run.regions?.length ?? 0) > 0 || run.totalRegionCount > 0,
+      `${run.name}: shift must produce regions`,
+    );
   }
   return {
     expected: "each shift is detected and reported with observable diff regions",
@@ -368,7 +374,10 @@ await check("C03_defect_bbox", async () => {
   const hits = (Array.isArray(allRegions) ? allRegions : [])
     .map((r) => r.bounds ?? r)
     .filter((b) => overlap(b, c03Defect) > 0);
-  assert.ok(hits.length >= 1, `no diff region overlaps defect ${JSON.stringify(c03Defect)}; regions=${JSON.stringify(allRegions).slice(0, 400)}`);
+  assert.ok(
+    hits.length >= 1,
+    `no diff region overlaps defect ${JSON.stringify(c03Defect)}; regions=${JSON.stringify(allRegions).slice(0, 400)}`,
+  );
   return {
     expected: `a diff region overlaps the known defect at ${JSON.stringify(c03Defect)}`,
     actual: { matchRate: result.matchRate, hitBounds: hits, regionCount: regions.length },
@@ -391,13 +400,23 @@ await check("C10_small_text_diff", async () => {
   assert.ok(regions.length >= 1, "small text diff must produce a region");
   const whole = regions.find((r) => r.bounds.width > W * 0.5 && r.bounds.height > H * 0.5);
   const diagnosisText = JSON.stringify(result.diagnosis ?? {});
-  assert.ok(!/写真|photo/i.test(diagnosisText) || result.status !== "FAIL", "text diff must not be dismissed as photo");
+  assert.ok(
+    !/写真|photo/i.test(diagnosisText) || result.status !== "FAIL",
+    "text diff must not be dismissed as photo",
+  );
   return {
     expected: "local 13x11 text diff detected as a bounded region, not whole-page",
     actual: {
       matchRate: result.matchRate,
       regionCount: regions.length,
-      largestRegion: regions.reduce((m, r) => (r.bounds.width * r.bounds.height > (m?.bounds.width ?? 0) * (m?.bounds.height ?? 0) ? r : m), null)?.bounds ?? null,
+      largestRegion:
+        regions.reduce(
+          (m, r) =>
+            r.bounds.width * r.bounds.height > (m?.bounds.width ?? 0) * (m?.bounds.height ?? 0)
+              ? r
+              : m,
+          null,
+        )?.bounds ?? null,
       coversWholePage: Boolean(whole),
       status: result.status,
     },
@@ -434,7 +453,8 @@ await check("C13_scaled_marker", async () => {
   return {
     expected: "marker defect located in a consistent coordinate space",
     actual: {
-      canvas: result.ignoreRegionResolution?.coordinateContext ?? result.comparisonConditions ?? null,
+      canvas:
+        result.ignoreRegionResolution?.coordinateContext ?? result.comparisonConditions ?? null,
       hitLogical: hitLogical.map((r) => r.bounds),
       hitPhysical: hitPhysical.map((r) => r.bounds),
       regionCount: regions.length,
@@ -488,7 +508,12 @@ await check("M09_report_old_id", async () => {
     assert.ok(md.length > 100, "markdown report must have content");
     return {
       expected: "old comparison_id resolvable after 6+ recompares and process restart",
-      actual: { oldId, jsonBytes: (await stat(reportPath)).size, mdBytes: md.length, restarted: true },
+      actual: {
+        oldId,
+        jsonBytes: (await stat(reportPath)).size,
+        mdBytes: md.length,
+        restarted: true,
+      },
     };
   } finally {
     await fresh.close();
@@ -498,8 +523,7 @@ await check("M09_report_old_id", async () => {
 // M11: compare_animation。既知フレーム列・順序差・欠落・読込み失敗。
 await check("M11_compare_animation", async () => {
   const frames = [fixturePaths.frameA, fixturePaths.frameB, fixturePaths.frameC];
-  const timed = (paths, shift = 0) =>
-    paths.map((p, i) => ({ path: p, at_ms: (i + shift) * 100 }));
+  const timed = (paths, shift = 0) => paths.map((p, i) => ({ path: p, at_ms: (i + shift) * 100 }));
 
   const ok = data(
     await call(client, "compare_animation", {
@@ -613,9 +637,15 @@ await check("M14_loop_isolation", async () => {
   assert.ok(guard(a1), "loopGuard must be present");
   const iterOf = (r) => guard(r)?.iteration ?? guard(r)?.step;
   // 同一 campaign 内で反復が進むこと。
-  assert.ok(iterOf(a2) > iterOf(a1), `iteration must advance within campaign: ${iterOf(a1)} -> ${iterOf(a2)}`);
+  assert.ok(
+    iterOf(a2) > iterOf(a1),
+    `iteration must advance within campaign: ${iterOf(a1)} -> ${iterOf(a2)}`,
+  );
   // 別 campaign は新しい作業として巻き込まれないこと。
-  assert.ok(iterOf(b1) <= iterOf(a2), `new campaign must start fresh: a2=${iterOf(a2)} b1=${iterOf(b1)}`);
+  assert.ok(
+    iterOf(b1) <= iterOf(a2),
+    `new campaign must start fresh: a2=${iterOf(a2)} b1=${iterOf(b1)}`,
+  );
 
   const fresh = await startClient("campaign-verify-2-looprestart");
   try {
@@ -646,12 +676,17 @@ await check("M15_capture_width_stable", async () => {
   const widths = [];
   for (let i = 0; i < 3; i += 1) {
     const result = data(
-      await call(client, "compare_design", {
-        design_source: fixturePaths.design,
-        screenshot_url: pageUrl,
-        capture_width: 320,
-        campaign_id: "m15",
-      }, 180_000),
+      await call(
+        client,
+        "compare_design",
+        {
+          design_source: fixturePaths.design,
+          screenshot_url: pageUrl,
+          capture_width: 320,
+          campaign_id: "m15",
+        },
+        180_000,
+      ),
     );
     const canvas =
       result.comparisonConditions?.screenshot?.canvas ??
@@ -685,7 +720,10 @@ await check("X09_mcp_desktop_interop", async () => {
   const projectDir = join(store, "projects", created.project_id);
   const projectFile = JSON.parse(await readFile(join(projectDir, "project.json"), "utf8"));
   assert.equal(projectFile.id, created.project_id);
-  assert.ok(projectFile.name && Array.isArray(projectFile.pages), "project.json must have desktop-compatible shape");
+  assert.ok(
+    projectFile.name && Array.isArray(projectFile.pages),
+    "project.json must have desktop-compatible shape",
+  );
 
   // (b) desktop e2e が seed する形式の案件を MCP が list/get で読めること。
   const desktopId = "x09-desktop-seed";
@@ -716,8 +754,13 @@ await check("X09_mcp_desktop_interop", async () => {
   await writeFile(join(desktopDir, "project.json"), JSON.stringify(desktopProject, null, 2));
 
   const listed = data(await call(client, "list_projects", {}));
-  const found = (listed.projects ?? listed).find?.((p) => p.id === desktopId || p.project_id === desktopId);
-  assert.ok(found, `desktop-seeded project must be listed by MCP: ${JSON.stringify(listed).slice(0, 300)}`);
+  const found = (listed.projects ?? listed).find?.(
+    (p) => p.id === desktopId || p.project_id === desktopId,
+  );
+  assert.ok(
+    found,
+    `desktop-seeded project must be listed by MCP: ${JSON.stringify(listed).slice(0, 300)}`,
+  );
 
   // (c) 旧形式データ (driver1 の X09 で作成済み想定の legacy 形状) が消されないこと —
   // ここでは desktop seed が schema 準拠で読めることを project-store 側でも確認する。
@@ -733,7 +776,8 @@ await check("X09_mcp_desktop_interop", async () => {
   const reread = JSON.parse(await readFile(join(desktopDir, "project.json"), "utf8"));
   assert.equal(reread.id, desktopId, "desktop file must not be rewritten to another shape");
   return {
-    expected: "MCP-written project readable as desktop shape; desktop-seeded project readable by MCP",
+    expected:
+      "MCP-written project readable as desktop shape; desktop-seeded project readable by MCP",
     actual: {
       mcpCreatedId: created.project_id,
       desktopSeedListed: Boolean(found),

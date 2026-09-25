@@ -77,9 +77,10 @@ export function CropRegionSelector() {
     setIsSelecting(false);
   };
 
-  // Draw selection rectangle reactively when positions change
+  // 選択矩形を描画する。非選択中も毎回画像を描き直すのは、
+  // 前フレームの破線が残ったままクリア後も消えない stale 描画を
+  // 防ぐため。確定済み領域は登録領域として描き続ける。
   useEffect(() => {
-    if (!isSelecting) return;
     const canvas = canvasRef.current;
     const img = imgRef.current;
     if (!canvas || !img) return;
@@ -92,19 +93,24 @@ export function CropRegionSelector() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(img, 0, 0);
 
-    const x = Math.min(startPos.x, currentPos.x);
-    const y = Math.min(startPos.y, currentPos.y);
-    const width = Math.abs(currentPos.x - startPos.x);
-    const height = Math.abs(currentPos.y - startPos.y);
+    const region = isSelecting
+      ? {
+          x: Math.min(startPos.x, currentPos.x),
+          y: Math.min(startPos.y, currentPos.y),
+          width: Math.abs(currentPos.x - startPos.x),
+          height: Math.abs(currentPos.y - startPos.y),
+        }
+      : cropRegion;
+    if (!region) return;
 
     ctx.strokeStyle = readCssToken("--cobalt", "#3b82f6");
     ctx.lineWidth = 2;
     ctx.setLineDash([5, 5]);
-    ctx.strokeRect(x, y, width, height);
+    ctx.strokeRect(region.x, region.y, region.width, region.height);
 
     ctx.fillStyle = readCssToken("--cobalt-soft", "rgba(59,130,246,0.1)");
-    ctx.fillRect(x, y, width, height);
-  }, [isSelecting, startPos, currentPos]);
+    ctx.fillRect(region.x, region.y, region.width, region.height);
+  }, [isSelecting, startPos, currentPos, cropRegion]);
 
   const handleClearRegion = () => {
     setCropRegion(null);
