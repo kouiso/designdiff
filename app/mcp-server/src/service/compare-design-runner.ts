@@ -546,6 +546,7 @@ function buildStatus(
   tokenDiffBlockingCount: number,
   aspectMismatchInconclusive: boolean,
   anchorCheckFailed: boolean,
+  anchorCheckUncertain: boolean,
 ): CompareStatus {
   if (likelyMisconfig) {
     return "UNCERTAIN";
@@ -573,6 +574,11 @@ function buildStatus(
   // 配置が崩れていることはあり、そちらは画素経路の担当。
   if (tokenDiffBlockingCount > 0) {
     return "FAIL";
+  }
+  // 宣言されたのに評価できなかったアンカー検査は「確認済み」ではない。
+  // fail-closed の方針どおり、確からしい FAIL よりは弱いが PASS も出さず人へ回す。
+  if (anchorCheckUncertain) {
+    return "UNCERTAIN";
   }
   return structuralVerdict === "pass" ? "PASS" : "FAIL";
 }
@@ -1771,7 +1777,7 @@ export async function runCompareDesign(
   // 同幅・異高は anchors を宣言した比較では前提条件であり、設定ミスではない。
   // 既定では縦横比不一致を critical で拾って likely_misconfig に倒すため、
   // 幅が一致する場合に限りその警告を降格してアンカー検査へ判定を委ねる。
-  // 幅まで違う入力はアンカー検査自体が evaluated:false を返すため降格しない。
+  // 幅まで違う入力は撮影条件そのものが不整合なので、そちらの判断を優先して降格しない。
   const anchorsDeclared = args.anchors !== undefined && args.anchors.length > 0;
   const widthsMatchForAnchors =
     typeof preflightDimensions.figmaFrameWidth === "number" &&
@@ -1943,6 +1949,7 @@ export async function runCompareDesign(
       missingNodeId !== undefined ||
       scrollCaptureIncomplete !== undefined,
     anchorCheckFailed,
+    anchorCheck !== undefined && !anchorCheck.evaluated,
   );
   // 経路を必ず出す。無言で画素経路へ落ちていることに呼び出し側が気づけないと、
   // 「色は見てもらえている」と誤解したまま作業が進む。
@@ -1963,10 +1970,10 @@ export async function runCompareDesign(
         ? buildMisconfigNextAction(diagnosis)
         : pixelsContradictPass
           ? buildPixelContradictionNextAction(perceptibleDiffRatio)
-          : tokenDiffSummary !== undefined
-            ? `${tokenDiffSummary} 値が分かっているので、該当箇所の指定を設計側の値へ直してください。`
-            : anchorFailureSummary !== undefined
-              ? `${anchorFailureSummary} 宣言した位置規則 (top-ratio / bottom-fixed) を実装側が満たしていません。配置を修正して再度 compare_design で検証してください。`
+          : anchorFailureSummary !== undefined
+            ? `${anchorFailureSummary} 宣言した位置規則 (top-ratio / bottom-fixed) を実装側が満たしていません。配置を修正して再度 compare_design で検証してください。`
+            : tokenDiffSummary !== undefined
+              ? `${tokenDiffSummary} 値が分かっているので、該当箇所の指定を設計側の値へ直してください。`
               : scrollCaptureIncomplete !== undefined
                 ? scrollCaptureIncomplete
                 : (buildDiagnosisNextAction(diagnosis) ??
@@ -2108,8 +2115,8 @@ export async function runCompareDesign(
       ? diagnosis.headline
       : pixelsContradictPass
         ? buildPixelContradictionSuggestion(perceptibleDiffRatio)
-        : (tokenDiffSummary ??
-          anchorFailureSummary ??
+        : (anchorFailureSummary ??
+          tokenDiffSummary ??
           buildSuggestion(structuralReviewResult.verdict, comparison.matchRate, regionCount)),
     critique,
     preflight: finalPreflight,

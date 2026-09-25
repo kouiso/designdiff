@@ -2275,14 +2275,16 @@ describe("runCompareDesign", () => {
       });
     });
 
-    it("評価自体を行えなかったときは合否を倒さず UNCERTAIN 行だけ出す", async () => {
+    it("評価自体を行えなかったときは未検証の契約として UNCERTAIN に倒す", async () => {
       const { result } = await runAnchorComparison({
         evaluated: false,
         reason: "幅が一致しません。",
         anchors: [],
       });
 
-      expect(result.status).toBe("PASS");
+      // 宣言した規則を一度も見ていないのに PASS を出すと、検査したことに
+      // なる。fail-closed で UNCERTAIN へ回す。
+      expect(result.status).toBe("UNCERTAIN");
       expect(result.completionCriteria?.anchorReview).toMatchObject({
         status: "UNCERTAIN",
         blocking: false,

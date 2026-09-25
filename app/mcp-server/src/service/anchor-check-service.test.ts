@@ -309,4 +309,38 @@ describe("evaluateAnchorRegions", () => {
     expect(report.anchors[0].matchedY).toBe(Math.round(CARD.y * SCALE));
     expect(report.anchors[1].matchedY).toBe(SCREENSHOT_HEIGHT - FOOTER.height);
   });
+
+  it("shifts anchors by the crop offset when design pixels are cropped", () => {
+    // crop で上端 100px が削れた作業空間。宣言は crop 前の native 座標のまま。
+    const cropY = 100;
+    const workingDesignHeight = DESIGN_HEIGHT - cropY;
+    const workingScreenshotHeight = 700;
+    const blockTop = 50;
+    const blockHeight = 80;
+
+    const design = Buffer.alloc(WIDTH * workingDesignHeight * 4);
+    fillBackground(design, WIDTH, workingDesignHeight);
+    fillBlock(design, WIDTH, workingDesignHeight, blockTop, blockHeight, 41);
+
+    const expectedTop = Math.round((blockTop * workingScreenshotHeight) / workingDesignHeight);
+    const screenshot = Buffer.alloc(WIDTH * workingScreenshotHeight * 4);
+    fillBackground(screenshot, WIDTH, workingScreenshotHeight);
+    fillBlock(screenshot, WIDTH, workingScreenshotHeight, expectedTop, blockHeight, 41);
+
+    const report = evaluateAnchorRegions({
+      designPixels: design,
+      designWidth: WIDTH,
+      designHeight: workingDesignHeight,
+      screenshotPixels: screenshot,
+      screenshotWidth: WIDTH,
+      screenshotHeight: workingScreenshotHeight,
+      anchors: [
+        { x: 0, y: cropY + blockTop, width: WIDTH, height: blockHeight, mode: "top-ratio" },
+      ],
+      transform: { scale: 1, offsetX: 0, offsetY: cropY },
+    });
+
+    expect(report.verdict).toBe("pass");
+    expect(report.anchors[0].matchedY).toBe(expectedTop);
+  });
 });
