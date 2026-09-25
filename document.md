@@ -2,6 +2,8 @@
 
 ## 設計書 & 開発計画 v4
 
+> Status 2026-09-25: this is the historical v4 plan. Every statement in it that FigDiff is free, open source, or published on npm (for example §1 competitor table, the §3 architecture diagram, the §9 Phase 4 tasks and §12) is not in effect. Use of FigDiff is governed by [LICENSE](LICENSE): no rights by default, use only under a written grant that names the user.
+
 ---
 
 ## 1. プロダクト概要
@@ -1571,6 +1573,8 @@ designdiff/
 ---
 
 ## 12. ビジネスモデル
+
+> Status 2026-09-25: this pricing and distribution plan is not in effect. Use of FigDiff is governed by [LICENSE](LICENSE): no rights by default, use only under a written grant that names the user.
 
 ### 基本戦略: MCPは無料、アプリは有料（Freemium）
 

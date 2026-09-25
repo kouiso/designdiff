@@ -721,7 +721,7 @@ async function main() {
   }
 
   const lpRepo = path.resolve(lpDir);
-  const horseRoot = path.dirname(lpRepo);
+  const lpParentDir = path.dirname(lpRepo);
   const baseSha = spawnSync("git", ["-C", lpRepo, "rev-parse", "HEAD"], {
     encoding: "utf8",
   }).stdout.trim();
@@ -729,7 +729,7 @@ async function main() {
     throw new Error(`Failed to resolve HEAD for ${lpRepo}`);
   }
 
-  const worktreePath = path.join(horseRoot, `lp-p5-${Date.now()}`);
+  const worktreePath = path.join(lpParentDir, `lp-p5-${Date.now()}`);
   const summary = {
     phase: "P5",
     generatedAt: new Date().toISOString(),

@@ -60,7 +60,7 @@ gap収束推移：27 → 17 → 2 → 0。停止条件到達（gap dry ＋ in-fl
 macmini 経由（ssh）で実機 dogfood を完遂。bg-MCP 不要で macmini ローカルの codex に委譲。
 
 ### Task D 実機E2E（[deferred:macmini] → 解消）
-- **Android**：Pixel(2A091FDH300C0J)で sample-project staging 実画面を `adb exec-out screencap -p` で取得（1080×2340）→ `captureDeviceScreenshot({device:"android"})` が ~/.figdiff/cache/capture/ に保存 → `compare_design` を capture_device:"android" で実行成立（FAIL/match 86.53%/8 region）。
+- **Android**：Pixel(<android-serial>)で sample-project staging 実画面を `adb exec-out screencap -p` で取得（1080×2340）→ `captureDeviceScreenshot({device:"android"})` が ~/.figdiff/cache/capture/ に保存 → `compare_design` を capture_device:"android" で実行成立（FAIL/match 86.53%/8 region）。
 - **iOS**：iPhone 17 Pro sim を `xcrun simctl io booted screenshot` で取得（1206×2622）→ ios-sim provider 検証。sample-mobile dev もsimに導入済み。
 - → mobile-capture(#166) の android/ios 両 provider が実機/シムで end-to-end 成立。
 
@@ -166,19 +166,19 @@ PASS になっていた。CIEDE2000 は同じ色差ペアを ~40 ΔE として�
 
 ---
 
-## 2026-08-27 HorseManager formal監査向け bounded triage（Issue #58 / #59）
+## 2026-08-27 モバイルアプリの formal 監査向け bounded triage（Issue #58 / #59）
 
 ### Issue #58 alignment補正後の局所差分bbox
 
 - 現行develop（PR #99 merge後）の `image-compare-service.ts` は、`resolveAlignment` の `alignedDesignPixels` を pixelmatchへ渡した後に `earlyClusterForScoring` を生成する（1092行、1197行付近）。Issue本文の「補正前クラスタを補正後スコアへ流す」経路は現行コードでは成立しない。
 - 120x90の合成画像で、実装を右へ7px移動し、補正後座標へ20x20の局所欠陥を置く再現を実行した。結果は `translation={x:7,y:0}`、補正適用、`diffRegions` は左端OOBと局所欠陥 `x=40..60,y=30..50` だった。補正前右境界bboxは返らず、局所欠陥の座標は補正後空間と一致した。
-- したがってHorseManagerのformal監査を直接阻害する明確な再現はなく、追加修正PRは作成しない。再現は一時テストで実行し、リポジトリへ残骸を保存していない。
+- したがってモバイルアプリの formal 監査を直接阻害する明確な再現はなく、追加修正PRは作成しない。再現は一時テストで実行し、リポジトリへ残骸を保存していない。
 
 ### Issue #59 capture_width振動
 
 - `figma-service.test.ts` の `recommended capture width convergence (#275)` を現行developで実行し、2 test files / 31 testsがPASSした。effect-margin cropありの反復は `[390, 390, 390]` に収束し、cropなしの旧欠陥は `[430, 474]` と再現する。
 - 修正履歴は `e35873e`（#275 effect-margin crop）および `6830aed`（#234 capture_width CDP loop guard）。現行のFigma URL撮影は、フレーム幅を自動取得して `capture_width` に使う実装（`compare-design-runner.ts` 762〜783行付近）である。
-- 現行developでIssue #59の1080→1191→1314発散は再現せず、HorseManager formal監査を直接阻害する証拠はない。追加修正PRは作成せず、Issue #59は既修正・今回スコープ外として扱う。
+- 現行developでIssue #59の1080→1191→1314発散は再現せず、モバイルアプリの formal 監査を直接阻害する証拠はない。追加修正PRは作成せず、Issue #59は既修正・今回スコープ外として扱う。
 
 ### 判定
 
