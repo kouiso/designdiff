@@ -53,7 +53,9 @@ const makePng = async (name, w, h, paint) => {
     }
   }
   const path = join(fixtureDir, name);
-  await sharp(buf, { raw: { width: w, height: h, channels: 4 } }).png().toFile(path);
+  await sharp(buf, { raw: { width: w, height: h, channels: 4 } })
+    .png()
+    .toFile(path);
   return path;
 };
 
@@ -65,8 +67,10 @@ const shifted = (dx, dy) => (x, y) => {
   return sx >= 0 && sx < W && sy >= 0 && sy < H ? basePixel(sx, sy) : [0, 0, 0, 255];
 };
 const DEFECT = { x: 30, y: 20, w: 24, h: 16 };
-const withDefect = (paint, rect, color = [255, 0, 0, 255]) => (x, y) =>
-  x >= rect.x && x < rect.x + rect.w && y >= rect.y && y < rect.y + rect.h ? color : paint(x, y);
+const withDefect =
+  (paint, rect, color = [255, 0, 0, 255]) =>
+  (x, y) =>
+    x >= rect.x && x < rect.x + rect.w && y >= rect.y && y < rect.y + rect.h ? color : paint(x, y);
 
 const paths = {};
 paths.base = await makePng("design-base.png", W, H, basePixel);
@@ -78,12 +82,18 @@ paths.shiftW2 = await makePng("impl-shift-w2.png", W, H, shifted(-2, 0));
 paths.implDefect = await makePng("impl-defect.png", W, H, withDefect(basePixel, DEFECT));
 paths.design2x = await makePng("design-2x.png", W * 2, H * 2, (x, y) => basePixel(x >> 1, y >> 1));
 paths.impl2x = await makePng("impl-2x.png", W * 2, H * 2, (x, y) => basePixel(x >> 1, y >> 1));
-paths.design3x = await makePng("design-3x.png", W * 3, H * 3, (x, y) => basePixel((x / 3) | 0, (y / 3) | 0));
-paths.impl3x = await makePng("impl-3x.png", W * 3, H * 3, (x, y) => basePixel((x / 3) | 0, (y / 3) | 0));
+paths.design3x = await makePng("design-3x.png", W * 3, H * 3, (x, y) =>
+  basePixel((x / 3) | 0, (y / 3) | 0),
+);
+paths.impl3x = await makePng("impl-3x.png", W * 3, H * 3, (x, y) =>
+  basePixel((x / 3) | 0, (y / 3) | 0),
+);
 paths.implPadded = await makePng("impl-padded.png", 140, 100, (x, y) =>
   x >= 10 && x < 130 && y >= 10 && y < 90 ? basePixel(x - 10, y - 10) : [255, 255, 255, 255],
 );
-paths.implWide = await makePng("impl-wide.png", 140, 80, (x, y) => basePixel((x * W) / 140 | 0, y));
+paths.implWide = await makePng("impl-wide.png", 140, 80, (x, y) =>
+  basePixel(((x * W) / 140) | 0, y),
+);
 paths.implTall = await makePng("impl-tall.png", 120, 100, (x, y) =>
   y < H ? basePixel(x, y) : [0, 0, 0, 255],
 );
@@ -131,7 +141,10 @@ paths.implTallDefect = await makePng(
 );
 paths.impl1px = await makePng("impl-1px.png", 1, 1, () => [200, 30, 30, 255]);
 paths.implCorrupt = join(fixtureDir, "impl-corrupt.png");
-await writeFile(paths.implCorrupt, Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.alloc(24)]));
+await writeFile(
+  paths.implCorrupt,
+  Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.alloc(24)]),
+);
 // C13: 2x 寸法の実装画像 + 既知マーカー (物理 48,64,16x16 → 設計座標 24,32)。
 const MARKER = { x: 48, y: 64, w: 16, h: 16 };
 paths.impl2xMarker = await makePng(
@@ -278,12 +291,15 @@ const bboxContains = (bboxes, x, y) =>
 // structure=SSIM(1で一致), color=DeltaE(0で一致), shape=Hausdorff(0で一致)。
 const cellContaining = (regionScores, x, y) =>
   regionScores.find(
-    (r) => r.bbox && x >= r.bbox.x && x < r.bbox.x + r.bbox.w && y >= r.bbox.y && y < r.bbox.y + r.bbox.h,
+    (r) =>
+      r.bbox &&
+      x >= r.bbox.x &&
+      x < r.bbox.x + r.bbox.w &&
+      y >= r.bbox.y &&
+      y < r.bbox.y + r.bbox.h,
   );
-const isDegraded = (r) =>
-  r.scores.structure < 1 || r.scores.color > 0 || r.scores.shape > 0;
-const isPerfect = (r) =>
-  r.scores.structure === 1 && r.scores.color === 0 && r.scores.shape === 0;
+const isDegraded = (r) => r.scores.structure < 1 || r.scores.color > 0 || r.scores.shape > 0;
+const isPerfect = (r) => r.scores.structure === 1 && r.scores.color === 0 && r.scores.shape === 0;
 const bboxInRect = (t, rect) => {
   const m = t.match(/x:\s*(-?\d+), y:\s*(-?\d+), w:\s*(\d+), h:\s*(\d+)/);
   if (!m) return false;
@@ -318,7 +334,9 @@ const gotoCompare = async (page, label) => {
       .first()
       .waitFor({ timeout: 15_000 });
   } catch (error) {
-    await page.screenshot({ path: join(evidenceDir, `stuck-load-${label.replace(/\W+/g, "_")}.png`) });
+    await page.screenshot({
+      path: join(evidenceDir, `stuck-load-${label.replace(/\W+/g, "_")}.png`),
+    });
     await writeFile(join(evidenceDir, "stuck-load-dom.txt"), await page.content());
     throw error;
   }
@@ -333,7 +351,12 @@ const loadScreenshot = async (page, path, { expectError = false } = {}) => {
   await page.getByRole("button", { name: "実装スクリーンショット", exact: true }).click();
   if (expectError) {
     await page.getByText(/画像の読み込みに失敗しました/, { exact: false }).waitFor();
-    return (await page.locator("div", { hasText: "画像の読み込みに失敗しました" }).last().textContent()) ?? "";
+    return (
+      (await page
+        .locator("div", { hasText: "画像の読み込みに失敗しました" })
+        .last()
+        .textContent()) ?? ""
+    );
   }
   // design 側にも「読み込み済み」pill が常時あるので、2個目の出現を待つ。
   await page.locator("span.fd-pill", { hasText: "読み込み済み" }).nth(1).waitFor();
@@ -414,7 +437,11 @@ try {
   const c03 = await runCompare(page);
   evidence.results.C03 = c03;
   assert.ok(c03.diffRegions >= 1, `C03 must report >=1 diff region: ${c03.diffRegions}`);
-  const c03cell = cellContaining(c03.regionScores, DEFECT.x + DEFECT.w / 2, DEFECT.y + DEFECT.h / 2);
+  const c03cell = cellContaining(
+    c03.regionScores,
+    DEFECT.x + DEFECT.w / 2,
+    DEFECT.y + DEFECT.h / 2,
+  );
   assert.ok(
     c03cell && isDegraded(c03cell),
     `C03 defect cell must have degraded score: ${JSON.stringify(c03cell)}`,
@@ -503,9 +530,15 @@ try {
   const c06cropped = await runCompare(page);
   // crop 後は crop 領域だけが比較対象。低下セルは全て crop 内の欠陥
   // (crop 相対座標の INNER 中心) を含むはずで、外側欠陥は見えない。
-  const innerRel = { x: INNER.x + INNER.w / 2 - cropActual.x, y: INNER.y + INNER.h / 2 - cropActual.y };
+  const innerRel = {
+    x: INNER.x + INNER.w / 2 - cropActual.x,
+    y: INNER.y + INNER.h / 2 - cropActual.y,
+  };
   const c06degraded = c06cropped.regionScores.filter((r) => isDegraded(r));
-  assert.ok(c06cropped.diffRegions >= 1 && c06cropped.diffPixels > 0, "C06 crop must detect inner defect");
+  assert.ok(
+    c06cropped.diffRegions >= 1 && c06cropped.diffPixels > 0,
+    "C06 crop must detect inner defect",
+  );
   assert.ok(
     c06degraded.length > 0 &&
       c06degraded.every(
@@ -724,7 +757,11 @@ await import(${JSON.stringify(pathToFileURL(join(repository, "app/desktop/dist/m
 const fApp = await electron.launch({
   executablePath: process.env.FIGDIFF_ELECTRON_EXECUTABLE ?? requireFromDesktop("electron"),
   args: [figmaBootstrap, `--user-data-dir=${fUserData}`],
-  env: { ...environment, FIGDIFF_PROJECTS_DIR: fProjects, FIGDIFF_HOME: join(figmaSandbox, "figdiff-home") },
+  env: {
+    ...environment,
+    FIGDIFF_PROJECTS_DIR: fProjects,
+    FIGDIFF_HOME: join(figmaSandbox, "figdiff-home"),
+  },
   timeout: 30_000,
 });
 
@@ -765,7 +802,11 @@ try {
   await gotoSource("C09 visible node");
   await loadScreenshot(page, implForC09);
   const c09visible = await runCompare(page);
-  evidence.results.C09 = { hidden: c09hidden, visible: c09visible, requestLog: "c09-figma-requests.jsonl" };
+  evidence.results.C09 = {
+    hidden: c09hidden,
+    visible: c09visible,
+    requestLog: "c09-figma-requests.jsonl",
+  };
   assert.ok(
     c09visible.matchRate > c09hidden.matchRate,
     `C09 visible node must outscore hidden node (${c09visible.matchRate} vs ${c09hidden.matchRate})`,
@@ -781,4 +822,4 @@ evidence.results.C07 = {
 
 assert.equal(pageErrors.length, 0, `page errors: ${pageErrors.join(" | ")}`);
 await writeFile(join(evidenceDir, "evidence.json"), `${JSON.stringify(evidence, null, 2)}\n`);
-console.log(join(evidenceDir, "evidence.json"));
+process.stdout.write(`${join(evidenceDir, "evidence.json")}\n`);

@@ -117,7 +117,8 @@
       "!**/target",
       "!**/.turbo",
       "!**/*.d.ts",
-      "!**/src-tauri/gen"
+      "!**/src-tauri/gen",
+      "!docs/evidence"
     ]
   }
 }

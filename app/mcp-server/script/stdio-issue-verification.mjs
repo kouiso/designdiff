@@ -362,7 +362,10 @@ const startClient = async (name) => {
       PLAYWRIGHT_BROWSERS_PATH:
         process.env.PLAYWRIGHT_BROWSERS_PATH ??
         (process.platform === "win32"
-          ? join(process.env.LOCALAPPDATA ?? join(process.env.USERPROFILE ?? home, "AppData", "Local"), "ms-playwright")
+          ? join(
+              process.env.LOCALAPPDATA ?? join(process.env.USERPROFILE ?? home, "AppData", "Local"),
+              "ms-playwright",
+            )
           : process.platform === "darwin"
             ? join(process.env.HOME ?? home, "Library", "Caches", "ms-playwright")
             : join(process.env.HOME ?? home, ".cache", "ms-playwright")),

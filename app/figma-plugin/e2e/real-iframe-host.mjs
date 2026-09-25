@@ -76,7 +76,11 @@ window.__send = (msg) => iframe.contentWindow.postMessage({ pluginMessage: msg }
   const file = join(pluginDist, basename(url.pathname));
   try {
     const bytes = await readFile(file);
-    res.writeHead(200, { "content-type": MIME[file.slice(file.lastIndexOf("."))] ?? "application/octet-stream" }).end(bytes);
+    res
+      .writeHead(200, {
+        "content-type": MIME[file.slice(file.lastIndexOf("."))] ?? "application/octet-stream",
+      })
+      .end(bytes);
   } catch {
     res.writeHead(404).end();
   }
@@ -195,7 +199,12 @@ try {
   const statsText = await frame.locator(".section .value").last().textContent();
   assert.match(statsText, /4\s*\/\s*4/);
   assert.ok((await frame.locator('img[src^="data:image/png;base64,"]').count()) >= 1);
-  assertions.push({ name: "実canvas比較で全相違を低一致率として描画", ok: true, matchText, statsText });
+  assertions.push({
+    name: "実canvas比較で全相違を低一致率として描画",
+    ok: true,
+    matchText,
+    statsText,
+  });
 
   const postBuild = await treeDigest();
   assert.equal(postBuild.digest, preBuild.digest);
@@ -236,5 +245,12 @@ try {
 }
 
 const failed = assertions.filter((a) => !a.ok);
-console.log(JSON.stringify({ ok: failed.length === 0, evidence, assertions: assertions.length, failed: failed.length }));
+process.stdout.write(
+  `${JSON.stringify({
+    ok: failed.length === 0,
+    evidence,
+    assertions: assertions.length,
+    failed: failed.length,
+  })}\n`,
+);
 if (failed.length > 0) process.exitCode = 1;

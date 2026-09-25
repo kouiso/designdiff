@@ -77,7 +77,10 @@ const solidPng = async (w, h, rgb) =>
 const basePanel = (extraRects = []) =>
   Buffer.from(
     `<svg width="${W}" height="${H}"><rect x="10" y="30" width="370" height="780" fill="#ffffff"/><rect x="30" y="60" width="200" height="24" fill="#333333"/>${extraRects
-      .map((r) => `<rect x="${r.x}" y="${r.y}" width="${r.width}" height="${r.height}" fill="#cc3333"/>`)
+      .map(
+        (r) =>
+          `<rect x="${r.x}" y="${r.y}" width="${r.width}" height="${r.height}" fill="#cc3333"/>`,
+      )
       .join("")}</svg>`,
   );
 
@@ -201,7 +204,10 @@ const startClient = async (name) => {
       PLAYWRIGHT_BROWSERS_PATH:
         process.env.PLAYWRIGHT_BROWSERS_PATH ??
         (process.platform === "win32"
-          ? join(process.env.LOCALAPPDATA ?? join(process.env.USERPROFILE ?? home, "AppData", "Local"), "ms-playwright")
+          ? join(
+              process.env.LOCALAPPDATA ?? join(process.env.USERPROFILE ?? home, "AppData", "Local"),
+              "ms-playwright",
+            )
           : process.platform === "darwin"
             ? join(process.env.HOME ?? home, "Library", "Caches", "ms-playwright")
             : join(process.env.HOME ?? home, ".cache", "ms-playwright")),
@@ -278,7 +284,7 @@ const check = async (id, fn) => {
   }
 };
 
-let client = await startClient("figdiff-campaign-first-process");
+const client = await startClient("figdiff-campaign-first-process");
 try {
   // M02: 作成→一覧→無効ファイル診断→削除。別案件を触らない。
   await check("M02_project_lifecycle", async () => {
@@ -303,9 +309,7 @@ try {
       !listed2.projects.some((p) => p.id === "broken-proj"),
       "corrupt project.json must be skipped",
     );
-    const deleted = data(
-      await call(client, "delete_project", { project_id: created.project_id }),
-    );
+    const deleted = data(await call(client, "delete_project", { project_id: created.project_id }));
     assert.equal(deleted.success, true);
     const listed3 = data(await call(client, "list_projects", {}));
     assert.ok(
@@ -359,9 +363,7 @@ try {
       try {
         // @napi-rs/keyring は credential-store の依存なので、その package を
         // 起点に解決する (pnpm は依存を巻き上げないため script 位置からは見えない)。
-        const req = createRequire(
-          join(root, "package/credential-store/package.json"),
-        );
+        const req = createRequire(join(root, "package/credential-store/package.json"));
         const { Entry } = req("@napi-rs/keyring");
         new Entry("figdiff", "figma-pat").deletePassword();
       } catch {
@@ -436,7 +438,15 @@ try {
     );
     const regions = [
       { id: "mask-a", frame_name: "frame-a", x: 0, y: 0, width: 50, height: 50, label: "mask-a" },
-      { id: "mask-b", frame_name: "frame-a", x: 100, y: 100, width: 60, height: 60, label: "mask-b" },
+      {
+        id: "mask-b",
+        frame_name: "frame-a",
+        x: 100,
+        y: 100,
+        width: 60,
+        height: 60,
+        label: "mask-b",
+      },
     ];
     const setRes = data(
       await call(client, "set_ignore_regions", {
@@ -445,9 +455,7 @@ try {
       }),
     );
     assert.ok(setRes.success !== false, JSON.stringify(setRes));
-    const got = data(
-      await call(client, "get_ignore_regions", { project_id: proj.project_id }),
-    );
+    const got = data(await call(client, "get_ignore_regions", { project_id: proj.project_id }));
     assert.equal(got.regions.length, 2);
     const firstId = got.regions[0].id;
     const del = data(
@@ -457,9 +465,7 @@ try {
       }),
     );
     assert.equal(del.success, true);
-    const got2 = data(
-      await call(client, "get_ignore_regions", { project_id: proj.project_id }),
-    );
+    const got2 = data(await call(client, "get_ignore_regions", { project_id: proj.project_id }));
     assert.equal(got2.regions.length, 1);
     assert.ok(!got2.regions.some((r) => r.id === firstId));
     const delMissing = await call(client, "delete_ignore_region", {
@@ -468,9 +474,7 @@ try {
     });
     // 不存在IDの削除は no-op 成功で、件数不変として応答される（冪等）。
     const delMissingData = data(delMissing);
-    const got3 = data(
-      await call(client, "get_ignore_regions", { project_id: proj.project_id }),
-    );
+    const got3 = data(await call(client, "get_ignore_regions", { project_id: proj.project_id }));
     assert.equal(got3.regions.length, 1, "missing-id delete must not remove other regions");
     return {
       expected: { afterAdd: 2, afterDelete: 1, missingIdNoOp: true },
@@ -535,9 +539,7 @@ try {
         campaign_id: "c05-taller",
       }),
     );
-    const disk = JSON.parse(
-      await readFile(join(resultDir, `${taller.comparisonId}.json`), "utf8"),
-    );
+    const disk = JSON.parse(await readFile(join(resultDir, `${taller.comparisonId}.json`), "utf8"));
     assert.ok(disk.result?.normalization ?? taller.normalization, "normalization must be reported");
     assert.notEqual(taller.matchRate, 1, "size mismatch must not silently PASS at 100%");
     return {
@@ -609,9 +611,7 @@ try {
     assert.ok(noMask.diffPixelCount > masked.diffPixelCount);
     const bRegions = (masked.diffRegions ?? []).filter(
       (r) =>
-        r.bounds &&
-        Math.abs(r.bounds.x - defectB.x) <= 3 &&
-        Math.abs(r.bounds.y - defectB.y) <= 3,
+        r.bounds && Math.abs(r.bounds.x - defectB.x) <= 3 && Math.abs(r.bounds.y - defectB.y) <= 3,
     );
     assert.ok(bRegions.length > 0, "unmasked defect must remain a diff region");
     return {
@@ -722,12 +722,17 @@ try {
   // M05: Web URL 経路。実ブラウザ撮影で寸法・条件が取れる。
   await check("M05_screenshot_url", async () => {
     const result = data(
-      await call(client, "compare_design", {
-        design_source: fixturePaths.design,
-        screenshot_url: `${fixtureUrl}/`,
-        capture_width: 390,
-        campaign_id: "m05-url",
-      }, 240_000),
+      await call(
+        client,
+        "compare_design",
+        {
+          design_source: fixturePaths.design,
+          screenshot_url: `${fixtureUrl}/`,
+          capture_width: 390,
+          campaign_id: "m05-url",
+        },
+        240_000,
+      ),
     );
     assert.ok(result.comparisonId);
     assert.ok(Number.isFinite(result.matchRate));

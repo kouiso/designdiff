@@ -13,14 +13,7 @@ import assert from "node:assert/strict";
 import { execSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { createServer } from "node:http";
-import {
-  mkdir,
-  mkdtemp,
-  readdir,
-  rename,
-  rm,
-  writeFile,
-} from "node:fs/promises";
+import { mkdir, mkdtemp, readdir, rename, rm, writeFile } from "node:fs/promises";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
@@ -173,10 +166,7 @@ const evidence = {
 };
 // 開始直後の証跡が実際に書けたことを読み戻して確認する。ここで失敗
 // する証跡 dir は後の assert 結果も信頼できない。
-writeFileSync(
-  join(evidenceDir, "evidence.json"),
-  `${JSON.stringify(evidence, null, 2)}\n`,
-);
+writeFileSync(join(evidenceDir, "evidence.json"), `${JSON.stringify(evidence, null, 2)}\n`);
 {
   const persisted = JSON.parse(readFileSync(join(evidenceDir, "evidence.json"), "utf-8"));
   assert.equal(persisted.completed, false, "initial evidence must persist completed=false");
@@ -244,7 +234,16 @@ const keyboardCanvasDoc = {
 // エラー注入と再試行用の node。CANVAS 以外の正常応答を返し、
 // tryPageDetection の nodeType!==CANVAS 分岐を例外経由ではなくクリーンに通す。
 const exportableNodeIds = [
-  "7:8", "7:9", "7:10", "7:11", "7:12", "7:13", "7:14", "7:15", "7:16", "7:21",
+  "7:8",
+  "7:9",
+  "7:10",
+  "7:11",
+  "7:12",
+  "7:13",
+  "7:14",
+  "7:15",
+  "7:16",
+  "7:21",
 ];
 
 // renderer スクリプトの開始より前から動く計装 preload。error /
@@ -493,10 +492,7 @@ const launch = (launchIndex, extraEnv = {}) =>
 // 成功時も同じ内容が上書きされるだけなので二重書きは問題ない。
 process.on("exit", () => {
   try {
-    writeFileSync(
-      join(evidenceDir, "evidence.json"),
-      `${JSON.stringify(evidence, null, 2)}\n`,
-    );
+    writeFileSync(join(evidenceDir, "evidence.json"), `${JSON.stringify(evidence, null, 2)}\n`);
   } catch {
     // 証跡の書き出し自体の失敗はこれ以上追えないので握る。
   }
@@ -532,7 +528,9 @@ const figmaRequests = () =>
 const waitForExport = async (from, timeout = 15_000) => {
   const deadline = Date.now() + timeout;
   while (Date.now() < deadline) {
-    const hits = figmaRequests().slice(from).filter((u) => u.includes("/v1/images/"));
+    const hits = figmaRequests()
+      .slice(from)
+      .filter((u) => u.includes("/v1/images/"));
     if (hits.length) return hits;
     await new Promise((r) => setTimeout(r, 200));
   }
@@ -544,7 +542,9 @@ const waitForExport = async (from, timeout = 15_000) => {
 const waitForExportSettled = async (from, settleMs = 1500, timeout = 15_000) => {
   await waitForExport(from, timeout);
   await new Promise((r) => setTimeout(r, settleMs));
-  return figmaRequests().slice(from).filter((u) => u.includes("/v1/images/"));
+  return figmaRequests()
+    .slice(from)
+    .filter((u) => u.includes("/v1/images/"));
 };
 
 // 否定 assert (「API に届いていない」「ディスクに書かれていない」) も同じ
@@ -605,11 +605,7 @@ await page.getByRole("button", { name: "作成", exact: true }).click();
 await page.getByText("Figma Tokenが必要です", { exact: true }).waitFor({ timeout: 15_000 });
 await settle();
 assert.equal(figmaRequests().length, 0, "token-less create must not reach the API");
-assert.equal(
-  (await readdir(projectsDirectory)).length,
-  0,
-  "project created despite missing token",
-);
+assert.equal((await readdir(projectsDirectory)).length, 0, "project created despite missing token");
 evidence.results.D01.tokenlessPaths = ["quickCompareSubmit", "createProjectForm"];
 
 // PAT を dialog 経由で保存 → file backend の credentials.json ができる。
@@ -641,11 +637,16 @@ await page.getByLabel("送信", { exact: true }).click();
 await page.getByText("カード", { exact: true }).waitFor({ timeout: 15_000 });
 await page.getByText("ヘッダー", { exact: true }).waitFor();
 const beforeExport = figmaRequests().length;
-await page.getByRole("button", { name: /カード/ }).first().click();
+await page
+  .getByRole("button", { name: /カード/ })
+  .first()
+  .click();
 const exports = await waitForExportSettled(beforeExport, 1500);
 assert.equal(exports.length, 1, `expected exactly 1 export call, got ${exports.length}`);
-assert.ok(exports[0].includes("ids=7%3A9") || exports[0].includes("ids=7:9"),
-  `selected frame 7:9 not exported: ${exports[0]}`);
+assert.ok(
+  exports[0].includes("ids=7%3A9") || exports[0].includes("ids=7:9"),
+  `selected frame 7:9 not exported: ${exports[0]}`,
+);
 evidence.results.D01.frameSelect = { exported: exports[0], framesListed: ["ヘッダー", "カード"] };
 
 // 案件作成: 新規プロジェクトフォーム → project.json が実ディスクに残る。
@@ -699,9 +700,7 @@ const shotZoneLoaded = () =>
         el.textContent.includes("実装スクリーンショット"),
     );
     if (!zone) return null;
-    return [...zone.querySelectorAll("p")].some((p) =>
-      p.textContent.includes("読み込み済み"),
-    );
+    return [...zone.querySelectorAll("p")].some((p) => p.textContent.includes("読み込み済み"));
   });
 assert.equal(await shotZoneLoaded(), false, "screenshot slot already loaded before drop");
 await page.evaluate(() => {
@@ -817,7 +816,8 @@ evidence.results.D03.inputRetainedOnFailure = true;
 
 await nav(page, "ホーム").click();
 const figmaUrlInput = page.getByLabel("Figma URL またはローカル画像パス...", { exact: true });
-const nodeUrl = (nodeId) => `https://www.figma.com/design/FD01/Fixture?node-id=${nodeId.replace(":", "-")}`;
+const nodeUrl = (nodeId) =>
+  `https://www.figma.com/design/FD01/Fixture?node-id=${nodeId.replace(":", "-")}`;
 const submitDesign = async (url) => {
   await figmaUrlInput.fill(url);
   await page.getByLabel("送信", { exact: true }).click();
@@ -839,7 +839,10 @@ const assertApiHit = (before, nodeId, label) => {
   assert.ok(hits.length >= 1, `${label}: no API request reached for ${nodeId}`);
   return hits;
 };
-for (const [mode, nodeId] of [["401", "7:10"], ["403", "7:11"]]) {
+for (const [mode, nodeId] of [
+  ["401", "7:10"],
+  ["403", "7:11"],
+]) {
   await setMode(mode);
   const url = nodeUrl(nodeId);
   const beforeErr = figmaRequests().length;
@@ -897,10 +900,16 @@ await setMode("500");
 const retryUrl = nodeUrl("7:16");
 // 7:13 の 500 banner が画面に残ったままだと、次の waitFor が stale 要素で
 // 即解決して「7:16 の失敗が表示された」証左にならない。消えるまで待つ。
-await page.getByText(/server error/).first().waitFor({ state: "hidden", timeout: 15_000 });
+await page
+  .getByText(/server error/)
+  .first()
+  .waitFor({ state: "hidden", timeout: 15_000 });
 const beforeFailedRetry = figmaRequests().length;
 await submitDesign(retryUrl);
-await page.getByText(/server error/).first().waitFor({ timeout: 15_000 });
+await page
+  .getByText(/server error/)
+  .first()
+  .waitFor({ timeout: 15_000 });
 assertApiHit(beforeFailedRetry, "7:16", "500-retry");
 assert.equal(await figmaUrlInput.inputValue(), retryUrl, "input lost before same-URL retry");
 await setMode("ok");
@@ -1007,7 +1016,7 @@ const narrow = await page.evaluate(() => {
     .map((el) => {
       const r = el.getBoundingClientRect();
       const cls = typeof el.className === "string" ? el.className.slice(0, 50) : "";
-      return `${el.tagName.toLowerCase()}${cls ? "." + cls : ""} right=${Math.round(r.right)}`;
+      return `${el.tagName.toLowerCase()}${cls ? `.${cls}` : ""} right=${Math.round(r.right)}`;
     });
   const nav = document.querySelector('nav[aria-label="Main navigation"]');
   const home = [...(nav?.querySelectorAll("button") ?? [])].find((b) =>
@@ -1016,10 +1025,7 @@ const narrow = await page.evaluate(() => {
   let homeNav = { found: false, reachable: false };
   if (home) {
     const rect = home.getBoundingClientRect();
-    const hit = document.elementFromPoint(
-      rect.left + rect.width / 2,
-      rect.top + rect.height / 2,
-    );
+    const hit = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
     homeNav = { found: true, reachable: hit === home || home.contains(hit) };
   }
   return {
@@ -1094,7 +1100,10 @@ await page2.locator("article", { hasText: "MCP経由案件" }).waitFor();
 const d08 = { restored: ["D01案件", "比較テスト案件", "MCP経由案件"] };
 
 // D01案件を開く → page 一覧と source が保持されている。
-await page2.locator("article", { has: page2.locator("h3", { hasText: "D01案件" }) }).first().click();
+await page2
+  .locator("article", { has: page2.locator("h3", { hasText: "D01案件" }) })
+  .first()
+  .click();
 await page2.getByText("デスクトップ", { exact: true }).waitFor({ timeout: 15_000 });
 await page2.getByRole("heading", { name: "トップ", exact: true }).waitFor();
 d08.d01ProjectContents = { page: "トップ", source: "デスクトップ" };
@@ -1121,14 +1130,13 @@ await shotPill2.waitFor({ state: "attached", timeout: 15_000 });
 // 比較ページには複数の canvas が並び得るため「最初の canvas」ではなく
 // fixture 固有寸法の canvas が現れるまで待ち、全 canvas を列挙して照合する。
 await page2.waitForFunction(
-  () => [...document.querySelectorAll("canvas")].some(
-    (c) => c.width === 50 && c.height === 50,
-  ),
+  () => [...document.querySelectorAll("canvas")].some((c) => c.width === 50 && c.height === 50),
   undefined,
   { timeout: 15_000, polling: 200 },
 );
 const japaneseCanvases = await page2.evaluate(() =>
-  [...document.querySelectorAll("canvas")].map((c) => ({ width: c.width, height: c.height })));
+  [...document.querySelectorAll("canvas")].map((c) => ({ width: c.width, height: c.height })),
+);
 assert.ok(
   japaneseCanvases.some((c) => c.width === 50 && c.height === 50),
   `japanese-named file did not produce its fixture-sized canvas: ${JSON.stringify(japaneseCanvases)}`,
@@ -1145,7 +1153,10 @@ d10.japaneseFilename = {
 // article click では記憶済みの compare が再表示される。閉じて開き直す。
 await nav(page2, "ホーム").click();
 await page2.locator('span[aria-label="D01案件 を閉じる"]').click();
-await page2.locator("article", { has: page2.locator("h3", { hasText: "D01案件" }) }).first().click();
+await page2
+  .locator("article", { has: page2.locator("h3", { hasText: "D01案件" }) })
+  .first()
+  .click();
 await page2.getByText("デスクトップ", { exact: true }).waitFor({ timeout: 15_000 });
 
 // positive control: この process で design 画像を compare store に載せる。
@@ -1161,9 +1172,7 @@ await designPill2.waitFor({ state: "attached", timeout: 15_000 });
 // 別用途の canvas と混同しないよう、fixture 寸法の canvas を列挙して待つ。
 // (非アクティブ window では RAF poll が回らないことがあるため ms polling)
 await page2.waitForFunction(
-  () => [...document.querySelectorAll("canvas")].some(
-    (c) => c.width === 200 && c.height === 120,
-  ),
+  () => [...document.querySelectorAll("canvas")].some((c) => c.width === 200 && c.height === 120),
   undefined,
   { timeout: 15_000, polling: 200 },
 );
@@ -1220,9 +1229,7 @@ const parseTransform = (raw) => {
 const waitCompareCanvas = (specs, timeout = 8_000) =>
   page2.waitForFunction(
     (entries) => {
-      const c = document.querySelector(
-        '[data-testid="compare-canvas-container"] canvas',
-      );
+      const c = document.querySelector('[data-testid="compare-canvas-container"] canvas');
       if (!c || c.width !== 200 || c.height !== 120) return false;
       const ctx = c.getContext("2d");
       if (!ctx) return false;
@@ -1377,22 +1384,20 @@ try {
       // 失敗時の実測画素を証跡に残してから再 throw する (期待値との
       // 差分が fixture 誤算なのか描画不良なのかを切り分けるため)。
       d04.lastObserved = await page2.evaluate(() => {
-        const c = document.querySelector(
-          '[data-testid="compare-canvas-container"] canvas',
-        );
+        const c = document.querySelector('[data-testid="compare-canvas-container"] canvas');
         if (!c) return null;
         const ctx = c.getContext("2d", { willReadFrequently: true });
-        return [[25, 25], [150, 80], [140, 25], [100, 20], [60, 60]].map(
-          ([x, y]) => ({ x, y, px: [...ctx.getImageData(x, y, 1, 1).data] }),
-        );
+        return [
+          [25, 25],
+          [150, 80],
+          [140, 25],
+          [100, 20],
+          [60, 60],
+        ].map(([x, y]) => ({ x, y, px: [...ctx.getImageData(x, y, 1, 1).data] }));
       });
       throw error;
     }
-    assert.equal(
-      await errorBannerCount(),
-      0,
-      `error banner shown after switching to ${mode.id}`,
-    );
+    assert.equal(await errorBannerCount(), 0, `error banner shown after switching to ${mode.id}`);
     modeObservations[mode.id] = {
       activeClass: (await button.getAttribute("class"))?.includes("primary") ?? false,
       pixelsMatched: mode.specs.length,
@@ -1412,9 +1417,7 @@ try {
   await page2.keyboard.up("Control");
   await page2.waitForFunction(
     (beforeScale) => {
-      const el = document.querySelector(
-        '[data-testid="compare-canvas-container"] > div',
-      );
+      const el = document.querySelector('[data-testid="compare-canvas-container"] > div');
       const m = /scale\(\s*(-?[\d.eE+]+)\s*\)/.exec(el?.style.transform ?? "");
       return m !== null && Number(m[1]) > beforeScale * 1.2;
     },
@@ -1434,10 +1437,7 @@ try {
   assert.ok(p0, `transform unparsable before pan: ${await transformOf()}`);
   const canvasBox = await canvasContainer.boundingBox();
   assert.ok(canvasBox, "compare canvas container not visible");
-  await page2.mouse.move(
-    canvasBox.x + canvasBox.width / 2,
-    canvasBox.y + canvasBox.height / 2,
-  );
+  await page2.mouse.move(canvasBox.x + canvasBox.width / 2, canvasBox.y + canvasBox.height / 2);
   await page2.mouse.down({ button: "middle" });
   await page2.mouse.move(
     canvasBox.x + canvasBox.width / 2 + 60,
@@ -1447,16 +1447,10 @@ try {
   await page2.mouse.up({ button: "middle" });
   await page2.waitForFunction(
     (exp) => {
-      const el = document.querySelector(
-        '[data-testid="compare-canvas-container"] > div',
-      );
-      const m = /translate\(\s*(-?[\d.]+)px,\s*(-?[\d.]+)px\s*\)/.exec(
-        el?.style.transform ?? "",
-      );
+      const el = document.querySelector('[data-testid="compare-canvas-container"] > div');
+      const m = /translate\(\s*(-?[\d.]+)px,\s*(-?[\d.]+)px\s*\)/.exec(el?.style.transform ?? "");
       return (
-        m !== null &&
-        Math.abs(Number(m[1]) - exp.x) <= 5 &&
-        Math.abs(Number(m[2]) - exp.y) <= 5
+        m !== null && Math.abs(Number(m[1]) - exp.x) <= 5 && Math.abs(Number(m[2]) - exp.y) <= 5
       );
     },
     { x: p0.x + 60, y: p0.y + 40 },
@@ -1478,12 +1472,11 @@ try {
   await page2.keyboard.press("Control+0");
   await page2.waitForFunction(
     () => {
-      const el = document.querySelector(
-        '[data-testid="compare-canvas-container"] > div',
-      );
-      const m = /translate\(\s*(-?[\d.]+)px,\s*(-?[\d.]+)px\s*\)\s*scale\(\s*(-?[\d.eE+]+)\s*\)/.exec(
-        el?.style.transform ?? "",
-      );
+      const el = document.querySelector('[data-testid="compare-canvas-container"] > div');
+      const m =
+        /translate\(\s*(-?[\d.]+)px,\s*(-?[\d.]+)px\s*\)\s*scale\(\s*(-?[\d.eE+]+)\s*\)/.exec(
+          el?.style.transform ?? "",
+        );
       return (
         m !== null &&
         Math.abs(Number(m[1])) < 0.01 &&
@@ -1635,13 +1628,13 @@ assert.deepEqual(d04.consoleErrors, [], `D04 console errors: ${d04.consoleErrors
 // 案件切替: MCP経由案件を開く → 空の案件内容が出ることを実画面で確認する。
 // (一覧の article タイトルにも案件名は出るため、画面遷移の確証は空状態表示で取る)
 await nav(page2, "ホーム").click();
-await page2.locator("article", { has: page2.locator("h3", { hasText: "MCP経由案件" }) }).first().click();
+await page2
+  .locator("article", { has: page2.locator("h3", { hasText: "MCP経由案件" }) })
+  .first()
+  .click();
 await page2.getByText("Add Your First Page", { exact: true }).waitFor({ timeout: 15_000 });
 const mcpView = await page2.locator("body").textContent();
-assert.ok(
-  !mcpView.includes("デスクトップ"),
-  "D01 source contents leaked into MCP project view",
-);
+assert.ok(!mcpView.includes("デスクトップ"), "D01 source contents leaked into MCP project view");
 
 // design 画像を載せた直後に別案件の「比較」を開いた時の状態を観測する。
 // compare store は共通のため、前案件の画像が残る実挙動があり得る — 記録して台帳へ渡す。
@@ -1653,10 +1646,7 @@ await nav(page2, "比較").click();
 // design label sibling 限定の pill で観測する。
 await page2
   .waitForFunction(
-    () =>
-      [...document.querySelectorAll("canvas")].some(
-        (c) => c.width === 200 && c.height === 120,
-      ),
+    () => [...document.querySelectorAll("canvas")].some((c) => c.width === 200 && c.height === 120),
     undefined,
     { timeout: 10_000, polling: 200 },
   )
@@ -1680,8 +1670,8 @@ const compareAfterSwitch = await page2.evaluate(() => {
   // この compare 画面で driver が載せた screenshot pill を拾って
   // 「design が残っている」証拠が汚染される。
   if (designLabel?.parentElement) {
-    out.designPill = [...designLabel.parentElement.querySelectorAll("span.fd-pill")].some(
-      (s) => s.textContent.includes("読み込み済み"),
+    out.designPill = [...designLabel.parentElement.querySelectorAll("span.fd-pill")].some((s) =>
+      s.textContent.includes("読み込み済み"),
     );
   }
   // RGBA の alpha だけでは不透明な空状態と実画像を区別できない。
@@ -1697,7 +1687,11 @@ const compareAfterSwitch = await page2.evaluate(() => {
     const ctx = fixture.getContext("2d");
     if (ctx) {
       out.samples = [];
-      for (const [x, y] of [[60, 60], [150, 30], [170, 80]]) {
+      for (const [x, y] of [
+        [60, 60],
+        [150, 30],
+        [170, 80],
+      ]) {
         const d = ctx.getImageData(x, y, 1, 1).data;
         const dist = Math.abs(d[0] - 40) + Math.abs(d[1] - 90) + Math.abs(d[2] - 200);
         out.samples.push({ x, y, rgb: [d[0], d[1], d[2]], dist });
@@ -1715,7 +1709,10 @@ d08.compareAfterProjectSwitch = compareAfterSwitch;
 // の新規 tab になり、project view が確実に出る。
 await nav(page2, "ホーム").click();
 await page2.locator('span[aria-label="D01案件 を閉じる"]').click();
-await page2.locator("article", { has: page2.locator("h3", { hasText: "D01案件" }) }).first().click();
+await page2
+  .locator("article", { has: page2.locator("h3", { hasText: "D01案件" }) })
+  .first()
+  .click();
 await page2.getByText("デスクトップ", { exact: true }).waitFor({ timeout: 15_000 });
 // tab 切替ではなく tab close→再オープンでの復元確認 (tab は最後の page を
 // 記憶するため、切替だけでは project view に戻らない)。
@@ -1757,11 +1754,7 @@ const allRequests = readUrlLog(requestLog);
 const chromiumRequests = readUrlLog(networkLog);
 // host (hostname:port) で照合する — 撮影対象サーバはこの run が
 // listen した port のみ許可し、別 port の loopback 通信は境界違反として残す。
-const allowedMainHosts = [
-  "api.figma.com",
-  "figma-fixture.invalid",
-  `127.0.0.1:${port}`,
-];
+const allowedMainHosts = ["api.figma.com", "figma-fixture.invalid", `127.0.0.1:${port}`];
 const allowedChromiumHosts = [`127.0.0.1:${port}`];
 const offBoundary = [
   ...allRequests.filter((u) => !allowedMainHosts.includes(new URL(u).host)),
@@ -1787,7 +1780,8 @@ const sessionEntries = (existsSync(sessionLog) ? readFileSync(sessionLog, "utf-8
   .map((l) => JSON.parse(l));
 const perLaunchSessions = {};
 for (const e of sessionEntries) {
-  (perLaunchSessions[e.launchId] ??= new Set()).add(e.seq);
+  perLaunchSessions[e.launchId] ??= new Set();
+  perLaunchSessions[e.launchId].add(e.seq);
 }
 assert.ok(
   Object.keys(perLaunchSessions).length >= 3 &&
@@ -1888,11 +1882,12 @@ const knownDefects = [];
 if (d09["401"]?.cancelDisabled || d09["403"]?.cancelDisabled) {
   knownDefects.push({
     id: "token-dialog-cancel-stuck",
-    detail: "PAT 保存成功後に TokenRequiredDialog を再オープンするとキャンセルボタンが disabled のまま残る (Escape/onOpenChange 経路は生存)",
+    detail:
+      "PAT 保存成功後に TokenRequiredDialog を再オープンするとキャンセルボタンが disabled のまま残る (Escape/onOpenChange 経路は生存)",
     observedIn: "D09.401/403.cancelDisabled",
     observed: {
-      "401": d09["401"]?.cancelDisabled,
-      "403": d09["403"]?.cancelDisabled,
+      401: d09["401"]?.cancelDisabled,
+      403: d09["403"]?.cancelDisabled,
     },
     hypothesis: "dialog の isSubmitting が保存成功後に false へ戻らない可能性",
   });
@@ -1900,10 +1895,7 @@ if (d09["401"]?.cancelDisabled || d09["403"]?.cancelDisabled) {
 // 案件を跨いだ compare 状態リーク: 807行のテキストリークは hard assert で
 // run を落とすのに、画像+pill の残存を注記だけにすると台帳に出ない。
 // 同じ観測ルールで knownDefects へ載せる (block 化は製品判断)。
-if (
-  d08.compareAfterProjectSwitch?.designPill ||
-  d08.compareAfterProjectSwitch?.matchesFixture
-) {
+if (d08.compareAfterProjectSwitch?.designPill || d08.compareAfterProjectSwitch?.matchesFixture) {
   knownDefects.push({
     id: "compare-store-shared-across-projects",
     detail: "design 画像を載せた直後に別案件の「比較」を開くと、前案件の画像+pill がそのまま残る",
@@ -1912,10 +1904,7 @@ if (
     hypothesis: "compare store が案件非依存で共有されている可能性",
   });
 }
-if (
-  (d10.narrowViewport?.overflowPx ?? 0) > 0 ||
-  d10.narrowViewport?.homeNav?.reachable === false
-) {
+if ((d10.narrowViewport?.overflowPx ?? 0) > 0 || d10.narrowViewport?.homeNav?.reachable === false) {
   knownDefects.push({
     id: "narrow-viewport-overflow",
     detail: "430px viewport で横 overflow が発生する",
@@ -1936,11 +1925,7 @@ evidence.knownDefects = knownDefects;
 const unexpectedPageErrors = evidence.pageErrors.filter(
   (m) => !String(m).includes("selftest early pageerror"),
 );
-assert.equal(
-  unexpectedPageErrors.length,
-  0,
-  `page errors: ${unexpectedPageErrors.join(" | ")}`,
-);
+assert.equal(unexpectedPageErrors.length, 0, `page errors: ${unexpectedPageErrors.join(" | ")}`);
 // results の key 集合自体を固定する — case の追加・欠落が
 // 「完走」の形を変えたら証跡として不完全になる。
 assert.deepEqual(
@@ -1950,4 +1935,4 @@ assert.deepEqual(
 );
 evidence.completed = true;
 await writeFile(join(evidenceDir, "evidence.json"), `${JSON.stringify(evidence, null, 2)}\n`);
-console.log(join(evidenceDir, "evidence.json"));
+process.stdout.write(`${join(evidenceDir, "evidence.json")}\n`);
