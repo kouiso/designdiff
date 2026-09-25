@@ -124,6 +124,10 @@ describe("compareImages shift + localized diff scoring (Issue #58)", () => {
     const clusterScores = (report?.regionScores ?? []).filter((score) =>
       score.regionId.startsWith("diff-cluster-"),
     );
+    // この検体はパッチ由来のクラスタが厳密に1件のみ生成されることを前提に
+    // 上の計測結果（表）を記録している。2件以上あれば別のクラスタ(誤検出)が
+    // 混ざっている証拠なので、まずここで検出する。
+    expect(clusterScores).toHaveLength(1);
     // ずれ補正で空いた上端 SHIFT_Y 行の帯は全体の translation_offset 課題として
     // 集計済みのため、局所採点には残らない。
     expect(clusterScores.every((score) => score.bbox.y >= SHIFT_Y)).toBe(true);
