@@ -84,6 +84,33 @@ function run(argv) {
   const appPid = findAppPid(windows);
   const saveDialog = findSaveDialog(windows, appPid);
   switch (mode) {
+    case "wait": {
+      // Node 側から osascript を短周期で spawn し直すと、spawn 毎の JXA +
+      // Quartz 初期化コストを払い続け、高負荷ランナーでは spawnSync timeout
+      // に連続で殺されて dialog 検出が永久に 'unknown' になる実績がある。
+      // ポーリングはこのプロセス内で回し、状態遷移の結果だけを返す。
+      if (argv[1] !== "open" && argv[1] !== "closed") $.exit(2);
+      const wantOpen = argv[1] === "open";
+      const deadlineMs = Date.now() + Number(argv[2] ?? 60) * 1000;
+      let lastError = "";
+      while (Date.now() < deadlineMs) {
+        let found = null;
+        try {
+          const current = onScreenWindows();
+          found = findSaveDialog(current, findAppPid(current));
+        } catch (e) {
+          lastError = String(e);
+        }
+        if (wantOpen === Boolean(found)) {
+          if (found) console.log(hexId(found));
+          return;
+        }
+        delay(0.3);
+      }
+      throw new Error(
+        `wait ${argv[1]} timed out after ${argv[2] ?? 60}s${lastError ? ` (last probe error: ${lastError})` : ""}`,
+      );
+    }
     case "tree": {
       for (const w of windows) {
         const title = windowTitle(w);

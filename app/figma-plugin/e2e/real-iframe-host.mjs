@@ -117,14 +117,27 @@ try {
   const frame = page.frameLocator("#plugin");
   await frame.locator(".tab").first().waitFor();
 
-  const lastReceived = () => page.evaluate(() => window.__received.at(-1));
   const send = (msg) => page.evaluate((m) => window.__send(m), msg);
+  // __received は追記のみの受信ログなので「消費済み件数」のカーソルを持つ。
+  // 応答が click 直後 wait 開始より先に届いていても、未消費領域から type が
+  // 一致する最初の1件を拾えるため、wait 前到着のレースで timeout しない。
+  let requestCursor = 0;
   const waitForRequest = async (type) => {
-    const before = await page.evaluate(() => window.__received.length);
-    await page.waitForFunction((count) => window.__received.length > count, before);
-    const message = await lastReceived();
-    assert.equal(message?.type, type);
-    return message;
+    const handle = await page.waitForFunction(
+      ({ cursor, expected }) => {
+        const index = window.__received.findIndex(
+          (message, i) => i >= cursor && message && message.type === expected,
+        );
+        return index < 0 ? false : { index, message: window.__received[index] };
+      },
+      { cursor: requestCursor, expected: type },
+      // raf polling は headless のフレーム停滞で述語自体が評価されず
+      // timeout し得るため、インターバル polling にする。
+      { polling: 250 },
+    );
+    const found = await handle.jsonValue();
+    requestCursor = found.index + 1;
+    return found.message;
   };
 
   assert.equal(await frame.locator(".tab").count(), 2);
