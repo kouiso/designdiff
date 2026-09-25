@@ -67,13 +67,46 @@ const onScreenWindowsViaSe = () => {
       } catch (e) {}
       out.push({
         _se: true,
-        kCGWindowNumber: (pid << 12) | (i & 0xfff),
+        kCGWindowNumber: (pid << 12) | (i & 0x3ff),
         kCGWindowOwnerName: name,
         kCGWindowOwnerPID: pid,
         kCGWindowLayer: /Dialog|Sheet/i.test(subrole) ? 8 : 0,
         kCGWindowName: title,
         kCGWindowIsOnscreen: true,
       });
+      // Electron の dialog.showSaveDialog は window ではなく親 window の
+      // AXSheet として現れ、windows() には列挙されない。sheet/uiElements の
+      // AXSheet・AXDialog も modal layer 相当 (layer!=0) として拾う。
+      let sheets = [];
+      try {
+        sheets = w.sheets();
+      } catch (e) {
+        try {
+          sheets = w.uiElements().filter((el) => {
+            try {
+              return /Sheet|Dialog/i.test(String(el.role() || ""));
+            } catch (e2) {
+              return false;
+            }
+          });
+        } catch (e2) {}
+      }
+      for (let j = 0; j < sheets.length; j++) {
+        const sh = sheets[j];
+        let stitle = "";
+        try {
+          stitle = String(sh.name() || "");
+        } catch (e) {}
+        out.push({
+          _se: true,
+          kCGWindowNumber: (pid << 12) | 0x400 | ((i & 31) << 5) | (j & 31),
+          kCGWindowOwnerName: name,
+          kCGWindowOwnerPID: pid,
+          kCGWindowLayer: 8,
+          kCGWindowName: stitle,
+          kCGWindowIsOnscreen: true,
+        });
+      }
     }
   }
   return out;
