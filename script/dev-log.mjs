@@ -38,6 +38,7 @@ const QUOTA_LOCK_TIMEOUT_MS = 2000;
 const PUBLICATION_GRACE_MS = 1000;
 const TRUNCATED_SUFFIX = "…[truncated]";
 const SIGNAL_EXIT_CODES = { SIGHUP: 129, SIGINT: 130, SIGTERM: 143, SIGKILL: 137 };
+let logSequence = 0;
 
 const pad2 = (n) => String(n).padStart(2, "0");
 
@@ -99,17 +100,20 @@ export const pruneLogs = (dir, { maxFiles = MAX_FILES, maxTotalBytes = MAX_TOTAL
     let entries;
     try {
       entries = readdirSync(dir)
-        .filter((name) => /^dev-\d{8}-\d{6}(?:-\d+)?\.log$/.test(name))
         .flatMap((name) => {
+          const match = /^dev-(\d{8}-\d{6})(?:-(\d+))?\.log$/.exec(name);
+          if (!match) return [];
           const path = join(dir, name);
           try {
             const stat = statSync(path);
-            return stat.isFile() ? [{ path, size: stat.size }] : [];
+            return stat.isFile()
+              ? [{ path, sequence: Number(match[2] ?? 0), size: stat.size, stamp: match[1] }]
+              : [];
           } catch {
             return [];
           }
         })
-        .sort((a, b) => (a.path < b.path ? -1 : 1));
+        .sort((a, b) => a.stamp.localeCompare(b.stamp) || a.sequence - b.sequence);
     } catch {
       return removed;
     }
@@ -230,20 +234,24 @@ export const sanitizeLogText = (text) =>
 
 const reserveLogFile = (dir) => {
   const base = `dev-${fileStamp()}`;
-  for (let counter = 0; counter < 10_000; counter += 1) {
-    const suffix = counter === 0 ? "" : `-${counter}`;
+  for (let attempt = 0; attempt < 10_000; attempt += 1) {
+    const sequence = logSequence;
+    logSequence += 1;
+    const suffix = sequence === 0 ? "" : `-${sequence}`;
     const logPath = join(dir, `${base}${suffix}.log`);
     const activePath = `${logPath}.active`;
     const ownerPath = `${activePath}.owner`;
     try {
       if (existsSync(logPath)) continue;
+      const fd = openSync(activePath, "wx");
       const owner = currentProcessOwner();
-      atomicPublishJson(ownerPath, owner);
-      let fd;
       try {
-        fd = openSync(activePath, "wx");
+        if (existsSync(logPath))
+          throw Object.assign(new Error("log path already exists"), { code: "EEXIST" });
+        atomicPublishJson(ownerPath, owner);
       } catch (error) {
-        removeOwnedPublication(ownerPath, owner.nonce);
+        closeSync(fd);
+        unlinkSync(activePath);
         throw error;
       }
       return { activePath, fd, logPath, owner, ownerPath };
@@ -272,6 +280,48 @@ const logBytesInUse = (dir) => {
 };
 
 export const signalExitCode = (signal) => SIGNAL_EXIT_CODES[signal] ?? 1;
+
+const resolveWindowsCommand = (command, env, cwd) => {
+  if (/[\\/]/.test(command) || /\.[A-Za-z0-9]+$/u.test(command)) return command;
+  const result = spawnSync("where.exe", [command], {
+    cwd,
+    encoding: "utf8",
+    env,
+    windowsHide: true,
+  });
+  return result.status === 0 ? (result.stdout?.split(/\r?\n/u).find(Boolean) ?? command) : command;
+};
+
+const WINDOWS_META_CHARACTER_PATTERN = /([()\][%!^"`<>&|;, *?])/gu;
+const escapeWindowsCommand = (value) => value.replace(WINDOWS_META_CHARACTER_PATTERN, "^$1");
+// .cmd shim は `%*` で再解釈するため二段階分をescapeする。cross-spawn 7.0.6 (MIT) の方式に準拠。
+// 帰属とライセンス全文: script/license/cross-spawn.txt
+const escapeWindowsArgument = (value) => {
+  let escaped = value.replace(/(?=(\\+?)?)\1"/gu, '$1$1\\"').replace(/(?=(\\+?)?)\1$/gu, "$1$1");
+  escaped = `"${escaped}"`.replace(WINDOWS_META_CHARACTER_PATTERN, "^$1");
+  return escaped.replace(WINDOWS_META_CHARACTER_PATTERN, "^$1");
+};
+const getEnvironmentValue = (env, name) => {
+  const key = Object.keys(env).find((candidate) => candidate.toLowerCase() === name.toLowerCase());
+  return key ? env[key] : undefined;
+};
+
+const windowsSpawnSpec = (command, args, env, cwd) => {
+  const resolvedCommand = resolveWindowsCommand(command, env, cwd);
+  if (!/\.(?:bat|cmd)$/iu.test(resolvedCommand)) {
+    return { command: resolvedCommand, args, env };
+  }
+  const invocation = [
+    escapeWindowsCommand(resolvedCommand),
+    ...args.map(escapeWindowsArgument),
+  ].join(" ");
+  return {
+    command: getEnvironmentValue(env, "ComSpec") ?? "cmd.exe",
+    args: ["/d", "/s", "/c", `"${invocation}"`],
+    env,
+    windowsVerbatimArguments: true,
+  };
+};
 
 /** POSIX は専用process groupへ1回だけ送り、子孫をまとめて止める。 */
 export const signalTree = (rootPid, signal) => {
@@ -305,7 +355,27 @@ const isProcessAlive = (pid) => {
   }
 };
 
-export const processStartToken = (pid, run = spawnSync, platform = process.platform) => {
+export const processStartToken = (
+  pid,
+  run = spawnSync,
+  platform = process.platform,
+  read = readFileSync,
+) => {
+  if (!Number.isInteger(pid) || pid <= 0) return null;
+  if (platform === "linux") {
+    try {
+      const bootId = read("/proc/sys/kernel/random/boot_id", "utf8").trim();
+      if (!/^[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}$/i.test(bootId)) return null;
+      const stat = read(`/proc/${pid}/stat`, "utf8");
+      const commandEnd = stat.lastIndexOf(")");
+      if (commandEnd < 0) return null;
+      const fieldsAfterName = stat.slice(commandEnd + 2).split(" ");
+      const startTicks = fieldsAfterName[19];
+      return /^\d+$/.test(startTicks) ? `linux:${bootId}:${startTicks}` : null;
+    } catch {
+      return null;
+    }
+  }
   const commands =
     platform === "win32"
       ? [
@@ -678,12 +748,17 @@ export const runTee = ({
     const out = createLineWriter(sink, "out");
     const err = createLineWriter(sink, "err");
 
-    const child = spawn(command, args, {
+    const spawnSpec =
+      process.platform === "win32"
+        ? windowsSpawnSpec(command, args, env ?? process.env, cwd)
+        : { command, args };
+    const child = spawn(spawnSpec.command, spawnSpec.args, {
       cwd,
-      env,
+      env: spawnSpec.env ?? env,
       stdio: ["inherit", "pipe", "pipe"],
-      shell: process.platform === "win32",
+      shell: false,
       detached: process.platform !== "win32",
+      windowsVerbatimArguments: spawnSpec.windowsVerbatimArguments ?? false,
     });
     onStarted?.({ logPath, child });
 
@@ -747,7 +822,9 @@ export const runTee = ({
       if (closeDeadlineTimer) clearTimeout(closeDeadlineTimer);
       out.flush();
       err.flush();
-      const finalCode = code ?? signalExitCode(requestedSignal ?? signal);
+      const finalCode = requestedSignal
+        ? signalExitCode(requestedSignal)
+        : (code ?? signalExitCode(signal));
       const loggingEnabled = finishLogFile({
         activePath,
         fd,

@@ -23,7 +23,7 @@ interface CapturedCache {
 }
 
 const getFile = vi.fn<(fileKey: string, depth?: number) => Promise<FigmaFileResponse>>();
-const getNode = vi.fn<(fileKey: string, nodeId: string) => Promise<FigmaNode>>();
+const getNode = vi.fn<(fileKey: string, nodeId: string, depth?: number) => Promise<FigmaNode>>();
 const downloadImageAsBase64 =
   vi.fn<(fileKey: string, nodeId: string, scale: number) => Promise<string>>();
 
@@ -290,6 +290,29 @@ describe("webAdapter", () => {
       expect(inspection.nodeId).toBe("1:2");
       expect(inspection.layout.width).toBe(120);
       expect(inspection.cssSuggestion).toContain("width");
+    });
+
+    it("getDesignTokens は指定した深さで共有抽出規則を使う", async () => {
+      const nodeId = crypto.randomUUID();
+      localStorage.setItem(TOKEN_STORAGE_KEY, VALID_TOKEN);
+      getNode.mockResolvedValueOnce({
+        id: nodeId,
+        name: "Token fixture",
+        type: "FRAME",
+        absoluteBoundingBox: { x: 0, y: 0, width: 320, height: 180 },
+      });
+
+      const result = await webAdapter.figma.getDesignTokens("file-key", nodeId, 1);
+
+      expect(getNode).toHaveBeenCalledWith("file-key", nodeId, 1);
+      expect(result).toContainEqual({
+        nodeId,
+        nodeName: "Token fixture",
+        nodeType: "FRAME",
+        property: "width",
+        value: 320,
+        unit: "px",
+      });
     });
   });
 

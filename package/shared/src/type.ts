@@ -24,6 +24,7 @@ import {
   type DiffRegionSchema,
   type DomElementStyleSchema,
   type FigmaAuthStateSchema,
+  type FigmaExportReportSchema,
   type FigmaOAuthTokenResponseSchema,
   type FigmaTokenSchema,
   type FrameSchema,
@@ -31,6 +32,7 @@ import {
   type GridSummarySchema,
   type IgnoreRegionConfigEntrySchema,
   type IgnoreRegionConfigFileSchema,
+  type IgnoreRegionCoordinateContextSchema,
   type IgnoreRegionSchema,
   type ImageDimensionsSchema,
   type ConvergenceCampaignSchema,
@@ -46,6 +48,7 @@ import {
   type NodeStrokeSchema,
   type NodeTypographySchema,
   type NormalizationReportSchema,
+  type StructuralAssessmentSchema,
   type ParsedDesignInputSchema,
   type PreflightReportSchema,
   type PreflightSeveritySchema,
@@ -123,6 +126,10 @@ export type PreflightWarningCode = z.infer<typeof PreflightWarningCodeSchema>;
 export type PreflightSeverity = z.infer<typeof PreflightSeveritySchema>;
 export type PreflightWarning = z.infer<typeof PreflightWarningSchema>;
 export type PreflightReport = z.infer<typeof PreflightReportSchema>;
+export type StructuralAssessment = z.infer<typeof StructuralAssessmentSchema>;
+
+export type FigmaExportReport = z.infer<typeof FigmaExportReportSchema>;
+
 export type NormalizationReport = z.infer<typeof NormalizationReportSchema>;
 export type ScrollCaptureReport = z.infer<typeof ScrollCaptureReportSchema>;
 export type ComparisonHeadline = z.infer<typeof ComparisonHeadlineSchema>;
@@ -138,6 +145,7 @@ export type CropRegion = z.infer<typeof CropRegionSchema>;
 // --- Ignore Region (PR #57) ---
 
 export type IgnoreRegion = z.infer<typeof IgnoreRegionSchema>;
+export type IgnoreRegionCoordinateContext = z.infer<typeof IgnoreRegionCoordinateContextSchema>;
 export type IgnoreRegionConfigEntry = z.infer<typeof IgnoreRegionConfigEntrySchema>;
 export type IgnoreRegionConfigFile = z.infer<typeof IgnoreRegionConfigFileSchema>;
 
@@ -258,6 +266,7 @@ export interface DiffReport {
   regionScores: RegionScore[];
   issues: DiffIssue[];
   weightedAggregate?: WeightedAggregate;
+  structuralAssessment?: StructuralAssessment;
   aggregateVerdict: DiffVerdict;
   rationale: string;
   // 知覚できる差 (ΔE2000 > 2) を持つ画素の割合 (0..1)。

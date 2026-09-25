@@ -1,0 +1,156 @@
+// darwin-native-dialog.jxa — macOS helper for native-report-export.mjs.
+// win32-native-dialog.ps1 と同じ契約: tree / find / shot <id> <out> /
+// save <id> <path> / cancel <id> を osascript -l JavaScript で提供する。
+// 検出は CGWindowListCopyWindowInfo(JXA ObjC ブリッジ経由、PyObjC 不要)。
+// 入力は System Events の keystroke(アクセシビリティ権限が必要)。
+// CGEventPost は使わない: 合成イベントは実入力パイプラインを迂回して
+// 「実ダイアログ操作」の証跡として成立しないため。
+// screencapture -l は Screen Recording 権限が必要。未取得時は PNG の代わりに
+// <out>.txt へ CGWindowList の metadata を書いて exit 0 で返す。
+ObjC.import("Quartz");
+ObjC.import("stdlib");
+
+const SAVE_TITLE = /save|保存/i;
+const APP_NAME = /electron|figdiff/i;
+
+const onScreenWindows = () =>
+  ObjC.deepUnwrap(
+    $.CGWindowListCopyWindowInfo(
+      $.kCGWindowListOptionOnScreenOnly,
+      $.kCGNullWindowID,
+    ),
+  ).filter((w) => w.kCGWindowIsOnscreen !== false);
+
+const windowTitle = (w) => {
+  const name = w.kCGWindowName;
+  return typeof name === "string" ? name : "";
+};
+
+// アプリ pid の特定は title だけでは不足(別の Electron アプリが 'FigDiff' を
+// title に含み得る)ので、owner プロセス名が electron/figdiff のものだけに絞る。
+const findAppPid = (windows) => {
+  for (const w of windows) {
+    const title = windowTitle(w);
+    const owner = String(w.kCGWindowOwnerName || "");
+    if (!/FigDiff/.test(title) || !APP_NAME.test(owner)) continue;
+    const pid = Number(w.kCGWindowOwnerPID || 0);
+    if (pid > 0) return pid;
+  }
+  return 0;
+};
+
+// NSSavePanel は modal panel layer(非0)の子 window として現れる。
+// title が "Save"/"保存" を含む場合も拾うが、基本は layer != 0 で判定する。
+const findSaveDialog = (windows, appPid) => {
+  if (appPid === 0) return null;
+  let titled = null;
+  for (const w of windows) {
+    if (Number(w.kCGWindowOwnerPID) !== appPid) continue;
+    const layer = Number(w.kCGWindowLayer || 0);
+    const title = windowTitle(w);
+    if (layer !== 0) return w;
+    if (SAVE_TITLE.test(title)) titled = w;
+  }
+  return titled;
+};
+
+const hexId = (w) => `0x${Number(w.kCGWindowNumber).toString(16)}`;
+
+const processForPid = (pid) => {
+  const se = Application("System Events");
+  const candidates = se.processes.whose({ unixId: pid });
+  if (candidates.length === 0) {
+    throw new Error(`no System Events process for pid ${pid}`);
+  }
+  return candidates[0];
+};
+
+const frontmost = (pid) => {
+  const proc = processForPid(pid);
+  proc.frontmost = true;
+};
+
+const ownerPidOf = (windows, windowId) => {
+  const num = parseInt(String(windowId).replace(/^0x/, ""), 16);
+  for (const w of windows) {
+    if (Number(w.kCGWindowNumber) === num) return Number(w.kCGWindowOwnerPID || 0);
+  }
+  return 0;
+};
+
+function run(argv) {
+  const mode = argv[0];
+  const windows = onScreenWindows();
+  const appPid = findAppPid(windows);
+  const saveDialog = findSaveDialog(windows, appPid);
+  switch (mode) {
+    case "tree": {
+      for (const w of windows) {
+        const title = windowTitle(w);
+        if (title.length === 0) continue;
+        console.log(`${hexId(w)} "${title}"`);
+      }
+      // ドライバの正規表現 `0x<hex> "Save File"` と互換にするため、
+      // 保存ダイアログには実 title に加えて alias 行を出す。
+      if (saveDialog) console.log(`${hexId(saveDialog)} "Save File"`);
+      return;
+    }
+    case "find": {
+      if (!saveDialog) $.exit(1);
+      console.log(hexId(saveDialog));
+      return;
+    }
+    case "shot": {
+      const num = parseInt(argv[1].replace(/^0x/, ""), 16);
+      const out = argv[2];
+      const app = Application.currentApplication();
+      app.includeStandardAdditions = true;
+      try {
+        app.doShellScript(`screencapture -x -o -l ${num} '${out.replace(/'/g, "'\\''")}'`);
+        const fm = $.NSFileManager.defaultManager;
+        const ok =
+          fm.fileExistsAtPath(out) &&
+          fm.attributesOfItemAtPathError(out, null).fileSize() > 0;
+        if (!ok) throw new Error("screencapture produced no output");
+      } catch (e) {
+        const meta = JSON.stringify(
+          windows.filter((w) => Number(w.kCGWindowNumber) === num),
+          null,
+          2,
+        );
+        const text = `Screen Recording permission unavailable; CGWindowList metadata follows.\n${meta}\n`;
+        const str = $.NSString.stringWithUTF8String(text);
+        str.writeToFileAtomicallyEncodingError(`${out}.txt`, false, $.NSUTF8StringEncoding, null);
+      }
+      return;
+    }
+    case "save": {
+      const pid = ownerPidOf(windows, argv[1]);
+      if (pid === 0) $.exit(1);
+      const se = Application("System Events");
+      frontmost(pid);
+      delay(0.4);
+      // NSSavePanel の Go to folder sheet へ POSIX path を打って Enter。
+      // filename 直打ちより先に destination を確定させる方が安定する。
+      se.keystroke("g", { using: ["command down", "shift down"] });
+      delay(0.8);
+      se.keystroke(argv[2]);
+      delay(0.2);
+      se.keyCode(36);
+      delay(0.8);
+      se.keyCode(36);
+      return;
+    }
+    case "cancel": {
+      const pid = ownerPidOf(windows, argv[1]);
+      if (pid === 0) $.exit(1);
+      const se = Application("System Events");
+      frontmost(pid);
+      delay(0.3);
+      se.keyCode(53);
+      return;
+    }
+    default:
+      $.exit(2);
+  }
+}

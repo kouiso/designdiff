@@ -1,3 +1,5 @@
+import { normalize } from "node:path";
+
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // 起動処理は読み込んだだけで走る。境界を全部差し替えて、登録した処理を
@@ -62,6 +64,8 @@ const mocks = vi.hoisted(() => {
     registerOAuthHandlers: vi.fn(),
     registerActiveSessionHandlers: vi.fn(),
     registerConvergenceHandlers: vi.fn(),
+    registerIgnoreRegionHandlers: vi.fn(),
+    registerIssueReportHandlers: vi.fn(),
     logHooks,
     logError: vi.fn(),
     logWarn: vi.fn(),
@@ -136,6 +140,12 @@ vi.mock("./ipc/active-session", () => ({
 vi.mock("./ipc/convergence", () => ({
   registerConvergenceHandlers: mocks.registerConvergenceHandlers,
 }));
+vi.mock("./ipc/ignore-region", () => ({
+  registerIgnoreRegionHandlers: mocks.registerIgnoreRegionHandlers,
+}));
+vi.mock("./ipc/issue-report", () => ({
+  registerIssueReportHandlers: mocks.registerIssueReportHandlers,
+}));
 
 type Listener = (...args: unknown[]) => unknown;
 
@@ -195,6 +205,8 @@ describe("起動処理", () => {
     expect(mocks.registerOAuthHandlers).toHaveBeenCalledOnce();
     expect(mocks.registerActiveSessionHandlers).toHaveBeenCalledOnce();
     expect(mocks.registerConvergenceHandlers).toHaveBeenCalledOnce();
+    expect(mocks.registerIgnoreRegionHandlers).toHaveBeenCalledOnce();
+    expect(mocks.registerIssueReportHandlers).toHaveBeenCalledOnce();
     expect(mocks.BrowserWindow).toHaveBeenCalled();
   });
 
@@ -235,12 +247,14 @@ describe("起動処理", () => {
     findAppListener("window-all-closed")();
     expect(mocks.appQuit).toHaveBeenCalledOnce();
 
-    Object.defineProperty(process, "platform", { value: "darwin", configurable: true });
-    mocks.appQuit.mockClear();
-    findAppListener("window-all-closed")();
-    expect(mocks.appQuit).not.toHaveBeenCalled();
-
-    Object.defineProperty(process, "platform", { value: original, configurable: true });
+    try {
+      Object.defineProperty(process, "platform", { value: "darwin", configurable: true });
+      mocks.appQuit.mockClear();
+      findAppListener("window-all-closed")();
+      expect(mocks.appQuit).not.toHaveBeenCalled();
+    } finally {
+      Object.defineProperty(process, "platform", { value: original, configurable: true });
+    }
   });
 
   it("起動に失敗したら、理由を出して終わること", async () => {
@@ -504,15 +518,17 @@ describe("起動処理", () => {
     const variables = { home: "/Users/me", appData: "/Users/me/.config", fileName: "main.log" };
     const original = process.platform;
 
-    Object.defineProperty(process, "platform", { value: "darwin", configurable: true });
-    expect(resolvePath(variables)).toBe("/Users/me/Library/Logs/FigDiff/main.log");
+    try {
+      Object.defineProperty(process, "platform", { value: "darwin", configurable: true });
+      expect(resolvePath(variables)).toBe(normalize("/Users/me/Library/Logs/FigDiff/main.log"));
 
-    Object.defineProperty(process, "platform", { value: "linux", configurable: true });
-    expect(resolvePath(variables)).toBe("/Users/me/.config/FigDiff/logs/main.log");
-    expect(resolvePath({ ...variables, fileName: undefined })).toBe(
-      "/Users/me/.config/FigDiff/logs/main.log",
-    );
-
-    Object.defineProperty(process, "platform", { value: original, configurable: true });
+      Object.defineProperty(process, "platform", { value: "linux", configurable: true });
+      expect(resolvePath(variables)).toBe(normalize("/Users/me/.config/FigDiff/logs/main.log"));
+      expect(resolvePath({ ...variables, fileName: undefined })).toBe(
+        normalize("/Users/me/.config/FigDiff/logs/main.log"),
+      );
+    } finally {
+      Object.defineProperty(process, "platform", { value: original, configurable: true });
+    }
   });
 });

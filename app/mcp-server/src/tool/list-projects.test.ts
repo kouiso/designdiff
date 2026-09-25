@@ -1,10 +1,14 @@
+import { randomInt, randomUUID } from "node:crypto";
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from "vitest";
 
-import { listProjects } from "./list-projects.js";
+import { listProjects, registerListProjects } from "./list-projects.js";
 
 vi.mock("node:os", async () => {
   const actual = (await vi.importActual("node:os")) as { homedir: () => string };
@@ -49,6 +53,7 @@ const VALID_PROJECT_2 = {
 // vitest.setup.ts が全体へ入れとる FIGDIFF_HOME はここでは外す。
 beforeEach(() => {
   vi.stubEnv("FIGDIFF_HOME", undefined);
+  vi.stubEnv("FIGDIFF_PROJECTS_DIR", undefined);
 });
 
 afterEach(() => {
@@ -89,6 +94,7 @@ describe("listProjects", () => {
       implementationUrl: "http://localhost:3000",
       pageCount: 2,
       updatedAt: "2026-05-28T12:00:00+09:00",
+      pages: VALID_PROJECT.pages,
     });
   });
 
@@ -137,6 +143,90 @@ describe("listProjects", () => {
 
     const result = listProjects();
     expect(result).toEqual([]);
+  });
+
+  it("前回ノードのキャッシュだけがあるディレクトリを登録済みプロジェクトに数えない", () => {
+    const cacheDirectory = join(testDir, ".figdiff", "projects", "comparison-cache-only");
+    mkdirSync(cacheDirectory, { recursive: true });
+    writeFileSync(join(cacheDirectory, "last-used-node.json"), JSON.stringify({ entries: [] }));
+
+    expect(listProjects()).toEqual([]);
+  });
+
+  it("MCP 応答だけで保存済みのページと比較対象を取得でき、未知の保存項目は含めない", async () => {
+    const fileKey = randomUUID().replaceAll("-", "");
+    const nodeId = `${randomInt(1, 1000)}:${randomInt(1, 1000)}`;
+    const figmaUrl = `https://www.figma.com/design/${fileKey}/fixture?node-id=${nodeId.replace(":", "-")}`;
+    const source = {
+      type: "figma",
+      id: "design-source",
+      label: "Saved design",
+      figmaUrl,
+      fileKey,
+      nodeId,
+      frameName: "Saved frame",
+    };
+    const localSource = {
+      type: "local_image",
+      id: "local-source",
+      label: "Reference image",
+      filePath: join(testDir, "reference.png"),
+    };
+    const page = {
+      ...VALID_PROJECT.pages[0],
+      designSources: [source, localSource],
+    };
+    const projectDirectory = join(testDir, ".figdiff", "projects", VALID_PROJECT.id);
+    mkdirSync(projectDirectory, { recursive: true });
+    writeFileSync(
+      join(projectDirectory, "project.json"),
+      JSON.stringify({
+        ...VALID_PROJECT,
+        credentials: { accessToken: "test-only-private-field" },
+        pages: [
+          {
+            ...page,
+            designSources: [{ ...source, accessToken: "test-only-private-field" }, localSource],
+          },
+        ],
+      }),
+    );
+
+    const server = new McpServer({ name: "saved-project-discovery", version: "1.0.0" });
+    const client = new Client({ name: "saved-project-client", version: "1.0.0" });
+    registerListProjects(server);
+    const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+    try {
+      await server.connect(serverTransport);
+      await client.connect(clientTransport);
+      const result = await client.callTool({ name: "list_projects", arguments: {} });
+      expect(result.isError).not.toBe(true);
+      expect(result.content).toEqual([
+        {
+          type: "text",
+          text: JSON.stringify(
+            {
+              projectCount: 1,
+              projects: [
+                {
+                  id: VALID_PROJECT.id,
+                  name: VALID_PROJECT.name,
+                  implementationUrl: VALID_PROJECT.implementationUrl,
+                  pageCount: 1,
+                  updatedAt: VALID_PROJECT.updatedAt,
+                  pages: [page],
+                },
+              ],
+            },
+            null,
+            2,
+          ),
+        },
+      ]);
+    } finally {
+      await client.close();
+      await server.close();
+    }
   });
 
   it(".figdiff/projectsが存在しない場合はディレクトリを作成して空配列を返す", () => {

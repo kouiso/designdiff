@@ -35,12 +35,21 @@ describe("generateMarkdownReport", () => {
     expect(markdown).toContain("75.25");
   });
 
-  it("shows no-difference message when diffRegions is empty", () => {
-    const result = makeResult({ diffRegions: [] });
+  it("does not infer a perfect match from an empty diff-region list", () => {
+    const result = makeResult({ diffRegions: [], status: "UNCERTAIN" });
 
     const markdown = generateMarkdownReport(result);
 
-    expect(markdown).toContain("No differences found");
+    expect(markdown).toContain("No localized diff regions were reported");
+    expect(markdown).not.toContain("match perfectly");
+    expect(markdown).not.toContain("No differences found");
+  });
+
+  it("does not invent a repair action when none was supplied", () => {
+    const markdown = generateMarkdownReport(makeResult({ diffPixelCount: 0, matchRate: 100 }));
+
+    expect(markdown).not.toContain("Suggested Next Action");
+    expect(markdown).not.toContain("targeted CSS fixes");
   });
 
   it("lists diff regions when present", () => {

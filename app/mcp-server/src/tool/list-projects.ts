@@ -6,7 +6,7 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { ProjectSchema } from "@figdiff/shared";
+import { ProjectSchema, type ProjectPage } from "@figdiff/shared";
 
 import { getFigdiffProjectsDir } from "../util/figdiff-paths.js";
 
@@ -16,6 +16,9 @@ const DESCRIPTION = `【使用タイミング】プロジェクト一覧が必�
 
 FigDiff に登録済みのプロジェクト一覧を返します。
 各プロジェクトには実装URL・ページ数・最終更新日時が含まれます。
+pages に保存済みのページと designSources が含まれます。
+Figma URL・ノードIDまたは画像パスを取得し、次の比較に使用できます。
+有効な project.json があるプロジェクトだけを返します。比較キャッシュのみのディレクトリは含みません。
 compare_design の project_id パラメータに使用するIDを確認できます。
 
 【完了条件】このツール単体で完結。戻り値の projects 配列を参照して次のツールに進む。`;
@@ -34,6 +37,7 @@ export interface ProjectSummary {
   implementationUrl: string;
   pageCount: number;
   updatedAt: string;
+  pages: ProjectPage[];
 }
 
 export const listProjects = (): ProjectSummary[] => {
@@ -56,6 +60,7 @@ export const listProjects = (): ProjectSummary[] => {
           implementationUrl: parsed.data.implementationUrl,
           pageCount: parsed.data.pages.length,
           updatedAt: parsed.data.updatedAt,
+          pages: parsed.data.pages,
         });
       }
     } catch {

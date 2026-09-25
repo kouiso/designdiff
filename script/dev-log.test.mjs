@@ -133,6 +133,22 @@ test("pruneLogs は dir が無くても落ちない", () => {
   assert.deepEqual(pruneLogs("/nonexistent/figdiff-logs"), []);
 });
 
+test("pruneLogs は同一秒の数値suffixを起動順として扱う", () =>
+  withTempDir((dir) => {
+    for (let i = 0; i <= 12; i += 1) {
+      const suffix = i === 0 ? "" : `-${i}`;
+      writeFileSync(join(dir, `dev-20260902-100000${suffix}.log`), String(i));
+    }
+
+    pruneLogs(dir, { maxFiles: 3, maxTotalBytes: 10_000 });
+
+    assert.deepEqual(readdirSync(dir).sort(), [
+      "dev-20260902-100000-10.log",
+      "dev-20260902-100000-11.log",
+      "dev-20260902-100000-12.log",
+    ]);
+  }));
+
 test("永続コピーはパス、各種トークン、長大行を伏せる", () => {
   const sanitized = sanitizeLogText(
     `failed \\\\server\\share\\Patient A\\scan.dcm FIGD_SECRET Authorization: bearer AbC.123 X-Figma-Token: abc access_token=xyz github_pat_123 ${"x".repeat(9000)}`,
@@ -149,6 +165,79 @@ test("JSON形式のtokenを伏せ、URLを壊さない", () => {
   assert.doesNotMatch(sanitized, /secret value|figma secret|URL_SECRET/);
   assert.match(sanitized, /https:\/\/example\.test\/a\/b\?q=1/);
 });
+
+test(
+  "Windowsのcmdへ特殊文字をそのまま渡しcwdからbare commandを解決する",
+  { skip: process.platform !== "win32" },
+  async () =>
+    withTempDir(async (dir) => {
+      const command = join(dir, "fixture.cmd");
+      const recorder = join(dir, "record-argv.mjs");
+      writeFileSync(
+        recorder,
+        'import { writeFileSync } from "node:fs"; writeFileSync(process.argv[2], JSON.stringify(process.argv.slice(3)));',
+      );
+      writeFileSync(
+        command,
+        `@echo off\r\n"${process.execPath}" "${recorder}" %*\r\nexit /b 7\r\n`,
+      );
+      const expected = ["%TASK_LITERAL_SENTINEL%", "a&b", 'a"b', "a^b", "a!b", "", "hello world"];
+      const environment = { ...process.env, TASK_LITERAL_SENTINEL: "expanded" };
+      const directOutput = join(dir, "direct.json");
+      const result = await runTee({
+        command,
+        args: [directOutput, ...expected],
+        cwd: dir,
+        env: environment,
+        logDir: dir,
+      });
+      assert.equal(result.code, 7);
+      assert.deepEqual(JSON.parse(readFileSync(directOutput, "utf8")), expected);
+
+      const bareOutput = join(dir, "bare.json");
+      const resolvedFromPath = await runTee({
+        command: "fixture",
+        args: [bareOutput, ...expected],
+        cwd: dir,
+        env: environment,
+        logDir: dir,
+      });
+      assert.equal(resolvedFromPath.code, 7);
+      assert.deepEqual(JSON.parse(readFileSync(bareOutput, "utf8")), expected);
+
+      const inheritedOutput = join(dir, "inherited.json");
+      const inheritedEnvironment = await runTee({
+        command,
+        args: [inheritedOutput, "without explicit env"],
+        cwd: dir,
+        logDir: dir,
+      });
+      assert.equal(inheritedEnvironment.code, 7);
+      assert.deepEqual(JSON.parse(readFileSync(inheritedOutput, "utf8")), ["without explicit env"]);
+
+      const lowercaseComSpecOutput = join(dir, "lowercase-comspec.json");
+      const comSpecKey = Object.keys(environment).find((key) => key.toLowerCase() === "comspec");
+      if (!comSpecKey) throw new Error("ComSpec is unavailable");
+      const lowercaseComSpecEnvironment = {
+        ...Object.fromEntries(
+          Object.entries(environment).filter(([key]) => key.toLowerCase() !== "comspec"),
+        ),
+        PATH: "",
+        comspec: environment[comSpecKey],
+      };
+      const lowercaseComSpec = await runTee({
+        command,
+        args: [lowercaseComSpecOutput, "lowercase comspec"],
+        cwd: dir,
+        env: lowercaseComSpecEnvironment,
+        logDir: dir,
+      });
+      assert.equal(lowercaseComSpec.code, 7);
+      assert.deepEqual(JSON.parse(readFileSync(lowercaseComSpecOutput, "utf8")), [
+        "lowercase comspec",
+      ]);
+    }),
+);
 
 test("TTYのSIGINTでも子が終了しなければ猶予後に強制終了する", async () =>
   withTempDir(async (dir) => {
@@ -222,8 +311,13 @@ test("runTee は SIGINT を受けたら (非 TTY のとき) 子へ転送し、�
     assert.equal(started.logPath, logPath);
     const text = readFileSync(logPath, "utf8");
     assert.match(text, /\[out\] started\n/);
-    assert.match(text, /\[out\] bye\n/);
-    assert.equal(started.child.exitCode, 130, "子は終了している (孤児なし)");
+    if (process.platform === "win32") assert.doesNotMatch(text, /\[out\] bye\n/);
+    else assert.match(text, /\[out\] bye\n/);
+    assert.equal(
+      started.child.exitCode,
+      process.platform === "win32" ? 1 : 130,
+      "子は終了している (孤児なし)",
+    );
   }));
 
 test("runTee は SIGHUP を専用process groupへ転送して129を返す", async () =>
@@ -250,7 +344,7 @@ test("runTee のシグナル転送は孫プロセス (turbo → Electron の形)
     const script = [
       'const { spawn } = require("node:child_process");',
       'const { writeFileSync } = require("node:fs");',
-      'const grandchild = spawn("sleep", ["12345"], { stdio: "ignore" });',
+      'const grandchild = spawn(process.execPath, ["-e", "setInterval(() => {}, 1000)"], { stdio: "ignore" });',
       `writeFileSync(${JSON.stringify(pidPath)}, String(grandchild.pid));`,
       'process.on("SIGINT", () => process.exit(130));',
       "setInterval(() => {}, 1000);",
@@ -562,6 +656,28 @@ test("WindowsのPID開始時刻はPowerShell失敗時にWMICへfallbackする", 
   assert.deepEqual(calls, ["powershell.exe", "wmic"]);
 });
 
+test("LinuxのPID開始識別子はboot IDとstart tickを組み合わせる", () => {
+  const stat = `42 (node worker) ${["S", ...Array(18).fill("0"), "12345"].join(" ")}`;
+  const readIdentity = (bootId, processStat = stat) =>
+    processStartToken(42, undefined, "linux", (path) =>
+      path.endsWith("boot_id") ? bootId : processStat,
+    );
+
+  const firstBoot = "11111111-1111-4111-8111-111111111111";
+  const secondBoot = "22222222-2222-4222-8222-222222222222";
+  assert.equal(readIdentity(firstBoot), `linux:${firstBoot}:12345`);
+  assert.equal(readIdentity(firstBoot), readIdentity(firstBoot));
+  assert.notEqual(readIdentity(firstBoot), readIdentity(secondBoot));
+  assert.equal(readIdentity("malformed"), null);
+  assert.equal(readIdentity(firstBoot, "malformed stat"), null);
+  assert.equal(
+    processStartToken(42, undefined, "linux", () => {
+      throw new Error("proc unavailable");
+    }),
+    null,
+  );
+});
+
 test("旧実装が残した空lockは猶予後に安全回収する", async () =>
   withTempDir(async (dir) => {
     const lockPath = join(dir, ".dev-log-quota.lock");
@@ -579,7 +695,7 @@ test("旧実装が残した空lockは猶予後に安全回収する", async () =
     assert.match(readFileSync(result.logPath, "utf8"), /recovered/);
   }));
 
-test("子が自発SIGTERM終了したら143を返す", async () =>
+test("子の自発SIGTERMはPOSIXで143、Windowsでは識別不能の1を返す", async () =>
   withTempDir(async (dir) => {
     const result = await runTee({
       command: process.execPath,
@@ -588,7 +704,7 @@ test("子が自発SIGTERM終了したら143を返す", async () =>
       env: process.env,
       logDir: dir,
     });
-    assert.equal(result.code, 143);
+    assert.equal(result.code, process.platform === "win32" ? 1 : 143);
   }));
 
 test("printSummary は digest が無ければパスだけ出す", () =>

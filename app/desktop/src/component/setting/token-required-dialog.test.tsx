@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useSettingStore } from "@/store/setting-store";
@@ -54,5 +54,27 @@ describe("TokenRequiredDialog", () => {
     render(<TokenRequiredDialog />);
     const saveButton = screen.getByText("保存");
     expect(saveButton).toBeDisabled();
+  });
+
+  it("保存成功後に再度開いてもキャンセルボタンと入力欄が有効", async () => {
+    vi.mocked(window.electronAPI.saveFigmaToken).mockResolvedValue(undefined);
+    useSettingStore.setState({ showTokenDialog: true });
+    render(<TokenRequiredDialog />);
+
+    fireEvent.change(screen.getByPlaceholderText("figd_..."), {
+      target: { value: "figd_test1234567890abcdefghij" },
+    });
+    fireEvent.click(screen.getByText("保存"));
+    await waitFor(() => {
+      expect(useSettingStore.getState().showTokenDialog).toBe(false);
+    });
+
+    act(() => {
+      useSettingStore.getState().requireToken();
+    });
+
+    const cancelButton = await screen.findByText("キャンセル");
+    expect(cancelButton).toBeEnabled();
+    expect(screen.getByPlaceholderText("figd_...")).toBeEnabled();
   });
 });

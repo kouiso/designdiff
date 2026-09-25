@@ -31,6 +31,8 @@ describe("registerProjectHandlers", () => {
   beforeEach(async () => {
     homeDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), "figdiff-projects-"));
     mocks.getPath.mockReturnValue(homeDir);
+    vi.stubEnv("FIGDIFF_HOME", path.join(homeDir, ".figdiff"));
+    vi.stubEnv("FIGDIFF_PROJECTS_DIR", undefined);
     mocks.handle.mockClear();
     vi.resetModules();
 
@@ -46,6 +48,7 @@ describe("registerProjectHandlers", () => {
   });
 
   afterEach(async () => {
+    vi.unstubAllEnvs();
     await fs.promises.rm(homeDir, { recursive: true, force: true });
   });
 
@@ -63,6 +66,37 @@ describe("registerProjectHandlers", () => {
     invoke("project:save", project);
 
     expect(invoke("project:load", "alpha")).toEqual(project);
+  });
+
+  it.each([
+    false,
+    true,
+  ])("保存先overrideで案件と除外領域を同じ場所へ保存すること (%s)", async (explicitProjects) => {
+    const configuredHome = path.join(homeDir, "configured-home");
+    const projectsDir = explicitProjects
+      ? path.join(homeDir, "explicit-projects")
+      : path.join(configuredHome, "projects");
+    vi.stubEnv("FIGDIFF_HOME", configuredHome);
+    vi.stubEnv("FIGDIFF_PROJECTS_DIR", explicitProjects ? projectsDir : undefined);
+
+    invoke("project:save", makeProject("override"));
+    expect(fs.existsSync(path.join(projectsDir, "override", "project.json"))).toBe(true);
+    expect(fs.existsSync(path.join(homeDir, ".figdiff", "projects", "override"))).toBe(false);
+    expect(invoke("project:load", "override")).toEqual(makeProject("override"));
+
+    const { registerIgnoreRegionHandlers } = await import("./ignore-region.js");
+    registerIgnoreRegionHandlers();
+    for (const [channel, handler] of mocks.handle.mock.calls) {
+      if (typeof channel === "string" && typeof handler === "function") {
+        handlers.set(channel, handler);
+      }
+    }
+    const entry = { id: "clock", frame_name: "Home", x: 1, y: 2, width: 3, height: 4 };
+    await invoke("ignore-region:save", "override", entry);
+    expect(await invoke("ignore-region:list", "override", "Home")).toEqual([entry]);
+    expect(fs.existsSync(path.join(projectsDir, "override", "ignore-regions.yaml"))).toBe(true);
+    await invoke("ignore-region:delete", "override", "clock");
+    expect(await invoke("ignore-region:list", "override", "Home")).toEqual([]);
   });
 
   it("一覧は更新の新しい順に返すこと", () => {

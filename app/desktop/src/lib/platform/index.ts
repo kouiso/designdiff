@@ -1,15 +1,26 @@
 import type {
   ConvergenceAdapter,
+  FigmaNodeVerificationAdapter,
+  IssueReportAdapter,
   OverlayAdapter,
   PlatformAdapter,
   PlatformCapabilities,
+  ReportExportAdapter,
 } from "./platform-adapter";
 
 export type {
   ConvergenceAdapter,
+  FigmaNodeVerificationAdapter,
+  FigmaNodeVerificationInput,
+  FigmaNodeVerificationSource,
+  IssueReportAdapter,
+  IssueReportInput,
+  IssueReportPreview,
+  IssueReportSubmitResult,
   OverlayAdapter,
   PlatformAdapter,
   PlatformCapabilities,
+  ReportExportAdapter,
 } from "./platform-adapter";
 export type { FigmaAdapter, TokenAdapter, FileAdapter } from "./platform-adapter";
 
@@ -51,6 +62,26 @@ export const getOverlay = async (): Promise<OverlayAdapter | null> => {
   if (!window.electronAPI?.overlay) return null;
   const { electronOverlayAdapter } = await import("./electron-adapter");
   return electronOverlayAdapter;
+};
+
+export const getReportExport = async (): Promise<ReportExportAdapter | null> => {
+  if (!isElectronEnv() || typeof window.electronAPI?.saveComparisonReport !== "function") {
+    return null;
+  }
+  const { electronReportExportAdapter } = await import("./electron-adapter");
+  return electronReportExportAdapter;
+};
+
+export const getIssueReporter = async (): Promise<IssueReportAdapter | null> => {
+  if (!isElectronEnv() || !window.electronAPI?.issueReport) return null;
+  const { electronIssueReportAdapter } = await import("./electron-adapter");
+  return electronIssueReportAdapter;
+};
+
+export const getFigmaNodeVerifier = async (): Promise<FigmaNodeVerificationAdapter | null> => {
+  if (!isElectronEnv() || !window.electronAPI?.figmaNodeVerification) return null;
+  const { electronFigmaNodeVerificationAdapter } = await import("./electron-adapter");
+  return electronFigmaNodeVerificationAdapter;
 };
 
 /**
