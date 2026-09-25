@@ -89,7 +89,9 @@ try {
     },
   };
   await writeFile(join(evidenceDir, "x08-extension.json"), `${JSON.stringify(out, null, 2)}\n`);
-  process.stdout.write(`${JSON.stringify({ ok: true, diffPixelCount: response.diffPixelCount })}\n`);
+  process.stdout.write(
+    `${JSON.stringify({ ok: true, diffPixelCount: response.diffPixelCount })}\n`,
+  );
 } finally {
   await context.close();
 }

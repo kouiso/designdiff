@@ -78,7 +78,7 @@ await writeFile(designPath, await png({ r: 250, g: 250, b: 250 }));
 await writeFile(implPath, await png({ r: 250, g: 250, b: 250 }));
 
 // スキーマ上のプロパティ名だけで組み立てる (design_source + screenshot)。
-const implKey = (schema.properties?.screenshot !== undefined) ? "screenshot" : "implementation_image";
+const implKey = schema.properties?.screenshot !== undefined ? "screenshot" : "implementation_image";
 const res = await client.callTool(
   { name: "compare_design", arguments: { design_source: designPath, [implKey]: implPath } },
   undefined,
@@ -94,4 +94,4 @@ assert.ok(!res.isError, `first schema-conformant call failed: ${JSON.stringify(r
 assert.equal(protocolErrors.length, 0, `protocol errors: ${protocolErrors.join(" | ")}`);
 await writeFile(join(evidenceDir, "evidence.json"), `${JSON.stringify(evidence, null, 2)}\n`);
 await client.close();
-console.log(join(evidenceDir, "evidence.json"));
+console.info(join(evidenceDir, "evidence.json"));
