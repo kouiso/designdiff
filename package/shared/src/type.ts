@@ -5,6 +5,11 @@
 // =============================================================================
 
 import {
+  type AnchorCheckReportSchema,
+  type AnchorCheckResultSchema,
+  type AnchorCheckStatusSchema,
+  type AnchorModeSchema,
+  type AnchorRegionSchema,
   type BorderRadiusSchema,
   type ChildNodeSummarySchema,
   type ClusterCollapseSchema,
@@ -140,6 +145,14 @@ export type CropRegion = z.infer<typeof CropRegionSchema>;
 export type IgnoreRegion = z.infer<typeof IgnoreRegionSchema>;
 export type IgnoreRegionConfigEntry = z.infer<typeof IgnoreRegionConfigEntrySchema>;
 export type IgnoreRegionConfigFile = z.infer<typeof IgnoreRegionConfigFileSchema>;
+
+// --- Anchor Region (同幅・異高の位置整合検査) ---
+
+export type AnchorMode = z.infer<typeof AnchorModeSchema>;
+export type AnchorRegion = z.infer<typeof AnchorRegionSchema>;
+export type AnchorCheckStatus = z.infer<typeof AnchorCheckStatusSchema>;
+export type AnchorCheckResult = z.infer<typeof AnchorCheckResultSchema>;
+export type AnchorCheckReport = z.infer<typeof AnchorCheckReportSchema>;
 
 // --- Project (v4: implementation URL + pages + design sources) ---
 

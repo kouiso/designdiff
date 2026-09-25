@@ -29,8 +29,11 @@ import {
   runPreflight,
   selectScoringRegions,
   selfCritique,
+  type AnchorCheckReport,
+  type AnchorRegion,
   type ClusterCollapse,
   type CompareDesignResult,
+  type CompletionCriterion,
   type ComparisonDiagnosis,
   type CritiqueNote,
   type ScrollCaptureReport,
@@ -207,6 +210,9 @@ export interface CompareDesignRunArgs {
   // 既知の意図的差分マスク。compare 結果から除外される。
   // 座標系は cropRegion 適用後 (= screenshot ピクセル座標)。
   ignore_regions?: IgnoreRegion[];
+  // 同幅・異高の入力で位置整合を検査する宣言アンカー。
+  // 座標は design_source 画像のピクセル座標。
+  anchors?: AnchorRegion[];
 }
 
 export interface CompareDesignRunOutput {
@@ -272,6 +278,7 @@ function buildCompletionCriteria(
   structuralRationale: string | undefined,
   perceptibleDiffRatio: number | undefined,
   tokenDiff: TokenDiffReport | undefined,
+  anchorCheck: AnchorCheckReport | undefined,
 ): Record<
   | "structuralReview"
   | "consistencyReview"
@@ -279,14 +286,10 @@ function buildCompletionCriteria(
   | "matchRate"
   | "diffPixelCount"
   | "remainingIssues",
-  {
-    required: number;
-    current: number;
-    status: "PASS" | "FAIL" | "UNCERTAIN";
-    blocking: boolean;
-    note: string;
-  }
-> {
+  CompletionCriterion
+> &
+  // anchors を宣言しない比較では行自体を出さない。
+  Partial<Record<"anchorReview", CompletionCriterion>> {
   // inconclusive を FAIL と書くと「直せば PASS になる」と読まれる。実際は
   // 判定の確からしさが足りていない状態なので、status も UNCERTAIN で揃える。
   const structuralStatus =
@@ -336,6 +339,25 @@ function buildCompletionCriteria(
               ? `Colour and typography values match across ${tokenDiff.matchedNodeCount} nodes (${tokenDiff.checkedPropertyCount} properties).`
               : `${tokenBlocking.length} colour/typography values differ from the design. These are exact values, not perceptual guesses.`,
     },
+    ...(anchorCheck === undefined
+      ? {}
+      : {
+          anchorReview: {
+            required: 0,
+            current: anchorCheck.anchors.filter((anchor) => anchor.status !== "pass").length,
+            status: anchorCheck.evaluated
+              ? anchorCheck.verdict === "pass"
+                ? "PASS"
+                : "FAIL"
+              : "UNCERTAIN",
+            blocking: anchorCheck.evaluated && anchorCheck.verdict === "fail",
+            note: anchorCheck.evaluated
+              ? anchorCheck.verdict === "pass"
+                ? `All ${anchorCheck.anchors.length} declared layout anchors hold their position rule.`
+                : `${anchorCheck.anchors.filter((anchor) => anchor.status !== "pass").length} of ${anchorCheck.anchors.length} declared layout anchors violate their position rule.`
+              : `Anchor check could not run. ${anchorCheck.reason ?? ""}`.trim(),
+          },
+        }),
     matchRate: {
       required: 100,
       current: matchRate,
@@ -362,6 +384,24 @@ function buildCompletionCriteria(
     },
   };
 }
+
+// アンカー違反を人が読める1行にする。合否の根拠が画素ではなく宣言規則なので、
+// 違反したアンカーの期待位置と実位置をそのまま並べる。
+const buildAnchorFailureSummary = (anchorCheck: AnchorCheckReport): string => {
+  const failing = anchorCheck.anchors.filter((anchor) => anchor.status !== "pass");
+  const head = failing
+    .slice(0, 3)
+    .map((anchor) => {
+      const name = anchor.label ?? `(${anchor.region.x},${anchor.region.y})`;
+      if (anchor.status === "unmatched") {
+        return `${name} (${anchor.mode}) がスクリーンショット内で同定できない`;
+      }
+      return `${name} (${anchor.mode}) が期待 y=${anchor.expectedY} に対し y=${anchor.matchedY} (ズレ ${anchor.offsetPx}px)`;
+    })
+    .join(" / ");
+  const rest = failing.length > 3 ? ` ほか ${failing.length - 3} 件` : "";
+  return `縦位置アンカーが ${failing.length} 件違反しています: ${head}${rest}。`;
+};
 
 function resolveStructuralVerdict(
   diffReport: DiffReport | undefined,
@@ -429,6 +469,7 @@ function buildStatus(
   perceptibleDiffRatio: number | undefined,
   tokenDiffBlockingCount: number,
   aspectMismatchInconclusive: boolean,
+  anchorCheckFailed: boolean,
 ): CompareStatus {
   if (likelyMisconfig) {
     return "UNCERTAIN";
@@ -444,6 +485,11 @@ function buildStatus(
   }
   if (isPassContradictedByPixels(structuralVerdict, perceptibleDiffRatio)) {
     return "UNCERTAIN";
+  }
+  // 宣言アンカーの位置規則違反は、画素が偶然一致していても
+  // レイアウト意図を満たしていないという決定的な証拠。
+  if (anchorCheckFailed) {
+    return "FAIL";
   }
   // 色や文字の大きさは値の事実であって、見た目の近さの問題ではない。
   // 画素が近いと言っても、使っている値が違うなら実装は仕様どおりではない。
@@ -1523,6 +1569,7 @@ export async function runCompareDesign(
       fallbackIgnoreRegions,
       verifiedSystemUiTopInset: systemIgnoreRegions.verifiedTopInset,
       designBackground: args.design_background,
+      anchors: args.anchors,
     },
     figmaRootNode,
     `cmp-${randomUUID()}`,
@@ -1675,6 +1722,14 @@ export async function runCompareDesign(
   // 合格を出すとループがそこで止まるので、人が見る状態にする。
   const scrollCaptureIncomplete = describeIncompleteScrollCapture(resolvedScreenshot.scrollCapture);
 
+  // 宣言アンカーの位置規則を検査した結果。anchors 未指定の比較では undefined。
+  const anchorCheck = comparison.anchorCheck;
+  const anchorCheckFailed = anchorCheck?.verdict === "fail";
+  const anchorFailureSummary =
+    anchorCheck !== undefined && anchorCheckFailed
+      ? buildAnchorFailureSummary(anchorCheck)
+      : undefined;
+
   const status = buildStatus(
     structuralReviewResult.verdict,
     diagnosis.likelyMisconfig,
@@ -1683,10 +1738,17 @@ export async function runCompareDesign(
     aspectMismatchInconclusive ||
       missingNodeId !== undefined ||
       scrollCaptureIncomplete !== undefined,
+    anchorCheckFailed,
   );
   // 経路を必ず出す。無言で画素経路へ落ちていることに呼び出し側が気づけないと、
   // 「色は見てもらえている」と誤解したまま作業が進む。
-  const verdictRoute: VerdictRoute = tokenDiffBlocking.length > 0 ? "token-diff" : "pixel";
+  // アンカー違反で FAIL になったとき、経路を pixel と書くと
+  // 「画素で負けた」と読まれてしまう。宣言規則が根拠だったと分かるよう独立させる。
+  const verdictRoute: VerdictRoute = anchorCheckFailed
+    ? "anchor"
+    : tokenDiffBlocking.length > 0
+      ? "token-diff"
+      : "pixel";
 
   // 呼び出し側は nextAction に従うよう案内しているので、status が人間レビューを
   // 指しているのに nextAction が「完了を確認せよ」と言う状態を作らない。
@@ -1696,15 +1758,17 @@ export async function runCompareDesign(
       ? buildPixelContradictionNextAction(perceptibleDiffRatio)
       : tokenDiffSummary !== undefined
         ? `${tokenDiffSummary} 値が分かっているので、該当箇所の指定を設計側の値へ直してください。`
-        : scrollCaptureIncomplete !== undefined
-          ? scrollCaptureIncomplete
-          : (buildDiagnosisNextAction(diagnosis) ??
-            buildNextAction(
-              structuralReviewResult.verdict,
-              regionCount,
-              targetNodeIds,
-              comparison.clusterCollapse,
-            ));
+        : anchorFailureSummary !== undefined
+          ? `${anchorFailureSummary} 宣言した位置規則 (top-ratio / bottom-fixed) を実装側が満たしていません。配置を修正して再度 compare_design で検証してください。`
+          : scrollCaptureIncomplete !== undefined
+            ? scrollCaptureIncomplete
+            : (buildDiagnosisNextAction(diagnosis) ??
+              buildNextAction(
+                structuralReviewResult.verdict,
+                regionCount,
+                targetNodeIds,
+                comparison.clusterCollapse,
+              ));
   const loopGuard = await evaluateLoopGuardSafely({
     sourceKey,
     comparisonId: comparison.comparisonId,
@@ -1758,6 +1822,7 @@ export async function runCompareDesign(
       structuralReviewResult.rationale,
       perceptibleDiffRatio,
       tokenDiff,
+      anchorCheck,
     ),
     tokenDiff,
     verdictRoute,
@@ -1767,6 +1832,7 @@ export async function runCompareDesign(
       : pixelsContradictPass
         ? buildPixelContradictionSuggestion(perceptibleDiffRatio)
         : (tokenDiffSummary ??
+          anchorFailureSummary ??
           buildSuggestion(structuralReviewResult.verdict, comparison.matchRate, regionCount)),
     critique,
     preflight: finalPreflight,

@@ -15,6 +15,8 @@ import {
   generateMatchSuggestion,
   matchDiffRegionsToNodes,
   resolveAlignment,
+  type AnchorCheckReport,
+  type AnchorRegion,
   type CompareDesignResult,
   type ClusterCollapse,
   type ClusterTelemetry,
@@ -26,6 +28,7 @@ import {
   type Alignment,
 } from "@figdiff/shared";
 
+import { evaluateAnchorRegions } from "./anchor-check-service.js";
 import { buildDiffReport } from "./diff-report-builder.js";
 
 // 巨大画像のデコードでプロセスを OOM させないための上限。
@@ -76,6 +79,9 @@ interface CompareImagesOptions {
   verifiedSystemUiTopInset?: number;
   // 背景の塗りが無いノードを、どの色の上に置いて評価するか (#RRGGBB)。既定は白。
   designBackground?: string;
+  // 同幅・異高の入力で位置整合を検査する宣言アンカー。
+  // 座標は design_source 画像のピクセル座標。未指定時はピクセル比較のみ。
+  anchors?: AnchorRegion[];
 }
 
 interface ComparisonGeometry {
@@ -1069,6 +1075,32 @@ export async function compareImages(
   const finalScreenshotWidth = finalScreenshotMeta.width ?? 0;
   const finalScreenshotHeight = finalScreenshotMeta.height ?? 0;
 
+  // 同幅・異高の位置整合検査。contain-resize でつぶす前の、
+  // 幅合わせ + crop 済みの両画像で宣言領域の実位置を同定する。
+  // anchors 未指定の回は一切触らないので、既存の比較結果と変わらない。
+  let anchorCheck: AnchorCheckReport | undefined;
+  if (options.anchors !== undefined && options.anchors.length > 0) {
+    const designRawForAnchors = await createSharp(designBuffer).ensureAlpha().raw().toBuffer();
+    const screenshotRawForAnchors = await createSharp(screenshotBuffer)
+      .ensureAlpha()
+      .raw()
+      .toBuffer();
+    anchorCheck = evaluateAnchorRegions({
+      designPixels: designRawForAnchors,
+      designWidth: finalDesignWidth,
+      designHeight: finalDesignHeight,
+      screenshotPixels: screenshotRawForAnchors,
+      screenshotWidth: finalScreenshotWidth,
+      screenshotHeight: finalScreenshotHeight,
+      anchors: options.anchors,
+      transform: {
+        scale: screenshotWidth / designWidth,
+        offsetX: appliedCropRegion?.x ?? 0,
+        offsetY: appliedCropRegion?.y ?? 0,
+      },
+    });
+  }
+
   // Resize design to match screenshot if still different (e.g., height mismatch after crop)
   let finalDesignBuffer: Buffer = designBuffer;
   let paddingMask: PaddingMask | null = null;
@@ -1430,6 +1462,9 @@ export async function compareImages(
     gridSummary,
     diffReport,
     diffImageBase64,
+    // anchors 未指定の比較では結果に新しいキーを出さない。
+    // スキーマは optional なので、キー自体を省略すれば従来の出力形と一致する。
+    ...(anchorCheck === undefined ? {} : { anchorCheck }),
     normalization: {
       designNativeWidth: designWidth,
       designNativeHeight: designHeight,

@@ -157,6 +157,11 @@ export {
 } from "./figma-url-parser.js";
 export {
   AlignmentSchema,
+  AnchorCheckReportSchema,
+  AnchorCheckResultSchema,
+  AnchorCheckStatusSchema,
+  AnchorModeSchema,
+  AnchorRegionSchema,
   BorderRadiusSchema,
   ChildNodeSummarySchema,
   ClusterCollapseSchema,
@@ -228,6 +233,11 @@ export {
 export { computeVerdict, selectScoringRegions, UNIMPLEMENTED_LAYOUT_SCORE } from "./type.js";
 export type {
   Alignment,
+  AnchorCheckReport,
+  AnchorCheckResult,
+  AnchorCheckStatus,
+  AnchorMode,
+  AnchorRegion,
   BorderRadius,
   ChildNodeSummary,
   ClusterCollapse,
