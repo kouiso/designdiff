@@ -232,6 +232,9 @@ export const CompletionCriteriaSchema = z.object({
   // 色と文字を値そのもので突き合わせた行。使えなかったときは UNCERTAIN で残し、
   // 「見ていない」ことが読み手に伝わるようにする。
   tokenReview: CompletionCriterionSchema.optional(),
+  // 同幅・異高の入力で宣言された位置アンカーを検査した行。
+  // anchors 未指定の比較では行自体を出さない。
+  anchorReview: CompletionCriterionSchema.optional(),
   matchRate: CompletionCriterionSchema,
   diffPixelCount: CompletionCriterionSchema,
   remainingIssues: CompletionCriterionSchema,
@@ -643,7 +646,70 @@ export const TokenDiffReportSchema = z.object({
 });
 
 /** どの経路が最終的な合否を決めたか。無言で劣化させないために必ず載せる。 */
-export const VerdictRouteSchema = z.enum(["token-diff", "pixel"]);
+export const VerdictRouteSchema = z.enum(["token-diff", "anchor", "pixel"]);
+
+// --- Anchor Region Schema ---
+// 同幅・異高の入力に対して、ピクセル一致ではなく位置整合を検めるための宣言。
+// 縦伸びする画面では contain-resize + 画素比較が「比率配置の正しい実装」と
+// 「上寄せ固定のままの不正な実装」を区別できないため、呼び出し側が
+// 領域ごとの位置規則を宣言して合否の根拠にする。
+export const AnchorModeSchema = z.enum([
+  // 上端を高さ比で写像する (期待 y = region.y * screenshotHeight / designHeight)。
+  "top-ratio",
+  // 下端からの距離を保存する (期待下端 = screenshotHeight - (designHeight - region下端))。
+  "bottom-fixed",
+]);
+
+export const AnchorRegionSchema = z.object({
+  // design_source の画像ピクセル座標 (Figma エクスポート画像またはローカル画像の実ピクセル)。
+  x: z.number().nonnegative(),
+  y: z.number().nonnegative(),
+  width: z.number().positive(),
+  height: z.number().positive(),
+  mode: AnchorModeSchema,
+  label: z.string().optional(),
+  // 位置ズレの許容 (px)。丸めやアンチエイリアス由来の1px差を呑むため既定は2。
+  tolerancePx: z.number().nonnegative().optional(),
+});
+
+export const AnchorCheckStatusSchema = z.enum([
+  "pass",
+  "fail",
+  // 宣言領域をスクリーンショット内で同定できなかった。位置規則を検査できないので
+  // fail-closed の方針で合否を落とす側に倒し、「見つからなかった」事実だけ区別して出す。
+  "unmatched",
+]);
+
+export const AnchorCheckResultSchema = z.object({
+  // 呼び出し側が宣言した領域 (design 画像ピクセル座標)。
+  region: z.object({
+    x: z.number().nonnegative(),
+    y: z.number().nonnegative(),
+    width: z.number().positive(),
+    height: z.number().positive(),
+  }),
+  mode: AnchorModeSchema,
+  label: z.string().optional(),
+  tolerancePx: z.number().nonnegative(),
+  // 規則が要求する上端位置 (比較座標系 = crop 後のスクリーンショット空間)。
+  expectedY: z.number().nullable(),
+  // スクリーンショット内で同定した実際の上端位置。unmatched なら null。
+  matchedY: z.number().nullable(),
+  offsetPx: z.number().nullable(),
+  // テンプレート照合の輝度平均絶対差 (0-255)。小さいほど一致品質が高い。
+  matchScore: z.number().nullable(),
+  status: AnchorCheckStatusSchema,
+  // unmatched / fail のとき、何が起きたかを人の言葉で残す。
+  reason: z.string().optional(),
+});
+
+export const AnchorCheckReportSchema = z.object({
+  // 幅が一致しない等で評価自体を行えなかったとき false。理由は reason に残す。
+  evaluated: z.boolean(),
+  reason: z.string().optional(),
+  anchors: z.array(AnchorCheckResultSchema),
+  verdict: z.enum(["pass", "fail"]).optional(),
+});
 
 export const CompareDesignResultSchema = z
   .object({
@@ -699,6 +765,8 @@ export const CompareDesignResultSchema = z
     tokenDiff: TokenDiffReportSchema.optional(),
     /** 合否を決めた経路。token-diff が働いたときだけ "token-diff"。 */
     verdictRoute: VerdictRouteSchema.optional(),
+    // anchors 引数を指定した比較でのみ入る。未指定なら項目自体が無い。
+    anchorCheck: AnchorCheckReportSchema.optional(),
     verificationContext: VerificationContextSchema.optional(),
     diffImagePath: z.string().optional(),
     diffImageBase64: z.string().optional(),

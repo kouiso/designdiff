@@ -2155,4 +2155,140 @@ describe("runCompareDesign", () => {
     ).rejects.toThrow(/Failed to decode screenshot image/);
     expect(mocks.compareImages).not.toHaveBeenCalled();
   });
+
+  // 宣言アンカーの検査結果は compareImages が返してくるので、runner 側は
+  // その verdict / anchors を status・completionCriteria・nextAction・suggestion・
+  // verdictRoute へ正しく写すことだけを確かめる。位置規則の評価自体は
+  // anchor-check-service.test.ts で検証する。
+  describe("縦位置アンカー検査 (anchors)", () => {
+    const runAnchorComparison = async (anchorCheck: unknown) => {
+      tmpRoot = await fs.mkdtemp(path.join(process.cwd(), "tmp-figdiff-runner-"));
+      const designPath = path.join(tmpRoot, "design.png");
+      const screenshotPath = path.join(tmpRoot, "screenshot.png");
+      await fs.writeFile(designPath, Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+      await fs.writeFile(screenshotPath, Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+
+      mocks.sharp.mockReturnValue({
+        metadata: vi.fn(async () => ({ width: 390, height: 915 })),
+      });
+      mocks.compareImages.mockResolvedValue({
+        comparisonId: "cmp-anchor",
+        matchRate: 100,
+        diffPixelCount: 0,
+        totalPixelCount: 390 * 915,
+        diffRegions: [],
+        suggestion: "anchor test fixture",
+        diffReport: {
+          alignment: {
+            translation: { x: 0, y: 0 },
+            scale: { x: 1, y: 1 },
+            rotation: 0,
+            confidence: 1,
+            residual: 0,
+          },
+          regionScores: [],
+          issues: [],
+          weightedAggregate: {
+            weightedStructure: 1,
+            weightedColor: 1,
+            totalWeight: 1,
+          },
+          aggregateVerdict: "pass",
+          rationale: "structural pass",
+          perceptibleDiffRatio: 0,
+        },
+        anchorCheck,
+        normalization: {
+          designNativeWidth: 390,
+          designNativeHeight: 692,
+          screenshotWidth: 390,
+          screenshotHeight: 915,
+          cropApplied: false,
+          containResized: true,
+          appliedScale: 1,
+        },
+      });
+      return runCompareDesign({
+        design_source: designPath,
+        screenshot: screenshotPath,
+        anchors: [{ x: 0, y: 640, width: 390, height: 52, mode: "bottom-fixed" }],
+      });
+    };
+
+    it("アンカー違反があると status=FAIL で anchor 経路を記録し、違反内容を nextAction と suggestion に出す", async () => {
+      const { result } = await runAnchorComparison({
+        evaluated: true,
+        verdict: "fail",
+        anchors: [
+          {
+            region: { x: 0, y: 640, width: 390, height: 52 },
+            mode: "bottom-fixed",
+            label: "footer",
+            tolerancePx: 2,
+            expectedY: 863,
+            matchedY: 640,
+            offsetPx: 223,
+            matchScore: 2.4,
+            status: "fail",
+          },
+        ],
+      });
+
+      // 画素が一致していても (matchRate=100, structural pass) 宣言規則を
+      // 満たさない限り PASS にしない。画素経路に倒れたと誤読されないよう
+      // 経路も独立した値で出す。
+      expect(result.status).toBe("FAIL");
+      expect(result.verdictRoute).toBe("anchor");
+      expect(result.completionCriteria?.anchorReview).toMatchObject({
+        status: "FAIL",
+        blocking: true,
+      });
+      expect(result.nextAction).toContain("bottom-fixed");
+      expect(result.nextAction).toContain("footer");
+      expect(result.suggestion).toContain("footer");
+    });
+
+    it("アンカーが全件 PASS なら anchorReview は PASS 扱いで他の判定を邪魔しない", async () => {
+      const { result } = await runAnchorComparison({
+        evaluated: true,
+        verdict: "pass",
+        anchors: [
+          {
+            region: { x: 0, y: 640, width: 390, height: 52 },
+            mode: "bottom-fixed",
+            label: "footer",
+            tolerancePx: 2,
+            expectedY: 863,
+            matchedY: 863,
+            offsetPx: 0,
+            matchScore: 1.1,
+            status: "pass",
+          },
+        ],
+      });
+
+      expect(result.status).toBe("PASS");
+      expect(result.verdictRoute).toBe("pixel");
+      expect(result.completionCriteria?.anchorReview).toMatchObject({
+        status: "PASS",
+        blocking: false,
+      });
+    });
+
+    it("評価自体を行えなかったときは未検証の契約として UNCERTAIN に倒す", async () => {
+      const { result } = await runAnchorComparison({
+        evaluated: false,
+        reason: "幅が一致しません。",
+        anchors: [],
+      });
+
+      // 宣言した規則を一度も見ていないのに PASS を出すと、検査したことに
+      // なる。fail-closed で UNCERTAIN へ回す。
+      expect(result.status).toBe("UNCERTAIN");
+      expect(result.completionCriteria?.anchorReview).toMatchObject({
+        status: "UNCERTAIN",
+        blocking: false,
+      });
+    });
+  });
 });

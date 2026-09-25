@@ -1806,6 +1806,59 @@ describe("compareImages", () => {
 
     expect(detectBestAnchorOffset(designProfile, referenceProfile, 10_000)).toBe(trueOffset);
   });
+
+  it("anchors 指定時は結果に anchorCheck が付くこと", async () => {
+    const pixelmatchMock = await import("pixelmatch");
+
+    const mockInstance = createMockSharpInstance({ width: 20, height: 30 });
+    mockSharpFn.mockReturnValue(mockInstance);
+    vi.mocked(pixelmatchMock.default).mockReturnValue(0);
+
+    const { compareImages } = await import("./image-compare-service.js");
+    const dummyBase64 = Buffer.alloc(100).toString("base64");
+
+    const result = await compareImages({
+      designBase64: dummyBase64,
+      screenshotBase64: dummyBase64,
+      anchors: [{ x: 0, y: 0, width: 10, height: 10, mode: "top-ratio", label: "card" }],
+    });
+
+    // モックの画素は全て alpha=0 なので領域は同定できず unmatched で報告される。
+    // ここで確かめたいのは anchors が evaluate 経路まで届くこと。
+    expect(result.anchorCheck).toBeDefined();
+    expect(result.anchorCheck?.evaluated).toBe(true);
+    expect(result.anchorCheck?.anchors[0]).toMatchObject({
+      mode: "top-ratio",
+      label: "card",
+      status: "unmatched",
+    });
+    expect(result.anchorCheck?.verdict).toBe("fail");
+  });
+
+  it.each([
+    { anchors: undefined },
+    { anchors: [] },
+  ])("anchors 未指定または空では結果に anchorCheck を含めないこと (%o)", async ({ anchors }) => {
+    const pixelmatchMock = await import("pixelmatch");
+
+    const mockInstance = createMockSharpInstance({ width: 10, height: 10 });
+    mockSharpFn.mockReturnValue(mockInstance);
+    vi.mocked(pixelmatchMock.default).mockReturnValue(0);
+
+    const { compareImages } = await import("./image-compare-service.js");
+    const dummyBase64 = Buffer.alloc(100).toString("base64");
+
+    const result = await compareImages({
+      designBase64: dummyBase64,
+      screenshotBase64: dummyBase64,
+      anchors,
+    });
+
+    // anchors を宣言しない比較では、結果に新しいフィールドを出さない
+    // (従来の出力と同じ形を保つため)。
+    expect(result.anchorCheck).toBeUndefined();
+    expect("anchorCheck" in result).toBe(false);
+  });
 });
 
 describe("classifyAlignmentSource", () => {

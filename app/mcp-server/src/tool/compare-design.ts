@@ -7,6 +7,7 @@
 import { z } from "zod";
 
 import {
+  AnchorRegionSchema,
   CompareDesignResultSchema,
   ComparisonCampaignIdSchema,
   ComparisonConditionsInputSchema,
@@ -37,7 +38,7 @@ const DESCRIPTION = `デザインと実装のピクセル差分を検出しま�
 
 ## 出力の読み方
 - ループ判定: 2つ目のテキストブロック先頭。停止 / 続行 / 取得できません。status より優先する。取得できません は停止として扱う
-- 判定経路: token-diff = 色とフォントを値そのもので突き合わせた。要修正の項目は設計側の値が確定しているので、そのまま直すこと。pixel = 値の突合が使えず画素だけで見た（理由が同じ欄に出る）。この場合フォントの縁のぼかしに埋もれる色差は検出できない
+- 判定経路: token-diff = 色とフォントを値そのもので突き合わせた。要修正の項目は設計側の値が確定しているので、そのまま直すこと。anchor = 宣言した縦位置アンカーの位置規則違反。該当アンカーの期待位置へ配置を直すこと。pixel = 値の突合が使えず画素だけで見た（理由が同じ欄に出る）。この場合フォントの縁のぼかしに埋もれる色差は検出できない
 - status: "PASS" = 構造SSIM判定上の完了。"FAIL" = 修正が必要。"UNCERTAIN" = 判定の確からしさが足りず人間レビューへ回った状態。失敗ではないので直そうとせず報告すること
 - completionCriteria: blocking=true の項目が "PASS" になるまで作業を続行。ただし status が "UNCERTAIN" の項目は直しても "PASS" にならないので、そこで止めて人間に報告する。matchRate は参考値
 - nextAction: 次に実行すべきアクション（従うこと）
@@ -56,6 +57,7 @@ const DESCRIPTION = `デザインと実装のピクセル差分を検出しま�
 - campaign_id: 独立した修正作業を識別するID。同じ作業の反復では同じIDを使い、新しいブランチ・作業では別IDにする。省略時は従来の対象単位の履歴を使う
 - comparison_conditions: design / screenshotそれぞれのviewport{width,height}(論理px)、pixelRatio(物理px/論理px)、origin{x,y}(画像左上の共通参照座標、論理px)の申告。画像外寸はキャンバス寸法であり端末の高さとは限らない。未指定は未確認として報告し、異なる表示領域・原点ならCSS修正の前に撮影条件を確認する。申告値による自動変換は行わない
 - ignore_regions: 既知の意図的差分マスク（省略可）。project_id の保存済みマスク、自動 system UI マスクと結合される。WP原文 vs Figmaプレースホルダ、Google Map埋め込み等の false-positive 抑制に使用。各矩形 {x,y,width,height,label?} 内のピクセルは差分検出/matchRate 分母から除外される
+- anchors: 同幅・異高入力（レスポンシブ縦伸び）の位置整合検査（省略可）。各要素 {x,y,width,height,mode,label?,tolerancePx?} を design 画像のピクセル座標で宣言する。mode は top-ratio（上端を高さ比で写像）または bottom-fixed（下端固定）。tolerancePx 既定2。宣言領域を screenshot 内で同定し、期待位置とのズレが許容内かをアンカー毎に PASS/FAIL で返す。未指定時は従来どおりピクセル比較のみ
 - mask_system_ui: モバイル実機/Simulator撮影のOSステータスバー/ナビゲーションバーを自動マスクするか。capture_device指定時は既定true、それ以外は既定false。set_ignore_regionsで追加の微調整が可能
 - auto_mask_dynamic: screenshot_url経路で同じページを2回撮り、変わった領域を自動マスクする（既定true）。時計/カウンタ/カルーセル等が毎回差分に出て収束しなくなるのを防ぐ
 
@@ -180,6 +182,7 @@ export const buildSummaryText = (result: CompareDesignResult): string => {
 
   lines.push(...buildPreflightWarningLines(result));
   lines.push(...buildNormalizationLines(result));
+  lines.push(...buildAnchorCheckLines(result));
   lines.push(...buildToastBandLines(result));
   lines.push(...buildMaskCandidateLines(result));
 
@@ -253,6 +256,31 @@ const buildTokenDiffLines = (result: CompareDesignResult): string[] => {
   if (blocking.length > 0) {
     lines.push(
       "要修正の項目は値が確定しているので、推測せずこの値へ直してください。参考の項目は合否を落としません。",
+    );
+  }
+  return lines;
+};
+
+// 位置規則の違反は画素差とは別の根拠なので、
+// アンカー毎に期待位置と実位置を並べて出す。anchors 未指定の比較では出さない。
+const buildAnchorCheckLines = (result: CompareDesignResult): string[] => {
+  const report = result.anchorCheck;
+  if (!report) return [];
+
+  if (!report.evaluated) {
+    return ["", `縦位置アンカー検査: 未評価 (${report.reason ?? "不明な理由"})`];
+  }
+
+  const lines = ["", `縦位置アンカー検査: ${report.verdict === "pass" ? "全件 PASS" : "違反あり"}`];
+  for (const anchor of report.anchors) {
+    const name = anchor.label ?? `(${anchor.region.x},${anchor.region.y})`;
+    if (anchor.status === "unmatched") {
+      lines.push(`  - [UNMATCHED] ${name} (${anchor.mode}): 領域を同定できませんでした`);
+      continue;
+    }
+    const mark = anchor.status === "pass" ? "PASS" : "FAIL";
+    lines.push(
+      `  - [${mark}] ${name} (${anchor.mode}): 期待 y=${anchor.expectedY} / 実際 y=${anchor.matchedY} / ズレ ${anchor.offsetPx}px (許容 ${anchor.tolerancePx}px)`,
     );
   }
   return lines;
@@ -433,6 +461,12 @@ export const registerCompareDesign = (server: McpServer): void => {
       .optional()
       .describe(
         "意図的差分マスク。project_id指定時は保存済みマスクと結合される。各矩形{x,y,width,height,label?}内のピクセルは差分検出/matchRate分母から除外。座標系はcrop適用後のscreenshotピクセル座標。",
+      ),
+    anchors: z
+      .array(AnchorRegionSchema)
+      .optional()
+      .describe(
+        "同幅・異高入力（レスポンシブ縦伸び）の位置整合検査。design_source画像のピクセル座標で宣言した領域{x,y,width,height}を screenshot 内で同定し、mode の位置規則 (top-ratio=上端を高さ比で写像 / bottom-fixed=下端固定) を tolerancePx(既定2) 内で検査する。アンカー毎の PASS/FAIL は anchorCheck に返り、違反があれば status は FAIL になる。未指定時は従来どおりピクセル比較のみ。",
       ),
   };
 
