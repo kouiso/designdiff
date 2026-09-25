@@ -190,4 +190,4 @@ git-crypt unlock /path/to/git-crypt-key
 
 ## License
 
-UNLICENSED — All rights reserved. A formal license will be selected in the future.
+All rights reserved. Reading this repository grants no right to use it. Use requires a written grant that names you; see [LICENSE](LICENSE) and the grant form in [doc/license-grant-template.md](doc/license-grant-template.md).

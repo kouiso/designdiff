@@ -1,4 +1,38 @@
-UNLICENSED
+FigDiff (designdiff) License
 
-This project is currently unlicensed. All rights reserved.
-A formal license will be selected in the future.
+Copyright (c) 2026 Kosuke Isogai. All rights reserved.
+
+1. No license by default.
+   This repository is publicly visible so that it can be read. Being able to read
+   or download it does not give you any right to use, copy, modify, merge,
+   publish, distribute, sublicense, or sell the software or any part of it.
+
+2. Permission by named written grant only.
+   You may use the software only if the copyright holder has given you a
+   written grant that names you (a person or an organization). A grant is
+   valid only for the person or organization it names, for the scope and period
+   written in it, and it cannot be transferred or sublicensed. The template in
+   `doc/license-grant-template.md` shows the form a grant takes; the template
+   itself grants nothing.
+
+3. Contributions.
+   If you send a contribution (a pull request, patch, issue attachment, or
+   similar) to this repository, you give the copyright holder a perpetual,
+   worldwide, royalty-free, irrevocable right to use, modify, and relicense
+   that contribution as part of the software.
+
+4. Feedback and automatically filed reports.
+   Reports that the software files on your behalf (for example through its
+   `report_issue` tool) are contributions under section 3.
+
+5. No warranty. No liability.
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   IMPLIED. IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM,
+   DAMAGES OR OTHER LIABILITY ARISING FROM THE SOFTWARE OR ITS USE.
+
+6. Termination.
+   A grant ends automatically if its holder breaks its terms or this license.
+   The copyright holder may end a grant by written notice. When a grant ends,
+   the holder must stop using the software and delete their copies.
+
+Third-party components keep their own licenses.
