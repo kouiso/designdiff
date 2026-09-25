@@ -19,7 +19,7 @@
     "eval:sample-project-lp-figma:ready": "node script/eval/sample-project-lp-figma-readiness.mjs",
     "eval:sample-corporate-figma:ready": "node script/eval/sample-corporate-figma-readiness.mjs",
     "typecheck": "turbo run typecheck && pnpm --filter @figdiff/shared typecheck:test",
-    "test": "turbo run test && node --test script/dev-log.test.mjs script/log-digest.test.mjs",
+    "test": "turbo run test && node --test script/dev-log.test.mjs script/log-digest.test.mjs script/check-naming.test.mjs script/verify-campaign-evidence.test.mjs",
     "format": "biome format --write .",
     "check": "biome check .",
     "check:naming": "node script/check-naming.mjs",
@@ -30,7 +30,8 @@
     "eval:sample-project-lp-figma:sbi-regression:validate": "node script/eval/ingest-figma-pages.mjs --figma-manifest verification/fixture/sample-project-lp-figma-pages.sbi-regression.json --out /tmp/designdiff-sbi-regression-validate-only --summary-json /tmp/designdiff-sbi-regression-validate-only/figma-ingest-summary.json --validate-only",
     "guard:figma-credentials": "node script/figma-credential-guard.mjs",
     "eval:sample-corporate-figma": "node script/eval/sample-corporate-figma-compare.mjs",
-    "logs:digest": "node script/log-digest.mjs"
+    "logs:digest": "node script/log-digest.mjs",
+    "verify:campaign": "node script/verify-campaign-evidence.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.15",

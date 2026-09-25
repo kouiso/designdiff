@@ -10,6 +10,21 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
+    },
+    "./node/ignore-region-store": {
+      "types": "./dist/node/ignore-region-store.d.ts",
+      "import": "./dist/node/ignore-region-store.js",
+      "default": "./dist/node/ignore-region-store.js"
+    },
+    "./node/github-service": {
+      "types": "./dist/node/github-service.d.ts",
+      "import": "./dist/node/github-service.js",
+      "default": "./dist/node/github-service.js"
+    },
+    "./node/public-issue-guard": {
+      "types": "./dist/node/public-issue-guard.d.ts",
+      "import": "./dist/node/public-issue-guard.js",
+      "default": "./dist/node/public-issue-guard.js"
     }
   },
   "scripts": {
@@ -19,14 +34,18 @@
     "lint": "biome check src/",
     "lint:fix": "biome check --write src/",
     "test": "vitest run",
+    "test:node-store-process": "pnpm build && node script/ignore-region-store-process.test.mjs",
     "test:coverage": "vitest run --coverage"
   },
   "devDependencies": {
+    "@types/node": "^25.6.0",
     "@vitest/coverage-v8": "^4.1.11",
     "typescript": "^5.9.3",
     "vitest": "^4.1.11"
   },
   "dependencies": {
+    "pixelmatch": "^7.2.0",
+    "yaml": "^2.4.2",
     "zod": "^4.4.3"
   }
 }

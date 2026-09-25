@@ -332,16 +332,21 @@ export default [
   },
 
   // App-level smoke/contract scripts (Node.js + browser globals for page.evaluate contexts)
+  // e2e 配下の driver も page.evaluate / chrome.* API を文字列評価内で参照するため
+  // browser + webextensions global を足す。
   {
     files: [
       "app/chrome-extension/script/**/*.mjs",
+      "app/chrome-extension/e2e/**/*.mjs",
       "app/desktop/script/**/*.mjs",
+      "app/figma-plugin/e2e/**/*.mjs",
       "app/mcp-server/script/**/*.mjs",
     ],
     languageOptions: {
       globals: {
         ...globals.node,
         ...globals.browser,
+        ...globals.webextensions,
       },
       ecmaVersion: "latest",
       sourceType: "module",

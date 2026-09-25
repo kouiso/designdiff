@@ -18,3 +18,7 @@ export const getFigdiffHome = (): string =>
 /** 収束履歴 (キャンペーン単位の反復記録) の置き場。 */
 export const getConvergenceDir = (): string =>
   readEnvDir("FIGDIFF_CONVERGENCE_DIR") ?? path.join(getFigdiffHome(), "convergence");
+
+// 案件と除外領域をMCPと同じ優先順で解決し、別storeへの分岐を防ぐ。
+export const getFigdiffProjectsDir = (): string =>
+  readEnvDir("FIGDIFF_PROJECTS_DIR") ?? path.join(getFigdiffHome(), "projects");

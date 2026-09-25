@@ -407,7 +407,7 @@ describe("compareImages", () => {
       expect.any(Uint8ClampedArray),
       200,
       100,
-      { threshold: 0.1, diffMask: true },
+      { checkerboard: false, threshold: 0.1, diffMask: true },
     );
   });
 

@@ -26,6 +26,7 @@ const tabMessages: unknown[] = [];
 
 let backgroundError: string | null = null;
 let tabSendError: string | null = null;
+let tabResponse: unknown = { success: true };
 let activeTabs: { id?: number }[] = [{ id: 1 }];
 
 function messageType(message: unknown): string {
@@ -52,7 +53,7 @@ const chromeStub: ChromeStub = {
     sendMessage: (_tabId, message, callback) => {
       tabMessages.push(message);
       chromeStub.runtime.lastError = tabSendError ? { message: tabSendError } : undefined;
-      callback({ success: true });
+      callback(tabResponse);
       chromeStub.runtime.lastError = undefined;
     },
   },
@@ -128,6 +129,7 @@ beforeEach(() => {
   tabMessages.length = 0;
   backgroundError = null;
   tabSendError = null;
+  tabResponse = { success: true };
   activeTabs = [{ id: 1 }];
   imageShouldFail = false;
   backgroundResponses.set("token:get", {});
@@ -316,10 +318,23 @@ describe("オーバーレイ操作", () => {
     const popup = await loadPopup();
     popup.state.overlayActive = true;
 
-    await popup.hideOverlayOnPage();
+    const hidden = await popup.hideOverlayOnPage();
 
+    expect(hidden).toBe(true);
     expect(popup.state.overlayActive).toBe(false);
     expect(tabMessages.filter((m) => messageType(m) === "hide-overlay")).toHaveLength(1);
+  });
+
+  it("hide の描画確認エラーでは overlayActive を保つ", async () => {
+    tabResponse = { error: "Overlay removal paint acknowledgement timed out" };
+    const popup = await loadPopup();
+    popup.state.overlayActive = true;
+
+    const hidden = await popup.hideOverlayOnPage();
+
+    expect(hidden).toBe(false);
+    expect(popup.state.overlayActive).toBe(true);
+    expect(popup.state.error).toBe("Overlay removal paint acknowledgement timed out");
   });
 
   it("mode / opacity の更新を content script へ送る", async () => {
@@ -465,6 +480,20 @@ describe("captureAndCompare", () => {
 
     expect(tabMessages.filter((m) => messageType(m) === "hide-overlay")).toHaveLength(1);
     expect(tabMessages.filter((m) => messageType(m) === "show-overlay")).toHaveLength(1);
+  });
+
+  it("表示中オーバーレイの描画確認に失敗したら撮影へ進まない", async () => {
+    const popup = await setupCompare();
+    popup.state.overlayActive = true;
+    tabResponse = { error: "Overlay removal paint acknowledgement timed out" };
+
+    await popup.captureAndCompare();
+
+    expect(backgroundMessages.filter((m) => messageType(m) === "capture-screenshot")).toHaveLength(
+      0,
+    );
+    expect(popup.state.overlayActive).toBe(true);
+    expect(popup.state.error).toBe("Overlay removal paint acknowledgement timed out");
   });
 
   it("画像の読み込みに失敗したら reject する", async () => {

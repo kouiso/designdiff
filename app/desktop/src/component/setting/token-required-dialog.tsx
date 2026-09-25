@@ -46,6 +46,7 @@ export function TokenRequiredDialog() {
       setTokenInput("");
     } catch (e) {
       setError(t("tokenDialog.failed", { error: String(e) }));
+    } finally {
       setIsSubmitting(false);
     }
   };
@@ -66,6 +67,9 @@ export function TokenRequiredDialog() {
   const handleClose = () => {
     setTokenInput("");
     setError(null);
+    setIsSubmitting(false);
+    setLoginStatus("idle");
+    setLoginError(null);
     closeTokenDialog();
   };
 

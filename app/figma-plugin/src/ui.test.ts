@@ -1,19 +1,22 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
+import { comparePixels } from "@figdiff/shared";
+
 import {
+  PLUGIN_REQUEST_TIMEOUT_MS,
   el,
   escapeHtml,
   handleFileInput,
   handlePluginMessage,
   imageLoader,
   isPluginResponse,
-  pixelmatchSimple,
   render,
   renderChildrenSection,
   renderCompareTab,
   renderCssSection,
   renderInspectTab,
   renderPropertySection,
+  resetRequestTracking,
   runComparison,
   state,
   tab,
@@ -79,50 +82,48 @@ describe("isPluginResponse", () => {
   });
 });
 
-describe("pixelmatchSimple", () => {
+describe("comparePixels", () => {
   it("同一画像 → diffCount = 0", () => {
     const img = new Uint8ClampedArray([255, 0, 0, 255, 0, 255, 0, 255]);
     const output = new Uint8ClampedArray(8);
-    const diff = pixelmatchSimple(img, img, output, 2, 1, 0.1);
+    const diff = comparePixels(img, img, output, 2, 1, { threshold: 0.1 });
     expect(diff).toBe(0);
   });
 
-  it("完全に異なる画像 → diffCount > 0", () => {
+  it("完全に異なる画像 → 全ピクセルが差分になる", () => {
     const img1 = new Uint8ClampedArray([255, 0, 0, 255, 255, 0, 0, 255]);
     const img2 = new Uint8ClampedArray([0, 255, 0, 255, 0, 255, 0, 255]);
     const output = new Uint8ClampedArray(8);
-    const diff = pixelmatchSimple(img1, img2, output, 2, 1, 0.1);
-    expect(diff).toBeGreaterThan(0);
+    const diff = comparePixels(img1, img2, output, 2, 1, { threshold: 0.1 });
+    expect(diff).toBe(2);
   });
 
-  it("差分ピクセルは赤(255,0,0,200)で出力される", () => {
+  it("差分ピクセルは赤(255,0,0,255)で出力される", () => {
     const img1 = new Uint8ClampedArray([255, 0, 0, 255]);
     const img2 = new Uint8ClampedArray([0, 255, 0, 255]);
     const output = new Uint8ClampedArray(4);
-    pixelmatchSimple(img1, img2, output, 1, 1, 0.1);
+    comparePixels(img1, img2, output, 1, 1, { threshold: 0.1 });
     expect(output[0]).toBe(255);
     expect(output[1]).toBe(0);
     expect(output[2]).toBe(0);
-    expect(output[3]).toBe(200);
+    expect(output[3]).toBe(255);
   });
 
-  it("一致ピクセルは元画像の半透明(alpha=60)で出力される", () => {
+  it("一致ピクセルはグレースケールの薄い描画で出力される", () => {
     const img = new Uint8ClampedArray([100, 150, 200, 255]);
     const output = new Uint8ClampedArray(4);
-    pixelmatchSimple(img, img, output, 1, 1, 0.1);
-    expect(output[0]).toBe(100);
-    expect(output[1]).toBe(150);
-    expect(output[2]).toBe(200);
-    expect(output[3]).toBe(60);
+    comparePixels(img, img, output, 1, 1, { threshold: 0.1 });
+    // pixelmatch は一致画素を輝度の薄塗りで描く (R=G=B)
+    expect(output[0]).toBe(output[1]);
+    expect(output[1]).toBe(output[2]);
+    expect(output[3]).toBe(255);
   });
 
   it("threshold=1.0 → 微小差分は一致扱い", () => {
-    // maxDelta = 35215 * 1.0^2 = 35215
-    // delta = 100^2 + 100^2 + 0 = 20000 < 35215 → 一致扱い
     const img1 = new Uint8ClampedArray([200, 100, 50, 255]);
     const img2 = new Uint8ClampedArray([100, 0, 50, 255]);
     const output = new Uint8ClampedArray(4);
-    const diff = pixelmatchSimple(img1, img2, output, 1, 1, 1.0);
+    const diff = comparePixels(img1, img2, output, 1, 1, { threshold: 1.0 });
     expect(diff).toBe(0);
   });
 });
@@ -133,6 +134,7 @@ const app = document.getElementById("app");
 if (!app) throw new Error("setup.ts が #app を用意していない");
 
 function resetState(): void {
+  resetRequestTracking();
   state.tab = "compare";
   state.selection = [];
   state.designBase64 = null;
@@ -263,7 +265,13 @@ describe("renderCompareTab", () => {
     app.querySelector<HTMLElement>(".btn")?.click();
 
     expect(post).toHaveBeenCalledWith(
-      { pluginMessage: { type: "export-frame", nodeId: "9:9" } },
+      {
+        pluginMessage: {
+          type: "export-frame",
+          nodeId: "9:9",
+          requestId: expect.stringMatching(/^export-frame-\d+$/),
+        },
+      },
       "*",
     );
     expect(state.loading).toBe(true);
@@ -424,7 +432,13 @@ describe("renderInspectTab", () => {
     app.querySelector<HTMLElement>(".btn")?.click();
 
     expect(post).toHaveBeenCalledWith(
-      { pluginMessage: { type: "inspect-node", nodeId: "2:2" } },
+      {
+        pluginMessage: {
+          type: "inspect-node",
+          nodeId: "2:2",
+          requestId: expect.stringMatching(/^inspect-node-\d+$/),
+        },
+      },
       "*",
     );
     expect(state.loading).toBe(true);
@@ -528,7 +542,13 @@ describe("renderChildrenSection", () => {
     section.querySelector<HTMLElement>(".diff-region")?.click();
 
     expect(post).toHaveBeenCalledWith(
-      { pluginMessage: { type: "inspect-node", nodeId: "3:1" } },
+      {
+        pluginMessage: {
+          type: "inspect-node",
+          nodeId: "3:1",
+          requestId: expect.stringMatching(/^inspect-node-\d+$/),
+        },
+      },
       "*",
     );
     expect(state.loading).toBe(true);
@@ -627,6 +647,113 @@ describe("handlePluginMessage", () => {
   });
 });
 
+describe("plugin request tracking", () => {
+  // postMessage の引数は unknown なので型断言を避けて Reflect で取り出す
+  function extractRequestId(post: ReturnType<typeof vi.spyOn>): string {
+    const arg = post.mock.calls.at(-1)?.[0];
+    if (typeof arg !== "object" || arg === null) {
+      throw new Error("postMessage がオブジェクト引数で呼ばれていない");
+    }
+    const pluginMessage = Reflect.get(arg, "pluginMessage");
+    if (typeof pluginMessage !== "object" || pluginMessage === null) {
+      throw new Error("pluginMessage が無い");
+    }
+    const requestId = Reflect.get(pluginMessage, "requestId");
+    if (typeof requestId !== "string") throw new Error("requestId が無い");
+    return requestId;
+  }
+
+  function clickInspect(nodeId = "2:2"): ReturnType<typeof vi.spyOn> {
+    state.selection = [makeSelection({ id: nodeId })];
+    renderInspectTab(app);
+    const post = vi.spyOn(parent, "postMessage");
+    app.querySelector<HTMLElement>(".btn")?.click();
+    return post;
+  }
+
+  it("requestId 付きで送信し、対応する応答だけ受理する", () => {
+    const post = clickInspect();
+    const requestId = extractRequestId(post);
+    expect(requestId).toMatch(/^inspect-node-\d+$/);
+
+    handlePluginMessage({ type: "inspect-result", requestId, inspection: makeInspection() });
+
+    expect(state.inspectionResult?.nodeName).toBe("Button");
+    expect(state.loading).toBe(false);
+  });
+
+  it("古い requestId の応答 → 状態を変えず pending を維持する", () => {
+    clickInspect();
+
+    handlePluginMessage({
+      type: "inspect-result",
+      requestId: "inspect-node-999",
+      inspection: makeInspection(),
+    });
+
+    expect(state.inspectionResult).toBeNull();
+    expect(state.loading).toBe(true);
+  });
+
+  it("別 kind の応答 → 同じ requestId でも棄却する", () => {
+    const post = clickInspect();
+    const requestId = extractRequestId(post);
+
+    handlePluginMessage({ type: "export-result", requestId, base64: "design" });
+
+    expect(state.designBase64).toBeNull();
+    expect(state.loading).toBe(true);
+  });
+
+  it("連続 request → 連番の requestId を発行する", () => {
+    const post = clickInspect();
+    const first = extractRequestId(post);
+
+    // startPluginRequest 内の render() が compare タブへ戻すため、inspect を描き直してから押す
+    renderInspectTab(app);
+    app.querySelector<HTMLElement>(".btn")?.click();
+    const second = extractRequestId(post);
+
+    expect(second).not.toBe(first);
+    expect(second).toMatch(/^inspect-node-\d+$/);
+  });
+
+  it("10秒無応答 → timeout alert で loading を解除する", () => {
+    vi.useFakeTimers();
+    clickInspect();
+    expect(state.loading).toBe(true);
+
+    vi.advanceTimersByTime(PLUGIN_REQUEST_TIMEOUT_MS);
+
+    expect(window.alert).toHaveBeenCalledWith(
+      "The node inspection timed out. Check the selection and try again.",
+    );
+    expect(state.loading).toBe(false);
+  });
+
+  it("export-frame の timeout → frame export と案内する", () => {
+    vi.useFakeTimers();
+    state.selection = [makeSelection({ id: "5:5" })];
+    state.screenshotBase64 = "shot";
+    renderCompareTab(app);
+    const post = vi.spyOn(parent, "postMessage");
+    [...app.querySelectorAll<HTMLElement>(".btn")]
+      .find((btn) => btn.textContent === "Compare")
+      ?.click();
+
+    const requestId = extractRequestId(post);
+    expect(requestId).toMatch(/^export-frame-\d+$/);
+    expect(state.designBase64).toBeNull();
+
+    vi.advanceTimersByTime(PLUGIN_REQUEST_TIMEOUT_MS);
+
+    expect(window.alert).toHaveBeenCalledWith(
+      "The frame export timed out. Check the selection and try again.",
+    );
+    expect(state.loading).toBe(false);
+  });
+});
+
 describe("runComparison", () => {
   it("画像が揃っていない → 何もしない", async () => {
     await runComparison();
@@ -659,5 +786,27 @@ describe("runComparison", () => {
     expect(window.alert).toHaveBeenCalledWith("Comparison failed: Error: decode failed");
     expect(state.comparisonResult).toBeNull();
     expect(state.loading).toBe(false);
+  });
+
+  it("実画像loaderのerrorイベントを復旧可能な説明へ変換する", async () => {
+    const BrowserImage = window.Image;
+    vi.spyOn(window, "Image").mockImplementation(
+      class extends BrowserImage {
+        constructor() {
+          super();
+          queueMicrotask(() => this.dispatchEvent(new Event("error")));
+        }
+      },
+    );
+    state.designBase64 = "broken-image";
+    state.screenshotBase64 = "screenshot";
+
+    await runComparison();
+
+    expect(window.alert).toHaveBeenCalledWith(
+      "Comparison failed: Error: Could not decode the image. Re-export the design or choose a valid screenshot, then try again.",
+    );
+    expect(state.loading).toBe(false);
+    expect(state.comparisonResult).toBeNull();
   });
 });

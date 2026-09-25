@@ -9,6 +9,8 @@ import { z } from "zod";
 import {
   AnchorRegionSchema,
   CompareDesignResultSchema,
+  ComparisonCampaignIdSchema,
+  ComparisonConditionsInputSchema,
   IgnoreRegionSchema,
   type CompareDesignResult,
 } from "@figdiff/shared";
@@ -52,6 +54,8 @@ const DESCRIPTION = `デザインと実装のピクセル差分を検出しま�
 - threshold: 色差の許容閾値（0-1）。profile を指定した場合はそちらが既定値になる
 - profile: 比較プロファイル（strict/balanced/layout）。threshold 直接指定で上書き可
 - project_id: Crop Region・ignore_regions・前回使用ノード自動補完に使うプロジェクトID（省略可）
+- campaign_id: 独立した修正作業を識別するID。同じ作業の反復では同じIDを使い、新しいブランチ・作業では別IDにする。省略時は従来の対象単位の履歴を使う
+- comparison_conditions: design / screenshotそれぞれのviewport{width,height}(論理px)、pixelRatio(物理px/論理px)、origin{x,y}(画像左上の共通参照座標、論理px)の申告。画像外寸はキャンバス寸法であり端末の高さとは限らない。未指定は未確認として報告し、異なる表示領域・原点ならCSS修正の前に撮影条件を確認する。申告値による自動変換は行わない
 - ignore_regions: 既知の意図的差分マスク（省略可）。project_id の保存済みマスク、自動 system UI マスクと結合される。WP原文 vs Figmaプレースホルダ、Google Map埋め込み等の false-positive 抑制に使用。各矩形 {x,y,width,height,label?} 内のピクセルは差分検出/matchRate 分母から除外される
 - anchors: 同幅・異高入力（レスポンシブ縦伸び）の位置整合検査（省略可）。各要素 {x,y,width,height,mode,label?,tolerancePx?} を design 画像のピクセル座標で宣言する。mode は top-ratio（上端を高さ比で写像）または bottom-fixed（下端固定）。tolerancePx 既定2。宣言領域を screenshot 内で同定し、期待位置とのズレが許容内かをアンカー毎に PASS/FAIL で返す。未指定時は従来どおりピクセル比較のみ
 - mask_system_ui: モバイル実機/Simulator撮影のOSステータスバー/ナビゲーションバーを自動マスクするか。capture_device指定時は既定true、それ以外は既定false。set_ignore_regionsで追加の微調整が可能
@@ -159,6 +163,9 @@ export const buildSummaryText = (result: CompareDesignResult): string => {
   const lines: string[] = [];
 
   lines.push(...buildLoopGuardLines(result));
+  if (result.comparisonConditions) {
+    lines.push("", result.comparisonConditions.message);
+  }
   lines.push(...buildTokenDiffLines(result));
 
   if (result.diffReport) {
@@ -314,12 +321,15 @@ const buildMaskCandidateLines = (result: CompareDesignResult): string[] => {
 
   if (candidates.length === 0) return [];
 
-  const lines = ["", "マスク候補（意図的差分の可能性・採否はAIループが判断）:"];
+  const lines = [
+    "",
+    "マスク候補（自動では除外していません。内容を確認し、採否は利用者が判断してください）:",
+  ];
   for (const c of candidates) {
     const reason =
       (c.textureScore ?? 0) > 0.5
-        ? `texture=${(c.textureScore ?? 0).toFixed(2)} (写真/画像領域)`
-        : `structure=${c.structure.toFixed(2)} / color=${c.color.toFixed(2)} (意図的な色差)`;
+        ? `texture=${(c.textureScore ?? 0).toFixed(2)} (画素の変化が細かい領域。文章やボタンも含まれ得るため、写真とは判定していません)`
+        : `structure=${c.structure.toFixed(2)} / color=${c.color.toFixed(2)} (構造が近く色が異なる領域。意図した差か確認してください)`;
     lines.push(
       `  - ${c.regionId}: {x:${c.bbox.x},y:${c.bbox.y},w:${c.bbox.w},h:${c.bbox.h}} (${reason})`,
     );
@@ -332,6 +342,21 @@ const buildMaskCandidateLines = (result: CompareDesignResult): string[] => {
 
 export const registerCompareDesign = (server: McpServer): void => {
   const inputSchema = {
+    figma_contents_only: z
+      .boolean()
+      .optional()
+      .describe(
+        "Figma 書き出しで対象ノードの内容だけを含める（既定 true）。false は重なる周辺レイヤーも含むため、その背景やレイヤーを比較する意図がある場合だけ指定する。",
+      ),
+    figma_use_absolute_bounds: z
+      .boolean()
+      .optional()
+      .describe(
+        "Figma 書き出しにノード全体の境界を使う（既定 true）。false は描画内容の境界を使う。非表示ノードの空白出力を調べる場合も、取得できた画像に設計内容があるか確認する。",
+      ),
+    campaign_id: ComparisonCampaignIdSchema.optional().describe(
+      "修正キャンペーンのID（1〜128文字）。同じ作業では同じIDで履歴を継続し、新しい作業では別IDで初回から始める。省略時は従来どおり対象単位の履歴を使う。過去の比較証跡は削除しない。",
+    ),
     design_source: z
       .string()
       .describe(
@@ -356,6 +381,14 @@ export const registerCompareDesign = (server: McpServer): void => {
       .describe(
         "接続済みモバイル端末/SimulatorからPNGを撮影し、screenshotの代わりに使用する。android=adb、ios-sim=xcrun simctl、ios-device=pymobiledevice3。",
       ),
+    capture_device_serial: z
+      .string()
+      .trim()
+      .min(1)
+      .optional()
+      .describe(
+        "撮影対象のAndroid端末serial。capture_device: androidと併用。省略時はANDROID_SERIALまたは単一の接続端末を使用し、複数なら選択を求める。",
+      ),
     capture_scroll: z
       .boolean()
       .optional()
@@ -370,6 +403,9 @@ export const registerCompareDesign = (server: McpServer): void => {
       .describe(
         "撮影幅(px)。省略時はFigmaフレームの実幅を自動取得。screenshot_url指定時のみ有効。",
       ),
+    comparison_conditions: ComparisonConditionsInputSchema.optional().describe(
+      "両画像の表示領域・倍率・共通原点の申告。各sideはviewport{width,height}(論理px), pixelRatio(物理px/論理px), origin{x,y}(画像左上の共通参照座標、論理px)。画像の移動・cropには使用しない。",
+    ),
     mask_system_ui: z
       .boolean()
       .optional()

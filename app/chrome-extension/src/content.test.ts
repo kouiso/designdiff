@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
 import type { DiffRegion } from "@figdiff/shared";
 
@@ -23,6 +23,11 @@ beforeEach(() => {
   overlayState.imageBase64 = null;
   overlayState.mode = "transparent_overlay";
   overlayState.opacity = 0.5;
+});
+
+afterEach(() => {
+  vi.useRealTimers();
+  vi.unstubAllGlobals();
 });
 
 describe("handleContentMessage", () => {
@@ -59,7 +64,15 @@ describe("handleContentMessage", () => {
     expect(sendResponse).toHaveBeenCalledWith({ success: true });
   });
 
-  it("hide-overlay → オーバーレイ・バー・ハイライトを全部片付ける", () => {
+  it("hide-overlay → オーバーレイ・バー・ハイライトを片付け、2描画境界後に応答する", () => {
+    const frames: FrameRequestCallback[] = [];
+    vi.stubGlobal(
+      "requestAnimationFrame",
+      vi.fn((callback: FrameRequestCallback) => {
+        frames.push(callback);
+        return frames.length;
+      }),
+    );
     handleContentMessage(
       {
         type: "show-overlay",
@@ -77,13 +90,35 @@ describe("handleContentMessage", () => {
     );
 
     const sendResponse = vi.fn();
-    handleContentMessage({ type: "hide-overlay" }, sendResponse);
+    const keepsMessageChannelOpen = handleContentMessage({ type: "hide-overlay" }, sendResponse);
 
     expect(overlayState.active).toBe(false);
     expect(document.getElementById("figdiff-overlay")).toBeNull();
     expect(document.getElementById("figdiff-controls")).toBeNull();
     expect(document.getElementById("figdiff-diff-highlights")).toBeNull();
+    expect(keepsMessageChannelOpen).toBe(true);
+    expect(sendResponse).not.toHaveBeenCalled();
+    frames.shift()?.(0);
+    expect(sendResponse).not.toHaveBeenCalled();
+    frames.shift()?.(16);
     expect(sendResponse).toHaveBeenCalledWith({ success: true });
+  });
+
+  it("hide-overlay → 描画境界が停止したら成功扱いにせず期限付きエラーを返す", () => {
+    vi.useFakeTimers();
+    vi.stubGlobal(
+      "requestAnimationFrame",
+      vi.fn(() => 1),
+    );
+    const sendResponse = vi.fn();
+
+    const keepsMessageChannelOpen = handleContentMessage({ type: "hide-overlay" }, sendResponse);
+    vi.advanceTimersByTime(1_000);
+
+    expect(keepsMessageChannelOpen).toBe(true);
+    expect(sendResponse).toHaveBeenCalledWith({
+      error: "Overlay removal paint acknowledgement timed out",
+    });
   });
 
   it("update-opacity → overlayState.opacity を更新する", () => {

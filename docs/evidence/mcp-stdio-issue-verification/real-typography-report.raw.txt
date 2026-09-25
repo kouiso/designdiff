@@ -1,0 +1,351 @@
+{
+  "status": "FAIL",
+  "comparisonId": "cmp-c0c55eda-d216-4ec3-8132-f3b31b1192e1",
+  "matchRate": 99.98,
+  "diffPixelCount": 82,
+  "totalPixelCount": 468000,
+  "remainingIssues": 1,
+  "diffRegions": [
+    {
+      "id": 0,
+      "bounds": {
+        "x": 77,
+        "y": 87,
+        "width": 11,
+        "height": 10
+      },
+      "diffPixelCount": 82,
+      "nearbyNodeIds": [],
+      "nearbyNodeNames": []
+    }
+  ],
+  "completionCriteria": {
+    "structuralReview": {
+      "required": 1,
+      "current": 0,
+      "status": "FAIL",
+      "blocking": true,
+      "note": "critical severity issue detected; weakest region diff-cluster-77-87-11-10 (structure 0.944, color ΔE 26.133; lower=better, critical threshold 2) with texture-adjusted weights active (alpha 0.700, photo-like cap 0.300)"
+    },
+    "conditionsReview": {
+      "required": 1,
+      "current": 0,
+      "status": "UNCERTAIN",
+      "blocking": false,
+      "note": "表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。"
+    },
+    "wholeImageStructure": {
+      "required": 0.95,
+      "current": 0.9999526818784052,
+      "status": "PASS",
+      "blocking": false,
+      "note": "Area-weighted contrast and structure over disjoint 8x8 windows. Uniform luminance shifts are excluded; contrast changes remain. Local issues and the aggregate gate remain independent."
+    },
+    "consistencyReview": {
+      "required": 0.5,
+      "current": 0,
+      "status": "PASS",
+      "blocking": false,
+      "note": "Not evaluated: the contradiction check only applies to a passing structural review."
+    },
+    "tokenReview": {
+      "required": 0,
+      "current": 0,
+      "status": "UNCERTAIN",
+      "blocking": false,
+      "note": "Not evaluated: token comparison needs both a Figma node tree and a FigDiff-captured URL."
+    },
+    "matchRate": {
+      "required": 100,
+      "current": 99.98,
+      "status": "FAIL",
+      "blocking": false,
+      "note": "Reference metric only. Do not use matchRate% as the completion gate."
+    },
+    "diffPixelCount": {
+      "required": 0,
+      "current": 82,
+      "status": "FAIL",
+      "blocking": false,
+      "note": "Reference metric. Structural SSIM review is the blocking gate."
+    },
+    "remainingIssues": {
+      "required": 0,
+      "current": 1,
+      "status": "FAIL",
+      "blocking": true,
+      "note": "Blocking only while structural SSIM review has not passed."
+    }
+  },
+  "nextAction": "表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。 inspect_node を使って 1 箇所の diffRegions の詳細を確認し、CSSを修正してください。修正後は再度 compare_design で検証してください。",
+  "suggestion": "matchRateは高いですが、構造SSIM判定はFAILです。局所的な粗を1箇所確認してください。",
+  "clusterTelemetry": {
+    "requestedMode": "auto",
+    "usedMode": "flood",
+    "fallbackUsed": false,
+    "wallMs": 1.2,
+    "regionCount": 1
+  },
+  "gridSummary": {
+    "rows": 4,
+    "cols": 2,
+    "cells": [
+      {
+        "row": 0,
+        "col": 0,
+        "x": 0,
+        "y": 0,
+        "width": 195,
+        "height": 300,
+        "diffPixels": 82,
+        "totalPixels": 58500,
+        "matchRate": 99.86
+      },
+      {
+        "row": 0,
+        "col": 1,
+        "x": 195,
+        "y": 0,
+        "width": 195,
+        "height": 300,
+        "diffPixels": 0,
+        "totalPixels": 58500,
+        "matchRate": 100
+      },
+      {
+        "row": 1,
+        "col": 0,
+        "x": 0,
+        "y": 300,
+        "width": 195,
+        "height": 300,
+        "diffPixels": 0,
+        "totalPixels": 58500,
+        "matchRate": 100
+      },
+      {
+        "row": 1,
+        "col": 1,
+        "x": 195,
+        "y": 300,
+        "width": 195,
+        "height": 300,
+        "diffPixels": 0,
+        "totalPixels": 58500,
+        "matchRate": 100
+      },
+      {
+        "row": 2,
+        "col": 0,
+        "x": 0,
+        "y": 600,
+        "width": 195,
+        "height": 300,
+        "diffPixels": 0,
+        "totalPixels": 58500,
+        "matchRate": 100
+      },
+      {
+        "row": 2,
+        "col": 1,
+        "x": 195,
+        "y": 600,
+        "width": 195,
+        "height": 300,
+        "diffPixels": 0,
+        "totalPixels": 58500,
+        "matchRate": 100
+      },
+      {
+        "row": 3,
+        "col": 0,
+        "x": 0,
+        "y": 900,
+        "width": 195,
+        "height": 300,
+        "diffPixels": 0,
+        "totalPixels": 58500,
+        "matchRate": 100
+      },
+      {
+        "row": 3,
+        "col": 1,
+        "x": 195,
+        "y": 900,
+        "width": 195,
+        "height": 300,
+        "diffPixels": 0,
+        "totalPixels": 58500,
+        "matchRate": 100
+      }
+    ]
+  },
+  "diffReport": {
+    "alignment": {
+      "translation": {
+        "x": 0,
+        "y": 0
+      },
+      "source": "none",
+      "applied": false,
+      "baselineResidual": 0.00024145299145299145,
+      "correctedResidual": 0.00024145299145299145,
+      "scale": {
+        "x": 1,
+        "y": 1
+      },
+      "rotation": 0,
+      "confidence": 1,
+      "residual": 0.00024145299145299145
+    },
+    "regionScores": [
+      {
+        "regionId": "diff-cluster-77-87-11-10",
+        "bbox": {
+          "x": 77,
+          "y": 87,
+          "w": 11,
+          "h": 10
+        },
+        "structure": 0.9437116100171362,
+        "color": 26.132913901461375,
+        "shape": 0.06726727939963126,
+        "layout": 0,
+        "textureScore": 0.9241616464617464
+      },
+      {
+        "regionId": "whole-frame",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "w": 390,
+          "h": 1200
+        },
+        "scope": "root",
+        "structure": 0.9999493101025925,
+        "color": 0.006873723275322976,
+        "shape": 0.0031701135624364937,
+        "layout": 0,
+        "textureScore": 0.1560101020725895
+      }
+    ],
+    "issues": [
+      {
+        "regionId": "diff-cluster-77-87-11-10",
+        "bbox": {
+          "x": 77,
+          "y": 87,
+          "w": 11,
+          "h": 10
+        },
+        "kind": "color",
+        "severity": "critical",
+        "evidence": {
+          "signal": "delta_e_2000",
+          "value": 26.132913901461375,
+          "threshold": 2,
+          "expected": "< 2",
+          "actual": 26.132913901461375
+        },
+        "suggestedCssFix": "背景色や塗り色のトークン値をデザイン基準に合わせてください。"
+      }
+    ],
+    "weightedAggregate": {
+      "weightedStructure": 0.9437116100171362,
+      "weightedColor": 26.132913901461375,
+      "totalWeight": 0.3
+    },
+    "structuralAssessment": {
+      "metric": "ssim-contrast-structure-area-v1",
+      "score": 0.9999526818784052,
+      "evaluatedPixelCount": 468000,
+      "excludedPixelCount": 0,
+      "passThreshold": 0.95,
+      "failThreshold": 0.8,
+      "verdict": "pass",
+      "rationale": "Area-weighted contrast and structure over disjoint 8x8 windows. Uniform luminance shifts are excluded; contrast changes remain. Local issues and the aggregate gate remain independent."
+    },
+    "aggregateVerdict": "fail",
+    "rationale": "critical severity issue detected; weakest region diff-cluster-77-87-11-10 (structure 0.944, color ΔE 26.133; lower=better, critical threshold 2) with texture-adjusted weights active (alpha 0.700, photo-like cap 0.300)"
+  },
+  "preflight": {
+    "warnings": []
+  },
+  "normalization": {
+    "designNativeWidth": 390,
+    "designNativeHeight": 1200,
+    "screenshotWidth": 390,
+    "screenshotHeight": 1200,
+    "cropApplied": false,
+    "containResized": false,
+    "appliedScale": 1,
+    "autoCropped": false,
+    "cropSource": "none"
+  },
+  "ignoreRegionResolution": {
+    "coordinateContext": {
+      "canvas_width": 390,
+      "canvas_height": 1200,
+      "design_original_width": 390,
+      "design_original_height": 1200,
+      "screenshot_original_width": 390,
+      "screenshot_original_height": 1200
+    },
+    "appliedIds": [],
+    "incompatibleIds": [],
+    "legacyIds": []
+  },
+  "comparisonConditions": {
+    "status": "unverified",
+    "design": {
+      "canvas": {
+        "width": 390,
+        "height": 1200
+      },
+      "canvasSource": "image-metadata",
+      "unverified": [
+        "viewport",
+        "pixelRatio",
+        "origin"
+      ]
+    },
+    "screenshot": {
+      "canvas": {
+        "width": 390,
+        "height": 1200
+      },
+      "canvasSource": "image-metadata",
+      "unverified": [
+        "viewport",
+        "pixelRatio",
+        "origin"
+      ]
+    },
+    "differences": [],
+    "message": "表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。"
+  },
+  "diagnosis": {
+    "verdict": "clean",
+    "likelyMisconfig": false,
+    "rankedCauses": [],
+    "headline": "差分はほぼありません。"
+  },
+  "comparisonHeadline": {
+    "structureMatch": 94.37,
+    "colorOnlyRegions": 0,
+    "structuralRegions": 1,
+    "headline": "構造一致 94.37% / 色のみ差分 0領域 / 構造差分 1領域"
+  },
+  "loopGuard": {
+    "stop": false,
+    "step": 1,
+    "maxSteps": 10,
+    "remainingSteps": 9,
+    "reason": "continue",
+    "message": "反復 1/10 回。改善の余地があるため修正を続行できます。",
+    "iteration": 1,
+    "decision": "continue"
+  },
+  "verdictRoute": "pixel",
+  "diffImagePath": "/tmp/figdiff-issue-verify-FlEmVO/store/results/diff-cmp-c0c55eda-d216-4ec3-8132-f3b31b1192e1.png"
+}

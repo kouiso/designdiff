@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 
@@ -389,6 +390,88 @@ describe("buildTargetNodeIds", () => {
 });
 
 describe("runCompareDesign", () => {
+  it.each([
+    undefined,
+    1,
+    2,
+  ])("Figma書き出し要求と申告倍率 %s の出所を分離する", async (pixelRatio) => {
+    tmpRoot = await fs.mkdtemp(path.join(process.cwd(), "tmp-figdiff-runner-"));
+    const screenshotPath = path.join(tmpRoot, "screenshot.png");
+    await fs.writeFile(screenshotPath, Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+    const fileKey = randomUUID().replaceAll("-", "");
+    const nodeId = `${process.pid}:1`;
+    const figmaExport = {
+      conditions: { contentsOnly: true, useAbsoluteBounds: true, scale: 2 },
+      opaqueFillExpected: false,
+      uniformRaster: false,
+      interiorTransparentRatio: 0,
+      warnings: [],
+    };
+    mocks.createFigmaService.mockReturnValue({
+      getNodeDetails: vi.fn(async () => ({
+        id: nodeId,
+        name: "Synthetic frame",
+        type: "FRAME",
+        children: [],
+        absoluteBoundingBox: { x: 0, y: 0, width: 195, height: 919.5 },
+        fills: [],
+        strokes: [],
+        effects: [],
+      })),
+      getFrameImage: vi.fn(async () => ({
+        base64: Buffer.from("synthetic").toString("base64"),
+        figmaExport,
+      })),
+    });
+    mocks.sharp.mockReturnValue({ metadata: vi.fn(async () => ({ width: 390, height: 1839 })) });
+    mocks.compareImages.mockResolvedValue({
+      comparisonId: randomUUID(),
+      matchRate: 100,
+      diffPixelCount: 0,
+      totalPixelCount: 390 * 1839,
+      diffRegions: [],
+      suggestion: "",
+      normalization: {
+        designNativeWidth: 390,
+        designNativeHeight: 1839,
+        screenshotWidth: 390,
+        screenshotHeight: 1839,
+        cropApplied: false,
+        containResized: false,
+        appliedScale: 1,
+      },
+    });
+    const { result } = await runCompareDesign({
+      design_source: `https://www.figma.com/design/${fileKey}/Fixture?node-id=${nodeId}`,
+      screenshot: screenshotPath,
+      comparison_conditions: pixelRatio === undefined ? undefined : { design: { pixelRatio } },
+    });
+    expect(result.comparisonConditions?.design.requested).toEqual({
+      source: "figma-export-request",
+      pixelRatio: 2,
+    });
+    expect(result.comparisonConditions?.design.observed).toBeUndefined();
+    expect(result.comparisonConditions?.status).toBe(pixelRatio === 1 ? "mismatch" : "unverified");
+    if (pixelRatio === 1) {
+      expect(result.status).toBe("UNCERTAIN");
+      expect(result.completionCriteria?.conditionsReview).toMatchObject({
+        status: "UNCERTAIN",
+        blocking: true,
+      });
+      expect(result.nextAction).toContain("書き出し要求は実測値ではありません");
+    }
+    expect(mocks.recordComparison).toHaveBeenCalledWith(
+      expect.objectContaining({
+        result: expect.objectContaining({ comparisonConditions: result.comparisonConditions }),
+      }),
+    );
+    expect(mocks.recordConvergenceIteration).toHaveBeenCalledWith(
+      expect.objectContaining({
+        iteration: expect.objectContaining({ comparisonConditions: result.comparisonConditions }),
+      }),
+    );
+  });
+
   async function runLocalStructuralComparison(
     aggregateVerdict: "pass" | "fail" | "inconclusive",
     diffPixelCount: number,
@@ -1071,11 +1154,19 @@ describe("runCompareDesign", () => {
     });
 
     expect(getFrames).toHaveBeenCalledWith("FILEKEY123");
-    expect(getNodeDetails).toHaveBeenCalledWith("FILEKEY123", "2:2");
-    expect(getFrameImage).toHaveBeenCalledWith("FILEKEY123", "2:2", 1440, 1440, undefined, {
-      logicalBox: { x: 0, y: 0, width: 1440, height: 1800 },
-      renderBox: undefined,
-    });
+    expect(getNodeDetails).toHaveBeenCalledWith("FILEKEY123", "2:2", undefined, undefined);
+    expect(getFrameImage).toHaveBeenCalledWith(
+      "FILEKEY123",
+      "2:2",
+      1440,
+      1440,
+      undefined,
+      {
+        logicalBox: { x: 0, y: 0, width: 1440, height: 1800 },
+        renderBox: undefined,
+      },
+      expect.objectContaining({ node: expect.objectContaining({ type: "FRAME" }) }),
+    );
     expect(mocks.compareImages).toHaveBeenCalledWith(
       expect.objectContaining({ figmaNodeId: "2:2" }),
       expect.objectContaining({ id: "2:2" }),
@@ -1266,10 +1357,19 @@ describe("runCompareDesign", () => {
       screenshot: screenshotPath,
     });
 
-    expect(getFrameImage).toHaveBeenCalledWith("FILEKEY123", "2:2", 1440, 1440, "987654321", {
-      logicalBox: { x: 0, y: 0, width: 1440, height: 1800 },
-      renderBox: undefined,
-    });
+    expect(getNodeDetails).toHaveBeenCalledWith("FILEKEY123", "2:2", undefined, "987654321");
+    expect(getFrameImage).toHaveBeenCalledWith(
+      "FILEKEY123",
+      "2:2",
+      1440,
+      1440,
+      "987654321",
+      {
+        logicalBox: { x: 0, y: 0, width: 1440, height: 1800 },
+        renderBox: undefined,
+      },
+      expect.objectContaining({ node: expect.objectContaining({ type: "FRAME" }) }),
+    );
   });
 
   it("normalizes last-used fallback node ids for screenshot capture width and Figma assets", async () => {
@@ -1332,11 +1432,19 @@ describe("runCompareDesign", () => {
       detectDynamic: true,
       collectDomStyles: true,
     });
-    expect(getNodeDetails).toHaveBeenCalledWith("FILEKEY123", "12:34");
-    expect(getFrameImage).toHaveBeenCalledWith("FILEKEY123", "12:34", 375, 375, undefined, {
-      logicalBox: { x: 0, y: 0, width: 375, height: 812 },
-      renderBox: undefined,
-    });
+    expect(getNodeDetails).toHaveBeenCalledWith("FILEKEY123", "12:34", undefined, undefined);
+    expect(getFrameImage).toHaveBeenCalledWith(
+      "FILEKEY123",
+      "12:34",
+      375,
+      375,
+      undefined,
+      {
+        logicalBox: { x: 0, y: 0, width: 375, height: 812 },
+        renderBox: undefined,
+      },
+      expect.objectContaining({ node: expect.objectContaining({ type: "FRAME" }) }),
+    );
     expect(output.result.preflight?.warnings[0]).toEqual(
       expect.objectContaining({
         code: "last_used_node",
@@ -1390,7 +1498,7 @@ describe("runCompareDesign", () => {
     });
 
     expect(output.result.status).toBe("PASS");
-    expect(getNodeDetails).toHaveBeenCalledWith("FILEKEY123", "9:9");
+    expect(getNodeDetails).toHaveBeenCalledWith("FILEKEY123", "9:9", undefined, undefined);
     expect(mocks.compareImages).toHaveBeenCalledOnce();
   });
 
@@ -1485,6 +1593,16 @@ describe("runCompareDesign", () => {
         },
         aggregateVerdict: "fail",
         rationale: "localized CTA flaw detected",
+        structuralAssessment: {
+          metric: "ssim-contrast-structure-area-v1",
+          score: 0.999,
+          evaluatedPixelCount: 390 * 844,
+          excludedPixelCount: 0,
+          passThreshold: 0.95,
+          failThreshold: 0.8,
+          verdict: "pass",
+          rationale: "Whole-image structure passes; local defect remains independent.",
+        },
       },
       normalization: {
         designNativeWidth: 390,
@@ -1505,6 +1623,11 @@ describe("runCompareDesign", () => {
     expect(result.status).toBe("FAIL");
     expect(result.completionCriteria?.structuralReview.status).toBe("FAIL");
     expect(result.completionCriteria?.matchRate.blocking).toBe(false);
+    expect(result.completionCriteria?.wholeImageStructure).toMatchObject({
+      status: "PASS",
+      current: 0.999,
+      blocking: false,
+    });
     expect(result.suggestion).toContain("matchRateは高いですが");
   });
 
@@ -1855,7 +1978,7 @@ describe("runCompareDesign", () => {
     expect(result.nextAction).toContain("inconclusive");
     expect(result.suggestion).toContain("だけでは判断できません");
     expect(result.completionCriteria?.structuralReview.note).toBe(
-      "Structural SSIM verdict is inconclusive; treat this as not complete and ask for review.",
+      "Aggregate visual verdict is inconclusive; treat this as not complete and ask for review.",
     );
   });
 

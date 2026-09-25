@@ -1,3 +1,18 @@
+export {
+  ComparisonCampaignIdSchema,
+  parseComparisonCampaignKey,
+  scopeComparisonCampaign,
+} from "./campaign-key.js";
+
+export {
+  ComparisonConditionsInputSchema,
+  ComparisonConditionsReportSchema,
+  CoordinateConditionsSchema,
+  describeComparisonConditions,
+  type ComparisonConditionsInput,
+  type ComparisonConditionsReport,
+} from "./comparison-conditions.js";
+
 // Figma Client
 export {
   collectNestedFrames,
@@ -16,11 +31,27 @@ export {
   type FigmaEffect,
   type FigmaFileResponse,
   type FigmaImagesResponse,
+  type FigmaImageExportOptions,
   type FigmaNode,
   type FigmaNodesResponse,
   type FigmaPaint,
   type FigmaTypeStyle,
 } from "./figma-client.js";
+
+export {
+  extractFigmaGeometryTree,
+  FigmaGeometryBoxSchema,
+  FigmaGeometryNodeSchema,
+  FigmaGeometryTreeSchema,
+  FigmaImageTransformSchema,
+  mapFigmaGeometryToImage,
+  resolveFigmaGeometryTarget,
+  type FigmaGeometryExtraction,
+  type FigmaGeometryNode,
+  type FigmaGeometryTargetResolution,
+  type FigmaGeometryTree,
+  type FigmaImageTransform,
+} from "./figma-geometry.js";
 
 export {
   resolveFixtureVerifiedSystemUiTopInset,
@@ -31,6 +62,25 @@ export {
 // CSS Suggestion Generator
 export { figmaColorToHex, generateCssSuggestion } from "./css-suggestion.js";
 
+export {
+  compareFixRegions,
+  type FixRegionComparison,
+  type FixSideEffect,
+} from "./fix-region-comparison.js";
+
+// MCP とデスクトップのデザイントークン抽出を同じ規則に揃える。
+export { extractDesignTokens } from "./design-token-extractor.js";
+export {
+  applyIgnoreRegions,
+  buildIgnoreMask,
+  type IgnoreMaskResult,
+} from "./ignore-region-mask.js";
+export {
+  classifyIgnoreRegionEntries,
+  ignoreRegionContextEquals,
+  type IgnoreRegionEntryClassification,
+} from "./ignore-region-context.js";
+
 // Figma Node → 検査結果への変換
 export { transformNode } from "./transform-node.js";
 
@@ -40,6 +90,9 @@ export {
   matchDiffRegionsToNodes,
   pointInBoundingBox,
 } from "./node-matcher.js";
+
+// Pixel Compare (desktop / MCP / plugin で同一の差分判定)
+export { comparePixels, type PixelCompareOptions } from "./pixel-compare.js";
 
 // Diff Clustering (pixelmatch output → regions)
 export {
@@ -80,7 +133,12 @@ export {
   type GlyphEdgeRasterEvidence,
 } from "./signal/glyph-edge-raster.js";
 export { computeHausdorff } from "./signal/hausdorff.js";
-export { computeSsim, computeSsimForRegion, type SsimRegion } from "./signal/ssim.js";
+export {
+  computeSsim,
+  computeSsimForRegion,
+  computeWholeImageStructure,
+  type SsimRegion,
+} from "./signal/ssim.js";
 export {
   aggregateTemporalVerdict,
   alignFrame,
@@ -130,6 +188,14 @@ export {
   type RankedFrame,
 } from "./confidence/frame-guidance.js";
 export { buildComparisonHeadline } from "./confidence/headline.js";
+export {
+  canonicalizeVerificationContextPayload,
+  normalizeVerificationContextPayload,
+  type VerificationContext,
+  type VerificationContextPayload,
+  VerificationContextPayloadSchema,
+  VerificationContextSchema,
+} from "./verification-context.js";
 export { runPreflight, type PreflightInput } from "./confidence/preflight.js";
 export {
   buildSystemBarIgnoreRegions,
@@ -199,6 +265,8 @@ export {
   GridSummarySchema,
   IgnoreRegionConfigEntrySchema,
   IgnoreRegionConfigFileSchema,
+  IgnoreRegionCoordinateContextSchema,
+  IgnoreRegionResolutionSchema,
   IgnoreRegionSchema,
   ImageDimensionsSchema,
   ConvergenceCampaignSchema,
@@ -214,6 +282,8 @@ export {
   NodeStrokeSchema,
   NodeTypographySchema,
   NormalizationReportSchema,
+  StructuralAssessmentSchema,
+  FigmaExportReportSchema,
   ParsedDesignInputSchema,
   PreflightReportSchema,
   PreflightSeveritySchema,
@@ -287,6 +357,8 @@ export type {
   NodeStroke,
   NodeTypography,
   NormalizationReport,
+  StructuralAssessment,
+  FigmaExportReport,
   ParsedDesignInput,
   PreflightReport,
   PreflightSeverity,
@@ -299,5 +371,26 @@ export type {
   TokenDiffReport,
   TokenMismatch,
   VerdictRoute,
+  IgnoreRegionCoordinateContext,
   WeightedAggregate,
 } from "./type.js";
+
+export { generateMarkdownReport, generateJsonReport } from "./report-generator.js";
+
+export {
+  classifyForegroundOccupancyGeometry,
+  type ForegroundOccupancyGeometry,
+} from "./signal/foreground-occupancy.js";
+
+export { axisContribution, buildVerdict } from "./verify-fix-verdict.js";
+
+export { sanitizeForPublicIssue, type SanitizeResult } from "./public-issue-sanitizer.js";
+
+export {
+  runAnimationCompare,
+  type TimedImage,
+  type FrameComparison,
+  type CompareOneFrame,
+  type AnimationCompareInput,
+  type AnimationCompareResult,
+} from "./animation-comparison.js";

@@ -122,4 +122,18 @@ describe("Header の残りの操作", () => {
     fireEvent.mouseEnter(active);
     expect(active.style.background).toBe(activeBackground);
   });
+
+  it("狭いviewportではnavが縮んで横スクロールし、ロゴと右側は縮まない", () => {
+    render(<Header currentPage="home" onNavigate={vi.fn()} />);
+
+    const nav = screen.getByRole("navigation");
+    expect(nav.style.minWidth).toBe("0");
+    expect(nav.style.overflowX).toBe("auto");
+
+    const actions = screen.getByRole("button", { name: "新規比較" }).parentElement;
+    expect(actions?.style.flexShrink).toBe("0");
+
+    const logo = screen.getByText("FigDiff").closest("button");
+    expect(logo?.style.flexShrink).toBe("0");
+  });
 });

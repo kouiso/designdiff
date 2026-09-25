@@ -14,7 +14,13 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const require = createRequire(import.meta.url);
 
 const sharp = require(path.join(__dirname, "../app/mcp-server/node_modules/sharp"));
-const pixelmatch = require(path.join(__dirname, "../app/mcp-server/node_modules/pixelmatch"));
+// pixelmatch 7 は ESM の default export なので、require(esm) では名前空間オブジェクトが返る。
+// 5 系（CJS で関数そのもの）とどちらでも関数を取り出せるようにしておく。
+const pixelmatchModule = require(path.join(__dirname, "../app/mcp-server/node_modules/pixelmatch"));
+const pixelmatch = pixelmatchModule.default ?? pixelmatchModule;
+if (typeof pixelmatch !== "function") {
+  throw new TypeError("pixelmatch の比較関数を読み込めません");
+}
 
 const TMP_DIR = path.join(__dirname, "../.tmp-oracle");
 // COARSE_RANGE は実機のシステム UI 帯オフセット(最大72px程度)まで届く値に
@@ -50,9 +56,11 @@ function shiftPixels(srcPixels, width, height, dx, dy) {
  * Count differing pixels between two RGBA Uint8ClampedArrays.
  * Uses pixelmatch with threshold=0.1 for speed.
  */
+// checkerboard: false は製品側 (package/shared/src/pixel-compare.ts) と同じ白合成に揃えるため。
+// pixelmatch 7 の既定 (市松模様) のままだと、半透明画素で物差しの意味が製品とずれる。
 function countDiff(a, b, width, height) {
   const diff = new Uint8ClampedArray(width * height * 4);
-  return pixelmatch(a, b, diff, width, height, { threshold: 0.1 });
+  return pixelmatch(a, b, diff, width, height, { threshold: 0.1, checkerboard: false });
 }
 
 /**
@@ -330,7 +338,7 @@ async function compareFiles(designPath, screenshotPath, outDiffPath, ignoreRegio
     baselineDiffPng,
     width,
     height,
-    { threshold: 0.1 },
+    { threshold: 0.1, checkerboard: false },
   );
 
   // Detect translation — マスクの影響を受けないよう、無加工のピクセルで探す。
@@ -354,7 +362,7 @@ async function compareFiles(designPath, screenshotPath, outDiffPath, ignoreRegio
     correctedDiffPng,
     width,
     height,
-    { threshold: 0.1 },
+    { threshold: 0.1, checkerboard: false },
   );
 
   if (outDiffPath) {

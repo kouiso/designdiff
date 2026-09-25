@@ -4,6 +4,8 @@ import { extname, resolve } from "node:path";
 
 import { BrowserWindow, ipcMain } from "electron";
 
+import { saveComparisonReport } from "./report";
+
 const ALLOWED_IMAGE_EXTENSIONS = new Set([
   ".png",
   ".jpg",
@@ -31,6 +33,9 @@ const validateImagePath = (filePath: string): string => {
 };
 
 export const registerFileHandlers = (): void => {
+  ipcMain.handle("file:save-comparison-report", (_event, request: unknown) =>
+    saveComparisonReport(request),
+  );
   ipcMain.handle("file:read-local-image", async (_event, path: string) => {
     const validPath = validateImagePath(path);
     const buffer = await readFile(validPath);
