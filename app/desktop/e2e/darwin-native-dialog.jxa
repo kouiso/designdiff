@@ -2,6 +2,7 @@
 // win32-native-dialog.ps1 と同じ契約: tree / find / shot <id> <out> /
 // save <id> <path> / cancel <id> を osascript -l JavaScript で提供する。
 // 検出は CGWindowListCopyWindowInfo(JXA ObjC ブリッジ経由、PyObjC 不要)。
+// macOS 26 では同ブリッジが壊れるため System Events 列挙にフォールバックする。
 // 入力は System Events の keystroke(アクセシビリティ権限が必要)。
 // CGEventPost は使わない: 合成イベントは実入力パイプラインを迂回して
 // 「実ダイアログ操作」の証跡として成立しないため。
@@ -13,13 +14,70 @@ ObjC.import("stdlib");
 const SAVE_TITLE = /save|保存/i;
 const APP_NAME = /electron|figdiff/i;
 
-const onScreenWindows = () =>
-  ObjC.deepUnwrap(
-    $.CGWindowListCopyWindowInfo(
-      $.kCGWindowListOptionOnScreenOnly,
-      $.kCGNullWindowID,
-    ),
-  ).filter((w) => w.kCGWindowIsOnscreen !== false);
+// CGWindowList は macOS 26 で JXA ObjC ブリッジが壊れている
+// ($.CGWindowListCopyWindowInfo is not a function; CoreGraphics import でも
+// CFArrayRef が unwrap できない)。その場合は System Events 経由で対象アプリの
+// ウィンドウだけを列挙する経路に落ちる。AX 権限はダイアログ操作 (keystroke) に
+// 元々必須なので、追加の権限要求は発生しない。
+const onScreenWindows = () => {
+  try {
+    return ObjC.deepUnwrap(
+      $.CGWindowListCopyWindowInfo(
+        $.kCGWindowListOptionOnScreenOnly,
+        $.kCGNullWindowID,
+      ),
+    ).filter((w) => w.kCGWindowIsOnscreen !== false);
+  } catch (e) {
+    return onScreenWindowsViaSe();
+  }
+};
+
+// System Events のウィンドウは CG window id を持たないため、kCGWindowNumber は
+// pid<<12|index の合成値で代替する。screencapture -l には使えないが、shot の
+// metadata 出力パスは num で元データを引くだけなのでそのまま動く。
+// AXSubrole が Dialog/Sheet 系なら CG の layer != 0 相当として layer=8 を置く。
+const onScreenWindowsViaSe = () => {
+  const se = Application("System Events");
+  const out = [];
+  for (const proc of se.processes()) {
+    let name = "";
+    let pid = 0;
+    try {
+      name = String(proc.name());
+      pid = Number(proc.unixId());
+    } catch (e) {
+      continue;
+    }
+    if (!APP_NAME.test(name)) continue;
+    let wins = [];
+    try {
+      wins = proc.windows();
+    } catch (e) {
+      continue;
+    }
+    for (let i = 0; i < wins.length; i++) {
+      const w = wins[i];
+      let title = "";
+      let subrole = "";
+      try {
+        title = String(w.name() || "");
+      } catch (e) {}
+      try {
+        subrole = String(w.attributes.byName("AXSubrole").value() || "");
+      } catch (e) {}
+      out.push({
+        _se: true,
+        kCGWindowNumber: (pid << 12) | (i & 0xfff),
+        kCGWindowOwnerName: name,
+        kCGWindowOwnerPID: pid,
+        kCGWindowLayer: /Dialog|Sheet/i.test(subrole) ? 8 : 0,
+        kCGWindowName: title,
+        kCGWindowIsOnscreen: true,
+      });
+    }
+  }
+  return out;
+};
 
 const windowTitle = (w) => {
   const name = w.kCGWindowName;
@@ -44,14 +102,22 @@ const findAppPid = (windows) => {
 const findSaveDialog = (windows, appPid) => {
   if (appPid === 0) return null;
   let titled = null;
+  let other = null;
   for (const w of windows) {
     if (Number(w.kCGWindowOwnerPID) !== appPid) continue;
     const layer = Number(w.kCGWindowLayer || 0);
     const title = windowTitle(w);
     if (layer !== 0) return w;
-    if (SAVE_TITLE.test(title)) titled = w;
+    if (SAVE_TITLE.test(title)) {
+      titled = w;
+      continue;
+    }
+    // SE 経路では NSSavePanel が layer/title のどちらでも検出し損ねる
+    // ことがあるため、アプリ本体 (FigDiff タイトル) 以外の可視ウィンドウを
+    // 最終候補として拾う。
+    if (w._se && !/FigDiff/i.test(title)) other = w;
   }
-  return titled;
+  return titled || other;
 };
 
 const hexId = (w) => `0x${Number(w.kCGWindowNumber).toString(16)}`;

@@ -239,7 +239,9 @@ try {
     executablePath: process.env.FIGDIFF_ELECTRON_EXECUTABLE ?? require("electron"),
     args: [bootstrap, `--user-data-dir=${userData}`],
     env: environment,
-    timeout: 30_000,
+    // コールドの macOS ランナーでは Electron 起動〜firstWindow に 40s 級を
+    // 要し 30s で落ちる実績があるため、launch は 60s を下限とする。
+    timeout: 60_000,
   });
   page = await application.firstWindow();
   page.on("pageerror", (error) => pageErrors.push(error.message));
