@@ -20,7 +20,7 @@
         ]
       },
       "project": {
-        "id": "1790325953664-x1a1d55",
+        "id": "1790326430993-2i0axrc",
         "persisted": true
       },
       "sourceCompare": {
@@ -66,7 +66,7 @@
     },
     "D10": {
       "keyboardSubmit": "frame list appeared via hero input (node 7:30)",
-      "japaneseProject": "1790325977687-mp705xe",
+      "japaneseProject": "1790326454855-hma11wb",
       "narrowViewport": {
         "width": 430,
         "view": "compare",
@@ -217,12 +217,12 @@
   },
   "pageErrors": [],
   "meta": {
-    "runId": "dcase-1790325947280-35814",
-    "startedAt": "2026-09-25T08:45:47.280Z",
+    "runId": "dcase-1790326425098-40381",
+    "startedAt": "2026-09-25T08:53:45.098Z",
     "platform": "linux",
     "node": "v25.6.1",
-    "driverSha256": "0caa963c61290e1ac3f4149e3d7ab04e31f2f088eb91f81ce5a5b2a2da81d71b",
-    "repoSha": "76e366790d9cd058fc24ea527c2f15048fb9f7ce",
+    "driverSha256": "5a8d8427a67282ed2b91f734db8eeb83bf5d5eec19bd474719afd6673d8a2a3f",
+    "repoSha": "03aa48b9f899735cddeb580b39587c0624724160",
     "repoDirty": false,
     "expectedResultKeys": 7
   },
@@ -231,15 +231,15 @@
     "chromiumRequests": 4,
     "sessionsObserved": 6,
     "launchIds": [
-      "dcase-1790325947280-35814#1",
-      "dcase-1790325947280-35814#2",
-      "dcase-1790325947280-35814#3"
+      "dcase-1790326425098-40381#1",
+      "dcase-1790326425098-40381#2",
+      "dcase-1790326425098-40381#3"
     ],
     "probeRequestsObserved": 3,
-    "earlyErrorsObserved": 2,
+    "earlyErrorsObserved": 1,
     "offBoundary": [],
     "unexpectedThrows": 0,
-    "tokenlessPhaseEndTs": 1790325951813
+    "tokenlessPhaseEndTs": 1790326429186
   },
   "knownDefects": []
 }
