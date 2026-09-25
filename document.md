@@ -1572,6 +1572,8 @@ designdiff/
 
 ## 12. ビジネスモデル
 
+> Status 2026-09-25: this pricing and distribution plan is not in effect. Use of FigDiff is governed by [LICENSE](LICENSE): no rights by default, use only under a written grant that names the user.
+
 ### 基本戦略: MCPは無料、アプリは有料（Freemium）
 
 **競合価格対比:**

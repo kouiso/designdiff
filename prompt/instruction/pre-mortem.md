@@ -22,8 +22,8 @@ Read the project's CLAUDE.md and understand its mission. Then ask: if the projec
 
 Examples:
 - sample-corporate: "The corporate site relaunch failed." → Design didn't match Figma, text diverged from WordPress, forms broken, SEO/analytics missing.
-- task-app: "The educational app failed to serve learners." → Curriculum quality was poor, UX confused users, features were built but didn't support the learning goal.
-- sample-project: "The horse management system was unusable." → Core workflows were broken, data integrity issues, performance too slow for daily use.
+- sample-learning-app: "The educational app failed to serve learners." → Curriculum quality was poor, UX confused users, features were built but didn't support the learning goal.
+- sample-project: "The management system was unusable." → Core workflows were broken, data integrity issues, performance too slow for daily use.
 
 This question is asked ONCE per session (or when switching projects) and stays in the background as a filter for all decisions.
 
