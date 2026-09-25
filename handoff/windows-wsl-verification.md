@@ -7,7 +7,7 @@ Android 実機・エミュレータは macmini (`macmini-lan`) に物理接続�
 
 試して不安定だった経路:
 
-- `ADB_SERVER_SOCKET=tcp:192.168.55.2:5037 adb devices` — 接続は張るが
+- `ADB_SERVER_SOCKET=tcp:<wsl-host-ip>:5037 adb devices` — 接続は張るが
   端末一覧が空 / offline で出たり消えたりする。複数 adb ホスト配下の
   USB 端末トラッキングは adbd 側が安定しない。
 - `adb -H <mac>` / `adb -H macmini-lan` — リモートホストでの server 起動は
@@ -23,10 +23,10 @@ Android 実機・エミュレータは macmini (`macmini-lan`) に物理接続�
 1. macmini 側で実機を TCP モードにする (USB 接続したまま一度だけ):
 
    ```
-   adb -s 2A091FDH300C0J tcpip 5555
+   adb -s <android-serial> tcpip 5555
    ```
 
-   以降、実機は `192.168.11.12:5555` (端末の WLAN IP) で adb を受け付ける。
+   以降、実機は `<android-lan-ip>:5555` (端末の WLAN IP) で adb を受け付ける。
    再起動・USB 抜差しで USB モードに戻るので、その時はやり直し。
 
 2. 各クライアントに macmini の承認済み adbkey を複製する。
@@ -42,17 +42,17 @@ Android 実機・エミュレータは macmini (`macmini-lan`) に物理接続�
 3. 接続:
 
    ```
-   adb connect 192.168.11.12:5555   # => ... device
+   adb connect <android-lan-ip>:5555   # => ... device
    ```
 
    WSL / Windows 双方から同時にぶら下げられる。macmini 側の USB 接続も
-   そのまま残る (serial `2A091FDH300C0J` と `192.168.11.12:5555` は
+   そのまま残る (serial `<android-serial>` と `<android-lan-ip>:5555` は
    adbd 側で別 transport として見える)。
 
 ## driver の実行
 
 scroll 検体ページは driver ホストではなく、実機と同一 LAN に届く
-macmini (`192.168.11.9`) に立てる:
+macmini (`<host-lan-ip>`) に立てる:
 
 ```
 ssh macmini-lan 'cd /tmp && nohup python3 -m http.server 48901 --bind 0.0.0.0 &'
@@ -62,17 +62,17 @@ ssh macmini-lan 'cd /tmp && nohup python3 -m http.server 48901 --bind 0.0.0.0 &'
 実行 (WSL / Windows 共通):
 
 ```
-ANDROID_EXPECT_SERIALS="192.168.11.12:5555" \
-ANDROID_PAGE_URL="http://192.168.11.9:48901/tall.html" \
+ANDROID_EXPECT_SERIALS="<android-lan-ip>:5555" \
+ANDROID_PAGE_URL="http://<host-lan-ip>:48901/tall.html" \
 node app/mcp-server/script/stdio-android-verification.mjs <evidence-dir>
 ```
 
 macmini 側では USB+emulator の2台体制が組める:
 
 ```
-ANDROID_EXPECT_SERIALS="2A091FDH300C0J,emulator-5554" \
-ANDROID_SCROLL_DEVICE="2A091FDH300C0J" \
-ANDROID_PAGE_URL="http://192.168.11.9:48901/tall.html" \
+ANDROID_EXPECT_SERIALS="<android-serial>,emulator-5554" \
+ANDROID_SCROLL_DEVICE="<android-serial>" \
+ANDROID_PAGE_URL="http://<host-lan-ip>:48901/tall.html" \
 node app/mcp-server/script/stdio-android-verification.mjs <evidence-dir>
 ```
 

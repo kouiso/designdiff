@@ -60,7 +60,7 @@ gap収束推移：27 → 17 → 2 → 0。停止条件到達（gap dry ＋ in-fl
 macmini 経由（ssh）で実機 dogfood を完遂。bg-MCP 不要で macmini ローカルの codex に委譲。
 
 ### Task D 実機E2E（[deferred:macmini] → 解消）
-- **Android**：Pixel(2A091FDH300C0J)で sample-project staging 実画面を `adb exec-out screencap -p` で取得（1080×2340）→ `captureDeviceScreenshot({device:"android"})` が ~/.figdiff/cache/capture/ に保存 → `compare_design` を capture_device:"android" で実行成立（FAIL/match 86.53%/8 region）。
+- **Android**：Pixel(<android-serial>)で sample-project staging 実画面を `adb exec-out screencap -p` で取得（1080×2340）→ `captureDeviceScreenshot({device:"android"})` が ~/.figdiff/cache/capture/ に保存 → `compare_design` を capture_device:"android" で実行成立（FAIL/match 86.53%/8 region）。
 - **iOS**：iPhone 17 Pro sim を `xcrun simctl io booted screenshot` で取得（1206×2622）→ ios-sim provider 検証。sample-mobile dev もsimに導入済み。
 - → mobile-capture(#166) の android/ios 両 provider が実機/シムで end-to-end 成立。
 
