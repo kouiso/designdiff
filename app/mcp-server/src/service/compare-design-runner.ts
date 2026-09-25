@@ -42,7 +42,6 @@ import {
   type AnchorRegion,
   type ClusterCollapse,
   type CompareDesignResult,
-  type CompletionCriterion,
   type ComparisonDiagnosis,
   type CritiqueNote,
   type ScrollCaptureReport,
