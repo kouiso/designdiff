@@ -126,6 +126,9 @@ await writeFile(earlyErrorLog, "");
 // completed:true が残った証跡 dir へ再実行して途中 kill された場合、
 // 古い成功証跡が今回の完走と誤読されるのを防ぐ。
 const runId = `dcase-${Date.now()}-${process.pid}`;
+// 完走の形を定める唯一の集合。meta.expectedResultKeys と末尾の構造
+// assert がここから導出される。
+const EXPECTED_RESULT_KEYS = ["D01", "D03", "D04", "D08", "D09", "D10", "X09"];
 const git = (args) => {
   try {
     return execSync(`git ${args}`, { cwd: repository, encoding: "utf-8" }).trim();
@@ -158,10 +161,15 @@ const evidence = {
       .update(readFileSync(fileURLToPath(import.meta.url)))
       .digest("hex"),
     repoSha: git("rev-parse HEAD"),
+    // repoDirty は run 開始時点の worktree 汚染度の記録。証跡 dir が repo
+    // 内にある正規経路では run 中の書込み自体が汚染を作るため、
+    // コード凍結の証明ではなく「開始時点でどの状態だったか」の audit 値。
     repoDirty: git("status --porcelain") !== "",
     // 台帳の「6/6」集計は D04 未計測時代の値。results は D04 を含む
     // 7 keys (D01/D03/D04/D08/D09/D10/X09) が完走の正しい形。
-    expectedResultKeys: 7,
+    // 期待集合は末尾の assert と同一情報源から導く (別々の literal にすると
+    // 片方だけ更新されて構造検査が嘘をつく)。
+    expectedResultKeys: EXPECTED_RESULT_KEYS.length,
   },
 };
 // 開始直後の証跡が実際に書けたことを読み戻して確認する。ここで失敗
@@ -402,7 +410,9 @@ const instrumentSession = (s, role = "auto") => {
     );
     // renderer スクリプトより先に動く計装 preload を全 session に仕掛け、
     // pageerror リスナ登録前の失敗も ipc 経由で証跡へ残す。
-    s.setPreloads([earlyPreload]);
+    // 既存の session 既定 preload は保持する — 置換すると製品側が将来
+    // session 経由の preload を使い始めた際に計装が黙ってそれを潰す。
+    s.setPreloads([...(s.getPreloads?.() ?? []), earlyPreload]);
   } catch (e) {
     appendFileSync(
       errorLog,
@@ -1930,7 +1940,7 @@ assert.equal(unexpectedPageErrors.length, 0, `page errors: ${unexpectedPageError
 // 「完走」の形を変えたら証跡として不完全になる。
 assert.deepEqual(
   Object.keys(evidence.results).sort(),
-  ["D01", "D03", "D04", "D08", "D09", "D10", "X09"].sort(),
+  [...EXPECTED_RESULT_KEYS].sort(),
   `results keys mismatch: ${JSON.stringify(Object.keys(evidence.results))}`,
 );
 evidence.completed = true;
