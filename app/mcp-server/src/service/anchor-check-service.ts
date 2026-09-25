@@ -48,38 +48,38 @@ interface WorkingRegion {
   height: number;
 }
 
-function luminanceAt(
+const luminanceAt = (
   pixels: Uint8Array | Buffer,
   width: number,
   height: number,
   x: number,
   y: number,
-): number {
+): number => {
   if (x < 0 || y < 0 || x >= width || y >= height) {
     return 0;
   }
   const i = (y * width + x) * 4;
   return 0.299 * pixels[i] + 0.587 * pixels[i + 1] + 0.114 * pixels[i + 2];
-}
+};
 
-function alphaAt(
+const alphaAt = (
   pixels: Uint8Array | Buffer,
   width: number,
   height: number,
   x: number,
   y: number,
-): number {
+): number => {
   if (x < 0 || y < 0 || x >= width || y >= height) {
     return 0;
   }
   return pixels[(y * width + x) * 4 + 3];
-}
+};
 
 // 宣言領域を比較作業空間へ写す。crop が無ければ offset は 0。
-function mapRegionToWorking(
+const mapRegionToWorking = (
   anchor: AnchorRegion,
   transform: AnchorWorkingTransform,
-): WorkingRegion {
+): WorkingRegion => {
   const x = anchor.x * transform.scale - transform.offsetX;
   const y = anchor.y * transform.scale - transform.offsetY;
   return {
@@ -88,20 +88,20 @@ function mapRegionToWorking(
     width: Math.max(1, Math.round(anchor.width * transform.scale)),
     height: Math.max(1, Math.round(anchor.height * transform.scale)),
   };
-}
+};
 
 // 宣言した規則が要求する上端位置 (スクリーンショット座標系)。
-function expectedTopFor(
+const expectedTopFor = (
   mode: AnchorRegion["mode"],
   regionTop: number,
   designHeight: number,
   screenshotHeight: number,
-): number {
+): number => {
   if (mode === "bottom-fixed") {
     return screenshotHeight - designHeight + regionTop;
   }
   return Math.round((regionTop * screenshotHeight) / designHeight);
-}
+};
 
 interface SamplePoint {
   dx: number;
@@ -110,12 +110,12 @@ interface SamplePoint {
 }
 
 // 領域内の代表画素を抽出する。行・列とも上限内に収めて照合コストを有界にする。
-function buildRegionSamples(
+const buildRegionSamples = (
   pixels: Uint8Array | Buffer,
   width: number,
   height: number,
   region: WorkingRegion,
-): SamplePoint[] {
+): SamplePoint[] => {
   const strideX = Math.max(1, Math.floor(region.width / ANCHOR_SAMPLE_MAX_COLS));
   const strideY = Math.max(1, Math.floor(region.height / ANCHOR_SAMPLE_MAX_ROWS));
   const samples: SamplePoint[] = [];
@@ -128,11 +128,11 @@ function buildRegionSamples(
     }
   }
   return samples;
-}
+};
 
 // 宣言領域をスクリーンショットの列帯内で最もよく一致する上端位置へ同定する。
 // 幅は比較時点で揃っている前提なので、x は固定で y だけを走査する。
-function locateRegionTop(
+const locateRegionTop = (
   designPixels: Uint8Array | Buffer,
   designWidth: number,
   designHeight: number,
@@ -140,7 +140,7 @@ function locateRegionTop(
   screenshotWidth: number,
   screenshotHeight: number,
   region: WorkingRegion,
-): { matchedY: number; score: number } | null {
+): { matchedY: number; score: number } | null => {
   if (region.width <= 0 || region.height <= 0) {
     return null;
   }
@@ -187,9 +187,9 @@ function locateRegionTop(
     return null;
   }
   return { matchedY: bestTop, score: bestScore };
-}
+};
 
-export function evaluateAnchorRegions(options: EvaluateAnchorRegionsOptions): AnchorCheckReport {
+export const evaluateAnchorRegions = (options: EvaluateAnchorRegionsOptions): AnchorCheckReport => {
   const {
     designPixels,
     designWidth,
@@ -304,4 +304,4 @@ export function evaluateAnchorRegions(options: EvaluateAnchorRegionsOptions): An
     anchors: results,
     verdict,
   };
-}
+};

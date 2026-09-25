@@ -8,14 +8,14 @@ const WIDTH = 390;
 const DESIGN_HEIGHT = 692;
 const SCREENSHOT_HEIGHT = 915;
 
-function fillBlock(
+const fillBlock = (
   buffer: Buffer,
   width: number,
   height: number,
   top: number,
   blockHeight: number,
   seed: number,
-) {
+) => {
   for (let y = top; y < top + blockHeight && y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
       const tone = (x * 31 + (y - top) * 17 + seed) % 256;
@@ -26,9 +26,9 @@ function fillBlock(
       buffer[offset + 3] = 255;
     }
   }
-}
+};
 
-function fillBackground(buffer: Buffer, width: number, height: number) {
+const fillBackground = (buffer: Buffer, width: number, height: number) => {
   for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
       const tone = (x * 3 + y * 5) % 64;
@@ -39,7 +39,7 @@ function fillBackground(buffer: Buffer, width: number, height: number) {
       buffer[offset + 3] = 255;
     }
   }
-}
+};
 
 interface Blocks {
   cardTop: number;
@@ -48,21 +48,21 @@ interface Blocks {
   footerHeight: number;
 }
 
-function buildDesign(blocks: Blocks): Buffer {
+const buildDesign = (blocks: Blocks): Buffer => {
   const buffer = Buffer.alloc(WIDTH * DESIGN_HEIGHT * 4);
   fillBackground(buffer, WIDTH, DESIGN_HEIGHT);
   fillBlock(buffer, WIDTH, DESIGN_HEIGHT, blocks.cardTop, blocks.cardHeight, 11);
   fillBlock(buffer, WIDTH, DESIGN_HEIGHT, blocks.footerTop, blocks.footerHeight, 97);
   return buffer;
-}
+};
 
-function buildScreenshot(blocks: Blocks): Buffer {
+const buildScreenshot = (blocks: Blocks): Buffer => {
   const buffer = Buffer.alloc(WIDTH * SCREENSHOT_HEIGHT * 4);
   fillBackground(buffer, WIDTH, SCREENSHOT_HEIGHT);
   fillBlock(buffer, WIDTH, SCREENSHOT_HEIGHT, blocks.cardTop, blocks.cardHeight, 11);
   fillBlock(buffer, WIDTH, SCREENSHOT_HEIGHT, blocks.footerTop, blocks.footerHeight, 97);
   return buffer;
-}
+};
 
 const CARD = { x: 20, y: 120, width: 350, height: 200 };
 const FOOTER = { x: 0, y: 640, width: 390, height: 52 };

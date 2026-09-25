@@ -238,3 +238,91 @@ describe("compare_design input errors", () => {
     }
   });
 });
+
+describe("縦位置アンカー検査の出力", () => {
+  // anchors を宣言しない比較は従来と同じサマリーでなければならない。
+  it("anchorCheck が無ければ何も出さない", () => {
+    expect(buildSummaryText(makeResult())).not.toContain("縦位置アンカー検査");
+  });
+
+  it("評価できなかったときは未評価の理由を出す", () => {
+    const text = buildSummaryText(
+      makeResult({
+        anchorCheck: {
+          evaluated: false,
+          reason: "幅が一致しません (design 390px / screenshot 360px)。",
+          anchors: [],
+        },
+      }),
+    );
+
+    expect(text).toContain("縦位置アンカー検査: 未評価");
+    expect(text).toContain("幅が一致しません");
+  });
+
+  it("アンカー毎に期待位置・実位置・ズレ・許容を出す", () => {
+    const text = buildSummaryText(
+      makeResult({
+        anchorCheck: {
+          evaluated: true,
+          verdict: "fail",
+          anchors: [
+            {
+              region: { x: 20, y: 120, width: 350, height: 200 },
+              mode: "top-ratio",
+              label: "card",
+              tolerancePx: 2,
+              expectedY: 159,
+              matchedY: 120,
+              offsetPx: 39,
+              matchScore: 3.2,
+              status: "fail",
+            },
+            {
+              region: { x: 0, y: 640, width: 390, height: 52 },
+              mode: "bottom-fixed",
+              label: "footer",
+              tolerancePx: 2,
+              expectedY: 863,
+              matchedY: 863,
+              offsetPx: 0,
+              matchScore: 1.1,
+              status: "pass",
+            },
+          ],
+        },
+      }),
+    );
+
+    expect(text).toContain("縦位置アンカー検査: 違反あり");
+    expect(text).toContain("[FAIL] card (top-ratio)");
+    expect(text).toContain("期待 y=159 / 実際 y=120 / ズレ 39px (許容 2px)");
+    expect(text).toContain("[PASS] footer (bottom-fixed)");
+  });
+
+  it("同定できなかったアンカーは UNMATCHED と出す", () => {
+    const text = buildSummaryText(
+      makeResult({
+        anchorCheck: {
+          evaluated: true,
+          verdict: "fail",
+          anchors: [
+            {
+              region: { x: 20, y: 120, width: 350, height: 200 },
+              mode: "top-ratio",
+              tolerancePx: 2,
+              expectedY: 159,
+              matchedY: null,
+              offsetPx: null,
+              matchScore: null,
+              status: "unmatched",
+              reason: "領域を同定できませんでした",
+            },
+          ],
+        },
+      }),
+    );
+
+    expect(text).toContain("[UNMATCHED] (20,120) (top-ratio)");
+  });
+});

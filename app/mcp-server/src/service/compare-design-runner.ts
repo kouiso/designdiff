@@ -1085,6 +1085,9 @@ async function resolveProjectRegions(
 // 撮影条件そのものが疑わしいため自動crop対象外とし、既存の preflight
 // (width_mismatch等) に判断を委ねる。
 const AUTO_CROP_WIDTH_TOLERANCE_PX = 2;
+// preflight の幅許容 (DEFAULT_WIDTH_TOLERANCE_PX) と揃える。anchors を宣言した
+// 比較では「同幅・異高」が前提なので、幅が実質一致するときだけ縦横比警告を降格する。
+const ANCHOR_WIDTH_TOLERANCE_PX = 2;
 // Figma のフレーム寸法は論理pt、スクショは撮影機の実ピクセル。実機やRetinaは
 // 2x/3x で撮れるので、幅を素のまま比べると論理pt と実px を突き合わせてしまい、
 // 高解像度の撮影が丸ごと自動crop の対象外になる。撮影倍率を先に割り出して
@@ -1617,6 +1620,29 @@ export async function runCompareDesign(
     figmaNodeType: figmaRootNode?.type,
   });
 
+  // 同幅・異高は anchors を宣言した比較では前提条件であり、設定ミスではない。
+  // 既定では縦横比不一致を critical で拾って likely_misconfig に倒すため、
+  // 幅が一致する場合に限りその警告を降格してアンカー検査へ判定を委ねる。
+  // 幅まで違う入力はアンカー検査自体が evaluated:false を返すため降格しない。
+  const anchorsDeclared = args.anchors !== undefined && args.anchors.length > 0;
+  const widthsMatchForAnchors =
+    typeof preflightDimensions.figmaFrameWidth === "number" &&
+    Number.isFinite(preflightDimensions.figmaFrameWidth) &&
+    Math.abs(preflightDimensions.figmaFrameWidth - preflightDimensions.screenshotWidth) <=
+      ANCHOR_WIDTH_TOLERANCE_PX;
+  const preflightWarnings = preflight.warnings.map((warning) =>
+    anchorsDeclared &&
+    widthsMatchForAnchors &&
+    warning.code === "aspect_ratio_mismatch" &&
+    warning.severity === "critical"
+      ? {
+          ...warning,
+          severity: "warning" as const,
+          message: `${warning.message} ただし anchors が宣言されているため、高さ方向の位置整合はアンカー検査で評価します。`,
+        }
+      : warning,
+  );
+
   // 診断は元の preflight 警告で行い、その後に表示用の拡張を加える。
   const comparisonHeadline = buildComparisonHeadline(regionScores, comparison.matchRate);
   const diagnosis = diagnoseComparison({
@@ -1624,7 +1650,7 @@ export async function runCompareDesign(
     // 比較対象そのものの行は子と範囲が重なる。平均に入れると同じ画素を二重に
     // 数えて、しきい値をまたぐかどうかが変わる。
     regionScores: selectScoringRegions(regionScores),
-    preflightWarnings: preflight.warnings,
+    preflightWarnings,
     normalization: comparison.normalization,
   });
 
@@ -1634,12 +1660,12 @@ export async function runCompareDesign(
   let finalPreflightWarnings =
     parsedDesignSource.type === "figma_url"
       ? await enhanceBlankFrameWarning(
-          preflight.warnings,
+          preflightWarnings,
           parsedDesignSource.fileKey,
           screenWidth,
           screenHeight,
         )
-      : preflight.warnings;
+      : preflightWarnings;
 
   if (lastUsedNodeNote) {
     const infoWarning: PreflightWarning = {
