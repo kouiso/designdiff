@@ -2,6 +2,7 @@
 // win32-native-dialog.ps1 と同じ契約: tree / find / shot <id> <out> /
 // save <id> <path> / cancel <id> を osascript -l JavaScript で提供する。
 // 検出は CGWindowListCopyWindowInfo(JXA ObjC ブリッジ経由、PyObjC 不要)。
+// macOS 26 では同ブリッジが壊れるため System Events 列挙にフォールバックする。
 // 入力は System Events の keystroke(アクセシビリティ権限が必要)。
 // CGEventPost は使わない: 合成イベントは実入力パイプラインを迂回して
 // 「実ダイアログ操作」の証跡として成立しないため。
@@ -9,26 +10,139 @@
 // <out>.txt へ CGWindowList の metadata を書いて exit 0 で返す。
 ObjC.import("Quartz");
 ObjC.import("stdlib");
+ObjC.import("Foundation");
 
 const SAVE_TITLE = /save|保存/i;
 const APP_NAME = /electron|figdiff/i;
 
-const onScreenWindows = () =>
-  ObjC.deepUnwrap(
-    $.CGWindowListCopyWindowInfo(
-      $.kCGWindowListOptionOnScreenOnly,
-      $.kCGNullWindowID,
+// この環境の osascript -l JavaScript は console.log が stderr に流れるため、
+// driver が result.stdout で読む IPC 出力は stdout fd へ直接書き出す。
+const print = (text) => {
+  $.NSFileHandle.fileHandleWithStandardOutput.writeData(
+    $.NSString.stringWithUTF8String(`${text}\n`).dataUsingEncoding(
+      $.NSUTF8StringEncoding,
     ),
-  ).filter((w) => w.kCGWindowIsOnscreen !== false);
+  );
+};
+
+// CGWindowList は macOS 26 で JXA ObjC ブリッジが壊れている
+// ($.CGWindowListCopyWindowInfo is not a function; CoreGraphics import でも
+// CFArrayRef が unwrap できない)。その場合は System Events 経由で対象アプリの
+// ウィンドウだけを列挙する経路に落ちる。AX 権限はダイアログ操作 (keystroke) に
+// 元々必須なので、追加の権限要求は発生しない。
+const onScreenWindows = () => {
+  try {
+    return ObjC.deepUnwrap(
+      $.CGWindowListCopyWindowInfo(
+        $.kCGWindowListOptionOnScreenOnly,
+        $.kCGNullWindowID,
+      ),
+    ).filter((w) => w.kCGWindowIsOnscreen !== false);
+  } catch (e) {
+    return onScreenWindowsViaSe();
+  }
+};
+
+// System Events のウィンドウは CG window id を持たないため、kCGWindowNumber は
+// pid<<12|index の合成値で代替する。screencapture -l には使えないが、shot の
+// metadata 出力パスは num で元データを引くだけなのでそのまま動く。
+// AXSubrole が Dialog/Sheet 系なら CG の layer != 0 相当として layer=8 を置く。
+const onScreenWindowsViaSe = () => {
+  const se = Application("System Events");
+  const out = [];
+  for (const proc of se.processes()) {
+    let name = "";
+    let pid = 0;
+    try {
+      name = String(proc.name());
+      pid = Number(proc.unixId());
+    } catch (e) {
+      continue;
+    }
+    if (!APP_NAME.test(name)) continue;
+    let wins = [];
+    try {
+      wins = proc.windows();
+    } catch (e) {
+      continue;
+    }
+    for (let i = 0; i < wins.length; i++) {
+      const w = wins[i];
+      let title = "";
+      let subrole = "";
+      try {
+        title = String(w.name() || "");
+      } catch (e) {}
+      try {
+        subrole = String(w.attributes.byName("AXSubrole").value() || "");
+      } catch (e) {}
+      out.push({
+        _se: true,
+        kCGWindowNumber: (pid << 12) | (i & 0x3ff),
+        kCGWindowOwnerName: name,
+        kCGWindowOwnerPID: pid,
+        kCGWindowLayer: /Dialog|Sheet/i.test(subrole) ? 8 : 0,
+        kCGWindowName: title,
+        kCGWindowIsOnscreen: true,
+      });
+      // Electron の dialog.showSaveDialog は window ではなく親 window の
+      // AXSheet として現れ、windows() には列挙されない。sheet/uiElements の
+      // AXSheet・AXDialog も modal layer 相当 (layer!=0) として拾う。
+      let sheets = [];
+      try {
+        sheets = w.sheets();
+      } catch (e) {
+        try {
+          sheets = w.uiElements().filter((el) => {
+            try {
+              return /Sheet|Dialog/i.test(String(el.role() || ""));
+            } catch (e2) {
+              return false;
+            }
+          });
+        } catch (e2) {}
+      }
+      for (let j = 0; j < sheets.length; j++) {
+        const sh = sheets[j];
+        let stitle = "";
+        try {
+          stitle = String(sh.name() || "");
+        } catch (e) {}
+        out.push({
+          _se: true,
+          kCGWindowNumber: (pid << 12) | 0x400 | ((i & 31) << 5) | (j & 31),
+          kCGWindowOwnerName: name,
+          kCGWindowOwnerPID: pid,
+          kCGWindowLayer: 8,
+          kCGWindowName: stitle,
+          kCGWindowIsOnscreen: true,
+        });
+      }
+    }
+  }
+  return out;
+};
 
 const windowTitle = (w) => {
   const name = w.kCGWindowName;
   return typeof name === "string" ? name : "";
 };
 
-// アプリ pid の特定は title だけでは不足(別の Electron アプリが 'FigDiff' を
-// title に含み得る)ので、owner プロセス名が electron/figdiff のものだけに絞る。
+// 前回ドライバの orphan など同名 Electron が残っていると、title 一致だけでは
+// 別プロセスの pid を掴んで dialog が永久に見えなくなる。ドライバは自身が
+// spawn した実 pid を FIGDIFF_APP_PID で渡すので、指定時は探索を行わず
+// その pid のみを対象にする。未指定 (単体診断など) のときだけ推定に落とす。
+// $.getenv は未設定時に NULL char* を返し NSException で落ちるため、
+// NSProcessInfo 経由で読む(未設定でも nil が返り落ちない)。
+const APP_PID_OVERRIDE = (() => {
+  const v =
+    $.NSProcessInfo.processInfo.environment.objectForKey("FIGDIFF_APP_PID");
+  return v ? Number(ObjC.unwrap(v)) : 0;
+})();
 const findAppPid = (windows) => {
+  if (APP_PID_OVERRIDE > 0) return APP_PID_OVERRIDE;
+  // 推定経路: title だけでは不足(別の Electron アプリが 'FigDiff' を title に
+  // 含み得る)ので、owner プロセス名が electron/figdiff のものだけに絞る。
   for (const w of windows) {
     const title = windowTitle(w);
     const owner = String(w.kCGWindowOwnerName || "");
@@ -44,14 +158,22 @@ const findAppPid = (windows) => {
 const findSaveDialog = (windows, appPid) => {
   if (appPid === 0) return null;
   let titled = null;
+  let other = null;
   for (const w of windows) {
     if (Number(w.kCGWindowOwnerPID) !== appPid) continue;
     const layer = Number(w.kCGWindowLayer || 0);
     const title = windowTitle(w);
     if (layer !== 0) return w;
-    if (SAVE_TITLE.test(title)) titled = w;
+    if (SAVE_TITLE.test(title)) {
+      titled = w;
+      continue;
+    }
+    // SE 経路では NSSavePanel が layer/title のどちらでも検出し損ねる
+    // ことがあるため、アプリ本体 (FigDiff タイトル) 以外の可視ウィンドウを
+    // 最終候補として拾う。
+    if (w._se && !/FigDiff/i.test(title)) other = w;
   }
-  return titled;
+  return titled || other;
 };
 
 const hexId = (w) => `0x${Number(w.kCGWindowNumber).toString(16)}`;
@@ -102,7 +224,7 @@ function run(argv) {
           lastError = String(e);
         }
         if (wantOpen === Boolean(found)) {
-          if (found) console.log(hexId(found));
+          if (found) print(hexId(found));
           return;
         }
         delay(0.3);
@@ -115,16 +237,16 @@ function run(argv) {
       for (const w of windows) {
         const title = windowTitle(w);
         if (title.length === 0) continue;
-        console.log(`${hexId(w)} "${title}"`);
+        print(`${hexId(w)} "${title}"`);
       }
       // ドライバの正規表現 `0x<hex> "Save File"` と互換にするため、
       // 保存ダイアログには実 title に加えて alias 行を出す。
-      if (saveDialog) console.log(`${hexId(saveDialog)} "Save File"`);
+      if (saveDialog) print(`${hexId(saveDialog)} "Save File"`);
       return;
     }
     case "find": {
       if (!saveDialog) $.exit(1);
-      console.log(hexId(saveDialog));
+      print(hexId(saveDialog));
       return;
     }
     case "shot": {
