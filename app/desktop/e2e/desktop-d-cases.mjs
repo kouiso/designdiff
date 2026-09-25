@@ -261,7 +261,7 @@ const earlyErrorPreload = join(sandbox, "early-error-preload.cjs");
 await writeFile(
   earlyErrorPreload,
   `"use strict";
-const { ipcRenderer } = require("electron");
+const { ipcRenderer, webFrame } = require("electron");
 const send = (kind, message) => {
   try {
     ipcRenderer.send("figdiff-dcase-early-error", {
@@ -274,16 +274,32 @@ const send = (kind, message) => {
     // ipc 未接続時はこれ以上追跡できない。
   }
 };
+// preload (isolated world) の error リスナには main world の未捕捉例外が
+// 届かない (Chrome isolated world の制約 — 実走で未捕捉を確認済み)。
+// そこで main world にリスナを注入し、world を跨いで届く CustomEvent で
+// 橋渡しする。本物の throw を含めページ側の例外が捕捉対象になる。
+window.addEventListener("figdiff-dcase-early-error", (e) => {
+  const d = e.detail ?? {};
+  send(d.kind ?? "error", d.message ?? "");
+});
+// preload world 側の異常 (計装自身の throw 等) も拾う保険として残す。
 window.addEventListener("error", (e) => send("error", e.message ?? e.error));
 window.addEventListener("unhandledrejection", (e) => send("unhandledrejection", e.reason));
-// 自己診断: driver が env で注入を指示した場合、ページスクリプト開始
-// 前の時点で意図的な早期エラーを起こし、この計装経路が早期イベントを
-// 拾えることを実証する。
-if (process.env.FIGDIFF_DCASE_SELFTEST_PAGEERROR === "1") {
-  window.dispatchEvent(
-    new ErrorEvent("error", { message: "figdiff-dcase selftest early pageerror" }),
-  );
-}
+// 自己診断: driver が env で指示した場合、main world の本物の未捕捉
+// 例外を起こす。main world 経由なので計装の全経路 (main-world 捕捉 →
+// CustomEvent 橋渡し → ipc 送信) が検証される。
+void webFrame.executeJavaScript(
+  "(function () {" +
+    'const relay = (kind, message) => { window.dispatchEvent(new CustomEvent("figdiff-dcase-early-error", { detail: { kind, message } })); };' +
+    'window.addEventListener("error", (e) => relay("error", e.message ?? String(e.error)));' +
+    'window.addEventListener("unhandledrejection", (e) => relay("unhandledrejection", String(e.reason)));' +
+    "if (" +
+    JSON.stringify(process.env.FIGDIFF_DCASE_SELFTEST_PAGEERROR === "1") +
+    ") {" +
+    'setTimeout(() => { throw new Error("figdiff-dcase selftest early pageerror"); }, 0);' +
+    "}" +
+    "})();",
+);
 `,
 );
 
@@ -1597,27 +1613,71 @@ try {
     );
   }
   d04.crop = { region: regionText, expected: "x:10, y:10, w:80, h:60 (css-px scaled)" };
+  // 選択描画の残存検出器: --cobalt の実効色を probe canvas で sRGB 化し、
+  // 確定矩形の上辺帯の画素と照合する。テーマごとのトークン値
+  // (light≈(29,109,204) / dark≈(128,165,240)) に固定 RGB では追従できず、
+  // 検出器が実質死体化するためトークンから都度導出する。
+  const hasCropStroke = () =>
+    page2.evaluate(
+      (band) => {
+        const c = document.querySelector('canvas[aria-label="範囲選択キャンバス"]');
+        if (!c || c.width !== 200 || c.height !== 120) return null;
+        const ctx = c.getContext("2d");
+        const probe = document.createElement("canvas");
+        probe.width = 1;
+        probe.height = 1;
+        const pctx = probe.getContext("2d");
+        if (!ctx || !pctx) return null;
+        const cobalt = getComputedStyle(document.documentElement)
+          .getPropertyValue("--cobalt")
+          .trim();
+        if (!cobalt) return null;
+        pctx.fillStyle = cobalt;
+        pctx.fillRect(0, 0, 1, 1);
+        const e = pctx.getImageData(0, 0, 1, 1).data;
+        if (e[3] === 0) return null; // トークンが canvas に解析不能 → 検出不能
+        for (const y of band.ys) {
+          for (let x = band.x0; x <= band.x1; x += 5) {
+            const d = ctx.getImageData(x, y, 1, 1).data;
+            if (
+              d[3] > 200 &&
+              Math.abs(d[0] - e[0]) <= 30 &&
+              Math.abs(d[1] - e[1]) <= 30 &&
+              Math.abs(d[2] - e[2]) <= 30
+            ) {
+              return true;
+            }
+          }
+        }
+        return false;
+      },
+      {
+        // 確定座標から走査帯を導く。表示 CSS px と backing が異なる場合は
+        // region も ratio でずれるため、固定の y≈10 帯だと見落とす。
+        ys: [Math.max(0, region.y - 1), region.y, region.y + 1],
+        x0: Math.round(region.x + 5),
+        x1: Math.round(region.x + region.w - 5),
+      },
+    );
+  // positive control: クリア前に stroke が検出できること。ここで検出
+  // できないなら検出器が死んでおり、クリア後の「残存なし」は証明にならない。
+  assert.equal(await hasCropStroke(), true, "crop stroke not detected before clear");
   await page2.getByRole("button", { name: "クリア", exact: true }).click();
   await cropText.waitFor({ state: "detached", timeout: 5_000 });
   // クリアは領域表示の消去だけでなく canvas 上の選択描画も消えることを
-  // 画素で確認する。旧選択矩形の上辺 (y≈10±2) で cobalt 系の残存を検出する —
-  // 描画が残っていれば store 消去だけの見せかけになる。
-  await page2.waitForFunction(
-    () => {
-      const c = document.querySelector('canvas[aria-label="範囲選択キャンバス"]');
-      if (!c || c.width !== 200 || c.height !== 120) return false;
-      const ctx = c.getContext("2d");
-      if (!ctx) return false;
-      for (const y of [9, 10, 11]) {
-        for (let x = 15; x < 90; x += 5) {
-          const d = ctx.getImageData(x, y, 1, 1).data;
-          if (d[3] > 200 && d[2] > 220 && d[1] > 105 && d[1] < 160) return false;
-        }
-      }
-      return true;
-    },
-    undefined,
-    { timeout: 5_000, polling: 100 },
+  // 同じ検出器で確認する。描画が残っていれば store 消去だけの見せかけ。
+  // (waitForFunction はページ内評価なので Node 側の検出器を呼べず、
+  // driver 側で再描画完了まで poll する)
+  const strokeClearDeadline = Date.now() + 5_000;
+  let strokeAfterClear = await hasCropStroke();
+  while (strokeAfterClear !== false && Date.now() < strokeClearDeadline) {
+    await new Promise((r) => setTimeout(r, 100));
+    strokeAfterClear = await hasCropStroke();
+  }
+  assert.equal(
+    strokeAfterClear,
+    false,
+    `crop stroke still visible after clear (observed: ${strokeAfterClear})`,
   );
   d04.crop.cleared = true;
   d04.cropDrawingCleared = true;
