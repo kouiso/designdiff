@@ -128,13 +128,9 @@
         "screenshot_original_width": 200,
         "screenshot_original_height": 200
       },
-      "appliedIds": [
-        "full-frame"
-      ],
+      "appliedIds": ["full-frame"],
       "incompatibleIds": [],
-      "legacyIds": [
-        "full-frame"
-      ],
+      "legacyIds": ["full-frame"],
       "effectiveCanvas": {
         "width": 200,
         "height": 200
@@ -159,11 +155,7 @@
           "height": 200
         },
         "canvasSource": "image-metadata",
-        "unverified": [
-          "viewport",
-          "pixelRatio",
-          "origin"
-        ]
+        "unverified": ["viewport", "pixelRatio", "origin"]
       },
       "screenshot": {
         "canvas": {
@@ -171,11 +163,7 @@
           "height": 200
         },
         "canvasSource": "image-metadata",
-        "unverified": [
-          "viewport",
-          "pixelRatio",
-          "origin"
-        ]
+        "unverified": ["viewport", "pixelRatio", "origin"]
       },
       "differences": [],
       "message": "表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。"
@@ -249,12 +237,8 @@
         ],
         "maskedPixelCount": 40000,
         "maskSha256": "fb67091504b666f393f1530f351a3fa5ae5168228b9aa06dcce5835be0402356",
-        "appliedIds": [
-          "full-frame"
-        ],
-        "legacyIds": [
-          "full-frame"
-        ]
+        "appliedIds": ["full-frame"],
+        "legacyIds": ["full-frame"]
       },
       "fingerprint": "5f4a98315e9f2791940fe0b6b8a5ddb66cc2dc2cd401d3423d20d7c7ba365987"
     },
