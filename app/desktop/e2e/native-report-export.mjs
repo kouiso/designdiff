@@ -265,7 +265,9 @@ try {
       { env: environment, encoding: "utf8", timeout },
     );
   const macDialogHelper = join(directory, "darwin-native-dialog.jxa");
-  const macDialog = (args, timeout = 10_000) =>
+  // JXA + Quartz の初期化コストは spawn 毎に払うため、高負荷な macOS
+  // ランナーでは 10s 級の timeout を踏み得る。単発呼出しは 30s を下限とする。
+  const macDialog = (args, timeout = 30_000) =>
     spawnSync("osascript", ["-l", "JavaScript", macDialogHelper, ...args], {
       env: environment,
       encoding: "utf8",
@@ -275,7 +277,7 @@ try {
     const result = isWin32
       ? winDialog(["tree"], 8_000)
       : isDarwin
-        ? macDialog(["tree"], 8_000)
+        ? macDialog(["tree"])
         : spawnSync("xwininfo", ["-root", "-tree"], {
             env: environment,
             encoding: "utf8",
@@ -289,6 +291,20 @@ try {
     return /0x[0-9a-f]+ "Save File"/.test(inspection.tree) ? "open" : "closed";
   };
   const waitForNativeDialog = async (open) => {
+    // darwin は JXA 側の wait モードにポーリングを任せる。Node 側で短周期に
+    // osascript を再 spawn すると初期化コストの連続踏みで永久に 'unknown'
+    // になり得るため、1 プロセス内で待機させて失敗理由 (stderr) も拾う。
+    if (isDarwin) {
+      const result = macDialog(["wait", open ? "open" : "closed", "60"], 75_000);
+      assert.equal(
+        result.status,
+        0,
+        `Native Save File dialog did not become ${open ? "visible" : "closed"} ` +
+          `(status=${result.status} signal=${result.signal ?? ""} ` +
+          `stderr=${result.stderr ?? ""} error=${result.error ? String(result.error) : ""})`,
+      );
+      return;
+    }
     await expect
       .poll(nativeDialogState, {
         timeout: 15_000,
@@ -308,7 +324,9 @@ try {
           }
           return false;
         },
-        { timeout: 15_000, message: "Native Save File window tree did not stabilize" },
+        // darwin の tree 呼出しは 1 回あたり最大 30s かかり得るため、
+        // poll 全体の予算はそれを上回る必要がある。
+        { timeout: 45_000, message: "Native Save File window tree did not stabilize" },
       )
       .toBe(true);
     return tree;
