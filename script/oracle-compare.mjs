@@ -56,9 +56,11 @@ function shiftPixels(srcPixels, width, height, dx, dy) {
  * Count differing pixels between two RGBA Uint8ClampedArrays.
  * Uses pixelmatch with threshold=0.1 for speed.
  */
+// checkerboard: false は製品側 (package/shared/src/pixel-compare.ts) と同じ白合成に揃えるため。
+// pixelmatch 7 の既定 (市松模様) のままだと、半透明画素で物差しの意味が製品とずれる。
 function countDiff(a, b, width, height) {
   const diff = new Uint8ClampedArray(width * height * 4);
-  return pixelmatch(a, b, diff, width, height, { threshold: 0.1 });
+  return pixelmatch(a, b, diff, width, height, { threshold: 0.1, checkerboard: false });
 }
 
 /**
@@ -336,7 +338,7 @@ async function compareFiles(designPath, screenshotPath, outDiffPath, ignoreRegio
     baselineDiffPng,
     width,
     height,
-    { threshold: 0.1 },
+    { threshold: 0.1, checkerboard: false },
   );
 
   // Detect translation — マスクの影響を受けないよう、無加工のピクセルで探す。
@@ -360,7 +362,7 @@ async function compareFiles(designPath, screenshotPath, outDiffPath, ignoreRegio
     correctedDiffPng,
     width,
     height,
-    { threshold: 0.1 },
+    { threshold: 0.1, checkerboard: false },
   );
 
   if (outDiffPath) {
