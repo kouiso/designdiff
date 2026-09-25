@@ -243,6 +243,9 @@ try {
     // 要し 30s で落ちる実績があるため、launch は 60s を下限とする。
     timeout: 60_000,
   });
+  // darwin のダイアログ検出で、同名 Electron の orphan を誤って掴まないよう
+  // 自身が spawn した main process の実 pid を helper に渡す。
+  environment.FIGDIFF_APP_PID = String(application.process().pid);
   page = await application.firstWindow();
   page.on("pageerror", (error) => pageErrors.push(error.message));
   page.on("crash", () => rendererCrashes.push("renderer crashed"));

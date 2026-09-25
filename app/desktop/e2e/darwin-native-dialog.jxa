@@ -117,9 +117,15 @@ const windowTitle = (w) => {
   return typeof name === "string" ? name : "";
 };
 
-// アプリ pid の特定は title だけでは不足(別の Electron アプリが 'FigDiff' を
-// title に含み得る)ので、owner プロセス名が electron/figdiff のものだけに絞る。
+// 前回ドライバの orphan など同名 Electron が残っていると、title 一致だけでは
+// 別プロセスの pid を掴んで dialog が永久に見えなくなる。ドライバは自身が
+// spawn した実 pid を FIGDIFF_APP_PID で渡すので、指定時は探索を行わず
+// その pid のみを対象にする。未指定 (単体診断など) のときだけ推定に落とす。
+const APP_PID_OVERRIDE = Number($.getenv("FIGDIFF_APP_PID") || 0);
 const findAppPid = (windows) => {
+  if (APP_PID_OVERRIDE > 0) return APP_PID_OVERRIDE;
+  // 推定経路: title だけでは不足(別の Electron アプリが 'FigDiff' を title に
+  // 含み得る)ので、owner プロセス名が electron/figdiff のものだけに絞る。
   for (const w of windows) {
     const title = windowTitle(w);
     const owner = String(w.kCGWindowOwnerName || "");
