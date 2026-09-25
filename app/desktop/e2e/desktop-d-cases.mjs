@@ -10,6 +10,8 @@
 // 別ログに全件記録し、両ログの union に allowlist を適用する。
 
 import assert from "node:assert/strict";
+import { execSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { createServer } from "node:http";
 import {
   mkdir,
@@ -122,6 +124,65 @@ await writeFile(sessionLog, "");
 const modeFile = join(sandbox, "figma-mode.txt");
 await writeFile(modeFile, "ok");
 
+// renderer スクリプトより先に動く計装 preload が ipc で main へ送り、
+// main が追記する早期エラーログ。pageerror リスナ登録前の throw も拾う。
+const earlyErrorLog = join(evidenceDir, "early-page-errors.jsonl");
+await writeFile(earlyErrorLog, "");
+
+// runId と completed:false を run 開始直後に永続化する。前回 run の
+// completed:true が残った証跡 dir へ再実行して途中 kill された場合、
+// 古い成功証跡が今回の完走と誤読されるのを防ぐ。
+const runId = `dcase-${Date.now()}-${process.pid}`;
+const git = (args) => {
+  try {
+    return execSync(`git ${args}`, { cwd: repository, encoding: "utf-8" }).trim();
+  } catch {
+    return null;
+  }
+};
+const detectPlatform = () => {
+  if (process.platform === "darwin") return "macos";
+  if (process.platform === "win32") return "windows";
+  if (process.env.WSL_DISTRO_NAME) return "linux-wsl";
+  try {
+    if (readFileSync("/proc/version", "utf-8").includes("icrosoft")) return "linux-wsl";
+  } catch {
+    // /proc が無い環境は linux 扱いにする。
+  }
+  return "linux";
+};
+const evidence = {
+  schemaVersion: 1,
+  completed: false,
+  results: {},
+  pageErrors: [],
+  meta: {
+    runId,
+    startedAt: new Date().toISOString(),
+    platform: detectPlatform(),
+    node: process.version,
+    driverSha256: createHash("sha256")
+      .update(readFileSync(fileURLToPath(import.meta.url)))
+      .digest("hex"),
+    repoSha: git("rev-parse HEAD"),
+    repoDirty: git("status --porcelain") !== "",
+    // 台帳の「6/6」集計は D04 未計測時代の値。results は D04 を含む
+    // 7 keys (D01/D03/D04/D08/D09/D10/X09) が完走の正しい形。
+    expectedResultKeys: 7,
+  },
+};
+// 開始直後の証跡が実際に書けたことを読み戻して確認する。ここで失敗
+// する証跡 dir は後の assert 結果も信頼できない。
+writeFileSync(
+  join(evidenceDir, "evidence.json"),
+  `${JSON.stringify(evidence, null, 2)}\n`,
+);
+{
+  const persisted = JSON.parse(readFileSync(join(evidenceDir, "evidence.json"), "utf-8"));
+  assert.equal(persisted.completed, false, "initial evidence must persist completed=false");
+  assert.equal(persisted.meta?.runId, runId, "initial evidence lost its runId");
+}
+
 // CANVAS (7:7) 配下に FRAME ヘッダー(7:8) / カード(7:9) を持つ擬似ファイル。
 const canvasDoc = {
   id: "7:7",
@@ -186,6 +247,39 @@ const exportableNodeIds = [
   "7:8", "7:9", "7:10", "7:11", "7:12", "7:13", "7:14", "7:15", "7:16", "7:21",
 ];
 
+// renderer スクリプトの開始より前から動く計装 preload。error /
+// unhandledrejection を ipc で main へ送り、driver の pageerror
+// リスナ登録 (firstWindow 解決後) より前に起きた失敗も証跡へ残す。
+const earlyErrorPreload = join(sandbox, "early-error-preload.cjs");
+await writeFile(
+  earlyErrorPreload,
+  `"use strict";
+const { ipcRenderer } = require("electron");
+const send = (kind, message) => {
+  try {
+    ipcRenderer.send("figdiff-dcase-early-error", {
+      launchId: process.env.FIGDIFF_DCASE_LAUNCH_ID ?? "unknown",
+      kind,
+      message: String(message),
+      ts: Date.now(),
+    });
+  } catch {
+    // ipc 未接続時はこれ以上追跡できない。
+  }
+};
+window.addEventListener("error", (e) => send("error", e.message ?? e.error));
+window.addEventListener("unhandledrejection", (e) => send("unhandledrejection", e.reason));
+// 自己診断: driver が env で注入を指示した場合、ページスクリプト開始
+// 前の時点で意図的な早期エラーを起こし、この計装経路が早期イベントを
+// 拾えることを実証する。
+if (process.env.FIGDIFF_DCASE_SELFTEST_PAGEERROR === "1") {
+  window.dispatchEvent(
+    new ErrorEvent("error", { message: "figdiff-dcase selftest early pageerror" }),
+  );
+}
+`,
+);
+
 const bootstrap = join(sandbox, "bootstrap.mjs");
 await writeFile(
   bootstrap,
@@ -193,7 +287,7 @@ await writeFile(
 import os from "node:os";
 import { appendFileSync, readFileSync } from "node:fs";
 import { syncBuiltinESMExports } from "node:module";
-import { app, session } from "electron";
+import { app, ipcMain, session } from "electron";
 os.homedir = () => ${JSON.stringify(isolatedHome)};
 syncBuiltinESMExports();
 app.setPath("home", ${JSON.stringify(isolatedHome)});
@@ -211,6 +305,10 @@ const singleCanvasDoc = ${JSON.stringify(singleCanvasDoc)};
 const keyboardCanvasDoc = ${JSON.stringify(keyboardCanvasDoc)};
 const exportableNodeIds = ${JSON.stringify(exportableNodeIds)};
 const errorLog = ${JSON.stringify(errorLog)};
+const earlyErrorLog = ${JSON.stringify(earlyErrorLog)};
+const earlyPreload = ${JSON.stringify(earlyErrorPreload)};
+const launchId = process.env.FIGDIFF_DCASE_LAUNCH_ID ?? "unknown";
+const probeUrl = ${JSON.stringify(`http://127.0.0.1:${port}/probe-partition`)};
 globalThis.fetch = async (input, init = {}) => {
   const url = typeof input === "string" ? input : input.url;
   // ts 必須: tokenless 期間の「遅れて届いた dispatch」は index ではなく
@@ -282,25 +380,83 @@ globalThis.fetch = async (input, init = {}) => {
 // defaultSession 以外の session (partition 指定 window / net.request) は
 // defaultSession の webRequest に出ないため、session-created でも同じ
 // 計測を仕掛け、session 一覧を証跡に残す。
-const instrumentSession = (s) => {
+// 計測順の seq で「default 以外の session も計測されている」ことを
+// driver 側で識別できるようにする。session-created は同一 session に
+// 二度来ないが、明示呼出しとの二重登録だけは WeakSet で防ぐ。
+let sessionSeq = 0;
+const instrumented = new WeakSet();
+const instrumentSession = (s, role = "auto") => {
+  if (instrumented.has(s)) return 0;
+  instrumented.add(s);
+  const seq = ++sessionSeq;
+  // 計測自体の失敗を空 catch で隠すと「session 記録が無い」のと
+  // 「計測が死んだ」の区別が付かないため、失敗は境界エラーログへ残す。
   try {
-    appendFileSync(sessionLog, JSON.stringify({ id: s?.storagePath ?? "unknown" }) + "\\n");
-  } catch {}
+    appendFileSync(
+      sessionLog,
+      JSON.stringify({
+        launchId,
+        seq,
+        role,
+        storagePath: s?.storagePath ?? null,
+      }) + "\\n",
+    );
+    // renderer スクリプトより先に動く計装 preload を全 session に仕掛け、
+    // pageerror リスナ登録前の失敗も ipc 経由で証跡へ残す。
+    s.setPreloads([earlyPreload]);
+  } catch (e) {
+    appendFileSync(
+      errorLog,
+      JSON.stringify({ error: "instrumentSession failed: " + String(e) }) + "\\n",
+    );
+  }
   s.webRequest.onBeforeRequest((details, callback) => {
     try {
       const u = new URL(details.url);
       // ws/wss も onBeforeRequest に来る。http 系だけ拾うと WebSocket 経由の
       // 外部通信が境界から見えなくなるため含める。
       if (["http:", "https:", "ws:", "wss:"].includes(u.protocol)) {
-        appendFileSync(networkLog, JSON.stringify({ url: details.url }) + "\\n");
+        appendFileSync(
+          networkLog,
+          JSON.stringify({ url: details.url, launchId, sessionSeq: seq }) + "\\n",
+        );
       }
-    } catch {}
+    } catch (e) {
+      appendFileSync(
+        errorLog,
+        JSON.stringify({ error: "webRequest log failed: " + String(e) }) + "\\n",
+      );
+    }
     callback({});
   });
+  return seq;
 };
 app.whenReady().then(() => {
-  instrumentSession(session.defaultSession);
-  app.on("session-created", instrumentSession);
+  ipcMain.on("figdiff-dcase-early-error", (_e, payload) => {
+    try {
+      appendFileSync(earlyErrorLog, JSON.stringify(payload) + "\\n");
+    } catch (e) {
+      appendFileSync(
+        errorLog,
+        JSON.stringify({ error: "early error log failed: " + String(e) }) + "\\n",
+      );
+    }
+  });
+  instrumentSession(session.defaultSession, "default");
+  app.on("session-created", (s) => instrumentSession(s));
+  // 別 partition の session も session-created で計測されることの実証:
+  // 専用 partition で probe fetch を発行し、その webRequest が seq>1 の
+  // session から networkLog に記録されることを driver 側で assert する。
+  const probeSess = session.fromPartition("figdiff-dcase-probe-" + launchId);
+  // net.fetch の session オプションは無い — 別 partition 経由を証明する
+  // には session の fetch を使う必要がある (webRequest がその session の
+  // ものとして記録される)。
+  probeSess.fetch(probeUrl).catch((e) =>
+    appendFileSync(
+      errorLog,
+      JSON.stringify({ error: "probe fetch failed: " + String(e) }) + "\\n",
+    ),
+  );
 });
 const credentials = await import(${JSON.stringify(pathToFileURL(join(repository, "package/credential-store/dist/index.js")).href)});
 credentials.selectFileCredentialBackend();
@@ -316,18 +472,23 @@ const environment = {
 };
 delete environment.ELECTRON_RUN_AS_NODE;
 
-const launch = () =>
+const launch = (launchIndex, extraEnv = {}) =>
   electron.launch({
     executablePath: process.env.FIGDIFF_ELECTRON_EXECUTABLE ?? requireFromDesktop("electron"),
     args: [bootstrap, `--user-data-dir=${userData}`],
-    env: environment,
+    env: {
+      ...environment,
+      // 起動 ID を session 計測ログに記録させるため、launch ごとに env で渡す。
+      FIGDIFF_DCASE_LAUNCH_ID: `${runId}#${launchIndex}`,
+      ...extraEnv,
+    },
     timeout: 30_000,
   });
 
 // completed は末尾まで到達した時だけ true にする。fatal で途中落ちした
 // evidence.json は results が部分的に埋まったまま残るため、台帳取込側が
-// 「全項 PASS」に見えないよう完走マーカーで区別する。
-const evidence = { schemaVersion: 1, completed: false, results: {}, pageErrors: [] };
+// 「全項 PASS」に見えないよう完走マーカーで区別する (開始時点で
+// completed:false が既に永続化済み)。
 // assert 失敗や予期せぬ throw でも部分証跡が残るよう、exit 時に必ず書き出す。
 // 成功時も同じ内容が上書きされるだけなので二重書きは問題ない。
 process.on("exit", () => {
@@ -393,7 +554,7 @@ const settle = (ms = 1500) => new Promise((r) => setTimeout(r, ms));
 
 // ---------- 実行 ----------
 
-const application = await launch();
+const application = await launch(1);
 // firstWindow 解決後に pageerror を貼ると初期 module 評価中の throw を
 // 逃す。window event で早期に仕掛け、後から作られる hidden capture
 // window の pageerror も同じ証跡に拾う。
@@ -451,13 +612,6 @@ assert.equal(
 );
 evidence.results.D01.tokenlessPaths = ["quickCompareSubmit", "createProjectForm"];
 
-// tokenless 期間の境界時刻: PAT 保存操作の直前に取る。ログ行の ts は
-// append 時刻なので「dispatch 時刻」ではないが、境界を期間の最後尾
-// (PAT 保存 = token が存在し始める瞬間) に置けば、遅れて着地した
-// dispatch も ts < 境界 で必ず捕捉できる。期間途中に境界を置くと
-// 境界以降の着地を取りこぼす。
-const tokenlessPhaseEndTs = Date.now();
-
 // PAT を dialog 経由で保存 → file backend の credentials.json ができる。
 await page.locator("#token-input").fill("figd_dcases_fixture_token_0000001");
 await page.getByRole("button", { name: "保存", exact: true }).click();
@@ -474,6 +628,11 @@ assert.ok(
   JSON.stringify(savedToken).includes("figd_dcases_fixture_token_0000001"),
   "saved PAT not found in credentials.json",
 );
+// tokenless 期間の境界時刻: token の保存が同一プロセス内で成立した
+// (credentials.json が実ディスクで確認できた) 直後に取る。fill→保存の
+// 窓を期間内に含めるため「token が存在し始める瞬間」より前に置き、
+// 期間中の dispatch は行内の ts で必ず捕捉できる。
+const tokenlessPhaseEndTs = Date.now();
 evidence.results.D01.auth = { credentialFile: "credentials.json", viaDialog: true };
 
 // 同じ URL を再送 → page detection → フレーム一覧 → カード選択 → export は 7:9 のみ。
@@ -577,6 +736,7 @@ await page.waitForFunction(
       [...zone.querySelectorAll("p")].some((p) => p.textContent.includes("読み込み済み"))
     );
   },
+  undefined,
   { timeout: 15_000, polling: 200 },
 );
 evidence.results.D03.drop = { screenshotLoaded: true, via: "scoped zone text" };
@@ -923,7 +1083,7 @@ assert.ok(
 
 // ---- D08: 再起動 → 永続化 → 案件切替 ----
 
-const application2 = await launch();
+const application2 = await launch(2);
 watchPageErrors(application2);
 const page2 = await application2.firstWindow();
 
@@ -964,6 +1124,7 @@ await page2.waitForFunction(
   () => [...document.querySelectorAll("canvas")].some(
     (c) => c.width === 50 && c.height === 50,
   ),
+  undefined,
   { timeout: 15_000, polling: 200 },
 );
 const japaneseCanvases = await page2.evaluate(() =>
@@ -1003,6 +1164,7 @@ await page2.waitForFunction(
   () => [...document.querySelectorAll("canvas")].some(
     (c) => c.width === 200 && c.height === 120,
   ),
+  undefined,
   { timeout: 15_000, polling: 200 },
 );
 const compareControl = await page2.evaluate(() => {
@@ -1026,7 +1188,7 @@ const d08ExportHits = figmaRequests()
   .filter((u) => u.includes("ids=7%3A8") || u.includes("ids=7:8"));
 d08.comparePositiveControl = { ...compareControl, apiHitsForSource: d08ExportHits.length };
 
-// D04: compare の全表示モード・zoom・pan・crop を実操作で検証する。
+// D04: compare の全7表示モード・zoom・pan・crop を実操作で検証する。
 // 表示が実際の入力・差分と一致することを canvas 実測で確認し、
 // この区間の例外と console error を別途収集して空を assert する。
 const d04 = { consoleErrors: [] };
@@ -1040,27 +1202,200 @@ const transformOf = () =>
     .locator("> div")
     .first()
     .evaluate((el) => el.style.transform ?? "");
+// transform 文字列を数値へ分解する。文字列が「変わった」だけでは
+// zoom/pan/reset の効果を区別できず、無関係な再描画でも pass し得た。
+const parseTransform = (raw) => {
+  const m = /translate\(\s*(-?[\d.]+)px,\s*(-?[\d.]+)px\s*\)\s*scale\(\s*(-?[\d.eE+]+)\s*\)/.exec(
+    raw,
+  );
+  return m ? { x: Number(m[1]), y: Number(m[2]), scale: Number(m[3]) } : null;
+};
+// メイン canvas は container 内のものだけを見る。crop 選択 canvas も
+// 画像 load 後は 200x120 になるため、container 外を拾うと別部品の
+// 描画を「メイン canvas」と誤判定する。
+// 画素の期待値は fixture 入力色 (design 200x120: (40,90,200) /
+// shot 50x50: (120,60,180)) と製品の描画仕様 (overlay alpha 0.5,
+// splitX=100 の白線を回避する座標) から driver 側で独立に計算する。
+// stale な描画や空白 canvas は照合が timeout になる設計なので誤 pass しない。
+const waitCompareCanvas = (specs, timeout = 8_000) =>
+  page2.waitForFunction(
+    (entries) => {
+      const c = document.querySelector(
+        '[data-testid="compare-canvas-container"] canvas',
+      );
+      if (!c || c.width !== 200 || c.height !== 120) return false;
+      const ctx = c.getContext("2d");
+      if (!ctx) return false;
+      return entries.every((s) => {
+        const d = ctx.getImageData(s.x, s.y, 1, 1).data;
+        if (s.a !== undefined) {
+          if (Math.abs(d[3] - s.a) > 25) return false;
+          if (s.a <= 25) return true; // 透明期待は rgb を問わない
+        }
+        return (
+          Math.abs(d[0] - s.r) <= s.tol &&
+          Math.abs(d[1] - s.g) <= s.tol &&
+          Math.abs(d[2] - s.b) <= s.tol
+        );
+      });
+    },
+    specs,
+    { timeout, polling: 100 },
+  );
+// エラーバナー (error store → --diff-soft の横帯) が出ていないことを
+// 各モード切替後に確認する。diff report の severity pill は span なので
+// div.mx-5 の限定で区別できる。
+const errorBannerCount = () => page2.locator('div.mx-5[style*="--diff-soft"]').count();
+const dumpCropDebug = async () => {
+  // drag が領域を作らなかった時の切り分け: 実座標に居る要素・canvas 実寸・
+  // 親の overflow 状態を証跡へ残す。座標は evaluate 内で canvas rect から引く。
+  d04.cropDebug = await page2.evaluate(() => {
+    const hitAt = (x, y) => {
+      const el = document.elementFromPoint(x, y);
+      return el ? `${el.tagName}.${el.className}` : null;
+    };
+    const canvas = document.querySelector('canvas[aria-label="範囲選択キャンバス"]');
+    const rect = canvas?.getBoundingClientRect();
+    const parent = canvas?.parentElement;
+    const style = parent ? getComputedStyle(parent) : null;
+    return {
+      hitAtStart: rect ? hitAt(rect.x + 10, rect.y + 10) : null,
+      hitAtMid: rect ? hitAt(rect.x + 50, rect.y + 40) : null,
+      selectingVisible: [...document.querySelectorAll("button")].some(
+        (b) => b.textContent === "選択中...",
+      ),
+      domEvents: window.__cropEvents ?? null,
+      canvasRect: rect ? { x: rect.x, y: rect.y, w: rect.width, h: rect.height } : null,
+      canvasSize: canvas ? { w: canvas.width, h: canvas.height } : null,
+      parentOverflow: style ? `${style.overflow}/${style.overflowX}/${style.overflowY}` : null,
+    };
+  });
+  await page2.screenshot({ path: join(evidenceDir, "d04-crop-stuck.png") });
+};
 try {
-  // 1. 3表示モードを順に切替え、アクティブ化と fixture canvas の残存を確認する。
-  //    aria-label が表示テキストを上書きするため日本語ラベルで選ぶ。
+  // 1. pixel_diff 未実行時の基線: 差分画像が無い場合は製品が screenshot を
+  //    フォールバック描画する。この基線を先に記録しないと「比較実行後の
+  //    描画」と「フォールバック描画」を区別できない。
+  await page2.getByRole("button", { name: "ピクセル差分", exact: true }).click();
+  await waitCompareCanvas([
+    { x: 25, y: 25, r: 120, g: 60, b: 180, tol: 10 },
+    { x: 150, y: 80, a: 0 },
+  ]);
+  d04.pixelDiffFallback = "screenshot drawn (no diff image yet)";
+
+  // 2. 「差分を検出」を実実行し、結果の diff 画像が描画へ反映されることを
+  //    確認する。pixelmatch は差分画素を赤 (255,0,0) で出力する。
+  await page2.getByRole("button", { name: "差分を検出", exact: true }).click();
+  await page2.getByTestId("compare-score-verdict-badge").waitFor({ timeout: 15_000 });
+  await waitCompareCanvas([
+    { x: 25, y: 25, r: 255, g: 0, b: 0, tol: 80 },
+    { x: 150, y: 80, a: 0 },
+  ]);
+  assert.equal(await errorBannerCount(), 0, "error banner shown after comparison run");
+  d04.comparisonRun = "diff image drawn after runComparison";
+
+  // 3. 全7表示モードを順に切替え、アクティブ化と fixture 画素照合を行う。
   const modeObservations = {};
   for (const mode of [
-    { label: "ピクセル差分", id: "pixel_diff" },
-    { label: "透過オーバーレイ", id: "transparent_overlay" },
-    { label: "分割画面", id: "split_screen" },
+    {
+      label: "デザインのみ",
+      id: "design_only",
+      specs: [
+        { x: 25, y: 25, r: 40, g: 90, b: 200, tol: 10 },
+        { x: 150, y: 80, r: 40, g: 90, b: 200, tol: 10 },
+      ],
+    },
+    {
+      label: "実装のみ",
+      id: "implementation",
+      specs: [
+        { x: 25, y: 25, r: 120, g: 60, b: 180, tol: 10 },
+        { x: 150, y: 80, a: 0 },
+      ],
+    },
+    {
+      label: "透過オーバーレイ",
+      id: "transparent_overlay",
+      specs: [
+        // 0.5*D + 0.5*S = (80,75,190)
+        { x: 25, y: 25, r: 80, g: 75, b: 190, tol: 15 },
+        // スクリーンショット範囲外: 半透過 design のみ (a≈128, rgb≈D)
+        { x: 150, y: 80, r: 40, g: 90, b: 200, tol: 20, a: 128 },
+      ],
+    },
+    {
+      label: "分割画面",
+      id: "split_screen",
+      specs: [
+        // 左半は design (clip 0..splitX)。screenshot はキャンバス 0,0 配置
+        // で右半に clip されるため、実装画像が splitX 未満の幅しかない
+        // この fixture では右半は描画域外で透過のままになる。
+        // 分割白線 (x=100±1) の画素で左右の区切り自体を照合する。
+        { x: 60, y: 60, r: 40, g: 90, b: 200, tol: 10 },
+        { x: 100, y: 20, r: 240, g: 240, b: 240, tol: 25 },
+        { x: 140, y: 25, a: 0 },
+      ],
+    },
+    {
+      label: "ブレンド差分",
+      id: "blended_diff",
+      specs: [
+        // drawBlendedDiff は screenshot を globalAlpha=0.5 のまま
+        // difference 合成する (globalAlpha を戻さない)。Porter-Duff 混合で
+        // co = 0.25|Cs-Cb| + 0.25Cs + 0.25Cb = (60,45,100), αo=0.75
+        // → unpremultiplied (80,60,133,192)
+        { x: 25, y: 25, r: 80, g: 60, b: 133, tol: 10 },
+        { x: 150, y: 80, r: 40, g: 90, b: 200, tol: 20, a: 128 },
+      ],
+    },
+    {
+      label: "ドラッグオーバーレイ",
+      id: "draggable_overlay",
+      specs: [
+        { x: 25, y: 25, r: 80, g: 75, b: 190, tol: 15 },
+        { x: 150, y: 80, r: 40, g: 90, b: 200, tol: 20, a: 128 },
+      ],
+    },
+    {
+      label: "ピクセル差分",
+      id: "pixel_diff",
+      specs: [
+        { x: 25, y: 25, r: 255, g: 0, b: 0, tol: 80 },
+        { x: 150, y: 80, a: 0 },
+      ],
+    },
   ]) {
+    // 途中失敗した際にどのモードで落ちたか部分証跡から判別できるよう残す。
+    d04.currentMode = mode.id;
     const button = page2.getByRole("button", { name: mode.label, exact: true });
     await button.click();
-    // 切替後も design fixture の canvas が残ることを確認する。
-    await page2.waitForFunction(
-      () =>
-        [...document.querySelectorAll("canvas")].some(
-          (c) => c.width === 200 && c.height === 120,
-        ),
-      { timeout: 5_000, polling: 200 },
+    // 画素照合自体が再描画の完了待ちを兼ねる — 切替えが描画へ反映
+    // されなければ timeout で失敗する。
+    try {
+      await waitCompareCanvas(mode.specs);
+    } catch (error) {
+      // 失敗時の実測画素を証跡に残してから再 throw する (期待値との
+      // 差分が fixture 誤算なのか描画不良なのかを切り分けるため)。
+      d04.lastObserved = await page2.evaluate(() => {
+        const c = document.querySelector(
+          '[data-testid="compare-canvas-container"] canvas',
+        );
+        if (!c) return null;
+        const ctx = c.getContext("2d", { willReadFrequently: true });
+        return [[25, 25], [150, 80], [140, 25], [100, 20], [60, 60]].map(
+          ([x, y]) => ({ x, y, px: [...ctx.getImageData(x, y, 1, 1).data] }),
+        );
+      });
+      throw error;
+    }
+    assert.equal(
+      await errorBannerCount(),
+      0,
+      `error banner shown after switching to ${mode.id}`,
     );
     modeObservations[mode.id] = {
       activeClass: (await button.getAttribute("class"))?.includes("primary") ?? false,
+      pixelsMatched: mode.specs.length,
     };
   }
   d04.viewModes = modeObservations;
@@ -1068,28 +1403,41 @@ try {
     assert.ok(obs.activeClass, `view mode ${id} did not activate`);
   }
 
-  // 2. zoom: Ctrl+wheel で transform の scale が変わることを実測する。
-  const transformBefore = await transformOf();
+  // 4. zoom: Ctrl+wheel で scale が上昇することを数値で確認する。
+  const t0 = parseTransform(await transformOf());
+  assert.ok(t0, `transform unparsable before zoom: ${await transformOf()}`);
   await canvasContainer.hover();
   await page2.keyboard.down("Control");
   await page2.mouse.wheel(0, -400);
   await page2.keyboard.up("Control");
   await page2.waitForFunction(
-    (before) => {
+    (beforeScale) => {
       const el = document.querySelector(
         '[data-testid="compare-canvas-container"] > div',
       );
-      return el && el.style.transform !== before && /scale\([^)]*\)/.test(el.style.transform);
+      const m = /scale\(\s*(-?[\d.eE+]+)\s*\)/.exec(el?.style.transform ?? "");
+      return m !== null && Number(m[1]) > beforeScale * 1.2;
     },
-    transformBefore,
+    t0.scale,
     { timeout: 5_000, polling: 100 },
   );
-  d04.zoom = { before: transformBefore, after: await transformOf() };
+  const t1 = parseTransform(await transformOf());
+  assert.ok(
+    t1 && t1.scale > t0.scale * 1.2,
+    `zoom did not increase scale: ${JSON.stringify({ before: t0, after: t1 })}`,
+  );
+  d04.zoom = { before: t0, after: t1 };
 
-  // 3. pan: middle-drag で translate が変わることを実測する。
-  const panBefore = await transformOf();
+  // 5. pan: middle-drag +60,+40 で translate が drag 量だけ動き、
+  //    scale が不変であることを数値で確認する。
+  const p0 = parseTransform(await transformOf());
+  assert.ok(p0, `transform unparsable before pan: ${await transformOf()}`);
   const canvasBox = await canvasContainer.boundingBox();
-  await page2.mouse.move(canvasBox.x + canvasBox.width / 2, canvasBox.y + canvasBox.height / 2);
+  assert.ok(canvasBox, "compare canvas container not visible");
+  await page2.mouse.move(
+    canvasBox.x + canvasBox.width / 2,
+    canvasBox.y + canvasBox.height / 2,
+  );
   await page2.mouse.down({ button: "middle" });
   await page2.mouse.move(
     canvasBox.x + canvasBox.width / 2 + 60,
@@ -1098,49 +1446,78 @@ try {
   );
   await page2.mouse.up({ button: "middle" });
   await page2.waitForFunction(
-    (before) => {
+    (exp) => {
       const el = document.querySelector(
         '[data-testid="compare-canvas-container"] > div',
       );
-      return el && el.style.transform !== before;
+      const m = /translate\(\s*(-?[\d.]+)px,\s*(-?[\d.]+)px\s*\)/.exec(
+        el?.style.transform ?? "",
+      );
+      return (
+        m !== null &&
+        Math.abs(Number(m[1]) - exp.x) <= 5 &&
+        Math.abs(Number(m[2]) - exp.y) <= 5
+      );
     },
-    panBefore,
+    { x: p0.x + 60, y: p0.y + 40 },
     { timeout: 5_000, polling: 100 },
   );
-  d04.pan = { before: panBefore, after: await transformOf() };
+  const p1 = parseTransform(await transformOf());
+  assert.ok(p1, "transform unparsable after pan");
+  assert.ok(
+    Math.abs(p1.x - (p0.x + 60)) <= 5 && Math.abs(p1.y - (p0.y + 40)) <= 5,
+    `pan delta off: ${JSON.stringify({ before: p0, after: p1 })}`,
+  );
+  assert.ok(
+    Math.abs(p1.scale - p0.scale) <= 0.01,
+    `pan changed scale: ${JSON.stringify({ before: p0, after: p1 })}`,
+  );
+  d04.pan = { before: p0, after: p1 };
 
-  // 4. Ctrl+0 で scale(1) へ戻ること。
+  // 6. Ctrl+0 で x=0/y=0/scale=1 へ戻ること。
   await page2.keyboard.press("Control+0");
   await page2.waitForFunction(
     () => {
       const el = document.querySelector(
         '[data-testid="compare-canvas-container"] > div',
       );
-      return el && /scale\(1\)/.test(el.style.transform ?? "");
+      const m = /translate\(\s*(-?[\d.]+)px,\s*(-?[\d.]+)px\s*\)\s*scale\(\s*(-?[\d.eE+]+)\s*\)/.exec(
+        el?.style.transform ?? "",
+      );
+      return (
+        m !== null &&
+        Math.abs(Number(m[1])) < 0.01 &&
+        Math.abs(Number(m[2])) < 0.01 &&
+        Math.abs(Number(m[3]) - 1) < 0.01
+      );
     },
+    undefined,
     { timeout: 5_000, polling: 100 },
   );
-  d04.reset = await transformOf();
+  d04.reset = parseTransform(await transformOf());
 
-  // 5. crop: 範囲選択キャンバスを 10px 超 drag → 座標表示 → クリアで消去。
+  // 7. crop: 範囲選択キャンバスを 10px 超 drag → 座標照合 → クリアで消去。
   //    比較領域の下端にあるため視界へ出してから座標を取る (画面外クリックは当たらない)。
   const cropCanvas = page2.locator('canvas[aria-label="範囲選択キャンバス"]');
   await cropCanvas.scrollIntoViewIfNeeded();
   // smooth scroll の収束を rect 安定で待つ。未到達のまま down すると、
   // isSelecting の描画で canvas が縮み pointer が外に出て onMouseLeave が
   // 選択をキャンセルする (domEvents で mouseleave@同座標 を実測)。
-  await page2.waitForFunction(
-    () => {
-      const c = document.querySelector('canvas[aria-label="範囲選択キャンバス"]');
-      if (!c) return false;
-      const r = c.getBoundingClientRect();
-      const key = `${r.x},${r.y},${r.width},${r.height}`;
-      const stable = window.__lastCropRect === key;
-      window.__lastCropRect = key;
-      return stable;
-    },
-    { timeout: 5_000, polling: 100 },
-  );
+  const waitCropRectStable = () =>
+    page2.waitForFunction(
+      () => {
+        const c = document.querySelector('canvas[aria-label="範囲選択キャンバス"]');
+        if (!c) return false;
+        const r = c.getBoundingClientRect();
+        const key = `${r.x},${r.y},${r.width},${r.height}`;
+        const stable = window.__lastCropRect === key;
+        window.__lastCropRect = key;
+        return stable;
+      },
+      undefined,
+      { timeout: 5_000, polling: 100 },
+    );
+  await waitCropRectStable();
   // DOMイベントの到達を直接記録して切り分ける (React handler 不発か入力未到達か)。
   await page2.evaluate(() => {
     const c = document.querySelector('canvas[aria-label="範囲選択キャンバス"]');
@@ -1152,8 +1529,8 @@ try {
     }
   });
   // 初回の isSelecting 描画で canvas が既定 300x150 から画像寸法へ縮み、
-  // flex-1 の再配置で要素自体が移動する。その移動が onMouseLeave を発火させて
-  // drag をキャンセルするため、先に一度選択を起こして最終寸法へ落ち着かせる。
+  // flex-1 の再配置で要素自体が移動する。この最初の drag を独立に検証する —
+  // resize 失敗を握り潰すと後続 drag の座標前提が崩れたまま進み得た。
   await cropCanvas.hover({ position: { x: 10, y: 10 } });
   await page2.mouse.down();
   try {
@@ -1162,25 +1539,24 @@ try {
         const c = document.querySelector('canvas[aria-label="範囲選択キャンバス"]');
         return c && c.width === 200 && c.height === 120;
       },
+      undefined,
       { timeout: 5_000, polling: 100 },
     );
-  } catch {
-    // img 未読込だと resize が起きず既定寸法のまま安定している — そのまま進める。
+  } catch (error) {
+    await dumpCropDebug();
+    throw error;
   }
   await page2.mouse.up();
+  d04.cropFirstDrag = { canvasResized: "300x150→200x120" };
+  // 本番 drag 前に計装ログと安定監視を初期化する。準備 drag のイベントでも
+  // mousemove 条件が成立してしまい「今回の drag で領域が作られた」証左に
+  // ならないため境界を切る。
+  await page2.evaluate(() => {
+    window.__cropEvents = [];
+    window.__lastCropRect = null;
+  });
   // 縮小後の位置収束を rect 安定で待ってから本番 drag する。
-  await page2.waitForFunction(
-    () => {
-      const c = document.querySelector('canvas[aria-label="範囲選択キャンバス"]');
-      if (!c) return false;
-      const r = c.getBoundingClientRect();
-      const key = `${r.x},${r.y},${r.width},${r.height}`;
-      const stable = window.__lastCropRect === key;
-      window.__lastCropRect = key;
-      return stable;
-    },
-    { timeout: 5_000, polling: 100 },
-  );
+  await waitCropRectStable();
   await cropCanvas.hover({ position: { x: 10, y: 10 } });
   await page2.mouse.down();
   // React の isSelecting commit を実表示で待つ。commit 前の mousemove/mouseup は
@@ -1190,6 +1566,7 @@ try {
   // move の DOM 到達を計装ログで確認してから放す (未到達なら領域は作られない)。
   await page2.waitForFunction(
     () => window.__cropEvents?.some((e) => e.startsWith("mousemove")),
+    undefined,
     { timeout: 5_000, polling: 100 },
   );
   await page2.mouse.up();
@@ -1197,36 +1574,57 @@ try {
   try {
     await cropText.waitFor({ timeout: 5_000 });
   } catch (error) {
-    // drag が領域を作らなかった時の切り分け: 実座標に居る要素・canvas 実寸・
-    // 親の overflow 状態を証跡へ残す。座標は evaluate 内で canvas rect から引く。
-    d04.cropDebug = await page2.evaluate(() => {
-      const hitAt = (x, y) => {
-        const el = document.elementFromPoint(x, y);
-        return el ? `${el.tagName}.${el.className}` : null;
-      };
-      const canvas = document.querySelector('canvas[aria-label="範囲選択キャンバス"]');
-      const rect = canvas?.getBoundingClientRect();
-      const parent = canvas?.parentElement;
-      const style = parent ? getComputedStyle(parent) : null;
-      return {
-        hitAtStart: rect ? hitAt(rect.x + 10, rect.y + 10) : null,
-        hitAtMid: rect ? hitAt(rect.x + 50, rect.y + 40) : null,
-        selectingVisible: [...document.querySelectorAll("button")].some(
-          (b) => b.textContent === "選択中...",
-        ),
-        domEvents: window.__cropEvents ?? null,
-        canvasRect: rect ? { x: rect.x, y: rect.y, w: rect.width, h: rect.height } : null,
-        canvasSize: canvas ? { w: canvas.width, h: canvas.height } : null,
-        parentOverflow: style ? `${style.overflow}/${style.overflowX}/${style.overflowY}` : null,
-      };
-    });
-    await page2.screenshot({ path: join(evidenceDir, "d04-crop-stuck.png") });
+    await dumpCropDebug();
     throw error;
   }
-  d04.crop = { region: await cropText.textContent() };
+  // 座標を実 drag 位置と照合する。「数字が出た」だけでは任意の値でも
+  // pass し得たため。位置指定は canvas 要素の CSS px 基準で、
+  // 表示が backing (200x120) と同寸法でない場合に備え ratio で換算する。
+  const regionText = await cropText.textContent();
+  const rm = /^x: (\d+), y: (\d+), w: (\d+), h: (\d+)$/.exec(regionText ?? "");
+  assert.ok(rm, `crop region text unparseable: ${regionText}`);
+  const region = { x: Number(rm[1]), y: Number(rm[2]), w: Number(rm[3]), h: Number(rm[4]) };
+  const cropBox = await cropCanvas.boundingBox();
+  const ratio = cropBox && cropBox.width > 0 ? 200 / cropBox.width : 1;
+  const expectedRegion = { x: 10 * ratio, y: 10 * ratio, w: 80 * ratio, h: 60 * ratio };
+  for (const k of ["x", "y", "w", "h"]) {
+    assert.ok(
+      Math.abs(region[k] - expectedRegion[k]) <= Math.max(8, 8 * ratio),
+      `crop region ${k}: expected ~${expectedRegion[k]}, got ${region[k]} (${regionText})`,
+    );
+  }
+  d04.crop = { region: regionText, expected: "x:10, y:10, w:80, h:60 (css-px scaled)" };
   await page2.getByRole("button", { name: "クリア", exact: true }).click();
   await cropText.waitFor({ state: "detached", timeout: 5_000 });
+  // クリアは領域表示の消去だけでなく canvas 上の選択描画も消えることを
+  // 画素で確認する。旧選択矩形の上辺 (y≈10±2) で cobalt 系の残存を検出する —
+  // 描画が残っていれば store 消去だけの見せかけになる。
+  await page2.waitForFunction(
+    () => {
+      const c = document.querySelector('canvas[aria-label="範囲選択キャンバス"]');
+      if (!c || c.width !== 200 || c.height !== 120) return false;
+      const ctx = c.getContext("2d");
+      if (!ctx) return false;
+      for (const y of [9, 10, 11]) {
+        for (let x = 15; x < 90; x += 5) {
+          const d = ctx.getImageData(x, y, 1, 1).data;
+          if (d[3] > 200 && d[2] > 220 && d[1] > 105 && d[1] < 160) return false;
+        }
+      }
+      return true;
+    },
+    undefined,
+    { timeout: 5_000, polling: 100 },
+  );
   d04.crop.cleared = true;
+  d04.cropDrawingCleared = true;
+
+  // 8. 後続の D08 観測を汚染しないよう、viewMode を既定の
+  //    transparent_overlay へ戻して再描画を待つ。split_screen のままだと
+  //    分割白線の画素が fixture 照合へ混入し得る。
+  await page2.getByRole("button", { name: "透過オーバーレイ", exact: true }).click();
+  await waitCompareCanvas([{ x: 25, y: 25, r: 80, g: 75, b: 190, tol: 15 }]);
+  d04.finalMode = "transparent_overlay";
 } finally {
   page2.off("console", d04ConsoleListener);
   // 途中失敗でも観測済みの区間を証跡へ残す (再実行なしに切り分けられるように)。
@@ -1259,6 +1657,7 @@ await page2
       [...document.querySelectorAll("canvas")].some(
         (c) => c.width === 200 && c.height === 120,
       ),
+    undefined,
     { timeout: 10_000, polling: 200 },
   )
   .catch(() => {});
@@ -1287,7 +1686,9 @@ const compareAfterSwitch = await page2.evaluate(() => {
   }
   // RGBA の alpha だけでは不透明な空状態と実画像を区別できない。
   // fixture 寸法の canvas を特定して fixture 色 (40,90,200) との距離を
-  // 中央で測り、「D01 の画像が残っている」か「空状態」かを分ける。
+  // 複数点で測り、「D01 の画像が残っている」か「空状態」かを分ける。
+  // 中央1点だと split_screen の白線 (x=100) や overlay の半透明化で
+  // モード残存に判定が左右されるため、容器内の複数座標で見る。
   const fixture = [...document.querySelectorAll("canvas")].find(
     (c) => c.width === 200 && c.height === 120,
   );
@@ -1295,12 +1696,13 @@ const compareAfterSwitch = await page2.evaluate(() => {
     out.fixtureCanvas = "200x120";
     const ctx = fixture.getContext("2d");
     if (ctx) {
-      const x = Math.floor(fixture.width / 2);
-      const y = Math.floor(fixture.height / 2);
-      const d = ctx.getImageData(x, y, 1, 1).data;
-      out.centerPixel = [d[0], d[1], d[2]];
-      const dist = Math.abs(d[0] - 40) + Math.abs(d[1] - 90) + Math.abs(d[2] - 200);
-      out.matchesFixture = dist < 60;
+      out.samples = [];
+      for (const [x, y] of [[60, 60], [150, 30], [170, 80]]) {
+        const d = ctx.getImageData(x, y, 1, 1).data;
+        const dist = Math.abs(d[0] - 40) + Math.abs(d[1] - 90) + Math.abs(d[2] - 200);
+        out.samples.push({ x, y, rgb: [d[0], d[1], d[2]], dist });
+      }
+      out.matchesFixture = out.samples.some((s) => s.dist < 60);
     }
   }
   return out;
@@ -1330,6 +1732,16 @@ evidence.results.X09 = {
 evidence.results.D08 = d08;
 
 await application2.close();
+
+// ---- 早期 pageerror 計装の自己診断 ----
+// renderer スクリプトの開始前に意図的なエラーを注入し、計装 preload が
+// それを証跡へ記録できることを確認する。検出できなければこの計装は
+// 「常に空」を返すだけで、早期 throw の不在は証明されない。
+const application3 = await launch(3, { FIGDIFF_DCASE_SELFTEST_PAGEERROR: "1" });
+watchPageErrors(application3);
+const page3 = await application3.firstWindow();
+await page3.getByText("3ステップで差分検出", { exact: true }).waitFor({ timeout: 15_000 });
+await application3.close();
 server.close();
 
 // 合成境界の検証: main fetch ログと Chromium webRequest ログは許可先が
@@ -1364,12 +1776,61 @@ assert.ok(
   chromiumRequests.some((u) => new URL(u).host === `127.0.0.1:${port}`),
   `capture request missing from webRequest log (instrumentation dead?): ${JSON.stringify(chromiumRequests)}`,
 );
-const sessionsObserved = (existsSync(sessionLog) ? readFileSync(sessionLog, "utf-8") : "")
+// session 計測は「2 launch で 2 行」では証明にならない (両方とも
+// defaultSession であり得る)。launchId × seq の組で、各 launch に
+// default 以外の session (probe partition) が計測されていることと、
+// probe fetch の webRequest が default 以外の sessionSeq で記録されて
+// いることを assert する。
+const sessionEntries = (existsSync(sessionLog) ? readFileSync(sessionLog, "utf-8") : "")
   .split("\n")
-  .filter(Boolean).length;
+  .filter(Boolean)
+  .map((l) => JSON.parse(l));
+const perLaunchSessions = {};
+for (const e of sessionEntries) {
+  (perLaunchSessions[e.launchId] ??= new Set()).add(e.seq);
+}
 assert.ok(
-  sessionsObserved >= 2,
-  `expected >=2 sessions (default + capture partition), got ${sessionsObserved}`,
+  Object.keys(perLaunchSessions).length >= 3 &&
+    Object.values(perLaunchSessions).every((s) => s.size >= 2),
+  `expected >=2 instrumented sessions per launch across 3 launches: ${JSON.stringify(
+    Object.fromEntries(Object.entries(perLaunchSessions).map(([k, v]) => [k, [...v]])),
+  )}`,
+);
+const chromiumEntries = (existsSync(networkLog) ? readFileSync(networkLog, "utf-8") : "")
+  .split("\n")
+  .filter(Boolean)
+  .map((l) => JSON.parse(l));
+const probeHits = chromiumEntries.filter((e) => String(e.url).includes("/probe-partition"));
+assert.ok(
+  probeHits.length >= 1,
+  "probe request missing from webRequest log (partition instrumentation dead?)",
+);
+assert.ok(
+  probeHits.every((h) => h.sessionSeq > 1),
+  `probe request was not attributed to a non-default session: ${JSON.stringify(probeHits)}`,
+);
+const sessionsObserved = sessionEntries.length;
+// 早期エラー計装: 通常 launch では 0 件、selftest launch では注入が
+// 必ず記録されていること。チャネル自体が死んでいても「0件」に見える
+// ため、selftest 記録を positive control にする。
+const earlyErrors = (existsSync(earlyErrorLog) ? readFileSync(earlyErrorLog, "utf-8") : "")
+  .split("\n")
+  .filter(Boolean)
+  .map((l) => JSON.parse(l));
+const selftestErrors = earlyErrors.filter((e) =>
+  String(e.message).includes("selftest early pageerror"),
+);
+assert.ok(
+  selftestErrors.length >= 1,
+  "selftest early pageerror was not captured — early-error channel is dead",
+);
+const unexpectedEarly = earlyErrors.filter(
+  (e) => !String(e.message).includes("selftest early pageerror"),
+);
+assert.deepEqual(
+  unexpectedEarly,
+  [],
+  `unexpected early page errors: ${JSON.stringify(unexpectedEarly)}`,
 );
 const boundaryThrows = (existsSync(errorLog) ? readFileSync(errorLog, "utf-8") : "").trim();
 assert.equal(boundaryThrows, "", `synthetic boundary throws: ${boundaryThrows}`);
@@ -1380,11 +1841,27 @@ const tokenlessEntries = (existsSync(requestLog) ? readFileSync(requestLog, "utf
   .split("\n")
   .filter(Boolean)
   .map((l) => JSON.parse(l));
-const leakedDuringTokenless = tokenlessEntries.filter(
-  (entry) => typeof entry.ts === "number" &&
-    entry.ts < tokenlessPhaseEndTs &&
-    entry.url.startsWith("https://api.figma.com"),
+const findTokenlessLeaks = (entries, boundaryTs) =>
+  entries.filter(
+    (entry) =>
+      typeof entry.ts === "number" &&
+      entry.ts < boundaryTs &&
+      entry.url.startsWith("https://api.figma.com"),
+  );
+// 検出器自体の健全性: 境界手前の ts を持つ注入エントリが必ず検出される
+// こと。検出器が常に空を返すなら「leak 0」は証明にならない。
+assert.equal(
+  findTokenlessLeaks(
+    [
+      ...tokenlessEntries,
+      { ts: tokenlessPhaseEndTs - 1, url: "https://api.figma.com/v1/selftest" },
+    ],
+    tokenlessPhaseEndTs,
+  ).length,
+  findTokenlessLeaks(tokenlessEntries, tokenlessPhaseEndTs).length + 1,
+  "tokenless leak detector failed to flag a pre-boundary entry",
 );
+const leakedDuringTokenless = findTokenlessLeaks(tokenlessEntries, tokenlessPhaseEndTs);
 assert.equal(
   leakedDuringTokenless.length,
   0,
@@ -1395,6 +1872,9 @@ evidence.networkBoundary = {
   mainFetchRequests: allRequests.length,
   chromiumRequests: chromiumRequests.length,
   sessionsObserved,
+  launchIds: Object.keys(perLaunchSessions),
+  probeRequestsObserved: probeHits.length,
+  earlyErrorsObserved: earlyErrors.length,
   offBoundary,
   unexpectedThrows: boundaryThrows === "" ? 0 : boundaryThrows.split("\n").length,
   tokenlessPhaseEndTs,
@@ -1451,7 +1931,23 @@ if (
 }
 evidence.knownDefects = knownDefects;
 
-assert.equal(evidence.pageErrors.length, 0, `page errors: ${evidence.pageErrors.join(" | ")}`);
+// selftest launch で意図注入した早期エラーも pageerror 経路で拾われ
+// 得るため、想定分を除いた残りを assert する。
+const unexpectedPageErrors = evidence.pageErrors.filter(
+  (m) => !String(m).includes("selftest early pageerror"),
+);
+assert.equal(
+  unexpectedPageErrors.length,
+  0,
+  `page errors: ${unexpectedPageErrors.join(" | ")}`,
+);
+// results の key 集合自体を固定する — case の追加・欠落が
+// 「完走」の形を変えたら証跡として不完全になる。
+assert.deepEqual(
+  Object.keys(evidence.results).sort(),
+  ["D01", "D03", "D04", "D08", "D09", "D10", "X09"].sort(),
+  `results keys mismatch: ${JSON.stringify(Object.keys(evidence.results))}`,
+);
 evidence.completed = true;
 await writeFile(join(evidenceDir, "evidence.json"), `${JSON.stringify(evidence, null, 2)}\n`);
 console.log(join(evidenceDir, "evidence.json"));
