@@ -532,6 +532,19 @@ x.XSync(d, 0)
       sha256: sha256(await readFile(path)),
     })),
   );
+  // manifest には再現用の起動コマンドと実ダイアログの toolkit 名を書く。
+  // xvfb-run は linux の無画面環境だけで runner が挟むもの
+  // (script/run-campaign-round.mjs) なので、実行した OS の値に分岐する。
+  const runCommand = isWin32
+    ? '$env:FIGDIFF_REPORT_EVIDENCE="<evidence>"; node app/desktop/e2e/native-report-export.mjs'
+    : isDarwin
+      ? "FIGDIFF_REPORT_EVIDENCE=<evidence> node app/desktop/e2e/native-report-export.mjs"
+      : "FIGDIFF_REPORT_EVIDENCE=<evidence> xvfb-run -a node app/desktop/e2e/native-report-export.mjs";
+  const dialogLabel = isWin32
+    ? "実Win32保存ダイアログ"
+    : isDarwin
+      ? "実NSSavePanel"
+      : "実Gtk保存ダイアログ";
   await writeFile(
     join(evidence, "manifest.json"),
     `${JSON.stringify(
@@ -541,8 +554,7 @@ x.XSync(d, 0)
         completedAt: new Date().toISOString(),
         revision,
         dirtyState,
-        command:
-          "FIGDIFF_REPORT_EVIDENCE=<evidence> xvfb-run -a node app/desktop/e2e/native-report-export.mjs",
+        command: runCommand,
         build: buildAtStart,
         buildEndSha256: buildAtEnd.sha256,
         buildUnchanged,
@@ -556,8 +568,7 @@ x.XSync(d, 0)
           D07: {
             status: "PASS",
             expected: "実ファイルが読め、保存内容が差分実測と一致する",
-            actual:
-              "実Gtk保存ダイアログからJSON/Markdownへ保存し読み戻した。原画像の独立raw差分・bboxをファイル内容へ照合。キャンセル時bytes不変も確認",
+            actual: `${dialogLabel}からJSON/Markdownへ保存し読み戻した。原画像の独立raw差分・bboxをファイル内容へ照合。キャンセル時bytes不変も確認`,
           },
         },
         artifacts,
