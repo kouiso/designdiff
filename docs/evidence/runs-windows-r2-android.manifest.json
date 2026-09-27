@@ -1,0 +1,10 @@
+[
+  {
+    "driver": "app/mcp-server/script/stdio-android-verification.mjs",
+    "evidenceDir": "docs/evidence/round2-windows/stdio-android-verification",
+    "executedAt": "2026-09-27T14:46:27.910Z",
+    "environment": "windows",
+    "buildDigest": "",
+    "roundExecutionId": "round2"
+  }
+]
