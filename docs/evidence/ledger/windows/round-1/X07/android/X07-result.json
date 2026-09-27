@@ -1,0 +1,55 @@
+{
+  "case": "X07",
+  "route": "android",
+  "platform": "windows",
+  "drivers": [
+    "app/mcp-server/script/stdio-android-verification.mjs"
+  ],
+  "checks": [
+    "X07_android_scroll"
+  ],
+  "actual": {
+    "stdio-android-verification:X07_android_scroll": {
+      "isError": false,
+      "status": "PASS",
+      "comparisonStatus": "UNCERTAIN",
+      "scrollCapture": {
+        "captureCount": 2,
+        "stitchedWidth": 1440,
+        "stitchedHeight": 3121,
+        "viewportWidth": 1440,
+        "viewportHeight": 3120,
+        "fixedHeaderHeight": 211,
+        "fixedFooterHeight": 84,
+        "reachedBottom": true,
+        "truncatedAtCaptureLimit": false,
+        "didNotScroll": false,
+        "startedAtTop": true,
+        "notes": [
+          "1 箇所で重なりの完全一致が取れず、行の平均輝度による近似で繋いでいます。繋ぎ目の位置がずれている可能性があります。"
+        ]
+      },
+      "ignoreRegionResolution": {
+        "effectiveRegions": [
+          {
+            "x": 0,
+            "y": 0,
+            "width": 1440,
+            "height": 84,
+            "label": "system:status-bar"
+          },
+          {
+            "x": 0,
+            "y": 3037,
+            "width": 1440,
+            "height": 84,
+            "label": "system:navigation-bar"
+          }
+        ],
+        "maskedPixelCount": 241920,
+        "maskSha256": "bff23cb0c71d2c03525932336803671ab9ae89545f290dc00e9458e9137208a5"
+      },
+      "textHead": "{\n  \"status\": \"UNCERTAIN\",\n  \"comparisonId\": \"cmp-52cbb74d-dee0-4ad2-9624-71afe233531f\",\n  \"matchRate\": 16.48,\n  \"diffPixelCount\": 3551623,\n  \"totalPixelCount\": 4252320,\n  \"remainingIssues\": 1,\n  \"diffRegions\": [],\n  \"totalRegionCount\": 0,\n  \"returnedRegionCount\": 0,\n  \"regionsTruncated\": false,\n  \"completionCriteria\": {\n    \"structuralReview\": {\n      \"required\": 1,\n      \"current\": 0,\n      \"sta"
+    }
+  }
+}

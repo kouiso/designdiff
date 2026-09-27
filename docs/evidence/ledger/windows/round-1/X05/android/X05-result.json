@@ -1,0 +1,32 @@
+{
+  "case": "X05",
+  "route": "android",
+  "platform": "windows",
+  "drivers": [
+    "app/mcp-server/script/stdio-android-verification.mjs"
+  ],
+  "checks": [
+    "X05_single_device_auto",
+    "X05_device_captures",
+    "X05_bogus_serial"
+  ],
+  "actual": {
+    "stdio-android-verification:X05_single_device_auto": {
+      "isError": false,
+      "note": "single-device environment: serial-less call must pick the only device",
+      "text": "{\n  \"status\": \"UNCERTAIN\",\n  \"comparisonId\": \"cmp-9b729ea2-816e-4834-82df-b3e89d52e131\",\n  \"matchRate\": 16.86,\n  \"diffPixelCount\": 3534356,\n  \"totalPixelCount\": 4250880,\n  \"remainingIssues\": 1,\n  \"diffRegions\": [],\n  \"totalRegionCount\": 0,\n  \"returnedRegionCount\": 0,\n  \"regionsTruncated\": false,\n  \"completionCriteria\": {\n    \"structuralReview\": {\n      \"required\": 1,\n      \"current\": 0,\n      \"status\": \"FAIL\",\n      \"blocking\": true,\n      \"note\": \"critical severity issue detected; weakest regio"
+    },
+    "stdio-android-verification:X05_device_captures": {
+      "emulator-5554": {
+        "kind": "emulator",
+        "captured": "android-1790518812880-1b3d26e6-5cbf-4dcc-8900-0c8bfe22d9e3.png",
+        "width": 1440,
+        "height": 3120
+      }
+    },
+    "stdio-android-verification:X05_bogus_serial": {
+      "isError": true,
+      "text": "Error: Android device no-such-serial-000 is not connected. Check adb devices -l."
+    }
+  }
+}

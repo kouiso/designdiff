@@ -1,0 +1,260 @@
+{
+  "sourceKey": "local:C:\\Users\\Administrator\\repos\\designdiff\\docs\\evidence\\round2-windows\\stdio-android-verification\\input-design.png",
+  "campaigns": [
+    {
+      "campaignId": "f4731580-8f8d-4019-a6b0-841c678722e6",
+      "sourceKey": "local:C:\\Users\\Administrator\\repos\\designdiff\\docs\\evidence\\round2-windows\\stdio-android-verification\\input-design.png",
+      "designSource": "C:\\Users\\Administrator\\repos\\designdiff\\docs\\evidence\\round2-windows\\stdio-android-verification\\input-design.png",
+      "startedAt": 1790519274560,
+      "updatedAt": 1790519274560,
+      "endedAt": 1790519274560,
+      "endReason": "uncertain",
+      "endMessage": "判定が UNCERTAIN です。この比較は判定の確からしさを損なう条件を含むため、自動修正を止めて人間のレビューに回してください。",
+      "iterations": [
+        {
+          "comparisonId": "cmp-031e17b8-a909-4bd8-ae82-fcf421b4c475",
+          "comparisonConditions": {
+            "status": "unverified",
+            "design": {
+              "canvas": {
+                "width": 360,
+                "height": 800
+              },
+              "canvasSource": "image-metadata",
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
+            },
+            "screenshot": {
+              "canvas": {
+                "width": 1440,
+                "height": 3120
+              },
+              "canvasSource": "image-metadata",
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
+            },
+            "differences": [],
+            "message": "表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。"
+          },
+          "matchRate": 16.47,
+          "diffPixelCount": 3550637,
+          "regionCount": 1,
+          "structuralVerdict": "fail",
+          "status": "UNCERTAIN",
+          "timestamp": 1790519274560,
+          "diffImagePath": "C:\\Users\\Administrator\\repos\\designdiff\\docs\\evidence\\round2-windows\\stdio-android-verification\\figdiff-home\\results\\diff-cmp-031e17b8-a909-4bd8-ae82-fcf421b4c475.png"
+        }
+      ]
+    },
+    {
+      "campaignId": "bb0b1832-e3c4-4ea2-b9d8-3ee148df3bb8",
+      "sourceKey": "local:C:\\Users\\Administrator\\repos\\designdiff\\docs\\evidence\\round2-windows\\stdio-android-verification\\input-design.png",
+      "designSource": "C:\\Users\\Administrator\\repos\\designdiff\\docs\\evidence\\round2-windows\\stdio-android-verification\\input-design.png",
+      "startedAt": 1790519400045,
+      "updatedAt": 1790519400045,
+      "endedAt": 1790519400045,
+      "endReason": "uncertain",
+      "endMessage": "判定が UNCERTAIN です。この比較は判定の確からしさを損なう条件を含むため、自動修正を止めて人間のレビューに回してください。",
+      "iterations": [
+        {
+          "comparisonId": "cmp-20f253fd-45ba-4a0c-b416-2a35a15f316e",
+          "comparisonConditions": {
+            "status": "unverified",
+            "design": {
+              "canvas": {
+                "width": 360,
+                "height": 800
+              },
+              "canvasSource": "image-metadata",
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
+            },
+            "screenshot": {
+              "canvas": {
+                "width": 1440,
+                "height": 3120
+              },
+              "canvasSource": "image-metadata",
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
+            },
+            "differences": [],
+            "message": "表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。"
+          },
+          "matchRate": 8.56,
+          "diffPixelCount": 3886848,
+          "regionCount": 1,
+          "structuralVerdict": "fail",
+          "status": "UNCERTAIN",
+          "timestamp": 1790519400045,
+          "diffImagePath": "C:\\Users\\Administrator\\repos\\designdiff\\docs\\evidence\\round2-windows\\stdio-android-verification\\figdiff-home\\results\\diff-cmp-20f253fd-45ba-4a0c-b416-2a35a15f316e.png"
+        }
+      ]
+    },
+    {
+      "campaignId": "cdc198c8-4ca2-4569-8b48-d495d49677d0",
+      "sourceKey": "local:C:\\Users\\Administrator\\repos\\designdiff\\docs\\evidence\\round2-windows\\stdio-android-verification\\input-design.png",
+      "designSource": "C:\\Users\\Administrator\\repos\\designdiff\\docs\\evidence\\round2-windows\\stdio-android-verification\\input-design.png",
+      "startedAt": 1790519405809,
+      "updatedAt": 1790519405809,
+      "endedAt": 1790519405809,
+      "endReason": "uncertain",
+      "endMessage": "判定が UNCERTAIN です。この比較は判定の確からしさを損なう条件を含むため、自動修正を止めて人間のレビューに回してください。",
+      "iterations": [
+        {
+          "comparisonId": "cmp-1b1d80c6-173c-4ba0-ad62-71ca4db172e5",
+          "comparisonConditions": {
+            "status": "unverified",
+            "design": {
+              "canvas": {
+                "width": 360,
+                "height": 800
+              },
+              "canvasSource": "image-metadata",
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
+            },
+            "screenshot": {
+              "canvas": {
+                "width": 1440,
+                "height": 3120
+              },
+              "canvasSource": "image-metadata",
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
+            },
+            "differences": [],
+            "message": "表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。"
+          },
+          "matchRate": 16.39,
+          "diffPixelCount": 3554246,
+          "regionCount": 1,
+          "structuralVerdict": "fail",
+          "status": "UNCERTAIN",
+          "timestamp": 1790519405809,
+          "diffImagePath": "C:\\Users\\Administrator\\repos\\designdiff\\docs\\evidence\\round2-windows\\stdio-android-verification\\figdiff-home\\results\\diff-cmp-1b1d80c6-173c-4ba0-ad62-71ca4db172e5.png"
+        }
+      ]
+    },
+    {
+      "campaignId": "24389f5b-0499-46c5-b651-5c86ec966916",
+      "sourceKey": "local:C:\\Users\\Administrator\\repos\\designdiff\\docs\\evidence\\round2-windows\\stdio-android-verification\\input-design.png",
+      "designSource": "C:\\Users\\Administrator\\repos\\designdiff\\docs\\evidence\\round2-windows\\stdio-android-verification\\input-design.png",
+      "startedAt": 1790520406947,
+      "updatedAt": 1790520406947,
+      "endedAt": 1790520406947,
+      "endReason": "uncertain",
+      "endMessage": "判定が UNCERTAIN です。この比較は判定の確からしさを損なう条件を含むため、自動修正を止めて人間のレビューに回してください。",
+      "iterations": [
+        {
+          "comparisonId": "cmp-28c15d25-b8ae-4baf-b9c9-d9de67d2be75",
+          "comparisonConditions": {
+            "status": "unverified",
+            "design": {
+              "canvas": {
+                "width": 360,
+                "height": 800
+              },
+              "canvasSource": "image-metadata",
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
+            },
+            "screenshot": {
+              "canvas": {
+                "width": 1440,
+                "height": 3120
+              },
+              "canvasSource": "image-metadata",
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
+            },
+            "differences": [],
+            "message": "表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。"
+          },
+          "matchRate": 23.01,
+          "diffPixelCount": 3272655,
+          "regionCount": 1,
+          "structuralVerdict": "fail",
+          "status": "UNCERTAIN",
+          "timestamp": 1790520406947,
+          "diffImagePath": "C:\\Users\\Administrator\\repos\\designdiff\\docs\\evidence\\round2-windows\\stdio-android-verification\\figdiff-home\\results\\diff-cmp-28c15d25-b8ae-4baf-b9c9-d9de67d2be75.png"
+        }
+      ]
+    },
+    {
+      "campaignId": "6f3068e9-a67f-44c2-8452-c6e774482cfd",
+      "sourceKey": "local:C:\\Users\\Administrator\\repos\\designdiff\\docs\\evidence\\round2-windows\\stdio-android-verification\\input-design.png",
+      "designSource": "C:\\Users\\Administrator\\repos\\designdiff\\docs\\evidence\\round2-windows\\stdio-android-verification\\input-design.png",
+      "startedAt": 1790520416078,
+      "updatedAt": 1790520416078,
+      "iterations": [
+        {
+          "comparisonId": "cmp-b07f3940-16df-40d5-b530-0c083aeef881",
+          "comparisonConditions": {
+            "status": "unverified",
+            "design": {
+              "canvas": {
+                "width": 360,
+                "height": 800
+              },
+              "canvasSource": "image-metadata",
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
+            },
+            "screenshot": {
+              "canvas": {
+                "width": 1440,
+                "height": 3120
+              },
+              "canvasSource": "image-metadata",
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
+            },
+            "differences": [],
+            "message": "表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。"
+          },
+          "matchRate": 23.01,
+          "diffPixelCount": 3272655,
+          "regionCount": 1,
+          "structuralVerdict": "fail",
+          "status": "UNCERTAIN",
+          "timestamp": 1790520416078,
+          "diffImagePath": "C:\\Users\\Administrator\\repos\\designdiff\\docs\\evidence\\round2-windows\\stdio-android-verification\\figdiff-home\\results\\diff-cmp-b07f3940-16df-40d5-b530-0c083aeef881.png"
+        }
+      ],
+      "endedAt": 1790520416078,
+      "endReason": "uncertain",
+      "endMessage": "判定が UNCERTAIN です。この比較は判定の確からしさを損なう条件を含むため、自動修正を止めて人間のレビューに回してください。"
+    }
+  ]
+}
