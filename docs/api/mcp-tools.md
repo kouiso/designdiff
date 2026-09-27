@@ -105,7 +105,7 @@ Important fields:
 - `comparisonHeadline?: string` — one-line human-readable summary of the outcome.
 - `diagnosis?` — structured diagnosis of the comparison (e.g. `real_diff`, `likelyMisconfig`).
 - `diffReport?: DiffReport`
-- `preflight?: PreflightReport` — capture-quality checks. `preflight.warnings[]` carries export anomalies such as `figma_export_hidden_blank` (a hidden node exported as a blank raster — the tool retries once with `use_absolute_bounds=false` first and only emits this warning when the retry also comes back blank) or `figma_export_background_missing` (opaque fill exported with transparent interior). Read these before trusting `matchRate`.
+- `preflight?: PreflightReport` — capture-quality checks. `preflight.warnings[]` carries export anomalies such as `figma_export_hidden_blank` (a hidden node exported as a blank raster — the tool retries once with `use_absolute_bounds=false`; this warning remains when the retry is skipped because it was already requested, when the retry fails, or when the retry also comes back blank) or `figma_export_background_missing` (opaque fill exported with transparent interior). Read these before trusting `matchRate`.
 - `figmaExport?: FigmaExportReport` — what Figma actually returned for `design_source`: `conditions` (contentsOnly/useAbsoluteBounds/scale/version), `nodeVisible`, `uniformRaster`, `interiorTransparentRatio`.
 - `verificationContext?` — fingerprinted record of the comparison conditions. `verify_fix` compares this to the baseline and refuses when conditions changed.
 - `comparisonConditions?` / `normalization?` / `ignoreRegionResolution?` — how the two inputs were declared, aligned, and masked for this run.
