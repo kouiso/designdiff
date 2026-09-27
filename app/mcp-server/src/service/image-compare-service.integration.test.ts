@@ -233,3 +233,99 @@ describe("compareImages shift + localized diff scoring (Issue #58)", () => {
     });
   });
 });
+
+// Issue #58 follow-up: 1px の輪郭だけが変化したクラスタは、bbox が未変化の
+// 内部画素を大きく含むため、平均ベースの採点 (color / structure) が薄まる
+// 疑いがあった。同じ差分画素数・同じ色対で「疎な輪郭」と「密な塊」を比べて
+// 実測したところ、輪郭側の color は約 1/23 (45.07 → 1.99) に薄まり、
+// critical 閾値 2 を下回って issue 0件の pass になった。対応として採点値は
+// 変えず、クラスタ行へ diffPixelDensity (diff 画素数 / bbox 面積) を付けて、
+// 読む側が薄まり具合を判断できるようにした。このテストはその測定結果を
+// 固定する。
+describe("compareImages sparse outline cluster dilution (Issue #58)", () => {
+  const WIDTH = 200;
+  const HEIGHT = 160;
+  const BACKGROUND = [245, 245, 245, 255];
+  const DESIGN_COLOR = [30, 120, 200, 255];
+  const SCREENSHOT_COLOR = [200, 60, 60, 255];
+  // 外周 2*(102+80)-4 = 360px。対照の密な塊も同じ 360px (20x18) にして、
+  // 差分の総量を揃えた上で形状だけを変える。
+  const BOX = { x: 40, y: 40, w: 102, h: 80 };
+  const BLOCK = { x: 40, y: 40, w: 20, h: 18 };
+
+  const isOnBorder = (x: number, y: number, rect: { x: number; y: number; w: number; h: number }) =>
+    x >= rect.x &&
+    x < rect.x + rect.w &&
+    y >= rect.y &&
+    y < rect.y + rect.h &&
+    (x === rect.x || x === rect.x + rect.w - 1 || y === rect.y || y === rect.y + rect.h - 1);
+  const isInside = (x: number, y: number, rect: { x: number; y: number; w: number; h: number }) =>
+    x >= rect.x && x < rect.x + rect.w && y >= rect.y && y < rect.y + rect.h;
+
+  const runPair = async (changedPixelAt: (x: number, y: number) => boolean) => {
+    const designPixels = rgbaBuffer(WIDTH, HEIGHT, (x, y) =>
+      changedPixelAt(x, y) ? DESIGN_COLOR : BACKGROUND,
+    );
+    const screenshotPixels = rgbaBuffer(WIDTH, HEIGHT, (x, y) =>
+      changedPixelAt(x, y) ? SCREENSHOT_COLOR : BACKGROUND,
+    );
+    const designPng = await pngFromRgba(WIDTH, HEIGHT, designPixels);
+    const screenshotPng = await pngFromRgba(WIDTH, HEIGHT, screenshotPixels);
+    return compareImages({
+      designBase64: designPng.toString("base64"),
+      screenshotBase64: screenshotPng.toString("base64"),
+    });
+  };
+
+  it("疎な輪郭クラスタの採点が密な対照より薄まり、密度シグナルで読み分けられること", async () => {
+    const outline = await runPair((x, y) => isOnBorder(x, y, BOX));
+    const solid = await runPair((x, y) => isInside(x, y, BLOCK));
+
+    // 前提: 両検体は同じ 360 画素の差分を持つ。ここが崩れると比較が成立しない。
+    expect(outline.diffPixelCount).toBe(360);
+    expect(solid.diffPixelCount).toBe(360);
+
+    const clusterScoreOf = (result: typeof outline) =>
+      result.diffReport?.regionScores.find((score) => score.regionId.startsWith("diff-cluster-"));
+    const regionOf = (result: typeof outline) => result.diffRegions[0];
+    const outlineScore = clusterScoreOf(outline);
+    const solidScore = clusterScoreOf(solid);
+
+    // 実測 (記録): 輪郭 = bbox 102x80 / 差分 360px / 密度 0.0441 /
+    // color 1.989 / structure ≈1.000。塊 = bbox 20x18 / 360px / 密度 1 /
+    // color 45.07 / structure ≈1.000。
+    expect(outline.diffRegions).toHaveLength(1);
+    expect(solid.diffRegions).toHaveLength(1);
+    expect(outlineScore?.bbox).toMatchObject({ x: BOX.x, y: BOX.y, w: BOX.w, h: BOX.h });
+    expect(solidScore?.bbox).toMatchObject({ x: BLOCK.x, y: BLOCK.y, w: BLOCK.w, h: BLOCK.h });
+    expect(regionOf(outline)?.diffPixelCount).toBe(360);
+    expect(regionOf(solid)?.diffPixelCount).toBe(360);
+
+    // 密度シグナル: 輪郭は約 4.4%、塊は 100%。
+    expect(outlineScore?.diffPixelDensity).toBeCloseTo(360 / (BOX.w * BOX.h), 10);
+    expect(solidScore?.diffPixelDensity).toBe(1);
+
+    // 薄まりの固定: 輪郭の color は critical 閾値 2 を下回り (実測 1.989)、
+    // 塊は同じ色対で 45 超。同じ差分が形状だけで約 23 倍薄まる。
+    expect(outlineScore?.color).toBeLessThan(2);
+    expect(solidScore?.color).toBeGreaterThan(40);
+    // 内部が未変化なので SSIM / Hausdorff は両検体ともほぼ無傷。
+    expect(outlineScore?.structure).toBeGreaterThan(0.95);
+    expect(solidScore?.structure).toBeGreaterThan(0.95);
+
+    // 順位への影響の固定: 輪郭は critical issue を持たず pass、塊は
+    // color critical で fail。同じ欠陥量でも輪郭は検出されずに流れる。
+    expect(
+      outline.diffReport?.issues.some(
+        (issue) => issue.regionId === outlineScore?.regionId && issue.severity === "critical",
+      ),
+    ).toBe(false);
+    expect(outline.diffReport?.aggregateVerdict).toBe("pass");
+    expect(
+      solid.diffReport?.issues.some(
+        (issue) => issue.regionId === solidScore?.regionId && issue.severity === "critical",
+      ),
+    ).toBe(true);
+    expect(solid.diffReport?.aggregateVerdict).toBe("fail");
+  });
+});
