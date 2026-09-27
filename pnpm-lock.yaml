@@ -145,10 +145,10 @@ importers:
     devDependencies:
       '@electron-toolkit/preload':
         specifier: ^3.0.2
-        version: 3.0.2(electron@40.10.6)
+        version: 3.0.2(electron@41.10.7)
       '@electron-toolkit/utils':
         specifier: ^3.0.0
-        version: 3.0.0(electron@40.10.6)
+        version: 3.0.0(electron@41.10.7)
       '@playwright/test':
         specifier: ^1.60.0
         version: 1.60.0
@@ -180,8 +180,8 @@ importers:
         specifier: ^4.1.11
         version: 4.1.11(vitest@4.1.11)
       electron:
-        specifier: ^40.10.6
-        version: 40.10.6
+        specifier: ^41.10.7
+        version: 41.10.7
       electron-builder:
         specifier: ^26.15.3
         version: 26.15.3(electron-builder-squirrel-windows@26.15.3)
@@ -2243,8 +2243,8 @@ packages:
     resolution: {integrity: sha512-bO3y10YikuUwUuDUQRM4KfwNkKhnpVO7IPdbsrejwN9/AABJzzTQ4GeHwyzNSrVO+tEH3/Np255a3sVZpZDjvg==}
     engines: {node: '>=8.0.0'}
 
-  electron@40.10.6:
-    resolution: {integrity: sha512-TGjlkOU9Lg6K4KjDbsErywCWCIDaNgLh0q+xj0nlpRoQhevI7VBIxBTtJI/V30lypyLAaXMpnP9O9jui1/qRFw==}
+  electron@41.10.7:
+    resolution: {integrity: sha512-AqIiefddlf5i+HYCGatr8VlBuEbWJpad4/yloBFYcMB2r57j7xhW1ogiJ+BfA5kxQyfmSs5yjwy54Me+wJn1jw==}
     engines: {node: '>= 22.12.0'}
     hasBin: true
 
@@ -4370,13 +4370,13 @@ snapshots:
 
   '@electron-internal/extract-zip@1.0.5': {}
 
-  '@electron-toolkit/preload@3.0.2(electron@40.10.6)':
+  '@electron-toolkit/preload@3.0.2(electron@41.10.7)':
     dependencies:
-      electron: 40.10.6
+      electron: 41.10.7
 
-  '@electron-toolkit/utils@3.0.0(electron@40.10.6)':
+  '@electron-toolkit/utils@3.0.0(electron@41.10.7)':
     dependencies:
-      electron: 40.10.6
+      electron: 41.10.7
 
   '@electron/asar@3.4.1':
     dependencies:
@@ -5992,7 +5992,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  electron@40.10.6:
+  electron@41.10.7:
     dependencies:
       '@electron-internal/extract-zip': 1.0.5
       '@electron/get': 5.1.0
