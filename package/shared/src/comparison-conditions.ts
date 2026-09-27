@@ -29,6 +29,10 @@ const ObservationSchema = z.object({
 const ExportRequestSchema = z.object({
   pixelRatio: z.number().finite().positive(),
   source: z.literal("figma-export-request"),
+  // 空白書き出しの自動フォールバックなどで要求値と実際の書き出し条件が
+  // ずれることがあるため、実際に使った条件を記録する (#125)。
+  contentsOnly: z.boolean().optional(),
+  useAbsoluteBounds: z.boolean().optional(),
 });
 const CaptureEvidenceSchema = z.object({
   observed: ObservationSchema.optional(),
