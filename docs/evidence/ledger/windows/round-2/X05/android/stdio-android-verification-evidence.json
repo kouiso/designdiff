@@ -1,0 +1,89 @@
+{
+  "schemaVersion": 1,
+  "protocolErrors": [],
+  "results": {
+    "connectedDevices": [
+      {
+        "serial": "emulator-5554",
+        "state": "device",
+        "model": "sdk_gphone64_x86_64"
+      }
+    ],
+    "deviceSelectionMode": "single-device",
+    "directCaptures": {
+      "emulator-5554": {
+        "width": 1440,
+        "height": 3120,
+        "model": "sdk_gphone64_x86_64"
+      }
+    },
+    "X05_single_device_auto": {
+      "isError": false,
+      "note": "single-device environment: serial-less call must pick the only device",
+      "text": "{\n  \"status\": \"UNCERTAIN\",\n  \"comparisonId\": \"cmp-28c15d25-b8ae-4baf-b9c9-d9de67d2be75\",\n  \"matchRate\": 23.01,\n  \"diffPixelCount\": 3272655,\n  \"totalPixelCount\": 4250880,\n  \"remainingIssues\": 1,\n  \"diffRegions\": [],\n  \"totalRegionCount\": 0,\n  \"returnedRegionCount\": 0,\n  \"regionsTruncated\": false,\n  \"completionCriteria\": {\n    \"structuralReview\": {\n      \"required\": 1,\n      \"current\": 0,\n      \"status\": \"FAIL\",\n      \"blocking\": true,\n      \"note\": \"critical severity issue detected; weakest regio"
+    },
+    "X05_device_captures": {
+      "emulator-5554": {
+        "kind": "emulator",
+        "captured": "android-1790520406968-3320a1bf-a772-4218-9845-4333af5c0a8d.png",
+        "width": 1440,
+        "height": 3120
+      }
+    },
+    "X05_bogus_serial": {
+      "isError": true,
+      "text": "Error: Android device no-such-serial-000 is not connected. Check adb devices -l."
+    },
+    "scrollTarget": {
+      "serial": "emulator-5554",
+      "pageUrl": "http://10.0.2.2:50941/tall.html"
+    },
+    "pageRenderWait": {
+      "rendered": true,
+      "attempts": 1,
+      "coloredSamples": 517
+    },
+    "X07_android_scroll": {
+      "isError": false,
+      "status": "PASS",
+      "comparisonStatus": "UNCERTAIN",
+      "scrollCapture": {
+        "captureCount": 4,
+        "stitchedWidth": 1440,
+        "stitchedHeight": 9524,
+        "viewportWidth": 1440,
+        "viewportHeight": 3120,
+        "fixedHeaderHeight": 0,
+        "fixedFooterHeight": 0,
+        "reachedBottom": true,
+        "truncatedAtCaptureLimit": false,
+        "didNotScroll": false,
+        "startedAtTop": true,
+        "notes": [
+          "1 箇所で重なりの完全一致が取れず、行の平均輝度による近似で繋いでいます。繋ぎ目の位置がずれている可能性があります。"
+        ]
+      },
+      "ignoreRegionResolution": {
+        "effectiveRegions": [
+          {
+            "x": 0,
+            "y": 0,
+            "width": 1440,
+            "height": 84,
+            "label": "system:status-bar"
+          },
+          {
+            "x": 0,
+            "y": 9440,
+            "width": 1440,
+            "height": 84,
+            "label": "system:navigation-bar"
+          }
+        ],
+        "maskedPixelCount": 241920,
+        "maskSha256": "d6b3367de7ca33c83aaa704949dc9be23f08f257381630f73b21c894b9e9e067"
+      },
+      "textHead": "{\n  \"status\": \"UNCERTAIN\",\n  \"comparisonId\": \"cmp-50144d83-7758-4ae3-826e-cecef80987f1\",\n  \"matchRate\": 68.94,\n  \"diffPixelCount\": 4184390,\n  \"totalPixelCount\": 13472640,\n  \"remainingIssues\": 10,\n  \"diffRegions\": [\n    {\n      \"id\": 6,\n      \"bounds\": {\n        \"x\": 0,\n        \"y\": 6156,\n        \"width\": 1440,\n        \"height\": 3284\n      },\n      \"diffPixelCount\": 3942127,\n      \"nearbyNodeIds\": "
+    }
+  }
+}
