@@ -1,0 +1,2169 @@
+{
+  "comparisonId": "cmp-50144d83-7758-4ae3-826e-cecef80987f1",
+  "sourceKey": "local:C:\\Users\\Administrator\\repos\\designdiff\\docs\\evidence\\round2-windows\\stdio-android-verification\\input-design.png|conditions:67ee90b2041417feea6a66dadf3d166518e0aa81d1b0ea14ef3b0edeeea94fbe",
+  "captureWidth": 1440,
+  "captureHeight": 9524,
+  "result": {
+    "status": "UNCERTAIN",
+    "comparisonId": "cmp-50144d83-7758-4ae3-826e-cecef80987f1",
+    "matchRate": 68.94,
+    "diffPixelCount": 4184390,
+    "totalPixelCount": 13472640,
+    "remainingIssues": 10,
+    "diffRegions": [
+      {
+        "id": 0,
+        "bounds": {
+          "x": 1216,
+          "y": 84,
+          "width": 126,
+          "height": 10
+        },
+        "diffPixelCount": 661,
+        "nearbyNodeIds": [],
+        "nearbyNodeNames": []
+      },
+      {
+        "id": 1,
+        "bounds": {
+          "x": 440,
+          "y": 1280,
+          "width": 560,
+          "height": 559
+        },
+        "diffPixelCount": 204452,
+        "nearbyNodeIds": [],
+        "nearbyNodeNames": []
+      },
+      {
+        "id": 2,
+        "bounds": {
+          "x": 532,
+          "y": 3072,
+          "width": 364,
+          "height": 13
+        },
+        "diffPixelCount": 4716,
+        "nearbyNodeIds": [],
+        "nearbyNodeNames": []
+      },
+      {
+        "id": 3,
+        "bounds": {
+          "x": 81,
+          "y": 3137,
+          "width": 171,
+          "height": 42
+        },
+        "diffPixelCount": 1183,
+        "nearbyNodeIds": [],
+        "nearbyNodeNames": []
+      },
+      {
+        "id": 4,
+        "bounds": {
+          "x": 1189,
+          "y": 3136,
+          "width": 153,
+          "height": 43
+        },
+        "diffPixelCount": 3072,
+        "nearbyNodeIds": [],
+        "nearbyNodeNames": []
+      },
+      {
+        "id": 5,
+        "bounds": {
+          "x": 0,
+          "y": 3296,
+          "width": 1440,
+          "height": 133
+        },
+        "diffPixelCount": 12836,
+        "nearbyNodeIds": [],
+        "nearbyNodeNames": []
+      },
+      {
+        "id": 6,
+        "bounds": {
+          "x": 0,
+          "y": 6156,
+          "width": 1440,
+          "height": 3284
+        },
+        "diffPixelCount": 3942127,
+        "nearbyNodeIds": [],
+        "nearbyNodeNames": []
+      },
+      {
+        "id": 7,
+        "bounds": {
+          "x": 196,
+          "y": 7977,
+          "width": 46,
+          "height": 46
+        },
+        "diffPixelCount": 670,
+        "nearbyNodeIds": [],
+        "nearbyNodeNames": []
+      },
+      {
+        "id": 8,
+        "bounds": {
+          "x": 384,
+          "y": 7980,
+          "width": 233,
+          "height": 53
+        },
+        "diffPixelCount": 1555,
+        "nearbyNodeIds": [],
+        "nearbyNodeNames": []
+      },
+      {
+        "id": 9,
+        "bounds": {
+          "x": 384,
+          "y": 8150,
+          "width": 98,
+          "height": 40
+        },
+        "diffPixelCount": 1008,
+        "nearbyNodeIds": [],
+        "nearbyNodeNames": []
+      }
+    ],
+    "completionCriteria": {
+      "structuralReview": {
+        "required": 1,
+        "current": 0,
+        "status": "FAIL",
+        "blocking": true,
+        "note": "critical severity issue detected; weakest region diff-cluster-384-8150-98-40 (structure 0.192, color ΔE 29.407; lower=better, critical threshold 2) with texture-adjusted weights active (alpha 0.700, photo-like cap 0.300)"
+      },
+      "conditionsReview": {
+        "required": 1,
+        "current": 0,
+        "status": "UNCERTAIN",
+        "blocking": false,
+        "note": "表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。"
+      },
+      "wholeImageStructure": {
+        "required": 0.95,
+        "current": 0.9819291640672715,
+        "status": "PASS",
+        "blocking": false,
+        "note": "Area-weighted contrast and structure over disjoint 8x8 windows. Uniform luminance shifts are excluded; contrast changes remain. Local issues and the aggregate gate remain independent."
+      },
+      "consistencyReview": {
+        "required": 0.5,
+        "current": 0,
+        "status": "PASS",
+        "blocking": false,
+        "note": "Not evaluated: the contradiction check only applies to a passing structural review."
+      },
+      "tokenReview": {
+        "required": 0,
+        "current": 0,
+        "status": "UNCERTAIN",
+        "blocking": false,
+        "note": "Not evaluated: token comparison needs both a Figma node tree and a FigDiff-captured URL."
+      },
+      "matchRate": {
+        "required": 100,
+        "current": 68.94,
+        "status": "FAIL",
+        "blocking": false,
+        "note": "Reference metric only. Do not use matchRate% as the completion gate."
+      },
+      "diffPixelCount": {
+        "required": 0,
+        "current": 4184390,
+        "status": "FAIL",
+        "blocking": false,
+        "note": "Reference metric. Structural SSIM review is the blocking gate."
+      },
+      "remainingIssues": {
+        "required": 0,
+        "current": 10,
+        "status": "FAIL",
+        "blocking": true,
+        "note": "Blocking only while structural SSIM review has not passed."
+      }
+    },
+    "nextAction": "表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。 ⚠️ セットアップ問題の可能性が高いです。CSS修正の前に、まず設定を見直してください: 端末キャプチャは物理ピクセルで返るため、Figma フレームを同じスケール（例: DPR込みの 1440px 幅）でレンダリングして比較してください。 サイト実装が vw ベースのレスポンシブ幅を使っている場合は、ブラウザの viewport 幅やスクロールバー有無で固定pxの Figma フレームと描画幅がずれることがあるため、意図した viewport / scrollbar 条件も確認してください。 解消後に再度 compare_design で検証してください。",
+    "suggestion": "⚠️ これは実装差分ではなくセットアップ問題の可能性が高いです（一致率 68.94%）。最有力原因: 撮影幅と Figma フレーム幅が一致していません。レイアウト自体は合っていても全面が差分になります。",
+    "clusterTelemetry": {
+      "requestedMode": "auto",
+      "usedMode": "grid",
+      "fallbackUsed": false,
+      "wallMs": 74.75,
+      "budgetMs": 5000,
+      "regionCount": 10
+    },
+    "gridSummary": {
+      "rows": 24,
+      "cols": 5,
+      "cells": [
+        {
+          "row": 0,
+          "col": 0,
+          "x": 0,
+          "y": 0,
+          "width": 288,
+          "height": 396,
+          "diffPixels": 232,
+          "totalPixels": 89856,
+          "matchRate": 99.74
+        },
+        {
+          "row": 0,
+          "col": 1,
+          "x": 288,
+          "y": 0,
+          "width": 288,
+          "height": 396,
+          "diffPixels": 0,
+          "totalPixels": 89856,
+          "matchRate": 100
+        },
+        {
+          "row": 0,
+          "col": 2,
+          "x": 576,
+          "y": 0,
+          "width": 288,
+          "height": 396,
+          "diffPixels": 0,
+          "totalPixels": 89856,
+          "matchRate": 100
+        },
+        {
+          "row": 0,
+          "col": 3,
+          "x": 864,
+          "y": 0,
+          "width": 288,
+          "height": 396,
+          "diffPixels": 0,
+          "totalPixels": 89856,
+          "matchRate": 100
+        },
+        {
+          "row": 0,
+          "col": 4,
+          "x": 1152,
+          "y": 0,
+          "width": 288,
+          "height": 396,
+          "diffPixels": 711,
+          "totalPixels": 89856,
+          "matchRate": 99.21
+        },
+        {
+          "row": 1,
+          "col": 0,
+          "x": 0,
+          "y": 396,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 0,
+          "totalPixels": 114336,
+          "matchRate": 100
+        },
+        {
+          "row": 1,
+          "col": 1,
+          "x": 288,
+          "y": 396,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 0,
+          "totalPixels": 114336,
+          "matchRate": 100
+        },
+        {
+          "row": 1,
+          "col": 2,
+          "x": 576,
+          "y": 396,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 0,
+          "totalPixels": 114336,
+          "matchRate": 100
+        },
+        {
+          "row": 1,
+          "col": 3,
+          "x": 864,
+          "y": 396,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 0,
+          "totalPixels": 114336,
+          "matchRate": 100
+        },
+        {
+          "row": 1,
+          "col": 4,
+          "x": 1152,
+          "y": 396,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 0,
+          "totalPixels": 114336,
+          "matchRate": 100
+        },
+        {
+          "row": 2,
+          "col": 0,
+          "x": 0,
+          "y": 793,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 0,
+          "totalPixels": 114336,
+          "matchRate": 100
+        },
+        {
+          "row": 2,
+          "col": 1,
+          "x": 288,
+          "y": 793,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 0,
+          "totalPixels": 114336,
+          "matchRate": 100
+        },
+        {
+          "row": 2,
+          "col": 2,
+          "x": 576,
+          "y": 793,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 0,
+          "totalPixels": 114336,
+          "matchRate": 100
+        },
+        {
+          "row": 2,
+          "col": 3,
+          "x": 864,
+          "y": 793,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 0,
+          "totalPixels": 114336,
+          "matchRate": 100
+        },
+        {
+          "row": 2,
+          "col": 4,
+          "x": 1152,
+          "y": 793,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 0,
+          "totalPixels": 114336,
+          "matchRate": 100
+        },
+        {
+          "row": 3,
+          "col": 0,
+          "x": 0,
+          "y": 1190,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 0,
+          "totalPixels": 114336,
+          "matchRate": 100
+        },
+        {
+          "row": 3,
+          "col": 1,
+          "x": 288,
+          "y": 1190,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 24918,
+          "totalPixels": 114336,
+          "matchRate": 78.21
+        },
+        {
+          "row": 3,
+          "col": 2,
+          "x": 576,
+          "y": 1190,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 68006,
+          "totalPixels": 114336,
+          "matchRate": 40.52
+        },
+        {
+          "row": 3,
+          "col": 3,
+          "x": 864,
+          "y": 1190,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 23534,
+          "totalPixels": 114336,
+          "matchRate": 79.42
+        },
+        {
+          "row": 3,
+          "col": 4,
+          "x": 1152,
+          "y": 1190,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 0,
+          "totalPixels": 114336,
+          "matchRate": 100
+        },
+        {
+          "row": 4,
+          "col": 0,
+          "x": 0,
+          "y": 1587,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 0,
+          "totalPixels": 114336,
+          "matchRate": 100
+        },
+        {
+          "row": 4,
+          "col": 1,
+          "x": 288,
+          "y": 1587,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 17301,
+          "totalPixels": 114336,
+          "matchRate": 84.87
+        },
+        {
+          "row": 4,
+          "col": 2,
+          "x": 576,
+          "y": 1587,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 54991,
+          "totalPixels": 114336,
+          "matchRate": 51.9
+        },
+        {
+          "row": 4,
+          "col": 3,
+          "x": 864,
+          "y": 1587,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 16094,
+          "totalPixels": 114336,
+          "matchRate": 85.92
+        },
+        {
+          "row": 4,
+          "col": 4,
+          "x": 1152,
+          "y": 1587,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 0,
+          "totalPixels": 114336,
+          "matchRate": 100
+        },
+        {
+          "row": 5,
+          "col": 0,
+          "x": 0,
+          "y": 1984,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 0,
+          "totalPixels": 114336,
+          "matchRate": 100
+        },
+        {
+          "row": 5,
+          "col": 1,
+          "x": 288,
+          "y": 1984,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 0,
+          "totalPixels": 114336,
+          "matchRate": 100
+        },
+        {
+          "row": 5,
+          "col": 2,
+          "x": 576,
+          "y": 1984,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 0,
+          "totalPixels": 114336,
+          "matchRate": 100
+        },
+        {
+          "row": 5,
+          "col": 3,
+          "x": 864,
+          "y": 1984,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 0,
+          "totalPixels": 114336,
+          "matchRate": 100
+        },
+        {
+          "row": 5,
+          "col": 4,
+          "x": 1152,
+          "y": 1984,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 0,
+          "totalPixels": 114336,
+          "matchRate": 100
+        },
+        {
+          "row": 6,
+          "col": 0,
+          "x": 0,
+          "y": 2381,
+          "width": 288,
+          "height": 396,
+          "diffPixels": 0,
+          "totalPixels": 114048,
+          "matchRate": 100
+        },
+        {
+          "row": 6,
+          "col": 1,
+          "x": 288,
+          "y": 2381,
+          "width": 288,
+          "height": 396,
+          "diffPixels": 0,
+          "totalPixels": 114048,
+          "matchRate": 100
+        },
+        {
+          "row": 6,
+          "col": 2,
+          "x": 576,
+          "y": 2381,
+          "width": 288,
+          "height": 396,
+          "diffPixels": 0,
+          "totalPixels": 114048,
+          "matchRate": 100
+        },
+        {
+          "row": 6,
+          "col": 3,
+          "x": 864,
+          "y": 2381,
+          "width": 288,
+          "height": 396,
+          "diffPixels": 0,
+          "totalPixels": 114048,
+          "matchRate": 100
+        },
+        {
+          "row": 6,
+          "col": 4,
+          "x": 1152,
+          "y": 2381,
+          "width": 288,
+          "height": 396,
+          "diffPixels": 0,
+          "totalPixels": 114048,
+          "matchRate": 100
+        },
+        {
+          "row": 7,
+          "col": 0,
+          "x": 0,
+          "y": 2777,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 1059,
+          "totalPixels": 114336,
+          "matchRate": 99.07
+        },
+        {
+          "row": 7,
+          "col": 1,
+          "x": 288,
+          "y": 2777,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 594,
+          "totalPixels": 114336,
+          "matchRate": 99.48
+        },
+        {
+          "row": 7,
+          "col": 2,
+          "x": 576,
+          "y": 2777,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 4032,
+          "totalPixels": 114336,
+          "matchRate": 96.47
+        },
+        {
+          "row": 7,
+          "col": 3,
+          "x": 864,
+          "y": 2777,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 594,
+          "totalPixels": 114336,
+          "matchRate": 99.48
+        },
+        {
+          "row": 7,
+          "col": 4,
+          "x": 1152,
+          "y": 2777,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 2744,
+          "totalPixels": 114336,
+          "matchRate": 97.6
+        },
+        {
+          "row": 8,
+          "col": 0,
+          "x": 0,
+          "y": 3174,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 3158,
+          "totalPixels": 114336,
+          "matchRate": 97.24
+        },
+        {
+          "row": 8,
+          "col": 1,
+          "x": 288,
+          "y": 3174,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 3540,
+          "totalPixels": 114336,
+          "matchRate": 96.9
+        },
+        {
+          "row": 8,
+          "col": 2,
+          "x": 576,
+          "y": 3174,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 3682,
+          "totalPixels": 114336,
+          "matchRate": 96.78
+        },
+        {
+          "row": 8,
+          "col": 3,
+          "x": 864,
+          "y": 3174,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 2276,
+          "totalPixels": 114336,
+          "matchRate": 98.01
+        },
+        {
+          "row": 8,
+          "col": 4,
+          "x": 1152,
+          "y": 3174,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 2914,
+          "totalPixels": 114336,
+          "matchRate": 97.45
+        },
+        {
+          "row": 9,
+          "col": 0,
+          "x": 0,
+          "y": 3571,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 0,
+          "totalPixels": 114336,
+          "matchRate": 100
+        },
+        {
+          "row": 9,
+          "col": 1,
+          "x": 288,
+          "y": 3571,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 0,
+          "totalPixels": 114336,
+          "matchRate": 100
+        },
+        {
+          "row": 9,
+          "col": 2,
+          "x": 576,
+          "y": 3571,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 0,
+          "totalPixels": 114336,
+          "matchRate": 100
+        },
+        {
+          "row": 9,
+          "col": 3,
+          "x": 864,
+          "y": 3571,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 0,
+          "totalPixels": 114336,
+          "matchRate": 100
+        },
+        {
+          "row": 9,
+          "col": 4,
+          "x": 1152,
+          "y": 3571,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 0,
+          "totalPixels": 114336,
+          "matchRate": 100
+        },
+        {
+          "row": 10,
+          "col": 0,
+          "x": 0,
+          "y": 3968,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 0,
+          "totalPixels": 114336,
+          "matchRate": 100
+        },
+        {
+          "row": 10,
+          "col": 1,
+          "x": 288,
+          "y": 3968,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 0,
+          "totalPixels": 114336,
+          "matchRate": 100
+        },
+        {
+          "row": 10,
+          "col": 2,
+          "x": 576,
+          "y": 3968,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 0,
+          "totalPixels": 114336,
+          "matchRate": 100
+        },
+        {
+          "row": 10,
+          "col": 3,
+          "x": 864,
+          "y": 3968,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 0,
+          "totalPixels": 114336,
+          "matchRate": 100
+        },
+        {
+          "row": 10,
+          "col": 4,
+          "x": 1152,
+          "y": 3968,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 0,
+          "totalPixels": 114336,
+          "matchRate": 100
+        },
+        {
+          "row": 11,
+          "col": 0,
+          "x": 0,
+          "y": 4365,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 0,
+          "totalPixels": 114336,
+          "matchRate": 100
+        },
+        {
+          "row": 11,
+          "col": 1,
+          "x": 288,
+          "y": 4365,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 0,
+          "totalPixels": 114336,
+          "matchRate": 100
+        },
+        {
+          "row": 11,
+          "col": 2,
+          "x": 576,
+          "y": 4365,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 0,
+          "totalPixels": 114336,
+          "matchRate": 100
+        },
+        {
+          "row": 11,
+          "col": 3,
+          "x": 864,
+          "y": 4365,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 0,
+          "totalPixels": 114336,
+          "matchRate": 100
+        },
+        {
+          "row": 11,
+          "col": 4,
+          "x": 1152,
+          "y": 4365,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 0,
+          "totalPixels": 114336,
+          "matchRate": 100
+        },
+        {
+          "row": 12,
+          "col": 0,
+          "x": 0,
+          "y": 4762,
+          "width": 288,
+          "height": 396,
+          "diffPixels": 0,
+          "totalPixels": 114048,
+          "matchRate": 100
+        },
+        {
+          "row": 12,
+          "col": 1,
+          "x": 288,
+          "y": 4762,
+          "width": 288,
+          "height": 396,
+          "diffPixels": 0,
+          "totalPixels": 114048,
+          "matchRate": 100
+        },
+        {
+          "row": 12,
+          "col": 2,
+          "x": 576,
+          "y": 4762,
+          "width": 288,
+          "height": 396,
+          "diffPixels": 0,
+          "totalPixels": 114048,
+          "matchRate": 100
+        },
+        {
+          "row": 12,
+          "col": 3,
+          "x": 864,
+          "y": 4762,
+          "width": 288,
+          "height": 396,
+          "diffPixels": 0,
+          "totalPixels": 114048,
+          "matchRate": 100
+        },
+        {
+          "row": 12,
+          "col": 4,
+          "x": 1152,
+          "y": 4762,
+          "width": 288,
+          "height": 396,
+          "diffPixels": 0,
+          "totalPixels": 114048,
+          "matchRate": 100
+        },
+        {
+          "row": 13,
+          "col": 0,
+          "x": 0,
+          "y": 5158,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 0,
+          "totalPixels": 114336,
+          "matchRate": 100
+        },
+        {
+          "row": 13,
+          "col": 1,
+          "x": 288,
+          "y": 5158,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 0,
+          "totalPixels": 114336,
+          "matchRate": 100
+        },
+        {
+          "row": 13,
+          "col": 2,
+          "x": 576,
+          "y": 5158,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 0,
+          "totalPixels": 114336,
+          "matchRate": 100
+        },
+        {
+          "row": 13,
+          "col": 3,
+          "x": 864,
+          "y": 5158,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 0,
+          "totalPixels": 114336,
+          "matchRate": 100
+        },
+        {
+          "row": 13,
+          "col": 4,
+          "x": 1152,
+          "y": 5158,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 0,
+          "totalPixels": 114336,
+          "matchRate": 100
+        },
+        {
+          "row": 14,
+          "col": 0,
+          "x": 0,
+          "y": 5555,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 0,
+          "totalPixels": 114336,
+          "matchRate": 100
+        },
+        {
+          "row": 14,
+          "col": 1,
+          "x": 288,
+          "y": 5555,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 0,
+          "totalPixels": 114336,
+          "matchRate": 100
+        },
+        {
+          "row": 14,
+          "col": 2,
+          "x": 576,
+          "y": 5555,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 0,
+          "totalPixels": 114336,
+          "matchRate": 100
+        },
+        {
+          "row": 14,
+          "col": 3,
+          "x": 864,
+          "y": 5555,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 0,
+          "totalPixels": 114336,
+          "matchRate": 100
+        },
+        {
+          "row": 14,
+          "col": 4,
+          "x": 1152,
+          "y": 5555,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 0,
+          "totalPixels": 114336,
+          "matchRate": 100
+        },
+        {
+          "row": 15,
+          "col": 0,
+          "x": 0,
+          "y": 5952,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 42336,
+          "totalPixels": 114336,
+          "matchRate": 62.97
+        },
+        {
+          "row": 15,
+          "col": 1,
+          "x": 288,
+          "y": 5952,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 42930,
+          "totalPixels": 114336,
+          "matchRate": 62.45
+        },
+        {
+          "row": 15,
+          "col": 2,
+          "x": 576,
+          "y": 5952,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 46368,
+          "totalPixels": 114336,
+          "matchRate": 59.45
+        },
+        {
+          "row": 15,
+          "col": 3,
+          "x": 864,
+          "y": 5952,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 42930,
+          "totalPixels": 114336,
+          "matchRate": 62.45
+        },
+        {
+          "row": 15,
+          "col": 4,
+          "x": 1152,
+          "y": 5952,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 42336,
+          "totalPixels": 114336,
+          "matchRate": 62.97
+        },
+        {
+          "row": 16,
+          "col": 0,
+          "x": 0,
+          "y": 6349,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 110055,
+          "totalPixels": 114336,
+          "matchRate": 3.74
+        },
+        {
+          "row": 16,
+          "col": 1,
+          "x": 288,
+          "y": 6349,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 112528,
+          "totalPixels": 114336,
+          "matchRate": 1.58
+        },
+        {
+          "row": 16,
+          "col": 2,
+          "x": 576,
+          "y": 6349,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 112486,
+          "totalPixels": 114336,
+          "matchRate": 1.62
+        },
+        {
+          "row": 16,
+          "col": 3,
+          "x": 864,
+          "y": 6349,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 113101,
+          "totalPixels": 114336,
+          "matchRate": 1.08
+        },
+        {
+          "row": 16,
+          "col": 4,
+          "x": 1152,
+          "y": 6349,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 109884,
+          "totalPixels": 114336,
+          "matchRate": 3.89
+        },
+        {
+          "row": 17,
+          "col": 0,
+          "x": 0,
+          "y": 6746,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 114336,
+          "totalPixels": 114336,
+          "matchRate": 0
+        },
+        {
+          "row": 17,
+          "col": 1,
+          "x": 288,
+          "y": 6746,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 114336,
+          "totalPixels": 114336,
+          "matchRate": 0
+        },
+        {
+          "row": 17,
+          "col": 2,
+          "x": 576,
+          "y": 6746,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 114336,
+          "totalPixels": 114336,
+          "matchRate": 0
+        },
+        {
+          "row": 17,
+          "col": 3,
+          "x": 864,
+          "y": 6746,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 114336,
+          "totalPixels": 114336,
+          "matchRate": 0
+        },
+        {
+          "row": 17,
+          "col": 4,
+          "x": 1152,
+          "y": 6746,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 114336,
+          "totalPixels": 114336,
+          "matchRate": 0
+        },
+        {
+          "row": 18,
+          "col": 0,
+          "x": 0,
+          "y": 7143,
+          "width": 288,
+          "height": 396,
+          "diffPixels": 114048,
+          "totalPixels": 114048,
+          "matchRate": 0
+        },
+        {
+          "row": 18,
+          "col": 1,
+          "x": 288,
+          "y": 7143,
+          "width": 288,
+          "height": 396,
+          "diffPixels": 114048,
+          "totalPixels": 114048,
+          "matchRate": 0
+        },
+        {
+          "row": 18,
+          "col": 2,
+          "x": 576,
+          "y": 7143,
+          "width": 288,
+          "height": 396,
+          "diffPixels": 114048,
+          "totalPixels": 114048,
+          "matchRate": 0
+        },
+        {
+          "row": 18,
+          "col": 3,
+          "x": 864,
+          "y": 7143,
+          "width": 288,
+          "height": 396,
+          "diffPixels": 114048,
+          "totalPixels": 114048,
+          "matchRate": 0
+        },
+        {
+          "row": 18,
+          "col": 4,
+          "x": 1152,
+          "y": 7143,
+          "width": 288,
+          "height": 396,
+          "diffPixels": 114048,
+          "totalPixels": 114048,
+          "matchRate": 0
+        },
+        {
+          "row": 19,
+          "col": 0,
+          "x": 0,
+          "y": 7539,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 72766,
+          "totalPixels": 114336,
+          "matchRate": 36.36
+        },
+        {
+          "row": 19,
+          "col": 1,
+          "x": 288,
+          "y": 7539,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 50877,
+          "totalPixels": 114336,
+          "matchRate": 55.5
+        },
+        {
+          "row": 19,
+          "col": 2,
+          "x": 576,
+          "y": 7539,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 51537,
+          "totalPixels": 114336,
+          "matchRate": 54.92
+        },
+        {
+          "row": 19,
+          "col": 3,
+          "x": 864,
+          "y": 7539,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 48913,
+          "totalPixels": 114336,
+          "matchRate": 57.22
+        },
+        {
+          "row": 19,
+          "col": 4,
+          "x": 1152,
+          "y": 7539,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 71309,
+          "totalPixels": 114336,
+          "matchRate": 37.63
+        },
+        {
+          "row": 20,
+          "col": 0,
+          "x": 0,
+          "y": 7936,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 51021,
+          "totalPixels": 114336,
+          "matchRate": 55.38
+        },
+        {
+          "row": 20,
+          "col": 1,
+          "x": 288,
+          "y": 7936,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 17706,
+          "totalPixels": 114336,
+          "matchRate": 84.51
+        },
+        {
+          "row": 20,
+          "col": 2,
+          "x": 576,
+          "y": 7936,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 15388,
+          "totalPixels": 114336,
+          "matchRate": 86.54
+        },
+        {
+          "row": 20,
+          "col": 3,
+          "x": 864,
+          "y": 7936,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 14976,
+          "totalPixels": 114336,
+          "matchRate": 86.9
+        },
+        {
+          "row": 20,
+          "col": 4,
+          "x": 1152,
+          "y": 7936,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 48563,
+          "totalPixels": 114336,
+          "matchRate": 57.53
+        },
+        {
+          "row": 21,
+          "col": 0,
+          "x": 0,
+          "y": 8333,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 114336,
+          "totalPixels": 114336,
+          "matchRate": 0
+        },
+        {
+          "row": 21,
+          "col": 1,
+          "x": 288,
+          "y": 8333,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 114336,
+          "totalPixels": 114336,
+          "matchRate": 0
+        },
+        {
+          "row": 21,
+          "col": 2,
+          "x": 576,
+          "y": 8333,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 114336,
+          "totalPixels": 114336,
+          "matchRate": 0
+        },
+        {
+          "row": 21,
+          "col": 3,
+          "x": 864,
+          "y": 8333,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 114336,
+          "totalPixels": 114336,
+          "matchRate": 0
+        },
+        {
+          "row": 21,
+          "col": 4,
+          "x": 1152,
+          "y": 8333,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 114336,
+          "totalPixels": 114336,
+          "matchRate": 0
+        },
+        {
+          "row": 22,
+          "col": 0,
+          "x": 0,
+          "y": 8730,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 114336,
+          "totalPixels": 114336,
+          "matchRate": 0
+        },
+        {
+          "row": 22,
+          "col": 1,
+          "x": 288,
+          "y": 8730,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 114336,
+          "totalPixels": 114336,
+          "matchRate": 0
+        },
+        {
+          "row": 22,
+          "col": 2,
+          "x": 576,
+          "y": 8730,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 114336,
+          "totalPixels": 114336,
+          "matchRate": 0
+        },
+        {
+          "row": 22,
+          "col": 3,
+          "x": 864,
+          "y": 8730,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 114336,
+          "totalPixels": 114336,
+          "matchRate": 0
+        },
+        {
+          "row": 22,
+          "col": 4,
+          "x": 1152,
+          "y": 8730,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 114336,
+          "totalPixels": 114336,
+          "matchRate": 0
+        },
+        {
+          "row": 23,
+          "col": 0,
+          "x": 0,
+          "y": 9127,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 90144,
+          "totalPixels": 90144,
+          "matchRate": 0
+        },
+        {
+          "row": 23,
+          "col": 1,
+          "x": 288,
+          "y": 9127,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 90144,
+          "totalPixels": 90144,
+          "matchRate": 0
+        },
+        {
+          "row": 23,
+          "col": 2,
+          "x": 576,
+          "y": 9127,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 90144,
+          "totalPixels": 90144,
+          "matchRate": 0
+        },
+        {
+          "row": 23,
+          "col": 3,
+          "x": 864,
+          "y": 9127,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 90144,
+          "totalPixels": 90144,
+          "matchRate": 0
+        },
+        {
+          "row": 23,
+          "col": 4,
+          "x": 1152,
+          "y": 9127,
+          "width": 288,
+          "height": 397,
+          "diffPixels": 90144,
+          "totalPixels": 90144,
+          "matchRate": 0
+        }
+      ]
+    },
+    "diffReport": {
+      "alignment": {
+        "translation": {
+          "x": 0,
+          "y": 55
+        },
+        "source": "auto",
+        "applied": false,
+        "baselineResidual": 0.684403650657926,
+        "correctedResidual": 0.6784181867844759,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "rotation": 0,
+        "confidence": 0.2221825406947977,
+        "residual": 0.6784181867844759
+      },
+      "regionScores": [
+        {
+          "regionId": "diff-cluster-0-6156-1440-3284",
+          "bbox": {
+            "x": 0,
+            "y": 6156,
+            "w": 1440,
+            "h": 3284
+          },
+          "structure": 0.7088889332494551,
+          "color": 37.93010546053451,
+          "shape": 1,
+          "layout": 0,
+          "textureScore": 0.11906336271370035
+        },
+        {
+          "regionId": "diff-cluster-440-1280-560-559",
+          "bbox": {
+            "x": 440,
+            "y": 1280,
+            "w": 560,
+            "h": 559
+          },
+          "structure": 0.7622731150141829,
+          "color": 29.786374126773115,
+          "shape": 1,
+          "layout": 0,
+          "textureScore": 0.15738416092935176
+        },
+        {
+          "regionId": "diff-cluster-0-3296-1440-133",
+          "bbox": {
+            "x": 0,
+            "y": 3296,
+            "w": 1440,
+            "h": 133
+          },
+          "structure": 0.788398381796842,
+          "color": 8.306121312598261,
+          "shape": 1,
+          "layout": 0,
+          "textureScore": 0.5547112470789426
+        },
+        {
+          "regionId": "diff-cluster-532-3072-364-13",
+          "bbox": {
+            "x": 532,
+            "y": 3072,
+            "w": 364,
+            "h": 13
+          },
+          "structure": 0.6925059259614588,
+          "color": 41.716713068079926,
+          "shape": 1,
+          "layout": 0,
+          "textureScore": 0.0156492433169074,
+          "flatColorMismatch": {
+            "designHex": "#F0F4FA",
+            "screenshotHex": "#666466",
+            "maxChannelDelta": 148
+          }
+        },
+        {
+          "regionId": "diff-cluster-1189-3136-153-43",
+          "bbox": {
+            "x": 1189,
+            "y": 3136,
+            "w": 153,
+            "h": 43
+          },
+          "structure": 0.488808851435487,
+          "color": 22.075067316786896,
+          "shape": 1,
+          "layout": 0,
+          "textureScore": 0.533061825121276
+        },
+        {
+          "regionId": "diff-cluster-384-7980-233-53",
+          "bbox": {
+            "x": 384,
+            "y": 7980,
+            "w": 233,
+            "h": 53
+          },
+          "structure": 0.3529600970079794,
+          "color": 21.000048023365355,
+          "shape": 1,
+          "layout": 0,
+          "textureScore": 0.9363537237004791
+        },
+        {
+          "regionId": "diff-cluster-81-3137-171-42",
+          "bbox": {
+            "x": 81,
+            "y": 3137,
+            "w": 171,
+            "h": 42
+          },
+          "structure": 0.3854823010388754,
+          "color": 11.867027918142359,
+          "shape": 1,
+          "layout": 0,
+          "textureScore": 0.8258244188233616
+        },
+        {
+          "regionId": "diff-cluster-384-8150-98-40",
+          "bbox": {
+            "x": 384,
+            "y": 8150,
+            "w": 98,
+            "h": 40
+          },
+          "structure": 0.1924852314711842,
+          "color": 29.406581631255666,
+          "shape": 1,
+          "layout": 0,
+          "textureScore": 0.7026856783154611
+        },
+        {
+          "regionId": "diff-cluster-196-7977-46-46",
+          "bbox": {
+            "x": 196,
+            "y": 7977,
+            "w": 46,
+            "h": 46
+          },
+          "structure": 0.22800883301279323,
+          "color": 21.470283923755108,
+          "shape": 1,
+          "layout": 0,
+          "textureScore": 0.8269653763644981
+        },
+        {
+          "regionId": "diff-cluster-1216-84-126-10",
+          "bbox": {
+            "x": 1216,
+            "y": 84,
+            "w": 126,
+            "h": 10
+          },
+          "structure": 0.5857170033077007,
+          "color": 24.112737863355786,
+          "shape": 1,
+          "layout": 0,
+          "textureScore": 0.42877123133496164
+        },
+        {
+          "regionId": "whole-frame",
+          "bbox": {
+            "x": 0,
+            "y": 0,
+            "w": 1440,
+            "h": 9524
+          },
+          "scope": "root",
+          "structure": 0.8863750413271508,
+          "color": 16.184591488153654,
+          "shape": 1,
+          "layout": 0,
+          "textureScore": 0.06501648838374353
+        }
+      ],
+      "issues": [
+        {
+          "regionId": "diff-cluster-0-6156-1440-3284",
+          "bbox": {
+            "x": 0,
+            "y": 6156,
+            "w": 1440,
+            "h": 3284
+          },
+          "kind": "color",
+          "severity": "critical",
+          "evidence": {
+            "signal": "delta_e_2000",
+            "value": 37.93010546053451,
+            "threshold": 2,
+            "expected": "< 2",
+            "actual": 37.93010546053451
+          },
+          "suggestedCssFix": "背景色や塗り色のトークン値をデザイン基準に合わせてください。"
+        },
+        {
+          "regionId": "diff-cluster-440-1280-560-559",
+          "bbox": {
+            "x": 440,
+            "y": 1280,
+            "w": 560,
+            "h": 559
+          },
+          "kind": "color",
+          "severity": "critical",
+          "evidence": {
+            "signal": "delta_e_2000",
+            "value": 29.786374126773115,
+            "threshold": 2,
+            "expected": "< 2",
+            "actual": 29.786374126773115
+          },
+          "suggestedCssFix": "背景色や塗り色のトークン値をデザイン基準に合わせてください。"
+        },
+        {
+          "regionId": "diff-cluster-0-3296-1440-133",
+          "bbox": {
+            "x": 0,
+            "y": 3296,
+            "w": 1440,
+            "h": 133
+          },
+          "kind": "color",
+          "severity": "critical",
+          "evidence": {
+            "signal": "delta_e_2000",
+            "value": 8.306121312598261,
+            "threshold": 2,
+            "expected": "< 2",
+            "actual": 8.306121312598261
+          },
+          "suggestedCssFix": "背景色や塗り色のトークン値をデザイン基準に合わせてください。"
+        },
+        {
+          "regionId": "diff-cluster-532-3072-364-13",
+          "bbox": {
+            "x": 532,
+            "y": 3072,
+            "w": 364,
+            "h": 13
+          },
+          "kind": "color",
+          "severity": "critical",
+          "evidence": {
+            "signal": "flat_region_color",
+            "value": 148,
+            "threshold": 1,
+            "expected": "#F0F4FA",
+            "actual": "#666466"
+          },
+          "suggestedCssFix": "ベタ面の塗りが #F0F4FA ではなく #666466 になっています。色トークンをデザイン基準に合わせてください。"
+        },
+        {
+          "regionId": "diff-cluster-532-3072-364-13",
+          "bbox": {
+            "x": 532,
+            "y": 3072,
+            "w": 364,
+            "h": 13
+          },
+          "kind": "color",
+          "severity": "critical",
+          "evidence": {
+            "signal": "delta_e_2000",
+            "value": 41.716713068079926,
+            "threshold": 2,
+            "expected": "< 2",
+            "actual": 41.716713068079926
+          },
+          "suggestedCssFix": "背景色や塗り色のトークン値をデザイン基準に合わせてください。"
+        },
+        {
+          "regionId": "diff-cluster-1189-3136-153-43",
+          "bbox": {
+            "x": 1189,
+            "y": 3136,
+            "w": 153,
+            "h": 43
+          },
+          "kind": "color",
+          "severity": "critical",
+          "evidence": {
+            "signal": "delta_e_2000",
+            "value": 22.075067316786896,
+            "threshold": 2,
+            "expected": "< 2",
+            "actual": 22.075067316786896
+          },
+          "suggestedCssFix": "背景色や塗り色のトークン値をデザイン基準に合わせてください。"
+        },
+        {
+          "regionId": "diff-cluster-384-7980-233-53",
+          "bbox": {
+            "x": 384,
+            "y": 7980,
+            "w": 233,
+            "h": 53
+          },
+          "kind": "color",
+          "severity": "critical",
+          "evidence": {
+            "signal": "delta_e_2000",
+            "value": 21.000048023365355,
+            "threshold": 2,
+            "expected": "< 2",
+            "actual": 21.000048023365355
+          },
+          "suggestedCssFix": "背景色や塗り色のトークン値をデザイン基準に合わせてください。"
+        },
+        {
+          "regionId": "diff-cluster-81-3137-171-42",
+          "bbox": {
+            "x": 81,
+            "y": 3137,
+            "w": 171,
+            "h": 42
+          },
+          "kind": "color",
+          "severity": "critical",
+          "evidence": {
+            "signal": "delta_e_2000",
+            "value": 11.867027918142359,
+            "threshold": 2,
+            "expected": "< 2",
+            "actual": 11.867027918142359
+          },
+          "suggestedCssFix": "背景色や塗り色のトークン値をデザイン基準に合わせてください。"
+        },
+        {
+          "regionId": "diff-cluster-384-8150-98-40",
+          "bbox": {
+            "x": 384,
+            "y": 8150,
+            "w": 98,
+            "h": 40
+          },
+          "kind": "color",
+          "severity": "critical",
+          "evidence": {
+            "signal": "delta_e_2000",
+            "value": 29.406581631255666,
+            "threshold": 2,
+            "expected": "< 2",
+            "actual": 29.406581631255666
+          },
+          "suggestedCssFix": "背景色や塗り色のトークン値をデザイン基準に合わせてください。"
+        },
+        {
+          "regionId": "diff-cluster-196-7977-46-46",
+          "bbox": {
+            "x": 196,
+            "y": 7977,
+            "w": 46,
+            "h": 46
+          },
+          "kind": "color",
+          "severity": "critical",
+          "evidence": {
+            "signal": "delta_e_2000",
+            "value": 21.470283923755108,
+            "threshold": 2,
+            "expected": "< 2",
+            "actual": 21.470283923755108
+          },
+          "suggestedCssFix": "背景色や塗り色のトークン値をデザイン基準に合わせてください。"
+        },
+        {
+          "regionId": "diff-cluster-1216-84-126-10",
+          "bbox": {
+            "x": 1216,
+            "y": 84,
+            "w": 126,
+            "h": 10
+          },
+          "kind": "color",
+          "severity": "critical",
+          "evidence": {
+            "signal": "delta_e_2000",
+            "value": 24.112737863355786,
+            "threshold": 2,
+            "expected": "< 2",
+            "actual": 24.112737863355786
+          },
+          "suggestedCssFix": "背景色や塗り色のトークン値をデザイン基準に合わせてください。"
+        }
+      ],
+      "weightedAggregate": {
+        "weightedStructure": 0.7131359142876414,
+        "weightedColor": 36.679402167770576,
+        "totalWeight": 0.9006445366402075
+      },
+      "structuralAssessment": {
+        "metric": "ssim-contrast-structure-area-v1",
+        "score": 0.9819291640672715,
+        "evaluatedPixelCount": 13472640,
+        "excludedPixelCount": 241920,
+        "passThreshold": 0.95,
+        "failThreshold": 0.8,
+        "verdict": "pass",
+        "rationale": "Area-weighted contrast and structure over disjoint 8x8 windows. Uniform luminance shifts are excluded; contrast changes remain. Local issues and the aggregate gate remain independent."
+      },
+      "aggregateVerdict": "fail",
+      "rationale": "critical severity issue detected; weakest region diff-cluster-384-8150-98-40 (structure 0.192, color ΔE 29.407; lower=better, critical threshold 2) with texture-adjusted weights active (alpha 0.700, photo-like cap 0.300)"
+    },
+    "preflight": {
+      "warnings": [
+        {
+          "code": "width_mismatch",
+          "severity": "critical",
+          "message": "Figma レンダリング画像幅 360px に対し、スクリーンショット幅は 1440px です。幅が違うと要素が横方向にズレ、全面が差分として検出されます。",
+          "suggestedFix": "端末キャプチャは物理ピクセルで返るため、Figma フレームを同じスケール（例: DPR込みの 1440px 幅）でレンダリングして比較してください。 サイト実装が vw ベースのレスポンシブ幅を使っている場合は、ブラウザの viewport 幅やスクロールバー有無で固定pxの Figma フレームと描画幅がずれることがあるため、意図した viewport / scrollbar 条件も確認してください。"
+        }
+      ]
+    },
+    "normalization": {
+      "designNativeWidth": 360,
+      "designNativeHeight": 800,
+      "screenshotWidth": 1440,
+      "screenshotHeight": 9524,
+      "cropApplied": false,
+      "containResized": true,
+      "appliedScale": 1,
+      "autoCropped": false,
+      "cropSource": "none"
+    },
+    "ignoreRegionResolution": {
+      "coordinateContext": {
+        "canvas_width": 1440,
+        "canvas_height": 9524,
+        "design_original_width": 360,
+        "design_original_height": 800,
+        "screenshot_original_width": 1440,
+        "screenshot_original_height": 9524
+      },
+      "appliedIds": [],
+      "incompatibleIds": [],
+      "legacyIds": [],
+      "effectiveCanvas": {
+        "width": 1440,
+        "height": 9524
+      },
+      "effectiveRegions": [
+        {
+          "x": 0,
+          "y": 0,
+          "width": 1440,
+          "height": 84,
+          "label": "system:status-bar"
+        },
+        {
+          "x": 0,
+          "y": 9440,
+          "width": 1440,
+          "height": 84,
+          "label": "system:navigation-bar"
+        }
+      ],
+      "maskedPixelCount": 241920,
+      "maskSha256": "d6b3367de7ca33c83aaa704949dc9be23f08f257381630f73b21c894b9e9e067"
+    },
+    "comparisonConditions": {
+      "status": "unverified",
+      "design": {
+        "canvas": {
+          "width": 360,
+          "height": 800
+        },
+        "canvasSource": "image-metadata",
+        "unverified": [
+          "viewport",
+          "pixelRatio",
+          "origin"
+        ]
+      },
+      "screenshot": {
+        "canvas": {
+          "width": 1440,
+          "height": 9524
+        },
+        "canvasSource": "image-metadata",
+        "observed": {
+          "viewportPixels": {
+            "width": 1440,
+            "height": 3120
+          },
+          "source": "scroll-capture"
+        },
+        "unverified": [
+          "viewport",
+          "pixelRatio",
+          "origin"
+        ]
+      },
+      "differences": [],
+      "message": "表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。"
+    },
+    "scrollCapture": {
+      "captureCount": 4,
+      "stitchedWidth": 1440,
+      "stitchedHeight": 9524,
+      "viewportWidth": 1440,
+      "viewportHeight": 3120,
+      "fixedHeaderHeight": 0,
+      "fixedFooterHeight": 0,
+      "reachedBottom": true,
+      "truncatedAtCaptureLimit": false,
+      "didNotScroll": false,
+      "startedAtTop": true,
+      "notes": [
+        "1 箇所で重なりの完全一致が取れず、行の平均輝度による近似で繋いでいます。繋ぎ目の位置がずれている可能性があります。"
+      ]
+    },
+    "diagnosis": {
+      "verdict": "likely_misconfig",
+      "likelyMisconfig": true,
+      "rankedCauses": [
+        {
+          "code": "width_mismatch",
+          "confidence": 0.9,
+          "message": "撮影幅と Figma フレーム幅が一致していません。レイアウト自体は合っていても全面が差分になります。",
+          "suggestedFix": "端末キャプチャは物理ピクセルで返るため、Figma フレームを同じスケール（例: DPR込みの 1440px 幅）でレンダリングして比較してください。 サイト実装が vw ベースのレスポンシブ幅を使っている場合は、ブラウザの viewport 幅やスクロールバー有無で固定pxの Figma フレームと描画幅がずれることがあるため、意図した viewport / scrollbar 条件も確認してください。"
+        },
+        {
+          "code": "aspect_mismatch",
+          "confidence": 0.45,
+          "message": "Figma フレームとスクリーンショットに軽い縦横比差があります。contain 正規化のレターボックス余白は差分から除外済みです。",
+          "suggestedFix": "余白部分ではなく、残っている diffRegions を実際の視覚差分として確認してください。必要なら viewport に合わせた crop を設定してください。",
+          "classification": "mild_aspect_mismatch"
+        }
+      ],
+      "headline": "⚠️ これは実装差分ではなくセットアップ問題の可能性が高いです（一致率 68.94%）。最有力原因: 撮影幅と Figma フレーム幅が一致していません。レイアウト自体は合っていても全面が差分になります。"
+    },
+    "comparisonHeadline": {
+      "structureMatch": 51.86,
+      "colorOnlyRegions": 0,
+      "structuralRegions": 10,
+      "headline": "構造一致 51.86% / 色のみ差分 0領域 / 構造差分 10領域"
+    },
+    "loopGuard": {
+      "stop": true,
+      "step": 1,
+      "maxSteps": 10,
+      "remainingSteps": 9,
+      "reason": "uncertain",
+      "message": "判定が UNCERTAIN です。この比較は判定の確からしさを損なう条件を含むため、自動修正を止めて人間のレビューに回してください。",
+      "iteration": 1,
+      "decision": "stop"
+    },
+    "toastBandCandidates": [
+      {
+        "x": 0,
+        "y": 6205,
+        "width": 1440,
+        "height": 185,
+        "contrast": 151,
+        "position": "bottom"
+      },
+      {
+        "x": 0,
+        "y": 6499,
+        "width": 1440,
+        "height": 139,
+        "contrast": 151,
+        "position": "bottom"
+      },
+      {
+        "x": 0,
+        "y": 6668,
+        "width": 1440,
+        "height": 1039,
+        "contrast": 162,
+        "position": "bottom"
+      }
+    ],
+    "verdictRoute": "pixel",
+    "verificationContext": {
+      "version": 1,
+      "design": {
+        "sourceIdentitySha256": "045b3f095548ef5dd767466cb6dda23f3d5bf9406310f6c46165f2308244d04d",
+        "imageSha256": "2c09bc21b2615c5a4130e79c84cdaf0d150abfeefc5c44ad29ab1e7a384a8f88",
+        "background": "#FFFFFF",
+        "figmaExportConditions": null
+      },
+      "comparison": {
+        "effectiveThreshold": 0.1,
+        "profile": null,
+        "declaredConditions": {},
+        "geometry": {
+          "designNativeWidth": 360,
+          "designNativeHeight": 800,
+          "screenshotWidth": 1440,
+          "cropApplied": false,
+          "autoCropped": false,
+          "cropSource": "none"
+        }
+      },
+      "mask": {
+        "status": "applied",
+        "coordinateContext": {
+          "canvas_width": 1440,
+          "canvas_height": 9524,
+          "design_original_width": 360,
+          "design_original_height": 800,
+          "screenshot_original_width": 1440,
+          "screenshot_original_height": 9524
+        },
+        "effectiveCanvas": {
+          "width": 1440,
+          "height": 9524
+        },
+        "effectiveRegions": [
+          {
+            "x": 0,
+            "y": 0,
+            "width": 1440,
+            "height": 84,
+            "label": "system:status-bar"
+          },
+          {
+            "x": 0,
+            "y": 9440,
+            "width": 1440,
+            "height": 84,
+            "label": "system:navigation-bar"
+          }
+        ],
+        "maskedPixelCount": 241920,
+        "maskSha256": "d6b3367de7ca33c83aaa704949dc9be23f08f257381630f73b21c894b9e9e067",
+        "appliedIds": [],
+        "legacyIds": []
+      },
+      "fingerprint": "4543709167728afb903fad81e098a6aae7cef45149380aed2e789932c29ea2b9"
+    },
+    "diffImagePath": "C:\\Users\\Administrator\\repos\\designdiff\\docs\\evidence\\round2-windows\\stdio-android-verification\\figdiff-home\\results\\diff-cmp-50144d83-7758-4ae3-826e-cecef80987f1.png"
+  }
+}
