@@ -449,6 +449,8 @@ describe("runCompareDesign", () => {
     expect(result.comparisonConditions?.design.requested).toEqual({
       source: "figma-export-request",
       pixelRatio: 2,
+      contentsOnly: true,
+      useAbsoluteBounds: true,
     });
     expect(result.comparisonConditions?.design.observed).toBeUndefined();
     expect(result.comparisonConditions?.status).toBe(pixelRatio === 1 ? "mismatch" : "unverified");

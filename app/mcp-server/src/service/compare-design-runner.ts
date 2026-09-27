@@ -1713,6 +1713,8 @@ export async function runCompareDesign(
                 requested: {
                   source: "figma-export-request",
                   pixelRatio: figmaExport.conditions.scale,
+                  contentsOnly: figmaExport.conditions.contentsOnly,
+                  useAbsoluteBounds: figmaExport.conditions.useAbsoluteBounds,
                 },
               }
             : undefined,
@@ -1854,21 +1856,33 @@ export async function runCompareDesign(
     comparison.diffReport,
     comparison.diffPixelCount,
   );
+  // 空白書き出しの自動フォールバックで要求と実際の書き出し条件がずれることが
+  // ある。履歴キーには実際に使った条件を記録し、条件違いの比較を混ぜない (#125)。
   const baseSourceKey = buildComparisonSourceKey(
     parsedDesignSource,
     resolvedNodeId,
     args.design_background,
-    {
-      contentsOnly: args.figma_contents_only,
-      useAbsoluteBounds: args.figma_use_absolute_bounds,
-    },
+    figmaExport
+      ? {
+          contentsOnly: figmaExport.conditions.contentsOnly,
+          useAbsoluteBounds: figmaExport.conditions.useAbsoluteBounds,
+        }
+      : {
+          contentsOnly: args.figma_contents_only,
+          useAbsoluteBounds: args.figma_use_absolute_bounds,
+        },
   );
   // 中身の高さは修正のたびに変わる。座標条件だけを鍵にし、未指定の既存履歴は維持する。
   const coordinateIdentity = comparisonConditions
     ? {
         design: {
           declared: declaredCoordinates(comparisonConditions.design.declared),
-          requested: comparisonConditions.design.requested,
+          // 書き出し条件(contentsOnly/useAbsoluteBounds)は履歴キーの export 接尾辞が
+          // 既に担っている。座標ハッシュに混ぜると既存履歴と恒久的に分かれるため除外する。
+          requested: comparisonConditions.design.requested && {
+            source: comparisonConditions.design.requested.source,
+            pixelRatio: comparisonConditions.design.requested.pixelRatio,
+          },
         },
         screenshot: {
           declared: declaredCoordinates(comparisonConditions.screenshot.declared),

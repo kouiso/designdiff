@@ -5,7 +5,7 @@ import * as path from "node:path";
 import sharp from "sharp";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { FigmaClient } from "@figdiff/shared";
+import { FigmaClient, type FigmaNode } from "@figdiff/shared";
 
 import {
   computeEffectMarginCrop,
@@ -425,6 +425,127 @@ describe("FigmaService.getFrameImage — effect margin removal on a real PNG", (
     const meta = await sharp(Buffer.from(result.base64, "base64")).metadata();
     expect(meta.width).toBe(390);
     expect(result.effectMarginCrop?.width).toBe(390);
+  });
+});
+
+// issue #125: visible:false のノードは use_absolute_bounds 指定の書き出しで
+// 単色画像が返る。検出したときだけ use_absolute_bounds=false で一度だけ取り直す。
+describe("FigmaService.getFrameImage — hidden node blank export fallback (#125)", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  const hiddenNode: FigmaNode = {
+    id: "9:99",
+    name: "HiddenStateVariant",
+    type: "FRAME",
+    visible: false,
+    children: [],
+    fills: [],
+    strokes: [],
+    effects: [],
+  };
+
+  const blankPng = async (): Promise<string> =>
+    (
+      await sharp({
+        create: {
+          width: 100,
+          height: 100,
+          channels: 3,
+          background: { r: 255, g: 255, b: 255 },
+        },
+      })
+        .png()
+        .toBuffer()
+    ).toString("base64");
+
+  const contentPng = async (): Promise<string> => {
+    const dot = await sharp({
+      create: { width: 40, height: 40, channels: 3, background: { r: 0, g: 0, b: 200 } },
+    })
+      .png()
+      .toBuffer();
+    return (
+      await sharp({
+        create: {
+          width: 100,
+          height: 100,
+          channels: 3,
+          background: { r: 200, g: 0, b: 0 },
+        },
+      })
+        .composite([{ input: dot, left: 30, top: 30 }])
+        .png()
+        .toBuffer()
+    ).toString("base64");
+  };
+
+  it("re-exports once with useAbsoluteBounds=false when a hidden node returns a blank raster", async () => {
+    const blank = await blankPng();
+    const content = await contentPng();
+    const download = vi
+      .spyOn(FigmaClient.prototype, "downloadImageAsBase64")
+      .mockImplementation((_fileKey, _nodeId, _scale, _version, options) =>
+        Promise.resolve(options.useAbsoluteBounds === false ? content : blank),
+      );
+
+    const service = new FigmaService(
+      "figd_1234567890abcdef",
+      path.join(tmpdir(), "figdiff-test-cache"),
+    );
+    const result = await service.getFrameImage("FILEKEY", "9:99", 100, 100, undefined, undefined, {
+      node: hiddenNode,
+    });
+
+    expect(download).toHaveBeenCalledTimes(2);
+    expect(download.mock.calls[0]?.[4]?.useAbsoluteBounds).not.toBe(false);
+    expect(download.mock.calls[1]?.[4]?.useAbsoluteBounds).toBe(false);
+    expect(result.base64).toBe(content);
+    expect(result.figmaExport?.conditions.useAbsoluteBounds).toBe(false);
+    expect(result.figmaExport?.warnings.map((w) => w.code)).not.toContain(
+      "figma_export_hidden_blank",
+    );
+  });
+
+  it("keeps the original export and its warning when the fallback is still blank", async () => {
+    const blank = await blankPng();
+    const download = vi
+      .spyOn(FigmaClient.prototype, "downloadImageAsBase64")
+      .mockResolvedValue(blank);
+
+    const service = new FigmaService(
+      "figd_1234567890abcdef",
+      path.join(tmpdir(), "figdiff-test-cache"),
+    );
+    const result = await service.getFrameImage("FILEKEY", "9:99", 100, 100, undefined, undefined, {
+      node: hiddenNode,
+    });
+
+    expect(download).toHaveBeenCalledTimes(2);
+    expect(result.base64).toBe(blank);
+    expect(result.figmaExport?.conditions.useAbsoluteBounds).toBe(true);
+    expect(result.figmaExport?.warnings.map((w) => w.code)).toContain("figma_export_hidden_blank");
+  });
+
+  it("does not retry when the caller already requested useAbsoluteBounds=false", async () => {
+    const blank = await blankPng();
+    const download = vi
+      .spyOn(FigmaClient.prototype, "downloadImageAsBase64")
+      .mockResolvedValue(blank);
+
+    const service = new FigmaService(
+      "figd_1234567890abcdef",
+      path.join(tmpdir(), "figdiff-test-cache"),
+    );
+    const result = await service.getFrameImage("FILEKEY", "9:99", 100, 100, undefined, undefined, {
+      useAbsoluteBounds: false,
+      node: hiddenNode,
+    });
+
+    expect(download).toHaveBeenCalledTimes(1);
+    expect(result.figmaExport?.conditions.useAbsoluteBounds).toBe(false);
+    expect(result.figmaExport?.warnings.map((w) => w.code)).toContain("figma_export_hidden_blank");
   });
 });
 

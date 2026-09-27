@@ -56,7 +56,7 @@ export const inspectFigmaExport = async (
       message:
         "非表示の Figma ノードから単色の画像が返されました。設計内容が書き出されていない可能性があります。",
       suggestedFix:
-        "Figma の表示状態と対象ノードを確認してください。figma_use_absolute_bounds: false を明示して再取得できますが、取得画像に設計内容があるか確認する必要があります。",
+        "ツールは use_absolute_bounds: false への自動再取得を試みます。この警告が残る場合は再取得でも内容が得られなかったため、Figma の表示状態と対象ノードを確認してください。",
     });
   } else if (opaqueFillExpected && interiorTransparentRatio > 0.1) {
     warnings.push({
