@@ -1858,7 +1858,10 @@ export async function runCompareDesign(
     parsedDesignSource,
     resolvedNodeId,
     args.design_background,
-    {
+    // figmaExport.conditions には非表示ノードの空白書き出しを検知したときの
+    // 自動フォールバック (useAbsoluteBounds=false) が反映済みのため、履歴キーは
+    // 引数の指定値ではなく実際に書き出した条件で分ける (#125)。
+    figmaExport?.conditions ?? {
       contentsOnly: args.figma_contents_only,
       useAbsoluteBounds: args.figma_use_absolute_bounds,
     },

@@ -323,90 +323,113 @@ export class FigmaService {
     nodeBounds?: FrameImageNodeBounds,
     options: FigmaImageExportOptions & { node?: FigmaNode } = {},
   ): Promise<FrameImageResult> {
-    const finish = async (base64: string, scale: number): Promise<FrameImageResult> => {
-      const image = await cropEffectMargin(base64, nodeBounds, scale);
-      const figmaExport = await inspectFigmaExport(image.base64, options.node, {
-        contentsOnly: options.contentsOnly ?? true,
-        useAbsoluteBounds: options.useAbsoluteBounds ?? true,
-        scale,
-        version,
-      });
-      return { ...image, figmaExport };
-    };
-    if (targetWidth && logicalWidth && logicalWidth > 0) {
-      const optimalScale = computeOptimalScale(targetWidth, logicalWidth);
-      let usedScale = optimalScale;
+    const renderWith = async (
+      exportOptions: FigmaImageExportOptions,
+    ): Promise<FrameImageResult> => {
+      const finish = async (base64: string, scale: number): Promise<FrameImageResult> => {
+        const image = await cropEffectMargin(base64, nodeBounds, scale);
+        const figmaExport = await inspectFigmaExport(image.base64, options.node, {
+          contentsOnly: exportOptions.contentsOnly ?? true,
+          useAbsoluteBounds: exportOptions.useAbsoluteBounds ?? true,
+          scale,
+          version,
+        });
+        return { ...image, figmaExport };
+      };
+      if (targetWidth && logicalWidth && logicalWidth > 0) {
+        const optimalScale = computeOptimalScale(targetWidth, logicalWidth);
+        let usedScale = optimalScale;
+        let base64 = await this.client.downloadImageAsBase64(
+          fileKey,
+          nodeId,
+          optimalScale,
+          version,
+          exportOptions,
+        );
+        let actualWidth = await getImageWidth(base64);
+        if (actualWidth > 0 && actualWidth < targetWidth * 0.8) {
+          const fallbackScale = Math.min(
+            MAX_SCALE,
+            Math.ceil(targetWidth / (actualWidth / optimalScale)),
+          );
+          if (fallbackScale > optimalScale) {
+            console.error(
+              `[figma-service] Image smaller than expected (${actualWidth}px vs target ${targetWidth}px), retrying with scale=${fallbackScale}`,
+            );
+            base64 = await this.client.downloadImageAsBase64(
+              fileKey,
+              nodeId,
+              fallbackScale,
+              version,
+              exportOptions,
+            );
+            usedScale = fallbackScale;
+            actualWidth = await getImageWidth(base64);
+          }
+        }
+        return await finish(base64, usedScale);
+      }
+
+      const initialScale = 2;
       let base64 = await this.client.downloadImageAsBase64(
         fileKey,
         nodeId,
-        optimalScale,
+        initialScale,
         version,
-        options,
+        exportOptions,
       );
-      let actualWidth = await getImageWidth(base64);
-      if (actualWidth > 0 && actualWidth < targetWidth * 0.8) {
-        const fallbackScale = Math.min(
-          MAX_SCALE,
-          Math.ceil(targetWidth / (actualWidth / optimalScale)),
-        );
-        if (fallbackScale > optimalScale) {
-          console.error(
-            `[figma-service] Image smaller than expected (${actualWidth}px vs target ${targetWidth}px), retrying with scale=${fallbackScale}`,
-          );
-          base64 = await this.client.downloadImageAsBase64(
-            fileKey,
-            nodeId,
-            fallbackScale,
-            version,
-            options,
-          );
-          usedScale = fallbackScale;
-          actualWidth = await getImageWidth(base64);
-        }
+
+      if (!targetWidth) {
+        return await finish(base64, initialScale);
       }
-      return await finish(base64, usedScale);
-    }
 
-    const initialScale = 2;
-    let base64 = await this.client.downloadImageAsBase64(
-      fileKey,
-      nodeId,
-      initialScale,
-      version,
-      options,
-    );
+      const initialWidth = await getImageWidth(base64);
+      if (initialWidth === 0 || initialWidth >= targetWidth * 0.8) {
+        return await finish(base64, initialScale);
+      }
 
-    if (!targetWidth) {
-      return await finish(base64, initialScale);
-    }
+      const neededScale = Math.min(4, Math.ceil(targetWidth / (initialWidth / initialScale)));
+      if (neededScale <= initialScale) return await finish(base64, initialScale);
 
-    const initialWidth = await getImageWidth(base64);
-    if (initialWidth === 0 || initialWidth >= targetWidth * 0.8) {
-      return await finish(base64, initialScale);
-    }
-
-    const neededScale = Math.min(4, Math.ceil(targetWidth / (initialWidth / initialScale)));
-    if (neededScale <= initialScale) return await finish(base64, initialScale);
-
-    console.error(
-      `[figma-service] Image too small (${initialWidth}px vs target ${targetWidth}px), retrying with scale=${neededScale}`,
-    );
-
-    base64 = await this.client.downloadImageAsBase64(
-      fileKey,
-      nodeId,
-      neededScale,
-      version,
-      options,
-    );
-    const retryWidth = await getImageWidth(base64);
-    if (retryWidth > 0 && retryWidth < targetWidth * 0.8) {
       console.error(
-        `[figma-service] Figma image remains small after retry (${retryWidth}px vs target ${targetWidth}px); proceeding with available image`,
+        `[figma-service] Image too small (${initialWidth}px vs target ${targetWidth}px), retrying with scale=${neededScale}`,
+      );
+
+      base64 = await this.client.downloadImageAsBase64(
+        fileKey,
+        nodeId,
+        neededScale,
+        version,
+        exportOptions,
+      );
+      const retryWidth = await getImageWidth(base64);
+      if (retryWidth > 0 && retryWidth < targetWidth * 0.8) {
+        console.error(
+          `[figma-service] Figma image remains small after retry (${retryWidth}px vs target ${targetWidth}px); proceeding with available image`,
+        );
+      }
+
+      return await finish(base64, neededScale);
+    };
+
+    const result = await renderWith(options);
+    // use_absolute_bounds=true は対象ノードが canvas 上で占める領域を
+    // 描くため、比較対象のノード自身 (または祖先) が visible:false だと
+    // 内容の無い単色画像しか返らない (#125)。対象として指名されたノードの
+    // 可視フラグは書き出しでは無視するのが期待動作なので、単色ラスタが
+    // 返ったときだけ対象単体の書き出し (use_absolute_bounds=false) へ
+    // 一度だけ切り替える。子孫の可視フラグはどちらの条件でもそのまま効く。
+    if (result.figmaExport?.uniformRaster === true && (options.useAbsoluteBounds ?? true)) {
+      const fallback = await renderWith({ ...options, useAbsoluteBounds: false });
+      if (fallback.figmaExport?.uniformRaster === false) {
+        return fallback;
+      }
+      // 再取得しても単色なら本当に空の設計とみなし、初回の結果 (警告つき) を返す。
+      console.error(
+        `[figma-service] Re-export without absolute bounds still returned a uniform image for node ${nodeId}; keeping the original export`,
       );
     }
-
-    return await finish(base64, neededScale);
+    return result;
   }
 
   /**

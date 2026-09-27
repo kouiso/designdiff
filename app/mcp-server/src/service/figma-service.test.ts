@@ -6,6 +6,7 @@ import sharp from "sharp";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { FigmaClient } from "@figdiff/shared";
+import type { FigmaNode } from "@figdiff/shared";
 
 import {
   computeEffectMarginCrop,
@@ -470,6 +471,159 @@ describe("recommended capture width convergence (#275)", () => {
     }
 
     expect(observed).toEqual([430, 474]);
+  });
+});
+
+// issue #125: use_absolute_bounds=true は対象ノードが canvas 上で占める領域を
+// 描くため、visible:false の比較対象では単色の空白しか返らない。単色ラスタを
+// 検出したとき figdiff は対象単体の書き出しへ一度だけ切り替える。
+describe("FigmaService.getFrameImage — hidden node export fallback (#125)", () => {
+  const hiddenNode: FigmaNode = {
+    id: "9:9",
+    name: "HiddenStateVariant",
+    type: "FRAME",
+    visible: false,
+    absoluteBoundingBox: { x: 0, y: 0, width: 390, height: 692 },
+    children: [
+      {
+        id: "9:10",
+        name: "Content",
+        type: "RECTANGLE",
+        absoluteBoundingBox: { x: 40, y: 40, width: 200, height: 120 },
+        fills: [{ type: "SOLID", color: { r: 0.1, g: 0.4, b: 0.9, a: 1 } }],
+        strokes: [],
+        effects: [],
+        children: [],
+      },
+    ],
+    fills: [{ type: "SOLID", color: { r: 1, g: 1, b: 1, a: 1 } }],
+    strokes: [],
+    effects: [],
+  };
+
+  const blankExport = () =>
+    sharp({
+      create: { width: 780, height: 1384, channels: 4, background: { r: 255, g: 255, b: 255 } },
+    })
+      .png()
+      .toBuffer();
+
+  const contentExport = async () => {
+    const blank = await blankExport();
+    const rect = await sharp({
+      create: { width: 400, height: 240, channels: 4, background: { r: 26, g: 102, b: 230 } },
+    })
+      .png()
+      .toBuffer();
+    return sharp(blank)
+      .composite([{ input: rect, left: 80, top: 80 }])
+      .png()
+      .toBuffer();
+  };
+
+  const makeService = () =>
+    new FigmaService("figd_1234567890abcdef", path.join(tmpdir(), "figdiff-test-cache"));
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("re-exports once without absolute bounds when the hidden target renders blank", async () => {
+    const blank = (await blankExport()).toString("base64");
+    const content = (await contentExport()).toString("base64");
+    const spy = vi
+      .spyOn(FigmaClient.prototype, "downloadImageAsBase64")
+      .mockImplementation(async (_fileKey, _nodeId, _scale, _version, exportOptions) =>
+        exportOptions?.useAbsoluteBounds === false ? content : blank,
+      );
+
+    const result = await makeService().getFrameImage(
+      "FILEKEY",
+      "9:9",
+      780,
+      390,
+      undefined,
+      undefined,
+      { node: hiddenNode },
+    );
+
+    expect(result.base64).toBe(content);
+    expect(result.figmaExport?.conditions.useAbsoluteBounds).toBe(false);
+    expect(result.figmaExport?.uniformRaster).toBe(false);
+    expect(result.figmaExport?.nodeVisible).toBe(false);
+    expect(result.figmaExport?.warnings.map((warning) => warning.code)).not.toContain(
+      "figma_export_hidden_blank",
+    );
+    expect(spy.mock.calls.map((call) => call[4]?.useAbsoluteBounds !== false)).toEqual([
+      true,
+      false,
+    ]);
+  });
+
+  it("keeps the hidden-blank warning when the fallback export is also blank", async () => {
+    const blank = (await blankExport()).toString("base64");
+    const spy = vi.spyOn(FigmaClient.prototype, "downloadImageAsBase64").mockResolvedValue(blank);
+
+    const result = await makeService().getFrameImage(
+      "FILEKEY",
+      "9:9",
+      780,
+      390,
+      undefined,
+      undefined,
+      { node: hiddenNode },
+    );
+
+    expect(result.base64).toBe(blank);
+    expect(result.figmaExport?.conditions.useAbsoluteBounds).toBe(true);
+    expect(result.figmaExport?.uniformRaster).toBe(true);
+    expect(result.figmaExport?.warnings.map((warning) => warning.code)).toContain(
+      "figma_export_hidden_blank",
+    );
+    expect(spy.mock.calls.map((call) => call[4]?.useAbsoluteBounds !== false)).toEqual([
+      true,
+      false,
+    ]);
+  });
+
+  it("does not re-export when the absolute-bounds export already has content", async () => {
+    const content = (await contentExport()).toString("base64");
+    const spy = vi.spyOn(FigmaClient.prototype, "downloadImageAsBase64").mockResolvedValue(content);
+
+    const result = await makeService().getFrameImage(
+      "FILEKEY",
+      "9:9",
+      780,
+      390,
+      undefined,
+      undefined,
+      { node: hiddenNode },
+    );
+
+    expect(result.base64).toBe(content);
+    expect(result.figmaExport?.conditions.useAbsoluteBounds).toBe(true);
+    expect(spy).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not re-export when useAbsoluteBounds was already disabled", async () => {
+    const blank = (await blankExport()).toString("base64");
+    const spy = vi.spyOn(FigmaClient.prototype, "downloadImageAsBase64").mockResolvedValue(blank);
+
+    const result = await makeService().getFrameImage(
+      "FILEKEY",
+      "9:9",
+      780,
+      390,
+      undefined,
+      undefined,
+      { node: hiddenNode, useAbsoluteBounds: false },
+    );
+
+    expect(result.base64).toBe(blank);
+    expect(result.figmaExport?.warnings.map((warning) => warning.code)).toContain(
+      "figma_export_hidden_blank",
+    );
+    expect(spy).toHaveBeenCalledTimes(1);
   });
 });
 

@@ -352,7 +352,7 @@ export const registerCompareDesign = (server: McpServer): void => {
       .boolean()
       .optional()
       .describe(
-        "Figma 書き出しにノード全体の境界を使う（既定 true）。false は描画内容の境界を使う。非表示ノードの空白出力を調べる場合も、取得できた画像に設計内容があるか確認する。",
+        "Figma 書き出しにノード全体の境界を使う（既定 true）。false は描画内容の境界を使う。書き出しが単色になった場合は false での再取得を自動で一度だけ試みるため、非表示ノードの手動切り替えは不要。",
       ),
     campaign_id: ComparisonCampaignIdSchema.optional().describe(
       "修正キャンペーンのID（1〜128文字）。同じ作業では同じIDで履歴を継続し、新しい作業では別IDで初回から始める。省略時は従来どおり対象単位の履歴を使う。過去の比較証跡は削除しない。",
