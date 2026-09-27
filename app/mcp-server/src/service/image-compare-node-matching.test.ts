@@ -188,6 +188,77 @@ describe("差分が全面に広がって分割できないとき", () => {
   }, 60_000);
 });
 
+describe("独立した局所差分が100個を超えて格子分割が諦めるとき", () => {
+  // region-count-exceeded は「差分が全面に広がっている」ではなく
+  // 「分離した差分が多すぎる」ことを意味する中止理由。全面崩壊として報告すると
+  // 位置の手がかりが全て失われるので、大まかなタイルで位置を残す必要がある。
+  const BIG_WIDTH = 1500;
+  const BIG_HEIGHT = 1300;
+  // 格子セル(64px)の密度閾値 5% (=205px) を超え、かつ隣のホットセルと
+  // 辺を共有しない最小の差分として、24x24=576px の正方形を1セルおきに置く。
+  // 12x10=120個の独立ホットセルで maxRegions(100) を超えて
+  // region-count-exceeded になるが、ホットセル比は 120/504≈0.24 で
+  // maxHotCellRatio(0.5) を下回る = 全面に広がった差分ではない。
+  const CELL_SIZE = 64;
+  const DEFECT_SIZE = 24;
+  const DEFECT_COLS = 12;
+  const DEFECT_ROWS = 10;
+  const DEFECT_MARGIN = 20;
+
+  const makeLatticePng = async (withDefects: boolean): Promise<string> => {
+    const pixels = Buffer.alloc(BIG_WIDTH * BIG_HEIGHT * 4, 255);
+    if (withDefects) {
+      for (let row = 0; row < DEFECT_ROWS; row++) {
+        for (let col = 0; col < DEFECT_COLS; col++) {
+          const originX = col * 2 * CELL_SIZE + DEFECT_MARGIN;
+          const originY = row * 2 * CELL_SIZE + DEFECT_MARGIN;
+          for (let y = originY; y < originY + DEFECT_SIZE; y++) {
+            for (let x = originX; x < originX + DEFECT_SIZE; x++) {
+              const offset = (y * BIG_WIDTH + x) * 4;
+              pixels[offset] = 0;
+              pixels[offset + 1] = 0;
+              pixels[offset + 2] = 0;
+            }
+          }
+        }
+      }
+    }
+    const png = await sharp(pixels, {
+      raw: { width: BIG_WIDTH, height: BIG_HEIGHT, channels: 4 },
+    })
+      .png()
+      .toBuffer();
+    return png.toString("base64");
+  };
+
+  it("差分領域を0件にせず、全面崩壊のメッセージも返さないこと", async () => {
+    const designBase64 = await makeLatticePng(true);
+    const screenshotBase64 = await makeLatticePng(false);
+
+    const result = await compareImages({ designBase64, screenshotBase64, threshold: 0.1 });
+
+    // 格子が region-count-exceeded で中断する検体であることをピン留めする。
+    expect(result.clusterTelemetry?.fallbackReason).toBe("region-count-exceeded");
+    expect(result.diffPixelCount).toBeGreaterThan(0);
+    // 「差分が画面全体に広がっている」は誤りなので、全面崩壊としては報告しない。
+    expect(result.clusterCollapse).toBeUndefined();
+    // 差分があるのに直す場所が0件では利用者が何も直せない。
+    // 大まかなタイルでもよいので位置の手がかりを残す。
+    expect(result.diffRegions.length).toBeGreaterThan(0);
+    // 返された領域が実際の差分位置を指していること。
+    // 先頭の欠陥 (x,y∈[20,44)) を覆う領域があるはず。
+    expect(
+      result.diffRegions.some(
+        (region) =>
+          region.bounds.x <= DEFECT_MARGIN &&
+          region.bounds.y <= DEFECT_MARGIN &&
+          region.bounds.x + region.bounds.width >= DEFECT_MARGIN + DEFECT_SIZE &&
+          region.bounds.y + region.bounds.height >= DEFECT_MARGIN + DEFECT_SIZE,
+      ),
+    ).toBe(true);
+  }, 60_000);
+});
+
 describe("resolveAppliedCropOrigin", () => {
   it("実際に切り出される原点を、切り捨てと画像内へのクリップ込みで返すこと", () => {
     expect(resolveAppliedCropOrigin({ x: 10.7, y: 20.9, width: 50, height: 50 }, 200, 400)).toEqual(
