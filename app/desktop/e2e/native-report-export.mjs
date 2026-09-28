@@ -534,10 +534,11 @@ x.XSync(d, 0)
   );
   // manifest には再現用の起動コマンドと実ダイアログの toolkit 名を書く。
   // xvfb-run は linux の無画面環境だけで runner が挟むもの
-  // (script/run-campaign-round.mjs) なので、実行した OS の値に分岐する。
+  // (script/run-campaign-round.mjs)。xvfb-run は子にも DISPLAY を配るので
+  // driver 側では runner の marker FIGDIFF_VIA_XVFB で判定する。
   const runCommand = isWin32
     ? '$env:FIGDIFF_REPORT_EVIDENCE="<evidence>"; node app/desktop/e2e/native-report-export.mjs'
-    : process.platform === "linux"
+    : process.platform === "linux" && process.env.FIGDIFF_VIA_XVFB === "1"
       ? "FIGDIFF_REPORT_EVIDENCE=<evidence> xvfb-run -a node app/desktop/e2e/native-report-export.mjs"
       : "FIGDIFF_REPORT_EVIDENCE=<evidence> node app/desktop/e2e/native-report-export.mjs";
   const dialogLabel = isWin32

@@ -65,10 +65,16 @@ const runDriver = async (entry, platform) => {
   }
   // linux 系ホストでは desktop driver に仮想 display が要る。
   const needsDisplay = entry.requires?.includes("display-or-xvfb");
-  const command =
-    needsDisplay && process.platform === "linux" && !process.env.DISPLAY
-      ? ["xvfb-run", "-a", process.execPath, ...argv]
-      : [process.execPath, ...argv];
+  const viaXvfb =
+    needsDisplay && process.platform === "linux" && !process.env.DISPLAY;
+  if (viaXvfb) {
+    // xvfb-run は子にも DISPLAY を配るため、driver が manifest に起動方法を
+    // 記録するときは DISPLAY の有無ではなくこの marker で判定する。
+    env.FIGDIFF_VIA_XVFB = "1";
+  }
+  const command = viaXvfb
+    ? ["xvfb-run", "-a", process.execPath, ...argv]
+    : [process.execPath, ...argv];
   const result = spawnSync(command[0], command.slice(1), {
     cwd: root,
     env,
