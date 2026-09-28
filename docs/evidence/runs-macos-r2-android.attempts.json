@@ -1,0 +1,13 @@
+[
+  {
+    "driver": "app/mcp-server/script/stdio-android-verification.mjs",
+    "startedAt": "2026-09-28T09:37:54.607Z",
+    "status": "ok",
+    "exitStatus": 0,
+    "signal": null,
+    "evidenceExists": true,
+    "buildDigest": "",
+    "stdoutTail": "/Users/devin/repos/designdiff/docs/evidence/round2-macos/stdio-android-verification/evidence.json\n",
+    "stderrTail": ""
+  }
+]

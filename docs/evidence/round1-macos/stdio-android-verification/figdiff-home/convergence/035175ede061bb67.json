@@ -1,0 +1,107 @@
+{
+  "sourceKey": "local:/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-android-verification/input-design.png",
+  "campaigns": [
+    {
+      "campaignId": "55b0d0d4-526d-4f8c-8dfd-34b83d4630df",
+      "sourceKey": "local:/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-android-verification/input-design.png",
+      "designSource": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-android-verification/input-design.png",
+      "startedAt": 1790586056369,
+      "updatedAt": 1790586056369,
+      "endedAt": 1790586056369,
+      "endReason": "uncertain",
+      "endMessage": "判定が UNCERTAIN です。この比較は判定の確からしさを損なう条件を含むため、自動修正を止めて人間のレビューに回してください。",
+      "iterations": [
+        {
+          "comparisonId": "cmp-a93c8ba4-0a8f-4ecc-85e3-ec29d9747edf",
+          "comparisonConditions": {
+            "status": "unverified",
+            "design": {
+              "canvas": {
+                "width": 360,
+                "height": 800
+              },
+              "canvasSource": "image-metadata",
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
+            },
+            "screenshot": {
+              "canvas": {
+                "width": 360,
+                "height": 780
+              },
+              "canvasSource": "image-metadata",
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
+            },
+            "differences": [],
+            "message": "表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。"
+          },
+          "matchRate": 0,
+          "diffPixelCount": 252000,
+          "regionCount": 1,
+          "structuralVerdict": "fail",
+          "status": "UNCERTAIN",
+          "timestamp": 1790586056369,
+          "diffImagePath": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-android-verification/figdiff-home/results/diff-cmp-a93c8ba4-0a8f-4ecc-85e3-ec29d9747edf.png"
+        }
+      ]
+    },
+    {
+      "campaignId": "0e688746-69f0-4786-ba0b-ef6198a65c19",
+      "sourceKey": "local:/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-android-verification/input-design.png",
+      "designSource": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-android-verification/input-design.png",
+      "startedAt": 1790586108360,
+      "updatedAt": 1790586108360,
+      "iterations": [
+        {
+          "comparisonId": "cmp-c48d4bf6-0b6f-4a5d-aab3-5f199f45331b",
+          "comparisonConditions": {
+            "status": "unverified",
+            "design": {
+              "canvas": {
+                "width": 360,
+                "height": 800
+              },
+              "canvasSource": "image-metadata",
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
+            },
+            "screenshot": {
+              "canvas": {
+                "width": 360,
+                "height": 780
+              },
+              "canvasSource": "image-metadata",
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
+            },
+            "differences": [],
+            "message": "表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。"
+          },
+          "matchRate": 0,
+          "diffPixelCount": 252000,
+          "regionCount": 1,
+          "structuralVerdict": "fail",
+          "status": "UNCERTAIN",
+          "timestamp": 1790586108360,
+          "diffImagePath": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-android-verification/figdiff-home/results/diff-cmp-c48d4bf6-0b6f-4a5d-aab3-5f199f45331b.png"
+        }
+      ],
+      "endedAt": 1790586108360,
+      "endReason": "uncertain",
+      "endMessage": "判定が UNCERTAIN です。この比較は判定の確からしさを損なう条件を含むため、自動修正を止めて人間のレビューに回してください。"
+    }
+  ]
+}
