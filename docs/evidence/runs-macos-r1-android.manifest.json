@@ -1,0 +1,10 @@
+[
+  {
+    "driver": "app/mcp-server/script/stdio-android-verification.mjs",
+    "evidenceDir": "docs/evidence/round1-macos/stdio-android-verification",
+    "executedAt": "2026-09-28T08:59:36.211Z",
+    "environment": "macos",
+    "buildDigest": "",
+    "roundExecutionId": "round1-macos-android"
+  }
+]
