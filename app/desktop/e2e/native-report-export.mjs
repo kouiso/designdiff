@@ -537,9 +537,9 @@ x.XSync(d, 0)
   // (script/run-campaign-round.mjs) なので、実行した OS の値に分岐する。
   const runCommand = isWin32
     ? '$env:FIGDIFF_REPORT_EVIDENCE="<evidence>"; node app/desktop/e2e/native-report-export.mjs'
-    : isDarwin
-      ? "FIGDIFF_REPORT_EVIDENCE=<evidence> node app/desktop/e2e/native-report-export.mjs"
-      : "FIGDIFF_REPORT_EVIDENCE=<evidence> xvfb-run -a node app/desktop/e2e/native-report-export.mjs";
+    : process.platform === "linux"
+      ? "FIGDIFF_REPORT_EVIDENCE=<evidence> xvfb-run -a node app/desktop/e2e/native-report-export.mjs"
+      : "FIGDIFF_REPORT_EVIDENCE=<evidence> node app/desktop/e2e/native-report-export.mjs";
   const dialogLabel = isWin32
     ? "実Win32保存ダイアログ"
     : isDarwin
