@@ -1,0 +1,433 @@
+{
+  "comparisonId": "cmp-c48d4bf6-0b6f-4a5d-aab3-5f199f45331b",
+  "sourceKey": "local:/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-android-verification/input-design.png",
+  "captureWidth": 360,
+  "captureHeight": 780,
+  "result": {
+    "status": "UNCERTAIN",
+    "comparisonId": "cmp-c48d4bf6-0b6f-4a5d-aab3-5f199f45331b",
+    "matchRate": 0,
+    "diffPixelCount": 252000,
+    "totalPixelCount": 252000,
+    "remainingIssues": 1,
+    "diffRegions": [
+      {
+        "id": 0,
+        "bounds": {
+          "x": 0,
+          "y": 48,
+          "width": 360,
+          "height": 700
+        },
+        "diffPixelCount": 252000,
+        "nearbyNodeIds": [],
+        "nearbyNodeNames": []
+      }
+    ],
+    "completionCriteria": {
+      "structuralReview": {
+        "required": 1,
+        "current": 0,
+        "status": "FAIL",
+        "blocking": true,
+        "note": "critical severity issue detected; weakest region diff-cluster-0-48-360-700 (structure 0.000, color ΔE 95.091; lower=better, critical threshold 2)"
+      },
+      "conditionsReview": {
+        "required": 1,
+        "current": 0,
+        "status": "UNCERTAIN",
+        "blocking": false,
+        "note": "表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。"
+      },
+      "wholeImageStructure": {
+        "required": 0.95,
+        "current": 0.9842619956769241,
+        "status": "PASS",
+        "blocking": false,
+        "note": "Area-weighted contrast and structure over disjoint 8x8 windows. Uniform luminance shifts are excluded; contrast changes remain. Local issues and the aggregate gate remain independent."
+      },
+      "consistencyReview": {
+        "required": 0.5,
+        "current": 0,
+        "status": "PASS",
+        "blocking": false,
+        "note": "Not evaluated: the contradiction check only applies to a passing structural review."
+      },
+      "tokenReview": {
+        "required": 0,
+        "current": 0,
+        "status": "UNCERTAIN",
+        "blocking": false,
+        "note": "Not evaluated: token comparison needs both a Figma node tree and a FigDiff-captured URL."
+      },
+      "matchRate": {
+        "required": 100,
+        "current": 0,
+        "status": "FAIL",
+        "blocking": false,
+        "note": "Reference metric only. Do not use matchRate% as the completion gate."
+      },
+      "diffPixelCount": {
+        "required": 0,
+        "current": 252000,
+        "status": "FAIL",
+        "blocking": false,
+        "note": "Reference metric. Structural SSIM review is the blocking gate."
+      },
+      "remainingIssues": {
+        "required": 0,
+        "current": 1,
+        "status": "FAIL",
+        "blocking": true,
+        "note": "Blocking only while structural SSIM review has not passed."
+      }
+    },
+    "nextAction": "表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。 ⚠️ セットアップ問題の可能性が高いです。CSS修正の前に、まず設定を見直してください: スクリーンショット幅 360px は Figma フレーム幅 360px とすでに一致しているため、差分の主因は content height / 縦方向の比較範囲です。Figma フレームが固定高さアートボードかスクロール可能な full-page デザインか、crop_region が意図した高さか、正しい breakpoint / frame variant を選んでいるかを確認してください。 解消後に再度 compare_design で検証してください。",
+    "suggestion": "⚠️ これは実装差分ではなくセットアップ問題の可能性が高いです（一致率 0%）。最有力原因: Figma レンダリング画像とスクリーンショットの縦横比または解像度が一致していません。DPR だけではない撮影条件差の可能性があります。",
+    "clusterTelemetry": {
+      "requestedMode": "auto",
+      "usedMode": "flood",
+      "fallbackUsed": false,
+      "wallMs": 43.07,
+      "regionCount": 1
+    },
+    "gridSummary": {
+      "rows": 3,
+      "cols": 2,
+      "cells": [
+        {
+          "row": 0,
+          "col": 0,
+          "x": 0,
+          "y": 0,
+          "width": 180,
+          "height": 260,
+          "diffPixels": 38160,
+          "totalPixels": 38160,
+          "matchRate": 0
+        },
+        {
+          "row": 0,
+          "col": 1,
+          "x": 180,
+          "y": 0,
+          "width": 180,
+          "height": 260,
+          "diffPixels": 38160,
+          "totalPixels": 38160,
+          "matchRate": 0
+        },
+        {
+          "row": 1,
+          "col": 0,
+          "x": 0,
+          "y": 260,
+          "width": 180,
+          "height": 260,
+          "diffPixels": 46800,
+          "totalPixels": 46800,
+          "matchRate": 0
+        },
+        {
+          "row": 1,
+          "col": 1,
+          "x": 180,
+          "y": 260,
+          "width": 180,
+          "height": 260,
+          "diffPixels": 46800,
+          "totalPixels": 46800,
+          "matchRate": 0
+        },
+        {
+          "row": 2,
+          "col": 0,
+          "x": 0,
+          "y": 520,
+          "width": 180,
+          "height": 260,
+          "diffPixels": 41040,
+          "totalPixels": 41040,
+          "matchRate": 0
+        },
+        {
+          "row": 2,
+          "col": 1,
+          "x": 180,
+          "y": 520,
+          "width": 180,
+          "height": 260,
+          "diffPixels": 41040,
+          "totalPixels": 41040,
+          "matchRate": 0
+        }
+      ]
+    },
+    "diffReport": {
+      "alignment": {
+        "translation": {
+          "x": 55,
+          "y": -55
+        },
+        "source": "auto",
+        "applied": false,
+        "baselineResidual": 0.975,
+        "correctedResidual": 0.8086388888888889,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "rotation": 0,
+        "confidence": 0,
+        "residual": 0.8086388888888889
+      },
+      "regionScores": [
+        {
+          "regionId": "diff-cluster-0-48-360-700",
+          "bbox": {
+            "x": 0,
+            "y": 48,
+            "w": 360,
+            "h": 700
+          },
+          "structure": 0.0001077803645689657,
+          "color": 95.09132316805837,
+          "shape": 0,
+          "layout": 0,
+          "textureScore": 0
+        },
+        {
+          "regionId": "whole-frame",
+          "bbox": {
+            "x": 0,
+            "y": 0,
+            "w": 360,
+            "h": 780
+          },
+          "scope": "root",
+          "structure": 0.0001077803645689657,
+          "color": 95.09132316805837,
+          "shape": 0,
+          "layout": 0,
+          "textureScore": 0.04897454729438913
+        }
+      ],
+      "issues": [
+        {
+          "regionId": "diff-cluster-0-48-360-700",
+          "bbox": {
+            "x": 0,
+            "y": 48,
+            "w": 360,
+            "h": 700
+          },
+          "kind": "color",
+          "severity": "critical",
+          "evidence": {
+            "signal": "delta_e_2000",
+            "value": 95.09132316805837,
+            "threshold": 2,
+            "expected": "< 2",
+            "actual": 95.09132316805837
+          },
+          "suggestedCssFix": "背景色や塗り色のトークン値をデザイン基準に合わせてください。"
+        }
+      ],
+      "weightedAggregate": {
+        "weightedStructure": 0.0001077803645689657,
+        "weightedColor": 95.09132316805837,
+        "totalWeight": 1
+      },
+      "structuralAssessment": {
+        "metric": "ssim-contrast-structure-area-v1",
+        "score": 0.9842619956769241,
+        "evaluatedPixelCount": 252000,
+        "excludedPixelCount": 28800,
+        "passThreshold": 0.95,
+        "failThreshold": 0.8,
+        "verdict": "pass",
+        "rationale": "Area-weighted contrast and structure over disjoint 8x8 windows. Uniform luminance shifts are excluded; contrast changes remain. Local issues and the aggregate gate remain independent."
+      },
+      "aggregateVerdict": "fail",
+      "rationale": "critical severity issue detected; weakest region diff-cluster-0-48-360-700 (structure 0.000, color ΔE 95.091; lower=better, critical threshold 2)"
+    },
+    "critique": {
+      "concern": "healthy",
+      "advice": "比較結果は大きく悪化していません。worstDeltaSection を優先しつつ、同じ評価条件で修正を継続してください。"
+    },
+    "preflight": {
+      "warnings": [
+        {
+          "code": "aspect_ratio_mismatch",
+          "severity": "critical",
+          "message": "Figma レンダリング画像は 360x800px、スクリーンショットは 360x780px です。幅が近くても縦横比が違うため、比較前提が崩れています。",
+          "suggestedFix": "スクリーンショット幅 360px は Figma フレーム幅 360px とすでに一致しているため、差分の主因は content height / 縦方向の比較範囲です。Figma フレームが固定高さアートボードかスクロール可能な full-page デザインか、crop_region が意図した高さか、正しい breakpoint / frame variant を選んでいるかを確認してください。"
+        }
+      ]
+    },
+    "normalization": {
+      "designNativeWidth": 360,
+      "designNativeHeight": 800,
+      "screenshotWidth": 360,
+      "screenshotHeight": 780,
+      "cropApplied": false,
+      "containResized": true,
+      "appliedScale": 0.975,
+      "autoCropped": false,
+      "cropSource": "none"
+    },
+    "ignoreRegionResolution": {
+      "coordinateContext": {
+        "canvas_width": 360,
+        "canvas_height": 780,
+        "design_original_width": 360,
+        "design_original_height": 800,
+        "screenshot_original_width": 360,
+        "screenshot_original_height": 780
+      },
+      "appliedIds": [],
+      "incompatibleIds": [],
+      "legacyIds": [],
+      "effectiveCanvas": {
+        "width": 360,
+        "height": 780
+      },
+      "effectiveRegions": [
+        {
+          "x": 0,
+          "y": 0,
+          "width": 360,
+          "height": 48,
+          "label": "system:status-bar"
+        },
+        {
+          "x": 0,
+          "y": 748,
+          "width": 360,
+          "height": 32,
+          "label": "system:navigation-bar"
+        }
+      ],
+      "maskedPixelCount": 28800,
+      "maskSha256": "b7fd6fc9a43e88cbd892f0f464f56f0e68faa762d444e878f4ae53068433fd07"
+    },
+    "comparisonConditions": {
+      "status": "unverified",
+      "design": {
+        "canvas": {
+          "width": 360,
+          "height": 800
+        },
+        "canvasSource": "image-metadata",
+        "unverified": [
+          "viewport",
+          "pixelRatio",
+          "origin"
+        ]
+      },
+      "screenshot": {
+        "canvas": {
+          "width": 360,
+          "height": 780
+        },
+        "canvasSource": "image-metadata",
+        "unverified": [
+          "viewport",
+          "pixelRatio",
+          "origin"
+        ]
+      },
+      "differences": [],
+      "message": "表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。"
+    },
+    "diagnosis": {
+      "verdict": "likely_misconfig",
+      "likelyMisconfig": true,
+      "rankedCauses": [
+        {
+          "code": "aspect_mismatch",
+          "confidence": 0.9,
+          "message": "Figma レンダリング画像とスクリーンショットの縦横比または解像度が一致していません。DPR だけではない撮影条件差の可能性があります。",
+          "suggestedFix": "スクリーンショット幅 360px は Figma フレーム幅 360px とすでに一致しているため、差分の主因は content height / 縦方向の比較範囲です。Figma フレームが固定高さアートボードかスクロール可能な full-page デザインか、crop_region が意図した高さか、正しい breakpoint / frame variant を選んでいるかを確認してください。"
+        }
+      ],
+      "headline": "⚠️ これは実装差分ではなくセットアップ問題の可能性が高いです（一致率 0%）。最有力原因: Figma レンダリング画像とスクリーンショットの縦横比または解像度が一致していません。DPR だけではない撮影条件差の可能性があります。"
+    },
+    "comparisonHeadline": {
+      "structureMatch": 0.01,
+      "colorOnlyRegions": 0,
+      "structuralRegions": 1,
+      "headline": "構造一致 0.01% / 色のみ差分 0領域 / 構造差分 1領域"
+    },
+    "loopGuard": {
+      "stop": true,
+      "step": 1,
+      "maxSteps": 10,
+      "remainingSteps": 9,
+      "reason": "uncertain",
+      "message": "判定が UNCERTAIN です。この比較は判定の確からしさを損なう条件を含むため、自動修正を止めて人間のレビューに回してください。",
+      "iteration": 1,
+      "decision": "stop"
+    },
+    "verdictRoute": "pixel",
+    "verificationContext": {
+      "version": 1,
+      "design": {
+        "sourceIdentitySha256": "035175ede061bb674d91a054b0023df5a796ceaeeaf3ff6cc663b1c883f544a5",
+        "imageSha256": "2c09bc21b2615c5a4130e79c84cdaf0d150abfeefc5c44ad29ab1e7a384a8f88",
+        "background": "#FFFFFF",
+        "figmaExportConditions": null
+      },
+      "comparison": {
+        "effectiveThreshold": 0.1,
+        "profile": null,
+        "declaredConditions": {},
+        "geometry": {
+          "designNativeWidth": 360,
+          "designNativeHeight": 800,
+          "screenshotWidth": 360,
+          "cropApplied": false,
+          "autoCropped": false,
+          "cropSource": "none"
+        }
+      },
+      "mask": {
+        "status": "applied",
+        "coordinateContext": {
+          "canvas_width": 360,
+          "canvas_height": 780,
+          "design_original_width": 360,
+          "design_original_height": 800,
+          "screenshot_original_width": 360,
+          "screenshot_original_height": 780
+        },
+        "effectiveCanvas": {
+          "width": 360,
+          "height": 780
+        },
+        "effectiveRegions": [
+          {
+            "x": 0,
+            "y": 0,
+            "width": 360,
+            "height": 48,
+            "label": "system:status-bar"
+          },
+          {
+            "x": 0,
+            "y": 748,
+            "width": 360,
+            "height": 32,
+            "label": "system:navigation-bar"
+          }
+        ],
+        "maskedPixelCount": 28800,
+        "maskSha256": "b7fd6fc9a43e88cbd892f0f464f56f0e68faa762d444e878f4ae53068433fd07",
+        "appliedIds": [],
+        "legacyIds": []
+      },
+      "fingerprint": "a57a585222e83a76f848a7703fe12f85de3436e632f6f45917e277ecedb0256b"
+    },
+    "diffImagePath": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-android-verification/figdiff-home/results/diff-cmp-c48d4bf6-0b6f-4a5d-aab3-5f199f45331b.png"
+  }
+}

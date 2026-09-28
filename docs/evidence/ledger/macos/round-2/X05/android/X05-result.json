@@ -1,0 +1,32 @@
+{
+  "case": "X05",
+  "route": "android",
+  "platform": "macos",
+  "drivers": [
+    "app/mcp-server/script/stdio-android-verification.mjs"
+  ],
+  "checks": [
+    "X05_single_device_auto",
+    "X05_device_captures",
+    "X05_bogus_serial"
+  ],
+  "actual": {
+    "stdio-android-verification:X05_single_device_auto": {
+      "isError": false,
+      "note": "single-device environment: serial-less call must pick the only device",
+      "text": "{\n  \"status\": \"UNCERTAIN\",\n  \"comparisonId\": \"cmp-7c0c3a94-f5ce-4e52-af90-3ef3d798bc0e\",\n  \"matchRate\": 0,\n  \"diffPixelCount\": 252000,\n  \"totalPixelCount\": 252000,\n  \"remainingIssues\": 1,\n  \"diffRegions\": [\n    {\n      \"id\": 0,\n      \"bounds\": {\n        \"x\": 0,\n        \"y\": 48,\n        \"width\": 360,\n        \"height\": 700\n      },\n      \"diffPixelCount\": 252000,\n      \"nearbyNodeIds\": [],\n      \"nearbyNodeNames\": []\n    }\n  ],\n  \"totalRegionCount\": 1,\n  \"returnedRegionCount\": 1,\n  \"regionsTruncat"
+    },
+    "stdio-android-verification:X05_device_captures": {
+      "emulator-5554": {
+        "kind": "emulator",
+        "captured": "android-1790588322512-d7aecf69-ea2e-4ea5-8ff0-b9045dc3f108.png",
+        "width": 360,
+        "height": 780
+      }
+    },
+    "stdio-android-verification:X05_bogus_serial": {
+      "isError": true,
+      "text": "Error: Android device no-such-serial-000 is not connected. Check adb devices -l."
+    }
+  }
+}

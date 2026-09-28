@@ -8,14 +8,14 @@
       "executionId": "round1",
       "productSha": "4e9145e5e051d4efe78a922723f7b3245005a05e",
       "startedAt": "2026-09-19T04:42:25.440Z",
-      "finishedAt": "2026-09-27T14:46:27.910Z"
+      "finishedAt": "2026-09-28T09:37:54.607Z"
     },
     {
       "round": 2,
       "executionId": "round2",
       "productSha": "4e9145e5e051d4efe78a922723f7b3245005a05e",
       "startedAt": "2026-09-19T04:42:44.837Z",
-      "finishedAt": "2026-09-27T14:46:27.910Z"
+      "finishedAt": "2026-09-28T09:37:54.607Z"
     }
   ],
   "runs": [
@@ -6823,6 +6823,47 @@
       ]
     },
     {
+      "case": "X05",
+      "round": 1,
+      "platform": "macos",
+      "route": "android",
+      "roundExecutionId": "round1",
+      "executedAt": "2026-09-28T08:59:36.211Z",
+      "productSha": "4e9145e5e051d4efe78a922723f7b3245005a05e",
+      "dirty": false,
+      "status": "PASS",
+      "newBugs": 0,
+      "observedKnownDefects": [],
+      "buildDigest": "731983867d0aea2a2eb46ee60d43fcc5b932c3c1e19146cad7899a3d7a3aee61",
+      "environment": "macos",
+      "input": "Android2台接続・対象端末指定・切断・未認証端末",
+      "steps": "指定端末の撮影と誤切替確認 [drivers: app/mcp-server/script/stdio-android-verification.mjs]",
+      "expected": "指定端末を撮影し、誤端末へ黙って切り替わらない",
+      "actual": "{\"stdio-android-verification:X05_single_device_auto\":{\"isError\":false,\"note\":\"single-device environment: serial-less call must pick the only device\",\"text\":\"{\\n  \\\"status\\\": \\\"UNCERTAIN\\\",\\n  \\\"comparisonId\\\": \\\"cmp-a93c8ba4-0a8f-4ecc-85e3-ec29d9747edf\\\",\\n  \\\"matchRate\\\": 0,\\n  \\\"diffPixelCount\\\": 252000,\\n  \\\"totalPixelCount\\\": 252000,\\n  \\\"remainingIssues\\\": 1,\\n  \\\"diffRegions\\\": [\\n    {\\n      \\\"id\\\": 0,\\n      \\\"bounds\\\": {\\n        \\\"x\\\": 0,\\n        \\\"y\\\": 48,\\n        \\\"width\\\": 360,\\n        \\\"height\\\": 700\\n      },\\n      \\\"diffPixelCount\\\": 252000,\\n      \\\"nearbyNodeIds\\\": [],\\n      \\\"nearbyNodeNames\\\": []\\n    }\\n  ],\\n  \\\"totalRegionCount\\\": 1,\\n  \\\"returnedRegionCount\\\": 1,\\n  \\\"regionsTruncat\"},\"stdio-android-verification:X05_device_captures\":{\"emulator-5554\":{\"kind\":\"emulator\",\"captured\":\"android-1790586056377-384d9fef-0b45-4696-a952-7dcbb0b7633f.png\",\"width\":360,\"height\":780}},\"stdio-android-verification:X05_bogus_serial\":{\"isError\":true,\"text\":\"Error: Android device no-such-serial-000 is not connected. Check adb devices -l.\"}}",
+      "oracle": {
+        "kind": "host-observation",
+        "description": "指定端末を撮影し、誤端末へ黙って切り替わらない"
+      },
+      "evidence": [
+        {
+          "path": "ledger/macos/round-1/X05/android/stdio-android-verification-evidence.json",
+          "sha256": "b7a6be1f70ee945f94494a7fd0f1b90cfca55760278342165be58f5363410bee"
+        },
+        {
+          "path": "ledger/macos/round-1/X05/android/stdio-android-verification-evidence.json",
+          "sha256": "b7a6be1f70ee945f94494a7fd0f1b90cfca55760278342165be58f5363410bee"
+        },
+        {
+          "path": "ledger/macos/round-1/X05/android/stdio-android-verification-evidence.json",
+          "sha256": "b7a6be1f70ee945f94494a7fd0f1b90cfca55760278342165be58f5363410bee"
+        },
+        {
+          "path": "ledger/macos/round-1/X05/android/X05-result.json",
+          "sha256": "7c91475280b5cb89f15a653ec51120430631f0f7e3594cacea26d9ab075915c9"
+        }
+      ]
+    },
+    {
       "case": "C01",
       "round": 2,
       "platform": "macos",
@@ -9062,6 +9103,47 @@
         {
           "path": "ledger/macos/round-2/X09/mcp/X09-result.json",
           "sha256": "28ac0c9d6014126e0ae78b11a5d117dfee8f11a67becbc751e18d7a0389fed66"
+        }
+      ]
+    },
+    {
+      "case": "X05",
+      "round": 2,
+      "platform": "macos",
+      "route": "android",
+      "roundExecutionId": "round2",
+      "executedAt": "2026-09-28T09:37:54.607Z",
+      "productSha": "4e9145e5e051d4efe78a922723f7b3245005a05e",
+      "dirty": false,
+      "status": "PASS",
+      "newBugs": 0,
+      "observedKnownDefects": [],
+      "buildDigest": "731983867d0aea2a2eb46ee60d43fcc5b932c3c1e19146cad7899a3d7a3aee61",
+      "environment": "macos",
+      "input": "Android2台接続・対象端末指定・切断・未認証端末",
+      "steps": "指定端末の撮影と誤切替確認 [drivers: app/mcp-server/script/stdio-android-verification.mjs]",
+      "expected": "指定端末を撮影し、誤端末へ黙って切り替わらない",
+      "actual": "{\"stdio-android-verification:X05_single_device_auto\":{\"isError\":false,\"note\":\"single-device environment: serial-less call must pick the only device\",\"text\":\"{\\n  \\\"status\\\": \\\"UNCERTAIN\\\",\\n  \\\"comparisonId\\\": \\\"cmp-7c0c3a94-f5ce-4e52-af90-3ef3d798bc0e\\\",\\n  \\\"matchRate\\\": 0,\\n  \\\"diffPixelCount\\\": 252000,\\n  \\\"totalPixelCount\\\": 252000,\\n  \\\"remainingIssues\\\": 1,\\n  \\\"diffRegions\\\": [\\n    {\\n      \\\"id\\\": 0,\\n      \\\"bounds\\\": {\\n        \\\"x\\\": 0,\\n        \\\"y\\\": 48,\\n        \\\"width\\\": 360,\\n        \\\"height\\\": 700\\n      },\\n      \\\"diffPixelCount\\\": 252000,\\n      \\\"nearbyNodeIds\\\": [],\\n      \\\"nearbyNodeNames\\\": []\\n    }\\n  ],\\n  \\\"totalRegionCount\\\": 1,\\n  \\\"returnedRegionCount\\\": 1,\\n  \\\"regionsTruncat\"},\"stdio-android-verification:X05_device_captures\":{\"emulator-5554\":{\"kind\":\"emulator\",\"captured\":\"android-1790588322512-d7aecf69-ea2e-4ea5-8ff0-b9045dc3f108.png\",\"width\":360,\"height\":780}},\"stdio-android-verification:X05_bogus_serial\":{\"isError\":true,\"text\":\"Error: Android device no-such-serial-000 is not connected. Check adb devices -l.\"}}",
+      "oracle": {
+        "kind": "host-observation",
+        "description": "指定端末を撮影し、誤端末へ黙って切り替わらない"
+      },
+      "evidence": [
+        {
+          "path": "ledger/macos/round-2/X05/android/stdio-android-verification-evidence.json",
+          "sha256": "1cb70bd8c1f4e28a95685a793335b00768c7b9bf21d87b672f88735c6e885d40"
+        },
+        {
+          "path": "ledger/macos/round-2/X05/android/stdio-android-verification-evidence.json",
+          "sha256": "1cb70bd8c1f4e28a95685a793335b00768c7b9bf21d87b672f88735c6e885d40"
+        },
+        {
+          "path": "ledger/macos/round-2/X05/android/stdio-android-verification-evidence.json",
+          "sha256": "1cb70bd8c1f4e28a95685a793335b00768c7b9bf21d87b672f88735c6e885d40"
+        },
+        {
+          "path": "ledger/macos/round-2/X05/android/X05-result.json",
+          "sha256": "418fc81fb08bf4e584e5df8daff9907be926240f4dfae82c4405c317b99a4d38"
         }
       ]
     },

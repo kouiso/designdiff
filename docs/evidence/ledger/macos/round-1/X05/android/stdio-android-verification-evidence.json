@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "protocolErrors": [],
+  "results": {
+    "connectedDevices": [
+      {
+        "serial": "emulator-5554",
+        "state": "device",
+        "model": "sdk_gphone_arm64"
+      }
+    ],
+    "deviceSelectionMode": "single-device",
+    "directCaptures": {
+      "emulator-5554": {
+        "width": 360,
+        "height": 780,
+        "model": "sdk_gphone_arm64"
+      }
+    },
+    "X05_single_device_auto": {
+      "isError": false,
+      "note": "single-device environment: serial-less call must pick the only device",
+      "text": "{\n  \"status\": \"UNCERTAIN\",\n  \"comparisonId\": \"cmp-a93c8ba4-0a8f-4ecc-85e3-ec29d9747edf\",\n  \"matchRate\": 0,\n  \"diffPixelCount\": 252000,\n  \"totalPixelCount\": 252000,\n  \"remainingIssues\": 1,\n  \"diffRegions\": [\n    {\n      \"id\": 0,\n      \"bounds\": {\n        \"x\": 0,\n        \"y\": 48,\n        \"width\": 360,\n        \"height\": 700\n      },\n      \"diffPixelCount\": 252000,\n      \"nearbyNodeIds\": [],\n      \"nearbyNodeNames\": []\n    }\n  ],\n  \"totalRegionCount\": 1,\n  \"returnedRegionCount\": 1,\n  \"regionsTruncat"
+    },
+    "X05_device_captures": {
+      "emulator-5554": {
+        "kind": "emulator",
+        "captured": "android-1790586056377-384d9fef-0b45-4696-a952-7dcbb0b7633f.png",
+        "width": 360,
+        "height": 780
+      }
+    },
+    "X05_bogus_serial": {
+      "isError": true,
+      "text": "Error: Android device no-such-serial-000 is not connected. Check adb devices -l."
+    },
+    "scrollTarget": {
+      "serial": "emulator-5554",
+      "pageUrl": "http://10.0.2.2:63521/tall.html"
+    },
+    "pageRenderWait": {
+      "rendered": false,
+      "attempts": 2
+    },
+    "X07_android_scroll": {
+      "isError": true,
+      "status": "FAIL",
+      "textHead": "Error: Command failed: adb -s emulator-5554 shell input swipe 180 156 180 624 600\n",
+      "note": "scroll capture returned error — see textHead"
+    }
+  }
+}
