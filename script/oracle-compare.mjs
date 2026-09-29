@@ -30,6 +30,12 @@ const COARSE_STEP = 10;
 const COARSE_RANGE = 100;
 const FINE_RANGE = 5;
 
+// checkerboard: false は製品側 (package/shared/src/pixel-compare.ts) と同じ白合成に揃えるため。
+// pixelmatch 7 の既定 (市松模様) のままだと、半透明画素で物差しの意味が製品とずれる。
+// 全呼び出しがこの定数を通る形に集約する — 個別指定だと新規呼び出しが既定値へ
+// 静かに戻り得る。採点意味論の退行は self-test の check5 が CI で検知する。
+const PIXELMATCH_OPTS = { threshold: 0.1, checkerboard: false };
+
 /**
  * Shift pixel array by (dx, dy) into a same-size canvas.
  * Pixels shifted outside bounds become transparent (0,0,0,0).
@@ -56,11 +62,9 @@ function shiftPixels(srcPixels, width, height, dx, dy) {
  * Count differing pixels between two RGBA Uint8ClampedArrays.
  * Uses pixelmatch with threshold=0.1 for speed.
  */
-// checkerboard: false は製品側 (package/shared/src/pixel-compare.ts) と同じ白合成に揃えるため。
-// pixelmatch 7 の既定 (市松模様) のままだと、半透明画素で物差しの意味が製品とずれる。
 function countDiff(a, b, width, height) {
   const diff = new Uint8ClampedArray(width * height * 4);
-  return pixelmatch(a, b, diff, width, height, { threshold: 0.1, checkerboard: false });
+  return pixelmatch(a, b, diff, width, height, PIXELMATCH_OPTS);
 }
 
 /**
@@ -270,6 +274,46 @@ async function selfTest() {
   results.correctedDiffPixels = correctedDiff;
   results.residualRate = residualRate;
 
+  // Check 5: 半透明画素の採点が製品と同じ白合成に張り付いていること
+  // (採点意味論の退行検知)。Figma 由来の半透明レイヤはスクリーンショットでは
+  // 白へ合成されて写るので、design=半透明の被覆 / impl=白へ flatten 済み
+  // の pair は正しく「一致」と採点されるべき。checkerboard:true (v7 既定)
+  // だとこの pair を全面不一致と誤採点する。
+  // 参照差分が 2 つの semantics で異なること自体も assert し、検査が
+  // 判別力を失っていないこと (vacuous pass 化) まで担保する。
+  const alphaDesign = new Uint8ClampedArray(W * H * 4);
+  const alphaImpl = new Uint8ClampedArray(W * H * 4);
+  for (let i = 0; i < W * H * 4; i += 4) {
+    alphaImpl[i] = 255;
+    alphaImpl[i + 1] = 255;
+    alphaImpl[i + 2] = 255;
+    alphaImpl[i + 3] = 255;
+  }
+  for (let y = 16; y < 48; y++) {
+    for (let x = 16; x < 48; x++) {
+      const i = (y * W + x) * 4;
+      alphaDesign[i] = 128;
+      alphaDesign[i + 1] = 128;
+      alphaDesign[i + 2] = 128;
+      alphaDesign[i + 3] = 128;
+      alphaImpl[i] = 191;
+      alphaImpl[i + 1] = 191;
+      alphaImpl[i + 2] = 191;
+    }
+  }
+  const alphaDiffPng = new Uint8ClampedArray(W * H * 4);
+  const onWhite = pixelmatch(alphaDesign, alphaImpl, alphaDiffPng, W, H, {
+    threshold: 0.1,
+    checkerboard: false,
+  });
+  const onCheckerboard = pixelmatch(alphaDesign, alphaImpl, alphaDiffPng, W, H, {
+    threshold: 0.1,
+    checkerboard: true,
+  });
+  const oracleAlphaCount = countDiff(alphaDesign, alphaImpl, W, H);
+  results.check5_alpha_scored_on_white = oracleAlphaCount === onWhite && onWhite !== onCheckerboard;
+  results.alphaSemantics = { onWhite, onCheckerboard, oracle: oracleAlphaCount };
+
   // Save visual artifacts for inspection
   await saveImage(design, W, H, path.join(TMP_DIR, "self-test-design.png"));
   await saveImage(shifted, W, H, path.join(TMP_DIR, "self-test-shifted.png"));
@@ -279,7 +323,8 @@ async function selfTest() {
     results.check1_same_diff_is_zero &&
     results.check2_shifted_diff_gt_zero &&
     results.check3_detection_within_5px &&
-    results.check4_corrected_diff_near_zero;
+    results.check4_corrected_diff_near_zero &&
+    results.check5_alpha_scored_on_white;
 
   results.overall = allPass ? "PASS" : "FAIL";
   return results;
@@ -338,7 +383,7 @@ async function compareFiles(designPath, screenshotPath, outDiffPath, ignoreRegio
     baselineDiffPng,
     width,
     height,
-    { threshold: 0.1, checkerboard: false },
+    PIXELMATCH_OPTS,
   );
 
   // Detect translation — マスクの影響を受けないよう、無加工のピクセルで探す。
@@ -362,7 +407,7 @@ async function compareFiles(designPath, screenshotPath, outDiffPath, ignoreRegio
     correctedDiffPng,
     width,
     height,
-    { threshold: 0.1, checkerboard: false },
+    PIXELMATCH_OPTS,
   );
 
   if (outDiffPath) {
