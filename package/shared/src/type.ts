@@ -236,6 +236,11 @@ export interface RegionScore {
   shape: number;
   layout: number;
   textureScore?: number;
+  // pixelmatch クラスタ由来の行だけに入る差分密度 (diffPixelCount / bbox 面積)。
+  // 1px 枠線の色違いのような疎なクラスタは、bbox 内の未変化画素に平均系の採点
+  // (color / structure) が薄まる。読む側がどの程度薄まっているかをスコアとは
+  // 独立に判断できるようにするためのシグナル (Issue #58)。
+  diffPixelDensity?: number;
   // 両側がベタ面のときだけ入る。ΔE2000 が閾値を下回るトークン1段のズレを捕まえる。
   flatColorMismatch?: {
     designHex: string;

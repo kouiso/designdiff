@@ -366,6 +366,21 @@ function toScreenshotBbox(
   };
 }
 
+// diffRegions のクラスタ bbox 内で実際に差分だった画素の割合 (0..1]。
+// 輪郭クリップ (clipToAlignedCanvas) は diffPixelCount を減らさずに bbox だけ
+// 縮めるので、clip 済みのクラスタでは 1 を超え得る。シグナルとしての意味を
+// 保つため 1 で切る。diffPixelCount を持たない呼び出しでは「不明」と「密度 0」を
+// 混ぜないよう undefined を返す。
+const computeDiffPixelDensity = (
+  bbox: DiffBoundingBox & { diffPixelCount?: number },
+): number | undefined => {
+  const area = bbox.w * bbox.h;
+  if (bbox.diffPixelCount === undefined || area <= 0) {
+    return undefined;
+  }
+  return Math.min(1, bbox.diffPixelCount / area);
+};
+
 function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
   const {
     designPixels,
@@ -506,6 +521,10 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
       diffClusterRegions.push({
         regionId: `diff-cluster-${bbox.x}-${bbox.y}-${bbox.w}-${bbox.h}`,
         bbox,
+        // 1px 枠線の色違いのような疎なクラスタは、bbox 内の未変化画素に
+        // 平均系の採点 (color / structure) が薄まる (Issue #58)。採点値は
+        // 変えず、薄まり具合を読む側が判断できるよう密度だけを残す。
+        diffPixelDensity: computeDiffPixelDensity(bbox),
         structure: computeSsimForRegion(
           designPixels,
           screenshotPixels,

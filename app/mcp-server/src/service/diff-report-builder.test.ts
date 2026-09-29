@@ -1563,3 +1563,76 @@ describe("同じ矩形の子が複数あるときの扱い", () => {
     expect(merged?.overlappingNodeIds).toEqual(["under", "middle"]);
   });
 });
+
+describe("diff-cluster 行の差分密度シグナル (Issue #58)", () => {
+  const FRAME_SIZE = 300;
+
+  it("diffPixelCount を持つクラスタ行に bbox 面積に占める差分画素の割合を付けること", async () => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    const designPixels = await createSolidRgba(FRAME_SIZE, FRAME_SIZE, WHITE_RGB);
+    const screenshotPixels = Uint8ClampedArray.from(designPixels);
+
+    // 100x80 の 1px 枠線だけが変化する疎なクラスタ (外周 356px) と、
+    // 同程度の差分画素数を持つ密な塊 (20x18 = 360px) の対。
+    const sparse = { x: 50, y: 50, w: 100, h: 80, diffPixelCount: 356 };
+    const dense = { x: 200, y: 200, w: 20, h: 18, diffPixelCount: 360 };
+    const report = buildDiffReport({
+      designPixels,
+      screenshotPixels,
+      width: FRAME_SIZE,
+      height: FRAME_SIZE,
+      diffRegions: [sparse, dense],
+    });
+
+    const sparseScore = report.regionScores.find(
+      (score) => score.regionId === `diff-cluster-${sparse.x}-${sparse.y}-${sparse.w}-${sparse.h}`,
+    );
+    const denseScore = report.regionScores.find(
+      (score) => score.regionId === `diff-cluster-${dense.x}-${dense.y}-${dense.w}-${dense.h}`,
+    );
+    // 実測では疎なクラスタの color が密な対照の約 1/23 に薄まった。採点値は
+    // 変えず、薄まり具合を読む側が判断できるよう密度だけを付ける。
+    expect(sparseScore?.diffPixelDensity).toBeCloseTo(356 / (100 * 80), 10);
+    expect(denseScore?.diffPixelDensity).toBe(1);
+  });
+
+  it("diffPixelCount を持たない行では「不明」と密度 0 を混ぜないこと", async () => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    const designPixels = await createSolidRgba(FRAME_SIZE, FRAME_SIZE, WHITE_RGB);
+    const screenshotPixels = Uint8ClampedArray.from(designPixels);
+
+    // 既存の呼び出し (このファイル内の他のテスト同様) は diffPixelCount を
+    // 持たない bbox をそのまま渡せる。その場合は 0 ではなく未設定であること。
+    const report = buildDiffReport({
+      designPixels,
+      screenshotPixels,
+      width: FRAME_SIZE,
+      height: FRAME_SIZE,
+      diffRegions: [{ x: 10, y: 10, w: 30, h: 30 }],
+    });
+
+    const cluster = report.regionScores.find((score) => score.regionId.startsWith("diff-cluster-"));
+    const root = report.regionScores.find((score) => score.regionId === "whole-frame");
+    expect(cluster?.diffPixelDensity).toBeUndefined();
+    expect(root?.diffPixelDensity).toBeUndefined();
+  });
+
+  it("diffPixelCount が bbox 面積を超える入力では密度を 1 に飽和させること", async () => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    const designPixels = await createSolidRgba(FRAME_SIZE, FRAME_SIZE, WHITE_RGB);
+    const screenshotPixels = Uint8ClampedArray.from(designPixels);
+
+    // clipToAlignedCanvas は diffPixelCount を減らさずに bbox だけを縮めるため、
+    // clip 済みのクラスタは count > area になり得る。スキーマの 0..1 を守る。
+    const report = buildDiffReport({
+      designPixels,
+      screenshotPixels,
+      width: FRAME_SIZE,
+      height: FRAME_SIZE,
+      diffRegions: [{ x: 10, y: 10, w: 10, h: 10, diffPixelCount: 500 }],
+    });
+
+    const cluster = report.regionScores.find((score) => score.regionId.startsWith("diff-cluster-"));
+    expect(cluster?.diffPixelDensity).toBe(1);
+  });
+});
