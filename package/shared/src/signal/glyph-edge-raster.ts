@@ -296,3 +296,192 @@ export const classifyGlyphEdgeRasterization = (
     foregroundHex: toHex(foreground),
   };
 };
+
+export interface SameTokenRasterEvidence {
+  classification: "same-token-rasterization";
+  changedPixelCount: number;
+  backgroundHex: string;
+  foregroundHex: string;
+  inkCoverageDelta: number;
+}
+
+// 前景トークンは両画像で同一色名である必要があるが、ラスタライザ差で数値は僅かに揺れる。
+const FOREGROUND_TOKEN_TOLERANCE = 24;
+// 1px でも色相ズレが混ざったら別トークンとみなし、このクラスでは説明しない。
+const RASTER_BLEND_RESIDUAL = 16;
+// 同じ太さの文字列が別ラスタライザで描かれたときのインク量差はせいぜい±15%。
+// 太さ違い (Regular↔Bold で約30%)・文字欠落はこれを越えるので 0.25 で切る。
+const MAX_INK_COVERAGE_DELTA = 0.25;
+// 位置ズレのみの同一トポロジなら Hausdorff 正規化値は 0.1 前後。
+// グリフ欠落・要素欠落は領域対角の 1/3 級の空隙を作るので 0.25 で切る。
+const MAX_TOPOLOGY_SHAPE = 0.25;
+
+const foregroundExtreme = (
+  pixels: Uint8ClampedArray,
+  width: number,
+  window: RasterWindow,
+  background: readonly number[],
+  ignoreMask?: Uint8Array,
+): number[] | undefined => {
+  let extreme: number[] | undefined;
+  let extremeScore = 0;
+  for (let y = window.top; y < window.bottom; y++) {
+    for (let x = window.left; x < window.right; x++) {
+      const index = y * width + x;
+      if (ignoreMask?.[index]) continue;
+      const color = colorAt(pixels, index);
+      const contrast = maxChannelDelta(background, color);
+      if (contrast > extremeScore) {
+        extremeScore = contrast;
+        extreme = [...color];
+      }
+    }
+  }
+  return extremeScore >= MIN_FOREGROUND_CONTRAST ? extreme : undefined;
+};
+
+const isOnAxisBlend = (
+  pixels: Uint8ClampedArray,
+  width: number,
+  window: RasterWindow,
+  background: readonly number[],
+  foreground: readonly number[],
+  ignoreMask?: Uint8Array,
+): boolean => {
+  for (let y = window.top; y < window.bottom; y++) {
+    for (let x = window.left; x < window.right; x++) {
+      const index = y * width + x;
+      if (ignoreMask?.[index]) continue;
+      const { residual } = blendAlphaAndResidual(colorAt(pixels, index), background, foreground);
+      if (residual > RASTER_BLEND_RESIDUAL) return false;
+    }
+  }
+  return true;
+};
+
+const inkCoverage = (
+  pixels: Uint8ClampedArray,
+  width: number,
+  window: RasterWindow,
+  background: readonly number[],
+  foreground: readonly number[],
+  ignoreMask?: Uint8Array,
+): number => {
+  let coverage = 0;
+  for (let y = window.top; y < window.bottom; y++) {
+    for (let x = window.left; x < window.right; x++) {
+      const index = y * width + x;
+      if (ignoreMask?.[index]) continue;
+      coverage += blendAlphaAndResidual(colorAt(pixels, index), background, foreground).alpha;
+    }
+  }
+  return coverage;
+};
+
+const countChangedPixels = (
+  designPixels: Uint8ClampedArray,
+  screenshotPixels: Uint8ClampedArray,
+  width: number,
+  window: RasterWindow,
+  ignoreMask?: Uint8Array,
+): number => {
+  let changed = 0;
+  for (let y = window.top; y < window.bottom; y++) {
+    for (let x = window.left; x < window.right; x++) {
+      const index = y * width + x;
+      if (ignoreMask?.[index]) continue;
+      const design = colorAt(designPixels, index);
+      const screenshot = colorAt(screenshotPixels, index);
+      if (maxChannelDelta(design, screenshot) > CHANNEL_TOLERANCE) changed++;
+    }
+  }
+  return changed;
+};
+
+/**
+ * 同一トークン・同一トポロジのラスタライザ差分だけを証明する狭い分類。
+ *
+ * 4つの独立した拘束を全部満たす領域だけが対象:
+ * 1. 両画像の全画素が共通 bg→fg 軸上のブレンドである (色相ズレ = 別トークン → 拒否)
+ * 2. 各画像の最前景トークンが一致 (bg/fg の色名が同じ)
+ * 3. インク被覆率差が小さい (同じ分量の墨が置かれている)
+ * 4. エッジトポロジが近い (欠落したグリフや要素は大きな空隙を作り弾かれる)
+ *
+ * glyph-edge-rasterization が「同一位置の共有コア」を要求するのに対し、
+ * こちらは位置を共有しない同一トークンを許容する。欠落・色違い・太さ違いの
+ * 実害は各拘束が弾くため、このクラスに入れば要素レベルでは一致とみなせる。
+ */
+export const classifySameTokenRasterization = (
+  designPixels: Uint8ClampedArray,
+  screenshotPixels: Uint8ClampedArray,
+  width: number,
+  height: number,
+  bbox: DiffBoundingBox,
+  topologyShape: number,
+  ignoreMask?: Uint8Array,
+): SameTokenRasterEvidence | undefined => {
+  if (topologyShape > MAX_TOPOLOGY_SHAPE) return undefined;
+  const window = resolveRasterWindow(width, height, bbox);
+  if (!window) return undefined;
+  const background = resolveMatchingBackground(
+    designPixels,
+    screenshotPixels,
+    width,
+    window,
+    ignoreMask,
+  );
+  if (!background) return undefined;
+  const designForeground = foregroundExtreme(designPixels, width, window, background, ignoreMask);
+  const screenshotForeground = foregroundExtreme(
+    screenshotPixels,
+    width,
+    window,
+    background,
+    ignoreMask,
+  );
+  if (!designForeground || !screenshotForeground) return undefined;
+  if (maxChannelDelta(designForeground, screenshotForeground) > FOREGROUND_TOKEN_TOLERANCE) {
+    return undefined;
+  }
+  if (
+    !isOnAxisBlend(designPixels, width, window, background, designForeground, ignoreMask) ||
+    !isOnAxisBlend(screenshotPixels, width, window, background, screenshotForeground, ignoreMask)
+  ) {
+    return undefined;
+  }
+  const designInk = inkCoverage(
+    designPixels,
+    width,
+    window,
+    background,
+    designForeground,
+    ignoreMask,
+  );
+  const screenshotInk = inkCoverage(
+    screenshotPixels,
+    width,
+    window,
+    background,
+    screenshotForeground,
+    ignoreMask,
+  );
+  const inkDelta = Math.abs(designInk - screenshotInk) / Math.max(designInk, screenshotInk);
+  if (inkDelta > MAX_INK_COVERAGE_DELTA) return undefined;
+
+  const changedPixelCount = countChangedPixels(
+    designPixels,
+    screenshotPixels,
+    width,
+    window,
+    ignoreMask,
+  );
+  if (changedPixelCount === 0) return undefined;
+
+  return {
+    classification: "same-token-rasterization",
+    changedPixelCount,
+    backgroundHex: toHex(background),
+    foregroundHex: toHex(designForeground),
+    inkCoverageDelta: inkDelta,
+  };
+};

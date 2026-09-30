@@ -1,13 +1,17 @@
 import {
   buildVerifiedInsetCandidates,
   classifyGlyphEdgeRasterization,
+  classifySameTokenRasterization,
   compareFlatRegionColor,
+  computeBestLocalAlignment,
   computeHausdorff,
   classifyForegroundOccupancyGeometry,
   computeMeanDeltaE2000,
   computePerceptibleDiffRatio,
   computeSsimForRegion,
   computeWholeImageStructure,
+  effectiveRegionColor,
+  effectiveRegionStructure,
   GLOBAL_SHIFT_CRITICAL_THRESHOLD_PX,
   GLOBAL_SHIFT_ISSUE_THRESHOLD_PX,
   resolveAlignment,
@@ -66,6 +70,17 @@ interface BuildDiffReportOptions {
   // ときだけ採点単位として使う (Issue #56)。diffPixelCount は上限超過時に
   // 疑わしい順で残すための重大度シグナル。
   diffRegions?: (DiffBoundingBox & { diffPixelCount?: number })[];
+  // 各採点領域で許容する局所平行移動の最大px。指定時だけ有効になる opt-in
+  // 許容 (既定 off: 1px でも FAIL を維持する従来契約を他利用者から変えない)。
+  // ラスタライザ差・丸め誤差で要素が数pxずれる環境間比較 (例: Figma 正本と
+  // Flutter/Skia 実測) では、±3px までのズレを「同じ内容物の位置ずれ」と
+  // みなして major/critical ではなく minor issue として残す (designdiff#230)。
+  localAlignmentTolerancePx?: number;
+  // same-token-rasterization 分類の証拠を合否に効かせるかの opt-in。
+  // 分類自体は常に計算され証拠として残るが、既定では採点を変えない
+  // (従来契約: 画素が一致しない領域は FAIL)。true にすると4拘束で証明された
+  // 領域の構造・色誤差を解消済みとして採点する (designdiff#230)。
+  rasterizationTolerance?: boolean;
 }
 
 const MAX_REGION_SCORE_COUNT = 24;
@@ -139,6 +154,30 @@ const buildGlyphEdgeRasterization = (
 ): RegionScore["glyphEdgeRasterization"] =>
   classifyGlyphEdgeRasterization(designPixels, screenshotPixels, width, height, bbox, ignoreMask);
 
+// 局所シフトの再採点は採点が落ちる領域だけに走らせる。
+// 構造は閾値内でも、1px ずれた帯のように位置ずれがそのまま色誤差になる
+// 領域があるため、ΔE が critical 水準の領域も対象にする。両方とも閾値内の
+// 領域でずらし評価を回すと 48 通りの SSIM/ΔE が無駄になるだけなので外す。
+const buildLocalAlignment = (
+  structure: number,
+  color: number,
+  options: BuildDiffReportOptions,
+  bbox: DiffBoundingBox,
+): RegionScore["localAlignment"] => {
+  if ((structure >= 0.95 && color < 2) || options.localAlignmentTolerancePx === undefined) {
+    return undefined;
+  }
+  return computeBestLocalAlignment(
+    options.designPixels,
+    options.screenshotPixels,
+    options.width,
+    options.height,
+    bbox,
+    options.ignoreMask,
+    options.localAlignmentTolerancePx,
+  );
+};
+
 function buildIssues(
   regionScores: RegionScore[],
   options: BuildDiffReportOptions,
@@ -174,8 +213,10 @@ function buildIssues(
     // ベタ面どうしの hex 不一致は「塗りのトークンが違う」という離散的な事実で、
     // ΔE の連続量では表現できない。critical に上げて computeVerdict の
     // hasCriticalIssue 経路へ乗せる。
+    // ただし局所シフト救済済みの領域で、整列後の位置でベタ面同色と証明された
+    // 場合は「同じ帯がずれた」差分なので critical に上げない (designdiff#230)。
     const flat = regionScore.flatColorMismatch;
-    if (flat) {
+    if (flat && !regionScore.localAlignment?.residualFlatColorMatch) {
       issues.push({
         regionId: regionScore.regionId,
         bbox: regionScore.bbox,
@@ -198,7 +239,16 @@ function buildIssues(
     // hasCriticalIssue 判定に直結するため、常に emit する（verdict の
     // 正しさが kind ラベルの精度より優先 — 条件付き抑制で verdict accuracy が
     // 100%→66.7%に崩れることを実測済み）。
-    if (regionScore.color >= 2) {
+    // ただし局所シフトで救済された領域は、ズレたまま測ったΔEが縁の非重複を
+    // 色誤差として数えてしまうので、オフセット位置で測り直した値を判定に使う。
+    // その位置でも残る色誤差がグリフ縁だけならラスタライザ差として minor に
+    // 落とし、それ以外 (実トークン違い) は critical のまま残す。
+    const localAlignment = regionScore.localAlignment;
+    const effectiveColor = effectiveRegionColor(
+      regionScore,
+      options.rasterizationTolerance === true,
+    );
+    if (effectiveColor >= 2 && !localAlignment?.residualGlyphEdge) {
       issues.push({
         regionId: regionScore.regionId,
         bbox: regionScore.bbox,
@@ -207,13 +257,84 @@ function buildIssues(
         figmaNodeId: regionScore.figmaNodeId,
         evidence: {
           signal: "delta_e_2000",
-          value: regionScore.color,
+          value: effectiveColor,
           threshold: 2,
           expected: "< 2",
-          actual: regionScore.color,
+          actual: effectiveColor,
           ...evidenceProvenance,
         },
         suggestedCssFix: "背景色や塗り色のトークン値をデザイン基準に合わせてください。",
+      });
+    }
+
+    // 救済位置までずらしても残る色差がグリフ縁のみの領域は、トークン違いではなく
+    // ラスタライザ間のアンチエイリアス差。critical にはしないが、痕跡として
+    // minor issue に残す (glyphEdgeRasterization の救済版)。
+    if (effectiveColor >= 2 && localAlignment?.residualGlyphEdge) {
+      issues.push({
+        regionId: regionScore.regionId,
+        bbox: regionScore.bbox,
+        kind: "color",
+        severity: "minor",
+        figmaNodeId: regionScore.figmaNodeId,
+        evidence: {
+          signal: "glyph_edge_rasterization_after_alignment",
+          value: effectiveColor,
+          threshold: 2,
+          expected: "< 2",
+          actual: `ΔE ${effectiveColor.toFixed(2)} at offset (${localAlignment.dx}, ${localAlignment.dy})px`,
+          ...evidenceProvenance,
+        },
+        suggestedCssFix:
+          "文字の縁だけが描画エンジン差でずれています。色トークンは一致していますが、位置のずれを確認してください。",
+      });
+    }
+
+    // 局所シフトで構造が復元できた領域は「同じ内容物が±3pxずれて描画された」
+    // 状態。欠落や別コンテンツではないため major の位置/サイズ違反にはせず、
+    // ずれ量を記録した minor issue として残す。
+    if (localAlignment) {
+      issues.push({
+        regionId: regionScore.regionId,
+        bbox: regionScore.bbox,
+        kind: "position",
+        severity: "minor",
+        figmaNodeId: regionScore.figmaNodeId,
+        evidence: {
+          signal: "local_translation",
+          value: Math.max(Math.abs(localAlignment.dx), Math.abs(localAlignment.dy)),
+          threshold: 1,
+          expected: "0px",
+          actual: `(${localAlignment.dx}, ${localAlignment.dy})px shift, structure ${regionScore.structure.toFixed(3)} -> ${localAlignment.structure.toFixed(3)}`,
+          ...evidenceProvenance,
+        },
+        suggestedCssFix:
+          "領域内の要素が数pxずれて描画されています。余白・座標・丸めを確認してください。",
+      });
+    }
+
+    // 同一トークン証明が取れた領域は、画素非一致がラスタライザ差だけで
+    // 構成されていると4拘束 (bg/fgトークン・無彩色軸・インク量・トポロジ) で
+    // 証明されている。実害と区別するための診断として minor で記録する。
+    const sameToken = regionScore.sameTokenRasterization;
+    const honorSameToken = options.rasterizationTolerance === true;
+    if (sameToken) {
+      issues.push({
+        regionId: regionScore.regionId,
+        bbox: regionScore.bbox,
+        kind: "color",
+        severity: "minor",
+        figmaNodeId: regionScore.figmaNodeId,
+        evidence: {
+          signal: "same_token_rasterization",
+          value: sameToken.inkCoverageDelta,
+          threshold: 0.25,
+          expected: `${sameToken.foregroundHex} on ${sameToken.backgroundHex}`,
+          actual: `${sameToken.changedPixelCount} pixels on same bg->fg axis, ink delta ${(sameToken.inkCoverageDelta * 100).toFixed(1)}%`,
+          ...evidenceProvenance,
+        },
+        suggestedCssFix:
+          "前景/背景トークン・トポロジ・インク量が一致しています。ラスタライザ差の可能性が高いので実害が無いか目視で確認してください。",
       });
     }
 
@@ -221,6 +342,8 @@ function buildIssues(
     // 位置ずれと断定しない。前景位置と双方向の色対応が保たれる場合は幾何issueを
     // 抑え、上で生成した色issueと不合格判定は維持する。
     const hasEdgeDisplacement =
+      !localAlignment &&
+      !(honorSameToken && sameToken) &&
       regionScore.shape > GEOMETRIC_SHAPE_EPSILON &&
       classifyForegroundOccupancyGeometry(
         options.designPixels,
@@ -231,7 +354,10 @@ function buildIssues(
         options.ignoreMask,
       ) === "different";
 
-    if (regionScore.structure < 0.95 && hasEdgeDisplacement) {
+    if (
+      effectiveRegionStructure(regionScore, options.rasterizationTolerance === true) < 0.95 &&
+      hasEdgeDisplacement
+    ) {
       issues.push({
         regionId: regionScore.regionId,
         bbox: regionScore.bbox,
@@ -432,27 +558,39 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
         continue;
       }
 
+      const structure = computeSsimForRegion(
+        designPixels,
+        screenshotPixels,
+        width,
+        height,
+        bbox,
+        ignoreMask,
+      );
+      const color = buildColorDifference(
+        designPixels,
+        screenshotPixels,
+        width,
+        height,
+        bbox,
+        ignoreMask,
+      );
+      const localAlignment = buildLocalAlignment(structure, color, options, bbox);
+      const shape = computeHausdorff(
+        designPixels,
+        screenshotPixels,
+        width,
+        height,
+        bbox,
+        ignoreMask,
+      );
+
       childRegions.push({
         regionId: section.child.id,
         bbox,
         figmaNodeId: section.child.id,
         overlappingNodeIds: section.overlappingNodeIds,
-        structure: computeSsimForRegion(
-          designPixels,
-          screenshotPixels,
-          width,
-          height,
-          bbox,
-          ignoreMask,
-        ),
-        color: buildColorDifference(
-          designPixels,
-          screenshotPixels,
-          width,
-          height,
-          bbox,
-          ignoreMask,
-        ),
+        structure,
+        color,
         flatColorMismatch: buildFlatColorMismatch(
           designPixels,
           screenshotPixels,
@@ -469,9 +607,19 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
           bbox,
           ignoreMask,
         ),
-        shape: computeHausdorff(designPixels, screenshotPixels, width, height, bbox, ignoreMask),
+        sameTokenRasterization: classifySameTokenRasterization(
+          designPixels,
+          screenshotPixels,
+          width,
+          height,
+          bbox,
+          shape,
+          ignoreMask,
+        ),
+        shape,
         layout: UNIMPLEMENTED_LAYOUT_SCORE,
         textureScore: getTextureScore(bbox),
+        localAlignment,
       });
     }
   }
@@ -503,25 +651,36 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
       // 判定するため、順位由来の ID は誤った回帰検出を招く。座標由来の安定した
       // ID にする。x,y だけだと、同じ左上原点で大きさだけ違う別クラスタ
       // (入れ子/重なる形状) が衝突するため w,h も含める。
+      const structure = computeSsimForRegion(
+        designPixels,
+        screenshotPixels,
+        width,
+        height,
+        bbox,
+        ignoreMask,
+      );
+      const color = buildColorDifference(
+        designPixels,
+        screenshotPixels,
+        width,
+        height,
+        bbox,
+        ignoreMask,
+      );
+      const localAlignment = buildLocalAlignment(structure, color, options, bbox);
+      const shape = computeHausdorff(
+        designPixels,
+        screenshotPixels,
+        width,
+        height,
+        bbox,
+        ignoreMask,
+      );
       diffClusterRegions.push({
         regionId: `diff-cluster-${bbox.x}-${bbox.y}-${bbox.w}-${bbox.h}`,
         bbox,
-        structure: computeSsimForRegion(
-          designPixels,
-          screenshotPixels,
-          width,
-          height,
-          bbox,
-          ignoreMask,
-        ),
-        color: buildColorDifference(
-          designPixels,
-          screenshotPixels,
-          width,
-          height,
-          bbox,
-          ignoreMask,
-        ),
+        structure,
+        color,
         flatColorMismatch: buildFlatColorMismatch(
           designPixels,
           screenshotPixels,
@@ -538,9 +697,19 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
           bbox,
           ignoreMask,
         ),
-        shape: computeHausdorff(designPixels, screenshotPixels, width, height, bbox, ignoreMask),
+        sameTokenRasterization: classifySameTokenRasterization(
+          designPixels,
+          screenshotPixels,
+          width,
+          height,
+          bbox,
+          shape,
+          ignoreMask,
+        ),
+        shape,
         layout: UNIMPLEMENTED_LAYOUT_SCORE,
         textureScore: getTextureScore(bbox),
+        localAlignment,
       });
     }
   }
@@ -790,7 +959,10 @@ export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
     });
   }
 
-  const verdict = computeVerdict({ alignment, regionScores, issues });
+  const verdict = computeVerdict(
+    { alignment, regionScores, issues },
+    options.rasterizationTolerance === true,
+  );
   const structuralAssessment = computeWholeImageStructure(
     alignedDesignPixels,
     screenshotPixels,

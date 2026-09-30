@@ -92,6 +92,12 @@ interface CompareImagesOptions {
   // 同幅・異高の入力で位置整合を検査する宣言アンカー。
   // 座標は design_source 画像のピクセル座標。未指定時はピクセル比較のみ。
   anchors?: AnchorRegion[];
+  // 採点領域ごとの局所平行移動の許容上限 (px)。opt-in: 未指定時は 1px の
+  // 座標差でも従来どおり FAIL を維持する (designdiff#230)。
+  localAlignmentTolerancePx?: number;
+  // same-token-rasterization 分類を合否に効かせるかの opt-in。
+  // 既定では分類は証拠として残るだけで採点を変えない (designdiff#230)。
+  rasterizationTolerance?: boolean;
 }
 
 interface ComparisonGeometry {
@@ -1419,6 +1425,8 @@ export async function compareImages(
       h: region.bounds.height,
       diffPixelCount: region.diffPixelCount,
     })),
+    localAlignmentTolerancePx: options.localAlignmentTolerancePx,
+    rasterizationTolerance: options.rasterizationTolerance,
   });
   if (totalPixelCount === 0) {
     diffReport = {

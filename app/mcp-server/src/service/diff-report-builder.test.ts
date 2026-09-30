@@ -1419,6 +1419,213 @@ describe("diffRegions による局所採点 (Issue #56)", () => {
   });
 });
 
+describe("localAlignmentTolerancePx による局所シフト許容 (designdiff#230)", () => {
+  const FRAME_SIZE = 300;
+  const BLOB_SIZE = 40;
+  const BLOB_X = 130;
+  const BLOB_Y = 130;
+
+  const paintRect = (
+    pixels: Uint8ClampedArray,
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    rgb: { r: number; g: number; b: number },
+  ): void => {
+    for (let row = y; row < y + h; row++) {
+      for (let col = x; col < x + w; col++) {
+        const index = (row * FRAME_SIZE + col) * 4;
+        pixels[index] = rgb.r;
+        pixels[index + 1] = rgb.g;
+        pixels[index + 2] = rgb.b;
+      }
+    }
+  };
+
+  const shiftedBlobFixtures = async (shiftX: number) => {
+    const designPixels = await createSolidRgba(FRAME_SIZE, FRAME_SIZE, WHITE_RGB);
+    const screenshotPixels = Uint8ClampedArray.from(designPixels);
+    const black = { r: 20, g: 20, b: 20 };
+    paintRect(designPixels, BLOB_X, BLOB_Y, BLOB_SIZE, BLOB_SIZE, black);
+    paintRect(screenshotPixels, BLOB_X + shiftX, BLOB_Y, BLOB_SIZE, BLOB_SIZE, black);
+    return { designPixels, screenshotPixels };
+  };
+
+  it("指定時は ±3px の平行移動を検出して critical ではなく minor issue として残す", async () => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    const { designPixels, screenshotPixels } = await shiftedBlobFixtures(3);
+    // diff クラスタの bbox は両側のブロックを含む union 領域。
+    const cluster = { x: BLOB_X, y: BLOB_Y, w: BLOB_SIZE + 3, h: BLOB_SIZE };
+
+    const report = buildDiffReport({
+      designPixels,
+      screenshotPixels,
+      width: FRAME_SIZE,
+      height: FRAME_SIZE,
+      diffRegions: [cluster],
+      localAlignmentTolerancePx: 3,
+    });
+
+    const region = report.regionScores.find(
+      (score) =>
+        score.regionId === `diff-cluster-${cluster.x}-${cluster.y}-${cluster.w}-${cluster.h}`,
+    );
+    expect(region?.localAlignment).toMatchObject({ dx: 3, dy: 0, structure: 1 });
+
+    // 位置ずれの事実は消えず minor の position issue として証跡に残る。
+    expect(report.issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          severity: "minor",
+          kind: "position",
+          evidence: expect.objectContaining({
+            signal: "local_translation",
+            actual: expect.stringContaining("(3, 0)px shift"),
+          }),
+        }),
+      ]),
+    );
+    expect(report.issues.some((issue) => issue.severity === "critical")).toBe(false);
+    expect(report.aggregateVerdict).toBe("pass");
+  });
+
+  it("未指定 (既定) では同じ 3px 差分を従来どおり失格扱いにする", async () => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    const { designPixels, screenshotPixels } = await shiftedBlobFixtures(3);
+    const cluster = { x: BLOB_X, y: BLOB_Y, w: BLOB_SIZE + 3, h: BLOB_SIZE };
+
+    const report = buildDiffReport({
+      designPixels,
+      screenshotPixels,
+      width: FRAME_SIZE,
+      height: FRAME_SIZE,
+      diffRegions: [cluster],
+    });
+
+    const region = report.regionScores.find(
+      (score) =>
+        score.regionId === `diff-cluster-${cluster.x}-${cluster.y}-${cluster.w}-${cluster.h}`,
+    );
+    expect(region?.localAlignment).toBeUndefined();
+    expect(report.aggregateVerdict).not.toBe("pass");
+  });
+
+  it("内容物が違う領域は許容指定があっても救済されず critical を維持する", async () => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    const designPixels = await createSolidRgba(FRAME_SIZE, FRAME_SIZE, WHITE_RGB);
+    const screenshotPixels = Uint8ClampedArray.from(designPixels);
+    paintRect(screenshotPixels, BLOB_X, BLOB_Y, BLOB_SIZE, BLOB_SIZE, { r: 200, g: 30, b: 30 });
+    const cluster = { x: BLOB_X, y: BLOB_Y, w: BLOB_SIZE, h: BLOB_SIZE };
+
+    const report = buildDiffReport({
+      designPixels,
+      screenshotPixels,
+      width: FRAME_SIZE,
+      height: FRAME_SIZE,
+      diffRegions: [cluster],
+      localAlignmentTolerancePx: 3,
+    });
+
+    const region = report.regionScores.find(
+      (score) =>
+        score.regionId === `diff-cluster-${cluster.x}-${cluster.y}-${cluster.w}-${cluster.h}`,
+    );
+    expect(region?.localAlignment).toBeUndefined();
+    expect(
+      report.issues.some(
+        (issue) => issue.regionId === region?.regionId && issue.severity === "critical",
+      ),
+    ).toBe(true);
+  });
+});
+
+describe("rasterization_tolerance による同一トークン採点 (designdiff#230)", () => {
+  const width = 9;
+  const height = 9;
+
+  const makeGlyph = (edgeValue: number, xOffset = 0): Uint8ClampedArray => {
+    const pixels = new Uint8ClampedArray(width * height * 4).fill(255);
+    const coreX = 4 + xOffset;
+    for (let y = 2; y < 7; y++) {
+      for (const [x, value] of [
+        [coreX - 1, edgeValue],
+        [coreX, 0],
+      ] as const) {
+        const offset = (y * width + x) * 4;
+        pixels[offset] = value;
+        pixels[offset + 1] = value;
+        pixels[offset + 2] = value;
+      }
+    }
+    return pixels;
+  };
+
+  const compare = async (
+    designPixels: Uint8ClampedArray,
+    screenshotPixels: Uint8ClampedArray,
+    rasterizationTolerance?: boolean,
+  ) => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    return buildDiffReport({
+      designPixels,
+      screenshotPixels,
+      width,
+      height,
+      diffRegions: [{ x: 1, y: 1, w: 7, h: 7, diffPixelCount: 5 }],
+      rasterizationTolerance,
+      resolvedAlignment: {
+        alignment: {
+          translation: { x: 0, y: 0 },
+          scale: { x: 1, y: 1 },
+          rotation: 0,
+          confidence: 1,
+          residual: 0,
+        },
+        alignedDesignPixels: designPixels,
+        applied: false,
+      },
+    });
+  };
+
+  it("指定時は同一トークン証明のある領域を構造・色とも解消済みとして採点する", async () => {
+    const result = await compare(makeGlyph(96), makeGlyph(96, 1), true);
+
+    expect(result.regionScores[0].sameTokenRasterization).toMatchObject({
+      classification: "same-token-rasterization",
+    });
+    expect(
+      result.issues.some(
+        (issue) =>
+          issue.severity === "minor" && issue.evidence.signal === "same_token_rasterization",
+      ),
+    ).toBe(true);
+    expect(result.issues.some((issue) => issue.severity === "critical")).toBe(false);
+    expect(result.aggregateVerdict).toBe("pass");
+  });
+
+  it("未指定では分類証拠を残したまま従来どおり FAIL を維持する", async () => {
+    const result = await compare(makeGlyph(96), makeGlyph(96, 1));
+
+    expect(result.regionScores[0].sameTokenRasterization).toBeDefined();
+    expect(result.aggregateVerdict).not.toBe("pass");
+  });
+
+  it("色相の違う差分は許容指定があっても critical を維持する", async () => {
+    const design = makeGlyph(96);
+    const screenshot = makeGlyph(96, 1);
+    const colored = (6 * width + 2) * 4;
+    screenshot[colored] = 200;
+    screenshot[colored + 1] = 40;
+    screenshot[colored + 2] = 40;
+
+    const result = await compare(design, screenshot, true);
+
+    expect(result.regionScores[0].sameTokenRasterization).toBeUndefined();
+    expect(result.aggregateVerdict).not.toBe("pass");
+  });
+});
+
 // テストデータと期待値で同じ値を参照する。分散させると検証対象が黙ってずれる。
 const VISIBILITY_FIXTURE_NODE_IDS = { visible: "layer-visible", hidden: "layer-hidden" };
 const VARIANT_FIXTURE_NODE_IDS = { a: "variant-a", b: "variant-b", c: "variant-c" };

@@ -313,6 +313,25 @@ export const RegionScoreSchema = z.object({
       foregroundHex: z.string(),
     })
     .optional(),
+  localAlignment: z
+    .object({
+      dx: z.number(),
+      dy: z.number(),
+      structure: z.number().min(0).max(1),
+      color: z.number().nonnegative(),
+      residualGlyphEdge: z.boolean().optional(),
+      residualFlatColorMatch: z.boolean().optional(),
+    })
+    .optional(),
+  sameTokenRasterization: z
+    .object({
+      classification: z.literal("same-token-rasterization"),
+      changedPixelCount: z.number().int().positive(),
+      backgroundHex: z.string(),
+      foregroundHex: z.string(),
+      inkCoverageDelta: z.number().min(0).max(1),
+    })
+    .optional(),
 });
 
 export const WeightedAggregateSchema = z.object({

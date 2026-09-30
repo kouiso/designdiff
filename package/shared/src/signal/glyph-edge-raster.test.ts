@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { classifyGlyphEdgeRasterization } from "./glyph-edge-raster.js";
+import {
+  classifyGlyphEdgeRasterization,
+  classifySameTokenRasterization,
+} from "./glyph-edge-raster.js";
 
 const WIDTH = 9;
 const HEIGHT = 9;
@@ -80,5 +83,79 @@ describe("classifyGlyphEdgeRasterization", () => {
   it("範囲外fixtureを拒否する", () => {
     expect(() => makeGlyph(96, -4)).toThrow(RangeError);
     expect(() => makeGlyph(96, 0, HEIGHT)).toThrow(RangeError);
+  });
+});
+
+const classifySameToken = (
+  design: Uint8ClampedArray,
+  screenshot: Uint8ClampedArray,
+  topologyShape = 0.1,
+) =>
+  classifySameTokenRasterization(
+    design,
+    screenshot,
+    WIDTH,
+    HEIGHT,
+    { x: 1, y: 1, w: 7, h: 7 },
+    topologyShape,
+  );
+
+describe("classifySameTokenRasterization", () => {
+  it("同一トークンで位置ずれしたグリフを同一トークン差として分類する", () => {
+    expect(classifySameToken(makeGlyph(96), makeGlyph(96, 1))).toMatchObject({
+      classification: "same-token-rasterization",
+      backgroundHex: "#FFFFFF",
+      foregroundHex: "#000000",
+    });
+  });
+
+  it("被覆差だけの同一位置グリフも分類する", () => {
+    expect(classifySameToken(makeGlyph(96), makeGlyph(144))).toMatchObject({
+      classification: "same-token-rasterization",
+    });
+  });
+
+  it("トポロジ差が大きい領域 (グリフ欠落) を扱わない", () => {
+    // 片方だけにグリフがあると欠落側のエッジが空隙を作る。
+    // builder 由来の Hausdorff 値が閾値を越えた入力は分類を拒否する。
+    const blank = new Uint8ClampedArray(WIDTH * HEIGHT * 4).fill(255);
+    for (let pixel = 0; pixel < WIDTH * HEIGHT; pixel++) blank[pixel * 4 + 3] = 255;
+    expect(classifySameToken(makeGlyph(96), blank, 0.4)).toBeUndefined();
+  });
+
+  it("色相の違う画素が混ざった領域を扱わない", () => {
+    const design = makeGlyph(96);
+    const screenshot = makeGlyph(96, 1);
+    const colored = (8 * WIDTH + 2) * 4;
+    screenshot[colored] = 200;
+    screenshot[colored + 1] = 40;
+    screenshot[colored + 2] = 40;
+    expect(classifySameToken(design, screenshot)).toBeUndefined();
+  });
+
+  it("インク量差が大きい領域 (太さ違い) を扱わない", () => {
+    const design = makeGlyph(96);
+    const screenshot = makeGlyph(96);
+    // 太字化相当: core の右隣に同じ高さの列を追加して墨量を約1.5倍にする。
+    const extraX = 5;
+    for (let y = 2; y < 7; y++) {
+      const offset = (y * WIDTH + extraX) * 4;
+      screenshot[offset] = 0;
+      screenshot[offset + 1] = 0;
+      screenshot[offset + 2] = 0;
+    }
+    expect(classifySameToken(design, screenshot)).toBeUndefined();
+  });
+
+  it("前景の無い領域 (要素欠落) を扱わない", () => {
+    const blank = new Uint8ClampedArray(WIDTH * HEIGHT * 4).fill(255);
+    for (let pixel = 0; pixel < WIDTH * HEIGHT; pixel++) blank[pixel * 4 + 3] = 255;
+    expect(classifySameToken(makeGlyph(96), blank)).toBeUndefined();
+  });
+
+  it("ベタ面トークン差を扱わない", () => {
+    const design = new Uint8ClampedArray(WIDTH * HEIGHT * 4).fill(255);
+    const screenshot = new Uint8ClampedArray(WIDTH * HEIGHT * 4).fill(248);
+    expect(classifySameToken(design, screenshot)).toBeUndefined();
   });
 });
