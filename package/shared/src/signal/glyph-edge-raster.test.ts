@@ -185,8 +185,8 @@ describe("classifySameTokenRasterization", () => {
       screenshot[offset] = screenshot[offset + 1] = screenshot[offset + 2] = 51;
     }
     const bbox = { x: 12, y: 12, w: 6, h: 12 };
-    expect(
-      classifySameTokenRasterization(design, screenshot, BIG, BIG, bbox, 0.1),
-    ).toMatchObject({ classification: "same-token-rasterization" });
+    expect(classifySameTokenRasterization(design, screenshot, BIG, BIG, bbox, 0.1)).toMatchObject({
+      classification: "same-token-rasterization",
+    });
   });
 });
