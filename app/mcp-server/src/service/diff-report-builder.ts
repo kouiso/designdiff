@@ -2,6 +2,7 @@ import {
   buildVerifiedInsetCandidates,
   classifyGlyphEdgeRasterization,
   classifySameTokenRasterization,
+  classifyTextReflow,
   compareFlatRegionColor,
   computeBestLocalAlignment,
   computeHausdorff,
@@ -338,12 +339,36 @@ function buildIssues(
       });
     }
 
+    // 行折り返しの証明が取れた領域は、ブロック全体の不変量 (トークン・
+    // インク量・行数・成分数) が一致している。グループの先頭だけに
+    // minor を出してノイズを抑える。
+    const textReflow = regionScore.textReflow;
+    if (textReflow && textReflow.memberRegionIds[0] === regionScore.regionId) {
+      issues.push({
+        regionId: regionScore.regionId,
+        bbox: regionScore.bbox,
+        kind: "color",
+        severity: "minor",
+        figmaNodeId: regionScore.figmaNodeId,
+        evidence: {
+          signal: "text_block_reflow",
+          value: textReflow.inkCoverageDelta,
+          threshold: 0.3,
+          expected: `${textReflow.foregroundHex} on ${textReflow.backgroundHex}`,
+          actual: `${textReflow.designLineCount} lines, components ${textReflow.designComponentCount}/${textReflow.screenshotComponentCount}, ink delta ${(textReflow.inkCoverageDelta * 100).toFixed(1)}%`,
+          ...evidenceProvenance,
+        },
+        suggestedCssFix:
+          "テキストブロックの不変量が一致しています。折り返し位置の差は描画器の測定差の可能性が高いので実害が無いか目視で確認してください。",
+      });
+    }
+
     // 輝度勾配の閾値は色だけの変更でも輪郭集合を変えるため、Hausdorff単独で
     // 位置ずれと断定しない。前景位置と双方向の色対応が保たれる場合は幾何issueを
     // 抑え、上で生成した色issueと不合格判定は維持する。
     const hasEdgeDisplacement =
       !localAlignment &&
-      !(honorSameToken && sameToken) &&
+      !(honorSameToken && (sameToken || textReflow)) &&
       regionScore.shape > GEOMETRIC_SHAPE_EPSILON &&
       classifyForegroundOccupancyGeometry(
         options.designPixels,
@@ -714,6 +739,20 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
     }
   }
 
+  // 行折り返しで別 cluster に散った差分を、テキストブロック単位でまとめて
+  // 再分類する。同一トークン分類を通らなかった差分だけが対象 — 同一文字列が
+  // 行をまたいで移動すると、cluster 単位ではグリフが欠落/追加した形に見えるが、
+  // ブロック全体ではインク量・成分数・行数が保存される (designdiff#230)。
+  // 証拠は常に付け、採点への反映は rasterization_tolerance 側で制御する。
+  applyTextReflowClassification(
+    diffClusterRegions,
+    designPixels,
+    screenshotPixels,
+    width,
+    height,
+    ignoreMask,
+  );
+
   const wholeFrameBbox = toWholeFrameRegion(width, height);
   // letterbox 余白を含めると SSIM / 色差が不当に悪化するため、content rect 内で評価する。
   const contentBbox = toContentRegion(width, height, paddingMask);
@@ -779,6 +818,84 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
 
   return [buildRootRegion()];
 }
+
+// 同一行内の cluster はグリフ片ごとに水平方向へ分かれ、行同士は行間の
+// 隙間で縦に分かれる。どちらの方向も「同じテキストブロック内の近接差分」
+// として結合する距離の上限 (行間 ~10px・語間 ~30px の実測から)。
+const REFLOW_MERGE_VERTICAL_GAP = 14;
+const REFLOW_MERGE_HORIZONTAL_GAP = 30;
+
+const intervalsOverlap = (a1: number, a2: number, b1: number, b2: number): boolean =>
+  a1 < b2 && b1 < a2;
+
+const applyTextReflowClassification = (
+  regions: RegionScore[],
+  designPixels: Uint8ClampedArray,
+  screenshotPixels: Uint8ClampedArray,
+  width: number,
+  height: number,
+  ignoreMask?: Uint8Array,
+): void => {
+  const candidates = regions
+    .filter((region) => region.sameTokenRasterization === undefined)
+    .sort((a, b) => a.bbox.y - b.bbox.y || a.bbox.x - b.bbox.x);
+  const groups: RegionScore[][] = [];
+  let groupBottom = -1;
+  let groupRight = -1;
+  let groupLeft = -1;
+  let groupTop = -1;
+  for (const region of candidates) {
+    const top = region.bbox.y;
+    const bottom = region.bbox.y + region.bbox.h;
+    const left = region.bbox.x;
+    const right = region.bbox.x + region.bbox.w;
+    const current = groups.at(-1);
+    const joins =
+      current !== undefined &&
+      ((top - groupBottom <= REFLOW_MERGE_VERTICAL_GAP &&
+        intervalsOverlap(left, right, groupLeft, groupRight)) ||
+        (intervalsOverlap(top, bottom, groupTop, groupBottom) &&
+          left - groupRight <= REFLOW_MERGE_HORIZONTAL_GAP));
+    if (!joins || current === undefined) {
+      groups.push([region]);
+      groupTop = top;
+      groupBottom = bottom;
+      groupLeft = left;
+      groupRight = right;
+      continue;
+    }
+    current.push(region);
+    groupTop = Math.min(groupTop, top);
+    groupBottom = Math.max(groupBottom, bottom);
+    groupLeft = Math.min(groupLeft, left);
+    groupRight = Math.max(groupRight, right);
+  }
+  for (const group of groups) {
+    const union = {
+      x: Math.min(...group.map((region) => region.bbox.x)),
+      y: Math.min(...group.map((region) => region.bbox.y)),
+      w:
+        Math.max(...group.map((region) => region.bbox.x + region.bbox.w)) -
+        Math.min(...group.map((region) => region.bbox.x)),
+      h:
+        Math.max(...group.map((region) => region.bbox.y + region.bbox.h)) -
+        Math.min(...group.map((region) => region.bbox.y)),
+    };
+    const evidence = classifyTextReflow(
+      designPixels,
+      screenshotPixels,
+      width,
+      height,
+      union,
+      ignoreMask,
+    );
+    if (!evidence) continue;
+    const memberIds = group.map((region) => region.regionId);
+    for (const region of group) {
+      region.textReflow = { ...evidence, memberRegionIds: memberIds };
+    }
+  }
+};
 
 interface SectionAnchor {
   child: FigmaNode;

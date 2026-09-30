@@ -323,6 +323,20 @@ export const RegionScoreSchema = z.object({
       residualFlatColorMatch: z.boolean().optional(),
     })
     .optional(),
+  textReflow: z
+    .object({
+      classification: z.literal("text-block-reflow"),
+      changedPixelCount: z.number().int().positive(),
+      backgroundHex: z.string(),
+      foregroundHex: z.string(),
+      inkCoverageDelta: z.number().nonnegative(),
+      designComponentCount: z.number().int().nonnegative(),
+      screenshotComponentCount: z.number().int().nonnegative(),
+      designLineCount: z.number().int().nonnegative(),
+      screenshotLineCount: z.number().int().nonnegative(),
+      memberRegionIds: z.array(z.string()).min(1),
+    })
+    .optional(),
   sameTokenRasterization: z
     .object({
       classification: z.literal("same-token-rasterization"),

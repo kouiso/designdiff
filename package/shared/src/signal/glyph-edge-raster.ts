@@ -11,26 +11,29 @@ export interface GlyphEdgeRasterEvidence {
 const HALO_PX = 2;
 const CHANNEL_TOLERANCE = 1;
 const MIN_BACKGROUND_COVERAGE = 0.4;
-const MIN_FOREGROUND_CONTRAST = 64;
+export const MIN_FOREGROUND_CONTRAST = 64;
 const CORE_ALPHA = 0.85;
 const EDGE_ALPHA_MIN = 0.02;
 const EDGE_ALPHA_MAX = 0.98;
 const MAX_BLEND_RESIDUAL = 10;
 
-const colorAt = (pixels: Uint8ClampedArray, pixelIndex: number): [number, number, number] => {
+export const colorAt = (
+  pixels: Uint8ClampedArray,
+  pixelIndex: number,
+): [number, number, number] => {
   const offset = pixelIndex * 4;
   return [pixels[offset], pixels[offset + 1], pixels[offset + 2]];
 };
 
-const colorKey = (color: readonly number[]): string => `${color[0]},${color[1]},${color[2]}`;
+export const colorKey = (color: readonly number[]): string => `${color[0]},${color[1]},${color[2]}`;
 
-const toHex = (color: readonly number[]): string =>
+export const toHex = (color: readonly number[]): string =>
   `#${color
     .map((channel) => channel.toString(16).padStart(2, "0"))
     .join("")
     .toUpperCase()}`;
 
-const maxChannelDelta = (a: readonly number[], b: readonly number[]): number =>
+export const maxChannelDelta = (a: readonly number[], b: readonly number[]): number =>
   Math.max(Math.abs(a[0] - b[0]), Math.abs(a[1] - b[1]), Math.abs(a[2] - b[2]));
 
 const squaredDistance = (a: readonly number[], b: readonly number[]): number =>
@@ -64,7 +67,7 @@ const dominantBorderColor = (
   return { color: dominant.color, coverage: dominant.count / sampleCount };
 };
 
-const blendAlphaAndResidual = (
+export const blendAlphaAndResidual = (
   color: readonly number[],
   background: readonly number[],
   foreground: readonly number[],
@@ -88,14 +91,14 @@ const blendAlphaAndResidual = (
   return { alpha, residual: Math.sqrt(squaredDistance(color, projected)) };
 };
 
-interface RasterWindow {
+export interface RasterWindow {
   left: number;
   top: number;
   right: number;
   bottom: number;
 }
 
-const resolveRasterWindow = (
+export const resolveRasterWindow = (
   width: number,
   height: number,
   bbox: DiffBoundingBox,
@@ -109,7 +112,7 @@ const resolveRasterWindow = (
   return window.right - window.left >= 3 && window.bottom - window.top >= 3 ? window : undefined;
 };
 
-const resolveMatchingBackground = (
+export const resolveMatchingBackground = (
   designPixels: Uint8ClampedArray,
   screenshotPixels: Uint8ClampedArray,
   width: number,
@@ -306,9 +309,9 @@ export interface SameTokenRasterEvidence {
 }
 
 // 前景トークンは両画像で同一色名である必要があるが、ラスタライザ差で数値は僅かに揺れる。
-const FOREGROUND_TOKEN_TOLERANCE = 24;
+export const FOREGROUND_TOKEN_TOLERANCE = 24;
 // 1px でも色相ズレが混ざったら別トークンとみなし、このクラスでは説明しない。
-const RASTER_BLEND_RESIDUAL = 16;
+export const RASTER_BLEND_RESIDUAL = 16;
 // 同じ太さの文字列が別ラスタライザで描かれたときのインク量差はせいぜい±15%。
 // 太さ違い (Regular↔Bold で約30%)・文字欠落はこれを越えるので 0.25 で切る。
 const MAX_INK_COVERAGE_DELTA = 0.25;
@@ -316,7 +319,7 @@ const MAX_INK_COVERAGE_DELTA = 0.25;
 // グリフ欠落・要素欠落は領域対角の 1/3 級の空隙を作るので 0.25 で切る。
 const MAX_TOPOLOGY_SHAPE = 0.25;
 
-const foregroundExtreme = (
+export const foregroundExtreme = (
   pixels: Uint8ClampedArray,
   width: number,
   window: RasterWindow,
@@ -340,7 +343,7 @@ const foregroundExtreme = (
   return extremeScore >= MIN_FOREGROUND_CONTRAST ? extreme : undefined;
 };
 
-const isOnAxisBlend = (
+export const isOnAxisBlend = (
   pixels: Uint8ClampedArray,
   width: number,
   window: RasterWindow,
@@ -359,7 +362,7 @@ const isOnAxisBlend = (
   return true;
 };
 
-const inkCoverage = (
+export const inkCoverage = (
   pixels: Uint8ClampedArray,
   width: number,
   window: RasterWindow,
@@ -378,7 +381,7 @@ const inkCoverage = (
   return coverage;
 };
 
-const countChangedPixels = (
+export const countChangedPixels = (
   designPixels: Uint8ClampedArray,
   screenshotPixels: Uint8ClampedArray,
   width: number,

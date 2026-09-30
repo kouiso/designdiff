@@ -134,6 +134,10 @@ export {
   type GlyphEdgeRasterEvidence,
   type SameTokenRasterEvidence,
 } from "./signal/glyph-edge-raster.js";
+export {
+  classifyTextReflow,
+  type TextReflowEvidence,
+} from "./signal/text-reflow.js";
 export { computeHausdorff } from "./signal/hausdorff.js";
 export {
   computeBestLocalAlignment,

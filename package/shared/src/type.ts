@@ -278,6 +278,24 @@ export interface RegionScore {
     foregroundHex: string;
     inkCoverageDelta: number;
   };
+  // テキストブロックの行折り返し差。同一 bg/fg トークン・総インク量・
+  // 行バンド数・インク連結成分数が全て一致したときだけ付く (designdiff#230)。
+  // グリフが行をまたいで移動するためトポロジ拘束は入れない。
+  textReflow?: {
+    classification: "text-block-reflow";
+    changedPixelCount: number;
+    backgroundHex: string;
+    foregroundHex: string;
+    inkCoverageDelta: number;
+    designComponentCount: number;
+    screenshotComponentCount: number;
+    designLineCount: number;
+    screenshotLineCount: number;
+    // 結合窓の証明を共有する cluster の regionId 一覧 (自身を含む)。
+    // 折り返し差分は cluster 単位では証明できないので、どの窓で証明したか
+    // を残す。発行する minor issue は先頭メンバーにだけ付ける。
+    memberRegionIds: string[];
+  };
 }
 
 /**
@@ -288,7 +306,12 @@ export const effectiveRegionStructure = (score: RegionScore, honorSameToken = fa
   // 4拘束の同一トークン証明がある領域は、opt-in (rasterization_tolerance)
   // された比較だけ構造一致として採点する。既定では従来契約 (画素差は
   // FAIL) を維持し、診断フィールドは証拠として残るだけにする。
-  if (honorSameToken && score.sameTokenRasterization !== undefined) return 1;
+  if (
+    honorSameToken &&
+    (score.sameTokenRasterization !== undefined || score.textReflow !== undefined)
+  ) {
+    return 1;
+  }
   return score.localAlignment !== undefined
     ? Math.max(score.structure, score.localAlignment.structure)
     : score.structure;
@@ -301,7 +324,12 @@ export const effectiveRegionStructure = (score: RegionScore, honorSameToken = fa
 export const effectiveRegionColor = (score: RegionScore, honorSameToken = false): number => {
   // 同一トークン証明のある領域の残存ΔEはトークン誤差ではなく
   // ラスタライザの被覆差。opt-in 時だけ色誤差としては採点しない。
-  if (honorSameToken && score.sameTokenRasterization !== undefined) return 0;
+  if (
+    honorSameToken &&
+    (score.sameTokenRasterization !== undefined || score.textReflow !== undefined)
+  ) {
+    return 0;
+  }
   return score.localAlignment?.color ?? score.color;
 };
 
