@@ -10,7 +10,6 @@
 //      使う: 同一 bg/fg トークン・総インク量・行バンド数・インク連結成分数
 //      (グリフ片数)。文字列の置換は連結成分数とインク量で弾く。
 
-import type { DiffBoundingBox } from "../type.js";
 import {
   type RasterWindow,
   colorAt,
@@ -24,6 +23,8 @@ import {
   toHex,
   FOREGROUND_TOKEN_TOLERANCE,
 } from "./glyph-edge-raster.js";
+
+import type { DiffBoundingBox } from "../type.js";
 
 export interface TextReflowEvidence {
   classification: "text-block-reflow";

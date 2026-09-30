@@ -343,7 +343,7 @@ function buildIssues(
     // インク量・行数・成分数) が一致している。グループの先頭だけに
     // minor を出してノイズを抑える。
     const textReflow = regionScore.textReflow;
-    if (textReflow && textReflow.memberRegionIds[0] === regionScore.regionId) {
+    if (textReflow?.memberRegionIds[0] === regionScore.regionId) {
       issues.push({
         regionId: regionScore.regionId,
         bbox: regionScore.bbox,

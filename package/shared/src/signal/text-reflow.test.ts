@@ -28,7 +28,7 @@ const blank = (): Uint8ClampedArray => {
 };
 
 // 7本の棒を2行に並べる。折り返し差は「行末の棒が次行の先頭に移る」形。
-const designBars: Array<readonly [number, number]> = [
+const designBars: (readonly [number, number])[] = [
   [3, 3],
   [9, 3],
   [15, 3],
@@ -37,7 +37,7 @@ const designBars: Array<readonly [number, number]> = [
   [9, 15],
   [15, 15],
 ];
-const reflowedBars: Array<readonly [number, number]> = [
+const reflowedBars: (readonly [number, number])[] = [
   [3, 3],
   [9, 3],
   [15, 3],
@@ -47,7 +47,7 @@ const reflowedBars: Array<readonly [number, number]> = [
   [21, 15],
 ];
 
-const makeBlock = (bars: Array<readonly [number, number]>): Uint8ClampedArray => {
+const makeBlock = (bars: (readonly [number, number])[]): Uint8ClampedArray => {
   const pixels = blank();
   for (const [x, y] of bars) paintBar(pixels, x, y);
   return pixels;
@@ -68,7 +68,7 @@ describe("classifyTextReflow", () => {
   });
 
   it("行内でトラッキングだけが変わった同一文字列も分類する", () => {
-    const tracked: Array<readonly [number, number]> = [
+    const tracked: (readonly [number, number])[] = [
       [3, 3],
       [10, 3],
       [17, 3],
@@ -83,7 +83,7 @@ describe("classifyTextReflow", () => {
   });
 
   it("成分数が違うブロック (別の文字列) を扱わない", () => {
-    const different: Array<readonly [number, number]> = [...designBars, [21, 15], [3, 24]];
+    const different: (readonly [number, number])[] = [...designBars, [21, 15], [3, 24]];
     expect(classify(makeBlock(designBars), makeBlock(different))).toBeUndefined();
   });
 
