@@ -158,4 +158,35 @@ describe("classifySameTokenRasterization", () => {
     const screenshot = new Uint8ClampedArray(WIDTH * HEIGHT * 4).fill(248);
     expect(classifySameToken(design, screenshot)).toBeUndefined();
   });
+
+  const BIG = 40;
+  const bigPixels = (stems: number[]): Uint8ClampedArray => {
+    const pixels = new Uint8ClampedArray(BIG * BIG * 4).fill(255);
+    for (let pixel = 0; pixel < BIG * BIG; pixel++) pixels[pixel * 4 + 3] = 255;
+    for (const x of stems) {
+      for (let y = 10; y < 27; y++) {
+        const offset = (y * BIG + x) * 4;
+        pixels[offset] = 51;
+        pixels[offset + 1] = 51;
+        pixels[offset + 2] = 51;
+      }
+    }
+    return pixels;
+  };
+
+  it("証明枠の縁をグリフが占有する小窓でも拡大枠で同一トークンを証明する", () => {
+    // 実測パターン (designdiff#232): 窓縁を別 stem が埋めて背景支配率が
+    // 40% を割るクラスタ。halo を広げた窓では縁が白に戻り証明が成立する。
+    const design = bigPixels([10, 14, 19]);
+    const screenshot = bigPixels([11, 15, 20]);
+    for (let x = 10; x <= 20; x++) {
+      const offset = (10 * BIG + x) * 4;
+      design[offset] = design[offset + 1] = design[offset + 2] = 51;
+      screenshot[offset] = screenshot[offset + 1] = screenshot[offset + 2] = 51;
+    }
+    const bbox = { x: 12, y: 12, w: 6, h: 12 };
+    expect(classifySameTokenRasterization(design, screenshot, BIG, BIG, bbox, 0.1)).toMatchObject({
+      classification: "same-token-rasterization",
+    });
+  });
 });

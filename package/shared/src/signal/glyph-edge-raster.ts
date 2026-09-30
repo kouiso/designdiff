@@ -102,12 +102,13 @@ export const resolveRasterWindow = (
   width: number,
   height: number,
   bbox: DiffBoundingBox,
+  halo: number = HALO_PX,
 ): RasterWindow | undefined => {
   const window = {
-    left: Math.max(0, Math.floor(bbox.x) - HALO_PX),
-    top: Math.max(0, Math.floor(bbox.y) - HALO_PX),
-    right: Math.min(width, Math.ceil(bbox.x + bbox.w) + HALO_PX),
-    bottom: Math.min(height, Math.ceil(bbox.y + bbox.h) + HALO_PX),
+    left: Math.max(0, Math.floor(bbox.x) - halo),
+    top: Math.max(0, Math.floor(bbox.y) - halo),
+    right: Math.min(width, Math.ceil(bbox.x + bbox.w) + halo),
+    bottom: Math.min(height, Math.ceil(bbox.y + bbox.h) + halo),
   };
   return window.right - window.left >= 3 && window.bottom - window.top >= 3 ? window : undefined;
 };
@@ -318,6 +319,12 @@ const MAX_INK_COVERAGE_DELTA = 0.25;
 // 位置ズレのみの同一トポロジなら Hausdorff 正規化値は 0.1 前後。
 // グリフ欠落・要素欠落は領域対角の 1/3 級の空隙を作るので 0.25 で切る。
 const MAX_TOPOLOGY_SHAPE = 0.25;
+// 証明枠は差分の周辺文脈を見るための窓で、細い stem が縁を占める小窓では
+// 背景支配率・インク量差・前景極値が実体より悪く出て証明が崩れる。
+// 窓の大きさ自体は証明の意味論に関与しないので、失敗時は段階的に広げて
+// 再証明する (designdiff#232)。先に小さい窓を試すため既存の証明済み領域の
+// 判定は変わらない。
+const SAME_TOKEN_HALO_CANDIDATES = [HALO_PX, 4, 6, 8] as const;
 
 export const foregroundExtreme = (
   pixels: Uint8ClampedArray,
@@ -414,17 +421,16 @@ export const countChangedPixels = (
  * こちらは位置を共有しない同一トークンを許容する。欠落・色違い・太さ違いの
  * 実害は各拘束が弾くため、このクラスに入れば要素レベルでは一致とみなせる。
  */
-export const classifySameTokenRasterization = (
+const classifySameTokenRasterizationAtHalo = (
   designPixels: Uint8ClampedArray,
   screenshotPixels: Uint8ClampedArray,
   width: number,
   height: number,
   bbox: DiffBoundingBox,
-  topologyShape: number,
+  halo: number,
   ignoreMask?: Uint8Array,
 ): SameTokenRasterEvidence | undefined => {
-  if (topologyShape > MAX_TOPOLOGY_SHAPE) return undefined;
-  const window = resolveRasterWindow(width, height, bbox);
+  const window = resolveRasterWindow(width, height, bbox, halo);
   if (!window) return undefined;
   const background = resolveMatchingBackground(
     designPixels,
@@ -487,4 +493,29 @@ export const classifySameTokenRasterization = (
     foregroundHex: toHex(designForeground),
     inkCoverageDelta: inkDelta,
   };
+};
+
+export const classifySameTokenRasterization = (
+  designPixels: Uint8ClampedArray,
+  screenshotPixels: Uint8ClampedArray,
+  width: number,
+  height: number,
+  bbox: DiffBoundingBox,
+  topologyShape: number,
+  ignoreMask?: Uint8Array,
+): SameTokenRasterEvidence | undefined => {
+  if (topologyShape > MAX_TOPOLOGY_SHAPE) return undefined;
+  for (const halo of SAME_TOKEN_HALO_CANDIDATES) {
+    const evidence = classifySameTokenRasterizationAtHalo(
+      designPixels,
+      screenshotPixels,
+      width,
+      height,
+      bbox,
+      halo,
+      ignoreMask,
+    );
+    if (evidence) return evidence;
+  }
+  return undefined;
 };

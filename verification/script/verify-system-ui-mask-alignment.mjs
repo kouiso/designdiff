@@ -553,6 +553,23 @@ async function writeComparisonSheet(outputDir, tool, independent, images) {
     .toFile(path.join(outputDir, "comparison-sheet.png"));
 }
 
+const rollbackPublishedEntries = async (entries) => {
+  const rollbackErrors = [];
+  for (const entry of [...entries].reverse()) {
+    try {
+      if (entry.installed) {
+        await fs.rm(entry.targetDir, { recursive: true, force: true });
+      }
+      if (entry.targetExisted) {
+        await fs.rename(entry.backupDir, entry.targetDir);
+      }
+    } catch (error) {
+      rollbackErrors.push(error);
+    }
+  }
+  return rollbackErrors;
+};
+
 const publishDirectoriesAtomically = async (directories, assertPublishedState) => {
   const transactionId = `${process.pid}-${Date.now()}`;
   const entries = directories.map(({ stagingDir, targetDir }) => ({
@@ -585,21 +602,7 @@ const publishDirectoriesAtomically = async (directories, assertPublishedState) =
   } catch (error) {
     publicationError = error;
   } finally {
-    const rollbackErrors = [];
-    if (!succeeded) {
-      for (const entry of [...entries].reverse()) {
-        try {
-          if (entry.installed) {
-            await fs.rm(entry.targetDir, { recursive: true, force: true });
-          }
-          if (entry.targetExisted) {
-            await fs.rename(entry.backupDir, entry.targetDir);
-          }
-        } catch (error) {
-          rollbackErrors.push(error);
-        }
-      }
-    }
+    const rollbackErrors = succeeded ? [] : await rollbackPublishedEntries(entries);
     if (rollbackErrors.length > 0) {
       rollbackError = new AggregateError(rollbackErrors, "evidence publication rollback failed");
     } else {
