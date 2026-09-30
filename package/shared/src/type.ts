@@ -255,7 +255,88 @@ export interface RegionScore {
     backgroundHex: string;
     foregroundHex: string;
   };
+  // ±3px 以内の平行移動で構造が救済水準まで復元できた領域の診断。
+  // 全体補正 (resolveAlignment) では拾えない「カード内の文字が1-2pxずれる」
+  // ような局所シフトを、内容物の不一致と区別するために残す (designdiff#230)。
+  localAlignment?: {
+    // screenshot を (dx, dy) ずらすと design と一致する向きのオフセット。
+    dx: number;
+    dy: number;
+    // 最良オフセット位置で測り直した SSIM と平均ΔE2000。
+    structure: number;
+    color: number;
+    // オフセット位置の残差分がグリフ縁だけで構成されるなら true。
+    // ラスタライザ差の確証になり、残った色誤差を実トークン違いと区別する。
+    residualGlyphEdge?: boolean;
+    // 整列後の位置で両側がベタ面同色と証明されたときだけ true。
+    // ずれたままの位置で出した flat_region_color critical と、
+    // 「同じ帯が平行移動した」差分を区別する (designdiff#230)。
+    residualFlatColorMatch?: boolean;
+  };
+  // 同一 bg/fg トークン・近いトポロジ・近いインク量であることが4拘束で
+  // 証明された領域の診断。ラスタライザ差で画素が一致しないだけで、
+  // 要素レベルでは同じ内容物が同じ位置に描かれている (designdiff#230)。
+  sameTokenRasterization?: {
+    classification: "same-token-rasterization";
+    changedPixelCount: number;
+    backgroundHex: string;
+    foregroundHex: string;
+    inkCoverageDelta: number;
+  };
+  // テキストブロックの行折り返し差。同一 bg/fg トークン・総インク量・
+  // 行バンド数・インク連結成分数が全て一致したときだけ付く (designdiff#230)。
+  // グリフが行をまたいで移動するためトポロジ拘束は入れない。
+  textReflow?: {
+    classification: "text-block-reflow";
+    changedPixelCount: number;
+    backgroundHex: string;
+    foregroundHex: string;
+    inkCoverageDelta: number;
+    designComponentCount: number;
+    screenshotComponentCount: number;
+    designLineCount: number;
+    screenshotLineCount: number;
+    // 結合窓の証明を共有する cluster の regionId 一覧 (自身を含む)。
+    // 折り返し差分は cluster 単位では証明できないので、どの窓で証明したか
+    // を残す。発行する minor issue は先頭メンバーにだけ付ける。
+    memberRegionIds: string[];
+  };
 }
+
+/**
+ * 領域の採点に使う構造値。局所シフトで救済された領域はオフセット位置の
+ * スコアを返す。そうでなければ元の値をそのまま使う。
+ */
+export const effectiveRegionStructure = (score: RegionScore, honorSameToken = false): number => {
+  // 4拘束の同一トークン証明がある領域は、opt-in (rasterization_tolerance)
+  // された比較だけ構造一致として採点する。既定では従来契約 (画素差は
+  // FAIL) を維持し、診断フィールドは証拠として残るだけにする。
+  if (
+    honorSameToken &&
+    (score.sameTokenRasterization !== undefined || score.textReflow !== undefined)
+  ) {
+    return 1;
+  }
+  return score.localAlignment !== undefined
+    ? Math.max(score.structure, score.localAlignment.structure)
+    : score.structure;
+};
+
+/**
+ * 領域の採点に使う色差。局所シフトで救済された領域は、ズレたまま測ると
+ * グリフ縁の非重複が色誤差として過大に出るため、オフセット位置で測った値を使う。
+ */
+export const effectiveRegionColor = (score: RegionScore, honorSameToken = false): number => {
+  // 同一トークン証明のある領域の残存ΔEはトークン誤差ではなく
+  // ラスタライザの被覆差。opt-in 時だけ色誤差としては採点しない。
+  if (
+    honorSameToken &&
+    (score.sameTokenRasterization !== undefined || score.textReflow !== undefined)
+  ) {
+    return 0;
+  }
+  return score.localAlignment?.color ?? score.color;
+};
 
 /**
  * layout スコアは未実装。定義が決まっていないので 0 のままにする。
@@ -335,7 +416,10 @@ export const selectScoringRegions = (regionScores: RegionScore[]): RegionScore[]
   return sections.length > 0 ? sections : regionScores;
 };
 
-const normalizeWeightedAggregate = (allRegionScores: RegionScore[]): WeightedAggregate => {
+const normalizeWeightedAggregate = (
+  allRegionScores: RegionScore[],
+  honorSameToken = false,
+): WeightedAggregate => {
   const regionScores = selectScoringRegions(allRegionScores);
   if (regionScores.length === 0) {
     return {
@@ -358,8 +442,8 @@ const normalizeWeightedAggregate = (allRegionScores: RegionScore[]): WeightedAgg
           ? adjustedWeights[index] / adjustedTotalWeight
           : 1 / regionScores.length;
 
-      aggregate.weightedStructure += weight * score.structure;
-      aggregate.weightedColor += weight * score.color;
+      aggregate.weightedStructure += weight * effectiveRegionStructure(score, honorSameToken);
+      aggregate.weightedColor += weight * effectiveRegionColor(score, honorSameToken);
       aggregate.totalWeight = adjustedTotalWeight;
       return aggregate;
     },
@@ -415,10 +499,11 @@ const buildGlyphEdgeRationaleSuffix = (regionScores: RegionScore[]): string => {
 
 export const computeVerdict = (
   report: Omit<DiffReport, "aggregateVerdict" | "rationale">,
+  honorSameToken = false,
 ): { verdict: DiffVerdict; rationale: string; weightedAggregate: WeightedAggregate } => {
   const hasCriticalIssue = report.issues.some((issue) => issue.severity === "critical");
   // P2 では region 面積で重み付けし、単一セクションの暴走で全体 verdict が即死しないようにする。
-  const weightedAggregate = normalizeWeightedAggregate(report.regionScores);
+  const weightedAggregate = normalizeWeightedAggregate(report.regionScores, honorSameToken);
   // 理由の文面も集計と同じ行から作る。片方だけ全部の行を見ると、判定は子から
   // 出しているのに「いちばん悪いのは画面全体」と書く食い違いが起きる。
   const scoringRegions = selectScoringRegions(report.regionScores);

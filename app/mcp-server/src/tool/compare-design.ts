@@ -58,6 +58,8 @@ const DESCRIPTION = `デザインと実装のピクセル差分を検出しま�
 - comparison_conditions: design / screenshotそれぞれのviewport{width,height}(論理px)、pixelRatio(物理px/論理px)、origin{x,y}(画像左上の共通参照座標、論理px)の申告。画像外寸はキャンバス寸法であり端末の高さとは限らない。未指定は未確認として報告し、異なる表示領域・原点ならCSS修正の前に撮影条件を確認する。申告値による自動変換は行わない
 - ignore_regions: 既知の意図的差分マスク（省略可）。project_id の保存済みマスク、自動 system UI マスクと結合される。WP原文 vs Figmaプレースホルダ、Google Map埋め込み等の false-positive 抑制に使用。各矩形 {x,y,width,height,label?} 内のピクセルは差分検出/matchRate 分母から除外される
 - anchors: 同幅・異高入力（レスポンシブ縦伸び）の位置整合検査（省略可）。各要素 {x,y,width,height,mode,label?,tolerancePx?} を design 画像のピクセル座標で宣言する。mode は top-ratio（上端を高さ比で写像）または bottom-fixed（下端固定）。tolerancePx 既定2。宣言領域を screenshot 内で同定し、期待位置とのズレが許容内かをアンカー毎に PASS/FAIL で返す。未指定時は従来どおりピクセル比較のみ
+- local_alignment_tolerance_px: 採点領域ごとの局所平行移動の許容上限（省略可、opt-in）。指定した場合、structure が閾値未満の領域で ±N px の再整列を試し、整列後に構造 0.95 以上なら位置ずれを minor issue として採点に残す。ラスタライザ差・丸め誤差による数pxのズレ向け（例: Figma 正本 vs Flutter/Skia 実測）。未指定時は 1px の座標差でも従来どおり FAIL を維持する
+- rasterization_tolerance: same-token-rasterization 分類を合否に効かせるか（省略可、opt-in、既定 false）。領域の全画素が共通 bg→fg 軸上のブレンドで前景トークン・トポロジ・インク量が一致すると4拘束で証明された領域を「同一内容物のラスタライザ差」として採点する。別描画エンジン同士の比較 (Figma 正本 vs Flutter/Skia 実測) で文字列のストローク被覆差を実害と区別する向け。未指定時は分類証拠がレポートに残るだけで合否は従来どおり
 - mask_system_ui: モバイル実機/Simulator撮影のOSステータスバー/ナビゲーションバーを自動マスクするか。capture_device指定時は既定true、それ以外は既定false。set_ignore_regionsで追加の微調整が可能
 - auto_mask_dynamic: screenshot_url経路で同じページを2回撮り、変わった領域を自動マスクする（既定true）。時計/カウンタ/カルーセル等が毎回差分に出て収束しなくなるのを防ぐ
 
@@ -467,6 +469,21 @@ export const registerCompareDesign = (server: McpServer): void => {
       .optional()
       .describe(
         "同幅・異高入力（レスポンシブ縦伸び）の位置整合検査。design_source画像のピクセル座標で宣言した領域{x,y,width,height}を screenshot 内で同定し、mode の位置規則 (top-ratio=上端を高さ比で写像 / bottom-fixed=下端固定) を tolerancePx(既定2) 内で検査する。アンカー毎の PASS/FAIL は anchorCheck に返り、違反があれば status は FAIL になる。未指定時は従来どおりピクセル比較のみ。",
+      ),
+    local_alignment_tolerance_px: z
+      .number()
+      .int()
+      .min(0)
+      .max(10)
+      .optional()
+      .describe(
+        "採点領域ごとの局所平行移動の許容上限 (px)。指定すると、structure が閾値未満の領域に対して ±N px の再整列を試し、整列後に構造 0.95 以上なら「同じ内容物の位置ずれ」として採点する (整列後の残差色が glyph-edge と分類される場合のみ色差 critical を minor に格下げし、位置ずれ自体は必ず minor issue としてレポートに残る)。ラスタライザ差・丸め誤差で要素が数pxずれる環境間比較 (例: Figma 正本 vs Flutter/Skia 実測) 向けの opt-in 許容。未指定時は従来どおり 1px の座標差でも FAIL を維持する。",
+      ),
+    rasterization_tolerance: z
+      .boolean()
+      .optional()
+      .describe(
+        "same-token-rasterization 分類を合否に効かせるかの opt-in (既定 false)。領域内の全画素が共通 bg→fg 軸上のブレンドであり前景トークン・トポロジ (Hausdorff)・インク量が一致すると4拘束で証明された領域を「同一内容物のラスタライザ差」として採点する (構造・色誤差を解消済みにし critical を minor へ)。別描画エンジン同士の比較 (Figma 正本 vs Flutter/Skia 実測など) で、同じトークンで描かれた文字列のストローク被覆差を実害と区別するための許容。未指定時は分類証拠をレポートに残すだけで合否は従来どおり。",
       ),
   };
 

@@ -130,9 +130,21 @@ export {
 } from "./signal/flat-region-color.js";
 export {
   classifyGlyphEdgeRasterization,
+  classifySameTokenRasterization,
   type GlyphEdgeRasterEvidence,
+  type SameTokenRasterEvidence,
 } from "./signal/glyph-edge-raster.js";
+export {
+  classifyTextReflow,
+  type TextReflowEvidence,
+} from "./signal/text-reflow.js";
 export { computeHausdorff } from "./signal/hausdorff.js";
+export {
+  computeBestLocalAlignment,
+  LOCAL_ALIGNMENT_MAX_SHIFT_PX,
+  LOCAL_ALIGNMENT_RESCUE_STRUCTURE,
+  type LocalAlignmentResult,
+} from "./signal/local-alignment.js";
 export {
   computeSsim,
   computeSsimForRegion,
@@ -300,7 +312,13 @@ export {
   WeightedAggregateSchema,
 } from "./schema.js";
 // Types derived from schemas
-export { computeVerdict, selectScoringRegions, UNIMPLEMENTED_LAYOUT_SCORE } from "./type.js";
+export {
+  computeVerdict,
+  effectiveRegionColor,
+  effectiveRegionStructure,
+  selectScoringRegions,
+  UNIMPLEMENTED_LAYOUT_SCORE,
+} from "./type.js";
 export type {
   Alignment,
   AnchorCheckReport,
