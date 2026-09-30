@@ -296,6 +296,9 @@ export const RegionScoreSchema = z.object({
   shape: z.number().nonnegative(),
   layout: z.number().nonnegative(),
   textureScore: z.number().min(0).max(1).optional(),
+  // クラスタ bbox 面積に占める差分画素の割合。疎な輪郭クラスタで採点が
+  // 薄まる度合いを読み取る補助シグナル (Issue #58)。クラスタ行にのみ付く。
+  diffPixelDensity: z.number().min(0).max(1).optional(),
   // 落とすと「なぜ critical になったか」が結果から辿れなくなる。
   flatColorMismatch: z
     .object({

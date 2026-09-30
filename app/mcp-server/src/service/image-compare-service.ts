@@ -397,10 +397,12 @@ interface ClusterDiffResult {
 // ここが空だと「60箇所直せ」という読み方に戻ってしまう。
 // 分割を諦めた理由のうち、「差分が全面に広がっている」と言い切れるもの。
 // 時間切れ (wall-budget-exceeded) は処理が重かっただけで、広がりの証拠にならない。
+// 領域数超過 (region-count-exceeded) は逆に「独立した差分が多すぎる」状態で、
+// ホットセル比の上限を超えた場合 (hot-cell-ratio-exceeded) にだけ全面への広がりが言える。
 function isWidespreadDiffReason(
   reason: NonNullable<ClusterTelemetry["fallbackReason"]>,
-): reason is "hot-cell-ratio-exceeded" | "region-count-exceeded" {
-  return reason === "hot-cell-ratio-exceeded" || reason === "region-count-exceeded";
+): reason is "hot-cell-ratio-exceeded" {
+  return reason === "hot-cell-ratio-exceeded";
 }
 
 const CLUSTER_COLLAPSE_CHECKS = [
@@ -493,8 +495,9 @@ function clusterDiffRegions(args: {
         checks: CLUSTER_COLLAPSE_CHECKS,
       };
     } else {
-      // 時間切れは「差分が全面に広がっている」証拠にならない。局所的な差分でも
-      // 大きい画像なら起きる。せっかく見つけた大まかな位置を捨てずに返す。
+      // 時間切れや領域数超過は「差分が全面に広がっている」証拠にならない。
+      // 局所的な差分が多いだけでも大きい画像なら起きる。
+      // せっかく見つけた大まかな位置を捨てずに返す。
       diffRegions = coarseTiles;
     }
   }
