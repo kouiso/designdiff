@@ -29,7 +29,7 @@ designdiff/
 ## Tech Stack
 
 - **Frontend**: React 19 + TypeScript + Vite + Tailwind CSS 4 + shadcn/ui
-- **Desktop**: Electron 35 + electron-vite 3
+- **Desktop**: Electron 41 + electron-vite 3
 - **State**: Zustand 5
 - **Validation**: Zod v4
 - **Test**: Vitest + @testing-library/react

@@ -2,11 +2,12 @@
  * FigDiff MCP Server
  * Diff-driven design comparison tools for AI assistants
  *
- * Exposes 16 tools via MCP protocol:
+ * Exposes 17 tools via MCP protocol:
  * - list_projects (Utility): List all FigDiff projects stored in ~/.figdiff/projects/
  * - create_project (Utility): Create a new FigDiff project
  * - delete_project (Utility): Delete a FigDiff project
  * - compare_design (Primary): Pixel diff between Figma design and implementation
+ * - compare_animation (Primary): Compare animated UI as a time-ordered frame sequence
  * - inspect_node (Secondary): Dev Mode-like node detail inspection
  * - get_design_tokens (Secondary): Extract design tokens from a Figma frame
  * - list_figma_frames (Utility): List frames in a Figma file
