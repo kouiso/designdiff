@@ -3,6 +3,7 @@ import {
   classifyGlyphEdgeRasterization,
   classifySameTokenRasterization,
   classifyTextReflow,
+  classifyTextureResampling,
   compareFlatRegionColor,
   computeBestLocalAlignment,
   computeHausdorff,
@@ -329,13 +330,37 @@ function buildIssues(
         evidence: {
           signal: "same_token_rasterization",
           value: sameToken.inkCoverageDelta,
-          threshold: 0.25,
+          threshold: sameToken.inkLimit,
           expected: `${sameToken.foregroundHex} on ${sameToken.backgroundHex}`,
           actual: `${sameToken.changedPixelCount} pixels on same bg->fg axis, ink delta ${(sameToken.inkCoverageDelta * 100).toFixed(1)}%`,
           ...evidenceProvenance,
         },
         suggestedCssFix:
           "前景/背景トークン・トポロジ・インク量が一致しています。ラスタライザ差の可能性が高いので実害が無いか目視で確認してください。",
+      });
+    }
+
+    // 写真系領域でリサンプル証明が取れた領域は、画素非一致が別スケーラの
+    // 縁AAだけで構成されていると3拘束 (両側写真様・縁トポロジ・構造) で
+    // 証明されている。実害と区別する診断として minor で記録する。
+    const textureResampling = regionScore.textureResampling;
+    if (textureResampling) {
+      issues.push({
+        regionId: regionScore.regionId,
+        bbox: regionScore.bbox,
+        kind: "color",
+        severity: "minor",
+        figmaNodeId: regionScore.figmaNodeId,
+        evidence: {
+          signal: "texture_resampling",
+          value: textureResampling.structure,
+          threshold: 0.65,
+          expected: "photo-like both sides",
+          actual: `${textureResampling.changedPixelCount} pixels resampled, texture ${textureResampling.textureScore.toFixed(2)}, shape ${textureResampling.shape.toFixed(2)}`,
+          ...evidenceProvenance,
+        },
+        suggestedCssFix:
+          "両側とも写真様テクスチャで縁・構造が一致しています。リサンプラ差の可能性が高いので実害が無いか目視で確認してください。",
       });
     }
 
@@ -623,6 +648,15 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
         bbox,
         ignoreMask,
       );
+      const sameToken = classifySameTokenRasterization(
+        designPixels,
+        screenshotPixels,
+        width,
+        height,
+        bbox,
+        shape,
+        ignoreMask,
+      );
 
       childRegions.push({
         regionId: section.child.id,
@@ -647,15 +681,19 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
           bbox,
           ignoreMask,
         ),
-        sameTokenRasterization: classifySameTokenRasterization(
-          designPixels,
-          screenshotPixels,
-          width,
-          height,
-          bbox,
-          shape,
-          ignoreMask,
-        ),
+        sameTokenRasterization: sameToken,
+        // トークン証明が通らなかった領域だけテクスチャ証明を試す。
+        // 同一トークン証明がある領域で二重分類すると診断が読みにくい。
+        textureResampling: sameToken
+          ? undefined
+          : classifyTextureResampling(
+              designPixels,
+              screenshotPixels,
+              width,
+              height,
+              bbox,
+              ignoreMask,
+            ),
         shape,
         layout: UNIMPLEMENTED_LAYOUT_SCORE,
         textureScore: getTextureScore(bbox),
@@ -716,6 +754,15 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
         bbox,
         ignoreMask,
       );
+      const sameToken = classifySameTokenRasterization(
+        designPixels,
+        screenshotPixels,
+        width,
+        height,
+        bbox,
+        shape,
+        ignoreMask,
+      );
       diffClusterRegions.push({
         regionId: `diff-cluster-${bbox.x}-${bbox.y}-${bbox.w}-${bbox.h}`,
         bbox,
@@ -741,15 +788,17 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
           bbox,
           ignoreMask,
         ),
-        sameTokenRasterization: classifySameTokenRasterization(
-          designPixels,
-          screenshotPixels,
-          width,
-          height,
-          bbox,
-          shape,
-          ignoreMask,
-        ),
+        sameTokenRasterization: sameToken,
+        textureResampling: sameToken
+          ? undefined
+          : classifyTextureResampling(
+              designPixels,
+              screenshotPixels,
+              width,
+              height,
+              bbox,
+              ignoreMask,
+            ),
         shape,
         layout: UNIMPLEMENTED_LAYOUT_SCORE,
         textureScore: getTextureScore(bbox),

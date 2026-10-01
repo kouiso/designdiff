@@ -282,6 +282,18 @@ export interface RegionScore {
     backgroundHex: string;
     foregroundHex: string;
     inkCoverageDelta: number;
+    inkLimit: number;
+  };
+  // 写真系テクスチャ領域のリサンプル差。両側が写真様・±3px平行移動で
+  // 縁トポロジ一致・構造一致したときだけ付く (designdiff#239)。
+  // 同一コンテンツを別スケーラで描いた差分は画素ごとに大きくずれるが
+  // 縁と構造は保存されるため、トークン証明の無い領域でも実害と区別できる。
+  textureResampling?: {
+    classification: "texture-resampling";
+    changedPixelCount: number;
+    textureScore: number;
+    structure: number;
+    shape: number;
   };
   // テキストブロックの行折り返し差。同一 bg/fg トークン・総インク量・
   // 行バンド数・インク連結成分数が全て一致したときだけ付く (designdiff#230)。
@@ -313,7 +325,9 @@ export const effectiveRegionStructure = (score: RegionScore, honorSameToken = fa
   // FAIL) を維持し、診断フィールドは証拠として残るだけにする。
   if (
     honorSameToken &&
-    (score.sameTokenRasterization !== undefined || score.textReflow !== undefined)
+    (score.sameTokenRasterization !== undefined ||
+      score.textReflow !== undefined ||
+      score.textureResampling !== undefined)
   ) {
     return 1;
   }
@@ -331,7 +345,9 @@ export const effectiveRegionColor = (score: RegionScore, honorSameToken = false)
   // ラスタライザの被覆差。opt-in 時だけ色誤差としては採点しない。
   if (
     honorSameToken &&
-    (score.sameTokenRasterization !== undefined || score.textReflow !== undefined)
+    (score.sameTokenRasterization !== undefined ||
+      score.textReflow !== undefined ||
+      score.textureResampling !== undefined)
   ) {
     return 0;
   }

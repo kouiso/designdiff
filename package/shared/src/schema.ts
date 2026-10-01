@@ -347,6 +347,16 @@ export const RegionScoreSchema = z.object({
       backgroundHex: z.string(),
       foregroundHex: z.string(),
       inkCoverageDelta: z.number().min(0).max(1),
+      inkLimit: z.number().min(0).max(1),
+    })
+    .optional(),
+  textureResampling: z
+    .object({
+      classification: z.literal("texture-resampling"),
+      changedPixelCount: z.number().int().positive(),
+      textureScore: z.number().min(0).max(1),
+      structure: z.number().min(0).max(1),
+      shape: z.number().min(0).max(1),
     })
     .optional(),
 });

@@ -136,15 +136,15 @@ function directedHausdorff(source: Point[], target: Point[]): number {
   return maxDistance;
 }
 
-function sampleEdgePoints(points: Point[]): Point[] {
-  if (points.length <= MAX_HAUSDORFF_EDGE_POINTS) {
+function sampleEdgePoints(points: Point[], cap: number = MAX_HAUSDORFF_EDGE_POINTS): Point[] {
+  if (points.length <= cap) {
     return points;
   }
 
   const sampled: Point[] = [];
   const lastIndex = points.length - 1;
-  for (let index = 0; index < MAX_HAUSDORFF_EDGE_POINTS; index += 1) {
-    sampled.push(points[Math.round((index * lastIndex) / (MAX_HAUSDORFF_EDGE_POINTS - 1))]);
+  for (let index = 0; index < cap; index += 1) {
+    sampled.push(points[Math.round((index * lastIndex) / (cap - 1))]);
   }
 
   return sampled;
@@ -199,4 +199,84 @@ export const computeHausdorff = (
   }
 
   return Math.min(1, Math.max(0, distance / diagonal));
+};
+
+// 平行移動を除いた形状差。
+//
+// 同じ要素がラスタライザ差や座標丸めで ±数px ずれると、生の Hausdorff は
+// 移動量ぶん悪化して「同じ形状」を弾いてしまう。一方ずつ ±maxShiftPx の
+// 全オフセットを試し、最小の対称 Hausdorff を返すことで、移動量を除いた
+// 形状差だけを残す。欠落・別形状の要素はどのオフセットでも一致しないので
+// 救済しない。
+// 距離計算は O(offsets × edges²) になるため、ここだけは sample 上限を
+// 絞る。サンプルが粗くなる分の誤差は ±1-2 画素程度で、形状の有無判定には
+// 十分な解像度を保つ。
+const TOLERANT_HAUSDORFF_EDGE_POINTS = 128;
+
+export const computeShiftTolerantHausdorff = (
+  imgA: Uint8ClampedArray,
+  imgB: Uint8ClampedArray,
+  width: number,
+  height: number,
+  bbox: DiffBoundingBox,
+  ignoreMask?: Uint8Array,
+  maxShiftPx = 3,
+): number => {
+  if (imgA.length !== width * height * 4 || imgB.length !== width * height * 4) {
+    throw new Error("Image data length must equal width * height * 4");
+  }
+  if (ignoreMask !== undefined && ignoreMask.length !== width * height) {
+    throw new Error("ignoreMask length must equal width * height");
+  }
+
+  const region = clampRegion(bbox, width, height);
+  if (region.w === 0 || region.h === 0) {
+    return 0;
+  }
+
+  const luminanceA = toLuminance(imgA);
+  const luminanceB = toLuminance(imgB);
+  const edgesA = sampleEdgePoints(
+    detectEdges(luminanceA, width, height, region, ignoreMask),
+    TOLERANT_HAUSDORFF_EDGE_POINTS,
+  );
+  const edgesB = sampleEdgePoints(
+    detectEdges(luminanceB, width, height, region, ignoreMask),
+    TOLERANT_HAUSDORFF_EDGE_POINTS,
+  );
+
+  if (edgesA.length === 0 && edgesB.length === 0) {
+    return 0;
+  }
+  if (edgesA.length === 0 || edgesB.length === 0) {
+    return 1;
+  }
+
+  let best = Number.POSITIVE_INFINITY;
+  for (let dy = -maxShiftPx; dy <= maxShiftPx; dy++) {
+    for (let dx = -maxShiftPx; dx <= maxShiftPx; dx++) {
+      const shiftedB = edgesB.map((p) => ({ x: p.x + dx, y: p.y + dy }));
+      const distance = Math.max(
+        directedHausdorff(edgesA, shiftedB),
+        directedHausdorff(shiftedB, edgesA),
+      );
+      if (distance < best) {
+        best = distance;
+      }
+      // 原点ずれ0の完全一致は下限。これ以上探索しても小さくならない。
+      if (best === 0) {
+        break;
+      }
+    }
+    if (best === 0) {
+      break;
+    }
+  }
+
+  const diagonal = Math.hypot(region.w, region.h);
+  if (diagonal === 0) {
+    return 0;
+  }
+
+  return Math.min(1, Math.max(0, best / diagonal));
 };
