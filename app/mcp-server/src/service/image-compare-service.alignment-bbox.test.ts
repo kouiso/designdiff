@@ -34,8 +34,11 @@ const paint = (
 };
 
 const toPngBase64 = async (pixels: Buffer): Promise<string> =>
-  (await sharp(pixels, { raw: { width: WIDTH, height: HEIGHT, channels: 3 } }).png().toBuffer())
-    .toString("base64");
+  (
+    await sharp(pixels, { raw: { width: WIDTH, height: HEIGHT, channels: 3 } })
+      .png()
+      .toBuffer()
+  ).toString("base64");
 
 describe("compareImages — 位置ずれ補正後のクラスタ座標 (designdiff#58)", () => {
   it("全体ずれが補正される場面で、局所差分の bbox が補正後の実位置を指す", async () => {

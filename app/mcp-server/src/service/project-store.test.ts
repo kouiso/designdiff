@@ -1,6 +1,6 @@
 // project-store の永続化まわりの異常系を実ファイルで検証する。
 // 本物の FS に対して FIGDIFF_PROJECTS_DIR を向け替えて行う。
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -98,9 +98,7 @@ describe("project-store", () => {
 
   describe("assertProjectExists", () => {
     it("存在しないプロジェクトには作成を促すメッセージで失敗する", async () => {
-      await expect(assertProjectExists("missing")).rejects.toThrow(
-        'project not found: "missing"',
-      );
+      await expect(assertProjectExists("missing")).rejects.toThrow('project not found: "missing"');
     });
 
     it("存在するプロジェクトでは何もしない", async () => {
@@ -125,8 +123,7 @@ describe("project-store", () => {
   describe("getProjectDir", () => {
     it("プロジェクトIDをプロジェクト置き場の配下に解決する", async () => {
       await writeProject("proj-1");
-      const project = (await readProject("proj-1")) as { id: string };
-      expect(project.id).toBe("proj-1");
+      await expect(readProject("proj-1")).resolves.toMatchObject({ id: "proj-1" });
       expect(getProjectDir("proj-1")).toBe(join(directory, "projects", "proj-1"));
     });
   });
