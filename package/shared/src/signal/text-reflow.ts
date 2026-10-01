@@ -230,7 +230,8 @@ const classifyInWindow = (
     screenshotForeground,
     ignoreMask,
   );
-  const inkDelta = Math.abs(designInk - screenshotInk) / Math.max(designInk, screenshotInk);
+  // 両側ともインク量0の窓は 0/0 で NaN になる。差が無いものとして0扱いにする。
+  const inkDelta = Math.abs(designInk - screenshotInk) / Math.max(designInk, screenshotInk, 1e-9);
   if (inkDelta > MAX_REFLOW_INK_DELTA) return undefined;
 
   // 行バンド数は証拠として残すが判定には使わない。折り返し差そのものが

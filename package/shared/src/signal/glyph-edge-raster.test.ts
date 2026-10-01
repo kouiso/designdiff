@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import {
   classifyGlyphEdgeRasterization,
   classifySameTokenRasterization,
+  foregroundExtreme,
+  resolveMatchingBackground,
 } from "./glyph-edge-raster.js";
 
 const WIDTH = 9;
@@ -188,5 +190,92 @@ describe("classifySameTokenRasterization", () => {
     expect(classifySameTokenRasterization(design, screenshot, BIG, BIG, bbox, 0.1)).toMatchObject({
       classification: "same-token-rasterization",
     });
+  });
+});
+
+const canvas = (size: number, fill: readonly number[]): Uint8ClampedArray => {
+  const pixels = new Uint8ClampedArray(size * size * 4);
+  for (let pixel = 0; pixel < size * size; pixel++) {
+    const offset = pixel * 4;
+    pixels[offset] = fill[0];
+    pixels[offset + 1] = fill[1];
+    pixels[offset + 2] = fill[2];
+    pixels[offset + 3] = 255;
+  }
+  return pixels;
+};
+
+const paint = (
+  pixels: Uint8ClampedArray,
+  size: number,
+  x: number,
+  y: number,
+  color: readonly number[],
+): void => {
+  const offset = (y * size + x) * 4;
+  pixels[offset] = color[0];
+  pixels[offset + 1] = color[1];
+  pixels[offset + 2] = color[2];
+};
+
+describe("resolveMatchingBackground", () => {
+  const SIZE = 12;
+  const WINDOW = { left: 0, top: 0, right: SIZE, bottom: SIZE };
+
+  it("縁リングを前景画素が埋めても窓全体の支配色を背景に使う", () => {
+    // 実測パターン: 密な日本語グリフ帯はリングまでストロークが食い込み、
+    // 縁だけの支配被覆が3割を切る。窓全体では背景が4割以上を占める。
+    const design = canvas(SIZE, [250, 252, 250]);
+    const screenshot = canvas(SIZE, [250, 252, 250]);
+    for (let y = 0; y < SIZE; y++) {
+      for (const x of [0, SIZE - 1]) {
+        paint(design, SIZE, x, y, [51, 51, 51]);
+        paint(screenshot, SIZE, x, y, [51, 51, 51]);
+      }
+    }
+    for (let x = 1; x < SIZE - 1; x++) {
+      paint(design, SIZE, x, 0, [51, 51, 51]);
+      paint(screenshot, SIZE, x, 0, [51, 51, 51]);
+    }
+    for (let x = 1; x < 7; x++) {
+      paint(design, SIZE, x, SIZE - 1, [51, 51, 51]);
+      paint(screenshot, SIZE, x, SIZE - 1, [51, 51, 51]);
+    }
+    expect(resolveMatchingBackground(design, screenshot, SIZE, WINDOW)).toEqual([250, 252, 250]);
+  });
+
+  it("同トークン勾配の補間差 (±3ch) は一致扱いにする", () => {
+    // white->#EFF8F2 系のグラデーションは実装側が勾配スパンを動的に変える
+    // ため、同じトークンでも支配色が±3-4chずれる。実トークン差はΔ5以上。
+    const design = canvas(SIZE, [249, 252, 249]);
+    const screenshot = canvas(SIZE, [246, 251, 248]);
+    expect(resolveMatchingBackground(design, screenshot, SIZE, WINDOW)).toEqual([249, 252, 249]);
+  });
+
+  it("実トークン差 (Δ5ch 以上) は拒否する", () => {
+    const design = canvas(SIZE, [249, 252, 249]);
+    const screenshot = canvas(SIZE, [244, 251, 248]);
+    expect(resolveMatchingBackground(design, screenshot, SIZE, WINDOW)).toBeUndefined();
+  });
+});
+
+describe("foregroundExtreme", () => {
+  const SIZE = 8;
+  const WINDOW = { left: 0, top: 0, right: SIZE, bottom: SIZE };
+
+  it("最深画素が散在する窓は最深3点の平均を返す", () => {
+    // 1px未満の細ストロークは最深画素もトークン色へ届かず、単一極値は
+    // ばらつく。最深3点の平均で描画被覆差を吸収する。
+    const pixels = canvas(SIZE, [255, 255, 255]);
+    paint(pixels, SIZE, 2, 2, [120, 120, 120]);
+    paint(pixels, SIZE, 3, 3, [130, 130, 130]);
+    paint(pixels, SIZE, 4, 2, [140, 140, 140]);
+    const estimate = foregroundExtreme(pixels, SIZE, WINDOW, [255, 255, 255]);
+    expect(estimate).toEqual([130, 130, 130]);
+  });
+
+  it("コントラスト不足の窓は前景なしを返す", () => {
+    const pixels = canvas(SIZE, [250, 250, 250]);
+    expect(foregroundExtreme(pixels, SIZE, WINDOW, [255, 255, 255])).toBeUndefined();
   });
 });

@@ -7,7 +7,6 @@
 // fetch 境界を合成した専用 bootstrap により非表示/可視ノードを切り分ける。
 
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
 import { mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
@@ -279,13 +278,6 @@ const scrape = async (page) => {
   };
 };
 
-const bboxContains = (bboxes, x, y) =>
-  bboxes.some((t) => {
-    const m = t.match(/x:\s*(-?\d+), y:\s*(-?\d+), w:\s*(\d+), h:\s*(\d+)/);
-    if (!m) return false;
-    const [, bx, by, bw, bh] = m.map(Number);
-    return x >= bx && x < bx + bw && y >= by && y < by + bh;
-  });
 // 点 (x,y) を含む regionScore セルを返す。欠陥の局在はセルスコアで見る
 // (issue 行は閾値超えの時だけ出るので頼れない)。スコア意味は混在:
 // structure=SSIM(1で一致), color=DeltaE(0で一致), shape=Hausdorff(0で一致)。
@@ -300,13 +292,6 @@ const cellContaining = (regionScores, x, y) =>
   );
 const isDegraded = (r) => r.scores.structure < 1 || r.scores.color > 0 || r.scores.shape > 0;
 const isPerfect = (r) => r.scores.structure === 1 && r.scores.color === 0 && r.scores.shape === 0;
-const bboxInRect = (t, rect) => {
-  const m = t.match(/x:\s*(-?\d+), y:\s*(-?\d+), w:\s*(\d+), h:\s*(\d+)/);
-  if (!m) return false;
-  const [, bx, by, bw, bh] = m.map(Number);
-  return bx >= rect.x && by >= rect.y && bx + bw <= rect.x + rect.w && by + bh <= rect.y + rect.h;
-};
-
 const gotoCompare = async (page, label) => {
   // 開いたことのある案件 tab は最後の page を記憶していて、再オープンでは
   // project_view に戻れない。毎回 tab を閉じてから開き直す。

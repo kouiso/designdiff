@@ -36,7 +36,7 @@ const evidence = { schemaVersion: 1, protocolErrors: [], results: {} };
 const protocolErrors = evidence.protocolErrors;
 
 // 独立オラクル: devicectl で接続中の実機情報を取る (製品を通さない確認)。
-const { stdout: deviceList } = await execFileAsync("xcrun", [
+await execFileAsync("xcrun", [
   "devicectl",
   "list",
   "devices",
