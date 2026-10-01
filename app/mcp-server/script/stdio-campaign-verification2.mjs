@@ -8,7 +8,7 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { createServer } from "node:http";
-import { mkdir, mkdtemp, readFile, readdir, stat, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, stat, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { dirname, join, relative, resolve } from "node:path";
@@ -272,7 +272,7 @@ const check = async (name, fn) => {
 
 // M15 用の固定ページサーバ。撮影対象として使う。
 const pageHtml = `<!doctype html><html><body style="margin:0;background:#f5f5f5"><div style="margin:10px 0 0 10px;width:370px;height:780px;background:#fff"></div></body></html>`;
-const server = createServer((req, res) => {
+const server = createServer((_req, res) => {
   res.writeHead(200, { "content-type": "text/html" });
   res.end(pageHtml);
 });
@@ -534,7 +534,6 @@ await check("M11_compare_animation", async () => {
   );
   assert.equal(ok.frames.length, 3, "must compare all 3 frames");
   assert.ok(Array.isArray(ok.alignments), "must return frame alignments");
-  const orderedDrift = ok.temporal?.maxAbsDriftMs;
 
   const swapped = data(
     await call(client, "compare_animation", {

@@ -2,7 +2,6 @@
 // 同一バイト列の PNG ペアを与え、差分画素・領域・diff 画像が一致するかを見る。
 // AA 判定の揺れを避けるため、縁の硬い矩形だけで構成する (SVG は使わない)。
 
-import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import sharp from "sharp";
 

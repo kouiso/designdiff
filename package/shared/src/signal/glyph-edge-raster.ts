@@ -67,20 +67,11 @@ const dominantColor = (
   borderOnly: boolean,
   ignoreMask?: Uint8Array,
 ): { color: [number, number, number]; coverage: number } | undefined => {
-  const counts = new Map<
-    string,
-    { sum: [number, number, number]; count: number }
-  >();
+  const counts = new Map<string, { sum: [number, number, number]; count: number }>();
   let sampleCount = 0;
   for (let y = top; y < bottom; y++) {
     for (let x = left; x < right; x++) {
-      if (
-        borderOnly &&
-        x !== left &&
-        x !== right - 1 &&
-        y !== top &&
-        y !== bottom - 1
-      ) continue;
+      if (borderOnly && x !== left && x !== right - 1 && y !== top && y !== bottom - 1) continue;
       const pixelIndex = y * width + x;
       if (ignoreMask?.[pixelIndex]) continue;
       const color = colorAt(pixels, pixelIndex);
@@ -88,11 +79,7 @@ const dominantColor = (
       const current = counts.get(key);
       counts.set(key, {
         sum: current
-          ? [
-              current.sum[0] + color[0],
-              current.sum[1] + color[1],
-              current.sum[2] + color[2],
-            ]
+          ? [current.sum[0] + color[0], current.sum[1] + color[1], current.sum[2] + color[2]]
           : [color[0], color[1], color[2]],
         count: (current?.count ?? 0) + 1,
       });
@@ -180,8 +167,7 @@ export const resolveMatchingBackground = (
     if (design.coverage < minCoverage || screenshot.coverage < minCoverage) {
       return undefined;
     }
-    return maxChannelDelta(design.color, screenshot.color) <=
-      BACKGROUND_CHANNEL_TOLERANCE
+    return maxChannelDelta(design.color, screenshot.color) <= BACKGROUND_CHANNEL_TOLERANCE
       ? design.color
       : undefined;
   };
@@ -194,19 +180,13 @@ export const resolveMatchingBackground = (
     designWindow &&
     screenshotRing &&
     screenshotWindow &&
-    maxChannelDelta(designRing.color, designWindow.color) <=
-      BACKGROUND_CHANNEL_TOLERANCE &&
-    maxChannelDelta(screenshotRing.color, screenshotWindow.color) <=
-      BACKGROUND_CHANNEL_TOLERANCE;
+    maxChannelDelta(designRing.color, designWindow.color) <= BACKGROUND_CHANNEL_TOLERANCE &&
+    maxChannelDelta(screenshotRing.color, screenshotWindow.color) <= BACKGROUND_CHANNEL_TOLERANCE;
   const ring = ringSupported
     ? crossMatch(designRing, screenshotRing, MIN_BACKGROUND_COVERAGE)
     : undefined;
   if (ring) return ring;
-  return crossMatch(
-    designWindow,
-    screenshotWindow,
-    MIN_FULLWINDOW_BACKGROUND_COVERAGE,
-  );
+  return crossMatch(designWindow, screenshotWindow, MIN_FULLWINDOW_BACKGROUND_COVERAGE);
 };
 
 const findSharedForeground = (
@@ -568,8 +548,7 @@ const classifySameTokenRasterizationAtHalo = (
     ignoreMask,
   );
   // 両側のインク量が0なら 0/0 で NaN になる。差が無いものとして0扱いにする。
-  const inkDelta =
-    Math.abs(designInk - screenshotInk) / Math.max(designInk, screenshotInk, 1e-9);
+  const inkDelta = Math.abs(designInk - screenshotInk) / Math.max(designInk, screenshotInk, 1e-9);
   if (inkDelta > MAX_INK_COVERAGE_DELTA) return undefined;
 
   const changedPixelCount = countChangedPixels(

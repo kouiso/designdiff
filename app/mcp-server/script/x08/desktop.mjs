@@ -3,7 +3,6 @@
 // 表示された diff 画像と DOM 上の採点数を x08-desktop.json に書く。
 
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { mkdir, mkdtemp, statfs, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
@@ -41,7 +40,7 @@ await mkdir(figdiffHome, { recursive: true });
 await mkdir(projectDirectory, { recursive: true });
 await mkdir(userData, { recursive: true });
 
-const { designPath, expectedDiffPixelCount, expectedRegions } = await writeX08Fixture(evidenceDir);
+const { expectedDiffPixelCount, expectedRegions } = await writeX08Fixture(evidenceDir);
 // file:read-local-image は home/tmp 配下のみ許可。証跡dirと別に sandbox home 側にも置く。
 const homeFixture = await writeX08Fixture(isolatedHome);
 const desktopDesignPath = homeFixture.designPath;

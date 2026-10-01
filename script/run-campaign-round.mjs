@@ -50,7 +50,7 @@ const parseArgs = (argv) => {
 
 const tail = (text, lines = 40) => text.split("\n").slice(-lines).join("\n").slice(-8000);
 
-const runDriver = async (entry, platform) => {
+const runDriver = async (entry, _platform) => {
   const driverPath = join(root, entry.driver);
   const evidenceDir = isAbsolute(entry.evidenceDir)
     ? entry.evidenceDir

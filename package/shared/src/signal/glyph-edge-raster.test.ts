@@ -241,9 +241,7 @@ describe("resolveMatchingBackground", () => {
       paint(design, SIZE, x, SIZE - 1, [51, 51, 51]);
       paint(screenshot, SIZE, x, SIZE - 1, [51, 51, 51]);
     }
-    expect(
-      resolveMatchingBackground(design, screenshot, SIZE, WINDOW),
-    ).toEqual([250, 252, 250]);
+    expect(resolveMatchingBackground(design, screenshot, SIZE, WINDOW)).toEqual([250, 252, 250]);
   });
 
   it("同トークン勾配の補間差 (±3ch) は一致扱いにする", () => {
@@ -251,17 +249,13 @@ describe("resolveMatchingBackground", () => {
     // ため、同じトークンでも支配色が±3-4chずれる。実トークン差はΔ5以上。
     const design = canvas(SIZE, [249, 252, 249]);
     const screenshot = canvas(SIZE, [246, 251, 248]);
-    expect(
-      resolveMatchingBackground(design, screenshot, SIZE, WINDOW),
-    ).toEqual([249, 252, 249]);
+    expect(resolveMatchingBackground(design, screenshot, SIZE, WINDOW)).toEqual([249, 252, 249]);
   });
 
   it("実トークン差 (Δ5ch 以上) は拒否する", () => {
     const design = canvas(SIZE, [249, 252, 249]);
     const screenshot = canvas(SIZE, [244, 251, 248]);
-    expect(
-      resolveMatchingBackground(design, screenshot, SIZE, WINDOW),
-    ).toBeUndefined();
+    expect(resolveMatchingBackground(design, screenshot, SIZE, WINDOW)).toBeUndefined();
   });
 });
 

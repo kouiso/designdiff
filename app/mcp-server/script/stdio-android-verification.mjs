@@ -22,7 +22,7 @@
 
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
-import { copyFile, mkdir, mkdtemp, readFile, readdir, writeFile } from "node:fs/promises";
+import { copyFile, mkdir, mkdtemp, readdir, writeFile } from "node:fs/promises";
 import { createServer } from "node:http";
 import { homedir, tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
@@ -256,7 +256,7 @@ let pageUrl;
 if (process.env.ANDROID_PAGE_URL) {
   pageUrl = process.env.ANDROID_PAGE_URL;
 } else {
-  pageServer = createServer((req, res) => {
+  pageServer = createServer((_req, res) => {
     res.writeHead(200, { "content-type": "text/html" });
     res.end(tallHtml);
   });
