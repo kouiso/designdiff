@@ -1,3 +1,5 @@
+import { computeShiftTolerantHausdorff } from "./hausdorff.js";
+
 import type { DiffBoundingBox } from "../type.js";
 
 export interface GlyphEdgeRasterEvidence {
@@ -365,6 +367,9 @@ export interface SameTokenRasterEvidence {
   backgroundHex: string;
   foregroundHex: string;
   inkCoverageDelta: number;
+  // 証明に使ったインク量差の上限。トポロジ強一致の窓では緩和閾値になるので
+  // 発行する診断の threshold にはこの値を使う。
+  inkLimit: number;
 }
 
 // 前景トークンは両画像で同一色名である必要があるが、ラスタライザ差で数値は僅かに揺れる。
@@ -374,6 +379,12 @@ export const RASTER_BLEND_RESIDUAL = 16;
 // 同じ太さの文字列が別ラスタライザで描かれたときのインク量差はせいぜい±15%。
 // 太さ違い (Regular↔Bold で約30%)・文字欠落はこれを越えるので 0.25 で切る。
 const MAX_INK_COVERAGE_DELTA = 0.25;
+// トポロジが強一致する窓に限りインク量差を 0.35 まで許す。縁の位置が同一なのに
+// インク量だけが増えるのは、フォント版違いや合成太字処理で同じグリフが
+// 太く描かれたラスタライザ差 (例: Figma 側 SemiBold と同梱 Inter-SemiBold.ttf の
+// stem 差で約30%)。太さ違いの実害は stem の中心がずれてトポロジ側で弾く。
+const TIGHT_TOPOLOGY_SHAPE = 0.12;
+const RELAXED_INK_COVERAGE_DELTA = 0.35;
 // 位置ズレのみの同一トポロジなら Hausdorff 正規化値は 0.1 前後。
 // グリフ欠落・要素欠落は領域対角の 1/3 級の空隙を作るので 0.25 で切る。
 const MAX_TOPOLOGY_SHAPE = 0.25;
@@ -501,6 +512,7 @@ const classifySameTokenRasterizationAtHalo = (
   height: number,
   bbox: DiffBoundingBox,
   halo: number,
+  effectiveShape: number,
   ignoreMask?: Uint8Array,
 ): SameTokenRasterEvidence | undefined => {
   const window = resolveRasterWindow(width, height, bbox, halo);
@@ -549,7 +561,9 @@ const classifySameTokenRasterizationAtHalo = (
   );
   // 両側のインク量が0なら 0/0 で NaN になる。差が無いものとして0扱いにする。
   const inkDelta = Math.abs(designInk - screenshotInk) / Math.max(designInk, screenshotInk, 1e-9);
-  if (inkDelta > MAX_INK_COVERAGE_DELTA) return undefined;
+  const inkLimit =
+    effectiveShape <= TIGHT_TOPOLOGY_SHAPE ? RELAXED_INK_COVERAGE_DELTA : MAX_INK_COVERAGE_DELTA;
+  if (inkDelta > inkLimit) return undefined;
 
   const changedPixelCount = countChangedPixels(
     designPixels,
@@ -566,8 +580,13 @@ const classifySameTokenRasterizationAtHalo = (
     backgroundHex: toHex(background),
     foregroundHex: toHex(designForeground),
     inkCoverageDelta: inkDelta,
+    inkLimit,
   };
 };
+
+// 平行移動を除いたトポロジ判定を許す探索幅。ラスタライザ差や座標丸めで
+// 要素全体が ±数px ずれるだけなら形状は同一とみなす。
+const SAME_TOKEN_TOPOLOGY_SHIFT_PX = 3;
 
 export const classifySameTokenRasterization = (
   designPixels: Uint8ClampedArray,
@@ -578,7 +597,34 @@ export const classifySameTokenRasterization = (
   topologyShape: number,
   ignoreMask?: Uint8Array,
 ): SameTokenRasterEvidence | undefined => {
-  if (topologyShape > MAX_TOPOLOGY_SHAPE) return undefined;
+  let effectiveShape = topologyShape;
+  if (topologyShape > MAX_TOPOLOGY_SHAPE) {
+    // 生のトポロジが門を割るときは、平行移動を除いた形状差で再判定する。
+    // 評価窓は最大 halo。小窓だと移動したストロークの輪郭点が窓縁で切れて
+    // 形状差が実体より大きく出るため、最も文脈を含む窓で一度だけ試す。
+    const tolerantWindow = resolveRasterWindow(
+      width,
+      height,
+      bbox,
+      SAME_TOKEN_HALO_CANDIDATES[SAME_TOKEN_HALO_CANDIDATES.length - 1],
+    );
+    if (tolerantWindow === undefined) return undefined;
+    effectiveShape = computeShiftTolerantHausdorff(
+      designPixels,
+      screenshotPixels,
+      width,
+      height,
+      {
+        x: tolerantWindow.left,
+        y: tolerantWindow.top,
+        w: tolerantWindow.right - tolerantWindow.left,
+        h: tolerantWindow.bottom - tolerantWindow.top,
+      },
+      ignoreMask,
+      SAME_TOKEN_TOPOLOGY_SHIFT_PX,
+    );
+    if (effectiveShape > MAX_TOPOLOGY_SHAPE) return undefined;
+  }
   for (const halo of SAME_TOKEN_HALO_CANDIDATES) {
     const evidence = classifySameTokenRasterizationAtHalo(
       designPixels,
@@ -587,6 +633,7 @@ export const classifySameTokenRasterization = (
       height,
       bbox,
       halo,
+      effectiveShape,
       ignoreMask,
     );
     if (evidence) return evidence;

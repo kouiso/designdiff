@@ -176,6 +176,93 @@ describe("classifySameTokenRasterization", () => {
     return pixels;
   };
 
+  it("トポロジ強一致の窓ではインク量差を 0.35 まで許す", () => {
+    // 縁の位置が同一なのにインク量だけ増えるのはフォント版違いのラスタライザ差
+    // (例: Figma 側 SemiBold と同梱 Inter の stem 差で約30%)。shape<=0.12 の
+    // 窓では inkLimit が緩和閾値になる。
+    const design = bigPixels([10, 14, 19]);
+    const screenshot = bigPixels([10, 14, 19]);
+    // 既存 stem の脇に列を足して墨量を約30%増やす (51px→73px)。
+    for (let y = 10; y < 27; y++) {
+      const offset = (y * BIG + 11) * 4;
+      screenshot[offset] = 51;
+      screenshot[offset + 1] = 51;
+      screenshot[offset + 2] = 51;
+    }
+    for (let y = 10; y < 15; y++) {
+      const offset = (y * BIG + 12) * 4;
+      screenshot[offset] = 51;
+      screenshot[offset + 1] = 51;
+      screenshot[offset + 2] = 51;
+    }
+    const evidence = classifySameTokenRasterization(
+      design,
+      screenshot,
+      BIG,
+      BIG,
+      { x: 8, y: 8, w: 14, h: 20 },
+      0.1,
+    );
+    expect(evidence).toMatchObject({
+      classification: "same-token-rasterization",
+      inkLimit: 0.35,
+    });
+    expect(evidence?.inkCoverageDelta).toBeGreaterThan(0.25);
+  });
+
+  it("トポロジ一致が弱い窓ではインク量差 0.25 超を扱わない", () => {
+    const design = bigPixels([10, 14, 19]);
+    const screenshot = bigPixels([10, 14, 19]);
+    for (let y = 10; y < 27; y++) {
+      const offset = (y * BIG + 11) * 4;
+      screenshot[offset] = 51;
+      screenshot[offset + 1] = 51;
+      screenshot[offset + 2] = 51;
+    }
+    for (let y = 10; y < 15; y++) {
+      const offset = (y * BIG + 12) * 4;
+      screenshot[offset] = 51;
+      screenshot[offset + 1] = 51;
+      screenshot[offset + 2] = 51;
+    }
+    expect(
+      classifySameTokenRasterization(
+        design,
+        screenshot,
+        BIG,
+        BIG,
+        { x: 8, y: 8, w: 14, h: 20 },
+        0.2,
+      ),
+    ).toBeUndefined();
+  });
+
+  it("生トポロジが門を割っても平行移動済み形状差で再判定する", () => {
+    // ±3px の平行移動は生 Hausdorff で 0.25 を越えるが、移動を除けば形状は
+    // 同一。ラスタライザ差由来のオフセットを救済する。
+    expect(classifySameToken(makeGlyph(96), makeGlyph(96, 2), 0.4)).toMatchObject({
+      classification: "same-token-rasterization",
+      inkLimit: 0.35,
+    });
+  });
+
+  it("平行移動では説明できない別トポロジは再判定でも扱わない", () => {
+    // stem の本数は同じだが位置関係が遠すぎて ±3px の平行移動では
+    // 一致しない。インク量は同一なので形状側の拘束で弾く。
+    const design = bigPixels([10, 14, 19]);
+    const screenshot = bigPixels([28, 33]);
+    expect(
+      classifySameTokenRasterization(
+        design,
+        screenshot,
+        BIG,
+        BIG,
+        { x: 8, y: 8, w: 14, h: 20 },
+        0.4,
+      ),
+    ).toBeUndefined();
+  });
+
   it("証明枠の縁をグリフが占有する小窓でも拡大枠で同一トークンを証明する", () => {
     // 実測パターン (designdiff#232): 窓縁を別 stem が埋めて背景支配率が
     // 40% を割るクラスタ。halo を広げた窓では縁が白に戻り証明が成立する。

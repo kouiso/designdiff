@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { computeHausdorff } from "./hausdorff.js";
+import { computeHausdorff, computeShiftTolerantHausdorff } from "./hausdorff.js";
 
 function createBlankImage(width: number, height: number): Uint8ClampedArray {
   const pixels = new Uint8ClampedArray(width * height * 4);
@@ -130,5 +130,63 @@ describe("computeHausdorff", () => {
     expect(computeHausdorff(imageA, imageB, width, height, undefined, ignoreMask)).toBeGreaterThan(
       0.1,
     );
+  });
+});
+
+describe("computeShiftTolerantHausdorff", () => {
+  it("同一輪郭なら 0 を返す", () => {
+    const imageA = createBlankImage(32, 32);
+    const imageB = createBlankImage(32, 32);
+    drawRect(imageA, 32, 8, 8, 10, 10);
+    drawRect(imageB, 32, 8, 8, 10, 10);
+
+    expect(
+      computeShiftTolerantHausdorff(imageA, imageB, 32, 32, { x: 0, y: 0, w: 32, h: 32 }),
+    ).toBeCloseTo(0, 6);
+  });
+
+  it("±3px の平行移動を除いた形状差だけを残す", () => {
+    const imageA = createBlankImage(32, 32);
+    const imageB = createBlankImage(32, 32);
+    drawRect(imageA, 32, 8, 8, 10, 10);
+    drawRect(imageB, 32, 11, 8, 10, 10);
+
+    const raw = computeHausdorff(imageA, imageB, 32, 32, { x: 0, y: 0, w: 32, h: 32 });
+    const tolerant = computeShiftTolerantHausdorff(
+      imageA,
+      imageB,
+      32,
+      32,
+      { x: 0, y: 0, w: 32, h: 32 },
+      undefined,
+      3,
+    );
+
+    expect(raw).toBeGreaterThan(0.04);
+    expect(tolerant).toBeLessThan(raw);
+    expect(tolerant).toBeLessThan(0.05);
+  });
+
+  it("探索幅を越える平行移動は救済しない", () => {
+    const imageA = createBlankImage(32, 32);
+    const imageB = createBlankImage(32, 32);
+    drawRect(imageA, 32, 6, 8, 10, 10);
+    drawRect(imageB, 32, 14, 8, 10, 10);
+
+    expect(
+      computeShiftTolerantHausdorff(imageA, imageB, 32, 32, { x: 0, y: 0, w: 32, h: 32 }),
+    ).toBeGreaterThan(0.1);
+  });
+
+  it("別形状はどのオフセットでも一致しないので救済しない", () => {
+    const imageA = createBlankImage(32, 32);
+    const imageB = createBlankImage(32, 32);
+    drawRect(imageA, 32, 8, 8, 10, 10);
+    drawRect(imageB, 32, 8, 8, 5, 5);
+    drawRect(imageB, 32, 20, 8, 10, 10);
+
+    expect(
+      computeShiftTolerantHausdorff(imageA, imageB, 32, 32, { x: 0, y: 0, w: 32, h: 32 }),
+    ).toBeGreaterThan(0.1);
   });
 });

@@ -140,6 +140,14 @@ export {
 } from "./signal/text-reflow.js";
 export { computeHausdorff } from "./signal/hausdorff.js";
 export {
+  classifyTextureResampling,
+  type TextureResamplingEvidence,
+} from "./signal/texture-resampling.js";
+export {
+  classifyEdgeStraddle,
+  type EdgeStraddleEvidence,
+} from "./signal/edge-straddle.js";
+export {
   computeBestLocalAlignment,
   LOCAL_ALIGNMENT_MAX_SHIFT_PX,
   LOCAL_ALIGNMENT_RESCUE_STRUCTURE,
