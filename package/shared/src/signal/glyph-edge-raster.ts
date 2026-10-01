@@ -563,7 +563,8 @@ const classifySameTokenRasterizationAtHalo = (
   const inkDelta = Math.abs(designInk - screenshotInk) / Math.max(designInk, screenshotInk, 1e-9);
   const inkLimit =
     effectiveShape <= TIGHT_TOPOLOGY_SHAPE ? RELAXED_INK_COVERAGE_DELTA : MAX_INK_COVERAGE_DELTA;
-  if (inkDelta > inkLimit) return undefined;
+  // NaN は比較が常に false になり上限判定を素通りし、スキーマ検証で比較全体を落とす。
+  if (!Number.isFinite(inkDelta) || inkDelta > inkLimit) return undefined;
 
   const changedPixelCount = countChangedPixels(
     designPixels,

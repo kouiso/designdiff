@@ -232,7 +232,8 @@ const classifyInWindow = (
   );
   // 両側ともインク量0の窓は 0/0 で NaN になる。差が無いものとして0扱いにする。
   const inkDelta = Math.abs(designInk - screenshotInk) / Math.max(designInk, screenshotInk, 1e-9);
-  if (inkDelta > MAX_REFLOW_INK_DELTA) return undefined;
+  // NaN は比較が常に false になり上限判定を素通りし、スキーマ検証で比較全体を落とす。
+  if (!Number.isFinite(inkDelta) || inkDelta > MAX_REFLOW_INK_DELTA) return undefined;
 
   // 行バンド数は証拠として残すが判定には使わない。折り返し差そのものが
   // 行数を変えうる (同じ文字列が2行にも3行にも折り返される) ことと、
@@ -272,6 +273,9 @@ const classifyInWindow = (
     screenshotForeground,
     ignoreMask,
   );
+  // 両側とも成分0だと差は 0/0 = NaN になり、しきい値比較をすり抜ける。
+  // グリフが1つも数えられない窓はテキストの証明にならないので拒否する。
+  if (designComponents === 0 || screenshotComponents === 0) return undefined;
   const componentDelta =
     Math.abs(designComponents - screenshotComponents) /
     Math.max(designComponents, screenshotComponents);
