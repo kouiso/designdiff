@@ -97,6 +97,31 @@ describe("compare_design — threshold 未満の低振幅差分の報告", () =>
     );
   });
 
+  it("透明な design と白い screenshot の見た目一致を閾値未満差分に数えない", async () => {
+    // Figma 書き出しの全面透明 (0,0,0,0) と、白く描画された実装。
+    // pixelmatch は白へブレンドして一致と見るので、件数も警告も出ないはず。
+    const transparentPath = join(directory, "transparent.png");
+    await writeFile(
+      transparentPath,
+      await sharp(Buffer.alloc(width * height * 4, 0), {
+        raw: { width, height, channels: 4 },
+      })
+        .png()
+        .toBuffer(),
+    );
+    const whitePath = join(directory, "white.png");
+    await writeFile(whitePath, await solidGray(255));
+    const response = await client.callTool({
+      name: "compare_design",
+      arguments: { design_source: transparentPath, screenshot: whitePath, threshold: 0.1 },
+    });
+    expect(response.isError).toBeFalsy();
+    const result = CompareDesignResultSchema.parse(response.structuredContent);
+    expect(result.diffPixelCount).toBe(0);
+    expect(result.subThresholdDiffPixelCount).toBe(0);
+    expect(result.suggestion).not.toContain("threshold 未満");
+  });
+
   it("閾値を越える明確な差分では、閾値未満の件数は0で警告も出ない", async () => {
     const result = await compare(obviousPath);
     expect(result.diffPixelCount).toBe(width * height);
