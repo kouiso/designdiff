@@ -1,8 +1,9 @@
-import type { DiffBoundingBox } from "../type.js";
-import { computeShiftTolerantHausdorff } from "./hausdorff.js";
 import { countChangedPixels, resolveRasterWindow } from "./glyph-edge-raster.js";
+import { computeShiftTolerantHausdorff } from "./hausdorff.js";
 import { computeSsimForRegion } from "./ssim.js";
 import { detectHighTextureRegion } from "./texture.js";
+
+import type { DiffBoundingBox } from "../type.js";
 
 export interface TextureResamplingEvidence {
   classification: "texture-resampling";

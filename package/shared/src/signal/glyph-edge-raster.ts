@@ -1,5 +1,6 @@
-import type { DiffBoundingBox } from "../type.js";
 import { computeShiftTolerantHausdorff } from "./hausdorff.js";
+
+import type { DiffBoundingBox } from "../type.js";
 
 export interface GlyphEdgeRasterEvidence {
   classification: "glyph-edge-rasterization";
