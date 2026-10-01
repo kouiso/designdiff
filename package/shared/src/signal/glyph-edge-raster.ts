@@ -10,7 +10,15 @@ export interface GlyphEdgeRasterEvidence {
 
 const HALO_PX = 2;
 const CHANNEL_TOLERANCE = 1;
-const MIN_BACKGROUND_COVERAGE = 0.4;
+// 背景色の一致判定だけは±4chまで許す。前景のピクセル一致とブレンド
+//      検証は CHANNEL_TOLERANCE=1 のまま厳格に行う。実際の色トークン違いは
+//      Δ5以上で発生するが、同トークンのグラデーションは端点スパンや補間
+//      実装の差で同じ場所が±3-4chずれることがある (white→#EFF8F2 系)。
+const BACKGROUND_CHANNEL_TOLERANCE = 4;
+// 支配被覆の下限は0.3。二値化した上で最頻ビンが3割を占めれば支配色と
+//      呼べる。細いグリフが縁リングまで食い込む密テキスト帯では0.4だと
+//      系統的にリング被覆を割り込んで「背景なし」誤判定になる。
+const MIN_BACKGROUND_COVERAGE = 0.3;
 export const MIN_FOREGROUND_CONTRAST = 64;
 const CORE_ALPHA = 0.85;
 const EDGE_ALPHA_MIN = 0.02;
@@ -39,32 +47,68 @@ export const maxChannelDelta = (a: readonly number[], b: readonly number[]): num
 const squaredDistance = (a: readonly number[], b: readonly number[]): number =>
   (a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2 + (a[2] - b[2]) ** 2;
 
-const dominantBorderColor = (
+// なぜ量子化するか: 実機/Skia 由来のスクリーンショットの背景には
+//      ±1-2ch の微細なディザが混入することが多い。完全一致で集計すると
+//      支配色の支持率が40%前後へ割れて「背景なし」と誤判定するため
+//      偶数ビンへ畳んで数える。代表色はビン内の実色平均を使う。
+const BACKGROUND_BIN = 2;
+const binKey = (color: readonly number[]): string =>
+  `${Math.floor(color[0] / BACKGROUND_BIN)},${Math.floor(
+    color[1] / BACKGROUND_BIN,
+  )},${Math.floor(color[2] / BACKGROUND_BIN)}`;
+
+const dominantColor = (
   pixels: Uint8ClampedArray,
   width: number,
   left: number,
   top: number,
   right: number,
   bottom: number,
+  borderOnly: boolean,
   ignoreMask?: Uint8Array,
 ): { color: [number, number, number]; coverage: number } | undefined => {
-  const counts = new Map<string, { color: [number, number, number]; count: number }>();
+  const counts = new Map<
+    string,
+    { sum: [number, number, number]; count: number }
+  >();
   let sampleCount = 0;
   for (let y = top; y < bottom; y++) {
     for (let x = left; x < right; x++) {
-      if (x !== left && x !== right - 1 && y !== top && y !== bottom - 1) continue;
+      if (
+        borderOnly &&
+        x !== left &&
+        x !== right - 1 &&
+        y !== top &&
+        y !== bottom - 1
+      ) continue;
       const pixelIndex = y * width + x;
       if (ignoreMask?.[pixelIndex]) continue;
       const color = colorAt(pixels, pixelIndex);
-      const key = colorKey(color);
+      const key = binKey(color);
       const current = counts.get(key);
-      counts.set(key, { color, count: (current?.count ?? 0) + 1 });
+      counts.set(key, {
+        sum: current
+          ? [
+              current.sum[0] + color[0],
+              current.sum[1] + color[1],
+              current.sum[2] + color[2],
+            ]
+          : [color[0], color[1], color[2]],
+        count: (current?.count ?? 0) + 1,
+      });
       sampleCount++;
     }
   }
   if (sampleCount === 0) return undefined;
   const dominant = [...counts.values()].sort((a, b) => b.count - a.count)[0];
-  return { color: dominant.color, coverage: dominant.count / sampleCount };
+  return {
+    color: [
+      Math.round(dominant.sum[0] / dominant.count),
+      Math.round(dominant.sum[1] / dominant.count),
+      Math.round(dominant.sum[2] / dominant.count),
+    ],
+    coverage: dominant.count / sampleCount,
+  };
 };
 
 export const blendAlphaAndResidual = (
@@ -113,6 +157,12 @@ export const resolveRasterWindow = (
   return window.right - window.left >= 3 && window.bottom - window.top >= 3 ? window : undefined;
 };
 
+// 背景の支配推定は縁リングが第一候補だが、グリフがリングを占めると
+//      前景色が支配として返ってしまう。真の背景は窓全体でも支配的な
+//      はずなので、リング支配は窓全体支配と色が一致する時だけ採用し、
+//      それ以外では窓全体支配に退く (被覆が足りなければ推定自体を捨てる)。
+const MIN_FULLWINDOW_BACKGROUND_COVERAGE = 0.4;
+
 export const resolveMatchingBackground = (
   designPixels: Uint8ClampedArray,
   screenshotPixels: Uint8ClampedArray,
@@ -120,15 +170,43 @@ export const resolveMatchingBackground = (
   window: RasterWindow,
   ignoreMask?: Uint8Array,
 ): [number, number, number] | undefined => {
-  const args = [width, window.left, window.top, window.right, window.bottom, ignoreMask] as const;
-  const design = dominantBorderColor(designPixels, ...args);
-  const screenshot = dominantBorderColor(screenshotPixels, ...args);
-  if (!design || !screenshot) return undefined;
-  if (design.coverage < MIN_BACKGROUND_COVERAGE) return undefined;
-  if (screenshot.coverage < MIN_BACKGROUND_COVERAGE) return undefined;
-  return maxChannelDelta(design.color, screenshot.color) <= CHANNEL_TOLERANCE
-    ? design.color
+  const args = [width, window.left, window.top, window.right, window.bottom] as const;
+  const crossMatch = (
+    design: { color: [number, number, number]; coverage: number } | undefined,
+    screenshot: { color: [number, number, number]; coverage: number } | undefined,
+    minCoverage: number,
+  ): [number, number, number] | undefined => {
+    if (!design || !screenshot) return undefined;
+    if (design.coverage < minCoverage || screenshot.coverage < minCoverage) {
+      return undefined;
+    }
+    return maxChannelDelta(design.color, screenshot.color) <=
+      BACKGROUND_CHANNEL_TOLERANCE
+      ? design.color
+      : undefined;
+  };
+  const designRing = dominantColor(designPixels, ...args, true, ignoreMask);
+  const screenshotRing = dominantColor(screenshotPixels, ...args, true, ignoreMask);
+  const designWindow = dominantColor(designPixels, ...args, false, ignoreMask);
+  const screenshotWindow = dominantColor(screenshotPixels, ...args, false, ignoreMask);
+  const ringSupported =
+    designRing &&
+    designWindow &&
+    screenshotRing &&
+    screenshotWindow &&
+    maxChannelDelta(designRing.color, designWindow.color) <=
+      BACKGROUND_CHANNEL_TOLERANCE &&
+    maxChannelDelta(screenshotRing.color, screenshotWindow.color) <=
+      BACKGROUND_CHANNEL_TOLERANCE;
+  const ring = ringSupported
+    ? crossMatch(designRing, screenshotRing, MIN_BACKGROUND_COVERAGE)
     : undefined;
+  if (ring) return ring;
+  return crossMatch(
+    designWindow,
+    screenshotWindow,
+    MIN_FULLWINDOW_BACKGROUND_COVERAGE,
+  );
 };
 
 const findSharedForeground = (
@@ -324,7 +402,16 @@ const MAX_TOPOLOGY_SHAPE = 0.25;
 // 窓の大きさ自体は証明の意味論に関与しないので、失敗時は段階的に広げて
 // 再証明する (designdiff#232)。先に小さい窓を試すため既存の証明済み領域の
 // 判定は変わらない。
-const SAME_TOKEN_HALO_CANDIDATES = [HALO_PX, 4, 6, 8] as const;
+// halo は段階的に広げる。小さい窓ほどグリフがリングに食い込み背景
+//      推定が失敗しやすい。12px までは隣接要素の誤取込を許容範囲内と
+//      みなし、それ以上は行間の別要素を吸い込むため広げない。
+const SAME_TOKEN_HALO_CANDIDATES = [HALO_PX, 4, 6, 8, 12] as const;
+
+// 前景トークンの推定は最深3画素の平均。1px未満の細いストロークはAAで
+//      最深画素すら真のトークン色に届かず、単一極値だとレンダラ差が
+//      そのままトークン差に誤判定される (fig 133 vs app 156 で 24 を越える)。
+//      3点平均は真のトークン差 (34ch 級) と描画上の被覆差を分離する。
+const FOREGROUND_EXTREME_TOPK = 3;
 
 export const foregroundExtreme = (
   pixels: Uint8ClampedArray,
@@ -333,21 +420,27 @@ export const foregroundExtreme = (
   background: readonly number[],
   ignoreMask?: Uint8Array,
 ): number[] | undefined => {
-  let extreme: number[] | undefined;
-  let extremeScore = 0;
+  const top: { score: number; color: number[] }[] = [];
   for (let y = window.top; y < window.bottom; y++) {
     for (let x = window.left; x < window.right; x++) {
       const index = y * width + x;
       if (ignoreMask?.[index]) continue;
       const color = colorAt(pixels, index);
       const contrast = maxChannelDelta(background, color);
-      if (contrast > extremeScore) {
-        extremeScore = contrast;
-        extreme = [...color];
+      if (top.length < FOREGROUND_EXTREME_TOPK || contrast > top[top.length - 1].score) {
+        top.push({ score: contrast, color: [...color] });
+        top.sort((a, b) => b.score - a.score);
+        if (top.length > FOREGROUND_EXTREME_TOPK) top.length = FOREGROUND_EXTREME_TOPK;
       }
     }
   }
-  return extremeScore >= MIN_FOREGROUND_CONTRAST ? extreme : undefined;
+  const deepest = top[0];
+  if (!deepest || deepest.score < MIN_FOREGROUND_CONTRAST) return undefined;
+  return [
+    Math.round(top.reduce((s, e) => s + e.color[0], 0) / top.length),
+    Math.round(top.reduce((s, e) => s + e.color[1], 0) / top.length),
+    Math.round(top.reduce((s, e) => s + e.color[2], 0) / top.length),
+  ];
 };
 
 export const isOnAxisBlend = (
@@ -474,7 +567,9 @@ const classifySameTokenRasterizationAtHalo = (
     screenshotForeground,
     ignoreMask,
   );
-  const inkDelta = Math.abs(designInk - screenshotInk) / Math.max(designInk, screenshotInk);
+  // 両側のインク量が0なら 0/0 で NaN になる。差が無いものとして0扱いにする。
+  const inkDelta =
+    Math.abs(designInk - screenshotInk) / Math.max(designInk, screenshotInk, 1e-9);
   if (inkDelta > MAX_INK_COVERAGE_DELTA) return undefined;
 
   const changedPixelCount = countChangedPixels(
