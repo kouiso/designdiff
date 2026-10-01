@@ -295,6 +295,19 @@ export interface RegionScore {
     structure: number;
     shape: number;
   };
+  // 差分画素が「両側画像の同じ位置にある強縁」の ±2px 以内に85%以上載り、
+  // 暗側/明側の端点色が両側で一致する領域の診断 (designdiff#239)。
+  // 平坦背景でも写真全体のリサンプルでもない、グリフ縁や角丸縁のような
+  // 局所縁上の AA 差だけで構成される差分を実害と区別する。
+  edgeStraddle?: {
+    classification: "edge-straddle-rasterization";
+    changedPixelCount: number;
+    straddleCoverage: number;
+    designLowHex: string;
+    designHighHex: string;
+    screenshotLowHex: string;
+    screenshotHighHex: string;
+  };
   // テキストブロックの行折り返し差。同一 bg/fg トークン・総インク量・
   // 行バンド数・インク連結成分数が全て一致したときだけ付く (designdiff#230)。
   // グリフが行をまたいで移動するためトポロジ拘束は入れない。
@@ -327,7 +340,8 @@ export const effectiveRegionStructure = (score: RegionScore, honorSameToken = fa
     honorSameToken &&
     (score.sameTokenRasterization !== undefined ||
       score.textReflow !== undefined ||
-      score.textureResampling !== undefined)
+      score.textureResampling !== undefined ||
+      score.edgeStraddle !== undefined)
   ) {
     return 1;
   }
@@ -347,7 +361,8 @@ export const effectiveRegionColor = (score: RegionScore, honorSameToken = false)
     honorSameToken &&
     (score.sameTokenRasterization !== undefined ||
       score.textReflow !== undefined ||
-      score.textureResampling !== undefined)
+      score.textureResampling !== undefined ||
+      score.edgeStraddle !== undefined)
   ) {
     return 0;
   }

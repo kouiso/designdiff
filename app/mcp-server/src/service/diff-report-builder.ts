@@ -1,5 +1,6 @@
 import {
   buildVerifiedInsetCandidates,
+  classifyEdgeStraddle,
   classifyGlyphEdgeRasterization,
   classifySameTokenRasterization,
   classifyTextReflow,
@@ -364,6 +365,30 @@ function buildIssues(
       });
     }
 
+    // 両側の同じ位置に強縁が並ぶ領域では、縁上の画素だけが別ラスタライザの
+    // アンチエイリアス差でずれる。トークン証明とリサンプル証明の隙間に落ちる
+    // 局所縁の差分を実害と区別する診断として minor で記録する (designdiff#239)。
+    const edgeStraddle = regionScore.edgeStraddle;
+    if (edgeStraddle) {
+      issues.push({
+        regionId: regionScore.regionId,
+        bbox: regionScore.bbox,
+        kind: "color",
+        severity: "minor",
+        figmaNodeId: regionScore.figmaNodeId,
+        evidence: {
+          signal: "edge_straddle_rasterization",
+          value: edgeStraddle.straddleCoverage,
+          threshold: 0.85,
+          expected: `${edgeStraddle.designLowHex}..${edgeStraddle.designHighHex}`,
+          actual: `${edgeStraddle.changedPixelCount} pixels straddling shared edges, endpoints ${edgeStraddle.screenshotLowHex}..${edgeStraddle.screenshotHighHex}`,
+          ...evidenceProvenance,
+        },
+        suggestedCssFix:
+          "両側の同じ位置に強い縁が並んでいて、差分画素がその縁上だけに載っています。ラスタライザのアンチエイリアス差の可能性が高いので実害が無いか目視で確認してください。",
+      });
+    }
+
     // 行折り返しの証明が取れた領域は、ブロック全体の不変量 (トークン・
     // インク量・行数・成分数) が一致している。グループの先頭だけに
     // minor を出してノイズを抑える。
@@ -393,7 +418,7 @@ function buildIssues(
     // 抑え、上で生成した色issueと不合格判定は維持する。
     const hasEdgeDisplacement =
       !localAlignment &&
-      !(honorSameToken && (sameToken || textReflow)) &&
+      !(honorSameToken && (sameToken || textReflow || edgeStraddle)) &&
       regionScore.shape > GEOMETRIC_SHAPE_EPSILON &&
       classifyForegroundOccupancyGeometry(
         options.designPixels,
@@ -657,6 +682,18 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
         shape,
         ignoreMask,
       );
+      // トークン証明が通らなかった領域だけテクスチャ証明を試す。
+      // 同一トークン証明がある領域で二重分類すると診断が読みにくい。
+      const textureResampling = sameToken
+        ? undefined
+        : classifyTextureResampling(
+            designPixels,
+            screenshotPixels,
+            width,
+            height,
+            bbox,
+            ignoreMask,
+          );
 
       childRegions.push({
         regionId: section.child.id,
@@ -682,18 +719,13 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
           ignoreMask,
         ),
         sameTokenRasterization: sameToken,
-        // トークン証明が通らなかった領域だけテクスチャ証明を試す。
-        // 同一トークン証明がある領域で二重分類すると診断が読みにくい。
-        textureResampling: sameToken
-          ? undefined
-          : classifyTextureResampling(
-              designPixels,
-              screenshotPixels,
-              width,
-              height,
-              bbox,
-              ignoreMask,
-            ),
+        textureResampling,
+        // 平坦背景でも写真領域全体でもない局所縁 (グリフ縁・角丸縁) の
+        // 差分は両証明の前提に乗らないため、縁ストラドル証明を最後に試す。
+        edgeStraddle:
+          sameToken === undefined && textureResampling === undefined
+            ? classifyEdgeStraddle(designPixels, screenshotPixels, width, height, bbox, ignoreMask)
+            : undefined,
         shape,
         layout: UNIMPLEMENTED_LAYOUT_SCORE,
         textureScore: getTextureScore(bbox),
@@ -763,6 +795,16 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
         shape,
         ignoreMask,
       );
+      const textureResampling = sameToken
+        ? undefined
+        : classifyTextureResampling(
+            designPixels,
+            screenshotPixels,
+            width,
+            height,
+            bbox,
+            ignoreMask,
+          );
       diffClusterRegions.push({
         regionId: `diff-cluster-${bbox.x}-${bbox.y}-${bbox.w}-${bbox.h}`,
         bbox,
@@ -789,16 +831,11 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
           ignoreMask,
         ),
         sameTokenRasterization: sameToken,
-        textureResampling: sameToken
-          ? undefined
-          : classifyTextureResampling(
-              designPixels,
-              screenshotPixels,
-              width,
-              height,
-              bbox,
-              ignoreMask,
-            ),
+        textureResampling,
+        edgeStraddle:
+          sameToken === undefined && textureResampling === undefined
+            ? classifyEdgeStraddle(designPixels, screenshotPixels, width, height, bbox, ignoreMask)
+            : undefined,
         shape,
         layout: UNIMPLEMENTED_LAYOUT_SCORE,
         textureScore: getTextureScore(bbox),
