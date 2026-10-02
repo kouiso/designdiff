@@ -11,6 +11,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Electron IPC smoke test (`app/desktop/e2e/electron-ipc-smoke.mjs`): launches the real Electron binary and drives `project`, `token`, and `file:read-local-image` IPC paths; wired into CI on xvfb.
 - CI jobs for the Figma-plugin host E2E (`real-iframe-host.mjs`) and Chrome-extension E2E (`real-chrome-e2e.mjs`), both previously local-only scripts.
 - Crop-region round-trip integration coverage (`set_crop_region` → `compare_design` auto-application → `get_crop_region`) and Figma-plugin message-contract tests (requestId echo, `figma.command` menu routing).
+- `script/eval/figdiff-perf-bench.mjs`: p50/p95 wall-clock bench for `compareImages` across SP/PC/tall profiles, with per-profile p95 gates (`FIGDIFF_PERF_P95_MS[_<PROFILE>]`); results recorded in `docs/evidence/perf-bench.json` and the threshold decision in `docs/perf-bench.md`.
+- `docs/acceptance-matrix.md`: per-feature acceptance table (expected behavior, pass criteria, verification, latest evidence) covering all MCP tools, desktop, extension, and plugin surfaces.
 
 ### Changed
 
