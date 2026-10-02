@@ -1,6 +1,6 @@
 # FigDiff — Test Strategy
 
-**Last updated**: 2026-05-17
+**Last updated**: 2026-10-01
 **Owner**: All package maintainers (per-package sections delegate)
 **Companion docs**: `prompt/instruction/testing.md` (RED → GREEN → REFACTOR policy)
 **This doc**: scope, layers, per-package inventory, coverage targets, gaps, QA checklists.
@@ -21,19 +21,19 @@
 
 ## 2. Per-package inventory
 
-### `@figdiff/shared` — 10 test files (~93 tests)
-Verified via `find package/shared/src -name "*.test.ts" | wc -l` at develop tip.
-- Diff clustering: `diff-cluster.test.ts` (flood + grid clusterers, suggestion thresholds — 14 tests as of PR #51)
-- Parsing/schemas: `figma-url-parser.test.ts` (19), `project-schema.test.ts` (23), `figma-page-frame.test.ts` (11), `type.test.ts` (7)
-- Figma: `figma-client.test.ts` (2)
-- Signal layer: `signal/ssim.test.ts` (6), `signal/hausdorff.test.ts` (4), `signal/texture.test.ts` (3)
-- Self-critique: `self-critique.test.ts` (4)
+### `@figdiff/shared` — 49 test files
+Verified via `find package/shared/src -name "*.test.ts" | wc -l` at develop tip (2026-10-01).
+- Diff clustering: `diff-cluster.test.ts` (flood + grid clusterers, suggestion thresholds)
+- Parsing/schemas: `figma-url-parser.test.ts`, `project-schema.test.ts`, `figma-page-frame.test.ts`, `type.test.ts`
+- Figma: `figma-client.test.ts`
+- Signal layer: `signal/` — ssim, hausdorff, texture, delta-e-2000, glyph-edge-raster (same-token rasterization proof), text-reflow, local-alignment, flat-region-color, whole-image-structure, and more
+- Self-critique: `self-critique.test.ts`
 
 **Coverage target**: ≥ 80 % branch on all pure functions. Currently meeting target on cluster + url-parser; signal coverage TBD via `vitest --coverage`.
 
-### `@figdiff/mcp-server` — 11 test files
-Verified via `find app/mcp-server/src -name "*.test.ts" | wc -l` at develop tip.
-- Tool tests: `compare-design`, `inspect-node`, `list-frames`, `get-design-tokens`, `generate-report`, `crop-region` plus error-shape and runtime tests
+### `@figdiff/mcp-server` — 64 test files (22 tool-level)
+Verified via `find app/mcp-server/src -name "*.test.ts" | wc -l` at develop tip (2026-10-01).
+- Tool tests: all 17 tools, including error paths for the project/region tools (`create-project`, `delete-project`, `get-crop-region`, `get-ignore-regions`, `set-crop-region`, `set-ignore-regions`, `delete-ignore-region`), response ordering, response budget, and conditions/loop-guard flows
 - Service-level (image-compare, figma-service): covered indirectly via tool tests + the in-repo benchmark script [`script/eval/figdiff-cluster-bench.mjs`](../script/eval/figdiff-cluster-bench.mjs) (informal but reproducible; used for PR #50/#51 grid-vs-flood comparison)
 - **No `smoke:*` scripts** on develop at this revision (any `smoke:runtime*` references in older drafts are stale; if smoke harnesses re-land they should be re-listed here).
 
@@ -41,7 +41,7 @@ Verified via `find app/mcp-server/src -name "*.test.ts" | wc -l` at develop tip.
 
 **Gap**: no integration test for the `project_id` + `frame_name` crop-region lookup flow end-to-end (`set_crop_region` → `compare_design` referencing it → `get_crop_region`).
 
-### `@figdiff/desktop` — 32 test files (11 `.test.ts` + 21 `.test.tsx`)
+### `@figdiff/desktop` — 56 test files (`.test.ts` + `.test.tsx`)
 - Component tests: home, project, compare, live-overlay, setting, layout/header, ui/* primitives (button, input, dialog, slider, spinner, etc.)
 - Hook tests: `use-canvas-zoom-pan`, others
 - Store tests: project, compare, setting, overlay stores (Zustand)
@@ -52,7 +52,7 @@ Verified via `find app/mcp-server/src -name "*.test.ts" | wc -l` at develop tip.
 
 **Gap**: no Electron main-process tests (preload bridge, IPC handlers — see §6).
 
-### `@figdiff/chrome-extension` — 6 test files
+### `@figdiff/chrome-extension` — 9 test files
 Verified at develop tip: `app/chrome-extension/src/background.test.ts`, `service/{token-service,pixel-diff-service,figma-service}.test.ts`, `content/{overlay-renderer,diff-highlighter}.test.ts`.
 
 **Coverage gap (not zero, but partial)**: manifest validation and end-to-end capture flow not covered by existing unit tests. Earlier drafts of this doc incorrectly stated "0 tests" — corrected after codex review.

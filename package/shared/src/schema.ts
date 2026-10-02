@@ -765,6 +765,10 @@ export const CompareDesignResultSchema = z
     comparisonId: z.string(),
     matchRate: z.number().min(0).max(100),
     diffPixelCount: z.number().int().nonnegative(),
+    // pixelmatch の threshold を越えず差分に数えられなかったが、生の画素値は
+    // 異なる画素の数。影のぼかし・グラデーション・AA縁のような低振幅の広域差分は
+    // diffPixelCount=0 / PASS でもここに残る (designdiff#218)。
+    subThresholdDiffPixelCount: z.number().int().nonnegative().optional(),
     // ignoreRegions が画像全体を覆うケースでは 0 が正当。
     totalPixelCount: z.number().int().nonnegative(),
     remainingIssues: z.number().int().nonnegative().optional(),

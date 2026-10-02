@@ -1367,6 +1367,33 @@ export async function compareImages(
     totalPixelCount === 0
       ? 0
       : Math.round(((totalPixelCount - diffPixelCount) / totalPixelCount) * 100 * 100) / 100;
+
+  // 生の画素値が異なるのに pixelmatch の threshold を越えず差分に数えられなかった
+  // 画素数。ignore/padding mask 済みの領域は両側が同一値に揃えてあるので、ここには
+  // 入らない。ぼかし半径差のような低振幅の広域差分が PASS に見える誤判定を、
+  // 呼び出し側が見抜けるようにする (designdiff#218)。
+  // pixelmatch (checkerboard=false) と同じく白へブレンドしてから比べる。
+  // 生の RGBA を比べると、Figma 書き出しの透明画素 (0,0,0,0) が白いスクリーン
+  // ショットとの見た目一致でも差分に数えられ、警告が常時出てしまう。
+  const blendOverWhite = (pixels: Uint8ClampedArray, offset: number, channel: number): number => {
+    const alpha = pixels[offset + 3] / 255;
+    return 255 + (pixels[offset + channel] - 255) * alpha;
+  };
+  let rawDiffPixelCount = 0;
+  for (let index = 0; index < width * height; index++) {
+    const offset = index * 4;
+    if (
+      blendOverWhite(pixelmatchDesignPixels, offset, 0) !==
+        blendOverWhite(screenshotPixels, offset, 0) ||
+      blendOverWhite(pixelmatchDesignPixels, offset, 1) !==
+        blendOverWhite(screenshotPixels, offset, 1) ||
+      blendOverWhite(pixelmatchDesignPixels, offset, 2) !==
+        blendOverWhite(screenshotPixels, offset, 2)
+    ) {
+      rawDiffPixelCount++;
+    }
+  }
+  const subThresholdDiffPixelCount = Math.max(0, rawDiffPixelCount - diffPixelCount);
   // 判定と証拠を先に作る。矛盾で人間レビューへ回すとき、pixelmatch の閾値では
   // 1画素も差分にならないことがある。そのままだと差分画像が真っ黒、領域0件で
   // 「見てくれ」と渡すことになるので、見える差のあった画素を証拠として使う。
@@ -1542,6 +1569,7 @@ export async function compareImages(
     comparisonId: comparisonId ?? `cmp-${Date.now()}`,
     matchRate,
     diffPixelCount,
+    subThresholdDiffPixelCount,
     totalPixelCount,
     diffRegions,
     suggestion,

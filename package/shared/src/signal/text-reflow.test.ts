@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import { RegionScoreSchema } from "../schema.js";
+
 import { classifyTextReflow } from "./text-reflow.js";
 
 const WIDTH = 30;
@@ -120,5 +122,28 @@ describe("classifyTextReflow", () => {
 
   it("完全一致のブロック (差分なし) を扱わない", () => {
     expect(classify(makeBlock(designBars), makeBlock(designBars))).toBeUndefined();
+  });
+
+  // designdiff#235: 両側の連結成分数が0だと成分差が 0/0 = NaN になり、
+  // しきい値比較をすり抜けて「折り返し」と誤認されていた。
+  it("グリフと数えられる墨が無い点描だけの領域を扱わない", () => {
+    const design = blank();
+    const screenshot = blank();
+    for (const x of [5, 12, 19]) {
+      paint(design, x, 5);
+      paint(screenshot, x, 20);
+    }
+    expect(classify(design, screenshot)).toBeUndefined();
+  });
+
+  it("分類できた証拠は RegionScore の textReflow スキーマを満たす", () => {
+    const evidence = classify(makeBlock(designBars), makeBlock(reflowedBars));
+    expect(evidence).toBeDefined();
+    const parsed = RegionScoreSchema.shape.textReflow.safeParse({
+      ...evidence,
+      memberRegionIds: ["region-0"],
+    });
+    expect(parsed.success).toBe(true);
+    expect(Number.isFinite(evidence?.inkCoverageDelta)).toBe(true);
   });
 });
