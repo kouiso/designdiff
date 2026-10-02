@@ -9,17 +9,17 @@
 
 | 機能 | 期待動作 | 合格条件 | 検証手段 | 証跡 |
 |---|---|---|---|---|
-| `create_project` | プロジェクトを登録し Figma URL を保存 | 同名/同URL重複時はエラー、作成後 `list_projects` に出る | `create-project.test.ts`, `project-store.test.ts` | ✅ CI |
+| `create_project` | プロジェクトを登録し Figma URL を保存 | 同ID重複時はエラー (存在 dir 拒否)、作成後 `list_projects` に出る | `create-project.test.ts`, `project-store.test.ts` | ✅ CI |
 | `list_projects` / `delete_project` | 一覧返却・削除 | 未存在ID削除はエラー、削除後 `projectExists:false` | `delete-project.test.ts`, `e2e-compare-design.test.ts` | ✅ CI |
 | `set_figma_token` | `figd_` トークンを keychain/ファイルに保存 | 不正形式拒否、保存→参照→削除が往復 | `set-figma-token.test.ts`, IPC スモーク | ✅ CI |
-| `list_frames` | プロジェクトのフレーム一覧を返す | Figma API モックで shape/件数一致 | `list-frames.test.ts` | ✅ CI |
-| `inspect_node` | ノードの構造を返す | 指定ノードの transform/children 抽出 | `inspect-node.test.ts` | ✅ CI |
+| `list_frames` | プロジェクトのフレーム一覧を返す | ツール応答形式・budget 内件数 | `e2e-compare-design.test.ts`, `mcp-response-budget.test.ts` | ✅ CI |
+| `inspect_node` | ノードの構造を返す | 指定ノードの transform/children 抽出 | `e2e-compare-design.test.ts`, `mcp-response-budget.test.ts` | ✅ CI |
 | `compare_design` | Figma 画像 vs スクショの差分判定 | verdict/diffRegions/bbox が仕様通り、エラー時は構造化エラー | `compare-design.test.ts` 他多数 | ✅ CI |
 | crop region (`set_/get_`) | 比較領域を固定・往復参照 | `compare_design` が `cropApplied`/`cropSource` を正しく報告 | `e2e-compare-design.test.ts` (往復結合) | ✅ CI |
 | ignore regions (`set_/get_/delete_`) | 除外領域の登録・参照・削除 | 除外領域内の差分はカウントされない | `set-ignore-regions.test.ts` 等 | ✅ CI |
 | `verify_fix` | 修正後の再比較・改善判定 | before/after の verdict 遷移が正しい | `verify-fix.test.ts` | ✅ CI |
 | `compare_animation` | 連番フレームの変化量 | 変化率/フレームごとの差分 | `compare-animation.test.ts` | ✅ CI |
-| `get_design_tokens` | トークン差分抽出 | token diff の分類が正しい | `get-design-tokens.test.ts` | ✅ CI |
+| `get_design_tokens` | トークン差分抽出 | token diff の分類が正しい | `mcp-response-budget.test.ts`, `token-diff-service.test.ts` | ✅ CI |
 | `generate_report` | HTML/Markdown レポート生成 | レポートに verdict/領域/画像が含まれる | `generate-report.test.ts` | ✅ CI |
 | `report_issue` | 差分を issue として整形 | GitHub 連携モックで送信形式一致 | `report-issue.test.ts` | ✅ CI |
 | Gate1 判定精度 | 細線/1px以下のずれを誤FAILしない | 実検体9ノードで FAIL→PASS 是正 | 実検体画像が必要 | ❌ #243 |

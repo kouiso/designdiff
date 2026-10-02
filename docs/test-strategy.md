@@ -13,9 +13,9 @@
 |-------|------|---------------|---------------|
 | **Unit** | Vitest | Per-package via `pnpm --filter <pkg> test`; aggregated `pnpm test` (turbo) | Pure-function correctness, type guards, parsing, schemas, diff algorithms |
 | **Integration** | Vitest + minimal mocks | Per-package (mcp-server, desktop) | MCP tool handlers wired to services, store ↔ component interactions |
-| **Smoke** | Node scripts (`script/*.mjs`) | *(no `smoke:*` scripts on develop at this revision; the previous `smoke:runtime` / `smoke:white-theme` harnesses have been removed. If smoke harnesses re-land, list them here.)* | Process boots, stdio transport connects, theme renders without crash |
+| **Smoke** | Node scripts (`script/*.mjs`) | `smoke:top-pc-large-page` (root `package.json` — large-page compare smoke). The previous `smoke:runtime` / `smoke:white-theme` harnesses are gone; if new ones land, list them here | Process boots, stdio transport connects, theme renders without crash |
 | **Functional QA** | Manual + Playwright (renderer only) | `pnpm dev` → Vite at `http://localhost:5173` → Playwright MCP | UI flows, dialog focus traps, view-mode toggles |
-| **E2E (Electron)** | Not yet implemented | — | Window boot + IPC + preload bridge (gap, see §6) |
+| **E2E (Electron)** | `app/desktop/e2e/electron-ipc-smoke.mjs` (CI `electron-smoke`, xvfb) + `e2e/desktop-happy-path.spec.ts` (CI `e2e`) | Playwright `_electron` | Window boot + IPC + preload bridge + renderer happy path |
 
 **External boundary mocks only** (electron-vite stub, sharp/pixelmatch use real buffers, Figma API mocked at fetch level). Per `prompt/instruction/testing.md`: never mock internal logic.
 
@@ -35,7 +35,7 @@ Verified via `find package/shared/src -name "*.test.ts" | wc -l` at develop tip 
 Verified via `find app/mcp-server/src -name "*.test.ts" | wc -l` at develop tip (2026-10-01).
 - Tool tests: all 17 tools, including error paths for the project/region tools (`create-project`, `delete-project`, `get-crop-region`, `get-ignore-regions`, `set-crop-region`, `set-ignore-regions`, `delete-ignore-region`), response ordering, response budget, and conditions/loop-guard flows
 - Service-level (image-compare, figma-service): covered indirectly via tool tests + the in-repo benchmark script [`script/eval/figdiff-cluster-bench.mjs`](../script/eval/figdiff-cluster-bench.mjs) (informal but reproducible; used for PR #50/#51 grid-vs-flood comparison)
-- **No `smoke:*` scripts** on develop at this revision (any `smoke:runtime*` references in older drafts are stale; if smoke harnesses re-land they should be re-listed here).
+- Root `package.json` exposes `smoke:top-pc-large-page` (large-page smoke harness); any `smoke:runtime*` references in older drafts are stale.
 
 **Coverage target**: ≥ 80 % branch on service layer; ≥ 60 % on tool wrappers (mostly schema → service plumbing).
 
