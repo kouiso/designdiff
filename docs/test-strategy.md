@@ -13,15 +13,15 @@
 |-------|------|---------------|---------------|
 | **Unit** | Vitest | Per-package via `pnpm --filter <pkg> test`; aggregated `pnpm test` (turbo) | Pure-function correctness, type guards, parsing, schemas, diff algorithms |
 | **Integration** | Vitest + minimal mocks | Per-package (mcp-server, desktop) | MCP tool handlers wired to services, store ↔ component interactions |
-| **Smoke** | Node scripts (`script/*.mjs`) | *(no `smoke:*` scripts on develop at this revision; the previous `smoke:runtime` / `smoke:white-theme` harnesses have been removed. If smoke harnesses re-land, list them here.)* | Process boots, stdio transport connects, theme renders without crash |
+| **Smoke** | Node scripts (`script/*.mjs`) | `smoke:top-pc-large-page` (root `package.json` — large-page compare smoke). The previous `smoke:runtime` / `smoke:white-theme` harnesses are gone; if new ones land, list them here | Process boots, stdio transport connects, theme renders without crash |
 | **Functional QA** | Manual + Playwright (renderer only) | `pnpm dev` → Vite at `http://localhost:5173` → Playwright MCP | UI flows, dialog focus traps, view-mode toggles |
-| **E2E (Electron)** | Not yet implemented | — | Window boot + IPC + preload bridge (gap, see §6) |
+| **E2E (Electron)** | `app/desktop/e2e/electron-ipc-smoke.mjs` (CI `electron-smoke`, xvfb) + `e2e/desktop-happy-path.spec.ts` (CI `e2e`) | Playwright `_electron` | Window boot + IPC + preload bridge + renderer happy path |
 
 **External boundary mocks only** (electron-vite stub, sharp/pixelmatch use real buffers, Figma API mocked at fetch level). Per `prompt/instruction/testing.md`: never mock internal logic.
 
 ## 2. Per-package inventory
 
-### `@figdiff/shared` — 49 test files
+### `@figdiff/shared` — 51 test files
 Verified via `find package/shared/src -name "*.test.ts" | wc -l` at develop tip (2026-10-01).
 - Diff clustering: `diff-cluster.test.ts` (flood + grid clusterers, suggestion thresholds)
 - Parsing/schemas: `figma-url-parser.test.ts`, `project-schema.test.ts`, `figma-page-frame.test.ts`, `type.test.ts`
@@ -31,17 +31,17 @@ Verified via `find package/shared/src -name "*.test.ts" | wc -l` at develop tip 
 
 **Coverage target**: ≥ 80 % branch on all pure functions. Currently meeting target on cluster + url-parser; signal coverage TBD via `vitest --coverage`.
 
-### `@figdiff/mcp-server` — 64 test files (22 tool-level)
+### `@figdiff/mcp-server` — 65 test files (22 tool-level)
 Verified via `find app/mcp-server/src -name "*.test.ts" | wc -l` at develop tip (2026-10-01).
 - Tool tests: all 17 tools, including error paths for the project/region tools (`create-project`, `delete-project`, `get-crop-region`, `get-ignore-regions`, `set-crop-region`, `set-ignore-regions`, `delete-ignore-region`), response ordering, response budget, and conditions/loop-guard flows
 - Service-level (image-compare, figma-service): covered indirectly via tool tests + the in-repo benchmark script [`script/eval/figdiff-cluster-bench.mjs`](../script/eval/figdiff-cluster-bench.mjs) (informal but reproducible; used for PR #50/#51 grid-vs-flood comparison)
-- **No `smoke:*` scripts** on develop at this revision (any `smoke:runtime*` references in older drafts are stale; if smoke harnesses re-land they should be re-listed here).
+- Root `package.json` exposes `smoke:top-pc-large-page` (large-page smoke harness); any `smoke:runtime*` references in older drafts are stale.
 
 **Coverage target**: ≥ 80 % branch on service layer; ≥ 60 % on tool wrappers (mostly schema → service plumbing).
 
-**Gap**: no integration test for the `project_id` + `frame_name` crop-region lookup flow end-to-end (`set_crop_region` → `compare_design` referencing it → `get_crop_region`).
+The `project_id` + `frame_name` crop-region lookup flow is covered end-to-end by `e2e-compare-design.test.ts` (`set_crop_region` → `compare_design` referencing it → `get_crop_region`, including post-delete `projectExists: false`).
 
-### `@figdiff/desktop` — 56 test files (`.test.ts` + `.test.tsx`)
+### `@figdiff/desktop` — 78 test files (`.test.ts` + `.test.tsx`, incl. `electron/`)
 - Component tests: home, project, compare, live-overlay, setting, layout/header, ui/* primitives (button, input, dialog, slider, spinner, etc.)
 - Hook tests: `use-canvas-zoom-pan`, others
 - Store tests: project, compare, setting, overlay stores (Zustand)
@@ -50,23 +50,25 @@ Verified via `find app/mcp-server/src -name "*.test.ts" | wc -l` at develop tip 
 
 **Coverage target**: ≥ 80 % branch on stores + lib; ≥ 60 % on components (interactions, not rendered snapshots).
 
-**Gap**: no Electron main-process tests (preload bridge, IPC handlers — see §6).
+- Main-process tests: `electron/ipc/*.test.ts`, `electron/util/*.test.ts`, `electron/preload.test.ts`, `electron/oauth/` run under `vitest.electron.config.ts` (node env, ≥80% line / ≥85% branch / ≥90% function thresholds)
+- **App-launch smoke**: `e2e/electron-ipc-smoke.mjs` boots the real Electron binary via Playwright `_electron` and drives project/token/image IPC — runs in CI (`electron-smoke` job, xvfb)
+- UI-level verification of the comparison flows lives in `e2e/desktop-c-cases.mjs` / `desktop-d-cases.mjs` (heavier, not yet per-PR)
 
 ### `@figdiff/chrome-extension` — 9 test files
 Verified at develop tip: `app/chrome-extension/src/background.test.ts`, `service/{token-service,pixel-diff-service,figma-service}.test.ts`, `content/{overlay-renderer,diff-highlighter}.test.ts`.
 
-**Coverage gap (not zero, but partial)**: manifest validation and end-to-end capture flow not covered by existing unit tests. Earlier drafts of this doc incorrectly stated "0 tests" — corrected after codex review.
+**End-to-end**: `script/real-chrome-e2e.mjs` loads the real `dist/` into Chromium (service worker, popup, overlay drag/scroll/opacity/navigation, token round-trip) — runs in CI (`chrome-ext-e2e` job) with evidence artifacts. Manifest validation remains unit-level.
 
 ### `@figdiff/figma-plugin` — 2 test files
 Verified at develop tip: `app/figma-plugin/src/code.test.ts`, `app/figma-plugin/src/ui.test.ts`. `package.json` defines `"test": "vitest run"`.
 
-**Coverage gap**: very thin (only entry + UI smoke). Plugin message bus and frame extraction logic largely manual-only. Earlier drafts of this doc incorrectly stated "0 tests + no script" — corrected after codex review.
+**Coverage**: `code.test.ts` covers the plugin message bus end-to-end in jsdom — all six `onmessage` commands, requestId echo (success and error), `figma.command` menu routing, selection events, and node extraction normalizers (85 cases). `e2e/real-iframe-host.mjs` drives the real `dist/ui.html` bundle in a real Chromium iframe (postMessage contract, stale-requestId rejection, timeout recovery, real canvas pixelmatch) — runs in CI (`figma-plugin-e2e` job). What remains manual-only: execution inside a real Figma host.
 
 ## 3. CI workflows (`.github/workflows/`)
 
 | Workflow | What runs | Required to merge? |
 |----------|-----------|--------------------|
-| `ci.yml` | `pnpm check` (Biome format + lint), `pnpm lint:eslint` (ESLint v9 type-aware), `pnpm typecheck`, `pnpm test` matrix per `check-type` | Yes |
+| `ci.yml` | `pnpm check` (Biome format + lint), `pnpm lint:eslint` (ESLint v9 type-aware), `pnpm typecheck`, `pnpm test` + `test:coverage` thresholds matrix per `check-type`; `e2e` (desktop Playwright renderer); `figma-plugin-e2e` (real-bundle iframe host); `electron-smoke` (Electron launch + IPC, xvfb); `chrome-ext-e2e` (extension in real Chromium, evidence artifacts); `naming` (naming/action-pin checks); `oracle` (independent oracle self-test + verdict agreement + convergence gate) | Yes |
 | `build.yml` | Electron Build per OS (Linux / macOS / Windows). Guard: `if: github.event.pull_request.draft == false` only — **no `paths` filter**, so it runs on every non-draft PR including docs-only ones (jobs may still be no-ops if turbo cache hits) | Yes |
 | `labeler.yml` | Auto-label PRs by path | Status only |
 | `license-check.yml` | License compatibility scan | Advisory |
@@ -119,22 +121,15 @@ Before reporting "done", verify (mirrors `.github/workflows/ci.yml` step-for-ste
 
 ## 5. Coverage measurement
 
-**Current**: tests pass / fail are tracked, but no quantitative coverage report is generated in CI.
-
-**Target**: add `vitest --coverage` to `test` scripts and surface coverage % per package in CI summary. Threshold guard at ≥ 80 % branch for business logic (services, stores, parsers, clusterers).
-
-Tracked as follow-up.
+**Current**: the `coverage` leg of the `ci.yml` node matrix runs `pnpm -r run test:coverage` with per-package thresholds (e.g. desktop electron layer: ≥80% lines / ≥85% branches / ≥90% functions — see `app/desktop/vitest.electron.config.ts`; lowering a threshold to pass is prohibited).
 
 ## 6. Gap roadmap
 
 | Gap | Severity | Owner | Notes |
 |-----|----------|-------|-------|
-| `@figdiff/chrome-extension` — thin coverage (6 test files, mostly service-level) | Medium | Extension maintainer | Expand: manifest validation, full capture flow end-to-end, MV3 background lifecycle |
-| `@figdiff/figma-plugin` — thin coverage (2 test files: code, ui) | Medium | Plugin maintainer | Expand: message-bus contract tests, frame-extraction edge cases |
-| No Electron main-process tests | Medium | Desktop maintainer | Add `playwright-electron` for IPC + preload bridge coverage (Spectron is deprecated and not recommended) |
-| No coverage thresholds in CI | Medium | CI maintainer | Add `vitest --coverage` + reporter → fail build below threshold |
-| No persistent Playwright E2E suite for renderer (only ad-hoc) | Medium | Desktop maintainer | Establish `app/desktop/test/playwright/` with happy-path per page |
-| No integration test for MCP crop-region round-trip (`set_crop_region` → `compare_design` with matching `project_id`/`frame_name` → `get_crop_region`) | Low | mcp-server maintainer | Single test file covering the round-trip |
+| `@figdiff/chrome-extension` — MV3 manifest validation and edge-case capture flows | Low | Extension maintainer | End-to-end covered by `real-chrome-e2e.mjs` in CI; unit layer could grow manifest-schema cases |
+| `@figdiff/figma-plugin` — real Figma host execution (Figma sandbox, not iframe host) | Low | Plugin maintainer | Contract + host-iframe layers covered; genuine Figma-hosted run stays manual |
+| Desktop C/D-case UI suites not in per-PR CI | Medium | Desktop maintainer | `desktop-c-cases.mjs` / `desktop-d-cases.mjs` exist but are heavy; consider a scheduled workflow rather than per-PR |
 | No semantic / structural diff (Figma node-aware) | Strategic | Cross-team | Tracked in PR #50 Section C and the follow-up plan after PR #51 |
 
 ## 7. References

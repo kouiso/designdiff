@@ -92,6 +92,125 @@ jobs:
           path: app/desktop/playwright-report
           retention-days: 7
 
+  # jsdom テストはプラグイン UI の契約をモック越しにしか見ない。
+  # 実 bundle (dist/ui.html) を実 Chromium の iframe に載せ、sandbox↔iframe の
+  # postMessage 往復・requestId 相関・実 canvas 比較を外側から検証する。
+  figma-plugin-e2e:
+    name: Figma plugin host E2E
+    runs-on: ${{ vars.RUNNER_LINUX }}
+    timeout-minutes: 15
+    if: github.event.pull_request.draft == false
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: jdx/mise-action@9e7f7633ff6f6d6048a9418a68d48f288f50eb14 # v4.2.3
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # dist/ui.html は build でしか生まれない。古い bundle を検体にすると
+      # 契約ズレを取りこぼすので必ず先にビルドする。
+      - name: Build all packages
+        run: pnpm build
+
+      - name: Install Playwright browser
+        run: pnpm --filter "@figdiff/desktop" exec playwright install --with-deps chromium
+
+      - name: Run plugin host E2E
+        env:
+          FIGDIFF_PLUGIN_HOST_EVIDENCE: ${{ runner.temp }}/figma-plugin-evidence
+        run: node app/figma-plugin/e2e/real-iframe-host.mjs
+
+      - name: Upload plugin host evidence
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: figma-plugin-evidence
+          path: ${{ runner.temp }}/figma-plugin-evidence
+          retention-days: 7
+
+  # Electron 本体の起動は単体テストでも Playwright E2E (web 版) でも
+  # 一度も通っていない。配布物が立ち上がって preload 経由の IPC が
+  # 生きているかを最小限だけ確かめる。重い UI 検証は desktop-c-cases が担う。
+  electron-smoke:
+    name: Electron IPC smoke
+    runs-on: ${{ vars.RUNNER_LINUX }}
+    timeout-minutes: 15
+    if: github.event.pull_request.draft == false
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: jdx/mise-action@9e7f7633ff6f6d6048a9418a68d48f288f50eb14 # v4.2.3
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # dist/main/main.js を検体にするので build は必須
+      - name: Build all packages
+        run: pnpm build
+
+      # Electron は真の headless を持たない。X server が無い CI では
+      # xvfb で仮想ディスプレイを立てて起動する。
+      - name: Install xvfb
+        run: sudo apt-get update && sudo apt-get install -y xvfb
+
+      - name: Install Playwright browser
+        run: pnpm --filter "@figdiff/desktop" exec playwright install --with-deps chromium
+
+      - name: Run Electron IPC smoke
+        run: xvfb-run -a node app/desktop/e2e/electron-ipc-smoke.mjs ${{ runner.temp }}/electron-ipc-evidence
+
+      - name: Upload Electron smoke evidence
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: electron-ipc-evidence
+          path: ${{ runner.temp }}/electron-ipc-evidence
+          retention-days: 7
+
+  # 拡張機能は popup → service worker → content script の実通信を
+  # 実 Chromium に読み込んだ dist/ でしか確かめられない。証跡
+  # (evidence.json + スクリーンショット) は成功時も artifact に残す。
+  chrome-ext-e2e:
+    name: Chrome extension E2E
+    runs-on: ${{ vars.RUNNER_LINUX }}
+    timeout-minutes: 15
+    if: github.event.pull_request.draft == false
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: jdx/mise-action@9e7f7633ff6f6d6048a9418a68d48f288f50eb14 # v4.2.3
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build all packages
+        run: pnpm build
+
+      - name: Install Playwright browser
+        run: pnpm --filter "@figdiff/desktop" exec playwright install --with-deps chromium
+
+      # X server 不要の新 headless で拡張を読み込む。captureVisibleTab 依存の
+      # compare 検証は権限拡張 dist を要するため対象外 (evidence の outcome 参照)。
+      - name: Run Chrome extension E2E
+        env:
+          FIGDIFF_HEADLESS: new
+        run: node app/chrome-extension/script/real-chrome-e2e.mjs ${{ runner.temp }}/chrome-ext-evidence
+
+      - name: Upload extension evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: chrome-ext-evidence
+          path: ${{ runner.temp }}/chrome-ext-evidence
+          retention-days: 7
+
   naming:
     name: Naming and action pins
     runs-on: ${{ vars.RUNNER_LINUX }}

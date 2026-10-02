@@ -195,7 +195,7 @@
     "verificationContext": {
       "version": 1,
       "design": {
-        "sourceIdentitySha256": "9cb1f8b3143aae4107558a94674b9b5bd2a8d6080f2cdd4ec7e3f8536542e171",
+        "sourceIdentitySha256": "1d1e54d387d8704e665c42071e578a02af5b8025cef56e615fe7fa3259f22fca",
         "imageSha256": "e7ca1c4a88e88b46e58c54f566a43ac9a89e35f98ae64dabf915bda32241f5d3",
         "background": "#FFFFFF",
         "figmaExportConditions": null
@@ -241,7 +241,7 @@
         "appliedIds": ["full-frame"],
         "legacyIds": ["full-frame"]
       },
-      "fingerprint": "90c8245706d7b91475e19b536b4e35265e6171aa9f50281724eb7dc9fc06ac8c"
+      "fingerprint": "b1dc0e6579416a4551a0149fea7009f0508b4d1bd636a61be4a10a29ab5f4d0b"
     },
     "diffImagePath": "/tmp/figdiff-mcp/cmp-evidence.png"
   }

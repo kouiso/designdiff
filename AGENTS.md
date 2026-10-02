@@ -34,6 +34,7 @@ pnpm test                # Run tests
 - No `any` types / No `@ts-ignore` / No `eslint-disable` (fix root cause)
 - `git reset --hard/--soft/--mixed` forbidden
 - `--no-verify` forbidden / `--force` forbidden (use `--force-with-lease` only)
+- Update `CHANGELOG.md` with every user-facing change (Keep a Changelog, SemVer). Behavioral changes, new tools, and breaking changes must land an entry in the same PR — a release diff without a changelog line is incomplete.
 
 ## Review Focus — Recurring AI Mistakes (MUST violations)
 
