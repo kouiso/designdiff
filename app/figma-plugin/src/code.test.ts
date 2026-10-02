@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
 import type { NodeAppearance, NodeLayout, NodeTypography } from "@figdiff/shared";
 
@@ -754,5 +754,90 @@ describe("正規化ヘルパー (公開 API 経由)", () => {
   it("TEXT ノードの検査 → typography を含む", () => {
     const result = extractNodeInspection(makeTextNode({ id: "8:8", name: "Label", x: 0, y: 0 }));
     expect(result.typography?.fontFamily).toBe("Inter");
+  });
+});
+
+// --- requestId の応答相関 ---
+// UI 側は requestId で応答を自分の要求に紐付け、stale 応答を棄却する。
+// エコーが欠けると全要求が宙に浮くので、正常系・異常系どちらでも固定する。
+describe("requestId の応答相関", () => {
+  it("export-frame → export-result に同じ requestId を載せる", async () => {
+    figma.currentPage.selection = [makeExportableNode()];
+    sendToPlugin({ type: "export-frame", requestId: "req-exp-1" });
+    await vi.waitFor(() => {
+      expect(lastMessageOfType("export-result")?.requestId).toBe("req-exp-1");
+    });
+  });
+
+  it("inspect-node → inspect-result に同じ requestId を載せる", async () => {
+    figma.currentPage.selection = [makeExportableNode()];
+    sendToPlugin({ type: "inspect-node", requestId: "req-ins-1" });
+    await vi.waitFor(() => {
+      expect(lastMessageOfType("inspect-result")?.requestId).toBe("req-ins-1");
+    });
+  });
+
+  it("compare-images → run-comparison に同じ requestId を載せる", async () => {
+    sendToPlugin({
+      type: "compare-images",
+      designBase64: "d",
+      screenshotBase64: "s",
+      requestId: "req-cmp-1",
+    });
+    await vi.waitFor(() => {
+      expect(lastMessageOfType("run-comparison")?.requestId).toBe("req-cmp-1");
+    });
+  });
+
+  it("エラー応答にも requestId を載せる", async () => {
+    vi.mocked(figma.getNodeById).mockReturnValue(null);
+    sendToPlugin({ type: "export-frame", nodeId: "missing", requestId: "req-err-1" });
+    await vi.waitFor(() => {
+      expect(lastMessageOfType("export-result")).toEqual({
+        type: "export-result",
+        requestId: "req-err-1",
+        error: "No node selected",
+      });
+    });
+  });
+});
+
+// --- メニューコマンドのルーティング ---
+// manifest の3コマンドは figma.command 経由で届き、初期タブと自動書き出しを決める。
+// モジュール読み込み時に一度だけ評価されるので、resetModules で起動を再現する。
+describe("figma.command のルーティング", () => {
+  afterEach(() => {
+    Reflect.deleteProperty(figma, "command");
+    vi.resetModules();
+  });
+
+  it("inspect → inspect タブで開く", async () => {
+    Object.defineProperty(figma, "command", { value: "inspect", configurable: true });
+    vi.resetModules();
+    await import("./code");
+    await vi.waitFor(() => {
+      expect(lastMessageOfType("init")).toEqual({ type: "init", tab: "inspect" });
+    });
+  });
+
+  it("export-frame → compare タブで開き、選択フレームを自動書き出す", async () => {
+    Object.defineProperty(figma, "command", { value: "export-frame", configurable: true });
+    figma.currentPage.selection = [makeExportableNode({ id: "9:9", name: "Auto" })];
+    vi.resetModules();
+    await import("./code");
+    await vi.waitFor(() => {
+      expect(lastMessageOfType("init")).toEqual({ type: "init", tab: "compare" });
+      expect(lastMessageOfType("export-result")?.nodeId).toBe("9:9");
+    });
+  });
+
+  it("compare / コマンドなし → compare タブのみで自動書き出ししない", async () => {
+    figma.currentPage.selection = [makeExportableNode()];
+    vi.resetModules();
+    await import("./code");
+    await vi.waitFor(() => {
+      expect(lastMessageOfType("init")).toEqual({ type: "init", tab: "compare" });
+    });
+    expect(lastMessageOfType("export-result")).toBeUndefined();
   });
 });

@@ -435,6 +435,90 @@ describe("MCP Server E2E: compare_design", () => {
     expect(data.regions.length).toBeGreaterThan(0);
   });
 
+  it("crop_region の set → compare_design 自動適用 → get の往復ができること", async () => {
+    await client.callTool({
+      name: "delete_project",
+      arguments: { project_id: "crop-roundtrip" },
+    });
+
+    const createResult = await client.callTool({
+      name: "create_project",
+      arguments: {
+        id: "crop-roundtrip",
+        name: "crop-roundtrip",
+        implementation_url: "https://example.com",
+      },
+    });
+    expect(createResult.isError).toBeFalsy();
+
+    const region = { x: 10, y: 20, width: 100, height: 80 };
+    const setResult = await client.callTool({
+      name: "set_crop_region",
+      arguments: {
+        project_id: "crop-roundtrip",
+        frame_name: "test-frame",
+        region,
+      },
+    });
+    expect(setResult.isError).toBeFalsy();
+
+    const compareResult = await client.callTool({
+      name: "compare_design",
+      arguments: {
+        design_source: designPath,
+        screenshot: screenshotSamePath,
+        threshold: 0.1,
+        project_id: "crop-roundtrip",
+        frame_name: "test-frame",
+      },
+    });
+    expect(compareResult.isError).toBeFalsy();
+    const data = JSON.parse(findTextContent(compareResult)!.text);
+    expect(data.status).toBe("PASS");
+    expect(data.normalization?.cropApplied).toBe(true);
+    expect(data.normalization?.cropSource).toBe("explicit-project");
+    expect(data.normalization?.cropRegion).toMatchObject(region);
+
+    // frame_name が違うと保存済み crop は適用されない (= frame identity 束縛)
+    const otherFrameResult = await client.callTool({
+      name: "compare_design",
+      arguments: {
+        design_source: designPath,
+        screenshot: screenshotSamePath,
+        threshold: 0.1,
+        project_id: "crop-roundtrip",
+        frame_name: "other-frame",
+      },
+    });
+    expect(otherFrameResult.isError).toBeFalsy();
+    const otherData = JSON.parse(findTextContent(otherFrameResult)!.text);
+    expect(otherData.normalization?.cropApplied ?? false).toBe(false);
+
+    const getResult = await client.callTool({
+      name: "get_crop_region",
+      arguments: {
+        project_id: "crop-roundtrip",
+        frame_name: "test-frame",
+      },
+    });
+    expect(getResult.isError).toBeFalsy();
+    const persisted = JSON.parse(findTextContent(getResult)!.text);
+    expect(persisted.regions).toHaveLength(1);
+    expect(persisted.regions[0].region).toMatchObject(region);
+
+    // 削除後の参照は projectExists:false に落ちる (例外ではなく参照不可能として報告)
+    await client.callTool({
+      name: "delete_project",
+      arguments: { project_id: "crop-roundtrip" },
+    });
+    const getAfterDelete = await client.callTool({
+      name: "get_crop_region",
+      arguments: { project_id: "crop-roundtrip" },
+    });
+    const afterDelete = JSON.parse(findTextContent(getAfterDelete)!.text);
+    expect(afterDelete.projectExists).toBe(false);
+  });
+
   it("ignore_regions YAML の保存と compare_design 自動適用ができること", async () => {
     await client.callTool({
       name: "delete_project",
