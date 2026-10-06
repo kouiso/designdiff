@@ -19,6 +19,10 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - `docs/test-strategy.md` aligned with the current test inventory (file counts, coverage thresholds in CI, resolved gap items).
 - `AGENTS.md` now requires a CHANGELOG entry with every user-facing change.
 
+### Fixed
+
+- `report_issue` context footer now reads the figdiff version from `app/mcp-server/package.json` at runtime instead of the hardcoded `0.1.0`, falling back to `unknown` when the package metadata is unreadable.
+
 ## [2.0.0] - 2026-04-18
 
 ### Added
