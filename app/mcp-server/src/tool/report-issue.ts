@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import * as os from "node:os";
 
 import { z } from "zod";
@@ -61,10 +62,31 @@ function appendComparisonSummary(body: string, comparisonId?: string): string {
   return `${body}\n\n---\n**比較ID**: \`${comparisonId}\`\n(matchRate / region 数は generate_diff_report で確認可能)`;
 }
 
+// バージョンが 0.1.0 固定のままだとリリース後にフッターと実バージョンがズレるため、
+// package.json から実行時に読む。読めない配布形態でもフッター出力自体は失敗させない。
+function readFigdiffVersion(): string {
+  try {
+    const pkg: unknown = JSON.parse(
+      readFileSync(new URL("../../package.json", import.meta.url), "utf8"),
+    );
+    if (
+      pkg !== null &&
+      typeof pkg === "object" &&
+      "version" in pkg &&
+      typeof pkg.version === "string"
+    ) {
+      return pkg.version;
+    }
+    return "unknown";
+  } catch {
+    return "unknown";
+  }
+}
+
 async function buildContextFooter(includeDesignSource: boolean): Promise<string> {
   const session = await readActiveSession().catch(() => null);
   const platform = `${os.platform()} ${os.release()}`;
-  const figdiffVersion = "0.1.0";
+  const figdiffVersion = readFigdiffVersion();
   let contextFooter = `\n\n---\n**Context**\n- figdiff: ${figdiffVersion}\n- platform: ${platform}`;
 
   if (!session) return contextFooter;

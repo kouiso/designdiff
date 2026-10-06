@@ -20,6 +20,10 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - `AGENTS.md` now requires a CHANGELOG entry with every user-facing change.
 - Pinned remaining Dependabot medium/low transitive alerts via `pnpm.overrides`: `qs@^6.16.0`, `body-parser@^2.3.0`, `@hono/node-server@^1.19.15`, `@humanfs/node@^0.16.8`, `@babel/core@^7.29.7`.
 
+### Fixed
+
+- `report_issue` context footer now reads the figdiff version from `app/mcp-server/package.json` at runtime instead of the hardcoded `0.1.0`, falling back to `unknown` when the package metadata is unreadable.
+
 ## [2.0.0] - 2026-04-18
 
 ### Added

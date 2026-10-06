@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -159,6 +161,26 @@ describe("report_issue MCP handler", () => {
     expect(response.isError).toBe(true);
     expect(response.content[0]?.type === "text" ? response.content[0].text : undefined).toContain(
       "upstream unavailable",
+    );
+  });
+
+  it("writes the package version from package.json into the context footer", async () => {
+    const pkg: unknown = JSON.parse(
+      readFileSync(new URL("../../package.json", import.meta.url), "utf8"),
+    );
+    if (
+      pkg === null ||
+      typeof pkg !== "object" ||
+      !("version" in pkg) ||
+      typeof pkg.version !== "string"
+    ) {
+      throw new Error("package.json has no string version field");
+    }
+    const service = createGithubService();
+    const response = await callReport({ title: "Version", body: "Body", include_context: true });
+    expect(response.isError).toBeFalsy();
+    expect(service.createIssue).toHaveBeenCalledWith(
+      expect.objectContaining({ body: expect.stringContaining(`figdiff: ${pkg.version}`) }),
     );
   });
 });
