@@ -18,6 +18,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 - `docs/test-strategy.md` aligned with the current test inventory (file counts, coverage thresholds in CI, resolved gap items).
 - `AGENTS.md` now requires a CHANGELOG entry with every user-facing change.
+- Pinned remaining Dependabot medium/low transitive alerts via `pnpm.overrides`: `qs@^6.16.0`, `body-parser@^2.3.0`, `@hono/node-server@^1.19.15`, `@humanfs/node@^0.16.8`, `@babel/core@^7.29.7`.
 
 ## [2.0.0] - 2026-04-18
 
