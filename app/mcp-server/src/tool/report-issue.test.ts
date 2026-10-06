@@ -165,11 +165,17 @@ describe("report_issue MCP handler", () => {
   });
 
   it("writes the package version from package.json into the context footer", async () => {
-    const pkg = JSON.parse(
+    const pkg: unknown = JSON.parse(
       readFileSync(new URL("../../package.json", import.meta.url), "utf8"),
-    ) as {
-      version: string;
-    };
+    );
+    if (
+      pkg === null ||
+      typeof pkg !== "object" ||
+      !("version" in pkg) ||
+      typeof pkg.version !== "string"
+    ) {
+      throw new Error("package.json has no string version field");
+    }
     const service = createGithubService();
     const response = await callReport({ title: "Version", body: "Body", include_context: true });
     expect(response.isError).toBeFalsy();

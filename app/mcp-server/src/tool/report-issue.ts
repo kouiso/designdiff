@@ -66,10 +66,18 @@ function appendComparisonSummary(body: string, comparisonId?: string): string {
 // package.json から実行時に読む。読めない配布形態でもフッター出力自体は失敗させない。
 function readFigdiffVersion(): string {
   try {
-    const pkg = JSON.parse(
+    const pkg: unknown = JSON.parse(
       readFileSync(new URL("../../package.json", import.meta.url), "utf8"),
-    ) as { version?: string };
-    return pkg.version ?? "unknown";
+    );
+    if (
+      pkg !== null &&
+      typeof pkg === "object" &&
+      "version" in pkg &&
+      typeof pkg.version === "string"
+    ) {
+      return pkg.version;
+    }
+    return "unknown";
   } catch {
     return "unknown";
   }
