@@ -1,4 +1,5 @@
 import { computeShiftTolerantHausdorff } from "./hausdorff.js";
+import { selfNccPlane } from "./self-ncc-plane.js";
 
 import type { DiffBoundingBox } from "../type.js";
 
@@ -578,69 +579,37 @@ const scanAllSelfLags = (
   return false;
 };
 
-const findPeriodicLag = (
-  selfAt: (dx: number, dy: number) => number,
-  spanX: number,
-  spanY: number,
-  width: number,
-  height: number,
-): boolean => {
-  // 全域走査が払える窓では検出可能な全 lag を見る。lag が増えすぎる
-  // 大窓では軸と 45 度対角の線走査に留める。
-  if ((spanX * 2 + 1) * (spanY * 2 + 1) * width * height <= OFFSET_PERIODIC_DENSE_OPS) {
-    return scanAllSelfLags(selfAt, spanX, spanY);
-  }
-  const shortX = Math.min(CONTENT_OFFSET_SEARCH_PX * 2, spanX);
-  const shortY = Math.min(CONTENT_OFFSET_SEARCH_PX * 2, spanY);
-  for (let dy = -shortY; dy <= shortY; dy++) {
-    for (let dx = -shortX; dx <= shortX; dx++) {
-      if (dx === 0 && dy === 0) continue;
-      if (isStrictSelfMax(selfAt, dx, dy)) return true;
-    }
-  }
-  for (let t = shortX + 1; t <= spanX; t++) {
-    if (isStrictSelfMax(selfAt, t, 0) || isStrictSelfMax(selfAt, -t, 0)) return true;
-  }
-  for (let t = shortY + 1; t <= spanY; t++) {
-    if (isStrictSelfMax(selfAt, 0, t) || isStrictSelfMax(selfAt, 0, -t)) return true;
-  }
-  const diagSpan = Math.min(spanX, spanY);
-  for (let t = Math.min(shortX, shortY) + 1; t <= diagSpan; t++) {
-    if (
-      isStrictSelfMax(selfAt, t, t) ||
-      isStrictSelfMax(selfAt, -t, -t) ||
-      isStrictSelfMax(selfAt, t, -t) ||
-      isStrictSelfMax(selfAt, -t, t)
-    )
-      return true;
-  }
-  return false;
-};
-
 const hasPeriodicContent = (
   selfCorrelate: (dx: number, dy: number) => number,
+  design: Float64Array,
   width: number,
   height: number,
 ): boolean => {
-  // 周期は窓内に 2 周期以上収まる範囲でしか検証できない。走査が
-  // 払える窓では全 lag を見る。払えない大窓では軸と 45 度対角の
-  // 線走査に留まり、成分が探索幅より大きい非軸・非対角の周期だけ残る。
+  // 周期は窓内に 2 周期以上収まる範囲でしか検証できない。全 lag を
+  // 走査する：直接計算が払える窓では逐次、払えない大窓では FFT で
+  // 全 lag 面を一括して求める。どちらでも網羅性は同じ。
   const spanX = width >> 1;
   const spanY = height >> 1;
   const padX = spanX + 1;
   const padY = spanY + 1;
   const stride = padX * 2 + 1;
-  const selfScores = new Map<number, number>();
-  const selfAt = (dx: number, dy: number): number => {
-    const key = (dy + padY) * stride + dx + padX;
-    let cached = selfScores.get(key);
-    if (cached === undefined) {
-      cached = selfCorrelate(dx, dy);
-      selfScores.set(key, cached);
-    }
-    return cached;
-  };
-  return findPeriodicLag(selfAt, spanX, spanY, width, height);
+  let selfAt: (dx: number, dy: number) => number;
+  if ((spanX * 2 + 1) * (spanY * 2 + 1) * width * height <= OFFSET_PERIODIC_DENSE_OPS) {
+    const selfScores = new Map<number, number>();
+    selfAt = (dx, dy) => {
+      const key = (dy + padY) * stride + dx + padX;
+      let cached = selfScores.get(key);
+      if (cached === undefined) {
+        cached = selfCorrelate(dx, dy);
+        selfScores.set(key, cached);
+      }
+      return cached;
+    };
+  } else {
+    const plane = selfNccPlane(design, width, height, spanX, spanY);
+    selfAt = (dx, dy) => plane[(dy + padY) * stride + dx + padX];
+  }
+  return scanAllSelfLags(selfAt, spanX, spanY);
 };
 
 const detectAmbiguousOffset = (
@@ -649,11 +618,12 @@ const detectAmbiguousOffset = (
   bestDx: number,
   bestDy: number,
   selfCorrelate: (dx: number, dy: number) => number,
+  design: Float64Array,
   width: number,
   height: number,
 ): boolean =>
   secondPeakScore(scores, bestDx, bestDy) >= best * OFFSET_ALIAS_RATIO ||
-  ((bestDx !== 0 || bestDy !== 0) && hasPeriodicContent(selfCorrelate, width, height));
+  ((bestDx !== 0 || bestDy !== 0) && hasPeriodicContent(selfCorrelate, design, width, height));
 
 // 窓内のインク分布 (bg→fg 軸上の alpha) を正規化相互相関で突き合わせ、
 // screenshot 側の内容物がどれだけ平行移動しているかを推定する。AA の被覆差は
@@ -751,6 +721,7 @@ export const estimateContentOffset = (
       bestDx,
       bestDy,
       (dx, dy) => correlate(dx, dy, design),
+      design,
       w,
       h,
     );
