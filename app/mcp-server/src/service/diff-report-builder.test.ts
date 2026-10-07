@@ -1604,6 +1604,127 @@ describe("rasterization_tolerance による同一トークン採点 (designdiff#
     expect(result.aggregateVerdict).toBe("pass");
   });
 
+  describe("証明済み領域の内容物ずれ", () => {
+    const size = 24;
+    const strokes: readonly (readonly [number, number])[] = [
+      ...Array.from({ length: 7 }, (_, i) => [9, 8 + i] as const),
+      ...Array.from({ length: 5 }, (_, i) => [10 + i, 14] as const),
+      [13, 9],
+    ];
+    const draw = (dx: number): Uint8ClampedArray => {
+      const pixels = new Uint8ClampedArray(size * size * 4).fill(255);
+      for (const [x, y] of strokes) {
+        const offset = (y * size + x + dx) * 4;
+        pixels[offset] = 51;
+        pixels[offset + 1] = 51;
+        pixels[offset + 2] = 51;
+      }
+      return pixels;
+    };
+    const compareShift = async (dx: number) => {
+      const { buildDiffReport } = await import("./diff-report-builder.js");
+      const designPixels = draw(0);
+      return buildDiffReport({
+        designPixels,
+        screenshotPixels: draw(dx),
+        width: size,
+        height: size,
+        diffRegions: [{ x: 8, y: 7, w: 8 + dx, h: 9, diffPixelCount: 20 }],
+        rasterizationTolerance: true,
+        resolvedAlignment: {
+          alignment: {
+            translation: { x: 0, y: 0 },
+            scale: { x: 1, y: 1 },
+            rotation: 0,
+            confidence: 1,
+            residual: 0,
+          },
+          alignedDesignPixels: designPixels,
+          applied: false,
+        },
+      });
+    };
+    const offsetIssues = (result: Awaited<ReturnType<typeof compareShift>>) =>
+      result.issues.filter((issue) => issue.evidence.signal === "same_token_content_offset");
+
+    it("合否は変えずにずれ量を position issue として返す", async () => {
+      const result = await compareShift(2);
+
+      expect(result.regionScores[0].sameTokenRasterization?.contentOffset?.dx).toBeCloseTo(2, 0);
+      expect(offsetIssues(result)).toEqual([
+        expect.objectContaining({
+          kind: "position",
+          severity: "minor",
+          evidence: expect.objectContaining({ value: 2 }),
+        }),
+      ]);
+      expect(result.aggregateVerdict).toBe("pass");
+    });
+
+    it("大きいずれは major で返す", async () => {
+      const result = await compareShift(4);
+
+      expect(offsetIssues(result).map((issue) => issue.severity)).toEqual(["major"]);
+    });
+
+    it("探索端に達したずれは下限として報告する", async () => {
+      const result = await compareShift(4);
+
+      const offset = result.regionScores[0].sameTokenRasterization?.contentOffset;
+      expect(offset?.clippedX).toBe(true);
+      expect(offsetIssues(result)).toEqual([
+        expect.objectContaining({
+          severity: "major",
+          evidence: expect.objectContaining({
+            actual: expect.stringContaining("≥"),
+          }),
+        }),
+      ]);
+    });
+
+    it("周期コンテンツの曖昧なエイリアスは issue を出さない", async () => {
+      const periodicSize = 30;
+      const bars = (dx: number): Uint8ClampedArray => {
+        const pixels = new Uint8ClampedArray(periodicSize * periodicSize * 4).fill(255);
+        for (let b = 0; b < 5; b++) {
+          for (let y = 8; y < 22; y++) {
+            const x = 4 + b * 5 + dx;
+            if (x < 0 || x >= periodicSize) continue;
+            const offset = (y * periodicSize + x) * 4;
+            pixels[offset] = 51;
+            pixels[offset + 1] = 51;
+            pixels[offset + 2] = 51;
+          }
+        }
+        return pixels;
+      };
+      const designPixels = bars(0);
+      const { buildDiffReport } = await import("./diff-report-builder.js");
+      const result = buildDiffReport({
+        designPixels,
+        screenshotPixels: bars(7),
+        width: periodicSize,
+        height: periodicSize,
+        diffRegions: [{ x: 3, y: 7, w: 27, h: 16, diffPixelCount: 30 }],
+        rasterizationTolerance: true,
+        resolvedAlignment: {
+          alignment: {
+            translation: { x: 0, y: 0 },
+            scale: { x: 1, y: 1 },
+            rotation: 0,
+            confidence: 1,
+            residual: 0,
+          },
+          alignedDesignPixels: designPixels,
+          applied: false,
+        },
+      });
+
+      expect(result.regionScores[0].sameTokenRasterization?.contentOffset?.ambiguous).toBe(true);
+      expect(offsetIssues(result)).toEqual([]);
+    });
+  });
+
   it("未指定では分類証拠を残したまま従来どおり FAIL を維持する", async () => {
     const result = await compare(makeGlyph(96), makeGlyph(96, 1));
 

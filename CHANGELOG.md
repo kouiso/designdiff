@@ -12,6 +12,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - CI jobs for the Figma-plugin host E2E (`real-iframe-host.mjs`) and Chrome-extension E2E (`real-chrome-e2e.mjs`), both previously local-only scripts.
 - Crop-region round-trip integration coverage (`set_crop_region` → `compare_design` auto-application → `get_crop_region`) and Figma-plugin message-contract tests (requestId echo, `figma.command` menu routing).
 - `script/eval/figdiff-perf-bench.mjs`: p50/p95 wall-clock bench for `compareImages` across SP/PC/tall profiles, with per-profile p95 gates (`FIGDIFF_PERF_P95_MS[_<PROFILE>]`); results recorded in `docs/evidence/perf-bench.json` and the threshold decision in `docs/perf-bench.md`.
+- `compare_design` with `rasterization_tolerance` now reports how far proven same-token content moved (`sameTokenRasterization.contentOffset`) and emits a `same_token_content_offset` position issue (minor from 1.5px, major from 3.5px). Offsets that hit the ±4px search bound are reported as a lower bound (`clipped`, sign-aware). Estimates that window data cannot disambiguate — a second aliased correlation peak or strongly periodic content — are marked `ambiguous` and emit no issue. The verdict is unchanged; shifted text or icons no longer pass silently.
 - `docs/acceptance-matrix.md`: per-feature acceptance table (expected behavior, pass criteria, verification, latest evidence) covering all MCP tools, desktop, extension, and plugin surfaces.
 
 ### Changed

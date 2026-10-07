@@ -131,6 +131,8 @@ export {
 export {
   classifyGlyphEdgeRasterization,
   classifySameTokenRasterization,
+  estimateContentOffset,
+  type ContentOffset,
   type GlyphEdgeRasterEvidence,
   type SameTokenRasterEvidence,
 } from "./signal/glyph-edge-raster.js";

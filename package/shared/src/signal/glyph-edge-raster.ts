@@ -1,4 +1,5 @@
 import { computeShiftTolerantHausdorff } from "./hausdorff.js";
+import { selfNccPlane } from "./self-ncc-plane.js";
 
 import type { DiffBoundingBox } from "../type.js";
 
@@ -370,6 +371,25 @@ export interface SameTokenRasterEvidence {
   // 証明に使ったインク量差の上限。トポロジ強一致の窓では緩和閾値になるので
   // 発行する診断の threshold にはこの値を使う。
   inkLimit: number;
+  // 4拘束はどれも平行移動に不変なので、証明は「同じ内容物が数pxずれた」
+  // 配置まで通す。実測の Figma 正本 vs 実機撮影では目視で受け入れ済みの
+  // 画面でも 3-4px の局所ずれが普通に出るため、ずれ量で証明を落とすと
+  // 受け入れ済み画面が FAIL に戻る。証明は維持し、ずれ量を証拠として残す。
+  contentOffset?: ContentOffset;
+}
+
+export interface ContentOffset {
+  // screenshot 側の内容物が design 側から (dx, dy) だけ動いている。
+  dx: number;
+  dy: number;
+  // 最良オフセットでのインク分布の正規化相互相関 (-1..1)。
+  peak: number;
+  // argmax が探索端に張り付いた軸ごとに true。その軸の真のずれは報告値以上の可能性がある。
+  clippedX?: boolean;
+  clippedY?: boolean;
+  // argmax とほぼ同強度の別極大があるとき true。周期コンテンツのエイリアスで
+  // どのピークが真の移動か決まらず、値を主張しない。
+  ambiguous?: boolean;
 }
 
 // 前景トークンは両画像で同一色名である必要があるが、ラスタライザ差で数値は僅かに揺れる。
@@ -470,6 +490,269 @@ export const inkCoverage = (
     }
   }
   return coverage;
+};
+
+// ずれ量の探索幅。真のずれがこれを越えても、領域対角で正規化するシフト許容
+// ハウスドルフでは証明が通りうる。その場合 argmax は探索端に張り付くので、
+// 推定値は下限として clipped 印を付けて返す。
+export const CONTENT_OFFSET_SEARCH_PX = 4;
+
+// argmax のローブ外にそこそこ強い「別極大」があると、周期コンテンツの
+// エイリアスでどれが真の移動か窓内では判別できない。探索端へ向かう
+// 立ち上がり斜面は同じピークの側面なので、近傍内の局所最大だけを数える。
+const OFFSET_ALIAS_RATIO = 0.5;
+// 別極大が見つからなくても窓内コンテンツ自体が強周期を持つならずれ量は
+// 周期の剰余でしか決まらない。エイリアス対が両方探索幅の外に逃げると
+// 別極大が存在しないため、design 同士の自己相関でも周期を検出する。
+// エイリアス強度は自己相関に比例するので、検出閾値は issue 発火側の
+// 相関閾値 (0.8) より下に置かないと発火しうる周期抜けが残る。
+const OFFSET_PERIODIC_MIN = 0.75;
+// 周期走査の総コスト上目安 (lag 数 × 窓画素数)。払える窓では全 lag を
+// 密走査し、これを越える大窓では線走査に切り替える。
+const OFFSET_PERIODIC_DENSE_OPS = 50_000_000;
+
+const isLocalMaxInGrid = (scores: Float64Array, dx: number, dy: number): boolean => {
+  const span = CONTENT_OFFSET_SEARCH_PX * 2 + 1;
+  const score = scores[(dy + CONTENT_OFFSET_SEARCH_PX) * span + dx + CONTENT_OFFSET_SEARCH_PX];
+  if (Number.isNaN(score)) return false;
+  for (let ny = dy - 1; ny <= dy + 1; ny++) {
+    for (let nx = dx - 1; nx <= dx + 1; nx++) {
+      if (nx === dx && ny === dy) continue;
+      if (
+        nx < -CONTENT_OFFSET_SEARCH_PX ||
+        nx > CONTENT_OFFSET_SEARCH_PX ||
+        ny < -CONTENT_OFFSET_SEARCH_PX ||
+        ny > CONTENT_OFFSET_SEARCH_PX
+      )
+        continue;
+      const neighbor =
+        scores[(ny + CONTENT_OFFSET_SEARCH_PX) * span + nx + CONTENT_OFFSET_SEARCH_PX];
+      if (!Number.isNaN(neighbor) && neighbor > score) return false;
+    }
+  }
+  return true;
+};
+
+const secondPeakScore = (scores: Float64Array, bestDx: number, bestDy: number): number => {
+  const span = CONTENT_OFFSET_SEARCH_PX * 2 + 1;
+  let secondBest = Number.NEGATIVE_INFINITY;
+  for (let dy = -CONTENT_OFFSET_SEARCH_PX; dy <= CONTENT_OFFSET_SEARCH_PX; dy++) {
+    for (let dx = -CONTENT_OFFSET_SEARCH_PX; dx <= CONTENT_OFFSET_SEARCH_PX; dx++) {
+      if (Math.max(Math.abs(dx - bestDx), Math.abs(dy - bestDy)) < 2) continue;
+      const score = scores[(dy + CONTENT_OFFSET_SEARCH_PX) * span + dx + CONTENT_OFFSET_SEARCH_PX];
+      if (!Number.isNaN(score) && isLocalMaxInGrid(scores, dx, dy) && score > secondBest)
+        secondBest = score;
+    }
+  }
+  return secondBest;
+};
+
+// ベタ面の高原状自己相関を弾くため厳密な局所最大だけを周期とみなす。
+const isStrictSelfMax = (
+  selfAt: (dx: number, dy: number) => number,
+  dx: number,
+  dy: number,
+): boolean => {
+  const score = selfAt(dx, dy);
+  if (Number.isNaN(score) || score < OFFSET_PERIODIC_MIN) return false;
+  for (let ny = dy - 1; ny <= dy + 1; ny++) {
+    for (let nx = dx - 1; nx <= dx + 1; nx++) {
+      if (nx === dx && ny === dy) continue;
+      const neighbor = nx === 0 && ny === 0 ? 1 : selfAt(nx, ny);
+      if (!Number.isNaN(neighbor) && neighbor >= score) return false;
+    }
+  }
+  return true;
+};
+
+const scanAllSelfLags = (
+  selfAt: (dx: number, dy: number) => number,
+  spanX: number,
+  spanY: number,
+): boolean => {
+  for (let dy = -spanY; dy <= spanY; dy++) {
+    for (let dx = -spanX; dx <= spanX; dx++) {
+      if (dx === 0 && dy === 0) continue;
+      if (isStrictSelfMax(selfAt, dx, dy)) return true;
+    }
+  }
+  return false;
+};
+
+const hasPeriodicContent = (
+  selfCorrelate: (dx: number, dy: number) => number,
+  design: Float64Array,
+  width: number,
+  height: number,
+): boolean => {
+  // 周期は窓内に 2 周期以上収まる範囲でしか検証できない。全 lag を
+  // 走査する：直接計算が払える窓では逐次、払えない大窓では FFT で
+  // 全 lag 面を一括して求める。無マスク窓では両者の値は一致するが、
+  // ignoreMask 付きでは FFT 側がマスク画素を 0 として数え込み値が
+  // ずれうる。マスクが検出側を下げる時は発火側ピークも同じ画素で
+  // 下がるため、誤発火を招く差分は観測されていない。さらに FFT の
+  // セル上限 (2^24) を超える超巨大窓では検出自体を諦め周期なしとする。
+  const spanX = width >> 1;
+  const spanY = height >> 1;
+  const padX = spanX + 1;
+  const padY = spanY + 1;
+  const stride = padX * 2 + 1;
+  let selfAt: (dx: number, dy: number) => number;
+  if ((spanX * 2 + 1) * (spanY * 2 + 1) * width * height <= OFFSET_PERIODIC_DENSE_OPS) {
+    const selfScores = new Map<number, number>();
+    selfAt = (dx, dy) => {
+      const key = (dy + padY) * stride + dx + padX;
+      let cached = selfScores.get(key);
+      if (cached === undefined) {
+        cached = selfCorrelate(dx, dy);
+        selfScores.set(key, cached);
+      }
+      return cached;
+    };
+  } else {
+    const plane = selfNccPlane(design, width, height, spanX, spanY);
+    selfAt = (dx, dy) => plane[(dy + padY) * stride + dx + padX];
+  }
+  return scanAllSelfLags(selfAt, spanX, spanY);
+};
+
+const detectAmbiguousOffset = (
+  scores: Float64Array,
+  best: number,
+  bestDx: number,
+  bestDy: number,
+  selfCorrelate: (dx: number, dy: number) => number,
+  design: Float64Array,
+  width: number,
+  height: number,
+): boolean =>
+  secondPeakScore(scores, bestDx, bestDy) >= best * OFFSET_ALIAS_RATIO ||
+  ((bestDx !== 0 || bestDy !== 0) && hasPeriodicContent(selfCorrelate, design, width, height));
+
+// 窓内のインク分布 (bg→fg 軸上の alpha) を正規化相互相関で突き合わせ、
+// screenshot 側の内容物がどれだけ平行移動しているかを推定する。AA の被覆差は
+// 相関ピークの位置を動かさず、内容物の移動だけがピークを中心から離す。
+// 窓全体の相関なので、動かなかった塊が大きい窓ではずれを過小推定する。
+export const estimateContentOffset = (
+  designPixels: Uint8ClampedArray,
+  screenshotPixels: Uint8ClampedArray,
+  width: number,
+  window: RasterWindow,
+  background: readonly number[],
+  designForeground: readonly number[],
+  screenshotForeground: readonly number[],
+  ignoreMask?: Uint8Array,
+): ContentOffset | undefined => {
+  const w = window.right - window.left;
+  const h = window.bottom - window.top;
+  const design = new Float64Array(w * h);
+  const shot = new Float64Array(w * h);
+  const valid = new Uint8Array(w * h);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const index = (window.top + y) * width + window.left + x;
+      if (ignoreMask?.[index]) continue;
+      const i = y * w + x;
+      valid[i] = 1;
+      design[i] = blendAlphaAndResidual(
+        colorAt(designPixels, index),
+        background,
+        designForeground,
+      ).alpha;
+      shot[i] = blendAlphaAndResidual(
+        colorAt(screenshotPixels, index),
+        background,
+        screenshotForeground,
+      ).alpha;
+    }
+  }
+
+  const span = CONTENT_OFFSET_SEARCH_PX * 2 + 1;
+  const scores = new Float64Array(span * span).fill(Number.NaN);
+  const correlate = (dx: number, dy: number, shifted: Float64Array = shot): number => {
+    let count = 0;
+    let sumD = 0;
+    let sumS = 0;
+    let sumDD = 0;
+    let sumSS = 0;
+    let sumDS = 0;
+    for (let y = Math.max(0, -dy); y < Math.min(h, h - dy); y++) {
+      for (let x = Math.max(0, -dx); x < Math.min(w, w - dx); x++) {
+        const i = y * w + x;
+        const j = (y + dy) * w + x + dx;
+        if (!valid[i] || !valid[j]) continue;
+        const d = design[i];
+        const s = shifted[j];
+        count++;
+        sumD += d;
+        sumS += s;
+        sumDD += d * d;
+        sumSS += s * s;
+        sumDS += d * s;
+      }
+    }
+    if (count < 4) return Number.NaN;
+    const varD = sumDD - (sumD * sumD) / count;
+    const varS = sumSS - (sumS * sumS) / count;
+    if (varD <= 1e-9 || varS <= 1e-9) return Number.NaN;
+    return (sumDS - (sumD * sumS) / count) / Math.sqrt(varD * varS);
+  };
+
+  let best = Number.NEGATIVE_INFINITY;
+  let bestDx = 0;
+  let bestDy = 0;
+  for (let dy = -CONTENT_OFFSET_SEARCH_PX; dy <= CONTENT_OFFSET_SEARCH_PX; dy++) {
+    for (let dx = -CONTENT_OFFSET_SEARCH_PX; dx <= CONTENT_OFFSET_SEARCH_PX; dx++) {
+      const score = correlate(dx, dy);
+      scores[(dy + CONTENT_OFFSET_SEARCH_PX) * span + dx + CONTENT_OFFSET_SEARCH_PX] = score;
+      if (Number.isNaN(score)) continue;
+      // 同点なら小さい移動を採る。移動ゼロで説明できるものを動いたとは言わない。
+      const closer = dx * dx + dy * dy < bestDx * bestDx + bestDy * bestDy;
+      if (score > best + 1e-12 || (Math.abs(score - best) <= 1e-12 && closer)) {
+        best = score;
+        bestDx = dx;
+        bestDy = dy;
+      }
+    }
+  }
+  if (!Number.isFinite(best)) return undefined;
+
+  const ambiguous =
+    best > 0 &&
+    detectAmbiguousOffset(
+      scores,
+      best,
+      bestDx,
+      bestDy,
+      (dx, dy) => correlate(dx, dy, design),
+      design,
+      w,
+      h,
+    );
+
+  const scoreAt = (dx: number, dy: number): number =>
+    Math.abs(dx) > CONTENT_OFFSET_SEARCH_PX || Math.abs(dy) > CONTENT_OFFSET_SEARCH_PX
+      ? Number.NaN
+      : scores[(dy + CONTENT_OFFSET_SEARCH_PX) * span + dx + CONTENT_OFFSET_SEARCH_PX];
+  // 整数ピークの両隣で放物線を当ててサブピクセルに詰める。両隣が測れない
+  // (探索端・評価不能) ときは整数値のまま返す。
+  const refine = (center: number, left: number, right: number): number => {
+    if (Number.isNaN(left) || Number.isNaN(right)) return center;
+    const curvature = left - 2 * best + right;
+    if (curvature >= -1e-9) return center;
+    return center + Math.max(-0.5, Math.min(0.5, (left - right) / (2 * curvature)));
+  };
+  const round = (value: number): number => Math.round(value * 100) / 100;
+  const clippedX = Math.abs(bestDx) === CONTENT_OFFSET_SEARCH_PX;
+  const clippedY = Math.abs(bestDy) === CONTENT_OFFSET_SEARCH_PX;
+  return {
+    dx: round(refine(bestDx, scoreAt(bestDx - 1, bestDy), scoreAt(bestDx + 1, bestDy))),
+    dy: round(refine(bestDy, scoreAt(bestDx, bestDy - 1), scoreAt(bestDx, bestDy + 1))),
+    peak: round(best),
+    ...(clippedX ? { clippedX: true } : {}),
+    ...(clippedY ? { clippedY: true } : {}),
+    ...(ambiguous ? { ambiguous: true } : {}),
+  };
 };
 
 export const countChangedPixels = (
@@ -575,6 +858,17 @@ const classifySameTokenRasterizationAtHalo = (
   );
   if (changedPixelCount === 0) return undefined;
 
+  const contentOffset = estimateContentOffset(
+    designPixels,
+    screenshotPixels,
+    width,
+    window,
+    background,
+    designForeground,
+    screenshotForeground,
+    ignoreMask,
+  );
+
   return {
     classification: "same-token-rasterization",
     changedPixelCount,
@@ -582,6 +876,7 @@ const classifySameTokenRasterizationAtHalo = (
     foregroundHex: toHex(designForeground),
     inkCoverageDelta: inkDelta,
     inkLimit,
+    ...(contentOffset ? { contentOffset } : {}),
   };
 };
 

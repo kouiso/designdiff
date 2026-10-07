@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   classifyGlyphEdgeRasterization,
   classifySameTokenRasterization,
+  estimateContentOffset,
   foregroundExtreme,
   resolveMatchingBackground,
 } from "./glyph-edge-raster.js";
@@ -364,5 +365,83 @@ describe("foregroundExtreme", () => {
   it("コントラスト不足の窓は前景なしを返す", () => {
     const pixels = canvas(SIZE, [250, 250, 250]);
     expect(foregroundExtreme(pixels, SIZE, WINDOW, [255, 255, 255])).toBeUndefined();
+  });
+});
+
+describe("estimateContentOffset", () => {
+  const SIZE = 20;
+  const WINDOW = { left: 0, top: 0, right: SIZE, bottom: SIZE };
+  const BG = [255, 255, 255];
+  const FG = [40, 40, 40];
+  // 周期性の無い L 字 + 点。周期形状だと相関ピークが複数立って移動量が一意に決まらない。
+  const STROKES: readonly (readonly [number, number])[] = [
+    ...Array.from({ length: 7 }, (_, i) => [7, 6 + i] as const),
+    ...Array.from({ length: 5 }, (_, i) => [8 + i, 12] as const),
+    [11, 7],
+  ];
+  const draw = (dx: number, dy: number, edge?: number): Uint8ClampedArray => {
+    const pixels = canvas(SIZE, BG);
+    for (const [x, y] of STROKES) {
+      paint(pixels, SIZE, x + dx, y + dy, FG);
+      if (edge !== undefined) paint(pixels, SIZE, x + dx + 1, y + dy, [edge, edge, edge]);
+    }
+    return pixels;
+  };
+
+  it("縁の被覆差だけなら移動ゼロを返す", () => {
+    const offset = estimateContentOffset(draw(0, 0), draw(0, 0, 160), SIZE, WINDOW, BG, FG, FG);
+    expect(offset).toBeDefined();
+    expect(Math.abs(offset?.dx ?? 99)).toBeLessThanOrEqual(0.5);
+    expect(Math.abs(offset?.dy ?? 99)).toBeLessThanOrEqual(0.5);
+  });
+
+  it("内容物が丸ごと動いた量を返す", () => {
+    const offset = estimateContentOffset(draw(0, 0), draw(3, -2), SIZE, WINDOW, BG, FG, FG);
+    expect(offset?.dx).toBeCloseTo(3, 0);
+    expect(offset?.dy).toBeCloseTo(-2, 0);
+    expect(offset?.peak).toBeGreaterThan(0.9);
+  });
+
+  it("前景の無い窓は推定しない", () => {
+    expect(
+      estimateContentOffset(canvas(SIZE, BG), canvas(SIZE, BG), SIZE, WINDOW, BG, FG, FG),
+    ).toBeUndefined();
+  });
+
+  it("探索端を越えるずれは下限として clipped を付ける", () => {
+    const offset = estimateContentOffset(draw(0, 0), draw(5, 0), SIZE, WINDOW, BG, FG, FG);
+    expect(offset?.dx).toBeCloseTo(4, 0);
+    expect(offset?.clippedX).toBe(true);
+    expect(offset?.clippedY).toBeUndefined();
+  });
+
+  it("周期コンテンツのエイリアスは曖昧として扱う", () => {
+    // 周期5の縦帯を真値+7で動かすと +2 の内側エイリアスが argmax になり、
+    // -3 の別極大がほぼ同じ強さで残る。
+    const bars = (dx: number): Uint8ClampedArray => {
+      const pixels = canvas(SIZE, BG);
+      for (let b = 0; b < 3; b++) {
+        for (let y = 4; y < 16; y++) paint(pixels, SIZE, 3 + b * 5 + dx, y, FG);
+      }
+      return pixels;
+    };
+    const offset = estimateContentOffset(bars(0), bars(7), SIZE, WINDOW, BG, FG, FG);
+    expect(offset?.ambiguous).toBe(true);
+  });
+
+  it("探索幅の外に対が逃げた周期コンテンツも曖昧として扱う", () => {
+    // 周期9では真値+12のエイリアス対が窓外に逃げて別極大が無いが、
+    // design 同士の自己相関で周期自体を検出する。
+    const BIG = 30;
+    const bigWindow = { left: 0, top: 0, right: BIG, bottom: BIG };
+    const bars = (dx: number): Uint8ClampedArray => {
+      const pixels = canvas(BIG, BG);
+      for (let b = 0; b < 3; b++) {
+        for (let y = 8; y < 22; y++) paint(pixels, BIG, 4 + b * 9 + dx, y, FG);
+      }
+      return pixels;
+    };
+    const offset = estimateContentOffset(bars(0), bars(12), BIG, bigWindow, BG, FG, FG);
+    expect(offset?.ambiguous).toBe(true);
   });
 });

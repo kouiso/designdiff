@@ -181,6 +181,54 @@ const buildLocalAlignment = (
   );
 };
 
+// 同一トークン証明は平行移動に不変なので、rasterization_tolerance 下では
+// 文字列や部品が丸ごと数pxずれても合否は PASS のまま通る。受け入れ済みの
+// 実機画面でも 3-4px の局所ずれが出るため合否には混ぜないが、ずれ自体は
+// 黙って消さず position issue として返す。相関ピークが低い窓は推定が
+// 当てにならないので出さない。
+export const CONTENT_OFFSET_REPORT_PX = 1.5;
+export const CONTENT_OFFSET_MAJOR_PX = 3.5;
+export const CONTENT_OFFSET_MIN_PEAK = 0.8;
+
+const buildContentOffsetIssue = (
+  regionScore: RegionScore,
+  offset:
+    | {
+        dx: number;
+        dy: number;
+        peak: number;
+        clippedX?: boolean;
+        clippedY?: boolean;
+        ambiguous?: boolean;
+      }
+    | undefined,
+): DiffReport["issues"][number] | undefined => {
+  // 曖昧なエイリアスは偽値を主張することになるので issue 自体を出さない。
+  if (!offset || offset.peak < CONTENT_OFFSET_MIN_PEAK || offset.ambiguous) return undefined;
+  const magnitude = Math.hypot(offset.dx, offset.dy);
+  if (magnitude < CONTENT_OFFSET_REPORT_PX) return undefined;
+  const severity = magnitude >= CONTENT_OFFSET_MAJOR_PX ? "major" : "minor";
+  // 探索端の下限は軸の符号方向に合わせる。負側は真のずれが値以下の可能性。
+  const axis = (value: number, clipped?: boolean) =>
+    clipped ? `${value < 0 ? "≤" : "≥"}${value}` : `${value}`;
+  return {
+    regionId: regionScore.regionId,
+    bbox: regionScore.bbox,
+    kind: "position",
+    severity,
+    figmaNodeId: regionScore.figmaNodeId,
+    evidence: {
+      signal: "same_token_content_offset",
+      value: magnitude,
+      threshold: severity === "major" ? CONTENT_OFFSET_MAJOR_PX : CONTENT_OFFSET_REPORT_PX,
+      expected: "0px",
+      actual: `content moved (${axis(offset.dx, offset.clippedX)}, ${axis(offset.dy, offset.clippedY)})px, correlation ${offset.peak}`,
+    },
+    suggestedCssFix:
+      "内容物は一致していますが位置がずれています。余白・座標・行高を確認してください。",
+  };
+};
+
 function buildIssues(
   regionScores: RegionScore[],
   options: BuildDiffReportOptions,
@@ -339,6 +387,13 @@ function buildIssues(
         suggestedCssFix:
           "前景/背景トークン・トポロジ・インク量が一致しています。ラスタライザ差の可能性が高いので実害が無いか目視で確認してください。",
       });
+      const offsetIssue = buildContentOffsetIssue(regionScore, sameToken.contentOffset);
+      if (offsetIssue) {
+        issues.push({
+          ...offsetIssue,
+          evidence: { ...offsetIssue.evidence, ...evidenceProvenance },
+        });
+      }
     }
 
     // 写真系領域でリサンプル証明が取れた領域は、画素非一致が別スケーラの
