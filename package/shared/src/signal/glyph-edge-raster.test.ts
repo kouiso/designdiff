@@ -411,6 +411,21 @@ describe("estimateContentOffset", () => {
   it("探索端を越えるずれは下限として clipped を付ける", () => {
     const offset = estimateContentOffset(draw(0, 0), draw(5, 0), SIZE, WINDOW, BG, FG, FG);
     expect(offset?.dx).toBeCloseTo(4, 0);
-    expect(offset?.clipped).toBe(true);
+    expect(offset?.clippedX).toBe(true);
+    expect(offset?.clippedY).toBeUndefined();
+  });
+
+  it("周期コンテンツのエイリアスは曖昧として扱う", () => {
+    // 周期5の縦帯を真値+7で動かすと +2 の内側エイリアスが argmax になり、
+    // -3 の別極大がほぼ同じ強さで残る。
+    const bars = (dx: number): Uint8ClampedArray => {
+      const pixels = canvas(SIZE, BG);
+      for (let b = 0; b < 3; b++) {
+        for (let y = 4; y < 16; y++) paint(pixels, SIZE, 3 + b * 5 + dx, y, FG);
+      }
+      return pixels;
+    };
+    const offset = estimateContentOffset(bars(0), bars(7), SIZE, WINDOW, BG, FG, FG);
+    expect(offset?.ambiguous).toBe(true);
   });
 });

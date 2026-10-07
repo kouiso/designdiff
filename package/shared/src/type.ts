@@ -284,7 +284,14 @@ export interface RegionScore {
     inkCoverageDelta: number;
     inkLimit: number;
     // 証明は平行移動に不変なので、内容物のずれ量を別に測って残す。
-    contentOffset?: { dx: number; dy: number; peak: number; clipped?: boolean };
+    contentOffset?: {
+      dx: number;
+      dy: number;
+      peak: number;
+      clippedX?: boolean;
+      clippedY?: boolean;
+      ambiguous?: boolean;
+    };
   };
   // 写真系テクスチャ領域のリサンプル差。両側が写真様・±3px平行移動で
   // 縁トポロジ一致・構造一致したときだけ付く (designdiff#239)。

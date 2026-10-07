@@ -383,8 +383,12 @@ export interface ContentOffset {
   dy: number;
   // 最良オフセットでのインク分布の正規化相互相関 (-1..1)。
   peak: number;
-  // argmax が探索端に張り付いたとき true。真のずれは報告値以上の可能性がある。
-  clipped?: boolean;
+  // argmax が探索端に張り付いた軸ごとに true。その軸の真のずれは報告値以上の可能性がある。
+  clippedX?: boolean;
+  clippedY?: boolean;
+  // argmax とほぼ同強度の別極大があるとき true。周期コンテンツのエイリアスで
+  // どのピークが真の移動か決まらず、値を主張しない。
+  ambiguous?: boolean;
 }
 
 // 前景トークンは両画像で同一色名である必要があるが、ラスタライザ差で数値は僅かに揺れる。
@@ -580,6 +584,40 @@ export const estimateContentOffset = (
   }
   if (!Number.isFinite(best)) return undefined;
 
+  // argmax のローブ外にほぼ同じ強さの「別極大」があると、周期コンテンツの
+  // エイリアスでどれが真の移動か窓内では判別できない。探索端へ向かう
+  // 立ち上がり斜面は同じピークの側面なので、近傍内の局所最大だけを数える。
+  const OFFSET_ALIAS_RATIO = 0.7;
+  const isLocalMax = (dx: number, dy: number): boolean => {
+    const score = scores[(dy + CONTENT_OFFSET_SEARCH_PX) * span + dx + CONTENT_OFFSET_SEARCH_PX];
+    if (Number.isNaN(score)) return false;
+    for (let ny = dy - 1; ny <= dy + 1; ny++) {
+      for (let nx = dx - 1; nx <= dx + 1; nx++) {
+        if (nx === dx && ny === dy) continue;
+        if (
+          nx < -CONTENT_OFFSET_SEARCH_PX ||
+          nx > CONTENT_OFFSET_SEARCH_PX ||
+          ny < -CONTENT_OFFSET_SEARCH_PX ||
+          ny > CONTENT_OFFSET_SEARCH_PX
+        )
+          continue;
+        const neighbor =
+          scores[(ny + CONTENT_OFFSET_SEARCH_PX) * span + nx + CONTENT_OFFSET_SEARCH_PX];
+        if (!Number.isNaN(neighbor) && neighbor > score) return false;
+      }
+    }
+    return true;
+  };
+  let secondBest = Number.NEGATIVE_INFINITY;
+  for (let dy = -CONTENT_OFFSET_SEARCH_PX; dy <= CONTENT_OFFSET_SEARCH_PX; dy++) {
+    for (let dx = -CONTENT_OFFSET_SEARCH_PX; dx <= CONTENT_OFFSET_SEARCH_PX; dx++) {
+      if (Math.max(Math.abs(dx - bestDx), Math.abs(dy - bestDy)) < 2) continue;
+      const score = scores[(dy + CONTENT_OFFSET_SEARCH_PX) * span + dx + CONTENT_OFFSET_SEARCH_PX];
+      if (!Number.isNaN(score) && isLocalMax(dx, dy) && score > secondBest) secondBest = score;
+    }
+  }
+  const ambiguous = best > 0 && secondBest >= best * OFFSET_ALIAS_RATIO;
+
   const scoreAt = (dx: number, dy: number): number =>
     Math.abs(dx) > CONTENT_OFFSET_SEARCH_PX || Math.abs(dy) > CONTENT_OFFSET_SEARCH_PX
       ? Number.NaN
@@ -593,13 +631,15 @@ export const estimateContentOffset = (
     return center + Math.max(-0.5, Math.min(0.5, (left - right) / (2 * curvature)));
   };
   const round = (value: number): number => Math.round(value * 100) / 100;
-  const clipped =
-    Math.abs(bestDx) === CONTENT_OFFSET_SEARCH_PX || Math.abs(bestDy) === CONTENT_OFFSET_SEARCH_PX;
+  const clippedX = Math.abs(bestDx) === CONTENT_OFFSET_SEARCH_PX;
+  const clippedY = Math.abs(bestDy) === CONTENT_OFFSET_SEARCH_PX;
   return {
     dx: round(refine(bestDx, scoreAt(bestDx - 1, bestDy), scoreAt(bestDx + 1, bestDy))),
     dy: round(refine(bestDy, scoreAt(bestDx, bestDy - 1), scoreAt(bestDx, bestDy + 1))),
     peak: round(best),
-    ...(clipped ? { clipped: true } : {}),
+    ...(clippedX ? { clippedX: true } : {}),
+    ...(clippedY ? { clippedY: true } : {}),
+    ...(ambiguous ? { ambiguous: true } : {}),
   };
 };
 

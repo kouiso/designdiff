@@ -192,12 +192,23 @@ export const CONTENT_OFFSET_MIN_PEAK = 0.8;
 
 const buildContentOffsetIssue = (
   regionScore: RegionScore,
-  offset: { dx: number; dy: number; peak: number; clipped?: boolean } | undefined,
+  offset:
+    | {
+        dx: number;
+        dy: number;
+        peak: number;
+        clippedX?: boolean;
+        clippedY?: boolean;
+        ambiguous?: boolean;
+      }
+    | undefined,
 ): DiffReport["issues"][number] | undefined => {
-  if (!offset || offset.peak < CONTENT_OFFSET_MIN_PEAK) return undefined;
+  // 曖昧なエイリアスは偽値を主張することになるので issue 自体を出さない。
+  if (!offset || offset.peak < CONTENT_OFFSET_MIN_PEAK || offset.ambiguous) return undefined;
   const magnitude = Math.hypot(offset.dx, offset.dy);
   if (magnitude < CONTENT_OFFSET_REPORT_PX) return undefined;
   const severity = magnitude >= CONTENT_OFFSET_MAJOR_PX ? "major" : "minor";
+  const axis = (value: number, clipped?: boolean) => (clipped ? `≥${value}` : `${value}`);
   return {
     regionId: regionScore.regionId,
     bbox: regionScore.bbox,
@@ -209,7 +220,7 @@ const buildContentOffsetIssue = (
       value: magnitude,
       threshold: severity === "major" ? CONTENT_OFFSET_MAJOR_PX : CONTENT_OFFSET_REPORT_PX,
       expected: "0px",
-      actual: `content moved ${offset.clipped ? "≥ " : ""}(${offset.dx}, ${offset.dy})px, correlation ${offset.peak}`,
+      actual: `content moved (${axis(offset.dx, offset.clippedX)}, ${axis(offset.dy, offset.clippedY)})px, correlation ${offset.peak}`,
     },
     suggestedCssFix:
       "内容物は一致していますが位置がずれています。余白・座標・行高を確認してください。",

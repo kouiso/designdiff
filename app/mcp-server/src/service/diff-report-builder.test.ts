@@ -1671,7 +1671,7 @@ describe("rasterization_tolerance による同一トークン採点 (designdiff#
       const result = await compareShift(4);
 
       const offset = result.regionScores[0].sameTokenRasterization?.contentOffset;
-      expect(offset?.clipped).toBe(true);
+      expect(offset?.clippedX).toBe(true);
       expect(offsetIssues(result)).toEqual([
         expect.objectContaining({
           severity: "major",
@@ -1680,6 +1680,48 @@ describe("rasterization_tolerance による同一トークン採点 (designdiff#
           }),
         }),
       ]);
+    });
+
+    it("周期コンテンツの曖昧なエイリアスは issue を出さない", async () => {
+      const periodicSize = 30;
+      const bars = (dx: number): Uint8ClampedArray => {
+        const pixels = new Uint8ClampedArray(periodicSize * periodicSize * 4).fill(255);
+        for (let b = 0; b < 5; b++) {
+          for (let y = 8; y < 22; y++) {
+            const x = 4 + b * 5 + dx;
+            if (x < 0 || x >= periodicSize) continue;
+            const offset = (y * periodicSize + x) * 4;
+            pixels[offset] = 51;
+            pixels[offset + 1] = 51;
+            pixels[offset + 2] = 51;
+          }
+        }
+        return pixels;
+      };
+      const designPixels = bars(0);
+      const { buildDiffReport } = await import("./diff-report-builder.js");
+      const result = buildDiffReport({
+        designPixels,
+        screenshotPixels: bars(7),
+        width: periodicSize,
+        height: periodicSize,
+        diffRegions: [{ x: 3, y: 7, w: 27, h: 16, diffPixelCount: 30 }],
+        rasterizationTolerance: true,
+        resolvedAlignment: {
+          alignment: {
+            translation: { x: 0, y: 0 },
+            scale: { x: 1, y: 1 },
+            rotation: 0,
+            confidence: 1,
+            residual: 0,
+          },
+          alignedDesignPixels: designPixels,
+          applied: false,
+        },
+      });
+
+      expect(result.regionScores[0].sameTokenRasterization?.contentOffset?.ambiguous).toBe(true);
+      expect(offsetIssues(result)).toEqual([]);
     });
   });
 
