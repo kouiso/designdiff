@@ -246,7 +246,23 @@ try {
     independentOracle.bounds.x <= 100 &&
       independentOracle.bounds.x + independentOracle.bounds.width >= 260,
   );
-  execFileSync("/usr/bin/import", ["-window", "root", join(evidence, "browser-toolbar.png")]);
+  // ツールバーの状況を証跡に残す。実 ImageMagick は "root" を受け付けるが、
+  // sudo 不能環境の互換 wrapper は数値 window id しか受け付けないため、
+  // 失敗した時だけ xwininfo で root の id を引いて再試行する。どちらも
+  // 成果物の PNG が要る点は同じなので、最終失敗は今まで通り例外として落ちる。
+  const toolbarShot = join(evidence, "browser-toolbar.png");
+  try {
+    execFileSync("import", ["-window", "root", toolbarShot]);
+  } catch {
+    const rootInfo = execFileSync("xwininfo", ["-root"], { encoding: "utf8" });
+    const rootId = /Window id:\s*(0x[0-9a-fA-F]+)/u.exec(rootInfo)?.[1];
+    if (!rootId) {
+      throw new Error("xwininfo did not report the root window id");
+    }
+    // ffmpeg x11grab の -window_id は 10 進を受け付けるため 0x 表記は変換する。
+    const rootIdDecimal = String(Number.parseInt(rootId, 16));
+    execFileSync("import", ["-window", rootIdDecimal, toolbarShot]);
+  }
 
   let popup;
   const popupEvent = context.waitForEvent("page", {

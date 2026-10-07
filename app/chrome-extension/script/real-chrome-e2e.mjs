@@ -240,13 +240,17 @@ try {
   assert.equal(hits, 1, "page must be clickable after overlay removal");
 
   // X01-比較: Capture & Compare が background capture + diff を実実行する。
-  // 結果 (.match-rate) かエラー (.error) のどちらかが出るのが契約。
-  await popup.evaluate(() => {
-    [...document.querySelectorAll("#app button")]
-      .find((b) => b.textContent === "Capture & Compare")
-      .click();
-  });
-  let compareOutcome = "timeout-silent";
+  // 結果 (.match-rate) か行動可能なエラー (.error) のどちらかが出るのが契約。
+  // 「何も表示されない」のは失敗を握り潰しているだけなので、どの環境でも受け付けない。
+  const clickCaptureAndCompare = () =>
+    popup.evaluate(() => {
+      [...document.querySelectorAll("#app button")]
+        .find((b) => b.textContent === "Capture & Compare")
+        .click();
+    });
+  await clickCaptureAndCompare();
+  let compareOutcome = "no-visible-result";
+  let visibleErrorText = null;
   try {
     await popup.waitForFunction(
       () => document.querySelector("#app .match-rate") ?? document.querySelector("#app .error"),
@@ -260,20 +264,58 @@ try {
       : err
         ? `error:${await err.textContent()}`
         : "unknown";
+    visibleErrorText = err ? await err.textContent() : null;
   } catch {
-    // error は figma タブの section にしか描画されん — upload タブでは
-    // 失敗がユーザーに不可視になる。その無応答自体を証跡に残す。
-    compareOutcome = "no-visible-result";
+    // DOM 全文を証跡に残す。ただし catch に落ちる時点で契約違反なので、
+    // この後の assertion で必ず落とす。
     evidence.results.X01_compare_dom = {
       appText: await popup.$eval("#app", (el) => el.innerText),
     };
   }
-  evidence.results.X01_compare = { outcome: compareOutcome };
+  evidence.results.X01_compare = { outcome: compareOutcome, visibleErrorText };
+  assert.match(
+    compareOutcome,
+    /^(match-rate:[\d.]+%|error:.+)$/,
+    `compare must show a visible result, got ${compareOutcome}`,
+  );
   if (expectCompare) {
     assert.match(
       compareOutcome,
       /^match-rate:[\d.]+%$/,
       `compare must render a real match rate, got ${compareOutcome}`,
+    );
+  } else if (!compareOutcome.startsWith("match-rate:")) {
+    // activeTab 未付与の自動実行では captureVisibleTab が失敗する。その失敗は
+    // 行動可能な案内として popup に見え、比較中表示が戻り、再試行できなければならない。
+    assert.match(
+      compareOutcome,
+      /^error:Could not capture the page/,
+      `capture failure must be visible and actionable, got ${compareOutcome}`,
+    );
+    const retryState = await popup.evaluate(() => {
+      const btn = [...document.querySelectorAll("#app button")].find(
+        (b) => b.textContent === "Capture & Compare" || b.textContent === "Comparing...",
+      );
+      return { label: btn?.textContent ?? null, disabled: btn?.disabled ?? null };
+    });
+    evidence.results.X01_compare_retry_state = retryState;
+    assert.equal(
+      retryState.label,
+      "Capture & Compare",
+      "capture failure must clear the comparing state so retry stays possible",
+    );
+    assert.equal(retryState.disabled, false, "retry button must not stay disabled");
+    // 再試行でも同じ行動可能エラーが出ること — リトライ経路自体の実行証拠。
+    await clickCaptureAndCompare();
+    await popup.waitForFunction(() => document.querySelector("#app .error"), undefined, {
+      timeout: 20_000,
+    });
+    const retryError = await popup.$eval("#app .error", (el) => el.textContent);
+    evidence.results.X01_compare_retry_error = retryError;
+    assert.match(
+      retryError,
+      /^Could not capture the page/,
+      `retry after capture failure must reproduce the actionable error, got ${retryError}`,
     );
   }
 
