@@ -240,6 +240,7 @@ try {
     args: [bootstrap, `--user-data-dir=${userData}`],
     env: environment,
     timeout: 30_000,
+    recordVideo: { dir: join(evidence, "video"), size: { width: 1200, height: 800 } },
   });
   page = await application.firstWindow();
   page.on("pageerror", (error) => pageErrors.push(error.message));
@@ -377,12 +378,13 @@ x.XSync(d, 0)
       ],
       { env: environment, timeout: 5_000 },
     );
-  // GTK では Ctrl+L→Ctrl+A→path→Enter。win32 ではフォーカス依存の入力が
+  // GTK の非同期 filename 検証中に Enter が消費されるため、入力の描画を
+  // 記録してから実 Save ボタンをクリックする。win32 ではフォーカス依存の入力が
   // 他窓に吸われ得るため、WM_CHAR で filename Edit に直接入力してから
   // Save ボタンへ BM_CLICK を投げる (フォーカス不要の経路)。darwin では
   // NSSavePanel の Go to folder sheet へ POSIX path を keystroke する
   // (System Events 経由、アクセシビリティ権限が必要)。
-  const sendDialogInput = (text) => {
+  const sendDialogInput = async (text, format) => {
     if (isWin32) {
       const found = winDialog(["find"]);
       assert.equal(
@@ -411,7 +413,37 @@ x.XSync(d, 0)
       );
       return;
     }
-    nativeKeys(`\x0c\x01${text}\n\n`);
+    const filledPath = join(evidence, `native-filled-${format}.png`);
+    await captureNativeDialogImage(filledPath);
+    const beforeInput = sha256(await readFile(filledPath));
+    nativeKeys(`\x01${text}`);
+    // XSync は送信完了までしか保証せず、GTK の再描画は後から来る。
+    // 入力前と同じ画像のまま記録すると、入力が見えない証跡になる。
+    await expect
+      .poll(
+        async () => {
+          await captureNativeDialogImage(filledPath);
+          return sha256(await readFile(filledPath));
+        },
+        { timeout: 10_000, message: "Native dialog did not redraw after filename input" },
+      )
+      .not.toBe(beforeInput);
+    const tree = await captureNativeDialogTree();
+    const window = tree.match(/(0x[0-9a-f]+) "Save File".*?(\d+)x(\d+)\+/);
+    assert.ok(window, "Native dialog geometry must be discoverable");
+    execFileSync(
+      "xdotool",
+      [
+        "mousemove",
+        "--window",
+        window[1],
+        String(Number(window[2]) - 45),
+        String(Number(window[3]) - 20),
+        "click",
+        "1",
+      ],
+      { env: environment, timeout: 5_000 },
+    );
   };
   const sendDialogCancel = () => {
     if (isWin32) {
@@ -440,7 +472,7 @@ x.XSync(d, 0)
     await waitForNativeDialog(true);
     await captureNativeDialogImage(join(evidence, `native-dialog-${format}.png`));
     await writeFile(join(evidence, `native-window-${format}.txt`), await captureNativeDialogTree());
-    sendDialogInput(destination);
+    await sendDialogInput(destination, format);
     await waitForNativeDialog(false);
     captureAppWindowImage(join(evidence, `after-input-${format}.png`));
     const readSavedFile = async () => {
@@ -480,14 +512,109 @@ x.XSync(d, 0)
     assert.equal(sha256(await readFile(saved.path)), saved.sha256);
   }
   await page.screenshot({ path: join(evidence, "canceled.png") });
+
+  // 採点結果だけで透明度の成功を判定せず、描画済み canvas の実画素を照合する。
+  await page.getByRole("button", { name: "透過オーバーレイ", exact: true }).click();
+  const canvas = page.getByTestId("compare-canvas-container").locator("canvas");
+  const sampleCanvas = () =>
+    canvas.evaluate((element) => {
+      const context = element.getContext("2d");
+      if (!context) throw new Error("Comparison canvas context missing");
+      return [...context.getImageData(10, 10, 1, 1).data];
+    });
+  // label 内に現在値の "50%" も入るため、名前は先頭一致で拾う。
+  const opacity = page.getByRole("slider", { name: /^透明度/ });
+  await opacity.focus();
+  await opacity.press("Home");
+  await expect(opacity).toHaveValue("0");
+  await expect.poll(sampleCanvas).toEqual([255, 255, 255, 255]);
+  await page.screenshot({ path: join(evidence, "overlay-opacity-zero.png") });
+  await opacity.press("End");
+  await expect(opacity).toHaveValue("1");
+  await expect.poll(sampleCanvas).toEqual([0, 0, 0, 255]);
+  await page.screenshot({ path: join(evidence, "overlay-opacity-full.png") });
+  // 黒 alpha 0.5 を白へ重ねた理論値は 127.5。8bit の premultiplied 合成では
+  // 丸め方向が実装依存なので、0/255 と明確に区別できる ±2 の量子化幅で照合する。
+  const halfBlendSamples = [];
+  const isHalfBlend = async () => {
+    const sample = await sampleCanvas();
+    halfBlendSamples.push(sample);
+    return sample[3] === 255 && sample.slice(0, 3).every((value) => Math.abs(value - 127.5) <= 2);
+  };
+  await opacity.press("Home");
+  for (let step = 0; step < 50; step += 1) await opacity.press("ArrowRight");
+  await expect(opacity).toHaveValue("0.5");
+  await expect.poll(isHalfBlend).toBe(true);
+  await page.screenshot({ path: join(evidence, "overlay-opacity-half.png") });
+  await page.getByRole("button", { name: "ピクセル差分", exact: true }).click();
+  await expect(opacity).toHaveCount(0);
+  await page.screenshot({ path: join(evidence, "defect-diff.png") });
+  await page.getByRole("button", { name: "透過オーバーレイ", exact: true }).click();
+  await expect.poll(isHalfBlend).toBe(true);
+  await page.getByRole("button", { name: "修正確認", exact: true }).click();
+  const temporaryNotice =
+    "この画面を閉じるまでの一時的な修正前データです。採点済みの画面領域だけを比較します。";
+  await expect(page.getByText(temporaryNotice, { exact: true })).toBeVisible();
+  await page.getByLabel("確認する採点領域").selectOption("top-left");
+  await page.getByRole("button", { name: "修正前として固定", exact: true }).click();
+  await expect(page.getByText("対象領域: top-left", { exact: true })).toBeVisible();
+  await page.screenshot({ path: join(evidence, "correction-before-pinned.png") });
+
+  const correctedPath = join(isolatedHome, "fix-corrected.png");
+  await writeRawPng(correctedPath, makeFixPixels({ topLeft: true, bottomRight: true }));
+  await writeFile(join(evidence, "fix-corrected.png"), await readFile(correctedPath));
+  fixOracle.corrected = await pixelDifference(inputPaths.design, correctedPath);
+  assert.deepEqual(fixOracle.corrected, { count: 0, bounds: null });
+  await loadScreenshotAndCompare(page, correctedPath);
+  await page.getByRole("button", { name: "修正を確認", exact: true }).click();
+  const correctionResult = page.getByTestId("fix-verification-result");
+  await expect(correctionResult.getByText(/対象領域の変化:/)).toContainText("IMPROVED");
+  await expect(correctionResult.getByText(/現在比較全体:/)).toContainText("PASS");
+  await correctionResult.scrollIntoViewIfNeeded();
+  await page.screenshot({ path: join(evidence, "correction-recompared.png") });
+  await writeFile(join(evidence, "correction-dom.txt"), await page.locator("body").innerText());
+
+  const correctedReportPath = join(evidence, "corrected-report.json");
+  await page.getByLabel("レポートの形式").selectOption("json");
+  await saveButton.click();
+  await waitForNativeDialog(true);
+  await sendDialogInput(correctedReportPath, "corrected");
+  await waitForNativeDialog(false);
+  await expect(saveButton).toBeEnabled();
+  const correctedReport = JSON.parse(await readFile(correctedReportPath, "utf8"));
+  assert.equal(correctedReport.diffPixelCount, fixOracle.corrected.count);
+  assert.equal(correctedReport.totalPixelCount, 8100);
+  assert.deepEqual(correctedReport.diffRegions, []);
+  savedFiles.push({
+    format: "corrected-json",
+    path: correctedReportPath,
+    sha256: sha256(await readFile(correctedReportPath)),
+  });
+  for (const saved of savedFiles) {
+    assert.equal(sha256(await readFile(saved.path)), saved.sha256);
+  }
+  await page.screenshot({ path: join(evidence, "corrected-report-saved.png") });
   assert.deepEqual(pageErrors, []);
   assert.deepEqual(rendererCrashes, []);
+  const video = page.video();
+  assert.ok(video, "Actual renderer video must be recorded");
+  await application.close();
+  application = undefined;
+  await video.saveAs(join(evidence, "desktop-correction.webm"));
   await writeFile(
     join(evidence, "evidence.json"),
     JSON.stringify(
       {
         savedFiles,
         independentRawDifference: fixOracle.before,
+        correctedRawDifference: fixOracle.corrected,
+        overlayPixelOracle: {
+          zero: [255, 255, 255, 255],
+          half: { expected: 127.5, tolerance: 2, observed: halfBlendSamples.at(-1) },
+          full: [0, 0, 0, 255],
+        },
+        fixHistory: { persisted: false, advertisedAs: temporaryNotice },
+        video: "desktop-correction.webm",
         pageErrors,
         rendererCrashes,
         nativeDialogMocked: false,
@@ -528,13 +655,18 @@ x.XSync(d, 0)
           sha256: sha256(await readFile(fileURLToPath(import.meta.url))),
         },
         scope:
-          "Native Electron report export through real save dialogs, saved file readback and independent raw pixel difference.",
+          "Native Electron JSON/Markdown export, cancel, correction/recomparison, overlay opacity pixels and actual renderer video. Fix baseline is explicitly temporary, not persisted history.",
         results: {
           D07: {
             status: "PASS",
             expected: "実ファイルが読め、保存内容が差分実測と一致する",
             actual:
               "実Gtk保存ダイアログからJSON/Markdownへ保存し読み戻した。原画像の独立raw差分・bboxをファイル内容へ照合。キャンセル時bytes不変も確認",
+          },
+          correction: {
+            status: "PASS",
+            actual:
+              "Independent raw difference: 400 pixels at (5,5,20,20) before; 0 after. Real corrected JSON save has zero diff regions. Canvas opacity 0/0.5/1 yields independently expected white/gray/black.",
           },
         },
         artifacts,
@@ -545,6 +677,23 @@ x.XSync(d, 0)
   );
   assert.ok(buildUnchanged, "desktop/shared build changed during native verification");
 } catch (error) {
+  // 診断の失敗で元の error を覆い隠さないよう、例外を投げない spawnSync を使う。
+  if (process.platform === "linux") {
+    const tree =
+      spawnSync("xwininfo", ["-root", "-tree"], {
+        env: environment,
+        encoding: "utf8",
+        timeout: 2_000,
+      }).stdout ?? "";
+    await writeFile(join(evidence, "failure-native-window.txt"), tree);
+    const dialog = tree.match(/(0x[0-9a-f]+) "Save File"/);
+    if (dialog) {
+      spawnSync("import", ["-window", dialog[1], join(evidence, "failure-native-dialog.png")], {
+        env: environment,
+        timeout: 5_000,
+      });
+    }
+  }
   if (page) {
     await page.screenshot({ path: join(evidence, "failure.png"), animations: "disabled" });
     await writeFile(join(evidence, "failure-dom.txt"), await page.locator("body").innerText());
