@@ -24,7 +24,7 @@
     "@figdiff/credential-store": "workspace:*",
     "@figdiff/mobile-capture": "workspace:*",
     "@figdiff/shared": "workspace:*",
-    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@modelcontextprotocol/sdk": "^1.31.0",
     "pixelmatch": "^7.2.0",
     "sharp": "^0.35.5",
     "zod": "^4.4.3"
