@@ -286,12 +286,14 @@ function buildIssues(
     // hasCriticalIssue 経路へ乗せる。
     // ただし局所シフト救済済みの領域で、整列後の位置でベタ面同色と証明された
     // 場合は「同じ帯がずれた」差分なので critical に上げない (designdiff#230)。
-    // 細い線・縁が平行移動しただけと証明された領域も、rasterization_tolerance
-    // 下では同じ理由で critical に上げない (designdiff#243)。
+    // 細い線・縁が平行移動しただけと証明された領域も、整列後にトークン段差が
+    // 残っていなければ同じ理由で critical に上げない (designdiff#243)。
+    // 段差が残る (alignedTokenMatch=false) 場合は変位は事実でも塗り違いなので
+    // critical を残す。
     const flat = regionScore.flatColorMismatch;
     const localDisplacement = regionScore.localDisplacement;
     const honorDisplacement =
-      options.rasterizationTolerance === true && localDisplacement !== undefined;
+      options.rasterizationTolerance === true && localDisplacement?.alignedTokenMatch === true;
     if (flat && !regionScore.localAlignment?.residualFlatColorMatch && !honorDisplacement) {
       issues.push({
         regionId: regionScore.regionId,
@@ -407,8 +409,9 @@ function buildIssues(
           actual: `line/edge moved (${localDisplacement.dx}, ${localDisplacement.dy})px, ΔE ${localDisplacement.unalignedDeltaE.toFixed(2)} -> ${localDisplacement.alignedDeltaE.toFixed(2)} after alignment`,
           ...evidenceProvenance,
         },
-        suggestedCssFix:
-          "同じ線・縁が数pxずれて描画されています。色トークンは一致しています。枠線の位置・余白・丸めを確認してください。",
+        suggestedCssFix: localDisplacement.alignedTokenMatch
+          ? "同じ線・縁が数pxずれて描画されています。色トークンは一致しています。枠線の位置・余白・丸めを確認してください。"
+          : "同じ線・縁が数pxずれて描画されていますが、整列後も色の段差が残っています。塗り色のトークンをデザイン基準に合わせてください。",
       });
     }
 

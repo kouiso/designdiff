@@ -60,6 +60,7 @@ describe("classifyLocalDisplacement", () => {
     expect(evidence).toMatchObject({ classification: "local-displacement", dx: 0, dy: 1 });
     expect(evidence?.alignedDeltaE).toBeLessThan(0.5);
     expect(evidence?.unalignedDeltaE).toBeGreaterThan(2);
+    expect(evidence?.alignedTokenMatch).toBe(true);
   });
 
   it("1px幅の縦線が3pxずれた差分を証明する (上限ちょうど)", () => {
@@ -122,6 +123,65 @@ describe("classifyLocalDisplacement", () => {
     expect(
       classifyLocalDisplacement(design, screenshot, WIDTH, HEIGHT, { x: 10, y: 30, w: 60, h: 2 }),
     ).toBeUndefined();
+  });
+
+  it("ずれた先の色がトークン1段 (±1の許容外) だけ違う線は、変位と判定しても色救済の根拠にしない", () => {
+    // #D9D9D9 → #DBD9D9 は ΔE2000 が 2 を下回るため整列後 ΔE の条件は
+    // 通る。残差がどの画素も同じ向きの帯のずれならトークン段差として検出する。
+    const design = canvas();
+    const screenshot = canvas();
+    paint(design, 10, 30, 60, 1, GRAY_BORDER);
+    paint(screenshot, 10, 31, 60, 1, [0xdb, 0xd9, 0xd9]);
+
+    const evidence = classifyLocalDisplacement(design, screenshot, WIDTH, HEIGHT, {
+      x: 10,
+      y: 30,
+      w: 60,
+      h: 2,
+    });
+
+    expect(evidence).toMatchObject({ dx: 0, dy: 1, alignedTokenMatch: false });
+    expect(evidence?.alignedDeltaE).toBeLessThan(2);
+  });
+
+  it("ずれに ±1 のディザが乗っていてもトークン一致と扱う", () => {
+    const design = canvas();
+    const screenshot = canvas();
+    paint(design, 10, 30, 60, 1, GRAY_BORDER);
+    paint(screenshot, 10, 31, 60, 1, GRAY_BORDER);
+    for (let x = 12; x < 70; x += 5) {
+      screenshot.set([0xda, 0xda, 0xd9, 255], (31 * WIDTH + x) * 4);
+    }
+
+    const evidence = classifyLocalDisplacement(design, screenshot, WIDTH, HEIGHT, {
+      x: 10,
+      y: 30,
+      w: 60,
+      h: 2,
+    });
+
+    expect(evidence?.alignedTokenMatch).toBe(true);
+  });
+
+  it("整列後に同一ベクトルの迷い画素が少数残るだけならトークン段差とはしない", () => {
+    // 実測 (9776-6698): 281px の線で整列後に 2px だけ (8,4,6) の差分が
+    // 残る。点の迷いを段差と誤認すると救済を外し、誤FAILに戻る。
+    const design = canvas();
+    const screenshot = canvas();
+    paint(design, 10, 30, 60, 1, GRAY_BORDER);
+    paint(screenshot, 10, 31, 60, 1, GRAY_BORDER);
+    for (const x of [20, 40]) {
+      screenshot.set([0xdd, 0xdb, 0xda, 255], (31 * WIDTH + x) * 4);
+    }
+
+    const evidence = classifyLocalDisplacement(design, screenshot, WIDTH, HEIGHT, {
+      x: 10,
+      y: 30,
+      w: 60,
+      h: 2,
+    });
+
+    expect(evidence?.alignedTokenMatch).toBe(true);
   });
 
   it("画像端の領域でも片側だけの要素を窓の外へ逃がさない", () => {
@@ -194,6 +254,23 @@ describe("classifyLocalDisplacement", () => {
       expect(() =>
         classifyLocalDisplacement(design, screenshot, WIDTH, HEIGHT, bbox, undefined, maxShift),
       ).toThrow(RangeError);
+    }
+  });
+
+  it("bbox に有限でない座標・寸法が含まれていれば走査せずに例外にする", () => {
+    const design = canvas();
+    const screenshot = canvas();
+    for (const bbox of [
+      { x: Number.NaN, y: 10, w: 10, h: 2 },
+      { x: 10, y: Number.POSITIVE_INFINITY, w: 10, h: 2 },
+      { x: 10, y: 10, w: Number.NaN, h: 2 },
+      { x: 10, y: 10, w: 10, h: Number.NaN },
+      { x: 10, y: 10, w: 0, h: 2 },
+      { x: 10, y: 10, w: 10, h: -1 },
+    ]) {
+      expect(() => classifyLocalDisplacement(design, screenshot, WIDTH, HEIGHT, bbox)).toThrow(
+        RangeError,
+      );
     }
   });
 });

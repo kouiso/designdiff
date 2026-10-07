@@ -332,6 +332,10 @@ export interface RegionScore {
     alignedDeltaE: number;
     strongMismatchRatio: number;
     evaluatedPixelCount: number;
+    // 整列後の残差が一様なトークン段差 (どの差分画素も同じ向きの
+    // ±2 以上のずれ) でないとき true。位置の変位は事実でも、段差が
+    // 残る領域の色の救済には使えない (designdiff#243)。
+    alignedTokenMatch: boolean;
   };
   // テキストブロックの行折り返し差。同一 bg/fg トークン・総インク量・
   // 行バンド数・インク連結成分数が全て一致したときだけ付く (designdiff#230)。
@@ -383,13 +387,15 @@ export const effectiveRegionStructure = (score: RegionScore, honorSameToken = fa
 export const effectiveRegionColor = (score: RegionScore, honorSameToken = false): number => {
   // 同一トークン証明のある領域の残存ΔEはトークン誤差ではなく
   // ラスタライザの被覆差。opt-in 時だけ色誤差としては採点しない。
+  // 変位証明は位置の事実なのでトークン一致までは保証せず、整列後に
+  // トークン段差が残る領域は元の色差を採点に戻す (designdiff#243)。
   if (
     honorSameToken &&
     (score.sameTokenRasterization !== undefined ||
       score.textReflow !== undefined ||
       score.textureResampling !== undefined ||
       score.edgeStraddle !== undefined ||
-      score.localDisplacement !== undefined)
+      score.localDisplacement?.alignedTokenMatch === true)
   ) {
     return 0;
   }

@@ -2073,6 +2073,7 @@ describe("細線の局所変位 (designdiff#243)", () => {
 
     expect(report.regionScores[0].flatColorMismatch).toBeDefined();
     expect(report.regionScores[0].localDisplacement).toMatchObject({ dx: 0, dy: 2 });
+    expect(report.regionScores[0].localDisplacement?.alignedTokenMatch).toBe(true);
     expect(report.issues.some((issue) => issue.severity === "critical")).toBe(false);
     expect(report.issues).toEqual(
       expect.arrayContaining([
@@ -2087,6 +2088,37 @@ describe("細線の局所変位 (designdiff#243)", () => {
         }),
       ]),
     );
+  });
+
+  it("ずれた線の塗りがトークン1段変わっている場合は色の critical を残す", async () => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    const designPixels = await createSolidRgba(SIZE, SIZE, WHITE_RGB);
+    const screenshotPixels = Uint8ClampedArray.from(designPixels);
+    // #CCEBD8 → #CEEBD8 は ΔE2000 が 2 を下回るトークン1段のずれ。
+    // 変位は事実でも残差が一様な段差なら、色の救済根拠にはできない。
+    paint(designPixels, 10, 50, 100, 1, BORDER);
+    paint(screenshotPixels, 10, 52, 100, 1, { r: 0xce, g: 0xeb, b: 0xd8 });
+    const cluster = { x: 10, y: 50, w: 100, h: 1 };
+
+    const report = buildDiffReport({
+      designPixels,
+      screenshotPixels,
+      width: SIZE,
+      height: SIZE,
+      diffRegions: [cluster],
+      rasterizationTolerance: true,
+    });
+
+    expect(report.regionScores[0].localDisplacement).toMatchObject({
+      dx: 0,
+      dy: 2,
+      alignedTokenMatch: false,
+    });
+    expect(
+      report.issues.some(
+        (issue) => issue.severity === "critical" && issue.evidence.signal === "flat_region_color",
+      ),
+    ).toBe(true);
   });
 
   it("既定 (rasterization_tolerance 未指定) では従来どおり critical で失格にする", async () => {

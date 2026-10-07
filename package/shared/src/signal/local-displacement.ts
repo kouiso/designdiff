@@ -14,6 +14,7 @@
 //      証明を通る。
 
 import { deltaE2000, srgbToLab } from "./delta-e-2000.js";
+import { FLAT_TOLERANCE } from "./flat-region-color.js";
 
 import type { DiffBoundingBox } from "../type.js";
 
@@ -42,6 +43,21 @@ const MAX_RESIDUAL_COMPONENT_PX = 2;
 // (3846 × 11 ≒ 42k) を含められる大きさにする。
 const MAX_WINDOW_AREA = 120000;
 
+// 整列後に残る差分が「どの画素もほぼ同じ向き・同じ大きさの帯のずれ
+// (トークン段差)」かを判定するための閾値。ΔE2000 は知覚距離なので
+// #D9D9D9 → #DBD9D9 のようなトークン1段のずれは閾値 2 を下回り、
+// 変位証明の ΔE 条件を通ってしまう。段差はフラット許容 (±1) の
+// 外側から始まるので、ベタ面の離散的な色事実と同じ水準で弾く。
+const TOKEN_STEP_MIN_MAGNITUDE = FLAT_TOLERANCE + 1;
+// 段差ベクトルは差分画素のほぼ全部に同じ形で乗っているはず。実測の
+// 正規差分 (AA・ディザ) は最頻ベクトルへの一致率が 52% 以下に散る。
+const TOKEN_STEP_UNIFORM_RATIO = 0.9;
+// 段差が領域の評価画素に占める割合の下限と最小画素数。実測の正規差分には
+// 同一ベクトルの迷い画素が 2px 程度乗ることがあり (281px 中 2px = 0.7%)、
+// 点の迷いを段差と誤認しないための下限。
+const TOKEN_STEP_MIN_COVERAGE_RATIO = 0.05;
+const TOKEN_STEP_MIN_PIXELS = 4;
+
 export interface LocalDisplacementEvidence {
   classification: "local-displacement";
   // screenshot を (dx, dy) だけずらして読むと design と一致する向き。
@@ -53,6 +69,10 @@ export interface LocalDisplacementEvidence {
   alignedDeltaE: number;
   strongMismatchRatio: number;
   evaluatedPixelCount: number;
+  // 整列後の残差が一様なトークン段差でなければ true。位置の変位は事実でも、
+  // 段差が残る領域の色の救済根拠にはできない (flat_region_color の抑制と
+  // effectiveRegionColor の色リセットはこの値を見る)。
+  alignedTokenMatch: boolean;
 }
 
 interface Window {
@@ -155,6 +175,129 @@ const regionMeanDeltaE = (
     }
   }
   return count === 0 ? 0 : sum / count;
+};
+
+// 整列後の region 内の差分画素の符号付き差をベクトルごとに数える。
+const tallyAlignedDeltas = (
+  design: Uint8ClampedArray,
+  screenshot: Uint8ClampedArray,
+  width: number,
+  region: Window,
+  dx: number,
+  dy: number,
+  ignoreMask?: Uint8Array,
+): { counts: Map<string, number>; evaluated: number; differing: number } => {
+  const counts = new Map<string, number>();
+  let evaluated = 0;
+  let differing = 0;
+  for (let y = region.top; y < region.bottom; y++) {
+    for (let x = region.left; x < region.right; x++) {
+      const designIndex = y * width + x;
+      const screenshotIndex = (y + dy) * width + x + dx;
+      if (ignoreMask && (ignoreMask[designIndex] === 1 || ignoreMask[screenshotIndex] === 1)) {
+        continue;
+      }
+      evaluated += 1;
+      const a = designIndex * 4;
+      const b = screenshotIndex * 4;
+      const dr = screenshot[b] - design[a];
+      const dg = screenshot[b + 1] - design[a + 1];
+      const db = screenshot[b + 2] - design[a + 2];
+      if (Math.max(Math.abs(dr), Math.abs(dg), Math.abs(db)) < 1) {
+        continue;
+      }
+      differing += 1;
+      const key = `${dr},${dg},${db}`;
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+  }
+  return { counts, evaluated, differing };
+};
+
+// 整列後の region 内で、差が段差ベクトルの ±1 以内に収まる画素を数える。
+const countWithinStepVector = (
+  design: Uint8ClampedArray,
+  screenshot: Uint8ClampedArray,
+  width: number,
+  region: Window,
+  dx: number,
+  dy: number,
+  step: [number, number, number],
+  ignoreMask?: Uint8Array,
+): number => {
+  let within = 0;
+  for (let y = region.top; y < region.bottom; y++) {
+    for (let x = region.left; x < region.right; x++) {
+      const designIndex = y * width + x;
+      const screenshotIndex = (y + dy) * width + x + dx;
+      if (ignoreMask && (ignoreMask[designIndex] === 1 || ignoreMask[screenshotIndex] === 1)) {
+        continue;
+      }
+      const a = designIndex * 4;
+      const b = screenshotIndex * 4;
+      if (
+        Math.abs(screenshot[b] - design[a] - step[0]) <= 1 &&
+        Math.abs(screenshot[b + 1] - design[a + 1] - step[1]) <= 1 &&
+        Math.abs(screenshot[b + 2] - design[a + 2] - step[2]) <= 1
+      ) {
+        within += 1;
+      }
+    }
+  }
+  return within;
+};
+
+// 整列後の region 内で、差分画素の符号付き差がどの画素もほぼ同じベクトル
+// (一様なトークン段差) になっていれば true を返す。ΔE2000 は ±2 程度の
+// 段差を知覚差として弾けないため、ベクトルの一様性で離散的な色の事実を
+// 直接見る。AA・ディザは向きと大きさが画素ごとに散るので弾かれる。
+const hasAlignedTokenStep = (
+  design: Uint8ClampedArray,
+  screenshot: Uint8ClampedArray,
+  width: number,
+  region: Window,
+  dx: number,
+  dy: number,
+  ignoreMask?: Uint8Array,
+): boolean => {
+  const { counts, evaluated, differing } = tallyAlignedDeltas(
+    design,
+    screenshot,
+    width,
+    region,
+    dx,
+    dy,
+    ignoreMask,
+  );
+  if (differing === 0 || evaluated === 0) {
+    return false;
+  }
+  let modalKey = "";
+  let modalCount = 0;
+  for (const [key, count] of counts) {
+    if (count > modalCount) {
+      modalKey = key;
+      modalCount = count;
+    }
+  }
+  const [mr, mg, mb] = modalKey.split(",").map(Number);
+  if (Math.max(Math.abs(mr), Math.abs(mg), Math.abs(mb)) < TOKEN_STEP_MIN_MAGNITUDE) {
+    return false;
+  }
+  if (modalCount < Math.max(TOKEN_STEP_MIN_PIXELS, TOKEN_STEP_MIN_COVERAGE_RATIO * evaluated)) {
+    return false;
+  }
+  const within = countWithinStepVector(
+    design,
+    screenshot,
+    width,
+    region,
+    dx,
+    dy,
+    [mr, mg, mb],
+    ignoreMask,
+  );
+  return within / differing >= TOKEN_STEP_UNIFORM_RATIO;
 };
 
 const buildResidualMask = (
@@ -324,6 +467,21 @@ export const classifyLocalDisplacement = (
   if (ignoreMask !== undefined && ignoreMask.length !== width * height) {
     throw new Error("classifyLocalDisplacement: ignoreMask length must equal width * height");
   }
+  // NaN の座標・寸素は以後の全比較を false にし、サイズと面積のガードも
+  // 素通りして「証明できなかった」のと同じ undefined に沈む。座標変換の
+  // 前段で入力として弾き、黙った救済不能を返させない。
+  if (
+    !Number.isFinite(bbox.x) ||
+    !Number.isFinite(bbox.y) ||
+    !Number.isFinite(bbox.w) ||
+    !Number.isFinite(bbox.h) ||
+    bbox.w <= 0 ||
+    bbox.h <= 0
+  ) {
+    throw new RangeError(
+      "classifyLocalDisplacement: bbox must have finite coordinates and positive size",
+    );
+  }
   const region: Window = {
     left: Math.max(0, Math.floor(bbox.x)),
     top: Math.max(0, Math.floor(bbox.y)),
@@ -399,6 +557,15 @@ export const classifyLocalDisplacement = (
   if (alignedDeltaE >= MAX_ALIGNED_REGION_DELTA_E) {
     return undefined;
   }
+  const alignedTokenMatch = !hasAlignedTokenStep(
+    designPixels,
+    screenshotPixels,
+    width,
+    region,
+    best.dx,
+    best.dy,
+    ignoreMask,
+  );
 
   return {
     classification: "local-displacement",
@@ -416,5 +583,6 @@ export const classifyLocalDisplacement = (
     alignedDeltaE,
     strongMismatchRatio,
     evaluatedPixelCount: best.score.count,
+    alignedTokenMatch,
   };
 };
