@@ -62,6 +62,34 @@ describe("MCP tool secret-safe error formatter", () => {
     );
   });
 
+  it("classifies a file-endpoint 403 Token expired as an authentication failure, not access denial", () => {
+    // 実API計測: 期限切れPATで /v1/files/:key を叩くと 403 {"err":"Token expired"} が返る。
+    // 「アクセス権を確認」ではPAT再作成に辿り着けないため、認証失敗として案内する。
+    const error = Object.assign(
+      new Error('Figma API error 403: {"status":403,"err":"Token expired"}'),
+      { status: 403 },
+    );
+
+    const message = formatMcpToolError(error);
+
+    expect(message).toBe(
+      "Figma authentication failed. Check that FIGMA_TOKEN is configured and valid, then retry.",
+    );
+  });
+
+  it("surfaces the raw Figma API error body for a 404 so the real cause is visible", () => {
+    // 実API計測: 有効だが対象ファイル未共有のPATでは 404 {"err":"Not found"} が返る。
+    // get_design_tokens はこの文言をそのまま返しており、他ツールも同様に原因を伝える。
+    const error = Object.assign(
+      new Error('Figma API error 404: {"status":404,"err":"Not found"}'),
+      { status: 404 },
+    );
+
+    const message = formatMcpToolError(error);
+
+    expect(message).toBe('Figma API error 404: {"status":404,"err":"Not found"}');
+  });
+
   it("returns a fixed access message for a forbidden Figma file", () => {
     const host = "private.example";
     const message = formatMcpToolError(

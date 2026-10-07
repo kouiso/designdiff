@@ -22,6 +22,16 @@ const NETWORK_ERROR_CODES = new Set([
   "ETIMEDOUT",
 ]);
 const SECRET_LIKE_PATTERN = /\bfigd_[^\s"']{8,}|oauth[_-]?[a-z0-9_:-]{8,}|token=/i;
+// 実API計測（2026-10）: 期限切れPATに対し Figma のファイル系APIは 401 ではなく
+// 403 {"err":"Token expired"} を返す。403 を一律「アクセス拒否」と案内すると
+// 利用者は本来の対処（PAT再作成）から遠ざかるため、期限切れ文言は認証失敗へ分類する。
+const TOKEN_EXPIRED_MESSAGE_PATTERN = /token[ _-]?(?:has[ _-]+)?expired/i;
+// Figma が返す素のエラーボディ（{"status":404,"err":"Not found"} 等）は秘密を含まず、
+// get_design_tokens は既にこれをそのまま返している。他ツールも同じ文言を出すことで
+// 「リクエストを確認」という誤った案内をやめ、原因をそのまま伝える。秘密を含み得る
+// 他の文言（ホスト名等）は従来どおり固定文に落とす。
+const FIGMA_API_ERROR_BODY_PATTERN =
+  /^Figma API error \d{3}: \{"status":\d{3},"err":"[^"\r\n]*"\}$/;
 const SECRET_SAFE_ERROR_PREFIXES = [
   "FIGMA_TOKEN is not set.",
   "FIGMA_TOKEN is invalid.",
@@ -68,7 +78,12 @@ const classifyFigmaApiFailure = (
 
   const status = readErrorStatus(error);
   if (status === 401) return "invalid_token";
-  if (status === 403) return "access_denied";
+  if (status === 403) {
+    if (error instanceof Error && TOKEN_EXPIRED_MESSAGE_PATTERN.test(error.message)) {
+      return "invalid_token";
+    }
+    return "access_denied";
+  }
   if (status === 429) return "rate_limited";
   if (status !== undefined && status >= 500 && status <= 599) return "server_error";
 
@@ -131,7 +146,16 @@ export const formatMcpToolError = (error: unknown): string => {
   if (figmaApiFailure === "access_denied") return ACCESS_TOOL_ERROR_MESSAGE;
   if (figmaApiFailure === "rate_limited") return RATE_LIMIT_TOOL_ERROR_MESSAGE;
   if (figmaApiFailure === "server_error") return SERVER_TOOL_ERROR_MESSAGE;
-  if (figmaApiFailure === "api_error") return API_TOOL_ERROR_MESSAGE;
+  if (figmaApiFailure === "api_error") {
+    if (
+      error instanceof Error &&
+      !SECRET_LIKE_PATTERN.test(error.message) &&
+      FIGMA_API_ERROR_BODY_PATTERN.test(error.message)
+    ) {
+      return error.message;
+    }
+    return API_TOOL_ERROR_MESSAGE;
+  }
 
   if (isNetworkFailure(error)) return NETWORK_TOOL_ERROR_MESSAGE;
 
