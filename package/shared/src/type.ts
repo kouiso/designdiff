@@ -320,6 +320,19 @@ export interface RegionScore {
     screenshotLowHex: string;
     screenshotHighHex: string;
   };
+  // 1-5px 幅の差分領域が、両側にある同じ線・縁の ±3px 平行移動だけで
+  // 説明できると、周囲へ広げた窓の突き合わせで証明された領域の診断。
+  // 枠線や区切り線がずれた位置で「ベタ面の色違い」に見える差分を、
+  // 片側にしか無い要素や塗り違いと区別する (designdiff#243)。
+  localDisplacement?: {
+    classification: "local-displacement";
+    dx: number;
+    dy: number;
+    unalignedDeltaE: number;
+    alignedDeltaE: number;
+    strongMismatchRatio: number;
+    evaluatedPixelCount: number;
+  };
   // テキストブロックの行折り返し差。同一 bg/fg トークン・総インク量・
   // 行バンド数・インク連結成分数が全て一致したときだけ付く (designdiff#230)。
   // グリフが行をまたいで移動するためトポロジ拘束は入れない。
@@ -353,7 +366,8 @@ export const effectiveRegionStructure = (score: RegionScore, honorSameToken = fa
     (score.sameTokenRasterization !== undefined ||
       score.textReflow !== undefined ||
       score.textureResampling !== undefined ||
-      score.edgeStraddle !== undefined)
+      score.edgeStraddle !== undefined ||
+      score.localDisplacement !== undefined)
   ) {
     return 1;
   }
@@ -374,7 +388,8 @@ export const effectiveRegionColor = (score: RegionScore, honorSameToken = false)
     (score.sameTokenRasterization !== undefined ||
       score.textReflow !== undefined ||
       score.textureResampling !== undefined ||
-      score.edgeStraddle !== undefined)
+      score.edgeStraddle !== undefined ||
+      score.localDisplacement !== undefined)
   ) {
     return 0;
   }

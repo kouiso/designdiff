@@ -2028,3 +2028,110 @@ describe("diff-cluster 行の差分密度シグナル (Issue #58)", () => {
     expect(cluster?.diffPixelDensity).toBe(1);
   });
 });
+
+describe("細線の局所変位 (designdiff#243)", () => {
+  const SIZE = 120;
+  const BORDER = { r: 0xcc, g: 0xeb, b: 0xd8 };
+  const CARET = { r: 0x19, g: 0xc4, b: 0x7a };
+
+  const paint = (
+    pixels: Uint8ClampedArray,
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    rgb: { r: number; g: number; b: number },
+  ): void => {
+    for (let row = y; row < y + h; row++) {
+      for (let col = x; col < x + w; col++) {
+        pixels.set([rgb.r, rgb.g, rgb.b, 255], (row * SIZE + col) * 4);
+      }
+    }
+  };
+
+  // 1px の区切り線が 2px 下へずれ、ずれた位置では両側ともベタ面の別色になる。
+  const shiftedDivider = async () => {
+    const designPixels = await createSolidRgba(SIZE, SIZE, WHITE_RGB);
+    const screenshotPixels = Uint8ClampedArray.from(designPixels);
+    paint(designPixels, 10, 50, 100, 1, BORDER);
+    paint(screenshotPixels, 10, 52, 100, 1, BORDER);
+    return { designPixels, screenshotPixels, cluster: { x: 10, y: 50, w: 100, h: 1 } };
+  };
+
+  it("rasterization_tolerance 下ではずれた線を critical にせず位置の minor issue で残す", async () => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    const { designPixels, screenshotPixels, cluster } = await shiftedDivider();
+
+    const report = buildDiffReport({
+      designPixels,
+      screenshotPixels,
+      width: SIZE,
+      height: SIZE,
+      diffRegions: [cluster],
+      rasterizationTolerance: true,
+    });
+
+    expect(report.regionScores[0].flatColorMismatch).toBeDefined();
+    expect(report.regionScores[0].localDisplacement).toMatchObject({ dx: 0, dy: 2 });
+    expect(report.issues.some((issue) => issue.severity === "critical")).toBe(false);
+    expect(report.issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          kind: "position",
+          severity: "minor",
+          evidence: expect.objectContaining({
+            signal: "local_displacement",
+            value: 2,
+            actual: expect.stringContaining("(0, 2)px"),
+          }),
+        }),
+      ]),
+    );
+    expect(report.aggregateVerdict).toBe("pass");
+  });
+
+  it("既定 (rasterization_tolerance 未指定) では従来どおり critical で失格にする", async () => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    const { designPixels, screenshotPixels, cluster } = await shiftedDivider();
+
+    const report = buildDiffReport({
+      designPixels,
+      screenshotPixels,
+      width: SIZE,
+      height: SIZE,
+      diffRegions: [cluster],
+    });
+
+    expect(report.regionScores[0].localDisplacement).toBeDefined();
+    expect(
+      report.issues.some(
+        (issue) => issue.severity === "critical" && issue.evidence.signal === "flat_region_color",
+      ),
+    ).toBe(true);
+    expect(report.aggregateVerdict).toBe("fail");
+  });
+
+  it("変位の上限より遠くにしか無い細い要素は rasterization_tolerance 下でも critical を維持する", async () => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    const designPixels = await createSolidRgba(SIZE, SIZE, WHITE_RGB);
+    const screenshotPixels = Uint8ClampedArray.from(designPixels);
+    // 同一トークン証明の窓 (周囲の余白込み) にも入らない距離へ置き、
+    // 変位証明だけが判定に関わる状態にする。
+    paint(designPixels, 100, 40, 2, 20, CARET);
+    paint(screenshotPixels, 60, 40, 2, 20, CARET);
+    const cluster = { x: 60, y: 40, w: 2, h: 20 };
+
+    const report = buildDiffReport({
+      designPixels,
+      screenshotPixels,
+      width: SIZE,
+      height: SIZE,
+      diffRegions: [cluster],
+      rasterizationTolerance: true,
+    });
+
+    expect(report.regionScores[0].localDisplacement).toBeUndefined();
+    expect(report.issues.some((issue) => issue.severity === "critical")).toBe(true);
+    expect(report.aggregateVerdict).toBe("fail");
+  });
+});
