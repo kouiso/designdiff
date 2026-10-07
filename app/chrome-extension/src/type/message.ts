@@ -16,7 +16,10 @@ export type InternalMessage =
   | GetTokenMessage
   | SetTokenMessage
   | ClearTokenMessage
-  | CompareMessage;
+  | CompareMessage
+  | SetPluginTargetMessage
+  | GetPluginTargetMessage
+  | PluginSendFrameMessage;
 
 export interface CaptureScreenshotMessage {
   type: "capture-screenshot";
@@ -58,6 +61,14 @@ export interface CompareMessage {
   height: number;
 }
 
+export interface SetPluginTargetMessage {
+  type: "plugin:target:set";
+}
+
+export interface GetPluginTargetMessage {
+  type: "plugin:target:get";
+}
+
 // --- Content Script Messages (background → content) ---
 
 export type ContentMessage =
@@ -66,7 +77,8 @@ export type ContentMessage =
   | UpdateOpacityMessage
   | UpdateModeMessage
   | ShowDiffRegionsMessage
-  | GetContentStateMessage;
+  | GetContentStateMessage
+  | GetContentDesignMessage;
 
 export interface ShowOverlayMessage {
   type: "show-overlay";
@@ -102,14 +114,46 @@ export interface GetContentStateMessage {
   type: "get-state";
 }
 
+export interface GetContentDesignMessage {
+  type: "get-design";
+}
+
+export interface ContentDesignResponse {
+  imageBase64: string | null;
+  frameWidth: number;
+  frameHeight: number;
+  active: boolean;
+  mode: ViewMode;
+  opacity: number;
+}
+
 // --- External Messages (Figma Plugin → background via onMessageExternal) ---
 
 export interface PluginSendFrameMessage {
   type: "plugin:send-frame";
+  requestId: string;
   imageBase64: string;
   frameName: string;
   frameWidth: number;
   frameHeight: number;
+}
+
+export interface PluginTarget {
+  tabId: number;
+  title: string;
+  url: string;
+}
+
+export interface PluginTargetResponse {
+  target?: PluginTarget;
+  error?: string;
+}
+
+export interface PluginSendFrameResponse {
+  success?: boolean;
+  targetTitle?: string;
+  requestId?: string;
+  error?: string;
 }
 
 // --- Response Types ---

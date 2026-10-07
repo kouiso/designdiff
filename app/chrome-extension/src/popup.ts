@@ -13,6 +13,9 @@ import type {
   FigmaFetchImageResponse,
   CompareResponse,
   TokenGetResponse,
+  PluginTargetResponse,
+  PluginTarget,
+  ContentDesignResponse,
 } from "./type/message";
 
 // =============================================================================
@@ -37,6 +40,7 @@ export interface PopupState {
   error: string | null;
   tokenInput: string;
   hasToken: boolean;
+  pluginTarget: PluginTarget | null;
   // Capture & Compare の実行中フラグ。多重実行を防ぎ、失敗時の再試行可否の
   // 判定にも使うため、成功・失敗を問わず必ず false に戻す。
   comparing: boolean;
@@ -60,6 +64,7 @@ export const state: PopupState = {
   error: null,
   tokenInput: "",
   hasToken: false,
+  pluginTarget: null,
   comparing: false,
 };
 
@@ -123,6 +128,25 @@ function renderErrorElement(): HTMLDivElement {
 
 export function renderFigmaTab(): HTMLDivElement {
   const section = div("section");
+
+  const targetSection = div("section");
+  const targetLabel = div("label");
+  targetLabel.textContent = "Chrome extension target";
+  targetSection.appendChild(targetLabel);
+
+  const targetDescription = div("stats");
+  targetDescription.textContent = state.pluginTarget
+    ? `${state.pluginTarget.title} — ${state.pluginTarget.url}`
+    : "No implementation page selected";
+  targetSection.appendChild(targetDescription);
+
+  const targetButton = button("btn btn-secondary", "Use current page as implementation target");
+  targetButton.disabled = state.loading;
+  targetButton.addEventListener("click", () => {
+    setPluginTarget().catch(console.error);
+  });
+  targetSection.appendChild(targetButton);
+  section.appendChild(targetSection);
 
   const urlLabel = div("label");
   urlLabel.textContent = "Figma URL";
@@ -440,6 +464,24 @@ export async function handleFetchFrames(): Promise<void> {
   render();
 }
 
+export async function setPluginTarget(): Promise<void> {
+  state.loading = true;
+  state.error = null;
+  render();
+  try {
+    const response = await sendToBackground<PluginTargetResponse>({
+      type: "plugin:target:set",
+    });
+    state.pluginTarget = response.target ?? null;
+    state.error = response.error ?? null;
+  } catch (error) {
+    state.error = error instanceof Error ? error.message : String(error);
+  } finally {
+    state.loading = false;
+    render();
+  }
+}
+
 export async function handleSelectFrame(frame: Frame): Promise<void> {
   state.selectedFrame = frame;
   state.loading = true;
@@ -675,8 +717,28 @@ function button(className: string, text: string): HTMLButtonElement {
 // =============================================================================
 
 export async function init(): Promise<void> {
-  const tokenRes = await sendToBackground<TokenGetResponse>({ type: "token:get" });
+  const [tokenRes, targetRes, designRes] = await Promise.all([
+    sendToBackground<TokenGetResponse>({ type: "token:get" }),
+    sendToBackground<PluginTargetResponse>({ type: "plugin:target:get" }),
+    // handoff で渡された design は content script のオーバーレイ内にしか存在しない。
+    // 起動時に読み込まないと popup の Compare に design を渡せない。
+    sendToActiveTab<ContentDesignResponse>({ type: "get-design" }),
+  ]);
   state.hasToken = !!tokenRes.token;
+  state.pluginTarget = targetRes.target ?? null;
+  const design = designRes.response;
+  if (design?.imageBase64) {
+    state.designBase64 = design.imageBase64;
+    state.selectedFrame = {
+      id: "page-overlay",
+      name: "Design on current page",
+      width: design.frameWidth,
+      height: design.frameHeight,
+    };
+    state.overlayActive = design.active;
+    state.mode = design.mode;
+    state.opacity = Math.round(design.opacity * 100);
+  }
   render();
 }
 
