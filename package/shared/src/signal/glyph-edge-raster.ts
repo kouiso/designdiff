@@ -541,12 +541,52 @@ const secondPeakScore = (scores: Float64Array, bestDx: number, bestDy: number): 
   return secondBest;
 };
 
-const hasPeriodicContent = (selfCorrelate: (dx: number, dy: number) => number): boolean => {
-  // ベタ面の高原状自己相関を弾くため厳密な局所最大だけを周期とみなす。
-  const periodicSpan = CONTENT_OFFSET_SEARCH_PX * 2;
+// ベタ面の高原状自己相関を弾くため厳密な局所最大だけを周期とみなす。
+const isStrictSelfMax = (
+  selfAt: (dx: number, dy: number) => number,
+  dx: number,
+  dy: number,
+): boolean => {
+  const score = selfAt(dx, dy);
+  if (Number.isNaN(score) || score < OFFSET_PERIODIC_MIN) return false;
+  for (let ny = dy - 1; ny <= dy + 1; ny++) {
+    for (let nx = dx - 1; nx <= dx + 1; nx++) {
+      if (nx === dx && ny === dy) continue;
+      const neighbor = nx === 0 && ny === 0 ? 1 : selfAt(nx, ny);
+      if (!Number.isNaN(neighbor) && neighbor >= score) return false;
+    }
+  }
+  return true;
+};
+
+const findPeriodicLag = (selfAt: (dx: number, dy: number) => number, span: number): boolean => {
+  const shortSpan = Math.min(CONTENT_OFFSET_SEARCH_PX * 2, span);
+  for (let dy = -shortSpan; dy <= shortSpan; dy++) {
+    for (let dx = -shortSpan; dx <= shortSpan; dx++) {
+      if (dx === 0 && dy === 0) continue;
+      if (isStrictSelfMax(selfAt, dx, dy)) return true;
+    }
+  }
+  for (let t = shortSpan + 1; t <= span; t++) {
+    if (isStrictSelfMax(selfAt, t, 0) || isStrictSelfMax(selfAt, -t, 0)) return true;
+    if (isStrictSelfMax(selfAt, 0, t) || isStrictSelfMax(selfAt, 0, -t)) return true;
+  }
+  return false;
+};
+
+const hasPeriodicContent = (
+  selfCorrelate: (dx: number, dy: number) => number,
+  width: number,
+  height: number,
+): boolean => {
+  // 周期は窓内に 2 周期以上収まる範囲でしか検証できない。軸方向は
+  // min(w,h)/2 まで走査し、行送り・カラム間隔が探索幅より大きい周期も拾う。
+  const span = Math.min(width, height) >> 1;
+  const pad = span + 1;
+  const stride = pad * 2 + 1;
   const selfScores = new Map<number, number>();
   const selfAt = (dx: number, dy: number): number => {
-    const key = (dy + 16) * 33 + dx + 16;
+    const key = (dy + pad) * stride + dx + pad;
     let cached = selfScores.get(key);
     if (cached === undefined) {
       cached = selfCorrelate(dx, dy);
@@ -554,25 +594,7 @@ const hasPeriodicContent = (selfCorrelate: (dx: number, dy: number) => number): 
     }
     return cached;
   };
-  const strictLocalMax = (dx: number, dy: number, score: number): boolean => {
-    for (let ny = dy - 1; ny <= dy + 1; ny++) {
-      for (let nx = dx - 1; nx <= dx + 1; nx++) {
-        if (nx === dx && ny === dy) continue;
-        const neighbor = nx === 0 && ny === 0 ? 1 : selfAt(nx, ny);
-        if (!Number.isNaN(neighbor) && neighbor >= score) return false;
-      }
-    }
-    return true;
-  };
-  for (let dy = -periodicSpan; dy <= periodicSpan; dy++) {
-    for (let dx = -periodicSpan; dx <= periodicSpan; dx++) {
-      if (dx === 0 && dy === 0) continue;
-      const score = selfAt(dx, dy);
-      if (!Number.isNaN(score) && score >= OFFSET_PERIODIC_MIN && strictLocalMax(dx, dy, score))
-        return true;
-    }
-  }
-  return false;
+  return findPeriodicLag(selfAt, span);
 };
 
 const detectAmbiguousOffset = (
@@ -581,9 +603,11 @@ const detectAmbiguousOffset = (
   bestDx: number,
   bestDy: number,
   selfCorrelate: (dx: number, dy: number) => number,
+  width: number,
+  height: number,
 ): boolean =>
   secondPeakScore(scores, bestDx, bestDy) >= best * OFFSET_ALIAS_RATIO ||
-  ((bestDx !== 0 || bestDy !== 0) && hasPeriodicContent(selfCorrelate));
+  ((bestDx !== 0 || bestDy !== 0) && hasPeriodicContent(selfCorrelate, width, height));
 
 // 窓内のインク分布 (bg→fg 軸上の alpha) を正規化相互相関で突き合わせ、
 // screenshot 側の内容物がどれだけ平行移動しているかを推定する。AA の被覆差は
@@ -675,7 +699,15 @@ export const estimateContentOffset = (
 
   const ambiguous =
     best > 0 &&
-    detectAmbiguousOffset(scores, best, bestDx, bestDy, (dx, dy) => correlate(dx, dy, design));
+    detectAmbiguousOffset(
+      scores,
+      best,
+      bestDx,
+      bestDy,
+      (dx, dy) => correlate(dx, dy, design),
+      w,
+      h,
+    );
 
   const scoreAt = (dx: number, dy: number): number =>
     Math.abs(dx) > CONTENT_OFFSET_SEARCH_PX || Math.abs(dy) > CONTENT_OFFSET_SEARCH_PX

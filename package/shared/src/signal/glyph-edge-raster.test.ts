@@ -428,4 +428,20 @@ describe("estimateContentOffset", () => {
     const offset = estimateContentOffset(bars(0), bars(7), SIZE, WINDOW, BG, FG, FG);
     expect(offset?.ambiguous).toBe(true);
   });
+
+  it("探索幅の外に対が逃げた周期コンテンツも曖昧として扱う", () => {
+    // 周期9では真値+12のエイリアス対が窓外に逃げて別極大が無いが、
+    // design 同士の自己相関で周期自体を検出する。
+    const BIG = 30;
+    const bigWindow = { left: 0, top: 0, right: BIG, bottom: BIG };
+    const bars = (dx: number): Uint8ClampedArray => {
+      const pixels = canvas(BIG, BG);
+      for (let b = 0; b < 3; b++) {
+        for (let y = 8; y < 22; y++) paint(pixels, BIG, 4 + b * 9 + dx, y, FG);
+      }
+      return pixels;
+    };
+    const offset = estimateContentOffset(bars(0), bars(12), BIG, bigWindow, BG, FG, FG);
+    expect(offset?.ambiguous).toBe(true);
+  });
 });
