@@ -1651,11 +1651,13 @@ describe("rasterization_tolerance による同一トークン採点 (designdiff#
       const result = await compareShift(2);
 
       expect(result.regionScores[0].sameTokenRasterization?.contentOffset?.dx).toBeCloseTo(2, 0);
+      // ずれ量の証拠は丸めずに生値で残す。閾値 (1.5/3.5px) の判定に丸めが
+      // 効かないため、サブピクセル推定の端数がそのまま出る。
       expect(offsetIssues(result)).toEqual([
         expect.objectContaining({
           kind: "position",
           severity: "minor",
-          evidence: expect.objectContaining({ value: 2 }),
+          evidence: expect.objectContaining({ value: expect.closeTo(2, 1) }),
         }),
       ]);
       expect(result.aggregateVerdict).toBe("pass");
@@ -1722,6 +1724,68 @@ describe("rasterization_tolerance による同一トークン採点 (designdiff#
 
       expect(result.regionScores[0].sameTokenRasterization?.contentOffset?.ambiguous).toBe(true);
       expect(offsetIssues(result)).toEqual([]);
+    });
+
+    // 確度閾値 (0.8) の直下と直上で発火が変わることの検証。L 字 + 点を 2px
+    // 動かし、相関を削ぐ小さな帯を両画像の別位置に足す。帯の濃さで生ピークを
+    // 0.798 / 0.801 に調整してある (濃いほど相関を削ぐ)。
+    const compareShiftWithDimBand = async (bandGray: number) => {
+      const { buildDiffReport } = await import("./diff-report-builder.js");
+      const withBand = (shift: number, bandY: number): Uint8ClampedArray => {
+        const pixels = new Uint8ClampedArray(size * size * 4).fill(255);
+        for (const [x, y] of strokes) {
+          const offset = (y * size + x + shift) * 4;
+          pixels[offset] = 51;
+          pixels[offset + 1] = 51;
+          pixels[offset + 2] = 51;
+        }
+        for (let i = 0; i < 3; i++) {
+          const offset = (bandY * size + 17 + i) * 4;
+          pixels[offset] = bandGray;
+          pixels[offset + 1] = bandGray;
+          pixels[offset + 2] = bandGray;
+        }
+        return pixels;
+      };
+      const designPixels = withBand(0, 5);
+      return buildDiffReport({
+        designPixels,
+        screenshotPixels: withBand(2, 16),
+        width: size,
+        height: size,
+        diffRegions: [{ x: 8, y: 7, w: 10, h: 9, diffPixelCount: 20 }],
+        rasterizationTolerance: true,
+        resolvedAlignment: {
+          alignment: {
+            translation: { x: 0, y: 0 },
+            scale: { x: 1, y: 1 },
+            rotation: 0,
+            confidence: 1,
+            residual: 0,
+          },
+          alignedDesignPixels: designPixels,
+          applied: false,
+        },
+      });
+    };
+
+    it("確度閾値未満の生ピークは position issue を出さない", async () => {
+      const result = await compareShiftWithDimBand(6);
+      const offset = result.regionScores[0].sameTokenRasterization?.contentOffset;
+      // 同一トークン証明が通った窓で測っていることを先に固定する。
+      expect(offset).toBeDefined();
+      expect(offset?.peak).toBeLessThan(0.8);
+      expect(offset?.peak).toBeGreaterThan(0.795);
+      // 旧実装は生ピークを 2 桁に丸めて 0.8 として報告し、この issue を出していた。
+      expect(offsetIssues(result)).toEqual([]);
+    });
+
+    it("確度閾値以上の生ピークは position issue を出す", async () => {
+      const result = await compareShiftWithDimBand(8);
+      const offset = result.regionScores[0].sameTokenRasterization?.contentOffset;
+      expect(offset).toBeDefined();
+      expect(offset?.peak).toBeGreaterThan(0.8);
+      expect(offsetIssues(result).map((issue) => issue.severity)).toEqual(["minor"]);
     });
   });
 

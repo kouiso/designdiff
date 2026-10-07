@@ -291,6 +291,9 @@ export interface RegionScore {
       clippedX?: boolean;
       clippedY?: boolean;
       ambiguous?: boolean;
+      // 周期走査を実行できなかった理由。曖昧と併せて残し、確定ずれとして
+      // 扱わせない。glyph-edge-raster.ts の ContentOffset と同じ選択肢を保つ。
+      periodicityUnchecked?: "fft-window-too-large" | "fft-masked-window";
     };
   };
   // 写真系テクスチャ領域のリサンプル差。両側が写真様・±3px平行移動で

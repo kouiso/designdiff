@@ -356,6 +356,8 @@ export const RegionScoreSchema = z.object({
           clippedX: z.boolean().optional(),
           clippedY: z.boolean().optional(),
           ambiguous: z.boolean().optional(),
+          // 周期走査を実行できなかった理由。曖昧と併せて残す。
+          periodicityUnchecked: z.enum(["fft-window-too-large", "fft-masked-window"]).optional(),
         })
         .optional(),
     })

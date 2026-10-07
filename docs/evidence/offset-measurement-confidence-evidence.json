@@ -1,0 +1,92 @@
+{
+  "subject": "content-offset measurement confidence fixes (self-ncc-plane, glyph-edge-raster)",
+  "baseCommit": "a6ef7bc0",
+  "reproducedBeforeFix": {
+    "peakRoundedBeforeConfidenceFloor": {
+      "unitFixture": "shared: 20x20 window, 1px bar moved +2px, decorrelating dim band",
+      "rawPeak": 0.7981402645611458,
+      "reportedBeforeFix": 0.8,
+      "reportedAfterFix": 0.7981402645611458,
+      "reportFixture": "mcp-server: 24x24 same-token proof window, strokes moved +2px, dim band",
+      "reportRawPeak": 0.7979849391261307,
+      "positionIssueEmittedBeforeFix": true,
+      "positionIssueEmittedAfterFix": false,
+      "positiveControlRawPeakJustAboveFloor": 0.8005778316558363,
+      "positiveControlIssueEmittedAfterFix": true
+    },
+    "sparseSupportFalseConfidence": {
+      "fixture": "20x20 window, one ink pixel per image 4px apart",
+      "beforeFix": { "dx": 4, "dy": 0, "peak": 1, "clippedX": true },
+      "afterFix": "no contentOffset (unmeasurable)"
+    },
+    "oversizedWindowAllocatedAllNanPlane": {
+      "fixture": "2731x1366 window (exceeds the 2^24 FFT cell cap)",
+      "beforeFix": "allocated 29931816-byte plane filled with NaN in ~14ms, caller read it as no periodicity",
+      "afterFix": "returns unmeasurable in 0.01ms with no allocation"
+    },
+    "maskedFftWindowValueSkew": {
+      "fixture": "64x64 window, period-7 bars, left third ignored",
+      "fftPlaneLag7": 0.9064194636764248,
+      "maskHonoringDirectLag7": 1,
+      "fftPlaneLag14": 0.8033617310539428,
+      "maskHonoringDirectLag14": 1,
+      "periodicDetectionThreshold": 0.75,
+      "consequence": "a masked window above the dense-scan budget can flip the periodicity verdict either way"
+    },
+    "maskedNonPeriodicLargeWindowAssertedConfidentOffset": {
+      "fixture": "200x200 window, non-periodic L strokes moved +2px, left band ignored",
+      "beforeFix": { "dx": 0, "dy": 2, "peak": 1 },
+      "afterFix": {
+        "dx": 0,
+        "dy": 1.9999903500799892,
+        "peak": 1,
+        "ambiguous": true,
+        "periodicityUnchecked": "fft-masked-window"
+      },
+      "sameWindowWithoutMaskAfterFix": {
+        "dx": 0,
+        "dy": 1.9999935426965851,
+        "peak": 1,
+        "ambiguous": false,
+        "note": "the unmasked window runs the mask-free FFT scan and keeps its confident verdict, so the mask is what makes the scan unmeasurable"
+      }
+    },
+    "oversizedPeriodicWindowAssertedConfidentAlias": {
+      "fixture": "2731x1366 window, period-7 bars moved +12px (in-range alias at -2)",
+      "beforeFix": "confident dx=-2 with no ambiguity marker",
+      "afterFix": {
+        "dx": -1.9999980830613142,
+        "peak": 0.9947374575158368,
+        "ambiguous": true,
+        "periodicityUnchecked": "fft-window-too-large"
+      }
+    }
+  },
+  "largeWindowOverhead": {
+    "unit": "milliseconds, single run, Node 25.6.1",
+    "estimateContentOffsetOnOversizedWindow2731x1366": 6227,
+    "estimateContentOffsetOnOversizedWindowHeapDeltaMB": 0.4,
+    "periodicityPlaneLookupOnOversizedWindowAfterFix": 0.01,
+    "periodicityPlaneLookupOnOversizedWindowBeforeFixMs": 14,
+    "fftPlaneMeasurable1000x1000": 941,
+    "fftPlaneMeasurable2000x2000": 4290.7,
+    "fftPlaneMeasurable2730x1365": 1859.3,
+    "note": "the ~6s total is the pre-existing 81-lag correlate sweep over 3.7M px; the periodicity scan itself no longer allocates on oversized windows. The 0.9-4.3s FFT plane cost applies only to unmasked windows that fit the 2^24 cell cap and is unchanged by these fixes."
+  },
+  "regressionTests": [
+    "package/shared/src/signal/self-ncc-plane.test.ts (4 tests)",
+    "package/shared/src/signal/glyph-edge-raster.test.ts (5 new tests in estimateContentOffset)",
+    "app/mcp-server/src/service/diff-report-builder.test.ts (2 new tests + 1 updated assertion)"
+  ],
+  "checks": {
+    "sharedTypecheck": "pass",
+    "sharedLint": "pass (0 errors, 5 warnings identical to base)",
+    "sharedBuild": "pass",
+    "sharedTests": "627 passed / 627",
+    "mcpServerTypecheck": "pass",
+    "mcpServerLint": "pass (0 errors, 8 warnings identical to base modulo line shift)",
+    "mcpServerBuild": "pass",
+    "mcpServerTests": "467 passed / 491, 24 failures pre-existing on base (mcp-response-budget, requires Figma credentials) — failure set identical to base"
+  },
+  "oracle": "synthetic known inputs (independent known shifts and pixel patterns); no compare_design verdict or PASS% used as a correctness oracle"
+}

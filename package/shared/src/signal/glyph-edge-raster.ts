@@ -382,7 +382,8 @@ export interface ContentOffset {
   // screenshot 側の内容物が design 側から (dx, dy) だけ動いている。
   dx: number;
   dy: number;
-  // 最良オフセットでのインク分布の正規化相互相関 (-1..1)。
+  // 最良オフセットでのインク分布の正規化相互相関 (-1..1)。丸めない生値。
+  // 報告側の確度閾値 (0.8) はこの値で判定するため、丸めは提示側だけで行う。
   peak: number;
   // argmax が探索端に張り付いた軸ごとに true。その軸の真のずれは報告値以上の可能性がある。
   clippedX?: boolean;
@@ -390,6 +391,11 @@ export interface ContentOffset {
   // argmax とほぼ同強度の別極大があるとき true。周期コンテンツのエイリアスで
   // どのピークが真の移動か決まらず、値を主張しない。
   ambiguous?: boolean;
+  // 周期走査を実行できなかった理由。周期が強い窓では argmax がエイリアスで
+  // ある可能性を排除できていないため、ambiguous と併せて付け、確定値として
+  // 扱わせない。type.ts / schema.ts の sameTokenRasterization.contentOffset
+  // と同じ選択肢を保つこと。
+  periodicityUnchecked?: "fft-window-too-large" | "fft-masked-window";
 }
 
 // 前景トークンは両画像で同一色名である必要があるが、ラスタライザ差で数値は僅かに揺れる。
@@ -510,6 +516,14 @@ const OFFSET_PERIODIC_MIN = 0.75;
 // 周期走査の総コスト上目安 (lag 数 × 窓画素数)。払える窓では全 lag を
 // 密走査し、これを越える大窓では線走査に切り替える。
 const OFFSET_PERIODIC_DENSE_OPS = 50_000_000;
+// 相関候補の「インクを含む組」の下限。組数は背景どうしの一致で簡単に
+// 稼げるが、単点どうしは平行移動すれば必ず完全一致するため、インク 1 画素
+// の一致だけで ncc=1 が立つ。空白の多さから確度を推断しない。
+const OFFSET_INFORMATIVE_MIN = 8;
+// インクとみなす alpha の下限。背景の支配色推定は ±4ch のディザを許すため
+// 最小コントラスト (64) の軸では alpha 約 0.06 まで出る。それより上に置き、
+// 背景の揺らぎをインクに数えない。
+const OFFSET_INFORMATIVE_ALPHA = 0.1;
 
 const isLocalMaxInGrid = (scores: Float64Array, dx: number, dy: number): boolean => {
   const span = CONTENT_OFFSET_SEARCH_PX * 2 + 1;
@@ -579,28 +593,35 @@ const scanAllSelfLags = (
   return false;
 };
 
-const hasPeriodicContent = (
+// 周期走査の結果。周期なし (periodic=false, unchecked 無し) は「走査して
+// 周期が無かった」の主張であり、「走査できなかった」とは区別する。走査不能を
+// 周期なしと偽ると、周期コンテンツのエイリアスを確定オフセットとして主張する。
+interface PeriodicityScan {
+  periodic: boolean;
+  unchecked?: ContentOffset["periodicityUnchecked"];
+}
+
+const scanPeriodicity = (
   selfCorrelate: (dx: number, dy: number) => number,
   design: Float64Array,
   width: number,
   height: number,
-): boolean => {
-  // 周期は窓内に 2 周期以上収まる範囲でしか検証できない。全 lag を
-  // 走査する：直接計算が払える窓では逐次、払えない大窓では FFT で
-  // 全 lag 面を一括して求める。無マスク窓では両者の値は一致するが、
-  // ignoreMask 付きでは FFT 側がマスク画素を 0 として数え込み値が
-  // ずれうる。マスクが検出側を下げる時は発火側ピークも同じ画素で
-  // 下がるため、誤発火を招く差分は観測されていない。さらに FFT の
-  // セル上限 (2^24) を超える超巨大窓では検出自体を諦め周期なしとする。
+  masked: boolean,
+): PeriodicityScan => {
+  // 周期は窓内に 2 周期以上収まる範囲でしか検証できない。全 lag を走査する:
+  // 直接計算が払える窓では逐次 (マスク画素は組から除外する)、払えない大窓では
+  // FFT で全 lag 面を一括して求める。FFT は窓を 0 詰めした信号の正規化項まで
+  // 計算に含めるため、ignoreMask 付きの窓では値が直接計算と一致しない
+  // (実測: 周期7の縦帯で lag7 の自己相関 1.0 が 0.91 に落ちる)。検出閾値
+  // (0.75) を跨ぐ乖離なので、周期なしとは断定せず走査不能として返す。
   const spanX = width >> 1;
   const spanY = height >> 1;
   const padX = spanX + 1;
   const padY = spanY + 1;
   const stride = padX * 2 + 1;
-  let selfAt: (dx: number, dy: number) => number;
   if ((spanX * 2 + 1) * (spanY * 2 + 1) * width * height <= OFFSET_PERIODIC_DENSE_OPS) {
     const selfScores = new Map<number, number>();
-    selfAt = (dx, dy) => {
+    const selfAt = (dx: number, dy: number): number => {
       const key = (dy + padY) * stride + dx + padX;
       let cached = selfScores.get(key);
       if (cached === undefined) {
@@ -609,12 +630,24 @@ const hasPeriodicContent = (
       }
       return cached;
     };
-  } else {
-    const plane = selfNccPlane(design, width, height, spanX, spanY);
-    selfAt = (dx, dy) => plane[(dy + padY) * stride + dx + padX];
+    return { periodic: scanAllSelfLags(selfAt, spanX, spanY) };
   }
-  return scanAllSelfLags(selfAt, spanX, spanY);
+  if (masked) return { periodic: false, unchecked: "fft-masked-window" };
+  const plane = selfNccPlane(design, width, height, spanX, spanY);
+  // セル上限を越える窓では全 lag 面を作れない。周期なしと断定すると
+  // 周期コンテンツのエイリアスを確定オフセットとして主張するので、
+  // 走査不能を理由付きで上位に伝える。
+  if (plane === undefined) return { periodic: false, unchecked: "fft-window-too-large" };
+  const selfAt = (dx: number, dy: number): number => plane[(dy + padY) * stride + dx + padX];
+  return { periodic: scanAllSelfLags(selfAt, spanX, spanY) };
 };
+
+// 曖昧判定の結果。周期走査不能は「値を主張できない」だけでなく、人間が
+// 再測定の指針を持てるように理由も残す。
+interface OffsetDisambiguation {
+  ambiguous: boolean;
+  unchecked?: ContentOffset["periodicityUnchecked"];
+}
 
 const detectAmbiguousOffset = (
   scores: Float64Array,
@@ -625,9 +658,20 @@ const detectAmbiguousOffset = (
   design: Float64Array,
   width: number,
   height: number,
-): boolean =>
-  secondPeakScore(scores, bestDx, bestDy) >= best * OFFSET_ALIAS_RATIO ||
-  ((bestDx !== 0 || bestDy !== 0) && hasPeriodicContent(selfCorrelate, design, width, height));
+  masked: boolean,
+): OffsetDisambiguation => {
+  if (secondPeakScore(scores, bestDx, bestDy) >= best * OFFSET_ALIAS_RATIO) {
+    return { ambiguous: true };
+  }
+  // 移動ゼロで説明できる窓は周期走査をしない。周期の落とし穴は「argmax が
+  // 周期の剰余の偽の移動を主張する」ことで、主張がゼロなら検証不要。
+  if (bestDx === 0 && bestDy === 0) return { ambiguous: false };
+  const scan = scanPeriodicity(selfCorrelate, design, width, height, masked);
+  if (scan.periodic) return { ambiguous: true };
+  return scan.unchecked === undefined
+    ? { ambiguous: false }
+    : { ambiguous: true, unchecked: scan.unchecked };
+};
 
 // 窓内のインク分布 (bg→fg 軸上の alpha) を正規化相互相関で突き合わせ、
 // screenshot 側の内容物がどれだけ平行移動しているかを推定する。AA の被覆差は
@@ -648,10 +692,14 @@ export const estimateContentOffset = (
   const design = new Float64Array(w * h);
   const shot = new Float64Array(w * h);
   const valid = new Uint8Array(w * h);
+  let masked = false;
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
       const index = (window.top + y) * width + window.left + x;
-      if (ignoreMask?.[index]) continue;
+      if (ignoreMask?.[index]) {
+        masked = true;
+        continue;
+      }
       const i = y * w + x;
       valid[i] = 1;
       design[i] = blendAlphaAndResidual(
@@ -671,6 +719,7 @@ export const estimateContentOffset = (
   const scores = new Float64Array(span * span).fill(Number.NaN);
   const correlate = (dx: number, dy: number, shifted: Float64Array = shot): number => {
     let count = 0;
+    let informative = 0;
     let sumD = 0;
     let sumS = 0;
     let sumDD = 0;
@@ -684,6 +733,7 @@ export const estimateContentOffset = (
         const d = design[i];
         const s = shifted[j];
         count++;
+        if (d > OFFSET_INFORMATIVE_ALPHA || s > OFFSET_INFORMATIVE_ALPHA) informative++;
         sumD += d;
         sumS += s;
         sumDD += d * d;
@@ -691,7 +741,9 @@ export const estimateContentOffset = (
         sumDS += d * s;
       }
     }
-    if (count < 4) return Number.NaN;
+    // 組数は背景どうしの一致で簡単に稼げる。相関の有意さはインクを含む組で
+    // 判定しないと、孤立点 1 つの一致が ncc=1 の確定ずれとして報告される。
+    if (count < 4 || informative < OFFSET_INFORMATIVE_MIN) return Number.NaN;
     const varD = sumDD - (sumD * sumD) / count;
     const varS = sumSS - (sumS * sumS) / count;
     if (varD <= 1e-9 || varS <= 1e-9) return Number.NaN;
@@ -717,18 +769,20 @@ export const estimateContentOffset = (
   }
   if (!Number.isFinite(best)) return undefined;
 
-  const ambiguous =
-    best > 0 &&
-    detectAmbiguousOffset(
-      scores,
-      best,
-      bestDx,
-      bestDy,
-      (dx, dy) => correlate(dx, dy, design),
-      design,
-      w,
-      h,
-    );
+  const disambiguation =
+    best > 0
+      ? detectAmbiguousOffset(
+          scores,
+          best,
+          bestDx,
+          bestDy,
+          (dx, dy) => correlate(dx, dy, design),
+          design,
+          w,
+          h,
+          masked,
+        )
+      : { ambiguous: false };
 
   const scoreAt = (dx: number, dy: number): number =>
     Math.abs(dx) > CONTENT_OFFSET_SEARCH_PX || Math.abs(dy) > CONTENT_OFFSET_SEARCH_PX
@@ -742,16 +796,20 @@ export const estimateContentOffset = (
     if (curvature >= -1e-9) return center;
     return center + Math.max(-0.5, Math.min(0.5, (left - right) / (2 * curvature)));
   };
-  const round = (value: number): number => Math.round(value * 100) / 100;
   const clippedX = Math.abs(bestDx) === CONTENT_OFFSET_SEARCH_PX;
   const clippedY = Math.abs(bestDy) === CONTENT_OFFSET_SEARCH_PX;
+  // 証拠は生値で残す。報告側は確度 0.8・ずれ 1.5/3.5px の閾値をこの値で
+  // 判定するため、ここで丸めると閾値直下の値が閾値以上に化ける。丸めは
+  // 報告文面の整形だけに任せる。相関は数学的に [-1,1] なので、浮動小数点の
+  // 桁あふれ (1.0000000000000002) だけスキーマ上限に収める。
   return {
-    dx: round(refine(bestDx, scoreAt(bestDx - 1, bestDy), scoreAt(bestDx + 1, bestDy))),
-    dy: round(refine(bestDy, scoreAt(bestDx, bestDy - 1), scoreAt(bestDx, bestDy + 1))),
-    peak: round(best),
+    dx: refine(bestDx, scoreAt(bestDx - 1, bestDy), scoreAt(bestDx + 1, bestDy)),
+    dy: refine(bestDy, scoreAt(bestDx, bestDy - 1), scoreAt(bestDx, bestDy + 1)),
+    peak: Math.max(-1, Math.min(1, best)),
     ...(clippedX ? { clippedX: true } : {}),
     ...(clippedY ? { clippedY: true } : {}),
-    ...(ambiguous ? { ambiguous: true } : {}),
+    ...(disambiguation.ambiguous ? { ambiguous: true } : {}),
+    ...(disambiguation.unchecked ? { periodicityUnchecked: disambiguation.unchecked } : {}),
   };
 };
 

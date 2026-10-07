@@ -444,4 +444,112 @@ describe("estimateContentOffset", () => {
     const offset = estimateContentOffset(bars(0), bars(12), BIG, bigWindow, BG, FG, FG);
     expect(offset?.ambiguous).toBe(true);
   });
+
+  it("確度閾値 (0.8) 直下の生ピークを丸めずに残す", () => {
+    // design: 1px の横棒。shot: 同じ棒を +2px 動かし、相関を削ぐ淡い帯を足す。
+    // 帯の濃さで生ピークを 0.798 に調整してある。旧実装は 2 桁に丸めて 0.8 と
+    // 報告し、報告側の確度閾値を下からすり抜けていた。
+    const dim = [66, 66, 66];
+    const design = canvas(SIZE, BG);
+    for (let x = 2; x < 18; x++) paint(design, SIZE, x, 6, FG);
+    const shot = canvas(SIZE, BG);
+    for (let x = 2; x < 18; x++) paint(shot, SIZE, x, 8, FG);
+    for (let x = 2; x < 13; x++) paint(shot, SIZE, x, 14, dim);
+    const offset = estimateContentOffset(design, shot, SIZE, WINDOW, BG, FG, FG);
+    expect(offset).toBeDefined();
+    // 生値が 0.8 未満であること自体がこの検証の本体。丸めると 0.8 になる帯の
+    // 中央にいることを固定する。
+    expect(offset?.peak).toBeGreaterThan(0.795);
+    expect(offset?.peak).toBeLessThan(0.8);
+    expect(offset?.dy).toBeCloseTo(2, 0);
+  });
+
+  it("孤立点 1 つずつの一致から確定ずれを作らない", () => {
+    // 2 画像に各 1 点のインクがあるだけだと、その点が並んだ候補で ncc=1 が
+    // 立つ。組数は背景の一致で稼げるため、インクを含む組の数で有意さを判定する。
+    const design = canvas(SIZE, BG);
+    paint(design, SIZE, 10, 10, FG);
+    const shot = canvas(SIZE, BG);
+    paint(shot, SIZE, 14, 10, FG);
+    expect(estimateContentOffset(design, shot, SIZE, WINDOW, BG, FG, FG)).toBeUndefined();
+  });
+
+  it("周期帯の密な窓と同じ入力でも、無視領域付きの大窓は周期検証不能として曖昧にする", () => {
+    // FFT は ignoreMask を 0 のインクとして正規化に数え込むため、直接計算と
+    // 値が一致しない。周期検証を省いた確定ずれは主張できないので、理由付き
+    // の曖昧として残す。
+    const BIG = 200;
+    const bigWindow = { left: 0, top: 0, right: BIG, bottom: BIG };
+    const bars = (dx: number): Uint8ClampedArray => {
+      const pixels = canvas(BIG, BG);
+      for (let x = 3; x < BIG; x += 7) {
+        for (let y = 40; y < 160; y++) paint(pixels, BIG, x + dx, y, FG);
+      }
+      return pixels;
+    };
+    const ignoreMask = new Uint8Array(BIG * BIG);
+    for (let y = 0; y < BIG; y++) {
+      for (let x = 0; x < BIG / 2; x++) ignoreMask[y * BIG + x] = 1;
+    }
+    const offset = estimateContentOffset(bars(0), bars(12), BIG, bigWindow, BG, FG, FG, ignoreMask);
+    expect(offset?.ambiguous).toBe(true);
+    expect(offset?.periodicityUnchecked).toBe("fft-masked-window");
+  });
+
+  it("無視領域付きの非周期大窓も周期検証不能として曖昧にする", () => {
+    // 旧実装はこの窓で周期なしと断定し、確度 1.0 の確定ずれを返していた。
+    // マスクを尊重する周期検証は大窓では実行できないため、断定を許さない。
+    const BIG = 200;
+    const bigWindow = { left: 0, top: 0, right: BIG, bottom: BIG };
+    const strokes: readonly (readonly [number, number])[] = [
+      ...Array.from({ length: 60 }, (_, i) => [120, 60 + i] as const),
+      ...Array.from({ length: 40 }, (_, i) => [120 + i, 120] as const),
+      [170, 65],
+    ];
+    const draw = (dy: number): Uint8ClampedArray => {
+      const pixels = canvas(BIG, BG);
+      for (const [x, y] of strokes) paint(pixels, BIG, x, y + dy, FG);
+      return pixels;
+    };
+    const ignoreMask = new Uint8Array(BIG * BIG);
+    for (let y = 0; y < BIG; y++) {
+      for (let x = 0; x < 66; x++) ignoreMask[y * BIG + x] = 1;
+    }
+    const offset = estimateContentOffset(draw(0), draw(2), BIG, bigWindow, BG, FG, FG, ignoreMask);
+    expect(offset?.ambiguous).toBe(true);
+    expect(offset?.periodicityUnchecked).toBe("fft-masked-window");
+  });
+
+  // セル上限を越える最小級の窓 (2731×1366) は correlate の全 lag 走査に数秒
+  // かかる。既定の 5 秒では落ちるため、この検証だけ明示的に延ばす。
+  it("周期走査を諦めた超巨大窓は周期なしと断定しない", { timeout: 30_000 }, () => {
+    // 周期7の帯を 12px 動かすと -2 の窓内エイリアスが唯一の argmax になる。
+    // 真のずれは 12 (または周期の剰余) だが、旧実装は FFT セル上限で全 NaN 面
+    // を「周期なし」と解釈し、-2 を確定ずれとして報告した。
+    const BIG_W = 2731;
+    const BIG_H = 1366;
+    const bigWindow = { left: 0, top: 0, right: BIG_W, bottom: BIG_H };
+    const rectCanvas = (width: number, height: number): Uint8ClampedArray => {
+      const pixels = new Uint8ClampedArray(width * height * 4);
+      for (let offset = 0; offset < pixels.length; offset += 4) {
+        pixels[offset] = BG[0];
+        pixels[offset + 1] = BG[1];
+        pixels[offset + 2] = BG[2];
+        pixels[offset + 3] = 255;
+      }
+      return pixels;
+    };
+    const bars = (dx: number): Uint8ClampedArray => {
+      const pixels = rectCanvas(BIG_W, BIG_H);
+      for (let x = 3; x < BIG_W - 40; x += 7) {
+        for (let y = 600; y < 700; y++) paint(pixels, BIG_W, x + dx, y, FG);
+      }
+      return pixels;
+    };
+    const offset = estimateContentOffset(bars(0), bars(12), BIG_W, bigWindow, BG, FG, FG);
+    // エイリアスそのものは測れている。確定できない理由だけを付ける。
+    expect(offset?.dx).toBeCloseTo(-2, 0);
+    expect(offset?.ambiguous).toBe(true);
+    expect(offset?.periodicityUnchecked).toBe("fft-window-too-large");
+  });
 });
