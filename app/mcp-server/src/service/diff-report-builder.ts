@@ -208,7 +208,9 @@ const buildContentOffsetIssue = (
   const magnitude = Math.hypot(offset.dx, offset.dy);
   if (magnitude < CONTENT_OFFSET_REPORT_PX) return undefined;
   const severity = magnitude >= CONTENT_OFFSET_MAJOR_PX ? "major" : "minor";
-  const axis = (value: number, clipped?: boolean) => (clipped ? `≥${value}` : `${value}`);
+  // 探索端の下限は軸の符号方向に合わせる。負側は真のずれが値以下の可能性。
+  const axis = (value: number, clipped?: boolean) =>
+    clipped ? `${value < 0 ? "≤" : "≥"}${value}` : `${value}`;
   return {
     regionId: regionScore.regionId,
     bbox: regionScore.bbox,

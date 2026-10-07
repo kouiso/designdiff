@@ -496,6 +496,95 @@ export const inkCoverage = (
 // 推定値は下限として clipped 印を付けて返す。
 export const CONTENT_OFFSET_SEARCH_PX = 4;
 
+// argmax のローブ外にそこそこ強い「別極大」があると、周期コンテンツの
+// エイリアスでどれが真の移動か窓内では判別できない。探索端へ向かう
+// 立ち上がり斜面は同じピークの側面なので、近傍内の局所最大だけを数える。
+const OFFSET_ALIAS_RATIO = 0.5;
+// 別極大が見つからなくても窓内コンテンツ自体が強周期を持つならずれ量は
+// 周期の剰余でしか決まらない。エイリアス対が両方探索幅の外に逃げると
+// 別極大が存在しないため、design 同士の自己相関でも周期を検出する。
+const OFFSET_PERIODIC_MIN = 0.85;
+
+const isLocalMaxInGrid = (scores: Float64Array, dx: number, dy: number): boolean => {
+  const span = CONTENT_OFFSET_SEARCH_PX * 2 + 1;
+  const score = scores[(dy + CONTENT_OFFSET_SEARCH_PX) * span + dx + CONTENT_OFFSET_SEARCH_PX];
+  if (Number.isNaN(score)) return false;
+  for (let ny = dy - 1; ny <= dy + 1; ny++) {
+    for (let nx = dx - 1; nx <= dx + 1; nx++) {
+      if (nx === dx && ny === dy) continue;
+      if (
+        nx < -CONTENT_OFFSET_SEARCH_PX ||
+        nx > CONTENT_OFFSET_SEARCH_PX ||
+        ny < -CONTENT_OFFSET_SEARCH_PX ||
+        ny > CONTENT_OFFSET_SEARCH_PX
+      )
+        continue;
+      const neighbor =
+        scores[(ny + CONTENT_OFFSET_SEARCH_PX) * span + nx + CONTENT_OFFSET_SEARCH_PX];
+      if (!Number.isNaN(neighbor) && neighbor > score) return false;
+    }
+  }
+  return true;
+};
+
+const secondPeakScore = (scores: Float64Array, bestDx: number, bestDy: number): number => {
+  const span = CONTENT_OFFSET_SEARCH_PX * 2 + 1;
+  let secondBest = Number.NEGATIVE_INFINITY;
+  for (let dy = -CONTENT_OFFSET_SEARCH_PX; dy <= CONTENT_OFFSET_SEARCH_PX; dy++) {
+    for (let dx = -CONTENT_OFFSET_SEARCH_PX; dx <= CONTENT_OFFSET_SEARCH_PX; dx++) {
+      if (Math.max(Math.abs(dx - bestDx), Math.abs(dy - bestDy)) < 2) continue;
+      const score = scores[(dy + CONTENT_OFFSET_SEARCH_PX) * span + dx + CONTENT_OFFSET_SEARCH_PX];
+      if (!Number.isNaN(score) && isLocalMaxInGrid(scores, dx, dy) && score > secondBest)
+        secondBest = score;
+    }
+  }
+  return secondBest;
+};
+
+const hasPeriodicContent = (selfCorrelate: (dx: number, dy: number) => number): boolean => {
+  // ベタ面の高原状自己相関を弾くため厳密な局所最大だけを周期とみなす。
+  const periodicSpan = CONTENT_OFFSET_SEARCH_PX * 2;
+  const selfScores = new Map<number, number>();
+  const selfAt = (dx: number, dy: number): number => {
+    const key = (dy + 16) * 33 + dx + 16;
+    let cached = selfScores.get(key);
+    if (cached === undefined) {
+      cached = selfCorrelate(dx, dy);
+      selfScores.set(key, cached);
+    }
+    return cached;
+  };
+  const strictLocalMax = (dx: number, dy: number, score: number): boolean => {
+    for (let ny = dy - 1; ny <= dy + 1; ny++) {
+      for (let nx = dx - 1; nx <= dx + 1; nx++) {
+        if (nx === dx && ny === dy) continue;
+        const neighbor = nx === 0 && ny === 0 ? 1 : selfAt(nx, ny);
+        if (!Number.isNaN(neighbor) && neighbor >= score) return false;
+      }
+    }
+    return true;
+  };
+  for (let dy = -periodicSpan; dy <= periodicSpan; dy++) {
+    for (let dx = -periodicSpan; dx <= periodicSpan; dx++) {
+      if (dx === 0 && dy === 0) continue;
+      const score = selfAt(dx, dy);
+      if (!Number.isNaN(score) && score >= OFFSET_PERIODIC_MIN && strictLocalMax(dx, dy, score))
+        return true;
+    }
+  }
+  return false;
+};
+
+const detectAmbiguousOffset = (
+  scores: Float64Array,
+  best: number,
+  bestDx: number,
+  bestDy: number,
+  selfCorrelate: (dx: number, dy: number) => number,
+): boolean =>
+  secondPeakScore(scores, bestDx, bestDy) >= best * OFFSET_ALIAS_RATIO ||
+  ((bestDx !== 0 || bestDy !== 0) && hasPeriodicContent(selfCorrelate));
+
 // 窓内のインク分布 (bg→fg 軸上の alpha) を正規化相互相関で突き合わせ、
 // screenshot 側の内容物がどれだけ平行移動しているかを推定する。AA の被覆差は
 // 相関ピークの位置を動かさず、内容物の移動だけがピークを中心から離す。
@@ -536,7 +625,7 @@ export const estimateContentOffset = (
 
   const span = CONTENT_OFFSET_SEARCH_PX * 2 + 1;
   const scores = new Float64Array(span * span).fill(Number.NaN);
-  const correlate = (dx: number, dy: number): number => {
+  const correlate = (dx: number, dy: number, shifted: Float64Array = shot): number => {
     let count = 0;
     let sumD = 0;
     let sumS = 0;
@@ -549,7 +638,7 @@ export const estimateContentOffset = (
         const j = (y + dy) * w + x + dx;
         if (!valid[i] || !valid[j]) continue;
         const d = design[i];
-        const s = shot[j];
+        const s = shifted[j];
         count++;
         sumD += d;
         sumS += s;
@@ -584,39 +673,9 @@ export const estimateContentOffset = (
   }
   if (!Number.isFinite(best)) return undefined;
 
-  // argmax のローブ外にほぼ同じ強さの「別極大」があると、周期コンテンツの
-  // エイリアスでどれが真の移動か窓内では判別できない。探索端へ向かう
-  // 立ち上がり斜面は同じピークの側面なので、近傍内の局所最大だけを数える。
-  const OFFSET_ALIAS_RATIO = 0.7;
-  const isLocalMax = (dx: number, dy: number): boolean => {
-    const score = scores[(dy + CONTENT_OFFSET_SEARCH_PX) * span + dx + CONTENT_OFFSET_SEARCH_PX];
-    if (Number.isNaN(score)) return false;
-    for (let ny = dy - 1; ny <= dy + 1; ny++) {
-      for (let nx = dx - 1; nx <= dx + 1; nx++) {
-        if (nx === dx && ny === dy) continue;
-        if (
-          nx < -CONTENT_OFFSET_SEARCH_PX ||
-          nx > CONTENT_OFFSET_SEARCH_PX ||
-          ny < -CONTENT_OFFSET_SEARCH_PX ||
-          ny > CONTENT_OFFSET_SEARCH_PX
-        )
-          continue;
-        const neighbor =
-          scores[(ny + CONTENT_OFFSET_SEARCH_PX) * span + nx + CONTENT_OFFSET_SEARCH_PX];
-        if (!Number.isNaN(neighbor) && neighbor > score) return false;
-      }
-    }
-    return true;
-  };
-  let secondBest = Number.NEGATIVE_INFINITY;
-  for (let dy = -CONTENT_OFFSET_SEARCH_PX; dy <= CONTENT_OFFSET_SEARCH_PX; dy++) {
-    for (let dx = -CONTENT_OFFSET_SEARCH_PX; dx <= CONTENT_OFFSET_SEARCH_PX; dx++) {
-      if (Math.max(Math.abs(dx - bestDx), Math.abs(dy - bestDy)) < 2) continue;
-      const score = scores[(dy + CONTENT_OFFSET_SEARCH_PX) * span + dx + CONTENT_OFFSET_SEARCH_PX];
-      if (!Number.isNaN(score) && isLocalMax(dx, dy) && score > secondBest) secondBest = score;
-    }
-  }
-  const ambiguous = best > 0 && secondBest >= best * OFFSET_ALIAS_RATIO;
+  const ambiguous =
+    best > 0 &&
+    detectAmbiguousOffset(scores, best, bestDx, bestDy, (dx, dy) => correlate(dx, dy, design));
 
   const scoreAt = (dx: number, dy: number): number =>
     Math.abs(dx) > CONTENT_OFFSET_SEARCH_PX || Math.abs(dy) > CONTENT_OFFSET_SEARCH_PX
