@@ -506,6 +506,9 @@ const OFFSET_ALIAS_RATIO = 0.5;
 // エイリアス強度は自己相関に比例するので、検出閾値は issue 発火側の
 // 相関閾値 (0.8) より下に置かないと発火しうる周期抜けが残る。
 const OFFSET_PERIODIC_MIN = 0.75;
+// 周期走査の総コスト上目安 (lag 数 × 窓画素数)。払える窓では全 lag を
+// 密走査し、これを越える大窓では線走査に切り替える。
+const OFFSET_PERIODIC_DENSE_OPS = 50_000_000;
 
 const isLocalMaxInGrid = (scores: Float64Array, dx: number, dy: number): boolean => {
   const span = CONTENT_OFFSET_SEARCH_PX * 2 + 1;
@@ -561,11 +564,32 @@ const isStrictSelfMax = (
   return true;
 };
 
-const findPeriodicLag = (
+const scanAllSelfLags = (
   selfAt: (dx: number, dy: number) => number,
   spanX: number,
   spanY: number,
 ): boolean => {
+  for (let dy = -spanY; dy <= spanY; dy++) {
+    for (let dx = -spanX; dx <= spanX; dx++) {
+      if (dx === 0 && dy === 0) continue;
+      if (isStrictSelfMax(selfAt, dx, dy)) return true;
+    }
+  }
+  return false;
+};
+
+const findPeriodicLag = (
+  selfAt: (dx: number, dy: number) => number,
+  spanX: number,
+  spanY: number,
+  width: number,
+  height: number,
+): boolean => {
+  // 全域走査が払える窓では検出可能な全 lag を見る。lag が増えすぎる
+  // 大窓では軸と 45 度対角の線走査に留める。
+  if ((spanX * 2 + 1) * (spanY * 2 + 1) * width * height <= OFFSET_PERIODIC_DENSE_OPS) {
+    return scanAllSelfLags(selfAt, spanX, spanY);
+  }
   const shortX = Math.min(CONTENT_OFFSET_SEARCH_PX * 2, spanX);
   const shortY = Math.min(CONTENT_OFFSET_SEARCH_PX * 2, spanY);
   for (let dy = -shortY; dy <= shortY; dy++) {
@@ -598,11 +622,9 @@ const hasPeriodicContent = (
   width: number,
   height: number,
 ): boolean => {
-  // 周期は窓内に 2 周期以上収まる範囲でしか検証できない。軸ごとに
-  // w/2・h/2 まで走査し、横長窓でも字間・行送りの大きな周期を拾う。
-  // 対角方向も 45 度線に沿って走査する。両成分が探索幅より大きく
-  // 対角でもないスキュー周期だけは残り、走査コストとの引き換えで
-  // 未検出のままになる。
+  // 周期は窓内に 2 周期以上収まる範囲でしか検証できない。走査が
+  // 払える窓では全 lag を見る。払えない大窓では軸と 45 度対角の
+  // 線走査に留まり、成分が探索幅より大きい非軸・非対角の周期だけ残る。
   const spanX = width >> 1;
   const spanY = height >> 1;
   const padX = spanX + 1;
@@ -618,7 +640,7 @@ const hasPeriodicContent = (
     }
     return cached;
   };
-  return findPeriodicLag(selfAt, spanX, spanY);
+  return findPeriodicLag(selfAt, spanX, spanY, width, height);
 };
 
 const detectAmbiguousOffset = (
