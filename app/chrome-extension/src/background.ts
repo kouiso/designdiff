@@ -7,26 +7,27 @@ import { fetchFrames, fetchFrameImage } from "./service/figma-service";
 import { computePixelDiff } from "./service/pixel-diff-service";
 import { getToken, setToken, clearToken } from "./service/token-service";
 
-import type { InternalMessage, PluginSendFrameMessage, ShowOverlayMessage } from "./type/message";
+import type {
+  InternalMessage,
+  PluginSendFrameMessage,
+  PluginSendFrameResponse,
+  PluginTarget,
+  PluginTargetResponse,
+  ShowOverlayMessage,
+} from "./type/message";
+
+const PLUGIN_TARGET_STORAGE_KEY = "plugin_target";
 
 function isInternalMessage(value: unknown): value is InternalMessage {
   return typeof value === "object" && value !== null && "type" in value;
 }
 
-// onMessageExternal を受け付ける正規の送信元 origin。
-// manifest の externally_connectable は figma.com 配下を広く許可してしまうため、
-// ここで送信元 origin を厳密一致でゲートし、任意の figma.com ページからの
-// overlay 注入(なりすまし)を弾く。Figma プラグイン UI は www.figma.com 上で動く。
-const ALLOWED_EXTERNAL_ORIGINS: ReadonlySet<string> = new Set([
+const ALLOWED_FIGMA_ORIGINS: ReadonlySet<string> = new Set([
   "https://www.figma.com",
   "https://figma.com",
 ]);
 
-/**
- * onMessageExternal の送信元が許可 origin か検証する。
- * sender.origin を優先し、無ければ sender.url から origin を導出する。
- */
-export function isAllowedExternalSender(
+export function isAllowedFigmaSender(
   sender: Pick<chrome.runtime.MessageSender, "origin" | "url"> | undefined,
 ): boolean {
   if (!sender) return false;
@@ -39,13 +40,24 @@ export function isAllowedExternalSender(
     }
   }
   if (!origin) return false;
-  return ALLOWED_EXTERNAL_ORIGINS.has(origin);
+  return ALLOWED_FIGMA_ORIGINS.has(origin);
+}
+
+export function isAllowedPluginTargetUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return false;
+    const hostname = parsed.hostname.toLowerCase();
+    return hostname !== "figma.com" && !hostname.endsWith(".figma.com");
+  } catch {
+    return false;
+  }
 }
 
 // --- Internal message handler (popup → background) ---
 
 chrome.runtime.onMessage.addListener(
-  (message: unknown, _sender, sendResponse: (response: unknown) => void) => {
+  (message: unknown, sender, sendResponse: (response: unknown) => void) => {
     if (!isInternalMessage(message)) return;
     switch (message.type) {
       case "capture-screenshot": {
@@ -120,29 +132,129 @@ chrome.runtime.onMessage.addListener(
         );
         return true;
       }
+
+      case "plugin:target:set": {
+        setPluginTarget(sendResponse);
+        return true;
+      }
+
+      case "plugin:target:get": {
+        getPluginTarget(sendResponse);
+        return true;
+      }
+
+      case "plugin:send-frame": {
+        if (!isAllowedFigmaSender(sender)) {
+          sendResponse({ error: "Frame handoff is only accepted from Figma." });
+          return;
+        }
+        if (!isPluginSendFrameMessage(message)) {
+          sendResponse({ error: "Invalid frame handoff payload." });
+          return;
+        }
+        handlePluginSendFrame(message, sendResponse);
+        return true;
+      }
     }
   },
 );
 
-// --- External message handler (Figma Plugin → background) ---
+// --- Helpers ---
 
-chrome.runtime.onMessageExternal.addListener(
-  (message: PluginSendFrameMessage, _sender, sendResponse: (response: unknown) => void) => {
-    // 送信元 origin を厳密一致で検証し、許可外なら何もせず弾く。
-    if (!isAllowedExternalSender(_sender)) {
-      sendResponse({ error: "Sender origin not allowed" });
+function isPluginSendFrameMessage(value: unknown): value is PluginSendFrameMessage {
+  if (typeof value !== "object" || value === null) return false;
+  const message = value;
+  return (
+    Reflect.get(message, "type") === "plugin:send-frame" &&
+    typeof Reflect.get(message, "requestId") === "string" &&
+    Reflect.get(message, "requestId").length > 0 &&
+    typeof Reflect.get(message, "imageBase64") === "string" &&
+    Reflect.get(message, "imageBase64").length > 0 &&
+    Reflect.get(message, "imageBase64").length <= 48_000_000 &&
+    typeof Reflect.get(message, "frameName") === "string" &&
+    Reflect.get(message, "frameName").length <= 500 &&
+    typeof Reflect.get(message, "frameWidth") === "number" &&
+    Number.isFinite(Reflect.get(message, "frameWidth")) &&
+    Reflect.get(message, "frameWidth") > 0 &&
+    typeof Reflect.get(message, "frameHeight") === "number" &&
+    Number.isFinite(Reflect.get(message, "frameHeight")) &&
+    Reflect.get(message, "frameHeight") > 0
+  );
+}
+
+function isPluginTarget(value: unknown): value is PluginTarget {
+  if (typeof value !== "object" || value === null) return false;
+  const target = value;
+  return (
+    typeof Reflect.get(target, "tabId") === "number" &&
+    Number.isInteger(Reflect.get(target, "tabId")) &&
+    typeof Reflect.get(target, "title") === "string" &&
+    typeof Reflect.get(target, "url") === "string" &&
+    isAllowedPluginTargetUrl(Reflect.get(target, "url"))
+  );
+}
+
+function setPluginTarget(sendResponse: (response: unknown) => void): void {
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    const tab = tabs[0];
+    const tabId = tab?.id;
+    const title = tab?.title;
+    const url = tab?.url;
+    if (typeof tabId !== "number" || typeof title !== "string" || typeof url !== "string") {
+      sendResponse({
+        error: "No active browser page is available.",
+      } satisfies PluginTargetResponse);
+      return;
+    }
+    if (!isAllowedPluginTargetUrl(url)) {
+      sendResponse({
+        error: "Choose an implementation page, not Figma or a browser settings page.",
+      } satisfies PluginTargetResponse);
       return;
     }
 
-    if (message.type !== "plugin:send-frame") {
-      sendResponse({ error: "Unknown external message type" });
-      return;
-    }
+    const target: PluginTarget = { tabId, title, url };
+    chrome.storage.local
+      .set({ [PLUGIN_TARGET_STORAGE_KEY]: target })
+      .then(() => sendResponse({ target } satisfies PluginTargetResponse))
+      .catch((error: unknown) =>
+        sendResponse({
+          error: error instanceof Error ? error.message : String(error),
+        } satisfies PluginTargetResponse),
+      );
+  });
+}
 
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      const tabId = tabs[0]?.id;
-      if (tabId === undefined) {
-        sendResponse({ error: "No active tab" });
+function getPluginTarget(sendResponse: (response: unknown) => void): void {
+  chrome.storage.local
+    .get(PLUGIN_TARGET_STORAGE_KEY)
+    .then((items) => {
+      const target = items[PLUGIN_TARGET_STORAGE_KEY];
+      sendResponse({
+        ...(isPluginTarget(target) ? { target } : {}),
+      } satisfies PluginTargetResponse);
+    })
+    .catch((error: unknown) =>
+      sendResponse({
+        error: error instanceof Error ? error.message : String(error),
+      } satisfies PluginTargetResponse),
+    );
+}
+
+function handlePluginSendFrame(
+  message: PluginSendFrameMessage,
+  sendResponse: (response: unknown) => void,
+): void {
+  chrome.storage.local
+    .get(PLUGIN_TARGET_STORAGE_KEY)
+    .then((items) => {
+      const target = items[PLUGIN_TARGET_STORAGE_KEY];
+      if (!isPluginTarget(target)) {
+        sendResponse({
+          error:
+            "No implementation tab is set. Open the extension on the implementation page and set it as the target.",
+          requestId: message.requestId,
+        } satisfies PluginSendFrameResponse);
         return;
       }
 
@@ -155,20 +267,46 @@ chrome.runtime.onMessageExternal.addListener(
         frameHeight: message.frameHeight,
       };
 
-      chrome.tabs.sendMessage(tabId, contentMessage, (response) => {
+      chrome.tabs.update(target.tabId, { active: true }, () => {
         if (chrome.runtime.lastError) {
-          sendResponse({ error: chrome.runtime.lastError.message });
-        } else {
-          sendResponse(response);
+          sendResponse({
+            error: `Could not activate ${target.title}: ${chrome.runtime.lastError.message}`,
+            requestId: message.requestId,
+          } satisfies PluginSendFrameResponse);
+          return;
         }
+        chrome.tabs.sendMessage(target.tabId, contentMessage, (response) => {
+          if (chrome.runtime.lastError) {
+            sendResponse({
+              error: `Could not send the frame to ${target.title}. Reload the implementation page and retry. (${chrome.runtime.lastError.message})`,
+              requestId: message.requestId,
+            } satisfies PluginSendFrameResponse);
+          } else if (
+            typeof response === "object" &&
+            response !== null &&
+            Reflect.get(response, "success") === true
+          ) {
+            sendResponse({
+              success: true,
+              targetTitle: target.title,
+              requestId: message.requestId,
+            } satisfies PluginSendFrameResponse);
+          } else {
+            sendResponse({
+              error: `The overlay was not confirmed on ${target.title}.`,
+              requestId: message.requestId,
+            } satisfies PluginSendFrameResponse);
+          }
+        });
       });
-    });
-
-    return true;
-  },
-);
-
-// --- Helpers ---
+    })
+    .catch((error: unknown) =>
+      sendResponse({
+        error: error instanceof Error ? error.message : String(error),
+        requestId: message.requestId,
+      } satisfies PluginSendFrameResponse),
+    );
+}
 
 async function handleFetchFrames(
   figmaUrl: string,

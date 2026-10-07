@@ -141,6 +141,7 @@ function resetState(): void {
   state.screenshotBase64 = null;
   state.comparisonResult = null;
   state.inspectionResult = null;
+  state.handoffStatus = "Set the implementation page as the Chrome extension target first.";
   state.loading = false;
   app.innerHTML = "";
 }
@@ -640,10 +641,30 @@ describe("handlePluginMessage", () => {
   });
 
   it("window.onmessage 経由でも同じ処理が走る", () => {
-    window.onmessage?.(
-      new MessageEvent("message", { data: { pluginMessage: { type: "init", tab: "inspect" } } }),
+    window.dispatchEvent(
+      new MessageEvent("message", {
+        source: parent,
+        data: { pluginMessage: { type: "init", tab: "inspect" } },
+      }),
     );
     expect(state.tab).toBe("inspect");
+  });
+
+  it("親から届く拡張機能の応答を UI に表示する", () => {
+    state.selection = [makeSelection()];
+    render();
+    window.dispatchEvent(
+      new MessageEvent("message", {
+        source: parent,
+        data: {
+          type: "figdiff:send-frame-response",
+          requestId: "export-frame-1",
+          success: false,
+          error: "No implementation tab is set.",
+        },
+      }),
+    );
+    expect(app.textContent).not.toContain("No implementation tab is set.");
   });
 });
 
@@ -668,6 +689,17 @@ describe("plugin request tracking", () => {
     renderInspectTab(app);
     const post = vi.spyOn(parent, "postMessage");
     app.querySelector<HTMLElement>(".btn")?.click();
+    return post;
+  }
+
+  function clickSendToExtension(): ReturnType<typeof vi.spyOn> {
+    state.selection = [makeSelection({ id: "3:4", name: "Account", width: 1440, height: 900 })];
+    renderCompareTab(app);
+    const post = vi.spyOn(parent, "postMessage");
+    const button = Array.from(app.querySelectorAll("button")).find(
+      (candidate) => candidate.textContent === "Send frame to Chrome extension",
+    );
+    button?.click();
     return post;
   }
 
@@ -709,13 +741,98 @@ describe("plugin request tracking", () => {
     const post = clickInspect();
     const first = extractRequestId(post);
 
-    // startPluginRequest 内の render() が compare タブへ戻すため、inspect を描き直してから押す
-    renderInspectTab(app);
-    app.querySelector<HTMLElement>(".btn")?.click();
+    state.tab = "inspect";
+    render();
+    const button = Array.from(app.querySelectorAll("button")).find((item) =>
+      item.textContent?.startsWith("Inspect:"),
+    );
+    button?.click();
     const second = extractRequestId(post);
 
     expect(second).not.toBe(first);
     expect(second).toMatch(/^inspect-node-\d+$/);
+  });
+
+  it("Figmaへ出したhandoff要求以外のrequestは拡張応答として扱わない", () => {
+    const post = clickInspect();
+    const requestId = extractRequestId(post);
+    window.dispatchEvent(
+      new MessageEvent("message", {
+        source: parent,
+        data: {
+          type: "figdiff:send-frame-response",
+          requestId,
+          success: false,
+          error: "should not be shown",
+        },
+      }),
+    );
+    expect(state.handoffStatus).toBe(
+      "Set the implementation page as the Chrome extension target first.",
+    );
+  });
+
+  it("exported frame を Chrome extension へ渡し、結果を受け取る", () => {
+    const post = clickSendToExtension();
+    const requestId = extractRequestId(post);
+    expect(requestId).toMatch(/^export-frame-\d+$/);
+    handlePluginMessage({ type: "export-result", requestId, base64: "frame-image" });
+
+    expect(post).toHaveBeenLastCalledWith(
+      {
+        type: "figdiff:send-frame",
+        requestId,
+        imageBase64: "frame-image",
+        frameName: "Account",
+        frameWidth: 1440,
+        frameHeight: 900,
+      },
+      "*",
+    );
+    expect(state.handoffStatus).toBe("Sending frame to the selected browser tab…");
+    expect(state.loading).toBe(false);
+
+    window.dispatchEvent(
+      new MessageEvent("message", {
+        source: parent,
+        data: {
+          type: "figdiff:send-frame-response",
+          requestId,
+          success: true,
+          targetTitle: "Horse app",
+        },
+      }),
+    );
+    expect(state.handoffStatus).toBe("Frame sent to Horse app.");
+  });
+
+  it("handoff 応答が規定時間を過ぎたら案内に戻し、遅延応答は無視する", () => {
+    vi.useFakeTimers();
+    const post = clickSendToExtension();
+    const requestId = extractRequestId(post);
+    handlePluginMessage({ type: "export-result", requestId, base64: "frame-image" });
+    expect(state.handoffStatus).toBe("Sending frame to the selected browser tab…");
+
+    vi.advanceTimersByTime(PLUGIN_REQUEST_TIMEOUT_MS);
+
+    expect(state.handoffStatus).toBe(
+      "No response from the Chrome extension. Load it in the same browser, set the implementation target, then retry.",
+    );
+
+    window.dispatchEvent(
+      new MessageEvent("message", {
+        source: parent,
+        data: {
+          type: "figdiff:send-frame-response",
+          requestId,
+          success: true,
+          targetTitle: "Horse app",
+        },
+      }),
+    );
+    expect(state.handoffStatus).toBe(
+      "No response from the Chrome extension. Load it in the same browser, set the implementation target, then retry.",
+    );
   });
 
   it("10秒無応答 → timeout alert で loading を解除する", () => {

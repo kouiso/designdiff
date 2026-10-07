@@ -11,11 +11,95 @@ import {
   updateOpacity,
   updateMode,
   getState,
+  overlayState,
 } from "./content/overlay-renderer";
 
-import type { ContentMessage } from "./type/message";
+import type {
+  ContentMessage,
+  PluginSendFrameMessage,
+  PluginSendFrameResponse,
+} from "./type/message";
 
 const HIDE_PAINT_TIMEOUT_MS = 1_000;
+const FIGMA_HOSTS: ReadonlySet<string> = new Set(["figma.com", "www.figma.com"]);
+const EXTENSION_HANDOFF_TYPE = "figdiff:send-frame";
+const EXTENSION_RESPONSE_TYPE = "figdiff:send-frame-response";
+
+// Figma 親ページ経由で届く handoff の wire 形状。内部メッセージ(plugin:send-frame)とは型を分ける。
+interface ExtensionHandoffPayload {
+  type: "figdiff:send-frame";
+  requestId: string;
+  imageBase64: string;
+  frameName: string;
+  frameWidth: number;
+  frameHeight: number;
+}
+
+function isExtensionHandoff(value: unknown): value is ExtensionHandoffPayload {
+  if (typeof value !== "object" || value === null) return false;
+  const message = value;
+  return (
+    Reflect.get(message, "type") === EXTENSION_HANDOFF_TYPE &&
+    typeof Reflect.get(message, "requestId") === "string" &&
+    Reflect.get(message, "requestId").length > 0 &&
+    typeof Reflect.get(message, "imageBase64") === "string" &&
+    Reflect.get(message, "imageBase64").length > 0 &&
+    Reflect.get(message, "imageBase64").length <= 48_000_000 &&
+    typeof Reflect.get(message, "frameName") === "string" &&
+    Reflect.get(message, "frameName").length <= 500 &&
+    typeof Reflect.get(message, "frameWidth") === "number" &&
+    Number.isFinite(Reflect.get(message, "frameWidth")) &&
+    Reflect.get(message, "frameWidth") > 0 &&
+    typeof Reflect.get(message, "frameHeight") === "number" &&
+    Number.isFinite(Reflect.get(message, "frameHeight")) &&
+    Reflect.get(message, "frameHeight") > 0
+  );
+}
+
+function isFigmaHost(hostname: string): boolean {
+  return FIGMA_HOSTS.has(hostname);
+}
+
+export function handlePluginFrameWindowMessage(
+  event: MessageEvent,
+  pageHostname = window.location.hostname,
+): boolean {
+  if (!isFigmaHost(pageHostname)) return false;
+  if (event.source === null || event.source === window) return false;
+  if (event.origin !== "null" && event.origin !== window.location.origin) return false;
+  if (!isExtensionHandoff(event.data)) return false;
+
+  const source = event.source;
+  const postMessage = Reflect.get(source, "postMessage");
+  if (typeof postMessage !== "function") return false;
+
+  const payload = event.data;
+
+  const message: PluginSendFrameMessage = {
+    type: "plugin:send-frame",
+    requestId: payload.requestId,
+    imageBase64: payload.imageBase64,
+    frameName: payload.frameName,
+    frameWidth: payload.frameWidth,
+    frameHeight: payload.frameHeight,
+  };
+
+  chrome.runtime.sendMessage(message, (response: PluginSendFrameResponse) => {
+    const error =
+      chrome.runtime.lastError?.message ??
+      response?.error ??
+      (response?.success === true ? undefined : "The Chrome extension did not confirm the frame.");
+    const reply = {
+      type: EXTENSION_RESPONSE_TYPE,
+      requestId: payload.requestId,
+      success: !error && response?.success === true,
+      targetTitle: response?.targetTitle,
+      error,
+    };
+    Reflect.apply(postMessage, source, [reply, event.origin === "null" ? "*" : event.origin]);
+  });
+  return true;
+}
 
 function acknowledgeOverlayRemovalAfterPaint(sendResponse: (response: unknown) => void): void {
   let settled = false;
@@ -46,15 +130,22 @@ export function handleContentMessage(
 ): boolean {
   switch (message.type) {
     case "show-overlay": {
-      showOverlay(
-        message.imageBase64,
-        message.mode,
-        message.opacity,
-        message.frameWidth,
-        message.frameHeight,
-      );
-      showFloatingControlBar();
-      sendResponse({ success: true });
+      try {
+        showOverlay(
+          message.imageBase64,
+          message.mode,
+          message.opacity,
+          message.frameWidth,
+          message.frameHeight,
+        );
+        showFloatingControlBar();
+        sendResponse({ success: true });
+      } catch (error) {
+        // 不正な画像データで描画が失敗したとき、壊れた要素を残さず失敗を返す。
+        hideOverlay();
+        removeFloatingControlBar();
+        sendResponse({ error: error instanceof Error ? error.message : String(error) });
+      }
       return false;
     }
 
@@ -88,6 +179,18 @@ export function handleContentMessage(
       sendResponse(getState());
       return false;
     }
+
+    case "get-design": {
+      // handoff で渡された design 画像は content script 内にしか無い。
+      // popup が Compare に使えるよう、状態に加えて画像本体も返す。
+      sendResponse({
+        ...getState(),
+        imageBase64: overlayState.imageBase64,
+        frameWidth: overlayState.frameWidth,
+        frameHeight: overlayState.frameHeight,
+      });
+      return false;
+    }
   }
 }
 
@@ -96,3 +199,7 @@ chrome.runtime.onMessage.addListener(
     return handleContentMessage(message, sendResponse);
   },
 );
+
+window.addEventListener("message", (event: MessageEvent) => {
+  handlePluginFrameWindowMessage(event);
+});

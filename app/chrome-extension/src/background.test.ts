@@ -3,7 +3,7 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { DiffResult } from "./service/pixel-diff-service";
 import type { InternalMessage, PluginSendFrameMessage } from "./type/message";
 
-// background.ts は import 時に onMessage / onMessageExternal へリスナーを登録する。
+// background.ts は import 時に onMessage へリスナーを登録する。
 // __mock__/setup.ts の chrome モックには onMessageExternal も captureVisibleTab も無く、
 // コールバックも呼ばれないため、このファイル専用の chrome を組んで差し替える。
 
@@ -17,7 +17,6 @@ interface ChromeStub {
   runtime: {
     lastError: { message: string } | undefined;
     onMessage: { addListener: (listener: Listener) => void };
-    onMessageExternal: { addListener: (listener: Listener) => void };
   };
   tabs: {
     captureVisibleTab: (
@@ -25,6 +24,7 @@ interface ChromeStub {
       callback: (dataUrl: string | undefined) => void,
     ) => void;
     query: (info: unknown, callback: (tabs: Record<string, unknown>[]) => void) => void;
+    update: (tabId: number, properties: { active: boolean }, callback: () => void) => void;
     sendMessage: (tabId: number, message: unknown, callback: (response: unknown) => void) => void;
   };
   storage: {
@@ -40,11 +40,11 @@ const store = new Map<string, unknown>();
 const tabMessages: unknown[] = [];
 
 let onMessage: Listener | null = null;
-let onMessageExternal: Listener | null = null;
 
 let captureError: string | null = null;
 let captureDataUrl: string | undefined = "data:image/png;base64,AAAA";
 let tabSendError: string | null = null;
+let tabUpdateError: string | null = null;
 let activeTabs: Record<string, unknown>[] = [];
 let storageFailure: string | null = null;
 
@@ -56,11 +56,6 @@ const chromeStub: ChromeStub = {
         onMessage = listener;
       },
     },
-    onMessageExternal: {
-      addListener: (listener) => {
-        onMessageExternal = listener;
-      },
-    },
   },
   tabs: {
     captureVisibleTab: (_options, callback) => {
@@ -70,6 +65,11 @@ const chromeStub: ChromeStub = {
     },
     query: (_info, callback) => {
       callback(activeTabs);
+    },
+    update: (_tabId, _properties, callback) => {
+      chromeStub.runtime.lastError = tabUpdateError ? { message: tabUpdateError } : undefined;
+      callback();
+      chromeStub.runtime.lastError = undefined;
     },
     sendMessage: (_tabId, message, callback) => {
       tabMessages.push(message);
@@ -113,39 +113,27 @@ vi.mock("./service/pixel-diff-service", () => ({
   computePixelDiff: computePixelDiffMock,
 }));
 
-let isAllowedExternalSender: (sender: { origin?: string; url?: string } | undefined) => boolean;
+let isAllowedFigmaSender: (sender: { origin?: string; url?: string } | undefined) => boolean;
+let isAllowedPluginTargetUrl: (url: string) => boolean;
 
 beforeAll(async () => {
   const mod = await import("./background");
-  isAllowedExternalSender = mod.isAllowedExternalSender;
+  isAllowedFigmaSender = mod.isAllowedFigmaSender;
+  isAllowedPluginTargetUrl = mod.isAllowedPluginTargetUrl;
 });
 
 /** onMessage リスナーを呼び、sendResponse へ渡された応答を待つ。 */
-function callInternal(message: unknown): Promise<unknown> {
+function callInternal(
+  message: unknown,
+  sender: { origin?: string; url?: string } = {},
+): Promise<unknown> {
   return new Promise((resolve, reject) => {
     if (!onMessage) {
       reject(new Error("onMessage listener not registered"));
       return;
     }
     const timer = setTimeout(() => reject(new Error("sendResponse not called")), 1000);
-    onMessage(message, {}, (response) => {
-      clearTimeout(timer);
-      resolve(response);
-    });
-  });
-}
-
-function callExternal(
-  message: unknown,
-  sender: { origin?: string; url?: string },
-): Promise<unknown> {
-  return new Promise((resolve, reject) => {
-    if (!onMessageExternal) {
-      reject(new Error("onMessageExternal listener not registered"));
-      return;
-    }
-    const timer = setTimeout(() => reject(new Error("sendResponse not called")), 1000);
-    onMessageExternal(message, sender, (response) => {
+    onMessage(message, sender, (response) => {
       clearTimeout(timer);
       resolve(response);
     });
@@ -158,6 +146,7 @@ beforeEach(() => {
   captureError = null;
   captureDataUrl = "data:image/png;base64,AAAA";
   tabSendError = null;
+  tabUpdateError = null;
   activeTabs = [{ id: 7, url: "https://example.com", title: "Example", width: 1280, height: 800 }];
   storageFailure = null;
   fetchFramesMock.mockReset();
@@ -182,28 +171,40 @@ describe("background service worker", () => {
     });
   });
 
-  // onMessageExternal の origin allowlist 検証(fix の核心)。
-  // 旧実装は sender を一切検証せず、任意の figma.com ページから overlay 注入できた。
-  describe("isAllowedExternalSender (origin allowlist)", () => {
+  describe("isAllowedFigmaSender (origin allowlist)", () => {
     it("許可 origin (www.figma.com) を true と判定する", () => {
-      expect(isAllowedExternalSender({ origin: "https://www.figma.com" })).toBe(true);
-      expect(isAllowedExternalSender({ origin: "https://figma.com" })).toBe(true);
+      expect(isAllowedFigmaSender({ origin: "https://www.figma.com" })).toBe(true);
+      expect(isAllowedFigmaSender({ origin: "https://figma.com" })).toBe(true);
     });
 
     it("url から origin を導出して判定する", () => {
-      expect(isAllowedExternalSender({ url: "https://www.figma.com/file/abc" })).toBe(true);
+      expect(isAllowedFigmaSender({ url: "https://www.figma.com/file/abc" })).toBe(true);
     });
 
     it("許可外 origin (なりすまし) を false と判定する", () => {
-      expect(isAllowedExternalSender({ origin: "https://evil.figma.com" })).toBe(false);
-      expect(isAllowedExternalSender({ origin: "https://figma.com.evil.com" })).toBe(false);
-      expect(isAllowedExternalSender({ origin: "https://attacker.example" })).toBe(false);
+      expect(isAllowedFigmaSender({ origin: "https://evil.figma.com" })).toBe(false);
+      expect(isAllowedFigmaSender({ origin: "https://figma.com.evil.com" })).toBe(false);
+      expect(isAllowedFigmaSender({ origin: "https://attacker.example" })).toBe(false);
     });
 
     it("sender や origin が無い場合は false を返す", () => {
-      expect(isAllowedExternalSender(undefined)).toBe(false);
-      expect(isAllowedExternalSender({})).toBe(false);
-      expect(isAllowedExternalSender({ url: "not-a-url" })).toBe(false);
+      expect(isAllowedFigmaSender(undefined)).toBe(false);
+      expect(isAllowedFigmaSender({})).toBe(false);
+      expect(isAllowedFigmaSender({ url: "not-a-url" })).toBe(false);
+    });
+  });
+
+  describe("isAllowedPluginTargetUrl", () => {
+    it("http / https の実装ページを許可する", () => {
+      expect(isAllowedPluginTargetUrl("http://localhost:3000")).toBe(true);
+      expect(isAllowedPluginTargetUrl("https://example.com")).toBe(true);
+    });
+
+    it("Figma やブラウザー内部ページなどの比較先にできない URL を拒否する", () => {
+      expect(isAllowedPluginTargetUrl("https://www.figma.com/design/example")).toBe(false);
+      expect(isAllowedPluginTargetUrl("chrome://extensions")).toBe(false);
+      expect(isAllowedPluginTargetUrl("file:///tmp/screen.png")).toBe(false);
+      expect(isAllowedPluginTargetUrl("not a url")).toBe(false);
     });
   });
 
@@ -380,41 +381,45 @@ describe("background service worker", () => {
     });
   });
 
-  describe("onMessageExternal", () => {
+  describe("plugin frame handoff", () => {
     const frameMessage: PluginSendFrameMessage = {
       type: "plugin:send-frame",
+      requestId: "export-frame-1",
       imageBase64: "BASE64",
       frameName: "Home",
       frameWidth: 1440,
       frameHeight: 900,
     };
 
-    it("許可外 origin → 弾いて content script へ流さない", async () => {
-      await expect(callExternal(frameMessage, { origin: "https://evil.example" })).resolves.toEqual(
-        {
-          error: "Sender origin not allowed",
-        },
+    it("Figma 以外の extension sender を拒否する", async () => {
+      await expect(callInternal(frameMessage, { origin: "https://evil.example" })).resolves.toEqual(
+        { error: "Frame handoff is only accepted from Figma." },
       );
       expect(tabMessages).toHaveLength(0);
     });
 
-    it("未知の type → エラーを返す", async () => {
+    it("対象タブが未設定なら、設定手順付きで失敗する", async () => {
       await expect(
-        callExternal({ type: "plugin:unknown" }, { origin: "https://www.figma.com" }),
-      ).resolves.toEqual({ error: "Unknown external message type" });
+        callInternal(frameMessage, { origin: "https://www.figma.com" }),
+      ).resolves.toMatchObject({
+        error: expect.stringContaining("No implementation tab is set"),
+        requestId: "export-frame-1",
+      });
     });
 
-    it("アクティブタブが無い → No active tab", async () => {
-      activeTabs = [];
+    it("設定された対象タブへ show-overlay を送り、成功応答を返す", async () => {
+      store.set("plugin_target", {
+        tabId: 42,
+        title: "Horse app",
+        url: "http://localhost:3000/dashboard",
+      });
       await expect(
-        callExternal(frameMessage, { origin: "https://www.figma.com" }),
-      ).resolves.toEqual({ error: "No active tab" });
-    });
-
-    it("許可 origin → show-overlay を content script へ送る", async () => {
-      await expect(
-        callExternal(frameMessage, { origin: "https://www.figma.com" }),
-      ).resolves.toEqual({ success: true });
+        callInternal(frameMessage, { origin: "https://www.figma.com" }),
+      ).resolves.toEqual({
+        success: true,
+        targetTitle: "Horse app",
+        requestId: "export-frame-1",
+      });
       expect(tabMessages).toEqual([
         {
           type: "show-overlay",
@@ -427,11 +432,82 @@ describe("background service worker", () => {
       ]);
     });
 
-    it("content script 不在 → lastError を error として返す", async () => {
+    it("保存済み target の URL が Figma なら無効扱いにする", async () => {
+      store.set("plugin_target", {
+        tabId: 42,
+        title: "Figma",
+        url: "https://www.figma.com/design/example",
+      });
+      await expect(
+        callInternal(frameMessage, { origin: "https://www.figma.com" }),
+      ).resolves.toMatchObject({ error: expect.stringContaining("No implementation tab") });
+      expect(tabMessages).toHaveLength(0);
+    });
+
+    it("対象タブのコンテンツスクリプト不在 → 行動可能なエラー", async () => {
+      store.set("plugin_target", {
+        tabId: 42,
+        title: "Horse app",
+        url: "http://localhost:3000/dashboard",
+      });
       tabSendError = "Could not establish connection";
       await expect(
-        callExternal(frameMessage, { origin: "https://www.figma.com" }),
-      ).resolves.toEqual({ error: "Could not establish connection" });
+        callInternal(frameMessage, { origin: "https://www.figma.com" }),
+      ).resolves.toMatchObject({
+        error: expect.stringContaining("Reload the implementation page and retry"),
+        requestId: "export-frame-1",
+      });
+    });
+
+    it("payload が壊れていたら送らずに拒否する", async () => {
+      await expect(
+        callInternal(
+          { ...frameMessage, frameWidth: Number.NaN },
+          { origin: "https://www.figma.com" },
+        ),
+      ).resolves.toEqual({ error: "Invalid frame handoff payload." });
+      expect(tabMessages).toHaveLength(0);
+    });
+  });
+
+  describe("plugin target", () => {
+    it("現在の実装ページを保存して返す", async () => {
+      await expect(callInternal({ type: "plugin:target:set" })).resolves.toEqual({
+        target: {
+          tabId: 7,
+          title: "Example",
+          url: "https://example.com",
+        },
+      });
+      expect(store.get("plugin_target")).toEqual({
+        tabId: 7,
+        title: "Example",
+        url: "https://example.com",
+      });
+    });
+
+    it("Figmaページは実装先として保存しない", async () => {
+      activeTabs = [
+        {
+          id: 7,
+          title: "Figma",
+          url: "https://www.figma.com/design/example",
+        },
+      ];
+      await expect(callInternal({ type: "plugin:target:set" })).resolves.toEqual({
+        error: "Choose an implementation page, not Figma or a browser settings page.",
+      });
+      expect(store.has("plugin_target")).toBe(false);
+    });
+
+    it("保存済みの有効な対象を取得する", async () => {
+      const target = {
+        tabId: 42,
+        title: "Horse app",
+        url: "http://localhost:3000/dashboard",
+      };
+      store.set("plugin_target", target);
+      await expect(callInternal({ type: "plugin:target:get" })).resolves.toEqual({ target });
     });
   });
 });

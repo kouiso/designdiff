@@ -27,6 +27,7 @@ interface AppState {
   screenshotBase64: string | null;
   comparisonResult: ComparisonResult | null;
   inspectionResult: InspectionResult | null;
+  handoffStatus: string;
   loading: boolean;
 }
 
@@ -55,6 +56,7 @@ export const state: AppState = {
   screenshotBase64: null,
   comparisonResult: null,
   inspectionResult: null,
+  handoffStatus: "Set the implementation page as the Chrome extension target first.",
   loading: false,
 };
 
@@ -85,7 +87,6 @@ interface InitMessage {
   type: "init";
   tab: "compare" | "inspect";
 }
-
 type PluginResponse =
   | SelectionMessage
   | ExportResultMessage
@@ -104,13 +105,21 @@ const PLUGIN_RESPONSE_TYPES = new Set([
 export const PLUGIN_REQUEST_TIMEOUT_MS = 10_000;
 
 type RequestKind = "export-frame" | "inspect-node";
-
-let requestSequence = 0;
-let pendingRequest: {
+type RequestAction = "compare" | "send-to-extension";
+interface PendingPluginRequest {
   id: string;
   kind: RequestKind;
+  action: RequestAction;
+  frame: { name: string; width: number; height: number };
   timeout: ReturnType<typeof setTimeout>;
-} | null = null;
+}
+
+let requestSequence = 0;
+let pendingHandoffId: string | null = null;
+let handoffTimeout: ReturnType<typeof setTimeout> | null = null;
+let pendingRequest: PendingPluginRequest | null = null;
+
+type AcceptedPluginRequest = Omit<PendingPluginRequest, "timeout">;
 
 function clearPendingRequest(): void {
   if (!pendingRequest) return;
@@ -118,12 +127,25 @@ function clearPendingRequest(): void {
   pendingRequest = null;
 }
 
+function clearHandoffTracking(): void {
+  pendingHandoffId = null;
+  if (handoffTimeout !== null) {
+    clearTimeout(handoffTimeout);
+    handoffTimeout = null;
+  }
+}
+
 export function resetRequestTracking(): void {
   clearPendingRequest();
+  clearHandoffTracking();
   requestSequence = 0;
 }
 
-function startPluginRequest(kind: RequestKind, nodeId: string): void {
+function startPluginRequest(
+  kind: RequestKind,
+  nodeId: string,
+  action: RequestAction = "compare",
+): void {
   clearPendingRequest();
   const requestId = `${kind}-${++requestSequence}`;
 
@@ -138,6 +160,12 @@ function startPluginRequest(kind: RequestKind, nodeId: string): void {
   pendingRequest = {
     id: requestId,
     kind,
+    action,
+    frame: {
+      name: state.selection[0]?.name ?? "Selected frame",
+      width: state.selection[0]?.width ?? 0,
+      height: state.selection[0]?.height ?? 0,
+    },
     timeout: setTimeout(() => {
       if (pendingRequest?.id !== requestId) return;
       pendingRequest = null;
@@ -151,11 +179,23 @@ function startPluginRequest(kind: RequestKind, nodeId: string): void {
   parent.postMessage({ pluginMessage: { type: kind, nodeId, requestId } }, "*");
 }
 
-function acceptsResponse(kind: RequestKind, requestId: string | undefined): boolean {
-  if (!pendingRequest) return requestId === undefined;
-  if (pendingRequest.kind !== kind || pendingRequest.id !== requestId) return false;
+function acceptsResponse(
+  kind: RequestKind,
+  requestId: string | undefined,
+): AcceptedPluginRequest | null {
+  if (!pendingRequest) {
+    if (requestId !== undefined) return null;
+    return {
+      id: "",
+      kind,
+      action: "compare",
+      frame: { name: "Selected frame", width: 0, height: 0 },
+    };
+  }
+  if (pendingRequest.kind !== kind || pendingRequest.id !== requestId) return null;
+  const accepted = pendingRequest;
   clearPendingRequest();
-  return true;
+  return accepted;
 }
 
 export function isPluginResponse(msg: unknown): msg is PluginResponse {
@@ -175,14 +215,39 @@ export function handlePluginMessage(raw: unknown): void {
       render();
       break;
 
-    case "export-result":
-      if (!acceptsResponse("export-frame", msg.requestId)) return;
+    case "export-result": {
+      const request = acceptsResponse("export-frame", msg.requestId);
+      if (!request) return;
       if (msg.error) {
         alert(msg.error);
         state.loading = false;
       } else if (msg.base64) {
         state.designBase64 = msg.base64;
-        if (state.screenshotBase64) {
+        if (request.action === "send-to-extension") {
+          clearHandoffTracking();
+          pendingHandoffId = request.id;
+          state.handoffStatus = "Sending frame to the selected browser tab…";
+          // 拡張が無応答でも「送信中」で固まらないよう、応答待ちの上限を作る。
+          handoffTimeout = setTimeout(() => {
+            if (pendingHandoffId !== request.id) return;
+            clearHandoffTracking();
+            state.handoffStatus =
+              "No response from the Chrome extension. Load it in the same browser, set the implementation target, then retry.";
+            if (state.tab === "compare") render();
+          }, PLUGIN_REQUEST_TIMEOUT_MS);
+          parent.postMessage(
+            {
+              type: "figdiff:send-frame",
+              requestId: request.id,
+              imageBase64: msg.base64,
+              frameName: request.frame.name,
+              frameWidth: request.frame.width,
+              frameHeight: request.frame.height,
+            },
+            "*",
+          );
+          state.loading = false;
+        } else if (state.screenshotBase64) {
           runComparison();
         } else {
           state.loading = false;
@@ -193,6 +258,7 @@ export function handlePluginMessage(raw: unknown): void {
       }
       render();
       break;
+    }
 
     case "inspect-result":
       if (!acceptsResponse("inspect-node", msg.requestId)) return;
@@ -222,10 +288,32 @@ export function handlePluginMessage(raw: unknown): void {
   }
 }
 
+function handleExtensionHandoffResponse(raw: unknown): void {
+  if (typeof raw !== "object" || raw === null) return;
+  const response = raw;
+  if (
+    Reflect.get(response, "type") !== "figdiff:send-frame-response" ||
+    typeof Reflect.get(response, "requestId") !== "string" ||
+    typeof Reflect.get(response, "success") !== "boolean" ||
+    Reflect.get(response, "requestId") !== pendingHandoffId
+  ) {
+    return;
+  }
+  clearHandoffTracking();
+  state.handoffStatus = Reflect.get(response, "success")
+    ? `Frame sent to ${typeof Reflect.get(response, "targetTitle") === "string" ? Reflect.get(response, "targetTitle") : "the selected browser tab"}.`
+    : typeof Reflect.get(response, "error") === "string"
+      ? Reflect.get(response, "error")
+      : "Could not send the frame to the browser extension.";
+  if (state.tab === "compare") render();
+}
+
 // Figma Plugin iframe context: event.origin is always "null" (opaque origin), so origin validation is not applicable
-window.onmessage = (event: MessageEvent) => {
-  handlePluginMessage(event.data.pluginMessage);
-};
+window.addEventListener("message", (event: MessageEvent) => {
+  if (event.source !== parent || typeof event.data !== "object" || event.data === null) return;
+  handleExtensionHandoffResponse(event.data);
+  handlePluginMessage(Reflect.get(event.data, "pluginMessage"));
+});
 
 // --- Comparison Logic (uses Canvas API in iframe) ---
 
@@ -404,6 +492,16 @@ export function renderCompareTab(app: HTMLElement): void {
     });
     app.appendChild(btn);
   }
+
+  const handoffButton = el("button", "btn btn-secondary", "Send frame to Chrome extension");
+  handoffButton.addEventListener("click", () => {
+    startPluginRequest("export-frame", selected.id, "send-to-extension");
+  });
+  app.appendChild(handoffButton);
+
+  const handoffStatus = el("div", "section", state.handoffStatus);
+  handoffStatus.id = "handoff-status";
+  app.appendChild(handoffStatus);
 
   // Loading
   if (state.loading) {

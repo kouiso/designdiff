@@ -150,6 +150,52 @@ describe("init", () => {
     const popup = await loadPopup();
     expect(popup.state.hasToken).toBe(false);
   });
+
+  it("保存済み extension target を読み込む", async () => {
+    const target = {
+      tabId: 19,
+      title: "Horse app",
+      url: "http://localhost:3000/dashboard",
+    };
+    backgroundResponses.set("plugin:target:get", { target });
+
+    const popup = await loadPopup();
+
+    expect(popup.state.pluginTarget).toEqual(target);
+    expect(document.body.textContent).toContain("Horse app");
+  });
+
+  it("handoff 済み design を active tab のオーバーレイから読み込む", async () => {
+    tabResponse = {
+      imageBase64: "handoff-image",
+      frameWidth: 640,
+      frameHeight: 400,
+      active: true,
+      mode: "split_screen",
+      opacity: 0.4,
+    };
+
+    const popup = await loadPopup();
+
+    expect(popup.state.designBase64).toBe("handoff-image");
+    expect(popup.state.selectedFrame).toEqual({
+      id: "page-overlay",
+      name: "Design on current page",
+      width: 640,
+      height: 400,
+    });
+    expect(popup.state.overlayActive).toBe(true);
+    expect(popup.state.mode).toBe("split_screen");
+    expect(popup.state.opacity).toBe(40);
+    expect(tabMessages).toContainEqual({ type: "get-design" });
+  });
+
+  it("content script が design を持っていなければ何も読み込まない", async () => {
+    const popup = await loadPopup();
+
+    expect(popup.state.designBase64).toBeNull();
+    expect(popup.state.selectedFrame).toBeNull();
+  });
 });
 
 describe("render", () => {
@@ -177,6 +223,37 @@ describe("render", () => {
 });
 
 describe("Figma タブ", () => {
+  it("現在の実装ページを extension target に設定する", async () => {
+    const target = {
+      tabId: 19,
+      title: "Horse app",
+      url: "http://localhost:3000/dashboard",
+    };
+    backgroundResponses.set("plugin:target:set", { target });
+    const popup = await loadPopup();
+
+    await popup.setPluginTarget();
+
+    expect(popup.state.pluginTarget).toEqual(target);
+    expect(document.body.textContent).toContain("Horse app");
+    expect(backgroundMessages.filter((m) => messageType(m) === "plugin:target:set")).toHaveLength(
+      1,
+    );
+  });
+
+  it("実装先の設定失敗を表示し、再試行可能にする", async () => {
+    backgroundResponses.set("plugin:target:set", {
+      error: "Choose an implementation page, not Figma or a browser settings page.",
+    });
+    const popup = await loadPopup();
+
+    await popup.setPluginTarget();
+
+    expect(popup.state.pluginTarget).toBeNull();
+    expect(popup.state.error).toContain("Choose an implementation page");
+    expect(popup.state.loading).toBe(false);
+  });
+
   it("URL 入力が state に反映される", async () => {
     const popup = await loadPopup();
     const urlInput = inputBySelector('input[type="text"]');
@@ -291,7 +368,8 @@ describe("オーバーレイ操作", () => {
     const popup = await loadPopup();
     await popup.showOverlayOnPage();
 
-    expect(tabMessages).toHaveLength(0);
+    // init の get-design は届くが、show-overlay 自体は送られない
+    expect(tabMessages.filter((m) => messageType(m) === "show-overlay")).toHaveLength(0);
     expect(popup.state.overlayActive).toBe(false);
   });
 
@@ -353,7 +431,10 @@ describe("オーバーレイ操作", () => {
 
     await popup.showOverlayOnPage();
 
-    expect(tabMessages[0]).toMatchObject({ frameWidth: 1280, frameHeight: 800 });
+    expect(tabMessages.find((m) => messageType(m) === "show-overlay")).toMatchObject({
+      frameWidth: 1280,
+      frameHeight: 800,
+    });
   });
 });
 

@@ -203,12 +203,17 @@ jobs:
           FIGDIFF_HEADLESS: new
         run: node app/chrome-extension/script/real-chrome-e2e.mjs ${{ runner.temp }}/chrome-ext-evidence
 
+      - name: Run Figma plugin to extension handoff E2E
+        run: xvfb-run -a node app/chrome-extension/script/plugin-frame-handoff-e2e.mjs ${{ runner.temp }}/plugin-extension-evidence
+
       - name: Upload extension evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: chrome-ext-evidence
-          path: ${{ runner.temp }}/chrome-ext-evidence
+          name: chrome-extension-evidence
+          path: |
+            ${{ runner.temp }}/chrome-ext-evidence
+            ${{ runner.temp }}/plugin-extension-evidence
           retention-days: 7
 
   naming:
