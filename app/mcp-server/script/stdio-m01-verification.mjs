@@ -57,7 +57,7 @@ await client.connect(transport);
 const { tools } = await client.listTools();
 const names = tools.map((t) => t.name).sort();
 evidence.results.M01_tools = { count: names.length, names };
-assert.equal(names.length, 17, `expected 17 tools, got ${names.length}`);
+assert.equal(names.length, 18, `expected 18 tools, got ${names.length}`);
 
 // 公開 inputSchema に適合する引数だけで compare_design を呼べること
 // (新規 AI が docs/schema から組み立てられる最小の呼出し)。

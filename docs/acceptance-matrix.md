@@ -5,7 +5,7 @@
 
 凡例: ✅ 自動テスト/CI で継続検証 / 🟡 手動または定期実行で検証可能 / ❌ 証跡なし (Issue 参照)
 
-## MCP サーバ (`@figdiff/mcp-server`, 17 tools)
+## MCP サーバ (`@figdiff/mcp-server`, 18 tools)
 
 | 機能 | 期待動作 | 合格条件 | 検証手段 | 証跡 |
 |---|---|---|---|---|
@@ -15,6 +15,7 @@
 | `list_frames` | プロジェクトのフレーム一覧を返す | ツール応答形式・budget 内件数 | `e2e-compare-design.test.ts`, `mcp-response-budget.test.ts` | ✅ CI |
 | `inspect_node` | ノードの構造を返す | 指定ノードの transform/children 抽出 | `e2e-compare-design.test.ts`, `mcp-response-budget.test.ts` | ✅ CI |
 | `compare_design` | Figma 画像 vs スクショの差分判定 | verdict/diffRegions/bbox が仕様通り、エラー時は構造化エラー | `compare-design.test.ts` 他多数 | ✅ CI |
+| `compare_design_batch` | 複数フレームを1回で逐次比較し集約 | 入力順の per-frame verdict、集約件数/共通差分/収束、1件の実行エラーが残りを打ち切らない、`comparisonId` から全レポート取得可 | `compare-design-batch.test.ts`, `batch-compare-service.test.ts` | ✅ CI |
 | crop region (`set_/get_`) | 比較領域を固定・往復参照 | `compare_design` が `cropApplied`/`cropSource` を正しく報告 | `e2e-compare-design.test.ts` (往復結合) | ✅ CI |
 | ignore regions (`set_/get_/delete_`) | 除外領域の登録・参照・削除 | 除外領域内の差分はカウントされない | `set-ignore-regions.test.ts` 等 | ✅ CI |
 | `verify_fix` | 修正後の再比較・改善判定 | before/after の verdict 遷移が正しい | `verify-fix.test.ts` | ✅ CI |

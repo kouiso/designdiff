@@ -8,6 +8,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ### Added
 
+- `compare_design_batch` MCP tool (`app/mcp-server/src/tool/compare-design-batch.ts`): compares 1-10 frames/screens sequentially in one call through the existing `compare_design` engine and returns per-frame verdicts (`PASS` / `FAIL` / `UNCERTAIN` / `ERROR`) plus an aggregate report — counts, aggregate `verdict` (`ERROR > FAIL > UNCERTAIN > PASS`), `comparisonIds` for full `generate_diff_report` retrieval, `recurringIssues` (issue kinds seen in two or more frames), and a flow-level `convergence` folded from each frame's `loopGuard`. A per-frame execution failure is reported as `ERROR` and does not abort the remaining frames; shared `threshold`/`profile`/`design_background`/`ignore_regions`/`anchors` defaults are overridable per frame (frame value replaces the default, no merge). Aggregation lives in `app/mcp-server/src/service/batch-compare-service.ts`.
 - Electron IPC smoke test (`app/desktop/e2e/electron-ipc-smoke.mjs`): launches the real Electron binary and drives `project`, `token`, and `file:read-local-image` IPC paths; wired into CI on xvfb.
 - CI jobs for the Figma-plugin host E2E (`real-iframe-host.mjs`) and Chrome-extension E2E (`real-chrome-e2e.mjs`), both previously local-only scripts.
 - Crop-region round-trip integration coverage (`set_crop_region` → `compare_design` auto-application → `get_crop_region`) and Figma-plugin message-contract tests (requestId echo, `figma.command` menu routing).

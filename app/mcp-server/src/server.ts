@@ -2,11 +2,12 @@
  * FigDiff MCP Server
  * Diff-driven design comparison tools for AI assistants
  *
- * Exposes 17 tools via MCP protocol:
+ * Exposes 18 tools via MCP protocol:
  * - list_projects (Utility): List all FigDiff projects stored in ~/.figdiff/projects/
  * - create_project (Utility): Create a new FigDiff project
  * - delete_project (Utility): Delete a FigDiff project
  * - compare_design (Primary): Pixel diff between Figma design and implementation
+ * - compare_design_batch (Primary): Compare multiple frames/screens in one call
  * - compare_animation (Primary): Compare animated UI as a time-ordered frame sequence
  * - inspect_node (Secondary): Dev Mode-like node detail inspection
  * - get_design_tokens (Secondary): Extract design tokens from a Figma frame
@@ -25,6 +26,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
 import { registerCompareAnimation } from "./tool/compare-animation.js";
+import { registerCompareDesignBatch } from "./tool/compare-design-batch.js";
 import { registerCompareDesign } from "./tool/compare-design.js";
 import { registerCreateProject } from "./tool/create-project.js";
 import { registerDeleteIgnoreRegion } from "./tool/delete-ignore-region.js";
@@ -56,6 +58,7 @@ export function createMcpServer(): McpServer {
 - create_project: Create a new FigDiff project
 - delete_project: Delete a FigDiff project and its saved settings
 - compare_design: Pixel-level diff between Figma design and implementation screenshot
+- compare_design_batch: 複数フレーム/画面を1回で入力順に比較し、フレームごとの判定と全体の集計を返す
 - compare_animation: 動きのあるUIを、時間で並んだ複数の絵として比べる
 - inspect_node: Dev Mode-like node detail inspection with CSS suggestions
 - get_design_tokens: Extract design tokens (colors, spacing, typography) from Figma frames
@@ -73,6 +76,10 @@ export function createMcpServer(): McpServer {
 **Workflow (follow this order):**
 1. list_projects — Start here to find registered projects and their IDs.
 2. compare_design — Detects pixel-level differences. Output may include "マスク候補" based on texture or structure/color differences. These signals do not identify photos or prove an intentional difference. Candidates are not automatically masked; ask the user to confirm exclusions.
+   When a whole screen flow must be checked, pass the screens to compare_design_batch instead of
+   looping compare_design yourself. The verdict stays per frame; only the aggregation is folded
+   into one response. Use compare_design's per-frame loopGuard to decide each screen, and
+   compare_design_batch's convergence to decide the flow.
 3. Check "判定経路" in the summary. When it reads token-diff, colour and typography were
    compared as values rather than pixels, and the listed 要修正 items carry the exact value
    the design specifies — apply those directly instead of guessing from the diff image.
@@ -109,6 +116,7 @@ export function createMcpServer(): McpServer {
   registerCreateProject(server);
   registerDeleteProject(server);
   registerCompareDesign(server);
+  registerCompareDesignBatch(server);
   registerCompareAnimation(server);
   registerInspectNode(server);
   registerGetDesignTokens(server);

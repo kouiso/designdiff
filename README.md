@@ -207,13 +207,35 @@ Replace the example ID with the exact `comparisonId` from the comparison respons
 The report includes alignment, region scores, issues and their rationale. Keep the
 original images and comparison conditions as independent evidence of the reported differences.
 
+### Compare multiple screens in one call
+
+When a whole screen flow must be checked, pass every frame to `compare_design_batch`.
+Frames are compared sequentially in input order. Each frame keeps its own `status`,
+`loopGuard` and `comparisonId`; the response adds aggregate counts, a `convergence`
+decision for the flow, and `recurringIssues` (issue kinds seen in two or more frames).
+An execution error is reported as `status: "ERROR"` for that frame and does not abort
+the remaining frames. Retrieve any frame's full report with its `comparisonId`.
+
+```json
+{
+  "name": "compare_design_batch",
+  "arguments": {
+    "campaign_id": "checkout-flow",
+    "frames": [
+      { "label": "home", "design_source": "./design/home.png", "screenshot": "./screenshots/home.png" },
+      { "label": "detail", "design_source": "./design/detail.png", "screenshot": "./screenshots/detail.png" }
+    ]
+  }
+}
+```
+
 ### Discover other operations
 
 | Task | MCP tools |
 |---|---|
 | Projects | `list_projects`, `create_project`, `delete_project` |
 | Design inspection | `list_figma_frames`, `inspect_node`, `get_design_tokens` |
-| Comparison and reports | `compare_design`, `compare_animation`, `verify_fix`, `generate_diff_report` |
+| Comparison and reports | `compare_design`, `compare_design_batch`, `compare_animation`, `verify_fix`, `generate_diff_report` |
 | Focused comparison | `get_crop_region`, `set_crop_region` |
 | Intentional differences | `get_ignore_regions`, `set_ignore_regions`, `delete_ignore_region` |
 | Authentication and feedback | `set_figma_token`, `report_issue` |

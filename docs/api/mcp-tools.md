@@ -5,6 +5,7 @@ This document describes the MCP tools implemented in `app/mcp-server/src/tool/`.
 Source of truth:
 
 - `app/mcp-server/src/tool/compare-design.ts`
+- `app/mcp-server/src/tool/compare-design-batch.ts`
 - `app/mcp-server/src/tool/compare-animation.ts`
 - `app/mcp-server/src/tool/verify-fix.ts`
 - `app/mcp-server/src/tool/inspect-node.ts`
@@ -25,7 +26,7 @@ Source of truth:
 
 ## `compare_design`
 
-Primary tool. Declares an explicit `outputSchema` and returns typed `structuredContent` (as do `compare_animation`, `verify_fix`, and `report_issue`; the remaining tools return JSON text).
+Primary tool. Declares an explicit `outputSchema` and returns typed `structuredContent` (as do `compare_design_batch`, `compare_animation`, `verify_fix`, and `report_issue`; the remaining tools return JSON text).
 
 Defined in `app/mcp-server/src/tool/compare-design.ts`.
 
@@ -157,6 +158,54 @@ Tool transport details:
 - missing frame selection when the URL has no `node-id` and no `frame_name`
 - invalid persisted ignore-region YAML
 - output parse failure against `CompareDesignResultSchema`
+
+## `compare_design_batch`
+
+Compares multiple frames/screens in one call. Frames are compared sequentially in input order, each through the same engine as `compare_design`; the tool returns per-frame verdicts plus an aggregate report. Declares `outputSchema` and returns `structuredContent`.
+
+Defined in `app/mcp-server/src/tool/compare-design-batch.ts`; aggregation lives in `app/mcp-server/src/service/batch-compare-service.ts`.
+
+### Input schema
+
+```json
+{
+  "frames": "[{ label?, design_source, screenshot?, screenshot_url?, capture_device?, capture_device_serial?, capture_scroll?, capture_width?, frame_name?, comparison_conditions?, ignore_regions?, anchors?, design_background?, threshold?, profile? }] — 1..10 items, required",
+  "campaign_id": "string? (1-128 chars)",
+  "project_id": "string?",
+  "threshold": "number? 0-1 — shared default; a frame value wins",
+  "profile": "\"strict\" | \"balanced\" | \"layout\"? — shared default",
+  "design_background": "string? (#RGB or #RRGGBB) — shared default",
+  "ignore_regions": "IgnoreRegion[]? — shared default; a frame value replaces it (no merge)",
+  "anchors": "AnchorRegion[]? — shared default; a frame value replaces it (no merge)",
+  "figma_contents_only": "boolean?",
+  "figma_use_absolute_bounds": "boolean?",
+  "mask_system_ui": "boolean?",
+  "auto_mask_dynamic": "boolean?",
+  "token_diff": "boolean?",
+  "local_alignment_tolerance_px": "number? 0-10",
+  "rasterization_tolerance": "boolean?"
+}
+```
+
+Each frame must specify exactly one of `screenshot` / `screenshot_url` / `capture_device`; a frame that specifies none or more than one fails the whole call with the offending index. `label` defaults to `frame-1`, `frame-2`, ... and must be unique.
+
+### Output shape
+
+`structuredContent` is `CompareDesignBatchResultSchema`:
+
+- `totalFrames`, `passCount`, `failCount`, `uncertainCount`, `errorCount` — aggregate counts.
+- `verdict` — aggregate verdict, resolved `ERROR > FAIL > UNCERTAIN > PASS`. `ERROR` means at least one frame could not be compared, so the batch never claims PASS/FAIL for it.
+- `frames[]` — per-frame result: `index`, `label`, `status` (`PASS` / `FAIL` / `UNCERTAIN` / `ERROR`), `matchRate` (0-100, absent for `ERROR`), `diffPixelCount`, `comparisonId`, `diffImagePath`, `verdictRoute`, `loopGuard`, `remainingIssues`, `issueKinds`, `nextAction`, `error`. `diffRegions` is truncated to the top 3 by `diffPixelCount`; `totalRegionCount` / `returnedRegionCount` / `regionsTruncated` describe the truncation.
+- `comparisonIds[]` — every successful frame's `comparisonId`; pass one to `generate_diff_report` for the full report (all `diffRegions`, `diffReport`, `gridSummary`).
+- `recurringIssues[]` — issue `kind`s that appeared in two or more frames, with `frameCount`, `frameLabels`, and the observed `severities`. This is a category-level count; it does not assert the same node or cause.
+- `convergence` — flow-level decision folded from the per-frame `loopGuard`: `continue` (at least one frame can continue), `blocked` (no frame continues and at least one stopped for a non-success reason or could not be evaluated), `converged` (every evaluated frame stopped with `no-regression`), `unknown`. Lists of labels are included.
+
+### Error modes
+
+- no frames, or more than 10 frames
+- a frame with none / multiple screenshot sources, or a duplicate `label`
+- per-frame execution failure (missing file, undecodable image, network) → that frame becomes `status: "ERROR"`; the remaining frames still run
+- storage permission failure → the whole call fails with the structured storage payload
 
 ## `inspect_node`
 
@@ -791,6 +840,6 @@ Notes:
 
 ## Consumer Notes
 
-- `compare_design`, `compare_animation`, `verify_fix`, and `report_issue` declare `outputSchema` and return typed `structuredContent`.
+- `compare_design`, `compare_design_batch`, `compare_animation`, `verify_fix`, and `report_issue` declare `outputSchema` and return typed `structuredContent`.
 - The other tools return JSON text through `content[0].text`.
 - If you need runtime validation on the client side, parse the JSON text and validate it against the matching schema from `package/shared/src/schema.ts` when a shared schema exists.

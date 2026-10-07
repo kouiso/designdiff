@@ -57,6 +57,7 @@ Use MCP initialization instructions and `tools/list` for the current input schem
 | Tool | Description |
 |---|---|
 | `compare_design` | Pixel diff between Figma design and implementation screenshot |
+| `compare_design_batch` | Compare multiple frames/screens in one call, with per-frame verdicts and an aggregate report |
 | `inspect_node` | Get CSS/layout details for a Figma node (`figma_url` + optional `node_id`/`node_ids`) |
 | `compare_animation` | Compare a time-aligned sequence of frames to verify motion, not just one instant |
 | `verify_fix` | Re-run comparison after a CSS fix to confirm improvement |
@@ -80,6 +81,9 @@ Use MCP initialization instructions and `tools/list` for the current input schem
    `list_figma_frames` and `create_project`; do not guess a frame or credential.
 2. Call `compare_design` with the design source and a readable screenshot or capture
    source. Inspect the original images, comparison conditions and diff regions.
+   When a whole screen flow must be checked, call `compare_design_batch` with all frames
+   instead of looping `compare_design` yourself; the per-frame verdicts and `loopGuard`
+   are unchanged, and the aggregate `convergence`/`recurringIssues` are added.
 3. Use `inspect_node` and `get_design_tokens` to investigate the relevant node before
    editing the implementation. Keep the same `campaign_id` for the same task.
 4. Re-capture and use `verify_fix` with the previous comparison to check the claimed
