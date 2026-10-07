@@ -353,6 +353,7 @@ export const RegionScoreSchema = z.object({
           dx: z.number(),
           dy: z.number(),
           peak: z.number().min(-1).max(1),
+          clipped: z.boolean().optional(),
         })
         .optional(),
     })

@@ -192,23 +192,24 @@ export const CONTENT_OFFSET_MIN_PEAK = 0.8;
 
 const buildContentOffsetIssue = (
   regionScore: RegionScore,
-  offset: { dx: number; dy: number; peak: number } | undefined,
+  offset: { dx: number; dy: number; peak: number; clipped?: boolean } | undefined,
 ): DiffReport["issues"][number] | undefined => {
   if (!offset || offset.peak < CONTENT_OFFSET_MIN_PEAK) return undefined;
-  const magnitude = Math.max(Math.abs(offset.dx), Math.abs(offset.dy));
+  const magnitude = Math.hypot(offset.dx, offset.dy);
   if (magnitude < CONTENT_OFFSET_REPORT_PX) return undefined;
+  const severity = magnitude >= CONTENT_OFFSET_MAJOR_PX ? "major" : "minor";
   return {
     regionId: regionScore.regionId,
     bbox: regionScore.bbox,
     kind: "position",
-    severity: magnitude >= CONTENT_OFFSET_MAJOR_PX ? "major" : "minor",
+    severity,
     figmaNodeId: regionScore.figmaNodeId,
     evidence: {
       signal: "same_token_content_offset",
       value: magnitude,
-      threshold: CONTENT_OFFSET_REPORT_PX,
+      threshold: severity === "major" ? CONTENT_OFFSET_MAJOR_PX : CONTENT_OFFSET_REPORT_PX,
       expected: "0px",
-      actual: `content moved (${offset.dx}, ${offset.dy})px, correlation ${offset.peak}`,
+      actual: `content moved ${offset.clipped ? "≥ " : ""}(${offset.dx}, ${offset.dy})px, correlation ${offset.peak}`,
     },
     suggestedCssFix:
       "内容物は一致していますが位置がずれています。余白・座標・行高を確認してください。",

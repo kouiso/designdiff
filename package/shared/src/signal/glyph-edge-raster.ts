@@ -383,6 +383,8 @@ export interface ContentOffset {
   dy: number;
   // 最良オフセットでのインク分布の正規化相互相関 (-1..1)。
   peak: number;
+  // argmax が探索端に張り付いたとき true。真のずれは報告値以上の可能性がある。
+  clipped?: boolean;
 }
 
 // 前景トークンは両画像で同一色名である必要があるが、ラスタライザ差で数値は僅かに揺れる。
@@ -485,13 +487,15 @@ export const inkCoverage = (
   return coverage;
 };
 
-// ずれ量の探索幅。これを越えるずれは同一トポロジ判定 (平行移動許容 3px) と
-// halo 窓の両方から外れるため、証明済み領域では観測されない。
+// ずれ量の探索幅。真のずれがこれを越えても、領域対角で正規化するシフト許容
+// ハウスドルフでは証明が通りうる。その場合 argmax は探索端に張り付くので、
+// 推定値は下限として clipped 印を付けて返す。
 export const CONTENT_OFFSET_SEARCH_PX = 4;
 
 // 窓内のインク分布 (bg→fg 軸上の alpha) を正規化相互相関で突き合わせ、
 // screenshot 側の内容物がどれだけ平行移動しているかを推定する。AA の被覆差は
 // 相関ピークの位置を動かさず、内容物の移動だけがピークを中心から離す。
+// 窓全体の相関なので、動かなかった塊が大きい窓ではずれを過小推定する。
 export const estimateContentOffset = (
   designPixels: Uint8ClampedArray,
   screenshotPixels: Uint8ClampedArray,
@@ -589,10 +593,13 @@ export const estimateContentOffset = (
     return center + Math.max(-0.5, Math.min(0.5, (left - right) / (2 * curvature)));
   };
   const round = (value: number): number => Math.round(value * 100) / 100;
+  const clipped =
+    Math.abs(bestDx) === CONTENT_OFFSET_SEARCH_PX || Math.abs(bestDy) === CONTENT_OFFSET_SEARCH_PX;
   return {
     dx: round(refine(bestDx, scoreAt(bestDx - 1, bestDy), scoreAt(bestDx + 1, bestDy))),
     dy: round(refine(bestDy, scoreAt(bestDx, bestDy - 1), scoreAt(bestDx, bestDy + 1))),
     peak: round(best),
+    ...(clipped ? { clipped: true } : {}),
   };
 };
 

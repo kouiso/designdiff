@@ -407,4 +407,10 @@ describe("estimateContentOffset", () => {
       estimateContentOffset(canvas(SIZE, BG), canvas(SIZE, BG), SIZE, WINDOW, BG, FG, FG),
     ).toBeUndefined();
   });
+
+  it("探索端を越えるずれは下限として clipped を付ける", () => {
+    const offset = estimateContentOffset(draw(0, 0), draw(5, 0), SIZE, WINDOW, BG, FG, FG);
+    expect(offset?.dx).toBeCloseTo(4, 0);
+    expect(offset?.clipped).toBe(true);
+  });
 });

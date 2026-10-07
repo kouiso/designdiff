@@ -1666,6 +1666,21 @@ describe("rasterization_tolerance による同一トークン採点 (designdiff#
 
       expect(offsetIssues(result).map((issue) => issue.severity)).toEqual(["major"]);
     });
+
+    it("探索端に達したずれは下限として報告する", async () => {
+      const result = await compareShift(4);
+
+      const offset = result.regionScores[0].sameTokenRasterization?.contentOffset;
+      expect(offset?.clipped).toBe(true);
+      expect(offsetIssues(result)).toEqual([
+        expect.objectContaining({
+          severity: "major",
+          evidence: expect.objectContaining({
+            actual: expect.stringContaining("≥"),
+          }),
+        }),
+      ]);
+    });
   });
 
   it("未指定では分類証拠を残したまま従来どおり FAIL を維持する", async () => {
