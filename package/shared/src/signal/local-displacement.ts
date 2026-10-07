@@ -34,8 +34,13 @@ const MAX_STRONG_MISMATCH_RATIO = 0.01;
 const MAX_ALIGNED_REGION_DELTA_E = 2;
 // 平行移動で差分の大半が消えることを要求する (誤差の半分以上を説明する)。
 const MIN_EXPLAINED_FRACTION = 0.5;
-// 画素を舐める回数の上限。細い領域なら長辺 2000px 程度まで収まる。
-const MAX_WINDOW_AREA = 20000;
+// 整列後に残る別色画素の連結成分の上限。AA の取りこぼしは縁の1-2画素に
+// 孤立して出るが、線の一部欠落・別色の差し込みは線に沿って連なる。窓全体の
+// 割合だけで判定すると長い線ほど欠落が薄まって見逃すため、塊の大きさで切る。
+const MAX_RESIDUAL_COMPONENT_PX = 2;
+// 走査コストの上限 (49 オフセット × 窓面積)。4K 幅の全幅 5px 線
+// (3846 × 11 ≒ 42k) を含められる大きさにする。
+const MAX_WINDOW_AREA = 120000;
 
 export interface LocalDisplacementEvidence {
   classification: "local-displacement";
@@ -152,6 +157,81 @@ const regionMeanDeltaE = (
   return count === 0 ? 0 : sum / count;
 };
 
+const buildResidualMask = (
+  design: Uint8ClampedArray,
+  screenshot: Uint8ClampedArray,
+  width: number,
+  window: Window,
+  dx: number,
+  dy: number,
+  ignoreMask?: Uint8Array,
+): Uint8Array => {
+  const w = window.right - window.left;
+  const h = window.bottom - window.top;
+  const residual = new Uint8Array(w * h);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const designIndex = (window.top + y) * width + window.left + x;
+      const screenshotIndex = designIndex + dy * width + dx;
+      const masked =
+        ignoreMask !== undefined &&
+        (ignoreMask[designIndex] === 1 || ignoreMask[screenshotIndex] === 1);
+      if (
+        !masked &&
+        channelDelta(design, screenshot, designIndex, screenshotIndex) > STRONG_MISMATCH_CHANNEL
+      ) {
+        residual[y * w + x] = 1;
+      }
+    }
+  }
+  return residual;
+};
+
+// mask の start から 8 連結で塗りつぶし、塗った画素数を返す (塗った画素は 2 にする)。
+const fillComponent = (mask: Uint8Array, w: number, h: number, start: number): number => {
+  const stack = [start];
+  mask[start] = 2;
+  let size = 0;
+  while (stack.length > 0) {
+    const index = stack.pop() ?? start;
+    size += 1;
+    const cx = index % w;
+    const cy = (index - cx) / w;
+    for (let ny = Math.max(0, cy - 1); ny <= Math.min(h - 1, cy + 1); ny++) {
+      for (let nx = Math.max(0, cx - 1); nx <= Math.min(w - 1, cx + 1); nx++) {
+        const neighbor = ny * w + nx;
+        if (mask[neighbor] === 1) {
+          mask[neighbor] = 2;
+          stack.push(neighbor);
+        }
+      }
+    }
+  }
+  return size;
+};
+
+// 整列後も別色のまま残る画素を 8 連結でまとめ、最大の塊の画素数を返す。
+const largestResidualComponent = (
+  design: Uint8ClampedArray,
+  screenshot: Uint8ClampedArray,
+  width: number,
+  window: Window,
+  dx: number,
+  dy: number,
+  ignoreMask?: Uint8Array,
+): number => {
+  const w = window.right - window.left;
+  const h = window.bottom - window.top;
+  const residual = buildResidualMask(design, screenshot, width, window, dx, dy, ignoreMask);
+  let largest = 0;
+  for (let start = 0; start < residual.length; start++) {
+    if (residual[start] === 1) {
+      largest = Math.max(largest, fillComponent(residual, w, h, start));
+    }
+  }
+  return largest;
+};
+
 interface BestOffset {
   dx: number;
   dy: number;
@@ -226,6 +306,24 @@ export const classifyLocalDisplacement = (
   ignoreMask?: Uint8Array,
   maxShiftPx: number = LOCAL_DISPLACEMENT_MAX_SHIFT_PX,
 ): LocalDisplacementEvidence | undefined => {
+  if (
+    !Number.isSafeInteger(maxShiftPx) ||
+    maxShiftPx < 1 ||
+    maxShiftPx > LOCAL_DISPLACEMENT_MAX_SHIFT_PX
+  ) {
+    throw new RangeError(
+      `classifyLocalDisplacement: maxShiftPx must be an integer in 1..${LOCAL_DISPLACEMENT_MAX_SHIFT_PX}`,
+    );
+  }
+  if (
+    designPixels.length !== width * height * 4 ||
+    screenshotPixels.length !== width * height * 4
+  ) {
+    throw new Error("classifyLocalDisplacement: image data length must equal width * height * 4");
+  }
+  if (ignoreMask !== undefined && ignoreMask.length !== width * height) {
+    throw new Error("classifyLocalDisplacement: ignoreMask length must equal width * height");
+  }
   const region: Window = {
     left: Math.max(0, Math.floor(bbox.x)),
     top: Math.max(0, Math.floor(bbox.y)),
@@ -275,7 +373,16 @@ export const classifyLocalDisplacement = (
   const strongMismatchRatio = best.score.strong / best.score.count;
   if (
     bestMean > baselineMean * (1 - MIN_EXPLAINED_FRACTION) ||
-    strongMismatchRatio > MAX_STRONG_MISMATCH_RATIO
+    strongMismatchRatio > MAX_STRONG_MISMATCH_RATIO ||
+    largestResidualComponent(
+      designPixels,
+      screenshotPixels,
+      width,
+      window,
+      best.dx,
+      best.dy,
+      ignoreMask,
+    ) > MAX_RESIDUAL_COMPONENT_PX
   ) {
     return undefined;
   }

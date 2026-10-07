@@ -144,4 +144,56 @@ describe("classifyLocalDisplacement", () => {
       classifyLocalDisplacement(design, screenshot, WIDTH, HEIGHT, { x: 20, y: 20, w: 21, h: 20 }),
     ).toBeUndefined();
   });
+
+  it("長い線の一部が欠けている差分は、線全体がずれていても証明しない", () => {
+    // 長い線ほど欠落が窓全体の割合では薄まる。欠落は線に沿って連なるので
+    // 残差の塊の大きさで弾けることを確かめる。
+    const width = 1100;
+    const height = 20;
+    const make = (): Uint8ClampedArray => new Uint8ClampedArray(width * height * 4).fill(255);
+    const line = (pixels: Uint8ClampedArray, x0: number, x1: number, y: number): void => {
+      for (let x = x0; x < x1; x++) pixels.set([...GRAY_BORDER, 255], (y * width + x) * 4);
+    };
+    const design = make();
+    const screenshot = make();
+    line(design, 50, 1050, 8);
+    line(screenshot, 50, 500, 10);
+    line(screenshot, 510, 1050, 10);
+    const bbox = { x: 50, y: 8, w: 1000, h: 3 };
+
+    expect(classifyLocalDisplacement(design, screenshot, width, height, bbox)).toBeUndefined();
+
+    // 欠落が無ければ同じ線は証明できる (欠落以外の条件で落ちていないことの確認)。
+    line(screenshot, 500, 510, 10);
+    expect(classifyLocalDisplacement(design, screenshot, width, height, bbox)).toMatchObject({
+      dx: 0,
+      dy: 2,
+    });
+  });
+
+  it("4K 幅の全幅区切り線も証明の対象にする", () => {
+    const width = 3840;
+    const height = 16;
+    const design = new Uint8ClampedArray(width * height * 4).fill(255);
+    const screenshot = new Uint8ClampedArray(width * height * 4).fill(255);
+    for (let x = 0; x < width; x++) {
+      design.set([...BORDER, 255], (6 * width + x) * 4);
+      screenshot.set([...BORDER, 255], (7 * width + x) * 4);
+    }
+
+    expect(
+      classifyLocalDisplacement(design, screenshot, width, height, { x: 0, y: 6, w: width, h: 2 }),
+    ).toMatchObject({ dx: 0, dy: 1 });
+  });
+
+  it("探索幅が整数 1..3 以外なら走査せずに例外にする", () => {
+    const design = canvas();
+    const screenshot = canvas();
+    const bbox = { x: 10, y: 10, w: 10, h: 1 };
+    for (const maxShift of [0, 4, 1.5, Number.POSITIVE_INFINITY, Number.NaN]) {
+      expect(() =>
+        classifyLocalDisplacement(design, screenshot, WIDTH, HEIGHT, bbox, undefined, maxShift),
+      ).toThrow(RangeError);
+    }
+  });
 });
