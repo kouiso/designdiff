@@ -55,13 +55,16 @@ const server = createServer(async (req, res) => {
   }
   if (url.pathname === "/" || url.pathname === "/host.html") {
     res.writeHead(200, { "content-type": "text/html" }).end(`<!DOCTYPE html>
-<html><body>
+<html><body style="margin:24px;font-family:sans-serif;background:#edf2f7">
+<h2>Figma plugin contract harness</h2>
+<p>Synthetic host, actual plugin UI bundle. Not a live Figma session.</p>
 <script>
 window.__received = [];
 window.__dialogs = [];
 const iframe = document.createElement("iframe");
 iframe.id = "plugin";
 iframe.src = "/ui.html";
+iframe.style.cssText = "width:480px;height:640px;border:1px solid #bcc8d6;background:white";
 document.body.appendChild(iframe);
 window.addEventListener("message", (event) => {
   if (event.source === iframe.contentWindow && event.data && event.data.pluginMessage) {
@@ -105,9 +108,18 @@ const pageErrors = [];
 const consoleErrors = [];
 const dialogs = [];
 let browser;
+let context;
+let video;
+let completed = false;
+let failureMessage = null;
 try {
   browser = await chromium.launch();
-  const page = await browser.newPage();
+  context = await browser.newContext({
+    viewport: { width: 760, height: 820 },
+    recordVideo: { dir: evidence, size: { width: 760, height: 820 } },
+  });
+  const page = await context.newPage();
+  video = page.video();
   page.on("pageerror", (error) => pageErrors.push(String(error)));
   page.on("console", (msg) => {
     if (msg.type() === "error") consoleErrors.push(msg.text());
@@ -121,12 +133,19 @@ try {
   const frame = page.frameLocator("#plugin");
   await frame.locator(".tab").first().waitFor();
 
-  const lastReceived = () => page.evaluate(() => window.__received.at(-1));
   const send = (msg) => page.evaluate((m) => window.__send(m), msg);
-  const waitForRequest = async (type) => {
+  const waitForRequest = async (type, trigger) => {
+    // click 完了前に postMessage が届くため、操作後に件数を記録すると応答を取り逃す。
     const before = await page.evaluate(() => window.__received.length);
-    await page.waitForFunction((count) => window.__received.length > count, before);
-    const message = await lastReceived();
+    await trigger();
+    await page.waitForFunction(
+      ({ count, type }) => window.__received.slice(count).some((message) => message.type === type),
+      { count: before, type },
+    );
+    const message = await page.evaluate(
+      ({ count, type }) => window.__received.slice(count).find((message) => message.type === type),
+      { count: before, type },
+    );
     assert.equal(message?.type, type);
     return message;
   };
@@ -139,8 +158,9 @@ try {
     nodes: [{ id: "7:7", name: "Hero", type: "FRAME", width: 120, height: 60 }],
   });
   await frame.locator(".tab", { hasText: "Inspect" }).click();
-  await frame.locator(".btn", { hasText: "Inspect: Hero" }).click();
-  const inspectRequest = await waitForRequest("inspect-node");
+  const inspectRequest = await waitForRequest("inspect-node", () =>
+    frame.locator(".btn", { hasText: "Inspect: Hero" }).click(),
+  );
   assert.equal(inspectRequest.type, "inspect-node");
   assert.equal(inspectRequest.nodeId, "7:7");
   assert.match(inspectRequest.requestId, /^inspect-node-\d+$/);
@@ -168,8 +188,9 @@ try {
   assertions.push({ name: "一致 requestId の応答で結果描画", ok: true });
 
   const timeoutDialog = page.waitForEvent("dialog", { timeout: 15000 });
-  await frame.locator(".btn", { hasText: "Inspect: Hero" }).click();
-  const secondRequest = await waitForRequest("inspect-node");
+  const secondRequest = await waitForRequest("inspect-node", () =>
+    frame.locator(".btn", { hasText: "Inspect: Hero" }).click(),
+  );
   assert.match(secondRequest.requestId, /^inspect-node-\d+$/);
   assert.notEqual(secondRequest.requestId, inspectRequest.requestId);
   const timeoutText = (await timeoutDialog).message();
@@ -183,8 +204,9 @@ try {
   await frame.locator("#dropzone").click();
   await (await chooserPromise).setFiles(redPng);
   await frame.locator(".btn", { hasText: "Compare" }).waitFor();
-  await frame.locator(".btn", { hasText: "Compare" }).click();
-  const exportRequest = await waitForRequest("export-frame");
+  const exportRequest = await waitForRequest("export-frame", () =>
+    frame.locator(".btn", { hasText: "Compare" }).click(),
+  );
   assert.equal(exportRequest.type, "export-frame");
   assert.equal(exportRequest.nodeId, "7:7");
   assert.match(exportRequest.requestId, /^export-frame-\d+$/);
@@ -206,6 +228,23 @@ try {
     statsText,
   });
 
+  // 修正後の入力はデザインと同じ PNG bytes。製品の一致率に依存せず元入力の同一性を確認する。
+  const correctedChooser = page.waitForEvent("filechooser");
+  await frame.locator("#dropzone").click();
+  await (await correctedChooser).setFiles(bluePng);
+  const correctedRequest = await waitForRequest("export-frame", () =>
+    frame.locator(".btn", { hasText: "Compare" }).click(),
+  );
+  assert.notEqual(correctedRequest.requestId, exportRequest.requestId);
+  assert.equal((await readFile(bluePng)).toString("base64"), blueBase64);
+  await send({ type: "export-result", requestId: correctedRequest.requestId, base64: blueBase64 });
+  await frame
+    .locator(".section .value")
+    .last()
+    .filter({ hasText: /^0\s*\/\s*4$/ })
+    .waitFor();
+  assertions.push({ name: "修正済み入力の再比較で既知の4画素差が解消", ok: true });
+
   const postBuild = await treeDigest();
   assert.equal(postBuild.digest, preBuild.digest);
   assert.deepEqual(pageErrors, []);
@@ -213,7 +252,17 @@ try {
   assertions.push({ name: "build digest 不変・page/console error 0", ok: true });
 
   await page.screenshot({ path: join(evidence, "final-state.png"), fullPage: true });
+  completed = true;
+} catch (error) {
+  failureMessage = error instanceof Error ? error.message : String(error);
+  throw error;
 } finally {
+  try {
+    await context?.close();
+    if (video) await video.saveAs(join(evidence, "plugin-compare-correction.webm"));
+  } finally {
+    await browser?.close();
+  }
   const postBuild = await treeDigest();
   const artifactFiles = (await collectFiles(evidence)).sort();
   const manifest = {
@@ -224,15 +273,17 @@ try {
     dialogs,
     pageErrors,
     consoleErrors,
+    completed,
+    failureMessage,
     evidenceFiles: artifactFiles.map((f) => basename(f)),
     results: {
       X03: {
-        status: "PASS",
-        expected: "選択・export・compare・inspect が sandbox↔iframe 実通信で動く",
+        status: completed ? "PASS" : "FAIL",
+        expected: "実UI bundle と合成hostの postMessage で選択・export・compare・inspect が動く",
         actual: assertions.filter((a) => /inspect|export|canvas|描画|タブ/.test(a.name)),
       },
       X04: {
-        status: "PASS",
+        status: completed ? "PASS" : "FAIL",
         expected: "未応答・stale応答など通信失敗から復旧できる",
         actual: assertions.filter((a) => /timeout|stale|error/i.test(a.name)),
       },
@@ -240,7 +291,6 @@ try {
     note: "実 Chromium iframe + 実 dist bundle の検証。実 Figma ホスト・実 sandbox code.js 連携の代替証拠ではない。",
   };
   await writeFile(join(evidence, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`);
-  await browser?.close();
   server.close();
 }
 
