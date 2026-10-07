@@ -370,6 +370,19 @@ export interface SameTokenRasterEvidence {
   // 証明に使ったインク量差の上限。トポロジ強一致の窓では緩和閾値になるので
   // 発行する診断の threshold にはこの値を使う。
   inkLimit: number;
+  // 4拘束はどれも平行移動に不変なので、証明は「同じ内容物が数pxずれた」
+  // 配置まで通す。実測の Figma 正本 vs 実機撮影では目視で受け入れ済みの
+  // 画面でも 3-4px の局所ずれが普通に出るため、ずれ量で証明を落とすと
+  // 受け入れ済み画面が FAIL に戻る。証明は維持し、ずれ量を証拠として残す。
+  contentOffset?: ContentOffset;
+}
+
+export interface ContentOffset {
+  // screenshot 側の内容物が design 側から (dx, dy) だけ動いている。
+  dx: number;
+  dy: number;
+  // 最良オフセットでのインク分布の正規化相互相関 (-1..1)。
+  peak: number;
 }
 
 // 前景トークンは両画像で同一色名である必要があるが、ラスタライザ差で数値は僅かに揺れる。
@@ -470,6 +483,117 @@ export const inkCoverage = (
     }
   }
   return coverage;
+};
+
+// ずれ量の探索幅。これを越えるずれは同一トポロジ判定 (平行移動許容 3px) と
+// halo 窓の両方から外れるため、証明済み領域では観測されない。
+export const CONTENT_OFFSET_SEARCH_PX = 4;
+
+// 窓内のインク分布 (bg→fg 軸上の alpha) を正規化相互相関で突き合わせ、
+// screenshot 側の内容物がどれだけ平行移動しているかを推定する。AA の被覆差は
+// 相関ピークの位置を動かさず、内容物の移動だけがピークを中心から離す。
+export const estimateContentOffset = (
+  designPixels: Uint8ClampedArray,
+  screenshotPixels: Uint8ClampedArray,
+  width: number,
+  window: RasterWindow,
+  background: readonly number[],
+  designForeground: readonly number[],
+  screenshotForeground: readonly number[],
+  ignoreMask?: Uint8Array,
+): ContentOffset | undefined => {
+  const w = window.right - window.left;
+  const h = window.bottom - window.top;
+  const design = new Float64Array(w * h);
+  const shot = new Float64Array(w * h);
+  const valid = new Uint8Array(w * h);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const index = (window.top + y) * width + window.left + x;
+      if (ignoreMask?.[index]) continue;
+      const i = y * w + x;
+      valid[i] = 1;
+      design[i] = blendAlphaAndResidual(
+        colorAt(designPixels, index),
+        background,
+        designForeground,
+      ).alpha;
+      shot[i] = blendAlphaAndResidual(
+        colorAt(screenshotPixels, index),
+        background,
+        screenshotForeground,
+      ).alpha;
+    }
+  }
+
+  const span = CONTENT_OFFSET_SEARCH_PX * 2 + 1;
+  const scores = new Float64Array(span * span).fill(Number.NaN);
+  const correlate = (dx: number, dy: number): number => {
+    let count = 0;
+    let sumD = 0;
+    let sumS = 0;
+    let sumDD = 0;
+    let sumSS = 0;
+    let sumDS = 0;
+    for (let y = Math.max(0, -dy); y < Math.min(h, h - dy); y++) {
+      for (let x = Math.max(0, -dx); x < Math.min(w, w - dx); x++) {
+        const i = y * w + x;
+        const j = (y + dy) * w + x + dx;
+        if (!valid[i] || !valid[j]) continue;
+        const d = design[i];
+        const s = shot[j];
+        count++;
+        sumD += d;
+        sumS += s;
+        sumDD += d * d;
+        sumSS += s * s;
+        sumDS += d * s;
+      }
+    }
+    if (count < 4) return Number.NaN;
+    const varD = sumDD - (sumD * sumD) / count;
+    const varS = sumSS - (sumS * sumS) / count;
+    if (varD <= 1e-9 || varS <= 1e-9) return Number.NaN;
+    return (sumDS - (sumD * sumS) / count) / Math.sqrt(varD * varS);
+  };
+
+  let best = Number.NEGATIVE_INFINITY;
+  let bestDx = 0;
+  let bestDy = 0;
+  for (let dy = -CONTENT_OFFSET_SEARCH_PX; dy <= CONTENT_OFFSET_SEARCH_PX; dy++) {
+    for (let dx = -CONTENT_OFFSET_SEARCH_PX; dx <= CONTENT_OFFSET_SEARCH_PX; dx++) {
+      const score = correlate(dx, dy);
+      scores[(dy + CONTENT_OFFSET_SEARCH_PX) * span + dx + CONTENT_OFFSET_SEARCH_PX] = score;
+      if (Number.isNaN(score)) continue;
+      // 同点なら小さい移動を採る。移動ゼロで説明できるものを動いたとは言わない。
+      const closer = dx * dx + dy * dy < bestDx * bestDx + bestDy * bestDy;
+      if (score > best + 1e-12 || (Math.abs(score - best) <= 1e-12 && closer)) {
+        best = score;
+        bestDx = dx;
+        bestDy = dy;
+      }
+    }
+  }
+  if (!Number.isFinite(best)) return undefined;
+
+  const scoreAt = (dx: number, dy: number): number =>
+    Math.abs(dx) > CONTENT_OFFSET_SEARCH_PX || Math.abs(dy) > CONTENT_OFFSET_SEARCH_PX
+      ? Number.NaN
+      : scores[(dy + CONTENT_OFFSET_SEARCH_PX) * span + dx + CONTENT_OFFSET_SEARCH_PX];
+  // 整数ピークの両隣で放物線を当ててサブピクセルに詰める。両隣が測れない
+  // (探索端・評価不能) ときは整数値のまま返す。
+  const refine = (center: number, left: number, right: number): number => {
+    if (Number.isNaN(left) || Number.isNaN(right)) return center;
+    const curvature = left - 2 * best + right;
+    if (curvature >= -1e-9) return center;
+    return center + Math.max(-0.5, Math.min(0.5, (left - right) / (2 * curvature)));
+  };
+  const round = (value: number): number => Math.round(value * 100) / 100;
+  return {
+    dx: round(refine(bestDx, scoreAt(bestDx - 1, bestDy), scoreAt(bestDx + 1, bestDy))),
+    dy: round(refine(bestDy, scoreAt(bestDx, bestDy - 1), scoreAt(bestDx, bestDy + 1))),
+    peak: round(best),
+  };
 };
 
 export const countChangedPixels = (
@@ -575,6 +699,17 @@ const classifySameTokenRasterizationAtHalo = (
   );
   if (changedPixelCount === 0) return undefined;
 
+  const contentOffset = estimateContentOffset(
+    designPixels,
+    screenshotPixels,
+    width,
+    window,
+    background,
+    designForeground,
+    screenshotForeground,
+    ignoreMask,
+  );
+
   return {
     classification: "same-token-rasterization",
     changedPixelCount,
@@ -582,6 +717,7 @@ const classifySameTokenRasterizationAtHalo = (
     foregroundHex: toHex(designForeground),
     inkCoverageDelta: inkDelta,
     inkLimit,
+    ...(contentOffset ? { contentOffset } : {}),
   };
 };
 
