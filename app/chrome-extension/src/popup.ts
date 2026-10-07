@@ -37,6 +37,9 @@ export interface PopupState {
   error: string | null;
   tokenInput: string;
   hasToken: boolean;
+  // Capture & Compare の実行中フラグ。多重実行を防ぎ、失敗時の再試行可否の
+  // 判定にも使うため、成功・失敗を問わず必ず false に戻す。
+  comparing: boolean;
 }
 
 export const state: PopupState = {
@@ -57,6 +60,7 @@ export const state: PopupState = {
   error: null,
   tokenInput: "",
   hasToken: false,
+  comparing: false,
 };
 
 // =============================================================================
@@ -106,6 +110,15 @@ export function renderTabs(): HTMLDivElement {
   return wrapper;
 }
 
+// タブごとに同じ見た目のエラー表示を置くための共通要素。Figma タブだけに置くと
+// Upload タブ由来の失敗 (capture 等) がユーザーに一切見えなくなるため、両タブで使う。
+function renderErrorElement(): HTMLDivElement {
+  const errEl = div("error");
+  errEl.textContent = state.error;
+  errEl.style.cssText = "color:#E53935;font-size:11px;margin-top:4px;";
+  return errEl;
+}
+
 // --- Figma Tab ---
 
 export function renderFigmaTab(): HTMLDivElement {
@@ -134,10 +147,7 @@ export function renderFigmaTab(): HTMLDivElement {
   section.appendChild(fetchBtn);
 
   if (state.error) {
-    const errEl = div("error");
-    errEl.textContent = state.error;
-    errEl.style.cssText = "color:#E53935;font-size:11px;margin-top:4px;";
-    section.appendChild(errEl);
+    section.appendChild(renderErrorElement());
   }
 
   if (state.frames.length > 0) {
@@ -223,6 +233,12 @@ export function renderUploadTab(): HTMLDivElement {
       reader.readAsDataURL(file);
     });
     section.appendChild(fileInput);
+  }
+
+  // capture / overlay の失敗は Upload タブでも必ず見せる。ここに置かないと
+  // 失敗が「何も起きなかった」ようにしか映らず、再試行の判断ができない。
+  if (state.error) {
+    section.appendChild(renderErrorElement());
   }
 
   return section;
@@ -340,7 +356,13 @@ export function renderCompareSection(): HTMLDivElement {
   const section = div("section");
   section.style.marginTop = "8px";
 
-  const compareBtn = button("btn btn-primary", "Capture & Compare");
+  // 比較中は多重実行を防ぐ。失敗経路でも comparing は必ず戻るため、
+  // 失敗後にすぐ再試行できる。
+  const compareBtn = button(
+    "btn btn-primary",
+    state.comparing ? "Comparing..." : "Capture & Compare",
+  );
+  compareBtn.disabled = state.comparing;
   compareBtn.addEventListener("click", () => {
     captureAndCompare().catch(console.error);
   });
@@ -501,57 +523,75 @@ export async function sendOpacityUpdate(opacity: number): Promise<void> {
   await sendToActiveTab(message);
 }
 
+// capture 失敗時の行動可能な案内文。失敗理由だけでなく、権限を得て再試行する
+// 手順まで伝えないと、ユーザーが次の一手を選べない。
+export function formatCaptureFailure(detail: string): string {
+  return `Could not capture the page (${detail}). Click the PixelRay toolbar icon on the page you want to compare, then try again.`;
+}
+
 export async function captureAndCompare(): Promise<void> {
   if (!state.designBase64) return;
 
   const overlayWasActive = state.overlayActive;
-  if (overlayWasActive && !(await hideOverlayOnPage())) {
-    return;
-  }
+  // 比較中はボタンを Comparing... にして多重実行を防ぐ。どの経路で抜けても
+  // finally で戻さないと、一度の失敗で永久に再試行できなくなる。
+  state.comparing = true;
+  render();
+  try {
+    if (overlayWasActive && !(await hideOverlayOnPage())) {
+      // hide 失敗の理由は hideOverlayOnPage が state.error に載せている。
+      return;
+    }
 
-  const captureRes = await sendToBackground<{ dataUrl?: string; error?: string }>({
-    type: "capture-screenshot",
-  });
+    const captureRes = await sendToBackground<{ dataUrl?: string; error?: string }>({
+      type: "capture-screenshot",
+    });
 
-  if (captureRes.error || !captureRes.dataUrl) {
-    const captureError = captureRes.error ?? "Screenshot failed";
-    if (overlayWasActive) await showOverlayOnPage();
-    state.error = captureError;
-    render();
-    return;
-  }
+    if (captureRes.error || !captureRes.dataUrl) {
+      // capture 失敗がこの操作の主原因。オーバーレイ再表示が state.error を
+      // 上書き/消去するため、再表示の後に設定して必ずユーザーに見せる。
+      const captureError = formatCaptureFailure(captureRes.error ?? "Screenshot failed");
+      if (overlayWasActive) await showOverlayOnPage();
+      state.error = captureError;
+      return;
+    }
 
-  state.screenshotBase64 = captureRes.dataUrl;
+    state.screenshotBase64 = captureRes.dataUrl;
 
-  const img = new Image();
-  await new Promise<void>((resolve, reject) => {
-    img.onload = () => resolve();
-    img.onerror = () => reject(new Error("Failed to load captured screenshot"));
-    img.src = captureRes.dataUrl ?? "";
-  });
+    const img = new Image();
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve();
+      img.onerror = () => reject(new Error("Failed to load captured screenshot"));
+      img.src = captureRes.dataUrl ?? "";
+    });
 
-  const response = await sendToBackground<CompareResponse>({
-    type: "compare",
-    designBase64: state.designBase64,
-    screenshotBase64: state.screenshotBase64,
-    width: img.naturalWidth,
-    height: img.naturalHeight,
-  });
+    const response = await sendToBackground<CompareResponse>({
+      type: "compare",
+      designBase64: state.designBase64,
+      screenshotBase64: state.screenshotBase64,
+      width: img.naturalWidth,
+      height: img.naturalHeight,
+    });
 
-  if (response.error) {
-    state.error = response.error;
-  } else {
+    if (response.error) {
+      // capture と同じく、オーバーレイ復帰でエラーが消えないよう後に設定する。
+      if (state.overlayActive || state.designBase64) await showOverlayOnPage();
+      state.error = response.error;
+      return;
+    }
+
     state.matchRate = response.matchRate ?? null;
     state.diffPixelCount = response.diffPixelCount ?? 0;
     state.totalPixelCount = response.totalPixelCount ?? 0;
     state.regions = response.regions ?? [];
-  }
 
-  if (state.overlayActive || state.designBase64) {
-    await showOverlayOnPage();
+    if (state.overlayActive || state.designBase64) {
+      await showOverlayOnPage();
+    }
+  } finally {
+    state.comparing = false;
+    render();
   }
-
-  render();
 }
 
 export async function handleSaveToken(): Promise<void> {

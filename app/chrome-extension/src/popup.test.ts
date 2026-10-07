@@ -445,25 +445,27 @@ describe("captureAndCompare", () => {
     );
   });
 
-  it("スクリーンショット失敗 → error に載せる", async () => {
+  it("スクリーンショット失敗 → 行動可能な案内を error に載せる", async () => {
     backgroundResponses.set("capture-screenshot", { error: "Cannot capture" });
     const popup = await loadPopup();
     popup.state.designBase64 = TINY_PNG;
 
     await popup.captureAndCompare();
 
-    expect(popup.state.error).toBe("Cannot capture");
+    // 失敗理由だけでなく再試行の手順まで含めて、次の一手が選べる文言にする。
+    expect(popup.state.error).toBe(popup.formatCaptureFailure("Cannot capture"));
+    expect(popup.state.error).toContain("Could not capture the page");
     expect(popup.state.matchRate).toBeNull();
   });
 
-  it("dataUrl が空なら Screenshot failed とする", async () => {
+  it("dataUrl が空なら Screenshot failed を案内に含める", async () => {
     backgroundResponses.set("capture-screenshot", {});
     const popup = await loadPopup();
     popup.state.designBase64 = TINY_PNG;
 
     await popup.captureAndCompare();
 
-    expect(popup.state.error).toBe("Screenshot failed");
+    expect(popup.state.error).toBe(popup.formatCaptureFailure("Screenshot failed"));
   });
 
   it("表示中オーバーレイは撮影前に隠し、比較後に戻す", async () => {
@@ -503,14 +505,15 @@ describe("captureAndCompare", () => {
     await expect(popup.captureAndCompare()).rejects.toThrow("Failed to load captured screenshot");
   });
 
-  it("compare がエラー → 比較結果を取り込まない", async () => {
+  it("compare がエラー → 結果を取り込まず失敗理由を残す", async () => {
     const popup = await setupCompare();
     backgroundResponses.set("compare", { error: "size mismatch" });
 
     await popup.captureAndCompare();
 
-    // compare 後にオーバーレイを描き直す経路が state.error を null に戻すため、
-    // ここで観測できるのは「結果が入っていない」ことだけ。
+    // オーバーレイ復帰でエラーが消えることはもう無い。失敗理由が残って
+    // 初めてユーザーは次の一手を選べる。
+    expect(popup.state.error).toBe("size mismatch");
     expect(popup.state.matchRate).toBeNull();
     expect(popup.state.diffPixelCount).toBe(0);
   });
@@ -570,6 +573,64 @@ describe("captureAndCompare", () => {
     await flush();
 
     expect(popup.state.matchRate).toBe(100);
+  });
+
+  it("Upload タブで capture 失敗が行動可能なエラーとして見え、再試行できる", async () => {
+    backgroundResponses.set("capture-screenshot", { error: "activeTab permission denied" });
+    const popup = await loadPopup();
+    popup.state.designBase64 = TINY_PNG;
+    popup.state.tab = "upload";
+    popup.render();
+
+    buttonByText("Capture & Compare").click();
+    await flush();
+
+    // Upload タブに失敗が見えないと、ユーザーには何も起きなかったように映る。
+    const errorEl = document.querySelector("#app .error");
+    expect(errorEl).toBeInstanceOf(HTMLElement);
+    expect(errorEl?.textContent).toBe(popup.formatCaptureFailure("activeTab permission denied"));
+    expect(errorEl?.textContent).toContain("try again");
+    // 比較中の表示に留まらず、ボタンが戻っていれば再試行できる。
+    expect(popup.state.comparing).toBe(false);
+    const retryBtn = buttonByText("Capture & Compare");
+    expect(retryBtn.disabled).toBe(false);
+
+    // 再試行: capture が通る状況になれば、同じ操作で結果まで進む。
+    backgroundResponses.set("capture-screenshot", { dataUrl: TINY_PNG });
+    backgroundResponses.set("compare", {
+      matchRate: 94.2,
+      diffPixelCount: 580,
+      totalPixelCount: 10000,
+      regions: [],
+    });
+    retryBtn.click();
+    await flush();
+
+    expect(popup.state.error).toBeNull();
+    expect(popup.state.matchRate).toBe(94.2);
+    expect(document.querySelector("#app .match-rate")?.textContent).toBe("94.2%");
+  });
+
+  it("比較中はボタンが無効になり、完了で戻る", async () => {
+    const popup = await setupCompare();
+    backgroundResponses.set("compare", {
+      matchRate: 100,
+      diffPixelCount: 0,
+      totalPixelCount: 100,
+      regions: [],
+    });
+    popup.state.tab = "upload";
+    popup.render();
+
+    buttonByText("Capture & Compare").click();
+    // captureAndCompare は最初の await 前に comparing を立てて再描画するため、
+    // 同期クリックの直後には Comparing... が見える。
+    expect(buttonByText("Comparing...").disabled).toBe(true);
+
+    await flush();
+
+    expect(buttonByText("Capture & Compare").disabled).toBe(false);
+    expect(popup.state.comparing).toBe(false);
   });
 });
 

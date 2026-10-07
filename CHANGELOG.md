@@ -23,6 +23,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ### Fixed
 
+- Chrome extension popup: `Capture & Compare` failures (for example `captureVisibleTab` blocked without `activeTab`) are now shown as an actionable error on the Upload tab instead of being silently swallowed; the button shows a `Comparing...` state while running and is re-enabled for retry, and `real-chrome-e2e.mjs` now fails on any invisible compare outcome instead of recording `no-visible-result`.
 - `report_issue` context footer now reads the figdiff version from `app/mcp-server/package.json` at runtime instead of the hardcoded `0.1.0`, falling back to `unknown` when the package metadata is unreadable.
 
 ## [2.0.0] - 2026-04-18
