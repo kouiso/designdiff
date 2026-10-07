@@ -503,7 +503,9 @@ const OFFSET_ALIAS_RATIO = 0.5;
 // 別極大が見つからなくても窓内コンテンツ自体が強周期を持つならずれ量は
 // 周期の剰余でしか決まらない。エイリアス対が両方探索幅の外に逃げると
 // 別極大が存在しないため、design 同士の自己相関でも周期を検出する。
-const OFFSET_PERIODIC_MIN = 0.85;
+// エイリアス強度は自己相関に比例するので、検出閾値は issue 発火側の
+// 相関閾値 (0.8) より下に置かないと発火しうる周期抜けが残る。
+const OFFSET_PERIODIC_MIN = 0.75;
 
 const isLocalMaxInGrid = (scores: Float64Array, dx: number, dy: number): boolean => {
   const span = CONTENT_OFFSET_SEARCH_PX * 2 + 1;
@@ -578,6 +580,16 @@ const findPeriodicLag = (
   for (let t = shortY + 1; t <= spanY; t++) {
     if (isStrictSelfMax(selfAt, 0, t) || isStrictSelfMax(selfAt, 0, -t)) return true;
   }
+  const diagSpan = Math.min(spanX, spanY);
+  for (let t = Math.min(shortX, shortY) + 1; t <= diagSpan; t++) {
+    if (
+      isStrictSelfMax(selfAt, t, t) ||
+      isStrictSelfMax(selfAt, -t, -t) ||
+      isStrictSelfMax(selfAt, t, -t) ||
+      isStrictSelfMax(selfAt, -t, t)
+    )
+      return true;
+  }
   return false;
 };
 
@@ -588,6 +600,9 @@ const hasPeriodicContent = (
 ): boolean => {
   // 周期は窓内に 2 周期以上収まる範囲でしか検証できない。軸ごとに
   // w/2・h/2 まで走査し、横長窓でも字間・行送りの大きな周期を拾う。
+  // 対角方向も 45 度線に沿って走査する。両成分が探索幅より大きく
+  // 対角でもないスキュー周期だけは残り、走査コストとの引き換えで
+  // 未検出のままになる。
   const spanX = width >> 1;
   const spanY = height >> 1;
   const padX = spanX + 1;
