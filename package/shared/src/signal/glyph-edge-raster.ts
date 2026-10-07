@@ -559,16 +559,23 @@ const isStrictSelfMax = (
   return true;
 };
 
-const findPeriodicLag = (selfAt: (dx: number, dy: number) => number, span: number): boolean => {
-  const shortSpan = Math.min(CONTENT_OFFSET_SEARCH_PX * 2, span);
-  for (let dy = -shortSpan; dy <= shortSpan; dy++) {
-    for (let dx = -shortSpan; dx <= shortSpan; dx++) {
+const findPeriodicLag = (
+  selfAt: (dx: number, dy: number) => number,
+  spanX: number,
+  spanY: number,
+): boolean => {
+  const shortX = Math.min(CONTENT_OFFSET_SEARCH_PX * 2, spanX);
+  const shortY = Math.min(CONTENT_OFFSET_SEARCH_PX * 2, spanY);
+  for (let dy = -shortY; dy <= shortY; dy++) {
+    for (let dx = -shortX; dx <= shortX; dx++) {
       if (dx === 0 && dy === 0) continue;
       if (isStrictSelfMax(selfAt, dx, dy)) return true;
     }
   }
-  for (let t = shortSpan + 1; t <= span; t++) {
+  for (let t = shortX + 1; t <= spanX; t++) {
     if (isStrictSelfMax(selfAt, t, 0) || isStrictSelfMax(selfAt, -t, 0)) return true;
+  }
+  for (let t = shortY + 1; t <= spanY; t++) {
     if (isStrictSelfMax(selfAt, 0, t) || isStrictSelfMax(selfAt, 0, -t)) return true;
   }
   return false;
@@ -579,14 +586,16 @@ const hasPeriodicContent = (
   width: number,
   height: number,
 ): boolean => {
-  // 周期は窓内に 2 周期以上収まる範囲でしか検証できない。軸方向は
-  // min(w,h)/2 まで走査し、行送り・カラム間隔が探索幅より大きい周期も拾う。
-  const span = Math.min(width, height) >> 1;
-  const pad = span + 1;
-  const stride = pad * 2 + 1;
+  // 周期は窓内に 2 周期以上収まる範囲でしか検証できない。軸ごとに
+  // w/2・h/2 まで走査し、横長窓でも字間・行送りの大きな周期を拾う。
+  const spanX = width >> 1;
+  const spanY = height >> 1;
+  const padX = spanX + 1;
+  const padY = spanY + 1;
+  const stride = padX * 2 + 1;
   const selfScores = new Map<number, number>();
   const selfAt = (dx: number, dy: number): number => {
-    const key = (dy + pad) * stride + dx + pad;
+    const key = (dy + padY) * stride + dx + padX;
     let cached = selfScores.get(key);
     if (cached === undefined) {
       cached = selfCorrelate(dx, dy);
@@ -594,7 +603,7 @@ const hasPeriodicContent = (
     }
     return cached;
   };
-  return findPeriodicLag(selfAt, span);
+  return findPeriodicLag(selfAt, spanX, spanY);
 };
 
 const detectAmbiguousOffset = (
