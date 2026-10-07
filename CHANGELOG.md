@@ -24,6 +24,10 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 ### Fixed
 
 - `report_issue` context footer now reads the figdiff version from `app/mcp-server/package.json` at runtime instead of the hardcoded `0.1.0`, falling back to `unknown` when the package metadata is unreadable.
+- `sameTokenRasterization.contentOffset` no longer reports confident offsets it cannot verify. A periodicity scan that could not run — the FFT cell cap on very large windows, or a window with ignore regions where the FFT path cannot honor the mask — now marks the estimate `ambiguous` with the reason in `periodicityUnchecked` (`fft-window-too-large` / `fft-masked-window`) instead of silently claiming "no periodicity"; the measured `dx`/`dy`/`peak` stay in the evidence for review, and no `same_token_content_offset` issue is emitted.
+- `contentOffset.peak`, `dx`, and `dy` are now reported as raw (unrounded) values so the report-side confidence floor (0.8) and the 1.5/3.5px magnitude thresholds are decided on the measurement itself; a raw peak of 0.798 no longer rounds to 0.8 and fires a position issue. Rounding is applied only to the human-readable issue text.
+- The FFT self-NCC plane for large windows validates dimensions, search spans, and the cell cap before allocating anything (previously a window beyond the cap allocated an all-NaN plane of roughly the window's area first), and returns an explicit "unmeasurable" result instead of a NaN plane.
+- Correlation candidates for `contentOffset` now require a minimum number of ink-bearing pixel pairs instead of just any four overlapping pixels, so a single coinciding dot between two otherwise-blank windows can no longer produce a perfect (1.0) correlation reported as a clipped translation.
 
 ## [2.0.0] - 2026-04-18
 

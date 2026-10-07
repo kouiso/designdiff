@@ -21,6 +21,7 @@ import {
   UNIMPLEMENTED_LAYOUT_SCORE,
   computeVerdict,
   detectHighTextureRegion,
+  type ContentOffset,
   type CropRegion,
   type DiffBoundingBox,
   type DiffReport,
@@ -190,27 +191,24 @@ export const CONTENT_OFFSET_REPORT_PX = 1.5;
 export const CONTENT_OFFSET_MAJOR_PX = 3.5;
 export const CONTENT_OFFSET_MIN_PEAK = 0.8;
 
+// 証拠のずれ量・相関は生値で届く。閾値判定に丸めが効かない代わりに、
+// 文面に埋める数値だけここで 2 桁に整える。
+const formatOffsetValue = (value: number): string => `${Math.round(value * 100) / 100}`;
+
 const buildContentOffsetIssue = (
   regionScore: RegionScore,
-  offset:
-    | {
-        dx: number;
-        dy: number;
-        peak: number;
-        clippedX?: boolean;
-        clippedY?: boolean;
-        ambiguous?: boolean;
-      }
-    | undefined,
+  offset: ContentOffset | undefined,
 ): DiffReport["issues"][number] | undefined => {
   // 曖昧なエイリアスは偽値を主張することになるので issue 自体を出さない。
+  // 周期走査不能 (periodicityUnchecked) も同様に値を主張できないため
+  // ambiguous を付けて送られてくる。証拠自体は regionScores に残る。
   if (!offset || offset.peak < CONTENT_OFFSET_MIN_PEAK || offset.ambiguous) return undefined;
   const magnitude = Math.hypot(offset.dx, offset.dy);
   if (magnitude < CONTENT_OFFSET_REPORT_PX) return undefined;
   const severity = magnitude >= CONTENT_OFFSET_MAJOR_PX ? "major" : "minor";
   // 探索端の下限は軸の符号方向に合わせる。負側は真のずれが値以下の可能性。
   const axis = (value: number, clipped?: boolean) =>
-    clipped ? `${value < 0 ? "≤" : "≥"}${value}` : `${value}`;
+    clipped ? `${value < 0 ? "≤" : "≥"}${formatOffsetValue(value)}` : `${formatOffsetValue(value)}`;
   return {
     regionId: regionScore.regionId,
     bbox: regionScore.bbox,
@@ -222,7 +220,7 @@ const buildContentOffsetIssue = (
       value: magnitude,
       threshold: severity === "major" ? CONTENT_OFFSET_MAJOR_PX : CONTENT_OFFSET_REPORT_PX,
       expected: "0px",
-      actual: `content moved (${axis(offset.dx, offset.clippedX)}, ${axis(offset.dy, offset.clippedY)})px, correlation ${offset.peak}`,
+      actual: `content moved (${axis(offset.dx, offset.clippedX)}, ${axis(offset.dy, offset.clippedY)})px, correlation ${formatOffsetValue(offset.peak)}`,
     },
     suggestedCssFix:
       "内容物は一致していますが位置がずれています。余白・座標・行高を確認してください。",

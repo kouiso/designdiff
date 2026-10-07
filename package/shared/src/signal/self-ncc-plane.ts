@@ -105,25 +105,42 @@ const rectSum = (
 // lag (dx,dy) の正規化相関を FFT + 積分画像で全 lag まとめて求める。
 // 返す面は dy ∈ [-padY..padY], dx ∈ [-padX..padX]、stride = 2*padX+1。
 // オーバーラップが 4px 未満か分散が潰れた lag は NaN。
+// undefined は「この窓では全 lag 面を作れない」。NaN との違いは測定の
+// 失敗 (巨大窓・不正寸法) と測定した結果の欠落 (潰れた lag) の区別で、
+// 呼び出し側は undefined を周期なしと解釈してはならない。
+
+// FFT 作業域 (re/im) と出力面のセル上限。re/im 合わせて約 268MB で、
+// これを越える窓は計算量的にも記憶的にも走査不能とする。
+const MAX_CELLS = 1 << 24;
+
 export const selfNccPlane = (
   alpha: Float64Array,
   w: number,
   h: number,
   spanX: number,
   spanY: number,
-): Float64Array => {
+): Float64Array | undefined => {
+  // 寸法検証は確保より前。巨大な w では nextPow2 の p <<= 1 が 2^31 で
+  // 桁あふれて 0 に戻り無限ループに落ちるため、上限確認の前に弾く。
+  if (!Number.isInteger(w) || !Number.isInteger(h) || w < 1 || h < 1) return undefined;
+  if (!Number.isInteger(spanX) || !Number.isInteger(spanY) || spanX < 0 || spanY < 0) {
+    return undefined;
+  }
+  if (alpha.length < w * h) return undefined;
   const padX = spanX + 1;
   const padY = spanY + 1;
   const stride = padX * 2 + 1;
-  const plane = new Float64Array((padY * 2 + 1) * stride);
+  const planeCells = (padY * 2 + 1) * stride;
+  // spanX >= w の呼び出しは全 lag のオーバーラップが取れない上に面サイズを
+  // 窓面積の約4倍まで膨らませる。測定にならないので確保前に切り捨てる。
+  if (spanX >= w || spanY >= h || planeCells > MAX_CELLS) return undefined;
+  // FFT サイズは nextPow2 で上乗せされる。生の積が上限を越えていれば
+  // nextPow2 後の積も必ず越えるので、確保前に切り捨てられる。
+  if ((w + padX) * (h + padY) > MAX_CELLS) return undefined;
   const cols = nextPow2(w + padX);
   const rows = nextPow2(h + padY);
-  // 2^24 セルは re/im 合わせて約 268MB。それを越える巨大窓では検証
-  // できないとみなして全 NaN を返し、呼び出し側は周期なしと解釈する。
-  if (cols * rows > 1 << 24) {
-    plane.fill(Number.NaN);
-    return plane;
-  }
+  if (cols * rows > MAX_CELLS) return undefined;
+  const plane = new Float64Array(planeCells);
   const re = new Float64Array(rows * cols);
   const im = new Float64Array(rows * cols);
   for (let y = 0; y < h; y++) {
