@@ -170,6 +170,9 @@ describe("実画像と公開MCPの座標条件", () => {
     expect(result.status).toBe("FAIL");
   }, 60000);
 
+  // 4 回の compare を直列に走らせる重い検体。coverage 計装 (v8) が乗ると
+  // 通常より 1.5 倍前後かかり、60 秒では coverage 付き CI job でだけ timeout
+  // していた (2026-10-07 実測: ローカル 45.2 秒)。この検体だけ余裕を持たせる。
   it("空の申告は既存履歴を維持し、有効な座標条件の変更は別履歴になる", async () => {
     const omitted = await compare(undefined, shiftedPath);
     const empty = await compare({}, shiftedPath);
@@ -190,5 +193,5 @@ describe("実画像と公開MCPの座標条件", () => {
     expect(await sourceKey(declared.comparisonId)).not.toBe(legacyKey);
     expect(await sourceKey(changed.comparisonId)).not.toBe(await sourceKey(declared.comparisonId));
     expect(changed.loopGuard?.step).toBe(1);
-  }, 60000);
+  }, 180_000);
 });

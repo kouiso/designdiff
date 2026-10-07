@@ -184,6 +184,9 @@ describe("compare_design の capture_scroll", () => {
     expect(output.result.scrollCapture).toBeUndefined();
   });
 
+  // 1080x4800 の結合画像を比較する重い検体。coverage 計装 (v8) が乗ると
+  // 通常より 1.5 倍前後かかり、60 秒では coverage 付き CI job でだけ timeout
+  // していた (2026-10-07 実測: ローカル 35.3 秒)。この検体だけ余裕を持たせる。
   it("結合画像末尾の system UI を mask し、status bar inset と一致する本文を安定して補正する", async () => {
     mocks.captureDeviceScreenshot.mockClear();
     mocks.captureDeviceScrollingScreenshot.mockClear();
@@ -226,7 +229,7 @@ describe("compare_design の capture_scroll", () => {
     expect(systemInsetIssue).toBeUndefined();
     expect(output.result.diffReport?.aggregateVerdict).not.toBe("fail");
     expect(output.result.status).toBe("PASS");
-  }, 60_000);
+  }, 180_000);
 });
 
 describe("capture_scroll の指定の検査", () => {
