@@ -31,9 +31,9 @@ Verified via `find package/shared/src -name "*.test.ts" | wc -l` at develop tip 
 
 **Coverage target**: ≥ 80 % branch on all pure functions. Currently meeting target on cluster + url-parser; signal coverage TBD via `vitest --coverage`.
 
-### `@figdiff/mcp-server` — 65 test files (22 tool-level)
+### `@figdiff/mcp-server` — 67 test files (23 tool-level)
 Verified via `find app/mcp-server/src -name "*.test.ts" | wc -l` at develop tip (2026-10-01).
-- Tool tests: all 17 tools, including error paths for the project/region tools (`create-project`, `delete-project`, `get-crop-region`, `get-ignore-regions`, `set-crop-region`, `set-ignore-regions`, `delete-ignore-region`), response ordering, response budget, and conditions/loop-guard flows
+- Tool tests: all 18 tools, including error paths for the project/region tools (`create-project`, `delete-project`, `get-crop-region`, `get-ignore-regions`, `set-crop-region`, `set-ignore-regions`, `delete-ignore-region`), response ordering, response budget, and conditions/loop-guard flows
 - Service-level (image-compare, figma-service): covered indirectly via tool tests + the in-repo benchmark script [`script/eval/figdiff-cluster-bench.mjs`](../script/eval/figdiff-cluster-bench.mjs) (informal but reproducible; used for PR #50/#51 grid-vs-flood comparison)
 - Root `package.json` exposes `smoke:top-pc-large-page` (large-page smoke harness); any `smoke:runtime*` references in older drafts are stale.
 

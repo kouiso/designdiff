@@ -1,0 +1,254 @@
+{
+  "schemaVersion": 1,
+  "revision": "a6ef7bc054e0c961f1740042da0b984cbbbb3f0c",
+  "dirtyState": [
+    " M CHANGELOG.md",
+    " M README.md",
+    " M app/mcp-server/README.md",
+    " M app/mcp-server/script/stdio-m01-verification.mjs",
+    " M app/mcp-server/src/server.ts",
+    " M docs/acceptance-matrix.md",
+    " M docs/api/mcp-tools.md",
+    " M docs/evidence/mcp-list-tools.json",
+    " M docs/test-strategy.md",
+    "?? app/mcp-server/script/stdio-batch-verification.mjs",
+    "?? app/mcp-server/src/service/batch-compare-service.test.ts",
+    "?? app/mcp-server/src/service/batch-compare-service.ts",
+    "?? app/mcp-server/src/tool/compare-design-batch.test.ts",
+    "?? app/mcp-server/src/tool/compare-design-batch.ts",
+    "?? docs/evidence/mcp-stdio-batch-verification/"
+  ],
+  "server": {
+    "entry": "app/mcp-server/dist/index.js",
+    "entrySha256": "2f3782ac72d3f6ee4e3ed9e396ff44771b270995296c29cb0d02f875929f793e"
+  },
+  "environment": {
+    "platform": "linux",
+    "arch": "x64",
+    "node": "v25.6.1"
+  },
+  "executedAt": "2026-10-07T09:21:46.109Z",
+  "transport": "@modelcontextprotocol/sdk Client + StdioClientTransport (real process, isolated FIGDIFF_HOME)",
+  "protocolErrors": [],
+  "verificationFailures": [],
+  "fixtures": [
+    {
+      "name": "design",
+      "path": "docs/evidence/mcp-stdio-batch-verification/input-design.png",
+      "sha256": "fcb6e38a4dc029c6004eab167fda9da5a4d674c1b179b054e9f3dd565f277b67"
+    },
+    {
+      "name": "identical",
+      "path": "docs/evidence/mcp-stdio-batch-verification/input-identical.png",
+      "sha256": "fcb6e38a4dc029c6004eab167fda9da5a4d674c1b179b054e9f3dd565f277b67"
+    },
+    {
+      "name": "colorDefect",
+      "path": "docs/evidence/mcp-stdio-batch-verification/input-color-defect.png",
+      "sha256": "495f90c5d7d71a4385498fe50b2c2ab5874d759283794657660ca751469b8e7d"
+    },
+    {
+      "name": "positionDefect",
+      "path": "docs/evidence/mcp-stdio-batch-verification/input-position-defect.png",
+      "sha256": "7fcca2b8d5c03c99b747a6dd81c6363b23bec131e4cf6aeffe3e4dc099704a95"
+    },
+    {
+      "name": "corrected",
+      "path": "docs/evidence/mcp-stdio-batch-verification/input-corrected.png",
+      "sha256": "fcb6e38a4dc029c6004eab167fda9da5a4d674c1b179b054e9f3dd565f277b67"
+    }
+  ],
+  "results": {
+    "batch_tools_list": {
+      "status": "PASS",
+      "expected": {
+        "serverName": "figdiff",
+        "toolPresent": true,
+        "hasFramesInput": true
+      },
+      "actual": {
+        "serverName": "figdiff",
+        "toolCount": 18,
+        "toolPresent": true,
+        "hasFramesInput": true
+      }
+    },
+    "independent_oracles": {
+      "status": "PASS",
+      "oracle": "raw RGBA byte diff + colors written in the generated SVG source",
+      "expected": {
+        "identical": {
+          "differingPixelCount": 0,
+          "bounds": null
+        },
+        "colorDefect": {
+          "differingPixelCount": 3200,
+          "bounds": {
+            "x": 40,
+            "y": 140,
+            "width": 100,
+            "height": 32
+          }
+        },
+        "corrected": {
+          "differingPixelCount": 0,
+          "bounds": null
+        },
+        "designButtonColor": {
+          "r": 34,
+          "g": 102,
+          "b": 204
+        },
+        "defectButtonColor": {
+          "r": 204,
+          "g": 51,
+          "b": 51
+        }
+      },
+      "actual": {
+        "oracles": {
+          "identical": {
+            "differingPixelCount": 0,
+            "bounds": null
+          },
+          "colorDefect": {
+            "differingPixelCount": 3200,
+            "bounds": {
+              "x": 40,
+              "y": 140,
+              "width": 100,
+              "height": 32
+            }
+          },
+          "positionDefect": {
+            "differingPixelCount": 768,
+            "bounds": {
+              "x": 40,
+              "y": 140,
+              "width": 112,
+              "height": 32
+            }
+          },
+          "corrected": {
+            "differingPixelCount": 0,
+            "bounds": null
+          }
+        },
+        "sourceColors": {
+          "design": {
+            "r": 34,
+            "g": 102,
+            "b": 204
+          },
+          "identical": {
+            "r": 34,
+            "g": 102,
+            "b": 204
+          },
+          "colorDefect": {
+            "r": 204,
+            "g": 51,
+            "b": 51
+          },
+          "corrected": {
+            "r": 34,
+            "g": 102,
+            "b": 204
+          }
+        }
+      }
+    },
+    "batch_defect_run": {
+      "status": "PASS",
+      "oracle": "raw RGBA diff count per frame",
+      "expected": {
+        "statuses": ["PASS", "FAIL", "FAIL", "FAIL"],
+        "verdict": "FAIL",
+        "diffPixelCounts": [0, 3200, 768],
+        "recurringIssueKinds": ["color"]
+      },
+      "actual": {
+        "statuses": ["PASS", "FAIL", "FAIL", "FAIL"],
+        "verdict": "FAIL",
+        "diffPixelCounts": [0, 3200, 768, 3200],
+        "recurringIssues": [
+          {
+            "kind": "color",
+            "frameCount": 3,
+            "frameLabels": ["settings", "profile", "settings-retry"],
+            "severities": ["critical"]
+          }
+        ],
+        "convergence": "continue"
+      }
+    },
+    "report_retrieval": {
+      "status": "PASS",
+      "expected": {
+        "comparisonId": "cmp-be9d5b2b-1f38-46a2-a04c-f868a4af22be",
+        "hasDiffReport": true
+      },
+      "actual": {
+        "comparisonId": "cmp-be9d5b2b-1f38-46a2-a04c-f868a4af22be",
+        "hasDiffReport": true,
+        "regionCount": 1
+      }
+    },
+    "batch_corrected_run": {
+      "status": "PASS",
+      "oracle": "raw RGBA diff after correcting the fixture",
+      "expected": {
+        "statuses": ["PASS", "PASS"],
+        "verdict": "PASS",
+        "settingsDiffPixelCount": 0
+      },
+      "actual": {
+        "statuses": ["PASS", "PASS"],
+        "verdict": "PASS",
+        "settingsDiffPixelCount": 0
+      }
+    },
+    "batch_partial_failure": {
+      "status": "PASS",
+      "expected": {
+        "statuses": ["PASS", "ERROR", "FAIL"],
+        "verdict": "ERROR",
+        "comparisonIds": 2,
+        "unevaluatedLabels": ["missing"]
+      },
+      "actual": {
+        "statuses": ["PASS", "ERROR", "FAIL"],
+        "verdict": "ERROR",
+        "comparisonIds": 2,
+        "unevaluatedLabels": ["missing"]
+      }
+    },
+    "batch_invalid_input": {
+      "status": "PASS",
+      "expected": {
+        "isError": true,
+        "mentionsFrameIndex": true,
+        "mentionsSourceRule": true
+      },
+      "actual": {
+        "isError": true,
+        "message": "Error: frames[0] (no-source): screenshot / screenshot_url / capture_device のうち、どれか1つだけを指定してください。"
+      }
+    }
+  },
+  "scope": {
+    "verifiedAssertions": [
+      "MCP initialize + tools/list advertises compare_design_batch with a frames input",
+      "identical pair → PASS and diffPixelCount matches the raw RGBA oracle (0)",
+      "known color defect → FAIL with the exact oracle rectangle",
+      "known position defect → FAIL with the raw RGBA oracle count",
+      "recurring issue kinds aggregated only across two or more frames",
+      "full report retrievable by per-frame comparisonId",
+      "corrected fixture → PASS with oracle-confirmed zero difference",
+      "one execution error does not abort the remaining frames",
+      "missing screenshot source is rejected with the offending frame index"
+    ],
+    "notRun": ["external Figma API routes", "external network web capture routes"],
+    "oracle": "Raw RGBA byte comparison and the color values written into the generated SVG source. Product status and matchRate are never used as acceptance oracles."
+  }
+}
