@@ -374,18 +374,10 @@ export class FigmaClient {
       if (!response.ok) {
         const body = await response.text();
         const status = response.status;
-        if (status === 401) {
-          throw new FigmaApiError(
-            401,
-            `Figma token is invalid or expired (401). Please update your token in Settings.`,
-          );
-        }
-        if (status === 403) {
-          throw new FigmaApiError(
-            403,
-            `Access denied (403). You don't have permission to access this Figma file.`,
-          );
-        }
+        // 実API計測（2026-10）: 期限切れPATに対し Figma は /v1/me で 401 "Token has
+        // expired"、ファイル系APIで 403 {"err":"Token expired"} を返す。401/403 を固定文に
+        // 置き換えると真の原因（期限切れ）が捨てられ、利用者は共有設定の確認に誘導されて
+        // しまう。本文をそのまま残し、状態に基づく案内は上流の分類層に任せる。
         if (status === 429) {
           const retryAfter = response.headers.get("Retry-After");
           const wait = retryAfter
@@ -507,6 +499,11 @@ const TOKEN_ERROR_PATTERNS = [
   "Forbidden",
   "invalid or expired (401)",
   "Access denied (403)",
+  // 実API計測: 期限切れPATの本文は "Token expired"（ファイル系API・403）と
+  // "Token has expired"（/v1/me・401）。本文がそのまま流れてくるようになったため、
+  // 期限切れ文言もトークン再設定の誘導対象に含める。
+  "Token expired",
+  "Token has expired",
 ] as const;
 
 export const isTokenError = (message: string): boolean =>

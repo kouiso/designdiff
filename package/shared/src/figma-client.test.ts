@@ -4,7 +4,9 @@ import {
   collectNestedFrames,
   extractFrames,
   extractNestedFrames,
+  FigmaApiError,
   FigmaClient,
+  isTokenError,
 } from "./figma-client.js";
 
 import type { FigmaFileResponse, FigmaNode } from "./figma-client.js";
@@ -118,6 +120,50 @@ describe("FigmaClient", () => {
       await expect(client.getNode("FILE", "99999:88888")).rejects.toThrow(
         "Run list_figma_frames to see valid node ids.",
       );
+    });
+  });
+
+  describe("error bodies", () => {
+    it("期限切れPATの403本文を固定文で置き換えずそのまま伝える（実API計測: Token expired）", async () => {
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(async () => new Response('{"status":403,"err":"Token expired"}', { status: 403 })),
+      );
+      const client = new FigmaClient(token);
+
+      const error: FigmaApiError = await client.getFile("FILE").then(
+        () => {
+          throw new Error("expected rejection");
+        },
+        (e: FigmaApiError) => e,
+      );
+
+      // 本文を捨てると「アクセス権を確認」という誤った案内になり、PAT再作成に辿り着けない。
+      expect(error).toBeInstanceOf(FigmaApiError);
+      expect(error.status).toBe(403);
+      expect(error.message).toBe('Figma API error 403: {"status":403,"err":"Token expired"}');
+      expect(isTokenError(error.message)).toBe(true);
+    });
+
+    it("未共有ファイルの404本文をそのまま伝える（実API計測: Not found）", async () => {
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(async () => new Response('{"status":404,"err":"Not found"}', { status: 404 })),
+      );
+      const client = new FigmaClient(token);
+
+      const error: FigmaApiError = await client.getFile("FILE").then(
+        () => {
+          throw new Error("expected rejection");
+        },
+        (e: FigmaApiError) => e,
+      );
+
+      expect(error).toBeInstanceOf(FigmaApiError);
+      expect(error.status).toBe(404);
+      expect(error.message).toBe('Figma API error 404: {"status":404,"err":"Not found"}');
+      // 404はトークン再設定で解決しないため、トークン誘導対象にしない。
+      expect(isTokenError(error.message)).toBe(false);
     });
   });
   describe("getImageUrl", () => {
