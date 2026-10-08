@@ -116,40 +116,48 @@ describe("resolveAutoCrop", () => {
 
   // top..excessTop は白背景固定、excessTop..height (超過領域) だけ
   // "blank" (白と同色) か "noise" (ランダムノイズ) で塗り分ける。
-  async function makeScreenshot(
+  const paintDesignPattern = (pixels: Buffer, width: number, height: number): void => {
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const base = (y * width + x) * 3;
+        const value = (x + y) % 7 === 0 ? 17 : 255;
+        pixels[base] = value;
+        pixels[base + 1] = value;
+        pixels[base + 2] = value;
+      }
+    }
+  };
+
+  const paintNoise = (pixels: Buffer, width: number, height: number, startY: number): void => {
+    for (let y = startY; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const base = (y * width + x) * 3;
+        pixels[base] = (base * 37) % 256;
+        pixels[base + 1] = (base * 53) % 256;
+        pixels[base + 2] = (base * 71) % 256;
+      }
+    }
+  };
+
+  const makeScreenshot = async (
     width: number,
     height: number,
     excess: "blank" | "noise",
     excessTop: number,
     designArea: "blank" | "content" = "blank",
-  ): Promise<Buffer> {
+  ): Promise<Buffer> => {
     const pixels = Buffer.alloc(width * height * 3, 255);
     if (designArea === "content") {
       // design 側にだけ模様を置く。実ページはここが真っ白にならない。
-      for (let y = 0; y < excessTop; y++) {
-        for (let x = 0; x < width; x++) {
-          const base = (y * width + x) * 3;
-          const on = (x + y) % 7 === 0;
-          pixels[base] = on ? 17 : 255;
-          pixels[base + 1] = on ? 17 : 255;
-          pixels[base + 2] = on ? 17 : 255;
-        }
-      }
+      paintDesignPattern(pixels, width, excessTop);
     }
     if (excess === "noise") {
-      for (let y = excessTop; y < height; y++) {
-        for (let x = 0; x < width; x++) {
-          const base = (y * width + x) * 3;
-          pixels[base] = (base * 37) % 256;
-          pixels[base + 1] = (base * 53) % 256;
-          pixels[base + 2] = (base * 71) % 256;
-        }
-      }
+      paintNoise(pixels, width, height, excessTop);
     }
     return realSharp(pixels, { raw: { width, height, channels: 3 } })
       .png()
       .toBuffer();
-  }
+  };
 
   it("超過領域が単色(空白)なら design範囲へ自動cropする", async () => {
     const screenshot = await makeScreenshot(100, 150, "blank", 100);
@@ -1103,7 +1111,14 @@ describe("runCompareDesign", () => {
     }
   });
 
-  it("auto-selects the best matching frame when nodeId and frameName are omitted", async () => {
+  it.each([
+    { requestedContentsOnly: undefined, expectedContentsOnly: false },
+    { requestedContentsOnly: false, expectedContentsOnly: false },
+    { requestedContentsOnly: true, expectedContentsOnly: true },
+  ])("auto-selects the best matching frame with contentsOnly=$expectedContentsOnly", async ({
+    requestedContentsOnly,
+    expectedContentsOnly,
+  }) => {
     tmpRoot = await fs.mkdtemp(path.join(process.cwd(), "tmp-figdiff-runner-"));
     const screenshotPath = path.join(tmpRoot, "screenshot.png");
     await fs.writeFile(
@@ -1153,6 +1168,7 @@ describe("runCompareDesign", () => {
     await runCompareDesign({
       design_source: "https://www.figma.com/design/FILEKEY123/Test",
       screenshot: screenshotPath,
+      figma_contents_only: requestedContentsOnly,
     });
 
     expect(getFrames).toHaveBeenCalledWith("FILEKEY123");
@@ -1167,7 +1183,10 @@ describe("runCompareDesign", () => {
         logicalBox: { x: 0, y: 0, width: 1440, height: 1800 },
         renderBox: undefined,
       },
-      expect.objectContaining({ node: expect.objectContaining({ type: "FRAME" }) }),
+      expect.objectContaining({
+        contentsOnly: expectedContentsOnly,
+        node: expect.objectContaining({ type: "FRAME" }),
+      }),
     );
     expect(mocks.compareImages).toHaveBeenCalledWith(
       expect.objectContaining({ figmaNodeId: "2:2" }),

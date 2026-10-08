@@ -328,7 +328,9 @@ export const registerCompareDesignBatch = (server: McpServer): void => {
     figma_contents_only: z
       .boolean()
       .optional()
-      .describe("Figma書き出しで対象ノードの内容だけを含める（既定true）。"),
+      .describe(
+        "Figma書き出しで対象ノードの内容だけを含める（既定false: ノード自身の背景塗りに加えて重なる周辺レイヤーも書き出す。true は背景塗りを落とす）。",
+      ),
     figma_use_absolute_bounds: z
       .boolean()
       .optional()

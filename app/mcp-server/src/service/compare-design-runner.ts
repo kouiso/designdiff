@@ -1630,7 +1630,14 @@ export async function runCompareDesign(
       targetWidth,
       screenshotMeta.height,
       fallbackNodeId,
-      { contentsOnly: args.figma_contents_only, useAbsoluteBounds: args.figma_use_absolute_bounds },
+      // 既定は false (ノード自身の背景塗りを含めて書き出す)。contents_only: true
+      // はフレームの背景を落とすため、白を敷いた偽の下地と実装側の実際の背景
+      // (グラデーション等) が比べられて偽FAILになる。内容だけを比較したい
+      // 場合は figma_contents_only: true を明示的に指定する。
+      {
+        contentsOnly: args.figma_contents_only ?? false,
+        useAbsoluteBounds: args.figma_use_absolute_bounds,
+      },
     );
 
   const {
@@ -1681,6 +1688,10 @@ export async function runCompareDesign(
       fallbackIgnoreRegions,
       verifiedSystemUiTopInset: systemIgnoreRegions.verifiedTopInset,
       designBackground: args.design_background,
+      // contents_only: true の書き出しはノード自身の背景塗りを落とすため、その
+      // 完全透明画素だけ「デザインが色を指定していない」として採点から外す。
+      // ローカル PNG の透明は意図的な穴のこともあるため外さない。
+      treatTransparentDesignAsUnspecified: figmaExport?.conditions.contentsOnly === true,
       anchors: args.anchors,
       localAlignmentTolerancePx: args.local_alignment_tolerance_px,
       rasterizationTolerance: args.rasterization_tolerance,
@@ -1876,7 +1887,10 @@ export async function runCompareDesign(
           useAbsoluteBounds: figmaExport.conditions.useAbsoluteBounds,
         }
       : {
-          contentsOnly: args.figma_contents_only,
+          // 書き出しを実行していない経路でも、要求側の既定 (contentsOnly: false)
+          // を履歴キーに反映させないと、同じ条件の比較が無印キーと接尾辞付き
+          // キーに分かれて履歴が混ざる。
+          contentsOnly: args.figma_contents_only ?? false,
           useAbsoluteBounds: args.figma_use_absolute_bounds,
         },
   );
@@ -2053,6 +2067,9 @@ export async function runCompareDesign(
               .update(Buffer.from(designBase64, "base64"))
               .digest("hex"),
             background: normalizeDesignBackground(args.design_background),
+            // 省略時は完全透明画素を採点から外す契約になるため、verify_fix の
+            // 再現で明示/省略を区別できるよう記録する。
+            backgroundExplicit: args.design_background !== undefined,
             figmaExportConditions: figmaExport?.conditions ?? null,
           },
           comparison: {

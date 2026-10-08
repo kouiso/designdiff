@@ -299,6 +299,15 @@ export const RegionScoreSchema = z.object({
   // クラスタ bbox 面積に占める差分画素の割合。疎な輪郭クラスタで採点が
   // 薄まる度合いを読み取る補助シグナル (Issue #58)。クラスタ行にのみ付く。
   diffPixelDensity: z.number().min(0).max(1).optional(),
+  // セクション行の救済証拠。セクション内の差分クラスタ全てが
+  // rasterization_tolerance 下の合格水準を満たしたかの内訳。
+  diffClusterCoverage: z
+    .object({
+      clusterCount: z.number().int().positive(),
+      explainedCount: z.number().int().nonnegative(),
+      unexplainedPerceptibleDiff: z.boolean().optional(),
+    })
+    .optional(),
   // 落とすと「なぜ critical になったか」が結果から辿れなくなる。
   flatColorMismatch: z
     .object({

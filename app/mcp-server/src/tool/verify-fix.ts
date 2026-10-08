@@ -170,10 +170,29 @@ const runCurrentComparison = async (
     ignore_regions: args.ignore_regions,
     design_background:
       args.design_background ??
-      (priorContext.design.background === "#FFFFFF" ? undefined : priorContext.design.background),
+      // 省略は「完全透明画素を採点から外す」契約のまま再現する。旧履歴
+      // (backgroundExplicit 無し) も省略で再現する。当時の省略は白敷き採点で、
+      // 今の省略もローカル PNG では白敷き採点のまま変わらないため。明示の
+      // 旧履歴は履歴キー (sourceIdentitySha256 の下地接尾辞) が一致せず拒絶
+      // され、基準に使った design_background を渡し直すことで再現できる。
+      (priorContext.design.backgroundExplicit === true
+        ? priorContext.design.background
+        : undefined),
     comparison_conditions: args.comparison_conditions ?? priorContext.comparison.declaredConditions,
   });
 };
+
+// 旧履歴には backgroundExplicit が無い。当時の明示/省略はもう区別できず、本来の
+// 番人は履歴キー (sourceIdentitySha256 の下地接尾辞) のため、等価判定では無い鍵を
+// 今回側の値に合わせて許容する。指紋の検証 (contextPayload) には使わない。格納済み
+// 指紋は鍵が無いままの正規形で計算されている。
+const alignLegacyBackgroundExplicit = (
+  payload: VerificationContextPayload,
+  fallback: boolean,
+): VerificationContextPayload =>
+  payload.design.backgroundExplicit === undefined
+    ? { ...payload, design: { ...payload.design, backgroundExplicit: fallback } }
+    : payload;
 
 const assertMatchingContext = (
   priorComparisonId: string,
@@ -189,16 +208,30 @@ const assertMatchingContext = (
   } catch {
     throw new Error("current comparison recorded an invalid verification context");
   }
+  const currentBackgroundExplicit = currentPayload.design.backgroundExplicit ?? true;
+  const priorForComparison = alignLegacyBackgroundExplicit(priorPayload, currentBackgroundExplicit);
+  const currentForComparison = alignLegacyBackgroundExplicit(
+    currentPayload,
+    currentBackgroundExplicit,
+  );
   if (
-    canonicalizeVerificationContextPayload(priorPayload) ===
-    canonicalizeVerificationContextPayload(currentPayload)
+    canonicalizeVerificationContextPayload(priorForComparison) ===
+    canonicalizeVerificationContextPayload(currentForComparison)
   ) {
     return;
   }
-  const changedPaths = listChangedContextPaths(priorPayload, currentPayload);
+  const changedPaths = listChangedContextPaths(priorForComparison, currentForComparison);
+  // 旧形式の下地明示は接尾辞の生値 (例: #fff) が履歴キーにしか残らず、格納済みの
+  // 正規化色では履歴キーを作り直せない。基準に使った値を渡し直せば再現できる。
+  const legacyBackgroundHint =
+    priorPayload.design.backgroundExplicit === undefined &&
+    changedPaths.some((path) => path.startsWith("design."))
+      ? " pass the design_background value the baseline used and retry, or re-run compare_design once more."
+      : "";
   throw new Error(
     `comparison context changed since baseline (${changedPaths.join(", ")}): ${priorComparisonId}. ` +
-      "run compare_design once more under the current conditions, then retry verify_fix.",
+      "run compare_design once more under the current conditions, then retry verify_fix." +
+      legacyBackgroundHint,
   );
 };
 
