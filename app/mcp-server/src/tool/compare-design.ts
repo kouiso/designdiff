@@ -40,7 +40,7 @@ const DESCRIPTION = `デザインと実装のピクセル差分を検出しま�
 ## 出力の読み方
 - ループ判定: 2つ目のテキストブロック先頭。停止 / 続行 / 取得できません。status より優先する。取得できません は停止として扱う
 - 判定経路: token-diff = 色とフォントを値そのもので突き合わせた。要修正の項目は設計側の値が確定しているので、そのまま直すこと。anchor = 宣言した縦位置アンカーの位置規則違反。該当アンカーの期待位置へ配置を直すこと。pixel = 値の突合が使えず画素だけで見た（理由が同じ欄に出る）。この場合フォントの縁のぼかしに埋もれる色差は検出できない
-- 構造SSIM判定: 2つ目のテキストブロック内の行。完成 (PASS) / 要修正 (FAIL) / 判定不能 (INCONCLUSIVE) の日本語とトークン併記。INCONCLUSIVE は失敗ではないので直そうとせず報告すること
+- 構造SSIM判定: 2つ目のテキストブロック内の行。構造差なし (PASS) / 構造差あり (FAIL) / 判定不能 (INCONCLUSIVE) の日本語とトークン併記。構造面の部分判定であり、完了可否は status とループ判定で決める。INCONCLUSIVE は失敗ではないので直そうとせず報告すること
 - status: "PASS" = 構造SSIM判定上の完了。"FAIL" = 修正が必要。"UNCERTAIN" = 判定の確からしさが足りず人間レビューへ回った状態。失敗ではないので直そうとせず報告すること
 - completionCriteria: blocking=true の項目が "PASS" になるまで作業を続行。ただし status が "UNCERTAIN" の項目は直しても "PASS" にならないので、そこで止めて人間に報告する。matchRate は参考値
 - nextAction: 次に実行すべきアクション（従うこと）
@@ -162,11 +162,15 @@ const buildNormalizationLines = (result: CompareDesignResult): string[] => {
 
 // 構造SSIM判定の行は日本語本文の中で内部トークンだけを大文字で出しても非開発者に
 // 判定が伝わらない (#256)。日本語を先頭にし、エージェントがサマリーから判定を拾える
-// ようトークンを括弧に残す。INCONCLUSIVE は失敗ではないので直そうとせず報告する運用を
-// status の UNCERTAIN と揃えてこの行にも書く。
+// ようトークンを括弧に残す。
+// aggregateVerdict は構造面の部分判定でしかなく、pass でも token/anchor 違反や
+// 設定ミス疑いで status は FAIL / UNCERTAIN になり得るし、fail でも UNCERTAIN に
+// 倒れることがある。「完成」「要修正」と書くと status と矛盾した指示になるので、
+// pass / fail は構造差の有無だけを述べる。inconclusive は status が必ず UNCERTAIN に
+// なるため、直さず報告する運用をこの行にも書いてよい。
 const VERDICT_DISPLAY: Record<DiffVerdict, string> = {
-  pass: "完成 (PASS)",
-  fail: "要修正 (FAIL)",
+  pass: "構造差なし (PASS)",
+  fail: "構造差あり (FAIL)",
   inconclusive: "判定不能 (INCONCLUSIVE)。失敗ではないので直そうとせず人間に報告",
 };
 

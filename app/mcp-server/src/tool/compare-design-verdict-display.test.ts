@@ -6,9 +6,12 @@ import { buildSummaryText } from "./compare-design.js";
 
 // 構造SSIM判定の行が生トークンだけに戻ると非開発者に判定が伝わらなくなる (#256)。
 // 日本語 + トークン併記という表示形式を固定文字列で担保する。
-const buildVerdictResult = (aggregateVerdict: DiffVerdict): CompareDesignResult => ({
+const buildVerdictResult = (
+  aggregateVerdict: DiffVerdict,
+  status: CompareDesignResult["status"] = "FAIL",
+): CompareDesignResult => ({
   comparisonId: "verdict-display",
-  status: "FAIL",
+  status,
   matchRate: 70,
   diffPixelCount: 30,
   totalPixelCount: 100,
@@ -31,8 +34,8 @@ const buildVerdictResult = (aggregateVerdict: DiffVerdict): CompareDesignResult 
 
 describe("構造SSIM判定の表示", () => {
   it.each([
-    ["pass", "完成 (PASS)"],
-    ["fail", "要修正 (FAIL)"],
+    ["pass", "構造差なし (PASS)"],
+    ["fail", "構造差あり (FAIL)"],
     ["inconclusive", "判定不能 (INCONCLUSIVE)"],
   ] as const)("aggregateVerdict %s を日本語とトークン併記で出す", (aggregateVerdict, display) => {
     const text = buildSummaryText(buildVerdictResult(aggregateVerdict));
@@ -40,7 +43,18 @@ describe("構造SSIM判定の表示", () => {
   });
 
   it("inconclusive は失敗ではないことをサマリー行自体に書く", () => {
-    const text = buildSummaryText(buildVerdictResult("inconclusive"));
+    const text = buildSummaryText(buildVerdictResult("inconclusive", "UNCERTAIN"));
     expect(text).toContain("失敗ではないので直そうとせず人間に報告");
+  });
+
+  // 構造判定は部分判定なので、status と矛盾する完了・修正の指示を出さない。
+  it.each([
+    ["pass", "FAIL"],
+    ["pass", "UNCERTAIN"],
+    ["fail", "UNCERTAIN"],
+  ] as const)("aggregateVerdict %s / status %s で完成・要修正と書かない", (aggregateVerdict, status) => {
+    const text = buildSummaryText(buildVerdictResult(aggregateVerdict, status));
+    expect(text).not.toContain("完成");
+    expect(text).not.toContain("要修正");
   });
 });
