@@ -3,8 +3,10 @@ import { describe, it, expect } from "vitest";
 
 import {
   compareImages,
+  buildDesignUnspecifiedMask,
   flattenTransparentPixels,
   hasTransparentPixel,
+  mergeIgnoreMasks,
   parseBackgroundColor,
 } from "./image-compare-service.js";
 
@@ -38,6 +40,36 @@ async function makePng(base: { r: number; g: number; b: number; a: number }): Pr
   return png.toString("base64");
 }
 
+const makeSizedPng = async (
+  width: number,
+  height: number,
+  pixelAt: (x: number, y: number) => readonly [number, number, number],
+): Promise<string> => {
+  const pixels = Buffer.alloc(width * height * 4);
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const offset = (y * width + x) * 4;
+      const [r, g, b] = pixelAt(x, y);
+      pixels[offset] = r;
+      pixels[offset + 1] = g;
+      pixels[offset + 2] = b;
+      pixels[offset + 3] = 255;
+    }
+  }
+  return sharp(pixels, { raw: { width, height, channels: 4 } })
+    .png()
+    .toBuffer()
+    .then((png) => png.toString("base64"));
+};
+
+const makeFullyTransparentPng = async (): Promise<string> =>
+  sharp(Buffer.alloc(SIZE * SIZE * 4), {
+    raw: { width: SIZE, height: SIZE, channels: 4 },
+  })
+    .png()
+    .toBuffer()
+    .then((png) => png.toString("base64"));
+
 describe("背景の塗りが無い設計を白地の実装と比べるとき", () => {
   it("透明部分を黒と読まず、構造一致が落ちないこと", async () => {
     const designBase64 = await makePng({ r: 0, g: 0, b: 0, a: 0 });
@@ -53,11 +85,19 @@ describe("背景の塗りが無い設計を白地の実装と比べるとき", (
   });
 
   it("下地の色を指定すると、その色の上に置いて評価すること", async () => {
-    // 設計は透明、実装は黒地。白を敷けば食い違い、黒を敷けば一致する。
+    // 設計は透明、実装は黒地。下地を明示すればその色の上に置いて採点される。
+    // 白を敷けば食い違い、黒を敷けば一致する。未指定では「デザインが色を
+    // 指定していない」画素として採点から外れるため、どちらの効果も出ない。
     const designBase64 = await makePng({ r: 0, g: 0, b: 0, a: 0 });
     const screenshotBase64 = await makePng({ r: 0, g: 0, b: 0, a: 255 });
 
-    const onWhite = await compareImages({ designBase64, screenshotBase64, threshold: 0.1 });
+    const unspecified = await compareImages({ designBase64, screenshotBase64, threshold: 0.1 });
+    const onWhite = await compareImages({
+      designBase64,
+      screenshotBase64,
+      threshold: 0.1,
+      designBackground: "#FFFFFF",
+    });
     const onBlack = await compareImages({
       designBase64,
       screenshotBase64,
@@ -67,7 +107,42 @@ describe("背景の塗りが無い設計を白地の実装と比べるとき", (
 
     const worst = (result: typeof onWhite): number =>
       Math.min(...(result.diffReport?.regionScores ?? []).map((score) => score.structure));
+    // 未指定の透明画素は比較対象ではないので、構造は落ちない。
+    expect(worst(unspecified)).toBeGreaterThanOrEqual(0.95);
+    // 白を明示したときだけ白地として採点に入り、黒地の実装と食い違う。
     expect(worst(onBlack)).toBeGreaterThan(worst(onWhite));
+  });
+
+  it("contain 合成で生じた余白から実装側の追加内容を隠さないこと", async () => {
+    const contentPixel = (x: number, y: number): readonly [number, number, number] =>
+      (Math.floor(x / 5) + Math.floor(y / 5)) % 2 === 0 ? [240, 240, 240] : [16, 16, 16];
+    const designBase64 = await makeSizedPng(40, 40, contentPixel);
+    const screenshotBase64 = await makeSizedPng(40, 60, (x, y) => {
+      if (y < 10 || y >= 50) {
+        return (x + y) % 2 === 0 ? [0, 0, 0] : [255, 255, 255];
+      }
+      return contentPixel(x, y - 10);
+    });
+
+    const result = await compareImages({ designBase64, screenshotBase64, threshold: 0.1 });
+
+    expect(result.diffReport?.aggregateVerdict).toBe("fail");
+  });
+
+  it("全画素が透明なら根拠のない PASS ではなく UNCERTAIN を返すこと", async () => {
+    const designBase64 = await makeFullyTransparentPng();
+    const screenshotBase64 = await makePng({ r: 255, g: 0, b: 0, a: 255 });
+
+    const result = await compareImages({ designBase64, screenshotBase64, threshold: 0.1 });
+
+    expect(result.matchRate).toBe(0);
+    expect(result.diffReport?.aggregateVerdict).toBe("inconclusive");
+    expect(result.diffReport?.structuralAssessment).toMatchObject({
+      score: null,
+      evaluatedPixelCount: 0,
+      verdict: "inconclusive",
+    });
+    expect(result.status).toBe("UNCERTAIN");
   });
 });
 
@@ -113,6 +188,48 @@ describe("hasTransparentPixel", () => {
 
   it("1画素でも透けていれば true", () => {
     expect(hasTransparentPixel(Uint8ClampedArray.from([1, 2, 3, 255, 4, 5, 6, 254]))).toBe(true);
+  });
+});
+
+describe("design unspecified mask", () => {
+  it("完全透明だけを無視し、半透明の縁は採点に残すこと", () => {
+    const pixels = Uint8ClampedArray.from([10, 20, 30, 0, 40, 50, 60, 128, 70, 80, 90, 255]);
+
+    expect(buildDesignUnspecifiedMask(pixels, 3, 1)).toEqual(Uint8Array.from([1, 0, 0]));
+  });
+
+  it("contain 合成の余白は未指定画素マスクに含めないこと", () => {
+    const pixels = Uint8ClampedArray.from([
+      0, 0, 0, 0, 10, 20, 30, 0, 40, 50, 60, 0, 70, 80, 90, 0,
+    ]);
+
+    expect(
+      buildDesignUnspecifiedMask(pixels, 2, 2, {
+        left: 0,
+        top: 1,
+        width: 2,
+        height: 1,
+      }),
+    ).toEqual(Uint8Array.from([0, 0, 1, 1]));
+  });
+
+  it("寸法と RGBA バッファ長が食い違えば弾くこと", () => {
+    expect(() => buildDesignUnspecifiedMask(Uint8ClampedArray.from([0, 0, 0, 0]), 2, 1)).toThrow(
+      /must equal 2x1 RGBA/,
+    );
+  });
+
+  it("既存の無視マスクと論理和で統合すること", () => {
+    const extra = Uint8Array.from([1, 0, 1]);
+
+    expect(mergeIgnoreMasks(undefined, extra)).toBe(extra);
+    expect(mergeIgnoreMasks(Uint8Array.from([0, 1, 0]), extra)).toEqual(Uint8Array.from([1, 1, 1]));
+  });
+
+  it("長さが違う無視マスクは統合せず弾くこと", () => {
+    expect(() => mergeIgnoreMasks(Uint8Array.from([0]), Uint8Array.from([0, 1]))).toThrow(
+      /lengths must match/,
+    );
   });
 });
 

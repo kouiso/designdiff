@@ -348,7 +348,7 @@ export const registerCompareDesign = (server: McpServer): void => {
       .boolean()
       .optional()
       .describe(
-        "Figma 書き出しで対象ノードの内容だけを含める（既定 true）。false は重なる周辺レイヤーも含むため、その背景やレイヤーを比較する意図がある場合だけ指定する。",
+        "Figma 書き出しで対象ノードの内容だけを含める（既定 false: ノード自身の背景塗りも書き出す。背景を比較しないと実装側の実際の背景との偽差分が出る）。true は背景塗りを落とすため、背景を意図的に比較対象外にするときだけ指定する。",
       ),
     figma_use_absolute_bounds: z
       .boolean()
@@ -443,7 +443,7 @@ export const registerCompareDesign = (server: McpServer): void => {
       .regex(/^#?([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/, "design_background must be a hex color")
       .optional()
       .describe(
-        "背景の塗りが無いFigmaノードを、どの色の上に置いて評価するか（#RRGGBB、既定は白）。実装側の画面が白地でない場合に指定する。",
+        "透明画素を合成する色（#RRGGBB、既定は白）。省略時は完全透明な設計画素を構造採点から除外する。背景色がデザインで明示されている場合や、透明画素も指定色の上で評価したい場合に指定する。",
       ),
     profile: z
       .enum(["strict", "balanced", "layout"])

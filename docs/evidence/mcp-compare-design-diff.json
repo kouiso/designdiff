@@ -183,7 +183,7 @@
     "verificationContext": {
       "version": 1,
       "design": {
-        "sourceIdentitySha256": "1d1e54d387d8704e665c42071e578a02af5b8025cef56e615fe7fa3259f22fca",
+        "sourceIdentitySha256": "fec7037da98988d51b4bd506e7cf5b31b7a41055acea1e60853261c116d37f54",
         "imageSha256": "e7ca1c4a88e88b46e58c54f566a43ac9a89e35f98ae64dabf915bda32241f5d3",
         "background": "#FFFFFF",
         "figmaExportConditions": null
@@ -204,7 +204,7 @@
       "mask": {
         "status": "none"
       },
-      "fingerprint": "e68086efa749e0c46d9cbf4cf71b3af21a817f2f0933e0bd0f664f1802361ec5"
+      "fingerprint": "98742f696f116bf6c6c308d1627a3ec8478c164abf0cf1dc8d94ea4a0dc2c849"
     },
     "diffImagePath": "/tmp/figdiff-mcp/cmp-evidence.png"
   },

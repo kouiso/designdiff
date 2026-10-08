@@ -35,7 +35,7 @@ Defined in `app/mcp-server/src/tool/compare-design.ts`.
 ```json
 {
   "design_source": "string",
-  "figma_contents_only": "boolean? (default true)",
+  "figma_contents_only": "boolean? (default false)",
   "figma_use_absolute_bounds": "boolean? (default true)",
   "screenshot": "string?",
   "screenshot_url": "string?",
@@ -82,7 +82,7 @@ Notes:
 - Mobile `capture_device` comparisons default `mask_system_ui` to `true`, adding top `system:status-bar` and bottom `system:navigation-bar` ignore regions in screenshot pixel coordinates. Set `mask_system_ui: false` to disable this preset; use `set_ignore_regions` or inline `ignore_regions` for device-specific fine-tuning.
 - `capture_device_serial` selects one Android device by serial when several are attached (`capture_device: "android"` only). If omitted and multiple devices are ready, the call fails listing the serials — pick one or set `ANDROID_SERIAL`.
 - `capture_scroll` stitches a scrollable page into one tall image on the `capture_device` path. The stitch detail (frame count, whether the bottom was reached) is returned in `scrollCapture`.
-- `design_background` chooses the colour transparent Figma exports are evaluated over. The default is white; set it when the implementation background is not white.
+- `design_background` chooses the colour transparent pixels are composited over (default white). When omitted, fully transparent design pixels are excluded from structural scoring; set it when the design explicitly specifies a background colour or when you want transparent pixels evaluated over a particular implementation background.
 - `comparison_conditions` declares the viewport `{width,height}` (logical px), `pixelRatio`, and `origin` `{x,y}` (common reference of the image top-left, logical px) for each side. It is recorded into the result and reused by `verify_fix`; it never moves or crops the images.
 - `campaign_id` scopes comparison history per work item. Reuse the same ID within one fix campaign and start a new ID for new work. Old comparison records are never deleted.
 

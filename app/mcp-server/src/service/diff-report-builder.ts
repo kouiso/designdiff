@@ -14,11 +14,14 @@ import {
   computePerceptibleDiffRatio,
   computeSsimForRegion,
   computeWholeImageStructure,
+  deltaE2000,
   effectiveRegionColor,
   effectiveRegionStructure,
   GLOBAL_SHIFT_CRITICAL_THRESHOLD_PX,
   GLOBAL_SHIFT_ISSUE_THRESHOLD_PX,
   resolveAlignment,
+  PERCEPTIBLE_DELTA_E,
+  srgbToLab,
   UNIMPLEMENTED_LAYOUT_SCORE,
   computeVerdict,
   detectHighTextureRegion,
@@ -75,6 +78,9 @@ interface BuildDiffReportOptions {
   // ときだけ採点単位として使う (Issue #56)。diffPixelCount は上限超過時に
   // 疑わしい順で残すための重大度シグナル。
   diffRegions?: (DiffBoundingBox & { diffPixelCount?: number })[];
+  // pixelmatch のRGBA差分画像。クラスタ外に残る知覚可能な色差を検査するとき、
+  // クラスタに含まれる画素を追加メモリ無しで識別する。
+  diffPixelData?: Uint8ClampedArray;
   // 各採点領域で許容する局所平行移動の最大px。指定時だけ有効になる opt-in
   // 許容 (既定 off: 1px でも FAIL を維持する従来契約を他利用者から変えない)。
   // ラスタライザ差・丸め誤差で要素が数pxずれる環境間比較 (例: Figma 正本と
@@ -89,6 +95,9 @@ interface BuildDiffReportOptions {
 }
 
 const MAX_REGION_SCORE_COUNT = 24;
+// section relief は差分クラスタ全件の証明を要する。レポート行数とは別の上限を設け、
+// 超過したクラスタは未説明として扱い救済を止める。
+const MAX_SECTION_RELIEF_CLUSTER_COUNT = 200;
 const MIN_REGION_PIXEL_AREA = 64;
 // shape (Hausdorff, 0-1 正規化済み) が実測でこの値を明確に上回る場合のみ
 // エッジの空間ズレを「実在する」と判定する。純色/輝度シフトのみの領域は
@@ -415,6 +424,34 @@ function buildIssues(
       });
     }
 
+    // セクション行が差分クラスタ網羅救済で合否から外れたとき、なぜ外れた
+    // かを結果から辿れるよう診断として残す。黙って消すと、セクションの
+    // 平均スコアが閾値を超えているのに critical が無い理由が分からなくなる。
+    const diffClusterCoverage = regionScore.diffClusterCoverage;
+    if (
+      diffClusterCoverage &&
+      diffClusterCoverage.unexplainedPerceptibleDiff === false &&
+      diffClusterCoverage.explainedCount === diffClusterCoverage.clusterCount
+    ) {
+      issues.push({
+        regionId: regionScore.regionId,
+        bbox: regionScore.bbox,
+        kind: "color",
+        severity: "minor",
+        figmaNodeId: regionScore.figmaNodeId,
+        evidence: {
+          signal: "diff_cluster_relief",
+          value: diffClusterCoverage.explainedCount,
+          threshold: diffClusterCoverage.clusterCount,
+          expected: "セクション内の全差分クラスタが説明済み",
+          actual: `${diffClusterCoverage.explainedCount}/${diffClusterCoverage.clusterCount} 差分クラスタが同一トークン・変位などの証明で説明済み`,
+          ...evidenceProvenance,
+        },
+        suggestedCssFix:
+          "セクション内の差分はすべてラスタライズ差として証明済みです。実害が無いか目視で確認してください。",
+      });
+    }
+
     // 同一トークン証明が取れた領域は、画素非一致がラスタライザ差だけで
     // 構成されていると4拘束 (bg/fgトークン・無彩色軸・インク量・トポロジ) で
     // 証明されている。実害と区別するための診断として minor で記録する。
@@ -688,6 +725,111 @@ const computeDiffPixelDensity = (
   return Math.min(1, bbox.diffPixelCount / area);
 };
 
+// クラスタ行が rasterization_tolerance 下の合格水準を満たすか。
+// sameToken / localDisplacement 等の証明が付くか、証明が無くても構造・色
+// とも閾値内かのどちらか。セクション行の救済判定にだけ使う。
+const isDiffClusterExplained = (cluster: RegionScore): boolean =>
+  effectiveRegionStructure(cluster, true) >= 0.95 && effectiveRegionColor(cluster, true) < 2;
+
+const isPixelmatchDiffPixel = (diffPixelData: Uint8ClampedArray, pixel: number): boolean => {
+  const offset = pixel * 4;
+  const red = diffPixelData[offset];
+  const green = diffPixelData[offset + 1];
+  const blue = diffPixelData[offset + 2];
+  const alpha = diffPixelData[offset + 3];
+  return (
+    !(alpha === 0 && red === 0 && green === 0 && blue === 0) && (red !== green || green !== blue)
+  );
+};
+
+// セクション bbox と重なる差分クラスタの内訳。重なりが 1 件も無いセクションは
+// undefined を返し、救済にも診断にも使わない。閾値未満の広範な色ずれは
+// クラスタを作らないため、クラスタ 0 件を「説明済み」と数えると誤 PASS になる。
+const buildDiffClusterCoverage = (
+  bbox: DiffBoundingBox,
+  clusters: readonly RegionScore[],
+  unscoredClusters: readonly DiffBoundingBox[],
+  unexplainedPerceptibleDiff: boolean | undefined,
+): RegionScore["diffClusterCoverage"] | undefined => {
+  const intersects = (cluster: DiffBoundingBox): boolean =>
+    cluster.x < bbox.x + bbox.w &&
+    bbox.x < cluster.x + cluster.w &&
+    cluster.y < bbox.y + bbox.h &&
+    bbox.y < cluster.y + cluster.h;
+  const intersecting = clusters.filter((cluster) => intersects(cluster.bbox));
+  const intersectingUnscored = unscoredClusters.filter(intersects);
+  if (intersecting.length + intersectingUnscored.length === 0) {
+    return undefined;
+  }
+  return {
+    // 上限で採点から外れたクラスタは説明済みとは数えない。未採点クラスタを
+    // 網羅判定から落とすと、真の差分を抱えたセクションまで救済してしまう。
+    clusterCount: intersecting.length + intersectingUnscored.length,
+    explainedCount: intersecting.filter(isDiffClusterExplained).length,
+    ...(unexplainedPerceptibleDiff === undefined ? {} : { unexplainedPerceptibleDiff }),
+  };
+};
+
+const hasUnexplainedPerceptibleDiff = (
+  designPixels: Uint8ClampedArray,
+  screenshotPixels: Uint8ClampedArray,
+  bbox: DiffBoundingBox,
+  width: number,
+  height: number,
+  diffPixelData: Uint8ClampedArray | undefined,
+  ignoreMask: Uint8Array | undefined,
+): boolean | undefined => {
+  const pixelCount = width * height;
+  if (
+    diffPixelData === undefined ||
+    diffPixelData.length !== pixelCount * 4 ||
+    (ignoreMask !== undefined && ignoreMask.length !== pixelCount)
+  ) {
+    return undefined;
+  }
+  for (let y = Math.max(0, bbox.y); y < Math.min(height, bbox.y + bbox.h); y += 1) {
+    for (let x = Math.max(0, bbox.x); x < Math.min(width, bbox.x + bbox.w); x += 1) {
+      const pixel = y * width + x;
+      if (ignoreMask?.[pixel] === 1 || isPixelmatchDiffPixel(diffPixelData, pixel)) continue;
+      const offset = pixel * 4;
+      if (
+        designPixels[offset] === screenshotPixels[offset] &&
+        designPixels[offset + 1] === screenshotPixels[offset + 1] &&
+        designPixels[offset + 2] === screenshotPixels[offset + 2] &&
+        designPixels[offset + 3] === screenshotPixels[offset + 3]
+      ) {
+        continue;
+      }
+      const designAlpha = designPixels[offset + 3] / 255;
+      const screenshotAlpha = screenshotPixels[offset + 3] / 255;
+      const designLab = srgbToLab(
+        255 + (designPixels[offset] - 255) * designAlpha,
+        255 + (designPixels[offset + 1] - 255) * designAlpha,
+        255 + (designPixels[offset + 2] - 255) * designAlpha,
+      );
+      const screenshotLab = srgbToLab(
+        255 + (screenshotPixels[offset] - 255) * screenshotAlpha,
+        255 + (screenshotPixels[offset + 1] - 255) * screenshotAlpha,
+        255 + (screenshotPixels[offset + 2] - 255) * screenshotAlpha,
+      );
+      if (deltaE2000(designLab, screenshotLab) > PERCEPTIBLE_DELTA_E) return true;
+    }
+  }
+  return false;
+};
+
+const shouldScoreDiffClusters = (
+  options: BuildDiffReportOptions,
+  hasChildRegions: boolean,
+): boolean =>
+  (options.diffRegions?.length ?? 0) > 0 &&
+  (!hasChildRegions || options.rasterizationTolerance === true);
+
+const getDiffClusterScoreLimit = (hasChildRegions: boolean, rasterizationTolerance: boolean) =>
+  hasChildRegions && rasterizationTolerance
+    ? MAX_SECTION_RELIEF_CLUSTER_COUNT
+    : MAX_REGION_SCORE_COUNT;
+
 function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
   const {
     designPixels,
@@ -700,6 +842,7 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
     paddingMask,
   } = options;
   const childRegions: RegionScore[] = [];
+  const unscoredDiffClusters: DiffBoundingBox[] = [];
   const fullFrame = resolveFullFrame(width, height, cropRegion, options.fullFrame);
 
   const getTextureScore = (bbox: DiffBoundingBox): number => {
@@ -844,22 +987,35 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
   // Figma ノード木が無い比較では childRegions が作れず、面積重み付き平均が
   // whole-frame 1行だけになる。局所差分が面積比で薄まって合否を通り抜ける
   // (Issue #56)。pixelmatch の差分クラスタは局所化を既に正しく行えているため、
-  // これを採点単位に転用する。figmaRootNode 側の挙動 (childRegions がある場合)
-  // は変えない。
+  // これを採点単位に転用する。ノード木がある比較でも、rasterization_tolerance
+  // が指定されたときは、セクション行 (bbox を次兄弟まで引き伸ばした広い採点
+  // 単位) の差分がクラスタ側の証明で説明済みかを測るために同じ分類を使う。
+  // tolerance 未指定のセクション経路では従来どおり計算しない。
   const diffClusterRegions: RegionScore[] = [];
-  if (childRegions.length === 0 && options.diffRegions && options.diffRegions.length > 0) {
+  if (shouldScoreDiffClusters(options, childRegions.length > 0)) {
     // pixelmatch のクラスタリング (clusterDiffPixels 系) が既に自前の連結画素数
     // 閾値でノイズを除いている。子ノード用の MIN_REGION_PIXEL_AREA (64px^2) を
     // ここでも適用すると、1x40 の細い欠落のような正当な小面積差分まで捨てて
     // whole-frame 平均へフォールバックし、#56 と同じ薄まりが再発する。
-    const scoreableClusters = options.diffRegions.filter((bbox) => bbox.w > 0 && bbox.h > 0);
+    const scoreableClusters = (options.diffRegions ?? []).filter(
+      (bbox) => bbox.w > 0 && bbox.h > 0,
+    );
     // 上限超過時は先頭から均等間引きせず、diffPixelCount が大きい (=疑わしい)
     // 順に残す。均等間引きだと本命のクラスタがたまたま非採用インデックスに
     // 落ちて丸ごと見逃され、他の採用クラスタのせいで whole-frame fallback も
     // 効かなくなり、誤 PASS が再発する。
     const selectedClusters = [...scoreableClusters]
       .sort((a, b) => (b.diffPixelCount ?? 0) - (a.diffPixelCount ?? 0))
-      .slice(0, MAX_REGION_SCORE_COUNT);
+      .slice(
+        0,
+        getDiffClusterScoreLimit(childRegions.length > 0, options.rasterizationTolerance === true),
+      );
+    const selectedClusterSet = new Set(selectedClusters);
+    for (const cluster of scoreableClusters) {
+      if (!selectedClusterSet.has(cluster)) {
+        unscoredDiffClusters.push(cluster);
+      }
+    }
 
     for (const bbox of selectedClusters) {
       // ソート後の index を ID にすると、2 回の比較で重大度の順位が入れ替わった
@@ -965,6 +1121,37 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
     height,
     ignoreMask,
   );
+
+  // セクション行の救済証拠をここで後付けする。textReflow による再分類が
+  // 確定してからでないと、クラスタが説明済みかを数えられないため。
+  // tolerance 未指定の比較では cluster 分類自体を走らせていないので、
+  // childRegions に証拠は付かず、採点は従来契約のまま変わらない。
+  for (const section of childRegions) {
+    const coverage = buildDiffClusterCoverage(
+      section.bbox,
+      diffClusterRegions,
+      unscoredDiffClusters,
+      undefined,
+    );
+    if (coverage !== undefined) {
+      const unexplainedPerceptibleDiff =
+        coverage.explainedCount === coverage.clusterCount && options.rasterizationTolerance === true
+          ? hasUnexplainedPerceptibleDiff(
+              designPixels,
+              screenshotPixels,
+              section.bbox,
+              width,
+              height,
+              options.diffPixelData,
+              ignoreMask,
+            )
+          : undefined;
+      section.diffClusterCoverage = {
+        ...coverage,
+        ...(unexplainedPerceptibleDiff === undefined ? {} : { unexplainedPerceptibleDiff }),
+      };
+    }
+  }
 
   const wholeFrameBbox = toWholeFrameRegion(width, height);
   // letterbox 余白を含めると SSIM / 色差が不当に悪化するため、content rect 内で評価する。

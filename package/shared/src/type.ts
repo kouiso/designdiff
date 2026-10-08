@@ -241,6 +241,16 @@ export interface RegionScore {
   // (color / structure) が薄まる。読む側がどの程度薄まっているかをスコアとは
   // 独立に判断できるようにするためのシグナル (Issue #58)。
   diffPixelDensity?: number;
+  // セクション行 (bbox を次の兄弟まで引き伸ばした採点単位) の救済証拠。
+  // セクション内の pixelmatch 差分クラスタすべてが rasterization_tolerance
+  // 下の合格水準を満たし、クラスタ外に知覚可能な差が残らないときに限り、
+  // セクションの広面積平均に残る差分は説明済みとして扱う。
+  diffClusterCoverage?: {
+    clusterCount: number;
+    explainedCount: number;
+    // true または未計測なら救済しない。false のときだけクラスタ網羅救済を許す。
+    unexplainedPerceptibleDiff?: boolean;
+  };
   // 両側がベタ面のときだけ入る。ΔE2000 が閾値を下回るトークン1段のズレを捕まえる。
   flatColorMismatch?: {
     designHex: string;
@@ -358,6 +368,27 @@ export interface RegionScore {
 }
 
 /**
+ * セクション行のクラスタ網羅救済が成立しているか。
+ *
+ * セクションの bbox は次の兄弟まで引き伸ばされるため、細い線 1 本のズレ
+ * でも全面積の平均系スコアが落ちる。実際の差分は pixelmatch クラスタに
+ * 局在しており、そのすべてが rasterization_tolerance 下の合格水準を満た
+ * しているなら、セクションに残った差分はクラスタ側の証明で説明済みと
+ * みなせる。クラスタが 1 件も無いセクションは救済しない。閾値未満の
+ * 広範な色ずれはクラスタを作らないため、「説明済み」と断定する材料が
+ * 無いからです。
+ */
+const isDiffClusterCoverageComplete = (score: RegionScore): boolean => {
+  const coverage = score.diffClusterCoverage;
+  return (
+    coverage !== undefined &&
+    coverage.clusterCount > 0 &&
+    coverage.explainedCount === coverage.clusterCount &&
+    coverage.unexplainedPerceptibleDiff === false
+  );
+};
+
+/**
  * 領域の採点に使う構造値。局所シフトで救済された領域はオフセット位置の
  * スコアを返す。そうでなければ元の値をそのまま使う。
  */
@@ -371,7 +402,8 @@ export const effectiveRegionStructure = (score: RegionScore, honorSameToken = fa
       score.textReflow !== undefined ||
       score.textureResampling !== undefined ||
       score.edgeStraddle !== undefined ||
-      score.localDisplacement !== undefined)
+      score.localDisplacement !== undefined ||
+      isDiffClusterCoverageComplete(score))
   ) {
     return 1;
   }
@@ -395,7 +427,8 @@ export const effectiveRegionColor = (score: RegionScore, honorSameToken = false)
       score.textReflow !== undefined ||
       score.textureResampling !== undefined ||
       score.edgeStraddle !== undefined ||
-      score.localDisplacement?.alignedTokenMatch === true)
+      score.localDisplacement?.alignedTokenMatch === true ||
+      isDiffClusterCoverageComplete(score))
   ) {
     return 0;
   }
