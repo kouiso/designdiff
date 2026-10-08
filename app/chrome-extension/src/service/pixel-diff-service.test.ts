@@ -141,9 +141,12 @@ describe("pixel-diff-service", () => {
       return [build(pixel), build(pixel)] as const;
     };
 
+    // desktop / MCP / Figma plugin の既定閾値。DIFF_THRESHOLD を参照すると、拡張側の
+    // 閾値だけが変わっても参照も一緒に動き、ずれを検知できない。
+    const PRODUCT_THRESHOLD = 0.1;
     const reference = (a: Uint8ClampedArray, b: Uint8ClampedArray, checkerboard = false) =>
       comparePixels(a, b, new Uint8ClampedArray(W * H * 4), W, H, {
-        threshold: DIFF_THRESHOLD,
+        threshold: PRODUCT_THRESHOLD,
         checkerboard,
       });
 

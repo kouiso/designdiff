@@ -10,6 +10,28 @@ import typescriptEslint from "typescript-eslint";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const PIXELMATCH_MESSAGE =
+  "@figdiff/shared の comparePixels を使う (白合成の採点意味論を共有するため)。";
+const PIXELMATCH_COMPARE_FILE = "package/shared/src/pixel-compare.ts";
+const TEST_FILES = ["**/*.test.ts", "**/*.test.tsx", "**/*.spec.ts"];
+// no-restricted-syntax は後ろのブロックが配列ごと上書きするため、同ルールを持つ
+// ブロックすべてにこの selector を入れる。テストは vi.mock した pixelmatch を
+// 取り出すために動的 import するので、テスト以外にだけ効かせる。
+const PIXELMATCH_DYNAMIC_IMPORT = {
+  selector: "ImportExpression[source.value='pixelmatch']",
+  message: PIXELMATCH_MESSAGE,
+};
+const DESKTOP_PROPS_SELECTORS = [
+  {
+    selector: "TSTypeAliasDeclaration[id.name='Props']",
+    message: "Name props type after the component: use `XxxProps`, not bare `Props`.",
+  },
+  {
+    selector: "TSInterfaceDeclaration[id.name='Props']",
+    message: "Name props interface after the component: use `XxxProps`, not bare `Props`.",
+  },
+];
+
 export default [
   {
     ignores: [
@@ -198,6 +220,14 @@ export default [
     },
   },
 
+  {
+    files: ["**/*.ts", "**/*.tsx"],
+    ignores: [PIXELMATCH_COMPARE_FILE, ...TEST_FILES],
+    rules: {
+      "no-restricted-syntax": ["error", PIXELMATCH_DYNAMIC_IMPORT],
+    },
+  },
+
   // React hooks rules + props type naming
   {
     files: ["app/desktop/src/**/*.tsx", "app/desktop/src/**/*.ts"],
@@ -209,17 +239,13 @@ export default [
       "react-hooks/exhaustive-deps": "warn",
 
       // Props types are named after the component (`XxxProps`), never bare `Props`.
-      "no-restricted-syntax": [
-        "error",
-        {
-          selector: "TSTypeAliasDeclaration[id.name='Props']",
-          message: "Name props type after the component: use `XxxProps`, not bare `Props`.",
-        },
-        {
-          selector: "TSInterfaceDeclaration[id.name='Props']",
-          message: "Name props interface after the component: use `XxxProps`, not bare `Props`.",
-        },
-      ],
+      "no-restricted-syntax": ["error", ...DESKTOP_PROPS_SELECTORS, PIXELMATCH_DYNAMIC_IMPORT],
+    },
+  },
+  {
+    files: ["app/desktop/src/**/*.test.ts", "app/desktop/src/**/*.test.tsx"],
+    rules: {
+      "no-restricted-syntax": ["error", ...DESKTOP_PROPS_SELECTORS],
     },
   },
 
@@ -280,6 +306,7 @@ export default [
           selector: "FunctionExpression",
           message: "Use an arrow function in the compare_design tool.",
         },
+        PIXELMATCH_DYNAMIC_IMPORT,
       ],
     },
   },
@@ -365,19 +392,11 @@ export default [
   // script/oracle-compare.mjs は製品コードから独立させる物差しなので対象外 (self-test で固定)。
   {
     files: ["**/*.ts", "**/*.tsx"],
-    ignores: ["package/shared/src/pixel-compare.ts"],
+    ignores: [PIXELMATCH_COMPARE_FILE],
     rules: {
       "no-restricted-imports": [
         "error",
-        {
-          paths: [
-            {
-              name: "pixelmatch",
-              message:
-                "@figdiff/shared の comparePixels を使う (白合成の採点意味論を共有するため)。",
-            },
-          ],
-        },
+        { paths: [{ name: "pixelmatch", message: PIXELMATCH_MESSAGE }] },
       ],
     },
   },
