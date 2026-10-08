@@ -44,7 +44,7 @@ const DESCRIPTION = `デザインと実装のピクセル差分を検出しま�
 - status: "PASS" = 構造SSIM判定上の完了。"FAIL" = 修正が必要。"UNCERTAIN" = 判定の確からしさが足りず人間レビューへ回った状態。失敗ではないので直そうとせず報告すること
 - completionCriteria: blocking=true の項目が "PASS" になるまで作業を続行。ただし status が "UNCERTAIN" の項目は直しても "PASS" にならないので、そこで止めて人間に報告する。matchRate は参考値
 - nextAction: 次に実行すべきアクション（従うこと）
-- subThresholdDiffPixelCount: 生の画素値は異なるが threshold 未満で diffPixelCount に数えられなかった画素数。diffPixelCount が 0 でもこれが 1 以上なら、影のぼかし・グラデーション・AA縁のような低振幅差分が残っている（サマリーにも警告が出る）。status は変わらないので、ぼかし半径などを照合する目的なら threshold を下げて再比較する
+- subThresholdDiffPixelCount: diffPixelCount が 0 のときだけ返す。threshold を 0 に下げれば差分として数えられるが現 threshold では数えられない画素数（AA 検出で pixelmatch が除外する画素は含まない）。1 以上なら影のぼかし・グラデーションのような低振幅差分が残っている（サマリーにも警告が出る）。status は変わらないので、ループ判定が 続行 なら threshold を下げて再比較し、停止 なら人間へ報告する
 - diffImagePath: 差分画像のローカルパス。Read ツールで開いて視覚確認できる（~/.figdiff/results/ に保存）
 - diffRegions: 差分領域。レスポンス肥大化を防ぐため上位20件のみ。全件は regionsDetailPath のJSONファイルを参照
 
@@ -176,11 +176,20 @@ const buildSubThresholdLines = (result: CompareDesignResult): string[] => {
     result.totalPixelCount > 0
       ? ` (採点対象 ${result.totalPixelCount} px の ${((subThreshold / result.totalPixelCount) * PERCENT_SCALE).toFixed(2)}%)`
       : "";
+  // 「ループ判定が最終決定」がツール契約の最優先ルール。停止と出ているのに
+  // 「再比較してください」と並ぶと、守るべき指示が読み手に伝わらない。
+  // 判定の取得失敗も停止として扱う契約に合わせ、停止時は人間への報告へ振る。
+  const stop =
+    result.loopGuard === undefined ||
+    (result.loopGuard.stop ?? result.loopGuard.decision === "stop");
+  const guidance = stop
+    ? "  ループ判定が 停止 のため再呼出しはできません。ぼかし半径・グラデーションの照合が目的なら、この警告を人間に報告してください（人間側で threshold を下げた再比較が可能です）。"
+    : "  影のぼかし半径やグラデーションの一致を確かめる目的なら、threshold を下げて (例: 0) 再比較するか差分を目視で確認してください。";
   return [
     "",
     `threshold 未満の差分画素: ${subThreshold} px${ratio}`,
-    "全差分が threshold 未満の低振幅差分です（影・グラデーション・AA縁の可能性）。",
-    "  影のぼかし半径やグラデーションの一致を確かめる目的なら、threshold を下げて (例: 0) 再比較するか差分を目視で確認してください。",
+    "全差分が threshold 未満の低振幅差分です（影のぼかし・グラデーション・微細な色ズレの可能性）。",
+    guidance,
   ];
 };
 

@@ -165,7 +165,7 @@
     "verificationContext": {
       "version": 1,
       "design": {
-        "sourceIdentitySha256": "fec7037da98988d51b4bd506e7cf5b31b7a41055acea1e60853261c116d37f54",
+        "sourceIdentitySha256": "1d1e54d387d8704e665c42071e578a02af5b8025cef56e615fe7fa3259f22fca",
         "imageSha256": "e7ca1c4a88e88b46e58c54f566a43ac9a89e35f98ae64dabf915bda32241f5d3",
         "background": "#FFFFFF",
         "backgroundExplicit": false,
@@ -187,7 +187,7 @@
       "mask": {
         "status": "none"
       },
-      "fingerprint": "b69853e14820526a51be42b3eef2000ab86aff38180af4df93e264900eea34d3"
+      "fingerprint": "8b1acfd3e30c1b6b75f19d81c9ac1a54b884e5181640ca9a63b7aa0f2d8406eb"
     }
   }
 }

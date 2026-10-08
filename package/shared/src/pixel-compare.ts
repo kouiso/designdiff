@@ -18,7 +18,7 @@ export interface PixelCompareOptions {
 export function comparePixels(
   img1: Uint8ClampedArray,
   img2: Uint8ClampedArray,
-  output: Uint8ClampedArray,
+  output: Uint8ClampedArray | undefined,
   width: number,
   height: number,
   options: PixelCompareOptions = {},

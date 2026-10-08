@@ -12,7 +12,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 
 import { CompareDesignResultSchema } from "@figdiff/shared";
-
 import type { CompareDesignResult } from "@figdiff/shared";
 
 import { createMcpServer } from "../server.js";
@@ -53,7 +52,8 @@ describe("compare_design — threshold 未満の低振幅差分の報告", () =>
       .parse(response.content);
     return {
       result: CompareDesignResultSchema.parse(response.structuredContent),
-      // 1つ目は互換用の JSON、2つ目が人間とエージェントが読むサマリー。
+      // 警告が「JSON にだけ出る」状態へ退行しないかを見るため、人間向けサマリー
+      // (応答の 2 ブロック目という順序はツールの公開契約) を別に取る。
       summary: content[1]?.text ?? "",
     };
   };
@@ -106,7 +106,7 @@ describe("compare_design — threshold 未満の低振幅差分の報告", () =>
     // status は構造・色の別系統の検出器が決めるため、ここでは件数と警告だけを見る。
     expect(result.subThresholdDiffPixelCount).toBe(width * height);
     expect(result.suggestion).toContain(
-      "全差分が threshold 未満の低振幅差分です（影・グラデーション・AA縁の可能性）。",
+      "全差分が threshold 未満の低振幅差分です（影のぼかし・グラデーション・微細な色ズレの可能性）。",
     );
   });
 
@@ -117,15 +117,20 @@ describe("compare_design — threshold 未満の低振幅差分の報告", () =>
       `threshold 未満の差分画素: ${width * height} px (採点対象 ${width * height} px の 100.00%)`,
     );
     expect(summary).toContain(
-      "全差分が threshold 未満の低振幅差分です（影・グラデーション・AA縁の可能性）。",
+      "全差分が threshold 未満の低振幅差分です（影のぼかし・グラデーション・微細な色ズレの可能性）。",
     );
-    expect(summary).toContain("threshold を下げて (例: 0) 再比較");
+    // この fixture は色解析が全体の色ズレを検出して FAIL / ループ判定 続行 を
+    // 返すため、案内は再比較を促す側になる。停止時の人間報告への振り分けは
+    // buildSummaryText のユニットテストで担保する。
+    expect(summary).toContain("threshold を下げて (例: 0) 再比較するか差分を目視で確認");
+    expect(summary).not.toContain("人間に報告");
   });
 
   it("threshold を 0 に下げると同じ差分が diffPixelCount に数えられ、警告は消える", async () => {
     const { result, summary } = await callCompare(subtlePath, 0);
     expect(result.diffPixelCount).toBe(width * height);
-    expect(result.subThresholdDiffPixelCount).toBe(0);
+    // フィールドは diffPixelCount=0 の比較にだけ返す契約。
+    expect(result.subThresholdDiffPixelCount).toBeUndefined();
     expect(summary).not.toContain("threshold 未満");
   });
 
@@ -159,10 +164,10 @@ describe("compare_design — threshold 未満の低振幅差分の報告", () =>
     expect(result.suggestion).not.toContain("threshold 未満");
   });
 
-  it("閾値を越える明確な差分では、閾値未満の件数は0で警告も出ない", async () => {
+  it("閾値を越える明確な差分では、閾値未満の件数は返さず警告も出ない", async () => {
     const result = await compare(obviousPath);
     expect(result.diffPixelCount).toBe(width * height);
-    expect(result.subThresholdDiffPixelCount).toBe(0);
+    expect(result.subThresholdDiffPixelCount).toBeUndefined();
     expect(result.suggestion).not.toContain("threshold 未満");
   });
 });
@@ -201,5 +206,46 @@ describe("buildSummaryText — threshold 未満の低振幅差分", () => {
     expect(text).toContain("threshold 未満の差分画素: 3 px");
     expect(text).not.toContain("採点対象");
     expect(text).not.toContain("NaN");
+  });
+
+  // ループ判定はサマリー内のすべてに優先する契約。停止なのに「再比較」と出すと
+  // エージェントが契約違反の再呼出しを試みるため、案内は判定状態で切り替える。
+  it("ループ判定が続行なら threshold を下げた再比較を案内する", () => {
+    const text = build({
+      subThresholdDiffPixelCount: 76,
+      loopGuard: {
+        stop: false,
+        step: 2,
+        maxSteps: 10,
+        remainingSteps: 8,
+        reason: "continue",
+        message: "差分が残っています。続行してください。",
+      },
+    });
+    expect(text).toContain("threshold を下げて (例: 0) 再比較するか差分を目視で確認");
+    expect(text).not.toContain("人間に報告");
+  });
+
+  it("ループ判定が停止なら再比較ではなく人間への報告を案内する", () => {
+    const text = build({
+      subThresholdDiffPixelCount: 76,
+      loopGuard: {
+        stop: true,
+        step: 1,
+        maxSteps: 10,
+        remainingSteps: 0,
+        reason: "no-regression",
+        message: "PASS に到達しました (反復 1 回)。ループを終了してください。",
+      },
+    });
+    expect(text).toContain("ループ判定が 停止");
+    expect(text).toContain("人間に報告");
+    expect(text).not.toContain("再比較するか差分を目視で確認");
+  });
+
+  it("ループ判定を取得できない結果も停止として扱い人間への報告を案内する", () => {
+    const text = build({ subThresholdDiffPixelCount: 76 });
+    expect(text).toContain("ループ判定が 停止");
+    expect(text).toContain("人間に報告");
   });
 });
