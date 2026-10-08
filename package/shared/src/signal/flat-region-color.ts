@@ -17,7 +17,7 @@ import type { DiffBoundingBox } from "../type.js";
  */
 
 /** 最頻色からこの差（各チャンネル）までは同じ色とみなす */
-const FLAT_TOLERANCE = 1;
+export const FLAT_TOLERANCE = 1;
 /** 最頻色の許容内に収まる画素がこの割合を超えたら「ベタ面」とみなす */
 const FLAT_COVERAGE = 0.995;
 /** これより小さい領域は統計として当てにならないので判定しない */

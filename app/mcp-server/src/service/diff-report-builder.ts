@@ -2,6 +2,7 @@ import {
   buildVerifiedInsetCandidates,
   classifyEdgeStraddle,
   classifyGlyphEdgeRasterization,
+  classifyLocalDisplacement,
   classifySameTokenRasterization,
   classifyTextReflow,
   classifyTextureResampling,
@@ -182,6 +183,27 @@ const buildLocalAlignment = (
   );
 };
 
+// 細い領域の変位証明も採点が落ちる領域だけに走らせる。証明自体は細さと
+// 窓面積で打ち切られるので、太い領域ではすぐ undefined が返る。
+const buildLocalDisplacement = (
+  structure: number,
+  color: number,
+  options: BuildDiffReportOptions,
+  bbox: DiffBoundingBox,
+): RegionScore["localDisplacement"] => {
+  if (structure >= 0.95 && color < 2) {
+    return undefined;
+  }
+  return classifyLocalDisplacement(
+    options.designPixels,
+    options.screenshotPixels,
+    options.width,
+    options.height,
+    bbox,
+    options.ignoreMask,
+  );
+};
+
 // 同一トークン証明は平行移動に不変なので、rasterization_tolerance 下では
 // 文字列や部品が丸ごと数pxずれても合否は PASS のまま通る。受け入れ済みの
 // 実機画面でも 3-4px の局所ずれが出るため合否には混ぜないが、ずれ自体は
@@ -264,8 +286,15 @@ function buildIssues(
     // hasCriticalIssue 経路へ乗せる。
     // ただし局所シフト救済済みの領域で、整列後の位置でベタ面同色と証明された
     // 場合は「同じ帯がずれた」差分なので critical に上げない (designdiff#230)。
+    // 細い線・縁が平行移動しただけと証明された領域も、整列後にトークン段差が
+    // 残っていなければ同じ理由で critical に上げない (designdiff#243)。
+    // 段差が残る (alignedTokenMatch=false) 場合は変位は事実でも塗り違いなので
+    // critical を残す。
     const flat = regionScore.flatColorMismatch;
-    if (flat && !regionScore.localAlignment?.residualFlatColorMatch) {
+    const localDisplacement = regionScore.localDisplacement;
+    const honorDisplacement =
+      options.rasterizationTolerance === true && localDisplacement?.alignedTokenMatch === true;
+    if (flat && !regionScore.localAlignment?.residualFlatColorMatch && !honorDisplacement) {
       issues.push({
         regionId: regionScore.regionId,
         bbox: regionScore.bbox,
@@ -359,6 +388,30 @@ function buildIssues(
         },
         suggestedCssFix:
           "領域内の要素が数pxずれて描画されています。余白・座標・丸めを確認してください。",
+      });
+    }
+
+    // 変位証明は位置の事実なので、合否に効かせるかどうかに関わらず
+    // ずれ量を position issue として残す。黙って消すと線の位置を詰める
+    // 手掛かりが無くなる。
+    if (localDisplacement) {
+      issues.push({
+        regionId: regionScore.regionId,
+        bbox: regionScore.bbox,
+        kind: "position",
+        severity: "minor",
+        figmaNodeId: regionScore.figmaNodeId,
+        evidence: {
+          signal: "local_displacement",
+          value: Math.max(Math.abs(localDisplacement.dx), Math.abs(localDisplacement.dy)),
+          threshold: 1,
+          expected: "0px",
+          actual: `line/edge moved (${localDisplacement.dx}, ${localDisplacement.dy})px, ΔE ${localDisplacement.unalignedDeltaE.toFixed(2)} -> ${localDisplacement.alignedDeltaE.toFixed(2)} after alignment`,
+          ...evidenceProvenance,
+        },
+        suggestedCssFix: localDisplacement.alignedTokenMatch
+          ? "同じ線・縁が数pxずれて描画されています。色トークンは一致しています。枠線の位置・余白・丸めを確認してください。"
+          : "同じ線・縁が数pxずれて描画されていますが、整列後も色の段差が残っています。塗り色のトークンをデザイン基準に合わせてください。",
       });
     }
 
@@ -471,7 +524,7 @@ function buildIssues(
     // 抑え、上で生成した色issueと不合格判定は維持する。
     const hasEdgeDisplacement =
       !localAlignment &&
-      !(honorSameToken && (sameToken || textReflow || edgeStraddle)) &&
+      !(honorSameToken && (sameToken || textReflow || edgeStraddle || localDisplacement)) &&
       regionScore.shape > GEOMETRIC_SHAPE_EPSILON &&
       classifyForegroundOccupancyGeometry(
         options.designPixels,
@@ -783,6 +836,7 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
         layout: UNIMPLEMENTED_LAYOUT_SCORE,
         textureScore: getTextureScore(bbox),
         localAlignment,
+        localDisplacement: buildLocalDisplacement(structure, color, options, bbox),
       });
     }
   }
@@ -893,6 +947,7 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
         layout: UNIMPLEMENTED_LAYOUT_SCORE,
         textureScore: getTextureScore(bbox),
         localAlignment,
+        localDisplacement: buildLocalDisplacement(structure, color, options, bbox),
       });
     }
   }

@@ -150,6 +150,12 @@ export {
   type EdgeStraddleEvidence,
 } from "./signal/edge-straddle.js";
 export {
+  classifyLocalDisplacement,
+  LOCAL_DISPLACEMENT_MAX_SHIFT_PX,
+  LOCAL_DISPLACEMENT_MAX_THICKNESS_PX,
+  type LocalDisplacementEvidence,
+} from "./signal/local-displacement.js";
+export {
   computeBestLocalAlignment,
   LOCAL_ALIGNMENT_MAX_SHIFT_PX,
   LOCAL_ALIGNMENT_RESCUE_STRUCTURE,

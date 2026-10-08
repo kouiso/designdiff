@@ -326,6 +326,18 @@ export const RegionScoreSchema = z.object({
       residualFlatColorMatch: z.boolean().optional(),
     })
     .optional(),
+  localDisplacement: z
+    .object({
+      classification: z.literal("local-displacement"),
+      dx: z.number().int(),
+      dy: z.number().int(),
+      unalignedDeltaE: z.number().nonnegative(),
+      alignedDeltaE: z.number().nonnegative(),
+      strongMismatchRatio: z.number().min(0).max(1),
+      evaluatedPixelCount: z.number().int().positive(),
+      alignedTokenMatch: z.boolean(),
+    })
+    .optional(),
   textReflow: z
     .object({
       classification: z.literal("text-block-reflow"),

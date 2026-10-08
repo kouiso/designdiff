@@ -320,6 +320,23 @@ export interface RegionScore {
     screenshotLowHex: string;
     screenshotHighHex: string;
   };
+  // 1-5px 幅の差分領域が、両側にある同じ線・縁の ±3px 平行移動だけで
+  // 説明できると、周囲へ広げた窓の突き合わせで証明された領域の診断。
+  // 枠線や区切り線がずれた位置で「ベタ面の色違い」に見える差分を、
+  // 片側にしか無い要素や塗り違いと区別する (designdiff#243)。
+  localDisplacement?: {
+    classification: "local-displacement";
+    dx: number;
+    dy: number;
+    unalignedDeltaE: number;
+    alignedDeltaE: number;
+    strongMismatchRatio: number;
+    evaluatedPixelCount: number;
+    // 整列後の残差が一様なトークン段差 (どの差分画素も同じ向きの
+    // ±2 以上のずれ) でないとき true。位置の変位は事実でも、段差が
+    // 残る領域の色の救済には使えない (designdiff#243)。
+    alignedTokenMatch: boolean;
+  };
   // テキストブロックの行折り返し差。同一 bg/fg トークン・総インク量・
   // 行バンド数・インク連結成分数が全て一致したときだけ付く (designdiff#230)。
   // グリフが行をまたいで移動するためトポロジ拘束は入れない。
@@ -353,7 +370,8 @@ export const effectiveRegionStructure = (score: RegionScore, honorSameToken = fa
     (score.sameTokenRasterization !== undefined ||
       score.textReflow !== undefined ||
       score.textureResampling !== undefined ||
-      score.edgeStraddle !== undefined)
+      score.edgeStraddle !== undefined ||
+      score.localDisplacement !== undefined)
   ) {
     return 1;
   }
@@ -369,12 +387,15 @@ export const effectiveRegionStructure = (score: RegionScore, honorSameToken = fa
 export const effectiveRegionColor = (score: RegionScore, honorSameToken = false): number => {
   // 同一トークン証明のある領域の残存ΔEはトークン誤差ではなく
   // ラスタライザの被覆差。opt-in 時だけ色誤差としては採点しない。
+  // 変位証明は位置の事実なのでトークン一致までは保証せず、整列後に
+  // トークン段差が残る領域は元の色差を採点に戻す (designdiff#243)。
   if (
     honorSameToken &&
     (score.sameTokenRasterization !== undefined ||
       score.textReflow !== undefined ||
       score.textureResampling !== undefined ||
-      score.edgeStraddle !== undefined)
+      score.edgeStraddle !== undefined ||
+      score.localDisplacement?.alignedTokenMatch === true)
   ) {
     return 0;
   }
