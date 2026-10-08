@@ -59,10 +59,6 @@ function shiftPixels(srcPixels, width, height, dx, dy) {
   return dst;
 }
 
-/**
- * Score two RGBA Uint8ClampedArrays, writing the diff image into `out`.
- * The only scoring call site of pixelmatch in this file.
- */
 function diffPixelsInto(a, b, out, width, height) {
   return pixelmatch(a, b, out, width, height, PIXELMATCH_OPTS);
 }
