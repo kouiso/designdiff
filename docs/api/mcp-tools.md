@@ -97,6 +97,7 @@ Important fields:
 - `comparisonId: string`
 - `matchRate: number`
 - `diffPixelCount: number`
+- `subThresholdDiffPixelCount?: number` — pixels whose raw value differs (after the same white blend pixelmatch uses) but which stayed under `threshold` and were not counted in `diffPixelCount`. When `diffPixelCount` is 0 and this is greater than 0, every difference is low-amplitude (shadow blur, gradients, AA edges); `suggestion` and the human-readable summary carry a warning. `status` is unchanged, so lower `threshold` (for example `0`) to count these pixels when matching blur radii or gradients.
 - `totalPixelCount: number`
 - `remainingIssues?: number`
 - `diffRegions: DiffRegion[]`

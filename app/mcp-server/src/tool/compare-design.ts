@@ -44,6 +44,7 @@ const DESCRIPTION = `デザインと実装のピクセル差分を検出しま�
 - status: "PASS" = 構造SSIM判定上の完了。"FAIL" = 修正が必要。"UNCERTAIN" = 判定の確からしさが足りず人間レビューへ回った状態。失敗ではないので直そうとせず報告すること
 - completionCriteria: blocking=true の項目が "PASS" になるまで作業を続行。ただし status が "UNCERTAIN" の項目は直しても "PASS" にならないので、そこで止めて人間に報告する。matchRate は参考値
 - nextAction: 次に実行すべきアクション（従うこと）
+- subThresholdDiffPixelCount: 生の画素値は異なるが threshold 未満で diffPixelCount に数えられなかった画素数。diffPixelCount が 0 でもこれが 1 以上なら、影のぼかし・グラデーション・AA縁のような低振幅差分が残っている（サマリーにも警告が出る）。status は変わらないので、ぼかし半径などを照合する目的なら threshold を下げて再比較する
 - diffImagePath: 差分画像のローカルパス。Read ツールで開いて視覚確認できる（~/.figdiff/results/ に保存）
 - diffRegions: 差分領域。レスポンス肥大化を防ぐため上位20件のみ。全件は regionsDetailPath のJSONファイルを参照
 
@@ -160,6 +161,29 @@ const buildNormalizationLines = (result: CompareDesignResult): string[] => {
   return lines;
 };
 
+const PERCENT_SCALE = 100;
+
+// 警告を JSON の suggestion にだけ載せると、人間とエージェントが読むサマリーには
+// 「差分はほぼありません」「ループを終了してください」しか出ず、ぼかし半径差を
+// 照合したい場面で PASS をそのまま信じてしまう (designdiff#218)。
+// status は変えずに、件数と再確認の手段をサマリー側にも出す。
+const buildSubThresholdLines = (result: CompareDesignResult): string[] => {
+  const subThreshold = result.subThresholdDiffPixelCount ?? 0;
+  if (result.diffPixelCount !== 0 || subThreshold <= 0) {
+    return [];
+  }
+  const ratio =
+    result.totalPixelCount > 0
+      ? ` (採点対象 ${result.totalPixelCount} px の ${((subThreshold / result.totalPixelCount) * PERCENT_SCALE).toFixed(2)}%)`
+      : "";
+  return [
+    "",
+    `threshold 未満の差分画素: ${subThreshold} px${ratio}`,
+    "全差分が threshold 未満の低振幅差分です（影・グラデーション・AA縁の可能性）。",
+    "  影のぼかし半径やグラデーションの一致を確かめる目的なら、threshold を下げて (例: 0) 再比較するか差分を目視で確認してください。",
+  ];
+};
+
 // 構造SSIM判定の行は日本語本文の中で内部トークンだけを大文字で出しても非開発者に
 // 判定が伝わらない (#256)。日本語を先頭にし、エージェントがサマリーから判定を拾える
 // ようトークンを括弧に残す。
@@ -198,6 +222,7 @@ export const buildSummaryText = (result: CompareDesignResult): string => {
     lines.push("", result.comparisonHeadline.headline);
   }
 
+  lines.push(...buildSubThresholdLines(result));
   lines.push(...buildPreflightWarningLines(result));
   lines.push(...buildNormalizationLines(result));
   lines.push(...buildAnchorCheckLines(result));
