@@ -2217,7 +2217,12 @@ describe("細線の局所変位 (designdiff#243)", () => {
     // クラスタ単位では変位 + 整列後トークン一致の証明が付く形状にする。
     paint(designPixels, 10, 50, 100, 1, DARK_RGB);
     paint(screenshotPixels, 10, 52, 100, 1, DARK_RGB);
-    const cluster = { x: 10, y: 50, w: 100, h: 1 };
+    // pixelmatch は両側の行 (y=50, y=52) を差分と検出し、clustering は行ごとに
+    // 別の連結成分として 2 クラスタを作るため、採点クラスタは 2 件になる。
+    const clusters = [
+      { x: 10, y: 50, w: 100, h: 1 },
+      { x: 10, y: 52, w: 100, h: 1 },
+    ];
     const diffPixelData = new Uint8ClampedArray(SIZE * SIZE * 4);
     for (let x = 10; x < 110; x += 1) {
       diffPixelData[(50 * SIZE + x) * 4] = 255;
@@ -2232,7 +2237,7 @@ describe("細線の局所変位 (designdiff#243)", () => {
       width: SIZE,
       height: SIZE,
       figmaRootNode: frame,
-      diffRegions: [cluster],
+      diffRegions: clusters,
       diffPixelData,
       rasterizationTolerance: true,
     });
@@ -2243,8 +2248,8 @@ describe("細線の局所変位 (designdiff#243)", () => {
     // セクションの平均 ΔE は critical 閾値を超えるが、証明済みクラスタの網羅で救済される。
     expect(section?.color).toBeGreaterThanOrEqual(2);
     expect(section?.diffClusterCoverage).toEqual({
-      clusterCount: 1,
-      explainedCount: 1,
+      clusterCount: 2,
+      explainedCount: 2,
       unexplainedPerceptibleDiff: false,
     });
     expect(report.issues.some((issue) => issue.severity === "critical")).toBe(false);
@@ -2266,7 +2271,11 @@ describe("細線の局所変位 (designdiff#243)", () => {
     paint(designPixels, 10, 50, 100, 1, DARK_RGB);
     // 変位に加えて色も大きく変え、整列後トークン一致の証明が付かないようにする。
     paint(screenshotPixels, 10, 52, 100, 1, { r: 0x00, g: 0x66, b: 0xcc });
-    const cluster = { x: 10, y: 50, w: 100, h: 1 };
+    // 上の救済ケースと同じく、両側の行が別クラスタになる現実の形にする。
+    const clusters = [
+      { x: 10, y: 50, w: 100, h: 1 },
+      { x: 10, y: 52, w: 100, h: 1 },
+    ];
     const diffPixelData = new Uint8ClampedArray(SIZE * SIZE * 4);
     for (let x = 10; x < 110; x += 1) {
       diffPixelData[(50 * SIZE + x) * 4] = 255;
@@ -2281,7 +2290,7 @@ describe("細線の局所変位 (designdiff#243)", () => {
       width: SIZE,
       height: SIZE,
       figmaRootNode: frame,
-      diffRegions: [cluster],
+      diffRegions: clusters,
       diffPixelData,
       rasterizationTolerance: true,
     });
@@ -2290,7 +2299,7 @@ describe("細線の局所変位 (designdiff#243)", () => {
       (score) => score.regionId === SECTION_RELIEF_NODE_IDS.section,
     );
     expect(section?.diffClusterCoverage).toMatchObject({
-      clusterCount: 1,
+      clusterCount: 2,
       explainedCount: 0,
     });
     expect(
@@ -2389,6 +2398,58 @@ describe("細線の局所変位 (designdiff#243)", () => {
     expect(section?.diffClusterCoverage).toEqual({
       clusterCount: 201,
       explainedCount: 200,
+    });
+    expect(
+      report.issues.some(
+        (issue) =>
+          issue.regionId === SECTION_RELIEF_NODE_IDS.section && issue.severity === "critical",
+      ),
+    ).toBe(true);
+  });
+
+  it("クラスタ化で落ちた小さな実差分がセクション内にあれば救済しない", async () => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    const frame = sectionReliefFrame();
+    const designPixels = await createSolidRgba(SIZE, SIZE, WHITE_RGB);
+    const screenshotPixels = Uint8ClampedArray.from(designPixels);
+    paint(designPixels, 10, 50, 100, 1, DARK_RGB);
+    paint(screenshotPixels, 10, 52, 100, 1, DARK_RGB);
+    // 3x3 (=9px) の実差分。連結成分しきい値未満のため pixelmatch は差分画素として
+    // 検出するのに clustering はクラスタを作らず、diffRegions に載らない。
+    paint(screenshotPixels, 60, 44, 3, 3, { r: 0xff, g: 0x00, b: 0x00 });
+    const diffPixelData = new Uint8ClampedArray(SIZE * SIZE * 4);
+    for (let x = 10; x < 110; x += 1) {
+      for (const y of [50, 52]) {
+        diffPixelData[(y * SIZE + x) * 4] = 255;
+        diffPixelData[(y * SIZE + x) * 4 + 3] = 255;
+      }
+    }
+    for (let y = 44; y < 47; y += 1) {
+      for (let x = 60; x < 63; x += 1) {
+        diffPixelData[(y * SIZE + x) * 4] = 255;
+        diffPixelData[(y * SIZE + x) * 4 + 3] = 255;
+      }
+    }
+
+    const report = buildDiffReport({
+      designPixels,
+      screenshotPixels,
+      width: SIZE,
+      height: SIZE,
+      figmaRootNode: frame,
+      // 落ちたクラスタは採点クラスタ一覧にも現れないため 1 件だけ渡す。
+      diffRegions: [{ x: 10, y: 50, w: 100, h: 1, diffPixelCount: 200 }],
+      diffPixelData,
+      rasterizationTolerance: true,
+    });
+
+    const section = report.regionScores.find(
+      (score) => score.regionId === SECTION_RELIEF_NODE_IDS.section,
+    );
+    expect(section?.diffClusterCoverage).toEqual({
+      clusterCount: 1,
+      explainedCount: 1,
+      unexplainedPerceptibleDiff: true,
     });
     expect(
       report.issues.some(

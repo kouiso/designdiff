@@ -89,6 +89,11 @@ interface CompareImagesOptions {
   verifiedSystemUiTopInset?: number;
   // 背景の塗りが無いノードを、どの色の上に置いて評価するか (#RRGGBB)。既定は白。
   designBackground?: string;
+  // contents_only: true の Figma 書き出しのように、完全透明な design 画素が
+  // 「デザインがその位置に色を指定していない」ことを表す比較か。このときだけ
+  // 完全透明画素を採点から外す。ローカル PNG の透明は意図的な穴 (角丸の透過等)
+  // のこともあるため、外すと実装側だけの追加内容を検出できなくなる。
+  treatTransparentDesignAsUnspecified?: boolean;
   // 同幅・異高の入力で位置整合を検査する宣言アンカー。
   // 座標は design_source 画像のピクセル座標。未指定時はピクセル比較のみ。
   anchors?: AnchorRegion[];
@@ -1485,11 +1490,14 @@ export async function compareImages(
   // 複製すると、上限いっぱいの画像で 96MB の確保が増えて OOM の上限が形骸化する。
   // 同じ配列をそのまま塗り替える。
   // design_background で下地を明示した比較は「その色を敷いて比べる」という契約
-  // なので従来どおり合成する。未指定のときだけ、何も描かれていない画素
-  // (alpha = 0) を採点対象から外す。不透明化の前に alpha を読まないと
-  // どの画素が該当か分からなくなるため、ここで先に作る。
+  // なので従来どおり合成する。未指定かつ contents_only 書き出し (透明 = 背景未指定)
+  // のときだけ、何も描かれていない画素 (alpha = 0) を採点対象から外す。
+  // ローカル PNG の透明は意図的な穴のこともあるため外さない。
+  // 不透明化の前に alpha を読まないとどの画素が該当か分からなくなるため、ここで先に作る。
   const designUnspecifiedMask =
-    options.designBackground === undefined && hasTransparentPixel(reportDesignPixels)
+    options.designBackground === undefined &&
+    options.treatTransparentDesignAsUnspecified === true &&
+    hasTransparentPixel(reportDesignPixels)
       ? buildDesignUnspecifiedMask(
           reportDesignPixels,
           width,
@@ -1509,8 +1517,27 @@ export async function compareImages(
   const scoringIgnoreMask = designUnspecifiedMask
     ? mergeIgnoreMasks(ignoreMaskResult.mask, designUnspecifiedMask)
     : ignoreMaskResult.mask;
-  const hasScorablePixels =
-    scoringIgnoreMask === undefined || scoringIgnoreMask.some((ignored) => ignored === 0);
+  // 採点可能画素の有無は、buildDiffReport が実際に採点する範囲 (= paddingMask の
+  // content rect) で判定する。contain 合成の余白は paddingMask で採点から外れる
+  // ため、余白だけが残る比較を「採点画素あり」と数えると、0 画素採点の
+  // SSIM フォールバックで PASS が出てしまう。
+  const hasScorablePixels = (() => {
+    if (scoringIgnoreMask === undefined && paddingMask === null) return true;
+    const contentLeft = paddingMask ? Math.max(0, paddingMask.left) : 0;
+    const contentTop = paddingMask ? Math.max(0, paddingMask.top) : 0;
+    const contentWidth = paddingMask
+      ? Math.max(0, Math.min(width - paddingMask.left, paddingMask.width))
+      : width;
+    const contentHeight = paddingMask
+      ? Math.max(0, Math.min(height - paddingMask.top, paddingMask.height))
+      : height;
+    for (let y = contentTop; y < contentTop + contentHeight; y += 1) {
+      for (let x = contentLeft; x < contentLeft + contentWidth; x += 1) {
+        if (scoringIgnoreMask?.[y * width + x] !== 1) return true;
+      }
+    }
+    return false;
+  })();
 
   // buildDiffReport の採点だけに使う先読みクラスタリング。矛盾マスクの塗り足し
   // (下の paintPerceptibleMask) より前の diffPixelData で計算するため、最終的に
@@ -1563,7 +1590,7 @@ export async function compareImages(
     const rationale =
       totalPixelCount === 0
         ? "Ignore regions cover the entire comparison canvas, so no pixels remain for a reliable verdict."
-        : "All design pixels are fully transparent and no structural pixels remain for a reliable verdict.";
+        : "Ignore regions and fully transparent design pixels leave no structural pixels for a reliable verdict.";
     diffReport = {
       ...diffReport,
       aggregateVerdict: "inconclusive",

@@ -1,7 +1,9 @@
+import { createHash } from "node:crypto";
 import { copyFile, mkdtemp, rename } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import * as path from "node:path";
 
+import { canonicalizeVerificationContextPayload } from "@figdiff/shared";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import sharp from "sharp";
@@ -778,6 +780,142 @@ describe("verify_fix", () => {
 
     expect(result.isError).toBeTruthy();
     expect(extractText(result)).toContain("design.background");
+  });
+
+  it("design_background を省略した基準は省略のまま再現する", async () => {
+    const fixtureDirectory = path.join(FIXTURES_ROOT, "pair-01-simple-static-lp");
+    const designPath = path.join(fixtureDirectory, "figma-export.png");
+    const screenshotPath = path.join(fixtureDirectory, "impl-layout-off.png");
+    const prior = await client.callTool({
+      name: "compare_design",
+      arguments: { design_source: designPath, screenshot: screenshotPath },
+    });
+    const priorData = z.object({ comparisonId: z.string() }).parse(JSON.parse(extractText(prior)));
+    const result = await client.callTool({
+      name: "verify_fix",
+      arguments: {
+        design_source: designPath,
+        screenshot: screenshotPath,
+        prior_comparison_id: priorData.comparisonId,
+        expected_target_node_id: "whole-frame",
+      },
+    });
+
+    expect(result.isError).toBeFalsy();
+    // 省略を白明示に置き換えると、contents_only 書き出しの完全透明画素を
+    // 採点から外す契約まで再現から失われる。
+    const activeSession = await readActiveSession();
+    const currentEntry = activeSession
+      ? await getComparisonEntry(activeSession.comparisonId)
+      : undefined;
+    expect(currentEntry?.result.verificationContext?.design.backgroundExplicit).toBe(false);
+  });
+
+  it("backgroundExplicit のない旧基準は省略のまま再現する", async () => {
+    const fixtureDirectory = path.join(FIXTURES_ROOT, "pair-01-simple-static-lp");
+    const designPath = path.join(fixtureDirectory, "figma-export.png");
+    const screenshotPath = path.join(fixtureDirectory, "impl-layout-off.png");
+    const prior = await client.callTool({
+      name: "compare_design",
+      arguments: { design_source: designPath, screenshot: screenshotPath },
+    });
+    const priorData = z.object({ comparisonId: z.string() }).parse(JSON.parse(extractText(prior)));
+    const priorEntry = await getComparisonEntry(priorData.comparisonId);
+    const priorContext = priorEntry?.result.verificationContext;
+    if (!priorContext) throw new Error("prior verification context missing");
+    // 旧履歴の形 (鍵なし) に戻し、その正規形で指紋を作り直す。
+    const design = { ...priorContext.design };
+    delete design.backgroundExplicit;
+    const { fingerprint: priorFingerprint, ...legacyPayload } = priorContext;
+    const legacyFingerprint = createHash("sha256")
+      .update(canonicalizeVerificationContextPayload({ ...legacyPayload, design }))
+      .digest("hex");
+    expect(priorFingerprint).not.toBe(legacyFingerprint);
+    priorEntry.result.verificationContext = {
+      ...legacyPayload,
+      design,
+      fingerprint: legacyFingerprint,
+    };
+    const result = await client.callTool({
+      name: "verify_fix",
+      arguments: {
+        design_source: designPath,
+        screenshot: screenshotPath,
+        prior_comparison_id: priorData.comparisonId,
+        expected_target_node_id: "whole-frame",
+      },
+    });
+
+    // 旧基準の省略は白敷き採点で、今の省略もローカル PNG では白敷き採点のまま
+    // ため、履歴キー (下地接尾辞なし) も採点も等価として再現できる。
+    expect(result.isError, extractText(result)).toBeFalsy();
+    const activeSession = await readActiveSession();
+    const currentEntry = activeSession
+      ? await getComparisonEntry(activeSession.comparisonId)
+      : undefined;
+    expect(currentEntry?.result.verificationContext?.design.backgroundExplicit).toBe(false);
+  });
+
+  it("下地を明示した旧基準は基準の値を渡し直せば再現できる", async () => {
+    const fixtureDirectory = path.join(FIXTURES_ROOT, "pair-01-simple-static-lp");
+    const designPath = path.join(fixtureDirectory, "figma-export.png");
+    const screenshotPath = path.join(fixtureDirectory, "impl-layout-off.png");
+    const prior = await client.callTool({
+      name: "compare_design",
+      arguments: {
+        design_source: designPath,
+        screenshot: screenshotPath,
+        design_background: "#fff",
+      },
+    });
+    const priorData = z.object({ comparisonId: z.string() }).parse(JSON.parse(extractText(prior)));
+    const priorEntry = await getComparisonEntry(priorData.comparisonId);
+    const priorContext = priorEntry?.result.verificationContext;
+    if (!priorContext) throw new Error("prior verification context missing");
+    // 旧履歴の形 (鍵なし) に戻し、その正規形で指紋を作り直す。
+    const design = { ...priorContext.design };
+    delete design.backgroundExplicit;
+    const { fingerprint: priorFingerprint, ...legacyPayload } = priorContext;
+    const legacyFingerprint = createHash("sha256")
+      .update(canonicalizeVerificationContextPayload({ ...legacyPayload, design }))
+      .digest("hex");
+    expect(priorFingerprint).not.toBe(legacyFingerprint);
+    priorEntry.result.verificationContext = {
+      ...legacyPayload,
+      design,
+      fingerprint: legacyFingerprint,
+    };
+    // 旧形式の明示は接尾辞の生値 (#fff) が履歴キーにしか残らないため、
+    // 省略での自動再現では履歴キーが一致せず、拒絶と手順が返る。
+    const rejected = await client.callTool({
+      name: "verify_fix",
+      arguments: {
+        design_source: designPath,
+        screenshot: screenshotPath,
+        prior_comparison_id: priorData.comparisonId,
+        expected_target_node_id: "whole-frame",
+      },
+    });
+    expect(rejected.isError).toBeTruthy();
+    expect(extractText(rejected)).toContain("design.sourceIdentitySha256");
+    expect(extractText(rejected)).toContain("design_background");
+
+    const recovered = await client.callTool({
+      name: "verify_fix",
+      arguments: {
+        design_source: designPath,
+        screenshot: screenshotPath,
+        design_background: "#fff",
+        prior_comparison_id: priorData.comparisonId,
+        expected_target_node_id: "whole-frame",
+      },
+    });
+    expect(recovered.isError, extractText(recovered)).toBeFalsy();
+    const activeSession = await readActiveSession();
+    const currentEntry = activeSession
+      ? await getComparisonEntry(activeSession.comparisonId)
+      : undefined;
+    expect(currentEntry?.result.verificationContext?.design.backgroundExplicit).toBe(true);
   });
 
   it("verification contextのない旧baselineには再取得手順を返す", async () => {

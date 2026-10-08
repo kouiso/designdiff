@@ -742,6 +742,14 @@ const isPixelmatchDiffPixel = (diffPixelData: Uint8ClampedArray, pixel: number):
   );
 };
 
+// 2つの bbox が重なるか。セクション行の救済証拠を数える両側 (採点クラスタと
+// 上限外れクラスタ) で同じ判定を使うため、共通化する。
+const boxesIntersect = (cluster: DiffBoundingBox, bbox: DiffBoundingBox): boolean =>
+  cluster.x < bbox.x + bbox.w &&
+  bbox.x < cluster.x + cluster.w &&
+  cluster.y < bbox.y + bbox.h &&
+  bbox.y < cluster.y + cluster.h;
+
 // セクション bbox と重なる差分クラスタの内訳。重なりが 1 件も無いセクションは
 // undefined を返し、救済にも診断にも使わない。閾値未満の広範な色ずれは
 // クラスタを作らないため、クラスタ 0 件を「説明済み」と数えると誤 PASS になる。
@@ -751,13 +759,8 @@ const buildDiffClusterCoverage = (
   unscoredClusters: readonly DiffBoundingBox[],
   unexplainedPerceptibleDiff: boolean | undefined,
 ): RegionScore["diffClusterCoverage"] | undefined => {
-  const intersects = (cluster: DiffBoundingBox): boolean =>
-    cluster.x < bbox.x + bbox.w &&
-    bbox.x < cluster.x + cluster.w &&
-    cluster.y < bbox.y + bbox.h &&
-    bbox.y < cluster.y + cluster.h;
-  const intersecting = clusters.filter((cluster) => intersects(cluster.bbox));
-  const intersectingUnscored = unscoredClusters.filter(intersects);
+  const intersecting = clusters.filter((cluster) => boxesIntersect(cluster.bbox, bbox));
+  const intersectingUnscored = unscoredClusters.filter((cluster) => boxesIntersect(cluster, bbox));
   if (intersecting.length + intersectingUnscored.length === 0) {
     return undefined;
   }
@@ -778,6 +781,7 @@ const hasUnexplainedPerceptibleDiff = (
   height: number,
   diffPixelData: Uint8ClampedArray | undefined,
   ignoreMask: Uint8Array | undefined,
+  accountedClusterBoxes: readonly DiffBoundingBox[],
 ): boolean | undefined => {
   const pixelCount = width * height;
   if (
@@ -787,10 +791,19 @@ const hasUnexplainedPerceptibleDiff = (
   ) {
     return undefined;
   }
+  // pixelmatch が差分と検出した画素でも、採点に数えたクラスタの外側にあれば
+  // clustering が連結成分しきい値未満として捨てた実差分の可能性がある。
+  // 説明済みとして読み飛ばすのは採点クラスタの内側だけにする。
+  const isInsideAccountedCluster = (x: number, y: number): boolean =>
+    accountedClusterBoxes.some(
+      (cluster) =>
+        x >= cluster.x && x < cluster.x + cluster.w && y >= cluster.y && y < cluster.y + cluster.h,
+    );
   for (let y = Math.max(0, bbox.y); y < Math.min(height, bbox.y + bbox.h); y += 1) {
     for (let x = Math.max(0, bbox.x); x < Math.min(width, bbox.x + bbox.w); x += 1) {
       const pixel = y * width + x;
-      if (ignoreMask?.[pixel] === 1 || isPixelmatchDiffPixel(diffPixelData, pixel)) continue;
+      if (ignoreMask?.[pixel] === 1) continue;
+      if (isPixelmatchDiffPixel(diffPixelData, pixel) && isInsideAccountedCluster(x, y)) continue;
       const offset = pixel * 4;
       if (
         designPixels[offset] === screenshotPixels[offset] &&
@@ -1127,6 +1140,12 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
   // tolerance 未指定の比較では cluster 分類自体を走らせていないので、
   // childRegions に証拠は付かず、採点は従来契約のまま変わらない。
   for (const section of childRegions) {
+    // 網羅判定に数えるクラスタ (=セクションと重なる採点クラスタと上限外れクラスタ)。
+    // 残差検査で「説明済み」として読み飛ばしてよいのはこの内側だけ。
+    const accountedClusterBoxes = [
+      ...diffClusterRegions.map((cluster) => cluster.bbox),
+      ...unscoredDiffClusters,
+    ].filter((cluster) => boxesIntersect(cluster, section.bbox));
     const coverage = buildDiffClusterCoverage(
       section.bbox,
       diffClusterRegions,
@@ -1144,6 +1163,7 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
               height,
               options.diffPixelData,
               ignoreMask,
+              accountedClusterBoxes,
             )
           : undefined;
       section.diffClusterCoverage = {

@@ -35,6 +35,10 @@ export const VerificationContextPayloadSchema = z
         sourceIdentitySha256: z.string().regex(/^[0-9a-f]{64}$/),
         imageSha256: z.string().regex(/^[0-9a-f]{64}$/),
         background: z.string().regex(/^#[0-9A-F]{6}$/),
+        // design_background を明示したか。省略時は contents_only 書き出しの完全透明
+        // 画素を採点から外す契約になるため、verify_fix の再現では両者を区別する。
+        // 旧履歴にこの鍵は無く、当時の省略は白敷き採点 (=明示) だった。
+        backgroundExplicit: z.boolean().optional(),
         figmaExportConditions: z
           .object({
             contentsOnly: z.boolean(),

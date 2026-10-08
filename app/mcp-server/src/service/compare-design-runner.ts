@@ -1688,6 +1688,10 @@ export async function runCompareDesign(
       fallbackIgnoreRegions,
       verifiedSystemUiTopInset: systemIgnoreRegions.verifiedTopInset,
       designBackground: args.design_background,
+      // contents_only: true の書き出しはノード自身の背景塗りを落とすため、その
+      // 完全透明画素だけ「デザインが色を指定していない」として採点から外す。
+      // ローカル PNG の透明は意図的な穴のこともあるため外さない。
+      treatTransparentDesignAsUnspecified: figmaExport?.conditions.contentsOnly === true,
       anchors: args.anchors,
       localAlignmentTolerancePx: args.local_alignment_tolerance_px,
       rasterizationTolerance: args.rasterization_tolerance,
@@ -2063,6 +2067,9 @@ export async function runCompareDesign(
               .update(Buffer.from(designBase64, "base64"))
               .digest("hex"),
             background: normalizeDesignBackground(args.design_background),
+            // 省略時は完全透明画素を採点から外す契約になるため、verify_fix の
+            // 再現で明示/省略を区別できるよう記録する。
+            backgroundExplicit: args.design_background !== undefined,
             figmaExportConditions: figmaExport?.conditions ?? null,
           },
           comparison: {

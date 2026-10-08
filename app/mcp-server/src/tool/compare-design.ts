@@ -348,7 +348,7 @@ export const registerCompareDesign = (server: McpServer): void => {
       .boolean()
       .optional()
       .describe(
-        "Figma 書き出しで対象ノードの内容だけを含める（既定 false: ノード自身の背景塗りも書き出す。背景を比較しないと実装側の実際の背景との偽差分が出る）。true は背景塗りを落とすため、背景を意図的に比較対象外にするときだけ指定する。",
+        "Figma 書き出しで対象ノードの内容だけを含める（既定 false）。false はノード自身の背景塗りに加えて、対象ノードと重なる周辺レイヤーも書き出す。背景塗りを含めないと実装側の実際の背景との偽差分が出るため既定は false だが、比較対象外の重なりが基準に入る場合は true を指定する。true は背景塗りを落とすため、未指定 (design_background 省略) の完全透明画素は採点から外れる。",
       ),
     figma_use_absolute_bounds: z
       .boolean()
@@ -443,7 +443,7 @@ export const registerCompareDesign = (server: McpServer): void => {
       .regex(/^#?([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/, "design_background must be a hex color")
       .optional()
       .describe(
-        "透明画素を合成する色（#RRGGBB、既定は白）。省略時は完全透明な設計画素を構造採点から除外する。背景色がデザインで明示されている場合や、透明画素も指定色の上で評価したい場合に指定する。",
+        "透明画素を合成する色（#RRGGBB、既定は白）。figma_contents_only: true の書き出しで省略したときだけ、完全透明な設計画素（背景未指定）を構造採点から外す。それ以外の省略時は従来どおり白を敷いて採点するため、ローカル PNG の意図的な透明の穴も検出対象のまま残る。指定時は常にその色の上で採点する。",
       ),
     profile: z
       .enum(["strict", "balanced", "layout"])

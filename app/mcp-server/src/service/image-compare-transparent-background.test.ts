@@ -75,7 +75,12 @@ describe("背景の塗りが無い設計を白地の実装と比べるとき", (
     const designBase64 = await makePng({ r: 0, g: 0, b: 0, a: 0 });
     const screenshotBase64 = await makePng({ r: 255, g: 255, b: 255, a: 255 });
 
-    const result = await compareImages({ designBase64, screenshotBase64, threshold: 0.1 });
+    const result = await compareImages({
+      designBase64,
+      screenshotBase64,
+      threshold: 0.1,
+      treatTransparentDesignAsUnspecified: true,
+    });
 
     const structures = (result.diffReport?.regionScores ?? []).map((score) => score.structure);
     expect(structures.length).toBeGreaterThan(0);
@@ -91,7 +96,12 @@ describe("背景の塗りが無い設計を白地の実装と比べるとき", (
     const designBase64 = await makePng({ r: 0, g: 0, b: 0, a: 0 });
     const screenshotBase64 = await makePng({ r: 0, g: 0, b: 0, a: 255 });
 
-    const unspecified = await compareImages({ designBase64, screenshotBase64, threshold: 0.1 });
+    const unspecified = await compareImages({
+      designBase64,
+      screenshotBase64,
+      threshold: 0.1,
+      treatTransparentDesignAsUnspecified: true,
+    });
     const onWhite = await compareImages({
       designBase64,
       screenshotBase64,
@@ -113,6 +123,35 @@ describe("背景の塗りが無い設計を白地の実装と比べるとき", (
     expect(worst(onBlack)).toBeGreaterThan(worst(onWhite));
   });
 
+  it("ローカル画像の意図的な透明の穴は採点から外さないこと", async () => {
+    // contents_only 書き出し以外の透明は意図的な穴のこともある。白を敷いて
+    // 採点し続けないと、穴に実装側だけの内容を足しても検出できなくなる。
+    const designPixels = Buffer.alloc(40 * 40 * 4);
+    const screenshotPixels = Buffer.alloc(40 * 40 * 4);
+    for (let y = 0; y < 40; y += 1) {
+      for (let x = 0; x < 40; x += 1) {
+        const offset = (y * 40 + x) * 4;
+        const hole = x >= 16 && x < 24 && y >= 16 && y < 24;
+        // design 側は穴だけ完全透明。実装側は同じ位置に赤を足した。
+        designPixels.set(hole ? [0, 0, 0, 0] : [255, 255, 255, 255], offset);
+        screenshotPixels.set(hole ? [255, 0, 0, 255] : [255, 255, 255, 255], offset);
+      }
+    }
+    const toPng = async (pixels: Buffer): Promise<string> =>
+      sharp(pixels, { raw: { width: 40, height: 40, channels: 4 } })
+        .png()
+        .toBuffer()
+        .then((png) => png.toString("base64"));
+
+    const result = await compareImages({
+      designBase64: await toPng(designPixels),
+      screenshotBase64: await toPng(screenshotPixels),
+      threshold: 0.1,
+    });
+
+    expect(result.diffReport?.aggregateVerdict).toBe("fail");
+  });
+
   it("contain 合成で生じた余白から実装側の追加内容を隠さないこと", async () => {
     const contentPixel = (x: number, y: number): readonly [number, number, number] =>
       (Math.floor(x / 5) + Math.floor(y / 5)) % 2 === 0 ? [240, 240, 240] : [16, 16, 16];
@@ -124,7 +163,12 @@ describe("背景の塗りが無い設計を白地の実装と比べるとき", (
       return contentPixel(x, y - 10);
     });
 
-    const result = await compareImages({ designBase64, screenshotBase64, threshold: 0.1 });
+    const result = await compareImages({
+      designBase64,
+      screenshotBase64,
+      threshold: 0.1,
+      treatTransparentDesignAsUnspecified: true,
+    });
 
     expect(result.diffReport?.aggregateVerdict).toBe("fail");
   });
@@ -133,7 +177,12 @@ describe("背景の塗りが無い設計を白地の実装と比べるとき", (
     const designBase64 = await makeFullyTransparentPng();
     const screenshotBase64 = await makePng({ r: 255, g: 0, b: 0, a: 255 });
 
-    const result = await compareImages({ designBase64, screenshotBase64, threshold: 0.1 });
+    const result = await compareImages({
+      designBase64,
+      screenshotBase64,
+      threshold: 0.1,
+      treatTransparentDesignAsUnspecified: true,
+    });
 
     expect(result.matchRate).toBe(0);
     expect(result.diffReport?.aggregateVerdict).toBe("inconclusive");
@@ -142,6 +191,33 @@ describe("背景の塗りが無い設計を白地の実装と比べるとき", (
       evaluatedPixelCount: 0,
       verdict: "inconclusive",
     });
+    expect(result.status).toBe("UNCERTAIN");
+  });
+
+  it("contain 合成で余白しか残らない完全透明なら UNCERTAIN を返すこと", async () => {
+    // 内容矩形は未指定画素マスクで埋まり、余白は paddingMask で採点から外れる。
+    // 余白だけを「採点画素あり」と数えると 0 画素採点の SSIM フォールバックで
+    // PASS が出てしまうため、採点範囲は paddingMask の内容矩形で判定する。
+    const fullyTransparentDesign = await sharp(Buffer.alloc(40 * 40 * 4), {
+      raw: { width: 40, height: 40, channels: 4 },
+    })
+      .png()
+      .toBuffer()
+      .then((png) => png.toString("base64"));
+    const screenshotBase64 = await makeSizedPng(40, 60, () => [255, 255, 255]);
+
+    const result = await compareImages({
+      designBase64: fullyTransparentDesign,
+      screenshotBase64,
+      threshold: 0.1,
+      treatTransparentDesignAsUnspecified: true,
+    });
+
+    expect(result.diffReport?.structuralAssessment).toMatchObject({
+      evaluatedPixelCount: 0,
+      verdict: "inconclusive",
+    });
+    expect(result.diffReport?.aggregateVerdict).toBe("inconclusive");
     expect(result.status).toBe("UNCERTAIN");
   });
 });
