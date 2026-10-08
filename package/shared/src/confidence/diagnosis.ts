@@ -29,7 +29,9 @@ const SCALE_HIGH = 1.4;
 // これを超える圧縮/引き伸ばしは、matchRate に関わらず比較自体が無効なほどの設定ミス。
 const SEVERE_SCALE_LOW = 0.6;
 const SEVERE_SCALE_HIGH = 2;
-const FULL_PAGE_VIEWPORT_HEIGHT_RATIO = 1.4;
+// 比較側 (mcp-server) も「縮めずに上端揃えで比べてよい高さ差」の上限にこの値を使う。
+// 別々に持つと、比較は 1:1 で行ったのに診断だけ full_page_vs_viewport と読む食い違いが出る。
+export const FULL_PAGE_VIEWPORT_HEIGHT_RATIO = 1.4;
 // 各診断原因の確度 (0-1)。原因をランク付けする際の重みなので、上部の閾値定数と同様に集約する。
 const CONFIDENCE_WIDTH_MISMATCH_CRITICAL = 0.9;
 const CONFIDENCE_WIDTH_MISMATCH_WARNING = 0.7;

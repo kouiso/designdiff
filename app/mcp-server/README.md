@@ -156,6 +156,8 @@ new or edited behavior must use an arrow function assigned to a `const`.
 
 projectに保存した明示的なcropがある場合は、runnerの自動cropより優先されます。`cropSource`が`explicit-project`なら、寸法を見てauto cropへ置き換えたと解釈しません。自動cropの場合は`auto`、cropなしは`none`です。
 
+designとscreenshotの幅が同じで、designだけが少し縦に長い場合（幅正規化後の高さ比が1.4以下）は、designを縮小せず上端揃えで1:1に比較します。足りない行はscreenshotの下端に足し、実装側に存在しない内容として差分に数えます。このとき`containResized`は`false`のままで、足した行数を`normalization.screenshotBottomPaddingRows`に出します。比較キャンバスの高さはdesign側の高さになり、`ignoreRegionResolution.effectiveCanvas`で確認できます。
+
 `baselineResidual`と`correctedResidual`はpixelmatchのdiff率ではありません。位置候補のscoreと同じ不一致数を、working pxのサンプル点数で割った値です。`residual`も同じサンプル単位で読むため、raw pixel countやexport pxの寸法と直接比較しません。移動が検出されても採用されなかった場合は、`alignment.translation`に検出値を残し、`applied: false`と`source: "auto"`で区別します。
 
 自動位置合わせで未知の移動を補正しても、実UIのずれを合格にしません。working pxで2px以上の採用済み移動はposition issueをcriticalとして扱い、PASSにしません。1px未満の描画誤差は許容範囲です。`verified-system-ui`は、capture deviceから検証済みのtop inset候補と完全一致し、実際に補正を適用した場合だけです。背景一致や、候補が不採用だったことだけではsystem UI例外になりません。

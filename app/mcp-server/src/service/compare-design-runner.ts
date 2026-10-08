@@ -1805,18 +1805,30 @@ export async function runCompareDesign(
     Number.isFinite(preflightDimensions.figmaFrameWidth) &&
     Math.abs(preflightDimensions.figmaFrameWidth - preflightDimensions.screenshotWidth) <=
       ANCHOR_WIDTH_TOLERANCE_PX;
-  const preflightWarnings = preflight.warnings.map((warning) =>
-    anchorsDeclared &&
-    widthsMatchForAnchors &&
-    warning.code === "aspect_ratio_mismatch" &&
-    warning.severity === "critical"
-      ? {
-          ...warning,
-          severity: "warning" as const,
-          message: `${warning.message} ただし anchors が宣言されているため、高さ方向の位置整合はアンカー検査で評価します。`,
-        }
-      : warning,
-  );
+  // 比較側が縮めずに上端揃えで比べた回は、高さの差そのものが差分画像に出ている。
+  // 縦横比不一致を critical のまま残すと、比較が成立しているのに設定ミスと
+  // 判定され、実装の高さ差を直す前にループが止まる。
+  const screenshotBottomPaddingRows = comparison.normalization?.screenshotBottomPaddingRows ?? 0;
+  const preflightWarnings = preflight.warnings.map((warning) => {
+    if (warning.code !== "aspect_ratio_mismatch" || warning.severity !== "critical") {
+      return warning;
+    }
+    if (anchorsDeclared && widthsMatchForAnchors) {
+      return {
+        ...warning,
+        severity: "warning" as const,
+        message: `${warning.message} ただし anchors が宣言されているため、高さ方向の位置整合はアンカー検査で評価します。`,
+      };
+    }
+    if (screenshotBottomPaddingRows > 0) {
+      return {
+        ...warning,
+        severity: "warning" as const,
+        message: `${warning.message} ただし幅は一致しているため、縮小せず上端揃えで比較しました。高さの差 ${screenshotBottomPaddingRows}px はスクリーンショットに無い行として差分に数えています（実装側の内容差として確認してください）。`,
+      };
+    }
+    return warning;
+  });
 
   // 診断は元の preflight 警告で行い、その後に表示用の拡張を加える。
   const comparisonHeadline = buildComparisonHeadline(regionScores, comparison.matchRate);

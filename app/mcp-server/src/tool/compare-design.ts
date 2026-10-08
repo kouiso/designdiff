@@ -153,6 +153,12 @@ const buildNormalizationLines = (result: CompareDesignResult): string[] => {
   if (ratio < 0.9 || ratio > 1.1) {
     lines.push(`  解像度差 約${ratio.toFixed(2)}x を正規化（軽微なボケが diff に乗る可能性）`);
   }
+  const paddingRows = result.normalization.screenshotBottomPaddingRows;
+  if (paddingRows !== undefined && paddingRows > 0) {
+    lines.push(
+      `  幅が一致しているため縮小せず上端揃えで比較し、design だけにある下端 ${paddingRows}px をスクリーンショットに無い行として差分に数えました`,
+    );
+  }
   if (result.normalization.autoCropped) {
     lines.push(
       `  スクリーンショットがdesignフレーム高を超えていたため、自動でフレーム範囲 (${designNativeWidth}×${designNativeHeight}) にcropして比較しました`,
