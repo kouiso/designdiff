@@ -553,7 +553,10 @@ describe("compareImages", () => {
     } else {
       const result = await pending;
       expect(result.normalization?.cropApplied).toBe(false);
-      expect(pixelmatchMock.default).toHaveBeenCalledOnce();
+      // 差分本体に加え、diffPixelCount=0 のとき threshold=0 で未満差分を数える
+      // 2回目の呼出しが正当 (designdiff#218)。mask 復元の検証は呼出しごとの
+      // mock 内 assertion が担う。
+      expect(pixelmatchMock.default).toHaveBeenCalledTimes(2);
     }
     expect(instances.every((instance) => instance.extract.mock.calls.length === 0)).toBe(true);
   });

@@ -2169,7 +2169,7 @@ export async function runCompareDesign(
   // 閾値未満の低振幅差分だけがあると diffPixelCount=0 / PASS に見える。
   // ぼかし半径の照合用途では誤判定になるため、件数と併せて警告を添える (designdiff#218)。
   if (result.diffPixelCount === 0 && (result.subThresholdDiffPixelCount ?? 0) > 0) {
-    result.suggestion = `${result.suggestion} 全差分が threshold 未満の低振幅差分です（影・グラデーション・AA縁の可能性）。`;
+    result.suggestion = `${result.suggestion} 全差分が threshold 未満の低振幅差分です（影のぼかし・グラデーション・微細な色ズレの可能性）。`;
   }
 
   await recordComparison({

@@ -1453,32 +1453,22 @@ export async function compareImages(
       ? 0
       : Math.round(((totalPixelCount - diffPixelCount) / totalPixelCount) * 100 * 100) / 100;
 
-  // 生の画素値が異なるのに pixelmatch の threshold を越えず差分に数えられなかった
-  // 画素数。ignore/padding mask 済みの領域は両側が同一値に揃えてあるので、ここには
-  // 入らない。ぼかし半径差のような低振幅の広域差分が PASS に見える誤判定を、
-  // 呼び出し側が見抜けるようにする (designdiff#218)。
-  // pixelmatch (checkerboard=false) と同じく白へブレンドしてから比べる。
-  // 生の RGBA を比べると、Figma 書き出しの透明画素 (0,0,0,0) が白いスクリーン
-  // ショットとの見た目一致でも差分に数えられ、警告が常時出てしまう。
-  const blendOverWhite = (pixels: Uint8ClampedArray, offset: number, channel: number): number => {
-    const alpha = pixels[offset + 3] / 255;
-    return 255 + (pixels[offset + channel] - 255) * alpha;
-  };
-  let rawDiffPixelCount = 0;
-  for (let index = 0; index < width * height; index++) {
-    const offset = index * 4;
-    if (
-      blendOverWhite(pixelmatchDesignPixels, offset, 0) !==
-        blendOverWhite(screenshotPixels, offset, 0) ||
-      blendOverWhite(pixelmatchDesignPixels, offset, 1) !==
-        blendOverWhite(screenshotPixels, offset, 1) ||
-      blendOverWhite(pixelmatchDesignPixels, offset, 2) !==
-        blendOverWhite(screenshotPixels, offset, 2)
-    ) {
-      rawDiffPixelCount++;
-    }
-  }
-  const subThresholdDiffPixelCount = Math.max(0, rawDiffPixelCount - diffPixelCount);
+  // pixelmatch の threshold を越えず差分に数えられなかったが、threshold を 0 に
+  // 下げた再比較では差分として数えられる画素数。ぼかし半径差のような低振幅の
+  // 広域差分が diffPixelCount=0 / PASS に見える誤判定を、呼び出し側が見抜ける
+  // ようにする (designdiff#218)。
+  // 生の値差ではなく pixelmatch (threshold=0) で数え直すのは、「threshold を
+  // 下げれば数えられる画素」だけに限定するため。生の値差で数えると AA 検出で
+  // 除外される画素 (= 0 に下げても数えられない画素) まで混ざり、threshold を
+  // 下げても消えない警告を出してしまう。
+  // diffPixelCount > 0 のときは閾値を越えた差分が既に見えるため返さない。
+  // ignore/padding mask 済みの領域は両側が同一値に揃えてあるのでここには入らない。
+  const subThresholdDiffPixelCount =
+    diffPixelCount === 0
+      ? comparePixels(pixelmatchDesignPixels, screenshotPixels, undefined, width, height, {
+          threshold: 0,
+        })
+      : undefined;
   // 判定と証拠を先に作る。矛盾で人間レビューへ回すとき、pixelmatch の閾値では
   // 1画素も差分にならないことがある。そのままだと差分画像が真っ黒、領域0件で
   // 「見てくれ」と渡すことになるので、見える差のあった画素を証拠として使う。
