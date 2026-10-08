@@ -32,8 +32,9 @@ const FINE_RANGE = 5;
 
 // checkerboard: false は製品側 (package/shared/src/pixel-compare.ts) と同じ白合成に揃えるため。
 // pixelmatch 7 の既定 (市松模様) のままだと、半透明画素で物差しの意味が製品とずれる。
-// 全呼び出しがこの定数を通る形に集約する — 個別指定だと新規呼び出しが既定値へ
-// 静かに戻り得る。採点意味論の退行は self-test の check5 が CI で検知する。
+// 採点用の pixelmatch 呼び出しは diffPixelsInto() の 1 箇所だけにする — 個別指定だと
+// 新規呼び出しが既定値へ静かに戻り得る。self-test の check5 (位置探索) と check6
+// (compare モードの baseline / corrected 採点) が、この意味論の退行を CI で検知する。
 const PIXELMATCH_OPTS = { threshold: 0.1, checkerboard: false };
 
 /**
@@ -59,12 +60,19 @@ function shiftPixels(srcPixels, width, height, dx, dy) {
 }
 
 /**
+ * Score two RGBA Uint8ClampedArrays, writing the diff image into `out`.
+ * The only scoring call site of pixelmatch in this file.
+ */
+function diffPixelsInto(a, b, out, width, height) {
+  return pixelmatch(a, b, out, width, height, PIXELMATCH_OPTS);
+}
+
+/**
  * Count differing pixels between two RGBA Uint8ClampedArrays.
  * Uses pixelmatch with threshold=0.1 for speed.
  */
 function countDiff(a, b, width, height) {
-  const diff = new Uint8ClampedArray(width * height * 4);
-  return pixelmatch(a, b, diff, width, height, PIXELMATCH_OPTS);
+  return diffPixelsInto(a, b, new Uint8ClampedArray(width * height * 4), width, height);
 }
 
 /**
@@ -314,6 +322,23 @@ async function selfTest() {
   results.check5_alpha_scored_on_white = oracleAlphaCount === onWhite && onWhite !== onCheckerboard;
   results.alphaSemantics = { onWhite, onCheckerboard, oracle: oracleAlphaCount };
 
+  // Check 6: 同じ pair を PNG 経由で compare モード (compareFiles) に通す。
+  // p5-oracle-gate / oracle-verdict-agreement が読む baseline / corrected の残差は
+  // check5 の countDiff とは別経路で、sharp の読み込み (alpha の扱い) も挟まる。
+  // ここを検査しないと、採点経路だけが既定値へ戻っても self-test は PASS のまま。
+  const alphaDesignPath = path.join(TMP_DIR, "self-test-alpha-design.png");
+  const alphaImplPath = path.join(TMP_DIR, "self-test-alpha-impl.png");
+  await saveImage(alphaDesign, W, H, alphaDesignPath);
+  await saveImage(alphaImpl, W, H, alphaImplPath);
+  const alphaCompare = await compareFiles(alphaDesignPath, alphaImplPath);
+  results.check6_compare_mode_scored_on_white =
+    alphaCompare.baselineDiffPixels === onWhite && alphaCompare.correctedDiffPixels === onWhite;
+  results.alphaCompareMode = {
+    baselineDiffPixels: alphaCompare.baselineDiffPixels,
+    correctedDiffPixels: alphaCompare.correctedDiffPixels,
+    detectedOffset: alphaCompare.detectedOffset,
+  };
+
   // Save visual artifacts for inspection
   await saveImage(design, W, H, path.join(TMP_DIR, "self-test-design.png"));
   await saveImage(shifted, W, H, path.join(TMP_DIR, "self-test-shifted.png"));
@@ -324,7 +349,8 @@ async function selfTest() {
     results.check2_shifted_diff_gt_zero &&
     results.check3_detection_within_5px &&
     results.check4_corrected_diff_near_zero &&
-    results.check5_alpha_scored_on_white;
+    results.check5_alpha_scored_on_white &&
+    results.check6_compare_mode_scored_on_white;
 
   results.overall = allPass ? "PASS" : "FAIL";
   return results;
@@ -377,13 +403,12 @@ async function compareFiles(designPath, screenshotPath, outDiffPath, ignoreRegio
   );
   const comparablePixels = Math.max(1, width * height - maskedPixelCount);
   const baselineDiffPng = new Uint8ClampedArray(width * height * 4);
-  const baselineDiffCount = pixelmatch(
+  const baselineDiffCount = diffPixelsInto(
     baselineDesign,
     baselineScreenshot,
     baselineDiffPng,
     width,
     height,
-    PIXELMATCH_OPTS,
   );
 
   // Detect translation — マスクの影響を受けないよう、無加工のピクセルで探す。
@@ -401,13 +426,12 @@ async function compareFiles(designPath, screenshotPath, outDiffPath, ignoreRegio
   );
   const correctedComparablePixels = Math.max(1, width * height - correctedMaskedPixelCount);
   const correctedDiffPng = new Uint8ClampedArray(width * height * 4);
-  const correctedDiffCount = pixelmatch(
+  const correctedDiffCount = diffPixelsInto(
     correctedDesign,
     correctedScreenshot,
     correctedDiffPng,
     width,
     height,
-    PIXELMATCH_OPTS,
   );
 
   if (outDiffPath) {
