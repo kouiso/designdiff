@@ -359,4 +359,26 @@ export default [
       "@typescript-eslint/no-empty-function": "off",
     },
   },
+
+  // pixelmatch 7 の既定は半透明画素を市松模様へ合成する。製品の採点は白合成なので、
+  // 直接呼ぶと同じ画像でも面ごとに diffPixelCount がずれる。比較は comparePixels に集約する。
+  // script/oracle-compare.mjs は製品コードから独立させる物差しなので対象外 (self-test で固定)。
+  {
+    files: ["**/*.ts", "**/*.tsx"],
+    ignores: ["package/shared/src/pixel-compare.ts"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            {
+              name: "pixelmatch",
+              message:
+                "@figdiff/shared の comparePixels を使う (白合成の採点意味論を共有するため)。",
+            },
+          ],
+        },
+      ],
+    },
+  },
 ];
