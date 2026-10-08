@@ -97,6 +97,7 @@ Important fields:
 - `comparisonId: string`
 - `matchRate: number`
 - `diffPixelCount: number`
+- `subThresholdDiffPixelCount?: number` — returned only when `diffPixelCount` is 0. Counts pixels that a pixelmatch re-run with `threshold: 0` would count as differences (it re-runs pixelmatch rather than comparing raw values, so pixels pixelmatch excludes as anti-aliasing do not inflate it). When it is greater than 0, every difference is low-amplitude (shadow blur, gradients, subtle colour shifts); `suggestion` and the human-readable summary carry a warning. `status` is unchanged: if the ループ判定 is 続行, lower `threshold` (for example `0`) to count these pixels when matching blur radii or gradients; if it is 停止, report the warning to a human instead of calling the tool again.
 - `totalPixelCount: number`
 - `remainingIssues?: number`
 - `diffRegions: DiffRegion[]`

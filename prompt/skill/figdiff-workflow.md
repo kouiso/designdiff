@@ -98,11 +98,13 @@ compare_design(
 - Read `loopGuard.stop` from the `compare_design` tool result JSON; the campaign continues
   only while `stop` is `false`.
 - Read `matchRate` only as a reference metric, not as a completion gate.
-- Check `subThresholdDiffPixelCount` when `diffPixelCount` is 0: it counts pixels
-  whose raw values differ but stayed under the pixelmatch threshold (shadow blur
-  radius, gradients, AA edges). When every diff is sub-threshold, the tool appends
-  a warning to `suggestion`; if you are verifying shadow/gradient rendering, treat
-  a non-zero count as a real difference to investigate, not as a pass.
+- Check `subThresholdDiffPixelCount` when `diffPixelCount` is 0 (it is only
+  returned then): pixels that a `threshold: 0` re-run would count but the current
+  threshold absorbed (shadow blur radius, gradients). When every diff is
+  sub-threshold, the tool warns in `suggestion` and in the human-readable
+  summary. If the ループ判定 is 続行 and you are verifying shadow/gradient
+  rendering, re-run with a lower `threshold`; if it is 停止, do not call the
+  tool again — report the warning to a human.
 - Read the diff image to identify which regions are red (mismatched).
 
 ### Step 2: inspect_node
