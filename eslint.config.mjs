@@ -13,6 +13,8 @@ const __dirname = path.dirname(__filename);
 const PIXELMATCH_MESSAGE =
   "@figdiff/shared の comparePixels を使う (白合成の採点意味論を共有するため)。";
 const PIXELMATCH_COMPARE_FILE = "package/shared/src/pixel-compare.ts";
+// 製品コードから独立させる物差し。白合成は self-test の check5 / check6 で固定している。
+const PIXELMATCH_ORACLE_FILE = "script/oracle-compare.mjs";
 // vi.mock("pixelmatch") した mock を取り出し、comparePixels へ渡る引数を検証する
 // ためだけに動的 import するテスト。採点には使わないので、ここだけ例外にする。
 // テスト全体を例外にすると、採点用テストが動的 import で市松合成へ戻せてしまう。
@@ -394,14 +396,30 @@ export default [
 
   // pixelmatch 7 の既定は半透明画素を市松模様へ合成する。製品の採点は白合成なので、
   // 直接呼ぶと同じ画像でも面ごとに diffPixelCount がずれる。比較は comparePixels に集約する。
-  // script/oracle-compare.mjs は製品コードから独立させる物差しなので対象外 (self-test で固定)。
   {
-    files: ["**/*.ts", "**/*.tsx"],
-    ignores: [PIXELMATCH_COMPARE_FILE],
+    files: ["**/*.ts", "**/*.tsx", "**/*.mjs", "**/*.cjs", "**/*.js"],
+    ignores: [PIXELMATCH_COMPARE_FILE, PIXELMATCH_ORACLE_FILE],
     rules: {
       "no-restricted-imports": [
         "error",
         { paths: [{ name: "pixelmatch", message: PIXELMATCH_MESSAGE }] },
+      ],
+    },
+  },
+
+  // 検証スクリプトも新しい採点経路になり得る。ts 側のブロックは no-restricted-syntax を
+  // 別の規則と共有しているため、js 系はここで動的 import と require をまとめて塞ぐ。
+  {
+    files: ["**/*.mjs", "**/*.cjs", "**/*.js"],
+    ignores: [PIXELMATCH_ORACLE_FILE],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        PIXELMATCH_DYNAMIC_IMPORT,
+        {
+          selector: "CallExpression[callee.name='require'][arguments.0.value='pixelmatch']",
+          message: PIXELMATCH_MESSAGE,
+        },
       ],
     },
   },
