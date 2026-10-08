@@ -13,6 +13,7 @@ import {
   ComparisonConditionsInputSchema,
   IgnoreRegionSchema,
   type CompareDesignResult,
+  type DiffVerdict,
 } from "@figdiff/shared";
 
 import { writeActiveSession } from "../service/active-session.js";
@@ -39,6 +40,7 @@ const DESCRIPTION = `デザインと実装のピクセル差分を検出しま�
 ## 出力の読み方
 - ループ判定: 2つ目のテキストブロック先頭。停止 / 続行 / 取得できません。status より優先する。取得できません は停止として扱う
 - 判定経路: token-diff = 色とフォントを値そのもので突き合わせた。要修正の項目は設計側の値が確定しているので、そのまま直すこと。anchor = 宣言した縦位置アンカーの位置規則違反。該当アンカーの期待位置へ配置を直すこと。pixel = 値の突合が使えず画素だけで見た（理由が同じ欄に出る）。この場合フォントの縁のぼかしに埋もれる色差は検出できない
+- 構造SSIM判定: 2つ目のテキストブロック内の行。完成 (PASS) / 要修正 (FAIL) / 判定不能 (INCONCLUSIVE) の日本語とトークン併記。INCONCLUSIVE は失敗ではないので直そうとせず報告すること
 - status: "PASS" = 構造SSIM判定上の完了。"FAIL" = 修正が必要。"UNCERTAIN" = 判定の確からしさが足りず人間レビューへ回った状態。失敗ではないので直そうとせず報告すること
 - completionCriteria: blocking=true の項目が "PASS" になるまで作業を続行。ただし status が "UNCERTAIN" の項目は直しても "PASS" にならないので、そこで止めて人間に報告する。matchRate は参考値
 - nextAction: 次に実行すべきアクション（従うこと）
@@ -158,6 +160,16 @@ const buildNormalizationLines = (result: CompareDesignResult): string[] => {
   return lines;
 };
 
+// 構造SSIM判定の行は日本語本文の中で内部トークンだけを大文字で出しても非開発者に
+// 判定が伝わらない (#256)。日本語を先頭にし、エージェントがサマリーから判定を拾える
+// ようトークンを括弧に残す。INCONCLUSIVE は失敗ではないので直そうとせず報告する運用を
+// status の UNCERTAIN と揃えてこの行にも書く。
+const VERDICT_DISPLAY: Record<DiffVerdict, string> = {
+  pass: "完成 (PASS)",
+  fail: "要修正 (FAIL)",
+  inconclusive: "判定不能 (INCONCLUSIVE)。失敗ではないので直そうとせず人間に報告",
+};
+
 // 並び順は「結論 → 原因 → 内訳 → 警告」。AI/ユーザーが最初の数行で
 // 「実差分か設定ミスか」を即断でき、likely_misconfig の時だけ確度順に原因を
 // 列挙して最優先の対処に誘導するため、この順序と簡潔な箇条書き形式にしている。
@@ -172,7 +184,7 @@ export const buildSummaryText = (result: CompareDesignResult): string => {
 
   if (result.diffReport) {
     if (lines.length > 0) lines.push("");
-    lines.push(`構造SSIM判定: ${result.diffReport.aggregateVerdict.toUpperCase()}`);
+    lines.push(`構造SSIM判定: ${VERDICT_DISPLAY[result.diffReport.aggregateVerdict]}`);
     lines.push(result.diffReport.rationale);
   }
 
