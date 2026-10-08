@@ -13,10 +13,15 @@ const __dirname = path.dirname(__filename);
 const PIXELMATCH_MESSAGE =
   "@figdiff/shared の comparePixels を使う (白合成の採点意味論を共有するため)。";
 const PIXELMATCH_COMPARE_FILE = "package/shared/src/pixel-compare.ts";
-const TEST_FILES = ["**/*.test.ts", "**/*.test.tsx", "**/*.spec.ts"];
+// vi.mock("pixelmatch") した mock を取り出し、comparePixels へ渡る引数を検証する
+// ためだけに動的 import するテスト。採点には使わないので、ここだけ例外にする。
+// テスト全体を例外にすると、採点用テストが動的 import で市松合成へ戻せてしまう。
+const PIXELMATCH_MOCK_INSPECTION_FILES = [
+  "app/desktop/src/service/image-compare.test.ts",
+  "app/mcp-server/src/service/image-compare-service.test.ts",
+];
 // no-restricted-syntax は後ろのブロックが配列ごと上書きするため、同ルールを持つ
-// ブロックすべてにこの selector を入れる。テストは vi.mock した pixelmatch を
-// 取り出すために動的 import するので、テスト以外にだけ効かせる。
+// ブロックすべてにこの selector を入れる。
 const PIXELMATCH_DYNAMIC_IMPORT = {
   selector: "ImportExpression[source.value='pixelmatch']",
   message: PIXELMATCH_MESSAGE,
@@ -222,7 +227,7 @@ export default [
 
   {
     files: ["**/*.ts", "**/*.tsx"],
-    ignores: [PIXELMATCH_COMPARE_FILE, ...TEST_FILES],
+    ignores: [PIXELMATCH_COMPARE_FILE, ...PIXELMATCH_MOCK_INSPECTION_FILES],
     rules: {
       "no-restricted-syntax": ["error", PIXELMATCH_DYNAMIC_IMPORT],
     },
@@ -243,7 +248,7 @@ export default [
     },
   },
   {
-    files: ["app/desktop/src/**/*.test.ts", "app/desktop/src/**/*.test.tsx"],
+    files: PIXELMATCH_MOCK_INSPECTION_FILES.filter((file) => file.startsWith("app/desktop/")),
     rules: {
       "no-restricted-syntax": ["error", ...DESKTOP_PROPS_SELECTORS],
     },
