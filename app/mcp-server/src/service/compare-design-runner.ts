@@ -1831,7 +1831,12 @@ export async function runCompareDesign(
   });
 
   // 診断は元の preflight 警告で行い、その後に表示用の拡張を加える。
-  const comparisonHeadline = buildComparisonHeadline(regionScores, comparison.matchRate);
+  // 採点行の bbox は比較キャンバス座標なので、面積の重みも同じキャンバスで取る。
+  const comparisonHeadline = buildComparisonHeadline(
+    regionScores,
+    comparison.matchRate,
+    comparison.ignoreRegionResolution?.effectiveCanvas,
+  );
   const diagnosis = diagnoseComparison({
     matchRate: comparison.matchRate,
     // 比較対象そのものの行は子と範囲が重なる。平均に入れると同じ画素を二重に
