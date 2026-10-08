@@ -3,12 +3,13 @@ import { copyFile, mkdtemp, rename } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import * as path from "node:path";
 
-import { canonicalizeVerificationContextPayload } from "@figdiff/shared";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import sharp from "sharp";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { z } from "zod";
+
+import { canonicalizeVerificationContextPayload } from "@figdiff/shared";
 
 import { createMcpServer } from "../server.js";
 import { readActiveSession } from "../service/active-session.js";
