@@ -119,8 +119,20 @@ jobs:
           mkdir -p "$out"
           FIGDIFF_IGNORE_EVIDENCE="$PWD/docs/evidence/round1-windows/native-ignore-region" \
             node app/desktop/e2e/native-ignore-region.mjs > "$out/ignore-region-debug.log" 2>&1 || true
+          python - <<'PY'
+          p='app/desktop/e2e/native-figma-node-fix.mjs'
+          s=open(p).read()
+          needle='const cropLabel = page.getByText'
+          inject=('const dpr=await page.evaluate(()=>window.devicePixelRatio);'
+                  'const bb2=await cropCanvas.boundingBox();'
+                  'console.log("DBG-GEOM",JSON.stringify({bb2,dpr}));'
+                  'try{await page.screenshot({path:process.env.FIGDIFF_FIGMA_NODE_FIX_EVIDENCE+"/pre-crop.png"})}catch(e){console.log("shot-fail",e.message)};')
+          s=s.replace(needle,inject+needle,1)
+          open('app/desktop/e2e/fnf-dbg.mjs','w').write(s)
+          PY
           FIGDIFF_FIGMA_NODE_FIX_EVIDENCE="$PWD/docs/evidence/round1-windows/native-figma-node-fix" \
-            node app/desktop/e2e/native-figma-node-fix.mjs > "$out/figma-node-fix-debug.log" 2>&1 || true
+            node app/desktop/e2e/fnf-dbg.mjs > "$out/figma-node-fix-debug.log" 2>&1 || true
+          rm -f app/desktop/e2e/fnf-dbg.mjs
           for f in "$out/ignore-region-debug.log" "$out/figma-node-fix-debug.log"; do
             echo "=== $f ==="; tail -60 "$f"
           done
