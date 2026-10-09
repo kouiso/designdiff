@@ -367,11 +367,10 @@ export default [
     },
   },
 
-  // docs/evidence 配下の .mjs は Node 実行の再現スクリプト。Node globals の
-  // 付与だけを行い、rules は定義しない (script 系ブロックの off 指定を
-  // 持ち込まず、no-console や no-unused-* 等の severity は既存のまま)。
+  // 再現スクリプトに Node globals だけを付与する。rules は定義しない
+  // (既存の off 指定を持ち込まず、severity は既存のまま)。
   {
-    files: ["docs/evidence/**/*.mjs"],
+    files: ["docs/evidence/residual-parity-359/*.mjs"],
     languageOptions: {
       globals: {
         ...globals.node,
