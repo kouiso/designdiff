@@ -82,6 +82,23 @@ jobs:
           t=open(p,encoding='utf-8').read()
           needle='let canvasBox = await cropCanvas.boundingBox();'
           t=t.replace(needle,'await cropCanvas.evaluate(el=>el.scrollIntoView({block:"center"}));\n  '+needle,1)
+          drag='''  await page.mouse.move(canvasBox.x + fixture.crop.x, canvasBox.y + fixture.crop.y);
+  await page.mouse.down();
+  await page.mouse.move(
+    canvasBox.x + fixture.crop.x + fixture.crop.width,
+    canvasBox.y + fixture.crop.y + fixture.crop.height,
+    { steps: 5 },
+  );
+  await page.mouse.up();'''
+          repl='''  await cropCanvas.dragTo(cropCanvas, {
+    sourcePosition: { x: fixture.crop.x, y: fixture.crop.y },
+    targetPosition: {
+      x: fixture.crop.x + fixture.crop.width,
+      y: fixture.crop.y + fixture.crop.height,
+    },
+  });'''
+          assert drag in t
+          t=t.replace(drag,repl,1)
           open(p,'w',encoding='utf-8').write(t)
           PY
           git update-index --skip-worktree app/desktop/e2e/native-figma-node-fix.mjs
@@ -309,6 +326,23 @@ jobs:
           t=open(p,encoding='utf-8').read()
           needle='let canvasBox = await cropCanvas.boundingBox();'
           t=t.replace(needle,'await cropCanvas.evaluate(el=>el.scrollIntoView({block:"center"}));\n  '+needle,1)
+          drag='''  await page.mouse.move(canvasBox.x + fixture.crop.x, canvasBox.y + fixture.crop.y);
+  await page.mouse.down();
+  await page.mouse.move(
+    canvasBox.x + fixture.crop.x + fixture.crop.width,
+    canvasBox.y + fixture.crop.y + fixture.crop.height,
+    { steps: 5 },
+  );
+  await page.mouse.up();'''
+          repl='''  await cropCanvas.dragTo(cropCanvas, {
+    sourcePosition: { x: fixture.crop.x, y: fixture.crop.y },
+    targetPosition: {
+      x: fixture.crop.x + fixture.crop.width,
+      y: fixture.crop.y + fixture.crop.height,
+    },
+  });'''
+          assert drag in t
+          t=t.replace(drag,repl,1)
           open(p,'w',encoding='utf-8').write(t)
           PY
           git update-index --skip-worktree app/desktop/e2e/native-figma-node-fix.mjs
