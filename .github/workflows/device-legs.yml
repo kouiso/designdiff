@@ -175,7 +175,7 @@ jobs:
           # macOS ホストでは既定の -gpu swiftshader_indirect で画面が単色灰、
           # -gpu guest で単色黒のまま描画されなかった (adb screencap で実測)。
           # ANGLE 経由のソフトウェア描画を試す。
-          emulator-options: -no-window -gpu swangle_indirect -no-snapshot -noaudio -no-boot-anim -no-metrics -memory 3072 -cores 4
+          emulator-options: -no-window -gpu host -no-snapshot -noaudio -no-boot-anim -no-metrics -memory 3072 -cores 4
           script: sh .github/scripts/device-legs-android.sh "${{ runner.temp }}/device-legs-evidence/android-macos"
 
       - name: Upload android-macos evidence
