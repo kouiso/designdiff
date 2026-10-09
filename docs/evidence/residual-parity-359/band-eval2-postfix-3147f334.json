@@ -1,0 +1,346 @@
+[
+  {
+    "case": "band-top",
+    "unrelatedDiff": false,
+    "expected": "FAIL",
+    "observedStatus": "PASS",
+    "aggregateVerdict": "pass",
+    "diffPixelCount": 0,
+    "diffRegionCount": 0,
+    "criticalSignals": [],
+    "classification": "MISS"
+  },
+  {
+    "case": "band-top",
+    "unrelatedDiff": true,
+    "expected": "FAIL",
+    "observedStatus": "FAIL",
+    "aggregateVerdict": "fail",
+    "diffPixelCount": 60,
+    "diffRegionCount": 2,
+    "criticalSignals": [
+      "residual_color_drift=5.543460539190365"
+    ],
+    "classification": "hit"
+  },
+  {
+    "case": "band-middle",
+    "unrelatedDiff": false,
+    "expected": "FAIL",
+    "observedStatus": "PASS",
+    "aggregateVerdict": "pass",
+    "diffPixelCount": 0,
+    "diffRegionCount": 0,
+    "criticalSignals": [],
+    "classification": "MISS"
+  },
+  {
+    "case": "band-middle",
+    "unrelatedDiff": true,
+    "expected": "FAIL",
+    "observedStatus": "FAIL",
+    "aggregateVerdict": "fail",
+    "diffPixelCount": 60,
+    "diffRegionCount": 2,
+    "criticalSignals": [
+      "residual_color_drift=2.9565122875681253"
+    ],
+    "classification": "hit"
+  },
+  {
+    "case": "band-bottom",
+    "unrelatedDiff": false,
+    "expected": "FAIL",
+    "observedStatus": "PASS",
+    "aggregateVerdict": "pass",
+    "diffPixelCount": 0,
+    "diffRegionCount": 0,
+    "criticalSignals": [],
+    "classification": "MISS"
+  },
+  {
+    "case": "band-bottom",
+    "unrelatedDiff": true,
+    "expected": "FAIL",
+    "observedStatus": "FAIL",
+    "aggregateVerdict": "fail",
+    "diffPixelCount": 60,
+    "diffRegionCount": 2,
+    "criticalSignals": [
+      "residual_color_drift=5.543460539190365"
+    ],
+    "classification": "hit"
+  },
+  {
+    "case": "straddle",
+    "unrelatedDiff": false,
+    "expected": "FAIL",
+    "observedStatus": "PASS",
+    "aggregateVerdict": "pass",
+    "diffPixelCount": 0,
+    "diffRegionCount": 0,
+    "criticalSignals": [],
+    "classification": "MISS"
+  },
+  {
+    "case": "straddle",
+    "unrelatedDiff": true,
+    "expected": "FAIL",
+    "observedStatus": "FAIL",
+    "aggregateVerdict": "fail",
+    "diffPixelCount": 60,
+    "diffRegionCount": 2,
+    "criticalSignals": [
+      "residual_color_drift=3.6956403594601475"
+    ],
+    "classification": "hit"
+  },
+  {
+    "case": "straddle-thin",
+    "unrelatedDiff": false,
+    "expected": "FAIL",
+    "observedStatus": "PASS",
+    "aggregateVerdict": "pass",
+    "diffPixelCount": 0,
+    "diffRegionCount": 0,
+    "criticalSignals": [],
+    "classification": "MISS"
+  },
+  {
+    "case": "straddle-thin",
+    "unrelatedDiff": true,
+    "expected": "FAIL",
+    "observedStatus": "PASS",
+    "aggregateVerdict": "pass",
+    "diffPixelCount": 60,
+    "diffRegionCount": 2,
+    "criticalSignals": [],
+    "classification": "MISS"
+  },
+  {
+    "case": "narrow-7",
+    "unrelatedDiff": false,
+    "expected": "FAIL",
+    "observedStatus": "PASS",
+    "aggregateVerdict": "pass",
+    "diffPixelCount": 0,
+    "diffRegionCount": 0,
+    "criticalSignals": [],
+    "classification": "MISS"
+  },
+  {
+    "case": "narrow-7",
+    "unrelatedDiff": true,
+    "expected": "FAIL",
+    "observedStatus": "FAIL",
+    "aggregateVerdict": "fail",
+    "diffPixelCount": 60,
+    "diffRegionCount": 2,
+    "criticalSignals": [
+      "residual_color_drift=2.5869482516221143"
+    ],
+    "classification": "hit"
+  },
+  {
+    "case": "narrow-3",
+    "unrelatedDiff": false,
+    "expected": "FAIL",
+    "observedStatus": "PASS",
+    "aggregateVerdict": "pass",
+    "diffPixelCount": 0,
+    "diffRegionCount": 0,
+    "criticalSignals": [],
+    "classification": "MISS"
+  },
+  {
+    "case": "narrow-3",
+    "unrelatedDiff": true,
+    "expected": "FAIL",
+    "observedStatus": "PASS",
+    "aggregateVerdict": "pass",
+    "diffPixelCount": 60,
+    "diffRegionCount": 2,
+    "criticalSignals": [],
+    "classification": "MISS"
+  },
+  {
+    "case": "wide-30",
+    "unrelatedDiff": false,
+    "expected": "FAIL",
+    "observedStatus": "PASS",
+    "aggregateVerdict": "pass",
+    "diffPixelCount": 0,
+    "diffRegionCount": 0,
+    "criticalSignals": [],
+    "classification": "MISS"
+  },
+  {
+    "case": "wide-30",
+    "unrelatedDiff": true,
+    "expected": "FAIL",
+    "observedStatus": "FAIL",
+    "aggregateVerdict": "fail",
+    "diffPixelCount": 60,
+    "diffRegionCount": 2,
+    "criticalSignals": [
+      "residual_color_drift=5.543460539190365"
+    ],
+    "classification": "hit"
+  },
+  {
+    "case": "block-40x40",
+    "unrelatedDiff": false,
+    "expected": "FAIL",
+    "observedStatus": "PASS",
+    "aggregateVerdict": "pass",
+    "diffPixelCount": 0,
+    "diffRegionCount": 0,
+    "criticalSignals": [],
+    "classification": "MISS"
+  },
+  {
+    "case": "block-40x40",
+    "unrelatedDiff": true,
+    "expected": "FAIL",
+    "observedStatus": "PASS",
+    "aggregateVerdict": "pass",
+    "diffPixelCount": 60,
+    "diffRegionCount": 2,
+    "criticalSignals": [],
+    "classification": "MISS"
+  },
+  {
+    "case": "vstripe-8",
+    "unrelatedDiff": false,
+    "expected": "FAIL",
+    "observedStatus": "PASS",
+    "aggregateVerdict": "pass",
+    "diffPixelCount": 0,
+    "diffRegionCount": 0,
+    "criticalSignals": [],
+    "classification": "MISS"
+  },
+  {
+    "case": "vstripe-8",
+    "unrelatedDiff": true,
+    "expected": "FAIL",
+    "observedStatus": "PASS",
+    "aggregateVerdict": "pass",
+    "diffPixelCount": 60,
+    "diffRegionCount": 2,
+    "criticalSignals": [],
+    "classification": "MISS"
+  },
+  {
+    "case": "uniform-1.5",
+    "unrelatedDiff": false,
+    "expected": "PASS",
+    "observedStatus": "FAIL",
+    "aggregateVerdict": "fail",
+    "diffPixelCount": 0,
+    "diffRegionCount": 0,
+    "criticalSignals": [
+      "flat_region_color=#FAFAFA"
+    ],
+    "classification": "FALSE-ALARM"
+  },
+  {
+    "case": "uniform-1.5",
+    "unrelatedDiff": true,
+    "expected": "PASS",
+    "observedStatus": "PASS",
+    "aggregateVerdict": "pass",
+    "diffPixelCount": 60,
+    "diffRegionCount": 2,
+    "criticalSignals": [],
+    "classification": "correct-pass"
+  },
+  {
+    "case": "gradient-ramp",
+    "unrelatedDiff": false,
+    "expected": "PASS",
+    "observedStatus": "PASS",
+    "aggregateVerdict": "pass",
+    "diffPixelCount": 0,
+    "diffRegionCount": 0,
+    "criticalSignals": [],
+    "classification": "correct-pass"
+  },
+  {
+    "case": "gradient-ramp",
+    "unrelatedDiff": true,
+    "expected": "PASS",
+    "observedStatus": "PASS",
+    "aggregateVerdict": "pass",
+    "diffPixelCount": 60,
+    "diffRegionCount": 2,
+    "criticalSignals": [],
+    "classification": "correct-pass"
+  },
+  {
+    "case": "aa-dither",
+    "unrelatedDiff": false,
+    "expected": "PASS",
+    "observedStatus": "PASS",
+    "aggregateVerdict": "pass",
+    "diffPixelCount": 0,
+    "diffRegionCount": 0,
+    "criticalSignals": [],
+    "classification": "correct-pass"
+  },
+  {
+    "case": "aa-dither",
+    "unrelatedDiff": true,
+    "expected": "PASS",
+    "observedStatus": "PASS",
+    "aggregateVerdict": "pass",
+    "diffPixelCount": 60,
+    "diffRegionCount": 2,
+    "criticalSignals": [],
+    "classification": "correct-pass"
+  },
+  {
+    "case": "photo-noise",
+    "unrelatedDiff": false,
+    "expected": "PASS",
+    "observedStatus": "PASS",
+    "aggregateVerdict": "pass",
+    "diffPixelCount": 0,
+    "diffRegionCount": 0,
+    "criticalSignals": [],
+    "classification": "correct-pass"
+  },
+  {
+    "case": "photo-noise",
+    "unrelatedDiff": true,
+    "expected": "PASS",
+    "observedStatus": "PASS",
+    "aggregateVerdict": "pass",
+    "diffPixelCount": 60,
+    "diffRegionCount": 2,
+    "criticalSignals": [],
+    "classification": "correct-pass"
+  },
+  {
+    "case": "sanity-displacement-only",
+    "unrelatedDiff": true,
+    "expected": "PASS",
+    "observedStatus": "PASS",
+    "aggregateVerdict": "pass",
+    "diffPixelCount": 60,
+    "diffRegionCount": 2,
+    "criticalSignals": [],
+    "classification": "correct-pass"
+  },
+  {
+    "case": "sanity-identical",
+    "unrelatedDiff": false,
+    "expected": "PASS",
+    "observedStatus": "PASS",
+    "aggregateVerdict": "pass",
+    "diffPixelCount": 0,
+    "diffRegionCount": 0,
+    "criticalSignals": [],
+    "classification": "correct-pass"
+  }
+]

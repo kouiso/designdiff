@@ -1,0 +1,462 @@
+[
+  {
+    "node": "9704-5734",
+    "hasTree": false,
+    "tree": {
+      "verdict": "pass",
+      "critical": []
+    },
+    "noTree": {
+      "verdict": "pass",
+      "critical": []
+    }
+  },
+  {
+    "node": "9705-6069",
+    "hasTree": false,
+    "tree": {
+      "verdict": "pass",
+      "critical": []
+    },
+    "noTree": {
+      "verdict": "pass",
+      "critical": []
+    }
+  },
+  {
+    "node": "9721-6204",
+    "hasTree": false,
+    "tree": {
+      "verdict": "fail",
+      "critical": [
+        "diff-cluster-247-499-3-9:delta_e_2000",
+        "diff-cluster-106-500-4-4:delta_e_2000",
+        "diff-cluster-107-504-5-4:delta_e_2000",
+        "diff-cluster-333-558-4-5:delta_e_2000"
+      ]
+    },
+    "noTree": {
+      "verdict": "fail",
+      "critical": [
+        "diff-cluster-247-499-3-9:delta_e_2000",
+        "diff-cluster-106-500-4-4:delta_e_2000",
+        "diff-cluster-107-504-5-4:delta_e_2000",
+        "diff-cluster-333-558-4-5:delta_e_2000"
+      ]
+    }
+  },
+  {
+    "node": "9776-6456",
+    "hasTree": false,
+    "tree": {
+      "verdict": "fail",
+      "critical": [
+        "diff-cluster-130-505-8-16:delta_e_2000",
+        "diff-cluster-116-505-7-16:delta_e_2000",
+        "diff-cluster-143-509-14-9:delta_e_2000",
+        "diff-cluster-126-511-5-4:delta_e_2000"
+      ]
+    },
+    "noTree": {
+      "verdict": "fail",
+      "critical": [
+        "diff-cluster-130-505-8-16:delta_e_2000",
+        "diff-cluster-116-505-7-16:delta_e_2000",
+        "diff-cluster-143-509-14-9:delta_e_2000",
+        "diff-cluster-126-511-5-4:delta_e_2000"
+      ]
+    }
+  },
+  {
+    "node": "9776-6584",
+    "hasTree": false,
+    "tree": {
+      "verdict": "fail",
+      "critical": [
+        "diff-cluster-214-128-2-20:delta_e_2000",
+        "diff-cluster-225-128-1-19:delta_e_2000",
+        "frame-residual:residual_color_drift"
+      ]
+    },
+    "noTree": {
+      "verdict": "fail",
+      "critical": [
+        "diff-cluster-214-128-2-20:delta_e_2000",
+        "diff-cluster-225-128-1-19:delta_e_2000",
+        "frame-residual:residual_color_drift"
+      ]
+    }
+  },
+  {
+    "node": "9776-6698",
+    "hasTree": false,
+    "tree": {
+      "verdict": "fail",
+      "critical": [
+        "diff-cluster-65-422-5-7:delta_e_2000"
+      ]
+    },
+    "noTree": {
+      "verdict": "fail",
+      "critical": [
+        "diff-cluster-65-422-5-7:delta_e_2000"
+      ]
+    }
+  },
+  {
+    "node": "9776-6791",
+    "hasTree": false,
+    "tree": {
+      "verdict": "fail",
+      "critical": [
+        "diff-cluster-238-273-7-7:delta_e_2000"
+      ]
+    },
+    "noTree": {
+      "verdict": "fail",
+      "critical": [
+        "diff-cluster-238-273-7-7:delta_e_2000"
+      ]
+    }
+  },
+  {
+    "node": "9787-3365",
+    "hasTree": false,
+    "tree": {
+      "verdict": "pass",
+      "critical": []
+    },
+    "noTree": {
+      "verdict": "pass",
+      "critical": []
+    }
+  },
+  {
+    "node": "9788-3540",
+    "hasTree": false,
+    "tree": {
+      "verdict": "pass",
+      "critical": []
+    },
+    "noTree": {
+      "verdict": "pass",
+      "critical": []
+    }
+  },
+  {
+    "node": "9789-3641",
+    "hasTree": false,
+    "tree": {
+      "verdict": "fail",
+      "critical": [
+        "frame-residual:residual_color_drift"
+      ]
+    },
+    "noTree": {
+      "verdict": "fail",
+      "critical": [
+        "frame-residual:residual_color_drift"
+      ]
+    }
+  },
+  {
+    "node": "9791-3766",
+    "hasTree": false,
+    "tree": {
+      "verdict": "pass",
+      "critical": []
+    },
+    "noTree": {
+      "verdict": "pass",
+      "critical": []
+    }
+  },
+  {
+    "node": "9794-3835",
+    "hasTree": false,
+    "tree": {
+      "verdict": "pass",
+      "critical": []
+    },
+    "noTree": {
+      "verdict": "pass",
+      "critical": []
+    }
+  },
+  {
+    "node": "9797-3950",
+    "hasTree": false,
+    "tree": {
+      "verdict": "pass",
+      "critical": []
+    },
+    "noTree": {
+      "verdict": "pass",
+      "critical": []
+    }
+  },
+  {
+    "node": "9799-4024",
+    "hasTree": false,
+    "tree": {
+      "verdict": "fail",
+      "critical": [
+        "diff-cluster-77-438-18-5:delta_e_2000",
+        "diff-cluster-131-319-13-4:delta_e_2000",
+        "diff-cluster-67-305-8-3:delta_e_2000",
+        "diff-cluster-68-307-7-3:delta_e_2000"
+      ]
+    },
+    "noTree": {
+      "verdict": "fail",
+      "critical": [
+        "diff-cluster-77-438-18-5:delta_e_2000",
+        "diff-cluster-131-319-13-4:delta_e_2000",
+        "diff-cluster-67-305-8-3:delta_e_2000",
+        "diff-cluster-68-307-7-3:delta_e_2000"
+      ]
+    }
+  },
+  {
+    "node": "9804-4204",
+    "hasTree": false,
+    "tree": {
+      "verdict": "pass",
+      "critical": []
+    },
+    "noTree": {
+      "verdict": "pass",
+      "critical": []
+    }
+  },
+  {
+    "node": "9804-4285",
+    "hasTree": false,
+    "tree": {
+      "verdict": "fail",
+      "critical": [
+        "diff-cluster-114-444-12-5:delta_e_2000",
+        "diff-cluster-140-446-8-3:delta_e_2000"
+      ]
+    },
+    "noTree": {
+      "verdict": "fail",
+      "critical": [
+        "diff-cluster-114-444-12-5:delta_e_2000",
+        "diff-cluster-140-446-8-3:delta_e_2000"
+      ]
+    }
+  },
+  {
+    "node": "9804-4369",
+    "hasTree": false,
+    "tree": {
+      "verdict": "fail",
+      "critical": [
+        "diff-cluster-280-266-26-2:delta_e_2000",
+        "diff-cluster-288-236-7-7:delta_e_2000",
+        "diff-cluster-281-263-24-1:delta_e_2000",
+        "diff-cluster-291-257-4-5:delta_e_2000",
+        "frame-residual:residual_color_drift"
+      ]
+    },
+    "noTree": {
+      "verdict": "fail",
+      "critical": [
+        "diff-cluster-280-266-26-2:delta_e_2000",
+        "diff-cluster-288-236-7-7:delta_e_2000",
+        "diff-cluster-281-263-24-1:delta_e_2000",
+        "diff-cluster-291-257-4-5:delta_e_2000",
+        "frame-residual:residual_color_drift"
+      ]
+    }
+  },
+  {
+    "node": "9810-3055",
+    "hasTree": false,
+    "tree": {
+      "verdict": "fail",
+      "critical": [
+        "frame-residual:residual_color_drift"
+      ]
+    },
+    "noTree": {
+      "verdict": "fail",
+      "critical": [
+        "frame-residual:residual_color_drift"
+      ]
+    }
+  },
+  {
+    "node": "9810-3193",
+    "hasTree": false,
+    "tree": {
+      "verdict": "fail",
+      "critical": [
+        "diff-cluster-107-309-12-3:delta_e_2000",
+        "diff-cluster-257-276-7-7:delta_e_2000",
+        "diff-cluster-250-274-8-9:delta_e_2000",
+        "diff-cluster-44-536-4-3:delta_e_2000",
+        "frame-residual:residual_color_drift"
+      ]
+    },
+    "noTree": {
+      "verdict": "fail",
+      "critical": [
+        "diff-cluster-107-309-12-3:delta_e_2000",
+        "diff-cluster-257-276-7-7:delta_e_2000",
+        "diff-cluster-250-274-8-9:delta_e_2000",
+        "diff-cluster-44-536-4-3:delta_e_2000",
+        "frame-residual:residual_color_drift"
+      ]
+    }
+  },
+  {
+    "node": "9810-3312",
+    "hasTree": false,
+    "tree": {
+      "verdict": "fail",
+      "critical": [
+        "diff-cluster-108-364-10-11:delta_e_2000",
+        "diff-cluster-25-629-10-9:delta_e_2000",
+        "diff-cluster-80-627-7-9:delta_e_2000",
+        "diff-cluster-224-365-7-10:delta_e_2000",
+        "diff-cluster-314-347-9-10:delta_e_2000",
+        "diff-cluster-46-493-6-13:delta_e_2000",
+        "diff-cluster-111-440-6-9:delta_e_2000",
+        "diff-cluster-65-354-11-2:delta_e_2000",
+        "diff-cluster-87-628-4-10:delta_e_2000",
+        "diff-cluster-45-354-10-5:delta_e_2000",
+        "diff-cluster-273-421-6-8:delta_e_2000",
+        "diff-cluster-112-326-7-5:delta_e_2000",
+        "diff-cluster-325-347-8-5:delta_e_2000",
+        "diff-cluster-47-426-8-6:delta_e_2000",
+        "diff-cluster-179-513-8-3:delta_e_2000",
+        "diff-cluster-366-571-3-10:delta_e_2000",
+        "diff-cluster-89-257-1-11:delta_e_2000"
+      ]
+    },
+    "noTree": {
+      "verdict": "fail",
+      "critical": [
+        "diff-cluster-108-364-10-11:delta_e_2000",
+        "diff-cluster-25-629-10-9:delta_e_2000",
+        "diff-cluster-80-627-7-9:delta_e_2000",
+        "diff-cluster-224-365-7-10:delta_e_2000",
+        "diff-cluster-314-347-9-10:delta_e_2000",
+        "diff-cluster-46-493-6-13:delta_e_2000",
+        "diff-cluster-111-440-6-9:delta_e_2000",
+        "diff-cluster-65-354-11-2:delta_e_2000",
+        "diff-cluster-87-628-4-10:delta_e_2000",
+        "diff-cluster-45-354-10-5:delta_e_2000",
+        "diff-cluster-273-421-6-8:delta_e_2000",
+        "diff-cluster-112-326-7-5:delta_e_2000",
+        "diff-cluster-325-347-8-5:delta_e_2000",
+        "diff-cluster-47-426-8-6:delta_e_2000",
+        "diff-cluster-179-513-8-3:delta_e_2000",
+        "diff-cluster-366-571-3-10:delta_e_2000",
+        "diff-cluster-89-257-1-11:delta_e_2000"
+      ]
+    }
+  },
+  {
+    "node": "9878-6665",
+    "hasTree": false,
+    "tree": {
+      "verdict": "fail",
+      "critical": [
+        "diff-cluster-259-61-14-11:delta_e_2000",
+        "diff-cluster-332-484-21-14:delta_e_2000",
+        "diff-cluster-314-510-11-11:delta_e_2000",
+        "diff-cluster-326-510-11-11:delta_e_2000",
+        "diff-cluster-154-62-18-11:delta_e_2000",
+        "diff-cluster-322-438-10-11:delta_e_2000",
+        "diff-cluster-189-62-11-11:delta_e_2000",
+        "diff-cluster-66-62-8-11:delta_e_2000",
+        "diff-cluster-274-61-12-6:delta_e_2000",
+        "diff-cluster-327-334-6-10:delta_e_2000",
+        "diff-cluster-275-68-9-4:delta_e_2000",
+        "diff-cluster-321-664-7-7:delta_e_2000",
+        "diff-cluster-139-61-3-14:delta_e_2000",
+        "diff-cluster-334-70-9-2:delta_e_2000",
+        "diff-cluster-225-64-4-7:delta_e_2000",
+        "diff-cluster-337-75-9-3:delta_e_2000",
+        "frame-residual:residual_color_drift"
+      ]
+    },
+    "noTree": {
+      "verdict": "fail",
+      "critical": [
+        "diff-cluster-259-61-14-11:delta_e_2000",
+        "diff-cluster-332-484-21-14:delta_e_2000",
+        "diff-cluster-314-510-11-11:delta_e_2000",
+        "diff-cluster-326-510-11-11:delta_e_2000",
+        "diff-cluster-154-62-18-11:delta_e_2000",
+        "diff-cluster-322-438-10-11:delta_e_2000",
+        "diff-cluster-189-62-11-11:delta_e_2000",
+        "diff-cluster-66-62-8-11:delta_e_2000",
+        "diff-cluster-274-61-12-6:delta_e_2000",
+        "diff-cluster-327-334-6-10:delta_e_2000",
+        "diff-cluster-275-68-9-4:delta_e_2000",
+        "diff-cluster-321-664-7-7:delta_e_2000",
+        "diff-cluster-139-61-3-14:delta_e_2000",
+        "diff-cluster-334-70-9-2:delta_e_2000",
+        "diff-cluster-225-64-4-7:delta_e_2000",
+        "diff-cluster-337-75-9-3:delta_e_2000",
+        "frame-residual:residual_color_drift"
+      ]
+    }
+  },
+  {
+    "node": "9883-7836",
+    "hasTree": false,
+    "tree": {
+      "verdict": "pass",
+      "critical": []
+    },
+    "noTree": {
+      "verdict": "pass",
+      "critical": []
+    }
+  },
+  {
+    "node": "9892-8063",
+    "hasTree": false,
+    "tree": {
+      "verdict": "pass",
+      "critical": []
+    },
+    "noTree": {
+      "verdict": "pass",
+      "critical": []
+    }
+  },
+  {
+    "node": "9949-23460",
+    "hasTree": false,
+    "tree": {
+      "verdict": "pass",
+      "critical": []
+    },
+    "noTree": {
+      "verdict": "pass",
+      "critical": []
+    }
+  },
+  {
+    "node": "9949-23513",
+    "hasTree": false,
+    "tree": {
+      "verdict": "fail",
+      "critical": [
+        "frame-residual:residual_color_drift"
+      ]
+    },
+    "noTree": {
+      "verdict": "fail",
+      "critical": [
+        "frame-residual:residual_color_drift"
+      ]
+    }
+  }
+]
