@@ -43,12 +43,18 @@ jobs:
         shell: bash
         run: |
           echo "whoami=$(whoami) USERNAME=$USERNAME USERDOMAIN=$USERDOMAIN COMPUTERNAME=$COMPUTERNAME"
-          for principal in "$(whoami)" "${COMPUTERNAME}\\${USERNAME}" "${USERDOMAIN}\\${USERNAME}"; do
+          MSYS2_ARG_CONV_EXCL="*" whoami /user
+          MSYS2_ARG_CONV_EXCL="*" whoami /upn || true
+          MSYS2_ARG_CONV_EXCL="*" whoami /fqdn || true
+          MSYS2_ARG_CONV_EXCL="*" whoami /groups | grep -i admin || true
+          node -e "console.log('node-whoami:', require('os').userInfo().username)"
+          for principal in "*$(MSYS2_ARG_CONV_EXCL='*' whoami /user | awk '{print $NF}')" "${COMPUTERNAME}\\${USERNAME}" "${USERDOMAIN}\\${USERNAME}"; do
             probe_dir="$HOME/acl-probe-$(echo "$principal" | tr -cd '[:alnum:]')"
             probe_win="$(cygpath -w "$probe_dir")"
             mkdir -p "$probe_dir"
             echo "--- deny $principal"
             MSYS2_ARG_CONV_EXCL="*" icacls "$probe_win" /deny "$principal:(OI)(CI)(W)"
+            MSYS2_ARG_CONV_EXCL="*" icacls "$probe_win" | tail -6
             (echo x > "$probe_dir/probe.txt" && echo "WRITE SUCCEEDED [$principal]") || echo "WRITE DENIED [$principal]"
             MSYS2_ARG_CONV_EXCL="*" icacls "$probe_win" /remove:d "$principal" >/dev/null || true
           done
