@@ -77,8 +77,15 @@ Open limitations (NOT accepted; pending owner decision):
 Scope: zero-cluster residual measurement, window generalization
 (row/col strips 1/8-1/16-1/32 + 8x8 cells), AA exclusion, regionId rename.
 
-Same-pixels replay parity (buildDiffReport tree/noTree): live-v3 25/25,
-png-v2 25/25.
+Same-pixels replay (buildDiffReport, AA provider wired like production):
+live-v3 dumps carry the real node tree, so tree-vs-noTree parity is
+genuine: 25/25. png-v2 dumps carry no tree (the production PNG path never
+has one); their replay is a single-path (noTree) regression record, NOT a
+parity check. A genuine parity check on the PNG pixel set was run
+separately by injecting the live-v3 node tree (`replay-png-tree.mjs` /
+`replay-v2-png-tree.json`): 24/25, the one divergence (9794-3835, tree
+over-fires section delta_e_2000/ssim on displacement-proven content) is
+root-caused and recorded as an open item in the README.
 
 Verdict changes vs the 9d91d73e e2e columns above (post-AA):
 
@@ -98,7 +105,12 @@ pixel-level evidence in logs/classify-9810-*.log and logs/classify-9789-*.log;
 no threshold was moved to quiet them.
 
 band-eval2 (independent expectations, compareImages entry, 30 runs):
-pre-fix (dist @9d91d73e, regenerated) hit 6 / correct-pass 9 / MISS 14 /
-FALSE-ALARM 1; post-fix (3147f334) hit 20 / correct-pass 9 / MISS 0 /
+pre-fix (dist @9d91d73e, regenerated 18:10:20-18:10:22 UTC, exit 0) hit 6 /
+correct-pass 9 / MISS 14 / FALSE-ALARM 1; post-fix (dist @3147f334 code,
+18:09:57-18:10:00 UTC, exit 0) hit 20 / correct-pass 9 / MISS 0 /
 FALSE-ALARM 1 (flat_region_color on uniform-1.5, existing strict rule,
-expectation mismatch recorded, not relaxed).
+expectation mismatch recorded, not relaxed). sha256:
+pre 6697b602…, post 069179b4… (full hashes in README). Note: the first
+evidence commit mislabeled the pre-fix output as the post-fix JSON (fixed
+output path copied without re-running); both were regenerated with distinct
+output paths and the tallies match the values reported in the thread.

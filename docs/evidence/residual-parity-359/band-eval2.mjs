@@ -190,4 +190,4 @@ for (const [name, make] of Object.entries(MUTATIONS)) {
 const tally = {};
 for (const r of rows) tally[r.classification] = (tally[r.classification] ?? 0) + 1;
 console.log("\ntally:", JSON.stringify(tally));
-await writeFile("/tmp/dd-live-run/band-eval2.json", JSON.stringify(rows, null, 2));
+await writeFile(process.argv[2] ?? "/tmp/dd-live-run/band-eval2.json", JSON.stringify(rows, null, 2));

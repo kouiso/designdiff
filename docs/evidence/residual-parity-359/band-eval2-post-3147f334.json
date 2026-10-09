@@ -3,12 +3,14 @@
     "case": "band-top",
     "unrelatedDiff": false,
     "expected": "FAIL",
-    "observedStatus": "PASS",
-    "aggregateVerdict": "pass",
+    "observedStatus": "FAIL",
+    "aggregateVerdict": "fail",
     "diffPixelCount": 0,
     "diffRegionCount": 0,
-    "criticalSignals": [],
-    "classification": "MISS"
+    "criticalSignals": [
+      "residual_color_drift=5.543460539190365"
+    ],
+    "classification": "hit"
   },
   {
     "case": "band-top",
@@ -27,12 +29,14 @@
     "case": "band-middle",
     "unrelatedDiff": false,
     "expected": "FAIL",
-    "observedStatus": "PASS",
-    "aggregateVerdict": "pass",
+    "observedStatus": "FAIL",
+    "aggregateVerdict": "fail",
     "diffPixelCount": 0,
     "diffRegionCount": 0,
-    "criticalSignals": [],
-    "classification": "MISS"
+    "criticalSignals": [
+      "residual_color_drift=5.543460539190347"
+    ],
+    "classification": "hit"
   },
   {
     "case": "band-middle",
@@ -43,7 +47,7 @@
     "diffPixelCount": 60,
     "diffRegionCount": 2,
     "criticalSignals": [
-      "residual_color_drift=2.9565122875681253"
+      "residual_color_drift=5.543460539190347"
     ],
     "classification": "hit"
   },
@@ -51,12 +55,14 @@
     "case": "band-bottom",
     "unrelatedDiff": false,
     "expected": "FAIL",
-    "observedStatus": "PASS",
-    "aggregateVerdict": "pass",
+    "observedStatus": "FAIL",
+    "aggregateVerdict": "fail",
     "diffPixelCount": 0,
     "diffRegionCount": 0,
-    "criticalSignals": [],
-    "classification": "MISS"
+    "criticalSignals": [
+      "residual_color_drift=5.543460539190365"
+    ],
+    "classification": "hit"
   },
   {
     "case": "band-bottom",
@@ -75,12 +81,14 @@
     "case": "straddle",
     "unrelatedDiff": false,
     "expected": "FAIL",
-    "observedStatus": "PASS",
-    "aggregateVerdict": "pass",
+    "observedStatus": "FAIL",
+    "aggregateVerdict": "fail",
     "diffPixelCount": 0,
     "diffRegionCount": 0,
-    "criticalSignals": [],
-    "classification": "MISS"
+    "criticalSignals": [
+      "residual_color_drift=5.543460539190347"
+    ],
+    "classification": "hit"
   },
   {
     "case": "straddle",
@@ -91,7 +99,7 @@
     "diffPixelCount": 60,
     "diffRegionCount": 2,
     "criticalSignals": [
-      "residual_color_drift=3.6956403594601475"
+      "residual_color_drift=5.543460539190347"
     ],
     "classification": "hit"
   },
@@ -99,34 +107,40 @@
     "case": "straddle-thin",
     "unrelatedDiff": false,
     "expected": "FAIL",
-    "observedStatus": "PASS",
-    "aggregateVerdict": "pass",
+    "observedStatus": "FAIL",
+    "aggregateVerdict": "fail",
     "diffPixelCount": 0,
     "diffRegionCount": 0,
-    "criticalSignals": [],
-    "classification": "MISS"
+    "criticalSignals": [
+      "residual_color_drift=5.543460539190347"
+    ],
+    "classification": "hit"
   },
   {
     "case": "straddle-thin",
     "unrelatedDiff": true,
     "expected": "FAIL",
-    "observedStatus": "PASS",
-    "aggregateVerdict": "pass",
+    "observedStatus": "FAIL",
+    "aggregateVerdict": "fail",
     "diffPixelCount": 60,
     "diffRegionCount": 2,
-    "criticalSignals": [],
-    "classification": "MISS"
+    "criticalSignals": [
+      "residual_color_drift=5.543460539190347"
+    ],
+    "classification": "hit"
   },
   {
     "case": "narrow-7",
     "unrelatedDiff": false,
     "expected": "FAIL",
-    "observedStatus": "PASS",
-    "aggregateVerdict": "pass",
+    "observedStatus": "FAIL",
+    "aggregateVerdict": "fail",
     "diffPixelCount": 0,
     "diffRegionCount": 0,
-    "criticalSignals": [],
-    "classification": "MISS"
+    "criticalSignals": [
+      "residual_color_drift=5.543460539190305"
+    ],
+    "classification": "hit"
   },
   {
     "case": "narrow-7",
@@ -137,7 +151,7 @@
     "diffPixelCount": 60,
     "diffRegionCount": 2,
     "criticalSignals": [
-      "residual_color_drift=2.5869482516221143"
+      "residual_color_drift=5.543460539190305"
     ],
     "classification": "hit"
   },
@@ -145,34 +159,40 @@
     "case": "narrow-3",
     "unrelatedDiff": false,
     "expected": "FAIL",
-    "observedStatus": "PASS",
-    "aggregateVerdict": "pass",
+    "observedStatus": "FAIL",
+    "aggregateVerdict": "fail",
     "diffPixelCount": 0,
     "diffRegionCount": 0,
-    "criticalSignals": [],
-    "classification": "MISS"
+    "criticalSignals": [
+      "residual_color_drift=3.6956403594602163"
+    ],
+    "classification": "hit"
   },
   {
     "case": "narrow-3",
     "unrelatedDiff": true,
     "expected": "FAIL",
-    "observedStatus": "PASS",
-    "aggregateVerdict": "pass",
+    "observedStatus": "FAIL",
+    "aggregateVerdict": "fail",
     "diffPixelCount": 60,
     "diffRegionCount": 2,
-    "criticalSignals": [],
-    "classification": "MISS"
+    "criticalSignals": [
+      "residual_color_drift=3.6956403594602163"
+    ],
+    "classification": "hit"
   },
   {
     "case": "wide-30",
     "unrelatedDiff": false,
     "expected": "FAIL",
-    "observedStatus": "PASS",
-    "aggregateVerdict": "pass",
+    "observedStatus": "FAIL",
+    "aggregateVerdict": "fail",
     "diffPixelCount": 0,
     "diffRegionCount": 0,
-    "criticalSignals": [],
-    "classification": "MISS"
+    "criticalSignals": [
+      "residual_color_drift=5.543460539190365"
+    ],
+    "classification": "hit"
   },
   {
     "case": "wide-30",
@@ -191,45 +211,53 @@
     "case": "block-40x40",
     "unrelatedDiff": false,
     "expected": "FAIL",
-    "observedStatus": "PASS",
-    "aggregateVerdict": "pass",
+    "observedStatus": "FAIL",
+    "aggregateVerdict": "fail",
     "diffPixelCount": 0,
     "diffRegionCount": 0,
-    "criticalSignals": [],
-    "classification": "MISS"
+    "criticalSignals": [
+      "residual_color_drift=5.54346053919032"
+    ],
+    "classification": "hit"
   },
   {
     "case": "block-40x40",
     "unrelatedDiff": true,
     "expected": "FAIL",
-    "observedStatus": "PASS",
-    "aggregateVerdict": "pass",
+    "observedStatus": "FAIL",
+    "aggregateVerdict": "fail",
     "diffPixelCount": 60,
     "diffRegionCount": 2,
-    "criticalSignals": [],
-    "classification": "MISS"
+    "criticalSignals": [
+      "residual_color_drift=5.54346053919032"
+    ],
+    "classification": "hit"
   },
   {
     "case": "vstripe-8",
     "unrelatedDiff": false,
     "expected": "FAIL",
-    "observedStatus": "PASS",
-    "aggregateVerdict": "pass",
+    "observedStatus": "FAIL",
+    "aggregateVerdict": "fail",
     "diffPixelCount": 0,
     "diffRegionCount": 0,
-    "criticalSignals": [],
-    "classification": "MISS"
+    "criticalSignals": [
+      "residual_color_drift=5.543460539190347"
+    ],
+    "classification": "hit"
   },
   {
     "case": "vstripe-8",
     "unrelatedDiff": true,
     "expected": "FAIL",
-    "observedStatus": "PASS",
-    "aggregateVerdict": "pass",
+    "observedStatus": "FAIL",
+    "aggregateVerdict": "fail",
     "diffPixelCount": 60,
     "diffRegionCount": 2,
-    "criticalSignals": [],
-    "classification": "MISS"
+    "criticalSignals": [
+      "residual_color_drift=5.543460539190347"
+    ],
+    "classification": "hit"
   },
   {
     "case": "uniform-1.5",
