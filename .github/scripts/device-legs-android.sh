@@ -47,6 +47,21 @@ adb devices -l
 # ロックを外し、どの window が前面かを証跡に残す (macOS ホストで単色画面を実測)。
 adb shell input keyevent KEYCODE_WAKEUP >/dev/null 2>&1 || true
 adb shell wm dismiss-keyguard >/dev/null 2>&1 || true
+# sys.boot_completed が立っても、ユーザ領域の解錠が終わるまでは
+# Settings の FallbackHome が前面に居て launcher も Chrome も動かない
+# (macOS ホストで実測)。抜けるまで待ち、待った秒数を証跡に残す。
+fallback_start="$(date +%s)"
+fallback_deadline=$((fallback_start + 900))
+while adb shell dumpsys window 2>/dev/null | grep -q 'mCurrentFocus=.*FallbackHome'; do
+  if [ "$(date +%s)" -ge "$fallback_deadline" ]; then
+    echo "fallback_home_still_focused_after_seconds=900" >>"$evidence_dir/runner-host.txt"
+    break
+  fi
+  adb shell input keyevent KEYCODE_WAKEUP >/dev/null 2>&1 || true
+  adb shell wm dismiss-keyguard >/dev/null 2>&1 || true
+  sleep 10
+done
+echo "fallback_home_wait_seconds=$(($(date +%s) - fallback_start))" >>"$evidence_dir/runner-host.txt"
 {
   adb shell dumpsys power | grep -E 'mWakefulness=|Display Power' || true
   adb shell dumpsys window | grep -E 'mCurrentFocus|mFocusedApp' || true
