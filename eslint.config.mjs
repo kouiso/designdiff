@@ -367,6 +367,19 @@ export default [
     },
   },
 
+  // 再現スクリプトに Node globals だけを付与する。rules は定義しない
+  // (既存の off 指定を持ち込まず、severity は既存のまま)。
+  {
+    files: ["docs/evidence/residual-parity-359/*.mjs"],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+      },
+      ecmaVersion: "latest",
+      sourceType: "module",
+    },
+  },
+
   // App-level smoke/contract scripts (Node.js + browser globals for page.evaluate contexts)
   // e2e 配下の driver も page.evaluate / chrome.* API を文字列評価内で参照するため
   // browser + webextensions global を足す。

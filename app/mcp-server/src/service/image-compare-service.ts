@@ -11,6 +11,7 @@ import sharp, { type Sharp } from "sharp";
 import {
   PERCEPTIBLE_DIFF_CONTRADICTION_RATIO,
   applyIgnoreRegions as zeroIgnoreRegions,
+  buildAntiAliasedMask as buildAntiAliasedMaskSignal,
   buildIgnoreMask,
   classifyIgnoreRegionEntries,
   buildVerifiedInsetCandidates,
@@ -495,6 +496,24 @@ const isVisibleDiffPixelAtIndex = (diffPixelData: Uint8ClampedArray, idx: number
   return (
     !(alpha === 0 && red === 0 && green === 0 && blue === 0) && (red !== green || green !== blue)
   );
+};
+
+// buildDiffReport の残差計測が、クラスタの bbox 全体ではなく実際の差分画素
+// だけを除外するための 1 画素 1 バイトのマスク。疎なクラスタ (枠線だけ等) の
+// 内側に広がる色ずれを残差から消さないための縮約で、クラスタが無い比較では
+// 残差を測らないので呼び出し側で確保を省く。
+const buildDiffPixelMask = (
+  diffPixelData: Uint8ClampedArray,
+  width: number,
+  height: number,
+): Uint8Array => {
+  const mask = new Uint8Array(width * height);
+  for (let index = 0; index < mask.length; index += 1) {
+    if (isVisibleDiffPixelAtIndex(diffPixelData, index * 4)) {
+      mask[index] = 1;
+    }
+  }
+  return mask;
 };
 
 function clusterDiffRegions(args: {
@@ -1562,7 +1581,6 @@ export async function compareImages(
       alignedDesignPixels: reportDesignPixels,
     },
     perceptibleMask,
-    diffPixelData,
     // Figma ノード写像 (matchDiffRegionsToNodes) より前の素の bbox でよい。
     // 採点は座標と diffPixelCount (上限超過時の重大度順ソート用) だけを使い、
     // ノード名は使わない。
@@ -1573,6 +1591,21 @@ export async function compareImages(
       h: region.bounds.height,
       diffPixelCount: region.diffPixelCount,
     })),
+    // 残差マスクで実差分画素だけを除くための縮約。矛盾マスクの塗り足し
+    // (paintPerceptibleMask) が diffPixelData を書き換える前に作る必要が
+    // あるため、earlyClusterForScoring と同じタイミングでここで作る。
+    diffMask:
+      earlyClusterForScoring.diffRegions.length > 0
+        ? buildDiffPixelMask(diffPixelData, width, height)
+        : undefined,
+    // 残差が発火水準に届いたときだけ AA 縁を除いて測り直すための遅延提供者。
+    // pixelmatch と同じ入力・同じ閾値で作る。ずれると「本家は AA と認めたが
+    // 残差は数える」画素が生まれ、ずれ許容済みの縁に残差が発火する。
+    // 常に構築すると pixelmatch 1 パス分のコストが全比較に乗るため遅延にする。
+    buildAntiAliasedMask: () =>
+      buildAntiAliasedMaskSignal(reportDesignPixels, reportScreenshotPixels, width, height, {
+        threshold,
+      }),
     localAlignmentTolerancePx: options.localAlignmentTolerancePx,
     rasterizationTolerance: options.rasterizationTolerance,
   });
