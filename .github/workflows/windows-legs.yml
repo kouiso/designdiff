@@ -31,7 +31,7 @@ jobs:
           ref: ${{ env.FROZEN_SHA }}
           persist-credentials: false
 
-      - uses: jdx/mise-action@5f4cc77e6ac04221a7073081b41808d3445fe55c
+      - uses: jdx/mise-action@9e7f7633ff6f6d6048a9418a68d48f288f50eb14 # v4.2.3
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Build all packages
@@ -125,7 +125,7 @@ jobs:
           ref: ${{ env.FROZEN_SHA }}
           persist-credentials: false
 
-      - uses: jdx/mise-action@5f4cc77e6ac04221a7073081b41808d3445fe55c
+      - uses: jdx/mise-action@9e7f7633ff6f6d6048a9418a68d48f288f50eb14 # v4.2.3
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Build all packages
