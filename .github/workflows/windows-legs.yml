@@ -105,7 +105,7 @@ jobs:
           # open で deny ACE を素通りする (実測)。deny を効かせるには
           # 非特権実行が必須。NETWORK SERVICE ならパスワード不要で
           # schtasks 経由の session 0 実行が可能 (DENIED 確認済み)。
-          evi="$PWD/docs/evidence/round2-windows/native-ignore-region"
+          evi="$PWD/docs/evidence/round1-windows/native-ignore-region"
           mkdir -p "$evi"
           repowin="$(cygpath -w "$PWD")"
           nodeexe="$(cygpath -w "$(node -p process.execPath)")"
@@ -132,13 +132,13 @@ jobs:
           python - <<PY
           import json,os,datetime
           evi=r"$evi"
-          mfile=r"$PWD/docs/evidence/runs-windows-r2-remaining.manifest.json"
+          mfile=r"$PWD/docs/evidence/runs-windows-r1-remaining.manifest.json"
           efile=os.path.join(evi,'manifest.json')
           if os.path.exists(efile) and os.path.exists(mfile):
               mtime=datetime.datetime.fromtimestamp(os.path.getmtime(efile),datetime.timezone.utc).isoformat().replace('+00:00','Z')
               runs=json.load(open(mfile))
               runs=[r for r in runs if r.get('driver')!='app/desktop/e2e/native-ignore-region.mjs']
-              runs.append({"driver":"app/desktop/e2e/native-ignore-region.mjs","evidenceDir":"docs/evidence/round2-windows/native-ignore-region","evidenceFile":"manifest.json","executedAt":mtime,"environment":"windows","buildDigest":"","roundExecutionId":"round2","note":"executed as NT AUTHORITY NETWORK SERVICE: admin tokens bypass deny ACEs via SeBackupPrivilege backup-intent opens"})
+              runs.append({"driver":"app/desktop/e2e/native-ignore-region.mjs","evidenceDir":"docs/evidence/round1-windows/native-ignore-region","evidenceFile":"manifest.json","executedAt":mtime,"environment":"windows","buildDigest":"","roundExecutionId":"round1","note":"executed as NT AUTHORITY NETWORK SERVICE: admin tokens bypass deny ACEs via SeBackupPrivilege backup-intent opens"})
               json.dump(runs,open(mfile,'w'),indent=2)
               print('manifest entry appended, executedAt=',mtime)
           else:
