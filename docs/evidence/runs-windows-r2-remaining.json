@@ -1,0 +1,82 @@
+{
+  "platform": "windows",
+  "round": 2,
+  "roundExecutionId": "round2",
+  "generatedAt": "2026-09-19T05:21:03.425Z",
+  "entries": [
+    {
+      "driver": "app/desktop/e2e/native-ignore-region.mjs",
+      "evidenceDir": "docs/evidence/round2-windows/native-ignore-region",
+      "evidenceFile": "manifest.json",
+      "passEvidenceVia": "env:FIGDIFF_IGNORE_EVIDENCE",
+      "requires": [
+        "display-or-xvfb",
+        "electron"
+      ]
+    },
+    {
+      "driver": "app/desktop/e2e/native-figma-node-fix.mjs",
+      "evidenceDir": "docs/evidence/round2-windows/native-figma-node-fix",
+      "evidenceFile": "manifest.json",
+      "passEvidenceVia": "env:FIGDIFF_FIGMA_NODE_FIX_EVIDENCE",
+      "requires": [
+        "display-or-xvfb",
+        "electron"
+      ]
+    },
+    {
+      "driver": "app/figma-plugin/e2e/real-iframe-host.mjs",
+      "evidenceDir": "docs/evidence/round2-windows/real-iframe-host",
+      "evidenceFile": "manifest.json",
+      "passEvidenceVia": "env:FIGDIFF_PLUGIN_HOST_EVIDENCE",
+      "requires": [
+        "figma-plugin-sandbox"
+      ],
+      "note": "iframe証跡は実Figma sandbox証跡に数えない。実Figma接続は別途"
+    },
+    {
+      "driver": "app/mcp-server/script/x08/mcp.mjs",
+      "evidenceDir": "docs/evidence/round2-windows/x08",
+      "evidenceFile": "x08-mcp.json",
+      "passEvidenceVia": "argv2",
+      "requires": [],
+      "note": "x08-mcp.json に face 計測+results.X08 を吐く。runs-manifest は evidenceFile: x08-mcp.json を指定する"
+    },
+    {
+      "driver": "app/mcp-server/script/x08/desktop.mjs",
+      "evidenceDir": "docs/evidence/round2-windows/x08",
+      "evidenceFile": "x08-desktop.json",
+      "passEvidenceVia": "argv2",
+      "requires": [
+        "display-or-xvfb",
+        "electron"
+      ],
+      "note": "evidenceFile: x08-desktop.json"
+    },
+    {
+      "driver": "app/mcp-server/script/x08/extension.mjs",
+      "evidenceDir": "docs/evidence/round2-windows/x08",
+      "evidenceFile": "x08-extension.json",
+      "passEvidenceVia": "argv2",
+      "requires": [
+        "chrome"
+      ],
+      "note": "evidenceFile: x08-extension.json"
+    },
+    {
+      "driver": "app/mcp-server/script/x08/plugin.mjs",
+      "evidenceDir": "docs/evidence/round2-windows/x08",
+      "evidenceFile": "x08-plugin.json",
+      "passEvidenceVia": "argv2",
+      "requires": [],
+      "note": "evidenceFile: x08-plugin.json"
+    },
+    {
+      "driver": "app/mcp-server/script/x08/compare.mjs",
+      "evidenceDir": "docs/evidence/round2-windows/x08",
+      "passEvidenceVia": "argv2",
+      "requires": [],
+      "note": "4面横断verdict。全X08 routeの必須provider"
+    }
+  ]
+}
