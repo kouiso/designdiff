@@ -430,7 +430,9 @@ try {
       },
     ];
 
-    const parseCount = (s) => Number(s.replace(/[^\d]/g, ""));
+    // toLocaleString 書式 (数字と桁区切りだけ) 以外を弾く。`-20,000` や `NaN` のような
+    // 退行を非数字の削除で丸めて受け入れないため、ここで構造を固定する。
+    const parseCount = (s) => Number(s.replace(/,/g, ""));
     const matchRateResults = [];
     for (const c of cases) {
       // 前回比較後に再表示された overlay が capture に写らないよう、毎回読み直す
@@ -474,7 +476,9 @@ try {
       await comparePopup.close();
 
       const expectedRatePercent = ((totalPixels - c.expectedDiffPixels) / totalPixels) * 100;
-      const stats = statsText.match(/^(.+) diff px \/ (.+) total$/);
+      const stats = statsText.match(
+        /^(\d{1,3}(?:,\d{3})*|\d+) diff px \/ (\d{1,3}(?:,\d{3})*|\d+) total$/,
+      );
       const result = {
         label: c.label,
         design: c.file.replace(evidenceDir, "<evidence>"),
