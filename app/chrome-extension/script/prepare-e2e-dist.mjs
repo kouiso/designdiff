@@ -13,19 +13,36 @@
 //
 // 第1引数: 出力ディレクトリ (必須、既存なら中身を置き換える)。
 
-import { cp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
-import { dirname, isAbsolute, join, relative, resolve } from "node:path";
+import { cp, mkdir, readFile, realpath, rm, writeFile } from "node:fs/promises";
+import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const extRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const shippedDir = join(extRoot, "dist");
 const outArg = process.argv[2];
 if (!outArg) throw new Error("output dir argument is required");
-const outDir = resolve(outArg);
+
+// symlink を経由した出力先 (例: /tmp/ext -> app/chrome-extension で /tmp/ext/dist) は
+// 字面上は別パスでも実体が出荷物になる。未作成の末尾は実在する祖先を実体化して補う。
+const canonicalize = async (path) => {
+  const missing = [];
+  let current = resolve(path);
+  for (;;) {
+    try {
+      return join(await realpath(current), ...missing.reverse());
+    } catch (error) {
+      const parent = dirname(current);
+      if (error?.code !== "ENOENT" || parent === current) throw error;
+      missing.push(basename(current));
+      current = parent;
+    }
+  }
+};
+const shippedDir = await realpath(join(extRoot, "dist"));
+const outDir = await canonicalize(outArg);
 
 const isInside = (parent, child) => {
   const rel = relative(parent, child);
-  return rel === "" || (!rel.startsWith("..") && !isAbsolute(rel));
+  return rel === "" || (rel !== ".." && !rel.startsWith(`..${sep}`) && !isAbsolute(rel));
 };
 // 出力先の rm で出荷物 (やそれを含む親) を消さないよう、どちら向きの包含も拒否する
 if (isInside(shippedDir, outDir) || isInside(outDir, shippedDir)) {

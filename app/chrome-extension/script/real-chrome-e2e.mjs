@@ -328,11 +328,37 @@ try {
     );
     assert.equal(retryState.disabled, false, "retry button must not stay disabled");
     // 再試行でも同じ行動可能エラーが出ること — リトライ経路自体の実行証拠。
-    await clickCaptureAndCompare();
-    await popup.waitForFunction(() => document.querySelector("#app .error"), undefined, {
-      timeout: 20_000,
-    });
-    const retryError = await popup.$eval("#app .error", (el) => el.textContent);
+    // 前回の .error は比較中も state に残って描画され続けるため、出現待ちでは
+    // 再試行が返らなくても即通ってしまう。Comparing... に入ってから抜けるまでを
+    // 観測し、その完了時点で表示されているエラーを読む。
+    const retryError = await popup.evaluate(
+      () =>
+        new Promise((resolveRetry, rejectRetry) => {
+          const app = document.querySelector("#app");
+          const compareButton = () =>
+            [...app.querySelectorAll("button")].find(
+              (b) => b.textContent === "Capture & Compare" || b.textContent === "Comparing...",
+            );
+          let sawComparing = false;
+          const observer = new MutationObserver(() => {
+            const btn = compareButton();
+            if (btn?.textContent === "Comparing...") {
+              sawComparing = true;
+            } else if (sawComparing && btn && !btn.disabled) {
+              observer.disconnect();
+              clearTimeout(timer);
+              resolveRetry(app.querySelector(".error")?.textContent ?? null);
+            }
+          });
+          const timer = setTimeout(() => {
+            observer.disconnect();
+            rejectRetry(new Error(`retry did not complete (sawComparing=${sawComparing})`));
+          }, 20_000);
+          observer.observe(app, { childList: true, subtree: true, characterData: true });
+          compareButton().click();
+        }),
+    );
+    assert.ok(retryError, "retry must finish with a visible error");
     evidence.results.X01_compare_retry_error = retryError;
     assert.match(
       retryError,
