@@ -132,10 +132,12 @@ jobs:
     # で Hypervisor.framework による加速が効くかを実測する。TCG (ソフトウェア
     # CPU) に落ちる場合は swipe 1回が 60s の adb タイムアウトを超え、X07 は
     # このホストでは実行不能という記録になる (過去に macOS VM で実測)。
-    # 実測では加速は効くが、boot 後に FallbackHome / system ANR が出て2巡が
-    # 安定して通らない。PR の必須チェックを恒常的に赤くしないよう、push と
-    # 手動実行でだけ回して証跡を取る。
-    if: github.event_name != 'pull_request'
+    # 実測では加速は効くが、guest の SystemUI が ANR ダイアログを繰り返し出し、
+    # swipe がページへ届かず6回の実行で12巡中1巡しか通らなかった
+    # (証跡は各 push 実行の device-legs-android-macos artifact)。
+    # 不安定なので手動実行専用にして、push / PR のチェックを赤くしない。
+    # 再現する時は Actions タブから workflow_dispatch で起動する。
+    if: github.event_name == 'workflow_dispatch'
     runs-on: macos-15-intel
     timeout-minutes: 120
     env:
