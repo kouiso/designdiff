@@ -137,6 +137,7 @@ jobs:
     # (証跡は各 push 実行の device-legs-android-macos artifact)。
     # 不安定なので手動実行専用にして、push / PR のチェックを赤くしない。
     # 再現する時は Actions タブから workflow_dispatch で起動する。
+    if: github.event_name == 'workflow_dispatch'
     runs-on: macos-15-intel
     timeout-minutes: 150
     env:
