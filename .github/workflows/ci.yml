@@ -196,12 +196,26 @@ jobs:
       - name: Install Playwright browser
         run: pnpm --filter "@figdiff/desktop" exec playwright install --with-deps chromium
 
-      # X server 不要の新 headless で拡張を読み込む。captureVisibleTab 依存の
-      # compare 検証は権限拡張 dist を要するため対象外 (evidence の outcome 参照)。
+      # X server 不要の新 headless で出荷物そのままの dist を読み込む。activeTab が
+      # 付かない自動化では capture が失敗するので、その失敗が行動可能なエラーとして
+      # 見え、再試行できることをここで確かめる。
       - name: Run Chrome extension E2E
         env:
           FIGDIFF_HEADLESS: new
         run: node app/chrome-extension/script/real-chrome-e2e.mjs ${{ runner.temp }}/chrome-ext-evidence
+
+      # captureVisibleTab は activeTab か <all_urls> を要求し、自動化で得られるのは
+      # 後者だけ。出荷 manifest は変えず、runner.temp に <all_urls> を足した複製を作り、
+      # 比較 → 一致率表示を作図由来の期待値で表明する。
+      - name: Prepare permissioned E2E extension dist
+        run: node app/chrome-extension/script/prepare-e2e-dist.mjs ${{ runner.temp }}/chrome-ext-e2e-dist
+
+      - name: Run Chrome extension compare E2E
+        env:
+          FIGDIFF_HEADLESS: new
+          FIGDIFF_EXT_DIR: ${{ runner.temp }}/chrome-ext-e2e-dist
+          FIGDIFF_EXPECT_COMPARE: "1"
+        run: node app/chrome-extension/script/real-chrome-e2e.mjs ${{ runner.temp }}/chrome-ext-compare-evidence
 
       - name: Run Figma plugin to extension handoff E2E
         run: xvfb-run -a node app/chrome-extension/script/plugin-frame-handoff-e2e.mjs ${{ runner.temp }}/plugin-extension-evidence
@@ -213,6 +227,7 @@ jobs:
           name: chrome-extension-evidence
           path: |
             ${{ runner.temp }}/chrome-ext-evidence
+            ${{ runner.temp }}/chrome-ext-compare-evidence
             ${{ runner.temp }}/plugin-extension-evidence
           retention-days: 7
 

@@ -4,6 +4,7 @@
 // ページ遷移・閉じた後の操作性を確認する。再現DOM注入はしない。
 //
 // 判定はページ上の実DOM・実スタイルで行い、拡張自身の状態表示は使わない。
+// 一致率の期待値も拡張の出力ではなく、検体ページと検体画像の作図から決める。
 // 第1引数: 証跡ディレクトリ (必須)。実行には X server か xvfb-run が要る。
 
 import assert from "node:assert/strict";
@@ -24,9 +25,9 @@ const { chromium } = desktopRequire("playwright/test");
 const sharp = desktopRequire("sharp");
 // 既定は出荷物そのままの dist。FIGDIFF_EXT_DIR を渡すと権限だけを拡げた
 // 検証用複製を使える (activeTab は自動化では付与されんため)。
-const extDir = process.env.FIGDIFF_EXT_DIR
-  ? resolve(process.env.FIGDIFF_EXT_DIR)
-  : join(root, "app/chrome-extension/dist");
+// 複製は script/prepare-e2e-dist.mjs で dist/ の外に作る。
+const shippedDir = join(root, "app/chrome-extension/dist");
+const extDir = process.env.FIGDIFF_EXT_DIR ? resolve(process.env.FIGDIFF_EXT_DIR) : shippedDir;
 // compare は captureVisibleTab を要し、activeTab 未付与の自動化では失敗する。
 // 権限拡張済み複製で走らせる時だけ FIGDIFF_EXPECT_COMPARE=1 を立てる。
 const expectCompare = process.env.FIGDIFF_EXPECT_COMPARE === "1";
@@ -37,10 +38,25 @@ await mkdir(evidenceDir, { recursive: true });
 const evidence = { schemaVersion: 1, results: {}, errors: [] };
 const sha256 = (b) => createHash("sha256").update(b).digest("hex");
 // 検証対象の manifest を証跡に残し、権限拡張版との区別を後から追えるようにする
+const manifestUnderTest = JSON.parse(await readFile(join(extDir, "manifest.json"), "utf8"));
 evidence.results.extUnderTest = {
   dir: extDir.replace(root, "<repo>"),
-  manifest: JSON.parse(await readFile(join(extDir, "manifest.json"), "utf8")),
+  manifest: manifestUnderTest,
 };
+// 権限拡張版で通った結果を出荷物の保証と取り違えないよう、拡張版は出荷 manifest に
+// <all_urls> を足しただけ (name の識別子以外は同一) であることを先に確かめる。
+if (extDir !== shippedDir) {
+  const shippedManifest = JSON.parse(await readFile(join(shippedDir, "manifest.json"), "utf8"));
+  const shippedHosts = shippedManifest.host_permissions ?? [];
+  assert.ok(!shippedHosts.includes("<all_urls>"), "shipped manifest must not grant <all_urls>");
+  assert.deepEqual(
+    { ...manifestUnderTest, name: shippedManifest.name },
+    { ...shippedManifest, host_permissions: [...shippedHosts, "<all_urls>"] },
+    "E2E dist may differ from the shipped manifest only by <all_urls> and its name marker",
+  );
+  assert.notEqual(manifestUnderTest.name, shippedManifest.name, "E2E dist must be labeled");
+  evidence.results.extUnderTest.addedOverShipped = { host_permissions: ["<all_urls>"] };
+}
 
 // --- 検体ページ: 既知要素 + 縦長コンテンツ + クリック計測用マーカー ---
 const PAGE_A = `<!doctype html><html><body style="margin:0">
@@ -50,10 +66,16 @@ const PAGE_A = `<!doctype html><html><body style="margin:0">
 <script>window.__hits=0;document.getElementById('hit').addEventListener('click',()=>window.__hits++);</script>
 </body></html>`;
 const PAGE_B = `<!doctype html><html><body style="background:#222;color:#eee">page-b</body></html>`;
+// 一致率の期待値を作図から決めるための比較専用ページ。白地に単色矩形だけを置き、
+// グラデーション・文字・スクロールバーなど描画系依存の画素を持たせない。
+const MARKER = { x: 100, y: 120, w: 80, h: 40, rgb: [0x18, 0xa9, 0x57] };
+const PAGE_C = `<!doctype html><html><body style="margin:0;background:#fff;overflow:hidden">
+<div id="marker" style="position:absolute;left:${MARKER.x}px;top:${MARKER.y}px;width:${MARKER.w}px;height:${MARKER.h}px;background:#18A957"></div>
+</body></html>`;
 
 const server = createServer((req, res) => {
   res.setHeader("content-type", "text/html");
-  res.end(req.url === "/b" ? PAGE_B : PAGE_A);
+  res.end(req.url === "/b" ? PAGE_B : req.url === "/c" ? PAGE_C : PAGE_A);
 });
 await new Promise((r) => server.listen(0, "127.0.0.1", r));
 const port = server.address().port;
@@ -317,6 +339,150 @@ try {
       /^Could not capture the page/,
       `retry after capture failure must reproduce the actionable error, got ${retryError}`,
     );
+  }
+
+  if (expectCompare) {
+    // X01-一致率: 期待値は作図だけから決める (拡張の出力を正解に使わない)。
+    // 比較ページを実測した viewport 寸法で、ページと同じ配置の画像と、
+    // 既知面積の矩形を足した画像を作り、表示された一致率と差分画素数を照合する。
+    const pageC = await context.newPage();
+    await pageC.goto(`http://127.0.0.1:${port}/c`);
+    await pageC.waitForSelector("#marker");
+    const viewport = await pageC.evaluate(() => ({
+      cssWidth: innerWidth,
+      cssHeight: innerHeight,
+      dpr: devicePixelRatio,
+    }));
+    // 小数 DPR では矩形境界が補間され、画素数を作図から確定できない
+    assert.ok(
+      Number.isInteger(viewport.dpr) && viewport.dpr >= 1,
+      `dpr must be integer, got ${viewport.dpr}`,
+    );
+    const width = viewport.cssWidth * viewport.dpr;
+    const height = viewport.cssHeight * viewport.dpr;
+    const totalPixels = width * height;
+    assert.ok(totalPixels > 0, "viewport must have a positive area");
+
+    const toDevice = (r) => ({
+      x: r.x * viewport.dpr,
+      y: r.y * viewport.dpr,
+      w: r.w * viewport.dpr,
+      h: r.h * viewport.dpr,
+      rgb: r.rgb,
+    });
+    // 白地との差が閾値を大きく超え、AA 判定にも掛からない (内側に同色画素が十分ある) 矩形
+    const EXTRA = { x: 400, y: 200, w: 200, h: 100, rgb: [0, 0, 0] };
+    const writeDesign = async (file, rects) => {
+      const buf = Buffer.alloc(totalPixels * 4, 255);
+      for (const { x, y, w, h, rgb } of rects.map(toDevice)) {
+        assert.ok(x >= 0 && y >= 0 && x + w <= width && y + h <= height, "rect must fit viewport");
+        for (let yy = y; yy < y + h; yy++) {
+          for (let xx = x; xx < x + w; xx++) {
+            const i = (yy * width + xx) * 4;
+            buf[i] = rgb[0];
+            buf[i + 1] = rgb[1];
+            buf[i + 2] = rgb[2];
+          }
+        }
+      }
+      const path = join(evidenceDir, file);
+      await sharp(buf, { raw: { width, height, channels: 4 } })
+        .png()
+        .toFile(path);
+      return path;
+    };
+    const cases = [
+      {
+        label: "identical",
+        file: await writeDesign("design-identical.png", [MARKER]),
+        expectedDiffPixels: 0,
+      },
+      {
+        label: "mismatch",
+        file: await writeDesign("design-mismatch.png", [MARKER, EXTRA]),
+        expectedDiffPixels: toDevice(EXTRA).w * toDevice(EXTRA).h,
+      },
+    ];
+
+    const parseCount = (s) => Number(s.replace(/[^\d]/g, ""));
+    const matchRateResults = [];
+    for (const c of cases) {
+      // 前回比較後に再表示された overlay が capture に写らないよう、毎回読み直す
+      await pageC.goto(`http://127.0.0.1:${port}/c`);
+      await pageC.waitForSelector("#marker");
+      assert.equal(
+        await pageC.$("#figdiff-overlay"),
+        null,
+        "page must be overlay-free before capture",
+      );
+
+      // 前回の一致率表示を新しい結果と取り違えないよう、比較ごとに新しい popup を開く
+      const comparePopup = await context.newPage();
+      await comparePopup.goto(`chrome-extension://${extensionId}/popup.html`);
+      await comparePopup.waitForSelector("text=Figma");
+      await comparePopup.evaluate(() => {
+        [...document.querySelectorAll("#app button")]
+          .find((b) => b.textContent === "Upload")
+          .click();
+      });
+      await comparePopup.setInputFiles('#app input[type="file"]', c.file);
+      await comparePopup.waitForSelector("text=Design loaded", { timeout: 10_000 });
+      await pageC.bringToFront();
+      await comparePopup.evaluate(() => {
+        [...document.querySelectorAll("#app button")]
+          .find((b) => b.textContent === "Capture & Compare")
+          .click();
+      });
+      await comparePopup.waitForSelector("#app .match-rate, #app .error", { timeout: 20_000 });
+      const errorText = await comparePopup.$eval(
+        "#app",
+        (el) => el.querySelector(".error")?.textContent ?? null,
+      );
+      assert.equal(errorText, null, `${c.label}: compare must not error, got ${errorText}`);
+      const rateText = await comparePopup.$eval("#app .match-rate", (el) => el.textContent);
+      const statsText = await comparePopup.$eval("#app .result .stats", (el) => el.textContent);
+      const popupShot = `popup-match-rate-${c.label}.png`;
+      await comparePopup.screenshot({ path: join(evidenceDir, popupShot) });
+      const pageShot = `page-compare-${c.label}.png`;
+      await pageC.screenshot({ path: join(evidenceDir, pageShot) });
+      await comparePopup.close();
+
+      const expectedRatePercent = ((totalPixels - c.expectedDiffPixels) / totalPixels) * 100;
+      const stats = statsText.match(/^(.+) diff px \/ (.+) total$/);
+      const result = {
+        label: c.label,
+        design: c.file.replace(evidenceDir, "<evidence>"),
+        expected: {
+          diffPixels: c.expectedDiffPixels,
+          totalPixels,
+          ratePercent: expectedRatePercent,
+        },
+        displayed: { rateText, statsText },
+        screenshots: { popup: popupShot, page: pageShot },
+      };
+      matchRateResults.push(result);
+      evidence.results.X01_match_rate = { viewport, cases: matchRateResults };
+
+      assert.ok(stats, `${c.label}: stats must read "<n> diff px / <n> total", got ${statsText}`);
+      assert.equal(
+        parseCount(stats[2]),
+        totalPixels,
+        `${c.label}: total px must equal the viewport area`,
+      );
+      assert.equal(
+        parseCount(stats[1]),
+        c.expectedDiffPixels,
+        `${c.label}: diff px must equal the constructed difference`,
+      );
+      const rateMatch = rateText.match(/^(\d+(?:\.\d+)?)%$/);
+      assert.ok(rateMatch, `${c.label}: match rate must read "<n>%", got ${rateText}`);
+      // 表示は小数2桁丸めなので、作図から求めた真値との差は 0.005 以内に収まる
+      assert.ok(
+        Math.abs(Number(rateMatch[1]) - expectedRatePercent) <= 0.005,
+        `${c.label}: displayed ${rateText} must match constructed ${expectedRatePercent}%`,
+      );
+    }
+    await pageC.close();
   }
 
   // X01-token: Token タブで保存→SWの chrome.storage 往復→削除を確認する。
