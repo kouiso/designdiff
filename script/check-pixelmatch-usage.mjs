@@ -18,7 +18,8 @@ const SELF = relative(process.cwd(), fileURLToPath(import.meta.url)).replaceAll(
 const FORMS = {
   specifier: /(["'\x60])pixelmatch(?:\/[^"'\x60]*)?\1/g,
   // 独立オラクルは製品の依存解決を通らないよう、node_modules をパスで直接読む。
-  path: /node_modules\/pixelmatch\b/g,
+  // Windows の区切りは String.raw なら \、通常の文字列なら \\ になる。
+  path: /node_modules[\\/]+pixelmatch\b/g,
 };
 
 // 採点の唯一の入口。
@@ -40,11 +41,10 @@ const isAllowed = (file, form) => {
   return false;
 };
 
-const files = execFileSync(
-  "git",
-  ["ls-files", "-z", "--", "*.ts", "*.tsx", "*.mjs", "*.cjs", "*.js"],
-  { encoding: "utf8" },
-)
+// 現在は存在しない拡張子も含める。ESLint 側は .ts/.tsx/.mjs/.cjs/.js しか構文解析の
+// 設定がないため、新しい拡張子で足された採点経路はここでしか止まらない。
+const SOURCE_GLOBS = ["*.ts", "*.tsx", "*.mts", "*.cts", "*.js", "*.jsx", "*.mjs", "*.cjs"];
+const files = execFileSync("git", ["ls-files", "-z", "--", ...SOURCE_GLOBS], { encoding: "utf8" })
   .split("\0")
   .filter((file) => file && file !== SELF);
 
