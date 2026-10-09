@@ -1,0 +1,133 @@
+name: Windows capture legs
+
+# PBI #156 の残 NOT RUN うち windows 12記録 (C07/D05/X03/X04 r1+r2, X08 r2) を
+# GitHub Actions の実 Windows ランナで実行する。windows-latest は実ホストなので
+# platform 要件をそのまま満たす。証跡は artifact として上げ、台帳取り込みは
+# ローカルで assemble-campaign-ledger.mjs → verify-campaign-evidence.mjs を通す。
+# device-legs.yml (ci/device-legs-emulators) と同じ発想の Windows 版。
+
+on:
+  push:
+    branches:
+      - devin/*-ci-windows-legs
+  pull_request:
+    paths:
+      - ".github/workflows/windows-legs.yml"
+      - "docs/evidence/runs-windows-*-remaining.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  round-1:
+    name: Windows legs round 1 (C07/D05/X03/X04)
+    runs-on: windows-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: jdx/mise-action@9e7f7633ff6f6d6048a9418a68d48f288f50eb14 # v4.2.3
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build all packages
+        run: pnpm build
+
+      - name: Record runner host
+        shell: bash
+        run: |
+          mkdir -p "docs/evidence/.staging/round-1"
+          {
+            echo "host=github-actions-windows-latest"
+            uname -a
+            cmd.exe /c ver 2>/dev/null || true
+            powershell -NoProfile -Command "(Get-CimInstance Win32_OperatingSystem).Caption + ' ' + (Get-CimInstance Win32_OperatingSystem).Version" 2>/dev/null || true
+            node --version
+            pnpm --version
+          } > "docs/evidence/.staging/round-1/runner-host.txt" 2>&1
+          cat "docs/evidence/.staging/round-1/runner-host.txt"
+
+      - name: Run windows legs round 1
+        shell: bash
+        run: node script/run-campaign-round.mjs --manifest docs/evidence/runs-windows-r1-remaining.json 2>&1 | tee "docs/evidence/.staging/round-1/runner.log"
+
+      - name: Collect produced evidence into artifact dir
+        if: always()
+        shell: bash
+        run: |
+          out="docs/evidence/.staging/round-1"
+          # run-campaign-round が吐く成果物は manifest の隣と evidenceDir 配下。
+          # リポジトリ内に生成されたものを artifact 用 dir へ集める。
+          for f in docs/evidence/runs-windows-r1-remaining.manifest.json docs/evidence/runs-windows-r1-remaining.attempts.json; do
+            [ -f "$f" ] && cp "$f" "$out/" || true
+          done
+          [ -d docs/evidence/round1-windows ] && cp -r docs/evidence/round1-windows "$out/round1-windows" || true
+
+      - name: Upload round-1 evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: windows-legs-round-1
+          path: docs/evidence/.staging/round-1
+          retention-days: 14
+
+  round-2:
+    name: Windows legs round 2 (C07/D05/X03/X04 + X08)
+    runs-on: windows-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: jdx/mise-action@9e7f7633ff6f6d6048a9418a68d48f288f50eb14 # v4.2.3
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build all packages
+        run: pnpm build
+
+      - name: Record runner host
+        shell: bash
+        run: |
+          mkdir -p "docs/evidence/.staging/round-2"
+          {
+            echo "host=github-actions-windows-latest"
+            uname -a
+            cmd.exe /c ver 2>/dev/null || true
+            powershell -NoProfile -Command "(Get-CimInstance Win32_OperatingSystem).Caption + ' ' + (Get-CimInstance Win32_OperatingSystem).Version" 2>/dev/null || true
+            node --version
+            pnpm --version
+          } > "docs/evidence/.staging/round-2/runner-host.txt" 2>&1
+          cat "docs/evidence/.staging/round-2/runner-host.txt"
+
+      - name: Run windows legs round 2
+        shell: bash
+        run: node script/run-campaign-round.mjs --manifest docs/evidence/runs-windows-r2-remaining.json 2>&1 | tee "docs/evidence/.staging/round-2/runner.log"
+
+      - name: Collect produced evidence into artifact dir
+        if: always()
+        shell: bash
+        run: |
+          out="docs/evidence/.staging/round-2"
+          for f in docs/evidence/runs-windows-r2-remaining.manifest.json docs/evidence/runs-windows-r2-remaining.attempts.json; do
+            [ -f "$f" ] && cp "$f" "$out/" || true
+          done
+          [ -d docs/evidence/round2-windows ] && cp -r docs/evidence/round2-windows "$out/round2-windows" || true
+
+      - name: Upload round-2 evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: windows-legs-round-2
+          path: docs/evidence/.staging/round-2
+          retention-days: 14
