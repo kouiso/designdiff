@@ -43,6 +43,21 @@ cat "$evidence_dir/runner-host.txt"
 
 adb devices -l
 
+# macOS Intel ホストでは guest の SystemUI が ANR ダイアログを繰り返し出して
+# swipe が背面のページへ届かなかった (実測 12巡中1巡)。グローバルに error
+# dialog を抑止し、残る場合に備えて CLOSE_SYSTEM_DIALOGS を定期的に投げる
+# ウォッチャをバックグラウンドで回す。
+adb shell settings put global hide_error_dialogs 1 >/dev/null 2>&1 || true
+adb shell settings put global show_first_crash_dialog 0 >/dev/null 2>&1 || true
+(
+  while :; do
+    adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS >/dev/null 2>&1
+    sleep 10
+  done
+) &
+anr_watcher_pid=$!
+trap 'kill $anr_watcher_pid 2>/dev/null || true' EXIT
+
 # 画面が消灯・ロック中だと screencap は単色になり swipe も届かない。起こして
 # ロックを外し、どの window が前面かを証跡に残す (macOS ホストで単色画面を実測)。
 adb shell input keyevent KEYCODE_WAKEUP >/dev/null 2>&1 || true
