@@ -54,6 +54,32 @@ capture dumps, horsemanager canonical originals at
   regenerated with distinct output paths as above; the tallies match what
   was reported in the thread at measurement time.
 
+## Format-applied hash correspondence (whitespace only)
+
+Biome format was applied to the JSON artifacts — the raw bytes DID change
+(whitespace/newline only). JSON parsed values are equal and the
+non-whitespace JSON token sequences are identical; the MISS / false-alarm /
+tally fields are unchanged. Old -> new sha256:
+
+| file | sha256 before format | sha256 after format |
+|---|---|---|
+| `band-eval.json` | `c57b921247770f05541df552a7a40efb816c41d968fe21d05a31a0d7088891c6` | `05cc7bb6bb13a193513142cb68b741a58c459d0c2ea003d3d8d15c2b8164d1fa` |
+| `band-eval2-pre-9d91d73e.json` | `6697b6021700347348603aae349d88482bac9fc1a4415a6d55c42f33e3cdb94e` | `2ce666a06d6eb04104dc23951b1ae2037a3d259fc7aa167edae7c0bf9c8ee853` |
+| `band-eval2-post-3147f334.json` | `069179b42f57d44a48116c09e4ba401c73b683cc80fba426934db03899817bb7` | `22f3f511010c9a53829b13a938691f344aa1ebc449f9213d8b8f7b82a8db94dc` |
+| `replay-v2-png-aa.json` | `b0f8d654a041d22e41a09325ef72fb0829d72530fdaebf6e392d872a1b0bc45b` | `32c6ec14fab72de77276005ae1d334b44957cb6cbccd0bc92cb1cc8ef1da87d1` |
+| `replay-v2-png-tree.json` | `6b0e5d22ce9e4a8073d36be1e304cb35894fb133e2bd1f06d7fc738e6f70e9f0` | `7b921bfccc77c8c4fcd594e2815a02a3a6d5261d6b51a2b93d62bfca57b13303` |
+| `replay-v2-png-windowed.json` | `d36b2dbe72b2239e7a86bffaa2233903b1887d6508d15505f0a4e5eed6daf9cd` | `dcbc1e248cc0c2d987fe9c1a47f25dcdddbb638f79c8a86f02c98b934ea0c626` |
+| `replay-v3-aa.json` | `112112bdf4fba242f62954b06f99cdd4ebc780e1044069195c19a18857ddfa64` | `00a1c18285130575721feb9e78f9ac00c45ea8a8a1edeffc1d8553daa67c000e` |
+| `replay-v3-windowed.json` | `4f37370340ce4f8c88af2a22cb693942c849e12524ee0f8e42d678ea9fac5c93` | `f7988431e487d7adeefeebc23cc1108d5e4c7af2a2658dc1cc283c4748dec926` |
+
+The pre-format bytes remain the immutable originals at the same paths in
+commit `aa23705802a29bf42411e243d38cf6f8ad8c8441` — the hashes quoted
+inline above (e.g. `band-eval2-*` and `replay-v2-png-tree`) refer to THOSE
+files, not to the formatted working copies on the current HEAD. This table
+maps the immutable originals to the formatted derivations; it is not a
+re-measurement and not an approval-hash rewrite. Verified with `json.load`
+equality on all 8 files (values, expectations, tallies identical).
+
 ## Real-screen replay (25 screens, same pixels both paths)
 
 - `replay.mjs` — replays capture dumps through `buildDiffReport` with and
@@ -111,6 +137,24 @@ D = dump design-vs-shot gap.
   big-diff pixels are AA-classified (anti-aliasing), which pixelmatch itself
   never counts. Conclusion: 4/4 false alarms -> fixed by AA exclusion, not
   by threshold changes.
+
+  Correction: this description overstates the observation method. The probe
+  ran pixelmatch with `diffMask: true`, and in pixelmatch 7.2.0
+  (`index.js:74-78`) `diffMask` suppresses drawing of AA-classified pixels
+  as yellow — so the yellow-pixel counts it logged cannot substantiate
+  "AA-classified" claims for those windows. The replay JSONs above do
+  record 4 verdict flips under the AA-exclusion variant, but whether those
+  pixels were truly AA-derived rather than real differences is NOT
+  established by this probe or by the replay JSONs alone — the validity
+  stays unproven. No re-measurement has been run. The original source and
+  the pre-correction wording remain in the history, but the raw AA
+  observation log's location and contents cannot be verified from this
+  README (no probe-aa raw log exists in the public `aa237058` metadata,
+  and `classify-flip.log`/`shift-signature.log` are 0 bytes), so this note
+  does NOT claim a preserved raw observation log. A dedicated
+  AA-observation mode on the independent oracle is a proposal pending
+  required Claude review — this note records the insufficiency without
+  fabricating a new measurement.
 - `classify-9810-png.mjs` / `classify-9810-glyph.mjs`,
   `classify-9789-png.mjs` / `classify-9789-glyph.mjs` + logs (all exit 0) —
   the two png screens that remain FAIL after AA exclusion
