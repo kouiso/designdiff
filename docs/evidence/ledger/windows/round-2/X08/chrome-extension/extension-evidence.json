@@ -1,5 +1,5 @@
 {
-  "surface": "mcp",
+  "surface": "chrome-extension",
   "diffPixelCount": 832,
   "matchRate": 90.97,
   "regions": [
@@ -16,8 +16,6 @@
       "height": 8
     }
   ],
-  "diffPixelsSha256": "7d0da44f7b88c359673cd0d3ede91c01a1dc9761646f4a4bcc62885594fe890b",
-  "diffImagePath": "D:\\a\\designdiff\\designdiff\\docs\\evidence\\round2-windows\\x08\\figdiff-home\\results\\diff-cmp-44e34236-73e4-4e4c-b0f6-ba27247cc308.png",
   "expectedDiffPixelCount": 832,
   "expectedRegions": [
     {
@@ -33,17 +31,14 @@
       "height": 8
     }
   ],
-  "protocolErrors": [],
   "results": {
     "X08": {
       "status": "PASS",
-      "expected": "mcp 面が同一検体で diffPixelCount=832・領域=2 を返す",
+      "expected": "chrome-extension 面が同一検体で diffPixelCount=832・領域=2 を返す",
       "actual": {
         "diffPixelCount": 832,
         "matchRate": 90.97,
-        "regionCount": 2,
-        "diffPixelsSha256": "7d0da44f7b88c359673cd0d3ede91c01a1dc9761646f4a4bcc62885594fe890b",
-        "protocolErrors": 0
+        "regionCount": 2
       }
     }
   }

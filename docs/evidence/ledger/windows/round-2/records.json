@@ -3,42 +3,9 @@
   "platform": "windows",
   "round": 2,
   "productSha": "4e9145e5e051d4efe78a922723f7b3245005a05e",
-  "generatedAt": "2026-09-24T14:03:27.082Z",
-  "recordCount": 56,
+  "generatedAt": "2026-10-09T03:23:48.691Z",
+  "recordCount": 62,
   "records": [
-    {
-      "case": "C01",
-      "round": 2,
-      "platform": "windows",
-      "route": "desktop",
-      "roundExecutionId": "round2",
-      "executedAt": "2026-09-24T13:38:25.269Z",
-      "productSha": "4e9145e5e051d4efe78a922723f7b3245005a05e",
-      "dirty": false,
-      "status": "PASS",
-      "newBugs": 0,
-      "observedKnownDefects": [],
-      "buildDigest": "6d76943b2f40b8eab22392fbc357f55dc89317ec12c5c02f9f4484d7dd03d075",
-      "environment": "windows",
-      "input": "不透明な同一画像2枚",
-      "steps": "比較・詳細表示・出力を実施 [drivers: app/desktop/e2e/desktop-c-cases.mjs]",
-      "expected": "元画素の一致を独立計算し、存在しない欠陥が報告されないことを確認",
-      "actual": "{\"desktop-c-cases:C01\":{\"matchRate\":100,\"diffRegions\":0,\"diffPixels\":0,\"issues\":0,\"issueKinds\":[\"top-left\",\"top-center\",\"top-right\",\"middle-left\",\"middle-center\",\"middle-right\",\"bottom-left\",\"bottom-center\",\"bottom-right\"],\"regionScores\":[{\"id\":\"top-left\",\"bbox\":{\"x\":0,\"y\":0,\"w\":40,\"h\":26},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"top-center\",\"bbox\":{\"x\":40,\"y\":0,\"w\":40,\"h\":26},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"top-right\",\"bbox\":{\"x\":80,\"y\":0,\"w\":40,\"h\":26},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"middle-left\",\"bbox\":{\"x\":0,\"y\":26,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"middle-center\",\"bbox\":{\"x\":40,\"y\":26,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"middle-right\",\"bbox\":{\"x\":80,\"y\":26,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"bottom-left\",\"bbox\":{\"x\":0,\"y\":53,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"bottom-center\",\"bbox\":{\"x\":40,\"y\":53,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"bottom-right\",\"bbox\":{\"x\":80,\"y\":53,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}}],\"diffImageDims\":{\"w\":120,\"h\":80},\"cropChip\":[]}}",
-      "oracle": {
-        "kind": "source-pixels",
-        "description": "元画素の一致を独立計算し、存在しない欠陥が報告されないことを確認"
-      },
-      "evidence": [
-        {
-          "path": "ledger/windows/round-2/C01/desktop/desktop-c-cases-evidence.json",
-          "sha256": "a87eadaeea0341c2f65c0748d5bc5ad141cad37cf7ac11e400d112216a637e90"
-        },
-        {
-          "path": "ledger/windows/round-2/C01/desktop/C01-result.json",
-          "sha256": "3670eb919a787834fd5ee84ca65dc88efc22349ba3ef29001d470f8455504ec0"
-        }
-      ]
-    },
     {
       "case": "C01",
       "round": 2,
@@ -77,7 +44,7 @@
       ]
     },
     {
-      "case": "C02",
+      "case": "C01",
       "round": 2,
       "platform": "windows",
       "route": "desktop",
@@ -88,24 +55,24 @@
       "status": "PASS",
       "newBugs": 0,
       "observedKnownDefects": [],
-      "buildDigest": "6d76943b2f40b8eab22392fbc357f55dc89317ec12c5c02f9f4484d7dd03d075",
+      "buildDigest": "3ce3c518e2ae4693fdca6c43bb1e24d124ba554c21e4968a31d5482d579e9b2e",
       "environment": "windows",
-      "input": "内容を左右上下に1px・2px移動した画像群",
-      "steps": "各方向を補正あり・なしで比較 [drivers: app/desktop/e2e/desktop-c-cases.mjs]",
-      "expected": "元の移動量を原座標で追跡でき、補正で配置不良を隠さない",
-      "actual": "{\"desktop-c-cases:C02\":{\"shifts\":{\"e1\":{\"matchRate\":96,\"diffPixels\":418,\"diffRegions\":4},\"e2\":{\"matchRate\":91,\"diffPixels\":829,\"diffRegions\":3},\"s1\":{\"matchRate\":97,\"diffPixels\":335,\"diffRegions\":2},\"w2\":{\"matchRate\":91,\"diffPixels\":843,\"diffRegions\":2}},\"note\":\"desktop exposes no alignment correction toggle; shift tracked as diff\"}}",
+      "input": "不透明な同一画像2枚",
+      "steps": "比較・詳細表示・出力を実施 [drivers: app/desktop/e2e/desktop-c-cases.mjs]",
+      "expected": "元画素の一致を独立計算し、存在しない欠陥が報告されないことを確認",
+      "actual": "{\"desktop-c-cases:C01\":{\"matchRate\":100,\"diffRegions\":0,\"diffPixels\":0,\"issues\":0,\"issueKinds\":[\"top-left\",\"top-center\",\"top-right\",\"middle-left\",\"middle-center\",\"middle-right\",\"bottom-left\",\"bottom-center\",\"bottom-right\"],\"regionScores\":[{\"id\":\"top-left\",\"bbox\":{\"x\":0,\"y\":0,\"w\":40,\"h\":26},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"top-center\",\"bbox\":{\"x\":40,\"y\":0,\"w\":40,\"h\":26},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"top-right\",\"bbox\":{\"x\":80,\"y\":0,\"w\":40,\"h\":26},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"middle-left\",\"bbox\":{\"x\":0,\"y\":26,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"middle-center\",\"bbox\":{\"x\":40,\"y\":26,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"middle-right\",\"bbox\":{\"x\":80,\"y\":26,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"bottom-left\",\"bbox\":{\"x\":0,\"y\":53,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"bottom-center\",\"bbox\":{\"x\":40,\"y\":53,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"bottom-right\",\"bbox\":{\"x\":80,\"y\":53,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}}],\"diffImageDims\":{\"w\":120,\"h\":80},\"cropChip\":[]}}",
       "oracle": {
         "kind": "source-pixels",
-        "description": "元の移動量を原座標で追跡でき、補正で配置不良を隠さない"
+        "description": "元画素の一致を独立計算し、存在しない欠陥が報告されないことを確認"
       },
       "evidence": [
         {
-          "path": "ledger/windows/round-2/C02/desktop/desktop-c-cases-evidence.json",
+          "path": "ledger/windows/round-2/C01/desktop/desktop-c-cases-evidence.json",
           "sha256": "a87eadaeea0341c2f65c0748d5bc5ad141cad37cf7ac11e400d112216a637e90"
         },
         {
-          "path": "ledger/windows/round-2/C02/desktop/C02-result.json",
-          "sha256": "734ad72100717224b5c25110d12192b81528c3f0af4f94c2d73436421fd762af"
+          "path": "ledger/windows/round-2/C01/desktop/C01-result.json",
+          "sha256": "3670eb919a787834fd5ee84ca65dc88efc22349ba3ef29001d470f8455504ec0"
         }
       ]
     },
@@ -147,7 +114,7 @@
       ]
     },
     {
-      "case": "C03",
+      "case": "C02",
       "round": 2,
       "platform": "windows",
       "route": "desktop",
@@ -158,24 +125,24 @@
       "status": "PASS",
       "newBugs": 0,
       "observedKnownDefects": [],
-      "buildDigest": "6d76943b2f40b8eab22392fbc357f55dc89317ec12c5c02f9f4484d7dd03d075",
+      "buildDigest": "3ce3c518e2ae4693fdca6c43bb1e24d124ba554c21e4968a31d5482d579e9b2e",
       "environment": "windows",
-      "input": "移動画像に既知の局所矩形欠陥を追加",
-      "steps": "比較後に欠陥領域を表示 [drivers: app/desktop/e2e/desktop-c-cases.mjs]",
-      "expected": "bboxが実際の欠陥と同じ座標を指す",
-      "actual": "{\"desktop-c-cases:C03\":{\"matchRate\":96,\"diffRegions\":1,\"diffPixels\":384,\"issues\":4,\"bboxes\":[\"x:0, y:0, w:40, h:26\",\"x:40, y:0, w:40, h:26\",\"x:0, y:26, w:40, h:27\",\"x:40, y:26, w:40, h:27\"],\"issueKinds\":[\"top-left\",\"top-center\",\"top-right\",\"middle-left\",\"middle-center\",\"middle-right\",\"bottom-left\",\"bottom-center\",\"bottom-right\",\"color\",\"color\",\"color\",\"color\"],\"regionScores\":[{\"id\":\"top-left\",\"bbox\":{\"x\":0,\"y\":0,\"w\":40,\"h\":26},\"scores\":{\"structure\":0.814,\"color\":2.137,\"shape\":0.147,\"layout\":0}},{\"id\":\"top-center\",\"bbox\":{\"x\":40,\"y\":0,\"w\":40,\"h\":26},\"scores\":{\"structure\":0.864,\"color\":3.9,\"shape\":0.524,\"layout\":0}},{\"id\":\"top-right\",\"bbox\":{\"x\":80,\"y\":0,\"w\":40,\"h\":26},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"middle-left\",\"bbox\":{\"x\":0,\"y\":26,\"w\":40,\"h\":27},\"scores\":{\"structure\":0.837,\"color\":3.843,\"shape\":0.145,\"layout\":0}},{\"id\":\"middle-center\",\"bbox\":{\"x\":40,\"y\":26,\"w\":40,\"h\":27},\"scores\":{\"structure\":0.848,\"color\":6.901,\"shape\":0.414,\"layout\":0}},{\"id\":\"middle-right\",\"bbox\":{\"x\":80,\"y\":26,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"bottom-left\",\"bbox\":{\"x\":0,\"y\":53,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"bottom-center\",\"bbox\":{\"x\":40,\"y\":53,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"bottom-right\",\"bbox\":{\"x\":80,\"y\":53,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}}],\"diffImageDims\":{\"w\":120,\"h\":80},\"cropChip\":[]}}",
+      "input": "内容を左右上下に1px・2px移動した画像群",
+      "steps": "各方向を補正あり・なしで比較 [drivers: app/desktop/e2e/desktop-c-cases.mjs]",
+      "expected": "元の移動量を原座標で追跡でき、補正で配置不良を隠さない",
+      "actual": "{\"desktop-c-cases:C02\":{\"shifts\":{\"e1\":{\"matchRate\":96,\"diffPixels\":418,\"diffRegions\":4},\"e2\":{\"matchRate\":91,\"diffPixels\":829,\"diffRegions\":3},\"s1\":{\"matchRate\":97,\"diffPixels\":335,\"diffRegions\":2},\"w2\":{\"matchRate\":91,\"diffPixels\":843,\"diffRegions\":2}},\"note\":\"desktop exposes no alignment correction toggle; shift tracked as diff\"}}",
       "oracle": {
         "kind": "source-pixels",
-        "description": "bboxが実際の欠陥と同じ座標を指す"
+        "description": "元の移動量を原座標で追跡でき、補正で配置不良を隠さない"
       },
       "evidence": [
         {
-          "path": "ledger/windows/round-2/C03/desktop/desktop-c-cases-evidence.json",
+          "path": "ledger/windows/round-2/C02/desktop/desktop-c-cases-evidence.json",
           "sha256": "a87eadaeea0341c2f65c0748d5bc5ad141cad37cf7ac11e400d112216a637e90"
         },
         {
-          "path": "ledger/windows/round-2/C03/desktop/C03-result.json",
-          "sha256": "07c4aea2b8042472c81b498de729d8f2c54a7406ccec00a8ce7a6c711f09e033"
+          "path": "ledger/windows/round-2/C02/desktop/C02-result.json",
+          "sha256": "734ad72100717224b5c25110d12192b81528c3f0af4f94c2d73436421fd762af"
         }
       ]
     },
@@ -217,7 +184,7 @@
       ]
     },
     {
-      "case": "C04",
+      "case": "C03",
       "round": 2,
       "platform": "windows",
       "route": "desktop",
@@ -228,24 +195,24 @@
       "status": "PASS",
       "newBugs": 0,
       "observedKnownDefects": [],
-      "buildDigest": "6d76943b2f40b8eab22392fbc357f55dc89317ec12c5c02f9f4484d7dd03d075",
+      "buildDigest": "3ce3c518e2ae4693fdca6c43bb1e24d124ba554c21e4968a31d5482d579e9b2e",
       "environment": "windows",
-      "input": "DPR 1/2/3・同じ論理寸法の画像",
-      "steps": "各画像を比較 [drivers: app/desktop/e2e/desktop-c-cases.mjs]",
-      "expected": "論理pxと物理pxの変換を再構成できる",
-      "actual": "{\"desktop-c-cases:C04\":{\"dpr2\":{\"matchRate\":100,\"diffImageDims\":{\"w\":240,\"h\":160}},\"dpr3\":{\"matchRate\":99,\"diffImageDims\":{\"w\":360,\"h\":240}}}}",
+      "input": "移動画像に既知の局所矩形欠陥を追加",
+      "steps": "比較後に欠陥領域を表示 [drivers: app/desktop/e2e/desktop-c-cases.mjs]",
+      "expected": "bboxが実際の欠陥と同じ座標を指す",
+      "actual": "{\"desktop-c-cases:C03\":{\"matchRate\":96,\"diffRegions\":1,\"diffPixels\":384,\"issues\":4,\"bboxes\":[\"x:0, y:0, w:40, h:26\",\"x:40, y:0, w:40, h:26\",\"x:0, y:26, w:40, h:27\",\"x:40, y:26, w:40, h:27\"],\"issueKinds\":[\"top-left\",\"top-center\",\"top-right\",\"middle-left\",\"middle-center\",\"middle-right\",\"bottom-left\",\"bottom-center\",\"bottom-right\",\"color\",\"color\",\"color\",\"color\"],\"regionScores\":[{\"id\":\"top-left\",\"bbox\":{\"x\":0,\"y\":0,\"w\":40,\"h\":26},\"scores\":{\"structure\":0.814,\"color\":2.137,\"shape\":0.147,\"layout\":0}},{\"id\":\"top-center\",\"bbox\":{\"x\":40,\"y\":0,\"w\":40,\"h\":26},\"scores\":{\"structure\":0.864,\"color\":3.9,\"shape\":0.524,\"layout\":0}},{\"id\":\"top-right\",\"bbox\":{\"x\":80,\"y\":0,\"w\":40,\"h\":26},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"middle-left\",\"bbox\":{\"x\":0,\"y\":26,\"w\":40,\"h\":27},\"scores\":{\"structure\":0.837,\"color\":3.843,\"shape\":0.145,\"layout\":0}},{\"id\":\"middle-center\",\"bbox\":{\"x\":40,\"y\":26,\"w\":40,\"h\":27},\"scores\":{\"structure\":0.848,\"color\":6.901,\"shape\":0.414,\"layout\":0}},{\"id\":\"middle-right\",\"bbox\":{\"x\":80,\"y\":26,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"bottom-left\",\"bbox\":{\"x\":0,\"y\":53,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"bottom-center\",\"bbox\":{\"x\":40,\"y\":53,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"bottom-right\",\"bbox\":{\"x\":80,\"y\":53,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}}],\"diffImageDims\":{\"w\":120,\"h\":80},\"cropChip\":[]}}",
       "oracle": {
         "kind": "source-pixels",
-        "description": "論理pxと物理pxの変換を再構成できる"
+        "description": "bboxが実際の欠陥と同じ座標を指す"
       },
       "evidence": [
         {
-          "path": "ledger/windows/round-2/C04/desktop/desktop-c-cases-evidence.json",
+          "path": "ledger/windows/round-2/C03/desktop/desktop-c-cases-evidence.json",
           "sha256": "a87eadaeea0341c2f65c0748d5bc5ad141cad37cf7ac11e400d112216a637e90"
         },
         {
-          "path": "ledger/windows/round-2/C04/desktop/C04-result.json",
-          "sha256": "5f555bd19062f84de7b38432f4b7dbd26bf5d556d232ff1a5d1462cb114f7166"
+          "path": "ledger/windows/round-2/C03/desktop/C03-result.json",
+          "sha256": "07c4aea2b8042472c81b498de729d8f2c54a7406ccec00a8ce7a6c711f09e033"
         }
       ]
     },
@@ -283,7 +250,7 @@
       ]
     },
     {
-      "case": "C05",
+      "case": "C04",
       "round": 2,
       "platform": "windows",
       "route": "desktop",
@@ -294,24 +261,24 @@
       "status": "PASS",
       "newBugs": 0,
       "observedKnownDefects": [],
-      "buildDigest": "6d76943b2f40b8eab22392fbc357f55dc89317ec12c5c02f9f4484d7dd03d075",
+      "buildDigest": "3ce3c518e2ae4693fdca6c43bb1e24d124ba554c21e4968a31d5482d579e9b2e",
       "environment": "windows",
-      "input": "同じ内容で余白・高さ・縦横比の異なる画像",
-      "steps": "比較・重ね合わせ表示 [drivers: app/desktop/e2e/desktop-c-cases.mjs]",
-      "expected": "引き伸ばしで形状差を消さず、比較条件が分かる",
-      "actual": "{\"desktop-c-cases:C05\":{\"padded\":{\"matchRate\":41,\"diffPixels\":8330,\"diffImageDims\":{\"w\":140,\"h\":100}},\"wide\":{\"matchRate\":59,\"diffPixels\":4584,\"diffImageDims\":{\"w\":140,\"h\":80}},\"tall\":{\"matchRate\":80,\"diffPixels\":2400,\"diffImageDims\":{\"w\":120,\"h\":100}}}}",
+      "input": "DPR 1/2/3・同じ論理寸法の画像",
+      "steps": "各画像を比較 [drivers: app/desktop/e2e/desktop-c-cases.mjs]",
+      "expected": "論理pxと物理pxの変換を再構成できる",
+      "actual": "{\"desktop-c-cases:C04\":{\"dpr2\":{\"matchRate\":100,\"diffImageDims\":{\"w\":240,\"h\":160}},\"dpr3\":{\"matchRate\":99,\"diffImageDims\":{\"w\":360,\"h\":240}}}}",
       "oracle": {
         "kind": "source-pixels",
-        "description": "引き伸ばしで形状差を消さず、比較条件が分かる"
+        "description": "論理pxと物理pxの変換を再構成できる"
       },
       "evidence": [
         {
-          "path": "ledger/windows/round-2/C05/desktop/desktop-c-cases-evidence.json",
+          "path": "ledger/windows/round-2/C04/desktop/desktop-c-cases-evidence.json",
           "sha256": "a87eadaeea0341c2f65c0748d5bc5ad141cad37cf7ac11e400d112216a637e90"
         },
         {
-          "path": "ledger/windows/round-2/C05/desktop/C05-result.json",
-          "sha256": "63dc45f33b875c2706af0fcc730eed8e6a625714e57989cb3ce9e525184abfc6"
+          "path": "ledger/windows/round-2/C04/desktop/C04-result.json",
+          "sha256": "5f555bd19062f84de7b38432f4b7dbd26bf5d556d232ff1a5d1462cb114f7166"
         }
       ]
     },
@@ -349,7 +316,7 @@
       ]
     },
     {
-      "case": "C06",
+      "case": "C05",
       "round": 2,
       "platform": "windows",
       "route": "desktop",
@@ -360,24 +327,24 @@
       "status": "PASS",
       "newBugs": 0,
       "observedKnownDefects": [],
-      "buildDigest": "6d76943b2f40b8eab22392fbc357f55dc89317ec12c5c02f9f4484d7dd03d075",
+      "buildDigest": "3ce3c518e2ae4693fdca6c43bb1e24d124ba554c21e4968a31d5482d579e9b2e",
       "environment": "windows",
-      "input": "正常crop・画像外crop・片側のみ適用可能なcrop",
-      "steps": "指定・保存・再読込み・比較 [drivers: app/desktop/e2e/desktop-c-cases.mjs]",
-      "expected": "適用範囲が両画像で対応し、無効条件を黙って変えない",
-      "actual": "{\"desktop-c-cases:C06\":{\"cropped\":{\"matchRate\":95,\"diffRegions\":1,\"diffPixels\":120,\"issues\":1,\"bboxes\":[\"x:20, y:13, w:20, h:13\"],\"issueKinds\":[\"top-left\",\"top-center\",\"top-right\",\"middle-left\",\"middle-center\",\"middle-right\",\"bottom-left\",\"bottom-center\",\"bottom-right\",\"color\"],\"regionScores\":[{\"id\":\"top-left\",\"bbox\":{\"x\":0,\"y\":0,\"w\":20,\"h\":13},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"top-center\",\"bbox\":{\"x\":20,\"y\":0,\"w\":20,\"h\":13},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"top-right\",\"bbox\":{\"x\":40,\"y\":0,\"w\":20,\"h\":13},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"middle-left\",\"bbox\":{\"x\":0,\"y\":13,\"w\":20,\"h\":13},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"middle-center\",\"bbox\":{\"x\":20,\"y\":13,\"w\":20,\"h\":13},\"scores\":{\"structure\":0.336,\"color\":27.322,\"shape\":1,\"layout\":0}},{\"id\":\"middle-right\",\"bbox\":{\"x\":40,\"y\":13,\"w\":20,\"h\":13},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"bottom-left\",\"bbox\":{\"x\":0,\"y\":26,\"w\":20,\"h\":14},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"bottom-center\",\"bbox\":{\"x\":20,\"y\":26,\"w\":20,\"h\":14},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"bottom-right\",\"bbox\":{\"x\":40,\"y\":26,\"w\":20,\"h\":14},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}}],\"diffImageDims\":{\"w\":60,\"h\":40},\"cropChip\":[\"x:20 y:15 w:60 h:40\"]},\"full\":{\"matchRate\":98,\"diffRegions\":2,\"diffPixels\":240,\"issues\":2,\"bboxes\":[\"x:80, y:0, w:40, h:26\",\"x:40, y:26, w:40, h:27\"],\"issueKinds\":[\"top-left\",\"top-center\",\"top-right\",\"middle-left\",\"middle-center\",\"middle-right\",\"bottom-left\",\"bottom-center\",\"bottom-right\",\"color\",\"color\"],\"regionScores\":[{\"id\":\"top-left\",\"bbox\":{\"x\":0,\"y\":0,\"w\":40,\"h\":26},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"top-center\",\"bbox\":{\"x\":40,\"y\":0,\"w\":40,\"h\":26},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"top-right\",\"bbox\":{\"x\":80,\"y\":0,\"w\":40,\"h\":26},\"scores\":{\"structure\":0.935,\"color\":3.577,\"shape\":0.126,\"layout\":0}},{\"id\":\"middle-left\",\"bbox\":{\"x\":0,\"y\":26,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"middle-center\",\"bbox\":{\"x\":40,\"y\":26,\"w\":40,\"h\":27},\"scores\":{\"structure\":0.802,\"color\":6.578,\"shape\":0.456,\"layout\":0}},{\"id\":\"middle-right\",\"bbox\":{\"x\":80,\"y\":26,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"bottom-left\",\"bbox\":{\"x\":0,\"y\":53,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"bottom-center\",\"bbox\":{\"x\":40,\"y\":53,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"bottom-right\",\"bbox\":{\"x\":80,\"y\":53,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}}],\"diffImageDims\":{\"w\":120,\"h\":80},\"cropChip\":[]}}}",
+      "input": "同じ内容で余白・高さ・縦横比の異なる画像",
+      "steps": "比較・重ね合わせ表示 [drivers: app/desktop/e2e/desktop-c-cases.mjs]",
+      "expected": "引き伸ばしで形状差を消さず、比較条件が分かる",
+      "actual": "{\"desktop-c-cases:C05\":{\"padded\":{\"matchRate\":41,\"diffPixels\":8330,\"diffImageDims\":{\"w\":140,\"h\":100}},\"wide\":{\"matchRate\":59,\"diffPixels\":4584,\"diffImageDims\":{\"w\":140,\"h\":80}},\"tall\":{\"matchRate\":80,\"diffPixels\":2400,\"diffImageDims\":{\"w\":120,\"h\":100}}}}",
       "oracle": {
         "kind": "source-pixels",
-        "description": "適用範囲が両画像で対応し、無効条件を黙って変えない"
+        "description": "引き伸ばしで形状差を消さず、比較条件が分かる"
       },
       "evidence": [
         {
-          "path": "ledger/windows/round-2/C06/desktop/desktop-c-cases-evidence.json",
+          "path": "ledger/windows/round-2/C05/desktop/desktop-c-cases-evidence.json",
           "sha256": "a87eadaeea0341c2f65c0748d5bc5ad141cad37cf7ac11e400d112216a637e90"
         },
         {
-          "path": "ledger/windows/round-2/C06/desktop/C06-result.json",
-          "sha256": "e2aa03bdab6895746a7a3131624dac67b93baf5444a1dd00835ea6b7c9c9aa3b"
+          "path": "ledger/windows/round-2/C05/desktop/C05-result.json",
+          "sha256": "63dc45f33b875c2706af0fcc730eed8e6a625714e57989cb3ce9e525184abfc6"
         }
       ]
     },
@@ -411,6 +378,39 @@
         {
           "path": "ledger/windows/round-2/C06/mcp/C06-result.json",
           "sha256": "41b982503651e3cab218387ec40be85d357f075f3962639e13b47f0c13b23ef4"
+        }
+      ]
+    },
+    {
+      "case": "C06",
+      "round": 2,
+      "platform": "windows",
+      "route": "desktop",
+      "roundExecutionId": "round2",
+      "executedAt": "2026-09-24T13:38:25.269Z",
+      "productSha": "4e9145e5e051d4efe78a922723f7b3245005a05e",
+      "dirty": false,
+      "status": "PASS",
+      "newBugs": 0,
+      "observedKnownDefects": [],
+      "buildDigest": "3ce3c518e2ae4693fdca6c43bb1e24d124ba554c21e4968a31d5482d579e9b2e",
+      "environment": "windows",
+      "input": "正常crop・画像外crop・片側のみ適用可能なcrop",
+      "steps": "指定・保存・再読込み・比較 [drivers: app/desktop/e2e/desktop-c-cases.mjs]",
+      "expected": "適用範囲が両画像で対応し、無効条件を黙って変えない",
+      "actual": "{\"desktop-c-cases:C06\":{\"cropped\":{\"matchRate\":95,\"diffRegions\":1,\"diffPixels\":120,\"issues\":1,\"bboxes\":[\"x:20, y:13, w:20, h:13\"],\"issueKinds\":[\"top-left\",\"top-center\",\"top-right\",\"middle-left\",\"middle-center\",\"middle-right\",\"bottom-left\",\"bottom-center\",\"bottom-right\",\"color\"],\"regionScores\":[{\"id\":\"top-left\",\"bbox\":{\"x\":0,\"y\":0,\"w\":20,\"h\":13},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"top-center\",\"bbox\":{\"x\":20,\"y\":0,\"w\":20,\"h\":13},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"top-right\",\"bbox\":{\"x\":40,\"y\":0,\"w\":20,\"h\":13},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"middle-left\",\"bbox\":{\"x\":0,\"y\":13,\"w\":20,\"h\":13},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"middle-center\",\"bbox\":{\"x\":20,\"y\":13,\"w\":20,\"h\":13},\"scores\":{\"structure\":0.336,\"color\":27.322,\"shape\":1,\"layout\":0}},{\"id\":\"middle-right\",\"bbox\":{\"x\":40,\"y\":13,\"w\":20,\"h\":13},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"bottom-left\",\"bbox\":{\"x\":0,\"y\":26,\"w\":20,\"h\":14},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"bottom-center\",\"bbox\":{\"x\":20,\"y\":26,\"w\":20,\"h\":14},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"bottom-right\",\"bbox\":{\"x\":40,\"y\":26,\"w\":20,\"h\":14},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}}],\"diffImageDims\":{\"w\":60,\"h\":40},\"cropChip\":[\"x:20 y:15 w:60 h:40\"]},\"full\":{\"matchRate\":98,\"diffRegions\":2,\"diffPixels\":240,\"issues\":2,\"bboxes\":[\"x:80, y:0, w:40, h:26\",\"x:40, y:26, w:40, h:27\"],\"issueKinds\":[\"top-left\",\"top-center\",\"top-right\",\"middle-left\",\"middle-center\",\"middle-right\",\"bottom-left\",\"bottom-center\",\"bottom-right\",\"color\",\"color\"],\"regionScores\":[{\"id\":\"top-left\",\"bbox\":{\"x\":0,\"y\":0,\"w\":40,\"h\":26},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"top-center\",\"bbox\":{\"x\":40,\"y\":0,\"w\":40,\"h\":26},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"top-right\",\"bbox\":{\"x\":80,\"y\":0,\"w\":40,\"h\":26},\"scores\":{\"structure\":0.935,\"color\":3.577,\"shape\":0.126,\"layout\":0}},{\"id\":\"middle-left\",\"bbox\":{\"x\":0,\"y\":26,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"middle-center\",\"bbox\":{\"x\":40,\"y\":26,\"w\":40,\"h\":27},\"scores\":{\"structure\":0.802,\"color\":6.578,\"shape\":0.456,\"layout\":0}},{\"id\":\"middle-right\",\"bbox\":{\"x\":80,\"y\":26,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"bottom-left\",\"bbox\":{\"x\":0,\"y\":53,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"bottom-center\",\"bbox\":{\"x\":40,\"y\":53,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"bottom-right\",\"bbox\":{\"x\":80,\"y\":53,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}}],\"diffImageDims\":{\"w\":120,\"h\":80},\"cropChip\":[]}}}",
+      "oracle": {
+        "kind": "source-pixels",
+        "description": "適用範囲が両画像で対応し、無効条件を黙って変えない"
+      },
+      "evidence": [
+        {
+          "path": "ledger/windows/round-2/C06/desktop/desktop-c-cases-evidence.json",
+          "sha256": "a87eadaeea0341c2f65c0748d5bc5ad141cad37cf7ac11e400d112216a637e90"
+        },
+        {
+          "path": "ledger/windows/round-2/C06/desktop/C06-result.json",
+          "sha256": "e2aa03bdab6895746a7a3131624dac67b93baf5444a1dd00835ea6b7c9c9aa3b"
         }
       ]
     },
@@ -451,39 +451,6 @@
       "case": "C08",
       "round": 2,
       "platform": "windows",
-      "route": "desktop",
-      "roundExecutionId": "round2",
-      "executedAt": "2026-09-24T13:38:25.269Z",
-      "productSha": "4e9145e5e051d4efe78a922723f7b3245005a05e",
-      "dirty": false,
-      "status": "PASS",
-      "newBugs": 0,
-      "observedKnownDefects": [],
-      "buildDigest": "6d76943b2f40b8eab22392fbc357f55dc89317ec12c5c02f9f4484d7dd03d075",
-      "environment": "windows",
-      "input": "透明背景と不透明背景・Figmaノード情報",
-      "steps": "書出し条件を変えて比較 [drivers: app/desktop/e2e/desktop-c-cases.mjs]",
-      "expected": "意図した透明と背景欠落を区別し、書出し条件を記録する",
-      "actual": "{\"desktop-c-cases:C08\":{\"semantics\":\"transparent pixels blend onto white (checkerboard=false, v5 compat)\",\"sameAlpha\":{\"matchRate\":100,\"diffRegions\":0,\"diffPixels\":0,\"issues\":0,\"bboxes\":[],\"issueKinds\":[\"top-left\",\"top-center\",\"top-right\",\"middle-left\",\"middle-center\",\"middle-right\",\"bottom-left\",\"bottom-center\",\"bottom-right\"],\"regionScores\":[{\"id\":\"top-left\",\"bbox\":{\"x\":0,\"y\":0,\"w\":40,\"h\":26},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"top-center\",\"bbox\":{\"x\":40,\"y\":0,\"w\":40,\"h\":26},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"top-right\",\"bbox\":{\"x\":80,\"y\":0,\"w\":40,\"h\":26},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"middle-left\",\"bbox\":{\"x\":0,\"y\":26,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"middle-center\",\"bbox\":{\"x\":40,\"y\":26,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"middle-right\",\"bbox\":{\"x\":80,\"y\":26,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"bottom-left\",\"bbox\":{\"x\":0,\"y\":53,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"bottom-center\",\"bbox\":{\"x\":40,\"y\":53,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"bottom-right\",\"bbox\":{\"x\":80,\"y\":53,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}}],\"diffImageDims\":{\"w\":120,\"h\":80},\"cropChip\":[]},\"onWhite\":{\"matchRate\":100,\"diffRegions\":0,\"diffPixels\":0,\"issues\":8,\"bboxes\":[\"x:0, y:0, w:40, h:26\",\"x:40, y:0, w:40, h:26\",\"x:80, y:0, w:40, h:26\",\"x:0, y:26, w:40, h:27\",\"x:80, y:26, w:40, h:27\",\"x:0, y:53, w:40, h:27\",\"x:40, y:53, w:40, h:27\",\"x:80, y:53, w:40, h:27\"],\"issueKinds\":[\"top-left\",\"top-center\",\"top-right\",\"middle-left\",\"middle-center\",\"middle-right\",\"bottom-left\",\"bottom-center\",\"bottom-right\",\"color\",\"color\",\"color\",\"color\",\"color\",\"color\",\"color\",\"color\"],\"regionScores\":[{\"id\":\"top-left\",\"bbox\":{\"x\":0,\"y\":0,\"w\":40,\"h\":26},\"scores\":{\"structure\":0,\"color\":100,\"shape\":0,\"layout\":0}},{\"id\":\"top-center\",\"bbox\":{\"x\":40,\"y\":0,\"w\":40,\"h\":26},\"scores\":{\"structure\":0,\"color\":96.154,\"shape\":0,\"layout\":0}},{\"id\":\"top-right\",\"bbox\":{\"x\":80,\"y\":0,\"w\":40,\"h\":26},\"scores\":{\"structure\":0,\"color\":100,\"shape\":0,\"layout\":0}},{\"id\":\"middle-left\",\"bbox\":{\"x\":0,\"y\":26,\"w\":40,\"h\":27},\"scores\":{\"structure\":0,\"color\":100,\"shape\":0,\"layout\":0}},{\"id\":\"middle-center\",\"bbox\":{\"x\":40,\"y\":26,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"middle-right\",\"bbox\":{\"x\":80,\"y\":26,\"w\":40,\"h\":27},\"scores\":{\"structure\":0,\"color\":100,\"shape\":0,\"layout\":0}},{\"id\":\"bottom-left\",\"bbox\":{\"x\":0,\"y\":53,\"w\":40,\"h\":27},\"scores\":{\"structure\":0,\"color\":100,\"shape\":0,\"layout\":0}},{\"id\":\"bottom-center\",\"bbox\":{\"x\":40,\"y\":53,\"w\":40,\"h\":27},\"scores\":{\"structure\":0,\"color\":92.593,\"shape\":0,\"layout\":0}},{\"id\":\"bottom-right\",\"bbox\":{\"x\":80,\"y\":53,\"w\":40,\"h\":27},\"scores\":{\"structure\":0,\"color\":100,\"shape\":0,\"layout\":0}}],\"diffImageDims\":{\"w\":120,\"h\":80},\"cropChip\":[]},\"onBlack\":{\"matchRate\":13,\"diffRegions\":1,\"diffPixels\":8400,\"issues\":0,\"bboxes\":[],\"issueKinds\":[\"top-left\",\"top-center\",\"top-right\",\"middle-left\",\"middle-center\",\"middle-right\",\"bottom-left\",\"bottom-center\",\"bottom-right\"],\"regionScores\":[{\"id\":\"top-left\",\"bbox\":{\"x\":0,\"y\":0,\"w\":40,\"h\":26},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"top-center\",\"bbox\":{\"x\":40,\"y\":0,\"w\":40,\"h\":26},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"top-right\",\"bbox\":{\"x\":80,\"y\":0,\"w\":40,\"h\":26},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"middle-left\",\"bbox\":{\"x\":0,\"y\":26,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"middle-center\",\"bbox\":{\"x\":40,\"y\":26,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"middle-right\",\"bbox\":{\"x\":80,\"y\":26,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"bottom-left\",\"bbox\":{\"x\":0,\"y\":53,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"bottom-center\",\"bbox\":{\"x\":40,\"y\":53,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"bottom-right\",\"bbox\":{\"x\":80,\"y\":53,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}}],\"diffImageDims\":{\"w\":120,\"h\":80},\"cropChip\":[]}}}",
-      "oracle": {
-        "kind": "source-pixels",
-        "description": "意図した透明と背景欠落を区別し、書出し条件を記録する"
-      },
-      "evidence": [
-        {
-          "path": "ledger/windows/round-2/C08/desktop/desktop-c-cases-evidence.json",
-          "sha256": "a87eadaeea0341c2f65c0748d5bc5ad141cad37cf7ac11e400d112216a637e90"
-        },
-        {
-          "path": "ledger/windows/round-2/C08/desktop/C08-result.json",
-          "sha256": "233a5b189e062af8aa4e20ecb580f8c0537ded31f48b71ceaf279a0ae602a892"
-        }
-      ]
-    },
-    {
-      "case": "C08",
-      "round": 2,
-      "platform": "windows",
       "route": "mcp",
       "roundExecutionId": "round2",
       "executedAt": "2026-09-24T13:35:30.220Z",
@@ -514,7 +481,7 @@
       ]
     },
     {
-      "case": "C09",
+      "case": "C08",
       "round": 2,
       "platform": "windows",
       "route": "desktop",
@@ -525,24 +492,24 @@
       "status": "PASS",
       "newBugs": 0,
       "observedKnownDefects": [],
-      "buildDigest": "6d76943b2f40b8eab22392fbc357f55dc89317ec12c5c02f9f4484d7dd03d075",
+      "buildDigest": "3ce3c518e2ae4693fdca6c43bb1e24d124ba554c21e4968a31d5482d579e9b2e",
       "environment": "windows",
-      "input": "非表示フレームと対応する可視フレーム",
-      "steps": "実Figmaから取得・比較 [drivers: app/desktop/e2e/desktop-c-cases.mjs]",
-      "expected": "空白書出しを実装不良と断定せず、原因と次の操作を示す",
-      "actual": "{\"desktop-c-cases:C09\":{\"hidden\":{\"matchRate\":1,\"diffRegions\":1,\"diffPixels\":9536,\"issues\":9,\"bboxes\":[\"x:0, y:0, w:40, h:26\",\"x:40, y:0, w:40, h:26\",\"x:80, y:0, w:40, h:26\",\"x:0, y:26, w:40, h:27\",\"x:40, y:26, w:40, h:27\",\"x:80, y:26, w:40, h:27\",\"x:0, y:53, w:40, h:27\",\"x:40, y:53, w:40, h:27\",\"x:80, y:53, w:40, h:27\"],\"issueKinds\":[\"top-left\",\"top-center\",\"top-right\",\"middle-left\",\"middle-center\",\"middle-right\",\"bottom-left\",\"bottom-center\",\"bottom-right\",\"color\",\"color\",\"color\",\"color\",\"color\",\"color\",\"color\",\"color\",\"color\"],\"regionScores\":[{\"id\":\"top-left\",\"bbox\":{\"x\":0,\"y\":0,\"w\":40,\"h\":26},\"scores\":{\"structure\":0.229,\"color\":55.843,\"shape\":1,\"layout\":0}},{\"id\":\"top-center\",\"bbox\":{\"x\":40,\"y\":0,\"w\":40,\"h\":26},\"scores\":{\"structure\":0.254,\"color\":53.085,\"shape\":1,\"layout\":0}},{\"id\":\"top-right\",\"bbox\":{\"x\":80,\"y\":0,\"w\":40,\"h\":26},\"scores\":{\"structure\":0.231,\"color\":55.311,\"shape\":1,\"layout\":0}},{\"id\":\"middle-left\",\"bbox\":{\"x\":0,\"y\":26,\"w\":40,\"h\":27},\"scores\":{\"structure\":0.222,\"color\":28.816,\"shape\":1,\"layout\":0}},{\"id\":\"middle-center\",\"bbox\":{\"x\":40,\"y\":26,\"w\":40,\"h\":27},\"scores\":{\"structure\":0.236,\"color\":34.615,\"shape\":1,\"layout\":0}},{\"id\":\"middle-right\",\"bbox\":{\"x\":80,\"y\":26,\"w\":40,\"h\":27},\"scores\":{\"structure\":0.224,\"color\":29.633,\"shape\":1,\"layout\":0}},{\"id\":\"bottom-left\",\"bbox\":{\"x\":0,\"y\":53,\"w\":40,\"h\":27},\"scores\":{\"structure\":0.25,\"color\":51.562,\"shape\":1,\"layout\":0}},{\"id\":\"bottom-center\",\"bbox\":{\"x\":40,\"y\":53,\"w\":40,\"h\":27},\"scores\":{\"structure\":0.253,\"color\":51.712,\"shape\":1,\"layout\":0}},{\"id\":\"bottom-right\",\"bbox\":{\"x\":80,\"y\":53,\"w\":40,\"h\":27},\"scores\":{\"structure\":0.242,\"color\":51.899,\"shape\":1,\"layout\":0}}],\"diffImageDims\":{\"w\":120,\"h\":80},\"cropChip\":[]},\"visible\":{\"matchRate\":100,\"diffRegions\":0,\"diffPixels\":0,\"issues\":0,\"bboxes\":[],\"issueKinds\":[\"top-left\",\"top-center\",\"top-right\",\"middle-left\",\"middle-center\",\"middle-right\",\"bottom-left\",\"bottom-center\",\"bottom-right\"],\"regionScores\":[{\"id\":\"top-left\",\"bbox\":{\"x\":0,\"y\":0,\"w\":40,\"h\":26},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"top-center\",\"bbox\":{\"x\":40,\"y\":0,\"w\":40,\"h\":26},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"top-right\",\"bbox\":{\"x\":80,\"y\":0,\"w\":40,\"h\":26},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"middle-left\",\"bbox\":{\"x\":0,\"y\":26,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"middle-center\",\"bbox\":{\"x\":40,\"y\":26,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"middle-right\",\"bbox\":{\"x\":80,\"y\":26,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"bottom-left\",\"bbox\":{\"x\":0,\"y\":53,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"bottom-center\",\"bbox\":{\"x\":40,\"y\":53,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"bottom-right\",\"bbox\":{\"x\":80,\"y\":53,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}}],\"diffImageDims\":{\"w\":120,\"h\":80},\"cropChip\":[]},\"requestLog\":\"c09-figma-requests.jsonl\"}}",
+      "input": "透明背景と不透明背景・Figmaノード情報",
+      "steps": "書出し条件を変えて比較 [drivers: app/desktop/e2e/desktop-c-cases.mjs]",
+      "expected": "意図した透明と背景欠落を区別し、書出し条件を記録する",
+      "actual": "{\"desktop-c-cases:C08\":{\"semantics\":\"transparent pixels blend onto white (checkerboard=false, v5 compat)\",\"sameAlpha\":{\"matchRate\":100,\"diffRegions\":0,\"diffPixels\":0,\"issues\":0,\"bboxes\":[],\"issueKinds\":[\"top-left\",\"top-center\",\"top-right\",\"middle-left\",\"middle-center\",\"middle-right\",\"bottom-left\",\"bottom-center\",\"bottom-right\"],\"regionScores\":[{\"id\":\"top-left\",\"bbox\":{\"x\":0,\"y\":0,\"w\":40,\"h\":26},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"top-center\",\"bbox\":{\"x\":40,\"y\":0,\"w\":40,\"h\":26},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"top-right\",\"bbox\":{\"x\":80,\"y\":0,\"w\":40,\"h\":26},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"middle-left\",\"bbox\":{\"x\":0,\"y\":26,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"middle-center\",\"bbox\":{\"x\":40,\"y\":26,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"middle-right\",\"bbox\":{\"x\":80,\"y\":26,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"bottom-left\",\"bbox\":{\"x\":0,\"y\":53,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"bottom-center\",\"bbox\":{\"x\":40,\"y\":53,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"bottom-right\",\"bbox\":{\"x\":80,\"y\":53,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}}],\"diffImageDims\":{\"w\":120,\"h\":80},\"cropChip\":[]},\"onWhite\":{\"matchRate\":100,\"diffRegions\":0,\"diffPixels\":0,\"issues\":8,\"bboxes\":[\"x:0, y:0, w:40, h:26\",\"x:40, y:0, w:40, h:26\",\"x:80, y:0, w:40, h:26\",\"x:0, y:26, w:40, h:27\",\"x:80, y:26, w:40, h:27\",\"x:0, y:53, w:40, h:27\",\"x:40, y:53, w:40, h:27\",\"x:80, y:53, w:40, h:27\"],\"issueKinds\":[\"top-left\",\"top-center\",\"top-right\",\"middle-left\",\"middle-center\",\"middle-right\",\"bottom-left\",\"bottom-center\",\"bottom-right\",\"color\",\"color\",\"color\",\"color\",\"color\",\"color\",\"color\",\"color\"],\"regionScores\":[{\"id\":\"top-left\",\"bbox\":{\"x\":0,\"y\":0,\"w\":40,\"h\":26},\"scores\":{\"structure\":0,\"color\":100,\"shape\":0,\"layout\":0}},{\"id\":\"top-center\",\"bbox\":{\"x\":40,\"y\":0,\"w\":40,\"h\":26},\"scores\":{\"structure\":0,\"color\":96.154,\"shape\":0,\"layout\":0}},{\"id\":\"top-right\",\"bbox\":{\"x\":80,\"y\":0,\"w\":40,\"h\":26},\"scores\":{\"structure\":0,\"color\":100,\"shape\":0,\"layout\":0}},{\"id\":\"middle-left\",\"bbox\":{\"x\":0,\"y\":26,\"w\":40,\"h\":27},\"scores\":{\"structure\":0,\"color\":100,\"shape\":0,\"layout\":0}},{\"id\":\"middle-center\",\"bbox\":{\"x\":40,\"y\":26,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"middle-right\",\"bbox\":{\"x\":80,\"y\":26,\"w\":40,\"h\":27},\"scores\":{\"structure\":0,\"color\":100,\"shape\":0,\"layout\":0}},{\"id\":\"bottom-left\",\"bbox\":{\"x\":0,\"y\":53,\"w\":40,\"h\":27},\"scores\":{\"structure\":0,\"color\":100,\"shape\":0,\"layout\":0}},{\"id\":\"bottom-center\",\"bbox\":{\"x\":40,\"y\":53,\"w\":40,\"h\":27},\"scores\":{\"structure\":0,\"color\":92.593,\"shape\":0,\"layout\":0}},{\"id\":\"bottom-right\",\"bbox\":{\"x\":80,\"y\":53,\"w\":40,\"h\":27},\"scores\":{\"structure\":0,\"color\":100,\"shape\":0,\"layout\":0}}],\"diffImageDims\":{\"w\":120,\"h\":80},\"cropChip\":[]},\"onBlack\":{\"matchRate\":13,\"diffRegions\":1,\"diffPixels\":8400,\"issues\":0,\"bboxes\":[],\"issueKinds\":[\"top-left\",\"top-center\",\"top-right\",\"middle-left\",\"middle-center\",\"middle-right\",\"bottom-left\",\"bottom-center\",\"bottom-right\"],\"regionScores\":[{\"id\":\"top-left\",\"bbox\":{\"x\":0,\"y\":0,\"w\":40,\"h\":26},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"top-center\",\"bbox\":{\"x\":40,\"y\":0,\"w\":40,\"h\":26},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"top-right\",\"bbox\":{\"x\":80,\"y\":0,\"w\":40,\"h\":26},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"middle-left\",\"bbox\":{\"x\":0,\"y\":26,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"middle-center\",\"bbox\":{\"x\":40,\"y\":26,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"middle-right\",\"bbox\":{\"x\":80,\"y\":26,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"bottom-left\",\"bbox\":{\"x\":0,\"y\":53,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"bottom-center\",\"bbox\":{\"x\":40,\"y\":53,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"bottom-right\",\"bbox\":{\"x\":80,\"y\":53,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}}],\"diffImageDims\":{\"w\":120,\"h\":80},\"cropChip\":[]}}}",
       "oracle": {
-        "kind": "host-observation",
-        "description": "空白書出しを実装不良と断定せず、原因と次の操作を示す"
+        "kind": "source-pixels",
+        "description": "意図した透明と背景欠落を区別し、書出し条件を記録する"
       },
       "evidence": [
         {
-          "path": "ledger/windows/round-2/C09/desktop/desktop-c-cases-evidence.json",
+          "path": "ledger/windows/round-2/C08/desktop/desktop-c-cases-evidence.json",
           "sha256": "a87eadaeea0341c2f65c0748d5bc5ad141cad37cf7ac11e400d112216a637e90"
         },
         {
-          "path": "ledger/windows/round-2/C09/desktop/C09-result.json",
-          "sha256": "df06bbe678bf7f2667dfddd4ac3f56e90b81a04c1c2dbad06a81fdd49198c314"
+          "path": "ledger/windows/round-2/C08/desktop/C08-result.json",
+          "sha256": "233a5b189e062af8aa4e20ecb580f8c0537ded31f48b71ceaf279a0ae602a892"
         }
       ]
     },
@@ -558,7 +525,7 @@
       "status": "PASS",
       "newBugs": 0,
       "observedKnownDefects": [],
-      "buildDigest": "da4a551faec001f09e6f00320613bef5c1fa93aeaf9ba31422822db0cd73cbb7",
+      "buildDigest": "731983867d0aea2a2eb46ee60d43fcc5b932c3c1e19146cad7899a3d7a3aee61",
       "environment": "windows",
       "input": "非表示フレームと対応する可視フレーム",
       "steps": "実Figmaから取得・比較 [drivers: app/mcp-server/script/stdio-real-figma-verification.mjs]",
@@ -580,7 +547,7 @@
       ]
     },
     {
-      "case": "C10",
+      "case": "C09",
       "round": 2,
       "platform": "windows",
       "route": "desktop",
@@ -591,24 +558,24 @@
       "status": "PASS",
       "newBugs": 0,
       "observedKnownDefects": [],
-      "buildDigest": "6d76943b2f40b8eab22392fbc357f55dc89317ec12c5c02f9f4484d7dd03d075",
+      "buildDigest": "3ce3c518e2ae4693fdca6c43bb1e24d124ba554c21e4968a31d5482d579e9b2e",
       "environment": "windows",
-      "input": "13×11px文字差分・日本語本文・ボタン",
-      "steps": "balancedで比較・候補表示 [drivers: app/desktop/e2e/desktop-c-cases.mjs]",
-      "expected": "局所差分と全体評価を区別し、文字を写真と断定しない",
-      "actual": "{\"desktop-c-cases:C10\":{\"matchRate\":99,\"diffRegions\":1,\"diffPixels\":143,\"issues\":1,\"bboxes\":[\"x:40, y:26, w:40, h:27\"],\"issueKinds\":[\"top-left\",\"top-center\",\"top-right\",\"middle-left\",\"middle-center\",\"middle-right\",\"bottom-left\",\"bottom-center\",\"bottom-right\",\"color\"],\"regionScores\":[{\"id\":\"top-left\",\"bbox\":{\"x\":0,\"y\":0,\"w\":40,\"h\":26},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"top-center\",\"bbox\":{\"x\":40,\"y\":0,\"w\":40,\"h\":26},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"top-right\",\"bbox\":{\"x\":80,\"y\":0,\"w\":40,\"h\":26},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"middle-left\",\"bbox\":{\"x\":0,\"y\":26,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"middle-center\",\"bbox\":{\"x\":40,\"y\":26,\"w\":40,\"h\":27},\"scores\":{\"structure\":0.694,\"color\":7.497,\"shape\":0.249,\"layout\":0}},{\"id\":\"middle-right\",\"bbox\":{\"x\":80,\"y\":26,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"bottom-left\",\"bbox\":{\"x\":0,\"y\":53,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"bottom-center\",\"bbox\":{\"x\":40,\"y\":53,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"bottom-right\",\"bbox\":{\"x\":80,\"y\":53,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}}],\"diffImageDims\":{\"w\":120,\"h\":80},\"cropChip\":[]}}",
+      "input": "非表示フレームと対応する可視フレーム",
+      "steps": "実Figmaから取得・比較 [drivers: app/desktop/e2e/desktop-c-cases.mjs]",
+      "expected": "空白書出しを実装不良と断定せず、原因と次の操作を示す",
+      "actual": "{\"desktop-c-cases:C09\":{\"hidden\":{\"matchRate\":1,\"diffRegions\":1,\"diffPixels\":9536,\"issues\":9,\"bboxes\":[\"x:0, y:0, w:40, h:26\",\"x:40, y:0, w:40, h:26\",\"x:80, y:0, w:40, h:26\",\"x:0, y:26, w:40, h:27\",\"x:40, y:26, w:40, h:27\",\"x:80, y:26, w:40, h:27\",\"x:0, y:53, w:40, h:27\",\"x:40, y:53, w:40, h:27\",\"x:80, y:53, w:40, h:27\"],\"issueKinds\":[\"top-left\",\"top-center\",\"top-right\",\"middle-left\",\"middle-center\",\"middle-right\",\"bottom-left\",\"bottom-center\",\"bottom-right\",\"color\",\"color\",\"color\",\"color\",\"color\",\"color\",\"color\",\"color\",\"color\"],\"regionScores\":[{\"id\":\"top-left\",\"bbox\":{\"x\":0,\"y\":0,\"w\":40,\"h\":26},\"scores\":{\"structure\":0.229,\"color\":55.843,\"shape\":1,\"layout\":0}},{\"id\":\"top-center\",\"bbox\":{\"x\":40,\"y\":0,\"w\":40,\"h\":26},\"scores\":{\"structure\":0.254,\"color\":53.085,\"shape\":1,\"layout\":0}},{\"id\":\"top-right\",\"bbox\":{\"x\":80,\"y\":0,\"w\":40,\"h\":26},\"scores\":{\"structure\":0.231,\"color\":55.311,\"shape\":1,\"layout\":0}},{\"id\":\"middle-left\",\"bbox\":{\"x\":0,\"y\":26,\"w\":40,\"h\":27},\"scores\":{\"structure\":0.222,\"color\":28.816,\"shape\":1,\"layout\":0}},{\"id\":\"middle-center\",\"bbox\":{\"x\":40,\"y\":26,\"w\":40,\"h\":27},\"scores\":{\"structure\":0.236,\"color\":34.615,\"shape\":1,\"layout\":0}},{\"id\":\"middle-right\",\"bbox\":{\"x\":80,\"y\":26,\"w\":40,\"h\":27},\"scores\":{\"structure\":0.224,\"color\":29.633,\"shape\":1,\"layout\":0}},{\"id\":\"bottom-left\",\"bbox\":{\"x\":0,\"y\":53,\"w\":40,\"h\":27},\"scores\":{\"structure\":0.25,\"color\":51.562,\"shape\":1,\"layout\":0}},{\"id\":\"bottom-center\",\"bbox\":{\"x\":40,\"y\":53,\"w\":40,\"h\":27},\"scores\":{\"structure\":0.253,\"color\":51.712,\"shape\":1,\"layout\":0}},{\"id\":\"bottom-right\",\"bbox\":{\"x\":80,\"y\":53,\"w\":40,\"h\":27},\"scores\":{\"structure\":0.242,\"color\":51.899,\"shape\":1,\"layout\":0}}],\"diffImageDims\":{\"w\":120,\"h\":80},\"cropChip\":[]},\"visible\":{\"matchRate\":100,\"diffRegions\":0,\"diffPixels\":0,\"issues\":0,\"bboxes\":[],\"issueKinds\":[\"top-left\",\"top-center\",\"top-right\",\"middle-left\",\"middle-center\",\"middle-right\",\"bottom-left\",\"bottom-center\",\"bottom-right\"],\"regionScores\":[{\"id\":\"top-left\",\"bbox\":{\"x\":0,\"y\":0,\"w\":40,\"h\":26},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"top-center\",\"bbox\":{\"x\":40,\"y\":0,\"w\":40,\"h\":26},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"top-right\",\"bbox\":{\"x\":80,\"y\":0,\"w\":40,\"h\":26},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"middle-left\",\"bbox\":{\"x\":0,\"y\":26,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"middle-center\",\"bbox\":{\"x\":40,\"y\":26,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"middle-right\",\"bbox\":{\"x\":80,\"y\":26,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"bottom-left\",\"bbox\":{\"x\":0,\"y\":53,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"bottom-center\",\"bbox\":{\"x\":40,\"y\":53,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"bottom-right\",\"bbox\":{\"x\":80,\"y\":53,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}}],\"diffImageDims\":{\"w\":120,\"h\":80},\"cropChip\":[]},\"requestLog\":\"c09-figma-requests.jsonl\"}}",
       "oracle": {
-        "kind": "source-pixels",
-        "description": "局所差分と全体評価を区別し、文字を写真と断定しない"
+        "kind": "host-observation",
+        "description": "空白書出しを実装不良と断定せず、原因と次の操作を示す"
       },
       "evidence": [
         {
-          "path": "ledger/windows/round-2/C10/desktop/desktop-c-cases-evidence.json",
+          "path": "ledger/windows/round-2/C09/desktop/desktop-c-cases-evidence.json",
           "sha256": "a87eadaeea0341c2f65c0748d5bc5ad141cad37cf7ac11e400d112216a637e90"
         },
         {
-          "path": "ledger/windows/round-2/C10/desktop/C10-result.json",
-          "sha256": "aaa577037d02d8c402d08981015cee584df7b01969f026ec48524056208278c8"
+          "path": "ledger/windows/round-2/C09/desktop/C09-result.json",
+          "sha256": "df06bbe678bf7f2667dfddd4ac3f56e90b81a04c1c2dbad06a81fdd49198c314"
         }
       ]
     },
@@ -650,7 +617,7 @@
       ]
     },
     {
-      "case": "C11",
+      "case": "C10",
       "round": 2,
       "platform": "windows",
       "route": "desktop",
@@ -661,24 +628,24 @@
       "status": "PASS",
       "newBugs": 0,
       "observedKnownDefects": [],
-      "buildDigest": "6d76943b2f40b8eab22392fbc357f55dc89317ec12c5c02f9f4484d7dd03d075",
+      "buildDigest": "3ce3c518e2ae4693fdca6c43bb1e24d124ba554c21e4968a31d5482d579e9b2e",
       "environment": "windows",
-      "input": "長い画面・固定ヘッダー・動的領域",
-      "steps": "分割撮影・結合・比較 [drivers: app/desktop/e2e/desktop-c-cases.mjs]",
-      "expected": "二重ヘッダーや欠落がないことを原撮影とDOM矩形で確認",
-      "actual": "{\"desktop-c-cases:C11\":{\"matchRate\":99,\"diffRegions\":1,\"diffPixels\":300,\"issues\":0,\"bboxes\":[],\"issueKinds\":[\"top-left\",\"top-center\",\"top-right\",\"middle-left\",\"middle-center\",\"middle-right\",\"bottom-left\",\"bottom-center\",\"bottom-right\"],\"regionScores\":[{\"id\":\"top-left\",\"bbox\":{\"x\":0,\"y\":0,\"w\":40,\"h\":160},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"top-center\",\"bbox\":{\"x\":40,\"y\":0,\"w\":40,\"h\":160},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"top-right\",\"bbox\":{\"x\":80,\"y\":0,\"w\":40,\"h\":160},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"middle-left\",\"bbox\":{\"x\":0,\"y\":160,\"w\":40,\"h\":160},\"scores\":{\"structure\":0.961,\"color\":0.762,\"shape\":0.274,\"layout\":0}},{\"id\":\"middle-center\",\"bbox\":{\"x\":40,\"y\":160,\"w\":40,\"h\":160},\"scores\":{\"structure\":0.958,\"color\":0.663,\"shape\":0.166,\"layout\":0}},{\"id\":\"middle-right\",\"bbox\":{\"x\":80,\"y\":160,\"w\":40,\"h\":160},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"bottom-left\",\"bbox\":{\"x\":0,\"y\":320,\"w\":40,\"h\":160},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"bottom-center\",\"bbox\":{\"x\":40,\"y\":320,\"w\":40,\"h\":160},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"bottom-right\",\"bbox\":{\"x\":80,\"y\":320,\"w\":40,\"h\":160},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}}],\"diffImageDims\":{\"w\":120,\"h\":480},\"cropChip\":[]}}",
+      "input": "13×11px文字差分・日本語本文・ボタン",
+      "steps": "balancedで比較・候補表示 [drivers: app/desktop/e2e/desktop-c-cases.mjs]",
+      "expected": "局所差分と全体評価を区別し、文字を写真と断定しない",
+      "actual": "{\"desktop-c-cases:C10\":{\"matchRate\":99,\"diffRegions\":1,\"diffPixels\":143,\"issues\":1,\"bboxes\":[\"x:40, y:26, w:40, h:27\"],\"issueKinds\":[\"top-left\",\"top-center\",\"top-right\",\"middle-left\",\"middle-center\",\"middle-right\",\"bottom-left\",\"bottom-center\",\"bottom-right\",\"color\"],\"regionScores\":[{\"id\":\"top-left\",\"bbox\":{\"x\":0,\"y\":0,\"w\":40,\"h\":26},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"top-center\",\"bbox\":{\"x\":40,\"y\":0,\"w\":40,\"h\":26},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"top-right\",\"bbox\":{\"x\":80,\"y\":0,\"w\":40,\"h\":26},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"middle-left\",\"bbox\":{\"x\":0,\"y\":26,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"middle-center\",\"bbox\":{\"x\":40,\"y\":26,\"w\":40,\"h\":27},\"scores\":{\"structure\":0.694,\"color\":7.497,\"shape\":0.249,\"layout\":0}},{\"id\":\"middle-right\",\"bbox\":{\"x\":80,\"y\":26,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"bottom-left\",\"bbox\":{\"x\":0,\"y\":53,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"bottom-center\",\"bbox\":{\"x\":40,\"y\":53,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"bottom-right\",\"bbox\":{\"x\":80,\"y\":53,\"w\":40,\"h\":27},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}}],\"diffImageDims\":{\"w\":120,\"h\":80},\"cropChip\":[]}}",
       "oracle": {
-        "kind": "dom-geometry",
-        "description": "二重ヘッダーや欠落がないことを原撮影とDOM矩形で確認"
+        "kind": "source-pixels",
+        "description": "局所差分と全体評価を区別し、文字を写真と断定しない"
       },
       "evidence": [
         {
-          "path": "ledger/windows/round-2/C11/desktop/desktop-c-cases-evidence.json",
+          "path": "ledger/windows/round-2/C10/desktop/desktop-c-cases-evidence.json",
           "sha256": "a87eadaeea0341c2f65c0748d5bc5ad141cad37cf7ac11e400d112216a637e90"
         },
         {
-          "path": "ledger/windows/round-2/C11/desktop/C11-result.json",
-          "sha256": "5b425fa47e3d23e3c7f7b113040b9d2b650a330eeec5c04f0a595d13ae73fb08"
+          "path": "ledger/windows/round-2/C10/desktop/C10-result.json",
+          "sha256": "aaa577037d02d8c402d08981015cee584df7b01969f026ec48524056208278c8"
         }
       ]
     },
@@ -716,7 +683,7 @@
       ]
     },
     {
-      "case": "C12",
+      "case": "C11",
       "round": 2,
       "platform": "windows",
       "route": "desktop",
@@ -727,24 +694,24 @@
       "status": "PASS",
       "newBugs": 0,
       "observedKnownDefects": [],
-      "buildDigest": "6d76943b2f40b8eab22392fbc357f55dc89317ec12c5c02f9f4484d7dd03d075",
+      "buildDigest": "3ce3c518e2ae4693fdca6c43bb1e24d124ba554c21e4968a31d5482d579e9b2e",
       "environment": "windows",
-      "input": "1px画像・破損画像・不正寸法・巨大画像",
-      "steps": "各入力で比較 [drivers: app/desktop/e2e/desktop-c-cases.mjs]",
-      "expected": "クラッシュやゼロ除算がなく、失敗理由と復旧方法が分かる",
-      "actual": "{\"desktop-c-cases:C12\":{\"onePixel\":{\"matchRate\":0,\"diffRegions\":0,\"diffPixels\":1,\"issues\":1,\"bboxes\":[\"x:0, y:0, w:1, h:1\"],\"issueKinds\":[\"top-left\",\"top-center\",\"top-right\",\"middle-left\",\"middle-center\",\"middle-right\",\"bottom-left\",\"bottom-center\",\"bottom-right\",\"color\"],\"regionScores\":[{\"id\":\"top-left\",\"bbox\":{\"x\":0,\"y\":0,\"w\":0,\"h\":0},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"top-center\",\"bbox\":{\"x\":0,\"y\":0,\"w\":0,\"h\":0},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"top-right\",\"bbox\":{\"x\":0,\"y\":0,\"w\":1,\"h\":0},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"middle-left\",\"bbox\":{\"x\":0,\"y\":0,\"w\":0,\"h\":0},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"middle-center\",\"bbox\":{\"x\":0,\"y\":0,\"w\":0,\"h\":0},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"middle-right\",\"bbox\":{\"x\":0,\"y\":0,\"w\":1,\"h\":0},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"bottom-left\",\"bbox\":{\"x\":0,\"y\":0,\"w\":0,\"h\":1},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"bottom-center\",\"bbox\":{\"x\":0,\"y\":0,\"w\":0,\"h\":1},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"bottom-right\",\"bbox\":{\"x\":0,\"y\":0,\"w\":1,\"h\":1},\"scores\":{\"structure\":0.923,\"color\":28.905,\"shape\":0,\"layout\":0}}],\"diffImageDims\":{\"w\":1,\"h\":1},\"cropChip\":[]},\"missingError\":\"画像の読み込みに失敗しました: Error: Error invoking remote method 'file:read-local-image': Error: ENOENT: no such file or directory, open 'C:\\\\Users\\\\ADMINI~1\\\\AppData\\\\Local\\\\Temp\\\\figdiff-c-cases-KCcfCi\\\\home\\\\fixtures\\\\no-such-image.png'\",\"corruptError\":\"[object Event]\",\"pageErrors\":[]}}",
+      "input": "長い画面・固定ヘッダー・動的領域",
+      "steps": "分割撮影・結合・比較 [drivers: app/desktop/e2e/desktop-c-cases.mjs]",
+      "expected": "二重ヘッダーや欠落がないことを原撮影とDOM矩形で確認",
+      "actual": "{\"desktop-c-cases:C11\":{\"matchRate\":99,\"diffRegions\":1,\"diffPixels\":300,\"issues\":0,\"bboxes\":[],\"issueKinds\":[\"top-left\",\"top-center\",\"top-right\",\"middle-left\",\"middle-center\",\"middle-right\",\"bottom-left\",\"bottom-center\",\"bottom-right\"],\"regionScores\":[{\"id\":\"top-left\",\"bbox\":{\"x\":0,\"y\":0,\"w\":40,\"h\":160},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"top-center\",\"bbox\":{\"x\":40,\"y\":0,\"w\":40,\"h\":160},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"top-right\",\"bbox\":{\"x\":80,\"y\":0,\"w\":40,\"h\":160},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"middle-left\",\"bbox\":{\"x\":0,\"y\":160,\"w\":40,\"h\":160},\"scores\":{\"structure\":0.961,\"color\":0.762,\"shape\":0.274,\"layout\":0}},{\"id\":\"middle-center\",\"bbox\":{\"x\":40,\"y\":160,\"w\":40,\"h\":160},\"scores\":{\"structure\":0.958,\"color\":0.663,\"shape\":0.166,\"layout\":0}},{\"id\":\"middle-right\",\"bbox\":{\"x\":80,\"y\":160,\"w\":40,\"h\":160},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"bottom-left\",\"bbox\":{\"x\":0,\"y\":320,\"w\":40,\"h\":160},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"bottom-center\",\"bbox\":{\"x\":40,\"y\":320,\"w\":40,\"h\":160},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"bottom-right\",\"bbox\":{\"x\":80,\"y\":320,\"w\":40,\"h\":160},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}}],\"diffImageDims\":{\"w\":120,\"h\":480},\"cropChip\":[]}}",
       "oracle": {
-        "kind": "schema-contract",
-        "description": "クラッシュやゼロ除算がなく、失敗理由と復旧方法が分かる"
+        "kind": "dom-geometry",
+        "description": "二重ヘッダーや欠落がないことを原撮影とDOM矩形で確認"
       },
       "evidence": [
         {
-          "path": "ledger/windows/round-2/C12/desktop/desktop-c-cases-evidence.json",
+          "path": "ledger/windows/round-2/C11/desktop/desktop-c-cases-evidence.json",
           "sha256": "a87eadaeea0341c2f65c0748d5bc5ad141cad37cf7ac11e400d112216a637e90"
         },
         {
-          "path": "ledger/windows/round-2/C12/desktop/C12-result.json",
-          "sha256": "bb0d1ba5246c641e0601292a9f6a6a47a8794e615a803c919c6406dd215de80a"
+          "path": "ledger/windows/round-2/C11/desktop/C11-result.json",
+          "sha256": "5b425fa47e3d23e3c7f7b113040b9d2b650a330eeec5c04f0a595d13ae73fb08"
         }
       ]
     },
@@ -782,7 +749,7 @@
       ]
     },
     {
-      "case": "C13",
+      "case": "C12",
       "round": 2,
       "platform": "windows",
       "route": "desktop",
@@ -793,24 +760,24 @@
       "status": "PASS",
       "newBugs": 0,
       "observedKnownDefects": [],
-      "buildDigest": "6d76943b2f40b8eab22392fbc357f55dc89317ec12c5c02f9f4484d7dd03d075",
+      "buildDigest": "3ce3c518e2ae4693fdca6c43bb1e24d124ba554c21e4968a31d5482d579e9b2e",
       "environment": "windows",
-      "input": "サイズの異なる画像と既知のマーカー",
-      "steps": "全比較表示・zoom・pan [drivers: app/desktop/e2e/desktop-c-cases.mjs]",
-      "expected": "プレビューの位置と採点座標が同じ領域を示す",
-      "actual": "{\"desktop-c-cases:C13\":{\"matchRate\":95,\"diffRegions\":2,\"diffPixels\":1888,\"issues\":1,\"bboxes\":[\"x:0, y:53, w:80, h:53\"],\"issueKinds\":[\"top-left\",\"top-center\",\"top-right\",\"middle-left\",\"middle-center\",\"middle-right\",\"bottom-left\",\"bottom-center\",\"bottom-right\",\"color\"],\"regionScores\":[{\"id\":\"top-left\",\"bbox\":{\"x\":0,\"y\":0,\"w\":80,\"h\":53},\"scores\":{\"structure\":0.987,\"color\":0.874,\"shape\":0,\"layout\":0}},{\"id\":\"top-center\",\"bbox\":{\"x\":80,\"y\":0,\"w\":80,\"h\":53},\"scores\":{\"structure\":0.98,\"color\":1.009,\"shape\":0.271,\"layout\":0}},{\"id\":\"top-right\",\"bbox\":{\"x\":160,\"y\":0,\"w\":80,\"h\":53},\"scores\":{\"structure\":0.985,\"color\":1.015,\"shape\":0.604,\"layout\":0}},{\"id\":\"middle-left\",\"bbox\":{\"x\":0,\"y\":53,\"w\":80,\"h\":53},\"scores\":{\"structure\":0.915,\"color\":3.155,\"shape\":0.271,\"layout\":0}},{\"id\":\"middle-center\",\"bbox\":{\"x\":80,\"y\":53,\"w\":80,\"h\":53},\"scores\":{\"structure\":0.976,\"color\":1.606,\"shape\":0.396,\"layout\":0}},{\"id\":\"middle-right\",\"bbox\":{\"x\":160,\"y\":53,\"w\":80,\"h\":53},\"scores\":{\"structure\":0.982,\"color\":1.4,\"shape\":0.01,\"layout\":0}},{\"id\":\"bottom-left\",\"bbox\":{\"x\":0,\"y\":106,\"w\":80,\"h\":54},\"scores\":{\"structure\":0.973,\"color\":1.269,\"shape\":0.611,\"layout\":0}},{\"id\":\"bottom-center\",\"bbox\":{\"x\":80,\"y\":106,\"w\":80,\"h\":54},\"scores\":{\"structure\":0.987,\"color\":0.845,\"shape\":0,\"layout\":0}},{\"id\":\"bottom-right\",\"bbox\":{\"x\":160,\"y\":106,\"w\":80,\"h\":54},\"scores\":{\"structure\":0.977,\"color\":1.2,\"shape\":0.363,\"layout\":0}}],\"diffImageDims\":{\"w\":240,\"h\":160},\"cropChip\":[]}}",
+      "input": "1px画像・破損画像・不正寸法・巨大画像",
+      "steps": "各入力で比較 [drivers: app/desktop/e2e/desktop-c-cases.mjs]",
+      "expected": "クラッシュやゼロ除算がなく、失敗理由と復旧方法が分かる",
+      "actual": "{\"desktop-c-cases:C12\":{\"onePixel\":{\"matchRate\":0,\"diffRegions\":0,\"diffPixels\":1,\"issues\":1,\"bboxes\":[\"x:0, y:0, w:1, h:1\"],\"issueKinds\":[\"top-left\",\"top-center\",\"top-right\",\"middle-left\",\"middle-center\",\"middle-right\",\"bottom-left\",\"bottom-center\",\"bottom-right\",\"color\"],\"regionScores\":[{\"id\":\"top-left\",\"bbox\":{\"x\":0,\"y\":0,\"w\":0,\"h\":0},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"top-center\",\"bbox\":{\"x\":0,\"y\":0,\"w\":0,\"h\":0},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"top-right\",\"bbox\":{\"x\":0,\"y\":0,\"w\":1,\"h\":0},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"middle-left\",\"bbox\":{\"x\":0,\"y\":0,\"w\":0,\"h\":0},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"middle-center\",\"bbox\":{\"x\":0,\"y\":0,\"w\":0,\"h\":0},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"middle-right\",\"bbox\":{\"x\":0,\"y\":0,\"w\":1,\"h\":0},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"bottom-left\",\"bbox\":{\"x\":0,\"y\":0,\"w\":0,\"h\":1},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"bottom-center\",\"bbox\":{\"x\":0,\"y\":0,\"w\":0,\"h\":1},\"scores\":{\"structure\":1,\"color\":0,\"shape\":0,\"layout\":0}},{\"id\":\"bottom-right\",\"bbox\":{\"x\":0,\"y\":0,\"w\":1,\"h\":1},\"scores\":{\"structure\":0.923,\"color\":28.905,\"shape\":0,\"layout\":0}}],\"diffImageDims\":{\"w\":1,\"h\":1},\"cropChip\":[]},\"missingError\":\"画像の読み込みに失敗しました: Error: Error invoking remote method 'file:read-local-image': Error: ENOENT: no such file or directory, open 'C:\\\\Users\\\\ADMINI~1\\\\AppData\\\\Local\\\\Temp\\\\figdiff-c-cases-KCcfCi\\\\home\\\\fixtures\\\\no-such-image.png'\",\"corruptError\":\"[object Event]\",\"pageErrors\":[]}}",
       "oracle": {
-        "kind": "dom-geometry",
-        "description": "プレビューの位置と採点座標が同じ領域を示す"
+        "kind": "schema-contract",
+        "description": "クラッシュやゼロ除算がなく、失敗理由と復旧方法が分かる"
       },
       "evidence": [
         {
-          "path": "ledger/windows/round-2/C13/desktop/desktop-c-cases-evidence.json",
+          "path": "ledger/windows/round-2/C12/desktop/desktop-c-cases-evidence.json",
           "sha256": "a87eadaeea0341c2f65c0748d5bc5ad141cad37cf7ac11e400d112216a637e90"
         },
         {
-          "path": "ledger/windows/round-2/C13/desktop/C13-result.json",
-          "sha256": "d6e912f2c700dc15ac5694248ba2ab10601e9bfbb473fa24576a7fe60672ce7c"
+          "path": "ledger/windows/round-2/C12/desktop/C12-result.json",
+          "sha256": "bb0d1ba5246c641e0601292a9f6a6a47a8794e615a803c919c6406dd215de80a"
         }
       ]
     },
@@ -826,7 +793,7 @@
       "status": "PASS",
       "newBugs": 0,
       "observedKnownDefects": [],
-      "buildDigest": "da4a551faec001f09e6f00320613bef5c1fa93aeaf9ba31422822db0cd73cbb7",
+      "buildDigest": "731983867d0aea2a2eb46ee60d43fcc5b932c3c1e19146cad7899a3d7a3aee61",
       "environment": "windows",
       "input": "サイズの異なる画像と既知のマーカー",
       "steps": "全比較表示・zoom・pan [drivers: app/mcp-server/script/stdio-campaign-verification2.mjs]",
@@ -848,307 +815,35 @@
       ]
     },
     {
-      "case": "D01",
+      "case": "C13",
       "round": 2,
       "platform": "windows",
       "route": "desktop",
       "roundExecutionId": "round2",
-      "executedAt": "2026-09-24T13:38:53.390Z",
+      "executedAt": "2026-09-24T13:38:25.269Z",
       "productSha": "4e9145e5e051d4efe78a922723f7b3245005a05e",
       "dirty": false,
       "status": "PASS",
       "newBugs": 0,
       "observedKnownDefects": [],
-      "buildDigest": "6d76943b2f40b8eab22392fbc357f55dc89317ec12c5c02f9f4484d7dd03d075",
+      "buildDigest": "3ce3c518e2ae4693fdca6c43bb1e24d124ba554c21e4968a31d5482d579e9b2e",
       "environment": "windows",
-      "input": "初回起動→認証→案件作成→フレーム選択",
-      "steps": "画面の表示だけを根拠に進行 [drivers: app/desktop/e2e/desktop-d-cases.mjs]",
-      "expected": "次の操作が画面から分かる。実Figmaの選択と取得が一致",
-      "actual": "{\"desktop-d-cases:D01\":{\"onboarding\":\"steps + input visible\",\"tokenlessPaths\":[\"quickCompareSubmit\",\"createProjectForm\"],\"auth\":{\"credentialFile\":\"credentials.json\",\"viaDialog\":true},\"frameSelect\":{\"exported\":\"https://api.figma.com/v1/images/FD01?ids=7:9&format=png&scale=2&use_absolute_bounds=true\",\"framesListed\":[\"ヘッダー\",\"カード\"]},\"project\":{\"id\":\"1790257140900-1xl6n05\",\"persisted\":true},\"sourceCompare\":{\"exported\":\"https://api.figma.com/v1/images/FD01?ids=7:8&format=png&scale=2&use_absolute_bounds=true\"},\"singleFrameAutoLoad\":\"https://api.figma.com/v1/images/FD01?ids=7:21&format=png&scale=2&use_absolute_bounds=true\"}}",
+      "input": "サイズの異なる画像と既知のマーカー",
+      "steps": "全比較表示・zoom・pan [drivers: app/desktop/e2e/desktop-c-cases.mjs]",
+      "expected": "プレビューの位置と採点座標が同じ領域を示す",
+      "actual": "{\"desktop-c-cases:C13\":{\"matchRate\":95,\"diffRegions\":2,\"diffPixels\":1888,\"issues\":1,\"bboxes\":[\"x:0, y:53, w:80, h:53\"],\"issueKinds\":[\"top-left\",\"top-center\",\"top-right\",\"middle-left\",\"middle-center\",\"middle-right\",\"bottom-left\",\"bottom-center\",\"bottom-right\",\"color\"],\"regionScores\":[{\"id\":\"top-left\",\"bbox\":{\"x\":0,\"y\":0,\"w\":80,\"h\":53},\"scores\":{\"structure\":0.987,\"color\":0.874,\"shape\":0,\"layout\":0}},{\"id\":\"top-center\",\"bbox\":{\"x\":80,\"y\":0,\"w\":80,\"h\":53},\"scores\":{\"structure\":0.98,\"color\":1.009,\"shape\":0.271,\"layout\":0}},{\"id\":\"top-right\",\"bbox\":{\"x\":160,\"y\":0,\"w\":80,\"h\":53},\"scores\":{\"structure\":0.985,\"color\":1.015,\"shape\":0.604,\"layout\":0}},{\"id\":\"middle-left\",\"bbox\":{\"x\":0,\"y\":53,\"w\":80,\"h\":53},\"scores\":{\"structure\":0.915,\"color\":3.155,\"shape\":0.271,\"layout\":0}},{\"id\":\"middle-center\",\"bbox\":{\"x\":80,\"y\":53,\"w\":80,\"h\":53},\"scores\":{\"structure\":0.976,\"color\":1.606,\"shape\":0.396,\"layout\":0}},{\"id\":\"middle-right\",\"bbox\":{\"x\":160,\"y\":53,\"w\":80,\"h\":53},\"scores\":{\"structure\":0.982,\"color\":1.4,\"shape\":0.01,\"layout\":0}},{\"id\":\"bottom-left\",\"bbox\":{\"x\":0,\"y\":106,\"w\":80,\"h\":54},\"scores\":{\"structure\":0.973,\"color\":1.269,\"shape\":0.611,\"layout\":0}},{\"id\":\"bottom-center\",\"bbox\":{\"x\":80,\"y\":106,\"w\":80,\"h\":54},\"scores\":{\"structure\":0.987,\"color\":0.845,\"shape\":0,\"layout\":0}},{\"id\":\"bottom-right\",\"bbox\":{\"x\":160,\"y\":106,\"w\":80,\"h\":54},\"scores\":{\"structure\":0.977,\"color\":1.2,\"shape\":0.363,\"layout\":0}}],\"diffImageDims\":{\"w\":240,\"h\":160},\"cropChip\":[]}}",
       "oracle": {
         "kind": "dom-geometry",
-        "description": "次の操作が画面から分かる。実Figmaの選択と取得が一致"
+        "description": "プレビューの位置と採点座標が同じ領域を示す"
       },
       "evidence": [
         {
-          "path": "ledger/windows/round-2/D01/desktop/desktop-d-cases-evidence.json",
-          "sha256": "782a1414f8566e196fb3133983a27f9dfc6f22fb8ee63d00474ec3a85dfb527d"
+          "path": "ledger/windows/round-2/C13/desktop/desktop-c-cases-evidence.json",
+          "sha256": "a87eadaeea0341c2f65c0748d5bc5ad141cad37cf7ac11e400d112216a637e90"
         },
         {
-          "path": "ledger/windows/round-2/D01/desktop/D01-result.json",
-          "sha256": "174e515ce2912cc0773f5d0c5383b2b2a28820ed614139a8bfbe57a27b786b41"
-        }
-      ]
-    },
-    {
-      "case": "D02",
-      "round": 2,
-      "platform": "windows",
-      "route": "desktop",
-      "roundExecutionId": "round2",
-      "executedAt": "2026-09-24T13:40:06.505Z",
-      "productSha": "4e9145e5e051d4efe78a922723f7b3245005a05e",
-      "dirty": false,
-      "status": "PASS",
-      "newBugs": 0,
-      "observedKnownDefects": [],
-      "buildDigest": "6d76943b2f40b8eab22392fbc357f55dc89317ec12c5c02f9f4484d7dd03d075",
-      "environment": "windows",
-      "input": "未実行案件・未実行ページ・比較前画面",
-      "steps": "各画面を開く [drivers: app/desktop/e2e/native-unmeasured-score.mjs]",
-      "expected": "D02: 未実行案件・ページ・比較前画面で0点/赤不合格ではなく未計測を表示する",
-      "actual": "{\"native-unmeasured-score:D02\":{\"scoreText\":\"— (未計測)\",\"badgePresent\":false,\"views\":\"home/project/compare/node-inspection-empty/measured/convergence\",\"pageErrors\":[],\"rendererCrashes\":[]}}",
-      "oracle": {
-        "kind": "dom-geometry",
-        "description": "0点・赤い不合格ではなく未計測を表示する"
-      },
-      "evidence": [
-        {
-          "path": "ledger/windows/round-2/D02/desktop/native-unmeasured-score-evidence.json",
-          "sha256": "fd231c2b21422d39dde9225a01660b9bb36e511becad7912b30ac1f7bcfbdc9e"
-        },
-        {
-          "path": "ledger/windows/round-2/D02/desktop/D02-result.json",
-          "sha256": "07afc010c15369d8f0c064522a03a23b4f1e121a04be76284e8c9602dbddb4e3"
-        }
-      ]
-    },
-    {
-      "case": "D03",
-      "round": 2,
-      "platform": "windows",
-      "route": "desktop",
-      "roundExecutionId": "round2",
-      "executedAt": "2026-09-24T13:38:53.390Z",
-      "productSha": "4e9145e5e051d4efe78a922723f7b3245005a05e",
-      "dirty": false,
-      "status": "PASS",
-      "newBugs": 0,
-      "observedKnownDefects": [],
-      "buildDigest": "6d76943b2f40b8eab22392fbc357f55dc89317ec12c5c02f9f4484d7dd03d075",
-      "environment": "windows",
-      "input": "ファイル選択・D&D・Web撮影・端末撮影",
-      "steps": "各入力経路と失敗後の状態 [drivers: app/desktop/e2e/desktop-d-cases.mjs]",
-      "expected": "入力画像を確認でき、失敗後も入力と選択を失わない",
-      "actual": "{\"desktop-d-cases:D03\":{\"drop\":{\"screenshotLoaded\":true,\"via\":\"scoped zone text\"},\"localFile\":\"loaded\",\"webCapture\":{\"url\":\"/capture-target\",\"requests\":1},\"inputRetainedOnFailure\":true}}",
-      "oracle": {
-        "kind": "dom-geometry",
-        "description": "入力画像を確認でき、失敗後も入力と選択を失わない"
-      },
-      "evidence": [
-        {
-          "path": "ledger/windows/round-2/D03/desktop/desktop-d-cases-evidence.json",
-          "sha256": "782a1414f8566e196fb3133983a27f9dfc6f22fb8ee63d00474ec3a85dfb527d"
-        },
-        {
-          "path": "ledger/windows/round-2/D03/desktop/D03-result.json",
-          "sha256": "ca8e3cb5daade4d4264442a78623e114958bcc9cdc55552f633b88b2cf04f84a"
-        }
-      ]
-    },
-    {
-      "case": "D04",
-      "round": 2,
-      "platform": "windows",
-      "route": "desktop",
-      "roundExecutionId": "round2",
-      "executedAt": "2026-09-24T13:38:53.390Z",
-      "productSha": "4e9145e5e051d4efe78a922723f7b3245005a05e",
-      "dirty": false,
-      "status": "PASS",
-      "newBugs": 0,
-      "observedKnownDefects": [],
-      "buildDigest": "6d76943b2f40b8eab22392fbc357f55dc89317ec12c5c02f9f4484d7dd03d075",
-      "environment": "windows",
-      "input": "比較→全表示モード→zoom・pan・crop",
-      "steps": "表示モード切替・拡縮・移動・crop [drivers: app/desktop/e2e/desktop-d-cases.mjs]",
-      "expected": "実際の入力・差分と表示が一致。例外とconsole errorがない",
-      "actual": "{\"desktop-d-cases:D04\":{\"consoleErrors\":[],\"viewModes\":{\"pixel_diff\":{\"activeClass\":true},\"transparent_overlay\":{\"activeClass\":true},\"split_screen\":{\"activeClass\":true}},\"zoom\":{\"before\":\"translate(0px, 0px) scale(1)\",\"after\":\"translate(-184.546px, -40.9539px) scale(1.49212)\"},\"pan\":{\"before\":\"translate(-184.546px, -40.9539px) scale(1.49212)\",\"after\":\"translate(-124.546px, -0.953885px) scale(1.49212)\"},\"reset\":\"translate(0px, 0px) scale(1)\",\"crop\":{\"region\":\"x: 11, y: 11, w: 80, h: 60\",\"cleared\":true}}}",
-      "oracle": {
-        "kind": "dom-geometry",
-        "description": "実際の入力・差分と表示が一致。例外とconsole errorがない"
-      },
-      "evidence": [
-        {
-          "path": "ledger/windows/round-2/D04/desktop/desktop-d-cases-evidence.json",
-          "sha256": "782a1414f8566e196fb3133983a27f9dfc6f22fb8ee63d00474ec3a85dfb527d"
-        },
-        {
-          "path": "ledger/windows/round-2/D04/desktop/D04-result.json",
-          "sha256": "a7c73c57f2fd98086cb49e398526e93fcb0e60d07e9ee2bf33784ad953cd30d7"
-        }
-      ]
-    },
-    {
-      "case": "D06",
-      "round": 2,
-      "platform": "windows",
-      "route": "desktop",
-      "roundExecutionId": "round2",
-      "executedAt": "2026-09-24T13:40:16.000Z",
-      "productSha": "4e9145e5e051d4efe78a922723f7b3245005a05e",
-      "dirty": false,
-      "status": "PASS",
-      "newBugs": 0,
-      "observedKnownDefects": [],
-      "buildDigest": "9505e9740527c94053a222a21acffca5af9df3003b115cca4f474eb13bc7116d",
-      "environment": "windows",
-      "input": "修正前後比較・アニメーション比較",
-      "steps": "過去と現在・時間方向の違いを表示 [drivers: app/desktop/e2e/native-figma-node-fix.mjs, app/desktop/e2e/native-fix-animation.mjs]",
-      "expected": "D06: 修正前後の違いを説明できる | D06: 過去と現在の違い、時間方向の違いを説明できる",
-      "actual": "{\"native-figma-node-fix:D06\":\"mask適用対象の改善(raw差分800→0)と別grid悪化(0→1600)を独立raw画素で計測し、対象IMPROVEDと全体FAILの併存を確認\",\"native-fix-animation:D06\":\"修正前後比較で対象改善と別領域悪化を独立raw画素で確認。animationは時刻対応・逆順拒否・画像hash対応を検証\"}",
-      "oracle": {
-        "kind": "source-pixels",
-        "description": "過去と現在の違い、時間方向の違いを説明できる"
-      },
-      "evidence": [
-        {
-          "path": "ledger/windows/round-2/D06/desktop/native-figma-node-fix-evidence.json",
-          "sha256": "beab4561b9b038162f7d13f7cea0e4213087d3430f8a6f954dc733dce11a5601"
-        },
-        {
-          "path": "ledger/windows/round-2/D06/desktop/native-fix-animation-evidence.json",
-          "sha256": "8b341fb68eaabecd7a528efb6a6b1cafa833f749ad8b1ab814ea5e5a71c55495"
-        },
-        {
-          "path": "ledger/windows/round-2/D06/desktop/D06-result.json",
-          "sha256": "64891a6f7e06e198d16093b39a8cc061c17f929b5092da3356ee3a859a696fac"
-        }
-      ]
-    },
-    {
-      "case": "D07",
-      "round": 2,
-      "platform": "windows",
-      "route": "desktop",
-      "roundExecutionId": "round2",
-      "executedAt": "2026-09-20T12:37:42.490Z",
-      "productSha": "4e9145e5e051d4efe78a922723f7b3245005a05e",
-      "dirty": false,
-      "status": "PASS",
-      "newBugs": 0,
-      "observedKnownDefects": [],
-      "buildDigest": "9505e9740527c94053a222a21acffca5af9df3003b115cca4f474eb13bc7116d",
-      "environment": "windows",
-      "input": "レポート保存・問題報告",
-      "steps": "実ファイル保存・報告内容確認 [drivers: app/desktop/e2e/native-issue-report.mjs, app/desktop/e2e/native-report-export.mjs]",
-      "expected": "D07: 報告対象・内容を確認して送れる | D07: 実ファイルが読め、保存内容が差分実測と一致する",
-      "actual": "{\"native-issue-report:D07\":\"prepare→確認→編集/破棄を実IPCで検証。POST投稿0件・認証エラー復旧を確認。実外部投稿は未検証で範囲外\",\"native-report-export:D07\":\"実Gtk保存ダイアログからJSON/Markdownへ保存し読み戻した。原画像の独立raw差分・bboxをファイル内容へ照合。キャンセル時bytes不変も確認\"}",
-      "oracle": {
-        "kind": "host-observation",
-        "description": "実ファイルが読め、報告対象・内容を確認して送れる"
-      },
-      "evidence": [
-        {
-          "path": "ledger/windows/round-2/D07/desktop/native-issue-report-evidence.json",
-          "sha256": "416104617f52f27ec94f8cf8a0f0480412428aab85d53bcc711bd3e5871b526f"
-        },
-        {
-          "path": "ledger/windows/round-2/D07/desktop/native-report-export-evidence.json",
-          "sha256": "631b30c8dcc61861fcbcfa3184875706935dfdcd1f8d630798bdf0cdb2a3cf4b"
-        },
-        {
-          "path": "ledger/windows/round-2/D07/desktop/D07-result.json",
-          "sha256": "9e62ff4143921fa7d52abc4d24ef50f37039f8554851b7f0443c24be827e4353"
-        }
-      ]
-    },
-    {
-      "case": "D08",
-      "round": 2,
-      "platform": "windows",
-      "route": "desktop",
-      "roundExecutionId": "round2",
-      "executedAt": "2026-09-24T13:38:53.390Z",
-      "productSha": "4e9145e5e051d4efe78a922723f7b3245005a05e",
-      "dirty": false,
-      "status": "PASS",
-      "newBugs": 0,
-      "observedKnownDefects": [],
-      "buildDigest": "6d76943b2f40b8eab22392fbc357f55dc89317ec12c5c02f9f4484d7dd03d075",
-      "environment": "windows",
-      "input": "保存→終了→再起動・案件切替・タブ切替",
-      "steps": "永続化・再起動・切替 [drivers: app/desktop/e2e/desktop-d-cases.mjs]",
-      "expected": "設定・履歴を復元し、別案件へ状態が混ざらない",
-      "actual": "{\"desktop-d-cases:D08\":{\"restored\":[\"D01案件\",\"比較テスト案件\",\"MCP経由案件\"],\"d01ProjectContents\":{\"page\":\"トップ\",\"source\":\"デスクトップ\"},\"comparePositiveControl\":{\"canvasCount\":2,\"canvases\":[{\"width\":200,\"height\":120},{\"width\":300,\"height\":150}],\"apiHitsForSource\":0},\"compareAfterProjectSwitch\":{\"canvases\":[],\"fixtureCanvas\":null,\"centerPixel\":null,\"matchesFixture\":false,\"designPill\":false},\"switching\":\"close-and-reopen round-trip verified\"}}",
-      "oracle": {
-        "kind": "dom-geometry",
-        "description": "設定・履歴を復元し、別案件へ状態が混ざらない"
-      },
-      "evidence": [
-        {
-          "path": "ledger/windows/round-2/D08/desktop/desktop-d-cases-evidence.json",
-          "sha256": "782a1414f8566e196fb3133983a27f9dfc6f22fb8ee63d00474ec3a85dfb527d"
-        },
-        {
-          "path": "ledger/windows/round-2/D08/desktop/D08-result.json",
-          "sha256": "e7a86f2c8e97ac2bea2ab49ebb48f30023b41aea8d9c1ce08a7f87b0c19c0998"
-        }
-      ]
-    },
-    {
-      "case": "D09",
-      "round": 2,
-      "platform": "windows",
-      "route": "desktop",
-      "roundExecutionId": "round2",
-      "executedAt": "2026-09-24T13:38:53.390Z",
-      "productSha": "4e9145e5e051d4efe78a922723f7b3245005a05e",
-      "dirty": false,
-      "status": "PASS",
-      "newBugs": 0,
-      "observedKnownDefects": [],
-      "buildDigest": "6d76943b2f40b8eab22392fbc357f55dc89317ec12c5c02f9f4484d7dd03d075",
-      "environment": "windows",
-      "input": "401/403/429/5xx・オフライン・失敗後の再試行",
-      "steps": "各エラー注入と復旧操作 [drivers: app/desktop/e2e/desktop-d-cases.mjs]",
-      "expected": "失敗理由と復旧操作を表示し、操作不能状態に残らない",
-      "actual": "{\"desktop-d-cases:D09\":{\"401\":{\"surfaced\":\"token re-entry dialog\",\"cancelDisabled\":false},\"403\":{\"surfaced\":\"token re-entry dialog\",\"cancelDisabled\":false},\"429\":{\"surfaced\":\"Error: Error invoking remote method 'figma:get-frame-image': Error: Figma API rate limit exceeded (429). Please wait 7 seconds.\"},\"500\":{\"surfaced\":\"Error: Error invoking remote method 'figma:get-frame-image': Error: Figma server error (500). Please try again later.\"},\"offline\":{\"surfaced\":\"Error: Error invoking remote method 'figma:get-frame-image': Error: fetch failed\"},\"sameUrlRetry\":{\"node\":\"7:16\",\"exported\":\"https://api.figma.com/v1/images/FD01?ids=7:16&format=png&scale=2&use_absolute_bounds=true\"},\"retryAfterRecovery\":\"export succeeded\"}}",
-      "oracle": {
-        "kind": "host-observation",
-        "description": "失敗理由と復旧操作を表示し、操作不能状態に残らない"
-      },
-      "evidence": [
-        {
-          "path": "ledger/windows/round-2/D09/desktop/desktop-d-cases-evidence.json",
-          "sha256": "782a1414f8566e196fb3133983a27f9dfc6f22fb8ee63d00474ec3a85dfb527d"
-        },
-        {
-          "path": "ledger/windows/round-2/D09/desktop/D09-result.json",
-          "sha256": "8b53e9a76fcb209d871c21b4abd020acd4c0caca730fcfbebc099452dc2f9e86"
-        }
-      ]
-    },
-    {
-      "case": "D10",
-      "round": 2,
-      "platform": "windows",
-      "route": "desktop",
-      "roundExecutionId": "round2",
-      "executedAt": "2026-09-24T13:38:53.390Z",
-      "productSha": "4e9145e5e051d4efe78a922723f7b3245005a05e",
-      "dirty": false,
-      "status": "PASS",
-      "newBugs": 0,
-      "observedKnownDefects": [],
-      "buildDigest": "6d76943b2f40b8eab22392fbc357f55dc89317ec12c5c02f9f4484d7dd03d075",
-      "environment": "windows",
-      "input": "キーボード操作・狭いウィンドウ・日本語ファイル名",
-      "steps": "キーボード到達・430px viewport・日本語名 [drivers: app/desktop/e2e/desktop-d-cases.mjs]",
-      "expected": "操作対象へ到達でき、表示切れや文字化けで操作が失われない",
-      "actual": "{\"desktop-d-cases:D10\":{\"keyboardSubmit\":\"frame list appeared via hero input (node 7:30)\",\"japaneseProject\":\"1790257167330-re2nd1i\",\"narrowViewport\":{\"width\":430,\"view\":\"compare\",\"overflowPx\":0,\"overflowElements\":[\"button right=574\",\"svg right=439\",\"path right=438\",\"path right=438\",\"path right=438\",\"button right=650\"],\"homeNav\":{\"found\":true,\"reachable\":true}},\"japaneseFilename\":{\"loaded\":\"実装-比較テスト.png\",\"canvas\":\"50x50\",\"canvases\":[{\"width\":50,\"height\":50},{\"width\":300,\"height\":150}],\"via\":\"shotInput path\"}}}",
-      "oracle": {
-        "kind": "dom-geometry",
-        "description": "操作対象へ到達でき、表示切れや文字化けで操作が失われない"
-      },
-      "evidence": [
-        {
-          "path": "ledger/windows/round-2/D10/desktop/desktop-d-cases-evidence.json",
-          "sha256": "782a1414f8566e196fb3133983a27f9dfc6f22fb8ee63d00474ec3a85dfb527d"
-        },
-        {
-          "path": "ledger/windows/round-2/D10/desktop/D10-result.json",
-          "sha256": "c2f7ccff3008be4ec272c24163a42d1ff8d20cacfd0e9e589df3a50c3a9201de"
+          "path": "ledger/windows/round-2/C13/desktop/C13-result.json",
+          "sha256": "d6e912f2c700dc15ac5694248ba2ab10601e9bfbb473fa24576a7fe60672ce7c"
         }
       ]
     },
@@ -1164,7 +859,7 @@
       "status": "PASS",
       "newBugs": 0,
       "observedKnownDefects": [],
-      "buildDigest": "da4a551faec001f09e6f00320613bef5c1fa93aeaf9ba31422822db0cd73cbb7",
+      "buildDigest": "731983867d0aea2a2eb46ee60d43fcc5b932c3c1e19146cad7899a3d7a3aee61",
       "environment": "windows",
       "input": "個人スキルなしのAIへリポジトリURLのみ",
       "steps": "導入・接続・listTools・スキーマ適合呼出し [drivers: app/mcp-server/script/stdio-m01-verification.mjs]",
@@ -1271,7 +966,7 @@
       "status": "PASS",
       "newBugs": 0,
       "observedKnownDefects": [],
-      "buildDigest": "da4a551faec001f09e6f00320613bef5c1fa93aeaf9ba31422822db0cd73cbb7",
+      "buildDigest": "731983867d0aea2a2eb46ee60d43fcc5b932c3c1e19146cad7899a3d7a3aee61",
       "environment": "windows",
       "input": "list_figma_frames 複数ページ・大量フレーム・node指定・不正URL",
       "steps": "各入力で一覧取得 [drivers: app/mcp-server/script/stdio-real-figma-verification.mjs]",
@@ -1341,7 +1036,7 @@
       "status": "PASS",
       "newBugs": 0,
       "observedKnownDefects": [],
-      "buildDigest": "da4a551faec001f09e6f00320613bef5c1fa93aeaf9ba31422822db0cd73cbb7",
+      "buildDigest": "731983867d0aea2a2eb46ee60d43fcc5b932c3c1e19146cad7899a3d7a3aee61",
       "environment": "windows",
       "input": "inspect_node/get_design_tokens TEXT・FRAME・影・透明度・不存在node",
       "steps": "実ノード情報取得 [drivers: app/mcp-server/script/stdio-real-figma-verification.mjs]",
@@ -1563,7 +1258,7 @@
       "status": "PASS",
       "newBugs": 0,
       "observedKnownDefects": [],
-      "buildDigest": "da4a551faec001f09e6f00320613bef5c1fa93aeaf9ba31422822db0cd73cbb7",
+      "buildDigest": "731983867d0aea2a2eb46ee60d43fcc5b932c3c1e19146cad7899a3d7a3aee61",
       "environment": "windows",
       "input": "report_issue 既存課題照合・確認済み新規課題投稿",
       "steps": "重複照合・投稿 [drivers: app/mcp-server/script/stdio-m12-verification.mjs]",
@@ -1612,7 +1307,7 @@
       "status": "PASS",
       "newBugs": 0,
       "observedKnownDefects": [],
-      "buildDigest": "da4a551faec001f09e6f00320613bef5c1fa93aeaf9ba31422822db0cd73cbb7",
+      "buildDigest": "731983867d0aea2a2eb46ee60d43fcc5b932c3c1e19146cad7899a3d7a3aee61",
       "environment": "windows",
       "input": "エラー契約 書込み不可保存先・無効入力・通信失敗",
       "steps": "各エラー経路をSDK経由で呼出し [drivers: app/mcp-server/script/stdio-campaign-verification2.mjs]",
@@ -1719,7 +1414,7 @@
       "status": "PASS",
       "newBugs": 0,
       "observedKnownDefects": [],
-      "buildDigest": "da4a551faec001f09e6f00320613bef5c1fa93aeaf9ba31422822db0cd73cbb7",
+      "buildDigest": "731983867d0aea2a2eb46ee60d43fcc5b932c3c1e19146cad7899a3d7a3aee61",
       "environment": "windows",
       "input": "自律利用 対象探索→撮影→比較→根拠確認→修正→再比較→レポート",
       "steps": "個人スキルなしのAIへ実対象を完走させる [drivers: app/mcp-server/script/stdio-real-figma-verification.mjs]",
@@ -1741,6 +1436,311 @@
       ]
     },
     {
+      "case": "D01",
+      "round": 2,
+      "platform": "windows",
+      "route": "desktop",
+      "roundExecutionId": "round2",
+      "executedAt": "2026-09-24T13:38:53.390Z",
+      "productSha": "4e9145e5e051d4efe78a922723f7b3245005a05e",
+      "dirty": false,
+      "status": "PASS",
+      "newBugs": 0,
+      "observedKnownDefects": [],
+      "buildDigest": "3ce3c518e2ae4693fdca6c43bb1e24d124ba554c21e4968a31d5482d579e9b2e",
+      "environment": "windows",
+      "input": "初回起動→認証→案件作成→フレーム選択",
+      "steps": "画面の表示だけを根拠に進行 [drivers: app/desktop/e2e/desktop-d-cases.mjs]",
+      "expected": "次の操作が画面から分かる。実Figmaの選択と取得が一致",
+      "actual": "{\"desktop-d-cases:D01\":{\"onboarding\":\"steps + input visible\",\"tokenlessPaths\":[\"quickCompareSubmit\",\"createProjectForm\"],\"auth\":{\"credentialFile\":\"credentials.json\",\"viaDialog\":true},\"frameSelect\":{\"exported\":\"https://api.figma.com/v1/images/FD01?ids=7:9&format=png&scale=2&use_absolute_bounds=true\",\"framesListed\":[\"ヘッダー\",\"カード\"]},\"project\":{\"id\":\"1790257140900-1xl6n05\",\"persisted\":true},\"sourceCompare\":{\"exported\":\"https://api.figma.com/v1/images/FD01?ids=7:8&format=png&scale=2&use_absolute_bounds=true\"},\"singleFrameAutoLoad\":\"https://api.figma.com/v1/images/FD01?ids=7:21&format=png&scale=2&use_absolute_bounds=true\"}}",
+      "oracle": {
+        "kind": "dom-geometry",
+        "description": "次の操作が画面から分かる。実Figmaの選択と取得が一致"
+      },
+      "evidence": [
+        {
+          "path": "ledger/windows/round-2/D01/desktop/desktop-d-cases-evidence.json",
+          "sha256": "782a1414f8566e196fb3133983a27f9dfc6f22fb8ee63d00474ec3a85dfb527d"
+        },
+        {
+          "path": "ledger/windows/round-2/D01/desktop/D01-result.json",
+          "sha256": "174e515ce2912cc0773f5d0c5383b2b2a28820ed614139a8bfbe57a27b786b41"
+        }
+      ]
+    },
+    {
+      "case": "D02",
+      "round": 2,
+      "platform": "windows",
+      "route": "desktop",
+      "roundExecutionId": "round2",
+      "executedAt": "2026-09-24T13:40:06.505Z",
+      "productSha": "4e9145e5e051d4efe78a922723f7b3245005a05e",
+      "dirty": false,
+      "status": "PASS",
+      "newBugs": 0,
+      "observedKnownDefects": [],
+      "buildDigest": "3ce3c518e2ae4693fdca6c43bb1e24d124ba554c21e4968a31d5482d579e9b2e",
+      "environment": "windows",
+      "input": "未実行案件・未実行ページ・比較前画面",
+      "steps": "各画面を開く [drivers: app/desktop/e2e/native-unmeasured-score.mjs]",
+      "expected": "D02: 未実行案件・ページ・比較前画面で0点/赤不合格ではなく未計測を表示する",
+      "actual": "{\"native-unmeasured-score:D02\":{\"scoreText\":\"— (未計測)\",\"badgePresent\":false,\"views\":\"home/project/compare/node-inspection-empty/measured/convergence\",\"pageErrors\":[],\"rendererCrashes\":[]}}",
+      "oracle": {
+        "kind": "dom-geometry",
+        "description": "0点・赤い不合格ではなく未計測を表示する"
+      },
+      "evidence": [
+        {
+          "path": "ledger/windows/round-2/D02/desktop/native-unmeasured-score-evidence.json",
+          "sha256": "fd231c2b21422d39dde9225a01660b9bb36e511becad7912b30ac1f7bcfbdc9e"
+        },
+        {
+          "path": "ledger/windows/round-2/D02/desktop/D02-result.json",
+          "sha256": "07afc010c15369d8f0c064522a03a23b4f1e121a04be76284e8c9602dbddb4e3"
+        }
+      ]
+    },
+    {
+      "case": "D03",
+      "round": 2,
+      "platform": "windows",
+      "route": "desktop",
+      "roundExecutionId": "round2",
+      "executedAt": "2026-09-24T13:38:53.390Z",
+      "productSha": "4e9145e5e051d4efe78a922723f7b3245005a05e",
+      "dirty": false,
+      "status": "PASS",
+      "newBugs": 0,
+      "observedKnownDefects": [],
+      "buildDigest": "3ce3c518e2ae4693fdca6c43bb1e24d124ba554c21e4968a31d5482d579e9b2e",
+      "environment": "windows",
+      "input": "ファイル選択・D&D・Web撮影・端末撮影",
+      "steps": "各入力経路と失敗後の状態 [drivers: app/desktop/e2e/desktop-d-cases.mjs]",
+      "expected": "入力画像を確認でき、失敗後も入力と選択を失わない",
+      "actual": "{\"desktop-d-cases:D03\":{\"drop\":{\"screenshotLoaded\":true,\"via\":\"scoped zone text\"},\"localFile\":\"loaded\",\"webCapture\":{\"url\":\"/capture-target\",\"requests\":1},\"inputRetainedOnFailure\":true}}",
+      "oracle": {
+        "kind": "dom-geometry",
+        "description": "入力画像を確認でき、失敗後も入力と選択を失わない"
+      },
+      "evidence": [
+        {
+          "path": "ledger/windows/round-2/D03/desktop/desktop-d-cases-evidence.json",
+          "sha256": "782a1414f8566e196fb3133983a27f9dfc6f22fb8ee63d00474ec3a85dfb527d"
+        },
+        {
+          "path": "ledger/windows/round-2/D03/desktop/D03-result.json",
+          "sha256": "ca8e3cb5daade4d4264442a78623e114958bcc9cdc55552f633b88b2cf04f84a"
+        }
+      ]
+    },
+    {
+      "case": "D04",
+      "round": 2,
+      "platform": "windows",
+      "route": "desktop",
+      "roundExecutionId": "round2",
+      "executedAt": "2026-09-24T13:38:53.390Z",
+      "productSha": "4e9145e5e051d4efe78a922723f7b3245005a05e",
+      "dirty": false,
+      "status": "PASS",
+      "newBugs": 0,
+      "observedKnownDefects": [],
+      "buildDigest": "3ce3c518e2ae4693fdca6c43bb1e24d124ba554c21e4968a31d5482d579e9b2e",
+      "environment": "windows",
+      "input": "比較→全表示モード→zoom・pan・crop",
+      "steps": "表示モード切替・拡縮・移動・crop [drivers: app/desktop/e2e/desktop-d-cases.mjs]",
+      "expected": "実際の入力・差分と表示が一致。例外とconsole errorがない",
+      "actual": "{\"desktop-d-cases:D04\":{\"consoleErrors\":[],\"viewModes\":{\"pixel_diff\":{\"activeClass\":true},\"transparent_overlay\":{\"activeClass\":true},\"split_screen\":{\"activeClass\":true}},\"zoom\":{\"before\":\"translate(0px, 0px) scale(1)\",\"after\":\"translate(-184.546px, -40.9539px) scale(1.49212)\"},\"pan\":{\"before\":\"translate(-184.546px, -40.9539px) scale(1.49212)\",\"after\":\"translate(-124.546px, -0.953885px) scale(1.49212)\"},\"reset\":\"translate(0px, 0px) scale(1)\",\"crop\":{\"region\":\"x: 11, y: 11, w: 80, h: 60\",\"cleared\":true}}}",
+      "oracle": {
+        "kind": "dom-geometry",
+        "description": "実際の入力・差分と表示が一致。例外とconsole errorがない"
+      },
+      "evidence": [
+        {
+          "path": "ledger/windows/round-2/D04/desktop/desktop-d-cases-evidence.json",
+          "sha256": "782a1414f8566e196fb3133983a27f9dfc6f22fb8ee63d00474ec3a85dfb527d"
+        },
+        {
+          "path": "ledger/windows/round-2/D04/desktop/D04-result.json",
+          "sha256": "a7c73c57f2fd98086cb49e398526e93fcb0e60d07e9ee2bf33784ad953cd30d7"
+        }
+      ]
+    },
+    {
+      "case": "D06",
+      "round": 2,
+      "platform": "windows",
+      "route": "desktop",
+      "roundExecutionId": "round2",
+      "executedAt": "2026-09-24T13:40:16.000Z",
+      "productSha": "4e9145e5e051d4efe78a922723f7b3245005a05e",
+      "dirty": false,
+      "status": "PASS",
+      "newBugs": 0,
+      "observedKnownDefects": [],
+      "buildDigest": "9505e9740527c94053a222a21acffca5af9df3003b115cca4f474eb13bc7116d",
+      "environment": "windows",
+      "input": "修正前後比較・アニメーション比較",
+      "steps": "過去と現在・時間方向の違いを表示 [drivers: app/desktop/e2e/native-figma-node-fix.mjs, app/desktop/e2e/native-fix-animation.mjs]",
+      "expected": "D06: 修正前後の違いを説明できる | D06: 過去と現在の違い、時間方向の違いを説明できる",
+      "actual": "{\"native-figma-node-fix:D06\":\"mask適用対象の改善(raw差分800→0)と別grid悪化(0→1600)を独立raw画素で計測し、対象IMPROVEDと全体FAILの併存を確認\",\"native-fix-animation:D06\":\"修正前後比較で対象改善と別領域悪化を独立raw画素で確認。animationは時刻対応・逆順拒否・画像hash対応を検証\"}",
+      "oracle": {
+        "kind": "source-pixels",
+        "description": "過去と現在の違い、時間方向の違いを説明できる"
+      },
+      "evidence": [
+        {
+          "path": "ledger/windows/round-2/D06/desktop/native-figma-node-fix-evidence.json",
+          "sha256": "beab4561b9b038162f7d13f7cea0e4213087d3430f8a6f954dc733dce11a5601"
+        },
+        {
+          "path": "ledger/windows/round-2/D06/desktop/native-fix-animation-evidence.json",
+          "sha256": "8b341fb68eaabecd7a528efb6a6b1cafa833f749ad8b1ab814ea5e5a71c55495"
+        },
+        {
+          "path": "ledger/windows/round-2/D06/desktop/D06-result.json",
+          "sha256": "64891a6f7e06e198d16093b39a8cc061c17f929b5092da3356ee3a859a696fac"
+        }
+      ]
+    },
+    {
+      "case": "D07",
+      "round": 2,
+      "platform": "windows",
+      "route": "desktop",
+      "roundExecutionId": "round2",
+      "executedAt": "2026-09-24T13:40:27.756Z",
+      "productSha": "4e9145e5e051d4efe78a922723f7b3245005a05e",
+      "dirty": false,
+      "status": "PASS",
+      "newBugs": 0,
+      "observedKnownDefects": [],
+      "buildDigest": "9505e9740527c94053a222a21acffca5af9df3003b115cca4f474eb13bc7116d",
+      "environment": "windows",
+      "input": "レポート保存・問題報告",
+      "steps": "実ファイル保存・報告内容確認 [drivers: app/desktop/e2e/native-issue-report.mjs, app/desktop/e2e/native-report-export.mjs]",
+      "expected": "D07: 報告対象・内容を確認して送れる | D07: 実ファイルが読め、保存内容が差分実測と一致する",
+      "actual": "{\"native-issue-report:D07\":\"prepare→確認→編集/破棄を実IPCで検証。POST投稿0件・認証エラー復旧を確認。実外部投稿は未検証で範囲外\",\"native-report-export:D07\":\"実Gtk保存ダイアログからJSON/Markdownへ保存し読み戻した。原画像の独立raw差分・bboxをファイル内容へ照合。キャンセル時bytes不変も確認\"}",
+      "oracle": {
+        "kind": "host-observation",
+        "description": "実ファイルが読め、報告対象・内容を確認して送れる"
+      },
+      "evidence": [
+        {
+          "path": "ledger/windows/round-2/D07/desktop/native-issue-report-evidence.json",
+          "sha256": "e9055847b6dd600e80860c74f95a5fcffe57dbdd5ec9d87b4cdc7ff0a9236ff6"
+        },
+        {
+          "path": "ledger/windows/round-2/D07/desktop/native-report-export-evidence.json",
+          "sha256": "631b30c8dcc61861fcbcfa3184875706935dfdcd1f8d630798bdf0cdb2a3cf4b"
+        },
+        {
+          "path": "ledger/windows/round-2/D07/desktop/D07-result.json",
+          "sha256": "9e62ff4143921fa7d52abc4d24ef50f37039f8554851b7f0443c24be827e4353"
+        }
+      ]
+    },
+    {
+      "case": "D08",
+      "round": 2,
+      "platform": "windows",
+      "route": "desktop",
+      "roundExecutionId": "round2",
+      "executedAt": "2026-09-24T13:38:53.390Z",
+      "productSha": "4e9145e5e051d4efe78a922723f7b3245005a05e",
+      "dirty": false,
+      "status": "PASS",
+      "newBugs": 0,
+      "observedKnownDefects": [],
+      "buildDigest": "3ce3c518e2ae4693fdca6c43bb1e24d124ba554c21e4968a31d5482d579e9b2e",
+      "environment": "windows",
+      "input": "保存→終了→再起動・案件切替・タブ切替",
+      "steps": "永続化・再起動・切替 [drivers: app/desktop/e2e/desktop-d-cases.mjs]",
+      "expected": "設定・履歴を復元し、別案件へ状態が混ざらない",
+      "actual": "{\"desktop-d-cases:D08\":{\"restored\":[\"D01案件\",\"比較テスト案件\",\"MCP経由案件\"],\"d01ProjectContents\":{\"page\":\"トップ\",\"source\":\"デスクトップ\"},\"comparePositiveControl\":{\"canvasCount\":2,\"canvases\":[{\"width\":200,\"height\":120},{\"width\":300,\"height\":150}],\"apiHitsForSource\":0},\"compareAfterProjectSwitch\":{\"canvases\":[],\"fixtureCanvas\":null,\"centerPixel\":null,\"matchesFixture\":false,\"designPill\":false},\"switching\":\"close-and-reopen round-trip verified\"}}",
+      "oracle": {
+        "kind": "dom-geometry",
+        "description": "設定・履歴を復元し、別案件へ状態が混ざらない"
+      },
+      "evidence": [
+        {
+          "path": "ledger/windows/round-2/D08/desktop/desktop-d-cases-evidence.json",
+          "sha256": "782a1414f8566e196fb3133983a27f9dfc6f22fb8ee63d00474ec3a85dfb527d"
+        },
+        {
+          "path": "ledger/windows/round-2/D08/desktop/D08-result.json",
+          "sha256": "e7a86f2c8e97ac2bea2ab49ebb48f30023b41aea8d9c1ce08a7f87b0c19c0998"
+        }
+      ]
+    },
+    {
+      "case": "D09",
+      "round": 2,
+      "platform": "windows",
+      "route": "desktop",
+      "roundExecutionId": "round2",
+      "executedAt": "2026-09-24T13:38:53.390Z",
+      "productSha": "4e9145e5e051d4efe78a922723f7b3245005a05e",
+      "dirty": false,
+      "status": "PASS",
+      "newBugs": 0,
+      "observedKnownDefects": [],
+      "buildDigest": "3ce3c518e2ae4693fdca6c43bb1e24d124ba554c21e4968a31d5482d579e9b2e",
+      "environment": "windows",
+      "input": "401/403/429/5xx・オフライン・失敗後の再試行",
+      "steps": "各エラー注入と復旧操作 [drivers: app/desktop/e2e/desktop-d-cases.mjs]",
+      "expected": "失敗理由と復旧操作を表示し、操作不能状態に残らない",
+      "actual": "{\"desktop-d-cases:D09\":{\"401\":{\"surfaced\":\"token re-entry dialog\",\"cancelDisabled\":false},\"403\":{\"surfaced\":\"token re-entry dialog\",\"cancelDisabled\":false},\"429\":{\"surfaced\":\"Error: Error invoking remote method 'figma:get-frame-image': Error: Figma API rate limit exceeded (429). Please wait 7 seconds.\"},\"500\":{\"surfaced\":\"Error: Error invoking remote method 'figma:get-frame-image': Error: Figma server error (500). Please try again later.\"},\"offline\":{\"surfaced\":\"Error: Error invoking remote method 'figma:get-frame-image': Error: fetch failed\"},\"sameUrlRetry\":{\"node\":\"7:16\",\"exported\":\"https://api.figma.com/v1/images/FD01?ids=7:16&format=png&scale=2&use_absolute_bounds=true\"},\"retryAfterRecovery\":\"export succeeded\"}}",
+      "oracle": {
+        "kind": "host-observation",
+        "description": "失敗理由と復旧操作を表示し、操作不能状態に残らない"
+      },
+      "evidence": [
+        {
+          "path": "ledger/windows/round-2/D09/desktop/desktop-d-cases-evidence.json",
+          "sha256": "782a1414f8566e196fb3133983a27f9dfc6f22fb8ee63d00474ec3a85dfb527d"
+        },
+        {
+          "path": "ledger/windows/round-2/D09/desktop/D09-result.json",
+          "sha256": "8b53e9a76fcb209d871c21b4abd020acd4c0caca730fcfbebc099452dc2f9e86"
+        }
+      ]
+    },
+    {
+      "case": "D10",
+      "round": 2,
+      "platform": "windows",
+      "route": "desktop",
+      "roundExecutionId": "round2",
+      "executedAt": "2026-09-24T13:38:53.390Z",
+      "productSha": "4e9145e5e051d4efe78a922723f7b3245005a05e",
+      "dirty": false,
+      "status": "PASS",
+      "newBugs": 0,
+      "observedKnownDefects": [],
+      "buildDigest": "3ce3c518e2ae4693fdca6c43bb1e24d124ba554c21e4968a31d5482d579e9b2e",
+      "environment": "windows",
+      "input": "キーボード操作・狭いウィンドウ・日本語ファイル名",
+      "steps": "キーボード到達・430px viewport・日本語名 [drivers: app/desktop/e2e/desktop-d-cases.mjs]",
+      "expected": "操作対象へ到達でき、表示切れや文字化けで操作が失われない",
+      "actual": "{\"desktop-d-cases:D10\":{\"keyboardSubmit\":\"frame list appeared via hero input (node 7:30)\",\"japaneseProject\":\"1790257167330-re2nd1i\",\"narrowViewport\":{\"width\":430,\"view\":\"compare\",\"overflowPx\":0,\"overflowElements\":[\"button right=574\",\"svg right=439\",\"path right=438\",\"path right=438\",\"path right=438\",\"button right=650\"],\"homeNav\":{\"found\":true,\"reachable\":true}},\"japaneseFilename\":{\"loaded\":\"実装-比較テスト.png\",\"canvas\":\"50x50\",\"canvases\":[{\"width\":50,\"height\":50},{\"width\":300,\"height\":150}],\"via\":\"shotInput path\"}}}",
+      "oracle": {
+        "kind": "dom-geometry",
+        "description": "操作対象へ到達でき、表示切れや文字化けで操作が失われない"
+      },
+      "evidence": [
+        {
+          "path": "ledger/windows/round-2/D10/desktop/desktop-d-cases-evidence.json",
+          "sha256": "782a1414f8566e196fb3133983a27f9dfc6f22fb8ee63d00474ec3a85dfb527d"
+        },
+        {
+          "path": "ledger/windows/round-2/D10/desktop/D10-result.json",
+          "sha256": "c2f7ccff3008be4ec272c24163a42d1ff8d20cacfd0e9e589df3a50c3a9201de"
+        }
+      ]
+    },
+    {
       "case": "X01",
       "round": 2,
       "platform": "windows",
@@ -1752,7 +1752,7 @@
       "status": "PASS",
       "newBugs": 0,
       "observedKnownDefects": [],
-      "buildDigest": "dc70b5a859aae1d40700b67cbb18c9f3fbd69f94ff562f6286b67b0c43aab3db",
+      "buildDigest": "4188f7fab773fdda8ab572ff5217d805115de526e91a4fb8fc84e5809b0ca336",
       "environment": "windows",
       "input": "実Chrome拡張を分離プロファイルへ読み込み",
       "steps": "popup→撮影→比較→overlay [drivers: app/chrome-extension/script/real-chrome-e2e.mjs]",
@@ -1813,7 +1813,7 @@
       "status": "PASS",
       "newBugs": 0,
       "observedKnownDefects": [],
-      "buildDigest": "dc70b5a859aae1d40700b67cbb18c9f3fbd69f94ff562f6286b67b0c43aab3db",
+      "buildDigest": "4188f7fab773fdda8ab572ff5217d805115de526e91a4fb8fc84e5809b0ca336",
       "environment": "windows",
       "input": "overlayの移動・スクロール・透明度・ページ遷移・閉じる",
       "steps": "overlay操作と閉じた後の状態 [drivers: app/chrome-extension/script/real-chrome-e2e.mjs]",
@@ -1855,76 +1855,68 @@
       ]
     },
     {
-      "case": "X09",
+      "case": "X03",
       "round": 2,
       "platform": "windows",
-      "route": "desktop",
+      "route": "figma-plugin",
       "roundExecutionId": "round2",
-      "executedAt": "2026-09-24T13:38:53.390Z",
+      "executedAt": "2026-10-09T03:11:34.529Z",
       "productSha": "4e9145e5e051d4efe78a922723f7b3245005a05e",
       "dirty": false,
       "status": "PASS",
       "newBugs": 0,
       "observedKnownDefects": [],
-      "buildDigest": "6d76943b2f40b8eab22392fbc357f55dc89317ec12c5c02f9f4484d7dd03d075",
+      "buildDigest": "6e21831c5e1bcf98f07cad1e20e75414d01231d2a510bbcc020b223378edf920",
       "environment": "windows",
-      "input": "保存形式の旧データ・MCPとdesktopの相互読込み",
-      "steps": "旧データ読込み・相互作成読込み [drivers: app/desktop/e2e/desktop-d-cases.mjs]",
-      "expected": "互換性を維持し、旧データを黙って削除しない",
-      "actual": "{\"desktop-d-cases:X09\":{\"direction\":\"mcp-write → desktop-read\",\"project\":\"mcp-made-project\",\"listed\":true,\"opened\":true}}",
+      "input": "実Figmaへ開発pluginを読み込み",
+      "steps": "選択・export・compare・inspect [drivers: app/figma-plugin/e2e/real-iframe-host.mjs]",
+      "expected": "X03: 選択・export・compare・inspect が sandbox↔iframe 実通信で動く",
+      "actual": "{\"real-iframe-host:X03\":[{\"name\":\"初期描画でタブが2枚出る\",\"ok\":true},{\"name\":\"inspect-node requestId 付き送信\",\"ok\":true},{\"name\":\"一致 requestId の応答で結果描画\",\"ok\":true},{\"name\":\"export-frame requestId 付き送信\",\"ok\":true},{\"name\":\"実canvas比較で全相違を低一致率として描画\",\"ok\":true,\"matchText\":\"0%\",\"statsText\":\"4 / 4\"}]}",
       "oracle": {
-        "kind": "schema-contract",
-        "description": "互換性を維持し、旧データを黙って削除しない"
+        "kind": "host-observation",
+        "description": "sandboxとiframe間の実通信と生成画像が一致"
       },
       "evidence": [
         {
-          "path": "ledger/windows/round-2/X09/desktop/desktop-d-cases-evidence.json",
-          "sha256": "782a1414f8566e196fb3133983a27f9dfc6f22fb8ee63d00474ec3a85dfb527d"
+          "path": "ledger/windows/round-2/X03/figma-plugin/real-iframe-host-evidence.json",
+          "sha256": "b67cb70c0339963460aef0befb4b0e113d819fc57a517c1aeb3c2e90943d5f83"
         },
         {
-          "path": "ledger/windows/round-2/X09/desktop/desktop-d-cases-evidence.json",
-          "sha256": "782a1414f8566e196fb3133983a27f9dfc6f22fb8ee63d00474ec3a85dfb527d"
-        },
-        {
-          "path": "ledger/windows/round-2/X09/desktop/X09-result.json",
-          "sha256": "a921b0072dea5c35a7d2432af9056238559f69262a90a1bb0ab3106db4e1702e"
+          "path": "ledger/windows/round-2/X03/figma-plugin/X03-result.json",
+          "sha256": "fd15ee842df6af19312b832d55e964b190e8042747114c9af459d37f3547b2a8"
         }
       ]
     },
     {
-      "case": "X09",
+      "case": "X04",
       "round": 2,
       "platform": "windows",
-      "route": "mcp",
+      "route": "figma-plugin",
       "roundExecutionId": "round2",
-      "executedAt": "2026-09-24T13:35:30.220Z",
+      "executedAt": "2026-10-09T03:11:34.529Z",
       "productSha": "4e9145e5e051d4efe78a922723f7b3245005a05e",
       "dirty": false,
       "status": "PASS",
       "newBugs": 0,
       "observedKnownDefects": [],
-      "buildDigest": "4ea11b2a6c8e1db667767e9acfbc66d0d153bd2bf3373a3bec52b654e26d8481",
+      "buildDigest": "6e21831c5e1bcf98f07cad1e20e75414d01231d2a510bbcc020b223378edf920",
       "environment": "windows",
-      "input": "保存形式の旧データ・MCPとdesktopの相互読込み",
-      "steps": "旧データ読込み・相互作成読込み [drivers: app/mcp-server/script/stdio-campaign-verification.mjs, app/mcp-server/script/stdio-campaign-verification2.mjs]",
-      "expected": "X09_legacy_data: legacy record readable, secret not leaked | X09_mcp_desktop_interop: MCP-written project readable as desktop shape; desktop-seeded project readable by MCP",
-      "actual": "{\"stdio-campaign-verification:X09_legacy_data\":{\"listed\":true,\"secretPresent\":false},\"stdio-campaign-verification2:X09_mcp_desktop_interop\":{\"mcpCreatedId\":\"1790257026203-cc373ccd\",\"desktopSeedListed\":true,\"cropOnDesktopProject\":{\"success\":true,\"entry\":{\"frameName\":\"fixture-page\",\"region\":{\"x\":10,\"y\":20,\"width\":100,\"height\":80},\"updatedAt\":\"2026-09-24T13:37:06.221Z\",\"capturedWidth\":390,\"capturedHeight\":844}}}}",
+      "input": "pluginで未選択・非表示node・不正画像・通信失敗",
+      "steps": "各エラー注入と復旧 [drivers: app/figma-plugin/e2e/real-iframe-host.mjs]",
+      "expected": "X04: 未応答・stale応答など通信失敗から復旧できる",
+      "actual": "{\"real-iframe-host:X04\":[{\"name\":\"stale requestId の応答を棄却\",\"ok\":true},{\"name\":\"応答なしで timeout alert と loading 解除\",\"ok\":true},{\"name\":\"build digest 不変・page/console error 0\",\"ok\":true}]}",
       "oracle": {
-        "kind": "schema-contract",
-        "description": "互換性を維持し、旧データを黙って削除しない"
+        "kind": "host-observation",
+        "description": "操作可能なエラー表示から復旧できる"
       },
       "evidence": [
         {
-          "path": "ledger/windows/round-2/X09/mcp/stdio-campaign-verification-evidence.json",
-          "sha256": "3107959f0bbf42810e846092e9cdce69e68d76ef1920c1c086eec0e5b12576be"
+          "path": "ledger/windows/round-2/X04/figma-plugin/real-iframe-host-evidence.json",
+          "sha256": "b67cb70c0339963460aef0befb4b0e113d819fc57a517c1aeb3c2e90943d5f83"
         },
         {
-          "path": "ledger/windows/round-2/X09/mcp/stdio-campaign-verification2-evidence.json",
-          "sha256": "3ea8a335e15962caa43e0f22c945a9ab8f6380eee387a4a273829bd0a7a32c04"
-        },
-        {
-          "path": "ledger/windows/round-2/X09/mcp/X09-result.json",
-          "sha256": "28e6003f851f4b47863b2473047f4b3ff9bf15fa73c46c64d84ec03d00954323"
+          "path": "ledger/windows/round-2/X04/figma-plugin/X04-result.json",
+          "sha256": "3ef601a80af3fa211e3f2f8c9af11297caa1a948ab280bc4783a8c99c3dcf871"
         }
       ]
     },
@@ -2001,6 +1993,228 @@
           "sha256": "9f8b1b1343e66fe988896f6cfca85448bc1f2fe0636546789abd18faf499d928"
         }
       ]
+    },
+    {
+      "case": "X08",
+      "round": 2,
+      "platform": "windows",
+      "route": "mcp",
+      "roundExecutionId": "round2",
+      "executedAt": "2026-10-09T03:11:46.206Z",
+      "productSha": "4e9145e5e051d4efe78a922723f7b3245005a05e",
+      "dirty": false,
+      "status": "PASS",
+      "newBugs": 0,
+      "observedKnownDefects": [],
+      "buildDigest": "731983867d0aea2a2eb46ee60d43fcc5b932c3c1e19146cad7899a3d7a3aee61",
+      "environment": "windows",
+      "input": "同じ検体をMCP・desktop・拡張・pluginで比較",
+      "steps": "同一検体の横断比較 [drivers: app/mcp-server/script/x08/mcp.mjs, app/mcp-server/script/x08/compare.mjs]",
+      "expected": "X08: mcp 面が同一検体で diffPixelCount=832・領域=2 を返す | X08: 全4面で diffPixelCount=832・regions一致・diff画像画素一致",
+      "actual": "{\"mcp:X08\":{\"diffPixelCount\":832,\"matchRate\":90.97,\"regionCount\":2,\"diffPixelsSha256\":\"7d0da44f7b88c359673cd0d3ede91c01a1dc9761646f4a4bcc62885594fe890b\",\"protocolErrors\":0},\"compare:X08\":{\"ok\":true,\"expected\":{\"expectedDiffPixelCount\":832,\"expectedRegions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"expectedRate\":90.97},\"checks\":[{\"name\":\"diffPixelCount==expected\",\"ok\":true,\"detail\":832},{\"name\":\"diffPixelCount==expected (ext)\",\"ok\":true,\"detail\":832},{\"name\":\"diffPixelCount==expected (desktop DOM)\",\"ok\":true,\"detail\":832},{\"name\":\"matchRate mcp\",\"ok\":true,\"detail\":{\"rate\":90.97,\"expectedRate\":90.97}},{\"name\":\"matchRate extension\",\"ok\":true,\"detail\":{\"rate\":90.97,\"expectedRate\":90.97}},{\"name\":\"matchRate plugin\",\"ok\":true,\"detail\":{\"rate\":90.97,\"expectedRate\":90.97}},{\"name\":\"regions mcp\",\"ok\":true,\"detail\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}]},{\"name\":\"regions ext\",\"ok\":true,\"detail\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}]},{\"name\":\"region count desktop DOM\",\"ok\":true,\"detail\":2},{\"name\":\"diff mask equality\",\"ok\":true,\"detail\":{\"mcp\":\"4d3da6cbe0a6ab9e15885a0b12ad445d400abcf7cc25c28076c4a7ec8caea8bd\",\"desktop\":\"4d3da6cbe0a6ab9e15885a0b12ad445d400abcf7cc25c28076c4a7ec8caea8bd\",\"plugin\":\"4d3da6cbe0a6ab9e15885a0b12ad445d400abcf7cc25c28076c4a7ec8caea8bd\"}},{\"name\":\"derived regions mcp\",\"ok\":true,\"detail\":[\"16,16,32,24\",\"4,64,8,8\"]},{\"name\":\"derived regions desktop\",\"ok\":true,\"detail\":[\"16,16,32,24\",\"4,64,8,8\"]},{\"name\":\"derived regions plugin\",\"ok\":true,\"detail\":[\"16,16,32,24\",\"4,64,8,8\"]}],\"surfaces\":{\"mcp\":{\"surface\":\"mcp\",\"diffPixelCount\":832,\"matchRate\":90.97,\"regions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"diffPixelsSha256\":\"7d0da44f7b88c359673cd0d3ede91c01a1dc9761646f4a4bcc62885594fe890b\",\"diffImagePath\":\"D:\\\\a\\\\designdiff\\\\designdiff\\\\docs\\\\evidence\\\\round2-windows\\\\x08\\\\figdiff-home\\\\results\\\\diff-cmp-44e34236-73e4-4e4c-b0f6-ba27247cc308.png\",\"expectedDiffPixelCount\":832,\"expectedRegions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"protocolErrors\":[],\"results\":{\"X08\":{\"status\":\"PASS\",\"expected\":\"mcp 面が同一検体で diffPixelCount=832・領域=2 を返す\",\"actual\":{\"diffPixelCount\":832,\"matchRate\":90.97,\"regionCount\":2,\"diffPixelsSha256\":\"7d0da44f7b88c359673cd0d3ede91c01a1dc9761646f4a4bcc62885594fe890b\",\"protocolErrors\":0}}}},\"desktop\":{\"surface\":\"desktop\",\"diffPixelsSha256\":\"881671c2f5cc8ef9ed1348762782d32c70d4feceab7810efe926848dcd95596f\",\"diffPngBase64\":\"iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAYAAADimHc4AAACDklEQVR4AeycwY7DIAwFac/9/y/NPXulCpK1ATOETqRIWSz8YEa+rfo+fVAC7+KDElAAir8UBSgAJgDHOwEKgAnA8U6AAmACcLwToACAwEKRTgAsQwEKgAnA8U6AAmACcHz/BLxepZBvefbTL+DZ98dPrwBYgQIUABOA4ydOAHzTReMVAItRgAJgAnC8E6AAmAAc7wQoACYAxzsBCoAJwPFOQLKAqL0CIkLJdQUkA47aKyAilFxXQDLgqL0CIkLJdQUkA47aKyAilFxXQDLgqH2/gPMshXyjGy5e7xew+AVXP96eAlanXp1PARUM4lMBBPUqUwEVDOJTAQT1KlMBFQzic3sBx3GUzLdX2vYCegFl71dANuGgvwICQNllBWQTDvoPFBAkWW4SUEATy7xFBcxj3UxSQBPLvEUFzGPdTFJAE8u8RQXMY91MUkATy7xFBcxj3UxSQBPLvEUFdLLu3X4VEP32T2+i+78IXAV8lf0jm4ACsgkH/RUQAMouKyCbcNBfAQGg7LICsgkH/RUQAMouXwVE/+uffaIf638V8GMA6Os+UwBNbWC+AgbCvNNKAXeoDdyjgIEw77RSwB1qA/coYCDMO622F/D5fErmewd6vWd7AfVlV/xWAGxFAQqACcDx/5gA+KSbxisAFqsABcAE4HgnQAEwATjeCVAATACOdwIUABOA452AQEB2+Q8AAP//CoOsigAAAAZJREFUAwDdvRdfUY2vmgAAAABJRU5ErkJggg==\",\"diffPngSha256\":\"bf8e760bc63ab259866199aa02cc1585409912065859c0f544ff354c9d9baa03\",\"diffPixelCountDom\":832,\"regionCountDom\":2,\"expectedDiffPixelCount\":832,\"expectedRegions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"pageErrors\":[],\"results\":{\"X08\":{\"status\":\"PASS\",\"expected\":\"desktop 面が同一検体で diffPixelCount=832・領域=2 を描画する\",\"actual\":{\"diffPixelCountDom\":832,\"regionCountDom\":2,\"diffPixelsSha256\":\"881671c2f5cc8ef9ed1348762782d32c70d4feceab7810efe926848dcd95596f\",\"pageErrors\":0}}}},\"extension\":{\"surface\":\"chrome-extension\",\"diffPixelCount\":832,\"matchRate\":90.97,\"regions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"expectedDiffPixelCount\":832,\"expectedRegions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"results\":{\"X08\":{\"status\":\"PASS\",\"expected\":\"chrome-extension 面が同一検体で diffPixelCount=832・領域=2 を返す\",\"actual\":{\"diffPixelCount\":832,\"matchRate\":90.97,\"regionCount\":2}}}},\"plugin\":{\"surface\":\"figma-plugin\",\"matchRate\":90.97,\"diffPixelsSha256\":\"881671c2f5cc8ef9ed1348762782d32c70d4feceab7810efe926848dcd95596f\",\"diffPngBase64\":\"iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAYAAADimHc4AAACDklEQVR4AeycwY7DIAwFac/9/y/NPXulCpK1ATOETqRIWSz8YEa+rfo+fVAC7+KDElAAir8UBSgAJgDHOwEKgAnA8U6AAmACcLwToACAwEKRTgAsQwEKgAnA8U6AAmACcHz/BLxepZBvefbTL+DZ98dPrwBYgQIUABOA4ydOAHzTReMVAItRgAJgAnC8E6AAmAAc7wQoACYAxzsBCoAJwPFOQLKAqL0CIkLJdQUkA47aKyAilFxXQDLgqL0CIkLJdQUkA47aKyAilFxXQDLgqH2/gPMshXyjGy5e7xew+AVXP96eAlanXp1PARUM4lMBBPUqUwEVDOJTAQT1KlMBFQzic3sBx3GUzLdX2vYCegFl71dANuGgvwICQNllBWQTDvoPFBAkWW4SUEATy7xFBcxj3UxSQBPLvEUFzGPdTFJAE8u8RQXMY91MUkATy7xFBcxj3UxSQBPLvEUFdLLu3X4VEP32T2+i+78IXAV8lf0jm4ACsgkH/RUQAMouKyCbcNBfAQGg7LICsgkH/RUQAMouXwVE/+uffaIf638V8GMA6Os+UwBNbWC+AgbCvNNKAXeoDdyjgIEw77RSwB1qA/coYCDMO622F/D5fErmewd6vWd7AfVlV/xWAGxFAQqACcDx/5gA+KSbxisAFqsABcAE4HgnQAEwATjeCVAATACOdwIUABOA452AQEB2+Q8AAP//CoOsigAAAAZJREFUAwDdvRdfUY2vmgAAAABJRU5ErkJggg==\",\"diffPngSha256\":\"bf8e760bc63ab259866199aa02cc1585409912065859c0f544ff354c9d9baa03\",\"expectedDiffPixelCount\":832,\"expectedRegions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"results\":{\"X08\":{\"status\":\"PASS\",\"expected\":\"figma-plugin 面が同一検体で diffPixelCount=832・領域=2 に対応する diff を描画する\",\"actual\":{\"matchRate\":90.97,\"diffPixelsSha256\":\"881671c2f5cc8ef9ed1348762782d32c70d4feceab7810efe926848dcd95596f\"}}}}},\"documentedDifferences\":[\"chrome-extension: pixelmatch を deps に持てないため YIQ 移植版 (pixel-diff-service.ts)。同一検体で同じ diffPixelCount/regions を返すことを上記で実証。\",\"desktop: clusterDiffRegions (独自 floodFill+>=10px) を使用。shared clusterDiffPixels と同規則で、region 数の一致を DOM 経由で確認。\",\"figma-plugin: 領域を UI に出さないため diff 画像画素の一致で等価性を確認。\"]}}",
+      "oracle": {
+        "kind": "source-pixels",
+        "description": "共通条件では同じ領域・差分規則。意図した機能差は明記"
+      },
+      "evidence": [
+        {
+          "path": "ledger/windows/round-2/X08/mcp/mcp-evidence.json",
+          "sha256": "efcc5d74cb48cad4df1c5bb6cec466675ac87380a49ad4060a64a2ced5f2153c"
+        },
+        {
+          "path": "ledger/windows/round-2/X08/mcp/compare-evidence.json",
+          "sha256": "5df08c1a5e79e4adbe293b8eb8883e7f9fd0ff2cd1358ccc1259e745abf726f6"
+        },
+        {
+          "path": "ledger/windows/round-2/X08/mcp/X08-result.json",
+          "sha256": "1a672c568bc4f0232eb4f431b02e5bb7daa08996a633dc8915b36d8ea37ef22b"
+        }
+      ]
+    },
+    {
+      "case": "X08",
+      "round": 2,
+      "platform": "windows",
+      "route": "desktop",
+      "roundExecutionId": "round2",
+      "executedAt": "2026-10-09T03:11:47.204Z",
+      "productSha": "4e9145e5e051d4efe78a922723f7b3245005a05e",
+      "dirty": false,
+      "status": "PASS",
+      "newBugs": 0,
+      "observedKnownDefects": [],
+      "buildDigest": "3ce3c518e2ae4693fdca6c43bb1e24d124ba554c21e4968a31d5482d579e9b2e",
+      "environment": "windows",
+      "input": "同じ検体をMCP・desktop・拡張・pluginで比較",
+      "steps": "同一検体の横断比較 [drivers: app/mcp-server/script/x08/desktop.mjs, app/mcp-server/script/x08/compare.mjs]",
+      "expected": "X08: desktop 面が同一検体で diffPixelCount=832・領域=2 を描画する | X08: 全4面で diffPixelCount=832・regions一致・diff画像画素一致",
+      "actual": "{\"desktop:X08\":{\"diffPixelCountDom\":832,\"regionCountDom\":2,\"diffPixelsSha256\":\"881671c2f5cc8ef9ed1348762782d32c70d4feceab7810efe926848dcd95596f\",\"pageErrors\":0},\"compare:X08\":{\"ok\":true,\"expected\":{\"expectedDiffPixelCount\":832,\"expectedRegions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"expectedRate\":90.97},\"checks\":[{\"name\":\"diffPixelCount==expected\",\"ok\":true,\"detail\":832},{\"name\":\"diffPixelCount==expected (ext)\",\"ok\":true,\"detail\":832},{\"name\":\"diffPixelCount==expected (desktop DOM)\",\"ok\":true,\"detail\":832},{\"name\":\"matchRate mcp\",\"ok\":true,\"detail\":{\"rate\":90.97,\"expectedRate\":90.97}},{\"name\":\"matchRate extension\",\"ok\":true,\"detail\":{\"rate\":90.97,\"expectedRate\":90.97}},{\"name\":\"matchRate plugin\",\"ok\":true,\"detail\":{\"rate\":90.97,\"expectedRate\":90.97}},{\"name\":\"regions mcp\",\"ok\":true,\"detail\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}]},{\"name\":\"regions ext\",\"ok\":true,\"detail\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}]},{\"name\":\"region count desktop DOM\",\"ok\":true,\"detail\":2},{\"name\":\"diff mask equality\",\"ok\":true,\"detail\":{\"mcp\":\"4d3da6cbe0a6ab9e15885a0b12ad445d400abcf7cc25c28076c4a7ec8caea8bd\",\"desktop\":\"4d3da6cbe0a6ab9e15885a0b12ad445d400abcf7cc25c28076c4a7ec8caea8bd\",\"plugin\":\"4d3da6cbe0a6ab9e15885a0b12ad445d400abcf7cc25c28076c4a7ec8caea8bd\"}},{\"name\":\"derived regions mcp\",\"ok\":true,\"detail\":[\"16,16,32,24\",\"4,64,8,8\"]},{\"name\":\"derived regions desktop\",\"ok\":true,\"detail\":[\"16,16,32,24\",\"4,64,8,8\"]},{\"name\":\"derived regions plugin\",\"ok\":true,\"detail\":[\"16,16,32,24\",\"4,64,8,8\"]}],\"surfaces\":{\"mcp\":{\"surface\":\"mcp\",\"diffPixelCount\":832,\"matchRate\":90.97,\"regions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"diffPixelsSha256\":\"7d0da44f7b88c359673cd0d3ede91c01a1dc9761646f4a4bcc62885594fe890b\",\"diffImagePath\":\"D:\\\\a\\\\designdiff\\\\designdiff\\\\docs\\\\evidence\\\\round2-windows\\\\x08\\\\figdiff-home\\\\results\\\\diff-cmp-44e34236-73e4-4e4c-b0f6-ba27247cc308.png\",\"expectedDiffPixelCount\":832,\"expectedRegions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"protocolErrors\":[],\"results\":{\"X08\":{\"status\":\"PASS\",\"expected\":\"mcp 面が同一検体で diffPixelCount=832・領域=2 を返す\",\"actual\":{\"diffPixelCount\":832,\"matchRate\":90.97,\"regionCount\":2,\"diffPixelsSha256\":\"7d0da44f7b88c359673cd0d3ede91c01a1dc9761646f4a4bcc62885594fe890b\",\"protocolErrors\":0}}}},\"desktop\":{\"surface\":\"desktop\",\"diffPixelsSha256\":\"881671c2f5cc8ef9ed1348762782d32c70d4feceab7810efe926848dcd95596f\",\"diffPngBase64\":\"iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAYAAADimHc4AAACDklEQVR4AeycwY7DIAwFac/9/y/NPXulCpK1ATOETqRIWSz8YEa+rfo+fVAC7+KDElAAir8UBSgAJgDHOwEKgAnA8U6AAmACcLwToACAwEKRTgAsQwEKgAnA8U6AAmACcHz/BLxepZBvefbTL+DZ98dPrwBYgQIUABOA4ydOAHzTReMVAItRgAJgAnC8E6AAmAAc7wQoACYAxzsBCoAJwPFOQLKAqL0CIkLJdQUkA47aKyAilFxXQDLgqL0CIkLJdQUkA47aKyAilFxXQDLgqH2/gPMshXyjGy5e7xew+AVXP96eAlanXp1PARUM4lMBBPUqUwEVDOJTAQT1KlMBFQzic3sBx3GUzLdX2vYCegFl71dANuGgvwICQNllBWQTDvoPFBAkWW4SUEATy7xFBcxj3UxSQBPLvEUFzGPdTFJAE8u8RQXMY91MUkATy7xFBcxj3UxSQBPLvEUFdLLu3X4VEP32T2+i+78IXAV8lf0jm4ACsgkH/RUQAMouKyCbcNBfAQGg7LICsgkH/RUQAMouXwVE/+uffaIf638V8GMA6Os+UwBNbWC+AgbCvNNKAXeoDdyjgIEw77RSwB1qA/coYCDMO622F/D5fErmewd6vWd7AfVlV/xWAGxFAQqACcDx/5gA+KSbxisAFqsABcAE4HgnQAEwATjeCVAATACOdwIUABOA452AQEB2+Q8AAP//CoOsigAAAAZJREFUAwDdvRdfUY2vmgAAAABJRU5ErkJggg==\",\"diffPngSha256\":\"bf8e760bc63ab259866199aa02cc1585409912065859c0f544ff354c9d9baa03\",\"diffPixelCountDom\":832,\"regionCountDom\":2,\"expectedDiffPixelCount\":832,\"expectedRegions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"pageErrors\":[],\"results\":{\"X08\":{\"status\":\"PASS\",\"expected\":\"desktop 面が同一検体で diffPixelCount=832・領域=2 を描画する\",\"actual\":{\"diffPixelCountDom\":832,\"regionCountDom\":2,\"diffPixelsSha256\":\"881671c2f5cc8ef9ed1348762782d32c70d4feceab7810efe926848dcd95596f\",\"pageErrors\":0}}}},\"extension\":{\"surface\":\"chrome-extension\",\"diffPixelCount\":832,\"matchRate\":90.97,\"regions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"expectedDiffPixelCount\":832,\"expectedRegions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"results\":{\"X08\":{\"status\":\"PASS\",\"expected\":\"chrome-extension 面が同一検体で diffPixelCount=832・領域=2 を返す\",\"actual\":{\"diffPixelCount\":832,\"matchRate\":90.97,\"regionCount\":2}}}},\"plugin\":{\"surface\":\"figma-plugin\",\"matchRate\":90.97,\"diffPixelsSha256\":\"881671c2f5cc8ef9ed1348762782d32c70d4feceab7810efe926848dcd95596f\",\"diffPngBase64\":\"iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAYAAADimHc4AAACDklEQVR4AeycwY7DIAwFac/9/y/NPXulCpK1ATOETqRIWSz8YEa+rfo+fVAC7+KDElAAir8UBSgAJgDHOwEKgAnA8U6AAmACcLwToACAwEKRTgAsQwEKgAnA8U6AAmACcHz/BLxepZBvefbTL+DZ98dPrwBYgQIUABOA4ydOAHzTReMVAItRgAJgAnC8E6AAmAAc7wQoACYAxzsBCoAJwPFOQLKAqL0CIkLJdQUkA47aKyAilFxXQDLgqL0CIkLJdQUkA47aKyAilFxXQDLgqH2/gPMshXyjGy5e7xew+AVXP96eAlanXp1PARUM4lMBBPUqUwEVDOJTAQT1KlMBFQzic3sBx3GUzLdX2vYCegFl71dANuGgvwICQNllBWQTDvoPFBAkWW4SUEATy7xFBcxj3UxSQBPLvEUFzGPdTFJAE8u8RQXMY91MUkATy7xFBcxj3UxSQBPLvEUFdLLu3X4VEP32T2+i+78IXAV8lf0jm4ACsgkH/RUQAMouKyCbcNBfAQGg7LICsgkH/RUQAMouXwVE/+uffaIf638V8GMA6Os+UwBNbWC+AgbCvNNKAXeoDdyjgIEw77RSwB1qA/coYCDMO622F/D5fErmewd6vWd7AfVlV/xWAGxFAQqACcDx/5gA+KSbxisAFqsABcAE4HgnQAEwATjeCVAATACOdwIUABOA452AQEB2+Q8AAP//CoOsigAAAAZJREFUAwDdvRdfUY2vmgAAAABJRU5ErkJggg==\",\"diffPngSha256\":\"bf8e760bc63ab259866199aa02cc1585409912065859c0f544ff354c9d9baa03\",\"expectedDiffPixelCount\":832,\"expectedRegions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"results\":{\"X08\":{\"status\":\"PASS\",\"expected\":\"figma-plugin 面が同一検体で diffPixelCount=832・領域=2 に対応する diff を描画する\",\"actual\":{\"matchRate\":90.97,\"diffPixelsSha256\":\"881671c2f5cc8ef9ed1348762782d32c70d4feceab7810efe926848dcd95596f\"}}}}},\"documentedDifferences\":[\"chrome-extension: pixelmatch を deps に持てないため YIQ 移植版 (pixel-diff-service.ts)。同一検体で同じ diffPixelCount/regions を返すことを上記で実証。\",\"desktop: clusterDiffRegions (独自 floodFill+>=10px) を使用。shared clusterDiffPixels と同規則で、region 数の一致を DOM 経由で確認。\",\"figma-plugin: 領域を UI に出さないため diff 画像画素の一致で等価性を確認。\"]}}",
+      "oracle": {
+        "kind": "source-pixels",
+        "description": "共通条件では同じ領域・差分規則。意図した機能差は明記"
+      },
+      "evidence": [
+        {
+          "path": "ledger/windows/round-2/X08/desktop/desktop-evidence.json",
+          "sha256": "e92e892c0be839ccd8ada45563579d6df785720c2051a392b8f2fcbba773c15a"
+        },
+        {
+          "path": "ledger/windows/round-2/X08/desktop/compare-evidence.json",
+          "sha256": "5df08c1a5e79e4adbe293b8eb8883e7f9fd0ff2cd1358ccc1259e745abf726f6"
+        },
+        {
+          "path": "ledger/windows/round-2/X08/desktop/X08-result.json",
+          "sha256": "62395d7c6c1c32463d4ec3352984109998f4821bf97293ad97dd4a1321a2d51c"
+        }
+      ]
+    },
+    {
+      "case": "X08",
+      "round": 2,
+      "platform": "windows",
+      "route": "chrome-extension",
+      "roundExecutionId": "round2",
+      "executedAt": "2026-10-09T03:11:49.972Z",
+      "productSha": "4e9145e5e051d4efe78a922723f7b3245005a05e",
+      "dirty": false,
+      "status": "PASS",
+      "newBugs": 0,
+      "observedKnownDefects": [],
+      "buildDigest": "4188f7fab773fdda8ab572ff5217d805115de526e91a4fb8fc84e5809b0ca336",
+      "environment": "windows",
+      "input": "同じ検体をMCP・desktop・拡張・pluginで比較",
+      "steps": "同一検体の横断比較 [drivers: app/mcp-server/script/x08/extension.mjs, app/mcp-server/script/x08/compare.mjs]",
+      "expected": "X08: chrome-extension 面が同一検体で diffPixelCount=832・領域=2 を返す | X08: 全4面で diffPixelCount=832・regions一致・diff画像画素一致",
+      "actual": "{\"extension:X08\":{\"diffPixelCount\":832,\"matchRate\":90.97,\"regionCount\":2},\"compare:X08\":{\"ok\":true,\"expected\":{\"expectedDiffPixelCount\":832,\"expectedRegions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"expectedRate\":90.97},\"checks\":[{\"name\":\"diffPixelCount==expected\",\"ok\":true,\"detail\":832},{\"name\":\"diffPixelCount==expected (ext)\",\"ok\":true,\"detail\":832},{\"name\":\"diffPixelCount==expected (desktop DOM)\",\"ok\":true,\"detail\":832},{\"name\":\"matchRate mcp\",\"ok\":true,\"detail\":{\"rate\":90.97,\"expectedRate\":90.97}},{\"name\":\"matchRate extension\",\"ok\":true,\"detail\":{\"rate\":90.97,\"expectedRate\":90.97}},{\"name\":\"matchRate plugin\",\"ok\":true,\"detail\":{\"rate\":90.97,\"expectedRate\":90.97}},{\"name\":\"regions mcp\",\"ok\":true,\"detail\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}]},{\"name\":\"regions ext\",\"ok\":true,\"detail\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}]},{\"name\":\"region count desktop DOM\",\"ok\":true,\"detail\":2},{\"name\":\"diff mask equality\",\"ok\":true,\"detail\":{\"mcp\":\"4d3da6cbe0a6ab9e15885a0b12ad445d400abcf7cc25c28076c4a7ec8caea8bd\",\"desktop\":\"4d3da6cbe0a6ab9e15885a0b12ad445d400abcf7cc25c28076c4a7ec8caea8bd\",\"plugin\":\"4d3da6cbe0a6ab9e15885a0b12ad445d400abcf7cc25c28076c4a7ec8caea8bd\"}},{\"name\":\"derived regions mcp\",\"ok\":true,\"detail\":[\"16,16,32,24\",\"4,64,8,8\"]},{\"name\":\"derived regions desktop\",\"ok\":true,\"detail\":[\"16,16,32,24\",\"4,64,8,8\"]},{\"name\":\"derived regions plugin\",\"ok\":true,\"detail\":[\"16,16,32,24\",\"4,64,8,8\"]}],\"surfaces\":{\"mcp\":{\"surface\":\"mcp\",\"diffPixelCount\":832,\"matchRate\":90.97,\"regions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"diffPixelsSha256\":\"7d0da44f7b88c359673cd0d3ede91c01a1dc9761646f4a4bcc62885594fe890b\",\"diffImagePath\":\"D:\\\\a\\\\designdiff\\\\designdiff\\\\docs\\\\evidence\\\\round2-windows\\\\x08\\\\figdiff-home\\\\results\\\\diff-cmp-44e34236-73e4-4e4c-b0f6-ba27247cc308.png\",\"expectedDiffPixelCount\":832,\"expectedRegions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"protocolErrors\":[],\"results\":{\"X08\":{\"status\":\"PASS\",\"expected\":\"mcp 面が同一検体で diffPixelCount=832・領域=2 を返す\",\"actual\":{\"diffPixelCount\":832,\"matchRate\":90.97,\"regionCount\":2,\"diffPixelsSha256\":\"7d0da44f7b88c359673cd0d3ede91c01a1dc9761646f4a4bcc62885594fe890b\",\"protocolErrors\":0}}}},\"desktop\":{\"surface\":\"desktop\",\"diffPixelsSha256\":\"881671c2f5cc8ef9ed1348762782d32c70d4feceab7810efe926848dcd95596f\",\"diffPngBase64\":\"iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAYAAADimHc4AAACDklEQVR4AeycwY7DIAwFac/9/y/NPXulCpK1ATOETqRIWSz8YEa+rfo+fVAC7+KDElAAir8UBSgAJgDHOwEKgAnA8U6AAmACcLwToACAwEKRTgAsQwEKgAnA8U6AAmACcHz/BLxepZBvefbTL+DZ98dPrwBYgQIUABOA4ydOAHzTReMVAItRgAJgAnC8E6AAmAAc7wQoACYAxzsBCoAJwPFOQLKAqL0CIkLJdQUkA47aKyAilFxXQDLgqL0CIkLJdQUkA47aKyAilFxXQDLgqH2/gPMshXyjGy5e7xew+AVXP96eAlanXp1PARUM4lMBBPUqUwEVDOJTAQT1KlMBFQzic3sBx3GUzLdX2vYCegFl71dANuGgvwICQNllBWQTDvoPFBAkWW4SUEATy7xFBcxj3UxSQBPLvEUFzGPdTFJAE8u8RQXMY91MUkATy7xFBcxj3UxSQBPLvEUFdLLu3X4VEP32T2+i+78IXAV8lf0jm4ACsgkH/RUQAMouKyCbcNBfAQGg7LICsgkH/RUQAMouXwVE/+uffaIf638V8GMA6Os+UwBNbWC+AgbCvNNKAXeoDdyjgIEw77RSwB1qA/coYCDMO622F/D5fErmewd6vWd7AfVlV/xWAGxFAQqACcDx/5gA+KSbxisAFqsABcAE4HgnQAEwATjeCVAATACOdwIUABOA452AQEB2+Q8AAP//CoOsigAAAAZJREFUAwDdvRdfUY2vmgAAAABJRU5ErkJggg==\",\"diffPngSha256\":\"bf8e760bc63ab259866199aa02cc1585409912065859c0f544ff354c9d9baa03\",\"diffPixelCountDom\":832,\"regionCountDom\":2,\"expectedDiffPixelCount\":832,\"expectedRegions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"pageErrors\":[],\"results\":{\"X08\":{\"status\":\"PASS\",\"expected\":\"desktop 面が同一検体で diffPixelCount=832・領域=2 を描画する\",\"actual\":{\"diffPixelCountDom\":832,\"regionCountDom\":2,\"diffPixelsSha256\":\"881671c2f5cc8ef9ed1348762782d32c70d4feceab7810efe926848dcd95596f\",\"pageErrors\":0}}}},\"extension\":{\"surface\":\"chrome-extension\",\"diffPixelCount\":832,\"matchRate\":90.97,\"regions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"expectedDiffPixelCount\":832,\"expectedRegions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"results\":{\"X08\":{\"status\":\"PASS\",\"expected\":\"chrome-extension 面が同一検体で diffPixelCount=832・領域=2 を返す\",\"actual\":{\"diffPixelCount\":832,\"matchRate\":90.97,\"regionCount\":2}}}},\"plugin\":{\"surface\":\"figma-plugin\",\"matchRate\":90.97,\"diffPixelsSha256\":\"881671c2f5cc8ef9ed1348762782d32c70d4feceab7810efe926848dcd95596f\",\"diffPngBase64\":\"iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAYAAADimHc4AAACDklEQVR4AeycwY7DIAwFac/9/y/NPXulCpK1ATOETqRIWSz8YEa+rfo+fVAC7+KDElAAir8UBSgAJgDHOwEKgAnA8U6AAmACcLwToACAwEKRTgAsQwEKgAnA8U6AAmACcHz/BLxepZBvefbTL+DZ98dPrwBYgQIUABOA4ydOAHzTReMVAItRgAJgAnC8E6AAmAAc7wQoACYAxzsBCoAJwPFOQLKAqL0CIkLJdQUkA47aKyAilFxXQDLgqL0CIkLJdQUkA47aKyAilFxXQDLgqH2/gPMshXyjGy5e7xew+AVXP96eAlanXp1PARUM4lMBBPUqUwEVDOJTAQT1KlMBFQzic3sBx3GUzLdX2vYCegFl71dANuGgvwICQNllBWQTDvoPFBAkWW4SUEATy7xFBcxj3UxSQBPLvEUFzGPdTFJAE8u8RQXMY91MUkATy7xFBcxj3UxSQBPLvEUFdLLu3X4VEP32T2+i+78IXAV8lf0jm4ACsgkH/RUQAMouKyCbcNBfAQGg7LICsgkH/RUQAMouXwVE/+uffaIf638V8GMA6Os+UwBNbWC+AgbCvNNKAXeoDdyjgIEw77RSwB1qA/coYCDMO622F/D5fErmewd6vWd7AfVlV/xWAGxFAQqACcDx/5gA+KSbxisAFqsABcAE4HgnQAEwATjeCVAATACOdwIUABOA452AQEB2+Q8AAP//CoOsigAAAAZJREFUAwDdvRdfUY2vmgAAAABJRU5ErkJggg==\",\"diffPngSha256\":\"bf8e760bc63ab259866199aa02cc1585409912065859c0f544ff354c9d9baa03\",\"expectedDiffPixelCount\":832,\"expectedRegions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"results\":{\"X08\":{\"status\":\"PASS\",\"expected\":\"figma-plugin 面が同一検体で diffPixelCount=832・領域=2 に対応する diff を描画する\",\"actual\":{\"matchRate\":90.97,\"diffPixelsSha256\":\"881671c2f5cc8ef9ed1348762782d32c70d4feceab7810efe926848dcd95596f\"}}}}},\"documentedDifferences\":[\"chrome-extension: pixelmatch を deps に持てないため YIQ 移植版 (pixel-diff-service.ts)。同一検体で同じ diffPixelCount/regions を返すことを上記で実証。\",\"desktop: clusterDiffRegions (独自 floodFill+>=10px) を使用。shared clusterDiffPixels と同規則で、region 数の一致を DOM 経由で確認。\",\"figma-plugin: 領域を UI に出さないため diff 画像画素の一致で等価性を確認。\"]}}",
+      "oracle": {
+        "kind": "source-pixels",
+        "description": "共通条件では同じ領域・差分規則。意図した機能差は明記"
+      },
+      "evidence": [
+        {
+          "path": "ledger/windows/round-2/X08/chrome-extension/extension-evidence.json",
+          "sha256": "d6e5fae7e630162b330c673058dc777421759a8482a7bea2c862d1a83304a472"
+        },
+        {
+          "path": "ledger/windows/round-2/X08/chrome-extension/compare-evidence.json",
+          "sha256": "5df08c1a5e79e4adbe293b8eb8883e7f9fd0ff2cd1358ccc1259e745abf726f6"
+        },
+        {
+          "path": "ledger/windows/round-2/X08/chrome-extension/X08-result.json",
+          "sha256": "a994522026d6452330559904bb6d0d9ecf700116d1e33f2fb008702a90438cf4"
+        }
+      ]
+    },
+    {
+      "case": "X08",
+      "round": 2,
+      "platform": "windows",
+      "route": "figma-plugin",
+      "roundExecutionId": "round2",
+      "executedAt": "2026-10-09T03:11:53.398Z",
+      "productSha": "4e9145e5e051d4efe78a922723f7b3245005a05e",
+      "dirty": false,
+      "status": "PASS",
+      "newBugs": 0,
+      "observedKnownDefects": [],
+      "buildDigest": "6e21831c5e1bcf98f07cad1e20e75414d01231d2a510bbcc020b223378edf920",
+      "environment": "windows",
+      "input": "同じ検体をMCP・desktop・拡張・pluginで比較",
+      "steps": "同一検体の横断比較 [drivers: app/mcp-server/script/x08/plugin.mjs, app/mcp-server/script/x08/compare.mjs]",
+      "expected": "X08: figma-plugin 面が同一検体で diffPixelCount=832・領域=2 に対応する diff を描画する | X08: 全4面で diffPixelCount=832・regions一致・diff画像画素一致",
+      "actual": "{\"plugin:X08\":{\"matchRate\":90.97,\"diffPixelsSha256\":\"881671c2f5cc8ef9ed1348762782d32c70d4feceab7810efe926848dcd95596f\"},\"compare:X08\":{\"ok\":true,\"expected\":{\"expectedDiffPixelCount\":832,\"expectedRegions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"expectedRate\":90.97},\"checks\":[{\"name\":\"diffPixelCount==expected\",\"ok\":true,\"detail\":832},{\"name\":\"diffPixelCount==expected (ext)\",\"ok\":true,\"detail\":832},{\"name\":\"diffPixelCount==expected (desktop DOM)\",\"ok\":true,\"detail\":832},{\"name\":\"matchRate mcp\",\"ok\":true,\"detail\":{\"rate\":90.97,\"expectedRate\":90.97}},{\"name\":\"matchRate extension\",\"ok\":true,\"detail\":{\"rate\":90.97,\"expectedRate\":90.97}},{\"name\":\"matchRate plugin\",\"ok\":true,\"detail\":{\"rate\":90.97,\"expectedRate\":90.97}},{\"name\":\"regions mcp\",\"ok\":true,\"detail\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}]},{\"name\":\"regions ext\",\"ok\":true,\"detail\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}]},{\"name\":\"region count desktop DOM\",\"ok\":true,\"detail\":2},{\"name\":\"diff mask equality\",\"ok\":true,\"detail\":{\"mcp\":\"4d3da6cbe0a6ab9e15885a0b12ad445d400abcf7cc25c28076c4a7ec8caea8bd\",\"desktop\":\"4d3da6cbe0a6ab9e15885a0b12ad445d400abcf7cc25c28076c4a7ec8caea8bd\",\"plugin\":\"4d3da6cbe0a6ab9e15885a0b12ad445d400abcf7cc25c28076c4a7ec8caea8bd\"}},{\"name\":\"derived regions mcp\",\"ok\":true,\"detail\":[\"16,16,32,24\",\"4,64,8,8\"]},{\"name\":\"derived regions desktop\",\"ok\":true,\"detail\":[\"16,16,32,24\",\"4,64,8,8\"]},{\"name\":\"derived regions plugin\",\"ok\":true,\"detail\":[\"16,16,32,24\",\"4,64,8,8\"]}],\"surfaces\":{\"mcp\":{\"surface\":\"mcp\",\"diffPixelCount\":832,\"matchRate\":90.97,\"regions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"diffPixelsSha256\":\"7d0da44f7b88c359673cd0d3ede91c01a1dc9761646f4a4bcc62885594fe890b\",\"diffImagePath\":\"D:\\\\a\\\\designdiff\\\\designdiff\\\\docs\\\\evidence\\\\round2-windows\\\\x08\\\\figdiff-home\\\\results\\\\diff-cmp-44e34236-73e4-4e4c-b0f6-ba27247cc308.png\",\"expectedDiffPixelCount\":832,\"expectedRegions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"protocolErrors\":[],\"results\":{\"X08\":{\"status\":\"PASS\",\"expected\":\"mcp 面が同一検体で diffPixelCount=832・領域=2 を返す\",\"actual\":{\"diffPixelCount\":832,\"matchRate\":90.97,\"regionCount\":2,\"diffPixelsSha256\":\"7d0da44f7b88c359673cd0d3ede91c01a1dc9761646f4a4bcc62885594fe890b\",\"protocolErrors\":0}}}},\"desktop\":{\"surface\":\"desktop\",\"diffPixelsSha256\":\"881671c2f5cc8ef9ed1348762782d32c70d4feceab7810efe926848dcd95596f\",\"diffPngBase64\":\"iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAYAAADimHc4AAACDklEQVR4AeycwY7DIAwFac/9/y/NPXulCpK1ATOETqRIWSz8YEa+rfo+fVAC7+KDElAAir8UBSgAJgDHOwEKgAnA8U6AAmACcLwToACAwEKRTgAsQwEKgAnA8U6AAmACcHz/BLxepZBvefbTL+DZ98dPrwBYgQIUABOA4ydOAHzTReMVAItRgAJgAnC8E6AAmAAc7wQoACYAxzsBCoAJwPFOQLKAqL0CIkLJdQUkA47aKyAilFxXQDLgqL0CIkLJdQUkA47aKyAilFxXQDLgqH2/gPMshXyjGy5e7xew+AVXP96eAlanXp1PARUM4lMBBPUqUwEVDOJTAQT1KlMBFQzic3sBx3GUzLdX2vYCegFl71dANuGgvwICQNllBWQTDvoPFBAkWW4SUEATy7xFBcxj3UxSQBPLvEUFzGPdTFJAE8u8RQXMY91MUkATy7xFBcxj3UxSQBPLvEUFdLLu3X4VEP32T2+i+78IXAV8lf0jm4ACsgkH/RUQAMouKyCbcNBfAQGg7LICsgkH/RUQAMouXwVE/+uffaIf638V8GMA6Os+UwBNbWC+AgbCvNNKAXeoDdyjgIEw77RSwB1qA/coYCDMO622F/D5fErmewd6vWd7AfVlV/xWAGxFAQqACcDx/5gA+KSbxisAFqsABcAE4HgnQAEwATjeCVAATACOdwIUABOA452AQEB2+Q8AAP//CoOsigAAAAZJREFUAwDdvRdfUY2vmgAAAABJRU5ErkJggg==\",\"diffPngSha256\":\"bf8e760bc63ab259866199aa02cc1585409912065859c0f544ff354c9d9baa03\",\"diffPixelCountDom\":832,\"regionCountDom\":2,\"expectedDiffPixelCount\":832,\"expectedRegions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"pageErrors\":[],\"results\":{\"X08\":{\"status\":\"PASS\",\"expected\":\"desktop 面が同一検体で diffPixelCount=832・領域=2 を描画する\",\"actual\":{\"diffPixelCountDom\":832,\"regionCountDom\":2,\"diffPixelsSha256\":\"881671c2f5cc8ef9ed1348762782d32c70d4feceab7810efe926848dcd95596f\",\"pageErrors\":0}}}},\"extension\":{\"surface\":\"chrome-extension\",\"diffPixelCount\":832,\"matchRate\":90.97,\"regions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"expectedDiffPixelCount\":832,\"expectedRegions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"results\":{\"X08\":{\"status\":\"PASS\",\"expected\":\"chrome-extension 面が同一検体で diffPixelCount=832・領域=2 を返す\",\"actual\":{\"diffPixelCount\":832,\"matchRate\":90.97,\"regionCount\":2}}}},\"plugin\":{\"surface\":\"figma-plugin\",\"matchRate\":90.97,\"diffPixelsSha256\":\"881671c2f5cc8ef9ed1348762782d32c70d4feceab7810efe926848dcd95596f\",\"diffPngBase64\":\"iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAYAAADimHc4AAACDklEQVR4AeycwY7DIAwFac/9/y/NPXulCpK1ATOETqRIWSz8YEa+rfo+fVAC7+KDElAAir8UBSgAJgDHOwEKgAnA8U6AAmACcLwToACAwEKRTgAsQwEKgAnA8U6AAmACcHz/BLxepZBvefbTL+DZ98dPrwBYgQIUABOA4ydOAHzTReMVAItRgAJgAnC8E6AAmAAc7wQoACYAxzsBCoAJwPFOQLKAqL0CIkLJdQUkA47aKyAilFxXQDLgqL0CIkLJdQUkA47aKyAilFxXQDLgqH2/gPMshXyjGy5e7xew+AVXP96eAlanXp1PARUM4lMBBPUqUwEVDOJTAQT1KlMBFQzic3sBx3GUzLdX2vYCegFl71dANuGgvwICQNllBWQTDvoPFBAkWW4SUEATy7xFBcxj3UxSQBPLvEUFzGPdTFJAE8u8RQXMY91MUkATy7xFBcxj3UxSQBPLvEUFdLLu3X4VEP32T2+i+78IXAV8lf0jm4ACsgkH/RUQAMouKyCbcNBfAQGg7LICsgkH/RUQAMouXwVE/+uffaIf638V8GMA6Os+UwBNbWC+AgbCvNNKAXeoDdyjgIEw77RSwB1qA/coYCDMO622F/D5fErmewd6vWd7AfVlV/xWAGxFAQqACcDx/5gA+KSbxisAFqsABcAE4HgnQAEwATjeCVAATACOdwIUABOA452AQEB2+Q8AAP//CoOsigAAAAZJREFUAwDdvRdfUY2vmgAAAABJRU5ErkJggg==\",\"diffPngSha256\":\"bf8e760bc63ab259866199aa02cc1585409912065859c0f544ff354c9d9baa03\",\"expectedDiffPixelCount\":832,\"expectedRegions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"results\":{\"X08\":{\"status\":\"PASS\",\"expected\":\"figma-plugin 面が同一検体で diffPixelCount=832・領域=2 に対応する diff を描画する\",\"actual\":{\"matchRate\":90.97,\"diffPixelsSha256\":\"881671c2f5cc8ef9ed1348762782d32c70d4feceab7810efe926848dcd95596f\"}}}}},\"documentedDifferences\":[\"chrome-extension: pixelmatch を deps に持てないため YIQ 移植版 (pixel-diff-service.ts)。同一検体で同じ diffPixelCount/regions を返すことを上記で実証。\",\"desktop: clusterDiffRegions (独自 floodFill+>=10px) を使用。shared clusterDiffPixels と同規則で、region 数の一致を DOM 経由で確認。\",\"figma-plugin: 領域を UI に出さないため diff 画像画素の一致で等価性を確認。\"]}}",
+      "oracle": {
+        "kind": "source-pixels",
+        "description": "共通条件では同じ領域・差分規則。意図した機能差は明記"
+      },
+      "evidence": [
+        {
+          "path": "ledger/windows/round-2/X08/figma-plugin/plugin-evidence.json",
+          "sha256": "830a9aee771a61940c272c9bd7133780b6083281343ed12e53687217250fbe48"
+        },
+        {
+          "path": "ledger/windows/round-2/X08/figma-plugin/compare-evidence.json",
+          "sha256": "5df08c1a5e79e4adbe293b8eb8883e7f9fd0ff2cd1358ccc1259e745abf726f6"
+        },
+        {
+          "path": "ledger/windows/round-2/X08/figma-plugin/X08-result.json",
+          "sha256": "26b07080b38820197fd5f80b70dad20e28d221821ed0f00e833881c9dc24bbf7"
+        }
+      ]
+    },
+    {
+      "case": "X09",
+      "round": 2,
+      "platform": "windows",
+      "route": "mcp",
+      "roundExecutionId": "round2",
+      "executedAt": "2026-09-24T13:35:30.220Z",
+      "productSha": "4e9145e5e051d4efe78a922723f7b3245005a05e",
+      "dirty": false,
+      "status": "PASS",
+      "newBugs": 0,
+      "observedKnownDefects": [],
+      "buildDigest": "4ea11b2a6c8e1db667767e9acfbc66d0d153bd2bf3373a3bec52b654e26d8481",
+      "environment": "windows",
+      "input": "保存形式の旧データ・MCPとdesktopの相互読込み",
+      "steps": "旧データ読込み・相互作成読込み [drivers: app/mcp-server/script/stdio-campaign-verification.mjs, app/mcp-server/script/stdio-campaign-verification2.mjs]",
+      "expected": "X09_legacy_data: legacy record readable, secret not leaked | X09_mcp_desktop_interop: MCP-written project readable as desktop shape; desktop-seeded project readable by MCP",
+      "actual": "{\"stdio-campaign-verification:X09_legacy_data\":{\"listed\":true,\"secretPresent\":false},\"stdio-campaign-verification2:X09_mcp_desktop_interop\":{\"mcpCreatedId\":\"1790257026203-cc373ccd\",\"desktopSeedListed\":true,\"cropOnDesktopProject\":{\"success\":true,\"entry\":{\"frameName\":\"fixture-page\",\"region\":{\"x\":10,\"y\":20,\"width\":100,\"height\":80},\"updatedAt\":\"2026-09-24T13:37:06.221Z\",\"capturedWidth\":390,\"capturedHeight\":844}}}}",
+      "oracle": {
+        "kind": "schema-contract",
+        "description": "互換性を維持し、旧データを黙って削除しない"
+      },
+      "evidence": [
+        {
+          "path": "ledger/windows/round-2/X09/mcp/stdio-campaign-verification-evidence.json",
+          "sha256": "3107959f0bbf42810e846092e9cdce69e68d76ef1920c1c086eec0e5b12576be"
+        },
+        {
+          "path": "ledger/windows/round-2/X09/mcp/stdio-campaign-verification2-evidence.json",
+          "sha256": "3ea8a335e15962caa43e0f22c945a9ab8f6380eee387a4a273829bd0a7a32c04"
+        },
+        {
+          "path": "ledger/windows/round-2/X09/mcp/X09-result.json",
+          "sha256": "28e6003f851f4b47863b2473047f4b3ff9bf15fa73c46c64d84ec03d00954323"
+        }
+      ]
+    },
+    {
+      "case": "X09",
+      "round": 2,
+      "platform": "windows",
+      "route": "desktop",
+      "roundExecutionId": "round2",
+      "executedAt": "2026-09-24T13:38:53.390Z",
+      "productSha": "4e9145e5e051d4efe78a922723f7b3245005a05e",
+      "dirty": false,
+      "status": "PASS",
+      "newBugs": 0,
+      "observedKnownDefects": [],
+      "buildDigest": "3ce3c518e2ae4693fdca6c43bb1e24d124ba554c21e4968a31d5482d579e9b2e",
+      "environment": "windows",
+      "input": "保存形式の旧データ・MCPとdesktopの相互読込み",
+      "steps": "旧データ読込み・相互作成読込み [drivers: app/desktop/e2e/desktop-d-cases.mjs]",
+      "expected": "互換性を維持し、旧データを黙って削除しない",
+      "actual": "{\"desktop-d-cases:X09\":{\"direction\":\"mcp-write → desktop-read\",\"project\":\"mcp-made-project\",\"listed\":true,\"opened\":true}}",
+      "oracle": {
+        "kind": "schema-contract",
+        "description": "互換性を維持し、旧データを黙って削除しない"
+      },
+      "evidence": [
+        {
+          "path": "ledger/windows/round-2/X09/desktop/desktop-d-cases-evidence.json",
+          "sha256": "782a1414f8566e196fb3133983a27f9dfc6f22fb8ee63d00474ec3a85dfb527d"
+        },
+        {
+          "path": "ledger/windows/round-2/X09/desktop/desktop-d-cases-evidence.json",
+          "sha256": "782a1414f8566e196fb3133983a27f9dfc6f22fb8ee63d00474ec3a85dfb527d"
+        },
+        {
+          "path": "ledger/windows/round-2/X09/desktop/X09-result.json",
+          "sha256": "a921b0072dea5c35a7d2432af9056238559f69262a90a1bb0ab3106db4e1702e"
+        }
+      ]
     }
   ],
   "skipped": [
@@ -2017,62 +2231,6 @@
       "route": "desktop",
       "round": 2,
       "reason": "driver evidence missing: app/desktop/e2e/native-ignore-region.mjs"
-    },
-    {
-      "case": "X03",
-      "platform": "windows",
-      "route": "figma-plugin",
-      "round": 2,
-      "reason": "driver evidence missing: app/figma-plugin/e2e/real-iframe-host.mjs"
-    },
-    {
-      "case": "X04",
-      "platform": "windows",
-      "route": "figma-plugin",
-      "round": 2,
-      "reason": "driver evidence missing: app/figma-plugin/e2e/real-iframe-host.mjs"
-    },
-    {
-      "case": "X05",
-      "platform": "windows",
-      "route": "android",
-      "round": 2,
-      "reason": "driver evidence missing: app/mcp-server/script/stdio-android-verification.mjs"
-    },
-    {
-      "case": "X07",
-      "platform": "windows",
-      "route": "android",
-      "round": 2,
-      "reason": "driver evidence missing: app/mcp-server/script/stdio-android-verification.mjs"
-    },
-    {
-      "case": "X08",
-      "platform": "windows",
-      "route": "mcp",
-      "round": 2,
-      "reason": "driver evidence missing: app/mcp-server/script/x08/compare.mjs"
-    },
-    {
-      "case": "X08",
-      "platform": "windows",
-      "route": "desktop",
-      "round": 2,
-      "reason": "driver evidence missing: app/mcp-server/script/x08/compare.mjs"
-    },
-    {
-      "case": "X08",
-      "platform": "windows",
-      "route": "chrome-extension",
-      "round": 2,
-      "reason": "driver evidence missing: app/mcp-server/script/x08/compare.mjs"
-    },
-    {
-      "case": "X08",
-      "platform": "windows",
-      "route": "figma-plugin",
-      "round": 2,
-      "reason": "driver evidence missing: app/mcp-server/script/x08/plugin.mjs; app/mcp-server/script/x08/compare.mjs"
     }
   ]
 }
