@@ -60,6 +60,8 @@ jobs:
 
       - name: Run windows legs round 1
         shell: bash
+        env:
+          ELECTRON_ENABLE_LOGGING: "1"
         run: node script/run-campaign-round.mjs --manifest docs/evidence/runs-windows-r1-remaining.json 2>&1 | tee "docs/evidence/.staging/round-1/runner.log"
 
       - name: Collect produced evidence into artifact dir
@@ -118,6 +120,8 @@ jobs:
 
       - name: Run windows legs round 2
         shell: bash
+        env:
+          ELECTRON_ENABLE_LOGGING: "1"
         run: node script/run-campaign-round.mjs --manifest docs/evidence/runs-windows-r2-remaining.json 2>&1 | tee "docs/evidence/.staging/round-2/runner.log"
 
       - name: Collect produced evidence into artifact dir

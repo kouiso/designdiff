@@ -67,6 +67,10 @@ let browser;
 try {
   browser = await chromium.launch();
   const page = await browser.newPage();
+  // iframe 内で握り潰される例外を拾うため console/pageerror を証跡に残す
+  const consoleLog = [];
+  page.on("console", (msg) => consoleLog.push(`[${msg.type()}] ${msg.text()}`));
+  page.on("pageerror", (err) => consoleLog.push(`[pageerror] ${String(err)}`));
   await page.goto(`http://127.0.0.1:${port}/host.html`);
   const frame = page.frameLocator("#plugin");
   await frame.locator(".tab").first().waitFor();
@@ -74,7 +78,16 @@ try {
   const send = (msg) => page.evaluate((m) => window.__send(m), msg);
   const waitForRequest = async (type) => {
     const before = await page.evaluate(() => window.__received.length);
-    await page.waitForFunction((count) => window.__received.length > count, before);
+    try {
+      await page.waitForFunction((count) => window.__received.length > count, before);
+    } catch (error) {
+      const received = await page.evaluate(() => window.__received);
+      await writeFile(
+        join(evidenceDir, "x08-plugin-diagnostics.json"),
+        JSON.stringify({ waitedFor: type, received, consoleLog }, null, 2),
+      );
+      throw error;
+    }
     const message = await page.evaluate(() => window.__received.at(-1));
     if (message?.type !== type) throw new Error(`expected ${type}, got ${message?.type}`);
     return message;
