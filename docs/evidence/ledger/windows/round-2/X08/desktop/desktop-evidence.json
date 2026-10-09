@@ -1,0 +1,36 @@
+{
+  "surface": "desktop",
+  "diffPixelsSha256": "881671c2f5cc8ef9ed1348762782d32c70d4feceab7810efe926848dcd95596f",
+  "diffPngBase64": "iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAYAAADimHc4AAACDklEQVR4AeycwY7DIAwFac/9/y/NPXulCpK1ATOETqRIWSz8YEa+rfo+fVAC7+KDElAAir8UBSgAJgDHOwEKgAnA8U6AAmACcLwToACAwEKRTgAsQwEKgAnA8U6AAmACcHz/BLxepZBvefbTL+DZ98dPrwBYgQIUABOA4ydOAHzTReMVAItRgAJgAnC8E6AAmAAc7wQoACYAxzsBCoAJwPFOQLKAqL0CIkLJdQUkA47aKyAilFxXQDLgqL0CIkLJdQUkA47aKyAilFxXQDLgqH2/gPMshXyjGy5e7xew+AVXP96eAlanXp1PARUM4lMBBPUqUwEVDOJTAQT1KlMBFQzic3sBx3GUzLdX2vYCegFl71dANuGgvwICQNllBWQTDvoPFBAkWW4SUEATy7xFBcxj3UxSQBPLvEUFzGPdTFJAE8u8RQXMY91MUkATy7xFBcxj3UxSQBPLvEUFdLLu3X4VEP32T2+i+78IXAV8lf0jm4ACsgkH/RUQAMouKyCbcNBfAQGg7LICsgkH/RUQAMouXwVE/+uffaIf638V8GMA6Os+UwBNbWC+AgbCvNNKAXeoDdyjgIEw77RSwB1qA/coYCDMO622F/D5fErmewd6vWd7AfVlV/xWAGxFAQqACcDx/5gA+KSbxisAFqsABcAE4HgnQAEwATjeCVAATACOdwIUABOA452AQEB2+Q8AAP//CoOsigAAAAZJREFUAwDdvRdfUY2vmgAAAABJRU5ErkJggg==",
+  "diffPngSha256": "bf8e760bc63ab259866199aa02cc1585409912065859c0f544ff354c9d9baa03",
+  "diffPixelCountDom": 832,
+  "regionCountDom": 2,
+  "expectedDiffPixelCount": 832,
+  "expectedRegions": [
+    {
+      "x": 16,
+      "y": 16,
+      "width": 32,
+      "height": 24
+    },
+    {
+      "x": 4,
+      "y": 64,
+      "width": 8,
+      "height": 8
+    }
+  ],
+  "pageErrors": [],
+  "results": {
+    "X08": {
+      "status": "PASS",
+      "expected": "desktop 面が同一検体で diffPixelCount=832・領域=2 を描画する",
+      "actual": {
+        "diffPixelCountDom": 832,
+        "regionCountDom": 2,
+        "diffPixelsSha256": "881671c2f5cc8ef9ed1348762782d32c70d4feceab7810efe926848dcd95596f",
+        "pageErrors": 0
+      }
+    }
+  }
+}

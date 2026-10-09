@@ -1,16 +1,11 @@
 {
   "schemaVersion": 1,
-  "startedAt": "2026-09-24T13:40:16.329Z",
-  "completedAt": "2026-09-24T13:40:20.833Z",
+  "startedAt": "2026-10-09T04:59:30.416Z",
+  "completedAt": "2026-10-09T04:59:37.228Z",
   "revision": "4e9145e5e051d4efe78a922723f7b3245005a05e",
   "dirtyState": [
-    "A  docs/evidence/runs-windows-r1.json",
-    "M  docs/evidence/runs-windows-r2.json",
-    "?? docs/evidence/mcp-stdio-campaign-verification/",
-    "?? docs/evidence/round1-windows/",
-    "?? docs/evidence/round2-windows/",
-    "?? docs/evidence/runs-windows-r1.attempts.json",
-    "?? docs/evidence/runs-windows-r1.manifest.json"
+    "?? docs/evidence/.staging/",
+    "?? docs/evidence/runs-windows-r2-remaining.json"
   ],
   "command": "FIGDIFF_FIGMA_NODE_FIX_EVIDENCE=<private-evidence> xvfb-run -a node app/desktop/e2e/native-figma-node-fix.mjs",
   "build": {
@@ -1771,7 +1766,7 @@
   "buildUnchanged": true,
   "driver": {
     "path": "app/desktop/e2e/native-figma-node-fix.mjs",
-    "sha256": "266fd392b02d8fbafa9f9b4ece50643369539f6053d4e7e8ffc5e02699af9cbd"
+    "sha256": "f11c7074112f3563fa23236877818b6ed14561572a467bbff27ecea1f131224d"
   },
   "mockedBoundary": {
     "service": "Figma HTTP only",
@@ -1864,22 +1859,22 @@
     {
       "path": "native-figma-node-fix.json",
       "size": 2112,
-      "sha256": "dfde96be8dae8b8151a3cb766c60dd291ebce80345e2234db36815056503742f"
+      "sha256": "686b2bbe405dcf2a14a0c6e2b9fab47ec6cfda4495e8103e83ee8bbe2aa570bb"
     },
     {
       "path": "native-ipc.jsonl",
       "size": 4147,
-      "sha256": "dcecc58ac90d3d2b2cefcf2aaec6f8481b5056a78a23c42745955a15454b2f38"
+      "sha256": "5e86808559d7924f14bad0c09087e43525337cae49edddd0948b1eaf5afcb428"
     },
     {
       "path": "target-improved-grid-regressed.png",
-      "size": 103019,
-      "sha256": "cec5224fa4fc668459d85753dca912389e48f840544e44436fadad36c99ebd62"
+      "size": 67694,
+      "sha256": "69dfc4237ebd20ddcc7861ea21b9d0fbea8fe7bff7534d64d5a9c2c19367b2e1"
     },
     {
       "path": "version-pinned-masked-cropped-before.png",
-      "size": 113614,
-      "sha256": "6ffe2e42515c179a1c8ead2ef48e07c7135c340c7246ebb606b5e66b08eb6082"
+      "size": 61760,
+      "sha256": "a9fc142cc6efd3fe616458dd04116dd7955d49cbdb62bd36da7f947467a52522"
     }
   ]
 }

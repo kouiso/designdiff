@@ -1,12 +1,11 @@
 {
   "schemaVersion": 1,
-  "startedAt": "2026-09-24T13:15:53.057Z",
-  "completedAt": "2026-09-24T13:15:58.206Z",
+  "startedAt": "2026-10-09T05:00:20.313Z",
+  "completedAt": "2026-10-09T05:00:26.089Z",
   "revision": "4e9145e5e051d4efe78a922723f7b3245005a05e",
   "dirtyState": [
-    "A  docs/evidence/runs-windows-r1.json",
-    "?? docs/evidence/mcp-stdio-campaign-verification/",
-    "?? docs/evidence/round1-windows/"
+    "?? docs/evidence/.staging/",
+    "?? docs/evidence/runs-windows-r1-remaining.json"
   ],
   "command": "FIGDIFF_FIGMA_NODE_FIX_EVIDENCE=<private-evidence> xvfb-run -a node app/desktop/e2e/native-figma-node-fix.mjs",
   "build": {
@@ -1767,7 +1766,7 @@
   "buildUnchanged": true,
   "driver": {
     "path": "app/desktop/e2e/native-figma-node-fix.mjs",
-    "sha256": "266fd392b02d8fbafa9f9b4ece50643369539f6053d4e7e8ffc5e02699af9cbd"
+    "sha256": "f11c7074112f3563fa23236877818b6ed14561572a467bbff27ecea1f131224d"
   },
   "mockedBoundary": {
     "service": "Figma HTTP only",
@@ -1860,22 +1859,22 @@
     {
       "path": "native-figma-node-fix.json",
       "size": 2112,
-      "sha256": "194148b92f8b6f4240b3d27b1ae45dc492f36ba06184f05824014f6d054f414d"
+      "sha256": "5f5fb31ff33bef980762c0f980c44ba6f27f4501cebd9fdbfd6c5b2b9c10eed0"
     },
     {
       "path": "native-ipc.jsonl",
       "size": 4147,
-      "sha256": "dcecc58ac90d3d2b2cefcf2aaec6f8481b5056a78a23c42745955a15454b2f38"
+      "sha256": "5e86808559d7924f14bad0c09087e43525337cae49edddd0948b1eaf5afcb428"
     },
     {
       "path": "target-improved-grid-regressed.png",
-      "size": 102734,
-      "sha256": "ce3d62a37ea3226cc5d9f1db60b966effbf20f9ae0d94fd64957fb9ef04bb52d"
+      "size": 67694,
+      "sha256": "59dcb7f2fadfb141d77aca4daaa037f809cc8f7ccc6f621bd9ff140193e491b3"
     },
     {
       "path": "version-pinned-masked-cropped-before.png",
-      "size": 113485,
-      "sha256": "c9b0d66edba8226e05a1a1dd17d4d1d6a7513ea078e88ed6ab16d428a5be5faf"
+      "size": 61560,
+      "sha256": "e1f08c3977c0cede9a46a6e6ca256c7d005f3adf625ffebe2d89f5899b8f8135"
     }
   ]
 }
