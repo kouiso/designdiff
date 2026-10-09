@@ -24,8 +24,10 @@ const PIXELMATCH_MOCK_INSPECTION_FILES = [
 ];
 // no-restricted-syntax は後ろのブロックが配列ごと上書きするため、同ルールを持つ
 // ブロックすべてにこの selector を入れる。
+// `pixelmatch` のようなテンプレートリテラル指定も同じモジュールを読むので一緒に塞ぐ。
 const PIXELMATCH_DYNAMIC_IMPORT = {
-  selector: "ImportExpression[source.value='pixelmatch']",
+  selector:
+    "ImportExpression[source.value='pixelmatch'], ImportExpression[source.quasis.0.value.cooked='pixelmatch']",
   message: PIXELMATCH_MESSAGE,
 };
 const DESKTOP_PROPS_SELECTORS = [
@@ -417,7 +419,8 @@ export default [
         "error",
         PIXELMATCH_DYNAMIC_IMPORT,
         {
-          selector: "CallExpression[callee.name='require'][arguments.0.value='pixelmatch']",
+          selector:
+            "CallExpression[callee.name='require'][arguments.0.value='pixelmatch'], CallExpression[callee.name='require'][arguments.0.quasis.0.value.cooked='pixelmatch']",
           message: PIXELMATCH_MESSAGE,
         },
       ],
