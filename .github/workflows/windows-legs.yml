@@ -81,7 +81,7 @@ jobs:
           p='app/desktop/e2e/native-figma-node-fix.mjs'
           t=open(p,encoding='utf-8').read()
           needle='let canvasBox = await cropCanvas.boundingBox();'
-          t=t.replace(needle,'await cropCanvas.scrollIntoViewIfNeeded();\n  '+needle,1)
+          t=t.replace(needle,'await cropCanvas.evaluate(el=>el.scrollIntoView({block:"center"}));\n  '+needle,1)
           open(p,'w',encoding='utf-8').write(t)
           PY
           git update-index --skip-worktree app/desktop/e2e/native-figma-node-fix.mjs
@@ -103,50 +103,47 @@ jobs:
         run: |
           # admin トークンの Node/bash は SeBackupPrivilege の backup-intent
           # open で deny ACE を素通りする (実測)。deny を効かせるには
-          # 非特権実行が必須。NETWORK SERVICE は権限剥奪済みでパスワード
-          # 不要 (probe で DENIED 確認済み)。Electron は session 0 で
-          # 不可視起動する想定。
-          evi="$PWD/docs/evidence/round1-windows/native-ignore-region"
+          # 非特権実行が必須。NETWORK SERVICE ならパスワード不要で
+          # schtasks 経由の session 0 実行が可能 (DENIED 確認済み)。
+          evi="$PWD/docs/evidence/round2-windows/native-ignore-region"
           mkdir -p "$evi"
           repowin="$(cygpath -w "$PWD")"
           nodeexe="$(cygpath -w "$(node -p process.execPath)")"
           nodedir="$(dirname "$nodeexe")"
           pwcache="$(cygpath -w "$LOCALAPPDATA/ms-playwright")"
+          lad="$(cygpath -w "$LOCALAPPDATA")"
+          ad="$(cygpath -w "$APPDATA")"
+          up="$(cygpath -w "$USERPROFILE")"
           eviwin="$(cygpath -w "$evi")"
           cat > /tmp/ir-run.ps1 <<EOF
-          \$ErrorActionPreference='Continue'
           icacls "$repowin" /grant "NETWORK SERVICE:(OI)(CI)(RX)" /T | Out-Null
           icacls "$nodedir" /grant "NETWORK SERVICE:(OI)(CI)(RX)" /T | Out-Null
           icacls "$pwcache" /grant "NETWORK SERVICE:(OI)(CI)(RX)" /T | Out-Null
           icacls "$eviwin" /grant "NETWORK SERVICE:(OI)(CI)(M)" /T | Out-Null
-          \$cmdfile = "C:\Windows\Temp\ir-run.cmd"
-          Set-Content -Path \$cmdfile -Value "@echo on`r`ncd /d `"$repowin`"`r`nset FIGDIFF_IGNORE_EVIDENCE=$eviwin`r`n`"$nodeexe`" app\desktop\e2e\native-ignore-region.mjs 1>C:\Windows\Temp\ir-run.log 2>&1`r`necho %ERRORLEVEL% > C:\Windows\Temp\ir-run.exit"
-          schtasks /create /tn ir-run /sc once /st 00:00 /ru "NT AUTHORITY\NETWORK SERVICE" /f /tr "cmd /c \$cmdfile"
+          Set-Content -Path C:\Windows\Temp\ir-run.cmd -Value "@echo on`r`ncd /d `"$repowin`"`r`nset FIGDIFF_IGNORE_EVIDENCE=$eviwin`r`nset USERPROFILE=$up`r`nset LOCALAPPDATA=$lad`r`nset APPDATA=$ad`r`n`"$nodeexe`" app\desktop\e2e\native-ignore-region.mjs 1>C:\Windows\Temp\ir-run.log 2>&1`r`necho %ERRORLEVEL% > C:\Windows\Temp\ir-run.exit"
+          schtasks /create /tn ir-run /sc once /st 00:00 /ru "NT AUTHORITY\NETWORK SERVICE" /f /tr "cmd /c C:\Windows\Temp\ir-run.cmd"
           schtasks /run /tn ir-run
-          for (\$i=0; \$i -lt 120; \$i++) { if (Test-Path C:\Windows\Temp\ir-run.exit) { break }; Start-Sleep -Seconds 5 }
+          for ($i=0; $i -lt 120; $i++) { if (Test-Path C:\Windows\Temp\ir-run.exit) { break }; Start-Sleep -Seconds 5 }
           "EXIT=" + (Get-Content C:\Windows\Temp\ir-run.exit -ErrorAction SilentlyContinue)
           Get-Content C:\Windows\Temp\ir-run.log -Tail 40 -ErrorAction SilentlyContinue
           schtasks /delete /tn ir-run /f | Out-Null
           EOF
-          MSYS2_ARG_CONV_EXCL="*" powershell.exe -NoProfile -File "$(cygpath -w /tmp/ir-run.ps1)"
-          # 実行成功なら manifest に ignore-region エントリを追記する。
-          # executedAt は証跡ファイルの実 mtime (真実の実行時刻)。
+          powershell -NoProfile -File "$(cygpath -w /tmp/ir-run.ps1)"
           python - <<PY
           import json,os,datetime
-          evi=os.environ.get('EVI_OVERRIDE') or r"$evi"
-          mfile=r"$PWD/docs/evidence/runs-windows-r1-remaining.manifest.json"
+          evi=r"$evi"
+          mfile=r"$PWD/docs/evidence/runs-windows-r2-remaining.manifest.json"
           efile=os.path.join(evi,'manifest.json')
           if os.path.exists(efile) and os.path.exists(mfile):
               mtime=datetime.datetime.fromtimestamp(os.path.getmtime(efile),datetime.timezone.utc).isoformat().replace('+00:00','Z')
               runs=json.load(open(mfile))
               runs=[r for r in runs if r.get('driver')!='app/desktop/e2e/native-ignore-region.mjs']
-              runs.append({"driver":"app/desktop/e2e/native-ignore-region.mjs","evidenceDir":"docs/evidence/round1-windows/native-ignore-region","evidenceFile":"manifest.json","executedAt":mtime,"environment":"windows","buildDigest":"","roundExecutionId":"round1","note":"executed as NT AUTHORITY\\NETWORK SERVICE: admin tokens bypass deny ACEs via SeBackupPrivilege backup-intent opens"})
+              runs.append({"driver":"app/desktop/e2e/native-ignore-region.mjs","evidenceDir":"docs/evidence/round2-windows/native-ignore-region","evidenceFile":"manifest.json","executedAt":mtime,"environment":"windows","buildDigest":"","roundExecutionId":"round2","note":"executed as NT AUTHORITY NETWORK SERVICE: admin tokens bypass deny ACEs via SeBackupPrivilege backup-intent opens"})
               json.dump(runs,open(mfile,'w'),indent=2)
               print('manifest entry appended, executedAt=',mtime)
           else:
               print('skip append: evidenceFile exists=',os.path.exists(efile),'manifest exists=',os.path.exists(mfile))
           PY
-
       - name: Debug re-run failed drivers (full log)
         shell: bash
         if: always()
@@ -288,7 +285,7 @@ jobs:
           p='app/desktop/e2e/native-figma-node-fix.mjs'
           t=open(p,encoding='utf-8').read()
           needle='let canvasBox = await cropCanvas.boundingBox();'
-          t=t.replace(needle,'await cropCanvas.scrollIntoViewIfNeeded();\n  '+needle,1)
+          t=t.replace(needle,'await cropCanvas.evaluate(el=>el.scrollIntoView({block:"center"}));\n  '+needle,1)
           open(p,'w',encoding='utf-8').write(t)
           PY
           git update-index --skip-worktree app/desktop/e2e/native-figma-node-fix.mjs
