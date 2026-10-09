@@ -43,23 +43,25 @@ jobs:
         shell: bash
         run: |
           echo "whoami=$(whoami) USERNAME=$USERNAME USERDOMAIN=$USERDOMAIN COMPUTERNAME=$COMPUTERNAME"
-          MSYS2_ARG_CONV_EXCL="*" cmd //c "whoami /user" || true
-          MSYS2_ARG_CONV_EXCL="*" powershell.exe -NoProfile -Command "[System.Security.Principal.WindowsIdentity]::GetCurrent() | Select-Object -Expand Name" || true
-          node -e "console.log('node-whoami:', require('os').userInfo().username)" || true
-          sid="$(MSYS2_ARG_CONV_EXCL='*' powershell.exe -NoProfile -Command "[System.Security.Principal.WindowsIdentity]::GetCurrent().User.Value" 2>/dev/null | tr -d '\r')"
-          echo "token-sid=$sid"
-          for spec in "*${sid:-NONE}:(OI)(CI)(W)" "*${sid:-NONE}:(OI)(CI)(F)" "${COMPUTERNAME}\\${USERNAME}:(OI)(CI)(W)"; do
-            principal="${spec%%:*}"
-            probe_dir="$HOME/acl-probe-$(echo "$spec" | tr -cd '[:alnum:]')"
-            probe_win="$(cygpath -w "$probe_dir")"
-            mkdir -p "$probe_dir"
-            echo "--- deny $spec"
-            MSYS2_ARG_CONV_EXCL="*" icacls "$probe_win" /deny "$spec" || true
-            MSYS2_ARG_CONV_EXCL="*" icacls "$probe_win" || true
-            (echo x > "$probe_dir/probe.txt" && echo "ECHO-WRITE OK [$spec]") || echo "ECHO-WRITE DENIED [$spec]"
-            node -e "const fs=require('fs');try{fs.writeFileSync(process.argv[1]+'/probe-node.txt','x');console.log('NODE-WRITE OK')}catch(e){console.log('NODE-WRITE DENIED',e.code)}" "$probe_dir" || true
-            MSYS2_ARG_CONV_EXCL="*" powershell.exe -NoProfile -Command "try { New-Item -Path '$probe_win\\probe-ps.txt' -ItemType File -Force -ErrorAction Stop | Out-Null; 'PS-WRITE OK' } catch { 'PS-WRITE DENIED ' + \$_.Exception.Message }" || true
-          done
+          # MSYS bash と Node (libuv backup-intent open) は admin トークンの
+          # SeBackupPrivilege で deny ACE を素通りする (実測: PowerShell は
+          # DENIED, echo/node は OK)。非特権ユーザで実行しないと deny が
+          # 効かない。一般ユーザを作り、その資格で書込みを試す。
+          cat > /tmp/acl-probe.ps1 <<'EOF'
+          net user probeuser "Probe!Pass0x1234" /add | Out-Null
+          $d = "C:\Users\runneradmin\acl-probe-lowpriv"
+          New-Item -Path $d -ItemType Directory -Force | Out-Null
+          icacls $d /grant "probeuser:(OI)(CI)(M)" | Out-Null
+          icacls $d /deny "probeuser:(OI)(CI)(W)" | Out-Null
+          icacls $d
+          $cred = New-Object PSCredential("probeuser", (ConvertTo-SecureString "Probe!Pass0x1234" -AsPlainText -Force))
+          $inner = "try { New-Item -Path '$d\probe.txt' -ItemType File -Force -ErrorAction Stop | Out-Null; 'LOWPRIV-WRITE OK' } catch { 'LOWPRIV-WRITE DENIED ' + `$_.Exception.Message }"
+          $p = Start-Process -Credential $cred -FilePath "powershell.exe" -ArgumentList "-NoProfile","-Command",$inner -Wait -PassThru -RedirectStandardOutput "$d\out.txt" -RedirectStandardError "$d\err.txt" -NoNewWindow
+          Get-Content "$d\out.txt" -ErrorAction SilentlyContinue
+          Get-Content "$d\err.txt" -ErrorAction SilentlyContinue
+          net user probeuser /delete | Out-Null
+          EOF
+          MSYS2_ARG_CONV_EXCL="*" powershell.exe -NoProfile -File "$(cygpath -w /tmp/acl-probe.ps1)" || true
 
       - name: Write runs manifest
         shell: bash
