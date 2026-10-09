@@ -68,6 +68,15 @@ client.onerror = (error) => {
   if (protocolErrors.length < MAX_PROTOCOL_ERRORS) protocolErrors.push(error.message);
   else droppedProtocolErrors += 1;
 };
+// SDK 1.31 の StdioClientTransport は子の終了コードを捨てる。最後の応答の後にサーバーが落ちても
+// 要求が残っていなければ何も reject されないので、こちらが閉じる前の切断を自前で検知する。
+let closeRequested = false;
+let closedBeforeRequest = false;
+client.onclose = () => {
+  if (!closeRequested) closedBeforeRequest = true;
+};
+
+const errorMessage = (error) => (error instanceof Error ? error.message : String(error));
 
 const fail = (message) => {
   const tail = stderrTail.trim().split("\n").slice(-20).join("\n");
@@ -85,9 +94,16 @@ const fail = (message) => {
 const watchdog = setTimeout(() => {
   fail(`did not finish within ${deadlineMs}ms; killing the server.`);
   // close() の穏当な停止手順を待つと、それ自体が止まっている可能性がある。子を確実に残さない。
-  if (transport.pid !== null) process.kill(transport.pid, "SIGKILL");
-  rmSync(sandbox, { recursive: true, force: true });
-  process.exit(1);
+  // 子が同時に終了していると kill が ESRCH で投げるが、その場合も後始末と exit は必ず行う。
+  const pid = transport.pid;
+  try {
+    if (pid !== null) process.kill(pid, "SIGKILL");
+  } catch (error) {
+    process.stderr.write(`could not SIGKILL MCP server pid ${pid}: ${errorMessage(error)}\n`);
+  } finally {
+    rmSync(sandbox, { recursive: true, force: true });
+    process.exit(1);
+  }
 }, deadlineMs);
 
 // 期待値は同じビルドの createMcpServer を InMemoryTransport で直接つないだ結果。
@@ -110,8 +126,6 @@ const listToolsInProcess = async () => {
     await server.close();
   }
 };
-
-const errorMessage = (error) => (error instanceof Error ? error.message : String(error));
 
 let summary;
 let exitCode = 0;
@@ -162,6 +176,13 @@ try {
   fail(errorMessage(error));
 }
 
+// 応答直後に落ちた場合、close イベントはこちらの判定より少し遅れて届く。その分だけ待つ。
+if (exitCode === 0) await new Promise((resolveSettle) => setTimeout(resolveSettle, 500));
+if (exitCode === 0 && closedBeforeRequest) {
+  exitCode = 1;
+  fail("the MCP server closed the stdio connection before the client did");
+}
+closeRequested = true;
 // 停止手順の失敗も stdio 経路の異常なので、往復が通っていても赤にする。
 await client.close().catch((error) => {
   exitCode = 1;
