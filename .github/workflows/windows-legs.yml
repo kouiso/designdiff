@@ -170,8 +170,8 @@ jobs:
           cmd //c "$(cygpath -w /tmp/ir-run.cmd)"
           python - <<PY
           import json,os,datetime
-          evi=r"$evi"
-          mfile=r"$PWD/docs/evidence/runs-windows-r1-remaining.manifest.json"
+          evi=r"$eviwin"
+          mfile=r"$(cygpath -w "$PWD/docs/evidence/runs-windows-r1-remaining.manifest.json")"
           efile=os.path.join(evi,'manifest.json')
           if os.path.exists(efile) and os.path.exists(mfile):
               mtime=datetime.datetime.fromtimestamp(os.path.getmtime(efile),datetime.timezone.utc).isoformat().replace('+00:00','Z')
@@ -411,8 +411,8 @@ jobs:
           cmd //c "$(cygpath -w /tmp/ir-run.cmd)"
           python - <<PY
           import json,os,datetime
-          evi=r"$evi"
-          mfile=r"$PWD/docs/evidence/runs-windows-r2-remaining.manifest.json"
+          evi=r"$eviwin"
+          mfile=r"$(cygpath -w "$PWD/docs/evidence/runs-windows-r2-remaining.manifest.json")"
           efile=os.path.join(evi,'manifest.json')
           if os.path.exists(efile) and os.path.exists(mfile):
               mtime=datetime.datetime.fromtimestamp(os.path.getmtime(efile),datetime.timezone.utc).isoformat().replace('+00:00','Z')
