@@ -51,6 +51,12 @@ jobs:
         if: matrix.check-type == 'test'
         run: pnpm test
 
+      # 単体テストの MCP は全部 InMemoryTransport 越しで、SDK の stdio 実装を一度も通らん。
+      # SDK の minor/patch は automerge されるので、本物の dist/index.js と往復せんと stdio が壊れても緑で通る。
+      - name: MCP stdio round-trip smoke
+        if: matrix.check-type == 'test'
+        run: pnpm --filter "@figdiff/mcp-server" run test:stdio-smoke
+
       - name: Coverage thresholds
         if: matrix.check-type == 'coverage'
         # 7パッケージ全部を対象にする。門の外に置いたパッケージは、
