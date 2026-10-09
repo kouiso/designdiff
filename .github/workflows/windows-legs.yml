@@ -44,6 +44,16 @@ jobs:
       - name: Install Playwright browsers
         run: pnpm --filter "@figdiff/desktop" exec playwright install chromium
 
+      - name: ACL deny probe
+        shell: bash
+        run: |
+          whoami
+          mkdir -p /tmp/acl-probe
+          icacls /tmp/acl-probe /deny "$(whoami):(W)"
+          icacls /tmp/acl-probe | tail -5
+          (echo x > /tmp/acl-probe/probe.txt && echo "WRITE SUCCEEDED") || echo "WRITE DENIED"
+          icacls /tmp/acl-probe /remove:d "$(whoami)" >/dev/null
+
       - name: Record runner host
         shell: bash
         run: |
