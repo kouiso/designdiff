@@ -2526,7 +2526,10 @@ describe("細線の局所変位 (designdiff#243)", () => {
     expect(section?.diffClusterCoverage?.residualColor).toBeGreaterThan(0);
     expect(section?.diffClusterCoverage?.residualColor).toBeLessThan(2);
     expect(report.issues.some((issue) => issue.severity === "critical")).toBe(false);
-    expect(report.aggregateVerdict).toBe(withoutTree.aggregateVerdict);
+    // 相互比較だけだと両経路が同じ誤判定に落ちても気付けないため、
+    // それぞれ独立に期待値を固定する。
+    expect(report.aggregateVerdict).toBe("pass");
+    expect(withoutTree.aggregateVerdict).toBe("pass");
   });
 
   it("セクション内でクラスタ単体が critical なら、広いセクションの平均に薄めず失格にする", async () => {
@@ -2678,5 +2681,263 @@ describe("細線の局所変位 (designdiff#243)", () => {
 
     expect(report.regionScores[0].localDisplacement).toBeUndefined();
     expect(report.issues.some((issue) => issue.severity === "critical")).toBe(true);
+  });
+
+  it("セクションが覆わない背景に色ずれがあれば、ノード木の有無に関わらず失格にする", async () => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    // 左 1/3 (幅 40) だけを子が覆う木。残りはどのセクション行にも乗らない。
+    // セクションの救済が効いても、その外側の色ずれはフレーム残差でだけ拾える。
+    const partialWidthChild = (id: string, y: number, height: number): FigmaNode => ({
+      id,
+      name: id,
+      type: "FRAME",
+      absoluteBoundingBox: { x: 0, y, width: 40, height },
+      absoluteRenderBounds: null,
+      fills: [],
+      strokes: [],
+      effects: [],
+      children: [],
+    });
+    const frame: FigmaNode = {
+      ...sectionReliefFrame(),
+      children: [
+        partialWidthChild("test-partial-header", 0, 40),
+        partialWidthChild(SECTION_RELIEF_NODE_IDS.section, 40, 20),
+      ],
+    };
+    const designPixels = await createSolidRgba(SIZE, SIZE, WHITE_RGB);
+    // セクション外の右 2/3 に広い背景色ずれ (#E0E0E0) があり、証明済みの
+    // 変位クラスタ (1px 線の 2px ずれ) だけが差分として検出された形。
+    const screenshotPixels = await createSolidRgba(SIZE, SIZE, WHITE_RGB);
+    paint(screenshotPixels, 40, 0, 80, SIZE, { r: 0xe0, g: 0xe0, b: 0xe0 });
+    paint(designPixels, 10, 50, 30, 1, DARK_RGB);
+    paint(screenshotPixels, 10, 52, 30, 1, DARK_RGB);
+    const options = {
+      designPixels,
+      screenshotPixels,
+      width: SIZE,
+      height: SIZE,
+      diffRegions: [
+        { x: 10, y: 50, w: 30, h: 1, diffPixelCount: 30 },
+        { x: 10, y: 52, w: 30, h: 1, diffPixelCount: 30 },
+      ],
+      rasterizationTolerance: true,
+    };
+
+    const report = buildDiffReport({ ...options, figmaRootNode: frame });
+    const withoutTree = buildDiffReport(options);
+
+    // 変位クラスタはセクション内で説明済み (救済自体は効く) が、右 2/3 の
+    // 色ずれはセクションの外なのでフレーム残差が critical になる。
+    const section = report.regionScores.find(
+      (score) => score.regionId === SECTION_RELIEF_NODE_IDS.section,
+    );
+    expect(section?.diffClusterCoverage).toMatchObject({
+      clusterCount: 2,
+      explainedCount: 2,
+      unexplainedPerceptibleDiff: false,
+    });
+    expect(report.issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          regionId: "whole-frame",
+          severity: "critical",
+          evidence: expect.objectContaining({ signal: "residual_color_drift" }),
+        }),
+      ]),
+    );
+    // 相互比較だけにすると両経路が同じ誤判定へ落ちても気付けないため、
+    // それぞれ独立に期待値を固定する。
+    expect(report.aggregateVerdict).toBe("fail");
+    expect(withoutTree.aggregateVerdict).toBe("fail");
+  });
+
+  it("帯状に集中した背景色ずれは、フレーム平均で閾値を割っても帯の残差で両経路とも失格にする", async () => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    // 実測 9949:23513 と同じ形。ルート背景のグラデーション (下端はミント
+    // #EFF8F2) が実装では無彩色 (#F7F7F7) になっており、ずれ (ΔE≈5) は
+    // 画面下 1/8 の帯にだけ集中する。フレーム全体の1平均では 2 未満に薄まり、
+    // ノード木の無い経路はこのずれを合否に出せていなかった。
+    const partialWidthChild = (id: string, y: number, height: number): FigmaNode => ({
+      id,
+      name: id,
+      type: "FRAME",
+      absoluteBoundingBox: { x: 0, y, width: 40, height },
+      absoluteRenderBounds: null,
+      fills: [],
+      strokes: [],
+      effects: [],
+      children: [],
+    });
+    const frame: FigmaNode = {
+      ...sectionReliefFrame(),
+      children: [
+        partialWidthChild("test-partial-header", 0, 40),
+        partialWidthChild(SECTION_RELIEF_NODE_IDS.section, 40, 20),
+      ],
+    };
+    const designPixels = await createSolidRgba(SIZE, SIZE, WHITE_RGB);
+    const screenshotPixels = await createSolidRgba(SIZE, SIZE, WHITE_RGB);
+    // 帯の分割数 (8) に合わせ、画面下から 1 帯分 (y105-120) だけ色を変える。
+    paint(designPixels, 0, 105, SIZE, 15, { r: 0xef, g: 0xf8, b: 0xf2 });
+    paint(screenshotPixels, 0, 105, SIZE, 15, { r: 0xf7, g: 0xf7, b: 0xf7 });
+    // 証明済みの変位クラスタ。残差計算が走る条件を作るためだけに置く。
+    paint(designPixels, 10, 50, 30, 1, DARK_RGB);
+    paint(screenshotPixels, 10, 52, 30, 1, DARK_RGB);
+    const options = {
+      designPixels,
+      screenshotPixels,
+      width: SIZE,
+      height: SIZE,
+      diffRegions: [
+        { x: 10, y: 50, w: 30, h: 1, diffPixelCount: 30 },
+        { x: 10, y: 52, w: 30, h: 1, diffPixelCount: 30 },
+      ],
+      rasterizationTolerance: true,
+    };
+
+    const report = buildDiffReport({ ...options, figmaRootNode: frame });
+    const withoutTree = buildDiffReport(options);
+
+    // 相互比較ではなく、各経路へ独立に期待値を固定する。
+    for (const target of [report, withoutTree]) {
+      expect(target.issues).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            regionId: "whole-frame",
+            severity: "critical",
+            evidence: expect.objectContaining({ signal: "residual_color_drift" }),
+          }),
+        ]),
+      );
+      expect(target.aggregateVerdict).toBe("fail");
+    }
+    // issue はずれが閾値を超えた帯を指す (フレーム全体の bbox ではない)。
+    const residualIssue = report.issues.find(
+      (issue) => issue.evidence.signal === "residual_color_drift",
+    );
+    expect(residualIssue?.bbox?.y).toBeGreaterThanOrEqual(100);
+  });
+
+  it("疎なクラスタの内側の色ずれは、diffMask 指定時は残差に数えてクラスタ網羅救済を止める", async () => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    // 40x20 のベタ塗りカードが 2px 下へずれ、内側の 24x8 だけ濃さが違う形。
+    // クラスタ bbox はカード全体 (40x22) を覆うが、実際の差分画素はずれた
+    // 上下の縁だけ。bbox ごと残差から除くと内側の色ずれを一度も測らない。
+    const cardChild = (id: string, y: number, h: number): FigmaNode => ({
+      id,
+      name: id,
+      type: "FRAME",
+      absoluteBoundingBox: {
+        x: id === "test-card" ? 40 : 0,
+        y,
+        width: id === "test-card" ? 40 : SIZE,
+        height: h,
+      },
+      absoluteRenderBounds: null,
+      fills: [],
+      strokes: [],
+      effects: [],
+      children: [],
+    });
+    const frame: FigmaNode = {
+      ...sectionReliefFrame(),
+      children: [cardChild("test-card", 50, 22), cardChild("test-card-tail", 72, 48)],
+    };
+    const designPixels = await createSolidRgba(SIZE, SIZE, WHITE_RGB);
+    paint(designPixels, 40, 50, 40, 20, DARK_RGB);
+    const screenshotPixels = await createSolidRgba(SIZE, SIZE, WHITE_RGB);
+    paint(screenshotPixels, 40, 52, 40, 20, DARK_RGB);
+    paint(screenshotPixels, 48, 58, 24, 8, { r: 0x55, g: 0x55, b: 0x55 });
+    const diffRegions = [{ x: 40, y: 50, w: 40, h: 22, diffPixelCount: 160 }];
+    // pixelmatch が差分と判定するのはずれた縁 (上下 2px ずつ) だけで、
+    // 内側の色ずれは差分画素に含まれない形。
+    const diffMask = new Uint8Array(SIZE * SIZE);
+    for (const y of [50, 51, 70, 71]) {
+      diffMask.fill(1, y * SIZE + 40, y * SIZE + 80);
+    }
+    const base = {
+      designPixels,
+      screenshotPixels,
+      width: SIZE,
+      height: SIZE,
+      figmaRootNode: frame,
+      diffRegions,
+      rasterizationTolerance: true,
+    };
+
+    const withMask = buildDiffReport({ ...base, diffMask });
+    const withoutMask = buildDiffReport(base);
+
+    const sectionWith = withMask.regionScores.find((score) => score.regionId === "test-card");
+    const sectionWithout = withoutMask.regionScores.find((score) => score.regionId === "test-card");
+    // どちらもクラスタ自体は説明済み。残差の測り方だけが違う。bbox ごと除く
+    // 従来方式では内側の色ずれが残差 0 になり、実差分画素だけを除くと
+    // 内側の色ずれが残差に出て閾値を超える。
+    expect(sectionWith?.diffClusterCoverage).toMatchObject({
+      clusterCount: 1,
+      explainedCount: 1,
+      unexplainedPerceptibleDiff: true,
+    });
+    expect(sectionWith?.diffClusterCoverage?.residualColor).toBeGreaterThanOrEqual(2);
+    expect(sectionWithout?.diffClusterCoverage).toMatchObject({
+      clusterCount: 1,
+      explainedCount: 1,
+      unexplainedPerceptibleDiff: false,
+      residualColor: 0,
+    });
+    // クラスタ網羅による救済 (diff_cluster_relief) は残差がある側だけ止まる。
+    // なおこのセクションは自身の同一トークン証明 (#333→#555 は同じ無彩色軸の
+    // 段差) を別に持つため、合否自体はここでは変わらない。
+    expect(
+      withMask.issues.some(
+        (issue) =>
+          issue.regionId === "test-card" && issue.evidence.signal === "diff_cluster_relief",
+      ),
+    ).toBe(false);
+    expect(
+      withoutMask.issues.some(
+        (issue) =>
+          issue.regionId === "test-card" && issue.evidence.signal === "diff_cluster_relief",
+      ),
+    ).toBe(true);
+  });
+
+  it("クラスタ単体では critical 未満でも、クラスタ行の重み付き構造が fail 閾値を割るなら両経路で失格にする", async () => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    // デザインは白一色、実装は同じ明るさ帯の細かなノイズ。平均色差は
+    // critical 閾値 (ΔE 2) に届かないので critical issue は立たないが、
+    // 構造はフラットではない。ノード木の無い比較はクラスタ行の重み付き構造で
+    // fail になるため、セクション経路も同じ結論に揃える。
+    const frame = sectionReliefFrame();
+    const designPixels = await createSolidRgba(SIZE, SIZE, WHITE_RGB);
+    const screenshotPixels = Uint8ClampedArray.from(designPixels);
+    for (let y = 40; y < 80; y += 1) {
+      for (let x = 40; x < 80; x += 1) {
+        const value = 0xff - ((x * 7 + y * 13) % 5) * 3;
+        paint(screenshotPixels, x, y, 1, 1, { r: value, g: value, b: value });
+      }
+    }
+    const options = {
+      designPixels,
+      screenshotPixels,
+      width: SIZE,
+      height: SIZE,
+      diffRegions: [{ x: 40, y: 40, w: 40, h: 40, diffPixelCount: 1600 }],
+      rasterizationTolerance: true,
+    };
+
+    const report = buildDiffReport({ ...options, figmaRootNode: frame });
+    const withoutTree = buildDiffReport(options);
+
+    // クラスタ行はノード木の無い比較の regionScores にだけ出る。色は critical
+    // 閾値未満 (critical issue では説明できない) が構造は fail 閾値を割る形。
+    const cluster = withoutTree.regionScores.find((score) =>
+      score.regionId.startsWith("diff-cluster-"),
+    );
+    expect(cluster?.color).toBeLessThan(2);
+    expect(cluster?.structure).toBeLessThan(0.8);
+    expect(withoutTree.aggregateVerdict).toBe("fail");
+    expect(report.aggregateVerdict).toBe("fail");
   });
 });

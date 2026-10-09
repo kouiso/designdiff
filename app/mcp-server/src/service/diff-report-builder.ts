@@ -76,6 +76,11 @@ interface BuildDiffReportOptions {
   // ときだけ採点単位として使う (Issue #56)。diffPixelCount は上限超過時に
   // 疑わしい順で残すための重大度シグナル。
   diffRegions?: (DiffBoundingBox & { diffPixelCount?: number })[];
+  // pixelmatch が差分と判定した画素 (1 = 差分)。diffRegions と同じ座標系。
+  // 残差マスクでクラスタの bbox 全体ではなく実際の差分画素だけを除くために
+  // 使う。bbox ごと除くと、枠線だけの疎なクラスタが内側の広い色ずれまで
+  // 残差から消してしまう。未指定時は従来どおり bbox 全体を除く。
+  diffMask?: Uint8Array;
   // 各採点領域で許容する局所平行移動の最大px。指定時だけ有効になる opt-in
   // 許容 (既定 off: 1px でも FAIL を維持する従来契約を他利用者から変えない)。
   // ラスタライザ差・丸め誤差で要素が数pxずれる環境間比較 (例: Figma 正本と
@@ -95,6 +100,18 @@ const MAX_REGION_SCORE_COUNT = 24;
 // がどの行にも載らず、判定から黙って消える (designdiff#359)。上限を超えた
 // クラスタは、セクション経路では救済を止め、ノード木の無い経路では PASS を止める。
 const MAX_DIFF_CLUSTER_SCORE_COUNT = 200;
+// フレーム残差を測る横帯の分割数。モバイル画面はヘッダ・カード・フッタの
+// ような横帯の積み重ねなので、帯単位の最大値を取れば帯に集中した色ずれが
+// フレーム平均に薄まらない。8 は典型的な画面高 (700px 前後) で 1 帯 ≒ 90px
+// (カード1枚分) になる粒度。
+const RESIDUAL_BAND_COUNT = 8;
+// 2つの採点単位 (セクション行 / クラスタ行) の判定を併合するときに厳しい側を
+// 採るための順序。inconclusive は「合格を保証できない」ので pass より厳しい。
+const VERDICT_SEVERITY_RANK: Record<DiffReport["aggregateVerdict"], number> = {
+  pass: 0,
+  inconclusive: 1,
+  fail: 2,
+};
 const MIN_REGION_PIXEL_AREA = 64;
 // shape (Hausdorff, 0-1 正規化済み) が実測でこの値を明確に上回る場合のみ
 // エッジの空間ズレを「実在する」と判定する。純色/輝度シフトのみの領域は
@@ -757,19 +774,28 @@ const buildDiffClusterCoverage = (
   };
 };
 
-// 採点・未採点を問わず差分クラスタの bbox を ignoreMask に足したマスク。
+// 採点・未採点を問わず差分クラスタの画素を ignoreMask に足したマスク。
 // クラスタの内側はクラスタ行が既に測っているので、残差 (クラスタ外の色差)
 // を測るときはその画素を数えない。1 枚を全セクションとフレームで共有する。
+// diffMask があるときは bbox 内の実差分画素だけを除く。枠線だけのような
+// 疎なクラスタは bbox が内側の広い未変化画素を含み、bbox ごと除くと
+// そこに広がる色ずれが残差からもクラスタ行の証明からもこぼれるため。
 const buildResidualMask = (
   width: number,
   height: number,
   ignoreMask: Uint8Array | undefined,
   clusterBoxes: readonly DiffBoundingBox[],
+  diffMask: Uint8Array | undefined,
 ): Uint8Array => {
   const pixelCount = width * height;
   if (ignoreMask !== undefined && ignoreMask.length !== pixelCount) {
     throw new Error(
       `buildResidualMask: ignoreMask must cover every pixel (got ${ignoreMask.length}, expected ${pixelCount})`,
+    );
+  }
+  if (diffMask !== undefined && diffMask.length !== pixelCount) {
+    throw new Error(
+      `buildResidualMask: diffMask must cover every pixel (got ${diffMask.length}, expected ${pixelCount})`,
     );
   }
   const mask = ignoreMask ? Uint8Array.from(ignoreMask) : new Uint8Array(pixelCount);
@@ -780,7 +806,17 @@ const buildResidualMask = (
     const endY = Math.min(height, Math.ceil(box.y + box.h));
     if (endX <= startX) continue;
     for (let y = startY; y < endY; y += 1) {
-      mask.fill(1, y * width + startX, y * width + endX);
+      const rowStart = y * width + startX;
+      const rowEnd = y * width + endX;
+      if (diffMask === undefined) {
+        mask.fill(1, rowStart, rowEnd);
+        continue;
+      }
+      for (let index = rowStart; index < rowEnd; index += 1) {
+        if (diffMask[index] === 1) {
+          mask[index] = 1;
+        }
+      }
     }
   }
   return mask;
@@ -801,9 +837,12 @@ interface RegionScoreBuild {
   // セクション行がある比較でも採点した差分クラスタ行。セクションの広面積平均に
   // 薄まらないよう、クラスタ単体の critical はノード木の無い比較と同じく合否に効かせる。
   sectionDiffClusters: RegionScore[];
-  // ノード木の無い比較で、クラスタ外の画素だけで測ったフレームの平均 ΔE2000。
+  // クラスタ外の画素だけで測ったフレーム残差 (帯ごとの平均 ΔE2000 の最大値)。
   // セクション行の残差と同じ物差しで、クラスタを作らない広い色ずれを拾う。
+  // セクション行の有無に関わらず、クラスタがある比較では必ず測る。
   frameResidualColor?: number;
+  // frameResidualColor を出した帯の bbox。issue の指し先に使う。
+  frameResidualBand?: DiffBoundingBox;
 }
 
 const buildRegionScores = (options: BuildDiffReportOptions): RegionScoreBuild => {
@@ -813,6 +852,7 @@ const buildRegionScores = (options: BuildDiffReportOptions): RegionScoreBuild =>
     width,
     height,
     ignoreMask,
+    diffMask,
     figmaRootNode,
     cropRegion,
     paddingMask,
@@ -1104,10 +1144,13 @@ const buildRegionScores = (options: BuildDiffReportOptions): RegionScoreBuild =>
   // 無い経路と同じくノイズとして扱う。
   const residualMask =
     diffClusterRegions.length + unscoredDiffClusters.length > 0
-      ? buildResidualMask(width, height, ignoreMask, [
-          ...diffClusterRegions.map((cluster) => cluster.bbox),
-          ...unscoredDiffClusters,
-        ])
+      ? buildResidualMask(
+          width,
+          height,
+          ignoreMask,
+          [...diffClusterRegions.map((cluster) => cluster.bbox), ...unscoredDiffClusters],
+          diffMask,
+        )
       : undefined;
 
   // セクション行の救済証拠をここで後付けする。textReflow による再分類が
@@ -1147,6 +1190,49 @@ const buildRegionScores = (options: BuildDiffReportOptions): RegionScoreBuild =>
   const wholeFrameBbox = toWholeFrameRegion(width, height);
   // letterbox 余白を含めると SSIM / 色差が不当に悪化するため、content rect 内で評価する。
   const contentBbox = toContentRegion(width, height, paddingMask);
+
+  // クラスタの外側は、セクション行の有無に関わらずフレーム全体で測る。
+  // セクション経路で子が画面を覆わない (部分幅の子・兄弟間の隙間) と、
+  // 背景の色ずれがどのセクション行にも乗らず、ノード木の無い経路だけが
+  // residual_color_drift で失格して同じ画素の合否が経路で割れる。
+  // root 行は子の行があると合否から外れるため、クラスタの外側を別途測ら
+  // ないと、クラスタを作らない広い色ずれが合否に一切届かない。
+  //
+  // フレーム全体の1平均だと、帯状に集中した色ずれが面積で薄まる
+  // (画面下 1/8 の帯で ΔE≈5 の背景ずれがあっても全体平均は 2 未満に落ち、
+  // セクション経路ではたまたま帯にかかった細いセクション行だけが失格する
+  // = 実測 9949:23513)。モバイル画面は横帯 (ヘッダ・カード・フッタ) の
+  // 積み重ねなので、content rect を高さ 8 等分の帯に分けて最大値を取る。
+  // 全面に均一なずれはどの帯でも同じ値に出るため、帯化で見逃しは増えない
+  // (帯の最大値はフレーム平均以上になる)。
+  const frameResidual =
+    residualMask === undefined
+      ? undefined
+      : (() => {
+          let maxColor = 0;
+          let maxBand = contentBbox;
+          for (let band = 0; band < RESIDUAL_BAND_COUNT; band += 1) {
+            const bandY0 = contentBbox.y + Math.floor((band * contentBbox.h) / RESIDUAL_BAND_COUNT);
+            const bandY1 =
+              contentBbox.y + Math.floor(((band + 1) * contentBbox.h) / RESIDUAL_BAND_COUNT);
+            if (bandY1 <= bandY0) continue;
+            const bandBbox = { x: contentBbox.x, y: bandY0, w: contentBbox.w, h: bandY1 - bandY0 };
+            const color = buildColorDifference(
+              designPixels,
+              screenshotPixels,
+              width,
+              height,
+              bandBbox,
+              residualMask,
+            );
+            if (color > maxColor) {
+              maxColor = color;
+              maxBand = bandBbox;
+            }
+          }
+          return { color: maxColor, band: maxBand };
+        })();
+  const frameResidualColor = frameResidual?.color;
 
   // 比較対象そのものの行。子の行があっても必ず1件持たせる。
   // 単一ノードを比べたとき、子の行しか無いと「対象ノードが見つからない」で
@@ -1204,6 +1290,8 @@ const buildRegionScores = (options: BuildDiffReportOptions): RegionScoreBuild =>
       regionScores: [...childRegions, buildRootRegion()],
       unscoredClusterCountWithoutSections: 0,
       sectionDiffClusters: diffClusterRegions,
+      frameResidualColor,
+      frameResidualBand: frameResidual?.band,
     };
   }
 
@@ -1212,19 +1300,8 @@ const buildRegionScores = (options: BuildDiffReportOptions): RegionScoreBuild =>
       regionScores: [...diffClusterRegions, buildRootRegion()],
       unscoredClusterCountWithoutSections: unscoredDiffClusters.length,
       sectionDiffClusters: [],
-      // クラスタがあると root 行は合否から外れるため、クラスタの外側を
-      // 別途測らないと、クラスタを作らない広い色ずれが合否に一切届かない。
-      frameResidualColor:
-        residualMask === undefined
-          ? undefined
-          : buildColorDifference(
-              designPixels,
-              screenshotPixels,
-              width,
-              height,
-              contentBbox,
-              residualMask,
-            ),
+      frameResidualColor,
+      frameResidualBand: frameResidual?.band,
     };
   }
 
@@ -1454,6 +1531,7 @@ export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
     unscoredClusterCountWithoutSections,
     sectionDiffClusters,
     frameResidualColor,
+    frameResidualBand,
   } = buildRegionScores(alignedOptions);
 
   // 比較対象そのものの行は子と範囲が重なる。合否を決める不具合をここから作ると、
@@ -1464,17 +1542,15 @@ export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
   // 無い比較と同じく合否に効かせる。セクションの広面積平均に任せると、省略記号の
   // 欠落のような小さな実差分が面積で薄まり、同じ画素なのに経路で合否が割れる。
   // minor/major はセクション行の issue と重複するので、合否に効く critical だけ足す。
-  if (sectionDiffClusters.length > 0) {
-    issues.push(
-      ...buildIssues(sectionDiffClusters, alignedOptions).filter(
-        (issue) => issue.severity === "critical",
-      ),
-    );
-  }
+  const sectionDiffClusterIssues =
+    sectionDiffClusters.length > 0 ? buildIssues(sectionDiffClusters, alignedOptions) : [];
+  issues.push(...sectionDiffClusterIssues.filter((issue) => issue.severity === "critical"));
   if (frameResidualColor !== undefined && frameResidualColor >= PERCEPTIBLE_DELTA_E) {
     issues.push({
       regionId: "whole-frame",
-      bbox: toContentRegion(width, height, paddingMask),
+      // 残差が閾値を超えた帯を指す。帯状のずれをフレーム全体の bbox で
+      // 報告すると、直す側がずれの位置を絞れない。
+      bbox: frameResidualBand ?? toContentRegion(width, height, paddingMask),
       kind: "color",
       severity: "critical",
       figmaNodeId: options.figmaNodeId,
@@ -1533,16 +1609,39 @@ export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
     { alignment, regionScores, issues },
     options.rasterizationTolerance === true,
   );
+  // セクション行がある比較でも、クラスタ行だけを集計した判定を並行して計算し、
+  // 厳しい側を採る。ノード木の無い比較はこのクラスタ側の判定だけで合否が決まる
+  // ため、個々のクラスタが critical 未満でも重み付き構造が fail 閾値を割る
+  // ケースや、pass/fail どちらの条件も満たさない inconclusive をここで揃える。
+  const clusterVerdict =
+    sectionDiffClusters.length > 0
+      ? computeVerdict(
+          {
+            alignment,
+            regionScores: sectionDiffClusters,
+            issues: sectionDiffClusterIssues,
+          },
+          options.rasterizationTolerance === true,
+        )
+      : undefined;
+  const mergedVerdict =
+    clusterVerdict !== undefined &&
+    VERDICT_SEVERITY_RANK[clusterVerdict.verdict] > VERDICT_SEVERITY_RANK[computedVerdict.verdict]
+      ? {
+          ...clusterVerdict,
+          rationale: `cluster-level scoring (the same measure that decides comparisons without a node tree) is stricter: ${clusterVerdict.rationale}`,
+        }
+      : computedVerdict;
   // ノード木の無い比較では採点したクラスタ行だけが合否を決める。上限から外れた
   // クラスタは一度も測っていないので、そこに実差分が無いとは言えない。
   const verdict =
-    computedVerdict.verdict === "pass" && unscoredClusterCountWithoutSections > 0
+    mergedVerdict.verdict === "pass" && unscoredClusterCountWithoutSections > 0
       ? {
-          ...computedVerdict,
+          ...mergedVerdict,
           verdict: "inconclusive" as const,
-          rationale: `${unscoredClusterCountWithoutSections} diff cluster(s) beyond the ${MAX_DIFF_CLUSTER_SCORE_COUNT}-cluster scoring limit were not scored, so a pass cannot be confirmed; ${computedVerdict.rationale}`,
+          rationale: `${unscoredClusterCountWithoutSections} diff cluster(s) beyond the ${MAX_DIFF_CLUSTER_SCORE_COUNT}-cluster scoring limit were not scored, so a pass cannot be confirmed; ${mergedVerdict.rationale}`,
         }
-      : computedVerdict;
+      : mergedVerdict;
   const structuralAssessment = computeWholeImageStructure(
     alignedDesignPixels,
     screenshotPixels,

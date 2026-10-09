@@ -497,6 +497,24 @@ const isVisibleDiffPixelAtIndex = (diffPixelData: Uint8ClampedArray, idx: number
   );
 };
 
+// buildDiffReport の残差計測が、クラスタの bbox 全体ではなく実際の差分画素
+// だけを除外するための 1 画素 1 バイトのマスク。疎なクラスタ (枠線だけ等) の
+// 内側に広がる色ずれを残差から消さないための縮約で、クラスタが無い比較では
+// 残差を測らないので呼び出し側で確保を省く。
+const buildDiffPixelMask = (
+  diffPixelData: Uint8ClampedArray,
+  width: number,
+  height: number,
+): Uint8Array => {
+  const mask = new Uint8Array(width * height);
+  for (let index = 0; index < mask.length; index += 1) {
+    if (isVisibleDiffPixelAtIndex(diffPixelData, index * 4)) {
+      mask[index] = 1;
+    }
+  }
+  return mask;
+};
+
 function clusterDiffRegions(args: {
   clusterMode: ClusterMode;
   totalPixelCount: number;
@@ -1572,6 +1590,13 @@ export async function compareImages(
       h: region.bounds.height,
       diffPixelCount: region.diffPixelCount,
     })),
+    // 残差マスクで実差分画素だけを除くための縮約。矛盾マスクの塗り足し
+    // (paintPerceptibleMask) が diffPixelData を書き換える前に作る必要が
+    // あるため、earlyClusterForScoring と同じタイミングでここで作る。
+    diffMask:
+      earlyClusterForScoring.diffRegions.length > 0
+        ? buildDiffPixelMask(diffPixelData, width, height)
+        : undefined,
     localAlignmentTolerancePx: options.localAlignmentTolerancePx,
     rasterizationTolerance: options.rasterizationTolerance,
   });
