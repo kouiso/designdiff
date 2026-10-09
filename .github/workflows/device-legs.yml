@@ -137,8 +137,7 @@ jobs:
     # (証跡は各 push 実行の device-legs-android-macos artifact)。
     # 不安定なので手動実行専用にして、push / PR のチェックを赤くしない。
     # 再現する時は Actions タブから workflow_dispatch で起動する。
-    if: github.event_name == 'workflow_dispatch'
-    runs-on: macos-15-intel
+    runs-on: macos-15
     timeout-minutes: 120
     env:
       ANDROID_EXPECT_SERIALS: emulator-5554
@@ -169,7 +168,9 @@ jobs:
         with:
           api-level: 34
           target: google_apis
-          arch: x86_64
+          # Apple Silicon (ARM) ホストでは arm64 イメージが Hypervisor.framework
+          # でネイティブ加速される。x86_64 の TCG 変換より桁違いに安定する。
+          arch: arm64-v8a
           emulator-boot-timeout: 2700
           # macOS ホストでは既定の -gpu swiftshader_indirect で画面が単色灰、
           # -gpu guest で単色黒のまま描画されなかった (adb screencap で実測)。
