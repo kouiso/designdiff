@@ -112,7 +112,7 @@ jobs:
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
         with:
           api-level: ${{ matrix.api-level }}
-          target: google_apis
+          target: aosp_atd
           arch: x86_64
           emulator-boot-timeout: 900
           script: sh .github/scripts/device-legs-android.sh "${{ runner.temp }}/device-legs-evidence/android-api${{ matrix.api-level }}"
@@ -138,7 +138,7 @@ jobs:
     # 不安定なので手動実行専用にして、push / PR のチェックを赤くしない。
     # 再現する時は Actions タブから workflow_dispatch で起動する。
     runs-on: macos-15-intel
-    timeout-minutes: 120
+    timeout-minutes: 150
     env:
       ANDROID_EXPECT_SERIALS: emulator-5554
     steps:
@@ -166,12 +166,12 @@ jobs:
       - name: Run X05/X07 verification on the emulator
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
         with:
-          api-level: 33
-          target: google_apis
+          api-level: 30
+          target: aosp_atd
           # Apple Silicon (ARM) ホストでは arm64 イメージが Hypervisor.framework
           # でネイティブ加速される。x86_64 の TCG 変換より桁違いに安定する。
           arch: x86_64
-          emulator-boot-timeout: 2700
+          emulator-boot-timeout: 5400
           # macOS ホストでは既定の -gpu swiftshader_indirect で画面が単色灰、
           # -gpu guest で単色黒のまま描画されなかった (adb screencap で実測)。
           # ANGLE 経由のソフトウェア描画を試す。
