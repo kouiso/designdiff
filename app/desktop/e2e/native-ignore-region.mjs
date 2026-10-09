@@ -390,14 +390,18 @@ try {
     : `${process.env.USERDOMAIN ? `${process.env.USERDOMAIN}\\` : ""}${process.env.USERNAME ?? ""}`;
   const denyWrites = async () => {
     if (isWindows) {
-      execFileSync("icacls", [projectDirectory, "/deny", `${currentPrincipal}:(W)`], { stdio: "inherit" });
+      execFileSync("icacls", [projectDirectory, "/deny", `${currentPrincipal}:(W)`], {
+        stdio: "inherit",
+      });
       return;
     }
     await chmod(projectDirectory, 0o500);
   };
   const allowWrites = async () => {
     if (isWindows) {
-      execFileSync("icacls", [projectDirectory, "/remove:d", currentPrincipal], { stdio: "inherit" });
+      execFileSync("icacls", [projectDirectory, "/remove:d", currentPrincipal], {
+        stdio: "inherit",
+      });
       return;
     }
     await chmod(projectDirectory, 0o700);

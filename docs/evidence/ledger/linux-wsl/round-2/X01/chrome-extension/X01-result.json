@@ -2,9 +2,7 @@
   "case": "X01",
   "route": "chrome-extension",
   "platform": "linux-wsl",
-  "drivers": [
-    "app/chrome-extension/script/real-chrome-e2e.mjs"
-  ],
+  "drivers": ["app/chrome-extension/script/real-chrome-e2e.mjs"],
   "checks": [
     "X01_service_worker",
     "X01_popup_rendered",
@@ -21,12 +19,7 @@
       "extensionId": "ecmlfaipgekhkcamphaoaamofckjfjfo"
     },
     "real-chrome-e2e:X01_popup_rendered": {
-      "tabs": [
-        "Figma",
-        "Upload",
-        "Token",
-        "Fetch Frames"
-      ]
+      "tabs": ["Figma", "Upload", "Token", "Fetch Frames"]
     },
     "real-chrome-e2e:X01_upload_loaded": true,
     "real-chrome-e2e:X01_overlay_shown": {

@@ -2,12 +2,8 @@
   "case": "X03",
   "route": "figma-plugin",
   "platform": "macos",
-  "drivers": [
-    "app/figma-plugin/e2e/real-iframe-host.mjs"
-  ],
-  "checks": [
-    "X03"
-  ],
+  "drivers": ["app/figma-plugin/e2e/real-iframe-host.mjs"],
+  "checks": ["X03"],
   "actual": {
     "real-iframe-host:X03": [
       {

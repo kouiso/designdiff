@@ -58,12 +58,7 @@ assert.ok(connected.length >= 1, "at least one paired iOS device must be connect
 // pymobiledevice3 直接撮影 (製品を通さない基準画像)。
 // dvt screenshot は PNG を書く。失敗したらここで分かる。
 const directPath = join(evidenceDir, "pymobiledevice3-direct.png");
-await execFileAsync("pymobiledevice3", [
-  "developer",
-  "dvt",
-  "screenshot",
-  directPath,
-]);
+await execFileAsync("pymobiledevice3", ["developer", "dvt", "screenshot", directPath]);
 const directMeta = await sharp(directPath).metadata();
 evidence.results.directCapture = {
   width: directMeta.width,
@@ -166,13 +161,10 @@ evidence.results.X06_scroll_rejected = {
   isError: scrollAttempt.isError === true,
   text: text(scrollAttempt),
 };
-assert.ok(
-  scrollAttempt.isError === true,
-  "ios-device scroll capture must be rejected explicitly",
-);
+assert.ok(scrollAttempt.isError === true, "ios-device scroll capture must be rejected explicitly");
 assert.match(text(scrollAttempt), /not supported|ios-device/i);
 
 assert.equal(protocolErrors.length, 0, `protocol errors: ${protocolErrors.join(" | ")}`);
 await writeFile(join(evidenceDir, "evidence.json"), `${JSON.stringify(evidence, null, 2)}\n`);
 await client.close();
-console.log(join(evidenceDir, "evidence.json"));
+console.info(join(evidenceDir, "evidence.json"));

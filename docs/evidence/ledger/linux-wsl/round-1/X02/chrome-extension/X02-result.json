@@ -2,9 +2,7 @@
   "case": "X02",
   "route": "chrome-extension",
   "platform": "linux-wsl",
-  "drivers": [
-    "app/chrome-extension/script/real-chrome-e2e.mjs"
-  ],
+  "drivers": ["app/chrome-extension/script/real-chrome-e2e.mjs"],
   "checks": [
     "X02_opacity",
     "X02_drag",

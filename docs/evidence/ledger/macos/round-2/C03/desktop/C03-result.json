@@ -2,12 +2,8 @@
   "case": "C03",
   "route": "desktop",
   "platform": "macos",
-  "drivers": [
-    "app/desktop/e2e/desktop-c-cases.mjs"
-  ],
-  "checks": [
-    "C03"
-  ],
+  "drivers": ["app/desktop/e2e/desktop-c-cases.mjs"],
+  "checks": ["C03"],
   "actual": {
     "desktop-c-cases:C03": {
       "matchRate": 96,

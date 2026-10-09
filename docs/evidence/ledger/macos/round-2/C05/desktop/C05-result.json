@@ -2,12 +2,8 @@
   "case": "C05",
   "route": "desktop",
   "platform": "macos",
-  "drivers": [
-    "app/desktop/e2e/desktop-c-cases.mjs"
-  ],
-  "checks": [
-    "C05"
-  ],
+  "drivers": ["app/desktop/e2e/desktop-c-cases.mjs"],
+  "checks": ["C05"],
   "actual": {
     "desktop-c-cases:C05": {
       "padded": {

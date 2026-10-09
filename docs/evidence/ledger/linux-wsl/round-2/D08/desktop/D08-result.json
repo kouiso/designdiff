@@ -2,19 +2,11 @@
   "case": "D08",
   "route": "desktop",
   "platform": "linux-wsl",
-  "drivers": [
-    "app/desktop/e2e/desktop-d-cases.mjs"
-  ],
-  "checks": [
-    "D08"
-  ],
+  "drivers": ["app/desktop/e2e/desktop-d-cases.mjs"],
+  "checks": ["D08"],
   "actual": {
     "desktop-d-cases:D08": {
-      "restored": [
-        "D01案件",
-        "比較テスト案件",
-        "MCP経由案件"
-      ],
+      "restored": ["D01案件", "比較テスト案件", "MCP経由案件"],
       "d01ProjectContents": {
         "page": "トップ",
         "source": "デスクトップ"

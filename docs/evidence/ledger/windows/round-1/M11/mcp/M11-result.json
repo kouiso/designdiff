@@ -6,10 +6,7 @@
     "app/mcp-server/script/stdio-campaign-verification2.mjs",
     "app/mcp-server/script/stdio-issue-verification.mjs"
   ],
-  "checks": [
-    "M11_compare_animation",
-    "M11_compareAnimation"
-  ],
+  "checks": ["M11_compare_animation", "M11_compareAnimation"],
   "actual": {
     "stdio-campaign-verification2:M11_compare_animation": {
       "sameOrder": {
@@ -19,11 +16,7 @@
           "maxAbsDriftMs": 0,
           "orderViolation": false
         },
-        "frames": [
-          "PASS",
-          "PASS",
-          "PASS"
-        ]
+        "frames": ["PASS", "PASS", "PASS"]
       },
       "swapped": {
         "temporal": {
@@ -76,10 +69,7 @@
         "maxAbsDriftMs": 0,
         "orderViolation": false
       },
-      "reportDiffPixelCounts": [
-        0,
-        4096
-      ],
+      "reportDiffPixelCounts": [0, 4096],
       "durableDiff": {
         "path": "docs\\evidence\\round1-windows\\stdio-issue-verification\\animation-diff-100ms.png",
         "sha256": "ff3feec9f79e0f72cfe5f71c8378112d62d4cca6e4733cf2ef6eae9fdfcf8a28"

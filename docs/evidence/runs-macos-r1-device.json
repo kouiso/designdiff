@@ -8,18 +8,14 @@
       "driver": "app/mcp-server/script/stdio-android-verification.mjs",
       "evidenceDir": "docs/evidence/round1-macos/stdio-android-verification",
       "passEvidenceVia": "argv2",
-      "requires": [
-        "android-devices"
-      ],
+      "requires": ["android-devices"],
       "note": "X05の複数台拒否は2台以上見える環境でのみ検証"
     },
     {
       "driver": "app/mcp-server/script/stdio-ios-device-verification.mjs",
       "evidenceDir": "docs/evidence/round1-macos/stdio-ios-device-verification",
       "passEvidenceVia": "argv2",
-      "requires": [
-        "ios-device-tethered"
-      ],
+      "requires": ["ios-device-tethered"],
       "note": "X07/ios-device も同様に spec の OS固有非対応ルールで必須経路から除外済み"
     }
   ]

@@ -2,12 +2,8 @@
   "case": "X04",
   "route": "figma-plugin",
   "platform": "linux-wsl",
-  "drivers": [
-    "app/figma-plugin/e2e/real-iframe-host.mjs"
-  ],
-  "checks": [
-    "X04"
-  ],
+  "drivers": ["app/figma-plugin/e2e/real-iframe-host.mjs"],
+  "checks": ["X04"],
   "actual": {
     "real-iframe-host:X04": [
       {

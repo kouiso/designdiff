@@ -2,12 +2,8 @@
   "case": "C13",
   "route": "mcp",
   "platform": "linux-wsl",
-  "drivers": [
-    "app/mcp-server/script/stdio-campaign-verification2.mjs"
-  ],
-  "checks": [
-    "C13_scaled_marker"
-  ],
+  "drivers": ["app/mcp-server/script/stdio-campaign-verification2.mjs"],
+  "checks": ["C13_scaled_marker"],
   "actual": {
     "stdio-campaign-verification2:C13_scaled_marker": {
       "canvas": {

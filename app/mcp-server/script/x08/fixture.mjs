@@ -38,11 +38,7 @@ export const writeX08Fixture = async (dir) => {
     .png()
     .toFile(designPath);
   await base()
-    .composite([
-      await rectPng(RECT_A_IMPL),
-      await rectPng(RECT_B),
-      await rectPng(RECT_C_IMPL),
-    ])
+    .composite([await rectPng(RECT_A_IMPL), await rectPng(RECT_B), await rectPng(RECT_C_IMPL)])
     .png()
     .toFile(screenshotPath);
   return {

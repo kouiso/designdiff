@@ -2,12 +2,8 @@
   "case": "M16",
   "route": "mcp",
   "platform": "linux-wsl",
-  "drivers": [
-    "app/mcp-server/script/stdio-real-figma-verification.mjs"
-  ],
-  "checks": [
-    "M16_generate_report"
-  ],
+  "drivers": ["app/mcp-server/script/stdio-real-figma-verification.mjs"],
+  "checks": ["M16_generate_report"],
   "actual": {
     "stdio-real-figma-verification:M16_generate_report": {
       "isError": false,

@@ -1,1 +1,13 @@
-{"platform":"windows","round":1,"roundExecutionId":"round1","entries":[{"driver":"app/mcp-server/script/stdio-android-verification.mjs","evidenceDir":"docs/evidence/round1-windows/stdio-android-verification","passEvidenceVia":"argv2","requires":["android-devices"]}]}
+{
+  "platform": "windows",
+  "round": 1,
+  "roundExecutionId": "round1",
+  "entries": [
+    {
+      "driver": "app/mcp-server/script/stdio-android-verification.mjs",
+      "evidenceDir": "docs/evidence/round1-windows/stdio-android-verification",
+      "passEvidenceVia": "argv2",
+      "requires": ["android-devices"]
+    }
+  ]
+}

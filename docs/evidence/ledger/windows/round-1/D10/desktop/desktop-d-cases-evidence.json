@@ -4,20 +4,14 @@
   "results": {
     "D01": {
       "onboarding": "steps + input visible",
-      "tokenlessPaths": [
-        "quickCompareSubmit",
-        "createProjectForm"
-      ],
+      "tokenlessPaths": ["quickCompareSubmit", "createProjectForm"],
       "auth": {
         "credentialFile": "credentials.json",
         "viaDialog": true
       },
       "frameSelect": {
         "exported": "https://api.figma.com/v1/images/FD01?ids=7:9&format=png&scale=2&use_absolute_bounds=true",
-        "framesListed": [
-          "ヘッダー",
-          "カード"
-        ]
+        "framesListed": ["ヘッダー", "カード"]
       },
       "project": {
         "id": "1790255679485-dru4ylj",
@@ -134,11 +128,7 @@
       "opened": true
     },
     "D08": {
-      "restored": [
-        "D01案件",
-        "比較テスト案件",
-        "MCP経由案件"
-      ],
+      "restored": ["D01案件", "比較テスト案件", "MCP経由案件"],
       "d01ProjectContents": {
         "page": "トップ",
         "source": "デスクトップ"

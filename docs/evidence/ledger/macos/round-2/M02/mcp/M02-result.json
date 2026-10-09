@@ -2,12 +2,8 @@
   "case": "M02",
   "route": "mcp",
   "platform": "macos",
-  "drivers": [
-    "app/mcp-server/script/stdio-campaign-verification.mjs"
-  ],
-  "checks": [
-    "M02_project_lifecycle"
-  ],
+  "drivers": ["app/mcp-server/script/stdio-campaign-verification.mjs"],
+  "checks": ["M02_project_lifecycle"],
   "actual": {
     "stdio-campaign-verification:M02_project_lifecycle": {
       "projectId": "1790256225971-57122451",

@@ -14,11 +14,7 @@
   ],
   "command": "FIGDIFF_IGNORE_EVIDENCE=<evidence> xvfb-run -a node app/desktop/e2e/native-ignore-region.mjs",
   "build": {
-    "roots": [
-      "app/desktop/dist",
-      "package/shared/dist",
-      "package/credential-store/dist"
-    ],
+    "roots": ["app/desktop/dist", "package/shared/dist", "package/credential-store/dist"],
     "identityFiles": [
       "pnpm-lock.yaml",
       "package.json",

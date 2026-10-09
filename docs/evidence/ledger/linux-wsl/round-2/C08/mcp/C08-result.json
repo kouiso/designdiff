@@ -2,12 +2,8 @@
   "case": "C08",
   "route": "mcp",
   "platform": "linux-wsl",
-  "drivers": [
-    "app/mcp-server/script/stdio-campaign-verification.mjs"
-  ],
-  "checks": [
-    "C08_transparent_design"
-  ],
+  "drivers": ["app/mcp-server/script/stdio-campaign-verification.mjs"],
+  "checks": ["C08_transparent_design"],
   "actual": {
     "stdio-campaign-verification:C08_transparent_design": {
       "onWhite": 0,

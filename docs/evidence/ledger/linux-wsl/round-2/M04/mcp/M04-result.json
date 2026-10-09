@@ -2,13 +2,8 @@
   "case": "M04",
   "route": "mcp",
   "platform": "linux-wsl",
-  "drivers": [
-    "app/mcp-server/script/stdio-real-figma-verification.mjs"
-  ],
-  "checks": [
-    "M04_list_frames",
-    "M04_bad_url"
-  ],
+  "drivers": ["app/mcp-server/script/stdio-real-figma-verification.mjs"],
+  "checks": ["M04_list_frames", "M04_bad_url"],
   "actual": {
     "stdio-real-figma-verification:M04_list_frames": {
       "structuredContent": {
