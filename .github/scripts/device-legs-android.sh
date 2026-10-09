@@ -46,29 +46,37 @@ adb devices -l
 width=""
 height=""
 
-# X07 は Chrome で長いページを開く。fresh AVD の Chrome は初回に利用規約画面を
-# 出して URL を描画しない。driver 本体の force-stop では消せない初回フローな
-# ので、実行前に画面下端中央のタップで受理しておく。証跡として各段階の
-# スクリーンショットを残す。
+# `wm size` は "Physical size: 320x640" を返す。空白を残すと整数判定に落ちて
+# 後段のタップと swipe 計測がまるごと飛ぶ (初回実行で実測)。
+size="$(adb shell wm size 2>/dev/null | tr -d '\r' | grep -E '^Physical size:' | head -1 | tr -d ' ')"
+dims="${size#*:}"
+width="${dims%%x*}"
+height="${dims##*x}"
+
+# X07 は Chrome で長いページを開く。fresh AVD の Chrome は初回に利用規約画面
+# ("Welcome to Chrome") を出して URL を描画せず、swipe も効かない
+# (初回実行で captureCount=1 / didNotScroll=true を実測)。Chrome が debug app
+# の時に読むコマンドラインファイルで初回フローを無効化し、念のため
+# 「Accept & continue」位置のタップも残す。各段階のスクリーンショットを証跡にする。
 adb shell pm list packages >"$evidence_dir/chrome-packages.txt" 2>&1
 if grep -q com.android.chrome "$evidence_dir/chrome-packages.txt"; then
   adb shell am force-stop com.android.chrome
+  adb shell 'echo "_ --disable-fre --no-default-browser-check --no-first-run" > /data/local/tmp/chrome-command-line' \
+    >>"$evidence_dir/chrome-warmup-note.txt" 2>&1 || true
+  adb shell am set-debug-app --persistent com.android.chrome \
+    >>"$evidence_dir/chrome-warmup-note.txt" 2>&1 || true
   adb shell am start -a android.intent.action.VIEW -d http://10.0.2.2:65535/ >/dev/null 2>&1 || true
   sleep 10
-  size="$(adb shell wm size 2>/dev/null | tr -d '\r' | grep -E '^Physical size:' | head -1)"
-  width="${size#*:}"
-  width="${width%%x*}"
-  height="${size##*x}"
   if is_uint "$width" && is_uint "$height"; then
     attempt=1
     while [ "$attempt" -le 3 ]; do
       adb exec-out screencap -p >"$evidence_dir/chrome-warmup-$attempt.png" 2>/dev/null || true
-      adb shell input tap "$((width / 2))" "$((height * 9 / 10))"
+      adb shell input tap "$((width / 2))" "$((height * 19 / 20))"
       sleep 3
       attempt=$((attempt + 1))
     done
   else
-    echo "wm size parse failed: $size" >"$evidence_dir/chrome-warmup-note.txt"
+    echo "wm size parse failed: $size" >>"$evidence_dir/chrome-warmup-note.txt"
   fi
   adb exec-out screencap -p >"$evidence_dir/chrome-warmup-final.png" 2>/dev/null || true
   adb shell am force-stop com.android.chrome
