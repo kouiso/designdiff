@@ -42,14 +42,16 @@ jobs:
       - name: ACL deny probe
         shell: bash
         run: |
-          whoami
-          probe_dir="$HOME/acl-probe"
-          probe_win="$(cygpath -w "$probe_dir")"
-          mkdir -p "$probe_dir"
-          MSYS2_ARG_CONV_EXCL="*" icacls "$probe_win" /deny "$(whoami):(OI)(CI)(W)"
-          MSYS2_ARG_CONV_EXCL="*" icacls "$probe_win" | tail -5
-          (echo x > "$probe_dir/probe.txt" && echo "WRITE SUCCEEDED") || echo "WRITE DENIED"
-          MSYS2_ARG_CONV_EXCL="*" icacls "$probe_win" /remove:d "$(whoami)" >/dev/null || true
+          echo "whoami=$(whoami) USERNAME=$USERNAME USERDOMAIN=$USERDOMAIN COMPUTERNAME=$COMPUTERNAME"
+          for principal in "$(whoami)" "${COMPUTERNAME}\\${USERNAME}" "${USERDOMAIN}\\${USERNAME}"; do
+            probe_dir="$HOME/acl-probe-$(echo "$principal" | tr -cd '[:alnum:]')"
+            probe_win="$(cygpath -w "$probe_dir")"
+            mkdir -p "$probe_dir"
+            echo "--- deny $principal"
+            MSYS2_ARG_CONV_EXCL="*" icacls "$probe_win" /deny "$principal:(OI)(CI)(W)"
+            (echo x > "$probe_dir/probe.txt" && echo "WRITE SUCCEEDED [$principal]") || echo "WRITE DENIED [$principal]"
+            MSYS2_ARG_CONV_EXCL="*" icacls "$probe_win" /remove:d "$principal" >/dev/null || true
+          done
 
       - name: Write runs manifest
         shell: bash
@@ -93,8 +95,27 @@ jobs:
         env:
           ELECTRON_ENABLE_LOGGING: "1"
         run: |
+          # driver は USERDOMAIN\USERNAME で deny 主体を解決するため、
+          # runner の実プリンシパル (COMPUTERNAME\USERNAME) に寄せる
+          export USERDOMAIN="$COMPUTERNAME"
           mkdir -p "docs/evidence/.staging/round-1"
           node script/run-campaign-round.mjs --manifest docs/evidence/runs-windows-r1-remaining.json 2>&1 | tee "docs/evidence/.staging/round-1/runner.log"
+
+      - name: Debug re-run failed drivers (full log)
+        shell: bash
+        if: always()
+        run: |
+          export USERDOMAIN="$COMPUTERNAME"
+          export ELECTRON_ENABLE_LOGGING=1
+          out="docs/evidence/.staging/round-1"
+          mkdir -p "$out"
+          FIGDIFF_IGNORE_EVIDENCE="$PWD/docs/evidence/round1-windows/native-ignore-region" \
+            node app/desktop/e2e/native-ignore-region.mjs > "$out/ignore-region-debug.log" 2>&1 || true
+          FIGDIFF_FIGMA_NODE_FIX_EVIDENCE="$PWD/docs/evidence/round1-windows/native-figma-node-fix" \
+            node app/desktop/e2e/native-figma-node-fix.mjs > "$out/figma-node-fix-debug.log" 2>&1 || true
+          for f in "$out/ignore-region-debug.log" "$out/figma-node-fix-debug.log"; do
+            echo "=== $f ==="; tail -60 "$f"
+          done
 
       - name: Collect evidence
         shell: bash
@@ -214,8 +235,25 @@ jobs:
         env:
           ELECTRON_ENABLE_LOGGING: "1"
         run: |
+          export USERDOMAIN="$COMPUTERNAME"
           mkdir -p "docs/evidence/.staging/round-2"
           node script/run-campaign-round.mjs --manifest docs/evidence/runs-windows-r2-remaining.json 2>&1 | tee "docs/evidence/.staging/round-2/runner.log"
+
+      - name: Debug re-run failed drivers (full log)
+        shell: bash
+        if: always()
+        run: |
+          export USERDOMAIN="$COMPUTERNAME"
+          export ELECTRON_ENABLE_LOGGING=1
+          out="docs/evidence/.staging/round-2"
+          mkdir -p "$out"
+          FIGDIFF_IGNORE_EVIDENCE="$PWD/docs/evidence/round2-windows/native-ignore-region" \
+            node app/desktop/e2e/native-ignore-region.mjs > "$out/ignore-region-debug.log" 2>&1 || true
+          FIGDIFF_FIGMA_NODE_FIX_EVIDENCE="$PWD/docs/evidence/round2-windows/native-figma-node-fix" \
+            node app/desktop/e2e/native-figma-node-fix.mjs > "$out/figma-node-fix-debug.log" 2>&1 || true
+          for f in "$out/ignore-region-debug.log" "$out/figma-node-fix-debug.log"; do
+            echo "=== $f ==="; tail -60 "$f"
+          done
 
       - name: Collect evidence
         shell: bash
