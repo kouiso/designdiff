@@ -68,7 +68,7 @@ Verified at develop tip: `app/figma-plugin/src/code.test.ts`, `app/figma-plugin/
 
 | Workflow | What runs | Required to merge? |
 |----------|-----------|--------------------|
-| `ci.yml` | `pnpm check` (Biome format + lint), `pnpm lint:eslint` (ESLint v9 type-aware), `pnpm typecheck`, `pnpm test` + `test:coverage` thresholds matrix per `check-type`; `e2e` (desktop Playwright renderer); `figma-plugin-e2e` (real-bundle iframe host); `electron-smoke` (Electron launch + IPC, xvfb); `chrome-ext-e2e` (extension in real Chromium, evidence artifacts); `naming` (naming/action-pin checks); `oracle` (independent oracle self-test + verdict agreement + convergence gate) | Yes |
+| `ci.yml` | `pnpm check` (Biome format + lint), `pnpm lint:eslint` (ESLint v9 type-aware), `pnpm typecheck`, `pnpm test` + `test:coverage` thresholds matrix per `check-type`; `e2e` (desktop Playwright renderer); `figma-plugin-e2e` (real-bundle iframe host); `electron-smoke` (Electron launch + IPC, xvfb); `chrome-ext-e2e` (extension in real Chromium, evidence artifacts); `naming` (naming/action-pin/pixelmatch-usage checks); `oracle` (independent oracle self-test + verdict agreement + convergence gate) | Yes |
 | `build.yml` | Electron Build per OS (Linux / macOS / Windows). Guard: `if: github.event.pull_request.draft == false` only — **no `paths` filter**, so it runs on every non-draft PR including docs-only ones (jobs may still be no-ops if turbo cache hits) | Yes |
 | `labeler.yml` | Auto-label PRs by path | Status only |
 | `license-check.yml` | License compatibility scan | Advisory |
