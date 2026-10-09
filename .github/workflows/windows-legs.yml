@@ -46,10 +46,10 @@ jobs:
           probe_dir="$HOME/acl-probe"
           probe_win="$(cygpath -w "$probe_dir")"
           mkdir -p "$probe_dir"
-          icacls "$probe_win" /deny "$(whoami):(OI)(CI)(W)"
-          icacls "$probe_win" | tail -5
+          MSYS2_ARG_CONV_EXCL="*" icacls "$probe_win" /deny "$(whoami):(OI)(CI)(W)"
+          MSYS2_ARG_CONV_EXCL="*" icacls "$probe_win" | tail -5
           (echo x > "$probe_dir/probe.txt" && echo "WRITE SUCCEEDED") || echo "WRITE DENIED"
-          icacls "$probe_win" /remove:d "$(whoami)" >/dev/null || true
+          MSYS2_ARG_CONV_EXCL="*" icacls "$probe_win" /remove:d "$(whoami)" >/dev/null || true
 
       - name: Write runs manifest
         shell: bash
