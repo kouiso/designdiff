@@ -8,6 +8,8 @@
 // 探す。createRequire の別名や vi.mock など呼び出し方は何通りもあり、形で列挙すると
 // 必ず漏れるため。コメントや文言に引用符付きで書いても検出されるが、静かに見逃すより
 // 書き換えを求めるほうを選んでいる。
+// "pixel" + "match" のように名前を組み立てる意図的な回避は静的には追い切れないので、
+// うっかり直接読み込む事故だけを対象にし、それ以上はレビューで止める。
 
 import { execFileSync } from "node:child_process";
 import { lstatSync, readFileSync } from "node:fs";
@@ -33,6 +35,8 @@ const MOCK_INSPECTION_FILES = new Set([
   "app/desktop/src/service/image-compare.test.ts",
   "app/mcp-server/src/service/image-compare-service.test.ts",
 ]);
+// 上のテストは指定文字列を丸ごと許可しているので、モックを外して本物を呼ぶ道もここで塞ぐ。
+const MOCK_ESCAPE = /\b(?:vi|jest)\.(?:unmock|doUnmock|importActual|requireActual)\b/g;
 
 const isAllowed = (file, form) => {
   if (file === COMPARE_FILE) return true;
@@ -72,6 +76,11 @@ for (const file of files) {
       const line = text.slice(0, match.index).split("\n").length;
       violations.push(`  ${file}:${line} (${form}) ${match[0]}`);
     }
+  }
+  if (!MOCK_INSPECTION_FILES.has(file)) continue;
+  for (const match of text.matchAll(MOCK_ESCAPE)) {
+    const line = text.slice(0, match.index).split("\n").length;
+    violations.push(`  ${file}:${line} (mock-escape) ${match[0]}`);
   }
 }
 
