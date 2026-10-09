@@ -39,6 +39,11 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - The FFT self-NCC plane for large windows validates dimensions, search spans, and the cell cap before allocating anything (previously a window beyond the cap allocated an all-NaN plane of roughly the window's area first), and returns an explicit "unmeasurable" result instead of a NaN plane.
 - Correlation candidates for `contentOffset` now require a minimum number of ink-bearing pixel pairs instead of just any four overlapping pixels, so a single coinciding dot between two otherwise-blank windows can no longer produce a perfect (1.0) correlation reported as a clipped translation.
 
+### Security
+
+- Updated sharp to 0.35.5 to address GHSA-wq5f-xc86-pv6w (use-after-free in the bundled librsvg). sharp decodes and resizes images in the MCP server's compare and Figma export paths.
+- Updated `@modelcontextprotocol/sdk` to 1.31.0 for GHSA-6qxp-vccf-f47h (OAuth credentials not bound to their issuing authorization server). figdiff does not use the SDK's OAuth client, so it was not exploitable here; the bump also brings the 10 MiB stdio read-buffer cap from 1.30.0.
+
 ## [2.0.0] - 2026-04-18
 
 ### Added
