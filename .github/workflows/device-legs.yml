@@ -165,6 +165,10 @@ jobs:
           target: google_apis
           arch: x86_64
           emulator-boot-timeout: 2700
+          # 既定の -gpu swiftshader_indirect だと macOS ホストでは画面が単色灰の
+          # まま描画されず (adb screencap で実測)、swipe しても画面が変わらない。
+          # guest 側のソフトウェア描画に切り替える。
+          emulator-options: -no-window -gpu guest -no-snapshot -noaudio -no-boot-anim
           script: sh .github/scripts/device-legs-android.sh "${{ runner.temp }}/device-legs-evidence/android-macos"
 
       - name: Upload android-macos evidence
