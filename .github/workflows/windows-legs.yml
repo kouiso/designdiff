@@ -43,22 +43,22 @@ jobs:
         shell: bash
         run: |
           echo "whoami=$(whoami) USERNAME=$USERNAME USERDOMAIN=$USERDOMAIN COMPUTERNAME=$COMPUTERNAME"
-          MSYS2_ARG_CONV_EXCL="*" whoami.exe /user || true
-          MSYS2_ARG_CONV_EXCL="*" whoami.exe /upn || true
-          MSYS2_ARG_CONV_EXCL="*" whoami.exe /groups /fo list | grep -iE "group name|sid" | head -20 || true
+          MSYS2_ARG_CONV_EXCL="*" cmd //c "whoami /user" || true
           MSYS2_ARG_CONV_EXCL="*" powershell.exe -NoProfile -Command "[System.Security.Principal.WindowsIdentity]::GetCurrent() | Select-Object -Expand Name" || true
           node -e "console.log('node-whoami:', require('os').userInfo().username)" || true
-          sid="$(MSYS2_ARG_CONV_EXCL='*' whoami.exe /user /fo list 2>/dev/null | grep -i 'sid' | head -1 | awk '{print $NF}')"
+          sid="$(MSYS2_ARG_CONV_EXCL='*' powershell.exe -NoProfile -Command "[System.Security.Principal.WindowsIdentity]::GetCurrent().User.Value" 2>/dev/null | tr -d '\r')"
           echo "token-sid=$sid"
-          for principal in "*${sid:-NONE}" "${COMPUTERNAME}\\${USERNAME}" "${USERDOMAIN}\\${USERNAME}"; do
-            probe_dir="$HOME/acl-probe-$(echo "$principal" | tr -cd '[:alnum:]')"
+          for spec in "*${sid:-NONE}:(OI)(CI)(W)" "*${sid:-NONE}:(OI)(CI)(F)" "${COMPUTERNAME}\\${USERNAME}:(OI)(CI)(W)"; do
+            principal="${spec%%:*}"
+            probe_dir="$HOME/acl-probe-$(echo "$spec" | tr -cd '[:alnum:]')"
             probe_win="$(cygpath -w "$probe_dir")"
             mkdir -p "$probe_dir"
-            echo "--- deny $principal"
-            MSYS2_ARG_CONV_EXCL="*" icacls "$probe_win" /deny "$principal:(OI)(CI)(W)"
-            MSYS2_ARG_CONV_EXCL="*" icacls "$probe_win" | tail -6
-            (echo x > "$probe_dir/probe.txt" && echo "WRITE SUCCEEDED [$principal]") || echo "WRITE DENIED [$principal]"
-            MSYS2_ARG_CONV_EXCL="*" icacls "$probe_win" /remove:d "$principal" >/dev/null || true
+            echo "--- deny $spec"
+            MSYS2_ARG_CONV_EXCL="*" icacls "$probe_win" /deny "$spec" || true
+            MSYS2_ARG_CONV_EXCL="*" icacls "$probe_win" || true
+            (echo x > "$probe_dir/probe.txt" && echo "ECHO-WRITE OK [$spec]") || echo "ECHO-WRITE DENIED [$spec]"
+            node -e "const fs=require('fs');try{fs.writeFileSync(process.argv[1]+'/probe-node.txt','x');console.log('NODE-WRITE OK')}catch(e){console.log('NODE-WRITE DENIED',e.code)}" "$probe_dir" || true
+            MSYS2_ARG_CONV_EXCL="*" powershell.exe -NoProfile -Command "try { New-Item -Path '$probe_win\\probe-ps.txt' -ItemType File -Force -ErrorAction Stop | Out-Null; 'PS-WRITE OK' } catch { 'PS-WRITE DENIED ' + \$_.Exception.Message }" || true
           done
 
       - name: Write runs manifest
