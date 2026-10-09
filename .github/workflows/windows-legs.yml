@@ -48,18 +48,23 @@ jobs:
           # DENIED, echo/node は OK)。非特権ユーザで実行しないと deny が
           # 効かない。一般ユーザを作り、その資格で書込みを試す。
           cat > /tmp/acl-probe.ps1 <<'EOF'
-          net user probeuser "Probe!Pass0x1234" /add | Out-Null
+          $ErrorActionPreference='Continue'
+          "--- net user attempt"
+          net user probeuser "Probe!Pass0x1234" /add
           $d = "C:\Users\runneradmin\acl-probe-lowpriv"
           New-Item -Path $d -ItemType Directory -Force | Out-Null
-          icacls $d /grant "probeuser:(OI)(CI)(M)" | Out-Null
-          icacls $d /deny "probeuser:(OI)(CI)(W)" | Out-Null
-          icacls $d
-          $cred = New-Object PSCredential("probeuser", (ConvertTo-SecureString "Probe!Pass0x1234" -AsPlainText -Force))
-          $inner = "try { New-Item -Path '$d\probe.txt' -ItemType File -Force -ErrorAction Stop | Out-Null; 'LOWPRIV-WRITE OK' } catch { 'LOWPRIV-WRITE DENIED ' + `$_.Exception.Message }"
-          $p = Start-Process -Credential $cred -FilePath "powershell.exe" -ArgumentList "-NoProfile","-Command",$inner -Wait -PassThru -RedirectStandardOutput "$d\out.txt" -RedirectStandardError "$d\err.txt" -NoNewWindow
-          Get-Content "$d\out.txt" -ErrorAction SilentlyContinue
-          Get-Content "$d\err.txt" -ErrorAction SilentlyContinue
-          net user probeuser /delete | Out-Null
+          $ns = "C:\Windows\Temp\acl-probe-ns"
+          New-Item -Path $ns -ItemType Directory -Force | Out-Null
+          icacls $ns /grant "NETWORK SERVICE:(OI)(CI)(M)" | Out-Null
+          icacls $ns /deny "NETWORK SERVICE:(OI)(CI)(W)" | Out-Null
+          icacls $ns
+          "--- schtasks as NETWORK SERVICE"
+          schtasks /create /tn probe-ns /sc once /st 00:00 /ru "NT AUTHORITY\NETWORK SERVICE" /f /tr "cmd /c (echo x > `"$ns\probe.txt`" 2>C:\Windows\Temp\ns-err.txt && echo NS-WRITE-OK > C:\Windows\Temp\ns-result.txt) || echo NS-WRITE-DENIED > C:\Windows\Temp\ns-result.txt"
+          schtasks /run /tn probe-ns
+          Start-Sleep -Seconds 8
+          Get-Content C:\Windows\Temp\ns-result.txt -ErrorAction SilentlyContinue
+          Get-Content C:\Windows\Temp\ns-err.txt -ErrorAction SilentlyContinue
+          schtasks /delete /tn probe-ns /f | Out-Null
           EOF
           MSYS2_ARG_CONV_EXCL="*" powershell.exe -NoProfile -File "$(cygpath -w /tmp/acl-probe.ps1)" || true
 
@@ -123,14 +128,14 @@ jobs:
             node app/desktop/e2e/native-ignore-region.mjs > "$out/ignore-region-debug.log" 2>&1 || true
           python - <<'PY'
           p='app/desktop/e2e/native-figma-node-fix.mjs'
-          s=open(p).read()
+          s=open(p,encoding='utf-8').read()
           needle='const cropLabel = page.getByText'
           inject=('const dpr=await page.evaluate(()=>window.devicePixelRatio);'
                   'const bb2=await cropCanvas.boundingBox();'
                   'console.log("DBG-GEOM",JSON.stringify({bb2,dpr}));'
                   'try{await page.screenshot({path:process.env.FIGDIFF_FIGMA_NODE_FIX_EVIDENCE+"/pre-crop.png"})}catch(e){console.log("shot-fail",e.message)};')
           s=s.replace(needle,inject+needle,1)
-          open('app/desktop/e2e/fnf-dbg.mjs','w').write(s)
+          open('app/desktop/e2e/fnf-dbg.mjs','w',encoding='utf-8').write(s)
           PY
           FIGDIFF_FIGMA_NODE_FIX_EVIDENCE="$PWD/docs/evidence/round1-windows/native-figma-node-fix" \
             node app/desktop/e2e/fnf-dbg.mjs > "$out/figma-node-fix-debug.log" 2>&1 || true
