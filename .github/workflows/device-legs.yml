@@ -166,7 +166,7 @@ jobs:
       - name: Run X05/X07 verification on the emulator
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
         with:
-          api-level: 34
+          api-level: 33
           target: google_apis
           # Apple Silicon (ARM) ホストでは arm64 イメージが Hypervisor.framework
           # でネイティブ加速される。x86_64 の TCG 変換より桁違いに安定する。
@@ -175,7 +175,7 @@ jobs:
           # macOS ホストでは既定の -gpu swiftshader_indirect で画面が単色灰、
           # -gpu guest で単色黒のまま描画されなかった (adb screencap で実測)。
           # ANGLE 経由のソフトウェア描画を試す。
-          emulator-options: -no-window -gpu swangle_indirect -no-snapshot -noaudio -no-boot-anim
+          emulator-options: -no-window -gpu swangle_indirect -no-snapshot -noaudio -no-boot-anim -no-metrics -memory 3072 -cores 4
           script: sh .github/scripts/device-legs-android.sh "${{ runner.temp }}/device-legs-evidence/android-macos"
 
       - name: Upload android-macos evidence
