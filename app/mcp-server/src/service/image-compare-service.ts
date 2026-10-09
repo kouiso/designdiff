@@ -11,6 +11,7 @@ import sharp, { type Sharp } from "sharp";
 import {
   PERCEPTIBLE_DIFF_CONTRADICTION_RATIO,
   applyIgnoreRegions as zeroIgnoreRegions,
+  buildAntiAliasedMask as buildAntiAliasedMaskSignal,
   buildIgnoreMask,
   classifyIgnoreRegionEntries,
   buildVerifiedInsetCandidates,
@@ -1597,6 +1598,14 @@ export async function compareImages(
       earlyClusterForScoring.diffRegions.length > 0
         ? buildDiffPixelMask(diffPixelData, width, height)
         : undefined,
+    // 残差が発火水準に届いたときだけ AA 縁を除いて測り直すための遅延提供者。
+    // pixelmatch と同じ入力・同じ閾値で作る。ずれると「本家は AA と認めたが
+    // 残差は数える」画素が生まれ、ずれ許容済みの縁に残差が発火する。
+    // 常に構築すると pixelmatch 1 パス分のコストが全比較に乗るため遅延にする。
+    buildAntiAliasedMask: () =>
+      buildAntiAliasedMaskSignal(reportDesignPixels, reportScreenshotPixels, width, height, {
+        threshold,
+      }),
     localAlignmentTolerancePx: options.localAlignmentTolerancePx,
     rasterizationTolerance: options.rasterizationTolerance,
   });

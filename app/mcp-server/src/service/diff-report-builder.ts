@@ -81,6 +81,16 @@ interface BuildDiffReportOptions {
   // 使う。bbox ごと除くと、枠線だけの疎なクラスタが内側の広い色ずれまで
   // 残差から消してしまう。未指定時は従来どおり bbox 全体を除く。
   diffMask?: Uint8Array;
+  // pixelmatch が「差分ではなく AA」と判定した画素 (1 = AA) を遅延で返す
+  // 提供者。残差は「pixelmatch が差分に数えなかった画素」の広い色ずれを
+  // 拾う物差しなので、AA 縁 (ラスタライザ差・1-2px のずれの輪郭) を混ぜると
+  // ずれとして許容済みの画素に発火する (実測 9892:8063 等 4 画面: 発火窓の
+  // 大差分画素の 73-100% が AA 判定)。ただし AA 判定の走査は pixelmatch
+  // 1 パス分のコストなので、窓残差が閾値に届いた (= 発射の可能性がある)
+  // ときだけ呼び出す。クラスタ採点側は pixelmatch が AA を件数から外す
+  // 時点で既に同じ許容を受けているため、残差だけが AA を数えると経路間で
+  // 物差しが割れる。
+  buildAntiAliasedMask?: () => Uint8Array;
   // 各採点領域で許容する局所平行移動の最大px。指定時だけ有効になる opt-in
   // 許容 (既定 off: 1px でも FAIL を維持する従来契約を他利用者から変えない)。
   // ラスタライザ差・丸め誤差で要素が数pxずれる環境間比較 (例: Figma 正本と
@@ -100,11 +110,21 @@ const MAX_REGION_SCORE_COUNT = 24;
 // がどの行にも載らず、判定から黙って消える (designdiff#359)。上限を超えた
 // クラスタは、セクション経路では救済を止め、ノード木の無い経路では PASS を止める。
 const MAX_DIFF_CLUSTER_SCORE_COUNT = 200;
-// フレーム残差を測る横帯の分割数。モバイル画面はヘッダ・カード・フッタの
+// フレーム残差を測る窓のスケール。モバイル画面はヘッダ・カード・フッタの
 // ような横帯の積み重ねなので、帯単位の最大値を取れば帯に集中した色ずれが
-// フレーム平均に薄まらない。8 は典型的な画面高 (700px 前後) で 1 帯 ≒ 90px
-// (カード1枚分) になる粒度。
-const RESIDUAL_BAND_COUNT = 8;
+// フレーム平均に薄まらない (実測 9949:23513: 画面下 1/8 の帯で ΔE≈5 の
+// ずれが全体平均 1.69 に薄まり、ノード木の無い経路を素通りしていた)。
+// ただし単一スケールの固定横帯だけでは、帯の境界をまたぐ薄い帯が両側に
+// 分かれて薄まり、縦縞や局所ブロックは帯の面積に対して小さく薄まる
+// (band-eval2 の miss として実測)。そこで行・列の帯を 3 スケール
+// (1/8・1/16・1/32) で重ね、2 次元の局所性は 8×8 のセル網で拾い、
+// 全窓の平均の最大値を残差とする。8 分割の行帯はフレームの分割なので、
+// 帯の最大値はフレーム平均以上 = 帯化・窓化で見逃しは増えない。
+// セルを 16×16 より細かくすると、clustering の連結画素数しきい値未満の
+// 断片 (3x3 程度) がセル面積の1割を超えて平均を押し上げ、両経路で
+// 「ノイズ」と決めている断片に発火してしまうため 8×8 までに留める。
+const RESIDUAL_BAND_SCALES = [8, 16, 32] as const;
+const RESIDUAL_CELL_GRIDS = [8] as const;
 // 2つの採点単位 (セクション行 / クラスタ行) の判定を併合するときに厳しい側を
 // 採るための順序。inconclusive は「合格を保証できない」ので pass より厳しい。
 const VERDICT_SEVERITY_RANK: Record<DiffReport["aggregateVerdict"], number> = {
@@ -143,6 +163,61 @@ const buildColorDifference = (
     width,
     ignoreMask,
   );
+};
+
+// フレーム残差の計測窓。行・列の帯を 3 スケールで重ね、2 次元のセル網を
+// 足した全窓について、マスク外画素の平均 ΔE2000 の最大値とその窓を返す。
+// 窓あたりの計測はセクション採点と同じ buildColorDifference (サンプリング
+// 規則も同一) を使い、残差だけが別の物差しにならないようにする。
+const computeMaxWindowResidual = (
+  designPixels: Uint8ClampedArray,
+  screenshotPixels: Uint8ClampedArray,
+  width: number,
+  height: number,
+  contentBbox: DiffBoundingBox,
+  residualMask: Uint8Array,
+): { color: number; window: DiffBoundingBox } => {
+  let maxColor = 0;
+  let maxWindow = contentBbox;
+  const consider = (bbox: DiffBoundingBox): void => {
+    if (bbox.w <= 0 || bbox.h <= 0) return;
+    const color = buildColorDifference(
+      designPixels,
+      screenshotPixels,
+      width,
+      height,
+      bbox,
+      residualMask,
+    );
+    if (color > maxColor) {
+      maxColor = color;
+      maxWindow = bbox;
+    }
+  };
+  const splitOffset = (origin: number, length: number, scale: number, index: number): number =>
+    origin + Math.floor((index * length) / scale);
+  for (const scale of RESIDUAL_BAND_SCALES) {
+    for (let index = 0; index < scale; index += 1) {
+      const y0 = splitOffset(contentBbox.y, contentBbox.h, scale, index);
+      const y1 = splitOffset(contentBbox.y, contentBbox.h, scale, index + 1);
+      consider({ x: contentBbox.x, y: y0, w: contentBbox.w, h: y1 - y0 });
+      const x0 = splitOffset(contentBbox.x, contentBbox.w, scale, index);
+      const x1 = splitOffset(contentBbox.x, contentBbox.w, scale, index + 1);
+      consider({ x: x0, y: contentBbox.y, w: x1 - x0, h: contentBbox.h });
+    }
+  }
+  for (const grid of RESIDUAL_CELL_GRIDS) {
+    for (let gy = 0; gy < grid; gy += 1) {
+      const y0 = splitOffset(contentBbox.y, contentBbox.h, grid, gy);
+      const y1 = splitOffset(contentBbox.y, contentBbox.h, grid, gy + 1);
+      for (let gx = 0; gx < grid; gx += 1) {
+        const x0 = splitOffset(contentBbox.x, contentBbox.w, grid, gx);
+        const x1 = splitOffset(contentBbox.x, contentBbox.w, grid, gx + 1);
+        consider({ x: x0, y: y0, w: x1 - x0, h: y1 - y0 });
+      }
+    }
+  }
+  return { color: maxColor, window: maxWindow };
 };
 
 // ΔE2000 は知覚距離なのでトークン1段のズレ (例 #22AA88 vs #28AA88) が閾値 2 を
@@ -786,6 +861,7 @@ const buildResidualMask = (
   ignoreMask: Uint8Array | undefined,
   clusterBoxes: readonly DiffBoundingBox[],
   diffMask: Uint8Array | undefined,
+  antiAliasedMask?: Uint8Array,
 ): Uint8Array => {
   const pixelCount = width * height;
   if (ignoreMask !== undefined && ignoreMask.length !== pixelCount) {
@@ -798,7 +874,21 @@ const buildResidualMask = (
       `buildResidualMask: diffMask must cover every pixel (got ${diffMask.length}, expected ${pixelCount})`,
     );
   }
+  if (antiAliasedMask !== undefined && antiAliasedMask.length !== pixelCount) {
+    throw new Error(
+      `buildResidualMask: antiAliasedMask must cover every pixel (got ${antiAliasedMask.length}, expected ${pixelCount})`,
+    );
+  }
   const mask = ignoreMask ? Uint8Array.from(ignoreMask) : new Uint8Array(pixelCount);
+  // AA 縁はクラスタの内外に関わらずレンダラ由来のノイズなので、残差の
+  // 対象から全域で外す (クラスタ採点が AA を件数に数えないのと同じ扱い)。
+  if (antiAliasedMask !== undefined) {
+    for (let index = 0; index < pixelCount; index += 1) {
+      if (antiAliasedMask[index] === 1) {
+        mask[index] = 1;
+      }
+    }
+  }
   for (const box of clusterBoxes) {
     const startX = Math.max(0, Math.floor(box.x));
     const endX = Math.min(width, Math.ceil(box.x + box.w));
@@ -837,11 +927,11 @@ interface RegionScoreBuild {
   // セクション行がある比較でも採点した差分クラスタ行。セクションの広面積平均に
   // 薄まらないよう、クラスタ単体の critical はノード木の無い比較と同じく合否に効かせる。
   sectionDiffClusters: RegionScore[];
-  // クラスタ外の画素だけで測ったフレーム残差 (帯ごとの平均 ΔE2000 の最大値)。
-  // セクション行の残差と同じ物差しで、クラスタを作らない広い色ずれを拾う。
-  // セクション行の有無に関わらず、クラスタがある比較では必ず測る。
+  // クラスタ外の画素だけで測ったフレーム残差 (帯・セル窓ごとの平均 ΔE2000
+  // の最大値)。セクション行の残差と同じ物差しで、クラスタを作らない広い
+  // 色ずれを拾う。セクション行やクラスタの有無に関わらず必ず測る。
   frameResidualColor?: number;
-  // frameResidualColor を出した帯の bbox。issue の指し先に使う。
+  // frameResidualColor を出した窓 (帯またはセル) の bbox。issue の指し先に使う。
   frameResidualBand?: DiffBoundingBox;
 }
 
@@ -1142,16 +1232,71 @@ const buildRegionScores = (options: BuildDiffReportOptions): RegionScoreBuild =>
   // の合否が割れていた。クラスタを作らない広い色ずれは平均に出るので、この
   // 物差しで拾える。clustering の連結画素数しきい値未満の断片は、ノード木の
   // 無い経路と同じくノイズとして扱う。
-  const residualMask =
-    diffClusterRegions.length + unscoredDiffClusters.length > 0
-      ? buildResidualMask(
-          width,
-          height,
-          ignoreMask,
-          [...diffClusterRegions.map((cluster) => cluster.bbox), ...unscoredDiffClusters],
-          diffMask,
-        )
-      : undefined;
+  // クラスタが0件でも残差は必ず測る。クラスタを作らない (pixelmatch 閾値
+  // 未満の) 帯状の色ずれだけが存在する画面でマスク自体を作らないと、
+  // そのずれはどの採点にも乗らず無計測のまま合格する (band-eval2 の
+  // 無関係diffなし変種 10 件が全て見逃しになった原因)。
+  const clusterBoxes = [
+    ...diffClusterRegions.map((cluster) => cluster.bbox),
+    ...unscoredDiffClusters,
+  ];
+  let residualMask = buildResidualMask(width, height, ignoreMask, clusterBoxes, diffMask);
+
+  const wholeFrameBbox = toWholeFrameRegion(width, height);
+  // letterbox 余白を含めると SSIM / 色差が不当に悪化するため、content rect 内で評価する。
+  const contentBbox = toContentRegion(width, height, paddingMask);
+
+  // クラスタの外側は、セクション行の有無に関わらずフレーム全体で測る。
+  // セクション経路で子が画面を覆わない (部分幅の子・兄弟間の隙間) と、
+  // 背景の色ずれがどのセクション行にも乗らず、ノード木の無い経路だけが
+  // residual_color_drift で失格して同じ画素の合否が経路で割れる。
+  // root 行は子の行があると合否から外れるため、クラスタの外側を別途測ら
+  // ないと、クラスタを作らない広い色ずれが合否に一切届かない。
+  //
+  // フレーム全体の1平均だと、帯状に集中した色ずれが面積で薄まる
+  // (画面下 1/8 の帯で ΔE≈5 の背景ずれがあっても全体平均は 2 未満に落ち、
+  // セクション経路ではたまたま帯にかかった細いセクション行だけが失格する
+  // = 実測 9949:23513)。窓の形に依存せず拾うため、行・列の帯 (3 スケール)
+  // とセル網 (2 スケール) の全窓で最大値を取る。全面に均一なずれはどの窓
+  // でも同じ値に出るため、窓の増加で見逃しは増えない (8 分割行帯がフレーム
+  // の分割なので、窓の最大値はフレーム平均以上になる)。
+  let frameResidual = computeMaxWindowResidual(
+    designPixels,
+    screenshotPixels,
+    width,
+    height,
+    contentBbox,
+    residualMask,
+  );
+
+  // 窓残差が発火水準に届いたときだけ、AA 縁を除いて測り直す。
+  // 閾値に届かない比較では画素を除いても値は下がるだけなので走査は不要で、
+  // 届いた比較では AA 縁 (ずれとして許容済みの輪郭) を除かないと
+  // ずれ許容の裏口から同じ画素に再発火する (実測 9705:6069 / 9804:4204 /
+  // 9810:3055 / 9892:8063)。再計測後のマスクをセクション残差にも使い、
+  // 窓とセクションで物差しが割れないようにする。
+  if (frameResidual.color >= PERCEPTIBLE_DELTA_E && options.buildAntiAliasedMask !== undefined) {
+    const antiAliasedMask = options.buildAntiAliasedMask();
+    if (antiAliasedMask.some((value) => value === 1)) {
+      residualMask = buildResidualMask(
+        width,
+        height,
+        ignoreMask,
+        clusterBoxes,
+        diffMask,
+        antiAliasedMask,
+      );
+      frameResidual = computeMaxWindowResidual(
+        designPixels,
+        screenshotPixels,
+        width,
+        height,
+        contentBbox,
+        residualMask,
+      );
+    }
+  }
+  const frameResidualColor = frameResidual.color;
 
   // セクション行の救済証拠をここで後付けする。textReflow による再分類が
   // 確定してからでないと、クラスタが説明済みかを数えられないため。
@@ -1165,7 +1310,6 @@ const buildRegionScores = (options: BuildDiffReportOptions): RegionScoreBuild =>
     );
     if (coverage === undefined) continue;
     if (
-      residualMask === undefined ||
       coverage.explainedCount !== coverage.clusterCount ||
       options.rasterizationTolerance !== true
     ) {
@@ -1186,53 +1330,6 @@ const buildRegionScores = (options: BuildDiffReportOptions): RegionScoreBuild =>
       unexplainedPerceptibleDiff: residualColor >= PERCEPTIBLE_DELTA_E,
     };
   }
-
-  const wholeFrameBbox = toWholeFrameRegion(width, height);
-  // letterbox 余白を含めると SSIM / 色差が不当に悪化するため、content rect 内で評価する。
-  const contentBbox = toContentRegion(width, height, paddingMask);
-
-  // クラスタの外側は、セクション行の有無に関わらずフレーム全体で測る。
-  // セクション経路で子が画面を覆わない (部分幅の子・兄弟間の隙間) と、
-  // 背景の色ずれがどのセクション行にも乗らず、ノード木の無い経路だけが
-  // residual_color_drift で失格して同じ画素の合否が経路で割れる。
-  // root 行は子の行があると合否から外れるため、クラスタの外側を別途測ら
-  // ないと、クラスタを作らない広い色ずれが合否に一切届かない。
-  //
-  // フレーム全体の1平均だと、帯状に集中した色ずれが面積で薄まる
-  // (画面下 1/8 の帯で ΔE≈5 の背景ずれがあっても全体平均は 2 未満に落ち、
-  // セクション経路ではたまたま帯にかかった細いセクション行だけが失格する
-  // = 実測 9949:23513)。モバイル画面は横帯 (ヘッダ・カード・フッタ) の
-  // 積み重ねなので、content rect を高さ 8 等分の帯に分けて最大値を取る。
-  // 全面に均一なずれはどの帯でも同じ値に出るため、帯化で見逃しは増えない
-  // (帯の最大値はフレーム平均以上になる)。
-  const frameResidual =
-    residualMask === undefined
-      ? undefined
-      : (() => {
-          let maxColor = 0;
-          let maxBand = contentBbox;
-          for (let band = 0; band < RESIDUAL_BAND_COUNT; band += 1) {
-            const bandY0 = contentBbox.y + Math.floor((band * contentBbox.h) / RESIDUAL_BAND_COUNT);
-            const bandY1 =
-              contentBbox.y + Math.floor(((band + 1) * contentBbox.h) / RESIDUAL_BAND_COUNT);
-            if (bandY1 <= bandY0) continue;
-            const bandBbox = { x: contentBbox.x, y: bandY0, w: contentBbox.w, h: bandY1 - bandY0 };
-            const color = buildColorDifference(
-              designPixels,
-              screenshotPixels,
-              width,
-              height,
-              bandBbox,
-              residualMask,
-            );
-            if (color > maxColor) {
-              maxColor = color;
-              maxBand = bandBbox;
-            }
-          }
-          return { color: maxColor, band: maxBand };
-        })();
-  const frameResidualColor = frameResidual?.color;
 
   // 比較対象そのものの行。子の行があっても必ず1件持たせる。
   // 単一ノードを比べたとき、子の行しか無いと「対象ノードが見つからない」で
@@ -1291,7 +1388,7 @@ const buildRegionScores = (options: BuildDiffReportOptions): RegionScoreBuild =>
       unscoredClusterCountWithoutSections: 0,
       sectionDiffClusters: diffClusterRegions,
       frameResidualColor,
-      frameResidualBand: frameResidual?.band,
+      frameResidualBand: frameResidual.window,
     };
   }
 
@@ -1301,7 +1398,7 @@ const buildRegionScores = (options: BuildDiffReportOptions): RegionScoreBuild =>
       unscoredClusterCountWithoutSections: unscoredDiffClusters.length,
       sectionDiffClusters: [],
       frameResidualColor,
-      frameResidualBand: frameResidual?.band,
+      frameResidualBand: frameResidual.window,
     };
   }
 
@@ -1309,6 +1406,8 @@ const buildRegionScores = (options: BuildDiffReportOptions): RegionScoreBuild =>
     regionScores: [buildRootRegion()],
     unscoredClusterCountWithoutSections: 0,
     sectionDiffClusters: [],
+    frameResidualColor,
+    frameResidualBand: frameResidual.window,
   };
 };
 
@@ -1547,9 +1646,13 @@ export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
   issues.push(...sectionDiffClusterIssues.filter((issue) => issue.severity === "critical"));
   if (frameResidualColor !== undefined && frameResidualColor >= PERCEPTIBLE_DELTA_E) {
     issues.push({
-      regionId: "whole-frame",
-      // 残差が閾値を超えた帯を指す。帯状のずれをフレーム全体の bbox で
-      // 報告すると、直す側がずれの位置を絞れない。
+      // root 行 ("whole-frame") とは別の ID にする。root 行は子が全て合格の
+      // とき合否から外れる契約があり、残差の issue はその行の判定ではなく
+      // 独立した計測なので、混ざると「比較対象そのものの行が他の判断へ
+      // 漏れない」契約を破る。
+      regionId: "frame-residual",
+      // 残差が閾値を超えた窓 (帯またはセル) を指す。局所的なずれを
+      // フレーム全体の bbox で報告すると、直す側がずれの位置を絞れない。
       bbox: frameResidualBand ?? toContentRegion(width, height, paddingMask),
       kind: "color",
       severity: "critical",

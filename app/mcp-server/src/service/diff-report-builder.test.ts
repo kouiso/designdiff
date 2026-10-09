@@ -2170,14 +2170,25 @@ describe("細線の局所変位 (designdiff#243)", () => {
 
   it("rasterization_tolerance 下ではずれた線を critical にせず位置の minor issue で残す", async () => {
     const { buildDiffReport } = await import("./diff-report-builder.js");
-    const { designPixels, screenshotPixels, cluster } = await shiftedDivider();
+    const { designPixels, screenshotPixels } = await shiftedDivider();
+    // 実パイプラインでは pixelmatch がずれた線の両側 (y50 の消失側と y52 の
+    // 出現側) を差分として拾い、両方がクラスタと diffMask に入る。片側だけ
+    // のクラスタで diffMask 無しにすると、もう片側の線が残差に見えてしまい、
+    // 細かい計測窓がそれを拾う (実際には起きない入力なので fixture を直す)。
+    const diffMask = new Uint8Array(SIZE * SIZE);
+    diffMask.fill(1, 50 * SIZE + 10, 50 * SIZE + 110);
+    diffMask.fill(1, 52 * SIZE + 10, 52 * SIZE + 110);
 
     const report = buildDiffReport({
       designPixels,
       screenshotPixels,
       width: SIZE,
       height: SIZE,
-      diffRegions: [cluster],
+      diffRegions: [
+        { x: 10, y: 50, w: 100, h: 1, diffPixelCount: 100 },
+        { x: 10, y: 52, w: 100, h: 1, diffPixelCount: 100 },
+      ],
+      diffMask,
       rasterizationTolerance: true,
     });
 
@@ -2605,7 +2616,7 @@ describe("細線の局所変位 (designdiff#243)", () => {
     expect(report.issues).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          regionId: "whole-frame",
+          regionId: "frame-residual",
           severity: "critical",
           evidence: expect.objectContaining({ signal: "residual_color_drift" }),
         }),
@@ -2740,7 +2751,7 @@ describe("細線の局所変位 (designdiff#243)", () => {
     expect(report.issues).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          regionId: "whole-frame",
+          regionId: "frame-residual",
           severity: "critical",
           evidence: expect.objectContaining({ signal: "residual_color_drift" }),
         }),
@@ -2804,7 +2815,7 @@ describe("細線の局所変位 (designdiff#243)", () => {
       expect(target.issues).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
-            regionId: "whole-frame",
+            regionId: "frame-residual",
             severity: "critical",
             evidence: expect.objectContaining({ signal: "residual_color_drift" }),
           }),
@@ -2938,6 +2949,331 @@ describe("細線の局所変位 (designdiff#243)", () => {
     expect(cluster?.color).toBeLessThan(2);
     expect(cluster?.structure).toBeLessThan(0.8);
     expect(withoutTree.aggregateVerdict).toBe("fail");
+    expect(report.aggregateVerdict).toBe("fail");
+  });
+
+  it("差分クラスタが1件も無くても、帯状の背景色ずれはフレーム残差で失格にする", async () => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    // pixelmatch が1画素も差分と判定しない (ΔE≈5 は pixelmatch 閾値未満、
+    // 実測 9949:23513 と同じ色ペアで実測済み) とクラスタは0件になる。
+    // その場合に残差マスク自体を作らないと、色ずれはどの採点にも乗らず
+    // 無計測のまま合格してしまう。クラスタの有無は残差を測るかどうかの
+    // 条件にしない。
+    const designPixels = await createSolidRgba(SIZE, SIZE, WHITE_RGB);
+    const screenshotPixels = await createSolidRgba(SIZE, SIZE, WHITE_RGB);
+    paint(designPixels, 0, 105, SIZE, 15, { r: 0xef, g: 0xf8, b: 0xf2 });
+    paint(screenshotPixels, 0, 105, SIZE, 15, { r: 0xf7, g: 0xf7, b: 0xf7 });
+    const options = {
+      designPixels,
+      screenshotPixels,
+      width: SIZE,
+      height: SIZE,
+      diffRegions: [],
+      rasterizationTolerance: true,
+    };
+
+    const report = buildDiffReport({ ...options, figmaRootNode: sectionReliefFrame() });
+    const withoutTree = buildDiffReport(options);
+
+    for (const target of [report, withoutTree]) {
+      expect(target.issues).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            regionId: "frame-residual",
+            severity: "critical",
+            evidence: expect.objectContaining({ signal: "residual_color_drift" }),
+          }),
+        ]),
+      );
+      expect(target.aggregateVerdict).toBe("fail");
+    }
+  });
+
+  it("帯の境界をまたぐ薄い帯・縦縞・局所ブロックの色ずれも、面積で薄めず残差で失格にする", async () => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    // いずれも ΔE≈5.2 の均一な色ずれ (知覚閾の5倍弱) で、人の目には帯分割も
+    // 面積比も関係なく見える実差分。固定8帯の1平均だと、境界をまたぐ薄帯は
+    // 両側に分かれて、縦縞と局所ブロックは帯の面積に対して小さくて、
+    // それぞれ閾値を割る。レンダラ差になり得ない (フラットな面がまるごと
+    // 変わる) ずれなので、窓の形に依存せず拾う。
+    const variants: ReadonlyArray<{
+      name: string;
+      apply: (design: Uint8ClampedArray, shot: Uint8ClampedArray) => void;
+    }> = [
+      {
+        // 8 行の帯が 1/8 分割の境界 (y105) をまたぐ。片側 5 行・片側 3 行。
+        name: "thin-band-straddle",
+        apply: (design, shot) => {
+          paint(design, 0, 101, SIZE, 8, { r: 0xef, g: 0xf8, b: 0xf2 });
+          paint(shot, 0, 101, SIZE, 8, { r: 0xf7, g: 0xf7, b: 0xf7 });
+        },
+      },
+      {
+        // 高さ 3 行の全幅帯。細いが全幅に ΔE≈5.2 のずれは明瞭に見える。
+        name: "thin-band-3rows",
+        apply: (design, shot) => {
+          paint(design, 0, 106, SIZE, 3, { r: 0xef, g: 0xf8, b: 0xf2 });
+          paint(shot, 0, 106, SIZE, 3, { r: 0xf7, g: 0xf7, b: 0xf7 });
+        },
+      },
+      {
+        // 幅 8px の縦縞。横帯だけで測ると全帯で (8/120)*5.2 = 0.35 に薄まる。
+        name: "vertical-stripe",
+        apply: (design, shot) => {
+          paint(design, 60, 0, 8, SIZE, { r: 0xef, g: 0xf8, b: 0xf2 });
+          paint(shot, 60, 0, 8, SIZE, { r: 0xf7, g: 0xf7, b: 0xf7 });
+        },
+      },
+      {
+        // 40x40 の局所ブロック。帯の高さ 15 行には 40x15 画素しか乗らず
+        // (40*15*5.2)/(120*15) = 1.73 < 2 に薄まる。局所的な実欠陥を
+        // 「クラスタ採点の責務」とみなして素通ししない (pixelmatch 閾値未満の
+        // ずれはクラスタに乗らないため、残差が最後の計測)。
+        name: "local-block-40x40",
+        apply: (design, shot) => {
+          paint(design, 40, 40, 40, 40, { r: 0xef, g: 0xf8, b: 0xf2 });
+          paint(shot, 40, 40, 40, 40, { r: 0xf7, g: 0xf7, b: 0xf7 });
+        },
+      },
+    ];
+    for (const variant of variants) {
+      const designPixels = await createSolidRgba(SIZE, SIZE, WHITE_RGB);
+      const screenshotPixels = await createSolidRgba(SIZE, SIZE, WHITE_RGB);
+      variant.apply(designPixels, screenshotPixels);
+      // 証明済みの変位クラスタ (無関係な差分があっても結果が変わらないことの
+      // 確認も兼ねる)。
+      paint(designPixels, 10, 10, 30, 1, DARK_RGB);
+      paint(screenshotPixels, 10, 12, 30, 1, DARK_RGB);
+      const options = {
+        designPixels,
+        screenshotPixels,
+        width: SIZE,
+        height: SIZE,
+        diffRegions: [
+          { x: 10, y: 10, w: 30, h: 1, diffPixelCount: 30 },
+          { x: 10, y: 12, w: 30, h: 1, diffPixelCount: 30 },
+        ],
+        rasterizationTolerance: true,
+      };
+
+      const report = buildDiffReport({ ...options, figmaRootNode: sectionReliefFrame() });
+      const withoutTree = buildDiffReport(options);
+
+      for (const target of [report, withoutTree]) {
+        expect(
+          target.issues.some(
+            (issue) =>
+              issue.severity === "critical" && issue.evidence.signal === "residual_color_drift",
+          ),
+          `${variant.name}: residual_color_drift が critical で出ること`,
+        ).toBe(true);
+        expect(target.aggregateVerdict, `${variant.name}: 失格になること`).toBe("fail");
+      }
+    }
+  });
+
+  it("許容されるレンダラ差 (なめらかな階調差・AA ディザ・写真風ノイズ) は細かい窓でも発火しない", async () => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    // 窓を細かくするとノイズを拾う恐れがあるため、対照群を同じ重さで固定する。
+    // いずれも画素あたり ΔE ≲ 1.5・零平均・エッジ非局在で、レンダラ/符号化差
+    // として許容される形。
+    const variants: ReadonlyArray<{
+      name: string;
+      apply: (design: Uint8ClampedArray, shot: Uint8ClampedArray) => void;
+    }> = [
+      {
+        name: "gradient-ramp",
+        apply: (design, shot) => {
+          for (let y = 0; y < SIZE; y += 1) {
+            const t = y / SIZE;
+            const d = Math.round;
+            paint(design, 0, y, SIZE, 1, {
+              r: d(255 - 16 * t),
+              g: d(255 - 7 * t),
+              b: d(255 - 13 * t),
+            });
+            paint(shot, 0, y, SIZE, 1, {
+              r: d(255 - 13 * t),
+              g: d(255 - 6 * t),
+              b: d(255 - 11 * t),
+            });
+          }
+        },
+      },
+      {
+        name: "aa-dither",
+        apply: (_design, shot) => {
+          for (let y = 0; y < SIZE; y += 1) {
+            for (let x = 0; x < SIZE; x += 1) {
+              if ((x * 7 + y * 13) % 3 === 0) continue;
+              const value = 0xff - ((x + y) % 2); // 254/255 の ±1 ディザ
+              paint(shot, x, y, 1, 1, { r: value, g: value, b: value });
+            }
+          }
+        },
+      },
+      {
+        name: "photo-noise",
+        apply: (_design, shot) => {
+          for (let y = 0; y < SIZE; y += 1) {
+            for (let x = 0; x < SIZE; x += 1) {
+              const n = ((x * 31 + y * 17) % 7) - 3;
+              paint(shot, x, y, 1, 1, { r: 0xff - n, g: 0xff - n, b: 0xff - n });
+            }
+          }
+        },
+      },
+    ];
+    for (const variant of variants) {
+      const designPixels = await createSolidRgba(SIZE, SIZE, WHITE_RGB);
+      const screenshotPixels = await createSolidRgba(SIZE, SIZE, WHITE_RGB);
+      variant.apply(designPixels, screenshotPixels);
+      paint(designPixels, 10, 10, 30, 1, DARK_RGB);
+      paint(screenshotPixels, 10, 12, 30, 1, DARK_RGB);
+      const report = buildDiffReport({
+        designPixels,
+        screenshotPixels,
+        width: SIZE,
+        height: SIZE,
+        diffRegions: [
+          { x: 10, y: 10, w: 30, h: 1, diffPixelCount: 30 },
+          { x: 10, y: 12, w: 30, h: 1, diffPixelCount: 30 },
+        ],
+        rasterizationTolerance: true,
+      });
+
+      expect(
+        report.issues.some((issue) => issue.evidence.signal === "residual_color_drift"),
+        `${variant.name}: 残差は発火しないこと`,
+      ).toBe(false);
+      expect(
+        report.issues.some((issue) => issue.severity === "critical"),
+        `${variant.name}: critical が出ないこと`,
+      ).toBe(false);
+      expect(report.aggregateVerdict, `${variant.name}: 合格のままであること`).toBe("pass");
+    }
+  });
+
+  it("AA 縁 (1px ずれた文字帯の輪郭) は残差に混ぜず、混ぜたままだと発火することを併せて証明する", async () => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    const { buildAntiAliasedMask, comparePixels } = await import("@figdiff/shared");
+    // 実機で受理済みの 1px ずれ (実測 9892:8063 等) を模す。白地にグレー縁つきの
+    // 濃灰 2 行 (文字の画線) を design は y=60、shot は y=61 に引く。
+    // ずれの輪郭は高振幅 (白↔灰↔濃灰) だが、pixelmatch は AA として件数に
+    // 数えず、クラスタ採点のずれ許容でも合格してきた画素。残差がこれを数えると
+    // 許容の裏口から再発火するため、提供者経由の AA マスクで除く。
+    const paintBand = (pixels: Uint8ClampedArray, y0: number): void => {
+      paint(pixels, 10, y0, 90, 1, { r: 0x99, g: 0x99, b: 0x99 });
+      paint(pixels, 10, y0 + 1, 90, 2, DARK_RGB);
+      paint(pixels, 10, y0 + 3, 90, 1, { r: 0x99, g: 0x99, b: 0x99 });
+    };
+    const designPixels = await createSolidRgba(SIZE, SIZE, WHITE_RGB);
+    const screenshotPixels = await createSolidRgba(SIZE, SIZE, WHITE_RGB);
+    // 静止アンカー (両画像で同一の外枠と横線)。ほぼ白紙の画面だと全体
+    // アライメントの相関が縮退して帯の位置へ誤シフトし、帯と無関係な窓が
+    // 発火するため (fixture 起因の誤検出)、位置合わせの基準を固定する。
+    for (const pixels of [designPixels, screenshotPixels]) {
+      paint(pixels, 0, 0, SIZE, 1, DARK_RGB);
+      paint(pixels, 0, SIZE - 1, SIZE, 1, DARK_RGB);
+      paint(pixels, 0, 0, 1, SIZE, DARK_RGB);
+      paint(pixels, SIZE - 1, 0, 1, SIZE, DARK_RGB);
+      paint(pixels, 30, 20, 40, 2, DARK_RGB);
+      paint(pixels, 30, 100, 40, 2, DARK_RGB);
+    }
+    paintBand(designPixels, 60);
+    paintBand(screenshotPixels, 61);
+
+    // 実パイプラインと同じ部品で差分画素 (diffMask) と AA マスクを作る。
+    // diffMask は pixelmatch が差分と数えた赤画素、AA マスクは本家と同じ
+    // 手続きの移植。両者を合成すると本家の全差分画素を網羅する。
+    const diffPixelData = new Uint8ClampedArray(SIZE * SIZE * 4);
+    comparePixels(designPixels, screenshotPixels, diffPixelData, SIZE, SIZE, {
+      threshold: 0.1,
+      diffMask: true,
+    });
+    const diffMask = new Uint8Array(SIZE * SIZE);
+    for (let index = 0; index < diffMask.length; index += 1) {
+      const offset = index * 4;
+      if (
+        diffPixelData[offset + 3] !== 0 &&
+        (diffPixelData[offset] !== diffPixelData[offset + 1] ||
+          diffPixelData[offset + 1] !== diffPixelData[offset + 2])
+      ) {
+        diffMask[index] = 1;
+      }
+    }
+    const antiAliasedMask = buildAntiAliasedMask(designPixels, screenshotPixels, SIZE, SIZE, {
+      threshold: 0.1,
+    });
+    // 前提: このずれは本家の AA 判定を実際に引く画素を含む (空なら配線の
+    // 証明にならない)。
+    expect(antiAliasedMask.some((value) => value === 1)).toBe(true);
+
+    const options = {
+      designPixels,
+      screenshotPixels,
+      width: SIZE,
+      height: SIZE,
+      diffRegions: [{ x: 10, y: 60, w: 90, h: 5, diffPixelCount: 200 }],
+      diffMask,
+      rasterizationTolerance: true,
+    };
+
+    // 提供者が無い (= AA を区別できない) と残差はずれの輪郭に発火する。
+    // これが残ることで「除外が効いている」ことの反対証明になる。
+    const withoutProvider = buildDiffReport(options);
+    expect(
+      withoutProvider.issues.some((issue) => issue.evidence.signal === "residual_color_drift"),
+      "AA を区別しない残差は 1px ずれの輪郭に発火する (除外の必要性の証明)",
+    ).toBe(true);
+
+    let providerCalls = 0;
+    const withProvider = buildDiffReport({
+      ...options,
+      buildAntiAliasedMask: () => {
+        providerCalls += 1;
+        return antiAliasedMask;
+      },
+    });
+    expect(providerCalls, "発火水準に届いたので AA マスクが要求されること").toBeGreaterThan(0);
+    expect(
+      withProvider.issues.some((issue) => issue.evidence.signal === "residual_color_drift"),
+      "AA 縁を除いた残差は 1px ずれに発火しないこと",
+    ).toBe(false);
+  });
+
+  it("一様な色ずれの帯は AA マスクを渡しても残差が発火する (除外で見逃しが増えない)", async () => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    const { buildAntiAliasedMask } = await import("@figdiff/shared");
+    // ベタ面の一様なずれは同色の隣接が 3 つ以上あるため AA と判定されず、
+    // 除外の対象に入らない。ずれを黙らせないことの固定。
+    const designPixels = await createSolidRgba(SIZE, SIZE, WHITE_RGB);
+    const screenshotPixels = await createSolidRgba(SIZE, SIZE, WHITE_RGB);
+    // 上のテストと同じ理由で、全体アライメントの縮退を防ぐ静止アンカーを入れる。
+    for (const pixels of [designPixels, screenshotPixels]) {
+      paint(pixels, 0, 0, SIZE, 1, DARK_RGB);
+      paint(pixels, 0, SIZE - 1, SIZE, 1, DARK_RGB);
+      paint(pixels, 0, 0, 1, SIZE, DARK_RGB);
+      paint(pixels, SIZE - 1, 0, 1, SIZE, DARK_RGB);
+    }
+    paint(designPixels, 0, 105, SIZE, 15, { r: 0xef, g: 0xf8, b: 0xf2 });
+    paint(screenshotPixels, 0, 105, SIZE, 15, { r: 0xf7, g: 0xf7, b: 0xf7 });
+
+    const report = buildDiffReport({
+      designPixels,
+      screenshotPixels,
+      width: SIZE,
+      height: SIZE,
+      diffRegions: [],
+      rasterizationTolerance: true,
+      buildAntiAliasedMask: () =>
+        buildAntiAliasedMask(designPixels, screenshotPixels, SIZE, SIZE, { threshold: 0.1 }),
+    });
+
+    expect(
+      report.issues.some((issue) => issue.evidence.signal === "residual_color_drift"),
+      "一様な色ずれは AA 除外の対象にならず発火し続けること",
+    ).toBe(true);
     expect(report.aggregateVerdict).toBe("fail");
   });
 });
