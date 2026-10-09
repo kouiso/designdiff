@@ -3,8 +3,9 @@
 //   - project save → list → load → delete (プロジェクト経路)
 //   - token save → get → delete (設定/資格情報経路, file バックエンド)
 //   - file:read-local-image (比較入力の画像読み出し経路)
+//   - compare 画面を UI 駆動で通す比較 (同一ペアと既知欠陥ペアの2回)
 // 重い UI 操作は desktop-c-cases.mjs が担う。ここでは「配布物として
-// 起動して IPC が生きているか」だけを早く確かめる。
+// 起動して IPC が生きていて、比較が1回通るか」だけを早く確かめる。
 // 実行には dist/ が必要。Linux では xvfb-run 経由で起動する。
 
 import assert from "node:assert/strict";
@@ -44,6 +45,124 @@ await sharp({
 })
   .png()
   .toFile(fixturePng);
+
+// 比較経路の検体。期待値は製品の出力ではなく、ここでの作図から決める。
+// 背景と既存ブロックはベタ塗りにし、欠陥矩形は既存ブロックから離して置く。
+// こうすると欠陥の全画素が「周囲に同色が3画素以上ある」状態になり、
+// pixelmatch の anti-alias 判定に掛からず、差分画素数が矩形の面積と一致する。
+const COMPARE_W = 64;
+const COMPARE_H = 48;
+const COMPARE_BACKGROUND = [240, 240, 240, 255];
+const COMPARE_BLOCK = { x: 4, y: 4, w: 16, h: 12, color: [30, 90, 200, 255] };
+const COMPARE_DEFECT = { x: 36, y: 24, w: 12, h: 8, color: [0, 0, 0, 255] };
+const inRect = (rect, x, y) =>
+  x >= rect.x && x < rect.x + rect.w && y >= rect.y && y < rect.y + rect.h;
+const comparePaint = (withDefect) => (x, y) => {
+  if (withDefect && inRect(COMPARE_DEFECT, x, y)) return COMPARE_DEFECT.color;
+  if (inRect(COMPARE_BLOCK, x, y)) return COMPARE_BLOCK.color;
+  return COMPARE_BACKGROUND;
+};
+const writeComparePng = async (name, paint) => {
+  const raw = Buffer.alloc(COMPARE_W * COMPARE_H * 4);
+  for (let y = 0; y < COMPARE_H; y++) {
+    for (let x = 0; x < COMPARE_W; x++) {
+      raw.set(paint(x, y), (y * COMPARE_W + x) * 4);
+    }
+  }
+  const path = join(fixtureDir, name);
+  await sharp(raw, { raw: { width: COMPARE_W, height: COMPARE_H, channels: 4 } })
+    .png()
+    .toFile(path);
+  return path;
+};
+const compareDesignPng = await writeComparePng("compare-design.png", comparePaint(false));
+const compareIdenticalPng = await writeComparePng("compare-identical.png", comparePaint(false));
+const compareDefectPng = await writeComparePng("compare-defect.png", comparePaint(true));
+const compareTotal = COMPARE_W * COMPARE_H;
+const defectArea = COMPARE_DEFECT.w * COMPARE_DEFECT.h;
+// 合否の主基準は作図で決まる画素数と矩形 (AGENTS.md の self-certification 禁止に
+// 沿って FigDiff の採点単体には委ねない)。matchRate も (合計−欠陥)/合計 という
+// 作図由来の値と表示が一致するかだけを見る、表示計算の検証として併記する。
+const expectedCompare = {
+  identical: { matchRate: 100, diffPixels: 0, diffRegions: 0, coloredBox: null, colored: 0 },
+  defect: {
+    // 製品は小数2桁へ丸めて表示する。丸め方だけ合わせ、値は作図から出す。
+    matchRate: Math.round(((compareTotal - defectArea) / compareTotal) * 100 * 100) / 100,
+    diffPixels: defectArea,
+    diffRegions: 1,
+    colored: defectArea,
+    coloredBox: {
+      x: COMPARE_DEFECT.x,
+      y: COMPARE_DEFECT.y,
+      w: COMPARE_DEFECT.w,
+      h: COMPARE_DEFECT.h,
+    },
+  },
+};
+
+// compare 画面へは案件 → デザインソース → Compare の実 UI で入る。
+// 案件は起動前に projects dir へ置き、project:list 経由でホームに出させる。
+const COMPARE_PROJECT = { id: "compare-smoke", name: "Compare smoke" };
+const COMPARE_SOURCE_LABEL = "Smoke design";
+await mkdir(join(projectsDirectory, COMPARE_PROJECT.id), { recursive: true });
+await writeFile(
+  join(projectsDirectory, COMPARE_PROJECT.id, "project.json"),
+  JSON.stringify({
+    ...COMPARE_PROJECT,
+    implementationUrl: "http://localhost:3000",
+    pages: [
+      {
+        id: "p1",
+        name: "Page",
+        path: "/",
+        designSources: [
+          {
+            id: "smoke-design",
+            type: "local_image",
+            label: COMPARE_SOURCE_LABEL,
+            filePath: compareDesignPng,
+          },
+        ],
+      },
+    ],
+    createdAt: "2026-01-01T00:00:00Z",
+    updatedAt: "2026-01-01T00:00:00Z",
+  }),
+);
+
+// 差分画像は pixelmatch が一致画素を灰色 (r=g=b)、不一致を有彩色で描く。
+// 有彩色画素の数と外接矩形を数え、欠陥の位置が作図どおりかを製品の数値とは
+// 別に確かめる。
+const measureDiffImage = async (dataUrl) => {
+  const match = /^data:image\/png;base64,(.+)$/.exec(dataUrl ?? "");
+  if (!match) throw new Error(`diff image must be a PNG data URL: ${String(dataUrl).slice(0, 40)}`);
+  const { data, info } = await sharp(Buffer.from(match[1], "base64"))
+    .ensureAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+  let colored = 0;
+  let minX = Number.POSITIVE_INFINITY;
+  let minY = Number.POSITIVE_INFINITY;
+  let maxX = -1;
+  let maxY = -1;
+  for (let y = 0; y < info.height; y++) {
+    for (let x = 0; x < info.width; x++) {
+      const i = (y * info.width + x) * info.channels;
+      if (data[i] === data[i + 1] && data[i + 1] === data[i + 2]) continue;
+      colored++;
+      minX = Math.min(minX, x);
+      minY = Math.min(minY, y);
+      maxX = Math.max(maxX, x);
+      maxY = Math.max(maxY, y);
+    }
+  }
+  return {
+    width: info.width,
+    height: info.height,
+    colored,
+    coloredBox: colored ? { x: minX, y: minY, w: maxX - minX + 1, h: maxY - minY + 1 } : null,
+  };
+};
 
 // c-cases と同じ隔離ブートストラップ。home/userData/資格情報 backend を
 // 砂箱に向け、本物の dist/main/main.js を読む。
@@ -141,6 +260,101 @@ try {
   const imageString = typeof image === "string" ? image : JSON.stringify(image);
   assert.ok(imageString.length > 0, "read-local-image must return image payload");
   evidence.results.image = { bytes: imageString.length };
+
+  // --- 比較 (renderer の compareImages を compare 画面の実操作で通す) ---
+  // 比較は renderer 内で完結し、bundle 済みの関数は外から呼べない。製品経路を
+  // 外さないよう、ユーザーと同じ画面操作で流して DOM の結果を読む。
+  const report = page.locator('[data-testid="compare-diff-report"]');
+  const screenshotInput = page.getByPlaceholder(
+    "URL またはファイルパス（例: http://localhost:3000）",
+  );
+  // 採取の失敗で元の比較エラーを上書きしないよう、採取側の例外は証跡へ積むだけにする。
+  const dumpStuck = async (name) => {
+    try {
+      await page.screenshot({ path: join(evidenceDir, `${name}.png`) });
+      await writeFile(join(evidenceDir, `${name}.html`), await page.content());
+    } catch (dumpError) {
+      evidence.errors.push(`failure dump failed: ${String(dumpError?.stack ?? dumpError)}`);
+    }
+  };
+  const loadScreenshot = async (path) => {
+    // 一度読み込むと入力欄は隠れて「変更」ボタンに置き換わる。
+    const change = page.getByRole("button", { name: "変更", exact: true });
+    if (await change.count()) await change.click();
+    await screenshotInput.fill(path);
+    await page.getByRole("button", { name: "実装スクリーンショット", exact: true }).click();
+    // design 側にも「読み込み済み」pill が常にあるので、2個目の出現を待つ。
+    await page.locator("span.fd-pill", { hasText: "読み込み済み" }).nth(1).waitFor();
+  };
+  const runCompare = async (expectedPath) => {
+    const before = (await report.count()) ? await report.innerText() : null;
+    const run = page.getByRole("button", { name: "差分を検出", exact: true });
+    await run.waitFor({ state: "visible" });
+    assert.ok(await run.isEnabled(), "差分を検出 must be enabled");
+    await run.click();
+    if (before !== null) {
+      // 前回の結果が残ったまま読むと、比較が走っていなくても通ってしまう。
+      await page.waitForFunction(
+        (previous) => {
+          const element = document.querySelector('[data-testid="compare-diff-report"]');
+          return element !== null && element.innerText !== previous;
+        },
+        before,
+        { timeout: 30_000 },
+      );
+    }
+    await report.waitFor({ timeout: 30_000 });
+    const text = await report.innerText();
+    const read = (pattern, label) => {
+      const found = pattern.exec(text);
+      if (!found) throw new Error(`${label} missing in compare report: ${text.slice(0, 400)}`);
+      return Number(found[1]);
+    };
+    const diffImage = await measureDiffImage(
+      await report.locator('img[src^="data:image/"]').first().getAttribute("src"),
+    );
+    return {
+      screenshot: expectedPath,
+      diffRegions: read(/diffRegions:\s*(\d+)/, "diffRegions"),
+      diffPixels: read(/diffPixels:\s*(\d+)/, "diffPixels"),
+      diffImage,
+      matchRate: read(/matchRate:\s*([\d.]+)%/, "matchRate"),
+    };
+  };
+  const assertCompare = (label, actual, expected) => {
+    // 先に独立 oracle (デコードした差分画像) を見てから、表示値を照合する。
+    assert.equal(actual.diffImage.width, COMPARE_W, `${label}: diff image width`);
+    assert.equal(actual.diffImage.height, COMPARE_H, `${label}: diff image height`);
+    assert.equal(actual.diffImage.colored, expected.colored, `${label}: diff image pixels`);
+    assert.deepEqual(actual.diffImage.coloredBox, expected.coloredBox, `${label}: diff image box`);
+    assert.equal(actual.diffPixels, expected.diffPixels, `${label}: diffPixels`);
+    assert.equal(actual.diffRegions, expected.diffRegions, `${label}: diffRegions`);
+    assert.equal(actual.matchRate, expected.matchRate, `${label}: matchRate display`);
+  };
+
+  try {
+    await page
+      .locator("article", { has: page.locator("h3", { hasText: COMPARE_PROJECT.name }) })
+      .first()
+      .click();
+    const sourceCard = page.locator("article", { hasText: COMPARE_SOURCE_LABEL });
+    await sourceCard.waitFor({ timeout: 15_000 });
+    await sourceCard.getByRole("button", { name: "Compare" }).click();
+    await screenshotInput.waitFor({ timeout: 15_000 });
+
+    await loadScreenshot(compareIdenticalPng);
+    const identical = await runCompare(compareIdenticalPng);
+    evidence.results.compareIdentical = identical;
+    assertCompare("identical pair", identical, expectedCompare.identical);
+
+    await loadScreenshot(compareDefectPng);
+    const defect = await runCompare(compareDefectPng);
+    evidence.results.compareDefect = { ...defect, expected: expectedCompare.defect };
+    assertCompare("known-defect pair", defect, expectedCompare.defect);
+  } catch (error) {
+    await dumpStuck("compare-failure");
+    throw error;
+  }
 
   assert.deepEqual(pageErrors, [], "renderer must not raise page errors");
   await writeFile(join(evidenceDir, "evidence.json"), `${JSON.stringify(evidence, null, 2)}\n`);

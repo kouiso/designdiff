@@ -133,7 +133,8 @@ jobs:
 
   # Electron 本体の起動は単体テストでも Playwright E2E (web 版) でも
   # 一度も通っていない。配布物が立ち上がって preload 経由の IPC が
-  # 生きているかを最小限だけ確かめる。重い UI 検証は desktop-c-cases が担う。
+  # 生きているか、compare 画面で比較が1回通るかを最小限だけ確かめる。
+  # 重い UI 検証は desktop-c-cases が担う。
   electron-smoke:
     name: Electron IPC smoke
     runs-on: ${{ vars.RUNNER_LINUX }}
