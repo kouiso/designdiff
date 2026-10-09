@@ -6,10 +6,7 @@
     "app/mcp-server/script/stdio-campaign-verification2.mjs",
     "app/mcp-server/script/stdio-issue-verification.mjs"
   ],
-  "checks": [
-    "C10_small_text_diff",
-    "C10_issue112_real_typography"
-  ],
+  "checks": ["C10_small_text_diff", "C10_issue112_real_typography"],
   "actual": {
     "stdio-campaign-verification2:C10_small_text_diff": {
       "matchRate": 99.25,

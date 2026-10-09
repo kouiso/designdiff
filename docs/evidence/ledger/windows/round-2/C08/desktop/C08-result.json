@@ -2,12 +2,8 @@
   "case": "C08",
   "route": "desktop",
   "platform": "windows",
-  "drivers": [
-    "app/desktop/e2e/desktop-c-cases.mjs"
-  ],
-  "checks": [
-    "C08"
-  ],
+  "drivers": ["app/desktop/e2e/desktop-c-cases.mjs"],
+  "checks": ["C08"],
   "actual": {
     "desktop-c-cases:C08": {
       "semantics": "transparent pixels blend onto white (checkerboard=false, v5 compat)",

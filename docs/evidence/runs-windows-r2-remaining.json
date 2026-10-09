@@ -9,29 +9,21 @@
       "evidenceDir": "docs/evidence/round2-windows/native-ignore-region",
       "evidenceFile": "manifest.json",
       "passEvidenceVia": "env:FIGDIFF_IGNORE_EVIDENCE",
-      "requires": [
-        "display-or-xvfb",
-        "electron"
-      ]
+      "requires": ["display-or-xvfb", "electron"]
     },
     {
       "driver": "app/desktop/e2e/native-figma-node-fix.mjs",
       "evidenceDir": "docs/evidence/round2-windows/native-figma-node-fix",
       "evidenceFile": "manifest.json",
       "passEvidenceVia": "env:FIGDIFF_FIGMA_NODE_FIX_EVIDENCE",
-      "requires": [
-        "display-or-xvfb",
-        "electron"
-      ]
+      "requires": ["display-or-xvfb", "electron"]
     },
     {
       "driver": "app/figma-plugin/e2e/real-iframe-host.mjs",
       "evidenceDir": "docs/evidence/round2-windows/real-iframe-host",
       "evidenceFile": "manifest.json",
       "passEvidenceVia": "env:FIGDIFF_PLUGIN_HOST_EVIDENCE",
-      "requires": [
-        "figma-plugin-sandbox"
-      ],
+      "requires": ["figma-plugin-sandbox"],
       "note": "iframe証跡は実Figma sandbox証跡に数えない。実Figma接続は別途"
     },
     {
@@ -47,10 +39,7 @@
       "evidenceDir": "docs/evidence/round2-windows/x08",
       "evidenceFile": "x08-desktop.json",
       "passEvidenceVia": "argv2",
-      "requires": [
-        "display-or-xvfb",
-        "electron"
-      ],
+      "requires": ["display-or-xvfb", "electron"],
       "note": "evidenceFile: x08-desktop.json"
     },
     {
@@ -58,9 +47,7 @@
       "evidenceDir": "docs/evidence/round2-windows/x08",
       "evidenceFile": "x08-extension.json",
       "passEvidenceVia": "argv2",
-      "requires": [
-        "chrome"
-      ],
+      "requires": ["chrome"],
       "note": "evidenceFile: x08-extension.json"
     },
     {

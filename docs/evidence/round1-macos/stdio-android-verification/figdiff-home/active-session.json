@@ -1,1 +1,9 @@
-{"comparisonId":"cmp-c48d4bf6-0b6f-4a5d-aab3-5f199f45331b","sourceKey":"local:/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-android-verification/input-design.png","designSource":"/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-android-verification/input-design.png","designImagePath":"/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-android-verification/input-design.png","matchRate":0,"status":"UNCERTAIN","updatedAt":1790586108362}
+{
+  "comparisonId": "cmp-c48d4bf6-0b6f-4a5d-aab3-5f199f45331b",
+  "sourceKey": "local:/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-android-verification/input-design.png",
+  "designSource": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-android-verification/input-design.png",
+  "designImagePath": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-android-verification/input-design.png",
+  "matchRate": 0,
+  "status": "UNCERTAIN",
+  "updatedAt": 1790586108362
+}

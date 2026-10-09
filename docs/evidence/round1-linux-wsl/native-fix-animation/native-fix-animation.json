@@ -27,14 +27,8 @@
       }
     },
     "animation": {
-      "designTimesMs": [
-        0,
-        100
-      ],
-      "implementationTimesMs": [
-        20,
-        120
-      ],
+      "designTimesMs": [0, 100],
+      "implementationTimesMs": [20, 120],
       "expectedMappings": [
         {
           "designAtMs": 0,

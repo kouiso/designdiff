@@ -18,10 +18,7 @@
       "expectedPreview": {
         "title": "[bug] Artificial token [REDACTED]",
         "body": "Artificial path ~/private/reproduction.txt",
-        "labels": [
-          "desktop-feedback",
-          "bug"
-        ],
+        "labels": ["desktop-feedback", "bug"],
         "maskedCount": 2
       }
     }
@@ -87,11 +84,7 @@
     "mocked": [
       "GitHub search GET only; returns an explicit empty issue list and records every request"
     ],
-    "forbidden": [
-      "GitHub POST",
-      "live GitHub credentials",
-      "non-fixture report input"
-    ]
+    "forbidden": ["GitHub POST", "live GitHub credentials", "non-fixture report input"]
   },
   "pageErrors": [],
   "rendererCrashes": []

@@ -1,1 +1,10 @@
-{"comparisonId":"cmp-179810bb-8d78-484d-94da-9e246b557d7c","sourceKey":"campaign:v1:[\"local:C:\\\\Users\\\\Administrator\\\\repos\\\\designdiff\\\\docs\\\\evidence\\\\round2-windows\\\\stdio-campaign-verification2\\\\input-design.png\",\"m15\"]","implementationUrl":"http://127.0.0.1:61463/page.html","designSource":"C:\\Users\\Administrator\\repos\\designdiff\\docs\\evidence\\round2-windows\\stdio-campaign-verification2\\input-design.png","designImagePath":"C:\\Users\\Administrator\\repos\\designdiff\\docs\\evidence\\round2-windows\\stdio-campaign-verification2\\input-design.png","matchRate":99.14,"status":"UNCERTAIN","updatedAt":1790257026198}
+{
+  "comparisonId": "cmp-179810bb-8d78-484d-94da-9e246b557d7c",
+  "sourceKey": "campaign:v1:[\"local:C:\\\\Users\\\\Administrator\\\\repos\\\\designdiff\\\\docs\\\\evidence\\\\round2-windows\\\\stdio-campaign-verification2\\\\input-design.png\",\"m15\"]",
+  "implementationUrl": "http://127.0.0.1:61463/page.html",
+  "designSource": "C:\\Users\\Administrator\\repos\\designdiff\\docs\\evidence\\round2-windows\\stdio-campaign-verification2\\input-design.png",
+  "designImagePath": "C:\\Users\\Administrator\\repos\\designdiff\\docs\\evidence\\round2-windows\\stdio-campaign-verification2\\input-design.png",
+  "matchRate": 99.14,
+  "status": "UNCERTAIN",
+  "updatedAt": 1790257026198
+}

@@ -20,10 +20,7 @@
       "number": 166,
       "title": "[usability] M12 campaign verification 2026-09-19T04-42-25-440Z",
       "state": "open",
-      "labels": [
-        "mcp-feedback",
-        "usability"
-      ],
+      "labels": ["mcp-feedback", "usability"],
       "bodyExcerpt": "campaign verification issue (auto-filed by stdio-m12-verification.mjs).\n\n再現: report_issue を実SDK経由で呼び出し\n期待: dedup 判定と秘密情報のマスク付きで起票される\n実際: この issue。検証用パス /tmp/figdiff-m12-Oo0UVU~/credentials.json と偽toke"
     },
     "M12_index_wait": {

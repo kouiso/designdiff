@@ -2,12 +2,8 @@
   "case": "X07",
   "route": "android",
   "platform": "windows",
-  "drivers": [
-    "app/mcp-server/script/stdio-android-verification.mjs"
-  ],
-  "checks": [
-    "X07_android_scroll"
-  ],
+  "drivers": ["app/mcp-server/script/stdio-android-verification.mjs"],
+  "checks": ["X07_android_scroll"],
   "actual": {
     "stdio-android-verification:X07_android_scroll": {
       "isError": false,

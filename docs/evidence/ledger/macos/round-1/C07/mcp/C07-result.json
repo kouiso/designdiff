@@ -2,12 +2,8 @@
   "case": "C07",
   "route": "mcp",
   "platform": "macos",
-  "drivers": [
-    "app/mcp-server/script/stdio-campaign-verification.mjs"
-  ],
-  "checks": [
-    "C07_mask"
-  ],
+  "drivers": ["app/mcp-server/script/stdio-campaign-verification.mjs"],
+  "checks": ["C07_mask"],
   "actual": {
     "stdio-campaign-verification:C07_mask": {
       "maskedDiff": 400,

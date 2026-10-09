@@ -3,17 +3,10 @@
   "startedAt": "2026-10-09T05:00:20.313Z",
   "completedAt": "2026-10-09T05:00:26.089Z",
   "revision": "4e9145e5e051d4efe78a922723f7b3245005a05e",
-  "dirtyState": [
-    "?? docs/evidence/.staging/",
-    "?? docs/evidence/runs-windows-r1-remaining.json"
-  ],
+  "dirtyState": ["?? docs/evidence/.staging/", "?? docs/evidence/runs-windows-r1-remaining.json"],
   "command": "FIGDIFF_FIGMA_NODE_FIX_EVIDENCE=<private-evidence> xvfb-run -a node app/desktop/e2e/native-figma-node-fix.mjs",
   "build": {
-    "roots": [
-      "app\\desktop\\dist",
-      "package\\shared\\dist",
-      "package\\credential-store\\dist"
-    ],
+    "roots": ["app\\desktop\\dist", "package\\shared\\dist", "package\\credential-store\\dist"],
     "identityFiles": [
       "pnpm-lock.yaml",
       "package.json",

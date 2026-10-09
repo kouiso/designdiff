@@ -2,12 +2,8 @@
   "case": "D03",
   "route": "desktop",
   "platform": "linux-wsl",
-  "drivers": [
-    "app/desktop/e2e/desktop-d-cases.mjs"
-  ],
-  "checks": [
-    "D03"
-  ],
+  "drivers": ["app/desktop/e2e/desktop-d-cases.mjs"],
+  "checks": ["D03"],
   "actual": {
     "desktop-d-cases:D03": {
       "drop": {
