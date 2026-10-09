@@ -112,7 +112,7 @@ jobs:
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
         with:
           api-level: ${{ matrix.api-level }}
-          target: aosp_atd
+          target: google_apis
           arch: x86_64
           emulator-boot-timeout: 900
           script: sh .github/scripts/device-legs-android.sh "${{ runner.temp }}/device-legs-evidence/android-api${{ matrix.api-level }}"
