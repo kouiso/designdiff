@@ -105,6 +105,8 @@ jobs:
           # open で deny ACE を素通りする (実測)。deny を効かせるには
           # 非特権実行が必須。NETWORK SERVICE ならパスワード不要で
           # schtasks 経由の session 0 実行が可能 (DENIED 確認済み)。
+          # powershell はこの runner の Git Bash では R.exe に解決され
+          # てしまうため、全て cmd batch で行う。
           evi="$PWD/docs/evidence/round1-windows/native-ignore-region"
           mkdir -p "$evi"
           repowin="$(cygpath -w "$PWD")"
@@ -115,20 +117,39 @@ jobs:
           ad="$(cygpath -w "$APPDATA")"
           up="$(cygpath -w "$USERPROFILE")"
           eviwin="$(cygpath -w "$evi")"
-          cat > /tmp/ir-run.ps1 <<EOF
-          icacls "$repowin" /grant "NETWORK SERVICE:(OI)(CI)(RX)" /T | Out-Null
-          icacls "$nodedir" /grant "NETWORK SERVICE:(OI)(CI)(RX)" /T | Out-Null
-          icacls "$pwcache" /grant "NETWORK SERVICE:(OI)(CI)(RX)" /T | Out-Null
-          icacls "$eviwin" /grant "NETWORK SERVICE:(OI)(CI)(M)" /T | Out-Null
-          Set-Content -Path C:\Windows\Temp\ir-run.cmd -Value "@echo on`r`ncd /d `"$repowin`"`r`nset FIGDIFF_IGNORE_EVIDENCE=$eviwin`r`nset USERPROFILE=$up`r`nset LOCALAPPDATA=$lad`r`nset APPDATA=$ad`r`n`"$nodeexe`" app\desktop\e2e\native-ignore-region.mjs 1>C:\Windows\Temp\ir-run.log 2>&1`r`necho %ERRORLEVEL% > C:\Windows\Temp\ir-run.exit"
-          schtasks /create /tn ir-run /sc once /st 00:00 /ru "NT AUTHORITY\NETWORK SERVICE" /f /tr "cmd /c C:\Windows\Temp\ir-run.cmd"
-          schtasks /run /tn ir-run
-          for ($i=0; $i -lt 120; $i++) { if (Test-Path C:\Windows\Temp\ir-run.exit) { break }; Start-Sleep -Seconds 5 }
-          "EXIT=" + (Get-Content C:\Windows\Temp\ir-run.exit -ErrorAction SilentlyContinue)
-          Get-Content C:\Windows\Temp\ir-run.log -Tail 40 -ErrorAction SilentlyContinue
-          schtasks /delete /tn ir-run /f | Out-Null
+          cat > /tmp/ir-driver.cmd <<EOF
+          @echo on
+          cd /d "$repowin"
+          set FIGDIFF_IGNORE_EVIDENCE=$eviwin
+          set USERPROFILE=$up
+          set LOCALAPPDATA=$lad
+          set APPDATA=$ad
+          "$nodeexe" app\desktop\e2e\native-ignore-region.mjs 1>C:\Windows\Temp\ir-run.log 2>&1
+          echo %ERRORLEVEL% > C:\Windows\Temp\ir-run.exit
           EOF
-          powershell -NoProfile -File "$(cygpath -w /tmp/ir-run.ps1)"
+          cp /tmp/ir-driver.cmd "/c/Windows/Temp/ir-driver.cmd"
+          cat > /tmp/ir-run.cmd <<EOF
+          @echo on
+          icacls "$repowin" /grant "NETWORK SERVICE:(OI)(CI)(RX)" /T
+          icacls "$nodedir" /grant "NETWORK SERVICE:(OI)(CI)(RX)" /T
+          icacls "$pwcache" /grant "NETWORK SERVICE:(OI)(CI)(RX)" /T
+          icacls "$eviwin" /grant "NETWORK SERVICE:(OI)(CI)(M)" /T
+          schtasks /create /tn ir-run /sc once /st 00:00 /ru "NT AUTHORITY\NETWORK SERVICE" /f /tr "cmd /c C:\Windows\Temp\ir-driver.cmd"
+          schtasks /run /tn ir-run
+          set tries=0
+          :wait
+          if exist C:\Windows\Temp\ir-run.exit goto done
+          ping -n 6 127.0.0.1 >nul
+          set /a tries+=1
+          if %tries% lss 120 goto wait
+          :done
+          echo === exit ===
+          type C:\Windows\Temp\ir-run.exit 2>nul
+          echo === log tail ===
+          type C:\Windows\Temp\ir-run.log 2>nul
+          schtasks /delete /tn ir-run /f
+          EOF
+          cmd //c "$(cygpath -w /tmp/ir-run.cmd)"
           python - <<PY
           import json,os,datetime
           evi=r"$evi"
