@@ -1,18 +1,17 @@
 {
   "schemaVersion": 1,
-  "startedAt": "2026-09-24T13:40:29.113Z",
-  "completedAt": "2026-09-24T13:40:35.933Z",
+  "startedAt": "2026-09-20T12:24:48.043Z",
+  "completedAt": "2026-09-20T12:25:50.231Z",
   "revision": "4e9145e5e051d4efe78a922723f7b3245005a05e",
   "dirtyState": [
+    "A  docs/evidence/campaign-rounds.json",
     "A  docs/evidence/runs-windows-r1.json",
     "M  docs/evidence/runs-windows-r2.json",
-    "?? docs/evidence/mcp-stdio-campaign-verification/",
     "?? docs/evidence/round1-windows/",
-    "?? docs/evidence/round2-windows/",
     "?? docs/evidence/runs-windows-r1.attempts.json",
     "?? docs/evidence/runs-windows-r1.manifest.json"
   ],
-  "command": "FIGDIFF_ISSUE_REPORT_EVIDENCE=<evidence> xvfb-run -a node app/desktop/e2e/native-issue-report.mjs",
+  "command": "FIGDIFF_REPORT_EVIDENCE=<evidence> xvfb-run -a node app/desktop/e2e/native-report-export.mjs",
   "build": {
     "roots": [
       "app\\desktop\\dist",
@@ -1774,52 +1773,87 @@
   "buildEndSha256": "9505e9740527c94053a222a21acffca5af9df3003b115cca4f474eb13bc7116d",
   "buildUnchanged": true,
   "driver": {
-    "path": "app/desktop/e2e/native-issue-report.mjs",
-    "sha256": "607082be0b466082eb3e456f2f301966d2f9496fe8d4f20077a60765dac75306"
+    "path": "app/desktop/e2e/native-report-export.mjs",
+    "sha256": "ff5711d471e9bcd3c869231e8047bb80ec25a49d1474edf9fa90243a249ff683"
   },
-  "scope": "Synthetic native Electron issue-report prepare/review/edit/discard and credential-failure flow. GitHub search is a recorded GET-only mock; submission is forbidden and untested.",
+  "scope": "Native Electron report export through real save dialogs, saved file readback and independent raw pixel difference.",
   "results": {
     "D07": {
       "status": "PASS",
-      "expected": "報告対象・内容を確認して送れる",
-      "actual": "prepare→確認→編集/破棄を実IPCで検証。POST投稿0件・認証エラー復旧を確認。実外部投稿は未検証で範囲外"
+      "expected": "実ファイルが読め、保存内容が差分実測と一致する",
+      "actual": "実Gtk保存ダイアログからJSON/Markdownへ保存し読み戻した。原画像の独立raw差分・bboxをファイル内容へ照合。キャンセル時bytes不変も確認"
     }
   },
   "artifacts": [
     {
-      "path": "credential-failure-visible.png",
-      "size": 141835,
-      "sha256": "86bafe79b2355330d55ddd0c98f154726a504fa0e84198e1132bf34eda91a25a"
+      "path": "after-input-json.png",
+      "size": 86898,
+      "sha256": "5d986963d5b9fdcae1b9549b76f0f8b49c27e4a718439e9bbfbbda911c55312e"
     },
     {
-      "path": "fixture-input.json",
-      "size": 456,
-      "sha256": "7e9ef6523e94d4684050307277867661c5f11c85632b05114c2b72da8c1ffc21"
+      "path": "after-input-markdown.png",
+      "size": 87006,
+      "sha256": "03d5794008908d91dd7eeb0b4c321d8374e6d18b45acff50e0b3f66c6bd9d1ef"
     },
     {
-      "path": "invalid-credential-ipc.jsonl",
-      "size": 320,
-      "sha256": "0775433cb7a3a93fb051793549f05ea99e47353147016b4438c462242e370a52"
+      "path": "canceled.png",
+      "size": 86978,
+      "sha256": "bba583e328e7c15d76960204d09af65ecabdedb6835359369d6cd6ef47c1f917"
     },
     {
-      "path": "native-issue-report.json",
-      "size": 2712,
-      "sha256": "7b5e74ba33b3b644e0c7f1c6582b8e001ce86690601ec6a32ae996bf37ff496a"
+      "path": "evidence.json",
+      "size": 753,
+      "sha256": "6e4f77472c65d06a0185457ef1fcd8cf783295f8c227bca2ae36a7760ab47d93"
     },
     {
-      "path": "reviewed-readonly-draft.png",
-      "size": 127535,
-      "sha256": "8c478df0a067a8dc86e27d5beef0924f5586ba1761996218e1b46cf5266e793b"
+      "path": "fix-before.png",
+      "size": 305,
+      "sha256": "4f4f1d01aa2c8ef1ae363f1f9eb2ac443a5e99e78b63d491c0bbb347701ce284"
     },
     {
-      "path": "valid-github-read-mock.jsonl",
-      "size": 402,
-      "sha256": "70e9e1c42e2dc3536018dc6116bc3d51eb6127f46d6cf22aad302e8f53d867f3"
+      "path": "fix-design.png",
+      "size": 308,
+      "sha256": "354fc272c706174f99284137f3954fe2ac68feac9c7c12b8e7981137ead62a3e"
     },
     {
-      "path": "valid-ipc.jsonl",
-      "size": 1384,
-      "sha256": "95d804b94498d89d9f64f5c46d61d8a8b5a289a6d161d3d74fd194cfeff9c973"
+      "path": "native-dialog-json.png",
+      "size": 20699,
+      "sha256": "584e5eec81093e62b8bdb6c8623d5deeb5d9a86828bbea60e4eaee71b2a7127a"
+    },
+    {
+      "path": "native-dialog-markdown.png",
+      "size": 20831,
+      "sha256": "a236bfcfa3511382cb69a342f92ba881512b2e2116272f721b0b62cb552d0674"
+    },
+    {
+      "path": "native-window-json.txt",
+      "size": 211,
+      "sha256": "699a0bbf17fb9d4141980fff676828424fc1abebb256715682639bca142946b5"
+    },
+    {
+      "path": "native-window-markdown.txt",
+      "size": 211,
+      "sha256": "3f4cb4c718f59398140124c7e1a103cf0f4e8ca68b25c471f7005590db4dc1c9"
+    },
+    {
+      "path": "saved-json.png",
+      "size": 92545,
+      "sha256": "03a67d8350e4bfceb6eedc3f018701a90d8d66d23f0623fdcf6928d41a6194e8"
+    },
+    {
+      "path": "saved-markdown.png",
+      "size": 92697,
+      "sha256": "c9311eeded7e8524a6b2f2733beaa59a046efced24c21d221eae51a90c2fdf11"
+    },
+    {
+      "path": "saved-report.json",
+      "size": 3939,
+      "sha256": "bc0a154a5684e690feab4f6d54371499a83dbd338563d220f05a60e2949e5f68"
+    },
+    {
+      "path": "saved-report.md",
+      "size": 945,
+      "sha256": "f0f520903b4fd6f14ed097960cc06165eb28bcdf6dcb6f3ab80384d1f5495d82"
     }
   ]
 }

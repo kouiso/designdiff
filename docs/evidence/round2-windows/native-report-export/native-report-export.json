@@ -1,18 +1,20 @@
 {
   "schemaVersion": 1,
-  "startedAt": "2026-09-24T13:40:29.113Z",
-  "completedAt": "2026-09-24T13:40:35.933Z",
+  "startedAt": "2026-09-20T12:37:47.224Z",
+  "completedAt": "2026-09-20T12:38:51.231Z",
   "revision": "4e9145e5e051d4efe78a922723f7b3245005a05e",
   "dirtyState": [
+    "A  docs/evidence/campaign-rounds.json",
     "A  docs/evidence/runs-windows-r1.json",
     "M  docs/evidence/runs-windows-r2.json",
-    "?? docs/evidence/mcp-stdio-campaign-verification/",
     "?? docs/evidence/round1-windows/",
     "?? docs/evidence/round2-windows/",
     "?? docs/evidence/runs-windows-r1.attempts.json",
-    "?? docs/evidence/runs-windows-r1.manifest.json"
+    "?? docs/evidence/runs-windows-r1.manifest.json",
+    "?? docs/evidence/runs-windows-r2.attempts.json",
+    "?? docs/evidence/runs-windows-r2.manifest.json"
   ],
-  "command": "FIGDIFF_ISSUE_REPORT_EVIDENCE=<evidence> xvfb-run -a node app/desktop/e2e/native-issue-report.mjs",
+  "command": "FIGDIFF_REPORT_EVIDENCE=<evidence> xvfb-run -a node app/desktop/e2e/native-report-export.mjs",
   "build": {
     "roots": [
       "app\\desktop\\dist",
@@ -1774,52 +1776,87 @@
   "buildEndSha256": "9505e9740527c94053a222a21acffca5af9df3003b115cca4f474eb13bc7116d",
   "buildUnchanged": true,
   "driver": {
-    "path": "app/desktop/e2e/native-issue-report.mjs",
-    "sha256": "607082be0b466082eb3e456f2f301966d2f9496fe8d4f20077a60765dac75306"
+    "path": "app/desktop/e2e/native-report-export.mjs",
+    "sha256": "ff5711d471e9bcd3c869231e8047bb80ec25a49d1474edf9fa90243a249ff683"
   },
-  "scope": "Synthetic native Electron issue-report prepare/review/edit/discard and credential-failure flow. GitHub search is a recorded GET-only mock; submission is forbidden and untested.",
+  "scope": "Native Electron report export through real save dialogs, saved file readback and independent raw pixel difference.",
   "results": {
     "D07": {
       "status": "PASS",
-      "expected": "報告対象・内容を確認して送れる",
-      "actual": "prepare→確認→編集/破棄を実IPCで検証。POST投稿0件・認証エラー復旧を確認。実外部投稿は未検証で範囲外"
+      "expected": "実ファイルが読め、保存内容が差分実測と一致する",
+      "actual": "実Gtk保存ダイアログからJSON/Markdownへ保存し読み戻した。原画像の独立raw差分・bboxをファイル内容へ照合。キャンセル時bytes不変も確認"
     }
   },
   "artifacts": [
     {
-      "path": "credential-failure-visible.png",
-      "size": 141835,
-      "sha256": "86bafe79b2355330d55ddd0c98f154726a504fa0e84198e1132bf34eda91a25a"
+      "path": "after-input-json.png",
+      "size": 86968,
+      "sha256": "e38ceeec2681f7ec557f4301908b5be0304ed06d947c03c5d5422cd76444e99a"
     },
     {
-      "path": "fixture-input.json",
-      "size": 456,
-      "sha256": "7e9ef6523e94d4684050307277867661c5f11c85632b05114c2b72da8c1ffc21"
+      "path": "after-input-markdown.png",
+      "size": 87076,
+      "sha256": "84d1e30f5d955a4425902423797afd8475b2aa0a3c6d48c6cc7a6345d6f8470b"
     },
     {
-      "path": "invalid-credential-ipc.jsonl",
-      "size": 320,
-      "sha256": "0775433cb7a3a93fb051793549f05ea99e47353147016b4438c462242e370a52"
+      "path": "canceled.png",
+      "size": 86978,
+      "sha256": "bba583e328e7c15d76960204d09af65ecabdedb6835359369d6cd6ef47c1f917"
     },
     {
-      "path": "native-issue-report.json",
-      "size": 2712,
-      "sha256": "7b5e74ba33b3b644e0c7f1c6582b8e001ce86690601ec6a32ae996bf37ff496a"
+      "path": "evidence.json",
+      "size": 753,
+      "sha256": "0ae2e61578e953b911cf29260757a3bd6e9e4b1616312ba8bfb7c883fb5f9608"
     },
     {
-      "path": "reviewed-readonly-draft.png",
-      "size": 127535,
-      "sha256": "8c478df0a067a8dc86e27d5beef0924f5586ba1761996218e1b46cf5266e793b"
+      "path": "fix-before.png",
+      "size": 305,
+      "sha256": "4f4f1d01aa2c8ef1ae363f1f9eb2ac443a5e99e78b63d491c0bbb347701ce284"
     },
     {
-      "path": "valid-github-read-mock.jsonl",
-      "size": 402,
-      "sha256": "70e9e1c42e2dc3536018dc6116bc3d51eb6127f46d6cf22aad302e8f53d867f3"
+      "path": "fix-design.png",
+      "size": 308,
+      "sha256": "354fc272c706174f99284137f3954fe2ac68feac9c7c12b8e7981137ead62a3e"
     },
     {
-      "path": "valid-ipc.jsonl",
-      "size": 1384,
-      "sha256": "95d804b94498d89d9f64f5c46d61d8a8b5a289a6d161d3d74fd194cfeff9c973"
+      "path": "native-dialog-json.png",
+      "size": 20786,
+      "sha256": "23a966eb534f4ffc79b1cd1c618b143070f95728a6f2d8aa85dac375a260aef8"
+    },
+    {
+      "path": "native-dialog-markdown.png",
+      "size": 20918,
+      "sha256": "f8a1cfe56c286133f0cd2af25ce1260cdce5ec2c6073b2a9db4f1cd83ec7b67b"
+    },
+    {
+      "path": "native-window-json.txt",
+      "size": 211,
+      "sha256": "a3e8370b0dc8dc0b1fc4f31f9d4f5de0ffe50c30c8358a877c3207537effdce0"
+    },
+    {
+      "path": "native-window-markdown.txt",
+      "size": 211,
+      "sha256": "74cd25a89956b9f76962420380797140b5350b0f4d0a3a3778659a015cc25fe7"
+    },
+    {
+      "path": "saved-json.png",
+      "size": 92672,
+      "sha256": "1a42c6fa3df2bb61f7db02328825d7090a5b72dec83460cdf3d1857f94b908a5"
+    },
+    {
+      "path": "saved-markdown.png",
+      "size": 92824,
+      "sha256": "1ef1786141c88d895d50ad06a3d12562c829ebdf697a3965ad44793c44a41f33"
+    },
+    {
+      "path": "saved-report.json",
+      "size": 3939,
+      "sha256": "1309228fbb37a7f22b5fd1061af6d5360e31f450528da9d6115c88a22f5a7deb"
+    },
+    {
+      "path": "saved-report.md",
+      "size": 945,
+      "sha256": "091be512d38da3181c875d1aec34974e503c62269854e6a19a8bcea6f3507f88"
     }
   ]
 }
