@@ -43,6 +43,15 @@ cat "$evidence_dir/runner-host.txt"
 
 adb devices -l
 
+# 画面が消灯・ロック中だと screencap は単色になり swipe も届かない。起こして
+# ロックを外し、どの window が前面かを証跡に残す (macOS ホストで単色画面を実測)。
+adb shell input keyevent KEYCODE_WAKEUP >/dev/null 2>&1 || true
+adb shell wm dismiss-keyguard >/dev/null 2>&1 || true
+{
+  adb shell dumpsys power | grep -E 'mWakefulness=|Display Power' || true
+  adb shell dumpsys window | grep -E 'mCurrentFocus|mFocusedApp' || true
+} >>"$evidence_dir/runner-host.txt" 2>&1
+
 width=""
 height=""
 
