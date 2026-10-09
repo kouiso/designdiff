@@ -54,7 +54,7 @@ figma.ui.onmessage = async (msg: PluginMessage) => {
 };
 
 // Send initial state when plugin opens
-handleGetSelection();
+handleGetSelection().catch((e) => console.error("figdiff: initial get-selection failed", e));
 figma.ui.postMessage({ type: "init", tab: initialTab });
 
 // If launched via "Export Selected Frame" command, auto-export
@@ -63,10 +63,35 @@ if (command === "export-frame") {
 }
 
 /**
+ * documentAccess: "dynamic-page" ではページ配下のノード群が遅延ロードされ、
+ * loadAsync 前のアクセスは例外になるため、現在ページのロード完了を待つ。
+ * テストモック等で loadAsync が無い環境ではそのまま通過させる。
+ */
+async function ensureCurrentPageLoaded(): Promise<PageNode> {
+  const page = figma.currentPage;
+  if (typeof page.loadAsync === "function") {
+    await page.loadAsync();
+  }
+  return page;
+}
+
+/**
+ * dynamic-page では getNodeById(同期) が使えず getNodeByIdAsync 必須。
+ * モック等の非対応環境では同期版へフォールバックする。
+ */
+async function findSceneNode(nodeId: string): Promise<SceneNode | null> {
+  if (typeof figma.getNodeByIdAsync === "function") {
+    return toSceneNode(await figma.getNodeByIdAsync(nodeId));
+  }
+  return toSceneNode(figma.getNodeById(nodeId));
+}
+
+/**
  * Get current selection info and send to UI
  */
 async function handleGetSelection(): Promise<void> {
-  const selection = figma.currentPage.selection;
+  const page = await ensureCurrentPageLoaded();
+  const selection = page.selection;
 
   if (selection.length === 0) {
     figma.ui.postMessage({ type: "selection", nodes: [] });
@@ -101,9 +126,12 @@ async function handleExportFrame(nodeId?: string, requestId?: string): Promise<v
   let node: SceneNode | null = null;
 
   if (nodeId) {
-    node = toSceneNode(figma.getNodeById(nodeId));
-  } else if (figma.currentPage.selection.length > 0) {
-    node = figma.currentPage.selection[0];
+    node = await findSceneNode(nodeId);
+  } else {
+    const page = await ensureCurrentPageLoaded();
+    if (page.selection.length > 0) {
+      node = page.selection[0];
+    }
   }
 
   if (!node) {
@@ -145,9 +173,12 @@ async function handleInspectNode(nodeId?: string, requestId?: string): Promise<v
   let node: SceneNode | null = null;
 
   if (nodeId) {
-    node = toSceneNode(figma.getNodeById(nodeId));
-  } else if (figma.currentPage.selection.length > 0) {
-    node = figma.currentPage.selection[0];
+    node = await findSceneNode(nodeId);
+  } else {
+    const page = await ensureCurrentPageLoaded();
+    if (page.selection.length > 0) {
+      node = page.selection[0];
+    }
   }
 
   if (!node) {
