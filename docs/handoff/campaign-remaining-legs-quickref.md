@@ -36,6 +36,25 @@ node script/run-campaign-round.mjs --manifest docs/evidence/runs-macos-r2-device
 
 前提: `adb devices` に実シリアル（emulator- でない）表示・pymobiledevice3 導入済み・iPhone 接続。エミュレータ代替は無効。
 
+### Android 側の環境 prep（実測で要検証済み・必須）
+
+新規 AVD / 初回起動の Chrome は First Run Experience (FRE) のウェルカム画面と
+通知許可モーダルで実ページを塞ぎ、scroll 撮影が1枚で止まる（Linux 実機で
+再現・回避確認済み 2026-10-09）。manifest 実行の前に1度だけ:
+
+```bash
+adb shell 'echo "chrome --no-first-run --disable-fre" > /data/local/tmp/chrome-command-line'
+adb shell am force-stop com.android.chrome
+adb shell am start -a android.intent.action.VIEW -d http://example.com
+sleep 5
+adb shell input keyevent 4   # 通知モーダルを Back で閉じる
+adb shell am force-stop com.android.chrome
+```
+
+driver 側は force-stop → URL起動 → 描画待ち → 実 swipe の順で走るので、
+FRE を事前消費しておけば以後の実行はクリーン（driver 自体は実機で
+10枚・12086px 結合・下端到達まで確認済み）。
+
 ## 台帳取り込み（実行後）
 
 1. `docs/evidence/campaign-rounds.json` の該当 round `finishedAt` を最終実行時刻以降へ更新（round は全195記録が揃うまで open。executedAt の改ざんは禁止）
