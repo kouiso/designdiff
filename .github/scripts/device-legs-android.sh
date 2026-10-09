@@ -106,6 +106,10 @@ if grep -q com.android.chrome "$evidence_dir/chrome-packages.txt"; then
     >>"$evidence_dir/chrome-warmup-note.txt" 2>&1 || true
   adb shell am start -a android.intent.action.VIEW -d http://10.0.2.2:65535/ >/dev/null 2>&1 || true
   sleep 10
+  # --disable-fre を潜り抜けて出る通知許可モーダルは Back 1回で閉じる
+  # (フレッシュ AVD で実測: keyevent 4 でモーダル消去→実ページ露出)。
+  adb shell input keyevent 4 >/dev/null 2>&1 || true
+  sleep 3
   if is_uint "$width" && is_uint "$height"; then
     attempt=1
     while [ "$attempt" -le 3 ]; do
