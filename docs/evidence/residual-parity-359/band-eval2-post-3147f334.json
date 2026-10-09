@@ -7,9 +7,7 @@
     "aggregateVerdict": "fail",
     "diffPixelCount": 0,
     "diffRegionCount": 0,
-    "criticalSignals": [
-      "residual_color_drift=5.543460539190365"
-    ],
+    "criticalSignals": ["residual_color_drift=5.543460539190365"],
     "classification": "hit"
   },
   {
@@ -20,9 +18,7 @@
     "aggregateVerdict": "fail",
     "diffPixelCount": 60,
     "diffRegionCount": 2,
-    "criticalSignals": [
-      "residual_color_drift=5.543460539190365"
-    ],
+    "criticalSignals": ["residual_color_drift=5.543460539190365"],
     "classification": "hit"
   },
   {
@@ -33,9 +29,7 @@
     "aggregateVerdict": "fail",
     "diffPixelCount": 0,
     "diffRegionCount": 0,
-    "criticalSignals": [
-      "residual_color_drift=5.543460539190347"
-    ],
+    "criticalSignals": ["residual_color_drift=5.543460539190347"],
     "classification": "hit"
   },
   {
@@ -46,9 +40,7 @@
     "aggregateVerdict": "fail",
     "diffPixelCount": 60,
     "diffRegionCount": 2,
-    "criticalSignals": [
-      "residual_color_drift=5.543460539190347"
-    ],
+    "criticalSignals": ["residual_color_drift=5.543460539190347"],
     "classification": "hit"
   },
   {
@@ -59,9 +51,7 @@
     "aggregateVerdict": "fail",
     "diffPixelCount": 0,
     "diffRegionCount": 0,
-    "criticalSignals": [
-      "residual_color_drift=5.543460539190365"
-    ],
+    "criticalSignals": ["residual_color_drift=5.543460539190365"],
     "classification": "hit"
   },
   {
@@ -72,9 +62,7 @@
     "aggregateVerdict": "fail",
     "diffPixelCount": 60,
     "diffRegionCount": 2,
-    "criticalSignals": [
-      "residual_color_drift=5.543460539190365"
-    ],
+    "criticalSignals": ["residual_color_drift=5.543460539190365"],
     "classification": "hit"
   },
   {
@@ -85,9 +73,7 @@
     "aggregateVerdict": "fail",
     "diffPixelCount": 0,
     "diffRegionCount": 0,
-    "criticalSignals": [
-      "residual_color_drift=5.543460539190347"
-    ],
+    "criticalSignals": ["residual_color_drift=5.543460539190347"],
     "classification": "hit"
   },
   {
@@ -98,9 +84,7 @@
     "aggregateVerdict": "fail",
     "diffPixelCount": 60,
     "diffRegionCount": 2,
-    "criticalSignals": [
-      "residual_color_drift=5.543460539190347"
-    ],
+    "criticalSignals": ["residual_color_drift=5.543460539190347"],
     "classification": "hit"
   },
   {
@@ -111,9 +95,7 @@
     "aggregateVerdict": "fail",
     "diffPixelCount": 0,
     "diffRegionCount": 0,
-    "criticalSignals": [
-      "residual_color_drift=5.543460539190347"
-    ],
+    "criticalSignals": ["residual_color_drift=5.543460539190347"],
     "classification": "hit"
   },
   {
@@ -124,9 +106,7 @@
     "aggregateVerdict": "fail",
     "diffPixelCount": 60,
     "diffRegionCount": 2,
-    "criticalSignals": [
-      "residual_color_drift=5.543460539190347"
-    ],
+    "criticalSignals": ["residual_color_drift=5.543460539190347"],
     "classification": "hit"
   },
   {
@@ -137,9 +117,7 @@
     "aggregateVerdict": "fail",
     "diffPixelCount": 0,
     "diffRegionCount": 0,
-    "criticalSignals": [
-      "residual_color_drift=5.543460539190305"
-    ],
+    "criticalSignals": ["residual_color_drift=5.543460539190305"],
     "classification": "hit"
   },
   {
@@ -150,9 +128,7 @@
     "aggregateVerdict": "fail",
     "diffPixelCount": 60,
     "diffRegionCount": 2,
-    "criticalSignals": [
-      "residual_color_drift=5.543460539190305"
-    ],
+    "criticalSignals": ["residual_color_drift=5.543460539190305"],
     "classification": "hit"
   },
   {
@@ -163,9 +139,7 @@
     "aggregateVerdict": "fail",
     "diffPixelCount": 0,
     "diffRegionCount": 0,
-    "criticalSignals": [
-      "residual_color_drift=3.6956403594602163"
-    ],
+    "criticalSignals": ["residual_color_drift=3.6956403594602163"],
     "classification": "hit"
   },
   {
@@ -176,9 +150,7 @@
     "aggregateVerdict": "fail",
     "diffPixelCount": 60,
     "diffRegionCount": 2,
-    "criticalSignals": [
-      "residual_color_drift=3.6956403594602163"
-    ],
+    "criticalSignals": ["residual_color_drift=3.6956403594602163"],
     "classification": "hit"
   },
   {
@@ -189,9 +161,7 @@
     "aggregateVerdict": "fail",
     "diffPixelCount": 0,
     "diffRegionCount": 0,
-    "criticalSignals": [
-      "residual_color_drift=5.543460539190365"
-    ],
+    "criticalSignals": ["residual_color_drift=5.543460539190365"],
     "classification": "hit"
   },
   {
@@ -202,9 +172,7 @@
     "aggregateVerdict": "fail",
     "diffPixelCount": 60,
     "diffRegionCount": 2,
-    "criticalSignals": [
-      "residual_color_drift=5.543460539190365"
-    ],
+    "criticalSignals": ["residual_color_drift=5.543460539190365"],
     "classification": "hit"
   },
   {
@@ -215,9 +183,7 @@
     "aggregateVerdict": "fail",
     "diffPixelCount": 0,
     "diffRegionCount": 0,
-    "criticalSignals": [
-      "residual_color_drift=5.54346053919032"
-    ],
+    "criticalSignals": ["residual_color_drift=5.54346053919032"],
     "classification": "hit"
   },
   {
@@ -228,9 +194,7 @@
     "aggregateVerdict": "fail",
     "diffPixelCount": 60,
     "diffRegionCount": 2,
-    "criticalSignals": [
-      "residual_color_drift=5.54346053919032"
-    ],
+    "criticalSignals": ["residual_color_drift=5.54346053919032"],
     "classification": "hit"
   },
   {
@@ -241,9 +205,7 @@
     "aggregateVerdict": "fail",
     "diffPixelCount": 0,
     "diffRegionCount": 0,
-    "criticalSignals": [
-      "residual_color_drift=5.543460539190347"
-    ],
+    "criticalSignals": ["residual_color_drift=5.543460539190347"],
     "classification": "hit"
   },
   {
@@ -254,9 +216,7 @@
     "aggregateVerdict": "fail",
     "diffPixelCount": 60,
     "diffRegionCount": 2,
-    "criticalSignals": [
-      "residual_color_drift=5.543460539190347"
-    ],
+    "criticalSignals": ["residual_color_drift=5.543460539190347"],
     "classification": "hit"
   },
   {
@@ -267,9 +227,7 @@
     "aggregateVerdict": "fail",
     "diffPixelCount": 0,
     "diffRegionCount": 0,
-    "criticalSignals": [
-      "flat_region_color=#FAFAFA"
-    ],
+    "criticalSignals": ["flat_region_color=#FAFAFA"],
     "classification": "FALSE-ALARM"
   },
   {

@@ -8,7 +8,9 @@
 import { pathToFileURL } from "node:url";
 
 const { buildDiffReport } = await import(
-  pathToFileURL("/home/factory-user/dd-figma-path/app/mcp-server/dist/service/diff-report-builder.js").href
+  pathToFileURL(
+    "/home/factory-user/dd-figma-path/app/mcp-server/dist/service/diff-report-builder.js",
+  ).href
 );
 
 const SIZE = 120;
@@ -188,10 +190,14 @@ add("bottom band + extra unrelated explained diff", true, () => {
   paintRect(s, 0, 105, SIZE, 15, GRAY);
   paintRect(d, 60, 70, 20, 1, DARK);
   paintRect(s, 60, 72, 20, 1, DARK);
-  return [d, s, [
-    { x: 60, y: 70, w: 20, h: 1, diffPixelCount: 20 },
-    { x: 60, y: 72, w: 20, h: 1, diffPixelCount: 20 },
-  ]];
+  return [
+    d,
+    s,
+    [
+      { x: 60, y: 70, w: 20, h: 1, diffPixelCount: 20 },
+      { x: 60, y: 72, w: 20, h: 1, diffPixelCount: 20 },
+    ],
+  ];
 });
 
 delete process.env.DD_DUMP_DIR;
@@ -217,10 +223,12 @@ for (const c of cases) {
   if (!ok && c.expectFire) misses += 1;
   if (!ok && !c.expectFire) falseAlarms += 1;
   rows.push({ name: c.name, expected: c.expectFire, fired, ok });
-  console.log(`${ok ? "OK  " : "BAD "} expect=${c.expectFire ? "fire" : "quiet"} fired=${fired}  ${c.name}`);
+  console.info(
+    `${ok ? "OK  " : "BAD "} expect=${c.expectFire ? "fire" : "quiet"} fired=${fired}  ${c.name}`,
+  );
 }
-console.log(`\nmisses(expected fire, stayed quiet): ${misses}`);
-console.log(`false alarms(expected quiet, fired): ${falseAlarms}`);
+console.info(`\nmisses(expected fire, stayed quiet): ${misses}`);
+console.info(`false alarms(expected quiet, fired): ${falseAlarms}`);
 await import("node:fs/promises").then(({ writeFile }) =>
   writeFile("/tmp/dd-live-run/band-eval.json", JSON.stringify(rows, null, 2)),
 );

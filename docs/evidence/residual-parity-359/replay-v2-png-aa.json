@@ -92,15 +92,11 @@
     "hasTree": false,
     "tree": {
       "verdict": "fail",
-      "critical": [
-        "diff-cluster-65-422-5-7:delta_e_2000"
-      ]
+      "critical": ["diff-cluster-65-422-5-7:delta_e_2000"]
     },
     "noTree": {
       "verdict": "fail",
-      "critical": [
-        "diff-cluster-65-422-5-7:delta_e_2000"
-      ]
+      "critical": ["diff-cluster-65-422-5-7:delta_e_2000"]
     }
   },
   {
@@ -108,15 +104,11 @@
     "hasTree": false,
     "tree": {
       "verdict": "fail",
-      "critical": [
-        "diff-cluster-238-273-7-7:delta_e_2000"
-      ]
+      "critical": ["diff-cluster-238-273-7-7:delta_e_2000"]
     },
     "noTree": {
       "verdict": "fail",
-      "critical": [
-        "diff-cluster-238-273-7-7:delta_e_2000"
-      ]
+      "critical": ["diff-cluster-238-273-7-7:delta_e_2000"]
     }
   },
   {
@@ -148,15 +140,11 @@
     "hasTree": false,
     "tree": {
       "verdict": "fail",
-      "critical": [
-        "frame-residual:residual_color_drift"
-      ]
+      "critical": ["frame-residual:residual_color_drift"]
     },
     "noTree": {
       "verdict": "fail",
-      "critical": [
-        "frame-residual:residual_color_drift"
-      ]
+      "critical": ["frame-residual:residual_color_drift"]
     }
   },
   {
@@ -276,15 +264,11 @@
     "hasTree": false,
     "tree": {
       "verdict": "fail",
-      "critical": [
-        "frame-residual:residual_color_drift"
-      ]
+      "critical": ["frame-residual:residual_color_drift"]
     },
     "noTree": {
       "verdict": "fail",
-      "critical": [
-        "frame-residual:residual_color_drift"
-      ]
+      "critical": ["frame-residual:residual_color_drift"]
     }
   },
   {
@@ -448,15 +432,11 @@
     "hasTree": false,
     "tree": {
       "verdict": "fail",
-      "critical": [
-        "frame-residual:residual_color_drift"
-      ]
+      "critical": ["frame-residual:residual_color_drift"]
     },
     "noTree": {
       "verdict": "fail",
-      "critical": [
-        "frame-residual:residual_color_drift"
-      ]
+      "critical": ["frame-residual:residual_color_drift"]
     }
   }
 ]

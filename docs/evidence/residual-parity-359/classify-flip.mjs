@@ -10,13 +10,13 @@
 //   canonicalOriginal) を見て確認する。
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { pathToFileURL, fileURLToPath } from "node:url";
+import { pathToFileURL } from "node:url";
 import { createRequire } from "node:module";
 
 const require = createRequire("/home/factory-user/dd-figma-path/package.json");
-const { PNG } = require(
-  "/home/factory-user/dd-figma-path/node_modules/.pnpm/pngjs@7.0.0/node_modules/pngjs/lib/png.js"
-);
+const {
+  PNG,
+} = require("/home/factory-user/dd-figma-path/node_modules/.pnpm/pngjs@7.0.0/node_modules/pngjs/lib/png.js");
 
 const checkout = "/home/factory-user/dd-figma-path";
 const { buildDiffReport } = await import(
@@ -45,7 +45,10 @@ const loadPng = async (path) => {
 
 // 窓内の mean|ΔRGB|・変化画素率・最大チャネル差を返す
 const windowStats = (a, b, widthA, widthB, win) => {
-  let count = 0, changed = 0, sum = 0, maxCh = 0;
+  let count = 0,
+    changed = 0,
+    sum = 0,
+    maxCh = 0;
   for (let y = win.y; y < win.y + win.h; y++) {
     for (let x = win.x; x < win.x + win.w; x++) {
       const ia = (y * widthA + x) * 4;
@@ -73,17 +76,17 @@ for (const node of nodes) {
   const report = buildDiffReport(options);
   const issue = report.issues.find((i) => i.evidence?.signal === "residual_color_drift");
   if (!issue) {
-    console.log(`${node}: no residual issue (live-v3)`);
+    console.info(`${node}: no residual issue (live-v3)`);
     continue;
   }
   const win = issue.bbox;
   const orig = await loadPng(join(HM, "originals", `${node}.png`));
   const cap = await loadPng(join(HM, "captures", node, "capture.png"));
-  console.log(
-    `${node} window=(${win.x},${win.y},${win.w}x${win.h}) residual=${issue.evidence.actual.toFixed(2)}`
+  console.info(
+    `${node} window=(${win.x},${win.y},${win.w}x${win.h}) residual=${issue.evidence.actual.toFixed(2)}`,
   );
-  console.log(
-    `  dims: dump=${options.width}x${options.height} orig=${orig.width}x${orig.height} capture=${cap.width}x${cap.height}`
+  console.info(
+    `  dims: dump=${options.width}x${options.height} orig=${orig.width}x${orig.height} capture=${cap.width}x${cap.height}`,
   );
   const w = Math.min(options.width, orig.width, cap.width);
   const h = Math.min(options.height, orig.height, cap.height);
@@ -96,19 +99,30 @@ for (const node of nodes) {
   const A = windowStats(options.designPixels, orig.data, options.width, orig.width, winClamped);
   const B = windowStats(options.screenshotPixels, cap.data, options.width, cap.width, winClamped);
   const C = windowStats(orig.data, cap.data, orig.width, cap.width, winClamped);
-  const D = windowStats(options.designPixels, options.screenshotPixels, options.width, options.width, winClamped);
-  console.log(`  A dumpDesign  vs canonOriginal : ${fmt(A)}`);
-  console.log(`  B dumpShot    vs canonCapture  : ${fmt(B)}`);
-  console.log(`  C canonOrigin vs canonCapture  : ${fmt(C)}  <- ground-truth design-vs-impl`);
-  console.log(`  D dumpDesign  vs dumpShot      : ${fmt(D)}  <- what residual measured`);
+  const D = windowStats(
+    options.designPixels,
+    options.screenshotPixels,
+    options.width,
+    options.width,
+    winClamped,
+  );
+  console.info(`  A dumpDesign  vs canonOriginal : ${fmt(A)}`);
+  console.info(`  B dumpShot    vs canonCapture  : ${fmt(B)}`);
+  console.info(`  C canonOrigin vs canonCapture  : ${fmt(C)}  <- ground-truth design-vs-impl`);
+  console.info(`  D dumpDesign  vs dumpShot      : ${fmt(D)}  <- what residual measured`);
   const truePositive = C.changedPct > 10 && C.meanAbs > 2;
   const designDrift = A.changedPct > 10 && A.meanAbs > 2;
   const implDrift = B.changedPct > 10 && B.meanAbs > 2;
   let verdict;
-  if (truePositive && !designDrift && !implDrift) verdict = "TRUE_POSITIVE (canonical design-vs-impl gap, unchanged since canonical)";
-  else if (truePositive && (designDrift || implDrift)) verdict = "TRUE_POSITIVE_BUT_MOVED (canonical gap exists; pixels also changed since canonical)";
-  else if (!truePositive && designDrift) verdict = "DESIGN_DRIFT_CONFOUND (canonical was clean; Figma design changed since)";
-  else if (!truePositive && implDrift) verdict = "IMPL_CHANGED_SINCE_CANONICAL (canonical was clean; implementation render changed)";
-  else verdict = "FALSE_ALARM_CANDIDATE (canonical clean, dump pair loud, neither A nor B explains)";
-  console.log(`  => ${verdict}`);
+  if (truePositive && !designDrift && !implDrift)
+    verdict = "TRUE_POSITIVE (canonical design-vs-impl gap, unchanged since canonical)";
+  else if (truePositive && (designDrift || implDrift))
+    verdict = "TRUE_POSITIVE_BUT_MOVED (canonical gap exists; pixels also changed since canonical)";
+  else if (!truePositive && designDrift)
+    verdict = "DESIGN_DRIFT_CONFOUND (canonical was clean; Figma design changed since)";
+  else if (!truePositive && implDrift)
+    verdict = "IMPL_CHANGED_SINCE_CANONICAL (canonical was clean; implementation render changed)";
+  else
+    verdict = "FALSE_ALARM_CANDIDATE (canonical clean, dump pair loud, neither A nor B explains)";
+  console.info(`  => ${verdict}`);
 }

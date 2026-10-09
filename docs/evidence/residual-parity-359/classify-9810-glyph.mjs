@@ -25,36 +25,45 @@ const { designPixels, screenshotPixels, width } = options;
 const win = { x: 0, y: 151, w: 390, h: 22 };
 
 const glyph = classifyGlyphEdgeRasterization(
-  designPixels, screenshotPixels, width, options.height,
+  designPixels,
+  screenshotPixels,
+  width,
+  options.height,
   { x: win.x, y: win.y, w: win.w, h: win.h },
 );
-console.log("glyphEdge:", JSON.stringify(glyph));
+console.info("glyphEdge:", JSON.stringify(glyph));
 
-let big = 0, shiftOk = 0;
+let big = 0,
+  shiftOk = 0;
 for (let y = win.y; y < win.y + win.h; y++)
   for (let x = win.x; x < win.x + win.w; x++) {
     const i = (y * width + x) * 4;
     const approx =
       (Math.abs(designPixels[i] - screenshotPixels[i]) +
         Math.abs(designPixels[i + 1] - screenshotPixels[i + 1]) +
-        Math.abs(designPixels[i + 2] - screenshotPixels[i + 2])) / 3;
+        Math.abs(designPixels[i + 2] - screenshotPixels[i + 2])) /
+      3;
     if (approx <= 2) continue;
     big++;
     let found = false;
     outer: for (let dy = -2; dy <= 2; dy++)
       for (let dx = -2; dx <= 2; dx++) {
-        const nx = x + dx, ny = y + dy;
+        const nx = x + dx,
+          ny = y + dy;
         if (nx < 0 || ny < 0 || nx >= width || ny >= options.height) continue;
         const j = (ny * width + nx) * 4;
         if (
           Math.abs(screenshotPixels[j] - designPixels[i]) <= 6 &&
           Math.abs(screenshotPixels[j + 1] - designPixels[i + 1]) <= 6 &&
           Math.abs(screenshotPixels[j + 2] - designPixels[i + 2]) <= 6
-        ) { found = true; break outer; }
+        ) {
+          found = true;
+          break outer;
+        }
       }
     if (found) shiftOk++;
   }
-console.log(`big=${big} shiftExplainable(±2px,tol6)=${((100 * shiftOk) / big).toFixed(1)}%`);
+console.info(`big=${big} shiftExplainable(±2px,tol6)=${((100 * shiftOk) / big).toFixed(1)}%`);
 
 // 窓内の画素値ヒストグラム的な把握: design/shot それぞれの代表値
 const hist = (px) => {
@@ -67,5 +76,5 @@ const hist = (px) => {
     }
   return [...m.entries()].sort((a, b) => b[1] - a[1]).slice(0, 6);
 };
-console.log("design top colors:", hist(designPixels));
-console.log("shot   top colors:", hist(screenshotPixels));
+console.info("design top colors:", hist(designPixels));
+console.info("shot   top colors:", hist(screenshotPixels));

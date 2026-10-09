@@ -5,9 +5,7 @@ import { join } from "node:path";
 import { createRequire } from "node:module";
 
 const require = createRequire("/home/factory-user/dd-figma-path/package.json");
-const pixelmatchModule = require(
-  "/home/factory-user/dd-figma-path/node_modules/.pnpm/pixelmatch@7.2.0/node_modules/pixelmatch/index.js"
-);
+const pixelmatchModule = require("/home/factory-user/dd-figma-path/node_modules/.pnpm/pixelmatch@7.2.0/node_modules/pixelmatch/index.js");
 const pixelmatch = pixelmatchModule.default ?? pixelmatchModule;
 
 const ctors = { Uint8ClampedArray, Uint8Array, Float32Array, Float64Array };
@@ -40,24 +38,32 @@ for (const node of process.argv.slice(2)) {
     checkerboard: false,
   });
   const win = windows[node];
-  let big = 0, red = 0, yellow = 0, unmarked = 0, other = 0;
+  let big = 0,
+    red = 0,
+    yellow = 0,
+    unmarked = 0,
+    other = 0;
   for (let y = win.y; y < win.y + win.h; y++) {
     for (let x = win.x; x < win.x + win.w; x++) {
       const i = (y * width + x) * 4;
       const approx =
         (Math.abs(designPixels[i] - screenshotPixels[i]) +
           Math.abs(designPixels[i + 1] - screenshotPixels[i + 1]) +
-          Math.abs(designPixels[i + 2] - screenshotPixels[i + 2])) / 3;
+          Math.abs(designPixels[i + 2] - screenshotPixels[i + 2])) /
+        3;
       if (approx <= 2) continue;
       big += 1;
-      const r = out[i], g = out[i + 1], b = out[i + 2], a = out[i + 3];
+      const r = out[i],
+        g = out[i + 1],
+        b = out[i + 2],
+        a = out[i + 3];
       if (a === 0) unmarked += 1;
       else if (r === 255 && g === 0 && b === 0) red += 1;
       else if (r === 255 && g === 255 && b === 0) yellow += 1;
       else other += 1;
     }
   }
-  console.log(
-    `${node} diffCount=${diffCount} window big=${big} red(diff)=${red} yellow(AA)=${yellow} unmarked=${unmarked} other=${other}`
+  console.info(
+    `${node} diffCount=${diffCount} window big=${big} red(diff)=${red} yellow(AA)=${yellow} unmarked=${unmarked} other=${other}`,
   );
 }

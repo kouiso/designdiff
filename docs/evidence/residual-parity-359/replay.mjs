@@ -27,9 +27,15 @@ const load = async (dir) => {
   // ダンプは buildDiffReport の入力画素をそのまま持つので、同じ画素・同じ
   // 既定閾値 (0.1) で作る。渡さないと AA 除外が働かず本番と判定がずれる。
   options.buildAntiAliasedMask = () =>
-    buildAntiAliasedMask(options.designPixels, options.screenshotPixels, options.width, options.height, {
-      threshold: 0.1,
-    });
+    buildAntiAliasedMask(
+      options.designPixels,
+      options.screenshotPixels,
+      options.width,
+      options.height,
+      {
+        threshold: 0.1,
+      },
+    );
   return options;
 };
 
@@ -47,7 +53,7 @@ for (const node of (await readdir(dumpDir)).sort()) {
   const tree = summarize(buildDiffReport(options));
   const noTree = summarize(buildDiffReport({ ...options, figmaRootNode: undefined }));
   rows.push({ node, hasTree: Boolean(options.figmaRootNode), tree, noTree });
-  console.log(
+  console.info(
     `${node} tree=${tree.verdict}(${tree.critical.length}) noTree=${noTree.verdict}(${noTree.critical.length})${tree.verdict === noTree.verdict ? "" : "  <-- DIFF"}`,
   );
 }

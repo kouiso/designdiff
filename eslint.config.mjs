@@ -367,6 +367,20 @@ export default [
     },
   },
 
+  // docs/evidence 配下の .mjs は Node 実行の再現スクリプト。Node globals の
+  // 付与だけを行い、rules は定義しない (script 系ブロックの off 指定を
+  // 持ち込まず、no-console や no-unused-* 等の severity は既存のまま)。
+  {
+    files: ["docs/evidence/**/*.mjs"],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+      },
+      ecmaVersion: "latest",
+      sourceType: "module",
+    },
+  },
+
   // App-level smoke/contract scripts (Node.js + browser globals for page.evaluate contexts)
   // e2e 配下の driver も page.evaluate / chrome.* API を文字列評価内で参照するため
   // browser + webextensions global を足す。

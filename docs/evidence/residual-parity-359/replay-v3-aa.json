@@ -104,16 +104,11 @@
     "hasTree": true,
     "tree": {
       "verdict": "fail",
-      "critical": [
-        "9776:6788:delta_e_2000",
-        "diff-cluster-65-422-9-7:delta_e_2000"
-      ]
+      "critical": ["9776:6788:delta_e_2000", "diff-cluster-65-422-9-7:delta_e_2000"]
     },
     "noTree": {
       "verdict": "fail",
-      "critical": [
-        "diff-cluster-65-422-9-7:delta_e_2000"
-      ]
+      "critical": ["diff-cluster-65-422-9-7:delta_e_2000"]
     }
   },
   {
@@ -121,15 +116,11 @@
     "hasTree": true,
     "tree": {
       "verdict": "fail",
-      "critical": [
-        "diff-cluster-238-273-7-7:delta_e_2000"
-      ]
+      "critical": ["diff-cluster-238-273-7-7:delta_e_2000"]
     },
     "noTree": {
       "verdict": "fail",
-      "critical": [
-        "diff-cluster-238-273-7-7:delta_e_2000"
-      ]
+      "critical": ["diff-cluster-238-273-7-7:delta_e_2000"]
     }
   },
   {
@@ -1104,16 +1095,11 @@
     "hasTree": true,
     "tree": {
       "verdict": "fail",
-      "critical": [
-        "9776:6574:delta_e_2000",
-        "frame-residual:residual_color_drift"
-      ]
+      "critical": ["9776:6574:delta_e_2000", "frame-residual:residual_color_drift"]
     },
     "noTree": {
       "verdict": "fail",
-      "critical": [
-        "frame-residual:residual_color_drift"
-      ]
+      "critical": ["frame-residual:residual_color_drift"]
     }
   }
 ]

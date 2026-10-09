@@ -26,9 +26,15 @@ const load = async (dir) => {
     options[key] = new C(raw.buffer, raw.byteOffset, raw.byteLength / C.BYTES_PER_ELEMENT);
   }
   options.buildAntiAliasedMask = () =>
-    buildAntiAliasedMask(options.designPixels, options.screenshotPixels, options.width, options.height, {
-      threshold: 0.1,
-    });
+    buildAntiAliasedMask(
+      options.designPixels,
+      options.screenshotPixels,
+      options.width,
+      options.height,
+      {
+        threshold: 0.1,
+      },
+    );
   return options;
 };
 
@@ -46,11 +52,21 @@ for (const node of (await readdir(pngDir)).sort()) {
   const live = await load(join(liveDir, node));
   if (!live.figmaRootNode) throw new Error(`live dump ${node} has no figmaRootNode`);
   // PNG 画素 + 実ノード木 (Figma URL 経路が使うのと同じ木)
-  const treeOptions = { ...options, figmaRootNode: live.figmaRootNode, figmaNodeId: live.figmaNodeId };
+  const treeOptions = {
+    ...options,
+    figmaRootNode: live.figmaRootNode,
+    figmaNodeId: live.figmaNodeId,
+  };
   const tree = summarize(buildDiffReport(treeOptions));
   const noTree = summarize(buildDiffReport({ ...options }));
-  rows.push({ node, hasTree: true, treeSource: "live-v3 figmaRootNode over png-v2 pixels", tree, noTree });
-  console.log(
+  rows.push({
+    node,
+    hasTree: true,
+    treeSource: "live-v3 figmaRootNode over png-v2 pixels",
+    tree,
+    noTree,
+  });
+  console.info(
     `${node} tree=${tree.verdict}(${tree.critical.length}) noTree=${noTree.verdict}(${noTree.critical.length})${tree.verdict === noTree.verdict ? "" : "  <-- DIFF"}`,
   );
 }

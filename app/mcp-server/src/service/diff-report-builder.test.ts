@@ -2996,10 +2996,10 @@ describe("細線の局所変位 (designdiff#243)", () => {
     // 両側に分かれて、縦縞と局所ブロックは帯の面積に対して小さくて、
     // それぞれ閾値を割る。レンダラ差になり得ない (フラットな面がまるごと
     // 変わる) ずれなので、窓の形に依存せず拾う。
-    const variants: ReadonlyArray<{
+    const variants: readonly {
       name: string;
       apply: (design: Uint8ClampedArray, shot: Uint8ClampedArray) => void;
-    }> = [
+    }[] = [
       {
         // 8 行の帯が 1/8 分割の境界 (y105) をまたぐ。片側 5 行・片側 3 行。
         name: "thin-band-straddle",
@@ -3077,10 +3077,10 @@ describe("細線の局所変位 (designdiff#243)", () => {
     // 窓を細かくするとノイズを拾う恐れがあるため、対照群を同じ重さで固定する。
     // いずれも画素あたり ΔE ≲ 1.5・零平均・エッジ非局在で、レンダラ/符号化差
     // として許容される形。
-    const variants: ReadonlyArray<{
+    const variants: readonly {
       name: string;
       apply: (design: Uint8ClampedArray, shot: Uint8ClampedArray) => void;
-    }> = [
+    }[] = [
       {
         name: "gradient-ramp",
         apply: (design, shot) => {

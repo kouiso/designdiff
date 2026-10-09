@@ -9,7 +9,9 @@ import { pathToFileURL } from "node:url";
 const require = createRequire("/home/factory-user/dd-figma-path/app/mcp-server/package.json");
 const sharp = require("sharp");
 const { compareImages } = await import(
-  pathToFileURL("/home/factory-user/dd-figma-path/app/mcp-server/dist/service/image-compare-service.js").href
+  pathToFileURL(
+    "/home/factory-user/dd-figma-path/app/mcp-server/dist/service/image-compare-service.js",
+  ).href
 );
 
 const SIZE = 120;
@@ -120,22 +122,28 @@ const MUTATIONS = {
 
 // 期待 (band-eval-expectations.md と一致。実装式ではなく知覚根拠で固定)
 const EXPECT_FAIL = new Set([
-  "band-top", "band-middle", "band-bottom", "straddle", "straddle-thin",
-  "narrow-7", "narrow-3", "wide-30", "block-40x40", "vstripe-8",
-]);
-const EXPECT_PASS = new Set([
-  "uniform-1.5", "gradient-ramp", "aa-dither", "photo-noise",
-  "sanity-displacement-only", "sanity-identical",
+  "band-top",
+  "band-middle",
+  "band-bottom",
+  "straddle",
+  "straddle-thin",
+  "narrow-7",
+  "narrow-3",
+  "wide-30",
+  "block-40x40",
+  "vstripe-8",
 ]);
 
 const toPng = (raw) =>
-  sharp(raw, { raw: { width: SIZE, height: SIZE, channels: 4 } }).png().toBuffer();
+  sharp(raw, { raw: { width: SIZE, height: SIZE, channels: 4 } })
+    .png()
+    .toBuffer();
 
 delete process.env.DD_DUMP_DIR;
 const rows = [];
 for (const [name, make] of Object.entries(MUTATIONS)) {
   for (const withUnrelated of name.startsWith("sanity-")
-    ? [name === "sanity-identical" ? false : true]
+    ? [name !== "sanity-identical"]
     : [false, true]) {
     const [d0, s0] = make();
     const d = new Uint8ClampedArray(d0);
@@ -179,7 +187,7 @@ for (const [name, make] of Object.entries(MUTATIONS)) {
       criticalSignals: signals,
       classification: cls,
     });
-    console.log(
+    console.info(
       `${cls.padEnd(12)} expect=${expected} got=${status} ` +
         `pm=${result.diffPixelCount} regions=${result.diffRegions?.length ?? 0} ` +
         `${name}${withUnrelated ? " +unrelated" : " (no unrelated)"} ` +
@@ -189,5 +197,8 @@ for (const [name, make] of Object.entries(MUTATIONS)) {
 }
 const tally = {};
 for (const r of rows) tally[r.classification] = (tally[r.classification] ?? 0) + 1;
-console.log("\ntally:", JSON.stringify(tally));
-await writeFile(process.argv[2] ?? "/tmp/dd-live-run/band-eval2.json", JSON.stringify(rows, null, 2));
+console.info("\ntally:", JSON.stringify(tally));
+await writeFile(
+  process.argv[2] ?? "/tmp/dd-live-run/band-eval2.json",
+  JSON.stringify(rows, null, 2),
+);

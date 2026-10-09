@@ -101,16 +101,11 @@
     "treeSource": "live-v3 figmaRootNode over png-v2 pixels",
     "tree": {
       "verdict": "fail",
-      "critical": [
-        "9776:6788:delta_e_2000",
-        "diff-cluster-65-422-5-7:delta_e_2000"
-      ]
+      "critical": ["9776:6788:delta_e_2000", "diff-cluster-65-422-5-7:delta_e_2000"]
     },
     "noTree": {
       "verdict": "fail",
-      "critical": [
-        "diff-cluster-65-422-5-7:delta_e_2000"
-      ]
+      "critical": ["diff-cluster-65-422-5-7:delta_e_2000"]
     }
   },
   {
@@ -119,15 +114,11 @@
     "treeSource": "live-v3 figmaRootNode over png-v2 pixels",
     "tree": {
       "verdict": "fail",
-      "critical": [
-        "diff-cluster-238-273-7-7:delta_e_2000"
-      ]
+      "critical": ["diff-cluster-238-273-7-7:delta_e_2000"]
     },
     "noTree": {
       "verdict": "fail",
-      "critical": [
-        "diff-cluster-238-273-7-7:delta_e_2000"
-      ]
+      "critical": ["diff-cluster-238-273-7-7:delta_e_2000"]
     }
   },
   {
@@ -162,15 +153,11 @@
     "treeSource": "live-v3 figmaRootNode over png-v2 pixels",
     "tree": {
       "verdict": "fail",
-      "critical": [
-        "frame-residual:residual_color_drift"
-      ]
+      "critical": ["frame-residual:residual_color_drift"]
     },
     "noTree": {
       "verdict": "fail",
-      "critical": [
-        "frame-residual:residual_color_drift"
-      ]
+      "critical": ["frame-residual:residual_color_drift"]
     }
   },
   {
@@ -192,9 +179,7 @@
     "treeSource": "live-v3 figmaRootNode over png-v2 pixels",
     "tree": {
       "verdict": "fail",
-      "critical": [
-        "9797:3922:delta_e_2000"
-      ]
+      "critical": ["9797:3922:delta_e_2000"]
     },
     "noTree": {
       "verdict": "pass",
@@ -301,15 +286,11 @@
     "treeSource": "live-v3 figmaRootNode over png-v2 pixels",
     "tree": {
       "verdict": "fail",
-      "critical": [
-        "frame-residual:residual_color_drift"
-      ]
+      "critical": ["frame-residual:residual_color_drift"]
     },
     "noTree": {
       "verdict": "fail",
-      "critical": [
-        "frame-residual:residual_color_drift"
-      ]
+      "critical": ["frame-residual:residual_color_drift"]
     }
   },
   {
@@ -486,16 +467,11 @@
     "treeSource": "live-v3 figmaRootNode over png-v2 pixels",
     "tree": {
       "verdict": "fail",
-      "critical": [
-        "9776:6574:delta_e_2000",
-        "frame-residual:residual_color_drift"
-      ]
+      "critical": ["9776:6574:delta_e_2000", "frame-residual:residual_color_drift"]
     },
     "noTree": {
       "verdict": "fail",
-      "critical": [
-        "frame-residual:residual_color_drift"
-      ]
+      "critical": ["frame-residual:residual_color_drift"]
     }
   }
 ]
