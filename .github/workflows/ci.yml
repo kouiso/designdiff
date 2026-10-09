@@ -236,6 +236,10 @@ jobs:
       - name: Check action pins
         run: node script/check-action-pins.mjs
 
+      # ESLint が対象外にしている e2e なども含め、comparePixels 以外の採点経路を止める。
+      - name: Check pixelmatch usage
+        run: node script/check-pixelmatch-usage.mjs
+
   # FigDiff の合否を FigDiff 自身のテストで裏付けると、ズレたときに一緒にズレる。
   # このジョブは FigDiff のコードを一切読み込まず、画像処理ライブラリだけで
   # 「ずらした画像はずれて見えるか」「ずれを戻したら一致するか」を測る。

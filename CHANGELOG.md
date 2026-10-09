@@ -15,6 +15,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Crop-region round-trip integration coverage (`set_crop_region` → `compare_design` auto-application → `get_crop_region`) and Figma-plugin message-contract tests (requestId echo, `figma.command` menu routing).
 - `script/eval/figdiff-perf-bench.mjs`: p50/p95 wall-clock bench for `compareImages` across SP/PC/tall profiles, with per-profile p95 gates (`FIGDIFF_PERF_P95_MS[_<PROFILE>]`); results recorded in `docs/evidence/perf-bench.json` and the threshold decision in `docs/perf-bench.md`.
 - `compare_design` with `rasterization_tolerance` now reports how far proven same-token content moved (`sameTokenRasterization.contentOffset`) and emits a `same_token_content_offset` position issue (minor from 1.5px, major from 3.5px). Offsets that hit the ±4px search bound are reported as a lower bound (`clipped`, sign-aware). Estimates that window data cannot disambiguate — a second aliased correlation peak or strongly periodic content — are marked `ambiguous` and emit no issue. The verdict is unchanged; shifted text or icons no longer pass silently.
+- Guards that keep every scoring path on the product's white-composite pixel semantics (pixelmatch 7 defaults to checkerboard compositing for translucent pixels): the independent oracle self-test now also checks compare-mode baseline/corrected scores (`check6`), the Chrome extension's pixelmatch port has a parity test against `comparePixels`, and ESLint plus the new CI check `script/check-pixelmatch-usage.mjs` (run in the `naming` job across all tracked TS/JS files, including `app/desktop/e2e`) reject loading pixelmatch anywhere except `package/shared/src/pixel-compare.ts`.
 - `docs/acceptance-matrix.md`: per-feature acceptance table (expected behavior, pass criteria, verification, latest evidence) covering all MCP tools, desktop, extension, and plugin surfaces.
 
 ### Changed
@@ -38,6 +39,11 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - `contentOffset.peak`, `dx`, and `dy` are now reported as raw (unrounded) values so the report-side confidence floor (0.8) and the 1.5/3.5px magnitude thresholds are decided on the measurement itself; a raw peak of 0.798 no longer rounds to 0.8 and fires a position issue. Rounding is applied only to the human-readable issue text.
 - The FFT self-NCC plane for large windows validates dimensions, search spans, and the cell cap before allocating anything (previously a window beyond the cap allocated an all-NaN plane of roughly the window's area first), and returns an explicit "unmeasurable" result instead of a NaN plane.
 - Correlation candidates for `contentOffset` now require a minimum number of ink-bearing pixel pairs instead of just any four overlapping pixels, so a single coinciding dot between two otherwise-blank windows can no longer produce a perfect (1.0) correlation reported as a clipped translation.
+
+### Security
+
+- Updated sharp to 0.35.5 to address GHSA-wq5f-xc86-pv6w (use-after-free in the bundled librsvg). sharp decodes and resizes images in the MCP server's compare and Figma export paths.
+- Updated `@modelcontextprotocol/sdk` to 1.31.0 for GHSA-6qxp-vccf-f47h (OAuth credentials not bound to their issuing authorization server). figdiff does not use the SDK's OAuth client, so it was not exploitable here; the bump also brings the 10 MiB stdio read-buffer cap from 1.30.0.
 
 ## [2.0.0] - 2026-04-18
 
