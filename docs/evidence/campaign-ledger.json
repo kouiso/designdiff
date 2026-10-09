@@ -8,14 +8,14 @@
       "executionId": "round1",
       "productSha": "4e9145e5e051d4efe78a922723f7b3245005a05e",
       "startedAt": "2026-09-19T04:42:25.440Z",
-      "finishedAt": "2026-10-09T04:00:00.000Z"
+      "finishedAt": "2026-10-09T05:02:00.000Z"
     },
     {
       "round": 2,
       "executionId": "round2",
       "productSha": "4e9145e5e051d4efe78a922723f7b3245005a05e",
       "startedAt": "2026-09-19T04:42:44.837Z",
-      "finishedAt": "2026-10-09T04:00:00.000Z"
+      "finishedAt": "2026-10-09T05:02:00.000Z"
     }
   ],
   "runs": [
@@ -11067,7 +11067,7 @@
       "platform": "windows",
       "route": "figma-plugin",
       "roundExecutionId": "round1",
-      "executedAt": "2026-10-09T03:21:17.630Z",
+      "executedAt": "2026-10-09T04:53:13.866Z",
       "productSha": "4e9145e5e051d4efe78a922723f7b3245005a05e",
       "dirty": false,
       "status": "PASS",
@@ -11086,7 +11086,7 @@
       "evidence": [
         {
           "path": "ledger/windows/round-1/X03/figma-plugin/real-iframe-host-evidence.json",
-          "sha256": "74d1312eea1f7c7a2172b92d132843fb6db5cc77cfc2c212a6c46feb916d6bec"
+          "sha256": "6338174714dadc21a9aab93c6c852e445b19b2233d1940071cfcb5a47b80098c"
         },
         {
           "path": "ledger/windows/round-1/X03/figma-plugin/X03-result.json",
@@ -11100,7 +11100,7 @@
       "platform": "windows",
       "route": "figma-plugin",
       "roundExecutionId": "round1",
-      "executedAt": "2026-10-09T03:21:17.630Z",
+      "executedAt": "2026-10-09T04:53:13.866Z",
       "productSha": "4e9145e5e051d4efe78a922723f7b3245005a05e",
       "dirty": false,
       "status": "PASS",
@@ -11119,7 +11119,7 @@
       "evidence": [
         {
           "path": "ledger/windows/round-1/X04/figma-plugin/real-iframe-host-evidence.json",
-          "sha256": "74d1312eea1f7c7a2172b92d132843fb6db5cc77cfc2c212a6c46feb916d6bec"
+          "sha256": "6338174714dadc21a9aab93c6c852e445b19b2233d1940071cfcb5a47b80098c"
         },
         {
           "path": "ledger/windows/round-1/X04/figma-plugin/X04-result.json",
@@ -11420,6 +11420,76 @@
         {
           "path": "ledger/windows/round-1/X09/desktop/X09-result.json",
           "sha256": "a921b0072dea5c35a7d2432af9056238559f69262a90a1bb0ab3106db4e1702e"
+        }
+      ]
+    },
+    {
+      "case": "C07",
+      "round": 1,
+      "platform": "windows",
+      "route": "desktop",
+      "roundExecutionId": "round1",
+      "executedAt": "2026-10-09T05:01:44.719423Z",
+      "productSha": "4e9145e5e051d4efe78a922723f7b3245005a05e",
+      "dirty": false,
+      "status": "PASS",
+      "newBugs": 0,
+      "observedKnownDefects": [],
+      "buildDigest": "3ce3c518e2ae4693fdca6c43bb1e24d124ba554c21e4968a31d5482d579e9b2e",
+      "environment": "windows",
+      "input": "既知の欠陥2個と片方を覆うmask",
+      "steps": "追加・編集・削除後に再比較 [drivers: app/desktop/e2e/native-ignore-region.mjs]",
+      "expected": "C07: 除外領域の追加・編集・削除後に指定外の欠陥を保持し、crop後もmask座標が一致する",
+      "actual": "{\"native-ignore-region:C07\":\"raw画素oracle・diffPixel・YAML永続値・再起動復元・EACCES時不変を実Electronで検証。詳細はartifacts内の各JSON/PNG\"}",
+      "oracle": {
+        "kind": "source-pixels",
+        "description": "指定外の欠陥を保持し、crop後もmask座標が一致する"
+      },
+      "evidence": [
+        {
+          "path": "ledger/windows/round-1/C07/desktop/native-ignore-region-evidence.json",
+          "sha256": "e723d83e4a1d6368b9d919728b3dea73d18014811ef6cb7d1db04b1bcd25f190"
+        },
+        {
+          "path": "ledger/windows/round-1/C07/desktop/C07-result.json",
+          "sha256": "800e20ecda5c65bff90ffb45103ee1710069a948cd43c9847fe05d2bd4cfdbf6"
+        }
+      ]
+    },
+    {
+      "case": "D05",
+      "round": 1,
+      "platform": "windows",
+      "route": "desktop",
+      "roundExecutionId": "round1",
+      "executedAt": "2026-10-09T05:01:44.719423Z",
+      "productSha": "4e9145e5e051d4efe78a922723f7b3245005a05e",
+      "dirty": false,
+      "status": "PASS",
+      "newBugs": 0,
+      "observedKnownDefects": [],
+      "buildDigest": "9505e9740527c94053a222a21acffca5af9df3003b115cca4f474eb13bc7116d",
+      "environment": "windows",
+      "input": "ノード詳細・トークン表示・除外領域編集",
+      "steps": "画面から到達・選択対象へ適用 [drivers: app/desktop/e2e/native-ignore-region.mjs, app/desktop/e2e/native-figma-node-fix.mjs]",
+      "expected": "D05: 除外領域編集へ画面から到達でき、選択した対象だけに適用する | D05: ノード詳細・トークン表示へ画面から到達でき、選択した対象だけに適用する",
+      "actual": "{\"native-ignore-region:D05\":\"実UIで領域の保存・一覧・削除・再比較を操作し、選択scopeのみに適用されることを永続値と再比較結果で確認\",\"native-figma-node-fix:D05\":\"版固定・deep ancestry・scale2 exportを実IPC経由で検証し、選択nodeだけが詳細対象になることをHTTP要求と画素で確認\"}",
+      "oracle": {
+        "kind": "dom-geometry",
+        "description": "画面から到達でき、人間が選択した対象だけに適用する"
+      },
+      "evidence": [
+        {
+          "path": "ledger/windows/round-1/D05/desktop/native-ignore-region-evidence.json",
+          "sha256": "e723d83e4a1d6368b9d919728b3dea73d18014811ef6cb7d1db04b1bcd25f190"
+        },
+        {
+          "path": "ledger/windows/round-1/D05/desktop/native-figma-node-fix-evidence.json",
+          "sha256": "5078d22cef1f1225d18dc93590cebf0b75d234e7809980d80a827074963fa09d"
+        },
+        {
+          "path": "ledger/windows/round-1/D05/desktop/D05-result.json",
+          "sha256": "e160d2b8265a8692d17ea30fb779eeb190e568b7060a6f4b4a1c1a3aa5b095e1"
         }
       ]
     },
@@ -13277,7 +13347,7 @@
       "platform": "windows",
       "route": "figma-plugin",
       "roundExecutionId": "round2",
-      "executedAt": "2026-10-09T03:11:34.529Z",
+      "executedAt": "2026-10-09T04:59:37.386Z",
       "productSha": "4e9145e5e051d4efe78a922723f7b3245005a05e",
       "dirty": false,
       "status": "PASS",
@@ -13296,7 +13366,7 @@
       "evidence": [
         {
           "path": "ledger/windows/round-2/X03/figma-plugin/real-iframe-host-evidence.json",
-          "sha256": "b67cb70c0339963460aef0befb4b0e113d819fc57a517c1aeb3c2e90943d5f83"
+          "sha256": "6c7f1b3888433c87ba816e907badccb8fc3b2265c1027a4d6a513fece59951af"
         },
         {
           "path": "ledger/windows/round-2/X03/figma-plugin/X03-result.json",
@@ -13310,7 +13380,7 @@
       "platform": "windows",
       "route": "figma-plugin",
       "roundExecutionId": "round2",
-      "executedAt": "2026-10-09T03:11:34.529Z",
+      "executedAt": "2026-10-09T04:59:37.386Z",
       "productSha": "4e9145e5e051d4efe78a922723f7b3245005a05e",
       "dirty": false,
       "status": "PASS",
@@ -13329,7 +13399,7 @@
       "evidence": [
         {
           "path": "ledger/windows/round-2/X04/figma-plugin/real-iframe-host-evidence.json",
-          "sha256": "b67cb70c0339963460aef0befb4b0e113d819fc57a517c1aeb3c2e90943d5f83"
+          "sha256": "6c7f1b3888433c87ba816e907badccb8fc3b2265c1027a4d6a513fece59951af"
         },
         {
           "path": "ledger/windows/round-2/X04/figma-plugin/X04-result.json",
@@ -13417,7 +13487,7 @@
       "platform": "windows",
       "route": "mcp",
       "roundExecutionId": "round2",
-      "executedAt": "2026-10-09T03:11:46.206Z",
+      "executedAt": "2026-10-09T04:59:56.424Z",
       "productSha": "4e9145e5e051d4efe78a922723f7b3245005a05e",
       "dirty": false,
       "status": "PASS",
@@ -13428,7 +13498,7 @@
       "input": "同じ検体をMCP・desktop・拡張・pluginで比較",
       "steps": "同一検体の横断比較 [drivers: app/mcp-server/script/x08/mcp.mjs, app/mcp-server/script/x08/compare.mjs]",
       "expected": "X08: mcp 面が同一検体で diffPixelCount=832・領域=2 を返す | X08: 全4面で diffPixelCount=832・regions一致・diff画像画素一致",
-      "actual": "{\"mcp:X08\":{\"diffPixelCount\":832,\"matchRate\":90.97,\"regionCount\":2,\"diffPixelsSha256\":\"7d0da44f7b88c359673cd0d3ede91c01a1dc9761646f4a4bcc62885594fe890b\",\"protocolErrors\":0},\"compare:X08\":{\"ok\":true,\"expected\":{\"expectedDiffPixelCount\":832,\"expectedRegions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"expectedRate\":90.97},\"checks\":[{\"name\":\"diffPixelCount==expected\",\"ok\":true,\"detail\":832},{\"name\":\"diffPixelCount==expected (ext)\",\"ok\":true,\"detail\":832},{\"name\":\"diffPixelCount==expected (desktop DOM)\",\"ok\":true,\"detail\":832},{\"name\":\"matchRate mcp\",\"ok\":true,\"detail\":{\"rate\":90.97,\"expectedRate\":90.97}},{\"name\":\"matchRate extension\",\"ok\":true,\"detail\":{\"rate\":90.97,\"expectedRate\":90.97}},{\"name\":\"matchRate plugin\",\"ok\":true,\"detail\":{\"rate\":90.97,\"expectedRate\":90.97}},{\"name\":\"regions mcp\",\"ok\":true,\"detail\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}]},{\"name\":\"regions ext\",\"ok\":true,\"detail\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}]},{\"name\":\"region count desktop DOM\",\"ok\":true,\"detail\":2},{\"name\":\"diff mask equality\",\"ok\":true,\"detail\":{\"mcp\":\"4d3da6cbe0a6ab9e15885a0b12ad445d400abcf7cc25c28076c4a7ec8caea8bd\",\"desktop\":\"4d3da6cbe0a6ab9e15885a0b12ad445d400abcf7cc25c28076c4a7ec8caea8bd\",\"plugin\":\"4d3da6cbe0a6ab9e15885a0b12ad445d400abcf7cc25c28076c4a7ec8caea8bd\"}},{\"name\":\"derived regions mcp\",\"ok\":true,\"detail\":[\"16,16,32,24\",\"4,64,8,8\"]},{\"name\":\"derived regions desktop\",\"ok\":true,\"detail\":[\"16,16,32,24\",\"4,64,8,8\"]},{\"name\":\"derived regions plugin\",\"ok\":true,\"detail\":[\"16,16,32,24\",\"4,64,8,8\"]}],\"surfaces\":{\"mcp\":{\"surface\":\"mcp\",\"diffPixelCount\":832,\"matchRate\":90.97,\"regions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"diffPixelsSha256\":\"7d0da44f7b88c359673cd0d3ede91c01a1dc9761646f4a4bcc62885594fe890b\",\"diffImagePath\":\"D:\\\\a\\\\designdiff\\\\designdiff\\\\docs\\\\evidence\\\\round2-windows\\\\x08\\\\figdiff-home\\\\results\\\\diff-cmp-44e34236-73e4-4e4c-b0f6-ba27247cc308.png\",\"expectedDiffPixelCount\":832,\"expectedRegions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"protocolErrors\":[],\"results\":{\"X08\":{\"status\":\"PASS\",\"expected\":\"mcp 面が同一検体で diffPixelCount=832・領域=2 を返す\",\"actual\":{\"diffPixelCount\":832,\"matchRate\":90.97,\"regionCount\":2,\"diffPixelsSha256\":\"7d0da44f7b88c359673cd0d3ede91c01a1dc9761646f4a4bcc62885594fe890b\",\"protocolErrors\":0}}}},\"desktop\":{\"surface\":\"desktop\",\"diffPixelsSha256\":\"881671c2f5cc8ef9ed1348762782d32c70d4feceab7810efe926848dcd95596f\",\"diffPngBase64\":\"iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAYAAADimHc4AAACDklEQVR4AeycwY7DIAwFac/9/y/NPXulCpK1ATOETqRIWSz8YEa+rfo+fVAC7+KDElAAir8UBSgAJgDHOwEKgAnA8U6AAmACcLwToACAwEKRTgAsQwEKgAnA8U6AAmACcHz/BLxepZBvefbTL+DZ98dPrwBYgQIUABOA4ydOAHzTReMVAItRgAJgAnC8E6AAmAAc7wQoACYAxzsBCoAJwPFOQLKAqL0CIkLJdQUkA47aKyAilFxXQDLgqL0CIkLJdQUkA47aKyAilFxXQDLgqH2/gPMshXyjGy5e7xew+AVXP96eAlanXp1PARUM4lMBBPUqUwEVDOJTAQT1KlMBFQzic3sBx3GUzLdX2vYCegFl71dANuGgvwICQNllBWQTDvoPFBAkWW4SUEATy7xFBcxj3UxSQBPLvEUFzGPdTFJAE8u8RQXMY91MUkATy7xFBcxj3UxSQBPLvEUFdLLu3X4VEP32T2+i+78IXAV8lf0jm4ACsgkH/RUQAMouKyCbcNBfAQGg7LICsgkH/RUQAMouXwVE/+uffaIf638V8GMA6Os+UwBNbWC+AgbCvNNKAXeoDdyjgIEw77RSwB1qA/coYCDMO622F/D5fErmewd6vWd7AfVlV/xWAGxFAQqACcDx/5gA+KSbxisAFqsABcAE4HgnQAEwATjeCVAATACOdwIUABOA452AQEB2+Q8AAP//CoOsigAAAAZJREFUAwDdvRdfUY2vmgAAAABJRU5ErkJggg==\",\"diffPngSha256\":\"bf8e760bc63ab259866199aa02cc1585409912065859c0f544ff354c9d9baa03\",\"diffPixelCountDom\":832,\"regionCountDom\":2,\"expectedDiffPixelCount\":832,\"expectedRegions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"pageErrors\":[],\"results\":{\"X08\":{\"status\":\"PASS\",\"expected\":\"desktop 面が同一検体で diffPixelCount=832・領域=2 を描画する\",\"actual\":{\"diffPixelCountDom\":832,\"regionCountDom\":2,\"diffPixelsSha256\":\"881671c2f5cc8ef9ed1348762782d32c70d4feceab7810efe926848dcd95596f\",\"pageErrors\":0}}}},\"extension\":{\"surface\":\"chrome-extension\",\"diffPixelCount\":832,\"matchRate\":90.97,\"regions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"expectedDiffPixelCount\":832,\"expectedRegions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"results\":{\"X08\":{\"status\":\"PASS\",\"expected\":\"chrome-extension 面が同一検体で diffPixelCount=832・領域=2 を返す\",\"actual\":{\"diffPixelCount\":832,\"matchRate\":90.97,\"regionCount\":2}}}},\"plugin\":{\"surface\":\"figma-plugin\",\"matchRate\":90.97,\"diffPixelsSha256\":\"881671c2f5cc8ef9ed1348762782d32c70d4feceab7810efe926848dcd95596f\",\"diffPngBase64\":\"iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAYAAADimHc4AAACDklEQVR4AeycwY7DIAwFac/9/y/NPXulCpK1ATOETqRIWSz8YEa+rfo+fVAC7+KDElAAir8UBSgAJgDHOwEKgAnA8U6AAmACcLwToACAwEKRTgAsQwEKgAnA8U6AAmACcHz/BLxepZBvefbTL+DZ98dPrwBYgQIUABOA4ydOAHzTReMVAItRgAJgAnC8E6AAmAAc7wQoACYAxzsBCoAJwPFOQLKAqL0CIkLJdQUkA47aKyAilFxXQDLgqL0CIkLJdQUkA47aKyAilFxXQDLgqH2/gPMshXyjGy5e7xew+AVXP96eAlanXp1PARUM4lMBBPUqUwEVDOJTAQT1KlMBFQzic3sBx3GUzLdX2vYCegFl71dANuGgvwICQNllBWQTDvoPFBAkWW4SUEATy7xFBcxj3UxSQBPLvEUFzGPdTFJAE8u8RQXMY91MUkATy7xFBcxj3UxSQBPLvEUFdLLu3X4VEP32T2+i+78IXAV8lf0jm4ACsgkH/RUQAMouKyCbcNBfAQGg7LICsgkH/RUQAMouXwVE/+uffaIf638V8GMA6Os+UwBNbWC+AgbCvNNKAXeoDdyjgIEw77RSwB1qA/coYCDMO622F/D5fErmewd6vWd7AfVlV/xWAGxFAQqACcDx/5gA+KSbxisAFqsABcAE4HgnQAEwATjeCVAATACOdwIUABOA452AQEB2+Q8AAP//CoOsigAAAAZJREFUAwDdvRdfUY2vmgAAAABJRU5ErkJggg==\",\"diffPngSha256\":\"bf8e760bc63ab259866199aa02cc1585409912065859c0f544ff354c9d9baa03\",\"expectedDiffPixelCount\":832,\"expectedRegions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"results\":{\"X08\":{\"status\":\"PASS\",\"expected\":\"figma-plugin 面が同一検体で diffPixelCount=832・領域=2 に対応する diff を描画する\",\"actual\":{\"matchRate\":90.97,\"diffPixelsSha256\":\"881671c2f5cc8ef9ed1348762782d32c70d4feceab7810efe926848dcd95596f\"}}}}},\"documentedDifferences\":[\"chrome-extension: pixelmatch を deps に持てないため YIQ 移植版 (pixel-diff-service.ts)。同一検体で同じ diffPixelCount/regions を返すことを上記で実証。\",\"desktop: clusterDiffRegions (独自 floodFill+>=10px) を使用。shared clusterDiffPixels と同規則で、region 数の一致を DOM 経由で確認。\",\"figma-plugin: 領域を UI に出さないため diff 画像画素の一致で等価性を確認。\"]}}",
+      "actual": "{\"mcp:X08\":{\"diffPixelCount\":832,\"matchRate\":90.97,\"regionCount\":2,\"diffPixelsSha256\":\"7d0da44f7b88c359673cd0d3ede91c01a1dc9761646f4a4bcc62885594fe890b\",\"protocolErrors\":0},\"compare:X08\":{\"ok\":true,\"expected\":{\"expectedDiffPixelCount\":832,\"expectedRegions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"expectedRate\":90.97},\"checks\":[{\"name\":\"diffPixelCount==expected\",\"ok\":true,\"detail\":832},{\"name\":\"diffPixelCount==expected (ext)\",\"ok\":true,\"detail\":832},{\"name\":\"diffPixelCount==expected (desktop DOM)\",\"ok\":true,\"detail\":832},{\"name\":\"matchRate mcp\",\"ok\":true,\"detail\":{\"rate\":90.97,\"expectedRate\":90.97}},{\"name\":\"matchRate extension\",\"ok\":true,\"detail\":{\"rate\":90.97,\"expectedRate\":90.97}},{\"name\":\"matchRate plugin\",\"ok\":true,\"detail\":{\"rate\":90.97,\"expectedRate\":90.97}},{\"name\":\"regions mcp\",\"ok\":true,\"detail\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}]},{\"name\":\"regions ext\",\"ok\":true,\"detail\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}]},{\"name\":\"region count desktop DOM\",\"ok\":true,\"detail\":2},{\"name\":\"diff mask equality\",\"ok\":true,\"detail\":{\"mcp\":\"4d3da6cbe0a6ab9e15885a0b12ad445d400abcf7cc25c28076c4a7ec8caea8bd\",\"desktop\":\"4d3da6cbe0a6ab9e15885a0b12ad445d400abcf7cc25c28076c4a7ec8caea8bd\",\"plugin\":\"4d3da6cbe0a6ab9e15885a0b12ad445d400abcf7cc25c28076c4a7ec8caea8bd\"}},{\"name\":\"derived regions mcp\",\"ok\":true,\"detail\":[\"16,16,32,24\",\"4,64,8,8\"]},{\"name\":\"derived regions desktop\",\"ok\":true,\"detail\":[\"16,16,32,24\",\"4,64,8,8\"]},{\"name\":\"derived regions plugin\",\"ok\":true,\"detail\":[\"16,16,32,24\",\"4,64,8,8\"]}],\"surfaces\":{\"mcp\":{\"surface\":\"mcp\",\"diffPixelCount\":832,\"matchRate\":90.97,\"regions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"diffPixelsSha256\":\"7d0da44f7b88c359673cd0d3ede91c01a1dc9761646f4a4bcc62885594fe890b\",\"diffImagePath\":\"D:\\\\a\\\\designdiff\\\\designdiff\\\\docs\\\\evidence\\\\round2-windows\\\\x08\\\\figdiff-home\\\\results\\\\diff-cmp-fad289ad-fb5d-44bb-95ef-6fa1a69595b3.png\",\"expectedDiffPixelCount\":832,\"expectedRegions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"protocolErrors\":[],\"results\":{\"X08\":{\"status\":\"PASS\",\"expected\":\"mcp 面が同一検体で diffPixelCount=832・領域=2 を返す\",\"actual\":{\"diffPixelCount\":832,\"matchRate\":90.97,\"regionCount\":2,\"diffPixelsSha256\":\"7d0da44f7b88c359673cd0d3ede91c01a1dc9761646f4a4bcc62885594fe890b\",\"protocolErrors\":0}}}},\"desktop\":{\"surface\":\"desktop\",\"diffPixelsSha256\":\"881671c2f5cc8ef9ed1348762782d32c70d4feceab7810efe926848dcd95596f\",\"diffPngBase64\":\"iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAYAAADimHc4AAACDklEQVR4AeycwY7DIAwFac/9/y/NPXulCpK1ATOETqRIWSz8YEa+rfo+fVAC7+KDElAAir8UBSgAJgDHOwEKgAnA8U6AAmACcLwToACAwEKRTgAsQwEKgAnA8U6AAmACcHz/BLxepZBvefbTL+DZ98dPrwBYgQIUABOA4ydOAHzTReMVAItRgAJgAnC8E6AAmAAc7wQoACYAxzsBCoAJwPFOQLKAqL0CIkLJdQUkA47aKyAilFxXQDLgqL0CIkLJdQUkA47aKyAilFxXQDLgqH2/gPMshXyjGy5e7xew+AVXP96eAlanXp1PARUM4lMBBPUqUwEVDOJTAQT1KlMBFQzic3sBx3GUzLdX2vYCegFl71dANuGgvwICQNllBWQTDvoPFBAkWW4SUEATy7xFBcxj3UxSQBPLvEUFzGPdTFJAE8u8RQXMY91MUkATy7xFBcxj3UxSQBPLvEUFdLLu3X4VEP32T2+i+78IXAV8lf0jm4ACsgkH/RUQAMouKyCbcNBfAQGg7LICsgkH/RUQAMouXwVE/+uffaIf638V8GMA6Os+UwBNbWC+AgbCvNNKAXeoDdyjgIEw77RSwB1qA/coYCDMO622F/D5fErmewd6vWd7AfVlV/xWAGxFAQqACcDx/5gA+KSbxisAFqsABcAE4HgnQAEwATjeCVAATACOdwIUABOA452AQEB2+Q8AAP//CoOsigAAAAZJREFUAwDdvRdfUY2vmgAAAABJRU5ErkJggg==\",\"diffPngSha256\":\"bf8e760bc63ab259866199aa02cc1585409912065859c0f544ff354c9d9baa03\",\"diffPixelCountDom\":832,\"regionCountDom\":2,\"expectedDiffPixelCount\":832,\"expectedRegions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"pageErrors\":[],\"results\":{\"X08\":{\"status\":\"PASS\",\"expected\":\"desktop 面が同一検体で diffPixelCount=832・領域=2 を描画する\",\"actual\":{\"diffPixelCountDom\":832,\"regionCountDom\":2,\"diffPixelsSha256\":\"881671c2f5cc8ef9ed1348762782d32c70d4feceab7810efe926848dcd95596f\",\"pageErrors\":0}}}},\"extension\":{\"surface\":\"chrome-extension\",\"diffPixelCount\":832,\"matchRate\":90.97,\"regions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"expectedDiffPixelCount\":832,\"expectedRegions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"results\":{\"X08\":{\"status\":\"PASS\",\"expected\":\"chrome-extension 面が同一検体で diffPixelCount=832・領域=2 を返す\",\"actual\":{\"diffPixelCount\":832,\"matchRate\":90.97,\"regionCount\":2}}}},\"plugin\":{\"surface\":\"figma-plugin\",\"matchRate\":90.97,\"diffPixelsSha256\":\"881671c2f5cc8ef9ed1348762782d32c70d4feceab7810efe926848dcd95596f\",\"diffPngBase64\":\"iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAYAAADimHc4AAACDklEQVR4AeycwY7DIAwFac/9/y/NPXulCpK1ATOETqRIWSz8YEa+rfo+fVAC7+KDElAAir8UBSgAJgDHOwEKgAnA8U6AAmACcLwToACAwEKRTgAsQwEKgAnA8U6AAmACcHz/BLxepZBvefbTL+DZ98dPrwBYgQIUABOA4ydOAHzTReMVAItRgAJgAnC8E6AAmAAc7wQoACYAxzsBCoAJwPFOQLKAqL0CIkLJdQUkA47aKyAilFxXQDLgqL0CIkLJdQUkA47aKyAilFxXQDLgqH2/gPMshXyjGy5e7xew+AVXP96eAlanXp1PARUM4lMBBPUqUwEVDOJTAQT1KlMBFQzic3sBx3GUzLdX2vYCegFl71dANuGgvwICQNllBWQTDvoPFBAkWW4SUEATy7xFBcxj3UxSQBPLvEUFzGPdTFJAE8u8RQXMY91MUkATy7xFBcxj3UxSQBPLvEUFdLLu3X4VEP32T2+i+78IXAV8lf0jm4ACsgkH/RUQAMouKyCbcNBfAQGg7LICsgkH/RUQAMouXwVE/+uffaIf638V8GMA6Os+UwBNbWC+AgbCvNNKAXeoDdyjgIEw77RSwB1qA/coYCDMO622F/D5fErmewd6vWd7AfVlV/xWAGxFAQqACcDx/5gA+KSbxisAFqsABcAE4HgnQAEwATjeCVAATACOdwIUABOA452AQEB2+Q8AAP//CoOsigAAAAZJREFUAwDdvRdfUY2vmgAAAABJRU5ErkJggg==\",\"diffPngSha256\":\"bf8e760bc63ab259866199aa02cc1585409912065859c0f544ff354c9d9baa03\",\"expectedDiffPixelCount\":832,\"expectedRegions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"results\":{\"X08\":{\"status\":\"PASS\",\"expected\":\"figma-plugin 面が同一検体で diffPixelCount=832・領域=2 に対応する diff を描画する\",\"actual\":{\"matchRate\":90.97,\"diffPixelsSha256\":\"881671c2f5cc8ef9ed1348762782d32c70d4feceab7810efe926848dcd95596f\"}}}}},\"documentedDifferences\":[\"chrome-extension: pixelmatch を deps に持てないため YIQ 移植版 (pixel-diff-service.ts)。同一検体で同じ diffPixelCount/regions を返すことを上記で実証。\",\"desktop: clusterDiffRegions (独自 floodFill+>=10px) を使用。shared clusterDiffPixels と同規則で、region 数の一致を DOM 経由で確認。\",\"figma-plugin: 領域を UI に出さないため diff 画像画素の一致で等価性を確認。\"]}}",
       "oracle": {
         "kind": "source-pixels",
         "description": "共通条件では同じ領域・差分規則。意図した機能差は明記"
@@ -13436,15 +13506,15 @@
       "evidence": [
         {
           "path": "ledger/windows/round-2/X08/mcp/mcp-evidence.json",
-          "sha256": "efcc5d74cb48cad4df1c5bb6cec466675ac87380a49ad4060a64a2ced5f2153c"
+          "sha256": "b8df68b130d1e780b756bc814af2d0aaddd0c0dd7be29050e2d18284681676fb"
         },
         {
           "path": "ledger/windows/round-2/X08/mcp/compare-evidence.json",
-          "sha256": "5df08c1a5e79e4adbe293b8eb8883e7f9fd0ff2cd1358ccc1259e745abf726f6"
+          "sha256": "9edef5761ee8f1c767c30ac417d58bb382e6872f49d1d493c2e27de7eb2e9e02"
         },
         {
           "path": "ledger/windows/round-2/X08/mcp/X08-result.json",
-          "sha256": "1a672c568bc4f0232eb4f431b02e5bb7daa08996a633dc8915b36d8ea37ef22b"
+          "sha256": "30084d99a504f319f4b1c626b01b6d36a0f99725ab383dd86fd535eaa5400062"
         }
       ]
     },
@@ -13454,7 +13524,7 @@
       "platform": "windows",
       "route": "desktop",
       "roundExecutionId": "round2",
-      "executedAt": "2026-10-09T03:11:47.204Z",
+      "executedAt": "2026-10-09T04:59:56.978Z",
       "productSha": "4e9145e5e051d4efe78a922723f7b3245005a05e",
       "dirty": false,
       "status": "PASS",
@@ -13465,7 +13535,7 @@
       "input": "同じ検体をMCP・desktop・拡張・pluginで比較",
       "steps": "同一検体の横断比較 [drivers: app/mcp-server/script/x08/desktop.mjs, app/mcp-server/script/x08/compare.mjs]",
       "expected": "X08: desktop 面が同一検体で diffPixelCount=832・領域=2 を描画する | X08: 全4面で diffPixelCount=832・regions一致・diff画像画素一致",
-      "actual": "{\"desktop:X08\":{\"diffPixelCountDom\":832,\"regionCountDom\":2,\"diffPixelsSha256\":\"881671c2f5cc8ef9ed1348762782d32c70d4feceab7810efe926848dcd95596f\",\"pageErrors\":0},\"compare:X08\":{\"ok\":true,\"expected\":{\"expectedDiffPixelCount\":832,\"expectedRegions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"expectedRate\":90.97},\"checks\":[{\"name\":\"diffPixelCount==expected\",\"ok\":true,\"detail\":832},{\"name\":\"diffPixelCount==expected (ext)\",\"ok\":true,\"detail\":832},{\"name\":\"diffPixelCount==expected (desktop DOM)\",\"ok\":true,\"detail\":832},{\"name\":\"matchRate mcp\",\"ok\":true,\"detail\":{\"rate\":90.97,\"expectedRate\":90.97}},{\"name\":\"matchRate extension\",\"ok\":true,\"detail\":{\"rate\":90.97,\"expectedRate\":90.97}},{\"name\":\"matchRate plugin\",\"ok\":true,\"detail\":{\"rate\":90.97,\"expectedRate\":90.97}},{\"name\":\"regions mcp\",\"ok\":true,\"detail\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}]},{\"name\":\"regions ext\",\"ok\":true,\"detail\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}]},{\"name\":\"region count desktop DOM\",\"ok\":true,\"detail\":2},{\"name\":\"diff mask equality\",\"ok\":true,\"detail\":{\"mcp\":\"4d3da6cbe0a6ab9e15885a0b12ad445d400abcf7cc25c28076c4a7ec8caea8bd\",\"desktop\":\"4d3da6cbe0a6ab9e15885a0b12ad445d400abcf7cc25c28076c4a7ec8caea8bd\",\"plugin\":\"4d3da6cbe0a6ab9e15885a0b12ad445d400abcf7cc25c28076c4a7ec8caea8bd\"}},{\"name\":\"derived regions mcp\",\"ok\":true,\"detail\":[\"16,16,32,24\",\"4,64,8,8\"]},{\"name\":\"derived regions desktop\",\"ok\":true,\"detail\":[\"16,16,32,24\",\"4,64,8,8\"]},{\"name\":\"derived regions plugin\",\"ok\":true,\"detail\":[\"16,16,32,24\",\"4,64,8,8\"]}],\"surfaces\":{\"mcp\":{\"surface\":\"mcp\",\"diffPixelCount\":832,\"matchRate\":90.97,\"regions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"diffPixelsSha256\":\"7d0da44f7b88c359673cd0d3ede91c01a1dc9761646f4a4bcc62885594fe890b\",\"diffImagePath\":\"D:\\\\a\\\\designdiff\\\\designdiff\\\\docs\\\\evidence\\\\round2-windows\\\\x08\\\\figdiff-home\\\\results\\\\diff-cmp-44e34236-73e4-4e4c-b0f6-ba27247cc308.png\",\"expectedDiffPixelCount\":832,\"expectedRegions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"protocolErrors\":[],\"results\":{\"X08\":{\"status\":\"PASS\",\"expected\":\"mcp 面が同一検体で diffPixelCount=832・領域=2 を返す\",\"actual\":{\"diffPixelCount\":832,\"matchRate\":90.97,\"regionCount\":2,\"diffPixelsSha256\":\"7d0da44f7b88c359673cd0d3ede91c01a1dc9761646f4a4bcc62885594fe890b\",\"protocolErrors\":0}}}},\"desktop\":{\"surface\":\"desktop\",\"diffPixelsSha256\":\"881671c2f5cc8ef9ed1348762782d32c70d4feceab7810efe926848dcd95596f\",\"diffPngBase64\":\"iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAYAAADimHc4AAACDklEQVR4AeycwY7DIAwFac/9/y/NPXulCpK1ATOETqRIWSz8YEa+rfo+fVAC7+KDElAAir8UBSgAJgDHOwEKgAnA8U6AAmACcLwToACAwEKRTgAsQwEKgAnA8U6AAmACcHz/BLxepZBvefbTL+DZ98dPrwBYgQIUABOA4ydOAHzTReMVAItRgAJgAnC8E6AAmAAc7wQoACYAxzsBCoAJwPFOQLKAqL0CIkLJdQUkA47aKyAilFxXQDLgqL0CIkLJdQUkA47aKyAilFxXQDLgqH2/gPMshXyjGy5e7xew+AVXP96eAlanXp1PARUM4lMBBPUqUwEVDOJTAQT1KlMBFQzic3sBx3GUzLdX2vYCegFl71dANuGgvwICQNllBWQTDvoPFBAkWW4SUEATy7xFBcxj3UxSQBPLvEUFzGPdTFJAE8u8RQXMY91MUkATy7xFBcxj3UxSQBPLvEUFdLLu3X4VEP32T2+i+78IXAV8lf0jm4ACsgkH/RUQAMouKyCbcNBfAQGg7LICsgkH/RUQAMouXwVE/+uffaIf638V8GMA6Os+UwBNbWC+AgbCvNNKAXeoDdyjgIEw77RSwB1qA/coYCDMO622F/D5fErmewd6vWd7AfVlV/xWAGxFAQqACcDx/5gA+KSbxisAFqsABcAE4HgnQAEwATjeCVAATACOdwIUABOA452AQEB2+Q8AAP//CoOsigAAAAZJREFUAwDdvRdfUY2vmgAAAABJRU5ErkJggg==\",\"diffPngSha256\":\"bf8e760bc63ab259866199aa02cc1585409912065859c0f544ff354c9d9baa03\",\"diffPixelCountDom\":832,\"regionCountDom\":2,\"expectedDiffPixelCount\":832,\"expectedRegions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"pageErrors\":[],\"results\":{\"X08\":{\"status\":\"PASS\",\"expected\":\"desktop 面が同一検体で diffPixelCount=832・領域=2 を描画する\",\"actual\":{\"diffPixelCountDom\":832,\"regionCountDom\":2,\"diffPixelsSha256\":\"881671c2f5cc8ef9ed1348762782d32c70d4feceab7810efe926848dcd95596f\",\"pageErrors\":0}}}},\"extension\":{\"surface\":\"chrome-extension\",\"diffPixelCount\":832,\"matchRate\":90.97,\"regions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"expectedDiffPixelCount\":832,\"expectedRegions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"results\":{\"X08\":{\"status\":\"PASS\",\"expected\":\"chrome-extension 面が同一検体で diffPixelCount=832・領域=2 を返す\",\"actual\":{\"diffPixelCount\":832,\"matchRate\":90.97,\"regionCount\":2}}}},\"plugin\":{\"surface\":\"figma-plugin\",\"matchRate\":90.97,\"diffPixelsSha256\":\"881671c2f5cc8ef9ed1348762782d32c70d4feceab7810efe926848dcd95596f\",\"diffPngBase64\":\"iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAYAAADimHc4AAACDklEQVR4AeycwY7DIAwFac/9/y/NPXulCpK1ATOETqRIWSz8YEa+rfo+fVAC7+KDElAAir8UBSgAJgDHOwEKgAnA8U6AAmACcLwToACAwEKRTgAsQwEKgAnA8U6AAmACcHz/BLxepZBvefbTL+DZ98dPrwBYgQIUABOA4ydOAHzTReMVAItRgAJgAnC8E6AAmAAc7wQoACYAxzsBCoAJwPFOQLKAqL0CIkLJdQUkA47aKyAilFxXQDLgqL0CIkLJdQUkA47aKyAilFxXQDLgqH2/gPMshXyjGy5e7xew+AVXP96eAlanXp1PARUM4lMBBPUqUwEVDOJTAQT1KlMBFQzic3sBx3GUzLdX2vYCegFl71dANuGgvwICQNllBWQTDvoPFBAkWW4SUEATy7xFBcxj3UxSQBPLvEUFzGPdTFJAE8u8RQXMY91MUkATy7xFBcxj3UxSQBPLvEUFdLLu3X4VEP32T2+i+78IXAV8lf0jm4ACsgkH/RUQAMouKyCbcNBfAQGg7LICsgkH/RUQAMouXwVE/+uffaIf638V8GMA6Os+UwBNbWC+AgbCvNNKAXeoDdyjgIEw77RSwB1qA/coYCDMO622F/D5fErmewd6vWd7AfVlV/xWAGxFAQqACcDx/5gA+KSbxisAFqsABcAE4HgnQAEwATjeCVAATACOdwIUABOA452AQEB2+Q8AAP//CoOsigAAAAZJREFUAwDdvRdfUY2vmgAAAABJRU5ErkJggg==\",\"diffPngSha256\":\"bf8e760bc63ab259866199aa02cc1585409912065859c0f544ff354c9d9baa03\",\"expectedDiffPixelCount\":832,\"expectedRegions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"results\":{\"X08\":{\"status\":\"PASS\",\"expected\":\"figma-plugin 面が同一検体で diffPixelCount=832・領域=2 に対応する diff を描画する\",\"actual\":{\"matchRate\":90.97,\"diffPixelsSha256\":\"881671c2f5cc8ef9ed1348762782d32c70d4feceab7810efe926848dcd95596f\"}}}}},\"documentedDifferences\":[\"chrome-extension: pixelmatch を deps に持てないため YIQ 移植版 (pixel-diff-service.ts)。同一検体で同じ diffPixelCount/regions を返すことを上記で実証。\",\"desktop: clusterDiffRegions (独自 floodFill+>=10px) を使用。shared clusterDiffPixels と同規則で、region 数の一致を DOM 経由で確認。\",\"figma-plugin: 領域を UI に出さないため diff 画像画素の一致で等価性を確認。\"]}}",
+      "actual": "{\"desktop:X08\":{\"diffPixelCountDom\":832,\"regionCountDom\":2,\"diffPixelsSha256\":\"881671c2f5cc8ef9ed1348762782d32c70d4feceab7810efe926848dcd95596f\",\"pageErrors\":0},\"compare:X08\":{\"ok\":true,\"expected\":{\"expectedDiffPixelCount\":832,\"expectedRegions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"expectedRate\":90.97},\"checks\":[{\"name\":\"diffPixelCount==expected\",\"ok\":true,\"detail\":832},{\"name\":\"diffPixelCount==expected (ext)\",\"ok\":true,\"detail\":832},{\"name\":\"diffPixelCount==expected (desktop DOM)\",\"ok\":true,\"detail\":832},{\"name\":\"matchRate mcp\",\"ok\":true,\"detail\":{\"rate\":90.97,\"expectedRate\":90.97}},{\"name\":\"matchRate extension\",\"ok\":true,\"detail\":{\"rate\":90.97,\"expectedRate\":90.97}},{\"name\":\"matchRate plugin\",\"ok\":true,\"detail\":{\"rate\":90.97,\"expectedRate\":90.97}},{\"name\":\"regions mcp\",\"ok\":true,\"detail\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}]},{\"name\":\"regions ext\",\"ok\":true,\"detail\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}]},{\"name\":\"region count desktop DOM\",\"ok\":true,\"detail\":2},{\"name\":\"diff mask equality\",\"ok\":true,\"detail\":{\"mcp\":\"4d3da6cbe0a6ab9e15885a0b12ad445d400abcf7cc25c28076c4a7ec8caea8bd\",\"desktop\":\"4d3da6cbe0a6ab9e15885a0b12ad445d400abcf7cc25c28076c4a7ec8caea8bd\",\"plugin\":\"4d3da6cbe0a6ab9e15885a0b12ad445d400abcf7cc25c28076c4a7ec8caea8bd\"}},{\"name\":\"derived regions mcp\",\"ok\":true,\"detail\":[\"16,16,32,24\",\"4,64,8,8\"]},{\"name\":\"derived regions desktop\",\"ok\":true,\"detail\":[\"16,16,32,24\",\"4,64,8,8\"]},{\"name\":\"derived regions plugin\",\"ok\":true,\"detail\":[\"16,16,32,24\",\"4,64,8,8\"]}],\"surfaces\":{\"mcp\":{\"surface\":\"mcp\",\"diffPixelCount\":832,\"matchRate\":90.97,\"regions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"diffPixelsSha256\":\"7d0da44f7b88c359673cd0d3ede91c01a1dc9761646f4a4bcc62885594fe890b\",\"diffImagePath\":\"D:\\\\a\\\\designdiff\\\\designdiff\\\\docs\\\\evidence\\\\round2-windows\\\\x08\\\\figdiff-home\\\\results\\\\diff-cmp-fad289ad-fb5d-44bb-95ef-6fa1a69595b3.png\",\"expectedDiffPixelCount\":832,\"expectedRegions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"protocolErrors\":[],\"results\":{\"X08\":{\"status\":\"PASS\",\"expected\":\"mcp 面が同一検体で diffPixelCount=832・領域=2 を返す\",\"actual\":{\"diffPixelCount\":832,\"matchRate\":90.97,\"regionCount\":2,\"diffPixelsSha256\":\"7d0da44f7b88c359673cd0d3ede91c01a1dc9761646f4a4bcc62885594fe890b\",\"protocolErrors\":0}}}},\"desktop\":{\"surface\":\"desktop\",\"diffPixelsSha256\":\"881671c2f5cc8ef9ed1348762782d32c70d4feceab7810efe926848dcd95596f\",\"diffPngBase64\":\"iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAYAAADimHc4AAACDklEQVR4AeycwY7DIAwFac/9/y/NPXulCpK1ATOETqRIWSz8YEa+rfo+fVAC7+KDElAAir8UBSgAJgDHOwEKgAnA8U6AAmACcLwToACAwEKRTgAsQwEKgAnA8U6AAmACcHz/BLxepZBvefbTL+DZ98dPrwBYgQIUABOA4ydOAHzTReMVAItRgAJgAnC8E6AAmAAc7wQoACYAxzsBCoAJwPFOQLKAqL0CIkLJdQUkA47aKyAilFxXQDLgqL0CIkLJdQUkA47aKyAilFxXQDLgqH2/gPMshXyjGy5e7xew+AVXP96eAlanXp1PARUM4lMBBPUqUwEVDOJTAQT1KlMBFQzic3sBx3GUzLdX2vYCegFl71dANuGgvwICQNllBWQTDvoPFBAkWW4SUEATy7xFBcxj3UxSQBPLvEUFzGPdTFJAE8u8RQXMY91MUkATy7xFBcxj3UxSQBPLvEUFdLLu3X4VEP32T2+i+78IXAV8lf0jm4ACsgkH/RUQAMouKyCbcNBfAQGg7LICsgkH/RUQAMouXwVE/+uffaIf638V8GMA6Os+UwBNbWC+AgbCvNNKAXeoDdyjgIEw77RSwB1qA/coYCDMO622F/D5fErmewd6vWd7AfVlV/xWAGxFAQqACcDx/5gA+KSbxisAFqsABcAE4HgnQAEwATjeCVAATACOdwIUABOA452AQEB2+Q8AAP//CoOsigAAAAZJREFUAwDdvRdfUY2vmgAAAABJRU5ErkJggg==\",\"diffPngSha256\":\"bf8e760bc63ab259866199aa02cc1585409912065859c0f544ff354c9d9baa03\",\"diffPixelCountDom\":832,\"regionCountDom\":2,\"expectedDiffPixelCount\":832,\"expectedRegions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"pageErrors\":[],\"results\":{\"X08\":{\"status\":\"PASS\",\"expected\":\"desktop 面が同一検体で diffPixelCount=832・領域=2 を描画する\",\"actual\":{\"diffPixelCountDom\":832,\"regionCountDom\":2,\"diffPixelsSha256\":\"881671c2f5cc8ef9ed1348762782d32c70d4feceab7810efe926848dcd95596f\",\"pageErrors\":0}}}},\"extension\":{\"surface\":\"chrome-extension\",\"diffPixelCount\":832,\"matchRate\":90.97,\"regions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"expectedDiffPixelCount\":832,\"expectedRegions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"results\":{\"X08\":{\"status\":\"PASS\",\"expected\":\"chrome-extension 面が同一検体で diffPixelCount=832・領域=2 を返す\",\"actual\":{\"diffPixelCount\":832,\"matchRate\":90.97,\"regionCount\":2}}}},\"plugin\":{\"surface\":\"figma-plugin\",\"matchRate\":90.97,\"diffPixelsSha256\":\"881671c2f5cc8ef9ed1348762782d32c70d4feceab7810efe926848dcd95596f\",\"diffPngBase64\":\"iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAYAAADimHc4AAACDklEQVR4AeycwY7DIAwFac/9/y/NPXulCpK1ATOETqRIWSz8YEa+rfo+fVAC7+KDElAAir8UBSgAJgDHOwEKgAnA8U6AAmACcLwToACAwEKRTgAsQwEKgAnA8U6AAmACcHz/BLxepZBvefbTL+DZ98dPrwBYgQIUABOA4ydOAHzTReMVAItRgAJgAnC8E6AAmAAc7wQoACYAxzsBCoAJwPFOQLKAqL0CIkLJdQUkA47aKyAilFxXQDLgqL0CIkLJdQUkA47aKyAilFxXQDLgqH2/gPMshXyjGy5e7xew+AVXP96eAlanXp1PARUM4lMBBPUqUwEVDOJTAQT1KlMBFQzic3sBx3GUzLdX2vYCegFl71dANuGgvwICQNllBWQTDvoPFBAkWW4SUEATy7xFBcxj3UxSQBPLvEUFzGPdTFJAE8u8RQXMY91MUkATy7xFBcxj3UxSQBPLvEUFdLLu3X4VEP32T2+i+78IXAV8lf0jm4ACsgkH/RUQAMouKyCbcNBfAQGg7LICsgkH/RUQAMouXwVE/+uffaIf638V8GMA6Os+UwBNbWC+AgbCvNNKAXeoDdyjgIEw77RSwB1qA/coYCDMO622F/D5fErmewd6vWd7AfVlV/xWAGxFAQqACcDx/5gA+KSbxisAFqsABcAE4HgnQAEwATjeCVAATACOdwIUABOA452AQEB2+Q8AAP//CoOsigAAAAZJREFUAwDdvRdfUY2vmgAAAABJRU5ErkJggg==\",\"diffPngSha256\":\"bf8e760bc63ab259866199aa02cc1585409912065859c0f544ff354c9d9baa03\",\"expectedDiffPixelCount\":832,\"expectedRegions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"results\":{\"X08\":{\"status\":\"PASS\",\"expected\":\"figma-plugin 面が同一検体で diffPixelCount=832・領域=2 に対応する diff を描画する\",\"actual\":{\"matchRate\":90.97,\"diffPixelsSha256\":\"881671c2f5cc8ef9ed1348762782d32c70d4feceab7810efe926848dcd95596f\"}}}}},\"documentedDifferences\":[\"chrome-extension: pixelmatch を deps に持てないため YIQ 移植版 (pixel-diff-service.ts)。同一検体で同じ diffPixelCount/regions を返すことを上記で実証。\",\"desktop: clusterDiffRegions (独自 floodFill+>=10px) を使用。shared clusterDiffPixels と同規則で、region 数の一致を DOM 経由で確認。\",\"figma-plugin: 領域を UI に出さないため diff 画像画素の一致で等価性を確認。\"]}}",
       "oracle": {
         "kind": "source-pixels",
         "description": "共通条件では同じ領域・差分規則。意図した機能差は明記"
@@ -13477,11 +13547,11 @@
         },
         {
           "path": "ledger/windows/round-2/X08/desktop/compare-evidence.json",
-          "sha256": "5df08c1a5e79e4adbe293b8eb8883e7f9fd0ff2cd1358ccc1259e745abf726f6"
+          "sha256": "9edef5761ee8f1c767c30ac417d58bb382e6872f49d1d493c2e27de7eb2e9e02"
         },
         {
           "path": "ledger/windows/round-2/X08/desktop/X08-result.json",
-          "sha256": "62395d7c6c1c32463d4ec3352984109998f4821bf97293ad97dd4a1321a2d51c"
+          "sha256": "90ed11943cbc605517839696f71407e8b32d1026ee6f9aa3c06a067f0a21aab7"
         }
       ]
     },
@@ -13491,7 +13561,7 @@
       "platform": "windows",
       "route": "chrome-extension",
       "roundExecutionId": "round2",
-      "executedAt": "2026-10-09T03:11:49.972Z",
+      "executedAt": "2026-10-09T04:59:58.643Z",
       "productSha": "4e9145e5e051d4efe78a922723f7b3245005a05e",
       "dirty": false,
       "status": "PASS",
@@ -13502,7 +13572,7 @@
       "input": "同じ検体をMCP・desktop・拡張・pluginで比較",
       "steps": "同一検体の横断比較 [drivers: app/mcp-server/script/x08/extension.mjs, app/mcp-server/script/x08/compare.mjs]",
       "expected": "X08: chrome-extension 面が同一検体で diffPixelCount=832・領域=2 を返す | X08: 全4面で diffPixelCount=832・regions一致・diff画像画素一致",
-      "actual": "{\"extension:X08\":{\"diffPixelCount\":832,\"matchRate\":90.97,\"regionCount\":2},\"compare:X08\":{\"ok\":true,\"expected\":{\"expectedDiffPixelCount\":832,\"expectedRegions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"expectedRate\":90.97},\"checks\":[{\"name\":\"diffPixelCount==expected\",\"ok\":true,\"detail\":832},{\"name\":\"diffPixelCount==expected (ext)\",\"ok\":true,\"detail\":832},{\"name\":\"diffPixelCount==expected (desktop DOM)\",\"ok\":true,\"detail\":832},{\"name\":\"matchRate mcp\",\"ok\":true,\"detail\":{\"rate\":90.97,\"expectedRate\":90.97}},{\"name\":\"matchRate extension\",\"ok\":true,\"detail\":{\"rate\":90.97,\"expectedRate\":90.97}},{\"name\":\"matchRate plugin\",\"ok\":true,\"detail\":{\"rate\":90.97,\"expectedRate\":90.97}},{\"name\":\"regions mcp\",\"ok\":true,\"detail\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}]},{\"name\":\"regions ext\",\"ok\":true,\"detail\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}]},{\"name\":\"region count desktop DOM\",\"ok\":true,\"detail\":2},{\"name\":\"diff mask equality\",\"ok\":true,\"detail\":{\"mcp\":\"4d3da6cbe0a6ab9e15885a0b12ad445d400abcf7cc25c28076c4a7ec8caea8bd\",\"desktop\":\"4d3da6cbe0a6ab9e15885a0b12ad445d400abcf7cc25c28076c4a7ec8caea8bd\",\"plugin\":\"4d3da6cbe0a6ab9e15885a0b12ad445d400abcf7cc25c28076c4a7ec8caea8bd\"}},{\"name\":\"derived regions mcp\",\"ok\":true,\"detail\":[\"16,16,32,24\",\"4,64,8,8\"]},{\"name\":\"derived regions desktop\",\"ok\":true,\"detail\":[\"16,16,32,24\",\"4,64,8,8\"]},{\"name\":\"derived regions plugin\",\"ok\":true,\"detail\":[\"16,16,32,24\",\"4,64,8,8\"]}],\"surfaces\":{\"mcp\":{\"surface\":\"mcp\",\"diffPixelCount\":832,\"matchRate\":90.97,\"regions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"diffPixelsSha256\":\"7d0da44f7b88c359673cd0d3ede91c01a1dc9761646f4a4bcc62885594fe890b\",\"diffImagePath\":\"D:\\\\a\\\\designdiff\\\\designdiff\\\\docs\\\\evidence\\\\round2-windows\\\\x08\\\\figdiff-home\\\\results\\\\diff-cmp-44e34236-73e4-4e4c-b0f6-ba27247cc308.png\",\"expectedDiffPixelCount\":832,\"expectedRegions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"protocolErrors\":[],\"results\":{\"X08\":{\"status\":\"PASS\",\"expected\":\"mcp 面が同一検体で diffPixelCount=832・領域=2 を返す\",\"actual\":{\"diffPixelCount\":832,\"matchRate\":90.97,\"regionCount\":2,\"diffPixelsSha256\":\"7d0da44f7b88c359673cd0d3ede91c01a1dc9761646f4a4bcc62885594fe890b\",\"protocolErrors\":0}}}},\"desktop\":{\"surface\":\"desktop\",\"diffPixelsSha256\":\"881671c2f5cc8ef9ed1348762782d32c70d4feceab7810efe926848dcd95596f\",\"diffPngBase64\":\"iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAYAAADimHc4AAACDklEQVR4AeycwY7DIAwFac/9/y/NPXulCpK1ATOETqRIWSz8YEa+rfo+fVAC7+KDElAAir8UBSgAJgDHOwEKgAnA8U6AAmACcLwToACAwEKRTgAsQwEKgAnA8U6AAmACcHz/BLxepZBvefbTL+DZ98dPrwBYgQIUABOA4ydOAHzTReMVAItRgAJgAnC8E6AAmAAc7wQoACYAxzsBCoAJwPFOQLKAqL0CIkLJdQUkA47aKyAilFxXQDLgqL0CIkLJdQUkA47aKyAilFxXQDLgqH2/gPMshXyjGy5e7xew+AVXP96eAlanXp1PARUM4lMBBPUqUwEVDOJTAQT1KlMBFQzic3sBx3GUzLdX2vYCegFl71dANuGgvwICQNllBWQTDvoPFBAkWW4SUEATy7xFBcxj3UxSQBPLvEUFzGPdTFJAE8u8RQXMY91MUkATy7xFBcxj3UxSQBPLvEUFdLLu3X4VEP32T2+i+78IXAV8lf0jm4ACsgkH/RUQAMouKyCbcNBfAQGg7LICsgkH/RUQAMouXwVE/+uffaIf638V8GMA6Os+UwBNbWC+AgbCvNNKAXeoDdyjgIEw77RSwB1qA/coYCDMO622F/D5fErmewd6vWd7AfVlV/xWAGxFAQqACcDx/5gA+KSbxisAFqsABcAE4HgnQAEwATjeCVAATACOdwIUABOA452AQEB2+Q8AAP//CoOsigAAAAZJREFUAwDdvRdfUY2vmgAAAABJRU5ErkJggg==\",\"diffPngSha256\":\"bf8e760bc63ab259866199aa02cc1585409912065859c0f544ff354c9d9baa03\",\"diffPixelCountDom\":832,\"regionCountDom\":2,\"expectedDiffPixelCount\":832,\"expectedRegions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"pageErrors\":[],\"results\":{\"X08\":{\"status\":\"PASS\",\"expected\":\"desktop 面が同一検体で diffPixelCount=832・領域=2 を描画する\",\"actual\":{\"diffPixelCountDom\":832,\"regionCountDom\":2,\"diffPixelsSha256\":\"881671c2f5cc8ef9ed1348762782d32c70d4feceab7810efe926848dcd95596f\",\"pageErrors\":0}}}},\"extension\":{\"surface\":\"chrome-extension\",\"diffPixelCount\":832,\"matchRate\":90.97,\"regions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"expectedDiffPixelCount\":832,\"expectedRegions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"results\":{\"X08\":{\"status\":\"PASS\",\"expected\":\"chrome-extension 面が同一検体で diffPixelCount=832・領域=2 を返す\",\"actual\":{\"diffPixelCount\":832,\"matchRate\":90.97,\"regionCount\":2}}}},\"plugin\":{\"surface\":\"figma-plugin\",\"matchRate\":90.97,\"diffPixelsSha256\":\"881671c2f5cc8ef9ed1348762782d32c70d4feceab7810efe926848dcd95596f\",\"diffPngBase64\":\"iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAYAAADimHc4AAACDklEQVR4AeycwY7DIAwFac/9/y/NPXulCpK1ATOETqRIWSz8YEa+rfo+fVAC7+KDElAAir8UBSgAJgDHOwEKgAnA8U6AAmACcLwToACAwEKRTgAsQwEKgAnA8U6AAmACcHz/BLxepZBvefbTL+DZ98dPrwBYgQIUABOA4ydOAHzTReMVAItRgAJgAnC8E6AAmAAc7wQoACYAxzsBCoAJwPFOQLKAqL0CIkLJdQUkA47aKyAilFxXQDLgqL0CIkLJdQUkA47aKyAilFxXQDLgqH2/gPMshXyjGy5e7xew+AVXP96eAlanXp1PARUM4lMBBPUqUwEVDOJTAQT1KlMBFQzic3sBx3GUzLdX2vYCegFl71dANuGgvwICQNllBWQTDvoPFBAkWW4SUEATy7xFBcxj3UxSQBPLvEUFzGPdTFJAE8u8RQXMY91MUkATy7xFBcxj3UxSQBPLvEUFdLLu3X4VEP32T2+i+78IXAV8lf0jm4ACsgkH/RUQAMouKyCbcNBfAQGg7LICsgkH/RUQAMouXwVE/+uffaIf638V8GMA6Os+UwBNbWC+AgbCvNNKAXeoDdyjgIEw77RSwB1qA/coYCDMO622F/D5fErmewd6vWd7AfVlV/xWAGxFAQqACcDx/5gA+KSbxisAFqsABcAE4HgnQAEwATjeCVAATACOdwIUABOA452AQEB2+Q8AAP//CoOsigAAAAZJREFUAwDdvRdfUY2vmgAAAABJRU5ErkJggg==\",\"diffPngSha256\":\"bf8e760bc63ab259866199aa02cc1585409912065859c0f544ff354c9d9baa03\",\"expectedDiffPixelCount\":832,\"expectedRegions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"results\":{\"X08\":{\"status\":\"PASS\",\"expected\":\"figma-plugin 面が同一検体で diffPixelCount=832・領域=2 に対応する diff を描画する\",\"actual\":{\"matchRate\":90.97,\"diffPixelsSha256\":\"881671c2f5cc8ef9ed1348762782d32c70d4feceab7810efe926848dcd95596f\"}}}}},\"documentedDifferences\":[\"chrome-extension: pixelmatch を deps に持てないため YIQ 移植版 (pixel-diff-service.ts)。同一検体で同じ diffPixelCount/regions を返すことを上記で実証。\",\"desktop: clusterDiffRegions (独自 floodFill+>=10px) を使用。shared clusterDiffPixels と同規則で、region 数の一致を DOM 経由で確認。\",\"figma-plugin: 領域を UI に出さないため diff 画像画素の一致で等価性を確認。\"]}}",
+      "actual": "{\"extension:X08\":{\"diffPixelCount\":832,\"matchRate\":90.97,\"regionCount\":2},\"compare:X08\":{\"ok\":true,\"expected\":{\"expectedDiffPixelCount\":832,\"expectedRegions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"expectedRate\":90.97},\"checks\":[{\"name\":\"diffPixelCount==expected\",\"ok\":true,\"detail\":832},{\"name\":\"diffPixelCount==expected (ext)\",\"ok\":true,\"detail\":832},{\"name\":\"diffPixelCount==expected (desktop DOM)\",\"ok\":true,\"detail\":832},{\"name\":\"matchRate mcp\",\"ok\":true,\"detail\":{\"rate\":90.97,\"expectedRate\":90.97}},{\"name\":\"matchRate extension\",\"ok\":true,\"detail\":{\"rate\":90.97,\"expectedRate\":90.97}},{\"name\":\"matchRate plugin\",\"ok\":true,\"detail\":{\"rate\":90.97,\"expectedRate\":90.97}},{\"name\":\"regions mcp\",\"ok\":true,\"detail\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}]},{\"name\":\"regions ext\",\"ok\":true,\"detail\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}]},{\"name\":\"region count desktop DOM\",\"ok\":true,\"detail\":2},{\"name\":\"diff mask equality\",\"ok\":true,\"detail\":{\"mcp\":\"4d3da6cbe0a6ab9e15885a0b12ad445d400abcf7cc25c28076c4a7ec8caea8bd\",\"desktop\":\"4d3da6cbe0a6ab9e15885a0b12ad445d400abcf7cc25c28076c4a7ec8caea8bd\",\"plugin\":\"4d3da6cbe0a6ab9e15885a0b12ad445d400abcf7cc25c28076c4a7ec8caea8bd\"}},{\"name\":\"derived regions mcp\",\"ok\":true,\"detail\":[\"16,16,32,24\",\"4,64,8,8\"]},{\"name\":\"derived regions desktop\",\"ok\":true,\"detail\":[\"16,16,32,24\",\"4,64,8,8\"]},{\"name\":\"derived regions plugin\",\"ok\":true,\"detail\":[\"16,16,32,24\",\"4,64,8,8\"]}],\"surfaces\":{\"mcp\":{\"surface\":\"mcp\",\"diffPixelCount\":832,\"matchRate\":90.97,\"regions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"diffPixelsSha256\":\"7d0da44f7b88c359673cd0d3ede91c01a1dc9761646f4a4bcc62885594fe890b\",\"diffImagePath\":\"D:\\\\a\\\\designdiff\\\\designdiff\\\\docs\\\\evidence\\\\round2-windows\\\\x08\\\\figdiff-home\\\\results\\\\diff-cmp-fad289ad-fb5d-44bb-95ef-6fa1a69595b3.png\",\"expectedDiffPixelCount\":832,\"expectedRegions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"protocolErrors\":[],\"results\":{\"X08\":{\"status\":\"PASS\",\"expected\":\"mcp 面が同一検体で diffPixelCount=832・領域=2 を返す\",\"actual\":{\"diffPixelCount\":832,\"matchRate\":90.97,\"regionCount\":2,\"diffPixelsSha256\":\"7d0da44f7b88c359673cd0d3ede91c01a1dc9761646f4a4bcc62885594fe890b\",\"protocolErrors\":0}}}},\"desktop\":{\"surface\":\"desktop\",\"diffPixelsSha256\":\"881671c2f5cc8ef9ed1348762782d32c70d4feceab7810efe926848dcd95596f\",\"diffPngBase64\":\"iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAYAAADimHc4AAACDklEQVR4AeycwY7DIAwFac/9/y/NPXulCpK1ATOETqRIWSz8YEa+rfo+fVAC7+KDElAAir8UBSgAJgDHOwEKgAnA8U6AAmACcLwToACAwEKRTgAsQwEKgAnA8U6AAmACcHz/BLxepZBvefbTL+DZ98dPrwBYgQIUABOA4ydOAHzTReMVAItRgAJgAnC8E6AAmAAc7wQoACYAxzsBCoAJwPFOQLKAqL0CIkLJdQUkA47aKyAilFxXQDLgqL0CIkLJdQUkA47aKyAilFxXQDLgqH2/gPMshXyjGy5e7xew+AVXP96eAlanXp1PARUM4lMBBPUqUwEVDOJTAQT1KlMBFQzic3sBx3GUzLdX2vYCegFl71dANuGgvwICQNllBWQTDvoPFBAkWW4SUEATy7xFBcxj3UxSQBPLvEUFzGPdTFJAE8u8RQXMY91MUkATy7xFBcxj3UxSQBPLvEUFdLLu3X4VEP32T2+i+78IXAV8lf0jm4ACsgkH/RUQAMouKyCbcNBfAQGg7LICsgkH/RUQAMouXwVE/+uffaIf638V8GMA6Os+UwBNbWC+AgbCvNNKAXeoDdyjgIEw77RSwB1qA/coYCDMO622F/D5fErmewd6vWd7AfVlV/xWAGxFAQqACcDx/5gA+KSbxisAFqsABcAE4HgnQAEwATjeCVAATACOdwIUABOA452AQEB2+Q8AAP//CoOsigAAAAZJREFUAwDdvRdfUY2vmgAAAABJRU5ErkJggg==\",\"diffPngSha256\":\"bf8e760bc63ab259866199aa02cc1585409912065859c0f544ff354c9d9baa03\",\"diffPixelCountDom\":832,\"regionCountDom\":2,\"expectedDiffPixelCount\":832,\"expectedRegions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"pageErrors\":[],\"results\":{\"X08\":{\"status\":\"PASS\",\"expected\":\"desktop 面が同一検体で diffPixelCount=832・領域=2 を描画する\",\"actual\":{\"diffPixelCountDom\":832,\"regionCountDom\":2,\"diffPixelsSha256\":\"881671c2f5cc8ef9ed1348762782d32c70d4feceab7810efe926848dcd95596f\",\"pageErrors\":0}}}},\"extension\":{\"surface\":\"chrome-extension\",\"diffPixelCount\":832,\"matchRate\":90.97,\"regions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"expectedDiffPixelCount\":832,\"expectedRegions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"results\":{\"X08\":{\"status\":\"PASS\",\"expected\":\"chrome-extension 面が同一検体で diffPixelCount=832・領域=2 を返す\",\"actual\":{\"diffPixelCount\":832,\"matchRate\":90.97,\"regionCount\":2}}}},\"plugin\":{\"surface\":\"figma-plugin\",\"matchRate\":90.97,\"diffPixelsSha256\":\"881671c2f5cc8ef9ed1348762782d32c70d4feceab7810efe926848dcd95596f\",\"diffPngBase64\":\"iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAYAAADimHc4AAACDklEQVR4AeycwY7DIAwFac/9/y/NPXulCpK1ATOETqRIWSz8YEa+rfo+fVAC7+KDElAAir8UBSgAJgDHOwEKgAnA8U6AAmACcLwToACAwEKRTgAsQwEKgAnA8U6AAmACcHz/BLxepZBvefbTL+DZ98dPrwBYgQIUABOA4ydOAHzTReMVAItRgAJgAnC8E6AAmAAc7wQoACYAxzsBCoAJwPFOQLKAqL0CIkLJdQUkA47aKyAilFxXQDLgqL0CIkLJdQUkA47aKyAilFxXQDLgqH2/gPMshXyjGy5e7xew+AVXP96eAlanXp1PARUM4lMBBPUqUwEVDOJTAQT1KlMBFQzic3sBx3GUzLdX2vYCegFl71dANuGgvwICQNllBWQTDvoPFBAkWW4SUEATy7xFBcxj3UxSQBPLvEUFzGPdTFJAE8u8RQXMY91MUkATy7xFBcxj3UxSQBPLvEUFdLLu3X4VEP32T2+i+78IXAV8lf0jm4ACsgkH/RUQAMouKyCbcNBfAQGg7LICsgkH/RUQAMouXwVE/+uffaIf638V8GMA6Os+UwBNbWC+AgbCvNNKAXeoDdyjgIEw77RSwB1qA/coYCDMO622F/D5fErmewd6vWd7AfVlV/xWAGxFAQqACcDx/5gA+KSbxisAFqsABcAE4HgnQAEwATjeCVAATACOdwIUABOA452AQEB2+Q8AAP//CoOsigAAAAZJREFUAwDdvRdfUY2vmgAAAABJRU5ErkJggg==\",\"diffPngSha256\":\"bf8e760bc63ab259866199aa02cc1585409912065859c0f544ff354c9d9baa03\",\"expectedDiffPixelCount\":832,\"expectedRegions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"results\":{\"X08\":{\"status\":\"PASS\",\"expected\":\"figma-plugin 面が同一検体で diffPixelCount=832・領域=2 に対応する diff を描画する\",\"actual\":{\"matchRate\":90.97,\"diffPixelsSha256\":\"881671c2f5cc8ef9ed1348762782d32c70d4feceab7810efe926848dcd95596f\"}}}}},\"documentedDifferences\":[\"chrome-extension: pixelmatch を deps に持てないため YIQ 移植版 (pixel-diff-service.ts)。同一検体で同じ diffPixelCount/regions を返すことを上記で実証。\",\"desktop: clusterDiffRegions (独自 floodFill+>=10px) を使用。shared clusterDiffPixels と同規則で、region 数の一致を DOM 経由で確認。\",\"figma-plugin: 領域を UI に出さないため diff 画像画素の一致で等価性を確認。\"]}}",
       "oracle": {
         "kind": "source-pixels",
         "description": "共通条件では同じ領域・差分規則。意図した機能差は明記"
@@ -13514,11 +13584,11 @@
         },
         {
           "path": "ledger/windows/round-2/X08/chrome-extension/compare-evidence.json",
-          "sha256": "5df08c1a5e79e4adbe293b8eb8883e7f9fd0ff2cd1358ccc1259e745abf726f6"
+          "sha256": "9edef5761ee8f1c767c30ac417d58bb382e6872f49d1d493c2e27de7eb2e9e02"
         },
         {
           "path": "ledger/windows/round-2/X08/chrome-extension/X08-result.json",
-          "sha256": "a994522026d6452330559904bb6d0d9ecf700116d1e33f2fb008702a90438cf4"
+          "sha256": "f0f596c5df2f250a44548e48b150b8c6cd8b51eeb2ce6a2ffff43f6706abc6c5"
         }
       ]
     },
@@ -13528,7 +13598,7 @@
       "platform": "windows",
       "route": "figma-plugin",
       "roundExecutionId": "round2",
-      "executedAt": "2026-10-09T03:11:53.398Z",
+      "executedAt": "2026-10-09T05:00:01.967Z",
       "productSha": "4e9145e5e051d4efe78a922723f7b3245005a05e",
       "dirty": false,
       "status": "PASS",
@@ -13539,7 +13609,7 @@
       "input": "同じ検体をMCP・desktop・拡張・pluginで比較",
       "steps": "同一検体の横断比較 [drivers: app/mcp-server/script/x08/plugin.mjs, app/mcp-server/script/x08/compare.mjs]",
       "expected": "X08: figma-plugin 面が同一検体で diffPixelCount=832・領域=2 に対応する diff を描画する | X08: 全4面で diffPixelCount=832・regions一致・diff画像画素一致",
-      "actual": "{\"plugin:X08\":{\"matchRate\":90.97,\"diffPixelsSha256\":\"881671c2f5cc8ef9ed1348762782d32c70d4feceab7810efe926848dcd95596f\"},\"compare:X08\":{\"ok\":true,\"expected\":{\"expectedDiffPixelCount\":832,\"expectedRegions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"expectedRate\":90.97},\"checks\":[{\"name\":\"diffPixelCount==expected\",\"ok\":true,\"detail\":832},{\"name\":\"diffPixelCount==expected (ext)\",\"ok\":true,\"detail\":832},{\"name\":\"diffPixelCount==expected (desktop DOM)\",\"ok\":true,\"detail\":832},{\"name\":\"matchRate mcp\",\"ok\":true,\"detail\":{\"rate\":90.97,\"expectedRate\":90.97}},{\"name\":\"matchRate extension\",\"ok\":true,\"detail\":{\"rate\":90.97,\"expectedRate\":90.97}},{\"name\":\"matchRate plugin\",\"ok\":true,\"detail\":{\"rate\":90.97,\"expectedRate\":90.97}},{\"name\":\"regions mcp\",\"ok\":true,\"detail\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}]},{\"name\":\"regions ext\",\"ok\":true,\"detail\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}]},{\"name\":\"region count desktop DOM\",\"ok\":true,\"detail\":2},{\"name\":\"diff mask equality\",\"ok\":true,\"detail\":{\"mcp\":\"4d3da6cbe0a6ab9e15885a0b12ad445d400abcf7cc25c28076c4a7ec8caea8bd\",\"desktop\":\"4d3da6cbe0a6ab9e15885a0b12ad445d400abcf7cc25c28076c4a7ec8caea8bd\",\"plugin\":\"4d3da6cbe0a6ab9e15885a0b12ad445d400abcf7cc25c28076c4a7ec8caea8bd\"}},{\"name\":\"derived regions mcp\",\"ok\":true,\"detail\":[\"16,16,32,24\",\"4,64,8,8\"]},{\"name\":\"derived regions desktop\",\"ok\":true,\"detail\":[\"16,16,32,24\",\"4,64,8,8\"]},{\"name\":\"derived regions plugin\",\"ok\":true,\"detail\":[\"16,16,32,24\",\"4,64,8,8\"]}],\"surfaces\":{\"mcp\":{\"surface\":\"mcp\",\"diffPixelCount\":832,\"matchRate\":90.97,\"regions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"diffPixelsSha256\":\"7d0da44f7b88c359673cd0d3ede91c01a1dc9761646f4a4bcc62885594fe890b\",\"diffImagePath\":\"D:\\\\a\\\\designdiff\\\\designdiff\\\\docs\\\\evidence\\\\round2-windows\\\\x08\\\\figdiff-home\\\\results\\\\diff-cmp-44e34236-73e4-4e4c-b0f6-ba27247cc308.png\",\"expectedDiffPixelCount\":832,\"expectedRegions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"protocolErrors\":[],\"results\":{\"X08\":{\"status\":\"PASS\",\"expected\":\"mcp 面が同一検体で diffPixelCount=832・領域=2 を返す\",\"actual\":{\"diffPixelCount\":832,\"matchRate\":90.97,\"regionCount\":2,\"diffPixelsSha256\":\"7d0da44f7b88c359673cd0d3ede91c01a1dc9761646f4a4bcc62885594fe890b\",\"protocolErrors\":0}}}},\"desktop\":{\"surface\":\"desktop\",\"diffPixelsSha256\":\"881671c2f5cc8ef9ed1348762782d32c70d4feceab7810efe926848dcd95596f\",\"diffPngBase64\":\"iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAYAAADimHc4AAACDklEQVR4AeycwY7DIAwFac/9/y/NPXulCpK1ATOETqRIWSz8YEa+rfo+fVAC7+KDElAAir8UBSgAJgDHOwEKgAnA8U6AAmACcLwToACAwEKRTgAsQwEKgAnA8U6AAmACcHz/BLxepZBvefbTL+DZ98dPrwBYgQIUABOA4ydOAHzTReMVAItRgAJgAnC8E6AAmAAc7wQoACYAxzsBCoAJwPFOQLKAqL0CIkLJdQUkA47aKyAilFxXQDLgqL0CIkLJdQUkA47aKyAilFxXQDLgqH2/gPMshXyjGy5e7xew+AVXP96eAlanXp1PARUM4lMBBPUqUwEVDOJTAQT1KlMBFQzic3sBx3GUzLdX2vYCegFl71dANuGgvwICQNllBWQTDvoPFBAkWW4SUEATy7xFBcxj3UxSQBPLvEUFzGPdTFJAE8u8RQXMY91MUkATy7xFBcxj3UxSQBPLvEUFdLLu3X4VEP32T2+i+78IXAV8lf0jm4ACsgkH/RUQAMouKyCbcNBfAQGg7LICsgkH/RUQAMouXwVE/+uffaIf638V8GMA6Os+UwBNbWC+AgbCvNNKAXeoDdyjgIEw77RSwB1qA/coYCDMO622F/D5fErmewd6vWd7AfVlV/xWAGxFAQqACcDx/5gA+KSbxisAFqsABcAE4HgnQAEwATjeCVAATACOdwIUABOA452AQEB2+Q8AAP//CoOsigAAAAZJREFUAwDdvRdfUY2vmgAAAABJRU5ErkJggg==\",\"diffPngSha256\":\"bf8e760bc63ab259866199aa02cc1585409912065859c0f544ff354c9d9baa03\",\"diffPixelCountDom\":832,\"regionCountDom\":2,\"expectedDiffPixelCount\":832,\"expectedRegions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"pageErrors\":[],\"results\":{\"X08\":{\"status\":\"PASS\",\"expected\":\"desktop 面が同一検体で diffPixelCount=832・領域=2 を描画する\",\"actual\":{\"diffPixelCountDom\":832,\"regionCountDom\":2,\"diffPixelsSha256\":\"881671c2f5cc8ef9ed1348762782d32c70d4feceab7810efe926848dcd95596f\",\"pageErrors\":0}}}},\"extension\":{\"surface\":\"chrome-extension\",\"diffPixelCount\":832,\"matchRate\":90.97,\"regions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"expectedDiffPixelCount\":832,\"expectedRegions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"results\":{\"X08\":{\"status\":\"PASS\",\"expected\":\"chrome-extension 面が同一検体で diffPixelCount=832・領域=2 を返す\",\"actual\":{\"diffPixelCount\":832,\"matchRate\":90.97,\"regionCount\":2}}}},\"plugin\":{\"surface\":\"figma-plugin\",\"matchRate\":90.97,\"diffPixelsSha256\":\"881671c2f5cc8ef9ed1348762782d32c70d4feceab7810efe926848dcd95596f\",\"diffPngBase64\":\"iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAYAAADimHc4AAACDklEQVR4AeycwY7DIAwFac/9/y/NPXulCpK1ATOETqRIWSz8YEa+rfo+fVAC7+KDElAAir8UBSgAJgDHOwEKgAnA8U6AAmACcLwToACAwEKRTgAsQwEKgAnA8U6AAmACcHz/BLxepZBvefbTL+DZ98dPrwBYgQIUABOA4ydOAHzTReMVAItRgAJgAnC8E6AAmAAc7wQoACYAxzsBCoAJwPFOQLKAqL0CIkLJdQUkA47aKyAilFxXQDLgqL0CIkLJdQUkA47aKyAilFxXQDLgqH2/gPMshXyjGy5e7xew+AVXP96eAlanXp1PARUM4lMBBPUqUwEVDOJTAQT1KlMBFQzic3sBx3GUzLdX2vYCegFl71dANuGgvwICQNllBWQTDvoPFBAkWW4SUEATy7xFBcxj3UxSQBPLvEUFzGPdTFJAE8u8RQXMY91MUkATy7xFBcxj3UxSQBPLvEUFdLLu3X4VEP32T2+i+78IXAV8lf0jm4ACsgkH/RUQAMouKyCbcNBfAQGg7LICsgkH/RUQAMouXwVE/+uffaIf638V8GMA6Os+UwBNbWC+AgbCvNNKAXeoDdyjgIEw77RSwB1qA/coYCDMO622F/D5fErmewd6vWd7AfVlV/xWAGxFAQqACcDx/5gA+KSbxisAFqsABcAE4HgnQAEwATjeCVAATACOdwIUABOA452AQEB2+Q8AAP//CoOsigAAAAZJREFUAwDdvRdfUY2vmgAAAABJRU5ErkJggg==\",\"diffPngSha256\":\"bf8e760bc63ab259866199aa02cc1585409912065859c0f544ff354c9d9baa03\",\"expectedDiffPixelCount\":832,\"expectedRegions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"results\":{\"X08\":{\"status\":\"PASS\",\"expected\":\"figma-plugin 面が同一検体で diffPixelCount=832・領域=2 に対応する diff を描画する\",\"actual\":{\"matchRate\":90.97,\"diffPixelsSha256\":\"881671c2f5cc8ef9ed1348762782d32c70d4feceab7810efe926848dcd95596f\"}}}}},\"documentedDifferences\":[\"chrome-extension: pixelmatch を deps に持てないため YIQ 移植版 (pixel-diff-service.ts)。同一検体で同じ diffPixelCount/regions を返すことを上記で実証。\",\"desktop: clusterDiffRegions (独自 floodFill+>=10px) を使用。shared clusterDiffPixels と同規則で、region 数の一致を DOM 経由で確認。\",\"figma-plugin: 領域を UI に出さないため diff 画像画素の一致で等価性を確認。\"]}}",
+      "actual": "{\"plugin:X08\":{\"matchRate\":90.97,\"diffPixelsSha256\":\"881671c2f5cc8ef9ed1348762782d32c70d4feceab7810efe926848dcd95596f\"},\"compare:X08\":{\"ok\":true,\"expected\":{\"expectedDiffPixelCount\":832,\"expectedRegions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"expectedRate\":90.97},\"checks\":[{\"name\":\"diffPixelCount==expected\",\"ok\":true,\"detail\":832},{\"name\":\"diffPixelCount==expected (ext)\",\"ok\":true,\"detail\":832},{\"name\":\"diffPixelCount==expected (desktop DOM)\",\"ok\":true,\"detail\":832},{\"name\":\"matchRate mcp\",\"ok\":true,\"detail\":{\"rate\":90.97,\"expectedRate\":90.97}},{\"name\":\"matchRate extension\",\"ok\":true,\"detail\":{\"rate\":90.97,\"expectedRate\":90.97}},{\"name\":\"matchRate plugin\",\"ok\":true,\"detail\":{\"rate\":90.97,\"expectedRate\":90.97}},{\"name\":\"regions mcp\",\"ok\":true,\"detail\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}]},{\"name\":\"regions ext\",\"ok\":true,\"detail\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}]},{\"name\":\"region count desktop DOM\",\"ok\":true,\"detail\":2},{\"name\":\"diff mask equality\",\"ok\":true,\"detail\":{\"mcp\":\"4d3da6cbe0a6ab9e15885a0b12ad445d400abcf7cc25c28076c4a7ec8caea8bd\",\"desktop\":\"4d3da6cbe0a6ab9e15885a0b12ad445d400abcf7cc25c28076c4a7ec8caea8bd\",\"plugin\":\"4d3da6cbe0a6ab9e15885a0b12ad445d400abcf7cc25c28076c4a7ec8caea8bd\"}},{\"name\":\"derived regions mcp\",\"ok\":true,\"detail\":[\"16,16,32,24\",\"4,64,8,8\"]},{\"name\":\"derived regions desktop\",\"ok\":true,\"detail\":[\"16,16,32,24\",\"4,64,8,8\"]},{\"name\":\"derived regions plugin\",\"ok\":true,\"detail\":[\"16,16,32,24\",\"4,64,8,8\"]}],\"surfaces\":{\"mcp\":{\"surface\":\"mcp\",\"diffPixelCount\":832,\"matchRate\":90.97,\"regions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"diffPixelsSha256\":\"7d0da44f7b88c359673cd0d3ede91c01a1dc9761646f4a4bcc62885594fe890b\",\"diffImagePath\":\"D:\\\\a\\\\designdiff\\\\designdiff\\\\docs\\\\evidence\\\\round2-windows\\\\x08\\\\figdiff-home\\\\results\\\\diff-cmp-fad289ad-fb5d-44bb-95ef-6fa1a69595b3.png\",\"expectedDiffPixelCount\":832,\"expectedRegions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"protocolErrors\":[],\"results\":{\"X08\":{\"status\":\"PASS\",\"expected\":\"mcp 面が同一検体で diffPixelCount=832・領域=2 を返す\",\"actual\":{\"diffPixelCount\":832,\"matchRate\":90.97,\"regionCount\":2,\"diffPixelsSha256\":\"7d0da44f7b88c359673cd0d3ede91c01a1dc9761646f4a4bcc62885594fe890b\",\"protocolErrors\":0}}}},\"desktop\":{\"surface\":\"desktop\",\"diffPixelsSha256\":\"881671c2f5cc8ef9ed1348762782d32c70d4feceab7810efe926848dcd95596f\",\"diffPngBase64\":\"iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAYAAADimHc4AAACDklEQVR4AeycwY7DIAwFac/9/y/NPXulCpK1ATOETqRIWSz8YEa+rfo+fVAC7+KDElAAir8UBSgAJgDHOwEKgAnA8U6AAmACcLwToACAwEKRTgAsQwEKgAnA8U6AAmACcHz/BLxepZBvefbTL+DZ98dPrwBYgQIUABOA4ydOAHzTReMVAItRgAJgAnC8E6AAmAAc7wQoACYAxzsBCoAJwPFOQLKAqL0CIkLJdQUkA47aKyAilFxXQDLgqL0CIkLJdQUkA47aKyAilFxXQDLgqH2/gPMshXyjGy5e7xew+AVXP96eAlanXp1PARUM4lMBBPUqUwEVDOJTAQT1KlMBFQzic3sBx3GUzLdX2vYCegFl71dANuGgvwICQNllBWQTDvoPFBAkWW4SUEATy7xFBcxj3UxSQBPLvEUFzGPdTFJAE8u8RQXMY91MUkATy7xFBcxj3UxSQBPLvEUFdLLu3X4VEP32T2+i+78IXAV8lf0jm4ACsgkH/RUQAMouKyCbcNBfAQGg7LICsgkH/RUQAMouXwVE/+uffaIf638V8GMA6Os+UwBNbWC+AgbCvNNKAXeoDdyjgIEw77RSwB1qA/coYCDMO622F/D5fErmewd6vWd7AfVlV/xWAGxFAQqACcDx/5gA+KSbxisAFqsABcAE4HgnQAEwATjeCVAATACOdwIUABOA452AQEB2+Q8AAP//CoOsigAAAAZJREFUAwDdvRdfUY2vmgAAAABJRU5ErkJggg==\",\"diffPngSha256\":\"bf8e760bc63ab259866199aa02cc1585409912065859c0f544ff354c9d9baa03\",\"diffPixelCountDom\":832,\"regionCountDom\":2,\"expectedDiffPixelCount\":832,\"expectedRegions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"pageErrors\":[],\"results\":{\"X08\":{\"status\":\"PASS\",\"expected\":\"desktop 面が同一検体で diffPixelCount=832・領域=2 を描画する\",\"actual\":{\"diffPixelCountDom\":832,\"regionCountDom\":2,\"diffPixelsSha256\":\"881671c2f5cc8ef9ed1348762782d32c70d4feceab7810efe926848dcd95596f\",\"pageErrors\":0}}}},\"extension\":{\"surface\":\"chrome-extension\",\"diffPixelCount\":832,\"matchRate\":90.97,\"regions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"expectedDiffPixelCount\":832,\"expectedRegions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"results\":{\"X08\":{\"status\":\"PASS\",\"expected\":\"chrome-extension 面が同一検体で diffPixelCount=832・領域=2 を返す\",\"actual\":{\"diffPixelCount\":832,\"matchRate\":90.97,\"regionCount\":2}}}},\"plugin\":{\"surface\":\"figma-plugin\",\"matchRate\":90.97,\"diffPixelsSha256\":\"881671c2f5cc8ef9ed1348762782d32c70d4feceab7810efe926848dcd95596f\",\"diffPngBase64\":\"iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAYAAADimHc4AAACDklEQVR4AeycwY7DIAwFac/9/y/NPXulCpK1ATOETqRIWSz8YEa+rfo+fVAC7+KDElAAir8UBSgAJgDHOwEKgAnA8U6AAmACcLwToACAwEKRTgAsQwEKgAnA8U6AAmACcHz/BLxepZBvefbTL+DZ98dPrwBYgQIUABOA4ydOAHzTReMVAItRgAJgAnC8E6AAmAAc7wQoACYAxzsBCoAJwPFOQLKAqL0CIkLJdQUkA47aKyAilFxXQDLgqL0CIkLJdQUkA47aKyAilFxXQDLgqH2/gPMshXyjGy5e7xew+AVXP96eAlanXp1PARUM4lMBBPUqUwEVDOJTAQT1KlMBFQzic3sBx3GUzLdX2vYCegFl71dANuGgvwICQNllBWQTDvoPFBAkWW4SUEATy7xFBcxj3UxSQBPLvEUFzGPdTFJAE8u8RQXMY91MUkATy7xFBcxj3UxSQBPLvEUFdLLu3X4VEP32T2+i+78IXAV8lf0jm4ACsgkH/RUQAMouKyCbcNBfAQGg7LICsgkH/RUQAMouXwVE/+uffaIf638V8GMA6Os+UwBNbWC+AgbCvNNKAXeoDdyjgIEw77RSwB1qA/coYCDMO622F/D5fErmewd6vWd7AfVlV/xWAGxFAQqACcDx/5gA+KSbxisAFqsABcAE4HgnQAEwATjeCVAATACOdwIUABOA452AQEB2+Q8AAP//CoOsigAAAAZJREFUAwDdvRdfUY2vmgAAAABJRU5ErkJggg==\",\"diffPngSha256\":\"bf8e760bc63ab259866199aa02cc1585409912065859c0f544ff354c9d9baa03\",\"expectedDiffPixelCount\":832,\"expectedRegions\":[{\"x\":16,\"y\":16,\"width\":32,\"height\":24},{\"x\":4,\"y\":64,\"width\":8,\"height\":8}],\"results\":{\"X08\":{\"status\":\"PASS\",\"expected\":\"figma-plugin 面が同一検体で diffPixelCount=832・領域=2 に対応する diff を描画する\",\"actual\":{\"matchRate\":90.97,\"diffPixelsSha256\":\"881671c2f5cc8ef9ed1348762782d32c70d4feceab7810efe926848dcd95596f\"}}}}},\"documentedDifferences\":[\"chrome-extension: pixelmatch を deps に持てないため YIQ 移植版 (pixel-diff-service.ts)。同一検体で同じ diffPixelCount/regions を返すことを上記で実証。\",\"desktop: clusterDiffRegions (独自 floodFill+>=10px) を使用。shared clusterDiffPixels と同規則で、region 数の一致を DOM 経由で確認。\",\"figma-plugin: 領域を UI に出さないため diff 画像画素の一致で等価性を確認。\"]}}",
       "oracle": {
         "kind": "source-pixels",
         "description": "共通条件では同じ領域・差分規則。意図した機能差は明記"
@@ -13551,11 +13621,11 @@
         },
         {
           "path": "ledger/windows/round-2/X08/figma-plugin/compare-evidence.json",
-          "sha256": "5df08c1a5e79e4adbe293b8eb8883e7f9fd0ff2cd1358ccc1259e745abf726f6"
+          "sha256": "9edef5761ee8f1c767c30ac417d58bb382e6872f49d1d493c2e27de7eb2e9e02"
         },
         {
           "path": "ledger/windows/round-2/X08/figma-plugin/X08-result.json",
-          "sha256": "26b07080b38820197fd5f80b70dad20e28d221821ed0f00e833881c9dc24bbf7"
+          "sha256": "4a5352262fb90df34d88fa0c0aec1738808d5dce9258c0f1e509f8dac9f97383"
         }
       ]
     },
@@ -13630,6 +13700,76 @@
         {
           "path": "ledger/windows/round-2/X09/desktop/X09-result.json",
           "sha256": "a921b0072dea5c35a7d2432af9056238559f69262a90a1bb0ab3106db4e1702e"
+        }
+      ]
+    },
+    {
+      "case": "C07",
+      "round": 2,
+      "platform": "windows",
+      "route": "desktop",
+      "roundExecutionId": "round2",
+      "executedAt": "2026-10-09T05:00:33.467968Z",
+      "productSha": "4e9145e5e051d4efe78a922723f7b3245005a05e",
+      "dirty": false,
+      "status": "PASS",
+      "newBugs": 0,
+      "observedKnownDefects": [],
+      "buildDigest": "3ce3c518e2ae4693fdca6c43bb1e24d124ba554c21e4968a31d5482d579e9b2e",
+      "environment": "windows",
+      "input": "既知の欠陥2個と片方を覆うmask",
+      "steps": "追加・編集・削除後に再比較 [drivers: app/desktop/e2e/native-ignore-region.mjs]",
+      "expected": "C07: 除外領域の追加・編集・削除後に指定外の欠陥を保持し、crop後もmask座標が一致する",
+      "actual": "{\"native-ignore-region:C07\":\"raw画素oracle・diffPixel・YAML永続値・再起動復元・EACCES時不変を実Electronで検証。詳細はartifacts内の各JSON/PNG\"}",
+      "oracle": {
+        "kind": "source-pixels",
+        "description": "指定外の欠陥を保持し、crop後もmask座標が一致する"
+      },
+      "evidence": [
+        {
+          "path": "ledger/windows/round-2/C07/desktop/native-ignore-region-evidence.json",
+          "sha256": "021d131fe3912ec97738aa6b07e0b59d24e81bf2a343d5709df4f15ffd8c9a82"
+        },
+        {
+          "path": "ledger/windows/round-2/C07/desktop/C07-result.json",
+          "sha256": "800e20ecda5c65bff90ffb45103ee1710069a948cd43c9847fe05d2bd4cfdbf6"
+        }
+      ]
+    },
+    {
+      "case": "D05",
+      "round": 2,
+      "platform": "windows",
+      "route": "desktop",
+      "roundExecutionId": "round2",
+      "executedAt": "2026-10-09T05:00:33.467968Z",
+      "productSha": "4e9145e5e051d4efe78a922723f7b3245005a05e",
+      "dirty": false,
+      "status": "PASS",
+      "newBugs": 0,
+      "observedKnownDefects": [],
+      "buildDigest": "9505e9740527c94053a222a21acffca5af9df3003b115cca4f474eb13bc7116d",
+      "environment": "windows",
+      "input": "ノード詳細・トークン表示・除外領域編集",
+      "steps": "画面から到達・選択対象へ適用 [drivers: app/desktop/e2e/native-ignore-region.mjs, app/desktop/e2e/native-figma-node-fix.mjs]",
+      "expected": "D05: 除外領域編集へ画面から到達でき、選択した対象だけに適用する | D05: ノード詳細・トークン表示へ画面から到達でき、選択した対象だけに適用する",
+      "actual": "{\"native-ignore-region:D05\":\"実UIで領域の保存・一覧・削除・再比較を操作し、選択scopeのみに適用されることを永続値と再比較結果で確認\",\"native-figma-node-fix:D05\":\"版固定・deep ancestry・scale2 exportを実IPC経由で検証し、選択nodeだけが詳細対象になることをHTTP要求と画素で確認\"}",
+      "oracle": {
+        "kind": "dom-geometry",
+        "description": "画面から到達でき、人間が選択した対象だけに適用する"
+      },
+      "evidence": [
+        {
+          "path": "ledger/windows/round-2/D05/desktop/native-ignore-region-evidence.json",
+          "sha256": "021d131fe3912ec97738aa6b07e0b59d24e81bf2a343d5709df4f15ffd8c9a82"
+        },
+        {
+          "path": "ledger/windows/round-2/D05/desktop/native-figma-node-fix-evidence.json",
+          "sha256": "1327d8bd61791ed16d4198a402457a500d6b367aad4557556d149460138bcfa1"
+        },
+        {
+          "path": "ledger/windows/round-2/D05/desktop/D05-result.json",
+          "sha256": "e160d2b8265a8692d17ea30fb779eeb190e568b7060a6f4b4a1c1a3aa5b095e1"
         }
       ]
     }
