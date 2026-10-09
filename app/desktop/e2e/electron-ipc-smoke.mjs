@@ -78,12 +78,16 @@ const writeComparePng = async (name, paint) => {
 const compareDesignPng = await writeComparePng("compare-design.png", comparePaint(false));
 const compareIdenticalPng = await writeComparePng("compare-identical.png", comparePaint(false));
 const compareDefectPng = await writeComparePng("compare-defect.png", comparePaint(true));
+const compareTotal = COMPARE_W * COMPARE_H;
 const defectArea = COMPARE_DEFECT.w * COMPARE_DEFECT.h;
-// matchRate は FigDiff 自身の採点なので合否には使わない (AGENTS.md の
-// self-certification 禁止)。合否は作図で決まる画素数と矩形だけで判定する。
+// 合否の主基準は作図で決まる画素数と矩形 (AGENTS.md の self-certification 禁止に
+// 沿って FigDiff の採点単体には委ねない)。matchRate も (合計−欠陥)/合計 という
+// 作図由来の値と表示が一致するかだけを見る、表示計算の検証として併記する。
 const expectedCompare = {
-  identical: { diffPixels: 0, diffRegions: 0, coloredBox: null, colored: 0 },
+  identical: { matchRate: 100, diffPixels: 0, diffRegions: 0, coloredBox: null, colored: 0 },
   defect: {
+    // 製品は小数2桁へ丸めて表示する。丸め方だけ合わせ、値は作図から出す。
+    matchRate: Math.round(((compareTotal - defectArea) / compareTotal) * 100 * 100) / 100,
     diffPixels: defectArea,
     diffRegions: 1,
     colored: defectArea,
@@ -314,17 +318,18 @@ try {
       diffRegions: read(/diffRegions:\s*(\d+)/, "diffRegions"),
       diffPixels: read(/diffPixels:\s*(\d+)/, "diffPixels"),
       diffImage,
-      // 失敗時の切り分け用に残すだけで、assertCompare では見ない。
-      matchRateDiagnostic: read(/matchRate:\s*([\d.]+)%/, "matchRate"),
+      matchRate: read(/matchRate:\s*([\d.]+)%/, "matchRate"),
     };
   };
   const assertCompare = (label, actual, expected) => {
+    // 先に独立 oracle (デコードした差分画像) を見てから、表示値を照合する。
     assert.equal(actual.diffImage.width, COMPARE_W, `${label}: diff image width`);
     assert.equal(actual.diffImage.height, COMPARE_H, `${label}: diff image height`);
     assert.equal(actual.diffImage.colored, expected.colored, `${label}: diff image pixels`);
     assert.deepEqual(actual.diffImage.coloredBox, expected.coloredBox, `${label}: diff image box`);
     assert.equal(actual.diffPixels, expected.diffPixels, `${label}: diffPixels`);
     assert.equal(actual.diffRegions, expected.diffRegions, `${label}: diffRegions`);
+    assert.equal(actual.matchRate, expected.matchRate, `${label}: matchRate display`);
   };
 
   try {
