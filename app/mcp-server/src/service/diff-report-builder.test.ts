@@ -2308,13 +2308,6 @@ describe("細線の局所変位 (designdiff#243)", () => {
       { x: 10, y: 50, w: 100, h: 1 },
       { x: 10, y: 52, w: 100, h: 1 },
     ];
-    const diffPixelData = new Uint8ClampedArray(SIZE * SIZE * 4);
-    for (let x = 10; x < 110; x += 1) {
-      diffPixelData[(50 * SIZE + x) * 4] = 255;
-      diffPixelData[(50 * SIZE + x) * 4 + 3] = 255;
-      diffPixelData[(52 * SIZE + x) * 4] = 255;
-      diffPixelData[(52 * SIZE + x) * 4 + 3] = 255;
-    }
 
     const report = buildDiffReport({
       designPixels,
@@ -2323,7 +2316,6 @@ describe("細線の局所変位 (designdiff#243)", () => {
       height: SIZE,
       figmaRootNode: frame,
       diffRegions: clusters,
-      diffPixelData,
       rasterizationTolerance: true,
     });
 
@@ -2335,6 +2327,7 @@ describe("細線の局所変位 (designdiff#243)", () => {
     expect(section?.diffClusterCoverage).toEqual({
       clusterCount: 2,
       explainedCount: 2,
+      residualColor: 0,
       unexplainedPerceptibleDiff: false,
     });
     expect(report.issues.some((issue) => issue.severity === "critical")).toBe(false);
@@ -2361,13 +2354,6 @@ describe("細線の局所変位 (designdiff#243)", () => {
       { x: 10, y: 50, w: 100, h: 1 },
       { x: 10, y: 52, w: 100, h: 1 },
     ];
-    const diffPixelData = new Uint8ClampedArray(SIZE * SIZE * 4);
-    for (let x = 10; x < 110; x += 1) {
-      diffPixelData[(50 * SIZE + x) * 4] = 255;
-      diffPixelData[(50 * SIZE + x) * 4 + 3] = 255;
-      diffPixelData[(52 * SIZE + x) * 4] = 255;
-      diffPixelData[(52 * SIZE + x) * 4 + 3] = 255;
-    }
 
     const report = buildDiffReport({
       designPixels,
@@ -2376,7 +2362,6 @@ describe("細線の局所変位 (designdiff#243)", () => {
       height: SIZE,
       figmaRootNode: frame,
       diffRegions: clusters,
-      diffPixelData,
       rasterizationTolerance: true,
     });
 
@@ -2400,18 +2385,13 @@ describe("細線の局所変位 (designdiff#243)", () => {
     const frame = sectionReliefFrame(55);
     const designPixels = await createSolidRgba(SIZE, SIZE, WHITE_RGB);
     const screenshotPixels = Uint8ClampedArray.from(designPixels);
+    // ずれた線の周辺 (変位証明が読む窓) は白のまま残し、クラスタの証明は成立させる。
     for (let y = 40; y < 95; y += 1) {
+      if (y >= 44 && y < 59) continue;
       paint(screenshotPixels, 0, y, SIZE, 1, { r: 0xf0, g: 0xf0, b: 0xf0 });
     }
     paint(designPixels, 10, 50, 100, 1, DARK_RGB);
     paint(screenshotPixels, 10, 52, 100, 1, DARK_RGB);
-    const diffPixelData = new Uint8ClampedArray(SIZE * SIZE * 4);
-    for (let x = 10; x < 110; x += 1) {
-      diffPixelData[(50 * SIZE + x) * 4] = 255;
-      diffPixelData[(50 * SIZE + x) * 4 + 3] = 255;
-      diffPixelData[(52 * SIZE + x) * 4] = 255;
-      diffPixelData[(52 * SIZE + x) * 4 + 3] = 255;
-    }
 
     const report = buildDiffReport({
       designPixels,
@@ -2419,19 +2399,23 @@ describe("細線の局所変位 (designdiff#243)", () => {
       width: SIZE,
       height: SIZE,
       figmaRootNode: frame,
-      diffRegions: [{ x: 10, y: 50, w: 100, h: 1 }],
-      diffPixelData,
+      diffRegions: [
+        { x: 10, y: 50, w: 100, h: 1 },
+        { x: 10, y: 52, w: 100, h: 1 },
+      ],
       rasterizationTolerance: true,
     });
 
     const section = report.regionScores.find(
       (score) => score.regionId === SECTION_RELIEF_NODE_IDS.section,
     );
+    // クラスタは全て証明済みでも、クラスタ外の平均 ΔE (#F0F0F0 と白) が閾値を超える。
     expect(section?.diffClusterCoverage).toMatchObject({
-      clusterCount: 1,
-      explainedCount: 1,
+      clusterCount: 2,
+      explainedCount: 2,
       unexplainedPerceptibleDiff: true,
     });
+    expect(section?.diffClusterCoverage?.residualColor).toBeGreaterThanOrEqual(2);
     expect(
       report.issues.some(
         (issue) =>
@@ -2492,56 +2476,165 @@ describe("細線の局所変位 (designdiff#243)", () => {
     ).toBe(true);
   });
 
-  it("クラスタ化で落ちた小さな実差分がセクション内にあれば救済しない", async () => {
+  // 救済を壊さないレンダラ差の典型: 説明済みクラスタの外に、知覚差 (ΔE > 2) は
+  // あるが面としては閾値に届かない散発画素 (AA 縁・影のぼかし) が残る形。
+  // 変位証明はクラスタ周辺の窓を読むので、ずれた線 (y=50/52) の近くには置かない。
+  const scatterSubThresholdNoise = (pixels: Uint8ClampedArray, top: number, bottom: number) => {
+    for (let y = top; y < bottom; y += 4) {
+      if (y >= 44 && y < 59) continue;
+      for (let x = 2; x < SIZE; x += 6) {
+        paint(pixels, x, y, 1, 1, { r: 0xe8, g: 0xe8, b: 0xe8 });
+      }
+    }
+  };
+
+  it("クラスタ外の散発的な知覚差だけなら救済し、ノード木の無い比較と同じ合否にする", async () => {
     const { buildDiffReport } = await import("./diff-report-builder.js");
     const frame = sectionReliefFrame();
     const designPixels = await createSolidRgba(SIZE, SIZE, WHITE_RGB);
     const screenshotPixels = Uint8ClampedArray.from(designPixels);
     paint(designPixels, 10, 50, 100, 1, DARK_RGB);
     paint(screenshotPixels, 10, 52, 100, 1, DARK_RGB);
-    // 3x3 (=9px) の実差分。連結成分しきい値未満のため pixelmatch は差分画素として
-    // 検出するのに clustering はクラスタを作らず、diffRegions に載らない。
+    scatterSubThresholdNoise(screenshotPixels, 41, 60);
+    // clustering の連結画素数しきい値 (10px) 未満で diffRegions に載らない 3x3 の
+    // 断片。ノード木の無い比較でもクラスタにならず合否に届かないので、セクション
+    // 経路だけで失格にすると同じ画素の合否が経路で割れる。
     paint(screenshotPixels, 60, 44, 3, 3, { r: 0xff, g: 0x00, b: 0x00 });
-    const diffPixelData = new Uint8ClampedArray(SIZE * SIZE * 4);
-    for (let x = 10; x < 110; x += 1) {
-      for (const y of [50, 52]) {
-        diffPixelData[(y * SIZE + x) * 4] = 255;
-        diffPixelData[(y * SIZE + x) * 4 + 3] = 255;
-      }
-    }
-    for (let y = 44; y < 47; y += 1) {
-      for (let x = 60; x < 63; x += 1) {
-        diffPixelData[(y * SIZE + x) * 4] = 255;
-        diffPixelData[(y * SIZE + x) * 4 + 3] = 255;
-      }
-    }
+    const options = {
+      designPixels,
+      screenshotPixels,
+      width: SIZE,
+      height: SIZE,
+      diffRegions: [
+        { x: 10, y: 50, w: 100, h: 1, diffPixelCount: 100 },
+        { x: 10, y: 52, w: 100, h: 1, diffPixelCount: 100 },
+      ],
+      rasterizationTolerance: true,
+    };
+
+    const report = buildDiffReport({ ...options, figmaRootNode: frame });
+    const withoutTree = buildDiffReport(options);
+
+    const section = report.regionScores.find(
+      (score) => score.regionId === SECTION_RELIEF_NODE_IDS.section,
+    );
+    expect(section?.diffClusterCoverage).toMatchObject({
+      clusterCount: 2,
+      explainedCount: 2,
+      unexplainedPerceptibleDiff: false,
+    });
+    expect(section?.diffClusterCoverage?.residualColor).toBeGreaterThan(0);
+    expect(section?.diffClusterCoverage?.residualColor).toBeLessThan(2);
+    expect(report.issues.some((issue) => issue.severity === "critical")).toBe(false);
+    expect(report.aggregateVerdict).toBe(withoutTree.aggregateVerdict);
+  });
+
+  it("セクション内でクラスタ単体が critical なら、広いセクションの平均に薄めず失格にする", async () => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    // 画面全体が 1 セクションになる木。小さな実差分はセクション平均では閾値に届かない。
+    const frame: FigmaNode = {
+      ...sectionReliefFrame(),
+      children: [
+        {
+          id: SECTION_RELIEF_NODE_IDS.section,
+          name: SECTION_RELIEF_NODE_IDS.section,
+          type: "FRAME",
+          absoluteBoundingBox: { x: 0, y: 0, width: SIZE, height: SIZE },
+          absoluteRenderBounds: null,
+          fills: [],
+          strokes: [],
+          effects: [],
+          children: [],
+        },
+      ],
+    };
+    const designPixels = await createSolidRgba(SIZE, SIZE, WHITE_RGB);
+    const screenshotPixels = Uint8ClampedArray.from(designPixels);
+    // デザインにだけある 7x7 の濃い記号 (省略記号の欠落など)。
+    paint(designPixels, 50, 50, 7, 7, DARK_RGB);
+    const options = {
+      designPixels,
+      screenshotPixels,
+      width: SIZE,
+      height: SIZE,
+      diffRegions: [{ x: 50, y: 50, w: 7, h: 7, diffPixelCount: 49 }],
+      rasterizationTolerance: true,
+    };
+
+    const report = buildDiffReport({ ...options, figmaRootNode: frame });
+    const withoutTree = buildDiffReport(options);
+
+    const section = report.regionScores.find(
+      (score) => score.regionId === SECTION_RELIEF_NODE_IDS.section,
+    );
+    expect(section?.color).toBeLessThan(2);
+    expect(section?.diffClusterCoverage).toMatchObject({ clusterCount: 1, explainedCount: 0 });
+    expect(
+      report.issues.some(
+        (issue) => issue.regionId === "diff-cluster-50-50-7-7" && issue.severity === "critical",
+      ),
+    ).toBe(true);
+    expect(report.aggregateVerdict).toBe("fail");
+    expect(withoutTree.aggregateVerdict).toBe("fail");
+  });
+
+  it("ノード木の無い比較でも、クラスタ外に広がる色ずれは失格にする", async () => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    const designPixels = await createSolidRgba(SIZE, SIZE, WHITE_RGB);
+    // pixelmatch の閾値に届かない背景色ずれ (#F0F0F0) が画面全体にあり、
+    // 証明済みの変位クラスタだけが差分として検出された形。
+    const screenshotPixels = await createSolidRgba(SIZE, SIZE, { r: 0xf0, g: 0xf0, b: 0xf0 });
+    paint(designPixels, 10, 50, 100, 1, DARK_RGB);
+    paint(screenshotPixels, 10, 52, 100, 1, DARK_RGB);
 
     const report = buildDiffReport({
       designPixels,
       screenshotPixels,
       width: SIZE,
       height: SIZE,
-      figmaRootNode: frame,
-      // 落ちたクラスタは採点クラスタ一覧にも現れないため 1 件だけ渡す。
-      diffRegions: [{ x: 10, y: 50, w: 100, h: 1, diffPixelCount: 200 }],
-      diffPixelData,
+      diffRegions: [
+        { x: 10, y: 50, w: 100, h: 1, diffPixelCount: 100 },
+        { x: 10, y: 52, w: 100, h: 1, diffPixelCount: 100 },
+      ],
       rasterizationTolerance: true,
     });
 
-    const section = report.regionScores.find(
-      (score) => score.regionId === SECTION_RELIEF_NODE_IDS.section,
+    expect(report.issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          regionId: "whole-frame",
+          severity: "critical",
+          evidence: expect.objectContaining({ signal: "residual_color_drift" }),
+        }),
+      ]),
     );
-    expect(section?.diffClusterCoverage).toEqual({
-      clusterCount: 1,
-      explainedCount: 1,
-      unexplainedPerceptibleDiff: true,
+    expect(report.aggregateVerdict).toBe("fail");
+  });
+
+  it("ノード木の無い比較で、クラスタ外の散発的な知覚差だけなら失格にしない", async () => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    const designPixels = await createSolidRgba(SIZE, SIZE, WHITE_RGB);
+    const screenshotPixels = Uint8ClampedArray.from(designPixels);
+    paint(designPixels, 10, 50, 100, 1, DARK_RGB);
+    paint(screenshotPixels, 10, 52, 100, 1, DARK_RGB);
+    scatterSubThresholdNoise(screenshotPixels, 0, SIZE);
+
+    const report = buildDiffReport({
+      designPixels,
+      screenshotPixels,
+      width: SIZE,
+      height: SIZE,
+      diffRegions: [
+        { x: 10, y: 50, w: 100, h: 1, diffPixelCount: 100 },
+        { x: 10, y: 52, w: 100, h: 1, diffPixelCount: 100 },
+      ],
+      rasterizationTolerance: true,
     });
-    expect(
-      report.issues.some(
-        (issue) =>
-          issue.regionId === SECTION_RELIEF_NODE_IDS.section && issue.severity === "critical",
-      ),
-    ).toBe(true);
+
+    expect(report.issues.some((issue) => issue.evidence.signal === "residual_color_drift")).toBe(
+      false,
+    );
+    expect(report.issues.some((issue) => issue.severity === "critical")).toBe(false);
   });
 
   it("既定 (rasterization_tolerance 未指定) では従来どおり critical で失格にする", async () => {

@@ -243,12 +243,16 @@ export interface RegionScore {
   diffPixelDensity?: number;
   // セクション行 (bbox を次の兄弟まで引き伸ばした採点単位) の救済証拠。
   // セクション内の pixelmatch 差分クラスタすべてが rasterization_tolerance
-  // 下の合格水準を満たし、クラスタ外に知覚可能な差が残らないときに限り、
+  // 下の合格水準を満たし、クラスタ外の残差が critical 閾値を下回るときに限り、
   // セクションの広面積平均に残る差分は説明済みとして扱う。
   diffClusterCoverage?: {
     clusterCount: number;
     explainedCount: number;
-    // true または未計測なら救済しない。false のときだけクラスタ網羅救済を許す。
+    // クラスタ bbox を除いたセクション画素の平均 ΔE2000。ノード木の無い比較の
+    // フレーム残差と同じ物差し。全クラスタが説明済みのときだけ測る。
+    residualColor?: number;
+    // residualColor が critical 閾値 (2) 以上なら true。true または未計測なら
+    // 救済しない。false のときだけクラスタ網羅救済を許す。
     unexplainedPerceptibleDiff?: boolean;
   };
   // 両側がベタ面のときだけ入る。ΔE2000 が閾値を下回るトークン1段のズレを捕まえる。

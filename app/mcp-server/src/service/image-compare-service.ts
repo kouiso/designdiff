@@ -1562,7 +1562,6 @@ export async function compareImages(
       alignedDesignPixels: reportDesignPixels,
     },
     perceptibleMask,
-    diffPixelData,
     // Figma ノード写像 (matchDiffRegionsToNodes) より前の素の bbox でよい。
     // 採点は座標と diffPixelCount (上限超過時の重大度順ソート用) だけを使い、
     // ノード名は使わない。
