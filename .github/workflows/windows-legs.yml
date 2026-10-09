@@ -1,27 +1,24 @@
 name: Windows capture legs
 
-# PBI #156 の残 NOT RUN うち windows 12記録 (C07/D05/X03/X04 r1+r2, X08 r2) を
-# GitHub Actions の実 Windows ランナで実行する。windows-latest は実ホストなので
-# platform 要件をそのまま満たす。証跡は artifact として上げ、台帳取り込みは
-# ローカルで assemble-campaign-ledger.mjs → verify-campaign-evidence.mjs を通す。
-# device-legs.yml (ci/device-legs-emulators) と同じ発想の Windows 版。
+# 凍結SHAの製品を windows-latest で実走査し、PBI #156 残りの
+# windows レグ (C07/D05/X03/X04 r1+r2, X08 r2) の証跡を取る。
+# 証跡の revision 一致条件を満たすため checkout は凍結SHAの detached、
+# manifest は docs/evidence 以下への書込みなので dirty 許容内。
 
 on:
   push:
-    branches:
-      - devin/*-ci-windows-legs
+    branches: ["devin/*-ci-windows-legs"]
   pull_request:
     paths:
-      - ".github/workflows/windows-legs.yml"
-      - "docs/evidence/runs-windows-*-remaining.json"
+      - .github/workflows/windows-legs.yml
   workflow_dispatch:
 
-permissions:
-  contents: read
-
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: windows-legs-${{ github.ref }}
   cancel-in-progress: true
+
+env:
+  FROZEN_SHA: "4e9145e5e051d4efe78a922723f7b3245005a05e"
 
 jobs:
   round-1:
@@ -29,18 +26,16 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 90
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
+          ref: ${{ env.FROZEN_SHA }}
           persist-credentials: false
 
-      - uses: jdx/mise-action@9e7f7633ff6f6d6048a9418a68d48f288f50eb14 # v4.2.3
-
+      - uses: jdx/mise-action@5f4cc77e6ac04221a7073081b41808d3445fe55c
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-
       - name: Build all packages
         run: pnpm build
-
       - name: Install Playwright browsers
         run: pnpm --filter "@figdiff/desktop" exec playwright install chromium
 
@@ -48,48 +43,73 @@ jobs:
         shell: bash
         run: |
           whoami
-          probe_dir="$(cygpath -w "$RUNNER_TEMP/acl-probe")"
+          probe_dir="$RUNNER_TEMP/acl-probe"
           mkdir -p "$probe_dir"
-          icacls "$probe_dir" /deny "$(whoami):(W)"
-          icacls "$probe_dir" | tail -5
+          probe_win="$(cygpath -w "$probe_dir")"
+          icacls "$probe_win" /deny "$(whoami):(W)"
+          icacls "$probe_win" | tail -5
           (echo x > "$probe_dir/probe.txt" && echo "WRITE SUCCEEDED") || echo "WRITE DENIED"
-          icacls "$probe_dir" /remove:d "$(whoami)" >/dev/null
+          icacls "$probe_win" /remove:d "$(whoami)" >/dev/null
 
-      - name: Record runner host
+      - name: Write runs manifest
         shell: bash
         run: |
-          mkdir -p "docs/evidence/.staging/round-1"
+          mkdir -p docs/evidence
+          cat > docs/evidence/runs-windows-r1-remaining.json <<'EOF'
           {
-            echo "host=github-actions-windows-latest"
-            uname -a
-            cmd.exe /c ver 2>/dev/null || true
-            powershell -NoProfile -Command "(Get-CimInstance Win32_OperatingSystem).Caption + ' ' + (Get-CimInstance Win32_OperatingSystem).Version" 2>/dev/null || true
-            node --version
-            pnpm --version
-          } > "docs/evidence/.staging/round-1/runner-host.txt" 2>&1
-          cat "docs/evidence/.staging/round-1/runner-host.txt"
+            "platform": "windows",
+            "round": 1,
+            "roundExecutionId": "round1",
+            "generatedAt": "2026-09-19T05:21:03.393Z",
+            "entries": [
+              {
+                "driver": "app/desktop/e2e/native-ignore-region.mjs",
+                "evidenceDir": "docs/evidence/round1-windows/native-ignore-region",
+                "evidenceFile": "manifest.json",
+                "passEvidenceVia": "env:FIGDIFF_IGNORE_EVIDENCE",
+                "requires": ["display-or-xvfb", "electron"]
+              },
+              {
+                "driver": "app/desktop/e2e/native-figma-node-fix.mjs",
+                "evidenceDir": "docs/evidence/round1-windows/native-figma-node-fix",
+                "evidenceFile": "manifest.json",
+                "passEvidenceVia": "env:FIGDIFF_FIGMA_NODE_FIX_EVIDENCE",
+                "requires": ["display-or-xvfb", "electron"]
+              },
+              {
+                "driver": "app/figma-plugin/e2e/real-iframe-host.mjs",
+                "evidenceDir": "docs/evidence/round1-windows/real-iframe-host",
+                "evidenceFile": "manifest.json",
+                "passEvidenceVia": "env:FIGDIFF_PLUGIN_HOST_EVIDENCE",
+                "requires": ["figma-plugin-sandbox"],
+                "note": "iframe証跡は実Figma sandbox証跡に数えない。実Figma接続は別途"
+              }
+            ]
+          }
+          EOF
 
       - name: Run windows legs round 1
         shell: bash
         env:
           ELECTRON_ENABLE_LOGGING: "1"
-        run: node script/run-campaign-round.mjs --manifest docs/evidence/runs-windows-r1-remaining.json 2>&1 | tee "docs/evidence/.staging/round-1/runner.log"
+        run: |
+          mkdir -p "docs/evidence/.staging/round-1"
+          node script/run-campaign-round.mjs --manifest docs/evidence/runs-windows-r1-remaining.json 2>&1 | tee "docs/evidence/.staging/round-1/runner.log"
 
-      - name: Collect produced evidence into artifact dir
-        if: always()
+      - name: Collect evidence
         shell: bash
+        if: always()
         run: |
           out="docs/evidence/.staging/round-1"
-          # run-campaign-round が吐く成果物は manifest の隣と evidenceDir 配下。
-          # リポジトリ内に生成されたものを artifact 用 dir へ集める。
+          mkdir -p "$out"
           for f in docs/evidence/runs-windows-r1-remaining.manifest.json docs/evidence/runs-windows-r1-remaining.attempts.json; do
             [ -f "$f" ] && cp "$f" "$out/" || true
           done
           [ -d docs/evidence/round1-windows ] && cp -r docs/evidence/round1-windows "$out/round1-windows" || true
 
-      - name: Upload round-1 evidence
+      - name: Upload evidence artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: windows-legs-round-1
           path: docs/evidence/.staging/round-1
@@ -100,54 +120,117 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 90
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
+          ref: ${{ env.FROZEN_SHA }}
           persist-credentials: false
 
-      - uses: jdx/mise-action@9e7f7633ff6f6d6048a9418a68d48f288f50eb14 # v4.2.3
-
+      - uses: jdx/mise-action@5f4cc77e6ac04221a7073081b41808d3445fe55c
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-
       - name: Build all packages
         run: pnpm build
-
       - name: Install Playwright browsers
         run: pnpm --filter "@figdiff/desktop" exec playwright install chromium
 
-      - name: Record runner host
+      - name: Write runs manifest
         shell: bash
         run: |
-          mkdir -p "docs/evidence/.staging/round-2"
+          mkdir -p docs/evidence
+          cat > docs/evidence/runs-windows-r2-remaining.json <<'EOF'
           {
-            echo "host=github-actions-windows-latest"
-            uname -a
-            cmd.exe /c ver 2>/dev/null || true
-            powershell -NoProfile -Command "(Get-CimInstance Win32_OperatingSystem).Caption + ' ' + (Get-CimInstance Win32_OperatingSystem).Version" 2>/dev/null || true
-            node --version
-            pnpm --version
-          } > "docs/evidence/.staging/round-2/runner-host.txt" 2>&1
-          cat "docs/evidence/.staging/round-2/runner-host.txt"
+            "platform": "windows",
+            "round": 2,
+            "roundExecutionId": "round2",
+            "generatedAt": "2026-09-19T05:21:03.425Z",
+            "entries": [
+              {
+                "driver": "app/desktop/e2e/native-ignore-region.mjs",
+                "evidenceDir": "docs/evidence/round2-windows/native-ignore-region",
+                "evidenceFile": "manifest.json",
+                "passEvidenceVia": "env:FIGDIFF_IGNORE_EVIDENCE",
+                "requires": ["display-or-xvfb", "electron"]
+              },
+              {
+                "driver": "app/desktop/e2e/native-figma-node-fix.mjs",
+                "evidenceDir": "docs/evidence/round2-windows/native-figma-node-fix",
+                "evidenceFile": "manifest.json",
+                "passEvidenceVia": "env:FIGDIFF_FIGMA_NODE_FIX_EVIDENCE",
+                "requires": ["display-or-xvfb", "electron"]
+              },
+              {
+                "driver": "app/figma-plugin/e2e/real-iframe-host.mjs",
+                "evidenceDir": "docs/evidence/round2-windows/real-iframe-host",
+                "evidenceFile": "manifest.json",
+                "passEvidenceVia": "env:FIGDIFF_PLUGIN_HOST_EVIDENCE",
+                "requires": ["figma-plugin-sandbox"],
+                "note": "iframe証跡は実Figma sandbox証跡に数えない。実Figma接続は別途"
+              },
+              {
+                "driver": "app/mcp-server/script/x08/mcp.mjs",
+                "evidenceDir": "docs/evidence/round2-windows/x08",
+                "evidenceFile": "x08-mcp.json",
+                "passEvidenceVia": "argv2",
+                "requires": [],
+                "note": "x08-mcp.json に face 計測+results.X08 を吐く。runs-manifest は evidenceFile: x08-mcp.json を指定する"
+              },
+              {
+                "driver": "app/mcp-server/script/x08/desktop.mjs",
+                "evidenceDir": "docs/evidence/round2-windows/x08",
+                "evidenceFile": "x08-desktop.json",
+                "passEvidenceVia": "argv2",
+                "requires": ["display-or-xvfb", "electron"],
+                "note": "evidenceFile: x08-desktop.json"
+              },
+              {
+                "driver": "app/mcp-server/script/x08/extension.mjs",
+                "evidenceDir": "docs/evidence/round2-windows/x08",
+                "evidenceFile": "x08-extension.json",
+                "passEvidenceVia": "argv2",
+                "requires": ["chrome"],
+                "note": "evidenceFile: x08-extension.json"
+              },
+              {
+                "driver": "app/mcp-server/script/x08/plugin.mjs",
+                "evidenceDir": "docs/evidence/round2-windows/x08",
+                "evidenceFile": "x08-plugin.json",
+                "passEvidenceVia": "argv2",
+                "requires": [],
+                "note": "evidenceFile: x08-plugin.json"
+              },
+              {
+                "driver": "app/mcp-server/script/x08/compare.mjs",
+                "evidenceDir": "docs/evidence/round2-windows/x08",
+                "passEvidenceVia": "argv2",
+                "requires": [],
+                "note": "4面横断verdict。全X08 routeの必須provider"
+              }
+            ]
+          }
+          EOF
 
       - name: Run windows legs round 2
         shell: bash
         env:
           ELECTRON_ENABLE_LOGGING: "1"
-        run: node script/run-campaign-round.mjs --manifest docs/evidence/runs-windows-r2-remaining.json 2>&1 | tee "docs/evidence/.staging/round-2/runner.log"
+        run: |
+          mkdir -p "docs/evidence/.staging/round-2"
+          node script/run-campaign-round.mjs --manifest docs/evidence/runs-windows-r2-remaining.json 2>&1 | tee "docs/evidence/.staging/round-2/runner.log"
 
-      - name: Collect produced evidence into artifact dir
-        if: always()
+      - name: Collect evidence
         shell: bash
+        if: always()
         run: |
           out="docs/evidence/.staging/round-2"
+          mkdir -p "$out"
           for f in docs/evidence/runs-windows-r2-remaining.manifest.json docs/evidence/runs-windows-r2-remaining.attempts.json; do
             [ -f "$f" ] && cp "$f" "$out/" || true
           done
           [ -d docs/evidence/round2-windows ] && cp -r docs/evidence/round2-windows "$out/round2-windows" || true
 
-      - name: Upload round-2 evidence
+      - name: Upload evidence artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: windows-legs-round-2
           path: docs/evidence/.staging/round-2
