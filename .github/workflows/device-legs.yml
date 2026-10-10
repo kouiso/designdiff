@@ -1,0 +1,189 @@
+name: Device capture legs
+
+# X05/X07 (android) と X06 の ios-sim 代替経路を GitHub Actions の実エミュレータ /
+# シミュレータで走らせる。ローカルの Linux 箱には KVM も macOS も adb も無い
+# ため、これらのレグはここでしか実行できない。物理 iPhone (X06 ios-device) は
+# ランナに接続できないので対象外 — 実機環境の記録が別途必要。
+
+on:
+  push:
+    branches:
+      - ci/device-legs-emulators
+  pull_request:
+    paths:
+      - ".github/workflows/device-legs.yml"
+      - ".github/scripts/device-legs-android.sh"
+      - ".github/scripts/device-legs-ios-sim.sh"
+      - "app/mcp-server/script/stdio-android-verification.mjs"
+      - "app/mcp-server/script/stdio-ios-sim-verification.mjs"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ios-sim:
+    name: iOS Simulator capture (X06 via ios-sim)
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: jdx/mise-action@9e7f7633ff6f6d6048a9418a68d48f288f50eb14 # v4.2.3
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build all packages
+        run: pnpm build
+
+      - name: Boot iPhone simulator
+        run: |
+          set -euo pipefail
+          # driver は booted シミュレータがちょうど1台であることを要求する。
+          # フレッシュな macOS ランナには booted が無いので、利用可能な最初の
+          # iPhone を1台だけ上げてこの前提を作る。
+          udid="$(xcrun simctl list devices available \
+            | grep -m1 'iPhone' \
+            | grep -oE '[0-9A-Fa-f]{8}(-[0-9A-Fa-f]{4}){3}-[0-9A-Fa-f]{12}')"
+          if [ -z "$udid" ]; then
+            echo "no available iPhone simulator on this runner image"
+            exit 1
+          fi
+          echo "booting simulator udid=$udid"
+          xcrun simctl boot "$udid"
+          xcrun simctl bootstatus "$udid" -b
+          xcrun simctl list devices booted
+
+      - name: Run ios-sim verification rounds 1 and 2
+        run: sh .github/scripts/device-legs-ios-sim.sh "${{ runner.temp }}/device-legs-evidence/ios-sim"
+
+      - name: Upload ios-sim evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: device-legs-ios-sim
+          path: ${{ runner.temp }}/device-legs-evidence/ios-sim
+          if-no-files-found: warn
+          retention-days: 14
+
+  android-emulator:
+    name: Android emulator API ${{ matrix.api-level }} (X05/X07)
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        api-level: [30, 34]
+    env:
+      # driver が boot 済み serial と突き合わせる対象。action は既定ポート
+      # 5554 で起動するので、常に emulator-5554 になる。
+      ANDROID_EXPECT_SERIALS: emulator-5554
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: jdx/mise-action@9e7f7633ff6f6d6048a9418a68d48f288f50eb14 # v4.2.3
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build all packages
+        run: pnpm build
+
+      - name: Enable KVM group perms
+        run: |
+          # エミュレータは /dev/kvm を直接開く。ランナの runner ユーザは kvm
+          # グループに居ないので、udev ルールで全ユーザに読み書きを許す
+          # (reactivecircus/android-emulator-runner のドキュメントどおり)。
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+          ls -l /dev/kvm
+
+      - name: Run X05/X07 verification on the emulator
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
+        with:
+          api-level: ${{ matrix.api-level }}
+          target: google_apis
+          arch: x86_64
+          emulator-boot-timeout: 900
+          script: sh .github/scripts/device-legs-android.sh "${{ runner.temp }}/device-legs-evidence/android-api${{ matrix.api-level }}"
+
+      - name: Upload android evidence (api${{ matrix.api-level }})
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: device-legs-android-api${{ matrix.api-level }}
+          path: ${{ runner.temp }}/device-legs-evidence/android-api${{ matrix.api-level }}
+          if-no-files-found: warn
+          retention-days: 14
+
+  android-emulator-macos:
+    name: Android emulator on macOS host (X05/X07 probe)
+    # macos-13 Intel は引退済みで使えない。現行の Intel ランナ (macos-15-intel)
+    # で Hypervisor.framework による加速が効くかを実測する。TCG (ソフトウェア
+    # CPU) に落ちる場合は swipe 1回が 60s の adb タイムアウトを超え、X07 は
+    # このホストでは実行不能という記録になる (過去に macOS VM で実測)。
+    # 実測では加速は効くが、guest の SystemUI が ANR ダイアログを繰り返し出し、
+    # swipe がページへ届かず6回の実行で12巡中1巡しか通らなかった
+    # (証跡は各 push 実行の device-legs-android-macos artifact)。
+    # 不安定なので手動実行専用にして、push / PR のチェックを赤くしない。
+    # 再現する時は Actions タブから workflow_dispatch で起動する。
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: macos-15-intel
+    timeout-minutes: 150
+    env:
+      ANDROID_EXPECT_SERIALS: emulator-5554
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: jdx/mise-action@9e7f7633ff6f6d6048a9418a68d48f288f50eb14 # v4.2.3
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build all packages
+        run: pnpm build
+
+      - name: Record host acceleration capability
+        run: |
+          set -euo pipefail
+          mkdir -p "${{ runner.temp }}/device-legs-evidence/android-macos"
+          {
+            sysctl kern.hv_support || true
+            "$ANDROID_HOME/emulator/emulator" -accel-check || true
+          } | tee "${{ runner.temp }}/device-legs-evidence/android-macos/host-probe.txt"
+
+      - name: Run X05/X07 verification on the emulator
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
+        with:
+          api-level: 30
+          target: aosp_atd
+          # Apple Silicon (ARM) ホストでは arm64 イメージが Hypervisor.framework
+          # でネイティブ加速される。x86_64 の TCG 変換より桁違いに安定する。
+          arch: x86_64
+          emulator-boot-timeout: 5400
+          # macOS ホストでは既定の -gpu swiftshader_indirect で画面が単色灰、
+          # -gpu guest で単色黒のまま描画されなかった (adb screencap で実測)。
+          # ANGLE 経由のソフトウェア描画を試す。
+          emulator-options: -no-window -gpu host -no-snapshot -noaudio -no-boot-anim -no-metrics -memory 3072 -cores 4
+          script: sh .github/scripts/device-legs-android.sh "${{ runner.temp }}/device-legs-evidence/android-macos"
+
+      - name: Upload android-macos evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: device-legs-android-macos
+          path: ${{ runner.temp }}/device-legs-evidence/android-macos
+          if-no-files-found: warn
+          retention-days: 14
