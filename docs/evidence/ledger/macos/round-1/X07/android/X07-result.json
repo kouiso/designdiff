@@ -1,0 +1,104 @@
+{
+  "case": "X07",
+  "route": "android",
+  "platform": "macos",
+  "drivers": [
+    "app/mcp-server/script/stdio-android-verification.mjs"
+  ],
+  "checks": [
+    "connectedDevices",
+    "deviceSelectionMode",
+    "directCaptures",
+    "X05_single_device_auto",
+    "X05_device_captures",
+    "X05_bogus_serial",
+    "scrollTarget",
+    "pageRenderWait",
+    "X07_android_scroll"
+  ],
+  "actual": {
+    "stdio-android-verification:connectedDevices": [
+      {
+        "serial": "emulator-5554",
+        "state": "device",
+        "model": "sdk_gphone64_x86_64"
+      }
+    ],
+    "stdio-android-verification:deviceSelectionMode": "single-device",
+    "stdio-android-verification:directCaptures": {
+      "emulator-5554": {
+        "width": 1080,
+        "height": 2400,
+        "model": "sdk_gphone64_x86_64"
+      }
+    },
+    "stdio-android-verification:X05_single_device_auto": {
+      "isError": false,
+      "note": "single-device environment: serial-less call must pick the only device",
+      "text": "{\n  \"status\": \"FAIL\",\n  \"comparisonId\": \"cmp-a3bf8673-7ca2-424e-b929-5d5bcb42fd61\",\n  \"matchRate\": 8.92,\n  \"diffPixelCount\": 2219186,\n  \"totalPixelCount\": 2436480,\n  \"remainingIssues\": 1,\n  \"diffRegions\": [],\n  \"totalRegionCount\": 0,\n  \"returnedRegionCount\": 0,\n  \"regionsTruncated\": false,\n  \"completionCriteria\": {\n    \"structuralReview\": {\n      \"required\": 1,\n      \"current\": 0,\n      \"status\": \"FAIL\",\n      \"blocking\": true,\n      \"note\": \"critical severity issue detected; weakest region whol"
+    },
+    "stdio-android-verification:X05_device_captures": {
+      "emulator-5554": {
+        "kind": "emulator",
+        "captured": "android-1791616102716-a201ece3-a545-4a98-8acc-ff0e5d48d16d.png",
+        "width": 1080,
+        "height": 2400
+      }
+    },
+    "stdio-android-verification:X05_bogus_serial": {
+      "isError": true,
+      "text": "Error: Android device no-such-serial-000 is not connected. Check adb devices -l."
+    },
+    "stdio-android-verification:scrollTarget": {
+      "serial": "emulator-5554",
+      "pageUrl": "http://10.0.2.2:8777/index.html"
+    },
+    "stdio-android-verification:pageRenderWait": {
+      "rendered": true,
+      "attempts": 1,
+      "coloredSamples": 1597
+    },
+    "stdio-android-verification:X07_android_scroll": {
+      "isError": false,
+      "status": "PASS",
+      "comparisonStatus": "UNCERTAIN",
+      "scrollCapture": {
+        "captureCount": 5,
+        "stitchedWidth": 1080,
+        "stitchedHeight": 6521,
+        "viewportWidth": 1080,
+        "viewportHeight": 2400,
+        "fixedHeaderHeight": 128,
+        "fixedFooterHeight": 63,
+        "reachedBottom": true,
+        "truncatedAtCaptureLimit": false,
+        "didNotScroll": false,
+        "startedAtTop": true,
+        "notes": [
+          "2 箇所で重なりの完全一致が取れず、行の平均輝度による近似で繋いでいます。繋ぎ目の位置がずれている可能性があります。"
+        ]
+      },
+      "ignoreRegionResolution": {
+        "effectiveRegions": [
+          {
+            "x": 0,
+            "y": 0,
+            "width": 1080,
+            "height": 72,
+            "label": "system:status-bar"
+          },
+          {
+            "x": 0,
+            "y": 6449,
+            "width": 1080,
+            "height": 72,
+            "label": "system:navigation-bar"
+          }
+        ],
+        "maskedPixelCount": 155520,
+        "maskSha256": "21e4ad221f42799d6b3337de611538f2ce4ca09718e57a102c649fe77c82e3de"
+      },
+      "textHead": "{\n  \"status\": \"UNCERTAIN\",\n  \"comparisonId\": \"cmp-d31cb77e-11be-4c76-ad11-813741470b74\",\n  \"matchRate\": 4.19,\n  \"diffPixelCount\": 6598853,\n  \"totalPixelCount\": 6887160,\n  \"remainingIssues\": 1,\n  \"diffRegions\": [],\n  \"totalRegionCount\": 0,\n  \"returnedRegionCount\": 0,\n  \"regionsTruncated\": false,\n  \"completionCriteria\": {\n    \"structuralReview\": {\n      \"required\": 1,\n      \"current\": 0,\n      \"stat"
+    }
+  }
+}
