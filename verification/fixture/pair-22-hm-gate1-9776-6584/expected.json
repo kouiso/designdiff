@@ -1,0 +1,22 @@
+{
+  "pairId": "pair-22-hm-gate1-9776-6584",
+  "figmaFrame": "figma-export.png",
+  "variants": [
+    {
+      "name": "correct",
+      "image": "impl-correct.png",
+      "expectedVerdict": "pass",
+      "expectedKinds": [],
+      "notes": "Figma正本と同一内容物。細ストロークAA/ストローク被覆差のみ (designdiff#243)"
+    },
+    {
+      "name": "drift-2px",
+      "image": "impl-drift-2px.png",
+      "expectedVerdict": "fail",
+      "expectedKinds": [
+        "position"
+      ],
+      "notes": "意図的な2px平行移動。本物の位置ずれ検出の対照検体 (designdiff#243)"
+    }
+  ]
+}

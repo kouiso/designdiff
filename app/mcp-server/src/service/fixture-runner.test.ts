@@ -437,4 +437,35 @@ describe("golden fixture runner", () => {
     // 持たせる。
     FIXTURE_TEST_TIMEOUT_MS * 3,
   );
+
+  // designdiff#243: horsemanager Gate1 で観測された誤FAIL検体。
+  // correct は細ストロークAA・ストローク被覆差のみの同一内容物なので
+  // pass が期待値。estimator 修正が入るまで correct 側は fail になる。
+  // drift-2px は本物の位置ずれの対照で、修正後も fail でなければならない。
+  it.each([
+    "pair-07-hm-gate1-9810-3312",
+    "pair-08-hm-gate1-9721-6204",
+    "pair-09-hm-gate1-9776-6791",
+    "pair-10-hm-gate1-9776-6698",
+    "pair-11-hm-gate1-9776-6456",
+    "pair-12-hm-gate1-9810-3193",
+    "pair-13-hm-gate1-9804-4204",
+    "pair-14-hm-gate1-9804-4285",
+    "pair-15-hm-gate1-9804-4369",
+    "pair-16-hm-gate1-9892-8063",
+    "pair-17-hm-gate1-9878-6665",
+    "pair-18-hm-gate1-9892-10228",
+    "pair-19-hm-gate1-9863-5441",
+    "pair-20-hm-gate1-9878-6036",
+    "pair-21-hm-gate1-9878-6362",
+    "pair-22-hm-gate1-9776-6584",
+    "pair-23-hm-gate1-9799-4024",
+    "pair-24-hm-gate1-9789-3641",
+  ])(
+    "%s の誤FAIL検体が期待 verdict を満たすこと (designdiff#243)",
+    async (pairId) => {
+      await runFixture(pairId);
+    },
+    FIXTURE_TEST_TIMEOUT_MS,
+  );
 });
