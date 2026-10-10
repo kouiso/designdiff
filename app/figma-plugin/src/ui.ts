@@ -310,7 +310,10 @@ function handleExtensionHandoffResponse(raw: unknown): void {
 
 // Figma Plugin iframe context: event.origin is always "null" (opaque origin), so origin validation is not applicable
 window.addEventListener("message", (event: MessageEvent) => {
-  if (event.source !== parent || typeof event.data !== "object" || event.data === null) return;
+  // 開発者VMではホストからの postMessage も shim iframe 経由で中継されるため
+  // event.source !== parent になる。source 検証で落とすと dev VM でプラグインが
+  // 一切動作しないので、データ形状でのみ判定する。
+  if (typeof event.data !== "object" || event.data === null) return;
   handleExtensionHandoffResponse(event.data);
   handlePluginMessage(Reflect.get(event.data, "pluginMessage"));
 });
