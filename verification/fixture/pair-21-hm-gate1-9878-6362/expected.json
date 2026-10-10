@@ -1,0 +1,31 @@
+{
+  "pairId": "pair-21-hm-gate1-9878-6362",
+  "figmaFrame": "figma-export.png",
+  "variants": [
+    {
+      "name": "correct",
+      "image": "impl-correct.png",
+      "expectedVerdict": "fail",
+      "expectedKinds": [],
+      "notes": "内容差あり: アイコン差・チップ内データ差。fail が期待値の対照検体 (designdiff#243 調査検体)",
+      "rasterizationTolerance": true,
+      "expectedIssueKinds": [
+        "color",
+        "position",
+        "size"
+      ]
+    },
+    {
+      "name": "drift-2px",
+      "image": "impl-drift-2px.png",
+      "expectedVerdict": "fail",
+      "expectedKinds": [],
+      "notes": "意図的な2px平行移動 (エッジ複製で透明帯なし)。本物の位置ずれ検出の対照検体 (designdiff#243)",
+      "expectedIssueKinds": [
+        "color",
+        "position",
+        "size"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "pairId": "pair-24-hm-gate1-9789-3641",
+  "figmaFrame": "figma-export.png",
+  "variants": [
+    {
+      "name": "correct",
+      "image": "impl-correct.png",
+      "expectedVerdict": "fail",
+      "expectedKinds": [],
+      "notes": "内容差あり: 実装キャプチャが 320x667 (figma は 390x692)。別寸法で同一内容物でない。fail が期待値の対照検体 (designdiff#243 調査検体)",
+      "rasterizationTolerance": true,
+      "expectedIssueKinds": [
+        "color",
+        "position",
+        "size"
+      ]
+    },
+    {
+      "name": "drift-2px",
+      "image": "impl-drift-2px.png",
+      "expectedVerdict": "fail",
+      "expectedKinds": [],
+      "notes": "意図的な2px平行移動 (エッジ複製で透明帯なし)。本物の位置ずれ検出の対照検体 (designdiff#243)",
+      "expectedIssueKinds": [
+        "color",
+        "position",
+        "size"
+      ]
+    }
+  ]
+}
