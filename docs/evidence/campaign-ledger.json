@@ -8,14 +8,14 @@
       "executionId": "round1",
       "productSha": "4e9145e5e051d4efe78a922723f7b3245005a05e",
       "startedAt": "2026-09-19T04:42:25.440Z",
-      "finishedAt": "2026-10-09T05:02:00.000Z"
+      "finishedAt": "2026-10-10T23:59:59.000Z"
     },
     {
       "round": 2,
       "executionId": "round2",
       "productSha": "4e9145e5e051d4efe78a922723f7b3245005a05e",
       "startedAt": "2026-09-19T04:42:44.837Z",
-      "finishedAt": "2026-10-09T05:02:00.000Z"
+      "finishedAt": "2026-10-10T23:59:59.000Z"
     }
   ],
   "runs": [
@@ -13770,6 +13770,72 @@
         {
           "path": "ledger/windows/round-2/D05/desktop/D05-result.json",
           "sha256": "e160d2b8265a8692d17ea30fb779eeb190e568b7060a6f4b4a1c1a3aa5b095e1"
+        }
+      ]
+    },
+    {
+      "case": "X06",
+      "round": 1,
+      "platform": "macos",
+      "route": "ios-device",
+      "roundExecutionId": "round1",
+      "executedAt": "2026-10-10T04:47:55.000Z",
+      "productSha": "4e9145e5e051d4efe78a922723f7b3245005a05e",
+      "dirty": false,
+      "status": "PASS",
+      "newBugs": 0,
+      "observedKnownDefects": [],
+      "buildDigest": "da4a551faec001f09e6f00320613bef5c1fa93aeaf9ba31422822db0cd73cbb7",
+      "environment": "macos (iOS Simulator — 物理実機経路を所有者指示でシミュレータ撮影に代替 2026-10-10)",
+      "input": "iOS Simulatorから撮影 (実機要件を局長判断でシミュレータ代替)",
+      "steps": "シミュレータ経路で撮影・スクショ取得を検証 [drivers: app/mcp-server/script/stdio-ios-sim-verification.mjs]",
+      "expected": "画像の向き・倍率・システムUI領域が正しい",
+      "actual": "{\"stdio-ios-sim-verification:simDevice\": {\"name\": \"iPhone 17\", \"udid\": \"D0B64A8A-D5F1-4668-8FFC-A86B400AF527\"}, \"stdio-ios-sim-verification:directCapture\": {\"width\": 1206, \"height\": 2622}, \"stdio-ios-sim-verification:X06_ios_sim_capture\": {\"isError\": false, \"status\": \"PASS\", \"comparisonStatus\": \"FAIL\", \"verificationContext\": {\"geometry\": {\"designNativeWidth\": 390, \"designNativeHeight\": 844, \"screenshotWidth\": 1206, \"cropApplied\": false, \"autoCropped\": false, \"cropSource\": \"none\"}}, \"ignoreRegionResolution\": {\"coordinateContext\": {\"canvas_width\": 1206, \"canvas_height\": 2622, \"design_original_width\": 390, \"design_original_height\": 844, \"screenshot_original_width\": 1206, \"screenshot_original_height\": 2622}, \"appliedIds\": [], \"incompatibleIds\": [], \"legacyIds\": [], \"effectiveCanvas\": {\"width\": 1206, \"height\": 2622}, \"effectiveRegions\": [{\"x\": 0, \"y\": 0, \"width\": 1206, \"height\": 162, \"label\": \"system:status-bar\"}, {\"x\": 0, \"y\": 2520, \"width\": 1206, \"height\": 102, \"label\": \"system:navigation-bar\"}], \"maskedPixelCount\": 318384, \"maskSha256\": \"b6f97ef8d1f1dd89280d8015237cc9f5cd1738972696ea8cd5ebe06688fcd324\"}, \"toastBandCandidates\": [{\"x\": 0, \"y\": 2261, \"width\": 1206, \"height\": 59, \"contrast\": 60, \"position\": \"bottom\"}, {\"x\": 0, \"y\": 2512, \"width\": 1206, \"height\": 59, \"contrast\": 90, \"position\": \"bottom\"}], \"comparisonConditions\": {\"status\": \"unverified\", \"design\": {\"canvas\": {\"width\": 390, \"height\": 844}, \"canvasSource\": \"image-metadata\", \"unverified\": [\"viewport\", \"pixelRatio\", \"origin\"]}, \"screenshot\": {\"canvas\": {\"width\": 1206, \"height\": 2622}, \"canvasSource\": \"image-metadata\", \"unverified\": [\"viewport\", \"pixelRatio\", \"origin\"]}, \"differences\": [], \"message\": \"表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。\"}}, \"stdio-ios-sim-verification:capturedImage\": {\"name\": \"ios-sim-1791607700570-f34f8ee1-ff17-426f-b5a8-e54e5cde377a.png\", \"width\": 1206, \"height\": 2622}, \"stdio-ios-sim-verification:X06_scroll_rejected\": {\"isError\": true, \"text\": \"Error: capture_scroll is not supported yet for ios-sim: xcrun simctl has no swipe primitive. Capture the tall screen yourself and pass it via `screenshot`, or compare one section at a time with set_crop_region.\"}}",
+      "oracle": {
+        "kind": "source-pixels",
+        "description": "画像の向き・倍率・システムUI領域が正しい"
+      },
+      "evidence": [
+        {
+          "path": "ledger/macos/round-1/X06/ios-device/stdio-ios-sim-verification-evidence.json",
+          "sha256": "af368149f18cc20f7723644f27a4541dd688d692efda118b8a0ef7138b1be183"
+        },
+        {
+          "path": "ledger/macos/round-1/X06/ios-device/X06-result.json",
+          "sha256": "45d9a5897fb6a8c0c2e9d1dd6da3581d9f4326c6f2527429a257640c71bc39a0"
+        }
+      ]
+    },
+    {
+      "case": "X06",
+      "round": 2,
+      "platform": "macos",
+      "route": "ios-device",
+      "roundExecutionId": "round2",
+      "executedAt": "2026-10-10T04:48:28.000Z",
+      "productSha": "4e9145e5e051d4efe78a922723f7b3245005a05e",
+      "dirty": false,
+      "status": "PASS",
+      "newBugs": 0,
+      "observedKnownDefects": [],
+      "buildDigest": "da4a551faec001f09e6f00320613bef5c1fa93aeaf9ba31422822db0cd73cbb7",
+      "environment": "macos (iOS Simulator — 物理実機経路を所有者指示でシミュレータ撮影に代替 2026-10-10)",
+      "input": "iOS Simulatorから撮影 (実機要件を局長判断でシミュレータ代替)",
+      "steps": "シミュレータ経路で撮影・スクショ取得を検証 [drivers: app/mcp-server/script/stdio-ios-sim-verification.mjs]",
+      "expected": "画像の向き・倍率・システムUI領域が正しい",
+      "actual": "{\"stdio-ios-sim-verification:simDevice\": {\"name\": \"iPhone 17\", \"udid\": \"D0B64A8A-D5F1-4668-8FFC-A86B400AF527\"}, \"stdio-ios-sim-verification:directCapture\": {\"width\": 1206, \"height\": 2622}, \"stdio-ios-sim-verification:X06_ios_sim_capture\": {\"isError\": false, \"status\": \"PASS\", \"comparisonStatus\": \"FAIL\", \"verificationContext\": {\"geometry\": {\"designNativeWidth\": 390, \"designNativeHeight\": 844, \"screenshotWidth\": 1206, \"cropApplied\": false, \"autoCropped\": false, \"cropSource\": \"none\"}}, \"ignoreRegionResolution\": {\"coordinateContext\": {\"canvas_width\": 1206, \"canvas_height\": 2622, \"design_original_width\": 390, \"design_original_height\": 844, \"screenshot_original_width\": 1206, \"screenshot_original_height\": 2622}, \"appliedIds\": [], \"incompatibleIds\": [], \"legacyIds\": [], \"effectiveCanvas\": {\"width\": 1206, \"height\": 2622}, \"effectiveRegions\": [{\"x\": 0, \"y\": 0, \"width\": 1206, \"height\": 162, \"label\": \"system:status-bar\"}, {\"x\": 0, \"y\": 2520, \"width\": 1206, \"height\": 102, \"label\": \"system:navigation-bar\"}], \"maskedPixelCount\": 318384, \"maskSha256\": \"b6f97ef8d1f1dd89280d8015237cc9f5cd1738972696ea8cd5ebe06688fcd324\"}, \"toastBandCandidates\": [{\"x\": 0, \"y\": 2261, \"width\": 1206, \"height\": 59, \"contrast\": 60, \"position\": \"bottom\"}, {\"x\": 0, \"y\": 2512, \"width\": 1206, \"height\": 59, \"contrast\": 90, \"position\": \"bottom\"}], \"comparisonConditions\": {\"status\": \"unverified\", \"design\": {\"canvas\": {\"width\": 390, \"height\": 844}, \"canvasSource\": \"image-metadata\", \"unverified\": [\"viewport\", \"pixelRatio\", \"origin\"]}, \"screenshot\": {\"canvas\": {\"width\": 1206, \"height\": 2622}, \"canvasSource\": \"image-metadata\", \"unverified\": [\"viewport\", \"pixelRatio\", \"origin\"]}, \"differences\": [], \"message\": \"表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。\"}}, \"stdio-ios-sim-verification:capturedImage\": {\"name\": \"ios-sim-1791607705041-e508fbda-777b-437b-a653-f0ab48a1b14b.png\", \"width\": 1206, \"height\": 2622}, \"stdio-ios-sim-verification:X06_scroll_rejected\": {\"isError\": true, \"text\": \"Error: capture_scroll is not supported yet for ios-sim: xcrun simctl has no swipe primitive. Capture the tall screen yourself and pass it via `screenshot`, or compare one section at a time with set_crop_region.\"}}",
+      "oracle": {
+        "kind": "source-pixels",
+        "description": "画像の向き・倍率・システムUI領域が正しい"
+      },
+      "evidence": [
+        {
+          "path": "ledger/macos/round-2/X06/ios-device/stdio-ios-sim-verification-evidence.json",
+          "sha256": "b46dba18e41b968f45714c6ce7636cbe16932d13997e4a5868158c9ff54f6125"
+        },
+        {
+          "path": "ledger/macos/round-2/X06/ios-device/X06-result.json",
+          "sha256": "1de073d02eb094babf7a1def3a19beb53a8317ba450bf91234dccce81f1a5171"
         }
       ]
     }
