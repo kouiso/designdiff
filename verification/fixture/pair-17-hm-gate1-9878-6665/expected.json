@@ -5,19 +5,27 @@
     {
       "name": "correct",
       "image": "impl-correct.png",
-      "expectedVerdict": "pass",
+      "expectedVerdict": "fail",
       "expectedKinds": [],
-      "notes": "Figma正本と同一内容物。細ストロークAA/ストローク被覆差のみ (designdiff#243)",
-      "rasterizationTolerance": true
+      "notes": "内容差あり: 省略記号の切り詰め位置が設計と異なる (実装は文末「です。」まで表示)。fail が期待値の対照検体 (designdiff#243 調査検体)",
+      "rasterizationTolerance": true,
+      "expectedIssueKinds": [
+        "color",
+        "position",
+        "size"
+      ]
     },
     {
       "name": "drift-2px",
       "image": "impl-drift-2px.png",
       "expectedVerdict": "fail",
-      "expectedKinds": [
-        "position"
-      ],
-      "notes": "意図的な2px平行移動。本物の位置ずれ検出の対照検体 (designdiff#243)"
+      "expectedKinds": [],
+      "notes": "意図的な2px平行移動 (エッジ複製で透明帯なし)。本物の位置ずれ検出の対照検体 (designdiff#243)",
+      "expectedIssueKinds": [
+        "color",
+        "position",
+        "size"
+      ]
     }
   ]
 }
