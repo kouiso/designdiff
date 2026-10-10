@@ -9,6 +9,7 @@ import { createHash } from "node:crypto";
 import sharp, { type Sharp } from "sharp";
 
 import {
+  FULL_PAGE_VIEWPORT_HEIGHT_RATIO,
   PERCEPTIBLE_DIFF_CONTRADICTION_RATIO,
   applyIgnoreRegions as zeroIgnoreRegions,
   buildIgnoreMask,
@@ -376,6 +377,154 @@ export const mergeIgnoreMasks = (base: Uint8Array | undefined, extra: Uint8Array
     merged[index] = base[index] === 1 || extra[index] === 1 ? 1 : 0;
   }
   return merged;
+};
+
+interface ScreenshotBottomPaddingInput {
+  designNativeWidth: number;
+  screenshotNativeWidth: number;
+  designWidth: number;
+  designHeight: number;
+  screenshotWidth: number;
+  screenshotHeight: number;
+  cropRequested: boolean;
+}
+
+const isPositiveInteger = (value: number): boolean => Number.isInteger(value) && value > 0;
+
+/**
+ * 縮めずに上端揃えで比べるとき、スクリーンショット下端へ足す行数を返す。対象外は 0。
+ *
+ * 幅を合わせるために design を拡縮した入力は、撮影条件そのものが違う可能性が
+ * あるので従来の contain 正規化と幅不一致の診断に任せる。高さ比が
+ * full_page_vs_viewport の閾値を超える design は単一ビューポート撮影との比較と
+ * 見なされ、縮小して重ねる従来経路と診断がその前提で組まれている。
+ * 足した後の画素数が作業上限を超える場合も、メモリ上限を守るため従来経路へ戻す。
+ */
+export const resolveScreenshotBottomPaddingRows = (input: ScreenshotBottomPaddingInput): number => {
+  if (input.cropRequested) return 0;
+  if (
+    !isPositiveInteger(input.designNativeWidth) ||
+    !isPositiveInteger(input.screenshotNativeWidth) ||
+    !isPositiveInteger(input.designWidth) ||
+    !isPositiveInteger(input.designHeight) ||
+    !isPositiveInteger(input.screenshotWidth) ||
+    !isPositiveInteger(input.screenshotHeight)
+  ) {
+    return 0;
+  }
+  if (input.designNativeWidth !== input.screenshotNativeWidth) return 0;
+  if (input.designWidth !== input.screenshotWidth) return 0;
+  if (input.designHeight <= input.screenshotHeight) return 0;
+  if (input.designHeight / input.screenshotHeight > FULL_PAGE_VIEWPORT_HEIGHT_RATIO) return 0;
+  if (input.designWidth * input.designHeight > MAX_COMPARE_PIXELS) return 0;
+  return input.designHeight - input.screenshotHeight;
+};
+
+// contain 合成の余白と同じく透明で足す。後段で比較の下地色へ平坦化されるので、
+// 採点側では「何も描かれていない背景」として扱われ、特定の色を捏造しない。
+const padImageBottom = async (buffer: Buffer, rows: number): Promise<Buffer> => {
+  if (rows <= 0) return buffer;
+  return createSharp(buffer)
+    .ensureAlpha()
+    .extend({ bottom: rows, background: { r: 0, g: 0, b: 0, alpha: 0 } })
+    .png()
+    .toBuffer();
+};
+
+// startRow 以降の行を足した mask を返す。足す行が無ければ元の mask をそのまま返し、
+// 従来経路の mask の実体を変えない。
+const maskRowsFrom = (
+  base: Uint8Array | undefined,
+  width: number,
+  height: number,
+  startRow: number,
+): Uint8Array | undefined => {
+  const clampedStart = Math.max(0, Math.min(height, startRow));
+  if (clampedStart >= height) return base;
+  const rows = new Uint8Array(width * height);
+  rows.fill(1, clampedStart * width, width * height);
+  return mergeIgnoreMasks(base, rows);
+};
+
+interface MissingRowsCompareInput {
+  designPixels: Uint8ClampedArray;
+  screenshotPixels: Uint8ClampedArray;
+  diffPixelData: Uint8ClampedArray;
+  width: number;
+  height: number;
+  // スクリーンショットに実際の画素がある行数。これより下は下端に足した行。
+  screenshotContentHeight: number;
+  ignoreMask: Uint8Array | undefined;
+  threshold: number;
+}
+
+/**
+ * 足した行は撮影側に内容が無い。透明の下地と design の白地が偶然一致しても
+ * 「実装に無い行」であることは変わらないので、pixelmatch には両方に画素がある
+ * 範囲だけを渡し、足した行は ignore mask 外を全て差分として数える。
+ */
+const comparePixelsWithMissingScreenshotRows = (input: MissingRowsCompareInput): number => {
+  const { width, height, screenshotContentHeight, threshold } = input;
+  if (screenshotContentHeight >= height) {
+    return comparePixels(
+      input.designPixels,
+      input.screenshotPixels,
+      input.diffPixelData,
+      width,
+      height,
+      { threshold, diffMask: true },
+    );
+  }
+  if (screenshotContentHeight <= 0) {
+    throw new Error(`Screenshot content height must be positive: got ${screenshotContentHeight}`);
+  }
+  const overlapLength = width * screenshotContentHeight * 4;
+  const overlapDiffPixelCount = comparePixels(
+    input.designPixels.subarray(0, overlapLength),
+    input.screenshotPixels.subarray(0, overlapLength),
+    input.diffPixelData.subarray(0, overlapLength),
+    width,
+    screenshotContentHeight,
+    { threshold, diffMask: true },
+  );
+  return (
+    overlapDiffPixelCount +
+    paintMissingScreenshotRows(
+      input.diffPixelData,
+      width,
+      height,
+      screenshotContentHeight,
+      input.ignoreMask,
+    )
+  );
+};
+
+// pixelmatch の差分色と同じ赤で塗る。戻り値は ignore mask 外で塗った画素数で、
+// diffPixelCount に足して一致率の分母・分子を揃える。
+const paintMissingScreenshotRows = (
+  diffPixelData: Uint8ClampedArray,
+  width: number,
+  height: number,
+  startRow: number,
+  ignoreMask: Uint8Array | undefined,
+): number => {
+  if (diffPixelData.length !== width * height * 4) {
+    throw new Error(
+      `Diff buffer length must equal ${width}x${height} RGBA: got ${diffPixelData.length}`,
+    );
+  }
+  const clampedStart = Math.max(0, Math.min(height, startRow));
+  let paintedCount = 0;
+  for (let index = clampedStart * width; index < width * height; index += 1) {
+    if (ignoreMask?.[index] === 1) continue;
+    const offset = index * 4;
+    diffPixelData[offset] = 255;
+    diffPixelData[offset + 1] = 0;
+    diffPixelData[offset + 2] = 0;
+    diffPixelData[offset + 3] = 255;
+    paintedCount += 1;
+  }
+  return paintedCount;
 };
 
 export async function redactImageBase64ForPublicExport(
@@ -1224,6 +1373,21 @@ export async function compareImages(
     });
   }
 
+  // contain 縮小は幅まで縮めるため、同幅のページでも全列が横へずれて同一の内容が
+  // 二重に見える。幅が元から一致し高さ差が軽いときは縮めず、足りない行を
+  // スクリーンショット下端に足して上端揃えで比べる。
+  const screenshotBottomPaddingRows = resolveScreenshotBottomPaddingRows({
+    designNativeWidth: designWidth,
+    screenshotNativeWidth: nativeScreenshotWidth,
+    designWidth: finalDesignWidth,
+    designHeight: finalDesignHeight,
+    screenshotWidth: finalScreenshotWidth,
+    screenshotHeight: finalScreenshotHeight,
+    cropRequested: nativeCropRegion !== undefined,
+  });
+  screenshotBuffer = await padImageBottom(screenshotBuffer, screenshotBottomPaddingRows);
+  const compareCanvasHeight = finalScreenshotHeight + screenshotBottomPaddingRows;
+
   // Resize design to match screenshot if still different (e.g., height mismatch after crop)
   let finalDesignBuffer: Buffer = designBuffer;
   let paddingMask: PaddingMask | null = null;
@@ -1232,7 +1396,7 @@ export async function compareImages(
   let compositedContentBounds: PaddingMask | undefined;
   // 合成した場合の貼り付け位置。ノード bbox を同じ空間へ写すときに要る。
   let compositeOffset = { x: 0, y: 0 };
-  if (finalDesignWidth !== finalScreenshotWidth || finalDesignHeight !== finalScreenshotHeight) {
+  if (finalDesignWidth !== finalScreenshotWidth || finalDesignHeight !== compareCanvasHeight) {
     const scale = Math.min(
       finalScreenshotWidth / finalDesignWidth,
       finalScreenshotHeight / finalDesignHeight,
@@ -1340,11 +1504,13 @@ export async function compareImages(
   const screenshotRaw = await createSharp(screenshotBuffer).ensureAlpha().raw().toBuffer();
 
   const width = finalScreenshotWidth;
-  const height = finalScreenshotHeight;
+  const height = compareCanvasHeight;
   const screenshotPixels = Uint8ClampedArray.from(screenshotRaw);
   const originalDesignPixels = Uint8ClampedArray.from(designRaw);
   const ignoreMask = buildIgnoreMask(width, height, ignoreRegions);
-  const alignmentIgnoreMask = ignoreMask.mask;
+  // 足した行は撮影側に画素が無いので、位置合わせの根拠に混ぜると透明な帯へ
+  // design を寄せる偽の平行移動を拾う。両方に画素がある範囲だけで推定する。
+  const alignmentIgnoreMask = maskRowsFrom(ignoreMask.mask, width, height, finalScreenshotHeight);
   const resolvedAlignment = resolveAlignment(
     originalDesignPixels,
     screenshotPixels,
@@ -1435,17 +1601,16 @@ export async function compareImages(
     flattenTransparentPixels(screenshotPixels, backgroundColor);
   }
 
-  const diffPixelCount = comparePixels(
-    pixelmatchDesignPixels,
+  const diffPixelCount = comparePixelsWithMissingScreenshotRows({
+    designPixels: pixelmatchDesignPixels,
     screenshotPixels,
     diffPixelData,
     width,
     height,
-    {
-      threshold,
-      diffMask: true,
-    },
-  );
+    screenshotContentHeight: finalScreenshotHeight,
+    ignoreMask: ignoreMaskResult.mask,
+    threshold,
+  });
 
   const totalPixelCount = width * height - maskedPixelCount;
   const matchRate =
@@ -1703,6 +1868,7 @@ export async function compareImages(
       cropApplied: appliedCropRegion !== null,
       containResized: wasComposited,
       appliedScale,
+      ...(screenshotBottomPaddingRows > 0 ? { screenshotBottomPaddingRows } : {}),
       cropRegion: nativeAppliedCropRegion ?? undefined,
       workingCropRegion: appliedCropRegion ?? undefined,
     },

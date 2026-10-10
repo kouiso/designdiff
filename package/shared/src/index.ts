@@ -206,6 +206,7 @@ export {
 
 // Comparison Confidence Layer (pre-flight / diagnosis / headline)
 export {
+  FULL_PAGE_VIEWPORT_HEIGHT_RATIO,
   diagnoseComparison,
   isFullPageAgainstShorterCapture,
   type DiagnosisInput,

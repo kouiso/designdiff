@@ -515,6 +515,10 @@ export const NormalizationReportSchema = z.object({
   containResized: z.boolean(),
   // contain 正規化で適用された最終スケール。1 から大きく外れると寸法ミスマッチのサイン。
   appliedScale: z.number().nonnegative(),
+  // 同幅で design だけが少し縦に長いとき、縮小せずスクリーンショットの下端に
+  // 足した行数。この行は実装側に存在しない内容として差分に数える。
+  // 縮小 (contain) した比較や高さが揃っている比較ではキー自体を出さない。
+  screenshotBottomPaddingRows: z.number().int().positive().optional(),
   // project の cropRegion 設定なしに、スクショがdesignフレーム高を超えた分を
   // ツールが自動でフレーム範囲へcropしたか。人間がcropRegionを手設定する
   // 手間を無くすための自動化 (#237系: 真の完成に向けた手動介入の自動化)。
