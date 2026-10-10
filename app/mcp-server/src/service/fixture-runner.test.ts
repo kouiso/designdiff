@@ -78,6 +78,10 @@ const FixtureVariantSchema = z
       .array(z.enum(["color", "position", "size", "missing", "extra", "typography"]))
       .optional(),
     ignoreRegions: z.array(IgnoreRegionSchema).optional(),
+    // 別レンダラ同士の検体 (Figma正本 vs Flutter/Skia キャプチャ) では、
+    // same-token 証明を verdict に効かせる opt-in を検体ごとに付ける。
+    // strict 判定を守る対照検体 (意図的差分など) では付けない。
+    rasterizationTolerance: z.boolean().optional(),
     expectedSystemUiAlignment: z
       .object({
         matchRate: z.number().min(0).max(100),
@@ -339,6 +343,7 @@ describe("golden fixture runner", () => {
             threshold: 0.1,
             ignoreRegions: variant.ignoreRegions,
             verifiedSystemUiTopInset,
+            rasterizationTolerance: variant.rasterizationTolerance,
           },
           expectation.figmaRootNode,
         );

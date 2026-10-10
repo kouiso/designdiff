@@ -7,7 +7,8 @@
       "image": "impl-correct.png",
       "expectedVerdict": "pass",
       "expectedKinds": [],
-      "notes": "Figma正本と同一内容物。細ストロークAA/ストローク被覆差のみ (designdiff#243)"
+      "notes": "Figma正本と同一内容物。細ストロークAA/ストローク被覆差のみ (designdiff#243)",
+      "rasterizationTolerance": true
     },
     {
       "name": "drift-2px",
