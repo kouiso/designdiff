@@ -2,12 +2,8 @@
   "case": "C06",
   "route": "desktop",
   "platform": "linux-wsl",
-  "drivers": [
-    "app/desktop/e2e/desktop-c-cases.mjs"
-  ],
-  "checks": [
-    "C06"
-  ],
+  "drivers": ["app/desktop/e2e/desktop-c-cases.mjs"],
+  "checks": ["C06"],
   "actual": {
     "desktop-c-cases:C06": {
       "cropped": {
@@ -15,9 +11,7 @@
         "diffRegions": 1,
         "diffPixels": 120,
         "issues": 1,
-        "bboxes": [
-          "x:20, y:13, w:20, h:13"
-        ],
+        "bboxes": ["x:20, y:13, w:20, h:13"],
         "issueKinds": [
           "top-left",
           "top-center",
@@ -171,19 +165,14 @@
           "w": 60,
           "h": 40
         },
-        "cropChip": [
-          "x:20 y:15 w:60 h:40"
-        ]
+        "cropChip": ["x:20 y:15 w:60 h:40"]
       },
       "full": {
         "matchRate": 98,
         "diffRegions": 2,
         "diffPixels": 240,
         "issues": 2,
-        "bboxes": [
-          "x:80, y:0, w:40, h:26",
-          "x:40, y:26, w:40, h:27"
-        ],
+        "bboxes": ["x:80, y:0, w:40, h:26", "x:40, y:26, w:40, h:27"],
         "issueKinds": [
           "top-left",
           "top-center",

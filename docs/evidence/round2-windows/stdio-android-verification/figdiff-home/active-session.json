@@ -1,1 +1,9 @@
-{"comparisonId":"cmp-50144d83-7758-4ae3-826e-cecef80987f1","sourceKey":"local:C:\\Users\\Administrator\\repos\\designdiff\\docs\\evidence\\round2-windows\\stdio-android-verification\\input-design.png|conditions:67ee90b2041417feea6a66dadf3d166518e0aa81d1b0ea14ef3b0edeeea94fbe","designSource":"C:\\Users\\Administrator\\repos\\designdiff\\docs\\evidence\\round2-windows\\stdio-android-verification\\input-design.png","designImagePath":"C:\\Users\\Administrator\\repos\\designdiff\\docs\\evidence\\round2-windows\\stdio-android-verification\\input-design.png","matchRate":68.94,"status":"UNCERTAIN","updatedAt":1790520491848}
+{
+  "comparisonId": "cmp-50144d83-7758-4ae3-826e-cecef80987f1",
+  "sourceKey": "local:C:\\Users\\Administrator\\repos\\designdiff\\docs\\evidence\\round2-windows\\stdio-android-verification\\input-design.png|conditions:67ee90b2041417feea6a66dadf3d166518e0aa81d1b0ea14ef3b0edeeea94fbe",
+  "designSource": "C:\\Users\\Administrator\\repos\\designdiff\\docs\\evidence\\round2-windows\\stdio-android-verification\\input-design.png",
+  "designImagePath": "C:\\Users\\Administrator\\repos\\designdiff\\docs\\evidence\\round2-windows\\stdio-android-verification\\input-design.png",
+  "matchRate": 68.94,
+  "status": "UNCERTAIN",
+  "updatedAt": 1790520491848
+}

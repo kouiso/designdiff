@@ -1,1 +1,9 @@
-{"comparisonId":"cmp-8fb77048-7528-42f9-babc-48643a2a082b","sourceKey":"local:C:\\Users\\Administrator\\repos\\designdiff\\docs\\evidence\\round2-windows\\stdio-m01-verification\\input-design.png","designSource":"C:\\Users\\Administrator\\repos\\designdiff\\docs\\evidence\\round2-windows\\stdio-m01-verification\\input-design.png","designImagePath":"C:\\Users\\Administrator\\repos\\designdiff\\docs\\evidence\\round2-windows\\stdio-m01-verification\\input-design.png","matchRate":100,"status":"PASS","updatedAt":1790257049013}
+{
+  "comparisonId": "cmp-8fb77048-7528-42f9-babc-48643a2a082b",
+  "sourceKey": "local:C:\\Users\\Administrator\\repos\\designdiff\\docs\\evidence\\round2-windows\\stdio-m01-verification\\input-design.png",
+  "designSource": "C:\\Users\\Administrator\\repos\\designdiff\\docs\\evidence\\round2-windows\\stdio-m01-verification\\input-design.png",
+  "designImagePath": "C:\\Users\\Administrator\\repos\\designdiff\\docs\\evidence\\round2-windows\\stdio-m01-verification\\input-design.png",
+  "matchRate": 100,
+  "status": "PASS",
+  "updatedAt": 1790257049013
+}

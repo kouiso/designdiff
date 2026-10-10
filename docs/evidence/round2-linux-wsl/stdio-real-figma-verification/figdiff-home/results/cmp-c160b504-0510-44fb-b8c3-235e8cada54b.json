@@ -20,16 +20,8 @@
           "height": 80
         },
         "diffPixelCount": 15552,
-        "nearbyNodeIds": [
-          "9525:4855",
-          "9525:4762",
-          "9525:4760"
-        ],
-        "nearbyNodeNames": [
-          "Frame 26086736",
-          "Frame 26086508",
-          "体重登録-入力画面"
-        ]
+        "nearbyNodeIds": ["9525:4855", "9525:4762", "9525:4760"],
+        "nearbyNodeNames": ["Frame 26086736", "Frame 26086508", "体重登録-入力画面"]
       }
     ],
     "completionCriteria": {
@@ -452,11 +444,7 @@
           "pixelRatio": 1,
           "source": "figma-export-request"
         },
-        "unverified": [
-          "viewport",
-          "pixelRatio",
-          "origin"
-        ]
+        "unverified": ["viewport", "pixelRatio", "origin"]
       },
       "screenshot": {
         "canvas": {
@@ -464,11 +452,7 @@
           "height": 691
         },
         "canvasSource": "image-metadata",
-        "unverified": [
-          "viewport",
-          "pixelRatio",
-          "origin"
-        ]
+        "unverified": ["viewport", "pixelRatio", "origin"]
       },
       "differences": [],
       "message": "表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。"

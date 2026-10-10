@@ -2,14 +2,8 @@
   "case": "M01",
   "route": "mcp",
   "platform": "linux-wsl",
-  "drivers": [
-    "app/mcp-server/script/stdio-m01-verification.mjs"
-  ],
-  "checks": [
-    "M01_tools",
-    "M01_schema_keys",
-    "M01_first_call"
-  ],
+  "drivers": ["app/mcp-server/script/stdio-m01-verification.mjs"],
+  "checks": ["M01_tools", "M01_schema_keys", "M01_first_call"],
   "actual": {
     "stdio-m01-verification:M01_tools": {
       "count": 17,

@@ -2,12 +2,8 @@
   "case": "D09",
   "route": "desktop",
   "platform": "linux-wsl",
-  "drivers": [
-    "app/desktop/e2e/desktop-d-cases.mjs"
-  ],
-  "checks": [
-    "D09"
-  ],
+  "drivers": ["app/desktop/e2e/desktop-d-cases.mjs"],
+  "checks": ["D09"],
   "actual": {
     "desktop-d-cases:D09": {
       "401": {

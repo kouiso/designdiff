@@ -2,12 +2,8 @@
   "case": "C09",
   "route": "desktop",
   "platform": "windows",
-  "drivers": [
-    "app/desktop/e2e/desktop-c-cases.mjs"
-  ],
-  "checks": [
-    "C09"
-  ],
+  "drivers": ["app/desktop/e2e/desktop-c-cases.mjs"],
+  "checks": ["C09"],
   "actual": {
     "desktop-c-cases:C09": {
       "hidden": {

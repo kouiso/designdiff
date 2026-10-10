@@ -2,12 +2,8 @@
   "case": "M13",
   "route": "mcp",
   "platform": "linux-wsl",
-  "drivers": [
-    "app/mcp-server/script/stdio-campaign-verification2.mjs"
-  ],
-  "checks": [
-    "M13_error_contracts"
-  ],
+  "drivers": ["app/mcp-server/script/stdio-campaign-verification2.mjs"],
+  "checks": ["M13_error_contracts"],
   "actual": {
     "stdio-campaign-verification2:M13_error_contracts": {
       "unknownArg": {

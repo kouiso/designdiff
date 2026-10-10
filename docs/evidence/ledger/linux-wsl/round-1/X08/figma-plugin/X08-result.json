@@ -2,14 +2,8 @@
   "case": "X08",
   "route": "figma-plugin",
   "platform": "linux-wsl",
-  "drivers": [
-    "app/mcp-server/script/x08/plugin.mjs",
-    "app/mcp-server/script/x08/compare.mjs"
-  ],
-  "checks": [
-    "X08",
-    "X08"
-  ],
+  "drivers": ["app/mcp-server/script/x08/plugin.mjs", "app/mcp-server/script/x08/compare.mjs"],
+  "checks": ["X08", "X08"],
   "actual": {
     "plugin:X08": {
       "matchRate": 90.97,
@@ -128,26 +122,17 @@
         {
           "name": "derived regions mcp",
           "ok": true,
-          "detail": [
-            "16,16,32,24",
-            "4,64,8,8"
-          ]
+          "detail": ["16,16,32,24", "4,64,8,8"]
         },
         {
           "name": "derived regions desktop",
           "ok": true,
-          "detail": [
-            "16,16,32,24",
-            "4,64,8,8"
-          ]
+          "detail": ["16,16,32,24", "4,64,8,8"]
         },
         {
           "name": "derived regions plugin",
           "ok": true,
-          "detail": [
-            "16,16,32,24",
-            "4,64,8,8"
-          ]
+          "detail": ["16,16,32,24", "4,64,8,8"]
         }
       ],
       "surfaces": {

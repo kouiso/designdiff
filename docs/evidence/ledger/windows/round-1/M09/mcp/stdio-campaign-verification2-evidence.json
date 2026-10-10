@@ -187,11 +187,7 @@
             "maxAbsDriftMs": 0,
             "orderViolation": false
           },
-          "frames": [
-            "PASS",
-            "PASS",
-            "PASS"
-          ]
+          "frames": ["PASS", "PASS", "PASS"]
         },
         "swapped": {
           "temporal": {
@@ -263,11 +259,7 @@
       "status": "PASS",
       "expected": "3 captures at capture_width=320 all produce 320-wide screenshots",
       "actual": {
-        "widths": [
-          320,
-          320,
-          320
-        ],
+        "widths": [320, 320, 320],
         "pageUrl": "http://127.0.0.1:61207/page.html"
       }
     },

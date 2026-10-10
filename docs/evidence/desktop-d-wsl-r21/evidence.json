@@ -4,20 +4,14 @@
   "results": {
     "D01": {
       "onboarding": "steps + input visible",
-      "tokenlessPaths": [
-        "quickCompareSubmit",
-        "createProjectForm"
-      ],
+      "tokenlessPaths": ["quickCompareSubmit", "createProjectForm"],
       "auth": {
         "credentialFile": "credentials.json",
         "viaDialog": true
       },
       "frameSelect": {
         "exported": "https://api.figma.com/v1/images/FD01?ids=7:9&format=png&scale=2&use_absolute_bounds=true",
-        "framesListed": [
-          "ヘッダー",
-          "カード"
-        ]
+        "framesListed": ["ヘッダー", "カード"]
       },
       "project": {
         "id": "1789774931972-u8m07me",

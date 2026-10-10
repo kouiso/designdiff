@@ -54,17 +54,10 @@
       "ok": true
     }
   ],
-  "dialogs": [
-    "The node inspection timed out. Check the selection and try again."
-  ],
+  "dialogs": ["The node inspection timed out. Check the selection and try again."],
   "pageErrors": [],
   "consoleErrors": [],
-  "evidenceFiles": [
-    "design-blue.png",
-    "final-state.png",
-    "manifest.json",
-    "screenshot-red.png"
-  ],
+  "evidenceFiles": ["design-blue.png", "final-state.png", "manifest.json", "screenshot-red.png"],
   "results": {
     "X03": {
       "status": "PASS",

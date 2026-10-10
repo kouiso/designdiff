@@ -2,12 +2,8 @@
   "case": "M08",
   "route": "mcp",
   "platform": "linux-wsl",
-  "drivers": [
-    "app/mcp-server/script/stdio-campaign-verification.mjs"
-  ],
-  "checks": [
-    "M08_ignore_regions"
-  ],
+  "drivers": ["app/mcp-server/script/stdio-campaign-verification.mjs"],
+  "checks": ["M08_ignore_regions"],
   "actual": {
     "stdio-campaign-verification:M08_ignore_regions": {
       "afterAdd": 2,

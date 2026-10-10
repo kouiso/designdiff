@@ -5,14 +5,7 @@
     "status": "passed",
     "exitCode": 0
   },
-  "views": [
-    "home",
-    "project",
-    "compare",
-    "node-inspection-empty",
-    "measured",
-    "convergence"
-  ],
+  "views": ["home", "project", "compare", "node-inspection-empty", "measured", "convergence"],
   "pageErrors": [],
   "consoleErrors": [
     "Loading the font '[embedded font data]' violates the following Content Security Policy directive: \"font-src 'self'\". The action has been blocked.",

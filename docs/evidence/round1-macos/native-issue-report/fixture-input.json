@@ -11,10 +11,7 @@
   "expectedPreview": {
     "title": "[bug] Artificial token [REDACTED]",
     "body": "Artificial path ~/private/reproduction.txt",
-    "labels": [
-      "desktop-feedback",
-      "bug"
-    ],
+    "labels": ["desktop-feedback", "bug"],
     "maskedCount": 2
   }
 }

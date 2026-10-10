@@ -2,14 +2,8 @@
   "case": "X05",
   "route": "android",
   "platform": "macos",
-  "drivers": [
-    "app/mcp-server/script/stdio-android-verification.mjs"
-  ],
-  "checks": [
-    "X05_single_device_auto",
-    "X05_device_captures",
-    "X05_bogus_serial"
-  ],
+  "drivers": ["app/mcp-server/script/stdio-android-verification.mjs"],
+  "checks": ["X05_single_device_auto", "X05_device_captures", "X05_bogus_serial"],
   "actual": {
     "stdio-android-verification:X05_single_device_auto": {
       "isError": false,
