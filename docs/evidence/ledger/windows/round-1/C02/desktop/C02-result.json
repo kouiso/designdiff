@@ -2,12 +2,8 @@
   "case": "C02",
   "route": "desktop",
   "platform": "windows",
-  "drivers": [
-    "app/desktop/e2e/desktop-c-cases.mjs"
-  ],
-  "checks": [
-    "C02"
-  ],
+  "drivers": ["app/desktop/e2e/desktop-c-cases.mjs"],
+  "checks": ["C02"],
   "actual": {
     "desktop-c-cases:C02": {
       "shifts": {

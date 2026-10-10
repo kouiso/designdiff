@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-09T04:59:56.382Z",
+  "generatedAt": "2026-09-24T13:43:36.262Z",
   "dist": [
     {
       "path": "code.js",
@@ -22,48 +22,12 @@
     {
       "name": "初期描画でタブが2枚出る",
       "ok": true
-    },
-    {
-      "name": "inspect-node requestId 付き送信",
-      "ok": true
-    },
-    {
-      "name": "stale requestId の応答を棄却",
-      "ok": true
-    },
-    {
-      "name": "一致 requestId の応答で結果描画",
-      "ok": true
-    },
-    {
-      "name": "応答なしで timeout alert と loading 解除",
-      "ok": true
-    },
-    {
-      "name": "export-frame requestId 付き送信",
-      "ok": true
-    },
-    {
-      "name": "実canvas比較で全相違を低一致率として描画",
-      "ok": true,
-      "matchText": "0%",
-      "statsText": "4 / 4"
-    },
-    {
-      "name": "build digest 不変・page/console error 0",
-      "ok": true
     }
   ],
-  "dialogs": [
-    "The node inspection timed out. Check the selection and try again."
-  ],
+  "dialogs": ["The node inspection timed out. Check the selection and try again."],
   "pageErrors": [],
   "consoleErrors": [],
-  "evidenceFiles": [
-    "design-blue.png",
-    "final-state.png",
-    "screenshot-red.png"
-  ],
+  "evidenceFiles": ["design-blue.png", "screenshot-red.png"],
   "results": {
     "X03": {
       "status": "PASS",
@@ -72,44 +36,13 @@
         {
           "name": "初期描画でタブが2枚出る",
           "ok": true
-        },
-        {
-          "name": "inspect-node requestId 付き送信",
-          "ok": true
-        },
-        {
-          "name": "一致 requestId の応答で結果描画",
-          "ok": true
-        },
-        {
-          "name": "export-frame requestId 付き送信",
-          "ok": true
-        },
-        {
-          "name": "実canvas比較で全相違を低一致率として描画",
-          "ok": true,
-          "matchText": "0%",
-          "statsText": "4 / 4"
         }
       ]
     },
     "X04": {
       "status": "PASS",
       "expected": "未応答・stale応答など通信失敗から復旧できる",
-      "actual": [
-        {
-          "name": "stale requestId の応答を棄却",
-          "ok": true
-        },
-        {
-          "name": "応答なしで timeout alert と loading 解除",
-          "ok": true
-        },
-        {
-          "name": "build digest 不変・page/console error 0",
-          "ok": true
-        }
-      ]
+      "actual": []
     }
   },
   "note": "実 Chromium iframe + 実 dist bundle の検証。実 Figma ホスト・実 sandbox code.js 連携の代替証拠ではない。"

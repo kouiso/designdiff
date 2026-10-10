@@ -2,16 +2,8 @@
   "case": "M12",
   "route": "mcp",
   "platform": "macos",
-  "drivers": [
-    "app/mcp-server/script/stdio-m12-verification.mjs"
-  ],
-  "checks": [
-    "M12_no_token",
-    "M12_create",
-    "M12_remote",
-    "M12_index_wait",
-    "M12_dedup"
-  ],
+  "drivers": ["app/mcp-server/script/stdio-m12-verification.mjs"],
+  "checks": ["M12_no_token", "M12_create", "M12_remote", "M12_index_wait", "M12_dedup"],
   "actual": {
     "stdio-m12-verification:M12_no_token": {
       "isError": true,
@@ -31,10 +23,7 @@
       "number": 196,
       "title": "[usability] M12 campaign verification 2026-09-24T13-24-30-648Z",
       "state": "open",
-      "labels": [
-        "mcp-feedback",
-        "usability"
-      ],
+      "labels": ["mcp-feedback", "usability"],
       "bodyExcerpt": "campaign verification issue (auto-filed by stdio-m12-verification.mjs).\n\n再現: report_issue を実SDK経由で呼び出し\n期待: dedup 判定と秘密情報のマスク付きで起票される\n実際: この issue。検証用パス /var/folders/2j/fwfzfr5x639f8rbmqc9t9ym40000gn/T"
     },
     "stdio-m12-verification:M12_index_wait": {

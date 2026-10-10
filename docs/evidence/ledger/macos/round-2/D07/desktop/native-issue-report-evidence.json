@@ -15,11 +15,7 @@
   ],
   "command": "FIGDIFF_ISSUE_REPORT_EVIDENCE=<evidence> xvfb-run -a node app/desktop/e2e/native-issue-report.mjs",
   "build": {
-    "roots": [
-      "app/desktop/dist",
-      "package/shared/dist",
-      "package/credential-store/dist"
-    ],
+    "roots": ["app/desktop/dist", "package/shared/dist", "package/credential-store/dist"],
     "identityFiles": [
       "pnpm-lock.yaml",
       "package.json",

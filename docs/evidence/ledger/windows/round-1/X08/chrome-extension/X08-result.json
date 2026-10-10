@@ -2,14 +2,8 @@
   "case": "X08",
   "route": "chrome-extension",
   "platform": "windows",
-  "drivers": [
-    "app/mcp-server/script/x08/extension.mjs",
-    "app/mcp-server/script/x08/compare.mjs"
-  ],
-  "checks": [
-    "X08",
-    "X08"
-  ],
+  "drivers": ["app/mcp-server/script/x08/extension.mjs", "app/mcp-server/script/x08/compare.mjs"],
+  "checks": ["X08", "X08"],
   "actual": {
     "extension:X08": {
       "diffPixelCount": 832,
@@ -129,26 +123,17 @@
         {
           "name": "derived regions mcp",
           "ok": true,
-          "detail": [
-            "16,16,32,24",
-            "4,64,8,8"
-          ]
+          "detail": ["16,16,32,24", "4,64,8,8"]
         },
         {
           "name": "derived regions desktop",
           "ok": true,
-          "detail": [
-            "16,16,32,24",
-            "4,64,8,8"
-          ]
+          "detail": ["16,16,32,24", "4,64,8,8"]
         },
         {
           "name": "derived regions plugin",
           "ok": true,
-          "detail": [
-            "16,16,32,24",
-            "4,64,8,8"
-          ]
+          "detail": ["16,16,32,24", "4,64,8,8"]
         }
       ],
       "surfaces": {

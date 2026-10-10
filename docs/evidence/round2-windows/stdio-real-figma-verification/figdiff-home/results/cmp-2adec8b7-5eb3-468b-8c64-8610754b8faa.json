@@ -20,16 +20,8 @@
           "height": 14
         },
         "diffPixelCount": 346,
-        "nearbyNodeIds": [
-          "9525:4822",
-          "9525:4821",
-          "9551:5156"
-        ],
-        "nearbyNodeNames": [
-          "連続体重登録",
-          "Frame 26086733",
-          "Frame 26086750"
-        ]
+        "nearbyNodeIds": ["9525:4822", "9525:4821", "9551:5156"],
+        "nearbyNodeNames": ["連続体重登録", "Frame 26086733", "Frame 26086750"]
       },
       {
         "id": 1,
@@ -40,16 +32,8 @@
           "height": 14
         },
         "diffPixelCount": 146,
-        "nearbyNodeIds": [
-          "9525:4822",
-          "9525:4821",
-          "9551:5156"
-        ],
-        "nearbyNodeNames": [
-          "連続体重登録",
-          "Frame 26086733",
-          "Frame 26086750"
-        ]
+        "nearbyNodeIds": ["9525:4822", "9525:4821", "9551:5156"],
+        "nearbyNodeNames": ["連続体重登録", "Frame 26086733", "Frame 26086750"]
       },
       {
         "id": 2,
@@ -60,16 +44,8 @@
           "height": 14
         },
         "diffPixelCount": 124,
-        "nearbyNodeIds": [
-          "9525:4822",
-          "9525:4821",
-          "9551:5156"
-        ],
-        "nearbyNodeNames": [
-          "連続体重登録",
-          "Frame 26086733",
-          "Frame 26086750"
-        ]
+        "nearbyNodeIds": ["9525:4822", "9525:4821", "9551:5156"],
+        "nearbyNodeNames": ["連続体重登録", "Frame 26086733", "Frame 26086750"]
       },
       {
         "id": 3,
@@ -80,16 +56,8 @@
           "height": 15
         },
         "diffPixelCount": 135,
-        "nearbyNodeIds": [
-          "9525:4822",
-          "9525:4821",
-          "9551:5156"
-        ],
-        "nearbyNodeNames": [
-          "連続体重登録",
-          "Frame 26086733",
-          "Frame 26086750"
-        ]
+        "nearbyNodeIds": ["9525:4822", "9525:4821", "9551:5156"],
+        "nearbyNodeNames": ["連続体重登録", "Frame 26086733", "Frame 26086750"]
       },
       {
         "id": 4,
@@ -100,16 +68,8 @@
           "height": 9
         },
         "diffPixelCount": 104,
-        "nearbyNodeIds": [
-          "9551:5151",
-          "9551:5152",
-          "9551:5156"
-        ],
-        "nearbyNodeNames": [
-          "一時停止",
-          "Frame 26086748",
-          "Frame 26086750"
-        ]
+        "nearbyNodeIds": ["9551:5151", "9551:5152", "9551:5156"],
+        "nearbyNodeNames": ["一時停止", "Frame 26086748", "Frame 26086750"]
       },
       {
         "id": 5,
@@ -120,16 +80,8 @@
           "height": 7
         },
         "diffPixelCount": 21,
-        "nearbyNodeIds": [
-          "9551:5154",
-          "9551:5155",
-          "9551:5152"
-        ],
-        "nearbyNodeNames": [
-          "Rectangle 12470",
-          "Frame 26086749",
-          "Frame 26086748"
-        ]
+        "nearbyNodeIds": ["9551:5154", "9551:5155", "9551:5152"],
+        "nearbyNodeNames": ["Rectangle 12470", "Frame 26086749", "Frame 26086748"]
       },
       {
         "id": 6,
@@ -140,16 +92,8 @@
           "height": 7
         },
         "diffPixelCount": 21,
-        "nearbyNodeIds": [
-          "9551:5153",
-          "9551:5155",
-          "9551:5152"
-        ],
-        "nearbyNodeNames": [
-          "Rectangle 12469",
-          "Frame 26086749",
-          "Frame 26086748"
-        ]
+        "nearbyNodeIds": ["9551:5153", "9551:5155", "9551:5152"],
+        "nearbyNodeNames": ["Rectangle 12469", "Frame 26086749", "Frame 26086748"]
       },
       {
         "id": 7,
@@ -160,16 +104,8 @@
           "height": 7
         },
         "diffPixelCount": 25,
-        "nearbyNodeIds": [
-          "9551:5151",
-          "9551:5152",
-          "9551:5156"
-        ],
-        "nearbyNodeNames": [
-          "一時停止",
-          "Frame 26086748",
-          "Frame 26086750"
-        ]
+        "nearbyNodeIds": ["9551:5151", "9551:5152", "9551:5156"],
+        "nearbyNodeNames": ["一時停止", "Frame 26086748", "Frame 26086750"]
       },
       {
         "id": 8,
@@ -180,16 +116,8 @@
           "height": 8
         },
         "diffPixelCount": 10,
-        "nearbyNodeIds": [
-          "9525:4823",
-          "9525:4821",
-          "9551:5156"
-        ],
-        "nearbyNodeNames": [
-          "2026/5/11（火）",
-          "Frame 26086733",
-          "Frame 26086750"
-        ]
+        "nearbyNodeIds": ["9525:4823", "9525:4821", "9551:5156"],
+        "nearbyNodeNames": ["2026/5/11（火）", "Frame 26086733", "Frame 26086750"]
       },
       {
         "id": 9,
@@ -200,14 +128,8 @@
           "height": 1
         },
         "diffPixelCount": 58,
-        "nearbyNodeIds": [
-          "9551:5156",
-          "9525:4760"
-        ],
-        "nearbyNodeNames": [
-          "Frame 26086750",
-          "体重登録-入力画面"
-        ]
+        "nearbyNodeIds": ["9551:5156", "9525:4760"],
+        "nearbyNodeNames": ["Frame 26086750", "体重登録-入力画面"]
       },
       {
         "id": 10,
@@ -218,16 +140,8 @@
           "height": 6
         },
         "diffPixelCount": 20,
-        "nearbyNodeIds": [
-          "9553:6255",
-          "9553:6241",
-          "9553:6240"
-        ],
-        "nearbyNodeNames": [
-          "6 / 12",
-          "Frame 26086738",
-          "Frame 26086765"
-        ]
+        "nearbyNodeIds": ["9553:6255", "9553:6241", "9553:6240"],
+        "nearbyNodeNames": ["6 / 12", "Frame 26086738", "Frame 26086765"]
       },
       {
         "id": 11,
@@ -238,16 +152,8 @@
           "height": 7
         },
         "diffPixelCount": 10,
-        "nearbyNodeIds": [
-          "9553:6255",
-          "9553:6241",
-          "9553:6240"
-        ],
-        "nearbyNodeNames": [
-          "6 / 12",
-          "Frame 26086738",
-          "Frame 26086765"
-        ]
+        "nearbyNodeIds": ["9553:6255", "9553:6241", "9553:6240"],
+        "nearbyNodeNames": ["6 / 12", "Frame 26086738", "Frame 26086765"]
       },
       {
         "id": 12,
@@ -258,16 +164,8 @@
           "height": 4
         },
         "diffPixelCount": 72,
-        "nearbyNodeIds": [
-          "9553:6243",
-          "9553:6242",
-          "9553:6241"
-        ],
-        "nearbyNodeNames": [
-          "Rectangle 12456",
-          "Frame 26086734",
-          "Frame 26086738"
-        ]
+        "nearbyNodeIds": ["9553:6243", "9553:6242", "9553:6241"],
+        "nearbyNodeNames": ["Rectangle 12456", "Frame 26086734", "Frame 26086738"]
       },
       {
         "id": 13,
@@ -278,16 +176,8 @@
           "height": 4
         },
         "diffPixelCount": 72,
-        "nearbyNodeIds": [
-          "9553:6244",
-          "9553:6242",
-          "9553:6241"
-        ],
-        "nearbyNodeNames": [
-          "Rectangle 12445",
-          "Frame 26086734",
-          "Frame 26086738"
-        ]
+        "nearbyNodeIds": ["9553:6244", "9553:6242", "9553:6241"],
+        "nearbyNodeNames": ["Rectangle 12445", "Frame 26086734", "Frame 26086738"]
       },
       {
         "id": 14,
@@ -298,16 +188,8 @@
           "height": 4
         },
         "diffPixelCount": 72,
-        "nearbyNodeIds": [
-          "9553:6245",
-          "9553:6242",
-          "9553:6241"
-        ],
-        "nearbyNodeNames": [
-          "Rectangle 12447",
-          "Frame 26086734",
-          "Frame 26086738"
-        ]
+        "nearbyNodeIds": ["9553:6245", "9553:6242", "9553:6241"],
+        "nearbyNodeNames": ["Rectangle 12447", "Frame 26086734", "Frame 26086738"]
       },
       {
         "id": 15,
@@ -318,16 +200,8 @@
           "height": 4
         },
         "diffPixelCount": 72,
-        "nearbyNodeIds": [
-          "9553:6246",
-          "9553:6242",
-          "9553:6241"
-        ],
-        "nearbyNodeNames": [
-          "Rectangle 12446",
-          "Frame 26086734",
-          "Frame 26086738"
-        ]
+        "nearbyNodeIds": ["9553:6246", "9553:6242", "9553:6241"],
+        "nearbyNodeNames": ["Rectangle 12446", "Frame 26086734", "Frame 26086738"]
       },
       {
         "id": 16,
@@ -338,16 +212,8 @@
           "height": 4
         },
         "diffPixelCount": 72,
-        "nearbyNodeIds": [
-          "9553:6247",
-          "9553:6242",
-          "9553:6241"
-        ],
-        "nearbyNodeNames": [
-          "Rectangle 12448",
-          "Frame 26086734",
-          "Frame 26086738"
-        ]
+        "nearbyNodeIds": ["9553:6247", "9553:6242", "9553:6241"],
+        "nearbyNodeNames": ["Rectangle 12448", "Frame 26086734", "Frame 26086738"]
       },
       {
         "id": 17,
@@ -358,16 +224,8 @@
           "height": 4
         },
         "diffPixelCount": 72,
-        "nearbyNodeIds": [
-          "9553:6248",
-          "9553:6242",
-          "9553:6241"
-        ],
-        "nearbyNodeNames": [
-          "Rectangle 12449",
-          "Frame 26086734",
-          "Frame 26086738"
-        ]
+        "nearbyNodeIds": ["9553:6248", "9553:6242", "9553:6241"],
+        "nearbyNodeNames": ["Rectangle 12449", "Frame 26086734", "Frame 26086738"]
       },
       {
         "id": 18,
@@ -378,16 +236,8 @@
           "height": 4
         },
         "diffPixelCount": 72,
-        "nearbyNodeIds": [
-          "9553:6249",
-          "9553:6242",
-          "9553:6241"
-        ],
-        "nearbyNodeNames": [
-          "Rectangle 12450",
-          "Frame 26086734",
-          "Frame 26086738"
-        ]
+        "nearbyNodeIds": ["9553:6249", "9553:6242", "9553:6241"],
+        "nearbyNodeNames": ["Rectangle 12450", "Frame 26086734", "Frame 26086738"]
       },
       {
         "id": 19,
@@ -398,16 +248,8 @@
           "height": 4
         },
         "diffPixelCount": 72,
-        "nearbyNodeIds": [
-          "9553:6250",
-          "9553:6242",
-          "9553:6241"
-        ],
-        "nearbyNodeNames": [
-          "Rectangle 12451",
-          "Frame 26086734",
-          "Frame 26086738"
-        ]
+        "nearbyNodeIds": ["9553:6250", "9553:6242", "9553:6241"],
+        "nearbyNodeNames": ["Rectangle 12451", "Frame 26086734", "Frame 26086738"]
       },
       {
         "id": 20,
@@ -418,16 +260,8 @@
           "height": 4
         },
         "diffPixelCount": 72,
-        "nearbyNodeIds": [
-          "9553:6251",
-          "9553:6242",
-          "9553:6241"
-        ],
-        "nearbyNodeNames": [
-          "Rectangle 12452",
-          "Frame 26086734",
-          "Frame 26086738"
-        ]
+        "nearbyNodeIds": ["9553:6251", "9553:6242", "9553:6241"],
+        "nearbyNodeNames": ["Rectangle 12452", "Frame 26086734", "Frame 26086738"]
       },
       {
         "id": 21,
@@ -438,16 +272,8 @@
           "height": 4
         },
         "diffPixelCount": 72,
-        "nearbyNodeIds": [
-          "9553:6252",
-          "9553:6242",
-          "9553:6241"
-        ],
-        "nearbyNodeNames": [
-          "Rectangle 12453",
-          "Frame 26086734",
-          "Frame 26086738"
-        ]
+        "nearbyNodeIds": ["9553:6252", "9553:6242", "9553:6241"],
+        "nearbyNodeNames": ["Rectangle 12453", "Frame 26086734", "Frame 26086738"]
       },
       {
         "id": 22,
@@ -458,16 +284,8 @@
           "height": 4
         },
         "diffPixelCount": 72,
-        "nearbyNodeIds": [
-          "9553:6253",
-          "9553:6242",
-          "9553:6241"
-        ],
-        "nearbyNodeNames": [
-          "Rectangle 12454",
-          "Frame 26086734",
-          "Frame 26086738"
-        ]
+        "nearbyNodeIds": ["9553:6253", "9553:6242", "9553:6241"],
+        "nearbyNodeNames": ["Rectangle 12454", "Frame 26086734", "Frame 26086738"]
       },
       {
         "id": 23,
@@ -478,16 +296,8 @@
           "height": 4
         },
         "diffPixelCount": 72,
-        "nearbyNodeIds": [
-          "9553:6254",
-          "9553:6242",
-          "9553:6241"
-        ],
-        "nearbyNodeNames": [
-          "Rectangle 12455",
-          "Frame 26086734",
-          "Frame 26086738"
-        ]
+        "nearbyNodeIds": ["9553:6254", "9553:6242", "9553:6241"],
+        "nearbyNodeNames": ["Rectangle 12455", "Frame 26086734", "Frame 26086738"]
       },
       {
         "id": 24,
@@ -498,16 +308,8 @@
           "height": 26
         },
         "diffPixelCount": 1615,
-        "nearbyNodeIds": [
-          "9553:6257",
-          "9553:6256",
-          "9553:6240"
-        ],
-        "nearbyNodeNames": [
-          "6頭目",
-          "Frame 26086735",
-          "Frame 26086765"
-        ]
+        "nearbyNodeIds": ["9553:6257", "9553:6256", "9553:6240"],
+        "nearbyNodeNames": ["6頭目", "Frame 26086735", "Frame 26086765"]
       },
       {
         "id": 25,
@@ -518,16 +320,8 @@
           "height": 7
         },
         "diffPixelCount": 45,
-        "nearbyNodeIds": [
-          "9553:6257",
-          "9553:6256",
-          "9553:6240"
-        ],
-        "nearbyNodeNames": [
-          "6頭目",
-          "Frame 26086735",
-          "Frame 26086765"
-        ]
+        "nearbyNodeIds": ["9553:6257", "9553:6256", "9553:6240"],
+        "nearbyNodeNames": ["6頭目", "Frame 26086735", "Frame 26086765"]
       },
       {
         "id": 26,
@@ -538,16 +332,8 @@
           "height": 5
         },
         "diffPixelCount": 10,
-        "nearbyNodeIds": [
-          "9553:6257",
-          "9553:6256",
-          "9553:6240"
-        ],
-        "nearbyNodeNames": [
-          "6頭目",
-          "Frame 26086735",
-          "Frame 26086765"
-        ]
+        "nearbyNodeIds": ["9553:6257", "9553:6256", "9553:6240"],
+        "nearbyNodeNames": ["6頭目", "Frame 26086735", "Frame 26086765"]
       },
       {
         "id": 27,
@@ -558,16 +344,8 @@
           "height": 5
         },
         "diffPixelCount": 10,
-        "nearbyNodeIds": [
-          "9525:4856",
-          "9525:4860",
-          "9525:4893"
-        ],
-        "nearbyNodeNames": [
-          "ルバーノ",
-          "Frame 26086737",
-          "Frame 26086739"
-        ]
+        "nearbyNodeIds": ["9525:4856", "9525:4860", "9525:4893"],
+        "nearbyNodeNames": ["ルバーノ", "Frame 26086737", "Frame 26086739"]
       },
       {
         "id": 28,
@@ -578,16 +356,8 @@
           "height": 28
         },
         "diffPixelCount": 112,
-        "nearbyNodeIds": [
-          "9525:4856",
-          "9525:4860",
-          "9525:4893"
-        ],
-        "nearbyNodeNames": [
-          "ルバーノ",
-          "Frame 26086737",
-          "Frame 26086739"
-        ]
+        "nearbyNodeIds": ["9525:4856", "9525:4860", "9525:4893"],
+        "nearbyNodeNames": ["ルバーノ", "Frame 26086737", "Frame 26086739"]
       },
       {
         "id": 29,
@@ -598,16 +368,8 @@
           "height": 28
         },
         "diffPixelCount": 159,
-        "nearbyNodeIds": [
-          "9525:4856",
-          "9525:4860",
-          "9525:4893"
-        ],
-        "nearbyNodeNames": [
-          "ルバーノ",
-          "Frame 26086737",
-          "Frame 26086739"
-        ]
+        "nearbyNodeIds": ["9525:4856", "9525:4860", "9525:4893"],
+        "nearbyNodeNames": ["ルバーノ", "Frame 26086737", "Frame 26086739"]
       },
       {
         "id": 30,
@@ -618,16 +380,8 @@
           "height": 28
         },
         "diffPixelCount": 142,
-        "nearbyNodeIds": [
-          "9525:4856",
-          "9525:4860",
-          "9525:4893"
-        ],
-        "nearbyNodeNames": [
-          "ルバーノ",
-          "Frame 26086737",
-          "Frame 26086739"
-        ]
+        "nearbyNodeIds": ["9525:4856", "9525:4860", "9525:4893"],
+        "nearbyNodeNames": ["ルバーノ", "Frame 26086737", "Frame 26086739"]
       },
       {
         "id": 31,
@@ -638,16 +392,8 @@
           "height": 25
         },
         "diffPixelCount": 108,
-        "nearbyNodeIds": [
-          "9525:4856",
-          "9525:4860",
-          "9525:4893"
-        ],
-        "nearbyNodeNames": [
-          "ルバーノ",
-          "Frame 26086737",
-          "Frame 26086739"
-        ]
+        "nearbyNodeIds": ["9525:4856", "9525:4860", "9525:4893"],
+        "nearbyNodeNames": ["ルバーノ", "Frame 26086737", "Frame 26086739"]
       },
       {
         "id": 32,
@@ -658,16 +404,8 @@
           "height": 24
         },
         "diffPixelCount": 105,
-        "nearbyNodeIds": [
-          "9525:4856",
-          "9525:4860",
-          "9525:4893"
-        ],
-        "nearbyNodeNames": [
-          "ルバーノ",
-          "Frame 26086737",
-          "Frame 26086739"
-        ]
+        "nearbyNodeIds": ["9525:4856", "9525:4860", "9525:4893"],
+        "nearbyNodeNames": ["ルバーノ", "Frame 26086737", "Frame 26086739"]
       },
       {
         "id": 33,
@@ -678,16 +416,8 @@
           "height": 27
         },
         "diffPixelCount": 213,
-        "nearbyNodeIds": [
-          "9525:4865",
-          "9525:4866",
-          "9525:4862"
-        ],
-        "nearbyNodeNames": [
-          "Group",
-          "Vector",
-          "Ellipse 74"
-        ]
+        "nearbyNodeIds": ["9525:4865", "9525:4866", "9525:4862"],
+        "nearbyNodeNames": ["Group", "Vector", "Ellipse 74"]
       },
       {
         "id": 34,
@@ -698,16 +428,8 @@
           "height": 4
         },
         "diffPixelCount": 112,
-        "nearbyNodeIds": [
-          "9525:4856",
-          "9525:4860",
-          "9525:4893"
-        ],
-        "nearbyNodeNames": [
-          "ルバーノ",
-          "Frame 26086737",
-          "Frame 26086739"
-        ]
+        "nearbyNodeIds": ["9525:4856", "9525:4860", "9525:4893"],
+        "nearbyNodeNames": ["ルバーノ", "Frame 26086737", "Frame 26086739"]
       },
       {
         "id": 35,
@@ -718,16 +440,8 @@
           "height": 139
         },
         "diffPixelCount": 36739,
-        "nearbyNodeIds": [
-          "9525:4855",
-          "9525:4762",
-          "9525:4760"
-        ],
-        "nearbyNodeNames": [
-          "Frame 26086736",
-          "Frame 26086508",
-          "体重登録-入力画面"
-        ]
+        "nearbyNodeIds": ["9525:4855", "9525:4762", "9525:4760"],
+        "nearbyNodeNames": ["Frame 26086736", "Frame 26086508", "体重登録-入力画面"]
       },
       {
         "id": 36,
@@ -738,16 +452,8 @@
           "height": 4
         },
         "diffPixelCount": 11,
-        "nearbyNodeIds": [
-          "9525:4858",
-          "9525:4860",
-          "9525:4893"
-        ],
-        "nearbyNodeNames": [
-          "前回　488kg ・ 前々回　471kg",
-          "Frame 26086737",
-          "Frame 26086739"
-        ]
+        "nearbyNodeIds": ["9525:4858", "9525:4860", "9525:4893"],
+        "nearbyNodeNames": ["前回　488kg ・ 前々回　471kg", "Frame 26086737", "Frame 26086739"]
       },
       {
         "id": 37,
@@ -758,16 +464,8 @@
           "height": 14
         },
         "diffPixelCount": 44,
-        "nearbyNodeIds": [
-          "9525:4882",
-          "9525:4855",
-          "9525:4762"
-        ],
-        "nearbyNodeNames": [
-          "kg",
-          "Frame 26086736",
-          "Frame 26086508"
-        ]
+        "nearbyNodeIds": ["9525:4882", "9525:4855", "9525:4762"],
+        "nearbyNodeNames": ["kg", "Frame 26086736", "Frame 26086508"]
       },
       {
         "id": 38,
@@ -778,16 +476,8 @@
           "height": 14
         },
         "diffPixelCount": 52,
-        "nearbyNodeIds": [
-          "9525:4882",
-          "9525:4855",
-          "9525:4762"
-        ],
-        "nearbyNodeNames": [
-          "kg",
-          "Frame 26086736",
-          "Frame 26086508"
-        ]
+        "nearbyNodeIds": ["9525:4882", "9525:4855", "9525:4762"],
+        "nearbyNodeNames": ["kg", "Frame 26086736", "Frame 26086508"]
       },
       {
         "id": 39,
@@ -798,16 +488,8 @@
           "height": 1
         },
         "diffPixelCount": 258,
-        "nearbyNodeIds": [
-          "9525:4855",
-          "9525:4762",
-          "9525:4760"
-        ],
-        "nearbyNodeNames": [
-          "Frame 26086736",
-          "Frame 26086508",
-          "体重登録-入力画面"
-        ]
+        "nearbyNodeIds": ["9525:4855", "9525:4762", "9525:4760"],
+        "nearbyNodeNames": ["Frame 26086736", "Frame 26086508", "体重登録-入力画面"]
       },
       {
         "id": 40,
@@ -818,16 +500,8 @@
           "height": 28
         },
         "diffPixelCount": 28,
-        "nearbyNodeIds": [
-          "9525:4890",
-          "9525:4883",
-          "9525:4760"
-        ],
-        "nearbyNodeNames": [
-          "Rectangle 12453",
-          "Frame 26086736",
-          "体重登録-入力画面"
-        ]
+        "nearbyNodeIds": ["9525:4890", "9525:4883", "9525:4760"],
+        "nearbyNodeNames": ["Rectangle 12453", "Frame 26086736", "体重登録-入力画面"]
       },
       {
         "id": 41,
@@ -838,16 +512,8 @@
           "height": 7
         },
         "diffPixelCount": 30,
-        "nearbyNodeIds": [
-          "9547:4934",
-          "9547:4933",
-          "9547:4929"
-        ],
-        "nearbyNodeNames": [
-          "ディープ⋯",
-          "Frame 26086742",
-          "Frame 26086745"
-        ]
+        "nearbyNodeIds": ["9547:4934", "9547:4933", "9547:4929"],
+        "nearbyNodeNames": ["ディープ⋯", "Frame 26086742", "Frame 26086745"]
       },
       {
         "id": 42,
@@ -858,16 +524,8 @@
           "height": 8
         },
         "diffPixelCount": 12,
-        "nearbyNodeIds": [
-          "9547:4917",
-          "9547:4920",
-          "9547:4921"
-        ],
-        "nearbyNodeNames": [
-          "カレン⋯",
-          "Frame 26086742",
-          "Frame 26086743"
-        ]
+        "nearbyNodeIds": ["9547:4917", "9547:4920", "9547:4921"],
+        "nearbyNodeNames": ["カレン⋯", "Frame 26086742", "Frame 26086743"]
       },
       {
         "id": 43,
@@ -878,16 +536,8 @@
           "height": 8
         },
         "diffPixelCount": 14,
-        "nearbyNodeIds": [
-          "9547:4927",
-          "9547:4926",
-          "9547:4922"
-        ],
-        "nearbyNodeNames": [
-          "ゴール⋯",
-          "Frame 26086742",
-          "Frame 26086744"
-        ]
+        "nearbyNodeIds": ["9547:4927", "9547:4926", "9547:4922"],
+        "nearbyNodeNames": ["ゴール⋯", "Frame 26086742", "Frame 26086744"]
       },
       {
         "id": 44,
@@ -898,16 +548,8 @@
           "height": 12
         },
         "diffPixelCount": 42,
-        "nearbyNodeIds": [
-          "9547:4905",
-          "9547:4906",
-          "9547:4907"
-        ],
-        "nearbyNodeNames": [
-          "Group",
-          "Vector",
-          "Frame 26086741"
-        ]
+        "nearbyNodeIds": ["9547:4905", "9547:4906", "9547:4907"],
+        "nearbyNodeNames": ["Group", "Vector", "Frame 26086741"]
       },
       {
         "id": 45,
@@ -918,16 +560,8 @@
           "height": 12
         },
         "diffPixelCount": 42,
-        "nearbyNodeIds": [
-          "9547:4924",
-          "9547:4925",
-          "9547:4923"
-        ],
-        "nearbyNodeNames": [
-          "Group",
-          "Vector",
-          "Frame 26086741"
-        ]
+        "nearbyNodeIds": ["9547:4924", "9547:4925", "9547:4923"],
+        "nearbyNodeNames": ["Group", "Vector", "Frame 26086741"]
       },
       {
         "id": 46,
@@ -938,16 +572,8 @@
           "height": 12
         },
         "diffPixelCount": 42,
-        "nearbyNodeIds": [
-          "9547:4931",
-          "9547:4932",
-          "9547:4930"
-        ],
-        "nearbyNodeNames": [
-          "Group",
-          "Vector",
-          "Frame 26086741"
-        ]
+        "nearbyNodeIds": ["9547:4931", "9547:4932", "9547:4930"],
+        "nearbyNodeNames": ["Group", "Vector", "Frame 26086741"]
       },
       {
         "id": 47,
@@ -958,16 +584,8 @@
           "height": 6
         },
         "diffPixelCount": 21,
-        "nearbyNodeIds": [
-          "9525:4889",
-          "9525:4883",
-          "9525:4760"
-        ],
-        "nearbyNodeNames": [
-          "次 →",
-          "Frame 26086736",
-          "体重登録-入力画面"
-        ]
+        "nearbyNodeIds": ["9525:4889", "9525:4883", "9525:4760"],
+        "nearbyNodeNames": ["次 →", "Frame 26086736", "体重登録-入力画面"]
       },
       {
         "id": 48,
@@ -978,16 +596,8 @@
           "height": 4
         },
         "diffPixelCount": 12,
-        "nearbyNodeIds": [
-          "9525:4889",
-          "9525:4883",
-          "9525:4760"
-        ],
-        "nearbyNodeNames": [
-          "次 →",
-          "Frame 26086736",
-          "体重登録-入力画面"
-        ]
+        "nearbyNodeIds": ["9525:4889", "9525:4883", "9525:4760"],
+        "nearbyNodeNames": ["次 →", "Frame 26086736", "体重登録-入力画面"]
       },
       {
         "id": 49,
@@ -998,16 +608,8 @@
           "height": 7
         },
         "diffPixelCount": 12,
-        "nearbyNodeIds": [
-          "9547:4918",
-          "9547:4920",
-          "9547:4921"
-        ],
-        "nearbyNodeNames": [
-          "467kg",
-          "Frame 26086742",
-          "Frame 26086743"
-        ]
+        "nearbyNodeIds": ["9547:4918", "9547:4920", "9547:4921"],
+        "nearbyNodeNames": ["467kg", "Frame 26086742", "Frame 26086743"]
       },
       {
         "id": 50,
@@ -1018,16 +620,8 @@
           "height": 6
         },
         "diffPixelCount": 19,
-        "nearbyNodeIds": [
-          "9547:4918",
-          "9547:4920",
-          "9547:4921"
-        ],
-        "nearbyNodeNames": [
-          "467kg",
-          "Frame 26086742",
-          "Frame 26086743"
-        ]
+        "nearbyNodeIds": ["9547:4918", "9547:4920", "9547:4921"],
+        "nearbyNodeNames": ["467kg", "Frame 26086742", "Frame 26086743"]
       },
       {
         "id": 51,
@@ -1038,16 +632,8 @@
           "height": 5
         },
         "diffPixelCount": 12,
-        "nearbyNodeIds": [
-          "9547:4918",
-          "9547:4920",
-          "9547:4921"
-        ],
-        "nearbyNodeNames": [
-          "467kg",
-          "Frame 26086742",
-          "Frame 26086743"
-        ]
+        "nearbyNodeIds": ["9547:4918", "9547:4920", "9547:4921"],
+        "nearbyNodeNames": ["467kg", "Frame 26086742", "Frame 26086743"]
       },
       {
         "id": 52,
@@ -1058,16 +644,8 @@
           "height": 7
         },
         "diffPixelCount": 12,
-        "nearbyNodeIds": [
-          "9547:4928",
-          "9547:4926",
-          "9547:4922"
-        ],
-        "nearbyNodeNames": [
-          "467kg",
-          "Frame 26086742",
-          "Frame 26086744"
-        ]
+        "nearbyNodeIds": ["9547:4928", "9547:4926", "9547:4922"],
+        "nearbyNodeNames": ["467kg", "Frame 26086742", "Frame 26086744"]
       },
       {
         "id": 53,
@@ -1078,16 +656,8 @@
           "height": 6
         },
         "diffPixelCount": 19,
-        "nearbyNodeIds": [
-          "9547:4928",
-          "9547:4926",
-          "9547:4922"
-        ],
-        "nearbyNodeNames": [
-          "467kg",
-          "Frame 26086742",
-          "Frame 26086744"
-        ]
+        "nearbyNodeIds": ["9547:4928", "9547:4926", "9547:4922"],
+        "nearbyNodeNames": ["467kg", "Frame 26086742", "Frame 26086744"]
       },
       {
         "id": 54,
@@ -1098,16 +668,8 @@
           "height": 5
         },
         "diffPixelCount": 12,
-        "nearbyNodeIds": [
-          "9547:4928",
-          "9547:4926",
-          "9547:4922"
-        ],
-        "nearbyNodeNames": [
-          "467kg",
-          "Frame 26086742",
-          "Frame 26086744"
-        ]
+        "nearbyNodeIds": ["9547:4928", "9547:4926", "9547:4922"],
+        "nearbyNodeNames": ["467kg", "Frame 26086742", "Frame 26086744"]
       },
       {
         "id": 55,
@@ -1118,16 +680,8 @@
           "height": 7
         },
         "diffPixelCount": 12,
-        "nearbyNodeIds": [
-          "9547:4935",
-          "9547:4933",
-          "9547:4929"
-        ],
-        "nearbyNodeNames": [
-          "467kg",
-          "Frame 26086742",
-          "Frame 26086745"
-        ]
+        "nearbyNodeIds": ["9547:4935", "9547:4933", "9547:4929"],
+        "nearbyNodeNames": ["467kg", "Frame 26086742", "Frame 26086745"]
       },
       {
         "id": 56,
@@ -1138,16 +692,8 @@
           "height": 6
         },
         "diffPixelCount": 19,
-        "nearbyNodeIds": [
-          "9547:4935",
-          "9547:4933",
-          "9547:4929"
-        ],
-        "nearbyNodeNames": [
-          "467kg",
-          "Frame 26086742",
-          "Frame 26086745"
-        ]
+        "nearbyNodeIds": ["9547:4935", "9547:4933", "9547:4929"],
+        "nearbyNodeNames": ["467kg", "Frame 26086742", "Frame 26086745"]
       },
       {
         "id": 57,
@@ -1158,16 +704,8 @@
           "height": 5
         },
         "diffPixelCount": 12,
-        "nearbyNodeIds": [
-          "9547:4935",
-          "9547:4933",
-          "9547:4929"
-        ],
-        "nearbyNodeNames": [
-          "467kg",
-          "Frame 26086742",
-          "Frame 26086745"
-        ]
+        "nearbyNodeIds": ["9547:4935", "9547:4933", "9547:4929"],
+        "nearbyNodeNames": ["467kg", "Frame 26086742", "Frame 26086745"]
       },
       {
         "id": 58,
@@ -1178,16 +716,8 @@
           "height": 6
         },
         "diffPixelCount": 14,
-        "nearbyNodeIds": [
-          "9547:4918",
-          "9547:4920",
-          "9547:4921"
-        ],
-        "nearbyNodeNames": [
-          "467kg",
-          "Frame 26086742",
-          "Frame 26086743"
-        ]
+        "nearbyNodeIds": ["9547:4918", "9547:4920", "9547:4921"],
+        "nearbyNodeNames": ["467kg", "Frame 26086742", "Frame 26086743"]
       },
       {
         "id": 59,
@@ -1198,16 +728,8 @@
           "height": 6
         },
         "diffPixelCount": 14,
-        "nearbyNodeIds": [
-          "9547:4928",
-          "9547:4926",
-          "9547:4922"
-        ],
-        "nearbyNodeNames": [
-          "467kg",
-          "Frame 26086742",
-          "Frame 26086744"
-        ]
+        "nearbyNodeIds": ["9547:4928", "9547:4926", "9547:4922"],
+        "nearbyNodeNames": ["467kg", "Frame 26086742", "Frame 26086744"]
       },
       {
         "id": 60,
@@ -1218,16 +740,8 @@
           "height": 6
         },
         "diffPixelCount": 14,
-        "nearbyNodeIds": [
-          "9547:4935",
-          "9547:4933",
-          "9547:4929"
-        ],
-        "nearbyNodeNames": [
-          "467kg",
-          "Frame 26086742",
-          "Frame 26086745"
-        ]
+        "nearbyNodeIds": ["9547:4935", "9547:4933", "9547:4929"],
+        "nearbyNodeNames": ["467kg", "Frame 26086742", "Frame 26086745"]
       },
       {
         "id": 61,
@@ -1238,14 +752,8 @@
           "height": 11
         },
         "diffPixelCount": 58,
-        "nearbyNodeIds": [
-          "9525:4783",
-          "9525:4760"
-        ],
-        "nearbyNodeNames": [
-          "マイクを押しながら体重を読み上げる",
-          "体重登録-入力画面"
-        ]
+        "nearbyNodeIds": ["9525:4783", "9525:4760"],
+        "nearbyNodeNames": ["マイクを押しながら体重を読み上げる", "体重登録-入力画面"]
       },
       {
         "id": 62,
@@ -1256,14 +764,8 @@
           "height": 11
         },
         "diffPixelCount": 80,
-        "nearbyNodeIds": [
-          "9525:4783",
-          "9525:4760"
-        ],
-        "nearbyNodeNames": [
-          "マイクを押しながら体重を読み上げる",
-          "体重登録-入力画面"
-        ]
+        "nearbyNodeIds": ["9525:4783", "9525:4760"],
+        "nearbyNodeNames": ["マイクを押しながら体重を読み上げる", "体重登録-入力画面"]
       },
       {
         "id": 63,
@@ -1274,14 +776,8 @@
           "height": 11
         },
         "diffPixelCount": 82,
-        "nearbyNodeIds": [
-          "9525:4783",
-          "9525:4760"
-        ],
-        "nearbyNodeNames": [
-          "マイクを押しながら体重を読み上げる",
-          "体重登録-入力画面"
-        ]
+        "nearbyNodeIds": ["9525:4783", "9525:4760"],
+        "nearbyNodeNames": ["マイクを押しながら体重を読み上げる", "体重登録-入力画面"]
       },
       {
         "id": 64,
@@ -1292,14 +788,8 @@
           "height": 10
         },
         "diffPixelCount": 10,
-        "nearbyNodeIds": [
-          "9525:4783",
-          "9525:4760"
-        ],
-        "nearbyNodeNames": [
-          "マイクを押しながら体重を読み上げる",
-          "体重登録-入力画面"
-        ]
+        "nearbyNodeIds": ["9525:4783", "9525:4760"],
+        "nearbyNodeNames": ["マイクを押しながら体重を読み上げる", "体重登録-入力画面"]
       },
       {
         "id": 65,
@@ -1310,14 +800,8 @@
           "height": 9
         },
         "diffPixelCount": 32,
-        "nearbyNodeIds": [
-          "9525:4783",
-          "9525:4760"
-        ],
-        "nearbyNodeNames": [
-          "マイクを押しながら体重を読み上げる",
-          "体重登録-入力画面"
-        ]
+        "nearbyNodeIds": ["9525:4783", "9525:4760"],
+        "nearbyNodeNames": ["マイクを押しながら体重を読み上げる", "体重登録-入力画面"]
       },
       {
         "id": 66,
@@ -1328,14 +812,8 @@
           "height": 9
         },
         "diffPixelCount": 28,
-        "nearbyNodeIds": [
-          "9525:4783",
-          "9525:4760"
-        ],
-        "nearbyNodeNames": [
-          "マイクを押しながら体重を読み上げる",
-          "体重登録-入力画面"
-        ]
+        "nearbyNodeIds": ["9525:4783", "9525:4760"],
+        "nearbyNodeNames": ["マイクを押しながら体重を読み上げる", "体重登録-入力画面"]
       },
       {
         "id": 67,
@@ -1346,14 +824,8 @@
           "height": 7
         },
         "diffPixelCount": 18,
-        "nearbyNodeIds": [
-          "9525:4783",
-          "9525:4760"
-        ],
-        "nearbyNodeNames": [
-          "マイクを押しながら体重を読み上げる",
-          "体重登録-入力画面"
-        ]
+        "nearbyNodeIds": ["9525:4783", "9525:4760"],
+        "nearbyNodeNames": ["マイクを押しながら体重を読み上げる", "体重登録-入力画面"]
       },
       {
         "id": 68,
@@ -1364,14 +836,8 @@
           "height": 9
         },
         "diffPixelCount": 28,
-        "nearbyNodeIds": [
-          "9525:4783",
-          "9525:4760"
-        ],
-        "nearbyNodeNames": [
-          "マイクを押しながら体重を読み上げる",
-          "体重登録-入力画面"
-        ]
+        "nearbyNodeIds": ["9525:4783", "9525:4760"],
+        "nearbyNodeNames": ["マイクを押しながら体重を読み上げる", "体重登録-入力画面"]
       },
       {
         "id": 69,
@@ -1382,14 +848,8 @@
           "height": 4
         },
         "diffPixelCount": 11,
-        "nearbyNodeIds": [
-          "9525:4783",
-          "9525:4760"
-        ],
-        "nearbyNodeNames": [
-          "マイクを押しながら体重を読み上げる",
-          "体重登録-入力画面"
-        ]
+        "nearbyNodeIds": ["9525:4783", "9525:4760"],
+        "nearbyNodeNames": ["マイクを押しながら体重を読み上げる", "体重登録-入力画面"]
       },
       {
         "id": 70,
@@ -1400,14 +860,8 @@
           "height": 5
         },
         "diffPixelCount": 11,
-        "nearbyNodeIds": [
-          "9525:4783",
-          "9525:4760"
-        ],
-        "nearbyNodeNames": [
-          "マイクを押しながら体重を読み上げる",
-          "体重登録-入力画面"
-        ]
+        "nearbyNodeIds": ["9525:4783", "9525:4760"],
+        "nearbyNodeNames": ["マイクを押しながら体重を読み上げる", "体重登録-入力画面"]
       },
       {
         "id": 71,
@@ -1418,14 +872,8 @@
           "height": 3
         },
         "diffPixelCount": 12,
-        "nearbyNodeIds": [
-          "9525:4783",
-          "9525:4760"
-        ],
-        "nearbyNodeNames": [
-          "マイクを押しながら体重を読み上げる",
-          "体重登録-入力画面"
-        ]
+        "nearbyNodeIds": ["9525:4783", "9525:4760"],
+        "nearbyNodeNames": ["マイクを押しながら体重を読み上げる", "体重登録-入力画面"]
       },
       {
         "id": 72,
@@ -1436,16 +884,8 @@
           "height": 12
         },
         "diffPixelCount": 22,
-        "nearbyNodeIds": [
-          "9525:4903",
-          "9525:4901",
-          "9525:4760"
-        ],
-        "nearbyNodeNames": [
-          "Vector",
-          "Frame 26086739",
-          "体重登録-入力画面"
-        ]
+        "nearbyNodeIds": ["9525:4903", "9525:4901", "9525:4760"],
+        "nearbyNodeNames": ["Vector", "Frame 26086739", "体重登録-入力画面"]
       },
       {
         "id": 73,
@@ -1456,16 +896,8 @@
           "height": 12
         },
         "diffPixelCount": 22,
-        "nearbyNodeIds": [
-          "9525:4898",
-          "9525:4895",
-          "9525:4760"
-        ],
-        "nearbyNodeNames": [
-          "Vector",
-          "Frame 26086735",
-          "体重登録-入力画面"
-        ]
+        "nearbyNodeIds": ["9525:4898", "9525:4895", "9525:4760"],
+        "nearbyNodeNames": ["Vector", "Frame 26086735", "体重登録-入力画面"]
       },
       {
         "id": 74,
@@ -1476,16 +908,8 @@
           "height": 9
         },
         "diffPixelCount": 53,
-        "nearbyNodeIds": [
-          "9525:4902",
-          "9525:4901",
-          "9525:4760"
-        ],
-        "nearbyNodeNames": [
-          "前の馬",
-          "Frame 26086739",
-          "体重登録-入力画面"
-        ]
+        "nearbyNodeIds": ["9525:4902", "9525:4901", "9525:4760"],
+        "nearbyNodeNames": ["前の馬", "Frame 26086739", "体重登録-入力画面"]
       },
       {
         "id": 75,
@@ -1496,16 +920,8 @@
           "height": 9
         },
         "diffPixelCount": 52,
-        "nearbyNodeIds": [
-          "9525:4902",
-          "9525:4901",
-          "9525:4760"
-        ],
-        "nearbyNodeNames": [
-          "前の馬",
-          "Frame 26086739",
-          "体重登録-入力画面"
-        ]
+        "nearbyNodeIds": ["9525:4902", "9525:4901", "9525:4760"],
+        "nearbyNodeNames": ["前の馬", "Frame 26086739", "体重登録-入力画面"]
       },
       {
         "id": 76,
@@ -1516,16 +932,8 @@
           "height": 9
         },
         "diffPixelCount": 53,
-        "nearbyNodeIds": [
-          "9525:4896",
-          "9525:4895",
-          "9525:4760"
-        ],
-        "nearbyNodeNames": [
-          "次の馬",
-          "Frame 26086735",
-          "体重登録-入力画面"
-        ]
+        "nearbyNodeIds": ["9525:4896", "9525:4895", "9525:4760"],
+        "nearbyNodeNames": ["次の馬", "Frame 26086735", "体重登録-入力画面"]
       },
       {
         "id": 77,
@@ -1536,16 +944,8 @@
           "height": 6
         },
         "diffPixelCount": 21,
-        "nearbyNodeIds": [
-          "9525:4902",
-          "9525:4901",
-          "9525:4760"
-        ],
-        "nearbyNodeNames": [
-          "前の馬",
-          "Frame 26086739",
-          "体重登録-入力画面"
-        ]
+        "nearbyNodeIds": ["9525:4902", "9525:4901", "9525:4760"],
+        "nearbyNodeNames": ["前の馬", "Frame 26086739", "体重登録-入力画面"]
       },
       {
         "id": 78,
@@ -1556,16 +956,8 @@
           "height": 7
         },
         "diffPixelCount": 24,
-        "nearbyNodeIds": [
-          "9525:4896",
-          "9525:4895",
-          "9525:4760"
-        ],
-        "nearbyNodeNames": [
-          "次の馬",
-          "Frame 26086735",
-          "体重登録-入力画面"
-        ]
+        "nearbyNodeIds": ["9525:4896", "9525:4895", "9525:4760"],
+        "nearbyNodeNames": ["次の馬", "Frame 26086735", "体重登録-入力画面"]
       },
       {
         "id": 79,
@@ -1576,16 +968,8 @@
           "height": 6
         },
         "diffPixelCount": 20,
-        "nearbyNodeIds": [
-          "9525:4896",
-          "9525:4895",
-          "9525:4760"
-        ],
-        "nearbyNodeNames": [
-          "次の馬",
-          "Frame 26086735",
-          "体重登録-入力画面"
-        ]
+        "nearbyNodeIds": ["9525:4896", "9525:4895", "9525:4760"],
+        "nearbyNodeNames": ["次の馬", "Frame 26086735", "体重登録-入力画面"]
       },
       {
         "id": 80,
@@ -1596,16 +980,8 @@
           "height": 36
         },
         "diffPixelCount": 564,
-        "nearbyNodeIds": [
-          "9525:4782",
-          "9525:4780",
-          "9525:4779"
-        ],
-        "nearbyNodeNames": [
-          "Vector",
-          "Group",
-          "マイクのアイコンその10 1"
-        ]
+        "nearbyNodeIds": ["9525:4782", "9525:4780", "9525:4779"],
+        "nearbyNodeNames": ["Vector", "Group", "マイクのアイコンその10 1"]
       },
       {
         "id": 81,
@@ -1616,16 +992,8 @@
           "height": 33
         },
         "diffPixelCount": 231,
-        "nearbyNodeIds": [
-          "9525:4781",
-          "9525:4780",
-          "9525:4779"
-        ],
-        "nearbyNodeNames": [
-          "Vector",
-          "Group",
-          "マイクのアイコンその10 1"
-        ]
+        "nearbyNodeIds": ["9525:4781", "9525:4780", "9525:4779"],
+        "nearbyNodeNames": ["Vector", "Group", "マイクのアイコンその10 1"]
       },
       {
         "id": 82,
@@ -1636,16 +1004,8 @@
           "height": 15
         },
         "diffPixelCount": 57,
-        "nearbyNodeIds": [
-          "9525:4773",
-          "9525:4771",
-          "9525:4770"
-        ],
-        "nearbyNodeNames": [
-          "Vector",
-          "Vector",
-          "Group"
-        ]
+        "nearbyNodeIds": ["9525:4773", "9525:4771", "9525:4770"],
+        "nearbyNodeNames": ["Vector", "Vector", "Group"]
       },
       {
         "id": 83,
@@ -1656,16 +1016,8 @@
           "height": 2
         },
         "diffPixelCount": 26,
-        "nearbyNodeIds": [
-          "9547:5139",
-          "9547:5137",
-          "9525:4775"
-        ],
-        "nearbyNodeNames": [
-          "Vector",
-          "solar:keyboard-outline",
-          "手書きボタン"
-        ]
+        "nearbyNodeIds": ["9547:5139", "9547:5137", "9525:4775"],
+        "nearbyNodeNames": ["Vector", "solar:keyboard-outline", "手書きボタン"]
       },
       {
         "id": 84,
@@ -1676,16 +1028,8 @@
           "height": 6
         },
         "diffPixelCount": 13,
-        "nearbyNodeIds": [
-          "9525:4771",
-          "9525:4770",
-          "9525:4769"
-        ],
-        "nearbyNodeNames": [
-          "Vector",
-          "Group",
-          "履歴ボタン"
-        ]
+        "nearbyNodeIds": ["9525:4771", "9525:4770", "9525:4769"],
+        "nearbyNodeNames": ["Vector", "Group", "履歴ボタン"]
       },
       {
         "id": 85,
@@ -1696,16 +1040,8 @@
           "height": 7
         },
         "diffPixelCount": 14,
-        "nearbyNodeIds": [
-          "9547:5139",
-          "9547:5137",
-          "9525:4775"
-        ],
-        "nearbyNodeNames": [
-          "Vector",
-          "solar:keyboard-outline",
-          "手書きボタン"
-        ]
+        "nearbyNodeIds": ["9547:5139", "9547:5137", "9525:4775"],
+        "nearbyNodeNames": ["Vector", "solar:keyboard-outline", "手書きボタン"]
       },
       {
         "id": 86,
@@ -1716,16 +1052,8 @@
           "height": 7
         },
         "diffPixelCount": 14,
-        "nearbyNodeIds": [
-          "9547:5139",
-          "9547:5137",
-          "9525:4775"
-        ],
-        "nearbyNodeNames": [
-          "Vector",
-          "solar:keyboard-outline",
-          "手書きボタン"
-        ]
+        "nearbyNodeIds": ["9547:5139", "9547:5137", "9525:4775"],
+        "nearbyNodeNames": ["Vector", "solar:keyboard-outline", "手書きボタン"]
       },
       {
         "id": 87,
@@ -1736,16 +1064,8 @@
           "height": 2
         },
         "diffPixelCount": 20,
-        "nearbyNodeIds": [
-          "9547:5139",
-          "9547:5137",
-          "9525:4775"
-        ],
-        "nearbyNodeNames": [
-          "Vector",
-          "solar:keyboard-outline",
-          "手書きボタン"
-        ]
+        "nearbyNodeIds": ["9547:5139", "9547:5137", "9525:4775"],
+        "nearbyNodeNames": ["Vector", "solar:keyboard-outline", "手書きボタン"]
       },
       {
         "id": 88,
@@ -1756,16 +1076,8 @@
           "height": 3
         },
         "diffPixelCount": 12,
-        "nearbyNodeIds": [
-          "9525:4771",
-          "9525:4770",
-          "9525:4769"
-        ],
-        "nearbyNodeNames": [
-          "Vector",
-          "Group",
-          "履歴ボタン"
-        ]
+        "nearbyNodeIds": ["9525:4771", "9525:4770", "9525:4769"],
+        "nearbyNodeNames": ["Vector", "Group", "履歴ボタン"]
       },
       {
         "id": 89,
@@ -1776,16 +1088,8 @@
           "height": 2
         },
         "diffPixelCount": 26,
-        "nearbyNodeIds": [
-          "9547:5139",
-          "9547:5137",
-          "9525:4775"
-        ],
-        "nearbyNodeNames": [
-          "Vector",
-          "solar:keyboard-outline",
-          "手書きボタン"
-        ]
+        "nearbyNodeIds": ["9547:5139", "9547:5137", "9525:4775"],
+        "nearbyNodeNames": ["Vector", "solar:keyboard-outline", "手書きボタン"]
       }
     ],
     "completionCriteria": {
@@ -2406,11 +1710,7 @@
           "pixelRatio": 1,
           "source": "figma-export-request"
         },
-        "unverified": [
-          "viewport",
-          "pixelRatio",
-          "origin"
-        ]
+        "unverified": ["viewport", "pixelRatio", "origin"]
       },
       "screenshot": {
         "canvas": {
@@ -2418,11 +1718,7 @@
           "height": 844
         },
         "canvasSource": "image-metadata",
-        "unverified": [
-          "viewport",
-          "pixelRatio",
-          "origin"
-        ]
+        "unverified": ["viewport", "pixelRatio", "origin"]
       },
       "differences": [],
       "message": "表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。"

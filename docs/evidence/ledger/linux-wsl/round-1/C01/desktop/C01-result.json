@@ -2,12 +2,8 @@
   "case": "C01",
   "route": "desktop",
   "platform": "linux-wsl",
-  "drivers": [
-    "app/desktop/e2e/desktop-c-cases.mjs"
-  ],
-  "checks": [
-    "C01"
-  ],
+  "drivers": ["app/desktop/e2e/desktop-c-cases.mjs"],
+  "checks": ["C01"],
   "actual": {
     "desktop-c-cases:C01": {
       "matchRate": 100,

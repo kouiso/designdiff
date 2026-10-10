@@ -2,12 +2,8 @@
   "case": "C12",
   "route": "desktop",
   "platform": "macos",
-  "drivers": [
-    "app/desktop/e2e/desktop-c-cases.mjs"
-  ],
-  "checks": [
-    "C12"
-  ],
+  "drivers": ["app/desktop/e2e/desktop-c-cases.mjs"],
+  "checks": ["C12"],
   "actual": {
     "desktop-c-cases:C12": {
       "onePixel": {
@@ -15,9 +11,7 @@
         "diffRegions": 0,
         "diffPixels": 1,
         "issues": 1,
-        "bboxes": [
-          "x:0, y:0, w:1, h:1"
-        ],
+        "bboxes": ["x:0, y:0, w:1, h:1"],
         "issueKinds": [
           "top-left",
           "top-center",

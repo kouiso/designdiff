@@ -2,12 +2,8 @@
   "case": "D10",
   "route": "desktop",
   "platform": "windows",
-  "drivers": [
-    "app/desktop/e2e/desktop-d-cases.mjs"
-  ],
-  "checks": [
-    "D10"
-  ],
+  "drivers": ["app/desktop/e2e/desktop-d-cases.mjs"],
+  "checks": ["D10"],
   "actual": {
     "desktop-d-cases:D10": {
       "keyboardSubmit": "frame list appeared via hero input (node 7:30)",

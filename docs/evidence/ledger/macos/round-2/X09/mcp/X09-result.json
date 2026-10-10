@@ -6,10 +6,7 @@
     "app/mcp-server/script/stdio-campaign-verification.mjs",
     "app/mcp-server/script/stdio-campaign-verification2.mjs"
   ],
-  "checks": [
-    "X09_legacy_data",
-    "X09_mcp_desktop_interop"
-  ],
+  "checks": ["X09_legacy_data", "X09_mcp_desktop_interop"],
   "actual": {
     "stdio-campaign-verification:X09_legacy_data": {
       "listed": true,

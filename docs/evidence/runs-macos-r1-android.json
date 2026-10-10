@@ -7,9 +7,7 @@
     {
       "driver": "app/mcp-server/script/stdio-android-verification.mjs",
       "passEvidenceVia": "argv2",
-      "requires": [
-        "android-devices"
-      ],
+      "requires": ["android-devices"],
       "note": "X05の複数台拒否は2台以上見える環境でのみ検証",
       "evidenceDir": "docs/evidence/round1-macos/stdio-android-verification"
     }

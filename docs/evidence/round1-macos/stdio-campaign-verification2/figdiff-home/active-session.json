@@ -1,1 +1,10 @@
-{"comparisonId":"cmp-4e4d9c53-166f-4c84-a386-1d452be25c3b","sourceKey":"campaign:v1:[\"local:/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/input-design.png\",\"m15\"]","implementationUrl":"http://127.0.0.1:64883/page.html","designSource":"/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/input-design.png","designImagePath":"/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/input-design.png","matchRate":99.14,"status":"UNCERTAIN","updatedAt":1790255284404}
+{
+  "comparisonId": "cmp-4e4d9c53-166f-4c84-a386-1d452be25c3b",
+  "sourceKey": "campaign:v1:[\"local:/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/input-design.png\",\"m15\"]",
+  "implementationUrl": "http://127.0.0.1:64883/page.html",
+  "designSource": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/input-design.png",
+  "designImagePath": "/Users/devin/repos/designdiff/docs/evidence/round1-macos/stdio-campaign-verification2/input-design.png",
+  "matchRate": 99.14,
+  "status": "UNCERTAIN",
+  "updatedAt": 1790255284404
+}

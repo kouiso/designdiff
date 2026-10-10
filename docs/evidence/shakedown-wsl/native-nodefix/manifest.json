@@ -40,11 +40,7 @@
   ],
   "command": "FIGDIFF_FIGMA_NODE_FIX_EVIDENCE=<private-evidence> xvfb-run -a node app/desktop/e2e/native-figma-node-fix.mjs",
   "build": {
-    "roots": [
-      "app/desktop/dist",
-      "package/shared/dist",
-      "package/credential-store/dist"
-    ],
+    "roots": ["app/desktop/dist", "package/shared/dist", "package/credential-store/dist"],
     "identityFiles": [
       "pnpm-lock.yaml",
       "package.json",

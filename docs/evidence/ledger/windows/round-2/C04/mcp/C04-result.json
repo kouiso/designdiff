@@ -2,12 +2,8 @@
   "case": "C04",
   "route": "mcp",
   "platform": "windows",
-  "drivers": [
-    "app/mcp-server/script/stdio-campaign-verification.mjs"
-  ],
-  "checks": [
-    "C04_dpr"
-  ],
+  "drivers": ["app/mcp-server/script/stdio-campaign-verification.mjs"],
+  "checks": ["C04_dpr"],
   "actual": {
     "stdio-campaign-verification:C04_dpr": [
       {
