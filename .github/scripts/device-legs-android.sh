@@ -92,11 +92,19 @@ height="${dims##*x}"
 (
   # ANR ダイアログのウィンドウタイトルは "<pkg> isn't responding" で、
   # CLOSE_SYSTEM_DIALOGS broadcast も Back キーも消せない (cancelable=false;
-  # TCG macos ホストで実測)。検出したら "Wait" 行の座標をタップして閉じる。
+  # TCG macos ホストで実測)。ダイアログの y 位置は背面アプリで変わるので、
+  # uiautomator dump で "Wait" ボタンの正確な bounds を取ってタップする。
   while :; do
     if adb shell dumpsys window 2>/dev/null | grep -qi "responding"; then
-      if is_uint "$width" && is_uint "$height"; then
-        adb shell input tap "$((width / 2))" "$((height * 695 / 1000))" >/dev/null 2>&1
+      if adb shell uiautomator dump /sdcard/anr-ui.xml >/dev/null 2>&1; then
+        wait_bounds="$(adb shell cat /sdcard/anr-ui.xml 2>/dev/null \
+          | grep -o 'text="Wait"[^>]*bounds="\[[0-9]*,[0-9]*\]\[[0-9]*,[0-9]*\]"' \
+          | head -1 \
+          | sed 's/.*bounds="\[\([0-9]*\),\([0-9]*\)\]\[\([0-9]*\),\([0-9]*\)\]"/\1 \2 \3 \4/')"
+        set -- $wait_bounds
+        if [ -n "${1:-}" ] && [ -n "${3:-}" ]; then
+          adb shell input tap "$((($1 + $3) / 2))" "$((($2 + $4) / 2))" >/dev/null 2>&1
+        fi
       fi
       sleep 1
     fi
