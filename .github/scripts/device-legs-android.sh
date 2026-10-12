@@ -49,21 +49,11 @@ adb devices -l
 # ウォッチャをバックグラウンドで回す。
 adb shell settings put global hide_error_dialogs 1 >/dev/null 2>&1 || true
 adb shell settings put global show_first_crash_dialog 0 >/dev/null 2>&1 || true
-(
-  # CLOSE_SYSTEM_DIALOGS は AppErrorDialog (ANR ダイアログ) を閉じない
-  # (TCG macos ホストで実測: broadcast 中も "System UI isn't responding" が
-  # 残存して swipe を遮った)。ウィンドウ列挙で "Not Responding" を検出して
-  # Back を投げる — AppErrorDialog は cancelable なので確実に消える。
-  while :; do
-    if adb shell dumpsys window 2>/dev/null | grep -qi "Application Not Responding"; then
-      adb shell input keyevent 4 >/dev/null 2>&1
-    fi
-    adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS >/dev/null 2>&1
-    sleep 4
-  done
-) &
-anr_watcher_pid=$!
-trap 'kill $anr_watcher_pid 2>/dev/null || true' EXIT
+# AppErrorDialog (ANR ダイアログ) 自体を抑止する設定。効かない個体に備えて
+# 下のウォッチャで残存分を消す。
+adb shell settings put global anr_show_dialog 0 >/dev/null 2>&1 || true
+adb shell settings put global anr_show_background 0 >/dev/null 2>&1 || true
+anr_watcher_pid=""
 
 # 画面が消灯・ロック中だと screencap は単色になり swipe も届かない。起こして
 # ロックを外し、どの window が前面かを証跡に残す (macOS ホストで単色画面を実測)。
@@ -98,6 +88,24 @@ size="$(adb shell wm size 2>/dev/null | tr -d '\r' | grep -E '^Physical size:' |
 dims="${size#*:}"
 width="${dims%%x*}"
 height="${dims##*x}"
+
+(
+  # ANR ダイアログのウィンドウタイトルは "<pkg> isn't responding" で、
+  # CLOSE_SYSTEM_DIALOGS broadcast も Back キーも消せない (cancelable=false;
+  # TCG macos ホストで実測)。検出したら "Wait" 行の座標をタップして閉じる。
+  while :; do
+    if adb shell dumpsys window 2>/dev/null | grep -qi "responding"; then
+      if is_uint "$width" && is_uint "$height"; then
+        adb shell input tap "$((width / 2))" "$((height * 695 / 1000))" >/dev/null 2>&1
+      fi
+      sleep 1
+    fi
+    adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS >/dev/null 2>&1
+    sleep 4
+  done
+) &
+anr_watcher_pid=$!
+trap 'kill $anr_watcher_pid 2>/dev/null || true' EXIT
 
 # X07 は Chrome で長いページを開く。fresh AVD の Chrome は初回に利用規約画面
 # ("Welcome to Chrome") を出して URL を描画せず、swipe も効かない
