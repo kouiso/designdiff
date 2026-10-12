@@ -9,6 +9,8 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { _electron as electron, expect } from "playwright/test";
 import sharp from "sharp";
 
+import { manifestRunCommand } from "./platform-manifest.mjs";
+
 const directory = dirname(fileURLToPath(import.meta.url));
 const repository = resolve(directory, "../../..");
 const require = createRequire(import.meta.url);
@@ -440,8 +442,11 @@ try {
         completedAt: new Date().toISOString(),
         revision,
         dirtyState,
-        command:
-          "FIGDIFF_ISSUE_REPORT_EVIDENCE=<evidence> xvfb-run -a node app/desktop/e2e/native-issue-report.mjs",
+        command: manifestRunCommand(
+          "FIGDIFF_ISSUE_REPORT_EVIDENCE",
+          "app/desktop/e2e/native-issue-report.mjs",
+          "<evidence>",
+        ),
         build: buildAtStart,
         buildEndSha256: buildAtEnd.sha256,
         buildUnchanged,

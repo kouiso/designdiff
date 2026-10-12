@@ -9,6 +9,8 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { _electron as electron, expect } from "playwright/test";
 import sharp from "sharp";
 
+import { manifestDialogLabel, manifestRunCommand } from "./platform-manifest.mjs";
+
 const directory = dirname(fileURLToPath(import.meta.url));
 const repository = resolve(directory, "../../..");
 const require = createRequire(import.meta.url);
@@ -532,20 +534,13 @@ x.XSync(d, 0)
       sha256: sha256(await readFile(path)),
     })),
   );
-  // manifest には再現用の起動コマンドと実ダイアログの toolkit 名を書く。
-  // xvfb-run は linux の無画面環境だけで runner が挟むもの
-  // (script/run-campaign-round.mjs)。xvfb-run は子にも DISPLAY を配るので
-  // driver 側では runner の marker FIGDIFF_VIA_XVFB で判定する。
-  const runCommand = isWin32
-    ? '$env:FIGDIFF_REPORT_EVIDENCE="<evidence>"; node app/desktop/e2e/native-report-export.mjs'
-    : process.platform === "linux" && process.env.FIGDIFF_VIA_XVFB === "1"
-      ? "FIGDIFF_REPORT_EVIDENCE=<evidence> xvfb-run -a node app/desktop/e2e/native-report-export.mjs"
-      : "FIGDIFF_REPORT_EVIDENCE=<evidence> node app/desktop/e2e/native-report-export.mjs";
-  const dialogLabel = isWin32
-    ? "実Win32保存ダイアログ"
-    : isDarwin
-      ? "実NSSavePanel"
-      : "実Gtk保存ダイアログ";
+  // manifest の起動コマンド・ダイアログ名は実際の実行 OS・xvfb marker に
+  // 一致させる。判定ロジックは platform-manifest.mjs に集約。
+  const runCommand = manifestRunCommand(
+    "FIGDIFF_REPORT_EVIDENCE",
+    "app/desktop/e2e/native-report-export.mjs",
+  );
+  const dialogLabel = manifestDialogLabel();
   await writeFile(
     join(evidence, "manifest.json"),
     `${JSON.stringify(
