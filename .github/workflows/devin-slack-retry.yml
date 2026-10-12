@@ -12,5 +12,9 @@ on:
 jobs:
   retry-devin:
     name: Retry pending Devin triggers
-    uses: kouiso/ritmo-devin/.github/workflows/devin-slack-retry-reusable.yml@devin/1791769900-devin-slack-retry-reusable
+    # 起動トリガのラベルは `devin`。無関係なラベル付与では走らせない
+    if: github.event_name != 'issues' || github.event.label.name == 'devin'
+    # 可変ブランチ参照に secrets を渡すと参照先更新で漏洩し得るため不変 SHA で固定。
+    # 中央実装 PR#14 の HEAD。main マージ後に @main へ切替える
+    uses: kouiso/ritmo-devin/.github/workflows/devin-slack-retry-reusable.yml@3bb10481528a5383dbc27a3dd9706f6ff98edde7
     secrets: inherit
