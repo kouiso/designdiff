@@ -8,14 +8,14 @@
    "executionId": "round1",
    "productSha": "4e9145e5e051d4efe78a922723f7b3245005a05e",
    "startedAt": "2026-09-19T04:42:25.440Z",
-   "finishedAt": "2026-10-10T23:59:59.000Z"
+   "finishedAt": "2026-10-12T23:59:59.000Z"
   },
   {
    "round": 2,
    "executionId": "round2",
    "productSha": "4e9145e5e051d4efe78a922723f7b3245005a05e",
    "startedAt": "2026-09-19T04:42:44.837Z",
-   "finishedAt": "2026-10-10T23:59:59.000Z"
+   "finishedAt": "2026-10-12T23:59:59.000Z"
   }
  ],
  "runs": [
@@ -13845,18 +13845,18 @@
    "platform": "macos",
    "route": "android",
    "roundExecutionId": "round1",
-   "executedAt": "2026-10-10T07:08:48.000Z",
+   "executedAt": "2026-10-12T04:30:18.537000Z",
    "productSha": "4e9145e5e051d4efe78a922723f7b3245005a05e",
    "dirty": false,
    "status": "PASS",
    "newBugs": 0,
    "observedKnownDefects": [],
    "buildDigest": "da4a551faec001f09e6f00320613bef5c1fa93aeaf9ba31422822db0cd73cbb7",
-   "environment": "macos (Linux KVM box の Android エミュレータ emulator-5554 / Android 14 / sdk_gphone64_x86_64 で代替実施 — 物理要件を所有者指示でエミュレータ経路に許可 2026-10-10。この macOS VM は kern.hv_support=0 でエミュレータ不可のため KVM 子セッション devin-880dda390d2e478bb2cd5a6cca0a3bed で実行)",
+   "environment": "macos 15.7.9 (GitHub Actions macos-15-intel ランナー上の Android エミュレータ emulator-5554 / Android 11 api30 / sdk_gphone_x86_64 で代替実施 — 物理要件を所有者指示でエミュレータ経路に許可 2026-10-10。workflow run 38203317778、swiftshader/TCG 経路)",
    "input": "モバイルの長い画面・system UI mask・トースト (エミュレータ代替撮影)",
    "steps": "分割撮影・結合・除外 [drivers: app/mcp-server/script/stdio-android-verification.mjs]",
    "expected": "正規UIを隠さず、結合・除外の根拠を追跡できる",
-   "actual": "{\"stdio-android-verification:connectedDevices\": [{\"serial\": \"emulator-5554\", \"state\": \"device\", \"model\": \"sdk_gphone64_x86_64\"}], \"stdio-android-verification:deviceSelectionMode\": \"single-device\", \"stdio-android-verification:directCaptures\": {\"emulator-5554\": {\"width\": 1080, \"height\": 2400, \"model\": \"sdk_gphone64_x86_64\"}}, \"stdio-android-verification:X05_single_device_auto\": {\"isError\": false, \"note\": \"single-device environment: serial-less call must pick the only device\", \"text\": \"{\\n  \\\"status\\\": \\\"FAIL\\\",\\n  \\\"comparisonId\\\": \\\"cmp-a3bf8673-7ca2-424e-b929-5d5bcb42fd61\\\",\\n  \\\"matchRate\\\": 8.92,\\n  \\\"diffPixelCount\\\": 2219186,\\n  \\\"totalPixelCount\\\": 2436480,\\n  \\\"remainingIssues\\\": 1,\\n  \\\"diffRegions\\\": [],\\n  \\\"totalRegionCount\\\": 0,\\n  \\\"returnedRegionCount\\\": 0,\\n  \\\"regionsTruncated\\\": false,\\n  \\\"completionCriteria\\\": {\\n    \\\"structuralReview\\\": {\\n      \\\"required\\\": 1,\\n      \\\"current\\\": 0,\\n      \\\"status\\\": \\\"FAIL\\\",\\n      \\\"blocking\\\": true,\\n      \\\"note\\\": \\\"critical severity issue detected; weakest region whol\"}, \"stdio-android-verification:X05_device_captures\": {\"emulator-5554\": {\"kind\": \"emulator\", \"captured\": \"android-1791616102716-a201ece3-a545-4a98-8acc-ff0e5d48d16d.png\", \"width\": 1080, \"height\": 2400}}, \"stdio-android-verification:X05_bogus_serial\": {\"isError\": true, \"text\": \"Error: Android device no-such-serial-000 is not connected. Check adb devices -l.\"}, \"stdio-android-verification:scrollTarget\": {\"serial\": \"emulator-5554\", \"pageUrl\": \"http://10.0.2.2:8777/index.html\"}, \"stdio-android-verification:pageRenderWait\": {\"rendered\": true, \"attempts\": 1, \"coloredSamples\": 1597}, \"stdio-android-verification:X07_android_scroll\": {\"isError\": false, \"status\": \"PASS\", \"comparisonStatus\": \"UNCERTAIN\", \"scrollCapture\": {\"captureCount\": 5, \"stitchedWidth\": 1080, \"stitchedHeight\": 6521, \"viewportWidth\": 1080, \"viewportHeight\": 2400, \"fixedHeaderHeight\": 128, \"fixedFooterHeight\": 63, \"reachedBottom\": true, \"truncatedAtCaptureLimit\": false, \"didNotScroll\": false, \"startedAtTop\": true, \"notes\": [\"2 箇所で重なりの完全一致が取れず、行の平均輝度による近似で繋いでいます。繋ぎ目の位置がずれている可能性があります。\"]}, \"ignoreRegionResolution\": {\"effectiveRegions\": [{\"x\": 0, \"y\": 0, \"width\": 1080, \"height\": 72, \"label\": \"system:status-bar\"}, {\"x\": 0, \"y\": 6449, \"width\": 1080, \"height\": 72, \"label\": \"system:navigation-bar\"}], \"maskedPixelCount\": 155520, \"maskSha256\": \"21e4ad221f42799d6b3337de611538f2ce4ca09718e57a102c649fe77c82e3de\"}, \"textHead\": \"{\\n  \\\"status\\\": \\\"UNCERTAIN\\\",\\n  \\\"comparisonId\\\": \\\"cmp-d31cb77e-11be-4c76-ad11-813741470b74\\\",\\n  \\\"matchRate\\\": 4.19,\\n  \\\"diffPixelCount\\\": 6598853,\\n  \\\"totalPixelCount\\\": 6887160,\\n  \\\"remainingIssues\\\": 1,\\n  \\\"diffRegions\\\": [],\\n  \\\"totalRegionCount\\\": 0,\\n  \\\"returnedRegionCount\\\": 0,\\n  \\\"regionsTruncated\\\": false,\\n  \\\"completionCriteria\\\": {\\n    \\\"structuralReview\\\": {\\n      \\\"required\\\": 1,\\n      \\\"current\\\": 0,\\n      \\\"stat\"}}",
+   "actual": "{\"stdio-android-verification:connectedDevices\": [{\"serial\": \"emulator-5554\", \"state\": \"device\", \"model\": \"sdk_gphone_x86_64\"}], \"stdio-android-verification:deviceSelectionMode\": \"single-device\", \"stdio-android-verification:directCaptures\": {\"emulator-5554\": {\"width\": 320, \"height\": 640, \"model\": \"sdk_gphone_x86_64\"}}, \"stdio-android-verification:X05_single_device_auto\": {\"isError\": false, \"note\": \"single-device environment: serial-less call must pick the only device\", \"text\": \"{\\n  \\\"status\\\": \\\"UNCERTAIN\\\",\\n  \\\"comparisonId\\\": \\\"cmp-51b77889-3634-420e-be0f-78a9a121e616\\\",\\n  \\\"matchRate\\\": 11.62,\\n  \\\"diffPixelCount\\\": 158381,\\n  \\\"totalPixelCount\\\": 179200,\\n  \\\"remainingIssues\\\": 1,\\n  \\\"diffRegions\\\": [\\n    {\\n      \\\"id\\\": 0,\\n      \\\"bounds\\\": {\\n        \\\"x\\\": 0,\\n        \\\"y\\\": 48,\\n        \\\"width\\\": 320,\\n        \\\"height\\\": 560\\n      },\\n      \\\"diffPixelCount\\\": 158340,\\n      \\\"nearbyNodeIds\\\": [],\\n      \\\"nearbyNodeNames\\\": []\\n    }\\n  ],\\n  \\\"totalRegionCount\\\": 1,\\n  \\\"returnedRegionCount\\\": 1,\\n  \\\"regionsTru\"}, \"stdio-android-verification:X05_device_captures\": {\"emulator-5554\": {\"kind\": \"emulator\", \"captured\": \"android-1791779418537-dd15ce62-464d-4c7f-84ab-16a85cbcf54c.png\", \"width\": 320, \"height\": 640}}, \"stdio-android-verification:X05_bogus_serial\": {\"isError\": true, \"text\": \"Error: Android device no-such-serial-000 is not connected. Check adb devices -l.\"}, \"stdio-android-verification:scrollTarget\": {\"serial\": \"emulator-5554\", \"pageUrl\": \"http://10.0.2.2:49921/tall.html\"}, \"stdio-android-verification:pageRenderWait\": {\"rendered\": false, \"attempts\": 18}, \"stdio-android-verification:X07_android_scroll\": {\"isError\": false, \"status\": \"PASS\", \"comparisonStatus\": \"UNCERTAIN\", \"scrollCapture\": {\"captureCount\": 19, \"stitchedWidth\": 320, \"stitchedHeight\": 1907, \"viewportWidth\": 320, \"viewportHeight\": 640, \"fixedHeaderHeight\": 6, \"fixedFooterHeight\": 0, \"reachedBottom\": true, \"truncatedAtCaptureLimit\": false, \"didNotScroll\": false, \"startedAtTop\": true, \"notes\": [\"18 箇所で重なりの完全一致が取れず、行の平均輝度による近似で繋いでいます。繋ぎ目の位置がずれている可能性があります。\"]}, \"ignoreRegionResolution\": {\"effectiveRegions\": [{\"x\": 0, \"y\": 0, \"width\": 320, \"height\": 48, \"label\": \"system:status-bar\"}, {\"x\": 0, \"y\": 1875, \"width\": 320, \"height\": 32, \"label\": \"system:navigation-bar\"}], \"maskedPixelCount\": 25600, \"maskSha256\": \"4444528a32d296a74a0992d23661cf1a682098b91e0e3e7be7675622cd4e3411\"}, \"textHead\": \"{\\n  \\\"status\\\": \\\"UNCERTAIN\\\",\\n  \\\"comparisonId\\\": \\\"cmp-d0287e3f-3c80-4fe2-a1af-72d39a79e4b7\\\",\\n  \\\"matchRate\\\": 1.78,\\n  \\\"diffPixelCount\\\": 574226,\\n  \\\"totalPixelCount\\\": 584640,\\n  \\\"remainingIssues\\\": 14,\\n  \\\"diffRegions\\\": [\\n    {\\n      \\\"id\\\": 13,\\n      \\\"bounds\\\": {\\n        \\\"x\\\": 0,\\n        \\\"y\\\": 83,\\n        \\\"width\\\": 320,\\n        \\\"height\\\": 1792\\n      },\\n      \\\"diffPixelCount\\\": 573440,\\n      \\\"nearbyNodeIds\\\": [],\\n   \"}}",
    "oracle": {
     "kind": "source-pixels",
     "description": "adb exec-out screencap 直撮り(独立オラクル)と MCP 撮影の寸法一致、scroll 結合高さ>viewport・captureCount>=2"
@@ -13864,15 +13864,15 @@
    "evidence": [
     {
      "path": "ledger/macos/round-1/X07/android/stdio-android-verification-evidence.json",
-     "sha256": "f0da9dece56ed271ef4316220409896c56eba4859b4140b79aa4d69fa09b7c83"
+     "sha256": "8063522732ebecbd870b61ad1b62841ffb190f9c3a9570c0514bd8ac6524765f"
     },
     {
      "path": "ledger/macos/round-1/X07/android/X07-result.json",
-     "sha256": "54caeb9925835ed91b36cacbd2ef9f96f7781ba4c4ea9ff385ba0431fb2e1a9c"
+     "sha256": "11702c1d116864bda1e11f1461e738c590bc58f7062773337867436ed99724d6"
     },
     {
      "path": "ledger/macos/round-1/X07/android/adb-direct-emulator-5554.png",
-     "sha256": "d2d15bca5c96cc03bc17b8e181c562487c835bc216b3699bddfca4536c00ad2a"
+     "sha256": "ac5ca7672923470987504bd7955b8dd676c3c9d0fbb878d6e7cdfdd908d5fe7a"
     },
     {
      "path": "ledger/macos/round-1/X07/android/input-design.png",
@@ -13886,18 +13886,18 @@
    "platform": "macos",
    "route": "android",
    "roundExecutionId": "round2",
-   "executedAt": "2026-10-10T07:09:37.000Z",
+   "executedAt": "2026-10-12T04:34:50.587000Z",
    "productSha": "4e9145e5e051d4efe78a922723f7b3245005a05e",
    "dirty": false,
    "status": "PASS",
    "newBugs": 0,
    "observedKnownDefects": [],
    "buildDigest": "da4a551faec001f09e6f00320613bef5c1fa93aeaf9ba31422822db0cd73cbb7",
-   "environment": "macos (Linux KVM box の Android エミュレータ emulator-5554 / Android 14 / sdk_gphone64_x86_64 で代替実施 — 物理要件を所有者指示でエミュレータ経路に許可 2026-10-10。この macOS VM は kern.hv_support=0 でエミュレータ不可のため KVM 子セッション devin-880dda390d2e478bb2cd5a6cca0a3bed で実行)",
+   "environment": "macos 15.7.9 (GitHub Actions macos-15-intel ランナー上の Android エミュレータ emulator-5554 / Android 11 api30 / sdk_gphone_x86_64 で代替実施 — 物理要件を所有者指示でエミュレータ経路に許可 2026-10-10。workflow run 38203317778、swiftshader/TCG 経路)",
    "input": "モバイルの長い画面・system UI mask・トースト (エミュレータ代替撮影)",
    "steps": "分割撮影・結合・除外 [drivers: app/mcp-server/script/stdio-android-verification.mjs]",
    "expected": "正規UIを隠さず、結合・除外の根拠を追跡できる",
-   "actual": "{\"stdio-android-verification:connectedDevices\": [{\"serial\": \"emulator-5554\", \"state\": \"device\", \"model\": \"sdk_gphone64_x86_64\"}], \"stdio-android-verification:deviceSelectionMode\": \"single-device\", \"stdio-android-verification:directCaptures\": {\"emulator-5554\": {\"width\": 1080, \"height\": 2400, \"model\": \"sdk_gphone64_x86_64\"}}, \"stdio-android-verification:X05_single_device_auto\": {\"isError\": false, \"note\": \"single-device environment: serial-less call must pick the only device\", \"text\": \"{\\n  \\\"status\\\": \\\"FAIL\\\",\\n  \\\"comparisonId\\\": \\\"cmp-fa9665c3-b553-4f93-a855-9626f893def9\\\",\\n  \\\"matchRate\\\": 3.43,\\n  \\\"diffPixelCount\\\": 2353017,\\n  \\\"totalPixelCount\\\": 2436480,\\n  \\\"remainingIssues\\\": 1,\\n  \\\"diffRegions\\\": [],\\n  \\\"totalRegionCount\\\": 0,\\n  \\\"returnedRegionCount\\\": 0,\\n  \\\"regionsTruncated\\\": false,\\n  \\\"completionCriteria\\\": {\\n    \\\"structuralReview\\\": {\\n      \\\"required\\\": 1,\\n      \\\"current\\\": 0,\\n      \\\"status\\\": \\\"FAIL\\\",\\n      \\\"blocking\\\": true,\\n      \\\"note\\\": \\\"critical severity issue detected; weakest region whol\"}, \"stdio-android-verification:X05_device_captures\": {\"emulator-5554\": {\"kind\": \"emulator\", \"captured\": \"android-1791616147995-c2065a98-365b-4221-951c-1da6199e189d.png\", \"width\": 1080, \"height\": 2400}}, \"stdio-android-verification:X05_bogus_serial\": {\"isError\": true, \"text\": \"Error: Android device no-such-serial-000 is not connected. Check adb devices -l.\"}, \"stdio-android-verification:scrollTarget\": {\"serial\": \"emulator-5554\", \"pageUrl\": \"http://10.0.2.2:8777/index.html\"}, \"stdio-android-verification:pageRenderWait\": {\"rendered\": true, \"attempts\": 1, \"coloredSamples\": 639}, \"stdio-android-verification:X07_android_scroll\": {\"isError\": false, \"status\": \"PASS\", \"comparisonStatus\": \"UNCERTAIN\", \"scrollCapture\": {\"captureCount\": 5, \"stitchedWidth\": 1080, \"stitchedHeight\": 6513, \"viewportWidth\": 1080, \"viewportHeight\": 2400, \"fixedHeaderHeight\": 128, \"fixedFooterHeight\": 63, \"reachedBottom\": true, \"truncatedAtCaptureLimit\": false, \"didNotScroll\": false, \"startedAtTop\": true, \"notes\": [\"2 箇所で重なりの完全一致が取れず、行の平均輝度による近似で繋いでいます。繋ぎ目の位置がずれている可能性があります。\"]}, \"ignoreRegionResolution\": {\"effectiveRegions\": [{\"x\": 0, \"y\": 0, \"width\": 1080, \"height\": 72, \"label\": \"system:status-bar\"}, {\"x\": 0, \"y\": 6441, \"width\": 1080, \"height\": 72, \"label\": \"system:navigation-bar\"}], \"maskedPixelCount\": 155520, \"maskSha256\": \"d6c47c2b37e4caf9f53ce510d81d373a85af1abd1b78163ddc51ee8e3e73761c\"}, \"textHead\": \"{\\n  \\\"status\\\": \\\"UNCERTAIN\\\",\\n  \\\"comparisonId\\\": \\\"cmp-04ae9a7e-af5f-4448-913d-5ece3f5dbf76\\\",\\n  \\\"matchRate\\\": 4.19,\\n  \\\"diffPixelCount\\\": 6590278,\\n  \\\"totalPixelCount\\\": 6878520,\\n  \\\"remainingIssues\\\": 1,\\n  \\\"diffRegions\\\": [],\\n  \\\"totalRegionCount\\\": 0,\\n  \\\"returnedRegionCount\\\": 0,\\n  \\\"regionsTruncated\\\": false,\\n  \\\"completionCriteria\\\": {\\n    \\\"structuralReview\\\": {\\n      \\\"required\\\": 1,\\n      \\\"current\\\": 0,\\n      \\\"stat\"}}",
+   "actual": "{\"stdio-android-verification:connectedDevices\": [{\"serial\": \"emulator-5554\", \"state\": \"device\", \"model\": \"sdk_gphone_x86_64\"}], \"stdio-android-verification:deviceSelectionMode\": \"single-device\", \"stdio-android-verification:directCaptures\": {\"emulator-5554\": {\"width\": 320, \"height\": 640, \"model\": \"sdk_gphone_x86_64\"}}, \"stdio-android-verification:X05_single_device_auto\": {\"isError\": false, \"note\": \"single-device environment: serial-less call must pick the only device\", \"text\": \"{\\n  \\\"status\\\": \\\"UNCERTAIN\\\",\\n  \\\"comparisonId\\\": \\\"cmp-a85a9e86-32c8-4dc5-b8b9-fc8322d591d0\\\",\\n  \\\"matchRate\\\": 0,\\n  \\\"diffPixelCount\\\": 179200,\\n  \\\"totalPixelCount\\\": 179200,\\n  \\\"remainingIssues\\\": 1,\\n  \\\"diffRegions\\\": [\\n    {\\n      \\\"id\\\": 0,\\n      \\\"bounds\\\": {\\n        \\\"x\\\": 0,\\n        \\\"y\\\": 48,\\n        \\\"width\\\": 320,\\n        \\\"height\\\": 560\\n      },\\n      \\\"diffPixelCount\\\": 179200,\\n      \\\"nearbyNodeIds\\\": [],\\n      \\\"nearbyNodeNames\\\": []\\n    }\\n  ],\\n  \\\"totalRegionCount\\\": 1,\\n  \\\"returnedRegionCount\\\": 1,\\n  \\\"regionsTruncat\"}, \"stdio-android-verification:X05_device_captures\": {\"emulator-5554\": {\"kind\": \"emulator\", \"captured\": \"android-1791779690587-f575b9ee-0084-4f00-8fba-c9239448c0b2.png\", \"width\": 320, \"height\": 640}}, \"stdio-android-verification:X05_bogus_serial\": {\"isError\": true, \"text\": \"Error: Android device no-such-serial-000 is not connected. Check adb devices -l.\"}, \"stdio-android-verification:scrollTarget\": {\"serial\": \"emulator-5554\", \"pageUrl\": \"http://10.0.2.2:50264/tall.html\"}, \"stdio-android-verification:pageRenderWait\": {\"rendered\": false, \"attempts\": 20}, \"stdio-android-verification:X07_android_scroll\": {\"isError\": false, \"status\": \"PASS\", \"comparisonStatus\": \"UNCERTAIN\", \"scrollCapture\": {\"captureCount\": 20, \"stitchedWidth\": 320, \"stitchedHeight\": 733, \"viewportWidth\": 320, \"viewportHeight\": 640, \"fixedHeaderHeight\": 5, \"fixedFooterHeight\": 0, \"reachedBottom\": false, \"truncatedAtCaptureLimit\": true, \"didNotScroll\": false, \"startedAtTop\": true, \"notes\": [\"撮影上限 20 枚で打ち切りました。画面の下端まで届いていないので、繋いだ画像はコンテンツの途中までです。\", \"19 箇所で重なりの完全一致が取れず、行の平均輝度による近似で繋いでいます。繋ぎ目の位置がずれている可能性があります。\"]}, \"ignoreRegionResolution\": {\"effectiveRegions\": [{\"x\": 0, \"y\": 0, \"width\": 320, \"height\": 48, \"label\": \"system:status-bar\"}, {\"x\": 0, \"y\": 701, \"width\": 320, \"height\": 32, \"label\": \"system:navigation-bar\"}], \"maskedPixelCount\": 25600, \"maskSha256\": \"ccd1d10142e2bbe3cf11629714cd117350b93f7baf69f18e2eda11f19355af36\"}, \"textHead\": \"{\\n  \\\"status\\\": \\\"UNCERTAIN\\\",\\n  \\\"comparisonId\\\": \\\"cmp-80219f9b-6587-45bc-9ebb-8d66cad25731\\\",\\n  \\\"matchRate\\\": 5.07,\\n  \\\"diffPixelCount\\\": 198375,\\n  \\\"totalPixelCount\\\": 208960,\\n  \\\"remainingIssues\\\": 13,\\n  \\\"diffRegions\\\": [\\n    {\\n      \\\"id\\\": 12,\\n      \\\"bounds\\\": {\\n        \\\"x\\\": 0,\\n        \\\"y\\\": 83,\\n        \\\"width\\\": 320,\\n        \\\"height\\\": 618\\n      },\\n      \\\"diffPixelCount\\\": 197586,\\n      \\\"nearbyNodeIds\\\": [],\\n    \"}}",
    "oracle": {
     "kind": "source-pixels",
     "description": "adb exec-out screencap 直撮り(独立オラクル)と MCP 撮影の寸法一致、scroll 結合高さ>viewport・captureCount>=2"
@@ -13905,15 +13905,15 @@
    "evidence": [
     {
      "path": "ledger/macos/round-2/X07/android/stdio-android-verification-evidence.json",
-     "sha256": "c222ab812a4d320588260a57c9aede5a09513f0c230ada731a43765ce113f6d3"
+     "sha256": "012fbcc6e649b92587a9fd6ad42b04979b6e6e50217e583dd3db0200145ce8ae"
     },
     {
      "path": "ledger/macos/round-2/X07/android/X07-result.json",
-     "sha256": "f86304709c16364d05c11886b13f83c48213b605354bf91f115689367d9e7805"
+     "sha256": "ca40d27d959922feb9fd237f43ceba56cdc93e5fba809702144b729b4a23bb7d"
     },
     {
      "path": "ledger/macos/round-2/X07/android/adb-direct-emulator-5554.png",
-     "sha256": "b8ef9da115357da136d24be70c1146dcb0181558262fb4eff549c5db8d0ede03"
+     "sha256": "cbc20c46f2c9cd4d72eb9a598e2634c96eb6bc7b8b8be5d20c682dcd6918f941"
     },
     {
      "path": "ledger/macos/round-2/X07/android/input-design.png",
