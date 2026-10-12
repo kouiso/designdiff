@@ -89,6 +89,20 @@ dims="${size#*:}"
 width="${dims%%x*}"
 height="${dims##*x}"
 
+# ブート直後は InputManager サービスがまだ publish されておらず input tap/
+# swipe が "No service published for: input" で死ぬ (TCG macos ホストで実測)。
+# 上がるまで待つ。
+input_wait_start="$(date +%s)"
+input_deadline=$((input_wait_start + 300))
+until adb shell service check input 2>/dev/null | grep -q "found"; do
+  if [ "$(date +%s)" -ge "$input_deadline" ]; then
+    echo "input_service_not_found_after_seconds=300" >>"$evidence_dir/runner-host.txt"
+    break
+  fi
+  sleep 5
+done
+echo "input_service_wait_seconds=$(($(date +%s) - input_wait_start))" >>"$evidence_dir/runner-host.txt"
+
 (
   # ANR ダイアログのウィンドウタイトルは "<pkg> isn't responding" で、
   # CLOSE_SYSTEM_DIALOGS broadcast も Back キーも消せない (cancelable=false;
@@ -108,7 +122,7 @@ height="${dims##*x}"
       fi
       sleep 1
     fi
-    adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS >/dev/null 2>&1
+    adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS >/dev/null 2>&1 || true
     sleep 4
   done
 ) &
@@ -137,7 +151,7 @@ if grep -q com.android.chrome "$evidence_dir/chrome-packages.txt"; then
     attempt=1
     while [ "$attempt" -le 3 ]; do
       adb exec-out screencap -p >"$evidence_dir/chrome-warmup-$attempt.png" 2>/dev/null || true
-      adb shell input tap "$((width / 2))" "$((height * 19 / 20))"
+      adb shell input tap "$((width / 2))" "$((height * 19 / 20))" || true
       sleep 3
       attempt=$((attempt + 1))
     done
