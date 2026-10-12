@@ -9,6 +9,8 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { _electron as electron, expect } from "playwright/test";
 import sharp from "sharp";
 
+import { manifestRunCommand } from "./platform-manifest.mjs";
+
 const directory = dirname(fileURLToPath(import.meta.url));
 const repository = resolve(directory, "../../..");
 const require = createRequire(import.meta.url);
@@ -434,8 +436,11 @@ try {
         completedAt: new Date().toISOString(),
         revision,
         dirtyState,
-        command:
-          "FIGDIFF_FIX_ANIMATION_EVIDENCE=<evidence> xvfb-run -a node app/desktop/e2e/native-fix-animation.mjs",
+        command: manifestRunCommand(
+          "FIGDIFF_FIX_ANIMATION_EVIDENCE",
+          "app/desktop/e2e/native-fix-animation.mjs",
+          "<evidence>",
+        ),
         build: buildAtStart,
         buildEndSha256: buildAtEnd.sha256,
         buildUnchanged,
