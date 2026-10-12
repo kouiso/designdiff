@@ -50,9 +50,16 @@ adb devices -l
 adb shell settings put global hide_error_dialogs 1 >/dev/null 2>&1 || true
 adb shell settings put global show_first_crash_dialog 0 >/dev/null 2>&1 || true
 (
+  # CLOSE_SYSTEM_DIALOGS は AppErrorDialog (ANR ダイアログ) を閉じない
+  # (TCG macos ホストで実測: broadcast 中も "System UI isn't responding" が
+  # 残存して swipe を遮った)。ウィンドウ列挙で "Not Responding" を検出して
+  # Back を投げる — AppErrorDialog は cancelable なので確実に消える。
   while :; do
+    if adb shell dumpsys window 2>/dev/null | grep -qi "Application Not Responding"; then
+      adb shell input keyevent 4 >/dev/null 2>&1
+    fi
     adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS >/dev/null 2>&1
-    sleep 10
+    sleep 4
   done
 ) &
 anr_watcher_pid=$!
