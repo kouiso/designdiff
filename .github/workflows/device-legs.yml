@@ -139,7 +139,7 @@ jobs:
     # 再現する時は Actions タブから workflow_dispatch で起動する。
     if: github.event_name == 'workflow_dispatch'
     runs-on: macos-15-intel
-    timeout-minutes: 150
+    timeout-minutes: 200
     env:
       ANDROID_EXPECT_SERIALS: emulator-5554
     steps:
@@ -168,11 +168,11 @@ jobs:
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
         with:
           api-level: 30
-          target: aosp_atd
+          target: google_apis
           # Apple Silicon (ARM) ホストでは arm64 イメージが Hypervisor.framework
           # でネイティブ加速される。x86_64 の TCG 変換より桁違いに安定する。
           arch: x86_64
-          emulator-boot-timeout: 5400
+          emulator-boot-timeout: 7200
           # macOS ホストでは既定の -gpu swiftshader_indirect で画面が単色灰、
           # -gpu guest で単色黒のまま描画されなかった (adb screencap で実測)。
           # ANGLE 経由のソフトウェア描画を試す。
