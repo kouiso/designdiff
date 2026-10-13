@@ -194,6 +194,30 @@ const alignLegacyBackgroundExplicit = (
     ? { ...payload, design: { ...payload.design, backgroundExplicit: fallback } }
     : payload;
 
+// 上端揃えの比較 (足りない行を足した回) と、高さが揃って足す行が無くなった回は、
+// どちらも 1:1 で上端を揃えて採点する同じ物差し。基準が足し行ありで、直した後に
+// 高さが揃うのは verify_fix が成功すべき通常の流れなので、鍵が消えただけでは
+// 文脈変更にしない。逆 (基準に鍵が無く今回だけ上端揃え) は、contain 縮小で採った
+// 旧基準と物差しが違う可能性があるので文脈変更として扱う。
+const alignPaddingAlignment = (
+  prior: VerificationContextPayload,
+  current: VerificationContextPayload,
+): VerificationContextPayload => {
+  if (
+    prior.comparison.geometry.alignment === "top-aligned" &&
+    current.comparison.geometry.alignment === undefined
+  ) {
+    return {
+      ...prior,
+      comparison: {
+        ...prior.comparison,
+        geometry: { ...prior.comparison.geometry, alignment: undefined },
+      },
+    };
+  }
+  return prior;
+};
+
 const assertMatchingContext = (
   priorComparisonId: string,
   priorPayload: VerificationContextPayload,
@@ -209,7 +233,10 @@ const assertMatchingContext = (
     throw new Error("current comparison recorded an invalid verification context");
   }
   const currentBackgroundExplicit = currentPayload.design.backgroundExplicit ?? true;
-  const priorForComparison = alignLegacyBackgroundExplicit(priorPayload, currentBackgroundExplicit);
+  const priorForComparison = alignPaddingAlignment(
+    alignLegacyBackgroundExplicit(priorPayload, currentBackgroundExplicit),
+    currentPayload,
+  );
   const currentForComparison = alignLegacyBackgroundExplicit(
     currentPayload,
     currentBackgroundExplicit,

@@ -130,11 +130,48 @@ describe("compare_design — 同幅・異高の縦横比警告", () => {
     expect(result.diagnosis?.verdict).not.toBe("likely_misconfig");
   });
 
+  it("足し行ありの基準から高さを直した再比較でも、verify_fix は文脈変更で止まらない", async () => {
+    const designHeight = 220;
+    const designPath = join(directory, "design-verify.png");
+    await writeFile(designPath, await pagePng(designHeight));
+    const prior = await client.callTool({
+      name: "compare_design",
+      arguments: { design_source: designPath, screenshot: screenshotPath, threshold: 0.1 },
+    });
+    expect(prior.isError).toBeFalsy();
+    const priorResult = CompareDesignResultSchema.parse(prior.structuredContent);
+    expect(priorResult.normalization?.screenshotBottomPaddingRows).toBe(
+      designHeight - SCREENSHOT_HEIGHT,
+    );
+
+    // 実装側の高さを直した後の再撮影 (design と同じ高さ)。
+    const fixedScreenshotPath = join(directory, "screenshot-fixed.png");
+    await writeFile(fixedScreenshotPath, await pagePng(designHeight));
+    const verified = await client.callTool({
+      name: "verify_fix",
+      arguments: {
+        design_source: designPath,
+        screenshot: fixedScreenshotPath,
+        prior_comparison_id: priorResult.comparisonId,
+        expected_target_node_id: "whole-frame",
+        threshold: 0.1,
+      },
+    });
+    const text = JSON.stringify(verified.content);
+    expect(text).not.toContain("comparison context changed");
+  });
+
   it("重なる部分が大きく食い違う (低一致率) 同幅・軽い高さ差でも、設定ミスではなく実差分として扱う", async () => {
     const designHeight = 220;
     const designPath = join(directory, "design-inverted.png");
     // 重なる上端は全面が別内容 (色を反転) → 一致率が大きく下がる。
-    await writeFile(designPath, await sharp(await pagePng(designHeight)).negate().png().toBuffer());
+    await writeFile(
+      designPath,
+      await sharp(await pagePng(designHeight))
+        .negate()
+        .png()
+        .toBuffer(),
+    );
     const response = await client.callTool({
       name: "compare_design",
       arguments: { design_source: designPath, screenshot: screenshotPath, threshold: 0.1 },

@@ -1775,7 +1775,9 @@ export async function compareImages(
   if (screenshotBottomPaddingRows > 0) {
     let missingRowPixelCount = 0;
     for (let index = finalScreenshotHeight * width; index < width * height; index += 1) {
-      if (ignoreMaskResult.mask?.[index] !== 1) missingRowPixelCount += 1;
+      // contents_only 書き出しで design が色を指定していない行 (完全透明) は、採点と
+      // 同じく「足りない」とは数えない。
+      if (scoringIgnoreMask?.[index] !== 1) missingRowPixelCount += 1;
     }
     if (missingRowPixelCount > 0 && diffReport.aggregateVerdict === "pass") {
       const rationale = `Screenshot has no rows for the bottom ${screenshotBottomPaddingRows}px of the design (${missingRowPixelCount} pixels outside ignore regions); missing rows are counted as differences.`;
