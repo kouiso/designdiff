@@ -165,30 +165,23 @@ describe("compareImages — 同幅・異高は縮小せず上端揃えで比較�
     expect(result.diffReport?.issues.some((issue) => issue.kind === "missing")).toBe(false);
   });
 
-  it("anchors を宣言して検査が通った回は、高さの位置整合をアンカーに委ねて pass を維持する", async () => {
+  it("anchors を宣言して検査が通っても、足りない下端行は fail にする (上端揃えでは下端の欠落をアンカーが保証できない)", async () => {
     const screenshotHeight = 200;
     const designHeight = 210;
     const design = await buildPng(WIDTH, designHeight, (x, y) =>
       y < screenshotHeight ? pagePixel(x, y) : [255, 255, 255, 255],
     );
     const screenshot = await buildPng(WIDTH, screenshotHeight, pagePixel);
-    const anchors = [{ x: 0, y: 0, width: WIDTH, height: 40, mode: "top-ratio" as const }];
 
-    const withAnchors = await compareImages({
+    const result = await compareImages({
       designBase64: design.toString("base64"),
       screenshotBase64: screenshot.toString("base64"),
-      anchors,
-    });
-    const withoutAnchors = await compareImages({
-      designBase64: design.toString("base64"),
-      screenshotBase64: screenshot.toString("base64"),
+      anchors: [{ x: 0, y: 0, width: WIDTH, height: 40, mode: "top-ratio" }],
     });
 
-    expect(withAnchors.anchorCheck?.verdict).toBe("pass");
-    expect(withAnchors.diffReport?.aggregateVerdict).toBe("pass");
-    // 足し行は一致率には残り、anchors が無ければ従来どおり fail。
-    expect(withAnchors.diffPixelCount).toBe(WIDTH * (designHeight - screenshotHeight));
-    expect(withoutAnchors.diffReport?.aggregateVerdict).toBe("fail");
+    expect(result.anchorCheck?.verdict).toBe("pass");
+    expect(result.diffReport?.aggregateVerdict).toBe("fail");
+    expect(result.diffPixelCount).toBe(WIDTH * (designHeight - screenshotHeight));
   });
 
   it("ignore region で覆った足りない行は差分にも分母にも入れない", async () => {

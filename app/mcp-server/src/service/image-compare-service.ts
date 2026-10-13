@@ -1799,14 +1799,7 @@ export async function compareImages(
     for (let index = finalScreenshotHeight * width; index < width * height; index += 1) {
       if (missingRowsIgnoreMask?.[index] !== 1) missingRowPixelCount += 1;
     }
-    // anchors を宣言して検査が通った回は、高さ方向の位置整合の判断をアンカーに委ねる
-    // (runner の aspect 警告降格と同じ契約)。足し行は一致率・差分画像には残る。
-    const anchorsVouchForHeight = anchorCheck?.evaluated === true && anchorCheck.verdict === "pass";
-    if (
-      missingRowPixelCount > 0 &&
-      diffReport.aggregateVerdict === "pass" &&
-      !anchorsVouchForHeight
-    ) {
+    if (missingRowPixelCount > 0 && diffReport.aggregateVerdict === "pass") {
       const rationale = `Screenshot has no rows for the bottom ${screenshotBottomPaddingRows}px of the design (${missingRowPixelCount} pixels outside ignore regions); missing rows are counted as differences.`;
       diffReport = {
         ...diffReport,
