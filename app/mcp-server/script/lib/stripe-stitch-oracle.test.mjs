@@ -52,6 +52,37 @@ describe("verifyStripeStitch", () => {
       await buildPng(stitched([0, 1, 2, 2, 3, 4, 5, 6, 7])),
     );
     expect(result.ok).toBe(false);
+    // 同じ色が2区画ぶん続くので、区画の高さが伸びた結合として検出される。
+    expect(result.reasons.join("\n")).toContain("stretched or truncated");
+  });
+
+  it("境目で暗色と混ざった (アンチエイリアス) 数行が別の縞色に見えても、順序を誤判定しない", async () => {
+    // 黄 (3) と暗色の境目に、茶 (6) に近い 50% ブレンド行を 2 行挟む。
+    const blend = STRIPE_COLORS[3].map((value, index) => Math.round((value + DARK[index]) / 2));
+    const rows = [];
+    [0, 1, 2, 3, 4, 5, 6, 7].forEach((id, index) => {
+      const section = sectionRows(id, SECTION_ROWS);
+      if (id === 3) section.splice(20, 0, blend, blend);
+      rows.push(...section);
+      void index;
+    });
+    const result = await verifyStripeStitch(await buildPng(rows));
+    expect(result.reasons).toEqual([]);
+    expect(result.ok).toBe(true);
+  });
+
+  it("区画が暗色で終わる・始まる (実ページの縞の位相) 結合も合格する", async () => {
+    const darkEdged = (id, trimTop, trimBottom) => {
+      const rows = sectionRows(id, SECTION_ROWS);
+      for (let y = 0; y < trimTop; y += 1) rows[y] = DARK;
+      for (let y = SECTION_ROWS - trimBottom; y < SECTION_ROWS; y += 1) rows[y] = DARK;
+      return rows;
+    };
+    const rows = [0, 1, 2, 3, 4, 5, 6, 7].flatMap((id) =>
+      id === 0 ? darkEdged(id, 40, 0) : id === 6 ? darkEdged(id, 0, 8) : sectionRows(id, SECTION_ROWS),
+    );
+    const result = await verifyStripeStitch(await buildPng(rows));
+    expect(result.reasons).toEqual([]);
   });
 
   it("区画が入れ替わった結合は不合格にする", async () => {

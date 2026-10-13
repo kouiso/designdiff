@@ -13,6 +13,7 @@ on:
       - ".github/scripts/device-legs-ios-sim.sh"
       - "app/mcp-server/script/stdio-android-verification.mjs"
       - "app/mcp-server/script/stdio-ios-sim-verification.mjs"
+      - "app/mcp-server/script/lib/**"
       # 撮影している製品側。ここを壊す PR でもエミュレータ / シミュレータのレグを走らせる。
       - "package/mobile-capture/**"
       - "app/mcp-server/src/service/capture-service.ts"
@@ -135,7 +136,7 @@ jobs:
     # このホストでは実行不能という記録になる (過去に macOS VM で実測)。
     # 実測では加速は効くが、guest の SystemUI が ANR ダイアログを繰り返し出し、
     # swipe がページへ届かず6回の実行で12巡中1巡しか通らなかった
-    # (証跡は各 push 実行の device-legs-android-macos artifact)。
+    # (証跡は各実行の device-legs-android-macos artifact)。
     # 不安定なので手動実行専用にして、push / PR のチェックを赤くしない。
     # 再現する時は Actions タブから workflow_dispatch で起動する。
     if: github.event_name == 'workflow_dispatch'

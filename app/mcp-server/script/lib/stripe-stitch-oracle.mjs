@@ -20,7 +20,8 @@ export const STRIPE_COLORS = [
 
 const MAX_COLOR_DISTANCE = 60;
 const MIN_RUN_ROWS = 8;
-const INNER_HEIGHT_TOLERANCE = 0.2;
+// 実ページの区画は暗色で終わる分 (最大 80px) 短く測れる。通常の撮影の揺れも含めて余裕を持たせる。
+const INNER_HEIGHT_TOLERANCE = 0.25;
 
 const classify = (r, g, b) => {
   let best = -1;
@@ -66,16 +67,26 @@ export const verifyStripeStitch = async (png) => {
     rowClass[y] = winner;
   }
 
-  // 色ごとの最初と最後の行。区画は暗色帯と交互なので、連続ではなく範囲で測る。
+  // 行ごとの判定を「連続 MIN_RUN_ROWS 行以上の同色」の run にまとめる。
+  // 縞の境目で暗色と混ざった (アンチエイリアス・リサンプル由来の) 1〜2 行が別の色に
+  // 見えても、短い run は捨てるので順序の判定を壊さない。
+  const runs = [];
+  let runStart = 0;
+  for (let y = 1; y <= height; y += 1) {
+    if (y < height && rowClass[y] === rowClass[runStart]) continue;
+    const id = rowClass[runStart];
+    if (id >= 0 && y - runStart >= MIN_RUN_ROWS) runs.push({ id, start: runStart, end: y - 1 });
+    runStart = y;
+  }
+
+  // 色ごとの最初と最後の行 (run の範囲)。区画は暗色帯と交互なので、連続ではなく範囲で測る。
   const first = new Array(STRIPE_COLORS.length).fill(-1);
   const last = new Array(STRIPE_COLORS.length).fill(-1);
   const rowsPerColor = new Array(STRIPE_COLORS.length).fill(0);
-  for (let y = 0; y < height; y += 1) {
-    const id = rowClass[y];
-    if (id < 0) continue;
-    if (first[id] < 0) first[id] = y;
-    last[id] = y;
-    rowsPerColor[id] += 1;
+  for (const run of runs) {
+    if (first[run.id] < 0) first[run.id] = run.start;
+    last[run.id] = run.end;
+    rowsPerColor[run.id] += run.end - run.start + 1;
   }
 
   const reasons = [];
