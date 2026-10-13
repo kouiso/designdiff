@@ -17,6 +17,8 @@ const STRUCTURE_MATCH_DECIMAL_PLACES = 2;
 export interface HeadlineCanvas {
   width: number;
   height: number;
+  // ignore region で採点から外した画素数。分母から引き、外した面を構造一致に数えない。
+  maskedPixelCount?: number;
 }
 
 // 画像同士の比較では採点行が pixelmatch の差分クラスタだけになる。行の単純平均だと
@@ -43,7 +45,9 @@ const averageStructure = (regionScores: RegionScore[], canvas?: HeadlineCanvas):
   }
   // セクション行は重なったり比較面いっぱいに並んだりするので、合計面積が比較面を
   // 超えるときは余白を足さず面積加重平均だけにする。
-  const uncoveredArea = Math.max(0, canvas.width * canvas.height - coveredArea);
+  const maskedArea = Math.max(0, canvas.maskedPixelCount ?? 0);
+  const scorableArea = Math.max(0, canvas.width * canvas.height - maskedArea);
+  const uncoveredArea = Math.max(0, scorableArea - coveredArea);
   const weightedStructure = regionScores.reduce(
     (sum, score, index) => sum + score.structure * areas[index],
     uncoveredArea,

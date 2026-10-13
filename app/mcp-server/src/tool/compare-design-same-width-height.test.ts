@@ -1,7 +1,7 @@
 // 同幅・軽い高さ差のフルページ比較で、縦横比不一致の preflight 警告が critical の
 // まま残り likely_misconfig に倒れていた不具合の regression test。
 // 高さ比が full_page_vs_viewport を超える入力は従来の扱いを保つことも固定する。
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -95,8 +95,55 @@ describe("compare_design — 同幅・異高の縦横比警告", () => {
         (warning) => warning.code === "aspect_ratio_mismatch" && warning.severity === "critical",
       ),
     ).toBe(false);
-    expect(result.diagnosis?.likelyMisconfig).toBe(false);
-    expect(result.diagnosis?.verdict).not.toBe("likely_misconfig");
+
+    // FigDiff 自身の判定ではなく、差分画像の画素を独立に読んで裏を取る。
+    // 重なる上端 200 行は同一の入力なので無色、足りない下端 20 行は全画素が差分色。
+    expect(result.diffImagePath).toBeDefined();
+    const diffImage = await sharp(await readFile(result.diffImagePath ?? ""))
+      .ensureAlpha()
+      .raw()
+      .toBuffer({ resolveWithObject: true });
+    expect(diffImage.info.width).toBe(WIDTH);
+    expect(diffImage.info.height).toBe(designHeight);
+    const isDiffRed = (x: number, y: number): boolean => {
+      const offset = (y * WIDTH + x) * 4;
+      const { data } = diffImage;
+      return data[offset] > 200 && data[offset + 1] < 80 && data[offset + 2] < 80;
+    };
+    let redInOverlap = 0;
+    let redInMissingRows = 0;
+    for (let y = 0; y < designHeight; y += 1) {
+      for (let x = 0; x < WIDTH; x += 1) {
+        if (!isDiffRed(x, y)) continue;
+        if (y < SCREENSHOT_HEIGHT) redInOverlap += 1;
+        else redInMissingRows += 1;
+      }
+    }
+    expect(redInOverlap).toBe(0);
+    expect(redInMissingRows).toBe(WIDTH * (designHeight - SCREENSHOT_HEIGHT));
+  });
+
+  it("design の下端が白い余白でも、足した行を一致と見なして PASS にしない", async () => {
+    const designHeight = 220;
+    const base = await pagePng(SCREENSHOT_HEIGHT);
+    const whiteTail = await sharp(base)
+      .extend({ bottom: designHeight - SCREENSHOT_HEIGHT, background: "#ffffff" })
+      .png()
+      .toBuffer();
+    const designPath = join(directory, "design-white-tail.png");
+    await writeFile(designPath, whiteTail);
+    const response = await client.callTool({
+      name: "compare_design",
+      arguments: { design_source: designPath, screenshot: screenshotPath, threshold: 0.1 },
+    });
+    expect(response.isError).toBeFalsy();
+    const result = CompareDesignResultSchema.parse(response.structuredContent);
+
+    expect(result.normalization?.screenshotBottomPaddingRows).toBe(
+      designHeight - SCREENSHOT_HEIGHT,
+    );
+    expect(result.diffPixelCount).toBe(WIDTH * (designHeight - SCREENSHOT_HEIGHT));
+    expect(result.status).not.toBe("PASS");
   });
 
   it("フルページ design と単一ビューポート撮影 (高さ比 > 1.4) は従来どおり critical のまま contain 正規化する", async () => {

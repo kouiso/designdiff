@@ -114,6 +114,38 @@ describe("compareImages — 同幅・異高は縮小せず上端揃えで比較�
     expect(result.subThresholdDiffPixelCount).toBeUndefined();
   });
 
+  it("白い下端行の足し行は、採点が一致でも report の判定を pass のままにしない", async () => {
+    const screenshotHeight = 200;
+    const designHeight = 210;
+    const design = await buildPng(WIDTH, designHeight, (x, y) =>
+      y < screenshotHeight ? pagePixel(x, y) : [255, 255, 255, 255],
+    );
+    const screenshot = await buildPng(WIDTH, screenshotHeight, pagePixel);
+
+    const result = await compareImages({
+      designBase64: design.toString("base64"),
+      screenshotBase64: screenshot.toString("base64"),
+    });
+
+    expect(result.diffReport?.aggregateVerdict).toBe("fail");
+    expect(result.diffReport?.issues.some((issue) => issue.kind === "missing")).toBe(true);
+  });
+
+  it("単一ビューポート撮影の宣言があるときは、画面外の行を足さず従来経路に任せる", async () => {
+    const screenshotHeight = 200;
+    const designHeight = 220;
+    const design = await buildPng(WIDTH, designHeight, pagePixel);
+    const screenshot = await buildPng(WIDTH, screenshotHeight, pagePixel);
+
+    const result = await compareImages({
+      designBase64: design.toString("base64"),
+      screenshotBase64: screenshot.toString("base64"),
+      screenshotIsSingleViewport: true,
+    });
+
+    expect(result.normalization?.screenshotBottomPaddingRows).toBeUndefined();
+  });
+
   it("ignore region で覆った足りない行は差分にも分母にも入れない", async () => {
     const screenshotHeight = 200;
     const designHeight = 220;

@@ -67,6 +67,10 @@ export const VerificationContextPayloadSchema = z
             cropRegion: RectangleSchema.optional(),
             workingCropRegion: RectangleSchema.optional(),
             cropSource: z.enum(["none", "explicit-project", "auto"]).optional(),
+            // 下端へ足りない行を足して上端揃えで比べた回だけ入る。contain 縮小の
+            // 履歴とは領域スコアの意味が違うため、混ぜて比べない。足す行が無い回は
+            // 従来の契約のまま鍵を持たず、既存の履歴指紋を変えない。
+            alignment: z.literal("top-aligned").optional(),
           })
           .strict(),
       })

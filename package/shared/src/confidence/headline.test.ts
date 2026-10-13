@@ -93,4 +93,14 @@ describe("buildComparisonHeadline", () => {
     );
     expect(headline.structureMatch).toBe(50);
   });
+
+  it("ignore region で外した画素は構造一致として数えない", () => {
+    // 100x100 の 99% を ignore で外し、残り 1% (100 画素) が構造 0。
+    const headline = buildComparisonHeadline(
+      [region({ bbox: { x: 0, y: 0, w: 10, h: 10 }, structure: 0 })],
+      0,
+      { width: 100, height: 100, maskedPixelCount: 9900 },
+    );
+    expect(headline.structureMatch).toBe(0);
+  });
 });

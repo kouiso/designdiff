@@ -1692,6 +1692,7 @@ export async function runCompareDesign(
       // 完全透明画素だけ「デザインが色を指定していない」として採点から外す。
       // ローカル PNG の透明は意図的な穴のこともあるため外さない。
       treatTransparentDesignAsUnspecified: figmaExport?.conditions.contentsOnly === true,
+      screenshotIsSingleViewport: args.capture_device !== undefined && args.capture_scroll !== true,
       anchors: args.anchors,
       localAlignmentTolerancePx: args.local_alignment_tolerance_px,
       rasterizationTolerance: args.rasterization_tolerance,
@@ -1835,7 +1836,12 @@ export async function runCompareDesign(
   const comparisonHeadline = buildComparisonHeadline(
     regionScores,
     comparison.matchRate,
-    comparison.ignoreRegionResolution?.effectiveCanvas,
+    comparison.ignoreRegionResolution?.effectiveCanvas
+      ? {
+          ...comparison.ignoreRegionResolution.effectiveCanvas,
+          maskedPixelCount: comparison.ignoreRegionResolution.maskedPixelCount,
+        }
+      : undefined,
   );
   const diagnosis = diagnoseComparison({
     matchRate: comparison.matchRate,
@@ -1947,8 +1953,11 @@ export async function runCompareDesign(
   // URLを開いて撮る場合だけ、高さは中身の量で決まる。
   // 繋いだ縦長画像の高さは、実装の中身の量と重なりの測り方で毎回わずかに変わる。
   // 撮影条件が変わったと見なすと、履歴が毎回リセットされて足踏みを検出できん。
+  // 上端揃えで足りない行を足した回も、撮影高さが実装の中身の量で変わる。
   const heightIsContentDriven =
-    typeof args.screenshot_url === "string" || resolvedScreenshot.scrollCapture !== undefined;
+    typeof args.screenshot_url === "string" ||
+    resolvedScreenshot.scrollCapture !== undefined ||
+    (comparison.normalization?.screenshotBottomPaddingRows ?? 0) > 0;
   const critique = buildCaptureAwareCritique(
     comparison.diffReport,
     priorComparisons,
@@ -2104,6 +2113,9 @@ export async function runCompareDesign(
               cropRegion: resultNormalization.cropRegion,
               workingCropRegion: resultNormalization.workingCropRegion,
               cropSource: resultNormalization.cropSource,
+              ...(resultNormalization.screenshotBottomPaddingRows === undefined
+                ? {}
+                : { alignment: "top-aligned" as const }),
             },
           },
           mask:

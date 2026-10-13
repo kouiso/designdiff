@@ -68,10 +68,25 @@ function widthMismatchCause(warnings: PreflightWarning[]): DiagnosisCause | unde
   };
 }
 
-function aspectRatioPreflightCause(warnings: PreflightWarning[]): DiagnosisCause | undefined {
+function aspectRatioPreflightCause(
+  warnings: PreflightWarning[],
+  normalization?: NormalizationReport,
+): DiagnosisCause | undefined {
   const warning = warnings.find((entry) => entry.code === "aspect_ratio_mismatch");
   if (!warning) {
     return undefined;
+  }
+  // 縮めず上端揃えで比べた回は、高さの差が差分画像に出ているので設定ミスの根拠にしない。
+  if (normalization?.screenshotBottomPaddingRows !== undefined) {
+    return {
+      code: "aspect_mismatch",
+      classification: "mild_aspect_mismatch",
+      confidence: CONFIDENCE_MILD_ASPECT_MISMATCH,
+      message:
+        "幅は一致していますが、スクリーンショットの方が縦に短くなっています。縮小せず上端揃えで比較し、足りない下端の行は差分として数えています。",
+      suggestedFix:
+        "下端の差分は実装側の内容差として確認してください。単一ビューポート撮影なら capture_scroll か crop で範囲を揃えてください。",
+    };
   }
   return {
     code: "aspect_mismatch",
@@ -290,7 +305,7 @@ export function diagnoseComparison(input: DiagnosisInput): ComparisonDiagnosis {
     conditionsCause,
     figmaExportCause(input.preflightWarnings),
     widthMismatchCause(input.preflightWarnings),
-    aspectRatioPreflightCause(input.preflightWarnings),
+    aspectRatioPreflightCause(input.preflightWarnings, input.normalization),
     normalizationCause(input.normalization),
     cropPreflightCause(input.preflightWarnings),
     globalColorShiftCause(input.matchRate, avgStructure, avgColor, lowMatchThreshold),

@@ -95,6 +95,9 @@ interface CompareImagesOptions {
   // 完全透明画素を採点から外す。ローカル PNG の透明は意図的な穴 (角丸の透過等)
   // のこともあるため、外すと実装側だけの追加内容を検出できなくなる。
   treatTransparentDesignAsUnspecified?: boolean;
+  // スクロールせず1画面だけ撮った端末撮影か。画面外の行は「撮っていない」だけで
+  // 「実装に無い」とは言えないので、このときは下端へ行を足して差分に数えない。
+  screenshotIsSingleViewport?: boolean;
   // 同幅・異高の入力で位置整合を検査する宣言アンカー。
   // 座標は design_source 画像のピクセル座標。未指定時はピクセル比較のみ。
   anchors?: AnchorRegion[];
@@ -1383,7 +1386,7 @@ export async function compareImages(
     designHeight: finalDesignHeight,
     screenshotWidth: finalScreenshotWidth,
     screenshotHeight: finalScreenshotHeight,
-    cropRequested: nativeCropRegion !== undefined,
+    cropRequested: nativeCropRegion !== undefined || options.screenshotIsSingleViewport === true,
   });
   screenshotBuffer = await padImageBottom(screenshotBuffer, screenshotBottomPaddingRows);
   const compareCanvasHeight = finalScreenshotHeight + screenshotBottomPaddingRows;
@@ -1761,6 +1764,39 @@ export async function compareImages(
           }
         : undefined,
     };
+  }
+
+  // 足した行は後段で下地色へ平坦化されるため、design の下端が余白色だと採点上は
+  // 一致に見える。diffPixelCount には数えているので、その事実を判定へ引き継ぐ。
+  if (screenshotBottomPaddingRows > 0) {
+    let missingRowPixelCount = 0;
+    for (let index = finalScreenshotHeight * width; index < width * height; index += 1) {
+      if (ignoreMaskResult.mask?.[index] !== 1) missingRowPixelCount += 1;
+    }
+    if (missingRowPixelCount > 0 && diffReport.aggregateVerdict === "pass") {
+      const rationale = `Screenshot has no rows for the bottom ${screenshotBottomPaddingRows}px of the design (${missingRowPixelCount} pixels outside ignore regions); missing rows are counted as differences.`;
+      diffReport = {
+        ...diffReport,
+        aggregateVerdict: "fail",
+        rationale,
+        issues: [
+          ...diffReport.issues,
+          {
+            regionId: "missing-bottom-rows",
+            bbox: { x: 0, y: finalScreenshotHeight, w: width, h: screenshotBottomPaddingRows },
+            kind: "missing",
+            severity: "critical",
+            evidence: {
+              signal: "screenshot_bottom_rows_missing",
+              value: missingRowPixelCount,
+              threshold: 0,
+              expected: `${height}px tall content`,
+              actual: `${finalScreenshotHeight}px tall screenshot`,
+            },
+          },
+        ],
+      };
+    }
   }
 
   let maskPainted = false;
