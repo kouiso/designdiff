@@ -22,7 +22,7 @@
 
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
-import { copyFile, mkdir, mkdtemp, readdir, writeFile } from "node:fs/promises";
+import { copyFile, mkdir, mkdtemp, readdir, readFile, writeFile } from "node:fs/promises";
 import { createServer } from "node:http";
 import { homedir, tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
@@ -32,6 +32,8 @@ import { fileURLToPath } from "node:url";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import sharp from "sharp";
+
+import { verifyStripeStitch } from "./lib/stripe-stitch-oracle.mjs";
 
 const execFileAsync = promisify(execFile);
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
@@ -346,6 +348,23 @@ if (!scrollResult.isError) {
     (sc.stitchedHeight ?? 0) > (sc.viewportHeight ?? 0),
     `stitched height ${sc.stitchedHeight} must exceed viewport ${sc.viewportHeight}`,
   );
+  // 製品の自己申告 (scrollCapture) だけでは、整合した数字を返しつつ結合画像が
+  // 壊れている実装を通してしまう。既知の縞模様ページなので、撮れた結合画像の
+  // 画素を独立に読み、8色の順序・欠落・重複・区画の伸縮を確かめる。
+  // 自分で用意したページ (ANDROID_PAGE_URL 指定時) は縞模様でないので対象外。
+  if (!process.env.ANDROID_PAGE_URL) {
+    const shots = (await readdir(captureDir)).sort();
+    const stitchedShot = shots.at(-1);
+    const stitchCheck = await verifyStripeStitch(await readFile(join(captureDir, stitchedShot)));
+    evidence.results.X07_android_scroll.independentStitchCheck = {
+      image: stitchedShot,
+      ...stitchCheck,
+    };
+    assert.ok(
+      stitchCheck.ok,
+      `stitched image failed the independent stripe oracle: ${stitchCheck.reasons.join("; ")}`,
+    );
+  }
 } else {
   evidence.results.X07_android_scroll.note = "scroll capture returned error — see textHead";
 }
