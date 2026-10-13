@@ -305,10 +305,10 @@ function assertWorstRegions(
   expect(new Set(actualWorstRegionIds)).toEqual(new Set(variant.expectedWorstRegionIds));
 }
 
-function assertVerdictAndMetrics(
+const assertVerdictAndMetrics = (
   result: CompareDesignResult,
   variant: z.infer<typeof FixtureVariantSchema>,
-): void {
+): void => {
   if (variant.knownRedIssue !== undefined) {
     // it.fails だと読込失敗や schema エラーの throw でも緑になる。verdict を直接
     // assert すれば、推定器が直って pass に変わった時にだけ落ちる。
@@ -324,12 +324,12 @@ function assertVerdictAndMetrics(
   assertIssuePresence(result, variant);
   assertIssueKinds(result, variant);
   assertWorstRegions(result, variant);
-}
+};
 
-function resolveVariants(
+const resolveVariants = (
   expectation: z.infer<typeof FixtureExpectationSchema>,
   variantName: string | undefined,
-): z.infer<typeof FixtureVariantSchema>[] {
+): z.infer<typeof FixtureVariantSchema>[] => {
   const variants = expectation.variants.filter(
     (variant) => variantName === undefined || variant.name === variantName,
   );
@@ -337,7 +337,7 @@ function resolveVariants(
     throw new Error(`${expectation.pairId}: variant ${String(variantName)} は定義されていない`);
   }
   return variants;
-}
+};
 
 describe("golden fixture runner", () => {
   beforeEach(() => {
@@ -345,7 +345,11 @@ describe("golden fixture runner", () => {
     vi.doUnmock("@figdiff/shared");
   });
 
-  async function runFixture(pairId: string, repetitions = 1, variantName?: string): Promise<void> {
+  const runFixture = async (
+    pairId: string,
+    repetitions = 1,
+    variantName?: string,
+  ): Promise<void> => {
     const { compareImages } = await import("./image-compare-service.js");
     const pairDir = path.join(FIXTURES_ROOT, pairId);
     const expectationRaw = await fs.readFile(path.join(pairDir, "expected.json"), "utf8");
@@ -420,7 +424,7 @@ describe("golden fixture runner", () => {
         expect(stableRuns[0]?.translation).toEqual(variant.expectedSystemUiAlignment.translation);
       }
     }
-  }
+  };
 
   it(
     "pair-01-simple-static-lp の期待 verdict を満たすこと",
