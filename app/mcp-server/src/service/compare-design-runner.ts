@@ -2113,6 +2113,8 @@ export async function runCompareDesign(
               cropRegion: resultNormalization.cropRegion,
               workingCropRegion: resultNormalization.workingCropRegion,
               cropSource: resultNormalization.cropSource,
+              // 足りない行を足して上端揃えで比べた回だけ記録する。高さや contain 倍率の変化は
+              // 実装の修正で起きる比較結果なので、既存の契約どおり文脈には入れない。
               ...(resultNormalization.screenshotBottomPaddingRows === undefined
                 ? {}
                 : { alignment: "top-aligned" as const }),

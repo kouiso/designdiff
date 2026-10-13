@@ -1608,6 +1608,28 @@ export async function compareImages(
     flattenTransparentPixels(screenshotPixels, backgroundColor);
   }
 
+  // 足した行のうち、design がもともと色を指定していない行 (contents_only 書き出しで
+  // 完全透明) は「撮影側に無い」とは言えない。採点側の未指定マスクと同じ条件で、
+  // 差分の塗りと判定の両方から外し、一致率・差分画像・判定が食い違わないようにする。
+  let missingRowsIgnoreMask = ignoreMaskResult.mask;
+  if (
+    screenshotBottomPaddingRows > 0 &&
+    options.designBackground === undefined &&
+    options.treatTransparentDesignAsUnspecified === true
+  ) {
+    const unspecifiedRows = new Uint8Array(width * height);
+    let anyUnspecified = false;
+    for (let index = finalScreenshotHeight * width; index < width * height; index += 1) {
+      if (pixelmatchDesignPixels[index * 4 + 3] === 0) {
+        unspecifiedRows[index] = 1;
+        anyUnspecified = true;
+      }
+    }
+    if (anyUnspecified) {
+      missingRowsIgnoreMask = mergeIgnoreMasks(ignoreMaskResult.mask, unspecifiedRows);
+    }
+  }
+
   const diffPixelCount = comparePixelsWithMissingScreenshotRows({
     designPixels: pixelmatchDesignPixels,
     screenshotPixels,
@@ -1615,7 +1637,7 @@ export async function compareImages(
     width,
     height,
     screenshotContentHeight: finalScreenshotHeight,
-    ignoreMask: ignoreMaskResult.mask,
+    ignoreMask: missingRowsIgnoreMask,
     threshold,
   });
 
@@ -1775,11 +1797,16 @@ export async function compareImages(
   if (screenshotBottomPaddingRows > 0) {
     let missingRowPixelCount = 0;
     for (let index = finalScreenshotHeight * width; index < width * height; index += 1) {
-      // contents_only 書き出しで design が色を指定していない行 (完全透明) は、採点と
-      // 同じく「足りない」とは数えない。
-      if (scoringIgnoreMask?.[index] !== 1) missingRowPixelCount += 1;
+      if (missingRowsIgnoreMask?.[index] !== 1) missingRowPixelCount += 1;
     }
-    if (missingRowPixelCount > 0 && diffReport.aggregateVerdict === "pass") {
+    // anchors を宣言して検査が通った回は、高さ方向の位置整合の判断をアンカーに委ねる
+    // (runner の aspect 警告降格と同じ契約)。足し行は一致率・差分画像には残る。
+    const anchorsVouchForHeight = anchorCheck?.evaluated === true && anchorCheck.verdict === "pass";
+    if (
+      missingRowPixelCount > 0 &&
+      diffReport.aggregateVerdict === "pass" &&
+      !anchorsVouchForHeight
+    ) {
       const rationale = `Screenshot has no rows for the bottom ${screenshotBottomPaddingRows}px of the design (${missingRowPixelCount} pixels outside ignore regions); missing rows are counted as differences.`;
       diffReport = {
         ...diffReport,

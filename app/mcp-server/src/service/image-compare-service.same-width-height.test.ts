@@ -146,6 +146,51 @@ describe("compareImages — 同幅・異高は縮小せず上端揃えで比較�
     expect(result.normalization?.screenshotBottomPaddingRows).toBeUndefined();
   });
 
+  it("contents_only で design が色を指定していない (透明) 下端行は、足りない行として数えない", async () => {
+    const screenshotHeight = 200;
+    const designHeight = 210;
+    const design = await buildPng(WIDTH, designHeight, (x, y) =>
+      y < screenshotHeight ? pagePixel(x, y) : [0, 0, 0, 0],
+    );
+    const screenshot = await buildPng(WIDTH, screenshotHeight, pagePixel);
+
+    const result = await compareImages({
+      designBase64: design.toString("base64"),
+      screenshotBase64: screenshot.toString("base64"),
+      treatTransparentDesignAsUnspecified: true,
+    });
+
+    // 一致率・差分画像・判定が同じ前提 (未指定行は撮影側に無くても欠落ではない) で揃う。
+    expect(result.diffPixelCount).toBe(0);
+    expect(result.diffReport?.issues.some((issue) => issue.kind === "missing")).toBe(false);
+  });
+
+  it("anchors を宣言して検査が通った回は、高さの位置整合をアンカーに委ねて pass を維持する", async () => {
+    const screenshotHeight = 200;
+    const designHeight = 210;
+    const design = await buildPng(WIDTH, designHeight, (x, y) =>
+      y < screenshotHeight ? pagePixel(x, y) : [255, 255, 255, 255],
+    );
+    const screenshot = await buildPng(WIDTH, screenshotHeight, pagePixel);
+    const anchors = [{ x: 0, y: 0, width: WIDTH, height: 40, mode: "top-ratio" as const }];
+
+    const withAnchors = await compareImages({
+      designBase64: design.toString("base64"),
+      screenshotBase64: screenshot.toString("base64"),
+      anchors,
+    });
+    const withoutAnchors = await compareImages({
+      designBase64: design.toString("base64"),
+      screenshotBase64: screenshot.toString("base64"),
+    });
+
+    expect(withAnchors.anchorCheck?.verdict).toBe("pass");
+    expect(withAnchors.diffReport?.aggregateVerdict).toBe("pass");
+    // 足し行は一致率には残り、anchors が無ければ従来どおり fail。
+    expect(withAnchors.diffPixelCount).toBe(WIDTH * (designHeight - screenshotHeight));
+    expect(withoutAnchors.diffReport?.aggregateVerdict).toBe("fail");
+  });
+
   it("ignore region で覆った足りない行は差分にも分母にも入れない", async () => {
     const screenshotHeight = 200;
     const designHeight = 220;
