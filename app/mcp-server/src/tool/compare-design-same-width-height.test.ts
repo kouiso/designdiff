@@ -124,6 +124,31 @@ describe("compare_design — 同幅・異高の縦横比警告", () => {
     }
     expect(redInOverlap).toBe(0);
     expect(redInMissingRows).toBe(WIDTH * (designHeight - SCREENSHOT_HEIGHT));
+
+    // 設定ミス扱いにならないこと (診断は差分画像とは別の経路で出る)。
+    expect(result.diagnosis?.likelyMisconfig).toBe(false);
+    expect(result.diagnosis?.verdict).not.toBe("likely_misconfig");
+  });
+
+  it("重なる部分が大きく食い違う (低一致率) 同幅・軽い高さ差でも、設定ミスではなく実差分として扱う", async () => {
+    const designHeight = 220;
+    const designPath = join(directory, "design-inverted.png");
+    // 重なる上端は全面が別内容 (色を反転) → 一致率が大きく下がる。
+    await writeFile(designPath, await sharp(await pagePng(designHeight)).negate().png().toBuffer());
+    const response = await client.callTool({
+      name: "compare_design",
+      arguments: { design_source: designPath, screenshot: screenshotPath, threshold: 0.1 },
+    });
+    expect(response.isError).toBeFalsy();
+    const result = CompareDesignResultSchema.parse(response.structuredContent);
+
+    expect(result.normalization?.screenshotBottomPaddingRows).toBe(
+      designHeight - SCREENSHOT_HEIGHT,
+    );
+    expect(result.matchRate).toBeLessThan(25);
+    expect(result.diagnosis?.likelyMisconfig).toBe(false);
+    expect(result.diagnosis?.verdict).toBe("real_diff");
+    expect(result.status).not.toBe("UNCERTAIN");
   });
 
   it("design の下端が白い余白でも、足した行を一致と見なして PASS にしない", async () => {
