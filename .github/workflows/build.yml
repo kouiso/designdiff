@@ -16,10 +16,11 @@ jobs:
   build-linux:
     name: Electron Build (Linux)
     timeout-minutes: 45
-    runs-on: ${{ vars.RUNNER_LINUX }}
+    runs-on: ${{ vars.RUNNER_LINUX || 'ubuntu-latest' }}
+    # == false だと dispatch (draft が null) で常に skip されるので != true にする
     if: >
       (github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch') &&
-      github.event.pull_request.draft == false
+      github.event.pull_request.draft != true
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -55,7 +56,7 @@ jobs:
       matrix:
         include:
           - os: macOS
-            runs-on: ${{ vars.RUNNER_MACOS }}
+            runs-on: ${{ vars.RUNNER_MACOS || 'macos-latest' }}
           - os: Windows
             runs-on: windows-latest
     runs-on: ${{ matrix.runs-on }}
