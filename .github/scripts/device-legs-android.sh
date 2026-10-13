@@ -170,11 +170,18 @@ fi
 # 失敗する。加速の実態を数字で証跡に残す。
 if is_uint "$width" && is_uint "$height"; then
   swipe_start="$(date +%s)"
+  swipe_rc=0
   adb shell input swipe \
     "$((width / 2))" "$((height * 7 / 10))" \
-    "$((width / 2))" "$((height * 3 / 10))" 600 >/dev/null 2>&1 || true
+    "$((width / 2))" "$((height * 3 / 10))" 600 >/dev/null 2>&1 || swipe_rc=$?
   swipe_end="$(date +%s)"
-  echo "swipe_probe_seconds=$((swipe_end - swipe_start))" >>"$evidence_dir/runner-host.txt"
+  # 失敗した swipe の所要時間は加速の証拠にならない (即座に失敗すると短時間に見える)。
+  # 失敗時は終了コードだけを残し、秒数は書かない。
+  if [ "$swipe_rc" -eq 0 ]; then
+    echo "swipe_probe_seconds=$((swipe_end - swipe_start))" >>"$evidence_dir/runner-host.txt"
+  else
+    echo "swipe_probe_failed=$swipe_rc" >>"$evidence_dir/runner-host.txt"
+  fi
 fi
 
 status=0
@@ -183,7 +190,17 @@ while [ "$round" -le 2 ]; do
   round_dir="$evidence_dir/round-$round"
   mkdir -p "$round_dir"
   echo "::group::Android driver round $round"
-  if node app/mcp-server/script/stdio-android-verification.mjs "$round_dir" >"$round_dir/driver.log" 2>&1; then
+  # driver は X07 の compare_design が isError を返しても注記だけ書いて exit 0 する。
+  # transport エラー以外の撮影失敗を見逃さないよう、証跡の X07 結果も合格条件に含める。
+  if node app/mcp-server/script/stdio-android-verification.mjs "$round_dir" >"$round_dir/driver.log" 2>&1 \
+    && node -e '
+      const evidence = JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8"));
+      const x07 = evidence.results?.X07_android_scroll;
+      if (!x07 || x07.isError === true) {
+        console.error("X07_android_scroll missing or isError in " + process.argv[1]);
+        process.exit(1);
+      }
+    ' "$round_dir/evidence.json" >>"$round_dir/driver.log" 2>&1; then
     echo "android round $round: PASS"
   else
     echo "android round $round: FAIL"

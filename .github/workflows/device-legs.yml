@@ -6,9 +6,6 @@ name: Device capture legs
 # ランナに接続できないので対象外 — 実機環境の記録が別途必要。
 
 on:
-  push:
-    branches:
-      - ci/device-legs-emulators
   pull_request:
     paths:
       - ".github/workflows/device-legs.yml"
@@ -16,6 +13,10 @@ on:
       - ".github/scripts/device-legs-ios-sim.sh"
       - "app/mcp-server/script/stdio-android-verification.mjs"
       - "app/mcp-server/script/stdio-ios-sim-verification.mjs"
+      # 撮影している製品側。ここを壊す PR でもエミュレータ / シミュレータのレグを走らせる。
+      - "package/mobile-capture/**"
+      - "app/mcp-server/src/service/capture-service.ts"
+      - "app/mcp-server/src/service/compare-design-runner.ts"
   workflow_dispatch:
 
 permissions:
