@@ -53,7 +53,8 @@ window.__send = (msg) => iframe.contentWindow.postMessage({ pluginMessage: msg }
     const bytes = await readFile(join(pluginDist, basename(url.pathname)));
     res
       .writeHead(200, {
-        "content-type": MIME[url.pathname.slice(url.pathname.lastIndexOf("."))] ?? "application/octet-stream",
+        "content-type":
+          MIME[url.pathname.slice(url.pathname.lastIndexOf("."))] ?? "application/octet-stream",
       })
       .end(bytes);
   } catch {
@@ -67,6 +68,10 @@ let browser;
 try {
   browser = await chromium.launch();
   const page = await browser.newPage();
+  // iframe 内で握り潰される例外を拾うため console/pageerror を証跡に残す
+  const consoleLog = [];
+  page.on("console", (msg) => consoleLog.push(`[${msg.type()}] ${msg.text()}`));
+  page.on("pageerror", (err) => consoleLog.push(`[pageerror] ${String(err)}`));
   await page.goto(`http://127.0.0.1:${port}/host.html`);
   const frame = page.frameLocator("#plugin");
   await frame.locator(".tab").first().waitFor();
@@ -74,7 +79,16 @@ try {
   const send = (msg) => page.evaluate((m) => window.__send(m), msg);
   const waitForRequest = async (type) => {
     const before = await page.evaluate(() => window.__received.length);
-    await page.waitForFunction((count) => window.__received.length > count, before);
+    try {
+      await page.waitForFunction((count) => window.__received.length > count, before);
+    } catch (error) {
+      const received = await page.evaluate(() => window.__received);
+      await writeFile(
+        join(evidenceDir, "x08-plugin-diagnostics.json"),
+        JSON.stringify({ waitedFor: type, received, consoleLog }, null, 2),
+      );
+      throw error;
+    }
     const message = await page.evaluate(() => window.__received.at(-1));
     if (message?.type !== type) throw new Error(`expected ${type}, got ${message?.type}`);
     return message;
@@ -97,7 +111,10 @@ try {
 
   const matchText = await frame.locator(".match-rate").textContent();
   const matchRate = Number.parseFloat(matchText);
-  const imgSrc = await frame.locator('img[src^="data:image/png;base64,"]').first().getAttribute("src");
+  const imgSrc = await frame
+    .locator('img[src^="data:image/png;base64,"]')
+    .first()
+    .getAttribute("src");
   const diffImageBase64 = imgSrc.replace("data:image/png;base64,", "");
   const diffBytes = Buffer.from(diffImageBase64, "base64");
 

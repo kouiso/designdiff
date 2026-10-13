@@ -50,7 +50,7 @@ const evidence = { schemaVersion: 1, protocolErrors: [], results: {} };
 const protocolErrors = evidence.protocolErrors;
 
 const adb = async (args, opts = {}) =>
-  (await execFileAsync("adb", args, { timeout: 60_000, maxBuffer: 64 * 1024 * 1024, ...opts }));
+  await execFileAsync("adb", args, { timeout: 60_000, maxBuffer: 64 * 1024 * 1024, ...opts });
 
 // 独立オラクル: adb devices -l を製品を通さず読む。
 const { stdout: devicesOut } = await adb(["devices", "-l"]);
@@ -67,7 +67,9 @@ const devices = devicesOut
 evidence.results.connectedDevices = devices;
 const ready = devices.filter((d) => d.state === "device");
 assert.ok(ready.length >= 1, `X05 needs >=1 ready android device, got ${ready.length}`);
-const expectedSerials = process.env.ANDROID_EXPECT_SERIALS?.split(",").map((s) => s.trim()).filter(Boolean);
+const expectedSerials = process.env.ANDROID_EXPECT_SERIALS?.split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
 if (expectedSerials) {
   assert.deepEqual(
     ready.map((d) => d.serial).sort(),
@@ -84,11 +86,11 @@ const captureTargets = [emulator, physical].filter((d) => d !== null);
 const directShots = {};
 for (const dev of captureTargets) {
   const p = join(evidenceDir, `adb-direct-${dev.serial}.png`);
-  const { stdout } = await execFileAsync(
-    "adb",
-    ["-s", dev.serial, "exec-out", "screencap", "-p"],
-    { encoding: "buffer", maxBuffer: 64 * 1024 * 1024, timeout: 60_000 },
-  );
+  const { stdout } = await execFileAsync("adb", ["-s", dev.serial, "exec-out", "screencap", "-p"], {
+    encoding: "buffer",
+    maxBuffer: 64 * 1024 * 1024,
+    timeout: 60_000,
+  });
   await writeFile(p, stdout);
   const meta = await sharp(p).metadata();
   directShots[dev.serial] = { width: meta.width, height: meta.height, model: dev.model };
@@ -139,7 +141,10 @@ if (ready.length >= 2) {
     isError: ambiguous.isError === true,
     text: text(ambiguous).slice(0, 500),
   };
-  assert.ok(ambiguous.isError === true, "two devices without serial must be rejected, not silently picked");
+  assert.ok(
+    ambiguous.isError === true,
+    "two devices without serial must be rejected, not silently picked",
+  );
   assert.match(text(ambiguous), /serial|device|ANDROID_SERIAL/i);
 } else {
   const sole = await call("compare_design", {
@@ -173,8 +178,16 @@ for (const dev of captureTargets) {
     width: meta.width,
     height: meta.height,
   };
-  assert.equal(meta.width, directShots[dev.serial].width, `capture width must match adb direct for ${dev.serial}`);
-  assert.equal(meta.height, directShots[dev.serial].height, `capture height must match adb direct for ${dev.serial}`);
+  assert.equal(
+    meta.width,
+    directShots[dev.serial].width,
+    `capture width must match adb direct for ${dev.serial}`,
+  );
+  assert.equal(
+    meta.height,
+    directShots[dev.serial].height,
+    `capture height must match adb direct for ${dev.serial}`,
+  );
 }
 
 // X05d: 不存在 serial → 明示拒否。
@@ -263,7 +276,17 @@ evidence.results.scrollTarget = { serial: scrollDevice.serial, pageUrl };
 await adb(["-s", scrollDevice.serial, "shell", "am", "force-stop", "com.android.chrome"]).catch(
   () => {},
 );
-await adb(["-s", scrollDevice.serial, "shell", "am", "start", "-a", "android.intent.action.VIEW", "-d", pageUrl]);
+await adb([
+  "-s",
+  scrollDevice.serial,
+  "shell",
+  "am",
+  "start",
+  "-a",
+  "android.intent.action.VIEW",
+  "-d",
+  pageUrl,
+]);
 // ブラウザ描画待ち。低速エミュレータでは固定時間待ちだとページ未描画のまま
 // scroll が走って1枚しか撮れないので、縞模様の彩色画素が出るまで待つ。
 const waitForPageRender = async () => {
@@ -271,16 +294,19 @@ const waitForPageRender = async () => {
   let attempts = 0;
   while (Date.now() < deadline) {
     attempts++;
-    const { stdout } = await adb([
-      "-s", scrollDevice.serial, "exec-out", "screencap", "-p",
-    ], { encoding: "buffer", maxBuffer: 50 * 1024 * 1024 });
+    const { stdout } = await adb(["-s", scrollDevice.serial, "exec-out", "screencap", "-p"], {
+      encoding: "buffer",
+      maxBuffer: 50 * 1024 * 1024,
+    });
     const { data, info } = await sharp(Buffer.isBuffer(stdout) ? stdout : Buffer.from(stdout))
       .raw()
       .toBuffer({ resolveWithObject: true });
     let colored = 0;
     const step = 997 * info.channels;
     for (let i = 0; i + 2 < data.length; i += step) {
-      const r = data[i], g = data[i + 1], b = data[i + 2];
+      const r = data[i],
+        g = data[i + 1],
+        b = data[i + 2];
       if (Math.max(Math.abs(r - g), Math.abs(g - b), Math.abs(r - b)) > 60) colored++;
     }
     if (colored > 200) return { rendered: true, attempts, coloredSamples: colored };
@@ -400,4 +426,4 @@ if (unauthSerial?.includes(":")) {
 assert.equal(protocolErrors.length, 0, `protocol errors: ${protocolErrors.join(" | ")}`);
 await writeFile(join(evidenceDir, "evidence.json"), `${JSON.stringify(evidence, null, 2)}\n`);
 await client.close();
-console.log(join(evidenceDir, "evidence.json"));
+console.info(join(evidenceDir, "evidence.json"));

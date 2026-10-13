@@ -381,18 +381,27 @@ try {
 
   // 書込み拒否の作り方はOSで異なる: POSIX は chmod 0o500、Windows では
   // chmod が効かないため icacls で現在ユーザーの WriteData を拒否する。
+  // 拒否対象のプリンシパルは環境変数ではなく whoami から取る。
+  // サービスセッションや CI ランナーでは USERNAME/USERDOMAIN が
+  // 実際のトークンと食い違い、拒否が別アカウントに掛かって書込みが通る。
   const isWindows = process.platform === "win32";
-  const currentPrincipal = `${process.env.USERDOMAIN ? `${process.env.USERDOMAIN}\\` : ""}${process.env.USERNAME ?? ""}`;
+  const currentPrincipal = isWindows
+    ? execFileSync("whoami", []).toString().trim()
+    : `${process.env.USERDOMAIN ? `${process.env.USERDOMAIN}\\` : ""}${process.env.USERNAME ?? ""}`;
   const denyWrites = async () => {
     if (isWindows) {
-      execFileSync("icacls", [projectDirectory, "/deny", `${currentPrincipal}:(W)`]);
+      execFileSync("icacls", [projectDirectory, "/deny", `${currentPrincipal}:(W)`], {
+        stdio: "inherit",
+      });
       return;
     }
     await chmod(projectDirectory, 0o500);
   };
   const allowWrites = async () => {
     if (isWindows) {
-      execFileSync("icacls", [projectDirectory, "/remove:d", currentPrincipal]);
+      execFileSync("icacls", [projectDirectory, "/remove:d", currentPrincipal], {
+        stdio: "inherit",
+      });
       return;
     }
     await chmod(projectDirectory, 0o700);
