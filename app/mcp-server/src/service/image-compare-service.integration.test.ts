@@ -1,8 +1,7 @@
-import pixelmatch from "pixelmatch";
 import sharp from "sharp";
 import { describe, expect, it } from "vitest";
 
-import { clusterDiffPixels, resolveAlignment } from "@figdiff/shared";
+import { clusterDiffPixels, comparePixels, resolveAlignment } from "@figdiff/shared";
 
 import { buildDiffReport } from "./diff-report-builder.js";
 import { compareImages } from "./image-compare-service.js";
@@ -171,7 +170,7 @@ describe("compareImages shift + localized diff scoring (Issue #58)", () => {
       const screenshot = Uint8ClampedArray.from(screenshotPixels);
 
       const preAlignmentDiff = new Uint8ClampedArray(WIDTH * HEIGHT * 4);
-      pixelmatch(design, screenshot, preAlignmentDiff, WIDTH, HEIGHT, {
+      comparePixels(design, screenshot, preAlignmentDiff, WIDTH, HEIGHT, {
         threshold: 0.1,
         diffMask: true,
       });
@@ -190,9 +189,11 @@ describe("compareImages shift + localized diff scoring (Issue #58)", () => {
         diffRegions: preAlignClusters,
       });
 
+      // 補正で空いた上端の行は透明画素になる。製品と同じ白合成で採点しないと、
+      // 旧/新パイプラインの比較そのものが製品とは別の物差しになる。
       const resolved = resolveAlignment(design, screenshot, WIDTH, HEIGHT);
       const postDiff = new Uint8ClampedArray(WIDTH * HEIGHT * 4);
-      pixelmatch(resolved.alignedDesignPixels, screenshot, postDiff, WIDTH, HEIGHT, {
+      comparePixels(resolved.alignedDesignPixels, screenshot, postDiff, WIDTH, HEIGHT, {
         threshold: 0.1,
         diffMask: true,
       });

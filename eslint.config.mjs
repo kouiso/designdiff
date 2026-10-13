@@ -10,6 +10,37 @@ import typescriptEslint from "typescript-eslint";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const PIXELMATCH_MESSAGE =
+  "@figdiff/shared の comparePixels を使う (白合成の採点意味論を共有するため)。";
+const PIXELMATCH_COMPARE_FILE = "package/shared/src/pixel-compare.ts";
+// 製品コードから独立させる物差し。白合成は self-test の check5 / check6 で固定している。
+const PIXELMATCH_ORACLE_FILE = "script/oracle-compare.mjs";
+// vi.mock("pixelmatch") した mock を取り出し、comparePixels へ渡る引数を検証する
+// ためだけに動的 import するテスト。採点には使わないので、ここだけ例外にする。
+// テスト全体を例外にすると、採点用テストが動的 import で市松合成へ戻せてしまう。
+const PIXELMATCH_MOCK_INSPECTION_FILES = [
+  "app/desktop/src/service/image-compare.test.ts",
+  "app/mcp-server/src/service/image-compare-service.test.ts",
+];
+// no-restricted-syntax は後ろのブロックが配列ごと上書きするため、同ルールを持つ
+// ブロックすべてにこの selector を入れる。
+// `pixelmatch` のようなテンプレートリテラル指定も同じモジュールを読むので一緒に塞ぐ。
+const PIXELMATCH_DYNAMIC_IMPORT = {
+  selector:
+    "ImportExpression[source.value='pixelmatch'], ImportExpression[source.quasis.0.value.cooked='pixelmatch']",
+  message: PIXELMATCH_MESSAGE,
+};
+const DESKTOP_PROPS_SELECTORS = [
+  {
+    selector: "TSTypeAliasDeclaration[id.name='Props']",
+    message: "Name props type after the component: use `XxxProps`, not bare `Props`.",
+  },
+  {
+    selector: "TSInterfaceDeclaration[id.name='Props']",
+    message: "Name props interface after the component: use `XxxProps`, not bare `Props`.",
+  },
+];
+
 export default [
   {
     ignores: [
@@ -198,6 +229,14 @@ export default [
     },
   },
 
+  {
+    files: ["**/*.ts", "**/*.tsx"],
+    ignores: [PIXELMATCH_COMPARE_FILE, ...PIXELMATCH_MOCK_INSPECTION_FILES],
+    rules: {
+      "no-restricted-syntax": ["error", PIXELMATCH_DYNAMIC_IMPORT],
+    },
+  },
+
   // React hooks rules + props type naming
   {
     files: ["app/desktop/src/**/*.tsx", "app/desktop/src/**/*.ts"],
@@ -209,17 +248,13 @@ export default [
       "react-hooks/exhaustive-deps": "warn",
 
       // Props types are named after the component (`XxxProps`), never bare `Props`.
-      "no-restricted-syntax": [
-        "error",
-        {
-          selector: "TSTypeAliasDeclaration[id.name='Props']",
-          message: "Name props type after the component: use `XxxProps`, not bare `Props`.",
-        },
-        {
-          selector: "TSInterfaceDeclaration[id.name='Props']",
-          message: "Name props interface after the component: use `XxxProps`, not bare `Props`.",
-        },
-      ],
+      "no-restricted-syntax": ["error", ...DESKTOP_PROPS_SELECTORS, PIXELMATCH_DYNAMIC_IMPORT],
+    },
+  },
+  {
+    files: PIXELMATCH_MOCK_INSPECTION_FILES.filter((file) => file.startsWith("app/desktop/")),
+    rules: {
+      "no-restricted-syntax": ["error", ...DESKTOP_PROPS_SELECTORS],
     },
   },
 
@@ -280,6 +315,7 @@ export default [
           selector: "FunctionExpression",
           message: "Use an arrow function in the compare_design tool.",
         },
+        PIXELMATCH_DYNAMIC_IMPORT,
       ],
     },
   },
@@ -357,6 +393,37 @@ export default [
       "@typescript-eslint/no-unused-expressions": "off",
       "@typescript-eslint/no-unused-vars": "off",
       "@typescript-eslint/no-empty-function": "off",
+    },
+  },
+
+  // pixelmatch 7 の既定は半透明画素を市松模様へ合成する。製品の採点は白合成なので、
+  // 直接呼ぶと同じ画像でも面ごとに diffPixelCount がずれる。比較は comparePixels に集約する。
+  {
+    files: ["**/*.ts", "**/*.tsx", "**/*.mjs", "**/*.cjs", "**/*.js"],
+    ignores: [PIXELMATCH_COMPARE_FILE, PIXELMATCH_ORACLE_FILE],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        { paths: [{ name: "pixelmatch", message: PIXELMATCH_MESSAGE }] },
+      ],
+    },
+  },
+
+  // 検証スクリプトも新しい採点経路になり得る。ts 側のブロックは no-restricted-syntax を
+  // 別の規則と共有しているため、js 系はここで動的 import と require をまとめて塞ぐ。
+  {
+    files: ["**/*.mjs", "**/*.cjs", "**/*.js"],
+    ignores: [PIXELMATCH_ORACLE_FILE],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        PIXELMATCH_DYNAMIC_IMPORT,
+        {
+          selector:
+            "CallExpression[callee.name='require'][arguments.0.value='pixelmatch'], CallExpression[callee.name='require'][arguments.0.quasis.0.value.cooked='pixelmatch']",
+          message: PIXELMATCH_MESSAGE,
+        },
+      ],
     },
   },
 ];

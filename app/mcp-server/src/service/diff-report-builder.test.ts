@@ -1266,6 +1266,91 @@ describe("diffRegions による局所採点 (Issue #56)", () => {
     ).not.toThrow();
   });
 
+  const paintDarkSquare = (pixels: Uint8ClampedArray, x0: number, y0: number, size: number) => {
+    for (let y = y0; y < y0 + size; y++) {
+      for (let x = x0; x < x0 + size; x++) {
+        const index = (y * FRAME_SIZE + x) * 4;
+        pixels[index] = 20;
+        pixels[index + 1] = 20;
+        pixels[index + 2] = 20;
+      }
+    }
+  };
+
+  // 画素が一致する (=採点すると無害な) クラスタを格子状に並べる。diffPixelCount
+  // だけを大きくして、本命の差分より採点順位を上にする。
+  const buildHarmlessClusters = (count: number) =>
+    Array.from({ length: count }, (_, i) => ({
+      x: (i % 30) * 10,
+      y: Math.floor(i / 30) * 10,
+      w: 8,
+      h: 8,
+      diffPixelCount: 500,
+    }));
+
+  it("ノード木の無い比較で、25件目以降の小さな実差分も採点して fail にすること", async () => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    const designPixels = await createSolidRgba(FRAME_SIZE, FRAME_SIZE, WHITE_RGB);
+    const screenshotPixels = Uint8ClampedArray.from(designPixels);
+    paintDarkSquare(screenshotPixels, LOCAL_DIFF_X, LOCAL_DIFF_Y, 4);
+    const realDefect = { x: LOCAL_DIFF_X, y: LOCAL_DIFF_Y, w: 4, h: 4, diffPixelCount: 16 };
+
+    const report = buildDiffReport({
+      designPixels,
+      screenshotPixels,
+      width: FRAME_SIZE,
+      height: FRAME_SIZE,
+      diffRegions: [...buildHarmlessClusters(24), realDefect],
+    });
+
+    expect(
+      report.regionScores.some(
+        (score) => score.regionId === `diff-cluster-${LOCAL_DIFF_X}-${LOCAL_DIFF_Y}-4-4`,
+      ),
+    ).toBe(true);
+    expect(report.aggregateVerdict).toBe("fail");
+  });
+
+  it("ノード木の無い比較で、採点上限から外れたクラスタが残れば pass にしないこと", async () => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    const designPixels = await createSolidRgba(FRAME_SIZE, FRAME_SIZE, WHITE_RGB);
+    const screenshotPixels = Uint8ClampedArray.from(designPixels);
+    paintDarkSquare(screenshotPixels, LOCAL_DIFF_X, LOCAL_DIFF_Y, 4);
+    const unscoredDefect = { x: LOCAL_DIFF_X, y: LOCAL_DIFF_Y, w: 4, h: 4, diffPixelCount: 16 };
+
+    const report = buildDiffReport({
+      designPixels,
+      screenshotPixels,
+      width: FRAME_SIZE,
+      height: FRAME_SIZE,
+      diffRegions: [...buildHarmlessClusters(200), unscoredDefect],
+    });
+
+    expect(
+      report.regionScores.some(
+        (score) => score.regionId === `diff-cluster-${LOCAL_DIFF_X}-${LOCAL_DIFF_Y}-4-4`,
+      ),
+    ).toBe(false);
+    expect(report.aggregateVerdict).toBe("inconclusive");
+    expect(report.rationale).toContain("1 diff cluster(s) beyond the 200-cluster scoring limit");
+  });
+
+  it("採点上限ちょうどのクラスタ数で全件が無害なら pass のままにすること", async () => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    const designPixels = await createSolidRgba(FRAME_SIZE, FRAME_SIZE, WHITE_RGB);
+    const screenshotPixels = Uint8ClampedArray.from(designPixels);
+
+    const report = buildDiffReport({
+      designPixels,
+      screenshotPixels,
+      width: FRAME_SIZE,
+      height: FRAME_SIZE,
+      diffRegions: buildHarmlessClusters(200),
+    });
+
+    expect(report.aggregateVerdict).toBe("pass");
+  });
+
   it("regionId が重大度の順位ではなく座標由来で、比較のたびに安定すること", async () => {
     const { buildDiffReport } = await import("./diff-report-builder.js");
     const designPixels = await createSolidRgba(FRAME_SIZE, FRAME_SIZE, WHITE_RGB);

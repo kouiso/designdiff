@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import { comparePixels } from "@figdiff/shared";
+
 import { DIFF_THRESHOLD, calculateMatchRate, renderPixelmatchDiff } from "./pixel-diff-service";
 
 describe("pixel-diff-service", () => {
@@ -103,6 +105,88 @@ describe("pixel-diff-service", () => {
       const { diffPixelCount } = renderPixelmatchDiff(design, screenshot, out, w, h);
       // AA として除外され、構造的な誤検出(false positive)にならない。
       expect(diffPixelCount).toBe(0);
+    });
+  });
+
+  // chrome-extension だけは pixelmatch を持てず移植実装で採点している。
+  // 移植がずれると拡張だけ diffPixelCount が変わるため、他の面が使う comparePixels と
+  // 同じ件数になることを、半透明・ノイズ・AA エッジを含む検体で固定する。
+  describe("renderPixelmatchDiff と comparePixels の一致", () => {
+    const W = 48;
+    const H = 40;
+
+    // 再現性のため固定 seed の線形合同法で乱数を作る。
+    const seededRandom = (seed: number) => {
+      let state = seed >>> 0;
+      return () => {
+        state = (state * 1664525 + 1013904223) >>> 0;
+        return state / 2 ** 32;
+      };
+    };
+
+    const build = (pixelAt: (x: number, y: number) => number[]): Uint8ClampedArray => {
+      const data = new Uint8ClampedArray(W * H * 4);
+      for (let y = 0; y < H; y++) {
+        for (let x = 0; x < W; x++) {
+          data.set(pixelAt(x, y), (y * W + x) * 4);
+        }
+      }
+      return data;
+    };
+
+    const noisePair = (seed: number, opaque: boolean) => {
+      const random = seededRandom(seed);
+      const channel = () => Math.floor(random() * 256);
+      const pixel = () => [channel(), channel(), channel(), opaque ? 255 : channel()];
+      return [build(pixel), build(pixel)] as const;
+    };
+
+    // desktop / MCP / Figma plugin の既定閾値。DIFF_THRESHOLD を参照すると、拡張側の
+    // 閾値だけが変わっても参照も一緒に動き、ずれを検知できない。
+    const PRODUCT_THRESHOLD = 0.1;
+    const reference = (a: Uint8ClampedArray, b: Uint8ClampedArray, checkerboard = false) =>
+      comparePixels(a, b, new Uint8ClampedArray(W * H * 4), W, H, {
+        threshold: PRODUCT_THRESHOLD,
+        checkerboard,
+      });
+
+    const translucentNoise = noisePair(2, false);
+
+    const specimens: Record<string, readonly [Uint8ClampedArray, Uint8ClampedArray]> = {
+      不透明ノイズ: noisePair(1, true),
+      半透明ノイズ: translucentNoise,
+      半透明グラデーション: [
+        build((x, y) => [x * 5, y * 6, 128, (x * 7) % 256]),
+        build((x, y) => [x * 5 + 10, y * 6, 120, (x * 7 + 30) % 256]),
+      ],
+      "AA を含む縦エッジ": [
+        build((x) => (x > W / 2 ? [0, 0, 0, 255] : [255, 255, 255, 255])),
+        build((x, y) => {
+          if (x === W / 2) return [128, 128, 128, 255];
+          return x > W / 2 + (y % 3 === 0 ? 1 : 0) ? [0, 0, 0, 255] : [255, 255, 255, 255];
+        }),
+      ],
+      透明と白: [build(() => [0, 0, 0, 0]), build(() => [255, 255, 255, 255])],
+    };
+
+    for (const [name, [design, screenshot]] of Object.entries(specimens)) {
+      it(name, () => {
+        const port = renderPixelmatchDiff(
+          design,
+          screenshot,
+          new Uint8ClampedArray(W * H * 4),
+          W,
+          H,
+        ).diffPixelCount;
+        expect(port).toBe(reference(design, screenshot));
+      });
+    }
+
+    // 白合成と市松合成で件数が変わる検体でなければ、合成方法のずれを検知できない。
+    it("半透明ノイズは合成方法の違いを判別できる", () => {
+      const [design, screenshot] = translucentNoise;
+      expect(reference(design, screenshot)).toBeGreaterThan(0);
+      expect(reference(design, screenshot, true)).not.toBe(reference(design, screenshot));
     });
   });
 });

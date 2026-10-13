@@ -95,9 +95,11 @@ interface BuildDiffReportOptions {
 }
 
 const MAX_REGION_SCORE_COUNT = 24;
-// section relief は差分クラスタ全件の証明を要する。レポート行数とは別の上限を設け、
-// 超過したクラスタは未説明として扱い救済を止める。
-const MAX_SECTION_RELIEF_CLUSTER_COUNT = 200;
+// 差分クラスタの採点上限。セクション行の上限 (MAX_REGION_SCORE_COUNT) と同じ
+// 24 件にすると、ノード木の無い比較では 25 件目以降の実差分 (アイコンの色違い等)
+// がどの行にも載らず、判定から黙って消える (designdiff#359)。上限を超えた
+// クラスタは、セクション経路では救済を止め、ノード木の無い経路では PASS を止める。
+const MAX_DIFF_CLUSTER_SCORE_COUNT = 200;
 const MIN_REGION_PIXEL_AREA = 64;
 // shape (Hausdorff, 0-1 正規化済み) が実測でこの値を明確に上回る場合のみ
 // エッジの空間ズレを「実在する」と判定する。純色/輝度シフトのみの領域は
@@ -838,12 +840,14 @@ const shouldScoreDiffClusters = (
   (options.diffRegions?.length ?? 0) > 0 &&
   (!hasChildRegions || options.rasterizationTolerance === true);
 
-const getDiffClusterScoreLimit = (hasChildRegions: boolean, rasterizationTolerance: boolean) =>
-  hasChildRegions && rasterizationTolerance
-    ? MAX_SECTION_RELIEF_CLUSTER_COUNT
-    : MAX_REGION_SCORE_COUNT;
+interface RegionScoreBuild {
+  regionScores: RegionScore[];
+  // ノード木の無い比較で採点上限から外れたクラスタ数。セクション行がある比較は
+  // セクションが全画素を覆うので 0 のまま。
+  unscoredClusterCountWithoutSections: number;
+}
 
-function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
+const buildRegionScores = (options: BuildDiffReportOptions): RegionScoreBuild => {
   const {
     designPixels,
     screenshotPixels,
@@ -1019,10 +1023,7 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
     // 効かなくなり、誤 PASS が再発する。
     const selectedClusters = [...scoreableClusters]
       .sort((a, b) => (b.diffPixelCount ?? 0) - (a.diffPixelCount ?? 0))
-      .slice(
-        0,
-        getDiffClusterScoreLimit(childRegions.length > 0, options.rasterizationTolerance === true),
-      );
+      .slice(0, MAX_DIFF_CLUSTER_SCORE_COUNT);
     const selectedClusterSet = new Set(selectedClusters);
     for (const cluster of scoreableClusters) {
       if (!selectedClusterSet.has(cluster)) {
@@ -1229,15 +1230,21 @@ function buildRegionScores(options: BuildDiffReportOptions): RegionScore[] {
   });
 
   if (childRegions.length > 0) {
-    return [...childRegions, buildRootRegion()];
+    return {
+      regionScores: [...childRegions, buildRootRegion()],
+      unscoredClusterCountWithoutSections: 0,
+    };
   }
 
   if (diffClusterRegions.length > 0) {
-    return [...diffClusterRegions, buildRootRegion()];
+    return {
+      regionScores: [...diffClusterRegions, buildRootRegion()],
+      unscoredClusterCountWithoutSections: unscoredDiffClusters.length,
+    };
   }
 
-  return [buildRootRegion()];
-}
+  return { regionScores: [buildRootRegion()], unscoredClusterCountWithoutSections: 0 };
+};
 
 // 同一行内の cluster はグリフ片ごとに水平方向へ分かれ、行同士は行間の
 // 隙間で縦に分かれる。どちらの方向も「同じテキストブロック内の近接差分」
@@ -1453,7 +1460,7 @@ export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
       ?.map((bbox) => clipToAlignedCanvas(bbox))
       .filter((bbox): bbox is DiffBoundingBox & { diffPixelCount?: number } => bbox !== null),
   };
-  const regionScores = buildRegionScores(alignedOptions);
+  const { regionScores, unscoredClusterCountWithoutSections } = buildRegionScores(alignedOptions);
 
   // 比較対象そのものの行は子と範囲が重なる。合否を決める不具合をここから作ると、
   // 子が全部合格でも背景の色差だけで不合格へ倒れる。集計と同じ行だけを使う。
@@ -1496,10 +1503,20 @@ export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
     });
   }
 
-  const verdict = computeVerdict(
+  const computedVerdict = computeVerdict(
     { alignment, regionScores, issues },
     options.rasterizationTolerance === true,
   );
+  // ノード木の無い比較では採点したクラスタ行だけが合否を決める。上限から外れた
+  // クラスタは一度も測っていないので、そこに実差分が無いとは言えない。
+  const verdict =
+    computedVerdict.verdict === "pass" && unscoredClusterCountWithoutSections > 0
+      ? {
+          ...computedVerdict,
+          verdict: "inconclusive" as const,
+          rationale: `${unscoredClusterCountWithoutSections} diff cluster(s) beyond the ${MAX_DIFF_CLUSTER_SCORE_COUNT}-cluster scoring limit were not scored, so a pass cannot be confirmed; ${computedVerdict.rationale}`,
+        }
+      : computedVerdict;
   const structuralAssessment = computeWholeImageStructure(
     alignedDesignPixels,
     screenshotPixels,
