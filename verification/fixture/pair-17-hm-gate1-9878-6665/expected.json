@@ -25,7 +25,8 @@
         "color",
         "position",
         "size"
-      ]
+      ],
+      "rasterizationTolerance": true
     }
   ]
 }

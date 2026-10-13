@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { readdirSync, readFileSync } from "node:fs";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import { isDeepStrictEqual } from "node:util";
@@ -82,6 +83,9 @@ const FixtureVariantSchema = z
     // same-token 証明を verdict に効かせる opt-in を検体ごとに付ける。
     // strict 判定を守る対照検体 (意図的差分など) では付けない。
     rasterizationTolerance: z.boolean().optional(),
+    // expectedVerdict は pass (あるべき姿) のまま、推定器の未修正で fail を返している既知 RED。
+    // 値は原因 Issue。runner はこの検体だけ fail を明示的に assert する。
+    knownRedIssue: z.string().min(1).optional(),
     expectedSystemUiAlignment: z
       .object({
         matchRate: z.number().min(0).max(100),
@@ -301,6 +305,27 @@ function assertWorstRegions(
   expect(new Set(actualWorstRegionIds)).toEqual(new Set(variant.expectedWorstRegionIds));
 }
 
+function assertVerdictAndMetrics(
+  result: CompareDesignResult,
+  variant: z.infer<typeof FixtureVariantSchema>,
+): void {
+  if (variant.knownRedIssue !== undefined) {
+    // it.fails だと読込失敗や schema エラーの throw でも緑になる。verdict を直接
+    // assert すれば、推定器が直って pass に変わった時にだけ落ちる。
+    expect(variant.expectedVerdict).toBe("pass");
+    expect(result.diffReport?.aggregateVerdict).toBe("fail");
+    return;
+  }
+
+  expect(result.diffReport?.aggregateVerdict).toBe(variant.expectedVerdict);
+  assertWeightedStructure(result, variant);
+  assertWeightedColor(result, variant);
+  assertRegionStructure(result, variant);
+  assertIssuePresence(result, variant);
+  assertIssueKinds(result, variant);
+  assertWorstRegions(result, variant);
+}
+
 function resolveVariants(
   expectation: z.infer<typeof FixtureExpectationSchema>,
   variantName: string | undefined,
@@ -360,13 +385,7 @@ describe("golden fixture runner", () => {
           expectation.figmaRootNode,
         );
 
-        expect(result.diffReport?.aggregateVerdict).toBe(variant.expectedVerdict);
-        assertWeightedStructure(result, variant);
-        assertWeightedColor(result, variant);
-        assertRegionStructure(result, variant);
-        assertIssuePresence(result, variant);
-        assertIssueKinds(result, variant);
-        assertWorstRegions(result, variant);
+        assertVerdictAndMetrics(result, variant);
         if (!result.diffImageBase64) {
           throw new Error(`${expectation.pairId}/${variant.name}: diff image is missing`);
         }
@@ -455,75 +474,32 @@ describe("golden fixture runner", () => {
     FIXTURE_TEST_TIMEOUT_MS * 3,
   );
 
-  // designdiff#243: horsemanager Gate1 で観測された検体群。
-  // correct(pass期待): Figma正本と同一内容物 — 細ストロークAA・ストローク被覆差のみ。
-  //   estimator 修正 (#243) が入るまで it.fails で分離し、修正時に落ちて外し忘れを防ぐ。
-  // correct(fail期待): 内容差 (別データ/スケール/寸法) が実在する対照検体。
-  // drift-*: 意図的平行移動の本物差分対照。linewidth: 線幅差の誤FAIL検体。
-  const HM_GATE1_PASS_PAIR_IDS = [
-    "pair-07-hm-gate1-9810-3312",
-    "pair-08-hm-gate1-9721-6204",
-    "pair-09-hm-gate1-9776-6791",
-    "pair-11-hm-gate1-9776-6456",
-    "pair-15-hm-gate1-9804-4369",
-    "pair-18-hm-gate1-9892-10228",
-    "pair-19-hm-gate1-9863-5441",
-    "pair-22-hm-gate1-9776-6584",
-    "pair-23-hm-gate1-9799-4024",
-  ];
-  it.fails.each(HM_GATE1_PASS_PAIR_IDS)(
-    "%s correct が誤FAILなく pass となること (designdiff#243, estimator修正まで既知失敗)",
-    async (pairId) => {
-      await runFixture(pairId, 1, "correct");
-    },
-    FIXTURE_TEST_TIMEOUT_MS,
-  );
-  it.fails.each([
-    "pair-07-hm-gate1-9810-3312",
-    "pair-09-hm-gate1-9776-6791",
-    "pair-15-hm-gate1-9804-4369",
-  ])(
-    "%s linewidth (線幅差) が誤FAILなく pass となること (designdiff#243, estimator修正まで既知失敗)",
-    async (pairId) => {
-      await runFixture(pairId, 1, "linewidth");
-    },
-    FIXTURE_TEST_TIMEOUT_MS,
-  );
-  const HM_GATE1_FAIL_CASES: [string, string][] = [
-    // 内容差あり (correct が fail 期待) の対照検体
-    ...[
-      "pair-10-hm-gate1-9776-6698",
-      "pair-12-hm-gate1-9810-3193",
-      "pair-13-hm-gate1-9804-4204",
-      "pair-14-hm-gate1-9804-4285",
-      "pair-16-hm-gate1-9892-8063",
-      "pair-17-hm-gate1-9878-6665",
-      "pair-20-hm-gate1-9878-6036",
-      "pair-21-hm-gate1-9878-6362",
-      "pair-24-hm-gate1-9789-3641",
-    ].map((pairId): [string, string] => [pairId, "correct"]),
-    // 意図的2px平行移動 (全18ペア)
-    ...[
-      ...HM_GATE1_PASS_PAIR_IDS,
-      "pair-10-hm-gate1-9776-6698",
-      "pair-12-hm-gate1-9810-3193",
-      "pair-13-hm-gate1-9804-4204",
-      "pair-14-hm-gate1-9804-4285",
-      "pair-16-hm-gate1-9892-8063",
-      "pair-17-hm-gate1-9878-6665",
-      "pair-20-hm-gate1-9878-6036",
-      "pair-21-hm-gate1-9878-6362",
-      "pair-24-hm-gate1-9789-3641",
-    ].map((pairId): [string, string] => [pairId, "drift-2px"]),
-    // 意図的1px平行移動
-    ...[
-      "pair-07-hm-gate1-9810-3312",
-      "pair-09-hm-gate1-9776-6791",
-      "pair-15-hm-gate1-9804-4369",
-    ].map((pairId): [string, string] => [pairId, "drift-1px"]),
-  ];
-  it.each(HM_GATE1_FAIL_CASES)(
-    "%s %s が fail を返すこと (designdiff#243 対照検体)",
+  // designdiff#243: horsemanager Gate1 検体。ケースは expected.json から生成し、
+  // verdict の正本を 1 か所 (expected.json) に保つ。
+  // correct: Figma正本と同一内容物なら pass 期待。推定器が未修正の間は knownRedIssue で
+  //   既知 RED として fail を直接 assert する。内容差・寸法差があるものは fail 期待の対照。
+  // drift-*: 意図的平行移動。tolerance 下でも fail のままであることを見る対照。
+  // linewidth: 線幅差。#243 は検出漏れを許さないので fail 期待。
+  const HM_GATE1_CASES: [string, string, string][] = readdirSync(FIXTURES_ROOT)
+    .filter((name) => /^pair-\d+-hm-gate1-/.test(name))
+    .sort()
+    .flatMap((pairId) => {
+      const expectation = FixtureExpectationSchema.parse(
+        JSON.parse(readFileSync(path.join(FIXTURES_ROOT, pairId, "expected.json"), "utf8")),
+      );
+      return expectation.variants.map((variant): [string, string, string] => [
+        pairId,
+        variant.name,
+        variant.knownRedIssue !== undefined
+          ? `既知RED(${variant.knownRedIssue}): ${variant.expectedVerdict} 期待だが fail`
+          : variant.expectedVerdict,
+      ]);
+    });
+  it("Gate1 検体を expected.json から読み込めていること", () => {
+    expect(HM_GATE1_CASES.length).toBeGreaterThanOrEqual(42);
+  });
+  it.each(HM_GATE1_CASES)(
+    "%s %s の verdict が期待どおりであること: %s (designdiff#243)",
     async (pairId, variantName) => {
       await runFixture(pairId, 1, variantName);
     },
