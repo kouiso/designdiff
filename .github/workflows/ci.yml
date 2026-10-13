@@ -15,9 +15,9 @@ concurrency:
 jobs:
   node:
     name: Node (${{ matrix.check-type }})
-    runs-on: ${{ vars.RUNNER_LINUX }}
+    runs-on: ${{ vars.RUNNER_LINUX || 'ubuntu-latest' }}
     timeout-minutes: 15
-    if: github.event.pull_request.draft == false
+    if: github.event.pull_request.draft != true
     strategy:
       fail-fast: false
       matrix:
@@ -51,6 +51,12 @@ jobs:
         if: matrix.check-type == 'test'
         run: pnpm test
 
+      # 単体テストの MCP は全部 InMemoryTransport 越しで、SDK の stdio 実装を一度も通らん。
+      # SDK の minor/patch は automerge されるので、本物の dist/index.js と往復せんと stdio が壊れても緑で通る。
+      - name: MCP stdio round-trip smoke
+        if: matrix.check-type == 'test'
+        run: pnpm --filter "@figdiff/mcp-server" run test:stdio-smoke
+
       - name: Coverage thresholds
         if: matrix.check-type == 'coverage'
         # 7パッケージ全部を対象にする。門の外に置いたパッケージは、
@@ -59,9 +65,9 @@ jobs:
 
   e2e:
     name: E2E (Playwright)
-    runs-on: ${{ vars.RUNNER_LINUX }}
+    runs-on: ${{ vars.RUNNER_LINUX || 'ubuntu-latest' }}
     timeout-minutes: 20
-    if: github.event.pull_request.draft == false
+    if: github.event.pull_request.draft != true
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -97,9 +103,9 @@ jobs:
   # postMessage 往復・requestId 相関・実 canvas 比較を外側から検証する。
   figma-plugin-e2e:
     name: Figma plugin host E2E
-    runs-on: ${{ vars.RUNNER_LINUX }}
+    runs-on: ${{ vars.RUNNER_LINUX || 'ubuntu-latest' }}
     timeout-minutes: 15
-    if: github.event.pull_request.draft == false
+    if: github.event.pull_request.draft != true
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -133,12 +139,13 @@ jobs:
 
   # Electron 本体の起動は単体テストでも Playwright E2E (web 版) でも
   # 一度も通っていない。配布物が立ち上がって preload 経由の IPC が
-  # 生きているかを最小限だけ確かめる。重い UI 検証は desktop-c-cases が担う。
+  # 生きているか、compare 画面で比較が1回通るかを最小限だけ確かめる。
+  # 重い UI 検証は desktop-c-cases が担う。
   electron-smoke:
     name: Electron IPC smoke
-    runs-on: ${{ vars.RUNNER_LINUX }}
+    runs-on: ${{ vars.RUNNER_LINUX || 'ubuntu-latest' }}
     timeout-minutes: 15
-    if: github.event.pull_request.draft == false
+    if: github.event.pull_request.draft != true
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -177,9 +184,9 @@ jobs:
   # (evidence.json + スクリーンショット) は成功時も artifact に残す。
   chrome-ext-e2e:
     name: Chrome extension E2E
-    runs-on: ${{ vars.RUNNER_LINUX }}
+    runs-on: ${{ vars.RUNNER_LINUX || 'ubuntu-latest' }}
     timeout-minutes: 15
-    if: github.event.pull_request.draft == false
+    if: github.event.pull_request.draft != true
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -196,12 +203,26 @@ jobs:
       - name: Install Playwright browser
         run: pnpm --filter "@figdiff/desktop" exec playwright install --with-deps chromium
 
-      # X server 不要の新 headless で拡張を読み込む。captureVisibleTab 依存の
-      # compare 検証は権限拡張 dist を要するため対象外 (evidence の outcome 参照)。
+      # X server 不要の新 headless で出荷物そのままの dist を読み込む。activeTab が
+      # 付かない自動化では capture が失敗するので、その失敗が行動可能なエラーとして
+      # 見え、再試行できることをここで確かめる。
       - name: Run Chrome extension E2E
         env:
           FIGDIFF_HEADLESS: new
         run: node app/chrome-extension/script/real-chrome-e2e.mjs ${{ runner.temp }}/chrome-ext-evidence
+
+      # captureVisibleTab は activeTab か <all_urls> を要求し、自動化で得られるのは
+      # 後者だけ。出荷 manifest は変えず、runner.temp に <all_urls> を足した複製を作り、
+      # 比較 → 一致率表示を作図由来の期待値で表明する。
+      - name: Prepare permissioned E2E extension dist
+        run: node app/chrome-extension/script/prepare-e2e-dist.mjs ${{ runner.temp }}/chrome-ext-e2e-dist
+
+      - name: Run Chrome extension compare E2E
+        env:
+          FIGDIFF_HEADLESS: new
+          FIGDIFF_EXT_DIR: ${{ runner.temp }}/chrome-ext-e2e-dist
+          FIGDIFF_EXPECT_COMPARE: "1"
+        run: node app/chrome-extension/script/real-chrome-e2e.mjs ${{ runner.temp }}/chrome-ext-compare-evidence
 
       - name: Run Figma plugin to extension handoff E2E
         run: xvfb-run -a node app/chrome-extension/script/plugin-frame-handoff-e2e.mjs ${{ runner.temp }}/plugin-extension-evidence
@@ -213,14 +234,15 @@ jobs:
           name: chrome-extension-evidence
           path: |
             ${{ runner.temp }}/chrome-ext-evidence
+            ${{ runner.temp }}/chrome-ext-compare-evidence
             ${{ runner.temp }}/plugin-extension-evidence
           retention-days: 7
 
   naming:
     name: Naming and action pins
-    runs-on: ${{ vars.RUNNER_LINUX }}
+    runs-on: ${{ vars.RUNNER_LINUX || 'ubuntu-latest' }}
     timeout-minutes: 5
-    if: github.event.pull_request.draft == false
+    if: github.event.pull_request.draft != true
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -246,9 +268,9 @@ jobs:
   # 独立した物差しが壊れていないことを、比較機能の変更ごとに確かめる。
   oracle:
     name: Independent oracle self-test
-    runs-on: ${{ vars.RUNNER_LINUX }}
+    runs-on: ${{ vars.RUNNER_LINUX || 'ubuntu-latest' }}
     timeout-minutes: 10
-    if: github.event.pull_request.draft == false
+    if: github.event.pull_request.draft != true
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
