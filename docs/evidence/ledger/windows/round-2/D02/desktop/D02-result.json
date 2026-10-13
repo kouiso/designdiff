@@ -2,8 +2,12 @@
   "case": "D02",
   "route": "desktop",
   "platform": "windows",
-  "drivers": ["app/desktop/e2e/native-unmeasured-score.mjs"],
-  "checks": ["D02"],
+  "drivers": [
+    "app/desktop/e2e/native-unmeasured-score.mjs"
+  ],
+  "checks": [
+    "D02"
+  ],
   "actual": {
     "native-unmeasured-score:D02": {
       "scoreText": "— (未計測)",
