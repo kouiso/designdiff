@@ -95,6 +95,9 @@ describe("compare_design — 同幅・異高の縦横比警告", () => {
         (warning) => warning.code === "aspect_ratio_mismatch" && warning.severity === "critical",
       ),
     ).toBe(false);
+    // 高さ差だけでは設定ミスと診断しない。これがこの不具合の本体なので外さない。
+    expect(result.diagnosis?.likelyMisconfig).toBe(false);
+    expect(result.diagnosis?.verdict).not.toBe("likely_misconfig");
 
     // FigDiff 自身の判定ではなく、差分画像の画素を独立に読んで裏を取る。
     // 重なる上端 200 行は同一の入力なので無色、足りない下端 20 行は全画素が差分色。

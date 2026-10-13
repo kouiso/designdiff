@@ -434,6 +434,10 @@ const padImageBottom = async (buffer: Buffer, rows: number): Promise<Buffer> => 
     .toBuffer();
 };
 
+// 行範囲を扱う関数で startRow の丸め方を揃える。片方だけ直すと mask と塗りの範囲がずれる。
+const clampStartRow = (height: number, startRow: number): number =>
+  Math.max(0, Math.min(height, startRow));
+
 // startRow 以降の行を足した mask を返す。足す行が無ければ元の mask をそのまま返し、
 // 従来経路の mask の実体を変えない。
 const maskRowsFrom = (
@@ -442,7 +446,7 @@ const maskRowsFrom = (
   height: number,
   startRow: number,
 ): Uint8Array | undefined => {
-  const clampedStart = Math.max(0, Math.min(height, startRow));
+  const clampedStart = clampStartRow(height, startRow);
   if (clampedStart >= height) return base;
   const rows = new Uint8Array(width * height);
   rows.fill(1, clampedStart * width, width * height);
@@ -516,7 +520,7 @@ const paintMissingScreenshotRows = (
       `Diff buffer length must equal ${width}x${height} RGBA: got ${diffPixelData.length}`,
     );
   }
-  const clampedStart = Math.max(0, Math.min(height, startRow));
+  const clampedStart = clampStartRow(height, startRow);
   let paintedCount = 0;
   for (let index = clampedStart * width; index < width * height; index += 1) {
     if (ignoreMask?.[index] === 1) continue;
