@@ -18,7 +18,7 @@ concurrency:
 jobs:
   cloudflare-pages:
     name: Cloudflare Pages
-    runs-on: ${{ vars.RUNNER_LINUX }}
+    runs-on: ${{ vars.RUNNER_LINUX || 'ubuntu-latest' }}
     timeout-minutes: 30
     if: github.event_name != 'pull_request' || (github.event.pull_request.draft == false && github.event.pull_request.head.repo.full_name == github.repository)
     env:

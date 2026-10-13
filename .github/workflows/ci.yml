@@ -15,9 +15,9 @@ concurrency:
 jobs:
   node:
     name: Node (${{ matrix.check-type }})
-    runs-on: ${{ vars.RUNNER_LINUX }}
+    runs-on: ${{ vars.RUNNER_LINUX || 'ubuntu-latest' }}
     timeout-minutes: 15
-    if: github.event.pull_request.draft == false
+    if: github.event.pull_request.draft != true
     strategy:
       fail-fast: false
       matrix:
@@ -65,9 +65,9 @@ jobs:
 
   e2e:
     name: E2E (Playwright)
-    runs-on: ${{ vars.RUNNER_LINUX }}
+    runs-on: ${{ vars.RUNNER_LINUX || 'ubuntu-latest' }}
     timeout-minutes: 20
-    if: github.event.pull_request.draft == false
+    if: github.event.pull_request.draft != true
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -103,9 +103,9 @@ jobs:
   # postMessage 往復・requestId 相関・実 canvas 比較を外側から検証する。
   figma-plugin-e2e:
     name: Figma plugin host E2E
-    runs-on: ${{ vars.RUNNER_LINUX }}
+    runs-on: ${{ vars.RUNNER_LINUX || 'ubuntu-latest' }}
     timeout-minutes: 15
-    if: github.event.pull_request.draft == false
+    if: github.event.pull_request.draft != true
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -143,9 +143,9 @@ jobs:
   # 重い UI 検証は desktop-c-cases が担う。
   electron-smoke:
     name: Electron IPC smoke
-    runs-on: ${{ vars.RUNNER_LINUX }}
+    runs-on: ${{ vars.RUNNER_LINUX || 'ubuntu-latest' }}
     timeout-minutes: 15
-    if: github.event.pull_request.draft == false
+    if: github.event.pull_request.draft != true
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -184,9 +184,9 @@ jobs:
   # (evidence.json + スクリーンショット) は成功時も artifact に残す。
   chrome-ext-e2e:
     name: Chrome extension E2E
-    runs-on: ${{ vars.RUNNER_LINUX }}
+    runs-on: ${{ vars.RUNNER_LINUX || 'ubuntu-latest' }}
     timeout-minutes: 15
-    if: github.event.pull_request.draft == false
+    if: github.event.pull_request.draft != true
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -240,9 +240,9 @@ jobs:
 
   naming:
     name: Naming and action pins
-    runs-on: ${{ vars.RUNNER_LINUX }}
+    runs-on: ${{ vars.RUNNER_LINUX || 'ubuntu-latest' }}
     timeout-minutes: 5
-    if: github.event.pull_request.draft == false
+    if: github.event.pull_request.draft != true
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -268,9 +268,9 @@ jobs:
   # 独立した物差しが壊れていないことを、比較機能の変更ごとに確かめる。
   oracle:
     name: Independent oracle self-test
-    runs-on: ${{ vars.RUNNER_LINUX }}
+    runs-on: ${{ vars.RUNNER_LINUX || 'ubuntu-latest' }}
     timeout-minutes: 10
-    if: github.event.pull_request.draft == false
+    if: github.event.pull_request.draft != true
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
