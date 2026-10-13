@@ -1236,9 +1236,17 @@ const buildRegionScores = (options: BuildDiffReportOptions): RegionScoreBuild =>
   // 未満の) 帯状の色ずれだけが存在する画面でマスク自体を作らないと、
   // そのずれはどの採点にも乗らず無計測のまま合格する (band-eval2 の
   // 無関係diffなし変種 10 件が全て見逃しになった原因)。
+  // ノード木があり rasterization_tolerance が無い比較はクラスタを採点しないため、
+  // 採点クラスタが空になる。そのまま残差を測ると pixelmatch が拾った実差分が
+  // 「クラスタの外側」に混ざるので、素の差分領域を除外対象に足す。diffMask があれば
+  // bbox 内の実差分画素だけが除かれ、背景の色ずれは引き続き測られる。
+  const unscoredRawBoxes = shouldScoreDiffClusters(options, childRegions.length > 0)
+    ? []
+    : (options.diffRegions ?? []).filter((bbox) => bbox.w > 0 && bbox.h > 0);
   const clusterBoxes = [
     ...diffClusterRegions.map((cluster) => cluster.bbox),
     ...unscoredDiffClusters,
+    ...unscoredRawBoxes,
   ];
   let residualMask = buildResidualMask(width, height, ignoreMask, clusterBoxes, diffMask);
 
@@ -1339,12 +1347,7 @@ const buildRegionScores = (options: BuildDiffReportOptions): RegionScoreBuild =>
       applySectionCoverage();
     }
   }
-  // ノード木がある比較で rasterization_tolerance が無いと、差分クラスタを採点せず
-  // clusterBoxes が空になる。このとき残差には pixelmatch が拾った実差分まで入り、
-  // 「クラスタの外側」という意味を保てない。クラスタを採点した比較だけで出す。
-  const frameResidualMeasured =
-    childRegions.length === 0 || options.rasterizationTolerance === true;
-  const frameResidualColor = frameResidualMeasured ? frameResidual.color : undefined;
+  const frameResidualColor = frameResidual.color;
 
   // 比較対象そのものの行。子の行があっても必ず1件持たせる。
   // 単一ノードを比べたとき、子の行しか無いと「対象ノードが見つからない」で

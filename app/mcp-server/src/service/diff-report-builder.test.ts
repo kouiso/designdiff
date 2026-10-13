@@ -2763,9 +2763,9 @@ describe("細線の局所変位 (designdiff#243)", () => {
     expect(withoutTree.aggregateVerdict).toBe("fail");
   });
 
-  it("ノード木ありで rasterization_tolerance が無い比較は、実差分を残差として数えない", async () => {
+  it("ノード木ありで tolerance が無くても、セクション外の背景色ずれは残差で失格にし、実差分は残差に混ぜない", async () => {
     const { buildDiffReport } = await import("./diff-report-builder.js");
-    const frame: FigmaNode = {
+    const makeFrame = (): FigmaNode => ({
       ...sectionReliefFrame(),
       children: [
         {
@@ -2780,22 +2780,34 @@ describe("細線の局所変位 (designdiff#243)", () => {
           children: [],
         },
       ],
-    };
-    const designPixels = await createSolidRgba(SIZE, SIZE, WHITE_RGB);
-    const screenshotPixels = await createSolidRgba(SIZE, SIZE, WHITE_RGB);
-    // クラスタ化されない tolerance 無しの比較では、この実差分が「クラスタの外側」に見えてしまう。
-    paint(screenshotPixels, 40, 0, 80, SIZE, { r: 0xe0, g: 0xe0, b: 0xe0 });
-
-    const report = buildDiffReport({
-      designPixels,
-      screenshotPixels,
-      width: SIZE,
-      height: SIZE,
-      diffRegions: [{ x: 40, y: 0, w: 80, h: SIZE, diffPixelCount: 80 * SIZE }],
-      figmaRootNode: frame,
     });
+    const build = async (withBackgroundDrift: boolean) => {
+      const designPixels = await createSolidRgba(SIZE, SIZE, WHITE_RGB);
+      const screenshotPixels = await createSolidRgba(SIZE, SIZE, WHITE_RGB);
+      // 実差分: セクション外の小さな濃い四角 (pixelmatch が拾う想定の領域)。
+      paint(screenshotPixels, 80, 80, 10, 10, DARK_RGB);
+      // pixelmatch の閾値未満の広い背景ずれ: セクションの外側だけ。
+      if (withBackgroundDrift)
+        paint(screenshotPixels, 40, 0, 40, 40, { r: 0xe0, g: 0xe0, b: 0xe0 });
+      const diffMask = new Uint8Array(SIZE * SIZE);
+      for (let y = 80; y < 90; y += 1) for (let x = 80; x < 90; x += 1) diffMask[y * SIZE + x] = 1;
+      return buildDiffReport({
+        designPixels,
+        screenshotPixels,
+        width: SIZE,
+        height: SIZE,
+        diffRegions: [{ x: 80, y: 80, w: 10, h: 10, diffPixelCount: 100 }],
+        diffMask,
+        figmaRootNode: makeFrame(),
+      });
+    };
 
-    expect(report.issues.some((issue) => issue.regionId === "frame-residual")).toBe(false);
+    const withDrift = await build(true);
+    expect(withDrift.issues.some((issue) => issue.regionId === "frame-residual")).toBe(true);
+
+    // 実差分 (濃い四角) だけでは、残差の issue は出ない。
+    const onlyRealDiff = await build(false);
+    expect(onlyRealDiff.issues.some((issue) => issue.regionId === "frame-residual")).toBe(false);
   });
 
   it("帯状に集中した背景色ずれは、フレーム平均で閾値を割っても帯の残差で両経路とも失格にする", async () => {
