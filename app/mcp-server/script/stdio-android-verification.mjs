@@ -355,6 +355,9 @@ if (!scrollResult.isError) {
   if (!process.env.ANDROID_PAGE_URL) {
     const shots = (await readdir(captureDir)).sort();
     const stitchedShot = shots.at(-1);
+    // 実機で oracle が落ちたとき、閾値を実測で決め直せるよう結合画像そのものを証跡に残す
+    // (サンドボックスの一時領域は実行後に消える)。判定の前に複製する。
+    await copyFile(join(captureDir, stitchedShot), join(evidenceDir, "x07-stitched.png"));
     const stitchCheck = await verifyStripeStitch(await readFile(join(captureDir, stitchedShot)));
     evidence.results.X07_android_scroll.independentStitchCheck = {
       image: stitchedShot,
