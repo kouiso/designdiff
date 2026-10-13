@@ -2763,6 +2763,41 @@ describe("細線の局所変位 (designdiff#243)", () => {
     expect(withoutTree.aggregateVerdict).toBe("fail");
   });
 
+  it("ノード木ありで rasterization_tolerance が無い比較は、実差分を残差として数えない", async () => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    const frame: FigmaNode = {
+      ...sectionReliefFrame(),
+      children: [
+        {
+          id: SECTION_RELIEF_NODE_IDS.section,
+          name: "section",
+          type: "FRAME",
+          absoluteBoundingBox: { x: 0, y: 40, width: 40, height: 20 },
+          absoluteRenderBounds: null,
+          fills: [],
+          strokes: [],
+          effects: [],
+          children: [],
+        },
+      ],
+    };
+    const designPixels = await createSolidRgba(SIZE, SIZE, WHITE_RGB);
+    const screenshotPixels = await createSolidRgba(SIZE, SIZE, WHITE_RGB);
+    // クラスタ化されない tolerance 無しの比較では、この実差分が「クラスタの外側」に見えてしまう。
+    paint(screenshotPixels, 40, 0, 80, SIZE, { r: 0xe0, g: 0xe0, b: 0xe0 });
+
+    const report = buildDiffReport({
+      designPixels,
+      screenshotPixels,
+      width: SIZE,
+      height: SIZE,
+      diffRegions: [{ x: 40, y: 0, w: 80, h: SIZE, diffPixelCount: 80 * SIZE }],
+      figmaRootNode: frame,
+    });
+
+    expect(report.issues.some((issue) => issue.regionId === "frame-residual")).toBe(false);
+  });
+
   it("帯状に集中した背景色ずれは、フレーム平均で閾値を割っても帯の残差で両経路とも失格にする", async () => {
     const { buildDiffReport } = await import("./diff-report-builder.js");
     // 実測 9949:23513 と同じ形。ルート背景のグラデーション (下端はミント

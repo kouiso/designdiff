@@ -133,7 +133,7 @@ D = dump design-vs-shot gap.
 - `shift-signature.mjs`, `logs/shift-signature.log` (exit 0) — 73-100% of
   big-diff pixels in the firing windows are explainable by a ±2px
   displacement (shift outlines, already tolerated).
-- `probe-aa.mjs` — pixelmatch 7.2.0 re-run on the dump pixels: window
+- `probe-aa.mjs` (removed in review: it read pixelmatch by absolute path and could not be re-run; the claim it supported stays unproven, see the correction below) — pixelmatch 7.2.0 re-run on the dump pixels: window
   big-diff pixels are AA-classified (anti-aliasing), which pixelmatch itself
   never counts. Conclusion: 4/4 false alarms -> fixed by AA exclusion, not
   by threshold changes.

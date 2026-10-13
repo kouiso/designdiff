@@ -1269,13 +1269,55 @@ const buildRegionScores = (options: BuildDiffReportOptions): RegionScoreBuild =>
     residualMask,
   );
 
-  // 窓残差が発火水準に届いたときだけ、AA 縁を除いて測り直す。
-  // 閾値に届かない比較では画素を除いても値は下がるだけなので走査は不要で、
-  // 届いた比較では AA 縁 (ずれとして許容済みの輪郭) を除かないと
+  // セクション行の救済証拠をここで後付けする。textReflow による再分類が
+  // 確定してからでないと、クラスタが説明済みかを数えられないため。
+  // tolerance 未指定の比較では cluster 分類自体を走らせていないので、
+  // childRegions に証拠は付かず、採点は従来契約のまま変わらない。
+  const applySectionCoverage = (): void => {
+    for (const section of childRegions) {
+      const coverage = buildDiffClusterCoverage(
+        section.bbox,
+        diffClusterRegions,
+        unscoredDiffClusters,
+      );
+      if (coverage === undefined) continue;
+      if (
+        coverage.explainedCount !== coverage.clusterCount ||
+        options.rasterizationTolerance !== true
+      ) {
+        section.diffClusterCoverage = coverage;
+        continue;
+      }
+      const residualColor = buildColorDifference(
+        designPixels,
+        screenshotPixels,
+        width,
+        height,
+        section.bbox,
+        residualMask,
+      );
+      section.diffClusterCoverage = {
+        ...coverage,
+        residualColor,
+        unexplainedPerceptibleDiff: residualColor >= PERCEPTIBLE_DELTA_E,
+      };
+    }
+  };
+
+  // 窓残差かセクション残差のどちらかが発火水準に届いたときだけ、AA 縁を除いて
+  // 測り直す。どちらにも届かない比較では画素を除いても値は下がるだけなので
+  // 走査は不要で、届いた比較では AA 縁 (ずれとして許容済みの輪郭) を除かないと
   // ずれ許容の裏口から同じ画素に再発火する (実測 9705:6069 / 9804:4204 /
-  // 9810:3055 / 9892:8063)。再計測後のマスクをセクション残差にも使い、
-  // 窓とセクションで物差しが割れないようにする。
-  if (frameResidual.color >= PERCEPTIBLE_DELTA_E && options.buildAntiAliasedMask !== undefined) {
+  // 9810:3055 / 9892:8063)。セクションだけが AA 縁で発火する場合も同じ物差しで
+  // 測り直し、窓とセクションで判定が割れないようにする。
+  applySectionCoverage();
+  const sectionResidualFires = childRegions.some(
+    (section) => (section.diffClusterCoverage?.residualColor ?? 0) >= PERCEPTIBLE_DELTA_E,
+  );
+  if (
+    (frameResidual.color >= PERCEPTIBLE_DELTA_E || sectionResidualFires) &&
+    options.buildAntiAliasedMask !== undefined
+  ) {
     const antiAliasedMask = options.buildAntiAliasedMask();
     if (antiAliasedMask.some((value) => value === 1)) {
       residualMask = buildResidualMask(
@@ -1294,42 +1336,15 @@ const buildRegionScores = (options: BuildDiffReportOptions): RegionScoreBuild =>
         contentBbox,
         residualMask,
       );
+      applySectionCoverage();
     }
   }
-  const frameResidualColor = frameResidual.color;
-
-  // セクション行の救済証拠をここで後付けする。textReflow による再分類が
-  // 確定してからでないと、クラスタが説明済みかを数えられないため。
-  // tolerance 未指定の比較では cluster 分類自体を走らせていないので、
-  // childRegions に証拠は付かず、採点は従来契約のまま変わらない。
-  for (const section of childRegions) {
-    const coverage = buildDiffClusterCoverage(
-      section.bbox,
-      diffClusterRegions,
-      unscoredDiffClusters,
-    );
-    if (coverage === undefined) continue;
-    if (
-      coverage.explainedCount !== coverage.clusterCount ||
-      options.rasterizationTolerance !== true
-    ) {
-      section.diffClusterCoverage = coverage;
-      continue;
-    }
-    const residualColor = buildColorDifference(
-      designPixels,
-      screenshotPixels,
-      width,
-      height,
-      section.bbox,
-      residualMask,
-    );
-    section.diffClusterCoverage = {
-      ...coverage,
-      residualColor,
-      unexplainedPerceptibleDiff: residualColor >= PERCEPTIBLE_DELTA_E,
-    };
-  }
+  // ノード木がある比較で rasterization_tolerance が無いと、差分クラスタを採点せず
+  // clusterBoxes が空になる。このとき残差には pixelmatch が拾った実差分まで入り、
+  // 「クラスタの外側」という意味を保てない。クラスタを採点した比較だけで出す。
+  const frameResidualMeasured =
+    childRegions.length === 0 || options.rasterizationTolerance === true;
+  const frameResidualColor = frameResidualMeasured ? frameResidual.color : undefined;
 
   // 比較対象そのものの行。子の行があっても必ず1件持たせる。
   // 単一ノードを比べたとき、子の行しか無いと「対象ノードが見つからない」で

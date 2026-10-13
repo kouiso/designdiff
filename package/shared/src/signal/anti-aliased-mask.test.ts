@@ -1,5 +1,6 @@
-import pixelmatch from "pixelmatch";
 import { describe, expect, it } from "vitest";
+
+import { comparePixels } from "../pixel-compare.js";
 
 import { buildAntiAliasedMask } from "./anti-aliased-mask.js";
 
@@ -66,10 +67,7 @@ const pixelmatchAaPositions = (
   threshold: number,
 ): Set<number> => {
   const output = new Uint8ClampedArray(WIDTH * HEIGHT * 4);
-  pixelmatch(img1, img2, output, WIDTH, HEIGHT, {
-    threshold,
-    checkerboard: false,
-  });
+  comparePixels(img1, img2, output, WIDTH, HEIGHT, { threshold });
   const positions = new Set<number>();
   for (let i = 0; i < WIDTH * HEIGHT; i++) {
     const offset = i * 4;
