@@ -5,7 +5,7 @@ import { buildComparisonHeadline } from "./headline.js";
 import type { RegionScore } from "../type.js";
 
 const region = (overrides: Partial<RegionScore>): RegionScore => ({
-  regionId: "r",
+  regionId: "diff-cluster-0-0-1-1",
   bbox: { x: 0, y: 0, w: 100, h: 100 },
   structure: 1,
   color: 0,
@@ -50,8 +50,16 @@ describe("buildComparisonHeadline", () => {
     // 1512x3697 の画面で 20x20 のグリフ差分が 2 つだけ出た状況。
     const headline = buildComparisonHeadline(
       [
-        region({ regionId: "c1", bbox: { x: 10, y: 10, w: 20, h: 20 }, structure: 0 }),
-        region({ regionId: "c2", bbox: { x: 100, y: 100, w: 20, h: 20 }, structure: 0 }),
+        region({
+          regionId: "diff-cluster-10-10-20-20",
+          bbox: { x: 10, y: 10, w: 20, h: 20 },
+          structure: 0,
+        }),
+        region({
+          regionId: "diff-cluster-100-100-20-20",
+          bbox: { x: 100, y: 100, w: 20, h: 20 },
+          structure: 0,
+        }),
       ],
       99.99,
       { width: 1512, height: 3697 },
@@ -100,6 +108,17 @@ describe("buildComparisonHeadline", () => {
       [region({ bbox: { x: 0, y: 0, w: 10, h: 10 }, structure: 0 })],
       0,
       { width: 100, height: 100, maskedPixelCount: 9900 },
+    );
+    expect(headline.structureMatch).toBe(0);
+  });
+
+  it("Figma ノードの行が混ざる比較では、行の外を構造一致として数えない", () => {
+    // 比較面 100x100 のうち左上 10x10 だけを Figma セクション行が採点し、構造 0。
+    // 行の外は採点していない面なので、一致 99% とは言わず 0% になる。
+    const headline = buildComparisonHeadline(
+      [region({ regionId: "1:23", bbox: { x: 0, y: 0, w: 10, h: 10 }, structure: 0 })],
+      50,
+      { width: 100, height: 100 },
     );
     expect(headline.structureMatch).toBe(0);
   });

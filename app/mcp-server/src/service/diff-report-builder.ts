@@ -1,4 +1,5 @@
 import {
+  DIFF_CLUSTER_REGION_ID_PREFIX,
   buildVerifiedInsetCandidates,
   classifyEdgeStraddle,
   classifyGlyphEdgeRasterization,
@@ -1083,7 +1084,7 @@ const buildRegionScores = (options: BuildDiffReportOptions): RegionScoreBuild =>
             ignoreMask,
           );
       diffClusterRegions.push({
-        regionId: `diff-cluster-${bbox.x}-${bbox.y}-${bbox.w}-${bbox.h}`,
+        regionId: `${DIFF_CLUSTER_REGION_ID_PREFIX}${bbox.x}-${bbox.y}-${bbox.w}-${bbox.h}`,
         bbox,
         // 1px 枠線の色違いのような疎なクラスタは、bbox 内の未変化画素に
         // 平均系の採点 (color / structure) が薄まる (Issue #58)。採点値は

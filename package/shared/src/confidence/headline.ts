@@ -14,6 +14,9 @@ const PERCENT = 100;
 // 構造一致率は見やすさのため小数第2位まで丸める。
 const STRUCTURE_MATCH_DECIMAL_PLACES = 2;
 
+// ピクセル差分クラスタの行は regionId をこの接頭辞で作る。Figma ノードの行とは区別して扱う。
+export const DIFF_CLUSTER_REGION_ID_PREFIX = "diff-cluster-";
+
 export interface HeadlineCanvas {
   width: number;
   height: number;
@@ -47,7 +50,13 @@ const averageStructure = (regionScores: RegionScore[], canvas?: HeadlineCanvas):
   // 超えるときは余白を足さず面積加重平均だけにする。
   const maskedArea = Math.max(0, canvas.maskedPixelCount ?? 0);
   const scorableArea = Math.max(0, canvas.width * canvas.height - maskedArea);
-  const uncoveredArea = Math.max(0, scorableArea - coveredArea);
+  // どの行にも入らない面を「構造一致」と数えてよいのは、行が差分クラスタだけのとき
+  // (差分が検出されなかった画素だから)。Figma ノードの行が混ざる比較では、行の外は
+  // 採点していない面なので、一致と見なさず行の面積加重平均だけにする。
+  const onlyDiffClusters = regionScores.every((score) =>
+    score.regionId.startsWith(DIFF_CLUSTER_REGION_ID_PREFIX),
+  );
+  const uncoveredArea = onlyDiffClusters ? Math.max(0, scorableArea - coveredArea) : 0;
   const weightedStructure = regionScores.reduce(
     (sum, score, index) => sum + score.structure * areas[index],
     uncoveredArea,

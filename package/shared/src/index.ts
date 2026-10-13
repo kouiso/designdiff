@@ -216,7 +216,10 @@ export {
   rankFrameCandidates,
   type RankedFrame,
 } from "./confidence/frame-guidance.js";
-export { buildComparisonHeadline } from "./confidence/headline.js";
+export {
+  buildComparisonHeadline,
+  DIFF_CLUSTER_REGION_ID_PREFIX,
+} from "./confidence/headline.js";
 export {
   canonicalizeVerificationContextPayload,
   normalizeVerificationContextPayload,
