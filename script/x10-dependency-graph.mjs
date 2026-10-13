@@ -136,7 +136,7 @@ const results = {};
     "utf8",
   );
   assert.ok(
-    extSrc.includes("pixelmatch") && extSrc.includes("移植"),
+    /pixelmatch/.test(extSrc) && extSrc.includes("移植"),
     "extension pixel-diff-service must remain the documented port",
   );
   results.documentedDifference =

@@ -19,7 +19,7 @@ jobs:
     # dependabot の依存更新PRが毎回この1件だけ赤くなり、他が全部緑でも
     # 「CIが落ちているPR」に見えてしまうため、bot が作ったPRでは走らせない。
     if: github.event.pull_request.user.type != 'Bot'
-    runs-on: ${{ vars.RUNNER_LINUX }}
+    runs-on: ${{ vars.RUNNER_LINUX || 'ubuntu-latest' }}
     timeout-minutes: 5
     steps:
       - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0

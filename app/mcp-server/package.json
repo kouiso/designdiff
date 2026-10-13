@@ -17,6 +17,7 @@
     "dev": "tsc --watch",
     "test": "vitest run && pnpm test:smoke-selftest",
     "test:smoke-selftest": "node script/runtime-smoke-selftest.mjs",
+    "test:stdio-smoke": "node script/stdio-roundtrip-smoke.mjs",
     "test:coverage": "vitest run --coverage",
     "prebuild": "pnpm --filter @figdiff/credential-store build"
   },

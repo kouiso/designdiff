@@ -13,7 +13,7 @@
 |-------|------|---------------|---------------|
 | **Unit** | Vitest | Per-package via `pnpm --filter <pkg> test`; aggregated `pnpm test` (turbo) | Pure-function correctness, type guards, parsing, schemas, diff algorithms |
 | **Integration** | Vitest + minimal mocks | Per-package (mcp-server, desktop) | MCP tool handlers wired to services, store ↔ component interactions |
-| **Smoke** | Node scripts (`script/*.mjs`) | `smoke:top-pc-large-page` (root `package.json` — large-page compare smoke). The previous `smoke:runtime` / `smoke:white-theme` harnesses are gone; if new ones land, list them here | Process boots, stdio transport connects, theme renders without crash |
+| **Smoke** | Node scripts (`script/*.mjs`) | `smoke:top-pc-large-page` (root `package.json` — large-page compare smoke); `@figdiff/mcp-server` `test:stdio-smoke` (`app/mcp-server/script/stdio-roundtrip-smoke.mjs`, CI `Node (test)` — real `dist/index.js` over stdio: `initialize` → `tools/list` → `list_projects`). The previous `smoke:runtime` / `smoke:white-theme` harnesses are gone; if new ones land, list them here | Process boots, stdio transport connects, theme renders without crash |
 | **Functional QA** | Manual + Playwright (renderer only) | `pnpm dev` → Vite at `http://localhost:5173` → Playwright MCP | UI flows, dialog focus traps, view-mode toggles |
 | **E2E (Electron)** | `app/desktop/e2e/electron-ipc-smoke.mjs` (CI `electron-smoke`, xvfb) + `e2e/desktop-happy-path.spec.ts` (CI `e2e`) | Playwright `_electron` | Window boot + IPC + preload bridge + renderer happy path |
 
@@ -68,7 +68,7 @@ Verified at develop tip: `app/figma-plugin/src/code.test.ts`, `app/figma-plugin/
 
 | Workflow | What runs | Required to merge? |
 |----------|-----------|--------------------|
-| `ci.yml` | `pnpm check` (Biome format + lint), `pnpm lint:eslint` (ESLint v9 type-aware), `pnpm typecheck`, `pnpm test` + `test:coverage` thresholds matrix per `check-type`; `e2e` (desktop Playwright renderer); `figma-plugin-e2e` (real-bundle iframe host); `electron-smoke` (Electron launch + IPC, xvfb); `chrome-ext-e2e` (extension in real Chromium, evidence artifacts); `naming` (naming/action-pin checks); `oracle` (independent oracle self-test + verdict agreement + convergence gate) | Yes |
+| `ci.yml` | `pnpm check` (Biome format + lint), `pnpm lint:eslint` (ESLint v9 type-aware), `pnpm typecheck`, `pnpm test` + `test:coverage` thresholds matrix per `check-type`; `e2e` (desktop Playwright renderer); `figma-plugin-e2e` (real-bundle iframe host); `electron-smoke` (Electron launch + IPC, xvfb); `chrome-ext-e2e` (extension in real Chromium, evidence artifacts); `naming` (naming/action-pin/pixelmatch-usage checks); `oracle` (independent oracle self-test + verdict agreement + convergence gate) | Yes |
 | `build.yml` | Electron Build per OS (Linux / macOS / Windows). Guard: `if: github.event.pull_request.draft == false` only — **no `paths` filter**, so it runs on every non-draft PR including docs-only ones (jobs may still be no-ops if turbo cache hits) | Yes |
 | `labeler.yml` | Auto-label PRs by path | Status only |
 | `license-check.yml` | License compatibility scan | Advisory |
