@@ -42,12 +42,18 @@ jobs:
     name: Node (${{ matrix.check-type }})
     runs-on: ${{ vars.RUNNER_LINUX || 'ubuntu-latest' }}
     timeout-minutes: 15
-    if: github.event.pull_request.draft != true
+    if: always() && !cancelled() && github.event.pull_request.draft != true
     strategy:
       fail-fast: false
       matrix:
         check-type: [lint, typecheck, test, coverage]
     steps:
+      - name: Require successful shared build
+        if: needs.build-artifact.result != 'success'
+        run: |
+          echo 'Shared build did not succeed; required validation cannot run.' >&2
+          exit 1
+
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
@@ -89,8 +95,14 @@ jobs:
     name: E2E (Playwright)
     runs-on: ${{ vars.RUNNER_LINUX || 'ubuntu-latest' }}
     timeout-minutes: 20
-    if: github.event.pull_request.draft != true
+    if: always() && !cancelled() && github.event.pull_request.draft != true
     steps:
+      - name: Require successful shared build
+        if: needs.build-artifact.result != 'success'
+        run: |
+          echo 'Shared build did not succeed; required validation cannot run.' >&2
+          exit 1
+
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
@@ -132,8 +144,14 @@ jobs:
     name: Figma plugin host E2E
     runs-on: ${{ vars.RUNNER_LINUX || 'ubuntu-latest' }}
     timeout-minutes: 15
-    if: github.event.pull_request.draft != true
+    if: always() && !cancelled() && github.event.pull_request.draft != true
     steps:
+      - name: Require successful shared build
+        if: needs.build-artifact.result != 'success'
+        run: |
+          echo 'Shared build did not succeed; required validation cannot run.' >&2
+          exit 1
+
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
@@ -177,8 +195,14 @@ jobs:
     name: Electron IPC smoke
     runs-on: ${{ vars.RUNNER_LINUX || 'ubuntu-latest' }}
     timeout-minutes: 15
-    if: github.event.pull_request.draft != true
+    if: always() && !cancelled() && github.event.pull_request.draft != true
     steps:
+      - name: Require successful shared build
+        if: needs.build-artifact.result != 'success'
+        run: |
+          echo 'Shared build did not succeed; required validation cannot run.' >&2
+          exit 1
+
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
@@ -223,8 +247,14 @@ jobs:
     name: Chrome extension E2E
     runs-on: ${{ vars.RUNNER_LINUX || 'ubuntu-latest' }}
     timeout-minutes: 15
-    if: github.event.pull_request.draft != true
+    if: always() && !cancelled() && github.event.pull_request.draft != true
     steps:
+      - name: Require successful shared build
+        if: needs.build-artifact.result != 'success'
+        run: |
+          echo 'Shared build did not succeed; required validation cannot run.' >&2
+          exit 1
+
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
