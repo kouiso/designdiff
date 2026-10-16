@@ -100,3 +100,6 @@ lp-screenshots/
 .serena/memories/
 # Added by code-review-graph
 .code-review-graph/
+
+# 同じ workflow 内の一時成果物だけを受け渡す。
+.ci-build/

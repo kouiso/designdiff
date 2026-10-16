@@ -2,13 +2,11 @@ version: '3'
 
 tasks:
   ci:fast:
+    dir: '{{.TASKFILE_DIR}}'
     cmds:
-      - pnpm install --frozen-lockfile
-      - pnpm check:naming
-      - pnpm lint
-      - pnpm build
-      - pnpm test
+      - node script/ci.mjs fast
 
   ci:
+    dir: '{{.TASKFILE_DIR}}'
     cmds:
-      - task: ci:fast
+      - node script/ci.mjs all
