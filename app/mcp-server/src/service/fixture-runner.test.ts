@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { readdirSync, readFileSync } from "node:fs";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import { isDeepStrictEqual } from "node:util";
@@ -78,6 +79,13 @@ const FixtureVariantSchema = z
       .array(z.enum(["color", "position", "size", "missing", "extra", "typography"]))
       .optional(),
     ignoreRegions: z.array(IgnoreRegionSchema).optional(),
+    // 別レンダラ同士の検体 (Figma正本 vs Flutter/Skia キャプチャ) では、
+    // same-token 証明を verdict に効かせる opt-in を検体ごとに付ける。
+    // strict 判定を守る対照検体 (意図的差分など) では付けない。
+    rasterizationTolerance: z.boolean().optional(),
+    // expectedVerdict は pass (あるべき姿) のまま、推定器の未修正で fail を返している既知 RED。
+    // 値は原因 Issue。runner はこの検体だけ fail を明示的に assert する。
+    knownRedIssue: z.string().min(1).optional(),
     expectedSystemUiAlignment: z
       .object({
         matchRate: z.number().min(0).max(100),
@@ -297,20 +305,57 @@ function assertWorstRegions(
   expect(new Set(actualWorstRegionIds)).toEqual(new Set(variant.expectedWorstRegionIds));
 }
 
+const assertVerdictAndMetrics = (
+  result: CompareDesignResult,
+  variant: z.infer<typeof FixtureVariantSchema>,
+): void => {
+  if (variant.knownRedIssue !== undefined) {
+    // it.fails だと読込失敗や schema エラーの throw でも緑になる。verdict を直接
+    // assert すれば、推定器が直って pass に変わった時にだけ落ちる。
+    expect(variant.expectedVerdict).toBe("pass");
+    expect(result.diffReport?.aggregateVerdict).toBe("fail");
+    return;
+  }
+
+  expect(result.diffReport?.aggregateVerdict).toBe(variant.expectedVerdict);
+  assertWeightedStructure(result, variant);
+  assertWeightedColor(result, variant);
+  assertRegionStructure(result, variant);
+  assertIssuePresence(result, variant);
+  assertIssueKinds(result, variant);
+  assertWorstRegions(result, variant);
+};
+
+const resolveVariants = (
+  expectation: z.infer<typeof FixtureExpectationSchema>,
+  variantName: string | undefined,
+): z.infer<typeof FixtureVariantSchema>[] => {
+  const variants = expectation.variants.filter(
+    (variant) => variantName === undefined || variant.name === variantName,
+  );
+  if (variants.length === 0) {
+    throw new Error(`${expectation.pairId}: variant ${String(variantName)} は定義されていない`);
+  }
+  return variants;
+};
+
 describe("golden fixture runner", () => {
   beforeEach(() => {
     vi.resetModules();
     vi.doUnmock("@figdiff/shared");
   });
 
-  async function runFixture(pairId: string, repetitions = 1): Promise<void> {
+  const runFixture = async (
+    pairId: string,
+    repetitions = 1,
+    variantName?: string,
+  ): Promise<void> => {
     const { compareImages } = await import("./image-compare-service.js");
     const pairDir = path.join(FIXTURES_ROOT, pairId);
     const expectationRaw = await fs.readFile(path.join(pairDir, "expected.json"), "utf8");
     const expectation = FixtureExpectationSchema.parse(JSON.parse(expectationRaw));
     const designBase64 = await loadBase64(path.join(pairDir, expectation.figmaFrame));
-
-    for (const variant of expectation.variants) {
+    for (const variant of resolveVariants(expectation, variantName)) {
       const screenshotBase64 = await loadBase64(path.join(pairDir, variant.image));
       const metadata = variant.captureDevice
         ? await sharp(Buffer.from(screenshotBase64, "base64")).metadata()
@@ -339,17 +384,12 @@ describe("golden fixture runner", () => {
             threshold: 0.1,
             ignoreRegions: variant.ignoreRegions,
             verifiedSystemUiTopInset,
+            rasterizationTolerance: variant.rasterizationTolerance,
           },
           expectation.figmaRootNode,
         );
 
-        expect(result.diffReport?.aggregateVerdict).toBe(variant.expectedVerdict);
-        assertWeightedStructure(result, variant);
-        assertWeightedColor(result, variant);
-        assertRegionStructure(result, variant);
-        assertIssuePresence(result, variant);
-        assertIssueKinds(result, variant);
-        assertWorstRegions(result, variant);
+        assertVerdictAndMetrics(result, variant);
         if (!result.diffImageBase64) {
           throw new Error(`${expectation.pairId}/${variant.name}: diff image is missing`);
         }
@@ -384,7 +424,7 @@ describe("golden fixture runner", () => {
         expect(stableRuns[0]?.translation).toEqual(variant.expectedSystemUiAlignment.translation);
       }
     }
-  }
+  };
 
   it(
     "pair-01-simple-static-lp の期待 verdict を満たすこと",
@@ -436,5 +476,37 @@ describe("golden fixture runner", () => {
     // では coverage 付き CI job でだけ timeout していた。この検体だけ余裕を
     // 持たせる。
     FIXTURE_TEST_TIMEOUT_MS * 3,
+  );
+
+  // designdiff#243: horsemanager Gate1 検体。ケースは expected.json から生成し、
+  // verdict の正本を 1 か所 (expected.json) に保つ。
+  // correct: Figma正本と同一内容物なら pass 期待。推定器が未修正の間は knownRedIssue で
+  //   既知 RED として fail を直接 assert する。内容差・寸法差があるものは fail 期待の対照。
+  // drift-*: 意図的平行移動。tolerance 下でも fail のままであることを見る対照。
+  // linewidth: 線幅差。#243 は検出漏れを許さないので fail 期待。
+  const HM_GATE1_CASES: [string, string, string][] = readdirSync(FIXTURES_ROOT)
+    .filter((name) => /^pair-\d+-hm-gate1-/.test(name))
+    .sort()
+    .flatMap((pairId) => {
+      const expectation = FixtureExpectationSchema.parse(
+        JSON.parse(readFileSync(path.join(FIXTURES_ROOT, pairId, "expected.json"), "utf8")),
+      );
+      return expectation.variants.map((variant): [string, string, string] => [
+        pairId,
+        variant.name,
+        variant.knownRedIssue !== undefined
+          ? `既知RED(${variant.knownRedIssue}): ${variant.expectedVerdict} 期待だが fail`
+          : variant.expectedVerdict,
+      ]);
+    });
+  it("Gate1 検体を expected.json から読み込めていること", () => {
+    expect(HM_GATE1_CASES.length).toBeGreaterThanOrEqual(42);
+  });
+  it.each(HM_GATE1_CASES)(
+    "%s %s の verdict が期待どおりであること: %s (designdiff#243)",
+    async (pairId, variantName) => {
+      await runFixture(pairId, 1, variantName);
+    },
+    FIXTURE_TEST_TIMEOUT_MS,
   );
 });
