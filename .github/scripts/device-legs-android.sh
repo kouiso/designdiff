@@ -1,0 +1,213 @@
+#!/bin/sh
+# designdiff X05/X07 撮影レグを GitHub Actions の Android エミュレータ (実機では
+# ない) で2巡実行する。reactivecircus/android-emulator-runner の script 入力は
+# 1行ずつ独立した sh -c で走るため、複数行の処理はすべてこのスクリプトに置く。
+#
+# 前提: android-emulator-runner が port 5554 でエミュレータを起動済みであること。
+# 使い方: sh .github/scripts/device-legs-android.sh <evidence-dir>
+# 終了コード: 0=2巡とも合格 / 1=round 1 のみ失敗 / 2=round 2 のみ失敗 / 3=両方失敗
+
+set -eu
+
+evidence_dir="${1:?evidence dir argument is required}"
+mkdir -p "$evidence_dir"
+
+sdk_root="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+export PATH="$sdk_root/platform-tools:$PATH"
+# action が ANDROID_SERIAL を設定して渡してくる。これが残っていると
+# mobile-capture が env 経由で serial を拾い、「1台しか無い時の自動選択」を
+# 検証しないまま通る。X05 の検証目的を壊すので外す。
+unset ANDROID_SERIAL
+
+is_uint() {
+  case "$1" in
+    '' | *[!0-9]*) return 1 ;;
+    *) return 0 ;;
+  esac
+}
+
+# ホストが GitHub Actions の仮想エミュレータであることを記録から明示する。
+{
+  echo "host=github-actions-android-emulator"
+  uname -a
+  if command -v lsb_release >/dev/null 2>&1; then lsb_release -ds; fi
+  if command -v sw_vers >/dev/null 2>&1; then sw_vers; fi
+  if command -v sysctl >/dev/null 2>&1; then sysctl kern.hv_support 2>&1 || true; fi
+  adb version
+  adb shell getprop ro.build.version.release
+  adb shell getprop ro.build.version.sdk
+  adb shell getprop ro.product.model
+  adb shell wm size
+} >"$evidence_dir/runner-host.txt" 2>&1
+cat "$evidence_dir/runner-host.txt"
+
+adb devices -l
+
+# macOS Intel ホストでは guest の SystemUI が ANR ダイアログを繰り返し出して
+# swipe が背面のページへ届かなかった (実測 12巡中1巡)。グローバルに error
+# dialog を抑止し、残る場合に備えて CLOSE_SYSTEM_DIALOGS を定期的に投げる
+# ウォッチャをバックグラウンドで回す。
+adb shell settings put global hide_error_dialogs 1 >/dev/null 2>&1 || true
+adb shell settings put global show_first_crash_dialog 0 >/dev/null 2>&1 || true
+# AppErrorDialog (ANR ダイアログ) 自体を抑止する設定。効かない個体に備えて
+# 下のウォッチャで残存分を消す。
+adb shell settings put global anr_show_dialog 0 >/dev/null 2>&1 || true
+adb shell settings put global anr_show_background 0 >/dev/null 2>&1 || true
+anr_watcher_pid=""
+
+# 画面が消灯・ロック中だと screencap は単色になり swipe も届かない。起こして
+# ロックを外し、どの window が前面かを証跡に残す (macOS ホストで単色画面を実測)。
+adb shell input keyevent KEYCODE_WAKEUP >/dev/null 2>&1 || true
+adb shell wm dismiss-keyguard >/dev/null 2>&1 || true
+# sys.boot_completed が立っても、ユーザ領域の解錠が終わるまでは
+# Settings の FallbackHome が前面に居て launcher も Chrome も動かない
+# (macOS ホストで実測)。抜けるまで待ち、待った秒数を証跡に残す。
+fallback_start="$(date +%s)"
+fallback_deadline=$((fallback_start + 900))
+while adb shell dumpsys window 2>/dev/null | grep -q 'mCurrentFocus=.*FallbackHome'; do
+  if [ "$(date +%s)" -ge "$fallback_deadline" ]; then
+    echo "fallback_home_still_focused_after_seconds=900" >>"$evidence_dir/runner-host.txt"
+    break
+  fi
+  adb shell input keyevent KEYCODE_WAKEUP >/dev/null 2>&1 || true
+  adb shell wm dismiss-keyguard >/dev/null 2>&1 || true
+  sleep 10
+done
+echo "fallback_home_wait_seconds=$(($(date +%s) - fallback_start))" >>"$evidence_dir/runner-host.txt"
+{
+  adb shell dumpsys power | grep -E 'mWakefulness=|Display Power' || true
+  adb shell dumpsys window | grep -E 'mCurrentFocus|mFocusedApp' || true
+} >>"$evidence_dir/runner-host.txt" 2>&1
+
+width=""
+height=""
+
+# `wm size` は "Physical size: 320x640" を返す。空白を残すと整数判定に落ちて
+# 後段のタップと swipe 計測がまるごと飛ぶ (初回実行で実測)。
+size="$(adb shell wm size 2>/dev/null | tr -d '\r' | grep -E '^Physical size:' | head -1 | tr -d ' ')"
+dims="${size#*:}"
+width="${dims%%x*}"
+height="${dims##*x}"
+
+# ブート直後は InputManager サービスがまだ publish されておらず input tap/
+# swipe が "No service published for: input" で死ぬ (TCG macos ホストで実測)。
+# 上がるまで待つ。
+input_wait_start="$(date +%s)"
+input_deadline=$((input_wait_start + 300))
+until adb shell service check input 2>/dev/null | grep -q "found"; do
+  if [ "$(date +%s)" -ge "$input_deadline" ]; then
+    echo "input_service_not_found_after_seconds=300" >>"$evidence_dir/runner-host.txt"
+    break
+  fi
+  sleep 5
+done
+echo "input_service_wait_seconds=$(($(date +%s) - input_wait_start))" >>"$evidence_dir/runner-host.txt"
+
+(
+  # ANR ダイアログのウィンドウタイトルは "<pkg> isn't responding" で、
+  # CLOSE_SYSTEM_DIALOGS broadcast も Back キーも消せない (cancelable=false;
+  # TCG macos ホストで実測)。ダイアログの y 位置は背面アプリで変わるので、
+  # uiautomator dump で "Wait" ボタンの正確な bounds を取ってタップする。
+  while :; do
+    if adb shell dumpsys window 2>/dev/null | grep -qi "responding"; then
+      if adb shell uiautomator dump /sdcard/anr-ui.xml >/dev/null 2>&1; then
+        wait_bounds="$(adb shell cat /sdcard/anr-ui.xml 2>/dev/null \
+          | grep -o 'text="Wait"[^>]*bounds="\[[0-9]*,[0-9]*\]\[[0-9]*,[0-9]*\]"' \
+          | head -1 \
+          | sed 's/.*bounds="\[\([0-9]*\),\([0-9]*\)\]\[\([0-9]*\),\([0-9]*\)\]"/\1 \2 \3 \4/')"
+        set -- $wait_bounds
+        if [ -n "${1:-}" ] && [ -n "${3:-}" ]; then
+          adb shell input tap "$((($1 + $3) / 2))" "$((($2 + $4) / 2))" >/dev/null 2>&1
+        fi
+      fi
+      sleep 1
+    fi
+    adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS >/dev/null 2>&1 || true
+    sleep 4
+  done
+) &
+anr_watcher_pid=$!
+trap 'kill $anr_watcher_pid 2>/dev/null || true' EXIT
+
+# X07 は Chrome で長いページを開く。fresh AVD の Chrome は初回に利用規約画面
+# ("Welcome to Chrome") を出して URL を描画せず、swipe も効かない
+# (初回実行で captureCount=1 / didNotScroll=true を実測)。Chrome が debug app
+# の時に読むコマンドラインファイルで初回フローを無効化し、念のため
+# 「Accept & continue」位置のタップも残す。各段階のスクリーンショットを証跡にする。
+adb shell pm list packages >"$evidence_dir/chrome-packages.txt" 2>&1
+if grep -q com.android.chrome "$evidence_dir/chrome-packages.txt"; then
+  adb shell am force-stop com.android.chrome
+  adb shell 'echo "_ --disable-fre --no-default-browser-check --no-first-run" > /data/local/tmp/chrome-command-line' \
+    >>"$evidence_dir/chrome-warmup-note.txt" 2>&1 || true
+  adb shell am set-debug-app --persistent com.android.chrome \
+    >>"$evidence_dir/chrome-warmup-note.txt" 2>&1 || true
+  adb shell am start -a android.intent.action.VIEW -d http://10.0.2.2:65535/ >/dev/null 2>&1 || true
+  sleep 10
+  # --disable-fre を潜り抜けて出る通知許可モーダルは Back 1回で閉じる
+  # (フレッシュ AVD で実測: keyevent 4 でモーダル消去→実ページ露出)。
+  adb shell input keyevent 4 >/dev/null 2>&1 || true
+  sleep 3
+  if is_uint "$width" && is_uint "$height"; then
+    attempt=1
+    while [ "$attempt" -le 3 ]; do
+      adb exec-out screencap -p >"$evidence_dir/chrome-warmup-$attempt.png" 2>/dev/null || true
+      adb shell input tap "$((width / 2))" "$((height * 19 / 20))" || true
+      sleep 3
+      attempt=$((attempt + 1))
+    done
+  else
+    echo "wm size parse failed: $size" >>"$evidence_dir/chrome-warmup-note.txt"
+  fi
+  adb exec-out screencap -p >"$evidence_dir/chrome-warmup-final.png" 2>/dev/null || true
+  adb shell am force-stop com.android.chrome
+else
+  echo "com.android.chrome is not installed; X07 depends on another browser" \
+    >"$evidence_dir/chrome-warmup-note.txt"
+fi
+
+# X07 の合否は swipe 1回の所要時間に強く依存する。低速ホスト (TCG の macOS VM
+# で実測 4m50s) では mobile-capture 側の 60s adb タイムアウトを swipe が超えて
+# 失敗する。加速の実態を数字で証跡に残す。
+if is_uint "$width" && is_uint "$height"; then
+  swipe_start="$(date +%s)"
+  swipe_rc=0
+  adb shell input swipe \
+    "$((width / 2))" "$((height * 7 / 10))" \
+    "$((width / 2))" "$((height * 3 / 10))" 600 >/dev/null 2>&1 || swipe_rc=$?
+  swipe_end="$(date +%s)"
+  # 失敗した swipe の所要時間は加速の証拠にならない (即座に失敗すると短時間に見える)。
+  # 失敗時は終了コードだけを残し、秒数は書かない。
+  if [ "$swipe_rc" -eq 0 ]; then
+    echo "swipe_probe_seconds=$((swipe_end - swipe_start))" >>"$evidence_dir/runner-host.txt"
+  else
+    echo "swipe_probe_failed=$swipe_rc" >>"$evidence_dir/runner-host.txt"
+  fi
+fi
+
+status=0
+round=1
+while [ "$round" -le 2 ]; do
+  round_dir="$evidence_dir/round-$round"
+  mkdir -p "$round_dir"
+  echo "::group::Android driver round $round"
+  # driver は X07 の compare_design が isError を返しても注記だけ書いて exit 0 する。
+  # transport エラー以外の撮影失敗を見逃さないよう、証跡の X07 結果も合格条件に含める。
+  if node app/mcp-server/script/stdio-android-verification.mjs "$round_dir" >"$round_dir/driver.log" 2>&1 \
+    && node -e '
+      const evidence = JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8"));
+      const x07 = evidence.results?.X07_android_scroll;
+      if (!x07 || x07.isError === true) {
+        console.error("X07_android_scroll missing or isError in " + process.argv[1]);
+        process.exit(1);
+      }
+    ' "$round_dir/evidence.json" >>"$round_dir/driver.log" 2>&1; then
+    echo "android round $round: PASS"
+  else
+    echo "android round $round: FAIL"
+    status=$((status + round))
+  fi
+  cat "$round_dir/driver.log"
+  echo "::endgroup::"
+  round=$((round + 1))
+done
+exit "$status"
