@@ -67,6 +67,16 @@ export const VerificationContextPayloadSchema = z
             cropRegion: RectangleSchema.optional(),
             workingCropRegion: RectangleSchema.optional(),
             cropSource: z.enum(["none", "explicit-project", "auto"]).optional(),
+            // 下端へ足りない行を足して上端揃えで比べた回だけ入る。旧 contain 基準と
+            // 今回の top-aligned は領域スコアの意味が違うため、混ぜて比べない。足す行が無い
+            // 回 (高さが揃った回を含む) は鍵を持たない。高さや contain 倍率の変化は
+            // 実装の修正で起きる比較結果なので、この契約では文脈変更にしない。
+            alignment: z.literal("top-aligned").optional(),
+            // contain 正規化で比べた回だけ true。alignment の鍵が無い回は
+            // 「高さが揃って 1:1 で比べた」か「contain に戻った」のどちらか分から
+            // ないため、比較方式の同一性を見る verify_fix がこの鍵で区別する。
+            // 倍率の値は含めず「contain 方式だったか」だけを記録する。
+            containResized: z.literal(true).optional(),
           })
           .strict(),
       })

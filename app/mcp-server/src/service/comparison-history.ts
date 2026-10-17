@@ -2,7 +2,12 @@ import * as fs from "node:fs/promises";
 import * as path from "node:path";
 
 import { CompareDesignResultSchema } from "@figdiff/shared";
-import type { CompareDesignResult, DiffReport, ParsedDesignInput } from "@figdiff/shared";
+import type {
+  CompareDesignResult,
+  DiffReport,
+  NormalizationReport,
+  ParsedDesignInput,
+} from "@figdiff/shared";
 
 import { getFigdiffResultsDir } from "../util/figdiff-paths.js";
 
@@ -26,6 +31,9 @@ export interface RecentComparison {
   report: DiffReport;
   captureWidth?: number;
   captureHeight?: number;
+  // 足し行で比べたかどうかなど、採点方式を見るために normalization も渡す。
+  // report (DiffReport) には載らないため result 側から取る。
+  normalization?: NormalizationReport | undefined;
 }
 
 const historyBySourceKey = new Map<string, ComparisonHistoryEntry[]>();
@@ -138,6 +146,7 @@ export function getRecentComparisons(sourceKey: string): RecentComparison[] {
     report: entry.result.diffReport,
     captureWidth: entry.captureWidth,
     captureHeight: entry.captureHeight,
+    normalization: entry.result.normalization,
   }));
 }
 
