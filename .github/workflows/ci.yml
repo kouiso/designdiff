@@ -13,16 +13,47 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  node:
-    name: Node (${{ matrix.check-type }})
+  build-artifact:
+    name: Shared Linux build
     runs-on: ${{ vars.RUNNER_LINUX || 'ubuntu-latest' }}
     timeout-minutes: 15
     if: github.event.pull_request.draft != true
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: jdx/mise-action@9e7f7633ff6f6d6048a9418a68d48f288f50eb14 # v4.2.3
+      - name: Install dependencies
+        run: node script/ci.mjs install
+      - name: Build all packages
+        run: node script/ci.mjs build
+      - name: Verify and archive build outputs and Turbo task cache
+        run: node script/ci-build-cache.mjs save
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: linux-build-${{ github.sha }}-${{ github.run_attempt }}
+          path: .ci-build/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 1
+
+  node:
+    needs: build-artifact
+    name: Node (${{ matrix.check-type }})
+    runs-on: ${{ vars.RUNNER_LINUX || 'ubuntu-latest' }}
+    timeout-minutes: 15
+    if: always() && !cancelled() && github.event.pull_request.draft != true
     strategy:
       fail-fast: false
       matrix:
         check-type: [lint, typecheck, test, coverage]
     steps:
+      - name: Require successful shared build
+        if: needs.build-artifact.result != 'success'
+        run: |
+          echo 'Shared build did not succeed; required validation cannot run.' >&2
+          exit 1
+
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
@@ -30,45 +61,48 @@ jobs:
       - uses: jdx/mise-action@9e7f7633ff6f6d6048a9418a68d48f288f50eb14 # v4.2.3
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: node script/ci.mjs install
 
-      - name: Build all packages
-        run: pnpm build
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: linux-build-${{ github.sha }}-${{ github.run_attempt }}
+          path: .ci-build/
+      - name: Restore exact build outputs and verify all Turbo build tasks are cached
+        run: node script/ci-build-cache.mjs restore
 
       - name: Biome check (format + lint)
         if: matrix.check-type == 'lint'
-        run: pnpm check
-
-      - name: ESLint
-        if: matrix.check-type == 'lint'
-        run: pnpm lint:eslint
+        run: node script/ci.mjs lint
 
       - name: TypeScript typecheck
         if: matrix.check-type == 'typecheck'
-        run: pnpm typecheck
+        run: node script/ci.mjs typecheck
 
       - name: Unit tests
         if: matrix.check-type == 'test'
-        run: pnpm test
+        run: node script/ci.mjs test
 
       # 単体テストの MCP は全部 InMemoryTransport 越しで、SDK の stdio 実装を一度も通らん。
       # SDK の minor/patch は automerge されるので、本物の dist/index.js と往復せんと stdio が壊れても緑で通る。
-      - name: MCP stdio round-trip smoke
-        if: matrix.check-type == 'test'
-        run: pnpm --filter "@figdiff/mcp-server" run test:stdio-smoke
-
       - name: Coverage thresholds
         if: matrix.check-type == 'coverage'
         # 7パッケージ全部を対象にする。門の外に置いたパッケージは、
         # 下がっても誰も気づかんまま放置される。
-        run: pnpm -r run test:coverage
+        run: node script/ci.mjs coverage
 
   e2e:
+    needs: build-artifact
     name: E2E (Playwright)
     runs-on: ${{ vars.RUNNER_LINUX || 'ubuntu-latest' }}
     timeout-minutes: 20
-    if: github.event.pull_request.draft != true
+    if: always() && !cancelled() && github.event.pull_request.draft != true
     steps:
+      - name: Require successful shared build
+        if: needs.build-artifact.result != 'success'
+        run: |
+          echo 'Shared build did not succeed; required validation cannot run.' >&2
+          exit 1
+
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
@@ -76,17 +110,21 @@ jobs:
       - uses: jdx/mise-action@9e7f7633ff6f6d6048a9418a68d48f288f50eb14 # v4.2.3
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: node script/ci.mjs install
 
-      - name: Build all packages
-        run: pnpm build
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: linux-build-${{ github.sha }}-${{ github.run_attempt }}
+          path: .ci-build/
+      - name: Restore exact build outputs and verify all Turbo build tasks are cached
+        run: node script/ci-build-cache.mjs restore
 
       # ブラウザ本体はリポジトリに無いので、実行前に取ってくる必要がある。
       - name: Install Playwright browser
-        run: pnpm --filter "@figdiff/desktop" exec playwright install --with-deps chromium
+        run: node script/ci.mjs browser
 
       - name: Run E2E
-        run: pnpm --filter "@figdiff/desktop" run e2e
+        run: node script/ci.mjs e2e
 
       # 落ちたときに何が起きたかを後から見られるようにする。
       # 成果物の保存は失敗時だけにして、無料枠を無駄に減らさない。
@@ -102,11 +140,18 @@ jobs:
   # 実 bundle (dist/ui.html) を実 Chromium の iframe に載せ、sandbox↔iframe の
   # postMessage 往復・requestId 相関・実 canvas 比較を外側から検証する。
   figma-plugin-e2e:
+    needs: build-artifact
     name: Figma plugin host E2E
     runs-on: ${{ vars.RUNNER_LINUX || 'ubuntu-latest' }}
     timeout-minutes: 15
-    if: github.event.pull_request.draft != true
+    if: always() && !cancelled() && github.event.pull_request.draft != true
     steps:
+      - name: Require successful shared build
+        if: needs.build-artifact.result != 'success'
+        run: |
+          echo 'Shared build did not succeed; required validation cannot run.' >&2
+          exit 1
+
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
@@ -114,20 +159,24 @@ jobs:
       - uses: jdx/mise-action@9e7f7633ff6f6d6048a9418a68d48f288f50eb14 # v4.2.3
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: node script/ci.mjs install
 
       # dist/ui.html は build でしか生まれない。古い bundle を検体にすると
       # 契約ズレを取りこぼすので必ず先にビルドする。
-      - name: Build all packages
-        run: pnpm build
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: linux-build-${{ github.sha }}-${{ github.run_attempt }}
+          path: .ci-build/
+      - name: Restore exact build outputs and verify all Turbo build tasks are cached
+        run: node script/ci-build-cache.mjs restore
 
       - name: Install Playwright browser
-        run: pnpm --filter "@figdiff/desktop" exec playwright install --with-deps chromium
+        run: node script/ci.mjs browser
 
       - name: Run plugin host E2E
         env:
           FIGDIFF_PLUGIN_HOST_EVIDENCE: ${{ runner.temp }}/figma-plugin-evidence
-        run: node app/figma-plugin/e2e/real-iframe-host.mjs
+        run: CI_EVIDENCE_DIR="${{ runner.temp }}" node script/ci.mjs plugin
 
       - name: Upload plugin host evidence
         if: failure()
@@ -142,11 +191,18 @@ jobs:
   # 生きているか、compare 画面で比較が1回通るかを最小限だけ確かめる。
   # 重い UI 検証は desktop-c-cases が担う。
   electron-smoke:
+    needs: build-artifact
     name: Electron IPC smoke
     runs-on: ${{ vars.RUNNER_LINUX || 'ubuntu-latest' }}
     timeout-minutes: 15
-    if: github.event.pull_request.draft != true
+    if: always() && !cancelled() && github.event.pull_request.draft != true
     steps:
+      - name: Require successful shared build
+        if: needs.build-artifact.result != 'success'
+        run: |
+          echo 'Shared build did not succeed; required validation cannot run.' >&2
+          exit 1
+
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
@@ -154,11 +210,15 @@ jobs:
       - uses: jdx/mise-action@9e7f7633ff6f6d6048a9418a68d48f288f50eb14 # v4.2.3
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: node script/ci.mjs install
 
       # dist/main/main.js を検体にするので build は必須
-      - name: Build all packages
-        run: pnpm build
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: linux-build-${{ github.sha }}-${{ github.run_attempt }}
+          path: .ci-build/
+      - name: Restore exact build outputs and verify all Turbo build tasks are cached
+        run: node script/ci-build-cache.mjs restore
 
       # Electron は真の headless を持たない。X server が無い CI では
       # xvfb で仮想ディスプレイを立てて起動する。
@@ -166,10 +226,10 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y xvfb
 
       - name: Install Playwright browser
-        run: pnpm --filter "@figdiff/desktop" exec playwright install --with-deps chromium
+        run: node script/ci.mjs browser
 
       - name: Run Electron IPC smoke
-        run: xvfb-run -a node app/desktop/e2e/electron-ipc-smoke.mjs ${{ runner.temp }}/electron-ipc-evidence
+        run: CI_EVIDENCE_DIR="${{ runner.temp }}" node script/ci.mjs electron
 
       - name: Upload Electron smoke evidence
         if: failure()
@@ -183,11 +243,18 @@ jobs:
   # 実 Chromium に読み込んだ dist/ でしか確かめられない。証跡
   # (evidence.json + スクリーンショット) は成功時も artifact に残す。
   chrome-ext-e2e:
+    needs: build-artifact
     name: Chrome extension E2E
     runs-on: ${{ vars.RUNNER_LINUX || 'ubuntu-latest' }}
     timeout-minutes: 15
-    if: github.event.pull_request.draft != true
+    if: always() && !cancelled() && github.event.pull_request.draft != true
     steps:
+      - name: Require successful shared build
+        if: needs.build-artifact.result != 'success'
+        run: |
+          echo 'Shared build did not succeed; required validation cannot run.' >&2
+          exit 1
+
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
@@ -195,13 +262,17 @@ jobs:
       - uses: jdx/mise-action@9e7f7633ff6f6d6048a9418a68d48f288f50eb14 # v4.2.3
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: node script/ci.mjs install
 
-      - name: Build all packages
-        run: pnpm build
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: linux-build-${{ github.sha }}-${{ github.run_attempt }}
+          path: .ci-build/
+      - name: Restore exact build outputs and verify all Turbo build tasks are cached
+        run: node script/ci-build-cache.mjs restore
 
       - name: Install Playwright browser
-        run: pnpm --filter "@figdiff/desktop" exec playwright install --with-deps chromium
+        run: node script/ci.mjs browser
 
       # X server 不要の新 headless で出荷物そのままの dist を読み込む。activeTab が
       # 付かない自動化では capture が失敗するので、その失敗が行動可能なエラーとして
@@ -209,23 +280,23 @@ jobs:
       - name: Run Chrome extension E2E
         env:
           FIGDIFF_HEADLESS: new
-        run: node app/chrome-extension/script/real-chrome-e2e.mjs ${{ runner.temp }}/chrome-ext-evidence
+        run: CI_EVIDENCE_DIR="${{ runner.temp }}" node script/ci.mjs extension-initial
 
       # captureVisibleTab は activeTab か <all_urls> を要求し、自動化で得られるのは
       # 後者だけ。出荷 manifest は変えず、runner.temp に <all_urls> を足した複製を作り、
       # 比較 → 一致率表示を作図由来の期待値で表明する。
       - name: Prepare permissioned E2E extension dist
-        run: node app/chrome-extension/script/prepare-e2e-dist.mjs ${{ runner.temp }}/chrome-ext-e2e-dist
+        run: CI_EVIDENCE_DIR="${{ runner.temp }}" node script/ci.mjs extension-prepare
 
       - name: Run Chrome extension compare E2E
         env:
           FIGDIFF_HEADLESS: new
           FIGDIFF_EXT_DIR: ${{ runner.temp }}/chrome-ext-e2e-dist
           FIGDIFF_EXPECT_COMPARE: "1"
-        run: node app/chrome-extension/script/real-chrome-e2e.mjs ${{ runner.temp }}/chrome-ext-compare-evidence
+        run: CI_EVIDENCE_DIR="${{ runner.temp }}" node script/ci.mjs extension-compare
 
       - name: Run Figma plugin to extension handoff E2E
-        run: xvfb-run -a node app/chrome-extension/script/plugin-frame-handoff-e2e.mjs ${{ runner.temp }}/plugin-extension-evidence
+        run: CI_EVIDENCE_DIR="${{ runner.temp }}" node script/ci.mjs extension-handoff
 
       - name: Upload extension evidence
         if: always()
@@ -251,16 +322,12 @@ jobs:
       - uses: jdx/mise-action@9e7f7633ff6f6d6048a9418a68d48f288f50eb14 # v4.2.3
 
       - name: Check naming conventions
-        run: node script/check-naming.mjs
+        run: node script/ci.mjs naming
 
       # 同じ Action の版が混ざると、更新のたびに片方が取り残される。
       # 動いてしまうので気づけない。混ざった時点で止める。
-      - name: Check action pins
-        run: node script/check-action-pins.mjs
 
       # ESLint が対象外にしている e2e なども含め、comparePixels 以外の採点経路を止める。
-      - name: Check pixelmatch usage
-        run: node script/check-pixelmatch-usage.mjs
 
   # FigDiff の合否を FigDiff 自身のテストで裏付けると、ズレたときに一緒にズレる。
   # このジョブは FigDiff のコードを一切読み込まず、画像処理ライブラリだけで
@@ -279,19 +346,15 @@ jobs:
       - uses: jdx/mise-action@9e7f7633ff6f6d6048a9418a68d48f288f50eb14 # v4.2.3
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: node script/ci.mjs install
 
       - name: Run independent oracle self-test
-        run: node script/oracle-compare.mjs self-test
+        run: node script/ci.mjs oracle
 
       # 物差しが正しいだけでは足りん。FigDiff の合否がその物差しと一致するかを見る。
       # ゴールデン検体の期待合否は FigDiff 側のテストが検証しており、ここで
       # 独立オラクルも同じ期待合否に一致することを示す。両者が同じ正解へ
       # 独立にたどり着いているかの確認になる。
-      - name: Check FigDiff verdicts agree with the independent oracle
-        run: node script/oracle-verdict-agreement.mjs
 
       # 収束したかどうかを決める側のロジックも、変更のたびに検査する。
       # ここが緩むと、外側で測る形にした意味が無くなる。
-      - name: Check the convergence gate logic
-        run: pnpm --filter "@figdiff/mcp-server" exec vitest run src/service/p5-oracle-gate.test.ts
