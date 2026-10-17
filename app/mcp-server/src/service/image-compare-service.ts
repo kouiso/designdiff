@@ -1514,10 +1514,22 @@ export async function compareImages(
           alignedCompositedContentBounds,
         )
       : undefined;
-  if (hasTransparentPixel(reportDesignPixels)) {
+  const designHasTransparent = hasTransparentPixel(reportDesignPixels);
+  const screenshotHasTransparent = hasTransparentPixel(screenshotPixels);
+  // AA 縁判定は生の RGBA (半透明画素の隣接判定が alpha を見る) を必要とする。
+  // 不透明化で潰れた画素で AA マスクを作ると縁の判定が変わるため、透明画素が
+  // ある回だけ塗り替え前のバッファを保存する。透明が無い回は元配列がそのまま
+  // 使われるのでコピーは増えない。
+  const designPixelsForAntiAlias = designHasTransparent
+    ? Uint8ClampedArray.from(reportDesignPixels)
+    : undefined;
+  const screenshotPixelsForAntiAlias = screenshotHasTransparent
+    ? Uint8ClampedArray.from(screenshotPixels)
+    : undefined;
+  if (designHasTransparent) {
     flattenTransparentPixels(reportDesignPixels, backgroundColor);
   }
-  if (hasTransparentPixel(screenshotPixels)) {
+  if (screenshotHasTransparent) {
     flattenTransparentPixels(screenshotPixels, backgroundColor);
   }
   const reportScreenshotPixels = screenshotPixels;
@@ -1603,9 +1615,13 @@ export async function compareImages(
     // 残差は数える」画素が生まれ、ずれ許容済みの縁に残差が発火する。
     // 常に構築すると pixelmatch 1 パス分のコストが全比較に乗るため遅延にする。
     buildAntiAliasedMask: () =>
-      buildAntiAliasedMaskSignal(reportDesignPixels, reportScreenshotPixels, width, height, {
-        threshold,
-      }),
+      buildAntiAliasedMaskSignal(
+        designPixelsForAntiAlias ?? reportDesignPixels,
+        screenshotPixelsForAntiAlias ?? reportScreenshotPixels,
+        width,
+        height,
+        { threshold },
+      ),
     localAlignmentTolerancePx: options.localAlignmentTolerancePx,
     rasterizationTolerance: options.rasterizationTolerance,
   });

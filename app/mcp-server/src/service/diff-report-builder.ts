@@ -12,6 +12,7 @@ import {
   classifyForegroundOccupancyGeometry,
   computeMeanDeltaE2000,
   computePerceptibleDiffRatio,
+  deltaE2000,
   computeSsimForRegion,
   computeWholeImageStructure,
   effectiveRegionColor,
@@ -20,6 +21,7 @@ import {
   GLOBAL_SHIFT_ISSUE_THRESHOLD_PX,
   resolveAlignment,
   PERCEPTIBLE_DELTA_E,
+  srgbToLab,
   UNIMPLEMENTED_LAYOUT_SCORE,
   computeVerdict,
   detectHighTextureRegion,
@@ -81,6 +83,10 @@ interface BuildDiffReportOptions {
   // 使う。bbox ごと除くと、枠線だけの疎なクラスタが内側の広い色ずれまで
   // 残差から消してしまう。未指定時は従来どおり bbox 全体を除く。
   diffMask?: Uint8Array;
+  // 実差分画素ではなく領域ごと残差採点から外す矩形 (位置合わせが空けた縁
+  // など)。diffRegions を境界帯でクリップしても、フレーム残差は空いた縁を
+  // 見てしまうため、採点から外した同じ領域をここでも外す。
+  residualExcludeBoxes?: DiffBoundingBox[];
   // pixelmatch が「差分ではなく AA」と判定した画素 (1 = AA) を遅延で返す
   // 提供者。残差は「pixelmatch が差分に数えなかった画素」の広い色ずれを
   // 拾う物差しなので、AA 縁 (ラスタライザ差・1-2px のずれの輪郭) を混ぜると
@@ -167,8 +173,23 @@ const buildColorDifference = (
 
 // フレーム残差の計測窓。行・列の帯を 3 スケールで重ね、2 次元のセル網を
 // 足した全窓について、マスク外画素の平均 ΔE2000 の最大値とその窓を返す。
-// 窓あたりの計測はセクション採点と同じ buildColorDifference (サンプリング
-// 規則も同一) を使い、残差だけが別の物差しにならないようにする。
+// 窓ごとに画素を舐め直すと比較1回あたり帯+セル分の全面走査が乗り、上限サイズ
+// (2400万画素) で MCP の応答時間を支配してしまう。窓の分割は画素位置だけで
+// 決まるため、ΔE を1回の走査で計算し全窓へ同時に積み上げる。
+// 1 画素あたりの意味は computeMeanDeltaE2000 と同じ (白への合成・両側完全
+// 透明は除外) に揃え、残差だけが別の物差しにならないようにする。
+const RESIDUAL_MIN_FIRING_PIXELS = 10;
+
+const compositePixelOverWhite = (
+  pixels: Uint8ClampedArray,
+  offset: number,
+): [number, number, number] => {
+  const alpha = pixels[offset + 3] / 255;
+  if (alpha === 1) return [pixels[offset], pixels[offset + 1], pixels[offset + 2]];
+  const blend = (value: number): number => Math.round(value * alpha + 255 * (1 - alpha));
+  return [blend(pixels[offset]), blend(pixels[offset + 1]), blend(pixels[offset + 2])];
+};
+
 const computeMaxWindowResidual = (
   designPixels: Uint8ClampedArray,
   screenshotPixels: Uint8ClampedArray,
@@ -177,35 +198,34 @@ const computeMaxWindowResidual = (
   contentBbox: DiffBoundingBox,
   residualMask: Uint8Array,
 ): { color: number; window: DiffBoundingBox } => {
-  let maxColor = 0;
-  let maxWindow = contentBbox;
-  const consider = (bbox: DiffBoundingBox): void => {
-    if (bbox.w <= 0 || bbox.h <= 0) return;
-    const color = buildColorDifference(
-      designPixels,
-      screenshotPixels,
-      width,
-      height,
-      bbox,
-      residualMask,
-    );
-    if (color > maxColor) {
-      maxColor = color;
-      maxWindow = bbox;
-    }
-  };
+  const startX = Math.max(0, Math.floor(contentBbox.x));
+  const startY = Math.max(0, Math.floor(contentBbox.y));
+  const endX = Math.min(width, Math.ceil(contentBbox.x + contentBbox.w));
+  const endY = Math.min(height, Math.ceil(contentBbox.y + contentBbox.h));
+  if (endX <= startX || endY <= startY) {
+    return { color: 0, window: contentBbox };
+  }
+  // 窓の並び順: 行帯 (スケール順) → 列帯 → セル網。bboxes を先に敷き、
+  // 走査では画素ごとに所属する窓 index を O(1) で引いて積み上げる。
+  const windowBboxes: DiffBoundingBox[] = [];
   const splitOffset = (origin: number, length: number, scale: number, index: number): number =>
     origin + Math.floor((index * length) / scale);
   for (const scale of RESIDUAL_BAND_SCALES) {
     for (let index = 0; index < scale; index += 1) {
       const y0 = splitOffset(contentBbox.y, contentBbox.h, scale, index);
       const y1 = splitOffset(contentBbox.y, contentBbox.h, scale, index + 1);
-      consider({ x: contentBbox.x, y: y0, w: contentBbox.w, h: y1 - y0 });
-      const x0 = splitOffset(contentBbox.x, contentBbox.w, scale, index);
-      const x1 = splitOffset(contentBbox.x, contentBbox.w, scale, index + 1);
-      consider({ x: x0, y: contentBbox.y, w: x1 - x0, h: contentBbox.h });
+      windowBboxes.push({ x: contentBbox.x, y: y0, w: contentBbox.w, h: y1 - y0 });
     }
   }
+  const columnBandBase = windowBboxes.length;
+  for (const scale of RESIDUAL_BAND_SCALES) {
+    for (let index = 0; index < scale; index += 1) {
+      const x0 = splitOffset(contentBbox.x, contentBbox.w, scale, index);
+      const x1 = splitOffset(contentBbox.x, contentBbox.w, scale, index + 1);
+      windowBboxes.push({ x: x0, y: contentBbox.y, w: x1 - x0, h: contentBbox.h });
+    }
+  }
+  const cellGridBase = windowBboxes.length;
   for (const grid of RESIDUAL_CELL_GRIDS) {
     for (let gy = 0; gy < grid; gy += 1) {
       const y0 = splitOffset(contentBbox.y, contentBbox.h, grid, gy);
@@ -213,8 +233,82 @@ const computeMaxWindowResidual = (
       for (let gx = 0; gx < grid; gx += 1) {
         const x0 = splitOffset(contentBbox.x, contentBbox.w, grid, gx);
         const x1 = splitOffset(contentBbox.x, contentBbox.w, grid, gx + 1);
-        consider({ x: x0, y: y0, w: x1 - x0, h: y1 - y0 });
+        windowBboxes.push({ x: x0, y: y0, w: x1 - x0, h: y1 - y0 });
       }
+    }
+  }
+  const windowCount = windowBboxes.length;
+  const sums = new Float64Array(windowCount);
+  const counts = new Float64Array(windowCount);
+  // 帯幅いっぱいの色ずれは何万画素も発火するが、クラスタ化の最小画素数に届かない
+  // 高コントラストの断片 (例: 9 画素) も同じ窓平均で 2 を超えられる。ノイズ床を
+  // そろえるため、発火画素がクラスタ採点の最小件数に届かない窓は合否に効かせない。
+  const firingCounts = new Float64Array(windowCount);
+  for (let y = startY; y < endY; y += 1) {
+    for (let x = startX; x < endX; x += 1) {
+      const pixelIndex = y * width + x;
+      if (residualMask[pixelIndex] === 1) continue;
+      const offset = pixelIndex * 4;
+      const alphaDesign = designPixels[offset + 3];
+      const alphaScreenshot = screenshotPixels[offset + 3];
+      if (alphaDesign === 0 && alphaScreenshot === 0) continue;
+      const [dr, dg, db] = compositePixelOverWhite(designPixels, offset);
+      const [sr, sg, sb] = compositePixelOverWhite(screenshotPixels, offset);
+      const delta = deltaE2000(srgbToLab(dr, dg, db), srgbToLab(sr, sg, sb));
+      const firing = delta >= PERCEPTIBLE_DELTA_E ? 1 : 0;
+      let bandBase = 0;
+      for (const scale of RESIDUAL_BAND_SCALES) {
+        const idx =
+          bandBase +
+          Math.min(
+            scale - 1,
+            Math.floor(((y - contentBbox.y) * scale) / Math.max(1, contentBbox.h)),
+          );
+        sums[idx] += delta;
+        counts[idx] += 1;
+        firingCounts[idx] += firing;
+        bandBase += scale;
+      }
+      let columnBase = columnBandBase;
+      for (const scale of RESIDUAL_BAND_SCALES) {
+        const idx =
+          columnBase +
+          Math.min(
+            scale - 1,
+            Math.floor(((x - contentBbox.x) * scale) / Math.max(1, contentBbox.w)),
+          );
+        sums[idx] += delta;
+        counts[idx] += 1;
+        firingCounts[idx] += firing;
+        columnBase += scale;
+      }
+      let cellBase = cellGridBase;
+      for (const grid of RESIDUAL_CELL_GRIDS) {
+        const gy = Math.min(
+          grid - 1,
+          Math.floor(((y - contentBbox.y) * grid) / Math.max(1, contentBbox.h)),
+        );
+        const gx = Math.min(
+          grid - 1,
+          Math.floor(((x - contentBbox.x) * grid) / Math.max(1, contentBbox.w)),
+        );
+        const idx = cellBase + gy * grid + gx;
+        sums[idx] += delta;
+        counts[idx] += 1;
+        firingCounts[idx] += firing;
+        cellBase += grid * grid;
+      }
+    }
+  }
+  let maxColor = 0;
+  let maxWindow = contentBbox;
+  for (let index = 0; index < windowCount; index += 1) {
+    if (counts[index] === 0) continue;
+    if (firingCounts[index] < RESIDUAL_MIN_FIRING_PIXELS) continue;
+    const color = sums[index] / counts[index];
+    if (color > maxColor) {
+      maxColor = color;
+      maxWindow = windowBboxes[index];
     }
   }
   return { color: maxColor, window: maxWindow };
@@ -861,7 +955,7 @@ const buildResidualMask = (
   ignoreMask: Uint8Array | undefined,
   clusterBoxes: readonly DiffBoundingBox[],
   diffMask: Uint8Array | undefined,
-  antiAliasedMask?: Uint8Array,
+  fullyExcludedBoxes?: readonly DiffBoundingBox[],
 ): Uint8Array => {
   const pixelCount = width * height;
   if (ignoreMask !== undefined && ignoreMask.length !== pixelCount) {
@@ -874,18 +968,18 @@ const buildResidualMask = (
       `buildResidualMask: diffMask must cover every pixel (got ${diffMask.length}, expected ${pixelCount})`,
     );
   }
-  if (antiAliasedMask !== undefined && antiAliasedMask.length !== pixelCount) {
-    throw new Error(
-      `buildResidualMask: antiAliasedMask must cover every pixel (got ${antiAliasedMask.length}, expected ${pixelCount})`,
-    );
-  }
   const mask = ignoreMask ? Uint8Array.from(ignoreMask) : new Uint8Array(pixelCount);
-  // AA 縁はクラスタの内外に関わらずレンダラ由来のノイズなので、残差の
-  // 対象から全域で外す (クラスタ採点が AA を件数に数えないのと同じ扱い)。
-  if (antiAliasedMask !== undefined) {
-    for (let index = 0; index < pixelCount; index += 1) {
-      if (antiAliasedMask[index] === 1) {
-        mask[index] = 1;
+  // 位置合わせが空けた縁のように、実差分画素ではなく領域そのものを残差から外す
+  // 箱は diffMask の有無に関わらず全面をマスクする。
+  if (fullyExcludedBoxes !== undefined) {
+    for (const box of fullyExcludedBoxes) {
+      const startX = Math.max(0, Math.floor(box.x));
+      const endX = Math.min(width, Math.ceil(box.x + box.w));
+      const startY = Math.max(0, Math.floor(box.y));
+      const endY = Math.min(height, Math.ceil(box.y + box.h));
+      if (endX <= startX) continue;
+      for (let y = startY; y < endY; y += 1) {
+        mask.fill(1, y * width + startX, y * width + endX);
       }
     }
   }
@@ -1243,12 +1337,18 @@ const buildRegionScores = (options: BuildDiffReportOptions): RegionScoreBuild =>
   const unscoredRawBoxes = shouldScoreDiffClusters(options, childRegions.length > 0)
     ? []
     : (options.diffRegions ?? []).filter((bbox) => bbox.w > 0 && bbox.h > 0);
-  const clusterBoxes = [
-    ...diffClusterRegions.map((cluster) => cluster.bbox),
-    ...unscoredDiffClusters,
-    ...unscoredRawBoxes,
-  ];
-  let residualMask = buildResidualMask(width, height, ignoreMask, clusterBoxes, diffMask);
+  // 採点上限から外れたクラスタは残差マスクに入れない。一度も測っていない画素を
+  // 「測定済み」として残差から除くと、未カバー部の実差分がどの行にも残差にも
+  // 載らず PASS が出る。残差側に見せておけば、それが実差分なら残差が発火する。
+  const clusterBoxes = [...diffClusterRegions.map((cluster) => cluster.bbox), ...unscoredRawBoxes];
+  const residualMask = buildResidualMask(
+    width,
+    height,
+    ignoreMask,
+    clusterBoxes,
+    diffMask,
+    options.residualExcludeBoxes,
+  );
 
   const wholeFrameBbox = toWholeFrameRegion(width, height);
   // letterbox 余白を含めると SSIM / 色差が不当に悪化するため、content rect 内で評価する。
@@ -1328,14 +1428,14 @@ const buildRegionScores = (options: BuildDiffReportOptions): RegionScoreBuild =>
   ) {
     const antiAliasedMask = options.buildAntiAliasedMask();
     if (antiAliasedMask.some((value) => value === 1)) {
-      residualMask = buildResidualMask(
-        width,
-        height,
-        ignoreMask,
-        clusterBoxes,
-        diffMask,
-        antiAliasedMask,
-      );
+      // AA 画素を外すだけなら既存マスクへの OR で足りる。上限サイズでは新規
+      // 24MB 確保が既存マスク・AA マスクと同時に生きて 3 倍のピークになるため、
+      // 追加確保なしに in-place で畳む。
+      for (let index = 0; index < residualMask.length; index += 1) {
+        if (antiAliasedMask[index] === 1) {
+          residualMask[index] = 1;
+        }
+      }
       frameResidual = computeMaxWindowResidual(
         designPixels,
         screenshotPixels,
@@ -1635,6 +1735,10 @@ export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
     }
     return { ...bbox, x, y, w, h };
   };
+  // 位置補正が採用された回は、空き縁 (shiftPixels が透明で埋めた帯) 側の
+  // クラスタ bbox はクリップして採点から外す。フレーム残差も同じ帯を
+  // 計測すると「補正で外した画素」を別窓で拾い直してしまうため、同じ帯を
+  // 残差の除外箱として渡す。
   const alignedOptions = {
     ...options,
     designPixels: alignedDesignPixels,
@@ -1642,6 +1746,12 @@ export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
     diffRegions: options.diffRegions
       ?.map((bbox) => clipToAlignedCanvas(bbox))
       .filter((bbox): bbox is DiffBoundingBox & { diffPixelCount?: number } => bbox !== null),
+    residualExcludeBoxes: [
+      ...(leftMargin > 0 ? [{ x: 0, y: 0, w: leftMargin, h: height }] : []),
+      ...(rightMargin > 0 ? [{ x: width - rightMargin, y: 0, w: rightMargin, h: height }] : []),
+      ...(topMargin > 0 ? [{ x: 0, y: 0, w: width, h: topMargin }] : []),
+      ...(bottomMargin > 0 ? [{ x: 0, y: height - bottomMargin, w: width, h: bottomMargin }] : []),
+    ],
   };
   const {
     regionScores,

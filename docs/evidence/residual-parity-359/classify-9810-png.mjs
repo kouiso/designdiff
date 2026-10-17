@@ -2,12 +2,12 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { createRequire } from "node:module";
+const checkout = process.env.DESIGNDIFF_CHECKOUT ?? new URL("../../../", import.meta.url).pathname;
 
-const require = createRequire("/home/factory-user/dd-figma-path/package.json");
-const {
-  PNG,
-} = require("/home/factory-user/dd-figma-path/node_modules/.pnpm/pngjs@7.0.0/node_modules/pngjs/lib/png.js");
-const HM = "/home/factory-user/horsemanager/doc/evidence/pixel-perfect/canonical";
+const require = createRequire(`${checkout}/package.json`);
+const { PNG } = require(`${checkout}/node_modules/.pnpm/pngjs@7.0.0/node_modules/pngjs/lib/png.js`);
+const HM =
+  process.env.HM_EVIDENCE_DIR ?? `${checkout}/../horsemanager/doc/evidence/pixel-perfect/canonical`;
 const ctors = { Uint8ClampedArray, Uint8Array, Float32Array, Float64Array };
 const load = async (dir) => {
   const { buffers, rest } = JSON.parse(await readFile(join(dir, "options.json"), "utf8"));

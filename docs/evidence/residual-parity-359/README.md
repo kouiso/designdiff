@@ -2,10 +2,11 @@
 
 Independent verification artifacts for the residual-measurement fixes on
 `fix/residual-rule-parity-359`. Everything here is re-obtainable from this PR;
-scripts reference absolute paths from the measuring machine
-(`/home/factory-user/dd-figma-path` checkout, `/tmp/dd-dump/{live-v3,png-v2}`
-capture dumps, horsemanager canonical originals at
-`/home/factory-user/horsemanager/doc/evidence/pixel-perfect/canonical`).
+scripts resolve the repository checkout relative to `import.meta.url` (override
+with the `DESIGNDIFF_CHECKOUT` env var) and locate the horsemanager canonical
+originals via the `HM_EVIDENCE_DIR` env var (defaults to a sibling
+`horsemanager` checkout). Capture dumps come from `/tmp/dd-dump/{live-v3,png-v2}`
+on the measuring machine.
 
 ## Commits
 

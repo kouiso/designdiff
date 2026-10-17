@@ -6,11 +6,10 @@
 // critical residual_color_drift issue, and score miss / false-alarm against
 // OUR expectation, never the other way round.
 import { pathToFileURL } from "node:url";
+const checkout = process.env.DESIGNDIFF_CHECKOUT ?? new URL("../../../", import.meta.url).pathname;
 
 const { buildDiffReport } = await import(
-  pathToFileURL(
-    "/home/factory-user/dd-figma-path/app/mcp-server/dist/service/diff-report-builder.js",
-  ).href
+  pathToFileURL(`${checkout}/app/mcp-server/dist/service/diff-report-builder.js`).href
 );
 
 const SIZE = 120;

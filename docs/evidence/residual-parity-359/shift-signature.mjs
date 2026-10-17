@@ -5,7 +5,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 
-const checkout = "/home/factory-user/dd-figma-path";
+const checkout = process.env.DESIGNDIFF_CHECKOUT ?? new URL("../../../", import.meta.url).pathname;
 const { buildDiffReport } = await import(
   pathToFileURL(join(checkout, "app/mcp-server/dist/service/diff-report-builder.js")).href
 );

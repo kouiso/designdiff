@@ -5,13 +5,12 @@
 import { createRequire } from "node:module";
 import { writeFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
+const checkout = process.env.DESIGNDIFF_CHECKOUT ?? new URL("../../../", import.meta.url).pathname;
 
-const require = createRequire("/home/factory-user/dd-figma-path/app/mcp-server/package.json");
+const require = createRequire(`${checkout}/app/mcp-server/package.json`);
 const sharp = require("sharp");
 const { compareImages } = await import(
-  pathToFileURL(
-    "/home/factory-user/dd-figma-path/app/mcp-server/dist/service/image-compare-service.js",
-  ).href
+  pathToFileURL(`${checkout}/app/mcp-server/dist/service/image-compare-service.js`).href
 );
 
 const SIZE = 120;
