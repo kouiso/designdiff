@@ -141,6 +141,54 @@ assert.equal(
   "captured height must match simctl direct capture",
 );
 
+// 寸法一致だけでは stale や単色の誤画像を通す。製品のメタデータとは独立に、
+// 直接撮影との画素差分で同じ画面が撮れていることを確かめる。
+const directPixels = await sharp(directPath)
+  .ensureAlpha()
+  .raw()
+  .toBuffer({ resolveWithObject: true });
+const capturedPixels = await sharp(join(captureDir, captured[0]))
+  .ensureAlpha()
+  .raw()
+  .toBuffer({ resolveWithObject: true });
+assert.equal(
+  capturedPixels.data.length,
+  directPixels.data.length,
+  "captured pixel buffer must match direct capture size",
+);
+const sampleStride = directPixels.info.channels * 7;
+let mismatch = 0;
+let sampled = 0;
+for (let i = 0; i + 3 < directPixels.data.length; i += sampleStride) {
+  sampled += 1;
+  const distance = Math.max(
+    Math.abs(directPixels.data[i] - capturedPixels.data[i]),
+    Math.abs(directPixels.data[i + 1] - capturedPixels.data[i + 1]),
+    Math.abs(directPixels.data[i + 2] - capturedPixels.data[i + 2]),
+  );
+  if (distance > 40) mismatch += 1;
+}
+evidence.results.independentPixelCheck = {
+  mismatchedSamples: mismatch,
+  sampled,
+  ratio: mismatch / sampled,
+};
+// 時計・バッテリー表示など撮影タイミング差での揺れを許容するため 30% まで。
+assert.ok(
+  mismatch / sampled <= 0.3,
+  `captured image diverges from direct simctl screenshot (${((mismatch / sampled) * 100).toFixed(1)}% mismatched samples)`,
+);
+
+// X06 の契約には system-UI マスクが含まれる。除外領域の幾何まで確かめないと
+// 「全部マスクした/何もマスクしない」でも通ってしまう。
+const regions = payload.ignoreRegionResolution?.effectiveRegions;
+assert.ok(
+  Array.isArray(regions) &&
+    regions.length > 0 &&
+    (payload.ignoreRegionResolution?.maskedPixelCount ?? 0) > 0,
+  "X06 must report non-empty effective ignore regions masking system-UI pixels",
+);
+
 // capture_scroll は ios-sim 非対応 — 嘘の結合を返さず明示拒否すること。
 const scrollAttempt = await call("compare_design", {
   design_source: designPath,
