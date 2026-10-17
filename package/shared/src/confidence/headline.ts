@@ -24,6 +24,36 @@ export interface HeadlineCanvas {
   maskedPixelCount?: number;
 }
 
+// 矩形の和集合の面積。行数は小さい (クラスタや Figma セクション程度) ので、
+// x 方向の区切りでスラブに分けて各区間の y 区間和を積めるだけで十分速い。
+const unionArea = (boxes: { x: number; y: number; w: number; h: number }[]): number => {
+  const xs = [...new Set(boxes.flatMap((b) => [b.x, b.x + b.w]))].sort((a, b) => a - b);
+  let area = 0;
+  for (let index = 0; index + 1 < xs.length; index += 1) {
+    const x0 = xs[index];
+    const x1 = xs[index + 1];
+    const intervals = boxes
+      .filter((b) => b.x < x1 && b.x + b.w > x0)
+      .map((b) => [b.y, b.y + b.h] as const)
+      .sort((a, b) => a[0] - b[0]);
+    if (intervals.length === 0) continue;
+    let ySum = 0;
+    let current = intervals[0][0];
+    let end = intervals[0][1];
+    for (let index2 = 1; index2 < intervals.length; index2 += 1) {
+      const [start, stop] = intervals[index2];
+      if (start > end) {
+        ySum += end - current;
+        current = start;
+      }
+      end = Math.max(end, stop);
+    }
+    ySum += end - current;
+    area += (x1 - x0) * ySum;
+  }
+  return area;
+};
+
 // 画像同士の比較では採点行が pixelmatch の差分クラスタだけになる。行の単純平均だと
 // 差分の出た数百 px だけで「構造一致率」を決めてしまい、99.99% 一致した画面が
 // 「構造一致 0%」と出る。行を面積で重み付けし、どの行にも入らない比較面
@@ -42,7 +72,9 @@ const averageStructure = (regionScores: RegionScore[], canvas?: HeadlineCanvas):
   }
 
   const areas = regionScores.map((score) => Math.max(0, score.bbox.w) * Math.max(0, score.bbox.h));
-  const coveredArea = areas.reduce((sum, area) => sum + area, 0);
+  // 重なり合う行の面積を足し合わせると、重なり分を複数回数えて「カバー済み」の面が
+  // 実際より大きくなる。カバー面は重なりを除いた和集合で数える。
+  const coveredArea = unionArea(regionScores.map((score) => score.bbox));
   if (coveredArea <= 0) {
     return simpleAverage;
   }
@@ -57,11 +89,15 @@ const averageStructure = (regionScores: RegionScore[], canvas?: HeadlineCanvas):
     score.regionId.startsWith(DIFF_CLUSTER_REGION_ID_PREFIX),
   );
   const uncoveredArea = onlyDiffClusters ? Math.max(0, scorableArea - coveredArea) : 0;
-  const weightedStructure = regionScores.reduce(
-    (sum, score, index) => sum + score.structure * areas[index],
-    uncoveredArea,
-  );
-  return weightedStructure / (coveredArea + uncoveredArea);
+  // 重なった行の構造スコアは面積加重平均にしてから和集合の面に載せる。行ごとの
+  // 面積で直接積むと、重なり分の canvas を複数回採点して 100% を超えられる。
+  const totalRegionArea = areas.reduce((sum, area) => sum + area, 0);
+  const blendedStructure =
+    totalRegionArea > 0
+      ? regionScores.reduce((sum, score, index) => sum + score.structure * areas[index], 0) /
+        totalRegionArea
+      : 0;
+  return (blendedStructure * coveredArea + uncoveredArea) / (coveredArea + uncoveredArea);
 };
 
 export function buildComparisonHeadline(

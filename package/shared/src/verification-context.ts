@@ -72,6 +72,11 @@ export const VerificationContextPayloadSchema = z
             // 回 (高さが揃った回を含む) は鍵を持たない。高さや contain 倍率の変化は
             // 実装の修正で起きる比較結果なので、この契約では文脈変更にしない。
             alignment: z.literal("top-aligned").optional(),
+            // contain 正規化で比べた回だけ true。alignment の鍵が無い回は
+            // 「高さが揃って 1:1 で比べた」か「contain に戻った」のどちらか分から
+            // ないため、比較方式の同一性を見る verify_fix がこの鍵で区別する。
+            // 倍率の値は含めず「contain 方式だったか」だけを記録する。
+            containResized: z.literal(true).optional(),
           })
           .strict(),
       })

@@ -219,6 +219,8 @@ export interface CompareDesignRunArgs {
   capture_device_serial?: string;
   /** capture_device 経路で、1画面に収まらん画面をスクロールしながら撮って繋ぐ。 */
   capture_scroll?: boolean;
+  /** ローカルパスの screenshot が1ビューポート撮影であることの明示。 */
+  screenshot_single_viewport?: boolean;
   capture_width?: number;
   comparison_conditions?: ComparisonConditionsInput;
   frame_name?: string;
@@ -1692,7 +1694,13 @@ export async function runCompareDesign(
       // 完全透明画素だけ「デザインが色を指定していない」として採点から外す。
       // ローカル PNG の透明は意図的な穴のこともあるため外さない。
       treatTransparentDesignAsUnspecified: figmaExport?.conditions.contentsOnly === true,
-      screenshotIsSingleViewport: args.capture_device !== undefined && args.capture_scroll !== true,
+      // 1画面だけ撮った入力では画面外の行が写り得ないので、design より短い分を
+      // 「実装に無い」とは見なさず下端を足さない。capture_device (scroll 無し) は
+      // 常に1画面撮影。ローカル PNG は撮影範囲の情報が無いため、呼び出し側が
+      // 1画面撮影と分かるときだけ screenshot_single_viewport で明示する。
+      screenshotIsSingleViewport:
+        (args.capture_device !== undefined && args.capture_scroll !== true) ||
+        args.screenshot_single_viewport === true,
       anchors: args.anchors,
       localAlignmentTolerancePx: args.local_alignment_tolerance_px,
       rasterizationTolerance: args.rasterization_tolerance,
@@ -1814,6 +1822,20 @@ export async function runCompareDesign(
     if (warning.code !== "aspect_ratio_mismatch" || warning.severity !== "critical") {
       return warning;
     }
+    // 足した行がある回は anchors 宣言より先に知らせる。anchors が通っても足した行は
+    // 「スクリーンショットに無い行」として差分に入るので、anchors だけを見に行くと
+    // 直すべき不足を見逃す。
+    if (screenshotBottomPaddingRows > 0) {
+      const anchorNote =
+        anchorsDeclared && widthsMatchForAnchors
+          ? "高さ方向の位置整合はアンカー検査でも評価します。"
+          : "";
+      return {
+        ...warning,
+        severity: "warning" as const,
+        message: `${warning.message} ただし幅は一致しているため、縮小せず上端揃えで比較しました。高さの差 ${screenshotBottomPaddingRows}px はスクリーンショットに無い行として差分に数えています（実装側の内容差として確認してください）。${anchorNote}`,
+      };
+    }
     if (anchorsDeclared && widthsMatchForAnchors) {
       return {
         ...warning,
@@ -1821,25 +1843,29 @@ export async function runCompareDesign(
         message: `${warning.message} ただし anchors が宣言されているため、高さ方向の位置整合はアンカー検査で評価します。`,
       };
     }
-    if (screenshotBottomPaddingRows > 0) {
-      return {
-        ...warning,
-        severity: "warning" as const,
-        message: `${warning.message} ただし幅は一致しているため、縮小せず上端揃えで比較しました。高さの差 ${screenshotBottomPaddingRows}px はスクリーンショットに無い行として差分に数えています（実装側の内容差として確認してください）。`,
-      };
-    }
     return warning;
   });
 
   // 診断は元の preflight 警告で行い、その後に表示用の拡張を加える。
   // 採点行の bbox は比較キャンバス座標なので、面積の重みも同じキャンバスで取る。
+  // ユーザー指定の ignore 以外に採点から外した画素 (letterbox の余白、
+  // contents_only 未指定画素) も「カバーされていない一致面」と見なすと、
+  // 採点面が小さい比較で構造一致率が水増しされる。SSIM が実際に外した
+  // 画素数をそのまま渡す。採点結果が無い回は従来のユーザー指定分だけ。
+  const excludedFromScoring =
+    comparison.diffReport?.structuralAssessment?.excludedPixelCount ??
+    comparison.ignoreRegionResolution?.maskedPixelCount;
   const comparisonHeadline = buildComparisonHeadline(
     regionScores,
     comparison.matchRate,
-    comparison.ignoreRegionResolution?.effectiveCanvas
+    comparison.ignoreRegionResolution?.effectiveCanvas !== undefined ||
+      excludedFromScoring !== undefined
       ? {
-          ...comparison.ignoreRegionResolution.effectiveCanvas,
-          maskedPixelCount: comparison.ignoreRegionResolution.maskedPixelCount,
+          ...(comparison.ignoreRegionResolution?.effectiveCanvas ?? {
+            width: comparison.normalization?.designNativeWidth ?? 0,
+            height: comparison.normalization?.designNativeHeight ?? 0,
+          }),
+          maskedPixelCount: excludedFromScoring ?? 0,
         }
       : undefined,
   );
@@ -1954,10 +1980,13 @@ export async function runCompareDesign(
   // 繋いだ縦長画像の高さは、実装の中身の量と重なりの測り方で毎回わずかに変わる。
   // 撮影条件が変わったと見なすと、履歴が毎回リセットされて足踏みを検出できん。
   // 上端揃えで足りない行を足した回も、撮影高さが実装の中身の量で変わる。
+  // 足し行の回から高さを直して等しくなった回も同じ修理の続きなので、直前に足し行が
+  // あった回は履歴を切らない。切るとその遷移で plateau / 回数制限が振り出しに戻る。
   const heightIsContentDriven =
     typeof args.screenshot_url === "string" ||
     resolvedScreenshot.scrollCapture !== undefined ||
-    (comparison.normalization?.screenshotBottomPaddingRows ?? 0) > 0;
+    (comparison.normalization?.screenshotBottomPaddingRows ?? 0) > 0 ||
+    priorComparisons.some((prior) => (prior.normalization?.screenshotBottomPaddingRows ?? 0) > 0);
   const critique = buildCaptureAwareCritique(
     comparison.diffReport,
     priorComparisons,
@@ -2118,6 +2147,12 @@ export async function runCompareDesign(
               ...(resultNormalization.screenshotBottomPaddingRows === undefined
                 ? {}
                 : { alignment: "top-aligned" as const }),
+              // contain 正規化で比べた回だけ記録する。足し行無しで直接 1:1 の回は
+              // 鍵を持たず、verify_fix はこれで「高さが揃った」と「contain に戻った」を
+              // 区別する。倍率は比較結果なので文脈に入れない。
+              ...(resultNormalization.containResized === true
+                ? { containResized: true as const }
+                : {}),
             },
           },
           mask:

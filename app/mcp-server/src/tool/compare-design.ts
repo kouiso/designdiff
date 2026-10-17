@@ -453,6 +453,12 @@ export const registerCompareDesign = (server: McpServer): void => {
       .describe(
         "capture_device 経路で、1画面に収まらん画面をスクロールしながら撮って縦長1枚へ繋ぐ。既定false。繋いだ内訳（何枚繋いだか・下端まで届いたか）は scrollCapture に返る。",
       ),
+    screenshot_single_viewport: z
+      .boolean()
+      .optional()
+      .describe(
+        "screenshot (ローカルパス) が1ビューポートだけを撮った画像であることを明示する。省略時はフルページ撮影として扱うため、design より短い分を「実装に無い行」として差分に数える。画面外の行を差分に数えたくないとき true を指定。",
+      ),
     capture_width: z
       .number()
       .int()

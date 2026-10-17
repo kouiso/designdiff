@@ -157,6 +157,10 @@ describe("compare_design — 同幅・異高の縦横比警告", () => {
         threshold: 0.1,
       },
     });
+    // 文言の否定だけだと別の理由で verify_fix が失敗していても緑になる。
+    // 検証したいのは「足し行あり→等高」遷移を受け付ける経路そのものなので、
+    // 成功まで確認する。
+    expect(verified.isError).toBeFalsy();
     const text = JSON.stringify(verified.content);
     expect(text).not.toContain("comparison context changed");
   });
@@ -209,6 +213,21 @@ describe("compare_design — 同幅・異高の縦横比警告", () => {
     );
     expect(result.diffPixelCount).toBe(WIDTH * (designHeight - SCREENSHOT_HEIGHT));
     expect(result.status).not.toBe("PASS");
+
+    // FigDiff 自身の status を正しさの根拠にすると、不足行の記録と status 組立で
+    // 同じ欠陥が両側にあっても緑になる。返ってきた差分画像をデコードし、
+    // 下端の不足行が差分として描かれていることを独立に確かめる。
+    const diffImage = await sharp(await readFile(result.diffImagePath ?? ""))
+      .raw()
+      .toBuffer({ resolveWithObject: true });
+    const bottomRow = diffImage.data.slice(
+      (SCREENSHOT_HEIGHT + 1) * WIDTH * diffImage.info.channels,
+      (SCREENSHOT_HEIGHT + 2) * WIDTH * diffImage.info.channels,
+    );
+    const painted = Array.from(bottomRow).filter(
+      (_, i) => i % diffImage.info.channels === 3 && bottomRow[i] > 0,
+    ).length;
+    expect(painted).toBeGreaterThan(0);
   });
 
   it("フルページ design と単一ビューポート撮影 (高さ比 > 1.4) は従来どおり critical のまま contain 正規化する", async () => {

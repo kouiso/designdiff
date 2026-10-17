@@ -199,13 +199,32 @@ const alignLegacyBackgroundExplicit = (
 // 高さが揃うのは verify_fix が成功すべき通常の流れなので、鍵が消えただけでは
 // 文脈変更にしない。逆 (基準に鍵が無く今回だけ上端揃え) は、contain 縮小で採った
 // 旧基準と物差しが違う可能性があるので文脈変更として扱う。
+// 比較方式 (contain / 直接 1:1) は実装の修正で変わる比較結果であり撮影条件では
+// ない。高さを直すと contain から直接比較へ移るのが verify_fix の普通の流れ
+// なので、この鍵は正規化比較の対象にせず、top-aligned の鍵を緩めてよいかだけ
+// に使う。
+const alignNormalizationMethod = (
+  payload: VerificationContextPayload,
+): VerificationContextPayload => {
+  if (payload.comparison.geometry.containResized !== true) return payload;
+  const { containResized: _containResized, ...geometry } = payload.comparison.geometry;
+  return {
+    ...payload,
+    comparison: { ...payload.comparison, geometry },
+  };
+};
+
 const alignPaddingAlignment = (
   prior: VerificationContextPayload,
   current: VerificationContextPayload,
 ): VerificationContextPayload => {
+  // 緩めるのは「高さが揃って 1:1 になった回」だけ。contain 正規化に戻った回は
+  // 同じ 1:1 の物差しではないので、鍵が無いことだけを根拠に消すと別方式同士を
+  // 同一文脈として受け入れてしまう。
   if (
     prior.comparison.geometry.alignment === "top-aligned" &&
-    current.comparison.geometry.alignment === undefined
+    current.comparison.geometry.alignment === undefined &&
+    current.comparison.geometry.containResized !== true
   ) {
     return {
       ...prior,
@@ -233,13 +252,14 @@ const assertMatchingContext = (
     throw new Error("current comparison recorded an invalid verification context");
   }
   const currentBackgroundExplicit = currentPayload.design.backgroundExplicit ?? true;
-  const priorForComparison = alignPaddingAlignment(
-    alignLegacyBackgroundExplicit(priorPayload, currentBackgroundExplicit),
-    currentPayload,
+  const priorForComparison = alignNormalizationMethod(
+    alignPaddingAlignment(
+      alignLegacyBackgroundExplicit(priorPayload, currentBackgroundExplicit),
+      currentPayload,
+    ),
   );
-  const currentForComparison = alignLegacyBackgroundExplicit(
-    currentPayload,
-    currentBackgroundExplicit,
+  const currentForComparison = alignNormalizationMethod(
+    alignLegacyBackgroundExplicit(currentPayload, currentBackgroundExplicit),
   );
   if (
     canonicalizeVerificationContextPayload(priorForComparison) ===

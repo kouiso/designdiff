@@ -1619,8 +1619,11 @@ export async function compareImages(
   ) {
     const unspecifiedRows = new Uint8Array(width * height);
     let anyUnspecified = false;
+    // 位置合わせ (dy < 0) で上へ寄せた design の下端は、寄せた先で透明になる。
+    // その透明を未指定と見なすと、元の design にあった行まで差分と判定から外れる。
+    // 未指定かどうかは位置合わせ前の design の画素で見る。
     for (let index = finalScreenshotHeight * width; index < width * height; index += 1) {
-      if (pixelmatchDesignPixels[index * 4 + 3] === 0) {
+      if (originalDesignPixels[index * 4 + 3] === 0) {
         unspecifiedRows[index] = 1;
         anyUnspecified = true;
       }
@@ -1799,29 +1802,33 @@ export async function compareImages(
     for (let index = finalScreenshotHeight * width; index < width * height; index += 1) {
       if (missingRowsIgnoreMask?.[index] !== 1) missingRowPixelCount += 1;
     }
-    if (missingRowPixelCount > 0 && diffReport.aggregateVerdict === "pass") {
-      const rationale = `Screenshot has no rows for the bottom ${screenshotBottomPaddingRows}px of the design (${missingRowPixelCount} pixels outside ignore regions); missing rows are counted as differences.`;
-      diffReport = {
-        ...diffReport,
-        aggregateVerdict: "fail",
-        rationale,
-        issues: [
-          ...diffReport.issues,
-          {
-            regionId: "missing-bottom-rows",
-            bbox: { x: 0, y: finalScreenshotHeight, w: width, h: screenshotBottomPaddingRows },
-            kind: "missing",
-            severity: "critical",
-            evidence: {
-              signal: "screenshot_bottom_rows_missing",
-              value: missingRowPixelCount,
-              threshold: 0,
-              expected: `${height}px tall content`,
-              actual: `${finalScreenshotHeight}px tall screenshot`,
-            },
-          },
-        ],
+    // 不足行は verdict を反転させるときだけでなく、すでに fail / inconclusive の
+    // 比較でも issue として残す。残さないと、足した行が普通の色・構造差に見えて
+    // 「実装に無い行」という情報が呼び出し側へ届かない。
+    if (missingRowPixelCount > 0) {
+      const missingIssue = {
+        regionId: "missing-bottom-rows",
+        bbox: { x: 0, y: finalScreenshotHeight, w: width, h: screenshotBottomPaddingRows },
+        kind: "missing" as const,
+        severity: "critical" as const,
+        evidence: {
+          signal: "screenshot_bottom_rows_missing",
+          value: missingRowPixelCount,
+          threshold: 0,
+          expected: `${height}px tall content`,
+          actual: `${finalScreenshotHeight}px tall screenshot`,
+        },
       };
+      if (diffReport.aggregateVerdict === "pass") {
+        diffReport = {
+          ...diffReport,
+          aggregateVerdict: "fail",
+          rationale: `Screenshot has no rows for the bottom ${screenshotBottomPaddingRows}px of the design (${missingRowPixelCount} pixels outside ignore regions); missing rows are counted as differences.`,
+          issues: [...diffReport.issues, missingIssue],
+        };
+      } else {
+        diffReport = { ...diffReport, issues: [...diffReport.issues, missingIssue] };
+      }
     }
   }
 
