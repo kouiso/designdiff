@@ -195,7 +195,7 @@
     "verificationContext": {
       "version": 1,
       "design": {
-        "sourceIdentitySha256": "1d1e54d387d8704e665c42071e578a02af5b8025cef56e615fe7fa3259f22fca",
+        "sourceIdentitySha256": "f444cd26cea7a918fadc9598350b24e89819c41ea68607bcc8ead75a39590135",
         "imageSha256": "e7ca1c4a88e88b46e58c54f566a43ac9a89e35f98ae64dabf915bda32241f5d3",
         "background": "#FFFFFF",
         "backgroundExplicit": false,
@@ -242,7 +242,7 @@
         "appliedIds": ["full-frame"],
         "legacyIds": ["full-frame"]
       },
-      "fingerprint": "dc9a0cded3a90d42d83279c57d160566125963d78bd7ba4d09705777d38a556c"
+      "fingerprint": "9b61447668b58bf2f868f0e82bad9e02806dcdb3b751958c8753a74335ed5f30"
     },
     "diffImagePath": "/tmp/figdiff-mcp/cmp-evidence.png"
   }

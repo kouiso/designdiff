@@ -142,6 +142,10 @@ export {
 } from "./signal/text-reflow.js";
 export { computeHausdorff } from "./signal/hausdorff.js";
 export {
+  buildAntiAliasedMask,
+  type AntiAliasedMaskOptions,
+} from "./signal/anti-aliased-mask.js";
+export {
   classifyTextureResampling,
   type TextureResamplingEvidence,
 } from "./signal/texture-resampling.js";
