@@ -65,7 +65,9 @@ const estimateScale = (rowClass, first, last, present) => {
     }
     if (bandRows.length >= 2) {
       const sortedBands = [...bandRows].sort((a, b) => a - b);
-      estimates.push(sortedBands[Math.floor(sortedBands.length / 2)] / (40 + id * 8));
+      // 暗帯は [40+id*8, 80+id*8] の区間なので CSS 高さは区画番号に依らず常に
+      // 40px。区画の色帯高さ (40+id*8) で割ると縮尺を過小評価する。
+      estimates.push(sortedBands[Math.floor(sortedBands.length / 2)] / 40);
     }
   }
   if (estimates.length < 2) return undefined;

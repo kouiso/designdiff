@@ -8,10 +8,15 @@ const SECTION_ROWS = 200;
 const DARK = [0x11, 0x11, 0x11];
 
 // ページと同じく、各区画は「色帯と暗色帯の繰り返し」で、先頭と末尾は色で終わる。
+// 実ページの CSS は色帯 (40+8i)px・暗帯 40px の交互なので、フィクスチャも
+// 同じ比率を縮尺 SCALE でなぞる (帯高が区画番号に依らないことが縮尺推定の支点)。
+const SCALE = 0.25;
 const sectionRows = (colorId, rows) => {
+  const colorBand = Math.round((40 + colorId * 8) * SCALE);
+  const period = colorBand + Math.round(40 * SCALE);
   const out = [];
   for (let y = 0; y < rows; y += 1) {
-    out.push(Math.floor(y / 20) % 2 === 0 ? STRIPE_COLORS[colorId] : DARK);
+    out.push(y % period < colorBand ? STRIPE_COLORS[colorId] : DARK);
   }
   out[0] = STRIPE_COLORS[colorId];
   out[rows - 1] = STRIPE_COLORS[colorId];
