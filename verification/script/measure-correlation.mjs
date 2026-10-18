@@ -51,6 +51,7 @@ export const FixtureVariantSchema = z
     expectedVerdict: z.enum(["pass", "fail", "inconclusive"]),
     expectedKinds: z.array(z.string()).default([]),
     expectedIssueKinds: z.array(DiffIssueKindSchema).optional(),
+    rasterizationTolerance: z.boolean().optional(),
     ignoreRegions: z.array(IgnoreRegionSchema).optional(),
     notes: z.string().optional(),
   })
@@ -360,6 +361,7 @@ async function measureFixture(fixtureDirName, options = {}) {
         screenshotBase64,
         threshold: THRESHOLD,
         ignoreRegions: variant.ignoreRegions,
+        rasterizationTolerance: variant.rasterizationTolerance,
         verifiedSystemUiTopInset,
       },
       expectation.figmaRootNode,
