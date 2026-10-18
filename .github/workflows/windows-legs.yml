@@ -6,8 +6,6 @@ name: Windows capture legs
 # manifest は docs/evidence 以下への書込みなので dirty 許容内。
 
 on:
-  push:
-    branches: ["devin/*-ci-windows-legs"]
   pull_request:
     paths:
       - .github/workflows/windows-legs.yml
