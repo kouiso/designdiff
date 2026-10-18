@@ -86,6 +86,18 @@ const FixtureVariantSchema = z
     // expectedVerdict は pass (あるべき姿) のまま、推定器の未修正で fail を返している既知 RED。
     // 値は原因 Issue。runner はこの検体だけ fail を明示的に assert する。
     knownRedIssue: z.string().min(1).optional(),
+    // FigDiff 自身の verdict に依存しない独立オラクル。
+    // translation: 派生画像が impl-correct を (dx,dy) 平行移動したものであることを raw 画素で確認する。
+    independentTranslation: z.object({ dx: z.number().int(), dy: z.number().int() }).optional(),
+    // 生画素の差分率 (全画素共通の単純オラクル)。against: figma は figma-export と、
+    // correct は impl-correct と比較する。min/max で上下限を宣言する。
+    independentPixelDiffRatio: z
+      .object({
+        against: z.enum(["figma", "correct"]),
+        min: z.number().min(0).max(1).optional(),
+        max: z.number().min(0).max(1).optional(),
+      })
+      .optional(),
     expectedSystemUiAlignment: z
       .object({
         matchRate: z.number().min(0).max(100),
@@ -305,6 +317,104 @@ function assertWorstRegions(
   expect(new Set(actualWorstRegionIds)).toEqual(new Set(variant.expectedWorstRegionIds));
 }
 
+const loadRgbRaw = async (
+  filePath: string,
+): Promise<{ data: Buffer; width: number; height: number }> => {
+  const { data, info } = await sharp(filePath)
+    .ensureAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+  for (let i = 0; i < info.width * info.height; i += 1) {
+    if (data[i * 4 + 3] !== 255) {
+      throw new Error(`${filePath}: non-opaque pixel at index ${i}`);
+    }
+  }
+  const rgb = Buffer.alloc(info.width * info.height * 3);
+  for (let i = 0; i < info.width * info.height; i += 1) {
+    data.copy(rgb, i * 3, i * 4, i * 4 + 3);
+  }
+  return { data: rgb, width: info.width, height: info.height };
+};
+
+const pixelDiffRatio = (
+  left: { data: Buffer; width: number; height: number },
+  right: { data: Buffer; width: number; height: number },
+): number => {
+  if (left.width !== right.width || left.height !== right.height) return 1;
+  let diff = 0;
+  const total = left.width * left.height;
+  for (let i = 0; i < total; i += 1) {
+    const offset = i * 3;
+    const delta = Math.max(
+      Math.abs(left.data[offset] - right.data[offset]),
+      Math.abs(left.data[offset + 1] - right.data[offset + 1]),
+      Math.abs(left.data[offset + 2] - right.data[offset + 2]),
+    );
+    if (delta > 40) diff += 1;
+  }
+  return diff / total;
+};
+
+// 派生画像が impl-correct の純粋な平行移動であることを、FigDiff を介さず
+// raw 画素で確かめる。x>=dx 域は完全一致、x<dx 域は端列の複製。
+const assertIndependentTranslation = async (
+  pairDir: string,
+  variant: { name: string; image: string; independentTranslation?: { dx: number; dy: number } },
+): Promise<void> => {
+  const delta = variant.independentTranslation;
+  if (!delta) return;
+  const shifted = await loadRgbRaw(path.join(pairDir, variant.image));
+  const base = await loadRgbRaw(path.join(pairDir, "impl-correct.png"));
+  expect({ width: shifted.width, height: shifted.height }).toEqual({
+    width: base.width,
+    height: base.height,
+  });
+  const { dx, dy } = delta;
+  for (let y = 0; y < shifted.height; y += 2) {
+    const sourceY = Math.min(Math.max(y - dy, 0), base.height - 1);
+    for (let x = 0; x < shifted.width; x += 2) {
+      const sourceX = Math.min(Math.max(x - dx, 0), base.width - 1);
+      const targetOffset = (y * shifted.width + x) * 3;
+      const sourceOffset = (sourceY * base.width + sourceX) * 3;
+      expect(
+        shifted.data
+          .subarray(targetOffset, targetOffset + 3)
+          .equals(base.data.subarray(sourceOffset, sourceOffset + 3)),
+        `${variant.name}: pixel(${x},${y}) が impl-correct の ${dx}px 平行移動と一致しない`,
+      ).toBe(true);
+    }
+  }
+};
+
+const assertIndependentPixelDiffRatio = async (
+  pairDir: string,
+  figmaFrame: string,
+  variant: {
+    name: string;
+    image: string;
+    independentPixelDiffRatio?: { against: "figma" | "correct"; min?: number; max?: number };
+  },
+): Promise<void> => {
+  const rule = variant.independentPixelDiffRatio;
+  if (!rule) return;
+  const variantRgb = await loadRgbRaw(path.join(pairDir, variant.image));
+  const referenceFile = rule.against === "figma" ? figmaFrame : "impl-correct.png";
+  const reference = await loadRgbRaw(path.join(pairDir, referenceFile));
+  const ratio = pixelDiffRatio(variantRgb, reference);
+  if (rule.min !== undefined) {
+    expect(
+      ratio,
+      `${variant.name}: vs ${referenceFile} の画素差分率 ${ratio.toFixed(4)} が下限 ${rule.min} を下回った`,
+    ).toBeGreaterThanOrEqual(rule.min);
+  }
+  if (rule.max !== undefined) {
+    expect(
+      ratio,
+      `${variant.name}: vs ${referenceFile} の画素差分率 ${ratio.toFixed(4)} が上限 ${rule.max} を超えた`,
+    ).toBeLessThanOrEqual(rule.max);
+  }
+};
+
 const assertVerdictAndMetrics = (
   result: CompareDesignResult,
   variant: z.infer<typeof FixtureVariantSchema>,
@@ -404,6 +514,10 @@ describe("golden fixture runner", () => {
         });
       }
       expect(stableRuns.every((run) => isDeepStrictEqual(run, stableRuns[0]))).toBe(true);
+      // FigDiff の verdict とは独立に、検体画像そのものの構成(平行移動)と
+      // 生画素の差分率を確かめる。expectedVerdict の自己申告化を防ぐ層。
+      await assertIndependentTranslation(pairDir, variant);
+      await assertIndependentPixelDiffRatio(pairDir, expectation.figmaFrame, variant);
       if (variant.expectedSystemUiAlignment !== undefined) {
         // tool出力だけを期待値にすると、実装の自己申告をfixtureが追認してしまう。
         // 生画像を独立に再配置して、system UI帯を除く画素の一致を先に検証する。
@@ -500,7 +614,9 @@ describe("golden fixture runner", () => {
       ]);
     });
   it("Gate1 検体を expected.json から読み込めていること", () => {
-    expect(HM_GATE1_CASES.length).toBeGreaterThanOrEqual(42);
+    // 18 correct + drift 対照(pass 基準の 9 ペア drift-2px + 3 drift-1px) + 3 linewidth。
+    // 基準が fail のペアでは drift 対照が空転するため対象外とし、この数が正規値。
+    expect(HM_GATE1_CASES.length).toBeGreaterThanOrEqual(33);
   });
   it.each(HM_GATE1_CASES)(
     "%s %s の verdict が期待どおりであること: %s (designdiff#243)",

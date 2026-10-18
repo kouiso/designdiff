@@ -13,20 +13,11 @@
         "color",
         "position",
         "size"
-      ]
-    },
-    {
-      "name": "drift-2px",
-      "image": "impl-drift-2px.png",
-      "expectedVerdict": "fail",
-      "expectedKinds": [],
-      "notes": "意図的な2px平行移動 (エッジ複製で透明帯なし)。本物の位置ずれ検出の対照検体 (designdiff#243)",
-      "expectedIssueKinds": [
-        "color",
-        "position",
-        "size"
       ],
-      "rasterizationTolerance": true
+      "independentPixelDiffRatio": {
+        "against": "figma",
+        "min": 0.02
+      }
     }
   ]
 }

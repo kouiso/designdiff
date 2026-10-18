@@ -9,7 +9,11 @@
       "expectedKinds": [],
       "notes": "Figma正本と同一内容物 (行データ・時刻・寸法を目視照合済み)。細ストロークAA/ストローク被覆差のみ (designdiff#243)",
       "rasterizationTolerance": true,
-      "knownRedIssue": "designdiff#243"
+      "knownRedIssue": "designdiff#243",
+      "independentPixelDiffRatio": {
+        "against": "figma",
+        "max": 0.15
+      }
     },
     {
       "name": "drift-2px",
@@ -22,12 +26,16 @@
         "position",
         "size"
       ],
-      "rasterizationTolerance": true
+      "rasterizationTolerance": true,
+      "independentTranslation": {
+        "dx": 2,
+        "dy": 0
+      }
     },
     {
       "name": "drift-1px",
       "image": "impl-drift-1px.png",
-      "expectedVerdict": "fail",
+      "expectedVerdict": "pass",
       "expectedKinds": [],
       "expectedIssueKinds": [
         "color",
@@ -35,7 +43,12 @@
         "size"
       ],
       "notes": "意図的な1px平行移動。検出漏れが起きないことの対照検体 (designdiff#243)",
-      "rasterizationTolerance": true
+      "rasterizationTolerance": true,
+      "independentTranslation": {
+        "dx": 1,
+        "dy": 0
+      },
+      "knownRedIssue": "designdiff#243"
     },
     {
       "name": "linewidth",
@@ -43,7 +56,11 @@
       "expectedVerdict": "fail",
       "expectedKinds": [],
       "notes": "ストロークを1px膨張させた線幅差検体。designdiff#243 は線幅差の検出漏れを許さないので fail が期待値。同一グリフの被覆差 (correct) とは区別する",
-      "rasterizationTolerance": true
+      "rasterizationTolerance": true,
+      "independentPixelDiffRatio": {
+        "against": "correct",
+        "min": 0.001
+      }
     }
   ]
 }
