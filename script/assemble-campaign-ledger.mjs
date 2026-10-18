@@ -19,11 +19,28 @@ const sha256 = (bytes) => createHash("sha256").update(bytes).digest("hex");
 
 // round 証跡 dir に記録された実行時ドライバパッチの対象パス一覧。
 // harness-patches.json は {patches:[{path,sha256,reason}]} で、差分自体も
-// 同 dir の *.patch として残る。記録が無ければ空配列(=従来どおり全拒否)。
+// 同 dir の *.patch として残る。宣言パスを信用する前に、同 dir の
+// *.patch の中に sha256 が一致し対象パスを実際に触る差分があることを
+// 確かめる — パス名だけの宣言で任意の dirty を許可しないため。
+// 記録・検証が無ければ空配列(=従来どおり全拒否)。
 const readHarnessPatches = async (roundDir) => {
   try {
     const record = JSON.parse(await readFile(join(roundDir, "harness-patches.json"), "utf8"));
-    return (record?.patches ?? []).map((patch) => patch?.path).filter(Boolean);
+    const allowed = [];
+    for (const patch of record?.patches ?? []) {
+      if (!patch?.path || !patch?.sha256) continue;
+      let verified = false;
+      for (const name of await readdir(roundDir)) {
+        if (!name.endsWith(".patch")) continue;
+        const bytes = await readFile(join(roundDir, name));
+        if (sha256(bytes) === patch.sha256 && bytes.includes(patch.path)) {
+          verified = true;
+          break;
+        }
+      }
+      if (verified) allowed.push(patch.path);
+    }
+    return allowed;
   } catch {
     return [];
   }

@@ -89,8 +89,10 @@ try {
           join(evidenceDir, "x08-plugin-diagnostics.json"),
           JSON.stringify({ waitedFor: type, received, consoleLog }, null, 2),
         );
-      } catch {
-        // best-effort diagnostics
+      } catch (diagnosticError) {
+        // 診断の書き出し失敗で本来のエラーを上書きしないが、診断が無いことを
+        // 無言で隠さないため警告は残す。
+        console.warn(`[warn] x08 diagnostics write failed: ${diagnosticError}`);
       }
       throw error;
     }
