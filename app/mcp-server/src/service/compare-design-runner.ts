@@ -1982,11 +1982,14 @@ export async function runCompareDesign(
   // 上端揃えで足りない行を足した回も、撮影高さが実装の中身の量で変わる。
   // 足し行の回から高さを直して等しくなった回も同じ修理の続きなので、直前に足し行が
   // あった回は履歴を切らない。切るとその遷移で plateau / 回数制限が振り出しに戻る。
+  // 見るのは直前の1回だけ。履歴のどこかに足し行があるだけで高さを見なくすると、
+  // その後に別の高さで撮った入力まで同じ条件として並べてしまう。
+  const previousComparison = priorComparisons.at(-1);
   const heightIsContentDriven =
     typeof args.screenshot_url === "string" ||
     resolvedScreenshot.scrollCapture !== undefined ||
     (comparison.normalization?.screenshotBottomPaddingRows ?? 0) > 0 ||
-    priorComparisons.some((prior) => (prior.normalization?.screenshotBottomPaddingRows ?? 0) > 0);
+    (previousComparison?.normalization?.screenshotBottomPaddingRows ?? 0) > 0;
   const critique = buildCaptureAwareCritique(
     comparison.diffReport,
     priorComparisons,
