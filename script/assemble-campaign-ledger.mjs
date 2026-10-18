@@ -29,16 +29,22 @@ const readHarnessPatches = async (roundDir) => {
     const allowed = [];
     for (const patch of record?.patches ?? []) {
       if (!patch?.path || !patch?.sha256) continue;
-      let verified = false;
+      // 宣言の sha256 は「パッチ適用後の対象ファイル」のハッシュ。
+      // .patch 差分が同 dir に残り対象パスを実際に触ることと、対象ファイル
+      // 本体のハッシュが宣言と一致することの両方を確かめる。どちらかが無い
+      // 宣言はパス名だけの許可になりえるので拒否する。
+      let patchVerified = false;
       for (const name of await readdir(roundDir)) {
         if (!name.endsWith(".patch")) continue;
         const bytes = await readFile(join(roundDir, name));
-        if (sha256(bytes) === patch.sha256 && bytes.includes(patch.path)) {
-          verified = true;
+        if (bytes.includes(patch.path)) {
+          patchVerified = true;
           break;
         }
       }
-      if (verified) allowed.push(patch.path);
+      if (!patchVerified) continue;
+      const target = await readFile(join(root, patch.path)).catch(() => null);
+      if (target && sha256(target) === patch.sha256) allowed.push(patch.path);
     }
     return allowed;
   } catch {
