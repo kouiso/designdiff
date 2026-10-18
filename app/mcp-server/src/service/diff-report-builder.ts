@@ -210,6 +210,12 @@ const computeMaxWindowResidual = (
   const windowBboxes: DiffBoundingBox[] = [];
   const splitOffset = (origin: number, length: number, scale: number, index: number): number =>
     origin + Math.floor((index * length) / scale);
+  // splitOffset の境界は floor するので、その逆写像は (offset*scale)/length の
+  // 素直な floor では境界画素を隣の窓へ計上する。画素 offset が属する帯は
+  // 「その帯の下端 floor(i*length/scale) が offset 以下の最大 i」で、これは
+  // ((offset+1)*scale - 1)/length の floor と一致する。
+  const bandIndexOf = (offset: number, length: number, scale: number): number =>
+    Math.min(scale - 1, Math.floor(((offset + 1) * scale - 1) / Math.max(1, length)));
   for (const scale of RESIDUAL_BAND_SCALES) {
     for (let index = 0; index < scale; index += 1) {
       const y0 = splitOffset(contentBbox.y, contentBbox.h, scale, index);
@@ -258,12 +264,7 @@ const computeMaxWindowResidual = (
       const firing = delta >= PERCEPTIBLE_DELTA_E ? 1 : 0;
       let bandBase = 0;
       for (const scale of RESIDUAL_BAND_SCALES) {
-        const idx =
-          bandBase +
-          Math.min(
-            scale - 1,
-            Math.floor(((y - contentBbox.y) * scale) / Math.max(1, contentBbox.h)),
-          );
+        const idx = bandBase + bandIndexOf(y - contentBbox.y, contentBbox.h, scale);
         sums[idx] += delta;
         counts[idx] += 1;
         firingCounts[idx] += firing;
@@ -271,12 +272,7 @@ const computeMaxWindowResidual = (
       }
       let columnBase = columnBandBase;
       for (const scale of RESIDUAL_BAND_SCALES) {
-        const idx =
-          columnBase +
-          Math.min(
-            scale - 1,
-            Math.floor(((x - contentBbox.x) * scale) / Math.max(1, contentBbox.w)),
-          );
+        const idx = columnBase + bandIndexOf(x - contentBbox.x, contentBbox.w, scale);
         sums[idx] += delta;
         counts[idx] += 1;
         firingCounts[idx] += firing;
@@ -284,14 +280,8 @@ const computeMaxWindowResidual = (
       }
       let cellBase = cellGridBase;
       for (const grid of RESIDUAL_CELL_GRIDS) {
-        const gy = Math.min(
-          grid - 1,
-          Math.floor(((y - contentBbox.y) * grid) / Math.max(1, contentBbox.h)),
-        );
-        const gx = Math.min(
-          grid - 1,
-          Math.floor(((x - contentBbox.x) * grid) / Math.max(1, contentBbox.w)),
-        );
+        const gy = bandIndexOf(y - contentBbox.y, contentBbox.h, grid);
+        const gx = bandIndexOf(x - contentBbox.x, contentBbox.w, grid);
         const idx = cellBase + gy * grid + gx;
         sums[idx] += delta;
         counts[idx] += 1;

@@ -47,6 +47,7 @@ const summarize = (report) => ({
 
 delete process.env.DD_DUMP_DIR;
 const rows = [];
+let mismatches = 0;
 for (const node of (await readdir(pngDir)).sort()) {
   const options = await load(join(pngDir, node));
   const live = await load(join(liveDir, node));
@@ -69,5 +70,11 @@ for (const node of (await readdir(pngDir)).sort()) {
   console.info(
     `${node} tree=${tree.verdict}(${tree.critical.length}) noTree=${noTree.verdict}(${noTree.critical.length})${tree.verdict === noTree.verdict ? "" : "  <-- DIFF"}`,
   );
+  if (tree.verdict !== noTree.verdict) mismatches += 1;
 }
 if (out) await writeFile(out, JSON.stringify(rows, null, 2));
+// 再実行がパリティ回帰を検知できるよう、verdict 不一致は非ゼロ終了にする。
+if (mismatches > 0) {
+  console.error(`parity mismatches: ${mismatches}`);
+  process.exitCode = 1;
+}

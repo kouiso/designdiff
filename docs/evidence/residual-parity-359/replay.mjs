@@ -1,6 +1,6 @@
-// Replays dumped buildDiffReport inputs through a checkout's dist, with and
-// without the Figma node tree, so the two paths see identical pixels.
-// Usage: node replay.mjs <dd-checkout> <dump-dir> [out.json]
+// ダンプした buildDiffReport 入力を、Figma ノード木あり/なし両経路で
+// 指定 checkout の dist へ流し、両者が同じ画素を見ることを再現する。
+// 使い方: node replay.mjs <dd-checkout> <dump-dir> [out.json]
 import { readdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
