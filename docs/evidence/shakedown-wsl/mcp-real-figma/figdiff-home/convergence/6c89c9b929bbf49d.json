@@ -25,7 +25,11 @@
                 "pixelRatio": 1,
                 "source": "figma-export-request"
               },
-              "unverified": ["viewport", "pixelRatio", "origin"]
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
             },
             "screenshot": {
               "canvas": {
@@ -33,7 +37,11 @@
                 "height": 844
               },
               "canvasSource": "image-metadata",
-              "unverified": ["viewport", "pixelRatio", "origin"]
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
             },
             "differences": [],
             "message": "表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。"
@@ -60,7 +68,11 @@
                 "pixelRatio": 1,
                 "source": "figma-export-request"
               },
-              "unverified": ["viewport", "pixelRatio", "origin"]
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
             },
             "screenshot": {
               "canvas": {
@@ -68,7 +80,11 @@
                 "height": 691
               },
               "canvasSource": "image-metadata",
-              "unverified": ["viewport", "pixelRatio", "origin"]
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
             },
             "differences": [],
             "message": "表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。"
@@ -95,7 +111,11 @@
                 "pixelRatio": 1,
                 "source": "figma-export-request"
               },
-              "unverified": ["viewport", "pixelRatio", "origin"]
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
             },
             "screenshot": {
               "canvas": {
@@ -103,7 +123,11 @@
                 "height": 691
               },
               "canvasSource": "image-metadata",
-              "unverified": ["viewport", "pixelRatio", "origin"]
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
             },
             "differences": [],
             "message": "表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。"
@@ -142,7 +166,11 @@
                 "pixelRatio": 1,
                 "source": "figma-export-request"
               },
-              "unverified": ["viewport", "pixelRatio", "origin"]
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
             },
             "screenshot": {
               "canvas": {
@@ -150,7 +178,11 @@
                 "height": 691
               },
               "canvasSource": "image-metadata",
-              "unverified": ["viewport", "pixelRatio", "origin"]
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
             },
             "differences": [],
             "message": "表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。"
@@ -177,7 +209,11 @@
                 "pixelRatio": 1,
                 "source": "figma-export-request"
               },
-              "unverified": ["viewport", "pixelRatio", "origin"]
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
             },
             "screenshot": {
               "canvas": {
@@ -185,7 +221,11 @@
                 "height": 844
               },
               "canvasSource": "image-metadata",
-              "unverified": ["viewport", "pixelRatio", "origin"]
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
             },
             "differences": [],
             "message": "表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。"
@@ -212,7 +252,11 @@
                 "pixelRatio": 1,
                 "source": "figma-export-request"
               },
-              "unverified": ["viewport", "pixelRatio", "origin"]
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
             },
             "screenshot": {
               "canvas": {
@@ -220,7 +264,11 @@
                 "height": 691
               },
               "canvasSource": "image-metadata",
-              "unverified": ["viewport", "pixelRatio", "origin"]
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
             },
             "differences": [],
             "message": "表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。"
@@ -247,7 +295,11 @@
                 "pixelRatio": 1,
                 "source": "figma-export-request"
               },
-              "unverified": ["viewport", "pixelRatio", "origin"]
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
             },
             "screenshot": {
               "canvas": {
@@ -255,7 +307,11 @@
                 "height": 691
               },
               "canvasSource": "image-metadata",
-              "unverified": ["viewport", "pixelRatio", "origin"]
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
             },
             "differences": [],
             "message": "表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。"
@@ -291,7 +347,11 @@
                 "pixelRatio": 1,
                 "source": "figma-export-request"
               },
-              "unverified": ["viewport", "pixelRatio", "origin"]
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
             },
             "screenshot": {
               "canvas": {
@@ -299,7 +359,11 @@
                 "height": 691
               },
               "canvasSource": "image-metadata",
-              "unverified": ["viewport", "pixelRatio", "origin"]
+              "unverified": [
+                "viewport",
+                "pixelRatio",
+                "origin"
+              ]
             },
             "differences": [],
             "message": "表示領域・倍率・座標原点には未確認の項目があります。画像の外寸はキャンバス寸法です。位置差を修正する前にcomparison_conditionsで両画像の撮影条件を確認してください。"

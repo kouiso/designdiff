@@ -5,6 +5,7 @@
 
 - 凍結製品SHA: `4e9145e5e051d4efe78a922723f7b3245005a05e`
 - `git checkout --detach 4e9145e5... && pnpm install --frozen-lockfile && pnpm build` 後に実行
+- 注意: 新規 manifest（`runs-*-remaining.json` 等）は凍結 SHA のツリーに存在しない。detach 前に本ブランチから `docs/evidence/runs-*.json` を退避して戻すか、`windows-legs.yml` のように実行時に manifest を生成する手順にする（CI は後者を採用）
 - **製品コードは一切編集しない**（`dirty: false` 必須）
 - 実行時刻は executedAt に正直に刻む。round 窓の finishedAt 延長は台帳取り込み側で扱う（後述）
 

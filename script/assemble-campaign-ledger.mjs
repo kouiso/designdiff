@@ -17,6 +17,18 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
 const sha256 = (bytes) => createHash("sha256").update(bytes).digest("hex");
 
+// round 証跡 dir に記録された実行時ドライバパッチの対象パス一覧。
+// harness-patches.json は {patches:[{path,sha256,reason}]} で、差分自体も
+// 同 dir の *.patch として残る。記録が無ければ空配列(=従来どおり全拒否)。
+const readHarnessPatches = async (roundDir) => {
+  try {
+    const record = JSON.parse(await readFile(join(roundDir, "harness-patches.json"), "utf8"));
+    return (record?.patches ?? []).map((patch) => patch?.path).filter(Boolean);
+  } catch {
+    return [];
+  }
+};
+
 const usage = () => {
   process.stderr.write(
     [
@@ -102,12 +114,21 @@ const assemble = async ({ sha, round, platform, runsPath, outDir, knownDefectsPa
       const outsideEvidence = dirtyState.filter(
         (line) => typeof line === "string" && !line.includes("docs/evidence/"),
       );
+      // 実行中 driver へのパッチは round 証跡 dir の harness-patches.json
+      // (差分 + sha256 記録) で明示されていれば許容する。未記録の dirty は
+      // 「凍結品とは別物が動いた」印なので取込を拒否する。
       if (outsideEvidence.length > 0) {
-        disqualifiedByDriver.set(
-          entry.driver,
-          `dirty tree outside docs/evidence: ${outsideEvidence.join(", ")}`,
+        const declared = new Set(await readHarnessPatches(dirname(dir)));
+        const undeclared = outsideEvidence.filter(
+          (line) => ![...declared].some((path) => line.includes(path)),
         );
-        continue;
+        if (undeclared.length > 0) {
+          disqualifiedByDriver.set(
+            entry.driver,
+            `dirty tree outside docs/evidence: ${undeclared.join(", ")}`,
+          );
+          continue;
+        }
       }
     }
     // exit-writer 型 driver は fatal で途中落ちしても部分証跡を書く。

@@ -82,11 +82,16 @@ try {
     try {
       await page.waitForFunction((count) => window.__received.length > count, before);
     } catch (error) {
-      const received = await page.evaluate(() => window.__received);
-      await writeFile(
-        join(evidenceDir, "x08-plugin-diagnostics.json"),
-        JSON.stringify({ waitedFor: type, received, consoleLog }, null, 2),
-      );
+      // 診断書き出しが失敗しても本来のタイムアウト例外を隠さない
+      try {
+        const received = await page.evaluate(() => window.__received);
+        await writeFile(
+          join(evidenceDir, "x08-plugin-diagnostics.json"),
+          JSON.stringify({ waitedFor: type, received, consoleLog }, null, 2),
+        );
+      } catch {
+        // best-effort diagnostics
+      }
       throw error;
     }
     const message = await page.evaluate(() => window.__received.at(-1));

@@ -2,8 +2,12 @@
   "case": "D04",
   "route": "desktop",
   "platform": "linux-wsl",
-  "drivers": ["app/desktop/e2e/desktop-d-cases.mjs"],
-  "checks": ["D04"],
+  "drivers": [
+    "app/desktop/e2e/desktop-d-cases.mjs"
+  ],
+  "checks": [
+    "D04"
+  ],
   "actual": {
     "desktop-d-cases:D04": {
       "consoleErrors": [],

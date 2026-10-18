@@ -14,7 +14,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: windows-legs-${{ github.ref }}
+  group: windows-legs-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
 
 env:
@@ -22,7 +22,7 @@ env:
 
 jobs:
   round-1:
-    name: Windows legs round 1 (C07/D05/X03/X04)
+    name: Windows legs round 1 (C07/D05 + iframe harness)
     runs-on: windows-latest
     timeout-minutes: 90
     steps:
@@ -37,7 +37,11 @@ jobs:
       - name: Build all packages
         run: pnpm build
       - name: Install Playwright browsers
-        run: pnpm --filter "@figdiff/desktop" exec playwright install chromium
+        run: pnpm --filter "@figdiff/desktop" exec playwright install --with-deps chromium
+
+      - name: Clean prior round evidence
+        shell: bash
+        run: rm -rf docs/evidence/round1-windows
 
       - name: Write runs manifest
         shell: bash
@@ -100,7 +104,15 @@ jobs:
           t=t.replace(drag,repl,1)
           open(p,'w',encoding='utf-8').write(t)
           PY
-          git update-index --skip-worktree app/desktop/e2e/native-figma-node-fix.mjs
+          # 実行中ドライバへのパッチを証跡化する。skip-worktree で隠すと
+          # driver が記録する dirtyState と実体がずれるため、patch 差分と
+          # パッチ後ファイルの sha256 を round 証跡 dir に残し、
+          # assemble-campaign-ledger がこれを許容する。
+          evdir="docs/evidence/round1-windows"
+          mkdir -p "$evdir"
+          git diff -- app/desktop/e2e/native-figma-node-fix.mjs > "$evdir/harness-patch-native-figma-node-fix.patch"
+          HASH=$(python -c "import hashlib;print(hashlib.sha256(open('app/desktop/e2e/native-figma-node-fix.mjs','rb').read()).hexdigest())")
+          printf '{"patches":[{"path":"app/desktop/e2e/native-figma-node-fix.mjs","sha256":"%s","reason":"crop canvas clipped inside overflow container on windows-latest; adds scrollIntoView and uses dragTo"}]}\n' "$HASH" > "$evdir/harness-patches.json"
 
       - name: Run windows legs round 1
         shell: bash
@@ -183,34 +195,6 @@ jobs:
           else:
               print('skip append: evidenceFile exists=',os.path.exists(efile),'manifest exists=',os.path.exists(mfile))
           PY
-      - name: Debug re-run failed drivers (full log)
-        shell: bash
-        if: always()
-        run: |
-          export USERDOMAIN="$COMPUTERNAME"
-          export ELECTRON_ENABLE_LOGGING=1
-          out="docs/evidence/.staging/round-1"
-          mkdir -p "$out"
-          FIGDIFF_IGNORE_EVIDENCE="$PWD/docs/evidence/round1-windows/native-ignore-region" \
-            node app/desktop/e2e/native-ignore-region.mjs > "$out/ignore-region-debug.log" 2>&1 || true
-          python - <<'PY'
-          p='app/desktop/e2e/native-figma-node-fix.mjs'
-          s=open(p,encoding='utf-8').read()
-          needle='const cropLabel = page.getByText'
-          inject=('const dpr=await page.evaluate(()=>window.devicePixelRatio);'
-                  'const bb2=await cropCanvas.boundingBox();'
-                  'console.log("DBG-GEOM",JSON.stringify({bb2,dpr}));'
-                  'try{await page.screenshot({path:process.env.FIGDIFF_FIGMA_NODE_FIX_EVIDENCE+"/pre-crop.png"})}catch(e){console.log("shot-fail",e.message)};')
-          s=s.replace(needle,inject+needle,1)
-          open('app/desktop/e2e/fnf-dbg.mjs','w',encoding='utf-8').write(s)
-          PY
-          FIGDIFF_FIGMA_NODE_FIX_EVIDENCE="$PWD/docs/evidence/round1-windows/native-figma-node-fix" \
-            node app/desktop/e2e/fnf-dbg.mjs > "$out/figma-node-fix-debug.log" 2>&1 || true
-          rm -f app/desktop/e2e/fnf-dbg.mjs
-          for f in "$out/ignore-region-debug.log" "$out/figma-node-fix-debug.log"; do
-            echo "=== $f ==="; tail -60 "$f"
-          done
-
       - name: Collect evidence
         shell: bash
         if: always()
@@ -231,7 +215,8 @@ jobs:
           retention-days: 14
 
   round-2:
-    name: Windows legs round 2 (C07/D05/X03/X04 + X08)
+    needs: round-1
+    name: Windows legs round 2 (C07/D05 + X08 + iframe harness)
     runs-on: windows-latest
     timeout-minutes: 90
     steps:
@@ -246,7 +231,11 @@ jobs:
       - name: Build all packages
         run: pnpm build
       - name: Install Playwright browsers
-        run: pnpm --filter "@figdiff/desktop" exec playwright install chromium
+        run: pnpm --filter "@figdiff/desktop" exec playwright install --with-deps chromium
+
+      - name: Clean prior round evidence
+        shell: bash
+        run: rm -rf docs/evidence/round2-windows
 
       - name: Write runs manifest
         shell: bash
@@ -343,7 +332,15 @@ jobs:
           t=t.replace(drag,repl,1)
           open(p,'w',encoding='utf-8').write(t)
           PY
-          git update-index --skip-worktree app/desktop/e2e/native-figma-node-fix.mjs
+          # 実行中ドライバへのパッチを証跡化する。skip-worktree で隠すと
+          # driver が記録する dirtyState と実体がずれるため、patch 差分と
+          # パッチ後ファイルの sha256 を round 証跡 dir に残し、
+          # assemble-campaign-ledger がこれを許容する。
+          evdir="docs/evidence/round2-windows"
+          mkdir -p "$evdir"
+          git diff -- app/desktop/e2e/native-figma-node-fix.mjs > "$evdir/harness-patch-native-figma-node-fix.patch"
+          HASH=$(python -c "import hashlib;print(hashlib.sha256(open('app/desktop/e2e/native-figma-node-fix.mjs','rb').read()).hexdigest())")
+          printf '{"patches":[{"path":"app/desktop/e2e/native-figma-node-fix.mjs","sha256":"%s","reason":"crop canvas clipped inside overflow container on windows-latest; adds scrollIntoView and uses dragTo"}]}\n' "$HASH" > "$evdir/harness-patches.json"
 
       - name: Run windows legs round 2
         shell: bash
@@ -424,22 +421,6 @@ jobs:
           else:
               print('skip append: evidenceFile exists=',os.path.exists(efile),'manifest exists=',os.path.exists(mfile))
           PY
-      - name: Debug re-run failed drivers (full log)
-        shell: bash
-        if: always()
-        run: |
-          export USERDOMAIN="$COMPUTERNAME"
-          export ELECTRON_ENABLE_LOGGING=1
-          out="docs/evidence/.staging/round-2"
-          mkdir -p "$out"
-          FIGDIFF_IGNORE_EVIDENCE="$PWD/docs/evidence/round2-windows/native-ignore-region" \
-            node app/desktop/e2e/native-ignore-region.mjs > "$out/ignore-region-debug.log" 2>&1 || true
-          FIGDIFF_FIGMA_NODE_FIX_EVIDENCE="$PWD/docs/evidence/round2-windows/native-figma-node-fix" \
-            node app/desktop/e2e/native-figma-node-fix.mjs > "$out/figma-node-fix-debug.log" 2>&1 || true
-          for f in "$out/ignore-region-debug.log" "$out/figma-node-fix-debug.log"; do
-            echo "=== $f ==="; tail -60 "$f"
-          done
-
       - name: Collect evidence
         shell: bash
         if: always()
