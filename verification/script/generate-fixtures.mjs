@@ -29,25 +29,48 @@ const translateRight = ({ data, width, height }, distance) => {
   return out;
 };
 
-// 3x3 近傍で最も輝度の低い既存画素を丸ごと採る。チャンネル別最小値だと
-// ソースに無い合成色が生まれて「線幅差」以外の差を混ぜてしまう。
+// 線幅差は「既存のインクが 1px 太くなる」差分だけを作る。
+// 全画素に最暗近傍を適用すると白系の背景まで書き換わり、線幅差ではなく
+// 背景差の検体になる。3ch 合計が INK_LUMINANCE_MAX 未満の画素をインクと
+// みなし、インク画素はそのまま残す。非インク画素は 8 近傍にインクが
+// ある時だけ、最も暗いインク画素の色を採る (1px 膨張)。
+// 検体の輝度分布は 700-765 の背景と 500 以下のインクに分かれ、
+// 500-699 の帯は AA 縁の疎な層なので 600 を境界にする。
+const INK_LUMINANCE_MAX = 600;
+const luminanceAt = (data, index) => data[index] + data[index + 1] + data[index + 2];
+// 8近傍にインクがあれば最も暗いインク画素のオフセットを返す。無ければ -1。
+const darkestInkNeighbor = ({ data, width, height }, x, y) => {
+  let darkest = -1;
+  let darkestIndex = -1;
+  for (let dy = -1; dy <= 1; dy += 1) {
+    for (let dx = -1; dx <= 1; dx += 1) {
+      if (dx === 0 && dy === 0) continue;
+      const ny = y + dy;
+      const nx = x + dx;
+      if (ny < 0 || ny >= height || nx < 0 || nx >= width) continue;
+      const index = (ny * width + nx) * 3;
+      const luminance = luminanceAt(data, index);
+      if (luminance >= INK_LUMINANCE_MAX) continue;
+      if (darkest === -1 || luminance < darkest) {
+        darkest = luminance;
+        darkestIndex = index;
+      }
+    }
+  }
+  return darkestIndex;
+};
+
 const inflateStroke = ({ data, width, height }) => {
   const out = Buffer.alloc(data.length);
   for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
-      let darkest = -1;
-      let darkestIndex = (y * width + x) * 3;
-      for (let dy = -1; dy <= 1; dy += 1) {
-        for (let dx = -1; dx <= 1; dx += 1) {
-          const index = (clamp(y + dy, height - 1) * width + clamp(x + dx, width - 1)) * 3;
-          const luminance = data[index] + data[index + 1] + data[index + 2];
-          if (darkest === -1 || luminance < darkest) {
-            darkest = luminance;
-            darkestIndex = index;
-          }
-        }
-      }
-      data.copy(out, (y * width + x) * 3, darkestIndex, darkestIndex + 3);
+      const selfIndex = (y * width + x) * 3;
+      const inkIndex =
+        luminanceAt(data, selfIndex) < INK_LUMINANCE_MAX
+          ? selfIndex
+          : darkestInkNeighbor({ data, width, height }, x, y);
+      const from = inkIndex === -1 ? selfIndex : inkIndex;
+      data.copy(out, selfIndex, from, from + 3);
     }
   }
   return out;

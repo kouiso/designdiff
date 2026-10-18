@@ -370,20 +370,30 @@ const assertIndependentTranslation = async (
     height: base.height,
   });
   const { dx, dy } = delta;
-  for (let y = 0; y < shifted.height; y += 2) {
+  // 間引き照合だと奇数行・奇数列だけの破損を見逃すため全画素を走査する。
+  // 画素ごとに expect すると数百万 assertion になるため、最初の不一致
+  // 座標を取って一回だけ失敗する形にする。
+  let firstMismatch: { x: number; y: number } | undefined;
+  outer: for (let y = 0; y < shifted.height; y += 1) {
     const sourceY = Math.min(Math.max(y - dy, 0), base.height - 1);
-    for (let x = 0; x < shifted.width; x += 2) {
+    for (let x = 0; x < shifted.width; x += 1) {
       const sourceX = Math.min(Math.max(x - dx, 0), base.width - 1);
       const targetOffset = (y * shifted.width + x) * 3;
       const sourceOffset = (sourceY * base.width + sourceX) * 3;
-      expect(
-        shifted.data
-          .subarray(targetOffset, targetOffset + 3)
-          .equals(base.data.subarray(sourceOffset, sourceOffset + 3)),
-        `${variant.name}: pixel(${x},${y}) が impl-correct の ${dx}px 平行移動と一致しない`,
-      ).toBe(true);
+      if (
+        shifted.data[targetOffset] !== base.data[sourceOffset] ||
+        shifted.data[targetOffset + 1] !== base.data[sourceOffset + 1] ||
+        shifted.data[targetOffset + 2] !== base.data[sourceOffset + 2]
+      ) {
+        firstMismatch = { x, y };
+        break outer;
+      }
     }
   }
+  expect(
+    firstMismatch,
+    `${variant.name}: pixel(${firstMismatch?.x},${firstMismatch?.y}) が impl-correct の (${dx},${dy}) 平行移動と一致しない`,
+  ).toBeUndefined();
 };
 
 const assertIndependentPixelDiffRatio = async (
@@ -424,6 +434,9 @@ const assertVerdictAndMetrics = (
     // assert すれば、推定器が直って pass に変わった時にだけ落ちる。
     expect(variant.expectedVerdict).toBe("pass");
     expect(result.diffReport?.aggregateVerdict).toBe("fail");
+    // 既知 RED の失敗モードも宣言した kinds で固定する。
+    // 推定器の修正中に別原因の fail へ化けても黙って緑にならないようにする。
+    assertIssueKinds(result, variant);
     return;
   }
 
@@ -598,25 +611,50 @@ describe("golden fixture runner", () => {
   //   既知 RED として fail を直接 assert する。内容差・寸法差があるものは fail 期待の対照。
   // drift-*: 意図的平行移動。tolerance 下でも fail のままであることを見る対照。
   // linewidth: 線幅差。#243 は検出漏れを許さないので fail 期待。
-  const HM_GATE1_CASES: [string, string, string][] = readdirSync(FIXTURES_ROOT)
+  // designdiff#243 の台帳は 18 ペア固定。検体ディレクトリの欠落・混入は
+  // 件数だけでは検出できないため、集合を明示して照合する。
+  const HM_GATE1_PAIR_IDS = [
+    "pair-07-hm-gate1-9810-3312",
+    "pair-08-hm-gate1-9721-6204",
+    "pair-09-hm-gate1-9776-6791",
+    "pair-10-hm-gate1-9776-6698",
+    "pair-11-hm-gate1-9776-6456",
+    "pair-12-hm-gate1-9810-3193",
+    "pair-13-hm-gate1-9804-4204",
+    "pair-14-hm-gate1-9804-4285",
+    "pair-15-hm-gate1-9804-4369",
+    "pair-16-hm-gate1-9892-8063",
+    "pair-17-hm-gate1-9878-6665",
+    "pair-18-hm-gate1-9892-10228",
+    "pair-19-hm-gate1-9863-5441",
+    "pair-20-hm-gate1-9878-6036",
+    "pair-21-hm-gate1-9878-6362",
+    "pair-22-hm-gate1-9776-6584",
+    "pair-23-hm-gate1-9799-4024",
+    "pair-24-hm-gate1-9789-3641",
+  ];
+  const gate1PairDirs = readdirSync(FIXTURES_ROOT)
     .filter((name) => /^pair-\d+-hm-gate1-/.test(name))
-    .sort()
-    .flatMap((pairId) => {
-      const expectation = FixtureExpectationSchema.parse(
-        JSON.parse(readFileSync(path.join(FIXTURES_ROOT, pairId, "expected.json"), "utf8")),
-      );
-      return expectation.variants.map((variant): [string, string, string] => [
-        pairId,
-        variant.name,
-        variant.knownRedIssue !== undefined
-          ? `既知RED(${variant.knownRedIssue}): ${variant.expectedVerdict} 期待だが fail`
-          : variant.expectedVerdict,
-      ]);
-    });
+    .sort();
+  const HM_GATE1_CASES: [string, string, string][] = gate1PairDirs.flatMap((pairId) => {
+    const expectation = FixtureExpectationSchema.parse(
+      JSON.parse(readFileSync(path.join(FIXTURES_ROOT, pairId, "expected.json"), "utf8")),
+    );
+    return expectation.variants.map((variant): [string, string, string] => [
+      pairId,
+      variant.name,
+      variant.knownRedIssue !== undefined
+        ? `既知RED(${variant.knownRedIssue}): ${variant.expectedVerdict} 期待だが fail`
+        : variant.expectedVerdict,
+    ]);
+  });
   it("Gate1 検体を expected.json から読み込めていること", () => {
-    // 18 correct + drift 対照(pass 基準の 9 ペア drift-2px + 3 drift-1px) + 3 linewidth。
-    // 基準が fail のペアでは drift 対照が空転するため対象外とし、この数が正規値。
-    expect(HM_GATE1_CASES.length).toBeGreaterThanOrEqual(33);
+    // 18 ペアの集合と variant 件数の両方をピンする。correct + drift 対照
+    // (pass 基準の 9 ペア drift-2px + 3 drift-1px) + 3 linewidth + fail 基準
+    // の 9 correct = 33 ケースが正規値。基準が fail のペアでは drift 対照が
+    // 空転するため対象外。
+    expect(gate1PairDirs).toEqual(HM_GATE1_PAIR_IDS);
+    expect(HM_GATE1_CASES.length).toBe(33);
   });
   it.each(HM_GATE1_CASES)(
     "%s %s の verdict が期待どおりであること: %s (designdiff#243)",

@@ -70,7 +70,7 @@
 `pair-*-hm-gate1-*` の `impl-drift-2px.png` / `impl-drift-1px.png` / `impl-linewidth.png` は、同じ pair の `impl-correct.png` から派生させています (`impl-correct.png` と `figma-export.png` は実機キャプチャなので再生成できません)。
 
 - `impl-drift-Npx.png`: 右へ N px 平行移動。左端は端の列を複製し、透明帯を作らない (透明帯だと位置ずれではなく欠落として検出され、対照にならない)
-- `impl-linewidth.png`: 3x3 近傍のチャンネル別最小値で、暗い線を 1px 太らせる。同一グリフの被覆差ではなく線幅差として扱い、`fail` を期待する (designdiff#243 は線幅差の検出漏れを許さない)
+- `impl-linewidth.png`: インク画素 (3ch 合計が 600 未満) はそのまま残し、8 近傍にインクがある非インク画素だけを最も暗い近傍インクの色で 1px 膨張させる。全画素に最暗近傍を掛けると背景まで書き換わり線幅差ではなく背景差の検体になるため、変更はインク周辺のリングに限定する。同一グリフの被覆差ではなく線幅差として扱い、`fail` を期待する (designdiff#243 は線幅差の検出漏れを許さない)
 
 ```bash
 node verification/script/generate-fixtures.mjs          # 書き出し
