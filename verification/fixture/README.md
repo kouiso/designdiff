@@ -43,9 +43,10 @@
 - `variants[].image`: pair ディレクトリからの相対パス
 - `variants[].expectedVerdict`: `pass` / `fail` / `inconclusive`
 - `variants[].expectedKinds`: 人手で期待する差分カテゴリ。現時点の runner は verdict を主判定に使い、この配列は将来の issue correlation 用メタデータとして保持します
-- `variants[].expectedIssueKinds`: runnerが出力するIssueKindの期待値。`expectedKinds`と異なる分類体系を持つ場合に明示します
+- `variants[].expectedIssueKinds`: `fail` / `inconclusive` 期待の検体で、runnerが出力するIssueKindの期待値。`expectedVerdict` が `pass` の検体には書けません (0 issue 必須と矛盾するため schema が拒否します)
 - `variants[].rasterizationTolerance`: 任意。`true` で、別レンダラ同士 (Figma正本 vs Flutter/Skia キャプチャ) のラスタライズ差を verdict から外す。strict のままだと同一内容の `correct` も fail するため、`fail` 期待の対照検体 (drift / linewidth) にも同じ値を付ける。付けないと、tolerance が本物のずれまで吸収するように壊れても対照が緑のままになる
 - `variants[].knownRedIssue`: 任意。`expectedVerdict` は `pass` (あるべき姿) のまま、推定器が未修正で `fail` を返している既知 RED に、原因 Issue を書く。runner はこの検体だけ `fail` を明示的に assert する。推定器が直ると落ちるので、このフィールドを外して通常の `pass` 検体に戻す
+- `variants[].knownRedIssueKinds`: 任意。`knownRedIssue` の検体が現在発火している IssueKind を宣言し、既知 RED の失敗モードを固定する。`expectedIssueKinds` を pass 検体に書くと矛盾するため別フィールドに分離している。推定器修正時に `knownRedIssue` と一緒に外す
 - `figmaRootNode`: 任意。P2 以降の section-aware DiffReport 用に top-level Figma section を埋め込めます
 - `variants[].expectedWeightedStructureMin/Max`: 任意。weighted aggregate の期待レンジ
 - `variants[].expectedRegionStructure`: 任意。`figmaNodeId` ごとの structure 期待レンジ

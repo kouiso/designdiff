@@ -86,6 +86,13 @@ const FixtureVariantSchema = z
     // expectedVerdict は pass (あるべき姿) のまま、推定器の未修正で fail を返している既知 RED。
     // 値は原因 Issue。runner はこの検体だけ fail を明示的に assert する。
     knownRedIssue: z.string().min(1).optional(),
+    // 既知 RED の失敗モードを固定する宣言。expectedVerdict が pass の検体に
+    // expectedIssueKinds を書くと「0 issue 必須」と矛盾するため別フィールドに
+    // 分離する。knownRedIssue 経路でのみ評価し、推定器修正後は knownRedIssue と
+    // 一緒に外す。
+    knownRedIssueKinds: z
+      .array(z.enum(["color", "position", "size", "missing", "extra", "typography"]))
+      .optional(),
     // FigDiff 自身の verdict に依存しない独立オラクル。
     // translation: 派生画像が impl-correct を (dx,dy) 平行移動したものであることを raw 画素で確認する。
     independentTranslation: z.object({ dx: z.number().int(), dy: z.number().int() }).optional(),
@@ -122,7 +129,19 @@ const FixtureVariantSchema = z
       .record(z.string(), z.object({ min: z.number().optional(), max: z.number().optional() }))
       .optional(),
   })
-  .and(SystemUiFixtureMetadataSchema);
+  .and(SystemUiFixtureMetadataSchema)
+  .refine(
+    (variant) => variant.knownRedIssueKinds === undefined || variant.knownRedIssue !== undefined,
+    { message: "knownRedIssueKinds は knownRedIssue とセットでのみ宣言する" },
+  )
+  .refine(
+    (variant) =>
+      variant.expectedVerdict !== "pass" || (variant.expectedIssueKinds ?? []).length === 0,
+    {
+      message:
+        "expectedVerdict=pass の検体に expectedIssueKinds は書けない (0 issue 必須と矛盾する)。既知 RED の失敗モードは knownRedIssueKinds に書く",
+    },
+  );
 
 const FixtureExpectationSchema = z.object({
   pairId: z.string().min(1),
@@ -280,17 +299,14 @@ function assertIssuePresence(
   expect((result.diffReport?.issues.length ?? 0) > 0).toBe(true);
 }
 
-function assertIssueKinds(
-  result: CompareDesignResult,
-  variant: z.infer<typeof FixtureVariantSchema>,
-): void {
-  if (!variant.expectedIssueKinds || variant.expectedIssueKinds.length === 0) {
+function assertIssueKinds(result: CompareDesignResult, expectedKinds: string[] | undefined): void {
+  if (!expectedKinds || expectedKinds.length === 0) {
     return;
   }
 
   const actualKinds = new Set(result.diffReport?.issues.map((issue) => issue.kind) ?? []);
 
-  for (const expectedKind of variant.expectedIssueKinds) {
+  for (const expectedKind of expectedKinds) {
     expect(actualKinds.has(expectedKind)).toBe(true);
   }
 }
@@ -436,7 +452,7 @@ const assertVerdictAndMetrics = (
     expect(result.diffReport?.aggregateVerdict).toBe("fail");
     // 既知 RED の失敗モードも宣言した kinds で固定する。
     // 推定器の修正中に別原因の fail へ化けても黙って緑にならないようにする。
-    assertIssueKinds(result, variant);
+    assertIssueKinds(result, variant.knownRedIssueKinds);
     return;
   }
 
@@ -445,7 +461,7 @@ const assertVerdictAndMetrics = (
   assertWeightedColor(result, variant);
   assertRegionStructure(result, variant);
   assertIssuePresence(result, variant);
-  assertIssueKinds(result, variant);
+  assertIssueKinds(result, variant.expectedIssueKinds);
   assertWorstRegions(result, variant);
 };
 

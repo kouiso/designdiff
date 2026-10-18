@@ -51,8 +51,13 @@ export const FixtureVariantSchema = z
     expectedVerdict: z.enum(["pass", "fail", "inconclusive"]),
     expectedKinds: z.array(z.string()).default([]),
     expectedIssueKinds: z.array(DiffIssueKindSchema).optional(),
-    rasterizationTolerance: z.boolean().optional(),
     ignoreRegions: z.array(IgnoreRegionSchema).optional(),
+    // runner が解釈する検体オプションを計測系でも解釈する。剥がすと
+    // tolerance 宣言済みの検体が strict モードで計測され、L7 レポートと
+    // 回帰テストが別の比較モードを見ることになる。
+    rasterizationTolerance: z.boolean().optional(),
+    knownRedIssue: z.string().min(1).optional(),
+    knownRedIssueKinds: z.array(DiffIssueKindSchema).optional(),
     notes: z.string().optional(),
   })
   .and(SystemUiFixtureMetadataSchema);

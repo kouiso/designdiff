@@ -7,6 +7,11 @@
       "image": "impl-correct.png",
       "expectedVerdict": "pass",
       "expectedKinds": [],
+      "knownRedIssueKinds": [
+        "color",
+        "position",
+        "size"
+      ],
       "notes": "Figma正本と同一内容物 (行データ・時刻・寸法を目視照合済み)。細ストロークAA/ストローク被覆差のみ (designdiff#243)",
       "rasterizationTolerance": true,
       "knownRedIssue": "designdiff#243",
@@ -43,7 +48,12 @@
         "dx": 1,
         "dy": 0
       },
-      "knownRedIssue": "designdiff#243"
+      "knownRedIssue": "designdiff#243",
+      "knownRedIssueKinds": [
+        "color",
+        "position",
+        "size"
+      ]
     },
     {
       "name": "linewidth",
