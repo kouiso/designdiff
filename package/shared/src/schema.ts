@@ -305,6 +305,7 @@ export const RegionScoreSchema = z.object({
     .object({
       clusterCount: z.number().int().positive(),
       explainedCount: z.number().int().nonnegative(),
+      residualColor: z.number().nonnegative().optional(),
       unexplainedPerceptibleDiff: z.boolean().optional(),
     })
     .optional(),

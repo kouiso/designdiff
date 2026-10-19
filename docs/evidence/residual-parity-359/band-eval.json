@@ -1,0 +1,98 @@
+[
+  {
+    "name": "band-top y0-15",
+    "expected": true,
+    "fired": true,
+    "ok": true
+  },
+  {
+    "name": "band-middle y52-67",
+    "expected": true,
+    "fired": true,
+    "ok": true
+  },
+  {
+    "name": "band-bottom y105-120 (9949-23513 shape)",
+    "expected": true,
+    "fired": true,
+    "ok": true
+  },
+  {
+    "name": "straddle y100-115 (5 rows in band6, 10 in band7)",
+    "expected": true,
+    "fired": true,
+    "ok": true
+  },
+  {
+    "name": "straddle-thin y101-109 (4 rows each side)",
+    "expected": false,
+    "fired": false,
+    "ok": true
+  },
+  {
+    "name": "narrow 7-row band y106-113",
+    "expected": true,
+    "fired": true,
+    "ok": true
+  },
+  {
+    "name": "very narrow 3-row band y106-109",
+    "expected": false,
+    "fired": false,
+    "ok": true
+  },
+  {
+    "name": "wide double band y90-120",
+    "expected": true,
+    "fired": true,
+    "ok": true
+  },
+  {
+    "name": "local 40x40 block at center, dE5",
+    "expected": false,
+    "fired": false,
+    "ok": true
+  },
+  {
+    "name": "local 40x40 block + same block marked as explained diff cluster",
+    "expected": false,
+    "fired": false,
+    "ok": true
+  },
+  {
+    "name": "vertical stripe 8px wide full height, dE5",
+    "expected": false,
+    "fired": false,
+    "ok": true
+  },
+  {
+    "name": "control: uniform tiny drift dE~1.5 everywhere",
+    "expected": false,
+    "fired": false,
+    "ok": true
+  },
+  {
+    "name": "control: natural gradient, slightly different ramp",
+    "expected": false,
+    "fired": false,
+    "ok": true
+  },
+  {
+    "name": "control: AA-like +/-1 dither noise",
+    "expected": false,
+    "fired": false,
+    "ok": true
+  },
+  {
+    "name": "control: photo-like subtle texture noise +/-3",
+    "expected": false,
+    "fired": false,
+    "ok": true
+  },
+  {
+    "name": "bottom band + extra unrelated explained diff",
+    "expected": true,
+    "fired": true,
+    "ok": true
+  }
+]
