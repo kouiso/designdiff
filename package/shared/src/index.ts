@@ -218,6 +218,7 @@ export {
 } from "./confidence/frame-guidance.js";
 export {
   buildComparisonHeadline,
+  unionArea,
   DIFF_CLUSTER_REGION_ID_PREFIX,
 } from "./confidence/headline.js";
 export {

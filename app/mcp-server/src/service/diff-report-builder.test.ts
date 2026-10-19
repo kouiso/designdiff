@@ -1333,6 +1333,22 @@ describe("diffRegions による局所採点 (Issue #56)", () => {
     ).toBe(false);
     expect(report.aggregateVerdict).toBe("inconclusive");
     expect(report.rationale).toContain("1 diff cluster(s) beyond the 200-cluster scoring limit");
+    // 未採点クラスタは 4x4 の枠。無害クラスタと重ならない配置なので面積は 16 画素。
+    expect(report.unscoredDiffArea).toBe(16);
+  });
+
+  it("採点上限に収まった比較では unscoredDiffArea を出さないこと", async () => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    const designPixels = await createSolidRgba(FRAME_SIZE, FRAME_SIZE, WHITE_RGB);
+    const report = buildDiffReport({
+      designPixels,
+      screenshotPixels: Uint8ClampedArray.from(designPixels),
+      width: FRAME_SIZE,
+      height: FRAME_SIZE,
+      diffRegions: buildHarmlessClusters(3),
+    });
+
+    expect("unscoredDiffArea" in report).toBe(false);
   });
 
   it("採点上限ちょうどのクラスタ数で全件が無害なら pass のままにすること", async () => {

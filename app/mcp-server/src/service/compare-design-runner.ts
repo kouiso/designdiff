@@ -1866,6 +1866,9 @@ export async function runCompareDesign(
             height: comparison.normalization?.designNativeHeight ?? 0,
           }),
           maskedPixelCount: excludedFromScoring ?? 0,
+          ...(comparison.diffReport?.unscoredDiffArea !== undefined
+            ? { unscoredDiffArea: comparison.diffReport.unscoredDiffArea }
+            : {}),
         }
       : undefined,
   );

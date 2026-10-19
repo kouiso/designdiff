@@ -93,6 +93,22 @@ describe("buildComparisonHeadline", () => {
     expect(headline.structureMatch).toBe(50);
   });
 
+  it("採点上限で行にならなかった差分面は、検出されなかった面として構造一致に数えない", () => {
+    // 100x200 の比較面。採点済みの行は上半分 100x100 (構造 1)。下半分は未採点の差分クラスタ。
+    // 手計算: 一致 10,000 画素 / 比較面 20,000 画素 = 50%。未採点面を一致に数えると 100%。
+    const rows = [region({ bbox: { x: 0, y: 0, w: 100, h: 100 }, structure: 1 })];
+    const canvas = { width: 100, height: 200 };
+
+    expect(buildComparisonHeadline(rows, 50, canvas).structureMatch).toBe(100);
+    expect(
+      buildComparisonHeadline(rows, 50, { ...canvas, unscoredDiffArea: 10000 }).structureMatch,
+    ).toBe(50);
+    // 未採点面が比較面の一部だけなら、残りは従来どおり一致に数える: (10,000 + 5,000) / 20,000 = 75%。
+    expect(
+      buildComparisonHeadline(rows, 50, { ...canvas, unscoredDiffArea: 5000 }).structureMatch,
+    ).toBe(75);
+  });
+
   it("canvas の寸法が不正なら単純平均へ戻す", () => {
     const headline = buildComparisonHeadline(
       [region({ structure: 0 }), region({ structure: 1 })],

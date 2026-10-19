@@ -22,11 +22,14 @@ export interface HeadlineCanvas {
   height: number;
   // ignore region で採点から外した画素数。分母から引き、外した面を構造一致に数えない。
   maskedPixelCount?: number;
+  // 採点件数の上限で行にならなかった差分クラスタが、採点済みの行の外に持つ面積。
+  // 差分が検出された面なので、検出されなかった面 (=構造一致) には数えず、不一致として分母に入れる。
+  unscoredDiffArea?: number;
 }
 
 // 矩形の和集合の面積。行数は小さい (クラスタや Figma セクション程度) ので、
 // x 方向の区切りでスラブに分けて各区間の y 区間和を積めるだけで十分速い。
-const unionArea = (boxes: { x: number; y: number; w: number; h: number }[]): number => {
+export const unionArea = (boxes: { x: number; y: number; w: number; h: number }[]): number => {
   const xs = [...new Set(boxes.flatMap((b) => [b.x, b.x + b.w]))].sort((a, b) => a - b);
   let area = 0;
   for (let index = 0; index + 1 < xs.length; index += 1) {
@@ -88,7 +91,10 @@ const averageStructure = (regionScores: RegionScore[], canvas?: HeadlineCanvas):
   const onlyDiffClusters = regionScores.every((score) =>
     score.regionId.startsWith(DIFF_CLUSTER_REGION_ID_PREFIX),
   );
-  const uncoveredArea = onlyDiffClusters ? Math.max(0, scorableArea - coveredArea) : 0;
+  const unscoredArea = onlyDiffClusters ? Math.max(0, canvas.unscoredDiffArea ?? 0) : 0;
+  const uncoveredArea = onlyDiffClusters
+    ? Math.max(0, scorableArea - coveredArea - unscoredArea)
+    : 0;
   // 重なった行の構造スコアは面積加重平均にしてから和集合の面に載せる。行ごとの
   // 面積で直接積むと、重なり分の canvas を複数回採点して 100% を超えられる。
   const totalRegionArea = areas.reduce((sum, area) => sum + area, 0);
@@ -97,7 +103,9 @@ const averageStructure = (regionScores: RegionScore[], canvas?: HeadlineCanvas):
       ? regionScores.reduce((sum, score, index) => sum + score.structure * areas[index], 0) /
         totalRegionArea
       : 0;
-  return (blendedStructure * coveredArea + uncoveredArea) / (coveredArea + uncoveredArea);
+  return (
+    (blendedStructure * coveredArea + uncoveredArea) / (coveredArea + uncoveredArea + unscoredArea)
+  );
 };
 
 export function buildComparisonHeadline(

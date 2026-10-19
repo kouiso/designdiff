@@ -190,6 +190,43 @@ describe("compare_design — 同幅・異高の縦横比警告", () => {
     expect(result.diagnosis?.likelyMisconfig).toBe(false);
     expect(result.diagnosis?.verdict).toBe("real_diff");
     expect(result.status).not.toBe("UNCERTAIN");
+
+    // FigDiff 自身の matchRate・診断・status だけでは、重なる部分の食い違いと足し行が
+    // 実際に残ったかを自分で裏取りしたことにならない。入力 PNG を直接デコードして
+    // 期待する差分画素を数え、返ってきた差分画像のデコード結果と突き合わせる。
+    const rawOf = async (input: Buffer | string) =>
+      (await sharp(input).ensureAlpha().raw().toBuffer({ resolveWithObject: true })).data;
+    const designRaw = await rawOf(designPath);
+    const screenshotRaw = await rawOf(screenshotPath);
+    // 閾値 100 は入力の作り方 (色を反転) から決めた値。pagePng の R チャンネルは反転で必ず 150 以上動く。
+    let expectedOverlapDiff = 0;
+    for (let y = 0; y < SCREENSHOT_HEIGHT; y += 1) {
+      for (let x = 0; x < WIDTH; x += 1) {
+        const offset = (y * WIDTH + x) * 4;
+        if (Math.abs(designRaw[offset] - screenshotRaw[offset]) > 100) expectedOverlapDiff += 1;
+      }
+    }
+    expect(expectedOverlapDiff).toBe(WIDTH * SCREENSHOT_HEIGHT);
+
+    expect(result.diffImagePath).toBeDefined();
+    const diffImage = await sharp(await readFile(result.diffImagePath ?? ""))
+      .ensureAlpha()
+      .raw()
+      .toBuffer({ resolveWithObject: true });
+    expect(diffImage.info.width).toBe(WIDTH);
+    expect(diffImage.info.height).toBe(designHeight);
+    let paintedInOverlap = 0;
+    let paintedInMissingRows = 0;
+    for (let y = 0; y < designHeight; y += 1) {
+      for (let x = 0; x < WIDTH; x += 1) {
+        if (diffImage.data[(y * WIDTH + x) * 4 + 3] === 0) continue;
+        if (y < SCREENSHOT_HEIGHT) paintedInOverlap += 1;
+        else paintedInMissingRows += 1;
+      }
+    }
+    // 重なる上端は全画素が食い違い、足した下端 20 行は全画素が差分として描かれる。
+    expect(paintedInOverlap).toBe(expectedOverlapDiff);
+    expect(paintedInMissingRows).toBe(WIDTH * (designHeight - SCREENSHOT_HEIGHT));
   });
 
   it("design の下端が白い余白でも、足した行を一致と見なして PASS にしない", async () => {
