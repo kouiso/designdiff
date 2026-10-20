@@ -11,9 +11,9 @@ const DARK = [0x11, 0x11, 0x11];
 // 実ページの CSS は色帯 (40+8i)px・暗帯 40px の交互なので、フィクスチャも
 // 同じ比率を縮尺 SCALE でなぞる (帯高が区画番号に依らないことが縮尺推定の支点)。
 const SCALE = 0.25;
-const sectionRows = (colorId, rows) => {
-  const colorBand = Math.round((40 + colorId * 8) * SCALE);
-  const period = colorBand + Math.round(40 * SCALE);
+const sectionRows = (colorId, rows, scale = SCALE) => {
+  const colorBand = Math.round((40 + colorId * 8) * scale);
+  const period = colorBand + Math.round(40 * scale);
   const out = [];
   for (let y = 0; y < rows; y += 1) {
     out.push(y % period < colorBand ? STRIPE_COLORS[colorId] : DARK);
@@ -23,20 +23,20 @@ const sectionRows = (colorId, rows) => {
   return out;
 };
 
-const buildPng = async (rows) => {
-  const data = Buffer.alloc(WIDTH * rows.length * 3);
+const buildPng = async (rows, width = WIDTH) => {
+  const data = Buffer.alloc(width * rows.length * 3);
   rows.forEach(([r, g, b], y) => {
-    for (let x = 0; x < WIDTH; x += 1) {
-      data.set([r, g, b], (y * WIDTH + x) * 3);
+    for (let x = 0; x < width; x += 1) {
+      data.set([r, g, b], (y * width + x) * 3);
     }
   });
-  return sharp(data, { raw: { width: WIDTH, height: rows.length, channels: 3 } })
+  return sharp(data, { raw: { width, height: rows.length, channels: 3 } })
     .png()
     .toBuffer();
 };
 
-const stitched = (order, rowsFor = () => SECTION_ROWS) =>
-  order.flatMap((id, index) => sectionRows(id, rowsFor(index)));
+const stitched = (order, rowsFor = () => SECTION_ROWS, scale = SCALE) =>
+  order.flatMap((id, index) => sectionRows(id, rowsFor(index), scale));
 
 describe("verifyStripeStitch", () => {
   it("8色が順序どおり同じ高さで並ぶ結合画像は合格", async () => {
@@ -53,9 +53,7 @@ describe("verifyStripeStitch", () => {
   });
 
   it("フレームが重複して区画が繰り返される結合は不合格にする", async () => {
-    const result = await verifyStripeStitch(
-      await buildPng(stitched([0, 1, 2, 2, 3, 4, 5, 6, 7])),
-    );
+    const result = await verifyStripeStitch(await buildPng(stitched([0, 1, 2, 2, 3, 4, 5, 6, 7])));
     expect(result.ok).toBe(false);
     // 同じ色が2区画ぶん続くので、区画の高さが伸びた結合として検出される。
     expect(result.reasons.join("\n")).toContain("stretched or truncated");
@@ -84,7 +82,11 @@ describe("verifyStripeStitch", () => {
       return rows;
     };
     const rows = [0, 1, 2, 3, 4, 5, 6, 7].flatMap((id) =>
-      id === 0 ? darkEdged(id, 40, 0) : id === 6 ? darkEdged(id, 0, 8) : sectionRows(id, SECTION_ROWS),
+      id === 0
+        ? darkEdged(id, 40, 0)
+        : id === 6
+          ? darkEdged(id, 0, 8)
+          : sectionRows(id, SECTION_ROWS),
     );
     const result = await verifyStripeStitch(await buildPng(rows));
     expect(result.reasons).toEqual([]);
@@ -98,9 +100,36 @@ describe("verifyStripeStitch", () => {
 
   it("内側の区画が伸びた（重なりの取りこぼし）結合は不合格にする", async () => {
     const result = await verifyStripeStitch(
-      await buildPng(stitched([0, 1, 2, 3, 4, 5, 6, 7], (index) => (index === 3 ? 320 : SECTION_ROWS))),
+      await buildPng(
+        stitched([0, 1, 2, 3, 4, 5, 6, 7], (index) => (index === 3 ? 320 : SECTION_ROWS)),
+      ),
     );
     expect(result.ok).toBe(false);
     expect(result.reasons.join("\n")).toContain("stretched or truncated");
+  });
+
+  it("全内側区画が同じ割合で短い結合は、相対比較を通っても絶対高チェックで落とす", async () => {
+    // 暗帯の周期は縮尺 0.25 のまま、内側区画だけ全部 120 行 (期待 200 行) にする。
+    // 中央値も一緒に縮むので相対条件は通り、絶対高だけが検出できる。
+    const result = await verifyStripeStitch(
+      await buildPng(stitched([0, 1, 2, 3, 4, 5, 6, 7], () => 120)),
+    );
+    expect(result.ok).toBe(false);
+    const reasons = result.reasons.join("\n");
+    expect(reasons).toContain("absolute squashed/stretched stitch");
+    expect(reasons).not.toContain("stretched or truncated");
+  });
+
+  it("縮尺ごと一様に潰れた結合は、絶対下限 (uniformly compressed) で落とす", async () => {
+    // 縮尺 0.25 の帯と 200 行の区画は互いに整合している (相対・絶対高チェックは通る)。
+    // ただし画像幅 200 なら css 幅の上限から縮尺は 0.4 以上のはずで、内側区画の
+    // 合計 (1200 行) が下限 (6 * 800 * 0.4 * 0.8 = 1536 行) を割る。
+    const result = await verifyStripeStitch(
+      await buildPng(stitched([0, 1, 2, 3, 4, 5, 6, 7]), 200),
+    );
+    expect(result.ok).toBe(false);
+    const reasons = result.reasons.join("\n");
+    expect(reasons).toContain("uniformly compressed or truncated stitch");
+    expect(reasons).not.toContain("absolute squashed/stretched stitch");
   });
 });

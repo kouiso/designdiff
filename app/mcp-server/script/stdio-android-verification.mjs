@@ -360,6 +360,9 @@ const countToastRows = async (png) => {
 const pageRenderWait = await waitForPageRender();
 evidence.results.pageRenderWait = pageRenderWait;
 
+// captureDir は X05 など他の撮影も共有する。辞書順の末尾を X07 の結合画像と
+// 決め打ちしないよう、撮影前の一覧を控えて差分から新規ファイルを特定する。
+const shotsBeforeScroll = new Set(await readdir(captureDir));
 const scrollResult = await call("compare_design", {
   design_source: designPath,
   capture_device: "android",
@@ -394,13 +397,21 @@ if (!scrollResult.isError) {
   // 画素を独立に読み、8色の順序・欠落・重複・区画の伸縮を確かめる。
   // 自分で用意したページ (ANDROID_PAGE_URL 指定時) は縞模様でないので対象外。
   if (!process.env.ANDROID_PAGE_URL) {
-    const shots = (await readdir(captureDir)).sort();
-    const stitchedShot = shots.at(-1);
+    const newShots = (await readdir(captureDir))
+      .filter((name) => name.endsWith(".png") && !shotsBeforeScroll.has(name))
+      .sort();
+    assert.equal(
+      newShots.length,
+      1,
+      `X07 must create exactly one new capture png, got ${newShots.length}: ${newShots.join(", ")}`,
+    );
+    const stitchedShot = newShots[0];
     // 実機で oracle が落ちたとき、閾値を実測で決め直せるよう結合画像そのものを証跡に残す
     // (サンドボックスの一時領域は実行後に消える)。判定の前に複製する。
     await copyFile(join(captureDir, stitchedShot), join(evidenceDir, "x07-stitched.png"));
-    const stitchCheck = await verifyStripeStitch(await readFile(join(captureDir, stitchedShot)));
-    const toastRows = await countToastRows(await readFile(join(captureDir, stitchedShot)));
+    const stitchedBuffer = await readFile(join(captureDir, stitchedShot));
+    const stitchCheck = await verifyStripeStitch(stitchedBuffer);
+    const toastRows = await countToastRows(stitchedBuffer);
     evidence.results.X07_android_scroll.independentStitchCheck = {
       image: stitchedShot,
       ...stitchCheck,

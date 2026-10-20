@@ -181,8 +181,8 @@ const checkStripeHeights = (rowClass, first, last, present, inner, width, reason
   }
 
   // 上の相対比較だけでは「全区画が同じ割合で潰れた結合」を見抜けない
-  // (中央値も一値も一緒に縮むので相対条件は全部通る)。stripe i の暗帯は
-  // (40+8i) css px 高と既知なので、区画の総高とは独立に画素内から
+  // (中央値も一値も一緒に縮むので相対条件は全部通る)。暗帯は区画番号に依らず
+  // 40 css px 高と既知なので、区画の総高とは独立に画素内から
   // css→image の縮尺を推し、絶対高の範囲も検証する。
   const measuredScale = estimateScale(rowClass, first, last, present);
   if (measuredScale !== undefined) {
