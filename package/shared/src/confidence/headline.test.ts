@@ -138,4 +138,18 @@ describe("buildComparisonHeadline", () => {
     );
     expect(headline.structureMatch).toBe(0);
   });
+
+  it("Figma ノードの行は、ignore region で外した画素がある比較では面積で重み付けせず単純平均にする", () => {
+    // 100x100 のセクション (構造 0) はほぼ全面が ignore、続く 100x1 のセクション (構造 1) は外していない。
+    // 面積で重み付けすると 1/10,001 ≒ 0.01% に落ちるが、セクションごとの評価は同じ重みなので 50%。
+    const headline = buildComparisonHeadline(
+      [
+        region({ regionId: "1:1", bbox: { x: 0, y: 0, w: 100, h: 100 }, structure: 0 }),
+        region({ regionId: "1:2", bbox: { x: 0, y: 100, w: 100, h: 1 }, structure: 1 }),
+      ],
+      50,
+      { width: 100, height: 101, maskedPixelCount: 9900 },
+    );
+    expect(headline.structureMatch).toBe(50);
+  });
 });

@@ -54,6 +54,31 @@ const readDiffRows = async (
   return { width: info.width, height: info.height, diffRows, diffCount };
 };
 
+// 判定と issue は FigDiff 自身の出力なので、正しさの根拠にならない。入力 design を直接デコードして
+// 「撮影側に無い白行」の位置を割り出し、返った差分画像の描画行と突き合わせる。
+const expectWhiteTailRowsInDiff = async (
+  design: Buffer,
+  diffImageBase64: string | undefined,
+  screenshotHeight: number,
+  designHeight: number,
+): Promise<void> => {
+  const designRaw = (await sharp(design).ensureAlpha().raw().toBuffer({ resolveWithObject: true }))
+    .data;
+  const expectedMissingRows = new Set<number>();
+  for (let y = screenshotHeight; y < designHeight; y += 1) {
+    const isWhiteRow = Array.from({ length: WIDTH }, (_, x) => (y * WIDTH + x) * 4).every(
+      (offset) => designRaw[offset] === 255 && designRaw[offset + 1] === 255,
+    );
+    if (isWhiteRow) expectedMissingRows.add(y);
+  }
+  expect(expectedMissingRows.size).toBe(designHeight - screenshotHeight);
+
+  const diff = await readDiffRows(diffImageBase64 ?? "");
+  expect(diff.height).toBe(designHeight);
+  expect(diff.diffRows).toEqual(expectedMissingRows);
+  expect(diff.diffCount).toBe(WIDTH * expectedMissingRows.size);
+};
+
 describe("compareImages — 同幅・異高は縮小せず上端揃えで比較する", () => {
   it("同一内容に design だけ下端の行がある場合、差分は足りない行だけに出る", async () => {
     const screenshotHeight = 200;
@@ -130,24 +155,7 @@ describe("compareImages — 同幅・異高は縮小せず上端揃えで比較�
     expect(result.diffReport?.aggregateVerdict).toBe("fail");
     expect(result.diffReport?.issues.some((issue) => issue.kind === "missing")).toBe(true);
 
-    // 判定と issue は FigDiff 自身の出力なので、正しさの根拠にならない。入力 design を
-    // 直接デコードして「撮影側に無い白行」の位置を割り出し、返った差分画像の描画行と突き合わせる。
-    const designRaw = (
-      await sharp(design).ensureAlpha().raw().toBuffer({ resolveWithObject: true })
-    ).data;
-    const expectedMissingRows = new Set<number>();
-    for (let y = screenshotHeight; y < designHeight; y += 1) {
-      const isWhiteRow = Array.from({ length: WIDTH }, (_, x) => (y * WIDTH + x) * 4).every(
-        (offset) => designRaw[offset] === 255 && designRaw[offset + 1] === 255,
-      );
-      if (isWhiteRow) expectedMissingRows.add(y);
-    }
-    expect(expectedMissingRows.size).toBe(designHeight - screenshotHeight);
-
-    const diff = await readDiffRows(result.diffImageBase64 ?? "");
-    expect(diff.height).toBe(designHeight);
-    expect(diff.diffRows).toEqual(expectedMissingRows);
-    expect(diff.diffCount).toBe(WIDTH * expectedMissingRows.size);
+    await expectWhiteTailRowsInDiff(design, result.diffImageBase64, screenshotHeight, designHeight);
   });
 
   it("単一ビューポート撮影の宣言があるときは、画面外の行を足さず従来経路に任せる", async () => {
@@ -201,6 +209,7 @@ describe("compareImages — 同幅・異高は縮小せず上端揃えで比較�
     expect(result.anchorCheck?.verdict).toBe("pass");
     expect(result.diffReport?.aggregateVerdict).toBe("fail");
     expect(result.diffPixelCount).toBe(WIDTH * (designHeight - screenshotHeight));
+    await expectWhiteTailRowsInDiff(design, result.diffImageBase64, screenshotHeight, designHeight);
   });
 
   it("ignore region で覆った足りない行は差分にも分母にも入れない", async () => {

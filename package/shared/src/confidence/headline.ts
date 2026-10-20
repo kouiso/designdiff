@@ -91,6 +91,12 @@ const averageStructure = (regionScores: RegionScore[], canvas?: HeadlineCanvas):
   const onlyDiffClusters = regionScores.every((score) =>
     score.regionId.startsWith(DIFF_CLUSTER_REGION_ID_PREFIX),
   );
+  // Figma ノードの行の bbox には ignore region で外した画素が含まれうるが、行ごとの
+  // 外した面積は持っていない。面積で重み付けすると外した面が平均を支配するため、
+  // 外した画素がある比較では従来どおりの単純平均を保つ。
+  if (!onlyDiffClusters && maskedArea > 0) {
+    return simpleAverage;
+  }
   const unscoredArea = onlyDiffClusters ? Math.max(0, canvas.unscoredDiffArea ?? 0) : 0;
   const uncoveredArea = onlyDiffClusters
     ? Math.max(0, scorableArea - coveredArea - unscoredArea)
