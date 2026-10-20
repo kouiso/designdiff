@@ -22,7 +22,8 @@
 
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
-import { copyFile, mkdir, mkdtemp, readdir, writeFile } from "node:fs/promises";
+import { writeFileSync } from "node:fs";
+import { copyFile, mkdir, mkdtemp, readdir, readFile, writeFile } from "node:fs/promises";
 import { createServer } from "node:http";
 import { homedir, tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
@@ -32,6 +33,8 @@ import { fileURLToPath } from "node:url";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import sharp from "sharp";
+
+import { verifyStripeStitch } from "./lib/stripe-stitch-oracle.mjs";
 
 const execFileAsync = promisify(execFile);
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
@@ -47,6 +50,22 @@ for (const d of [home, store, work]) await mkdir(d, { recursive: true });
 await mkdir(evidenceDir, { recursive: true });
 
 const evidence = { schemaVersion: 1, protocolErrors: [], results: {} };
+
+// 途中の assert で落ちても、そこまでに集めた診断は artifacts に残す。
+// oracle の失敗が「何を見て落ちたか」を調べるための材料を失わない。
+const persistEvidence = () => {
+  try {
+    writeFileSync(join(evidenceDir, "evidence.json"), `${JSON.stringify(evidence, null, 2)}\n`);
+  } catch (error) {
+    // 証跡の書き出し失敗で本来のエラーを上書きしない。ただし無言で握り潰すと
+    // 「書き出した」前提でアーティファクトが空になるので警告は残す。
+    console.warn(`[warn] evidence.json write failed: ${error}`);
+  }
+};
+process.on("uncaughtException", (error) => {
+  persistEvidence();
+  throw error;
+});
 const protocolErrors = evidence.protocolErrors;
 
 const adb = async (args, opts = {}) =>
@@ -250,7 +269,11 @@ const scrollDevice =
 // 縞模様を敷く。
 const stripe = (c, i) =>
   `height:800px;background:repeating-linear-gradient(0deg,${c},${c} ${40 + i * 8}px,#111 ${40 + i * 8}px,#111 ${80 + i * 8}px)`;
-const tallHtml = `<!doctype html><html><head><meta name="viewport" content="width=device-width"></head><body style="margin:0">${["#e33", "#3e3", "#33e", "#ee3", "#3ee", "#e3e", "#963", "#369"].map((c, i) => `<div style="${stripe(c, i)}"></div>`).join("")}</body></html>`;
+// 撮影中に定期的に現れる transient 帯。トースト相当の fixture で、結合画像に
+// 焼き付かないことを独立に確かめる。色は縞色と区別できる既知の値にする。
+const TOAST_COLOR = [0xf5, 0xa6, 0x23];
+const toastFixture = `<div style="position:fixed;left:8%;right:8%;bottom:24px;height:96px;background:#f5a623;border-radius:12px;animation:toastblink 3.2s linear infinite"></div><style>@keyframes toastblink{0%,55%{opacity:0}56%,84%{opacity:1}85%,100%{opacity:0}}</style>`;
+const tallHtml = `<!doctype html><html><head><meta name="viewport" content="width=device-width"></head><body style="margin:0">${["#e33", "#3e3", "#33e", "#ee3", "#3ee", "#e3e", "#963", "#369"].map((c, i) => `<div style="${stripe(c, i)}"></div>`).join("")}${toastFixture}</body></html>`;
 let pageServer;
 let pageUrl;
 if (process.env.ANDROID_PAGE_URL) {
@@ -314,9 +337,32 @@ const waitForPageRender = async () => {
   }
   return { rendered: false, attempts };
 };
+// 結合画像の行を走査し、トースト色に見える行を数える。行は中央付近の3列の
+// 過半数がトースト色のときだけカウントする (縞の縁の混色を除外)。
+const countToastRows = async (png) => {
+  const { data, info } = await sharp(png).removeAlpha().raw().toBuffer({ resolveWithObject: true });
+  let rows = 0;
+  for (let y = 0; y < info.height; y += 1) {
+    let hits = 0;
+    for (const ratio of [0.4, 0.5, 0.6]) {
+      const offset = (y * info.width + Math.floor(info.width * ratio)) * info.channels;
+      const distance = Math.max(
+        Math.abs(data[offset] - TOAST_COLOR[0]),
+        Math.abs(data[offset + 1] - TOAST_COLOR[1]),
+        Math.abs(data[offset + 2] - TOAST_COLOR[2]),
+      );
+      if (distance <= 60) hits += 1;
+    }
+    if (hits >= 2) rows += 1;
+  }
+  return rows;
+};
 const pageRenderWait = await waitForPageRender();
 evidence.results.pageRenderWait = pageRenderWait;
 
+// captureDir は X05 など他の撮影も共有する。辞書順の末尾を X07 の結合画像と
+// 決め打ちしないよう、撮影前の一覧を控えて差分から新規ファイルを特定する。
+const shotsBeforeScroll = new Set(await readdir(captureDir));
 const scrollResult = await call("compare_design", {
   design_source: designPath,
   capture_device: "android",
@@ -346,6 +392,56 @@ if (!scrollResult.isError) {
     (sc.stitchedHeight ?? 0) > (sc.viewportHeight ?? 0),
     `stitched height ${sc.stitchedHeight} must exceed viewport ${sc.viewportHeight}`,
   );
+  // 製品の自己申告 (scrollCapture) だけでは、整合した数字を返しつつ結合画像が
+  // 壊れている実装を通してしまう。既知の縞模様ページなので、撮れた結合画像の
+  // 画素を独立に読み、8色の順序・欠落・重複・区画の伸縮を確かめる。
+  // 自分で用意したページ (ANDROID_PAGE_URL 指定時) は縞模様でないので対象外。
+  if (!process.env.ANDROID_PAGE_URL) {
+    const newShots = (await readdir(captureDir))
+      .filter((name) => name.endsWith(".png") && !shotsBeforeScroll.has(name))
+      .sort();
+    assert.equal(
+      newShots.length,
+      1,
+      `X07 must create exactly one new capture png, got ${newShots.length}: ${newShots.join(", ")}`,
+    );
+    const stitchedShot = newShots[0];
+    // 実機で oracle が落ちたとき、閾値を実測で決め直せるよう結合画像そのものを証跡に残す
+    // (サンドボックスの一時領域は実行後に消える)。判定の前に複製する。
+    await copyFile(join(captureDir, stitchedShot), join(evidenceDir, "x07-stitched.png"));
+    const stitchedBuffer = await readFile(join(captureDir, stitchedShot));
+    const stitchCheck = await verifyStripeStitch(stitchedBuffer);
+    const toastRows = await countToastRows(stitchedBuffer);
+    evidence.results.X07_android_scroll.independentStitchCheck = {
+      image: stitchedShot,
+      ...stitchCheck,
+      toastRows,
+    };
+    // assert で落ちると sequence / sectionRows / reasons が artifacts から
+    // 消えるので、判定の前に必ず永続化する。
+    persistEvidence();
+    assert.ok(
+      stitchCheck.ok,
+      `stitched image failed the independent stripe oracle: ${stitchCheck.reasons.join("; ")}`,
+    );
+    // 撮影中に現れた transient 帯は結合画像に焼き付かないはず (焼き付く =
+    // 製品がトースト等の一時表示を除外できていない)。
+    // transient 帯が結合画像に残るのは撮影品質の問題だが、製品が一時表示を
+    // 除外する責務かは仕様未定のため失敗にはせず証跡だけに残す
+    // (evidence.toastRows)。0 でない時は調査対象として警告する。
+    if (toastRows !== 0) {
+      console.warn(`[warn] stitched image baked the transient toast band (rows: ${toastRows})`);
+    }
+    // X07 の契約には system-UI マスクも含まれる。メタデータを記録するだけでは
+    // 幾何が壊れても通るので、除外領域が空でないことまで確かめる。
+    const resolution = scrollPayload.ignoreRegionResolution;
+    assert.ok(
+      Array.isArray(resolution?.effectiveRegions) &&
+        resolution.effectiveRegions.length > 0 &&
+        (resolution.maskedPixelCount ?? 0) > 0,
+      "scroll capture must report non-empty effective ignore regions masking system UI pixels",
+    );
+  }
 } else {
   evidence.results.X07_android_scroll.note = "scroll capture returned error — see textHead";
 }
