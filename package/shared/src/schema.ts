@@ -443,6 +443,9 @@ export const DiffReportSchema = z.object({
   // 知覚できる差 (ΔE2000 > 2) を持つ画素の割合。pixelmatch の threshold にも
   // profile にも依存しない、判定と独立した証拠として持つ。
   perceptibleDiffRatio: z.number().min(0).max(1).optional(),
+  // 採点件数の上限で行にならなかった差分クラスタが、採点済みの行の外に持つ面積 (画素)。
+  // 無いときはキーごと出さない。構造一致率の見出しが未採点の差分面を一致に数えないために使う。
+  unscoredDiffArea: z.number().nonnegative().optional(),
 });
 
 export const CritiqueConcernSchema = z.enum([
@@ -516,6 +519,10 @@ export const NormalizationReportSchema = z.object({
   containResized: z.boolean(),
   // contain 正規化で適用された最終スケール。1 から大きく外れると寸法ミスマッチのサイン。
   appliedScale: z.number().nonnegative(),
+  // 同幅で design だけが少し縦に長いとき、縮小せずスクリーンショットの下端に
+  // 足した行数。この行は実装側に存在しない内容として差分に数える。
+  // 縮小 (contain) した比較や高さが揃っている比較ではキー自体を出さない。
+  screenshotBottomPaddingRows: z.number().int().positive().optional(),
   // project の cropRegion 設定なしに、スクショがdesignフレーム高を超えた分を
   // ツールが自動でフレーム範囲へcropしたか。人間がcropRegionを手設定する
   // 手間を無くすための自動化 (#237系: 真の完成に向けた手動介入の自動化)。

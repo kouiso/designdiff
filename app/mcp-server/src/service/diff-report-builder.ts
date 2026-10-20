@@ -1,4 +1,5 @@
 import {
+  DIFF_CLUSTER_REGION_ID_PREFIX,
   buildVerifiedInsetCandidates,
   classifyEdgeStraddle,
   classifyGlyphEdgeRasterization,
@@ -23,6 +24,7 @@ import {
   PERCEPTIBLE_DELTA_E,
   srgbToLab,
   UNIMPLEMENTED_LAYOUT_SCORE,
+  unionArea,
   computeVerdict,
   detectHighTextureRegion,
   type ContentOffset,
@@ -1008,6 +1010,8 @@ interface RegionScoreBuild {
   // ノード木の無い比較で採点上限から外れたクラスタ数。セクション行がある比較は
   // セクションが全画素を覆うので 0 のまま。
   unscoredClusterCountWithoutSections: number;
+  // 上限から外れたクラスタの枠。見出しの構造一致率が、測っていない差分面を一致に数えないために使う。
+  unscoredDiffBoxes: readonly DiffBoundingBox[];
   // セクション行がある比較でも採点した差分クラスタ行。セクションの広面積平均に
   // 薄まらないよう、クラスタ単体の critical はノード木の無い比較と同じく合否に効かせる。
   sectionDiffClusters: RegionScore[];
@@ -1256,7 +1260,7 @@ const buildRegionScores = (options: BuildDiffReportOptions): RegionScoreBuild =>
             ignoreMask,
           );
       diffClusterRegions.push({
-        regionId: `diff-cluster-${bbox.x}-${bbox.y}-${bbox.w}-${bbox.h}`,
+        regionId: `${DIFF_CLUSTER_REGION_ID_PREFIX}${bbox.x}-${bbox.y}-${bbox.w}-${bbox.h}`,
         bbox,
         // 1px 枠線の色違いのような疎なクラスタは、bbox 内の未変化画素に
         // 平均系の採点 (color / structure) が薄まる (Issue #58)。採点値は
@@ -1494,6 +1498,7 @@ const buildRegionScores = (options: BuildDiffReportOptions): RegionScoreBuild =>
     return {
       regionScores: [...childRegions, buildRootRegion()],
       unscoredClusterCountWithoutSections: 0,
+      unscoredDiffBoxes: [],
       sectionDiffClusters: diffClusterRegions,
       frameResidualColor,
       frameResidualBand: frameResidual.window,
@@ -1504,6 +1509,7 @@ const buildRegionScores = (options: BuildDiffReportOptions): RegionScoreBuild =>
     return {
       regionScores: [...diffClusterRegions, buildRootRegion()],
       unscoredClusterCountWithoutSections: unscoredDiffClusters.length,
+      unscoredDiffBoxes: unscoredDiffClusters,
       sectionDiffClusters: [],
       frameResidualColor,
       frameResidualBand: frameResidual.window,
@@ -1513,6 +1519,7 @@ const buildRegionScores = (options: BuildDiffReportOptions): RegionScoreBuild =>
   return {
     regionScores: [buildRootRegion()],
     unscoredClusterCountWithoutSections: 0,
+    unscoredDiffBoxes: [],
     sectionDiffClusters: [],
     frameResidualColor,
     frameResidualBand: frameResidual.window,
@@ -1749,6 +1756,7 @@ export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
     sectionDiffClusters,
     frameResidualColor,
     frameResidualBand,
+    unscoredDiffBoxes,
   } = buildRegionScores(alignedOptions);
 
   // 比較対象そのものの行は子と範囲が重なる。合否を決める不具合をここから作ると、
@@ -1863,6 +1871,14 @@ export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
           rationale: `${unscoredClusterCountWithoutSections} diff cluster(s) beyond the ${MAX_DIFF_CLUSTER_SCORE_COUNT}-cluster scoring limit were not scored, so a pass cannot be confirmed; ${mergedVerdict.rationale}`,
         }
       : mergedVerdict;
+  // 採点した行の外にだけ広がる未採点クラスタの面積。採点済みの行と重なる分は行の側で数える。
+  const scoredClusterBoxes = regionScores
+    .filter((score) => score.regionId.startsWith(DIFF_CLUSTER_REGION_ID_PREFIX))
+    .map((score) => score.bbox);
+  const unscoredDiffArea =
+    unscoredDiffBoxes.length === 0
+      ? 0
+      : unionArea([...scoredClusterBoxes, ...unscoredDiffBoxes]) - unionArea(scoredClusterBoxes);
   const structuralAssessment = computeWholeImageStructure(
     alignedDesignPixels,
     screenshotPixels,
@@ -1904,5 +1920,6 @@ export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
     structuralAssessment,
     rationale: verdict.rationale,
     perceptibleDiffRatio,
+    ...(unscoredDiffArea > 0 ? { unscoredDiffArea } : {}),
   };
 }
