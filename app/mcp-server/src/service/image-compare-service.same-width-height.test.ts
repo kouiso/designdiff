@@ -190,6 +190,11 @@ describe("compareImages — 同幅・異高は縮小せず上端揃えで比較�
     // 一致率・差分画像・判定が同じ前提 (未指定行は撮影側に無くても欠落ではない) で揃う。
     expect(result.diffPixelCount).toBe(0);
     expect(result.diffReport?.issues.some((issue) => issue.kind === "missing")).toBe(false);
+
+    // 件数と issue は自己申告なので、差分画像を直接デコードして重なり部も透明な下端も描かれていないことを確かめる。
+    const diff = await readDiffRows(result.diffImageBase64 ?? "");
+    expect(diff.height).toBe(designHeight);
+    expect(diff.diffCount).toBe(0);
   });
 
   it("anchors を宣言して検査が通っても、足りない下端行は fail にする (上端揃えでは下端の欠落をアンカーが保証できない)", async () => {
@@ -228,6 +233,10 @@ describe("compareImages — 同幅・異高は縮小せず上端揃えで比較�
 
     expect(result.diffPixelCount).toBe(WIDTH * 10);
     expect(result.totalPixelCount).toBe(WIDTH * designHeight - WIDTH * 10);
+
+    // 差分画像を直接デコードし、外していない 200〜209 行だけが描かれ ignore した 210〜219 行は空であることを確かめる。
+    const diff = await readDiffRows(result.diffImageBase64 ?? "");
+    expect(diff.diffRows).toEqual(new Set(Array.from({ length: 10 }, (_, i) => screenshotHeight + i)));
   });
 
   it("フルページ design と単一ビューポート撮影 (高さ比 > 1.4) は従来どおり contain 正規化する", async () => {
