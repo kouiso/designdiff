@@ -5,7 +5,10 @@
 
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { copyFile, mkdir, readFile, readdir, realpath, writeFile } from "node:fs/promises";
+import { execFile } from "node:child_process";
+import { copyFile, mkdir, mkdtemp, readFile, readdir, realpath, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { promisify } from "node:util";
 import { basename, dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -13,38 +16,69 @@ import { surfaceBuildDigest } from "./build-digest.mjs";
 import { caseDescriptions, driverCoverage } from "./campaign-case-map.mjs";
 import { requiredCampaignRuns } from "./verify-campaign-evidence.mjs";
 
+const execFileAsync = promisify(execFile);
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
 const sha256 = (bytes) => createHash("sha256").update(bytes).digest("hex");
 
+// 凍結 SHA の blob に .patch を当てた結果のハッシュ候補を返す。取込側チェックアウトの
+// 作業ツリーは見ない — 実行時パッチは誰にもコミットされず、後続ブランチで対象が
+// 変わっても、Windows の autocrlf で CRLF になっても、ここは影響を受けん。
+// 宣言側の sha256 は runner の作業ツリー(CRLF の可能性あり)で取るため、LF と
+// CRLF 正規化の両方を候補にする。
+const patchedDigests = async ({ repoRoot, sha, path, patchBytes }) => {
+  const tmp = await mkdtemp(join(tmpdir(), "figdiff-harness-"));
+  try {
+    const target = join(tmp, path);
+    let base = null;
+    try {
+      base = (await execFileAsync("git", ["show", `${sha}:${path}`], {
+        cwd: repoRoot,
+        encoding: "buffer",
+        maxBuffer: 64 * 1024 * 1024,
+      })).stdout;
+    } catch {
+      base = null; // 凍結 SHA に無いパス = パッチが新規作成するファイル
+    }
+    await mkdir(dirname(target), { recursive: true });
+    if (base) await writeFile(target, base);
+    const patchFile = join(tmp, ".harness.patch");
+    await writeFile(patchFile, patchBytes);
+    await execFileAsync("git", ["apply", "--include", path, patchFile], { cwd: tmp });
+    const result = await readFile(target);
+    const lf = result.toString("latin1").replace(/\r\n/g, "\n");
+    return [sha256(result), sha256(Buffer.from(lf, "latin1")), sha256(Buffer.from(lf.replace(/\n/g, "\r\n"), "latin1"))];
+  } catch {
+    return [];
+  } finally {
+    await rm(tmp, { recursive: true, force: true });
+  }
+};
+
 // round 証跡 dir に記録された実行時ドライバパッチの対象パス一覧。
 // harness-patches.json は {patches:[{path,sha256,reason}]} で、差分自体も
-// 同 dir の *.patch として残る。宣言パスを信用する前に、同 dir の
-// *.patch の中に sha256 が一致し対象パスを実際に触る差分があることを
-// 確かめる — パス名だけの宣言で任意の dirty を許可しないため。
+// 同 dir の *.patch として残る。宣言の sha256 は「凍結 SHA の blob に *.patch を
+// 当てた後のファイル」のハッシュで、取込側の作業ツリーでは検証しない。
+// 当たらない/ハッシュ不一致の宣言はパス名だけの許可になりえるので拒否する。
 // 記録・検証が無ければ空配列(=従来どおり全拒否)。
-const readHarnessPatches = async (roundDir) => {
+const readHarnessPatches = async (roundDir, sha, repoRoot = root) => {
   try {
     const record = JSON.parse(await readFile(join(roundDir, "harness-patches.json"), "utf8"));
     const allowed = [];
+    const patchNames = (await readdir(roundDir)).filter((name) => name.endsWith(".patch"));
     for (const patch of record?.patches ?? []) {
       if (!patch?.path || !patch?.sha256) continue;
-      // 宣言の sha256 は「パッチ適用後の対象ファイル」のハッシュ。
-      // .patch 差分が同 dir に残り対象パスを実際に触ることと、対象ファイル
-      // 本体のハッシュが宣言と一致することの両方を確かめる。どちらかが無い
-      // 宣言はパス名だけの許可になりえるので拒否する。
-      let patchVerified = false;
-      for (const name of await readdir(roundDir)) {
-        if (!name.endsWith(".patch")) continue;
-        const bytes = await readFile(join(roundDir, name));
-        if (bytes.includes(patch.path)) {
-          patchVerified = true;
+      let verified = false;
+      for (const name of patchNames) {
+        const patchBytes = await readFile(join(roundDir, name));
+        if (!patchBytes.includes(patch.path)) continue;
+        const digests = await patchedDigests({ repoRoot, sha, path: patch.path, patchBytes });
+        if (digests.includes(patch.sha256)) {
+          verified = true;
           break;
         }
       }
-      if (!patchVerified) continue;
-      const target = await readFile(join(root, patch.path)).catch(() => null);
-      if (target && sha256(target) === patch.sha256) allowed.push(patch.path);
+      if (verified) allowed.push(patch.path);
     }
     return allowed;
   } catch {
@@ -141,7 +175,7 @@ const assemble = async ({ sha, round, platform, runsPath, outDir, knownDefectsPa
       // (差分 + sha256 記録) で明示されていれば許容する。未記録の dirty は
       // 「凍結品とは別物が動いた」印なので取込を拒否する。
       if (outsideEvidence.length > 0) {
-        const declared = new Set(await readHarnessPatches(dirname(dir)));
+        const declared = new Set(await readHarnessPatches(dirname(dir), sha));
         const undeclared = outsideEvidence.filter(
           (line) => ![...declared].some((path) => line.includes(path)),
         );
@@ -414,4 +448,4 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   }
 }
 
-export { assemble };
+export { assemble, readHarnessPatches };
