@@ -130,7 +130,11 @@ evidence.results.capturedImage = {
   height: capturedMeta.height,
   sha256Prefix: undefined,
 };
-assert.equal(capturedMeta.width, directMeta.width, "captured width must match simctl direct capture");
+assert.equal(
+  capturedMeta.width,
+  directMeta.width,
+  "captured width must match simctl direct capture",
+);
 assert.equal(
   capturedMeta.height,
   directMeta.height,
@@ -153,4 +157,4 @@ assert.match(text(scrollAttempt), /not supported|ios-sim/i);
 assert.equal(protocolErrors.length, 0, `protocol errors: ${protocolErrors.join(" | ")}`);
 await writeFile(join(evidenceDir, "evidence.json"), `${JSON.stringify(evidence, null, 2)}\n`);
 await client.close();
-console.log(join(evidenceDir, "evidence.json"));
+console.info(join(evidenceDir, "evidence.json"));

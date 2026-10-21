@@ -1,0 +1,30 @@
+{
+  "platform": "windows",
+  "round": 1,
+  "roundExecutionId": "round1",
+  "generatedAt": "2026-09-19T05:21:03.393Z",
+  "entries": [
+    {
+      "driver": "app/desktop/e2e/native-ignore-region.mjs",
+      "evidenceDir": "docs/evidence/round1-windows/native-ignore-region",
+      "evidenceFile": "manifest.json",
+      "passEvidenceVia": "env:FIGDIFF_IGNORE_EVIDENCE",
+      "requires": ["display-or-xvfb", "electron"]
+    },
+    {
+      "driver": "app/desktop/e2e/native-figma-node-fix.mjs",
+      "evidenceDir": "docs/evidence/round1-windows/native-figma-node-fix",
+      "evidenceFile": "manifest.json",
+      "passEvidenceVia": "env:FIGDIFF_FIGMA_NODE_FIX_EVIDENCE",
+      "requires": ["display-or-xvfb", "electron"]
+    },
+    {
+      "driver": "app/figma-plugin/e2e/real-iframe-host.mjs",
+      "evidenceDir": "docs/evidence/round1-windows/real-iframe-host",
+      "evidenceFile": "manifest.json",
+      "passEvidenceVia": "env:FIGDIFF_PLUGIN_HOST_EVIDENCE",
+      "requires": ["figma-plugin-sandbox"],
+      "note": "iframe証跡は実Figma sandbox証跡に数えない。実Figma接続は別途"
+    }
+  ]
+}

@@ -30,7 +30,8 @@ const work = join(sandbox, "work");
 for (const d of [home, store, work]) await mkdir(d, { recursive: true });
 await mkdir(evidenceDir, { recursive: true });
 
-const githubToken = process.env.GITHUB_TOKEN ?? execFileSync("gh", ["auth", "token"], { encoding: "utf8" }).trim();
+const githubToken =
+  process.env.GITHUB_TOKEN ?? execFileSync("gh", ["auth", "token"], { encoding: "utf8" }).trim();
 assert.match(githubToken, /^gh[a-z]_|^github_pat_/, "GITHUB_TOKEN must come from gh auth token");
 
 const evidence = { schemaVersion: 1, protocolErrors: [], results: {} };
@@ -127,11 +128,16 @@ assert.ok(!first.isError, `report_issue failed: ${text(first)}`);
 assert.equal(firstOut.deduped, false, "first submission must create a new issue");
 assert.ok(firstOut.issueNumber > 0, "issueNumber must be positive");
 assert.match(firstOut.issueUrl, /github\.com\/kouiso\/designdiff\/issues\/\d+/);
-assert.ok((firstOut.maskedCount ?? 0) >= 2, `expected >=2 masked fields, got ${firstOut.maskedCount}`);
+assert.ok(
+  (firstOut.maskedCount ?? 0) >= 2,
+  `expected >=2 masked fields, got ${firstOut.maskedCount}`,
+);
 
 // 独立 oracle: GitHub API で実 issue を読み返し、タイトル・番号・マスクを確認。
 const remote = JSON.parse(
-  execFileSync("gh", ["api", `repos/kouiso/designdiff/issues/${firstOut.issueNumber}`], { encoding: "utf8" }),
+  execFileSync("gh", ["api", `repos/kouiso/designdiff/issues/${firstOut.issueNumber}`], {
+    encoding: "utf8",
+  }),
 );
 evidence.results.M12_remote = {
   number: remote.number,
@@ -151,7 +157,9 @@ assert.match(remote.body, /REDACTED|~\//);
 // #149/#150 が同タイトル2件になったことで観測済み — 製品の既知限界)。
 // dedup 経路そのものの検証のため、index に載るまで待ってから再送する。
 {
-  const q = encodeURIComponent(`repo:kouiso/designdiff type:issue state:open in:title "[usability] ${title}"`);
+  const q = encodeURIComponent(
+    `repo:kouiso/designdiff type:issue state:open in:title "[usability] ${title}"`,
+  );
   const deadline = Date.now() + 120_000;
   let indexed = false;
   while (Date.now() < deadline && !indexed) {
@@ -185,4 +193,4 @@ assert.equal(secondOut.issueNumber, firstOut.issueNumber, "dedup must point at t
 assert.equal(protocolErrors.length, 0, `protocol errors: ${protocolErrors.join(" | ")}`);
 await writeFile(join(evidenceDir, "evidence.json"), `${JSON.stringify(evidence, null, 2)}\n`);
 await client.close();
-console.log(join(evidenceDir, "evidence.json"));
+console.info(join(evidenceDir, "evidence.json"));

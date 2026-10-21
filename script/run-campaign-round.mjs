@@ -146,6 +146,12 @@ const main = async () => {
   process.stdout.write(
     `${JSON.stringify({ attempted: attempts.length, succeeded: manifestEntries.length, manifestOut: `${stem}.manifest.json`, attemptsOut: `${stem}.attempts.json` })}\n`,
   );
+  // 失敗 attempt があれば非ゼロ終了にして CI 側で検知できるようにする
+  const failed = attempts.filter((attempt) => attempt.status === "failed");
+  if (failed.length > 0) {
+    process.stdout.write(`${JSON.stringify({ failed: failed.map((f) => f.driver) })}\n`);
+    process.exitCode = 1;
+  }
 };
 
 await main();

@@ -41,8 +41,7 @@ await mkdir(figdiffHome, { recursive: true });
 await mkdir(projectDirectory, { recursive: true });
 await mkdir(userData, { recursive: true });
 
-const { designPath, expectedDiffPixelCount, expectedRegions } =
-  await writeX08Fixture(evidenceDir);
+const { designPath, expectedDiffPixelCount, expectedRegions } = await writeX08Fixture(evidenceDir);
 // file:read-local-image は home/tmp 配下のみ許可。証跡dirと別に sandbox home 側にも置く。
 const homeFixture = await writeX08Fixture(isolatedHome);
 const desktopDesignPath = homeFixture.designPath;
@@ -60,7 +59,12 @@ await writeFile(
         name: "Fixture page",
         path: "/",
         designSources: [
-          { id: "fixture-image", type: "local_image", label: "X08 design", filePath: desktopDesignPath },
+          {
+            id: "fixture-image",
+            type: "local_image",
+            label: "X08 design",
+            filePath: desktopDesignPath,
+          },
         ],
       },
     ],

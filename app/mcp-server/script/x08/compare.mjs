@@ -40,16 +40,25 @@ const record = (name, ok, detail) => {
   assert.ok(ok, `${name}: ${JSON.stringify(detail)}`);
 };
 
-const normRegions = (regions) =>
-  regions
-    .map((r) => `${r.x},${r.y},${r.width},${r.height}`)
-    .sort();
+const normRegions = (regions) => regions.map((r) => `${r.x},${r.y},${r.width},${r.height}`).sort();
 const expectedSet = normRegions(expectedRegions);
 
 // 1. 差分画素数: 独立 oracle の期待値 832 と全面一致
-record("diffPixelCount==expected", mcp.diffPixelCount === expectedDiffPixelCount, mcp.diffPixelCount);
-record("diffPixelCount==expected (ext)", extension.diffPixelCount === expectedDiffPixelCount, extension.diffPixelCount);
-record("diffPixelCount==expected (desktop DOM)", desktop.diffPixelCountDom === expectedDiffPixelCount, desktop.diffPixelCountDom);
+record(
+  "diffPixelCount==expected",
+  mcp.diffPixelCount === expectedDiffPixelCount,
+  mcp.diffPixelCount,
+);
+record(
+  "diffPixelCount==expected (ext)",
+  extension.diffPixelCount === expectedDiffPixelCount,
+  extension.diffPixelCount,
+);
+record(
+  "diffPixelCount==expected (desktop DOM)",
+  desktop.diffPixelCountDom === expectedDiffPixelCount,
+  desktop.diffPixelCountDom,
+);
 
 // 2. matchRate 一致 (±0.01)
 const expectedRate = Math.round(((W * H - expectedDiffPixelCount) / (W * H)) * 100 * 100) / 100;
@@ -59,16 +68,31 @@ for (const [name, rate] of Object.entries(rates)) {
 }
 
 // 3. 領域 bbox: MCP・拡張の reported regions が期待矩形と一致
-record("regions mcp", JSON.stringify(normRegions(mcp.regions)) === JSON.stringify(expectedSet), mcp.regions);
-record("regions ext", JSON.stringify(normRegions(extension.regions)) === JSON.stringify(expectedSet), extension.regions);
+record(
+  "regions mcp",
+  JSON.stringify(normRegions(mcp.regions)) === JSON.stringify(expectedSet),
+  mcp.regions,
+);
+record(
+  "regions ext",
+  JSON.stringify(normRegions(extension.regions)) === JSON.stringify(expectedSet),
+  extension.regions,
+);
 // desktop は DOM 上の領域数のみ公開 — 数の一致を確認
-record("region count desktop DOM", desktop.regionCountDom === expectedRegions.length, desktop.regionCountDom);
+record(
+  "region count desktop DOM",
+  desktop.regionCountDom === expectedRegions.length,
+  desktop.regionCountDom,
+);
 
 // 4. diff 画像の「差分としてマークされた画素集合」の一致。
 //    面ごとに描画スタイル (透過背景+α200赤 / pixelmatch標準の白+赤) が違うので
 //    生画素ではなく isDiffPixel 同規則のマスクで比較する。
 const isDiffPixel = (buf, idx) => {
-  const r = buf[idx], g = buf[idx + 1], b = buf[idx + 2], a = buf[idx + 3];
+  const r = buf[idx],
+    g = buf[idx + 1],
+    b = buf[idx + 2],
+    a = buf[idx + 3];
   if (a === 0 && r === 0 && g === 0 && b === 0) return false;
   return r !== g || g !== b;
 };
@@ -116,7 +140,11 @@ results.documentedDifferences = [
   "figma-plugin: 領域を UI に出さないため diff 画像画素の一致で等価性を確認。",
 ];
 
-const out = { ok: true, expected: { expectedDiffPixelCount, expectedRegions, expectedRate }, ...results };
+const out = {
+  ok: true,
+  expected: { expectedDiffPixelCount, expectedRegions, expectedRate },
+  ...results,
+};
 await mkdir(evidenceDir, { recursive: true });
 await writeFile(join(evidenceDir, "x08-verdict.json"), `${JSON.stringify(out, null, 2)}\n`);
 // 台帳形式の evidence.json も併記する (verdict と同一内容)。

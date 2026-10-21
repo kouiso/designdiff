@@ -1,0 +1,28 @@
+{
+  "platform": "macos",
+  "round": 2,
+  "roundExecutionId": "round2",
+  "generatedAt": "2026-09-19T04:35:48.496Z",
+  "entries": [
+    {
+      "driver": "app/mcp-server/script/stdio-android-verification.mjs",
+      "evidenceDir": "docs/evidence/round2-macos/stdio-android-verification",
+      "passEvidenceVia": "argv2",
+      "requires": [
+        "android-devices"
+      ],
+      "note": "X05\u306e\u8907\u6570\u53f0\u62d2\u5426\u306f2\u53f0\u4ee5\u4e0a\u898b\u3048\u308b\u74b0\u5883\u3067\u306e\u307f\u691c\u8a3c",
+      "roundExecutionId": "round2"
+    },
+    {
+      "driver": "app/mcp-server/script/stdio-ios-device-verification.mjs",
+      "evidenceDir": "docs/evidence/round2-macos/stdio-ios-device-verification",
+      "passEvidenceVia": "argv2",
+      "requires": [
+        "ios-device-tethered"
+      ],
+      "note": "X07/ios-device \u3082\u540c\u69d8\u306b spec \u306e OS\u56fa\u6709\u975e\u5bfe\u5fdc\u30eb\u30fc\u30eb\u3067\u5fc5\u9808\u7d4c\u8def\u304b\u3089\u9664\u5916\u6e08\u307f",
+      "roundExecutionId": "round2"
+    }
+  ]
+}
