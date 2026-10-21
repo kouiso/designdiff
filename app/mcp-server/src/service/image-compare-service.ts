@@ -14,6 +14,7 @@ import {
   applyIgnoreRegions as zeroIgnoreRegions,
   buildAntiAliasedMask as buildAntiAliasedMaskSignal,
   buildIgnoreMask,
+  buildComparisonHeadline,
   classifyIgnoreRegionEntries,
   buildVerifiedInsetCandidates,
   clusterDiffPixels,
@@ -1990,6 +1991,15 @@ export async function compareImages(
     clusterCollapse,
     gridSummary,
     diffReport,
+    comparisonHeadline: buildComparisonHeadline(diffReport.regionScores, matchRate, {
+      width,
+      height,
+      scoringMask: scoringIgnoreMask,
+      unscoredDiffArea: diffReport.unscoredDiffArea,
+      contentBounds: paddingMask
+        ? { x: paddingMask.left, y: paddingMask.top, w: paddingMask.width, h: paddingMask.height }
+        : undefined,
+    }),
     diffImageBase64,
     // anchors 未指定の比較では結果に新しいキーを出さない。
     // スキーマは optional なので、キー自体を省略すれば従来の出力形と一致する。

@@ -30,6 +30,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ### Fixed
 
+- Comparison headlines now weight each region by its actual unmasked pixels and exclude contain-resize margins. Masked areas inside a diff cluster no longer count toward its weight or covered area, and fully excluded rows are omitted from the region counts. Fully masked comparisons cannot display structural similarity as 100%. MCP responses reuse the same headline measured in the image comparison, including transparent unspecified pixels.
+
 - Full-page height fixes can now be verified in both directions: restoring missing bottom rows counts as improvement, and removing them counts as regression, including a single missing row. The whole-frame structural score is capped by the observed fraction of the unmasked canvas so a missing white footer cannot score as fully matching. Contain-resized comparisons remain distinct from top-aligned 1:1 comparisons. The loop guard also preserves iteration history after a height repair by recording each capture's own height semantics; a later fixed-height change still resets the loop.
 
 - `verify_fix` now preserves a baseline's single-viewport capture condition, including after loading its history from disk. Rechecking the same shorter screenshot no longer changes from contain normalization to a padded full-page comparison or rejects it as a changed alignment. Full-page screenshots still detect missing bottom rows. Baselines recorded before this field was stored must be retaken with `screenshot_single_viewport: true` to recover that condition.

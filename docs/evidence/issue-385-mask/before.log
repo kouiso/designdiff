@@ -1,0 +1,115 @@
+
+ RUN  v4.1.11 /Users/kouiso/Documents/Codex/2026-10-21/task-3/designdiff-release/package/shared
+
+ ❯ src/confidence/headline.test.ts (17 tests | 6 failed) 7ms
+     × section の重みはマスク外の実際の採点画素数に合わせる 3ms
+     × diff-cluster- の重みはマスク外の実際の採点画素数に合わせる 0ms
+     × 重なる行と不規則なマスクでも採点面の和集合を二重計上しない 0ms
+     × contain余白内の行は構造一致率の重みへ入れない 0ms
+     × 採点画素が残っていないときに完全一致を報告しない 0ms
+     × 採点マスクが比較面全体を覆わない入力は拒否する 1ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/confidence/headline.test.ts > buildComparisonHeadline > section の重みはマスク外の実際の採点画素数に合わせる
+ FAIL  src/confidence/headline.test.ts > buildComparisonHeadline > diff-cluster- の重みはマスク外の実際の採点画素数に合わせる
+AssertionError: expected 50 to be 99.01 // Object.is equality
+
+- Expected
++ Received
+
+- 99.01
++ 50
+
+ ❯ src/confidence/headline.test.ts:170:39
+    168|       );
+    169|       // 一致10000画素 / 採点10100画素。除外9900画素はどちらの重みにも入らない。
+    170|       expect(headline.structureMatch).toBe(99.01);
+       |                                       ^
+    171|     },
+    172|   );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/6]⎯
+
+ FAIL  src/confidence/headline.test.ts > buildComparisonHeadline > 重なる行と不規則なマスクでも採点面の和集合を二重計上しない
+AssertionError: expected 66.67 to be 62.5 // Object.is equality
+
+- Expected
++ Received
+
+- 62.5
++ 66.67
+
+ ❯ src/confidence/headline.test.ts:184:37
+    182|     );
+    183|     // 行ごとの面積は3と1。加重平均(0.5*3+1*1)/4、和集合の採点面は3画素。
+    184|     expect(headline.structureMatch).toBe(62.5);
+       |                                     ^
+    185|   });
+    186|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/6]⎯
+
+ FAIL  src/confidence/headline.test.ts > buildComparisonHeadline > contain余白内の行は構造一致率の重みへ入れない
+AssertionError: expected 64.29 to be 100 // Object.is equality
+
+- Expected
++ Received
+
+- 100
++ 64.29
+
+ ❯ src/confidence/headline.test.ts:196:37
+    194|       { width: 10, height: 10, contentBounds: { x: 2, y: 2, w: 6, h: 6…
+    195|     );
+    196|     expect(headline.structureMatch).toBe(100);
+       |                                     ^
+    197|   });
+    198|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/6]⎯
+
+ FAIL  src/confidence/headline.test.ts > buildComparisonHeadline > 採点画素が残っていないときに完全一致を報告しない
+AssertionError: expected 100 to be +0 // Object.is equality
+
+- Expected
++ Received
+
+- 0
++ 100
+
+ ❯ src/confidence/headline.test.ts:206:37
+    204|       maskedPixelCount: 4,
+    205|     });
+    206|     expect(headline.structureMatch).toBe(0);
+       |                                     ^
+    207|   });
+    208|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/6]⎯
+
+ FAIL  src/confidence/headline.test.ts > buildComparisonHeadline > 採点マスクが比較面全体を覆わない入力は拒否する
+AssertionError: expected [Function] to throw an error
+
+- Expected:
+null
+
++ Received:
+undefined
+
+ ❯ src/confidence/headline.test.ts:216:7
+    214|         scoringMask: new Uint8Array(3),
+    215|       }),
+    216|     ).toThrow("scoringMask");
+       |       ^
+    217|   });
+    218| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/6]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  6 failed | 11 passed (17)
+   Start at  04:50:14
+   Duration  128ms (transform 29ms, setup 0ms, import 37ms, tests 7ms, environment 0ms)
+

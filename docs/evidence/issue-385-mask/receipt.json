@@ -1,0 +1,41 @@
+{
+  "issue": "https://github.com/kouiso/designdiff/issues/385",
+  "baselineCommit": "68448eeb69913f0420c8579376f415b1d8dbe4b1",
+  "acceptance": "Headline weights use actual unmasked scoring areas rather than enclosing rectangles, including overlaps and contain padding. Real MCP response and persisted JSON report retain that value.",
+  "before": "6 newly added tests failed: both section and cluster cases returned 50% instead of independently calculated 99.01%.",
+  "after": {
+    "mcpTests": 225,
+    "sharedTests": 28,
+    "stdio": "compare_design -> new server generate_diff_report -> new server corrected compare; 99.01% retained, residual FAIL, corrected PASS.",
+    "guards": [
+      "overlap union",
+      "irregular mask",
+      "padding-only region excluded",
+      "all masked not 100%",
+      "invalid mask length rejected",
+      "unscored difference overflow retained",
+      "scalar-only legacy fallback retained"
+    ],
+    "typecheck": "MCP tsc build passes; Biome/ESLint no errors, existing warnings only."
+  },
+  "oracle": "Constructed pixels and explicit SSIM formula, not product verdict as correctness oracle.",
+  "sourceSha256": {
+    "package/shared/src/confidence/headline.ts": "b93eaec2daa97d4d8de51528925a6b651f255205f2d35e9562ef23663d9fffdf",
+    "package/shared/src/confidence/headline.test.ts": "462d597ed3940a1e860fc1b1178b02357b4826b749ddb02de6ec41ac44b73403",
+    "package/shared/src/type.ts": "24dda6ed1c78f9edd42a9c50d79cc5489e45d8a9ad6ce72e914ec322204c95cd",
+    "app/mcp-server/src/service/image-compare-service.ts": "69a1c242dd4d881efee41886f1d47f942b0564cb871f6e33d6c8f9b578c5a484",
+    "app/mcp-server/src/service/compare-design-runner.ts": "05e7abf4a783590e8c1566b4059eb8d69f99cc7d10b9a1c59745b46f879b1c9d",
+    "app/mcp-server/src/tool/compare-design-headline.test.ts": "81cd17b336736569f981c5fda7435d1863b2b65bcb6516f15001fba784d06f84"
+  },
+  "scope": "Synthetic locally generated assets. Real Figma host/API, AI source edits, and complete product acceptance are not claimed.",
+  "otherOpen385": [
+    "residual noise floor in small Figma sections",
+    "large-image residual CPU and transparent full copies",
+    "device stripe oracle and evidence diagnostics"
+  ],
+  "notFixed": [
+    "#376 classifier (12 false FAIL among 33 PR375-declared cases)",
+    "Android stripe defect #384"
+  ],
+  "reproduce": "node docs/evidence/issue-385-mask/reproduce.mjs REPOSITORY OUTPUT"
+}

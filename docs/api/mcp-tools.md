@@ -105,7 +105,7 @@ Important fields:
 - `completionCriteria?: CompletionCriteria`
 - `nextAction?: string`
 - `suggestion: string`
-- `comparisonHeadline?: string` — one-line human-readable summary of the outcome.
+- `comparisonHeadline?: { structureMatch, colorOnlyRegions, structuralRegions, headline }` — structural similarity and region counts plus a readable summary. The image comparison weights regions by their actual unmasked pixels, excludes contain margins and wholly excluded regions, and does not credit unscored differences as matching. The scoring bitmap stays internal and is not returned.
 - `diagnosis?` — structured diagnosis of the comparison (e.g. `real_diff`, `likelyMisconfig`).
 - `diffReport?: DiffReport`
 - `preflight?: PreflightReport` — capture-quality checks. `preflight.warnings[]` carries export anomalies such as `figma_export_hidden_blank` (a hidden node exported as a blank raster — the tool retries once with `use_absolute_bounds=false`; this warning remains when the retry is skipped because it was already requested, when the retry fails, or when the retry also comes back blank) or `figma_export_background_missing` (opaque fill exported with transparent interior). Read these before trusting `matchRate`.
