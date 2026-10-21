@@ -1858,23 +1858,25 @@ export async function runCompareDesign(
   const excludedFromScoring =
     comparison.diffReport?.structuralAssessment?.excludedPixelCount ??
     comparison.ignoreRegionResolution?.maskedPixelCount;
-  const comparisonHeadline = buildComparisonHeadline(
-    regionScores,
-    comparison.matchRate,
-    comparison.ignoreRegionResolution?.effectiveCanvas !== undefined ||
-      excludedFromScoring !== undefined
-      ? {
-          ...(comparison.ignoreRegionResolution?.effectiveCanvas ?? {
-            width: comparison.normalization?.designNativeWidth ?? 0,
-            height: comparison.normalization?.designNativeHeight ?? 0,
-          }),
-          maskedPixelCount: excludedFromScoring ?? 0,
-          ...(comparison.diffReport?.unscoredDiffArea !== undefined
-            ? { unscoredDiffArea: comparison.diffReport.unscoredDiffArea }
-            : {}),
-        }
-      : undefined,
-  );
+  const comparisonHeadline =
+    comparison.comparisonHeadline ??
+    buildComparisonHeadline(
+      regionScores,
+      comparison.matchRate,
+      comparison.ignoreRegionResolution?.effectiveCanvas !== undefined ||
+        excludedFromScoring !== undefined
+        ? {
+            ...(comparison.ignoreRegionResolution?.effectiveCanvas ?? {
+              width: comparison.normalization?.designNativeWidth ?? 0,
+              height: comparison.normalization?.designNativeHeight ?? 0,
+            }),
+            maskedPixelCount: excludedFromScoring ?? 0,
+            ...(comparison.diffReport?.unscoredDiffArea !== undefined
+              ? { unscoredDiffArea: comparison.diffReport.unscoredDiffArea }
+              : {}),
+          }
+        : undefined,
+    );
   const diagnosis = diagnoseComparison({
     matchRate: comparison.matchRate,
     // 比較対象そのものの行は子と範囲が重なる。平均に入れると同じ画素を二重に
