@@ -1,0 +1,8 @@
+
+ RUN  v4.1.11 <checkout>/package/shared
+
+
+ Test Files  3 passed (3)
+      Tests  22 passed (22)
+   Start at  04:13:35
+   Duration  232ms (transform 150ms, setup 0ms, import 294ms, tests 11ms, environment 0ms)

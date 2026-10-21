@@ -1,0 +1,55 @@
+{
+  "issue": "https://github.com/kouiso/designdiff/issues/385",
+  "baselineSha": "20b5c686dd2332eeab7aee6df1b27dddc0ecb0b6",
+  "scope": "Fix only screenshot_single_viewport replay in verify_fix; Issue #385 aggregates other unresolved items and must remain open.",
+  "reproduction": "Same synthetic 80x80 viewport PNG against an 80x100 design: verify_fix used full-page normalization and refused comparison.geometry.alignment. Reproduced in-memory and with disk-restored history before production fix (2 failed).",
+  "acceptance": [
+    {
+      "condition": "No change to captured bytes must yield unchanged, preserving single-viewport normalization.",
+      "evidence": ["regression.log", "runtime.json"],
+      "result": "pass"
+    },
+    {
+      "condition": "Capture condition survives disk history and real stdio process restart.",
+      "evidence": ["regression.log", "runtime.json"],
+      "result": "pass"
+    },
+    {
+      "condition": "Full-page control still adds and detects exactly 20 missing bottom rows.",
+      "evidence": ["regression.log", "runtime.json"],
+      "result": "pass"
+    },
+    {
+      "condition": "Existing context fingerprint checks, comparison history and runner tests do not regress.",
+      "evidence": ["regression.log", "shared.log"],
+      "result": "pass"
+    }
+  ],
+  "commands": [
+    "pnpm install --frozen-lockfile --ignore-scripts --registry=https://registry.npmjs.org (task-local store)",
+    "node node_modules/typescript/bin/tsc -b app/mcp-server",
+    "cd app/mcp-server && node node_modules/vitest/vitest.mjs run src/tool/verify-fix.test.ts src/service/comparison-history.test.ts src/service/compare-design-runner.test.ts",
+    "cd package/shared && node node_modules/vitest/vitest.mjs run src/verification-context.test.ts src/type.test.ts src/comparison-conditions.test.ts",
+    "node docs/evidence/issue-385-single-viewport/reproduce.mjs \"$PWD\" /tmp/figdiff-385-evidence",
+    "Biome check and ESLint on the four changed TypeScript files; git diff --check"
+  ],
+  "results": {
+    "mcpRegressionTests": 117,
+    "sharedTests": 22,
+    "stdioRestartCases": 2,
+    "build": "pass",
+    "eslint": "pass",
+    "biome": "pass with two pre-existing cognitive complexity warnings in runner",
+    "diffCheck": "pass"
+  },
+  "compatibility": "New fingerprinted screenshotSingleViewport flag is optional and present only for true. Old history without the flag retains full-page default; an old single-viewport baseline must be retaken. No inference from image dimensions or contain resizing.",
+  "notClaimed": [
+    "Issue #385 fully resolved",
+    "Real Figma API or host verification",
+    "Actual AI source-edit convergence",
+    "Desktop or Chrome/Figma extension acceptance",
+    "Full repository CI or all-platform verification",
+    "Release readiness"
+  ],
+  "operations": "Local only; no push, PR, merge, deployment, visibility, license or authentication changes."
+}

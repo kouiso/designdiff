@@ -1675,6 +1675,9 @@ export async function runCompareDesign(
   ];
   const fallbackIgnoreRegions = [...dynamicIgnoreRegions, ...systemIgnoreRegions.preCropRegions];
 
+  const screenshotIsSingleViewport =
+    (args.capture_device !== undefined && args.capture_scroll !== true) ||
+    args.screenshot_single_viewport === true;
   const comparison = await compareImages(
     {
       designBase64,
@@ -1698,9 +1701,7 @@ export async function runCompareDesign(
       // 「実装に無い」とは見なさず下端を足さない。capture_device (scroll 無し) は
       // 常に1画面撮影。ローカル PNG は撮影範囲の情報が無いため、呼び出し側が
       // 1画面撮影と分かるときだけ screenshot_single_viewport で明示する。
-      screenshotIsSingleViewport:
-        (args.capture_device !== undefined && args.capture_scroll !== true) ||
-        args.screenshot_single_viewport === true,
+      screenshotIsSingleViewport,
       anchors: args.anchors,
       localAlignmentTolerancePx: args.local_alignment_tolerance_px,
       rasterizationTolerance: args.rasterization_tolerance,
@@ -2136,6 +2137,7 @@ export async function runCompareDesign(
           comparison: {
             effectiveThreshold,
             profile: args.profile ?? null,
+            screenshotSingleViewport: screenshotIsSingleViewport || undefined,
             declaredConditions: ComparisonConditionsInputSchema.parse(
               args.comparison_conditions ?? {},
             ),

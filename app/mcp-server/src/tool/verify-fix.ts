@@ -161,6 +161,7 @@ const runCurrentComparison = async (
     figma_contents_only: priorEntry.result.figmaExport?.conditions.contentsOnly,
     figma_use_absolute_bounds: priorEntry.result.figmaExport?.conditions.useAbsoluteBounds,
     screenshot: args.screenshot,
+    screenshot_single_viewport: priorContext.comparison.screenshotSingleViewport,
     frame_name: args.frame_name,
     threshold:
       args.threshold ??
