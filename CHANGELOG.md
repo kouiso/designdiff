@@ -30,6 +30,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ### Fixed
 
+- Same-token and text-reflow ink coverage now uses each matched image's own background and keeps coverage between zero and one. Allowed background rounding can no longer create or subtract ink, which previously rejected identical strokes and could hide doubled stroke weight. Existing color, shape and ink limits are unchanged.
+
 - The independent scroll-stitch oracle now rejects duplicated or stretched first/last stripes using the inner-stripe height upper bound, while still allowing boundary clipping.
 
 - Small Figma sections now apply the same residual noise floor as frame windows: fewer than ten unmasked perceptible pixels cannot revoke otherwise proven cluster coverage. Ten-pixel and broader color defects still block relief.

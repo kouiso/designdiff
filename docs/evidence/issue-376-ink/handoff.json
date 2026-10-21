@@ -1,0 +1,29 @@
+{
+  "status": "WIP cloud handoff; Mac implementation and ordinary tests stopped",
+  "baseCommit": "f408dafdb27443630fc7f998b6d26d4cf88103a2",
+  "scope": "Each matched image uses its own background for ink coverage; alpha is bounded0..1. All ink/color/shape tolerances unchanged.",
+  "verified": {
+    "red": "Four failures initially reproduced, including a doubled-stroke classifier false proof; reversed-background text-reflow failure also reproduced.",
+    "shared": "65 tests passed after final test additions",
+    "mcp": "256 related tests passed before final test-only additions; product source unchanged afterward",
+    "runtime": "Four synthetic built shared API and fresh-process MCP cases passed",
+    "historicalRuntime": "Historical f408 shared classifier accepted doubled stroke in one background order. Full MCP still returned FAIL through other guards; no full-MCP false PASS observed.",
+    "typecheck": "MCP build passed before final test-only additions"
+  },
+  "gate1": {
+    "cases": 33,
+    "declaredPass": 12,
+    "remainingDeclaredPassFailures": 12,
+    "falsePass": 0,
+    "note": "Expectations unchanged; #376 remains unresolved"
+  },
+  "fixtureConcern": "Largest topology subgroup has107 regions in a declared-pass pair. Independent pixels show top input borders shifted-56px but keyboard best translation0. Do not suppress real geometry as noise. Raw images remain local; no new real image upload.",
+  "unfinished": [
+    "Final test additions need formatting and TypeScript test validation; mixed it.each tuples may need object cases or const tuples.",
+    "No more Mac unit/fixture runs. Parent coordinates cloud continuation.",
+    "Review geometry acceptance before attempting zero false FAIL by changing classifier."
+  ],
+  "dependencies": "Node>=25.6.1, pnpm9.15.x, existing lockfile, official registry; no credentials needed for synthetic unit/MCP tests",
+  "ci": "PR387 f408 device run39598887525 succeeded. New handoff branch has no PR/CI success claim.",
+  "dataPolicy": "Only code, synthetic pixels and generic test/runtime logs included. No actual fixture images, env, credentials, personal browser profiles or caches uploaded."
+}

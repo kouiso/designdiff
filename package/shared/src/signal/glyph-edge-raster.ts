@@ -153,25 +153,30 @@ export const resolveRasterWindow = (
 //      それ以外では窓全体支配に退く (被覆が足りなければ推定自体を捨てる)。
 const MIN_FULLWINDOW_BACKGROUND_COVERAGE = 0.4;
 
-export const resolveMatchingBackground = (
+interface MatchedBackgrounds {
+  design: [number, number, number];
+  screenshot: [number, number, number];
+}
+
+export const resolveMatchingBackgrounds = (
   designPixels: Uint8ClampedArray,
   screenshotPixels: Uint8ClampedArray,
   width: number,
   window: RasterWindow,
   ignoreMask?: Uint8Array,
-): [number, number, number] | undefined => {
+): MatchedBackgrounds | undefined => {
   const args = [width, window.left, window.top, window.right, window.bottom] as const;
   const crossMatch = (
     design: { color: [number, number, number]; coverage: number } | undefined,
     screenshot: { color: [number, number, number]; coverage: number } | undefined,
     minCoverage: number,
-  ): [number, number, number] | undefined => {
+  ): MatchedBackgrounds | undefined => {
     if (!design || !screenshot) return undefined;
     if (design.coverage < minCoverage || screenshot.coverage < minCoverage) {
       return undefined;
     }
     return maxChannelDelta(design.color, screenshot.color) <= BACKGROUND_CHANNEL_TOLERANCE
-      ? design.color
+      ? { design: design.color, screenshot: screenshot.color }
       : undefined;
   };
   const designRing = dominantColor(designPixels, ...args, true, ignoreMask);
@@ -191,6 +196,15 @@ export const resolveMatchingBackground = (
   if (ring) return ring;
   return crossMatch(designWindow, screenshotWindow, MIN_FULLWINDOW_BACKGROUND_COVERAGE);
 };
+
+export const resolveMatchingBackground = (
+  designPixels: Uint8ClampedArray,
+  screenshotPixels: Uint8ClampedArray,
+  width: number,
+  window: RasterWindow,
+  ignoreMask?: Uint8Array,
+): [number, number, number] | undefined =>
+  resolveMatchingBackgrounds(designPixels, screenshotPixels, width, window, ignoreMask)?.design;
 
 const findSharedForeground = (
   designPixels: Uint8ClampedArray,
@@ -492,7 +506,9 @@ export const inkCoverage = (
     for (let x = window.left; x < window.right; x++) {
       const index = y * width + x;
       if (ignoreMask?.[index]) continue;
-      coverage += blendAlphaAndResidual(colorAt(pixels, index), background, foreground).alpha;
+      // 推定軸からの丸め誤差で負の墨量が太字の増分を打ち消すことを防ぐ。
+      const { alpha } = blendAlphaAndResidual(colorAt(pixels, index), background, foreground);
+      coverage += Math.max(0, Math.min(1, alpha));
     }
   }
   return coverage;
@@ -858,14 +874,15 @@ const classifySameTokenRasterizationAtHalo = (
 ): SameTokenRasterEvidence | undefined => {
   const window = resolveRasterWindow(width, height, bbox, halo);
   if (!window) return undefined;
-  const background = resolveMatchingBackground(
+  const backgrounds = resolveMatchingBackgrounds(
     designPixels,
     screenshotPixels,
     width,
     window,
     ignoreMask,
   );
-  if (!background) return undefined;
+  if (!backgrounds) return undefined;
+  const background = backgrounds.design;
   const designForeground = foregroundExtreme(designPixels, width, window, background, ignoreMask);
   const screenshotForeground = foregroundExtreme(
     screenshotPixels,
@@ -896,7 +913,9 @@ const classifySameTokenRasterizationAtHalo = (
     screenshotPixels,
     width,
     window,
-    background,
+    // 同一トークンと確認済みでも実画素の丸め値は異なる。片側の背景を共用すると
+    // 広い余白が墨量へ加算・減算され、同じstemや太さ違いの判定を逆転させる。
+    backgrounds.screenshot,
     screenshotForeground,
     ignoreMask,
   );

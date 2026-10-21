@@ -59,6 +59,34 @@ const classify = (design: Uint8ClampedArray, screenshot: Uint8ClampedArray) =>
   classifyTextReflow(design, screenshot, WIDTH, HEIGHT, { x: 0, y: 0, w: WIDTH, h: HEIGHT });
 
 describe("classifyTextReflow", () => {
+  it.each([
+    [253, 255, false],
+    [255, 253, false],
+    [253, 255, true],
+    [255, 253, true],
+  ])("背景%s対%sの丸め差と太字化%sを区別する", (designBackground, screenshotBackground, thick) => {
+    const size = 128;
+    const fixture = (background: number, bold = false) => {
+      const pixels = new Uint8ClampedArray(size * size * 4).fill(background);
+      for (let index = 0; index < size * size; index++) pixels[index * 4 + 3] = 255;
+      for (const [x, y] of designBars)
+        for (let dy = 0; dy < 6; dy++)
+          for (let dx = 0; dx < (bold ? 6 : 3); dx++) {
+            const index = ((y + dy) * size + x * 3 + dx) * 4;
+            pixels.fill(0, index, index + 3);
+          }
+      return pixels;
+    };
+    const result = classifyTextReflow(fixture(designBackground), fixture(screenshotBackground, thick), size, size, {
+        x: 0,
+        y: 0,
+        w: size,
+        h: size,
+      });
+    if (thick) expect(result).toBeUndefined();
+    else expect(result).toMatchObject({ classification: "text-block-reflow", inkCoverageDelta: 0 });
+  });
+
   it("行またぎで配置が変わった同一文字列を折り返し差として分類する", () => {
     expect(classify(makeBlock(designBars), makeBlock(reflowedBars))).toMatchObject({
       classification: "text-block-reflow",

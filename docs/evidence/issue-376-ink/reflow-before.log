@@ -1,0 +1,31 @@
+
+ RUN  v4.1.11 /Users/kouiso/Documents/Codex/2026-10-21/task-3/designdiff-release/package/shared
+
+ ❯ src/signal/text-reflow.test.ts (12 tests | 1 failed | 10 skipped) 43ms
+     × 背景255対253の丸め差を広い余白の墨量へ加算しない 14ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/signal/text-reflow.test.ts > classifyTextReflow > 背景255対253の丸め差を広い余白の墨量へ加算しない
+AssertionError: expected undefined to match object { …(2) }
+
+- Expected:
+{
+  "classification": "text-block-reflow",
+  "inkCoverageDelta": 0,
+}
+
++ Received:
+undefined
+
+ ❯ src/signal/text-reflow.test.ts:73:127
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 1 passed | 10 skipped (12)
+   Start at  05:32:05
+   Duration  458ms (transform 212ms, setup 0ms, import 303ms, tests 43ms, environment 0ms)
+

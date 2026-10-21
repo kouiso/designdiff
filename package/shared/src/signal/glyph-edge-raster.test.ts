@@ -5,6 +5,7 @@ import {
   classifySameTokenRasterization,
   estimateContentOffset,
   foregroundExtreme,
+  inkCoverage,
   resolveMatchingBackground,
 } from "./glyph-edge-raster.js";
 
@@ -33,6 +34,60 @@ const makeGlyph = (edgeValue: number, xOffset = 0, coreHeight = 5): Uint8Clamped
   }
   return pixels;
 };
+
+describe("inkCoverage", () => {
+  it("前景・背景軸の外側の丸め誤差を負の墨量や1画素超の被覆にしない", () => {
+    const pixels = new Uint8ClampedArray([255, 255, 255, 255, 0, 0, 0, 255]);
+    // 既知の1背景画素+1前景画素。推定軸253→1の外に出ても、墨量は0+1。
+    expect(
+      inkCoverage(pixels, 2, { left: 0, top: 0, right: 2, bottom: 1 }, [253, 253, 253], [1, 1, 1]),
+    ).toBe(1);
+  });
+});
+
+describe("背景丸め差とストロークの分離", () => {
+  const size = 64;
+  const fixture = (background: number, thick = false, foreground = 51) => {
+    const pixels = new Uint8ClampedArray(size * size * 4).fill(background);
+    for (let index = 0; index < size * size; index++) pixels[index * 4 + 3] = 255;
+    for (const x of [20, 26, 32])
+      for (let y = 20; y < 37; y++) {
+        for (let offset = 0; offset < (thick ? 2 : 1); offset++) {
+          const index = (y * size + x + offset) * 4;
+          pixels.fill(foreground, index, index + 3);
+        }
+      }
+    return pixels;
+  };
+  const compare = (design: Uint8ClampedArray, screenshot: Uint8ClampedArray) =>
+    classifySameTokenRasterization(
+      design,
+      screenshot,
+      size,
+      size,
+      { x: 0, y: 0, w: size, h: size },
+      0,
+    );
+
+  it.each([
+    [253, 255],
+    [255, 253],
+  ])("同一の51画素stemは背景%i対%iの丸め差で墨量を失わない", (designBackground, screenshotBackground) => {
+    const result = compare(fixture(designBackground), fixture(screenshotBackground));
+    expect(result).toMatchObject({
+      classification: "same-token-rasterization",
+      inkCoverageDelta: 0,
+    });
+  });
+
+  it.each([[253,255],[255,253]])("背景%i対%iの丸め差があっても墨量が倍の太字化を扱わない", (designBackground,screenshotBackground) => {
+    expect(compare(fixture(designBackground), fixture(screenshotBackground, true))).toBeUndefined();
+  });
+
+  it("背景の丸め差があっても別の前景色トークンを扱わない", () => {
+    expect(compare(fixture(253), fixture(255, false, 91))).toBeUndefined();
+  });
+});
 
 const classify = (design: Uint8ClampedArray, screenshot: Uint8ClampedArray) =>
   classifyGlyphEdgeRasterization(design, screenshot, WIDTH, HEIGHT, { x: 2, y: 1, w: 5, h: 7 });

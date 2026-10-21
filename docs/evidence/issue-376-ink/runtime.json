@@ -1,0 +1,121 @@
+{
+  "scope": "Constructed opaque pixels with51vs102 known ink pixels; real built shared API and fresh-process MCP stdio. No real Figma or AI edit acceptance claimed.",
+  "environment": {
+    "node": "v26.7.0",
+    "width": 64,
+    "height": 64,
+    "font": "none",
+    "browser": "none",
+    "scale": 1
+  },
+  "cases": [
+    {
+      "designBackground": 253,
+      "screenshotBackground": 255,
+      "expectedInkPixels": [
+        51,
+        51
+      ],
+      "expectedStatus": "PASS",
+      "status": "PASS",
+      "classification": {
+        "classification": "same-token-rasterization",
+        "changedPixelCount": 4045,
+        "backgroundHex": "#FDFDFD",
+        "foregroundHex": "#333333",
+        "inkCoverageDelta": 0,
+        "inkLimit": 0.35,
+        "contentOffset": {
+          "dx": 0,
+          "dy": -3.727012085196403e-15,
+          "peak": 0.9999999999999692
+        }
+      },
+      "inputs": [
+        {
+          "filename": "253-255-same-design.png",
+          "sha256": "50abe2ce363cc3884526547e1eebbf4b85f8b877fb7e020b2ad424969136fa73"
+        },
+        {
+          "filename": "253-255-same-screenshot.png",
+          "sha256": "3b7a7905337a2a5a8518d5cac84734592eaefc4d13ae763dff41316f3500e8d7"
+        }
+      ]
+    },
+    {
+      "designBackground": 253,
+      "screenshotBackground": 255,
+      "expectedInkPixels": [
+        51,
+        102
+      ],
+      "expectedStatus": "FAIL",
+      "status": "FAIL",
+      "classification": null,
+      "inputs": [
+        {
+          "filename": "253-255-bold-design.png",
+          "sha256": "50abe2ce363cc3884526547e1eebbf4b85f8b877fb7e020b2ad424969136fa73"
+        },
+        {
+          "filename": "253-255-bold-screenshot.png",
+          "sha256": "4dc3a29bb9ff5fce87db205caff213016c23ab16293ba42ace95a98082b970cc"
+        }
+      ]
+    },
+    {
+      "designBackground": 255,
+      "screenshotBackground": 253,
+      "expectedInkPixels": [
+        51,
+        51
+      ],
+      "expectedStatus": "PASS",
+      "status": "PASS",
+      "classification": {
+        "classification": "same-token-rasterization",
+        "changedPixelCount": 4045,
+        "backgroundHex": "#FFFFFF",
+        "foregroundHex": "#333333",
+        "inkCoverageDelta": 0,
+        "inkLimit": 0.35,
+        "contentOffset": {
+          "dx": 0,
+          "dy": -5.590518127794677e-15,
+          "peak": 0.9999999999999591
+        }
+      },
+      "inputs": [
+        {
+          "filename": "255-253-same-design.png",
+          "sha256": "3b7a7905337a2a5a8518d5cac84734592eaefc4d13ae763dff41316f3500e8d7"
+        },
+        {
+          "filename": "255-253-same-screenshot.png",
+          "sha256": "50abe2ce363cc3884526547e1eebbf4b85f8b877fb7e020b2ad424969136fa73"
+        }
+      ]
+    },
+    {
+      "designBackground": 255,
+      "screenshotBackground": 253,
+      "expectedInkPixels": [
+        51,
+        102
+      ],
+      "expectedStatus": "FAIL",
+      "status": "FAIL",
+      "classification": null,
+      "inputs": [
+        {
+          "filename": "255-253-bold-design.png",
+          "sha256": "3b7a7905337a2a5a8518d5cac84734592eaefc4d13ae763dff41316f3500e8d7"
+        },
+        {
+          "filename": "255-253-bold-screenshot.png",
+          "sha256": "6600cefaf26dad359d1e301057f88f56f5eff966c549a6757c4c742208e713c6"
+        }
+      ]
+    }
+  ]
+}

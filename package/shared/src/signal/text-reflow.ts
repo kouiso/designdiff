@@ -19,7 +19,7 @@ import {
   isOnAxisBlend,
   blendAlphaAndResidual,
   maxChannelDelta,
-  resolveMatchingBackground,
+  resolveMatchingBackgrounds,
   toHex,
   FOREGROUND_TOKEN_TOLERANCE,
 } from "./glyph-edge-raster.js";
@@ -188,14 +188,15 @@ const classifyInWindow = (
   if (window.right - window.left < 3 || window.bottom - window.top < 3) {
     return undefined;
   }
-  const background = resolveMatchingBackground(
+  const backgrounds = resolveMatchingBackgrounds(
     designPixels,
     screenshotPixels,
     width,
     window,
     ignoreMask,
   );
-  if (!background) return undefined;
+  if (!backgrounds) return undefined;
+  const background = backgrounds.design;
   const designForeground = foregroundExtreme(designPixels, width, window, background, ignoreMask);
   const screenshotForeground = foregroundExtreme(
     screenshotPixels,
@@ -226,7 +227,7 @@ const classifyInWindow = (
     screenshotPixels,
     width,
     window,
-    background,
+    backgrounds.screenshot,
     screenshotForeground,
     ignoreMask,
   );

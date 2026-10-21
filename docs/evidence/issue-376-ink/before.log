@@ -1,0 +1,90 @@
+
+ RUN  v4.1.11 /Users/kouiso/Documents/Codex/2026-10-21/task-3/designdiff-release/package/shared
+
+ ❯ src/signal/glyph-edge-raster.test.ts (39 tests | 4 failed) 2547ms
+     × 前景・背景軸の外側の丸め誤差を負の墨量や1画素超の被覆にしない 8ms
+     × 同一の51画素stemは背景253対255の丸め差で墨量を失わない 20ms
+     × 同一の51画素stemは背景255対253の丸め差で墨量を失わない 6ms
+     × 背景の丸め差があっても墨量が倍の太字化を扱わない 53ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/signal/glyph-edge-raster.test.ts > inkCoverage > 前景・背景軸の外側の丸め誤差を負の墨量や1画素超の被覆にしない
+AssertionError: expected 0.996031746031746 to be 1 // Object.is equality
+
+- Expected
++ Received
+
+- 1
++ 0.996031746031746
+
+ ❯ src/signal/glyph-edge-raster.test.ts:42:102
+     40|     const pixels = new Uint8ClampedArray([255, 255, 255, 255, 0, 0, 0,…
+     41|     // 既知の1背景画素+1前景画素。推定軸253→1の外に出ても、墨量は0+1。
+     42|     expect(inkCoverage(pixels, 2, { left: 0, top: 0, right: 2, bottom:…
+       |                                                                                                      ^
+     43|   });
+     44| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  src/signal/glyph-edge-raster.test.ts > 背景丸め差とストロークの分離 > 同一の51画素stemは背景253対255の丸め差で墨量を失わない
+ FAIL  src/signal/glyph-edge-raster.test.ts > 背景丸め差とストロークの分離 > 同一の51画素stemは背景255対253の丸め差で墨量を失わない
+AssertionError: expected undefined to match object { …(2) }
+
+- Expected:
+{
+  "classification": "same-token-rasterization",
+  "inkCoverageDelta": 0,
+}
+
++ Received:
+undefined
+
+ ❯ src/signal/glyph-edge-raster.test.ts:63:20
+     61|   it.each([[253,255],[255,253]])("同一の51画素stemは背景%i対%iの丸め差で墨量を失わない", (d…
+     62|     const result = compare(fixture(designBackground), fixture(screensh…
+     63|     expect(result).toMatchObject({ classification: "same-token-rasteri…
+       |                    ^
+     64|   });
+     65|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  src/signal/glyph-edge-raster.test.ts > 背景丸め差とストロークの分離 > 背景の丸め差があっても墨量が倍の太字化を扱わない
+AssertionError: expected { …(7) } to be undefined
+
+- Expected:
+undefined
+
++ Received:
+{
+  "backgroundHex": "#FDFDFD",
+  "changedPixelCount": 4045,
+  "classification": "same-token-rasterization",
+  "contentOffset": {
+    "dx": 0.4998999604079564,
+    "dy": -2.6140138025603835e-15,
+    "peak": 0.702634984106237,
+  },
+  "foregroundHex": "#333333",
+  "inkCoverageDelta": 0.18341788205446494,
+  "inkLimit": 0.35,
+}
+
+ ❯ src/signal/glyph-edge-raster.test.ts:67:55
+     65|
+     66|   it("背景の丸め差があっても墨量が倍の太字化を扱わない", () => {
+     67|     expect(compare(fixture(253), fixture(255, true))).toBeUndefined();
+       |                                                       ^
+     68|   });
+     69|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  4 failed | 35 passed (39)
+   Start at  05:29:15
+   Duration  3.01s (transform 225ms, setup 0ms, import 256ms, tests 2.55s, environment 0ms)
+

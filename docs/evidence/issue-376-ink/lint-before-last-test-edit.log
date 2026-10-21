@@ -1,0 +1,30 @@
+package/shared/src/signal/glyph-edge-raster.ts:245:76 lint/complexity/noExcessiveCognitiveComplexity ━━━━━━━━━━
+
+  ! Excessive complexity of 26 detected (max: 25).
+  
+    243 │   foreground: readonly number[],
+    244 │   ignoreMask?: Uint8Array,
+  > 245 │ ): { sharedCorePixelCount: number; changedPixelCount: number } | undefined => {
+        │                                                                            ^^^
+    246 │   let sharedCorePixelCount = 0;
+    247 │   let changedPixelCount = 0;
+  
+  i Please refactor this function to reduce its complexity score from 26 to the max allowed complexity 25.
+  
+
+package/shared/src/signal/text-reflow.ts:116:11 lint/complexity/noExcessiveCognitiveComplexity ━━━━━━━━━━
+
+  ! Excessive complexity of 43 detected (max: 25).
+  
+    114 │   foreground: readonly number[],
+    115 │   ignoreMask?: Uint8Array,
+  > 116 │ ): number => {
+        │           ^^^
+    117 │   const w = window.right - window.left;
+    118 │   const h = window.bottom - window.top;
+  
+  i Please refactor this function to reduce its complexity score from 43 to the max allowed complexity 25.
+  
+
+Checked 4 files in 65ms. No fixes applied.
+Found 2 warnings.
