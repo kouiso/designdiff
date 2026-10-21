@@ -969,5 +969,16 @@
     }
   ],
   "scope": "Baseline only. Existing PR375 declared ground truth is not newly recertified. No classifier changes or fixture redistribution. Not an acceptance pass.",
-  "classifierGuards": "34 existing glyph-edge-raster tests passed, including thickness guards. Classifier code unchanged."
+  "classifierGuards": "34 existing glyph-edge-raster tests passed, including thickness guards. Classifier code unchanged.",
+  "afterMaskAndResidualRepairs": {
+    "commit": "22726c3449fd4a9f3ac8be300944f83a005b561a",
+    "summary": {
+      "cases": 33,
+      "expectedPass": 12,
+      "falseFail": 12,
+      "falsePass": 0,
+      "inconclusive": 0
+    },
+    "note": "Rerun of all 33 exact input hashes preserved the baseline: classifier still unresolved."
+  }
 }

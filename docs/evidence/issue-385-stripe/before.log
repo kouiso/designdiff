@@ -1,0 +1,35 @@
+
+ RUN  v4.1.11 /Users/kouiso/Documents/Codex/2026-10-21/task-3/designdiff-release/app/mcp-server
+
+ ❯ script/lib/stripe-stitch-oracle.test.mjs (12 tests | 2 failed) 762ms
+     × 端の区画0が重複しても不合格にする 60ms
+     × 端の区画7が重複しても不合格にする 43ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  script/lib/stripe-stitch-oracle.test.mjs > verifyStripeStitch > 端の区画0が重複しても不合格にする
+ FAIL  script/lib/stripe-stitch-oracle.test.mjs > verifyStripeStitch > 端の区画7が重複しても不合格にする
+AssertionError: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ script/lib/stripe-stitch-oracle.test.mjs:81:23
+     79|     order.splice(edge === 0 ? 0 : order.length, 0, edge);
+     80|     const result = await verifyStripeStitch(await buildPng(stitched(or…
+     81|     expect(result.ok).toBe(false);
+       |                       ^
+     82|     expect(result.reasons.join("\n")).toContain(`edge stripe ${edge}`);
+     83|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 10 passed (12)
+   Start at  05:18:23
+   Duration  2.02s (transform 103ms, setup 607ms, import 186ms, tests 762ms, environment 0ms)
+

@@ -30,6 +30,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ### Fixed
 
+- The independent scroll-stitch oracle now rejects duplicated or stretched first/last stripes using the inner-stripe height upper bound, while still allowing boundary clipping.
+
 - Small Figma sections now apply the same residual noise floor as frame windows: fewer than ten unmasked perceptible pixels cannot revoke otherwise proven cluster coverage. Ten-pixel and broader color defects still block relief.
 
 - Comparison headlines now weight each region by its actual unmasked pixels and exclude contain-resize margins. Masked areas inside a diff cluster no longer count toward its weight or covered area, and fully excluded rows are omitted from the region counts. Fully masked comparisons cannot display structural similarity as 100%. MCP responses reuse the same headline measured in the image comparison, including transparent unspecified pixels.

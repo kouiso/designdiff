@@ -152,7 +152,7 @@ const analyzeRowClass = (rowClass, width, height) => {
     }
   }
 
-  // 両端の区画は撮影窓で切れうるので、内側の区画の高さだけを中央値と比べる。
+  // 両端の区画は撮影窓で短くなりうる。内側から基準高を求め、両端には上限だけを課す。
   const sectionRows = present.map((id) => last[id] - first[id] + 1);
   const inner = sectionRows.slice(1, -1);
   const measuredScale = checkStripeHeights(rowClass, first, last, present, inner, width, reasons);
@@ -171,6 +171,17 @@ const checkStripeHeights = (rowClass, first, last, present, inner, width, reason
   if (inner.length >= 2) {
     const sorted = [...inner].sort((a, b) => a - b);
     const median = sorted[Math.floor(sorted.length / 2)];
+    // 切り取りで短くなることはあっても、両端が内側より大きく伸びる理由にはならない。
+    // 両端を高さ検証から完全に除くと、先頭・末尾の同色区画の重複が合格してしまう。
+    const maximumEdgeSpan = median * (1 + INNER_HEIGHT_TOLERANCE);
+    for (const id of [present[0], present[present.length - 1]]) {
+      const span = last[id] - first[id] + 1;
+      if (span > maximumEdgeSpan) {
+        reasons.push(
+          `edge stripe ${id} spans ${span} rows, maximum is ${Math.round(maximumEdgeSpan)} from inner median ${median} (duplicated or stretched boundary stitch)`,
+        );
+      }
+    }
     for (let index = 0; index < inner.length; index += 1) {
       if (Math.abs(inner[index] - median) > median * INNER_HEIGHT_TOLERANCE) {
         reasons.push(
