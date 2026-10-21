@@ -224,6 +224,29 @@ describe("loop-guard-service", () => {
     expect(third.iteration).toBe(3);
   });
 
+  it.each([
+    { nextHeight: 200, expectedIteration: 3 },
+    { nextHeight: 210, expectedIteration: 1 },
+  ])("高さ修復後の履歴は各回の撮影条件で照合する ($nextHeight)", async ({
+    nextHeight,
+    expectedIteration,
+  }) => {
+    await recordIterationAndEvaluate(
+      input({ captureHeight: 160, heightIsContentDriven: true, matchRate: 70 }),
+      { stateDir, now: baseNow },
+    );
+    const repaired = await recordIterationAndEvaluate(
+      input({ captureHeight: 200, heightIsContentDriven: false, matchRate: 80 }),
+      { stateDir, now: baseNow + 1 },
+    );
+    expect(repaired.iteration).toBe(2);
+    const next = await recordIterationAndEvaluate(
+      input({ captureHeight: nextHeight, heightIsContentDriven: false, matchRate: 80 }),
+      { stateDir, now: baseNow + 2 },
+    );
+    expect(next.iteration).toBe(expectedIteration);
+  });
+
   // 画像を渡す場合の高さは撮る側が決めた値。違う高さを同じ条件として扱うと、
   // 別の大きさの絵で出した数値を並べて比べることになる。
   it("画像を渡す場合は、高さが変わったら別の撮影条件として扱うこと", async () => {

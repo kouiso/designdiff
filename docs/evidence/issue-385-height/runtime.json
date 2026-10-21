@@ -1,0 +1,97 @@
+{
+  "scope": "Synthetic local PNGs over real built MCP stdio; every call uses a new server process. No real Figma, AI source edit, Desktop or extension acceptance claimed.",
+  "environment": {
+    "node": "v26.7.0",
+    "os": "darwin",
+    "architecture": "arm64",
+    "release": "25.1.0",
+    "sharp": "0.35.5",
+    "font": "none",
+    "browser": "none",
+    "pixelScale": 1
+  },
+  "fixture": {
+    "width": 80,
+    "designHeight": 200,
+    "blackRectangle": {
+      "x": 10,
+      "y": 10,
+      "width": 20,
+      "height": 20
+    },
+    "residualRectangle": {
+      "x": 50,
+      "y": 50,
+      "width": 10,
+      "height": 10
+    },
+    "inputs": {
+      "design.png": "3f9994ef44da23171261075e5e774037e0b286e1a0e6f746d78adb3295b09dbb",
+      "height-160.png": "8a4eb60e3999fba6ccc2fac4ab2c502bb6f04345bd5faf18acdf33acd25a7da5",
+      "height-199.png": "4af04e1a5ebda3be9a67f35adbe4ae2e2ed435d5b8ba09e3a7820f9e6be05426",
+      "height-200.png": "3f9994ef44da23171261075e5e774037e0b286e1a0e6f746d78adb3295b09dbb",
+      "residual.png": "e327ae1da2ccfa0127a34246f744b220db5d33a1386bd87db71bff526dc7cf63",
+      "short-residual.png": "bae5588e044d4bf63d5b5503106a25ab44d3836a86a7c01e72f5fb7b6df7c9ea"
+    }
+  },
+  "expected": "Cropping/restoring known white bottom rows changes root coverage by the exact row fraction. A single critical missing row remains meaningful. Height repair with an independently inserted 100px defect keeps iteration history after restarts.",
+  "heightCases": [
+    {
+      "before": 200,
+      "after": 160,
+      "expected": "regressed",
+      "verified": {
+        "fixedNode": "whole-frame",
+        "structureDelta": -0.19999999999999996,
+        "colorDelta": 0,
+        "shapeDelta": 0,
+        "verdict": "regressed",
+        "comparisonStatus": "FAIL",
+        "sideEffects": []
+      }
+    },
+    {
+      "before": 160,
+      "after": 200,
+      "expected": "improved",
+      "verified": {
+        "fixedNode": "whole-frame",
+        "structureDelta": 0.19999999999999996,
+        "colorDelta": 0,
+        "shapeDelta": 0,
+        "verdict": "improved",
+        "comparisonStatus": "PASS",
+        "sideEffects": []
+      }
+    },
+    {
+      "before": 200,
+      "after": 199,
+      "expected": "regressed",
+      "verified": {
+        "fixedNode": "whole-frame",
+        "structureDelta": -0.0050000000000000044,
+        "colorDelta": 0,
+        "shapeDelta": 0,
+        "verdict": "regressed",
+        "comparisonStatus": "FAIL",
+        "sideEffects": []
+      }
+    },
+    {
+      "before": 199,
+      "after": 200,
+      "expected": "improved",
+      "verified": {
+        "fixedNode": "whole-frame",
+        "structureDelta": 0.0050000000000000044,
+        "colorDelta": 0,
+        "shapeDelta": 0,
+        "verdict": "improved",
+        "comparisonStatus": "PASS",
+        "sideEffects": []
+      }
+    }
+  ],
+  "iterations": [1, 2, 3]
+}

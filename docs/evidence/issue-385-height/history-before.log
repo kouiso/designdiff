@@ -1,0 +1,59 @@
+
+ RUN  v4.1.11 <checkout>/app/mcp-server
+
+ ❯ src/service/loop-guard-service.test.ts (27 tests | 2 failed | 24 skipped) 9ms
+     × 高さ修復後の履歴は各回の撮影条件で照合する (200) 4ms
+     × 高さ修復後の履歴は各回の撮影条件で照合する (210) 1ms
+ ❯ src/tool/verify-fix-height.test.ts (5 tests | 1 failed | 4 skipped) 153ms
+     × 高さだけ修復して残差があるループは次の再比較でも反復履歴を保つ 152ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/service/loop-guard-service.test.ts > loop-guard-service > 高さ修復後の履歴は各回の撮影条件で照合する (200)
+ FAIL  src/service/loop-guard-service.test.ts > loop-guard-service > 高さ修復後の履歴は各回の撮影条件で照合する (210)
+AssertionError: expected 1 to be 2 // Object.is equality
+
+- Expected
++ Received
+
+- 2
++ 1
+
+ ❯ src/service/loop-guard-service.test.ts:241:34
+    239|         { stateDir, now: baseNow + 1 },
+    240|       );
+    241|       expect(repaired.iteration).toBe(2);
+       |                                  ^
+    242|       const next = await recordIterationAndEvaluate(
+    243|         input({ captureHeight: nextHeight, heightIsContentDriven: fals…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/tool/verify-fix-height.test.ts > verify_fix — full-page height changes > 高さだけ修復して残差があるループは次の再比較でも反復履歴を保つ
+AssertionError: expected [ 1, 2, 1 ] to deeply equal [ 1, 2, 3 ]
+
+- Expected
++ Received
+
+  [
+    1,
+    2,
+-   3,
++   1,
+  ]
+
+ ❯ src/tool/verify-fix-height.test.ts:128:24
+    126|       iterations.push(data.loopGuard.step);
+    127|     }
+    128|     expect(iterations).toEqual([1, 2, 3]);
+       |                        ^
+    129|   });
+    130| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+
+ Test Files  2 failed (2)
+      Tests  3 failed | 1 passed | 28 skipped (32)
+   Start at  04:28:47
+   Duration  833ms (transform 378ms, setup 79ms, import 624ms, tests 162ms, environment 0ms)
