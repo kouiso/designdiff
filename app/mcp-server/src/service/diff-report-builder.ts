@@ -192,6 +192,45 @@ const compositePixelOverWhite = (
   return [blend(pixels[offset]), blend(pixels[offset + 1]), blend(pixels[offset + 2])];
 };
 
+const buildSectionResidualColor = (
+  designPixels: Uint8ClampedArray,
+  screenshotPixels: Uint8ClampedArray,
+  width: number,
+  height: number,
+  bbox: DiffBoundingBox,
+  residualMask: Uint8Array,
+): number => {
+  const color = buildColorDifference(
+    designPixels,
+    screenshotPixels,
+    width,
+    height,
+    bbox,
+    residualMask,
+  );
+  if (color < PERCEPTIBLE_DELTA_E) return color;
+  // 小区画だけが10画素未満の断片で失格しないよう、窓残差と同じ発火件数を求める。
+  // 平均が閾値未満なら再走査せず、必要件数に達したら元の平均をそのまま返す。
+  let firingPixels = 0;
+  const endX = Math.min(width, Math.ceil(bbox.x + bbox.w));
+  const endY = Math.min(height, Math.ceil(bbox.y + bbox.h));
+  for (let y = Math.max(0, Math.floor(bbox.y)); y < endY; y++) {
+    for (let x = Math.max(0, Math.floor(bbox.x)); x < endX; x++) {
+      const pixelIndex = y * width + x;
+      if (residualMask[pixelIndex] === 1) continue;
+      const offset = pixelIndex * 4;
+      if (designPixels[offset + 3] === 0 && screenshotPixels[offset + 3] === 0) continue;
+      const [dr, dg, db] = compositePixelOverWhite(designPixels, offset);
+      const [sr, sg, sb] = compositePixelOverWhite(screenshotPixels, offset);
+      if (deltaE2000(srgbToLab(dr, dg, db), srgbToLab(sr, sg, sb)) >= PERCEPTIBLE_DELTA_E) {
+        firingPixels++;
+        if (firingPixels >= RESIDUAL_MIN_FIRING_PIXELS) return color;
+      }
+    }
+  }
+  return 0;
+};
+
 const computeMaxWindowResidual = (
   designPixels: Uint8ClampedArray,
   screenshotPixels: Uint8ClampedArray,
@@ -1390,7 +1429,7 @@ const buildRegionScores = (options: BuildDiffReportOptions): RegionScoreBuild =>
         section.diffClusterCoverage = coverage;
         continue;
       }
-      const residualColor = buildColorDifference(
+      const residualColor = buildSectionResidualColor(
         designPixels,
         screenshotPixels,
         width,

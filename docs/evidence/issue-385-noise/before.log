@@ -1,0 +1,38 @@
+
+ RUN  v4.1.11 /Users/kouiso/Documents/Codex/2026-10-21/task-3/designdiff-release/app/mcp-server
+
+ ❯ src/service/diff-report-builder.test.ts (82 tests | 1 failed | 79 skipped) 481ms
+     × 小さいセクションの残差も発火画素数の床を使う (9画素) 55ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/service/diff-report-builder.test.ts > 細線の局所変位 (designdiff#243) > 小さいセクションの残差も発火画素数の床を使う (9画素)
+AssertionError: expected { clusterCount: 2, …(3) } to match object { clusterCount: 2, …(2) }
+(1 matching property omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "clusterCount": 2,
+    "explainedCount": 2,
+-   "unexplainedPerceptibleDiff": false,
++   "unexplainedPerceptibleDiff": true,
+  }
+
+ ❯ src/service/diff-report-builder.test.ts:2428:22
+    2426|     });
+    2427|     const coverage = report.regionScores.find((score) => score.regionI…
+    2428|     expect(coverage).toMatchObject({ clusterCount: 2, explainedCount: …
+       |                      ^
+    2429|     expect(report.aggregateVerdict).toBe(noisePixels >= 10 ? "fail" : …
+    2430|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 2 passed | 79 skipped (82)
+   Start at  05:11:52
+   Duration  739ms (transform 242ms, setup 54ms, import 115ms, tests 481ms, environment 0ms)
+
