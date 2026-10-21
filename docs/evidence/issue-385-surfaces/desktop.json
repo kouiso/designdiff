@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "results": {
+    "window": {
+      "title": "FigDiff",
+      "bodyRendered": true
+    },
+    "preload": {
+      "electronAPI": "object"
+    },
+    "project": {
+      "listed": true,
+      "loadedName": "IPC smoke",
+      "deleted": true
+    },
+    "token": {
+      "roundTrip": true,
+      "cleared": true
+    },
+    "image": {
+      "bytes": 128
+    },
+    "compareIdentical": {
+      "screenshot": "/var/folders/rf/w0dkblsx33g18_wm31ct_r_r0000gn/T/figdiff-ipc-smoke-2IYGZL/home/fixtures/compare-identical.png",
+      "diffRegions": 0,
+      "diffPixels": 0,
+      "diffImage": {
+        "width": 64,
+        "height": 48,
+        "colored": 0,
+        "coloredBox": null
+      },
+      "matchRate": 100
+    },
+    "compareDefect": {
+      "screenshot": "/var/folders/rf/w0dkblsx33g18_wm31ct_r_r0000gn/T/figdiff-ipc-smoke-2IYGZL/home/fixtures/compare-defect.png",
+      "diffRegions": 1,
+      "diffPixels": 96,
+      "diffImage": {
+        "width": 64,
+        "height": 48,
+        "colored": 96,
+        "coloredBox": {
+          "x": 36,
+          "y": 24,
+          "w": 12,
+          "h": 8
+        }
+      },
+      "matchRate": 96.88,
+      "expected": {
+        "matchRate": 96.88,
+        "diffPixels": 96,
+        "diffRegions": 1,
+        "colored": 96,
+        "coloredBox": {
+          "x": 36,
+          "y": 24,
+          "w": 12,
+          "h": 8
+        }
+      }
+    }
+  },
+  "errors": []
+}
