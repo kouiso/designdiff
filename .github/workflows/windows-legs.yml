@@ -114,9 +114,25 @@ jobs:
           # assemble-campaign-ledger がこれを許容する。
           evdir="docs/evidence/round1-windows"
           mkdir -p "$evdir"
-          git diff -- app/desktop/e2e/native-figma-node-fix.mjs > "$evdir/harness-patch-native-figma-node-fix.patch"
-          HASH=$(python -c "import hashlib;print(hashlib.sha256(open('app/desktop/e2e/native-figma-node-fix.mjs','rb').read()).hexdigest())")
-          printf '{"patches":[{"path":"app/desktop/e2e/native-figma-node-fix.mjs","sha256":"%s","reason":"crop canvas clipped inside overflow container on windows-latest; adds scrollIntoView and uses dragTo"}]}\n' "$HASH" > "$evdir/harness-patches.json"
+          # 凍結 SHA との差分は全部ここで記録する。script/ の PR head 差し替え分と
+          # driver パッチの両方が dirtyState に出るため、片方だけ宣言すると台帳取込で
+          # 窓外 dirty として reject される。
+          git diff HEAD -- . ':!docs/evidence' > "$evdir/harness-patch-all.patch"
+          python - "$evdir" <<'PYREC'
+          import hashlib, json, subprocess, sys
+          evdir = sys.argv[1]
+          paths = subprocess.check_output(
+              ["git", "diff", "HEAD", "--name-only", "--", ".", ":!docs/evidence"], text=True
+          ).split("\n")
+          patches = []
+          for path in [p for p in paths if p]:
+              with open(path, "rb") as f:
+                  digest = hashlib.sha256(f.read()).hexdigest()
+              patches.append({"path": path, "sha256": digest, "reason": "harness replaced from PR head or patched at run time on windows-latest"})
+          with open(evdir + "/harness-patches.json", "w", encoding="utf-8") as f:
+              json.dump({"patches": patches}, f, indent=2)
+          print("recorded", len(patches), "harness paths")
+          PYREC
 
       - name: Run windows legs round 1
         shell: bash
@@ -164,6 +180,7 @@ jobs:
           cp /tmp/ir-driver.cmd "/c/Windows/Temp/ir-driver.cmd"
           cat > /tmp/ir-run.cmd <<EOF
           @echo on
+          del C:\Windows\Temp\ir-run.exit C:\Windows\Temp\ir-run.log 2>nul
           icacls "$repowin" /grant "NETWORK SERVICE:(OI)(CI)(RX)" /T
           icacls "$nodedir" /grant "NETWORK SERVICE:(OI)(CI)(RX)" /T
           icacls "$pwcache" /grant "NETWORK SERVICE:(OI)(CI)(RX)" /T
@@ -185,19 +202,28 @@ jobs:
           EOF
           cmd //c "$(cygpath -w /tmp/ir-run.cmd)"
           python - <<PY
-          import json,os,datetime
+          import json,os,sys,datetime
           evi=r"$eviwin"
           mfile=r"$(cygpath -w "$PWD/docs/evidence/runs-windows-r1-remaining.manifest.json")"
           efile=os.path.join(evi,'manifest.json')
-          if os.path.exists(efile) and os.path.exists(mfile):
-              mtime=datetime.datetime.fromtimestamp(os.path.getmtime(efile),datetime.timezone.utc).isoformat().replace('+00:00','Z')
-              runs=json.load(open(mfile))
-              runs=[r for r in runs if r.get('driver')!='app/desktop/e2e/native-ignore-region.mjs']
-              runs.append({"driver":"app/desktop/e2e/native-ignore-region.mjs","evidenceDir":"docs/evidence/round1-windows/native-ignore-region","evidenceFile":"manifest.json","executedAt":mtime,"environment":"windows","buildDigest":"","roundExecutionId":"round1","note":"executed as NT AUTHORITY NETWORK SERVICE: admin tokens bypass deny ACEs via SeBackupPrivilege backup-intent opens"})
-              json.dump(runs,open(mfile,'w'),indent=2)
-              print('manifest entry appended, executedAt=',mtime)
-          else:
-              print('skip append: evidenceFile exists=',os.path.exists(efile),'manifest exists=',os.path.exists(mfile))
+          exitf=r"C:\Windows\Temp\ir-run.exit"
+          # driver の失敗・タイムアウト・証跡欠落はジョブ失敗にする。成功を確認した後でだけ
+          # manifest に追記し、証跡無しの緑を作らない。
+          if not os.path.exists(exitf):
+              print('FAIL: ir-run.exit missing (driver timed out or never started)'); sys.exit(1)
+          code=open(exitf).read().strip()
+          if code!='0':
+              print('FAIL: native-ignore-region exit code',code); sys.exit(1)
+          if not os.path.exists(efile):
+              print('FAIL: evidence manifest missing',efile); sys.exit(1)
+          if not os.path.exists(mfile):
+              print('FAIL: runner manifest missing',mfile); sys.exit(1)
+          mtime=datetime.datetime.fromtimestamp(os.path.getmtime(efile),datetime.timezone.utc).isoformat().replace('+00:00','Z')
+          runs=json.load(open(mfile))
+          runs=[r for r in runs if r.get('driver')!='app/desktop/e2e/native-ignore-region.mjs']
+          runs.append({"driver":"app/desktop/e2e/native-ignore-region.mjs","evidenceDir":"docs/evidence/round1-windows/native-ignore-region","evidenceFile":"manifest.json","executedAt":mtime,"environment":"windows","buildDigest":"","roundExecutionId":"round1","note":"executed as NT AUTHORITY NETWORK SERVICE: admin tokens bypass deny ACEs via SeBackupPrivilege backup-intent opens"})
+          json.dump(runs,open(mfile,'w'),indent=2)
+          print('manifest entry appended, executedAt=',mtime)
           PY
       - name: Collect evidence
         shell: bash
@@ -348,9 +374,25 @@ jobs:
           # assemble-campaign-ledger がこれを許容する。
           evdir="docs/evidence/round2-windows"
           mkdir -p "$evdir"
-          git diff -- app/desktop/e2e/native-figma-node-fix.mjs > "$evdir/harness-patch-native-figma-node-fix.patch"
-          HASH=$(python -c "import hashlib;print(hashlib.sha256(open('app/desktop/e2e/native-figma-node-fix.mjs','rb').read()).hexdigest())")
-          printf '{"patches":[{"path":"app/desktop/e2e/native-figma-node-fix.mjs","sha256":"%s","reason":"crop canvas clipped inside overflow container on windows-latest; adds scrollIntoView and uses dragTo"}]}\n' "$HASH" > "$evdir/harness-patches.json"
+          # 凍結 SHA との差分は全部ここで記録する。script/ の PR head 差し替え分と
+          # driver パッチの両方が dirtyState に出るため、片方だけ宣言すると台帳取込で
+          # 窓外 dirty として reject される。
+          git diff HEAD -- . ':!docs/evidence' > "$evdir/harness-patch-all.patch"
+          python - "$evdir" <<'PYREC'
+          import hashlib, json, subprocess, sys
+          evdir = sys.argv[1]
+          paths = subprocess.check_output(
+              ["git", "diff", "HEAD", "--name-only", "--", ".", ":!docs/evidence"], text=True
+          ).split("\n")
+          patches = []
+          for path in [p for p in paths if p]:
+              with open(path, "rb") as f:
+                  digest = hashlib.sha256(f.read()).hexdigest()
+              patches.append({"path": path, "sha256": digest, "reason": "harness replaced from PR head or patched at run time on windows-latest"})
+          with open(evdir + "/harness-patches.json", "w", encoding="utf-8") as f:
+              json.dump({"patches": patches}, f, indent=2)
+          print("recorded", len(patches), "harness paths")
+          PYREC
 
       - name: Run windows legs round 2
         shell: bash
@@ -396,6 +438,7 @@ jobs:
           cp /tmp/ir-driver.cmd "/c/Windows/Temp/ir-driver.cmd"
           cat > /tmp/ir-run.cmd <<EOF
           @echo on
+          del C:\Windows\Temp\ir-run.exit C:\Windows\Temp\ir-run.log 2>nul
           icacls "$repowin" /grant "NETWORK SERVICE:(OI)(CI)(RX)" /T
           icacls "$nodedir" /grant "NETWORK SERVICE:(OI)(CI)(RX)" /T
           icacls "$pwcache" /grant "NETWORK SERVICE:(OI)(CI)(RX)" /T
@@ -417,19 +460,28 @@ jobs:
           EOF
           cmd //c "$(cygpath -w /tmp/ir-run.cmd)"
           python - <<PY
-          import json,os,datetime
+          import json,os,sys,datetime
           evi=r"$eviwin"
           mfile=r"$(cygpath -w "$PWD/docs/evidence/runs-windows-r2-remaining.manifest.json")"
           efile=os.path.join(evi,'manifest.json')
-          if os.path.exists(efile) and os.path.exists(mfile):
-              mtime=datetime.datetime.fromtimestamp(os.path.getmtime(efile),datetime.timezone.utc).isoformat().replace('+00:00','Z')
-              runs=json.load(open(mfile))
-              runs=[r for r in runs if r.get('driver')!='app/desktop/e2e/native-ignore-region.mjs']
-              runs.append({"driver":"app/desktop/e2e/native-ignore-region.mjs","evidenceDir":"docs/evidence/round2-windows/native-ignore-region","evidenceFile":"manifest.json","executedAt":mtime,"environment":"windows","buildDigest":"","roundExecutionId":"round2","note":"executed as NT AUTHORITY NETWORK SERVICE: admin tokens bypass deny ACEs via SeBackupPrivilege backup-intent opens"})
-              json.dump(runs,open(mfile,'w'),indent=2)
-              print('manifest entry appended, executedAt=',mtime)
-          else:
-              print('skip append: evidenceFile exists=',os.path.exists(efile),'manifest exists=',os.path.exists(mfile))
+          exitf=r"C:\Windows\Temp\ir-run.exit"
+          # driver の失敗・タイムアウト・証跡欠落はジョブ失敗にする。成功を確認した後でだけ
+          # manifest に追記し、証跡無しの緑を作らない。
+          if not os.path.exists(exitf):
+              print('FAIL: ir-run.exit missing (driver timed out or never started)'); sys.exit(1)
+          code=open(exitf).read().strip()
+          if code!='0':
+              print('FAIL: native-ignore-region exit code',code); sys.exit(1)
+          if not os.path.exists(efile):
+              print('FAIL: evidence manifest missing',efile); sys.exit(1)
+          if not os.path.exists(mfile):
+              print('FAIL: runner manifest missing',mfile); sys.exit(1)
+          mtime=datetime.datetime.fromtimestamp(os.path.getmtime(efile),datetime.timezone.utc).isoformat().replace('+00:00','Z')
+          runs=json.load(open(mfile))
+          runs=[r for r in runs if r.get('driver')!='app/desktop/e2e/native-ignore-region.mjs']
+          runs.append({"driver":"app/desktop/e2e/native-ignore-region.mjs","evidenceDir":"docs/evidence/round2-windows/native-ignore-region","evidenceFile":"manifest.json","executedAt":mtime,"environment":"windows","buildDigest":"","roundExecutionId":"round2","note":"executed as NT AUTHORITY NETWORK SERVICE: admin tokens bypass deny ACEs via SeBackupPrivilege backup-intent opens"})
+          json.dump(runs,open(mfile,'w'),indent=2)
+          print('manifest entry appended, executedAt=',mtime)
           PY
       - name: Collect evidence
         shell: bash
