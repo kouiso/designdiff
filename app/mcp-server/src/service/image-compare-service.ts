@@ -1855,6 +1855,22 @@ export async function compareImages(
     // 比較でも issue として残す。残さないと、足した行が普通の色・構造差に見えて
     // 「実装に無い行」という情報が呼び出し側へ届かない。
     if (missingRowPixelCount > 0) {
+      // 白い欠落行は平坦化後の SSIM では一致に見える。全体の構造一致は、
+      // 実際に撮れている採点面の割合を超えないようにする。既存の低い SSIM を
+      // 二重に減点せず上限だけを設け、下端の復元を verify_fix の改善量へ反映する。
+      const scorablePixelCount =
+        width * height - (diffReport.structuralAssessment?.excludedPixelCount ?? 0);
+      if (scorablePixelCount > 0) {
+        const coverage = Math.max(0, 1 - missingRowPixelCount / scorablePixelCount);
+        diffReport = {
+          ...diffReport,
+          regionScores: diffReport.regionScores.map((region) =>
+            region.scope === "root"
+              ? { ...region, structure: Math.min(region.structure, coverage) }
+              : region,
+          ),
+        };
+      }
       const missingIssue = {
         regionId: "missing-bottom-rows",
         bbox: { x: 0, y: finalScreenshotHeight, w: width, h: screenshotBottomPaddingRows },

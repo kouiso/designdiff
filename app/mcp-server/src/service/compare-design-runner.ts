@@ -1542,7 +1542,7 @@ function isSameCaptureCondition(
   if (entry.captureWidth !== captureWidth) {
     return false;
   }
-  if (heightIsContentDriven) {
+  if (heightIsContentDriven || (entry.normalization?.screenshotBottomPaddingRows ?? 0) > 0) {
     return true;
   }
   return entry.captureHeight === captureHeight;
@@ -1559,11 +1559,13 @@ function buildCaptureAwareCritique(
     return undefined;
   }
 
-  const comparableReports = priorComparisons
-    .filter((entry) =>
-      isSameCaptureCondition(entry, captureWidth, captureHeight, heightIsContentDriven),
-    )
-    .map((entry) => entry.report);
+  // 直近の固定高が違うときに、古い足し行の回だけを残して比較しない。
+  // ループガードと同じく各回の条件が全て揃う系列だけを採用する。
+  const comparableReports = priorComparisons.every((entry) =>
+    isSameCaptureCondition(entry, captureWidth, captureHeight, heightIsContentDriven),
+  )
+    ? priorComparisons.map((entry) => entry.report)
+    : [];
   if (comparableReports.length > 0) {
     return selfCritique(report, comparableReports);
   }
@@ -1984,16 +1986,13 @@ export async function runCompareDesign(
   // 繋いだ縦長画像の高さは、実装の中身の量と重なりの測り方で毎回わずかに変わる。
   // 撮影条件が変わったと見なすと、履歴が毎回リセットされて足踏みを検出できん。
   // 上端揃えで足りない行を足した回も、撮影高さが実装の中身の量で変わる。
-  // 足し行の回から高さを直して等しくなった回も同じ修理の続きなので、直前に足し行が
-  // あった回は履歴を切らない。切るとその遷移で plateau / 回数制限が振り出しに戻る。
-  // 見るのは直前の1回だけ。履歴のどこかに足し行があるだけで高さを見なくすると、
-  // その後に別の高さで撮った入力まで同じ条件として並べてしまう。
-  const previousComparison = priorComparisons.at(-1);
+  // この回自身の撮影条件だけを記録する。前回の足し行を今回へ引き継ぐと、
+  // 修復後の固定高を別の高さへ変えた回まで同条件として許してしまう。
+  // 足し行の履歴との照合は、それぞれの回の条件を使って判定する。
   const heightIsContentDriven =
     typeof args.screenshot_url === "string" ||
     resolvedScreenshot.scrollCapture !== undefined ||
-    (comparison.normalization?.screenshotBottomPaddingRows ?? 0) > 0 ||
-    (previousComparison?.normalization?.screenshotBottomPaddingRows ?? 0) > 0;
+    (comparison.normalization?.screenshotBottomPaddingRows ?? 0) > 0;
   const critique = buildCaptureAwareCritique(
     comparison.diffReport,
     priorComparisons,

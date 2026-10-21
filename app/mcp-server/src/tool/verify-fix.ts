@@ -11,6 +11,7 @@ import {
   parseComparisonCampaignKey,
   type ComparisonConditionsInput,
   type FixRegionComparison,
+  type DiffReport,
   type IgnoreRegion,
   type VerificationContext,
   type VerificationContextPayload,
@@ -198,8 +199,8 @@ const alignLegacyBackgroundExplicit = (
 // 上端揃えの比較 (足りない行を足した回) と、高さが揃って足す行が無くなった回は、
 // どちらも 1:1 で上端を揃えて採点する同じ物差し。基準が足し行ありで、直した後に
 // 高さが揃うのは verify_fix が成功すべき通常の流れなので、鍵が消えただけでは
-// 文脈変更にしない。逆 (基準に鍵が無く今回だけ上端揃え) は、contain 縮小で採った
-// 旧基準と物差しが違う可能性があるので文脈変更として扱う。
+// 文脈変更にしない。逆向きも非 contain の 1:1 同士なら同じ物差しなので、
+// 呼び出し側で両方向を照合し、ページが短くなる回帰も検証する。
 // 比較方式 (contain / 直接 1:1) は実装の修正で変わる比較結果であり撮影条件では
 // ない。高さを直すと contain から直接比較へ移るのが verify_fix の普通の流れ
 // なので、この鍵は正規化比較の対象にせず、top-aligned の鍵を緩めてよいかだけ
@@ -260,7 +261,10 @@ const assertMatchingContext = (
     ),
   );
   const currentForComparison = alignNormalizationMethod(
-    alignLegacyBackgroundExplicit(currentPayload, currentBackgroundExplicit),
+    alignPaddingAlignment(
+      alignLegacyBackgroundExplicit(currentPayload, currentBackgroundExplicit),
+      priorPayload,
+    ),
   );
   if (
     canonicalizeVerificationContextPayload(priorForComparison) ===
@@ -315,6 +319,17 @@ const requireMatchedRegions = (
   }
   return regionComparison;
 };
+
+const missingScreenshotPixels = (report: DiffReport): number =>
+  report.issues.reduce((count, issue) => {
+    const value = issue.evidence.value;
+    return issue.evidence.signal === "screenshot_bottom_rows_missing" &&
+      typeof value === "number" &&
+      Number.isFinite(value) &&
+      value > 0
+      ? count + value
+      : count;
+  }, 0);
 
 export function registerVerifyFix(server: McpServer): void {
   server.registerTool(
@@ -389,18 +404,32 @@ export function registerVerifyFix(server: McpServer): void {
           sideEffects,
         } = regionComparison;
 
+        const pixelVerdict = buildVerdict(
+          structureDelta,
+          colorDelta,
+          shapeDelta,
+          previousRegion.color,
+          currentRegion.color,
+        );
+        const missingPixelDelta =
+          currentRegion.scope === "root"
+            ? missingScreenshotPixels(priorEntry.result.diffReport) -
+              missingScreenshotPixels(comparison.result.diffReport)
+            : 0;
+        // 1行の欠落も critical。SSIM の微小変化の閾値で無視すると、白い下端の
+        // 追加・削除が unchanged になり、AI が同じ修正を繰り返す。
+        const verdict =
+          missingPixelDelta < 0
+            ? "regressed"
+            : missingPixelDelta > 0 && pixelVerdict === "unchanged"
+              ? "improved"
+              : pixelVerdict;
         const structuredContent = VerifyFixResultSchema.parse({
           fixedNode: args.expected_target_node_id,
           structureDelta,
           colorDelta,
           shapeDelta,
-          verdict: buildVerdict(
-            structureDelta,
-            colorDelta,
-            shapeDelta,
-            previousRegion.color,
-            currentRegion.color,
-          ),
+          verdict,
           comparisonStatus: comparison.result.status,
           sideEffects,
         });

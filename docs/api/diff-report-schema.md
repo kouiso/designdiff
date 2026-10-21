@@ -163,7 +163,7 @@ Field meanings:
 - `regionId`: stable region identifier
 - `bbox`: region bounds with `x`, `y`, `w`, `h`
 - `figmaNodeId`: optional Figma node link for that region
-- `structure`: SSIM-like structural score from `0` to `1`
+- `structure`: SSIM-like structural score from `0` to `1`. For a root (`whole-frame`) row with missing screenshot bottom rows, it is capped by the fraction of the unmasked canvas that was actually captured. Missing white rows therefore cannot score as fully matching; existing lower scores are not penalized twice. `verify_fix` also treats a change in the explicit critical missing-row count as meaningful even when the structural delta is below the usual noise threshold.
 - `color`: approximate color difference on a `0+` scale
 - `shape`: reserved numeric slot, currently `0` in the current builder
 - `layout`: reserved numeric slot, currently `0` in the current builder

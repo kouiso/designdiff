@@ -160,7 +160,7 @@ function hasMatchingCaptureDimensions(entry: LoopStateEntry, input: LoopIteratio
   if (typeof input.captureWidth !== "number" || entry.captureWidth !== input.captureWidth) {
     return false;
   }
-  if (input.heightIsContentDriven === true) {
+  if (input.heightIsContentDriven === true || entry.heightIsContentDriven === true) {
     return true;
   }
   return entry.captureHeight === input.captureHeight;
@@ -216,6 +216,7 @@ export async function recordIterationAndEvaluate(
       matchRate: input.matchRate,
       captureWidth: input.captureWidth,
       captureHeight: input.captureHeight,
+      heightIsContentDriven: input.heightIsContentDriven,
       diffPixelCount: input.diffPixelCount,
       regionCount: input.regionCount,
       perceptibleDiffRatio: input.perceptibleDiffRatio,
