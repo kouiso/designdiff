@@ -235,9 +235,7 @@ describe("classifySameTokenRasterization", () => {
     return pixels;
   };
 
-  it("トポロジ強一致の窓ではインク量差を 0.35 まで許す", () => {
-    // 現行の強形状時の許容境界を固定する。フォント指定の無いこの画素対は
-    // 描画差とウェイト変更を分離する正本にはならないため、実太線化の対照も別に検証する。
+  it("トポロジ強一致でも既存の不透明列を増やす太線化を扱わない", () => {
     const design = bigPixels([10, 14, 19]);
     const screenshot = bigPixels([10, 14, 19]);
     // 既存 stem の脇に列を足して墨量を約30%増やす (51px→73px)。
@@ -261,11 +259,26 @@ describe("classifySameTokenRasterization", () => {
       { x: 8, y: 8, w: 14, h: 20 },
       0.1,
     );
-    expect(evidence).toMatchObject({
-      classification: "same-token-rasterization",
+    expect(evidence).toBeUndefined();
+  });
+
+  it("不透明coreが同じAA被覆差では強トポロジの0.35境界を維持する", () => {
+    const design = bigPixels([10, 14, 19]);
+    const screenshot = bigPixels([10, 14, 19]);
+    // 境界値の正例は純背景を不透明列へ変えず、中間alphaだけを変える。
+    for (const x of [11, 15, 20]) {
+      for (let y = 10; y < 27; y++) {
+        const index = (y * BIG + x) * 4;
+        design.fill(102, index, index + 3);
+        screenshot.fill(204, index, index + 3);
+      }
+    }
+    const args = [design, screenshot, BIG, BIG, { x: 8, y: 8, w: 14, h: 20 }] as const;
+    expect(classifySameTokenRasterization(...args, 0.1)).toMatchObject({
+      inkCoverageDelta: expect.closeTo(2 / 7, 10),
       inkLimit: 0.35,
     });
-    expect(evidence?.inkCoverageDelta).toBeGreaterThan(0.25);
+    expect(classifySameTokenRasterization(...args, 0.2)).toBeUndefined();
   });
 
   it("トポロジ一致が弱い窓ではインク量差 0.25 超を扱わない", () => {

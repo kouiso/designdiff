@@ -1,0 +1,899 @@
+{
+  "scope": "Original four intentional opaque centered-stem width changes, independently known areas and native coordinates. Two production MCP PNG comparisons retrieve full persisted reports; two synthetic sections execute compareImages in fresh child processes. Section API calls are explicitly not production MCP or live Figma.",
+  "mode": "green",
+  "greenAssertionsEnabled": true,
+  "executionCommand": [
+    "/tmp/designdiff-toolchain/node-v25.6.1-linux-x64/bin/node",
+    "/workspace/designdiff/docs/evidence/issue-376-stroke-guard/reproduce.mjs",
+    "/workspace/designdiff",
+    "docs/evidence/issue-376-stroke-guard/runtime-after.json",
+    "green",
+    "docs/evidence/issue-376-stroke-guard/runtime-before.json"
+  ],
+  "environment": {
+    "node": "v25.6.1",
+    "platform": "linux",
+    "arch": "x64",
+    "fonts": "none",
+    "realImages": "none"
+  },
+  "scriptSha256": "0cd26e6171e057c3e31e16b59ce1943e8eecae8c625266880788368799c57c5e",
+  "sourceBefore": {
+    "baseCommit": "6f5f45ebca8074edf24094fe50b2debf26077e1c",
+    "trackedDiffSha256": "0146edb6e7994ae17fdf266096823d1921bab12f5b57fc2116469dc3ef36b65e",
+    "sourceSha256": {
+      "package/shared/src/signal/glyph-edge-raster.ts": "268761c604e4c5a75f16f874ac6cb760198b5412e033ad3fd705bd1ed181242c",
+      "package/shared/src/signal/text-reflow.ts": "7e428bc32e73ba8f91c6ff8dfa73449c09ad88f2fd11b820884230a0e9c13d8c",
+      "app/mcp-server/src/service/diff-report-builder.ts": "e225a893af8b6a4103c0ce63b34bcd8e7737a8dfcb55fc94fa2638f8ee81ed58",
+      "app/mcp-server/src/service/image-compare-service.ts": "69a1c242dd4d881efee41886f1d47f942b0564cb871f6e33d6c8f9b578c5a484"
+    }
+  },
+  "sourceAfter": {
+    "baseCommit": "6f5f45ebca8074edf24094fe50b2debf26077e1c",
+    "trackedDiffSha256": "0146edb6e7994ae17fdf266096823d1921bab12f5b57fc2116469dc3ef36b65e",
+    "sourceSha256": {
+      "package/shared/src/signal/glyph-edge-raster.ts": "268761c604e4c5a75f16f874ac6cb760198b5412e033ad3fd705bd1ed181242c",
+      "package/shared/src/signal/text-reflow.ts": "7e428bc32e73ba8f91c6ff8dfa73449c09ad88f2fd11b820884230a0e9c13d8c",
+      "app/mcp-server/src/service/diff-report-builder.ts": "e225a893af8b6a4103c0ce63b34bcd8e7737a8dfcb55fc94fa2638f8ee81ed58",
+      "app/mcp-server/src/service/image-compare-service.ts": "69a1c242dd4d881efee41886f1d47f942b0564cb871f6e33d6c8f9b578c5a484"
+    }
+  },
+  "distSha256": {
+    "package/shared/dist/signal/glyph-edge-raster.js": "e213dab8735ec978cc776e38e87191107b1783b6cec3edf28567de24f28b34b7",
+    "package/shared/dist/signal/text-reflow.js": "7e14d513725ba1b74581afbbfabe597b8b9c2c59186a3fdd5c8763f373298022",
+    "app/mcp-server/dist/service/diff-report-builder.js": "7c5bdc90e0720eced21fa973a63efff4cf8043a1b659437fc44c7a39b4be3127",
+    "app/mcp-server/dist/service/image-compare-service.js": "0cfa2a990c4dc50bd494476fef1e2a742d5a24114e7cb3c060a9446cbf782775"
+  },
+  "distStableThroughoutRun": true,
+  "sourceExecutionWarning": "Runtime claims refer to recorded dist bytes; source snapshots are separately recorded.",
+  "baselineEvidenceSha256": "a7b7b5f83f994ab2a0dd15e057efb5b89c635b81f6b74b4c64eaef0b2a044a22",
+  "cases": [
+    {
+      "name": "5-to-7/production-mcp-png",
+      "route": "production-mcp-png",
+      "freshProcess": true,
+      "inputEvidence": {
+        "size": 64,
+        "centers": [20, 30, 40],
+        "widths": [5, 7],
+        "section": null,
+        "inputs": [
+          {
+            "name": "design",
+            "inkPixels": 255,
+            "rawSha256": "57b1ea037f40eb4b662823a26f815879ffba1b382ad36cb8feb2c6a81032c6a8",
+            "pngSha256": "78b83df137e1f7eac16ccdbab786ba37c557a5077e701a040df1dcf0c21933fb"
+          },
+          {
+            "name": "screenshot",
+            "inkPixels": 357,
+            "rawSha256": "81df65ac0e0f12e1a410f17ed3b7795c89b452d3a3347245d022d10d577f902d",
+            "pngSha256": "25685dfd662446ded74dc26443b2c0d6b6974dc64fa121cf1f3dbd1e2073fd47"
+          }
+        ]
+      },
+      "independentGeometry": {
+        "symmetricExpansionPerSidePx": 1,
+        "stemLengthPx": 17,
+        "stemCount": 3,
+        "changedPixelCount": 102,
+        "expectedStatus": "FAIL"
+      },
+      "actualStatus": "FAIL",
+      "expectedStatus": "FAIL",
+      "criticalOpaqueStrokeIssueCount": 6,
+      "violatesExpectedStatus": false,
+      "issues": [
+        {
+          "kind": "size",
+          "severity": "critical",
+          "bbox": {
+            "x": 17,
+            "y": 20,
+            "w": 7,
+            "h": 5
+          },
+          "signal": "opaque_stroke_width_change",
+          "value": 2,
+          "expected": "5px opaque extent on x",
+          "actual": "7px across 5 scanlines; 10 hard background/foreground changes"
+        },
+        {
+          "kind": "position",
+          "severity": "minor",
+          "bbox": {
+            "x": 17,
+            "y": 20,
+            "w": 1,
+            "h": 17
+          },
+          "signal": "local_displacement",
+          "value": 1,
+          "expected": "0px",
+          "actual": "line/edge moved (-1, 0)px, ΔE 68.67 -> 0.00 after alignment"
+        },
+        {
+          "kind": "size",
+          "severity": "critical",
+          "bbox": {
+            "x": 17,
+            "y": 20,
+            "w": 7,
+            "h": 5
+          },
+          "signal": "opaque_stroke_width_change",
+          "value": 2,
+          "expected": "5px opaque extent on x",
+          "actual": "7px across 5 scanlines; 10 hard background/foreground changes"
+        },
+        {
+          "kind": "color",
+          "severity": "critical",
+          "bbox": {
+            "x": 23,
+            "y": 20,
+            "w": 1,
+            "h": 17
+          },
+          "signal": "delta_e_2000",
+          "value": 68.6681613504577,
+          "expected": "< 2",
+          "actual": 68.6681613504577
+        },
+        {
+          "kind": "size",
+          "severity": "critical",
+          "bbox": {
+            "x": 27,
+            "y": 20,
+            "w": 7,
+            "h": 5
+          },
+          "signal": "opaque_stroke_width_change",
+          "value": 2,
+          "expected": "5px opaque extent on x",
+          "actual": "7px across 5 scanlines; 10 hard background/foreground changes"
+        },
+        {
+          "kind": "color",
+          "severity": "critical",
+          "bbox": {
+            "x": 27,
+            "y": 20,
+            "w": 1,
+            "h": 17
+          },
+          "signal": "delta_e_2000",
+          "value": 68.6681613504577,
+          "expected": "< 2",
+          "actual": 68.6681613504577
+        },
+        {
+          "kind": "size",
+          "severity": "critical",
+          "bbox": {
+            "x": 27,
+            "y": 20,
+            "w": 7,
+            "h": 5
+          },
+          "signal": "opaque_stroke_width_change",
+          "value": 2,
+          "expected": "5px opaque extent on x",
+          "actual": "7px across 5 scanlines; 10 hard background/foreground changes"
+        },
+        {
+          "kind": "color",
+          "severity": "critical",
+          "bbox": {
+            "x": 33,
+            "y": 20,
+            "w": 1,
+            "h": 17
+          },
+          "signal": "delta_e_2000",
+          "value": 68.6681613504577,
+          "expected": "< 2",
+          "actual": 68.6681613504577
+        },
+        {
+          "kind": "size",
+          "severity": "critical",
+          "bbox": {
+            "x": 37,
+            "y": 20,
+            "w": 7,
+            "h": 5
+          },
+          "signal": "opaque_stroke_width_change",
+          "value": 2,
+          "expected": "5px opaque extent on x",
+          "actual": "7px across 5 scanlines; 10 hard background/foreground changes"
+        },
+        {
+          "kind": "color",
+          "severity": "critical",
+          "bbox": {
+            "x": 37,
+            "y": 20,
+            "w": 1,
+            "h": 17
+          },
+          "signal": "delta_e_2000",
+          "value": 68.6681613504577,
+          "expected": "< 2",
+          "actual": 68.6681613504577
+        },
+        {
+          "kind": "size",
+          "severity": "critical",
+          "bbox": {
+            "x": 37,
+            "y": 20,
+            "w": 7,
+            "h": 5
+          },
+          "signal": "opaque_stroke_width_change",
+          "value": 2,
+          "expected": "5px opaque extent on x",
+          "actual": "7px across 5 scanlines; 10 hard background/foreground changes"
+        },
+        {
+          "kind": "position",
+          "severity": "minor",
+          "bbox": {
+            "x": 43,
+            "y": 20,
+            "w": 1,
+            "h": 17
+          },
+          "signal": "local_displacement",
+          "value": 1,
+          "expected": "0px",
+          "actual": "line/edge moved (1, 0)px, ΔE 68.67 -> 0.00 after alignment"
+        }
+      ],
+      "stderr": "(node:24044) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n[mcp] log file: /tmp/figdiff-376-opaque-stroke-WlvnDc/logs/mcp-server.log\n"
+    },
+    {
+      "name": "5-to-7/fresh-child-built-api-section",
+      "route": "fresh-child-built-api-section",
+      "freshProcess": true,
+      "inputEvidence": {
+        "size": 64,
+        "centers": [20, 30, 40],
+        "widths": [5, 7],
+        "section": {
+          "id": "fc666610ea9f86f8bcb6d269f766bce64ef0225f0ca1e4f31edd541a4aa8993e",
+          "name": "Constructed frame",
+          "type": "FRAME",
+          "absoluteBoundingBox": {
+            "x": 0,
+            "y": 0,
+            "width": 64,
+            "height": 64
+          },
+          "absoluteRenderBounds": null,
+          "fills": [],
+          "strokes": [],
+          "effects": [],
+          "children": [
+            {
+              "id": "67f6d0b1f1d297261596d866b55e0801cc2127331064b4f4d0c7ed21363f101d",
+              "name": "Constructed section",
+              "type": "FRAME",
+              "absoluteBoundingBox": {
+                "x": 0,
+                "y": 0,
+                "width": 64,
+                "height": 64
+              },
+              "absoluteRenderBounds": null,
+              "fills": [],
+              "strokes": [],
+              "effects": [],
+              "children": []
+            }
+          ]
+        },
+        "inputs": [
+          {
+            "name": "design",
+            "inkPixels": 255,
+            "rawSha256": "57b1ea037f40eb4b662823a26f815879ffba1b382ad36cb8feb2c6a81032c6a8",
+            "pngSha256": "78b83df137e1f7eac16ccdbab786ba37c557a5077e701a040df1dcf0c21933fb"
+          },
+          {
+            "name": "screenshot",
+            "inkPixels": 357,
+            "rawSha256": "81df65ac0e0f12e1a410f17ed3b7795c89b452d3a3347245d022d10d577f902d",
+            "pngSha256": "25685dfd662446ded74dc26443b2c0d6b6974dc64fa121cf1f3dbd1e2073fd47"
+          }
+        ]
+      },
+      "independentGeometry": {
+        "symmetricExpansionPerSidePx": 1,
+        "stemLengthPx": 17,
+        "stemCount": 3,
+        "changedPixelCount": 102,
+        "expectedStatus": "FAIL"
+      },
+      "actualStatus": "FAIL",
+      "expectedStatus": "FAIL",
+      "criticalOpaqueStrokeIssueCount": 7,
+      "violatesExpectedStatus": false,
+      "issues": [
+        {
+          "kind": "size",
+          "severity": "critical",
+          "bbox": {
+            "x": 17,
+            "y": 20,
+            "w": 7,
+            "h": 5
+          },
+          "signal": "opaque_stroke_width_change",
+          "value": 2,
+          "expected": "5px opaque extent on x",
+          "actual": "7px across 5 scanlines; 10 hard background/foreground changes"
+        },
+        {
+          "kind": "position",
+          "severity": "major",
+          "bbox": {
+            "x": 0,
+            "y": 0,
+            "w": 64,
+            "h": 64
+          },
+          "signal": "ssim+hausdorff",
+          "value": 0.9480850836184053,
+          "expected": ">= 0.95",
+          "actual": 0.9480850836184053
+        },
+        {
+          "kind": "size",
+          "severity": "critical",
+          "bbox": {
+            "x": 17,
+            "y": 20,
+            "w": 7,
+            "h": 5
+          },
+          "signal": "opaque_stroke_width_change",
+          "value": 2,
+          "expected": "5px opaque extent on x",
+          "actual": "7px across 5 scanlines; 10 hard background/foreground changes"
+        },
+        {
+          "kind": "size",
+          "severity": "critical",
+          "bbox": {
+            "x": 17,
+            "y": 20,
+            "w": 7,
+            "h": 5
+          },
+          "signal": "opaque_stroke_width_change",
+          "value": 2,
+          "expected": "5px opaque extent on x",
+          "actual": "7px across 5 scanlines; 10 hard background/foreground changes"
+        },
+        {
+          "kind": "color",
+          "severity": "critical",
+          "bbox": {
+            "x": 23,
+            "y": 20,
+            "w": 1,
+            "h": 17,
+            "diffPixelCount": 17
+          },
+          "signal": "delta_e_2000",
+          "value": 68.6681613504577,
+          "expected": "< 2",
+          "actual": 68.6681613504577
+        },
+        {
+          "kind": "size",
+          "severity": "critical",
+          "bbox": {
+            "x": 27,
+            "y": 20,
+            "w": 7,
+            "h": 5
+          },
+          "signal": "opaque_stroke_width_change",
+          "value": 2,
+          "expected": "5px opaque extent on x",
+          "actual": "7px across 5 scanlines; 10 hard background/foreground changes"
+        },
+        {
+          "kind": "color",
+          "severity": "critical",
+          "bbox": {
+            "x": 27,
+            "y": 20,
+            "w": 1,
+            "h": 17,
+            "diffPixelCount": 17
+          },
+          "signal": "delta_e_2000",
+          "value": 68.6681613504577,
+          "expected": "< 2",
+          "actual": 68.6681613504577
+        },
+        {
+          "kind": "size",
+          "severity": "critical",
+          "bbox": {
+            "x": 27,
+            "y": 20,
+            "w": 7,
+            "h": 5
+          },
+          "signal": "opaque_stroke_width_change",
+          "value": 2,
+          "expected": "5px opaque extent on x",
+          "actual": "7px across 5 scanlines; 10 hard background/foreground changes"
+        },
+        {
+          "kind": "color",
+          "severity": "critical",
+          "bbox": {
+            "x": 33,
+            "y": 20,
+            "w": 1,
+            "h": 17,
+            "diffPixelCount": 17
+          },
+          "signal": "delta_e_2000",
+          "value": 68.6681613504577,
+          "expected": "< 2",
+          "actual": 68.6681613504577
+        },
+        {
+          "kind": "size",
+          "severity": "critical",
+          "bbox": {
+            "x": 37,
+            "y": 20,
+            "w": 7,
+            "h": 5
+          },
+          "signal": "opaque_stroke_width_change",
+          "value": 2,
+          "expected": "5px opaque extent on x",
+          "actual": "7px across 5 scanlines; 10 hard background/foreground changes"
+        },
+        {
+          "kind": "color",
+          "severity": "critical",
+          "bbox": {
+            "x": 37,
+            "y": 20,
+            "w": 1,
+            "h": 17,
+            "diffPixelCount": 17
+          },
+          "signal": "delta_e_2000",
+          "value": 68.6681613504577,
+          "expected": "< 2",
+          "actual": 68.6681613504577
+        },
+        {
+          "kind": "size",
+          "severity": "critical",
+          "bbox": {
+            "x": 37,
+            "y": 20,
+            "w": 7,
+            "h": 5
+          },
+          "signal": "opaque_stroke_width_change",
+          "value": 2,
+          "expected": "5px opaque extent on x",
+          "actual": "7px across 5 scanlines; 10 hard background/foreground changes"
+        }
+      ],
+      "stderr": ""
+    },
+    {
+      "name": "7-to-9/production-mcp-png",
+      "route": "production-mcp-png",
+      "freshProcess": true,
+      "inputEvidence": {
+        "size": 80,
+        "centers": [20, 40, 60],
+        "widths": [7, 9],
+        "section": null,
+        "inputs": [
+          {
+            "name": "design",
+            "inkPixels": 357,
+            "rawSha256": "a4f9d0bdb9b78854c2234e1dac08f2fbafb9f70e12b6037203b69b0df1569767",
+            "pngSha256": "416e4268c421e1f8fee48d39e48b85c6b5f905a34520ad80f8e83f7d0b71dd69"
+          },
+          {
+            "name": "screenshot",
+            "inkPixels": 459,
+            "rawSha256": "1c3ee29837439c54c86dea1892ba91002340aa35159392476184c0d0b131d363",
+            "pngSha256": "53bcdbc74c9d37eb2281bd3e03c9f20c02b58f2d6999a1a4e732beea36a5dd52"
+          }
+        ]
+      },
+      "independentGeometry": {
+        "symmetricExpansionPerSidePx": 1,
+        "stemLengthPx": 17,
+        "stemCount": 3,
+        "changedPixelCount": 102,
+        "expectedStatus": "FAIL"
+      },
+      "actualStatus": "FAIL",
+      "expectedStatus": "FAIL",
+      "criticalOpaqueStrokeIssueCount": 6,
+      "violatesExpectedStatus": false,
+      "issues": [
+        {
+          "kind": "size",
+          "severity": "critical",
+          "bbox": {
+            "x": 16,
+            "y": 20,
+            "w": 9,
+            "h": 5
+          },
+          "signal": "opaque_stroke_width_change",
+          "value": 2,
+          "expected": "7px opaque extent on x",
+          "actual": "9px across 5 scanlines; 10 hard background/foreground changes"
+        },
+        {
+          "kind": "position",
+          "severity": "minor",
+          "bbox": {
+            "x": 16,
+            "y": 20,
+            "w": 1,
+            "h": 17
+          },
+          "signal": "local_displacement",
+          "value": 1,
+          "expected": "0px",
+          "actual": "line/edge moved (-1, 0)px, ΔE 68.67 -> 0.00 after alignment"
+        },
+        {
+          "kind": "size",
+          "severity": "critical",
+          "bbox": {
+            "x": 16,
+            "y": 20,
+            "w": 9,
+            "h": 5
+          },
+          "signal": "opaque_stroke_width_change",
+          "value": 2,
+          "expected": "7px opaque extent on x",
+          "actual": "9px across 5 scanlines; 10 hard background/foreground changes"
+        },
+        {
+          "kind": "position",
+          "severity": "minor",
+          "bbox": {
+            "x": 24,
+            "y": 20,
+            "w": 1,
+            "h": 17
+          },
+          "signal": "local_displacement",
+          "value": 1,
+          "expected": "0px",
+          "actual": "line/edge moved (1, 0)px, ΔE 68.67 -> 0.00 after alignment"
+        },
+        {
+          "kind": "size",
+          "severity": "critical",
+          "bbox": {
+            "x": 36,
+            "y": 20,
+            "w": 9,
+            "h": 5
+          },
+          "signal": "opaque_stroke_width_change",
+          "value": 2,
+          "expected": "7px opaque extent on x",
+          "actual": "9px across 5 scanlines; 10 hard background/foreground changes"
+        },
+        {
+          "kind": "position",
+          "severity": "minor",
+          "bbox": {
+            "x": 36,
+            "y": 20,
+            "w": 1,
+            "h": 17
+          },
+          "signal": "local_displacement",
+          "value": 1,
+          "expected": "0px",
+          "actual": "line/edge moved (-1, 0)px, ΔE 68.67 -> 0.00 after alignment"
+        },
+        {
+          "kind": "size",
+          "severity": "critical",
+          "bbox": {
+            "x": 36,
+            "y": 20,
+            "w": 9,
+            "h": 5
+          },
+          "signal": "opaque_stroke_width_change",
+          "value": 2,
+          "expected": "7px opaque extent on x",
+          "actual": "9px across 5 scanlines; 10 hard background/foreground changes"
+        },
+        {
+          "kind": "position",
+          "severity": "minor",
+          "bbox": {
+            "x": 44,
+            "y": 20,
+            "w": 1,
+            "h": 17
+          },
+          "signal": "local_displacement",
+          "value": 1,
+          "expected": "0px",
+          "actual": "line/edge moved (1, 0)px, ΔE 68.67 -> 0.00 after alignment"
+        },
+        {
+          "kind": "size",
+          "severity": "critical",
+          "bbox": {
+            "x": 56,
+            "y": 20,
+            "w": 9,
+            "h": 5
+          },
+          "signal": "opaque_stroke_width_change",
+          "value": 2,
+          "expected": "7px opaque extent on x",
+          "actual": "9px across 5 scanlines; 10 hard background/foreground changes"
+        },
+        {
+          "kind": "position",
+          "severity": "minor",
+          "bbox": {
+            "x": 56,
+            "y": 20,
+            "w": 1,
+            "h": 17
+          },
+          "signal": "local_displacement",
+          "value": 1,
+          "expected": "0px",
+          "actual": "line/edge moved (-1, 0)px, ΔE 68.67 -> 0.00 after alignment"
+        },
+        {
+          "kind": "size",
+          "severity": "critical",
+          "bbox": {
+            "x": 56,
+            "y": 20,
+            "w": 9,
+            "h": 5
+          },
+          "signal": "opaque_stroke_width_change",
+          "value": 2,
+          "expected": "7px opaque extent on x",
+          "actual": "9px across 5 scanlines; 10 hard background/foreground changes"
+        },
+        {
+          "kind": "position",
+          "severity": "minor",
+          "bbox": {
+            "x": 64,
+            "y": 20,
+            "w": 1,
+            "h": 17
+          },
+          "signal": "local_displacement",
+          "value": 1,
+          "expected": "0px",
+          "actual": "line/edge moved (1, 0)px, ΔE 68.67 -> 0.00 after alignment"
+        }
+      ],
+      "stderr": "(node:24072) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n[mcp] log file: /tmp/figdiff-376-opaque-stroke-3dSugm/logs/mcp-server.log\n"
+    },
+    {
+      "name": "7-to-9/fresh-child-built-api-section",
+      "route": "fresh-child-built-api-section",
+      "freshProcess": true,
+      "inputEvidence": {
+        "size": 80,
+        "centers": [20, 40, 60],
+        "widths": [7, 9],
+        "section": {
+          "id": "fbcd3e0b35839632279d05d89233a6e79cd7a0d7ce164192fb361290a650db91",
+          "name": "Constructed frame",
+          "type": "FRAME",
+          "absoluteBoundingBox": {
+            "x": 0,
+            "y": 0,
+            "width": 80,
+            "height": 80
+          },
+          "absoluteRenderBounds": null,
+          "fills": [],
+          "strokes": [],
+          "effects": [],
+          "children": [
+            {
+              "id": "5d5282d519ec6710bda63953f4c7f9d6d3e405129e9fbeaa0c773deb5e538ca6",
+              "name": "Constructed section",
+              "type": "FRAME",
+              "absoluteBoundingBox": {
+                "x": 0,
+                "y": 0,
+                "width": 80,
+                "height": 80
+              },
+              "absoluteRenderBounds": null,
+              "fills": [],
+              "strokes": [],
+              "effects": [],
+              "children": []
+            }
+          ]
+        },
+        "inputs": [
+          {
+            "name": "design",
+            "inkPixels": 357,
+            "rawSha256": "a4f9d0bdb9b78854c2234e1dac08f2fbafb9f70e12b6037203b69b0df1569767",
+            "pngSha256": "416e4268c421e1f8fee48d39e48b85c6b5f905a34520ad80f8e83f7d0b71dd69"
+          },
+          {
+            "name": "screenshot",
+            "inkPixels": 459,
+            "rawSha256": "1c3ee29837439c54c86dea1892ba91002340aa35159392476184c0d0b131d363",
+            "pngSha256": "53bcdbc74c9d37eb2281bd3e03c9f20c02b58f2d6999a1a4e732beea36a5dd52"
+          }
+        ]
+      },
+      "independentGeometry": {
+        "symmetricExpansionPerSidePx": 1,
+        "stemLengthPx": 17,
+        "stemCount": 3,
+        "changedPixelCount": 102,
+        "expectedStatus": "FAIL"
+      },
+      "actualStatus": "FAIL",
+      "expectedStatus": "FAIL",
+      "criticalOpaqueStrokeIssueCount": 7,
+      "violatesExpectedStatus": false,
+      "issues": [
+        {
+          "kind": "size",
+          "severity": "critical",
+          "bbox": {
+            "x": 16,
+            "y": 20,
+            "w": 9,
+            "h": 5
+          },
+          "signal": "opaque_stroke_width_change",
+          "value": 2,
+          "expected": "7px opaque extent on x",
+          "actual": "9px across 5 scanlines; 10 hard background/foreground changes"
+        },
+        {
+          "kind": "color",
+          "severity": "minor",
+          "bbox": {
+            "x": 0,
+            "y": 0,
+            "w": 80,
+            "h": 80
+          },
+          "signal": "diff_cluster_relief",
+          "value": 6,
+          "expected": "セクション内の全差分クラスタが説明済み",
+          "actual": "6/6 差分クラスタが同一トークン・変位などの証明で説明済み"
+        },
+        {
+          "kind": "size",
+          "severity": "critical",
+          "bbox": {
+            "x": 16,
+            "y": 20,
+            "w": 9,
+            "h": 5
+          },
+          "signal": "opaque_stroke_width_change",
+          "value": 2,
+          "expected": "7px opaque extent on x",
+          "actual": "9px across 5 scanlines; 10 hard background/foreground changes"
+        },
+        {
+          "kind": "size",
+          "severity": "critical",
+          "bbox": {
+            "x": 16,
+            "y": 20,
+            "w": 9,
+            "h": 5
+          },
+          "signal": "opaque_stroke_width_change",
+          "value": 2,
+          "expected": "7px opaque extent on x",
+          "actual": "9px across 5 scanlines; 10 hard background/foreground changes"
+        },
+        {
+          "kind": "size",
+          "severity": "critical",
+          "bbox": {
+            "x": 36,
+            "y": 20,
+            "w": 9,
+            "h": 5
+          },
+          "signal": "opaque_stroke_width_change",
+          "value": 2,
+          "expected": "7px opaque extent on x",
+          "actual": "9px across 5 scanlines; 10 hard background/foreground changes"
+        },
+        {
+          "kind": "size",
+          "severity": "critical",
+          "bbox": {
+            "x": 36,
+            "y": 20,
+            "w": 9,
+            "h": 5
+          },
+          "signal": "opaque_stroke_width_change",
+          "value": 2,
+          "expected": "7px opaque extent on x",
+          "actual": "9px across 5 scanlines; 10 hard background/foreground changes"
+        },
+        {
+          "kind": "size",
+          "severity": "critical",
+          "bbox": {
+            "x": 56,
+            "y": 20,
+            "w": 9,
+            "h": 5
+          },
+          "signal": "opaque_stroke_width_change",
+          "value": 2,
+          "expected": "7px opaque extent on x",
+          "actual": "9px across 5 scanlines; 10 hard background/foreground changes"
+        },
+        {
+          "kind": "size",
+          "severity": "critical",
+          "bbox": {
+            "x": 56,
+            "y": 20,
+            "w": 9,
+            "h": 5
+          },
+          "signal": "opaque_stroke_width_change",
+          "value": 2,
+          "expected": "7px opaque extent on x",
+          "actual": "9px across 5 scanlines; 10 hard background/foreground changes"
+        }
+      ],
+      "stderr": ""
+    }
+  ],
+  "summary": {
+    "cases": 4,
+    "expectedFail": 4,
+    "observedFail": 4,
+    "knownFalsePass": 0,
+    "casesWithCriticalOpaqueStrokeIssue": 4
+  }
+}

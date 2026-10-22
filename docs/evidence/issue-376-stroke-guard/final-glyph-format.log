@@ -1,0 +1,16 @@
+package/shared/src/signal/glyph-edge-raster.ts:245:76 lint/complexity/noExcessiveCognitiveComplexity ━━━━━━━━━━
+
+  ! Excessive complexity of 26 detected (max: 25).
+
+    243 │   foreground: readonly number[],
+    244 │   ignoreMask?: Uint8Array,
+  > 245 │ ): { sharedCorePixelCount: number; changedPixelCount: number } | undefined => {
+        │                                                                            ^^^
+    246 │   let sharedCorePixelCount = 0;
+    247 │   let changedPixelCount = 0;
+
+  i Please refactor this function to reduce its complexity score from 26 to the max allowed complexity 25.
+
+
+Checked 1 file in 36ms. No fixes applied.
+Found 1 warning.

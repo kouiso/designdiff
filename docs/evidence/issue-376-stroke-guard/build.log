@@ -1,0 +1,13 @@
+Scope: 4 of 8 workspace projects
+package/credential-store build$ tsc
+package/mobile-capture build$ tsc && node -e "require('node:fs').chmodSync('dist/bin/figdiff-flutter-golden.js', 0o755)"
+package/shared build$ tsc
+package/credential-store build: Done
+package/mobile-capture build: Done
+package/shared build: Done
+app/mcp-server prebuild$ pnpm --filter @figdiff/credential-store build
+app/mcp-server prebuild: > @figdiff/credential-store@0.1.0 build /workspace/designdiff/package/credential-store
+app/mcp-server prebuild: > tsc
+app/mcp-server prebuild: Done
+app/mcp-server build$ tsc -b --force && node -e "require('node:fs').chmodSync('dist/index.js', 0o755)"
+app/mcp-server build: Done

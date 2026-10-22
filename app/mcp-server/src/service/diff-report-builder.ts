@@ -7,6 +7,7 @@ import {
   classifySameTokenRasterization,
   classifyTextReflow,
   classifyTextureResampling,
+  detectOpaqueStrokeChange,
   compareFlatRegionColor,
   computeBestLocalAlignment,
   computeHausdorff,
@@ -484,6 +485,34 @@ function buildIssues(
   };
 
   for (const regionScore of regionScores) {
+    const opaqueStroke = detectOpaqueStrokeChange(
+      options.designPixels,
+      options.screenshotPixels,
+      options.width,
+      options.height,
+      regionScore.bbox,
+      options.ignoreMask,
+    );
+    // 反対向きに広がる縁は別々の1px移動として救済できるため、幅変化を独立して残す。
+    if (opaqueStroke) {
+      issues.push({
+        regionId: regionScore.regionId,
+        bbox: opaqueStroke.bbox,
+        kind: "size",
+        severity: "critical",
+        figmaNodeId: regionScore.figmaNodeId,
+        evidence: {
+          signal: "opaque_stroke_width_change",
+          value: Math.abs(opaqueStroke.screenshotWidthPx - opaqueStroke.designWidthPx),
+          threshold: 0,
+          expected: `${opaqueStroke.designWidthPx}px opaque extent on ${opaqueStroke.axis}`,
+          actual: `${opaqueStroke.screenshotWidthPx}px across ${opaqueStroke.scanlineCount} scanlines; ${opaqueStroke.changedPixelCount} hard background/foreground changes`,
+          ...evidenceProvenance,
+        },
+        suggestedCssFix:
+          "不透明ストロークの実画素幅が変わっています。stroke幅、fontWeight、フォント解決と描画条件を確認してください。",
+      });
+    }
     const glyphEdge = regionScore.glyphEdgeRasterization;
     if (glyphEdge) {
       issues.push({

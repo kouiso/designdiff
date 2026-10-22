@@ -1,0 +1,414 @@
+{
+  "scope": "Read-only audit of pair-18 inputs. No product/test/build changes, no Figma API request, no Flutter/device execution and no real-image copies/uploads. Available source declarations do not certify the fonts/renderer that produced the exact fixture PNG.",
+  "fixture": {
+    "repository": "kouiso/designdiff",
+    "sourceCommit": "ea13c68354412868f46b808a5069b707481293a4",
+    "directory": "verification/fixture/pair-18-hm-gate1-9892-10228",
+    "localDirectory": "/tmp/designdiff-gate1/verification/fixture/pair-18-hm-gate1-9892-10228",
+    "files": [
+      {
+        "path": "verification/fixture/pair-18-hm-gate1-9892-10228/expected.json",
+        "localPath": "/tmp/designdiff-gate1/verification/fixture/pair-18-hm-gate1-9892-10228/expected.json",
+        "sizeBytes": 1156,
+        "sha256": "f709117fdf1f8f8fac51f4246c19156e12ae1e3cd16eeb21d81488f4a984fb8e",
+        "gitBlobSha1": "b6733d3250d675d071d46230a55bd084bb4d41b5",
+        "matchesPinnedPr375Blob": true
+      },
+      {
+        "path": "verification/fixture/pair-18-hm-gate1-9892-10228/figma-export.png",
+        "localPath": "/tmp/designdiff-gate1/verification/fixture/pair-18-hm-gate1-9892-10228/figma-export.png",
+        "sizeBytes": 42081,
+        "sha256": "3d09188cb41735bd129f85f9466649c4927a9eeb6c1813bd92e28f9db298ded2",
+        "gitBlobSha1": "642eeda8a4975b7708edb51cb1bfa4b56e41da02",
+        "matchesPinnedPr375Blob": true,
+        "dimensions": [390, 692],
+        "mode": "RGBA",
+        "pngMetadataKeys": ["Software", "dpi", "gamma", "srgb"]
+      },
+      {
+        "path": "verification/fixture/pair-18-hm-gate1-9892-10228/impl-correct.png",
+        "localPath": "/tmp/designdiff-gate1/verification/fixture/pair-18-hm-gate1-9892-10228/impl-correct.png",
+        "sizeBytes": 38947,
+        "sha256": "ada490db6760c320998675e907c56b39ecaab3fc0148cb8b51f66206d5ffacd8",
+        "gitBlobSha1": "eaff44a951f418eb92ae39cef93a119bbde7f9a7",
+        "matchesPinnedPr375Blob": true,
+        "dimensions": [390, 692],
+        "mode": "RGBA",
+        "pngMetadataKeys": []
+      },
+      {
+        "path": "verification/fixture/pair-18-hm-gate1-9892-10228/impl-drift-2px.png",
+        "localPath": "/tmp/designdiff-gate1/verification/fixture/pair-18-hm-gate1-9892-10228/impl-drift-2px.png",
+        "sizeBytes": 35176,
+        "sha256": "eb7c8665c7527645d452f110a2b267e236b7965f56c9ab4534c71a8d2adcc0e4",
+        "gitBlobSha1": "a654fd55e26bea5bf5cf9e82401b79722e52e990",
+        "matchesPinnedPr375Blob": true,
+        "dimensions": [390, 692],
+        "mode": "RGB",
+        "pngMetadataKeys": ["dpi"]
+      }
+    ],
+    "manifestKeys": ["pairId", "figmaFrame", "variants"],
+    "hasFigmaRootNode": false
+  },
+  "availableFigmaMetadata": {
+    "localFixture": "Raster export plus expected.json only; no node tree or text style metadata attached.",
+    "cachedFrame": {
+      "source": "doc/evidence/figma/frame-fingerprint-20261022.json",
+      "fileKey": "15giveDl0JkKddxasif6VA",
+      "fileVersion": "2413034871333583555",
+      "lastModified": "2026-10-22T04:39:41Z",
+      "capturedAt": "2026-10-22",
+      "id": "9892:10228",
+      "name": "オンボーディング　完了",
+      "page": "スマホ",
+      "size": [390, 692],
+      "status": "unchanged-or-unknown",
+      "sha256_16": "bd71bc23a118252e",
+      "bytes": 23877,
+      "screenFile": [
+        "lib/src/constant/color.dart",
+        "lib/src/constant/spacing.dart",
+        "lib/src/screen/onboarding/onboarding_screen.dart",
+        "lib/src/screen/onboarding/widget/onboarding_intro_page.dart"
+      ],
+      "issues": ["issue parent#5995"],
+      "limitation": "This is a 16-hex canonical subtree digest and screen mapping, not the raw subtree or resolved font data. It is dated 2026-10-22 and not linked by hash to the older PR375 PNG."
+    },
+    "historicalAudit": {
+      "source": "doc/evidence/pixel-perfect/onboard-completion-9892-10228/README.md",
+      "date": "2026-08-27",
+      "reportedImplementationRevision": "79271741f53d5848b2bd4b637869bc9f5179f575",
+      "reportedExportSha256": "625767f59246a6c4935024ad2d5ffcd92cd3e856bd8966c6d0bde49657d1bddc",
+      "reportedCaptureSha256": "72d9c710a538dd613bbb38c835c406ee9e14ebf6522e7e9189251914f1fc4079",
+      "geometry": {
+        "frame": [390, 692],
+        "logo": [123, 177, 144, 182.76],
+        "content": [26, 433, 338, 227],
+        "banner": [26, 544, 338, 51],
+        "bannerRadius": 10,
+        "button": [54, 611, 282, 49]
+      },
+      "limitation": "Historical documentation with request IDs and geometric specifications. Both reported PNG hashes differ from pair-18 fixture; it cannot pin that fixture's export/capture provenance.",
+      "reportedExportHashMatchesFixture": false,
+      "reportedCaptureHashMatchesFixture": false
+    },
+    "figmaDerivedTypographyClaims": {
+      "source": "native/lib/src/constant/typography.dart:794-850 and925-934",
+      "claims": [
+        "Onboarding uses nominal Inter with Noto Sans JP then BIZ UDPGothic fallback.",
+        "Title comment says Figma lineHeightPercent=100 and encoded height29.045/24 with even leading.",
+        "Code comments describe non-Latin weight substitution and font-metric ink placement differences."
+      ],
+      "status": "Implementation-side interpretation of design, not a raw Figma font-resolution record."
+    }
+  },
+  "availableImplementationDeclarations": {
+    "ref": "eb004836e7f03a4412a6ab2fbd56763d22c929cc",
+    "exactFixtureProvenanceVerified": false,
+    "captureTest": {
+      "path": "native/test/formal_onboarding_capture_test.dart",
+      "outputName": "implementation-9892-10228-390x692.png",
+      "viewport": [390, 692],
+      "devicePixelRatio": 1,
+      "locale": "ja",
+      "theme": "lightTheme()",
+      "setup": "GoldenTestHelper.setUp",
+      "capture": "RepaintBoundary.toImage() -> PNG",
+      "shadowsDisabled": false,
+      "textScaler": "not explicitly set in this test",
+      "limitations": [
+        "This candidate test/source is readable remotely but not present in the selected DesignDiff checkout.",
+        "No output SHA or capture run record ties this source revision to pair-18/impl-correct.png."
+      ]
+    },
+    "layout": {
+      "path": "native/lib/src/screen/onboarding/widget/onboarding_intro_page.dart",
+      "logo": {
+        "position": [123, 177],
+        "size": [144, 183],
+        "asset": "native/asset/image/onboarding_completion_brand.png"
+      },
+      "content": {
+        "left": 26,
+        "top": 433,
+        "width": 338,
+        "maxHeight": 178,
+        "fit": "FittedBox.scaleDown, topCenter"
+      },
+      "titleToBodyGap": 16,
+      "bodyToBannerGap": 16,
+      "banner": {
+        "height": 51,
+        "horizontalPadding": 4,
+        "iconSize": [20, 20],
+        "iconTextGap": 16,
+        "textWidth": 256,
+        "textAlign": "center"
+      },
+      "button": {
+        "source": "native/lib/src/screen/onboarding/onboarding_screen.dart",
+        "position": [54, 611],
+        "minimumSize": [282, 49]
+      }
+    },
+    "typography": {
+      "path": "native/lib/src/constant/typography.dart",
+      "family": "Inter",
+      "fallback": ["Noto Sans JP", "BIZ UDPGothic"],
+      "title": {
+        "fontSize": 24,
+        "nominalWeight": 900,
+        "nonLatinSpanWeight": 700,
+        "lineHeight": 29.045,
+        "leading": "even"
+      },
+      "body": {
+        "fontSize": 15,
+        "nominalWeight": 500,
+        "nonLatinSpanWeight": 400,
+        "lineHeight": 25,
+        "leading": "even"
+      },
+      "banner": {
+        "fontSize": 11,
+        "weight": 600,
+        "lineHeight": 16,
+        "leading": "even",
+        "scriptWeightSpan": false
+      },
+      "button": {
+        "fontSize": 14,
+        "nominalWeight": 900,
+        "nonLatinSpanWeight": 700,
+        "leading": "even"
+      }
+    },
+    "fontDeclarations": {
+      "pubspec": "native/pubspec.yaml",
+      "Inter": ["Regular", "Medium500", "SemiBold600", "Bold700", "ExtraBold800", "Black900"],
+      "NotoSansJP": ["Regular", "Medium500", "SemiBold600", "Bold700", "ExtraBold800", "Black900"],
+      "BIZUDPGothic": ["Regular", "Bold700"],
+      "assetRoot": "native/asset/font/"
+    },
+    "testFontRegistration": {
+      "sources": [
+        "native/test/flutter_test_config.dart",
+        "native/test/golden/golden_test_helper.dart"
+      ],
+      "runtimeFontFetching": false,
+      "InterBaseFamilyLoadedAssets": [
+        "Inter-Regular.ttf",
+        "Inter-Medium.ttf",
+        "Inter-SemiBold.ttf",
+        "Inter-Bold.ttf"
+      ],
+      "NotoSansJPBaseFamilyLoadedAssets": ["NotoSansJP-Regular.ttf"],
+      "observation": "The explicitly loaded test-family font list differs from the larger pubspec family list, notably InterBlack900 and NotoSansJP600/700 used by these styles. This suggests a concrete source-level resolution question, not proof of a runtime font substitution.",
+      "guard": "flutter_test_config.dart throws on missing declared load paths; GoldenTestHelper itself silently returns for missing files."
+    }
+  },
+  "missingExactCaptureInputs": [
+    {
+      "item": "Capture provenance manifest for exact impl-correct.png SHA",
+      "requiredFields": [
+        "horsemanager Git commit",
+        "test target and command",
+        "Flutter framework/engine/Dart revisions",
+        "capture timestamp",
+        "host OS/architecture",
+        "output image SHA256"
+      ],
+      "reason": "Candidate source and earlier reports are available but neither is linked to the exact pair-18 PNG."
+    },
+    {
+      "item": "Versioned raw Figma text subtree tied to exact figma-export.png SHA",
+      "requiredFields": [
+        "Figma file version/export timestamp",
+        "nodes9892:10233/10235/10252 or corresponding run IDs",
+        "text characters and textStyle/fontName/fontWeight/fontSize/lineHeight/letterSpacing",
+        "text box coordinates and line/wrap/auto-resize settings",
+        "resolved CJK fallback/variation instance if available"
+      ],
+      "reason": "Local expected.json has no figmaRootNode; current cached fingerprint has only a digest. Historical geometric docs refer to different PNG hashes."
+    },
+    {
+      "item": "Actual loaded font binaries and font-load/resolution receipt",
+      "requiredPaths": [
+        "native/asset/font/Inter-Regular.ttf",
+        "native/asset/font/Inter-Medium.ttf",
+        "native/asset/font/Inter-SemiBold.ttf",
+        "native/asset/font/Inter-Black.ttf",
+        "native/asset/font/NotoSansJP-Regular.ttf",
+        "native/asset/font/NotoSansJP-SemiBold.ttf",
+        "native/asset/font/NotoSansJP-Bold.ttf",
+        "native/asset/font/BIZUDPGothic-Regular.ttf",
+        "native/asset/font/BIZUDPGothic-Bold.ttf"
+      ],
+      "requiredFields": [
+        "SHA256/version per used TTF",
+        "actual family/weight/variation selected for each Latin/CJK text run",
+        "synthetic emboldening or fallback decision",
+        "FontLoader success receipt"
+      ],
+      "reason": "No TTF files/load receipts are present locally. Remote declarations exist; their existence does not establish what the historical capture actually loaded."
+    },
+    {
+      "item": "Matching layout and render metrics",
+      "candidateSources": [
+        "native/lib/src/screen/onboarding/widget/onboarding_intro_page.dart",
+        "native/lib/src/constant/typography.dart",
+        "native/lib/src/l10n/",
+        "native/test/formal_onboarding_capture_test.dart"
+      ],
+      "requiredFields": [
+        "TextPainter line metrics/baselines/ink bounds for title/body/banner",
+        "actual TextSpan weights and resolved fonts",
+        "textScaler/locale/strut/textHeightBehavior/leadingDistribution",
+        "render-tree widget bounds and FittedBox applied scale",
+        "DPR/viewport/insets and PNG resize/crop history",
+        "raster backend/Skia or Impeller version/hinting settings"
+      ],
+      "reason": "PNG row/ink differences do not determine whether source layout, fallback glyph metrics, weight substitution or AA caused them."
+    }
+  ],
+  "localAbsenceAudit": {
+    "roots": [
+      "/workspace/designdiff",
+      "/tmp/designdiff-gate1",
+      "/workspace/shared",
+      "/workspace/library-files",
+      "/workspace/scratch"
+    ],
+    "patterns": ["*.dart", "pubspec.yaml", "*.ttf", "*.otf", "*.woff", "*.fig", "*9892*"],
+    "finding": "No matching Flutter implementation checkout, font binaries or raw pair-18 Figma text subtree found; fixture contains expected.json plus three PNGs. Source configuration was subsequently read through authorized GitHub tools."
+  },
+  "remoteSources": [
+    {
+      "repository": "ritmo-inc/horsemanager",
+      "ref": "eb004836e7f03a4412a6ab2fbd56763d22c929cc",
+      "path": "native/test/formal_onboarding_capture_test.dart",
+      "gitBlobSha1": "391ebe1d337cc99c183c5895086c02648c84c27d",
+      "url": "https://github.com/ritmo-inc/horsemanager/blob/eb004836e7f03a4412a6ab2fbd56763d22c929cc/native/test/formal_onboarding_capture_test.dart",
+      "status": "read"
+    },
+    {
+      "repository": "ritmo-inc/horsemanager",
+      "ref": "eb004836e7f03a4412a6ab2fbd56763d22c929cc",
+      "path": "native/pubspec.yaml",
+      "gitBlobSha1": "9380d1b290d6aaea74538b53a7341dd28a7611b8",
+      "url": "https://github.com/ritmo-inc/horsemanager/blob/eb004836e7f03a4412a6ab2fbd56763d22c929cc/native/pubspec.yaml",
+      "status": "read"
+    },
+    {
+      "repository": "ritmo-inc/horsemanager",
+      "ref": "eb004836e7f03a4412a6ab2fbd56763d22c929cc",
+      "path": "doc/evidence/pixel-perfect/onboard-completion-9892-10228/README.md",
+      "gitBlobSha1": "8e9bb8c8064f8d49aaa7e7d773607c2c6e45ae67",
+      "url": "https://github.com/ritmo-inc/horsemanager/blob/eb004836e7f03a4412a6ab2fbd56763d22c929cc/doc/evidence/pixel-perfect/onboard-completion-9892-10228/README.md",
+      "status": "read"
+    },
+    {
+      "repository": "ritmo-inc/horsemanager",
+      "ref": "eb004836e7f03a4412a6ab2fbd56763d22c929cc",
+      "path": "doc/evidence/pr-merge/pr-2812-onboarding-completion-banner/evidence.md",
+      "status": "not_found",
+      "error": "GitHub API error 404: {\"message\":\"Not Found\",\"documentation_url\":\"https://docs.github.com/rest/repos/contents#get-repository-content\",\"status\":\"404\"}"
+    },
+    {
+      "repository": "ritmo-inc/horsemanager",
+      "ref": "eb004836e7f03a4412a6ab2fbd56763d22c929cc",
+      "path": "doc/evidence/pr-merge/issue-1121-1123-onboarding-figma.md",
+      "gitBlobSha1": "4d27891ddadcf35be159ce2cdcab76c7a9266f24",
+      "url": "https://github.com/ritmo-inc/horsemanager/blob/eb004836e7f03a4412a6ab2fbd56763d22c929cc/doc/evidence/pr-merge/issue-1121-1123-onboarding-figma.md",
+      "status": "read"
+    },
+    {
+      "repository": "ritmo-inc/horsemanager",
+      "ref": "eb004836e7f03a4412a6ab2fbd56763d22c929cc",
+      "path": "native/test/golden/golden_test_helper.dart",
+      "gitBlobSha1": "e166b8ab37229db56d51ab4fa47181aaf36851ba",
+      "url": "https://github.com/ritmo-inc/horsemanager/blob/eb004836e7f03a4412a6ab2fbd56763d22c929cc/native/test/golden/golden_test_helper.dart",
+      "status": "read"
+    },
+    {
+      "repository": "ritmo-inc/horsemanager",
+      "ref": "eb004836e7f03a4412a6ab2fbd56763d22c929cc",
+      "path": "native/lib/src/screen/onboarding/onboarding_screen.dart",
+      "gitBlobSha1": "c8bfcb2d445ff6e58bcba2e8b7accc0ecc31d89c",
+      "url": "https://github.com/ritmo-inc/horsemanager/blob/eb004836e7f03a4412a6ab2fbd56763d22c929cc/native/lib/src/screen/onboarding/onboarding_screen.dart",
+      "status": "read"
+    },
+    {
+      "repository": "ritmo-inc/horsemanager",
+      "ref": "eb004836e7f03a4412a6ab2fbd56763d22c929cc",
+      "path": "native/lib/src/constant/theme.dart",
+      "gitBlobSha1": "045c724f87b18ce24383577b95805a5accecfe06",
+      "url": "https://github.com/ritmo-inc/horsemanager/blob/eb004836e7f03a4412a6ab2fbd56763d22c929cc/native/lib/src/constant/theme.dart",
+      "status": "read"
+    },
+    {
+      "repository": "ritmo-inc/horsemanager",
+      "ref": "eb004836e7f03a4412a6ab2fbd56763d22c929cc",
+      "path": "native/lib/src/constant/spacing.dart",
+      "gitBlobSha1": "a9d4fd4e2f9ff61f97f2f41dba075446a90d47ac",
+      "url": "https://github.com/ritmo-inc/horsemanager/blob/eb004836e7f03a4412a6ab2fbd56763d22c929cc/native/lib/src/constant/spacing.dart",
+      "status": "read"
+    },
+    {
+      "repository": "ritmo-inc/horsemanager",
+      "ref": "eb004836e7f03a4412a6ab2fbd56763d22c929cc",
+      "path": "native/lib/src/screen/onboarding/widget/onboarding_intro_page.dart",
+      "gitBlobSha1": "f048eb37c40a4bc31e8c2a6592111a351ea0e263",
+      "url": "https://github.com/ritmo-inc/horsemanager/blob/eb004836e7f03a4412a6ab2fbd56763d22c929cc/native/lib/src/screen/onboarding/widget/onboarding_intro_page.dart",
+      "status": "read"
+    },
+    {
+      "repository": "ritmo-inc/horsemanager",
+      "ref": "eb004836e7f03a4412a6ab2fbd56763d22c929cc",
+      "path": "native/lib/src/constant/typography.dart",
+      "gitBlobSha1": "0124f88446acf83ec09a083c79c627ba923809d0",
+      "url": "https://github.com/ritmo-inc/horsemanager/blob/eb004836e7f03a4412a6ab2fbd56763d22c929cc/native/lib/src/constant/typography.dart",
+      "status": "read"
+    },
+    {
+      "repository": "ritmo-inc/horsemanager",
+      "ref": "eb004836e7f03a4412a6ab2fbd56763d22c929cc",
+      "path": "native/test/flutter_test_config.dart",
+      "gitBlobSha1": "55e2188f5e2206f4b31faab48755f5afddfd3f7b",
+      "url": "https://github.com/ritmo-inc/horsemanager/blob/eb004836e7f03a4412a6ab2fbd56763d22c929cc/native/test/flutter_test_config.dart",
+      "status": "read"
+    },
+    {
+      "repository": "ritmo-inc/horsemanager",
+      "ref": "eb004836e7f03a4412a6ab2fbd56763d22c929cc",
+      "path": "native/test/screen/onboarding/onboarding_screen_figma_style_test.dart",
+      "gitBlobSha1": "b47b8448add65e00967805586f6c26f0fe122a40",
+      "url": "https://github.com/ritmo-inc/horsemanager/blob/eb004836e7f03a4412a6ab2fbd56763d22c929cc/native/test/screen/onboarding/onboarding_screen_figma_style_test.dart",
+      "status": "read"
+    },
+    {
+      "repository": "ritmo-inc/horsemanager",
+      "ref": "eb004836e7f03a4412a6ab2fbd56763d22c929cc",
+      "path": "doc/evidence/figma/frame-fingerprint-20261022.json",
+      "gitBlobSha1": "ce86dd63878181efc441538ce48755ccbc4a48e5",
+      "url": "https://github.com/ritmo-inc/horsemanager/blob/eb004836e7f03a4412a6ab2fbd56763d22c929cc/doc/evidence/figma/frame-fingerprint-20261022.json",
+      "status": "read"
+    }
+  ],
+  "remoteSearchLimits": {
+    "queriesWithNoResults": [
+      "9892-10228.json",
+      "ada490db6760c320998675e907c56b39ecaab3fc0148cb8b51f66206d5ffacd8",
+      "3d09188cb41735bd129f85f9466649c4927a9eeb6c1813bd92e28f9db298ded2"
+    ],
+    "scope": "Connected GitHub default-branch code search only. No results do not prove absence from all history/artifacts/private capture hosts.",
+    "notFoundPath": "doc/evidence/pr-merge/pr-2812-onboarding-completion-banner/evidence.md at eb004836e7f03a4412a6ab2fbd56763d22c929cc returned404; a monorepo inventory mention is not the file contents."
+  },
+  "conclusion": "Pair-18 remains a FAIL/PASS classifier input with mixed measured text placement/appearance differences. This audit does not certify same-glyph AA, weight equality, font identity or a changed expected verdict. Concrete historical capture/source/font linkage is missing even though useful design and implementation metadata exists remotely.",
+  "localEvidence": {
+    "path": "docs/evidence/issue-376-continuation/stroke-analysis.json",
+    "sha256": "d872ac69dc6d80aeebe60933dd6feb3db3d7c8216270433bd9ae85788e72120a",
+    "observation": "Raw ROI measurements recorded logo best shift0, title best vertical shift+2, explanation line shifts+2/+3 and changed line widths. This is geometry/appearance evidence, not a font identity oracle."
+  }
+}

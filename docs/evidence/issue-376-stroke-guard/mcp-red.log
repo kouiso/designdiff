@@ -1,0 +1,449 @@
+
+ RUN  v4.1.11 /workspace/designdiff/app/mcp-server
+
+ ❯ src/service/image-compare-stroke-width.test.ts (26 tests | 18 failed) 1332ms
+     × PNG・中央5pxから7px 106ms
+     × PNG・中央7pxから9px 78ms
+     × PNG・中央7pxから5px 40ms
+     × PNG・中央9pxから7px 66ms
+     × PNG・横線5pxから7px 29ms
+     × PNG・横線7pxから5px 30ms
+     × PNG・片側5pxから7px 36ms
+     × PNG・背景255対251で5pxから7px 43ms
+     × PNG・背景251対255で5pxから7px 30ms
+     × section・中央5pxから7px 53ms
+     × section・中央7pxから9px 48ms
+     × section・中央7pxから5px 48ms
+     × section・中央9pxから7px 45ms
+     × section・横線5pxから7px 46ms
+     × section・横線7pxから5px 51ms
+     × section・片側5pxから7px 52ms
+     × section・背景255対251で5pxから7px 53ms
+     × section・背景251対255で5pxから7px 55ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 18 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/service/image-compare-stroke-width.test.ts > 完全不透明stroke幅の既知変化を実sharp比較で見逃さない > PNG・中央5pxから7px
+ FAIL  src/service/image-compare-stroke-width.test.ts > 完全不透明stroke幅の既知変化を実sharp比較で見逃さない > PNG・中央7pxから9px
+ FAIL  src/service/image-compare-stroke-width.test.ts > 完全不透明stroke幅の既知変化を実sharp比較で見逃さない > PNG・中央7pxから5px
+ FAIL  src/service/image-compare-stroke-width.test.ts > 完全不透明stroke幅の既知変化を実sharp比較で見逃さない > PNG・中央9pxから7px
+ FAIL  src/service/image-compare-stroke-width.test.ts > 完全不透明stroke幅の既知変化を実sharp比較で見逃さない > PNG・横線5pxから7px
+ FAIL  src/service/image-compare-stroke-width.test.ts > 完全不透明stroke幅の既知変化を実sharp比較で見逃さない > PNG・横線7pxから5px
+ FAIL  src/service/image-compare-stroke-width.test.ts > 完全不透明stroke幅の既知変化を実sharp比較で見逃さない > PNG・背景255対251で5pxから7px
+ FAIL  src/service/image-compare-stroke-width.test.ts > 完全不透明stroke幅の既知変化を実sharp比較で見逃さない > PNG・背景251対255で5pxから7px
+ FAIL  src/service/image-compare-stroke-width.test.ts > 完全不透明stroke幅の既知変化を実sharp比較で見逃さない > section・中央5pxから7px
+ FAIL  src/service/image-compare-stroke-width.test.ts > 完全不透明stroke幅の既知変化を実sharp比較で見逃さない > section・中央7pxから9px
+ FAIL  src/service/image-compare-stroke-width.test.ts > 完全不透明stroke幅の既知変化を実sharp比較で見逃さない > section・中央7pxから5px
+ FAIL  src/service/image-compare-stroke-width.test.ts > 完全不透明stroke幅の既知変化を実sharp比較で見逃さない > section・中央9pxから7px
+ FAIL  src/service/image-compare-stroke-width.test.ts > 完全不透明stroke幅の既知変化を実sharp比較で見逃さない > section・横線5pxから7px
+ FAIL  src/service/image-compare-stroke-width.test.ts > 完全不透明stroke幅の既知変化を実sharp比較で見逃さない > section・横線7pxから5px
+ FAIL  src/service/image-compare-stroke-width.test.ts > 完全不透明stroke幅の既知変化を実sharp比較で見逃さない > section・背景255対251で5pxから7px
+ FAIL  src/service/image-compare-stroke-width.test.ts > 完全不透明stroke幅の既知変化を実sharp比較で見逃さない > section・背景251対255で5pxから7px
+AssertionError: expected 'pass' to be 'fail' // Object.is equality
+
+Expected: "fail"
+Received: "pass"
+
+ ❯ src/service/image-compare-stroke-width.test.ts:193:53
+    191|       it(`${route}・${spec.name}`, async () => {
+    192|         const result = await compare(spec, useSection);
+    193|         expect(result.diffReport?.aggregateVerdict).toBe("fail");
+       |                                                     ^
+    194|         expect(result.diffReport?.issues).toContainEqual(
+    195|           expect.objectContaining({
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/18]⎯
+
+ FAIL  src/service/image-compare-stroke-width.test.ts > 完全不透明stroke幅の既知変化を実sharp比較で見逃さない > PNG・片側5pxから7px
+AssertionError: expected [ { …(7) }, { …(7) }, { …(7) }, …(6) ] to deep equally contain ObjectContaining{…}
+
+- Expected:
+ObjectContaining {
+  "evidence": ObjectContaining {
+    "signal": "opaque_stroke_width_change",
+  },
+  "severity": "critical",
+}
+
++ Received:
+[
+  {
+    "bbox": {
+      "diffPixelCount": 34,
+      "h": 17,
+      "w": 2,
+      "x": 23,
+      "y": 20,
+    },
+    "evidence": {
+      "actual": "line/edge moved (2, 0)px, ΔE 68.67 -> 0.00 after alignment",
+      "expected": "0px",
+      "figmaFileKey": undefined,
+      "figmaNodeId": undefined,
+      "figmaPageName": undefined,
+      "signal": "local_displacement",
+      "threshold": 2,
+      "value": 2,
+    },
+    "figmaNodeId": undefined,
+    "kind": "position",
+    "regionId": "diff-cluster-23-20-2-17",
+    "severity": "critical",
+    "suggestedCssFix": "同じ線・縁が数pxずれて描画されています。色トークンは一致しています。枠線の位置・余白・丸めを確認してください。",
+  },
+  {
+    "bbox": {
+      "diffPixelCount": 34,
+      "h": 17,
+      "w": 2,
+      "x": 23,
+      "y": 20,
+    },
+    "evidence": {
+      "actual": "34 pixels on same bg->fg axis, ink delta 33.3%",
+      "expected": "#333333 on #FFFFFF",
+      "figmaFileKey": undefined,
+      "figmaNodeId": undefined,
+      "figmaPageName": undefined,
+      "signal": "same_token_rasterization",
+      "threshold": 0.35,
+      "value": 0.3333333333333333,
+    },
+    "figmaNodeId": undefined,
+    "kind": "color",
+    "regionId": "diff-cluster-23-20-2-17",
+    "severity": "minor",
+    "suggestedCssFix": "前景/背景トークン・トポロジ・インク量が一致しています。ラスタライザ差の可能性が高いので実害が無いか目視で確認してください。",
+  },
+  {
+    "bbox": {
+      "diffPixelCount": 34,
+      "h": 17,
+      "w": 2,
+      "x": 23,
+      "y": 20,
+    },
+    "evidence": {
+      "actual": "content moved (1.94, 0)px, correlation 1",
+      "expected": "0px",
+      "figmaFileKey": undefined,
+      "figmaNodeId": undefined,
+      "figmaPageName": undefined,
+      "signal": "same_token_content_offset",
+      "threshold": 1.5,
+      "value": 1.9428025835359213,
+    },
+    "figmaNodeId": undefined,
+    "kind": "position",
+    "regionId": "diff-cluster-23-20-2-17",
+    "severity": "minor",
+    "suggestedCssFix": "内容物は一致していますが位置がずれています。余白・座標・行高を確認してください。",
+  },
+  {
+    "bbox": {
+      "diffPixelCount": 34,
+      "h": 17,
+      "w": 2,
+      "x": 43,
+      "y": 20,
+    },
+    "evidence": {
+      "actual": "line/edge moved (2, 0)px, ΔE 68.67 -> 0.00 after alignment",
+      "expected": "0px",
+      "figmaFileKey": undefined,
+      "figmaNodeId": undefined,
+      "figmaPageName": undefined,
+      "signal": "local_displacement",
+      "threshold": 2,
+      "value": 2,
+    },
+    "figmaNodeId": undefined,
+    "kind": "position",
+    "regionId": "diff-cluster-43-20-2-17",
+    "severity": "critical",
+    "suggestedCssFix": "同じ線・縁が数pxずれて描画されています。色トークンは一致しています。枠線の位置・余白・丸めを確認してください。",
+  },
+  {
+    "bbox": {
+      "diffPixelCount": 34,
+      "h": 17,
+      "w": 2,
+      "x": 43,
+      "y": 20,
+    },
+    "evidence": {
+      "actual": "34 pixels on same bg->fg axis, ink delta 33.3%",
+      "expected": "#333333 on #FFFFFF",
+      "figmaFileKey": undefined,
+      "figmaNodeId": undefined,
+      "figmaPageName": undefined,
+      "signal": "same_token_rasterization",
+      "threshold": 0.35,
+      "value": 0.3333333333333333,
+    },
+    "figmaNodeId": undefined,
+    "kind": "color",
+    "regionId": "diff-cluster-43-20-2-17",
+    "severity": "minor",
+    "suggestedCssFix": "前景/背景トークン・トポロジ・インク量が一致しています。ラスタライザ差の可能性が高いので実害が無いか目視で確認してください。",
+  },
+  {
+    "bbox": {
+      "diffPixelCount": 34,
+      "h": 17,
+      "w": 2,
+      "x": 43,
+      "y": 20,
+    },
+    "evidence": {
+      "actual": "content moved (1.94, 0)px, correlation 1",
+      "expected": "0px",
+      "figmaFileKey": undefined,
+      "figmaNodeId": undefined,
+      "figmaPageName": undefined,
+      "signal": "same_token_content_offset",
+      "threshold": 1.5,
+      "value": 1.9428025835359213,
+    },
+    "figmaNodeId": undefined,
+    "kind": "position",
+    "regionId": "diff-cluster-43-20-2-17",
+    "severity": "minor",
+    "suggestedCssFix": "内容物は一致していますが位置がずれています。余白・座標・行高を確認してください。",
+  },
+  {
+    "bbox": {
+      "diffPixelCount": 34,
+      "h": 17,
+      "w": 2,
+      "x": 63,
+      "y": 20,
+    },
+    "evidence": {
+      "actual": "line/edge moved (2, 0)px, ΔE 68.67 -> 0.00 after alignment",
+      "expected": "0px",
+      "figmaFileKey": undefined,
+      "figmaNodeId": undefined,
+      "figmaPageName": undefined,
+      "signal": "local_displacement",
+      "threshold": 2,
+      "value": 2,
+    },
+    "figmaNodeId": undefined,
+    "kind": "position",
+    "regionId": "diff-cluster-63-20-2-17",
+    "severity": "critical",
+    "suggestedCssFix": "同じ線・縁が数pxずれて描画されています。色トークンは一致しています。枠線の位置・余白・丸めを確認してください。",
+  },
+  {
+    "bbox": {
+      "diffPixelCount": 34,
+      "h": 17,
+      "w": 2,
+      "x": 63,
+      "y": 20,
+    },
+    "evidence": {
+      "actual": "34 pixels on same bg->fg axis, ink delta 33.3%",
+      "expected": "#333333 on #FFFFFF",
+      "figmaFileKey": undefined,
+      "figmaNodeId": undefined,
+      "figmaPageName": undefined,
+      "signal": "same_token_rasterization",
+      "threshold": 0.35,
+      "value": 0.3333333333333333,
+    },
+    "figmaNodeId": undefined,
+    "kind": "color",
+    "regionId": "diff-cluster-63-20-2-17",
+    "severity": "minor",
+    "suggestedCssFix": "前景/背景トークン・トポロジ・インク量が一致しています。ラスタライザ差の可能性が高いので実害が無いか目視で確認してください。",
+  },
+  {
+    "bbox": {
+      "diffPixelCount": 34,
+      "h": 17,
+      "w": 2,
+      "x": 63,
+      "y": 20,
+    },
+    "evidence": {
+      "actual": "content moved (1.94, 0)px, correlation 1",
+      "expected": "0px",
+      "figmaFileKey": undefined,
+      "figmaNodeId": undefined,
+      "figmaPageName": undefined,
+      "signal": "same_token_content_offset",
+      "threshold": 1.5,
+      "value": 1.9428025835359213,
+    },
+    "figmaNodeId": undefined,
+    "kind": "position",
+    "regionId": "diff-cluster-63-20-2-17",
+    "severity": "minor",
+    "suggestedCssFix": "内容物は一致していますが位置がずれています。余白・座標・行高を確認してください。",
+  },
+]
+
+ ❯ src/service/image-compare-stroke-width.test.ts:194:43
+    192|         const result = await compare(spec, useSection);
+    193|         expect(result.diffReport?.aggregateVerdict).toBe("fail");
+    194|         expect(result.diffReport?.issues).toContainEqual(
+       |                                           ^
+    195|           expect.objectContaining({
+    196|             severity: "critical",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/18]⎯
+
+ FAIL  src/service/image-compare-stroke-width.test.ts > 完全不透明stroke幅の既知変化を実sharp比較で見逃さない > section・片側5pxから7px
+AssertionError: expected [ { …(7) }, { …(7) }, { …(7) }, …(2) ] to deep equally contain ObjectContaining{…}
+
+- Expected:
+ObjectContaining {
+  "evidence": ObjectContaining {
+    "signal": "opaque_stroke_width_change",
+  },
+  "severity": "critical",
+}
+
++ Received:
+[
+  {
+    "bbox": {
+      "h": 80,
+      "w": 80,
+      "x": 0,
+      "y": 0,
+    },
+    "evidence": {
+      "actual": "3/3 差分クラスタが同一トークン・変位などの証明で説明済み",
+      "expected": "セクション内の全差分クラスタが説明済み",
+      "figmaFileKey": undefined,
+      "figmaNodeId": undefined,
+      "figmaPageName": undefined,
+      "signal": "diff_cluster_relief",
+      "threshold": 3,
+      "value": 3,
+    },
+    "figmaNodeId": "b4760819-0e23-4c09-a399-d8ab764e6f1a",
+    "kind": "color",
+    "regionId": "b4760819-0e23-4c09-a399-d8ab764e6f1a",
+    "severity": "minor",
+    "suggestedCssFix": "セクション内の差分はすべてラスタライズ差として証明済みです。実害が無いか目視で確認してください。",
+  },
+  {
+    "bbox": {
+      "h": 80,
+      "w": 80,
+      "x": 0,
+      "y": 0,
+    },
+    "evidence": {
+      "actual": "102 pixels on same bg->fg axis, ink delta 28.6%",
+      "expected": "#333333 on #FFFFFF",
+      "figmaFileKey": undefined,
+      "figmaNodeId": undefined,
+      "figmaPageName": undefined,
+      "signal": "same_token_rasterization",
+      "threshold": 0.35,
+      "value": 0.2857142857142857,
+    },
+    "figmaNodeId": "b4760819-0e23-4c09-a399-d8ab764e6f1a",
+    "kind": "color",
+    "regionId": "b4760819-0e23-4c09-a399-d8ab764e6f1a",
+    "severity": "minor",
+    "suggestedCssFix": "前景/背景トークン・トポロジ・インク量が一致しています。ラスタライザ差の可能性が高いので実害が無いか目視で確認してください。",
+  },
+  {
+    "bbox": {
+      "diffPixelCount": 34,
+      "h": 17,
+      "w": 2,
+      "x": 23,
+      "y": 20,
+    },
+    "evidence": {
+      "actual": "line/edge moved (2, 0)px, ΔE 68.67 -> 0.00 after alignment",
+      "expected": "0px",
+      "figmaFileKey": undefined,
+      "figmaNodeId": undefined,
+      "figmaPageName": undefined,
+      "signal": "local_displacement",
+      "threshold": 2,
+      "value": 2,
+    },
+    "figmaNodeId": undefined,
+    "kind": "position",
+    "regionId": "diff-cluster-23-20-2-17",
+    "severity": "critical",
+    "suggestedCssFix": "同じ線・縁が数pxずれて描画されています。色トークンは一致しています。枠線の位置・余白・丸めを確認してください。",
+  },
+  {
+    "bbox": {
+      "diffPixelCount": 34,
+      "h": 17,
+      "w": 2,
+      "x": 43,
+      "y": 20,
+    },
+    "evidence": {
+      "actual": "line/edge moved (2, 0)px, ΔE 68.67 -> 0.00 after alignment",
+      "expected": "0px",
+      "figmaFileKey": undefined,
+      "figmaNodeId": undefined,
+      "figmaPageName": undefined,
+      "signal": "local_displacement",
+      "threshold": 2,
+      "value": 2,
+    },
+    "figmaNodeId": undefined,
+    "kind": "position",
+    "regionId": "diff-cluster-43-20-2-17",
+    "severity": "critical",
+    "suggestedCssFix": "同じ線・縁が数pxずれて描画されています。色トークンは一致しています。枠線の位置・余白・丸めを確認してください。",
+  },
+  {
+    "bbox": {
+      "diffPixelCount": 34,
+      "h": 17,
+      "w": 2,
+      "x": 63,
+      "y": 20,
+    },
+    "evidence": {
+      "actual": "line/edge moved (2, 0)px, ΔE 68.67 -> 0.00 after alignment",
+      "expected": "0px",
+      "figmaFileKey": undefined,
+      "figmaNodeId": undefined,
+      "figmaPageName": undefined,
+      "signal": "local_displacement",
+      "threshold": 2,
+      "value": 2,
+    },
+    "figmaNodeId": undefined,
+    "kind": "position",
+    "regionId": "diff-cluster-63-20-2-17",
+    "severity": "critical",
+    "suggestedCssFix": "同じ線・縁が数pxずれて描画されています。色トークンは一致しています。枠線の位置・余白・丸めを確認してください。",
+  },
+]
+
+ ❯ src/service/image-compare-stroke-width.test.ts:194:43
+    192|         const result = await compare(spec, useSection);
+    193|         expect(result.diffReport?.aggregateVerdict).toBe("fail");
+    194|         expect(result.diffReport?.issues).toContainEqual(
+       |                                           ^
+    195|           expect.objectContaining({
+    196|             severity: "critical",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/18]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  18 failed | 8 passed (26)
+   Start at  12:44:17
+   Duration  2.17s (transform 492ms, setup 47ms, import 678ms, tests 1.33s, environment 0ms)
+
+undefined
+/workspace/designdiff/app/mcp-server:
+ ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL  Command failed with exit code 1: vitest run src/service/image-compare-stroke-width.test.ts

@@ -1,0 +1,48 @@
+
+ RUN  v4.1.11 /workspace/designdiff/package/shared
+
+ ❯ src/signal/glyph-edge-raster.test.ts (43 tests | 1 failed) 2197ms
+     × トポロジ強一致でも既存の不透明列を増やす太線化を扱わない 9ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/signal/glyph-edge-raster.test.ts > classifySameTokenRasterization > トポロジ強一致でも既存の不透明列を増やす太線化を扱わない
+AssertionError: expected { …(7) } to be undefined
+
+- Expected:
+undefined
+
++ Received:
+{
+  "backgroundHex": "#FFFFFF",
+  "changedPixelCount": 22,
+  "classification": "same-token-rasterization",
+  "contentOffset": {
+    "dx": 0.09979682591576784,
+    "dy": 0,
+    "peak": 0.8113502875955108,
+  },
+  "foregroundHex": "#333333",
+  "inkCoverageDelta": 0.3013698630136986,
+  "inkLimit": 0.35,
+}
+
+ ❯ src/signal/glyph-edge-raster.test.ts:262:22
+    260|       0.1,
+    261|     );
+    262|     expect(evidence).toBeUndefined();
+       |                      ^
+    263|   });
+    264|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 42 passed (43)
+   Start at  12:41:05
+   Duration  2.48s (transform 116ms, setup 0ms, import 139ms, tests 2.20s, environment 0ms)
+
+undefined
+/workspace/designdiff/package/shared:
+ ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL  Command failed with exit code 1: vitest run src/signal/glyph-edge-raster.test.ts

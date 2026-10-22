@@ -1,0 +1,8 @@
+
+ RUN  v4.1.11 /workspace/designdiff/package/shared
+
+
+ Test Files  3 passed (3)
+      Tests  78 passed (78)
+   Start at  12:49:01
+   Duration  4.69s (transform 558ms, setup 0ms, import 796ms, tests 4.68s, environment 0ms)

@@ -1,0 +1,775 @@
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index 20d3208..fc8e6e5 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -32,0 +33 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
++- Complete opaque stroke-width changes now remain FAIL even when opposite edges look like separate 1px displacements. A bounded context check rejects hard background-to-foreground expansion or contraction before same-token/reflow relief, and an independent critical size issue preserves the finding through section and local-alignment scoring. Partial AA coverage and rigid translations retain their existing rules; no ink thresholds or verdict states changed.
+diff --git a/app/mcp-server/src/service/diff-report-builder.ts b/app/mcp-server/src/service/diff-report-builder.ts
+index d7a3269..f763c9e 100644
+--- a/app/mcp-server/src/service/diff-report-builder.ts
++++ b/app/mcp-server/src/service/diff-report-builder.ts
+@@ -9,0 +10 @@ import {
++  detectOpaqueStrokeChange,
+@@ -486,0 +488,28 @@ function buildIssues(
++    const opaqueStroke = detectOpaqueStrokeChange(
++      options.designPixels,
++      options.screenshotPixels,
++      options.width,
++      options.height,
++      regionScore.bbox,
++      options.ignoreMask,
++    );
++    // 反対向きに広がる縁は別々の1px移動として救済できるため、幅変化を独立して残す。
++    if (opaqueStroke) {
++      issues.push({
++        regionId: regionScore.regionId,
++        bbox: opaqueStroke.bbox,
++        kind: "size",
++        severity: "critical",
++        figmaNodeId: regionScore.figmaNodeId,
++        evidence: {
++          signal: "opaque_stroke_width_change",
++          value: Math.abs(opaqueStroke.screenshotWidthPx - opaqueStroke.designWidthPx),
++          threshold: 0,
++          expected: `${opaqueStroke.designWidthPx}px opaque extent on ${opaqueStroke.axis}`,
++          actual: `${opaqueStroke.screenshotWidthPx}px across ${opaqueStroke.scanlineCount} scanlines; ${opaqueStroke.changedPixelCount} hard background/foreground changes`,
++          ...evidenceProvenance,
++        },
++        suggestedCssFix:
++          "不透明ストロークの実画素幅が変わっています。stroke幅、fontWeight、フォント解決と描画条件を確認してください。",
++      });
++    }
+diff --git a/app/mcp-server/src/service/image-compare-stroke-width.test.ts b/app/mcp-server/src/service/image-compare-stroke-width.test.ts
+new file mode 100644
+index 0000000..397d9a4
+--- /dev/null
++++ b/app/mcp-server/src/service/image-compare-stroke-width.test.ts
+@@ -0,0 +1,241 @@
++import { randomUUID } from "node:crypto";
++
++import sharp from "sharp";
++import { describe, expect, it } from "vitest";
++
++import type { FigmaNode } from "@figdiff/shared";
++
++import { compareImages } from "./image-compare-service.js";
++
++const SIZE = 80;
++const CENTERS = [20, 40, 60];
++const STEM_START = 20;
++const STEM_LENGTH = 17;
++const FOREGROUND = 51;
++const WIDTH_SIGNAL = "opaque_stroke_width_change";
++
++interface StrokeCase {
++  name: string;
++  designWidth: number;
++  screenshotWidth: number;
++  horizontal?: boolean;
++  oneSided?: boolean;
++  designBackground?: number;
++  screenshotBackground?: number;
++  screenshotShift?: number;
++  aaFringes?: boolean;
++  screenshotForeground?: number;
++  missing?: boolean;
++}
++
++const paint = (
++  pixels: Uint8ClampedArray,
++  x: number,
++  y: number,
++  w: number,
++  h: number,
++  value: number,
++): void => {
++  if (
++    pixels.length !== SIZE * SIZE * 4 ||
++    ![x, y, w, h, value].every(Number.isInteger) ||
++    x < 0 ||
++    y < 0 ||
++    w <= 0 ||
++    h <= 0 ||
++    x + w > SIZE ||
++    y + h > SIZE ||
++    value < 0 ||
++    value > 255
++  ) {
++    throw new Error(
++      "Known stroke rectangles must have integer in-bounds coordinates and byte tones",
++    );
++  }
++  for (let yy = y; yy < y + h; yy++) {
++    for (let xx = x; xx < x + w; xx++) {
++      const index = (yy * SIZE + xx) * 4;
++      pixels.fill(value, index, index + 3);
++    }
++  }
++};
++
++const fixture = (spec: StrokeCase, screenshot: boolean): Uint8ClampedArray => {
++  const background = screenshot
++    ? (spec.screenshotBackground ?? 255)
++    : (spec.designBackground ?? 255);
++  if (!Number.isInteger(background) || background < 0 || background > 255) {
++    throw new Error("Known stroke background must be a byte");
++  }
++  const pixels = new Uint8ClampedArray(SIZE * SIZE * 4).fill(background);
++  for (let pixel = 0; pixel < SIZE * SIZE; pixel++) pixels[pixel * 4 + 3] = 255;
++  if (screenshot && spec.missing) return pixels;
++  const width = screenshot ? spec.screenshotWidth : spec.designWidth;
++  if (!Number.isSafeInteger(width) || width <= 0 || width % 2 !== 1) {
++    throw new Error("Known centered stroke width must be a positive odd integer");
++  }
++  const originWidth = screenshot && spec.oneSided ? spec.designWidth : width;
++  const shift = screenshot ? (spec.screenshotShift ?? 0) : 0;
++  const foreground = screenshot ? (spec.screenshotForeground ?? FOREGROUND) : FOREGROUND;
++  for (const center of CENTERS) {
++    const crossStart = center - (originWidth - 1) / 2 + shift;
++    const rectangle = (start: number, thickness: number, tone: number) => {
++      if (spec.horizontal) paint(pixels, STEM_START, start, STEM_LENGTH, thickness, tone);
++      else paint(pixels, start, STEM_START, thickness, STEM_LENGTH, tone);
++    };
++    rectangle(crossStart, width, foreground);
++    if (spec.aaFringes) {
++      const edge = screenshot ? 204 : 153;
++      rectangle(crossStart - 1, 1, edge);
++      rectangle(crossStart + width, 1, edge);
++    }
++  }
++  return pixels;
++};
++
++const countTone = (pixels: Uint8ClampedArray, value: number): number => {
++  let count = 0;
++  for (let pixel = 0; pixel < SIZE * SIZE; pixel++) {
++    const index = pixel * 4;
++    if (
++      pixels[index] === value &&
++      pixels[index + 1] === value &&
++      pixels[index + 2] === value &&
++      pixels[index + 3] === 255
++    ) {
++      count++;
++    }
++  }
++  return count;
++};
++
++const assertKnownGeometry = (
++  pixels: Uint8ClampedArray,
++  spec: StrokeCase,
++  screenshot: boolean,
++): void => {
++  const width = screenshot ? spec.screenshotWidth : spec.designWidth;
++  const tone = screenshot ? (spec.screenshotForeground ?? FOREGROUND) : FOREGROUND;
++  const expectedPixels = screenshot && spec.missing ? 0 : CENTERS.length * STEM_LENGTH * width;
++  expect(countTone(pixels, tone)).toBe(expectedPixels);
++  if (screenshot && spec.missing) return;
++  const originWidth = screenshot && spec.oneSided ? spec.designWidth : width;
++  const shift = screenshot ? (spec.screenshotShift ?? 0) : 0;
++  for (const center of CENTERS) {
++    const start = center - (originWidth - 1) / 2 + shift;
++    const sample = (cross: number, along: number) =>
++      pixels[(spec.horizontal ? cross * SIZE + along : along * SIZE + cross) * 4];
++    expect(sample(start, STEM_START)).toBe(tone);
++    expect(sample(start + width - 1, STEM_START + STEM_LENGTH - 1)).toBe(tone);
++    expect(sample(start - 1, STEM_START)).not.toBe(tone);
++    expect(sample(start + width, STEM_START)).not.toBe(tone);
++  }
++};
++
++const png = async (pixels: Uint8ClampedArray): Promise<string> =>
++  (
++    await sharp(pixels, { raw: { width: SIZE, height: SIZE, channels: 4 } })
++      .png()
++      .toBuffer()
++  ).toString("base64");
++
++const node = (children: FigmaNode[] = []): FigmaNode => ({
++  id: randomUUID(),
++  name: "Constructed stroke frame",
++  type: "FRAME",
++  absoluteBoundingBox: { x: 0, y: 0, width: SIZE, height: SIZE },
++  absoluteRenderBounds: null,
++  fills: [],
++  strokes: [],
++  effects: [],
++  children,
++});
++
++const compare = async (spec: StrokeCase, useSection: boolean) => {
++  const design = fixture(spec, false);
++  const screenshot = fixture(spec, true);
++  // 既知の矩形面積と端点を先に確かめ、製品の合否を正解の根拠へ使わない。
++  assertKnownGeometry(design, spec, false);
++  assertKnownGeometry(screenshot, spec, true);
++  return compareImages(
++    {
++      designBase64: await png(design),
++      screenshotBase64: await png(screenshot),
++      rasterizationTolerance: true,
++    },
++    useSection ? node([node()]) : undefined,
++  );
++};
++
++const widthChanges: StrokeCase[] = [
++  { name: "中央5pxから7px", designWidth: 5, screenshotWidth: 7 },
++  { name: "中央7pxから9px", designWidth: 7, screenshotWidth: 9 },
++  { name: "中央7pxから5px", designWidth: 7, screenshotWidth: 5 },
++  { name: "中央9pxから7px", designWidth: 9, screenshotWidth: 7 },
++  { name: "横線5pxから7px", designWidth: 5, screenshotWidth: 7, horizontal: true },
++  { name: "横線7pxから5px", designWidth: 7, screenshotWidth: 5, horizontal: true },
++  { name: "片側5pxから7px", designWidth: 5, screenshotWidth: 7, oneSided: true },
++  {
++    name: "背景255対251で5pxから7px",
++    designWidth: 5,
++    screenshotWidth: 7,
++    screenshotBackground: 251,
++  },
++  { name: "背景251対255で5pxから7px", designWidth: 5, screenshotWidth: 7, designBackground: 251 },
++];
++
++describe("完全不透明stroke幅の既知変化を実sharp比較で見逃さない", () => {
++  for (const useSection of [false, true]) {
++    const route = useSection ? "section" : "PNG";
++    for (const spec of widthChanges) {
++      it(`${route}・${spec.name}`, async () => {
++        const result = await compare(spec, useSection);
++        expect(result.diffReport?.aggregateVerdict).toBe("fail");
++        expect(result.diffReport?.issues).toContainEqual(
++          expect.objectContaining({
++            severity: "critical",
++            evidence: expect.objectContaining({ signal: WIDTH_SIGNAL }),
++          }),
++        );
++      });
++    }
++
++    it(`${route}・同幅の既存1px移動許容を保つ`, async () => {
++      const result = await compare(
++        { name: "rigid shift", designWidth: 5, screenshotWidth: 5, screenshotShift: 1 },
++        useSection,
++      );
++      expect(result.diffReport?.aggregateVerdict).toBe("pass");
++      expect(
++        result.diffReport?.issues.some((issue) => issue.evidence.signal === WIDTH_SIGNAL),
++      ).toBe(false);
++    });
++
++    it(`${route}・不透明coreを保つ部分AA被覆差を保つ`, async () => {
++      const result = await compare(
++        { name: "AA coverage", designWidth: 5, screenshotWidth: 5, aaFringes: true },
++        useSection,
++      );
++      expect(result.diffReport?.aggregateVerdict).toBe("pass");
++      expect(
++        result.diffReport?.issues.some((issue) => issue.evidence.signal === WIDTH_SIGNAL),
++      ).toBe(false);
++    });
++
++    it(`${route}・前景色変更は不合格に保つ`, async () => {
++      const result = await compare(
++        { name: "color", designWidth: 5, screenshotWidth: 5, screenshotForeground: 91 },
++        useSection,
++      );
++      expect(result.diffReport?.aggregateVerdict).toBe("fail");
++    });
++
++    it(`${route}・要素欠落は不合格に保つ`, async () => {
++      const result = await compare(
++        { name: "missing", designWidth: 5, screenshotWidth: 5, missing: true },
++        useSection,
++      );
++      expect(result.diffReport?.aggregateVerdict).toBe("fail");
++    });
++  }
++});
+diff --git a/package/shared/src/index.ts b/package/shared/src/index.ts
+index e9fd5db..88ee90b 100644
+--- a/package/shared/src/index.ts
++++ b/package/shared/src/index.ts
+@@ -133,0 +134 @@ export {
++  detectOpaqueStrokeChange,
+@@ -136,0 +138 @@ export {
++  type OpaqueStrokeChange,
+diff --git a/package/shared/src/signal/glyph-edge-raster.test.ts b/package/shared/src/signal/glyph-edge-raster.test.ts
+index 8875c5f..ed42937 100644
+--- a/package/shared/src/signal/glyph-edge-raster.test.ts
++++ b/package/shared/src/signal/glyph-edge-raster.test.ts
+@@ -238,3 +238 @@ describe("classifySameTokenRasterization", () => {
+-  it("トポロジ強一致の窓ではインク量差を 0.35 まで許す", () => {
+-    // 現行の強形状時の許容境界を固定する。フォント指定の無いこの画素対は
+-    // 描画差とウェイト変更を分離する正本にはならないため、実太線化の対照も別に検証する。
++  it("トポロジ強一致でも既存の不透明列を増やす太線化を扱わない", () => {
+@@ -264,2 +262,17 @@ describe("classifySameTokenRasterization", () => {
+-    expect(evidence).toMatchObject({
+-      classification: "same-token-rasterization",
++    expect(evidence).toBeUndefined();
++  });
++
++  it("不透明coreが同じAA被覆差では強トポロジの0.35境界を維持する", () => {
++    const design = bigPixels([10, 14, 19]);
++    const screenshot = bigPixels([10, 14, 19]);
++    // 境界値の正例は純背景を不透明列へ変えず、中間alphaだけを変える。
++    for (const x of [11, 15, 20]) {
++      for (let y = 10; y < 27; y++) {
++        const index = (y * BIG + x) * 4;
++        design.fill(102, index, index + 3);
++        screenshot.fill(204, index, index + 3);
++      }
++    }
++    const args = [design, screenshot, BIG, BIG, { x: 8, y: 8, w: 14, h: 20 }] as const;
++    expect(classifySameTokenRasterization(...args, 0.1)).toMatchObject({
++      inkCoverageDelta: expect.closeTo(2 / 7, 10),
+@@ -268 +281 @@ describe("classifySameTokenRasterization", () => {
+-    expect(evidence?.inkCoverageDelta).toBeGreaterThan(0.25);
++    expect(classifySameTokenRasterization(...args, 0.2)).toBeUndefined();
+diff --git a/package/shared/src/signal/glyph-edge-raster.ts b/package/shared/src/signal/glyph-edge-raster.ts
+index 1338412..a7210a0 100644
+--- a/package/shared/src/signal/glyph-edge-raster.ts
++++ b/package/shared/src/signal/glyph-edge-raster.ts
+@@ -852,0 +853,283 @@ export const countChangedPixels = (
++export interface OpaqueStrokeChange {
++  axis: "x" | "y";
++  designWidthPx: number;
++  screenshotWidthPx: number;
++  scanlineCount: number;
++  changedPixelCount: number;
++  bbox: DiffBoundingBox;
++}
++
++// 片側の縁だけを見ると太線化も1px移動に見えるため、最大haloで両端を調べる。
++const OPAQUE_STROKE_HALO = 12;
++// 完全なベタ面だけを走査し、巨大セクションは局所クラスタ側で検証する。
++const MAX_OPAQUE_STROKE_WINDOW_AREA = 120000;
++// 孤立した丸め画素と既存の10画素未満の残差ノイズを幅変化の証拠にしない。
++const MIN_OPAQUE_STROKE_ROWS = 3;
++const MIN_OPAQUE_STROKE_CHANGED_PIXELS = 10;
++
++interface OpaqueRun {
++  start: number;
++  end: number;
++}
++
++const opaqueRuns = (line: Uint8Array): OpaqueRun[] => {
++  const runs: OpaqueRun[] = [];
++  let start = -1;
++  for (let position = 0; position <= line.length; position++) {
++    if (position < line.length && line[position] === 1) {
++      if (start === -1) start = position;
++      continue;
++    }
++    if (start > 0 && position < line.length && line[start - 1] === 0 && line[position] === 0) {
++      runs.push({ start, end: position });
++    }
++    start = -1;
++  }
++  return runs;
++};
++
++interface NestedOpaqueMasks {
++  thin: Uint8Array;
++  thick: Uint8Array;
++  designIsThin: boolean;
++}
++
++const opaquePixelClass = (
++  pixels: Uint8ClampedArray,
++  index: number,
++  background: readonly number[],
++  foreground: readonly number[],
++  ignoreMask?: Uint8Array,
++): number => {
++  if (ignoreMask?.[index] || pixels[index * 4 + 3] !== 255) return 2;
++  const color = colorAt(pixels, index);
++  if (maxChannelDelta(color, background) <= CHANNEL_TOLERANCE) return 0;
++  return maxChannelDelta(color, foreground) <= CHANNEL_TOLERANCE ? 1 : 2;
++};
++
++const nestedOpaqueMasks = (
++  designPixels: Uint8ClampedArray,
++  screenshotPixels: Uint8ClampedArray,
++  width: number,
++  window: RasterWindow,
++  backgrounds: MatchedBackgrounds,
++  foreground: readonly number[],
++  ignoreMask?: Uint8Array,
++): NestedOpaqueMasks | undefined => {
++  const w = window.right - window.left;
++  const h = window.bottom - window.top;
++  const masks = [new Uint8Array(w * h), new Uint8Array(w * h)];
++  let designOnly = 0;
++  let screenshotOnly = 0;
++  for (let y = 0; y < h; y++) {
++    for (let x = 0; x < w; x++) {
++      const index = (window.top + y) * width + window.left + x;
++      const local = y * w + x;
++      masks[0][local] = opaquePixelClass(
++        designPixels,
++        index,
++        backgrounds.design,
++        foreground,
++        ignoreMask,
++      );
++      masks[1][local] = opaquePixelClass(
++        screenshotPixels,
++        index,
++        backgrounds.screenshot,
++        foreground,
++        ignoreMask,
++      );
++      if (masks[0][local] === 1 && masks[1][local] !== 1) designOnly++;
++      if (masks[1][local] === 1 && masks[0][local] !== 1) screenshotOnly++;
++      // 平行移動は一方の縁でコアを失う。両方向の出入りがあれば太線化と断定しない。
++      if (designOnly > 0 && screenshotOnly > 0) return undefined;
++    }
++  }
++  if (designOnly === 0 && screenshotOnly === 0) return undefined;
++  const designIsThin = designOnly === 0;
++  return { thin: masks[designIsThin ? 0 : 1], thick: masks[designIsThin ? 1 : 0], designIsThin };
++};
++
++const addedOpaquePositions = (
++  thinLine: Uint8Array,
++  thin: OpaqueRun,
++  thick: OpaqueRun,
++): number[] | undefined => {
++  const added: number[] = [];
++  for (let position = thick.start; position < thick.end; position++) {
++    if (position >= thin.start && position < thin.end) continue;
++    // 窓内の別グリフや中間AAを、純背景から増えた不透明列と取り違えない。
++    if (thinLine[position] !== 0) return undefined;
++    added.push(position);
++  }
++  return added;
++};
++
++const opaqueRunChanges = (thinLine: Uint8Array, thickLine: Uint8Array) => {
++  const changes: { thin: OpaqueRun; thick: OpaqueRun; added: number[] }[] = [];
++  const thinRuns = opaqueRuns(thinLine);
++  const thickRuns = opaqueRuns(thickLine);
++  let firstThick = 0;
++  for (const thin of thinRuns) {
++    while (firstThick < thickRuns.length && thickRuns[firstThick].end <= thin.start) firstThick++;
++    for (let j = firstThick; j < thickRuns.length && thickRuns[j].start < thin.end; j++) {
++      const thick = thickRuns[j];
++      if (
++        thick.start > thin.start ||
++        thick.end < thin.end ||
++        thick.end - thick.start <= thin.end - thin.start
++      )
++        continue;
++      const added = addedOpaquePositions(thinLine, thin, thick);
++      if (added) changes.push({ thin, thick, added });
++    }
++  }
++  return changes;
++};
++
++const opaqueChangeTouchesRegion = (
++  added: number[],
++  line: number,
++  axis: "x" | "y",
++  window: RasterWindow,
++  bbox: DiffBoundingBox,
++): boolean =>
++  added.some((position) => {
++    const x = window.left + (axis === "x" ? position : line);
++    const y = window.top + (axis === "x" ? line : position);
++    return x >= bbox.x && x < bbox.x + bbox.w && y >= bbox.y && y < bbox.y + bbox.h;
++  });
++
++const scanOpaqueStrokeAxis = (
++  masks: NestedOpaqueMasks,
++  w: number,
++  h: number,
++  window: RasterWindow,
++  bbox: DiffBoundingBox,
++  axis: "x" | "y",
++): OpaqueStrokeChange | undefined => {
++  const lineLength = axis === "x" ? w : h;
++  const lineCount = axis === "x" ? h : w;
++  let previous = new Map<string, { first: number; count: number; touchesRegion: boolean }>();
++  for (let line = 0; line < lineCount; line++) {
++    const thinLine = new Uint8Array(lineLength);
++    const thickLine = new Uint8Array(lineLength);
++    for (let position = 0; position < lineLength; position++) {
++      const index = axis === "x" ? line * w + position : position * w + line;
++      thinLine[position] = masks.thin[index];
++      thickLine[position] = masks.thick[index];
++    }
++    const next = new Map<string, { first: number; count: number; touchesRegion: boolean }>();
++    for (const { thin, thick, added } of opaqueRunChanges(thinLine, thickLine)) {
++      const touchesRegion = opaqueChangeTouchesRegion(added, line, axis, window, bbox);
++      const key = `${thin.start},${thin.end},${thick.start},${thick.end}`;
++      const prior = previous.get(key);
++      const state = {
++        first: prior?.first ?? line,
++        count: (prior?.count ?? 0) + 1,
++        touchesRegion: touchesRegion || prior?.touchesRegion === true,
++      };
++      next.set(key, state);
++      if (
++        state.count < MIN_OPAQUE_STROKE_ROWS ||
++        added.length * state.count < MIN_OPAQUE_STROKE_CHANGED_PIXELS ||
++        !state.touchesRegion
++      )
++        continue;
++      const thinWidth = thin.end - thin.start;
++      const thickWidth = thick.end - thick.start;
++      const widths = masks.designIsThin
++        ? { designWidthPx: thinWidth, screenshotWidthPx: thickWidth }
++        : { designWidthPx: thickWidth, screenshotWidthPx: thinWidth };
++      return {
++        axis,
++        ...widths,
++        scanlineCount: state.count,
++        changedPixelCount: added.length * state.count,
++        bbox:
++          axis === "x"
++            ? {
++                x: window.left + thick.start,
++                y: window.top + state.first,
++                w: thick.end - thick.start,
++                h: state.count,
++              }
++            : {
++                x: window.left + state.first,
++                y: window.top + thick.start,
++                w: state.count,
++                h: thick.end - thick.start,
++              },
++      };
++    }
++    previous = next;
++  }
++  return undefined;
++};
++
++export const detectOpaqueStrokeChange = (
++  designPixels: Uint8ClampedArray,
++  screenshotPixels: Uint8ClampedArray,
++  width: number,
++  height: number,
++  bbox: DiffBoundingBox,
++  ignoreMask?: Uint8Array,
++): OpaqueStrokeChange | undefined => {
++  if (
++    !Number.isSafeInteger(width) ||
++    !Number.isSafeInteger(height) ||
++    width <= 0 ||
++    height <= 0 ||
++    designPixels.length !== width * height * 4 ||
++    screenshotPixels.length !== designPixels.length ||
++    (ignoreMask !== undefined && ignoreMask.length !== width * height) ||
++    ![bbox.x, bbox.y, bbox.w, bbox.h].every(Number.isFinite) ||
++    bbox.w <= 0 ||
++    bbox.h <= 0
++  )
++    return undefined;
++  const window = resolveRasterWindow(width, height, bbox, OPAQUE_STROKE_HALO);
++  if (!window) return undefined;
++  const w = window.right - window.left;
++  const h = window.bottom - window.top;
++  if (w * h > MAX_OPAQUE_STROKE_WINDOW_AREA) return undefined;
++  const backgrounds = resolveMatchingBackgrounds(
++    designPixels,
++    screenshotPixels,
++    width,
++    window,
++    ignoreMask,
++  );
++  if (!backgrounds) return undefined;
++  const foreground = foregroundExtreme(designPixels, width, window, backgrounds.design, ignoreMask);
++  const shotForeground = foregroundExtreme(
++    screenshotPixels,
++    width,
++    window,
++    backgrounds.screenshot,
++    ignoreMask,
++  );
++  if (
++    !foreground ||
++    !shotForeground ||
++    maxChannelDelta(foreground, shotForeground) > CHANNEL_TOLERANCE
++  )
++    return undefined;
++
++  const masks = nestedOpaqueMasks(
++    designPixels,
++    screenshotPixels,
++    width,
++    window,
++    backgrounds,
++    foreground,
++    ignoreMask,
++  );
++  if (!masks) return undefined;
++  for (const axis of ["x", "y"] as const) {
++    const evidence = scanOpaqueStrokeAxis(masks, w, h, window, bbox, axis);
++    if (evidence) return evidence;
++  }
++  return undefined;
++};
++
+@@ -860,0 +1144 @@ export const countChangedPixels = (
++ * 不透明ストロークの幅変化が確定した候補は、この4拘束の前に除外する。
+@@ -864 +1148 @@ export const countChangedPixels = (
+- * 対称な太線化のように形状・墨量の許容域へ入るウェイト変更もあるため、
++ * 部分被覆を含む太線化など形状・墨量の許容域へ入る変更もあるため、
+@@ -982,0 +1267,2 @@ export const classifySameTokenRasterization = (
++  if (detectOpaqueStrokeChange(designPixels, screenshotPixels, width, height, bbox, ignoreMask))
++    return undefined;
+diff --git a/package/shared/src/signal/opaque-stroke.test.ts b/package/shared/src/signal/opaque-stroke.test.ts
+new file mode 100644
+index 0000000..f08e2be
+--- /dev/null
++++ b/package/shared/src/signal/opaque-stroke.test.ts
+@@ -0,0 +1,136 @@
++import { describe, expect, it } from "vitest";
++
++import { detectOpaqueStrokeChange } from "./glyph-edge-raster.js";
++
++const SIZE = 80;
++const BOX = { x: 8, y: 8, w: 64, h: 64 };
++const pixels = (
++  strokeWidth: number,
++  transpose = false,
++  shift = 0,
++  background = 255,
++  length = 17,
++) => {
++  const result = new Uint8ClampedArray(SIZE * SIZE * 4).fill(background);
++  for (let index = 0; index < SIZE * SIZE; index++) result[index * 4 + 3] = 255;
++  for (const center of [20, 40, 60]) {
++    for (let row = 20; row < 20 + length; row++) {
++      for (
++        let column = center - Math.floor(strokeWidth / 2);
++        column < center - Math.floor(strokeWidth / 2) + strokeWidth;
++        column++
++      ) {
++        const x = (transpose ? row : column) + shift;
++        const y = transpose ? column : row;
++        if (x < 0 || x >= SIZE || y < 0 || y >= SIZE)
++          throw new RangeError("Stroke control is outside image");
++        result.fill(51, (y * SIZE + x) * 4, (y * SIZE + x) * 4 + 3);
++      }
++    }
++  }
++  expect(Array.from(result).filter((value, index) => index % 4 === 0 && value === 51)).toHaveLength(
++    3 * strokeWidth * length,
++  );
++  return result;
++};
++
++describe("不透明ストロークの幅変化", () => {
++  it.each([
++    [5, 7, false],
++    [7, 5, false],
++    [7, 9, false],
++    [9, 7, false],
++    [5, 7, true],
++    [7, 5, true],
++    [7, 9, true],
++    [9, 7, true],
++  ] as const)("%i→%i、転置%sの実幅差を測る", (designWidth, shotWidth, transpose) => {
++    const evidence = detectOpaqueStrokeChange(
++      pixels(designWidth, transpose),
++      pixels(shotWidth, transpose),
++      SIZE,
++      SIZE,
++      BOX,
++    );
++    expect(evidence).toMatchObject({
++      axis: transpose ? "y" : "x",
++      designWidthPx: designWidth,
++      screenshotWidthPx: shotWidth,
++    });
++    expect(evidence?.changedPixelCount).toBeGreaterThanOrEqual(10);
++  });
++
++  it.each([
++    [255, 251],
++    [251, 255],
++  ] as const)("独自背景%i/%iでも幅を変えた対照を拒否する", (designBg, shotBg) => {
++    expect(
++      detectOpaqueStrokeChange(
++        pixels(5, false, 0, designBg),
++        pixels(7, false, 0, shotBg),
++        SIZE,
++        SIZE,
++        BOX,
++      ),
++    ).toMatchObject({ designWidthPx: 5, screenshotWidthPx: 7 });
++  });
++
++  it.each([0, 1, 2])("同じ幅の%i px移動を太線化と呼ばない", (shift) => {
++    expect(
++      detectOpaqueStrokeChange(pixels(5), pixels(5, false, shift), SIZE, SIZE, BOX),
++    ).toBeUndefined();
++  });
++
++  it("片側の差分クラスタでも両端を調べて幅変化を見つける", () => {
++    expect(
++      detectOpaqueStrokeChange(pixels(5), pixels(7), SIZE, SIZE, { x: 17, y: 20, w: 1, h: 17 }),
++    ).toMatchObject({ designWidthPx: 5, screenshotWidthPx: 7 });
++  });
++
++  it("halo内の別要素の変化を元bboxへ帰属しない", () => {
++    expect(
++      detectOpaqueStrokeChange(pixels(5), pixels(7), SIZE, SIZE, { x: 28, y: 20, w: 1, h: 17 }),
++    ).toBeUndefined();
++  });
++
++  it("マスクで隠れた背景アンカーを完全な輪郭の証拠にしない", () => {
++    const mask = new Uint8Array(SIZE * SIZE);
++    for (const center of [20, 40, 60]) {
++      for (let y = 20; y < 37; y++) {
++        mask[y * SIZE + center - 4] = 1;
++        mask[y * SIZE + center + 4] = 1;
++      }
++    }
++    expect(detectOpaqueStrokeChange(pixels(5), pixels(7), SIZE, SIZE, BOX, mask)).toBeUndefined();
++  });
++
++  it.each([9, 10])("片側増幅の変更%i画素は既存の10画素境界を守る", (length) => {
++    const design = pixels(5, false, 0, 255, length);
++    const shot = Uint8ClampedArray.from(design);
++    for (let y = 20; y < 20 + length; y++)
++      shot.fill(51, (y * SIZE + 23) * 4, (y * SIZE + 23) * 4 + 3);
++    const evidence = detectOpaqueStrokeChange(design, shot, SIZE, SIZE, BOX);
++    if (length === 9) expect(evidence).toBeUndefined();
++    else
++      expect(evidence).toMatchObject({
++        designWidthPx: 5,
++        screenshotWidthPx: 6,
++        changedPixelCount: 10,
++      });
++  });
++
++  it("画像端で切れたストロークを完全幅と主張しない", () => {
++    const design = new Uint8ClampedArray(SIZE * SIZE * 4).fill(255);
++    const shot = Uint8ClampedArray.from(design);
++    for (let y = 20; y < 37; y++) {
++      for (let x = 0; x < 7; x++) {
++        const index = (y * SIZE + x) * 4;
++        if (x < 5) design.fill(51, index, index + 3);
++        shot.fill(51, index, index + 3);
++      }
++    }
++    expect(
++      detectOpaqueStrokeChange(design, shot, SIZE, SIZE, { x: 5, y: 20, w: 2, h: 17 }),
++    ).toBeUndefined();
++  });
++});
+diff --git a/package/shared/src/signal/text-reflow.ts b/package/shared/src/signal/text-reflow.ts
+index f9b789d..576a14b 100644
+--- a/package/shared/src/signal/text-reflow.ts
++++ b/package/shared/src/signal/text-reflow.ts
+@@ -15,0 +16 @@ import {
++  detectOpaqueStrokeChange,
+@@ -321,0 +323,2 @@ export const classifyTextReflow = (
++  if (detectOpaqueStrokeChange(designPixels, screenshotPixels, width, height, bbox, ignoreMask))
++    return undefined;

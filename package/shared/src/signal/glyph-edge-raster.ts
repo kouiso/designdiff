@@ -850,6 +850,289 @@ export const countChangedPixels = (
   return changed;
 };
 
+export interface OpaqueStrokeChange {
+  axis: "x" | "y";
+  designWidthPx: number;
+  screenshotWidthPx: number;
+  scanlineCount: number;
+  changedPixelCount: number;
+  bbox: DiffBoundingBox;
+}
+
+// 片側の縁だけを見ると太線化も1px移動に見えるため、最大haloで両端を調べる。
+const OPAQUE_STROKE_HALO = 12;
+// 完全なベタ面だけを走査し、巨大セクションは局所クラスタ側で検証する。
+const MAX_OPAQUE_STROKE_WINDOW_AREA = 120000;
+// 孤立した丸め画素と既存の10画素未満の残差ノイズを幅変化の証拠にしない。
+const MIN_OPAQUE_STROKE_ROWS = 3;
+const MIN_OPAQUE_STROKE_CHANGED_PIXELS = 10;
+
+interface OpaqueRun {
+  start: number;
+  end: number;
+}
+
+const opaqueRuns = (line: Uint8Array): OpaqueRun[] => {
+  const runs: OpaqueRun[] = [];
+  let start = -1;
+  for (let position = 0; position <= line.length; position++) {
+    if (position < line.length && line[position] === 1) {
+      if (start === -1) start = position;
+      continue;
+    }
+    if (start > 0 && position < line.length && line[start - 1] === 0 && line[position] === 0) {
+      runs.push({ start, end: position });
+    }
+    start = -1;
+  }
+  return runs;
+};
+
+interface NestedOpaqueMasks {
+  thin: Uint8Array;
+  thick: Uint8Array;
+  designIsThin: boolean;
+}
+
+const opaquePixelClass = (
+  pixels: Uint8ClampedArray,
+  index: number,
+  background: readonly number[],
+  foreground: readonly number[],
+  ignoreMask?: Uint8Array,
+): number => {
+  if (ignoreMask?.[index] || pixels[index * 4 + 3] !== 255) return 2;
+  const color = colorAt(pixels, index);
+  if (maxChannelDelta(color, background) <= CHANNEL_TOLERANCE) return 0;
+  return maxChannelDelta(color, foreground) <= CHANNEL_TOLERANCE ? 1 : 2;
+};
+
+const nestedOpaqueMasks = (
+  designPixels: Uint8ClampedArray,
+  screenshotPixels: Uint8ClampedArray,
+  width: number,
+  window: RasterWindow,
+  backgrounds: MatchedBackgrounds,
+  foreground: readonly number[],
+  ignoreMask?: Uint8Array,
+): NestedOpaqueMasks | undefined => {
+  const w = window.right - window.left;
+  const h = window.bottom - window.top;
+  const masks = [new Uint8Array(w * h), new Uint8Array(w * h)];
+  let designOnly = 0;
+  let screenshotOnly = 0;
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const index = (window.top + y) * width + window.left + x;
+      const local = y * w + x;
+      masks[0][local] = opaquePixelClass(
+        designPixels,
+        index,
+        backgrounds.design,
+        foreground,
+        ignoreMask,
+      );
+      masks[1][local] = opaquePixelClass(
+        screenshotPixels,
+        index,
+        backgrounds.screenshot,
+        foreground,
+        ignoreMask,
+      );
+      if (masks[0][local] === 1 && masks[1][local] !== 1) designOnly++;
+      if (masks[1][local] === 1 && masks[0][local] !== 1) screenshotOnly++;
+      // 平行移動は一方の縁でコアを失う。両方向の出入りがあれば太線化と断定しない。
+      if (designOnly > 0 && screenshotOnly > 0) return undefined;
+    }
+  }
+  if (designOnly === 0 && screenshotOnly === 0) return undefined;
+  const designIsThin = designOnly === 0;
+  return { thin: masks[designIsThin ? 0 : 1], thick: masks[designIsThin ? 1 : 0], designIsThin };
+};
+
+const addedOpaquePositions = (
+  thinLine: Uint8Array,
+  thin: OpaqueRun,
+  thick: OpaqueRun,
+): number[] | undefined => {
+  const added: number[] = [];
+  for (let position = thick.start; position < thick.end; position++) {
+    if (position >= thin.start && position < thin.end) continue;
+    // 窓内の別グリフや中間AAを、純背景から増えた不透明列と取り違えない。
+    if (thinLine[position] !== 0) return undefined;
+    added.push(position);
+  }
+  return added;
+};
+
+const opaqueRunChanges = (thinLine: Uint8Array, thickLine: Uint8Array) => {
+  const changes: { thin: OpaqueRun; thick: OpaqueRun; added: number[] }[] = [];
+  const thinRuns = opaqueRuns(thinLine);
+  const thickRuns = opaqueRuns(thickLine);
+  let firstThick = 0;
+  for (const thin of thinRuns) {
+    while (firstThick < thickRuns.length && thickRuns[firstThick].end <= thin.start) firstThick++;
+    for (let j = firstThick; j < thickRuns.length && thickRuns[j].start < thin.end; j++) {
+      const thick = thickRuns[j];
+      if (
+        thick.start > thin.start ||
+        thick.end < thin.end ||
+        thick.end - thick.start <= thin.end - thin.start
+      )
+        continue;
+      const added = addedOpaquePositions(thinLine, thin, thick);
+      if (added) changes.push({ thin, thick, added });
+    }
+  }
+  return changes;
+};
+
+const opaqueChangeTouchesRegion = (
+  added: number[],
+  line: number,
+  axis: "x" | "y",
+  window: RasterWindow,
+  bbox: DiffBoundingBox,
+): boolean =>
+  added.some((position) => {
+    const x = window.left + (axis === "x" ? position : line);
+    const y = window.top + (axis === "x" ? line : position);
+    return x >= bbox.x && x < bbox.x + bbox.w && y >= bbox.y && y < bbox.y + bbox.h;
+  });
+
+const scanOpaqueStrokeAxis = (
+  masks: NestedOpaqueMasks,
+  w: number,
+  h: number,
+  window: RasterWindow,
+  bbox: DiffBoundingBox,
+  axis: "x" | "y",
+): OpaqueStrokeChange | undefined => {
+  const lineLength = axis === "x" ? w : h;
+  const lineCount = axis === "x" ? h : w;
+  let previous = new Map<string, { first: number; count: number; touchesRegion: boolean }>();
+  for (let line = 0; line < lineCount; line++) {
+    const thinLine = new Uint8Array(lineLength);
+    const thickLine = new Uint8Array(lineLength);
+    for (let position = 0; position < lineLength; position++) {
+      const index = axis === "x" ? line * w + position : position * w + line;
+      thinLine[position] = masks.thin[index];
+      thickLine[position] = masks.thick[index];
+    }
+    const next = new Map<string, { first: number; count: number; touchesRegion: boolean }>();
+    for (const { thin, thick, added } of opaqueRunChanges(thinLine, thickLine)) {
+      const touchesRegion = opaqueChangeTouchesRegion(added, line, axis, window, bbox);
+      const key = `${thin.start},${thin.end},${thick.start},${thick.end}`;
+      const prior = previous.get(key);
+      const state = {
+        first: prior?.first ?? line,
+        count: (prior?.count ?? 0) + 1,
+        touchesRegion: touchesRegion || prior?.touchesRegion === true,
+      };
+      next.set(key, state);
+      if (
+        state.count < MIN_OPAQUE_STROKE_ROWS ||
+        added.length * state.count < MIN_OPAQUE_STROKE_CHANGED_PIXELS ||
+        !state.touchesRegion
+      )
+        continue;
+      const thinWidth = thin.end - thin.start;
+      const thickWidth = thick.end - thick.start;
+      const widths = masks.designIsThin
+        ? { designWidthPx: thinWidth, screenshotWidthPx: thickWidth }
+        : { designWidthPx: thickWidth, screenshotWidthPx: thinWidth };
+      return {
+        axis,
+        ...widths,
+        scanlineCount: state.count,
+        changedPixelCount: added.length * state.count,
+        bbox:
+          axis === "x"
+            ? {
+                x: window.left + thick.start,
+                y: window.top + state.first,
+                w: thick.end - thick.start,
+                h: state.count,
+              }
+            : {
+                x: window.left + state.first,
+                y: window.top + thick.start,
+                w: state.count,
+                h: thick.end - thick.start,
+              },
+      };
+    }
+    previous = next;
+  }
+  return undefined;
+};
+
+export const detectOpaqueStrokeChange = (
+  designPixels: Uint8ClampedArray,
+  screenshotPixels: Uint8ClampedArray,
+  width: number,
+  height: number,
+  bbox: DiffBoundingBox,
+  ignoreMask?: Uint8Array,
+): OpaqueStrokeChange | undefined => {
+  if (
+    !Number.isSafeInteger(width) ||
+    !Number.isSafeInteger(height) ||
+    width <= 0 ||
+    height <= 0 ||
+    designPixels.length !== width * height * 4 ||
+    screenshotPixels.length !== designPixels.length ||
+    (ignoreMask !== undefined && ignoreMask.length !== width * height) ||
+    ![bbox.x, bbox.y, bbox.w, bbox.h].every(Number.isFinite) ||
+    bbox.w <= 0 ||
+    bbox.h <= 0
+  )
+    return undefined;
+  const window = resolveRasterWindow(width, height, bbox, OPAQUE_STROKE_HALO);
+  if (!window) return undefined;
+  const w = window.right - window.left;
+  const h = window.bottom - window.top;
+  if (w * h > MAX_OPAQUE_STROKE_WINDOW_AREA) return undefined;
+  const backgrounds = resolveMatchingBackgrounds(
+    designPixels,
+    screenshotPixels,
+    width,
+    window,
+    ignoreMask,
+  );
+  if (!backgrounds) return undefined;
+  const foreground = foregroundExtreme(designPixels, width, window, backgrounds.design, ignoreMask);
+  const shotForeground = foregroundExtreme(
+    screenshotPixels,
+    width,
+    window,
+    backgrounds.screenshot,
+    ignoreMask,
+  );
+  if (
+    !foreground ||
+    !shotForeground ||
+    maxChannelDelta(foreground, shotForeground) > CHANNEL_TOLERANCE
+  )
+    return undefined;
+
+  const masks = nestedOpaqueMasks(
+    designPixels,
+    screenshotPixels,
+    width,
+    window,
+    backgrounds,
+    foreground,
+    ignoreMask,
+  );
+  if (!masks) return undefined;
+  for (const axis of ["x", "y"] as const) {
+    const evidence = scanOpaqueStrokeAxis(masks, w, h, window, bbox, axis);
+    if (evidence) return evidence;
+  }
+  return undefined;
+};
+
 /**
  * 同一トークン・同一トポロジのラスタライザ差分だけを証明する狭い分類。
  *
@@ -858,10 +1141,11 @@ export const countChangedPixels = (
  * 2. 各画像の最前景トークンが一致 (bg/fg の色名が同じ)
  * 3. インク被覆率差が小さい (同じ分量の墨が置かれている)
  * 4. エッジトポロジが近い (欠落したグリフや要素は大きな空隙を作り弾かれる)
+ * 不透明ストロークの幅変化が確定した候補は、この4拘束の前に除外する。
  *
  * glyph-edge-rasterization が「同一位置の共有コア」を要求するのに対し、
  * こちらは位置を共有しない同一トークンを許容する。各拘束で候補を絞るが、
- * 対称な太線化のように形状・墨量の許容域へ入るウェイト変更もあるため、
+ * 部分被覆を含む太線化など形状・墨量の許容域へ入る変更もあるため、
  * 分類だけからフォント指定や実配置の一致を断定してはならない。
  */
 const classifySameTokenRasterizationAtHalo = (
@@ -980,6 +1264,8 @@ export const classifySameTokenRasterization = (
   topologyShape: number,
   ignoreMask?: Uint8Array,
 ): SameTokenRasterEvidence | undefined => {
+  if (detectOpaqueStrokeChange(designPixels, screenshotPixels, width, height, bbox, ignoreMask))
+    return undefined;
   let effectiveShape = topologyShape;
   if (topologyShape > MAX_TOPOLOGY_SHAPE) {
     // 生のトポロジが門を割るときは、平行移動を除いた形状差で再判定する。

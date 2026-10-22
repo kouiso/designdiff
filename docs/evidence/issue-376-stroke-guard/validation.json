@@ -1,0 +1,443 @@
+{
+  "date": "2026-10-22",
+  "baseCommit": "6f5f45ebca8074edf24094fe50b2debf26077e1c",
+  "environment": {
+    "node": "v25.6.1",
+    "pnpm": "9.15.0",
+    "platform": "linux",
+    "arch": "x64"
+  },
+  "productDiffCommand": [
+    "git",
+    "diff",
+    "--binary",
+    "HEAD",
+    "--",
+    "package/shared/src/index.ts",
+    "package/shared/src/signal/glyph-edge-raster.ts",
+    "package/shared/src/signal/text-reflow.ts",
+    "app/mcp-server/src/service/diff-report-builder.ts",
+    "app/mcp-server/src/service/image-compare-service.ts"
+  ],
+  "productDiffFromBaseSha256": "8cc46b742356ad168dba2fa4f616b96ae4e754ee5a9b5c54872eac29e633a9dc",
+  "implementationPatchCommand": [
+    "git",
+    "diff",
+    "--unified=0",
+    "--binary",
+    "HEAD",
+    "--",
+    "CHANGELOG.md",
+    "package/shared/src/index.ts",
+    "package/shared/src/signal/glyph-edge-raster.ts",
+    "package/shared/src/signal/text-reflow.ts",
+    "app/mcp-server/src/service/diff-report-builder.ts",
+    "app/mcp-server/src/service/image-compare-service.ts",
+    "package/shared/src/signal/glyph-edge-raster.test.ts",
+    "package/shared/src/signal/opaque-stroke.test.ts",
+    "package/shared/src/signal/text-reflow.test.ts",
+    "app/mcp-server/src/service/image-compare-stroke-width.test.ts",
+    "app/mcp-server/src/service/image-compare-stroke-background.test.ts",
+    "app/mcp-server/src/service/diff-report-builder.test.ts",
+    "app/mcp-server/src/service/diff-report-reflow-group.test.ts"
+  ],
+  "implementationPatchSha256": "aaecac747e7bf473b862b2fa40ad906888c540d2bb30c4f87e01c44f55a551f0",
+  "implementationPatchApplyNote": "Zero context diff; apply with git apply --unidiff-zero against recordedbase.",
+  "sourceAndTestSha256": {
+    "package/shared/src/index.ts": "b569b6becc81d4fccd073973cdf91a859117b88171603e346fe6bd03b31ba813",
+    "package/shared/src/signal/glyph-edge-raster.ts": "268761c604e4c5a75f16f874ac6cb760198b5412e033ad3fd705bd1ed181242c",
+    "package/shared/src/signal/text-reflow.ts": "7e428bc32e73ba8f91c6ff8dfa73449c09ad88f2fd11b820884230a0e9c13d8c",
+    "app/mcp-server/src/service/diff-report-builder.ts": "e225a893af8b6a4103c0ce63b34bcd8e7737a8dfcb55fc94fa2638f8ee81ed58",
+    "app/mcp-server/src/service/image-compare-service.ts": "69a1c242dd4d881efee41886f1d47f942b0564cb871f6e33d6c8f9b578c5a484",
+    "package/shared/dist/index.js": "2cd49399d7f849084a5d77483eee6dd9528e2e4efd90229dc088b67fbb20d389",
+    "package/shared/dist/signal/glyph-edge-raster.js": "e213dab8735ec978cc776e38e87191107b1783b6cec3edf28567de24f28b34b7",
+    "package/shared/dist/signal/text-reflow.js": "7e14d513725ba1b74581afbbfabe597b8b9c2c59186a3fdd5c8763f373298022",
+    "app/mcp-server/dist/service/diff-report-builder.js": "7c5bdc90e0720eced21fa973a63efff4cf8043a1b659437fc44c7a39b4be3127",
+    "app/mcp-server/dist/service/image-compare-service.js": "0cfa2a990c4dc50bd494476fef1e2a742d5a24114e7cb3c060a9446cbf782775",
+    "package/shared/src/signal/glyph-edge-raster.test.ts": "e059c467f4de99cd1a65f9efc4b5009189967610096f555a8c109c4161498ace",
+    "package/shared/src/signal/opaque-stroke.test.ts": "2cd1efc4a5db620cec43655108f28601698247c4269aa7e1f47e8a966d8a8acb",
+    "package/shared/src/signal/text-reflow.test.ts": "bab89ce3b4e22b90c24f61fec468ff704459b9f27ef66ccc8eadf366e124e60a",
+    "app/mcp-server/src/service/image-compare-stroke-width.test.ts": "7e5abc4725f1a0f8cac227abb26452dcec59b04a4171b1a6cb6a0c5848c91e09",
+    "app/mcp-server/src/service/image-compare-stroke-background.test.ts": "ea3fb7719ea4b610a8cd8d8669ef37d915c077b07474b1bf48640a25a8acbc67",
+    "app/mcp-server/src/service/diff-report-builder.test.ts": "aee62543f7119c299cf840e593667af1ac3588257e97be04980a709592d3ef9d",
+    "app/mcp-server/src/service/diff-report-reflow-group.test.ts": "5f366ce3b53de793e3510795d25c9ba8ae04da79b57de41b64f8adf9d0b82679"
+  },
+  "checks": [
+    {
+      "command": "pnpm --filter @figdiff/mcp-server... build",
+      "exitCode": 0,
+      "log": "build.log"
+    },
+    {
+      "command": "pnpm typecheck",
+      "exitCode": 0,
+      "log": "typecheck.log",
+      "tasks": 10,
+      "sharedTestTypes": true
+    },
+    {
+      "command": "pnpm --filter @figdiff/shared exec tsc --noEmit --target ES2022 --module NodeNext --moduleResolution NodeNext --strict --esModuleInterop --skipLibCheck src/signal/glyph-edge-raster.test.ts src/signal/opaque-stroke.test.ts src/signal/text-reflow.test.ts",
+      "exitCode": 0,
+      "log": "shared-test-types.log"
+    },
+    {
+      "command": "pnpm --filter @figdiff/mcp-server exec tsc --noEmit --target ES2022 --module NodeNext --moduleResolution NodeNext --strict --esModuleInterop --skipLibCheck src/service/image-compare-stroke-width.test.ts src/service/image-compare-stroke-background.test.ts src/service/diff-report-reflow-group.test.ts",
+      "exitCode": 0,
+      "log": "mcp-test-types.log"
+    },
+    {
+      "command": "pnpm lint:eslint",
+      "exitCode": 0,
+      "log": "eslint.log",
+      "errors": 0,
+      "existingWarnings": 2
+    },
+    {
+      "command": "python3 docs/evidence/issue-376-cloud/reap-children.py task ci:fast",
+      "exitCode": 0,
+      "log": "ci-fast.log",
+      "unitTests": {
+        "shared": 699,
+        "mcp": 950,
+        "desktopRenderer": 663,
+        "desktopMain": 250,
+        "chrome": 189,
+        "figma": 167,
+        "mobile": 103,
+        "credentials": 46,
+        "total": 3067
+      },
+      "rootNodeTests": {
+        "pass": 59,
+        "fail": 0,
+        "skip": 1,
+        "reason": "Windows-only command/cwd control on Linux"
+      },
+      "cache": "5/10 test-phase Turbo tasks localcached; changed shared/MCP executed. Full install/naming/lint/build/test/smoke/root phases retained in log.",
+      "supervisor": "Unprivileged child-reaping only; hooks/tests unmodified."
+    },
+    {
+      "command": "pnpm --filter @figdiff/shared exec vitest run src/signal/glyph-edge-raster.test.ts",
+      "exitCode": 1,
+      "log": "shared-red.log",
+      "expectedRed": true,
+      "passed": 42,
+      "failed": 1,
+      "note": "Opaque51\u219273 addition must fail; replacement trueAA2/7 positive already passes. Original product source at6f5f45e."
+    },
+    {
+      "command": "pnpm --filter @figdiff/shared exec vitest run src/signal/glyph-edge-raster.test.ts src/signal/opaque-stroke.test.ts src/signal/text-reflow.test.ts",
+      "exitCode": 0,
+      "log": "shared-green.log",
+      "passed": 78
+    },
+    {
+      "command": "pnpm --filter @figdiff/mcp-server exec vitest run src/service/image-compare-stroke-width.test.ts",
+      "exitCode": 1,
+      "log": "mcp-red.log",
+      "expectedRed": true,
+      "passed": 8,
+      "failed": 18,
+      "knownFalsePass": 16,
+      "existingFailWithoutNewSignal": 2
+    },
+    {
+      "command": "pnpm --filter @figdiff/mcp-server exec vitest run src/service/image-compare-stroke-width.test.ts src/service/image-compare-stroke-background.test.ts src/service/diff-report-builder.test.ts src/service/diff-report-reflow-group.test.ts",
+      "exitCode": 0,
+      "log": "mcp-green.log",
+      "passed": 139,
+      "note": "Before helper-only refactor; latest complete suite on final source also passes950MCP cases."
+    },
+    {
+      "command": [
+        "/tmp/designdiff-toolchain/node-v25.6.1-linux-x64/bin/node",
+        "/workspace/designdiff/docs/evidence/issue-376-stroke-guard/reproduce.mjs",
+        "/workspace/designdiff",
+        "docs/evidence/issue-376-stroke-guard/runtime-before.json",
+        "red"
+      ],
+      "exitCode": 0,
+      "artifact": "runtime-before.json",
+      "expectedRed": true,
+      "knownFalsePass": 4,
+      "note": "Frozen old built files match6f5f45e previous ledger; unbuilt source changed during RED and both snapshots preserved; full stdoutstderr perprocess/actual reports in artifact."
+    },
+    {
+      "command": [
+        "/tmp/designdiff-toolchain/node-v25.6.1-linux-x64/bin/node",
+        "/workspace/designdiff/docs/evidence/issue-376-stroke-guard/reproduce.mjs",
+        "/workspace/designdiff",
+        "docs/evidence/issue-376-stroke-guard/runtime-after.json",
+        "green",
+        "docs/evidence/issue-376-stroke-guard/runtime-before.json"
+      ],
+      "exitCode": 0,
+      "log": "runtime-green.log",
+      "artifact": "runtime-after.json",
+      "knownIntentionalWidthCases": 4,
+      "passed": 4,
+      "criticalIssueCases": 4,
+      "byteIdenticalToRed": true,
+      "routeSplit": {
+        "productionMcpPng": 2,
+        "freshChildBuiltApiSection": 2
+      }
+    },
+    {
+      "command": [
+        "/tmp/designdiff-toolchain/node-v25.6.1-linux-x64/bin/node",
+        "/workspace/designdiff/docs/evidence/issue-376-continuation/reproduce-reflow.mjs",
+        "/workspace/designdiff",
+        "docs/evidence/issue-376-stroke-guard/positive-runtime.json"
+      ],
+      "exitCode": 0,
+      "log": "reflow-runtime.log",
+      "artifact": "reflow-runtime.json",
+      "passed": 8,
+      "note": "Only newly generated positive-runtime.json was renamed; metadata retains actual argv; old artifacts unchanged."
+    },
+    {
+      "command": "node docs/evidence/issue-376-stroke-guard/inventory.mjs /workspace/designdiff /tmp/designdiff-gate1/verification/fixture docs/evidence/issue-376-stroke-guard/inventory.json",
+      "exitCode": 0,
+      "log": "inventory.log",
+      "artifact": "inventory.json",
+      "cases": 33,
+      "declaredPassFailMismatches": 12,
+      "falsePassAgainstDeclarations": 0,
+      "acceptanceComplete": false
+    },
+    {
+      "command": "pnpm exec biome check package/shared/src/signal/glyph-edge-raster.ts package/shared/src/signal/opaque-stroke.test.ts package/shared/src/signal/glyph-edge-raster.test.ts package/shared/src/signal/text-reflow.ts package/shared/src/index.ts app/mcp-server/src/service/diff-report-builder.ts app/mcp-server/src/service/image-compare-stroke-width.test.ts",
+      "exitCode": 0,
+      "log": "format.log",
+      "note": "Final glyph-only check after helperrefactor removes added complexity warnings; existing warnings retained."
+    },
+    {
+      "command": "pnpm exec biome check package/shared/src/signal/glyph-edge-raster.ts",
+      "exitCode": 0,
+      "log": "final-glyph-format.log",
+      "newWarnings": 0,
+      "existingWarnings": 1
+    },
+    {
+      "command": "pnpm exec biome check docs/evidence/issue-376-stroke-guard/*.mjs docs/evidence/issue-376-stroke-guard/*.json",
+      "exitCode": 0,
+      "log": "evidence-format.log"
+    },
+    {
+      "command": "git merge-tree --write-tree --messages origin/develop HEAD",
+      "exitCode": 0,
+      "log": "develop-preview.log",
+      "note": "Read-only conflict preview at committed base6f plus disjoint final worktree paths; no actual merge/ref/index/worktree update. Finalcommit preview repeated before push."
+    }
+  ],
+  "logProvenance": {
+    "shared-red.log": {
+      "originalPath": "/tmp/designdiff-stroke-guard-shared-red.log",
+      "originalBytes": 1460,
+      "originalSha256": "a10dced7920e057b1f60ef1fb700d7b4a6443b83581e1fcdd68b3add5e157432",
+      "savedSha256": "a10dced7920e057b1f60ef1fb700d7b4a6443b83581e1fcdd68b3add5e157432",
+      "normalization": "Trailing whitespace and trailing empty lines only; no message lines omitted."
+    },
+    "shared-green.log": {
+      "originalPath": "/tmp/designdiff-stroke-guard-shared-final.log",
+      "originalBytes": 223,
+      "originalSha256": "88b2dcc16e1bcf1364296d58646a18454592f66856edf9c3b78774f867ccbae4",
+      "savedSha256": "158ca84536332fa6e4a50d791810e807bffb3ecaaa8a5f3ab4a6557ae0894577",
+      "normalization": "Trailing whitespace and trailing empty lines only; no message lines omitted."
+    },
+    "mcp-red.log": {
+      "originalPath": "/tmp/designdiff-stroke-width-mcp-red.log",
+      "originalBytes": 16875,
+      "originalSha256": "29543b0981421a90e32ffc8b2888630538a83a068e258df304fed376e8e8339f",
+      "savedSha256": "29543b0981421a90e32ffc8b2888630538a83a068e258df304fed376e8e8339f",
+      "normalization": "Trailing whitespace and trailing empty lines only; no message lines omitted."
+    },
+    "mcp-green.log": {
+      "originalPath": "/tmp/designdiff-stroke-guard-mcp-green.log",
+      "originalBytes": 228,
+      "originalSha256": "a9e283b8e4f1f2d45e88933c65602a8e5bbd2b897c0722c59d509a63622e6e8e",
+      "savedSha256": "92c0d3211d10f2e1a1f46830b4e6baaaadea18484f162d2d56c57709a134b319",
+      "normalization": "Trailing whitespace and trailing empty lines only; no message lines omitted."
+    },
+    "build.log": {
+      "originalPath": "/tmp/designdiff-stroke-guard-build.log",
+      "originalBytes": 689,
+      "originalSha256": "979bbd5e04ea707f64e14b974be4798d4e6f25b7a5039bc036166f70a941f895",
+      "savedSha256": "979bbd5e04ea707f64e14b974be4798d4e6f25b7a5039bc036166f70a941f895",
+      "normalization": "Trailing whitespace and trailing empty lines only; no message lines omitted."
+    },
+    "ci-fast.log": {
+      "originalPath": "/tmp/designdiff-stroke-guard-ci-fast.log",
+      "originalBytes": 162330,
+      "originalSha256": "d200151ec89d784da5bb67aa3f3056588aef2664b154799793038b72c9ad2e5e",
+      "savedSha256": "c7effe9e896cf52a1616fc8c2eac4176a8217e7f281d61b4403a5162e3ce390b",
+      "normalization": "Trailing whitespace and trailing empty lines only; no message lines omitted."
+    },
+    "typecheck.log": {
+      "originalPath": "/tmp/designdiff-stroke-guard-typecheck.log",
+      "originalBytes": 4834,
+      "originalSha256": "21d4c3633547befc0290c16337e6d824810e658591a45704836ceff1b492347b",
+      "savedSha256": "a79d356dfa35852ba3867df29b34b5cc7f060947ee85db3cc314be90f6ce166b",
+      "normalization": "Trailing whitespace and trailing empty lines only; no message lines omitted."
+    },
+    "shared-test-types.log": {
+      "originalPath": "/tmp/designdiff-stroke-guard-shared-types.log",
+      "originalBytes": 0,
+      "originalSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "savedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "normalization": "Trailing whitespace and trailing empty lines only; no message lines omitted."
+    },
+    "mcp-test-types.log": {
+      "originalPath": "/tmp/designdiff-stroke-guard-mcp-types.log",
+      "originalBytes": 0,
+      "originalSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "savedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "normalization": "Trailing whitespace and trailing empty lines only; no message lines omitted."
+    },
+    "eslint-before-fix.log": {
+      "originalPath": "/tmp/designdiff-stroke-guard-eslint.log",
+      "originalBytes": 790,
+      "originalSha256": "296da41b4b46633d899e02e9eded29fa13a9e3972c300bf112370864f8c2b8f9",
+      "savedSha256": "296da41b4b46633d899e02e9eded29fa13a9e3972c300bf112370864f8c2b8f9",
+      "normalization": "Trailing whitespace and trailing empty lines only; no message lines omitted."
+    },
+    "eslint.log": {
+      "originalPath": "/tmp/designdiff-stroke-guard-eslint-final.log",
+      "originalBytes": 620,
+      "originalSha256": "75eb353a7172c838a625bd21eb0615cdde15f362ee4668b6e3e9c7da6f7e5714",
+      "savedSha256": "208eec298812aae94da4a0c003c30ac5d741398535d34caf6dd865f24c4e737d",
+      "normalization": "Trailing whitespace and trailing empty lines only; no message lines omitted."
+    },
+    "format.log": {
+      "originalPath": "/tmp/designdiff-stroke-guard-touched-format.log",
+      "originalBytes": 4859,
+      "originalSha256": "f7debc9f35af8ab1ca5287413f19306789fa48cdec252d8c345c8f4c60e02543",
+      "savedSha256": "2ee082eaefd94895aa6e0feea9a3ca9c9e11f24bc35b856e7d4f02221554c16f",
+      "normalization": "Trailing whitespace and trailing empty lines only; no message lines omitted."
+    },
+    "final-glyph-format.log": {
+      "originalPath": "/tmp/designdiff-stroke-guard-final-glyph-format.log",
+      "originalBytes": 712,
+      "originalSha256": "b94397821dd4657f1ed0eaa0c6c9607884bf6c4ccb8543f13e29b12964082581",
+      "savedSha256": "c51a23ab4fee49e2b9f1a970162d77ec2b02c2ecc1644998fa0dc431aa1f98e2",
+      "normalization": "Trailing whitespace and trailing empty lines only; no message lines omitted."
+    },
+    "evidence-format.log": {
+      "originalPath": "/tmp/designdiff-stroke-guard-evidence-format.log",
+      "originalBytes": 43,
+      "originalSha256": "449ba69b2984f57df2a96685b2aee093d4b61ba98b82d86c59d83576b448b380",
+      "savedSha256": "449ba69b2984f57df2a96685b2aee093d4b61ba98b82d86c59d83576b448b380",
+      "normalization": "Trailing whitespace and trailing empty lines only; no message lines omitted."
+    },
+    "inventory.log": {
+      "originalPath": "/tmp/designdiff-stroke-guard-inventory-final.log",
+      "originalBytes": 1839,
+      "originalSha256": "2e460012a7f1cd5495c1a85a6b137626104f9a5ab5cec2da07a6e13ada1a535e",
+      "savedSha256": "2e460012a7f1cd5495c1a85a6b137626104f9a5ab5cec2da07a6e13ada1a535e",
+      "normalization": "Trailing whitespace and trailing empty lines only; no message lines omitted."
+    },
+    "runtime-green.log": {
+      "originalPath": "/tmp/designdiff-stroke-guard-runtime-green.log",
+      "originalBytes": 382,
+      "originalSha256": "cf405eee7a009d3803e7aba2def540659375a000f19c05e8eb88976b04291e83",
+      "savedSha256": "cf405eee7a009d3803e7aba2def540659375a000f19c05e8eb88976b04291e83",
+      "normalization": "Trailing whitespace and trailing empty lines only; no message lines omitted."
+    },
+    "reflow-runtime.log": {
+      "originalPath": "/tmp/designdiff-stroke-guard-reflow-runtime.log",
+      "originalBytes": 194,
+      "originalSha256": "1267726e489e22fc06bfeeddcb63c1b36c91865144af180e3225e87d7e303ca6",
+      "savedSha256": "1267726e489e22fc06bfeeddcb63c1b36c91865144af180e3225e87d7e303ca6",
+      "normalization": "Trailing whitespace and trailing empty lines only; no message lines omitted."
+    },
+    "develop-preview.log": {
+      "originalPath": "/tmp/designdiff-stroke-guard-develop-preview.log",
+      "originalBytes": 42,
+      "originalSha256": "f72c7f1c32fa79dbfed1ffd3afb90e96a0d73a887431152a3e59ca91f7c1263c",
+      "savedSha256": "737959b59b06e6c82a57d33bfe171015c7f80974a7b99649acf37882d9c0c394",
+      "normalization": "Trailing whitespace and trailing empty lines only; no message lines omitted."
+    },
+    "remote-compare.log": {
+      "originalPath": "/tmp/designdiff-stroke-guard-remote-compare.log",
+      "originalBytes": 243,
+      "originalSha256": "2fc0ab287f19484ef875ca92301acd866cb213ddef9c948f76a6d14ae9ec0ff7",
+      "savedSha256": "2fc0ab287f19484ef875ca92301acd866cb213ddef9c948f76a6d14ae9ec0ff7",
+      "normalization": "Trailing whitespace and trailing empty lines only; no message lines omitted."
+    }
+  },
+  "failedAttempts": [
+    {
+      "command": "pnpm lint:eslint",
+      "exitCode": 1,
+      "log": "eslint-before-fix.log",
+      "reason": "New inventory CLI used Node globalURL without explicitimport, causing ESLint no-undef. Added node:url import; final ESLint0 and inventory rerun on exactscript.",
+      "resolved": true
+    }
+  ],
+  "ui": {
+    "changed": false,
+    "sameConditionBeforeAfterImages": "Not applicable; raw and PNG inputhashes assert identical synthetic pairs before/after, no realimage writes/uploads."
+  },
+  "resolved": [
+    "Original4 intentional symmetric stroke changes nowFAIL across PNG/section routes withcriticalwidth evidence.",
+    "No new verdict state; existingPASS/FAILcontract retained, no specification-answerblock remains.",
+    "Latestdevelop083cf600 Nodeupdate compared; overlappingpaths0, Nodeconfiguration unchanged."
+  ],
+  "remaining": [
+    "11declaredPASS cases have independently measured nonfont layout/size/content differences; pair18 cause remainsuncertified.",
+    "Pair18 exactcapture revision/receipt, matching Figma rawtextstyles, actual resolved fontbinaries/weights/fallback and measured textbaselines/engine settings unavailable; sources/candidates documented in pair-18-inputs.",
+    "Newwidth signal is conservative for complete nestedopaque runs; mixedcoregain/loss, AA-hardedge ambiguity, >12halo or >120k context remainoutsideproof. No general fontweight classifier completion claimed."
+  ],
+  "unexecuted": [
+    "macOS actualDesktop",
+    "Retina",
+    "real paired-font rendering",
+    "live Figma host/API",
+    "Node26.12.1 integration runtime",
+    "remote explicit CI"
+  ],
+  "developComparison": "develop-comparison.json",
+  "mobileCaptureChanged": false,
+  "remoteActions": {
+    "newPr": false,
+    "externalContact": false,
+    "merge": false,
+    "draftReady": false,
+    "forcePush": false,
+    "protectedBranchPush": false,
+    "hookBypass": false
+  },
+  "artifactSha256": {
+    "README.md": "1ef5b319da0c8e0b53647462afd326bfe8005876570004aaec36fe0835f1e7e5",
+    "build.log": "979bbd5e04ea707f64e14b974be4798d4e6f25b7a5039bc036166f70a941f895",
+    "ci-fast.log": "c7effe9e896cf52a1616fc8c2eac4176a8217e7f281d61b4403a5162e3ce390b",
+    "develop-comparison.json": "fc274f12f74827545ba80d8766d83aad319d5ff1a96ac2a2942a6b672afaa1fd",
+    "develop-preview.log": "737959b59b06e6c82a57d33bfe171015c7f80974a7b99649acf37882d9c0c394",
+    "eslint-before-fix.log": "296da41b4b46633d899e02e9eded29fa13a9e3972c300bf112370864f8c2b8f9",
+    "eslint.log": "208eec298812aae94da4a0c003c30ac5d741398535d34caf6dd865f24c4e737d",
+    "evidence-format.log": "449ba69b2984f57df2a96685b2aee093d4b61ba98b82d86c59d83576b448b380",
+    "final-glyph-format.log": "c51a23ab4fee49e2b9f1a970162d77ec2b02c2ecc1644998fa0dc431aa1f98e2",
+    "format.log": "2ee082eaefd94895aa6e0feea9a3ca9c9e11f24bc35b856e7d4f02221554c16f",
+    "implementation.patch": "aaecac747e7bf473b862b2fa40ad906888c540d2bb30c4f87e01c44f55a551f0",
+    "inventory.json": "1b782a69cba4c59a78fb97af9945dff9aa3442df2bbaafd393bd0b4977ef5b0e",
+    "inventory.log": "2e460012a7f1cd5495c1a85a6b137626104f9a5ab5cec2da07a6e13ada1a535e",
+    "inventory.mjs": "7c659eca885b7b2c6638e47c4847c73c6eb620a4b29c6682ef8d35a230246a88",
+    "mcp-green.log": "92c0d3211d10f2e1a1f46830b4e6baaaadea18484f162d2d56c57709a134b319",
+    "mcp-red.log": "29543b0981421a90e32ffc8b2888630538a83a068e258df304fed376e8e8339f",
+    "mcp-test-types.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "pair-18-inputs.json": "dcb701526ef79afafb36c9823e5aaa8b9848551c1022e76f60c6484a8a75befc",
+    "pair-18-inputs.md": "692746792e10550d931e8c05004b533bc153841118592413f2ea0701af59b622",
+    "reflow-runtime.json": "87d1fa34e6e87bcb38113506ad4b8067bf5e979356f747f406fb6fce178d863f",
+    "reflow-runtime.log": "1267726e489e22fc06bfeeddcb63c1b36c91865144af180e3225e87d7e303ca6",
+    "remote-compare.log": "2fc0ab287f19484ef875ca92301acd866cb213ddef9c948f76a6d14ae9ec0ff7",
+    "reproduce.mjs": "0cd26e6171e057c3e31e16b59ce1943e8eecae8c625266880788368799c57c5e",
+    "runtime-after.json": "9e15d8fad895971d4e86b2e5fe515c3af3cc2f558d0b2c876b28b34b5f8805c5",
+    "runtime-before.json": "a7b7b5f83f994ab2a0dd15e057efb5b89c635b81f6b74b4c64eaef0b2a044a22",
+    "runtime-green.log": "cf405eee7a009d3803e7aba2def540659375a000f19c05e8eb88976b04291e83",
+    "shared-green.log": "158ca84536332fa6e4a50d791810e807bffb3ecaaa8a5f3ab4a6557ae0894577",
+    "shared-red.log": "a10dced7920e057b1f60ef1fb700d7b4a6443b83581e1fcdd68b3add5e157432",
+    "shared-test-types.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "typecheck.log": "a79d356dfa35852ba3867df29b34b5cc7f060947ee85db3cc314be90f6ce166b"
+  }
+}

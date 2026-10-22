@@ -13,6 +13,7 @@
 import {
   type RasterWindow,
   colorAt,
+  detectOpaqueStrokeChange,
   countChangedPixels,
   foregroundExtreme,
   inkCoverage,
@@ -319,6 +320,8 @@ export const classifyTextReflow = (
   bbox: DiffBoundingBox,
   ignoreMask?: Uint8Array,
 ): TextReflowEvidence | undefined => {
+  if (detectOpaqueStrokeChange(designPixels, screenshotPixels, width, height, bbox, ignoreMask))
+    return undefined;
   for (const padding of REFLOW_WINDOW_PADDINGS) {
     const window: RasterWindow = {
       left: Math.max(0, Math.floor(bbox.x) - padding),
