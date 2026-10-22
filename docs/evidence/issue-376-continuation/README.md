@@ -20,7 +20,7 @@
 | 11 correct | toast内の緑丸中心−4.5px、外側capsule中心−0.5px（相対−4px） | card境界は0/−1/−1/−1px、ここを2px累積差と主張しない。字送り原因は不明 | 非文字の相対配置差を含むためPASS救済不可 |
 | 15 correct | avatar/header Y−56px、下部navは概ね固定 | 薄灰placeholderの局所墨量差25.85%は算術と一致。AA/weightの原因は未確定 | 実配置差を含むためPASS救済不可 |
 | 15 drift-1px | header Y−56pxが残り、右1px派生を加えたもの | 同上 | 同上 |
-| 18 correct | logo最良移動0、title最良Y+2px。説明行帯+2/+3px | 文字の画素位置/太さ/行幅が違う。ソース配置・font metrics・描画器のどれが原因かPNGだけでは不明。4窓の墨量を独立計算し算術一致 | 純stroke-only正例と認定しない。原因未確定を保持 |
+| 18 correct | logo最良移動0、title最良Y+2px。説明行帯+2/+3px | 文字の画素位置/太さ/行幅が違う。ソース配置・font metrics・描画器のどれが原因かPNGだけでは不明。局所窓の墨量を独立計算し算術一致 | 純stroke-only正例と認定しない。原因未確定を保持 |
 | 19 correct | 検索アイコンの緑画素0→137、4行目0→59。実装4行目glyphは1行目horse glyphとRGB完全一致 | gray→greenトークン差とsymbol置換はAA救済の対象外 | 実内容/色差を含むためPASS救済不可 |
 | 22 correct | 入力境界Y−56px、keyboard最良移動0。topology拒否107領域 | 正本画像の実配置差をstroke差と呼ばない | 実配置差を含むためPASS救済不可 |
 | 23 correct | header/avatar Y−56px、下部navは概ね固定 | placeholder墨量差は算術一致、原因未確定 | 実配置差を含むためPASS救済不可 |
