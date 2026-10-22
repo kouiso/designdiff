@@ -1,0 +1,42 @@
+
+ RUN  v4.1.11 /workspace/designdiff/package/shared
+
+ ❯ src/signal/text-reflow.test.ts (16 tests | 1 failed) 115ms
+     × 背景253対255で半被覆の成分126対127を失わない 18ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/signal/text-reflow.test.ts > classifyTextReflow > 背景253対255で半被覆の成分126対127を失わない
+AssertionError: expected undefined to match object { …(5) }
+
+- Expected:
+{
+  "classification": "text-block-reflow",
+  "designComponentCount": 2,
+  "designLineCount": 1,
+  "screenshotComponentCount": 2,
+  "screenshotLineCount": 1,
+}
+
++ Received:
+undefined
+
+ ❯ src/signal/text-reflow.test.ts:113:20
+    111|       { x: 0, y: 0, w: size, h: size },
+    112|     );
+    113|     expect(result).toMatchObject({
+       |                    ^
+    114|       classification: "text-block-reflow",
+    115|       designComponentCount: 2,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 15 passed (16)
+   Start at  11:26:38
+   Duration  448ms (transform 150ms, setup 0ms, import 229ms, tests 115ms, environment 0ms)
+
+undefined
+/workspace/designdiff/package/shared:
+ ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL  Command failed with exit code 1: vitest run src/signal/text-reflow.test.ts

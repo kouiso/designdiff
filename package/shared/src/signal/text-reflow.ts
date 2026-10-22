@@ -202,7 +202,7 @@ const classifyInWindow = (
     screenshotPixels,
     width,
     window,
-    background,
+    backgrounds.screenshot,
     ignoreMask,
   );
   if (!designForeground || !screenshotForeground) return undefined;
@@ -211,7 +211,14 @@ const classifyInWindow = (
   }
   if (
     !isOnAxisBlend(designPixels, width, window, background, designForeground, ignoreMask) ||
-    !isOnAxisBlend(screenshotPixels, width, window, background, screenshotForeground, ignoreMask)
+    !isOnAxisBlend(
+      screenshotPixels,
+      width,
+      window,
+      backgrounds.screenshot,
+      screenshotForeground,
+      ignoreMask,
+    )
   ) {
     return undefined;
   }
@@ -253,7 +260,7 @@ const classifyInWindow = (
     screenshotPixels,
     width,
     window,
-    background,
+    backgrounds.screenshot,
     screenshotForeground,
     ignoreMask,
   );
@@ -270,7 +277,7 @@ const classifyInWindow = (
     screenshotPixels,
     width,
     window,
-    background,
+    backgrounds.screenshot,
     screenshotForeground,
     ignoreMask,
   );

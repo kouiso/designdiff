@@ -1,0 +1,153 @@
+{
+  "date": "2026-10-22",
+  "environment": {
+    "node": "v25.6.1",
+    "pnpm": "9.15.0",
+    "platform": "linux",
+    "arch": "x64"
+  },
+  "scope": "Cloud validation, not Issue376 acceptance completion. Tests use independent constructed inputs or unchanged PR375 declarations; no new real image uploads.",
+  "productSourceSha256": {
+    "package/shared/src/signal/glyph-edge-raster.ts": "e7fa4d326da8303400f98ea7142a4ed4a7f7b93f4aa1f80f2923b8a1c88890d9",
+    "package/shared/src/signal/text-reflow.ts": "de0243673cc340c291fbf87a8f92d6eb27d81a8082c881b6943176e9ac7eaf78",
+    "app/mcp-server/src/service/diff-report-builder.ts": "3fc6728fcdd789ea6a6dc584bc096dd47ef3e5d3d6ca0dec1f1413e1c75f1243"
+  },
+  "checks": [
+    {
+      "command": "pnpm install --frozen-lockfile",
+      "exitCode": 0,
+      "note": "Existing lockfile unchanged; official Electron archive checksum verified after installer fetch failure."
+    },
+    {
+      "command": "pnpm typecheck",
+      "exitCode": 0,
+      "tasks": 10,
+      "sharedTestTypecheck": true
+    },
+    {
+      "command": "pnpm --filter @figdiff/shared exec tsc --noEmit --target ES2022 --module NodeNext --moduleResolution NodeNext --strict --esModuleInterop --skipLibCheck src/signal/glyph-edge-raster.test.ts src/signal/text-reflow.test.ts",
+      "exitCode": 0
+    },
+    {
+      "command": "pnpm lint:eslint",
+      "exitCode": 0,
+      "errors": 0,
+      "existingWarnings": 2
+    },
+    {
+      "command": "python3 docs/evidence/issue-376-cloud/reap-children.py task ci:fast",
+      "exitCode": 0,
+      "phases": [
+        "frozen-lockfile install",
+        "naming",
+        "lint",
+        "all-package build",
+        "all-package tests",
+        "MCP runtime smoke self-test",
+        "root Node tests"
+      ],
+      "unitTests": {
+        "shared": 677,
+        "mcp": 916,
+        "desktopRenderer": 663,
+        "desktopMain": 250,
+        "chromeExtension": 189,
+        "figmaPlugin": 167,
+        "mobileCapture": 103,
+        "credentialStore": 46,
+        "total": 3011
+      },
+      "rootNodeTests": {
+        "passed": 59,
+        "failed": 0,
+        "skipped": 1,
+        "skipReason": "Windows-only command/cwd case on Linux"
+      },
+      "cacheNote": "Package build/lint/test executions passed in prior same-source attempt; final supervised run used Turbo local cache and reran root Node tests."
+    },
+    {
+      "command": "pnpm --filter @figdiff/mcp-server exec vitest run src/service/image-compare-stroke-background.test.ts src/service/diff-report-builder.test.ts",
+      "exitCode": 0,
+      "tests": 105,
+      "files": 2
+    },
+    {
+      "command": "node --test docs/evidence/issue-376-baseline/reproduce.test.mjs",
+      "exitCode": 0,
+      "tests": 7
+    },
+    {
+      "command": "pnpm --filter @figdiff/mcp-server run test:stdio-smoke",
+      "exitCode": 0,
+      "tools": 18,
+      "projectCount": 0
+    },
+    {
+      "command": "node docs/evidence/issue-376-ink/reproduce.mjs /workspace/designdiff /tmp/designdiff-ink-runtime-final",
+      "exitCode": 0,
+      "freshMcpCases": 4,
+      "outputJsonParse": true
+    },
+    {
+      "command": "node docs/evidence/issue-376-cloud/reproduce-runtime.mjs /workspace/designdiff docs/evidence/issue-376-cloud/runtime.json",
+      "exitCode": 0,
+      "freshMcpCases": 11,
+      "builtReflowCases": 2
+    },
+    {
+      "command": "node docs/evidence/issue-376-cloud/classify-stroke.mjs /workspace/designdiff /tmp/designdiff-gate1/verification/fixture docs/evidence/issue-376-cloud/stroke-diagnostics.json",
+      "exitCode": 0,
+      "cases": 33,
+      "declaredPass": 12,
+      "declaredVerdictMismatches": 12,
+      "falsePassAgainstDeclarations": 0
+    },
+    {
+      "command": "python3 docs/evidence/issue-376-cloud/measure-geometry.py /tmp/designdiff-gate1/verification/fixture/pair-22-hm-gate1-9776-6584 docs/evidence/issue-376-cloud/pair-22-geometry.json",
+      "exitCode": 0,
+      "inputBorderDy": [-56, -56],
+      "keyboardBestDy": 0
+    },
+    {
+      "command": "pnpm --filter @figdiff/mcp-server exec tsc --noEmit --target ES2022 --module NodeNext --moduleResolution NodeNext --strict --esModuleInterop --skipLibCheck src/service/image-compare-stroke-background.test.ts",
+      "exitCode": 0
+    },
+    {
+      "command": "pnpm exec biome check <touched product, test, issue-376 script and JSON paths>",
+      "exitCode": 0,
+      "errors": 0,
+      "note": "Existing complexity warnings only."
+    }
+  ],
+  "failedAttempts": [
+    {
+      "command": "task ci:fast",
+      "exitCode": 201,
+      "reason": "Two existing dev-log orphan-process tests detect unreaped zombie PIDs under container PID1=tail. All package tests passed."
+    },
+    {
+      "command": "node --test script/dev-log.test.mjs",
+      "exitCode": 1,
+      "reason": "Same two failures reproduced independently without supervisor."
+    },
+    {
+      "command": "python3 docs/evidence/issue-376-cloud/reap-children.py node --test script/dev-log.test.mjs",
+      "exitCode": 0,
+      "passed": 33,
+      "skipped": 1,
+      "reason": "Normal child-reaping environment; source and test assertions unchanged."
+    }
+  ],
+  "remaining": [
+    "12 declared-PASS mismatches; labels and true raster/layout differences require independent review; pair22 has confirmed real56px difference.",
+    "Correlation-only text-offset diagnostics remain advisory; differing-bg1px local moves can hit existing flat-color token guards.",
+    "macOS Desktop, Retina, real fonts, live Figma/API integration not verified."
+  ],
+  "remoteActions": {
+    "explicitWorkflowDispatch": false,
+    "merge": false,
+    "draftReady": false,
+    "forcePush": false,
+    "protectedBranchPush": false
+  }
+}

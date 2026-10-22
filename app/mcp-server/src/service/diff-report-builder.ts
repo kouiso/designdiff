@@ -614,20 +614,21 @@ function buildIssues(
       });
     }
 
-    // 変位証明は位置の事実なので、合否に効かせるかどうかに関わらず
-    // ずれ量を position issue として残す。黙って消すと線の位置を詰める
-    // 手掛かりが無くなる。
+    // 局所変位も全体変位と同じ2px境界で判定する。同じ色・形の証明は
+    // 移動先の正しさを証明しないため、ラスタ差の救済で実配置を隠さない。
     if (localDisplacement) {
+      const magnitude = Math.max(Math.abs(localDisplacement.dx), Math.abs(localDisplacement.dy));
+      const isCriticalShift = magnitude >= GLOBAL_SHIFT_CRITICAL_THRESHOLD_PX;
       issues.push({
         regionId: regionScore.regionId,
         bbox: regionScore.bbox,
         kind: "position",
-        severity: "minor",
+        severity: isCriticalShift ? "critical" : "minor",
         figmaNodeId: regionScore.figmaNodeId,
         evidence: {
           signal: "local_displacement",
-          value: Math.max(Math.abs(localDisplacement.dx), Math.abs(localDisplacement.dy)),
-          threshold: 1,
+          value: magnitude,
+          threshold: isCriticalShift ? GLOBAL_SHIFT_CRITICAL_THRESHOLD_PX : 1,
           expected: "0px",
           actual: `line/edge moved (${localDisplacement.dx}, ${localDisplacement.dy})px, ΔE ${localDisplacement.unalignedDeltaE.toFixed(2)} -> ${localDisplacement.alignedDeltaE.toFixed(2)} after alignment`,
           ...evidenceProvenance,

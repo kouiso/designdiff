@@ -30,7 +30,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ### Fixed
 
-- Same-token and text-reflow ink coverage now uses each matched image's own background and keeps coverage between zero and one. Allowed background rounding can no longer create or subtract ink, which previously rejected identical strokes and could hide doubled stroke weight. Existing color, shape and ink limits are unchanged.
+- Same-token and text-reflow ink coverage now uses each matched image's own background and keeps coverage between zero and one. Foreground/axis checks and text-reflow component/line measurements use that same image's background, so rounding cannot erase a half-covered component. Allowed background rounding can no longer create or subtract ink, which previously rejected identical strokes and could hide doubled stroke weight. Existing color, shape and ink limits are unchanged.
+- Proven local line/edge displacements of at least 2px now produce a critical position issue and FAIL even with `rasterization_tolerance`, matching the existing whole-frame displacement boundary. A matching color/shape proof cannot hide a measured placement change. The existing 1px tolerance is retained; correlation-only text-offset diagnostics keep their existing advisory behavior.
 
 - The independent scroll-stitch oracle now rejects duplicated or stretched first/last stripes using the inner-stripe height upper bound, while still allowing boundary clipping.
 

@@ -23,7 +23,7 @@
 | `get_design_tokens` | トークン差分抽出 | token diff の分類が正しい | `mcp-response-budget.test.ts`, `token-diff-service.test.ts` | ✅ CI |
 | `generate_report` | HTML/Markdown レポート生成 | レポートに verdict/領域/画像が含まれる | `generate-report.test.ts` | ✅ CI |
 | `report_issue` | 差分を issue として整形 | GitHub 連携モックで送信形式一致 | `report-issue.test.ts` | ✅ CI |
-| Gate1 判定精度 | 細線/1px以下のずれを誤FAILしない | 実検体9ノードで FAIL→PASS 是正 | 実検体画像が必要 | ❌ #243 |
+| Gate1 判定精度 | 細線/1px以下のずれを誤FAILしない。証明済みの線・縁の局所2px以上はFAIL | 実検体の正本を確認し、実配置差を隠さず是正 | [クラウド再検証](evidence/issue-376-cloud/README.md)。pair-22のPASS宣言に56px実配置差、正本判断が必要。相関だけの文字位置推定は従来の診断扱い | ❌ #243 / #376 未完了 |
 
 ## デスクトップアプリ (`@figdiff/desktop`)
 

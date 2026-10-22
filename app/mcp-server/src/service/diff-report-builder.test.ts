@@ -2184,7 +2184,7 @@ describe("細線の局所変位 (designdiff#243)", () => {
     return { designPixels, screenshotPixels, cluster: { x: 10, y: 50, w: 100, h: 1 } };
   };
 
-  it("rasterization_tolerance 下ではずれた線を critical にせず位置の minor issue で残す", async () => {
+  it("rasterization_tolerance 下でも2pxの局所変位はcriticalにしてFAILを返す", async () => {
     const { buildDiffReport } = await import("./diff-report-builder.js");
     const { designPixels, screenshotPixels } = await shiftedDivider();
     // 実パイプラインでは pixelmatch がずれた線の両側 (y50 の消失側と y52 の
@@ -2211,12 +2211,13 @@ describe("細線の局所変位 (designdiff#243)", () => {
     expect(report.regionScores[0].flatColorMismatch).toBeDefined();
     expect(report.regionScores[0].localDisplacement).toMatchObject({ dx: 0, dy: 2 });
     expect(report.regionScores[0].localDisplacement?.alignedTokenMatch).toBe(true);
-    expect(report.issues.some((issue) => issue.severity === "critical")).toBe(false);
+    expect(report.issues.some((issue) => issue.severity === "critical")).toBe(true);
+    expect(report.aggregateVerdict).toBe("fail");
     expect(report.issues).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           kind: "position",
-          severity: "minor",
+          severity: "critical",
           evidence: expect.objectContaining({
             signal: "local_displacement",
             value: 2,
@@ -2320,7 +2321,7 @@ describe("細線の局所変位 (designdiff#243)", () => {
     };
   };
 
-  it("セクション内の差分クラスタ全てが証明済みなら critical にしない", async () => {
+  it("全クラスタが同じトークンでも2pxの配置差はセクション救済で消さない", async () => {
     const { buildDiffReport } = await import("./diff-report-builder.js");
     const frame = sectionReliefFrame();
     const designPixels = await createSolidRgba(SIZE, SIZE, WHITE_RGB);
@@ -2357,7 +2358,8 @@ describe("細線の局所変位 (designdiff#243)", () => {
       residualColor: 0,
       unexplainedPerceptibleDiff: false,
     });
-    expect(report.issues.some((issue) => issue.severity === "critical")).toBe(false);
+    expect(report.issues.some((issue) => issue.severity === "critical")).toBe(true);
+    expect(report.aggregateVerdict).toBe("fail");
     expect(report.issues).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -2417,7 +2419,7 @@ describe("細線の局所変位 (designdiff#243)", () => {
     const designPixels = await createSolidRgba(SIZE, SIZE, WHITE_RGB);
     const screenshotPixels = Uint8ClampedArray.from(designPixels);
     paint(designPixels, 10, 40, 20, 1, DARK_RGB);
-    paint(screenshotPixels, 10, 42, 20, 1, DARK_RGB);
+    paint(screenshotPixels, 10, 41, 20, 1, DARK_RGB);
     // 説明済みの移動とは離して置く。小面積では9画素だけでも平均ΔEが2を超える。
     paint(screenshotPixels, 100, 41, noisePixels, 1, { r: 0, g: 0, b: 0 });
     const ignoreMask = new Uint8Array(SIZE * SIZE);
@@ -2431,7 +2433,7 @@ describe("細線の局所変位 (designdiff#243)", () => {
       figmaRootNode: sectionReliefFrame(3),
       diffRegions: [
         { x: 10, y: 40, w: 20, h: 1 },
-        { x: 10, y: 42, w: 20, h: 1 },
+        { x: 10, y: 41, w: 20, h: 1 },
       ],
       rasterizationTolerance: true,
     });
@@ -2560,7 +2562,7 @@ describe("細線の局所変位 (designdiff#243)", () => {
     const designPixels = await createSolidRgba(SIZE, SIZE, WHITE_RGB);
     const screenshotPixels = Uint8ClampedArray.from(designPixels);
     paint(designPixels, 10, 50, 100, 1, DARK_RGB);
-    paint(screenshotPixels, 10, 52, 100, 1, DARK_RGB);
+    paint(screenshotPixels, 10, 51, 100, 1, DARK_RGB);
     scatterSubThresholdNoise(screenshotPixels, 41, 60);
     // clustering の連結画素数しきい値 (10px) 未満で diffRegions に載らない 3x3 の
     // 断片。ノード木の無い比較でもクラスタにならず合否に届かないので、セクション
@@ -2573,7 +2575,7 @@ describe("細線の局所変位 (designdiff#243)", () => {
       height: SIZE,
       diffRegions: [
         { x: 10, y: 50, w: 100, h: 1, diffPixelCount: 100 },
-        { x: 10, y: 52, w: 100, h: 1, diffPixelCount: 100 },
+        { x: 10, y: 51, w: 100, h: 1, diffPixelCount: 100 },
       ],
       rasterizationTolerance: true,
     };
@@ -2685,7 +2687,7 @@ describe("細線の局所変位 (designdiff#243)", () => {
     const designPixels = await createSolidRgba(SIZE, SIZE, WHITE_RGB);
     const screenshotPixels = Uint8ClampedArray.from(designPixels);
     paint(designPixels, 10, 50, 100, 1, DARK_RGB);
-    paint(screenshotPixels, 10, 52, 100, 1, DARK_RGB);
+    paint(screenshotPixels, 10, 51, 100, 1, DARK_RGB);
     scatterSubThresholdNoise(screenshotPixels, 0, SIZE);
 
     const report = buildDiffReport({
@@ -2695,7 +2697,7 @@ describe("細線の局所変位 (designdiff#243)", () => {
       height: SIZE,
       diffRegions: [
         { x: 10, y: 50, w: 100, h: 1, diffPixelCount: 100 },
-        { x: 10, y: 52, w: 100, h: 1, diffPixelCount: 100 },
+        { x: 10, y: 51, w: 100, h: 1, diffPixelCount: 100 },
       ],
       rasterizationTolerance: true,
     });
@@ -3231,7 +3233,7 @@ describe("細線の局所変位 (designdiff#243)", () => {
       const screenshotPixels = await createSolidRgba(SIZE, SIZE, WHITE_RGB);
       variant.apply(designPixels, screenshotPixels);
       paint(designPixels, 10, 10, 30, 1, DARK_RGB);
-      paint(screenshotPixels, 10, 12, 30, 1, DARK_RGB);
+      paint(screenshotPixels, 10, 11, 30, 1, DARK_RGB);
       const report = buildDiffReport({
         designPixels,
         screenshotPixels,
@@ -3239,7 +3241,7 @@ describe("細線の局所変位 (designdiff#243)", () => {
         height: SIZE,
         diffRegions: [
           { x: 10, y: 10, w: 30, h: 1, diffPixelCount: 30 },
-          { x: 10, y: 12, w: 30, h: 1, diffPixelCount: 30 },
+          { x: 10, y: 11, w: 30, h: 1, diffPixelCount: 30 },
         ],
         rasterizationTolerance: true,
       });

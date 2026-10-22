@@ -60,10 +60,10 @@ const classify = (design: Uint8ClampedArray, screenshot: Uint8ClampedArray) =>
 
 describe("classifyTextReflow", () => {
   it.each([
-    [253, 255, false],
-    [255, 253, false],
-    [253, 255, true],
-    [255, 253, true],
+    [253, 255, false] as const,
+    [255, 253, false] as const,
+    [253, 255, true] as const,
+    [255, 253, true] as const,
   ])("背景%s対%sの丸め差と太字化%sを区別する", (designBackground, screenshotBackground, thick) => {
     const size = 128;
     const fixture = (background: number, bold = false) => {
@@ -77,14 +77,56 @@ describe("classifyTextReflow", () => {
           }
       return pixels;
     };
-    const result = classifyTextReflow(fixture(designBackground), fixture(screenshotBackground, thick), size, size, {
+    const result = classifyTextReflow(
+      fixture(designBackground),
+      fixture(screenshotBackground, thick),
+      size,
+      size,
+      {
         x: 0,
         y: 0,
         w: size,
         h: size,
-      });
+      },
+    );
     if (thick) expect(result).toBeUndefined();
     else expect(result).toMatchObject({ classification: "text-block-reflow", inkCoverageDelta: 0 });
+  });
+
+  it.each([
+    [253, 255, 126, 127],
+    [255, 253, 127, 126],
+  ])("背景%i対%iで半被覆の成分%i対%iを失わない", (designBg, screenshotBg, designEdge, screenshotEdge) => {
+    const size = 80;
+    const fixture = (background: number, edge: number) => {
+      const pixels = new Uint8ClampedArray(size * size * 4).fill(background);
+      for (let index = 0; index < size * size; index++) pixels[index * 4 + 3] = 255;
+      // 黒い成分で前景軸を固定し、半被覆の独立成分を既知の2個目として置く。
+      for (const x of [10, 40]) {
+        for (let y = 20; y < 32; y++) {
+          for (let dx = 0; dx < 8; dx++) {
+            const index = (y * size + x + dx) * 4;
+            pixels.fill(x === 10 ? 0 : edge, index, index + 3);
+          }
+        }
+      }
+      return pixels;
+    };
+    const result = classifyTextReflow(
+      fixture(designBg, designEdge),
+      fixture(screenshotBg, screenshotEdge),
+      size,
+      size,
+      { x: 0, y: 0, w: size, h: size },
+    );
+    expect(result).toMatchObject({
+      classification: "text-block-reflow",
+      designComponentCount: 2,
+      screenshotComponentCount: 2,
+      designLineCount: 1,
+      screenshotLineCount: 1,
+    });
+    expect(result?.inkCoverageDelta).toBeLessThan(0.00002);
   });
 
   it("行またぎで配置が変わった同一文字列を折り返し差として分類する", () => {

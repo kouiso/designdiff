@@ -888,7 +888,7 @@ const classifySameTokenRasterizationAtHalo = (
     screenshotPixels,
     width,
     window,
-    background,
+    backgrounds.screenshot,
     ignoreMask,
   );
   if (!designForeground || !screenshotForeground) return undefined;
@@ -897,7 +897,14 @@ const classifySameTokenRasterizationAtHalo = (
   }
   if (
     !isOnAxisBlend(designPixels, width, window, background, designForeground, ignoreMask) ||
-    !isOnAxisBlend(screenshotPixels, width, window, background, screenshotForeground, ignoreMask)
+    !isOnAxisBlend(
+      screenshotPixels,
+      width,
+      window,
+      backgrounds.screenshot,
+      screenshotForeground,
+      ignoreMask,
+    )
   ) {
     return undefined;
   }

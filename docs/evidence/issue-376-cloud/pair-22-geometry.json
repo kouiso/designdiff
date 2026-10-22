@@ -1,0 +1,115 @@
+{
+  "scope": "Independent native RGB-pixel measurement. No FigDiff score/status used as an oracle. No images copied or written.",
+  "specimen": "pair-22-hm-gate1-9776-6584",
+  "variant": "correct",
+  "declaredExpectedVerdict": "pass",
+  "inputHashes": {
+    "design": "1a577e0d1c91742141a1d5166ff6fff54145ba86ebaa89306cdcee7a88a84286",
+    "screenshot": "6d3a0fbd85f398389ac01022209267c8aba6bc178fb732ca03308d97ed753cac"
+  },
+  "manifestSha256": "d031c66e98e4fae36274c54fa798d78e3f5b11a7f15261a9ee787643a9b45446",
+  "environment": {
+    "python": "3.12.14",
+    "numpy": "2.3.5",
+    "pillow": "12.3.0"
+  },
+  "nativeDimensions": {
+    "width": 390,
+    "height": 692
+  },
+  "greenBorderDetector": {
+    "greenGreaterThan": 130,
+    "redLessThan": 100,
+    "blueLessThan": 170,
+    "rowPixelCountGreaterThan": 150,
+    "rowsBelow": 220
+  },
+  "designInputBorderRows": [
+    {
+      "y": 116,
+      "greenPixels": 336,
+      "left": 27,
+      "right": 362
+    },
+    {
+      "y": 158,
+      "greenPixels": 336,
+      "left": 27,
+      "right": 362
+    }
+  ],
+  "screenshotInputBorderRows": [
+    {
+      "y": 60,
+      "greenPixels": 334,
+      "left": 28,
+      "right": 361
+    },
+    {
+      "y": 102,
+      "greenPixels": 332,
+      "left": 29,
+      "right": 360
+    }
+  ],
+  "inputBorderVerticalShifts": [-56, -56],
+  "inputRoiTranslation": {
+    "designRoi": {
+      "x": 16,
+      "y": 104,
+      "width": 359,
+      "height": 112
+    },
+    "search": {
+      "dx": 0,
+      "minimumDy": -80,
+      "maximumDy": 80,
+      "step": 1
+    },
+    "best": {
+      "dx": 0,
+      "dy": -56,
+      "meanAbsoluteChannelError": 7.091955166467701
+    },
+    "unshifted": {
+      "dx": 0,
+      "dy": 0,
+      "meanAbsoluteChannelError": 25.34043805544502
+    },
+    "minus56": {
+      "dx": 0,
+      "dy": -56,
+      "meanAbsoluteChannelError": 7.091955166467701
+    }
+  },
+  "keyboardRoiTranslation": {
+    "designRoi": {
+      "x": 0,
+      "y": 430,
+      "width": 390,
+      "height": 180
+    },
+    "search": {
+      "dx": 0,
+      "minimumDy": -80,
+      "maximumDy": 80,
+      "step": 1
+    },
+    "best": {
+      "dx": 0,
+      "dy": 0,
+      "meanAbsoluteChannelError": 0.15077397910731244
+    },
+    "unshifted": {
+      "dx": 0,
+      "dy": 0,
+      "meanAbsoluteChannelError": 0.15077397910731244
+    },
+    "minus56": {
+      "dx": 0,
+      "dy": -56,
+      "meanAbsoluteChannelError": 23.203504273504272
+    }
+  },
+  "conclusion": "The top input is shifted upward 56 px while the keyboard remains fixed. A whole-frame translation cannot explain both. The declared AA/stroke-only PASS requires ground-truth review; these native pixels establish a placement difference."
+}

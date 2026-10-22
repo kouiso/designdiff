@@ -80,7 +80,10 @@ describe("背景丸め差とストロークの分離", () => {
     });
   });
 
-  it.each([[253,255],[255,253]])("背景%i対%iの丸め差があっても墨量が倍の太字化を扱わない", (designBackground,screenshotBackground) => {
+  it.each([
+    [253, 255],
+    [255, 253],
+  ])("背景%i対%iの丸め差があっても墨量が倍の太字化を扱わない", (designBackground, screenshotBackground) => {
     expect(compare(fixture(designBackground), fixture(screenshotBackground, true))).toBeUndefined();
   });
 
