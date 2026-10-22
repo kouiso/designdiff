@@ -1,0 +1,967 @@
+{
+  "scope": "Six assigned historical declared-PASS cases. Independent native opaque RGB/RGBA measurements; no product score/status/classifier used. No real image copies or uploads, no resize, no PASS relabeling.",
+  "coordinateConvention": "Native pixels, zero based; right/bottom exclusive. ROIs isolate known nonfont landmarks. Color thresholds select feature pixels and are not product acceptance tolerances.",
+  "environment": {
+    "python": "3.12.14",
+    "numpy": "2.3.5",
+    "pillow": "12.3.0"
+  },
+  "cases": [
+    {
+      "pair": "pair-07-hm-gate1-9810-3312",
+      "variant": "correct",
+      "fixtureSourceCommit": "ea13c68354412868f46b808a5069b707481293a4",
+      "declaredExpectedVerdict": "pass",
+      "nativeDimensions": {
+        "width": 390,
+        "height": 692
+      },
+      "inputHashes": {
+        "design": "d127020097214711562057e3c0d33839495e9c07ecb668a0a0bd77ab37d22ff3",
+        "screenshot": "63075f0e94b0036d61ed5474f51e6bbe2816995b4ce223acd8e08cb8a45555f2"
+      },
+      "manifestSha256": "9b6b5815dbb7db7e3d9a2a5fa90a9fde258a96145b06dbab5ee1d5547fb9d987",
+      "classification": {
+        "actualPlacementDifference": "proven by nonfont landmarks",
+        "strokeOrRenderingDifference": "visible raster/shape/color differences; same-glyph AA versus weight/font/token substitution is not certified",
+        "insufficientEvidence": [
+          "Paired source font files, actual implementation layout metrics and renderer settings are unavailable; nominal design styles alone cannot establish the cause.",
+          "Developer intent and the historical PASS label are not independent correctness evidence."
+        ],
+        "confidence": "high for greater-than 1 px nonfont placement/size differences; limited for glyph/AA cause"
+      },
+      "landmarks": [
+        {
+          "name": "row-1-icon-background",
+          "roi": [20, 315, 100, 380],
+          "detector": {
+            "kind": "exact-rgb",
+            "rgb": [235, 248, 240]
+          },
+          "design": {
+            "left": 45,
+            "top": 326,
+            "rightExclusive": 88,
+            "bottomExclusive": 370,
+            "selectedPixels": 1521,
+            "centerX": 66.5,
+            "centerY": 348.0,
+            "width": 43,
+            "height": 44
+          },
+          "screenshot": {
+            "left": 32,
+            "top": 326,
+            "rightExclusive": 76,
+            "bottomExclusive": 370,
+            "selectedPixels": 1567,
+            "centerX": 54.0,
+            "centerY": 348.0,
+            "width": 44,
+            "height": 44
+          },
+          "delta": {
+            "left": -13,
+            "top": 0,
+            "rightExclusive": -12,
+            "bottomExclusive": 0,
+            "centerX": -12.5,
+            "centerY": 0.0,
+            "width": 1,
+            "height": 0
+          },
+          "interpretation": "Large nonfont icon-background displacement. Exact-color boundary AA may move one edge by about 1 px; it cannot explain the measured several-pixel horizontal shifts."
+        },
+        {
+          "name": "row-2-icon-background",
+          "roi": [20, 390, 100, 450],
+          "detector": {
+            "kind": "exact-rgb",
+            "rgb": [235, 248, 240]
+          },
+          "design": {
+            "left": 40,
+            "top": 400,
+            "rightExclusive": 84,
+            "bottomExclusive": 444,
+            "selectedPixels": 1488,
+            "centerX": 62.0,
+            "centerY": 422.0,
+            "width": 44,
+            "height": 44
+          },
+          "screenshot": {
+            "left": 32,
+            "top": 400,
+            "rightExclusive": 76,
+            "bottomExclusive": 444,
+            "selectedPixels": 1460,
+            "centerX": 54.0,
+            "centerY": 422.0,
+            "width": 44,
+            "height": 44
+          },
+          "delta": {
+            "left": -8,
+            "top": 0,
+            "rightExclusive": -8,
+            "bottomExclusive": 0,
+            "centerX": -8.0,
+            "centerY": 0.0,
+            "width": 0,
+            "height": 0
+          },
+          "interpretation": "Large nonfont icon-background displacement. Exact-color boundary AA may move one edge by about 1 px; it cannot explain the measured several-pixel horizontal shifts."
+        },
+        {
+          "name": "row-3-icon-background",
+          "roi": [20, 465, 100, 520],
+          "detector": {
+            "kind": "exact-rgb",
+            "rgb": [235, 248, 240]
+          },
+          "design": {
+            "left": 40,
+            "top": 474,
+            "rightExclusive": 84,
+            "bottomExclusive": 518,
+            "selectedPixels": 1578,
+            "centerX": 62.0,
+            "centerY": 496.0,
+            "width": 44,
+            "height": 44
+          },
+          "screenshot": {
+            "left": 32,
+            "top": 474,
+            "rightExclusive": 76,
+            "bottomExclusive": 518,
+            "selectedPixels": 1496,
+            "centerX": 54.0,
+            "centerY": 496.0,
+            "width": 44,
+            "height": 44
+          },
+          "delta": {
+            "left": -8,
+            "top": 0,
+            "rightExclusive": -8,
+            "bottomExclusive": 0,
+            "centerX": -8.0,
+            "centerY": 0.0,
+            "width": 0,
+            "height": 0
+          },
+          "interpretation": "Large nonfont icon-background displacement. Exact-color boundary AA may move one edge by about 1 px; it cannot explain the measured several-pixel horizontal shifts."
+        },
+        {
+          "name": "primary-button-center-row",
+          "roi": [0, 581, 390, 582],
+          "detector": {
+            "kind": "green-chroma",
+            "redLessThan": 100,
+            "greenGreaterThan": 150,
+            "blueLessThan": 180
+          },
+          "design": {
+            "left": 15,
+            "top": 581,
+            "rightExclusive": 365,
+            "bottomExclusive": 582,
+            "selectedPixels": 293,
+            "centerX": 190.0,
+            "centerY": 581.5,
+            "width": 350,
+            "height": 1
+          },
+          "screenshot": {
+            "left": 20,
+            "top": 581,
+            "rightExclusive": 370,
+            "bottomExclusive": 582,
+            "selectedPixels": 280,
+            "centerX": 195.0,
+            "centerY": 581.5,
+            "width": 350,
+            "height": 1
+          },
+          "delta": {
+            "left": 5,
+            "top": 0,
+            "rightExclusive": 5,
+            "bottomExclusive": 0,
+            "centerX": 5.0,
+            "centerY": 0.0,
+            "width": 0,
+            "height": 0
+          },
+          "interpretation": "At the same middle row, both 350 px-wide button spans differ by several pixels horizontally. This is a fill-boundary position difference, independent of label glyphs."
+        }
+      ],
+      "additionalPixelEvidence": [
+        {
+          "kind": "flat-icon-core-color-difference",
+          "roi": [20, 315, 100, 380],
+          "design": {
+            "rgb": [59, 167, 118],
+            "selectedPixels": 111
+          },
+          "screenshot": {
+            "rgb": [45, 143, 94],
+            "selectedPixels": 136
+          },
+          "interpretation": "Large runs of solid green icon pixels use different RGB values. Rasterizer/color-management/token intent cannot be certified from two PNGs."
+        }
+      ],
+      "derivedControl": null
+    },
+    {
+      "pair": "pair-07-hm-gate1-9810-3312",
+      "variant": "drift-1px",
+      "fixtureSourceCommit": "ea13c68354412868f46b808a5069b707481293a4",
+      "declaredExpectedVerdict": "pass",
+      "nativeDimensions": {
+        "width": 390,
+        "height": 692
+      },
+      "inputHashes": {
+        "design": "d127020097214711562057e3c0d33839495e9c07ecb668a0a0bd77ab37d22ff3",
+        "screenshot": "802b574f345e655a8c774cb86ff39cf7a99d1f08832d934c0df6d0f08abe301a"
+      },
+      "manifestSha256": "9b6b5815dbb7db7e3d9a2a5fa90a9fde258a96145b06dbab5ee1d5547fb9d987",
+      "classification": {
+        "actualPlacementDifference": "proven by nonfont landmarks",
+        "strokeOrRenderingDifference": "visible raster/shape/color differences; same-glyph AA versus weight/font/token substitution is not certified",
+        "insufficientEvidence": [
+          "Paired source font files, actual implementation layout metrics and renderer settings are unavailable; nominal design styles alone cannot establish the cause.",
+          "Developer intent and the historical PASS label are not independent correctness evidence."
+        ],
+        "confidence": "high for greater-than 1 px nonfont placement/size differences; limited for glyph/AA cause"
+      },
+      "landmarks": [
+        {
+          "name": "row-1-icon-background",
+          "roi": [20, 315, 100, 380],
+          "detector": {
+            "kind": "exact-rgb",
+            "rgb": [235, 248, 240]
+          },
+          "design": {
+            "left": 45,
+            "top": 326,
+            "rightExclusive": 88,
+            "bottomExclusive": 370,
+            "selectedPixels": 1521,
+            "centerX": 66.5,
+            "centerY": 348.0,
+            "width": 43,
+            "height": 44
+          },
+          "screenshot": {
+            "left": 33,
+            "top": 326,
+            "rightExclusive": 77,
+            "bottomExclusive": 370,
+            "selectedPixels": 1567,
+            "centerX": 55.0,
+            "centerY": 348.0,
+            "width": 44,
+            "height": 44
+          },
+          "delta": {
+            "left": -12,
+            "top": 0,
+            "rightExclusive": -11,
+            "bottomExclusive": 0,
+            "centerX": -11.5,
+            "centerY": 0.0,
+            "width": 1,
+            "height": 0
+          },
+          "interpretation": "Large nonfont icon-background displacement. Exact-color boundary AA may move one edge by about 1 px; it cannot explain the measured several-pixel horizontal shifts."
+        },
+        {
+          "name": "row-2-icon-background",
+          "roi": [20, 390, 100, 450],
+          "detector": {
+            "kind": "exact-rgb",
+            "rgb": [235, 248, 240]
+          },
+          "design": {
+            "left": 40,
+            "top": 400,
+            "rightExclusive": 84,
+            "bottomExclusive": 444,
+            "selectedPixels": 1488,
+            "centerX": 62.0,
+            "centerY": 422.0,
+            "width": 44,
+            "height": 44
+          },
+          "screenshot": {
+            "left": 33,
+            "top": 400,
+            "rightExclusive": 77,
+            "bottomExclusive": 444,
+            "selectedPixels": 1460,
+            "centerX": 55.0,
+            "centerY": 422.0,
+            "width": 44,
+            "height": 44
+          },
+          "delta": {
+            "left": -7,
+            "top": 0,
+            "rightExclusive": -7,
+            "bottomExclusive": 0,
+            "centerX": -7.0,
+            "centerY": 0.0,
+            "width": 0,
+            "height": 0
+          },
+          "interpretation": "Large nonfont icon-background displacement. Exact-color boundary AA may move one edge by about 1 px; it cannot explain the measured several-pixel horizontal shifts."
+        },
+        {
+          "name": "row-3-icon-background",
+          "roi": [20, 465, 100, 520],
+          "detector": {
+            "kind": "exact-rgb",
+            "rgb": [235, 248, 240]
+          },
+          "design": {
+            "left": 40,
+            "top": 474,
+            "rightExclusive": 84,
+            "bottomExclusive": 518,
+            "selectedPixels": 1578,
+            "centerX": 62.0,
+            "centerY": 496.0,
+            "width": 44,
+            "height": 44
+          },
+          "screenshot": {
+            "left": 33,
+            "top": 474,
+            "rightExclusive": 77,
+            "bottomExclusive": 518,
+            "selectedPixels": 1496,
+            "centerX": 55.0,
+            "centerY": 496.0,
+            "width": 44,
+            "height": 44
+          },
+          "delta": {
+            "left": -7,
+            "top": 0,
+            "rightExclusive": -7,
+            "bottomExclusive": 0,
+            "centerX": -7.0,
+            "centerY": 0.0,
+            "width": 0,
+            "height": 0
+          },
+          "interpretation": "Large nonfont icon-background displacement. Exact-color boundary AA may move one edge by about 1 px; it cannot explain the measured several-pixel horizontal shifts."
+        },
+        {
+          "name": "primary-button-center-row",
+          "roi": [0, 581, 390, 582],
+          "detector": {
+            "kind": "green-chroma",
+            "redLessThan": 100,
+            "greenGreaterThan": 150,
+            "blueLessThan": 180
+          },
+          "design": {
+            "left": 15,
+            "top": 581,
+            "rightExclusive": 365,
+            "bottomExclusive": 582,
+            "selectedPixels": 293,
+            "centerX": 190.0,
+            "centerY": 581.5,
+            "width": 350,
+            "height": 1
+          },
+          "screenshot": {
+            "left": 21,
+            "top": 581,
+            "rightExclusive": 371,
+            "bottomExclusive": 582,
+            "selectedPixels": 280,
+            "centerX": 196.0,
+            "centerY": 581.5,
+            "width": 350,
+            "height": 1
+          },
+          "delta": {
+            "left": 6,
+            "top": 0,
+            "rightExclusive": 6,
+            "bottomExclusive": 0,
+            "centerX": 6.0,
+            "centerY": 0.0,
+            "width": 0,
+            "height": 0
+          },
+          "interpretation": "At the same middle row, both 350 px-wide button spans differ by several pixels horizontally. This is a fill-boundary position difference, independent of label glyphs."
+        }
+      ],
+      "additionalPixelEvidence": [
+        {
+          "kind": "flat-icon-core-color-difference",
+          "roi": [20, 315, 100, 380],
+          "design": {
+            "rgb": [59, 167, 118],
+            "selectedPixels": 111
+          },
+          "screenshot": {
+            "rgb": [45, 143, 94],
+            "selectedPixels": 136
+          },
+          "interpretation": "Large runs of solid green icon pixels use different RGB values. Rasterizer/color-management/token intent cannot be certified from two PNGs."
+        }
+      ],
+      "derivedControl": {
+        "correctScreenshotSha256": "63075f0e94b0036d61ed5474f51e6bbe2816995b4ce223acd8e08cb8a45555f2",
+        "exactRgbaRightShiftPx": 1,
+        "allInteriorRgbaBytesMatch": true,
+        "leftEdgeReplicationMatches": true,
+        "interpretation": "This adds exactly 1 px to the already mismatched correct image; larger geometry differences remain present."
+      }
+    },
+    {
+      "pair": "pair-08-hm-gate1-9721-6204",
+      "variant": "correct",
+      "fixtureSourceCommit": "ea13c68354412868f46b808a5069b707481293a4",
+      "declaredExpectedVerdict": "pass",
+      "nativeDimensions": {
+        "width": 390,
+        "height": 692
+      },
+      "inputHashes": {
+        "design": "0cb1d4ff540e9317aabc83245f040b44a718b9b79ddde962d00f8f83f8738cdc",
+        "screenshot": "4689d750b9d21bb2235044d4ebf971bcc7c454533435f4b2e72f9ac37139ba82"
+      },
+      "manifestSha256": "7710d05b5054c539b4c7a861166972ad3e8a43d7b23c552620133524e8302ed9",
+      "classification": {
+        "actualPlacementDifference": "proven by nonfont landmarks",
+        "strokeOrRenderingDifference": "visible raster/shape/color differences; same-glyph AA versus weight/font/token substitution is not certified",
+        "insufficientEvidence": [
+          "Paired source font files, actual implementation layout metrics and renderer settings are unavailable; nominal design styles alone cannot establish the cause.",
+          "Developer intent and the historical PASS label are not independent correctness evidence."
+        ],
+        "confidence": "high for greater-than 1 px nonfont placement/size differences; limited for glyph/AA cause"
+      },
+      "landmarks": [
+        {
+          "name": "loading-bubble-white-interior",
+          "roi": [55, 475, 290, 535],
+          "detector": {
+            "kind": "exact-rgb",
+            "rgb": [255, 255, 255]
+          },
+          "design": {
+            "left": 68,
+            "top": 484,
+            "rightExclusive": 266,
+            "bottomExclusive": 525,
+            "selectedPixels": 6973,
+            "centerX": 167.0,
+            "centerY": 504.5,
+            "width": 198,
+            "height": 41
+          },
+          "screenshot": {
+            "left": 68,
+            "top": 483,
+            "rightExclusive": 280,
+            "bottomExclusive": 522,
+            "selectedPixels": 7021,
+            "centerX": 174.0,
+            "centerY": 502.5,
+            "width": 212,
+            "height": 39
+          },
+          "delta": {
+            "left": 0,
+            "top": -1,
+            "rightExclusive": 14,
+            "bottomExclusive": -3,
+            "centerX": 7.0,
+            "centerY": -2.0,
+            "width": 14,
+            "height": -2
+          },
+          "interpretation": "The white bubble right edge expands 14 px while its left edge stays fixed. About 1 px edge-AA uncertainty cannot explain the width difference. Its top/bottom differ 1/3 px; shadows and AA limit exact vertical-boundary attribution."
+        }
+      ],
+      "additionalPixelEvidence": [],
+      "derivedControl": null
+    },
+    {
+      "pair": "pair-09-hm-gate1-9776-6791",
+      "variant": "correct",
+      "fixtureSourceCommit": "ea13c68354412868f46b808a5069b707481293a4",
+      "declaredExpectedVerdict": "pass",
+      "nativeDimensions": {
+        "width": 390,
+        "height": 692
+      },
+      "inputHashes": {
+        "design": "8d43a7880619231e660249d736a8f24141c0a43938be10418ab8b97d52f9ef62",
+        "screenshot": "f611a6747adc232615296b29ad73a6a19ad5f2357837065ba1f1b2ee161cd703"
+      },
+      "manifestSha256": "04bc8db97a3d7c36952a05108316296f240ee4d7645207e1aba4c2d92e54848d",
+      "classification": {
+        "actualPlacementDifference": "proven by nonfont landmarks",
+        "strokeOrRenderingDifference": "visible raster/shape/color differences; same-glyph AA versus weight/font/token substitution is not certified",
+        "insufficientEvidence": [
+          "Paired source font files, actual implementation layout metrics and renderer settings are unavailable; nominal design styles alone cannot establish the cause.",
+          "Developer intent and the historical PASS label are not independent correctness evidence."
+        ],
+        "confidence": "high for greater-than 1 px nonfont placement/size differences; limited for glyph/AA cause"
+      },
+      "landmarks": [
+        {
+          "name": "new-chat-pale-fill",
+          "roi": [0, 55, 310, 170],
+          "detector": {
+            "kind": "exact-rgb",
+            "rgb": [235, 248, 240]
+          },
+          "design": {
+            "left": 13,
+            "top": 120,
+            "rightExclusive": 300,
+            "bottomExclusive": 167,
+            "selectedPixels": 11102,
+            "centerX": 156.5,
+            "centerY": 143.5,
+            "width": 287,
+            "height": 47
+          },
+          "screenshot": {
+            "left": 13,
+            "top": 64,
+            "rightExclusive": 300,
+            "bottomExclusive": 111,
+            "selectedPixels": 10956,
+            "centerX": 156.5,
+            "centerY": 87.5,
+            "width": 287,
+            "height": 47
+          },
+          "delta": {
+            "left": 0,
+            "top": -56,
+            "rightExclusive": 0,
+            "bottomExclusive": -56,
+            "centerX": 0.0,
+            "centerY": -56.0,
+            "width": 0,
+            "height": 0
+          },
+          "interpretation": "Same nonfont filled component moves upward 56 px with unchanged height/width; drift1 also adds 1 px horizontally."
+        },
+        {
+          "name": "selected-history-item-fill",
+          "roi": [0, 140, 310, 260],
+          "detector": {
+            "kind": "exact-rgb",
+            "rgb": [232, 245, 238]
+          },
+          "design": {
+            "left": 11,
+            "top": 209,
+            "rightExclusive": 302,
+            "bottomExclusive": 249,
+            "selectedPixels": 10357,
+            "centerX": 156.5,
+            "centerY": 229.0,
+            "width": 291,
+            "height": 40
+          },
+          "screenshot": {
+            "left": 11,
+            "top": 153,
+            "rightExclusive": 302,
+            "bottomExclusive": 193,
+            "selectedPixels": 10246,
+            "centerX": 156.5,
+            "centerY": 173.0,
+            "width": 291,
+            "height": 40
+          },
+          "delta": {
+            "left": 0,
+            "top": -56,
+            "rightExclusive": 0,
+            "bottomExclusive": -56,
+            "centerX": 0.0,
+            "centerY": -56.0,
+            "width": 0,
+            "height": 0
+          },
+          "interpretation": "A separate nonfont filled component independently moves upward 56 px. This is not a glyph-stroke explanation."
+        },
+        {
+          "name": "drawer-white-span-at-row 600",
+          "roi": [0, 600, 313, 601],
+          "detector": {
+            "kind": "exact-rgb",
+            "rgb": [255, 255, 255]
+          },
+          "design": {
+            "left": 0,
+            "top": 600,
+            "rightExclusive": 313,
+            "bottomExclusive": 601,
+            "selectedPixels": 313,
+            "centerX": 156.5,
+            "centerY": 600.5,
+            "width": 313,
+            "height": 1
+          },
+          "screenshot": {
+            "left": 0,
+            "top": 600,
+            "rightExclusive": 313,
+            "bottomExclusive": 601,
+            "selectedPixels": 313,
+            "centerX": 156.5,
+            "centerY": 600.5,
+            "width": 313,
+            "height": 1
+          },
+          "delta": {
+            "left": 0,
+            "top": 0,
+            "rightExclusive": 0,
+            "bottomExclusive": 0,
+            "centerX": 0.0,
+            "centerY": 0.0,
+            "width": 0,
+            "height": 0
+          },
+          "interpretation": "The drawer shell remains at the native row 600 while content components shift upward 56 px. Measurements establish literal PNG placement; intended status-bar/capture semantics require separate evidence."
+        }
+      ],
+      "additionalPixelEvidence": [],
+      "derivedControl": null
+    },
+    {
+      "pair": "pair-09-hm-gate1-9776-6791",
+      "variant": "drift-1px",
+      "fixtureSourceCommit": "ea13c68354412868f46b808a5069b707481293a4",
+      "declaredExpectedVerdict": "pass",
+      "nativeDimensions": {
+        "width": 390,
+        "height": 692
+      },
+      "inputHashes": {
+        "design": "8d43a7880619231e660249d736a8f24141c0a43938be10418ab8b97d52f9ef62",
+        "screenshot": "8bc8f1686409e8858656946df013deb633f6824a7e000d1cab0f4c1cf2c14bda"
+      },
+      "manifestSha256": "04bc8db97a3d7c36952a05108316296f240ee4d7645207e1aba4c2d92e54848d",
+      "classification": {
+        "actualPlacementDifference": "proven by nonfont landmarks",
+        "strokeOrRenderingDifference": "visible raster/shape/color differences; same-glyph AA versus weight/font/token substitution is not certified",
+        "insufficientEvidence": [
+          "Paired source font files, actual implementation layout metrics and renderer settings are unavailable; nominal design styles alone cannot establish the cause.",
+          "Developer intent and the historical PASS label are not independent correctness evidence."
+        ],
+        "confidence": "high for greater-than 1 px nonfont placement/size differences; limited for glyph/AA cause"
+      },
+      "landmarks": [
+        {
+          "name": "new-chat-pale-fill",
+          "roi": [0, 55, 310, 170],
+          "detector": {
+            "kind": "exact-rgb",
+            "rgb": [235, 248, 240]
+          },
+          "design": {
+            "left": 13,
+            "top": 120,
+            "rightExclusive": 300,
+            "bottomExclusive": 167,
+            "selectedPixels": 11102,
+            "centerX": 156.5,
+            "centerY": 143.5,
+            "width": 287,
+            "height": 47
+          },
+          "screenshot": {
+            "left": 14,
+            "top": 64,
+            "rightExclusive": 301,
+            "bottomExclusive": 111,
+            "selectedPixels": 10956,
+            "centerX": 157.5,
+            "centerY": 87.5,
+            "width": 287,
+            "height": 47
+          },
+          "delta": {
+            "left": 1,
+            "top": -56,
+            "rightExclusive": 1,
+            "bottomExclusive": -56,
+            "centerX": 1.0,
+            "centerY": -56.0,
+            "width": 0,
+            "height": 0
+          },
+          "interpretation": "Same nonfont filled component moves upward 56 px with unchanged height/width; drift1 also adds 1 px horizontally."
+        },
+        {
+          "name": "selected-history-item-fill",
+          "roi": [0, 140, 310, 260],
+          "detector": {
+            "kind": "exact-rgb",
+            "rgb": [232, 245, 238]
+          },
+          "design": {
+            "left": 11,
+            "top": 209,
+            "rightExclusive": 302,
+            "bottomExclusive": 249,
+            "selectedPixels": 10357,
+            "centerX": 156.5,
+            "centerY": 229.0,
+            "width": 291,
+            "height": 40
+          },
+          "screenshot": {
+            "left": 12,
+            "top": 153,
+            "rightExclusive": 303,
+            "bottomExclusive": 193,
+            "selectedPixels": 10246,
+            "centerX": 157.5,
+            "centerY": 173.0,
+            "width": 291,
+            "height": 40
+          },
+          "delta": {
+            "left": 1,
+            "top": -56,
+            "rightExclusive": 1,
+            "bottomExclusive": -56,
+            "centerX": 1.0,
+            "centerY": -56.0,
+            "width": 0,
+            "height": 0
+          },
+          "interpretation": "A separate nonfont filled component independently moves upward 56 px. This is not a glyph-stroke explanation."
+        },
+        {
+          "name": "drawer-white-span-at-row 600",
+          "roi": [0, 600, 313, 601],
+          "detector": {
+            "kind": "exact-rgb",
+            "rgb": [255, 255, 255]
+          },
+          "design": {
+            "left": 0,
+            "top": 600,
+            "rightExclusive": 313,
+            "bottomExclusive": 601,
+            "selectedPixels": 313,
+            "centerX": 156.5,
+            "centerY": 600.5,
+            "width": 313,
+            "height": 1
+          },
+          "screenshot": {
+            "left": 0,
+            "top": 600,
+            "rightExclusive": 313,
+            "bottomExclusive": 601,
+            "selectedPixels": 313,
+            "centerX": 156.5,
+            "centerY": 600.5,
+            "width": 313,
+            "height": 1
+          },
+          "delta": {
+            "left": 0,
+            "top": 0,
+            "rightExclusive": 0,
+            "bottomExclusive": 0,
+            "centerX": 0.0,
+            "centerY": 0.0,
+            "width": 0,
+            "height": 0
+          },
+          "interpretation": "The drawer shell remains at the native row 600 while content components shift upward 56 px. Measurements establish literal PNG placement; intended status-bar/capture semantics require separate evidence."
+        }
+      ],
+      "additionalPixelEvidence": [],
+      "derivedControl": {
+        "correctScreenshotSha256": "f611a6747adc232615296b29ad73a6a19ad5f2357837065ba1f1b2ee161cd703",
+        "exactRgbaRightShiftPx": 1,
+        "allInteriorRgbaBytesMatch": true,
+        "leftEdgeReplicationMatches": true,
+        "interpretation": "This adds exactly 1 px to the already mismatched correct image; larger geometry differences remain present."
+      }
+    },
+    {
+      "pair": "pair-11-hm-gate1-9776-6456",
+      "variant": "correct",
+      "fixtureSourceCommit": "ea13c68354412868f46b808a5069b707481293a4",
+      "declaredExpectedVerdict": "pass",
+      "nativeDimensions": {
+        "width": 390,
+        "height": 692
+      },
+      "inputHashes": {
+        "design": "7fecc2532e6e0fea4b11686093f38f0f3aefeeb5bf5c7f88b465769d68c119ff",
+        "screenshot": "8549bcaecd87a30736b4ff710c6f4de7965af44611450f5027aecbe53820dedc"
+      },
+      "manifestSha256": "06507824d3097d38a29daa8f4816ca65e216fd5638f5f9b00973a0993cd18ad9",
+      "classification": {
+        "actualPlacementDifference": "proven by nonfont landmarks",
+        "strokeOrRenderingDifference": "visible raster/shape/color differences; same-glyph AA versus weight/font/token substitution is not certified",
+        "insufficientEvidence": [
+          "Paired source font files, actual implementation layout metrics and renderer settings are unavailable; nominal design styles alone cannot establish the cause.",
+          "Developer intent and the historical PASS label are not independent correctness evidence."
+        ],
+        "confidence": "high for greater-than 1 px nonfont placement/size differences; limited for glyph/AA cause"
+      },
+      "landmarks": [
+        {
+          "name": "toast-green-status-circle",
+          "roi": [100, 495, 150, 530],
+          "detector": {
+            "kind": "green-chroma",
+            "redLessThan": 50,
+            "greenGreaterThan": 150,
+            "blueLessThan": 150
+          },
+          "design": {
+            "left": 120,
+            "top": 504,
+            "rightExclusive": 138,
+            "bottomExclusive": 522,
+            "selectedPixels": 216,
+            "centerX": 129.0,
+            "centerY": 513.0,
+            "width": 18,
+            "height": 18
+          },
+          "screenshot": {
+            "left": 116,
+            "top": 504,
+            "rightExclusive": 133,
+            "bottomExclusive": 522,
+            "selectedPixels": 209,
+            "centerX": 124.5,
+            "centerY": 513.0,
+            "width": 17,
+            "height": 18
+          },
+          "delta": {
+            "left": -4,
+            "top": 0,
+            "rightExclusive": -5,
+            "bottomExclusive": 0,
+            "centerX": -4.5,
+            "centerY": 0.0,
+            "width": -1,
+            "height": 0
+          },
+          "interpretation": "The nonfont green circle center moves 4.5 px left; width differs 1 px due to shape/AA/color. Every sampled interior circle row corroborates a 4\u20135 px horizontal move."
+        },
+        {
+          "name": "toast-dark-capsule",
+          "roi": [80, 493, 305, 535],
+          "detector": {
+            "kind": "exact-rgb",
+            "rgb": [51, 51, 51]
+          },
+          "design": {
+            "left": 96,
+            "top": 493,
+            "rightExclusive": 295,
+            "bottomExclusive": 533,
+            "selectedPixels": 6555,
+            "centerX": 195.5,
+            "centerY": 513.0,
+            "width": 199,
+            "height": 40
+          },
+          "screenshot": {
+            "left": 96,
+            "top": 493,
+            "rightExclusive": 294,
+            "bottomExclusive": 533,
+            "selectedPixels": 6437,
+            "centerX": 195.0,
+            "centerY": 513.0,
+            "width": 198,
+            "height": 40
+          },
+          "delta": {
+            "left": 0,
+            "top": 0,
+            "rightExclusive": -1,
+            "bottomExclusive": 0,
+            "centerX": -0.5,
+            "centerY": 0.0,
+            "width": -1,
+            "height": 0
+          },
+          "interpretation": "The enclosing capsule changes its right edge by 1 px, center by 0.5 px. Circle movement relative to this capsule is 4 px and cannot be explained by a whole-toast translation."
+        }
+      ],
+      "additionalPixelEvidence": [
+        {
+          "kind": "card-divider-rows",
+          "roi": [60, 210, 355, 503],
+          "detector": "neutralRGB230..245; more than 250 selected pixels per row",
+          "design": [
+            {
+              "y": 218,
+              "selectedPixels": 295
+            },
+            {
+              "y": 289,
+              "selectedPixels": 295
+            },
+            {
+              "y": 360,
+              "selectedPixels": 295
+            },
+            {
+              "y": 431,
+              "selectedPixels": 295
+            }
+          ],
+          "screenshot": [
+            {
+              "y": 218,
+              "selectedPixels": 295
+            },
+            {
+              "y": 288,
+              "selectedPixels": 295
+            },
+            {
+              "y": 359,
+              "selectedPixels": 295
+            },
+            {
+              "y": 430,
+              "selectedPixels": 295
+            }
+          ],
+          "verticalShifts": [0, -1, -1, -1],
+          "interpretation": "These lines differ by at most 1 px. This measurement alone cannot establish a greater-than 1 px card-layout defect; per-edge AA and rounding remain plausible."
+        }
+      ],
+      "derivedControl": null
+    }
+  ],
+  "remainingAcceptanceQuestion": "These cases contain measured geometry differences despite historical PASS labels. Decide capture/viewport and geometry intent separately; none should become PASS merely by increasing stroke tolerance."
+}

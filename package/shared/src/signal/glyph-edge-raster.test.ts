@@ -236,9 +236,8 @@ describe("classifySameTokenRasterization", () => {
   };
 
   it("トポロジ強一致の窓ではインク量差を 0.35 まで許す", () => {
-    // 縁の位置が同一なのにインク量だけ増えるのはフォント版違いのラスタライザ差
-    // (例: Figma 側 SemiBold と同梱 Inter の stem 差で約30%)。shape<=0.12 の
-    // 窓では inkLimit が緩和閾値になる。
+    // 現行の強形状時の許容境界を固定する。フォント指定の無いこの画素対は
+    // 描画差とウェイト変更を分離する正本にはならないため、実太線化の対照も別に検証する。
     const design = bigPixels([10, 14, 19]);
     const screenshot = bigPixels([10, 14, 19]);
     // 既存 stem の脇に列を足して墨量を約30%増やす (51px→73px)。
@@ -445,6 +444,49 @@ describe("estimateContentOffset", () => {
     }
     return pixels;
   };
+
+  it.each([3, 8])("背景の丸めで有効点%d個を水増しせず、十分な点の移動は保持する", (solidCount) => {
+    const size = 24;
+    const points: readonly (readonly [number, number])[] = [
+      [7, 6],
+      [7, 7],
+      [8, 7],
+      [7, 8],
+      [7, 9],
+      [7, 10],
+      [7, 11],
+      [8, 12],
+      [9, 12],
+      [10, 12],
+      [11, 12],
+      [12, 12],
+      [11, 7],
+    ];
+    const fixture = (background: number, edge: number, dx: number) => {
+      const pixels = canvas(size, [background, background, background]);
+      for (const [index, [x, y]] of points.entries()) {
+        const value = index < solidCount ? 51 : edge;
+        paint(pixels, size, x + dx, y, [value, value, value]);
+      }
+      return pixels;
+    };
+    // 淡い10点は両画像とも被覆0.1未満。各3点しかない濃い点は、
+    // 対応を外しても合計6点なので既存の有効8点条件を満たさない。
+    const evidence = classifySameTokenRasterization(
+      fixture(255, 235, 0),
+      fixture(251, 232, 2),
+      size,
+      size,
+      { x: 0, y: 0, w: size, h: size },
+      0,
+    );
+    expect(evidence).toBeDefined();
+    if (solidCount === 3) expect(evidence?.contentOffset).toBeUndefined();
+    else {
+      expect(evidence?.contentOffset?.dx).toBeCloseTo(2, 0);
+      expect(evidence?.contentOffset?.peak).toBeGreaterThan(0.99);
+    }
+  });
 
   it("縁の被覆差だけなら移動ゼロを返す", () => {
     const offset = estimateContentOffset(draw(0, 0), draw(0, 0, 160), SIZE, WINDOW, BG, FG, FG);

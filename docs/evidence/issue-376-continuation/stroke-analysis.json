@@ -1,0 +1,871 @@
+{
+  "scope": "Independent native RGB/gray-mask arithmetic and constructed stem counterexample; FigDiff status is never the correctness oracle. No actual images are copied or written. Pixel samples stay in memory.",
+  "sourceCommit": "82328a9354ab94c2f4f340c9e64877a2be19e4d0",
+  "scriptSha256AtExecution": "d517f0443f61678825da09b7c2988ddc6a00aade3ce3c248b759460f92de7184",
+  "inputs": {
+    "historicalInventorySha256": "f8daf4772477d9f27738f342a30cde5c4383555dce68bb1fde726c9dac03703d",
+    "previousClassifierDiagnosticsSha256": "5760d70a63c9f5e71217b6ead1e6a1d3efde8fc448c96b9a61015a818f788a87"
+  },
+  "environment": {
+    "python": "3.12.14",
+    "numpy": "2.3.5",
+    "pillow": "12.3.0"
+  },
+  "grayMaskDefinition": {
+    "maximumChannelExclusive": 180,
+    "channelSpanExclusive": 5
+  },
+  "greenMaskDefinition": {
+    "redExclusiveMaximum": 100,
+    "greenExclusiveMinimum": 130,
+    "blueExclusiveMaximum": 180
+  },
+  "interpretationLimits": [
+    "Different canonical pixel positions establish a visual mismatch; they do not identify whether source layout, font metrics or rendering caused it.",
+    "Local ink mass varies with window clipping, glyph advance and neighboring text. No threshold is changed and no additional tolerance is inferred here.",
+    "Sampled gray-axis endpoints come from prior diagnostic estimates. Independent sum agreement checks arithmetic only, not whether the font weight or rendering difference should be accepted.",
+    "Issue376 was read at2026-10-22 and remains its originalOct10 text: it proposes stem-center displacement as a weight discriminator. Symmetric thickening is a counterexample to that premise."
+  ],
+  "issueReference": {
+    "url": "https://github.com/kouiso/designdiff/issues/376",
+    "updatedAt": "2026-10-10T04:38:31Z"
+  },
+  "symmetricStemCounterexample": {
+    "construction": "Centered opaque stems: 3x20 versus 5x20 pixels; no image/font/API used.",
+    "inkPixels": [60, 100],
+    "relativeInkDelta": 0.4,
+    "horizontalMedialRidgeX": [31, 31],
+    "rowCenterAgreement": true,
+    "bidirectionalSkeletonContainment": true,
+    "conclusion": "Symmetric thickening preserves stem centers and medial ridges. Skeleton agreement or containment alone cannot certify that a weight change did not occur. Keep existing ink/weight guards."
+  },
+  "cases": [
+    {
+      "pair": "pair-15-hm-gate1-9804-4369",
+      "variant": "correct",
+      "declaredExpectedVerdict": "pass",
+      "inputHashes": {
+        "design": "0062d3a197bf79b5a8490fafaf69a2fae238ad3ed5bc33472a54e9bc095b47fd",
+        "screenshot": "a50c052b01a52303ce8ecb2573f06c3c23add2ebac5b342179c00e5d91b18337"
+      },
+      "manifestSha256": "d50157262a8e4ff5c684dedb7f4bc00a00bdd401f3128dfdf70c777312b8d00d",
+      "nativeDimensions": {
+        "width": 390,
+        "height": 692
+      },
+      "priorClassifierStages": {
+        "topology": 15,
+        "accepted": 59,
+        "background": 9,
+        "foreground": 4,
+        "blendAxis": 1,
+        "ink": 1
+      },
+      "headerAvatar": {
+        "designRoi": [316, 56, 40, 40],
+        "search": {
+          "maxDx": 2,
+          "maxDy": 60,
+          "step": 1
+        },
+        "best": {
+          "dx": 0,
+          "dy": -56,
+          "meanAbsoluteChannelError": 4.11625
+        },
+        "nextTwo": [
+          {
+            "dx": 0,
+            "dy": -55,
+            "meanAbsoluteChannelError": 24.07375
+          },
+          {
+            "dx": 1,
+            "dy": -56,
+            "meanAbsoluteChannelError": 24.705416666666668
+          }
+        ],
+        "unshifted": {
+          "dx": 0,
+          "dy": 0,
+          "meanAbsoluteChannelError": 116.62083333333334
+        }
+      },
+      "navigation": {
+        "designRoi": [10, 620, 370, 60],
+        "search": {
+          "maxDx": 2,
+          "maxDy": 20,
+          "step": 1
+        },
+        "best": {
+          "dx": 0,
+          "dy": 0,
+          "meanAbsoluteChannelError": 3.401111111111111
+        },
+        "nextTwo": [
+          {
+            "dx": 0,
+            "dy": 1,
+            "meanAbsoluteChannelError": 3.7294444444444443
+          },
+          {
+            "dx": 0,
+            "dy": -1,
+            "meanAbsoluteChannelError": 4.564414414414414
+          }
+        ],
+        "unshifted": {
+          "dx": 0,
+          "dy": 0,
+          "meanAbsoluteChannelError": 3.401111111111111
+        }
+      },
+      "classification": "Canonical pixel placement differs: header upward56px, navigation approximately fixed. Placeholder ink difference is measured correctly but cannot establish font weight versus rasterizer cause.",
+      "placeholderInk": {
+        "bbox": [134, 569, 8, 8],
+        "background": 255,
+        "foreground": 177,
+        "halos": [
+          {
+            "halo": 2,
+            "roi": [132, 567, 12, 12],
+            "designInk": 21.294871794871796,
+            "screenshotInk": 33.23076923076923,
+            "delta": 0.3591820987654321
+          },
+          {
+            "halo": 4,
+            "roi": [130, 565, 16, 16],
+            "designInk": 33.05128205128205,
+            "screenshotInk": 52.51282051282051,
+            "delta": 0.37060546875
+          },
+          {
+            "halo": 6,
+            "roi": [128, 563, 20, 20],
+            "designInk": 47.769230769230774,
+            "screenshotInk": 67.80769230769232,
+            "delta": 0.29551900170164497
+          },
+          {
+            "halo": 8,
+            "roi": [126, 561, 24, 24],
+            "designInk": 61.16666666666666,
+            "screenshotInk": 82.82051282051282,
+            "delta": 0.2614551083591332
+          },
+          {
+            "halo": 12,
+            "roi": [122, 557, 32, 32],
+            "designInk": 76.21794871794872,
+            "screenshotInk": 102.7948717948718,
+            "delta": 0.258543277625343
+          }
+        ],
+        "priorClassifierFinalInk": {
+          "design": 76.2179487179487,
+          "screenshot": 102.79487179487178,
+          "delta": 0.25854327762534307,
+          "limit": 0.25
+        },
+        "independentArithmeticAbsoluteError": {
+          "designInk": 1.4210854715202004e-14,
+          "screenshotInk": 1.4210854715202004e-14,
+          "delta": 5.551115123125783e-17
+        }
+      }
+    },
+    {
+      "pair": "pair-15-hm-gate1-9804-4369",
+      "variant": "drift-1px",
+      "declaredExpectedVerdict": "pass",
+      "inputHashes": {
+        "design": "0062d3a197bf79b5a8490fafaf69a2fae238ad3ed5bc33472a54e9bc095b47fd",
+        "screenshot": "b5ae6ea47e0c3a035d8d0b0e7965e2b7b71ac735d7091cd9a30de16e80fff458"
+      },
+      "manifestSha256": "d50157262a8e4ff5c684dedb7f4bc00a00bdd401f3128dfdf70c777312b8d00d",
+      "nativeDimensions": {
+        "width": 390,
+        "height": 692
+      },
+      "priorClassifierStages": {
+        "topology": 14,
+        "accepted": 81,
+        "background": 16,
+        "foreground": 3,
+        "blendAxis": 1,
+        "ink": 1,
+        "token": 1
+      },
+      "headerAvatar": {
+        "designRoi": [316, 56, 40, 40],
+        "search": {
+          "maxDx": 2,
+          "maxDy": 60,
+          "step": 1
+        },
+        "best": {
+          "dx": 1,
+          "dy": -56,
+          "meanAbsoluteChannelError": 4.11625
+        },
+        "nextTwo": [
+          {
+            "dx": 1,
+            "dy": -55,
+            "meanAbsoluteChannelError": 24.07375
+          },
+          {
+            "dx": 2,
+            "dy": -56,
+            "meanAbsoluteChannelError": 24.705416666666668
+          }
+        ],
+        "unshifted": {
+          "dx": 0,
+          "dy": 0,
+          "meanAbsoluteChannelError": 116.62125
+        }
+      },
+      "navigation": {
+        "designRoi": [10, 620, 370, 60],
+        "search": {
+          "maxDx": 2,
+          "maxDy": 20,
+          "step": 1
+        },
+        "best": {
+          "dx": 1,
+          "dy": 0,
+          "meanAbsoluteChannelError": 3.401111111111111
+        },
+        "nextTwo": [
+          {
+            "dx": 1,
+            "dy": 1,
+            "meanAbsoluteChannelError": 3.7294444444444443
+          },
+          {
+            "dx": 1,
+            "dy": -1,
+            "meanAbsoluteChannelError": 4.564414414414414
+          }
+        ],
+        "unshifted": {
+          "dx": 0,
+          "dy": 0,
+          "meanAbsoluteChannelError": 4.716006006006006
+        }
+      },
+      "classification": "Canonical pixel placement differs: header upward56px, navigation approximately fixed. Placeholder ink difference is measured correctly but cannot establish font weight versus rasterizer cause.",
+      "placeholderInk": {
+        "bbox": [151, 574, 5, 4],
+        "background": 255,
+        "foreground": 177,
+        "halos": [
+          {
+            "halo": 2,
+            "roi": [149, 572, 9, 8],
+            "designInk": 9.038461538461538,
+            "screenshotInk": 15.923076923076923,
+            "delta": 0.43236714975845414
+          },
+          {
+            "halo": 4,
+            "roi": [147, 570, 13, 12],
+            "designInk": 16.269230769230766,
+            "screenshotInk": 28.576923076923077,
+            "delta": 0.4306864064602962
+          },
+          {
+            "halo": 6,
+            "roi": [145, 568, 17, 16],
+            "designInk": 24.62820512820513,
+            "screenshotInk": 44.51282051282051,
+            "delta": 0.44671658986175106
+          },
+          {
+            "halo": 8,
+            "roi": [143, 566, 21, 20],
+            "designInk": 36.41025641025641,
+            "screenshotInk": 60.46153846153846,
+            "delta": 0.3977947413061917
+          },
+          {
+            "halo": 12,
+            "roi": [139, 562, 29, 28],
+            "designInk": 52.76923076923077,
+            "screenshotInk": 70.94871794871794,
+            "delta": 0.2562341886519696
+          }
+        ],
+        "priorClassifierFinalInk": {
+          "design": 52.76923076923077,
+          "screenshot": 70.94871794871797,
+          "delta": 0.2562341886519699,
+          "limit": 0.25
+        },
+        "independentArithmeticAbsoluteError": {
+          "designInk": 0.0,
+          "screenshotInk": 2.842170943040401e-14,
+          "delta": 2.7755575615628914e-16
+        }
+      }
+    },
+    {
+      "pair": "pair-18-hm-gate1-9892-10228",
+      "variant": "correct",
+      "declaredExpectedVerdict": "pass",
+      "inputHashes": {
+        "design": "3d09188cb41735bd129f85f9466649c4927a9eeb6c1813bd92e28f9db298ded2",
+        "screenshot": "ada490db6760c320998675e907c56b39ecaab3fc0148cb8b51f66206d5ffacd8"
+      },
+      "manifestSha256": "f709117fdf1f8f8fac51f4246c19156e12ae1e3cd16eeb21d81488f4a984fb8e",
+      "nativeDimensions": {
+        "width": 390,
+        "height": 692
+      },
+      "priorClassifierStages": {
+        "token": 1,
+        "foreground": 1,
+        "accepted": 71,
+        "ink": 3
+      },
+      "regions": {
+        "logo": {
+          "translation": {
+            "designRoi": [115, 170, 160, 190],
+            "search": {
+              "maxDx": 5,
+              "maxDy": 5,
+              "step": 1
+            },
+            "best": {
+              "dx": 0,
+              "dy": 0,
+              "meanAbsoluteChannelError": 1.1340679824561404
+            },
+            "nextTwo": [
+              {
+                "dx": 0,
+                "dy": -1,
+                "meanAbsoluteChannelError": 3.5529934210526317
+              },
+              {
+                "dx": 0,
+                "dy": 1,
+                "meanAbsoluteChannelError": 3.5879934210526314
+              }
+            ],
+            "unshifted": {
+              "dx": 0,
+              "dy": 0,
+              "meanAbsoluteChannelError": 1.1340679824561404
+            }
+          },
+          "designDarkGray": {
+            "pixelCount": 1791,
+            "bboxInclusive": [125, 307, 265, 353],
+            "centroid": [193.50586264656616, 333.1602456728085],
+            "rowBandsInclusive": [[307, 324], [336, 353]]
+          },
+          "screenshotDarkGray": {
+            "pixelCount": 1836,
+            "bboxInclusive": [125, 307, 265, 353],
+            "centroid": [193.77450980392157, 333.06045751633985],
+            "rowBandsInclusive": [[307, 324], [336, 353]]
+          }
+        },
+        "title": {
+          "translation": {
+            "designRoi": [65, 425, 260, 45],
+            "search": {
+              "maxDx": 5,
+              "maxDy": 5,
+              "step": 1
+            },
+            "best": {
+              "dx": 0,
+              "dy": 2,
+              "meanAbsoluteChannelError": 6.586980056980057
+            },
+            "nextTwo": [
+              {
+                "dx": -1,
+                "dy": 2,
+                "meanAbsoluteChannelError": 9.312336182336182
+              },
+              {
+                "dx": 1,
+                "dy": 2,
+                "meanAbsoluteChannelError": 11.998774928774928
+              }
+            ],
+            "unshifted": {
+              "dx": 0,
+              "dy": 0,
+              "meanAbsoluteChannelError": 20.943048433048432
+            }
+          },
+          "designDarkGray": {
+            "pixelCount": 1930,
+            "bboxInclusive": [78, 436, 310, 457],
+            "centroid": [189.980310880829, 447.540414507772],
+            "rowBandsInclusive": [[436, 457]]
+          },
+          "screenshotDarkGray": {
+            "pixelCount": 1746,
+            "bboxInclusive": [77, 438, 311, 459],
+            "centroid": [190.63172966781212, 449.3951890034364],
+            "rowBandsInclusive": [[438, 459]]
+          }
+        },
+        "body": {
+          "translation": {
+            "designRoi": [50, 475, 290, 57],
+            "search": {
+              "maxDx": 5,
+              "maxDy": 5,
+              "step": 1
+            },
+            "best": {
+              "dx": 1,
+              "dy": 1,
+              "meanAbsoluteChannelError": 9.026678765880218
+            },
+            "nextTwo": [
+              {
+                "dx": 0,
+                "dy": 1,
+                "meanAbsoluteChannelError": 9.07789876991329
+              },
+              {
+                "dx": 0,
+                "dy": 2,
+                "meanAbsoluteChannelError": 9.708993748739665
+              }
+            ],
+            "unshifted": {
+              "dx": 0,
+              "dy": 0,
+              "meanAbsoluteChannelError": 12.121536600120992
+            }
+          },
+          "designDarkGray": {
+            "pixelCount": 1275,
+            "bboxInclusive": [61, 483, 324, 521],
+            "centroid": [190.59686274509804, 498.7498039215686],
+            "rowBandsInclusive": [[483, 496], [508, 521]]
+          },
+          "screenshotDarkGray": {
+            "pixelCount": 1404,
+            "bboxInclusive": [61, 484, 328, 523],
+            "centroid": [193.12321937321937, 499.89102564102564],
+            "rowBandsInclusive": [[484, 497], [510, 523]]
+          }
+        },
+        "explanation": {
+          "translation": {
+            "designRoi": [82, 550, 268, 40],
+            "search": {
+              "maxDx": 5,
+              "maxDy": 5,
+              "step": 1
+            },
+            "best": {
+              "dx": 5,
+              "dy": 2,
+              "meanAbsoluteChannelError": 11.813246268656716
+            },
+            "nextTwo": [
+              {
+                "dx": 5,
+                "dy": 1,
+                "meanAbsoluteChannelError": 13.474813432835822
+              },
+              {
+                "dx": 4,
+                "dy": 2,
+                "meanAbsoluteChannelError": 14.878917910447761
+              }
+            ],
+            "unshifted": {
+              "dx": 0,
+              "dy": 0,
+              "meanAbsoluteChannelError": 20.821082089552238
+            }
+          },
+          "designDarkGray": {
+            "pixelCount": 961,
+            "bboxInclusive": [87, 556, 339, 581],
+            "centroid": [213.34131113423518, 566.3954214360042],
+            "rowBandsInclusive": [[556, 565], [573, 581]]
+          },
+          "screenshotDarkGray": {
+            "pixelCount": 1278,
+            "bboxInclusive": [91, 558, 334, 584],
+            "centroid": [211.63145539906102, 568.7746478873239],
+            "rowBandsInclusive": [[558, 567], [575, 584]]
+          }
+        }
+      },
+      "explanationFragmentInk": {
+        "bbox": [137, 573, 20, 11],
+        "background": 255,
+        "foreground": 136,
+        "halos": [
+          {
+            "halo": 2,
+            "roi": [135, 571, 24, 15],
+            "designInk": 49.25210084033613,
+            "screenshotInk": 107.50420168067227,
+            "delta": 0.5418588290471352
+          },
+          {
+            "halo": 4,
+            "roi": [133, 569, 28, 19],
+            "designInk": 49.252100840336134,
+            "screenshotInk": 116.36974789915965,
+            "delta": 0.5767619872905834
+          },
+          {
+            "halo": 6,
+            "roi": [131, 567, 32, 23],
+            "designInk": 49.25210084033614,
+            "screenshotInk": 123.75630252100841,
+            "delta": 0.6020234942622393
+          },
+          {
+            "halo": 8,
+            "roi": [129, 565, 36, 27],
+            "designInk": 60.3109243697479,
+            "screenshotInk": 158.90756302521007,
+            "delta": 0.6204653622421998
+          },
+          {
+            "halo": 12,
+            "roi": [125, 561, 44, 35],
+            "designInk": 155.96918767507,
+            "screenshotInk": 254.32773109243698,
+            "delta": 0.38673935789415725
+          }
+        ],
+        "priorClassifierFinalInk": {
+          "design": 155.96918767506978,
+          "screenshot": 254.32773109243723,
+          "delta": 0.3867393578941588,
+          "limit": 0.25
+        },
+        "independentArithmeticAbsoluteError": {
+          "designInk": 2.2737367544323206e-13,
+          "screenshotInk": 2.5579538487363607e-13,
+          "delta": 1.5543122344752192e-15
+        }
+      },
+      "fullExplanationInk": {
+        "bbox": [85, 554, 264, 35],
+        "background": 255,
+        "foreground": 136,
+        "halos": [
+          {
+            "halo": 2,
+            "roi": [83, 552, 268, 39],
+            "designInk": 1270.563025210084,
+            "screenshotInk": 1480.5966386554621,
+            "delta": 0.14185741609957367
+          },
+          {
+            "halo": 4,
+            "roi": [81, 550, 272, 43],
+            "designInk": 1270.563025210084,
+            "screenshotInk": 1480.5966386554621,
+            "delta": 0.14185741609957367
+          },
+          {
+            "halo": 6,
+            "roi": [79, 548, 276, 47],
+            "designInk": 1358.6974789915964,
+            "screenshotInk": 1480.6302521008404,
+            "delta": 0.08235193961236148
+          },
+          {
+            "halo": 8,
+            "roi": [77, 546, 280, 51],
+            "designInk": 1386.6834733893556,
+            "screenshotInk": 1583.6638655462184,
+            "delta": 0.12438270294746079
+          },
+          {
+            "halo": 12,
+            "roi": [73, 542, 288, 59],
+            "designInk": 1565.4957983193274,
+            "screenshotInk": 1775.5602240896355,
+            "delta": 0.11830881482942225
+          }
+        ]
+      },
+      "classification": "Mixed pixel rendering/placement: logo stays at0px, title best at+2px; explanation has+2/+3 row shifts and changed line widths. Font metrics, source layout and rasterizer responsibility cannot be inferred from these PNGs alone. Ink mass is window dependent; no calculation error or safe weight classifier follows."
+    },
+    {
+      "pair": "pair-19-hm-gate1-9863-5441",
+      "variant": "correct",
+      "declaredExpectedVerdict": "pass",
+      "inputHashes": {
+        "design": "4ec2c17825635ccb17907aa62549c395f045f210da2fe7809b7194f1778b7228",
+        "screenshot": "253fab37692967cbdb2439182e68af05fce4a67d149c883f8f21172eea151dc5"
+      },
+      "manifestSha256": "ca58fd8b9f18b73c694a9258311ae46fa542e88efe40f1c9380f39a6da7b3cca",
+      "nativeDimensions": {
+        "width": 390,
+        "height": 692
+      },
+      "priorClassifierStages": {
+        "blendAxis": 8,
+        "foreground": 4,
+        "accepted": 59,
+        "token": 6,
+        "ink": 3,
+        "background": 3,
+        "topology": 1
+      },
+      "searchIcon": {
+        "roi": [32, 115, 30, 40],
+        "design": {
+          "green": {
+            "pixelCount": 0,
+            "bboxInclusive": null,
+            "rowBandsInclusive": []
+          },
+          "grayNonbackground": {
+            "pixelCount": 126,
+            "bboxInclusive": [37, 127, 54, 143],
+            "centroid": [45.388888888888886, 135.07142857142858],
+            "rowBandsInclusive": [[127, 143]]
+          }
+        },
+        "screenshot": {
+          "green": {
+            "pixelCount": 137,
+            "bboxInclusive": [38, 122, 55, 139],
+            "centroid": [46.25547445255474, 130.2189781021898],
+            "rowBandsInclusive": [[122, 139]]
+          },
+          "grayNonbackground": {
+            "pixelCount": 0,
+            "bboxInclusive": null,
+            "rowBandsInclusive": []
+          }
+        }
+      },
+      "fourthRowIcon": {
+        "roi": [35, 350, 36, 50],
+        "design": {
+          "green": {
+            "pixelCount": 0,
+            "bboxInclusive": null,
+            "rowBandsInclusive": []
+          },
+          "grayNonbackground": {
+            "pixelCount": 78,
+            "bboxInclusive": [44, 366, 60, 382],
+            "centroid": [51.64102564102564, 374.62820512820514],
+            "rowBandsInclusive": [[366, 382]]
+          }
+        },
+        "screenshot": {
+          "green": {
+            "pixelCount": 59,
+            "bboxInclusive": [49, 366, 55, 379],
+            "centroid": [51.91525423728814, 372.54237288135596],
+            "rowBandsInclusive": [[366, 379]]
+          },
+          "grayNonbackground": {
+            "pixelCount": 0,
+            "bboxInclusive": null,
+            "rowBandsInclusive": []
+          }
+        }
+      },
+      "fourthRowSymbolCorroboration": {
+        "visualInspection": "Design fourth row has a gray outlined speech bubble; screenshot fourth row has a green horse emblem like the first row.",
+        "screenshotFirstGlyphRoi": [49, 192, 7, 14],
+        "screenshotFourthGlyphRoi": [49, 366, 7, 14],
+        "exactRgbArrayEquality": true,
+        "firstGlyphRgbSha256": "f5c62b962af445a57aef74017f222a71b25862b66d65ad60c85b62374f314b22",
+        "fourthGlyphRgbSha256": "f5c62b962af445a57aef74017f222a71b25862b66d65ad60c85b62374f314b22"
+      },
+      "classification": "Genuine canonical content/token differences: search icon gray-to-green and fourth row symbol replacement. A same-stem rasterization classifier must not explain these away."
+    },
+    {
+      "pair": "pair-22-hm-gate1-9776-6584",
+      "variant": "correct",
+      "declaredExpectedVerdict": "pass",
+      "inputHashes": {
+        "design": "1a577e0d1c91742141a1d5166ff6fff54145ba86ebaa89306cdcee7a88a84286",
+        "screenshot": "6d3a0fbd85f398389ac01022209267c8aba6bc178fb732ca03308d97ed753cac"
+      },
+      "manifestSha256": "d031c66e98e4fae36274c54fa798d78e3f5b11a7f15261a9ee787643a9b45446",
+      "nativeDimensions": {
+        "width": 390,
+        "height": 692
+      },
+      "priorClassifierStages": {
+        "topology": 107,
+        "token": 30,
+        "background": 38,
+        "ink": 4,
+        "blendAxis": 3,
+        "accepted": 2,
+        "foreground": 7
+      },
+      "existingIndependentEvidence": {
+        "path": "docs/evidence/issue-376-cloud/pair-22-geometry.json",
+        "sha256": "31f2e85b165bbc0dcac9a4f5ea6b116f3b89240de358917b5dc3f4604a4f68fb",
+        "inputBorderVerticalShifts": [-56, -56],
+        "keyboardBestTranslation": {
+          "dx": 0,
+          "dy": 0,
+          "meanAbsoluteChannelError": 0.15077397910731244
+        }
+      },
+      "classification": "Genuine canonical placement difference: top input borders move upward56px while keyboard remains fixed; label needs specification review."
+    },
+    {
+      "pair": "pair-23-hm-gate1-9799-4024",
+      "variant": "correct",
+      "declaredExpectedVerdict": "pass",
+      "inputHashes": {
+        "design": "1d50f7bd4b9d05d483d55af14af63fff3000e15310ba433df1e49da2a53e15f9",
+        "screenshot": "49941f7b3de0852416bf23b8c222c6a3e34b0333f075be49cbb4384b0a1f0b38"
+      },
+      "manifestSha256": "d821e2af08a8aa24bb63b0fc9c26addfd686645ada7a4dce53545aa0524508c4",
+      "nativeDimensions": {
+        "width": 390,
+        "height": 692
+      },
+      "priorClassifierStages": {
+        "topology": 15,
+        "accepted": 55,
+        "background": 12,
+        "foreground": 3,
+        "blendAxis": 3,
+        "ink": 1
+      },
+      "headerAvatar": {
+        "designRoi": [316, 56, 40, 40],
+        "search": {
+          "maxDx": 2,
+          "maxDy": 60,
+          "step": 1
+        },
+        "best": {
+          "dx": 0,
+          "dy": -56,
+          "meanAbsoluteChannelError": 4.11625
+        },
+        "nextTwo": [
+          {
+            "dx": 0,
+            "dy": -55,
+            "meanAbsoluteChannelError": 24.07375
+          },
+          {
+            "dx": 1,
+            "dy": -56,
+            "meanAbsoluteChannelError": 24.705416666666668
+          }
+        ],
+        "unshifted": {
+          "dx": 0,
+          "dy": 0,
+          "meanAbsoluteChannelError": 116.62083333333334
+        }
+      },
+      "navigation": {
+        "designRoi": [10, 620, 370, 60],
+        "search": {
+          "maxDx": 2,
+          "maxDy": 20,
+          "step": 1
+        },
+        "best": {
+          "dx": 0,
+          "dy": 0,
+          "meanAbsoluteChannelError": 3.401111111111111
+        },
+        "nextTwo": [
+          {
+            "dx": 0,
+            "dy": 1,
+            "meanAbsoluteChannelError": 3.7294444444444443
+          },
+          {
+            "dx": 0,
+            "dy": -1,
+            "meanAbsoluteChannelError": 4.564414414414414
+          }
+        ],
+        "unshifted": {
+          "dx": 0,
+          "dy": 0,
+          "meanAbsoluteChannelError": 3.401111111111111
+        }
+      },
+      "classification": "Canonical pixel placement differs: header upward56px, navigation approximately fixed. Placeholder ink difference is measured correctly but cannot establish font weight versus rasterizer cause.",
+      "placeholderInk": {
+        "bbox": [137, 569, 8, 8],
+        "background": 255,
+        "foreground": 177,
+        "halos": [
+          {
+            "halo": 2,
+            "roi": [135, 567, 12, 12],
+            "designInk": 21.294871794871796,
+            "screenshotInk": 33.23076923076923,
+            "delta": 0.3591820987654321
+          },
+          {
+            "halo": 4,
+            "roi": [133, 565, 16, 16],
+            "designInk": 33.05128205128205,
+            "screenshotInk": 52.51282051282051,
+            "delta": 0.37060546875
+          },
+          {
+            "halo": 6,
+            "roi": [131, 563, 20, 20],
+            "designInk": 47.769230769230774,
+            "screenshotInk": 67.80769230769232,
+            "delta": 0.29551900170164497
+          },
+          {
+            "halo": 8,
+            "roi": [129, 561, 24, 24],
+            "designInk": 61.16666666666666,
+            "screenshotInk": 82.82051282051282,
+            "delta": 0.2614551083591332
+          },
+          {
+            "halo": 12,
+            "roi": [125, 557, 32, 32],
+            "designInk": 76.21794871794872,
+            "screenshotInk": 102.7948717948718,
+            "delta": 0.258543277625343
+          }
+        ],
+        "priorClassifierFinalInk": {
+          "design": 76.2179487179487,
+          "screenshot": 102.79487179487178,
+          "delta": 0.25854327762534307,
+          "limit": 0.25
+        },
+        "independentArithmeticAbsoluteError": {
+          "designInk": 1.4210854715202004e-14,
+          "screenshotInk": 1.4210854715202004e-14,
+          "delta": 5.551115123125783e-17
+        }
+      }
+    }
+  ]
+}

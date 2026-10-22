@@ -1,0 +1,39 @@
+
+ RUN  v4.1.11 /tmp/designdiff-reflow-before/app/mcp-server
+
+ ❯ src/service/diff-report-reflow-group.test.ts (8 tests | 1 failed) 515ms
+     × 既存の1px変位証明を持つ別色枠線を足してもテキストの証明を失わない 81ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/service/diff-report-reflow-group.test.ts > 説明済みの色付き枠線を未説明テキストのreflow窓へ混ぜない > 既存の1px変位証明を持つ別色枠線を足してもテキストの証明を失わない
+AssertionError: expected undefined to match object { designComponentCount: 1, …(1) }
+
+- Expected:
+{
+  "designComponentCount": 1,
+  "screenshotComponentCount": 1,
+}
+
++ Received:
+undefined
+
+ ❯ src/service/diff-report-reflow-group.test.ts:136:30
+    134|     expect(border?.localDisplacement).toMatchObject({ dx: 0, dy: 1, al…
+    135|     const text = result.regionScores.find((region) => region.bbox.x ==…
+    136|     expect(text?.textReflow).toMatchObject({
+       |                              ^
+    137|       designComponentCount: 1,
+    138|       screenshotComponentCount: 1,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 7 passed (8)
+   Start at  12:13:24
+   Duration  1.86s (transform 923ms, setup 70ms, import 1.12s, tests 515ms, environment 0ms)
+
+undefined
+/tmp/designdiff-reflow-before/app/mcp-server:
+ ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL  Command failed with exit code 1: vitest run src/service/diff-report-reflow-group.test.ts

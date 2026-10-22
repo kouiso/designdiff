@@ -1,0 +1,8 @@
+
+ RUN  v4.1.11 /workspace/designdiff/app/mcp-server
+
+
+ Test Files  3 passed (3)
+      Tests  113 passed (113)
+   Start at  12:06:54
+   Duration  18.78s (transform 1.48s, setup 108ms, import 1.75s, tests 26.03s, environment 0ms)

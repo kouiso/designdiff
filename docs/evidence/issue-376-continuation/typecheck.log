@@ -1,0 +1,84 @@
+
+> figdiff@ typecheck /workspace/designdiff
+> turbo run typecheck && pnpm --filter @figdiff/shared typecheck:test
+
+• turbo 2.9.14
+
+   • Packages in scope: @figdiff/chrome-extension, @figdiff/credential-store, @figdiff/desktop, @figdiff/figma-plugin, @figdiff/mcp-server, @figdiff/mobile-capture, @figdiff/shared
+   • Running typecheck in 7 packages
+   • Remote caching disabled
+
+@figdiff/credential-store:typecheck: cache hit, replaying logs 0b2a8dc26b341b68
+@figdiff/credential-store:typecheck:
+@figdiff/credential-store:typecheck: > @figdiff/credential-store@0.1.0 typecheck /workspace/designdiff/package/credential-store
+@figdiff/credential-store:typecheck: > tsc --noEmit
+@figdiff/credential-store:typecheck:
+@figdiff/shared:typecheck: cache miss, executing da3416ccefc8c596
+@figdiff/mobile-capture:typecheck: cache hit, replaying logs 88a3c4eddcd8de2f
+@figdiff/shared:build: cache miss, executing f2ceafad1b4aa46f
+@figdiff/mobile-capture:typecheck:
+@figdiff/mobile-capture:typecheck: > @figdiff/mobile-capture@0.1.0 typecheck /workspace/designdiff/package/mobile-capture
+@figdiff/mobile-capture:typecheck: > tsc --noEmit
+@figdiff/mobile-capture:typecheck:
+@figdiff/credential-store:build: cache hit, replaying logs 9f1a10a3c5102264
+@figdiff/credential-store:build:
+@figdiff/credential-store:build: > @figdiff/credential-store@0.1.0 build /workspace/designdiff/package/credential-store
+@figdiff/credential-store:build: > tsc
+@figdiff/credential-store:build:
+@figdiff/mobile-capture:build: cache hit, replaying logs fed34895375f1d0c
+@figdiff/mobile-capture:build:
+@figdiff/mobile-capture:build: > @figdiff/mobile-capture@0.1.0 build /workspace/designdiff/package/mobile-capture
+@figdiff/mobile-capture:build: > tsc && node -e "require('node:fs').chmodSync('dist/bin/figdiff-flutter-golden.js', 0o755)"
+@figdiff/mobile-capture:build:
+@figdiff/shared:build:
+@figdiff/shared:build: > @figdiff/shared@0.1.0 build /workspace/designdiff/package/shared
+@figdiff/shared:build: > tsc
+@figdiff/shared:build:
+@figdiff/shared:typecheck:
+@figdiff/shared:typecheck: > @figdiff/shared@0.1.0 typecheck /workspace/designdiff/package/shared
+@figdiff/shared:typecheck: > tsc --noEmit
+@figdiff/shared:typecheck:
+@figdiff/figma-plugin:typecheck: cache miss, executing 8118a894a1c61b71
+@figdiff/mcp-server:typecheck: cache miss, executing 741a8473278327bc
+@figdiff/chrome-extension:typecheck: cache miss, executing 54196e038dce0334
+@figdiff/desktop:typecheck: cache miss, executing 5fec3d78a590ee1e
+@figdiff/desktop:typecheck:
+@figdiff/desktop:typecheck: > @figdiff/desktop@1.0.0 typecheck /workspace/designdiff/app/desktop
+@figdiff/desktop:typecheck: > tsc --noEmit
+@figdiff/desktop:typecheck:
+@figdiff/figma-plugin:typecheck:
+@figdiff/figma-plugin:typecheck: > @figdiff/figma-plugin@0.1.0 typecheck /workspace/designdiff/app/figma-plugin
+@figdiff/figma-plugin:typecheck: > tsc --noEmit -p tsconfig.code.json && tsc --noEmit -p tsconfig.ui.json
+@figdiff/figma-plugin:typecheck:
+@figdiff/chrome-extension:typecheck:
+@figdiff/chrome-extension:typecheck: > @figdiff/chrome-extension@0.1.0 typecheck /workspace/designdiff/app/chrome-extension
+@figdiff/chrome-extension:typecheck: > tsc --noEmit -p tsconfig.background.json && tsc --noEmit -p tsconfig.content.json && tsc --noEmit -p tsconfig.popup.json
+@figdiff/chrome-extension:typecheck:
+@figdiff/mcp-server:typecheck:
+@figdiff/mcp-server:typecheck: > @figdiff/mcp-server@0.1.0 pretypecheck /workspace/designdiff/app/mcp-server
+@figdiff/mcp-server:typecheck: > pnpm --filter @figdiff/credential-store build && pnpm --filter @figdiff/shared build && pnpm --filter @figdiff/mobile-capture build
+@figdiff/mcp-server:typecheck:
+@figdiff/mcp-server:typecheck:
+@figdiff/mcp-server:typecheck: > @figdiff/credential-store@0.1.0 build /workspace/designdiff/package/credential-store
+@figdiff/mcp-server:typecheck: > tsc
+@figdiff/mcp-server:typecheck:
+@figdiff/mcp-server:typecheck:
+@figdiff/mcp-server:typecheck: > @figdiff/shared@0.1.0 build /workspace/designdiff/package/shared
+@figdiff/mcp-server:typecheck: > tsc
+@figdiff/mcp-server:typecheck:
+@figdiff/mcp-server:typecheck:
+@figdiff/mcp-server:typecheck: > @figdiff/mobile-capture@0.1.0 build /workspace/designdiff/package/mobile-capture
+@figdiff/mcp-server:typecheck: > tsc && node -e "require('node:fs').chmodSync('dist/bin/figdiff-flutter-golden.js', 0o755)"
+@figdiff/mcp-server:typecheck:
+@figdiff/mcp-server:typecheck:
+@figdiff/mcp-server:typecheck: > @figdiff/mcp-server@0.1.0 typecheck /workspace/designdiff/app/mcp-server
+@figdiff/mcp-server:typecheck: > tsc --noEmit
+@figdiff/mcp-server:typecheck:
+
+ Tasks:    10 successful, 10 total
+Cached:    4 cached, 10 total
+  Time:    19.021s
+
+
+> @figdiff/shared@0.1.0 typecheck:test /workspace/designdiff/package/shared
+> tsc -p tsconfig.css-suggestion-test.json --noEmit

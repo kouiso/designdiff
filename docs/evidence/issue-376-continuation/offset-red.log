@@ -1,0 +1,40 @@
+
+ RUN  v4.1.11 /tmp/designdiff-reflow-before/package/shared
+
+ ❯ src/signal/glyph-edge-raster.test.ts (42 tests | 1 failed) 3951ms
+     × 背景の丸めで有効点3個を水増しせず、十分な点の移動は保持する 8ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/signal/glyph-edge-raster.test.ts > estimateContentOffset > 背景の丸めで有効点3個を水増しせず、十分な点の移動は保持する
+AssertionError: expected { dx: 1.9997786173886873, …(2) } to be undefined
+
+- Expected:
+undefined
+
++ Received:
+{
+  "dx": 1.9997786173886873,
+  "dy": -0.0003859465672595684,
+  "peak": 0.9999855993452226,
+}
+
+ ❯ src/signal/glyph-edge-raster.test.ts:484:59
+    482|     );
+    483|     expect(evidence).toBeDefined();
+    484|     if (solidCount === 3) expect(evidence?.contentOffset).toBeUndefine…
+       |                                                           ^
+    485|     else {
+    486|       expect(evidence?.contentOffset?.dx).toBeCloseTo(2, 0);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 41 passed (42)
+   Start at  12:14:48
+   Duration  4.20s (transform 101ms, setup 0ms, import 124ms, tests 3.95s, environment 0ms)
+
+undefined
+/tmp/designdiff-reflow-before/package/shared:
+ ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL  Command failed with exit code 1: vitest run src/signal/glyph-edge-raster.test.ts

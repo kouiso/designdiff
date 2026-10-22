@@ -1,0 +1,274 @@
+{
+  "scope": "Constructed pixels and actual built APIs. Offset fix assertions are correctness controls; weight cases expose an unresolved policy conflict and are not passing acceptance results.",
+  "sourceCommit": "82328a9354ab94c2f4f340c9e64877a2be19e4d0",
+  "productDiffFromHeadSha256": "627c8aedd0b7f691393b711670703184ab5db7e232e050dc3e57978ceea4441f",
+  "fileSha256": {
+    "package/shared/src/signal/glyph-edge-raster.ts": "d1dfc643a4a0c6bc2c994072e4ddc171b73dfd3089b305f909ae461d6c5c86cf",
+    "package/shared/src/signal/text-reflow.ts": "de0243673cc340c291fbf87a8f92d6eb27d81a8082c881b6943176e9ac7eaf78",
+    "app/mcp-server/src/service/diff-report-builder.ts": "2676e09a4ba830a00fe84da07d9fda720294b8639316df0d0d36e3c0cc1e2824",
+    "app/mcp-server/src/service/image-compare-service.ts": "69a1c242dd4d881efee41886f1d47f942b0564cb871f6e33d6c8f9b578c5a484",
+    "package/shared/dist/signal/glyph-edge-raster.js": "a9c29fa6cc64ccba5ae5cbed837c40e2dbaf8808b4e10a1ad2a96e10c80117ec",
+    "package/shared/dist/signal/text-reflow.js": "b442b471ab196e0279c525818c75df44bc4cf5f2714c758758e197dc151789b0",
+    "app/mcp-server/dist/service/diff-report-builder.js": "5b1be2f5ad80c48c174d8c97ebf5a06ec0e6180669ea549be33af1f5a6413d67",
+    "app/mcp-server/dist/service/image-compare-service.js": "0cfa2a990c4dc50bd494476fef1e2a742d5a24114e7cb3c060a9446cbf782775"
+  },
+  "productFilesStableDuringRun": true,
+  "hasUncommittedChanges": true,
+  "environment": {
+    "node": "v25.6.1",
+    "platform": "linux",
+    "arch": "x64"
+  },
+  "offsetCases": [
+    {
+      "solidPointsPerImage": 3,
+      "independentKnownDisplacement": {
+        "dx": 2,
+        "dy": 0
+      },
+      "designEdgeAlpha": 0.09803921568627451,
+      "screenshotEdgeAlpha": 0.095,
+      "commonBackgroundOffset": {
+        "dx": 1.9997786173886873,
+        "dy": -0.0003859465672595684,
+        "peak": 0.9999855993452226
+      },
+      "correctedOffset": null,
+      "expected": "unmeasurable: at most six informative pairs",
+      "inputHashes": {
+        "design": "47c75ec4d2566e9920b1c0610c9159f99dad89826740504173ad713a0c3f87c7",
+        "screenshot": "079b74a437b5dfaac064817e2928b643676e6670074e14ce9407d16bb676a16f"
+      }
+    },
+    {
+      "solidPointsPerImage": 8,
+      "independentKnownDisplacement": {
+        "dx": 2,
+        "dy": 0
+      },
+      "designEdgeAlpha": 0.09803921568627451,
+      "screenshotEdgeAlpha": 0.095,
+      "commonBackgroundOffset": {
+        "dx": 1.9994978685441218,
+        "dy": 1.44024896765794e-16,
+        "peak": 0.9999971203512837
+      },
+      "correctedOffset": {
+        "dx": 1.9994978685441218,
+        "dy": 0,
+        "peak": 0.9999971203512779
+      },
+      "expected": "measurable two-pixel offset",
+      "inputHashes": {
+        "design": "0ead66fd67ab6a5abd784e699cb8d28330a8e280551d76eb3285bd9d0d11e157",
+        "screenshot": "36bc39d251b37242d190c017ee37e526377a9e964ca11e6aa0a8e6e10ba053e7"
+      }
+    }
+  ],
+  "weightCases": [
+    {
+      "route": "PNG",
+      "construction": "Three centered opaque stems intentionally widened 5 to 7 pixels; center and length unchanged",
+      "designStrokeWidth": 5,
+      "screenshotStrokeWidth": 7,
+      "designInkPixels": 255,
+      "screenshotInkPixels": 357,
+      "independentlyExpectedVerdict": "fail",
+      "observedVerdict": "pass",
+      "violatesExpectedVerdict": true,
+      "classifierEvidence": [
+        {
+          "bbox": {
+            "x": 17,
+            "y": 20,
+            "w": 1,
+            "h": 17,
+            "diffPixelCount": 17
+          },
+          "inkDelta": 0.3333333333333333,
+          "inkLimit": 0.35
+        },
+        {
+          "bbox": {
+            "x": 23,
+            "y": 20,
+            "w": 1,
+            "h": 17,
+            "diffPixelCount": 17
+          },
+          "inkDelta": 0.3333333333333333,
+          "inkLimit": 0.35
+        },
+        {
+          "bbox": {
+            "x": 27,
+            "y": 20,
+            "w": 1,
+            "h": 17,
+            "diffPixelCount": 17
+          },
+          "inkDelta": 0.3333333333333333,
+          "inkLimit": 0.35
+        },
+        {
+          "bbox": {
+            "x": 33,
+            "y": 20,
+            "w": 1,
+            "h": 17,
+            "diffPixelCount": 17
+          },
+          "inkDelta": 0.3333333333333333,
+          "inkLimit": 0.35
+        },
+        {
+          "bbox": {
+            "x": 37,
+            "y": 20,
+            "w": 1,
+            "h": 17,
+            "diffPixelCount": 17
+          },
+          "inkDelta": 0.3333333333333333,
+          "inkLimit": 0.35
+        },
+        {
+          "bbox": {
+            "x": 43,
+            "y": 20,
+            "w": 1,
+            "h": 17,
+            "diffPixelCount": 17
+          },
+          "inkDelta": 0.3333333333333333,
+          "inkLimit": 0.35
+        }
+      ]
+    },
+    {
+      "route": "section",
+      "construction": "Three centered opaque stems intentionally widened 5 to 7 pixels; center and length unchanged",
+      "designStrokeWidth": 5,
+      "screenshotStrokeWidth": 7,
+      "designInkPixels": 255,
+      "screenshotInkPixels": 357,
+      "independentlyExpectedVerdict": "fail",
+      "observedVerdict": "pass",
+      "violatesExpectedVerdict": true,
+      "classifierEvidence": [
+        {
+          "bbox": {
+            "x": 0,
+            "y": 0,
+            "w": 64,
+            "h": 64
+          },
+          "inkDelta": 0.2857142857142857,
+          "inkLimit": 0.35
+        }
+      ]
+    },
+    {
+      "route": "PNG",
+      "construction": "Three centered opaque stems intentionally widened 7 to 9 pixels; center and length unchanged",
+      "designStrokeWidth": 7,
+      "screenshotStrokeWidth": 9,
+      "designInkPixels": 357,
+      "screenshotInkPixels": 459,
+      "independentlyExpectedVerdict": "fail",
+      "observedVerdict": "pass",
+      "violatesExpectedVerdict": true,
+      "classifierEvidence": [
+        {
+          "bbox": {
+            "x": 16,
+            "y": 20,
+            "w": 1,
+            "h": 17,
+            "diffPixelCount": 17
+          },
+          "inkDelta": 0.3333333333333333,
+          "inkLimit": 0.35
+        },
+        {
+          "bbox": {
+            "x": 24,
+            "y": 20,
+            "w": 1,
+            "h": 17,
+            "diffPixelCount": 17
+          },
+          "inkDelta": 0.3333333333333333,
+          "inkLimit": 0.35
+        },
+        {
+          "bbox": {
+            "x": 36,
+            "y": 20,
+            "w": 1,
+            "h": 17,
+            "diffPixelCount": 17
+          },
+          "inkDelta": 0.3333333333333333,
+          "inkLimit": 0.35
+        },
+        {
+          "bbox": {
+            "x": 44,
+            "y": 20,
+            "w": 1,
+            "h": 17,
+            "diffPixelCount": 17
+          },
+          "inkDelta": 0.3333333333333333,
+          "inkLimit": 0.35
+        },
+        {
+          "bbox": {
+            "x": 56,
+            "y": 20,
+            "w": 1,
+            "h": 17,
+            "diffPixelCount": 17
+          },
+          "inkDelta": 0.3333333333333333,
+          "inkLimit": 0.35
+        },
+        {
+          "bbox": {
+            "x": 64,
+            "y": 20,
+            "w": 1,
+            "h": 17,
+            "diffPixelCount": 17
+          },
+          "inkDelta": 0.3333333333333333,
+          "inkLimit": 0.35
+        }
+      ]
+    },
+    {
+      "route": "section",
+      "construction": "Three centered opaque stems intentionally widened 7 to 9 pixels; center and length unchanged",
+      "designStrokeWidth": 7,
+      "screenshotStrokeWidth": 9,
+      "designInkPixels": 357,
+      "screenshotInkPixels": 459,
+      "independentlyExpectedVerdict": "fail",
+      "observedVerdict": "pass",
+      "violatesExpectedVerdict": true,
+      "classifierEvidence": [
+        {
+          "bbox": {
+            "x": 0,
+            "y": 0,
+            "w": 80,
+            "h": 80
+          },
+          "inkDelta": 0.2222222222222222,
+          "inkLimit": 0.35
+        }
+      ]
+    }
+  ]
+}

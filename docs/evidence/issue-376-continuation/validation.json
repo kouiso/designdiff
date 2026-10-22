@@ -1,0 +1,449 @@
+{
+  "date": "2026-10-22",
+  "scope": "Incremental cloud repair and evidence; Issue376 remains open. No new PR, remote messages, workflow dispatch, merge or draft conversion.",
+  "baseCommit": "82328a9354ab94c2f4f340c9e64877a2be19e4d0",
+  "productDiffCommand": [
+    "git",
+    "diff",
+    "HEAD",
+    "--",
+    "package/shared/src/signal/glyph-edge-raster.ts",
+    "package/shared/src/signal/text-reflow.ts",
+    "app/mcp-server/src/service/diff-report-builder.ts",
+    "app/mcp-server/src/service/image-compare-service.ts",
+    "package/shared/dist/signal/glyph-edge-raster.js",
+    "package/shared/dist/signal/text-reflow.js",
+    "app/mcp-server/dist/service/diff-report-builder.js",
+    "app/mcp-server/dist/service/image-compare-service.js"
+  ],
+  "productDiffFromBaseSha256": "627c8aedd0b7f691393b711670703184ab5db7e232e050dc3e57978ceea4441f",
+  "implementationPatchCommand": [
+    "git",
+    "diff",
+    "--unified=0",
+    "--binary",
+    "HEAD",
+    "--",
+    "CHANGELOG.md",
+    "package/shared/src/signal/glyph-edge-raster.ts",
+    "package/shared/src/signal/text-reflow.ts",
+    "app/mcp-server/src/service/diff-report-builder.ts",
+    "app/mcp-server/src/service/image-compare-service.ts",
+    "package/shared/dist/signal/glyph-edge-raster.js",
+    "package/shared/dist/signal/text-reflow.js",
+    "app/mcp-server/dist/service/diff-report-builder.js",
+    "app/mcp-server/dist/service/image-compare-service.js",
+    "package/shared/src/signal/glyph-edge-raster.test.ts",
+    "package/shared/src/signal/text-reflow.test.ts",
+    "app/mcp-server/src/service/diff-report-reflow-group.test.ts",
+    "app/mcp-server/src/service/diff-report-builder.test.ts",
+    "app/mcp-server/src/service/image-compare-stroke-background.test.ts"
+  ],
+  "implementationPatchSha256": "493e02355b8d5435d7f48eb045d2e400d4a04f2dda14fc5af4322d6963b36be0",
+  "sourceAndTestSha256": {
+    "package/shared/src/signal/glyph-edge-raster.ts": "d1dfc643a4a0c6bc2c994072e4ddc171b73dfd3089b305f909ae461d6c5c86cf",
+    "package/shared/src/signal/text-reflow.ts": "de0243673cc340c291fbf87a8f92d6eb27d81a8082c881b6943176e9ac7eaf78",
+    "app/mcp-server/src/service/diff-report-builder.ts": "2676e09a4ba830a00fe84da07d9fda720294b8639316df0d0d36e3c0cc1e2824",
+    "app/mcp-server/src/service/image-compare-service.ts": "69a1c242dd4d881efee41886f1d47f942b0564cb871f6e33d6c8f9b578c5a484",
+    "package/shared/dist/signal/glyph-edge-raster.js": "a9c29fa6cc64ccba5ae5cbed837c40e2dbaf8808b4e10a1ad2a96e10c80117ec",
+    "package/shared/dist/signal/text-reflow.js": "b442b471ab196e0279c525818c75df44bc4cf5f2714c758758e197dc151789b0",
+    "app/mcp-server/dist/service/diff-report-builder.js": "5b1be2f5ad80c48c174d8c97ebf5a06ec0e6180669ea549be33af1f5a6413d67",
+    "app/mcp-server/dist/service/image-compare-service.js": "0cfa2a990c4dc50bd494476fef1e2a742d5a24114e7cb3c060a9446cbf782775",
+    "package/shared/src/signal/glyph-edge-raster.test.ts": "1fa2d7ad3cc3e2a06fb7b6e0124b62cc0eb2647d1ac4ef82c26ba923b67d1744",
+    "package/shared/src/signal/text-reflow.test.ts": "bab89ce3b4e22b90c24f61fec468ff704459b9f27ef66ccc8eadf366e124e60a",
+    "app/mcp-server/src/service/diff-report-reflow-group.test.ts": "5f366ce3b53de793e3510795d25c9ba8ae04da79b57de41b64f8adf9d0b82679",
+    "app/mcp-server/src/service/diff-report-builder.test.ts": "aee62543f7119c299cf840e593667af1ac3588257e97be04980a709592d3ef9d",
+    "app/mcp-server/src/service/image-compare-stroke-background.test.ts": "ea3fb7719ea4b610a8cd8d8669ef37d915c077b07474b1bf48640a25a8acbc67"
+  },
+  "environment": {
+    "node": "v25.6.1",
+    "pnpm": "9.15.0",
+    "platform": "linux",
+    "arch": "x64"
+  },
+  "ui": {
+    "changed": false,
+    "sameConditionBeforeAfterImages": "Not applicable: no UI change; actual image fixtures were read in memory only."
+  },
+  "checks": [
+    {
+      "command": "pnpm --filter @figdiff/mcp-server... build",
+      "exitCode": 0,
+      "log": "build.log"
+    },
+    {
+      "command": "pnpm typecheck",
+      "exitCode": 0,
+      "log": "typecheck.log",
+      "tasks": 10,
+      "cache": "4 local cached / 10 tasks; remaining tasks executed; shared test typecheck also passed"
+    },
+    {
+      "command": "pnpm --filter @figdiff/shared exec tsc --noEmit --target ES2022 --module NodeNext --moduleResolution NodeNext --strict --esModuleInterop --skipLibCheck src/signal/glyph-edge-raster.test.ts src/signal/text-reflow.test.ts",
+      "exitCode": 0,
+      "log": "shared-test-types.log"
+    },
+    {
+      "command": "pnpm --filter @figdiff/mcp-server exec tsc --noEmit --target ES2022 --module NodeNext --moduleResolution NodeNext --strict --esModuleInterop --skipLibCheck src/service/diff-report-reflow-group.test.ts src/service/image-compare-stroke-background.test.ts",
+      "exitCode": 0,
+      "log": "mcp-test-types.log"
+    },
+    {
+      "command": "pnpm lint:eslint",
+      "exitCode": 0,
+      "log": "eslint.log",
+      "errors": 0,
+      "existingWarnings": 2
+    },
+    {
+      "command": "python3 docs/evidence/issue-376-cloud/reap-children.py task ci:fast",
+      "exitCode": 0,
+      "log": "ci-fast.log",
+      "phases": [
+        "frozen-lockfile install",
+        "naming",
+        "lint",
+        "build",
+        "all-package tests",
+        "MCP stdio smoke self-test",
+        "root Node tests"
+      ],
+      "unitTests": {
+        "shared": 679,
+        "mcp": 924,
+        "desktopRenderer": 663,
+        "desktopMain": 250,
+        "chrome": 189,
+        "figma": 167,
+        "mobile": 103,
+        "credentials": 46,
+        "total": 3021
+      },
+      "rootNodeTests": {
+        "passed": 59,
+        "failed": 0,
+        "skipped": 1,
+        "skipReason": "Windows-only command/cwd control on Linux"
+      },
+      "cache": "Five of ten Turbo test-phase tasks cached; changed shared/MCP tests executed; details retained in log.",
+      "environmentNote": "Unprivileged subreaper supplies missing PID1 child reaping; product/tests/hooks unchanged."
+    },
+    {
+      "command": "pnpm --filter @figdiff/shared exec vitest run src/signal/glyph-edge-raster.test.ts",
+      "exitCode": 1,
+      "log": "offset-red.log",
+      "cwd": "/tmp/designdiff-reflow-before",
+      "expectedRegressionFailure": true,
+      "passed": 41,
+      "failed": 1,
+      "sourceCommit": "82328a9354ab94c2f4f340c9e64877a2be19e4d0"
+    },
+    {
+      "command": "pnpm --filter @figdiff/shared exec vitest run src/signal/glyph-edge-raster.test.ts src/signal/text-reflow.test.ts",
+      "exitCode": 0,
+      "log": "offset-green.log",
+      "passed": 58
+    },
+    {
+      "command": "pnpm --filter @figdiff/mcp-server exec vitest run src/service/diff-report-reflow-group.test.ts",
+      "exitCode": 1,
+      "log": "reflow-group-red.log",
+      "cwd": "/tmp/designdiff-reflow-before",
+      "expectedRegressionFailure": true,
+      "passed": 7,
+      "failed": 1,
+      "sourceCommit": "82328a9354ab94c2f4f340c9e64877a2be19e4d0"
+    },
+    {
+      "command": "pnpm --filter @figdiff/mcp-server exec vitest run src/service/diff-report-reflow-group.test.ts",
+      "exitCode": 0,
+      "log": "reflow-group-green.log",
+      "passed": 8
+    },
+    {
+      "command": "pnpm --filter @figdiff/mcp-server exec vitest run src/service/diff-report-reflow-group.test.ts src/service/diff-report-builder.test.ts src/service/image-compare-stroke-background.test.ts",
+      "exitCode": 0,
+      "log": "related-mcp-green.log",
+      "passed": 113
+    },
+    {
+      "command": "python3 docs/evidence/issue-376-continuation/geometry-classification.py /tmp/designdiff-gate1/verification/fixture docs/evidence/issue-376-continuation/geometry-classification.json",
+      "exitCode": 0,
+      "log": "geometry.log",
+      "cases": 6,
+      "artifact": "geometry-classification.json"
+    },
+    {
+      "command": "python3 docs/evidence/issue-376-continuation/stroke-analysis.py /tmp/designdiff-gate1/verification/fixture docs/evidence/issue-376-continuation/stroke-analysis.json",
+      "exitCode": 0,
+      "log": "stroke-analysis.log",
+      "cases": 6,
+      "artifact": "stroke-analysis.json"
+    },
+    {
+      "command": "node docs/evidence/issue-376-continuation/reproduce-stroke.mjs /workspace/designdiff docs/evidence/issue-376-continuation/stroke-runtime.json",
+      "exitCode": 0,
+      "log": "stroke-runtime.log",
+      "correctOffsetControls": 2,
+      "knownUnresolvedWeightFailures": 4,
+      "acceptancePassed": false,
+      "artifact": "stroke-runtime.json",
+      "note": "Exit0 means measurement completed; four expected FAIL vs observed PASS are unresolved defects, not green controls."
+    },
+    {
+      "command": "/tmp/designdiff-toolchain/node-v25.6.1-linux-x64/bin/node /workspace/designdiff/docs/evidence/issue-376-continuation/reproduce-reflow.mjs /workspace/designdiff docs/evidence/issue-376-continuation/reflow-runtime.json",
+      "exitCode": 0,
+      "log": "Embedded per-process stderr and actual result per case in reflow-runtime.json",
+      "artifact": "reflow-runtime.json",
+      "freshMcpCases": 8,
+      "passed": 8
+    },
+    {
+      "command": "node docs/evidence/issue-376-cloud/classify-stroke.mjs /workspace/designdiff /tmp/designdiff-gate1/verification/fixture docs/evidence/issue-376-continuation/stroke-diagnostics.json",
+      "exitCode": 0,
+      "log": "diagnostics.log",
+      "cases": 33,
+      "declaredVerdictMismatches": 12,
+      "falsePassAgainstDeclarations": 0,
+      "acceptancePassed": false,
+      "artifact": "stroke-diagnostics.json"
+    },
+    {
+      "command": "pnpm exec biome check --write docs/evidence/issue-376-continuation/*.mjs docs/evidence/issue-376-continuation/*.json",
+      "exitCode": 0,
+      "log": "evidence-format.log"
+    },
+    {
+      "command": "pnpm exec eslint docs/evidence/issue-376-continuation/*.mjs",
+      "exitCode": 0,
+      "log": "evidence-eslint.log"
+    },
+    {
+      "command": "pnpm exec biome check package/shared/src/signal/glyph-edge-raster.ts package/shared/src/signal/glyph-edge-raster.test.ts app/mcp-server/src/service/diff-report-builder.ts app/mcp-server/src/service/diff-report-reflow-group.test.ts docs/evidence/issue-376-continuation/*.mjs docs/evidence/issue-376-continuation/*.json",
+      "exitCode": 0,
+      "log": "final-format.log",
+      "note": "Includes product, regression tests, evidence scripts/data and validation ledger; existing complexity warnings retained."
+    }
+  ],
+  "logProvenance": {
+    "offset-red.log": {
+      "originalPath": "/tmp/designdiff-offset-before-raw-final.log",
+      "originalBytes": 1454,
+      "originalSha256": "acf412a05490944fe1f9d9ed90e63ee1690fc523ad95cf4f8f5b827dba8b0665",
+      "savedSha256": "acf412a05490944fe1f9d9ed90e63ee1690fc523ad95cf4f8f5b827dba8b0665",
+      "normalization": "Trailing whitespace per line and trailing empty lines only; no message lines omitted."
+    },
+    "offset-green.log": {
+      "originalPath": "/tmp/designdiff-offset-after-raw-final.log",
+      "originalBytes": 223,
+      "originalSha256": "b7792b7a39f027cd8e6509559dad08e4fd4c4d0c954c7cd348a8ee3f481c0101",
+      "savedSha256": "c43fec988f51ac92f90ec6152bacf19c8beceef0550c3bc5669bb30deb0a5f3a",
+      "normalization": "Trailing whitespace per line and trailing empty lines only; no message lines omitted."
+    },
+    "reflow-group-red.log": {
+      "originalPath": "/tmp/designdiff-reflow-group-before-raw.log",
+      "originalBytes": 1584,
+      "originalSha256": "15773d463bd0145acc411e48c9b271afeb72bd294615d5543a9afa3b4abca332",
+      "savedSha256": "15773d463bd0145acc411e48c9b271afeb72bd294615d5543a9afa3b4abca332",
+      "normalization": "Trailing whitespace per line and trailing empty lines only; no message lines omitted."
+    },
+    "reflow-group-green.log": {
+      "originalPath": "/tmp/designdiff-reflow-group-after-raw.log",
+      "originalBytes": 222,
+      "originalSha256": "b573bbb0411591f7736b78ef101df67ec33ed0ec97afa31f586aeb6f8f25730f",
+      "savedSha256": "a5c42a179520ceaab7091bf5b16c9b8a03b65a4555af537d39b25a9be64e4bfa",
+      "normalization": "Trailing whitespace per line and trailing empty lines only; no message lines omitted."
+    },
+    "related-mcp-green.log": {
+      "originalPath": "/tmp/designdiff-reflow-group-green.log",
+      "originalBytes": 229,
+      "originalSha256": "94916540e6b39ad7809599713ca44b33161fc3a24fbb344838ada82e266686ae",
+      "savedSha256": "e9d4340b7182844018c2cc9ad8a9db601ce738281a74339c73e3ccbeacc2660f",
+      "normalization": "Trailing whitespace per line and trailing empty lines only; no message lines omitted."
+    },
+    "ci-fast.log": {
+      "originalPath": "/tmp/designdiff-continuation-ci-fast.log",
+      "originalBytes": 162064,
+      "originalSha256": "08e4efafad997a28ad66b33065e2563055388fefe9f18301c7cd040413f35f89",
+      "savedSha256": "2f5c7d68ec84af4d3bb961912e843423d78d993d498e6a1f67d284d89349b0ba",
+      "normalization": "Trailing whitespace per line and trailing empty lines only; no message lines omitted."
+    },
+    "build.log": {
+      "originalPath": "/tmp/designdiff-continuation-final-build.log",
+      "originalBytes": 689,
+      "originalSha256": "fd6620aa2f282bd77d10d8cd43d9bb1d46145bb0275880e8328c61e9f443e7a2",
+      "savedSha256": "fd6620aa2f282bd77d10d8cd43d9bb1d46145bb0275880e8328c61e9f443e7a2",
+      "normalization": "Trailing whitespace per line and trailing empty lines only; no message lines omitted."
+    },
+    "typecheck.log": {
+      "originalPath": "/tmp/designdiff-continuation-typecheck-final.log",
+      "originalBytes": 4835,
+      "originalSha256": "c88ea7731b6ae9fbd50b9ac52326473ea662c8cb70809351779e13eec548b306",
+      "savedSha256": "91cbd695165c50c20c55fce70f2b7f9fe2a7530cb773983fb8085bc3c651904f",
+      "normalization": "Trailing whitespace per line and trailing empty lines only; no message lines omitted."
+    },
+    "eslint.log": {
+      "originalPath": "/tmp/designdiff-continuation-eslint-final.log",
+      "originalBytes": 620,
+      "originalSha256": "a38c34242b4480430b3ff5989cfdbaf68d2b81df452b1d178c3d1875aa3e6183",
+      "savedSha256": "caeabdcf32b0ce4064b5250776fc7c101c37cb65288f84148d69a34c3289c9a3",
+      "normalization": "Trailing whitespace per line and trailing empty lines only; no message lines omitted."
+    },
+    "shared-test-types.log": {
+      "originalPath": "/tmp/designdiff-continuation-shared-test-types-final.log",
+      "originalBytes": 0,
+      "originalSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "savedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "normalization": "Trailing whitespace per line and trailing empty lines only; no message lines omitted."
+    },
+    "mcp-test-types.log": {
+      "originalPath": "/tmp/designdiff-continuation-mcp-test-types-final.log",
+      "originalBytes": 0,
+      "originalSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "savedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "normalization": "Trailing whitespace per line and trailing empty lines only; no message lines omitted."
+    },
+    "geometry.log": {
+      "originalPath": "/tmp/designdiff-continuation-geometry.log",
+      "originalBytes": 50,
+      "originalSha256": "488d992979ab4f751f968fdd42bd6ac923252f83118cad3a11ad4ea8b3fb45be",
+      "savedSha256": "488d992979ab4f751f968fdd42bd6ac923252f83118cad3a11ad4ea8b3fb45be",
+      "normalization": "Trailing whitespace per line and trailing empty lines only; no message lines omitted."
+    },
+    "stroke-analysis.log": {
+      "originalPath": "/tmp/designdiff-continuation-analysis.log",
+      "originalBytes": 107,
+      "originalSha256": "547fea974ba1b115f36c3a12bde5881a7c425e09ed1103bed7b75d55e4387bdd",
+      "savedSha256": "547fea974ba1b115f36c3a12bde5881a7c425e09ed1103bed7b75d55e4387bdd",
+      "normalization": "Trailing whitespace per line and trailing empty lines only; no message lines omitted."
+    },
+    "stroke-runtime.log": {
+      "originalPath": "/tmp/designdiff-continuation-stroke-provenance.log",
+      "originalBytes": 55,
+      "originalSha256": "ef0d490447195df085f3967f0760e2025b8f0199047c6f0638af355312794437",
+      "savedSha256": "ef0d490447195df085f3967f0760e2025b8f0199047c6f0638af355312794437",
+      "normalization": "Trailing whitespace per line and trailing empty lines only; no message lines omitted."
+    },
+    "diagnostics.log": {
+      "originalPath": "/tmp/designdiff-continuation-diagnostics-final.log",
+      "originalBytes": 9065,
+      "originalSha256": "8c4a0105985475c91e7782fd18d974a35bb6f6909a469d849c9d337851f1a1d2",
+      "savedSha256": "8c4a0105985475c91e7782fd18d974a35bb6f6909a469d849c9d337851f1a1d2",
+      "normalization": "Trailing whitespace per line and trailing empty lines only; no message lines omitted."
+    },
+    "evidence-format.log": {
+      "originalPath": "/tmp/designdiff-continuation-evidence-format.log",
+      "originalBytes": 41,
+      "originalSha256": "c5bc1146e9b2d12e859747fd00b71b8f88245bccf38a3c47d3acacf8609d56b0",
+      "savedSha256": "c5bc1146e9b2d12e859747fd00b71b8f88245bccf38a3c47d3acacf8609d56b0",
+      "normalization": "Trailing whitespace per line and trailing empty lines only; no message lines omitted."
+    },
+    "evidence-eslint.log": {
+      "originalPath": "/tmp/designdiff-continuation-evidence-eslint.log",
+      "originalBytes": 0,
+      "originalSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "savedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "normalization": "Trailing whitespace per line and trailing empty lines only; no message lines omitted."
+    },
+    "final-format.log": {
+      "originalPath": "/tmp/designdiff-continuation-final-format-check.log",
+      "originalBytes": 3732,
+      "originalSha256": "379f119c11cf91e5a959e1eead1640baa64a6e519b7ff7fbde93028ae35fe7a0",
+      "savedSha256": "3f7bd67426562c4bfaf23418eb73d78601f305bdb8e983474a498edae31b9f12",
+      "normalization": "Trailing whitespace per line and trailing empty lines only; no message lines omitted."
+    }
+  },
+  "redSetup": {
+    "command": "git worktree add --detach /tmp/designdiff-reflow-before 82328a9354ab94c2f4f340c9e64877a2be19e4d0",
+    "copiedCurrentTests": [
+      "package/shared/src/signal/glyph-edge-raster.test.ts",
+      "app/mcp-server/src/service/diff-report-reflow-group.test.ts"
+    ],
+    "dependencySymlinks": [
+      "node_modules",
+      "app/mcp-server/node_modules",
+      "package/shared/node_modules"
+    ],
+    "resolution": "Vitest aliases resolve baseline shared source and baseline diff-report-builder; no product source was overwritten, no reset or hook bypass. Test hashes above identify copied files.",
+    "baselineProductSourceSha256": {
+      "package/shared/src/signal/glyph-edge-raster.ts": "e7fa4d326da8303400f98ea7142a4ed4a7f7b93f4aa1f80f2923b8a1c88890d9",
+      "package/shared/src/signal/text-reflow.ts": "de0243673cc340c291fbf87a8f92d6eb27d81a8082c881b6943176e9ac7eaf78",
+      "app/mcp-server/src/service/diff-report-builder.ts": "3fc6728fcdd789ea6a6dc584bc096dd47ef3e5d3d6ca0dec1f1413e1c75f1243",
+      "app/mcp-server/src/service/image-compare-service.ts": "69a1c242dd4d881efee41886f1d47f942b0564cb871f6e33d6c8f9b578c5a484"
+    }
+  },
+  "classification": {
+    "mismatches": 12,
+    "provenNonfontGeometrySizeOrContent": 11,
+    "textGeometryRenderingCauseUncertain": ["pair-18-correct"],
+    "pureStrokeOnlyWholePairPositivesCertified": 0,
+    "real56pxDifferencesRetainedAsFail": true
+  },
+  "remaining": [
+    {
+      "action": "Choose FAIL versus UNCERTAIN for ambiguous stroke changes before changing acceptance behavior",
+      "status": "pending user specification answer",
+      "reason": "Issue376 forbids weight misses while existing tests demand topology-strong 25\u201335% ink acceptance; centered opaque5\u21927/7\u21929 stroke changes currently PASS in PNG and section routes. Skeleton-center invariance cannot distinguish intent.",
+      "evidence": "stroke-runtime.json; README.md; existing strong-topology35% test"
+    },
+    {
+      "action": "Establish rendering-only positive cause for pair18",
+      "status": "blocked by missing evidence",
+      "reason": "Paired actual implementation font/weight/renderer and source-layout metrics unavailable; PNG pixels show text movement but do not certify cause."
+    }
+  ],
+  "unexecuted": [
+    "macOS actual Desktop",
+    "Retina captures",
+    "real paired fonts",
+    "live Figma host/API",
+    "new remote CI run"
+  ],
+  "remoteRead": {
+    "issue": {
+      "number": 376,
+      "state": "open",
+      "updatedAt": "2026-10-10T04:38:31Z",
+      "comments": 0
+    },
+    "pr387": {
+      "draft": true,
+      "merged": false,
+      "head": "f408dafdb27443630fc7f998b6d26d4cf88103a2"
+    },
+    "log": "remote-read.log"
+  },
+  "artifactSha256": {
+    "README.md": "e714b4680ba0016ba48ab765d7decfd9f2c878960765a5cfd74624c0e694ad29",
+    "build.log": "fd6620aa2f282bd77d10d8cd43d9bb1d46145bb0275880e8328c61e9f443e7a2",
+    "ci-fast.log": "2f5c7d68ec84af4d3bb961912e843423d78d993d498e6a1f67d284d89349b0ba",
+    "diagnostics.log": "8c4a0105985475c91e7782fd18d974a35bb6f6909a469d849c9d337851f1a1d2",
+    "eslint.log": "caeabdcf32b0ce4064b5250776fc7c101c37cb65288f84148d69a34c3289c9a3",
+    "evidence-eslint.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "evidence-format.log": "c5bc1146e9b2d12e859747fd00b71b8f88245bccf38a3c47d3acacf8609d56b0",
+    "final-format.log": "3f7bd67426562c4bfaf23418eb73d78601f305bdb8e983474a498edae31b9f12",
+    "geometry-classification.json": "a5f53bfa32031a3c2c5965695961978ff326b6949cd6bd5c8ff08ca0d50d1ad1",
+    "geometry-classification.py": "0fbe8365497ab1d44282b66109d689128f5e46c69671aceb3aecb151cd91d5f3",
+    "geometry.log": "488d992979ab4f751f968fdd42bd6ac923252f83118cad3a11ad4ea8b3fb45be",
+    "implementation.patch": "493e02355b8d5435d7f48eb045d2e400d4a04f2dda14fc5af4322d6963b36be0",
+    "mcp-test-types.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "offset-green.log": "c43fec988f51ac92f90ec6152bacf19c8beceef0550c3bc5669bb30deb0a5f3a",
+    "offset-red.log": "acf412a05490944fe1f9d9ed90e63ee1690fc523ad95cf4f8f5b827dba8b0665",
+    "reflow-group-green.log": "a5c42a179520ceaab7091bf5b16c9b8a03b65a4555af537d39b25a9be64e4bfa",
+    "reflow-group-red.log": "15773d463bd0145acc411e48c9b271afeb72bd294615d5543a9afa3b4abca332",
+    "reflow-runtime.json": "9290dddc7682899b2070dc1309d52cfe6c05f4ca7b6fd5a7530c9656cf66cbe8",
+    "related-mcp-green.log": "e9d4340b7182844018c2cc9ad8a9db601ce738281a74339c73e3ccbeacc2660f",
+    "remote-read.log": "7094109fb8e1bc9341d1f2617aaa44ba9e39e0ffa6d76ce6ccbb1e00490247f8",
+    "reproduce-reflow.mjs": "be2d5f2086873a60b0046d033e98f6305249297fe62fe510652dc73ea9e7532c",
+    "reproduce-stroke.mjs": "aa4fd098152a21417154e0d3158b42e16d433c31a4169e2ac636f5dad37876e3",
+    "shared-test-types.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stroke-analysis.json": "d872ac69dc6d80aeebe60933dd6feb3db3d7c8216270433bd9ae85788e72120a",
+    "stroke-analysis.log": "547fea974ba1b115f36c3a12bde5881a7c425e09ed1103bed7b75d55e4387bdd",
+    "stroke-analysis.py": "d517f0443f61678825da09b7c2988ddc6a00aade3ce3c248b759460f92de7184",
+    "stroke-diagnostics.json": "96128ce84b6cefafa57e310e74184cd5816dd60d5b62112b060046efb651a8b1",
+    "stroke-runtime.json": "7f8fd94451d83adad612ddcc73f817c3c64389513ec1027ee62fb5fb92aa1a5e",
+    "stroke-runtime.log": "ef0d490447195df085f3967f0760e2025b8f0199047c6f0638af355312794437",
+    "typecheck.log": "91cbd695165c50c20c55fce70f2b7f9fe2a7530cb773983fb8085bc3c651904f"
+  },
+  "implementationPatchApplyNote": "Zero context diff avoids whitespace-only context lines; apply with git apply --unidiff-zero against the recorded base."
+}

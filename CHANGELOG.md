@@ -30,6 +30,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ### Fixed
 
+- Same-token content-offset diagnostics now use each image's own background for informative-alpha sampling. Allowed background rounding no longer promotes faint pixels into the minimum eight informative pairs and creates a confident offset from insufficient evidence. The offset reporting and acceptance thresholds are unchanged.
+- Text-reflow grouping now excludes regions already explained by the existing scoring rules. An independently explained colored border no longer contaminates nearby monochrome text and causes a false color-axis rejection; real border movement and missing, heavy or recolored text retain their failure checks.
 - Same-token and text-reflow ink coverage now uses each matched image's own background and keeps coverage between zero and one. Foreground/axis checks and text-reflow component/line measurements use that same image's background, so rounding cannot erase a half-covered component. Allowed background rounding can no longer create or subtract ink, which previously rejected identical strokes and could hide doubled stroke weight. Existing color, shape and ink limits are unchanged.
 - Proven local line/edge displacements of at least 2px now produce a critical position issue and FAIL even with `rasterization_tolerance`, matching the existing whole-frame displacement boundary. A matching color/shape proof cannot hide a measured placement change. The existing 1px tolerance is retained; correlation-only text-offset diagnostics keep their existing advisory behavior.
 

@@ -1,0 +1,300 @@
+{
+  "scope": "Known128x128 synthetic opaque pixels; independent rectangle areas/core coordinates and own-white-background ink math. Actual built MCP stdio, fresh temporary home per case. No real images copied/written/uploaded; no Figma/font/device acceptance claimed.",
+  "executionCommand": [
+    "/tmp/designdiff-toolchain/node-v25.6.1-linux-x64/bin/node",
+    "/workspace/designdiff/docs/evidence/issue-376-continuation/reproduce-reflow.mjs",
+    "/workspace/designdiff",
+    "docs/evidence/issue-376-continuation/reflow-runtime.json"
+  ],
+  "baseCommit": "82328a9354ab94c2f4f340c9e64877a2be19e4d0",
+  "workingTreeDiffCommand": [
+    "git",
+    "diff",
+    "--binary",
+    "HEAD",
+    "--",
+    "app/mcp-server/src/service/diff-report-builder.ts",
+    "package/shared/src/signal/glyph-edge-raster.ts",
+    "package/shared/src/signal/text-reflow.ts"
+  ],
+  "workingTreeDiffSha256": "627c8aedd0b7f691393b711670703184ab5db7e232e050dc3e57978ceea4441f",
+  "scriptSha256": "be2d5f2086873a60b0046d033e98f6305249297fe62fe510652dc73ea9e7532c",
+  "fileSha256": {
+    "app/mcp-server/src/service/diff-report-builder.ts": "2676e09a4ba830a00fe84da07d9fda720294b8639316df0d0d36e3c0cc1e2824",
+    "package/shared/src/signal/glyph-edge-raster.ts": "d1dfc643a4a0c6bc2c994072e4ddc171b73dfd3089b305f909ae461d6c5c86cf",
+    "package/shared/src/signal/text-reflow.ts": "de0243673cc340c291fbf87a8f92d6eb27d81a8082c881b6943176e9ac7eaf78",
+    "app/mcp-server/dist/service/diff-report-builder.js": "5b1be2f5ad80c48c174d8c97ebf5a06ec0e6180669ea549be33af1f5a6413d67",
+    "package/shared/dist/signal/glyph-edge-raster.js": "a9c29fa6cc64ccba5ae5cbed837c40e2dbaf8808b4e10a1ad2a96e10c80117ec",
+    "package/shared/dist/signal/text-reflow.js": "b442b471ab196e0279c525818c75df44bc4cf5f2714c758758e197dc151789b0"
+  },
+  "environment": {
+    "node": "v25.6.1",
+    "platform": "linux",
+    "arch": "x64",
+    "width": 128,
+    "height": 128,
+    "font": "none",
+    "scale": 1
+  },
+  "cases": [
+    {
+      "name": "text-alone",
+      "mutation": "none",
+      "rasterizationTolerance": true,
+      "threshold": 0,
+      "independentPixels": {
+        "designCorePixels": 18,
+        "designAaPixels": 60,
+        "screenshotCorePixels": 15,
+        "screenshotTokenPixels": 0,
+        "borderPixelsPerImage": 0,
+        "borderShift": null,
+        "designInk": 30.941176470588196,
+        "screenshotInk": 22.93333333333332,
+        "textInkDelta": 0.25880861850443554
+      },
+      "expectedStatus": "PASS",
+      "actualStatus": "PASS",
+      "freshMcpProcess": true,
+      "stderr": "(node:17123) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n[mcp] log file: /tmp/figdiff-376-reflow-82gD16/logs/mcp-server.log\n",
+      "inputs": [
+        {
+          "name": "design",
+          "rawSha256": "e48937974b763654452548501bd06510b174e6bc02b727f84aa69f465cbf43ec",
+          "pngSha256": "503afa6fba0ff1251e295f56cbc2ad22a664353d025a724ea9ac3820baa4b322"
+        },
+        {
+          "name": "screenshot",
+          "rawSha256": "e634741a2d87ed30d04b9c3d82abbe1623c9452c211ae585556db8efccf043d2",
+          "pngSha256": "c79dbda5a47f246aaede603a63e6290ef48534b356a1e0dd1a44b1608d9e7b40"
+        }
+      ]
+    },
+    {
+      "name": "colored-neighbor-1px",
+      "mutation": "none",
+      "rasterizationTolerance": true,
+      "threshold": 0,
+      "independentPixels": {
+        "designCorePixels": 18,
+        "designAaPixels": 60,
+        "screenshotCorePixels": 15,
+        "screenshotTokenPixels": 0,
+        "borderPixelsPerImage": 50,
+        "borderShift": 1,
+        "designInk": 30.941176470588196,
+        "screenshotInk": 22.93333333333332,
+        "textInkDelta": 0.25880861850443554
+      },
+      "expectedStatus": "PASS",
+      "actualStatus": "PASS",
+      "freshMcpProcess": true,
+      "stderr": "(node:17137) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n[mcp] log file: /tmp/figdiff-376-reflow-kipAdk/logs/mcp-server.log\n",
+      "inputs": [
+        {
+          "name": "design",
+          "rawSha256": "f69274748ace36fdd1cb03ec18ec7a3a100604b7fd7b1fc601f5f5543e60a98c",
+          "pngSha256": "8580ad98e6ad5355a2c72912411c5b37b05713bb468cb6950b3c34328f7a10c4"
+        },
+        {
+          "name": "screenshot",
+          "rawSha256": "72e4c7565388bc2c94d21cdd74bfe306698de6419c9cdc8ce2431743f145924d",
+          "pngSha256": "78f1fdf4ac2e082011e59e1a328a152cc99c6b9bd817b2a9eefd3dac31ca1ce8"
+        }
+      ]
+    },
+    {
+      "name": "colored-neighbor-2px",
+      "mutation": "none",
+      "rasterizationTolerance": true,
+      "threshold": 0,
+      "independentPixels": {
+        "designCorePixels": 18,
+        "designAaPixels": 60,
+        "screenshotCorePixels": 15,
+        "screenshotTokenPixels": 0,
+        "borderPixelsPerImage": 50,
+        "borderShift": 2,
+        "designInk": 30.941176470588196,
+        "screenshotInk": 22.93333333333332,
+        "textInkDelta": 0.25880861850443554
+      },
+      "expectedStatus": "FAIL",
+      "actualStatus": "FAIL",
+      "freshMcpProcess": true,
+      "stderr": "(node:17175) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n[mcp] log file: /tmp/figdiff-376-reflow-0AfEMI/logs/mcp-server.log\n",
+      "inputs": [
+        {
+          "name": "design",
+          "rawSha256": "f69274748ace36fdd1cb03ec18ec7a3a100604b7fd7b1fc601f5f5543e60a98c",
+          "pngSha256": "8580ad98e6ad5355a2c72912411c5b37b05713bb468cb6950b3c34328f7a10c4"
+        },
+        {
+          "name": "screenshot",
+          "rawSha256": "8605a000d2c65ad09e84f3f936bd615d1cc3a2a940e61d8c3a5d6b74f5f14174",
+          "pngSha256": "3dc01057ef342b6218382018499f2ee22b3ceb0215e25e4fed125b4645be0e91"
+        }
+      ]
+    },
+    {
+      "name": "colored-neighbor-56px",
+      "mutation": "none",
+      "rasterizationTolerance": true,
+      "threshold": 0,
+      "independentPixels": {
+        "designCorePixels": 18,
+        "designAaPixels": 60,
+        "screenshotCorePixels": 15,
+        "screenshotTokenPixels": 0,
+        "borderPixelsPerImage": 50,
+        "borderShift": 56,
+        "designInk": 30.941176470588196,
+        "screenshotInk": 22.93333333333332,
+        "textInkDelta": 0.25880861850443554
+      },
+      "expectedStatus": "FAIL",
+      "actualStatus": "FAIL",
+      "freshMcpProcess": true,
+      "stderr": "(node:17189) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n[mcp] log file: /tmp/figdiff-376-reflow-kQRSvI/logs/mcp-server.log\n",
+      "inputs": [
+        {
+          "name": "design",
+          "rawSha256": "f69274748ace36fdd1cb03ec18ec7a3a100604b7fd7b1fc601f5f5543e60a98c",
+          "pngSha256": "8580ad98e6ad5355a2c72912411c5b37b05713bb468cb6950b3c34328f7a10c4"
+        },
+        {
+          "name": "screenshot",
+          "rawSha256": "735d16a2a48736697018a2be6ea2939fe9255dac41040f7f7663031a746e84c1",
+          "pngSha256": "c011485af7a4ce11bc4bd2f78e1ed458ce80c62cef5179bbfeae14cf493a4804"
+        }
+      ]
+    },
+    {
+      "name": "missing-text",
+      "mutation": "missing",
+      "rasterizationTolerance": true,
+      "threshold": 0,
+      "independentPixels": {
+        "designCorePixels": 18,
+        "designAaPixels": 60,
+        "screenshotCorePixels": 0,
+        "screenshotTokenPixels": 0,
+        "borderPixelsPerImage": 50,
+        "borderShift": 1
+      },
+      "expectedStatus": "FAIL",
+      "actualStatus": "FAIL",
+      "freshMcpProcess": true,
+      "stderr": "(node:17215) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n[mcp] log file: /tmp/figdiff-376-reflow-ArzcDL/logs/mcp-server.log\n",
+      "inputs": [
+        {
+          "name": "design",
+          "rawSha256": "f69274748ace36fdd1cb03ec18ec7a3a100604b7fd7b1fc601f5f5543e60a98c",
+          "pngSha256": "8580ad98e6ad5355a2c72912411c5b37b05713bb468cb6950b3c34328f7a10c4"
+        },
+        {
+          "name": "screenshot",
+          "rawSha256": "fc8657a0f75f378ea4bfc615a0cfec2860f0733fe979130cebd2ea7af0d5bbe5",
+          "pngSha256": "cd99b8f9a3a5192434a1ad9bb1dfc7860e2673035ffc56a9d17c69083fcbc337"
+        }
+      ]
+    },
+    {
+      "name": "heavy-text",
+      "mutation": "heavy",
+      "rasterizationTolerance": true,
+      "threshold": 0,
+      "independentPixels": {
+        "designCorePixels": 18,
+        "designAaPixels": 60,
+        "screenshotCorePixels": 90,
+        "screenshotTokenPixels": 0,
+        "borderPixelsPerImage": 50,
+        "borderShift": 1
+      },
+      "expectedStatus": "FAIL",
+      "actualStatus": "FAIL",
+      "freshMcpProcess": true,
+      "stderr": "(node:17241) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n[mcp] log file: /tmp/figdiff-376-reflow-bUutFm/logs/mcp-server.log\n",
+      "inputs": [
+        {
+          "name": "design",
+          "rawSha256": "f69274748ace36fdd1cb03ec18ec7a3a100604b7fd7b1fc601f5f5543e60a98c",
+          "pngSha256": "8580ad98e6ad5355a2c72912411c5b37b05713bb468cb6950b3c34328f7a10c4"
+        },
+        {
+          "name": "screenshot",
+          "rawSha256": "6d851a5522a320a0861bae9c8bd2e5c5d1ac4ecf2186d4e15d77934a1d0ec8ff",
+          "pngSha256": "0c72d3bbb02599d82f2bf315be16b540c0cd3598066f3b491aeedff4ddf868d1"
+        }
+      ]
+    },
+    {
+      "name": "token-change",
+      "mutation": "token",
+      "rasterizationTolerance": true,
+      "threshold": 0,
+      "independentPixels": {
+        "designCorePixels": 18,
+        "designAaPixels": 60,
+        "screenshotCorePixels": 0,
+        "screenshotTokenPixels": 18,
+        "borderPixelsPerImage": 50,
+        "borderShift": 1
+      },
+      "expectedStatus": "FAIL",
+      "actualStatus": "FAIL",
+      "freshMcpProcess": true,
+      "stderr": "(node:17351) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n[mcp] log file: /tmp/figdiff-376-reflow-6NEc7i/logs/mcp-server.log\n",
+      "inputs": [
+        {
+          "name": "design",
+          "rawSha256": "f69274748ace36fdd1cb03ec18ec7a3a100604b7fd7b1fc601f5f5543e60a98c",
+          "pngSha256": "8580ad98e6ad5355a2c72912411c5b37b05713bb468cb6950b3c34328f7a10c4"
+        },
+        {
+          "name": "screenshot",
+          "rawSha256": "a47e2baa66036dea9877691026b0a7e4cef802b2653c5d12e40f14940c0c3553",
+          "pngSha256": "7d7eae2c1c40b5baec59b90018130df9d10e549f744fe921673b790975a1923e"
+        }
+      ]
+    },
+    {
+      "name": "opt-in-off",
+      "mutation": "none",
+      "rasterizationTolerance": false,
+      "threshold": 0,
+      "independentPixels": {
+        "designCorePixels": 18,
+        "designAaPixels": 60,
+        "screenshotCorePixels": 15,
+        "screenshotTokenPixels": 0,
+        "borderPixelsPerImage": 50,
+        "borderShift": 1,
+        "designInk": 30.941176470588196,
+        "screenshotInk": 22.93333333333332,
+        "textInkDelta": 0.25880861850443554
+      },
+      "expectedStatus": "FAIL",
+      "actualStatus": "FAIL",
+      "freshMcpProcess": true,
+      "stderr": "(node:17466) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n[mcp] log file: /tmp/figdiff-376-reflow-pAeACR/logs/mcp-server.log\n",
+      "inputs": [
+        {
+          "name": "design",
+          "rawSha256": "f69274748ace36fdd1cb03ec18ec7a3a100604b7fd7b1fc601f5f5543e60a98c",
+          "pngSha256": "8580ad98e6ad5355a2c72912411c5b37b05713bb468cb6950b3c34328f7a10c4"
+        },
+        {
+          "name": "screenshot",
+          "rawSha256": "72e4c7565388bc2c94d21cdd74bfe306698de6419c9cdc8ce2431743f145924d",
+          "pngSha256": "78f1fdf4ac2e082011e59e1a328a152cc99c6b9bd817b2a9eefd3dac31ca1ce8"
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "cases": 8,
+    "passed": 8
+  }
+}

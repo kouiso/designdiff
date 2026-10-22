@@ -1,0 +1,1915 @@
+task: [ci:fast] node script/ci.mjs fast
+Scope: all 8 workspace projects
+(node:16215) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+Lockfile is up to date, resolution step is skipped
+Already up to date
+
+Done in 2.8s
+
+> figdiff@ check:naming /workspace/designdiff
+> node script/check-naming.mjs
+
+Naming check passed: 1260 tracked files.
+
+> figdiff@ lint /workspace/designdiff
+> pnpm run lint:arrow && turbo run lint
+
+
+> figdiff@ lint:arrow /workspace/designdiff
+> node script/check-arrow-functions.mjs
+
+lint:arrow: PASS (origin/develop...HEAD)
+
+   • Packages in scope: @figdiff/chrome-extension, @figdiff/credential-store, @figdiff/desktop, @figdiff/figma-plugin, @figdiff/mcp-server, @figdiff/mobile-capture, @figdiff/shared
+   • Running lint in 7 packages
+   • Remote caching disabled
+
+@figdiff/mobile-capture:lint: cache hit, replaying logs da782b9bbd91abef
+@figdiff/mobile-capture:lint:
+@figdiff/mobile-capture:lint: > @figdiff/mobile-capture@0.1.0 lint /workspace/designdiff/package/mobile-capture
+@figdiff/mobile-capture:lint: > biome check src/ README.md
+@figdiff/mobile-capture:lint:
+@figdiff/mobile-capture:lint: Checked 21 files in 183ms. No fixes applied.
+@figdiff/shared:build: cache hit, replaying logs f2ceafad1b4aa46f
+@figdiff/shared:build:
+@figdiff/shared:build: > @figdiff/shared@0.1.0 build /workspace/designdiff/package/shared
+@figdiff/shared:build: > tsc
+@figdiff/shared:build:
+@figdiff/mobile-capture:build: cache hit, replaying logs fed34895375f1d0c
+@figdiff/credential-store:build: cache hit, replaying logs 9f1a10a3c5102264
+@figdiff/mobile-capture:build:
+@figdiff/mobile-capture:build: > @figdiff/mobile-capture@0.1.0 build /workspace/designdiff/package/mobile-capture
+@figdiff/credential-store:build:
+@figdiff/mobile-capture:build: > tsc && node -e "require('node:fs').chmodSync('dist/bin/figdiff-flutter-golden.js', 0o755)"
+@figdiff/mobile-capture:build:
+@figdiff/shared:lint: cache miss, executing 09f283a6da77d224
+@figdiff/credential-store:build: > @figdiff/credential-store@0.1.0 build /workspace/designdiff/package/credential-store
+@figdiff/credential-store:build: > tsc
+@figdiff/credential-store:build:
+@figdiff/chrome-extension:lint: cache miss, executing 8bfc4d39aae81315
+@figdiff/figma-plugin:lint: cache miss, executing 1666a10506294212
+@figdiff/mcp-server:lint: cache miss, executing 39c3355216719729
+@figdiff/desktop:lint: cache miss, executing 79a069298fe9db05
+@figdiff/mcp-server:lint:
+@figdiff/mcp-server:lint: > @figdiff/mcp-server@0.1.0 lint /workspace/designdiff/app/mcp-server
+@figdiff/mcp-server:lint: > biome check src/
+@figdiff/mcp-server:lint:
+@figdiff/chrome-extension:lint:
+@figdiff/chrome-extension:lint: > @figdiff/chrome-extension@0.1.0 lint /workspace/designdiff/app/chrome-extension
+@figdiff/chrome-extension:lint: > biome check src/
+@figdiff/chrome-extension:lint:
+@figdiff/figma-plugin:lint:
+@figdiff/figma-plugin:lint: > @figdiff/figma-plugin@0.1.0 lint /workspace/designdiff/app/figma-plugin
+@figdiff/figma-plugin:lint: > biome check src/
+@figdiff/figma-plugin:lint:
+@figdiff/desktop:lint:
+@figdiff/desktop:lint: > @figdiff/desktop@1.0.0 lint /workspace/designdiff/app/desktop
+@figdiff/desktop:lint: > biome check src/
+@figdiff/desktop:lint:
+@figdiff/shared:lint:
+@figdiff/shared:lint: > @figdiff/shared@0.1.0 lint /workspace/designdiff/package/shared
+@figdiff/shared:lint: > biome check src/
+@figdiff/shared:lint:
+@figdiff/chrome-extension:lint: Checked 20 files in 252ms. No fixes applied.
+@figdiff/figma-plugin:lint: Checked 5 files in 357ms. No fixes applied.
+@figdiff/desktop:lint: src/component/convergence/convergence-page.tsx:127:27 lint/nursery/useSortedClasses  FIXABLE  ━━━━━━━━━━
+@figdiff/desktop:lint:
+@figdiff/desktop:lint:   ! These CSS classes should be sorted.
+@figdiff/desktop:lint:
+@figdiff/desktop:lint:     126 │   if (unavailable) {
+@figdiff/desktop:lint:   > 127 │     return <div className="p-6 text-sm text-[var(--muted-fg)]">{t("convergence.unavailable")}</div>;
+@figdiff/desktop:lint:         │                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+@figdiff/desktop:lint:     128 │   }
+@figdiff/desktop:lint:     129 │   // 読めんかったことを空の履歴と同じ見た目にすると、記録が無いのか読めてへんのか
+@figdiff/desktop:lint:
+@figdiff/desktop:lint:   i This rule is still being actively worked on, so it may be missing features or have rough edges. Visit https://github.com/biomejs/biome/issues/1274 for more information or to report possible bugs.
+@figdiff/desktop:lint:
+@figdiff/desktop:lint:   i This rule belongs to the nursery group, which means it is not yet stable and may change in the future. Visit https://biomejs.dev/linter/#nursery for more information.
+@figdiff/desktop:lint:
+@figdiff/desktop:lint:   i Unsafe fix: Sort the classes.
+@figdiff/desktop:lint:
+@figdiff/desktop:lint:     125 125 │
+@figdiff/desktop:lint:     126 126 │     if (unavailable) {
+@figdiff/desktop:lint:     127     │ - ····return·<div·className="p-6·text-sm·text-[var(--muted-fg)]">{t("convergence.unavailable")}</div>;
+@figdiff/desktop:lint:         127 │ + ····return·<div·className="p-6·text-[var(--muted-fg)]·text-sm">{t("convergence.unavailable")}</div>;
+@figdiff/desktop:lint:     128 128 │     }
+@figdiff/desktop:lint:     129 129 │     // 読めんかったことを空の履歴と同じ見た目にすると、記録が無いのか読めてへんのか
+@figdiff/desktop:lint:
+@figdiff/desktop:lint:
+@figdiff/desktop:lint: src/component/convergence/convergence-page.tsx:145:22 lint/nursery/useSortedClasses  FIXABLE  ━━━━━━━━━━
+@figdiff/desktop:lint:
+@figdiff/desktop:lint:   ! These CSS classes should be sorted.
+@figdiff/desktop:lint:
+@figdiff/desktop:lint:     143 │     return (
+@figdiff/desktop:lint:     144 │       <div className="flex h-full flex-col items-center justify-center gap-2 p-6 text-center">
+@figdiff/desktop:lint:   > 145 │         <p className="text-sm font-medium">{t("convergence.emptyTitle")}</p>
+@figdiff/desktop:lint:         │                      ^^^^^^^^^^^^^^^^^^^^^
+@figdiff/desktop:lint:     146 │         <p className="max-w-md text-xs text-[var(--muted-fg)]">{t("convergence.emptyHint")}</p>
+@figdiff/desktop:lint:     147 │       </div>
+@figdiff/desktop:lint:
+@figdiff/desktop:lint:   i This rule is still being actively worked on, so it may be missing features or have rough edges. Visit https://github.com/biomejs/biome/issues/1274 for more information or to report possible bugs.
+@figdiff/desktop:lint:
+@figdiff/desktop:lint:   i This rule belongs to the nursery group, which means it is not yet stable and may change in the future. Visit https://biomejs.dev/linter/#nursery for more information.
+@figdiff/desktop:lint:
+@figdiff/desktop:lint:   i Unsafe fix: Sort the classes.
+@figdiff/desktop:lint:
+@figdiff/desktop:lint:     143 143 │       return (
+@figdiff/desktop:lint:     144 144 │         <div className="flex h-full flex-col items-center justify-center gap-2 p-6 text-center">
+@figdiff/desktop:lint:     145     │ - ········<p·className="text-sm·font-medium">{t("convergence.emptyTitle")}</p>
+@figdiff/desktop:lint:         145 │ + ········<p·className="font-medium·text-sm">{t("convergence.emptyTitle")}</p>
+@figdiff/desktop:lint:     146 146 │           <p className="max-w-md text-xs text-[var(--muted-fg)]">{t("convergence.emptyHint")}</p>
+@figdiff/desktop:lint:     147 147 │         </div>
+@figdiff/desktop:lint:
+@figdiff/desktop:lint:
+@figdiff/desktop:lint: src/component/convergence/convergence-page.tsx:146:22 lint/nursery/useSortedClasses  FIXABLE  ━━━━━━━━━━
+@figdiff/desktop:lint:
+@figdiff/desktop:lint:   ! These CSS classes should be sorted.
+@figdiff/desktop:lint:
+@figdiff/desktop:lint:     144 │       <div className="flex h-full flex-col items-center justify-center gap-2 p-6 text-center">
+@figdiff/desktop:lint:     145 │         <p className="text-sm font-medium">{t("convergence.emptyTitle")}</p>
+@figdiff/desktop:lint:   > 146 │         <p className="max-w-md text-xs text-[var(--muted-fg)]">{t("convergence.emptyHint")}</p>
+@figdiff/desktop:lint:         │                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+@figdiff/desktop:lint:     147 │       </div>
+@figdiff/desktop:lint:     148 │     );
+@figdiff/desktop:lint:
+@figdiff/desktop:lint:   i This rule is still being actively worked on, so it may be missing features or have rough edges. Visit https://github.com/biomejs/biome/issues/1274 for more information or to report possible bugs.
+@figdiff/desktop:lint:
+@figdiff/desktop:lint:   i This rule belongs to the nursery group, which means it is not yet stable and may change in the future. Visit https://biomejs.dev/linter/#nursery for more information.
+@figdiff/desktop:lint:
+@figdiff/desktop:lint:   i Unsafe fix: Sort the classes.
+@figdiff/desktop:lint:
+@figdiff/desktop:lint:     144 144 │         <div className="flex h-full flex-col items-center justify-center gap-2 p-6 text-center">
+@figdiff/desktop:lint:     145 145 │           <p className="text-sm font-medium">{t("convergence.emptyTitle")}</p>
+@figdiff/desktop:lint:     146     │ - ········<p·className="max-w-md·text-xs·text-[var(--muted-fg)]">{t("convergence.emptyHint")}</p>
+@figdiff/desktop:lint:         146 │ + ········<p·className="max-w-md·text-[var(--muted-fg)]·text-xs">{t("convergence.emptyHint")}</p>
+@figdiff/desktop:lint:     147 147 │         </div>
+@figdiff/desktop:lint:     148 148 │       );
+@figdiff/desktop:lint:
+@figdiff/desktop:lint:
+@figdiff/desktop:lint: src/component/convergence/convergence-page.tsx:154:22 lint/nursery/useSortedClasses  FIXABLE  ━━━━━━━━━━
+@figdiff/desktop:lint:
+@figdiff/desktop:lint:   ! These CSS classes should be sorted.
+@figdiff/desktop:lint:
+@figdiff/desktop:lint:     152 │     <div className="flex h-full gap-4 overflow-hidden">
+@figdiff/desktop:lint:     153 │       <aside className="scroll w-64 shrink-0 overflow-y-auto" aria-label={t("convergence.targets")}>
+@figdiff/desktop:lint:   > 154 │         <p className="px-2 pb-2 text-xs font-medium text-[var(--muted-fg)]">
+@figdiff/desktop:lint:         │                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+@figdiff/desktop:lint:     155 │           {t("convergence.targets")}
+@figdiff/desktop:lint:     156 │         </p>
+@figdiff/desktop:lint:
+@figdiff/desktop:lint:   i This rule is still being actively worked on, so it may be missing features or have rough edges. Visit https://github.com/biomejs/biome/issues/1274 for more information or to report possible bugs.
+@figdiff/desktop:lint:
+@figdiff/desktop:lint:   i This rule belongs to the nursery group, which means it is not yet stable and may change in the future. Visit https://biomejs.dev/linter/#nursery for more information.
+@figdiff/desktop:lint:
+@figdiff/desktop:lint:   i Unsafe fix: Sort the classes.
+@figdiff/desktop:lint:
+@figdiff/desktop:lint:     152 152 │       <div className="flex h-full gap-4 overflow-hidden">
+@figdiff/desktop:lint:     153 153 │         <aside className="scroll w-64 shrink-0 overflow-y-auto" aria-label={t("convergence.targets")}>
+@figdiff/desktop:lint:     154     │ - ········<p·className="px-2·pb-2·text-xs·font-medium·text-[var(--muted-fg)]">
+@figdiff/desktop:lint:         154 │ + ········<p·className="px-2·pb-2·font-medium·text-[var(--muted-fg)]·text-xs">
+@figdiff/desktop:lint:     155 155 │             {t("convergence.targets")}
+@figdiff/desktop:lint:     156 156 │           </p>
+@figdiff/desktop:lint:
+@figdiff/desktop:lint:
+@figdiff/desktop:lint: src/component/convergence/convergence-page.tsx:192:24 lint/nursery/useSortedClasses  FIXABLE  ━━━━━━━━━━
+@figdiff/desktop:lint:
+@figdiff/desktop:lint:   ! These CSS classes should be sorted.
+@figdiff/desktop:lint:
+@figdiff/desktop:lint:     190 │       <section className="scroll flex-1 overflow-y-auto pr-1">
+@figdiff/desktop:lint:     191 │         {campaign === undefined ? (
+@figdiff/desktop:lint:   > 192 │           <p className="text-sm text-[var(--muted-fg)]">{t("convergence.emptyTitle")}</p>
+@figdiff/desktop:lint:         │                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+@figdiff/desktop:lint:     193 │         ) : (
+@figdiff/desktop:lint:     194 │           <div className="flex flex-col gap-4">
+@figdiff/desktop:lint:
+@figdiff/desktop:lint:   i This rule is still being actively worked on, so it may be missing features or have rough edges. Visit https://github.com/biomejs/biome/issues/1274 for more information or to report possible bugs.
+@figdiff/desktop:lint:
+@figdiff/desktop:lint:   i This rule belongs to the nursery group, which means it is not yet stable and may change in the future. Visit https://biomejs.dev/linter/#nursery for more information.
+@figdiff/desktop:lint:
+@figdiff/desktop:lint:   i Unsafe fix: Sort the classes.
+@figdiff/desktop:lint:
+@figdiff/desktop:lint:     190 190 │         <section className="scroll flex-1 overflow-y-auto pr-1">
+@figdiff/desktop:lint:     191 191 │           {campaign === undefined ? (
+@figdiff/desktop:lint:     192     │ - ··········<p·className="text-sm·text-[var(--muted-fg)]">{t("convergence.emptyTitle")}</p>
+@figdiff/desktop:lint:         192 │ + ··········<p·className="text-[var(--muted-fg)]·text-sm">{t("convergence.emptyTitle")}</p>
+@figdiff/desktop:lint:     193 193 │           ) : (
+@figdiff/desktop:lint:     194 194 │             <div className="flex flex-col gap-4">
+@figdiff/desktop:lint:
+@figdiff/desktop:lint:
+@figdiff/desktop:lint: src/component/convergence/convergence-page.tsx:196:29 lint/nursery/useSortedClasses  FIXABLE  ━━━━━━━━━━
+@figdiff/desktop:lint:
+@figdiff/desktop:lint:   ! These CSS classes should be sorted.
+@figdiff/desktop:lint:
+@figdiff/desktop:lint:     194 │           <div className="flex flex-col gap-4">
+@figdiff/desktop:lint:     195 │             <header className="flex flex-col gap-1">
+@figdiff/desktop:lint:   > 196 │               <h2 className="text-base font-semibold">{t("convergence.title")}</h2>
+@figdiff/desktop:lint:         │                             ^^^^^^^^^^^^^^^^^^^^^^^^^
+@figdiff/desktop:lint:     197 │               <p
+@figdiff/desktop:lint:     198 │                 className="mono truncate text-xs text-[var(--muted-fg)]"
+@figdiff/desktop:lint:
+@figdiff/desktop:lint:   i This rule is still being actively worked on, so it may be missing features or have rough edges. Visit https://github.com/biomejs/biome/issues/1274 for more information or to report possible bugs.
+@figdiff/desktop:lint:
+@figdiff/desktop:lint:   i This rule belongs to the nursery group, which means it is not yet stable and may change in the future. Visit https://biomejs.dev/linter/#nursery for more information.
+@figdiff/desktop:lint:
+@figdiff/desktop:lint:   i Unsafe fix: Sort the classes.
+@figdiff/desktop:lint:
+@figdiff/desktop:lint: Checked 134 files in 1143ms. No fixes applied.
+@figdiff/desktop:lint: Found 10 warnings.
+@figdiff/desktop:lint:     194 194 │             <div className="flex flex-col gap-4">
+@figdiff/desktop:lint:     195 195 │               <header className="flex flex-col gap-1">
+@figdiff/desktop:lint:     196     │ - ··············<h2·className="text-base·font-semibold">{t("convergence.title")}</h2>
+@figdiff/desktop:lint:         196 │ + ··············<h2·className="font-semibold·text-base">{t("convergence.title")}</h2>
+@figdiff/desktop:lint:     197 197 │                 <p
+@figdiff/desktop:lint:     198 198 │                   className="mono truncate text-xs text-[var(--muted-fg)]"
+@figdiff/desktop:lint:
+@figdiff/desktop:lint:
+@figdiff/desktop:lint: src/component/convergence/convergence-page.tsx:198:27 lint/nursery/useSortedClasses  FIXABLE  ━━━━━━━━━━
+@figdiff/desktop:lint:
+@figdiff/desktop:lint:   ! These CSS classes should be sorted.
+@figdiff/desktop:lint:
+@figdiff/desktop:lint:     196 │               <h2 className="text-base font-semibold">{t("convergence.title")}</h2>
+@figdiff/desktop:lint:     197 │               <p
+@figdiff/desktop:lint:   > 198 │                 className="mono truncate text-xs text-[var(--muted-fg)]"
+@figdiff/desktop:lint:         │                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+@figdiff/desktop:lint:     199 │                 title={campaign.sourceKey}
+@figdiff/desktop:lint:     200 │               >
+@figdiff/desktop:lint:
+@figdiff/desktop:lint:   i This rule is still being actively worked on, so it may be missing features or have rough edges. Visit https://github.com/biomejs/biome/issues/1274 for more information or to report possible bugs.
+@figdiff/desktop:lint:
+@figdiff/desktop:lint:   i This rule belongs to the nursery group, which means it is not yet stable and may change in the future. Visit https://biomejs.dev/linter/#nursery for more information.
+@figdiff/desktop:lint:
+@figdiff/desktop:lint:   i Unsafe fix: Sort the classes.
+@figdiff/desktop:lint:
+@figdiff/desktop:lint:     196 196 │                 <h2 className="text-base font-semibold">{t("convergence.title")}</h2>
+@figdiff/desktop:lint:     197 197 │                 <p
+@figdiff/desktop:lint:     198     │ - ················className="mono·truncate·text-xs·text-[var(--muted-fg)]"
+@figdiff/desktop:lint:         198 │ + ················className="mono·truncate·text-[var(--muted-fg)]·text-xs"
+@figdiff/desktop:lint:     199 199 │                   title={campaign.sourceKey}
+@figdiff/desktop:lint:     200 200 │                 >
+@figdiff/desktop:lint:
+@figdiff/desktop:lint:
+@figdiff/desktop:lint: src/component/convergence/convergence-page.tsx:204:30 lint/nursery/useSortedClasses  FIXABLE  ━━━━━━━━━━
+@figdiff/desktop:lint:
+@figdiff/desktop:lint:   ! These CSS classes should be sorted.
+@figdiff/desktop:lint:
+@figdiff/desktop:lint:     202 │               </p>
+@figdiff/desktop:lint:     203 │               {campaign.implementationUrl !== undefined && (
+@figdiff/desktop:lint:   > 204 │                 <p className="mono truncate text-xs text-[var(--muted-fg)]">
+@figdiff/desktop:lint:         │                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+@figdiff/desktop:lint:     205 │                   {campaign.implementationUrl}
+@figdiff/desktop:lint:     206 │                 </p>
+@figdiff/desktop:lint:
+@figdiff/desktop:lint:   i This rule is still being actively worked on, so it may be missing features or have rough edges. Visit https://github.com/biomejs/biome/issues/1274 for more information or to report possible bugs.
+@figdiff/desktop:lint:
+@figdiff/desktop:lint:   i This rule belongs to the nursery group, which means it is not yet stable and may change in the future. Visit https://biomejs.dev/linter/#nursery for more information.
+@figdiff/desktop:lint:
+@figdiff/desktop:lint:   i Unsafe fix: Sort the classes.
+@figdiff/desktop:lint:
+@figdiff/desktop:lint:     202 202 │                 </p>
+@figdiff/desktop:lint:     203 203 │                 {campaign.implementationUrl !== undefined && (
+@figdiff/desktop:lint:     204     │ - ················<p·className="mono·truncate·text-xs·text-[var(--muted-fg)]">
+@figdiff/desktop:lint:         204 │ + ················<p·className="mono·truncate·text-[var(--muted-fg)]·text-xs">
+@figdiff/desktop:lint:     205 205 │                     {campaign.implementationUrl}
+@figdiff/desktop:lint:     206 206 │                   </p>
+@figdiff/desktop:lint:
+@figdiff/desktop:lint:
+@figdiff/desktop:lint: src/component/convergence/convergence-step-row.tsx:68:23 lint/nursery/useSortedClasses  FIXABLE  ━━━━━━━━━━
+@figdiff/desktop:lint:
+@figdiff/desktop:lint:   ! These CSS classes should be sorted.
+@figdiff/desktop:lint:
+@figdiff/desktop:lint:     66 │       )}
+@figdiff/desktop:lint:     67 │     >
+@figdiff/desktop:lint:   > 68 │       <span className="mono w-10 shrink-0 text-xs text-[var(--muted-fg)]">
+@figdiff/desktop:lint:        │                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+@figdiff/desktop:lint:     69 │         {t("convergence.step", { n: step })}
+@figdiff/desktop:lint:     70 │       </span>
+@figdiff/desktop:lint:
+@figdiff/desktop:lint:   i This rule is still being actively worked on, so it may be missing features or have rough edges. Visit https://github.com/biomejs/biome/issues/1274 for more information or to report possible bugs.
+@figdiff/desktop:lint:
+@figdiff/desktop:lint:   i This rule belongs to the nursery group, which means it is not yet stable and may change in the future. Visit https://biomejs.dev/linter/#nursery for more information.
+@figdiff/desktop:lint:
+@figdiff/desktop:lint:   i Unsafe fix: Sort the classes.
+@figdiff/desktop:lint:
+@figdiff/desktop:lint:      66  66 │         )}
+@figdiff/desktop:lint:      67  67 │       >
+@figdiff/desktop:lint:      68     │ - ······<span·className="mono·w-10·shrink-0·text-xs·text-[var(--muted-fg)]">
+@figdiff/desktop:lint:          68 │ + ······<span·className="mono·w-10·shrink-0·text-[var(--muted-fg)]·text-xs">
+@figdiff/desktop:lint:      69  69 │           {t("convergence.step", { n: step })}
+@figdiff/desktop:lint:      70  70 │         </span>
+@figdiff/desktop:lint:
+@figdiff/desktop:lint:
+@figdiff/desktop:lint: src/component/convergence/convergence-step-row.tsx:90:25 lint/nursery/useSortedClasses  FIXABLE  ━━━━━━━━━━
+@figdiff/desktop:lint:
+@figdiff/desktop:lint:   ! These CSS classes should be sorted.
+@figdiff/desktop:lint:
+@figdiff/desktop:lint:     88 │           )}
+@figdiff/desktop:lint:     89 │         </span>
+@figdiff/desktop:lint:   > 90 │         <span className="mono truncate text-xs text-[var(--muted-fg)]">
+@figdiff/desktop:lint:        │                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+@figdiff/desktop:lint:     91 │           {iteration.perceptibleDiffRatio !== undefined &&
+@figdiff/desktop:lint:     92 │             `${t("convergence.perceptible")} ${(iteration.perceptibleDiffRatio * 100).toFixed(2)}% · `}
+@figdiff/desktop:lint:
+@figdiff/desktop:lint:   i This rule is still being actively worked on, so it may be missing features or have rough edges. Visit https://github.com/biomejs/biome/issues/1274 for more information or to report possible bugs.
+@figdiff/desktop:lint:
+@figdiff/desktop:lint:   i This rule belongs to the nursery group, which means it is not yet stable and may change in the future. Visit https://biomejs.dev/linter/#nursery for more information.
+@figdiff/desktop:lint:
+@figdiff/desktop:lint:   i Unsafe fix: Sort the classes.
+@figdiff/desktop:lint:
+@figdiff/desktop:lint:      88  88 │             )}
+@figdiff/desktop:lint:      89  89 │           </span>
+@figdiff/desktop:lint:      90     │ - ········<span·className="mono·truncate·text-xs·text-[var(--muted-fg)]">
+@figdiff/desktop:lint:          90 │ + ········<span·className="mono·truncate·text-[var(--muted-fg)]·text-xs">
+@figdiff/desktop:lint:      91  91 │             {iteration.perceptibleDiffRatio !== undefined &&
+@figdiff/desktop:lint:      92  92 │               `${t("convergence.perceptible")} ${(iteration.perceptibleDiffRatio * 100).toFixed(2)}% · `}
+@figdiff/desktop:lint:
+@figdiff/desktop:lint:
+@figdiff/shared:lint: Checked 105 files in 1129ms. No fixes applied.
+@figdiff/shared:lint: Found 6 warnings.
+@figdiff/shared:lint: src/signal/anti-aliased-mask.ts:151:12 lint/complexity/noExcessiveCognitiveComplexity ━━━━━━━━━━━━━━
+@figdiff/shared:lint:
+@figdiff/shared:lint:   ! Excessive complexity of 27 detected (max: 25).
+@figdiff/shared:lint:
+@figdiff/shared:lint:     149 │   b32: Uint32Array,
+@figdiff/shared:lint:     150 │   checkerboard: boolean,
+@figdiff/shared:lint:   > 151 │ ): boolean => {
+@figdiff/shared:lint:         │            ^^^
+@figdiff/shared:lint:     152 │   const x0 = Math.max(x1 - 1, 0);
+@figdiff/shared:lint:     153 │   const y0 = Math.max(y1 - 1, 0);
+@figdiff/shared:lint:
+@figdiff/shared:lint:   i Please refactor this function to reduce its complexity score from 27 to the max allowed complexity 25.
+@figdiff/shared:lint:
+@figdiff/shared:lint:
+@figdiff/shared:lint: src/signal/dynamic-region.ts:61:17 lint/complexity/noExcessiveCognitiveComplexity ━━━━━━━━━━━━━━━━━━
+@figdiff/shared:lint:
+@figdiff/shared:lint:   ! Excessive complexity of 39 detected (max: 25).
+@figdiff/shared:lint:
+@figdiff/shared:lint:     59 │  * (揃っていない = そもそも同一ページの2連写ではない)。
+@figdiff/shared:lint:     60 │  */
+@figdiff/shared:lint:   > 61 │ export function detectDynamicRegions(
+@figdiff/shared:lint:        │                 ^^^^^^^^^^^^^^^^^^^^
+@figdiff/shared:lint:     62 │   pixels1: Uint8Array | Uint8ClampedArray,
+@figdiff/shared:lint:     63 │   pixels2: Uint8Array | Uint8ClampedArray,
+@figdiff/shared:lint:
+@figdiff/shared:lint:   i Please refactor this function to reduce its complexity score from 39 to the max allowed complexity 25.
+@figdiff/shared:lint:
+@figdiff/shared:lint:
+@figdiff/shared:lint: src/signal/dynamic-region.ts:170:10 lint/complexity/noExcessiveCognitiveComplexity ━━━━━━━━━━━━━━━━━
+@figdiff/shared:lint:
+@figdiff/shared:lint:   ! Excessive complexity of 49 detected (max: 25).
+@figdiff/shared:lint:
+@figdiff/shared:lint:     169 │ /** 立っているセルを4近傍で連結し、外接矩形へまとめる。 */
+@figdiff/shared:lint:   > 170 │ function mergeCellsIntoRegions(
+@figdiff/shared:lint:         │          ^^^^^^^^^^^^^^^^^^^^^
+@figdiff/shared:lint:     171 │   changed: Uint8Array,
+@figdiff/shared:lint:     172 │   cols: number,
+@figdiff/shared:lint:
+@figdiff/shared:lint:   i Please refactor this function to reduce its complexity score from 49 to the max allowed complexity 25.
+@figdiff/shared:lint:
+@figdiff/shared:lint:
+@figdiff/shared:lint: src/signal/glyph-edge-raster.ts:245:76 lint/complexity/noExcessiveCognitiveComplexity ━━━━━━━━━━━━━━
+@figdiff/shared:lint:
+@figdiff/shared:lint:   ! Excessive complexity of 26 detected (max: 25).
+@figdiff/shared:lint:
+@figdiff/shared:lint:     243 │   foreground: readonly number[],
+@figdiff/shared:lint:     244 │   ignoreMask?: Uint8Array,
+@figdiff/shared:lint:   > 245 │ ): { sharedCorePixelCount: number; changedPixelCount: number } | undefined => {
+@figdiff/shared:lint:         │                                                                            ^^^
+@figdiff/shared:lint:     246 │   let sharedCorePixelCount = 0;
+@figdiff/shared:lint:     247 │   let changedPixelCount = 0;
+@figdiff/shared:lint:
+@figdiff/shared:lint:   i Please refactor this function to reduce its complexity score from 26 to the max allowed complexity 25.
+@figdiff/shared:lint:
+@figdiff/shared:lint:
+@figdiff/shared:lint: src/signal/local-alignment.ts:96:37 lint/complexity/noExcessiveCognitiveComplexity ━━━━━━━━━━━━━━━━━
+@figdiff/shared:lint:
+@figdiff/shared:lint:   ! Excessive complexity of 35 detected (max: 25).
+@figdiff/shared:lint:
+@figdiff/shared:lint:     94 │   ignoreMask?: Uint8Array,
+@figdiff/shared:lint:     95 │   maxShiftPx: number = LOCAL_ALIGNMENT_MAX_SHIFT_PX,
+@figdiff/shared:lint:   > 96 │ ): LocalAlignmentResult | undefined => {
+@figdiff/shared:lint:        │                                     ^^^
+@figdiff/shared:lint:     97 │   const region = clampRect(bbox, width, height);
+@figdiff/shared:lint:     98 │   if (region.w === 0 || region.h === 0) {
+@figdiff/shared:lint:
+@figdiff/shared:lint:   i Please refactor this function to reduce its complexity score from 35 to the max allowed complexity 25.
+@figdiff/shared:lint:
+@figdiff/shared:lint:
+@figdiff/shared:lint: src/signal/text-reflow.ts:116:11 lint/complexity/noExcessiveCognitiveComplexity ━━━━━━━━━━━━━━━━━━━━
+@figdiff/shared:lint:
+@figdiff/shared:lint:   ! Excessive complexity of 43 detected (max: 25).
+@figdiff/shared:lint:
+@figdiff/shared:lint:     114 │   foreground: readonly number[],
+@figdiff/shared:lint:     115 │   ignoreMask?: Uint8Array,
+@figdiff/shared:lint:   > 116 │ ): number => {
+@figdiff/shared:lint:         │           ^^^
+@figdiff/shared:lint:     117 │   const w = window.right - window.left;
+@figdiff/shared:lint:     118 │   const h = window.bottom - window.top;
+@figdiff/shared:lint:
+@figdiff/shared:lint:   i Please refactor this function to reduce its complexity score from 43 to the max allowed complexity 25.
+@figdiff/shared:lint:
+@figdiff/shared:lint:
+@figdiff/mcp-server:lint: Checked 124 files in 1539ms. No fixes applied.
+@figdiff/mcp-server:lint: Found 11 warnings.
+@figdiff/mcp-server:lint: src/service/capture-service.ts:97:10 lint/complexity/noExcessiveCognitiveComplexity ━━━━━━━━━━━━━━━━
+@figdiff/mcp-server:lint:
+@figdiff/mcp-server:lint:   ! Excessive complexity of 37 detected (max: 25).
+@figdiff/mcp-server:lint:
+@figdiff/mcp-server:lint:     95 │  * 上限は引数で渡す。文字も背景色も持たない要素は、比べる値が無いので落とす。
+@figdiff/mcp-server:lint:     96 │  */
+@figdiff/mcp-server:lint:   > 97 │ function harvestDomStyles(maxElements: number): DomElementStyle[] {
+@figdiff/mcp-server:lint:        │          ^^^^^^^^^^^^^^^^
+@figdiff/mcp-server:lint:     98 │   const collected: DomElementStyle[] = [];
+@figdiff/mcp-server:lint:     99 │   for (const element of document.querySelectorAll("*")) {
+@figdiff/mcp-server:lint:
+@figdiff/mcp-server:lint:   i Please refactor this function to reduce its complexity score from 37 to the max allowed complexity 25.
+@figdiff/mcp-server:lint:
+@figdiff/mcp-server:lint:
+@figdiff/mcp-server:lint: src/service/capture-service.ts:278:71 lint/complexity/noExcessiveCognitiveComplexity ━━━━━━━━━━━━━━━
+@figdiff/mcp-server:lint:
+@figdiff/mcp-server:lint:   ! Excessive complexity of 47 detected (max: 25).
+@figdiff/mcp-server:lint:
+@figdiff/mcp-server:lint:     276 │   type PwPage = Awaited<ReturnType<Awaited<ReturnType<typeof pw.chromium.launch>>["newPage"]>>;
+@figdiff/mcp-server:lint:     277 │
+@figdiff/mcp-server:lint:   > 278 │   const takeScreenshot = async (page: PwPage): Promise<CaptureResult> => {
+@figdiff/mcp-server:lint:         │                                                                       ^^^
+@figdiff/mcp-server:lint:     279 │     await page.goto(url, { waitUntil: "networkidle", timeout: 60_000 });
+@figdiff/mcp-server:lint:     280 │     await page.evaluate(() => document.fonts.ready);
+@figdiff/mcp-server:lint:
+@figdiff/mcp-server:lint:   i Please refactor this function to reduce its complexity score from 47 to the max allowed complexity 25.
+@figdiff/mcp-server:lint:
+@figdiff/mcp-server:lint:
+@figdiff/mcp-server:lint: src/service/compare-design-runner.ts:374:10 lint/complexity/noExcessiveCognitiveComplexity ━━━━━━━━━━
+@figdiff/mcp-server:lint:
+@figdiff/mcp-server:lint:   ! Excessive complexity of 29 detected (max: 25).
+@figdiff/mcp-server:lint:
+@figdiff/mcp-server:lint:     372 │   side && Object.values(side).some((value) => value !== undefined) ? side : undefined;
+@figdiff/mcp-server:lint:     373 │
+@figdiff/mcp-server:lint:   > 374 │ function buildCompletionCriteria(
+@figdiff/mcp-server:lint:         │          ^^^^^^^^^^^^^^^^^^^^^^^
+@figdiff/mcp-server:lint:     375 │   matchRate: number,
+@figdiff/mcp-server:lint:     376 │   diffPixelCount: number,
+@figdiff/mcp-server:lint:
+@figdiff/mcp-server:lint:   i Please refactor this function to reduce its complexity score from 29 to the max allowed complexity 25.
+@figdiff/mcp-server:lint:
+@figdiff/mcp-server:lint:
+@figdiff/mcp-server:lint: src/service/compare-design-runner.ts:831:16 lint/complexity/noExcessiveCognitiveComplexity ━━━━━━━━━━
+@figdiff/mcp-server:lint:
+@figdiff/mcp-server:lint:   ! Excessive complexity of 36 detected (max: 25).
+@figdiff/mcp-server:lint:
+@figdiff/mcp-server:lint:     829 │ }
+@figdiff/mcp-server:lint:     830 │
+@figdiff/mcp-server:lint:   > 831 │ async function resolveScreenshotPath(
+@figdiff/mcp-server:lint:         │                ^^^^^^^^^^^^^^^^^^^^^
+@figdiff/mcp-server:lint:     832 │   args: CompareDesignRunArgs,
+@figdiff/mcp-server:lint:     833 │   fallbackNodeId?: string,
+@figdiff/mcp-server:lint:
+@figdiff/mcp-server:lint:   i Please refactor this function to reduce its complexity score from 36 to the max allowed complexity 25.
+@figdiff/mcp-server:lint:
+@figdiff/mcp-server:lint:
+@figdiff/mcp-server:lint: src/service/diff-report-builder.ts:241:47 lint/complexity/noExcessiveCognitiveComplexity ━━━━━━━━━━━
+@figdiff/mcp-server:lint:
+@figdiff/mcp-server:lint:   ! Excessive complexity of 43 detected (max: 25).
+@figdiff/mcp-server:lint:
+@figdiff/mcp-server:lint:     239 │   contentBbox: DiffBoundingBox,
+@figdiff/mcp-server:lint:     240 │   residualMask: Uint8Array,
+@figdiff/mcp-server:lint:   > 241 │ ): { color: number; window: DiffBoundingBox } => {
+@figdiff/mcp-server:lint:         │                                               ^^^
+@figdiff/mcp-server:lint:     242 │   const startX = Math.max(0, Math.floor(contentBbox.x));
+@figdiff/mcp-server:lint:     243 │   const startY = Math.max(0, Math.floor(contentBbox.y));
+@figdiff/mcp-server:lint:
+@figdiff/mcp-server:lint:   i Please refactor this function to reduce its complexity score from 43 to the max allowed complexity 25.
+@figdiff/mcp-server:lint:
+@figdiff/mcp-server:lint:
+@figdiff/mcp-server:lint: src/service/diff-report-builder.ts:475:10 lint/complexity/noExcessiveCognitiveComplexity ━━━━━━━━━━━
+@figdiff/mcp-server:lint:
+@figdiff/mcp-server:lint:   ! Excessive complexity of 49 detected (max: 25).
+@figdiff/mcp-server:lint:
+@figdiff/mcp-server:lint:     473 │ };
+@figdiff/mcp-server:lint:     474 │
+@figdiff/mcp-server:lint:   > 475 │ function buildIssues(
+@figdiff/mcp-server:lint:         │          ^^^^^^^^^^^
+@figdiff/mcp-server:lint:     476 │   regionScores: RegionScore[],
+@figdiff/mcp-server:lint:     477 │   options: BuildDiffReportOptions,
+@figdiff/mcp-server:lint:
+@figdiff/mcp-server:lint:   i Please refactor this function to reduce its complexity score from 49 to the max allowed complexity 25.
+@figdiff/mcp-server:lint:
+@figdiff/mcp-server:lint:
+@figdiff/mcp-server:lint: src/service/diff-report-builder.ts:991:15 lint/complexity/noExcessiveCognitiveComplexity ━━━━━━━━━━━
+@figdiff/mcp-server:lint:
+@figdiff/mcp-server:lint:   ! Excessive complexity of 29 detected (max: 25).
+@figdiff/mcp-server:lint:
+@figdiff/mcp-server:lint:     989 │   diffMask: Uint8Array | undefined,
+@figdiff/mcp-server:lint:     990 │   fullyExcludedBoxes?: readonly DiffBoundingBox[],
+@figdiff/mcp-server:lint:   > 991 │ ): Uint8Array => {
+@figdiff/mcp-server:lint:         │               ^^^
+@figdiff/mcp-server:lint:     992 │   const pixelCount = width * height;
+@figdiff/mcp-server:lint:     993 │   if (ignoreMask !== undefined && ignoreMask.length !== pixelCount) {
+@figdiff/mcp-server:lint:
+@figdiff/mcp-server:lint:   i Please refactor this function to reduce its complexity score from 29 to the max allowed complexity 25.
+@figdiff/mcp-server:lint:
+@figdiff/mcp-server:lint:
+@figdiff/mcp-server:lint: src/service/diff-report-builder.ts:1066:79 lint/complexity/noExcessiveCognitiveComplexity ━━━━━━━━━━
+@figdiff/mcp-server:lint:
+@figdiff/mcp-server:lint:   ! Excessive complexity of 49 detected (max: 25).
+@figdiff/mcp-server:lint:
+@figdiff/mcp-server:lint:     1064 │ }
+@figdiff/mcp-server:lint:     1065 │
+@figdiff/mcp-server:lint:   > 1066 │ const buildRegionScores = (options: BuildDiffReportOptions): RegionScoreBuild => {
+@figdiff/mcp-server:lint:          │                                                                               ^^^
+@figdiff/mcp-server:lint:     1067 │   const {
+@figdiff/mcp-server:lint:     1068 │     designPixels,
+@figdiff/mcp-server:lint:
+@figdiff/mcp-server:lint:   i Please refactor this function to reduce its complexity score from 49 to the max allowed complexity 25.
+@figdiff/mcp-server:lint:
+@figdiff/mcp-server:lint:
+@figdiff/mcp-server:lint: src/service/diff-report-builder.ts:1716:17 lint/complexity/noExcessiveCognitiveComplexity ━━━━━━━━━━
+@figdiff/mcp-server:lint:
+@figdiff/mcp-server:lint:   ! Excessive complexity of 36 detected (max: 25).
+@figdiff/mcp-server:lint:
+@figdiff/mcp-server:lint:     1714 │ // 上げる。補正がずれを隠すと検出できないため、補正後もこの判定を適用する。
+@figdiff/mcp-server:lint:     1715 │
+@figdiff/mcp-server:lint:   > 1716 │ export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
+@figdiff/mcp-server:lint:          │                 ^^^^^^^^^^^^^^^
+@figdiff/mcp-server:lint:     1717 │   const { designPixels, screenshotPixels, width, height, paddingMask } = options;
+@figdiff/mcp-server:lint:     1718 │
+@figdiff/mcp-server:lint:
+@figdiff/mcp-server:lint:   i Please refactor this function to reduce its complexity score from 36 to the max allowed complexity 25.
+@figdiff/mcp-server:lint:
+@figdiff/mcp-server:lint:
+@figdiff/mcp-server:lint: src/service/image-compare-service.ts:1179:23 lint/complexity/noExcessiveCognitiveComplexity ━━━━━━━━━━
+@figdiff/mcp-server:lint:
+@figdiff/mcp-server:lint:   ! Excessive complexity of 115 detected (max: 25).
+@figdiff/mcp-server:lint:
+@figdiff/mcp-server:lint:     1177 │  * Compare two images and return diff analysis
+@figdiff/mcp-server:lint:     1178 │  */
+@figdiff/mcp-server:lint:   > 1179 │ export async function compareImages(
+@figdiff/mcp-server:lint:          │                       ^^^^^^^^^^^^^
+@figdiff/mcp-server:lint:     1180 │   options: CompareImagesOptions,
+@figdiff/mcp-server:lint:     1181 │   figmaRootNode?: FigmaNode,
+@figdiff/mcp-server:lint:
+@figdiff/mcp-server:lint:   i Please refactor this function to reduce its complexity score from 115 to the max allowed complexity 25.
+@figdiff/mcp-server:lint:
+@figdiff/mcp-server:lint:
+@figdiff/mcp-server:lint: src/tool/error.ts:75:27 lint/complexity/noExcessiveCognitiveComplexity ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+@figdiff/mcp-server:lint:
+@figdiff/mcp-server:lint:   ! Excessive complexity of 28 detected (max: 25).
+@figdiff/mcp-server:lint:
+@figdiff/mcp-server:lint:     73 │   error: unknown,
+@figdiff/mcp-server:lint:     74 │   seen = new Set<unknown>(),
+@figdiff/mcp-server:lint:   > 75 │ ): FigmaApiFailure | null => {
+@figdiff/mcp-server:lint:        │                           ^^^
+@figdiff/mcp-server:lint:     76 │   if (typeof error !== "object" || error === null || seen.has(error)) return null;
+@figdiff/mcp-server:lint:     77 │   seen.add(error);
+@figdiff/mcp-server:lint:
+@figdiff/mcp-server:lint:   i Please refactor this function to reduce its complexity score from 28 to the max allowed complexity 25.
+@figdiff/mcp-server:lint:
+@figdiff/mcp-server:lint:
+
+ Tasks:    9 successful, 9 total
+Cached:    4 cached, 9 total
+  Time:    3.321s
+
+
+> figdiff@ build /workspace/designdiff
+> turbo run build
+
+
+   • Packages in scope: @figdiff/chrome-extension, @figdiff/credential-store, @figdiff/desktop, @figdiff/figma-plugin, @figdiff/mcp-server, @figdiff/mobile-capture, @figdiff/shared
+   • Running build in 7 packages
+   • Remote caching disabled
+
+@figdiff/credential-store:build: cache hit, replaying logs 9f1a10a3c5102264
+@figdiff/credential-store:build:
+@figdiff/credential-store:build: > @figdiff/credential-store@0.1.0 build /workspace/designdiff/package/credential-store
+@figdiff/credential-store:build: > tsc
+@figdiff/credential-store:build:
+@figdiff/mobile-capture:build: cache hit, replaying logs fed34895375f1d0c
+@figdiff/mobile-capture:build:
+@figdiff/mobile-capture:build: > @figdiff/mobile-capture@0.1.0 build /workspace/designdiff/package/mobile-capture
+@figdiff/mobile-capture:build: > tsc && node -e "require('node:fs').chmodSync('dist/bin/figdiff-flutter-golden.js', 0o755)"
+@figdiff/mobile-capture:build:
+@figdiff/shared:build: cache hit, replaying logs f2ceafad1b4aa46f
+@figdiff/shared:build:
+@figdiff/shared:build: > @figdiff/shared@0.1.0 build /workspace/designdiff/package/shared
+@figdiff/shared:build: > tsc
+@figdiff/shared:build:
+@figdiff/figma-plugin:build: cache miss, executing c3dd0cb485228a37
+@figdiff/desktop:build: cache miss, executing 008c73a716fe3093
+@figdiff/chrome-extension:build: cache miss, executing 0b78f9ff036356e7
+@figdiff/mcp-server:build: cache miss, executing e369851e648e90ff
+@figdiff/mcp-server:build:
+@figdiff/mcp-server:build: > @figdiff/mcp-server@0.1.0 prebuild /workspace/designdiff/app/mcp-server
+@figdiff/mcp-server:build: > pnpm --filter @figdiff/credential-store build
+@figdiff/mcp-server:build:
+@figdiff/chrome-extension:build:
+@figdiff/chrome-extension:build: > @figdiff/chrome-extension@0.1.0 build /workspace/designdiff/app/chrome-extension
+@figdiff/chrome-extension:build: > node build.mjs
+@figdiff/chrome-extension:build:
+@figdiff/desktop:build:
+@figdiff/desktop:build: > @figdiff/desktop@1.0.0 build /workspace/designdiff/app/desktop
+@figdiff/desktop:build: > electron-vite build
+@figdiff/desktop:build:
+@figdiff/figma-plugin:build:
+@figdiff/figma-plugin:build: > @figdiff/figma-plugin@0.1.0 build /workspace/designdiff/app/figma-plugin
+@figdiff/figma-plugin:build: > node build.mjs
+@figdiff/figma-plugin:build:
+@figdiff/chrome-extension:build: Build complete.
+@figdiff/figma-plugin:build: Build complete.
+@figdiff/mcp-server:build:
+@figdiff/mcp-server:build: > @figdiff/credential-store@0.1.0 build /workspace/designdiff/package/credential-store
+@figdiff/mcp-server:build: > tsc
+@figdiff/mcp-server:build:
+@figdiff/desktop:build: vite v6.4.3 building SSR bundle for production...
+@figdiff/desktop:build: transforming...
+@figdiff/desktop:build: ✓ 21 modules transformed.
+@figdiff/desktop:build: rendering chunks...
+@figdiff/desktop:build: dist/main/main.js  79.47 kB
+@figdiff/desktop:build: ✓ built in 585ms
+@figdiff/desktop:build: vite v6.4.3 building SSR bundle for production...
+@figdiff/desktop:build: transforming...
+@figdiff/desktop:build: ✓ 1 modules transformed.
+@figdiff/desktop:build: rendering chunks...
+@figdiff/desktop:build: dist/preload/preload.cjs  5.16 kB
+@figdiff/desktop:build: ✓ built in 44ms
+@figdiff/desktop:build: vite v6.4.3 building for production...
+@figdiff/desktop:build: transforming...
+@figdiff/mcp-server:build:
+@figdiff/mcp-server:build: > @figdiff/mcp-server@0.1.0 build /workspace/designdiff/app/mcp-server
+@figdiff/mcp-server:build: > tsc -b --force && node -e "require('node:fs').chmodSync('dist/index.js', 0o755)"
+@figdiff/mcp-server:build:
+@figdiff/desktop:build: ✓ 1975 modules transformed.
+@figdiff/desktop:build: rendering chunks...
+@figdiff/desktop:build: dist/renderer/index.html                                                       0.44 kB
+@figdiff/desktop:build: dist/renderer/assets/jetbrains-mono-vietnamese-wght-normal-Bt-aOZkq.woff2      7.50 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-latin-ext-wght-normal-pB8enYeX.woff2         8.23 kB
+@figdiff/desktop:build: dist/renderer/assets/jetbrains-mono-greek-wght-normal-Bw9x6K1M.woff2           9.00 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-vietnamese-wght-normal-CFXlG5tS.woff2        9.10 kB
+@figdiff/desktop:build: dist/renderer/assets/hanken-grotesk-vietnamese-wght-normal-CHiFlh_0.woff2      9.32 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-cyrillic-wght-normal-BQJ6xfwZ.woff2          9.98 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-57-wght-normal-Dcyw3o92.woff2               10.79 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-117-wght-normal-D73BPRww.woff2              11.81 kB
+@figdiff/desktop:build: dist/renderer/assets/jetbrains-mono-cyrillic-wght-normal-D73BlboJ.woff2       12.11 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-114-wght-normal-DCIM4jZs.woff2              14.45 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-113-wght-normal-CtbyXo_h.woff2              14.80 kB
+@figdiff/desktop:build: dist/renderer/assets/jetbrains-mono-latin-ext-wght-normal-DBQx-q_a.woff2      15.20 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-109-wght-normal-XZ0efpq6.woff2              15.21 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-101-wght-normal-Dls8jqVU.woff2              15.76 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-112-wght-normal-CnVx-8lB.woff2              15.82 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-110-wght-normal-CeHeZFeT.woff2              15.86 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-115-wght-normal-CDBMNWew.woff2              16.09 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-116-wght-normal-RqS7_mFx.woff2              16.44 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-107-wght-normal-BMH1cYUp.woff2              16.65 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-103-wght-normal-Cf0qKmex.woff2              16.66 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-86-wght-normal-B0MkLvt0.woff2               16.96 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-111-wght-normal-DyRaOVPC.woff2              16.98 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-96-wght-normal-Bww_3Upk.woff2               17.01 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-93-wght-normal-ChR3IuHk.woff2               17.16 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-88-wght-normal-CyIWoFtM.woff2               17.33 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-95-wght-normal-cEmZK7kl.woff2               17.35 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-97-wght-normal-DEi73Ic_.woff2               17.49 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-102-wght-normal-CKMRrjm1.woff2              17.52 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-85-wght-normal-CPi4u8zn.woff2               17.52 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-105-wght-normal-CTXm1m1e.woff2              17.59 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-81-wght-normal-C3e5dWMK.woff2               17.69 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-104-wght-normal-DU15_Tmk.woff2              17.79 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-76-wght-normal-HKTYIip9.woff2               17.95 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-89-wght-normal-B-qGeNph.woff2               18.06 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-94-wght-normal-CTW0oM41.woff2               18.12 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-74-wght-normal-iogpiswj.woff2               18.16 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-67-wght-normal-BmPiBD9j.woff2               18.17 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-66-wght-normal-C9Pvbzcq.woff2               18.23 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-80-wght-normal-C8rE7JRr.woff2               18.23 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-83-wght-normal-CdGQgLIl.woff2               18.25 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-63-wght-normal-pZDrjPWR.woff2               18.25 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-118-wght-normal-U5v7NshZ.woff2              18.34 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-108-wght-normal-1F5IhFoa.woff2              18.44 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-91-wght-normal-BZRsdRL6.woff2               18.63 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-98-wght-normal-BE30qkDG.woff2               18.64 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-82-wght-normal-BjuKihWA.woff2               18.77 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-92-wght-normal-Bfqhr8vr.woff2               18.86 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-90-wght-normal-sQganGqO.woff2               18.90 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-77-wght-normal-zMwvLrLX.woff2               18.90 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-75-wght-normal-DYpRVFfS.woff2               18.93 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-84-wght-normal-BqzEfM_o.woff2               18.98 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-99-wght-normal-Cj5IF6EZ.woff2               19.27 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-87-wght-normal-D5BdgnTn.woff2               19.32 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-106-wght-normal-COtgWfsA.woff2              19.50 kB
+@figdiff/desktop:build: dist/renderer/assets/hanken-grotesk-latin-ext-wght-normal-Dg-wlmqe.woff2      19.59 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-73-wght-normal-CwrK-6j-.woff2               19.69 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-62-wght-normal-Dvl1bj2o.woff2               19.73 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-79-wght-normal-YT6TNXn0.woff2               19.79 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-69-wght-normal-DjC_tZTr.woff2               19.85 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-70-wght-normal-BhDpOk5L.woff2               19.87 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-59-wght-normal-DUxkCIOP.woff2               20.02 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-78-wght-normal-CJFvkh-5.woff2               20.09 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-100-wght-normal-IGIcweVU.woff2              20.10 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-71-wght-normal-BeAYbG_b.woff2               20.29 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-65-wght-normal-ZWzDwZG9.woff2               20.48 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-61-wght-normal-DqwoqK_H.woff2               21.05 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-72-wght-normal-t74baR93.woff2               21.38 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-68-wght-normal-BM7y9lVd.woff2               21.88 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-64-wght-normal-DGBgUuRb.woff2               22.53 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-60-wght-normal-B1SQjyhM.woff2               23.54 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-latin-wght-normal-JmuruAaA.woff2            24.84 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-58-wght-normal-C-mIssxc.woff2               25.30 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-54-wght-normal-DkswS7jl.woff2               31.29 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-2-wght-normal-RseJrQYo.woff2                32.33 kB
+@figdiff/desktop:build: dist/renderer/assets/hanken-grotesk-latin-wght-normal-CaVRRdDk.woff2          34.70 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-56-wght-normal-k2E-xsGo.woff2               37.46 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-53-wght-normal-DwAVKRqn.woff2               38.59 kB
+@figdiff/desktop:build: dist/renderer/assets/jetbrains-mono-latin-wght-normal-B9CIFXIH.woff2          40.40 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-55-wght-normal-BYcCjSG_.woff2               42.46 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-3-wght-normal--H5uv3v4.woff2                43.30 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-51-wght-normal-Cqxu35Xk.woff2               57.22 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-46-wght-normal-BmRwgAv-.woff2               57.87 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-50-wght-normal-Cw6P8USA.woff2               60.60 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-20-wght-normal-FgfhxZU_.woff2               61.27 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-49-wght-normal-6kT-KCCt.woff2               61.64 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-36-wght-normal-Dyc832Mi.woff2               62.52 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-40-wght-normal-Ac3ANHeE.woff2               64.03 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-27-wght-normal-jmtCcHJ0.woff2               64.12 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-42-wght-normal-C4xWUztV.woff2               64.83 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-33-wght-normal-BnYdH6SQ.woff2               65.23 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-12-wght-normal-CZgOv4iD.woff2               66.53 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-45-wght-normal-BF-EckBd.woff2               67.03 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-26-wght-normal-Bu8z50LX.woff2               67.72 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-47-wght-normal-0LM1TynG.woff2               67.92 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-16-wght-normal-CIRRqAST.woff2               69.08 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-38-wght-normal-6T50SRVw.woff2               69.12 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-43-wght-normal-DAb0Sc5Y.woff2               69.98 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-1-wght-normal-CARGyt1_.woff2                69.99 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-35-wght-normal-C7HufUhC.woff2               70.01 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-28-wght-normal-DQNwlFIU.woff2               70.77 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-48-wght-normal-DrhQr74m.woff2               71.94 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-14-wght-normal-DbDHiDFQ.woff2               72.06 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-21-wght-normal-Ur8WYMVQ.woff2               72.06 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-44-wght-normal-DyPSHqCN.woff2               72.06 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-13-wght-normal-B3bKCuev.woff2               72.82 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-32-wght-normal-CRZDfOIz.woff2               73.42 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-37-wght-normal-BA1uUhJR.woff2               73.63 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-22-wght-normal-BACXhehE.woff2               74.16 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-52-wght-normal-DYmSQol3.woff2               74.85 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-10-wght-normal-DtPkCCyJ.woff2               75.15 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-39-wght-normal-CN8CV109.woff2               75.29 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-9-wght-normal-mnr2cWCS.woff2                75.54 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-11-wght-normal-Dkj9SGze.woff2               75.62 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-41-wght-normal-B-bcLJUI.woff2               75.84 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-23-wght-normal-BguN3TwY.woff2               75.89 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-29-wght-normal-BnPJOTuS.woff2               75.98 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-4-wght-normal-Dc2VWjiv.woff2                77.20 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-18-wght-normal-DhyYlhdC.woff2               77.71 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-119-wght-normal-D3TauSHf.woff2              79.10 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-8-wght-normal-B-fyrhM6.woff2                79.26 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-30-wght-normal-Bj8BZBgx.woff2               80.00 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-25-wght-normal-VS5EnqV2.woff2               80.25 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-15-wght-normal-BHvX48uZ.woff2               80.48 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-17-wght-normal-Cypgkvf4.woff2               80.65 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-7-wght-normal-DPLqcl0u.woff2                82.78 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-0-wght-normal-ChZwicxE.woff2                82.88 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-24-wght-normal-CXEahOPk.woff2               82.96 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-34-wght-normal-CGJbTgpI.woff2               85.06 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-31-wght-normal-Commwwo1.woff2               86.41 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-5-wght-normal-CeuaJ3GQ.woff2                86.85 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-19-wght-normal-Cm6ySjN8.woff2               87.03 kB
+@figdiff/desktop:build: dist/renderer/assets/noto-sans-jp-6-wght-normal-BETiiYWj.woff2                90.14 kB
+@figdiff/desktop:build: dist/renderer/assets/main-FoEmJd3d.css                                       167.93 kB
+@figdiff/desktop:build: dist/renderer/assets/electron-adapter-Chnnam7G.js                              6.97 kB
+@figdiff/desktop:build: dist/renderer/assets/web-adapter-Ds7FplIc.js                                  23.61 kB
+@figdiff/desktop:build: dist/renderer/assets/main-AoOuKX5f.js                                      1,403.71 kB
+@figdiff/desktop:build: ✓ built in 8.23s
+
+ Tasks:    7 successful, 7 total
+Cached:    3 cached, 7 total
+  Time:    15.649s
+
+
+> figdiff@ test /workspace/designdiff
+> turbo run test && node --test script/dev-log.test.mjs script/log-digest.test.mjs script/check-naming.test.mjs script/verify-campaign-evidence.test.mjs
+
+
+   • Packages in scope: @figdiff/chrome-extension, @figdiff/credential-store, @figdiff/desktop, @figdiff/figma-plugin, @figdiff/mcp-server, @figdiff/mobile-capture, @figdiff/shared
+   • Running test in 7 packages
+   • Remote caching disabled
+
+@figdiff/shared:test: cache miss, executing a0c54fbaa325a8ec
+@figdiff/credential-store:test: cache hit, replaying logs 542de851d4e06f39
+@figdiff/credential-store:test:
+@figdiff/credential-store:test: > @figdiff/credential-store@0.1.0 test /workspace/designdiff/package/credential-store
+@figdiff/credential-store:test: > vitest run
+@figdiff/credential-store:test:
+@figdiff/credential-store:test:
+@figdiff/credential-store:test:  RUN  v4.1.11 /workspace/designdiff/package/credential-store
+@figdiff/credential-store:test:
+@figdiff/credential-store:test:  ✓ src/keychain-backend.test.ts (11 tests) 107ms
+@figdiff/credential-store:test:  ✓ src/resolve-figma-token.test.ts (7 tests) 41ms
+@figdiff/credential-store:test:  ✓ src/credential-store.test.ts (8 tests) 594ms
+@figdiff/credential-store:test:      ✓ keychain backendがgetでnullを返した時、file backendの既存クレデンシャルへ read-only フォールバックする  436ms
+@figdiff/credential-store:test:  ✓ src/figma-refresh.test.ts (4 tests) 273ms
+@figdiff/credential-store:test:  ✓ src/file-backend.test.ts (9 tests) 44ms
+@figdiff/credential-store:test:  ✓ src/index.test.ts (3 tests) 54ms
+@figdiff/credential-store:test: stdout | src/figma-credentials.test.ts > figma-credentials (file backend) > PAT round-trip
+@figdiff/credential-store:test: [credential-store] OS keychain unavailable; using ~/.figdiff/credentials.json
+@figdiff/credential-store:test:
+@figdiff/credential-store:test:  ✓ src/figma-credentials.test.ts (4 tests) 75ms
+@figdiff/credential-store:test:
+@figdiff/credential-store:test:  Test Files  7 passed (7)
+@figdiff/credential-store:test:       Tests  46 passed (46)
+@figdiff/credential-store:test:    Start at  11:37:09
+@figdiff/credential-store:test:    Duration  3.20s (transform 1.03s, setup 0ms, import 3.07s, tests 1.19s, environment 1ms)
+@figdiff/credential-store:test:
+@figdiff/mobile-capture:test: cache hit, replaying logs f53c2f22a1f19165
+@figdiff/mobile-capture:test:
+@figdiff/mobile-capture:test: > @figdiff/mobile-capture@0.1.0 test /workspace/designdiff/package/mobile-capture
+@figdiff/mobile-capture:test: > vitest run
+@figdiff/mobile-capture:test:
+@figdiff/mobile-capture:test:
+@figdiff/mobile-capture:test:  RUN  v4.1.11 /workspace/designdiff/package/mobile-capture
+@figdiff/mobile-capture:test:
+@figdiff/mobile-capture:test:  ✓ src/scroll-capture.test.ts (11 tests) 65ms
+@figdiff/mobile-capture:test:  ✓ src/provider/android.test.ts (26 tests) 154ms
+@figdiff/mobile-capture:test:  ✓ src/index.test.ts (7 tests) 149ms
+@figdiff/mobile-capture:test:  ✓ src/flutter-golden.test.ts (4 tests) 97ms
+@figdiff/mobile-capture:test:  ✓ src/scroll-capture-cleanup.test.ts (2 tests) 2473ms
+@figdiff/mobile-capture:test:      ✓ 消せんかった素材は、黙らずに数と場所を残す  2219ms
+@figdiff/mobile-capture:test:  ✓ src/stitch.test.ts (26 tests) 5320ms
+@figdiff/mobile-capture:test:      ✓ 繋いだ結果が上限を超えるなら、領域を確保する前に落とす  5239ms
+@figdiff/mobile-capture:test:  ✓ src/provider/ios-device.test.ts (6 tests) 43ms
+@figdiff/mobile-capture:test:  ✓ src/provider/ios-sim.test.ts (6 tests) 69ms
+@figdiff/mobile-capture:test:  ✓ src/path.test.ts (4 tests) 53ms
+@figdiff/mobile-capture:test:  ✓ src/bin/figdiff-flutter-golden.test.ts (6 tests) 29ms
+@figdiff/mobile-capture:test:  ✓ src/scroll-capture-integration.test.ts (5 tests) 11271ms
+@figdiff/mobile-capture:test:      ✓ 下端まで撮って、1画面より縦に長い1枚へ繋ぐ  3751ms
+@figdiff/mobile-capture:test:      ✓ 繋いだ1枚だけを残し、素材は消す  3705ms
+@figdiff/mobile-capture:test:      ✓ 上限で打ち切ったときは、下端まで届いていないと伝える  1532ms
+@figdiff/mobile-capture:test:      ✓ 画面の中央を、送りたい距離ぶんだけなぞる  2258ms
+@figdiff/mobile-capture:test:
+@figdiff/mobile-capture:test:  Test Files  11 passed (11)
+@figdiff/mobile-capture:test:       Tests  103 passed (103)
+@figdiff/mobile-capture:test:    Start at  11:37:09
+@figdiff/mobile-capture:test:    Duration  13.53s (transform 1.48s, setup 0ms, import 2.57s, tests 19.72s, environment 1ms)
+@figdiff/mobile-capture:test:
+@figdiff/credential-store:build: cache hit, replaying logs 9f1a10a3c5102264
+@figdiff/credential-store:build:
+@figdiff/credential-store:build: > @figdiff/credential-store@0.1.0 build /workspace/designdiff/package/credential-store
+@figdiff/credential-store:build: > tsc
+@figdiff/credential-store:build:
+@figdiff/mobile-capture:build: cache hit, replaying logs fed34895375f1d0c
+@figdiff/mobile-capture:build:
+@figdiff/mobile-capture:build: > @figdiff/mobile-capture@0.1.0 build /workspace/designdiff/package/mobile-capture
+@figdiff/mobile-capture:build: > tsc && node -e "require('node:fs').chmodSync('dist/bin/figdiff-flutter-golden.js', 0o755)"
+@figdiff/mobile-capture:build:
+@figdiff/shared:build: cache hit, replaying logs f2ceafad1b4aa46f
+@figdiff/shared:build:
+@figdiff/shared:build: > @figdiff/shared@0.1.0 build /workspace/designdiff/package/shared
+@figdiff/shared:build: > tsc
+@figdiff/shared:build:
+@figdiff/mcp-server:test: cache miss, executing f36525ea48ea4585
+@figdiff/desktop:test: cache miss, executing ececd5be685bea0f
+@figdiff/chrome-extension:test: cache miss, executing 24b717d107ca22f6
+@figdiff/figma-plugin:test: cache miss, executing 8c8398adb7a91cd6
+@figdiff/shared:test:
+@figdiff/shared:test: > @figdiff/shared@0.1.0 test /workspace/designdiff/package/shared
+@figdiff/shared:test: > vitest run
+@figdiff/shared:test:
+@figdiff/figma-plugin:test:
+@figdiff/figma-plugin:test: > @figdiff/figma-plugin@0.1.0 test /workspace/designdiff/app/figma-plugin
+@figdiff/figma-plugin:test: > vitest run
+@figdiff/figma-plugin:test:
+@figdiff/desktop:test:
+@figdiff/desktop:test: > @figdiff/desktop@1.0.0 test /workspace/designdiff/app/desktop
+@figdiff/desktop:test: > vitest run && vitest run --config vitest.electron.config.ts
+@figdiff/desktop:test:
+@figdiff/chrome-extension:test:
+@figdiff/chrome-extension:test: > @figdiff/chrome-extension@0.1.0 test /workspace/designdiff/app/chrome-extension
+@figdiff/chrome-extension:test: > vitest run
+@figdiff/chrome-extension:test:
+@figdiff/mcp-server:test:
+@figdiff/mcp-server:test: > @figdiff/mcp-server@0.1.0 test /workspace/designdiff/app/mcp-server
+@figdiff/mcp-server:test: > vitest run && pnpm test:smoke-selftest
+@figdiff/mcp-server:test:
+@figdiff/shared:test:
+@figdiff/shared:test:  RUN  v4.1.11 /workspace/designdiff/package/shared
+@figdiff/shared:test:
+@figdiff/figma-plugin:test:
+@figdiff/figma-plugin:test:  RUN  v4.1.11 /workspace/designdiff/app/figma-plugin
+@figdiff/figma-plugin:test:
+@figdiff/chrome-extension:test:
+@figdiff/chrome-extension:test:  RUN  v4.1.11 /workspace/designdiff/app/chrome-extension
+@figdiff/chrome-extension:test:
+@figdiff/desktop:test:
+@figdiff/desktop:test:  RUN  v4.1.11 /workspace/designdiff/app/desktop
+@figdiff/desktop:test:
+@figdiff/mcp-server:test:
+@figdiff/mcp-server:test:  RUN  v4.1.11 /workspace/designdiff/app/mcp-server
+@figdiff/mcp-server:test:
+@figdiff/shared:test: (node:17493) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+@figdiff/shared:test: (Use `node --trace-warnings ...` to show where the warning was created)
+@figdiff/shared:test:  ✓ src/signal/whole-image-structure.test.ts (6 tests) 903ms
+@figdiff/chrome-extension:test:  ✓ src/content/overlay-renderer.test.ts (34 tests) 500ms
+@figdiff/shared:test:  ✓ src/signal/delta-e-2000.test.ts (19 tests) 727ms
+@figdiff/desktop:test: stdout | src/component/home/home-page.test.tsx
+@figdiff/desktop:test: 🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙
+@figdiff/desktop:test:
+@figdiff/desktop:test: stdout | src/component/compare/compare-page.test.tsx
+@figdiff/desktop:test: 🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙
+@figdiff/desktop:test:
+@figdiff/desktop:test: stdout | src/component/project/project-view.test.tsx
+@figdiff/desktop:test: 🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙
+@figdiff/desktop:test:
+@figdiff/shared:test:  ✓ src/node/ignore-region-store.test.ts (10 tests) 1980ms
+@figdiff/shared:test:      ✓ recovers a killed legacy owner after persistent EPERM  493ms
+@figdiff/shared:test:  ✓ src/signal/translation.test.ts (41 tests) 449ms
+@figdiff/shared:test:  ✓ src/signal/hausdorff.test.ts (11 tests) 382ms
+@figdiff/mcp-server:test: (node:17617) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+@figdiff/mcp-server:test: (Use `node --trace-warnings ...` to show where the warning was created)
+@figdiff/mcp-server:test: (node:17616) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+@figdiff/mcp-server:test: (Use `node --trace-warnings ...` to show where the warning was created)
+@figdiff/shared:test:  ✓ src/signal/text-reflow.test.ts (16 tests) 663ms
+@figdiff/chrome-extension:test:  ✓ src/content.test.ts (12 tests) 910ms
+@figdiff/chrome-extension:test:      ✓ 読み込み時に onMessage リスナーを登録する  511ms
+@figdiff/shared:test:  ✓ src/signal/texture-resampling.test.ts (4 tests) 301ms
+@figdiff/chrome-extension:test:  ✓ src/content/floating-control-bar.test.ts (17 tests) 408ms
+@figdiff/figma-plugin:test:  ✓ src/ui.test.ts (82 tests) 1111ms
+@figdiff/figma-plugin:test:  ✓ src/code.test.ts (85 tests) 1635ms
+@figdiff/figma-plugin:test:
+@figdiff/figma-plugin:test:  Test Files  2 passed (2)
+@figdiff/figma-plugin:test:       Tests  167 passed (167)
+@figdiff/figma-plugin:test:    Start at  12:10:05
+@figdiff/figma-plugin:test:    Duration  7.22s (transform 3.27s, setup 395ms, import 5.59s, tests 2.75s, environment 3.97s)
+@figdiff/figma-plugin:test:
+@figdiff/shared:test:  ✓ src/figma-export-options.test.ts (2 tests) 183ms
+@figdiff/shared:test:  ✓ src/figma-client.test.ts (16 tests) 373ms
+@figdiff/shared:test:  ✓ src/signal/flat-region-color.test.ts (15 tests) 243ms
+@figdiff/shared:test:  ✓ src/signal/local-displacement.test.ts (15 tests) 256ms
+@figdiff/chrome-extension:test:  ✓ src/background.test.ts (35 tests) 212ms
+@figdiff/chrome-extension:test:  ✓ src/content/diff-highlighter.test.ts (7 tests) 218ms
+@figdiff/shared:test:  ✓ src/signal/local-alignment.test.ts (7 tests) 189ms
+@figdiff/shared:test:  ✓ src/node/ignore-region-store-error.test.ts (2 tests) 103ms
+@figdiff/desktop:test:  ✓ src/component/project/project-view.test.tsx (23 tests) 3051ms
+@figdiff/shared:test:  ✓ src/diff-cluster.test.ts (26 tests) 186ms
+@figdiff/desktop:test: stderr | src/component/home/home-page.test.tsx > HomePage > レガシーフロー handleSubmit > Figma ログイン失敗時はエラーを表示する
+@figdiff/desktop:test: Error: login failed
+@figdiff/desktop:test:     at /workspace/designdiff/app/desktop/src/component/home/home-page.test.tsx:321:52
+@figdiff/desktop:test:     at file:///workspace/designdiff/node_modules/.pnpm/@vitest+runner@4.1.11/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+@figdiff/desktop:test:     at file:///workspace/designdiff/node_modules/.pnpm/@vitest+runner@4.1.11/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26
+@figdiff/desktop:test:     at file:///workspace/designdiff/node_modules/.pnpm/@vitest+runner@4.1.11/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20
+@figdiff/desktop:test:     at new Promise (<anonymous>)
+@figdiff/desktop:test:     at runWithCancel (file:///workspace/designdiff/node_modules/.pnpm/@vitest+runner@4.1.11/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)
+@figdiff/desktop:test:     at file:///workspace/designdiff/node_modules/.pnpm/@vitest+runner@4.1.11/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20
+@figdiff/desktop:test:     at new Promise (<anonymous>)
+@figdiff/desktop:test:     at runWithTimeout (file:///workspace/designdiff/node_modules/.pnpm/@vitest+runner@4.1.11/node_modules/@vitest/runner/dist/chunk-artifact.js:2272:10)
+@figdiff/desktop:test:     at file:///workspace/designdiff/node_modules/.pnpm/@vitest+runner@4.1.11/node_modules/@vitest/runner/dist/chunk-artifact.js:2956:64
+@figdiff/desktop:test:
+@figdiff/shared:test:  ✓ src/node/github-service.test.ts (25 tests) 206ms
+@figdiff/shared:test:  ✓ src/signal/toast-band.test.ts (13 tests) 190ms
+@figdiff/shared:test:  ✓ src/signal/dynamic-region.test.ts (16 tests) 88ms
+@figdiff/chrome-extension:test:  ✓ src/service/pixel-diff-service.test.ts (16 tests) 129ms
+@figdiff/desktop:test: stderr | src/component/home/home-page.test.tsx > HomePage > レガシーフロー handleSubmit > ページフレーム検出が失敗した場合は単一フレーム読み込みへフォールバックする
+@figdiff/desktop:test: Page frame detection failed, falling back to single frame flow Error: network
+@figdiff/desktop:test:     at /workspace/designdiff/app/desktop/src/component/home/home-page.test.tsx:489:78
+@figdiff/desktop:test:     at file:///workspace/designdiff/node_modules/.pnpm/@vitest+runner@4.1.11/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+@figdiff/desktop:test:     at file:///workspace/designdiff/node_modules/.pnpm/@vitest+runner@4.1.11/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26
+@figdiff/desktop:test:     at file:///workspace/designdiff/node_modules/.pnpm/@vitest+runner@4.1.11/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20
+@figdiff/desktop:test:     at new Promise (<anonymous>)
+@figdiff/desktop:test:     at runWithCancel (file:///workspace/designdiff/node_modules/.pnpm/@vitest+runner@4.1.11/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)
+@figdiff/desktop:test:     at file:///workspace/designdiff/node_modules/.pnpm/@vitest+runner@4.1.11/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20
+@figdiff/desktop:test:     at new Promise (<anonymous>)
+@figdiff/desktop:test:     at runWithTimeout (file:///workspace/designdiff/node_modules/.pnpm/@vitest+runner@4.1.11/node_modules/@vitest/runner/dist/chunk-artifact.js:2272:10)
+@figdiff/desktop:test:     at file:///workspace/designdiff/node_modules/.pnpm/@vitest+runner@4.1.11/node_modules/@vitest/runner/dist/chunk-artifact.js:2956:64
+@figdiff/desktop:test:
+@figdiff/chrome-extension:test:  ✓ src/service/figma-service.test.ts (5 tests) 33ms
+@figdiff/chrome-extension:test:  ✓ src/popup.test.ts (54 tests) 10344ms
+@figdiff/chrome-extension:test:      ✓ token あり → hasToken true でタブを描画する  2648ms
+@figdiff/chrome-extension:test:      ✓ スライダー不要のモードではスライダーを描かない  397ms
+@figdiff/desktop:test:  ✓ src/component/home/home-page.test.tsx (35 tests) 5394ms
+@figdiff/desktop:test:      ✓ FigDiffタイトルが表示される  339ms
+@figdiff/desktop:test:      ✓ プロジェクト一覧にプロジェクトカードが表示される  531ms
+@figdiff/shared:test:  ✓ src/project-schema.test.ts (23 tests) 83ms
+@figdiff/shared:test:  ✓ src/comparison-conditions-report.test.ts (2 tests) 153ms
+@figdiff/desktop:test: stdout | src/store/overlay-store.test.ts
+@figdiff/desktop:test: 🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙
+@figdiff/desktop:test:
+@figdiff/shared:test:  ✓ src/signal/anti-aliased-mask.test.ts (5 tests) 99ms
+@figdiff/shared:test:  ✓ src/signal/self-ncc-plane.test.ts (4 tests) 57ms
+@figdiff/chrome-extension:test:  ✓ src/service/token-service.test.ts (9 tests) 48ms
+@figdiff/chrome-extension:test:
+@figdiff/chrome-extension:test:  Test Files  9 passed (9)
+@figdiff/chrome-extension:test:       Tests  189 passed (189)
+@figdiff/chrome-extension:test:    Start at  12:10:05
+@figdiff/chrome-extension:test:    Duration  14.25s (transform 4.49s, setup 464ms, import 5.03s, tests 12.80s, environment 15.59s)
+@figdiff/chrome-extension:test:
+@figdiff/shared:test:  ✓ src/signal/foreground-occupancy.test.ts (13 tests) 43ms
+@figdiff/desktop:test:  ✓ src/store/overlay-store.test.ts (48 tests) 1058ms
+@figdiff/desktop:test:        ✓ opens overlay via electronAPI  906ms
+@figdiff/shared:test:  ✓ src/signal/edge-straddle.test.ts (7 tests) 13ms
+@figdiff/desktop:test:  ✓ src/component/compare/compare-page.test.tsx (24 tests) 6360ms
+@figdiff/desktop:test:      ✓ 比較前は未計測を表示してゼロ点や判定を表示しない  845ms
+@figdiff/desktop:test:      ✓ 比較前でも上部ボタンから問題報告を開ける  634ms
+@figdiff/desktop:test:      ✓ 修正確認タブから一時baseline導線へ到達できる  354ms
+@figdiff/desktop:test:      ✓ ノードタブは現在のFigmaファイルで選択したフレームを検査候補にする  309ms
+@figdiff/desktop:test:      ✓ 画像読み込み失敗時はエラーを表示する  394ms
+@figdiff/desktop:test:      ✓ 表示モードと透明度を操作できる  455ms
+@figdiff/shared:test:  ✓ src/node/public-issue-guard.test.ts (21 tests) 99ms
+@figdiff/desktop:test: stdout | src/component/compare/issue-report-dialog.test.tsx
+@figdiff/desktop:test: 🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙
+@figdiff/desktop:test:
+@figdiff/shared:test:  ✓ src/figma-url-parser.test.ts (32 tests) 105ms
+@figdiff/shared:test:  ✓ src/signal/texture.test.ts (3 tests) 82ms
+@figdiff/shared:test:  ✓ src/compare-animation-schema.test.ts (12 tests) 66ms
+@figdiff/desktop:test: stdout | src/component/live-overlay/live-overlay-panel.test.tsx
+@figdiff/desktop:test: 🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙
+@figdiff/desktop:test:
+@figdiff/shared:test:  ✓ src/figma-geometry.test.ts (13 tests) 88ms
+@figdiff/desktop:test: stdout | src/component/convergence/convergence-page.test.tsx
+@figdiff/desktop:test: 🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙
+@figdiff/desktop:test:
+@figdiff/shared:test:  ✓ src/comparison-conditions.test.ts (12 tests) 26ms
+@figdiff/shared:test:  ✓ src/type.test.ts (9 tests) 15ms
+@figdiff/shared:test:  ✓ src/confidence/headline.test.ts (18 tests) 55ms
+@figdiff/desktop:test:  ✓ src/component/compare/issue-report-dialog.test.tsx (9 tests) 2094ms
+@figdiff/desktop:test:      ✓ mainが返したexact payloadをreadonly表示して自動添付しない  502ms
+@figdiff/shared:test:  ✓ src/animation-comparison.test.ts (22 tests) 41ms
+@figdiff/shared:test:  ✓ src/confidence/preflight.test.ts (26 tests) 22ms
+@figdiff/shared:test:  ✓ src/signal/glyph-edge-raster.test.ts (42 tests) 18169ms
+@figdiff/shared:test:      ✓ 周期走査を諦めた超巨大窓は周期なしと断定しない  17513ms
+@figdiff/shared:test:  ✓ src/campaign-key.test.ts (5 tests) 24ms
+@figdiff/shared:test:  ✓ src/confidence/diagnosis.test.ts (22 tests) 39ms
+@figdiff/shared:test:  ✓ src/transform-node.test.ts (22 tests) 42ms
+@figdiff/shared:test:  ✓ src/css-suggestion.test.ts (12 tests) 15ms
+@figdiff/desktop:test:  ✓ src/component/convergence/convergence-page.test.tsx (16 tests) 1466ms
+@figdiff/desktop:test:      ✓ キャンペーン付きの比較対象を読める名前で表示し、元のキーで選択する  669ms
+@figdiff/shared:test:  ✓ src/signal/temporal-align.test.ts (23 tests) 30ms
+@figdiff/shared:test:  ✓ src/verification-context.test.ts (1 test) 36ms
+@figdiff/desktop:test: stdout | src/app.test.tsx
+@figdiff/desktop:test: 🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙
+@figdiff/desktop:test:
+@figdiff/shared:test:  ✓ src/design-token-extractor.test.ts (2 tests) 16ms
+@figdiff/shared:test:  ✓ src/verification-fixture.test.ts (6 tests) 58ms
+@figdiff/shared:test:  ✓ src/fix-region-comparison.test.ts (6 tests) 91ms
+@figdiff/shared:test:  ✓ src/signal/ssim.test.ts (10 tests) 16ms
+@figdiff/desktop:test:  ✓ src/component/live-overlay/live-overlay-panel.test.tsx (25 tests) 2539ms
+@figdiff/desktop:test:      ✓ URL入力後に表示ボタンが enabled  437ms
+@figdiff/shared:test:  ✓ src/node-matcher.test.ts (7 tests) 12ms
+@figdiff/desktop:test: stdout | src/component/setting/setting-screen.test.tsx
+@figdiff/desktop:test: 🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙
+@figdiff/desktop:test:
+@figdiff/shared:test:  ✓ src/confidence/frame-guidance.test.ts (7 tests) 15ms
+@figdiff/shared:test:  ✓ src/confidence/system-bar-ignore-regions.test.ts (10 tests) 27ms
+@figdiff/shared:test:  ✓ src/verification-fixture-preset-regression.test.ts (1 test) 15ms
+@figdiff/shared:test:  ✓ src/figma-page-frame.test.ts (11 tests) 79ms
+@figdiff/shared:test:  ✓ src/public-issue-sanitizer.test.ts (13 tests) 45ms
+@figdiff/shared:test:  ✓ src/self-critique.test.ts (4 tests) 28ms
+@figdiff/shared:test:  ✓ src/ignore-region-mask.test.ts (3 tests) 9ms
+@figdiff/shared:test:  ✓ src/pixel-compare.test.ts (4 tests) 10ms
+@figdiff/shared:test:  ✓ src/ignore-region-context.test.ts (2 tests) 8ms
+@figdiff/shared:test:
+@figdiff/shared:test:  Test Files  54 passed (54)
+@figdiff/shared:test:       Tests  679 passed (679)
+@figdiff/shared:test:    Start at  12:10:05
+@figdiff/shared:test:    Duration  24.25s (transform 5.39s, setup 0ms, import 15.68s, tests 27.25s, environment 24ms)
+@figdiff/shared:test:
+@figdiff/desktop:test: stdout | src/service/diff-report.test.ts
+@figdiff/desktop:test: 🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙
+@figdiff/desktop:test:
+@figdiff/desktop:test:  ✓ src/component/setting/setting-screen.test.tsx (14 tests) 1502ms
+@figdiff/desktop:test:        ✓ 未接続ならログインボタンを出し、押すとOAuthを開始する  406ms
+@figdiff/desktop:test:  ✓ src/app.test.tsx (7 tests) 2053ms
+@figdiff/desktop:test:      ✓ プロジェクトタブの切り替えに currentProject が追従する  612ms
+@figdiff/desktop:test:      ✓ 設定へ遷移するとタブ選択が外れて設定画面だけが残る  490ms
+@figdiff/desktop:test:      ✓ ライブオーバーレイへ遷移した後ホームへ戻ると開いていたサイトを閉じる  312ms
+@figdiff/desktop:test:  ✓ src/service/diff-report.test.ts (18 tests) 701ms
+@figdiff/desktop:test: stdout | src/component/compare/compare-canvas.test.tsx
+@figdiff/desktop:test: 🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙
+@figdiff/desktop:test:
+@figdiff/desktop:test: stdout | src/component/layout/header.test.tsx
+@figdiff/desktop:test: 🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙
+@figdiff/desktop:test:
+@figdiff/desktop:test: stdout | src/component/compare/animation-comparison-panel.test.tsx
+@figdiff/desktop:test: 🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙
+@figdiff/desktop:test:
+@figdiff/desktop:test:  ✓ src/component/compare/compare-canvas.test.tsx (18 tests) 555ms
+@figdiff/desktop:test:  ✓ src/component/layout/header.test.tsx (16 tests) 1201ms
+@figdiff/desktop:test: stdout | src/component/live-overlay/overlay-view-mode-toggle.test.tsx
+@figdiff/desktop:test: 🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙
+@figdiff/desktop:test:
+@figdiff/desktop:test: stdout | src/component/setting/token-required-dialog.test.tsx
+@figdiff/desktop:test: 🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙
+@figdiff/desktop:test:
+@figdiff/desktop:test:  ✓ src/component/compare/animation-comparison-panel.test.tsx (7 tests) 1326ms
+@figdiff/desktop:test:      ✓ keeps user order and renders frame mappings, missing frames, local diffs, and the overall verdict  609ms
+@figdiff/desktop:test:  ✓ src/component/live-overlay/overlay-view-mode-toggle.test.tsx (7 tests) 361ms
+@figdiff/desktop:test:  ✓ src/component/setting/token-required-dialog.test.tsx (7 tests) 605ms
+@figdiff/desktop:test: stdout | src/component/compare/compare-diff-report.test.tsx
+@figdiff/desktop:test: 🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙
+@figdiff/desktop:test:
+@figdiff/desktop:test: stdout | src/component/compare/ignore-region-panel.test.tsx
+@figdiff/desktop:test: 🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙
+@figdiff/desktop:test:
+@figdiff/desktop:test:  ✓ src/component/compare/compare-diff-report.test.tsx (12 tests) 531ms
+@figdiff/desktop:test: stdout | src/component/home/design-input.test.tsx
+@figdiff/desktop:test: 🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙
+@figdiff/desktop:test:
+@figdiff/desktop:test:  ✓ src/component/compare/ignore-region-panel.test.tsx (6 tests) 643ms
+@figdiff/desktop:test:  ✓ src/component/home/design-input.test.tsx (14 tests) 206ms
+@figdiff/desktop:test: stdout | src/component/compare/node-inspection-panel.test.tsx
+@figdiff/desktop:test: 🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙
+@figdiff/desktop:test:
+@figdiff/desktop:test: stdout | src/component/compare/compare-report-export.test.tsx
+@figdiff/desktop:test: 🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙
+@figdiff/desktop:test:
+@figdiff/desktop:test:  ✓ src/component/compare/compare-report-export.test.tsx (5 tests) 251ms
+@figdiff/desktop:test: stdout | src/lib/platform/index.test.ts
+@figdiff/desktop:test: 🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙
+@figdiff/desktop:test:
+@figdiff/desktop:test:  ✓ src/component/compare/node-inspection-panel.test.tsx (4 tests) 533ms
+@figdiff/desktop:test:  ✓ src/lib/platform/index.test.ts (9 tests) 444ms
+@figdiff/desktop:test:      ✓ Electron 環境では Electron 用の実装を返す  433ms
+@figdiff/desktop:test: stdout | src/component/compare/fix-verification-panel.test.tsx
+@figdiff/desktop:test: 🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙
+@figdiff/desktop:test:
+@figdiff/desktop:test: stdout | src/service/image-compare.test.ts
+@figdiff/desktop:test: 🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙
+@figdiff/desktop:test:
+@figdiff/desktop:test: stdout | src/component/project/frame-preview.test.tsx
+@figdiff/desktop:test: 🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙
+@figdiff/desktop:test:
+@figdiff/desktop:test:  ✓ src/service/image-compare.test.ts (26 tests) 334ms
+@figdiff/desktop:test:  ✓ src/component/compare/fix-verification-panel.test.tsx (10 tests) 610ms
+@figdiff/desktop:test:  ✓ src/component/project/frame-preview.test.tsx (6 tests) 399ms
+@figdiff/desktop:test: stdout | src/component/compare/view-mode-toggle.test.tsx
+@figdiff/desktop:test: 🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙
+@figdiff/desktop:test:
+@figdiff/desktop:test: stdout | src/component/ui/dialog.test.tsx
+@figdiff/desktop:test: 🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙
+@figdiff/desktop:test:
+@figdiff/desktop:test: stdout | src/component/ui/error-boundary.test.tsx
+@figdiff/desktop:test: 🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙
+@figdiff/desktop:test:
+@figdiff/desktop:test:  ✓ src/component/compare/view-mode-toggle.test.tsx (5 tests) 289ms
+@figdiff/desktop:test:  ✓ src/component/ui/error-boundary.test.tsx (3 tests) 260ms
+@figdiff/desktop:test:  ✓ src/component/ui/dialog.test.tsx (4 tests) 421ms
+@figdiff/desktop:test: stdout | src/component/home/active-session-card.test.tsx
+@figdiff/desktop:test: 🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙
+@figdiff/desktop:test:
+@figdiff/desktop:test:  ✓ src/component/home/active-session-card.test.tsx (7 tests) 213ms
+@figdiff/desktop:test: stdout | src/store/setting-store.test.ts
+@figdiff/desktop:test: 🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙
+@figdiff/desktop:test:
+@figdiff/desktop:test:  ✓ src/store/setting-store.test.ts (11 tests) 377ms
+@figdiff/desktop:test:        ✓ saves token via electronAPI and updates state  323ms
+@figdiff/desktop:test: stdout | src/component/ui/score-ring.test.tsx
+@figdiff/desktop:test: 🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙
+@figdiff/desktop:test:
+@figdiff/desktop:test:  ✓ src/component/ui/score-ring.test.tsx (6 tests) 309ms
+@figdiff/desktop:test: stdout | src/component/convergence/convergence-step-row.test.tsx
+@figdiff/desktop:test: 🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙
+@figdiff/desktop:test:
+@figdiff/desktop:test: stdout | src/component/project/frame-selector.test.tsx
+@figdiff/desktop:test: 🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙
+@figdiff/desktop:test:
+@figdiff/desktop:test:  ✓ src/component/convergence/convergence-step-row.test.tsx (9 tests) 600ms
+@figdiff/desktop:test:      ✓ 反復番号と一致率を出す  311ms
+@figdiff/desktop:test:  ✓ src/component/project/frame-selector.test.tsx (7 tests) 489ms
+@figdiff/desktop:test: stdout | src/store/compare-store.test.ts
+@figdiff/desktop:test: 🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙
+@figdiff/desktop:test:
+@figdiff/desktop:test:  ✓ src/store/compare-store.test.ts (35 tests) 24ms
+@figdiff/desktop:test: stdout | src/component/compare/diff-marker.test.tsx
+@figdiff/desktop:test: 🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙
+@figdiff/desktop:test:
+@figdiff/desktop:test: stdout | src/lib/platform/web-adapter.test.ts
+@figdiff/desktop:test: 🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙
+@figdiff/desktop:test:
+@figdiff/desktop:test: stdout | src/component/compare/crop-region-selector.test.tsx
+@figdiff/desktop:test: 🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙
+@figdiff/desktop:test:
+@figdiff/desktop:test:  ✓ src/component/compare/diff-marker.test.tsx (7 tests) 255ms
+@figdiff/desktop:test:  ✓ src/lib/platform/web-adapter.test.ts (31 tests) 136ms
+@figdiff/desktop:test:  ✓ src/component/compare/crop-region-selector.test.tsx (8 tests) 365ms
+@figdiff/desktop:test: stdout | src/component/layout/tab-bar.test.tsx
+@figdiff/desktop:test: 🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙
+@figdiff/desktop:test:
+@figdiff/desktop:test: stdout | src/hook/use-canvas-zoom-pan.test.ts
+@figdiff/desktop:test: 🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙
+@figdiff/desktop:test:
+@figdiff/desktop:test:  ✓ src/component/layout/tab-bar.test.tsx (7 tests) 399ms
+@figdiff/desktop:test:  ✓ src/hook/use-canvas-zoom-pan.test.ts (19 tests) 193ms
+@figdiff/desktop:test: stdout | src/component/project/project-page.test.tsx
+@figdiff/desktop:test: 🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙
+@figdiff/desktop:test:
+@figdiff/desktop:test: stdout | src/component/ui/card.test.tsx
+@figdiff/desktop:test: 🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙
+@figdiff/desktop:test:
+@figdiff/desktop:test:  ✓ src/component/project/project-page.test.tsx (7 tests) 242ms
+@figdiff/desktop:test: stdout | src/lib/platform/electron-adapter.test.ts
+@figdiff/desktop:test: 🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙
+@figdiff/desktop:test:
+@figdiff/desktop:test:  ✓ src/component/ui/card.test.tsx (3 tests) 354ms
+@figdiff/desktop:test:      ✓ 見出し・説明・本文・脚が入れ子で描画される  333ms
+@figdiff/desktop:test:  ✓ src/lib/platform/electron-adapter.test.ts (31 tests) 84ms
+@figdiff/desktop:test: stdout | src/component/live-overlay/live-overlay-page.test.tsx
+@figdiff/desktop:test: 🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙
+@figdiff/desktop:test:
+@figdiff/desktop:test: stdout | src/component/compare/compare-verdict-badge.test.tsx
+@figdiff/desktop:test: 🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙
+@figdiff/desktop:test:
+@figdiff/desktop:test:  ✓ src/component/live-overlay/live-overlay-page.test.tsx (3 tests) 131ms
+@figdiff/desktop:test: stdout | src/component/ui/score-bar.test.tsx
+@figdiff/desktop:test: 🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙
+@figdiff/desktop:test:
+@figdiff/desktop:test:  ✓ src/component/compare/compare-verdict-badge.test.tsx (3 tests) 103ms
+@figdiff/desktop:test:  ✓ src/component/ui/score-bar.test.tsx (2 tests) 55ms
+@figdiff/desktop:test: stdout | src/service/animation-comparison.test.ts
+@figdiff/desktop:test: 🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙
+@figdiff/desktop:test:
+@figdiff/desktop:test:  ✓ src/service/animation-comparison.test.ts (11 tests) 16ms
+@figdiff/desktop:test: stdout | src/service/live-diff.test.ts
+@figdiff/desktop:test: 🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙
+@figdiff/desktop:test:
+@figdiff/desktop:test:  ✓ src/service/live-diff.test.ts (2 tests) 9ms
+@figdiff/desktop:test: stdout | src/store/convergence-store.test.ts
+@figdiff/desktop:test: 🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙
+@figdiff/desktop:test:
+@figdiff/desktop:test:  ✓ src/store/convergence-store.test.ts (9 tests) 34ms
+@figdiff/desktop:test: stdout | src/service/fix-verification.test.ts
+@figdiff/desktop:test: 🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙
+@figdiff/desktop:test:
+@figdiff/desktop:test:  ✓ src/service/fix-verification.test.ts (10 tests) 19ms
+@figdiff/desktop:test: stdout | src/util/canvas-image.test.ts
+@figdiff/desktop:test: 🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙
+@figdiff/desktop:test:
+@figdiff/desktop:test:  ✓ src/util/canvas-image.test.ts (11 tests) 84ms
+@figdiff/desktop:test: stdout | src/store/project-store.test.ts
+@figdiff/desktop:test: 🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙
+@figdiff/desktop:test:
+@figdiff/desktop:test: stdout | src/store/project-list-store.test.ts
+@figdiff/desktop:test: 🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙
+@figdiff/desktop:test:
+@figdiff/desktop:test:  ✓ src/store/project-list-store.test.ts (17 tests) 36ms
+@figdiff/desktop:test:  ✓ src/store/project-store.test.ts (9 tests) 66ms
+@figdiff/desktop:test: stdout | src/store/active-session-store.test.ts
+@figdiff/desktop:test: 🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙
+@figdiff/desktop:test:
+@figdiff/desktop:test:  ✓ src/store/active-session-store.test.ts (4 tests) 5ms
+@figdiff/desktop:test: stdout | src/i18n/index.test.ts
+@figdiff/desktop:test: 🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙
+@figdiff/desktop:test:
+@figdiff/desktop:test:  ✓ src/i18n/index.test.ts (3 tests) 13ms
+@figdiff/desktop:test: stdout | src/store/tab-store.test.ts
+@figdiff/desktop:test: 🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙
+@figdiff/desktop:test:
+@figdiff/desktop:test:  ✓ src/store/tab-store.test.ts (10 tests) 12ms
+@figdiff/desktop:test: stdout | src/font-assets.test.ts
+@figdiff/desktop:test: 🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙
+@figdiff/desktop:test:
+@figdiff/desktop:test:  ✓ src/font-assets.test.ts (1 test) 4ms
+@figdiff/desktop:test: stdout | src/util/css-token.test.ts
+@figdiff/desktop:test: 🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙
+@figdiff/desktop:test:
+@figdiff/desktop:test:  ✓ src/util/css-token.test.ts (2 tests) 7ms
+@figdiff/desktop:test:
+@figdiff/desktop:test:  Test Files  56 passed (56)
+@figdiff/desktop:test:       Tests  663 passed (663)
+@figdiff/desktop:test:    Start at  12:10:05
+@figdiff/desktop:test:    Duration  58.93s (transform 10.51s, setup 14.77s, import 40.10s, tests 39.82s, environment 57.76s)
+@figdiff/desktop:test:
+@figdiff/desktop:test:
+@figdiff/desktop:test:  RUN  v4.1.11 /workspace/designdiff/app/desktop
+@figdiff/desktop:test:
+@figdiff/desktop:test: (node:18691) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+@figdiff/desktop:test: (Use `node --trace-warnings ...` to show where the warning was created)
+@figdiff/desktop:test:  ✓ electron/ipc/project.test.ts (12 tests) 1726ms
+@figdiff/desktop:test:      ✓ 保存したものを読み出せること  839ms
+@figdiff/desktop:test: stderr | electron/ipc/overlay.test.ts > 繋がらないときの粘り方 > 読み込みが一度失敗しても、もう一度試して開けること
+@figdiff/desktop:test: [overlay] load failed (1/2): https://example.test/ Error: net::ERR_CONNECTION_RESET
+@figdiff/desktop:test:     at /workspace/designdiff/app/desktop/electron/ipc/overlay.test.ts:407:30
+@figdiff/desktop:test:     at file:///workspace/designdiff/node_modules/.pnpm/@vitest+runner@4.1.11/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+@figdiff/desktop:test:     ... 7 lines matching cause stack trace ...
+@figdiff/desktop:test:     at file:///workspace/designdiff/node_modules/.pnpm/@vitest+runner@4.1.11/node_modules/@vitest/runner/dist/chunk-artifact.js:2956:64 {
+@figdiff/desktop:test:   [cause]: Error: reset
+@figdiff/desktop:test:       at /workspace/designdiff/app/desktop/electron/ipc/overlay.test.ts:407:78
+@figdiff/desktop:test:       at file:///workspace/designdiff/node_modules/.pnpm/@vitest+runner@4.1.11/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+@figdiff/desktop:test:       at file:///workspace/designdiff/node_modules/.pnpm/@vitest+runner@4.1.11/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26
+@figdiff/desktop:test:       at file:///workspace/designdiff/node_modules/.pnpm/@vitest+runner@4.1.11/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20
+@figdiff/desktop:test:       at new Promise (<anonymous>)
+@figdiff/desktop:test:       at runWithCancel (file:///workspace/designdiff/node_modules/.pnpm/@vitest+runner@4.1.11/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)
+@figdiff/desktop:test:       at file:///workspace/designdiff/node_modules/.pnpm/@vitest+runner@4.1.11/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20
+@figdiff/desktop:test:       at new Promise (<anonymous>)
+@figdiff/desktop:test:       at runWithTimeout (file:///workspace/designdiff/node_modules/.pnpm/@vitest+runner@4.1.11/node_modules/@vitest/runner/dist/chunk-artifact.js:2272:10)
+@figdiff/desktop:test:       at file:///workspace/designdiff/node_modules/.pnpm/@vitest+runner@4.1.11/node_modules/@vitest/runner/dist/chunk-artifact.js:2956:64
+@figdiff/desktop:test: }
+@figdiff/desktop:test:
+@figdiff/desktop:test: stderr | electron/ipc/overlay.test.ts > 繋がらないときの粘り方 > 読み込みが最後まで失敗したら、試した先を添えて終わること
+@figdiff/desktop:test: [overlay] load failed (1/2): https://example.test/ Error: net::ERR_ABORTED
+@figdiff/desktop:test:     at /workspace/designdiff/app/desktop/electron/ipc/overlay.test.ts:421:49
+@figdiff/desktop:test:     at file:///workspace/designdiff/node_modules/.pnpm/@vitest+runner@4.1.11/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+@figdiff/desktop:test:     at file:///workspace/designdiff/node_modules/.pnpm/@vitest+runner@4.1.11/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26
+@figdiff/desktop:test:     at file:///workspace/designdiff/node_modules/.pnpm/@vitest+runner@4.1.11/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20
+@figdiff/desktop:test:     at new Promise (<anonymous>)
+@figdiff/desktop:test:     at runWithCancel (file:///workspace/designdiff/node_modules/.pnpm/@vitest+runner@4.1.11/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)
+@figdiff/desktop:test:     at file:///workspace/designdiff/node_modules/.pnpm/@vitest+runner@4.1.11/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20
+@figdiff/desktop:test:     at new Promise (<anonymous>)
+@figdiff/desktop:test:     at runWithTimeout (file:///workspace/designdiff/node_modules/.pnpm/@vitest+runner@4.1.11/node_modules/@vitest/runner/dist/chunk-artifact.js:2272:10)
+@figdiff/desktop:test:     at file:///workspace/designdiff/node_modules/.pnpm/@vitest+runner@4.1.11/node_modules/@vitest/runner/dist/chunk-artifact.js:2956:64
+@figdiff/desktop:test:
+@figdiff/desktop:test: stderr | electron/ipc/overlay.test.ts > 繋がらないときの粘り方 > 読み込みが最後まで失敗したら、試した先を添えて終わること
+@figdiff/desktop:test: [overlay] load failed (2/2): https://example.test/ Error: net::ERR_ABORTED
+@figdiff/desktop:test:     at /workspace/designdiff/app/desktop/electron/ipc/overlay.test.ts:421:49
+@figdiff/desktop:test:     at file:///workspace/designdiff/node_modules/.pnpm/@vitest+runner@4.1.11/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+@figdiff/desktop:test:     at file:///workspace/designdiff/node_modules/.pnpm/@vitest+runner@4.1.11/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26
+@figdiff/desktop:test:     at file:///workspace/designdiff/node_modules/.pnpm/@vitest+runner@4.1.11/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20
+@figdiff/desktop:test:     at new Promise (<anonymous>)
+@figdiff/desktop:test:     at runWithCancel (file:///workspace/designdiff/node_modules/.pnpm/@vitest+runner@4.1.11/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)
+@figdiff/desktop:test:     at file:///workspace/designdiff/node_modules/.pnpm/@vitest+runner@4.1.11/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20
+@figdiff/desktop:test:     at new Promise (<anonymous>)
+@figdiff/desktop:test:     at runWithTimeout (file:///workspace/designdiff/node_modules/.pnpm/@vitest+runner@4.1.11/node_modules/@vitest/runner/dist/chunk-artifact.js:2272:10)
+@figdiff/desktop:test:     at file:///workspace/designdiff/node_modules/.pnpm/@vitest+runner@4.1.11/node_modules/@vitest/runner/dist/chunk-artifact.js:2956:64
+@figdiff/desktop:test:
+@figdiff/desktop:test:  ✓ electron/ipc/overlay.test.ts (20 tests) 2554ms
+@figdiff/desktop:test:      ✓ 手元の宛先が繋がらないときは、試した先を添えて終わること  903ms
+@figdiff/desktop:test:      ✓ 接続失敗がError以外でも内容を含めて扱うこと  908ms
+@figdiff/desktop:test:      ✓ 読み込みが最後まで失敗したら、試した先を添えて終わること  453ms
+@figdiff/desktop:test:  ✓ electron/main.test.ts (19 tests) 2712ms
+@figdiff/desktop:test:      ✓ 空の renderer を一度だけ再読み込みし、検査失敗を記録すること  2581ms
+@figdiff/desktop:test: stderr | electron/util/cache.test.ts > NodeFsCacheStrategy > 読み込みに失敗しても落ちずに null を返すこと
+@figdiff/desktop:test: [cache] キャッシュファイルの読み込みに失敗: Error: EISDIR: illegal operation on a directory, read
+@figdiff/desktop:test:     at Object.readSync (node:fs:731:18)
+@figdiff/desktop:test:     at tryReadSync (node:fs:411:20)
+@figdiff/desktop:test:     at readFileSync (node:fs:465:19)
+@figdiff/desktop:test:     at NodeFsCacheStrategy.get (/workspace/designdiff/app/desktop/electron/util/cache.ts:34:22)
+@figdiff/desktop:test:     at /workspace/designdiff/app/desktop/electron/util/cache.test.ts:125:24
+@figdiff/desktop:test:     at file:///workspace/designdiff/node_modules/.pnpm/@vitest+runner@4.1.11/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:20 {
+@figdiff/desktop:test:   errno: -21,
+@figdiff/desktop:test:   code: 'EISDIR',
+@figdiff/desktop:test:   syscall: 'read'
+@figdiff/desktop:test: }
+@figdiff/desktop:test:
+@figdiff/desktop:test:  ✓ electron/util/cache.test.ts (8 tests) 527ms
+@figdiff/desktop:test:      ✓ FigmaClientの5引数setからversion固定画像を保存して再利用すること  362ms
+@figdiff/desktop:test:  ✓ electron/ipc/convergence.test.ts (11 tests) 1347ms
+@figdiff/desktop:test:      ✓ 履歴ファイルの更新を画面へ通知すること  314ms
+@figdiff/desktop:test:      ✓ JSON以外の更新は通知せず、画面が無ければ通知もしないこと  315ms
+@figdiff/desktop:test:  ✓ electron/ipc/file.test.ts (8 tests) 1143ms
+@figdiff/desktop:test:      ✓ 許可された場所の画像を base64 で返すこと  411ms
+@figdiff/desktop:test:  ✓ electron/ipc/active-session.test.ts (10 tests) 544ms
+@figdiff/desktop:test:  ✓ electron/ipc/issue-report.test.ts (4 tests) 805ms
+@figdiff/desktop:test:      ✓ validates and forwards a report only to prepare  774ms
+@figdiff/desktop:test: stderr | electron/ipc/figma.test.ts > Figma IPC secret-safe error contract > registers Figma handlers that return fixed text for unknown Figma request failures
+@figdiff/desktop:test: [figma:get-frames] failed.
+@figdiff/desktop:test:
+@figdiff/desktop:test: stderr | electron/ipc/figma.test.ts > Figma IPC secret-safe error contract > versionを発見できないrootは再取得もPNG取得もしない
+@figdiff/desktop:test: [figma:get-node-verification-source] failed.
+@figdiff/desktop:test:
+@figdiff/desktop:test: stderr | electron/ipc/figma.test.ts > Figma IPC secret-safe error contract > 不正入力はtoken解決前に拒否する: 'FILE&version=other'/'1:2'/undefined
+@figdiff/desktop:test: [figma:get-node-verification-source] failed.
+@figdiff/desktop:test:
+@figdiff/desktop:test: stderr | electron/ipc/figma.test.ts > Figma IPC secret-safe error contract > 不正入力はtoken解決前に拒否する: 'FILE123'/'1:2&depth=1'/undefined
+@figdiff/desktop:test: [figma:get-node-verification-source] failed.
+@figdiff/desktop:test:
+@figdiff/desktop:test: stderr | electron/ipc/figma.test.ts > Figma IPC secret-safe error contract > 不正入力はtoken解決前に拒否する: 'FILE123'/'1:2'/0.001
+@figdiff/desktop:test: [figma:get-node-verification-source] failed.
+@figdiff/desktop:test:
+@figdiff/desktop:test: stderr | electron/ipc/figma.test.ts > Figma IPC secret-safe error contract > 不正入力はtoken解決前に拒否する: 'FILE123'/'1:2'/5
+@figdiff/desktop:test: [figma:get-node-verification-source] failed.
+@figdiff/desktop:test:
+@figdiff/desktop:test: stderr | electron/ipc/figma.test.ts > Figma IPC secret-safe error contract > 選択frameと返却rootが違えばPNGを取得しない
+@figdiff/desktop:test: [figma:get-node-verification-source] failed.
+@figdiff/desktop:test:
+@figdiff/desktop:test: stderr | electron/ipc/figma.test.ts > Figma IPC secret-safe error contract > PNGでない200応答をversion-bound画像として返さない
+@figdiff/desktop:test: [figma:get-node-verification-source] failed.
+@figdiff/desktop:test:
+@figdiff/desktop:test: stderr | electron/ipc/figma.test.ts > Figma IPC secret-safe error contract > version固定不能ならPNGを取得しない: version-unavailable
+@figdiff/desktop:test: [figma:get-node-verification-source] failed.
+@figdiff/desktop:test:
+@figdiff/desktop:test: stderr | electron/ipc/figma.test.ts > Figma IPC secret-safe error contract > version固定不能ならPNGを取得しない: version-mismatch
+@figdiff/desktop:test: [figma:get-node-verification-source] failed.
+@figdiff/desktop:test:
+@figdiff/desktop:test: stderr | electron/ipc/figma.test.ts > Figma IPC secret-safe error contract > target geometryがmissingならPNGを取得しない
+@figdiff/desktop:test: [figma:get-node-verification-source] failed.
+@figdiff/desktop:test:
+@figdiff/desktop:test: stderr | electron/ipc/figma.test.ts > Figma IPC secret-safe error contract > target geometryがambiguousならPNGを取得しない
+@figdiff/desktop:test: [figma:get-node-verification-source] failed.
+@figdiff/desktop:test:
+@figdiff/desktop:test: stderr | electron/ipc/figma.test.ts > Figma IPC secret-safe error contract > target geometryがhiddenならPNGを取得しない
+@figdiff/desktop:test: [figma:get-node-verification-source] failed.
+@figdiff/desktop:test:
+@figdiff/desktop:test: stderr | electron/ipc/figma.test.ts > Figma IPC secret-safe error contract > target geometryがinvalid-bboxならPNGを取得しない
+@figdiff/desktop:test: [figma:get-node-verification-source] failed.
+@figdiff/desktop:test:
+@figdiff/desktop:test: stderr | electron/ipc/figma.test.ts > Figma IPC secret-safe error contract > OAuth更新がinvalid_grantならセッション切れとして保存情報を消すこと
+@figdiff/desktop:test: [figma:get-frame-image] failed.
+@figdiff/desktop:test:
+@figdiff/desktop:test: stderr | electron/ipc/figma.test.ts > Figma IPC secret-safe error contract > OAuth更新の通信失敗は再試行エラーとして返すこと
+@figdiff/desktop:test: [figma:get-frame-image] failed.
+@figdiff/desktop:test:
+@figdiff/desktop:test: stderr | electron/ipc/figma.test.ts > Figma IPC secret-safe error contract > 再試行後の401はセッション切れとして扱うこと
+@figdiff/desktop:test: [figma:get-frame-image] failed.
+@figdiff/desktop:test:
+@figdiff/desktop:test:  ✓ electron/ipc/figma.test.ts (22 tests) 340ms
+@figdiff/desktop:test:  ✓ electron/ipc/ignore-region.test.ts (2 tests) 327ms
+@figdiff/desktop:test:      ✓ validates and forwards a frame-scoped entry  320ms
+@figdiff/desktop:test: stdout | electron/util/migrate-credentials.test.ts > migrateCredentials > 暗号化された個人用トークンを移すこと
+@figdiff/desktop:test: [migrate-credentials] Migrated 1 credential(s). Old file renamed to credentials.enc.migrated.
+@figdiff/desktop:test:
+@figdiff/desktop:test: stdout | electron/util/migrate-credentials.test.ts > migrateCredentials > 開発用の平文は、開発版では移すこと
+@figdiff/desktop:test: [migrate-credentials] Migrated 1 credential(s). Old file renamed to credentials.enc.migrated.
+@figdiff/desktop:test:
+@figdiff/desktop:test: stdout | electron/util/migrate-credentials.test.ts > migrateCredentials > 復号に失敗した値は飛ばし、他は移すこと
+@figdiff/desktop:test: [migrate-credentials] Migrated 1 credential(s). Old file renamed to credentials.enc.migrated.
+@figdiff/desktop:test:
+@figdiff/desktop:test: stderr | electron/util/migrate-credentials.test.ts > migrateCredentials > 中身が壊れていたら、何も移さずに終わること
+@figdiff/desktop:test: [migrate-credentials] Failed to read credentials.enc; skipping migration.
+@figdiff/desktop:test: stdout | electron/util/migrate-credentials.test.ts > migrateCredentials > 引き換え用のトークン一式を移すこと
+@figdiff/desktop:test: [migrate-credentials] Migrated 1 credential(s). Old file renamed to credentials.enc.migrated.
+@figdiff/desktop:test:
+@figdiff/desktop:test:
+@figdiff/desktop:test: stdout | electron/util/migrate-credentials.test.ts > migrateCredentials > 一度移したら、二度目は何もしないこと
+@figdiff/desktop:test: [migrate-credentials] Migrated 1 credential(s). Old file renamed to credentials.enc.migrated.
+@figdiff/desktop:test:
+@figdiff/desktop:test:  ✓ electron/util/migrate-credentials.test.ts (10 tests) 295ms
+@figdiff/desktop:test: stderr | electron/ipc/token.test.ts > token IPC secret-safe error contract > token:saveは既知の保存エラーだけをそのまま返すこと
+@figdiff/desktop:test: [token:save] failed.
+@figdiff/desktop:test:
+@figdiff/desktop:test: stderr | electron/ipc/token.test.ts > token IPC secret-safe error contract > token:saveは既知の保存エラーだけをそのまま返すこと
+@figdiff/desktop:test: [token:save] failed.
+@figdiff/desktop:test:
+@figdiff/desktop:test:  ✓ electron/ipc/token.test.ts (6 tests) 70ms
+@figdiff/desktop:test:  ✓ electron/ipc/report.test.ts (5 tests) 45ms
+@figdiff/desktop:test:  ✓ electron/preload.test.ts (13 tests) 55ms
+@figdiff/desktop:test:  ✓ electron/util/safe-storage.test.ts (10 tests) 8ms
+@figdiff/desktop:test:  ✓ electron/ipc/oauth.test.ts (7 tests) 67ms
+@figdiff/desktop:test: stdout | electron/oauth/figma-oauth.test.ts > startFigmaOAuth — happy path > opens authUrl with correct OAuth params
+@figdiff/desktop:test: [figma-oauth] opening authorization URL
+@figdiff/desktop:test:
+@figdiff/desktop:test:  ✓ electron/util/overlay-script.test.ts (15 tests) 41ms
+@figdiff/desktop:test: stdout | electron/oauth/figma-oauth.test.ts > startFigmaOAuth — happy path > calls token endpoint with Basic auth + code_verifier + authorization_code grant
+@figdiff/desktop:test: [figma-oauth] opening authorization URL
+@figdiff/desktop:test:
+@figdiff/desktop:test: stdout | electron/oauth/figma-oauth.test.ts > startFigmaOAuth — happy path > saves tokens with expiresAt ≈ now + expires_in * 1000
+@figdiff/desktop:test: [figma-oauth] opening authorization URL
+@figdiff/desktop:test:
+@figdiff/desktop:test: stdout | electron/oauth/figma-oauth.test.ts > startFigmaOAuth — happy path > callback returns SUCCESS_HTML
+@figdiff/desktop:test: [figma-oauth] opening authorization URL
+@figdiff/desktop:test:
+@figdiff/desktop:test: stdout | electron/oauth/figma-oauth.test.ts > startFigmaOAuth — error cases > rejects on state mismatch with 400 response
+@figdiff/desktop:test: [figma-oauth] opening authorization URL
+@figdiff/desktop:test:
+@figdiff/desktop:test: stdout | electron/oauth/figma-oauth.test.ts > startFigmaOAuth — error cases > rejects and returns ERROR_HTML on error param
+@figdiff/desktop:test: [figma-oauth] opening authorization URL
+@figdiff/desktop:test:
+@figdiff/desktop:test: stdout | electron/oauth/figma-oauth.test.ts > startFigmaOAuth — error cases > rejects on missing code param
+@figdiff/desktop:test: [figma-oauth] opening authorization URL
+@figdiff/desktop:test:
+@figdiff/desktop:test: stdout | electron/oauth/figma-oauth.test.ts > startFigmaOAuth — error cases > returns 404 for non-/callback path
+@figdiff/desktop:test: [figma-oauth] opening authorization URL
+@figdiff/desktop:test:
+@figdiff/desktop:test: stdout | electron/oauth/figma-oauth.test.ts > startFigmaOAuth — error cases > rejects and closes the flow when the callback times out
+@figdiff/desktop:test: [figma-oauth] opening authorization URL
+@figdiff/desktop:test:
+@figdiff/desktop:test: stdout | electron/oauth/figma-oauth.test.ts > startFigmaOAuth — error cases > answers Figma's private-network preflight before accepting the callback
+@figdiff/desktop:test: [figma-oauth] opening authorization URL
+@figdiff/desktop:test:
+@figdiff/desktop:test: stdout | electron/oauth/figma-oauth.test.ts > startFigmaOAuth — error cases > rejects when Figma refuses the authorization-code exchange
+@figdiff/desktop:test: [figma-oauth] opening authorization URL
+@figdiff/desktop:test:
+@figdiff/desktop:test: stdout | electron/oauth/figma-oauth.test.ts > startFigmaOAuth — error cases > falls back to the configured client credentials in packaged mode
+@figdiff/desktop:test: [figma-oauth] opening authorization URL
+@figdiff/desktop:test:
+@figdiff/desktop:test: stdout | electron/oauth/figma-oauth.test.ts > startFigmaOAuth — error cases > cancels in-flight flow when called again
+@figdiff/desktop:test: [figma-oauth] opening authorization URL
+@figdiff/desktop:test:
+@figdiff/desktop:test: stdout | electron/oauth/figma-oauth.test.ts > startFigmaOAuth — error cases > cancels in-flight flow when called again
+@figdiff/desktop:test: [figma-oauth] opening authorization URL
+@figdiff/desktop:test:
+@figdiff/desktop:test: stdout | electron/oauth/figma-oauth.test.ts > startFigmaOAuth — error cases > rejects and closes the callback flow when the browser cannot open
+@figdiff/desktop:test: [figma-oauth] opening authorization URL
+@figdiff/desktop:test:
+@figdiff/desktop:test: stdout | electron/oauth/figma-oauth.test.ts > startFigmaOAuth — error cases > rejects and closes the callback flow when the browser cannot open
+@figdiff/desktop:test: [figma-oauth] opening authorization URL
+@figdiff/desktop:test:
+@figdiff/desktop:test: stdout | electron/oauth/figma-oauth.test.ts > startFigmaOAuth — error cases > rejects an in-flight flow when the callback server fails after listening
+@figdiff/desktop:test: [figma-oauth] opening authorization URL
+@figdiff/desktop:test:
+@figdiff/desktop:test: stdout | electron/oauth/figma-oauth.test.ts > startFigmaOAuth — error cases > falls back to IPv4 when the IPv6 callback listener is unavailable
+@figdiff/desktop:test: [figma-oauth] opening authorization URL
+@figdiff/desktop:test: [figma-oauth] opening authorization URL
+@figdiff/desktop:test:
+@figdiff/desktop:test:  ✓ electron/oauth/figma-oauth.test.ts (27 tests) 246ms
+@figdiff/desktop:test:  ✓ electron/util/figdiff-home.test.ts (9 tests) 7ms
+@figdiff/mcp-server:test:  ✓ src/service/compare-design-runner-system-ui.test.ts (10 tests) 65790ms
+@figdiff/mcp-server:test:      ✓ capture_device 比較では system bar マスクが user region と結合されること  22239ms
+@figdiff/mcp-server:test:      ✓ mask_system_ui:false では capture_device でも system bar マスクを追加しないこと  10638ms
+@figdiff/mcp-server:test:      ✓ 通常 screenshot では既定で system bar マスクを追加しないこと  13079ms
+@figdiff/mcp-server:test:      ✓ screenshot_url では既定で system bar マスクを追加しないこと  11092ms
+@figdiff/mcp-server:test:      ✓ capture_device と cropRegion.y>0 の併用では post-crop 上端の実コンテンツを mask しないこと  7672ms
+@figdiff/desktop:test:  ✓ electron/util/renderer-log.test.ts (14 tests) 13ms
+@figdiff/desktop:test:  ✓ electron/util/pkce.test.ts (7 tests) 9ms
+@figdiff/desktop:test:  ✓ electron/service/issue-report-draft.test.ts (11 tests) 19ms
+@figdiff/desktop:test:
+@figdiff/desktop:test:  Test Files  22 passed (22)
+@figdiff/desktop:test:       Tests  250 passed (250)
+@figdiff/desktop:test:    Start at  12:11:05
+@figdiff/desktop:test:    Duration  8.85s (transform 2.72s, setup 0ms, import 4.42s, tests 12.90s, environment 3ms)
+@figdiff/desktop:test:
+@figdiff/mcp-server:test: (node:18861) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+@figdiff/mcp-server:test: (Use `node --trace-warnings ...` to show where the warning was created)
+@figdiff/mcp-server:test:  ✓ src/service/fixture-runner.test.ts (6 tests) 84453ms
+@figdiff/mcp-server:test:      ✓ pair-01-simple-static-lp の期待 verdict を満たすこと  9005ms
+@figdiff/mcp-server:test:      ✓ pair-02-multi-section-lp の期待 verdict と weighted isolation を満たすこと  16501ms
+@figdiff/mcp-server:test:      ✓ pair-03-typography-layout の期待 verdict と worst region を満たすこと  10700ms
+@figdiff/mcp-server:test:      ✓ pair-04-color-system の期待 verdict と weighted color を満たすこと  5493ms
+@figdiff/mcp-server:test:      ✓ pair-05-localized-diff の期待 verdict を満たすこと (Issue #56 回帰防止)  1879ms
+@figdiff/mcp-server:test:      ✓ pair-06-system-ui-alignment の stitched mask と位置補正を満たすこと  40872ms
+@figdiff/mcp-server:test:  ✓ src/service/compare-design-runner-scroll-capture.test.ts (11 tests) 21091ms
+@figdiff/mcp-server:test:      ✓ 指定するとスクロール撮影を呼び、繋いだ内訳を結果へ載せる  2402ms
+@figdiff/mcp-server:test:      ✓ 指定しなければ従来どおり1枚だけ撮り、内訳は付かん  767ms
+@figdiff/mcp-server:test:      ✓ 結合画像末尾の system UI を mask し、status bar inset と一致する本文を安定して補正する  10604ms
+@figdiff/mcp-server:test:      ✓ 1回送っても画面が変わらんかったときは、合否を出さず人へ回す  1547ms
+@figdiff/mcp-server:test:      ✓ 上端まで戻し切れんかったときは、合否を出さず人へ回す  1564ms
+@figdiff/mcp-server:test:      ✓ 上限で打ち切ったときは、合否を出さず人へ回す  1772ms
+@figdiff/mcp-server:test:      ✓ 撮り切れとるときは、その理由で人へ回さん  1927ms
+@figdiff/mcp-server:test:  ✓ src/tool/verify-fix.test.ts (40 tests) 82003ms
+@figdiff/mcp-server:test:      ✓ 対象ノードが改善したら improved を返す  14069ms
+@figdiff/mcp-server:test:      ✓ 撮影範囲の再検証は同じ採点条件を維持する (disk: false, viewport: true)  796ms
+@figdiff/mcp-server:test:      ✓ 撮影範囲の再検証は同じ採点条件を維持する (disk: true, viewport: true)  734ms
+@figdiff/mcp-server:test:      ✓ 撮影範囲の再検証は同じ採点条件を維持する (disk: false, viewport: false)  393ms
+@figdiff/mcp-server:test:      ✓ ディスクから復元したbaselineでもverification contextを照合する  3295ms
+@figdiff/mcp-server:test:      ✓ 前回比較のキャンペーンを引き継ぎ、既定履歴へ混ぜない  3028ms
+@figdiff/mcp-server:test:      ✓ whole-frame行を持たない旧baselineには再記録手順を返す  2597ms
+@figdiff/mcp-server:test:      ✓ 比較対象そのもののノードIDでも引き当てられること  8674ms
+@figdiff/mcp-server:test:      ✓ 引き当てに失敗したときは、引ける名前を添えて返すこと  9103ms
+@figdiff/mcp-server:test:      ✓ 比較全体の status を verdict と別に持ち上げる  9197ms
+@figdiff/mcp-server:test:      ✓ runner の status をそのまま持ち上げ、セッションにも反映する  10093ms
+@figdiff/mcp-server:test:      ✓ 対象ノードがさらに悪化したら regressed を返す  4084ms
+@figdiff/mcp-server:test:      ✓ threshold がbaselineから変わった場合は領域比較を拒否する  1181ms
+@figdiff/mcp-server:test:      ✓ effective thresholdが同じでもprofile指定が変われば拒否する  1138ms
+@figdiff/mcp-server:test:      ✓ baselineのdeclared comparison conditionsを省略時に復元する  911ms
+@figdiff/mcp-server:test:      ✓ 明示したcomparison conditionsがbaselineから変われば拒否する  1015ms
+@figdiff/mcp-server:test:      ✓ 同じmask IDの座標が変わった場合は領域比較を拒否する  1385ms
+@figdiff/mcp-server:test:      ✓ 適用cropが変わった場合は領域比較を拒否する  1005ms
+@figdiff/mcp-server:test:      ✓ design sourceが変わった場合は領域比較を拒否する  1652ms
+@figdiff/mcp-server:test:      ✓ 同じdesign pathのPNG bytesが変わった場合は領域比較を拒否する  1096ms
+@figdiff/mcp-server:test:      ✓ design backgroundが変わった場合は領域比較を拒否する  1056ms
+@figdiff/mcp-server:test:      ✓ design_background を省略した基準は省略のまま再現する  1117ms
+@figdiff/mcp-server:test:      ✓ backgroundExplicit のない旧基準は省略のまま再現する  1184ms
+@figdiff/mcp-server:test:      ✓ 下地を明示した旧基準は基準の値を渡し直せば再現できる  1735ms
+@figdiff/mcp-server:test:      ✓ verification contextのない旧baselineには再取得手順を返す  569ms
+@figdiff/mcp-server:test:      ✓ fingerprintがpayloadと一致しないbaselineを拒否する  565ms
+@figdiff/mcp-server:test: (node:18889) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+@figdiff/mcp-server:test: (Use `node --trace-warnings ...` to show where the warning was created)
+@figdiff/mcp-server:test: stderr | src/service/image-compare-service.test.ts > compareImages > 共通crop範囲が無い場合は両画像を切り出さないこと (100/200)
+@figdiff/mcp-server:test: Crop region has no valid common image bounds; returning both original image buffers.
+@figdiff/mcp-server:test:
+@figdiff/mcp-server:test: stderr | src/service/image-compare-service.test.ts > compareImages > 共通crop範囲が無い場合は両画像を切り出さないこと (200/100)
+@figdiff/mcp-server:test: Crop region has no valid common image bounds; returning both original image buffers.
+@figdiff/mcp-server:test:
+@figdiff/mcp-server:test: stderr | src/service/image-compare-service.test.ts > compareImages > 片側だけcrop領域が切り詰められる場合は適用しないこと (100/200)
+@figdiff/mcp-server:test: Crop region has no valid common image bounds; returning both original image buffers.
+@figdiff/mcp-server:test:
+@figdiff/mcp-server:test: stderr | src/service/image-compare-service.test.ts > compareImages > 片側だけcrop領域が切り詰められる場合は適用しないこと (200/100)
+@figdiff/mcp-server:test: Crop region has no valid common image bounds; returning both original image buffers.
+@figdiff/mcp-server:test:
+@figdiff/mcp-server:test: stderr | src/service/image-compare-service.test.ts > compareImages > crop中止時のmaskを元画像の位置へ戻すか拒否すること (200)
+@figdiff/mcp-server:test: Crop region has no valid common image bounds; returning both original image buffers.
+@figdiff/mcp-server:test:
+@figdiff/mcp-server:test:  ✓ src/service/image-compare-service.test.ts (61 tests) 13649ms
+@figdiff/mcp-server:test:      ✓ gridSummary でセル別の matchRate と diffPixels を返すこと  899ms
+@figdiff/mcp-server:test:      ✓ grid が差分領域を返せない場合は flood fallback を telemetry に記録すること  1781ms
+@figdiff/mcp-server:test:      ✓ 大きな画像で grid が予算超過した場合は flood をスキップしてタイル領域を返すこと  3307ms
+@figdiff/mcp-server:test:      ✓ quick tile fallback はリージョン数を上限で打ち切り、決定的な順序で返すこと  6535ms
+@figdiff/mcp-server:test:  ✓ src/tool/compare-design-conditions.test.ts (3 tests) 18501ms
+@figdiff/mcp-server:test:      ✓ 同じ画素でもviewport矛盾は完了ゲートを止め、保存・再読込みで条件を保つ  4587ms
+@figdiff/mcp-server:test:      ✓ 適合する申告を加えても既知の2px移動を画像の合格として隠さない  3954ms
+@figdiff/mcp-server:test:      ✓ 空の申告は既存履歴を維持し、有効な座標条件の変更は別履歴になる  9959ms
+@figdiff/mcp-server:test:  ✓ src/service/diff-report-builder.test.ts (83 tests) 19965ms
+@figdiff/mcp-server:test:      ✓ 極小領域を除外しつつ heavy page の上下セクションを保持すること  465ms
+@figdiff/mcp-server:test:      ✓ 採用されたグローバルシフト (>=2 working px)は position issue が critical になり aggregateVerdict が fail すること  2214ms
+@figdiff/mcp-server:test:      ✓ 採用された境界値の2pxシフトはcriticalになりaggregateVerdictがfailすること  1710ms
+@figdiff/mcp-server:test:      ✓ 採用された1pxシフトはcriticalへ昇格しないこと  1835ms
+@figdiff/mcp-server:test:      ✓ figmaRootNode が無い比較で、小面積の局所差分が whole-frame 平均に薄まらないこと  451ms
+@figdiff/mcp-server:test:      ✓ figmaRootNode がある比較では diffRegions を渡しても子ノード優先の挙動を変えないこと  362ms
+@figdiff/mcp-server:test:      ✓ 大量の未採点クラスタを配列引数へ展開せず処理すること  1304ms
+@figdiff/mcp-server:test:      ✓ ノード木の無い比較で、25件目以降の小さな実差分も採点して fail にすること  319ms
+@figdiff/mcp-server:test:      ✓ ノード木の無い比較で、採点上限から外れたクラスタが残れば pass にしないこと  495ms
+@figdiff/mcp-server:test:      ✓ 採点上限ちょうどのクラスタ数で全件が無害なら pass のままにすること  539ms
+@figdiff/mcp-server:test:      ✓ regionId が重大度の順位ではなく座標由来で、比較のたびに安定すること  543ms
+@figdiff/mcp-server:test:      ✓ 未指定 (既定) では同じ 3px 差分を従来どおり失格扱いにする  364ms
+@figdiff/mcp-server:test:      ✓ 200件の採点上限から外れたクラスタがセクション内にあれば救済しない  464ms
+@figdiff/mcp-server:test:      ✓ 疎なクラスタの内側の色ずれは、diffMask 指定時は残差に数えてクラスタ網羅救済を止める  717ms
+@figdiff/mcp-server:test:      ✓ 帯の境界をまたぐ薄い帯・縦縞・局所ブロックの色ずれも、面積で薄めず残差で失格にする  883ms
+@figdiff/mcp-server:test: (node:18944) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+@figdiff/mcp-server:test: (Use `node --trace-warnings ...` to show where the warning was created)
+@figdiff/mcp-server:test:  ✓ src/service/image-compare-node-matching.test.ts (11 tests) 12360ms
+@figdiff/mcp-server:test:      ✓ Body の位置に差分を作ると、その領域に Body のノードIDが付くこと  478ms
+@figdiff/mcp-server:test:      ✓ Header の位置に差分を作ると、Body ではなく Header が付くこと  367ms
+@figdiff/mcp-server:test:      ✓ 等間隔タイルを差分領域として返さず、分割できなかった事実を返すこと  3238ms
+@figdiff/mcp-server:test:      ✓ 差分領域を0件にせず、全面崩壊のメッセージも返さないこと  7668ms
+@figdiff/mcp-server:test:      ✓ 縮小と貼り付け位置を反映して、下半分の差分が Body に付くこと  320ms
+@figdiff/mcp-server:test:  ✓ src/tool/compare-design-batch.test.ts (10 tests) 7516ms
+@figdiff/mcp-server:test:      ✓ 複数フレームを1回で比較し、フレームごとの判定と集約を返す  939ms
+@figdiff/mcp-server:test:      ✓ 共通差分として複数フレームに出た issue 種別を返す  700ms
+@figdiff/mcp-server:test:      ✓ 1件の実行エラーで残りを打ち切らず ERROR として返す  742ms
+@figdiff/mcp-server:test:      ✓ 複数フレームを入力順に逐次比較する  995ms
+@figdiff/mcp-server:test:      ✓ 上限いっぱいの10フレームでもレスポンスは肥大化しない (32KB 未満)  3927ms
+@figdiff/mcp-server:test:  ✓ src/service/pr142-alignment-fixture.test.ts (1 test) 8894ms
+@figdiff/mcp-server:test:      ✓ 現行compareImagesでも既知2px左移動を補正後にposition issueとして残すこと  8892ms
+@figdiff/mcp-server:test: (node:18985) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+@figdiff/mcp-server:test: (Use `node --trace-warnings ...` to show where the warning was created)
+@figdiff/mcp-server:test:  ✓ src/tool/compare-design-campaign.test.ts (1 test) 3346ms
+@figdiff/mcp-server:test:      ✓ 新規 campaign は初回から始まり、同じ campaign はサーバー再接続後も続く  3344ms
+@figdiff/mcp-server:test:  ✓ src/service/diff-report-typography.test.ts (5 tests) 4768ms
+@figdiff/mcp-server:test:    ✓ 実描画した同じ文字の色変更を位置・寸法変更と断定しない  1408ms
+@figdiff/mcp-server:test:    ✓ 文字色変更に加えた実際のshiftを見逃さない  1212ms
+@figdiff/mcp-server:test:    ✓ 文字色変更に加えた実際のresizeを見逃さない  1268ms
+@figdiff/mcp-server:test:    ✓ 補正済み画像で採点した色差は同じ補正済み座標で幾何確認する  865ms
+@figdiff/mcp-server:test:  ✓ src/service/image-compare-stroke-background.test.ts (22 tests) 7385ms
+@figdiff/mcp-server:test:      ✓ 253対255・PNG・同じ配置  415ms
+@figdiff/mcp-server:test:      ✓ 253対255・PNG・墨量2倍  309ms
+@figdiff/mcp-server:test:      ✓ 253対255・セクション・同じ配置  451ms
+@figdiff/mcp-server:test:      ✓ 253対255・セクション・上部だけ2px移動  363ms
+@figdiff/mcp-server:test:      ✓ 253対255・セクション・上部だけ56px移動  371ms
+@figdiff/mcp-server:test:      ✓ 253対255・セクション・墨量2倍  442ms
+@figdiff/mcp-server:test:      ✓ 253対255・セクション・前景色変更  369ms
+@figdiff/mcp-server:test:      ✓ 255対253・セクション・同じ配置  348ms
+@figdiff/mcp-server:test:      ✓ 255対253・セクション・上部だけ2px移動  349ms
+@figdiff/mcp-server:test:      ✓ 255対253・セクション・上部だけ56px移動  373ms
+@figdiff/mcp-server:test:      ✓ 255対253・セクション・墨量2倍  467ms
+@figdiff/mcp-server:test:      ✓ 255対253・セクション・前景色変更  499ms
+@figdiff/mcp-server:test:      ✓ 255対255・セクション・既存の1px許容を保つ  398ms
+@figdiff/mcp-server:test:  ✓ src/service/whole-image-structure.test.ts (5 tests) 3018ms
+@figdiff/mcp-server:test:    ✓ preserves the 13x11 local critical and aggregate FAIL while reporting whole-image structure  886ms
+@figdiff/mcp-server:test:    ✓ retains the color gate independently from a uniform structural pass  1122ms
+@figdiff/mcp-server:test:    ✓ does not hide widespread structural changes when region metadata covers only a small part  453ms
+@figdiff/mcp-server:test:    ✓ fails critical alignment even when corrected pixels have identical structure  425ms
+@figdiff/mcp-server:test: (node:19037) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+@figdiff/mcp-server:test: (Use `node --trace-warnings ...` to show where the warning was created)
+@figdiff/mcp-server:test:  ✓ src/service/image-compare-service.same-width-height.test.ts (12 tests) 2618ms
+@figdiff/mcp-server:test:      ✓ 単一ビューポート撮影の宣言があるときは、画面外の行を足さず従来経路に任せる  495ms
+@figdiff/mcp-server:test:      ✓ フルページ design と単一ビューポート撮影 (高さ比 > 1.4) は従来どおり contain 正規化する  370ms
+@figdiff/mcp-server:test:      ✓ 幅が元から違う入力は、幅合わせ後に同幅でも従来どおり contain 正規化する  455ms
+@figdiff/mcp-server:test: (node:19051) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+@figdiff/mcp-server:test: (Use `node --trace-warnings ...` to show where the warning was created)
+@figdiff/mcp-server:test:  ✓ src/service/image-compare-service.integration.test.ts (4 tests) 1900ms
+@figdiff/mcp-server:test:      ✓ 補正後座標系で局所差分を正しい位置に採点すること  570ms
+@figdiff/mcp-server:test:      ✓ 補正前クラスタを流用すると同じ検体で採点が薄まること (回帰の形状記録)  1026ms
+@figdiff/mcp-server:test: (node:19065) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+@figdiff/mcp-server:test: (Use `node --trace-warnings ...` to show where the warning was created)
+@figdiff/mcp-server:test:  ✓ src/e2e-compare-design.test.ts (8 tests) 1764ms
+@figdiff/mcp-server:test:      ✓ 同一画像比較で matchRate 100% が返ること  307ms
+@figdiff/mcp-server:test:      ✓ 異なる画像比較で差分が検出されること  312ms
+@figdiff/mcp-server:test:      ✓ 差分率が単調減少するループを証明できること  516ms
+@figdiff/mcp-server:test:  ✓ src/tool/compare-design-same-width-height.test.ts (5 tests) 1501ms
+@figdiff/mcp-server:test:      ✓ 軽い高さ差は縮小せず比較し、縦横比警告を critical から降格して設定ミス扱いしない  338ms
+@figdiff/mcp-server:test:      ✓ 足し行ありの基準から高さを直した再比較でも、verify_fix は文脈変更で止まらない  360ms
+@figdiff/mcp-server:test:      ✓ フルページ design と単一ビューポート撮影 (高さ比 > 1.4) は従来どおり critical のまま contain 正規化する  377ms
+@figdiff/mcp-server:test: (node:19080) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+@figdiff/mcp-server:test: (Use `node --trace-warnings ...` to show where the warning was created)
+@figdiff/mcp-server:test: (node:19091) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+@figdiff/mcp-server:test: (Use `node --trace-warnings ...` to show where the warning was created)
+@figdiff/mcp-server:test:  ✓ src/tool/compare-design-sub-threshold.test.ts (14 tests) 561ms
+@figdiff/mcp-server:test:  ✓ src/tool/verify-fix-height.test.ts (7 tests) 1650ms
+@figdiff/mcp-server:test:      ✓ 下端の欠落 200 → 160 行を 'regressed' と判定する  341ms
+@figdiff/mcp-server:test:  ✓ src/onboarding-contract.test.ts (3 tests) 526ms
+@figdiff/mcp-server:test: (node:19118) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+@figdiff/mcp-server:test: (Use `node --trace-warnings ...` to show where the warning was created)
+@figdiff/mcp-server:test: (node:19111) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+@figdiff/mcp-server:test: (Use `node --trace-warnings ...` to show where the warning was created)
+@figdiff/mcp-server:test:  ✓ src/tool/mcp-response-budget.test.ts (24 tests) 564ms
+@figdiff/mcp-server:test:        ✓ single node with 100 children: response text < 4096 chars  310ms
+@figdiff/mcp-server:test: stderr | src/service/compare-design-runner.test.ts > runCompareDesign > 色・文字の値による判定 (token-diff) > token-diffの例外は比較結果を失わず画素経路へ戻す
+@figdiff/mcp-server:test: [compare-design] 色・文字の値による突合に失敗しました: invalid DOM style
+@figdiff/mcp-server:test:
+@figdiff/mcp-server:test: stderr | src/service/compare-design-runner.test.ts > runCompareDesign > keeps the comparison result when convergence history saving fails
+@figdiff/mcp-server:test: [compare_design] convergence history save failed: history unavailable
+@figdiff/mcp-server:test:
+@figdiff/mcp-server:test: stderr | src/service/compare-design-runner.test.ts > runCompareDesign > keeps the comparison result when last-used node saving fails
+@figdiff/mcp-server:test: [compare_design] last-used node save failed: last-used store unavailable
+@figdiff/mcp-server:test:
+@figdiff/mcp-server:test:  ✓ src/service/compare-design-runner.test.ts (71 tests) 514ms
+@figdiff/mcp-server:test:  ✓ src/service/diff-report-reflow-group.test.ts (8 tests) 542ms
+@figdiff/mcp-server:test:  ✓ src/service/anchor-check-service.test.ts (8 tests) 374ms
+@figdiff/mcp-server:test:  ✓ src/service/image-compare-transparent-background.test.ts (22 tests) 397ms
+@figdiff/mcp-server:test:  ✓ src/tool/compare-design-response-order.test.ts (4 tests) 246ms
+@figdiff/mcp-server:test:  ✓ script/lib/stripe-stitch-oracle.test.mjs (12 tests) 180ms
+@figdiff/mcp-server:test: (node:19171) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+@figdiff/mcp-server:test: (Use `node --trace-warnings ...` to show where the warning was created)
+@figdiff/mcp-server:test:  ✓ src/service/ignore-region-store.test.ts (17 tests) 283ms
+@figdiff/mcp-server:test:  ✓ src/service/crop-region-store.test.ts (17 tests) 186ms
+@figdiff/mcp-server:test:  ✓ src/tool/compare-design-headline.test.ts (1 test) 250ms
+@figdiff/mcp-server:test: (node:19224) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+@figdiff/mcp-server:test: (Use `node --trace-warnings ...` to show where the warning was created)
+@figdiff/mcp-server:test:  ✓ src/service/image-compare-service.alignment-bbox.test.ts (1 test) 193ms
+@figdiff/mcp-server:test: stderr | src/service/image-compare-service.ignore-regions.test.ts > compareImages — ignoreRegions マスク > crop が短い design に適用できなくても復元した保存 mask を適用済みと報告する
+@figdiff/mcp-server:test: Crop region has no valid common image bounds; returning both original image buffers.
+@figdiff/mcp-server:test:
+@figdiff/mcp-server:test:  ✓ src/service/image-compare-service.ignore-regions.test.ts (11 tests) 200ms
+@figdiff/mcp-server:test:  ✓ src/tool/compare-animation.test.ts (11 tests) 234ms
+@figdiff/mcp-server:test: stderr | src/service/figma-service.test.ts > FigmaService.getFrameImage — hidden node blank export fallback (#125) > re-exports once with useAbsoluteBounds=false when a hidden node returns a blank raster
+@figdiff/mcp-server:test: [figma-service] hidden node 9:99 exported a blank raster with absolute bounds; re-exported with use_absolute_bounds=false
+@figdiff/mcp-server:test:
+@figdiff/mcp-server:test: (node:19263) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+@figdiff/mcp-server:test: (Use `node --trace-warnings ...` to show where the warning was created)
+@figdiff/mcp-server:test:  ✓ src/service/figma-service.test.ts (33 tests) 175ms
+@figdiff/mcp-server:test:  ✓ src/tool/create-project.test.ts (5 tests) 125ms
+@figdiff/mcp-server:test: (node:19274) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+@figdiff/mcp-server:test: (Use `node --trace-warnings ...` to show where the warning was created)
+@figdiff/mcp-server:test:  ✓ src/tool/set-figma-token.test.ts (5 tests) 146ms
+@figdiff/mcp-server:test: stderr | src/service/convergence-history.test.ts > recordConvergenceIteration > 壊れた履歴は捨てて記録を続ける
+@figdiff/mcp-server:test: [convergence] history file is not valid JSON (starting over)
+@figdiff/mcp-server:test:
+@figdiff/mcp-server:test:  ✓ src/service/convergence-history.test.ts (11 tests) 141ms
+@figdiff/mcp-server:test: (node:19301) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+@figdiff/mcp-server:test: (Use `node --trace-warnings ...` to show where the warning was created)
+@figdiff/mcp-server:test:  ✓ src/tool/report-issue.test.ts (7 tests) 139ms
+@figdiff/mcp-server:test: (node:19319) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+@figdiff/mcp-server:test: (Use `node --trace-warnings ...` to show where the warning was created)
+@figdiff/mcp-server:test:  ✓ src/tool/set-ignore-regions.test.ts (4 tests) 109ms
+@figdiff/mcp-server:test:  ✓ src/tool/get-ignore-regions.test.ts (4 tests) 134ms
+@figdiff/mcp-server:test:  ✓ src/service/figma-export-inspection.test.ts (15 tests) 137ms
+@figdiff/mcp-server:test: (node:19349) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+@figdiff/mcp-server:test: (Use `node --trace-warnings ...` to show where the warning was created)
+@figdiff/mcp-server:test: (node:19359) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+@figdiff/mcp-server:test: (Use `node --trace-warnings ...` to show where the warning was created)
+@figdiff/mcp-server:test:  ✓ src/tool/get-crop-region.test.ts (4 tests) 108ms
+@figdiff/mcp-server:test:  ✓ src/tool/delete-project.test.ts (3 tests) 73ms
+@figdiff/mcp-server:test: (node:19367) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+@figdiff/mcp-server:test: (Use `node --trace-warnings ...` to show where the warning was created)
+@figdiff/mcp-server:test:  ✓ src/tool/generate-report.test.ts (5 tests) 124ms
+@figdiff/mcp-server:test:  ✓ src/service/comparison-history.test.ts (6 tests) 71ms
+@figdiff/mcp-server:test: (node:19382) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+@figdiff/mcp-server:test: (Use `node --trace-warnings ...` to show where the warning was created)
+@figdiff/mcp-server:test:  ✓ src/service/loop-guard-service.test.ts (27 tests) 90ms
+@figdiff/mcp-server:test:  ✓ src/tool/set-crop-region.test.ts (4 tests) 95ms
+@figdiff/mcp-server:test: stderr | src/service/last-used-node-store.test.ts > last-used-node-store > path traversal prevention > throws when projectId contains directory traversal sequences
+@figdiff/mcp-server:test: [last-used-node-store] store read/parse failed for project "../evil", resetting: Invalid project ID: must be alphanumeric with hyphens/underscores only
+@figdiff/mcp-server:test:
+@figdiff/mcp-server:test: stderr | src/service/last-used-node-store.test.ts > last-used-node-store > path traversal prevention > rejects or returns undefined when projectId contains path separators
+@figdiff/mcp-server:test: [last-used-node-store] store read/parse failed for project "project/hack", resetting: Invalid project ID: must be alphanumeric with hyphens/underscores only
+@figdiff/mcp-server:test:
+@figdiff/mcp-server:test:  ✓ src/service/last-used-node-store.test.ts (8 tests) 50ms
+@figdiff/mcp-server:test: (node:19433) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+@figdiff/mcp-server:test: (Use `node --trace-warnings ...` to show where the warning was created)
+@figdiff/mcp-server:test:  ✓ src/service/measure-correlation.test.ts (15 tests) 52ms
+@figdiff/mcp-server:test:  ✓ src/service/project-store.test.ts (14 tests) 32ms
+@figdiff/mcp-server:test:  ✓ src/tool/compare-design.test.ts (17 tests) 43ms
+@figdiff/mcp-server:test:  ✓ src/util/path-guard.test.ts (19 tests) 54ms
+@figdiff/mcp-server:test:  ✓ src/tool/list-projects.test.ts (9 tests) 33ms
+@figdiff/mcp-server:test: (node:19459) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+@figdiff/mcp-server:test: (Use `node --trace-warnings ...` to show where the warning was created)
+@figdiff/mcp-server:test:  ✓ src/tool/compare-design-device-selection.test.ts (1 test) 37ms
+@figdiff/mcp-server:test: stderr | src/service/capture-service.test.ts > captureUrl — launch path (no FIGDIFF_CDP_ENDPOINT) > DOMスタイル採取に失敗してもスクリーンショットを返すこと
+@figdiff/mcp-server:test: [capture] DOM スタイルの採取に失敗しました: style evaluator failed
+@figdiff/mcp-server:test:
+@figdiff/mcp-server:test:  ✓ src/service/capture-service.test.ts (14 tests) 29ms
+@figdiff/mcp-server:test:  ✓ src/util/local-log.test.ts (12 tests) 19ms
+@figdiff/mcp-server:test:  ✓ src/service/report-generator.test.ts (17 tests) 22ms
+@figdiff/mcp-server:test:  ✓ src/service/storage-permission.test.ts (2 tests) 25ms
+@figdiff/mcp-server:test:  ✓ src/service/figma-node-transformer.test.ts (34 tests) 17ms
+@figdiff/mcp-server:test:  ✓ src/service/batch-compare-service.test.ts (18 tests) 14ms
+@figdiff/mcp-server:test:  ✓ src/util/figdiff-paths.test.ts (8 tests) 6ms
+@figdiff/mcp-server:test:  ✓ src/service/persist-detail.test.ts (4 tests) 12ms
+@figdiff/mcp-server:test:  ✓ src/service/token-diff-service.test.ts (19 tests) 12ms
+@figdiff/mcp-server:test:  ✓ src/tool/error.test.ts (13 tests) 7ms
+@figdiff/mcp-server:test:  ✓ src/util/raw-tool-arguments.test.ts (2 tests) 8ms
+@figdiff/mcp-server:test:  ✓ src/service/capture-service.lazy-media.test.ts (8 tests) 9ms
+@figdiff/mcp-server:test:  ✓ src/tool/delete-ignore-region.test.ts (1 test) 5ms
+@figdiff/mcp-server:test:  ✓ src/service/p5-oracle-gate.test.ts (9 tests) 4ms
+@figdiff/mcp-server:test: (node:19594) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+@figdiff/mcp-server:test: (Use `node --trace-warnings ...` to show where the warning was created)
+@figdiff/mcp-server:test:  ✓ src/tool/compare-design-verdict-display.test.ts (7 tests) 4ms
+@figdiff/mcp-server:test: (node:19608) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+@figdiff/mcp-server:test: (Use `node --trace-warnings ...` to show where the warning was created)
+@figdiff/mcp-server:test:  ✓ src/service/dynamic-mask.test.ts (6 tests) 4ms
+@figdiff/mcp-server:test: (node:19615) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+@figdiff/mcp-server:test: (Use `node --trace-warnings ...` to show where the warning was created)
+@figdiff/mcp-server:test:  ✓ src/tool/compare-design-mask-description.test.ts (2 tests) 5ms
+@figdiff/mcp-server:test:  ✓ src/service/cross-project-guard.test.ts (1 test) 3ms
+@figdiff/mcp-server:test:  ✓ src/service/animation-compare-service.test.ts (1 test) 2ms
+@figdiff/mcp-server:test:  ✓ src/service/github-service.test.ts (1 test) 3ms
+@figdiff/mcp-server:test:
+@figdiff/mcp-server:test:  Test Files  75 passed (75)
+@figdiff/mcp-server:test:       Tests  924 passed (924)
+@figdiff/mcp-server:test:    Start at  12:10:05
+@figdiff/mcp-server:test:    Duration  137.39s (transform 10.89s, setup 1.14s, import 27.83s, tests 369.60s, environment 11ms)
+@figdiff/mcp-server:test:
+@figdiff/mcp-server:test:
+@figdiff/mcp-server:test: > @figdiff/mcp-server@0.1.0 test:smoke-selftest /workspace/designdiff/app/mcp-server
+@figdiff/mcp-server:test: > node script/runtime-smoke-selftest.mjs
+@figdiff/mcp-server:test:
+@figdiff/mcp-server:test: MCP runtime smoke self-test passed.
+
+ Tasks:    10 successful, 10 total
+Cached:    5 cached, 10 total
+  Time:    2m42.167s
+
+✔ accepts the established ISO-dated historical session log path (60.586659ms)
+✔ continues to reject uppercase names outside the historical session log convention (45.973707ms)
+✔ clockStamp / fileStamp はゼロ埋めした固定幅 (1.152917ms)
+✔ createLineWriter はチャンク途中で切れた行を結合し、時刻と stream 名を付ける (1.04576ms)
+✔ createLineWriter は \r と ANSI をそのまま残す (解析は digest の仕事) (0.160717ms)
+✔ createLineWriter は分割UTF-8を壊さず、改行なしの残余を上限内に保つ (0.341282ms)
+✔ pruneLogs は本数と合計バイトの上限を超えた分だけ古い順に消す (7.454033ms)
+✔ pruneLogs は dir が無くても落ちない (0.151363ms)
+✔ pruneLogs は同一秒の数値suffixを起動順として扱う (1.126939ms)
+✔ 永続コピーはパス、各種トークン、長大行を伏せる (1.156202ms)
+✔ JSON形式のtokenを伏せ、URLを壊さない (0.74689ms)
+﹣ Windowsのcmdへ特殊文字をそのまま渡しcwdからbare commandを解決する (0.181818ms) # SKIP
+✔ TTYのSIGINTでも子が終了しなければ猶予後に強制終了する (365.179553ms)
+hello
+tail-no-newlinewarning: careful
+✔ runTee は子の出力を画面とファイルの両方へ流し、終了コードを透過する (29.026725ms)
+started
+bye
+✔ runTee は SIGINT を受けたら (非 TTY のとき) 子へ転送し、末尾行を落とさず終わる (407.003171ms)
+ready
+✔ runTee は SIGHUP を専用process groupへ転送して129を返す (306.717415ms)
+✔ runTee のシグナル転送は孫プロセス (turbo → Electron の形) まで届く (33.97374ms)
+[dev-log] file logging disabled: EEXIST: file already exists, mkdir '/tmp/figdiff-dev-log-hXUVnR/blocked'
+✔ TTYで直下の子が130終了しても、SIGINTを無視する孫を残さない (34.051705ms)
+✔ runTee は起動できないコマンドでも解決し、理由をファイルに残す (2.799872ms)
+[dev-log] file logging disabled: timed out waiting for dev log quota lock
+✔ ログディレクトリへ書けなくても子コマンドは実行する (23.071175ms)
+child-ran
+✔ quota lockを取れなくても子は実行し、loggingを成功扱いしない (60.025423ms)
+first
+second
+✔ 同一秒の並行起動は別ファイルを確保する (39.355412ms)
+[dev-log] file size limit reached: /tmp/figdiff-dev-log-BwmXN3/dev-20261022-121247-20.log
+[dev-log] file size limit reached: /tmp/figdiff-dev-log-BwmXN3/dev-20261022-121247-21.log
+[dev-log] file size limit reached: /tmp/figdiff-dev-log-BwmXN3/dev-20261022-121247-22.log
+worker-0
+worker-1
+worker-2
+worker-3
+worker-4
+worker-5
+worker-6
+worker-7
+worker-8
+worker-9
+worker-10
+worker-11
+worker-12
+worker-13
+worker-14
+worker-15
+[dev-log] file size limit reached: /tmp/figdiff-dev-log-BwmXN3/dev-20261022-121247-24.log
+worker-19
+worker-18
+worker-17
+[dev-log] file size limit reached: /tmp/figdiff-dev-log-BwmXN3/dev-20261022-121247-26.log
+worker-16
+✔ 20並列でもactive名を衝突・残留させず、総量上限を超えない (155.149032ms)
+new output
+[dev-log] file size limit reached: /tmp/figdiff-dev-log-doGj4n/dev-20261022-121247-29.log
+✔ 所有権不明のactiveでquotaが尽きたら0B finalを成功扱いせず、自分のactiveを消す (26.70924ms)
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx[dev-log] file size limit reached: /tmp/figdiff-dev-log-r3YPz6/dev-20261022-121247-30.log
+✔ active logの上限後も子コマンドを完走する (27.636244ms)
+✔ 死んだownerのactiveをfinalへ昇格し、PID再利用と生存ownerを区別する (0.564762ms)
+✔ ownerが空のままcrashしたactiveも猶予後にfinalへ昇格する (0.439637ms)
+✔ active公開前にcrashした孤立ownerを猶予後に回収する (0.255566ms)
+✔ 独立Node間でもquota確認とwriteを原子化する (181.835588ms)
+✔ WindowsのPID開始時刻はPowerShell失敗時にWMICへfallbackする (0.297298ms)
+✔ LinuxのPID開始識別子はboot IDとstart tickを組み合わせる (0.201947ms)
+recovered
+✔ 旧実装が残した空lockは猶予後に安全回収する (27.037468ms)
+✔ 子の自発SIGTERMはPOSIXで143、Windowsでは識別不能の1を返す (22.263381ms)
+✔ printSummary は digest が無ければパスだけ出す (22.567785ms)
+✔ printSummary はログ無効時にgreen summaryを出さない (0.260434ms)
+first
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[dev-log] file size limit reached: /tmp/figdiff-dev-log-D6uNS8/dev-20261022-121247-33.log
+✔ quotaで途中欠落したログはfinalを残すがgreen summaryを出さない (27.614929ms)
+✔ electronLogDir は OS ごとの electron-log 既定の置き場を返す (1.286845ms)
+✔ mcpLogDir は FIGDIFF_HOME を尊重する (1.041223ms)
+✔ parseElectronLine は ms の有無どちらの format も読む (roentgen 既存 / designdiff 新) (0.617369ms)
+✔ parseDevLine は \r で区切り、ANSI と turbo 接頭辞を剥がして level を付ける (1.409174ms)
+✔ classifyDevMessage は行頭に固定し、行中の error は数えない (0.37353ms)
+✔ stripAnsi / devFileDate (0.284709ms)
+✔ defaultSources は同一秒のsuffix付きdevログも読む (0.68626ms)
+✔ normalizeMessage は数値・ID・パスを伏せる (1.177704ms)
+✔ normalizeMessage はJSON tokenと空白を含むパスを伏せ、URLを保つ (0.891803ms)
+✔ normalizeMessage はURL内のtokenも伏せる (0.582307ms)
+✔ normalizeMessage は閉じ引用符の無い値で次の行を巻き込まない (0.3535ms)
+✔ dedupe は main.log と dev ログの同じ行を ±5 秒で 1 件に畳み、app を残す (1.422484ms)
+✔ digest は warn/error だけを集計し、since と level で絞れる (0.375513ms)
+✔ parseSince は相対と絶対の両方 (0.608666ms)
+✔ readEntries は削除競合したファイルを飛ばして次を読む (0.538733ms)
+✔ readEntries は日をまたぐ dev ログを翌日として扱う (0.21078ms)
+✔ readEntries は実ファイルから読み、summarize / formatTable が件数を出す (0.551182ms)
+✔ 49ケース・2巡・必須経路を網羅した台帳の整合を受理する (99.740496ms)
+✔ 欠落・重複・別SHA・dirty・BLOCKED・新規不具合を全て検出する (64.522687ms)
+✔ 改変した証跡と製品自己判定のoracleを拒否する (62.705202ms)
+✔ ディレクトリ外へ向くsymlinkを証跡にできない (64.608298ms)
+✔ 未固定SHAと不正な台帳構造を拒否する (0.391917ms)
+✔ 必須OSと経路の契約を実装から独立した組合せで固定する (1.285201ms)
+✔ 同一実行の巡回番号変更や実行時刻のコピーを拒否する (98.216603ms)
+ℹ tests 60
+ℹ suites 0
+ℹ pass 59
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 1
+ℹ todo 0
+ℹ duration_ms 1871.385096

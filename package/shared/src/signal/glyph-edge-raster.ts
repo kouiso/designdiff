@@ -416,13 +416,11 @@ export interface ContentOffset {
 export const FOREGROUND_TOKEN_TOLERANCE = 24;
 // 1px でも色相ズレが混ざったら別トークンとみなし、このクラスでは説明しない。
 export const RASTER_BLEND_RESIDUAL = 16;
-// 同じ太さの文字列が別ラスタライザで描かれたときのインク量差はせいぜい±15%。
-// 太さ違い (Regular↔Bold で約30%)・文字欠落はこれを越えるので 0.25 で切る。
+// 墨量が大きく違う候補は描画差として扱わない。小さい墨量差だけで
+// 同一ウェイトを証明できるわけではないため、独立した太さ差の対照を保つ。
 const MAX_INK_COVERAGE_DELTA = 0.25;
-// トポロジが強一致する窓に限りインク量差を 0.35 まで許す。縁の位置が同一なのに
-// インク量だけが増えるのは、フォント版違いや合成太字処理で同じグリフが
-// 太く描かれたラスタライザ差 (例: Figma 側 SemiBold と同梱 Inter-SemiBold.ttf の
-// stem 差で約30%)。太さ違いの実害は stem の中心がずれてトポロジ側で弾く。
+// 強い形状一致では従来の0.35許容を保つ。対称な太線化はstem中心も保つため、
+// この条件だけではフォント版・描画差とウェイト変更を一意に区別できない。
 const TIGHT_TOPOLOGY_SHAPE = 0.12;
 const RELAXED_INK_COVERAGE_DELTA = 0.35;
 // 位置ズレのみの同一トポロジなら Hausdorff 正規化値は 0.1 前後。
@@ -702,6 +700,7 @@ export const estimateContentOffset = (
   designForeground: readonly number[],
   screenshotForeground: readonly number[],
   ignoreMask?: Uint8Array,
+  screenshotBackground: readonly number[] = background,
 ): ContentOffset | undefined => {
   const w = window.right - window.left;
   const h = window.bottom - window.top;
@@ -725,7 +724,9 @@ export const estimateContentOffset = (
       ).alpha;
       shot[i] = blendAlphaAndResidual(
         colorAt(screenshotPixels, index),
-        background,
+        // 相関値は軸の平行移動に不変でも、有効点を数えるalpha境界は不変ではない。
+        // 別背景の余白・淡い縁で最低有効点数を水増ししない。
+        screenshotBackground,
         screenshotForeground,
       ).alpha;
     }
@@ -859,8 +860,9 @@ export const countChangedPixels = (
  * 4. エッジトポロジが近い (欠落したグリフや要素は大きな空隙を作り弾かれる)
  *
  * glyph-edge-rasterization が「同一位置の共有コア」を要求するのに対し、
- * こちらは位置を共有しない同一トークンを許容する。欠落・色違い・太さ違いの
- * 実害は各拘束が弾くため、このクラスに入れば要素レベルでは一致とみなせる。
+ * こちらは位置を共有しない同一トークンを許容する。各拘束で候補を絞るが、
+ * 対称な太線化のように形状・墨量の許容域へ入るウェイト変更もあるため、
+ * 分類だけからフォント指定や実配置の一致を断定してはならない。
  */
 const classifySameTokenRasterizationAtHalo = (
   designPixels: Uint8ClampedArray,
@@ -951,6 +953,7 @@ const classifySameTokenRasterizationAtHalo = (
     designForeground,
     screenshotForeground,
     ignoreMask,
+    backgrounds.screenshot,
   );
 
   return {

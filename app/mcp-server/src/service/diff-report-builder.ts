@@ -1583,8 +1583,10 @@ const applyTextReflowClassification = (
   height: number,
   ignoreMask?: Uint8Array,
 ): void => {
+  // 証明済みの別要素まで結合すると、その色がテキストの単一軸条件を壊す。
+  // 合否の既存採点と同じ基準で、未説明の領域だけを再分類する。
   const candidates = regions
-    .filter((region) => region.sameTokenRasterization === undefined)
+    .filter((region) => !isDiffClusterExplained(region))
     .sort((a, b) => a.bbox.y - b.bbox.y || a.bbox.x - b.bbox.x);
   const groups: RegionScore[][] = [];
   let groupBottom = -1;

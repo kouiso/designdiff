@@ -1,0 +1,86 @@
+app/mcp-server/src/service/diff-report-builder.ts:241:47 lint/complexity/noExcessiveCognitiveComplexity ━━━━━━━━━━
+
+  ! Excessive complexity of 43 detected (max: 25).
+
+    239 │   contentBbox: DiffBoundingBox,
+    240 │   residualMask: Uint8Array,
+  > 241 │ ): { color: number; window: DiffBoundingBox } => {
+        │                                               ^^^
+    242 │   const startX = Math.max(0, Math.floor(contentBbox.x));
+    243 │   const startY = Math.max(0, Math.floor(contentBbox.y));
+
+  i Please refactor this function to reduce its complexity score from 43 to the max allowed complexity 25.
+
+
+app/mcp-server/src/service/diff-report-builder.ts:475:10 lint/complexity/noExcessiveCognitiveComplexity ━━━━━━━━━━
+
+  ! Excessive complexity of 49 detected (max: 25).
+
+    473 │ };
+    474 │
+  > 475 │ function buildIssues(
+        │          ^^^^^^^^^^^
+    476 │   regionScores: RegionScore[],
+    477 │   options: BuildDiffReportOptions,
+
+  i Please refactor this function to reduce its complexity score from 49 to the max allowed complexity 25.
+
+
+app/mcp-server/src/service/diff-report-builder.ts:991:15 lint/complexity/noExcessiveCognitiveComplexity ━━━━━━━━━━
+
+  ! Excessive complexity of 29 detected (max: 25).
+
+    989 │   diffMask: Uint8Array | undefined,
+    990 │   fullyExcludedBoxes?: readonly DiffBoundingBox[],
+  > 991 │ ): Uint8Array => {
+        │               ^^^
+    992 │   const pixelCount = width * height;
+    993 │   if (ignoreMask !== undefined && ignoreMask.length !== pixelCount) {
+
+  i Please refactor this function to reduce its complexity score from 29 to the max allowed complexity 25.
+
+
+app/mcp-server/src/service/diff-report-builder.ts:1066:79 lint/complexity/noExcessiveCognitiveComplexity ━━━━━━━━━━
+
+  ! Excessive complexity of 49 detected (max: 25).
+
+    1064 │ }
+    1065 │
+  > 1066 │ const buildRegionScores = (options: BuildDiffReportOptions): RegionScoreBuild => {
+         │                                                                               ^^^
+    1067 │   const {
+    1068 │     designPixels,
+
+  i Please refactor this function to reduce its complexity score from 49 to the max allowed complexity 25.
+
+
+app/mcp-server/src/service/diff-report-builder.ts:1716:17 lint/complexity/noExcessiveCognitiveComplexity ━━━━━━━━━━
+
+  ! Excessive complexity of 36 detected (max: 25).
+
+    1714 │ // 上げる。補正がずれを隠すと検出できないため、補正後もこの判定を適用する。
+    1715 │
+  > 1716 │ export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
+         │                 ^^^^^^^^^^^^^^^
+    1717 │   const { designPixels, screenshotPixels, width, height, paddingMask } = options;
+    1718 │
+
+  i Please refactor this function to reduce its complexity score from 36 to the max allowed complexity 25.
+
+
+package/shared/src/signal/glyph-edge-raster.ts:245:76 lint/complexity/noExcessiveCognitiveComplexity ━━━━━━━━━━
+
+  ! Excessive complexity of 26 detected (max: 25).
+
+    243 │   foreground: readonly number[],
+    244 │   ignoreMask?: Uint8Array,
+  > 245 │ ): { sharedCorePixelCount: number; changedPixelCount: number } | undefined => {
+        │                                                                            ^^^
+    246 │   let sharedCorePixelCount = 0;
+    247 │   let changedPixelCount = 0;
+
+  i Please refactor this function to reduce its complexity score from 26 to the max allowed complexity 25.
+
+
+Checked 12 files in 108ms. No fixes applied.
+Found 6 warnings.
