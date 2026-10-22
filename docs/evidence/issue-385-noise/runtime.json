@@ -1,0 +1,64 @@
+{
+  "scope": "Real built MCP stdio, synthetic local sections/pixels, fresh server for each call. No Figma API or AI source edit.",
+  "oracle": "Explicit 10-pixel residual floor from existing frame contract: independently placed 0/9/10 black noise pixels outside two explained 20px translated lines; excluding one of ten leaves nine. Ten-pixel defect remains FAIL.",
+  "environment": {
+    "node": "v26.7.0",
+    "width": 120,
+    "height": 120,
+    "font": "none",
+    "browser": "none",
+    "pixelScale": 1
+  },
+  "cases": [
+    {
+      "noise": 0,
+      "excluded": 0,
+      "expected": "PASS",
+      "status": "PASS",
+      "coverage": {
+        "clusterCount": 2,
+        "explainedCount": 2,
+        "residualColor": 0,
+        "unexplainedPerceptibleDiff": false
+      },
+      "inputSha256": "911952d01432b033d6d5e6ea7cf4b4bb325de4e07b31e4d6aaf220670f62761a"
+    },
+    {
+      "noise": 9,
+      "excluded": 0,
+      "expected": "PASS",
+      "status": "PASS",
+      "coverage": {
+        "clusterCount": 2,
+        "explainedCount": 2,
+        "residualColor": 0,
+        "unexplainedPerceptibleDiff": false
+      },
+      "inputSha256": "ae208205ecb93243910663a4186f2ee83cd217fd8dd44098d6f6012b9c0b5c42"
+    },
+    {
+      "noise": 10,
+      "excluded": 0,
+      "expected": "FAIL",
+      "status": "FAIL",
+      "coverage": {
+        "clusterCount": 3,
+        "explainedCount": 2
+      },
+      "inputSha256": "a49e4415bdef543425fc872967caf97718723fb014e6cab4564a2c05d0863158"
+    },
+    {
+      "noise": 10,
+      "excluded": 1,
+      "expected": "PASS",
+      "status": "PASS",
+      "coverage": {
+        "clusterCount": 2,
+        "explainedCount": 2,
+        "residualColor": 0,
+        "unexplainedPerceptibleDiff": false
+      },
+      "inputSha256": "a49e4415bdef543425fc872967caf97718723fb014e6cab4564a2c05d0863158"
+    }
+  ]
+}

@@ -1,0 +1,88 @@
+{
+  "issue": 385,
+  "scope": "single-viewport capture replay only; not real Figma, AI source edits, Desktop or extension acceptance",
+  "environment": {
+    "node": "v26.7.0",
+    "os": "darwin",
+    "architecture": "arm64",
+    "release": "25.1.0",
+    "sharp": "0.35.5"
+  },
+  "fixture": {
+    "design": {
+      "width": 80,
+      "height": 100
+    },
+    "screenshot": {
+      "width": 80,
+      "height": 80
+    },
+    "blackRectangle": {
+      "left": 10,
+      "top": 10,
+      "width": 20,
+      "height": 20
+    },
+    "inputHashes": {
+      "design.png": "0228e3ce774e1641db9d98ef4ebe67751c904fcfffd1d0fcefb2a42e855f082e",
+      "viewport.png": "ca3d1368c415d5ab380718359bc1a3b4b2263daf6dc652efa50e0f82f7ad571d"
+    },
+    "font": "none; raw raster pixels",
+    "browser": "none; local PNG path",
+    "baselineAndCurrentBytesIdentical": true
+  },
+  "expected": "Identical captured pixels remain unchanged after server restart; single viewport has no invented bottom rows, full-page control detects exactly 20 missing rows.",
+  "cases": [
+    {
+      "singleViewport": true,
+      "restarted": true,
+      "verification": {
+        "fixedNode": "whole-frame",
+        "structureDelta": 0,
+        "colorDelta": 0,
+        "shapeDelta": 0,
+        "verdict": "unchanged",
+        "comparisonStatus": "UNCERTAIN",
+        "sideEffects": []
+      },
+      "normalization": {
+        "designNativeWidth": 80,
+        "designNativeHeight": 100,
+        "screenshotWidth": 80,
+        "screenshotHeight": 80,
+        "cropApplied": false,
+        "containResized": true,
+        "appliedScale": 0.8,
+        "autoCropped": false,
+        "cropSource": "none"
+      },
+      "missingBottomRows": false
+    },
+    {
+      "singleViewport": false,
+      "restarted": true,
+      "verification": {
+        "fixedNode": "whole-frame",
+        "structureDelta": 0,
+        "colorDelta": 0,
+        "shapeDelta": 0,
+        "verdict": "unchanged",
+        "comparisonStatus": "FAIL",
+        "sideEffects": []
+      },
+      "normalization": {
+        "designNativeWidth": 80,
+        "designNativeHeight": 100,
+        "screenshotWidth": 80,
+        "screenshotHeight": 80,
+        "cropApplied": false,
+        "containResized": false,
+        "appliedScale": 1,
+        "screenshotBottomPaddingRows": 20,
+        "autoCropped": false,
+        "cropSource": "none"
+      },
+      "missingBottomRows": true
+    }
+  ]
+}

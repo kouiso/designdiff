@@ -1,0 +1,43 @@
+{
+  "issue": "https://github.com/kouiso/designdiff/issues/385",
+  "baselineCommit": "5dbdf86e35374320fe6048ce4f86867b4cd8ae5b",
+  "scope": [
+    "Bidirectional verify_fix for top-aligned non-contain full-page heights",
+    "Missing white bottom rows reflected in whole-frame structure and repair verdict, including a single row",
+    "Iteration history after a height repair, preserved across server restarts with each capture’s own height semantics"
+  ],
+  "before": {
+    "heightCases": "4 failures: shortening rejected with alignment context error; restoring white rows reported unchanged.",
+    "history": "Actual MCP calls returned steps [1,2,1]. Two loop-guard persistence tests also failed."
+  },
+  "after": {
+    "regression": "224 tests passed across 7 files (verify_fix, height, loop guard, history, runner, image comparison and same-width-height guards).",
+    "runtime": "Built MCP over real stdio; every tool call in a separate server process. Four crop/restore cases passed; residual-defect iterations were [1,2,3].",
+    "guard": "Contain-to-top-aligned and inverse remain rejected; changed fixed capture height still resets iteration; existing mask/transparent-row tests passed."
+  },
+  "fixture": "80x200 synthetic RGB page. Rectangle at (10,10) is 20x20 black. Short variants remove exactly 40 or 1 white bottom rows. Residual variant inserts an independent 10x10 black defect at (50,50). No font, Figma token, browser, Desktop or third-party asset involved.",
+  "commands": [
+    "node node_modules/typescript/bin/tsc -b app/mcp-server",
+    "cd app/mcp-server && node node_modules/vitest/vitest.mjs run src/tool/verify-fix.test.ts src/tool/verify-fix-height.test.ts src/service/loop-guard-service.test.ts src/service/comparison-history.test.ts src/service/compare-design-runner.test.ts src/service/image-compare-service.test.ts src/service/image-compare-service.same-width-height.test.ts",
+    "node docs/evidence/issue-385-height/reproduce.mjs \"$PWD\" /tmp/figdiff-385-height-evidence"
+  ],
+  "notClaimed": [
+    "All #385 items resolved",
+    "All #376 classifier cases resolved",
+    "Real Figma → AI source edit → Desktop/extension full-chain acceptance",
+    "Android or physical-device correctness"
+  ],
+  "ci": {
+    "initialPrHead": "5dbdf86e3",
+    "workflowRun": "https://github.com/kouiso/designdiff/actions/runs/39591572641",
+    "iosSimulator": "success",
+    "androidApi30And34": "failure; independent stripe oracle detected stretched/truncated/missing stripes, matching the class tracked in #384. This remains a real blocker for that capture scope; not waived as a pass.",
+    "deployment": "Not triggered; PR stays draft."
+  },
+  "workflowSafety": {
+    "branchPush": "deploy-web.yml only pushes to develop; release.yml only v* tags. Neither matches the task branch.",
+    "draftPr": "CI/build/deploy/commit-lint jobs skip drafts. device-legs.yml matches changed runner/image-comparison files and has no draft guard. Semgrep/TruffleHog/labeler/assignment may run.",
+    "runnerVariables": "Read-only confirmation: RUNNER_LINUX=ubuntu-latest, RUNNER_MACOS=macos-latest; device jobs use standard macos-15/ubuntu-latest. Public repository standard runners documented free.",
+    "source": "https://docs.github.com/en/actions/reference/runners/github-hosted-runners"
+  }
+}

@@ -1,0 +1,71 @@
+
+ RUN  v4.1.11 <checkout>/app/mcp-server
+
+ ❯ src/tool/verify-fix-height.test.ts (4 tests | 4 failed) 362ms
+     × 下端の欠落 200 → 160 行を 'regressed' と判定する 131ms
+     × 下端の欠落 160 → 200 行を 'improved' と判定する 88ms
+     × 下端の欠落 200 → 199 行を 'regressed' と判定する 78ms
+     × 下端の欠落 199 → 200 行を 'improved' と判定する 65ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/tool/verify-fix-height.test.ts > verify_fix — full-page height changes > 下端の欠落 200 → 160 行を 'regressed' と判定する
+AssertionError: [{"type":"text","text":"Error: comparison context changed since baseline (comparison.geometry.alignment): cmp-8cb682e7-c21e-4967-86c9-f27b25f4a61c. run compare_design once more under the current conditions, then retry verify_fix."}]: expected true to be falsy
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ src/tool/verify-fix-height.test.ts:84:60
+     82|       },
+     83|     });
+     84|     expect(result.isError, JSON.stringify(result.content)).toBeFalsy();
+       |                                                            ^
+     85|     const verified = verificationSchema.parse(result.structuredContent…
+     86|     expect(verified.verdict).toBe(verdict);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  src/tool/verify-fix-height.test.ts > verify_fix — full-page height changes > 下端の欠落 160 → 200 行を 'improved' と判定する
+ FAIL  src/tool/verify-fix-height.test.ts > verify_fix — full-page height changes > 下端の欠落 199 → 200 行を 'improved' と判定する
+AssertionError: expected 'unchanged' to be 'improved' // Object.is equality
+
+Expected: "improved"
+Received: "unchanged"
+
+ ❯ src/tool/verify-fix-height.test.ts:86:30
+     84|     expect(result.isError, JSON.stringify(result.content)).toBeFalsy();
+     85|     const verified = verificationSchema.parse(result.structuredContent…
+     86|     expect(verified.verdict).toBe(verdict);
+       |                              ^
+     87|     // 既存画素は同一。差分の根拠は白地の欠落行数だけであり、SSIMの自己申告ではない。
+     88|     expect(verified.structureDelta).toBeCloseTo((after - before) / 200…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  src/tool/verify-fix-height.test.ts > verify_fix — full-page height changes > 下端の欠落 200 → 199 行を 'regressed' と判定する
+AssertionError: [{"type":"text","text":"Error: comparison context changed since baseline (comparison.geometry.alignment): cmp-67afaf24-8fdc-42e9-9251-f910aa42c5e1. run compare_design once more under the current conditions, then retry verify_fix."}]: expected true to be falsy
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ src/tool/verify-fix-height.test.ts:84:60
+     82|       },
+     83|     });
+     84|     expect(result.isError, JSON.stringify(result.content)).toBeFalsy();
+       |                                                            ^
+     85|     const verified = verificationSchema.parse(result.structuredContent…
+     86|     expect(verified.verdict).toBe(verdict);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  4 failed (4)
+   Start at  04:25:21
+   Duration  1.50s (transform 592ms, setup 57ms, import 987ms, tests 362ms, environment 0ms)

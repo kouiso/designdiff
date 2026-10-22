@@ -1,0 +1,9 @@
+
+ RUN  v4.1.11 /Users/kouiso/Documents/Codex/2026-10-21/task-3/designdiff-release/package/shared
+
+
+ Test Files  1 passed (1)
+      Tests  34 passed (34)
+   Start at  05:16:26
+   Duration  1.41s (transform 86ms, setup 0ms, import 96ms, tests 1.16s, environment 0ms)
+
