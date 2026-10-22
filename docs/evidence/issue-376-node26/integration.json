@@ -1,0 +1,32 @@
+{
+  "integrationBranch": "codex/issue-376-node26-integration-20261022",
+  "integrationCommit": "d32e48270d649a0a4d5afa7d3719a010cb7cdc42",
+  "parents": [
+    "cd4f6ffed9ecb22d0469d8f76c34c3b994280bd9",
+    "083cf600754be070366b964e9295f2143efc437f"
+  ],
+  "issue376SourceCommit": "cd4f6ffed9ecb22d0469d8f76c34c3b994280bd9",
+  "developCommit": "083cf600754be070366b964e9295f2143efc437f",
+  "node": {
+    "execPath": "/tmp/designdiff-node26-toolchain/node-v26.12.1-linux-x64/bin/node",
+    "node": "v26.12.1",
+    "v8": "14.6.202.34-node.40",
+    "platform": "linux",
+    "arch": "x64"
+  },
+  "pnpm": "9.15.0",
+  "archive": {
+    "url": "https://nodejs.org/dist/v26.12.1/node-v26.12.1-linux-x64.tar.xz",
+    "sha256": "6170b2d474e1c626f43cff3adc118df9fe3b573258a4fc3d850c8dbc6b079bbd",
+    "checksumSource": "https://nodejs.org/dist/v26.12.1/SHASUMS256.txt",
+    "verifiedAgainstOfficialChecksum": true
+  },
+  "changedPathsFromIssue376": [".mise.toml", "package.json"],
+  "nodePin": "[tools]\nnode = \"26.12.1\"\npnpm = \"9\"\n\n[settings]\nexperimental = true\n",
+  "engine": ">=26.12.1",
+  "lockfileSha256": "268d1815f13fa8906c296190b5584b61140c048f6e038d3b706e8a8e89e3064f",
+  "node26CacheDirectory": "/tmp/designdiff-node26-cache-cd4f6ff",
+  "cacheWasAbsentBeforeRun": true,
+  "localIntegrationOnly": "Authorized local develop integration; no PR merge or protected-branch update.",
+  "pair18Policy": "Keep original images/labels. No hash-linked original receipt exists in available GitHub sources. Original Devin link has a login boundary per parent report. No auth/Mac access added; current Figma is not evidence for the historical capture."
+}

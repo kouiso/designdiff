@@ -1,0 +1,5 @@
+5-to-7/production-mcp-png: FAIL; critical opaque width issues=6
+5-to-7/fresh-child-built-api-section: FAIL; critical opaque width issues=7
+7-to-9/production-mcp-png: FAIL; critical opaque width issues=6
+7-to-9/fresh-child-built-api-section: FAIL; critical opaque width issues=7
+{"cases":4,"expectedFail":4,"observedFail":4,"knownFalsePass":0,"casesWithCriticalOpaqueStrokeIssue":4}

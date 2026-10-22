@@ -1,0 +1,9 @@
+text-alone: PASS
+colored-neighbor-1px: PASS
+colored-neighbor-2px: FAIL
+colored-neighbor-56px: FAIL
+missing-text: FAIL
+heavy-text: FAIL
+token-change: FAIL
+opt-in-off: FAIL
+{"cases":8,"passed":8}

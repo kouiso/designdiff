@@ -1,0 +1,13 @@
+
+> figdiff@ lint:eslint /workspace/designdiff
+> eslint .
+
+
+/workspace/designdiff/app/mcp-server/src/service/diff-report-builder.ts
+  676:7  warning  Prefer using an optional chain expression instead, as it's more concise and easier to read  @typescript-eslint/prefer-optional-chain
+
+/workspace/designdiff/app/mcp-server/src/service/image-compare-service.ts
+  1308:7  warning  Prefer using an optional chain expression instead, as it's more concise and easier to read  @typescript-eslint/prefer-optional-chain
+
+✖ 2 problems (0 errors, 2 warnings)
+  0 errors and 2 warnings potentially fixable with the `--fix` option.

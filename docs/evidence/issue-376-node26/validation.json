@@ -1,0 +1,287 @@
+{
+  "date": "2026-10-22",
+  "validationCommit": "d32e48270d649a0a4d5afa7d3719a010cb7cdc42",
+  "validationBranch": "codex/issue-376-node26-integration-20261022",
+  "issue376SourceCommit": "cd4f6ffed9ecb22d0469d8f76c34c3b994280bd9",
+  "developCommit": "083cf600754be070366b964e9295f2143efc437f",
+  "environment": {
+    "node": "v26.12.1",
+    "pnpm": "9.15.0",
+    "platform": "linux",
+    "arch": "x64",
+    "PATHPrefix": "/tmp/designdiff-node26-toolchain/node-v26.12.1-linux-x64/bin:/tmp/designdiff-toolchain/bin:/tmp/designdiff-hooks/node_modules/.bin",
+    "COREPACK_HOME": "/tmp/designdiff-corepack",
+    "npm_config_store_dir": "/tmp/designdiff-pnpm-store",
+    "TURBO_CACHE_DIR": "/tmp/designdiff-node26-cache-cd4f6ff",
+    "cacheAbsentBeforeFirstRun": true
+  },
+  "configurationSha256": {
+    ".mise.toml": "60f49b19abc0d5d6676032f28457b495afcb714ac2f730998524edbbf99bc1f4",
+    "package.json": "be725f6ff7cad82c9f3dc417414d4356df02e32695937c797bde7fb6a0c69b96",
+    "pnpm-lock.yaml": "268d1815f13fa8906c296190b5584b61140c048f6e038d3b706e8a8e89e3064f"
+  },
+  "sourceAndTestSha256": {
+    "package/shared/src/index.ts": "b569b6becc81d4fccd073973cdf91a859117b88171603e346fe6bd03b31ba813",
+    "package/shared/src/signal/glyph-edge-raster.ts": "268761c604e4c5a75f16f874ac6cb760198b5412e033ad3fd705bd1ed181242c",
+    "package/shared/src/signal/text-reflow.ts": "7e428bc32e73ba8f91c6ff8dfa73449c09ad88f2fd11b820884230a0e9c13d8c",
+    "app/mcp-server/src/service/diff-report-builder.ts": "e225a893af8b6a4103c0ce63b34bcd8e7737a8dfcb55fc94fa2638f8ee81ed58",
+    "app/mcp-server/src/service/image-compare-service.ts": "69a1c242dd4d881efee41886f1d47f942b0564cb871f6e33d6c8f9b578c5a484",
+    "package/shared/dist/index.js": "2cd49399d7f849084a5d77483eee6dd9528e2e4efd90229dc088b67fbb20d389",
+    "package/shared/dist/signal/glyph-edge-raster.js": "e213dab8735ec978cc776e38e87191107b1783b6cec3edf28567de24f28b34b7",
+    "package/shared/dist/signal/text-reflow.js": "7e14d513725ba1b74581afbbfabe597b8b9c2c59186a3fdd5c8763f373298022",
+    "app/mcp-server/dist/service/diff-report-builder.js": "7c5bdc90e0720eced21fa973a63efff4cf8043a1b659437fc44c7a39b4be3127",
+    "app/mcp-server/dist/service/image-compare-service.js": "0cfa2a990c4dc50bd494476fef1e2a742d5a24114e7cb3c060a9446cbf782775",
+    "package/shared/src/signal/glyph-edge-raster.test.ts": "e059c467f4de99cd1a65f9efc4b5009189967610096f555a8c109c4161498ace",
+    "package/shared/src/signal/opaque-stroke.test.ts": "2cd1efc4a5db620cec43655108f28601698247c4269aa7e1f47e8a966d8a8acb",
+    "package/shared/src/signal/text-reflow.test.ts": "bab89ce3b4e22b90c24f61fec468ff704459b9f27ef66ccc8eadf366e124e60a",
+    "app/mcp-server/src/service/image-compare-stroke-width.test.ts": "7e5abc4725f1a0f8cac227abb26452dcec59b04a4171b1a6cb6a0c5848c91e09",
+    "app/mcp-server/src/service/image-compare-stroke-background.test.ts": "ea3fb7719ea4b610a8cd8d8669ef37d915c077b07474b1bf48640a25a8acbc67",
+    "app/mcp-server/src/service/diff-report-builder.test.ts": "aee62543f7119c299cf840e593667af1ac3588257e97be04980a709592d3ef9d",
+    "app/mcp-server/src/service/diff-report-reflow-group.test.ts": "5f366ce3b53de793e3510795d25c9ba8ae04da79b57de41b64f8adf9d0b82679"
+  },
+  "priorArtifactHashesVerified": 30,
+  "localIntegration": {
+    "parents": [
+      "cd4f6ffed9ecb22d0469d8f76c34c3b994280bd9",
+      "083cf600754be070366b964e9295f2143efc437f"
+    ],
+    "conflicts": [],
+    "changedFiles": [".mise.toml", "package.json"],
+    "nodePinsByteIdenticalToDevelop": true,
+    "sourceChanges": false,
+    "mobileCaptureChanges": false,
+    "lockfileChanges": false,
+    "prMerge": false
+  },
+  "checks": [
+    {
+      "command": "node --version; pnpm --version",
+      "exitCode": 0,
+      "log": "environment.log",
+      "node": "v26.12.1",
+      "pnpm": "9.15.0"
+    },
+    {
+      "command": "pnpm typecheck",
+      "exitCode": 0,
+      "log": "typecheck.log",
+      "tasks": 10,
+      "cached": 0,
+      "sharedTestTypes": true
+    },
+    {
+      "command": "python3 docs/evidence/issue-376-cloud/reap-children.py task ci:fast",
+      "exitCode": 0,
+      "log": "ci-fast.log",
+      "unitTests": {
+        "shared": 699,
+        "mcp": 950,
+        "desktopRenderer": 663,
+        "desktopMain": 250,
+        "chromeExtension": 189,
+        "figmaPlugin": 167,
+        "mobileCapture": 103,
+        "credentials": 46,
+        "total": 3067
+      },
+      "rootNodeTests": {
+        "passed": 59,
+        "failed": 0,
+        "skipped": 1,
+        "skipReason": "Windows-only command/cwd test on Linux"
+      },
+      "testTasksExecuted": [
+        "@figdiff/chrome-extension, @figdiff/credential-store, @figdiff/desktop, @figdiff/figma-plugin, @figdiff/mcp-server, @figdiff/mobile-capture, @figdiff/shared\n   \u2022 Running test in 7 packages\n   \u2022 Remote caching disabled\n\n@figdiff/credential-store",
+        "@figdiff/mobile-capture",
+        "@figdiff/shared",
+        "@figdiff/mcp-server",
+        "@figdiff/desktop",
+        "@figdiff/chrome-extension",
+        "@figdiff/figma-plugin"
+      ],
+      "testTaskCacheHits": [],
+      "note": "Empty dedicated Node26 cache; all7 testtasks executed. Three build task hits were produced earlier during sameNode26 run, not Node25."
+    },
+    {
+      "command": "pnpm lint:eslint",
+      "exitCode": 0,
+      "log": "eslint.log",
+      "errors": 0,
+      "existingWarnings": 2
+    },
+    {
+      "command": "pnpm --filter @figdiff/shared exec tsc --noEmit --target ES2022 --module NodeNext --moduleResolution NodeNext --strict --esModuleInterop --skipLibCheck src/signal/glyph-edge-raster.test.ts src/signal/opaque-stroke.test.ts src/signal/text-reflow.test.ts",
+      "exitCode": 0,
+      "log": "shared-test-types.log"
+    },
+    {
+      "command": "pnpm --filter @figdiff/mcp-server exec tsc --noEmit --target ES2022 --module NodeNext --moduleResolution NodeNext --strict --esModuleInterop --skipLibCheck src/service/image-compare-stroke-width.test.ts src/service/image-compare-stroke-background.test.ts src/service/diff-report-reflow-group.test.ts",
+      "exitCode": 0,
+      "log": "mcp-test-types.log"
+    },
+    {
+      "command": "/tmp/designdiff-node26-toolchain/node-v26.12.1-linux-x64/bin/node docs/evidence/issue-376-stroke-guard/reproduce.mjs /workspace/designdiff docs/evidence/issue-376-node26/stroke-runtime.json green docs/evidence/issue-376-stroke-guard/runtime-before.json",
+      "exitCode": 0,
+      "log": "stroke-runtime.log",
+      "artifact": "stroke-runtime.json",
+      "constructedCases": 4,
+      "passed": 4,
+      "routeSplit": {
+        "productionMcpPng": 2,
+        "freshChildBuiltApiSections": 2
+      },
+      "identicalInputsToNode25": true
+    },
+    {
+      "command": "/tmp/designdiff-node26-toolchain/node-v26.12.1-linux-x64/bin/node docs/evidence/issue-376-continuation/reproduce-reflow.mjs /workspace/designdiff docs/evidence/issue-376-node26/reflow-runtime.json",
+      "exitCode": 0,
+      "log": "reflow-runtime.log",
+      "artifact": "reflow-runtime.json",
+      "passed": 8
+    },
+    {
+      "command": "/tmp/designdiff-node26-toolchain/node-v26.12.1-linux-x64/bin/node docs/evidence/issue-376-stroke-guard/inventory.mjs /workspace/designdiff /tmp/designdiff-gate1/verification/fixture docs/evidence/issue-376-node26/inventory.json",
+      "exitCode": 0,
+      "log": "inventory.log",
+      "artifact": "inventory.json",
+      "cases": 33,
+      "summary": {
+        "cases": 33,
+        "declaredPass": 12,
+        "declaredPassFailMismatches": 12,
+        "falsePassAgainstDeclarations": 0,
+        "inconclusive": 0
+      },
+      "inputLabelsAndVerdictsUnchanged": true
+    },
+    {
+      "command": "pnpm exec biome check --write docs/evidence/issue-376-node26/*.json",
+      "exitCode": 0,
+      "log": "evidence-format.log",
+      "note": "Data-only formatting; source/test/build hashes unchanged."
+    }
+  ],
+  "logProvenance": {
+    "environment.log": {
+      "originalPath": "/tmp/designdiff-node26-environment.log",
+      "originalSha256": "487629b2db9739c586048d8f9a99482804f6a1bb998f3660a9082c346c6adbfe",
+      "originalBytes": 16,
+      "savedSha256": "487629b2db9739c586048d8f9a99482804f6a1bb998f3660a9082c346c6adbfe",
+      "normalization": "Trailing whitespace and trailing empty lines only; no message lines omitted."
+    },
+    "typecheck.log": {
+      "originalPath": "/tmp/designdiff-node26-typecheck.log",
+      "originalSha256": "c8e3bdb99e29bc8bd1db2c13867a0159f93985bda19a910269c7af0d5b5ba3d0",
+      "originalBytes": 4819,
+      "savedSha256": "448a0d1b996a68b9f164f3b339201f23b054fa1f4ad9ca02bb63370752e2be6e",
+      "normalization": "Trailing whitespace and trailing empty lines only; no message lines omitted."
+    },
+    "ci-fast.log": {
+      "originalPath": "/tmp/designdiff-node26-ci-fast.log",
+      "originalSha256": "5a8c3bf30a4ae3de22bf4f429ea976c5c4e368ebae7fa0371e7e09c16fef4b0f",
+      "originalBytes": 156958,
+      "savedSha256": "53ef4cacf579541c3c1f51a9f7850f61bee8c08d5ce36b50e0d151fd16ba02ce",
+      "normalization": "Trailing whitespace and trailing empty lines only; no message lines omitted."
+    },
+    "eslint.log": {
+      "originalPath": "/tmp/designdiff-node26-eslint.log",
+      "originalSha256": "75eb353a7172c838a625bd21eb0615cdde15f362ee4668b6e3e9c7da6f7e5714",
+      "originalBytes": 620,
+      "savedSha256": "208eec298812aae94da4a0c003c30ac5d741398535d34caf6dd865f24c4e737d",
+      "normalization": "Trailing whitespace and trailing empty lines only; no message lines omitted."
+    },
+    "shared-test-types.log": {
+      "originalPath": "/tmp/designdiff-node26-shared-test-types.log",
+      "originalSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "originalBytes": 0,
+      "savedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "normalization": "Trailing whitespace and trailing empty lines only; no message lines omitted."
+    },
+    "mcp-test-types.log": {
+      "originalPath": "/tmp/designdiff-node26-mcp-test-types.log",
+      "originalSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "originalBytes": 0,
+      "savedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "normalization": "Trailing whitespace and trailing empty lines only; no message lines omitted."
+    },
+    "stroke-runtime.log": {
+      "originalPath": "/tmp/designdiff-node26-stroke-runtime.log",
+      "originalSha256": "cf405eee7a009d3803e7aba2def540659375a000f19c05e8eb88976b04291e83",
+      "originalBytes": 382,
+      "savedSha256": "cf405eee7a009d3803e7aba2def540659375a000f19c05e8eb88976b04291e83",
+      "normalization": "Trailing whitespace and trailing empty lines only; no message lines omitted."
+    },
+    "reflow-runtime.log": {
+      "originalPath": "/tmp/designdiff-node26-reflow-runtime.log",
+      "originalSha256": "1267726e489e22fc06bfeeddcb63c1b36c91865144af180e3225e87d7e303ca6",
+      "originalBytes": 194,
+      "savedSha256": "1267726e489e22fc06bfeeddcb63c1b36c91865144af180e3225e87d7e303ca6",
+      "normalization": "Trailing whitespace and trailing empty lines only; no message lines omitted."
+    },
+    "inventory.log": {
+      "originalPath": "/tmp/designdiff-node26-inventory.log",
+      "originalSha256": "2e460012a7f1cd5495c1a85a6b137626104f9a5ab5cec2da07a6e13ada1a535e",
+      "originalBytes": 1839,
+      "savedSha256": "2e460012a7f1cd5495c1a85a6b137626104f9a5ab5cec2da07a6e13ada1a535e",
+      "normalization": "Trailing whitespace and trailing empty lines only; no message lines omitted."
+    },
+    "evidence-format.log": {
+      "originalPath": "/tmp/designdiff-node26-evidence-format.log",
+      "originalSha256": "285b5adc7c87a1100ff6ecba8bdf108d0675c2f8ed6dc83665db2dbc21dec3f2",
+      "originalBytes": 40,
+      "savedSha256": "285b5adc7c87a1100ff6ecba8bdf108d0675c2f8ed6dc83665db2dbc21dec3f2",
+      "normalization": "Trailing whitespace and trailing empty lines only; no message lines omitted."
+    },
+    "remote-before-publish.log": {
+      "originalPath": "/tmp/designdiff-node26-remote-before-publish.log",
+      "originalSha256": "2874e8a0e3e85ef7db375da84188bc8592f730d729cc55d0aee288ab606acf79",
+      "originalBytes": 243,
+      "savedSha256": "2874e8a0e3e85ef7db375da84188bc8592f730d729cc55d0aee288ab606acf79",
+      "normalization": "Trailing whitespace and trailing empty lines only; no message lines omitted."
+    }
+  },
+  "failedAttempts": [],
+  "ui": {
+    "changed": false,
+    "sameConditionBeforeAfterImages": "Not applicable; no UIchange. Actual constructed PNG/raw input hashes identical acrossNode25/26."
+  },
+  "remaining": [
+    "Eleven historical PASS cases contain independently measured realnonfont differences; pair18 textlayout/rendering cause remains uncertified. Original labels/images are unchanged.",
+    "No hash-linked pair18 capture receipt/resolvedfont record is available; original Devin source is behind login according to parent. No auth/Mac access added and currentFigma is not historicalcapture proof."
+  ],
+  "unexecuted": [
+    "macOS actualDesktop",
+    "Retina",
+    "real pairedfont rendering",
+    "liveFigma host/API",
+    "manual remoteCI"
+  ],
+  "remoteConstraints": {
+    "target": "codex/issue-376-cloud-handoff-20261021 only after requiredchecks",
+    "forcePush": false,
+    "protectedBranchPush": false,
+    "prMerge": false,
+    "workflowDispatch": false,
+    "draftReady": false,
+    "externalContact": false,
+    "hookBypass": false
+  },
+  "artifactSha256": {
+    "README.md": "0a025bd2c4b0d5717532411e2c5aab9531511ff50a560bfb7811d39b2aac6566",
+    "ci-fast.log": "53ef4cacf579541c3c1f51a9f7850f61bee8c08d5ce36b50e0d151fd16ba02ce",
+    "environment.log": "487629b2db9739c586048d8f9a99482804f6a1bb998f3660a9082c346c6adbfe",
+    "eslint.log": "208eec298812aae94da4a0c003c30ac5d741398535d34caf6dd865f24c4e737d",
+    "evidence-format.log": "285b5adc7c87a1100ff6ecba8bdf108d0675c2f8ed6dc83665db2dbc21dec3f2",
+    "integration.json": "9935b067f8f346404f0e17cc40396055c900c9bdde06d6abcfba0a83dd407ee0",
+    "inventory.json": "8289c1bd71f517734e50cb4d4f2ceab0bbccbb559dfe3501396dae7a18e6f770",
+    "inventory.log": "2e460012a7f1cd5495c1a85a6b137626104f9a5ab5cec2da07a6e13ada1a535e",
+    "mcp-test-types.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "reflow-runtime.json": "ffc2786722bd321a5b74d70c2dad6723835d3bae47642905283bb234b0dfa893",
+    "reflow-runtime.log": "1267726e489e22fc06bfeeddcb63c1b36c91865144af180e3225e87d7e303ca6",
+    "remote-before-publish.log": "2874e8a0e3e85ef7db375da84188bc8592f730d729cc55d0aee288ab606acf79",
+    "shared-test-types.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stroke-runtime.json": "6a5136858f5af9ac4dfaf0107fbb1ae8b3bf1343b54e0f6495526e3688bebe4a",
+    "stroke-runtime.log": "cf405eee7a009d3803e7aba2def540659375a000f19c05e8eb88976b04291e83",
+    "typecheck.log": "448a0d1b996a68b9f164f3b339201f23b054fa1f4ad9ca02bb63370752e2be6e"
+  }
+}
