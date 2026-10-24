@@ -4,7 +4,7 @@ FigDiff MCP Server — pixel-level design-vs-implementation diff tool for AI cod
 
 ## Prerequisites
 
-- Node.js 25+ (managed by mise: `mise install`)
+- Node.js / pnpm: follow the [onboarding guide](../../doc/onboarding.md) and `.mise.toml`
 - A [Figma Personal Access Token](https://www.figma.com/developers/api#authentication) (must start with `figd_`)
 
 ## Build
@@ -92,7 +92,7 @@ Use MCP initialization instructions and `tools/list` for the current input schem
    or `UNCERTAIN` requires investigation. Neither `PASS` nor a high match rate alone
    proves that the implementation is correct.
 
-The [root workflow](../../README.md#scenario-b-ai-agent-via-mcp-server) includes
+The [development guide](../../doc/dev-guide.md#mcp) includes
 schema-checked examples and explains viewport, pixel ratio and coordinate origin.
 
 ### Project storage
