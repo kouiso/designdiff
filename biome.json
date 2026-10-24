@@ -21,6 +21,13 @@
         "noNonNullAssertion": "off",
         "useConsistentArrayType": "error",
         "useConst": "error",
+        "useFilenamingConvention": {
+          "level": "error",
+          "options": {
+            "filenameCases": ["kebab-case"],
+            "requireAscii": true
+          }
+        },
         "useExportType": "off",
         "useImportType": "off",
         "useNodejsImportProtocol": "error",
