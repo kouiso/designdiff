@@ -5,7 +5,7 @@ import { buildComparisonHeadline } from "./headline.js";
 import type { RegionScore } from "../type.js";
 
 const region = (overrides: Partial<RegionScore>): RegionScore => ({
-  regionId: "r",
+  regionId: "diff-cluster-0-0-1-1",
   bbox: { x: 0, y: 0, w: 100, h: 100 },
   structure: 1,
   color: 0,
@@ -36,5 +36,120 @@ describe("buildComparisonHeadline", () => {
     expect(headline.structuralRegions).toBe(1);
     expect(headline.headline).toContain("色のみ差分 2領域");
     expect(headline.headline).toContain("構造差分 1領域");
+  });
+
+  it("canvas が無ければ従来どおり行の単純平均を使う", () => {
+    const headline = buildComparisonHeadline(
+      [region({ structure: 0 }), region({ structure: 1, bbox: { x: 0, y: 0, w: 10, h: 10 } })],
+      99,
+    );
+    expect(headline.structureMatch).toBe(50);
+  });
+
+  it("差分クラスタだけの行は比較面全体に対する面積で薄め、ほぼ一致の画面を 0% にしない", () => {
+    // 1512x3697 の画面で 20x20 のグリフ差分が 2 つだけ出た状況。
+    const headline = buildComparisonHeadline(
+      [
+        region({
+          regionId: "diff-cluster-10-10-20-20",
+          bbox: { x: 10, y: 10, w: 20, h: 20 },
+          structure: 0,
+        }),
+        region({
+          regionId: "diff-cluster-100-100-20-20",
+          bbox: { x: 100, y: 100, w: 20, h: 20 },
+          structure: 0,
+        }),
+      ],
+      99.99,
+      { width: 1512, height: 3697 },
+    );
+    expect(headline.structureMatch).toBe(99.99);
+    expect(headline.structuralRegions).toBe(2);
+    expect(headline.headline).toContain("構造一致 99.99%");
+  });
+
+  it("比較面を覆うセクション行は面積加重平均になり、余白を足さない", () => {
+    const headline = buildComparisonHeadline(
+      [
+        region({ regionId: "top", bbox: { x: 0, y: 0, w: 100, h: 75 }, structure: 1 }),
+        region({ regionId: "bottom", bbox: { x: 0, y: 75, w: 100, h: 25 }, structure: 0.6 }),
+      ],
+      80,
+      { width: 100, height: 100 },
+    );
+    expect(headline.structureMatch).toBe(90);
+  });
+
+  it("重なって比較面より広くなった行でも 0〜100 に収まる", () => {
+    const headline = buildComparisonHeadline(
+      [
+        region({ regionId: "a", bbox: { x: 0, y: 0, w: 100, h: 100 }, structure: 0.5 }),
+        region({ regionId: "b", bbox: { x: 0, y: 0, w: 100, h: 100 }, structure: 0.5 }),
+      ],
+      50,
+      { width: 100, height: 100 },
+    );
+    expect(headline.structureMatch).toBe(50);
+  });
+
+  it("採点上限で行にならなかった差分面は、検出されなかった面として構造一致に数えない", () => {
+    // 100x200 の比較面。採点済みの行は上半分 100x100 (構造 1)。下半分は未採点の差分クラスタ。
+    // 手計算: 一致 10,000 画素 / 比較面 20,000 画素 = 50%。未採点面を一致に数えると 100%。
+    const rows = [region({ bbox: { x: 0, y: 0, w: 100, h: 100 }, structure: 1 })];
+    const canvas = { width: 100, height: 200 };
+
+    expect(buildComparisonHeadline(rows, 50, canvas).structureMatch).toBe(100);
+    expect(
+      buildComparisonHeadline(rows, 50, { ...canvas, unscoredDiffArea: 10000 }).structureMatch,
+    ).toBe(50);
+    // 未採点面が比較面の一部だけなら、残りは従来どおり一致に数える: (10,000 + 5,000) / 20,000 = 75%。
+    expect(
+      buildComparisonHeadline(rows, 50, { ...canvas, unscoredDiffArea: 5000 }).structureMatch,
+    ).toBe(75);
+  });
+
+  it("canvas の寸法が不正なら単純平均へ戻す", () => {
+    const headline = buildComparisonHeadline(
+      [region({ structure: 0 }), region({ structure: 1 })],
+      50,
+      { width: 0, height: Number.NaN },
+    );
+    expect(headline.structureMatch).toBe(50);
+  });
+
+  it("ignore region で外した画素は構造一致として数えない", () => {
+    // 100x100 の 99% を ignore で外し、残り 1% (100 画素) が構造 0。
+    const headline = buildComparisonHeadline(
+      [region({ bbox: { x: 0, y: 0, w: 10, h: 10 }, structure: 0 })],
+      0,
+      { width: 100, height: 100, maskedPixelCount: 9900 },
+    );
+    expect(headline.structureMatch).toBe(0);
+  });
+
+  it("Figma ノードの行が混ざる比較では、行の外を構造一致として数えない", () => {
+    // 比較面 100x100 のうち左上 10x10 だけを Figma セクション行が採点し、構造 0。
+    // 行の外は採点していない面なので、一致 99% とは言わず 0% になる。
+    const headline = buildComparisonHeadline(
+      [region({ regionId: "1:23", bbox: { x: 0, y: 0, w: 10, h: 10 }, structure: 0 })],
+      50,
+      { width: 100, height: 100 },
+    );
+    expect(headline.structureMatch).toBe(0);
+  });
+
+  it("Figma ノードの行は、ignore region で外した画素がある比較では面積で重み付けせず単純平均にする", () => {
+    // 100x100 のセクション (構造 0) はほぼ全面が ignore、続く 100x1 のセクション (構造 1) は外していない。
+    // 面積で重み付けすると 1/10,001 ≒ 0.01% に落ちるが、セクションごとの評価は同じ重みなので 50%。
+    const headline = buildComparisonHeadline(
+      [
+        region({ regionId: "1:1", bbox: { x: 0, y: 0, w: 100, h: 100 }, structure: 0 }),
+        region({ regionId: "1:2", bbox: { x: 0, y: 100, w: 100, h: 1 }, structure: 1 }),
+      ],
+      50,
+      { width: 100, height: 101, maskedPixelCount: 9900 },
+    );
+    expect(headline.structureMatch).toBe(50);
   });
 });

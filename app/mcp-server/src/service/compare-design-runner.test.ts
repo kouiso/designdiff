@@ -773,6 +773,74 @@ describe("runCompareDesign", () => {
     );
   });
 
+  it("足し行があったのが直前でなく古い回だけなら、別の高さの画像は同じ撮影条件として比べない", async () => {
+    tmpRoot = await fs.mkdtemp(path.join(process.cwd(), "tmp-figdiff-runner-"));
+    const designPath = path.join(tmpRoot, "design.png");
+    const screenshotPath = path.join(tmpRoot, "screenshot.png");
+    await fs.writeFile(designPath, Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+    await fs.writeFile(screenshotPath, Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+
+    const buildComparison = (screenshotHeight: number, paddingRows: number | undefined) => ({
+      comparisonId: `cmp-${screenshotHeight}`,
+      matchRate: 90,
+      diffPixelCount: 10,
+      totalPixelCount: 1440 * screenshotHeight,
+      diffRegions: [],
+      suggestion: "history condition fixture",
+      diffReport: {
+        alignment: {
+          translation: { x: 0, y: 0 },
+          scale: { x: 1, y: 1 },
+          rotation: 0,
+          confidence: 1,
+          residual: 0,
+        },
+        regionScores: [],
+        issues: [],
+        weightedAggregate: { weightedStructure: 0.7, weightedColor: 1, totalWeight: 1 },
+        aggregateVerdict: "fail" as const,
+        rationale: "history condition fixture",
+      },
+      normalization: {
+        designNativeWidth: 1440,
+        designNativeHeight: 1000,
+        screenshotWidth: 1440,
+        screenshotHeight,
+        cropApplied: false,
+        containResized: false,
+        appliedScale: 1,
+        ...(paddingRows === undefined ? {} : { screenshotBottomPaddingRows: paddingRows }),
+      },
+    });
+    const older = buildComparison(980, 20);
+    const previous = buildComparison(1000, undefined);
+    mocks.getRecentComparisons.mockReturnValue([
+      {
+        report: older.diffReport,
+        captureWidth: 1440,
+        captureHeight: 980,
+        normalization: older.normalization,
+      },
+      {
+        report: previous.diffReport,
+        captureWidth: 1440,
+        captureHeight: 1000,
+        normalization: previous.normalization,
+      },
+    ]);
+    mocks.sharp.mockReturnValue({
+      metadata: vi.fn(async () => ({ width: 1440, height: 700 })),
+    });
+    mocks.compareImages.mockResolvedValue(buildComparison(700, undefined));
+
+    const result = await runCompareDesign({
+      design_source: designPath,
+      screenshot: screenshotPath,
+    });
+
+    expect(result.result.critique?.concern).toBe("capture-changed");
+  });
+
   it("auto_mask_dynamic:false では2回目の撮影を要求しない", async () => {
     tmpRoot = await fs.mkdtemp(path.join(process.cwd(), "tmp-figdiff-runner-"));
     const designPath = path.join(tmpRoot, "design.png");

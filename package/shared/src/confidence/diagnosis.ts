@@ -29,7 +29,9 @@ const SCALE_HIGH = 1.4;
 // これを超える圧縮/引き伸ばしは、matchRate に関わらず比較自体が無効なほどの設定ミス。
 const SEVERE_SCALE_LOW = 0.6;
 const SEVERE_SCALE_HIGH = 2;
-const FULL_PAGE_VIEWPORT_HEIGHT_RATIO = 1.4;
+// 比較側 (mcp-server) も「縮めずに上端揃えで比べてよい高さ差」の上限にこの値を使う。
+// 別々に持つと、比較は 1:1 で行ったのに診断だけ full_page_vs_viewport と読む食い違いが出る。
+export const FULL_PAGE_VIEWPORT_HEIGHT_RATIO = 1.4;
 // 各診断原因の確度 (0-1)。原因をランク付けする際の重みなので、上部の閾値定数と同様に集約する。
 const CONFIDENCE_WIDTH_MISMATCH_CRITICAL = 0.9;
 const CONFIDENCE_WIDTH_MISMATCH_WARNING = 0.7;
@@ -66,10 +68,25 @@ function widthMismatchCause(warnings: PreflightWarning[]): DiagnosisCause | unde
   };
 }
 
-function aspectRatioPreflightCause(warnings: PreflightWarning[]): DiagnosisCause | undefined {
+function aspectRatioPreflightCause(
+  warnings: PreflightWarning[],
+  normalization?: NormalizationReport,
+): DiagnosisCause | undefined {
   const warning = warnings.find((entry) => entry.code === "aspect_ratio_mismatch");
   if (!warning) {
     return undefined;
+  }
+  // 縮めず上端揃えで比べた回は、高さの差が差分画像に出ているので設定ミスの根拠にしない。
+  if (normalization?.screenshotBottomPaddingRows !== undefined) {
+    return {
+      code: "aspect_mismatch",
+      classification: "mild_aspect_mismatch",
+      confidence: CONFIDENCE_MILD_ASPECT_MISMATCH,
+      message:
+        "幅は一致していますが、スクリーンショットの方が縦に短くなっています。縮小せず上端揃えで比較し、足りない下端の行は差分として数えています。",
+      suggestedFix:
+        "下端の差分は実装側の内容差として確認してください。単一ビューポート撮影なら capture_scroll か crop で範囲を揃えてください。",
+    };
   }
   return {
     code: "aspect_mismatch",
@@ -288,7 +305,7 @@ export function diagnoseComparison(input: DiagnosisInput): ComparisonDiagnosis {
     conditionsCause,
     figmaExportCause(input.preflightWarnings),
     widthMismatchCause(input.preflightWarnings),
-    aspectRatioPreflightCause(input.preflightWarnings),
+    aspectRatioPreflightCause(input.preflightWarnings, input.normalization),
     normalizationCause(input.normalization),
     cropPreflightCause(input.preflightWarnings),
     globalColorShiftCause(input.matchRate, avgStructure, avgColor, lowMatchThreshold),

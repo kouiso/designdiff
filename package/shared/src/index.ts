@@ -142,6 +142,10 @@ export {
 } from "./signal/text-reflow.js";
 export { computeHausdorff } from "./signal/hausdorff.js";
 export {
+  buildAntiAliasedMask,
+  type AntiAliasedMaskOptions,
+} from "./signal/anti-aliased-mask.js";
+export {
   classifyTextureResampling,
   type TextureResamplingEvidence,
 } from "./signal/texture-resampling.js";
@@ -206,6 +210,7 @@ export {
 
 // Comparison Confidence Layer (pre-flight / diagnosis / headline)
 export {
+  FULL_PAGE_VIEWPORT_HEIGHT_RATIO,
   diagnoseComparison,
   isFullPageAgainstShorterCapture,
   type DiagnosisInput,
@@ -215,7 +220,11 @@ export {
   rankFrameCandidates,
   type RankedFrame,
 } from "./confidence/frame-guidance.js";
-export { buildComparisonHeadline } from "./confidence/headline.js";
+export {
+  buildComparisonHeadline,
+  unionArea,
+  DIFF_CLUSTER_REGION_ID_PREFIX,
+} from "./confidence/headline.js";
 export {
   canonicalizeVerificationContextPayload,
   normalizeVerificationContextPayload,
