@@ -14,9 +14,9 @@ const figmaMock = {
     return btoa(binary);
   }),
   mixed: Symbol("mixed"),
-  currentPage: { selection: [] },
+  currentPage: { selection: [], loadAsync: vi.fn() },
   ui: { postMessage: vi.fn(), resize: vi.fn(), onmessage: vi.fn() },
-  getNodeById: vi.fn(),
+  getNodeByIdAsync: vi.fn(),
 };
 
 Object.defineProperty(globalThis, "figma", {

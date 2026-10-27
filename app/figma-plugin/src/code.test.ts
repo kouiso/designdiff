@@ -432,7 +432,8 @@ function makeExportableNode(overrides: object = {}): SceneNode {
 
 beforeEach(() => {
   vi.mocked(figma.ui.postMessage).mockClear();
-  vi.mocked(figma.getNodeById).mockReset();
+  vi.mocked(figma.getNodeByIdAsync).mockReset();
+  vi.mocked(figma.currentPage.loadAsync).mockReset();
   figma.currentPage.selection = [];
 });
 
@@ -466,9 +467,52 @@ describe("figma.ui.onmessage: get-selection", () => {
   });
 });
 
+// --- dynamic-page の非同期経路 ---
+// documentAccess: "dynamic-page" では loadAsync / getNodeByIdAsync が必須で、
+// 同期フォールバックは存在しない。非同期 API の呼び出し順まで固定する。
+describe("dynamic-page の非同期経路", () => {
+  it("loadAsync の完了を待ってから選択を読む", async () => {
+    let resolveLoad: (() => void) | undefined;
+    vi.mocked(figma.currentPage.loadAsync).mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveLoad = resolve;
+        }),
+    );
+    figma.currentPage.selection = [makeExportableNode({ id: "8:8", name: "Late" })];
+
+    sendToPlugin({ type: "get-selection" });
+
+    await vi.waitFor(() => {
+      expect(figma.currentPage.loadAsync).toHaveBeenCalled();
+    });
+    expect(lastMessageOfType("selection")).toBeUndefined();
+
+    resolveLoad?.();
+    await vi.waitFor(() => {
+      expect(lastMessageOfType("selection")?.nodes).toEqual([
+        { id: "8:8", name: "Late", type: "FRAME", width: 200, height: 100 },
+      ]);
+    });
+  });
+
+  it("指定された node id → getNodeByIdAsync に渡して解決する", async () => {
+    vi.mocked(figma.getNodeByIdAsync).mockResolvedValue(
+      makeExportableNode({ id: "9:9", name: "Saved" }),
+    );
+    sendToPlugin({ type: "export-frame", nodeId: "9:9" });
+    await vi.waitFor(() => {
+      expect(figma.getNodeByIdAsync).toHaveBeenCalledWith("9:9");
+      expect(lastMessageOfType("export-result")?.nodeId).toBe("9:9");
+    });
+  });
+});
+
 describe("figma.ui.onmessage: export-frame", () => {
   it("nodeId 指定 → base64 を返す", async () => {
-    vi.mocked(figma.getNodeById).mockReturnValue(makeExportableNode({ id: "4:4", name: "Hero" }));
+    vi.mocked(figma.getNodeByIdAsync).mockResolvedValue(
+      makeExportableNode({ id: "4:4", name: "Hero" }),
+    );
     sendToPlugin({ type: "export-frame", nodeId: "4:4" });
     await vi.waitFor(() => {
       expect(lastMessageOfType("export-result")).toEqual({
@@ -491,7 +535,7 @@ describe("figma.ui.onmessage: export-frame", () => {
   });
 
   it("対象ノードなし → エラーを返す", async () => {
-    vi.mocked(figma.getNodeById).mockReturnValue(null);
+    vi.mocked(figma.getNodeByIdAsync).mockResolvedValue(null);
     sendToPlugin({ type: "export-frame", nodeId: "missing" });
     await vi.waitFor(() => {
       expect(lastMessageOfType("export-result")).toEqual({
@@ -502,7 +546,7 @@ describe("figma.ui.onmessage: export-frame", () => {
   });
 
   it("PAGE ノード → SceneNode でないのでエラーを返す", async () => {
-    vi.mocked(figma.getNodeById).mockReturnValue(fake({ id: "0:1", type: "PAGE" }));
+    vi.mocked(figma.getNodeByIdAsync).mockResolvedValue(fake({ id: "0:1", type: "PAGE" }));
     sendToPlugin({ type: "export-frame", nodeId: "0:1" });
     await vi.waitFor(() => {
       expect(lastMessageOfType("export-result")?.error).toBe("No node selected");
@@ -551,7 +595,9 @@ describe("figma.ui.onmessage: export-frame", () => {
 
 describe("figma.ui.onmessage: inspect-node", () => {
   it("nodeId 指定 → 検査結果を返す", async () => {
-    vi.mocked(figma.getNodeById).mockReturnValue(makeExportableNode({ id: "6:6", name: "Panel" }));
+    vi.mocked(figma.getNodeByIdAsync).mockResolvedValue(
+      makeExportableNode({ id: "6:6", name: "Panel" }),
+    );
     sendToPlugin({ type: "inspect-node", nodeId: "6:6" });
     await vi.waitFor(() => {
       expect(lastMessageOfType("inspect-result")?.inspection).toMatchObject({
@@ -570,7 +616,7 @@ describe("figma.ui.onmessage: inspect-node", () => {
   });
 
   it("対象ノードなし → エラーを返す", async () => {
-    vi.mocked(figma.getNodeById).mockReturnValue(null);
+    vi.mocked(figma.getNodeByIdAsync).mockResolvedValue(null);
     sendToPlugin({ type: "inspect-node", nodeId: "missing" });
     await vi.waitFor(() => {
       expect(lastMessageOfType("inspect-result")).toEqual({
@@ -790,7 +836,7 @@ describe("requestId の応答相関", () => {
   });
 
   it("エラー応答にも requestId を載せる", async () => {
-    vi.mocked(figma.getNodeById).mockReturnValue(null);
+    vi.mocked(figma.getNodeByIdAsync).mockResolvedValue(null);
     sendToPlugin({ type: "export-frame", nodeId: "missing", requestId: "req-err-1" });
     await vi.waitFor(() => {
       expect(lastMessageOfType("export-result")).toEqual({
