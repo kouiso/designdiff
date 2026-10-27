@@ -59,31 +59,24 @@ figma.ui.postMessage({ type: "init", tab: initialTab });
 
 // If launched via "Export Selected Frame" command, auto-export
 if (command === "export-frame") {
-  handleExportFrame();
+  handleExportFrame().catch((e) => console.error("figdiff: auto export-frame failed", e));
 }
 
 /**
  * documentAccess: "dynamic-page" ではページ配下のノード群が遅延ロードされ、
  * loadAsync 前のアクセスは例外になるため、現在ページのロード完了を待つ。
- * テストモック等で loadAsync が無い環境ではそのまま通過させる。
  */
 async function ensureCurrentPageLoaded(): Promise<PageNode> {
   const page = figma.currentPage;
-  if (typeof page.loadAsync === "function") {
-    await page.loadAsync();
-  }
+  await page.loadAsync();
   return page;
 }
 
 /**
  * dynamic-page では getNodeById(同期) が使えず getNodeByIdAsync 必須。
- * モック等の非対応環境では同期版へフォールバックする。
  */
 async function findSceneNode(nodeId: string): Promise<SceneNode | null> {
-  if (typeof figma.getNodeByIdAsync === "function") {
-    return toSceneNode(await figma.getNodeByIdAsync(nodeId));
-  }
-  return toSceneNode(figma.getNodeById(nodeId));
+  return toSceneNode(await figma.getNodeByIdAsync(nodeId));
 }
 
 /**
@@ -438,5 +431,5 @@ function fontStyleToWeight(style: string): number {
 
 // Listen for selection changes
 figma.on("selectionchange", () => {
-  handleGetSelection();
+  handleGetSelection().catch((e) => console.error("figdiff: selectionchange handler failed", e));
 });
