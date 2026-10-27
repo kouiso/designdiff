@@ -650,6 +650,18 @@ describe("handlePluginMessage", () => {
     expect(state.tab).toBe("inspect");
   });
 
+  // 開発者VMでは shim iframe 中継で event.source === null になる。
+  // source ではなくデータ形状で判定するので、この検体も受理される必要がある。
+  it("event.source === null でも形状が正しければ受理する", () => {
+    window.dispatchEvent(
+      new MessageEvent("message", {
+        source: null,
+        data: { pluginMessage: { type: "init", tab: "inspect" } },
+      }),
+    );
+    expect(state.tab).toBe("inspect");
+  });
+
   it("親から届く拡張機能の応答を UI に表示する", () => {
     state.selection = [makeSelection()];
     render();
