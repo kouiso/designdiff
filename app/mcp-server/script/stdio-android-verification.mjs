@@ -35,6 +35,7 @@ import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js"
 import sharp from "sharp";
 
 import { verifyStripeStitch } from "./lib/stripe-stitch-oracle.mjs";
+import { waitForPageRender, x07ScrollGate } from "./lib/page-render-oracle.mjs";
 
 const execFileAsync = promisify(execFile);
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
@@ -312,31 +313,8 @@ await adb([
 ]);
 // ブラウザ描画待ち。低速エミュレータでは固定時間待ちだとページ未描画のまま
 // scroll が走って1枚しか撮れないので、縞模様の彩色画素が出るまで待つ。
-const waitForPageRender = async () => {
-  const deadline = Date.now() + 60_000;
-  let attempts = 0;
-  while (Date.now() < deadline) {
-    attempts++;
-    const { stdout } = await adb(["-s", scrollDevice.serial, "exec-out", "screencap", "-p"], {
-      encoding: "buffer",
-      maxBuffer: 50 * 1024 * 1024,
-    });
-    const { data, info } = await sharp(Buffer.isBuffer(stdout) ? stdout : Buffer.from(stdout))
-      .raw()
-      .toBuffer({ resolveWithObject: true });
-    let colored = 0;
-    const step = 997 * info.channels;
-    for (let i = 0; i + 2 < data.length; i += step) {
-      const r = data[i],
-        g = data[i + 1],
-        b = data[i + 2];
-      if (Math.max(Math.abs(r - g), Math.abs(g - b), Math.abs(r - b)) > 60) colored++;
-    }
-    if (colored > 200) return { rendered: true, attempts, coloredSamples: colored };
-    await new Promise((r) => setTimeout(r, 2000));
-  }
-  return { rendered: false, attempts };
-};
+// 判定は画面サイズ非依存の比率 + 既知 fixture 色で行う
+// (lib/page-render-oracle.mjs — 小さい画面で標本数が閾値未満になる誤判定の修正)。
 // 結合画像の行を走査し、トースト色に見える行を数える。行は中央付近の3列の
 // 過半数がトースト色のときだけカウントする (縞の縁の混色を除外)。
 const countToastRows = async (png) => {
@@ -357,8 +335,34 @@ const countToastRows = async (png) => {
   }
   return rows;
 };
-const pageRenderWait = await waitForPageRender();
-evidence.results.pageRenderWait = pageRenderWait;
+const pageRenderWait = await waitForPageRender({
+  captureScreen: async () => {
+    const { stdout } = await adb(["-s", scrollDevice.serial, "exec-out", "screencap", "-p"], {
+      encoding: "buffer",
+      maxBuffer: 50 * 1024 * 1024,
+    });
+    return Buffer.isBuffer(stdout) ? stdout : Buffer.from(stdout);
+  },
+  // ANDROID_PAGE_URL 指定時は縞 fixture でないので彩色比率だけで判定する
+  fixturePage: !process.env.ANDROID_PAGE_URL,
+});
+const { lastShot: unrenderedShot, ...waitRecord } = pageRenderWait;
+evidence.results.pageRenderWait = waitRecord;
+
+// 描画が確認できないまま X07 を走らせると、環境の不具合が製品の結合
+// 不具合と見分けられなくなる。timeout 時は検体画像と判定内訳を残し、
+// X07 は NOT_RUN として記録して止める。
+const scrollGate = x07ScrollGate(pageRenderWait);
+if (!scrollGate.proceed) {
+  if (unrenderedShot) {
+    await writeFile(join(evidenceDir, "page-render-timeout.png"), unrenderedShot);
+  }
+  evidence.results.X07_android_scroll = scrollGate.record;
+  persistEvidence();
+  assert.fail(
+    `scroll page did not render within the wait deadline (${waitRecord.reason}) — X07 was not run`,
+  );
+}
 
 // captureDir は X05 など他の撮影も共有する。辞書順の末尾を X07 の結合画像と
 // 決め打ちしないよう、撮影前の一覧を控えて差分から新規ファイルを特定する。
