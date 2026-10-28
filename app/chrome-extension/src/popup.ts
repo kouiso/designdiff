@@ -406,12 +406,12 @@ export function renderCompareSection(): HTMLDivElement {
     statsEl.textContent = `${state.diffPixelCount.toLocaleString()} diff px / ${state.totalPixelCount.toLocaleString()} total`;
     resultDiv.appendChild(statsEl);
 
-    if (state.regions.length > 0) {
-      const regionsEl = document.createElement("div");
-      regionsEl.className = "stats";
-      regionsEl.textContent = `${state.regions.length} diff region(s)`;
-      resultDiv.appendChild(regionsEl);
-    }
+    // 0 件でも行を出す。非表示にすると「0 diff px なのに 1 領域」系の
+    // 不整合が利用者から見えなくなり、原因の隠蔽になる (#399)。
+    const regionsEl = document.createElement("div");
+    regionsEl.className = "stats";
+    regionsEl.textContent = `${state.regions.length} diff region(s)`;
+    resultDiv.appendChild(regionsEl);
 
     section.appendChild(resultDiv);
   }
