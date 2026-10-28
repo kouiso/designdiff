@@ -29,6 +29,11 @@ export interface DetectOverlapOptions {
    * 一様な背景では完全一致する候補が複数出るので、その判別に使う。
    */
   expectedOverlap?: number;
+  /**
+   * 重なりとして認める最小行数。
+   * 見込みの重なりが分かっとるときの既定はその半分。暗い帯だけが
+   * 偶然一致した短い重なりを exact として採用せんための下限。
+   */
   minOverlap?: number;
 }
 
@@ -232,7 +237,13 @@ export function detectOverlap(
   assertSameDimensions([previous, next]);
   const { headerHeight, footerHeight } = options;
   const bodyHeight = resolveBodyHeight(previous, headerHeight, footerHeight);
-  const minOverlap = Math.max(1, options.minOverlap ?? 1);
+  const expected = options.expectedOverlap;
+  // 見込みが分かっとるのにその半分も無い重なりは、縞や暗帯が偶然
+  // 一致しただけの可能性が高い。exact の候補から外して近似へ落とす。
+  const minOverlap = Math.max(
+    1,
+    options.minOverlap ?? (expected === undefined ? 1 : Math.floor(expected / 2)),
+  );
 
   const previousHashes = rowHashes(previous);
   const nextHashes = rowHashes(next);
@@ -254,7 +265,6 @@ export function detectOverlap(
   // ハッシュ一致は候補の絞り込みでしかない。採用する1件だけ画素まで確かめる。
   // 見込み値に近い順に見るのは、一様な背景で候補が大量に出たときに
   // 本命が先頭へ来るようにするため。
-  const expected = options.expectedOverlap;
   const ordered =
     expected === undefined
       ? candidates
@@ -274,7 +284,7 @@ export function detectOverlap(
   }
 
   return {
-    overlap: bestEffortOverlap(previous, next, headerHeight, bodyHeight),
+    overlap: bestEffortOverlap(previous, next, headerHeight, bodyHeight, expected),
     method: "best-effort",
   };
 }
@@ -284,22 +294,39 @@ function bestEffortOverlap(
   next: RawImage,
   headerHeight: number,
   bodyHeight: number,
+  expectedOverlap?: number,
 ): number {
   const bandRows = Math.min(BEST_EFFORT_BAND_ROWS, bodyHeight);
   const previousSignatures = rowSignatures(previous);
   const nextSignatures = rowSignatures(next);
+  const candidateCount = bodyHeight - bandRows + 1;
+  const scores = new Float64Array(candidateCount);
 
-  let bestOffset = bodyHeight - bandRows;
   let bestScore = Number.POSITIVE_INFINITY;
-  for (let offset = 0; offset <= bodyHeight - bandRows; offset++) {
+  for (let offset = 0; offset < candidateCount; offset++) {
     let score = 0;
     for (let row = 0; row < bandRows; row++) {
       score += Math.abs(
         previousSignatures[headerHeight + offset + row] - nextSignatures[headerHeight + row],
       );
     }
-    if (score < bestScore) {
-      bestScore = score;
+    scores[offset] = score;
+    if (score < bestScore) bestScore = score;
+  }
+
+  // 縞や暗帯のような周期コンテンツでは、実際の繋ぎ目以外にも同じ最小スコアの
+  // 位置が並ぶ。先に見つかった側(=重なり最大)を採ると結合画像が縮むので、
+  // 最小スコアと見なせる候補の中から見込みの重なりに最も近いものを採る。
+  // 見込みが無いときは従来どおり重なり最大の位置を返す。
+  const scoreTolerance = Math.max(1e-9, bestScore * 0.05);
+  let bestOffset = 0;
+  let bestDistance = Number.POSITIVE_INFINITY;
+  for (let offset = 0; offset < candidateCount; offset++) {
+    if (scores[offset] > bestScore + scoreTolerance) continue;
+    const distance =
+      expectedOverlap === undefined ? offset : Math.abs(bodyHeight - offset - expectedOverlap);
+    if (distance < bestDistance) {
+      bestDistance = distance;
       bestOffset = offset;
     }
   }

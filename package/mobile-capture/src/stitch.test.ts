@@ -281,3 +281,75 @@ describe("stitchScrollFrames の大きさの上限", () => {
     expect(() => stitchScrollFrames([previous, next])).toThrow(/ceiling/);
   });
 });
+
+// RGB のバイト和が全部 3 で、画素値だけが違う色。行の平均輝度が同じになるので、
+// 近似探索のスコアを意図的に同値へ並べられる (#384 の縞ページの再現用)。
+const SUM3_ROWS = [0x000003, 0x000300, 0x030000, 0x010101, 0x000201, 0x010200, 0x020001, 0x000102];
+
+// 近似探索の帯は BEST_EFFORT_BAND_ROWS(32) 行なので、本文が 32 行以下だと
+// ずらせる候補が1つしか無い。候補の選択を確かめる検体は 32 行より高く作る。
+const APPROX_WINDOW = 64;
+
+describe("detectOverlap の近似探索 (#384)", () => {
+  it("最小スコアが同じ候補が並ぶとき、見込みの重なりに最も近いものを採る", () => {
+    // 全行が同じ平均輝度 → 近似スコアが全オフセットで同値になる。
+    // 画素は一致せんので exact は成立せず best-effort へ落ちる。
+    // 旧実装は先に見つかった側(=重なり最大)を採り、結合画像が縮んでいた。
+    const previous = imageFromRows(
+      Array.from({ length: APPROX_WINDOW }, (_, index) => SUM3_ROWS[index % 2]),
+    );
+    const next = imageFromRows(new Array(APPROX_WINDOW).fill(SUM3_ROWS[2]));
+
+    const result = detectOverlap(previous, next, {
+      headerHeight: 0,
+      footerHeight: 0,
+      expectedOverlap: 40,
+    });
+
+    expect(result.method).toBe("best-effort");
+    expect(result.overlap).toBe(40);
+  });
+
+  it("見込みの半分を下回る偶然の完全一致は採用しない", () => {
+    // 末尾1行だけが次の先頭と一致する。見込みの重なりが6と分かっとるのに
+    // この1行を採ると、実際よりはるかに浅い重なりで繋いでしまう。
+    const previous = imageFromRows(sequence(0, 10));
+    const next = imageFromRows([9, ...sequence(100, 9)]);
+
+    const result = detectOverlap(previous, next, {
+      headerHeight: 0,
+      footerHeight: 0,
+      expectedOverlap: 6,
+    });
+
+    expect(result.method).toBe("best-effort");
+    expect(result.overlap).not.toBe(1);
+  });
+});
+
+describe("stitchScrollFrames の近似結合 (#384)", () => {
+  it("完全一致が取れん繋ぎ目でも見込みの重なりで繋いで高さを保つ", () => {
+    // 縞ページを一定量ずつ送って撮ったフレーム。1フレームの先頭行が
+    // 画素だけ違う(トースト等)せいで完全一致が取れず近似へ落ちる。
+    // 近似が見込みを無視して最大の重なりを採ると、結合画像が縮む。
+    const STEP = 24;
+    const FRAME_COUNT = 4;
+    const pageRows = Array.from(
+      { length: APPROX_WINDOW + STEP * (FRAME_COUNT - 1) },
+      (_, index) => SUM3_ROWS[Math.floor(index / 6) % SUM3_ROWS.length],
+    );
+    const frames = Array.from({ length: FRAME_COUNT }, (_, index) =>
+      imageFromRows(pageRows.slice(index * STEP, index * STEP + APPROX_WINDOW)),
+    );
+    // 2枚目の先頭行を、平均輝度が同じまま別の色へ差し替える。
+    // 全候補の窓がこの行を含むので、exact の候補が0件になる。
+    frames[1] = imageFromRows([SUM3_ROWS[3], ...pageRows.slice(STEP + 1, STEP + APPROX_WINDOW)]);
+
+    const stitched = stitchScrollFrames(frames, { expectedOverlap: APPROX_WINDOW - STEP });
+
+    expect(stitched.overlaps).toEqual([40, 40, 40]);
+    expect(stitched.image.height).toBe(pageRows.length);
+    // 差し替えた行は捨てる重なりの内側にあるので、繋いだ内容はページどおり。
+    expect(rowsOf(stitched.image)).toEqual(pageRows);
+  });
+});
