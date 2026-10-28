@@ -10,166 +10,56 @@
   "cases": [
     {
       "name": "normal",
-      "order": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7
-      ],
+      "order": [0, 1, 2, 3, 4, 5, 6, 7],
       "expected": true,
       "actual": {
         "ok": true,
         "reasons": [],
-        "sequence": [
-          0,
-          1,
-          2,
-          3,
-          4,
-          5,
-          6,
-          7
-        ],
-        "sectionRows": [
-          190,
-          188,
-          200,
-          198,
-          186,
-          200,
-          200,
-          194
-        ],
+        "sequence": [0, 1, 2, 3, 4, 5, 6, 7],
+        "sectionRows": [190, 188, 200, 198, 186, 200, 200, 194],
         "measuredScale": 0.25
       },
       "sha256": "366476c72f687c08fe5514b128427dd17140e27ba40d00f174d2b30423dad856"
     },
     {
       "name": "duplicated-first",
-      "order": [
-        0,
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7
-      ],
+      "order": [0, 0, 1, 2, 3, 4, 5, 6, 7],
       "expected": false,
       "actual": {
         "ok": false,
         "reasons": [
           "edge stripe 0 spans 390 rows, maximum is 250 from inner median 200 (duplicated or stretched boundary stitch)"
         ],
-        "sequence": [
-          0,
-          1,
-          2,
-          3,
-          4,
-          5,
-          6,
-          7
-        ],
-        "sectionRows": [
-          390,
-          188,
-          200,
-          198,
-          186,
-          200,
-          200,
-          194
-        ],
+        "sequence": [0, 1, 2, 3, 4, 5, 6, 7],
+        "sectionRows": [390, 188, 200, 198, 186, 200, 200, 194],
         "measuredScale": 0.25
       },
       "sha256": "ebaa6b73a1908f64b65611415b3c3d6dc0ee1aad14f5cf47f5c1cc4bd85bd05e"
     },
     {
       "name": "duplicated-last",
-      "order": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        7
-      ],
+      "order": [0, 1, 2, 3, 4, 5, 6, 7, 7],
       "expected": false,
       "actual": {
         "ok": false,
         "reasons": [
           "edge stripe 7 spans 394 rows, maximum is 250 from inner median 200 (duplicated or stretched boundary stitch)"
         ],
-        "sequence": [
-          0,
-          1,
-          2,
-          3,
-          4,
-          5,
-          6,
-          7
-        ],
-        "sectionRows": [
-          190,
-          188,
-          200,
-          198,
-          186,
-          200,
-          200,
-          394
-        ],
+        "sequence": [0, 1, 2, 3, 4, 5, 6, 7],
+        "sectionRows": [190, 188, 200, 198, 186, 200, 200, 394],
         "measuredScale": 0.25
       },
       "sha256": "298200d4611c71757355615e4f37703580de822302b48d84d2b1048927794cde"
     },
     {
       "name": "clipped-edges",
-      "order": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7
-      ],
+      "order": [0, 1, 2, 3, 4, 5, 6, 7],
       "expected": true,
       "actual": {
         "ok": true,
         "reasons": [],
-        "sequence": [
-          0,
-          1,
-          2,
-          3,
-          4,
-          5,
-          6,
-          7
-        ],
-        "sectionRows": [
-          70,
-          188,
-          200,
-          198,
-          186,
-          200,
-          200,
-          80
-        ],
+        "sequence": [0, 1, 2, 3, 4, 5, 6, 7],
+        "sectionRows": [70, 188, 200, 198, 186, 200, 200, 80],
         "measuredScale": 0.25
       },
       "sha256": "17838bac7fc611be9f8d7a93a084e22b3c5bfefe203ade7a625b9aa5c6cafbe5"

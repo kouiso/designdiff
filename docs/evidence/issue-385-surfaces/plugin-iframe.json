@@ -58,9 +58,7 @@
       "ok": true
     }
   ],
-  "dialogs": [
-    "The node inspection timed out. Check the selection and try again."
-  ],
+  "dialogs": ["The node inspection timed out. Check the selection and try again."],
   "pageErrors": [],
   "consoleErrors": [],
   "completed": true,

@@ -25,21 +25,9 @@
       "opacity": 0.5
     },
     "independentPixelOracle": {
-      "insideFrame": [
-        255,
-        127,
-        255
-      ],
-      "outsideFrame": [
-        255,
-        255,
-        255
-      ],
-      "expectedInside": [
-        255,
-        127,
-        255
-      ]
+      "insideFrame": [255, 127, 255],
+      "outsideFrame": [255, 255, 255],
+      "expectedInside": [255, 127, 255]
     },
     "runtimeErrors": {
       "page": [],
