@@ -47,6 +47,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - `contentOffset.peak`, `dx`, and `dy` are now reported as raw (unrounded) values so the report-side confidence floor (0.8) and the 1.5/3.5px magnitude thresholds are decided on the measurement itself; a raw peak of 0.798 no longer rounds to 0.8 and fires a position issue. Rounding is applied only to the human-readable issue text.
 - The FFT self-NCC plane for large windows validates dimensions, search spans, and the cell cap before allocating anything (previously a window beyond the cap allocated an all-NaN plane of roughly the window's area first), and returns an explicit "unmeasurable" result instead of a NaN plane.
 - Correlation candidates for `contentOffset` now require a minimum number of ink-bearing pixel pairs instead of just any four overlapping pixels, so a single coinciding dot between two otherwise-blank windows can no longer produce a perfect (1.0) correlation reported as a clipped translation.
+- The real-Chrome extension E2E (`real-chrome-e2e.mjs`) no longer compares a captured area that differs from the DOM-measured viewport. The launcher used Playwright's default 1280×720 viewport emulation while `captureVisibleTab` grabs the native visible area (window chrome excluded), so the total-pixel assertion failed (810,240 captured vs 921,600 emulated). The context now launches with `viewport: null` so `innerWidth`/`innerHeight` report the real window's visible size and the constructed expected images match the capture.
 
 ### Security
 
