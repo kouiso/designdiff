@@ -14,7 +14,7 @@ concurrency:
 jobs:
   pr-title:
     name: PR title follows Conventional Commits
-    runs-on: ${{ vars.RUNNER_LINUX || 'ubuntu-latest' }}
+    runs-on: ubuntu-latest
     timeout-minutes: 5
     if: github.event.pull_request.draft != true
     steps:

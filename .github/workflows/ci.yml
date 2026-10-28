@@ -15,7 +15,7 @@ concurrency:
 jobs:
   build-artifact:
     name: Shared Linux build
-    runs-on: ${{ vars.RUNNER_LINUX || 'ubuntu-latest' }}
+    runs-on: ubuntu-latest
     timeout-minutes: 15
     if: github.event.pull_request.draft != true
     steps:
@@ -40,7 +40,7 @@ jobs:
   node:
     needs: build-artifact
     name: Node (${{ matrix.check-type }})
-    runs-on: ${{ vars.RUNNER_LINUX || 'ubuntu-latest' }}
+    runs-on: ubuntu-latest
     timeout-minutes: 15
     if: always() && !cancelled() && github.event.pull_request.draft != true
     strategy:
@@ -93,7 +93,7 @@ jobs:
   e2e:
     needs: build-artifact
     name: E2E (Playwright)
-    runs-on: ${{ vars.RUNNER_LINUX || 'ubuntu-latest' }}
+    runs-on: ubuntu-latest
     timeout-minutes: 20
     if: always() && !cancelled() && github.event.pull_request.draft != true
     steps:
@@ -142,7 +142,7 @@ jobs:
   figma-plugin-e2e:
     needs: build-artifact
     name: Figma plugin host E2E
-    runs-on: ${{ vars.RUNNER_LINUX || 'ubuntu-latest' }}
+    runs-on: ubuntu-latest
     timeout-minutes: 15
     if: always() && !cancelled() && github.event.pull_request.draft != true
     steps:
@@ -193,7 +193,7 @@ jobs:
   electron-smoke:
     needs: build-artifact
     name: Electron IPC smoke
-    runs-on: ${{ vars.RUNNER_LINUX || 'ubuntu-latest' }}
+    runs-on: ubuntu-latest
     timeout-minutes: 15
     if: always() && !cancelled() && github.event.pull_request.draft != true
     steps:
@@ -245,7 +245,7 @@ jobs:
   chrome-ext-e2e:
     needs: build-artifact
     name: Chrome extension E2E
-    runs-on: ${{ vars.RUNNER_LINUX || 'ubuntu-latest' }}
+    runs-on: ubuntu-latest
     timeout-minutes: 15
     if: always() && !cancelled() && github.event.pull_request.draft != true
     steps:
@@ -311,7 +311,7 @@ jobs:
 
   naming:
     name: Naming and action pins
-    runs-on: ${{ vars.RUNNER_LINUX || 'ubuntu-latest' }}
+    runs-on: ubuntu-latest
     timeout-minutes: 5
     if: github.event.pull_request.draft != true
     steps:
@@ -335,7 +335,7 @@ jobs:
   # 独立した物差しが壊れていないことを、比較機能の変更ごとに確かめる。
   oracle:
     name: Independent oracle self-test
-    runs-on: ${{ vars.RUNNER_LINUX || 'ubuntu-latest' }}
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     if: github.event.pull_request.draft != true
     steps:
