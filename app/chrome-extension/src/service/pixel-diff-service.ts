@@ -146,9 +146,17 @@ function classifyPixel(
 
   if (Math.abs(delta) <= maxDelta) {
     // 一致。元 design を薄く残し、視認用に alpha を下げる。
-    out[pos] = designData[pos];
-    out[pos + 1] = designData[pos + 1];
-    out[pos + 2] = designData[pos + 2];
+    // グレースケールにするのは、clusterDiffPixels の isDiffPixel が
+    // 「グレー以外 = 差分」と解釈する契約に合わせるため。
+    // 一致した緑マーカーなどを有彩色のまま出すと、差分領域に誤計上される。
+    const luminance = Math.round(
+      designData[pos] * 0.29889531 +
+        designData[pos + 1] * 0.58662247 +
+        designData[pos + 2] * 0.11448223,
+    );
+    out[pos] = luminance;
+    out[pos + 1] = luminance;
+    out[pos + 2] = luminance;
     out[pos + 3] = Math.round(designData[pos + 3] * 0.3);
     return false;
   }
