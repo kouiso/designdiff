@@ -52,7 +52,7 @@
   },
   "dependencies": {
     "sharp": "^0.35.5",
-    "zod": "^4.4.3"
+    "zod": "^4.6.6"
   },
   "pnpm": {
     "overrides": {
