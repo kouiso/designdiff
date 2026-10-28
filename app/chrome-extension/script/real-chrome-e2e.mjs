@@ -109,6 +109,11 @@ const profileDir = await mkdtemp(join(tmpdir(), "figdiff-ext-profile-"));
 const headlessNew = process.env.FIGDIFF_HEADLESS === "new";
 const context = await chromium.launchPersistentContext(profileDir, {
   headless: false,
+  // 既定の viewport エミュレーションでは innerWidth/innerHeight がエミュレート値を
+  // 返す一方、captureVisibleTab はウィンドウ枠を除いた実可視域を撮る。
+  // DOM 計測とキャプチャ面積がずれると比較の総画素アサーションが偽陽性で落ちるので、
+  // エミュレーションを外して実ウィンドウの可視域をそのまま viewport にする。
+  viewport: null,
   args: [
     ...(headlessNew ? ["--headless=new"] : []),
     `--disable-extensions-except=${extDir}`,
