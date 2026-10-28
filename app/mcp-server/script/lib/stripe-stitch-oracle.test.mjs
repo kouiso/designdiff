@@ -74,6 +74,25 @@ describe("verifyStripeStitch", () => {
     expect(result.ok).toBe(true);
   });
 
+  it.each([0, 7])("端の区画%iが重複しても不合格にする", async (edge) => {
+    const order = [0, 1, 2, 3, 4, 5, 6, 7];
+    order.splice(edge === 0 ? 0 : order.length, 0, edge);
+    const result = await verifyStripeStitch(await buildPng(stitched(order)));
+    expect(result.ok).toBe(false);
+    expect(result.reasons.join("\n")).toContain(`edge stripe ${edge}`);
+  });
+
+  it("両端が撮影窓で短く切れた結合は合格する", async () => {
+    const result = await verifyStripeStitch(
+      await buildPng(
+        stitched([0, 1, 2, 3, 4, 5, 6, 7], (index) =>
+          index === 0 || index === 7 ? 80 : SECTION_ROWS,
+        ),
+      ),
+    );
+    expect(result.reasons).toEqual([]);
+  });
+
   it("区画が暗色で終わる・始まる (実ページの縞の位相) 結合も合格する", async () => {
     const darkEdged = (id, trimTop, trimBottom) => {
       const rows = sectionRows(id, SECTION_ROWS);

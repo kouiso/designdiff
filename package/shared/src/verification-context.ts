@@ -55,6 +55,8 @@ export const VerificationContextPayloadSchema = z
         effectiveThreshold: z.number().finite().min(0).max(1),
         profile: z.enum(["strict", "balanced", "layout"]).nullable(),
         declaredConditions: ComparisonConditionsInputSchema,
+        // 撮影範囲は画像の寸法だけから復元できないため、再検証へ引き継ぐ。
+        screenshotSingleViewport: z.literal(true).optional(),
         geometry: z
           .object({
             designNativeWidth: z.number().int().nonnegative(),

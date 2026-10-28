@@ -2407,6 +2407,45 @@ describe("細線の局所変位 (designdiff#243)", () => {
     ).toBe(true);
   });
 
+  it.each([
+    [0, 0],
+    [9, 0],
+    [10, 0],
+    [10, 1],
+  ])("小さいセクションの残差も発火画素数の床を使う (%i画素、除外%i画素)", async (noisePixels, excludedPixels) => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    const designPixels = await createSolidRgba(SIZE, SIZE, WHITE_RGB);
+    const screenshotPixels = Uint8ClampedArray.from(designPixels);
+    paint(designPixels, 10, 40, 20, 1, DARK_RGB);
+    paint(screenshotPixels, 10, 42, 20, 1, DARK_RGB);
+    // 説明済みの移動とは離して置く。小面積では9画素だけでも平均ΔEが2を超える。
+    paint(screenshotPixels, 100, 41, noisePixels, 1, { r: 0, g: 0, b: 0 });
+    const ignoreMask = new Uint8Array(SIZE * SIZE);
+    ignoreMask.fill(1, 41 * SIZE + 100, 41 * SIZE + 100 + excludedPixels);
+    const report = buildDiffReport({
+      designPixels,
+      screenshotPixels,
+      width: SIZE,
+      height: SIZE,
+      ignoreMask,
+      figmaRootNode: sectionReliefFrame(3),
+      diffRegions: [
+        { x: 10, y: 40, w: 20, h: 1 },
+        { x: 10, y: 42, w: 20, h: 1 },
+      ],
+      rasterizationTolerance: true,
+    });
+    const coverage = report.regionScores.find(
+      (score) => score.regionId === SECTION_RELIEF_NODE_IDS.section,
+    )?.diffClusterCoverage;
+    expect(coverage).toMatchObject({
+      clusterCount: 2,
+      explainedCount: 2,
+      unexplainedPerceptibleDiff: noisePixels - excludedPixels >= 10,
+    });
+    expect(report.aggregateVerdict).toBe(noisePixels - excludedPixels >= 10 ? "fail" : "pass");
+  });
+
   it("セクション内にクラスタ外の知覚可能な色差があれば救済しない", async () => {
     const { buildDiffReport } = await import("./diff-report-builder.js");
     const frame = sectionReliefFrame(55);

@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { copyFile, mkdtemp, rename } from "node:fs/promises";
+import { copyFile, mkdtemp, rename, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import * as path from "node:path";
 
@@ -204,6 +204,90 @@ describe("verify_fix", () => {
     expect(currentEntry?.result.normalization?.screenshotHeight).toBe(600);
     expect(priorEntry?.result.normalization?.containResized).toBe(true);
     expect(currentEntry?.result.normalization?.containResized).toBe(false);
+  });
+
+  it.each([
+    { restoreFromDisk: false, singleViewport: true },
+    { restoreFromDisk: true, singleViewport: true },
+    { restoreFromDisk: false, singleViewport: false },
+    { restoreFromDisk: true, singleViewport: false },
+  ])("撮影範囲の再検証は同じ採点条件を維持する (disk: $restoreFromDisk, viewport: $singleViewport)", async ({
+    restoreFromDisk,
+    singleViewport,
+  }) => {
+    const directory = await mkdtemp(path.join(tmpdir(), "figdiff-verify-viewport-"));
+    process.env.FIGDIFF_ALLOWED_DIRS = directory;
+    try {
+      const designPath = path.join(directory, "design.png");
+      const screenshotPath = path.join(directory, "viewport.png");
+      await sharp({
+        create: { width: 80, height: 100, channels: 3, background: "white" },
+      })
+        .composite([
+          {
+            input: {
+              create: { width: 20, height: 20, channels: 3, background: "black" },
+            },
+            left: 10,
+            top: 10,
+          },
+        ])
+        .png()
+        .toFile(designPath);
+      await sharp(designPath)
+        .extract({ left: 0, top: 0, width: 80, height: 80 })
+        .png()
+        .toFile(screenshotPath);
+      const prior = await client.callTool({
+        name: "compare_design",
+        arguments: {
+          design_source: designPath,
+          screenshot: screenshotPath,
+          screenshot_single_viewport: singleViewport,
+        },
+      });
+      expect(prior.isError, extractText(prior)).toBeFalsy();
+      const { comparisonId } = z
+        .object({ comparisonId: z.string() })
+        .parse(JSON.parse(extractText(prior)));
+      if (restoreFromDisk) clearComparisonHistory();
+      const baseline = await getComparisonEntry(comparisonId);
+      expect(baseline?.result.normalization?.containResized).toBe(singleViewport);
+      expect(baseline?.result.normalization?.screenshotBottomPaddingRows).toBe(
+        singleViewport ? undefined : 20,
+      );
+      expect(
+        baseline?.result.diffReport?.issues.some(
+          (issue) => issue.regionId === "missing-bottom-rows",
+        ),
+      ).toBe(!singleViewport);
+
+      // 同じ画像の再検証なので、撮影範囲を変えて欠落行を捏造してはならない。
+      const result = await client.callTool({
+        name: "verify_fix",
+        arguments: {
+          design_source: designPath,
+          screenshot: screenshotPath,
+          prior_comparison_id: comparisonId,
+          expected_target_node_id: "whole-frame",
+        },
+      });
+      expect(result.isError, extractText(result)).toBeFalsy();
+      expect(JSON.parse(extractText(result)).verdict).toBe("unchanged");
+      const session = await readActiveSession();
+      const current = await getComparisonEntry(z.string().parse(session?.comparisonId));
+      expect(current?.result.normalization?.containResized).toBe(singleViewport);
+      expect(current?.result.normalization?.screenshotBottomPaddingRows).toBe(
+        singleViewport ? undefined : 20,
+      );
+      expect(
+        current?.result.diffReport?.issues.some(
+          (issue) => issue.regionId === "missing-bottom-rows",
+        ),
+      ).toBe(!singleViewport);
+    } finally {
+      await rm(directory, { recursive: true, force: true });
+    }
   });
 
   it("ディスクから復元したbaselineでもverification contextを照合する", async () => {
