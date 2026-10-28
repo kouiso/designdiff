@@ -236,7 +236,9 @@ describe("compareImages — 同幅・異高は縮小せず上端揃えで比較�
 
     // 差分画像を直接デコードし、外していない 200〜209 行だけが描かれ ignore した 210〜219 行は空であることを確かめる。
     const diff = await readDiffRows(result.diffImageBase64 ?? "");
-    expect(diff.diffRows).toEqual(new Set(Array.from({ length: 10 }, (_, i) => screenshotHeight + i)));
+    expect(diff.diffRows).toEqual(
+      new Set(Array.from({ length: 10 }, (_, i) => screenshotHeight + i)),
+    );
   });
 
   it("フルページ design と単一ビューポート撮影 (高さ比 > 1.4) は従来どおり contain 正規化する", async () => {
