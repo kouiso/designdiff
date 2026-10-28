@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { comparePixels } from "@figdiff/shared";
+import { clusterDiffPixels, comparePixels } from "@figdiff/shared";
 
 import { DIFF_THRESHOLD, calculateMatchRate, renderPixelmatchDiff } from "./pixel-diff-service";
 
@@ -105,6 +105,53 @@ describe("pixel-diff-service", () => {
       const { diffPixelCount } = renderPixelmatchDiff(design, screenshot, out, w, h);
       // AA として除外され、構造的な誤検出(false positive)にならない。
       expect(diffPixelCount).toBe(0);
+    });
+  });
+
+  describe("renderPixelmatchDiff の差分画像とクラスタ契約 (#399)", () => {
+    const paint = (
+      data: Uint8ClampedArray,
+      w: number,
+      rect: { x: number; y: number; w: number; h: number },
+      rgba: [number, number, number, number],
+    ) => {
+      for (let y = rect.y; y < rect.y + rect.h; y++) {
+        for (let x = rect.x; x < rect.x + rect.w; x++) {
+          const pos = (y * w + x) * 4;
+          data.set(rgba, pos);
+        }
+      }
+    };
+
+    it("一致した有彩色の画素はグレースケールで描き、diff 領域に数えない", () => {
+      // 白地 + 緑マーカーの同一画像。一致画素を有彩色のまま描くと、
+      // clusterDiffPixels の isDiffPixel(グレー以外=差分)が領域として数えてしまう。
+      const w = 20;
+      const h = 20;
+      const img = new Uint8ClampedArray(w * h * 4).fill(255);
+      paint(img, w, { x: 4, y: 6, w: 5, h: 3 }, [34, 197, 94, 255]);
+
+      const out = new Uint8ClampedArray(w * h * 4);
+      const { diffPixelCount } = renderPixelmatchDiff(img, img, out, w, h);
+
+      expect(diffPixelCount).toBe(0);
+      expect(clusterDiffPixels(out, w, h)).toEqual([]);
+    });
+
+    it("本物の差分は赤で描かれ、1 領域として数えられる", () => {
+      const w = 20;
+      const h = 20;
+      const design = new Uint8ClampedArray(w * h * 4).fill(255);
+      const screenshot = new Uint8ClampedArray(w * h * 4).fill(255);
+      paint(screenshot, w, { x: 3, y: 4, w: 5, h: 4 }, [0, 0, 0, 255]);
+
+      const out = new Uint8ClampedArray(w * h * 4);
+      const { diffPixelCount } = renderPixelmatchDiff(design, screenshot, out, w, h);
+      const regions = clusterDiffPixels(out, w, h);
+
+      expect(diffPixelCount).toBe(20);
+      expect(regions).toHaveLength(1);
+      expect(regions[0].diffPixelCount).toBe(20);
     });
   });
 

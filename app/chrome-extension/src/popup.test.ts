@@ -626,6 +626,22 @@ describe("captureAndCompare", () => {
     expect(document.body.textContent).toContain("1 diff region(s)");
   });
 
+  it("compare 成功で差分領域が 0 件でも件数を明示する (#399)", async () => {
+    const popup = await setupCompare();
+    backgroundResponses.set("compare", {
+      matchRate: 100,
+      diffPixelCount: 0,
+      totalPixelCount: 354564,
+      regions: [],
+    });
+    popup.state.tab = "upload";
+
+    await popup.captureAndCompare();
+
+    expect(document.body.textContent).toContain("0 diff px / 354,564 total");
+    expect(document.body.textContent).toContain("0 diff region(s)");
+  });
+
   it("compare が空応答なら 0 埋めで扱う", async () => {
     const popup = await setupCompare();
     backgroundResponses.set("compare", {});
