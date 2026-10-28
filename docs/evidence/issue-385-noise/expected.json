@@ -1,1 +1,28 @@
-{"figmaRootNode":{"id":"02b1cb2c-36e7-42f0-a99f-4d5e118a2c6c","name":"section-0","type":"FRAME","absoluteBoundingBox":{"x":0,"y":0,"width":120,"height":120},"children":[{"id":"61c16773-fab5-4805-9706-03d79eafadce","name":"section-0","type":"FRAME","absoluteBoundingBox":{"x":0,"y":0,"width":120,"height":40}},{"id":"e8735e60-e0a3-4ec2-b0bb-60b2bf5456cc","name":"section-40","type":"FRAME","absoluteBoundingBox":{"x":0,"y":40,"width":120,"height":3}},{"id":"596a4116-3a35-4ada-9e79-603eee38d040","name":"section-43","type":"FRAME","absoluteBoundingBox":{"x":0,"y":43,"width":120,"height":77}}]}}
+{
+  "figmaRootNode": {
+    "id": "02b1cb2c-36e7-42f0-a99f-4d5e118a2c6c",
+    "name": "section-0",
+    "type": "FRAME",
+    "absoluteBoundingBox": { "x": 0, "y": 0, "width": 120, "height": 120 },
+    "children": [
+      {
+        "id": "61c16773-fab5-4805-9706-03d79eafadce",
+        "name": "section-0",
+        "type": "FRAME",
+        "absoluteBoundingBox": { "x": 0, "y": 0, "width": 120, "height": 40 }
+      },
+      {
+        "id": "e8735e60-e0a3-4ec2-b0bb-60b2bf5456cc",
+        "name": "section-40",
+        "type": "FRAME",
+        "absoluteBoundingBox": { "x": 0, "y": 40, "width": 120, "height": 3 }
+      },
+      {
+        "id": "596a4116-3a35-4ada-9e79-603eee38d040",
+        "name": "section-43",
+        "type": "FRAME",
+        "absoluteBoundingBox": { "x": 0, "y": 43, "width": 120, "height": 77 }
+      }
+    ]
+  }
+}
