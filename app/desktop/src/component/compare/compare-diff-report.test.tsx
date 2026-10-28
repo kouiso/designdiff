@@ -137,6 +137,30 @@ describe("CompareDiffReport", () => {
     expect(screen.getByText(/diffPixels: 42/)).toBeInTheDocument();
   });
 
+  it("補助情報と領域スコアの grid は viewport ではなくコンテナ幅で列を切り替える (#400)", () => {
+    // このレポートは右サイドバー内で描かれる。viewport の lg breakpoint で
+    // 240px 固定列や4列を有効にすると、狭いコンテナでラベル列が0幅まで潰れ、
+    // プレビューや隣の要素へ重なる。container query のクラスが付いていることを
+    // 回帰として固定する（jsdom はレイアウトを計算しないのでクラス契約を見る）。
+    const compareResult = makeResult({
+      diffReport: makeDiffReport(),
+      diffImageBase64: "abc123",
+    });
+    render(<CompareDiffReport compareResult={compareResult} />);
+
+    const matchRateEl = screen.getByText(/matchRate: 98\.5%/);
+    const supplementaryContainer = matchRateEl.closest(".\\@container");
+    expect(supplementaryContainer).not.toBeNull();
+    const supplementaryGrid = supplementaryContainer?.querySelector(".grid");
+    expect(supplementaryGrid?.className).toContain("@md:grid-cols-[minmax(0,1fr)_240px]");
+    expect(supplementaryGrid?.className).not.toMatch(/(?<!@)lg:grid-cols-/);
+
+    const structureEl = screen.getByText(/structure: 0\.900/);
+    const scoreGrid = structureEl.closest(".grid");
+    expect(scoreGrid?.className).toContain("@lg:grid-cols-4");
+    expect(scoreGrid?.className).not.toMatch(/(?<!@)lg:grid-cols-/);
+  });
+
   it("diffImageBase64 がないとき img タグが描画されない", () => {
     const compareResult = makeResult({ diffReport: makeDiffReport() });
     render(<CompareDiffReport compareResult={compareResult} />);
