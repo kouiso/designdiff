@@ -50,6 +50,21 @@ describe("ActiveSessionCard", () => {
     expect(screen.queryByText(/AI が実装中/)).not.toBeInTheDocument();
   });
 
+  // PASS は比較が完了して producer が終わっている状態。
+  it("完了した比較は実装中と出さず PASS と出す", () => {
+    render(
+      <ActiveSessionCard
+        session={{ ...baseSession, status: "PASS", matchRate: 100 }}
+        onOpen={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText(/比較完了/)).toBeInTheDocument();
+    expect(screen.getByText(/PASS/)).toBeInTheDocument();
+    expect(screen.getByText(/match 100%/)).toBeInTheDocument();
+    expect(screen.queryByText(/AI が実装中/)).not.toBeInTheDocument();
+  });
+
   it("進行中は従来どおり実装中と出す", () => {
     render(<ActiveSessionCard session={{ ...baseSession, status: "FAIL" }} onOpen={vi.fn()} />);
 

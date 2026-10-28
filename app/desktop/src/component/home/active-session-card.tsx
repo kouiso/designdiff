@@ -1,4 +1,4 @@
-import { CircleHelp, Zap } from "lucide-react";
+import { CircleCheck, CircleHelp, Zap } from "lucide-react";
 
 import type { ActiveSessionPayload } from "@/store/active-session-store";
 
@@ -13,17 +13,32 @@ export const ActiveSessionCard = ({ session, onOpen }: ActiveSessionCardProps) =
   // UNCERTAIN は自走ループが止まって人の判断を待っている状態。
   // 「実装中」と出すと、いちばん人が見るべき比較が進行中に見えてしまう。
   const needsReview = session.status === "UNCERTAIN";
-  const accent = needsReview ? "var(--warn, #b45309)" : "var(--cobalt, #3b82f6)";
-  const Icon = needsReview ? CircleHelp : Zap;
+  // PASS は比較が完了して収束した状態。producer はもう動いとらんのに
+  // 「実装中」と出すと、利用者がまだ何か起きると待ってしまう。
+  const isPass = session.status === "PASS";
+  const accent = needsReview
+    ? "var(--warn, #b45309)"
+    : isPass
+      ? "var(--pass, #16a34a)"
+      : "var(--cobalt, #3b82f6)";
+  const Icon = needsReview ? CircleHelp : isPass ? CircleCheck : Zap;
 
   return (
     <div
       style={{
-        border: `1px solid ${needsReview ? "var(--warn-line, #b45309)" : "var(--cobalt-line, #3b82f6)"}`,
+        border: `1px solid ${
+          needsReview
+            ? "var(--warn-line, #b45309)"
+            : isPass
+              ? "var(--pass-line, #16a34a)"
+              : "var(--cobalt-line, #3b82f6)"
+        }`,
         borderRadius: "var(--radius-sm-token)",
         background: needsReview
           ? "var(--warn-soft, rgba(180,83,9,0.08))"
-          : "var(--cobalt-soft, rgba(59,130,246,0.08))",
+          : isPass
+            ? "var(--pass-soft, rgba(22,163,74,0.08))"
+            : "var(--cobalt-soft, rgba(59,130,246,0.08))",
         padding: "10px 14px",
         display: "flex",
         alignItems: "center",
@@ -32,7 +47,11 @@ export const ActiveSessionCard = ({ session, onOpen }: ActiveSessionCardProps) =
     >
       <Icon size={15} style={{ color: accent, flexShrink: 0 }} />
       <span style={{ color: "var(--fg)", fontSize: 13, flex: 1 }}>
-        {needsReview ? "人の確認待ち — 判定できず" : `AI が実装中 — match ${matchPct}%`}{" "}
+        {needsReview
+          ? "人の確認待ち — 判定できず"
+          : isPass
+            ? `比較完了 — PASS · match ${matchPct}%`
+            : `AI が実装中 — match ${matchPct}%`}{" "}
         <span style={{ color: "var(--muted-fg)", fontSize: 12 }}>({session.designSource})</span>
       </span>
       {hasUrl && (
