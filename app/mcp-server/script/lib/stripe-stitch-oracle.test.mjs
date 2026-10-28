@@ -92,6 +92,22 @@ describe("verifyStripeStitch", () => {
     expect(result.reasons).toEqual([]);
   });
 
+  it("無彩色の UI 帯 (ツールバー等) は淡い縞色に近くても縞と判定しない", async () => {
+    // ブラウザのツールバーやナビゲーション帯は無彩色のグレーで、淡い縞色
+    // (#963/#369 系) との max-channel 距離が 60 未満になる (実機実測
+    // [98,95,89] が #963 から距離 55)。距離だけでは縞と誤分類して UI の帯が
+    // 区画の一部として計測されるので、彩度が足りない画素は判定対象から外す。
+    const uiGray = [98, 95, 89];
+    const rows = [
+      ...sectionRows(0, SECTION_ROWS),
+      ...Array.from({ length: 30 }, () => uiGray),
+      ...[1, 2, 3, 4, 5, 6, 7].flatMap((id) => sectionRows(id, SECTION_ROWS)),
+    ];
+    const result = await verifyStripeStitch(await buildPng(rows));
+    expect(result.reasons).toEqual([]);
+    expect(result.ok).toBe(true);
+  });
+
   it("区画が入れ替わった結合は不合格にする", async () => {
     const result = await verifyStripeStitch(await buildPng(stitched([0, 2, 1, 3, 4, 5, 6, 7])));
     expect(result.ok).toBe(false);

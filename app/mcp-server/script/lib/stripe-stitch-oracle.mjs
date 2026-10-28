@@ -20,6 +20,12 @@ export const STRIPE_COLORS = [
 
 const MAX_COLOR_DISTANCE = 60;
 const MIN_RUN_ROWS = 8;
+// 縞色は全て彩度が高い (最大・最小チャンネル差が 102 以上)。ブラウザの
+// ツールバーやナビゲーション帯の無彩色グレーは、淡い縞色 (#963/#369 系)
+// からの距離が 60 未満で「縞」に紛れ込み、UI の帯が区画の一部として
+// 計測されてしまう (実機で実測: [98,95,89] が距離 55)。彩度の足りない
+// 画素は縞と判定しない。暗帯 (#111) はもともと -1 なので影響しない。
+const MIN_CHROMA_SPREAD = 40;
 // 実ページの区画は暗色で終わる分 (最大 80px) 短く測れる。通常の撮影の揺れも含めて余裕を持たせる。
 const INNER_HEIGHT_TOLERANCE = 0.25;
 // 検証ページの各区画の CSS 高。ドライバの tallHtml 側を変えたらここも揃える。
@@ -35,6 +41,7 @@ const ABSOLUTE_HEIGHT_TOLERANCE = 0.35;
 const CSS_VIEWPORT_WIDTH_MAX = 500;
 
 const classify = (r, g, b) => {
+  if (Math.max(r, g, b) - Math.min(r, g, b) < MIN_CHROMA_SPREAD) return -1;
   let best = -1;
   let bestDistance = Number.POSITIVE_INFINITY;
   for (let index = 0; index < STRIPE_COLORS.length; index += 1) {

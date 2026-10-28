@@ -67,8 +67,19 @@ export const MAX_STITCHED_PIXELS = 40_000_000;
 /** 完全一致候補のうち、画素まで検証する上限。一様な画面では候補が大量に出る。 */
 const MAX_EXACT_CANDIDATE_VERIFICATIONS = 16;
 
-/** 近似探索で突き合わせる帯の行数。 */
+/**
+ * 近似探索の重なり候補の下限。これより浅い重なりしか採れないときは
+ * スクロールがほぼ1画面進んだか、画面端の UI 帯どうしが偶然揃ったかで、
+ * 本文として採るには情報が少なすぎる。
+ */
 const BEST_EFFORT_BAND_ROWS = 32;
+
+/**
+ * 近似採点で「同じ行」と見なす署名差の上限。端末描画の揺れ (小数オフセットの
+ * アンチエイリアス等) は数バイト分の平均差に収まるので、それより大きい差は
+ * 別の内容が写っているものとして数える。
+ */
+const ROW_AGREE_TOLERANCE = 8;
 
 function assertSameDimensions(frames: readonly RawImage[]): void {
   const [first] = frames;
@@ -274,7 +285,7 @@ export function detectOverlap(
   }
 
   return {
-    overlap: bestEffortOverlap(previous, next, headerHeight, bodyHeight),
+    overlap: bestEffortOverlap(previous, next, headerHeight, bodyHeight, options.expectedOverlap),
     method: "best-effort",
   };
 }
@@ -284,26 +295,58 @@ function bestEffortOverlap(
   next: RawImage,
   headerHeight: number,
   bodyHeight: number,
+  expectedOverlap?: number,
 ): number {
-  const bandRows = Math.min(BEST_EFFORT_BAND_ROWS, bodyHeight);
+  // 見込みが分かっとるのにその 1/4 も無い重なりは、UI 帯どうしや暗帯だけが
+  // 偶然揃った短い一致の可能性が高い。指令量の 1.5 倍を超える fling は
+  // 想定外なので、そこまで浅い候補は外しておく (指令 0.6 画面 × 1.5 ≒ 本文の
+  // 9 割を一度に送る計算)。実機では指令の 1.3 倍前後の fling が実測される。
+  const minOverlap = Math.max(
+    Math.min(BEST_EFFORT_BAND_ROWS, bodyHeight),
+    expectedOverlap === undefined ? 0 : Math.floor(expectedOverlap / 4),
+  );
   const previousSignatures = rowSignatures(previous);
   const nextSignatures = rowSignatures(next);
 
-  let bestOffset = bodyHeight - bandRows;
+  // 近似スコアは重なり候補の全行で取る。フレームの端はブラウザや OS の
+  // UI (ツールバー・ナビゲーション帯) が写り込む場所で、先頭の固定幅だけを
+  // 指紋にすると、その帯で窓が埋まって実スクロール量と無関係な位置へ
+  // 繋ぎ目を取る (実機の device legs で実測)。採点は「一致しない行の割合」。
+  // 行どうしの差がどれだけ大きくても寄与は 1 で頭打ちなので輝度差の和より
+  // 頑健で、割合にするのは生の不一致数だと浅い重なりほど分子が小さくなって
+  // 不一致が多いはずの候補が逆に勝つ (実機の末尾バウンスで実測) ため。
+  const scores = new Float64Array(bodyHeight + 1);
   let bestScore = Number.POSITIVE_INFINITY;
-  for (let offset = 0; offset <= bodyHeight - bandRows; offset++) {
-    let score = 0;
-    for (let row = 0; row < bandRows; row++) {
-      score += Math.abs(
-        previousSignatures[headerHeight + offset + row] - nextSignatures[headerHeight + row],
-      );
+  for (let overlap = minOverlap; overlap <= bodyHeight; overlap++) {
+    const base = headerHeight + bodyHeight - overlap;
+    let disagreements = 0;
+    for (let row = 0; row < overlap; row++) {
+      const diff = Math.abs(previousSignatures[base + row] - nextSignatures[headerHeight + row]);
+      if (diff > ROW_AGREE_TOLERANCE) disagreements++;
     }
-    if (score < bestScore) {
-      bestScore = score;
-      bestOffset = offset;
+    const score = disagreements / overlap;
+    scores[overlap] = score;
+    if (score < bestScore) bestScore = score;
+  }
+
+  // 縞や暗帯のような周期コンテンツでは、実際の繋ぎ目以外にも同程度の
+  // 最小スコアが並ぶ。見込みの重なりに最も近い候補を採る。見込みが無い
+  // ときは従来どおり重なり最大の位置を返す。行署名の衝突で近似一致は
+  // 数%揺れるのと、正解のすぐ隣は行がずれても「似た行」として数えられて
+  // スコアが緩やかにしか悪化しないので、「ほぼ最小」の幅は絶対 5% か
+  // 最小値の 5% の大きい方で取る。
+  const scoreTolerance = Math.max(0.05, bestScore * 0.05);
+  let bestOverlap = bodyHeight;
+  let bestDistance = Number.POSITIVE_INFINITY;
+  for (let overlap = minOverlap; overlap <= bodyHeight; overlap++) {
+    if (scores[overlap] > bestScore + scoreTolerance) continue;
+    const distance = expectedOverlap === undefined ? -overlap : Math.abs(overlap - expectedOverlap);
+    if (distance < bestDistance) {
+      bestDistance = distance;
+      bestOverlap = overlap;
     }
   }
-  return bodyHeight - bestOffset;
+  return bestOverlap;
 }
 
 function copyRows(
