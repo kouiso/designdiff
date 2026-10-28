@@ -34,7 +34,7 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import sharp from "sharp";
 
-import { verifyStripeStitch } from "./lib/stripe-stitch-oracle.mjs";
+import { STRIPE_COLORS, verifyStripeStitch } from "./lib/stripe-stitch-oracle.mjs";
 import { waitForPageRender, x07ScrollGate } from "./lib/page-render-oracle.mjs";
 
 const execFileAsync = promisify(execFile);
@@ -268,19 +268,69 @@ const scrollDevice =
 // ポップアップが出て swipe を食うのを防ぐため。全面ベタ塗りだと
 // フレーム間の重なり判定が付かず縫い目が曖昧になるので、行毎に一意な
 // 縞模様を敷く。
-const stripe = (c, i) =>
-  `height:800px;background:repeating-linear-gradient(0deg,${c},${c} ${40 + i * 8}px,#111 ${40 + i * 8}px,#111 ${80 + i * 8}px)`;
+const STRIPE_HEIGHT_CSS = 800;
+const STRIPE_DARK_BAND_CSS = 40;
+// 縞の色は oracle (stripe-stitch-oracle.mjs) と同じ定数を共有する。
+// ここで別の値にすると「検体と判定が別の色」を前提にした試験になる。
+const STRIPE_RGB = STRIPE_COLORS;
+// 検体ページを CSS グラデーションではなく生成 PNG で描く理由:
+// 実機・実エミュレータでは input swipe の指令量と実スクロール量が一致せず
+// (fling・端折れ)、小数オフセットや transient 表示で行が完全一致しない
+// ため、結合はほぼ必ず行の平均輝度による近似探索へ落ちる。周期縞のような
+// 繰り返しコンテンツだと、近似スコアの最小が縞周期ぶんずれた位置にも並び、
+// 実際より大きな重なりが選ばれて区画が圧縮・欠落する (#384 で oracle 検出)。
+// 各区画の色と 40px の暗帯は oracle の区画・縮尺計測に必要なのでそのまま残し、
+// 行ごとに乱数の輝度揺らぎを焼いて「どの 32 行窓もページ内で一意」な署名に
+// する。揺らぎの振幅は oracle の色判定 (max-channel 差 60) に届かない ±32。
+const fixtureRand = (() => {
+  let seed = 0x384;
+  return () => {
+    seed = (seed + 0x6d2b79f5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+})();
+const fixturePngHeight = STRIPE_HEIGHT_CSS * STRIPE_RGB.length;
+const fixturePixels = new Uint8Array(fixturePngHeight * 3);
+for (let y = 0; y < fixturePngHeight; y += 1) {
+  const section = Math.floor(y / STRIPE_HEIGHT_CSS);
+  const local = y % STRIPE_HEIGHT_CSS;
+  const period = STRIPE_DARK_BAND_CSS * 2 + section * 8;
+  const dark = local % period >= STRIPE_DARK_BAND_CSS + section * 8;
+  const base = dark ? [0x11, 0x11, 0x11] : STRIPE_RGB[section];
+  const wobble = Math.floor(fixtureRand() * 65) - 32;
+  for (let c = 0; c < 3; c += 1) {
+    fixturePixels[y * 3 + c] = Math.min(255, Math.max(0, base[c] + wobble));
+  }
+}
+// 縦 1 css px = 1 png 行で、横幅は引き延ばして使う (行内は一様)。
+const fixturePng = await sharp(fixturePixels, {
+  raw: { width: 1, height: fixturePngHeight, channels: 3 },
+})
+  .png()
+  .toBuffer();
 // 撮影中に定期的に現れる transient 帯。トースト相当の fixture で、結合画像に
 // 焼き付かないことを独立に確かめる。色は縞色と区別できる既知の値にする。
 const TOAST_COLOR = [0xf5, 0xa6, 0x23];
 const toastFixture = `<div style="position:fixed;left:8%;right:8%;bottom:24px;height:96px;background:#f5a623;border-radius:12px;animation:toastblink 3.2s linear infinite"></div><style>@keyframes toastblink{0%,55%{opacity:0}56%,84%{opacity:1}85%,100%{opacity:0}}</style>`;
-const tallHtml = `<!doctype html><html><head><meta name="viewport" content="width=device-width"></head><body style="margin:0">${["#e33", "#3e3", "#33e", "#ee3", "#3ee", "#e3e", "#963", "#369"].map((c, i) => `<div style="${stripe(c, i)}"></div>`).join("")}${toastFixture}</body></html>`;
+// image-rendering:pixelated で非整数倍の拡大でも行端が滲まないようにし、
+// 暗帯の高さ (oracle の縮尺推定の元) が正確に残るようにする。
+const tallHtml = `<!doctype html><html><head><meta name="viewport" content="width=device-width"></head><body style="margin:0"><img src="x07-stripes.png" alt="" style="display:block;width:100%;height:${fixturePngHeight}px;image-rendering:pixelated">${toastFixture}</body></html>`;
 let pageServer;
 let pageUrl;
 if (process.env.ANDROID_PAGE_URL) {
   pageUrl = process.env.ANDROID_PAGE_URL;
 } else {
-  pageServer = createServer((_req, res) => {
+  // 生成した縞画像を証跡に残す — oracle が落ちたとき、撮れた結合画像と
+  // 「出すべきだったページ」を目で並べられると原因の切り分けが早い。
+  await writeFile(join(evidenceDir, "x07-stripe-fixture.png"), fixturePng);
+  pageServer = createServer((req, res) => {
+    if (req.url === "/x07-stripes.png") {
+      res.writeHead(200, { "content-type": "image/png" });
+      res.end(fixturePng);
+      return;
+    }
     res.writeHead(200, { "content-type": "text/html" });
     res.end(tallHtml);
   });

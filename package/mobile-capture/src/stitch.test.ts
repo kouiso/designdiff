@@ -170,6 +170,45 @@ describe("detectOverlap", () => {
     expect(result.overlap).toBeGreaterThanOrEqual(0);
   });
 
+  it("フレーム端に被った UI 帯で先頭の指紋窓が埋まっても、共有域の多数決で実送り量を拾う", () => {
+    // 実機の scroll 末尾ではブラウザのツールバー等が現れて、次フレームの
+    // 先頭が本文と無関係な一様帯になる。先頭の固定窓だけを指紋にすると、
+    // この帯が全候補を同じ向きに引っ張って実送り量と無関係な繋ぎ目を選ぶ
+    // (device legs で実測)。共有域の全行で採れば、本文の多数派が
+    // UI を外れ値として捨てる。実送りは 20 行、真の重なりは 44 行。
+    const body = 64;
+    const uiRows = Array.from({ length: 8 }, () => 250);
+    const previous = imageFromRows(sequence(0, body).map((v) => v * 3));
+    const next = imageFromRows([...uiRows, ...sequence(28, body - 8).map((v) => v * 3)]);
+    const result = detectOverlap(previous, next, {
+      headerHeight: 0,
+      footerHeight: 0,
+      expectedOverlap: body - 20,
+    });
+    expect(result.method).toBe("best-effort");
+    expect(result.overlap).toBe(44);
+  });
+
+  it("近似に落ちても、周期縞で並んだ最小スコアから見込みの重なりに近い候補を採る", () => {
+    // 縞のような周期コンテンツでは、実送り 20 行の正解 (重なり 44) と同じ
+    // 不一致数が周期 (10 行) ぶんずれた位置にも並ぶ。指令した送り量からの
+    // 見込みが無いと最大の重なりを選び、フレームをまるごと落とす。
+    // 各行 +3 だけずらして完全一致を潰し、近似経路を強制する。
+    const period = 10;
+    const phase = (index: number) => (index % period < 5 ? 200 : 20);
+    const body = 64;
+    const advance = 20;
+    const previous = imageFromRows(Array.from({ length: body }, (_, i) => phase(i)));
+    const next = imageFromRows(Array.from({ length: body }, (_, i) => phase(i + advance) + 3));
+    const result = detectOverlap(previous, next, {
+      headerHeight: 0,
+      footerHeight: 0,
+      expectedOverlap: body - advance,
+    });
+    expect(result.method).toBe("best-effort");
+    expect(result.overlap).toBe(body - advance);
+  });
+
   it("rejects fixed bands that leave no scrollable body", () => {
     const frame = imageFromRows([1, 2]);
     expect(() => detectOverlap(frame, frame, { headerHeight: 1, footerHeight: 1 })).toThrow(
