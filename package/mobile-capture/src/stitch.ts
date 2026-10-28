@@ -243,7 +243,13 @@ export function detectOverlap(
   assertSameDimensions([previous, next]);
   const { headerHeight, footerHeight } = options;
   const bodyHeight = resolveBodyHeight(previous, headerHeight, footerHeight);
-  const minOverlap = Math.max(1, options.minOverlap ?? 1);
+  const expected = options.expectedOverlap;
+  // 見込みが分かっとるのにその半分も無い重なりは、縞や暗帯が偶然
+  // 一致しただけの可能性が高い。exact の候補から外して近似へ落とす。
+  const minOverlap = Math.max(
+    1,
+    options.minOverlap ?? (expected === undefined ? 1 : Math.floor(expected / 2)),
+  );
 
   const previousHashes = rowHashes(previous);
   const nextHashes = rowHashes(next);
@@ -265,7 +271,6 @@ export function detectOverlap(
   // ハッシュ一致は候補の絞り込みでしかない。採用する1件だけ画素まで確かめる。
   // 見込み値に近い順に見るのは、一様な背景で候補が大量に出たときに
   // 本命が先頭へ来るようにするため。
-  const expected = options.expectedOverlap;
   const ordered =
     expected === undefined
       ? candidates
