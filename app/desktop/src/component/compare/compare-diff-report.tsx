@@ -55,11 +55,16 @@ export function CompareDiffReport({ compareResult }: CompareDiffReportProps) {
                       {formatBoundingBox(regionScore.bbox)}
                     </span>
                   </div>
-                  <div className="grid gap-2 text-muted-foreground sm:grid-cols-2 lg:grid-cols-4">
-                    <span>structure: {formatScore(regionScore.structure)}</span>
-                    <span>color: {formatScore(regionScore.color)}</span>
-                    <span>shape: {formatScore(regionScore.shape)}</span>
-                    <span>layout: {formatScore(regionScore.layout)}</span>
+                  {/* このカードはサイドバー内で使われるので、viewport ではなく
+                      コンテナ幅で列数を決める。狭い側で4列を強制すると
+                      ラベルが0幅まで潰れて隣の要素へ重なる。 */}
+                  <div className="@container">
+                    <div className="grid @lg:grid-cols-4 @sm:grid-cols-2 gap-2 text-muted-foreground">
+                      <span>structure: {formatScore(regionScore.structure)}</span>
+                      <span>color: {formatScore(regionScore.color)}</span>
+                      <span>shape: {formatScore(regionScore.shape)}</span>
+                      <span>layout: {formatScore(regionScore.layout)}</span>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -95,20 +100,25 @@ export function CompareDiffReport({ compareResult }: CompareDiffReportProps) {
 
         <Card className="space-y-3 p-4">
           <h3 className="font-semibold text-sm">{t("compare.supplementaryInfo")}</h3>
-          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_240px]">
-            <div className="space-y-2 text-sm">
-              <p>matchRate: {compareResult.matchRate}%</p>
-              <p>diffRegions: {compareResult.diffRegions.length}</p>
-              <p>diffPixels: {compareResult.diffPixelCount}</p>
-            </div>
+          {/* 補助情報カードもサイドバー内なので、2列化は viewport ではなく
+              コンテナ幅で切り替える。240px 固定列がコンテナへ収まらない幅で
+              適用されると、数値ラベル側が0幅になりプレビューへ重なって表示される。 */}
+          <div className="@container">
+            <div className="grid @md:grid-cols-[minmax(0,1fr)_240px] gap-4">
+              <div className="space-y-2 text-sm">
+                <p>matchRate: {compareResult.matchRate}%</p>
+                <p>diffRegions: {compareResult.diffRegions.length}</p>
+                <p>diffPixels: {compareResult.diffPixelCount}</p>
+              </div>
 
-            {compareResult.diffImageBase64 ? (
-              <img
-                src={buildDiffPreviewSrc(compareResult.diffImageBase64)}
-                alt={t("compare.diffPreviewAlt")}
-                className="w-full rounded-lg border border-border/70 bg-background object-contain"
-              />
-            ) : null}
+              {compareResult.diffImageBase64 ? (
+                <img
+                  src={buildDiffPreviewSrc(compareResult.diffImageBase64)}
+                  alt={t("compare.diffPreviewAlt")}
+                  className="w-full rounded-lg border border-border/70 bg-background object-contain"
+                />
+              ) : null}
+            </div>
           </div>
         </Card>
       </div>
