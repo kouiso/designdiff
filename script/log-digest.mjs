@@ -21,8 +21,6 @@ import { pathToFileURL } from "node:url";
 
 export const APP_LOG_NAME = "FigDiff";
 
-// --- 入力の場所 ---------------------------------------------------------------
-
 export const electronLogDir = (
   appName,
   { platform = process.platform, home = homedir(), env = process.env } = {},
@@ -65,8 +63,6 @@ export const defaultSources = (cwd = process.cwd()) => {
     },
   ];
 };
-
-// --- 行の解釈 -----------------------------------------------------------------
 
 // ESC (0x1b) をリテラルで書くと no-control-regex に当たるので組み立てる。
 const ANSI_PATTERN = new RegExp(`${String.fromCharCode(27)}\\[[0-9;?]*[ -/]*[@-~]`, "g");
@@ -195,8 +191,6 @@ export const readEntries = (source) => {
   }
   return entries;
 };
-
-// --- 集計 ---------------------------------------------------------------------
 
 const PATH_SEGMENT = `[^\\s/\\\\"'\`]+`;
 const SPACED_SEGMENT = `${PATH_SEGMENT}(?:[ \\t]+${PATH_SEGMENT})*`;
@@ -407,8 +401,6 @@ export const digest = (entries, { since = null, minLevel = "warn" } = {}) => {
   }
   return [...groups.values()].sort((a, b) => b.last - a.last);
 };
-
-// --- 出力 ---------------------------------------------------------------------
 
 const fmtTime = (ms) => {
   const d = new Date(ms);
