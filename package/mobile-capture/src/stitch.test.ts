@@ -160,6 +160,37 @@ describe("detectOverlap", () => {
     ).toBe(4);
   });
 
+  it("accepts an exact seam shallower than half the expected overlap (fling bound is a quarter)", () => {
+    // 指令量の 1.3 倍前後の fling は実機で普通に起きる。重なり 9 は
+    // expected 20 の半分を切るが正しい縫い目で、/2 の下限だと近似へ落ちる。
+    // 近似側と同じ 1/4 の下限なら exact のまま採用できる。
+    const previous = imageFromRows(sequence(0, 20));
+    const next = imageFromRows(sequence(11, 20));
+
+    const result = detectOverlap(previous, next, {
+      headerHeight: 0,
+      footerHeight: 0,
+      expectedOverlap: 20,
+    });
+
+    expect(result.overlap).toBe(9);
+    expect(result.method).toBe("exact");
+  });
+
+  it("rejects an exact seam below a quarter of the expected overlap", () => {
+    // 同じ重なり 9 でも expected 40 (下限 10) では偶然一致として捨てる。
+    const previous = imageFromRows(sequence(0, 20));
+    const next = imageFromRows(sequence(11, 20));
+
+    const result = detectOverlap(previous, next, {
+      headerHeight: 0,
+      footerHeight: 0,
+      expectedOverlap: 40,
+    });
+
+    expect(result.method).toBe("best-effort");
+  });
+
   it("falls back to a best-effort score when no row matches exactly", () => {
     const previous = imageFromRows(sequence(0, 10));
     const next = imageFromRows(sequence(100, 10));
@@ -349,16 +380,17 @@ describe("detectOverlap の近似探索 (#384)", () => {
     expect(result.overlap).toBe(40);
   });
 
-  it("見込みの半分を下回る偶然の完全一致は採用しない", () => {
-    // 末尾1行だけが次の先頭と一致する。見込みの重なりが6と分かっとるのに
+  it("見込みの 1/4 を下回る偶然の完全一致は採用しない", () => {
+    // 末尾1行だけが次の先頭と一致する。見込みの重なりが8と分かっとるのに
     // この1行を採ると、実際よりはるかに浅い重なりで繋いでしまう。
+    // 棄却の下限は近似側と同じ fling 由来の 1/4 (=2行)。
     const previous = imageFromRows(sequence(0, 10));
     const next = imageFromRows([9, ...sequence(100, 9)]);
 
     const result = detectOverlap(previous, next, {
       headerHeight: 0,
       footerHeight: 0,
-      expectedOverlap: 6,
+      expectedOverlap: 8,
     });
 
     expect(result.method).toBe("best-effort");
