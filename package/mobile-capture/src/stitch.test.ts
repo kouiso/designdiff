@@ -366,6 +366,66 @@ describe("detectOverlap の近似探索 (#384)", () => {
   });
 });
 
+describe("stitchScrollFrames の近似結合の回帰試験 (#406)", () => {
+  // #384/#405 で直した縮みの回帰検体。実機で観測した条件
+  // (8色×800行の縞ページ・窓640・送り384・見込みの重なり256) をそのまま使う。
+  // 修正前の近似探索は最小スコアで最初に見つかった側 (= 最大の重なり) を採るので、
+  // 結合画像が 5088〜5792 行まで縮み、重なりに 608/640/616 が混ざっていた。
+  const PAGE_HEIGHT = 6400;
+  const WINDOW = 640;
+  const FEED = 384;
+  const STRIPE = 800;
+  const EXPECTED = WINDOW - FEED; // 256
+  const FRAME_COUNT = (PAGE_HEIGHT - WINDOW) / FEED + 1; // 16
+  // 縞の8色は RGB のバイト和が近い色に揃えてある。行署名 (バイト平均) では
+  // どの縞も同じに見えるので、近似探索には正解と同スコアの候補が大量に並ぶ。
+  // 修正前コードが縮めたのはこの平たんさのせい。画素は別色なので
+  // 完全一致の筋は残る。
+  const STRIPE_COLORS = [
+    0xff0000, 0x00ff00, 0x0000ff, 0x660000, 0x006600, 0x000066, 0x330000, 0x003300,
+  ];
+  const pageRows = Array.from(
+    { length: PAGE_HEIGHT },
+    (_, index) => STRIPE_COLORS[Math.floor(index / STRIPE)],
+  );
+  const offsets = Array.from({ length: FRAME_COUNT }, (_, index) => index * FEED);
+  const capture = (offset: number) => imageFromRows(pageRows.slice(offset, offset + WINDOW));
+
+  it("トースト帯が被って完全一致が取れん結合でも、見込みの重なりで繋いで高さを保つ", () => {
+    // 実機では OS の通知・トーストがフレーム上端に被って、先頭数行が
+    // 本文と無関係な別色になる。全ての完全一致候補が先頭行を比較に含むので、
+    // ここを潰すとその繋ぎ目は必ず近似へ落ちる。
+    const TOAST = 0xffffff;
+    const frames = offsets.map((offset, index) =>
+      index === 0
+        ? capture(offset)
+        : imageFromRows([
+            ...new Array<number>(8).fill(TOAST),
+            ...pageRows.slice(offset + 8, offset + WINDOW),
+          ]),
+    );
+
+    const stitched = stitchScrollFrames(frames, { expectedOverlap: EXPECTED });
+
+    expect(stitched.overlaps).toEqual(new Array(FRAME_COUNT - 1).fill(EXPECTED));
+    expect(stitched.image.height).toBe(PAGE_HEIGHT);
+    // トースト帯は捨てる重なりの内側にあるので、繋いだ内容はページどおり。
+    expect(rowsOf(stitched.image)).toEqual(pageRows);
+  });
+
+  it("摂動が無ければ従来どおり完全一致で繋ぐ", () => {
+    const frames = offsets.map(capture);
+
+    const stitched = stitchScrollFrames(frames, { expectedOverlap: EXPECTED });
+
+    expect(stitched.overlaps).toEqual(new Array(FRAME_COUNT - 1).fill(EXPECTED));
+    expect(stitched.image.height).toBe(PAGE_HEIGHT);
+    expect(rowsOf(stitched.image)).toEqual(pageRows);
+    // 近似へ落ちると notes に注記が残るので、無いことで完全一致を確かめる。
+    expect(stitched.notes.join("")).not.toContain("近似");
+  });
+});
+
 describe("stitchScrollFrames の近似結合 (#384)", () => {
   it("完全一致が取れん繋ぎ目でも見込みの重なりで繋いで高さを保つ", () => {
     // 縞ページを一定量ずつ送って撮ったフレーム。1フレームの先頭行が
