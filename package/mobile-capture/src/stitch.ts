@@ -244,11 +244,12 @@ export function detectOverlap(
   const { headerHeight, footerHeight } = options;
   const bodyHeight = resolveBodyHeight(previous, headerHeight, footerHeight);
   const expected = options.expectedOverlap;
-  // 見込みが分かっとるのにその半分も無い重なりは、縞や暗帯が偶然
-  // 一致しただけの可能性が高い。exact の候補から外して近似へ落とす。
+  // 偶然一致の掴み損ないを防ぐ下限は近似側と同じ fling 由来の 1/4 に揃える。
+  // /2 のままだと指令の 1.3 倍前後の fling で実際に起きる浅い重なり
+  // (見込みの 0.5x 直下) が exact 候補から外れて近似へ落ちる (実測)。
   const minOverlap = Math.max(
     1,
-    options.minOverlap ?? (expected === undefined ? 1 : Math.floor(expected / 2)),
+    options.minOverlap ?? (expected === undefined ? 1 : Math.floor(expected / 4)),
   );
 
   const previousHashes = rowHashes(previous);
