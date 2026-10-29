@@ -299,7 +299,10 @@ function assertIssuePresence(
   expect((result.diffReport?.issues.length ?? 0) > 0).toBe(true);
 }
 
-const assertIssueKinds = (result: CompareDesignResult, expectedKinds: string[] | undefined): void => {
+const assertIssueKinds = (
+  result: CompareDesignResult,
+  expectedKinds: string[] | undefined,
+): void => {
   if (!expectedKinds || expectedKinds.length === 0) {
     return;
   }
