@@ -299,7 +299,7 @@ function assertIssuePresence(
   expect((result.diffReport?.issues.length ?? 0) > 0).toBe(true);
 }
 
-function assertIssueKinds(result: CompareDesignResult, expectedKinds: string[] | undefined): void {
+const assertIssueKinds = (result: CompareDesignResult, expectedKinds: string[] | undefined): void => {
   if (!expectedKinds || expectedKinds.length === 0) {
     return;
   }
@@ -309,7 +309,7 @@ function assertIssueKinds(result: CompareDesignResult, expectedKinds: string[] |
   for (const expectedKind of expectedKinds) {
     expect(actualKinds.has(expectedKind)).toBe(true);
   }
-}
+};
 
 function assertWorstRegions(
   result: CompareDesignResult,
