@@ -1,0 +1,85 @@
+{
+  "base": "184eb7131ed3d0941b9d1a0fee5b0647c469f774",
+  "branch": "test/issue-427-independent-oracle",
+  "node": "v24.19.0",
+  "platform": "Linux-6.18.57-x86_64-with-glibc2.41",
+  "sharp": "0.35.5",
+  "sourceSha256": {
+    "verification/script/measure-gate1-oracle.mjs": "0dfc4f25b310a2c44ac02e0b4e29864a0b6485c648426769f8594a458907de84",
+    "verification/script/measure-gate1-oracle.test.mjs": "0fadec414c45a9abd28e38730faa0ac13ae7e7bc830d4ac2e002cca74c65d559",
+    "verification/fixture/gate1-independent-oracle.json": "e369849a39b4e74bc904ee004e457b86a27eaf1bb3da3f33f53f4fa2997bf8e6"
+  },
+  "checks": {
+    "unit": {
+      "command": [
+        "node",
+        "--test",
+        "verification/script/measure-gate1-oracle.test.mjs"
+      ],
+      "exitCode": 0,
+      "seconds": 0.153
+    },
+    "biome": {
+      "command": [
+        "node_modules/.bin/biome",
+        "check",
+        "verification/script/measure-gate1-oracle.mjs",
+        "verification/script/measure-gate1-oracle.test.mjs",
+        "verification/fixture/gate1-independent-oracle.json"
+      ],
+      "exitCode": 0,
+      "seconds": 0.072
+    },
+    "eslint": {
+      "command": [
+        "node_modules/.bin/eslint",
+        "verification/script/measure-gate1-oracle.mjs",
+        "verification/script/measure-gate1-oracle.test.mjs"
+      ],
+      "exitCode": 0,
+      "seconds": 0.707
+    },
+    "typecheck": {
+      "command": [
+        "node_modules/.bin/tsc",
+        "--allowJs",
+        "--checkJs",
+        "--noEmit",
+        "--module",
+        "nodenext",
+        "--target",
+        "es2022",
+        "--skipLibCheck",
+        "verification/script/measure-gate1-oracle.mjs",
+        "verification/script/measure-gate1-oracle.test.mjs"
+      ],
+      "exitCode": 0,
+      "seconds": 0.692
+    },
+    "generate-fixtures": {
+      "command": [
+        "node",
+        "verification/script/generate-fixtures.mjs",
+        "--check"
+      ],
+      "exitCode": 0,
+      "seconds": 0.783
+    },
+    "reproduce": {
+      "command": [
+        "node",
+        "verification/script/measure-gate1-oracle.mjs",
+        "/tmp/designdiff-427-reproduce.json"
+      ],
+      "exitCode": 0,
+      "seconds": 1.909,
+      "byteIdentical": true
+    },
+    "independent-pillow": {
+      "exitCode": 0,
+      "comparisons": 66,
+      "pillow": "12.3.0",
+      "numpy": "2.3.5"
+    }
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "issue": "https://github.com/kouiso/designdiff/issues/427",
+  "passPairs": [7, 8, 9, 11, 15, 18, 19, 22, 23],
+  "failPairs": [10, 12, 13, 14, 16, 17, 20, 21, 24],
+  "method": "Opaque sRGB bytes; no resizing, alignment, masks, estimator or pixelmatch. Exact nonzero and max-channel delta > 40 are distinct metrics. Dimension mismatches have null pixel metrics. Fixed 32px tile concentration and symmetric radius-1px nearest-colour residual are exploratory independent diagnostics, not acceptance thresholds.",
+  "acceptance": "A positive fail-min minus pass-max gap is necessary but not sufficient for a robust scalar classifier. Overlap remains unresolved; never relax expected.json or remove knownRedIssue to certify separation."
+}
