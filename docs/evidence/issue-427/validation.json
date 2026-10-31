@@ -80,6 +80,20 @@
       "comparisons": 66,
       "pillow": "12.3.0",
       "numpy": "2.3.5"
+    },
+    "commit-guard": {
+      "exitCode": 0,
+      "command": [
+        "node",
+        "script/commit-msg-project-guard.mjs",
+        "/tmp/designdiff-427-commit-message"
+      ],
+      "initialFailure": "ERR_MODULE_NOT_FOUND @figdiff/shared before local commit; corrected by compiling the unchanged public-issue-guard.ts only and linking the workspace package; rerun passed. No hooks were disabled."
+    },
+    "arrow": {
+      "exitCode": 0,
+      "command": "ARROW_FUNCTION_BASE=184eb7131ed3d0941b9d1a0fee5b0647c469f774 node script/check-arrow-functions.mjs",
+      "initialFailure": "origin/develop and develop refs absent; rerun with verified base commit passed."
     }
   }
 }

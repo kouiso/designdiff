@@ -94,3 +94,5 @@ node verification/script/generate-fixtures.mjs --check
 専用ブランチ test/issue-427-independent-oracle。push/PR/merge/deploy/CI実行は未実施。GitHub REST の workflows と hooks 読取は Forbidden だったため、禁止CI/deploy・auto-merge等の副作用を確認できず、pushは保留 (未試行)。別経路で拒否を回避していない。これは自動承認審査の拒否ではなく、API読取の拒否である。ローカル変更とpatchを保持する。GitHub Project statusは外部status起点の副作用を確認できないため未変更。
 
 DoD: 実測表・数値分離帯・監査への回答は用意した。独立指標の追加コードはローカルで検証済みだがPR未作成。指標の分離は未達で、受入完了とはしない。
+
+追記: ローカル初回コミット bd4a4c4 の前に手動実行した message guard は @figdiff/shared 未ビルドで起動失敗したが、shellコマンドがそこで停止せずコミットされた。public-issue-guard.ts のみをビルドし workspace package をローカル解決した上で同じメッセージを追検査しPASS。フック無効化や --no-verify は行っていない。arrow検査も比較用ref不在で初回失敗したため、照合済みdevelopのSHAを ARROW_FUNCTION_BASE に指定してPASS。原失敗を検証成功に混同しない。
