@@ -3,5 +3,262 @@
   "passPairs": [7, 8, 9, 11, 15, 18, 19, 22, 23],
   "failPairs": [10, 12, 13, 14, 16, 17, 20, 21, 24],
   "method": "Opaque sRGB bytes; no resizing, alignment, masks, estimator or pixelmatch. Exact nonzero and max-channel delta > 40 are distinct metrics. Dimension mismatches have null pixel metrics. Fixed 32px tile concentration and symmetric radius-1px nearest-colour residual are exploratory independent diagnostics, not acceptance thresholds.",
-  "acceptance": "A positive fail-min minus pass-max gap is necessary but not sufficient for a robust scalar classifier. Overlap remains unresolved; never relax expected.json or remove knownRedIssue to certify separation."
+  "acceptance": "For a monotone classifier that fails high ratios, a positive fail-min minus pass-max gap is necessary on this sample but does not establish generalization. Overlap remains unresolved; never relax expected.json or remove knownRedIssue to certify separation.",
+  "fixtures": {
+    "pair-07-hm-gate1-9810-3312": {
+      "expectedSha256": "9b6b5815dbb7db7e3d9a2a5fa90a9fde258a96145b06dbab5ee1d5547fb9d987",
+      "variants": [
+        {
+          "variant": "correct",
+          "expectedVerdict": "pass",
+          "knownRedIssue": "designdiff#243"
+        },
+        {
+          "variant": "drift-2px",
+          "expectedVerdict": "fail",
+          "knownRedIssue": null
+        },
+        {
+          "variant": "drift-1px",
+          "expectedVerdict": "pass",
+          "knownRedIssue": "designdiff#243"
+        },
+        {
+          "variant": "linewidth",
+          "expectedVerdict": "fail",
+          "knownRedIssue": null
+        }
+      ]
+    },
+    "pair-08-hm-gate1-9721-6204": {
+      "expectedSha256": "7710d05b5054c539b4c7a861166972ad3e8a43d7b23c552620133524e8302ed9",
+      "variants": [
+        {
+          "variant": "correct",
+          "expectedVerdict": "pass",
+          "knownRedIssue": "designdiff#243"
+        },
+        {
+          "variant": "drift-2px",
+          "expectedVerdict": "fail",
+          "knownRedIssue": null
+        }
+      ]
+    },
+    "pair-09-hm-gate1-9776-6791": {
+      "expectedSha256": "04bc8db97a3d7c36952a05108316296f240ee4d7645207e1aba4c2d92e54848d",
+      "variants": [
+        {
+          "variant": "correct",
+          "expectedVerdict": "pass",
+          "knownRedIssue": "designdiff#243"
+        },
+        {
+          "variant": "drift-2px",
+          "expectedVerdict": "fail",
+          "knownRedIssue": null
+        },
+        {
+          "variant": "drift-1px",
+          "expectedVerdict": "pass",
+          "knownRedIssue": "designdiff#243"
+        },
+        {
+          "variant": "linewidth",
+          "expectedVerdict": "fail",
+          "knownRedIssue": null
+        }
+      ]
+    },
+    "pair-10-hm-gate1-9776-6698": {
+      "expectedSha256": "11f3a9cc15f77c64d46e5e6e29038cff41808cfb5c78ecaa65ae2e9685ac3e4a",
+      "variants": [
+        {
+          "variant": "correct",
+          "expectedVerdict": "fail",
+          "knownRedIssue": null
+        }
+      ]
+    },
+    "pair-11-hm-gate1-9776-6456": {
+      "expectedSha256": "06507824d3097d38a29daa8f4816ca65e216fd5638f5f9b00973a0993cd18ad9",
+      "variants": [
+        {
+          "variant": "correct",
+          "expectedVerdict": "pass",
+          "knownRedIssue": "designdiff#243"
+        },
+        {
+          "variant": "drift-2px",
+          "expectedVerdict": "fail",
+          "knownRedIssue": null
+        }
+      ]
+    },
+    "pair-12-hm-gate1-9810-3193": {
+      "expectedSha256": "4c6c345709c7556bf7bebc66adc96f0e52ab70050f8d41a32ea126afc0d7d539",
+      "variants": [
+        {
+          "variant": "correct",
+          "expectedVerdict": "fail",
+          "knownRedIssue": null
+        }
+      ]
+    },
+    "pair-13-hm-gate1-9804-4204": {
+      "expectedSha256": "799ba589f79ba03d60e4e22947670d01bc0ed1bf70b46713edfa8fb2a5d4b4dc",
+      "variants": [
+        {
+          "variant": "correct",
+          "expectedVerdict": "fail",
+          "knownRedIssue": null
+        }
+      ]
+    },
+    "pair-14-hm-gate1-9804-4285": {
+      "expectedSha256": "339fdce489a93c481d41c80345360ea2d6caf6f7b699f659595ec79d814e2ad0",
+      "variants": [
+        {
+          "variant": "correct",
+          "expectedVerdict": "fail",
+          "knownRedIssue": null
+        }
+      ]
+    },
+    "pair-15-hm-gate1-9804-4369": {
+      "expectedSha256": "d50157262a8e4ff5c684dedb7f4bc00a00bdd401f3128dfdf70c777312b8d00d",
+      "variants": [
+        {
+          "variant": "correct",
+          "expectedVerdict": "pass",
+          "knownRedIssue": "designdiff#243"
+        },
+        {
+          "variant": "drift-2px",
+          "expectedVerdict": "fail",
+          "knownRedIssue": null
+        },
+        {
+          "variant": "drift-1px",
+          "expectedVerdict": "pass",
+          "knownRedIssue": "designdiff#243"
+        },
+        {
+          "variant": "linewidth",
+          "expectedVerdict": "fail",
+          "knownRedIssue": null
+        }
+      ]
+    },
+    "pair-16-hm-gate1-9892-8063": {
+      "expectedSha256": "0663d78b7d4c58d97191991da8ff5c7f93c836b3cdebaeb147d747689fa0b064",
+      "variants": [
+        {
+          "variant": "correct",
+          "expectedVerdict": "fail",
+          "knownRedIssue": null
+        }
+      ]
+    },
+    "pair-17-hm-gate1-9878-6665": {
+      "expectedSha256": "10812832eeea1df8de60dfdcbbb4f8398c6e72c0c916fb6c11733dfd0f61ee52",
+      "variants": [
+        {
+          "variant": "correct",
+          "expectedVerdict": "fail",
+          "knownRedIssue": null
+        }
+      ]
+    },
+    "pair-18-hm-gate1-9892-10228": {
+      "expectedSha256": "f709117fdf1f8f8fac51f4246c19156e12ae1e3cd16eeb21d81488f4a984fb8e",
+      "variants": [
+        {
+          "variant": "correct",
+          "expectedVerdict": "pass",
+          "knownRedIssue": "designdiff#243"
+        },
+        {
+          "variant": "drift-2px",
+          "expectedVerdict": "fail",
+          "knownRedIssue": null
+        }
+      ]
+    },
+    "pair-19-hm-gate1-9863-5441": {
+      "expectedSha256": "ca58fd8b9f18b73c694a9258311ae46fa542e88efe40f1c9380f39a6da7b3cca",
+      "variants": [
+        {
+          "variant": "correct",
+          "expectedVerdict": "pass",
+          "knownRedIssue": "designdiff#243"
+        },
+        {
+          "variant": "drift-2px",
+          "expectedVerdict": "fail",
+          "knownRedIssue": null
+        }
+      ]
+    },
+    "pair-20-hm-gate1-9878-6036": {
+      "expectedSha256": "2f1c33ea5088c2e2168c10fda34fec03f67613ca5d8ad22542d80cbe6598ada1",
+      "variants": [
+        {
+          "variant": "correct",
+          "expectedVerdict": "fail",
+          "knownRedIssue": null
+        }
+      ]
+    },
+    "pair-21-hm-gate1-9878-6362": {
+      "expectedSha256": "a8d3723b95a305b1e0b153584846fe0aee6d96acd95e873f28d2e6405220d5d8",
+      "variants": [
+        {
+          "variant": "correct",
+          "expectedVerdict": "fail",
+          "knownRedIssue": null
+        }
+      ]
+    },
+    "pair-22-hm-gate1-9776-6584": {
+      "expectedSha256": "d031c66e98e4fae36274c54fa798d78e3f5b11a7f15261a9ee787643a9b45446",
+      "variants": [
+        {
+          "variant": "correct",
+          "expectedVerdict": "pass",
+          "knownRedIssue": "designdiff#243"
+        },
+        {
+          "variant": "drift-2px",
+          "expectedVerdict": "fail",
+          "knownRedIssue": null
+        }
+      ]
+    },
+    "pair-23-hm-gate1-9799-4024": {
+      "expectedSha256": "d821e2af08a8aa24bb63b0fc9c26addfd686645ada7a4dce53545aa0524508c4",
+      "variants": [
+        {
+          "variant": "correct",
+          "expectedVerdict": "pass",
+          "knownRedIssue": "designdiff#243"
+        },
+        {
+          "variant": "drift-2px",
+          "expectedVerdict": "fail",
+          "knownRedIssue": null
+        }
+      ]
+    },
+    "pair-24-hm-gate1-9789-3641": {
+      "expectedSha256": "eb2cb3aa65cbff19eabb127195f0021874d9a11f0fdbb1432d4c28cfbbc3b14f",
+      "variants": [
+        {
+          "variant": "correct",
+          "expectedVerdict": "fail",
+          "knownRedIssue": null
+        }
+      ]
+    }
+  }
 }

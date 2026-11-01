@@ -1,11 +1,12 @@
 import assert from "node:assert/strict";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, open, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import sharp from "sharp";
-import { loadImage, measurePixels } from "./measure-gate1-oracle.mjs";
+import { loadImage, measurePixels, validateRgbImage } from "./measure-gate1-oracle.mjs";
 
+/** @param {number[]} values */
 const image = (values, width = values.length) => ({
   data: Buffer.from(values.flatMap((v) => [v, v, v])),
   width,
@@ -52,6 +53,56 @@ test("alpha is rejected instead of silently discarded", async () => {
       .toFile(file);
     await assert.rejects(loadImage(file), /non-opaque/);
     await assert.rejects(loadImage(path.join(dir, "missing.png")), /ENOENT/);
+  } finally {
+    await rm(dir, { recursive: true });
+  }
+});
+
+test("RGB dimensions reject fractional and excessive images before processing", () => {
+  for (const [width, height] of [
+    [1.5, 200],
+    [4_000_001, 1],
+    [NaN, 1],
+    [1, Infinity],
+  ]) {
+    assert.throws(
+      () => validateRgbImage({ data: Buffer.alloc(900), width, height }),
+      /Invalid RGB/,
+    );
+  }
+});
+
+test("encoded files have byte bounds and only complete still PNGs are accepted", async () => {
+  const dir = await mkdtemp(path.join(os.tmpdir(), "gate1-png-guard-"));
+  try {
+    const valid = await sharp(Buffer.from([0, 0, 0]), { raw: { width: 1, height: 1, channels: 3 } })
+      .png()
+      .toBuffer();
+    const png = path.join(dir, "valid.png");
+    await writeFile(png, valid);
+    assert.deepEqual((await loadImage(png)).data, Buffer.from([0, 0, 0]));
+    const sparse = path.join(dir, "oversized.png");
+    const handle = await open(sparse, "w");
+    try {
+      await handle.truncate(16 * 1024 * 1024 + 1);
+    } finally {
+      await handle.close();
+    }
+    await assert.rejects(loadImage(sparse), /regular file of/);
+    await assert.rejects(loadImage(dir), /regular file of/);
+    const invalid = path.join(dir, "invalid.png");
+    await writeFile(invalid, Buffer.from("this is not a PNG"));
+    await assert.rejects(loadImage(invalid), /PNG signature/);
+    await writeFile(invalid, valid.subarray(0, valid.length - 1));
+    await assert.rejects(loadImage(invalid), /truncated PNG/);
+    await writeFile(invalid, Buffer.concat([valid, Buffer.from([0])]));
+    await assert.rejects(loadImage(invalid), /trailing bytes/);
+    const animation = Buffer.alloc(20);
+    animation.writeUInt32BE(8, 0);
+    animation.write("acTL", 4, "ascii");
+    animation.writeUInt32BE(2, 8);
+    await writeFile(invalid, Buffer.concat([valid.subarray(0, 33), animation, valid.subarray(33)]));
+    await assert.rejects(loadImage(invalid), /Animated PNG/);
   } finally {
     await rm(dir, { recursive: true });
   }

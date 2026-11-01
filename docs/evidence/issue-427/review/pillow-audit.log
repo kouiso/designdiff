@@ -1,0 +1,1 @@
+{"comparisonRows": 66, "nullDimensionRows": 3, "numericalRows": 63, "pillow": "12.3.0", "ratioChecks": 378, "scalarSummaryChecks": 6, "scope": "PNG hashes, fixture/source hashes, coverage, dimensions, max-channel delta histograms and six ratios; exploratory spatial metrics and semantic labels are not independently recertified", "sourceHashChecks": 10, "status": "passed"}

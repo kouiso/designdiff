@@ -87,7 +87,7 @@ node verification/script/generate-fixtures.mjs --check
 
 出力先は既存ファイルを上書きしない (wx)。全18ペア・33 variantを固定し、欠損・不正寸法・透過・件数変更で失敗する。4M pixels上限、sharp concurrency=1/cache=false、逐次処理で負荷を制限。環境は CPU5、メモリ17GiB、空き30GiB。60秒 timeout で測定・検証を実行し、欠損や不正画像があれば停止、群が重なれば指標追加へ切替と実行前に決定した。
 
-最終コード版の unit 4件・Biome・ESLint・checkJs/TypeScript・派生15 PNG再生成検査に成功。測定の再実行はbyte一致し、別デコーダ(Pillow/NumPy)でも66比較×6閾値を照合した。生ログとexit code・ツール版・source SHA256は validation.json と *.log。製品コード変更がないため全製品テストは未実施。Nodeは環境のv24.19.0であり、repo要求の>=26.12.1での検証は未実施。依存は/tmpに最小構成で導入し、lockfileは変更しない。
+初回コード版の unit 4件・Biome・ESLint・checkJs/TypeScript・派生15 PNG再生成検査に成功。測定の再実行はbyte一致し、別デコーダ(Pillow/NumPy)でも66比較行のうち同寸法63行×6閾値と、寸法不一致3行のnullを照合した。当時のexit code・ツール版・source SHA256は review/validation-before-review.json と従来の *.log に保存。製品全体テストは未実施。当時はNode v24.19.0で、対応版は未検証だったが、自己レビュー版ではNode26.12.1で関連検査を実行済み (現在のvalidation.json)。依存は/tmpに導入し、repo lockfileには最終差分なし。
 
 ## 配送と残件
 
@@ -96,3 +96,5 @@ node verification/script/generate-fixtures.mjs --check
 DoD: 実測表・数値分離帯・監査への回答は用意した。独立指標の追加コードはローカルで検証済みだがPR未作成。指標の分離は未達で、受入完了とはしない。
 
 追記: ローカル初回コミット bd4a4c4 の前に手動実行した message guard は @figdiff/shared 未ビルドで起動失敗したが、shellコマンドがそこで停止せずコミットされた。public-issue-guard.ts のみをビルドし workspace package をローカル解決した上で同じメッセージを追検査しPASS。フック無効化や --no-verify は行っていない。arrow検査も比較用ref不在で初回失敗したため、照合済みdevelopのSHAを ARROW_FUNCTION_BASE に指定してPASS。原失敗を検証成功に混同しない。
+
+2026-11-01自己レビュー版: 最新結果は [self-review.md](self-review.md)、再現手順は [reproduction.md](reproduction.md)、現在ソースの対応版検証は validation.json と review/ のログを参照。初回Node24検証・旧Libraryアーカイブとは区別する。測定値は不変。

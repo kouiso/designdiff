@@ -36,6 +36,18 @@ test("flat identical images remain ambiguous, zero differences have no fabricate
   assert.equal(result.neutralChannelChangeFraction, null);
   assert.equal(result.bands[0].tiedBestCount, 161);
   assert.equal(result.bands[0].shift, 0);
-  assert.throws(() => probeOverlap(a, { ...a, height: 399 }), /Dimension/);
+  assert.throws(
+    () => probeOverlap(a, { data: Buffer.alloc(399 * 3), width: 1, height: 399 }),
+    /Dimension/,
+  );
   assert.throws(() => probeOverlap({ ...a, data: Buffer.alloc(1) }, a), /Invalid/);
+});
+
+test("probe enforces shared safe RGB bounds before image iteration", () => {
+  const fractional = { data: Buffer.alloc(900), width: 1.5, height: 200 };
+  assert.throws(() => probeOverlap(fractional, fractional), /Invalid RGB/);
+  const huge = { data: Buffer.alloc(0), width: 4_000_001, height: 200 };
+  assert.throws(() => probeOverlap(huge, huge), /Invalid RGB/);
+  const tooShort = { data: Buffer.alloc(160 * 3), width: 1, height: 160 };
+  assert.throws(() => probeOverlap(tooShort, tooShort), /height must exceed/);
 });

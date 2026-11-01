@@ -1,18 +1,21 @@
 import { createHash } from "node:crypto";
-import { readFile, readdir, writeFile } from "node:fs/promises";
+import { open, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import sharp from "sharp";
+import { loadGate1Fixtures } from "./gate1-fixture.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const fixtureRoot = path.join(root, "verification/fixture");
 const maxPixels = 4_000_000;
+const maxEncodedBytes = 16 * 1024 * 1024;
 sharp.concurrency(1);
 sharp.cache(false);
 
 /** @param {{data: Buffer, width: number, height: number}} image */
-const validateImage = (image) => {
+export const validateRgbImage = (image) => {
   if (
+    !Buffer.isBuffer(image.data) ||
     !Number.isSafeInteger(image.width) ||
     !Number.isSafeInteger(image.height) ||
     image.width < 1 ||
@@ -25,9 +28,62 @@ const validateImage = (image) => {
 };
 
 /** @param {string} file */
+const readBoundedPng = async (file) => {
+  const handle = await open(file, "r");
+  try {
+    const stat = await handle.stat();
+    if (!stat.isFile() || stat.size < 8 || stat.size > maxEncodedBytes) {
+      throw new Error(`${file}: PNG must be a regular file of 8..${maxEncodedBytes} bytes`);
+    }
+    // stat 後の肥大化でも無制限に読まない。余分な1バイトで読込中のサイズ変更も検出する。
+    const encoded = Buffer.alloc(stat.size + 1);
+    let total = 0;
+    while (total < encoded.length) {
+      const { bytesRead } = await handle.read(encoded, total, encoded.length - total, null);
+      if (bytesRead === 0) break;
+      total += bytesRead;
+    }
+    if (total !== stat.size) throw new Error(`${file}: PNG changed during bounded read`);
+    return encoded.subarray(0, total);
+  } finally {
+    await handle.close();
+  }
+};
+
+/** @param {Buffer} png */
+const validatePngEncoding = (png) => {
+  if (!png.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))) {
+    throw new Error("Expected PNG signature");
+  }
+  let offset = 8;
+  while (offset + 12 <= png.length) {
+    const size = png.readUInt32BE(offset);
+    const kind = png.toString("ascii", offset + 4, offset + 8);
+    const end = offset + 12 + size;
+    if (end > png.length || (offset === 8 && (kind !== "IHDR" || size !== 13))) {
+      throw new Error("Invalid or truncated PNG structure");
+    }
+    // デコーダが先頭フレームだけ読む場合も、動画を静止検体として受け入れない。
+    if (["acTL", "fcTL", "fdAT"].includes(kind)) throw new Error("Animated PNG is unsupported");
+    if (kind === "IEND") {
+      if (size !== 0 || end !== png.length) throw new Error("Invalid PNG end or trailing bytes");
+      return;
+    }
+    offset = end;
+  }
+  throw new Error("Invalid or truncated PNG structure");
+};
+
+/** @param {string} file */
 export const loadImage = async (file) => {
-  const png = await readFile(file);
-  const { data, info } = await sharp(png, { limitInputPixels: maxPixels })
+  const png = await readBoundedPng(file);
+  validatePngEncoding(png);
+  const image = sharp(png, { limitInputPixels: maxPixels, failOn: "error" });
+  const metadata = await image.metadata();
+  if (metadata.format !== "png" || (metadata.pages ?? 1) !== 1) {
+    throw new Error(`${file}: expected single-frame PNG`);
+  }
+  const { data, info } = await image
     .toColourspace("srgb")
     .ensureAlpha()
     .raw()
@@ -38,9 +94,9 @@ export const loadImage = async (file) => {
     if (data[i * 4 + 3] !== 255) throw new Error(`${file}: non-opaque pixel ${i}`);
     data.copy(rgb, i * 3, i * 4, i * 4 + 3);
   }
-  const image = { data: rgb, width: info.width, height: info.height };
-  validateImage(image);
-  return { ...image, sha256: createHash("sha256").update(png).digest("hex") };
+  const result = { data: rgb, width: info.width, height: info.height };
+  validateRgbImage(result);
+  return { ...result, sha256: createHash("sha256").update(png).digest("hex") };
 };
 
 /** @param {Buffer} a @param {number} i @param {Buffer} b @param {number} j */
@@ -77,8 +133,8 @@ const unexplainedRatio = (a, b, radius, threshold) => {
 /** @param {{data: Buffer, width: number, height: number}} a
  * @param {{data: Buffer, width: number, height: number}} b */
 export const measurePixels = (a, b) => {
-  validateImage(a);
-  validateImage(b);
+  validateRgbImage(a);
+  validateRgbImage(b);
   const dimensionsMatch = a.width === b.width && a.height === b.height;
   // 寸法不一致を差分率 1 と呼ぶと実測値と混ざるので、旧 runner の代用値を別に保存する。
   if (!dimensionsMatch) return { dimensionsMatch, legacyRunnerRatio: 1, metrics: null };
@@ -142,27 +198,15 @@ const range = (rows, value) => {
 };
 
 export const runMeasurement = async () => {
-  const definitionFile = path.join(fixtureRoot, "gate1-independent-oracle.json");
-  const definitionBytes = await readFile(definitionFile);
-  const definition = JSON.parse(definitionBytes.toString("utf8"));
-  const dirs = (await readdir(fixtureRoot)).filter((d) => /^pair-\d+-hm-gate1-/.test(d)).sort();
-  if (dirs.length !== 18) throw new Error(`Expected 18 pairs, found ${dirs.length}`);
+  const { definitionSha256, fixtures } = await loadGate1Fixtures(fixtureRoot);
   const rows = [];
   const inputs = [];
-  for (const dir of dirs) {
-    const pairNumber = Number(dir.split("-")[1]);
-    const group = definition.passPairs.includes(pairNumber) ? "pass" : "fail";
-    if (!definition[`${group}Pairs`].includes(pairNumber)) throw new Error(`Unlisted pair ${dir}`);
-    const expectationBytes = await readFile(path.join(fixtureRoot, dir, "expected.json"));
-    const expectation = JSON.parse(expectationBytes.toString("utf8"));
-    if (expectation.variants.find((v) => v.name === "correct")?.expectedVerdict !== group) {
-      throw new Error(`Fixture label changed: ${dir}`);
-    }
+  for (const { directory: dir, group, expectation, expectedSha256 } of fixtures) {
     const reference = await loadImage(path.join(fixtureRoot, dir, expectation.figmaFrame));
     const correct = await loadImage(path.join(fixtureRoot, dir, "impl-correct.png"));
     inputs.push({
       pairId: dir,
-      expectedSha256: createHash("sha256").update(expectationBytes).digest("hex"),
+      expectedSha256,
     });
     for (const variant of expectation.variants) {
       const image = await loadImage(path.join(fixtureRoot, dir, variant.image));
@@ -175,7 +219,7 @@ export const runMeasurement = async () => {
           group,
           variant: variant.name,
           expectedVerdict: variant.expectedVerdict,
-          knownRedIssue: variant.knownRedIssue ?? null,
+          knownRedIssue: variant.knownRedIssue,
           against,
           image: {
             file: variant.image,
@@ -192,7 +236,9 @@ export const runMeasurement = async () => {
   if (rows.length !== 66)
     throw new Error(`Expected 33 variants × 2 references, found ${rows.length}`);
   const baseline = rows.filter((r) => r.variant === "correct" && r.against === "figma");
+  /** @type {Record<string, {pass: ReturnType<typeof range>, fail: ReturnType<typeof range>, gap: number, separated: boolean}>} */
   const summaries = {};
+  /** @type {Record<string, (metrics: NonNullable<ReturnType<typeof measurePixels>["metrics"]>) => number>} */
   const selectors = {
     rawAbove10: (m) => m.ratios["10"],
     rawAbove20: (m) => m.ratios["20"],
@@ -215,7 +261,7 @@ export const runMeasurement = async () => {
     summaries[name] = { pass, fail, gap: fail.min - pass.max, separated: fail.min > pass.max };
   }
   return {
-    definitionSha256: createHash("sha256").update(definitionBytes).digest("hex"),
+    definitionSha256,
     inputs,
     summaries,
     dimensionMismatches: baseline.filter((r) => !r.dimensionsMatch).map((r) => r.pairId),

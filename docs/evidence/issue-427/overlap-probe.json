@@ -1,4 +1,5 @@
 {
+  "definitionSha256": "52d25cf6ac3f9777a7f71a19084f51818e862ee3ed3813c8c47da97f4e990b98",
   "method": "Diagnostic only. Fixed max-channel delta>40, edge radius1, neutral signed-channel spread<=20, row ink sumRGB<600. Fixed 128px bands, all integer shifts +/-80, common interior rows. Profile-best shifts do not change labels, thresholds, or product comparison.",
   "rows": [
     {

@@ -1,7 +1,8 @@
-import { readFile, readdir, writeFile } from "node:fs/promises";
+import { writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { loadImage } from "./measure-gate1-oracle.mjs";
+import { loadGate1Fixtures } from "./gate1-fixture.mjs";
+import { loadImage, validateRgbImage } from "./measure-gate1-oracle.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 
@@ -54,15 +55,10 @@ const onEdge = (a, x, y) => {
 /** @param {{data: Buffer, width: number, height: number}} a
  * @param {{data: Buffer, width: number, height: number}} b */
 export const probeOverlap = (a, b) => {
+  validateRgbImage(a);
+  validateRgbImage(b);
   if (a.width !== b.width || a.height !== b.height) throw new Error("Dimension mismatch");
-  if (
-    a.width < 1 ||
-    a.height < 161 ||
-    a.data.length !== a.width * a.height * 3 ||
-    b.data.length !== a.data.length
-  ) {
-    throw new Error("Invalid probe image");
-  }
+  if (a.height < 161) throw new Error("Invalid probe image: height must exceed 160px");
   let changed = 0;
   let edgeAssociated = 0;
   let neutralChange = 0;
@@ -120,12 +116,8 @@ if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.ar
     throw new Error("Usage: node verification/script/probe-gate1-overlap.mjs OUTPUT.json");
   const fixtureRoot = path.join(root, "verification/fixture");
   const rows = [];
-  for (const dir of (await readdir(fixtureRoot))
-    .filter((d) => /^pair-\d+-hm-gate1-/.test(d))
-    .sort()) {
-    const expected = JSON.parse(
-      await readFile(path.join(fixtureRoot, dir, "expected.json"), "utf8"),
-    );
+  const { fixtures, definitionSha256 } = await loadGate1Fixtures(fixtureRoot);
+  for (const { directory: dir, expectation: expected } of fixtures) {
     const a = await loadImage(path.join(fixtureRoot, dir, expected.figmaFrame));
     const b = await loadImage(path.join(fixtureRoot, dir, "impl-correct.png"));
     rows.push({
@@ -139,7 +131,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.ar
   if (rows.length !== 18) throw new Error(`Expected 18 pairs, found ${rows.length}`);
   await writeFile(
     output,
-    `${JSON.stringify({ method: "Diagnostic only. Fixed max-channel delta>40, edge radius1, neutral signed-channel spread<=20, row ink sumRGB<600. Fixed 128px bands, all integer shifts +/-80, common interior rows. Profile-best shifts do not change labels, thresholds, or product comparison.", rows }, null, 2)}\n`,
+    `${JSON.stringify({ definitionSha256, method: "Diagnostic only. Fixed max-channel delta>40, edge radius1, neutral signed-channel spread<=20, row ink sumRGB<600. Fixed 128px bands, all integer shifts +/-80, common interior rows. Profile-best shifts do not change labels, thresholds, or product comparison.", rows }, null, 2)}\n`,
     { flag: "wx" },
   );
   console.info(`Measured ${rows.length} pairs`);
