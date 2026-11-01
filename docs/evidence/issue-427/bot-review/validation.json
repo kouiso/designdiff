@@ -1,0 +1,147 @@
+{
+  "base": "184eb7131ed3d0941b9d1a0fee5b0647c469f774",
+  "reviewedPreviousHead": "d55a3f1c7d16405a8000fc5fedc8bead85fb8b33",
+  "branch": "test/issue-427-independent-oracle",
+  "node": "v26.12.1",
+  "python": "3.12.14",
+  "platform": "Linux-6.18.57-x86_64-with-glibc2.41",
+  "sharp": "0.35.5",
+  "typescript": "5.9.3",
+  "sourceSha256": {
+    "verification/script/gate1-fixture.mjs": "5272e809e417a644e40cb734bee0eb48125315c3bbf3a6c19b2aa317468cb42d",
+    "verification/script/gate1-fixture.test.mjs": "619c569666060e36e0efb83535687852043ed8c4f6d3e21cad80c3d68fc4c16f",
+    "verification/script/measure-gate1-oracle.mjs": "f76f95909dd44364305ed6278ee9472e8b0811e659bb9dd81ff30debccb192ab",
+    "verification/script/measure-gate1-oracle.test.mjs": "09961ba5bf1fa4ba700dbd354fc0db1d9e808490a52c62d8a10d84f8c067583f",
+    "verification/script/probe-gate1-overlap.mjs": "36154c2783048d86e038319b2b3af62a450fc966a95ffd35358008b22f769edd",
+    "verification/script/probe-gate1-overlap.test.mjs": "c4004b0aafac9c28f2aaaa8ddf0c4b7fdccab7eddb94e734e9661c04f558fffa",
+    "verification/script/audit-gate1-pillow.py": "04400246e272db8e2323694ee9726e0fd8f22161d6a17153c3bba0ba5365a1fa",
+    "verification/script/audit-gate1-pillow.test.py": "faf2b06b6870553cf324cdbef77e9530071d87e16c957933d5b16a8ba3813599",
+    "verification/fixture/gate1-independent-oracle.json": "52d25cf6ac3f9777a7f71a19084f51818e862ee3ed3813c8c47da97f4e990b98",
+    "package.json": "c8b39797a1116cde3a59b23be85b5f13aae788a39a1243ab32ad14ef33e194ab"
+  },
+  "toolchainSha256": {
+    "docs/evidence/issue-427/toolchain/package.json": "299136576ac6d99c703402e07ae727ec7c3e5381ae80e4a3459bdab32d93939b",
+    "docs/evidence/issue-427/toolchain/package-lock.json": "e283b05412ffdcfcfbaf835c84c675ff747c41116e7a4b0080e14667b0203420",
+    "docs/evidence/issue-427/toolchain/runtime/package.json": "4fff5cd6c2a421184fd9e9fd2d39b1b9908ba16c56d571801b6b12f5969bcfb7",
+    "docs/evidence/issue-427/toolchain/runtime/package-lock.json": "8fa4b9a1473da52e0ec91122966f2b721299408e1ca14eacb8270e23555498f3"
+  },
+  "scope": "Related Gate1 local validation only; does not claim full product CI, semantic labels, capture provenance, external acceptance, or upload state.",
+  "checks": {
+    "unit": {
+      "command": [
+        "/tmp/issue427-review-runtime/node_modules/.bin/node",
+        "--test",
+        "verification/script/gate1-fixture.test.mjs",
+        "verification/script/measure-gate1-oracle.test.mjs",
+        "verification/script/probe-gate1-overlap.test.mjs"
+      ],
+      "exitCode": 0,
+      "seconds": 1.046
+    },
+    "biome": {
+      "command": [
+        "/tmp/issue427-review-runtime/node_modules/.bin/node",
+        "node_modules/@biomejs/biome/bin/biome",
+        "check",
+        "verification/script/gate1-fixture.mjs",
+        "verification/script/gate1-fixture.test.mjs",
+        "verification/script/measure-gate1-oracle.mjs",
+        "verification/script/measure-gate1-oracle.test.mjs",
+        "verification/script/probe-gate1-overlap.mjs",
+        "verification/script/probe-gate1-overlap.test.mjs",
+        "verification/fixture/gate1-independent-oracle.json",
+        "package.json"
+      ],
+      "exitCode": 0,
+      "seconds": 0.091
+    },
+    "eslint": {
+      "command": [
+        "/tmp/issue427-review-runtime/node_modules/.bin/node",
+        "node_modules/eslint/bin/eslint.js",
+        "verification/script/gate1-fixture.mjs",
+        "verification/script/gate1-fixture.test.mjs",
+        "verification/script/measure-gate1-oracle.mjs",
+        "verification/script/measure-gate1-oracle.test.mjs",
+        "verification/script/probe-gate1-overlap.mjs",
+        "verification/script/probe-gate1-overlap.test.mjs"
+      ],
+      "exitCode": 0,
+      "seconds": 1.089
+    },
+    "typecheck": {
+      "command": [
+        "/tmp/issue427-review-runtime/node_modules/.bin/node",
+        "node_modules/typescript/bin/tsc",
+        "--allowJs",
+        "--checkJs",
+        "--strict",
+        "--noEmit",
+        "--module",
+        "nodenext",
+        "--target",
+        "es2022",
+        "--skipLibCheck",
+        "verification/script/gate1-fixture.mjs",
+        "verification/script/gate1-fixture.test.mjs",
+        "verification/script/measure-gate1-oracle.mjs",
+        "verification/script/measure-gate1-oracle.test.mjs",
+        "verification/script/probe-gate1-overlap.mjs",
+        "verification/script/probe-gate1-overlap.test.mjs"
+      ],
+      "exitCode": 0,
+      "seconds": 1.092
+    },
+    "generate": {
+      "command": [
+        "/tmp/issue427-review-runtime/node_modules/.bin/node",
+        "verification/script/generate-fixtures.mjs",
+        "--check"
+      ],
+      "exitCode": 0,
+      "seconds": 0.656
+    },
+    "measurement": {
+      "command": [
+        "/tmp/issue427-review-runtime/node_modules/.bin/node",
+        "verification/script/measure-gate1-oracle.mjs",
+        "/tmp/issue427-bot-verified-g0x8d6d7/measurement.json"
+      ],
+      "exitCode": 0,
+      "seconds": 2.088,
+      "byteIdentical": true
+    },
+    "probe": {
+      "command": [
+        "/tmp/issue427-review-runtime/node_modules/.bin/node",
+        "verification/script/probe-gate1-overlap.mjs",
+        "/tmp/issue427-bot-verified-g0x8d6d7/probe.json"
+      ],
+      "exitCode": 0,
+      "seconds": 1.395,
+      "byteIdentical": true
+    },
+    "pillow-audit": {
+      "command": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python",
+        "verification/script/audit-gate1-pillow.py"
+      ],
+      "exitCode": 0,
+      "seconds": 0.423
+    },
+    "pillow-negative": {
+      "command": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python",
+        "verification/script/audit-gate1-pillow.test.py"
+      ],
+      "exitCode": 0,
+      "seconds": 1.07
+    }
+  },
+  "priorFailedAttempt": {
+    "command": "pnpm run test:gate1-oracle",
+    "log": "review/pnpm-wrapper-failure.log",
+    "result": "Environment wrapper auto-installed workspace dependencies under Node24, failed on ignored build scripts; generated lock/workspace changes restored byte-for-byte from prior HEAD. No approve-builds or settings mutation. Rerun directly with supported Node and locked isolated dependencies."
+  },
+  "botReview": "PR431 first review d55a3f1: APNG and independent fixture anchor fixes, default51PNGhash regression, docstrings; metrics/labels unchanged."
+}

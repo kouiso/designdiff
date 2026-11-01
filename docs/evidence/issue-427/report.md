@@ -89,7 +89,7 @@ node verification/script/generate-fixtures.mjs --check
 
 初回コード版の unit 4件・Biome・ESLint・checkJs/TypeScript・派生15 PNG再生成検査に成功。測定の再実行はbyte一致し、別デコーダ(Pillow/NumPy)でも66比較行のうち同寸法63行×6閾値と、寸法不一致3行のnullを照合した。当時のexit code・ツール版・source SHA256は review/validation-before-review.json と従来の *.log に保存。製品全体テストは未実施。当時はNode v24.19.0で、対応版は未検証だったが、自己レビュー版ではNode26.12.1で関連検査を実行済み (現在のvalidation.json)。依存は/tmpに導入し、repo lockfileには最終差分なし。
 
-## 配送と残件
+## 配送と残件（PR #431 作成前の記録）
 
 専用ブランチ test/issue-427-independent-oracle。push/PR/merge/deploy/CI実行は未実施。GitHub REST の workflows と hooks 読取は Forbidden だったため、禁止CI/deploy・auto-merge等の副作用を確認できず、pushは保留 (未試行)。別経路で拒否を回避していない。これは自動承認審査の拒否ではなく、API読取の拒否である。ローカル変更とpatchを保持する。GitHub Project statusは外部status起点の副作用を確認できないため未変更。
 

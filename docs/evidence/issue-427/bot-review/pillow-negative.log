@@ -1,0 +1,19 @@
+test_coordinated_fixture_and_measurement_edit_is_rejected_by_definition (__main__.Gate1PillowAuditTest.test_coordinated_fixture_and_measurement_edit_is_rejected_by_definition)
+期待値と測定を同時に書き換えても、別保存の定義を固定点として拒否する。 ... ok
+test_corrupt_measurements_are_rejected (__main__.Gate1PillowAuditTest.test_corrupt_measurements_are_rejected)
+測定だけの欠落・改変が、独立した元データ照合で失敗することを確かめる。 ... ok
+test_missing_runtime_source_hash_is_rejected (__main__.Gate1PillowAuditTest.test_missing_runtime_source_hash_is_rejected)
+必須モジュールをhash表から消して検査を省略する操作を拒否する。 ... ok
+test_one_and_two_frame_apng_are_rejected_before_conversion (__main__.Gate1PillowAuditTest.test_one_and_two_frame_apng_are_rejected_before_conversion)
+単一フレームAPNGも静止PNGと誤認せず、先頭画素だけを監査しない。 ... ok
+test_original (__main__.Gate1PillowAuditTest.test_original)
+数値比較と寸法不一致を混同せず、全検体の監査成功を固定する。 ... ok
+test_png_byte_limit_matches_measurement_before_decoding (__main__.Gate1PillowAuditTest.test_png_byte_limit_matches_measurement_before_decoding)
+測定側が拒否する大きさのPNGを別監査だけが受け入れる不整合を防ぐ。 ... ok
+test_source_hash_corruption_is_rejected (__main__.Gate1PillowAuditTest.test_source_hash_corruption_is_rejected)
+別実装へのすり替えを、保存したソースhashとの照合で検知する。 ... ok
+
+----------------------------------------------------------------------
+Ran 7 tests in 0.929s
+
+OK

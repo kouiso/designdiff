@@ -5,6 +5,7 @@ import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 import { loadGate1Fixtures, validateGate1Fixtures } from "./gate1-fixture.mjs";
+import { loadImage } from "./measure-gate1-oracle.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../fixture");
 const inputs = async () => ({
@@ -63,4 +64,35 @@ test("missing controls, duplicate pairs, overlap and stale expectation bytes fai
   assert.throws(() => validateGate1Fixtures(overlap, entries), /overlap/);
   entries[0].bytes = Buffer.concat([entries[0].bytes, Buffer.from("\n")]);
   assert.throws(() => validateGate1Fixtures(definition, entries), /hash changed/);
+});
+
+test("all 51 fixture PNG hashes match the committed measurement evidence", async () => {
+  const { fixtures } = await loadGate1Fixtures(root);
+  /** @type {{rows: {pairId: string, against: string, image: {file: string, sha256: string}, reference: {sha256: string}}[]}} */
+  const measurement = JSON.parse(
+    await readFile(path.join(root, "../../docs/evidence/issue-427/measurement.json"), "utf8"),
+  );
+  let checked = 0;
+  for (const { directory, expectation } of fixtures) {
+    const rows = measurement.rows.filter((row) => row.pairId === directory);
+    const files = new Set([expectation.figmaFrame, ...expectation.variants.map((v) => v.image)]);
+    for (const file of files) {
+      const recordedHashes = new Set(
+        rows.flatMap((row) => [
+          ...(row.image.file === file ? [row.image.sha256] : []),
+          ...(row.against === "figma" && file === expectation.figmaFrame
+            ? [row.reference.sha256]
+            : []),
+          ...(row.against === "correct" && file === "impl-correct.png"
+            ? [row.reference.sha256]
+            : []),
+        ]),
+      );
+      assert.equal(recordedHashes.size, 1, `${directory}/${file}: missing or conflicting evidence`);
+      const { sha256: actual } = await loadImage(path.join(root, directory, file));
+      assert.ok(recordedHashes.has(actual), `${directory}/${file}: stale PNG evidence`);
+      checked += 1;
+    }
+  }
+  assert.equal(checked, 51);
 });

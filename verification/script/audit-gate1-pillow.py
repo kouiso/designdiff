@@ -3,6 +3,7 @@
 
 import argparse
 import hashlib
+from io import BytesIO
 import json
 from pathlib import Path
 
@@ -13,14 +14,17 @@ from PIL import Image, ImageChops
 THRESHOLDS = (0, 10, 20, 40, 80, 160)
 MAX_PIXELS = 4_000_000
 MAX_BYTES = 32 * 1024 * 1024
+MAX_PNG_BYTES = 16 * 1024 * 1024
 
 
 def require(condition, message):
+    """監査条件の不成立を成功扱いせず、理由を付けて停止する。"""
     if not condition:
         raise ValueError(message)
 
 
 def bounded_path(root, relative):
+    """ソース照合がリポジトリ外のファイルへ逸脱するのを防ぐ。"""
     require(isinstance(relative, str), "Expected relative file path")
     candidate = (root / relative).resolve()
     require(candidate.is_relative_to(root), "Path escapes repository")
@@ -28,13 +32,16 @@ def bounded_path(root, relative):
 
 
 def digest(file):
+    """照合対象の内容を識別し、過大な入力は監査前に拒否する。"""
     require(file.stat().st_size <= MAX_BYTES, "Input exceeds byte limit")
     return hashlib.sha256(file.read_bytes()).hexdigest()
 
 
 def read_json(file):
+    """重複キーによる宣言の隠蔽を許さず、監査資料を読み込む。"""
     require(file.stat().st_size <= MAX_BYTES, "JSON exceeds byte limit")
     def no_duplicate_properties(pairs):
+        """後勝ちのJSON解釈で改変が見えなくなることを防ぐ。"""
         result = {}
         for key, value in pairs:
             require(key not in result, "Duplicate JSON property")
@@ -46,10 +53,42 @@ def read_json(file):
     )
 
 
+def require_still_png(encoded):
+    """Pillowが単一フレームへ縮退するAPNGも制御チャンクで拒否する。"""
+    require(encoded.startswith(b"\x89PNG\r\n\x1a\n"), "Expected PNG signature")
+    offset = 8
+    while offset + 12 <= len(encoded):
+        length = int.from_bytes(encoded[offset:offset + 4], "big")
+        kind = encoded[offset + 4:offset + 8]
+        end = offset + 12 + length
+        require(end <= len(encoded), "Invalid or truncated PNG structure")
+        require(
+            offset != 8 or (kind == b"IHDR" and length == 13),
+            "Invalid PNG header",
+        )
+        require(kind not in (b"acTL", b"fcTL", b"fdAT"), "Animated PNG is unsupported")
+        if kind == b"IEND":
+            require(length == 0 and end == len(encoded), "Invalid PNG end or trailing bytes")
+            return
+        offset = end
+    raise ValueError("Invalid or truncated PNG structure")
+
+
 def load_png(file):
-    sha256 = digest(file)
-    with Image.open(file) as image:
+    """先頭フレームの誤採用を防ぎ、同じ不透明PNGバイトをhash・画素照合に使う。"""
+    with file.open("rb") as handle:
+        encoded = handle.read(MAX_PNG_BYTES + 1)
+    require(len(encoded) <= MAX_PNG_BYTES, "Input exceeds byte limit")
+    require_still_png(encoded)
+    sha256 = hashlib.sha256(encoded).hexdigest()
+    with Image.open(BytesIO(encoded)) as image:
         require(image.format == "PNG", "Expected PNG")
+        require(
+            image.get_format_mimetype() != "image/apng"
+            and getattr(image, "n_frames", 1) == 1
+            and not getattr(image, "is_animated", False),
+            "Animated PNG is unsupported",
+        )
         width, height = image.size
         require(0 < width * height <= MAX_PIXELS, "Invalid image dimensions")
         rgba = image.convert("RGBA")
@@ -58,6 +97,7 @@ def load_png(file):
 
 
 def unique_index(entries, key, label):
+    """件数が同じでも重複により検体が欠落した監査資料を拒否する。"""
     index = {}
     for entry in entries:
         identity = key(entry)
@@ -67,6 +107,7 @@ def unique_index(entries, key, label):
 
 
 def audit(root, measurement_file, validation_file):
+    """独立定義を固定点に、保存測定と原PNGの同一性・網羅性・生差分を照合する。"""
     measurement = read_json(measurement_file)
     validation = read_json(validation_file)
     definition_file = root / "verification/fixture/gate1-independent-oracle.json"
@@ -105,6 +146,10 @@ def audit(root, measurement_file, validation_file):
     fixture_root = root / "verification/fixture"
     folders = sorted(fixture_root.glob("pair-*-hm-gate1-*"))
     require(len(folders) == 18, "Expected 18 fixture folders")
+    require(
+        set(definition["fixtures"]) == {folder.name for folder in folders},
+        "Independent fixture definition coverage mismatch",
+    )
     seen_numbers = set()
     expected_keys = set()
     expected_folder_names = set()
@@ -122,7 +167,12 @@ def audit(root, measurement_file, validation_file):
         expected = read_json(expected_file)
         require(expected["pairId"] == pair, "Fixture pairId differs from folder")
         require(pair in expected_inputs, "Missing fixture input hash")
-        require(expected_inputs[pair]["expectedSha256"] == digest(expected_file), "Fixture SHA256 mismatch")
+        expected_sha256 = digest(expected_file)
+        require(
+            definition["fixtures"][pair]["expectedSha256"] == expected_sha256,
+            "Independent fixture definition SHA256 mismatch",
+        )
+        require(expected_inputs[pair]["expectedSha256"] == expected_sha256, "Fixture SHA256 mismatch")
         group = "pass" if number in pass_pairs else "fail"
         variants = unique_index(expected["variants"], lambda variant: variant["name"], "variant")
         require("correct" in variants, "Missing correct variant")
@@ -201,6 +251,7 @@ def audit(root, measurement_file, validation_file):
 
 
 def main():
+    """対象を明示できるCLIから独立監査を実行し、検証範囲付きで結果を返す。"""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[2])
     parser.add_argument("--measurement", type=Path)
