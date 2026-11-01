@@ -234,3 +234,45 @@ test("寸法が違う検体は fail として照合する", async (context) => {
   assert.equal(summary.rows[0].oracle, "fail");
   assert.equal(summary.disagreements, 1);
 });
+
+test("重なった ignoreRegions は同じ画素を二度数えず、残差を大きく見積もらない", async (context) => {
+  const root = await mkdtemp(join(tmpdir(), "figdiff-oracle-agreement-overlap-"));
+  context.after(() => rm(root, { recursive: true, force: true }));
+  const pair = join(root, "pair-overlap");
+  await mkdir(pair);
+  const white = { width: 100, height: 100, channels: 3, background: "white" };
+  await sharp({ create: white }).png().toFile(join(pair, "figma.png"));
+  // 下端に黒い 20 画素。上 40 行を外した残り 6000 画素に対して残差 20 / 6000 ≒ 0.0033 で pass。
+  // 同じ領域を二度数えると分母が 2000 になり、残差 0.01 で fail と誤る。
+  await sharp({ create: white })
+    .composite([
+      {
+        input: { create: { width: 10, height: 2, channels: 3, background: "black" } },
+        left: 0,
+        top: 98,
+      },
+    ])
+    .png()
+    .toFile(join(pair, "spot.png"));
+  const region = { x: 0, y: 0, width: 100, height: 40 };
+  await writeFile(
+    join(pair, "expected.json"),
+    JSON.stringify({
+      pairId: "pair-overlap",
+      figmaFrame: "figma.png",
+      variants: [
+        {
+          name: "twice",
+          image: "spot.png",
+          expectedVerdict: "pass",
+          ignoreRegions: [region, region],
+        },
+      ],
+    }),
+  );
+
+  const { status, stderr, summary } = run(root);
+
+  assert.equal(status, 0, stderr);
+  assert.equal(summary.rows[0].oracle, "pass");
+});
