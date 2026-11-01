@@ -241,6 +241,17 @@ describe("buildComparisonHeadline", () => {
       { width: 4, height: 4, maskedPixelCount: 4, scoringMask: mask },
     );
     expect(headline.structureMatch).toBe(40);
+    // 測った面が無い行は、構造差分の領域にも数えない。
+    expect(headline.structuralRegions).toBe(0);
+  });
+
+  it("採点マスクが無く、行の面積が 0 のときは行の単純平均にする", () => {
+    const headline = buildComparisonHeadline(
+      [region({ bbox: { x: 1, y: 1, w: 0, h: 0 }, structure: 0.9 })],
+      90,
+      { width: 4, height: 4 },
+    );
+    expect(headline.structureMatch).toBe(90);
   });
 
   it("Figma ノードの行でも、採点画素が 1 つも無ければ 0% にする", () => {
