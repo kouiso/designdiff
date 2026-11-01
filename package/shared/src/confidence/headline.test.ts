@@ -208,6 +208,39 @@ describe("buildComparisonHeadline", () => {
     expect(headline.structuralRegions).toBe(0);
   });
 
+  it("差分クラスタがすべてマスク内に落ちたときは、採点面を一致として数える", () => {
+    // 4x4 のうち左上 2x2 がマスク (透明な指定なし領域など)。差分クラスタはその中だけ。
+    // 採点面 12 画素に検出差分は無いので 100%。採点面が無いときの 0% とは区別する。
+    const mask = new Uint8Array(16);
+    for (const index of [0, 1, 4, 5]) mask[index] = 1;
+    const headline = buildComparisonHeadline(
+      [region({ bbox: { x: 0, y: 0, w: 2, h: 2 }, structure: 0 })],
+      75,
+      { width: 4, height: 4, maskedPixelCount: 4, scoringMask: mask },
+    );
+    expect(headline.structureMatch).toBe(100);
+  });
+
+  it("差分クラスタが contain 余白だけにあるときは、内容面を一致として数える", () => {
+    const headline = buildComparisonHeadline(
+      [region({ bbox: { x: 0, y: 0, w: 2, h: 10 }, structure: 0 })],
+      80,
+      { width: 10, height: 10, contentBounds: { x: 2, y: 2, w: 6, h: 6 } },
+    );
+    expect(headline.structureMatch).toBe(100);
+  });
+
+  it("Figma ノードの行がすべてマスク内なら、測った面が無いので行の単純平均にする", () => {
+    const mask = new Uint8Array(16);
+    for (const index of [0, 1, 4, 5]) mask[index] = 1;
+    const headline = buildComparisonHeadline(
+      [region({ regionId: "node-1", bbox: { x: 0, y: 0, w: 2, h: 2 }, structure: 0.4 })],
+      75,
+      { width: 4, height: 4, maskedPixelCount: 4, scoringMask: mask },
+    );
+    expect(headline.structureMatch).toBe(40);
+  });
+
   it("採点マスクが比較面全体を覆わない入力は拒否する", () => {
     expect(() =>
       buildComparisonHeadline([region({})], 100, {

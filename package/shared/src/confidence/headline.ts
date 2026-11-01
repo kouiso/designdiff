@@ -166,9 +166,6 @@ const averageStructure = (
   // 重なり合う行の面積を足し合わせると、重なり分を複数回数えて「カバー済み」の面が
   // 実際より大きくなる。カバー面は重なりを除いた和集合で数える。
   const coveredArea = scoring?.coveredArea ?? unionArea(regionScores.map((score) => score.bbox));
-  if (coveredArea <= 0) {
-    return { value: scoring === undefined ? simpleAverage : 0, areas: scoring?.areas };
-  }
   // セクション行は重なったり比較面いっぱいに並んだりするので、合計面積が比較面を
   // 超えるときは余白を足さず面積加重平均だけにする。
   const maskedArea = Math.max(0, canvas.maskedPixelCount ?? 0);
@@ -180,6 +177,21 @@ const averageStructure = (
   const onlyDiffClusters = regionScores.every((score) =>
     score.regionId.startsWith(DIFF_CLUSTER_REGION_ID_PREFIX),
   );
+  if (coveredArea <= 0) {
+    if (scoring === undefined) return { value: simpleAverage };
+    // 採点できる画素が 1 つも無いときだけ 0 にする (全面マスクを 100% と見せない)。
+    // 行がすべてマスク内 (透明な指定なし領域や contain の余白) に落ちただけなら、
+    // 差分クラスタだけの比較では採点面に検出差分が無いので、採点面は一致として数える。
+    // Figma ノードの行が測れなかった場合は、測った面が無いので従来どおり単純平均にする。
+    if (scoring.scorableArea <= 0) return { value: 0, areas: scoring.areas };
+    if (!onlyDiffClusters) return { value: simpleAverage, areas: scoring.areas };
+    const unscored = Math.max(0, canvas.unscoredDiffArea ?? 0);
+    const matched = Math.max(0, scoring.scorableArea - unscored);
+    return {
+      value: matched + unscored > 0 ? matched / (matched + unscored) : 0,
+      areas: scoring.areas,
+    };
+  }
   // Figma ノードの行の bbox には ignore region で外した画素が含まれうるが、行ごとの
   // 外した面積は持っていない。面積で重み付けすると外した面が平均を支配するため、
   // 外した画素がある比較では従来どおりの単純平均を保つ。
