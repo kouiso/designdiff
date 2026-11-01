@@ -432,6 +432,23 @@ describe("detectOverlap", () => {
     expect(result).toEqual({ overlap: 40, method: "exact" });
   });
 
+  it("finds a shallow repeat one row above the seam when a fixed header is present", () => {
+    // 固定ヘッダー 10 行。前の画面の本文末尾 11 行が同じ並びで、次の先頭 10 行と一致する。
+    // 縫い目の位置はヘッダーぶんずれた所にあり、その 1 行上にも同じ並びがある。
+    const header = sequence(9000, 10);
+    const band = Array.from({ length: 11 }, () => 0xffffff);
+    const previous = imageFromRows([...header, ...sequence(0, 89), ...band]);
+    const next = imageFromRows([...header, ...band.slice(0, 10), ...sequence(500, 90)]);
+
+    const result = detectOverlap(previous, next, {
+      headerHeight: header.length,
+      footerHeight: 0,
+      expectedOverlap: 40,
+    });
+
+    expect(result.method).toBe("best-effort");
+  });
+
   it("accepts an exact seam exactly at a quarter of the expected overlap", () => {
     // 下限ちょうど (expected 20 → 5 行) は exact のまま採る。/3 (=6) などに
     // ずれたら落ちるよう、境界の受け入れ側をここで固定する。
