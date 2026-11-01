@@ -219,6 +219,8 @@ describe("buildComparisonHeadline", () => {
       { width: 4, height: 4, maskedPixelCount: 4, scoringMask: mask },
     );
     expect(headline.structureMatch).toBe(100);
+    // 測った面が無い行は、構造差分の領域にも数えない。
+    expect(headline.structuralRegions).toBe(0);
   });
 
   it("差分クラスタが contain 余白だけにあるときは、内容面を一致として数える", () => {
@@ -248,6 +250,7 @@ describe("buildComparisonHeadline", () => {
       { width: 4, height: 4, maskedPixelCount: 16, scoringMask: new Uint8Array(16).fill(1) },
     );
     expect(headline.structureMatch).toBe(0);
+    expect(headline.structuralRegions).toBe(0);
   });
 
   it("差分クラスタがすべてマスク内でも、採点上限で行にならなかった差分面は一致に数えない", () => {
