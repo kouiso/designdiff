@@ -19,7 +19,9 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const FIXTURE_ROOT = path.join(__dirname, "../verification/fixture");
+// 試験では一時ディレクトリの検体を読ませるため、場所だけ環境変数で差し替えられる。
+const FIXTURE_ROOT =
+  process.env.FIGDIFF_ORACLE_FIXTURE_ROOT ?? path.join(__dirname, "../verification/fixture");
 const ORACLE = path.join(__dirname, "oracle-compare.mjs");
 
 import { RESIDUAL_FAIL_THRESHOLD } from "./oracle-threshold.mjs";
@@ -72,8 +74,15 @@ for (const dir of collectPairs()) {
       path.join(dir, variant.image),
       variant.ignoreRegions,
     );
-    const agrees = verdict === variant.expectedVerdict;
-    if (!agrees) {
+    // rasterizationTolerance の pass 検体は、別レンダラ同士のラスタライズ差を許して
+    // はじめて pass になる。この物差しのしきい値は同じ描画経路の合成検体向け
+    // (oracle-threshold.mjs) で、その差を許さないので、合否を判定できない。
+    // 判定できないものは「一致」とも「食い違い」とも数えず、判定できなかった
+    // 検体 (unjudged) として分けて出す。ただし独立した裏付けが無いまま通すことは
+    // しないので、unjudged が 1 件でもあれば失敗にする。
+    const unjudged = variant.rasterizationTolerance === true && variant.expectedVerdict === "pass";
+    const agrees = unjudged ? null : verdict === variant.expectedVerdict;
+    if (agrees === false) {
       disagreements += 1;
     }
     rows.push({
@@ -83,12 +92,19 @@ for (const dir of collectPairs()) {
       oracle: verdict,
       residual,
       agrees,
-      note,
+      note: unjudged ? "ラスタライズ差を許す pass 検体のため、この物差しでは判定できない" : note,
     });
   }
 }
 
-console.info(JSON.stringify({ checked: rows.length, disagreements, rows }, null, 2));
+const unjudgedRows = rows.filter((row) => row.agrees === null);
+console.info(
+  JSON.stringify(
+    { checked: rows.length, unjudged: unjudgedRows.length, disagreements, rows },
+    null,
+    2,
+  ),
+);
 
 if (rows.length === 0) {
   console.error("検体が1件も見つからんかった。パスの取り違えを疑う。");
@@ -96,5 +112,14 @@ if (rows.length === 0) {
 }
 if (disagreements > 0) {
   console.error(`独立オラクルと期待合否が ${disagreements} 件食い違った。`);
+}
+if (unjudgedRows.length > 0) {
+  console.error(
+    `この物差しで判定できなかった検体が ${unjudgedRows.length} 件ある (pass を独立に裏付けられない): ${unjudgedRows
+      .map((row) => `${row.pair}/${row.variant}`)
+      .join(", ")}`,
+  );
+}
+if (disagreements > 0 || unjudgedRows.length > 0) {
   process.exit(1);
 }
