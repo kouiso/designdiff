@@ -278,6 +278,26 @@ describe("detectOverlap", () => {
     expect(result.method).toBe("best-effort");
   });
 
+  it("does not let rejected shallow candidates push a deeper real seam out of the verification budget", () => {
+    // 49 行の同色帯が前の画面の 2 か所にあり、浅い候補 (25〜49 行) が 25 件
+    // 出るがどれも別の位置にも現れるので採れない。それらが検証枠を埋めると、
+    // 見込み (100) から遠い本物の重なり 180 が枠から押し出されて近似へ落ちる。
+    const blank = 0xffffff;
+    const page = sequence(0, 620).map((value, index) =>
+      (index >= 220 && index < 269) || (index >= 351 && index < 400) ? blank : value,
+    );
+    const previous = imageFromRows(page.slice(0, 400));
+    const next = imageFromRows(page.slice(220, 620));
+
+    const result = detectOverlap(previous, next, {
+      headerHeight: 0,
+      footerHeight: 0,
+      expectedOverlap: 100,
+    });
+
+    expect(result).toEqual({ overlap: 180, method: "exact" });
+  });
+
   it("accepts an exact seam exactly at a quarter of the expected overlap", () => {
     // 下限ちょうど (expected 20 → 5 行) は exact のまま採る。/3 (=6) などに
     // ずれたら落ちるよう、境界の受け入れ側をここで固定する。

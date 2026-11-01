@@ -161,7 +161,9 @@ function occursOnlyAtSeam(
   overlap: number,
 ): boolean {
   const seamStart = headerHeight + bodyHeight - overlap;
-  for (let start = headerHeight; start < seamStart; start++) {
+  // 縫い目のすぐ上から遡って探す。余白帯のような繰り返しは隣の位置ですぐ
+  // 見つかるので、長い帯で候補が多いときも走査が本文全体まで伸びにくい。
+  for (let start = seamStart - 1; start >= headerHeight; start--) {
     let same = true;
     for (let offset = 0; offset < overlap; offset++) {
       if (previousHashes[start + offset] !== nextHashes[headerHeight + offset]) {
@@ -301,7 +303,16 @@ export function detectOverlap(
         break;
       }
     }
-    if (matched) candidates.push(overlap);
+    if (!matched) continue;
+    // 浅い候補は検証枠 (MAX_EXACT_CANDIDATE_VERIFICATIONS) を使う前にふるう。
+    // 外す候補が枠を埋めると、見込みから遠い深い本物の縫い目が枠から押し出される。
+    if (
+      overlap < shallowExactLimit &&
+      !occursOnlyAtSeam(previousHashes, nextHashes, headerHeight, bodyHeight, overlap)
+    ) {
+      continue;
+    }
+    candidates.push(overlap);
   }
 
   // ハッシュ一致は候補の絞り込みでしかない。採用する1件だけ画素まで確かめる。
@@ -322,13 +333,7 @@ export function detectOverlap(
         break;
       }
     }
-    if (!verified) continue;
-    if (
-      overlap >= shallowExactLimit ||
-      occursOnlyAtSeam(previousHashes, nextHashes, headerHeight, bodyHeight, overlap)
-    ) {
-      return { overlap, method: "exact" };
-    }
+    if (verified) return { overlap, method: "exact" };
   }
 
   return {
