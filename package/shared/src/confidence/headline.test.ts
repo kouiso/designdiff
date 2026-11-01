@@ -276,6 +276,17 @@ describe("buildComparisonHeadline", () => {
     expect(headline.structureMatch).toBe(50);
   });
 
+  it("採点上限外の差分面が採点面より大きくても、構造一致を負にしない", () => {
+    const mask = new Uint8Array(16);
+    for (const index of [0, 1, 4, 5]) mask[index] = 1;
+    const headline = buildComparisonHeadline(
+      [region({ bbox: { x: 0, y: 0, w: 2, h: 2 }, structure: 0 })],
+      0,
+      { width: 4, height: 4, maskedPixelCount: 4, scoringMask: mask, unscoredDiffArea: 20 },
+    );
+    expect(headline.structureMatch).toBe(0);
+  });
+
   it("採点マスクが比較面全体を覆わない入力は拒否する", () => {
     expect(() =>
       buildComparisonHeadline([region({})], 100, {
