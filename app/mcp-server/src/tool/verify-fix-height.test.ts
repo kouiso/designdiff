@@ -135,4 +135,46 @@ describe("verify_fix — full-page height changes", () => {
     }
     expect(iterations).toEqual([1, 2, 3]);
   });
+
+  it("高さを修復した後に別の固定高へ変えた回は、反復履歴を引き継がない", async () => {
+    // 160 行 (足し行あり) → 200 行 (修復) → 210 行。3 回目は修復後の固定高を
+    // 変えた別条件なので、ループは 1 回目からやり直す。前回の足し行を今回の
+    // 条件として引き継ぐと、3 回目まで同条件と見なして step 3 になる。
+    const design = path.join(directory, "design.png");
+    const short = path.join(directory, "short.png");
+    const full = path.join(directory, "full.png");
+    const taller = path.join(directory, "taller.png");
+    await sharp({ create: { width: 80, height: 200, channels: 3, background: "white" } })
+      .png()
+      .toFile(design);
+    await sharp(design)
+      .composite([
+        {
+          input: { create: { width: 10, height: 10, channels: 3, background: "black" } },
+          left: 10,
+          top: 10,
+        },
+      ])
+      .png()
+      .toFile(full);
+    await sharp(full).extract({ left: 0, top: 0, width: 80, height: 160 }).png().toFile(short);
+    await sharp(full).extend({ bottom: 10, background: "white" }).png().toFile(taller);
+    const iterations = [];
+    for (const screenshot of [short, full, taller]) {
+      const result = await client.callTool({
+        name: "compare_design",
+        arguments: {
+          design_source: design,
+          screenshot,
+          campaign_id: "height-repair-then-resize",
+        },
+      });
+      expect(result.isError, JSON.stringify(result.content)).toBeFalsy();
+      const data = z
+        .object({ loopGuard: z.object({ step: z.number() }) })
+        .parse(result.structuredContent);
+      iterations.push(data.loopGuard.step);
+    }
+    expect(iterations).toEqual([1, 2, 1]);
+  });
 });
