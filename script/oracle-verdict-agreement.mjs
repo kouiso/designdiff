@@ -44,6 +44,11 @@ function oracleVerdict(designPath, screenshotPath, ignoreRegions) {
   if (result.sizeMismatch) {
     return { verdict: "fail", residual: null, note: "寸法が違う" };
   }
+  // ignoreRegions が全面を覆うと、比べた画素が無いまま残差 0 で pass に見える。
+  // 何も比べていないので、合否は判定できなかったものとして扱う。
+  if (result.totalPixels - result.correctedMaskedPixelCount <= 0) {
+    return { verdict: null, residual: null, note: "比較できる画素が無い (全面がマスク)" };
+  }
   // FigDiff 自身も「位置合わせしてから判定する」ので、独立オラクルも
   // 補正後(correctedResidualRate)で判定しないと、位置ズレを含む検体
   // (例: システム UI マスク検体)を無条件に fail 扱いしてしまい、
@@ -86,7 +91,9 @@ for (const dir of collectPairs()) {
     // 判定できないものは「一致」とも「食い違い」とも数えず、判定できなかった
     // 検体 (unjudged) として分けて出す。ただし独立した裏付けが無いまま通すことは
     // しないので、unjudged が 1 件でもあれば失敗にする。
-    const unjudged = variant.rasterizationTolerance === true && variant.expectedVerdict === "pass";
+    const rasterizationOnly =
+      variant.rasterizationTolerance === true && variant.expectedVerdict === "pass";
+    const unjudged = verdict === null || rasterizationOnly;
     const agrees = unjudged ? null : verdict === variant.expectedVerdict;
     if (agrees === false) {
       disagreements += 1;
@@ -98,7 +105,9 @@ for (const dir of collectPairs()) {
       oracle: verdict,
       residual,
       agrees,
-      note: unjudged ? "ラスタライズ差を許す pass 検体のため、この物差しでは判定できない" : note,
+      note: rasterizationOnly
+        ? "ラスタライズ差を許す pass 検体のため、この物差しでは判定できない"
+        : note,
     });
   }
 }

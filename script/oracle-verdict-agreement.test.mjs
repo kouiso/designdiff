@@ -153,3 +153,84 @@ test("検体を 1 件も持たない組があれば、ほかが一致してい�
   assert.equal(status, 1);
   assert.match(stderr, /pair-empty/);
 });
+
+test("ignoreRegions が全面を覆う検体は、比べた画素が無いので判定できなかったものとして失敗する", async (context) => {
+  const root = await createPair([
+    {
+      name: "full-mask",
+      image: "other.png",
+      expectedVerdict: "pass",
+      ignoreRegions: [{ x: 0, y: 0, width: 16, height: 16 }],
+    },
+  ]);
+  context.after(() => rm(root, { recursive: true, force: true }));
+
+  const { status, summary } = run(root);
+
+  assert.equal(status, 1);
+  assert.equal(summary.unjudged, 1);
+  assert.equal(summary.rows[0].agrees, null);
+});
+
+test("ignoreRegions で差分だけを外した検体は、残りの画素で照合する", async (context) => {
+  const root = await mkdtemp(join(tmpdir(), "figdiff-oracle-agreement-mask-"));
+  context.after(() => rm(root, { recursive: true, force: true }));
+  const pair = join(root, "pair-mask");
+  await mkdir(pair);
+  await solid(join(pair, "figma.png"), "white");
+  // 左上 4x4 だけ黒い。そこを外せば残りは一致、外さなければ食い違う。
+  await sharp({ create: { width: 16, height: 16, channels: 3, background: "white" } })
+    .composite([
+      {
+        input: { create: { width: 4, height: 4, channels: 3, background: "black" } },
+        left: 0,
+        top: 0,
+      },
+    ])
+    .png()
+    .toFile(join(pair, "spot.png"));
+  await writeFile(
+    join(pair, "expected.json"),
+    JSON.stringify({
+      pairId: "pair-mask",
+      figmaFrame: "figma.png",
+      variants: [
+        {
+          name: "masked",
+          image: "spot.png",
+          expectedVerdict: "pass",
+          ignoreRegions: [{ x: 0, y: 0, width: 4, height: 4 }],
+        },
+        { name: "unmasked", image: "spot.png", expectedVerdict: "fail" },
+      ],
+    }),
+  );
+
+  const { status, stderr, summary } = run(root);
+
+  assert.equal(status, 0, stderr);
+  assert.equal(summary.disagreements, 0);
+});
+
+test("寸法が違う検体は fail として照合する", async (context) => {
+  const root = await createPair([{ name: "same", image: "same.png", expectedVerdict: "pass" }]);
+  context.after(() => rm(root, { recursive: true, force: true }));
+  await sharp({ create: { width: 16, height: 20, channels: 3, background: "white" } })
+    .png()
+    .toFile(join(root, "pair-test", "taller.png"));
+  const expectedPath = join(root, "pair-test", "expected.json");
+  await writeFile(
+    expectedPath,
+    JSON.stringify({
+      pairId: "pair-test",
+      figmaFrame: "figma.png",
+      variants: [{ name: "taller", image: "taller.png", expectedVerdict: "pass" }],
+    }),
+  );
+
+  const { status, summary } = run(root);
+
+  assert.equal(status, 1);
+  assert.equal(summary.rows[0].oracle, "fail");
+  assert.equal(summary.disagreements, 1);
+});
