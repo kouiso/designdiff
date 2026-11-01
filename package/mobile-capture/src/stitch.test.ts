@@ -364,6 +364,74 @@ describe("detectOverlap", () => {
     expect(result.overlap).toBeGreaterThan(0);
   });
 
+  it("does not count the last fixed header row as a repeat of a shallow run", () => {
+    // ヘッダー最終行 (901) と本文の並びが続けて同じに見えても、ヘッダーは本文ではない。
+    const header = [900, 901];
+    const previous = imageFromRows([
+      ...header,
+      ...sequence(10, 4),
+      ...sequence(100, 28),
+      901,
+      ...sequence(10, 4),
+    ]);
+    const next = imageFromRows([...header, 901, ...sequence(10, 4), ...sequence(700, 32)]);
+
+    const result = detectOverlap(previous, next, {
+      headerHeight: header.length,
+      footerHeight: 0,
+      expectedOverlap: 20,
+    });
+
+    expect(result).toEqual({ overlap: 5, method: "exact" });
+  });
+
+  it("rounds the quarter floor down when the expected overlap is not a multiple of 4", () => {
+    // expected 10 → 下限 2 行。切り上げ (3) にすると 2 行の本物の縫い目を失う。
+    const previous = imageFromRows(sequence(0, 20));
+    const next = imageFromRows(sequence(18, 20));
+
+    const result = detectOverlap(previous, next, {
+      headerHeight: 0,
+      footerHeight: 0,
+      expectedOverlap: 10,
+    });
+
+    expect(result).toEqual({ overlap: 2, method: "exact" });
+  });
+
+  it("accepts a one-row exact seam when no expected overlap is given", () => {
+    const previous = imageFromRows(sequence(0, 10));
+    const next = imageFromRows(sequence(9, 10));
+
+    const result = detectOverlap(previous, next, { headerHeight: 0, footerHeight: 0 });
+
+    expect(result).toEqual({ overlap: 1, method: "exact" });
+  });
+
+  it("rounds the half limit down so a repeated run at floor(expected / 2) stays exact", () => {
+    // expected 11 → 浅い一致として確かめるのは 5 行未満。5 行の並びは前の画面の先頭にも
+    // 現れるが、浅い一致ではないので従来どおり exact で採る。
+    const block = [900, 901, 902, 903, 904];
+    const previous = imageFromRows([...block, ...sequence(100, 20), ...block]);
+    const next = imageFromRows([...block, ...sequence(500, 25)]);
+
+    const result = detectOverlap(previous, next, {
+      headerHeight: 0,
+      footerHeight: 0,
+      expectedOverlap: 11,
+    });
+
+    expect(result).toEqual({ overlap: 5, method: "exact" });
+  });
+
+  it("takes the full body as an exact overlap when two frames are identical", () => {
+    const frame = imageFromRows(sequence(0, 40));
+
+    const result = detectOverlap(frame, frame, { headerHeight: 0, footerHeight: 0 });
+
+    expect(result).toEqual({ overlap: 40, method: "exact" });
+  });
+
   it("accepts an exact seam exactly at a quarter of the expected overlap", () => {
     // 下限ちょうど (expected 20 → 5 行) は exact のまま採る。/3 (=6) などに
     // ずれたら落ちるよう、境界の受け入れ側をここで固定する。
