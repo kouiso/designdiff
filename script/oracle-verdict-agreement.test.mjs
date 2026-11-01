@@ -107,3 +107,49 @@ test("全件をこの物差しで判定でき、期待合否と一致すれば�
   assert.equal(summary.unjudged, 0);
   assert.equal(summary.disagreements, 0);
 });
+
+test("ラスタライズ差を許す pass 検体は、オラクルが pass でも一致と数えない", async (context) => {
+  const root = await createPair([
+    {
+      name: "rt-pass-same",
+      image: "same.png",
+      expectedVerdict: "pass",
+      rasterizationTolerance: true,
+    },
+  ]);
+  context.after(() => rm(root, { recursive: true, force: true }));
+
+  const { status, summary } = run(root);
+
+  assert.equal(status, 1);
+  assert.equal(summary.unjudged, 1);
+  assert.equal(summary.rows[0].oracle, "pass");
+  assert.equal(summary.rows[0].agrees, null);
+});
+
+test("検体が 1 件も無いときは、場所の取り違えとして失敗する", async (context) => {
+  const root = await mkdtemp(join(tmpdir(), "figdiff-oracle-agreement-empty-"));
+  context.after(() => rm(root, { recursive: true, force: true }));
+
+  const result = spawnSync(process.execPath, [script], {
+    encoding: "utf8",
+    env: { ...process.env, FIGDIFF_ORACLE_FIXTURE_ROOT: root },
+  });
+
+  assert.equal(result.status, 2);
+});
+
+test("検体を 1 件も持たない組があれば、ほかが一致していても失敗する", async (context) => {
+  const root = await createPair([{ name: "same", image: "same.png", expectedVerdict: "pass" }]);
+  context.after(() => rm(root, { recursive: true, force: true }));
+  await mkdir(join(root, "pair-empty"));
+  await writeFile(
+    join(root, "pair-empty", "expected.json"),
+    JSON.stringify({ pairId: "pair-empty", figmaFrame: "figma.png", variants: [] }),
+  );
+
+  const { status, stderr } = run(root);
+
+  assert.equal(status, 1);
+  assert.match(stderr, /pair-empty/);
+});

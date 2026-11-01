@@ -64,10 +64,16 @@ function collectPairs() {
 
 const rows = [];
 let disagreements = 0;
+// 検体を 1 件も持たない組は、照合されないまま通ってしまう。fixture-runner.test.ts と
+// 同じく 1 件以上を求め、無い組は名前を出して失敗にする。
+const emptyPairs = [];
 
 for (const dir of collectPairs()) {
   const expected = JSON.parse(readFileSync(path.join(dir, "expected.json"), "utf8"));
   const designPath = path.join(dir, expected.figmaFrame);
+  if (expected.variants.length === 0) {
+    emptyPairs.push(expected.pairId ?? path.basename(dir));
+  }
   for (const variant of expected.variants) {
     const { verdict, residual, note } = oracleVerdict(
       designPath,
@@ -120,6 +126,9 @@ if (unjudgedRows.length > 0) {
       .join(", ")}`,
   );
 }
-if (disagreements > 0 || unjudgedRows.length > 0) {
+if (emptyPairs.length > 0) {
+  console.error(`検体を 1 件も持たない組がある: ${emptyPairs.join(", ")}`);
+}
+if (disagreements > 0 || unjudgedRows.length > 0 || emptyPairs.length > 0) {
   process.exit(1);
 }
