@@ -1559,25 +1559,33 @@ function buildCaptureAwareCritique(
     return undefined;
   }
 
-  // 直近の固定高が違うときに、古い足し行の回だけを残して比較しない。
-  // ループガードと同じく各回の条件が全て揃う系列だけを採用する。
-  const comparableReports = priorComparisons.every((entry) =>
-    isSameCaptureCondition(entry, captureWidth, captureHeight, heightIsContentDriven),
-  )
-    ? priorComparisons.map((entry) => entry.report)
-    : [];
+  // 今回と同じ撮影条件が続いている直近の回だけを比べる。新しい方から遡り、
+  // 条件が違う回に当たったらそこで止める。直近の固定高が違うのに、それより古い
+  // 足し行の回だけを拾って比べることはしない。履歴 (getRecentComparisons) は
+  // ループガードと違ってリセットされないので、全件が揃うことは求めない。
+  const comparableReports: DiffReport[] = [];
+  for (let index = priorComparisons.length - 1; index >= 0; index--) {
+    const entry = priorComparisons[index];
+    if (!isSameCaptureCondition(entry, captureWidth, captureHeight, heightIsContentDriven)) {
+      break;
+    }
+    comparableReports.unshift(entry.report);
+  }
   if (comparableReports.length > 0) {
     return selfCritique(report, comparableReports);
   }
 
   for (let index = priorComparisons.length - 1; index >= 0; index--) {
     const prior = priorComparisons[index];
-    if (typeof prior.captureWidth === "number") {
-      return {
-        concern: "capture-changed",
-        advice: `撮影条件（撮影幅 ${prior.captureWidth}px → ${captureWidth}px）が変わったため、前回との悪化判定は行っていません。`,
-      };
-    }
+    if (typeof prior.captureWidth !== "number") continue;
+    const changed =
+      prior.captureWidth !== captureWidth
+        ? `撮影幅 ${prior.captureWidth}px → ${captureWidth}px`
+        : `撮影高さ ${prior.captureHeight ?? "不明"}px → ${captureHeight ?? "不明"}px`;
+    return {
+      concern: "capture-changed",
+      advice: `撮影条件（${changed}）が変わったため、前回との悪化判定は行っていません。`,
+    };
   }
 
   return undefined;
