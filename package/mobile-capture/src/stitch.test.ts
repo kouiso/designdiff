@@ -298,6 +298,72 @@ describe("detectOverlap", () => {
     expect(result).toEqual({ overlap: 180, method: "exact" });
   });
 
+  it("treats a shallow blank match as repeated when the band reaches one row above the seam", () => {
+    // 前の末尾の余白帯は 9 行、次の先頭は 8 行。8 行の並びは縫い目の 1 行上にも
+    // 現れるので、縫い目の位置にしか無いとは言えない。
+    const blank = 0xffffff;
+    const fill = (count: number) => Array.from({ length: count }, () => blank);
+    const previous = imageFromRows([...sequence(0, 91), ...fill(9)]);
+    const next = imageFromRows([...fill(8), ...sequence(500, 92)]);
+
+    const result = detectOverlap(previous, next, {
+      headerHeight: 0,
+      footerHeight: 0,
+      expectedOverlap: 20,
+    });
+
+    expect(result.method).toBe("best-effort");
+  });
+
+  it("keeps a shallow exact seam whose run only partly repeats elsewhere", () => {
+    // 前の画面の 10〜16 行目に縫い目と同じ 7 行が現れるが、続く 17 行目が違う。
+    // 8 行の並び全体は縫い目の位置にしか無いので exact のまま採る。
+    const previousRows = sequence(0, 100);
+    for (let row = 10; row <= 16; row++) previousRows[row] = 82 + row;
+    previousRows[17] = 4242;
+    const previous = imageFromRows(previousRows);
+    const next = imageFromRows(sequence(92, 100));
+
+    const result = detectOverlap(previous, next, {
+      headerHeight: 0,
+      footerHeight: 0,
+      expectedOverlap: 20,
+    });
+
+    expect(result).toEqual({ overlap: 8, method: "exact" });
+  });
+
+  it("does not count fixed header rows when checking that a shallow run occurs only at the seam", () => {
+    // ヘッダー末尾の 12 行は次の先頭の 12 行と同じ色だが、本文ではない。
+    // 本文の中で縫い目の位置にしか無ければ exact で採る。
+    const header = [500, ...Array.from({ length: 12 }, () => 0)];
+    const zeros = Array.from({ length: 12 }, () => 0);
+    const previous = imageFromRows([...header, ...sequence(1000, 48), ...zeros]);
+    const next = imageFromRows([...header, ...zeros, ...sequence(5000, 48)]);
+
+    const result = detectOverlap(previous, next, {
+      headerHeight: header.length,
+      footerHeight: 0,
+      expectedOverlap: 40,
+    });
+
+    expect(result).toEqual({ overlap: 12, method: "exact" });
+  });
+
+  it("never reports a zero-row exact overlap when the expected overlap is 1", () => {
+    const previous = imageFromRows(sequence(1, 10));
+    const next = imageFromRows(sequence(100, 10));
+
+    const result = detectOverlap(previous, next, {
+      headerHeight: 0,
+      footerHeight: 0,
+      expectedOverlap: 1,
+    });
+
+    expect(result.method).toBe("best-effort");
+    expect(result.overlap).toBeGreaterThan(0);
+  });
+
   it("accepts an exact seam exactly at a quarter of the expected overlap", () => {
     // 下限ちょうど (expected 20 → 5 行) は exact のまま採る。/3 (=6) などに
     // ずれたら落ちるよう、境界の受け入れ側をここで固定する。
