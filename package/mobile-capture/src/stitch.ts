@@ -148,6 +148,14 @@ function rowsEqual(a: RawImage, aY: number, b: RawImage, bY: number): boolean {
   return true;
 }
 
+/** start から count 行のハッシュがすべて同じ (=全行が同じ見た目) かを返す。 */
+function isUniformRun(hashes: Uint32Array, start: number, count: number): boolean {
+  for (let row = start + 1; row < start + count; row++) {
+    if (hashes[row] !== hashes[start]) return false;
+  }
+  return true;
+}
+
 function rowHashes(image: RawImage): Uint32Array {
   const stride = image.width * 4;
   const hashes = new Uint32Array(image.height);
@@ -252,6 +260,14 @@ export function detectOverlap(
     options.minOverlap ?? (expected === undefined ? 1 : Math.floor(expected / 4)),
   );
 
+  // 見込みの半分より浅い exact 一致は、中身のある行が揃ったときだけ縫い目と認める。
+  // 下限を 1/4 へ下げたぶん、前の末尾と次の先頭にたまたま余白帯があると、
+  // 全行が同じ色の浅い一致が exact として通り、本物の縫い目 (1 行でも
+  // 揺れて exact にならんもの) を近似で拾う前に誤って繋いでしまう。
+  // 全行同じ色の帯は位置を決める根拠にならんので、ここでは候補から外す。
+  const shallowExactLimit =
+    options.minOverlap === undefined && expected !== undefined ? Math.floor(expected / 2) : 0;
+
   const previousHashes = rowHashes(previous);
   const nextHashes = rowHashes(next);
 
@@ -266,7 +282,9 @@ export function detectOverlap(
         break;
       }
     }
-    if (matched) candidates.push(overlap);
+    if (!matched) continue;
+    if (overlap < shallowExactLimit && isUniformRun(nextHashes, headerHeight, overlap)) continue;
+    candidates.push(overlap);
   }
 
   // ハッシュ一致は候補の絞り込みでしかない。採用する1件だけ画素まで確かめる。

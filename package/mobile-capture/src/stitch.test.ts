@@ -160,6 +160,30 @@ describe("detectOverlap", () => {
     ).toBe(4);
   });
 
+  it("does not take a shallow all-blank exact match over a real seam that is not pixel-exact", () => {
+    // 前の末尾と次の先頭に余白帯 (15 行) がたまたまあり、本物の重なり 40 は
+    // 1 行だけ揺れて exact にならん。下限 1/4 (=10) だと余白帯どうしの 15 行が
+    // exact として通り、内容が重複して繋がる。全行同じ色の浅い一致は根拠に
+    // ならんので近似へ回し、見込みに近い本物の重なりを拾う。
+    const blank = 0xffffff;
+    const band = 15;
+    const page = sequence(0, 160).map((value, index) =>
+      (index >= 100 - band && index < 100) || (index >= 60 && index < 60 + band) ? blank : value,
+    );
+    const previous = imageFromRows(page.slice(0, 100));
+    const nextRows = page.slice(60, 160);
+    nextRows[30] = 0x123456;
+    const next = imageFromRows(nextRows);
+
+    const result = detectOverlap(previous, next, {
+      headerHeight: 0,
+      footerHeight: 0,
+      expectedOverlap: 40,
+    });
+
+    expect(result).toEqual({ overlap: 40, method: "best-effort" });
+  });
+
   it("accepts an exact seam shallower than half the expected overlap (fling bound is a quarter)", () => {
     // 指令量の 1.3 倍前後の fling は実機で普通に起きる。重なり 9 は
     // expected 20 の半分を切るが正しい縫い目で、/2 の下限だと近似へ落ちる。
@@ -175,6 +199,21 @@ describe("detectOverlap", () => {
 
     expect(result.overlap).toBe(9);
     expect(result.method).toBe("exact");
+  });
+
+  it("accepts an exact seam exactly at a quarter of the expected overlap", () => {
+    // 下限ちょうど (expected 20 → 5 行) は exact のまま採る。/3 (=6) などに
+    // ずれたら落ちるよう、境界の受け入れ側をここで固定する。
+    const previous = imageFromRows(sequence(0, 20));
+    const next = imageFromRows(sequence(15, 20));
+
+    const result = detectOverlap(previous, next, {
+      headerHeight: 0,
+      footerHeight: 0,
+      expectedOverlap: 20,
+    });
+
+    expect(result).toEqual({ overlap: 5, method: "exact" });
   });
 
   it("rejects an exact seam below a quarter of the expected overlap", () => {
