@@ -1,0 +1,52 @@
+
+ RUN  v4.1.11 <checkout>/app/mcp-server
+
+ ❯ src/tool/verify-fix.test.ts (38 tests | 2 failed | 36 skipped) 230ms
+     × 単画面撮影の再検証は同じ採点条件を維持する (disk baseline: false) 163ms
+     × 単画面撮影の再検証は同じ採点条件を維持する (disk baseline: true) 66ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/tool/verify-fix.test.ts > verify_fix > 単画面撮影の再検証は同じ採点条件を維持する (disk baseline: false)
+AssertionError: Error: comparison context changed since baseline (comparison.geometry.alignment): cmp-9beeb7b6-d674-4353-8772-34d1bf15ff0f. run compare_design once more under the current conditions, then retry verify_fix.: expected true to be falsy
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ src/tool/verify-fix.test.ts:262:53
+    260|           },
+    261|         });
+    262|         expect(result.isError, extractText(result)).toBeFalsy();
+       |                                                     ^
+    263|         expect(JSON.parse(extractText(result)).verdict).toBe("unchange…
+    264|         const session = await readActiveSession();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/tool/verify-fix.test.ts > verify_fix > 単画面撮影の再検証は同じ採点条件を維持する (disk baseline: true)
+AssertionError: Error: comparison context changed since baseline (comparison.geometry.alignment): cmp-ac16cc5a-12fc-48e5-aea4-aee087548899. run compare_design once more under the current conditions, then retry verify_fix.: expected true to be falsy
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ src/tool/verify-fix.test.ts:262:53
+    260|           },
+    261|         });
+    262|         expect(result.isError, extractText(result)).toBeFalsy();
+       |                                                     ^
+    263|         expect(JSON.parse(extractText(result)).verdict).toBe("unchange…
+    264|         const session = await readActiveSession();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 36 skipped (38)
+   Start at  04:12:22
+   Duration  3.20s (transform 550ms, setup 608ms, import 2.23s, tests 230ms, environment 0ms)

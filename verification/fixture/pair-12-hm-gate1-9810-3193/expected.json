@@ -9,11 +9,7 @@
       "expectedKinds": [],
       "notes": "内容差あり: 行の構成・縦オフセットが設計と一致しない。fail が期待値の対照検体 (designdiff#243 調査検体)",
       "rasterizationTolerance": true,
-      "expectedIssueKinds": [
-        "color",
-        "position",
-        "size"
-      ],
+      "expectedIssueKinds": ["color", "position", "size"],
       "independentPixelDiffRatio": {
         "against": "figma",
         "min": 0.02

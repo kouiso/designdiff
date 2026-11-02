@@ -1,0 +1,17 @@
+{
+  "issue": "https://github.com/kouiso/designdiff/issues/385",
+  "baselineCommit": "22726c3449fd4a9f3ac8be300944f83a005b561a",
+  "before": "Both full first-stripe duplication and full last-stripe duplication incorrectly passed.",
+  "after": "12 oracle tests passed; 4 persisted known-image examples independently labelled by construction: normal/clipped pass, duplicated first/last fail.",
+  "contract": "Ends may be clipped shorter. Their maximum observed span is now constrained by the inner median and existing 25% tolerance. This detects large duplicate/stretch failures; exact arbitrary seam/pixel identity is not claimed.",
+  "validation": "Existing missing/reorder/inner duplicate/absolute compression/AA tests remain green. Touched-script ESLint passed.",
+  "notClaimed": [
+    "#384 Android stitching fixed",
+    "Physical device capture verified",
+    "All #385 acceptance conditions completed"
+  ],
+  "commands": [
+    "cd app/mcp-server && node node_modules/vitest/vitest.mjs run script/lib/stripe-stitch-oracle.test.mjs",
+    "node docs/evidence/issue-385-stripe/reproduce.mjs REPOSITORY OUTPUT"
+  ]
+}

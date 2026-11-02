@@ -462,6 +462,8 @@ export interface Alignment {
 export type DiffVerdict = "pass" | "fail" | "inconclusive";
 
 export interface DiffReport {
+  // schema が既に返す未採点差分面。見出しでも一致面へ混ぜない。
+  unscoredDiffArea?: number;
   alignment: Alignment;
   regionScores: RegionScore[];
   issues: DiffIssue[];
