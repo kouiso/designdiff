@@ -1,6 +1,6 @@
 // X07 (capture_scroll) の結合画像を、FigDiff の報告とは独立に検証する oracle。
 // 検証用ページ (stdio-android-verification.mjs の tallHtml) は、既知の8色を
-// 既知の順序・同じ高さ (CSS 800px) で積んだ縦長ページ。結合画像の中央列の色を
+// 既知の順序・同じ高さ (CSS 800px) で積んだ縦長ページ。結合画像の左右と中央の列の色を
 // 読み、(1) 8色が順序どおり1回ずつ現れる (欠落・重複・順序入れ替えが無い)、
 // (2) 内側の区画の高さが揃っている (フレームの重複や取りこぼしで伸縮していない)
 // を確かめる。scrollCapture.captureCount など製品の自己申告は使わない。
@@ -89,8 +89,9 @@ const estimateScale = (rowClass, first, last, present) => {
 export const verifyStripeStitch = async (png) => {
   const { data, info } = await sharp(png).removeAlpha().raw().toBuffer({ resolveWithObject: true });
   const { width, height, channels } = info;
-  // 中央付近の数列を見て、1列の描画ノイズに左右されないようにする。
-  const columns = [0.4, 0.5, 0.6].map((ratio) => Math.floor(width * ratio));
+  // fixture のトースト (左右8%を除く領域) は半透明時に縞色へ近づく。
+  // 中央に観測列を集中させると全票が同じ被覆を拾うため、左右にも分散する。
+  const columns = [0.05, 0.5, 0.95].map((ratio) => Math.floor(width * ratio));
 
   // 行ごとに、ストライプ色と判定した列の多数決を取る。暗色帯や UI は -1 のまま。
   const rowClass = new Array(height).fill(-1);
