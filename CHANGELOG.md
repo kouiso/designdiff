@@ -37,6 +37,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 - 相関測定では `correct` という名前でも期待値が `fail` の対照検体を severity 0 として採点し、通常の正解画像の 1、部分的な色差の 0.5 は維持。
 
+- The independent Android scroll-stitch check now samples both sides and the center of its stripe fixture. A translucent fixture toast previously covered every sampled column and could be mistaken for a duplicated brown stripe. Color and height thresholds are unchanged; missing, duplicated, and reordered stripes remain failures even with the toast present.
+
 - The independent scroll-stitch oracle now rejects duplicated or stretched first/last stripes using the inner-stripe height upper bound, while still allowing boundary clipping.
 
 - Small Figma sections now apply the same residual noise floor as frame windows: fewer than ten unmasked perceptible pixels cannot revoke otherwise proven cluster coverage. Ten-pixel and broader color defects still block relief.

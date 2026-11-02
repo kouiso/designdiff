@@ -38,7 +38,39 @@ const buildPng = async (rows, width = WIDTH) => {
 const stitched = (order, rowsFor = () => SECTION_ROWS, scale = SCALE) =>
   order.flatMap((id, index) => sectionRows(id, rowsFor(index), scale));
 
+const withToast = async (rows) => {
+  const png = await buildPng(rows);
+  const { data, info } = await sharp(png).raw().toBuffer({ resolveWithObject: true });
+  // API34 の失敗画像では暗帯上の半透明トーストが [184,126,30] になり、
+  // 茶色の縞へ分類された。全幅の縞は変えず、実fixtureと同じ中央だけを覆う。
+  for (let y = SECTION_ROWS * 4 + 20; y < SECTION_ROWS * 4 + 50; y++) {
+    for (let x = Math.ceil(WIDTH * 0.08); x < WIDTH * 0.92; x++) {
+      data.set([184, 126, 30], (y * WIDTH + x) * 3);
+    }
+  }
+  return sharp(data, { raw: { width: info.width, height: info.height, channels: 3 } })
+    .png()
+    .toBuffer();
+};
+
 describe("verifyStripeStitch", () => {
+  it("半透明トーストが縞色に近くても正常な結合を重複扱いしない", async () => {
+    const rows = stitched([0, 1, 2, 3, 4, 5, 6, 7]);
+    const clean = await verifyStripeStitch(await buildPng(rows));
+    const covered = await verifyStripeStitch(await withToast(rows));
+    expect(covered).toEqual(clean);
+    expect(covered.ok).toBe(true);
+  });
+
+  it.each([
+    { order: [0, 1, 2, 3, 4, 4, 5, 6, 7] },
+    { order: [0, 1, 2, 3, 5, 4, 6, 7] },
+    { order: [0, 1, 2, 3, 4, 6, 7] },
+  ])("トーストがあっても壊れた結合を通さない: $order", async ({ order }) => {
+    const result = await verifyStripeStitch(await withToast(stitched(order)));
+    expect(result.ok).toBe(false);
+  });
+
   it("8色が順序どおり同じ高さで並ぶ結合画像は合格", async () => {
     const result = await verifyStripeStitch(await buildPng(stitched([0, 1, 2, 3, 4, 5, 6, 7])));
     expect(result.reasons).toEqual([]);
