@@ -175,6 +175,9 @@ async function loadImage(filePath, canvasWidth, canvasHeight) {
 function zeroIgnoreRegions(pixelsA, pixelsB, width, height, regions) {
   if (!regions || regions.length === 0) return 0;
   let maskedPixelCount = 0;
+  // region どうしが重なると同じ画素を二度数え、比較の分母が実際より小さくなって
+  // 残差を大きく見積もる。画素ごとに一度だけ数える。
+  const masked = new Uint8Array(width * height);
   for (const region of regions) {
     const left = Math.max(0, Math.floor(region.x));
     const top = Math.max(0, Math.floor(region.y));
@@ -187,7 +190,10 @@ function zeroIgnoreRegions(pixelsA, pixelsB, width, height, regions) {
         pixelsA[idx + 1] = pixelsB[idx + 1] = 0;
         pixelsA[idx + 2] = pixelsB[idx + 2] = 0;
         pixelsA[idx + 3] = pixelsB[idx + 3] = 0;
-        maskedPixelCount++;
+        if (masked[y * width + x] === 0) {
+          masked[y * width + x] = 1;
+          maskedPixelCount++;
+        }
       }
     }
   }

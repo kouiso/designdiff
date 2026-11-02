@@ -148,6 +148,34 @@ function rowsEqual(a: RawImage, aY: number, b: RawImage, bY: number): boolean {
   return true;
 }
 
+/**
+ * 次の画面の先頭 overlap 行の並びが、前の画面の本文の中で縫い目の位置
+ * (本文の末尾) にしか現れないかを返す。別の位置にも現れるなら、その一致は
+ * 繰り返しの見た目が揃っただけで、位置を決める根拠にならん。
+ */
+function occursOnlyAtSeam(
+  previousHashes: Uint32Array,
+  nextHashes: Uint32Array,
+  headerHeight: number,
+  bodyHeight: number,
+  overlap: number,
+): boolean {
+  const seamStart = headerHeight + bodyHeight - overlap;
+  // 縫い目のすぐ上から遡って探す。余白帯のような繰り返しは隣の位置ですぐ
+  // 見つかるので、長い帯で候補が多いときも走査が本文全体まで伸びにくい。
+  for (let start = seamStart - 1; start >= headerHeight; start--) {
+    let same = true;
+    for (let offset = 0; offset < overlap; offset++) {
+      if (previousHashes[start + offset] !== nextHashes[headerHeight + offset]) {
+        same = false;
+        break;
+      }
+    }
+    if (same) return false;
+  }
+  return true;
+}
+
 function rowHashes(image: RawImage): Uint32Array {
   const stride = image.width * 4;
   const hashes = new Uint32Array(image.height);
@@ -244,12 +272,22 @@ export function detectOverlap(
   const { headerHeight, footerHeight } = options;
   const bodyHeight = resolveBodyHeight(previous, headerHeight, footerHeight);
   const expected = options.expectedOverlap;
-  // 見込みが分かっとるのにその半分も無い重なりは、縞や暗帯が偶然
-  // 一致しただけの可能性が高い。exact の候補から外して近似へ落とす。
+  // 偶然一致の掴み損ないを防ぐ下限は近似側と同じ fling 由来の 1/4 に揃える。
+  // /2 のままだと指令の 1.3 倍前後の fling で実際に起きる浅い重なり
+  // (見込みの 0.5x 直下) が exact 候補から外れて近似へ落ちる (実測)。
   const minOverlap = Math.max(
     1,
-    options.minOverlap ?? (expected === undefined ? 1 : Math.floor(expected / 2)),
+    options.minOverlap ?? (expected === undefined ? 1 : Math.floor(expected / 4)),
   );
+
+  // 見込みの半分より浅い exact 一致は、その行の並びが前の画面の中で
+  // 縫い目の位置にしか現れないときだけ採る。下限を 1/4 へ下げたぶん、
+  // 余白帯や一覧の項目ごとに繰り返す部品のように、前の末尾と次の先頭が
+  // たまたま揃う浅い一致が exact として通り、本物の縫い目 (1 行でも揺れて
+  // exact にならんもの) より先に採られてしまう。そうした並びは前の画面の
+  // 別の位置にも現れるので、位置の根拠にならんものとして近似へ回す。
+  const shallowExactLimit =
+    options.minOverlap === undefined && expected !== undefined ? Math.floor(expected / 2) : 0;
 
   const previousHashes = rowHashes(previous);
   const nextHashes = rowHashes(next);
@@ -265,7 +303,16 @@ export function detectOverlap(
         break;
       }
     }
-    if (matched) candidates.push(overlap);
+    if (!matched) continue;
+    // 浅い候補は検証枠 (MAX_EXACT_CANDIDATE_VERIFICATIONS) を使う前にふるう。
+    // 外す候補が枠を埋めると、見込みから遠い深い本物の縫い目が枠から押し出される。
+    if (
+      overlap < shallowExactLimit &&
+      !occursOnlyAtSeam(previousHashes, nextHashes, headerHeight, bodyHeight, overlap)
+    ) {
+      continue;
+    }
+    candidates.push(overlap);
   }
 
   // ハッシュ一致は候補の絞り込みでしかない。採用する1件だけ画素まで確かめる。

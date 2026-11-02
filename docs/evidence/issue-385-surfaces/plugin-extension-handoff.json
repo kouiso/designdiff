@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "host": "synthetic Figma origin; plugin host is not the live Figma service",
+  "extension": "built manifest and service worker",
+  "plugin": "built UI bundle inside opaque-origin iframe",
+  "checks": {
+    "extensionServiceWorker": {
+      "running": true,
+      "extensionId": "nbdbhiafklomgffgefolipbijbjmndpd"
+    },
+    "targetTabSaved": {
+      "title": "Implementation target",
+      "url": "http://127.0.0.1:56963/implementation"
+    },
+    "pluginSelectionDisplayed": true,
+    "frameExportedAndOverlayShown": {
+      "blobUrl": true,
+      "complete": true,
+      "width": 640,
+      "height": 400
+    },
+    "overlayStateConfirmed": {
+      "active": true,
+      "mode": "transparent_overlay",
+      "opacity": 0.5
+    },
+    "independentPixelOracle": {
+      "insideFrame": [255, 127, 255],
+      "outsideFrame": [255, 255, 255],
+      "expectedInside": [255, 127, 255]
+    },
+    "runtimeErrors": {
+      "page": [],
+      "console": []
+    },
+    "implementationPageClosed": true,
+    "browserContextClosed": true
+  },
+  "artifacts": {
+    "screenshot": {
+      "file": "implementation-with-plugin-frame.png",
+      "sha256": "b2866f837cbd0581330e5724143899bb91bb7477ec8bffb7082539525b5787ce"
+    },
+    "inputFrame": {
+      "sha256": "6666a3f7066e61177cf7b37dea1e3f2497a953457e43c2805333f09123ff9647",
+      "width": 640,
+      "height": 400
+    },
+    "implementation-handoff.webm": {
+      "file": "implementation-handoff.webm",
+      "sha256": "e5e137be253ea53cde64c95653c10fe96fdc8194e966343a0b8a006d06e12f07"
+    },
+    "plugin-extension-handoff.webm": {
+      "file": "plugin-extension-handoff.webm",
+      "sha256": "f9b0dc2c4dc00086eba1d4927c0ba2bf8da2728f3722cfe909da7cdeba3b4671"
+    }
+  }
+}

@@ -1,0 +1,12 @@
+✔ strict >40 cutoff, exact differences and partial tile denominator (1.162597ms)
+✔ symmetric neighborhood metric tolerates a shift but retains missing ink (0.317959ms)
+✔ dimension mismatch is explicitly non-comparable, invalid buffers throw (1.59128ms)
+✔ alpha is rejected instead of silently discarded (9.379332ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 113.54985

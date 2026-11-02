@@ -1,0 +1,55 @@
+{
+  "scope": "Synthetic local pixels over real built MCP stdio, new server process per call. No real Figma host/API or AI code edits claimed.",
+  "environment": {
+    "node": "v26.7.0",
+    "os": "darwin",
+    "arch": "arm64",
+    "release": "25.1.0",
+    "sharp": "0.35.5",
+    "width": 100,
+    "height": 200,
+    "pixelScale": 1,
+    "font": "none",
+    "browser": "none"
+  },
+  "oracle": {
+    "remainingBadPixels": 50,
+    "badSectionScorableArea": 100,
+    "goodSectionScorableArea": 10000,
+    "rowSsim": 0.0028697265797054286,
+    "expectedStructureMatch": 99.01,
+    "source": "Independent SSIM formula and constructed pixel counts; product status is the assertion target, not the oracle."
+  },
+  "inputs": {
+    "design.png": "676d11077e33d83d480149ac999a24e097ceae7462149291b6741b5281075d66",
+    "screenshot.png": "a19d5be79fd505d6ecd1f1fb0f3951d81695eeca2bbf347906a9a198ee8d7e39",
+    "expected.json": "2b9afb5e423a88a43197fea81294009e131a0a1d96e4a5944d8d7a589c6d243d"
+  },
+  "baseline": {
+    "status": "FAIL",
+    "headline": {
+      "structureMatch": 99.01,
+      "colorOnlyRegions": 0,
+      "structuralRegions": 1,
+      "headline": "構造一致 99.01% / 色のみ差分 0領域 / 構造差分 1領域"
+    }
+  },
+  "persisted": {
+    "status": "FAIL",
+    "headline": {
+      "structureMatch": 99.01,
+      "colorOnlyRegions": 0,
+      "structuralRegions": 1,
+      "headline": "構造一致 99.01% / 色のみ差分 0領域 / 構造差分 1領域"
+    }
+  },
+  "repaired": {
+    "status": "PASS",
+    "headline": {
+      "structureMatch": 100,
+      "colorOnlyRegions": 0,
+      "structuralRegions": 0,
+      "headline": "構造一致 100% / 色のみ差分 0領域 / 構造差分 0領域"
+    }
+  }
+}

@@ -1,0 +1,82 @@
+[WARN] Unsupported engine: wanted: {"node":">=26.12.1"} (current: {"node":"v24.19.0","pnpm":"11.25.0"})
+Scope: all 8 workspace projects
+? Verifying lockfile against supply-chain policies (862 entries)...
+
+   ╭──────────────────────────────────────────────────────────────────────╮
+   │                                                                      │
+   │                 Update available! 11.25.0 → 12.16.1.                 │
+   │                 Changelog: https://pnpm.io/v/12.16.1                 │
+   │   To update, run: curl -fsSL https://get.pnpm.io/install.sh | sh -   │
+   │                                                                      │
+   ╰──────────────────────────────────────────────────────────────────────╯
+
+✓ Lockfile passes supply-chain policies (862 entries in 9.2s)
+[WARN] Moving @biomejs/biome that was installed by a different package manager to "node_modules/.ignored"
+[WARN] Moving @eslint-community/eslint-plugin-eslint-comments that was installed by a different package manager to "node_modules/.ignored"
+[WARN] Moving @eslint/js that was installed by a different package manager to "node_modules/.ignored"
+[WARN] Moving eslint that was installed by a different package manager to "node_modules/.ignored"
+[WARN] Moving eslint-plugin-import that was installed by a different package manager to "node_modules/.ignored"
+[WARN] Moving eslint-plugin-react-hooks that was installed by a different package manager to "node_modules/.ignored"
+[WARN] Moving globals that was installed by a different package manager to "node_modules/.ignored"
+[WARN] Moving typescript that was installed by a different package manager to "node_modules/.ignored"
+[WARN] Moving typescript-eslint that was installed by a different package manager to "node_modules/.ignored"
+[WARN] Moving sharp that was installed by a different package manager to "node_modules/.ignored"
+[WARN] Moving zod that was installed by a different package manager to "node_modules/.ignored"
+Progress: resolved 1, reused 0, downloaded 0, added 0
+[WARN] deprecated eslint@9.39.4: This version is no longer supported. Please see https://eslint.org/version-support for other options.
+Progress: resolved 51, reused 0, downloaded 46, added 0
+Progress: resolved 87, reused 0, downloaded 54, added 0
+Progress: resolved 181, reused 0, downloaded 112, added 0
+Progress: resolved 283, reused 0, downloaded 176, added 0
+Progress: resolved 302, reused 0, downloaded 226, added 0
+Progress: resolved 469, reused 0, downloaded 282, added 0
+Progress: resolved 558, reused 0, downloaded 385, added 0
+Progress: resolved 717, reused 0, downloaded 480, added 0
+Progress: resolved 803, reused 0, downloaded 600, added 0
+Progress: resolved 860, reused 0, downloaded 716, added 0
+Progress: resolved 862, reused 0, downloaded 717, added 0
+[WARN] 5 deprecated subdependencies found: boolean@3.2.0, glob@7.2.3, inflight@1.0.6, rimraf@2.6.3, whatwg-encoding@3.1.1
+Packages: +718
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Packages are copied from the content-addressable store to the virtual store.
+  Content-addressable store is at: /home/agent/.local/share/pnpm/store/v11
+  Virtual store is at:             ../../tmp/issue427-review-tools/node_modules/.pnpm
+Progress: resolved 862, reused 0, downloaded 718, added 718, done
+[WARN] Failed to create bin at /workspace/designdiff/app/mcp-server/node_modules/.bin/figdiff-flutter-golden. ENOENT: no such file or directory, open '/workspace/designdiff/package/mobile-capture/dist/bin/figdiff-flutter-golden.js'
+[WARN] Failed to create bin at /workspace/designdiff/app/mcp-server/node_modules/.bin/figdiff-flutter-golden. ENOENT: no such file or directory, open '/workspace/designdiff/app/mcp-server/node_modules/@figdiff/mobile-capture/dist/bin/figdiff-flutter-golden.js'
+
+dependencies:
++ sharp 0.35.5
++ zod 4.4.3 (4.6.7 is available)
+
+devDependencies:
++ @biomejs/biome 2.4.15 (2.6.4 is available)
++ @eslint-community/eslint-plugin-eslint-comments 4.7.2 (4.8.1 is available)
++ @eslint/js 9.39.4 (10.0.1 is available)
++ @playwright/test 1.60.0 (1.64.1 is available)
++ eslint 9.39.4 (10.14.0 is available) deprecated
++ eslint-plugin-import 2.32.0
++ eslint-plugin-react-hooks 5.2.0 (7.1.1 is available)
++ globals 15.15.0
++ turbo 2.9.14 (2.11.10 is available)
++ typescript 5.9.3 (7.0.2 is available)
++ typescript-eslint 8.59.3 (8.72.1 is available)
+
+[ERR_PNPM_IGNORED_BUILDS] Ignored build scripts: electron-winstaller@5.4.0, esbuild@0.25.12, esbuild@0.28.1
+
+Run "pnpm approve-builds" to pick which dependencies should be allowed to run scripts.
+[ERROR] Command failed with exit code 1: /opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node /opt/codex/runtimes/codex-primary-runtime/dependencies/node/node_modules/pnpm/bin/pnpm.mjs install
+
+pnpm: Command failed with exit code 1: /opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node /opt/codex/runtimes/codex-primary-runtime/dependencies/node/node_modules/pnpm/bin/pnpm.mjs install
+    at getFinalError (file:///opt/codex/runtimes/codex-primary-runtime/dependencies/node/node_modules/pnpm/dist/pnpm.mjs:89986:14)
+    at makeError (file:///opt/codex/runtimes/codex-primary-runtime/dependencies/node/node_modules/pnpm/dist/pnpm.mjs:92293:21)
+    at getSyncResult (file:///opt/codex/runtimes/codex-primary-runtime/dependencies/node/node_modules/pnpm/dist/pnpm.mjs:94137:10)
+    at spawnSubprocessSync (file:///opt/codex/runtimes/codex-primary-runtime/dependencies/node/node_modules/pnpm/dist/pnpm.mjs:94097:14)
+    at execaCoreSync (file:///opt/codex/runtimes/codex-primary-runtime/dependencies/node/node_modules/pnpm/dist/pnpm.mjs:94027:23)
+    at callBoundExeca (file:///opt/codex/runtimes/codex-primary-runtime/dependencies/node/node_modules/pnpm/dist/pnpm.mjs:96555:23)
+    at boundExeca (file:///opt/codex/runtimes/codex-primary-runtime/dependencies/node/node_modules/pnpm/dist/pnpm.mjs:96532:49)
+    at sync2 (file:///opt/codex/runtimes/codex-primary-runtime/dependencies/node/node_modules/pnpm/dist/pnpm.mjs:96691:10)
+    at runPnpmCli (file:///opt/codex/runtimes/codex-primary-runtime/dependencies/node/node_modules/pnpm/dist/pnpm.mjs:276904:5)
+    at runDepsStatusCheck (file:///opt/codex/runtimes/codex-primary-runtime/dependencies/node/node_modules/pnpm/dist/pnpm.mjs:278122:7)
+[WARN] The "pnpm" field in package.json is no longer read by pnpm. The following keys were ignored: "pnpm.overrides". See https://pnpm.io/settings for the new home of each setting.
+[WARN] The "pnpm" field in package.json is no longer read by pnpm. The following keys were ignored: "pnpm.overrides". See https://pnpm.io/settings for the new home of each setting.

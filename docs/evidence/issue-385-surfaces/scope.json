@@ -1,0 +1,15 @@
+{
+  "sourceCommit": "2a89643826c6ef585e0b93c6d274c06ca32a6091",
+  "desktop": "Rebuilt and launched real Electron at this commit: 7 checks including independent exact 96px defect assertion.",
+  "mcp": "Rebuilt and ran fresh-process stdio at this commit: correct mask weight survives persisted report retrieval.",
+  "plugin": "Actual UI bundle in synthetic Chromium iframe: 9 assertions including timeout, stale response and corrected input. Bundle source is unchanged at sourceCommit; manifest records bundle digests.",
+  "chrome": "Shipped manifest and actual service worker/content script/popup, isolated browser profile: overlay, opacity, drag, scroll, navigation, error and retry. Successful capture via real toolbar activeTab is NOT established.",
+  "handoff": "Shipped extension and actual plugin UI bundle at sourceCommit: selected synthetic frame -> saved implementation tab -> overlay; independent expected inside pixel [255,127,255], outside white. No extra permissions.",
+  "limitations": [
+    "Figma host/main-plugin code is synthetic, not real Figma API or live file",
+    "No AI edits to an implementation source tree",
+    "No physical devices or cross-OS/font/DPR coverage",
+    "Desktop uses its existing independent synthetic PNG harness, not this entire Figma chain"
+  ],
+  "runtime": "macOS arm64; pinned Electron 41.10.7 and Playwright Chromium revision1223; isolated test profiles, no personal authentication changed."
+}

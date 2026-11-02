@@ -1,0 +1,18 @@
+{
+  "issue": "https://github.com/kouiso/designdiff/issues/385",
+  "baselineCommit": "2a89643826c6ef585e0b93c6d274c06ca32a6091",
+  "acceptance": "Small Figma sections with fully explained clusters apply the frame residual minimum of 10 unmasked perceptible pixels before revoking relief.",
+  "before": "0/9/10 boundary test: only nine-pixel case failed because section residual mean exceeded deltaE2 while frame-window noise floor did not fire.",
+  "after": {
+    "regression": "223 tests passed across five affected MCP files (builder, image comparison, runner, height verify and mask headline).",
+    "boundary": "0 and9 unmasked noise pixels allow relief;10 refuses relief; masking one of10 allows relief.",
+    "runtime": "Real built MCP stdio, new process per call and persisted report. Four constructed cases passed. The actual pipeline makes10 pixels a separate unexplained cluster, which remains FAIL.",
+    "typecheck": "MCP tsc build passed",
+    "lint": "No errors; existing complexity and optional-chain warnings only."
+  },
+  "change": "Only section residual floor; no classifier threshold relaxation, residual window change or performance optimization.",
+  "limitations": [
+    "Synthetic PNGs and Figma node metadata; no actual Figma/AI edit acceptance",
+    "#376 classifier remains unchanged; full #385 remains open"
+  ]
+}

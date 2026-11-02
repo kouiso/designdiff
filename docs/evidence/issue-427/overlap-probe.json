@@ -1,0 +1,1130 @@
+{
+  "definitionSha256": "52d25cf6ac3f9777a7f71a19084f51818e862ee3ed3813c8c47da97f4e990b98",
+  "method": "Diagnostic only. Fixed max-channel delta>40, edge radius1, neutral signed-channel spread<=20, row ink sumRGB<600. Fixed 128px bands, all integer shifts +/-80, common interior rows. Profile-best shifts do not change labels, thresholds, or product comparison.",
+  "rows": [
+    {
+      "pairId": "pair-07-hm-gate1-9810-3312",
+      "expectedVerdict": "pass",
+      "dimensions": {
+        "figma": [390, 692],
+        "correct": [390, 692]
+      },
+      "imageSha256": {
+        "figma": "d127020097214711562057e3c0d33839495e9c07ecb668a0a0bd77ab37d22ff3",
+        "correct": "63075f0e94b0036d61ed5474f51e6bbe2816995b4ce223acd8e08cb8a45555f2"
+      },
+      "probe": {
+        "changedPixels": 19515,
+        "edgeAssociatedFraction": 0.9913399948757367,
+        "neutralChannelChangeFraction": 0.8336664104534973,
+        "bands": [
+          {
+            "start": 80,
+            "end": 208,
+            "shift": 0,
+            "profileMeanAbsoluteError": 0.000540865384615385,
+            "zeroShiftProfileError": 0.000540865384615385,
+            "rawAtZero": 0.007431891025641025,
+            "rawAtProfileBest": 0.007431891025641025,
+            "tiedBestCount": 1
+          },
+          {
+            "start": 208,
+            "end": 336,
+            "shift": 0,
+            "profileMeanAbsoluteError": 0.01953125,
+            "zeroShiftProfileError": 0.01953125,
+            "rawAtZero": 0.07858573717948718,
+            "rawAtProfileBest": 0.07858573717948718,
+            "tiedBestCount": 1
+          },
+          {
+            "start": 336,
+            "end": 464,
+            "shift": 2,
+            "profileMeanAbsoluteError": 0.027864583333333307,
+            "zeroShiftProfileError": 0.042728365384615365,
+            "rawAtZero": 0.1391426282051282,
+            "rawAtProfileBest": 0.13086939102564102,
+            "tiedBestCount": 1
+          },
+          {
+            "start": 464,
+            "end": 592,
+            "shift": 1,
+            "profileMeanAbsoluteError": 0.0317708333333333,
+            "zeroShiftProfileError": 0.03277243589743587,
+            "rawAtZero": 0.12830528846153846,
+            "rawAtProfileBest": 0.13283253205128207,
+            "tiedBestCount": 1
+          },
+          {
+            "start": 592,
+            "end": 612,
+            "shift": 0,
+            "profileMeanAbsoluteError": 0.0002564102564102555,
+            "zeroShiftProfileError": 0.0002564102564102555,
+            "rawAtZero": 0.03051282051282051,
+            "rawAtProfileBest": 0.03051282051282051,
+            "tiedBestCount": 1
+          }
+        ]
+      }
+    },
+    {
+      "pairId": "pair-08-hm-gate1-9721-6204",
+      "expectedVerdict": "pass",
+      "dimensions": {
+        "figma": [390, 692],
+        "correct": [390, 692]
+      },
+      "imageSha256": {
+        "figma": "0cb1d4ff540e9317aabc83245f040b44a718b9b79ddde962d00f8f83f8738cdc",
+        "correct": "4689d750b9d21bb2235044d4ebf971bcc7c454533435f4b2e72f9ac37139ba82"
+      },
+      "probe": {
+        "changedPixels": 3489,
+        "edgeAssociatedFraction": 0.996847234164517,
+        "neutralChannelChangeFraction": 0.8546861564918314,
+        "bands": [
+          {
+            "start": 80,
+            "end": 208,
+            "shift": 0,
+            "profileMeanAbsoluteError": 0.0005408653846153849,
+            "zeroShiftProfileError": 0.0005408653846153849,
+            "rawAtZero": 0.001282051282051282,
+            "rawAtProfileBest": 0.001282051282051282,
+            "tiedBestCount": 1
+          },
+          {
+            "start": 208,
+            "end": 336,
+            "shift": 0,
+            "profileMeanAbsoluteError": 0,
+            "zeroShiftProfileError": 0,
+            "rawAtZero": 0,
+            "rawAtProfileBest": 0,
+            "tiedBestCount": 161
+          },
+          {
+            "start": 336,
+            "end": 464,
+            "shift": -1,
+            "profileMeanAbsoluteError": 0.0027844551282051274,
+            "zeroShiftProfileError": 0.003385416666666666,
+            "rawAtZero": 0.015284455128205128,
+            "rawAtProfileBest": 0.015424679487179488,
+            "tiedBestCount": 1
+          },
+          {
+            "start": 464,
+            "end": 592,
+            "shift": -2,
+            "profileMeanAbsoluteError": 0.009635416666666662,
+            "zeroShiftProfileError": 0.012279647435897432,
+            "rawAtZero": 0.03275240384615385,
+            "rawAtProfileBest": 0.03147035256410256,
+            "tiedBestCount": 1
+          },
+          {
+            "start": 592,
+            "end": 612,
+            "shift": 0,
+            "profileMeanAbsoluteError": 0,
+            "zeroShiftProfileError": 0,
+            "rawAtZero": 0,
+            "rawAtProfileBest": 0,
+            "tiedBestCount": 29
+          }
+        ]
+      }
+    },
+    {
+      "pairId": "pair-09-hm-gate1-9776-6791",
+      "expectedVerdict": "pass",
+      "dimensions": {
+        "figma": [390, 692],
+        "correct": [390, 692]
+      },
+      "imageSha256": {
+        "figma": "8d43a7880619231e660249d736a8f24141c0a43938be10418ab8b97d52f9ef62",
+        "correct": "f611a6747adc232615296b29ad73a6a19ad5f2357837065ba1f1b2ee161cd703"
+      },
+      "probe": {
+        "changedPixels": 21700,
+        "edgeAssociatedFraction": 0.8189861751152073,
+        "neutralChannelChangeFraction": 0.6672350230414746,
+        "bands": [
+          {
+            "start": 80,
+            "end": 208,
+            "shift": -56,
+            "profileMeanAbsoluteError": 0.013661858974358967,
+            "zeroShiftProfileError": 0.08535657051282046,
+            "rawAtZero": 0.11270032051282051,
+            "rawAtProfileBest": 0.03365384615384615,
+            "tiedBestCount": 1
+          },
+          {
+            "start": 208,
+            "end": 336,
+            "shift": -56,
+            "profileMeanAbsoluteError": 0.00829326923076923,
+            "zeroShiftProfileError": 0.08407451923076915,
+            "rawAtZero": 0.12245592948717948,
+            "rawAtProfileBest": 0.0421073717948718,
+            "tiedBestCount": 1
+          },
+          {
+            "start": 336,
+            "end": 464,
+            "shift": -56,
+            "profileMeanAbsoluteError": 0.00546875,
+            "zeroShiftProfileError": 0.06688701923076926,
+            "rawAtZero": 0.0937900641025641,
+            "rawAtProfileBest": 0.027764423076923075,
+            "tiedBestCount": 1
+          },
+          {
+            "start": 464,
+            "end": 592,
+            "shift": -56,
+            "profileMeanAbsoluteError": 0.004747596153846153,
+            "zeroShiftProfileError": 0.035096153846153846,
+            "rawAtZero": 0.04483173076923077,
+            "rawAtProfileBest": 0.027584134615384615,
+            "tiedBestCount": 1
+          },
+          {
+            "start": 592,
+            "end": 612,
+            "shift": 0,
+            "profileMeanAbsoluteError": 0,
+            "zeroShiftProfileError": 0,
+            "rawAtZero": 0,
+            "rawAtProfileBest": 0,
+            "tiedBestCount": 159
+          }
+        ]
+      }
+    },
+    {
+      "pairId": "pair-10-hm-gate1-9776-6698",
+      "expectedVerdict": "fail",
+      "dimensions": {
+        "figma": [390, 692],
+        "correct": [390, 692]
+      },
+      "imageSha256": {
+        "figma": "ded2ab0acfac47f3cdb0b8100a55738a93e1d246d6141ad90d94156e38cfb1d8",
+        "correct": "052dc499f958257a3ecf995ad7bb6f4b47b182cd1fe729f02dc2285ddbe6209a"
+      },
+      "probe": {
+        "changedPixels": 32257,
+        "edgeAssociatedFraction": 0.8909073999441982,
+        "neutralChannelChangeFraction": 0.6694670924140497,
+        "bands": [
+          {
+            "start": 80,
+            "end": 208,
+            "shift": 40,
+            "profileMeanAbsoluteError": 0.06019631410256408,
+            "zeroShiftProfileError": 0.08084935897435898,
+            "rawAtZero": 0.1054286858974359,
+            "rawAtProfileBest": 0.08423477564102565,
+            "tiedBestCount": 1
+          },
+          {
+            "start": 208,
+            "end": 336,
+            "shift": -62,
+            "profileMeanAbsoluteError": 0.0835136217948717,
+            "zeroShiftProfileError": 0.1244791666666666,
+            "rawAtZero": 0.14565304487179487,
+            "rawAtProfileBest": 0.11045673076923077,
+            "tiedBestCount": 1
+          },
+          {
+            "start": 336,
+            "end": 464,
+            "shift": 11,
+            "profileMeanAbsoluteError": 0.07457932692307687,
+            "zeroShiftProfileError": 0.0950120192307691,
+            "rawAtZero": 0.17700320512820514,
+            "rawAtProfileBest": 0.1577724358974359,
+            "tiedBestCount": 1
+          },
+          {
+            "start": 464,
+            "end": 592,
+            "shift": 39,
+            "profileMeanAbsoluteError": 0.030508814102564088,
+            "zeroShiftProfileError": 0.04757612179487175,
+            "rawAtZero": 0.06524439102564103,
+            "rawAtProfileBest": 0.07001201923076923,
+            "tiedBestCount": 2
+          },
+          {
+            "start": 592,
+            "end": 612,
+            "shift": -16,
+            "profileMeanAbsoluteError": 0,
+            "zeroShiftProfileError": 0.06243589743589745,
+            "rawAtZero": 0.06461538461538462,
+            "rawAtProfileBest": 0,
+            "tiedBestCount": 44
+          }
+        ]
+      }
+    },
+    {
+      "pairId": "pair-11-hm-gate1-9776-6456",
+      "expectedVerdict": "pass",
+      "dimensions": {
+        "figma": [390, 692],
+        "correct": [390, 692]
+      },
+      "imageSha256": {
+        "figma": "7fecc2532e6e0fea4b11686093f38f0f3aefeeb5bf5c7f88b465769d68c119ff",
+        "correct": "8549bcaecd87a30736b4ff710c6f4de7965af44611450f5027aecbe53820dedc"
+      },
+      "probe": {
+        "changedPixels": 9501,
+        "edgeAssociatedFraction": 0.996210925165772,
+        "neutralChannelChangeFraction": 0.9547416061467214,
+        "bands": [
+          {
+            "start": 80,
+            "end": 208,
+            "shift": -1,
+            "profileMeanAbsoluteError": 0.008954326923076922,
+            "zeroShiftProfileError": 0.01881009615384615,
+            "rawAtZero": 0.05897435897435897,
+            "rawAtProfileBest": 0.01247996794871795,
+            "tiedBestCount": 1
+          },
+          {
+            "start": 208,
+            "end": 336,
+            "shift": 0,
+            "profileMeanAbsoluteError": 0.004366987179487177,
+            "zeroShiftProfileError": 0.004366987179487177,
+            "rawAtZero": 0.03623798076923077,
+            "rawAtProfileBest": 0.03623798076923077,
+            "tiedBestCount": 1
+          },
+          {
+            "start": 336,
+            "end": 464,
+            "shift": 0,
+            "profileMeanAbsoluteError": 0.0040464743589743585,
+            "zeroShiftProfileError": 0.0040464743589743585,
+            "rawAtZero": 0.027584134615384615,
+            "rawAtProfileBest": 0.027584134615384615,
+            "tiedBestCount": 1
+          },
+          {
+            "start": 464,
+            "end": 592,
+            "shift": 0,
+            "profileMeanAbsoluteError": 0.008333333333333331,
+            "zeroShiftProfileError": 0.008333333333333331,
+            "rawAtZero": 0.046875,
+            "rawAtProfileBest": 0.046875,
+            "tiedBestCount": 1
+          },
+          {
+            "start": 592,
+            "end": 612,
+            "shift": 0,
+            "profileMeanAbsoluteError": 0,
+            "zeroShiftProfileError": 0,
+            "rawAtZero": 0,
+            "rawAtProfileBest": 0,
+            "tiedBestCount": 35
+          }
+        ]
+      }
+    },
+    {
+      "pairId": "pair-12-hm-gate1-9810-3193",
+      "expectedVerdict": "fail",
+      "dimensions": {
+        "figma": [390, 817],
+        "correct": [390, 817]
+      },
+      "imageSha256": {
+        "figma": "41c2a19682d35fd9792a9f1a80271b823e0723d73e7cb0d2a24c13054bc5c27e",
+        "correct": "72551f07258aaa50c733742bce8894c3afb68ffac079ca3e7097d5360255e57b"
+      },
+      "probe": {
+        "changedPixels": 20614,
+        "edgeAssociatedFraction": 0.9219462501212768,
+        "neutralChannelChangeFraction": 0.8405937712234404,
+        "bands": [
+          {
+            "start": 80,
+            "end": 208,
+            "shift": -55,
+            "profileMeanAbsoluteError": 0.0164863782051282,
+            "zeroShiftProfileError": 0.06376201923076923,
+            "rawAtZero": 0.0954727564102564,
+            "rawAtProfileBest": 0.03048878205128205,
+            "tiedBestCount": 1
+          },
+          {
+            "start": 208,
+            "end": 336,
+            "shift": -53,
+            "profileMeanAbsoluteError": 0.007171474358974358,
+            "zeroShiftProfileError": 0.0956129807692307,
+            "rawAtZero": 0.11552483974358975,
+            "rawAtProfileBest": 0.06989182692307692,
+            "tiedBestCount": 1
+          },
+          {
+            "start": 336,
+            "end": 464,
+            "shift": -52,
+            "profileMeanAbsoluteError": 0.004527243589743587,
+            "zeroShiftProfileError": 0.047736378205128195,
+            "rawAtZero": 0.06899038461538462,
+            "rawAtProfileBest": 0.036778846153846155,
+            "tiedBestCount": 1
+          },
+          {
+            "start": 464,
+            "end": 592,
+            "shift": 19,
+            "profileMeanAbsoluteError": 0.020272435897435888,
+            "zeroShiftProfileError": 0.03705929487179485,
+            "rawAtZero": 0.054106570512820515,
+            "rawAtProfileBest": 0.03854166666666667,
+            "tiedBestCount": 1
+          },
+          {
+            "start": 592,
+            "end": 720,
+            "shift": 0,
+            "profileMeanAbsoluteError": 0.005248397435897436,
+            "zeroShiftProfileError": 0.005248397435897436,
+            "rawAtZero": 0.01732772435897436,
+            "rawAtProfileBest": 0.01732772435897436,
+            "tiedBestCount": 1
+          },
+          {
+            "start": 720,
+            "end": 737,
+            "shift": 0,
+            "profileMeanAbsoluteError": 0,
+            "zeroShiftProfileError": 0,
+            "rawAtZero": 0,
+            "rawAtProfileBest": 0,
+            "tiedBestCount": 131
+          }
+        ]
+      }
+    },
+    {
+      "pairId": "pair-13-hm-gate1-9804-4204",
+      "expectedVerdict": "fail",
+      "dimensions": {
+        "figma": [390, 692],
+        "correct": [320, 667]
+      },
+      "imageSha256": {
+        "figma": "0cb67caf34bc960d61297231b8455b1e65e95391a05b9f855ead9e06f4984fa5",
+        "correct": "0494693f40f2b71d13b0877ec5952c5ab6bba3603647e1929cbbd8360f97a0d4"
+      },
+      "probe": null
+    },
+    {
+      "pairId": "pair-14-hm-gate1-9804-4285",
+      "expectedVerdict": "fail",
+      "dimensions": {
+        "figma": [390, 692],
+        "correct": [390, 692]
+      },
+      "imageSha256": {
+        "figma": "8f94673431c298872ef3b7532d627a5c6cd86d2b0944cb6de31e0776ae7566a4",
+        "correct": "53d069c7fe486bdb987b4258641eca2edbfd50f1670d9f0bbf984f3b1de4c91b"
+      },
+      "probe": {
+        "changedPixels": 47538,
+        "edgeAssociatedFraction": 0.6380369388699567,
+        "neutralChannelChangeFraction": 0.5843114981698851,
+        "bands": [
+          {
+            "start": 80,
+            "end": 208,
+            "shift": -62,
+            "profileMeanAbsoluteError": 0.15346554487179503,
+            "zeroShiftProfileError": 0.21474358974358976,
+            "rawAtZero": 0.2802684294871795,
+            "rawAtProfileBest": 0.311338141025641,
+            "tiedBestCount": 1
+          },
+          {
+            "start": 208,
+            "end": 336,
+            "shift": 18,
+            "profileMeanAbsoluteError": 0.1952524038461541,
+            "zeroShiftProfileError": 0.27710336538461544,
+            "rawAtZero": 0.31700721153846156,
+            "rawAtProfileBest": 0.29084535256410254,
+            "tiedBestCount": 1
+          },
+          {
+            "start": 336,
+            "end": 464,
+            "shift": 52,
+            "profileMeanAbsoluteError": 0.03505608974358974,
+            "zeroShiftProfileError": 0.11296073717948706,
+            "rawAtZero": 0.11997195512820513,
+            "rawAtProfileBest": 0.05056089743589744,
+            "tiedBestCount": 1
+          },
+          {
+            "start": 464,
+            "end": 592,
+            "shift": 6,
+            "profileMeanAbsoluteError": 0.03882211538461536,
+            "zeroShiftProfileError": 0.050060096153846115,
+            "rawAtZero": 0.06077724358974359,
+            "rawAtProfileBest": 0.05602964743589744,
+            "tiedBestCount": 1
+          },
+          {
+            "start": 592,
+            "end": 612,
+            "shift": -16,
+            "profileMeanAbsoluteError": 0,
+            "zeroShiftProfileError": 0.06243589743589745,
+            "rawAtZero": 0.06461538461538462,
+            "rawAtProfileBest": 0,
+            "tiedBestCount": 44
+          }
+        ]
+      }
+    },
+    {
+      "pairId": "pair-15-hm-gate1-9804-4369",
+      "expectedVerdict": "pass",
+      "dimensions": {
+        "figma": [390, 692],
+        "correct": [390, 692]
+      },
+      "imageSha256": {
+        "figma": "0062d3a197bf79b5a8490fafaf69a2fae238ad3ed5bc33472a54e9bc095b47fd",
+        "correct": "a50c052b01a52303ce8ecb2573f06c3c23add2ebac5b342179c00e5d91b18337"
+      },
+      "probe": {
+        "changedPixels": 10922,
+        "edgeAssociatedFraction": 0.9372825489837027,
+        "neutralChannelChangeFraction": 0.6075810291155466,
+        "bands": [
+          {
+            "start": 80,
+            "end": 208,
+            "shift": -1,
+            "profileMeanAbsoluteError": 0.011157852564102563,
+            "zeroShiftProfileError": 0.014102564102564101,
+            "rawAtZero": 0.01468349358974359,
+            "rawAtProfileBest": 0.011698717948717949,
+            "tiedBestCount": 1
+          },
+          {
+            "start": 208,
+            "end": 336,
+            "shift": -1,
+            "profileMeanAbsoluteError": 0.0005408653846153836,
+            "zeroShiftProfileError": 0.004847756410256409,
+            "rawAtZero": 0.009635416666666667,
+            "rawAtProfileBest": 0.0030849358974358973,
+            "tiedBestCount": 1
+          },
+          {
+            "start": 336,
+            "end": 464,
+            "shift": 0,
+            "profileMeanAbsoluteError": 0.022015224358974357,
+            "zeroShiftProfileError": 0.022015224358974357,
+            "rawAtZero": 0.0663261217948718,
+            "rawAtProfileBest": 0.0663261217948718,
+            "tiedBestCount": 1
+          },
+          {
+            "start": 464,
+            "end": 592,
+            "shift": -1,
+            "profileMeanAbsoluteError": 0.00673076923076923,
+            "zeroShiftProfileError": 0.02095352564102563,
+            "rawAtZero": 0.051702724358974356,
+            "rawAtProfileBest": 0.038080929487179484,
+            "tiedBestCount": 1
+          },
+          {
+            "start": 592,
+            "end": 612,
+            "shift": 0,
+            "profileMeanAbsoluteError": 0,
+            "zeroShiftProfileError": 0,
+            "rawAtZero": 0,
+            "rawAtProfileBest": 0,
+            "tiedBestCount": 43
+          }
+        ]
+      }
+    },
+    {
+      "pairId": "pair-16-hm-gate1-9892-8063",
+      "expectedVerdict": "fail",
+      "dimensions": {
+        "figma": [390, 692],
+        "correct": [430, 932]
+      },
+      "imageSha256": {
+        "figma": "47807c645ef4f8e8c6f52c4bdf58b584a8839cf3116b4f65c2a5f4d59e04d5f6",
+        "correct": "802fa3f87dc926a3dbb8579f2bbb3c2a4f627a8b0e0381bf4901494bfc03edae"
+      },
+      "probe": null
+    },
+    {
+      "pairId": "pair-17-hm-gate1-9878-6665",
+      "expectedVerdict": "fail",
+      "dimensions": {
+        "figma": [390, 869],
+        "correct": [390, 869]
+      },
+      "imageSha256": {
+        "figma": "ae7484b31d8d3148c49f0cf8edd27309ca9ea43cada253dfb230e81061cb5c96",
+        "correct": "fc1acfc623559888bfafadc02ff58d1dc17198a61f3aa8d2e20e4fae0f893df1"
+      },
+      "probe": {
+        "changedPixels": 20427,
+        "edgeAssociatedFraction": 0.9951045185293974,
+        "neutralChannelChangeFraction": 0.9569687178734029,
+        "bands": [
+          {
+            "start": 80,
+            "end": 208,
+            "shift": -1,
+            "profileMeanAbsoluteError": 0.004346955128205128,
+            "zeroShiftProfileError": 0.0072315705128205105,
+            "rawAtZero": 0.04130608974358974,
+            "rawAtProfileBest": 0.01844951923076923,
+            "tiedBestCount": 1
+          },
+          {
+            "start": 208,
+            "end": 336,
+            "shift": 1,
+            "profileMeanAbsoluteError": 0.018209134615384606,
+            "zeroShiftProfileError": 0.01901041666666666,
+            "rawAtZero": 0.0889022435897436,
+            "rawAtProfileBest": 0.08631810897435897,
+            "tiedBestCount": 1
+          },
+          {
+            "start": 336,
+            "end": 464,
+            "shift": 1,
+            "profileMeanAbsoluteError": 0.021694711538461538,
+            "zeroShiftProfileError": 0.03239182692307692,
+            "rawAtZero": 0.0876602564102564,
+            "rawAtProfileBest": 0.08451522435897436,
+            "tiedBestCount": 1
+          },
+          {
+            "start": 464,
+            "end": 592,
+            "shift": 2,
+            "profileMeanAbsoluteError": 0.02141426282051281,
+            "zeroShiftProfileError": 0.02836538461538461,
+            "rawAtZero": 0.0687099358974359,
+            "rawAtProfileBest": 0.06592548076923077,
+            "tiedBestCount": 1
+          },
+          {
+            "start": 592,
+            "end": 720,
+            "shift": 0,
+            "profileMeanAbsoluteError": 0.023036858974358972,
+            "zeroShiftProfileError": 0.023036858974358972,
+            "rawAtZero": 0.09114583333333333,
+            "rawAtProfileBest": 0.09114583333333333,
+            "tiedBestCount": 1
+          },
+          {
+            "start": 720,
+            "end": 789,
+            "shift": 0,
+            "profileMeanAbsoluteError": 0,
+            "zeroShiftProfileError": 0,
+            "rawAtZero": 0,
+            "rawAtProfileBest": 0,
+            "tiedBestCount": 105
+          }
+        ]
+      }
+    },
+    {
+      "pairId": "pair-18-hm-gate1-9892-10228",
+      "expectedVerdict": "pass",
+      "dimensions": {
+        "figma": [390, 692],
+        "correct": [390, 692]
+      },
+      "imageSha256": {
+        "figma": "3d09188cb41735bd129f85f9466649c4927a9eeb6c1813bd92e28f9db298ded2",
+        "correct": "ada490db6760c320998675e907c56b39ecaab3fc0148cb8b51f66206d5ffacd8"
+      },
+      "probe": {
+        "changedPixels": 6600,
+        "edgeAssociatedFraction": 0.9960606060606061,
+        "neutralChannelChangeFraction": 0.9471212121212121,
+        "bands": [
+          {
+            "start": 80,
+            "end": 208,
+            "shift": 0,
+            "profileMeanAbsoluteError": 0.0002003205128205129,
+            "zeroShiftProfileError": 0.0002003205128205129,
+            "rawAtZero": 0.0003205128205128205,
+            "rawAtProfileBest": 0.0003205128205128205,
+            "tiedBestCount": 1
+          },
+          {
+            "start": 208,
+            "end": 336,
+            "shift": 0,
+            "profileMeanAbsoluteError": 0.001602564102564103,
+            "zeroShiftProfileError": 0.001602564102564103,
+            "rawAtZero": 0.0006209935897435897,
+            "rawAtProfileBest": 0.0006209935897435897,
+            "tiedBestCount": 1
+          },
+          {
+            "start": 336,
+            "end": 464,
+            "shift": 2,
+            "profileMeanAbsoluteError": 0.0075320512820512804,
+            "zeroShiftProfileError": 0.014483173076923074,
+            "rawAtZero": 0.034735576923076925,
+            "rawAtProfileBest": 0.025881410256410258,
+            "tiedBestCount": 1
+          },
+          {
+            "start": 464,
+            "end": 592,
+            "shift": 1,
+            "profileMeanAbsoluteError": 0.015184294871794868,
+            "zeroShiftProfileError": 0.030248397435897426,
+            "rawAtZero": 0.09242788461538462,
+            "rawAtProfileBest": 0.07608173076923076,
+            "tiedBestCount": 1
+          },
+          {
+            "start": 592,
+            "end": 612,
+            "shift": 0,
+            "profileMeanAbsoluteError": 0.00012820512820512774,
+            "zeroShiftProfileError": 0.00012820512820512774,
+            "rawAtZero": 0,
+            "rawAtProfileBest": 0,
+            "tiedBestCount": 1
+          }
+        ]
+      }
+    },
+    {
+      "pairId": "pair-19-hm-gate1-9863-5441",
+      "expectedVerdict": "pass",
+      "dimensions": {
+        "figma": [390, 692],
+        "correct": [390, 692]
+      },
+      "imageSha256": {
+        "figma": "4ec2c17825635ccb17907aa62549c395f045f210da2fe7809b7194f1778b7228",
+        "correct": "253fab37692967cbdb2439182e68af05fce4a67d149c883f8f21172eea151dc5"
+      },
+      "probe": {
+        "changedPixels": 8185,
+        "edgeAssociatedFraction": 0.9577275503970678,
+        "neutralChannelChangeFraction": 0.6144166157605375,
+        "bands": [
+          {
+            "start": 80,
+            "end": 208,
+            "shift": -4,
+            "profileMeanAbsoluteError": 0.006710737179487175,
+            "zeroShiftProfileError": 0.018429487179487173,
+            "rawAtZero": 0.048477564102564104,
+            "rawAtProfileBest": 0.0399238782051282,
+            "tiedBestCount": 1
+          },
+          {
+            "start": 208,
+            "end": 336,
+            "shift": -2,
+            "profileMeanAbsoluteError": 0.005008012820512818,
+            "zeroShiftProfileError": 0.012179487179487176,
+            "rawAtZero": 0.03990384615384615,
+            "rawAtProfileBest": 0.034375,
+            "tiedBestCount": 1
+          },
+          {
+            "start": 336,
+            "end": 464,
+            "shift": 0,
+            "profileMeanAbsoluteError": 0.00546875,
+            "zeroShiftProfileError": 0.00546875,
+            "rawAtZero": 0.031189903846153846,
+            "rawAtProfileBest": 0.031189903846153846,
+            "tiedBestCount": 1
+          },
+          {
+            "start": 464,
+            "end": 592,
+            "shift": 0,
+            "profileMeanAbsoluteError": 0,
+            "zeroShiftProfileError": 0,
+            "rawAtZero": 0,
+            "rawAtProfileBest": 0,
+            "tiedBestCount": 106
+          },
+          {
+            "start": 592,
+            "end": 612,
+            "shift": 0,
+            "profileMeanAbsoluteError": 0,
+            "zeroShiftProfileError": 0,
+            "rawAtZero": 0,
+            "rawAtProfileBest": 0,
+            "tiedBestCount": 161
+          }
+        ]
+      }
+    },
+    {
+      "pairId": "pair-20-hm-gate1-9878-6036",
+      "expectedVerdict": "fail",
+      "dimensions": {
+        "figma": [390, 869],
+        "correct": [390, 869]
+      },
+      "imageSha256": {
+        "figma": "d39e0d291ba005835deb6251ff45f4ed220a6c023c3ae33d9a8c83950c8af450",
+        "correct": "3770d9a2ca03a12855dc59c434b8b496277e46d0242266d3cfcfebf8ce01bd1c"
+      },
+      "probe": {
+        "changedPixels": 18319,
+        "edgeAssociatedFraction": 0.9772367487308259,
+        "neutralChannelChangeFraction": 0.7797368852011572,
+        "bands": [
+          {
+            "start": 80,
+            "end": 208,
+            "shift": -5,
+            "profileMeanAbsoluteError": 0.008213141025641026,
+            "zeroShiftProfileError": 0.02287660256410256,
+            "rawAtZero": 0.04585336538461538,
+            "rawAtProfileBest": 0.02361778846153846,
+            "tiedBestCount": 1
+          },
+          {
+            "start": 208,
+            "end": 336,
+            "shift": -5,
+            "profileMeanAbsoluteError": 0.012219551282051275,
+            "zeroShiftProfileError": 0.02634214743589742,
+            "rawAtZero": 0.0641426282051282,
+            "rawAtProfileBest": 0.052904647435897435,
+            "tiedBestCount": 1
+          },
+          {
+            "start": 336,
+            "end": 464,
+            "shift": 68,
+            "profileMeanAbsoluteError": 0.010997596153846151,
+            "zeroShiftProfileError": 0.019150641025641017,
+            "rawAtZero": 0.04753605769230769,
+            "rawAtProfileBest": 0.05030048076923077,
+            "tiedBestCount": 1
+          },
+          {
+            "start": 464,
+            "end": 592,
+            "shift": -72,
+            "profileMeanAbsoluteError": 0.011718749999999998,
+            "zeroShiftProfileError": 0.013501602564102561,
+            "rawAtZero": 0.05064102564102564,
+            "rawAtProfileBest": 0.045753205128205125,
+            "tiedBestCount": 1
+          },
+          {
+            "start": 592,
+            "end": 720,
+            "shift": 1,
+            "profileMeanAbsoluteError": 0.011618589743589742,
+            "zeroShiftProfileError": 0.012880608974358972,
+            "rawAtZero": 0.047475961538461536,
+            "rawAtProfileBest": 0.0453926282051282,
+            "tiedBestCount": 1
+          },
+          {
+            "start": 720,
+            "end": 789,
+            "shift": 3,
+            "profileMeanAbsoluteError": 0.010850984764028236,
+            "zeroShiftProfileError": 0.016648086213303596,
+            "rawAtZero": 0.05217391304347826,
+            "rawAtProfileBest": 0.047045707915273134,
+            "tiedBestCount": 2
+          }
+        ]
+      }
+    },
+    {
+      "pairId": "pair-21-hm-gate1-9878-6362",
+      "expectedVerdict": "fail",
+      "dimensions": {
+        "figma": [390, 930],
+        "correct": [390, 930]
+      },
+      "imageSha256": {
+        "figma": "35ac0cba0c72bbda023800a879dad77af9f39704eda7b09da769e9ad17d2c647",
+        "correct": "34add76a5d4fd2c247608a86103192bf667d5c00bd0baf3b790002575de9f985"
+      },
+      "probe": {
+        "changedPixels": 14872,
+        "edgeAssociatedFraction": 0.9692711135018828,
+        "neutralChannelChangeFraction": 0.8019768692845616,
+        "bands": [
+          {
+            "start": 80,
+            "end": 208,
+            "shift": -4,
+            "profileMeanAbsoluteError": 0.007291666666666668,
+            "zeroShiftProfileError": 0.015024038461538458,
+            "rawAtZero": 0.03233173076923077,
+            "rawAtProfileBest": 0.014743589743589743,
+            "tiedBestCount": 1
+          },
+          {
+            "start": 208,
+            "end": 336,
+            "shift": -7,
+            "profileMeanAbsoluteError": 0.003585737179487178,
+            "zeroShiftProfileError": 0.023737980769230765,
+            "rawAtZero": 0.034555288461538464,
+            "rawAtProfileBest": 0.013040865384615385,
+            "tiedBestCount": 1
+          },
+          {
+            "start": 336,
+            "end": 464,
+            "shift": -5,
+            "profileMeanAbsoluteError": 0.005849358974358973,
+            "zeroShiftProfileError": 0.0251201923076923,
+            "rawAtZero": 0.043709935897435895,
+            "rawAtProfileBest": 0.027063301282051283,
+            "tiedBestCount": 1
+          },
+          {
+            "start": 464,
+            "end": 592,
+            "shift": -8,
+            "profileMeanAbsoluteError": 0.002784455128205127,
+            "zeroShiftProfileError": 0.01742788461538461,
+            "rawAtZero": 0.022455929487179487,
+            "rawAtProfileBest": 0.005208333333333333,
+            "tiedBestCount": 1
+          },
+          {
+            "start": 592,
+            "end": 720,
+            "shift": -6,
+            "profileMeanAbsoluteError": 0.0057291666666666645,
+            "zeroShiftProfileError": 0.02127403846153846,
+            "rawAtZero": 0.03673878205128205,
+            "rawAtProfileBest": 0.02485977564102564,
+            "tiedBestCount": 1
+          },
+          {
+            "start": 720,
+            "end": 848,
+            "shift": -68,
+            "profileMeanAbsoluteError": 0.01211939102564102,
+            "zeroShiftProfileError": 0.023737980769230768,
+            "rawAtZero": 0.039963942307692304,
+            "rawAtProfileBest": 0.04583333333333333,
+            "tiedBestCount": 1
+          },
+          {
+            "start": 848,
+            "end": 850,
+            "shift": 0,
+            "profileMeanAbsoluteError": 0.16282051282051282,
+            "zeroShiftProfileError": 0.16282051282051282,
+            "rawAtZero": 0.1794871794871795,
+            "rawAtProfileBest": 0.1794871794871795,
+            "tiedBestCount": 161
+          }
+        ]
+      }
+    },
+    {
+      "pairId": "pair-22-hm-gate1-9776-6584",
+      "expectedVerdict": "pass",
+      "dimensions": {
+        "figma": [390, 692],
+        "correct": [390, 692]
+      },
+      "imageSha256": {
+        "figma": "1a577e0d1c91742141a1d5166ff6fff54145ba86ebaa89306cdcee7a88a84286",
+        "correct": "6d3a0fbd85f398389ac01022209267c8aba6bc178fb732ca03308d97ed753cac"
+      },
+      "probe": {
+        "changedPixels": 23972,
+        "edgeAssociatedFraction": 0.7265559819789754,
+        "neutralChannelChangeFraction": 0.5721675287835808,
+        "bands": [
+          {
+            "start": 80,
+            "end": 208,
+            "shift": -56,
+            "profileMeanAbsoluteError": 0.00961538461538461,
+            "zeroShiftProfileError": 0.10060096153846143,
+            "rawAtZero": 0.20436698717948718,
+            "rawAtProfileBest": 0.04417067307692308,
+            "tiedBestCount": 1
+          },
+          {
+            "start": 208,
+            "end": 336,
+            "shift": -57,
+            "profileMeanAbsoluteError": 0.01139823717948718,
+            "zeroShiftProfileError": 0.10767227564102554,
+            "rawAtZero": 0.1323116987179487,
+            "rawAtProfileBest": 0.0052483974358974355,
+            "tiedBestCount": 1
+          },
+          {
+            "start": 336,
+            "end": 464,
+            "shift": -56,
+            "profileMeanAbsoluteError": 0.0337139423076923,
+            "zeroShiftProfileError": 0.037079326923076895,
+            "rawAtZero": 0.06334134615384615,
+            "rawAtProfileBest": 0.04875801282051282,
+            "tiedBestCount": 1
+          },
+          {
+            "start": 464,
+            "end": 592,
+            "shift": 0,
+            "profileMeanAbsoluteError": 0.00008012820512820484,
+            "zeroShiftProfileError": 0.00008012820512820484,
+            "rawAtZero": 0,
+            "rawAtProfileBest": 0,
+            "tiedBestCount": 1
+          },
+          {
+            "start": 592,
+            "end": 612,
+            "shift": 0,
+            "profileMeanAbsoluteError": 0.0003846153846153846,
+            "zeroShiftProfileError": 0.0003846153846153846,
+            "rawAtZero": 0,
+            "rawAtProfileBest": 0,
+            "tiedBestCount": 1
+          }
+        ]
+      }
+    },
+    {
+      "pairId": "pair-23-hm-gate1-9799-4024",
+      "expectedVerdict": "pass",
+      "dimensions": {
+        "figma": [390, 692],
+        "correct": [390, 692]
+      },
+      "imageSha256": {
+        "figma": "1d50f7bd4b9d05d483d55af14af63fff3000e15310ba433df1e49da2a53e15f9",
+        "correct": "49941f7b3de0852416bf23b8c222c6a3e34b0333f075be49cbb4384b0a1f0b38"
+      },
+      "probe": {
+        "changedPixels": 9709,
+        "edgeAssociatedFraction": 0.928519929961891,
+        "neutralChannelChangeFraction": 0.6433206303429807,
+        "bands": [
+          {
+            "start": 80,
+            "end": 208,
+            "shift": -56,
+            "profileMeanAbsoluteError": 0.0005408653846153849,
+            "zeroShiftProfileError": 0.011157852564102563,
+            "rawAtZero": 0.011658653846153846,
+            "rawAtProfileBest": 0.001282051282051282,
+            "tiedBestCount": 1
+          },
+          {
+            "start": 208,
+            "end": 336,
+            "shift": 1,
+            "profileMeanAbsoluteError": 0.00038060897435897436,
+            "zeroShiftProfileError": 0.002183493589743589,
+            "rawAtZero": 0.005528846153846154,
+            "rawAtProfileBest": 0.0006209935897435897,
+            "tiedBestCount": 1
+          },
+          {
+            "start": 336,
+            "end": 464,
+            "shift": 3,
+            "profileMeanAbsoluteError": 0.020713141025641018,
+            "zeroShiftProfileError": 0.037960737179487176,
+            "rawAtZero": 0.08245192307692308,
+            "rawAtProfileBest": 0.06602564102564103,
+            "tiedBestCount": 1
+          },
+          {
+            "start": 464,
+            "end": 592,
+            "shift": 0,
+            "profileMeanAbsoluteError": 0.004687499999999999,
+            "zeroShiftProfileError": 0.004687499999999999,
+            "rawAtZero": 0.01840945512820513,
+            "rawAtProfileBest": 0.01840945512820513,
+            "tiedBestCount": 1
+          },
+          {
+            "start": 592,
+            "end": 612,
+            "shift": 0,
+            "profileMeanAbsoluteError": 0,
+            "zeroShiftProfileError": 0,
+            "rawAtZero": 0,
+            "rawAtProfileBest": 0,
+            "tiedBestCount": 20
+          }
+        ]
+      }
+    },
+    {
+      "pairId": "pair-24-hm-gate1-9789-3641",
+      "expectedVerdict": "fail",
+      "dimensions": {
+        "figma": [390, 692],
+        "correct": [320, 667]
+      },
+      "imageSha256": {
+        "figma": "377013418fd050d277966c9cf45ab5f24de27c3d7b6ee870ceefc368b208b086",
+        "correct": "00552025392f29ccc52c3f4ecbaeb6b4ee358ebf1d465003e736c40ac52c9bdd"
+      },
+      "probe": null
+    }
+  ]
+}

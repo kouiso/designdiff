@@ -1542,7 +1542,7 @@ function isSameCaptureCondition(
   if (entry.captureWidth !== captureWidth) {
     return false;
   }
-  if (heightIsContentDriven) {
+  if (heightIsContentDriven || (entry.normalization?.screenshotBottomPaddingRows ?? 0) > 0) {
     return true;
   }
   return entry.captureHeight === captureHeight;
@@ -1559,23 +1559,33 @@ function buildCaptureAwareCritique(
     return undefined;
   }
 
-  const comparableReports = priorComparisons
-    .filter((entry) =>
-      isSameCaptureCondition(entry, captureWidth, captureHeight, heightIsContentDriven),
-    )
-    .map((entry) => entry.report);
+  // 今回と同じ撮影条件が続いている直近の回だけを比べる。新しい方から遡り、
+  // 条件が違う回に当たったらそこで止める。直近の固定高が違うのに、それより古い
+  // 足し行の回だけを拾って比べることはしない。履歴 (getRecentComparisons) は
+  // ループガードと違ってリセットされないので、全件が揃うことは求めない。
+  const comparableReports: DiffReport[] = [];
+  for (let index = priorComparisons.length - 1; index >= 0; index--) {
+    const entry = priorComparisons[index];
+    if (!isSameCaptureCondition(entry, captureWidth, captureHeight, heightIsContentDriven)) {
+      break;
+    }
+    comparableReports.unshift(entry.report);
+  }
   if (comparableReports.length > 0) {
     return selfCritique(report, comparableReports);
   }
 
   for (let index = priorComparisons.length - 1; index >= 0; index--) {
     const prior = priorComparisons[index];
-    if (typeof prior.captureWidth === "number") {
-      return {
-        concern: "capture-changed",
-        advice: `撮影条件（撮影幅 ${prior.captureWidth}px → ${captureWidth}px）が変わったため、前回との悪化判定は行っていません。`,
-      };
-    }
+    if (typeof prior.captureWidth !== "number") continue;
+    const changed =
+      prior.captureWidth !== captureWidth
+        ? `撮影幅 ${prior.captureWidth}px → ${captureWidth}px`
+        : `撮影高さ ${prior.captureHeight ?? "不明"}px → ${captureHeight ?? "不明"}px`;
+    return {
+      concern: "capture-changed",
+      advice: `撮影条件（${changed}）が変わったため、前回との悪化判定は行っていません。`,
+    };
   }
 
   return undefined;
@@ -1675,6 +1685,9 @@ export async function runCompareDesign(
   ];
   const fallbackIgnoreRegions = [...dynamicIgnoreRegions, ...systemIgnoreRegions.preCropRegions];
 
+  const screenshotIsSingleViewport =
+    (args.capture_device !== undefined && args.capture_scroll !== true) ||
+    args.screenshot_single_viewport === true;
   const comparison = await compareImages(
     {
       designBase64,
@@ -1698,9 +1711,7 @@ export async function runCompareDesign(
       // 「実装に無い」とは見なさず下端を足さない。capture_device (scroll 無し) は
       // 常に1画面撮影。ローカル PNG は撮影範囲の情報が無いため、呼び出し側が
       // 1画面撮影と分かるときだけ screenshot_single_viewport で明示する。
-      screenshotIsSingleViewport:
-        (args.capture_device !== undefined && args.capture_scroll !== true) ||
-        args.screenshot_single_viewport === true,
+      screenshotIsSingleViewport,
       anchors: args.anchors,
       localAlignmentTolerancePx: args.local_alignment_tolerance_px,
       rasterizationTolerance: args.rasterization_tolerance,
@@ -1855,23 +1866,25 @@ export async function runCompareDesign(
   const excludedFromScoring =
     comparison.diffReport?.structuralAssessment?.excludedPixelCount ??
     comparison.ignoreRegionResolution?.maskedPixelCount;
-  const comparisonHeadline = buildComparisonHeadline(
-    regionScores,
-    comparison.matchRate,
-    comparison.ignoreRegionResolution?.effectiveCanvas !== undefined ||
-      excludedFromScoring !== undefined
-      ? {
-          ...(comparison.ignoreRegionResolution?.effectiveCanvas ?? {
-            width: comparison.normalization?.designNativeWidth ?? 0,
-            height: comparison.normalization?.designNativeHeight ?? 0,
-          }),
-          maskedPixelCount: excludedFromScoring ?? 0,
-          ...(comparison.diffReport?.unscoredDiffArea !== undefined
-            ? { unscoredDiffArea: comparison.diffReport.unscoredDiffArea }
-            : {}),
-        }
-      : undefined,
-  );
+  const comparisonHeadline =
+    comparison.comparisonHeadline ??
+    buildComparisonHeadline(
+      regionScores,
+      comparison.matchRate,
+      comparison.ignoreRegionResolution?.effectiveCanvas !== undefined ||
+        excludedFromScoring !== undefined
+        ? {
+            ...(comparison.ignoreRegionResolution?.effectiveCanvas ?? {
+              width: comparison.normalization?.designNativeWidth ?? 0,
+              height: comparison.normalization?.designNativeHeight ?? 0,
+            }),
+            maskedPixelCount: excludedFromScoring ?? 0,
+            ...(comparison.diffReport?.unscoredDiffArea !== undefined
+              ? { unscoredDiffArea: comparison.diffReport.unscoredDiffArea }
+              : {}),
+          }
+        : undefined,
+    );
   const diagnosis = diagnoseComparison({
     matchRate: comparison.matchRate,
     // 比較対象そのものの行は子と範囲が重なる。平均に入れると同じ画素を二重に
@@ -1983,16 +1996,13 @@ export async function runCompareDesign(
   // 繋いだ縦長画像の高さは、実装の中身の量と重なりの測り方で毎回わずかに変わる。
   // 撮影条件が変わったと見なすと、履歴が毎回リセットされて足踏みを検出できん。
   // 上端揃えで足りない行を足した回も、撮影高さが実装の中身の量で変わる。
-  // 足し行の回から高さを直して等しくなった回も同じ修理の続きなので、直前に足し行が
-  // あった回は履歴を切らない。切るとその遷移で plateau / 回数制限が振り出しに戻る。
-  // 見るのは直前の1回だけ。履歴のどこかに足し行があるだけで高さを見なくすると、
-  // その後に別の高さで撮った入力まで同じ条件として並べてしまう。
-  const previousComparison = priorComparisons.at(-1);
+  // この回自身の撮影条件だけを記録する。前回の足し行を今回へ引き継ぐと、
+  // 修復後の固定高を別の高さへ変えた回まで同条件として許してしまう。
+  // 足し行の履歴との照合は、それぞれの回の条件を使って判定する。
   const heightIsContentDriven =
     typeof args.screenshot_url === "string" ||
     resolvedScreenshot.scrollCapture !== undefined ||
-    (comparison.normalization?.screenshotBottomPaddingRows ?? 0) > 0 ||
-    (previousComparison?.normalization?.screenshotBottomPaddingRows ?? 0) > 0;
+    (comparison.normalization?.screenshotBottomPaddingRows ?? 0) > 0;
   const critique = buildCaptureAwareCritique(
     comparison.diffReport,
     priorComparisons,
@@ -2136,6 +2146,7 @@ export async function runCompareDesign(
           comparison: {
             effectiveThreshold,
             profile: args.profile ?? null,
+            screenshotSingleViewport: screenshotIsSingleViewport || undefined,
             declaredConditions: ComparisonConditionsInputSchema.parse(
               args.comparison_conditions ?? {},
             ),
