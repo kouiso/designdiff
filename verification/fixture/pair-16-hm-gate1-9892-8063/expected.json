@@ -9,11 +9,7 @@
       "expectedKinds": [],
       "notes": "寸法不一致 (内容差の対照ではない): 実装キャプチャが 430x932 (figma は 390x692)。別寸法のため、寸法不一致で fail する。fail が期待値の対照検体 (designdiff#243 調査検体)",
       "rasterizationTolerance": true,
-      "expectedIssueKinds": [
-        "color",
-        "position",
-        "size"
-      ],
+      "expectedIssueKinds": ["color", "position", "size"],
       "independentPixelDiffRatio": {
         "against": "figma",
         "min": 0.02
