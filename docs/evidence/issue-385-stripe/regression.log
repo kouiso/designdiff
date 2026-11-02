@@ -1,0 +1,9 @@
+
+ RUN  v4.1.11 /Users/kouiso/Documents/Codex/2026-10-21/task-3/designdiff-release/app/mcp-server
+
+
+ Test Files  1 passed (1)
+      Tests  12 passed (12)
+   Start at  05:18:58
+   Duration  774ms (transform 144ms, setup 144ms, import 291ms, tests 99ms, environment 0ms)
+

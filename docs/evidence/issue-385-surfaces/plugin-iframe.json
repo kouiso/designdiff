@@ -1,0 +1,123 @@
+{
+  "generatedAt": "2026-10-21T12:04:53.345Z",
+  "dist": [
+    {
+      "path": "code.js",
+      "sha256": "d8bceab591a25b1370342363d9f7a6b3159a9ad68b0a7ee09a7c59c14f425f9f",
+      "size": 651225
+    },
+    {
+      "path": "ui-bundle.js",
+      "sha256": "3568b1b1b4fcb0ba2bef799988de689383cd070569b083b948862072e80d829d",
+      "size": 657450
+    },
+    {
+      "path": "ui.html",
+      "sha256": "3aa21f837b351e44bde632daa6885408bcc5584cb71843fed1c34314723e2862",
+      "size": 659849
+    }
+  ],
+  "distDigest": "d17c4f3d1b75969bda5873de867377595465a2b6dced27f6110618f307085f42",
+  "assertions": [
+    {
+      "name": "初期描画でタブが2枚出る",
+      "ok": true
+    },
+    {
+      "name": "inspect-node requestId 付き送信",
+      "ok": true
+    },
+    {
+      "name": "stale requestId の応答を棄却",
+      "ok": true
+    },
+    {
+      "name": "一致 requestId の応答で結果描画",
+      "ok": true
+    },
+    {
+      "name": "応答なしで timeout alert と loading 解除",
+      "ok": true
+    },
+    {
+      "name": "export-frame requestId 付き送信",
+      "ok": true
+    },
+    {
+      "name": "実canvas比較で全相違を低一致率として描画",
+      "ok": true,
+      "matchText": "0%",
+      "statsText": "4 / 4"
+    },
+    {
+      "name": "修正済み入力の再比較で既知の4画素差が解消",
+      "ok": true
+    },
+    {
+      "name": "build digest 不変・page/console error 0",
+      "ok": true
+    }
+  ],
+  "dialogs": ["The node inspection timed out. Check the selection and try again."],
+  "pageErrors": [],
+  "consoleErrors": [],
+  "completed": true,
+  "failureMessage": null,
+  "evidenceFiles": [
+    "design-blue.png",
+    "final-state.png",
+    "manifest.json",
+    "page@ad6c99b2546626c4187bb865d429be10.webm",
+    "plugin-compare-correction.webm",
+    "screenshot-red.png"
+  ],
+  "results": {
+    "X03": {
+      "status": "PASS",
+      "expected": "実UI bundle と合成hostの postMessage で選択・export・compare・inspect が動く",
+      "actual": [
+        {
+          "name": "初期描画でタブが2枚出る",
+          "ok": true
+        },
+        {
+          "name": "inspect-node requestId 付き送信",
+          "ok": true
+        },
+        {
+          "name": "一致 requestId の応答で結果描画",
+          "ok": true
+        },
+        {
+          "name": "export-frame requestId 付き送信",
+          "ok": true
+        },
+        {
+          "name": "実canvas比較で全相違を低一致率として描画",
+          "ok": true,
+          "matchText": "0%",
+          "statsText": "4 / 4"
+        }
+      ]
+    },
+    "X04": {
+      "status": "PASS",
+      "expected": "未応答・stale応答など通信失敗から復旧できる",
+      "actual": [
+        {
+          "name": "stale requestId の応答を棄却",
+          "ok": true
+        },
+        {
+          "name": "応答なしで timeout alert と loading 解除",
+          "ok": true
+        },
+        {
+          "name": "build digest 不変・page/console error 0",
+          "ok": true
+        }
+      ]
+    }
+  },
+  "note": "実 Chromium iframe + 実 dist bundle の検証。実 Figma ホスト・実 sandbox code.js 連携の代替証拠ではない。"
+}

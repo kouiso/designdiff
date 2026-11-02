@@ -1,0 +1,51 @@
+app/mcp-server/src/service/compare-design-runner.ts:374:10 lint/complexity/noExcessiveCognitiveComplexity ━━━━━━━━━━
+
+  ! Excessive complexity of 29 detected (max: 25).
+  
+    372 │   side && Object.values(side).some((value) => value !== undefined) ? side : undefined;
+    373 │ 
+  > 374 │ function buildCompletionCriteria(
+        │          ^^^^^^^^^^^^^^^^^^^^^^^
+    375 │   matchRate: number,
+    376 │   diffPixelCount: number,
+  
+  i Please refactor this function to reduce its complexity score from 29 to the max allowed complexity 25.
+  
+
+app/mcp-server/src/service/compare-design-runner.ts:831:16 lint/complexity/noExcessiveCognitiveComplexity ━━━━━━━━━━
+
+  ! Excessive complexity of 36 detected (max: 25).
+  
+    829 │ }
+    830 │ 
+  > 831 │ async function resolveScreenshotPath(
+        │                ^^^^^^^^^^^^^^^^^^^^^
+    832 │   args: CompareDesignRunArgs,
+    833 │   fallbackNodeId?: string,
+  
+  i Please refactor this function to reduce its complexity score from 36 to the max allowed complexity 25.
+  
+
+app/mcp-server/src/service/image-compare-service.ts:1179:23 lint/complexity/noExcessiveCognitiveComplexity ━━━━━━━━━━
+
+  ! Excessive complexity of 115 detected (max: 25).
+  
+    1177 │  * Compare two images and return diff analysis
+    1178 │  */
+  > 1179 │ export async function compareImages(
+         │                       ^^^^^^^^^^^^^
+    1180 │   options: CompareImagesOptions,
+    1181 │   figmaRootNode?: FigmaNode,
+  
+  i Please refactor this function to reduce its complexity score from 115 to the max allowed complexity 25.
+  
+
+Checked 6 files in 55ms. No fixes applied.
+Found 3 warnings.
+
+/Users/kouiso/Documents/Codex/2026-10-21/task-3/designdiff-release/app/mcp-server/src/service/image-compare-service.ts
+  1308:7  warning  Prefer using an optional chain expression instead, as it's more concise and easier to read  @typescript-eslint/prefer-optional-chain
+
+✖ 1 problem (0 errors, 1 warning)
+  0 errors and 1 warning potentially fixable with the `--fix` option.
+

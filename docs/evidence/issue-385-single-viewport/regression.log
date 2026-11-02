@@ -1,0 +1,8 @@
+
+ RUN  v4.1.11 <checkout>/app/mcp-server
+
+
+ Test Files  3 passed (3)
+      Tests  117 passed (117)
+   Start at  04:13:35
+   Duration  21.44s (transform 1.07s, setup 334ms, import 1.59s, tests 20.82s, environment 0ms)
