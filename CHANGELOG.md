@@ -27,6 +27,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ### Changed
 
+- Zod を 4.6.6 に更新し、5 ワークスペースのスキーマ依存を統一。
+
 - `docs/test-strategy.md` aligned with the current test inventory (file counts, coverage thresholds in CI, resolved gap items).
 - `AGENTS.md` now requires a CHANGELOG entry with every user-facing change.
 - Pinned remaining Dependabot medium/low transitive alerts via `pnpm.overrides`: `qs@^6.16.0`, `body-parser@^2.3.0`, `@hono/node-server@^1.19.15`, `@humanfs/node@^0.16.8`, `@babel/core@^7.29.7`.
