@@ -251,6 +251,9 @@ export function computeCorrelationMetrics(rows) {
  * @returns {number}
  */
 export function getHumanSeverity(variant) {
+  if (variant.name === "correct" && variant.expectedVerdict === "fail") {
+    return 0;
+  }
   const explicit = HUMAN_SEVERITY_BY_VARIANT[variant.name];
   if (explicit !== undefined) {
     return explicit;

@@ -23,6 +23,37 @@ import {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const HM_GATE1_FAIL_CONTROL_PAIR_IDS = [10, 12, 13, 14, 16, 17, 20, 21, 24];
+
+const collectCorrectSeverities = async () => {
+  const fixtureRoot = path.resolve(__dirname, "../../../../verification/fixture");
+  const entries = await fs.readdir(fixtureRoot, { withFileTypes: true });
+  const rows = await Promise.all(
+    entries
+      .filter((entry) => entry.isDirectory() && /^pair-\d+-hm-gate1-/.test(entry.name))
+      .map(async (entry) => {
+        const match = /^pair-(\d+)-hm-gate1-/.exec(entry.name);
+        if (!match) throw new Error(`Gate1 pair ID missing: ${entry.name}`);
+        const expectation = FixtureExpectationSchema.parse(
+          JSON.parse(
+            await fs.readFile(path.join(fixtureRoot, entry.name, "expected.json"), "utf8"),
+          ),
+        );
+        if (expectation.pairId !== entry.name) {
+          throw new Error(`Gate1 pair ID mismatch: ${entry.name}`);
+        }
+        const correct = expectation.variants.find((variant) => variant.name === "correct");
+        if (!correct) throw new Error(`Gate1 correct variant missing: ${entry.name}`);
+        return {
+          pairId: Number(match[1]),
+          expectedVerdict: correct.expectedVerdict,
+          severity: getHumanSeverity(correct),
+        };
+      }),
+  );
+  return rows.sort((left, right) => left.pairId - right.pairId);
+};
+
 const baseRow = {
   fixtureId: "pair-a",
   variantName: "correct",
@@ -44,6 +75,43 @@ const baseRow = {
 };
 
 describe("measure correlation math utilities", () => {
+  it("correct の fail 対照は名前の固定採点より期待ラベルを優先する", () => {
+    expect(
+      getHumanSeverity({
+        name: "correct",
+        expectedVerdict: "fail",
+        expectedKinds: [],
+        image: "impl.png",
+      }),
+    ).toBe(0);
+    expect(
+      getHumanSeverity({
+        name: "correct",
+        expectedVerdict: "pass",
+        expectedKinds: [],
+        image: "impl.png",
+      }),
+    ).toBe(1);
+  });
+
+  it("Gate1 の実検体の fail 対照9組を severity 0 で採点する", async () => {
+    const rows = await collectCorrectSeverities();
+    const controls = rows.filter((row) => HM_GATE1_FAIL_CONTROL_PAIR_IDS.includes(row.pairId));
+    expect(controls.map((row) => row.pairId)).toEqual(HM_GATE1_FAIL_CONTROL_PAIR_IDS);
+    expect(controls.map((row) => row.expectedVerdict)).toEqual(Array(9).fill("fail"));
+    expect(controls.map((row) => row.severity)).toEqual(Array(9).fill(0));
+  });
+
+  it("Gate1 の通常正解9組は1を保ち、全18組の採点総和は9になる", async () => {
+    const rows = await collectCorrectSeverities();
+    expect(rows).toHaveLength(18);
+    const normal = rows.filter((row) => !HM_GATE1_FAIL_CONTROL_PAIR_IDS.includes(row.pairId));
+    expect(normal.map((row) => row.pairId)).toEqual([7, 8, 9, 11, 15, 18, 19, 22, 23]);
+    expect(normal.map((row) => row.expectedVerdict)).toEqual(Array(9).fill("pass"));
+    expect(normal.map((row) => row.severity)).toEqual(Array(9).fill(1));
+    expect(rows.reduce((sum, row) => sum + row.severity, 0)).toBe(9);
+  });
+
   it("percentage は分母0なら null、通常は四捨五入して返す", () => {
     expect(percentage(1, 0)).toBeNull();
     expect(percentage(1, 4)).toBe(25);
