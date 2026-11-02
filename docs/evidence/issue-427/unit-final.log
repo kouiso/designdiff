@@ -1,0 +1,14 @@
+✔ strict >40 cutoff, exact differences and partial tile denominator (1.429414ms)
+✔ symmetric neighborhood metric tolerates a shift but retains missing ink (0.421331ms)
+✔ dimension mismatch is explicitly non-comparable, invalid buffers throw (1.27706ms)
+✔ alpha is rejected instead of silently discarded (15.170489ms)
+✔ independent row profile finds a known 20px displacement and raw bytes confirm it (9.590285ms)
+✔ flat identical images remain ambiguous, zero differences have no fabricated fractions (4.187313ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 129.299121

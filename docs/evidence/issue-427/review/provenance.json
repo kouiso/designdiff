@@ -1,0 +1,49 @@
+{
+  "historicalManifestRef": "c93b330de9cb75dee8b01b33493b138f1ae09db4",
+  "source": "Parent-provided transcript values; original historical manifest not independently read in this check.",
+  "rows": [
+    {
+      "pair": 9,
+      "image": "figma-export.png",
+      "currentSha256": "8d43a7880619231e660249d736a8f24141c0a43938be10418ab8b97d52f9ef62",
+      "historicalSha256": "e7aed3413769855fc525cda169bdc440de57bdbbe8f0768fd47bd131cae3872f",
+      "matches": false
+    },
+    {
+      "pair": 9,
+      "image": "impl-correct.png",
+      "currentSha256": "f611a6747adc232615296b29ad73a6a19ad5f2357837065ba1f1b2ee161cd703",
+      "historicalSha256": "c293047955a3a9778eda26bbd5a11ec2091a8f0d6cede56147063f5378482f58",
+      "matches": false
+    },
+    {
+      "pair": 12,
+      "image": "figma-export.png",
+      "currentSha256": "41c2a19682d35fd9792a9f1a80271b823e0723d73e7cb0d2a24c13054bc5c27e",
+      "historicalSha256": "05670540100e6b30e19946cbe2e170c144a64f8cbcb9fa4afa164bc293c2ff15",
+      "matches": false
+    },
+    {
+      "pair": 12,
+      "image": "impl-correct.png",
+      "currentSha256": "72551f07258aaa50c733742bce8894c3afb68ffac079ca3e7097d5360255e57b",
+      "historicalSha256": "efa9b009cc31b55951327eb9cabf9a969497a748675acc47725ca49daa11ee03",
+      "matches": false
+    },
+    {
+      "pair": 22,
+      "image": "figma-export.png",
+      "currentSha256": "1a577e0d1c91742141a1d5166ff6fff54145ba86ebaa89306cdcee7a88a84286",
+      "historicalSha256": "e08594ad9604c2cac1721b3b563338ba4538d05cd662224e664ea1339fbc7348",
+      "matches": false
+    },
+    {
+      "pair": 22,
+      "image": "impl-correct.png",
+      "currentSha256": "6d3a0fbd85f398389ac01022209267c8aba6bc178fb732ca03308d97ed753cac",
+      "historicalSha256": "ecddeea9e0b5f330047807ac42cfa2c9e544af4c6eb5c1aa4c58b1c261c9b199",
+      "matches": false
+    }
+  ],
+  "conclusion": "All six encoded hashes mismatch. This neither proves different decoded pixels nor permits inheriting historical capture settings. Actual generator/viewport/DPR/inset attribution remains unproven."
+}

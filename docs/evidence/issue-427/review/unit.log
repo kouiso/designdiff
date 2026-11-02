@@ -1,0 +1,20 @@
+✔ full fixture identities preserve all 33 controls and known RED labels (10.639816ms)
+✔ same-count duplicate or substituted variants are rejected even with refreshed byte hashes (8.367142ms)
+✔ missing controls, duplicate pairs, overlap and stale expectation bytes fail closed (2.919836ms)
+✔ strict >40 cutoff, exact differences and partial tile denominator (1.352801ms)
+✔ symmetric neighborhood metric tolerates a shift but retains missing ink (0.377285ms)
+✔ dimension mismatch is explicitly non-comparable, invalid buffers throw (1.055713ms)
+✔ alpha is rejected instead of silently discarded (20.176385ms)
+✔ RGB dimensions reject fractional and excessive images before processing (0.428751ms)
+✔ encoded files have byte bounds and only complete still PNGs are accepted (7.259772ms)
+✔ independent row profile finds a known 20px displacement and raw bytes confirm it (9.757296ms)
+✔ flat identical images remain ambiguous, zero differences have no fabricated fractions (2.602989ms)
+✔ probe enforces shared safe RGB bounds before image iteration (0.240744ms)
+ℹ tests 12
+ℹ suites 0
+ℹ pass 12
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 144.301863
