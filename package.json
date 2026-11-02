@@ -19,7 +19,7 @@
     "eval:sample-project-lp-figma:ready": "node script/eval/sample-project-lp-figma-readiness.mjs",
     "eval:sample-corporate-figma:ready": "node script/eval/sample-corporate-figma-readiness.mjs",
     "typecheck": "turbo run typecheck && pnpm --filter @figdiff/shared typecheck:test",
-    "test": "turbo run test && node --test script/dev-log.test.mjs script/log-digest.test.mjs script/check-naming.test.mjs script/verify-campaign-evidence.test.mjs",
+    "test": "turbo run test && node --test script/dev-log.test.mjs script/log-digest.test.mjs script/check-naming.test.mjs script/verify-campaign-evidence.test.mjs script/oracle-verdict-agreement.test.mjs",
     "format": "biome format --write .",
     "check": "biome check .",
     "check:naming": "node script/check-naming.mjs",
