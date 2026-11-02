@@ -6,7 +6,7 @@
   "acceptance": "For a monotone classifier that fails high ratios, a positive fail-min minus pass-max gap is necessary on this sample but does not establish generalization. Overlap remains unresolved; never relax expected.json or remove knownRedIssue to certify separation.",
   "fixtures": {
     "pair-07-hm-gate1-9810-3312": {
-      "expectedSha256": "9b6b5815dbb7db7e3d9a2a5fa90a9fde258a96145b06dbab5ee1d5547fb9d987",
+      "expectedSha256": "1017311382b08eb677e3d92a5fe343c49621dbd5994611e97d420368fa599f8d",
       "variants": [
         {
           "variant": "correct",
@@ -31,7 +31,7 @@
       ]
     },
     "pair-08-hm-gate1-9721-6204": {
-      "expectedSha256": "7710d05b5054c539b4c7a861166972ad3e8a43d7b23c552620133524e8302ed9",
+      "expectedSha256": "2a1e7c60d678a035dc3cb2cc9b295d2694dcccbbb67e742066ca08096bfeb9a7",
       "variants": [
         {
           "variant": "correct",
@@ -46,7 +46,7 @@
       ]
     },
     "pair-09-hm-gate1-9776-6791": {
-      "expectedSha256": "04bc8db97a3d7c36952a05108316296f240ee4d7645207e1aba4c2d92e54848d",
+      "expectedSha256": "341ee9383245dd63c4fd99943f3a2bc4eb0e816086e601ca7cd1c076a12bc49b",
       "variants": [
         {
           "variant": "correct",
@@ -71,7 +71,7 @@
       ]
     },
     "pair-10-hm-gate1-9776-6698": {
-      "expectedSha256": "11f3a9cc15f77c64d46e5e6e29038cff41808cfb5c78ecaa65ae2e9685ac3e4a",
+      "expectedSha256": "1f74fc1d2272c68ee877655d4d285444b0918a61602a71102710057ccd493813",
       "variants": [
         {
           "variant": "correct",
@@ -81,7 +81,7 @@
       ]
     },
     "pair-11-hm-gate1-9776-6456": {
-      "expectedSha256": "06507824d3097d38a29daa8f4816ca65e216fd5638f5f9b00973a0993cd18ad9",
+      "expectedSha256": "084f54eaf9f1952d0a79262189b6caed18c8f777bf7dfb304abf6fb77542ad1f",
       "variants": [
         {
           "variant": "correct",
@@ -96,7 +96,7 @@
       ]
     },
     "pair-12-hm-gate1-9810-3193": {
-      "expectedSha256": "4c6c345709c7556bf7bebc66adc96f0e52ab70050f8d41a32ea126afc0d7d539",
+      "expectedSha256": "5bf991bebfee1415f51efe6be2b0d4b99437368882ec9475fc4dc0e3671f9837",
       "variants": [
         {
           "variant": "correct",
@@ -106,7 +106,7 @@
       ]
     },
     "pair-13-hm-gate1-9804-4204": {
-      "expectedSha256": "799ba589f79ba03d60e4e22947670d01bc0ed1bf70b46713edfa8fb2a5d4b4dc",
+      "expectedSha256": "144d76a5350b76a300cc299224e5b42087ff64ab9962adee07f09c1f79e9d22e",
       "variants": [
         {
           "variant": "correct",
@@ -116,7 +116,7 @@
       ]
     },
     "pair-14-hm-gate1-9804-4285": {
-      "expectedSha256": "339fdce489a93c481d41c80345360ea2d6caf6f7b699f659595ec79d814e2ad0",
+      "expectedSha256": "6430761827a40d9c862f71cb3492a19555a345b1035757fb1421f4c2976e37ad",
       "variants": [
         {
           "variant": "correct",
@@ -126,7 +126,7 @@
       ]
     },
     "pair-15-hm-gate1-9804-4369": {
-      "expectedSha256": "d50157262a8e4ff5c684dedb7f4bc00a00bdd401f3128dfdf70c777312b8d00d",
+      "expectedSha256": "08dd69382cbdbaaae4931d254c4d3aa7d4b4a90413ede119782c5073fb91b089",
       "variants": [
         {
           "variant": "correct",
@@ -151,7 +151,7 @@
       ]
     },
     "pair-16-hm-gate1-9892-8063": {
-      "expectedSha256": "0663d78b7d4c58d97191991da8ff5c7f93c836b3cdebaeb147d747689fa0b064",
+      "expectedSha256": "c439a5fc974f2b824821a2f6a2653c0d32faf2d2e06c4efed7bfb91fcc77ad80",
       "variants": [
         {
           "variant": "correct",
@@ -161,7 +161,7 @@
       ]
     },
     "pair-17-hm-gate1-9878-6665": {
-      "expectedSha256": "10812832eeea1df8de60dfdcbbb4f8398c6e72c0c916fb6c11733dfd0f61ee52",
+      "expectedSha256": "3f926b945985302a31341d672e09480d4d936d3837ca9dddb3e85d4b3bc79186",
       "variants": [
         {
           "variant": "correct",
@@ -171,7 +171,7 @@
       ]
     },
     "pair-18-hm-gate1-9892-10228": {
-      "expectedSha256": "f709117fdf1f8f8fac51f4246c19156e12ae1e3cd16eeb21d81488f4a984fb8e",
+      "expectedSha256": "d2e01c3979508e393e726b62bd75527e9e614045a0cdcbb06597fa4f41ba6cd8",
       "variants": [
         {
           "variant": "correct",
@@ -186,7 +186,7 @@
       ]
     },
     "pair-19-hm-gate1-9863-5441": {
-      "expectedSha256": "ca58fd8b9f18b73c694a9258311ae46fa542e88efe40f1c9380f39a6da7b3cca",
+      "expectedSha256": "e8d71da3bfe821ecc7690daca8d2789f0e48e123ba09f9d917f8a3f879a3c0a1",
       "variants": [
         {
           "variant": "correct",
@@ -201,7 +201,7 @@
       ]
     },
     "pair-20-hm-gate1-9878-6036": {
-      "expectedSha256": "2f1c33ea5088c2e2168c10fda34fec03f67613ca5d8ad22542d80cbe6598ada1",
+      "expectedSha256": "4ff9dd01f240f370c6f009ebed05733f175a12d4d4b46555bca069d27b22313a",
       "variants": [
         {
           "variant": "correct",
@@ -211,7 +211,7 @@
       ]
     },
     "pair-21-hm-gate1-9878-6362": {
-      "expectedSha256": "a8d3723b95a305b1e0b153584846fe0aee6d96acd95e873f28d2e6405220d5d8",
+      "expectedSha256": "7019173760820fca4bad472e0805c6b3397dc50473e3b4a690e4808f9a750ca5",
       "variants": [
         {
           "variant": "correct",
@@ -221,7 +221,7 @@
       ]
     },
     "pair-22-hm-gate1-9776-6584": {
-      "expectedSha256": "d031c66e98e4fae36274c54fa798d78e3f5b11a7f15261a9ee787643a9b45446",
+      "expectedSha256": "cf226f90a9fc727a3b02c4cc5bf0d03b8018de2cab45173a49cfeb1963fd4a78",
       "variants": [
         {
           "variant": "correct",
@@ -236,7 +236,7 @@
       ]
     },
     "pair-23-hm-gate1-9799-4024": {
-      "expectedSha256": "d821e2af08a8aa24bb63b0fc9c26addfd686645ada7a4dce53545aa0524508c4",
+      "expectedSha256": "55993aa4f78fdd24298230c49c2dd2a06a8231569130ed84271ed9ea8ac3844b",
       "variants": [
         {
           "variant": "correct",
@@ -251,7 +251,7 @@
       ]
     },
     "pair-24-hm-gate1-9789-3641": {
-      "expectedSha256": "eb2cb3aa65cbff19eabb127195f0021874d9a11f0fdbb1432d4c28cfbbc3b14f",
+      "expectedSha256": "10b7cb17c91cb1bb42e6454ba671f2acd0daa3fb516f0537a59ad7de4e3163df",
       "variants": [
         {
           "variant": "correct",

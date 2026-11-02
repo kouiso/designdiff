@@ -6,14 +6,8 @@
       "pairId": "pair-07-hm-gate1-9810-3312",
       "expectedVerdict": "pass",
       "dimensions": {
-        "figma": [
-          390,
-          692
-        ],
-        "correct": [
-          390,
-          692
-        ]
+        "figma": [390, 692],
+        "correct": [390, 692]
       },
       "imageSha256": {
         "figma": "d127020097214711562057e3c0d33839495e9c07ecb668a0a0bd77ab37d22ff3",
@@ -81,14 +75,8 @@
       "pairId": "pair-08-hm-gate1-9721-6204",
       "expectedVerdict": "pass",
       "dimensions": {
-        "figma": [
-          390,
-          692
-        ],
-        "correct": [
-          390,
-          692
-        ]
+        "figma": [390, 692],
+        "correct": [390, 692]
       },
       "imageSha256": {
         "figma": "0cb1d4ff540e9317aabc83245f040b44a718b9b79ddde962d00f8f83f8738cdc",
@@ -156,14 +144,8 @@
       "pairId": "pair-09-hm-gate1-9776-6791",
       "expectedVerdict": "pass",
       "dimensions": {
-        "figma": [
-          390,
-          692
-        ],
-        "correct": [
-          390,
-          692
-        ]
+        "figma": [390, 692],
+        "correct": [390, 692]
       },
       "imageSha256": {
         "figma": "8d43a7880619231e660249d736a8f24141c0a43938be10418ab8b97d52f9ef62",
@@ -231,14 +213,8 @@
       "pairId": "pair-10-hm-gate1-9776-6698",
       "expectedVerdict": "fail",
       "dimensions": {
-        "figma": [
-          390,
-          692
-        ],
-        "correct": [
-          390,
-          692
-        ]
+        "figma": [390, 692],
+        "correct": [390, 692]
       },
       "imageSha256": {
         "figma": "ded2ab0acfac47f3cdb0b8100a55738a93e1d246d6141ad90d94156e38cfb1d8",
@@ -306,14 +282,8 @@
       "pairId": "pair-11-hm-gate1-9776-6456",
       "expectedVerdict": "pass",
       "dimensions": {
-        "figma": [
-          390,
-          692
-        ],
-        "correct": [
-          390,
-          692
-        ]
+        "figma": [390, 692],
+        "correct": [390, 692]
       },
       "imageSha256": {
         "figma": "7fecc2532e6e0fea4b11686093f38f0f3aefeeb5bf5c7f88b465769d68c119ff",
@@ -381,14 +351,8 @@
       "pairId": "pair-12-hm-gate1-9810-3193",
       "expectedVerdict": "fail",
       "dimensions": {
-        "figma": [
-          390,
-          817
-        ],
-        "correct": [
-          390,
-          817
-        ]
+        "figma": [390, 817],
+        "correct": [390, 817]
       },
       "imageSha256": {
         "figma": "41c2a19682d35fd9792a9f1a80271b823e0723d73e7cb0d2a24c13054bc5c27e",
@@ -466,14 +430,8 @@
       "pairId": "pair-13-hm-gate1-9804-4204",
       "expectedVerdict": "fail",
       "dimensions": {
-        "figma": [
-          390,
-          692
-        ],
-        "correct": [
-          320,
-          667
-        ]
+        "figma": [390, 692],
+        "correct": [320, 667]
       },
       "imageSha256": {
         "figma": "0cb67caf34bc960d61297231b8455b1e65e95391a05b9f855ead9e06f4984fa5",
@@ -485,14 +443,8 @@
       "pairId": "pair-14-hm-gate1-9804-4285",
       "expectedVerdict": "fail",
       "dimensions": {
-        "figma": [
-          390,
-          692
-        ],
-        "correct": [
-          390,
-          692
-        ]
+        "figma": [390, 692],
+        "correct": [390, 692]
       },
       "imageSha256": {
         "figma": "8f94673431c298872ef3b7532d627a5c6cd86d2b0944cb6de31e0776ae7566a4",
@@ -560,14 +512,8 @@
       "pairId": "pair-15-hm-gate1-9804-4369",
       "expectedVerdict": "pass",
       "dimensions": {
-        "figma": [
-          390,
-          692
-        ],
-        "correct": [
-          390,
-          692
-        ]
+        "figma": [390, 692],
+        "correct": [390, 692]
       },
       "imageSha256": {
         "figma": "0062d3a197bf79b5a8490fafaf69a2fae238ad3ed5bc33472a54e9bc095b47fd",
@@ -635,14 +581,8 @@
       "pairId": "pair-16-hm-gate1-9892-8063",
       "expectedVerdict": "fail",
       "dimensions": {
-        "figma": [
-          390,
-          692
-        ],
-        "correct": [
-          430,
-          932
-        ]
+        "figma": [390, 692],
+        "correct": [430, 932]
       },
       "imageSha256": {
         "figma": "47807c645ef4f8e8c6f52c4bdf58b584a8839cf3116b4f65c2a5f4d59e04d5f6",
@@ -654,14 +594,8 @@
       "pairId": "pair-17-hm-gate1-9878-6665",
       "expectedVerdict": "fail",
       "dimensions": {
-        "figma": [
-          390,
-          869
-        ],
-        "correct": [
-          390,
-          869
-        ]
+        "figma": [390, 869],
+        "correct": [390, 869]
       },
       "imageSha256": {
         "figma": "ae7484b31d8d3148c49f0cf8edd27309ca9ea43cada253dfb230e81061cb5c96",
@@ -739,14 +673,8 @@
       "pairId": "pair-18-hm-gate1-9892-10228",
       "expectedVerdict": "pass",
       "dimensions": {
-        "figma": [
-          390,
-          692
-        ],
-        "correct": [
-          390,
-          692
-        ]
+        "figma": [390, 692],
+        "correct": [390, 692]
       },
       "imageSha256": {
         "figma": "3d09188cb41735bd129f85f9466649c4927a9eeb6c1813bd92e28f9db298ded2",
@@ -814,14 +742,8 @@
       "pairId": "pair-19-hm-gate1-9863-5441",
       "expectedVerdict": "pass",
       "dimensions": {
-        "figma": [
-          390,
-          692
-        ],
-        "correct": [
-          390,
-          692
-        ]
+        "figma": [390, 692],
+        "correct": [390, 692]
       },
       "imageSha256": {
         "figma": "4ec2c17825635ccb17907aa62549c395f045f210da2fe7809b7194f1778b7228",
@@ -889,14 +811,8 @@
       "pairId": "pair-20-hm-gate1-9878-6036",
       "expectedVerdict": "fail",
       "dimensions": {
-        "figma": [
-          390,
-          869
-        ],
-        "correct": [
-          390,
-          869
-        ]
+        "figma": [390, 869],
+        "correct": [390, 869]
       },
       "imageSha256": {
         "figma": "d39e0d291ba005835deb6251ff45f4ed220a6c023c3ae33d9a8c83950c8af450",
@@ -974,14 +890,8 @@
       "pairId": "pair-21-hm-gate1-9878-6362",
       "expectedVerdict": "fail",
       "dimensions": {
-        "figma": [
-          390,
-          930
-        ],
-        "correct": [
-          390,
-          930
-        ]
+        "figma": [390, 930],
+        "correct": [390, 930]
       },
       "imageSha256": {
         "figma": "35ac0cba0c72bbda023800a879dad77af9f39704eda7b09da769e9ad17d2c647",
@@ -1069,14 +979,8 @@
       "pairId": "pair-22-hm-gate1-9776-6584",
       "expectedVerdict": "pass",
       "dimensions": {
-        "figma": [
-          390,
-          692
-        ],
-        "correct": [
-          390,
-          692
-        ]
+        "figma": [390, 692],
+        "correct": [390, 692]
       },
       "imageSha256": {
         "figma": "1a577e0d1c91742141a1d5166ff6fff54145ba86ebaa89306cdcee7a88a84286",
@@ -1144,14 +1048,8 @@
       "pairId": "pair-23-hm-gate1-9799-4024",
       "expectedVerdict": "pass",
       "dimensions": {
-        "figma": [
-          390,
-          692
-        ],
-        "correct": [
-          390,
-          692
-        ]
+        "figma": [390, 692],
+        "correct": [390, 692]
       },
       "imageSha256": {
         "figma": "1d50f7bd4b9d05d483d55af14af63fff3000e15310ba433df1e49da2a53e15f9",
@@ -1219,14 +1117,8 @@
       "pairId": "pair-24-hm-gate1-9789-3641",
       "expectedVerdict": "fail",
       "dimensions": {
-        "figma": [
-          390,
-          692
-        ],
-        "correct": [
-          320,
-          667
-        ]
+        "figma": [390, 692],
+        "correct": [320, 667]
       },
       "imageSha256": {
         "figma": "377013418fd050d277966c9cf45ab5f24de27c3d7b6ee870ceefc368b208b086",

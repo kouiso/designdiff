@@ -13,11 +13,7 @@
   },
   "checks": {
     "unit": {
-      "command": [
-        "node",
-        "--test",
-        "verification/script/measure-gate1-oracle.test.mjs"
-      ],
+      "command": ["node", "--test", "verification/script/measure-gate1-oracle.test.mjs"],
       "exitCode": 0,
       "seconds": 0.153
     },
@@ -59,11 +55,7 @@
       "seconds": 0.692
     },
     "generate-fixtures": {
-      "command": [
-        "node",
-        "verification/script/generate-fixtures.mjs",
-        "--check"
-      ],
+      "command": ["node", "verification/script/generate-fixtures.mjs", "--check"],
       "exitCode": 0,
       "seconds": 0.783
     },
@@ -151,11 +143,7 @@
       "seconds": 0.861
     },
     "generate-final": {
-      "command": [
-        "node",
-        "verification/script/generate-fixtures.mjs",
-        "--check"
-      ],
+      "command": ["node", "verification/script/generate-fixtures.mjs", "--check"],
       "exitCode": 0,
       "seconds": 0.864
     },

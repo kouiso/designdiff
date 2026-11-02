@@ -16,8 +16,8 @@
     "verification/script/probe-gate1-overlap.test.mjs": "c4004b0aafac9c28f2aaaa8ddf0c4b7fdccab7eddb94e734e9661c04f558fffa",
     "verification/script/audit-gate1-pillow.py": "04400246e272db8e2323694ee9726e0fd8f22161d6a17153c3bba0ba5365a1fa",
     "verification/script/audit-gate1-pillow.test.py": "faf2b06b6870553cf324cdbef77e9530071d87e16c957933d5b16a8ba3813599",
-    "verification/fixture/gate1-independent-oracle.json": "52d25cf6ac3f9777a7f71a19084f51818e862ee3ed3813c8c47da97f4e990b98",
-    "package.json": "c8b39797a1116cde3a59b23be85b5f13aae788a39a1243ab32ad14ef33e194ab"
+    "verification/fixture/gate1-independent-oracle.json": "760c5439e7f5df7598c90a7a35c8430014589a04345e8cbd2e5a2cf940c7d9e9",
+    "package.json": "8e1a9721f26f6b511b9a84cc2ac1f63ecfe2253d2f2d307903903a0b87097f79"
   },
   "toolchainSha256": {
     "docs/evidence/issue-427/toolchain/package.json": "299136576ac6d99c703402e07ae727ec7c3e5381ae80e4a3459bdab32d93939b",
@@ -143,5 +143,36 @@
     "log": "review/pnpm-wrapper-failure.log",
     "result": "Environment wrapper auto-installed workspace dependencies under Node24, failed on ignored build scripts; generated lock/workspace changes restored byte-for-byte from prior HEAD. No approve-builds or settings mutation. Rerun directly with supported Node and locked isolated dependencies."
   },
-  "botReview": "PR431 first review d55a3f1: APNG and independent fixture anchor fixes, default51PNGhash regression, docstrings; metrics/labels unchanged."
+  "botReview": "PR431 first review d55a3f1: APNG and independent fixture anchor fixes, default51PNGhash regression, docstrings; metrics/labels unchanged.",
+  "originalSourceSha256": {
+    "verification/script/gate1-fixture.mjs": "5272e809e417a644e40cb734bee0eb48125315c3bbf3a6c19b2aa317468cb42d",
+    "verification/script/gate1-fixture.test.mjs": "619c569666060e36e0efb83535687852043ed8c4f6d3e21cad80c3d68fc4c16f",
+    "verification/script/measure-gate1-oracle.mjs": "f76f95909dd44364305ed6278ee9472e8b0811e659bb9dd81ff30debccb192ab",
+    "verification/script/measure-gate1-oracle.test.mjs": "09961ba5bf1fa4ba700dbd354fc0db1d9e808490a52c62d8a10d84f8c067583f",
+    "verification/script/probe-gate1-overlap.mjs": "36154c2783048d86e038319b2b3af62a450fc966a95ffd35358008b22f769edd",
+    "verification/script/probe-gate1-overlap.test.mjs": "c4004b0aafac9c28f2aaaa8ddf0c4b7fdccab7eddb94e734e9661c04f558fffa",
+    "verification/script/audit-gate1-pillow.py": "04400246e272db8e2323694ee9726e0fd8f22161d6a17153c3bba0ba5365a1fa",
+    "verification/script/audit-gate1-pillow.test.py": "faf2b06b6870553cf324cdbef77e9530071d87e16c957933d5b16a8ba3813599",
+    "verification/fixture/gate1-independent-oracle.json": "52d25cf6ac3f9777a7f71a19084f51818e862ee3ed3813c8c47da97f4e990b98",
+    "package.json": "c8b39797a1116cde3a59b23be85b5f13aae788a39a1243ab32ad14ef33e194ab"
+  },
+  "integration": {
+    "base": "05a9753f",
+    "reason": "#430 only reformatted all 18 expectation JSON files. Original byte pins and parsed JSON equality were verified before refreshing current expectation/definition hashes. Original PNGs, labels, thresholds, all 66 measured rows and all scalar summaries are unchanged. Fresh Node remeasurement matched the refreshed measurement before formatting. Original Linux validation metadata/checks above remain historical; current source hashes apply to this macOS integration.",
+    "node": "26.12.1",
+    "python": "3.9.6",
+    "pillow": "11.3.0",
+    "platform": "macOS arm64",
+    "checks": {
+      "build": 0,
+      "check": 0,
+      "lint": 0,
+      "eslint": 0,
+      "typecheck": 0,
+      "test": 0,
+      "freshMeasurementMatches": 0,
+      "nodeAuditTestsPassed": 13,
+      "pillowAuditTestsPassed": 7
+    }
+  }
 }
