@@ -35,8 +35,8 @@ importers:
         specifier: ^0.35.5
         version: 0.35.5(@types/node@25.6.0)
       zod:
-        specifier: ^4.4.3
-        version: 4.4.3
+        specifier: ^4.6.6
+        version: 4.6.6
     devDependencies:
       '@biomejs/biome':
         specifier: ^2.4.15
@@ -142,8 +142,8 @@ importers:
         specifier: ^2.6.1
         version: 2.6.1
       zod:
-        specifier: ^4.4.3
-        version: 4.4.3
+        specifier: ^4.6.6
+        version: 4.6.6
       zustand:
         specifier: ^5.0.13
         version: 5.0.13(@types/react@19.2.14)(react@19.2.6)(use-sync-external-store@1.6.0(react@19.2.6))
@@ -256,7 +256,7 @@ importers:
         version: link:../../package/shared
       '@modelcontextprotocol/sdk':
         specifier: ^1.32.0
-        version: 1.32.0(zod@4.4.3)
+        version: 1.32.0(zod@4.6.6)
       pixelmatch:
         specifier: ^7.2.0
         version: 7.2.0
@@ -264,8 +264,8 @@ importers:
         specifier: ^0.35.5
         version: 0.35.5(@types/node@26.6.5)
       zod:
-        specifier: ^4.4.3
-        version: 4.4.3
+        specifier: ^4.6.6
+        version: 4.6.6
     optionalDependencies:
       '@playwright/test':
         specifier: ^1.60.0
@@ -287,8 +287,8 @@ importers:
         specifier: ^1.1.5
         version: 1.3.0
       zod:
-        specifier: ^4.4.3
-        version: 4.4.3
+        specifier: ^4.6.6
+        version: 4.6.6
     devDependencies:
       '@types/node':
         specifier: ^24.10.3
@@ -331,8 +331,8 @@ importers:
         specifier: ^2.4.2
         version: 2.9.0
       zod:
-        specifier: ^4.4.3
-        version: 4.4.3
+        specifier: ^4.6.6
+        version: 4.6.6
     devDependencies:
       '@types/node':
         specifier: ^25.6.0
@@ -4155,8 +4155,8 @@ packages:
     peerDependencies:
       zod: ^3.25.28 || ^4
 
-  zod@4.4.3:
-    resolution: {integrity: sha512-ytENFjIJFl2UwYglde2jchW2Hwm4GJFLDiSXWdTrJQBIN9Fcyp7n4DhxJEiWNAJMV1/BqWfW/kkg71UDcHJyTQ==}
+  zod@4.6.6:
+    resolution: {integrity: sha512-4UmzQUF5fxvfcYHlbjBmejU+w+hbDnWFx4aS8kBx7nPBHcO2SqPbpAG8snbdg+Xse4pRefR98hgjFgIMCI/UhA==}
 
   zustand@5.0.13:
     resolution: {integrity: sha512-efI2tVaVQPqtOh114loML/Z80Y4NP3yc+Ff0fYiZJPauNeWZeIp/bRFD7I9bfmCOYBh/PHxlglQ9+wvlwnPikQ==}
@@ -4864,7 +4864,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@modelcontextprotocol/sdk@1.32.0(zod@4.4.3)':
+  '@modelcontextprotocol/sdk@1.32.0(zod@4.6.6)':
     dependencies:
       '@hono/node-server': 1.19.17(hono@4.13.13)
       ajv: 8.20.0
@@ -4881,8 +4881,8 @@ snapshots:
       json-schema-typed: 8.0.2
       pkce-challenge: 5.0.1
       raw-body: 3.0.2
-      zod: 4.4.3
-      zod-to-json-schema: 3.25.2(zod@4.4.3)
+      zod: 4.6.6
+      zod-to-json-schema: 3.25.2(zod@4.6.6)
     transitivePeerDependencies:
       - supports-color
 
@@ -8241,11 +8241,11 @@ snapshots:
 
   yocto-queue@0.1.0: {}
 
-  zod-to-json-schema@3.25.2(zod@4.4.3):
+  zod-to-json-schema@3.25.2(zod@4.6.6):
     dependencies:
-      zod: 4.4.3
+      zod: 4.6.6
 
-  zod@4.4.3: {}
+  zod@4.6.6: {}
 
   zustand@5.0.13(@types/react@19.2.14)(react@19.2.6)(use-sync-external-store@1.6.0(react@19.2.6)):
     optionalDependencies:

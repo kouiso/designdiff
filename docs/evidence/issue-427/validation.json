@@ -17,7 +17,7 @@
     "verification/script/audit-gate1-pillow.py": "04400246e272db8e2323694ee9726e0fd8f22161d6a17153c3bba0ba5365a1fa",
     "verification/script/audit-gate1-pillow.test.py": "faf2b06b6870553cf324cdbef77e9530071d87e16c957933d5b16a8ba3813599",
     "verification/fixture/gate1-independent-oracle.json": "760c5439e7f5df7598c90a7a35c8430014589a04345e8cbd2e5a2cf940c7d9e9",
-    "package.json": "8e1a9721f26f6b511b9a84cc2ac1f63ecfe2253d2f2d307903903a0b87097f79"
+    "package.json": "cd52edc69ed5244dc9fb3485cdf61fd2a3225644e67cb851587ac15f34b07513"
   },
   "toolchainSha256": {
     "docs/evidence/issue-427/toolchain/package.json": "299136576ac6d99c703402e07ae727ec7c3e5381ae80e4a3459bdab32d93939b",
@@ -173,6 +173,11 @@
       "freshMeasurementMatches": 0,
       "nodeAuditTestsPassed": 13,
       "pillowAuditTestsPassed": 7
+    },
+    "zodRefresh": {
+      "reason": "Root package zod dependency updated from 4.4.3 to 4.6.6; audit source code, fixture bytes, PNGs, labels and metrics unchanged. Previous package source hash retained below.",
+      "previousPackageSha256": "8e1a9721f26f6b511b9a84cc2ac1f63ecfe2253d2f2d307903903a0b87097f79",
+      "zod": "4.6.6"
     }
   }
 }
