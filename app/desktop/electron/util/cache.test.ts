@@ -92,14 +92,40 @@ describe("NodeFsCacheStrategy", () => {
 
   it("FigmaClientの5引数setからversion固定画像を保存して再利用すること", async () => {
     const cache = await createCache();
-    const imageBytes = new Uint8Array([1, 2, 3, 4]);
+    // 実寸チェックが入ったので、画像は PNG 形で absoluteBoundingBox×scale と
+    // 一致させる (100x40 = 50x20 x 2)。nodes 応答も用意しておく。
+    const imageBytes = new Uint8Array(33);
+    imageBytes.set([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a], 0);
+    imageBytes.set([0x00, 0x00, 0x00, 0x0d, 0x49, 0x48, 0x44, 0x52], 8);
+    new DataView(imageBytes.buffer).setUint32(16, 100);
+    new DataView(imageBytes.buffer).setUint32(20, 40);
     const fetchMock = vi.fn(async (input: string | URL | Request) => {
       const url = new URL(
         typeof input === "string" ? input : input instanceof URL ? input.href : input.url,
       );
-      return url.hostname === "api.figma.com"
-        ? new Response(JSON.stringify({ images: { "1:2": "https://image.example/frame.png" } }))
-        : new Response(imageBytes);
+      if (url.hostname === "api.figma.com") {
+        return url.pathname.includes("/nodes")
+          ? new Response(
+              JSON.stringify({
+                nodes: {
+                  "1:2": {
+                    document: {
+                      id: "1:2",
+                      name: "Frame",
+                      type: "FRAME",
+                      absoluteBoundingBox: { x: 0, y: 0, width: 50, height: 20 },
+                      children: [],
+                      fills: [],
+                      strokes: [],
+                      effects: [],
+                    },
+                  },
+                },
+              }),
+            )
+          : new Response(JSON.stringify({ images: { "1:2": "https://image.example/frame.png" } }));
+      }
+      return new Response(imageBytes);
     });
     vi.stubGlobal("fetch", fetchMock);
     const { FigmaClient } = await import("@figdiff/shared");
@@ -108,9 +134,10 @@ describe("NodeFsCacheStrategy", () => {
     const first = await client.downloadImageAsBase64("FILE", "1:2", 2, "version-A");
     const second = await client.downloadImageAsBase64("FILE", "1:2", 2, "version-A");
 
-    expect(first).toBe(Buffer.from(imageBytes).toString("base64"));
-    expect(second).toBe(first);
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(first.base64).toBe(Buffer.from(imageBytes).toString("base64"));
+    expect(second.base64).toBe(first.base64);
+    // images 要求 + 画像本体 + 実寸チェックの nodes 要求で 3 回。
+    expect(fetchMock).toHaveBeenCalledTimes(3);
   });
 
   it("読み込みに失敗しても落ちずに null を返すこと", async () => {

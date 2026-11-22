@@ -107,7 +107,8 @@ const webFigmaAdapter: FigmaAdapter = {
   },
   getFrameImage: async (fileKey, nodeId, scale = 2) => {
     const client = createClient();
-    return client.downloadImageAsBase64(fileKey, nodeId, scale);
+    const image = await client.downloadImageAsBase64(fileKey, nodeId, scale);
+    return image.base64;
   },
   getNodeDetail: async (fileKey, nodeId) => {
     const client = createClient();

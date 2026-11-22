@@ -5,7 +5,7 @@ import * as path from "node:path";
 import sharp from "sharp";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { FigmaClient, type FigmaNode } from "@figdiff/shared";
+import { FigmaClient, type FigmaNode, readPngSizeBase64 } from "@figdiff/shared";
 
 import {
   computeEffectMarginCrop,
@@ -21,6 +21,14 @@ import {
 vi.mock("@figdiff/credential-store", () => ({
   resolveFigmaAccessToken: vi.fn(async () => null),
 }));
+
+// downloadImageAsBase64 のモック用に、実際の PNG base64 から実寸を含む
+// 返り値を組み立てる。寸法が実画像とずれると scale 再取得の条件判定が
+// 本番と違う経路を通るので、モックでも IHDR から実寸を読む。
+const pngImage = (base64: string, requestedScale = 2) => {
+  const { width, height } = readPngSizeBase64(base64);
+  return { base64, width, height, requestedScale };
+};
 
 const originalFigmaToken = process.env.FIGMA_TOKEN;
 
@@ -325,7 +333,7 @@ describe("FigmaService.getFrameImage — effect margin removal on a real PNG", (
 
   it("returns the logical box only, with the shadow band removed", async () => {
     const exported = await makeShadowedExport();
-    vi.spyOn(FigmaClient.prototype, "downloadImageAsBase64").mockResolvedValue(exported);
+    vi.spyOn(FigmaClient.prototype, "downloadImageAsBase64").mockResolvedValue(pngImage(exported));
 
     const service = new FigmaService(
       "figd_1234567890abcdef",
@@ -360,7 +368,7 @@ describe("FigmaService.getFrameImage — effect margin removal on a real PNG", (
 
   it("leaves the export untouched when the node has no render bounds", async () => {
     const exported = await makeShadowedExport();
-    vi.spyOn(FigmaClient.prototype, "downloadImageAsBase64").mockResolvedValue(exported);
+    vi.spyOn(FigmaClient.prototype, "downloadImageAsBase64").mockResolvedValue(pngImage(exported));
 
     const service = new FigmaService(
       "figd_1234567890abcdef",
@@ -385,7 +393,7 @@ describe("FigmaService.getFrameImage — effect margin removal on a real PNG", (
         .png()
         .toBuffer()
     ).toString("base64");
-    vi.spyOn(FigmaClient.prototype, "downloadImageAsBase64").mockResolvedValue(exported);
+    vi.spyOn(FigmaClient.prototype, "downloadImageAsBase64").mockResolvedValue(pngImage(exported));
 
     const service = new FigmaService(
       "figd_1234567890abcdef",
@@ -409,7 +417,7 @@ describe("FigmaService.getFrameImage — effect margin removal on a real PNG", (
         .png()
         .toBuffer()
     ).toString("base64");
-    vi.spyOn(FigmaClient.prototype, "downloadImageAsBase64").mockResolvedValue(exported);
+    vi.spyOn(FigmaClient.prototype, "downloadImageAsBase64").mockResolvedValue(pngImage(exported));
 
     const service = new FigmaService(
       "figd_1234567890abcdef",
@@ -486,8 +494,8 @@ describe("FigmaService.getFrameImage — hidden node blank export fallback (#125
     const content = await contentPng();
     const download = vi
       .spyOn(FigmaClient.prototype, "downloadImageAsBase64")
-      .mockImplementation((_fileKey, _nodeId, _scale, _version, options) =>
-        Promise.resolve(options.useAbsoluteBounds === false ? content : blank),
+      .mockImplementation((_fileKey, _nodeId, scale, _version, options) =>
+        Promise.resolve(pngImage(options.useAbsoluteBounds === false ? content : blank, scale)),
       );
 
     const service = new FigmaService(
@@ -512,7 +520,7 @@ describe("FigmaService.getFrameImage — hidden node blank export fallback (#125
     const blank = await blankPng();
     const download = vi
       .spyOn(FigmaClient.prototype, "downloadImageAsBase64")
-      .mockResolvedValue(blank);
+      .mockResolvedValue(pngImage(blank));
 
     const service = new FigmaService(
       "figd_1234567890abcdef",
@@ -532,7 +540,7 @@ describe("FigmaService.getFrameImage — hidden node blank export fallback (#125
     const blank = await blankPng();
     const download = vi
       .spyOn(FigmaClient.prototype, "downloadImageAsBase64")
-      .mockResolvedValue(blank);
+      .mockResolvedValue(pngImage(blank));
 
     const service = new FigmaService(
       "figd_1234567890abcdef",

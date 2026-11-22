@@ -256,7 +256,12 @@ describe("webAdapter", () => {
 
     it("getFrameImage は既定スケール2で画像を取得する", async () => {
       localStorage.setItem(TOKEN_STORAGE_KEY, VALID_TOKEN);
-      downloadImageAsBase64.mockResolvedValue("BASE64IMAGE");
+      downloadImageAsBase64.mockResolvedValue({
+        base64: "BASE64IMAGE",
+        width: 100,
+        height: 50,
+        requestedScale: 2,
+      });
 
       await expect(webAdapter.figma.getFrameImage("file-key", "1:2")).resolves.toBe("BASE64IMAGE");
 
@@ -265,7 +270,12 @@ describe("webAdapter", () => {
 
     it("getFrameImage は指定スケールをそのまま渡す", async () => {
       localStorage.setItem(TOKEN_STORAGE_KEY, VALID_TOKEN);
-      downloadImageAsBase64.mockResolvedValue("BASE64IMAGE");
+      downloadImageAsBase64.mockResolvedValue({
+        base64: "BASE64IMAGE",
+        width: 100,
+        height: 50,
+        requestedScale: 2,
+      });
 
       await webAdapter.figma.getFrameImage("file-key", "1:2", 4);
 
@@ -319,7 +329,12 @@ describe("webAdapter", () => {
   describe("画像キャッシュ", () => {
     const primeCache = async (): Promise<CapturedCache> => {
       localStorage.setItem(TOKEN_STORAGE_KEY, VALID_TOKEN);
-      downloadImageAsBase64.mockResolvedValue("IMG");
+      downloadImageAsBase64.mockResolvedValue({
+        base64: "IMG",
+        width: 100,
+        height: 50,
+        requestedScale: 2,
+      });
       await webAdapter.figma.getFrameImage("file-key", "1:2");
       const cache = capturedCache;
       if (!cache) throw new Error("cache strategy was not captured");

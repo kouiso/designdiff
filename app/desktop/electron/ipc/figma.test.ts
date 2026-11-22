@@ -153,7 +153,7 @@ describe("Figma IPC secret-safe error contract", () => {
     const { registerFigmaHandlers } = await import("./figma");
     mocks.getFile.mockResolvedValue({ document: { id: "0:0" } });
     mocks.extractFrames.mockReturnValue(["frame"]);
-    mocks.downloadImageAsBase64.mockResolvedValue("image-base64");
+    mocks.downloadImageAsBase64.mockResolvedValue({ base64: "image-base64", width: 100, height: 50, requestedScale: 2 });
     mocks.getNode
       .mockResolvedValueOnce({ id: "1:1" })
       .mockResolvedValueOnce({ id: "2:2" })
@@ -218,7 +218,7 @@ describe("Figma IPC secret-safe error contract", () => {
       targetBox: { x: 30, y: 60, width: 120, height: 48 },
     });
     const pinnedImage = "iVBORw0KGgoAAAANSUhEUg==";
-    mocks.downloadImageAsBase64.mockResolvedValue(pinnedImage);
+    mocks.downloadImageAsBase64.mockResolvedValue({ base64: pinnedImage, width: 100, height: 50, requestedScale: 2 });
 
     registerFigmaHandlers();
     const handler = mocks.ipcMainHandle.mock.calls.find(
@@ -325,9 +325,12 @@ describe("Figma IPC secret-safe error contract", () => {
       rootBox: { x: 0, y: 0, width: 100, height: 100 },
       targetBox: { x: 10, y: 10, width: 20, height: 20 },
     });
-    mocks.downloadImageAsBase64.mockResolvedValue(
-      Buffer.from("<html>error</html>").toString("base64"),
-    );
+    mocks.downloadImageAsBase64.mockResolvedValue({
+      base64: Buffer.from("<html>error</html>").toString("base64"),
+      width: 100,
+      height: 50,
+      requestedScale: 2,
+    });
 
     registerFigmaHandlers();
     const handler = mocks.ipcMainHandle.mock.calls.find(
@@ -394,7 +397,7 @@ describe("Figma IPC secret-safe error contract", () => {
     Object.defineProperty(expiredError, "status", { value: 401, writable: true });
     mocks.downloadImageAsBase64
       .mockRejectedValueOnce(expiredError)
-      .mockResolvedValueOnce("retried-image");
+      .mockResolvedValueOnce({ base64: "retried-image", width: 100, height: 50, requestedScale: 2 });
 
     registerFigmaHandlers();
     const imageHandler = mocks.ipcMainHandle.mock.calls.find(

@@ -13,6 +13,7 @@ import {
   type BoundingBox,
   FigmaClient,
   type FigmaCacheStrategy,
+  FigmaImageDimensionError,
   extractFrames,
   extractNestedFrames,
   type FigmaFileResponse,
@@ -338,18 +339,35 @@ export class FigmaService {
       });
       return { ...image, figmaExport };
     };
+    // 実寸チェックで落ちた (= Figma が要求倍率どおりに描かんかった) 場合でも、
+    // エラーの持つ実寸を使って「小さかったときの再取得」の計算は続けられる。
+    // 返ってきた画像はキャッシュしないので、再取得は新しい倍率で行う。
+    const downloadOrMeasure = async (
+      used: FigmaImageExportOptions,
+      scale: number,
+    ): Promise<{ base64: string; width: number }> => {
+      try {
+        const image = await this.client.downloadImageAsBase64(
+          fileKey,
+          nodeId,
+          scale,
+          version,
+          used,
+        );
+        return { base64: image.base64, width: image.width };
+      } catch (error) {
+        if (error instanceof FigmaImageDimensionError && error.actualWidth > 0) {
+          return { base64: error.base64, width: error.actualWidth };
+        }
+        throw error;
+      }
+    };
+
     const attempt = async (used: FigmaImageExportOptions): Promise<FrameImageResult> => {
       if (targetWidth && logicalWidth && logicalWidth > 0) {
         const optimalScale = computeOptimalScale(targetWidth, logicalWidth);
         let usedScale = optimalScale;
-        let base64 = await this.client.downloadImageAsBase64(
-          fileKey,
-          nodeId,
-          optimalScale,
-          version,
-          used,
-        );
-        let actualWidth = await getImageWidth(base64);
+        let { base64, width: actualWidth } = await downloadOrMeasure(used, optimalScale);
         if (actualWidth > 0 && actualWidth < targetWidth * 0.8) {
           const fallbackScale = Math.min(
             MAX_SCALE,
@@ -359,34 +377,20 @@ export class FigmaService {
             console.error(
               `[figma-service] Image smaller than expected (${actualWidth}px vs target ${targetWidth}px), retrying with scale=${fallbackScale}`,
             );
-            base64 = await this.client.downloadImageAsBase64(
-              fileKey,
-              nodeId,
-              fallbackScale,
-              version,
-              used,
-            );
+            ({ base64, width: actualWidth } = await downloadOrMeasure(used, fallbackScale));
             usedScale = fallbackScale;
-            actualWidth = await getImageWidth(base64);
           }
         }
         return await finish(base64, usedScale, used);
       }
 
       const initialScale = 2;
-      let base64 = await this.client.downloadImageAsBase64(
-        fileKey,
-        nodeId,
-        initialScale,
-        version,
-        used,
-      );
+      let { base64, width: initialWidth } = await downloadOrMeasure(used, initialScale);
 
       if (!targetWidth) {
         return await finish(base64, initialScale, used);
       }
 
-      const initialWidth = await getImageWidth(base64);
       if (initialWidth === 0 || initialWidth >= targetWidth * 0.8) {
         return await finish(base64, initialScale, used);
       }
@@ -398,8 +402,9 @@ export class FigmaService {
         `[figma-service] Image too small (${initialWidth}px vs target ${targetWidth}px), retrying with scale=${neededScale}`,
       );
 
-      base64 = await this.client.downloadImageAsBase64(fileKey, nodeId, neededScale, version, used);
-      const retryWidth = await getImageWidth(base64);
+      const retry = await downloadOrMeasure(used, neededScale);
+      base64 = retry.base64;
+      const retryWidth = retry.width;
       if (retryWidth > 0 && retryWidth < targetWidth * 0.8) {
         console.error(
           `[figma-service] Figma image remains small after retry (${retryWidth}px vs target ${targetWidth}px); proceeding with available image`,
@@ -451,12 +456,6 @@ export class FigmaService {
   async getFile(fileKey: string, depth?: number): Promise<FigmaFileResponse> {
     return this.client.getFile(fileKey, depth ?? 2);
   }
-}
-
-async function getImageWidth(base64: string): Promise<number> {
-  const buffer = Buffer.from(base64, "base64");
-  const meta = await sharp(buffer).metadata();
-  return meta.width ?? 0;
 }
 
 export function getMcpCacheDir(): string {

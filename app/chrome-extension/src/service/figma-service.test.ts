@@ -4,7 +4,9 @@ vi.mock("@figdiff/shared", () => ({
   FigmaClient: vi.fn().mockImplementation(function FigmaClientMock() {
     return {
       getFile: vi.fn().mockResolvedValue({ document: { children: [] } }),
-      downloadImageAsBase64: vi.fn().mockResolvedValue("base64data"),
+      downloadImageAsBase64: vi
+        .fn()
+        .mockResolvedValue({ base64: "base64data", width: 100, height: 50, requestedScale: 2 }),
     };
   }),
   extractFrames: vi
