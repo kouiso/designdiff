@@ -30,6 +30,14 @@ export interface CaptureOptions {
    * 動いている途中の見た目が原理的に1枚も写らんため。
    */
   frameTimestampsMs?: number[];
+  /**
+   * 撮影に使う deviceScaleFactor（実機の DPR と同じ値）。既定 1。
+   *
+   * 実機が DPR 2 や 3 で描いているのに 1 倍で撮ると、Figma 側と画素密度が
+   * 合わず比較の前提がずれる。正の有限数だけ許す。実機の DPR は 2.75 のような
+   * 小数もあるため整数には限らない。
+   */
+  deviceScaleFactor?: number;
 }
 
 export interface CaptureResult {
@@ -253,6 +261,15 @@ const loadLazyMedia = async (page: {
 };
 
 export async function captureUrl(url: string, options: CaptureOptions): Promise<CaptureResult> {
+  // 0 や NaN の DPR はコンテキスト生成で Playwright に投げさせると
+  // 「どの引数が悪いか」が沈黙するので、撮る前に名指しで落とす。
+  const deviceScaleFactor = options.deviceScaleFactor ?? 1;
+  if (!Number.isFinite(deviceScaleFactor) || deviceScaleFactor <= 0) {
+    throw new Error(
+      `deviceScaleFactor が不正です (${String(options.deviceScaleFactor)})。正の有限数を指定してください。`,
+    );
+  }
+
   const loadPw = async () => {
     try {
       return await import("@playwright/test");
@@ -329,9 +346,19 @@ export async function captureUrl(url: string, options: CaptureOptions): Promise<
       contentHeight = Math.ceil(rawHeight);
 
       const shootTo = async (outPath: string): Promise<void> => {
+        // clip.scale は「出力 PNG の倍率」。deviceScaleFactor と揃えんと、
+        // 実機の DPR 相当で描いても書き出しだけが 1 倍に戻る (実測: dsf=2 で
+        // clip.scale=1 のままだと PNG 幅は CSS 幅のまま)。clip の寸法自体は
+        // CSS px なので、出力は CSS 幅 × DPR の物理ピクセルになる。
         const shot = await client.send("Page.captureScreenshot", {
           format: "png",
-          clip: { x: 0, y: 0, width: options.width, height: contentHeight, scale: 1 },
+          clip: {
+            x: 0,
+            y: 0,
+            width: options.width,
+            height: contentHeight,
+            scale: deviceScaleFactor,
+          },
           captureBeyondViewport: true,
         });
         if (!shot?.data) {
@@ -418,7 +445,7 @@ export async function captureUrl(url: string, options: CaptureOptions): Promise<
     try {
       const context = await browser.newContext({
         viewport: { width: options.width, height: options.height ?? 1200 },
-        deviceScaleFactor: 1,
+        deviceScaleFactor,
       });
       const page = await context.newPage();
       const result = await takeScreenshot(page);
@@ -441,7 +468,7 @@ export async function captureUrl(url: string, options: CaptureOptions): Promise<
 
   const context = await browser.newContext({
     viewport: { width: options.width, height: options.height ?? 1200 },
-    deviceScaleFactor: 1,
+    deviceScaleFactor,
   });
   try {
     const page = await context.newPage();

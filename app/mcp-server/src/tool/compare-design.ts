@@ -54,6 +54,7 @@ const DESCRIPTION = `デザインと実装のピクセル差分を検出しま�
 - screenshot_url: 撮影対象URL。指定時はPlaywrightで内部撮影しscreenshotの代わりに使用
 - capture_device: 接続済みモバイル端末/SimulatorからPNGを撮影しscreenshotの代わりに使用（android/ios-sim/ios-device）。既定でOSステータスバー/ナビゲーションバーを ignore_regions として自動マスク
 - capture_width: 撮影幅(px)。省略時はFigmaフレームの実幅を自動取得（screenshot_url指定時のみ有効）
+- capture_dpr: screenshot_url 経路の撮影に使う実機のDPR（省略可、例: 2, 3）。deviceScaleFactor に渡り、PNG の物理幅は CSS 幅 × DPR になる。省略時は 1 倍。CDP 接続経路でも同じ値が効く
 - threshold: 色差の許容閾値（0-1）。profile を指定した場合はそちらが既定値になる
 - profile: 比較プロファイル（strict/balanced/layout）。threshold 直接指定で上書き可
 - project_id: Crop Region・ignore_regions・前回使用ノード自動補完に使うプロジェクトID（省略可）
@@ -466,6 +467,14 @@ export const registerCompareDesign = (server: McpServer): void => {
       .optional()
       .describe(
         "撮影幅(px)。省略時はFigmaフレームの実幅を自動取得。screenshot_url指定時のみ有効。",
+      ),
+    capture_dpr: z
+      .number()
+      .finite()
+      .positive()
+      .optional()
+      .describe(
+        "screenshot_url 経路の撮影に使う実機のDPR（例: 2, 3）。指定した値が deviceScaleFactor として Playwright のコンテキスト生成へ渡り、撮れる PNG の物理幅は CSS 幅 × DPR になる。実機表示と画素密度を揃えたいときに指定。省略時は 1 倍。CDP 接続（FIGDIFF_CDP_ENDPOINT）経路でも同じ値が使われる。",
       ),
     comparison_conditions: ComparisonConditionsInputSchema.optional().describe(
       "両画像の表示領域・倍率・共通原点の申告。各sideはviewport{width,height}(論理px), pixelRatio(物理px/論理px), origin{x,y}(画像左上の共通参照座標、論理px)。画像の移動・cropには使用しない。",

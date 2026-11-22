@@ -222,6 +222,11 @@ export interface CompareDesignRunArgs {
   /** ローカルパスの screenshot が1ビューポート撮影であることの明示。 */
   screenshot_single_viewport?: boolean;
   capture_width?: number;
+  /**
+   * screenshot_url 経路の撮影に使う実機の DPR。指定した値が Playwright の
+   * deviceScaleFactor へ渡る（省略時は 1 倍）。実機撮影と画素密度を揃えるための値。
+   */
+  capture_dpr?: number;
   comparison_conditions?: ComparisonConditionsInput;
   frame_name?: string;
   threshold?: number;
@@ -936,6 +941,9 @@ async function resolveScreenshotPath(
     detectDynamic,
     // 色と文字は画素より値で比べたほうが正確。撮れるときは必ず採取しておく。
     collectDomStyles: args.token_diff !== false,
+    // 未指定のときはキーごと渡さん。既存呼び出し (capture_dpr 非対応の経路) と
+    // 同じオプション形状を保ち、撮影側の既定 1 に任せる。
+    ...(args.capture_dpr !== undefined ? { deviceScaleFactor: args.capture_dpr } : {}),
   });
   return {
     screenshotPath: captured.screenshotPath,

@@ -8,6 +8,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ### Added
 
+- `capture_dpr` argument on `compare_design` and `compare_design_batch`: routes a physical-device DPR (e.g. 2 or 3, fractional values allowed) into `captureUrl` so Playwright captures at `deviceScaleFactor: <dpr>` on both the launch and the CDP (`FIGDIFF_CDP_ENDPOINT`) context paths, producing a PNG whose physical width is CSS width × DPR (#439). Omitted means the previous 1× behavior; a non-finite or non-positive value is rejected before any browser launch.
+
 - Independent Gate1 fixture measurement and overlap diagnostics for #427, with pinned fixture identities, bounded PNG decoding, regression tests in `pnpm test:gate1-oracle` and the default test command, and a reproducible Pillow audit. The measured pass/fail ranges still overlap; this does not resolve #243.
 
 - The Figma plugin can send the selected frame to the Chrome extension overlay. Set the implementation page as the extension target first; the handoff now exports the selected frame, routes it to that saved tab, and reports success or a retryable error in the plugin. A missing or silent extension is reported after the request timeout instead of leaving the plugin stuck on "Sending". The extension popup also loads the handed-off design image and frame size from the target tab's overlay, so Capture & Compare works from the handoff without a Figma REST token.

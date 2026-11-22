@@ -1,3 +1,4 @@
+import sharp from "sharp";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { captureUrl, forceEagerMediaInPage } from "./capture-service.js";
@@ -11,7 +12,7 @@ const mockEvaluate = vi.fn().mockResolvedValue(undefined); // document.fonts.rea
 const mockAddStyleTag = vi.fn().mockResolvedValue(undefined);
 
 // CDP セッション: getLayoutMetrics が実レイアウト寸法、captureScreenshot が画像を返す。
-const mockCdpSend = vi.fn(async (method: string) => {
+const defaultCdpSendImpl = async (method: string) => {
   if (method === "Page.getLayoutMetrics") {
     return { contentSize: { x: 0, y: 0, width: 1440, height: 900 } };
   }
@@ -19,7 +20,8 @@ const mockCdpSend = vi.fn(async (method: string) => {
     return { data: Buffer.from("fake-png").toString("base64") };
   }
   return {};
-});
+};
+const mockCdpSend = vi.fn(defaultCdpSendImpl);
 const mockCdpDetach = vi.fn().mockResolvedValue(undefined);
 const mockNewCDPSession = vi.fn().mockResolvedValue({ send: mockCdpSend, detach: mockCdpDetach });
 
@@ -374,6 +376,118 @@ describe("captureUrl — CDP path (FIGDIFF_CDP_ENDPOINT is set)", () => {
     expect(result.screenshotPath).toMatch(/capture-.*\.png$/);
     expect(result.width).toBe(1440);
     expect(result.height).toBe(900);
+  });
+});
+
+describe("captureUrl — deviceScaleFactor (実機 DPR)", () => {
+  const originalEnv = process.env.FIGDIFF_CDP_ENDPOINT;
+
+  afterEach(() => {
+    if (originalEnv === undefined) {
+      delete process.env.FIGDIFF_CDP_ENDPOINT;
+    } else {
+      process.env.FIGDIFF_CDP_ENDPOINT = originalEnv;
+    }
+  });
+
+  it("launch 経路で指定した DPR が newContext へ届く", async () => {
+    resetPageMocks();
+    delete process.env.FIGDIFF_CDP_ENDPOINT;
+
+    await captureUrl("http://localhost:3001", { width: 1440, deviceScaleFactor: 2 });
+
+    expect(mockBrowserNewContext).toHaveBeenCalledWith(
+      expect.objectContaining({ deviceScaleFactor: 2 }),
+    );
+  });
+
+  it("CDP 接続経路でも指定した DPR が newContext へ届く", async () => {
+    resetPageMocks();
+    process.env.FIGDIFF_CDP_ENDPOINT = "http://host-endpoint:9222";
+
+    await captureUrl("http://localhost:3001", { width: 1440, deviceScaleFactor: 3 });
+
+    expect(mockConnectOverCDP).toHaveBeenCalledOnce();
+    expect(mockBrowserNewContext).toHaveBeenCalledWith(
+      expect.objectContaining({ deviceScaleFactor: 3 }),
+    );
+  });
+
+  it("未指定なら 1 倍で撮る", async () => {
+    resetPageMocks();
+    delete process.env.FIGDIFF_CDP_ENDPOINT;
+
+    await captureUrl("http://localhost:3001", { width: 1440 });
+
+    expect(mockBrowserNewContext).toHaveBeenCalledWith(
+      expect.objectContaining({ deviceScaleFactor: 1 }),
+    );
+  });
+
+  // 実ブラウザは clip の CSS 幅 × deviceScaleFactor の物理ピクセルで描く。
+  // モックの CDP にはその挙動をそのまま真似させ、書き出した実物の PNG を
+  // 読み直して CSS 幅の 2 倍になっていることを確かめる。
+  it("DPR 2 で撮ると PNG の物理幅が CSS 幅の 2 倍になる", async () => {
+    resetPageMocks();
+    delete process.env.FIGDIFF_CDP_ENDPOINT;
+
+    const cssWidth = 1440;
+    const deviceScaleFactor = 2;
+    const physicalPng = await sharp({
+      create: {
+        width: cssWidth * deviceScaleFactor,
+        height: 100,
+        channels: 3,
+        background: "#ffffff",
+      },
+    })
+      .png()
+      .toBuffer();
+    // mockClear は実装を戻さんので、他の試験へ漏れんよう finally で元へ戻す。
+    try {
+      mockCdpSend.mockImplementation(async (method: string) => {
+        if (method === "Page.getLayoutMetrics") {
+          return { contentSize: { x: 0, y: 0, width: cssWidth, height: 100 } };
+        }
+        if (method === "Page.captureScreenshot") {
+          return { data: physicalPng.toString("base64") };
+        }
+        return {};
+      });
+
+      const result = await captureUrl("http://localhost:3001", {
+        width: cssWidth,
+        deviceScaleFactor,
+      });
+
+      // clip.scale が DPR と揃っとらんと、コンテキストの密度だけ上がって
+      // 書き出しは 1 倍のままになる (実ブラウザで実測して確かめた)。
+      expect(mockCdpSend).toHaveBeenCalledWith(
+        "Page.captureScreenshot",
+        expect.objectContaining({
+          clip: expect.objectContaining({ scale: deviceScaleFactor }),
+        }),
+      );
+      const metadata = await sharp(result.screenshotPath).metadata();
+      expect(metadata.width).toBe(cssWidth * deviceScaleFactor);
+    } finally {
+      mockCdpSend.mockImplementation(defaultCdpSendImpl);
+    }
+  });
+
+  it.each([
+    0,
+    -1,
+    Number.NaN,
+    Number.POSITIVE_INFINITY,
+  ])("deviceScaleFactor=%s は撮る前に落とす", async (invalid) => {
+    resetPageMocks();
+    delete process.env.FIGDIFF_CDP_ENDPOINT;
+
+    await expect(
+      captureUrl("http://localhost:3001", { width: 1440, deviceScaleFactor: invalid }),
+    ).rejects.toThrow(/deviceScaleFactor/);
+    expect(mockLaunch).not.toHaveBeenCalled();
   });
 });
 

@@ -674,6 +674,50 @@ describe("runCompareDesign", () => {
     expect(output.result.matchRate).toBe(100);
   });
 
+  // 実機の DPR を撮影へ通す経路 (#439): ツール引数 → runner → captureUrl。
+  it("capture_dpr が deviceScaleFactor として撮影へ届く", async () => {
+    tmpRoot = await fs.mkdtemp(path.join(process.cwd(), "tmp-figdiff-runner-"));
+    const designPath = path.join(tmpRoot, "design.png");
+    const screenshotPath = path.join(tmpRoot, "captured.png");
+    await fs.writeFile(designPath, Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+    await fs.writeFile(screenshotPath, Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+
+    mocks.captureUrl.mockResolvedValue({ screenshotPath });
+    mocks.sharp.mockReturnValue({
+      metadata: vi.fn(async () => ({ width: 390, height: 844 })),
+    });
+    mocks.compareImages.mockResolvedValue({
+      comparisonId: "cmp-captured-dpr",
+      matchRate: 100,
+      diffPixelCount: 0,
+      totalPixelCount: 390 * 844,
+      diffRegions: [],
+      suggestion: "一致率100%です。差分はありません。",
+      normalization: {
+        designNativeWidth: 390,
+        designNativeHeight: 844,
+        screenshotWidth: 390,
+        screenshotHeight: 844,
+        cropApplied: false,
+        containResized: false,
+        appliedScale: 1,
+      },
+    });
+
+    await runCompareDesign({
+      design_source: designPath,
+      screenshot_url: "https://example.test",
+      capture_dpr: 2,
+    });
+
+    expect(mocks.captureUrl).toHaveBeenCalledWith("https://example.test", {
+      width: 1440,
+      detectDynamic: true,
+      collectDomStyles: true,
+      deviceScaleFactor: 2,
+    });
+  });
+
   it("撮影幅を変えた比較は regression ではなく capture-changed を返す", async () => {
     tmpRoot = await fs.mkdtemp(path.join(process.cwd(), "tmp-figdiff-runner-"));
     const designPath = path.join(tmpRoot, "design.png");
