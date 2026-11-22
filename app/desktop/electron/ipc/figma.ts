@@ -130,7 +130,7 @@ export const registerFigmaHandlers = (): void => {
       try {
         return await withOAuthRetry((token) => {
           const client = createFigmaClient(token);
-          return client.downloadImageAsBase64(fileKey, nodeId, scale);
+          return client.downloadImageAsBase64(fileKey, nodeId, scale).then((image) => image.base64);
         });
       } catch (e) {
         console.error("[figma:get-frame-image] failed.");
@@ -221,13 +221,14 @@ export const registerFigmaHandlers = (): void => {
           throw new Error("Figma frame geometry does not match the selected frame.");
         }
 
-        const imageBase64 = await client.downloadImageAsBase64(
+        const image = await client.downloadImageAsBase64(
           validated.fileKey,
           validated.frameNodeId,
           validated.scale,
           sourceVersion,
           { contentsOnly: true, useAbsoluteBounds: true },
         );
+        const imageBase64 = image.base64;
         if (!isPngBase64(imageBase64)) {
           throw new Error("Figma did not return a valid PNG frame image.");
         }

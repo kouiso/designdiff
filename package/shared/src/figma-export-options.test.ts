@@ -43,6 +43,16 @@ it("separates all export conditions while reusing each cached variant", async ()
     },
   };
   const queries: URLSearchParams[] = [];
+  // バリアントごとに異なる PNG を返し、キャッシュが分かれることを実寸込みで確かめる。
+  // 先頭バリアント (既定オプション) は実寸チェックが走るので、absoluteBoundingBox
+  // × scale=2 に一致する 100x40 にしておく。
+  const imageSizes = [
+    { width: 100, height: 40 },
+    { width: 210, height: 50 },
+    { width: 220, height: 50 },
+    { width: 230, height: 50 },
+  ];
+  let imageIndex = 0;
   vi.stubGlobal(
     "fetch",
     vi.fn(async (input: string | URL | Request) => {
@@ -50,12 +60,39 @@ it("separates all export conditions while reusing each cached variant", async ()
         typeof input === "string" ? input : input instanceof URL ? input.href : input.url,
       );
       if (url.hostname === "api.figma.com") {
+        if (url.pathname.includes("/nodes")) {
+          return new Response(
+            JSON.stringify({
+              nodes: {
+                [nodeId]: {
+                  document: {
+                    id: nodeId,
+                    name: "Frame",
+                    type: "FRAME",
+                    absoluteBoundingBox: { x: 0, y: 0, width: 50, height: 20 },
+                    children: [],
+                    fills: [],
+                    strokes: [],
+                    effects: [],
+                  },
+                },
+              },
+            }),
+          );
+        }
         queries.push(url.searchParams);
         return new Response(
           JSON.stringify({ images: { [nodeId]: "https://image.example/fixture" } }),
         );
       }
-      return new Response(new Uint8Array([queries.length]));
+      const { width, height } = imageSizes[imageIndex] ?? { width: 10, height: 10 };
+      imageIndex += 1;
+      const bytes = new Uint8Array(33);
+      bytes.set([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a], 0);
+      bytes.set([0x00, 0x00, 0x00, 0x0d, 0x49, 0x48, 0x44, 0x52], 8);
+      new DataView(bytes.buffer).setUint32(16, width);
+      new DataView(bytes.buffer).setUint32(20, height);
+      return new Response(bytes);
     }),
   );
   const client = new FigmaClient("figd_fixture_token_123456", cache);
@@ -68,10 +105,9 @@ it("separates all export conditions while reusing each cached variant", async ()
   const images = [];
   for (const options of variants) {
     const first = await client.downloadImageAsBase64("fixture", nodeId, 2, "revision", options);
-    expect(await client.downloadImageAsBase64("fixture", nodeId, 2, "revision", options)).toBe(
-      first,
-    );
-    images.push(first);
+    const second = await client.downloadImageAsBase64("fixture", nodeId, 2, "revision", options);
+    expect(second.base64).toBe(first.base64);
+    images.push(first.base64);
   }
   expect(new Set(images).size).toBe(4);
   expect(

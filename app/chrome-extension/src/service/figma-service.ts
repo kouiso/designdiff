@@ -49,7 +49,8 @@ export async function fetchFrameImage(
   nodeId: string,
 ): Promise<string> {
   const client = new FigmaClient(token, new ChromeCacheStrategy());
-  return client.downloadImageAsBase64(fileKey, nodeId, 2);
+  const image = await client.downloadImageAsBase64(fileKey, nodeId, 2);
+  return image.base64;
 }
 
 export function parseFileKeyFromUrl(figmaUrl: string): string | null {

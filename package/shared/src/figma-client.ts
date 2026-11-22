@@ -242,12 +242,87 @@ export interface FigmaImageExportOptions {
   useAbsoluteBounds?: boolean;
 }
 
+/**
+ * downloadImageAsBase64 の戻り値。base64 に加えて、実際に書き出された
+ * PNG の実寸と、要求した倍率を返す。実寸が分からんと、Figma が要求とは
+ * 違う大きさで描いた画像 (過大描画や縮小) に気づけん。
+ */
+export interface FigmaDownloadedImage {
+  base64: string;
+  /** 実際に書き出された PNG の幅 (物理 px)。 */
+  width: number;
+  /** 実際に書き出された PNG の高さ (物理 px)。 */
+  height: number;
+  /** 書き出しに要求した倍率。 */
+  requestedScale: number;
+}
+
+/**
+ * 実寸が基準寸法 × requestedScale と合わんときのエラー。
+ * 呼び出し側が実測値を使って再取得できるよう、実寸と期待寸法を持つ。
+ */
+export class FigmaImageDimensionError extends Error {
+  readonly expectedWidth: number;
+  readonly expectedHeight: number;
+  readonly actualWidth: number;
+  readonly actualHeight: number;
+  readonly requestedScale: number;
+  /** 落とした画像そのもの。小さく描かれた分には再取得計算に使えるので捨てない。 */
+  readonly base64: string;
+  constructor(input: {
+    expectedWidth: number;
+    expectedHeight: number;
+    actualWidth: number;
+    actualHeight: number;
+    requestedScale: number;
+    nodeId: string;
+    base64: string;
+  }) {
+    super(
+      `Figma image for node ${input.nodeId} was rendered at ${input.actualWidth}x${input.actualHeight}px, ` +
+        `expected ${input.expectedWidth}x${input.expectedHeight}px (bounding box × scale ${input.requestedScale}). ` +
+        `The export used a different scale or bounds than requested.`,
+    );
+    this.name = "FigmaImageDimensionError";
+    this.expectedWidth = input.expectedWidth;
+    this.expectedHeight = input.expectedHeight;
+    this.actualWidth = input.actualWidth;
+    this.actualHeight = input.actualHeight;
+    this.requestedScale = input.requestedScale;
+    this.base64 = input.base64;
+  }
+}
+
 const getExportCacheNodeId = (nodeId: string, options: FigmaImageExportOptions): string => {
   const contentsOnly = options.contentsOnly ?? true;
   const absoluteBounds = options.useAbsoluteBounds ?? true;
   if (contentsOnly && absoluteBounds) return `${nodeId}${ABSOLUTE_BOUNDS_CACHE_SUFFIX}`;
   return `${nodeId}__figdiff_export_v2_c${Number(contentsOnly)}_a${Number(absoluteBounds)}`;
 };
+
+const PNG_SIGNATURE = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+
+/**
+ * base64 の PNG バイト列から IHDR の実寸を読む。
+ * Figma から返る画像は PNG 固定 (format=png) なので、先頭 24 バイトの
+ * シグネチャと IHDR 長だけ見ればデコーダ要らずで幅と高さが取れる。
+ */
+export function readPngSizeBase64(base64: string): { width: number; height: number } {
+  const binary = atob(base64.slice(0, 32));
+  if (binary.length < 24) {
+    throw new Error("Image is too small to be a PNG (missing IHDR)");
+  }
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+  const isPng = PNG_SIGNATURE.every((value, index) => bytes[index] === value);
+  const isIhdr =
+    bytes[12] === 0x49 && bytes[13] === 0x48 && bytes[14] === 0x44 && bytes[15] === 0x52;
+  if (!isPng || !isIhdr) {
+    throw new Error("Image is not a PNG with an IHDR header");
+  }
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  return { width: view.getUint32(16), height: view.getUint32(20) };
+}
 
 export type FigmaAuthMode = "pat" | "oauth";
 
@@ -324,11 +399,19 @@ export class FigmaClient {
     scale = 2,
     version?: string,
     options: FigmaImageExportOptions = {},
-  ): Promise<string> {
+  ): Promise<FigmaDownloadedImage> {
     const cacheNodeId = getExportCacheNodeId(nodeId, options);
     const cached = await this.cache.get(fileKey, cacheNodeId, scale, version);
     if (cached) {
-      return cached;
+      // キャッシュ済みの画像は取得時に実寸チェックを通っている。
+      // 寸法は PNG の IHDR から読むので、キャッシュ命中でも同じ形で返せる。
+      const cachedSize = readPngSizeBase64(cached);
+      return {
+        base64: cached,
+        width: cachedSize.width,
+        height: cachedSize.height,
+        requestedScale: scale,
+      };
     }
 
     const imageUrl = await this.getImageUrl(fileKey, nodeId, scale, version, options);
@@ -355,10 +438,40 @@ export class FigmaClient {
     const arrayBuffer = await response.arrayBuffer();
     clearTimeout(timer);
     const base64 = this.arrayBufferToBase64(new Uint8Array(arrayBuffer));
+    const actual = readPngSizeBase64(base64);
+
+    // 実寸チェックは「ノードの絶対矩形が描画領域になる」既定経路だけで行う。
+    // use_absolute_bounds:false はタイトな描画域になるため基準が absoluteBoundingBox
+    // では合わん。contents_only:false は隣接コンテンツごと描かれて基準より大きく
+    // なりえる。どちらも基準を取れないので、実寸を返して呼び出し側の判断に任せる。
+    if (options.useAbsoluteBounds !== false && options.contentsOnly !== false) {
+      const reference = await this.getNode(fileKey, nodeId);
+      const box = reference.absoluteBoundingBox;
+      if (box) {
+        // Figma は軸ごとに丸めて整数 px で返すため ±1px は丸め許容。
+        // 32MP 上限での縮小や別倍率での書き出しはこの幅を超えて外れる。
+        const expectedWidth = Math.round(box.width * scale);
+        const expectedHeight = Math.round(box.height * scale);
+        if (
+          Math.abs(actual.width - expectedWidth) > 1 ||
+          Math.abs(actual.height - expectedHeight) > 1
+        ) {
+          throw new FigmaImageDimensionError({
+            expectedWidth,
+            expectedHeight,
+            actualWidth: actual.width,
+            actualHeight: actual.height,
+            requestedScale: scale,
+            nodeId,
+            base64,
+          });
+        }
+      }
+    }
 
     await this.cache.set(fileKey, cacheNodeId, scale, version, base64);
 
-    return base64;
+    return { base64, width: actual.width, height: actual.height, requestedScale: scale };
   }
 
   private async fetchApi(url: string, timeoutMs = API_TIMEOUT_MS): Promise<unknown> {

@@ -6,7 +6,9 @@ import {
   extractNestedFrames,
   FigmaApiError,
   FigmaClient,
+  FigmaImageDimensionError,
   isTokenError,
+  readPngSizeBase64,
 } from "./figma-client.js";
 
 import type { FigmaFileResponse, FigmaNode } from "./figma-client.js";
@@ -32,6 +34,40 @@ function stubFigmaFetch() {
   vi.stubGlobal("fetch", fetchMock);
   return fetchMock;
 }
+
+// 実寸チェックはダウンロード画像を PNG として読むので、テスト画像も
+// 最低限の PNG (シグネチャ + IHDR) を用意する。CRC は実寸読み取りに
+// 関係しないので 0 でよい。
+function pngBytes(width: number, height: number): Uint8Array {
+  const bytes = new Uint8Array(33);
+  bytes.set([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a], 0);
+  bytes.set([0x00, 0x00, 0x00, 0x0d], 8);
+  bytes.set([0x49, 0x48, 0x44, 0x52], 12);
+  new DataView(bytes.buffer).setUint32(16, width);
+  new DataView(bytes.buffer).setUint32(20, height);
+  return bytes;
+}
+
+// 実寸チェックが参照する absoluteBoundingBox 付きの nodes 応答。
+const nodesResponse = (nodeId: string, width: number, height: number) =>
+  new Response(
+    JSON.stringify({
+      nodes: {
+        [nodeId]: {
+          document: {
+            id: nodeId,
+            name: "Frame",
+            type: "FRAME",
+            absoluteBoundingBox: { x: 0, y: 0, width, height },
+            children: [],
+            fills: [],
+            strokes: [],
+            effects: [],
+          },
+        },
+      },
+    }),
+  );
 
 const makeNode = (
   id: string,
@@ -210,18 +246,21 @@ describe("FigmaClient", () => {
         get: vi.fn(async () => null),
         set: vi.fn(async () => undefined),
       };
+      const imageBytes = pngBytes(150, 60);
       const fetchMock = vi
         .fn()
         .mockResolvedValueOnce(
           new Response(JSON.stringify({ images: { "1:1": "https://image.example/version.png" } })),
         )
-        .mockResolvedValueOnce(new Response(new Uint8Array([1, 2, 3])));
+        .mockResolvedValueOnce(new Response(imageBytes))
+        .mockResolvedValueOnce(nodesResponse("1:1", 50, 20));
       vi.stubGlobal("fetch", fetchMock);
       const client = new FigmaClient(token, cache);
 
-      const base64 = await client.downloadImageAsBase64("FILE", "1:1", 3, "1234567890");
+      const image = await client.downloadImageAsBase64("FILE", "1:1", 3, "1234567890");
 
-      expect(base64).toBe(Buffer.from([1, 2, 3]).toString("base64"));
+      expect(image.base64).toBe(Buffer.from(imageBytes).toString("base64"));
+      expect(image).toMatchObject({ width: 150, height: 60, requestedScale: 3 });
       expect(fetchMock.mock.calls[0]?.[0]).toBe(
         "https://api.figma.com/v1/images/FILE?ids=1:1&format=png&scale=3&use_absolute_bounds=true&version=1234567890",
       );
@@ -236,7 +275,7 @@ describe("FigmaClient", () => {
         "1:1__figdiff_absolute_bounds_v1",
         3,
         "1234567890",
-        base64,
+        image.base64,
       );
     });
 
@@ -267,7 +306,8 @@ describe("FigmaClient", () => {
             }),
           ),
         )
-        .mockResolvedValueOnce(new Response(new Uint8Array([3, 9, 0, 9, 8, 1])));
+        .mockResolvedValueOnce(new Response(pngBytes(120, 80)))
+        .mockResolvedValueOnce(nodesResponse(REPEATED_FETCH_NODE_ID, 120, 80));
       vi.stubGlobal("fetch", fetchMock);
       const client = new FigmaClient(token, cache);
 
@@ -278,7 +318,8 @@ describe("FigmaClient", () => {
         );
       }
 
-      expect(new Set(results).size).toBe(1);
+      expect(new Set(results.map((result) => result.base64)).size).toBe(1);
+      expect(results[0]).toMatchObject({ width: 120, height: 80, requestedScale: 1 });
       expect(fetchMock.mock.calls[0]?.[0]).toBe(
         `https://api.figma.com/v1/images/${REPEATED_FETCH_FILE_KEY}?ids=${REPEATED_FETCH_NODE_ID}&format=png&scale=1&use_absolute_bounds=true`,
       );
@@ -287,6 +328,94 @@ describe("FigmaClient", () => {
         `${REPEATED_FETCH_NODE_ID}__figdiff_absolute_bounds_v1`,
         `${REPEATED_FETCH_NODE_ID}__figdiff_absolute_bounds_v1`,
       ]);
+    });
+
+    // 過大描画 (#436): absoluteBoundingBox × scale から外れた実寸は、
+    // 比較元が要求と違う倍率・範囲の画像なので落とす。±1px は Figma の
+    // 軸ごとの丸めを許容する幅。
+    it("throws FigmaImageDimensionError when the raster exceeds bounding box × scale", async () => {
+      const cache = { get: vi.fn(async () => null), set: vi.fn(async () => undefined) };
+      const imageBytes = pngBytes(300, 60);
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValueOnce(
+          new Response(JSON.stringify({ images: { "1:1": "https://image.example/big.png" } })),
+        )
+        .mockResolvedValueOnce(new Response(imageBytes))
+        .mockResolvedValueOnce(nodesResponse("1:1", 50, 20));
+      vi.stubGlobal("fetch", fetchMock);
+      const client = new FigmaClient(token, cache);
+
+      const error = await client.downloadImageAsBase64("FILE", "1:1", 2).catch((e: unknown) => e);
+
+      expect(error).toBeInstanceOf(FigmaImageDimensionError);
+      const dimError = error as FigmaImageDimensionError;
+      expect(dimError.actualWidth).toBe(300);
+      expect(dimError.expectedWidth).toBe(100);
+      expect(dimError.base64).toBe(Buffer.from(imageBytes).toString("base64"));
+      // 不一致画像はキャッシュしない。取り直した結果を誤検しないため。
+      expect(cache.set).not.toHaveBeenCalled();
+    });
+
+    it("accepts a one-pixel rounding difference per axis", async () => {
+      const cache = { get: vi.fn(async () => null), set: vi.fn(async () => undefined) };
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValueOnce(
+          new Response(JSON.stringify({ images: { "1:1": "https://image.example/ok.png" } })),
+        )
+        .mockResolvedValueOnce(new Response(pngBytes(101, 41)))
+        .mockResolvedValueOnce(nodesResponse("1:1", 50, 20));
+      vi.stubGlobal("fetch", fetchMock);
+      const client = new FigmaClient(token, cache);
+
+      const image = await client.downloadImageAsBase64("FILE", "1:1", 2);
+      expect(image).toMatchObject({ width: 101, height: 41 });
+    });
+
+    // use_absolute_bounds:false はタイトな描画域、contents_only:false は
+    // 隣接込みの描画域になるため、absoluteBoundingBox を基準にできない。
+    // その経路では実寸を返すだけにして判定は呼び出し側へ任せる。
+    it.each([
+      { useAbsoluteBounds: false },
+      { contentsOnly: false },
+      { useAbsoluteBounds: false, contentsOnly: false },
+    ])("skips the bbox check when export bounds differ (%o)", async (options) => {
+      const cache = { get: vi.fn(async () => null), set: vi.fn(async () => undefined) };
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValueOnce(
+          new Response(JSON.stringify({ images: { "1:1": "https://image.example/alt.png" } })),
+        )
+        .mockResolvedValueOnce(new Response(pngBytes(300, 60)));
+      vi.stubGlobal("fetch", fetchMock);
+      const client = new FigmaClient(token, cache);
+
+      const image = await client.downloadImageAsBase64("FILE", "1:1", 2, undefined, options);
+
+      expect(image).toMatchObject({ width: 300, height: 60, requestedScale: 2 });
+      // getNode が走らない = nodes 応答を fetch モックに積んでいない
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+
+    it("throws when the downloaded payload is not a PNG", async () => {
+      const cache = { get: vi.fn(async () => null), set: vi.fn(async () => undefined) };
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValueOnce(
+          new Response(JSON.stringify({ images: { "1:1": "https://image.example/bad.png" } })),
+        )
+        .mockResolvedValueOnce(new Response(new Uint8Array([1, 2, 3])));
+      vi.stubGlobal("fetch", fetchMock);
+      const client = new FigmaClient(token, cache);
+
+      await expect(client.downloadImageAsBase64("FILE", "1:1", 2)).rejects.toThrow(/PNG/);
+      expect(cache.set).not.toHaveBeenCalled();
+    });
+
+    it("reads PNG dimensions from the IHDR header", () => {
+      const base64 = Buffer.from(pngBytes(123, 45)).toString("base64");
+      expect(readPngSizeBase64(base64)).toEqual({ width: 123, height: 45 });
     });
   });
 });
