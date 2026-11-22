@@ -108,6 +108,14 @@ const BatchFrameInputSchema = z.object({
     .positive()
     .optional()
     .describe("撮影幅(px)。省略時はFigmaフレームの実幅を自動取得。screenshot_url指定時のみ有効。"),
+  capture_dpr: z
+    .number()
+    .finite()
+    .positive()
+    .optional()
+    .describe(
+      "screenshot_url 経路の撮影に使う実機のDPR。compare_design と同じ意味。省略時は 1 倍。",
+    ),
   frame_name: z
     .string()
     .optional()
@@ -203,6 +211,7 @@ const buildRunArgs = (
   capture_device_serial: frame.capture_device_serial,
   capture_scroll: frame.capture_scroll,
   capture_width: frame.capture_width,
+  capture_dpr: frame.capture_dpr,
   frame_name: frame.frame_name,
   comparison_conditions: frame.comparison_conditions,
   // フレーム指定が共通既定を置き換える。結合すると、どの画面にどのマスクが効いたかを
