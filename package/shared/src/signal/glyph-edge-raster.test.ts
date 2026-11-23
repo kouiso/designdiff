@@ -281,6 +281,126 @@ describe("classifySameTokenRasterization", () => {
   });
 });
 
+describe("classifySameTokenRasterization 細ストローク緩和段 (designdiff#243)", () => {
+  const THIN = 40;
+  const THIN_BBOX = { x: 8, y: 8, w: 22, h: 21 };
+  const thinStems = (
+    stems: readonly number[],
+    value: number,
+    extraColumn = 0,
+  ): Uint8ClampedArray => {
+    const pixels = canvas(THIN, [255, 255, 255]);
+    for (const x of stems) {
+      for (let dx = 0; dx <= extraColumn; dx++) {
+        for (let y = 10; y < 27; y++) paint(pixels, THIN, x + dx, y, [value, value, value]);
+      }
+    }
+    return pixels;
+  };
+
+  it("極値がトークン色に届かない細ストロークの被覆差を証明する", () => {
+    // 1px未満ストロークでは最深画素が真のfg色に届かず、fg極値差が厳格段の
+    // 閾値 (24) を超えて誤FAILになる実測パターン。
+    const design = thinStems([10, 14, 19], 51);
+    const screenshot = thinStems([10, 14, 19], 120);
+    const evidence = classifySameTokenRasterization(
+      design,
+      screenshot,
+      THIN,
+      THIN,
+      THIN_BBOX,
+      0.3,
+      undefined,
+      true,
+    );
+    expect(evidence).toMatchObject({ classification: "same-token-rasterization" });
+    expect(evidence?.thinStroke).toBeDefined();
+  });
+
+  it("被覆差に±1pxドリフトが重なった細ストロークを証明する", () => {
+    const design = thinStems([10, 14, 19], 51);
+    const screenshot = thinStems([11, 15, 20], 120);
+    const evidence = classifySameTokenRasterization(
+      design,
+      screenshot,
+      THIN,
+      THIN,
+      THIN_BBOX,
+      0.3,
+      undefined,
+      true,
+    );
+    expect(evidence?.thinStroke).toBeDefined();
+  });
+
+  it("±1pxを超えるドリフトは緩和段でも証明しない", () => {
+    // 2px移動は offset 探索範囲 (±1) に入らず、どの窓でも新規強インク率が
+    // 閾値を超えるため弾かれる。意図した位置ずれの検出漏れを防ぐ対照。
+    const design = thinStems([10, 14, 19], 51);
+    const screenshot = thinStems([12, 16, 21], 120);
+    expect(
+      classifySameTokenRasterization(
+        design,
+        screenshot,
+        THIN,
+        THIN,
+        THIN_BBOX,
+        0.3,
+        undefined,
+        true,
+      ),
+    ).toBeUndefined();
+  });
+
+  it("ストローク太さの変更は新規強インク率で弾く", () => {
+    // 同一グリフの被覆差 (correct) ではなく、周縁に強インクの環が足される
+    // 線幅差 (linewidth) は新規強インク率 > 0.38 となり証明を拒否する。
+    const design = thinStems([10, 14, 19], 51);
+    const screenshot = thinStems([10, 14, 19], 51, 1);
+    expect(
+      classifySameTokenRasterization(
+        design,
+        screenshot,
+        THIN,
+        THIN,
+        THIN_BBOX,
+        0.3,
+        undefined,
+        true,
+      ),
+    ).toBeUndefined();
+  });
+
+  it("トポロジが壊れた差 (グリフ欠落) は緩和段でも弾く", () => {
+    // 欠落側の強インク消失が足跡比・新規強インク率の両閾値を超える量の
+    // 差は、被覆差ではなく要素の欠落として弾く。
+    const design = thinStems([10, 14, 19], 51);
+    const screenshot = thinStems([10], 120);
+    expect(
+      classifySameTokenRasterization(
+        design,
+        screenshot,
+        THIN,
+        THIN,
+        THIN_BBOX,
+        0.45,
+        undefined,
+        true,
+      ),
+    ).toBeUndefined();
+  });
+
+  it("rasterizationTolerance 未指定では緩和段を走らせない", () => {
+    // 緩和段の証明は診断 issue を伴うため、既定比較で動くと「証明は立つが
+    // 救済しない」診断だけ増えて既定の合否契約を変えてしまう。
+    const design = thinStems([10, 14, 19], 51);
+    const screenshot = thinStems([10, 14, 19], 120);
+    expect(
+      classifySameTokenRasterization(design, screenshot, THIN, THIN, THIN_BBOX, 0.3),
+    ).toBeUndefined();
+  });
+});
+
 const canvas = (size: number, fill: readonly number[]): Uint8ClampedArray => {
   const pixels = new Uint8ClampedArray(size * size * 4);
   for (let pixel = 0; pixel < size * size; pixel++) {

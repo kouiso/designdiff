@@ -1163,6 +1163,7 @@ const buildRegionScores = (options: BuildDiffReportOptions): RegionScoreBuild =>
         bbox,
         shape,
         ignoreMask,
+        options.rasterizationTolerance === true,
       );
       // トークン証明が通らなかった領域だけテクスチャ証明を試す。
       // 同一トークン証明がある領域で二重分類すると診断が読みにくい。
@@ -1287,6 +1288,7 @@ const buildRegionScores = (options: BuildDiffReportOptions): RegionScoreBuild =>
         bbox,
         shape,
         ignoreMask,
+        options.rasterizationTolerance === true,
       );
       const textureResampling = sameToken
         ? undefined
