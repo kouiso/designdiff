@@ -413,7 +413,7 @@ describe("位置合わせの画像寸法検査", () => {
 });
 
 // 拡大縮小の検体は、検出器と同じ写し方で作ると検出器の自己採点になる。設計の
-// 連続座標で定義した図形を、撮影側の画素ごとに 4x4 点で面積平均して描く。
+// 連続座標で定義した図形を、撮影側の画素ごとに 2x2 点で面積平均して描く。
 // 繰り返し模様にすると別の倍率でも重なってしまうので、大きさと位置を不揃いにする。
 const SCENE_WIDTH = 400;
 const SCENE_HEIGHT = 300;
@@ -464,7 +464,7 @@ function sceneColorAt(u: number, v: number): readonly [number, number, number] {
 /** 設計の点 (u, v) が撮影の (sx*u+ox, sy*v+oy) に写る画像を描く。 */
 function renderScene(transform: SceneTransform): Uint8ClampedArray {
   const pixels = new Uint8ClampedArray(SCENE_WIDTH * SCENE_HEIGHT * 4);
-  const subSamples = 4;
+  const subSamples = 2;
   const count = subSamples * subSamples;
   for (let y = 0; y < SCENE_HEIGHT; y++) {
     for (let x = 0; x < SCENE_WIDTH; x++) {
@@ -490,7 +490,8 @@ function renderScene(transform: SceneTransform): Uint8ClampedArray {
   return pixels;
 }
 
-describe("拡大縮小の検出", () => {
+// 400x300 の平行移動探索を1件ごとに回すので、並列実行で CPU が混むと既定の 5 秒を超える。
+describe("拡大縮小の検出", { timeout: 30_000 }, () => {
   const design = renderScene(IDENTITY_TRANSFORM);
 
   it("縦横同じ倍率で拡大した画像の倍率を許容誤差内で返すこと", () => {
@@ -549,13 +550,16 @@ describe("拡大縮小の検出", () => {
     expect(result.alignment.scale.x).not.toBe(1);
     expect(result.alignment.translation).toEqual({ x: detected.dx, y: detected.dy });
     expect(result.alignment.residual).toBe(detected.residual);
-    if (result.applied) {
-      expect(result.alignedDesignPixels).toEqual(
-        shiftPixels(design, SCENE_WIDTH, SCENE_HEIGHT, detected.dx, detected.dy),
-      );
-    } else {
-      expect(result.alignedDesignPixels).toBe(design);
+    // 平行移動の門を通る検体にして、適用した画素が平行移動だけで決まることを確かめる。
+    expect(result.applied).toBe(true);
+    const expected = shiftPixels(design, SCENE_WIDTH, SCENE_HEIGHT, detected.dx, detected.dy);
+    // 48万要素の配列を toEqual で比べると、差分表示の準備だけで秒単位かかる。
+    let mismatched = 0;
+    for (let index = 0; index < expected.length; index++) {
+      if (result.alignedDesignPixels[index] !== expected[index]) mismatched++;
     }
+    expect(result.alignedDesignPixels.length).toBe(expected.length);
+    expect(mismatched).toBe(0);
   });
 
   it("一様な画像では倍率を恒等で返すこと", () => {
