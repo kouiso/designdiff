@@ -448,15 +448,30 @@ export const effectiveRegionColor = (score: RegionScore, honorSameToken = false)
 export const UNIMPLEMENTED_LAYOUT_SCORE = 0;
 
 export interface Alignment {
+  // 設計の画素 (x, y) を撮影の (x + translation.x, y + translation.y) へ動かす量。
+  // 適用する画素 (alignedDesignPixels) と後段の採点窓は、この平行移動だけで決まる。
   translation: { x: number; y: number };
   source?: "none" | "auto" | "explicit" | "verified-system-ui";
   applied?: boolean;
   baselineResidual?: number;
   correctedResidual?: number;
+  // 軸ごとの伸縮率。設計の連続座標 u (画素の左上が原点) が撮影の
+  // scale * u + scaleOffset に写る。検出して報告するだけで適用はしない (#437)。
+  // 平行移動で足りる画面と手がかりの無い画面では {1, 1} を返し、scaleOffset を載せない。
   scale: { x: number; y: number };
+  // scale と組になる移動量。translation とは別の値になる。translation は
+  // 伸縮を考えない最良の平行移動で、伸縮のある画面ではその妥協点を指すため。
+  scaleOffset?: { x: number; y: number };
   rotation: number;
   confidence: number;
   residual: number;
+  // regionScores の各行と同じ regionId で、採点に使った (位置合わせ適用後の)
+  // 画素の不一致の割合を residual と同じ単位で持つ。測れる画素が無い行は載せない。
+  // regionScores[].localAlignment とは併存させる。localAlignment は ±3px の
+  // 局所探索で救済できたかの診断で、合否 (effectiveStructure / effectiveColor) が
+  // 読む。こちらは全体の位置合わせが各領域でどれだけ説明できたかの計測で、
+  // 合否には使わない (合否へ入れる作業は別の課題)。
+  regionResiduals?: { regionId: string; residual: number }[];
 }
 
 export type DiffVerdict = "pass" | "fail" | "inconclusive";

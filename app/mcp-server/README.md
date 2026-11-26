@@ -160,4 +160,6 @@ designとscreenshotの幅が同じで、designだけが少し縦に長い場合�
 
 `baselineResidual`と`correctedResidual`はpixelmatchのdiff率ではありません。位置候補のscoreと同じ不一致数を、working pxのサンプル点数で割った値です。`residual`も同じサンプル単位で読むため、raw pixel countやexport pxの寸法と直接比較しません。移動が検出されても採用されなかった場合は、`alignment.translation`に検出値を残し、`applied: false`と`source: "auto"`で区別します。
 
+`alignment.scale`は軸ごとの伸縮率です。設計の座標`u`が撮影の`scale * u + scaleOffset`に写るとみなした値で、平行移動だけの場合より違って見える画素が15%以上減るときだけ1以外を返し、そのときだけ`scaleOffset`を載せます。探す範囲は0.8から1.25、検出の許容誤差は±0.01です。倍率は報告するだけで、位置合わせの適用（`translation`と`applied`）や合否には使いません。`alignment.regionResiduals`は`regionScores`と同じ`regionId`ごとの残差で、`residual`と同じ単位（位置合わせを適用した後の画素で数えた不一致の割合）です。測れる画素が無い行は載せません。
+
 自動位置合わせで未知の移動を補正しても、実UIのずれを合格にしません。working pxで2px以上の採用済み移動はposition issueをcriticalとして扱い、PASSにしません。1px未満の描画誤差は許容範囲です。`verified-system-ui`は、capture deviceから検証済みのtop inset候補と完全一致し、実際に補正を適用した場合だけです。背景一致や、候補が不採用だったことだけではsystem UI例外になりません。

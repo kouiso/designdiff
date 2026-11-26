@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import {
   COARSE_SAMPLE_STEP,
+  SCALE_DETECTION_TOLERANCE,
   buildVerifiedInsetCandidates,
+  computeRegionResiduals,
   countSsdOffset,
   detectTranslation,
   resolveAlignment,
@@ -254,12 +256,13 @@ describe("resolveAlignment", () => {
     expect(result.alignment.correctedResidual).toBe(result.alignment.baselineResidual);
   });
 
-  it("倍率と回転は常に恒等で返すこと", () => {
+  it("同じ画像では倍率を恒等で返し、倍率の原点を載せないこと", () => {
     const image = makeImage(0, { x: 30, y: 20, w: 20, h: 20, value: 255 });
 
     const result = resolveAlignment(image, image, WIDTH, HEIGHT);
 
     expect(result.alignment.scale).toEqual({ x: 1, y: 1 });
+    expect(result.alignment.scaleOffset).toBeUndefined();
     expect(result.alignment.rotation).toBe(0);
   });
 
@@ -406,5 +409,275 @@ describe("位置合わせの画像寸法検査", () => {
     const image = new Uint8ClampedArray(0);
 
     expect(() => resolveAlignment(image, image, 1, height)).toThrow(/positive safe integers/);
+  });
+});
+
+// 拡大縮小の検体は、検出器と同じ写し方で作ると検出器の自己採点になる。設計の
+// 連続座標で定義した図形を、撮影側の画素ごとに 4x4 点で面積平均して描く。
+// 繰り返し模様にすると別の倍率でも重なってしまうので、大きさと位置を不揃いにする。
+const SCENE_WIDTH = 400;
+const SCENE_HEIGHT = 300;
+const SCENE_RECTS: readonly {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  rgb: readonly [number, number, number];
+}[] = [
+  { x: 12, y: 10, w: 150, h: 34, rgb: [220, 60, 40] },
+  { x: 180, y: 14, w: 96, h: 22, rgb: [40, 200, 90] },
+  { x: 300, y: 8, w: 88, h: 58, rgb: [60, 80, 230] },
+  { x: 20, y: 62, w: 58, h: 118, rgb: [240, 220, 50] },
+  { x: 96, y: 70, w: 184, h: 12, rgb: [200, 200, 200] },
+  { x: 96, y: 96, w: 132, h: 7, rgb: [150, 90, 210] },
+  { x: 250, y: 88, w: 41, h: 93, rgb: [30, 180, 190] },
+  { x: 310, y: 120, w: 70, h: 31, rgb: [250, 140, 20] },
+  { x: 110, y: 130, w: 23, h: 23, rgb: [255, 255, 255] },
+  { x: 150, y: 140, w: 77, h: 49, rgb: [120, 40, 60] },
+  { x: 30, y: 205, w: 210, h: 16, rgb: [90, 160, 40] },
+  { x: 262, y: 198, w: 118, h: 84, rgb: [210, 110, 170] },
+  { x: 44, y: 238, w: 67, h: 44, rgb: [70, 130, 250] },
+  { x: 128, y: 246, w: 99, h: 9, rgb: [230, 230, 120] },
+  { x: 140, y: 266, w: 31, h: 20, rgb: [180, 60, 230] },
+];
+
+interface SceneTransform {
+  sx: number;
+  sy: number;
+  ox: number;
+  oy: number;
+}
+
+const IDENTITY_TRANSFORM: SceneTransform = { sx: 1, sy: 1, ox: 0, oy: 0 };
+
+function sceneColorAt(u: number, v: number): readonly [number, number, number] {
+  let color: readonly [number, number, number] = [0, 0, 0];
+  if (u < 0 || u >= SCENE_WIDTH || v < 0 || v >= SCENE_HEIGHT) return color;
+  for (const rect of SCENE_RECTS) {
+    if (u >= rect.x && u < rect.x + rect.w && v >= rect.y && v < rect.y + rect.h) {
+      color = rect.rgb;
+    }
+  }
+  return color;
+}
+
+/** 設計の点 (u, v) が撮影の (sx*u+ox, sy*v+oy) に写る画像を描く。 */
+function renderScene(transform: SceneTransform): Uint8ClampedArray {
+  const pixels = new Uint8ClampedArray(SCENE_WIDTH * SCENE_HEIGHT * 4);
+  const subSamples = 4;
+  const count = subSamples * subSamples;
+  for (let y = 0; y < SCENE_HEIGHT; y++) {
+    for (let x = 0; x < SCENE_WIDTH; x++) {
+      const sum = [0, 0, 0];
+      for (let sample = 0; sample < count; sample++) {
+        const i = sample % subSamples;
+        const j = Math.floor(sample / subSamples);
+        const color = sceneColorAt(
+          (x + (i + 0.5) / subSamples - transform.ox) / transform.sx,
+          (y + (j + 0.5) / subSamples - transform.oy) / transform.sy,
+        );
+        sum[0] += color[0];
+        sum[1] += color[1];
+        sum[2] += color[2];
+      }
+      const offset = (y * SCENE_WIDTH + x) * 4;
+      pixels[offset] = Math.round(sum[0] / count);
+      pixels[offset + 1] = Math.round(sum[1] / count);
+      pixels[offset + 2] = Math.round(sum[2] / count);
+      pixels[offset + 3] = 255;
+    }
+  }
+  return pixels;
+}
+
+describe("拡大縮小の検出", () => {
+  const design = renderScene(IDENTITY_TRANSFORM);
+
+  it("縦横同じ倍率で拡大した画像の倍率を許容誤差内で返すこと", () => {
+    const screenshot = renderScene({ sx: 1.1, sy: 1.1, ox: 0, oy: 0 });
+
+    const result = resolveAlignment(design, screenshot, SCENE_WIDTH, SCENE_HEIGHT);
+
+    expect(Math.abs(result.alignment.scale.x - 1.1)).toBeLessThanOrEqual(SCALE_DETECTION_TOLERANCE);
+    expect(Math.abs(result.alignment.scale.y - 1.1)).toBeLessThanOrEqual(SCALE_DETECTION_TOLERANCE);
+    expect(result.alignment.scaleOffset).toBeDefined();
+  });
+
+  it("縦横で違う倍率と平行移動が同時にある画像を言い当てること", () => {
+    const screenshot = renderScene({ sx: 0.92, sy: 1.07, ox: 14, oy: -9 });
+
+    const result = resolveAlignment(design, screenshot, SCENE_WIDTH, SCENE_HEIGHT);
+
+    expect(Math.abs(result.alignment.scale.x - 0.92)).toBeLessThanOrEqual(
+      SCALE_DETECTION_TOLERANCE,
+    );
+    expect(Math.abs(result.alignment.scale.y - 1.07)).toBeLessThanOrEqual(
+      SCALE_DETECTION_TOLERANCE,
+    );
+    // 原点は倍率の誤差に画像の幅を掛けた分まで動く。2px 以内なら同じ写し方と読める。
+    expect(Math.abs((result.alignment.scaleOffset?.x ?? Number.NaN) - 14)).toBeLessThanOrEqual(2);
+    expect(Math.abs((result.alignment.scaleOffset?.y ?? Number.NaN) + 9)).toBeLessThanOrEqual(2);
+  });
+
+  it("横だけ縮めた画像では縦の倍率を1のまま返すこと", () => {
+    const screenshot = renderScene({ sx: 0.88, sy: 1, ox: 0, oy: 0 });
+
+    const result = resolveAlignment(design, screenshot, SCENE_WIDTH, SCENE_HEIGHT);
+
+    expect(Math.abs(result.alignment.scale.x - 0.88)).toBeLessThanOrEqual(
+      SCALE_DETECTION_TOLERANCE,
+    );
+    expect(result.alignment.scale.y).toBe(1);
+  });
+
+  it("平行移動だけの画像では倍率を恒等で返すこと", () => {
+    const screenshot = renderScene({ sx: 1, sy: 1, ox: 7, oy: -4 });
+
+    const result = resolveAlignment(design, screenshot, SCENE_WIDTH, SCENE_HEIGHT);
+
+    expect(result.alignment.translation).toEqual({ x: 7, y: -4 });
+    expect(result.alignment.scale).toEqual({ x: 1, y: 1 });
+    expect(result.alignment.scaleOffset).toBeUndefined();
+  });
+
+  it("倍率を検出しても、平行移動の値と適用する画素は変えないこと", () => {
+    const screenshot = renderScene({ sx: 1.08, sy: 1.08, ox: 0, oy: 0 });
+
+    const detected = detectTranslation(design, screenshot, SCENE_WIDTH, SCENE_HEIGHT);
+    const result = resolveAlignment(design, screenshot, SCENE_WIDTH, SCENE_HEIGHT);
+
+    expect(result.alignment.scale.x).not.toBe(1);
+    expect(result.alignment.translation).toEqual({ x: detected.dx, y: detected.dy });
+    expect(result.alignment.residual).toBe(detected.residual);
+    if (result.applied) {
+      expect(result.alignedDesignPixels).toEqual(
+        shiftPixels(design, SCENE_WIDTH, SCENE_HEIGHT, detected.dx, detected.dy),
+      );
+    } else {
+      expect(result.alignedDesignPixels).toBe(design);
+    }
+  });
+
+  it("一様な画像では倍率を恒等で返すこと", () => {
+    const flat = makeImage(0);
+
+    const result = resolveAlignment(flat, flat, WIDTH, HEIGHT);
+
+    expect(result.alignment.scale).toEqual({ x: 1, y: 1 });
+    expect(result.alignment.scaleOffset).toBeUndefined();
+  });
+
+  it("全画素を ignoreMask で外した画像では倍率を恒等で返すこと", () => {
+    const screenshot = renderScene({ sx: 1.1, sy: 1.1, ox: 0, oy: 0 });
+    const ignoreMask = new Uint8Array(SCENE_WIDTH * SCENE_HEIGHT).fill(1);
+
+    const result = resolveAlignment(design, screenshot, SCENE_WIDTH, SCENE_HEIGHT, ignoreMask);
+
+    expect(result.alignment.scale).toEqual({ x: 1, y: 1 });
+    expect(result.alignment.scaleOffset).toBeUndefined();
+  });
+});
+
+describe("computeRegionResiduals", () => {
+  it("領域ごとに、全体の残差と同じ単位で不一致の割合を返すこと", () => {
+    const design = makeImage(0);
+    const screenshot = makeImage(0, { x: 10, y: 10, w: 20, h: 15, value: 255 });
+
+    const residuals = computeRegionResiduals(design, screenshot, WIDTH, HEIGHT, [
+      { regionId: "left", bbox: { x: 0, y: 0, w: 60, h: 45 } },
+      { regionId: "right", bbox: { x: 60, y: 0, w: 60, h: 45 } },
+    ]);
+
+    expect(residuals).toEqual([
+      { regionId: "left", residual: (20 * 15) / (60 * 45) },
+      { regionId: "right", residual: 0 },
+    ]);
+  });
+
+  it("画像全体を1つの領域にすると、動かさない位置の全体の残差と一致すること", () => {
+    const design = makeImage(0, { x: 30, y: 20, w: 20, h: 20, value: 255 });
+    const screenshot = makeImage(0, { x: 36, y: 25, w: 20, h: 20, value: 200 });
+
+    const residuals = computeRegionResiduals(design, screenshot, WIDTH, HEIGHT, [
+      { regionId: "whole", bbox: { x: 0, y: 0, w: WIDTH, h: HEIGHT } },
+    ]);
+
+    expect(residuals).toEqual([
+      {
+        regionId: "whole",
+        residual: countSsdOffset(design, screenshot, WIDTH, HEIGHT, 0, 0, 1) / (WIDTH * HEIGHT),
+      },
+    ]);
+    expect(residuals[0]?.residual).toBeGreaterThan(0);
+  });
+
+  it("ignoreMask の画素は分子にも分母にも入れないこと", () => {
+    const design = makeImage(0);
+    const screenshot = makeImage(0, { x: 0, y: 0, w: 10, h: 45, value: 255 });
+    const ignoreMask = new Uint8Array(WIDTH * HEIGHT);
+    for (let y = 0; y < 45; y++) {
+      for (let x = 0; x < 10; x++) ignoreMask[y * WIDTH + x] = 1;
+    }
+
+    const residuals = computeRegionResiduals(
+      design,
+      screenshot,
+      WIDTH,
+      HEIGHT,
+      [{ regionId: "left", bbox: { x: 0, y: 0, w: 60, h: 45 } }],
+      ignoreMask,
+    );
+
+    expect(residuals).toEqual([{ regionId: "left", residual: 0 }]);
+  });
+
+  it("画像の外へはみ出た領域は画像の内側だけで数えること", () => {
+    const design = makeImage(0);
+    const screenshot = makeImage(255);
+
+    const residuals = computeRegionResiduals(design, screenshot, WIDTH, HEIGHT, [
+      { regionId: "edge", bbox: { x: 100, y: 80, w: 50, h: 50 } },
+    ]);
+
+    expect(residuals).toEqual([{ regionId: "edge", residual: 1 }]);
+  });
+
+  it("測れる画素が無い領域は 0 と書かずに載せないこと", () => {
+    const image = makeImage(0);
+    const ignoreMask = new Uint8Array(WIDTH * HEIGHT).fill(1);
+
+    const outside = computeRegionResiduals(image, image, WIDTH, HEIGHT, [
+      { regionId: "outside", bbox: { x: WIDTH + 5, y: 0, w: 10, h: 10 } },
+      { regionId: "empty", bbox: { x: 10, y: 10, w: 0, h: 10 } },
+      { regionId: "inside", bbox: { x: 0, y: 0, w: 10, h: 10 } },
+    ]);
+    const masked = computeRegionResiduals(
+      image,
+      image,
+      WIDTH,
+      HEIGHT,
+      [{ regionId: "masked", bbox: { x: 0, y: 0, w: 10, h: 10 } }],
+      ignoreMask,
+    );
+
+    expect(outside).toEqual([{ regionId: "inside", residual: 0 }]);
+    expect(masked).toEqual([]);
+  });
+
+  it("寸法や画素の並びが壊れている場合は弾くこと", () => {
+    const image = makeImage(0);
+    const regions = [{ regionId: "a", bbox: { x: 0, y: 0, w: 10, h: 10 } }];
+
+    expect(() => computeRegionResiduals(image, image, 0, HEIGHT, regions)).toThrow(
+      /positive safe integers/,
+    );
+    expect(() =>
+      computeRegionResiduals(image.subarray(0, 8), image, WIDTH, HEIGHT, regions),
+    ).toThrow(/buffer too small/);
+    expect(() =>
+      computeRegionResiduals(image, image, WIDTH, HEIGHT, [
+        { regionId: "nan", bbox: { x: Number.NaN, y: 0, w: 10, h: 10 } },
+      ]),
+    ).toThrow(/finite/);
   });
 });

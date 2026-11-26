@@ -2,6 +2,7 @@ import {
   computeHausdorff,
   classifyForegroundOccupancyGeometry,
   computeMeanDeltaE2000,
+  computeRegionResiduals,
   computeSsimForRegion,
   computeVerdict,
   GLOBAL_SHIFT_CRITICAL_THRESHOLD_PX,
@@ -339,6 +340,20 @@ export function buildDesktopDiffAnalysis(options: BuildDiffReportOptions): Deskt
     };
   });
 
+  // 行の id と画素を regionScores と揃える。揃えないと、どの行の採点が全体の
+  // 位置合わせでどれだけ説明できたかを突き合わせられない。
+  const reportAlignment = {
+    ...alignment,
+    regionResiduals: computeRegionResiduals(
+      alignedDesignPixels,
+      screenshotPixels,
+      width,
+      height,
+      regionScores,
+      options.ignoreMask,
+    ),
+  };
+
   const issues = buildIssues(regionScores, { ...options, designPixels: alignedDesignPixels });
 
   // 位置を合わせて測ると、ずれていた事実そのものは数値から消える。合わせた量が
@@ -373,7 +388,7 @@ export function buildDesktopDiffAnalysis(options: BuildDiffReportOptions): Deskt
       },
     });
   }
-  const verdict = computeVerdict({ alignment, regionScores, issues });
+  const verdict = computeVerdict({ alignment: reportAlignment, regionScores, issues });
   const alignedTargetRegion = options.targetRegion
     ? {
         ...options.targetRegion,
@@ -387,7 +402,7 @@ export function buildDesktopDiffAnalysis(options: BuildDiffReportOptions): Deskt
 
   return {
     report: {
-      alignment,
+      alignment: reportAlignment,
       regionScores,
       issues,
       weightedAggregate: verdict.weightedAggregate,

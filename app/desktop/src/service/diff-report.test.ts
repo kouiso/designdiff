@@ -110,6 +110,28 @@ describe("buildDiffReport", () => {
     expect(report.issues.every((issue) => issue.regionId === "top-left")).toBe(true);
   });
 
+  it("位置合わせの残差を regionScores と同じ行の id で返す", () => {
+    const width = 6;
+    const height = 6;
+    const designPixels = fillSolid(width, height, [80, 80, 80]);
+    const screenshotPixels = fillSolid(width, height, [80, 80, 80]);
+    paintRect(screenshotPixels, width, { x: 0, y: 0, w: 2, h: 2 }, [250, 250, 250]);
+
+    const report = buildDiffReport({ designPixels, screenshotPixels, width, height });
+
+    expect(report.alignment.regionResiduals?.map((row) => row.regionId)).toEqual(
+      report.regionScores.map((region) => region.regionId),
+    );
+    expect(
+      report.alignment.regionResiduals?.find((row) => row.regionId === "top-left")?.residual,
+    ).toBe(1);
+    expect(
+      report.alignment.regionResiduals
+        ?.filter((row) => row.regionId !== "top-left")
+        .every((row) => row.residual === 0),
+    ).toBe(true);
+  });
+
   it("任意ノードの採点をgrid集計へ混ぜず、部分maskの母数を明示する", () => {
     const width = 6;
     const height = 6;

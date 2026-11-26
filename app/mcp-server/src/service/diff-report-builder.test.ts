@@ -295,6 +295,57 @@ describe("buildDiffReport", () => {
     );
     expect(result.regionScores.every((score) => score.textureScore !== undefined)).toBe(true);
   });
+  it("位置合わせの残差を section 行と同じ id で返し、schema を通しても残すこと", async () => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    const { DiffReportSchema } = await import("@figdiff/shared");
+    const designPixels = await createSolidRgba(32, 24, WHITE_RGB);
+    const screenshotPixels = Uint8ClampedArray.from(designPixels);
+    for (let y = 16; y < 24; y++) {
+      for (let x = 0; x < 32; x++) {
+        const index = (y * 32 + x) * 4;
+        screenshotPixels[index] = 0;
+        screenshotPixels[index + 1] = 0;
+        screenshotPixels[index + 2] = 0;
+      }
+    }
+    const section = (id: string, y: number): FigmaNode => ({
+      id,
+      name: id,
+      type: "FRAME",
+      absoluteBoundingBox: { x: 0, y, width: 32, height: 8 },
+      absoluteRenderBounds: null,
+      fills: [],
+      strokes: [],
+      effects: [],
+      children: [],
+    });
+    const figmaRootNode: FigmaNode = {
+      ...section("root", 0),
+      absoluteBoundingBox: { x: 0, y: 0, width: 32, height: 24 },
+      children: [section("header", 0), section("body", 8), section("footer", 16)],
+    };
+
+    const result = buildDiffReport({
+      designPixels,
+      screenshotPixels,
+      width: 32,
+      height: 24,
+      figmaRootNode,
+    });
+    const residualOf = (regionId: string): number | undefined =>
+      result.alignment.regionResiduals?.find((row) => row.regionId === regionId)?.residual;
+
+    expect(result.alignment.regionResiduals?.map((row) => row.regionId)).toEqual(
+      result.regionScores.map((score) => score.regionId),
+    );
+    expect(residualOf("header")).toBe(0);
+    expect(residualOf("body")).toBe(0);
+    expect(residualOf("footer")).toBe(1);
+    expect(DiffReportSchema.parse(result).alignment.regionResiduals).toEqual(
+      result.alignment.regionResiduals,
+    );
+  });
+
   it("whole-frame fallback でも figmaNodeId を保持すること", async () => {
     const { buildDiffReport } = await import("./diff-report-builder.js");
     const pixels = await createSolidRgba(FALLBACK_FRAME_WIDTH, FALLBACK_FRAME_HEIGHT, BLUE_RGB);

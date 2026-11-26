@@ -381,6 +381,405 @@ export function buildVerifiedInsetCandidates(
   return candidates;
 }
 
+// 倍率を探す範囲。書き出し倍率や DPR の食い違い（2倍・3倍）は取り込み側で
+// 揃えている (#436, #439)。そこまで広げると、繰り返し模様が別の倍率でも
+// 重なって偽の倍率を拾う。ここで扱うのは、揃えた後に残る ±25% 程度の伸縮だけ。
+export const SCALE_SEARCH_MIN = 0.8;
+export const SCALE_SEARCH_MAX = 1.25;
+// 倍率の検出結果がこの幅に収まることを契約にする (#437)。画素の整数の位置で
+// 一致を数える以上、幅 W の画像では 1/W より細かい倍率は見分けられない。
+// 400px で 0.0025 なので、その4倍を取って画像の大きさに左右されない値にする。
+export const SCALE_DETECTION_TOLERANCE = 0.01;
+
+// 粗い探索で縮める輪郭の並びの長さ。8000px の縦長画面を1px刻みで全候補と
+// 突き合わせると終わらないので、まず束ねた並びで当たりを付ける。
+const SCALE_COARSE_PROFILE_LENGTH = 512;
+// 倍率の刻み (対数で等間隔)。等差にすると縮小側だけ刻みが粗くなる。
+const SCALE_COARSE_LOG_STEP = Math.log(1.005);
+const SCALE_FINE_LOG_STEP = Math.log(1.0005);
+// 重なりが短いと、端の数画素だけが偶然揃った候補が相関1に近づく。
+const SCALE_MIN_OVERLAP_RATIO = 0.5;
+// 片方の軸の並びがこれより短いと、輪郭の位置から倍率を言えるほどの手がかりが無い。
+const SCALE_MIN_PROFILE_LENGTH = 32;
+
+interface AxisScaleEstimate {
+  scale: number;
+  offset: number;
+}
+
+/**
+ * 軸に沿った輪郭の強さの並びを作る。
+ *
+ * 倍率は輪郭の間隔に出る。色の平均の並びだと、白地の多い画面では
+ * どの倍率でも同じに見えて決まらない。隣どうしの色の差を足した並びなら、
+ * 縦に伸ばしても横の輪郭の位置は変わらないので、軸ごとに独立して測れる。
+ */
+function buildEdgeProfile(
+  pixels: Uint8ClampedArray,
+  width: number,
+  height: number,
+  axis: "x" | "y",
+  ignoreMask: Uint8Array | undefined,
+): Float64Array {
+  const length = axis === "x" ? width : height;
+  const across = axis === "x" ? height : width;
+  // 直交方向は間引く。輪郭の位置を決めるのは並びの向きで、直交方向の全画素は要らない。
+  const stride = residualSampleStep(width, height);
+  const profile = new Float64Array(length);
+  for (let along = 0; along + 1 < length; along++) {
+    let sum = 0;
+    for (let other = 0; other < across; other += stride) {
+      const first = axis === "x" ? other * width + along : along * width + other;
+      const second = axis === "x" ? first + 1 : first + width;
+      if (ignoreMask && (ignoreMask[first] !== 0 || ignoreMask[second] !== 0)) continue;
+      const a = first * 4;
+      const b = second * 4;
+      sum +=
+        Math.abs(pixels[a] - pixels[b]) +
+        Math.abs(pixels[a + 1] - pixels[b + 1]) +
+        Math.abs(pixels[a + 2] - pixels[b + 2]);
+    }
+    profile[along] = sum;
+  }
+  // 撮影側は輪郭が中間色で2画素へ割れることがある。1画素の山どうしで比べると、
+  // 半画素ずれただけで相関が崩れるので、両側を軽くならす。
+  const smoothed = new Float64Array(length);
+  for (let index = 0; index < length; index++) {
+    const left = profile[Math.max(0, index - 1)];
+    const right = profile[Math.min(length - 1, index + 1)];
+    smoothed[index] = (left + 2 * profile[index] + right) / 4;
+  }
+  return smoothed;
+}
+
+function binProfile(profile: Float64Array, binSize: number): Float64Array {
+  const binned = new Float64Array(Math.ceil(profile.length / binSize));
+  for (let index = 0; index < profile.length; index++) {
+    binned[Math.floor(index / binSize)] += profile[index];
+  }
+  return binned;
+}
+
+/**
+ * 撮影側の位置 x に、設計側の位置 (x - offset) / scale の値を重ねたときの相関。
+ *
+ * 位置は並びの中心を原点に取る。左端を原点にすると、倍率を少し変えるだけで
+ * 右端の重なりが大きく動き、倍率と平行移動を分けて探せなくなる。
+ */
+function scoreAxisCandidate(
+  design: Float64Array,
+  screenshot: Float64Array,
+  scale: number,
+  centeredShift: number,
+): number {
+  const length = screenshot.length;
+  const center = length / 2;
+  let count = 0;
+  let sumA = 0;
+  let sumB = 0;
+  let sumAB = 0;
+  let sumAA = 0;
+  let sumBB = 0;
+  for (let x = 0; x < length; x++) {
+    const source = (x + 0.5 - center - centeredShift) / scale + center - 0.5;
+    if (source < 0 || source > design.length - 1) continue;
+    const floor = Math.floor(source);
+    const fraction = source - floor;
+    const next = Math.min(design.length - 1, floor + 1);
+    const a = design[floor] * (1 - fraction) + design[next] * fraction;
+    const b = screenshot[x];
+    count++;
+    sumA += a;
+    sumB += b;
+    sumAB += a * b;
+    sumAA += a * a;
+    sumBB += b * b;
+  }
+  if (count < length * SCALE_MIN_OVERLAP_RATIO) return Number.NEGATIVE_INFINITY;
+  const varianceA = count * sumAA - sumA * sumA;
+  const varianceB = count * sumBB - sumB * sumB;
+  // どちらかが平らなら相関は定義できない。0 割りで NaN を候補に混ぜない。
+  if (varianceA <= 0 || varianceB <= 0) return Number.NEGATIVE_INFINITY;
+  return (count * sumAB - sumA * sumB) / Math.sqrt(varianceA * varianceB);
+}
+
+interface AxisSearchResult {
+  logScale: number;
+  centeredShift: number;
+  score: number;
+}
+
+function searchAxis(
+  design: Float64Array,
+  screenshot: Float64Array,
+  logScales: readonly number[],
+  shiftCenter: number,
+  shiftRange: number,
+): AxisSearchResult | undefined {
+  let best: AxisSearchResult | undefined;
+  for (const logScale of logScales) {
+    const scale = Math.exp(logScale);
+    for (let shift = shiftCenter - shiftRange; shift <= shiftCenter + shiftRange; shift++) {
+      const score = scoreAxisCandidate(design, screenshot, scale, shift);
+      // 同点なら先に見た候補を残す。並びは倍率1・移動0に近い順にしてあるので、
+      // 手がかりの無い並びでは恒等が残る。
+      if (score > (best?.score ?? Number.NEGATIVE_INFINITY)) {
+        best = { logScale, centeredShift: shift, score };
+      }
+    }
+  }
+  return best;
+}
+
+/**
+ * -lowerLimit..upperLimit の整数を 0 から近い順に並べる。
+ *
+ * 探索は同点なら先に見た候補を残すので、恒等に近い順に見ておけば、
+ * 手がかりの無い並びで端の倍率が選ばれることは無い。
+ */
+function stepsNearestFirst(lowerLimit: number, upperLimit: number): number[] {
+  const steps = [0];
+  for (let magnitude = 1; magnitude <= Math.max(lowerLimit, upperLimit); magnitude++) {
+    if (magnitude <= upperLimit) steps.push(magnitude);
+    if (magnitude <= lowerLimit) steps.push(-magnitude);
+  }
+  return steps;
+}
+
+/**
+ * 1軸ぶんの倍率と移動量を、輪郭の並びの突き合わせで推定する。
+ *
+ * 2次元で倍率を2つと移動を2つ同時に探すと、実寸の画面では候補の数が
+ * 掛け算で増えて終わらない。輪郭の並びは軸ごとに独立なので、1次元の探索を
+ * 軸の数だけ回せば足りる。
+ */
+function estimateAxisScale(
+  designProfile: Float64Array,
+  screenshotProfile: Float64Array,
+): AxisScaleEstimate | undefined {
+  const length = screenshotProfile.length;
+  if (length < SCALE_MIN_PROFILE_LENGTH) return undefined;
+
+  const binSize = Math.max(1, Math.ceil(length / SCALE_COARSE_PROFILE_LENGTH));
+  const coarseDesign = binProfile(designProfile, binSize);
+  const coarseScreenshot = binProfile(screenshotProfile, binSize);
+  const coarseLogScales = stepsNearestFirst(
+    Math.floor(-Math.log(SCALE_SEARCH_MIN) / SCALE_COARSE_LOG_STEP),
+    Math.floor(Math.log(SCALE_SEARCH_MAX) / SCALE_COARSE_LOG_STEP),
+  ).map((step) => step * SCALE_COARSE_LOG_STEP);
+  // 左上を原点に伸縮した画面では、中心から見た移動が (1-倍率)*長さ/2 まで出る。
+  // それに一般の平行移動の探索幅を足した範囲を見る。
+  const coarseShiftRange =
+    Math.ceil(
+      (coarseScreenshot.length * Math.max(1 - SCALE_SEARCH_MIN, SCALE_SEARCH_MAX - 1)) / 2,
+    ) +
+    Math.ceil(COARSE_RANGE / binSize) +
+    1;
+  const coarse = searchAxis(coarseDesign, coarseScreenshot, coarseLogScales, 0, coarseShiftRange);
+  if (!coarse) return undefined;
+
+  const fineSpan = Math.ceil((1.5 * SCALE_COARSE_LOG_STEP) / SCALE_FINE_LOG_STEP);
+  const fineLogScales = stepsNearestFirst(fineSpan, fineSpan).map(
+    (step) => coarse.logScale + step * SCALE_FINE_LOG_STEP,
+  );
+  const fine = searchAxis(
+    designProfile,
+    screenshotProfile,
+    fineLogScales,
+    coarse.centeredShift * binSize,
+    binSize + 2,
+  );
+  if (!fine) return undefined;
+
+  const scale = Math.exp(fine.logScale);
+  // 中心を原点にした移動を、設計の左上を原点にした写し方 x = scale*u + offset へ戻す。
+  const center = length / 2;
+  return { scale, offset: fine.centeredShift + center * (1 - scale) };
+}
+
+/**
+ * 設計の点 u が撮影の scale*u + offset に写るとみなして、違って見える画素を数える。
+ *
+ * 外へ出た画素の扱いは平行移動の残差 (countSsdOffset の既定) と揃える。
+ * 揃えないと、平行移動と倍率のどちらが良いかを同じ物差しで比べられない。
+ */
+function countScaledMismatch(
+  design: Uint8ClampedArray,
+  screenshot: Uint8ClampedArray,
+  width: number,
+  height: number,
+  scale: { x: number; y: number },
+  offset: { x: number; y: number },
+  sampleStep: number,
+  ignoreMask: Uint8Array | undefined,
+): number {
+  let diff = 0;
+  for (let y = 0; y < height; y += sampleStep) {
+    const srcY = Math.floor((y + 0.5 - offset.y) / scale.y);
+    for (let x = 0; x < width; x += sampleStep) {
+      if (ignoreMask && ignoreMask[y * width + x] !== 0) continue;
+      const bIdx = (y * width + x) * 4;
+      const srcX = Math.floor((x + 0.5 - offset.x) / scale.x);
+      if (srcX < 0 || srcX >= width || srcY < 0 || srcY >= height) {
+        const r = screenshot[bIdx];
+        const g = screenshot[bIdx + 1];
+        const b = screenshot[bIdx + 2];
+        if (r * r + g * g + b * b > DIFF_THRESHOLD_SQ) diff++;
+        continue;
+      }
+      const aIdx = (srcY * width + srcX) * 4;
+      const dr = design[aIdx] - screenshot[bIdx];
+      const dg = design[aIdx + 1] - screenshot[bIdx + 1];
+      const db = design[aIdx + 2] - screenshot[bIdx + 2];
+      if (dr * dr + dg * dg + db * db > DIFF_THRESHOLD_SQ) diff++;
+    }
+  }
+  return diff;
+}
+
+interface DetectedScale {
+  scale: { x: number; y: number };
+  offset?: { x: number; y: number };
+}
+
+const IDENTITY_SCALE: DetectedScale = { scale: { x: 1, y: 1 } };
+
+/**
+ * 平行移動では説明しきれない伸縮を軸ごとに検出する。
+ *
+ * 輪郭の並びで当たりを付け、採るかどうかは平行移動と同じ「違って見える画素の数」で
+ * 決める。相関だけで採ると、伸縮していない画面でも 1.003 のような雑音の倍率が
+ * 毎回報告に載る。平行移動の適用と同じく 15% 以上減るときだけ採り、
+ * 軸を1つ足すときも同じ門を通す。
+ */
+function detectScale(
+  design: Uint8ClampedArray,
+  screenshot: Uint8ClampedArray,
+  width: number,
+  height: number,
+  translation: { dx: number; dy: number },
+  translationDiff: number,
+  sampleStep: number,
+  ignoreMask: Uint8Array | undefined,
+): DetectedScale {
+  if (width * height < 64 || translationDiff === 0) return IDENTITY_SCALE;
+
+  const xEstimate = estimateAxisScale(
+    buildEdgeProfile(design, width, height, "x", ignoreMask),
+    buildEdgeProfile(screenshot, width, height, "x", ignoreMask),
+  );
+  const yEstimate = estimateAxisScale(
+    buildEdgeProfile(design, width, height, "y", ignoreMask),
+    buildEdgeProfile(screenshot, width, height, "y", ignoreMask),
+  );
+  const xScaled = xEstimate !== undefined && xEstimate.scale !== 1 ? xEstimate : undefined;
+  const yScaled = yEstimate !== undefined && yEstimate.scale !== 1 ? yEstimate : undefined;
+
+  const identityX = { scale: 1, offset: translation.dx };
+  const identityY = { scale: 1, offset: translation.dy };
+  // 軸の少ない候補から順に見る。後の候補は、今の最良をさらに 15% 減らすときだけ勝つ。
+  const candidates: { x: AxisScaleEstimate; y: AxisScaleEstimate }[] = [];
+  if (xScaled) candidates.push({ x: xScaled, y: identityY });
+  if (yScaled) candidates.push({ x: identityX, y: yScaled });
+  if (xScaled && yScaled) candidates.push({ x: xScaled, y: yScaled });
+
+  let best: DetectedScale = IDENTITY_SCALE;
+  let bestDiff = translationDiff;
+  for (const candidate of candidates) {
+    const scale = { x: candidate.x.scale, y: candidate.y.scale };
+    const offset = { x: candidate.x.offset, y: candidate.y.offset };
+    const diff = countScaledMismatch(
+      design,
+      screenshot,
+      width,
+      height,
+      scale,
+      offset,
+      sampleStep,
+      ignoreMask,
+    );
+    if (diff < bestDiff * ALIGNMENT_IMPROVEMENT_THRESHOLD) {
+      bestDiff = diff;
+      best = { scale, offset };
+    }
+  }
+  if (!best.offset) return IDENTITY_SCALE;
+  // 探索の刻みより細かい桁は測れていない。雑音の桁を報告に残さない。
+  return {
+    scale: { x: roundTo(best.scale.x, 4), y: roundTo(best.scale.y, 4) },
+    offset: { x: roundTo(best.offset.x, 2), y: roundTo(best.offset.y, 2) },
+  };
+}
+
+function roundTo(value: number, digits: number): number {
+  const factor = 10 ** digits;
+  return Math.round(value * factor) / factor;
+}
+
+export interface RegionResidualInput {
+  regionId: string;
+  bbox: { x: number; y: number; w: number; h: number };
+}
+
+/**
+ * 領域ごとに、位置合わせ後に違って見える画素の割合を測る。
+ *
+ * 全体の残差 (alignment.residual) と同じ物差しにする。同じ画素の間引き方・
+ * 同じしきい値・同じ ignoreMask の扱いにしないと、領域の値と全体の値を
+ * 並べて読めない。採点に使う画素 (適用後の設計) を渡す前提で、ずらさずに数える。
+ *
+ * 測れる画素が1つも無い領域は載せない。0 と書くと「一致した」と読める。
+ */
+export const computeRegionResiduals = (
+  designPixels: Uint8ClampedArray,
+  screenshotPixels: Uint8ClampedArray,
+  width: number,
+  height: number,
+  regions: readonly RegionResidualInput[],
+  ignoreMask?: Uint8Array,
+): { regionId: string; residual: number }[] => {
+  validateImageDimensions(width, height);
+  validateIgnoreMask(ignoreMask, width, height);
+  validatePixelBuffer(designPixels, width, height, "design");
+  validatePixelBuffer(screenshotPixels, width, height, "screenshot");
+
+  const sampleStep = residualSampleStep(width, height);
+  const residuals: { regionId: string; residual: number }[] = [];
+  for (const region of regions) {
+    const { x, y, w, h } = region.bbox;
+    if (![x, y, w, h].every(Number.isFinite)) {
+      throw new Error(
+        `region bbox must be finite: regionId=${region.regionId}, x=${x}, y=${y}, w=${w}, h=${h}`,
+      );
+    }
+    const left = Math.max(0, Math.ceil(x));
+    const top = Math.max(0, Math.ceil(y));
+    const right = Math.min(width, Math.ceil(x + w));
+    const bottom = Math.min(height, Math.ceil(y + h));
+    let sampled = 0;
+    let diff = 0;
+    // 全体の残差と同じ格子 (原点から sampleStep 刻み) の上の点だけを数える。
+    // 領域の左上から刻み直すと、隣り合う領域で同じ画素を二度数えたり飛ばしたりする。
+    const firstY = Math.ceil(top / sampleStep) * sampleStep;
+    const firstX = Math.ceil(left / sampleStep) * sampleStep;
+    for (let py = firstY; py < bottom; py += sampleStep) {
+      for (let px = firstX; px < right; px += sampleStep) {
+        const pixel = py * width + px;
+        if (ignoreMask && ignoreMask[pixel] !== 0) continue;
+        sampled++;
+        const offset = pixel * 4;
+        const dr = designPixels[offset] - screenshotPixels[offset];
+        const dg = designPixels[offset + 1] - screenshotPixels[offset + 1];
+        const db = designPixels[offset + 2] - screenshotPixels[offset + 2];
+        if (dr * dr + dg * dg + db * db > DIFF_THRESHOLD_SQ) diff++;
+      }
+    }
+    if (sampled === 0) continue;
+    residuals.push({ regionId: region.regionId, residual: diff / sampled });
+  }
+  return residuals;
+};
+
 export interface ResolvedAlignment {
   alignment: Alignment;
   alignedDesignPixels: Uint8ClampedArray;
@@ -430,7 +829,7 @@ export const resolveAlignment = (
           residualStep,
           ignoreMask,
         ) / residualSampleCount;
-  const correctedResidual =
+  const correctedDiff =
     residualSampleCount === 0
       ? undefined
       : scoreTranslationCandidate(
@@ -441,7 +840,25 @@ export const resolveAlignment = (
           { dx, dy },
           residualStep,
           ignoreMask,
-        ) / residualSampleCount;
+        );
+  const correctedResidual =
+    correctedDiff === undefined ? undefined : correctedDiff / residualSampleCount;
+  // 倍率は検出して報告するだけで、適用する画素には使わない。後段の採点窓の
+  // 切り取りや対象ノードの移動は平行移動だけを前提にしており、伸縮した画素を
+  // 渡すと、そこで合否が黙って変わる (#437)。
+  const detectedScale =
+    correctedDiff === undefined
+      ? IDENTITY_SCALE
+      : detectScale(
+          designPixels,
+          screenshotPixels,
+          width,
+          height,
+          { dx, dy },
+          correctedDiff,
+          residualStep,
+          ignoreMask,
+        );
   if (dx !== 0 || dy !== 0) {
     // 画像の外へ出た画素を必ず違いとして数える。数えないと、透明な余白が
     // 黒い実装と「一致」に見えてしまう。
@@ -484,7 +901,8 @@ export const resolveAlignment = (
           : verifiedSystemUiCandidate && applied
             ? "verified-system-ui"
             : "auto",
-      scale: { x: 1, y: 1 },
+      scale: detectedScale.scale,
+      ...(detectedScale.offset ? { scaleOffset: detectedScale.offset } : {}),
       rotation: 0,
       confidence,
       residual,

@@ -414,9 +414,23 @@ export const AlignmentSchema = z.object({
     x: z.number(),
     y: z.number(),
   }),
+  scaleOffset: z
+    .object({
+      x: z.number(),
+      y: z.number(),
+    })
+    .optional(),
   rotation: z.number(),
   confidence: z.number().min(0).max(1),
   residual: z.number().nonnegative(),
+  regionResiduals: z
+    .array(
+      z.object({
+        regionId: z.string(),
+        residual: z.number().min(0).max(1),
+      }),
+    )
+    .optional(),
 });
 
 export const DiffVerdictSchema = z.enum(["pass", "fail", "inconclusive"]);
