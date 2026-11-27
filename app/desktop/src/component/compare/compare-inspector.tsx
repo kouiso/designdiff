@@ -213,6 +213,7 @@ function IssueCardList({
   if (!compareResult) {
     return (
       <div
+        data-testid="issue-list-empty"
         className="rounded-[var(--radius-token)] p-4 text-sm"
         style={{ background: "var(--surface-2)", color: "var(--muted-fg)" }}
       >
@@ -223,6 +224,7 @@ function IssueCardList({
   if (issues.length === 0) {
     return (
       <div
+        data-testid="issue-list-empty"
         className="rounded-[var(--radius-token)] p-4 text-sm"
         style={{ background: "var(--match-soft)", color: "var(--match)" }}
       >
@@ -234,6 +236,7 @@ function IssueCardList({
   if (visible.length === 0) {
     return (
       <div
+        data-testid="issue-list-empty"
         className="rounded-[var(--radius-token)] p-4 text-sm"
         style={{ background: "var(--surface-2)", color: "var(--muted-fg)" }}
       >

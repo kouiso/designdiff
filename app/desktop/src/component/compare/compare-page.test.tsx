@@ -47,8 +47,8 @@ beforeEach(() => {
 describe("ComparePage", () => {
   it("比較前は未計測を表示してゼロ点や判定を表示しない", () => {
     render(<ComparePage />);
-    expect(screen.getByRole("img", { name: "未実行" })).toBeInTheDocument();
-    expect(screen.getByTestId("score-ring-value")).toHaveTextContent("—");
+    expect(screen.getByText("未実行")).toBeInTheDocument();
+    expect(screen.getByTestId("inspector-score-value")).toHaveTextContent("—");
     expect(screen.queryByText("0%")).not.toBeInTheDocument();
     expect(screen.queryByTestId("compare-score-verdict-badge")).not.toBeInTheDocument();
   });
@@ -153,7 +153,9 @@ describe("ComparePage", () => {
     render(<ComparePage />);
     expect(screen.getByTestId("compare-verdict-badge")).toHaveTextContent("PASS");
     expect(screen.getByText("RegionScore Summary")).toBeInTheDocument();
-    expect(screen.getByText("No typed issues (P1 scope)")).toBeInTheDocument();
+    // 課題リストの空表示と、レポートタブ内の空表示の2か所に出る。
+    expect(screen.getAllByText("No typed issues (P1 scope)")).toHaveLength(2);
+    expect(screen.getByTestId("issue-list-empty")).toHaveTextContent("No typed issues (P1 scope)");
     expect(screen.getByText("matchRate: 95.5%")).toBeInTheDocument();
   });
 
@@ -176,8 +178,8 @@ describe("ComparePage", () => {
     expect(screen.getByTestId("compare-score-verdict-badge")).toHaveTextContent("INCONCLUSIVE");
   });
 
-  // 判定が保留やのにリングだけ緑にすると、判定バッジより先に緑の数字が目へ入る。
-  it("判定が保留の比較はリングも合格色にせん", () => {
+  // 判定が保留やのにスコア数字だけ緑にすると、判定バッジより先に緑の数字が目へ入る。
+  it("判定が保留の比較はスコア数字も合格色にせん", () => {
     useCompareStore.setState({
       designImage: "d",
       screenshotImage: "s",
@@ -191,7 +193,7 @@ describe("ComparePage", () => {
       },
     });
     render(<ComparePage />);
-    expect(screen.getByTestId("score-ring-value").style.color.replaceAll(" ", "")).toBe(
+    expect(screen.getByTestId("inspector-score-value").style.color.replaceAll(" ", "")).toBe(
       "var(--warn)",
     );
   });
@@ -217,7 +219,9 @@ describe("ComparePage", () => {
 
   it("修正確認タブから一時baseline導線へ到達できる", () => {
     render(<ComparePage />);
-    expect(screen.getByTestId("result-tabs")).toHaveClass("grid-cols-2");
+    expect(screen.getByTestId("result-tabs")).toBeInTheDocument();
+    // 課題リストは常時表示に変わったので、補助ツールのタブには課題タブを置かない。
+    expect(screen.queryByRole("button", { name: "課題" })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "修正確認" }));
 
     expect(screen.getByText("修正前後を確認")).toBeInTheDocument();
@@ -352,11 +356,9 @@ describe("ComparePage", () => {
     expect(useCompareStore.getState().overlayOpacity).toBe(0.8);
   });
 
-  it("課題タブは比較結果がない場合の案内を表示する", () => {
+  it("課題リストは比較結果がない場合の案内を常時表示する", () => {
     useCompareStore.setState({ designImage: "d", screenshotImage: "s" });
     render(<ComparePage />);
-
-    fireEvent.click(screen.getByText("課題"));
 
     expect(
       screen.getByText("「差分を検出」ボタンをクリックして比較を実行します。"),
