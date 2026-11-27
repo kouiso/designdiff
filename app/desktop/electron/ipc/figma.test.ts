@@ -405,14 +405,12 @@ describe("Figma IPC secret-safe error contract", () => {
     const expiredError = new FigmaApiError(401, "expired");
     Object.defineProperty(expiredError, "message", { value: "expired", writable: true });
     Object.defineProperty(expiredError, "status", { value: 401, writable: true });
-    mocks.downloadImageAsBase64
-      .mockRejectedValueOnce(expiredError)
-      .mockResolvedValueOnce({
-        base64: "retried-image",
-        width: 100,
-        height: 50,
-        requestedScale: 2,
-      });
+    mocks.downloadImageAsBase64.mockRejectedValueOnce(expiredError).mockResolvedValueOnce({
+      base64: "retried-image",
+      width: 100,
+      height: 50,
+      requestedScale: 2,
+    });
 
     registerFigmaHandlers();
     const imageHandler = mocks.ipcMainHandle.mock.calls.find(
