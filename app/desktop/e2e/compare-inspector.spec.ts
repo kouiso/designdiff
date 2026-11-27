@@ -75,7 +75,10 @@ test.describe("Compare inspector (Workspace)", () => {
 
   test("フィルタ操作の動画を残す", async ({ browser }) => {
     test.skip(!process.env.ISSUE_445_EVIDENCE, "動画は ISSUE_445_EVIDENCE=1 のときだけ録画する");
-    const videoDir = resolve(dirname(fileURLToPath(import.meta.url)), "../test-results/issue-445-video");
+    const videoDir = resolve(
+      dirname(fileURLToPath(import.meta.url)),
+      "../test-results/issue-445-video",
+    );
     const context = await browser.newContext({
       viewport: { width: 1280, height: 800 },
       recordVideo: { dir: videoDir, size: { width: 1280, height: 800 } },
