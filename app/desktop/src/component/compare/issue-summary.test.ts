@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { buildInspectorFixture, INSPECTOR_FIXTURE_ISSUES } from "@/test-fixture/compare-inspector-fixture";
+import {
+  buildInspectorFixture,
+  INSPECTOR_FIXTURE_ISSUES,
+} from "@/test-fixture/compare-inspector-fixture";
 
 import { countIssues, filterIssues, resolveIssueName } from "./issue-summary";
 

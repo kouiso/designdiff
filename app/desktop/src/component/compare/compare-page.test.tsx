@@ -1,9 +1,10 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { getPlatform } from "@/lib/platform";
 import { useCompareStore } from "@/store/compare-store";
 import { useProjectStore } from "@/store/project-store";
+import { buildInspectorFixture } from "@/test-fixture/compare-inspector-fixture";
 
 import { ComparePage } from "./compare-page";
 
@@ -363,5 +364,56 @@ describe("ComparePage", () => {
     expect(
       screen.getByText("「差分を検出」ボタンをクリックして比較を実行します。"),
     ).toBeInTheDocument();
+  });
+});
+
+describe("ComparePage Workspace chrome", () => {
+  it("表示モードボタンはアイコンだけで、aria-label と title を保つ", () => {
+    render(<ComparePage />);
+
+    const group = screen.getByTestId("view-mode-group");
+    const buttons = within(group).getAllByRole("button");
+    expect(buttons).toHaveLength(3);
+    for (const button of buttons) {
+      expect(button.textContent).toBe("");
+      expect(button).toHaveAttribute("aria-label");
+      expect(button.getAttribute("title")).toContain(button.getAttribute("aria-label"));
+    }
+  });
+
+  it("比較結果が無いときは状態バーを出さない", () => {
+    render(<ComparePage />);
+
+    expect(screen.queryByTestId("compare-status-bar")).not.toBeInTheDocument();
+  });
+
+  it("比較結果があるときは状態バーに寸法・しきい値・一致率を出す", () => {
+    useCompareStore.setState({ designImage: "d", screenshotImage: "s" });
+    useCompareStore.setState({ compareResult: buildInspectorFixture() });
+    render(<ComparePage />);
+
+    expect(screen.getByTestId("status-dimensions")).toHaveTextContent("320 × 660");
+    expect(screen.getByTestId("status-threshold")).toHaveTextContent("しきい値 10%");
+    expect(screen.getByTestId("status-match")).toHaveTextContent("78% 一致");
+  });
+
+  it("再比較ボタンは両画像が揃っていれば runComparison を呼ぶ", () => {
+    const mockRunComparison = vi.fn();
+    useCompareStore.setState({
+      designImage: "d",
+      screenshotImage: "s",
+      runComparison: mockRunComparison,
+    });
+    render(<ComparePage />);
+
+    fireEvent.click(screen.getByRole("button", { name: "再比較" }));
+
+    expect(mockRunComparison).toHaveBeenCalledTimes(1);
+  });
+
+  it("再比較ボタンは画像が足りなければ無効", () => {
+    render(<ComparePage />);
+
+    expect(screen.getByRole("button", { name: "再比較" })).toBeDisabled();
   });
 });
