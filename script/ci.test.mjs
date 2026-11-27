@@ -1,11 +1,20 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
 const root = join(import.meta.dirname, "..");
+const TASK_BIN = "/opt/homebrew/bin/task";
 test("full and fast CI preserve cloud command profiles and stop on each tool failure", () => {
   const fixture = mkdtempSync(join(tmpdir(), "figdiff-ci-contract-"));
   try {
@@ -49,10 +58,10 @@ test("full and fast CI preserve cloud command profiles and stop on each tool fai
       assert.ok(full.includes(command), command);
     assert.equal(full.filter((line) => line === "pnpm build").length, 1);
     writeFileSync(log, "");
-    const task = spawnSync(
-      "/opt/homebrew/bin/task",
-      ["--taskfile", join(fixture, "Taskfile.yml"), "ci"],
-      {
+    // The Taskfile wiring needs the Homebrew `task` binary; skip only that part where it is
+    // absent so the fast/full phase assertions below still run (Linux CI, containers).
+    if (existsSync(TASK_BIN)) {
+      const task = spawnSync(TASK_BIN, ["--taskfile", join(fixture, "Taskfile.yml"), "ci"], {
         cwd: fixture,
         encoding: "utf8",
         env: {
@@ -63,10 +72,10 @@ test("full and fast CI preserve cloud command profiles and stop on each tool fai
           FAIL_COMMAND: "never",
           CI_EVIDENCE_DIR: "/tmp/figdiff-contract-evidence",
         },
-      },
-    );
-    assert.equal(task.status, 0, task.stderr);
-    assert.deepEqual(readFileSync(log, "utf8").trim().split("\n"), full);
+      });
+      assert.equal(task.status, 0, task.stderr);
+      assert.deepEqual(readFileSync(log, "utf8").trim().split("\n"), full);
+    }
     assert.ok(full.some((line) => line.includes("plugin-frame-handoff-e2e.mjs")));
     assert.ok(full.some((line) => line.includes("electron-ipc-smoke.mjs")));
     for (const command of full) {
@@ -79,6 +88,7 @@ test("full and fast CI preserve cloud command profiles and stop on each tool fai
     assert.deepEqual(readFileSync(log, "utf8").trim().split("\n"), [
       "pnpm install --frozen-lockfile",
       "pnpm check:naming",
+      "pnpm check:ai-rules",
       "pnpm lint",
       "pnpm build",
       "pnpm test",

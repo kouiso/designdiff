@@ -2,6 +2,7 @@
 name: designdiff-verification-mandate
 description: Use when verifying UI work in designdiff, especially for Playwright-based browser checks against the Vite dev server on port 5173
 ---
+<!-- AUTO-GENERATED from .agents/skills/verification-mandate/SKILL.md by script/sync-ai-rules.sh. DO NOT EDIT: edit the source, then run bash script/sync-ai-rules.sh -->
 
 ---
 applyTo: "**"

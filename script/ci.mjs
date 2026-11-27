@@ -85,6 +85,7 @@ const plans = {
   fast: [
     ["pnpm", "install", "--frozen-lockfile"],
     ["pnpm", "check:naming"],
+    ["pnpm", "check:ai-rules"],
     ["pnpm", "lint"],
     ["pnpm", "build"],
     ["pnpm", "test"],

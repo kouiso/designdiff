@@ -7,3 +7,15 @@ CLAUDE.md filter=git-crypt diff=git-crypt
 .github/instructions/persona.instructions.md filter=git-crypt diff=git-crypt
 .github/instructions/core.instructions.md filter=git-crypt diff=git-crypt
 .github/instructions/data-driven-execution.instructions.md filter=git-crypt diff=git-crypt
+
+# AI rules sync (script/sync-ai-rules.sh): sources and generated outputs are LF-only
+# so `bash script/sync-ai-rules.sh --check` is byte-stable on every OS (autocrlf-safe).
+# Only *.md is normalised under the skill trees (symmetric for source and generated copy);
+# other skill files stay binary-safe and are byte-copied.
+AGENTS.md text eol=lf
+script/sync-ai-rules.sh text eol=lf
+.agents/skills/**/*.md text eol=lf
+.gemini/styleguide.md text eol=lf
+.github/copilot-instructions.md text eol=lf
+.claude/skills/**/*.md text eol=lf
+script/fixture/legacy-sync-ai-rules.sh text eol=lf

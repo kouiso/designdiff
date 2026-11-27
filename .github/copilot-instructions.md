@@ -9,6 +9,7 @@ TypeScript/Node.js monorepo using Turborepo.
 
 > ⚠️ `.gemini/styleguide.md` and `.github/copilot-instructions.md` are auto-generated from this file
 > by `script/sync-ai-rules.sh`. Do NOT edit them directly.
+> Shared AI rules, skills (`.agents/skills/` → generated `.claude/skills/`) and per-AI entry points: see [docs/ai-rules.md](https://github.com/kouiso/designdiff/blob/develop/docs/ai-rules.md).
 
 ## Tech Stack
 
@@ -57,3 +58,8 @@ Cite the relevant file from `prompt/instruction/` as the rule basis.
 | 7 | **review-plagiarism** | Review comment is a restatement of another bot's finding without independent code reading | 注意 (NOTE) |
 
 > Rule basis: `prompt/instruction/verification-mandate.md`, `prohibition.md`, `code-review.md`, `essential-thinking.md`
+
+## GitHub Project での作業管理
+
+- この repo のボードの設定は `.github/scrum-board.yml` にある
+- 手順は global skill `scrum-board` に従う

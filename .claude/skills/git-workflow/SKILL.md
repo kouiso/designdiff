@@ -2,6 +2,7 @@
 name: designdiff-git-workflow
 description: Use when doing Git or pull request work in designdiff, especially branch selection, commit formatting, PR safety rules, and CI gate checks
 ---
+<!-- AUTO-GENERATED from .agents/skills/git-workflow/SKILL.md by script/sync-ai-rules.sh. DO NOT EDIT: edit the source, then run bash script/sync-ai-rules.sh -->
 
 ---
 applyTo: "**"
