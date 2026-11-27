@@ -37,7 +37,7 @@ function ResultTabButton({
   return (
     <button
       type="button"
-      className="min-w-0 rounded-[8px] px-1.5 py-1.5 font-semibold text-xs"
+      className="flex-1 shrink-0 whitespace-nowrap rounded-[8px] px-2 py-1.5 font-semibold text-xs"
       onClick={onClick}
       style={{
         background: active ? "var(--surface)" : "transparent",
@@ -105,7 +105,7 @@ export function ResultToolTabs({ onChange, ...content }: ResultToolTabsProps) {
   return (
     <div className="space-y-3">
       <div
-        className="flex flex-wrap gap-1 rounded-[var(--radius-sm-token)] p-1"
+        className="flex flex-nowrap gap-1 overflow-x-auto rounded-[var(--radius-sm-token)] p-1"
         data-testid="result-tabs"
         role="group"
         aria-label={t("inspector.toolsLabel")}

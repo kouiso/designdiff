@@ -29,14 +29,13 @@ import type { LucideIcon } from "lucide-react";
 
 interface FlowMode {
   id: ViewMode;
-  label: string;
   icon: LucideIcon;
 }
 
 const FLOW_VIEW_MODES: FlowMode[] = [
-  { id: "pixel_diff", label: "DIFF", icon: Zap },
-  { id: "transparent_overlay", label: "OVERLAY", icon: Layers },
-  { id: "split_screen", label: "SIDE-BY-SIDE", icon: Split },
+  { id: "pixel_diff", icon: Zap },
+  { id: "transparent_overlay", icon: Layers },
+  { id: "split_screen", icon: Split },
 ];
 
 function StepDot({ done, fallback }: { done: boolean; fallback: string }) {

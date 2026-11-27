@@ -73,6 +73,36 @@ test.describe("Compare inspector (Workspace)", () => {
     await page.screenshot({ path: resolve(EVIDENCE_DIR, "inspector-filter-review.png") });
   });
 
+  test("フィルタ操作の動画を残す", async ({ browser }) => {
+    test.skip(!process.env.ISSUE_445_EVIDENCE, "動画は ISSUE_445_EVIDENCE=1 のときだけ録画する");
+    const videoDir = resolve(EVIDENCE_DIR, "../../../app/desktop/test-results/issue-445-video");
+    const context = await browser.newContext({
+      viewport: { width: 1280, height: 800 },
+      recordVideo: { dir: videoDir, size: { width: 1280, height: 800 } },
+    });
+    const page = await context.newPage();
+    const video = page.video();
+    await page.goto(TEST_URL);
+    await page.waitForSelector('[data-testid="compare-inspector"]');
+    const filter = page.getByTestId("inspector-filter");
+    const cards = page.getByTestId("issue-card");
+
+    await filter.getByRole("button", { name: "差分" }).click();
+    await expect(cards).toHaveCount(1);
+    await page.waitForTimeout(800);
+    await filter.getByRole("button", { name: "要確認" }).click();
+    await expect(cards).toHaveCount(2);
+    await page.waitForTimeout(800);
+    await filter.getByRole("button", { name: "すべて" }).click();
+    await expect(cards).toHaveCount(3);
+    await cards.first().hover();
+    await page.waitForTimeout(800);
+
+    await context.close();
+    if (video === null) throw new Error("video was not recorded");
+    await video.saveAs(resolve(EVIDENCE_DIR, "inspector-filter.webm"));
+  });
+
   test("再比較ボタンが押せる", async ({ page }) => {
     await page.getByRole("button", { name: "再比較" }).click();
 
