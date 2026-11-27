@@ -8,9 +8,7 @@ function formatNumber(value: number): string {
 }
 
 function isPoint(value: object): value is { x: number; y: number } {
-  return (
-    "x" in value && "y" in value && typeof value.x === "number" && typeof value.y === "number"
-  );
+  return "x" in value && "y" in value && typeof value.x === "number" && typeof value.y === "number";
 }
 
 function stringifyObject(value: object): string {
