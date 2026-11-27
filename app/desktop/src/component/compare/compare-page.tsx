@@ -1,135 +1,42 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 import {
   Check,
-  FileText,
-  Film,
   ImageIcon,
   Layers,
   MessageSquareWarning,
-  MousePointer2,
   ScanSearch,
-  ShieldOff,
   Split,
   Upload,
   Zap,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
-import type { DiffIssue, DiffVerdict } from "@figdiff/shared";
-
-import { ScoreBar } from "@/component/ui/score-bar";
-import { ScoreRing, type ScoreTone } from "@/component/ui/score-ring";
 import { LoadingOverlay, Spinner } from "@/component/ui/spinner";
 import { getPlatform } from "@/lib/platform";
 import { cn } from "@/lib/util";
-import type { DesktopCompareResult } from "@/service/image-compare";
 import { useCompareStore, type ViewMode } from "@/store/compare-store";
 import { useProjectListStore } from "@/store/project-list-store";
 import { useProjectStore } from "@/store/project-store";
 
-import { AnimationComparisonPanel } from "./animation-comparison-panel";
 import { CompareCanvas } from "./compare-canvas";
-import { CompareDiffReport } from "./compare-diff-report";
-import { CompareReportExport } from "./compare-report-export";
-import { CompareVerdictBadge } from "./compare-verdict-badge";
+import { CompareInspector } from "./compare-inspector";
+import { CompareStatusBar } from "./compare-status-bar";
 import { CropRegionSelector } from "./crop-region-selector";
-import { FixVerificationPanel } from "./fix-verification-panel";
-import { IgnoreRegionPanel } from "./ignore-region-panel";
 import { IssueReportDialog } from "./issue-report-dialog";
-import { type InspectionCandidate, NodeInspectionPanel } from "./node-inspection-panel";
 
 import type { LucideIcon } from "lucide-react";
 
-type ResultWithDiffImage = DesktopCompareResult;
-type ResultTab = "animation" | "fix" | "ignore" | "issues" | "node" | "report";
-
 interface FlowMode {
   id: ViewMode;
-  label: string;
   icon: LucideIcon;
 }
 
 const FLOW_VIEW_MODES: FlowMode[] = [
-  { id: "pixel_diff", label: "DIFF", icon: Zap },
-  { id: "transparent_overlay", label: "OVERLAY", icon: Layers },
-  { id: "split_screen", label: "SIDE-BY-SIDE", icon: Split },
+  { id: "pixel_diff", icon: Zap },
+  { id: "transparent_overlay", icon: Layers },
+  { id: "split_screen", icon: Split },
 ];
-
-function scoreColor(score: number | null): string {
-  if (score === null) return "var(--muted-fg)";
-  if (score >= 90) return "var(--match)";
-  if (score >= 70) return "var(--warn)";
-  return "var(--diff)";
-}
-
-function clampScore(value: number | null): number | null {
-  if (value === null) return null;
-  return Math.max(0, Math.min(100, Math.round(value)));
-}
-
-function formatScore(score: number | null): string {
-  if (score === null) return "—";
-  return `${clampScore(score)}%`;
-}
-
-function getVerdict(compareResult: ResultWithDiffImage | null): DiffVerdict {
-  if (compareResult?.diffReport) return compareResult.diffReport.aggregateVerdict;
-  // diffReport が無い比較に、ここだけの基準で合否を付けん。
-  // 一致率だけで pass を出すと、構造と色で見る共有の computeVerdict と
-  // 別の物差しが画面上にもう1つ生まれて、どちらを見とるか分からんようになる。
-  return "inconclusive";
-}
-
-// リングの色は点数やのうて判定に合わせる。一致率が高いだけで緑にすると、
-// 構造が違う回に緑の大きい数字が出て、判定バッジより先に目へ入る。
-const VERDICT_TONE: Record<DiffVerdict, ScoreTone> = {
-  pass: "pass",
-  fail: "fail",
-  inconclusive: "warn",
-};
-
-function getPrimaryIssues(compareResult: ResultWithDiffImage | null): DiffIssue[] {
-  return compareResult?.diffReport?.issues ?? [];
-}
-
-const ScoreStatus = ({ compareResult }: { compareResult: ResultWithDiffImage | null }) => {
-  const { t } = useTranslation();
-  return compareResult ? (
-    <CompareVerdictBadge verdict={getVerdict(compareResult)} testId="compare-score-verdict-badge" />
-  ) : (
-    <span style={{ color: "var(--muted-fg)" }}>{t("common.notMeasured")}</span>
-  );
-};
-
-function buildScoreBreakdown(compareResult: ResultWithDiffImage | null) {
-  if (!compareResult) {
-    return [
-      { label: "MATCH", score: null },
-      { label: "PIXELS", score: null },
-      { label: "REGIONS", score: null },
-    ];
-  }
-
-  const pixelScore =
-    compareResult.totalPixelCount > 0
-      ? ((compareResult.totalPixelCount - compareResult.diffPixelCount) /
-          compareResult.totalPixelCount) *
-        100
-      : compareResult.matchRate;
-  const regionScore = Math.max(0, 100 - compareResult.diffRegions.length * 6);
-  const structureScore =
-    compareResult.diffReport?.weightedAggregate?.weightedStructure !== undefined
-      ? compareResult.diffReport.weightedAggregate.weightedStructure * 100
-      : compareResult.matchRate;
-
-  return [
-    { label: "MATCH", score: compareResult.matchRate },
-    { label: "PIXELS", score: pixelScore },
-    { label: "REGIONS", score: regionScore },
-    { label: "STRUCT", score: structureScore },
-  ];
-}
 
 function StepDot({ done, fallback }: { done: boolean; fallback: string }) {
   return (
@@ -243,240 +150,11 @@ function EmptyCanvasState() {
     </div>
   );
 }
-
-function IssueList({
-  issues,
-  compareResult,
-}: {
-  issues: DiffIssue[];
-  compareResult: ResultWithDiffImage | null;
-}) {
-  const { t } = useTranslation();
-
-  if (!compareResult) {
-    return (
-      <div
-        className="rounded-[var(--radius-token)] p-4 text-sm"
-        style={{ background: "var(--surface-2)", color: "var(--muted-fg)" }}
-      >
-        {t("compare.bothLoadedNext")}
-      </div>
-    );
-  }
-
-  if (issues.length === 0) {
-    return (
-      <div
-        className="rounded-[var(--radius-token)] p-4 text-sm"
-        style={{ background: "var(--match-soft)", color: "var(--match)" }}
-      >
-        {t("compare.issuesEmpty")}
-      </div>
-    );
-  }
-
-  return (
-    <div className="scroll max-h-[260px] space-y-2 overflow-auto pr-1">
-      {issues.map((issue) => (
-        <div
-          key={`${issue.regionId}-${issue.kind}-${issue.severity}-${issue.evidence.signal}-${issue.evidence.value}`}
-          className="rounded-[var(--radius-sm-token)] p-3"
-          style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}
-        >
-          <div className="flex items-center justify-between gap-2">
-            <span className="font-semibold text-sm" style={{ color: "var(--fg)" }}>
-              {issue.kind}
-            </span>
-            <span
-              className="fd-pill"
-              style={{
-                background: issue.severity === "critical" ? "var(--diff-soft)" : "var(--warn-soft)",
-                color: issue.severity === "critical" ? "var(--diff)" : "var(--warn)",
-              }}
-            >
-              {issue.severity}
-            </span>
-          </div>
-          <p className="mono mt-2 text-xs" style={{ color: "var(--muted-fg)" }}>
-            x:{issue.bbox.x} y:{issue.bbox.y} w:{issue.bbox.w} h:{issue.bbox.h}
-          </p>
-          <p className="mt-1 text-xs" style={{ color: "var(--muted-fg)" }}>
-            {issue.evidence.signal}: {issue.evidence.value.toFixed(3)} /{" "}
-            {issue.evidence.threshold.toFixed(3)}
-          </p>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function buildInspectionCandidates(
-  selectedFrame: { id: string; name: string } | null,
-  compareResult: ResultWithDiffImage | null,
-): InspectionCandidate[] {
-  const candidates = new Map<string, string>();
-  if (selectedFrame) candidates.set(selectedFrame.id, selectedFrame.name);
-  for (const region of compareResult?.diffRegions ?? []) {
-    region.nearbyNodeIds.forEach((nodeId, index) => {
-      candidates.set(nodeId, region.nearbyNodeNames[index] ?? nodeId);
-    });
-  }
-  return [...candidates].map(([nodeId, nodeName]) => ({ nodeId, nodeName }));
-}
-
-function ResultTabButton({
-  active,
-  icon: Icon,
-  label,
-  onClick,
-}: {
-  active: boolean;
-  icon?: LucideIcon;
-  label: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      className="min-w-0 rounded-[10px] px-3 py-2 font-semibold text-sm"
-      onClick={onClick}
-      style={{
-        background: active ? "var(--surface)" : "transparent",
-        color: active ? "var(--fg)" : "var(--muted-fg)",
-      }}
-    >
-      <span className="inline-flex items-center justify-center gap-1.5">
-        {Icon ? <Icon className="h-4 w-4" /> : null}
-        {label}
-      </span>
-    </button>
-  );
-}
-
-function ResultTabContent({
-  activeTab,
-  compareResult,
-  currentFileKey,
-  inspectionCandidates,
-  issues,
-  projectId,
-  frameName,
-}: Omit<Parameters<typeof ResultTabs>[0], "onChange">) {
-  const { t } = useTranslation();
-  if (activeTab === "issues") return <IssueList issues={issues} compareResult={compareResult} />;
-  if (activeTab === "ignore") {
-    return (
-      <IgnoreRegionPanel
-        projectId={projectId}
-        frameName={frameName}
-        compareResult={compareResult}
-      />
-    );
-  }
-  if (activeTab === "fix") return <FixVerificationPanel />;
-  if (activeTab === "animation") return <AnimationComparisonPanel />;
-  if (activeTab === "node") {
-    return (
-      <NodeInspectionPanel
-        key={JSON.stringify([currentFileKey, inspectionCandidates[0]?.nodeId])}
-        fileKey={currentFileKey}
-        candidates={inspectionCandidates}
-      />
-    );
-  }
-  if (compareResult?.diffReport) return <CompareDiffReport compareResult={compareResult} />;
-  return (
-    <div
-      className="rounded-[var(--radius-token)] p-4 text-sm"
-      style={{ background: "var(--surface-2)", color: "var(--muted-fg)" }}
-    >
-      {t("compare.diffReportTitle")}
-    </div>
-  );
-}
-
-function ResultTabs({
-  activeTab,
-  compareResult,
-  currentFileKey,
-  inspectionCandidates,
-  issues,
-  projectId,
-  frameName,
-  onChange,
-}: {
-  activeTab: ResultTab;
-  compareResult: ResultWithDiffImage | null;
-  currentFileKey: string | null;
-  inspectionCandidates: InspectionCandidate[];
-  issues: DiffIssue[];
-  projectId: string | null;
-  frameName: string | null;
-  onChange: (tab: ResultTab) => void;
-}) {
-  const { t } = useTranslation();
-  return (
-    <div className="space-y-3">
-      <div
-        className="grid grid-cols-2 gap-1 rounded-[var(--radius-sm-token)] p-1"
-        data-testid="result-tabs"
-        style={{ background: "var(--surface-2)" }}
-      >
-        <ResultTabButton
-          active={activeTab === "issues"}
-          label={t("compare.tabIssues")}
-          onClick={() => onChange("issues")}
-        />
-        <ResultTabButton
-          active={activeTab === "ignore"}
-          icon={ShieldOff}
-          label={t("compare.tabIgnore")}
-          onClick={() => onChange("ignore")}
-        />
-        <ResultTabButton
-          active={activeTab === "fix"}
-          icon={ScanSearch}
-          label={t("compare.tabFix")}
-          onClick={() => onChange("fix")}
-        />
-        <ResultTabButton
-          active={activeTab === "animation"}
-          icon={Film}
-          label={t("compare.tabAnimation")}
-          onClick={() => onChange("animation")}
-        />
-        <ResultTabButton
-          active={activeTab === "report"}
-          icon={FileText}
-          label={t("compare.tabReport")}
-          onClick={() => onChange("report")}
-        />
-        <ResultTabButton
-          active={activeTab === "node"}
-          icon={MousePointer2}
-          label={t("compare.tabNode")}
-          onClick={() => onChange("node")}
-        />
-      </div>
-      <ResultTabContent
-        activeTab={activeTab}
-        compareResult={compareResult}
-        currentFileKey={currentFileKey}
-        inspectionCandidates={inspectionCandidates}
-        issues={issues}
-        projectId={projectId}
-        frameName={frameName}
-      />
-    </div>
-  );
-}
-
 export function ComparePage() {
   const { t } = useTranslation();
   const [screenshotPath, setScreenshotPath] = useState("");
   const [isLoadingScreenshot, setIsLoadingScreenshot] = useState(false);
   const [isIssueReportOpen, setIsIssueReportOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<ResultTab>("report");
   const frameImage = useProjectStore((s) => s.frameImage);
   const selectedFrame = useProjectStore((s) => s.selectedFrame);
   const currentFileKey = useProjectStore((s) => s.currentFileKey);
@@ -542,14 +220,6 @@ export function ComparePage() {
   const hasScreenshot = !!screenshotImage;
   const hasBothImages = hasDesign && hasScreenshot;
   const canCompare = hasBothImages && !isComparing && !isLoadingFixTarget;
-  const score = clampScore(compareResult?.matchRate ?? null);
-  const verdict = getVerdict(compareResult);
-  const issues = getPrimaryIssues(compareResult);
-  const scoreBreakdown = useMemo(() => buildScoreBreakdown(compareResult), [compareResult]);
-  const inspectionCandidates = useMemo(
-    () => buildInspectionCandidates(selectedFrame, compareResult),
-    [compareResult, selectedFrame],
-  );
   const issueReportScopeKey = JSON.stringify([
     currentProjectId,
     currentFileKey,
@@ -628,27 +298,7 @@ export function ComparePage() {
             className="flex shrink-0 flex-wrap items-center justify-between gap-3 px-4 py-3"
             style={{ borderBottom: "1px solid var(--border)" }}
           >
-            <div className="flex items-center gap-2">
-              {FLOW_VIEW_MODES.map((mode) => {
-                const Icon = mode.icon;
-                const isActive = viewMode === mode.id;
-                return (
-                  <button
-                    key={mode.id}
-                    type="button"
-                    className={cn("fd-btn", isActive && "primary")}
-                    onClick={() => setViewMode(mode.id)}
-                    title={`${t(`viewMode.${mode.id}`)} - ${t(`viewMode.desc_${mode.id}`)}`}
-                    aria-label={t(`viewMode.${mode.id}`)}
-                  >
-                    <Icon className="h-4 w-4" />
-                    {mode.label}
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               {(viewMode === "transparent_overlay" || viewMode === "draggable_overlay") && (
                 <label
                   className="flex items-center gap-2 text-xs"
@@ -676,6 +326,40 @@ export function ComparePage() {
                   : t("crop.selectRegion")}
               </span>
             </div>
+
+            <div
+              className="flex items-center gap-1 rounded-[var(--radius-sm-token)] p-1"
+              style={{ background: "var(--surface-2)" }}
+              data-testid="view-mode-group"
+            >
+              {FLOW_VIEW_MODES.map((mode) => {
+                const Icon = mode.icon;
+                const isActive = viewMode === mode.id;
+                const descriptionId = `view-mode-desc-${mode.id}`;
+                return (
+                  <button
+                    key={mode.id}
+                    type="button"
+                    className={cn("fd-icon-btn", isActive && "primary")}
+                    onClick={() => setViewMode(mode.id)}
+                    title={`${t(`viewMode.${mode.id}`)} - ${t(`viewMode.desc_${mode.id}`)}`}
+                    aria-label={t(`viewMode.${mode.id}`)}
+                    aria-describedby={descriptionId}
+                    aria-pressed={isActive}
+                    style={
+                      isActive
+                        ? { background: "var(--cobalt-soft)", color: "var(--cobalt)" }
+                        : undefined
+                    }
+                  >
+                    <Icon className="h-4 w-4" aria-hidden="true" />
+                    <span id={descriptionId} className="sr-only">
+                      {t(`viewMode.desc_${mode.id}`)}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           <div className="min-h-0 flex-1" style={{ background: "var(--bg-2)" }}>
@@ -687,90 +371,19 @@ export function ComparePage() {
               <CropRegionSelector />
             </div>
           ) : null}
+
+          {compareResult ? <CompareStatusBar compareResult={compareResult} /> : null}
         </section>
 
-        <aside
-          className="scroll flex min-h-0 flex-col gap-4 overflow-auto rounded-[var(--radius-token)] p-4"
-          style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
-        >
-          <div className="flex items-center gap-4">
-            <ScoreRing score={score} tone={VERDICT_TONE[verdict]} size={128} stroke={9} />
-            <div className="min-w-0 flex-1">
-              <p className="font-semibold text-sm" style={{ color: "var(--muted-fg)" }}>
-                {t("compare.matchRate")}
-              </p>
-              <p className="mono font-bold text-3xl" style={{ color: scoreColor(score) }}>
-                {formatScore(score)}
-              </p>
-              <div className="mt-2">
-                <ScoreStatus compareResult={compareResult} />
-              </div>
-            </div>
-          </div>
-
-          {compareResult && !isComparing ? (
-            <CompareReportExport key={compareResult.comparisonId} result={compareResult} />
-          ) : null}
-
-          <div className="grid grid-cols-3 gap-2">
-            <div
-              className="rounded-[var(--radius-sm-token)] p-3"
-              style={{ background: "var(--surface-2)" }}
-            >
-              <p className="text-xs" style={{ color: "var(--muted-fg)" }}>
-                {t("compare.diffRegions")}
-              </p>
-              <p className="mono font-bold text-lg">{compareResult?.diffRegions.length ?? "—"}</p>
-            </div>
-            <div
-              className="rounded-[var(--radius-sm-token)] p-3"
-              style={{ background: "var(--surface-2)" }}
-            >
-              <p className="text-xs" style={{ color: "var(--muted-fg)" }}>
-                {t("compare.diffPixels")}
-              </p>
-              <p className="mono font-bold text-lg">{compareResult?.diffPixelCount ?? "—"}</p>
-            </div>
-            <div
-              className="rounded-[var(--radius-sm-token)] p-3"
-              style={{ background: "var(--surface-2)" }}
-            >
-              <p className="text-xs" style={{ color: "var(--muted-fg)" }}>
-                {t("compare.issuesTitle")}
-              </p>
-              <p className="mono font-bold text-lg">{compareResult ? issues.length : "—"}</p>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <p className="font-semibold text-sm">{t("compare.supplementaryInfo")}</p>
-            <div className="space-y-2">
-              {scoreBreakdown.map((item) => (
-                <ScoreBar key={item.label} label={item.label} score={clampScore(item.score)} />
-              ))}
-            </div>
-          </div>
-
-          <ResultTabs
-            activeTab={activeTab}
-            compareResult={compareResult}
-            currentFileKey={currentFileKey}
-            inspectionCandidates={inspectionCandidates}
-            issues={issues}
-            projectId={currentProjectId}
-            frameName={selectedFrame?.name ?? null}
-            onChange={setActiveTab}
-          />
-
-          {compareResult?.suggestion && (
-            <div
-              className="rounded-[var(--radius-token)] p-4 text-sm"
-              style={{ background: "var(--cobalt-soft)", color: "var(--fg)" }}
-            >
-              {t(compareResult.suggestion, { count: compareResult.diffRegions.length })}
-            </div>
-          )}
-        </aside>
+        <CompareInspector
+          compareResult={compareResult}
+          isComparing={isComparing}
+          canCompare={canCompare}
+          onRecompare={runComparison}
+          currentFileKey={currentFileKey}
+          projectId={currentProjectId}
+          selectedFrame={selectedFrame}
+        />
       </div>
       <IssueReportDialog
         key={issueReportScopeKey}

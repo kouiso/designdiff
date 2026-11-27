@@ -64,7 +64,6 @@
   },
   "compare": {
     "reportExportFormat": "レポートの形式",
-    "reportExportSave": "レポートを保存",
     "reportExportSaving": "保存中…",
     "reportExportSaved": "保存しました: {{path}}",
     "reportExportCanceled": "保存をキャンセルしました",
@@ -88,7 +87,6 @@
     "comparing": "画像を比較中...",
     "matchRate": "一致率",
     "diffReportTitle": "Typed Diff Report",
-    "tabIssues": "課題",
     "tabIgnore": "除外",
     "tabNode": "ノード",
     "tabFix": "修正確認",
@@ -193,6 +191,32 @@
     "suggestionPerfect": "一致率100%です。差分はありません。",
     "suggestionMinor": "軽微な差分が{{count}}箇所あります。inspect_nodeで差分領域のノードを確認してください。",
     "suggestionMajor": "大きな差分が{{count}}箇所あります。inspect_nodeで各差分領域を確認し、修正してください。"
+  },
+  "inspector": {
+    "title": "インスペクタ",
+    "scoreSuffix": "/ 100 一致スコア",
+    "scoreAria": "一致スコア {{value}} / 100",
+    "countDiff": "差分",
+    "countReview": "要確認",
+    "countMatch": "一致",
+    "filterLabel": "課題の絞り込み",
+    "filterAll": "すべて",
+    "filterDiff": "差分",
+    "filterReview": "要確認",
+    "filteredEmpty": "この絞り込みに該当する課題はありません。",
+    "toolsLabel": "補助ツール",
+    "export": "書出",
+    "recompare": "再比較",
+    "statusThreshold": "色差しきい値 {{value}}",
+    "statusMatch": "{{value}}% 一致",
+    "kind": {
+      "color": "カラー",
+      "position": "位置",
+      "size": "サイズ",
+      "missing": "欠落",
+      "extra": "余分",
+      "typography": "タイポ"
+    }
   },
   "ignoreRegion": {
     "bound": "この画像条件で確認済み",

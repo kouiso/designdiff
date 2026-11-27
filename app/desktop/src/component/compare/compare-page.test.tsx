@@ -1,9 +1,10 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { getPlatform } from "@/lib/platform";
 import { useCompareStore } from "@/store/compare-store";
 import { useProjectStore } from "@/store/project-store";
+import { buildInspectorFixture } from "@/test-fixture/compare-inspector-fixture";
 
 import { ComparePage } from "./compare-page";
 
@@ -48,7 +49,7 @@ describe("ComparePage", () => {
   it("比較前は未計測を表示してゼロ点や判定を表示しない", () => {
     render(<ComparePage />);
     expect(screen.getByRole("img", { name: "未実行" })).toBeInTheDocument();
-    expect(screen.getByTestId("score-ring-value")).toHaveTextContent("—");
+    expect(screen.getByTestId("inspector-score-value")).toHaveTextContent("—");
     expect(screen.queryByText("0%")).not.toBeInTheDocument();
     expect(screen.queryByTestId("compare-score-verdict-badge")).not.toBeInTheDocument();
   });
@@ -153,7 +154,7 @@ describe("ComparePage", () => {
     render(<ComparePage />);
     expect(screen.getByTestId("compare-verdict-badge")).toHaveTextContent("PASS");
     expect(screen.getByText("RegionScore Summary")).toBeInTheDocument();
-    expect(screen.getByText("No typed issues (P1 scope)")).toBeInTheDocument();
+    expect(screen.getByTestId("issue-list-empty")).toHaveTextContent("No typed issues (P1 scope)");
     expect(screen.getByText("matchRate: 95.5%")).toBeInTheDocument();
   });
 
@@ -176,8 +177,8 @@ describe("ComparePage", () => {
     expect(screen.getByTestId("compare-score-verdict-badge")).toHaveTextContent("INCONCLUSIVE");
   });
 
-  // 判定が保留やのにリングだけ緑にすると、判定バッジより先に緑の数字が目へ入る。
-  it("判定が保留の比較はリングも合格色にせん", () => {
+  // 判定が保留やのにスコア数字だけ緑にすると、判定バッジより先に緑の数字が目へ入る。
+  it("判定が保留の比較はスコア数字も合格色にせん", () => {
     useCompareStore.setState({
       designImage: "d",
       screenshotImage: "s",
@@ -191,7 +192,7 @@ describe("ComparePage", () => {
       },
     });
     render(<ComparePage />);
-    expect(screen.getByTestId("score-ring-value").style.color.replaceAll(" ", "")).toBe(
+    expect(screen.getByTestId("inspector-score-value").style.color.replaceAll(" ", "")).toBe(
       "var(--warn)",
     );
   });
@@ -217,7 +218,9 @@ describe("ComparePage", () => {
 
   it("修正確認タブから一時baseline導線へ到達できる", () => {
     render(<ComparePage />);
-    expect(screen.getByTestId("result-tabs")).toHaveClass("grid-cols-2");
+    expect(screen.getByTestId("result-tabs")).toBeInTheDocument();
+    // 課題リストは常時表示に変わったので、補助ツールのタブには課題タブを置かない。
+    expect(screen.queryByRole("button", { name: "課題" })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "修正確認" }));
 
     expect(screen.getByText("修正前後を確認")).toBeInTheDocument();
@@ -352,14 +355,68 @@ describe("ComparePage", () => {
     expect(useCompareStore.getState().overlayOpacity).toBe(0.8);
   });
 
-  it("課題タブは比較結果がない場合の案内を表示する", () => {
+  it("課題リストは比較結果がない場合の案内を常時表示する", () => {
     useCompareStore.setState({ designImage: "d", screenshotImage: "s" });
     render(<ComparePage />);
-
-    fireEvent.click(screen.getByText("課題"));
 
     expect(
       screen.getByText("「差分を検出」ボタンをクリックして比較を実行します。"),
     ).toBeInTheDocument();
+  });
+});
+
+describe("ComparePage Workspace chrome", () => {
+  it("表示モードボタンはアイコンだけで、aria-label と title を保つ", () => {
+    render(<ComparePage />);
+
+    const group = screen.getByTestId("view-mode-group");
+    const buttons = within(group).getAllByRole("button");
+    expect(buttons).toHaveLength(3);
+    for (const button of buttons) {
+      const label = button.getAttribute("aria-label");
+      expect(label).toBeTruthy();
+      expect(button.querySelector("svg")).not.toBeNull();
+      expect(button.getAttribute("title")).toContain(label);
+      // 長い説明は title ではなく aria-describedby で読み上げる。
+      const describedBy = button.getAttribute("aria-describedby");
+      expect(describedBy).toBeTruthy();
+      expect(document.getElementById(describedBy ?? "")?.textContent).not.toBe("");
+    }
+  });
+
+  it("比較結果が無いときは状態バーを出さない", () => {
+    render(<ComparePage />);
+
+    expect(screen.queryByTestId("compare-status-bar")).not.toBeInTheDocument();
+  });
+
+  it("比較結果があるときは状態バーに寸法・しきい値・一致率を出す", () => {
+    useCompareStore.setState({ designImage: "d", screenshotImage: "s" });
+    useCompareStore.setState({ compareResult: buildInspectorFixture() });
+    render(<ComparePage />);
+
+    expect(screen.getByTestId("status-dimensions")).toHaveTextContent("320 × 660");
+    expect(screen.getByTestId("status-threshold")).toHaveTextContent("色差しきい値 0.1");
+    expect(screen.getByTestId("status-match")).toHaveTextContent("78% 一致");
+  });
+
+  it("再比較ボタンは両画像が揃っていれば runComparison を呼ぶ", () => {
+    const mockRunComparison = vi.fn();
+    useCompareStore.setState({
+      designImage: "d",
+      screenshotImage: "s",
+      runComparison: mockRunComparison,
+    });
+    render(<ComparePage />);
+
+    fireEvent.click(screen.getByRole("button", { name: "再比較" }));
+
+    expect(mockRunComparison).toHaveBeenCalledTimes(1);
+  });
+
+  it("再比較ボタンは画像が足りなければ無効", () => {
+    render(<ComparePage />);
+
+    expect(screen.getByRole("button", { name: "再比較" })).toBeDisabled();
   });
 });

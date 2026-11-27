@@ -64,7 +64,6 @@
   },
   "compare": {
     "reportExportFormat": "Report format",
-    "reportExportSave": "Save report",
     "reportExportSaving": "Saving…",
     "reportExportSaved": "Saved to {{path}}",
     "reportExportCanceled": "Save canceled",
@@ -88,7 +87,6 @@
     "comparing": "Comparing images...",
     "matchRate": "Match Rate",
     "diffReportTitle": "Typed Diff Report",
-    "tabIssues": "Issues",
     "tabIgnore": "Masks",
     "tabNode": "Node",
     "tabFix": "Verify fix",
@@ -193,6 +191,32 @@
     "suggestionPerfect": "100% match. No differences found.",
     "suggestionMinor": "Minor differences found in {{count}} areas. Use inspect_node to check the diff region nodes.",
     "suggestionMajor": "Significant differences found in {{count}} areas. Use inspect_node to review each diff region and apply fixes."
+  },
+  "inspector": {
+    "title": "Inspector",
+    "scoreSuffix": "/ 100 match score",
+    "scoreAria": "Match score {{value}} out of 100",
+    "countDiff": "Diff",
+    "countReview": "Review",
+    "countMatch": "Match",
+    "filterLabel": "Filter issues",
+    "filterAll": "All",
+    "filterDiff": "Diff",
+    "filterReview": "Review",
+    "filteredEmpty": "No issues match this filter.",
+    "toolsLabel": "Tools",
+    "export": "Export",
+    "recompare": "Re-compare",
+    "statusThreshold": "Color tolerance {{value}}",
+    "statusMatch": "{{value}}% match",
+    "kind": {
+      "color": "Color",
+      "position": "Position",
+      "size": "Size",
+      "missing": "Missing",
+      "extra": "Extra",
+      "typography": "Type"
+    }
   },
   "ignoreRegion": {
     "bound": "Verified for this image geometry",

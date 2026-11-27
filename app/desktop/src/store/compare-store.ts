@@ -6,6 +6,7 @@ import type {
   IgnoreRegionCoordinateContext,
 } from "@figdiff/shared";
 
+import { COMPARE_THRESHOLD } from "@/lib/compare-threshold";
 import { getFigmaNodeVerifier, type FigmaNodeVerificationSource } from "@/lib/platform";
 import {
   type DesktopFixVerification,
@@ -222,7 +223,7 @@ export const useCompareStore = create<CompareState>((set, get) => ({
     const fileKey = projectState.currentFileKey;
     const nodeId = projectState.selectedFrame?.id ?? null;
     const activeFixTarget = activeFixTargetFor(fixTarget, fileKey, nodeId, designImage);
-    const threshold = 0.1;
+    const threshold = COMPARE_THRESHOLD;
     const conditions: FixComparisonConditions = {
       designImage,
       threshold,
