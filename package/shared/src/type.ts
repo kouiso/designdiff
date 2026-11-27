@@ -451,11 +451,14 @@ export const UNIMPLEMENTED_LAYOUT_SCORE = 0;
  * 1軸の倍率をどう決めたか。
  *
  * - "detected": 平行移動だけより違って見える画素が 15% 以上減る倍率を見つけた。
- *   倍率の誤差は SCALE_DETECTION_TOLERANCE 以内。
+ *   倍率の誤差は、輪郭の多い画面では 192px 以上の軸で SCALE_DETECTION_TOLERANCE (0.01) 以内が
+ *   目安。輪郭の少ない画面 (矩形6枚の検体) では 0.02 ほど外れることがあり、
+ *   SCALE_SPARSE_SCENE_TOLERANCE (0.025) 以内で見ている。保証ではない。
  * - "none": 測ったが、0.8〜1.25 倍の範囲に平行移動より良く説明する倍率は無かった。
  *   scale は 1。
  * - "unmeasured": 測れなかった。軸が短い (SCALE_MIN_AXIS_LENGTH 未満)、輪郭が無い、
- *   全画素が ignoreMask で外れた、伸縮の山が 0.8〜1.25 倍の外にある、のどれか。
+ *   全画素が ignoreMask で外れた、伸縮の山が 0.8〜1.25 倍の外にある、比べる全ての写し方で
+ *   設計の内側を指す画素が標本点の半分に満たない、のどれか。
  *   scale は 1 だが、伸縮が無いという意味ではない。
  */
 export type ScaleAxisStatus = "detected" | "none" | "unmeasured";

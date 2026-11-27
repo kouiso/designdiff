@@ -4,6 +4,7 @@ import {
   COARSE_SAMPLE_STEP,
   SCALE_DETECTION_TOLERANCE,
   SCALE_MIN_AXIS_LENGTH,
+  SCALE_SPARSE_SCENE_TOLERANCE,
   buildVerifiedInsetCandidates,
   computeRegionResiduals,
   countSsdOffset,
@@ -834,6 +835,58 @@ describe("白地の画面での拡大縮小の検出", { timeout: 60_000 }, () =
     expect(Math.abs(alignment.scale.x - 1.1)).toBeLessThanOrEqual(SCALE_DETECTION_TOLERANCE);
     expect(alignment.scale.y).toBe(1);
     expect(alignment.scaleStatus).toEqual({ x: "detected", y: "unmeasured" });
+  });
+});
+
+// 矩形6枚の輪郭の少ない画面では、192px の軸の倍率が 0.01 を超えて外れる検体がある。
+// 0.01 を保証と書いた版 (9cee34a2) への反証で見つかった。外れ幅を文書の値に固定し、
+// 「0.01 は輪郭の多い画面の目安」であることを保つ。
+describe("輪郭の少ない画面での倍率の検出", { timeout: 60_000 }, () => {
+  const SPARSE_CASES = [
+    { seed: 8200, scale: 1.1 },
+    { seed: 8203, scale: 1.2 },
+    { seed: 8200, scale: 0.82 },
+  ];
+
+  function errorsFor(seed: number, scale: number) {
+    const scene = randomScene(seed, 192, 300, 6);
+    const design = renderScene(IDENTITY_TRANSFORM, scene);
+    const screenshot = renderScene({ sx: scale, sy: scale, ox: 0, oy: 0 }, scene);
+    const { alignment } = resolveAlignment(design, screenshot, 192, 300);
+    return {
+      alignment,
+      x: Math.abs(alignment.scale.x - scale),
+      y: Math.abs(alignment.scale.y - scale),
+    };
+  }
+
+  it("矩形6枚の画面は検出でき、誤差は文書の疎な画面の幅に収まること", () => {
+    for (const { seed, scale } of SPARSE_CASES) {
+      const { alignment, x, y } = errorsFor(seed, scale);
+      expect({ seed, scale, status: alignment.scaleStatus }).toEqual({
+        seed,
+        scale,
+        status: { x: "detected", y: "detected" },
+      });
+      expect({ seed, scale, within: x <= SCALE_SPARSE_SCENE_TOLERANCE }).toEqual({
+        seed,
+        scale,
+        within: true,
+      });
+      expect({ seed, scale, within: y <= SCALE_SPARSE_SCENE_TOLERANCE }).toEqual({
+        seed,
+        scale,
+        within: true,
+      });
+    }
+  });
+
+  it("疎な画面の幅は、輪郭の多い画面の 0.01 より広いこと", () => {
+    // 0.01 が疎な画面にも効くと読まれないよう、外れる検体が残る間は幅を分けておく。
+    // 推定が良くなってこの検体が 0.01 に収まったら、文書の幅を狭めてこの検査を外す。
+    const worst = Math.max(...SPARSE_CASES.map(({ seed, scale }) => errorsFor(seed, scale).x));
+    expect(worst).toBeGreaterThan(SCALE_DETECTION_TOLERANCE);
+    expect(SCALE_SPARSE_SCENE_TOLERANCE).toBeGreaterThan(SCALE_DETECTION_TOLERANCE);
   });
 });
 
