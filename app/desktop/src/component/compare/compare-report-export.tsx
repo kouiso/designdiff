@@ -62,7 +62,7 @@ export function CompareReportExport({ result, variant = "default" }: CompareRepo
     }
   };
 
-  if (!adapter && !failed) return null;
+  if (!adapter && !failed && !footer) return null;
   return (
     <div className={footer ? "min-w-0 flex-1 space-y-1" : "space-y-2"}>
       {adapter ? (
@@ -98,6 +98,12 @@ export function CompareReportExport({ result, variant = "default" }: CompareRepo
             )}
           </Button>
         </div>
+      ) : footer ? (
+        // 保存先が無い環境 (Web など) でも、下端の「書出 / 再比較」の並びは崩さない。
+        <Button variant="outline" size="sm" className="w-full" disabled>
+          <Download className="h-4 w-4" aria-hidden="true" />
+          {t("inspector.export")}
+        </Button>
       ) : null}
       {message ? (
         <p role={failed ? "alert" : "status"} className="break-all text-sm">
