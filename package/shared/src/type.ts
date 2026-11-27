@@ -447,6 +447,19 @@ export const effectiveRegionColor = (score: RegionScore, honorSameToken = false)
  */
 export const UNIMPLEMENTED_LAYOUT_SCORE = 0;
 
+/**
+ * 1軸の倍率をどう決めたか。
+ *
+ * - "detected": 平行移動だけより違って見える画素が 15% 以上減る倍率を見つけた。
+ *   倍率の誤差は SCALE_DETECTION_TOLERANCE 以内。
+ * - "none": 測ったが、0.8〜1.25 倍の範囲に平行移動より良く説明する倍率は無かった。
+ *   scale は 1。
+ * - "unmeasured": 測れなかった。軸が短い (SCALE_MIN_AXIS_LENGTH 未満)、輪郭が無い、
+ *   全画素が ignoreMask で外れた、伸縮の山が 0.8〜1.25 倍の外にある、のどれか。
+ *   scale は 1 だが、伸縮が無いという意味ではない。
+ */
+export type ScaleAxisStatus = "detected" | "none" | "unmeasured";
+
 export interface Alignment {
   // 設計の画素 (x, y) を撮影の (x + translation.x, y + translation.y) へ動かす量。
   // 適用する画素 (alignedDesignPixels) と後段の採点窓は、この平行移動だけで決まる。
@@ -457,16 +470,23 @@ export interface Alignment {
   correctedResidual?: number;
   // 軸ごとの伸縮率。設計の連続座標 u (画素の左上が原点) が撮影の
   // scale * u + scaleOffset に写る。検出して報告するだけで適用はしない (#437)。
-  // 平行移動で足りる画面と手がかりの無い画面では {1, 1} を返し、scaleOffset を載せない。
+  // 1 は「0.8〜1.25 倍の範囲で平行移動より良く説明する伸縮が見つからなかった」か
+  // 「測れなかった」のどちらかで、伸縮が無いと確かめた値ではない。どちらかは
+  // scaleStatus で読む。1 以外のときだけ scaleOffset を載せる。
   scale: { x: number; y: number };
   // scale と組になる移動量。translation とは別の値になる。translation は
   // 伸縮を考えない最良の平行移動で、伸縮のある画面ではその妥協点を指すため。
   scaleOffset?: { x: number; y: number };
+  // 軸ごとに scale をどう決めたか。値の意味は ScaleAxisStatus を見る。
+  // 位置合わせ (resolveAlignment) が作った値には必ず載る。古い報告には無い。
+  scaleStatus?: { x: ScaleAxisStatus; y: ScaleAxisStatus };
   rotation: number;
   confidence: number;
   residual: number;
   // regionScores の各行と同じ regionId で、採点に使った (位置合わせ適用後の)
-  // 画素の不一致の割合を residual と同じ単位で持つ。測れる画素が無い行は載せない。
+  // 画素の不一致の割合を residual と同じ単位で持つ。平行移動を適用した回は、
+  // 設計を動かして空いた縁の帯 (平行移動で説明済みの差) を数えない。
+  // 測れる画素が無い行は載せない。
   // regionScores[].localAlignment とは併存させる。localAlignment は ±3px の
   // 局所探索で救済できたかの診断で、合否 (effectiveStructure / effectiveColor) が
   // 読む。こちらは全体の位置合わせが各領域でどれだけ説明できたかの計測で、

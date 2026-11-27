@@ -1799,7 +1799,8 @@ export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
     unscoredDiffBoxes,
   } = buildRegionScores(alignedOptions);
   // 行の id と画素を regionScores と揃える。揃えないと、どの行の採点が全体の
-  // 位置合わせでどれだけ説明できたかを突き合わせられない。
+  // 位置合わせでどれだけ説明できたかを突き合わせられない。適用した平行移動を
+  // 渡し、設計を動かして空いた縁の帯 (平行移動で説明済みの差) を数えさせない。
   const reportAlignment = {
     ...alignment,
     regionResiduals: computeRegionResiduals(
@@ -1809,6 +1810,7 @@ export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
       height,
       regionScores,
       options.ignoreMask,
+      alignmentApplied ? alignment.translation : undefined,
     ),
   };
 

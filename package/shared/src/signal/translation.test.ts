@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   COARSE_SAMPLE_STEP,
   SCALE_DETECTION_TOLERANCE,
+  SCALE_MIN_AXIS_LENGTH,
   buildVerifiedInsetCandidates,
   computeRegionResiduals,
   countSsdOffset,
@@ -417,13 +418,18 @@ describe("位置合わせの画像寸法検査", () => {
 // 繰り返し模様にすると別の倍率でも重なってしまうので、大きさと位置を不揃いにする。
 const SCENE_WIDTH = 400;
 const SCENE_HEIGHT = 300;
-const SCENE_RECTS: readonly {
+
+type Rgb = readonly [number, number, number];
+
+interface SceneRect {
   x: number;
   y: number;
   w: number;
   h: number;
-  rgb: readonly [number, number, number];
-}[] = [
+  rgb: Rgb;
+}
+
+const SCENE_RECTS: readonly SceneRect[] = [
   { x: 12, y: 10, w: 150, h: 34, rgb: [220, 60, 40] },
   { x: 180, y: 14, w: 96, h: 22, rgb: [40, 200, 90] },
   { x: 300, y: 8, w: 88, h: 58, rgb: [60, 80, 230] },
@@ -448,12 +454,61 @@ interface SceneTransform {
   oy: number;
 }
 
+interface Scene {
+  width: number;
+  height: number;
+  rects: readonly SceneRect[];
+  // 図形の無い所の色。縮めた撮影の外側も同じ色で描く。実際の画面は、設計の外も
+  // 同じ背景が続くので、黒で埋めると縮小の外側が「たまたま一致」に見えてしまう。
+  background: Rgb;
+}
+
+const BLACK: Rgb = [0, 0, 0];
+const WHITE: Rgb = [255, 255, 255];
+const FIXED_SCENE: Scene = {
+  width: SCENE_WIDTH,
+  height: SCENE_HEIGHT,
+  rects: SCENE_RECTS,
+  background: BLACK,
+};
 const IDENTITY_TRANSFORM: SceneTransform = { sx: 1, sy: 1, ox: 0, oy: 0 };
 
-function sceneColorAt(u: number, v: number): readonly [number, number, number] {
-  let color: readonly [number, number, number] = [0, 0, 0];
-  if (u < 0 || u >= SCENE_WIDTH || v < 0 || v >= SCENE_HEIGHT) return color;
-  for (const rect of SCENE_RECTS) {
+/** 種から同じ並びを毎回作る乱数。テストの失敗を同じ検体で再現できるようにする。 */
+function seededRandom(seed: number): () => number {
+  let state = seed >>> 0;
+  return () => {
+    state = (state * 1664525 + 1013904223) >>> 0;
+    return state / 4294967296;
+  };
+}
+
+/**
+ * 大きさ・位置・色が不揃いの矩形を並べた画面を作る。
+ *
+ * 固定の1枚だけで確かめると、その配置でたまたま通る検出器を見逃す。
+ * 種を変えた複数の画面で同じ性質を確かめる。
+ */
+function randomScene(seed: number, width: number, height: number, count: number): Scene {
+  const random = seededRandom(seed);
+  const rects: SceneRect[] = [];
+  for (let index = 0; index < count; index++) {
+    const w = 8 + random() * width * 0.25;
+    const h = 6 + random() * height * 0.15;
+    const x = random() * (width - w);
+    const y = random() * (height - h);
+    const rgb: Rgb = [
+      Math.floor(random() * 255),
+      Math.floor(random() * 255),
+      Math.floor(random() * 255),
+    ];
+    rects.push({ x, y, w, h, rgb });
+  }
+  return { width, height, rects, background: WHITE };
+}
+
+function sceneColorAt(scene: Scene, u: number, v: number): Rgb {
+  let color = scene.background;
+  for (const rect of scene.rects) {
     if (u >= rect.x && u < rect.x + rect.w && v >= rect.y && v < rect.y + rect.h) {
       color = rect.rgb;
     }
@@ -462,17 +517,18 @@ function sceneColorAt(u: number, v: number): readonly [number, number, number] {
 }
 
 /** 設計の点 (u, v) が撮影の (sx*u+ox, sy*v+oy) に写る画像を描く。 */
-function renderScene(transform: SceneTransform): Uint8ClampedArray {
-  const pixels = new Uint8ClampedArray(SCENE_WIDTH * SCENE_HEIGHT * 4);
+function renderScene(transform: SceneTransform, scene: Scene = FIXED_SCENE): Uint8ClampedArray {
+  const pixels = new Uint8ClampedArray(scene.width * scene.height * 4);
   const subSamples = 2;
   const count = subSamples * subSamples;
-  for (let y = 0; y < SCENE_HEIGHT; y++) {
-    for (let x = 0; x < SCENE_WIDTH; x++) {
+  for (let y = 0; y < scene.height; y++) {
+    for (let x = 0; x < scene.width; x++) {
       const sum = [0, 0, 0];
       for (let sample = 0; sample < count; sample++) {
         const i = sample % subSamples;
         const j = Math.floor(sample / subSamples);
         const color = sceneColorAt(
+          scene,
           (x + (i + 0.5) / subSamples - transform.ox) / transform.sx,
           (y + (j + 0.5) / subSamples - transform.oy) / transform.sy,
         );
@@ -480,7 +536,7 @@ function renderScene(transform: SceneTransform): Uint8ClampedArray {
         sum[1] += color[1];
         sum[2] += color[2];
       }
-      const offset = (y * SCENE_WIDTH + x) * 4;
+      const offset = (y * scene.width + x) * 4;
       pixels[offset] = Math.round(sum[0] / count);
       pixels[offset + 1] = Math.round(sum[1] / count);
       pixels[offset + 2] = Math.round(sum[2] / count);
@@ -683,5 +739,172 @@ describe("computeRegionResiduals", () => {
         { regionId: "nan", bbox: { x: Number.NaN, y: 0, w: 10, h: 10 } },
       ]),
     ).toThrow(/finite/);
+  });
+});
+
+// 白地の画面で縮めると、撮影の右と下に設計の外の帯ができる。帯の扱いが
+// 候補ごとに違うと、正しい倍率の候補だけが損をする (#437 の反証で見つかった)。
+describe("白地の画面での拡大縮小の検出", { timeout: 60_000 }, () => {
+  const SEEDS = [2000, 2001, 2002, 2003, 2004];
+
+  it.each([0.9, 0.95])("縦横 %s 倍に縮めた画像の両軸の倍率を許容誤差内で返すこと", (scale) => {
+    for (const seed of SEEDS) {
+      const scene = randomScene(seed, SCENE_WIDTH, SCENE_HEIGHT, 30);
+      const design = renderScene(IDENTITY_TRANSFORM, scene);
+      const screenshot = renderScene({ sx: scale, sy: scale, ox: 0, oy: 0 }, scene);
+
+      const { alignment } = resolveAlignment(design, screenshot, SCENE_WIDTH, SCENE_HEIGHT);
+
+      expect({ seed, x: Math.abs(alignment.scale.x - scale) <= SCALE_DETECTION_TOLERANCE }).toEqual(
+        { seed, x: true },
+      );
+      expect({ seed, y: Math.abs(alignment.scale.y - scale) <= SCALE_DETECTION_TOLERANCE }).toEqual(
+        { seed, y: true },
+      );
+      expect(alignment.scaleStatus).toEqual({ x: "detected", y: "detected" });
+    }
+  });
+
+  it("縮小と平行移動が同時にある画像でも両軸の倍率を返すこと", () => {
+    const scene = randomScene(1007, SCENE_WIDTH, SCENE_HEIGHT, 30);
+    const design = renderScene(IDENTITY_TRANSFORM, scene);
+    const screenshot = renderScene({ sx: 0.9605, sy: 0.9605, ox: 19, oy: -4 }, scene);
+
+    const { alignment } = resolveAlignment(design, screenshot, SCENE_WIDTH, SCENE_HEIGHT);
+
+    expect(Math.abs(alignment.scale.x - 0.9605)).toBeLessThanOrEqual(SCALE_DETECTION_TOLERANCE);
+    expect(Math.abs(alignment.scale.y - 0.9605)).toBeLessThanOrEqual(SCALE_DETECTION_TOLERANCE);
+  });
+
+  it("平行移動だけの白地の画像では、両軸とも測ったうえで倍率無しと返すこと", () => {
+    const scene = randomScene(2005, SCENE_WIDTH, SCENE_HEIGHT, 30);
+    const design = renderScene(IDENTITY_TRANSFORM, scene);
+    const screenshot = renderScene({ sx: 1, sy: 1, ox: 9, oy: -6 }, scene);
+
+    const { alignment } = resolveAlignment(design, screenshot, SCENE_WIDTH, SCENE_HEIGHT);
+
+    expect(alignment.scale).toEqual({ x: 1, y: 1 });
+    expect(alignment.scaleOffset).toBeUndefined();
+    expect(alignment.scaleStatus).toEqual({ x: "none", y: "none" });
+  });
+
+  // 範囲の外の倍率は、範囲の中の別の倍率で一部だけ重なって 15% の門を通ってしまう。
+  // 外れた値を自信ありげに返すより、測れなかったと返す方が読み手を誤らせない。
+  it.each([
+    { sx: 1.27, sy: 1.27 },
+    { sx: 1.3, sy: 1.3 },
+    { sx: 4 / 3, sy: 4 / 3 },
+    { sx: 1.3, sy: 1 },
+  ])("範囲の外の倍率 ($sx, $sy) は倍率として返さないこと", ({ sx, sy }) => {
+    const scene = randomScene(7, SCENE_WIDTH, SCENE_HEIGHT, 40);
+    const design = renderScene(IDENTITY_TRANSFORM, scene);
+    const screenshot = renderScene({ sx, sy, ox: 0, oy: 0 }, scene);
+
+    const { alignment } = resolveAlignment(design, screenshot, SCENE_WIDTH, SCENE_HEIGHT);
+
+    expect(alignment.scale).toEqual({ x: 1, y: 1 });
+    expect(alignment.scaleOffset).toBeUndefined();
+    expect(alignment.scaleStatus?.x).toBe("unmeasured");
+    if (sy !== 1) expect(alignment.scaleStatus?.y).toBe("unmeasured");
+  });
+
+  it.each([
+    { width: 40, height: 30 },
+    { width: 64, height: 48 },
+  ])("小さい画像 ($width x $height) では倍率を測らなかったと返すこと", ({ width, height }) => {
+    const scene = randomScene(3, width, height, 4);
+    const design = renderScene(IDENTITY_TRANSFORM, scene);
+    const screenshot = renderScene({ sx: 1.1, sy: 1.1, ox: 0, oy: 0 }, scene);
+
+    const { alignment } = resolveAlignment(design, screenshot, width, height);
+
+    expect(alignment.scale).toEqual({ x: 1, y: 1 });
+    expect(alignment.scaleStatus).toEqual({ x: "unmeasured", y: "unmeasured" });
+  });
+
+  it("片方の軸だけ短い画像では、長い軸だけを測ること", () => {
+    const width = SCENE_WIDTH;
+    const height = SCALE_MIN_AXIS_LENGTH - 1;
+    const scene = randomScene(11, width, height, 20);
+    const design = renderScene(IDENTITY_TRANSFORM, scene);
+    const screenshot = renderScene({ sx: 1.1, sy: 1, ox: 0, oy: 0 }, scene);
+
+    const { alignment } = resolveAlignment(design, screenshot, width, height);
+
+    expect(Math.abs(alignment.scale.x - 1.1)).toBeLessThanOrEqual(SCALE_DETECTION_TOLERANCE);
+    expect(alignment.scale.y).toBe(1);
+    expect(alignment.scaleStatus).toEqual({ x: "detected", y: "unmeasured" });
+  });
+});
+
+describe("computeRegionResiduals と平行移動で空いた帯", () => {
+  it("適用した平行移動で空いた帯は数えず、帯の外だけで割合を出すこと", () => {
+    const width = SCENE_WIDTH;
+    const height = SCENE_HEIGHT;
+    const content = randomScene(5, width, height, 25).rects.map((rect) => ({
+      ...rect,
+      x: Math.max(70, rect.x),
+    }));
+    const scene: Scene = {
+      width,
+      height,
+      rects: [{ x: 0, y: 0, w: width, h: 30, rgb: [20, 40, 90] }, ...content],
+      background: WHITE,
+    };
+    const design = renderScene(IDENTITY_TRANSFORM, scene);
+    const screenshot = renderScene({ sx: 1, sy: 1, ox: 12, oy: 0 }, scene);
+    const resolved = resolveAlignment(design, screenshot, width, height);
+    expect(resolved.applied).toBe(true);
+    expect(resolved.alignment.translation).toEqual({ x: 12, y: 0 });
+
+    const residuals = computeRegionResiduals(
+      resolved.alignedDesignPixels,
+      screenshot,
+      width,
+      height,
+      [
+        { regionId: "sidebar", bbox: { x: 0, y: 30, w: 60, h: 240 } },
+        { regionId: "header", bbox: { x: 0, y: 0, w: width, h: 30 } },
+        { regionId: "strip-only", bbox: { x: 0, y: 40, w: 12, h: 20 } },
+      ],
+      undefined,
+      resolved.alignment.translation,
+    );
+
+    expect(residuals).toEqual([
+      { regionId: "sidebar", residual: 0 },
+      { regionId: "header", residual: 0 },
+    ]);
+  });
+
+  it("1画素幅の領域と画素より小さい領域も、間引く画像で落とさずに数えること", () => {
+    const width = 1200;
+    const height = 1000;
+    const design = new Uint8ClampedArray(width * height * 4);
+    const screenshot = new Uint8ClampedArray(width * height * 4);
+    // 奇数の列と行だけを違う色にして、間引きの格子に乗らない画素だけが違う形にする。
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const offset = (y * width + x) * 4;
+        const value = x === 101 || y === 201 || (x === 10 && y === 10) ? 255 : 0;
+        screenshot[offset] = value;
+        screenshot[offset + 1] = value;
+        screenshot[offset + 2] = value;
+        screenshot[offset + 3] = 255;
+        design[offset + 3] = 255;
+      }
+    }
+
+    const residuals = computeRegionResiduals(design, screenshot, width, height, [
+      { regionId: "odd-column", bbox: { x: 101, y: 0, w: 1, h: height } },
+      { regionId: "odd-row", bbox: { x: 0, y: 201, w: width, h: 1 } },
+      { regionId: "fraction", bbox: { x: 10.4, y: 10.4, w: 0.5, h: 0.5 } },
+    ]);
+
+    expect(residuals).toEqual([
+      { regionId: "odd-column", residual: 1 },
+      { regionId: "odd-row", residual: 1 },
+      { regionId: "fraction", residual: 1 },
+    ]);
   });
 });

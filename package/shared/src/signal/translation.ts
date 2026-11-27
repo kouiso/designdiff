@@ -6,7 +6,7 @@
  * いずれ食い違う。適用の可否まで含めてここへ集める。
  */
 
-import type { Alignment } from "../type.js";
+import type { Alignment, ScaleAxisStatus } from "../type.js";
 
 export const COARSE_RANGE = 50;
 export const COARSE_STEP = 5;
@@ -381,14 +381,24 @@ export function buildVerifiedInsetCandidates(
   return candidates;
 }
 
-// 倍率を探す範囲。書き出し倍率や DPR の食い違い（2倍・3倍）は取り込み側で
-// 揃えている (#436, #439)。そこまで広げると、繰り返し模様が別の倍率でも
-// 重なって偽の倍率を拾う。ここで扱うのは、揃えた後に残る ±25% 程度の伸縮だけ。
+// 倍率を報告する範囲。書き出し倍率や DPR の食い違い（2倍・3倍）は取り込み側で
+// 揃えている (#436, #439)。ここで扱うのは、揃えた後に残る ±25% 程度の伸縮だけ。
 export const SCALE_SEARCH_MIN = 0.8;
 export const SCALE_SEARCH_MAX = 1.25;
-// 倍率の検出結果がこの幅に収まることを契約にする (#437)。画素の整数の位置で
-// 一致を数える以上、幅 W の画像では 1/W より細かい倍率は見分けられない。
-// 400px で 0.0025 なので、その4倍を取って画像の大きさに左右されない値にする。
+// 粗い探索は報告する範囲よりこの比だけ外まで見る。範囲の外の伸縮 (1.3 倍や
+// DPR 1.5 と 2 倍書き出しの 4/3 倍) は、範囲の中の別の倍率でも一部だけ重なって
+// 平行移動より良く見える。外まで見て山が外にあれば、測れなかったと返す。
+// 2倍・3倍まで広げると、繰り返し模様が別の倍率でも重なる山を拾い、範囲の中の
+// 正しい倍率まで捨てることになるので、DPR 1.5 の食い違いが入る 1.5 倍で止める。
+const SCALE_GUARD_RATIO = 1.2;
+// 片方の軸の長さがこれより短いと、その軸は測らない。画素の整数の位置で輪郭を
+// 突き合わせる以上、倍率の分解能は長さに反比例する。白地と黒地、0.82〜1.2 倍の
+// 検体で片方の軸の長さを振ると、96px と 128px では誤差が 0.01 を超える種があり、
+// 160px・192px・256px では最大 0.007 だった。端の種に余裕を見て 192px にする。
+export const SCALE_MIN_AXIS_LENGTH = 192;
+// 倍率の検出結果がこの幅に収まることを契約にする (#437)。成り立つのは
+// SCALE_MIN_AXIS_LENGTH 以上の長さで測った軸だけで、短い軸は測らない
+// (scaleStatus が "unmeasured" になる)。
 export const SCALE_DETECTION_TOLERANCE = 0.01;
 
 // 粗い探索で縮める輪郭の並びの長さ。8000px の縦長画面を1px刻みで全候補と
@@ -399,8 +409,6 @@ const SCALE_COARSE_LOG_STEP = Math.log(1.005);
 const SCALE_FINE_LOG_STEP = Math.log(1.0005);
 // 重なりが短いと、端の数画素だけが偶然揃った候補が相関1に近づく。
 const SCALE_MIN_OVERLAP_RATIO = 0.5;
-// 片方の軸の並びがこれより短いと、輪郭の位置から倍率を言えるほどの手がかりが無い。
-const SCALE_MIN_PROFILE_LENGTH = 32;
 
 interface AxisScaleEstimate {
   scale: number;
@@ -552,36 +560,55 @@ function stepsNearestFirst(lowerLimit: number, upperLimit: number): number[] {
  * 2次元で倍率を2つと移動を2つ同時に探すと、実寸の画面では候補の数が
  * 掛け算で増えて終わらない。輪郭の並びは軸ごとに独立なので、1次元の探索を
  * 軸の数だけ回せば足りる。
+ *
+ * 測れなかった軸は undefined を返す。短すぎる軸・輪郭の無い軸・山が報告する
+ * 範囲の外にある軸がそれに当たる。倍率1と返すと「測って伸縮が無かった」と
+ * 区別できなくなる。
  */
 function estimateAxisScale(
   designProfile: Float64Array,
   screenshotProfile: Float64Array,
 ): AxisScaleEstimate | undefined {
   const length = screenshotProfile.length;
-  if (length < SCALE_MIN_PROFILE_LENGTH) return undefined;
+  if (length < SCALE_MIN_AXIS_LENGTH) return undefined;
 
+  const minLogScale = Math.log(SCALE_SEARCH_MIN);
+  const maxLogScale = Math.log(SCALE_SEARCH_MAX);
+  const guardLogRatio = Math.log(SCALE_GUARD_RATIO);
   const binSize = Math.max(1, Math.ceil(length / SCALE_COARSE_PROFILE_LENGTH));
   const coarseDesign = binProfile(designProfile, binSize);
   const coarseScreenshot = binProfile(screenshotProfile, binSize);
   const coarseLogScales = stepsNearestFirst(
-    Math.floor(-Math.log(SCALE_SEARCH_MIN) / SCALE_COARSE_LOG_STEP),
-    Math.floor(Math.log(SCALE_SEARCH_MAX) / SCALE_COARSE_LOG_STEP),
+    Math.floor((guardLogRatio - minLogScale) / SCALE_COARSE_LOG_STEP),
+    Math.floor((maxLogScale + guardLogRatio) / SCALE_COARSE_LOG_STEP),
   ).map((step) => step * SCALE_COARSE_LOG_STEP);
   // 左上を原点に伸縮した画面では、中心から見た移動が (1-倍率)*長さ/2 まで出る。
   // それに一般の平行移動の探索幅を足した範囲を見る。
+  const widestScaleDeviation = Math.max(
+    1 - SCALE_SEARCH_MIN / SCALE_GUARD_RATIO,
+    SCALE_SEARCH_MAX * SCALE_GUARD_RATIO - 1,
+  );
   const coarseShiftRange =
-    Math.ceil(
-      (coarseScreenshot.length * Math.max(1 - SCALE_SEARCH_MIN, SCALE_SEARCH_MAX - 1)) / 2,
-    ) +
+    Math.ceil((coarseScreenshot.length * widestScaleDeviation) / 2) +
     Math.ceil(COARSE_RANGE / binSize) +
     1;
   const coarse = searchAxis(coarseDesign, coarseScreenshot, coarseLogScales, 0, coarseShiftRange);
   if (!coarse) return undefined;
+  // 範囲の端から粗い刻み1つ分を超えて外に山があれば、本当の倍率は範囲の外にある。
+  // 刻み1つ分は許す。範囲の端ちょうど (1.25 倍) の画面でも、粗い刻みの格子点は
+  // 端の少し外に来ることがあるため。
+  if (
+    coarse.logScale > maxLogScale + SCALE_COARSE_LOG_STEP ||
+    coarse.logScale < minLogScale - SCALE_COARSE_LOG_STEP
+  ) {
+    return undefined;
+  }
 
   const fineSpan = Math.ceil((1.5 * SCALE_COARSE_LOG_STEP) / SCALE_FINE_LOG_STEP);
-  const fineLogScales = stepsNearestFirst(fineSpan, fineSpan).map(
-    (step) => coarse.logScale + step * SCALE_FINE_LOG_STEP,
-  );
+  // 細かい探索は範囲の内側に限る。外へはみ出た値を報告に載せない。
+  const fineLogScales = stepsNearestFirst(fineSpan, fineSpan)
+    .map((step) => coarse.logScale + step * SCALE_FINE_LOG_STEP)
+    .filter((logScale) => logScale >= minLogScale && logScale <= maxLogScale);
   const fine = searchAxis(
     designProfile,
     screenshotProfile,
@@ -597,60 +624,138 @@ function estimateAxisScale(
   return { scale, offset: fine.centeredShift + center * (1 - scale) };
 }
 
+/** 撮影の位置 position に写る設計の画素の位置。設計の外なら -1。 */
+function axisSource(position: number, transform: AxisScaleEstimate, length: number): number {
+  const source = Math.floor((position + 0.5 - transform.offset) / transform.scale);
+  return source >= 0 && source < length ? source : -1;
+}
+
 /**
- * 設計の点 u が撮影の scale*u + offset に写るとみなして、違って見える画素を数える。
+ * どの写し方でも設計の内側を指す撮影の位置の範囲 [start, end)。
  *
- * 外へ出た画素の扱いは平行移動の残差 (countSsdOffset の既定) と揃える。
- * 揃えないと、平行移動と倍率のどちらが良いかを同じ物差しで比べられない。
+ * 写し方は位置について単調なので、内側を指す位置は1つの区間になる。
+ * 式で端を解くと丸めで1画素ずれるので、両端から直接確かめて詰める。
  */
-function countScaledMismatch(
+function commonAxisRange(
+  length: number,
+  transforms: readonly AxisScaleEstimate[],
+): { start: number; end: number } {
+  const inside = (position: number) =>
+    transforms.every((transform) => axisSource(position, transform, length) >= 0);
+  let start = 0;
+  let end = length;
+  while (start < end && !inside(start)) start++;
+  while (end > start && !inside(end - 1)) end--;
+  return { start, end };
+}
+
+/**
+ * 軸ごとの写し方の組み合わせごとに、違って見える画素を数える。
+ *
+ * 数えるのは、比べる全ての写し方で設計の内側を指す画素だけにする。縮めた撮影には
+ * 右や下に設計の外の帯ができ、帯を数えると帯の大きい候補ほど損をする。白地の画面
+ * では帯が丸ごと違いになり、正しい倍率の候補が平行移動より良く見えなくなる。
+ * 同じ画素だけを数えれば、どの候補も同じ物差しで比べられる。
+ *
+ * 戻り値は [x の写し方][y の写し方] の数と、数えた画素の数。
+ */
+function countScaledMismatches(
   design: Uint8ClampedArray,
   screenshot: Uint8ClampedArray,
   width: number,
   height: number,
-  scale: { x: number; y: number },
-  offset: { x: number; y: number },
+  xTransforms: readonly AxisScaleEstimate[],
+  yTransforms: readonly AxisScaleEstimate[],
   sampleStep: number,
   ignoreMask: Uint8Array | undefined,
-): number {
-  let diff = 0;
-  for (let y = 0; y < height; y += sampleStep) {
-    const srcY = Math.floor((y + 0.5 - offset.y) / scale.y);
-    for (let x = 0; x < width; x += sampleStep) {
-      if (ignoreMask && ignoreMask[y * width + x] !== 0) continue;
-      const bIdx = (y * width + x) * 4;
-      const srcX = Math.floor((x + 0.5 - offset.x) / scale.x);
-      if (srcX < 0 || srcX >= width || srcY < 0 || srcY >= height) {
-        const r = screenshot[bIdx];
-        const g = screenshot[bIdx + 1];
-        const b = screenshot[bIdx + 2];
-        if (r * r + g * g + b * b > DIFF_THRESHOLD_SQ) diff++;
-        continue;
+): { diffs: number[][]; sampled: number } {
+  const xRange = commonAxisRange(width, xTransforms);
+  const yRange = commonAxisRange(height, yTransforms);
+  const diffs = xTransforms.map(() => yTransforms.map(() => 0));
+  let sampled = 0;
+  // 全体の残差と同じ格子 (原点から sampleStep 刻み) の上の点だけを数える。
+  const firstX = Math.ceil(xRange.start / sampleStep) * sampleStep;
+  const firstY = Math.ceil(yRange.start / sampleStep) * sampleStep;
+  const xSources = xTransforms.map((transform) => {
+    const sources: number[] = [];
+    for (let x = firstX; x < xRange.end; x += sampleStep) {
+      sources.push(axisSource(x, transform, width));
+    }
+    return sources;
+  });
+  for (let y = firstY; y < yRange.end; y += sampleStep) {
+    const ySources = yTransforms.map((transform) => axisSource(y, transform, height));
+    for (let x = firstX, column = 0; x < xRange.end; x += sampleStep, column++) {
+      const pixel = y * width + x;
+      if (ignoreMask && ignoreMask[pixel] !== 0) continue;
+      sampled++;
+      const bIdx = pixel * 4;
+      for (let xi = 0; xi < xTransforms.length; xi++) {
+        const srcX = xSources[xi][column];
+        for (let yi = 0; yi < yTransforms.length; yi++) {
+          const aIdx = (ySources[yi] * width + srcX) * 4;
+          const dr = design[aIdx] - screenshot[bIdx];
+          const dg = design[aIdx + 1] - screenshot[bIdx + 1];
+          const db = design[aIdx + 2] - screenshot[bIdx + 2];
+          if (dr * dr + dg * dg + db * db > DIFF_THRESHOLD_SQ) diffs[xi][yi]++;
+        }
       }
-      const aIdx = (srcY * width + srcX) * 4;
-      const dr = design[aIdx] - screenshot[bIdx];
-      const dg = design[aIdx + 1] - screenshot[bIdx + 1];
-      const db = design[aIdx + 2] - screenshot[bIdx + 2];
-      if (dr * dr + dg * dg + db * db > DIFF_THRESHOLD_SQ) diff++;
     }
   }
-  return diff;
+  return { diffs, sampled };
 }
 
 interface DetectedScale {
   scale: { x: number; y: number };
   offset?: { x: number; y: number };
+  status: { x: ScaleAxisStatus; y: ScaleAxisStatus };
 }
 
-const IDENTITY_SCALE: DetectedScale = { scale: { x: 1, y: 1 } };
+const UNMEASURED_SCALE: DetectedScale = {
+  scale: { x: 1, y: 1 },
+  status: { x: "unmeasured", y: "unmeasured" },
+};
+
+/**
+ * 平行移動・片軸・両軸の候補から、門を通った最良を選ぶ。
+ *
+ * diffs は countScaledMismatches の戻り値で、添字 0 が平行移動、1 が伸縮の写し方。
+ * 片方の軸だけの候補は平行移動と比べ、両軸の候補はそれまでの最良と比べる。
+ * 両軸を常に平行移動とだけ比べると、雑音の倍率 (1.0005 など) が片軸の結果に
+ * 相乗りして報告に載る。
+ */
+function pickScaleCandidate(
+  diffs: readonly (readonly number[])[],
+  identityX: AxisScaleEstimate,
+  identityY: AxisScaleEstimate,
+  xScaled: AxisScaleEstimate | undefined,
+  yScaled: AxisScaleEstimate | undefined,
+): { x: AxisScaleEstimate; y: AxisScaleEstimate } | undefined {
+  const identityDiff = diffs[0][0];
+  let best: { x: AxisScaleEstimate; y: AxisScaleEstimate } | undefined;
+  let bestDiff = identityDiff;
+  const singles: { x: AxisScaleEstimate; y: AxisScaleEstimate; diff: number }[] = [];
+  if (xScaled) singles.push({ x: xScaled, y: identityY, diff: diffs[1][0] });
+  if (yScaled) singles.push({ x: identityX, y: yScaled, diff: diffs[0][1] });
+  for (const single of singles) {
+    if (single.diff < identityDiff * ALIGNMENT_IMPROVEMENT_THRESHOLD && single.diff < bestDiff) {
+      best = { x: single.x, y: single.y };
+      bestDiff = single.diff;
+    }
+  }
+  if (xScaled && yScaled && diffs[1][1] < bestDiff * ALIGNMENT_IMPROVEMENT_THRESHOLD) {
+    return { x: xScaled, y: yScaled };
+  }
+  return best;
+}
 
 /**
  * 平行移動では説明しきれない伸縮を軸ごとに検出する。
  *
  * 輪郭の並びで当たりを付け、採るかどうかは平行移動と同じ「違って見える画素の数」で
  * 決める。相関だけで採ると、伸縮していない画面でも 1.003 のような雑音の倍率が
- * 毎回報告に載る。平行移動の適用と同じく 15% 以上減るときだけ採り、
- * 軸を1つ足すときも同じ門を通す。
+ * 毎回報告に載る。平行移動の適用と同じく 15% 以上減るときだけ採る。
+ * 片方の軸だけの候補は平行移動と比べ、両軸の候補はそれまでの最良と比べる。
  */
 function detectScale(
   design: Uint8ClampedArray,
@@ -658,12 +763,9 @@ function detectScale(
   width: number,
   height: number,
   translation: { dx: number; dy: number },
-  translationDiff: number,
   sampleStep: number,
   ignoreMask: Uint8Array | undefined,
 ): DetectedScale {
-  if (width * height < 64 || translationDiff === 0) return IDENTITY_SCALE;
-
   const xEstimate = estimateAxisScale(
     buildEdgeProfile(design, width, height, "x", ignoreMask),
     buildEdgeProfile(screenshot, width, height, "x", ignoreMask),
@@ -672,42 +774,52 @@ function detectScale(
     buildEdgeProfile(design, width, height, "y", ignoreMask),
     buildEdgeProfile(screenshot, width, height, "y", ignoreMask),
   );
+  const status: DetectedScale["status"] = {
+    x: xEstimate ? "none" : "unmeasured",
+    y: yEstimate ? "none" : "unmeasured",
+  };
+  const identity: DetectedScale = { scale: { x: 1, y: 1 }, status };
   const xScaled = xEstimate !== undefined && xEstimate.scale !== 1 ? xEstimate : undefined;
   const yScaled = yEstimate !== undefined && yEstimate.scale !== 1 ? yEstimate : undefined;
+  if (!xScaled && !yScaled) return identity;
 
   const identityX = { scale: 1, offset: translation.dx };
   const identityY = { scale: 1, offset: translation.dy };
-  // 軸の少ない候補から順に見る。後の候補は、今の最良をさらに 15% 減らすときだけ勝つ。
-  const candidates: { x: AxisScaleEstimate; y: AxisScaleEstimate }[] = [];
-  if (xScaled) candidates.push({ x: xScaled, y: identityY });
-  if (yScaled) candidates.push({ x: identityX, y: yScaled });
-  if (xScaled && yScaled) candidates.push({ x: xScaled, y: yScaled });
-
-  let best: DetectedScale = IDENTITY_SCALE;
-  let bestDiff = translationDiff;
-  for (const candidate of candidates) {
-    const scale = { x: candidate.x.scale, y: candidate.y.scale };
-    const offset = { x: candidate.x.offset, y: candidate.y.offset };
-    const diff = countScaledMismatch(
-      design,
-      screenshot,
-      width,
-      height,
-      scale,
-      offset,
-      sampleStep,
-      ignoreMask,
-    );
-    if (diff < bestDiff * ALIGNMENT_IMPROVEMENT_THRESHOLD) {
-      bestDiff = diff;
-      best = { scale, offset };
-    }
+  const xTransforms = xScaled ? [identityX, xScaled] : [identityX];
+  const yTransforms = yScaled ? [identityY, yScaled] : [identityY];
+  const { diffs, sampled } = countScaledMismatches(
+    design,
+    screenshot,
+    width,
+    height,
+    xTransforms,
+    yTransforms,
+    sampleStep,
+    ignoreMask,
+  );
+  // 全ての候補で内側を指す画素が少ないと、残った端の数画素の一致で決まってしまう。
+  // そのときは伸縮のある軸を測れなかったとする。
+  const sampledPositions = countSampledPositions(width, height, sampleStep, ignoreMask);
+  if (sampled === 0 || sampled < sampledPositions * SCALE_MIN_OVERLAP_RATIO) {
+    return {
+      scale: { x: 1, y: 1 },
+      status: {
+        x: xScaled ? "unmeasured" : status.x,
+        y: yScaled ? "unmeasured" : status.y,
+      },
+    };
   }
-  if (!best.offset) return IDENTITY_SCALE;
+
+  const best = pickScaleCandidate(diffs, identityX, identityY, xScaled, yScaled);
+  if (!best) return identity;
   // 探索の刻みより細かい桁は測れていない。雑音の桁を報告に残さない。
   return {
-    scale: { x: roundTo(best.scale.x, 4), y: roundTo(best.scale.y, 4) },
-    offset: { x: roundTo(best.offset.x, 2), y: roundTo(best.offset.y, 2) },
+    scale: { x: roundTo(best.x.scale, 4), y: roundTo(best.y.scale, 4) },
+    offset: { x: roundTo(best.x.offset, 2), y: roundTo(best.y.offset, 2) },
+    status: {
+      x: best.x.scale !== 1 ? "detected" : status.x,
+      y: best.y.scale !== 1 ? "detected" : status.y,
+    },
   };
 }
 
@@ -728,6 +840,11 @@ export interface RegionResidualInput {
  * 同じしきい値・同じ ignoreMask の扱いにしないと、領域の値と全体の値を
  * 並べて読めない。採点に使う画素 (適用後の設計) を渡す前提で、ずらさずに数える。
  *
+ * appliedTranslation には、適用した平行移動 (適用しなかった回は渡さない) を渡す。
+ * 設計を動かした回は、動かした側の縁に設計の無い帯ができる (shiftPixels が透明で
+ * 埋める)。帯は平行移動で説明済みの差なので、分子にも分母にも入れない。入れると、
+ * 縁に接する領域だけが、平行移動で説明しきれたのに大きい残差に見える。
+ *
  * 測れる画素が1つも無い領域は載せない。0 と書くと「一致した」と読める。
  */
 export const computeRegionResiduals = (
@@ -737,11 +854,23 @@ export const computeRegionResiduals = (
   height: number,
   regions: readonly RegionResidualInput[],
   ignoreMask?: Uint8Array,
+  appliedTranslation?: { x: number; y: number },
 ): { regionId: string; residual: number }[] => {
   validateImageDimensions(width, height);
   validateIgnoreMask(ignoreMask, width, height);
   validatePixelBuffer(designPixels, width, height, "design");
   validatePixelBuffer(screenshotPixels, width, height, "screenshot");
+
+  const shiftX = appliedTranslation?.x ?? 0;
+  const shiftY = appliedTranslation?.y ?? 0;
+  if (!Number.isInteger(shiftX) || !Number.isInteger(shiftY)) {
+    throw new Error(`appliedTranslation must use integer pixels: x=${shiftX}, y=${shiftY}`);
+  }
+  // shiftPixels は srcX = x - dx なので、dx > 0 なら左端、dx < 0 なら右端が空く。
+  const validLeft = Math.max(0, shiftX);
+  const validRight = Math.min(width, width + shiftX);
+  const validTop = Math.max(0, shiftY);
+  const validBottom = Math.min(height, height + shiftY);
 
   const sampleStep = residualSampleStep(width, height);
   const residuals: { regionId: string; residual: number }[] = [];
@@ -752,33 +881,66 @@ export const computeRegionResiduals = (
         `region bbox must be finite: regionId=${region.regionId}, x=${x}, y=${y}, w=${w}, h=${h}`,
       );
     }
-    const left = Math.max(0, Math.ceil(x));
-    const top = Math.max(0, Math.ceil(y));
-    const right = Math.min(width, Math.ceil(x + w));
-    const bottom = Math.min(height, Math.ceil(y + h));
-    let sampled = 0;
-    let diff = 0;
+    // 採点 (computeSsimForRegion など) と同じく、領域に掛かる画素を全て含める。
+    const left = Math.max(validLeft, Math.floor(x));
+    const top = Math.max(validTop, Math.floor(y));
+    const right = Math.min(validRight, Math.ceil(x + w));
+    const bottom = Math.min(validBottom, Math.ceil(y + h));
+    if (right <= left || bottom <= top) continue;
     // 全体の残差と同じ格子 (原点から sampleStep 刻み) の上の点だけを数える。
     // 領域の左上から刻み直すと、隣り合う領域で同じ画素を二度数えたり飛ばしたりする。
-    const firstY = Math.ceil(top / sampleStep) * sampleStep;
-    const firstX = Math.ceil(left / sampleStep) * sampleStep;
-    for (let py = firstY; py < bottom; py += sampleStep) {
-      for (let px = firstX; px < right; px += sampleStep) {
-        const pixel = py * width + px;
-        if (ignoreMask && ignoreMask[pixel] !== 0) continue;
-        sampled++;
-        const offset = pixel * 4;
-        const dr = designPixels[offset] - screenshotPixels[offset];
-        const dg = designPixels[offset + 1] - screenshotPixels[offset + 1];
-        const db = designPixels[offset + 2] - screenshotPixels[offset + 2];
-        if (dr * dr + dg * dg + db * db > DIFF_THRESHOLD_SQ) diff++;
-      }
+    let counted = countRegionMismatch(
+      designPixels,
+      screenshotPixels,
+      width,
+      { left, top, right, bottom },
+      sampleStep,
+      ignoreMask,
+    );
+    // 1画素幅の領域は格子の点を1つも含まないことがある。格子に乗らないだけで
+    // 測れる画素はあるので、その領域だけ全画素で数える。
+    if (counted.sampled === 0 && sampleStep > 1) {
+      counted = countRegionMismatch(
+        designPixels,
+        screenshotPixels,
+        width,
+        { left, top, right, bottom },
+        1,
+        ignoreMask,
+      );
     }
-    if (sampled === 0) continue;
-    residuals.push({ regionId: region.regionId, residual: diff / sampled });
+    if (counted.sampled === 0) continue;
+    residuals.push({ regionId: region.regionId, residual: counted.diff / counted.sampled });
   }
   return residuals;
 };
+
+function countRegionMismatch(
+  designPixels: Uint8ClampedArray,
+  screenshotPixels: Uint8ClampedArray,
+  width: number,
+  bounds: { left: number; top: number; right: number; bottom: number },
+  sampleStep: number,
+  ignoreMask: Uint8Array | undefined,
+): { sampled: number; diff: number } {
+  let sampled = 0;
+  let diff = 0;
+  const firstY = Math.ceil(bounds.top / sampleStep) * sampleStep;
+  const firstX = Math.ceil(bounds.left / sampleStep) * sampleStep;
+  for (let py = firstY; py < bounds.bottom; py += sampleStep) {
+    for (let px = firstX; px < bounds.right; px += sampleStep) {
+      const pixel = py * width + px;
+      if (ignoreMask && ignoreMask[pixel] !== 0) continue;
+      sampled++;
+      const offset = pixel * 4;
+      const dr = designPixels[offset] - screenshotPixels[offset];
+      const dg = designPixels[offset + 1] - screenshotPixels[offset + 1];
+      const db = designPixels[offset + 2] - screenshotPixels[offset + 2];
+      if (dr * dr + dg * dg + db * db > DIFF_THRESHOLD_SQ) diff++;
+    }
+  }
+  return { sampled, diff };
+}
 
 export interface ResolvedAlignment {
   alignment: Alignment;
@@ -848,14 +1010,13 @@ export const resolveAlignment = (
   // 渡すと、そこで合否が黙って変わる (#437)。
   const detectedScale =
     correctedDiff === undefined
-      ? IDENTITY_SCALE
+      ? UNMEASURED_SCALE
       : detectScale(
           designPixels,
           screenshotPixels,
           width,
           height,
           { dx, dy },
-          correctedDiff,
           residualStep,
           ignoreMask,
         );
@@ -903,6 +1064,7 @@ export const resolveAlignment = (
             : "auto",
       scale: detectedScale.scale,
       ...(detectedScale.offset ? { scaleOffset: detectedScale.offset } : {}),
+      scaleStatus: detectedScale.status,
       rotation: 0,
       confidence,
       residual,

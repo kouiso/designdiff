@@ -401,6 +401,8 @@ export const WeightedAggregateSchema = z.object({
   totalWeight: z.number().nonnegative(),
 });
 
+export const ScaleAxisStatusSchema = z.enum(["detected", "none", "unmeasured"]);
+
 export const AlignmentSchema = z.object({
   translation: z.object({
     x: z.number(),
@@ -418,6 +420,12 @@ export const AlignmentSchema = z.object({
     .object({
       x: z.number(),
       y: z.number(),
+    })
+    .optional(),
+  scaleStatus: z
+    .object({
+      x: ScaleAxisStatusSchema,
+      y: ScaleAxisStatusSchema,
     })
     .optional(),
   rotation: z.number(),
