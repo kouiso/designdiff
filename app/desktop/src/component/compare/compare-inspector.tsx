@@ -19,7 +19,6 @@ import {
 } from "./compare-score";
 import { CompareVerdictBadge } from "./compare-verdict-badge";
 import { IssueCard } from "./issue-card";
-import { MatchCard } from "./match-card";
 import {
   countIssues,
   type IssueCounts,
@@ -29,6 +28,7 @@ import {
   matchesIssueFilter,
   resolveIssueName,
 } from "./issue-summary";
+import { MatchCard } from "./match-card";
 import { type ResultToolTab, ResultToolTabs } from "./result-tool-tab";
 
 import type { InspectionCandidate } from "./node-inspection-panel";
@@ -244,10 +244,7 @@ function IssueCardList({
   }
   const matched = filter === "all" ? listMatchedRegions(compareResult.diffReport) : [];
   const matchCards = matched.map((region) => (
-    <MatchCard
-      key={region.regionId}
-      name={resolveRegionName(region, compareResult.diffRegions)}
-    />
+    <MatchCard key={region.regionId} name={resolveRegionName(region, compareResult.diffRegions)} />
   ));
   if (issues.length === 0) {
     return (
