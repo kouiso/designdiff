@@ -15,6 +15,37 @@ interface CompareReportExportProps {
   variant?: "default" | "footer";
 }
 
+const DEFAULT_STYLES = {
+  wrapper: "space-y-2",
+  row: "flex flex-wrap items-center gap-2",
+  select: "min-w-0 rounded-md border border-input bg-background px-2 py-2 text-sm",
+  button: undefined,
+  markdownLabel: "Markdown (.md)",
+  jsonLabel: "JSON (.json)",
+  saveLabelKey: "compare.reportExportSave",
+};
+
+const FOOTER_STYLES = {
+  wrapper: "min-w-0 flex-1 space-y-1",
+  row: "flex items-center gap-1.5",
+  select: "w-[78px] min-w-0 rounded-md border border-input bg-background px-1.5 py-2 text-xs",
+  button: "min-w-0 flex-1",
+  markdownLabel: "Markdown",
+  jsonLabel: "JSON",
+  saveLabelKey: "inspector.export",
+};
+
+// 保存先が無い環境 (Web など) でも、下端の「書出 / 再比較」の並びは崩さない。
+function UnavailableFooterExport() {
+  const { t } = useTranslation();
+  return (
+    <Button variant="outline" size="sm" className="w-full" disabled>
+      <Download className="h-4 w-4" aria-hidden="true" />
+      {t("inspector.export")}
+    </Button>
+  );
+}
+
 export function CompareReportExport({ result, variant = "default" }: CompareReportExportProps) {
   const footer = variant === "footer";
   const { t } = useTranslation();
@@ -63,47 +94,35 @@ export function CompareReportExport({ result, variant = "default" }: CompareRepo
   };
 
   if (!adapter && !failed && !footer) return null;
+  const styles = footer ? FOOTER_STYLES : DEFAULT_STYLES;
+  const saveLabelKey = saving ? "compare.reportExportSaving" : styles.saveLabelKey;
   return (
-    <div className={footer ? "min-w-0 flex-1 space-y-1" : "space-y-2"}>
+    <div className={styles.wrapper}>
       {adapter ? (
-        <div className={footer ? "flex items-center gap-1.5" : "flex flex-wrap items-center gap-2"}>
+        <div className={styles.row}>
           <select
             aria-label={t("compare.reportExportFormat")}
             value={format}
             disabled={saving}
             onChange={(event) => setFormat(event.target.value === "json" ? "json" : "markdown")}
-            className={
-              footer
-                ? "w-[78px] min-w-0 rounded-md border border-input bg-background px-1.5 py-2 text-xs"
-                : "min-w-0 rounded-md border border-input bg-background px-2 py-2 text-sm"
-            }
+            className={styles.select}
           >
-            <option value="markdown">{footer ? "Markdown" : "Markdown (.md)"}</option>
-            <option value="json">{footer ? "JSON" : "JSON (.json)"}</option>
+            <option value="markdown">{styles.markdownLabel}</option>
+            <option value="json">{styles.jsonLabel}</option>
           </select>
           <Button
             variant="outline"
             size="sm"
-            className={footer ? "min-w-0 flex-1" : undefined}
+            className={styles.button}
             disabled={saving}
             onClick={save}
           >
             {footer ? <Download className="h-4 w-4" aria-hidden="true" /> : null}
-            {t(
-              saving
-                ? "compare.reportExportSaving"
-                : footer
-                  ? "inspector.export"
-                  : "compare.reportExportSave",
-            )}
+            {t(saveLabelKey)}
           </Button>
         </div>
       ) : footer ? (
-        // 保存先が無い環境 (Web など) でも、下端の「書出 / 再比較」の並びは崩さない。
-        <Button variant="outline" size="sm" className="w-full" disabled>
-          <Download className="h-4 w-4" aria-hidden="true" />
-          {t("inspector.export")}
-        </Button>
+        <UnavailableFooterExport />
       ) : null}
       {message ? (
         <p role={failed ? "alert" : "status"} className="break-all text-sm">

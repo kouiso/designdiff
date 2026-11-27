@@ -216,8 +216,9 @@ describe("CompareInspector footer", () => {
     renderInspector();
 
     const footer = screen.getByTestId("inspector-footer");
-    const exportButton = await within(footer).findByRole("button", { name: "書出" });
-    fireEvent.click(exportButton);
+    // 保存先の読み込みが終わるまでは無効のボタンが出る。
+    await waitFor(() => expect(within(footer).getByRole("button", { name: "書出" })).toBeEnabled());
+    fireEvent.click(within(footer).getByRole("button", { name: "書出" }));
 
     await waitFor(() => expect(save).toHaveBeenCalledTimes(1));
     expect(save.mock.calls[0][1]).toBe("markdown");
