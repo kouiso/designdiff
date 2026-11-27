@@ -37,14 +37,14 @@ function ResultTabButton({
   return (
     <button
       type="button"
-      className="min-w-0 rounded-[8px] px-2 py-1.5 font-semibold text-xs"
+      className="min-w-0 rounded-[8px] px-1.5 py-1.5 font-semibold text-xs"
       onClick={onClick}
       style={{
         background: active ? "var(--surface)" : "transparent",
         color: active ? "var(--fg)" : "var(--muted-fg)",
       }}
     >
-      <span className="inline-flex items-center justify-center gap-1">
+      <span className="inline-flex items-center justify-center gap-0.5">
         <Icon className="h-3.5 w-3.5" aria-hidden="true" />
         {label}
       </span>
