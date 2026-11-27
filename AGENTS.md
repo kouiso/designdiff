@@ -5,6 +5,7 @@ TypeScript/Node.js monorepo using Turborepo.
 
 > ⚠️ `.gemini/styleguide.md` and `.github/copilot-instructions.md` are auto-generated from this file
 > by `script/sync-ai-rules.sh`. Do NOT edit them directly.
+> Shared AI rules, skills (`.agents/skills/` → generated `.claude/skills/`) and per-AI entry points: see [docs/ai-rules.md](https://github.com/kouiso/designdiff/blob/develop/docs/ai-rules.md).
 
 ## Tech Stack
 

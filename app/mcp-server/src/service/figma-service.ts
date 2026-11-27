@@ -385,7 +385,9 @@ export class FigmaService {
       }
 
       const initialScale = 2;
-      let { base64, width: initialWidth } = await downloadOrMeasure(used, initialScale);
+      const initial = await downloadOrMeasure(used, initialScale);
+      const initialWidth = initial.width;
+      let base64 = initial.base64;
 
       if (!targetWidth) {
         return await finish(base64, initialScale, used);
