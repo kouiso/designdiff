@@ -1,6 +1,6 @@
 import { type ReactNode, useMemo, useState } from "react";
 
-import { Download, RefreshCw, SlidersHorizontal } from "lucide-react";
+import { RefreshCw, SlidersHorizontal } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import type { DiffIssue } from "@figdiff/shared";
@@ -9,7 +9,7 @@ import { ScoreBar } from "@/component/ui/score-bar";
 import { cn } from "@/lib/util";
 import type { DesktopCompareResult } from "@/service/image-compare";
 
-import { CompareReportExport } from "./compare-report-export";
+import { CompareReportExport, UnavailableFooterExport } from "./compare-report-export";
 import {
   buildScoreBreakdown,
   clampScore,
@@ -19,11 +19,14 @@ import {
 } from "./compare-score";
 import { CompareVerdictBadge } from "./compare-verdict-badge";
 import { IssueCard } from "./issue-card";
+import { MatchCard } from "./match-card";
 import {
   countIssues,
   type IssueCounts,
+  listMatchedRegions,
+  resolveRegionName,
   type IssueFilter,
-  filterIssues,
+  matchesIssueFilter,
   resolveIssueName,
 } from "./issue-summary";
 import { type ResultToolTab, ResultToolTabs } from "./result-tool-tab";
@@ -72,6 +75,7 @@ function DistributionBar({ counts }: { counts: IssueCounts }) {
       className="flex h-1 w-full gap-0.5 overflow-hidden rounded-full"
       style={{ background: total === 0 ? "var(--border)" : "transparent" }}
       data-testid="inspector-bar"
+      aria-hidden="true"
     >
       {segments
         .filter((segment) => segment.count > 0)
@@ -79,6 +83,7 @@ function DistributionBar({ counts }: { counts: IssueCounts }) {
           <span
             key={segment.id}
             data-testid={`inspector-bar-${segment.id}`}
+            data-count={segment.count}
             className="h-full rounded-full"
             style={{ width: `${(segment.count / total) * 100}%`, background: segment.color }}
           />
@@ -119,6 +124,10 @@ function ScoreBlock({ compareResult }: { compareResult: DesktopCompareResult | n
     <div className="space-y-2.5 px-4 py-4" style={{ borderBottom: "1px solid var(--border)" }}>
       <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
         <span
+          role="img"
+          aria-label={
+            score === null ? t("common.notMeasured") : t("inspector.scoreAria", { value: score })
+          }
           className="mono font-bold text-4xl leading-none"
           style={{ color }}
           data-testid="inspector-score-value"
@@ -222,19 +231,43 @@ function IssueCardList({
       </div>
     );
   }
-  if (issues.length === 0) {
+  if (!compareResult.diffReport) {
     return (
       <div
         data-testid="issue-list-empty"
         className="rounded-[var(--radius-token)] p-4 text-sm"
-        style={{ background: "var(--match-soft)", color: "var(--match)" }}
+        style={{ background: "var(--surface-2)", color: "var(--muted-fg)" }}
       >
-        {t("compare.issuesEmpty")}
+        {t("common.notMeasured")}
       </div>
     );
   }
-  const visible = filterIssues(issues, filter);
-  if (visible.length === 0) {
+  const matched = filter === "all" ? listMatchedRegions(compareResult.diffReport) : [];
+  const matchCards = matched.map((region) => (
+    <MatchCard
+      key={region.regionId}
+      name={resolveRegionName(region, compareResult.diffRegions)}
+    />
+  ));
+  if (issues.length === 0) {
+    return (
+      <div className="space-y-2">
+        <div
+          data-testid="issue-list-empty"
+          className="rounded-[var(--radius-token)] p-4 text-sm"
+          style={{ background: "var(--match-soft)", color: "var(--match)" }}
+        >
+          {t("compare.issuesEmpty")}
+        </div>
+        {matchCards}
+      </div>
+    );
+  }
+  // key は絞り込み前の並び順 (index) を含める。同じ region に同じ値の課題が並んでも衝突しない。
+  const visible = issues
+    .map((issue, index) => ({ issue, index }))
+    .filter((entry) => matchesIssueFilter(entry.issue, filter));
+  if (visible.length === 0 && matched.length === 0) {
     return (
       <div
         data-testid="issue-list-empty"
@@ -247,13 +280,32 @@ function IssueCardList({
   }
   return (
     <div className="space-y-2" data-testid="issue-card-list">
-      {visible.map((issue) => (
+      {visible.map(({ issue, index }) => (
         <IssueCard
-          key={`${issue.regionId}-${issue.kind}-${issue.severity}-${issue.evidence.signal}-${issue.evidence.value}`}
+          key={`${index}-${issue.regionId}-${issue.kind}`}
           issue={issue}
           name={resolveIssueName(issue, compareResult.diffRegions)}
         />
       ))}
+      {matchCards}
+    </div>
+  );
+}
+
+// 比較結果が変わったら (key が変わり) 絞り込みを「すべて」へ戻す。前回の「差分」が残ると、
+// 新しい結果の課題が見えないまま 0 件に見えてしまう。
+function FilteredIssues({
+  issues,
+  compareResult,
+}: {
+  issues: DiffIssue[];
+  compareResult: DesktopCompareResult | null;
+}) {
+  const [filter, setFilter] = useState<IssueFilter>("all");
+  return (
+    <div className="space-y-3 px-4 py-3">
+      <FilterControl filter={filter} onChange={setFilter} />
+      <IssueCardList issues={issues} compareResult={compareResult} filter={filter} />
     </div>
   );
 }
@@ -309,16 +361,11 @@ function InspectorFooter({
       data-testid="inspector-footer"
     >
       {compareResult && !isComparing ? (
-        <CompareReportExport
-          key={compareResult.comparisonId}
-          result={compareResult}
-          variant="footer"
-        />
+        <CompareReportExport key={compareResult.comparisonId} result={compareResult} />
       ) : (
-        <button type="button" className="fd-btn min-w-0 flex-1 justify-center" disabled>
-          <Download className="h-4 w-4" aria-hidden="true" />
-          {t("inspector.export")}
-        </button>
+        <div className="min-w-0 flex-1">
+          <UnavailableFooterExport />
+        </div>
       )}
       <button
         type="button"
@@ -343,7 +390,6 @@ export function CompareInspector({
   selectedFrame,
 }: CompareInspectorProps) {
   const { t } = useTranslation();
-  const [filter, setFilter] = useState<IssueFilter>("all");
   const [activeTab, setActiveTab] = useState<ResultToolTab>("report");
   const issues = compareResult?.diffReport?.issues ?? [];
   const inspectionCandidates = useMemo(
@@ -371,10 +417,11 @@ export function CompareInspector({
 
       <div className="scroll min-h-0 flex-1 overflow-auto">
         <ScoreBlock compareResult={compareResult} />
-        <div className="space-y-3 px-4 py-3">
-          <FilterControl filter={filter} onChange={setFilter} />
-          <IssueCardList issues={issues} compareResult={compareResult} filter={filter} />
-        </div>
+        <FilteredIssues
+          key={compareResult?.comparisonId ?? "no-result"}
+          issues={issues}
+          compareResult={compareResult}
+        />
         <div className="space-y-4 px-4 py-4" style={{ borderTop: "1px solid var(--border)" }}>
           <ResultToolTabs
             activeTab={activeTab}

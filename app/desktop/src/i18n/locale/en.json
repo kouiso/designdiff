@@ -64,7 +64,6 @@
   },
   "compare": {
     "reportExportFormat": "Report format",
-    "reportExportSave": "Save report",
     "reportExportSaving": "Saving…",
     "reportExportSaved": "Saved to {{path}}",
     "reportExportCanceled": "Save canceled",
@@ -196,6 +195,7 @@
   "inspector": {
     "title": "Inspector",
     "scoreSuffix": "/ 100 match score",
+    "scoreAria": "Match score {{value}} out of 100",
     "countDiff": "Diff",
     "countReview": "Review",
     "countMatch": "Match",

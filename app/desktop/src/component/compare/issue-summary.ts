@@ -1,4 +1,4 @@
-import type { DiffIssue, DiffRegion, DiffReport } from "@figdiff/shared";
+import type { DiffIssue, DiffRegion, DiffReport, RegionScore } from "@figdiff/shared";
 
 export type IssueFilter = "all" | "diff" | "review";
 
@@ -19,17 +19,25 @@ export function countIssues(report: DiffReport | undefined): IssueCounts {
     if (issue.severity === "critical") diff += 1;
     else review += 1;
   }
+  return { diff, review, match: listMatchedRegions(report).length };
+}
+
+/** 課題を持たない採点領域 (root を除く)。一致件数と一致カードの定義を一箇所に揃える。 */
+export function listMatchedRegions(report: DiffReport): RegionScore[] {
   const regionsWithIssue = new Set(report.issues.map((issue) => issue.regionId));
-  const match = report.regionScores.filter(
+  return report.regionScores.filter(
     (score) => score.scope !== "root" && !regionsWithIssue.has(score.regionId),
-  ).length;
-  return { diff, review, match };
+  );
+}
+
+export function matchesIssueFilter(issue: DiffIssue, filter: IssueFilter): boolean {
+  if (filter === "diff") return issue.severity === "critical";
+  if (filter === "review") return issue.severity !== "critical";
+  return true;
 }
 
 export function filterIssues(issues: DiffIssue[], filter: IssueFilter): DiffIssue[] {
-  if (filter === "diff") return issues.filter((issue) => issue.severity === "critical");
-  if (filter === "review") return issues.filter((issue) => issue.severity !== "critical");
-  return issues;
+  return issues.filter((issue) => matchesIssueFilter(issue, filter));
 }
 
 /** Figma node の名前が分かればそれを、分からなければ regionId を返す。 */
@@ -43,4 +51,16 @@ export function resolveIssueName(issue: DiffIssue, diffRegions: DiffRegion[]): s
     }
   }
   return issue.regionId;
+}
+
+/** 一致領域の表示名。Figma node の名前が分かればそれを、分からなければ regionId を返す。 */
+export function resolveRegionName(region: RegionScore, diffRegions: DiffRegion[]): string {
+  if (region.figmaNodeId) {
+    for (const diffRegion of diffRegions) {
+      const index = diffRegion.nearbyNodeIds.indexOf(region.figmaNodeId);
+      const name = index >= 0 ? diffRegion.nearbyNodeNames[index] : undefined;
+      if (name) return name;
+    }
+  }
+  return region.regionId;
 }

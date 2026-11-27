@@ -8,12 +8,19 @@ import { CompareStatusBar } from "./compare-status-bar";
 afterEach(cleanup);
 
 describe("CompareStatusBar", () => {
-  it("寸法・しきい値・一致率を出し、合格でなければ琥珀色の点にする", () => {
+  it("寸法・しきい値・一致率を出し、判定が fail なら赤い点にする", () => {
     render(<CompareStatusBar compareResult={buildInspectorFixture()} />);
 
     expect(screen.getByTestId("status-dimensions")).toHaveTextContent("320 × 660");
     expect(screen.getByTestId("status-threshold")).toHaveTextContent("色差しきい値 0.1");
     expect(screen.getByTestId("status-match")).toHaveTextContent("78% 一致");
+    expect(screen.getByTestId("status-match-dot").style.background).toBe("var(--diff)");
+  });
+
+  it("判定が付かない比較 (inconclusive) は琥珀色の点にし、fail と区別する", () => {
+    const { diffReport: _omitted, ...withoutReport } = buildInspectorFixture();
+    render(<CompareStatusBar compareResult={withoutReport} />);
+
     expect(screen.getByTestId("status-match-dot").style.background).toBe("var(--warn)");
   });
 

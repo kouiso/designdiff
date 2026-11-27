@@ -19,10 +19,16 @@ beforeEach(() => {
 });
 afterEach(cleanup);
 
+// 保存先の読み込み中は無効の「書出」が出るので、形式の選択肢が出てから押せるボタンを返す。
+async function findExportButton(): Promise<HTMLElement> {
+  await screen.findByRole("combobox");
+  return screen.getByRole("button", { name: "書出" });
+}
+
 it("sends the displayed result and selected report format", async () => {
   mocks.save.mockResolvedValue("/tmp/report.json");
   render(<CompareReportExport result={result} />);
-  const button = await screen.findByRole("button", { name: "レポートを保存" });
+  const button = await findExportButton();
   fireEvent.change(screen.getByRole("combobox", { name: "レポートの形式" }), {
     target: { value: "json" },
   });
@@ -34,19 +40,19 @@ it("sends the displayed result and selected report format", async () => {
 it("reports cancellation without claiming the report was saved", async () => {
   mocks.save.mockResolvedValue(null);
   render(<CompareReportExport result={result} />);
-  fireEvent.click(await screen.findByRole("button", { name: "レポートを保存" }));
+  fireEvent.click(await findExportButton());
   expect(await screen.findByRole("status")).toHaveTextContent("保存をキャンセルしました");
-  expect(screen.getByRole("button", { name: "レポートを保存" })).toBeEnabled();
+  expect(screen.getByRole("button", { name: "書出" })).toBeEnabled();
 });
 
 it("shows a failure and allows retry without exposing raw errors", async () => {
   mocks.save.mockRejectedValueOnce(new Error("private internal details"));
   mocks.save.mockResolvedValueOnce("/tmp/retry.md");
   render(<CompareReportExport result={result} />);
-  fireEvent.click(await screen.findByRole("button", { name: "レポートを保存" }));
+  fireEvent.click(await findExportButton());
   expect(await screen.findByRole("alert")).toHaveTextContent("レポートを保存できませんでした");
   expect(screen.queryByText(/private internal/)).not.toBeInTheDocument();
-  fireEvent.click(screen.getByRole("button", { name: "レポートを保存" }));
+  fireEvent.click(screen.getByRole("button", { name: "書出" }));
   expect(await screen.findByRole("status")).toHaveTextContent("/tmp/retry.md");
 });
 
@@ -61,7 +67,7 @@ it("prevents duplicate save dialogs while a save is pending", async () => {
       }),
   );
   render(<CompareReportExport result={result} />);
-  const button = await screen.findByRole("button", { name: "レポートを保存" });
+  const button = await findExportButton();
   fireEvent.click(button);
   fireEvent.click(button);
   expect(mocks.save).toHaveBeenCalledTimes(1);
@@ -72,7 +78,8 @@ it("prevents duplicate save dialogs while a save is pending", async () => {
 
 it("does not offer saving on a platform without file export", async () => {
   mocks.getReportExport.mockResolvedValue(null);
-  const { container } = render(<CompareReportExport result={result} />);
+  render(<CompareReportExport result={result} />);
   await waitFor(() => expect(mocks.getReportExport).toHaveBeenCalled());
-  expect(container).toBeEmptyDOMElement();
+  expect(screen.getByRole("button", { name: "書出" })).toBeDisabled();
+  expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
 });

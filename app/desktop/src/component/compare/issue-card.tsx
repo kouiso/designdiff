@@ -50,6 +50,16 @@ export function IssueCard({ issue, name }: IssueCardProps) {
         <span aria-hidden="true">→</span>
         <span style={{ color: accent }}>{formatIssueValue(issue.evidence.actual)}</span>
       </p>
+      <p
+        className="mono mt-1 break-words text-[11px]"
+        style={{ color: "var(--muted-fg)" }}
+        data-testid="issue-card-meta"
+      >
+        x:{issue.bbox.x} y:{issue.bbox.y} w:{issue.bbox.w} h:{issue.bbox.h}
+        {" · "}
+        {issue.evidence.signal}: {formatIssueValue(issue.evidence.value)} /{" "}
+        {formatIssueValue(issue.evidence.threshold)}
+      </p>
     </div>
   );
 }

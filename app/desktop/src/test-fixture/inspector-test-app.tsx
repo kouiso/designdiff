@@ -56,7 +56,10 @@ function InspectorTestPage() {
   );
 }
 
-createRoot(document.getElementById("test-root")!).render(
+const rootElement = document.getElementById("test-root");
+if (!rootElement) throw new Error("test-inspector.html に #test-root がありません");
+
+createRoot(rootElement).render(
   <StrictMode>
     <InspectorTestPage />
   </StrictMode>,

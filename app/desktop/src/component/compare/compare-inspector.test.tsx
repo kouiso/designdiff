@@ -43,6 +43,7 @@ describe("CompareInspector score block", () => {
 
     expect(screen.getByRole("heading", { name: "インスペクタ" })).toBeInTheDocument();
     expect(screen.getByTestId("inspector-score-value")).toHaveTextContent("78");
+    expect(screen.getByRole("img", { name: "一致スコア 78 / 100" })).toBeInTheDocument();
     expect(screen.getByText("/ 100 一致スコア")).toBeInTheDocument();
     expect(screen.getByTestId("compare-score-verdict-badge")).toHaveTextContent("FAIL");
     expect(screen.getByTestId("inspector-count-diff")).toHaveTextContent("1 差分");
@@ -53,10 +54,13 @@ describe("CompareInspector score block", () => {
   it("3分割バーの幅は件数に比例する", () => {
     renderInspector();
 
-    // 差分1 : 要確認2 : 一致2 = 20% : 40% : 40%
-    expect(screen.getByTestId("inspector-bar-diff").style.width).toBe("20%");
-    expect(screen.getByTestId("inspector-bar-review").style.width).toBe("40%");
-    expect(screen.getByTestId("inspector-bar-match").style.width).toBe("40%");
+    // 差分1 : 要確認2 : 一致2。幅の絶対値ではなく、件数との比で見る。
+    const widthOf = (id: string) => Number.parseFloat(screen.getByTestId(id).style.width);
+    expect(screen.getByTestId("inspector-bar-diff")).toHaveAttribute("data-count", "1");
+    expect(screen.getByTestId("inspector-bar-review")).toHaveAttribute("data-count", "2");
+    expect(screen.getByTestId("inspector-bar-match")).toHaveAttribute("data-count", "2");
+    expect(widthOf("inspector-bar-review")).toBeCloseTo(widthOf("inspector-bar-diff") * 2);
+    expect(widthOf("inspector-bar-match")).toBeCloseTo(widthOf("inspector-bar-review"));
   });
 
   it("件数が0のセグメントはバーに出さない", () => {
@@ -80,7 +84,7 @@ describe("CompareInspector score block", () => {
     renderInspector({ compareResult: null, canCompare: false });
 
     expect(screen.getByTestId("inspector-score-value")).toHaveTextContent("—");
-    expect(screen.getByText("未実行")).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "未実行" })).toBeInTheDocument();
     expect(screen.getByTestId("issue-list-empty")).toHaveTextContent(
       "「差分を検出」ボタンをクリックして比較を実行します。",
     );
@@ -112,13 +116,68 @@ describe("CompareInspector issue list", () => {
     expect(within(typography).getByTestId("issue-card-values")).toHaveTextContent("700→600");
   });
 
-  it("critical のカードだけ赤い背景と枠にする", () => {
+  it("カードに bbox と signal / threshold の補助行を残す", () => {
     renderInspector();
 
-    const [critical, major] = screen.getAllByTestId("issue-card");
-    expect(critical.style.background).toBe("var(--diff-soft)");
-    expect(critical.style.border).toContain("var(--diff)");
-    expect(major.style.background).not.toBe("var(--diff-soft)");
+    const meta = within(screen.getAllByTestId("issue-card")[0]).getByTestId("issue-card-meta");
+    expect(meta).toHaveTextContent(/x:\d+ y:\d+ w:\d+ h:\d+/);
+    expect(meta).toHaveTextContent(/\S+: [\d.]+ \/ [\d.]+/);
+  });
+
+  it("critical のカードだけ data-severity が critical になる", () => {
+    renderInspector();
+
+    expect(
+      screen.getAllByTestId("issue-card").map((card) => card.getAttribute("data-severity")),
+    ).toEqual(["critical", "major", "minor"]);
+  });
+
+  it("同じ region に同じ値の課題が並んでも、全部描画される", () => {
+    const result = buildInspectorFixture();
+    if (!result.diffReport) throw new Error("fixture has no diffReport");
+    const [first] = result.diffReport.issues;
+    renderInspector({
+      compareResult: {
+        ...result,
+        diffReport: { ...result.diffReport, issues: [first, first] },
+      },
+    });
+
+    expect(screen.getAllByTestId("issue-card")).toHaveLength(2);
+    fireEvent.click(screen.getByRole("button", { name: "差分" }));
+    expect(screen.getAllByTestId("issue-card")).toHaveLength(2);
+  });
+
+  it("比較結果が切り替わったら絞り込みを「すべて」へ戻す", () => {
+    const first = buildInspectorFixture();
+    const { rerender } = render(
+      <CompareInspector
+        compareResult={first}
+        isComparing={false}
+        canCompare={true}
+        onRecompare={vi.fn()}
+        currentFileKey={null}
+        projectId={null}
+        selectedFrame={null}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "差分" }));
+    expect(screen.getAllByTestId("issue-card")).toHaveLength(1);
+
+    rerender(
+      <CompareInspector
+        compareResult={{ ...first, comparisonId: "next-comparison" }}
+        isComparing={false}
+        canCompare={true}
+        onRecompare={vi.fn()}
+        currentFileKey={null}
+        projectId={null}
+        selectedFrame={null}
+      />,
+    );
+
+    expect(screen.getAllByTestId("issue-card")).toHaveLength(3);
+    expect(screen.getByRole("button", { name: "すべて" })).toHaveAttribute("aria-pressed", "true");
   });
 
   it("差分フィルタは critical だけを残す", () => {
@@ -178,6 +237,62 @@ describe("CompareInspector issue list", () => {
     });
 
     expect(screen.getByTestId("issue-list-empty")).toHaveTextContent("No typed issues (P1 scope)");
+  });
+
+  it("diffReport が無い比較は未計測を中立表示し、issuesEmpty を出さない", () => {
+    renderInspector({ compareResult: { ...buildInspectorFixture(), diffReport: undefined } });
+
+    const empty = screen.getByTestId("issue-list-empty");
+    expect(empty).toHaveTextContent("未実行");
+    expect(empty).not.toHaveTextContent("No typed issues");
+    expect(screen.queryByTestId("match-card")).not.toBeInTheDocument();
+  });
+});
+
+describe("CompareInspector match cards", () => {
+  it("すべてでは課題カードの後ろに一致カードを出し、件数は一致件数と等しい", () => {
+    renderInspector();
+
+    const cards = screen.getAllByTestId("match-card");
+    expect(cards).toHaveLength(2);
+    expect(screen.getByTestId("inspector-count-match")).toHaveTextContent("2 一致");
+    const [balance, transactions] = cards;
+    expect(balance).toHaveTextContent("一致");
+    expect(balance).toHaveTextContent("balance-card");
+    expect(balance).toHaveTextContent("OK");
+    expect(transactions).toHaveTextContent("transaction-list");
+    expect(within(balance).queryByText("→")).not.toBeInTheDocument();
+    const lastIssue = screen.getAllByTestId("issue-card").at(-1);
+    expect(lastIssue?.compareDocumentPosition(balance)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+
+  it("figmaNodeId が引ければ node 名を表示する", () => {
+    const result = buildInspectorFixture();
+    if (!result.diffReport) throw new Error("fixture has no diffReport");
+    renderInspector({
+      compareResult: {
+        ...result,
+        diffReport: {
+          ...result.diffReport,
+          regionScores: result.diffReport.regionScores.map((score) =>
+            score.regionId === "balance-card" ? { ...score, figmaNodeId: "1:10" } : score,
+          ),
+        },
+      },
+    });
+
+    expect(screen.getAllByTestId("match-card")[0]).toHaveTextContent("プライマリボタンの背景色");
+  });
+
+  it("差分と要確認では一致カードを出さない", () => {
+    renderInspector();
+    const filter = screen.getByTestId("inspector-filter");
+
+    fireEvent.click(within(filter).getByRole("button", { name: "差分" }));
+    expect(screen.queryByTestId("match-card")).not.toBeInTheDocument();
+
+    fireEvent.click(within(filter).getByRole("button", { name: "要確認" }));
+    expect(screen.queryByTestId("match-card")).not.toBeInTheDocument();
   });
 });
 

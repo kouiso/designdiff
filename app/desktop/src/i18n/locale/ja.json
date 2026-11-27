@@ -64,7 +64,6 @@
   },
   "compare": {
     "reportExportFormat": "レポートの形式",
-    "reportExportSave": "レポートを保存",
     "reportExportSaving": "保存中…",
     "reportExportSaved": "保存しました: {{path}}",
     "reportExportCanceled": "保存をキャンセルしました",
@@ -196,6 +195,7 @@
   "inspector": {
     "title": "インスペクタ",
     "scoreSuffix": "/ 100 一致スコア",
+    "scoreAria": "一致スコア {{value}} / 100",
     "countDiff": "差分",
     "countReview": "要確認",
     "countMatch": "一致",

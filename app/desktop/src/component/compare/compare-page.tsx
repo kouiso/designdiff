@@ -335,6 +335,7 @@ export function ComparePage() {
               {FLOW_VIEW_MODES.map((mode) => {
                 const Icon = mode.icon;
                 const isActive = viewMode === mode.id;
+                const descriptionId = `view-mode-desc-${mode.id}`;
                 return (
                   <button
                     key={mode.id}
@@ -343,6 +344,7 @@ export function ComparePage() {
                     onClick={() => setViewMode(mode.id)}
                     title={`${t(`viewMode.${mode.id}`)} - ${t(`viewMode.desc_${mode.id}`)}`}
                     aria-label={t(`viewMode.${mode.id}`)}
+                    aria-describedby={descriptionId}
                     aria-pressed={isActive}
                     style={
                       isActive
@@ -351,6 +353,9 @@ export function ComparePage() {
                     }
                   >
                     <Icon className="h-4 w-4" aria-hidden="true" />
+                    <span id={descriptionId} className="sr-only">
+                      {t(`viewMode.desc_${mode.id}`)}
+                    </span>
                   </button>
                 );
               })}

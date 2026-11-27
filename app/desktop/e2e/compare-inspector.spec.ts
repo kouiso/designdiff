@@ -2,7 +2,7 @@ import { mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { expect, test } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
 
 const TEST_URL = "/test-inspector.html";
 // 証跡の更新は ISSUE_445_EVIDENCE=1 のときだけ docs/ に書く。通常実行では追跡ファイルを汚さない。
@@ -11,6 +11,26 @@ const EVIDENCE_DIR = process.env.ISSUE_445_EVIDENCE
   : resolve(dirname(fileURLToPath(import.meta.url)), "../test-results/issue-445");
 
 test.use({ viewport: { width: 860, height: 820 }, deviceScaleFactor: 1 });
+
+// 動画の各状態を目で追える長さだけ描画フレームを進める。固定時間の sleep ではなく、
+// 描画が実際に進んだことを待つ。通常の検証 (上のテスト群) には使わず、動画の証跡専用。
+const DWELL_FRAMES = 48;
+
+async function dwell(page: Page): Promise<void> {
+  await page.evaluate(
+    (frames) =>
+      new Promise<void>((done) => {
+        let remaining = frames;
+        const tick = () => {
+          remaining -= 1;
+          if (remaining <= 0) done();
+          else requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+      }),
+    DWELL_FRAMES,
+  );
+}
 
 test.describe("Compare inspector (Workspace)", () => {
   test.beforeEach(async ({ page }) => {
@@ -92,14 +112,14 @@ test.describe("Compare inspector (Workspace)", () => {
 
     await filter.getByRole("button", { name: "差分" }).click();
     await expect(cards).toHaveCount(1);
-    await page.waitForTimeout(800);
+    await dwell(page);
     await filter.getByRole("button", { name: "要確認" }).click();
     await expect(cards).toHaveCount(2);
-    await page.waitForTimeout(800);
+    await dwell(page);
     await filter.getByRole("button", { name: "すべて" }).click();
     await expect(cards).toHaveCount(3);
     await cards.first().hover();
-    await page.waitForTimeout(800);
+    await dwell(page);
 
     await context.close();
     if (video === null) throw new Error("video was not recorded");

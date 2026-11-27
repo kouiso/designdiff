@@ -49,7 +49,7 @@ export function buildScoreBreakdown(compareResult: DesktopCompareResult | null) 
   const structureScore =
     compareResult.diffReport?.weightedAggregate?.weightedStructure !== undefined
       ? compareResult.diffReport.weightedAggregate.weightedStructure * 100
-      : compareResult.matchRate;
+      : null;
 
   return [
     { label: "MATCH", score: compareResult.matchRate },

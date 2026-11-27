@@ -48,7 +48,7 @@ beforeEach(() => {
 describe("ComparePage", () => {
   it("比較前は未計測を表示してゼロ点や判定を表示しない", () => {
     render(<ComparePage />);
-    expect(screen.getByText("未実行")).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "未実行" })).toBeInTheDocument();
     expect(screen.getByTestId("inspector-score-value")).toHaveTextContent("—");
     expect(screen.queryByText("0%")).not.toBeInTheDocument();
     expect(screen.queryByTestId("compare-score-verdict-badge")).not.toBeInTheDocument();
@@ -154,8 +154,6 @@ describe("ComparePage", () => {
     render(<ComparePage />);
     expect(screen.getByTestId("compare-verdict-badge")).toHaveTextContent("PASS");
     expect(screen.getByText("RegionScore Summary")).toBeInTheDocument();
-    // 課題リストの空表示と、レポートタブ内の空表示の2か所に出る。
-    expect(screen.getAllByText("No typed issues (P1 scope)")).toHaveLength(2);
     expect(screen.getByTestId("issue-list-empty")).toHaveTextContent("No typed issues (P1 scope)");
     expect(screen.getByText("matchRate: 95.5%")).toBeInTheDocument();
   });
@@ -375,9 +373,14 @@ describe("ComparePage Workspace chrome", () => {
     const buttons = within(group).getAllByRole("button");
     expect(buttons).toHaveLength(3);
     for (const button of buttons) {
-      expect(button.textContent).toBe("");
-      expect(button).toHaveAttribute("aria-label");
-      expect(button.getAttribute("title")).toContain(button.getAttribute("aria-label"));
+      const label = button.getAttribute("aria-label");
+      expect(label).toBeTruthy();
+      expect(button.querySelector("svg")).not.toBeNull();
+      expect(button.getAttribute("title")).toContain(label);
+      // 長い説明は title ではなく aria-describedby で読み上げる。
+      const describedBy = button.getAttribute("aria-describedby");
+      expect(describedBy).toBeTruthy();
+      expect(document.getElementById(describedBy ?? "")?.textContent).not.toBe("");
     }
   });
 

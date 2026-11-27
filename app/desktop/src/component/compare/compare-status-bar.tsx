@@ -1,15 +1,15 @@
 import { useTranslation } from "react-i18next";
 
+import { COMPARE_THRESHOLD } from "@/lib/compare-threshold";
 import type { DesktopCompareResult } from "@/service/image-compare";
-import { COMPARE_THRESHOLD } from "@/store/compare-store";
 
-import { getVerdict } from "./compare-score";
+import { getVerdict, TONE_COLOR, VERDICT_TONE } from "./compare-score";
 
 /** キャンバス下端の状態バー。左に寸法としきい値、右に一致率。 */
 export function CompareStatusBar({ compareResult }: { compareResult: DesktopCompareResult }) {
   const { t } = useTranslation();
   const geometry = compareResult.comparisonGeometry;
-  const pass = getVerdict(compareResult) === "pass";
+  const color = TONE_COLOR[VERDICT_TONE[getVerdict(compareResult)]];
   const matchRate = Math.round(compareResult.matchRate * 10) / 10;
 
   return (
@@ -34,14 +34,14 @@ export function CompareStatusBar({ compareResult }: { compareResult: DesktopComp
       </span>
       <span
         className="inline-flex items-center gap-1.5 font-semibold"
-        style={{ color: pass ? "var(--match)" : "var(--warn)" }}
+        style={{ color }}
         data-testid="status-match"
       >
         <span
           aria-hidden="true"
           className="inline-block h-1.5 w-1.5 rounded-full"
           data-testid="status-match-dot"
-          style={{ background: pass ? "var(--match)" : "var(--warn)" }}
+          style={{ background: color }}
         />
         {t("inspector.statusMatch", { value: matchRate })}
       </span>
