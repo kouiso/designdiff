@@ -162,7 +162,7 @@ try {
   await checkScore("project", 2);
   await page.getByRole("button", { name: "比較を開始", exact: true }).click();
   await expect(page.getByText("デザインと実装を比較", { exact: true })).toBeVisible();
-  const compareValue = page.getByTestId("score-ring-value");
+  const compareValue = page.getByTestId("inspector-score-value");
   await expect(compareValue).toHaveText(before ? "0" : "—");
   if (!before) await expect(page.getByTestId("compare-score-verdict-badge")).toHaveCount(0);
   await page.screenshot({
@@ -178,7 +178,6 @@ try {
       path: join(evidence, "after-node-inspection-empty.png"),
       animations: "disabled",
     });
-    await page.getByRole("button", { name: "課題", exact: true }).click();
   }
   await page
     .getByPlaceholder("URL またはファイルパス（例: http://localhost:3000）")

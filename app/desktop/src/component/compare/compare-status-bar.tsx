@@ -29,7 +29,7 @@ export function CompareStatusBar({ compareResult }: { compareResult: DesktopComp
           </span>
         ) : null}
         <span data-testid="status-threshold">
-          {t("inspector.statusThreshold", { value: Math.round(COMPARE_THRESHOLD * 1000) / 10 })}
+          {t("inspector.statusThreshold", { value: COMPARE_THRESHOLD })}
         </span>
       </span>
       <span

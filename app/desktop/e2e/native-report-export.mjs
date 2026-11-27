@@ -458,7 +458,7 @@ x.XSync(d, 0)
     }
     nativeKeys("\x1b");
   };
-  const saveButton = page.getByRole("button", { name: "レポートを保存", exact: true });
+  const saveButton = page.getByRole("button", { name: "書出", exact: true });
   await expect(saveButton).toBeVisible();
   const savedFiles = [];
   for (const format of ["json", "markdown"]) {

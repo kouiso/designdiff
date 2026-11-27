@@ -393,7 +393,7 @@ describe("ComparePage Workspace chrome", () => {
     render(<ComparePage />);
 
     expect(screen.getByTestId("status-dimensions")).toHaveTextContent("320 × 660");
-    expect(screen.getByTestId("status-threshold")).toHaveTextContent("しきい値 10%");
+    expect(screen.getByTestId("status-threshold")).toHaveTextContent("色差しきい値 0.1");
     expect(screen.getByTestId("status-match")).toHaveTextContent("78% 一致");
   });
 

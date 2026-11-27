@@ -208,7 +208,7 @@
     "toolsLabel": "Tools",
     "export": "Export",
     "recompare": "Re-compare",
-    "statusThreshold": "Threshold {{value}}%",
+    "statusThreshold": "Color tolerance {{value}}",
     "statusMatch": "{{value}}% match",
     "kind": {
       "color": "Color",

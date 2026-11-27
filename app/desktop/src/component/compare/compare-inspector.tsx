@@ -26,8 +26,9 @@ import {
   filterIssues,
   resolveIssueName,
 } from "./issue-summary";
-import type { InspectionCandidate } from "./node-inspection-panel";
 import { type ResultToolTab, ResultToolTabs } from "./result-tool-tab";
+
+import type { InspectionCandidate } from "./node-inspection-panel";
 
 interface CompareInspectorProps {
   compareResult: DesktopCompareResult | null;

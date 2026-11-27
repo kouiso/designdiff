@@ -331,7 +331,7 @@ try {
   await openFixtureComparison(page);
   await page.screenshot({ path: join(evidence, "comparison-entry.png"), animations: "disabled" });
   await loadScreenshotAndCompare(page, screenshotPath);
-  const score = page.getByTestId("score-ring-value");
+  const score = page.getByTestId("inspector-score-value");
   await expect(score).toHaveText("50");
   await expect(diffPixelValue(page)).toHaveText(String(baselineOracle.differingPixelCount));
   const baselineScore = await score.textContent();
@@ -424,16 +424,16 @@ try {
   const restartEntries = await listRegions(page);
   assert.deepEqual(restartEntries, [expectedRightHalfEntry]);
   await loadScreenshotAndCompare(page, screenshotPath);
-  await expect(page.getByTestId("score-ring-value")).toHaveText("100");
+  await expect(page.getByTestId("inspector-score-value")).toHaveText("100");
   await expect(diffPixelValue(page)).toHaveText(String(maskedOracle.differingPixelCount));
-  const restartedScore = await page.getByTestId("score-ring-value").textContent();
+  const restartedScore = await page.getByTestId("inspector-score-value").textContent();
   const restartedDiffPixels = await diffPixelValue(page).textContent();
   await expect(restartedCard.getByText("この画像条件で確認済み", { exact: true })).toBeVisible();
 
   await restartedCard.getByRole("button", { name: "削除", exact: true }).click();
-  await expect(page.getByTestId("score-ring-value")).toHaveText("50");
+  await expect(page.getByTestId("inspector-score-value")).toHaveText("50");
   await expect(diffPixelValue(page)).toHaveText(String(baselineOracle.differingPixelCount));
-  const deleteRestoredScore = await page.getByTestId("score-ring-value").textContent();
+  const deleteRestoredScore = await page.getByTestId("inspector-score-value").textContent();
   const deleteRestoredDiffPixels = await diffPixelValue(page).textContent();
   const deletedEntries = await listRegions(page);
   assert.deepEqual(deletedEntries, []);
@@ -461,7 +461,7 @@ try {
 
   await fillMask(page, "full-canvas", 0, 0, 40, 40);
   await expect(page.getByText(/no pixels remain to compare/)).toBeVisible();
-  await expect(page.getByTestId("score-ring-value")).toHaveText("—");
+  await expect(page.getByTestId("inspector-score-value")).toHaveText("—");
   await expect(
     regionCard(page, "right-half").getByText("現在の画像条件とは不一致のため無効", {
       exact: true,

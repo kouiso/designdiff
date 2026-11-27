@@ -208,7 +208,7 @@
     "toolsLabel": "補助ツール",
     "export": "書出",
     "recompare": "再比較",
-    "statusThreshold": "しきい値 {{value}}%",
+    "statusThreshold": "色差しきい値 {{value}}",
     "statusMatch": "{{value}}% 一致",
     "kind": {
       "color": "カラー",

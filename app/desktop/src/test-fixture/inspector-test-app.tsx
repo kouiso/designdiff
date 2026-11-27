@@ -7,6 +7,7 @@ import { createRoot } from "react-dom/client";
 
 import { CompareInspector } from "@/component/compare/compare-inspector";
 import { CompareStatusBar } from "@/component/compare/compare-status-bar";
+
 import "@/i18n";
 import "@/index.css";
 import { buildInspectorFixture } from "./compare-inspector-fixture";

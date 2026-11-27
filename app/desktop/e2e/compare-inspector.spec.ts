@@ -5,10 +5,10 @@ import { fileURLToPath } from "node:url";
 import { expect, test } from "@playwright/test";
 
 const TEST_URL = "/test-inspector.html";
-const EVIDENCE_DIR = resolve(
-  dirname(fileURLToPath(import.meta.url)),
-  "../../../docs/evidence/issue-445",
-);
+// 証跡の更新は ISSUE_445_EVIDENCE=1 のときだけ docs/ に書く。通常実行では追跡ファイルを汚さない。
+const EVIDENCE_DIR = process.env.ISSUE_445_EVIDENCE
+  ? resolve(dirname(fileURLToPath(import.meta.url)), "../../../docs/evidence/issue-445")
+  : resolve(dirname(fileURLToPath(import.meta.url)), "../test-results/issue-445");
 
 test.use({ viewport: { width: 860, height: 820 }, deviceScaleFactor: 1 });
 
@@ -40,8 +40,12 @@ test.describe("Compare inspector (Workspace)", () => {
     const redCard = await cards.nth(0).evaluate((el) => getComputedStyle(el).backgroundColor);
     expect(redCard).not.toBe("rgba(0, 0, 0, 0)");
 
-    await expect(page.getByTestId("inspector-footer").getByRole("button", { name: "再比較" })).toBeEnabled();
-    await expect(page.getByTestId("inspector-footer").getByRole("button", { name: "書出" })).toBeVisible();
+    await expect(
+      page.getByTestId("inspector-footer").getByRole("button", { name: "再比較" }),
+    ).toBeEnabled();
+    await expect(
+      page.getByTestId("inspector-footer").getByRole("button", { name: "書出" }),
+    ).toBeVisible();
     await expect(page.getByTestId("compare-status-bar")).toContainText("320 × 660");
 
     await page.screenshot({ path: resolve(EVIDENCE_DIR, "inspector-all.png") });
