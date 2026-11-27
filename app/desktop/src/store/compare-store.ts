@@ -19,6 +19,9 @@ import { compareImages, type DesktopCompareResult } from "@/service/image-compar
 import { useProjectStore } from "@/store/project-store";
 import { useTabStore } from "@/store/tab-store";
 
+/** runComparison が compareImages へ渡す pixelmatch のしきい値 (0..1)。画面表示もこの値を読む。 */
+export const COMPARE_THRESHOLD = 0.1;
+
 export type ViewMode =
   | "design_only"
   | "implementation"
@@ -222,7 +225,7 @@ export const useCompareStore = create<CompareState>((set, get) => ({
     const fileKey = projectState.currentFileKey;
     const nodeId = projectState.selectedFrame?.id ?? null;
     const activeFixTarget = activeFixTargetFor(fixTarget, fileKey, nodeId, designImage);
-    const threshold = 0.1;
+    const threshold = COMPARE_THRESHOLD;
     const conditions: FixComparisonConditions = {
       designImage,
       threshold,

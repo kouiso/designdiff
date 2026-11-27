@@ -194,6 +194,31 @@
     "suggestionMinor": "Minor differences found in {{count}} areas. Use inspect_node to check the diff region nodes.",
     "suggestionMajor": "Significant differences found in {{count}} areas. Use inspect_node to review each diff region and apply fixes."
   },
+  "inspector": {
+    "title": "Inspector",
+    "scoreSuffix": "/ 100 match score",
+    "countDiff": "Diff",
+    "countReview": "Review",
+    "countMatch": "Match",
+    "filterLabel": "Filter issues",
+    "filterAll": "All",
+    "filterDiff": "Diff",
+    "filterReview": "Review",
+    "filteredEmpty": "No issues match this filter.",
+    "toolsLabel": "Tools",
+    "export": "Export",
+    "recompare": "Re-compare",
+    "statusThreshold": "Threshold {{value}}%",
+    "statusMatch": "{{value}}% match",
+    "kind": {
+      "color": "Color",
+      "position": "Position",
+      "size": "Size",
+      "missing": "Missing",
+      "extra": "Extra",
+      "typography": "Type"
+    }
+  },
   "ignoreRegion": {
     "bound": "Verified for this image geometry",
     "compareRequired": "Run a comparison before adding a mask.",

@@ -194,6 +194,31 @@
     "suggestionMinor": "軽微な差分が{{count}}箇所あります。inspect_nodeで差分領域のノードを確認してください。",
     "suggestionMajor": "大きな差分が{{count}}箇所あります。inspect_nodeで各差分領域を確認し、修正してください。"
   },
+  "inspector": {
+    "title": "インスペクタ",
+    "scoreSuffix": "/ 100 一致スコア",
+    "countDiff": "差分",
+    "countReview": "要確認",
+    "countMatch": "一致",
+    "filterLabel": "課題の絞り込み",
+    "filterAll": "すべて",
+    "filterDiff": "差分",
+    "filterReview": "要確認",
+    "filteredEmpty": "この絞り込みに該当する課題はありません。",
+    "toolsLabel": "補助ツール",
+    "export": "書出",
+    "recompare": "再比較",
+    "statusThreshold": "しきい値 {{value}}%",
+    "statusMatch": "{{value}}% 一致",
+    "kind": {
+      "color": "カラー",
+      "position": "位置",
+      "size": "サイズ",
+      "missing": "欠落",
+      "extra": "余分",
+      "typography": "タイポ"
+    }
+  },
   "ignoreRegion": {
     "bound": "この画像条件で確認済み",
     "compareRequired": "マスク追加前に比較を実行してください。",
