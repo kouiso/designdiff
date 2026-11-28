@@ -401,6 +401,8 @@ export const WeightedAggregateSchema = z.object({
   totalWeight: z.number().nonnegative(),
 });
 
+export const ScaleAxisStatusSchema = z.enum(["detected", "none", "unmeasured"]);
+
 export const AlignmentSchema = z.object({
   translation: z.object({
     x: z.number(),
@@ -414,9 +416,29 @@ export const AlignmentSchema = z.object({
     x: z.number(),
     y: z.number(),
   }),
+  scaleOffset: z
+    .object({
+      x: z.number(),
+      y: z.number(),
+    })
+    .optional(),
+  scaleStatus: z
+    .object({
+      x: ScaleAxisStatusSchema,
+      y: ScaleAxisStatusSchema,
+    })
+    .optional(),
   rotation: z.number(),
   confidence: z.number().min(0).max(1),
   residual: z.number().nonnegative(),
+  regionResiduals: z
+    .array(
+      z.object({
+        regionId: z.string(),
+        residual: z.number().min(0).max(1),
+      }),
+    )
+    .optional(),
 });
 
 export const DiffVerdictSchema = z.enum(["pass", "fail", "inconclusive"]);

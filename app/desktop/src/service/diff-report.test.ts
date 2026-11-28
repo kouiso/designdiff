@@ -110,6 +110,70 @@ describe("buildDiffReport", () => {
     expect(report.issues.every((issue) => issue.regionId === "top-left")).toBe(true);
   });
 
+  it("位置合わせの残差を regionScores と同じ行の id で返す", () => {
+    const width = 6;
+    const height = 6;
+    const designPixels = fillSolid(width, height, [80, 80, 80]);
+    const screenshotPixels = fillSolid(width, height, [80, 80, 80]);
+    paintRect(screenshotPixels, width, { x: 0, y: 0, w: 2, h: 2 }, [250, 250, 250]);
+
+    const report = buildDiffReport({ designPixels, screenshotPixels, width, height });
+
+    expect(report.alignment.regionResiduals?.map((row) => row.regionId)).toEqual(
+      report.regionScores.map((region) => region.regionId),
+    );
+    expect(
+      report.alignment.regionResiduals?.find((row) => row.regionId === "top-left")?.residual,
+    ).toBe(1);
+    expect(
+      report.alignment.regionResiduals
+        ?.filter((row) => row.regionId !== "top-left")
+        .every((row) => row.residual === 0),
+    ).toBe(true);
+  });
+
+  it("平行移動を適用した回は、設計を動かして空いた縁の帯を行の残差に数えない", () => {
+    const width = 12;
+    const height = 12;
+    const shift = 2;
+    const designPixels = fillSolid(width, height, [255, 255, 255]);
+    const screenshotPixels = fillSolid(width, height, [255, 255, 255]);
+    paintRect(designPixels, width, { x: 4, y: 4, w: 4, h: 4 }, [0, 0, 0]);
+    paintRect(screenshotPixels, width, { x: 4 + shift, y: 4, w: 4, h: 4 }, [0, 0, 0]);
+    const alignedDesignPixels = new Uint8ClampedArray(width * height * 4);
+    // 設計を右へ shift だけ動かし、左端の帯を透明のまま残す (shiftPixels と同じ形)。
+    for (let y = 0; y < height; y++) {
+      for (let x = shift; x < width; x++) {
+        const to = (y * width + x) * 4;
+        const from = (y * width + x - shift) * 4;
+        alignedDesignPixels.set(designPixels.subarray(from, from + 4), to);
+      }
+    }
+
+    const report = buildDiffReport({
+      designPixels,
+      screenshotPixels,
+      width,
+      height,
+      resolvedAlignment: {
+        alignment: {
+          translation: { x: shift, y: 0 },
+          source: "auto",
+          applied: true,
+          scale: { x: 1, y: 1 },
+          rotation: 0,
+          confidence: 1,
+          residual: 0,
+        },
+        alignedDesignPixels,
+        applied: true,
+      },
+    });
+
+    expect(report.alignment.regionResiduals?.length).toBeGreaterThan(0);
+    expect(report.alignment.regionResiduals?.every((row) => row.residual === 0)).toBe(true);
+  });
+
   it("任意ノードの採点をgrid集計へ混ぜず、部分maskの母数を明示する", () => {
     const width = 6;
     const height = 6;

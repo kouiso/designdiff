@@ -295,6 +295,128 @@ describe("buildDiffReport", () => {
     );
     expect(result.regionScores.every((score) => score.textureScore !== undefined)).toBe(true);
   });
+  it("位置合わせの残差を section 行と同じ id で返し、schema を通しても残すこと", async () => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    const { DiffReportSchema } = await import("@figdiff/shared");
+    const designPixels = await createSolidRgba(32, 24, WHITE_RGB);
+    const screenshotPixels = Uint8ClampedArray.from(designPixels);
+    for (let y = 16; y < 24; y++) {
+      for (let x = 0; x < 32; x++) {
+        const index = (y * 32 + x) * 4;
+        screenshotPixels[index] = 0;
+        screenshotPixels[index + 1] = 0;
+        screenshotPixels[index + 2] = 0;
+      }
+    }
+    const section = (id: string, y: number): FigmaNode => ({
+      id,
+      name: id,
+      type: "FRAME",
+      absoluteBoundingBox: { x: 0, y, width: 32, height: 8 },
+      absoluteRenderBounds: null,
+      fills: [],
+      strokes: [],
+      effects: [],
+      children: [],
+    });
+    const figmaRootNode: FigmaNode = {
+      ...section("root", 0),
+      absoluteBoundingBox: { x: 0, y: 0, width: 32, height: 24 },
+      children: [section("header", 0), section("body", 8), section("footer", 16)],
+    };
+
+    const result = buildDiffReport({
+      designPixels,
+      screenshotPixels,
+      width: 32,
+      height: 24,
+      figmaRootNode,
+    });
+    const residualOf = (regionId: string): number | undefined =>
+      result.alignment.regionResiduals?.find((row) => row.regionId === regionId)?.residual;
+
+    expect(result.alignment.regionResiduals?.map((row) => row.regionId)).toEqual(
+      result.regionScores.map((score) => score.regionId),
+    );
+    expect(residualOf("header")).toBe(0);
+    expect(residualOf("body")).toBe(0);
+    expect(residualOf("footer")).toBe(1);
+    expect(DiffReportSchema.parse(result).alignment.regionResiduals).toEqual(
+      result.alignment.regionResiduals,
+    );
+    // 32x24 は倍率を測るには短い。測らなかったことが schema を通しても残る。
+    expect(DiffReportSchema.parse(result).alignment.scaleStatus).toEqual({
+      x: "unmeasured",
+      y: "unmeasured",
+    });
+  });
+
+  it("平行移動を適用した回は、設計を動かして空いた縁の帯を行の残差に数えないこと", async () => {
+    const { buildDiffReport } = await import("./diff-report-builder.js");
+    const { shiftPixels } = await import("@figdiff/shared");
+    const width = 32;
+    const height = 24;
+    const shift = 4;
+    const designPixels = await createSolidRgba(width, height, WHITE_RGB);
+    const screenshotPixels = Uint8ClampedArray.from(designPixels);
+    // 設計の黒い四角が撮影では右へ shift だけ動いた画面。帯の外は平行移動で一致する。
+    for (let y = 8; y < 16; y++) {
+      for (let x = 8; x < 16; x++) {
+        for (const [pixels, offsetX] of [
+          [designPixels, 0],
+          [screenshotPixels, shift],
+        ] as const) {
+          const index = (y * width + x + offsetX) * 4;
+          pixels[index] = 0;
+          pixels[index + 1] = 0;
+          pixels[index + 2] = 0;
+        }
+      }
+    }
+    const section = (id: string, y: number): FigmaNode => ({
+      id,
+      name: id,
+      type: "FRAME",
+      absoluteBoundingBox: { x: 0, y, width, height: 8 },
+      absoluteRenderBounds: null,
+      fills: [],
+      strokes: [],
+      effects: [],
+      children: [],
+    });
+    const figmaRootNode: FigmaNode = {
+      ...section("root", 0),
+      absoluteBoundingBox: { x: 0, y: 0, width, height },
+      children: [section("header", 0), section("body", 8), section("footer", 16)],
+    };
+
+    const result = buildDiffReport({
+      designPixels,
+      screenshotPixels,
+      width,
+      height,
+      figmaRootNode,
+      resolvedAlignment: {
+        alignment: {
+          translation: { x: shift, y: 0 },
+          source: "auto",
+          applied: true,
+          scale: { x: 1, y: 1 },
+          rotation: 0,
+          confidence: 1,
+          residual: 0,
+        },
+        alignedDesignPixels: shiftPixels(designPixels, width, height, shift, 0),
+        applied: true,
+      },
+    });
+
+    expect(result.alignment.regionResiduals?.map((row) => row.regionId)).toEqual(
+      result.regionScores.map((score) => score.regionId),
+    );
+    expect(result.alignment.regionResiduals?.every((row) => row.residual === 0)).toBe(true);
+  });
+
   it("whole-frame fallback でも figmaNodeId を保持すること", async () => {
     const { buildDiffReport } = await import("./diff-report-builder.js");
     const pixels = await createSolidRgba(FALLBACK_FRAME_WIDTH, FALLBACK_FRAME_HEIGHT, BLUE_RGB);

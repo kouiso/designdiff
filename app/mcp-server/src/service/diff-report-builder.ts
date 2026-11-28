@@ -13,6 +13,7 @@ import {
   classifyForegroundOccupancyGeometry,
   computeMeanDeltaE2000,
   computePerceptibleDiffRatio,
+  computeRegionResiduals,
   deltaE2000,
   computeSsimForRegion,
   computeWholeImageStructure,
@@ -1797,6 +1798,21 @@ export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
     frameResidualBand,
     unscoredDiffBoxes,
   } = buildRegionScores(alignedOptions);
+  // 行の id と画素を regionScores と揃える。揃えないと、どの行の採点が全体の
+  // 位置合わせでどれだけ説明できたかを突き合わせられない。適用した平行移動を
+  // 渡し、設計を動かして空いた縁の帯 (平行移動で説明済みの差) を数えさせない。
+  const reportAlignment = {
+    ...alignment,
+    regionResiduals: computeRegionResiduals(
+      alignedDesignPixels,
+      screenshotPixels,
+      width,
+      height,
+      regionScores,
+      options.ignoreMask,
+      alignmentApplied ? alignment.translation : undefined,
+    ),
+  };
 
   // 比較対象そのものの行は子と範囲が重なる。合否を決める不具合をここから作ると、
   // 子が全部合格でも背景の色差だけで不合格へ倒れる。集計と同じ行だけを使う。
@@ -1874,7 +1890,7 @@ export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
   }
 
   const computedVerdict = computeVerdict(
-    { alignment, regionScores, issues },
+    { alignment: reportAlignment, regionScores, issues },
     options.rasterizationTolerance === true,
   );
   // セクション行がある比較でも、クラスタ行だけを集計した判定を並行して計算し、
@@ -1885,7 +1901,7 @@ export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
     sectionDiffClusters.length > 0
       ? computeVerdict(
           {
-            alignment,
+            alignment: reportAlignment,
             regionScores: sectionDiffClusters,
             issues: sectionDiffClusterIssues,
           },
@@ -1951,7 +1967,7 @@ export function buildDiffReport(options: BuildDiffReportOptions): DiffReport {
   }
 
   return {
-    alignment,
+    alignment: reportAlignment,
     regionScores,
     issues,
     weightedAggregate: verdict.weightedAggregate,
