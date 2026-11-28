@@ -36,6 +36,36 @@ export const colorAt = (
   return [pixels[offset], pixels[offset + 1], pixels[offset + 2]];
 };
 
+// 窓内画素をずらして読むための整数オフセット。細いストロークが 1px ずれて
+// 描かれた実測差を「別内容物の差」と分けるため、撮影側のサンプル位置を
+// ずらして突き合わせる経路で使う。範囲外に出た画素はサンプルから外す。
+export interface PixelOffset {
+  dx: number;
+  dy: number;
+}
+
+const NO_OFFSET: PixelOffset = { dx: 0, dy: 0 };
+
+// オフセット先が画像内にある画素だけを舐めるための添字解決。
+// pixels の長さから高さを復元する (呼び出し側は既に width/height で窓を
+// クリップしているので、オフセット分だけがはみ出しうる)。
+const shiftedIndex = (
+  pixels: Uint8ClampedArray,
+  width: number,
+  x: number,
+  y: number,
+  offset: PixelOffset | undefined,
+): number => {
+  if (offset === undefined || (offset.dx === 0 && offset.dy === 0)) {
+    return y * width + x;
+  }
+  const sx = x + offset.dx;
+  const sy = y + offset.dy;
+  const height = pixels.length / (width * 4);
+  if (sx < 0 || sx >= width || sy < 0 || sy >= height) return -1;
+  return sy * width + sx;
+};
+
 export const colorKey = (color: readonly number[]): string => `${color[0]},${color[1]},${color[2]}`;
 
 export const toHex = (color: readonly number[]): string =>
@@ -69,6 +99,7 @@ const dominantColor = (
   bottom: number,
   borderOnly: boolean,
   ignoreMask?: Uint8Array,
+  pixelOffset?: PixelOffset,
 ): { color: [number, number, number]; coverage: number } | undefined => {
   const counts = new Map<string, { sum: [number, number, number]; count: number }>();
   let sampleCount = 0;
@@ -77,7 +108,9 @@ const dominantColor = (
       if (borderOnly && x !== left && x !== right - 1 && y !== top && y !== bottom - 1) continue;
       const pixelIndex = y * width + x;
       if (ignoreMask?.[pixelIndex]) continue;
-      const color = colorAt(pixels, pixelIndex);
+      const sourceIndex = shiftedIndex(pixels, width, x, y, pixelOffset);
+      if (sourceIndex < 0) continue;
+      const color = colorAt(pixels, sourceIndex);
       const key = binKey(color);
       const current = counts.get(key);
       counts.set(key, {
@@ -159,6 +192,7 @@ export const resolveMatchingBackground = (
   width: number,
   window: RasterWindow,
   ignoreMask?: Uint8Array,
+  shotOffset?: PixelOffset,
 ): [number, number, number] | undefined => {
   const args = [width, window.left, window.top, window.right, window.bottom] as const;
   const crossMatch = (
@@ -175,9 +209,9 @@ export const resolveMatchingBackground = (
       : undefined;
   };
   const designRing = dominantColor(designPixels, ...args, true, ignoreMask);
-  const screenshotRing = dominantColor(screenshotPixels, ...args, true, ignoreMask);
+  const screenshotRing = dominantColor(screenshotPixels, ...args, true, ignoreMask, shotOffset);
   const designWindow = dominantColor(designPixels, ...args, false, ignoreMask);
-  const screenshotWindow = dominantColor(screenshotPixels, ...args, false, ignoreMask);
+  const screenshotWindow = dominantColor(screenshotPixels, ...args, false, ignoreMask, shotOffset);
   const ringSupported =
     designRing &&
     designWindow &&
@@ -376,6 +410,22 @@ export interface SameTokenRasterEvidence {
   // 画面でも 3-4px の局所ずれが普通に出るため、ずれ量で証明を落とすと
   // 受け入れ済み画面が FAIL に戻る。証明は維持し、ずれ量を証拠として残す。
   contentOffset?: ContentOffset;
+  // 細ストローク緩和段の証明である印。1px 未満のストロークは最深画素が
+  // 真のトークン色まで届かず被覆の質量比も数倍に割れるため、厳格段の
+  // fg差分・インク量差では同一ストロークを弾いてしまう (designdiff#243)。
+  // 緩和段は「同一 bg→fg 軸上の被覆差」を足跡 (alpha>=0.10 の画素範囲) と
+  // 新規強インク率で検分する。数値は診断のために残す。
+  thinStroke?: {
+    // 両側の足跡面積比 (大/小)。太さ変更はストローク周縁へ高 alpha の
+    // 環を足すので面積比が 2 倍を大きく越える。
+    footprintRatio: number;
+    // 片側にだけ現れた強インク (alpha>=0.6) の、足跡に対する割合の大きい方。
+    // 被覆差は既存足跡内の濃度差なので低く、太さ変更は周縁の環で高くなる。
+    newStrongRatio: number;
+    // 証明が成立した撮影側サンプルオフセット。0 なら同一位置の被覆差のみ。
+    shotOffsetDx: number;
+    shotOffsetDy: number;
+  };
 }
 
 export interface ContentOffset {
@@ -436,13 +486,16 @@ export const foregroundExtreme = (
   window: RasterWindow,
   background: readonly number[],
   ignoreMask?: Uint8Array,
+  pixelOffset?: PixelOffset,
 ): number[] | undefined => {
   const top: { score: number; color: number[] }[] = [];
   for (let y = window.top; y < window.bottom; y++) {
     for (let x = window.left; x < window.right; x++) {
       const index = y * width + x;
       if (ignoreMask?.[index]) continue;
-      const color = colorAt(pixels, index);
+      const sourceIndex = shiftedIndex(pixels, width, x, y, pixelOffset);
+      if (sourceIndex < 0) continue;
+      const color = colorAt(pixels, sourceIndex);
       const contrast = maxChannelDelta(background, color);
       if (top.length < FOREGROUND_EXTREME_TOPK || contrast > top[top.length - 1].score) {
         top.push({ score: contrast, color: [...color] });
@@ -467,12 +520,19 @@ export const isOnAxisBlend = (
   background: readonly number[],
   foreground: readonly number[],
   ignoreMask?: Uint8Array,
+  pixelOffset?: PixelOffset,
 ): boolean => {
   for (let y = window.top; y < window.bottom; y++) {
     for (let x = window.left; x < window.right; x++) {
       const index = y * width + x;
       if (ignoreMask?.[index]) continue;
-      const { residual } = blendAlphaAndResidual(colorAt(pixels, index), background, foreground);
+      const sourceIndex = shiftedIndex(pixels, width, x, y, pixelOffset);
+      if (sourceIndex < 0) continue;
+      const { residual } = blendAlphaAndResidual(
+        colorAt(pixels, sourceIndex),
+        background,
+        foreground,
+      );
       if (residual > RASTER_BLEND_RESIDUAL) return false;
     }
   }
@@ -486,13 +546,16 @@ export const inkCoverage = (
   background: readonly number[],
   foreground: readonly number[],
   ignoreMask?: Uint8Array,
+  pixelOffset?: PixelOffset,
 ): number => {
   let coverage = 0;
   for (let y = window.top; y < window.bottom; y++) {
     for (let x = window.left; x < window.right; x++) {
       const index = y * width + x;
       if (ignoreMask?.[index]) continue;
-      coverage += blendAlphaAndResidual(colorAt(pixels, index), background, foreground).alpha;
+      const sourceIndex = shiftedIndex(pixels, width, x, y, pixelOffset);
+      if (sourceIndex < 0) continue;
+      coverage += blendAlphaAndResidual(colorAt(pixels, sourceIndex), background, foreground).alpha;
     }
   }
   return coverage;
@@ -819,14 +882,17 @@ export const countChangedPixels = (
   width: number,
   window: RasterWindow,
   ignoreMask?: Uint8Array,
+  shotOffset?: PixelOffset,
 ): number => {
   let changed = 0;
   for (let y = window.top; y < window.bottom; y++) {
     for (let x = window.left; x < window.right; x++) {
       const index = y * width + x;
       if (ignoreMask?.[index]) continue;
+      const sourceIndex = shiftedIndex(screenshotPixels, width, x, y, shotOffset);
+      if (sourceIndex < 0) continue;
       const design = colorAt(designPixels, index);
-      const screenshot = colorAt(screenshotPixels, index);
+      const screenshot = colorAt(screenshotPixels, sourceIndex);
       if (maxChannelDelta(design, screenshot) > CHANNEL_TOLERANCE) changed++;
     }
   }
@@ -938,6 +1004,230 @@ const classifySameTokenRasterizationAtHalo = (
   };
 };
 
+// ── 細ストローク緩和段 (designdiff#243) ──────────────────────────────────
+// 厳格段が弾く実測ケースの分解:
+//  - 最深3画素の fg 差が 24 を超える: 1px 未満ストロークの AA は最深画素まで
+//    トークン色に届かず、同一ストロークでも極値が 25-80ch ずれる。
+//  - インク質量比が 0.35 を超える: 1-2px のストロークでは被覆差 1px が質量比で
+//    数倍に現れ、同一ストロークでも inkDelta が 0.9 まで出る。
+//  - ±3px トポロジが 0.25 を超える: 別フォントの細グリフは輪郭自体がずれる。
+// その代わりの拘束: 両側の全画素が共通 bg→fg 軸上にある (色相ズレ=別トークン
+// はここで弾く) こと、足跡 (alpha>=0.10 の画素数) の比が 2.2 倍以下であること、
+// 片側の強インク (alpha>=0.6) が他側の無インク位置 (alpha<0.15) に現れる率が
+// 38% 以下であること。太さ変更 (linewidth) は周縁へ高 alpha の環を足すため
+// 足跡比>=2.6 または新規強インク率>=0.4 となり、ここで弾ける。
+// サンプル位置のオフセットは ±1px まで: 被覆差に加えてコンテンツ全体が
+// 1px ずれた実測を許容する。2px 以上のずれはこの集合に入らないため、
+// 意図した位置ずれは従来どおり FAIL のまま残る。
+const THIN_STROKE_OFFSETS: readonly PixelOffset[] = [
+  NO_OFFSET,
+  { dx: 1, dy: 0 },
+  { dx: -1, dy: 0 },
+  { dx: 0, dy: 1 },
+  { dx: 0, dy: -1 },
+  { dx: 1, dy: 1 },
+  { dx: -1, dy: -1 },
+  { dx: 1, dy: -1 },
+  { dx: -1, dy: 1 },
+];
+// 足跡の alpha 閾値。縁の極薄い被覆 (alpha<0.1) は背景揺らぎと区別がつかない
+// ため、形状の判定には含めない。
+const THIN_STROKE_FOOT_ALPHA = 0.1;
+// 強インクの alpha 閾値。周縁へ足される linewidth の環は最深色 (alpha ~0.85)
+// なので、中間被覆 (0.15-0.5) とは分けて見る。
+const THIN_STROKE_STRONG_ALPHA = 0.6;
+const THIN_STROKE_EMPTY_ALPHA = 0.15;
+// 実測の細ストロークAA差は足跡比 <=2.0・新規強インク率 <=0.35、合成した
+// linewidth 差は >=2.6・>=0.40。両側を分ける閾値をこの中間に置く。
+const THIN_STROKE_MAX_FOOTPRINT_RATIO = 2.2;
+const THIN_STROKE_MAX_NEW_STRONG_RATIO = 0.38;
+// 緩和段のトポロジ上限。別フォントの細グリフは shift-tolerant Hausdorff で
+// 0.4 前後まで出る。グリフ欠落・要素欠落は 0.5 超の空隙を作るのでここで切る。
+const THIN_STROKE_TOPOLOGY_SHAPE = 0.5;
+// 緩和段でもインク質量差を診断として残すために inkLimit として出す値。
+// 質量比は拘束に使わない (足跡ゲートが代理) が、発行する issue の threshold
+// 欄には「緩和段である」ことが分かる値を入れる。
+const THIN_STROKE_INK_LIMIT = 1;
+
+interface ThinStrokeCoverage {
+  designInk: number;
+  screenshotInk: number;
+  designFoot: number;
+  screenshotFoot: number;
+  newStrongShot: number;
+  newStrongDesign: number;
+}
+
+// 被覆差検分のための窓内計数。design 側は素直に走査し、screenshot 側は
+// shotOffset だけずらした位置を読むことで ±1px ドリフトと被覆差が
+// 同居する実測を一度の走査で検分する。
+const measureThinStrokeCoverage = (
+  designPixels: Uint8ClampedArray,
+  screenshotPixels: Uint8ClampedArray,
+  width: number,
+  window: RasterWindow,
+  background: readonly number[],
+  designForeground: readonly number[],
+  screenshotForeground: readonly number[],
+  shotOffset: PixelOffset,
+  ignoreMask?: Uint8Array,
+): ThinStrokeCoverage => {
+  let designInk = 0;
+  let screenshotInk = 0;
+  let designFoot = 0;
+  let screenshotFoot = 0;
+  let newStrongShot = 0;
+  let newStrongDesign = 0;
+  for (let y = window.top; y < window.bottom; y++) {
+    for (let x = window.left; x < window.right; x++) {
+      const index = y * width + x;
+      if (ignoreMask?.[index]) continue;
+      const sourceIndex = shiftedIndex(screenshotPixels, width, x, y, shotOffset);
+      if (sourceIndex < 0) continue;
+      const d = Math.min(
+        1,
+        Math.max(
+          0,
+          blendAlphaAndResidual(colorAt(designPixels, index), background, designForeground).alpha,
+        ),
+      );
+      const s = Math.min(
+        1,
+        Math.max(
+          0,
+          blendAlphaAndResidual(
+            colorAt(screenshotPixels, sourceIndex),
+            background,
+            screenshotForeground,
+          ).alpha,
+        ),
+      );
+      designInk += d;
+      screenshotInk += s;
+      if (d >= THIN_STROKE_FOOT_ALPHA) designFoot++;
+      if (s >= THIN_STROKE_FOOT_ALPHA) screenshotFoot++;
+      if (s >= THIN_STROKE_STRONG_ALPHA && d < THIN_STROKE_EMPTY_ALPHA) newStrongShot++;
+      if (d >= THIN_STROKE_STRONG_ALPHA && s < THIN_STROKE_EMPTY_ALPHA) newStrongDesign++;
+    }
+  }
+  return { designInk, screenshotInk, designFoot, screenshotFoot, newStrongShot, newStrongDesign };
+};
+
+const classifyThinStrokeRasterizationAtHalo = (
+  designPixels: Uint8ClampedArray,
+  screenshotPixels: Uint8ClampedArray,
+  width: number,
+  height: number,
+  bbox: DiffBoundingBox,
+  halo: number,
+  shotOffset: PixelOffset,
+  ignoreMask?: Uint8Array,
+): SameTokenRasterEvidence | undefined => {
+  const window = resolveRasterWindow(width, height, bbox, halo);
+  if (!window) return undefined;
+  const background = resolveMatchingBackground(
+    designPixels,
+    screenshotPixels,
+    width,
+    window,
+    ignoreMask,
+    shotOffset,
+  );
+  if (!background) return undefined;
+  const designForeground = foregroundExtreme(designPixels, width, window, background, ignoreMask);
+  const screenshotForeground = foregroundExtreme(
+    screenshotPixels,
+    width,
+    window,
+    background,
+    ignoreMask,
+    shotOffset,
+  );
+  if (!designForeground || !screenshotForeground) return undefined;
+  // 前景トークンは最深値の画素差ではなく「互いが共通 bg→fg 軸上にあるか」で
+  // 見る。1px 未満ストロークでは最深画素が真のトークン色に届かないため、
+  // 同一トークンでも極値の差が fg 閾値 (24) を超えて誤 FAIL になる。
+  // 色相が違う別トークンは相手側軸から外れるためここで弾ける。
+  if (
+    blendAlphaAndResidual(screenshotForeground, background, designForeground).residual >
+      RASTER_BLEND_RESIDUAL ||
+    blendAlphaAndResidual(designForeground, background, screenshotForeground).residual >
+      RASTER_BLEND_RESIDUAL
+  ) {
+    return undefined;
+  }
+  if (
+    !isOnAxisBlend(designPixels, width, window, background, designForeground, ignoreMask) ||
+    !isOnAxisBlend(
+      screenshotPixels,
+      width,
+      window,
+      background,
+      screenshotForeground,
+      ignoreMask,
+      shotOffset,
+    )
+  ) {
+    return undefined;
+  }
+  // インクの質量比ではなく足跡・新規強インクで被覆差を検分する。
+  const coverage = measureThinStrokeCoverage(
+    designPixels,
+    screenshotPixels,
+    width,
+    window,
+    background,
+    designForeground,
+    screenshotForeground,
+    shotOffset,
+    ignoreMask,
+  );
+  const { designInk, screenshotInk, designFoot, screenshotFoot, newStrongShot, newStrongDesign } =
+    coverage;
+  if (designFoot < 4 || screenshotFoot < 4) return undefined;
+  const footprintRatio =
+    Math.max(designFoot, screenshotFoot) / Math.min(designFoot, screenshotFoot);
+  if (footprintRatio > THIN_STROKE_MAX_FOOTPRINT_RATIO) return undefined;
+  const newStrongRatio = Math.max(newStrongShot / screenshotFoot, newStrongDesign / designFoot);
+  if (newStrongRatio > THIN_STROKE_MAX_NEW_STRONG_RATIO) return undefined;
+  const changedPixelCount = countChangedPixels(
+    designPixels,
+    screenshotPixels,
+    width,
+    window,
+    ignoreMask,
+    shotOffset,
+  );
+  if (changedPixelCount === 0) return undefined;
+  const inkDelta = Math.abs(designInk - screenshotInk) / Math.max(designInk, screenshotInk, 1e-9);
+  if (!Number.isFinite(inkDelta)) return undefined;
+  const contentOffset = estimateContentOffset(
+    designPixels,
+    screenshotPixels,
+    width,
+    window,
+    background,
+    designForeground,
+    screenshotForeground,
+    ignoreMask,
+  );
+  return {
+    classification: "same-token-rasterization",
+    changedPixelCount,
+    backgroundHex: toHex(background),
+    foregroundHex: toHex(designForeground),
+    inkCoverageDelta: Math.min(1, inkDelta),
+    inkLimit: THIN_STROKE_INK_LIMIT,
+    ...(contentOffset ? { contentOffset } : {}),
+    thinStroke: {
+      footprintRatio,
+      newStrongRatio,
+      shotOffsetDx: shotOffset.dx,
+      shotOffsetDy: shotOffset.dy,
+    },
+  };
+};
+
 // 平行移動を除いたトポロジ判定を許す探索幅。ラスタライザ差や座標丸めで
 // 要素全体が ±数px ずれるだけなら形状は同一とみなす。
 const SAME_TOKEN_TOPOLOGY_SHIFT_PX = 3;
@@ -950,6 +1240,11 @@ export const classifySameTokenRasterization = (
   bbox: DiffBoundingBox,
   topologyShape: number,
   ignoreMask?: Uint8Array,
+  // 細ストローク緩和段は rasterizationTolerance 指定時だけ走らせる。
+  // 証明そのものは常に診断 issue を出す設計のため、tolerance 未指定の
+  // 既定比較で緩和段まで動くと「証明は立つが救済しない」issue だけが
+  // 増えて既定の合否契約を変えてしまう。
+  allowThinStroke?: boolean,
 ): SameTokenRasterEvidence | undefined => {
   let effectiveShape = topologyShape;
   if (topologyShape > MAX_TOPOLOGY_SHAPE) {
@@ -977,20 +1272,42 @@ export const classifySameTokenRasterization = (
       ignoreMask,
       SAME_TOKEN_TOPOLOGY_SHIFT_PX,
     );
-    if (effectiveShape > MAX_TOPOLOGY_SHAPE) return undefined;
   }
-  for (const halo of SAME_TOKEN_HALO_CANDIDATES) {
-    const evidence = classifySameTokenRasterizationAtHalo(
-      designPixels,
-      screenshotPixels,
-      width,
-      height,
-      bbox,
-      halo,
-      effectiveShape,
-      ignoreMask,
-    );
-    if (evidence) return evidence;
+  if (effectiveShape <= MAX_TOPOLOGY_SHAPE) {
+    for (const halo of SAME_TOKEN_HALO_CANDIDATES) {
+      const evidence = classifySameTokenRasterizationAtHalo(
+        designPixels,
+        screenshotPixels,
+        width,
+        height,
+        bbox,
+        halo,
+        effectiveShape,
+        ignoreMask,
+      );
+      if (evidence) return evidence;
+    }
+  }
+  // 厳格段が通らなかった窓について、細ストローク緩和段を試す。
+  // 緩和段は 1px 未満ストロークの AA 被覆差と ±1px ドリフトだけを拾う
+  // 経路で、fg極値差・インク質量比の代わりに共通軸・足跡・新規強インクで
+  // 検分する。トポロジが壊れている差 (欠落・別物) はここでも弾く。
+  if (allowThinStroke === true && effectiveShape <= THIN_STROKE_TOPOLOGY_SHAPE) {
+    for (const shotOffset of THIN_STROKE_OFFSETS) {
+      for (const halo of SAME_TOKEN_HALO_CANDIDATES) {
+        const evidence = classifyThinStrokeRasterizationAtHalo(
+          designPixels,
+          screenshotPixels,
+          width,
+          height,
+          bbox,
+          halo,
+          shotOffset,
+          ignoreMask,
+        );
+        if (evidence) return evidence;
+      }
+    }
   }
   return undefined;
 };

@@ -382,6 +382,17 @@ export const RegionScoreSchema = z.object({
           periodicityUnchecked: z.enum(["fft-window-too-large", "fft-masked-window"]).optional(),
         })
         .optional(),
+      // 細ストローク緩和段の証明印 (designdiff#243)。厳格段とは別の拘束
+      // (共通軸・足跡比・新規強インク率) で検分したことを区別できるよう、
+      // 使った数値を診断として残す。
+      thinStroke: z
+        .object({
+          footprintRatio: z.number().min(1),
+          newStrongRatio: z.number().min(0).max(1),
+          shotOffsetDx: z.number().int(),
+          shotOffsetDy: z.number().int(),
+        })
+        .optional(),
     })
     .optional(),
   textureResampling: z
